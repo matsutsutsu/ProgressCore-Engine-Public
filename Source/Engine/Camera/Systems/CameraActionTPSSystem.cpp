@@ -8,7 +8,7 @@
 
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
-#include "Engine/Core/App/GameFlowState.h" // ポーズ中はカーソルロックを解除するため
+#include "Engine/Core/App/GameFlowState.h"              // ポーズ中はカーソルロックを解除するため
 
 #include <memory>
 
@@ -65,7 +65,6 @@ void CameraActionTPSSystem::Update(float dt)
         std::abs(mouseDX) > 0.5f ||
         std::abs(mouseDY) > 0.5f;
 
-
     // カメラ衝突用の物理API（地形とだけ交差判定する）。無ければ衝突回避はスキップ。
     std::shared_ptr<IPhysicsAPI> physicsAPI =
         m_world->HasResource<std::shared_ptr<IPhysicsAPI>>()
@@ -119,7 +118,6 @@ void CameraActionTPSSystem::Update(float dt)
         Vector3 targetWorldPos = targetTrans->GetRenderWorldPosition();
 
         Vector3 idealLookAt = targetWorldPos + tps.targetOffset;
-
 
         // ===================================================================
         // ロックオン状態(lockOnTarget / isLockOnActive)は、その持ち主である
@@ -334,8 +332,6 @@ void CameraActionTPSSystem::Update(float dt)
         tps.wasLockOnActive =
             tps.isLockOnActive;
 
-        
-
         // ヨーは周回するたび無限に積算されるので ±360 に畳む。
         //   放置すると float の有効桁が回転量に食われ、長時間プレイで視点が
         //   カクつくようになる（プレハブに -4572 度が保存されていた）。
@@ -343,13 +339,12 @@ void CameraActionTPSSystem::Update(float dt)
         //   角度が飛んでも挙動は変わらない。
         tps.currentYaw = std::fmod(tps.currentYaw, 360.0f);
 
-
         // 回り込み中心(pivot)と距離。通常は注視点中心、ロックオン中はプレイヤー中心。
         // 寄り要求中（切り払い準備など）は基準距離を closeUpDistance へ寄せる。
         //   実際の寄り/戻りは currentCamDistance の指数減衰で滑らかに補間される。
-        const float baseDistance = tps.closeUpRequest ? tps.closeUpDistance : tps.distance;
-        Vector3 posPivotTarget = idealLookAt;
-        float   camDistance    = baseDistance;
+        const float baseDistance   = tps.closeUpRequest ? tps.closeUpDistance : tps.distance;
+        Vector3     posPivotTarget = idealLookAt;
+        float       camDistance    = baseDistance;
 
         if (enemyTrans)
         {
@@ -442,8 +437,8 @@ void CameraActionTPSSystem::Update(float dt)
         }
 
         // fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する。
-        float colDamping = (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
-        float colBlend   = CCL::Math::Damp(colDamping, dt);
+        float colDamping       = (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
+        float colBlend         = CCL::Math::Damp(colDamping, dt);
         tps.currentCamDistance = std::lerp(tps.currentCamDistance, resolvedDist, colBlend);
 
         // 回り込み中心から後方へ（衝突を反映した）距離ぶん引いた位置がカメラ本体。
@@ -452,10 +447,10 @@ void CameraActionTPSSystem::Update(float dt)
         // カメラが寄った時は「足元」ではなく「頭付近」へ寄せる。
         //   引き込み量(pullRatio)に応じて、カメラのY(高さ)を pivot(頭)の高さへ持ち上げる。
         //   これで壁/床でカメラが近づいても視点が足元に落ちず、頭〜肩の高さを保つ。
-        float range     = (std::max)(0.001f, desiredDist - tps.collisionMinDistance);
-        float pullRatio = std::clamp((desiredDist - tps.currentCamDistance) / range, 0.0f, 1.0f);
+        float range      = (std::max)(0.001f, desiredDist - tps.collisionMinDistance);
+        float pullRatio  = std::clamp((desiredDist - tps.currentCamDistance) / range, 0.0f, 1.0f);
         float liftAmount = pullRatio * tps.collisionHeadBias;
-        finalPos.y      = std::lerp(finalPos.y, tps.currentPivot.y, liftAmount);
+        finalPos.y       = std::lerp(finalPos.y, tps.currentPivot.y, liftAmount);
 
         // 持ち上げた先は上のレイキャストの経路上に無い（Y方向へずらしたため）。
         //   庇や階段裏では、寄せたはずのカメラが持ち上げによって再びジオメトリの
@@ -467,15 +462,15 @@ void CameraActionTPSSystem::Update(float dt)
             const float liftDist = toCam.Length();
             if (liftDist > 1e-4f)
             {
-                Vector3 liftDir = toCam / liftDist;
-                XMFLOAT3 o      = {tps.currentPivot.x, tps.currentPivot.y, tps.currentPivot.z};
-                XMFLOAT3 d      = {liftDir.x, liftDir.y, liftDir.z};
-                PhysicsHitInfo hit = physicsAPI->RayCastStatic(o, d, liftDist + tps.collisionRadius);
+                Vector3        liftDir = toCam / liftDist;
+                XMFLOAT3       o       = {tps.currentPivot.x, tps.currentPivot.y, tps.currentPivot.z};
+                XMFLOAT3       d       = {liftDir.x, liftDir.y, liftDir.z};
+                PhysicsHitInfo hit     = physicsAPI->RayCastStatic(o, d, liftDist + tps.collisionRadius);
                 if (hit.hit)
                 {
                     float safeDist = std::clamp(hit.distance - tps.collisionRadius,
                                                 tps.collisionMinDistance, liftDist);
-                    finalPos = tps.currentPivot + liftDir * safeDist;
+                    finalPos       = tps.currentPivot + liftDir * safeDist;
                 }
             }
         }
@@ -484,8 +479,8 @@ void CameraActionTPSSystem::Update(float dt)
         // 「画角を広げたい」という要求はゲーム側(PlayerDashSystem 等)が
         // wideFovRequest に書き込む。カメラは理由を知らずに要求だけを見る。
         float targetFov = tps.wideFovRequest ? tps.dashFov : tps.baseFov;
-        float fovBlend = CCL::Math::Damp(tps.fovDamping, dt);
-        vcam.fov       = std::lerp(vcam.fov, targetFov, fovBlend);
+        float fovBlend  = CCL::Math::Damp(tps.fovDamping, dt);
+        vcam.fov        = std::lerp(vcam.fov, targetFov, fovBlend);
 
         // 8. TransformとVirtualCameraバッファの更新
         trans.position = finalPos;
@@ -515,7 +510,6 @@ void CameraActionTPSSystem::Update(float dt)
 
     inputAPI->SetMouseLock(wantCursorLock);
 }
-
 
 // 描画ステージ（Render）ではなく、ロジック確定直後のL02フェーズでカメラの姿勢を確定させる
 REGISTER_RENDER_SYSTEM(CameraActionTPSSystem, Priority::RenderStage::R01_Camera);

@@ -5,14 +5,17 @@
 #include <vector>
 #include <deque>
 
-namespace CCL {
+namespace CCL
+{
 
     // 8バイトの超軽量ハンドル（ECSコンポーネントに持たせる用）
-    // 
-    template <typename T> struct Handle {
+    //
+    template <typename T>
+    struct Handle
+    {
         //0xFFF...はuint32の一番大きな数字、無効な値を表すために
-        uint32_t index      = 0xFFFFFFFF;   // 配列の何番目にあるか 
-        uint32_t generation = 0;            // その場所が「何回使い回されたか」
+        uint32_t index      = 0xFFFFFFFF; // 配列の何番目にあるか
+        uint32_t generation = 0;          // その場所が「何回使い回されたか」
 
         // このチケットが空っぽじゃないかどうかを確認するための関数
         bool IsValid() const { return index != 0xFFFFFFFF; }
@@ -28,7 +31,8 @@ namespace CCL {
         bool operator<(const Handle &other) const
         {
             // まず部屋番号(index)で比較
-            if (index != other.index) {
+            if (index != other.index)
+            {
                 return index < other.index;
             }
             // 部屋番号が同じなら、世代(generation)で比較
@@ -37,14 +41,16 @@ namespace CCL {
     };
 
     // 型安全かつキャッシュ効率が極大化されたメモリプール
-    template <typename T> class ResourcePool {
-      private:
-        
-        struct Slot {
+    template <typename T>
+    class ResourcePool
+    {
+    private:
+        struct Slot
+        {
             // alignas(T)　メモリの部屋を用意するための指示　メモリアライメント
             // unsigned char data[...]　ただの空間（バイト配列）
             // sizeof(T)　Tクラスのデータの広さ
-            alignas(T) unsigned char data[sizeof(T)];   // 型Tのサイズ分の「単なるバイト配列」
+            alignas(T) unsigned char data[sizeof(T)]; // 型Tのサイズ分の「単なるバイト配列」
             uint32_t generation = 0;
             bool     active     = false; // 部屋に有効なデータが入っているかどうかのフラグ
 
@@ -58,7 +64,7 @@ namespace CCL {
             // 読み取り専用(const)でプールを走査された時用のGetPtr
             // これがないと const 関数である ForEachActive から呼び出せません
             // =========================================================
-            const T* GetPtr() const { return reinterpret_cast<const T*>(data); }
+            const T *GetPtr() const { return reinterpret_cast<const T *>(data); }
         };
 
         // アパートの部屋全体の配列
@@ -67,24 +73,27 @@ namespace CCL {
         // これにより、アパートの増築時に住人の「お引越し」が絶対に発生しなくなり、
         // 外部に配ったポインタ(T*)が永遠に安全に保たれるようになります。
         // ===================================================================
-        std::deque<Slot>      m_slots;
+        std::deque<Slot> m_slots;
         // 空き部屋リスト
         // 大挙して空っぽになった部屋の番号(index)を保管する場所
         std::vector<uint32_t> m_freeIndices;
 
-      public:
+    public:
         ~ResourcePool() { Clear(); }
 
-        template <typename... Args> Handle<T> Create(Args &&...args)
+        template <typename... Args>
+        Handle<T> Create(Args &&...args)
         {
             uint32_t index;
-            if (!m_freeIndices.empty()) {
+            if (!m_freeIndices.empty())
+            {
                 // もし空き部屋リストにメモがあれば
                 // そこから一つの番号を取り出して使う
                 index = m_freeIndices.back();
                 m_freeIndices.pop_back();
             }
-            else {
+            else
+            {
                 // 空き部屋が一つもなければ、アパートを増築（配列を一つ拡張）
                 // して新しい部屋番号にする
                 index = static_cast<uint32_t>(m_slots.size());
@@ -92,11 +101,11 @@ namespace CCL {
             }
 
             // 決まった部屋番号のスロット（部屋）を取り出す
-            Slot &slot = m_slots[index];            
-            
+            Slot &slot = m_slots[index];
+
             // slot.data（用意しておいた空部屋）の中にT（データ）を直接組み立てる
             new (slot.data) T(std::forward<Args>(args)...); // Placement New
-            slot.active = true;  // 入居中のフラグを立てる
+            slot.active = true;                             // 入居中のフラグを立てる
 
             // 部屋番号と、その部屋の今の世代を書き込んだチケット(Handle)を発行して返す
             return Handle<T>{index, slot.generation};
@@ -115,11 +124,12 @@ namespace CCL {
 
             // 「現在入居中(active)」かつ「チケットの世代と、
             // 部屋の今の世代が一致している」か確認する
-            if (slot.active && slot.generation == handle.generation) {
+            if (slot.active && slot.generation == handle.generation)
+            {
                 // 面会許可。翻訳機を通してポインタを渡す
                 return slot.GetPtr();
             }
-            return nullptr;// 世代が違う（＝前の住人のチケットで来ている）場合は絶対に会わせない
+            return nullptr; // 世代が違う（＝前の住人のチケットで来ている）場合は絶対に会わせない
         }
 
         // 部屋の中をデストラクタを呼び出して破壊する
@@ -129,7 +139,8 @@ namespace CCL {
             if (!handle.IsValid() || handle.index >= m_slots.size()) return;
 
             Slot &slot = m_slots[handle.index];
-            if (slot.active && slot.generation == handle.generation) {
+            if (slot.active && slot.generation == handle.generation)
+            {
                 // この書き方は部屋のメモリは壊さないで
                 // 中身のデータだけをデストラクタするための呼び方
                 slot.GetPtr()->~T(); // デストラクタの明示的呼び出し
@@ -144,8 +155,10 @@ namespace CCL {
         // 次のシーンに行くときなどメモリリークを防ぐための終了関数
         void Clear()
         {
-            for (auto &slot : m_slots) {
-                if (slot.active) {
+            for (auto &slot : m_slots)
+            {
+                if (slot.active)
+                {
                     slot.GetPtr()->~T(); // 住んでいる部屋だけ、全員の荷物を片付ける
                     slot.active = false;
                 }
@@ -154,17 +167,18 @@ namespace CCL {
             m_freeIndices.clear(); // 空き部屋リストもリセット
         }
 
-
         template <typename Func>
-        void ForEachActive(Func&& func) const {
-            for (size_t i = 0; i < m_slots.size(); ++i) {
-                if (m_slots[i].active) {
+        void ForEachActive(Func &&func) const
+        {
+            for (size_t i = 0; i < m_slots.size(); ++i)
+            {
+                if (m_slots[i].active)
+                {
                     // ラムダ式に実体（T）を渡す
                     func(*m_slots[i].GetPtr());
                 }
             }
         }
-
     };
 
 } // namespace CCL

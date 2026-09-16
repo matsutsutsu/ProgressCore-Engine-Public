@@ -5,21 +5,21 @@
 using namespace DirectX;
 
 // ヘルパー関数：指定した View-Projection 行列から、ワールド空間での視錐台の8頂点を取得する
-inline std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX& view, const XMMATRIX& proj)
+inline std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX &view, const XMMATRIX &proj)
 {
-    XMMATRIX viewProj = view * proj;
+    XMMATRIX viewProj    = view * proj;
     XMMATRIX invViewProj = XMMatrixInverse(nullptr, viewProj);
 
     std::vector<XMFLOAT3> corners(8);
     // NDC(正規化デバイス座標)空間での箱の8頂点
     const XMFLOAT3 ndcCorners[8] = {
-        XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(1.0f,  1.0f, 0.0f),
+        XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 0.0f),
         XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT3(-1.0f, -1.0f, 0.0f),
-        XMFLOAT3(-1.0f,  1.0f, 1.0f), XMFLOAT3(1.0f,  1.0f, 1.0f),
-        XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -1.0f, 1.0f)
-    };
+        XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, -1.0f, 1.0f)};
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         XMVECTOR v = XMLoadFloat3(&ndcCorners[i]);
         // W=1.0 として座標変換
         XMVECTOR transformed = XMVector3TransformCoord(v, invViewProj);
@@ -33,18 +33,18 @@ inline std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX& view, c
 // ※ fov, aspectRatio: カメラの設定
 // ※ cascadeSplits: float[3] { 15.0f, 50.0f, 200.0f } などの境界値
 inline void CalculateCascadeMatrices(
-    const XMMATRIX& cameraView,
+    const XMMATRIX &cameraView,
     float fov, float aspectRatio,
-    const XMFLOAT3& lightDir,
-    const float cascadeSplits[3],
-    XMMATRIX outLightVP[3])
+    const XMFLOAT3 &lightDir,
+    const float     cascadeSplits[3],
+    XMMATRIX        outLightVP[3])
 {
     // カメラのZ方向の分割点を設定（Nearクリップを含めた4点）
-    float frustumIntervals[4] = { 0.1f, cascadeSplits[0], cascadeSplits[1], cascadeSplits[2] };
+    float frustumIntervals[4] = {0.1f, cascadeSplits[0], cascadeSplits[1], cascadeSplits[2]};
 
     // ライトのView行列を作成 (原点からライトの逆方向を見る)
     XMVECTOR lDir = XMLoadFloat3(&lightDir);
-    XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    XMVECTOR up   = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     // ライトが真上や真下を向いている場合の例外処理
     if (abs(XMVectorGetY(lDir)) > 0.999f) up = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
     XMMATRIX lightView = XMMatrixLookToLH(XMVectorZero(), lDir, up);
@@ -63,7 +63,8 @@ inline void CalculateCascadeMatrices(
         float minY = 100000.0f, maxY = -100000.0f;
         float minZ = 100000.0f, maxZ = -100000.0f;
 
-        for (const auto& corner : corners) {
+        for (const auto &corner : corners)
+        {
             XMVECTOR v = XMLoadFloat3(&corner);
             // 頂点をライト空間に変換
             XMVECTOR lightSpaceV = XMVector3TransformCoord(v, lightView);
@@ -84,10 +85,10 @@ inline void CalculateCascadeMatrices(
         //  影の揺れ(シマリング)と回転時の粗さを防ぐテクセルスナップ
         // =======================================================
         // 1. AABBを「常に正方形」に固定し、カメラ回転による影の伸び縮みを防ぐ
-        float frustumWidth = maxX - minX;
+        float frustumWidth  = maxX - minX;
         float frustumHeight = maxY - minY;
-        float maxLength = (std::max)(frustumWidth, frustumHeight);
-        float halfLength = maxLength * 0.5f;
+        float maxLength     = (std::max)(frustumWidth, frustumHeight);
+        float halfLength    = maxLength * 0.5f;
 
         float centerX = (minX + maxX) * 0.5f;
         float centerY = (minY + maxY) * 0.5f;
@@ -111,7 +112,6 @@ inline void CalculateCascadeMatrices(
 
         // 4. ライト用の正投影（Orthographic）行列を作成
         XMMATRIX lightProj = XMMatrixOrthographicOffCenterLH(minX, maxX, minY, maxY, minZ, maxZ);
-
 
         // 5. 結果を保存
         outLightVP[i] = lightView * lightProj;

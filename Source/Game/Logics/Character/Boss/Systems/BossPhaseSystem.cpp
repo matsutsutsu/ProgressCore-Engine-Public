@@ -12,11 +12,11 @@ using namespace CCL::ECS;
 
 void BossPhaseSystem::Update(float /*rawDt*/)
 {
-    ForEach([&](BossPhaseComponent      &phase,
-                BehaviorTreeComponent   &bt,
-                BossCommandComponent    &cmd,
-                AnimParametersComponent &anim,
-                HealthComponent         &health,
+    ForEach([&](BossPhaseComponent       &phase,
+                BehaviorTreeComponent    &bt,
+                BossCommandComponent     &cmd,
+                AnimParametersComponent  &anim,
+                HealthComponent          &health,
                 const TimeStateComponent &time) {
         const BossPhase next = DecideNextPhase(phase, health);
 
@@ -88,7 +88,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
     case BossPhase::Combat2:
         // assetPath が変わると BehaviorTreeSystem が自動ロードする。
-        bt.assetPath = phase.phase2AssetPath;
+        bt.assetPath              = phase.phase2AssetPath;
         health.invincibilityTimer = 0.0f; // 無敵解除
         phase.timer               = 0.0f;
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態 開始 → %s", bt.assetPath.c_str());

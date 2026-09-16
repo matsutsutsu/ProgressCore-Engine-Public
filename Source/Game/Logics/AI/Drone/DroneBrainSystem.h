@@ -15,18 +15,18 @@
 #include <SimpleMath.h>
 
 class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
-                             CCL::ECS::Read<TransformComponent>,
-                             CCL::ECS::Write<DroneComponent>,
-                             CCL::ECS::Read<TimeStateComponent>>
+                                                   CCL::ECS::Read<TransformComponent>,
+                                                   CCL::ECS::Write<DroneComponent>,
+                                                   CCL::ECS::Read<TimeStateComponent>>
 {
-  public:
-    DroneBrainSystem() : IfSystem("DroneBrainSystem"){}
+public:
+    DroneBrainSystem() : IfSystem("DroneBrainSystem") {}
 
     virtual ~DroneBrainSystem() override = default;
 
     virtual void Update(float dt) override;
 
-  private:
+private:
     // 陣形スロットへの初回接近がまだ必要か。距離だけで判定すると Idle の追従で
     // 閾値をまたいで MoveToTarget が点滅するので、hasReachedSlot にラッチする。
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
@@ -40,9 +40,9 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
 
     /// FireCharge へ入った瞬間だけ走る初期化。ここで方向を固定するので、移動層の
     /// 「タメ→リリース」がコミットした直進として成立する（ホーミングしない）。
-    void BeginCharge(DroneComponent &drone,
+    void BeginCharge(DroneComponent                     &drone,
                      const DirectX::SimpleMath::Vector3 &playerPos,
-                     bool hasPlayer) const;
+                     bool                                hasPlayer) const;
 
     static constexpr float kArriveThreshold = 2.5f;  // 陣形スロットへ到着とみなす距離
     static constexpr float kChargeWindup    = 0.4f;  // 突撃前のタメ時間 [秒]
@@ -54,6 +54,6 @@ class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
     //   √(50²+14²) ≒ 52m の飛距離が要る。56m あれば水平 54m まで貫ける。
     static constexpr float kChargeRange = 56.0f;
 
-    static constexpr float kChargeTimeout = 2.0f;  // 突撃の最長時間 [秒]（壁際用の保険）
-    static constexpr float kBreakawayTime = 1.6f;  // 突き抜けた後に減速する時間 [秒]
+    static constexpr float kChargeTimeout = 2.0f; // 突撃の最長時間 [秒]（壁際用の保険）
+    static constexpr float kBreakawayTime = 1.6f; // 突き抜けた後に減速する時間 [秒]
 };

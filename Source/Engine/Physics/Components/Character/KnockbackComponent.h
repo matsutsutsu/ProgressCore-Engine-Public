@@ -38,9 +38,9 @@ struct KnockbackComponent
     float stunDuration = 0.35f;
 
     // --- runtime（非シリアライズ） ---
-    DirectX::SimpleMath::Vector3 velocity = {0.0f, 0.0f, 0.0f}; // 現在のノックバック速度
-    float                        timer    = 0.0f;               // 残り時間(秒)。>0 の間だけ適用。
-    float                        stunTimer = 0.0f;              // 硬直の残り(秒)。>0 の間は操作不能。
+    DirectX::SimpleMath::Vector3 velocity  = {0.0f, 0.0f, 0.0f}; // 現在のノックバック速度
+    float                        timer     = 0.0f;               // 残り時間(秒)。>0 の間だけ適用。
+    float                        stunTimer = 0.0f;               // 硬直の残り(秒)。>0 の間は操作不能。
 
     // 操作を受け付けない状態か。
     bool IsStunned() const { return stunTimer > 0.0f; }

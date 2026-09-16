@@ -33,9 +33,9 @@
 
 #if HITBOX_DIAGNOSTICS
 // Warning レベルで出すのは、Info が構成によって間引かれるのを避けるため。
-#define HITDIAG_LOG(category, ...)                                                 \
-    Logger::Instance().Log((category), LogLevel::Warning,                          \
-        std::source_location::current(), __VA_ARGS__)
+#define HITDIAG_LOG(category, ...)                        \
+    Logger::Instance().Log((category), LogLevel::Warning, \
+                           std::source_location::current(), __VA_ARGS__)
 #else
 #define HITDIAG_LOG(category, ...) ((void)0)
 #endif

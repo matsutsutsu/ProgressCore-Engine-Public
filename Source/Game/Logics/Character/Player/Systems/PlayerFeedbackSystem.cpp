@@ -25,56 +25,56 @@
 
 namespace
 {
-// =========================================================================
-// PostProcess スロット
-// =========================================================================
-// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
-// 命中バースト(10)・ジャスト回避(20)より弱い。被弾は他の演出に譲る。
+    // =========================================================================
+    // PostProcess スロット
+    // =========================================================================
+    // スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+    // 命中バースト(10)・ジャスト回避(20)より弱い。被弾は他の演出に譲る。
 
-const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
-constexpr int  kPriority = 5;
+    const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
+    constexpr int  kPriority = 5;
 
-// ダッシュ集中線は常時出る環境演出なので最弱。命中バーストやジャスト回避に前を譲る。
-// （放射ブラーの合成は最大値なので実際は順序に依存しないが、意図として明示しておく）
-const uint32_t kDashSource   = CCL::Utils::HashString("PlayerDash");
-constexpr int  kDashPriority = 1;
+    // ダッシュ集中線は常時出る環境演出なので最弱。命中バーストやジャスト回避に前を譲る。
+    // （放射ブラーの合成は最大値なので実際は順序に依存しないが、意図として明示しておく）
+    const uint32_t kDashSource   = CCL::Utils::HashString("PlayerDash");
+    constexpr int  kDashPriority = 1;
 
-// =========================================================================
-// Utility
-// =========================================================================
+    // =========================================================================
+    // Utility
+    // =========================================================================
 
-float TickTimer(float &timer, float dt)
-{
-    timer = std::max(0.0f, timer - dt);
-    return timer;
-}
+    float TickTimer(float &timer, float dt)
+    {
+        timer = std::max(0.0f, timer - dt);
+        return timer;
+    }
 
-// =========================================================================
-// Envelope
-// =========================================================================
-//
-// タイマーの残り時間を0～1へ正規化し、
-// e^2のカーブを適用する。
-//
-// 被弾直後
-//     env = 1
-//
-// 時間経過
-//     env → 0
-//
-// 「パッと出て、スッと消える」演出にする。
-// =========================================================================
+    // =========================================================================
+    // Envelope
+    // =========================================================================
+    //
+    // タイマーの残り時間を0～1へ正規化し、
+    // e^2のカーブを適用する。
+    //
+    // 被弾直後
+    //     env = 1
+    //
+    // 時間経過
+    //     env → 0
+    //
+    // 「パッと出て、スッと消える」演出にする。
+    // =========================================================================
 
-float CalculateEnvelope(float timer, float duration)
-{
-    if (duration <= 0.0f)
-        return 0.0f;
+    float CalculateEnvelope(float timer, float duration)
+    {
+        if (duration <= 0.0f)
+            return 0.0f;
 
-    const float normalizedTime =
-        std::clamp(timer / duration, 0.0f, 1.0f);
+        const float normalizedTime =
+            std::clamp(timer / duration, 0.0f, 1.0f);
 
-    return normalizedTime * normalizedTime;
-}
+        return normalizedTime * normalizedTime;
+    }
 } // namespace
 
 PlayerFeedbackSystem::PlayerFeedbackSystem()
@@ -106,7 +106,6 @@ void PlayerFeedbackSystem::Initialize()
         });
 }
 
-
 void PlayerFeedbackSystem::Update(float dt)
 {
     UpdateDamageVignette(dt);
@@ -134,12 +133,20 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
         if (dash.isDashing)
         {
             const float e = CalculateEnvelope(dash.currentTimer, dash.dashDuration);
-            if (e > env) { env = e; peak = m_dashBlurPeak; }
+            if (e > env)
+            {
+                env  = e;
+                peak = m_dashBlurPeak;
+            }
         }
         else if (dash.isApproaching)
         {
             const float e = CalculateEnvelope(dash.approachTimer, dash.approachDuration);
-            if (e > env) { env = e; peak = m_approachBlurPeak; }
+            if (e > env)
+            {
+                env  = e;
+                peak = m_approachBlurPeak;
+            }
         }
     });
 
@@ -265,8 +272,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-
-
 
     // =========================================================================
     // Damage Vignette
@@ -396,7 +401,6 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
     // StartAttackHitSound(event);
 }
 
-
 // ===================================================================================
 // Camera Shake
 // ===================================================================================
@@ -450,7 +454,6 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
     // 命中の強さに応じて振動をスケーリング
     // ---------------------------------------------------------
 
-  
     const float power =
         std::clamp(
             event.damage / m_attackHitFeedbackScale,
@@ -466,7 +469,6 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
         right,
         m_attackHitVibrationDuration);
 }
-
 
 // ===================================================================================
 // Damage Vignette

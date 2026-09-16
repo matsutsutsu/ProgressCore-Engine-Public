@@ -33,59 +33,59 @@ using namespace DirectX::SimpleMath;
 // =========================================================================
 namespace
 {
-// スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
-// 以前はここに丸ごと複製があり、CameraDollySystem 側に isLoop を足しても
-// エディタのプレビュー線だけ旧仕様のまま、という食い違いが発生していた。
+    // スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
+    // 以前はここに丸ごと複製があり、CameraDollySystem 側に isLoop を足しても
+    // エディタのプレビュー線だけ旧仕様のまま、という食い違いが発生していた。
 
-// =========================================================================
-// レイ-AABB による最近傍エンティティ選択(ピッキング)
-//   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)へ
-//   レイを飛ばし、最も手前でヒットしたエンティティを返す。
-//   ※ 追加データ不要。BoundingBoxComponent は ModelCullingSetupSystem が自動付与する。
-// =========================================================================
-CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
-    const Vector3 &origin, const Vector3 &dir)
-{
-    using namespace CCL::ECS;
-
-    const XMVECTOR o = XMLoadFloat3(&origin);
-    const XMVECTOR d = XMLoadFloat3(&dir);
-
-    EntityID best     = InvalidEntityID;
-    float    bestDist = FLT_MAX;
-
-    auto &chunks = world.GetChunkManager().GetChunks();
-    for (auto &chunkPtr : chunks)
+    // =========================================================================
+    // レイ-AABB による最近傍エンティティ選択(ピッキング)
+    //   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)へ
+    //   レイを飛ばし、最も手前でヒットしたエンティティを返す。
+    //   ※ 追加データ不要。BoundingBoxComponent は ModelCullingSetupSystem が自動付与する。
+    // =========================================================================
+    CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
+                                  const Vector3 &origin, const Vector3 &dir)
     {
-        if (!chunkPtr) continue;
-        Chunk *chunk = chunkPtr.get();
-        if (!chunk->HasComponent<BoundingBoxComponent>()) continue;
+        using namespace CCL::ECS;
 
-        BoundingBoxComponent *boxes = chunk->GetComponentArray<BoundingBoxComponent>();
-        VisibilityComponent  *vis   = chunk->HasComponent<VisibilityComponent>()
-                                          ? chunk->GetComponentArray<VisibilityComponent>()
-                                          : nullptr;
+        const XMVECTOR o = XMLoadFloat3(&origin);
+        const XMVECTOR d = XMLoadFloat3(&dir);
 
-        const size_t count = chunk->GetEntityCount();
-        for (size_t i = 0; i < count; ++i)
+        EntityID best     = InvalidEntityID;
+        float    bestDist = FLT_MAX;
+
+        auto &chunks = world.GetChunkManager().GetChunks();
+        for (auto &chunkPtr : chunks)
         {
-            if (chunk->IsEntityDestroyed(i)) continue;
-            if (vis && !vis[i].isVisible) continue; // 非表示は拾わない
+            if (!chunkPtr) continue;
+            Chunk *chunk = chunkPtr.get();
+            if (!chunk->HasComponent<BoundingBoxComponent>()) continue;
 
-            float dist = 0.0f;
-            if (boxes[i].worldAABB.Intersects(o, d, dist) && dist < bestDist)
+            BoundingBoxComponent *boxes = chunk->GetComponentArray<BoundingBoxComponent>();
+            VisibilityComponent  *vis   = chunk->HasComponent<VisibilityComponent>()
+                                              ? chunk->GetComponentArray<VisibilityComponent>()
+                                              : nullptr;
+
+            const size_t count = chunk->GetEntityCount();
+            for (size_t i = 0; i < count; ++i)
             {
-                bestDist = dist;
-                best     = chunk->GetEntityByIndex(i);
+                if (chunk->IsEntityDestroyed(i)) continue;
+                if (vis && !vis[i].isVisible) continue; // 非表示は拾わない
+
+                float dist = 0.0f;
+                if (boxes[i].worldAABB.Intersects(o, d, dist) && dist < bestDist)
+                {
+                    bestDist = dist;
+                    best     = chunk->GetEntityByIndex(i);
+                }
             }
         }
+        return best;
     }
-    return best;
-}
 
-// JSON への書き出しは CameraPathEditorWindow::SavePathToJson に一本化した。
-// ここにも複製があったため、isLoop を書き出さない旧版でギズモ操作のたびに
-// ループ設定が消えていた。
+    // JSON への書き出しは CameraPathEditorWindow::SavePathToJson に一本化した。
+    // ここにも複製があったため、isLoop を書き出さない旧版でギズモ操作のたびに
+    // ループ設定が消えていた。
 } // namespace
 
 // =========================================================================
@@ -128,13 +128,13 @@ void GameViewWindow::DrawContents(EditorContext &context)
         //   これはプラットフォーム Mouse::GetPositionX/Y と同じ空間。
         if (context.world && context.world->HasResource<GameViewportInfo>())
         {
-            const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
-            GameViewportInfo &vp = context.world->GetResource<GameViewportInfo>();
-            vp.x     = screenPos.x - mainPos.x;
-            vp.y     = screenPos.y - mainPos.y;
-            vp.w     = imageSize.x;
-            vp.h     = imageSize.y;
-            vp.valid = true;
+            const ImVec2      mainPos = ImGui::GetMainViewport()->Pos;
+            GameViewportInfo &vp      = context.world->GetResource<GameViewportInfo>();
+            vp.x                      = screenPos.x - mainPos.x;
+            vp.y                      = screenPos.y - mainPos.y;
+            vp.w                      = imageSize.x;
+            vp.h                      = imageSize.y;
+            vp.valid                  = true;
         }
     }
     else
@@ -270,15 +270,17 @@ void GameViewWindow::DrawContents(EditorContext &context)
                 Camera *camera = context.world->GetResource<Camera *>();
                 Vector3 rayOrigin, rayDir;
                 ScreenToWorld::GetRay(local.x, local.y, imageSize.x, imageSize.y,
-                    *camera, rayOrigin, rayDir);
+                                      *camera, rayOrigin, rayDir);
 
                 const CCL::ECS::EntityID hit = PickEntity(*context.world, rayOrigin, rayDir);
 
                 ImGuiIO &io = ImGui::GetIO();
                 if (hit != CCL::ECS::InvalidEntityID)
                 {
-                    if (io.KeyCtrl) context.ToggleSelection(hit); // 追加/解除
-                    else            context.SetSingleSelection(hit);
+                    if (io.KeyCtrl)
+                        context.ToggleSelection(hit); // 追加/解除
+                    else
+                        context.SetSingleSelection(hit);
                 }
                 else if (!io.KeyCtrl)
                 {

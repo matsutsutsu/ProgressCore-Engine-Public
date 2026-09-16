@@ -27,9 +27,9 @@
 // が確定させ、本システム(L06)は読むだけなのでステージの壁で直列化される。
 class PlayerFeedbackSystem
     : public CCL::ECS::IfSystem<PlayerFeedbackSystem,
-          CCL::ECS::Read<DashComponent>>
+                                CCL::ECS::Read<DashComponent>>
 {
-  public:
+public:
     PlayerFeedbackSystem();
     ~PlayerFeedbackSystem() override = default;
 
@@ -39,7 +39,7 @@ class PlayerFeedbackSystem
 
     void OnGui() override;
 
-  private:
+private:
     // =========================================================================
     // Damage Feedback
     // =========================================================================
@@ -91,7 +91,6 @@ class PlayerFeedbackSystem
     float m_attackHitVibrationRight    = 0.55f;
     float m_attackHitVibrationDuration = 0.2f;
     float m_attackHitFeedbackScale     = 1.0f;
-
 
     // =========================================================================
     // Damage Vignette

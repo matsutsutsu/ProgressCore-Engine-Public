@@ -29,17 +29,17 @@ struct AnimSequence;
 // ===================================================================================
 
 class AnimationPoseSystem : public CCL::ECS::IfSystem<AnimationPoseSystem,
-                                CCL::ECS::Write<AnimatorComponent>,
-                                CCL::ECS::Write<ModelComponent>>
+                                                      CCL::ECS::Write<AnimatorComponent>,
+                                                      CCL::ECS::Write<ModelComponent>>
 {
-  public:
+public:
     AnimationPoseSystem();
     virtual ~AnimationPoseSystem() = default;
 
     void Update(float dt) override;
 
-  private:
+private:
     // ブレンド計算・Force Root Lock を経て、最終的な骨格ポーズを Model へ適用する。
     void ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
-        Model *model, const AnimSequence *seq);
+                             Model *model, const AnimSequence *seq);
 };

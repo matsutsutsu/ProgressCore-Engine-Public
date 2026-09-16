@@ -17,8 +17,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <utility>  // std::forward
-
+#include <utility> // std::forward
 
 namespace CCL::ECS
 {
@@ -55,7 +54,6 @@ namespace CCL::ECS
             return id;
         }
     };
-
 
     // ------------------------------------------------------------------
     // ResourceBase / ResourceWrapper<T>

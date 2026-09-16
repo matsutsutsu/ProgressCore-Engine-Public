@@ -7,7 +7,7 @@
 #include "Engine/Time/TimeService.h" // 全体スローは意図ファサード経由
 
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"   // プレイヤー識別
-#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"      // ボス識別
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // ボス識別
 
 using namespace CCL::ECS;
 

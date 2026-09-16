@@ -8,7 +8,6 @@
 
 #include "tracy/Tracy.hpp"
 
-
 // ============================================================================
 // デストラクタ ─ 自分宛のジョブが残っていないことを確認してから壊れる
 // ----------------------------------------------------------------------------
@@ -43,7 +42,6 @@ JoltJobSystemAdapter::~JoltJobSystemAdapter()
     }
 }
 
-
 // ============================================================================
 // Init ─ フリーリストとバリアを用意し、委譲先プールを覚える
 // ----------------------------------------------------------------------------
@@ -63,7 +61,6 @@ void JoltJobSystemAdapter::Init(CCL::ECS::JobSystem *inPool, JPH::uint inMaxJobs
     m_jobs.Init(inMaxJobs, inMaxJobs);
 }
 
-
 // ============================================================================
 // GetMaxConcurrency ─ 同時に走れるジョブ数
 // ----------------------------------------------------------------------------
@@ -82,7 +79,6 @@ int JoltJobSystemAdapter::GetMaxConcurrency() const
     if (m_pool == nullptr) return 1;
     return static_cast<int>(m_pool->GetWorkerCount()) + 1;
 }
-
 
 // ============================================================================
 // CreateJob ─ ジョブを1つ確保する
@@ -187,7 +183,6 @@ JoltJobSystemAdapter::JobHandle JoltJobSystemAdapter::CreateJob(
     return handle;
 }
 
-
 // ============================================================================
 // QueueJob ─ 実行可能になったジョブを1件積む
 // ----------------------------------------------------------------------------
@@ -206,7 +201,6 @@ void JoltJobSystemAdapter::QueueJob(Job *inJob)
 
     m_pool->Execute([this, inJob] { RunJob(inJob); });
 }
-
 
 // ============================================================================
 // QueueJobs ─ 実行可能になったジョブをまとめて積む
@@ -242,7 +236,6 @@ void JoltJobSystemAdapter::QueueJobs(Job **inJobs, JPH::uint inNumJobs)
     m_pool->ExecuteBatch(s_batch.data(), s_batch.size());
 }
 
-
 // ============================================================================
 // FreeJob ─ ジョブの後始末
 // ----------------------------------------------------------------------------
@@ -255,7 +248,6 @@ void JoltJobSystemAdapter::FreeJob(Job *inJob)
 {
     m_jobs.DestructObject(inJob);
 }
-
 
 // ============================================================================
 // RunJob ─ ワーカースレッド上での実際の実行

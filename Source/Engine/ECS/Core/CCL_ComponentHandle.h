@@ -15,12 +15,10 @@
 
 #include "../Common/CCL_Types.h"
 
-
 namespace CCL::ECS
 {
     // 前方宣言（World の完全定義は実装側で必要）
     class World;
-
 
     /**
      * @brief コンポーネントへの安全な間接アクセス用ハンドル。
@@ -47,15 +45,13 @@ namespace CCL::ECS
     public:
         // 無効ハンドルを構築する
         ComponentHandle()
-            : m_world(nullptr)
-            , m_id(InvalidEntityID)
+            : m_world(nullptr), m_id(InvalidEntityID)
         {
         }
 
         // 有効ハンドルを構築する（通常は World::GetHandle 経由で生成）
-        ComponentHandle(World* world, EntityID id)
-            : m_world(world)
-            , m_id(id)
+        ComponentHandle(World *world, EntityID id)
+            : m_world(world), m_id(id)
         {
         }
 
@@ -70,7 +66,7 @@ namespace CCL::ECS
          * @return 有効なら T*、無効なら nullptr。
          * @note 実装は CCL_World.h の末尾（World::GetComponent を呼ぶため）。
          */
-        T* Get() const;
+        T *Get() const;
 
         /**
          * @brief ポインタのように使えるアクセサ。
@@ -79,9 +75,9 @@ namespace CCL::ECS
          *       これにより「いつのまにかダングリング」というバグを開発中に
          *       発見しやすくなります。
          */
-        T* operator->() const
+        T *operator->() const
         {
-            T* ptr = Get();
+            T *ptr = Get();
             assert(ptr && "Accessing invalid or destroyed component! (Handle expired)");
             return ptr;
         }
@@ -90,13 +86,13 @@ namespace CCL::ECS
         explicit operator bool() const { return IsValid(); }
 
         // 同じ World 上の同じ Entity を指すかで一致判定
-        bool operator==(const ComponentHandle<T>& other) const
+        bool operator==(const ComponentHandle<T> &other) const
         {
             return m_world == other.m_world && m_id == other.m_id;
         }
 
     private:
-        World*   m_world;
+        World   *m_world;
         EntityID m_id;
     };
 

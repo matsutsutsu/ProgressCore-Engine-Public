@@ -63,8 +63,8 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     // --- ASCII をアトラス(1ch)へ焼く ---
     std::vector<unsigned char> bitmap(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     stbtt_BakeFontBitmap(ttf.data(), 0, bakePixelHeight,
-        bitmap.data(), m_impl->atlasW, m_impl->atlasH,
-        Impl::kFirst, Impl::kCount, m_impl->chars);
+                         bitmap.data(), m_impl->atlasW, m_impl->atlasH,
+                         Impl::kFirst, Impl::kCount, m_impl->chars);
     // ※ 戻り値が負でも一部は焼けている。ASCIIなら 512x512/48px で収まる想定。
 
     // --- 縦メトリクス取得 ---
@@ -110,13 +110,13 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     if (FAILED(device->CreateShaderResourceView(tex.Get(), nullptr, srv.GetAddressOf()))) return false;
 
     m_impl->atlas = std::make_unique<Sprite>(device, srv,
-        static_cast<float>(m_impl->atlasW), static_cast<float>(m_impl->atlasH));
+                                             static_cast<float>(m_impl->atlasW), static_cast<float>(m_impl->atlasH));
     m_impl->ready = true;
     return true;
 }
 
 void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
-    float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color)
+                            float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color)
 {
     if (!IsReady() || !dc) return;
 
@@ -149,7 +149,7 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
         const float gh = sh * scale;
 
         m_impl->atlas->Render(dc, gx, gy, 0.0f, gw, gh, sx, sy, sw, sh, 0.0f,
-            color.x, color.y, color.z, color.w);
+                              color.x, color.y, color.z, color.w);
 
         penX += b.xadvance * scale;
     }
@@ -162,7 +162,12 @@ float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
     float       w = 0.0f, maxw = 0.0f;
     for (unsigned char ch : text)
     {
-        if (ch == '\n') { maxw = (w > maxw) ? w : maxw; w = 0.0f; continue; }
+        if (ch == '\n')
+        {
+            maxw = (w > maxw) ? w : maxw;
+            w    = 0.0f;
+            continue;
+        }
         if (ch < Impl::kFirst || ch >= Impl::kFirst + Impl::kCount) continue;
         w += m_impl->chars[ch - Impl::kFirst].xadvance * scale;
     }

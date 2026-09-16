@@ -19,14 +19,13 @@
 #include "Engine/Graphics/Shader/PostProcess/PauseBlurEffect.h"
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中だけ背景をぼかすため
 
-
-
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従
 
-void PostProcessSystem::Update(float dt) {
+void PostProcessSystem::Update(float dt)
+{
     // Worldからリソースとして取得する
     if (!m_world->HasResource<PostProcessManager *>()) return;
     auto *postProcess = m_world->GetResource<PostProcessManager *>();
@@ -46,10 +45,12 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // ※ 本来は「GlobalVolume」タグやカメラ位置判定を行うが、
     //    ここではシンプルに「有効になっているものが見つかったら採用」する
-    if(auto* comp = m_world->GetSingletonComponent<BloomConfigComponent>()) {
+    if (auto *comp = m_world->GetSingletonComponent<BloomConfigComponent>())
+    {
 
         // 有効な設定が見つかったら上書き（後勝ち）
-        if (comp && comp->enable) {
+        if (comp && comp->enable)
+        {
             finalBloom = *comp;
         }
     }
@@ -57,7 +58,8 @@ void PostProcessSystem::Update(float dt) {
     // -------------------------------------------------------
     // 3. ToneMapConfigComponent を検索
     // -------------------------------------------------------
-    if (auto* comp = m_world->GetSingletonComponent<ToneMapConfigComponent>()) {      
+    if (auto *comp = m_world->GetSingletonComponent<ToneMapConfigComponent>())
+    {
         finalToneMap = *comp;
     }
 
@@ -73,86 +75,99 @@ void PostProcessSystem::Update(float dt) {
     //  されたエフェクトが動き続けて負荷が高くなっていた)。
     // 「コンポーネント無し = 無効」を毎フレーム明示するのが唯一の正しい実装。
 
-    if (auto* ssao = postProcess->GetEffect<SSAOEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<SSAOConfigComponent>();
-      ssao->SetEnabled(comp && comp->enable);
-      if (comp) ssao->UpdateParams(comp->data);
+    if (auto *ssao = postProcess->GetEffect<SSAOEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<SSAOConfigComponent>();
+        ssao->SetEnabled(comp && comp->enable);
+        if (comp) ssao->UpdateParams(comp->data);
     }
 
-    if (auto* contact = postProcess->GetEffect<ContactShadowEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<ContactShadowConfigComponent>();
-      contact->SetEnabled(comp && comp->enable);
-      if (comp) contact->UpdateParams(comp->data);
+    if (auto *contact = postProcess->GetEffect<ContactShadowEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<ContactShadowConfigComponent>();
+        contact->SetEnabled(comp && comp->enable);
+        if (comp) contact->UpdateParams(comp->data);
     }
 
-    if (auto *distortion = postProcess->GetEffect<DistortionEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<DistortionConfigComponent>();
-      distortion->SetEnabled(comp && comp->enable);
-      if (comp) {
-        comp->data.time += dt; // システム側でアニメーション時間を進める
-        distortion->UpdateParams(comp->data);
-      }
+    if (auto *distortion = postProcess->GetEffect<DistortionEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<DistortionConfigComponent>();
+        distortion->SetEnabled(comp && comp->enable);
+        if (comp)
+        {
+            comp->data.time += dt; // システム側でアニメーション時間を進める
+            distortion->UpdateParams(comp->data);
+        }
     }
 
     // 放射ブラー / 色収差は複数の演出システムが同時に要求しうる。
     // 各システムは自分の burst スロットへ書くだけで、最終値の決定はここに集約する。
     // enable(素の設定)が false でも演出は出す必要があるため、パスのON/OFFは
     // 合成後の強度が 0 かどうかで判断する。
-    if (auto* radial = postProcess->GetEffect<RadialBlurEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
-      const float strength = comp ? comp->ResolvedStrength() : 0.0f;
-      radial->SetEnabled(strength > 0.0f);
-      if (comp) {
-        auto data = comp->data;
-        data.blurStrength = strength;
-        radial->UpdateParams(data);
-      }
+    if (auto *radial = postProcess->GetEffect<RadialBlurEffect>())
+    {
+        auto       *comp     = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
+        const float strength = comp ? comp->ResolvedStrength() : 0.0f;
+        radial->SetEnabled(strength > 0.0f);
+        if (comp)
+        {
+            auto data         = comp->data;
+            data.blurStrength = strength;
+            radial->UpdateParams(data);
+        }
     }
 
-    if (auto* dof = postProcess->GetEffect<DepthOfFieldEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
-      dof->SetEnabled(comp && comp->enable);
-      if (comp) dof->UpdateParams(comp->data);
+    if (auto *dof = postProcess->GetEffect<DepthOfFieldEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
+        dof->SetEnabled(comp && comp->enable);
+        if (comp) dof->UpdateParams(comp->data);
     }
 
-    if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
+    if (auto *bloom = postProcess->GetEffect<BloomEffect>())
+    {
         bloom->SetEnabled(finalBloom.enable);
         bloom->UpdateParams(finalBloom.data);
     }
 
-    if (auto* chroma = postProcess->GetEffect<ChromaticAberrationEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
-      const float strength = comp ? comp->ResolvedStrength() : 0.0f;
-      chroma->SetEnabled(strength > 0.0f);
-      if (comp) {
-        auto data = comp->data;
-        data.chromaStrength = strength;
-        chroma->UpdateParams(data);
-      }
+    if (auto *chroma = postProcess->GetEffect<ChromaticAberrationEffect>())
+    {
+        auto       *comp     = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
+        const float strength = comp ? comp->ResolvedStrength() : 0.0f;
+        chroma->SetEnabled(strength > 0.0f);
+        if (comp)
+        {
+            auto data           = comp->data;
+            data.chromaStrength = strength;
+            chroma->UpdateParams(data);
+        }
     }
 
-    if (auto* vignette = postProcess->GetEffect<VignetteEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<VignetteConfigComponent>();
-      vignette->SetEnabled(comp && comp->ResolvedEnable());
-      if (comp) {
-        // 脈動の位相は演出ではなく常に進む連続値。ここだけが所有者。
-        comp->data.vigTime += dt;
-        vignette->UpdateParams(comp->Resolve());
-      }
+    if (auto *vignette = postProcess->GetEffect<VignetteEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<VignetteConfigComponent>();
+        vignette->SetEnabled(comp && comp->ResolvedEnable());
+        if (comp)
+        {
+            // 脈動の位相は演出ではなく常に進む連続値。ここだけが所有者。
+            comp->data.vigTime += dt;
+            vignette->UpdateParams(comp->Resolve());
+        }
     }
 
-    if (auto* grading = postProcess->GetEffect<ColorGradingEffect>()) {
-      auto* comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
-      grading->SetEnabled(comp && comp->ResolvedEnable());
-      if (comp) grading->UpdateParams(comp->Resolve());
+    if (auto *grading = postProcess->GetEffect<ColorGradingEffect>())
+    {
+        auto *comp = m_world->GetSingletonComponent<ColorGradingConfigComponent>();
+        grading->SetEnabled(comp && comp->ResolvedEnable());
+        if (comp) grading->UpdateParams(comp->Resolve());
     }
 
     // ポーズ中の背景ぼかし。
     //   世界の時計は止まっていても、このSystemは描画ステージなので実時間の dt が来る。
     //   だから「止まっている間に演出が進む」ことができ、パッと切り替わらずに沈み込む。
-    if (auto *blur = postProcess->GetEffect<PauseBlurEffect>()) {
-        const bool paused = m_world->HasResource<GameFlowState>()
-                         && m_world->GetResource<GameFlowState>().paused;
+    if (auto *blur = postProcess->GetEffect<PauseBlurEffect>())
+    {
+        const bool paused = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
 
         // 目標へ指数で寄せる。ポーズ解除は入りより速くして、操作再開を待たせない。
         const float target = paused ? 1.0f : 0.0f;
@@ -168,6 +183,5 @@ void PostProcessSystem::Update(float dt) {
 
     postProcess->toneMapConfig = finalToneMap;
 }
-
 
 REGISTER_RENDER_SYSTEM(PostProcessSystem, Priority::RenderStage::R09_PostProcess);

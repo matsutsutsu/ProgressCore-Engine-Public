@@ -8,10 +8,10 @@
 
 namespace ax
 {
-namespace NodeEditor
-{
-struct EditorContext;
-}
+    namespace NodeEditor
+    {
+        struct EditorContext;
+    }
 } // namespace ax
 
 // アニメーションのステートマシン(AnimStateGraph)をノードグラフで編集するウィンドウ。
@@ -20,14 +20,14 @@ struct EditorContext;
 // 毎フレーム再構築する m_linkLut(linkId→遷移の素性)で解決する。
 class AnimGraphWindow : public EditorWindow
 {
-  public:
+public:
     AnimGraphWindow();
     virtual ~AnimGraphWindow();
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
-  private:
+private:
     void DrawToolbar();
     void DrawNodeWorkspace();
     void DrawInspector();
@@ -59,9 +59,9 @@ class AnimGraphWindow : public EditorWindow
     //   と局所参照を張るので、既存の描画コードは無修正で現在の階層を編集できる。
     // =====================================================================
     AnimStateGraph &CurrentView();
-    void            DrawBreadcrumb(); // 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
+    void            DrawBreadcrumb();                         // 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
     void            EnterSubMachine(uint32_t subMachineHash); // 指定サブマシンへ潜る
-    uint32_t        MakeUniqueStateHash(std::string &name); // 階層全体で衝突しない hash を採る（name は必要なら連番付与で書き換え）
+    uint32_t        MakeUniqueStateHash(std::string &name);   // 階層全体で衝突しない hash を採る（name は必要なら連番付与で書き換え）
 
     // =====================================================================
     // リンクID → 遷移の素性 の対応表（毎フレーム DrawNodeWorkspace で再構築）
@@ -79,10 +79,10 @@ class AnimGraphWindow : public EditorWindow
     std::vector<std::pair<int, LinkRef>> m_linkLut;
     const LinkRef                       *FindLink(int linkId) const;
 
-  private:
-    AnimStateGraph        m_rootGraph;  // ツリー全体（保存/読込の対象）
-    std::vector<uint32_t> m_editPath;   // 潜っているサブマシンの hash 列（空=root）
-    std::string    m_currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
+private:
+    AnimStateGraph        m_rootGraph; // ツリー全体（保存/読込の対象）
+    std::vector<uint32_t> m_editPath;  // 潜っているサブマシンの hash 列（空=root）
+    std::string           m_currentFilePath = "Assets/Animations/PlayerAnimGraph.json";
 
     ax::NodeEditor::EditorContext *m_nodeContext = nullptr;
 

@@ -20,7 +20,7 @@
 // ===========================================================================
 class CurveEditorWidget
 {
-  public:
+public:
     struct Options
     {
         float height        = 260.0f; // キャンバス高さ(px)
@@ -40,7 +40,7 @@ class CurveEditorWidget
         return m_activeCurve;
     }
 
-  private:
+private:
     // ビュー範囲（カーブ座標）
     float m_viewMinX = 0.0f, m_viewMaxX = 1.0f;
     float m_viewMinY = -0.2f, m_viewMaxY = 1.2f;

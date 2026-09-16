@@ -57,9 +57,9 @@ void DroneBrainSystem::Update(float /*dt*/)
                 HasFinishedCharge(trans, drone, dt))
             {
                 drone.attackPhase    = DroneAttackPhase::Returning;
-                drone.stateTimer     = kBreakawayTime;  // 離脱カーブの長さとして持ち替える
-                drone.fireDirection  = Vector3::Zero;   // 次の突撃で方向を取り直させる
-                drone.hasReachedSlot = false;           // 帰投後は並び直す
+                drone.stateTimer     = kBreakawayTime; // 離脱カーブの長さとして持ち替える
+                drone.fireDirection  = Vector3::Zero;  // 次の突撃で方向を取り直させる
+                drone.hasReachedSlot = false;          // 帰投後は並び直す
                 drone.currentState   = DroneState::Returning;
                 return;
             }
@@ -92,7 +92,6 @@ void DroneBrainSystem::Update(float /*dt*/)
         drone.currentState = DroneState::Idle;
     });
 }
-
 
 bool DroneBrainSystem::UpdateStun(DroneComponent &drone, float dt) const
 {
@@ -127,7 +126,6 @@ bool DroneBrainSystem::UpdateStun(DroneComponent &drone, float dt) const
     return false;
 }
 
-
 bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
                                          DroneComponent           &drone,
                                          float                     dt) const
@@ -153,7 +151,6 @@ bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
     return drone.chargeTimer > kChargeTimeout;
 }
 
-
 bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const
 {
     // 一度到着したら、回転し続ける targetPosition との距離では接近へ戻さない。
@@ -164,13 +161,12 @@ bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneCompo
 
     if (Vector3::Distance(cur, target) <= kArriveThreshold)
     {
-        drone.hasReachedSlot = true;   // 初回到着をラッチ
+        drone.hasReachedSlot = true; // 初回到着をラッチ
         return false;
     }
 
-    return true;   // まだスロットへ向かう必要あり
+    return true; // まだスロットへ向かう必要あり
 }
-
 
 void DroneBrainSystem::BeginCharge(DroneComponent &drone,
                                    const Vector3  &playerPos,

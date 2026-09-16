@@ -26,7 +26,7 @@ struct RadialBlurConfigComponent
 {
     bool enable = false;
 
-    GpuData::CbRadialBlurData data{ { 0.5f, 0.5f }, 0.0f, 2.0f };
+    GpuData::CbRadialBlurData data{{0.5f, 0.5f}, 0.0f, 2.0f};
 
     PostEffectOverrides<RadialBlurOverrideParams> overrides;
 

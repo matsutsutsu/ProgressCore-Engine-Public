@@ -16,7 +16,7 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
                                CCL::ECS::Read<TransformComponent>,
                                CCL::ECS::Read<TimeStateComponent>>
 {
-  public:
+public:
     /// 申告の集約で基底の実装を呼ぶために別名を付ける（テンプレート引数の再掲を避ける）。
     using Base = CCL::ECS::IfSystem<BehaviorTreeSystem,
                                     CCL::ECS::Write<BehaviorTreeComponent>,
@@ -37,14 +37,14 @@ class BehaviorTreeSystem : public CCL::ECS::IfSystem<
     //   同じものを書く別システムと並列に走らせてしまう。
     //   レジストリが集めた申告をここで足すことで、「BTエンジンは敵の種類を知らない」を
     //   保ったまま依存解析を正しくする。
-    std::vector<CCL::ECS::TypeID> GetReadTypes()  const override;
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
     // アニメのトリガーを引くのはBTなので、消費側より前に走る必要がある。
     //   逆向きに書かない（あちらはエンジン、こちらはゲーム）。
     std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
 
-  private:
+private:
     /// 各エンティティに「パスに対応する木」を配り直す（直列）。読み込みは BTAssetCache
     /// が持ち、ここは配布と実行状態の破棄だけ。並列ループの手前で呼ぶ。
     void SyncAssets();

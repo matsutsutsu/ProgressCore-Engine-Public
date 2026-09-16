@@ -24,28 +24,30 @@
 // ===========================================================================
 namespace
 {
-// これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する。
-constexpr double kSlowFileReadMs = 2.0;
+    // これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する。
+    constexpr double kSlowFileReadMs = 2.0;
 
-// 遅い読み込みだけメッセージ一覧へ流す。
-//   ※ ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
-//     ゾーン変数(___tracy_scoped_zone)を参照するマクロなので、必ず呼び出し側に置く。
-void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
-{
-#ifdef TRACY_ENABLE
-    if (elapsedMs >= kSlowFileReadMs)
+    // 遅い読み込みだけメッセージ一覧へ流す。
+    //   ※ ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
+    //     ゾーン変数(___tracy_scoped_zone)を参照するマクロなので、必ず呼び出し側に置く。
+    void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
     {
-        char msg[512];
-        const int len = std::snprintf(msg, sizeof(msg),
-            "[SLOW FILE READ] %.2f ms / %zu bytes : %s",
-            elapsedMs, bytes, virtualPath.c_str());
-        if (len > 0)
-            TracyMessage(msg, static_cast<size_t>(len));
-    }
+#ifdef TRACY_ENABLE
+        if (elapsedMs >= kSlowFileReadMs)
+        {
+            char      msg[512];
+            const int len = std::snprintf(msg, sizeof(msg),
+                                          "[SLOW FILE READ] %.2f ms / %zu bytes : %s",
+                                          elapsedMs, bytes, virtualPath.c_str());
+            if (len > 0)
+                TracyMessage(msg, static_cast<size_t>(len));
+        }
 #else
-    (void)virtualPath; (void)elapsedMs; (void)bytes;
+        (void)virtualPath;
+        (void)elapsedMs;
+        (void)bytes;
 #endif
-}
+    }
 } // namespace
 
 void FileSystem::Initialize()
@@ -58,7 +60,7 @@ void FileSystem::Initialize()
     CCL_LOG_INFO(LogCategory::Core, "[FileSystem] Initialized.");
 }
 
-std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string& virtualPath)
+std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtualPath)
 {
     // 現在は Assets フォルダを直接見に行くだけ。
     // 将来的に「セーブデータは AppData 配下へ」「アセットは .pak 内へ」といった
@@ -66,14 +68,14 @@ std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string& virtual
     return std::filesystem::path(virtualPath);
 }
 
-bool FileSystem::Exists(const std::string& virtualPath)
+bool FileSystem::Exists(const std::string &virtualPath)
 {
     // 将来的には .pak 内の目次 (Trie木など) を検索する処理に分岐する
     return std::filesystem::exists(ResolvePhysicalPath(virtualPath));
 }
 
-std::vector<std::string> FileSystem::ListFiles(const std::string& virtualDir,
-                                               const std::string& extension)
+std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
+                                               const std::string &extension)
 {
     std::vector<std::string> result;
 
@@ -83,7 +85,7 @@ std::vector<std::string> FileSystem::ListFiles(const std::string& virtualDir,
     std::error_code ec;
     if (!std::filesystem::is_directory(dir, ec)) return result;
 
-    for (const auto& entry : std::filesystem::directory_iterator(dir, ec))
+    for (const auto &entry : std::filesystem::directory_iterator(dir, ec))
     {
         if (!entry.is_regular_file()) continue;
 
@@ -91,7 +93,8 @@ std::vector<std::string> FileSystem::ListFiles(const std::string& virtualDir,
         {
             // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む。
             std::string ext = entry.path().extension().string();
-            for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            for (char &c : ext)
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
             if (ext != extension) continue;
         }
 
@@ -105,7 +108,7 @@ std::vector<std::string> FileSystem::ListFiles(const std::string& virtualDir,
     return result;
 }
 
-std::string FileSystem::ReadAllText(const std::string& virtualPath)
+std::string FileSystem::ReadAllText(const std::string &virtualPath)
 {
     // TODO: Shipping構成時は .pak から展開したメモリブロックを std::string にして返す処理に分岐
     ZoneScopedN("FileSystem::ReadAllText");
@@ -116,7 +119,8 @@ std::string FileSystem::ReadAllText(const std::string& virtualPath)
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
     std::ifstream file(physicalPath, std::ios::in | std::ios::binary);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Failed to open text file: %s", virtualPath.c_str());
         return "";
     }
@@ -133,7 +137,7 @@ std::string FileSystem::ReadAllText(const std::string& virtualPath)
     return result;
 }
 
-bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string& content)
+bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string &content)
 {
 #ifdef SHIPPING_BUILD
     // 製品版で Assets フォルダを上書きしようとするのは通常バグか不正アクセス
@@ -144,12 +148,14 @@ bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string&
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
     // フォルダが存在しない場合は作成する
-    if (physicalPath.has_parent_path()) {
+    if (physicalPath.has_parent_path())
+    {
         std::filesystem::create_directories(physicalPath.parent_path());
     }
 
     std::ofstream file(physicalPath, std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Failed to write text file: %s", virtualPath.c_str());
         return false;
     }
@@ -159,14 +165,15 @@ bool FileSystem::WriteAllText(const std::string& virtualPath, const std::string&
 
     // write/flush の成否を見ずに true を返していた。ディスク不足などで
     // 途中までしか書けていなくても「保存できた」と報告されてしまう。
-    if (!file) {
+    if (!file)
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Write failed (disk full?): %s", virtualPath.c_str());
         return false;
     }
     return true;
 }
 
-std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string& virtualPath)
+std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string &virtualPath)
 {
     // TODO: Shipping構成時は .pak から解凍したバイト配列を返す処理に分岐
     ZoneScopedN("FileSystem::ReadAllBytes");
@@ -177,7 +184,8 @@ std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string& virtualPath)
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
     std::ifstream file(physicalPath, std::ios::in | std::ios::binary | std::ios::ate);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Failed to open binary file: %s", virtualPath.c_str());
         return {};
     }
@@ -187,7 +195,8 @@ std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string& virtualPath)
     file.seekg(0, std::ios::beg);
 
     std::vector<uint8_t> buffer(size);
-    if (file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+    if (file.read(reinterpret_cast<char *>(buffer.data()), size))
+    {
         const std::chrono::duration<double, std::milli> elapsed =
             std::chrono::steady_clock::now() - t0;
         ReportSlowFileRead(virtualPath, elapsed.count(), buffer.size());

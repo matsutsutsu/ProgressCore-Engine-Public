@@ -12,15 +12,15 @@
 
 struct UIProgressBarComponent
 {
-    float             value     = 1.0f;                     // 充填率 0..1
-    DirectX::XMFLOAT4 bgColor   = {0.0f, 0.0f, 0.0f, 0.63f}; // 背景色
+    float             value     = 1.0f;                       // 充填率 0..1
+    DirectX::XMFLOAT4 bgColor   = {0.0f, 0.0f, 0.0f, 0.63f};  // 背景色
     DirectX::XMFLOAT4 fillColor = {0.27f, 0.67f, 1.0f, 1.0f}; // フィル色
     bool              visible   = true;
     int               sortOrder = 0; // 背景=これ / フィル=これ(+1 or +2)（大きいほど手前）
 
     // --- 遅延ダメージ（チップ）バー（既定OFF。HPゲージ等で使う） ---
-    bool              showTrail  = false;                     // 遅延バーを描くか
-    float             trailValue = 1.0f;                      // 遅延バーの充填率 0..1（供給側が遅れて追従）
+    bool              showTrail  = false;                       // 遅延バーを描くか
+    float             trailValue = 1.0f;                        // 遅延バーの充填率 0..1（供給側が遅れて追従）
     DirectX::XMFLOAT4 trailColor = {1.0f, 0.85f, 0.85f, 0.95f}; // 遅延バーの色（失った分＝淡い白赤）
 
     // --- 質感（見た目だけ。値の意味は変えない） ---

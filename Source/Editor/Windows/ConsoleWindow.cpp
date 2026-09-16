@@ -19,7 +19,8 @@
 ConsoleWindow::ConsoleWindow() : EditorWindow("Console")
 {
     // カテゴリフィルタを全 true で初期化
-    for (auto& f : m_categoryFilters) f = true;
+    for (auto &f : m_categoryFilters)
+        f = true;
 }
 
 namespace
@@ -28,16 +29,17 @@ namespace
      * @brief Visual Studio で該当ファイル/行を開く
      * @details VS の自動化用 ProgID 経由。失敗しても無害なように try/catch 相当の扱い
      */
-    void OpenInVisualStudio(const std::string& file, int line)
+    void OpenInVisualStudio(const std::string &file, int line)
     {
         // 簡易実装: 既定のエディタで開く (devenv が PATH にあれば優先)
         char cmd[1024];
         std::snprintf(cmd, sizeof(cmd), "devenv /edit \"%s\" /command \"Edit.GoTo %d\"",
-            file.c_str(), line);
-        STARTUPINFOA si{}; si.cb = sizeof(si);
+                      file.c_str(), line);
+        STARTUPINFOA si{};
+        si.cb = sizeof(si);
         PROCESS_INFORMATION pi{};
         if (CreateProcessA(nullptr, cmd, nullptr, nullptr, FALSE,
-            CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi))
+                           CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi))
         {
             CloseHandle(pi.hThread);
             CloseHandle(pi.hProcess);
@@ -48,29 +50,33 @@ namespace
     {
         switch (level)
         {
-        case LogLevel::Success: return ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
-        case LogLevel::Warning: return ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
-        case LogLevel::Error:   return ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+        case LogLevel::Success:
+            return ImVec4(0.2f, 1.0f, 0.2f, 1.0f);
+        case LogLevel::Warning:
+            return ImVec4(1.0f, 0.8f, 0.2f, 1.0f);
+        case LogLevel::Error:
+            return ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
         case LogLevel::Info:
-        default:                return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+        default:
+            return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
         }
     }
 
     // 1行を CSV/コピー用に整形
-    std::string FormatLine(const LogMessage& m)
+    std::string FormatLine(const LogMessage &m)
     {
         char buf[2048];
         std::snprintf(buf, sizeof(buf), "[%s] [%s] [%s:%d] %s",
-            (m.level == LogLevel::Error) ? "ERROR" :
-            (m.level == LogLevel::Warning) ? "WARN" :
-            (m.level == LogLevel::Success) ? "SUCCESS" : "INFO",
-            GetLogCategoryName(m.category),
-            m.file.c_str(), m.line, m.text.c_str());
+                      (m.level == LogLevel::Error) ? "ERROR" : (m.level == LogLevel::Warning) ? "WARN"
+                                                           : (m.level == LogLevel::Success)   ? "SUCCESS"
+                                                                                              : "INFO",
+                      GetLogCategoryName(m.category),
+                      m.file.c_str(), m.line, m.text.c_str());
         return buf;
     }
-}
+} // namespace
 
-void ConsoleWindow::DrawContents(EditorContext& /*context*/)
+void ConsoleWindow::DrawContents(EditorContext & /*context*/)
 {
     if (!m_bufferSink)
     {
@@ -114,7 +120,7 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     for (int i = 0; i < static_cast<int>(LogCategory::Count); ++i)
     {
         ImGui::Checkbox(GetLogCategoryName(static_cast<LogCategory>(i)),
-            &m_categoryFilters[i]);
+                        &m_categoryFilters[i]);
         if (i < static_cast<int>(LogCategory::Count) - 1) ImGui::SameLine();
     }
     ImGui::Separator();
@@ -124,13 +130,14 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
     // ====================================================================
     static std::vector<LogMessage> s_cachedMessages;
     static std::vector<int>        s_cachedFiltered;
-    static float s_updateTimer = 0.0f;
+    static float                   s_updateTimer = 0.0f;
 
     // ImGuiのDeltaTimeを使ってタイマーを進行
     s_updateTimer += ImGui::GetIO().DeltaTime;
 
     // 前回の更新から0.1秒経過、または「Clear」ボタン等で強制更新が必要な場合のみコピーを走らせる
-    if (s_updateTimer > 0.1f) {
+    if (s_updateTimer > 0.1f)
+    {
         s_cachedMessages = m_bufferSink->Snapshot();
         s_cachedFiltered.clear();
         s_cachedFiltered.reserve(s_cachedMessages.size());
@@ -138,18 +145,28 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
         const bool hasSearch = (m_searchBuf[0] != '\0');
         for (int i = 0; i < static_cast<int>(s_cachedMessages.size()); ++i)
         {
-            const auto& m = s_cachedMessages[i];
+            const auto &m = s_cachedMessages[i];
 
             // フィルタ条件のチェック...
-            switch (m.level) {
-            case LogLevel::Info:    if (!m_showInfo)    continue; break;
-            case LogLevel::Success: if (!m_showSuccess) continue; break;
-            case LogLevel::Warning: if (!m_showWarning) continue; break;
-            case LogLevel::Error:   if (!m_showError)   continue; break;
+            switch (m.level)
+            {
+            case LogLevel::Info:
+                if (!m_showInfo) continue;
+                break;
+            case LogLevel::Success:
+                if (!m_showSuccess) continue;
+                break;
+            case LogLevel::Warning:
+                if (!m_showWarning) continue;
+                break;
+            case LogLevel::Error:
+                if (!m_showError) continue;
+                break;
             }
             if (!m_categoryFilters[static_cast<int>(m.category)]) continue;
 
-            if (hasSearch) {
+            if (hasSearch)
+            {
                 if (m.text.find(m_searchBuf) == std::string::npos &&
                     m.file.find(m_searchBuf) == std::string::npos) continue;
             }
@@ -175,13 +192,13 @@ void ConsoleWindow::DrawContents(EditorContext& /*context*/)
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
         {
             // キャッシュから読み出し
-            const auto& m = s_cachedMessages[s_cachedFiltered[i]];
-            const auto  color = LevelColor(m.level);
-            const auto* catName = GetLogCategoryName(m.category);
+            const auto &m       = s_cachedMessages[s_cachedFiltered[i]];
+            const auto  color   = LevelColor(m.level);
+            const auto *catName = GetLogCategoryName(m.category);
 
             ImGui::PushID(i);
             ImGui::TextColored(color, "[%s] [%s:%d] %s",
-                catName, m.file.c_str(), m.line, m.text.c_str());
+                               catName, m.file.c_str(), m.line, m.text.c_str());
 
             // 行ダブルクリック → Visual Studio で開く
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))

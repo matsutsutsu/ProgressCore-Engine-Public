@@ -36,7 +36,7 @@ struct ScreenImpactComponent
     //
     // 揺れの振幅や長さではない。それらはカメラの CameraShake 側が持つ。
     // ドローンを連続で斬ると命中も連続するので、1発分は小さめにしておく。
-    float shakeTrauma       = 0.18f;
+    float shakeTrauma = 0.18f;
 
     // --- ランタイム状態（非シリアライズ） ---
     float timer = 0.0f; // 残り時間(秒)。>0 の間だけ演出が出る。
@@ -48,7 +48,7 @@ struct ScreenImpactComponent
      */
     void Trigger(float p)
     {
-        timer = duration;      // 最新の命中で満タンに（連打で持続）
+        timer = duration; // 最新の命中で満タンに（連打で持続）
         power = p;
     }
 };

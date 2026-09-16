@@ -6,8 +6,6 @@
 // 各パスをTracyで追跡できるようにインクルード
 #include "tracy/Tracy.hpp"
 
-
-
 /**
  * @brief レンダリングパスの抽象基底インターフェース。
  * @details
@@ -26,14 +24,14 @@ public:
     // =========================================================
     //  TracyとUI表示用の自動キャッシュ名
     // =========================================================
-    std::string m_passName = "Unknown Pass";
+    std::string m_passName      = "Unknown Pass";
     std::string m_tracyZoneName = "Pass: Unknown";
 
     // =========================================================
     // テンプレートで自動生成される固有のGPUタグを保持する
     // =========================================================
 #if defined(TRACY_ENABLE)
-    const tracy::SourceLocationData* m_gpuSourceLocation = nullptr;
+    const tracy::SourceLocationData *m_gpuSourceLocation = nullptr;
 #endif
 
     /**
@@ -50,7 +48,7 @@ public:
      *    }
      *  @endcode
      */
-    virtual void Initialize(const RenderServices& services)
+    virtual void Initialize(const RenderServices &services)
     {
         m_services = &services;
     }
@@ -64,7 +62,7 @@ public:
      * @brief 毎フレームの描画実行。
      * @param ctx フレームコンテキスト（このフレームのみ有効）
      */
-    virtual void Execute(const RenderFrameContext& ctx) = 0;
+    virtual void Execute(const RenderFrameContext &ctx) = 0;
 
     /**
      * @brief ウィンドウリサイズ時の内部 RT 再生成等。
@@ -78,12 +76,12 @@ public:
     /**
      * @brief デバッグ表示名。GPU マーカー（Pix/RenderDoc）に出力される。
      */
-    virtual const char* GetName() const { return "UnnamedPass"; }
+    virtual const char *GetName() const { return "UnnamedPass"; }
 
     // パスを一時的に無効化するフラグ。エディタからのトグル用。
     bool enabled = true;
 
 protected:
     // Initialize 後にアクセス可能な永続サービスへのポインタ。
-    const RenderServices* m_services = nullptr;
+    const RenderServices *m_services = nullptr;
 };

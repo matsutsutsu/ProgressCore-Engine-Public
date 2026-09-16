@@ -13,13 +13,13 @@
 class TitleMenuSystem
     : public CCL::ECS::IfSystem<TitleMenuSystem, CCL::ECS::Read<UIButtonComponent>>
 {
-  public:
+public:
     TitleMenuSystem() : IfSystem("TitleMenuSystem") {}
 
     void Initialize() override; // イベント購読のみ
     void Update(float dt) override;
 
-  private:
+private:
     /// タイトル文字とボタンを生成する。
     ///
     /// なぜ Initialize ではなく最初の Update か:
@@ -28,6 +28,6 @@ class TitleMenuSystem
     ///   レベル読み込みが終わったあと＝最初の Update まで待つ。
     void SpawnMenu();
 
-    bool m_menuSpawned  = false; // 生成済みか（1回だけ生成するためのラッチ）
+    bool m_menuSpawned   = false; // 生成済みか（1回だけ生成するためのラッチ）
     bool m_transitioning = false; // 遷移予約後か（連打・多重発火対策）
 };

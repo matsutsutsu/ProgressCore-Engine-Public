@@ -32,7 +32,7 @@ class TitleSwarmSystem
 {
     using Base = CCL::ECS::IfSystem<TitleSwarmSystem, CCL::ECS::Write<DroneComponent>>;
 
-  public:
+public:
     TitleSwarmSystem() : IfSystem("TitleSwarmSystem") {}
 
     void Update(float dt) override;
@@ -43,7 +43,7 @@ class TitleSwarmSystem
     /// テンプレート引数には足せない（ForEach の絞り込みまで変わってしまう）。
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
-  private:
+private:
     /// ボス像の位置。輪の中心をここから決めるので、像を動かせば輪も付いてくる。
     /// まだ生成されていなければ false（次フレームに再試行）。
     bool ResolveBossPos(DirectX::SimpleMath::Vector3 &out);

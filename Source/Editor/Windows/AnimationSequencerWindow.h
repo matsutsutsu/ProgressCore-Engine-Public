@@ -26,11 +26,11 @@ class Model;
 // 1ウィンドウ=1編集バッファ。選択エンティティが変わると再バインドする。
 class AnimationSequencerWindow : public EditorWindow
 {
-  public:
+public:
     AnimationSequencerWindow();
     virtual ~AnimationSequencerWindow();
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
     // ウィンドウが描画されなくなっても編集モードを確実に解除する。
@@ -41,7 +41,7 @@ class AnimationSequencerWindow : public EditorWindow
     // 「そのエンティティのアニメが二度と動かない」になる。
     void OnFrameBegin(EditorContext &context) override;
 
-  private:
+private:
     // --- 描画・更新を分割したサブ関数群 ---
     void ResetStateOnEntitySwitch(EditorContext &context);
 
@@ -65,7 +65,7 @@ class AnimationSequencerWindow : public EditorWindow
     // で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
     void DrawRootMotionPreview(EditorContext &context, AnimatorComponent *animator);
 
-  private:
+private:
     // --- pImpl（ImSequencer 依存をcppに隠蔽） ---
     std::unique_ptr<AnimationSequenceImpl> m_sequencerImpl;
     CurveEditorWidget                      m_curveWidget; // 速度/RootMotionカーブの共通編集ウィジェット

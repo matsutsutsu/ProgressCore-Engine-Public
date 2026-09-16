@@ -2,7 +2,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/System/CCL_SystemAccess.h"
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
-#include "Engine/Transform/Components/TransformComponent.h" 
+#include "Engine/Transform/Components/TransformComponent.h"
 
 class IAudioAPI; // 前方宣言
 
@@ -12,9 +12,9 @@ class IAudioAPI; // 前方宣言
  * - `IfSystem` のテンプレート引数により、Transform(Read)とAudioEmitter(Write)を持つChunkのみを対象とする。
  * - 内部で並列処理（ForEachParallel）を用いて、キャッシュラインに優しいDODバッチ更新を行う。
  */
-class AudioSystem : public CCL::ECS::IfSystem<AudioSystem, 
-                           CCL::ECS::Read<TransformComponent>, 
-                           CCL::ECS::Write<AudioEmitterComponent>> 
+class AudioSystem : public CCL::ECS::IfSystem<AudioSystem,
+                                              CCL::ECS::Read<TransformComponent>,
+                                              CCL::ECS::Write<AudioEmitterComponent>>
 {
 public:
     AudioSystem() : IfSystem("AudioSystem") {}

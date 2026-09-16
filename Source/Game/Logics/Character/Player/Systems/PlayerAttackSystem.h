@@ -8,20 +8,19 @@
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中は通常攻撃を抑止
 #include <SimpleMath.h>
 
-class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
-      CCL::ECS::Read<PlayerInputComponent>,
-      CCL::ECS::Write<DashComponent>,
-      CCL::ECS::Write<AnimParametersComponent>,
-      CCL::ECS::Write<PlayerComponent>,
-      CCL::ECS::Read<CleaveComponent>>
+class PlayerAttackSystem : public CCL::ECS::IfSystem<PlayerAttackSystem,
+                                                     CCL::ECS::Read<PlayerInputComponent>,
+                                                     CCL::ECS::Write<DashComponent>,
+                                                     CCL::ECS::Write<AnimParametersComponent>,
+                                                     CCL::ECS::Write<PlayerComponent>,
+                                                     CCL::ECS::Read<CleaveComponent>>
 {
-  public:
+public:
     PlayerAttackSystem()
         : IfSystem("PlayerAttackSystem")
     {
     }
     virtual ~PlayerAttackSystem() = default;
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // PlayerInput が書いた PlayerInputComponent を読む。
@@ -29,7 +28,7 @@ class PlayerAttackSystem : public CCL::ECS::IfSystem< PlayerAttackSystem,
 
     void Update(float dt) override;
 
-  private:
+private:
     // 前方コーン内で最も近い「生存中の敵」を探す。ロックオンが無い時のフォールバック。
     // 敵＝HealthComponent を持ち PlayerComponent を持たない生存エンティティ。
     CCL::ECS::EntityID FindBestFrontEnemy(CCL::ECS::EntityID selfID, const DirectX::SimpleMath::Vector3 &selfPos,

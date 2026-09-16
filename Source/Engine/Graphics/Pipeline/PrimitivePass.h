@@ -5,6 +5,6 @@
 class PrimitivePass : public IRenderPass
 {
 public:
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "PrimitivePass"; }
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "PrimitivePass"; }
 };

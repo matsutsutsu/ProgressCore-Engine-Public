@@ -5,7 +5,8 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
 #include "Game/Logics/AI/Drone/DroneComponent.h"               // DroneFormationType
 
-struct BossCommandComponent {
+struct BossCommandComponent
+{
     DroneFormationType requestFormation = DroneFormationType::Hidden;
 
     // 「筋肉にやってほしい」行動。BossActionSystem が BossActionState へ翻訳する。

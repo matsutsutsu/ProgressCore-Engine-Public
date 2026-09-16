@@ -5,6 +5,6 @@
 class PostProcessPass : public IRenderPass
 {
 public:
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "PostProcessPass"; }
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "PostProcessPass"; }
 };

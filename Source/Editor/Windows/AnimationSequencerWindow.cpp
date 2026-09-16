@@ -47,7 +47,7 @@ inline float FrameToSec(int frame)
 // ===================================================================================
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 {
-  public:
+public:
     AnimSequence *m_seq = nullptr;
 
     // キャッシュバッファ: [0] はマスタートラック(Duration)、[1]以降がイベント
@@ -456,7 +456,7 @@ void AnimationSequencerWindow::DrawFileIO()
     ImGui::SameLine();
 
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Duration: %.2f s (%d frames)",
-        m_editingSequence.duration, SecToFrame(m_editingSequence.duration));
+                       m_editingSequence.duration, SecToFrame(m_editingSequence.duration));
     ImGui::SameLine();
 
     if (ImGui::Button("Save JSON..."))
@@ -493,7 +493,7 @@ void AnimationSequencerWindow::DrawFileIO()
             {
                 try
                 {
-                    nlohmann::json j = nlohmann::json::parse(text);
+                    nlohmann::json j  = nlohmann::json::parse(text);
                     m_editingSequence = j.get<AnimSequence>();
                     m_savePath        = loadPath;
 
@@ -522,8 +522,8 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
     {
         if (!m_wasEditMode)
         {
-            m_savedSequence       = animator->currentSequence;
-            m_wasEditMode         = true;
+            m_savedSequence      = animator->currentSequence;
+            m_wasEditMode        = true;
             context.animEditTime = animator->currentTimer;
         }
         animator->isEditorOverride = true;
@@ -683,7 +683,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
                 else
                 {
                     context.animEditTime = dur;
-                    m_isPlaying           = false; // 非ループは最後で停止
+                    m_isPlaying          = false; // 非ループは最後で停止
                 }
             }
             animator->currentTimer = context.animEditTime;
@@ -694,7 +694,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         {
             context.animEditTime   = 0.0f;
             animator->currentTimer = 0.0f;
-            m_isPlaying             = false;
+            m_isPlaying            = false;
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("先頭へ (Home)");
@@ -708,7 +708,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         {
             context.animEditTime   = dur;
             animator->currentTimer = dur;
-            m_isPlaying             = false;
+            m_isPlaying            = false;
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("最後へ (End)");
@@ -722,7 +722,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         const float curSec = context.animEditTime;
         const int   curFrm = SecToFrame(curSec);
         ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f),
-            "%.2fs / %df", curSec, curFrm);
+                           "%.2fs / %df", curSec, curFrm);
         ImGui::SameLine();
         ImGui::TextDisabled("(total %.2fs / %df)", dur, durFrame);
     }
@@ -739,13 +739,13 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         {
             context.animEditTime   = 0.0f;
             animator->currentTimer = 0.0f;
-            m_isPlaying             = false;
+            m_isPlaying            = false;
         }
         if (ImGui::IsKeyPressed(ImGuiKey_End))
         {
             context.animEditTime   = dur;
             animator->currentTimer = dur;
-            m_isPlaying             = false;
+            m_isPlaying            = false;
         }
     }
 
@@ -798,7 +798,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime) : SecToFrame(animator->currentTimer);
     int prevFrame = curFrame;
 
-    m_expanded    = true;
+    m_expanded   = true;
     bool changed = ImSequencer::Sequencer(
         m_sequencerImpl.get(), &curFrame, &m_expanded, &m_selectedEntry, &m_firstFrame,
         ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
@@ -871,7 +871,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     //   通常再生中はスムーズな時間進行（上の m_isPlaying ブロック）を唯一の権威にする。
     if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
-        m_isPlaying             = false;
+        m_isPlaying            = false;
         context.animEditTime   = FrameToSec(curFrame);
         animator->currentTimer = context.animEditTime;
     }
@@ -1089,7 +1089,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         case AnimEventType::CancelWindow: {
             const bool isCombo = (e.type == AnimEventType::ComboWindow);
             ImGui::TextColored(isCombo ? ImVec4(0.25f, 0.75f, 1.0f, 1.0f) : ImVec4(0.75f, 0.25f, 1.0f, 1.0f),
-                isCombo ? "コンボ受付窓 (Combo Window)" : "キャンセル窓 (Cancel Window)");
+                               isCombo ? "コンボ受付窓 (Combo Window)" : "キャンセル窓 (Cancel Window)");
             ImGui::Separator();
 
             ImGui::Text("許可するキャンセルアクション:");
@@ -1267,7 +1267,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     opt.showPlayhead  = true;
     opt.playheadX     = progress;
     opt.fitRequested  = m_fitCurveView;
-    m_fitCurveView     = false;
+    m_fitCurveView    = false;
 
     m_curveWidget.Draw("##seqCurves", targets, opt);
 
@@ -1288,7 +1288,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     }
 
     ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f),
-        "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m  |  前進速度 %.2f m/s", progress, sp, rm, rmSpeed);
+                       "進捗 %.2f  |  速度倍率 %.3f  |  累積前進 %.3f m  |  前進速度 %.2f m/s", progress, sp, rm, rmSpeed);
 
     if (active == 1 && !m_editingSequence.rootMotionCurve.empty())
     {

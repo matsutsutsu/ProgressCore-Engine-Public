@@ -20,9 +20,9 @@
 #include "Engine/Time/TimeService.h" // ヒットストップは意図ファサード経由
 #include "Engine/Physics/Components/Character/KnockbackComponent.h"
 #include "Game/Logics/Effects/Components/ScreenImpactComponent.h"
-#include "Engine/Camera/CameraEvents.h" // 命中時の画面揺れ要求（カメラは直接触らない）
-#include "Engine/Transform/Components/TransformComponent.h"       // 被弾者の向き（前後左右判定）
-#include "Engine/Animation/Components/AnimParametersComponent.h"  // ヒットリアクションのトリガー発行
+#include "Engine/Camera/CameraEvents.h"                          // 命中時の画面揺れ要求（カメラは直接触らない）
+#include "Engine/Transform/Components/TransformComponent.h"      // 被弾者の向き（前後左右判定）
+#include "Engine/Animation/Components/AnimParametersComponent.h" // ヒットリアクションのトリガー発行
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -52,7 +52,7 @@ namespace
         CCL::Utils::HashString("HitBack"),
         CCL::Utils::HashString("HitLeft"),
         CCL::Utils::HashString("HitRight")};
-    
+
     // 被弾方向から前後左右のヒットリアクションを選んで再生する。
     // アニメーターを持たない相手（ドローン等）は自動でスキップされる。
     // 方向元は「攻撃者の位置」を最優先、無ければノックバック方向の反転を使う。
@@ -61,17 +61,19 @@ namespace
         // アニメーターが無ければ何もしない（1000機のドローン等はここで弾かれる）。
         auto *anim = world->GetComponent<AnimParametersComponent>(ev.targetID);
         if (!anim) return;
-    
+
         auto *vtrans = world->GetComponent<TransformComponent>(ev.targetID);
         if (!vtrans) return;
-    
+
         // 被弾者の水平 forward / right を rotation から求める（LH: right = up × forward）。
         Vector3 fwd = Vector3::Transform(Vector3::UnitZ, vtrans->rotation);
-        fwd.y = 0.0f;
-        if (fwd.LengthSquared() < 1e-6f) fwd = Vector3::UnitZ;
-        else                             fwd.Normalize();
+        fwd.y       = 0.0f;
+        if (fwd.LengthSquared() < 1e-6f)
+            fwd = Vector3::UnitZ;
+        else
+            fwd.Normalize();
         const Vector3 right(fwd.z, 0.0f, -fwd.x);
-    
+
         // 攻撃が「来た方向」（被弾者→攻撃者側）を求める。
         //   基準は attackerID（帰属先）ではなく hitOriginID（実際に当てた体）。
         //   ドローンの攻撃は帰属がボスなので、attackerID を使うと背後から
@@ -87,7 +89,7 @@ namespace
         else if (ev.knockbackDir.LengthSquared() > 1e-6f)
             fromAttacker = -ev.knockbackDir;
         fromAttacker.y = 0.0f;
-    
+
         // 方向 → HitDir(0=前/1=後/2=左/3=右)。方向不明（環境ダメージ等）は前(0)で代替。
         float hitDir = 0.0f;
         if (fromAttacker.LengthSquared() > 1e-6f)
@@ -113,23 +115,25 @@ namespace
     }
 } // namespace
 
-void DamageResolutionSystem::Update(float dt) {
+void DamageResolutionSystem::Update(float dt)
+{
 
-    ForEachWithID([this](EntityID eventEntity, DamageEventComponent& event) {
-
-        if (auto* health = m_world->GetComponent<HealthComponent>(event.targetID)) {
+    ForEachWithID([this](EntityID eventEntity, DamageEventComponent &event) {
+        if (auto *health = m_world->GetComponent<HealthComponent>(event.targetID))
+        {
 
             // 無敵中はダメージ・ノックバックともに無効(イベントは破棄する)。
-            if (health->invincibilityTimer <= 0.0f) {
+            if (health->invincibilityTimer <= 0.0f)
+            {
 
                 // --- HP減算 ---
                 health->currentHealth -= event.finalDamage;
                 health->invincibilityTimer = health->invincibilityDuration;
 
                 CCL_LOG_INFO(LogCategory::Game,
-                    "%s took %f damage. Remaining HP: %f",
-                    CCL::EntityLabel(*m_world, event.targetID).c_str(), event.finalDamage,
-                    health->currentHealth);
+                             "%s took %f damage. Remaining HP: %f",
+                             CCL::EntityLabel(*m_world, event.targetID).c_str(), event.finalDamage,
+                             health->currentHealth);
 
                 // --- ヒットストップ適用（被弾側＋攻撃側の双方を止める）---
                 // TimeScaleSystem(L01) が次フレームから hitStopTimer を消費し localDt=0 にする。
@@ -165,7 +169,7 @@ void DamageResolutionSystem::Update(float dt) {
                 if (auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>())
                 {
                     constexpr float kRefDamage = 25.0f; // これで power=1.0 の基準ダメージ
-                    const float power = std::clamp(event.finalDamage / kRefDamage, 0.3f, 1.5f);
+                    const float     power      = std::clamp(event.finalDamage / kRefDamage, 0.3f, 1.5f);
                     impact->Trigger(power);
 
                     // 画面の揺れはカメラ側の一元経路へ回す。1フレームに何発命中しても
@@ -208,7 +212,7 @@ void DamageResolutionSystem::Update(float dt) {
 
         // 処理が終わったイベントエンティティは必ず破棄する。
         m_world->Destroy(eventEntity);
-        });
+    });
 }
 
 REGISTER_LOGIC_SYSTEM(DamageResolutionSystem, Priority::LogicStage::L06_DamageApply);

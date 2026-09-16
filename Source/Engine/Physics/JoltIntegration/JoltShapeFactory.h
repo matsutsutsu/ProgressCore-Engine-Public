@@ -27,9 +27,10 @@
 #include <DirectXMath.h>
 #include <cstdint>
 
-namespace JoltShapeFactory {
+namespace JoltShapeFactory
+{
 
-/**
+    /**
  * @brief 形状を生成し、Result を必ず検証してから取り出す。
  *
  * @param settings 生成元の設定。
@@ -39,19 +40,19 @@ namespace JoltShapeFactory {
  *
  * @note ECS に依存しないよう、ID は uint64_t で受け取る（Manager 層の非ECS原則）。
  */
-JPH::ShapeRefC CreateChecked(
-    const JPH::ShapeSettings &settings, uint64_t ownerId, const char *what);
+    JPH::ShapeRefC CreateChecked(
+        const JPH::ShapeSettings &settings, uint64_t ownerId, const char *what);
 
-/**
+    /**
  * @brief Degree(度)の XYZ オイラー角を Jolt のクォータニオンへ変換する。
  *
  * @note インスペクタが度数で持っているため、形状のローカル回転を作る箇所で必ず要る。
  *       JoltBodySetupSystem と JoltShapeUpdateSystem に同じ関数が二重定義されていたので
  *       ここへ寄せた（片方は匿名namespace、もう片方はグローバルの inline だった）。
  */
-JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree);
+    JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree);
 
-/**
+    /**
  * @brief 「基本形状 → ローカルオフセット/回転で包む」までを一括で行う。
  *
  * @details
@@ -64,8 +65,8 @@ JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree);
  * @param localEuler  形状のローカル回転（度）。球など回転が無意味な形状では無視される値を渡してよい。
  * @return 失敗時は nullptr（理由はログ済み）。
  */
-JPH::ShapeRefC CreateOffsetShape(
-    const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,
-    const DirectX::XMFLOAT3 &localEuler, uint64_t ownerId, const char *what);
+    JPH::ShapeRefC CreateOffsetShape(
+        const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,
+        const DirectX::XMFLOAT3 &localEuler, uint64_t ownerId, const char *what);
 
 } // namespace JoltShapeFactory

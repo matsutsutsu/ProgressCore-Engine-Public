@@ -33,7 +33,7 @@ void UIAppearSystem::Update(float dt)
         // easeOutCubic：最初速く、最後ふわっと減速して着地する。
         const float ease = 1.0f - (1.0f - p) * (1.0f - p) * (1.0f - p);
 
-        t.alpha    = ease;                             // 0→1（色αへの乗算なので base 透明度を保つ）
+        t.alpha    = ease;                                     // 0→1（色αへの乗算なので base 透明度を保つ）
         t.offset.y = a.baseOffsetY + a.slideY * (1.0f - ease); // 下→定位置へ上昇
 
         if (p >= 1.0f)

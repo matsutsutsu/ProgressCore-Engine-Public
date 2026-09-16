@@ -2,9 +2,9 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/Components/EntityLabel.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 敵を標的にする
-#include "Game/Logics/Combat/DeadTag.h"         // 死亡確認用
-#include "Game/Logics/Combat/EnemyTag.h"        // ロックオン候補の絞り込み
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // ロックオン状態をカメラへ push する
+#include "Game/Logics/Combat/DeadTag.h"                                // 死亡確認用
+#include "Game/Logics/Combat/EnemyTag.h"                               // ロックオン候補の絞り込み
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"     // ロックオン状態をカメラへ push する
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -17,7 +17,6 @@ void PlayerLockOnSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID playerID, PlayerComponent &player,
                       const PlayerInputComponent &pin, const TransformComponent &playerTrans) {
-        
         // ===================================================================
         // 1. ロックオン対象が死亡済み、または破棄済みなら自動解除する。
         //    世代違いのIDを掴んだままにしないため Exists ではなく IsEntityValid で判定する。
@@ -60,7 +59,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                     // 死亡している敵はスキップ
                     if (m_world->HasComponent<Tag::DeadTag>(enemyID)) return;
 
-                    auto* enemyTrans = m_world->GetComponent<TransformComponent>(enemyID);
+                    auto *enemyTrans = m_world->GetComponent<TransformComponent>(enemyID);
                     if (!enemyTrans) return;
 
                     // 平面での純粋な距離計算
@@ -77,7 +76,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 {
                     player.lockOnTargetID = closestEnemyID;
                     CCL_LOG_SUCCESS(LogCategory::Game, "Lock-On Target Confirmed! Target: %s",
-                        CCL::EntityLabel(*m_world, closestEnemyID).c_str());
+                                    CCL::EntityLabel(*m_world, closestEnemyID).c_str());
                 }
             }
         }
@@ -88,7 +87,7 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         //   なるため、状態の持ち主であるこちらから書き込む。解除条件もここで完結する。
         // ===================================================================
         m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-            auto* tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
+            auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
             if (!tps || tps->target.id != playerID) return; // このプレイヤーを映していないカメラは対象外
 
             tps->lockOnTarget.id = player.lockOnTargetID;

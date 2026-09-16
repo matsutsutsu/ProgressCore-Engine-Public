@@ -14,7 +14,8 @@ using namespace DirectX;
 // 静的物体は補間不要のため、現在のローカル値をそのまま使う。
 static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alpha)
 {
-    if (t.isStatic) {
+    if (t.isStatic)
+    {
         return XMMatrixAffineTransformation(
             XMLoadFloat3(&t.scale), XMVectorZero(),
             XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
@@ -45,16 +46,17 @@ void TransformInterpolationSystem::Update(float dt)
     //          cache自体はLogic権威データなので読み取り専用で使い、
     //            書き込みは自前の m_renderWorldDense に対してのみ行う。
     // ---------------------------------------------------------------
-    if (!m_world->HasResource<TransformHierarchyCache*>()) return;
-    TransformHierarchyCache *cache = m_world->GetResource<TransformHierarchyCache*>();
+    if (!m_world->HasResource<TransformHierarchyCache *>()) return;
+    TransformHierarchyCache *cache = m_world->GetResource<TransformHierarchyCache *>();
     if (!cache) return;
 
     const size_t n = cache->Count();
     if (m_renderWorldDense.size() < n) m_renderWorldDense.resize(n);
 
-    for (size_t i = 0; i < n; ++i) {
-        const int idx = static_cast<int>(i);
-        const EntityID id = cache->EntityAt(idx);
+    for (size_t i = 0; i < n; ++i)
+    {
+        const int      idx = static_cast<int>(i);
+        const EntityID id  = cache->EntityAt(idx);
 
         auto *t = m_world->GetComponent<TransformComponent>(id);
         if (!t) continue;
@@ -63,18 +65,20 @@ void TransformInterpolationSystem::Update(float dt)
 
         // 親のrenderWorldMatrix取得：非ルート親なら自前denseから、ルート親ならPhase1で確定済みのコンポーネントから
         const int p = cache->ParentInOrderOf(idx);
-        XMMATRIX parentW;
-        if (p >= 0) {
+        XMMATRIX  parentW;
+        if (p >= 0)
+        {
             parentW = XMLoadFloat4x4(&m_renderWorldDense[p]);
         }
-        else {
+        else
+        {
             auto *pt = m_world->GetComponent<TransformComponent>(cache->ParentIdOf(idx));
-            parentW = pt ? XMLoadFloat4x4(&pt->renderWorldMatrix) : XMMatrixIdentity();
+            parentW  = pt ? XMLoadFloat4x4(&pt->renderWorldMatrix) : XMMatrixIdentity();
         }
 
         const XMMATRIX world = XMMatrixMultiply(local, parentW);
         XMStoreFloat4x4(&m_renderWorldDense[idx], world); // 後続の子が読むため保持
-        XMStoreFloat4x4(&t->renderWorldMatrix, world);   // 描画用に書き戻し
+        XMStoreFloat4x4(&t->renderWorldMatrix, world);    // 描画用に書き戻し
     }
 }
 

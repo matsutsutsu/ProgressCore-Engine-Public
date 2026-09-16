@@ -14,7 +14,10 @@
 #include <memory>
 
 // ECS側の共有スレッドプール（前方宣言。実体は CCL_JobSystem.h）
-namespace CCL::ECS { class JobSystem; }
+namespace CCL::ECS
+{
+    class JobSystem;
+}
 
 // ===================================================================================
 // ファイル名: JoltPhysicsManager.h
@@ -40,8 +43,9 @@ namespace CCL::ECS { class JobSystem; }
 // ──────────────────────────────────────────────
 // JoltPhysicsManager クラス（心臓部）
 // ──────────────────────────────────────────────
-class JoltPhysicsManager {
-  public:
+class JoltPhysicsManager
+{
+public:
     JoltPhysicsManager() = default;
     ~JoltPhysicsManager();
 
@@ -71,32 +75,30 @@ class JoltPhysicsManager {
     JPH::BodyInterface &GetBodyInterfaceNoLock() const { return m_physicsSystem->GetBodyInterfaceNoLock(); }
 
     // CharacterVirtual の更新などに必要な一時アロケータを取得する
-    JPH::TempAllocator* GetTempAllocator() const { return m_tempAllocator.get(); }
+    JPH::TempAllocator *GetTempAllocator() const { return m_tempAllocator.get(); }
 
     // ECSシステムからリスナー（ポスト）にアクセスするためのゲッター
-    JoltContactListener* GetContactListener() const { return m_contactListener.get(); }
+    JoltContactListener *GetContactListener() const { return m_contactListener.get(); }
 
-  private:
+private:
     // Joltのコアシステム（破棄順序を制御するため unique_ptr で管理）
-    std::unique_ptr<JPH::PhysicsSystem>       m_physicsSystem;
-    std::unique_ptr<JPH::TempAllocatorImpl>   m_tempAllocator;
+    std::unique_ptr<JPH::PhysicsSystem>     m_physicsSystem;
+    std::unique_ptr<JPH::TempAllocatorImpl> m_tempAllocator;
 
     // --- ジョブシステムは2択。実体を持つのはどちらか一方だけ ---
     //   統合モード: ECS の共有プールに委譲するアダプタ
-    std::unique_ptr<JoltJobSystemAdapter>     m_adapterJobSystem;
+    std::unique_ptr<JoltJobSystemAdapter> m_adapterJobSystem;
     //   従来モード: Jolt 純正のスレッドプール
     std::unique_ptr<JPH::JobSystemThreadPool> m_nativeJobSystem;
     //   実際に PhysicsSystem::Update へ渡す方（上のどちらかを指す。所有しない）
-    JPH::JobSystem                           *m_activeJobSystem = nullptr;
+    JPH::JobSystem *m_activeJobSystem = nullptr;
     // リスナーのインスタンスを保持
     std::unique_ptr<JoltContactListener> m_contactListener;
-
 
     // フィルターのインスタンス
     BPLayerInterfaceImpl              m_bpLayerInterface;
     ObjectVsBroadPhaseLayerFilterImpl m_objectVsBroadphaseFilter;
     ObjectLayerPairFilterImpl         m_objectVsObjectFilter;
-
 
     bool m_isInitialized = false;
 };

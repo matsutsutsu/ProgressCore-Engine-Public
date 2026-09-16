@@ -25,17 +25,20 @@
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 
-#define REGISTER_COMPONENT_EDITOR_GUI(T)                                                          \
-        namespace {                                                                                   \
-            struct AutoRegGui_##T {                                                                   \
-                AutoRegGui_##T() {                                                                    \
-                    ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance());         \
-                }                                                                                     \
-            };                                                                                        \
-        }                                                                                             \
-        extern "C" _CCL_USED int g_GuiAnchor_##T = (AutoRegGui_##T{}, 1);                             \
-        _CCL_LINK(g_GuiAnchor_##T)
+#define REGISTER_COMPONENT_EDITOR_GUI(T)                                                  \
+    namespace                                                                             \
+    {                                                                                     \
+        struct AutoRegGui_##T                                                             \
+        {                                                                                 \
+            AutoRegGui_##T()                                                              \
+            {                                                                             \
+                ComponentMetaImGui::RegisterGuiMeta<T>(ComponentGuiRegistry::Instance()); \
+            }                                                                             \
+        };                                                                                \
+    }                                                                                     \
+    extern "C" _CCL_USED int g_GuiAnchor_##T = (AutoRegGui_##T{}, 1);                     \
+    _CCL_LINK(g_GuiAnchor_##T)
 #else
-    // ランタイム専用ビルド: 完全に空のマクロ。一切コードを生成しない。
+// ランタイム専用ビルド: 完全に空のマクロ。一切コードを生成しない。
 #define REGISTER_COMPONENT_EDITOR_GUI(T)
 #endif

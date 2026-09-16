@@ -167,25 +167,25 @@ bool VFXSystem::IsPendingDestroy(EntityID handle) const
 // =========================================================================
 namespace VFX
 {
-EntityID Play(World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos)
-{
-    if (!world.HasResource<VFXSystem *>())
+    EntityID Play(World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos)
     {
-        CCL_LOG_ERROR(LogCategory::Core, "[VFX] VFXSystem が登録されていません");
-        return InvalidEntityID;
+        if (!world.HasResource<VFXSystem *>())
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[VFX] VFXSystem が登録されていません");
+            return InvalidEntityID;
+        }
+        return world.GetResource<VFXSystem *>()->Play(path, worldPos);
     }
-    return world.GetResource<VFXSystem *>()->Play(path, worldPos);
-}
 
-void Stop(World &world, EntityID handle)
-{
-    if (!world.HasResource<VFXSystem *>())
+    void Stop(World &world, EntityID handle)
     {
-        CCL_LOG_ERROR(LogCategory::Core, "[VFX] VFXSystem が登録されていません");
-        return;
+        if (!world.HasResource<VFXSystem *>())
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[VFX] VFXSystem が登録されていません");
+            return;
+        }
+        world.GetResource<VFXSystem *>()->Stop(handle);
     }
-    world.GetResource<VFXSystem *>()->Stop(handle);
-}
 } // namespace VFX
 
 REGISTER_LOGIC_SYSTEM(VFXSystem, Priority::LogicStage::L08_Prefab);

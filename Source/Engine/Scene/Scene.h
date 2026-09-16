@@ -2,13 +2,19 @@
 #include <memory>
 #include <atomic>
 
-namespace CCL::ECS { class World; }
-namespace CCL::ECS { class SystemManager; }
+namespace CCL::ECS
+{
+    class World;
+}
+namespace CCL::ECS
+{
+    class SystemManager;
+}
 
 // シーン基底
 class Scene
 {
-  protected:
+protected:
     // 状態管理は一番親のクラスが責任を持つ。
     // 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
     //    acquire/release で「Initialize が構築した World の中身」の可視性まで保証する
@@ -30,7 +36,7 @@ public:
     virtual void Initialize() = 0;
 
     // GPUセットアップなど、Initialize後にメインスレッドで1回だけ呼ばれる処理（必要に応じてオーバーライド）
-    virtual void Start() {} 
+    virtual void Start() {}
 
     // 終了化
     virtual void Finalize() = 0;
@@ -49,6 +55,6 @@ public:
     virtual void DrawGUI() = 0;
 
     // 外部（エディタやフレームワーク）が世界にアクセスするための窓口
-    virtual CCL::ECS::World* GetWorld() = 0;
-    virtual CCL::ECS::SystemManager* GetSystemManager() = 0;
+    virtual CCL::ECS::World         *GetWorld()         = 0;
+    virtual CCL::ECS::SystemManager *GetSystemManager() = 0;
 };

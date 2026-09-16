@@ -16,7 +16,7 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Read<PlayerComponent>,
                                     CCL::ECS::Read<TransformComponent>>
 {
-  public:
+public:
     BattleContextSyncSystem()
         : IfSystem("BattleContextSyncSystem")
     {
@@ -24,7 +24,7 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
     void Initialize() override;
     void Update(float dt) override;
 
-  private:
+private:
     /// BattleContext が未登録なら登録する。GetResource は未登録だと assert で落ちるので、
     /// Update からも呼んで入口を一本化する。
     void EnsureContext();

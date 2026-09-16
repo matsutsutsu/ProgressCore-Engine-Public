@@ -1,12 +1,11 @@
 #include "CCL_JobSystem.h"
 
-#include <cstdio>   // snprintf（Tracy のスレッド名組み立て）
+#include <cstdio> // snprintf（Tracy のスレッド名組み立て）
 
 #include "tracy/Tracy.hpp"
 
-
-
-namespace CCL::ECS {
+namespace CCL::ECS
+{
 
     // =======================================================================
     // 開店準備（コンストラクタ）
@@ -38,7 +37,8 @@ namespace CCL::ECS {
         // m_workers.emplace_back した瞬間に、スレッドが生成され
         // WorkerLoop() という関数が別世界（別スレッド）で動き出します。
         m_workers.reserve(workerCount);
-        for (unsigned int i = 0; i < workerCount; ++i) {
+        for (unsigned int i = 0; i < workerCount; ++i)
+        {
             m_workers.emplace_back([this, i] { WorkerLoop(i); });
         }
     }
@@ -63,8 +63,10 @@ namespace CCL::ECS {
         m_condition.notify_all();
 
         // 3. 全員が更衣室から出てくる（スレッドが終了する）のを待つ
-        for (std::thread &worker : m_workers) {
-            if (worker.joinable()) {
+        for (std::thread &worker : m_workers)
+        {
+            if (worker.joinable())
+            {
                 worker.join(); // シェフが完全に帰るまでここで待機
             }
         }
@@ -79,7 +81,8 @@ namespace CCL::ECS {
         // なぜ？：もし「キューに入れてから」増やすと、シェフが爆速すぎて
         // 「店長が増やす前に、シェフが終わらせて減らしてしまう」可能性があるから。
         // 0 -> -1 になってバグるのを防ぐため、仕事を入れる前に「予約」として増やしておく。
-        if (counter) {
+        if (counter)
+        {
             counter->count.fetch_add(1);
         }
 
@@ -105,14 +108,16 @@ namespace CCL::ECS {
         if (inCount == 0) return;
 
         // 1. カウンターは「まとめて先に」増やす（理由は Execute と同じ）
-        if (counter) {
+        if (counter)
+        {
             counter->count.fetch_add(static_cast<int>(inCount));
         }
 
         {
             // 2. ロックは1回だけ。ここが Execute() をN回呼ぶ場合との違い。
             std::unique_lock<std::mutex> lock(m_queueMutex);
-            for (size_t i = 0; i < inCount; ++i) {
+            for (size_t i = 0; i < inCount; ++i)
+            {
                 m_jobQueue.push({std::move(inJobs[i]), counter});
             }
         }
@@ -121,10 +126,12 @@ namespace CCL::ECS {
         //    1件なら1人だけ起こせば十分。複数件なら全員起こす。
         //    件数ぶん notify_one を呼ぶと通知回数がそのまま増えてしまうため、
         //    複数件は notify_all 1回で済ませる。
-        if (inCount == 1) {
+        if (inCount == 1)
+        {
             m_condition.notify_one();
         }
-        else {
+        else
+        {
             m_condition.notify_all();
         }
     }
@@ -137,7 +144,8 @@ namespace CCL::ECS {
         if (!counter) return;
 
         // カウンターが0になるまでループ
-        while (counter->count.load() > 0) {
+        while (counter->count.load() > 0)
+        {
 
             // --- 待ってるだけじゃなくて手伝う！ ---
             InternalJob job;
@@ -146,24 +154,29 @@ namespace CCL::ECS {
             {
                 // ロックして仕事があるか確認
                 std::unique_lock<std::mutex> lock(m_queueMutex);
-                if (!m_jobQueue.empty()) {
+                if (!m_jobQueue.empty())
+                {
                     job = std::move(m_jobQueue.front());
                     m_jobQueue.pop();
                     foundJob = true;
                 }
             }
 
-            if (foundJob) {
+            if (foundJob)
+            {
                 // 仕事があったら実行する（店長自ら調理場へ！）
-                if (job.task) {
+                if (job.task)
+                {
                     job.task();
                 }
                 // 終わったらカウンターを減らす
-                if (job.counter) {
+                if (job.counter)
+                {
                     job.counter->count.fetch_sub(1);
                 }
             }
-            else {
+            else
+            {
 
                 // 仕事もないなら、仕方ないのでYieldして他のスレッドにCPUを譲る
                 // (まだカウンターが0じゃない＝誰かが実行中)
@@ -190,9 +203,8 @@ namespace CCL::ECS {
         snprintf(threadName, sizeof(threadName), "ECS Worker %u", workerIndex);
         tracy::SetThreadName(threadName);
 
-
-
-        while (true) {              // 基本的に死ぬまで働く無限ループ
+        while (true)
+        {                           // 基本的に死ぬまで働く無限ループ
             InternalJob currentJob; // 自分の手元に持ってくる仕事入れ（お盆）
 
             // ---【エリアA：注文ボードの前（立ち入り禁止区域）】---
@@ -208,7 +220,8 @@ namespace CCL::ECS {
                 m_condition.wait(lock, [this] { return m_shutdown || !m_jobQueue.empty(); });
 
                 // 起きた時に「閉店」かつ「仕事も空っぽ」なら、帰宅(return)する
-                if (m_shutdown && m_jobQueue.empty()) {
+                if (m_shutdown && m_jobQueue.empty())
+                {
                     return; // スレッド終了
                 }
 
@@ -224,7 +237,8 @@ namespace CCL::ECS {
             // ここはロックしていないので、全シェフが同時に作業できる！
 
             // 4. 仕事を実行！
-            if (currentJob.task) {
+            if (currentJob.task)
+            {
 
                 // 【バトンの開封と実行】
                 // 先ほどカプセル化された [sys, dt]() { sys->UpdateImpl(dt); } がここで発動！
@@ -234,7 +248,8 @@ namespace CCL::ECS {
             // 5. 完了報告
             // 「一丁あがり！」カウンターを1減らす。
             // 0になったら、待っている店長（WaitForCounter）が解放される。
-            if (currentJob.counter) {
+            if (currentJob.counter)
+            {
                 currentJob.counter->count.fetch_sub(1);
             }
         }

@@ -12,12 +12,17 @@ class LightManager;
 class PostProcessManager;
 
 // ECSのジョブプール（前方宣言）
-namespace CCL::ECS { class JobSystem; }
+namespace CCL::ECS
+{
+    class JobSystem;
+}
 
 // ゲームエンジン全体で共有されるコアシステムを保管する「仲介役」
-class EngineServices {
+class EngineServices
+{
 public:
-    static EngineServices& Instance() {
+    static EngineServices &Instance()
+    {
         static EngineServices instance;
         return instance;
     }

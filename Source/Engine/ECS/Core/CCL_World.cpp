@@ -8,8 +8,8 @@
 // Tracyのインクルード
 #include "tracy/Tracy.hpp"
 
-
-namespace CCL::ECS {
+namespace CCL::ECS
+{
     using namespace CCL::ECS;
 
     // ============================================================================
@@ -55,8 +55,6 @@ namespace CCL::ECS {
         // 一度だけ登録する設計のため、消すと再登録の手当てが必要になる。
     }
 
-
-
     // ============================================================================
     // World::RequestAddComponent  ─ コンポーネント追加の「予約」を積む
     // ----------------------------------------------------------------------------
@@ -84,23 +82,23 @@ namespace CCL::ECS {
     // ============================================================================
     // コンポーネント追加リクエストの実装部分
     // World.h の AddComponent<T> から呼ばれます
-    void World::RequestAddComponent(EntityID entity,
-        TypeID                               tid,
-        size_t                               size,
-        const std::function<void(void *)>   &ctor,
-        const Destructor                    &dtor,
-        TypeData::ConstructFunc              copyCtor,
-        TypeData::AssignFunc                 assigner,
-        TypeData::MoveFunc                   mover,
-        const char                          *name)
+    void World::RequestAddComponent(EntityID                           entity,
+                                    TypeID                             tid,
+                                    size_t                             size,
+                                    const std::function<void(void *)> &ctor,
+                                    const Destructor                  &dtor,
+                                    TypeData::ConstructFunc            copyCtor,
+                                    TypeData::AssignFunc               assigner,
+                                    TypeData::MoveFunc                 mover,
+                                    const char                        *name)
     {
         if (!IsEntityValid(entity)) return;
 
         PendingOp op;
-        op.kind     = PendingOpKind::AddComponent;
-        op.entity   = entity;
-        op.type     = tid;
-        op.typeSize = size;
+        op.kind       = PendingOpKind::AddComponent;
+        op.entity     = entity;
+        op.type       = tid;
+        op.typeSize   = size;
         op.destructor = dtor;
         // 関数ポインタの保存
         // ChunkManagerの ScrutinyAndApply で TypeData を生成する際、
@@ -111,11 +109,13 @@ namespace CCL::ECS {
         op.name        = name; // カプセルに名前を入れる
 
         // ここでコンストラクタを即時実行せず、factoryに保存する
-        if (ctor) {
+        if (ctor)
+        {
             op.factory = ctor;
             op.data    = nullptr; // dataは使わない
         }
-        else {
+        else
+        {
             // ctorがない場合（従来通り）はメモリ確保してコピー用データを作る
             void *mem = m_frameAllocator.Alloc(size);
             std::memset(mem, 0, size); // またはデフォルト構築
@@ -173,18 +173,21 @@ namespace CCL::ECS {
         // --- Phase 1: 世代付きIDの発行 ---
         {
             // 再利用リストに空きがあればそれを使う
-            if (!m_freeIndices.empty()) {
+            if (!m_freeIndices.empty())
+            {
                 index = m_freeIndices.back();
                 m_freeIndices.pop_back();
                 generation = m_entityGenerations[index];
             }
             // 空きがなければ新規発行
-            else {
+            else
+            {
                 index = m_nextUnusedIndex++;
-                if (index >= m_entityGenerations.size()) {
+                if (index >= m_entityGenerations.size())
+                {
                     m_entityGenerations.resize(index + 1024, 1);
                 }
-                generation                = 1;
+                generation                 = 1;
                 m_entityGenerations[index] = 1;
             }
         }
@@ -192,19 +195,18 @@ namespace CCL::ECS {
         EntityID id = EntityHandle::Combine(index, generation);
 
         // --- Phase 2: PendingOp への登録 ---
-         // FrameAllocator に Archetype を置いてポインタを渡す方式をやめる
-         //   旧: Archetype* heapArch = m_frameAllocator.New<Archetype>(archetype);
-         //       op.data = reinterpret_cast<void*>(heapArch);
-         //   ↓ FrameAllocator::Reset() のタイミング次第で heapArch が破棄済みになる
-         //
-         //   新: op.spawnArchetype にコピーして保存（PendingOp が生きている限り安全）
+        // FrameAllocator に Archetype を置いてポインタを渡す方式をやめる
+        //   旧: Archetype* heapArch = m_frameAllocator.New<Archetype>(archetype);
+        //       op.data = reinterpret_cast<void*>(heapArch);
+        //   ↓ FrameAllocator::Reset() のタイミング次第で heapArch が破棄済みになる
+        //
+        //   新: op.spawnArchetype にコピーして保存（PendingOp が生きている限り安全）
 
         PendingOp op;
-        op.kind   = PendingOpKind::Spawn;
-        op.entity = id; // 新しい世代付きIDをセット
+        op.kind           = PendingOpKind::Spawn;
+        op.entity         = id;        // 新しい世代付きIDをセット
         op.spawnArchetype = archetype; // 値コピーで保存
-        op.data = nullptr;   // 使わない
-
+        op.data           = nullptr;   // 使わない
 
         m_pendingOps.Add(op);
 
@@ -239,10 +241,12 @@ namespace CCL::ECS {
 
         // ここが世代オーバーフロー対策
         // UINT32_MAXまで行ったら1に戻す（0は無効値として避ける）
-        if (m_entityGenerations[index] == UINT32_MAX) {
+        if (m_entityGenerations[index] == UINT32_MAX)
+        {
             m_entityGenerations[index] = 1;
         }
-        else {
+        else
+        {
             m_entityGenerations[index]++;
         }
 
@@ -322,13 +326,11 @@ namespace CCL::ECS {
         //    m_entityCache が自動的に更新されます！
         std::vector<EntityID> deadList = m_chunkManager.ApplyPendingOperations(m_pendingOps);
 
-
-
         // 3. IDをリサイクル（世代を上げてフリーリストへ）
-        for (EntityID id : deadList) {
+        for (EntityID id : deadList)
+        {
             RecycleEntityID(id);
         }
-
 
         // 3. アロケータのリセット
         // これで一時メモリは一瞬で解放されます。delete op.data は不要です。
@@ -348,7 +350,8 @@ namespace CCL::ECS {
         // ChunkManagerのO(1) vectorアクセスを利用
         size_t chunkIdx = m_chunkManager.SearchEntityIn(entity, &entityIdx);
 
-        if (chunkIdx == InvalidIndex) {
+        if (chunkIdx == InvalidIndex)
+        {
             // 存在しない、または削除済みの場合は空のアーキタイプを返す
             static const Archetype emptyArchetype;
             return emptyArchetype;

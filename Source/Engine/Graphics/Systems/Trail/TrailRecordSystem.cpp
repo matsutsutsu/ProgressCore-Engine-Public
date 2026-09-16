@@ -12,7 +12,6 @@ using namespace CCL::ECS;
 void TrailRecordSystem::Update(float dt)
 {
     ForEach([dt](TrailComponent &trail) {
-
         // 一時表示タイマー。切れると emitting が落ちるので、印の発行より前に更新する。
         trail.UpdateBurstTimer(dt);
 

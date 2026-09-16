@@ -17,16 +17,16 @@
 
 namespace ComponentMetaJson
 {
-template <>
-struct ComponentSerializer<RootMotionComponent>
-{
-    static void Save(json & /*j*/, const RootMotionComponent & /*c*/, SaveContext * /*ctx*/)
+    template <>
+    struct ComponentSerializer<RootMotionComponent>
     {
-    }
-    static void Load(const json & /*j*/, RootMotionComponent & /*c*/, LoadContext * /*ctx*/)
-    {
-    }
-};
+        static void Save(json & /*j*/, const RootMotionComponent & /*c*/, SaveContext * /*ctx*/)
+        {
+        }
+        static void Load(const json & /*j*/, RootMotionComponent & /*c*/, LoadContext * /*ctx*/)
+        {
+        }
+    };
 } // namespace ComponentMetaJson
 
 template <>

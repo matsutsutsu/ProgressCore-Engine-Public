@@ -3,9 +3,9 @@
 
 #include "Editor/Windows/BuildingScatterWindow.h"
 
-#include "Game/Core/AllComponents.h"                     // Model/Material/Name
+#include "Game/Core/AllComponents.h" // Model/Material/Name
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/ECS/Common/CCL_Archetype.h"             // ArchetypeHelper
+#include "Engine/ECS/Common/CCL_Archetype.h" // ArchetypeHelper
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -21,7 +21,8 @@
 
 using namespace CCL::ECS;
 
-namespace {
+namespace
+{
     constexpr float kTwoPi = 6.28318530718f;
 
     // 建物モデルのパスを組み立てる (modelIndex は 0..7 → Scifi-Building_01..08)
@@ -31,12 +32,12 @@ namespace {
         sprintf_s(path, "Assets/Models/Building/Scifi-Building_%02d.glb", modelIndex0 + 1);
         return std::string(path);
     }
-}
+} // namespace
 
 // =========================================================================
 // UI
 // =========================================================================
-void BuildingScatterWindow::DrawContents(EditorContext& context)
+void BuildingScatterWindow::DrawContents(EditorContext &context)
 {
     ImGui::TextWrapped(
         "中心(円柱ステージ)の周囲に建物モデル(Scifi-Building_01〜08)を"
@@ -71,40 +72,51 @@ void BuildingScatterWindow::DrawContents(EditorContext& context)
     // ---- 使用モデル選択 ----
     ImGui::SeparatorText("使用する建物モデル");
     int selected = 0;
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 8; ++i)
+    {
         char label[8];
         sprintf_s(label, "%02d", i + 1);
         ImGui::Checkbox(label, &m_useModel[i]);
         if (m_useModel[i]) ++selected;
         if (i % 4 != 3 && i != 7) ImGui::SameLine();
     }
-    if (ImGui::SmallButton("全選択")) { for (auto& b : m_useModel) b = true; }
+    if (ImGui::SmallButton("全選択"))
+    {
+        for (auto &b : m_useModel)
+            b = true;
+    }
     ImGui::SameLine();
-    if (ImGui::SmallButton("全解除")) { for (auto& b : m_useModel) b = false; }
+    if (ImGui::SmallButton("全解除"))
+    {
+        for (auto &b : m_useModel)
+            b = false;
+    }
 
     // ---- 入力の妥当性チェック ----
     ImGui::Separator();
-    const bool hasWorld  = (context.world != nullptr);
-    const bool radiusOk  = (m_maxRadius > m_minRadius);
-    const bool modelOk   = (selected > 0);
-    const bool countOk   = (m_count > 0);
-    const bool canGen    = hasWorld && radiusOk && modelOk && countOk;
+    const bool hasWorld = (context.world != nullptr);
+    const bool radiusOk = (m_maxRadius > m_minRadius);
+    const bool modelOk  = (selected > 0);
+    const bool countOk  = (m_count > 0);
+    const bool canGen   = hasWorld && radiusOk && modelOk && countOk;
 
     if (!radiusOk) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "・最長距離は最短距離より大きくしてください");
-    if (!modelOk)  ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "・建物モデルを1つ以上選択してください");
-    if (!countOk)  ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "・建物数は1以上にしてください");
+    if (!modelOk) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "・建物モデルを1つ以上選択してください");
+    if (!countOk) ImGui::TextColored(ImVec4(1, 0.5f, 0.3f, 1), "・建物数は1以上にしてください");
 
     // ---- 生成/削除 ----
     ImGui::Spacing();
     ImGui::BeginDisabled(!canGen);
-    if (ImGui::Button("生成", ImVec2(140, 32))) {
+    if (ImGui::Button("生成", ImVec2(140, 32)))
+    {
         Generate(context);
     }
     ImGui::EndDisabled();
 
     ImGui::SameLine();
     ImGui::BeginDisabled(m_spawnedGroups.empty());
-    if (ImGui::Button("生成物を全削除", ImVec2(160, 32))) {
+    if (ImGui::Button("生成物を全削除", ImVec2(160, 32)))
+    {
         DeleteAll(context);
     }
     ImGui::EndDisabled();
@@ -119,14 +131,15 @@ void BuildingScatterWindow::DrawContents(EditorContext& context)
 // =========================================================================
 // 生成: 建物群を1バッチ生成し、クラスタ親グループ配下にまとめる
 // =========================================================================
-void BuildingScatterWindow::Generate(EditorContext& context)
+void BuildingScatterWindow::Generate(EditorContext &context)
 {
-    World* world = context.world;
+    World *world = context.world;
     if (!world) return;
 
     // 使用するモデルのインデックス(0..7)を集める
     std::vector<int> models;
-    for (int i = 0; i < 8; ++i) if (m_useModel[i]) models.push_back(i);
+    for (int i = 0; i < 8; ++i)
+        if (m_useModel[i]) models.push_back(i);
     if (models.empty()) return;
 
     const int   clusters = (std::max)(1, m_clusterCount);
@@ -136,7 +149,7 @@ void BuildingScatterWindow::Generate(EditorContext& context)
     const float spacing2 = m_minSpacing * m_minSpacing;
 
     // バッチごとに配置が変わるよう、シードにバッチ番号を混ぜる
-    std::mt19937 rng(static_cast<uint32_t>(m_seed) + static_cast<uint32_t>(m_batchCounter) * 2654435761u);
+    std::mt19937                          rng(static_cast<uint32_t>(m_seed) + static_cast<uint32_t>(m_batchCounter) * 2654435761u);
     std::uniform_real_distribution<float> u01(0.0f, 1.0f);
 
     // アーキタイプ(設計図)。連続メモリ確保のため事前生成。
@@ -146,55 +159,66 @@ void BuildingScatterWindow::Generate(EditorContext& context)
     // 選択モデルのマスター ModelComponent を1回だけ生成し、以降はコピーで使い回す
     // (ループ内で毎回 SetModel すると数百回パス検索/ロードが走るため)。
     ModelComponent baseModels[8];
-    for (int mi : models) {
+    for (int mi : models)
+    {
         baseModels[mi].SetModel(BuildModelPath(mi).c_str());
     }
 
     // ---- 1) クラスタ親グループを生成 ----
     std::vector<EntityID> groups;
     groups.reserve(clusters);
-    for (int c = 0; c < clusters; ++c) {
+    for (int c = 0; c < clusters; ++c)
+    {
         char gname[64];
         sprintf_s(gname, "BuildingGroup_B%02d_C%02d", m_batchCounter, c);
         auto gref = EntityFactory::SpawnNamed(*world, gname, groupArch);
         gref.Set(TransformComponent{
-            .position = { m_center[0], m_center[1], m_center[2] },
-            .rotation = { 0.0f, 0.0f, 0.0f, 1.0f },
-            .scale    = { 1.0f, 1.0f, 1.0f }
-            });
+            .position = {m_center[0], m_center[1], m_center[2]},
+            .rotation = {0.0f, 0.0f, 0.0f, 1.0f},
+            .scale    = {1.0f, 1.0f, 1.0f}});
         groups.push_back(gref.id);
         m_spawnedGroups.push_back(gref.id);
     }
 
     // ---- 2) 建物を生成(親付けは実体化後に行う) ----
-    struct Placed { float x, z; };
+    struct Placed
+    {
+        float x, z;
+    };
     std::vector<Placed> placed;
     placed.reserve(count);
 
     std::vector<std::pair<EntityID, EntityID>> childToGroup; // (建物, 所属グループ)
     childToGroup.reserve(count);
 
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i)
+    {
         const int c = i % clusters; // 塊(親グループ)への振り分け(ラウンドロビン)
 
         // --- 位置決定: 最小間隔を満たす場所を数回試行(だめなら最後の候補を採用) ---
         float px = m_center[0], pz = m_center[2];
-        for (int attempt = 0; attempt < 30; ++attempt) {
+        for (int attempt = 0; attempt < 30; ++attempt)
+        {
             // 面積的に均等になる半径サンプリング
             const float r = std::sqrt(minR * minR + u01(rng) * (maxR * maxR - minR * minR));
             // このクラスタの角度セクタ内に散らす(clusters>1 なら塊が空間的にも分かれる)
             const float ang = (static_cast<float>(c) + u01(rng)) / static_cast<float>(clusters) * kTwoPi;
-            px = m_center[0] + r * std::cos(ang);
-            pz = m_center[2] + r * std::sin(ang);
+            px              = m_center[0] + r * std::cos(ang);
+            pz              = m_center[2] + r * std::sin(ang);
 
             bool ok = true;
-            for (const auto& p : placed) {
+            for (const auto &p : placed)
+            {
                 const float dx = px - p.x, dz = pz - p.z;
-                if (dx * dx + dz * dz < spacing2) { ok = false; break; }
+                if (dx * dx + dz * dz < spacing2)
+                {
+                    ok = false;
+                    break;
+                }
             }
             if (ok) break;
         }
-        placed.push_back({ px, pz });
+        placed.push_back({px, pz});
 
         // 親グループ(中心に配置)からのローカルオフセット
         const float lx = px - m_center[0];
@@ -215,11 +239,10 @@ void BuildingScatterWindow::Generate(EditorContext& context)
 
         auto ref = EntityFactory::SpawnNamed(*world, bname, buildingArch);
         ref.Set(TransformComponent{
-                .position = { lx, m_baseY, lz },
-                .rotation = rot,
-                .scale    = { s, s, s }
-            })
-            .Set(ModelComponent{ baseModels[mi] }); // マスターをコピー(各自が別インスタンスを持つ)
+                    .position = {lx, m_baseY, lz},
+                    .rotation = rot,
+                    .scale    = {s, s, s}})
+            .Set(ModelComponent{baseModels[mi]}); // マスターをコピー(各自が別インスタンスを持つ)
 
         childToGroup.emplace_back(ref.id, groups[c]);
     }
@@ -227,25 +250,27 @@ void BuildingScatterWindow::Generate(EditorContext& context)
     // ---- 3) 実体化してから親子付け ----
     //   SpawnNamed は PendingOp に積むだけなので、SetParent の前に確定させる。
     world->ScrutinyAndApply();
-    for (const auto& [child, group] : childToGroup) {
+    for (const auto &[child, group] : childToGroup)
+    {
         TransformUpdateSystem::SetParent(*world, child, group);
     }
 
     m_batchCounter++;
     m_lastSpawnedCount = count;
     CCL_LOG_INFO(LogCategory::Editor,
-        "[BuildingScatter] Generated %d buildings in %d group(s).", count, clusters);
+                 "[BuildingScatter] Generated %d buildings in %d group(s).", count, clusters);
 }
 
 // =========================================================================
 // 削除: このウィンドウが生成した全グループを破棄(配下の建物も連鎖破棄される)
 // =========================================================================
-void BuildingScatterWindow::DeleteAll(EditorContext& context)
+void BuildingScatterWindow::DeleteAll(EditorContext &context)
 {
-    World* world = context.world;
+    World *world = context.world;
     if (!world) return;
 
-    for (EntityID g : m_spawnedGroups) {
+    for (EntityID g : m_spawnedGroups)
+    {
         // Destroy は DestroyTag を付けるだけ。HierarchyCleanupSystem が子まで
         // 再帰的に破棄する。無効IDは Destroy 側で弾かれるため手動削除後も安全。
         world->Destroy(g);

@@ -50,8 +50,8 @@ static constexpr int TrailShapeCount = 3;
 struct TrailComponent
 {
     // --- config（シリアライズ対象。ローカル空間・向きは所有エンティティ基準） ---
-    DirectX::XMFLOAT3 baseOffset = {0.0f, 0.0f, 0.0f}; // 刃の根本（ローカル）
-    DirectX::XMFLOAT3 tipOffset  = {0.0f, 1.0f, 0.0f}; // 刃の先端（ローカル）
+    DirectX::XMFLOAT3 baseOffset = {0.0f, 0.0f, 0.0f};       // 刃の根本（ローカル）
+    DirectX::XMFLOAT3 tipOffset  = {0.0f, 1.0f, 0.0f};       // 刃の先端（ローカル）
     DirectX::XMFLOAT4 color      = {0.6f, 0.8f, 1.0f, 1.0f}; // 加算色rgb + 基準アルファa
 
     // --- テクスチャ（config。空なら従来どおり単色。設定すると色×テクスチャで描く） ---
@@ -96,8 +96,8 @@ struct TrailComponent
     // 1フレーム分の刃の断面（根本-先端の線分）と経過時間。
     struct Segment
     {
-        DirectX::XMFLOAT3 base = {}; // 記録時の根本ワールド座標
-        DirectX::XMFLOAT3 tip  = {}; // 記録時の先端ワールド座標
+        DirectX::XMFLOAT3 base = {};   // 記録時の根本ワールド座標
+        DirectX::XMFLOAT3 tip  = {};   // 記録時の先端ワールド座標
         float             age  = 0.0f; // 記録からの経過秒。lifeTime 超で破棄。
 
         // 刻んだ順の通し番号。ジグザグの折れ方を決める識別子。
@@ -111,8 +111,8 @@ struct TrailComponent
     static constexpr int MAX_SEGMENTS = 24; // リングの容量（尾の最大分割数）
 
     Segment segments[MAX_SEGMENTS] = {}; // 断面リング
-    int     head  = 0; // 最古区間の index
-    int     count = 0; // 有効区間数
+    int     head                   = 0;  // 最古区間の index
+    int     count                  = 0;  // 有効区間数
 
     uint32_t nextStamp = 0; // 次に刻む区間へ渡す通し番号
 
@@ -185,7 +185,6 @@ struct TrailComponent
 
     // 折れ方のパターン。値を変えると別の稲妻になる。
     uint32_t zigZagSeed = 1337;
-
 
     /**
      * @brief 一時的にTrailを出現させるための関数

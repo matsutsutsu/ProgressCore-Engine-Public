@@ -50,9 +50,9 @@ namespace CCL::ECS
     // その型構成の箱が無ければ1つ作る。
     // 「空きがあるか」は見ないので、満員でも既存があれば何もしない。
     // 空きまで保証したいときは GetOrCreateAvailableChunk を使う。
-    void ChunkManager::CreateChunk(const Archetype& archetype)
+    void ChunkManager::CreateChunk(const Archetype &archetype)
     {
-        for (auto& c : m_chunks)
+        for (auto &c : m_chunks)
         {
             if (c->GetArchetype() == archetype)
                 return;
@@ -69,7 +69,7 @@ namespace CCL::ECS
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
 
-        for (auto& c : m_chunks)
+        for (auto &c : m_chunks)
             c->Finalize();
         m_chunks.clear();
 
@@ -81,15 +81,15 @@ namespace CCL::ECS
     // 予約を経由しない【即時実行】ルート。ゲームコードからの Spawn はここへ来ず、
     // PendingOps → ApplyPendingOperations → InsertNewEntity を通る。
     // こちらは初期値を書き込まないので、席はゼロクリアのままになる。
-    void ChunkManager::AddEntity(EntityID entity, const Archetype& archetype)
+    void ChunkManager::AddEntity(EntityID entity, const Archetype &archetype)
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
 
         auto it = std::find_if(m_chunks.begin(), m_chunks.end(),
-            [&](const std::unique_ptr<Chunk>& c) {
-                return c->GetArchetype() == archetype &&
-                       c->GetEntityCount() < c->GetCapacity();
-            });
+                               [&](const std::unique_ptr<Chunk> &c) {
+                                   return c->GetArchetype() == archetype &&
+                                          c->GetEntityCount() < c->GetCapacity();
+                               });
 
         if (it == m_chunks.end())
         {
@@ -138,13 +138,13 @@ namespace CCL::ECS
      *       erase せず無効値で上書きするため（添字が index と対応している以上、
      *       途中を削ると後ろの住所が全部ずれる）。
      */
-    size_t ChunkManager::SearchEntityIn(EntityID entity, size_t* outEntityIndex) const
+    size_t ChunkManager::SearchEntityIn(EntityID entity, size_t *outEntityIndex) const
     {
         size_t index = GetPureIndex(entity);
 
         if (index >= m_entityLocationMap.size()) return InvalidIndex;
 
-        const auto& loc = m_entityLocationMap[index];
+        const auto &loc = m_entityLocationMap[index];
 
         // 墓石（破棄済みで席が無い）
         if (loc.chunkIndex == InvalidIndex) return InvalidIndex;
@@ -158,13 +158,13 @@ namespace CCL::ECS
     //
     // 同じ型構成の2個目以降の Chunk が生まれるのはここ。検索条件に
     // GetEntityCount() < GetCapacity() が入っているので、定員に達した箱は弾かれる。
-    Chunk& ChunkManager::GetOrCreateAvailableChunk(const Archetype& archetype)
+    Chunk &ChunkManager::GetOrCreateAvailableChunk(const Archetype &archetype)
     {
         auto it = std::find_if(m_chunks.begin(), m_chunks.end(),
-            [&](const std::unique_ptr<Chunk>& c) {
-                return c->GetArchetype() == archetype &&
-                       c->GetEntityCount() < c->GetCapacity();
-            });
+                               [&](const std::unique_ptr<Chunk> &c) {
+                                   return c->GetArchetype() == archetype &&
+                                          c->GetEntityCount() < c->GetCapacity();
+                               });
 
         if (it == m_chunks.end())
         {
@@ -190,18 +190,18 @@ namespace CCL::ECS
      *       RAII リソース（ModelInstanceHandle 等）が解放され、複製先が死ぬ。
      */
     void ChunkManager::InsertNewEntity(
-        Chunk& dstChunk,
-        EntityID entityID,
-        const std::vector<PendingOp*>& addOps)
+        Chunk                          &dstChunk,
+        EntityID                        entityID,
+        const std::vector<PendingOp *> &addOps)
     {
         size_t newIndex = dstChunk.AddEntity(entityID);
 
         size_t chunkIdx = GetChunkIndex(&dstChunk);
         UpdateEntityLocation(entityID, chunkIdx, newIndex);
 
-        for (const TypeData& td : dstChunk.GetTypeDatas())
+        for (const TypeData &td : dstChunk.GetTypeDatas())
         {
-            void* dstPtr = dstChunk.GetComponentPtrByType(td.id, newIndex);
+            void *dstPtr = dstChunk.GetComponentPtrByType(td.id, newIndex);
             if (!dstPtr) continue;
 
             bool filled = false;
@@ -209,18 +209,19 @@ namespace CCL::ECS
             // 逆順＝後から積まれた AddComponent の値を勝たせる
             for (int i = (int)addOps.size() - 1; i >= 0; --i)
             {
-                auto* op = addOps[i];
+                auto *op = addOps[i];
                 if (op->type == td.id)
                 {
                     // factory は Emplace 経路。コピー禁止型もここで構築される
-                    if (op->factory) {
+                    if (op->factory)
+                    {
                         op->factory(dstPtr);
                     }
                     // 一時メモリからの移送は必ずムーブを先に試す。
                     // PendingOp::data は非const の void* なので mover(void*, void*) へそのまま渡せる。
                     if (op->data && td.mover)
                     {
-                        td.mover(dstPtr, op->data);       // 元は抜け殻になる（＝Clear で壊されても安全）
+                        td.mover(dstPtr, op->data); // 元は抜け殻になる（＝Clear で壊されても安全）
                     }
                     else if (op->data && td.constructor)
                     {
@@ -250,14 +251,15 @@ namespace CCL::ECS
         }
 
         // World 側のコンポーネントキャッシュへ実体化を知らせる
-        if (m_onEntityMove) {
+        if (m_onEntityMove)
+        {
             m_onEntityMove(entityID, &dstChunk, newIndex);
         }
     }
 
     // 型構成が完全一致する Chunk を線形探索する。
     // 空きの有無は見ないので、満員の箱も返る。
-    size_t ChunkManager::SearchEqualChunk(const Archetype& a) const
+    size_t ChunkManager::SearchEqualChunk(const Archetype &a) const
     {
         for (size_t i = 0; i < m_chunks.size(); ++i)
         {
@@ -274,7 +276,8 @@ namespace CCL::ECS
     {
         size_t index = GetPureIndex(entity);
 
-        if (index >= m_entityLocationMap.size()) {
+        if (index >= m_entityLocationMap.size())
+        {
             m_entityLocationMap.resize(index + 1);
         }
 
@@ -288,7 +291,8 @@ namespace CCL::ECS
     {
         size_t index = GetPureIndex(entity);
 
-        if (index < m_entityLocationMap.size()) {
+        if (index < m_entityLocationMap.size())
+        {
             m_entityLocationMap[index] = EntityLocation(InvalidIndex, InvalidIndex);
         }
     }
@@ -298,10 +302,12 @@ namespace CCL::ECS
     // 【線形探索】。Chunk 数に比例して遅くなり、引っ越しの多いフレームでは
     // O(移動数 × Chunk数) になる。既知の弱点で、必要になったら
     // Chunk 側に自分の添字を持たせて潰す。
-    size_t ChunkManager::GetChunkIndex(const Chunk* chunk) const
+    size_t ChunkManager::GetChunkIndex(const Chunk *chunk) const
     {
-        for (size_t i = 0; i < m_chunks.size(); ++i) {
-            if (m_chunks[i].get() == chunk) {
+        for (size_t i = 0; i < m_chunks.size(); ++i)
+        {
+            if (m_chunks[i].get() == chunk)
+            {
                 return i;
             }
         }
@@ -315,10 +321,11 @@ namespace CCL::ECS
     //
     // 例外が2つ。タグ型だけで stride==0 のときは割れないので 1024、
     // 1体が 16KB を超えるときは 0 になってしまうので最低 1 を返す。
-    size_t ChunkManager::CalculateChunkCapacity(const Archetype& archetype) const
+    size_t ChunkManager::CalculateChunkCapacity(const Archetype &archetype) const
     {
         size_t stride = 0;
-        for (const auto& t : archetype) {
+        for (const auto &t : archetype)
+        {
             stride += t.typeSize;
         }
 
@@ -349,14 +356,15 @@ namespace CCL::ECS
      * @return 引っ越せたら true。既に破棄済みだった場合は false。
      */
     bool ChunkManager::MoveEntityBetweenChunks(
-        Chunk& srcChunk,
-        size_t srcIndex,
-        Chunk& dstChunk,
-        EntityID entity,
-        const std::vector<PendingOp*>& addOps,
-        const std::vector<TypeID>& removeTypeIDs)
+        Chunk                          &srcChunk,
+        size_t                          srcIndex,
+        Chunk                          &dstChunk,
+        EntityID                        entity,
+        const std::vector<PendingOp *> &addOps,
+        const std::vector<TypeID>      &removeTypeIDs)
     {
-        if (srcChunk.IsEntityDestroyed(srcIndex)) {
+        if (srcChunk.IsEntityDestroyed(srcIndex))
+        {
             return false;
         }
 
@@ -367,12 +375,13 @@ namespace CCL::ECS
         size_t dstChunkIdx = GetChunkIndex(&dstChunk);
         UpdateEntityLocation(entity, dstChunkIdx, dstIndex);
 
-        const Archetype& srcArch = srcChunk.GetArchetype();
-        const Archetype& dstArch = dstChunk.GetArchetype();
+        const Archetype &srcArch = srcChunk.GetArchetype();
+        const Archetype &dstArch = dstChunk.GetArchetype();
 
-        auto BuildIndexMap = [](const Archetype& a) {
+        auto BuildIndexMap = [](const Archetype &a) {
             std::unordered_map<TypeID, size_t> m;
-            for (size_t i = 0; i < a.size(); ++i) m[a[i].id] = i;
+            for (size_t i = 0; i < a.size(); ++i)
+                m[a[i].id] = i;
             return m;
         };
         auto srcMap = BuildIndexMap(srcArch);
@@ -380,22 +389,25 @@ namespace CCL::ECS
 
         for (size_t di = 0; di < dstArch.size(); ++di)
         {
-            const TypeData& tdDst = dstArch[di];
-            void* dstPtr = dstChunk.GetComponentPtrByType(tdDst.id, dstIndex);
+            const TypeData &tdDst  = dstArch[di];
+            void           *dstPtr = dstChunk.GetComponentPtrByType(tdDst.id, dstIndex);
 
             // パターンA: 元の箱から運ぶ
             auto itSrc = srcMap.find(tdDst.id);
             if (itSrc != srcMap.end())
             {
-                void* srcPtr = srcChunk.GetComponentPtrByType(tdDst.id, srcIndex);
+                void *srcPtr = srcChunk.GetComponentPtrByType(tdDst.id, srcIndex);
 
-                if (tdDst.mover) {
+                if (tdDst.mover)
+                {
                     tdDst.mover(dstPtr, srcPtr);
                 }
-                else if (tdDst.constructor) {
+                else if (tdDst.constructor)
+                {
                     tdDst.constructor(dstPtr, srcPtr);
                 }
-                else {
+                else
+                {
                     std::memcpy(dstPtr, srcPtr, tdDst.typeSize);
                 }
             }
@@ -403,14 +415,18 @@ namespace CCL::ECS
             else
             {
                 bool filled = false;
-                for (PendingOp* op : addOps) {
-                    if (op->type == tdDst.id) {
-                        if (op->factory) {
+                for (PendingOp *op : addOps)
+                {
+                    if (op->type == tdDst.id)
+                    {
+                        if (op->factory)
+                        {
                             op->factory(dstPtr);
                             filled = true;
                             break;
                         }
-                        else if (op->data) {
+                        else if (op->data)
+                        {
                             if (tdDst.constructor)
                                 tdDst.constructor(dstPtr, op->data);
                             else
@@ -430,12 +446,13 @@ namespace CCL::ECS
 
         for (size_t si = 0; si < srcArch.size(); ++si)
         {
-            const TypeData& tdSrc = srcArch[si];
-            void* srcPtr = srcChunk.GetComponentPtrByType(tdSrc.id, srcIndex);
+            const TypeData &tdSrc  = srcArch[si];
+            void           *srcPtr = srcChunk.GetComponentPtrByType(tdSrc.id, srcIndex);
             tdSrc.destructor.Destruct(srcPtr);
         }
 
-        if (m_onEntityMove) {
+        if (m_onEntityMove)
+        {
             m_onEntityMove(entity, &dstChunk, dstIndex);
         }
 
@@ -443,7 +460,6 @@ namespace CCL::ECS
 
         return true;
     }
-
 
     // ---- 予約の適用 --------------------------------------------------------
     //   ApplyPendingOperations
@@ -467,7 +483,7 @@ namespace CCL::ECS
      *
      * @return 実際に破棄した EntityID。World がこれを RecycleEntityID（世代++）へ回す。
      */
-    std::vector<EntityID> ChunkManager::ApplyPendingOperations(PendingOps& pendingOps)
+    std::vector<EntityID> ChunkManager::ApplyPendingOperations(PendingOps &pendingOps)
     {
         std::unique_lock<std::shared_mutex> lock(m_structureMutex);
 
@@ -482,7 +498,7 @@ namespace CCL::ECS
         // 多重破棄の防止。存在確認を何度も引くので O(1) の set で持つ。
         std::unordered_set<EntityID> alreadyDestroyed;
 
-        for (auto& [entityID, ops] : opsByEntity)
+        for (auto &[entityID, ops] : opsByEntity)
         {
             ProcessEntityOps(entityID, ops, alreadyDestroyed, destroyedEntities);
         }
@@ -492,7 +508,6 @@ namespace CCL::ECS
         return destroyedEntities;
     }
 
-
     // 一列に並んだ予約を EntityID をキーにした map へ詰め替える。
     //   Entity10 AddTransform         Entity10 → [AddTransform, AddModel]
     //   Entity20 RemovePhysics   →    Entity20 → [RemovePhysics]
@@ -501,16 +516,16 @@ namespace CCL::ECS
     //
     // 値は PendingOp*。実体をコピーしないので、戻り値は元の pendingOps が
     // 生きている間だけ有効。
-    std::unordered_map<EntityID, std::vector<PendingOp*>>
-    ChunkManager::GroupOpsByEntity(PendingOps& pendingOps)
+    std::unordered_map<EntityID, std::vector<PendingOp *>>
+    ChunkManager::GroupOpsByEntity(PendingOps &pendingOps)
     {
-        std::unordered_map<EntityID, std::vector<PendingOp*>> opsByEntity;
-        for (auto& op : pendingOps.Ops()) {
+        std::unordered_map<EntityID, std::vector<PendingOp *>> opsByEntity;
+        for (auto &op : pendingOps.Ops())
+        {
             opsByEntity[op.entity].push_back(&op);
         }
         return opsByEntity;
     }
-
 
     /**
      * 1体分の予約をまとめて処理し、この Entity の最終形を確定させる。
@@ -525,13 +540,14 @@ namespace CCL::ECS
      * @param destroyedEntities 破棄した ID の蓄積先。World まで返る
      */
     void ChunkManager::ProcessEntityOps(
-        EntityID entityID,
-        const std::vector<PendingOp*>& ops,
-        std::unordered_set<EntityID>& alreadyDestroyed,
-        std::vector<EntityID>& destroyedEntities)
+        EntityID                        entityID,
+        const std::vector<PendingOp *> &ops,
+        std::unordered_set<EntityID>   &alreadyDestroyed,
+        std::vector<EntityID>          &destroyedEntities)
     {
         // ステップ1: 破棄が混ざっていれば最優先。消えるものに他の操作をしても無意味
-        if (HasDestroyOp(ops)) {
+        if (HasDestroyOp(ops))
+        {
             ApplyDestroyOp(entityID, alreadyDestroyed, destroyedEntities);
             return;
         }
@@ -539,44 +555,51 @@ namespace CCL::ECS
         // ステップ2: 今どこにいるか
         size_t srcIndex = 0;
         size_t chunkIdx = SearchEntityIn(entityID, &srcIndex);
-        Chunk* srcChunk = (chunkIdx != InvalidIndex) ? m_chunks[chunkIdx].get() : nullptr;
+        Chunk *srcChunk = (chunkIdx != InvalidIndex) ? m_chunks[chunkIdx].get() : nullptr;
 
         // 以下2つは防御的チェック。opsByEntity は EntityID がキーで1体につき1回しか
         // ここへ来ず、MarkDestroyEntity を呼ぶ3箇所（DestroyEntity / ApplyDestroyOp /
         // MoveEntityBetweenChunks）はいずれも住所録を先に更新するため、現状この分岐は
         // 踏まれない。破棄判定を1箇所に頼らないための保険として残している。
-        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end()) {
+        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end())
+        {
             return;
         }
-        if (srcChunk && srcChunk->IsEntityDestroyed(srcIndex)) {
+        if (srcChunk && srcChunk->IsEntityDestroyed(srcIndex))
+        {
             return;
         }
 
         // ステップ3: 差分を適用する前のベースとなる型構成を決める
         Archetype nextArch;
-        bool isNewSpawn = false;
-        if (!DetermineNextArchetype(ops, srcChunk, nextArch, isNewSpawn)) {
+        bool      isNewSpawn = false;
+        if (!DetermineNextArchetype(ops, srcChunk, nextArch, isNewSpawn))
+        {
             return; // 存在しないし Spawn でもない
         }
 
         // ステップ4: Add/Remove を反映して最終形にする
-        std::vector<PendingOp*> addOps;
-        std::vector<TypeID> removeIDs;
+        std::vector<PendingOp *> addOps;
+        std::vector<TypeID>      removeIDs;
         CalculateArchetypeDiff(ops, nextArch, addOps, removeIDs);
 
         // ステップ5: 3分岐で確定させる
-        if (isNewSpawn) {
-            Chunk& dstChunk = GetOrCreateAvailableChunk(nextArch);
+        if (isNewSpawn)
+        {
+            Chunk &dstChunk = GetOrCreateAvailableChunk(nextArch);
             InsertNewEntity(dstChunk, entityID, addOps);
         }
-        else if (!(nextArch == srcChunk->GetArchetype())) {
-            Chunk& dstChunk = GetOrCreateAvailableChunk(nextArch);
+        else if (!(nextArch == srcChunk->GetArchetype()))
+        {
+            Chunk &dstChunk = GetOrCreateAvailableChunk(nextArch);
 
-            if (!srcChunk->IsEntityDestroyed(srcIndex)) {
+            if (!srcChunk->IsEntityDestroyed(srcIndex))
+            {
                 MoveEntityBetweenChunks(*srcChunk, srcIndex, dstChunk, entityID, addOps, removeIDs);
             }
         }
-        else {
+        else
+        {
             UpdateExistingComponents(srcChunk, srcIndex, ops);
         }
 
@@ -584,19 +607,19 @@ namespace CCL::ECS
         ApplyPatchOps(entityID, ops);
     }
 
-
     // 予約に Destroy が1つでも混ざっているか。
     // 他の判定より先に呼ばれ、true なら残りの予約はすべて捨てられる。
-    bool ChunkManager::HasDestroyOp(const std::vector<PendingOp*>& ops) const
+    bool ChunkManager::HasDestroyOp(const std::vector<PendingOp *> &ops) const
     {
-        for (auto* op : ops) {
-            if (op->kind == PendingOpKind::Destroy) {
+        for (auto *op : ops)
+        {
+            if (op->kind == PendingOpKind::Destroy)
+            {
                 return true;
             }
         }
         return false;
     }
-
 
     // 破棄の確定処理。全コンポーネントの destructor を呼び、席に印を付け、住所録から消す。
     //
@@ -608,28 +631,31 @@ namespace CCL::ECS
     // 関数ポインタ経由で行う（型消去）。ここを飛ばすと RAII を持つ
     // コンポーネントがリークする。
     void ChunkManager::ApplyDestroyOp(
-        EntityID entityID,
-        std::unordered_set<EntityID>& alreadyDestroyed,
-        std::vector<EntityID>& destroyedEntities)
+        EntityID                      entityID,
+        std::unordered_set<EntityID> &alreadyDestroyed,
+        std::vector<EntityID>        &destroyedEntities)
     {
-        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end()) {
+        if (alreadyDestroyed.find(entityID) != alreadyDestroyed.end())
+        {
             return;
         }
 
         size_t entityIndex = 0;
-        size_t chunkIdx = SearchEntityIn(entityID, &entityIndex);
+        size_t chunkIdx    = SearchEntityIn(entityID, &entityIndex);
         if (chunkIdx == InvalidIndex) return; // 既に居ない
 
-        Chunk* cptr = m_chunks[chunkIdx].get();
+        Chunk *cptr = m_chunks[chunkIdx].get();
 
         // 印だけ付いていて destructor がまだの状態。破棄済みとして記録し、二重に壊さない
-        if (cptr->IsEntityDestroyed(entityIndex)) {
+        if (cptr->IsEntityDestroyed(entityIndex))
+        {
             alreadyDestroyed.insert(entityID);
             return;
         }
 
-        for (const TypeData& td : cptr->GetArchetype()) {
-            void* ptr = cptr->GetComponentPtrByType(td.id, entityIndex);
+        for (const TypeData &td : cptr->GetArchetype())
+        {
+            void *ptr = cptr->GetComponentPtrByType(td.id, entityIndex);
             td.destructor.Destruct(ptr);
         }
 
@@ -640,7 +666,6 @@ namespace CCL::ECS
         destroyedEntities.push_back(entityID);
     }
 
-
     // Add/Remove を適用する前の【ベースとなる型構成】を選ぶ。
     //   ops に Spawn がある    → op.spawnArchetype を採用し、outIsNewSpawn = true
     //   Spawn が無く既存が居る → 今いる Chunk の Archetype を引き継ぐ
@@ -650,28 +675,30 @@ namespace CCL::ECS
     // FrameAllocator の寿命が切れた瞬間にダングリングするため。
     // 経緯は World::RequestSpawnEntity のコメント。
     bool ChunkManager::DetermineNextArchetype(
-        const std::vector<PendingOp*>& ops,
-        Chunk* srcChunk,
-        Archetype& outArchetype,
-        bool& outIsNewSpawn) const
+        const std::vector<PendingOp *> &ops,
+        Chunk                          *srcChunk,
+        Archetype                      &outArchetype,
+        bool                           &outIsNewSpawn) const
     {
         outIsNewSpawn = false;
 
-        for (auto* op : ops) {
-            if (op->kind == PendingOpKind::Spawn) {
-                outArchetype = op->spawnArchetype;
+        for (auto *op : ops)
+        {
+            if (op->kind == PendingOpKind::Spawn)
+            {
+                outArchetype  = op->spawnArchetype;
                 outIsNewSpawn = true;
                 return true;
             }
         }
 
-        if (!srcChunk) {
+        if (!srcChunk)
+        {
             return false;
         }
         outArchetype = srcChunk->GetArchetype();
         return true;
     }
-
 
     /**
      * ベースの型構成へ予約を反映し、この Entity が最終的に持つ形にする。
@@ -686,22 +713,30 @@ namespace CCL::ECS
      *       落ち、RAII を持つコンポーネントが壊れる。
      */
     void ChunkManager::CalculateArchetypeDiff(
-        const std::vector<PendingOp*>& ops,
-        Archetype& nextArch,
-        std::vector<PendingOp*>& outAddOps,
-        std::vector<TypeID>& outRemoveIDs) const
+        const std::vector<PendingOp *> &ops,
+        Archetype                      &nextArch,
+        std::vector<PendingOp *>       &outAddOps,
+        std::vector<TypeID>            &outRemoveIDs) const
     {
-        for (auto* op : ops) {
-            if (op->kind == PendingOpKind::AddComponent) {
+        for (auto *op : ops)
+        {
+            if (op->kind == PendingOpKind::AddComponent)
+            {
                 outAddOps.push_back(op);
 
                 // Archetype は内部の std::vector<TypeData> に begin()/end() を公開しているので
                 // 範囲 for で回せる（CCL_Archetype.h）
                 bool has = false;
-                for (auto& td : nextArch) {
-                    if (td.id == op->type) { has = true; break; }
+                for (auto &td : nextArch)
+                {
+                    if (td.id == op->type)
+                    {
+                        has = true;
+                        break;
+                    }
                 }
-                if (!has) {
+                if (!has)
+                {
                     // PendingOp が型情報を運んでくるのは、AddComponent<T> のテンプレートを
                     // 通った時点でしか T の関数ポインタを取れないため。ここで詰め直す
                     TypeData newType;
@@ -718,13 +753,13 @@ namespace CCL::ECS
                     nextArch.Add(newType);
                 }
             }
-            else if (op->kind == PendingOpKind::RemoveComponent) {
+            else if (op->kind == PendingOpKind::RemoveComponent)
+            {
                 outRemoveIDs.push_back(op->type);
                 nextArch.Sub(op->type);
             }
         }
     }
-
 
     // 型構成が変わらないときの値の上書き。引っ越さずに中身だけを書き換える。
     // 呼ばれるのは ProcessEntityOps のステップ5で「最終形 == 今の型構成」だったとき
@@ -734,30 +769,36 @@ namespace CCL::ECS
     // constructor は未構築の場所にしか使えないため、代わりに assigner（代入演算子）を使う。
     // ムーブ専用型など代入できない型は factory 経由で「破棄 → 再構築」する。
     void ChunkManager::UpdateExistingComponents(
-        Chunk* srcChunk, size_t srcIndex,
-        const std::vector<PendingOp*>& ops)
+        Chunk *srcChunk, size_t srcIndex,
+        const std::vector<PendingOp *> &ops)
     {
-        for (auto* op : ops) {
+        for (auto *op : ops)
+        {
             // 値の上書きだけを扱うので AddComponent 以外は無視
             if (op->kind != PendingOpKind::AddComponent) continue;
 
-            void* dstPtr = srcChunk->GetComponentPtrByType(op->type, srcIndex);
+            void *dstPtr = srcChunk->GetComponentPtrByType(op->type, srcIndex);
             if (!dstPtr || (!op->factory && !op->data)) continue;
 
-            const Archetype& arch = srcChunk->GetArchetype();
-            for (const auto& td : arch) {
+            const Archetype &arch = srcChunk->GetArchetype();
+            for (const auto &td : arch)
+            {
                 if (td.id != op->type) continue;
 
                 // ムーブ専用型など、代入できない型
-                if (op->factory) {
+                if (op->factory)
+                {
                     td.destructor.Destruct(dstPtr);
                     op->factory(dstPtr);
                 }
-                else if (op->data) {
-                    if (td.assigner) {
+                else if (op->data)
+                {
+                    if (td.assigner)
+                    {
                         td.assigner(dstPtr, op->data);
                     }
-                    else {
+                    else
+                    {
                         std::memcpy(dstPtr, op->data, td.typeSize);
                     }
                 }
@@ -765,7 +806,6 @@ namespace CCL::ECS
             }
         }
     }
-
 
     // PatchComponent で登録したラムダを、確定した最終アドレスに対して呼ぶ。
     //
@@ -776,26 +816,27 @@ namespace CCL::ECS
     // op->patcher は void* を取るラムダ。型安全なラムダをこの形へ包むのは
     // World::PatchComponent の側。
     void ChunkManager::ApplyPatchOps(
-        EntityID entityID,
-        const std::vector<PendingOp*>& ops)
+        EntityID                        entityID,
+        const std::vector<PendingOp *> &ops)
     {
         // 引っ越し後の最終的な席を引き直す
-        size_t finalIndex = 0;
+        size_t finalIndex    = 0;
         size_t finalChunkIdx = SearchEntityIn(entityID, &finalIndex);
         if (finalChunkIdx == InvalidIndex) return;
 
-        Chunk* finalChunk = m_chunks[finalChunkIdx].get();
+        Chunk *finalChunk = m_chunks[finalChunkIdx].get();
 
-        for (auto* op : ops) {
+        for (auto *op : ops)
+        {
             if (op->kind != PendingOpKind::PatchComponent) continue;
 
-            void* ptr = finalChunk->GetComponentPtrByType(op->type, finalIndex);
-            if (ptr && op->patcher) {
+            void *ptr = finalChunk->GetComponentPtrByType(op->type, finalIndex);
+            if (ptr && op->patcher)
+            {
                 op->patcher(ptr);
             }
         }
     }
-
 
     // 全 Chunk の穴をまとめて詰める。フレーム末尾に1回だけ回る。
     //
@@ -805,12 +846,14 @@ namespace CCL::ECS
     // 別のエンティティのデータを掴む形で壊れる。
     void ChunkManager::CompactAllChunks()
     {
-        for (auto& c : m_chunks) {
-            c->CompactHoles([this](EntityID entity, Chunk* chunk, size_t newIndex) {
+        for (auto &c : m_chunks)
+        {
+            c->CompactHoles([this](EntityID entity, Chunk *chunk, size_t newIndex) {
                 size_t chunkIdx = GetChunkIndex(chunk);
                 UpdateEntityLocation(entity, chunkIdx, newIndex);
 
-                if (m_onEntityMove) {
+                if (m_onEntityMove)
+                {
                     m_onEntityMove(entity, chunk, newIndex);
                 }
             });

@@ -9,7 +9,7 @@
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h"
 
 class CleaveGaugeHudSystem : public CCL::ECS::IfSystem<CleaveGaugeHudSystem,
-                                 CCL::ECS::Read<CleaveComponent>>
+                                                       CCL::ECS::Read<CleaveComponent>>
 {
 public:
     CleaveGaugeHudSystem()

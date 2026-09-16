@@ -6,11 +6,11 @@
 #include <algorithm> // std::min / std::max
 #include <cmath>     // std::ceil
 #include <cstdarg>
-#include <cstdio>    // snprintf
+#include <cstdio> // snprintf
 #include <thread>
 #include <windows.h> // OutputDebugStringA
 
-#include "tracy/Tracy.hpp"             // ZoneScopedN / tracy::SetThreadName
+#include "tracy/Tracy.hpp"                 // ZoneScopedN / tracy::SetThreadName
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // 共有プールのワーカー数取得
 #include "Engine/Platform/Core/Logger.h"   // 起動時の構成ログ
 
@@ -49,12 +49,12 @@ static bool AssertFailedImpl(
 {
     char buffer[2048];
     snprintf(buffer,
-        sizeof(buffer),
-        "[Jolt Assert] %s:%d: (%s) %s\n",
-        inFile,
-        inLine,
-        inExpression,
-        (inMessage ? inMessage : ""));
+             sizeof(buffer),
+             "[Jolt Assert] %s:%d: (%s) %s\n",
+             inFile,
+             inLine,
+             inExpression,
+             (inMessage ? inMessage : ""));
 
     // 確実にVisual Studioの出力ウィンドウにエラーを叩き出す
     OutputDebugStringA(buffer);
@@ -109,12 +109,12 @@ void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
     // TempAllocatorは毎フレーム出る衝突点のリストなどの一時的なデータを
     // 確保するためで毎回newせずに、フレームの最後に一括でリセットして再利用するスタイル
 
-    #if PHYSICS_LARGE_WORLD_BUDGET
+#if PHYSICS_LARGE_WORLD_BUDGET
     // 50 * 1024 * 1024 = 約50MBの計算用スクラッチメモリ
     m_tempAllocator = std::make_unique<JPH::TempAllocatorImpl>(50 * 1024 * 1024);
-    #else
+#else
     m_tempAllocator = std::make_unique<TempAllocatorImpl>(10 * 1024 * 1024);
-    #endif
+#endif
 
     // ジョブシステムは、物理計算を複数のCPUコアで並列に走らせるためのもの。
     // fix: hardware_concurrency() は取得不能な環境で 0 を返す規格。
@@ -151,14 +151,14 @@ void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
 
         // どちらのモードで動いているか、Tracy計装が実際にビルドに入っているかを
         // 起動ログに残す。「Tracyに出ない」ときの切り分けを推測でやらないため。
-    #if defined(TRACY_ENABLE) && defined(JPH_PROFILE_ENABLED)
+#if defined(TRACY_ENABLE) && defined(JPH_PROFILE_ENABLED)
         const char *tracyState = "ON";
-    #else
+#else
         const char *tracyState = "OFF (TRACY_ENABLE / JPH_PROFILE_ENABLED のどちらかが未定義)";
-    #endif
+#endif
         CCL_LOG_INFO(LogCategory::Physics,
-            "JobSystem = SHARED (JoltJobSystemAdapter) / workers=%u / job zones=%s",
-            inSharedPool->GetWorkerCount(), tracyState);
+                     "JobSystem = SHARED (JoltJobSystemAdapter) / workers=%u / job zones=%s",
+                     inSharedPool->GetWorkerCount(), tracyState);
     }
     else
     {
@@ -198,33 +198,33 @@ void JoltPhysicsManager::Initialize(CCL::ECS::JobSystem *inSharedPool)
         m_activeJobSystem = m_nativeJobSystem.get();
 
         CCL_LOG_INFO(LogCategory::Physics,
-            "JobSystem = NATIVE (JPH::JobSystemThreadPool) / workers=%d / job zones=なし",
-            workerThreads);
+                     "JobSystem = NATIVE (JPH::JobSystemThreadPool) / workers=%d / job zones=なし",
+                     workerThreads);
     }
 
-    // 4. 物理システムのパラメータ設定
-    #if PHYSICS_LARGE_WORLD_BUDGET
+// 4. 物理システムのパラメータ設定
+#if PHYSICS_LARGE_WORLD_BUDGET
     // 大量の剛体を想定した上限値
     const uint cMaxBodies             = 65536; // 最大6万体まで許容
     const uint cNumBodyMutexes        = 0;     // デフォルトのミューテックス数
     const uint cMaxBodyPairs          = 65536; // 密集によるペア爆発に備える
     const uint cMaxContactConstraints = 20480; // 大量に押し合うための接点バッファ
-    #else
+#else
     // サンプル用。本番は上のスケールを使う。
     const uint cMaxBodies             = 1024;
     const uint cNumBodyMutexes        = 0;
     const uint cMaxBodyPairs          = 1024;
     const uint cMaxContactConstraints = 1024;
-    #endif
+#endif
 
     m_physicsSystem = std::make_unique<PhysicsSystem>();
     m_physicsSystem->Init(cMaxBodies,
-        cNumBodyMutexes,
-        cMaxBodyPairs,
-        cMaxContactConstraints,
-        m_bpLayerInterface,
-        m_objectVsBroadphaseFilter,
-        m_objectVsObjectFilter);
+                          cNumBodyMutexes,
+                          cMaxBodyPairs,
+                          cMaxContactConstraints,
+                          m_bpLayerInterface,
+                          m_objectVsBroadphaseFilter,
+                          m_objectVsObjectFilter);
 
     // 5. 重力設定（下方向）
     m_physicsSystem->SetGravity(Vec3(0, -9.81f, 0));

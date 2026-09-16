@@ -23,32 +23,32 @@ using namespace CCL::ECS;
 
 namespace
 {
-// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
-// ジャスト回避(20)より弱くしておき、同時に出たら回避側が前に出るようにする。
-const uint32_t kSource   = CCL::Utils::HashString("ScreenImpact");
-constexpr int  kPriority = 10;
+    // スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+    // ジャスト回避(20)より弱くしておき、同時に出たら回避側が前に出るようにする。
+    const uint32_t kSource   = CCL::Utils::HashString("ScreenImpact");
+    constexpr int  kPriority = 10;
 } // namespace
 
 void ScreenImpactSystem::Update(float dt)
 {
-    auto* impact = m_world->GetSingletonComponent<ScreenImpactComponent>();
+    auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>();
 
     const bool active = (impact && impact->timer > 0.0f);
 
     // ── PP への要求（自分のスロットだけを書く。設定本体には触れない） ──
     //   非アクティブ時は weight=0 ではなくスロットごと手放し、他の演出に枠を空ける。
     auto writeBurst = [&](float radialStrength, float chromaStrength) {
-        if (auto* c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
+        if (auto *c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
         {
-            if (auto* ov = c->overrides.Acquire(kSource, kPriority))
+            if (auto *ov = c->overrides.Acquire(kSource, kPriority))
             {
                 ov->weight          = 1.0f;
                 ov->params.strength = radialStrength;
             }
         }
-        if (auto* c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
+        if (auto *c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
         {
-            if (auto* ov = c->overrides.Acquire(kSource, kPriority))
+            if (auto *ov = c->overrides.Acquire(kSource, kPriority))
             {
                 ov->weight          = 1.0f;
                 ov->params.strength = chromaStrength;
@@ -57,9 +57,9 @@ void ScreenImpactSystem::Update(float dt)
     };
 
     auto releaseBurst = [&]() {
-        if (auto* c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
+        if (auto *c = m_world->GetSingletonComponent<RadialBlurConfigComponent>())
             c->overrides.Release(kSource);
-        if (auto* c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
+        if (auto *c = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>())
             c->overrides.Release(kSource);
     };
 

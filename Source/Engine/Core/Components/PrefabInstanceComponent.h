@@ -16,7 +16,8 @@
 //   ※ ComponentRegistry には登録しない(=シーンJSONには焼かれない)。
 //      あくまでエディタ配置/レベル参照のためのランタイムマーカー。
 // =====================================================================
-struct PrefabInstanceComponent {
+struct PrefabInstanceComponent
+{
     std::string prefabPath;
 
     PrefabInstanceComponent() = default;

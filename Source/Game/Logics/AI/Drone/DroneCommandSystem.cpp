@@ -2,7 +2,7 @@
 #include "DroneCommandSystem.h"
 
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"        // 陣形ごとの攻撃寿命
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 陣形ごとの攻撃寿命
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

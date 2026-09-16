@@ -12,10 +12,10 @@
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 
 class UILayoutSystem : public CCL::ECS::IfSystem<UILayoutSystem,
-                           CCL::ECS::Write<UITransformComponent>,
-                           CCL::ECS::Read<UIImageComponent>>
+                                                 CCL::ECS::Write<UITransformComponent>,
+                                                 CCL::ECS::Read<UIImageComponent>>
 {
-  public:
+public:
     UILayoutSystem()
         : IfSystem("UILayoutSystem")
     {

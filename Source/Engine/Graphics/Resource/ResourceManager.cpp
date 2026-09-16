@@ -19,24 +19,24 @@ using namespace CCL::Utils;
 
 namespace
 {
-// アセットのキャッシュキー用に、パス文字列の表記ゆれ(区切り文字・大文字小文字)を吸収する。
-// Windowsのファイルアクセス自体は大小無視・スラッシュ混在OKだが、HashStringは
-// バイト単位の完全一致でしか同じ値を返さない。Sequencer(保存)とAnimGraph(参照)が
-// それぞれ別のダイアログ操作で得た文字列は、見た目が同じファイルでも
-// "Assets/Anims/Attack.json" と "Assets\Anims\Attack.json" のようにズレることがあり、
-// これがキャッシュ更新を素通りさせて「保存しても反映されない」不具合の主因になる。
-// ※ 実際のファイル読み込み(FileSystem::ReadAllText等)には元の filename をそのまま使い、
-//   ハッシュ計算のときだけこの正規化版を使う。
-std::string NormalizeAssetKey(const char *path)
-{
-    std::string s = path ? path : "";
-    for (char &c : s)
+    // アセットのキャッシュキー用に、パス文字列の表記ゆれ(区切り文字・大文字小文字)を吸収する。
+    // Windowsのファイルアクセス自体は大小無視・スラッシュ混在OKだが、HashStringは
+    // バイト単位の完全一致でしか同じ値を返さない。Sequencer(保存)とAnimGraph(参照)が
+    // それぞれ別のダイアログ操作で得た文字列は、見た目が同じファイルでも
+    // "Assets/Anims/Attack.json" と "Assets\Anims\Attack.json" のようにズレることがあり、
+    // これがキャッシュ更新を素通りさせて「保存しても反映されない」不具合の主因になる。
+    // ※ 実際のファイル読み込み(FileSystem::ReadAllText等)には元の filename をそのまま使い、
+    //   ハッシュ計算のときだけこの正規化版を使う。
+    std::string NormalizeAssetKey(const char *path)
     {
-        if (c == '\\') c = '/';
-        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        std::string s = path ? path : "";
+        for (char &c : s)
+        {
+            if (c == '\\') c = '/';
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+        return s;
     }
-    return s;
-}
 } // namespace
 
 void ResourceManager::ClearAll()
@@ -206,7 +206,7 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     // 1) キャッシュ命中確認（ロック下）
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        auto it = m_modelRegistry.find(hash);
+        auto                        it = m_modelRegistry.find(hash);
         if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
             return it->second;
     }
@@ -225,7 +225,7 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     // 4) レジストリ登録（ロック下・二重ロードは「先着を採用し自分は破棄」で解決）
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        auto it = m_modelRegistry.find(hash);
+        auto                        it = m_modelRegistry.find(hash);
         if (it != m_modelRegistry.end() && m_modelPool.Get(it->second) != nullptr)
         {
             // 別スレッドが先に同じモデルを載せていた → 自分の分は捨てて既存を使う
@@ -394,9 +394,9 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     //     Sequencer 保存は SortAndResync 済みだが、手書き/外部生成 JSON は
     //     未ソートの可能性があるため、ロード経路で必ず保証する。
     std::sort(seq->events.begin(), seq->events.end(),
-        [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
-            return a.startTime < b.startTime;
-        });
+              [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
+                  return a.startTime < b.startTime;
+              });
 
     // (2) HitBox イベントの tagHash をここで1回だけ計算してキャッシュする。
     //     CombatAnimationSyncSystem が毎フレーム HashString する必要をなくす。
@@ -446,9 +446,9 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
         //   Sequencerの保存パスとゲーム側が参照しているパス文字列がズレている（別ファイル
         //   として扱われている）可能性が高い。m_debugNameRegistry と見比べて確認できる。
         CCL_LOG_WARN(LogCategory::Core,
-            "ReloadAnimSequence: cache miss for '%s' (key='%s') -> 新規ロードとして扱います。"
-            "既存キャッシュに反映されない場合はパス表記のズレを疑ってください。",
-            filename, NormalizeAssetKey(filename).c_str());
+                     "ReloadAnimSequence: cache miss for '%s' (key='%s') -> 新規ロードとして扱います。"
+                     "既存キャッシュに反映されない場合はパス表記のズレを疑ってください。",
+                     filename, NormalizeAssetKey(filename).c_str());
         return LoadAnimSequence(filename);
     }
 
@@ -470,7 +470,7 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
     // ロード後処理（LoadAnimSequence と同一）
     std::sort(seq->events.begin(), seq->events.end(),
-        [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) { return a.startTime < b.startTime; });
+              [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) { return a.startTime < b.startTime; });
     for (auto &ev : seq->events)
     {
         if (ev.type == AnimEventType::HitBox && !ev.stringParam.empty())

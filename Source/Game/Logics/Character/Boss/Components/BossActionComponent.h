@@ -7,7 +7,6 @@
 #pragma once
 #include <SimpleMath.h>
 
-
 // 並び順がそのままインスペクタの列挙値になる。増やすときは末尾に足すこと
 // （途中に挿すと保存済みプレハブの値がずれる）。
 enum class BossActionState : uint8_t
@@ -19,7 +18,6 @@ enum class BossActionState : uint8_t
     JumpAttack, // 跳躍斬り。溜め→放物線で跳ぶ→着地硬直
     BackStep,   // 後方ステップ。被弾がかさんだら間合いを切る
 };
-
 
 struct BossActionComponent
 {
@@ -41,8 +39,8 @@ struct BossActionComponent
     float meleeTurnTime = 0.35f;
 
     // 突進斬り。溜めの間だけプレイヤーを追う（0 だと「見てから避ける」が成立しない）。
-    float dashWindupTime = 0.35f;  // 溜め [秒]
-    float dashDriveTime  = 0.35f;  // 踏み込み [秒]。到達距離 = chargeSpeed * この値
+    float dashWindupTime = 0.35f; // 溜め [秒]
+    float dashDriveTime  = 0.35f; // 踏み込み [秒]。到達距離 = chargeSpeed * この値
 
     // 跳躍斬り。溜め＋滞空の合計が着地の時刻になる。アニメの攻撃判定が滞空区間へ
     // 収まるようにすること（ずれると空中攻撃なのに着地後に斬る絵になる）。
@@ -69,7 +67,7 @@ struct BossActionComponent
     DirectX::SimpleMath::Vector3 moveDirection    = DirectX::SimpleMath::Vector3::Zero;
 
     BossActionState currentState = BossActionState::None;
-    float           actionTimer  = 0.0f;  // 技に入ってからの経過 [秒]。段の切り替えはこれと閾値だけ
+    float           actionTimer  = 0.0f; // 技に入ってからの経過 [秒]。段の切り替えはこれと閾値だけ
 
     // 技に入った瞬間に固定した進行方向。毎フレーム取り直すとホーミング攻撃になり
     // 原理的に避けられない。「進む向き」であって「見ている向き」ではない。

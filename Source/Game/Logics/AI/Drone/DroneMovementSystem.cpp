@@ -18,16 +18,18 @@ DirectX::SimpleMath::Vector3
 DroneMovementSystem::ShiverOffset(const DroneComponent &drone, float t, float amplitude) const
 {
     // 位相を機体ごとにずらす。揃っていると全機が同時に膨らんで「呼吸」に見える。
-    const float phase = t * m_shiver.frequency * DirectX::XM_2PI
-                      + drone.localIndex * kShiverPhaseStep * m_shiver.scatter;
+    const float phase = t * m_shiver.frequency * DirectX::XM_2PI + drone.localIndex * kShiverPhaseStep * m_shiver.scatter;
 
     const float v = std::sin(phase) * amplitude;
 
     switch (drone.localIndex % 3)
     {
-    case 0:  return {v, 0.0f, 0.0f};
-    case 1:  return {0.0f, v, 0.0f};
-    default: return {0.0f, 0.0f, v};
+    case 0:
+        return {v, 0.0f, 0.0f};
+    case 1:
+        return {0.0f, v, 0.0f};
+    default:
+        return {0.0f, 0.0f, v};
     }
 }
 
@@ -60,8 +62,8 @@ void DroneMovementSystem::Update(float rawDt)
     }
 
     ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
-                        const TimeStateComponent &time) {
-        float dt = time.localDt;  // 各自の時計。ヒットストップでピタッと止まる
+                           const TimeStateComponent &time) {
+        float dt = time.localDt; // 各自の時計。ヒットストップでピタッと止まる
 
         // 位相を進めて 2π で巻き戻す。放置すると単調増加して float の刻みが粗くなり、
         // 長時間プレイで震えが量子化する。
@@ -134,7 +136,7 @@ inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, 
         Vector3 lookDir = drone.targetLookDirection;
         lookDir.Normalize();
         const Quaternion targetRot = LookToRotation(lookDir, /*includePitch*/ true);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(kTurnMoveToTarget * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot, (std::min)(kTurnMoveToTarget * dt, 1.0f));
     }
 }
 
@@ -168,16 +170,14 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
         // 速度ではなく座標を、差分（今フレーム − 前フレーム）で動かす。速度に足すと
         // 振れ幅が「振幅 ÷ 角速度」まで縮んで指定値と見た目が一致せず、足しっぱなしに
         // すると座標へ溜まって群れごと流れていく。
-        trans.position = Vector3(trans.position)
-                       + ShiverOffset(drone, drone.windupTimer, amp)
-                       - ShiverOffset(drone, drone.windupTimer - dt, amp);
+        trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.windupTimer, amp) - ShiverOffset(drone, drone.windupTimer - dt, amp);
     }
 
     if (drone.targetLookDirection.LengthSquared() > 0.001f)
     {
         const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                           (std::min)(kTurnIdle * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnIdle * dt, 1.0f));
     }
 }
 
@@ -231,8 +231,8 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
             Vector3 lookDir = drone.targetLookDirection;
             lookDir.Normalize();
             const Quaternion targetRot = LookToRotation(lookDir, /*includePitch*/ true);
-            trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                               (std::min)(kTurnMoveToTarget * dt, 1.0f));
+            trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                           (std::min)(kTurnMoveToTarget * dt, 1.0f));
         }
         return;
     }
@@ -270,8 +270,8 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         drone.currentVelocity = drone.fireDirection * lunge;
 
         const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                           (std::min)(kTurnWindup * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnWindup * dt, 1.0f));
     }
     else
     {
@@ -279,8 +279,8 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         drone.currentVelocity = drone.fireDirection * (drone.moveSpeed * kChargeSpeedScale);
 
         const Quaternion targetRot = LookToRotation(drone.targetLookDirection, /*includePitch*/ false);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                           (std::min)(kTurnCharge * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnCharge * dt, 1.0f));
     }
 }
 
@@ -288,7 +288,7 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
 // 剛体追従にすると隊列が1ミリも歪まず「1枚の板が近づいてくる」絵になる。
 inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
 {
-    const float pGain = m_followGain * SlotLag(drone);  // 後方の機ほど弱める＝しなる
+    const float pGain = m_followGain * SlotLag(drone); // 後方の機ほど弱める＝しなる
 
     // 先渡しの速度 ＋ 目標からのずれの補正（バネ）。先渡しがあるぶんバネは小さくてよい。
     Vector3 displacement   = drone.targetPosition - trans.position;
@@ -311,8 +311,8 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     {
         look.Normalize();
         const Quaternion targetRot = LookToRotation(look, /*includePitch*/ true);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                           (std::min)(kTurnSoftFollow * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnSoftFollow * dt, 1.0f));
     }
 }
 
@@ -354,8 +354,8 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
     {
         look.Normalize();
         const Quaternion targetRot = LookToRotation(look, /*includePitch*/ true);
-        trans.rotation = Quaternion::Slerp(trans.rotation, targetRot,
-                                           (std::min)(kTurnReturning * dt, 1.0f));
+        trans.rotation             = Quaternion::Slerp(trans.rotation, targetRot,
+                                                       (std::min)(kTurnReturning * dt, 1.0f));
     }
 }
 

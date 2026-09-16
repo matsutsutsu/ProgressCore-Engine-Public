@@ -16,7 +16,7 @@ public:
     RenderDebugWindow() : EditorWindow("Render Debug", false) {}
 
 protected:
-    void DrawContents(EditorContext& context) override;
+    void DrawContents(EditorContext &context) override;
 
 private:
     RenderTargetVisualizer m_viz;

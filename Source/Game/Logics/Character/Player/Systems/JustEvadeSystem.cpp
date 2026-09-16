@@ -11,7 +11,7 @@
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Game/Logics/Combat/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）
-#include "Engine/Camera/CameraEvents.h" // FOVパンチ要求（カメラへの演出指示）
+#include "Engine/Camera/CameraEvents.h"          // FOVパンチ要求（カメラへの演出指示）
 #include "Engine/Time/TimeState.h"
 #include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
@@ -29,17 +29,15 @@ bool JustEvadeSystem::IsDroneHostile(const DroneComponent *drone) const
     return drone->currentState == DroneState::FireCharge;
 }
 
-
 // アニメーション掲示板へ書き込むトリガーのハッシュ
 static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade");
-
 
 void JustEvadeSystem::Initialize()
 {
     // EventBus から物理衝突の報告を購読する。
     // ここで判定まで済ませると処理が発行元(JoltCollisionEventSystem)のタスク上で走り、
     // 本システムが申告した Write 型がスケジューラから見えなくなる。積むだけに留める。
-    ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent& ev) {
+    ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent &ev) {
         m_pendingContacts.push_back(ev);
     });
 
@@ -58,7 +56,7 @@ void JustEvadeSystem::Initialize()
         {
             dash->isDashing               = false; // 回避ダッシュを終了して接近へ
             dash->isJustEvadeWindowActive = false;
-            dash->isInvincible            = true;  // 接近中もスロー中の群れをすり抜けられるよう無敵
+            dash->isInvincible            = true; // 接近中もスロー中の群れをすり抜けられるよう無敵
             dash->isApproaching           = true;
             dash->approachTimer           = dash->approachDuration;
         }
@@ -85,8 +83,6 @@ void JustEvadeSystem::Initialize()
         // TODO(任意): 音響（甲高いガラス音）や残像の追加はここに足す。
         // m_world->GetEventBus().Publish(SoundRequestEvent{"event:/SFX/JustEvade", ev.playerID});
     });
-
-
 }
 
 std::vector<CCL::ECS::TypeID> JustEvadeSystem::GetWriteTypes() const
@@ -184,7 +180,6 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
         return; // 攻撃判定を持たない相手にはジャスト回避を成立させない
     }
 
-
     // =====================================================================
     // 5. 判定成立
     // =====================================================================
@@ -202,7 +197,7 @@ void JustEvadeSystem::CheckJustEvade(EntityID playerCandidate, EntityID otherCan
     m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerCandidate, 130.0f});
 
     CCL_LOG_SUCCESS(LogCategory::Game, "JUST EVADE SUCCESS!! Player: %s",
-        CCL::EntityLabel(*m_world, playerCandidate).c_str());
+                    CCL::EntityLabel(*m_world, playerCandidate).c_str());
 }
 
 // 接触判定と同じ L05_Collision に置く。

@@ -8,8 +8,8 @@
 #include <string.h> // <cstring>よりもC++ではこれか標準文字列を推奨
 
 #ifdef ENABLE_EDITOR
-#include "Engine/Platform/Core/Dialog.h"     
-#include "Engine/Platform/Core/FileSystem.h" 
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include <json.hpp>
 #include <imgui.h>
 #endif
@@ -19,12 +19,12 @@ struct ComponentMeta<CameraDollyCartComponent>
 {
     CCL_META_USING_THIS(CameraDollyCartComponent)
 
-    static constexpr const char *displayName    = "Camera Dolly Cart (Rail)";
-    static constexpr const char *category       = CCL::Categories::Camera; // カテゴリを明示
-    static constexpr int         sortPriority   = 320; // カメラ群の並び順
+    static constexpr const char *displayName       = "Camera Dolly Cart (Rail)";
+    static constexpr const char *category          = CCL::Categories::Camera; // カテゴリを明示
+    static constexpr int         sortPriority      = 320;                     // カメラ群の並び順
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
     static bool CustomGui(CameraDollyCartComponent &comp, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
@@ -39,7 +39,7 @@ struct ComponentMeta<CameraDollyCartComponent>
         {
             comp.pathAsset = pathBuf;
             comp.loadedPath.reset();
-            comp.hasLoadError = false; 
+            comp.hasLoadError = false;
             changed           = true;
         }
 
@@ -65,7 +65,7 @@ struct ComponentMeta<CameraDollyCartComponent>
                 nlohmann::json j;
                 j["points"] = nlohmann::json::array();
                 j["points"].push_back({{"x", 0.0f}, {"y", 0.0f}, {"z", 0.0f}});
-                j["points"].push_back({{"x", 0.0f}, {"y", 0.0f}, {"z", 5.0f}}); 
+                j["points"].push_back({{"x", 0.0f}, {"y", 0.0f}, {"z", 5.0f}});
 
                 FileSystem::WriteAllText(relPath, j.dump(4));
 
@@ -87,7 +87,7 @@ struct ComponentMeta<CameraDollyCartComponent>
             changed |= ImGui::DragFloat("先読みオフセット(m)", &comp.lookAheadOffset, 0.1f, 0.01f, 10.0f);
         }
 
-        return changed; 
+        return changed;
     }
 #else
     static bool CustomGui(CameraDollyCartComponent &, unsigned long long, void *) { return false; }
@@ -97,11 +97,10 @@ struct ComponentMeta<CameraDollyCartComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(pathAsset, "軌道アセット", "Settings")
-            CFIELD(currentDistance, "現在の進行距離", "Playback")
-            CFIELD(moveSpeed, "移動速度", "Playback")
-            CFIELD(lookForward, "進行方向を向く", "Playback")
-            CFIELD(lookAheadOffset, "先読みオフセット", "Playback")
-        };
+                CFIELD(currentDistance, "現在の進行距離", "Playback")
+                    CFIELD(moveSpeed, "移動速度", "Playback")
+                        CFIELD(lookForward, "進行方向を向く", "Playback")
+                            CFIELD(lookAheadOffset, "先読みオフセット", "Playback")};
         return fields;
     }
 };

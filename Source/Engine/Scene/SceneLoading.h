@@ -20,8 +20,9 @@ class Sprite;       // 前方宣言（プログレスバーの単色矩形用）
 //   - 完了したら SceneManager::ChangeScene(m_nextScene) で本線へ。
 //     対象は SetReady() 済みなので再 Initialize されない。
 // ============================================================================
-class SceneLoading : public BaseScene {
-  private:
+class SceneLoading : public BaseScene
+{
+private:
     // 次に遷移するシーン（裏読み対象）
     Scene *m_nextScene = nullptr;
 
@@ -45,7 +46,7 @@ class SceneLoading : public BaseScene {
     // ロードが一瞬で終わった場合に黒を一拍だけ置くための最小間。
     static constexpr float kMinLoadTime = 0.15f;
 
-  public:
+public:
     // コンストラクタで次のシーンを受け取る
     SceneLoading(Scene *nextScene);
     virtual ~SceneLoading() override;
@@ -58,8 +59,8 @@ class SceneLoading : public BaseScene {
     void OnRenderUI() override;
     void OnDrawImGui() override;
 
-    CCL::ECS::World* GetWorld() override { return m_worldPtr; }
-    CCL::ECS::SystemManager* GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
+    CCL::ECS::World         *GetWorld() override { return m_worldPtr; }
+    CCL::ECS::SystemManager *GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
 
     float time = 0.0f;
 };

@@ -22,7 +22,7 @@ struct UITransformComponent;
 
 class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
 {
-  public:
+public:
     InputPromptSystem()
         : IfSystem("InputPromptSystem")
     {
@@ -31,7 +31,7 @@ class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
     void Update(float dt) override;
     void OnGui() override;
 
-  private:
+private:
     // 設定JSONの1行ぶん。
     struct ConfigRow
     {
@@ -67,5 +67,5 @@ class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
     float m_labelWidth  = 108.0f; // 行名の幅(px)
     float m_labelGap    = 10.0f;  // アイコンと行名の間隔(px)
     float m_textSize    = 28.0f;  // 行名の文字高(px)
-    float m_alpha       = 0.7f;  // 不透明度。常時表示なので控えめにする
+    float m_alpha       = 0.7f;   // 不透明度。常時表示なので控えめにする
 };

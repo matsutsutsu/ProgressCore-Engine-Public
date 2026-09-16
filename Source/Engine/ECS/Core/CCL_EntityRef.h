@@ -16,12 +16,10 @@
 
 #include "../Common/CCL_Types.h"
 
-
 namespace CCL::ECS
 {
     // 前方宣言（World の定義は不要）
     class World;
-
 
     /**
      * @brief エンティティの初期セットアップを宣言的に書くための軽量ラッパー。
@@ -44,7 +42,7 @@ namespace CCL::ECS
      */
     struct EntityRef
     {
-        World*   world;
+        World   *world;
         EntityID id;
 
         /**
@@ -55,7 +53,7 @@ namespace CCL::ECS
          * @note 実装は CCL_World.h の末尾。World::AddComponent を呼び出す。
          */
         template <typename T>
-        EntityRef& Set(T&& component);
+        EntityRef &Set(T &&component);
 
         /**
          * @brief 既存コンポーネントの中身を、ラムダ式で部分書き換えする。
@@ -70,8 +68,7 @@ namespace CCL::ECS
          * @note 実装は CCL_World.h の末尾。World::PatchComponent を呼び出す。
          */
         template <typename T, typename Func>
-        EntityRef& Patch(Func&& func);
-
+        EntityRef &Patch(Func &&func);
 
         // ------------------------------------------------------------
         // EntityID への暗黙変換 / 明示取得

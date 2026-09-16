@@ -6,10 +6,10 @@
 #include "Engine/UI/ECS/Components/UIAnimationComponent.h"
 
 class UIAnimationSystem : public CCL::ECS::IfSystem<UIAnimationSystem,
-                              CCL::ECS::Write<UITransformComponent>,
-                              CCL::ECS::Read<UIAnimationComponent>>
+                                                    CCL::ECS::Write<UITransformComponent>,
+                                                    CCL::ECS::Read<UIAnimationComponent>>
 {
-  public:
+public:
     UIAnimationSystem()
         : IfSystem("UIAnimationSystem")
     {

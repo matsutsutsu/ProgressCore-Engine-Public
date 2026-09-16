@@ -11,12 +11,12 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
-                                 CCL::ECS::Write<DroneComponent>>
+                                                       CCL::ECS::Write<DroneComponent>>
 {
     using Base = CCL::ECS::IfSystem<DroneFormationSystem, CCL::ECS::Write<DroneComponent>>;
 
-  public:
-    DroneFormationSystem() : IfSystem("DroneFormationSystem"){}
+public:
+    DroneFormationSystem() : IfSystem("DroneFormationSystem") {}
 
     void Initialize() override;
 
@@ -41,7 +41,7 @@ class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
 
     void Update(float dt) override;
 
-  private:
+private:
     /// ボス位置・プレイヤー位置など「場の情報」を組み立てる。
     /// 狙いの固定（下の m_lockedAimDir）を更新するので const ではない。
     CCL::AI::Formation::FormationContext MakeContext(float dt);

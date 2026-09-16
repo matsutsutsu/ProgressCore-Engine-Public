@@ -21,127 +21,143 @@ using CCL::AI::Formation::Data::DataDrivenFormation;
 #ifdef ENABLE_EDITOR
 namespace
 {
-// ---------------------------------------------------------------------------
-// 画面に出す言葉と、内部の値の対応表
-// ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+    // 画面に出す言葉と、内部の値の対応表
+    // ---------------------------------------------------------------------------
 
-// 形。内部では「列の軸・中央揃え・列の起点」の3項目だが、既存の全技は
-// この3通りのどれかに収まる。3項目を別々に出すと組み合わせを自分で考えることになり、
-// 何から始めればいいか分からなくなる。
-enum class ShapeKind
-{
-    WallSide,    // 壁：横に敷く（刃・縦割り）
-    WallDepth,   // 壁：前後に敷く（挟み込み2段）
-    Arm,         // 腕：前へ伸ばす（薙ぎ払い・挟み込み1段）
-};
-constexpr const char *kShapeNames[] = {
-    "壁：横に敷く", "壁：前後に敷く", "腕：前へ伸ばす"};
-
-// 動き。内部の「種類 × 軸」を、見たままの動作1つに畳んである。
-// 「Rotate の軸が Right」から「前へ倒れる」を頭の中で復元させない。
-struct MotionKind
-{
-    LayerType type;
-    AssetAxis axis;
-};
-constexpr MotionKind kMotions[] = {
-    {LayerType::Rotate, AssetAxis::Right},      // 前へ倒す
-    {LayerType::Rotate, AssetAxis::Up},         // 横へ振る
-    {LayerType::Rotate, AssetAxis::Forward},    // 横へ倒す
-    {LayerType::Translate, AssetAxis::Right},   // 横へ動かす
-    {LayerType::Translate, AssetAxis::Up},      // 上下に動かす
-    {LayerType::Translate, AssetAxis::Forward}, // 前後に動かす
-    {LayerType::Shiver, AssetAxis::Right},      // 横に震わせる
-    {LayerType::Shiver, AssetAxis::Up},         // 上下に震わせる
-    {LayerType::Shiver, AssetAxis::Forward},    // 前後に震わせる
-};
-constexpr const char *kMotionNames[] = {
-    "前へ倒す", "横へ振る", "横へ倒す",
-    "横へ動かす", "上下に動かす", "前後に動かす",
-    "横に震わせる（予告）", "上下に震わせる（予告）", "前後に震わせる（予告）"};
-constexpr int kMotionCount = static_cast<int>(std::size(kMotions));
-
-int MotionIndexOf(const FormationLayer &layer)
-{
-    for (int i = 0; i < kMotionCount; ++i)
-        if (kMotions[i].type == layer.type && kMotions[i].axis == layer.axis) return i;
-    return 0;
-}
-
-// 動き方。内部の「ずらす基準(None/Column/Row/Group) × 逆順」を1つの選択肢に畳む。
-// 2つの項目を見比べて頭の中で合成させない。
-struct OrderKind
-{
-    PhaseSource source;
-    bool        reverse;
-};
-constexpr OrderKind kOrders[] = {
-    {PhaseSource::None, false},
-    {PhaseSource::Column, false}, {PhaseSource::Column, true},
-    {PhaseSource::Row, false},    {PhaseSource::Row, true},
-    {PhaseSource::Group, false},  {PhaseSource::Group, true},
-};
-constexpr int kOrderCount = static_cast<int>(std::size(kOrders));
-
-// 列の並ぶ向きで言葉が変わる。横に敷いた壁の「列」は左右だが、
-// 前後に敷いた壁の「列」は手前と奥になる。
-const char *OrderName(int index, AssetAxis columnAxis)
-{
-    const bool depth = (columnAxis == AssetAxis::Forward);
-    switch (index)
+    // 形。内部では「列の軸・中央揃え・列の起点」の3項目だが、既存の全技は
+    // この3通りのどれかに収まる。3項目を別々に出すと組み合わせを自分で考えることになり、
+    // 何から始めればいいか分からなくなる。
+    enum class ShapeKind
     {
-    case 0:  return "全機いっせいに";
-    case 1:  return depth ? "手前から順に" : "左から順に";
-    case 2:  return depth ? "奥から順に"   : "右から順に";
-    case 3:  return "低いほうから順に";
-    case 4:  return "高いほうから順に";
-    case 5:  return "下の段から順に";
-    case 6:  return "上の段から順に";
-    default: return "?";
-    }
-}
+        WallSide,  // 壁：横に敷く（刃・縦割り）
+        WallDepth, // 壁：前後に敷く（挟み込み2段）
+        Arm,       // 腕：前へ伸ばす（薙ぎ払い・挟み込み1段）
+    };
+    constexpr const char *kShapeNames[] = {
+        "壁：横に敷く", "壁：前後に敷く", "腕：前へ伸ばす"};
 
-int OrderIndexOf(const FormationLayer &layer)
-{
-    for (int i = 0; i < kOrderCount; ++i)
-        if (kOrders[i].source == layer.phaseSource && kOrders[i].reverse == layer.phaseReverse)
-            return i;
-    return 0;
-}
-
-constexpr const char *kLookNames[] = {
-    "動きに合わせる", "プレイヤーのほうを向く", "内側を向く（左右で向かい合う）"};
-constexpr const char *kChargeNames[] = {
-    "向きを決めて直進する", "形を保ったまま動く", "バネで遅れて追いつく"};
-
-constexpr const char *kTemplateNames[] = {
-    "壁を作って倒す（縦割り系）",
-    "腕を伸ばして薙ぐ（横なぎ系）",
-    "左右から挟む（挟み込み系）",
-    "空から作る",
-};
-
-ShapeKind ShapeOf(const FormationLayout &layout)
-{
-    if (!layout.centerColumns) return ShapeKind::Arm;
-    return (layout.columnAxis == AssetAxis::Forward) ? ShapeKind::WallDepth : ShapeKind::WallSide;
-}
-
-void ApplyShape(FormationLayout &layout, ShapeKind kind)
-{
-    switch (kind)
+    // 動き。内部の「種類 × 軸」を、見たままの動作1つに畳んである。
+    // 「Rotate の軸が Right」から「前へ倒れる」を頭の中で復元させない。
+    struct MotionKind
     {
-    case ShapeKind::WallSide:
-        layout.columnAxis = AssetAxis::Right;  layout.centerColumns = true;  break;
-    case ShapeKind::WallDepth:
-        layout.columnAxis = AssetAxis::Forward; layout.centerColumns = true; break;
-    case ShapeKind::Arm:
-        layout.columnAxis = AssetAxis::Forward; layout.centerColumns = false;
-        // 腕は「ボスから離れた位置」から伸びる。0 のままだとボスに刺さる。
-        if (layout.baseA <= 0.0f) layout.baseA = 3.0f;
-        break;
+        LayerType type;
+        AssetAxis axis;
+    };
+    constexpr MotionKind kMotions[] = {
+        {LayerType::Rotate, AssetAxis::Right},      // 前へ倒す
+        {LayerType::Rotate, AssetAxis::Up},         // 横へ振る
+        {LayerType::Rotate, AssetAxis::Forward},    // 横へ倒す
+        {LayerType::Translate, AssetAxis::Right},   // 横へ動かす
+        {LayerType::Translate, AssetAxis::Up},      // 上下に動かす
+        {LayerType::Translate, AssetAxis::Forward}, // 前後に動かす
+        {LayerType::Shiver, AssetAxis::Right},      // 横に震わせる
+        {LayerType::Shiver, AssetAxis::Up},         // 上下に震わせる
+        {LayerType::Shiver, AssetAxis::Forward},    // 前後に震わせる
+    };
+    constexpr const char *kMotionNames[] = {
+        "前へ倒す", "横へ振る", "横へ倒す",
+        "横へ動かす", "上下に動かす", "前後に動かす",
+        "横に震わせる（予告）", "上下に震わせる（予告）", "前後に震わせる（予告）"};
+    constexpr int kMotionCount = static_cast<int>(std::size(kMotions));
+
+    int MotionIndexOf(const FormationLayer &layer)
+    {
+        for (int i = 0; i < kMotionCount; ++i)
+            if (kMotions[i].type == layer.type && kMotions[i].axis == layer.axis) return i;
+        return 0;
     }
-}
+
+    // 動き方。内部の「ずらす基準(None/Column/Row/Group) × 逆順」を1つの選択肢に畳む。
+    // 2つの項目を見比べて頭の中で合成させない。
+    struct OrderKind
+    {
+        PhaseSource source;
+        bool        reverse;
+    };
+    constexpr OrderKind kOrders[] = {
+        {PhaseSource::None, false},
+        {PhaseSource::Column, false},
+        {PhaseSource::Column, true},
+        {PhaseSource::Row, false},
+        {PhaseSource::Row, true},
+        {PhaseSource::Group, false},
+        {PhaseSource::Group, true},
+    };
+    constexpr int kOrderCount = static_cast<int>(std::size(kOrders));
+
+    // 列の並ぶ向きで言葉が変わる。横に敷いた壁の「列」は左右だが、
+    // 前後に敷いた壁の「列」は手前と奥になる。
+    const char *OrderName(int index, AssetAxis columnAxis)
+    {
+        const bool depth = (columnAxis == AssetAxis::Forward);
+        switch (index)
+        {
+        case 0:
+            return "全機いっせいに";
+        case 1:
+            return depth ? "手前から順に" : "左から順に";
+        case 2:
+            return depth ? "奥から順に" : "右から順に";
+        case 3:
+            return "低いほうから順に";
+        case 4:
+            return "高いほうから順に";
+        case 5:
+            return "下の段から順に";
+        case 6:
+            return "上の段から順に";
+        default:
+            return "?";
+        }
+    }
+
+    int OrderIndexOf(const FormationLayer &layer)
+    {
+        for (int i = 0; i < kOrderCount; ++i)
+            if (kOrders[i].source == layer.phaseSource && kOrders[i].reverse == layer.phaseReverse)
+                return i;
+        return 0;
+    }
+
+    constexpr const char *kLookNames[] = {
+        "動きに合わせる", "プレイヤーのほうを向く", "内側を向く（左右で向かい合う）"};
+    constexpr const char *kChargeNames[] = {
+        "向きを決めて直進する", "形を保ったまま動く", "バネで遅れて追いつく"};
+
+    constexpr const char *kTemplateNames[] = {
+        "壁を作って倒す（縦割り系）",
+        "腕を伸ばして薙ぐ（横なぎ系）",
+        "左右から挟む（挟み込み系）",
+        "空から作る",
+    };
+
+    ShapeKind ShapeOf(const FormationLayout &layout)
+    {
+        if (!layout.centerColumns) return ShapeKind::Arm;
+        return (layout.columnAxis == AssetAxis::Forward) ? ShapeKind::WallDepth : ShapeKind::WallSide;
+    }
+
+    void ApplyShape(FormationLayout &layout, ShapeKind kind)
+    {
+        switch (kind)
+        {
+        case ShapeKind::WallSide:
+            layout.columnAxis    = AssetAxis::Right;
+            layout.centerColumns = true;
+            break;
+        case ShapeKind::WallDepth:
+            layout.columnAxis    = AssetAxis::Forward;
+            layout.centerColumns = true;
+            break;
+        case ShapeKind::Arm:
+            layout.columnAxis    = AssetAxis::Forward;
+            layout.centerColumns = false;
+            // 腕は「ボスから離れた位置」から伸びる。0 のままだとボスに刺さる。
+            if (layout.baseA <= 0.0f) layout.baseA = 3.0f;
+            break;
+        }
+    }
 } // namespace
 #endif // ENABLE_EDITOR
 
@@ -267,7 +283,11 @@ bool FormationEditorWindow::CreateFromTemplate(int templateIndex, const char *fi
     uint8_t freeSlot = 0;
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
-        if (!registry.Has(static_cast<DroneFormationType>(slot))) { freeSlot = slot; break; }
+        if (!registry.Has(static_cast<DroneFormationType>(slot)))
+        {
+            freeSlot = slot;
+            break;
+        }
     }
     if (freeSlot == 0)
     {
@@ -288,22 +308,28 @@ bool FormationEditorWindow::CreateFromTemplate(int templateIndex, const char *fi
     case 0: // 壁を作って倒す
         ApplyShape(asset.layout, ShapeKind::WallSide);
         asset.layout.spacingA = asset.layout.spacingB = 2.5f;
-        asset.origin.forward = 5.0f;
-        asset.origin.up      = 2.0f;
-        asset.attackSeconds          = 0.4000f;
-        layer.type = LayerType::Rotate; layer.axis = AssetAxis::Right;
-        layer.from = 0.0f; layer.to = 109.0f;
+        asset.origin.forward                          = 5.0f;
+        asset.origin.up                               = 2.0f;
+        asset.attackSeconds                           = 0.4000f;
+        layer.type                                    = LayerType::Rotate;
+        layer.axis                                    = AssetAxis::Right;
+        layer.from                                    = 0.0f;
+        layer.to                                      = 109.0f;
         asset.layers.push_back(layer);
         break;
 
     case 1: // 腕を伸ばして薙ぐ
         ApplyShape(asset.layout, ShapeKind::Arm);
-        asset.assign.rows  = 3;
-        asset.layout.baseA = 4.0f; asset.layout.spacingA = 2.0f;
-        asset.layout.baseB = 1.5f; asset.layout.spacingB = 1.5f;
-        asset.attackSeconds        = 0.6250f;
-        layer.type = LayerType::Rotate; layer.axis = AssetAxis::Up;
-        layer.from = 100.0f; layer.to = -100.0f;
+        asset.assign.rows     = 3;
+        asset.layout.baseA    = 4.0f;
+        asset.layout.spacingA = 2.0f;
+        asset.layout.baseB    = 1.5f;
+        asset.layout.spacingB = 1.5f;
+        asset.attackSeconds   = 0.6250f;
+        layer.type            = LayerType::Rotate;
+        layer.axis            = AssetAxis::Up;
+        layer.from            = 100.0f;
+        layer.to              = -100.0f;
         asset.layers.push_back(layer);
         break;
 
@@ -312,16 +338,24 @@ bool FormationEditorWindow::CreateFromTemplate(int templateIndex, const char *fi
         asset.assign.sideGroups = 2;
         asset.assign.split      = AssetSplit::Interleaved;
         asset.assign.rows       = 2;
-        asset.layout.baseA = 3.0f; asset.layout.spacingA = 1.8f;
-        asset.layout.baseB = 0.8f; asset.layout.spacingB = 1.5f;
-        asset.attackSeconds        = 0.3333f;
-        asset.output.look  = LookMode::ToPlayer;
-        layer.type = LayerType::Rotate; layer.axis = AssetAxis::Up;
-        layer.from = 86.0f; layer.to = 0.0f; layer.mirror = true;
+        asset.layout.baseA      = 3.0f;
+        asset.layout.spacingA   = 1.8f;
+        asset.layout.baseB      = 0.8f;
+        asset.layout.spacingB   = 1.5f;
+        asset.attackSeconds     = 0.3333f;
+        asset.output.look       = LookMode::ToPlayer;
+        layer.type              = LayerType::Rotate;
+        layer.axis              = AssetAxis::Up;
+        layer.from              = 86.0f;
+        layer.to                = 0.0f;
+        layer.mirror            = true;
         asset.layers.push_back(layer);
-        layer = FormationLayer{};
-        layer.type = LayerType::Translate; layer.axis = AssetAxis::Right;
-        layer.from = 0.0f; layer.to = 0.8f; layer.mirror = true;
+        layer        = FormationLayer{};
+        layer.type   = LayerType::Translate;
+        layer.axis   = AssetAxis::Right;
+        layer.from   = 0.0f;
+        layer.to     = 0.8f;
+        layer.mirror = true;
         asset.layers.push_back(layer);
         break;
 
@@ -357,7 +391,11 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     uint8_t freeSlot = 0;
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
-        if (!registry.Has(static_cast<DroneFormationType>(slot))) { freeSlot = slot; break; }
+        if (!registry.Has(static_cast<DroneFormationType>(slot)))
+        {
+            freeSlot = slot;
+            break;
+        }
     }
     if (freeSlot == 0)
     {
@@ -365,10 +403,10 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
         return false;
     }
 
-    Asset copy       = *src;
-    copy.slot        = freeSlot; // 枠は技の識別子。複製で同じ番号を名乗らせない
-    copy.name        = fileName;
-    copy.sourcePath  = std::string("Assets/Formations/") + fileName + ".json";
+    Asset copy      = *src;
+    copy.slot       = freeSlot; // 枠は技の識別子。複製で同じ番号を名乗らせない
+    copy.name       = fileName;
+    copy.sourcePath = std::string("Assets/Formations/") + fileName + ".json";
 
     if (!FormationAssetIO::Save(copy.sourcePath, copy))
     {
@@ -418,7 +456,7 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
         const auto type = static_cast<DroneFormationType>(slot);
-        auto *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
+        auto      *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
         if (!data) continue;
 
         const bool selected = (type == m_slot);
@@ -696,11 +734,19 @@ void FormationEditorWindow::DrawMotionSection(Asset &asset)
         const bool open = ImGui::CollapsingHeader(header, ImGuiTreeNodeFlags_DefaultOpen);
 
         ImGui::SameLine(ImGui::GetContentRegionMax().x - 78.0f);
-        if (ImGui::SmallButton("^")) { moveIndex = i; moveDelta = -1; }
+        if (ImGui::SmallButton("^"))
+        {
+            moveIndex = i;
+            moveDelta = -1;
+        }
         Help("順番を上げる", "動きは上から順に重なる。順番を変えると別の技になる。\n"
                              "「倒してから上げる」と「上げてから倒す」は着地点が違う。");
         ImGui::SameLine();
-        if (ImGui::SmallButton("v")) { moveIndex = i; moveDelta = +1; }
+        if (ImGui::SmallButton("v"))
+        {
+            moveIndex = i;
+            moveDelta = +1;
+        }
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
         if (ImGui::SmallButton("x")) removeIndex = i;
@@ -938,8 +984,10 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
     bool staged = m_staged;
     if (ImGui::Checkbox("実機に出す", &staged))
     {
-        if (staged) Stage(context);
-        else        Unstage(context);
+        if (staged)
+            Stage(context);
+        else
+            Unstage(context);
     }
     Help("実機に出す",
          "編集中の陣形をその場でドローンに組ませる。同時に4つを行う。\n"
@@ -967,7 +1015,11 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
 
     if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(70, 0))) m_playing = !m_playing;
     ImGui::SameLine();
-    if (ImGui::Button("0 に戻す", ImVec2(80, 0))) { m_progress = 0.0f; m_playing = false; }
+    if (ImGui::Button("0 に戻す", ImVec2(80, 0)))
+    {
+        m_progress = 0.0f;
+        m_playing  = false;
+    }
     ImGui::EndDisabled();
 
     ImGui::Spacing();
@@ -976,7 +1028,7 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
     if (const Asset *asset = CurrentAsset())
     {
         const int total = CountDrones(context);
-        int cols = 1, rows = 1;
+        int       cols = 1, rows = 1;
         DataDrivenFormation::GridSize(*asset, total, cols, rows);
 
         ImGui::Text("出ている機数 %d", total);

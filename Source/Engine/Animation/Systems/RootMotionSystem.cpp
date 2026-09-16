@@ -8,23 +8,23 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-// ルートモーションの出力を「使っていない」状態へ倒す。
-//
-// このシステムは離脱経路が多く、経路ごとに違うフィールドを消していたため
-// 「速度だけ 0 が残る」「フラグだけ立ったまま古い速度が使われる」が起きていた。
-// 消すべきものを1箇所にまとめ、どの経路からも同じ状態で抜けるようにする。
-// overrideSpeed は書かない（読み手が既定へ戻すため、書かない＝上書きしない）。
-void ClearRootMotionOutput(CharacterMovementComponent &movement)
-{
-    movement.isRootMotionActive = false;
-    movement.rootMotionVelocity = Vector3::Zero;
-}
+    // ルートモーションの出力を「使っていない」状態へ倒す。
+    //
+    // このシステムは離脱経路が多く、経路ごとに違うフィールドを消していたため
+    // 「速度だけ 0 が残る」「フラグだけ立ったまま古い速度が使われる」が起きていた。
+    // 消すべきものを1箇所にまとめ、どの経路からも同じ状態で抜けるようにする。
+    // overrideSpeed は書かない（読み手が既定へ戻すため、書かない＝上書きしない）。
+    void ClearRootMotionOutput(CharacterMovementComponent &movement)
+    {
+        movement.isRootMotionActive = false;
+        movement.rootMotionVelocity = Vector3::Zero;
+    }
 } // namespace
 
 void RootMotionSystem::Update(float /*rawDt*/)
 {
     ForEach([&](RootMotionComponent             &rm,
-                CharacterMovementComponent &movement,
+                CharacterMovementComponent      &movement,
                 const AnimatorComponent         &animator,
                 const AnimStateMachineComponent &fsm,
                 const TransformComponent        &trans,
@@ -147,9 +147,8 @@ void RootMotionSystem::Update(float /*rawDt*/)
             movement.desiredVelocity    = forward;
             movement.isRootMotionActive = true;
             movement.rootMotionVelocity = forward * speed; // 負値=後退もこの1本で表現される
-            return; // ボーン抽出はスキップ
+            return;                                        // ボーン抽出はスキップ
         }
-
 
         // ========================================================
         // 抽出ロジックの共通化 (Lambda)

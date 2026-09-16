@@ -24,12 +24,12 @@
 
 class PlayerAnimParamSyncSystem
     : public CCL::ECS::IfSystem<PlayerAnimParamSyncSystem,
-          CCL::ECS::Read<DashComponent>,
-          CCL::ECS::Read<PlayerComponent>,
-          CCL::ECS::Read<CharacterMovementComponent>,
-          CCL::ECS::Write<AnimParametersComponent>>
+                                CCL::ECS::Read<DashComponent>,
+                                CCL::ECS::Read<PlayerComponent>,
+                                CCL::ECS::Read<CharacterMovementComponent>,
+                                CCL::ECS::Write<AnimParametersComponent>>
 {
-  public:
+public:
     PlayerAnimParamSyncSystem()
         : IfSystem("PlayerAnimParamSyncSystem")
     {

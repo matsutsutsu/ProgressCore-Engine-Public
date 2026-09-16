@@ -12,12 +12,12 @@ class ModelConstantBuffers;
 
 // 描画に必要なコンポーネント (TransformComponent, ModelComponent) をフィルタするシステム
 class ModelRenderSystem : public CCL::ECS::IfSystem<ModelRenderSystem,
-                              CCL::ECS::Read<TransformComponent>,
-                              CCL::ECS::Read<ModelComponent>,
-                              CCL::ECS::Read<MaterialComponent>,
-                              CCL::ECS::Read<VisibilityComponent>>
+                                                    CCL::ECS::Read<TransformComponent>,
+                                                    CCL::ECS::Read<ModelComponent>,
+                                                    CCL::ECS::Read<MaterialComponent>,
+                                                    CCL::ECS::Read<VisibilityComponent>>
 {
-  public:
+public:
     ModelRenderSystem();
     virtual ~ModelRenderSystem() = default;
 

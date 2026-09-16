@@ -11,13 +11,11 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-
 class AIDebugOverlaySystem : public CCL::ECS::IfSystem<
-    AIDebugOverlaySystem,
-    CCL::ECS::Read<BossPhaseComponent>,
-    CCL::ECS::Read<BehaviorTreeComponent>,
-    CCL::ECS::Read<TransformComponent>
->
+                                 AIDebugOverlaySystem,
+                                 CCL::ECS::Read<BossPhaseComponent>,
+                                 CCL::ECS::Read<BehaviorTreeComponent>,
+                                 CCL::ECS::Read<TransformComponent>>
 {
 public:
     AIDebugOverlaySystem() : IfSystem("AIDebugOverlaySystem") {}
@@ -30,8 +28,8 @@ public:
     void OnGui() override;
 
 private:
-    bool  m_enabled    = true;
+    bool m_enabled = true;
     //bool  m_enabled    = false; d
-    float m_fontSize   = 25.0f; 
+    float m_fontSize    = 25.0f;
     float m_headOffsetY = 15.0f; // キャラ原点からの頭上ワールドYオフセット（本体に被らせないよう調整）
 };

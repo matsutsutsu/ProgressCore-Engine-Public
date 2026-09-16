@@ -3,8 +3,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-
-
 using namespace CCL::ECS;
 
 // =======================================================================
@@ -17,20 +15,24 @@ void ModelCullingSetupSystem::Update(float dt)
     std::vector<EntityID> needsVisibility;
 
     // 1. 足りないコンポーネントを【個別に】調査する
-    ForEachWithID([&](EntityID id, const ModelComponent& model) {
-        if (!m_world->HasComponent<BoundingBoxComponent>(id)) {
+    ForEachWithID([&](EntityID id, const ModelComponent &model) {
+        if (!m_world->HasComponent<BoundingBoxComponent>(id))
+        {
             needsBoundingBox.push_back(id);
         }
-        if (!m_world->HasComponent<VisibilityComponent>(id)) {
+        if (!m_world->HasComponent<VisibilityComponent>(id))
+        {
             needsVisibility.push_back(id);
         }
-        });
+    });
 
     // 2. 足りないものだけを【個別に】付与する
-    for (auto id : needsBoundingBox) {
+    for (auto id : needsBoundingBox)
+    {
         m_world->AddComponent<BoundingBoxComponent>(id);
     }
-    for (auto id : needsVisibility) {
+    for (auto id : needsVisibility)
+    {
         m_world->AddComponent<VisibilityComponent>(id);
     }
 }
@@ -45,20 +47,24 @@ void PrimitiveCullingSetupSystem::Update(float dt)
     std::vector<EntityID> needsVisibility;
 
     // 1. 足りないコンポーネントを【個別に】調査する
-    ForEachWithID([&](EntityID id, const PrimitiveComponent& prim) {
-        if (!m_world->HasComponent<BoundingBoxComponent>(id)) {
+    ForEachWithID([&](EntityID id, const PrimitiveComponent &prim) {
+        if (!m_world->HasComponent<BoundingBoxComponent>(id))
+        {
             needsBoundingBox.push_back(id);
         }
-        if (!m_world->HasComponent<VisibilityComponent>(id)) {
+        if (!m_world->HasComponent<VisibilityComponent>(id))
+        {
             needsVisibility.push_back(id);
         }
-        });
+    });
 
     // 2. 足りないものだけを【個別に】付与する
-    for (auto id : needsBoundingBox) {
+    for (auto id : needsBoundingBox)
+    {
         m_world->AddComponent<BoundingBoxComponent>(id);
     }
-    for (auto id : needsVisibility) {
+    for (auto id : needsVisibility)
+    {
         m_world->AddComponent<VisibilityComponent>(id);
     }
 }

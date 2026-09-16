@@ -136,7 +136,6 @@ void AssetBrowser::LoadDirectory(const fs::path &dirPath, AssetNode &node)
     });
 }
 
-
 AssetBrowser::AssetNode *AssetBrowser::FindNodeByPath(AssetNode &node, const fs::path &path)
 {
     if (node.path == path) return &node;

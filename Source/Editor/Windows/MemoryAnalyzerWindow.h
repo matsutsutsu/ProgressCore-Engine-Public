@@ -16,21 +16,22 @@ public:
 
 protected:
     // エディタマネージャーから毎フレーム呼ばれる描画関数
-    void DrawContents(EditorContext& context) override;
+    void DrawContents(EditorContext &context) override;
 
 private:
     // 毎フレームの集計負荷をゼロにするためのキャッシュ構造体
-    struct CachedAssetInfo {
+    struct CachedAssetInfo
+    {
         std::string path;
-        size_t sizeBytes = 0;
-        uint32_t width = 0;
-        uint32_t height = 0;
+        size_t      sizeBytes = 0;
+        uint32_t    width     = 0;
+        uint32_t    height    = 0;
     };
 
     // UI側のキャッシュデータ
     std::vector<CachedAssetInfo> m_cachedTextures;
-    size_t m_cachedTotalVram = 0;
-    float  m_updateTimer = 0.0f;
+    size_t                       m_cachedTotalVram = 0;
+    float                        m_updateTimer     = 0.0f;
 
     // VRAM予算（例として2.0GBに設定。プロジェクトの規模に応じて調整可能）
     const size_t VRAM_BUDGET_BYTES = 2ULL * 1024 * 1024 * 1024;

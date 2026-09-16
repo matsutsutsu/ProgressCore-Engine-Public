@@ -7,7 +7,7 @@
 // 座標(Transform)を持っているが、時間(TimeState)を持たないエンティティに
 // 自動的に TimeState を付与し、エラーを防ぐフェイルセーフシステム
 class TimeScaleSetupSystem : public CCL::ECS::IfSystem<TimeScaleSetupSystem,
-    CCL::ECS::Read<TransformComponent>>
+                                                       CCL::ECS::Read<TransformComponent>>
 {
 public:
     TimeScaleSetupSystem() : IfSystem("TimeScaleSetupSystem")

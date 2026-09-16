@@ -31,8 +31,8 @@ void UIButtonSystem::Update(float /*dt*/)
         // hover/focus で拡大演出（UIAnimationComponent があれば目標スケールを設定）。
         if (auto *anim = m_world->GetComponent<UIAnimationComponent>(id))
         {
-            const bool hot     = inter.interactable && (inter.isHovered || inter.isFocused);
-            anim->targetScale  = hot ? btn.hoverScale : 1.0f;
+            const bool hot    = inter.interactable && (inter.isHovered || inter.isFocused);
+            anim->targetScale = hot ? btn.hoverScale : 1.0f;
         }
 
         // クリック成立でイベント発火（ゲーム側がハッシュで分岐）
@@ -44,7 +44,7 @@ void UIButtonSystem::Update(float /*dt*/)
             m_world->GetEventBus().Publish(UIButtonClickedEvent{id, hash});
 
             CCL_LOG_INFO(LogCategory::Game, "[UIButton] clicked %s action='%s'",
-                CCL::EntityLabel(*m_world, id).c_str(), btn.onClickAction.c_str());
+                         CCL::EntityLabel(*m_world, id).c_str(), btn.onClickAction.c_str());
         }
     });
 }

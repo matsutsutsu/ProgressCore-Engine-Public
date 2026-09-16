@@ -13,7 +13,7 @@ namespace
 {
     // スパークのバーストエミッタ・プレハブ
     const char *kHitSparkPrefab = "Assets/Prefabs/Particles/VFX_HitSpark";
-} 
+} // namespace
 
 void HitEffectSystem::Initialize()
 {

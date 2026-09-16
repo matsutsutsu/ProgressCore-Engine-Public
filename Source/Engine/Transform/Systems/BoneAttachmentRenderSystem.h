@@ -14,19 +14,20 @@
  *       ModelRenderSystem(R08)より前に実行すること。
  */
 class BoneAttachmentRenderSystem : public CCL::ECS::IfSystem<BoneAttachmentRenderSystem,
-    CCL::ECS::Write<TransformComponent>,
-    CCL::ECS::Read<BoneAttachmentComponent>> {
+                                                             CCL::ECS::Write<TransformComponent>,
+                                                             CCL::ECS::Read<BoneAttachmentComponent>>
+{
 public:
     BoneAttachmentRenderSystem() : IfSystem("BoneAttachmentRenderSystem") {}
     void Update(float dt) override;
 
 private:
     // 1つのattach先の描画用worldを、親の補間済みworldとボーンglobalから確定する。
-    void ResolveRenderAttachment(CCL::ECS::EntityID id, TransformComponent& trans, const BoneAttachmentComponent& attach);
+    void ResolveRenderAttachment(CCL::ECS::EntityID id, TransformComponent &trans, const BoneAttachmentComponent &attach);
 
     // attach先のローカル小階層へ描画用worldを再伝播する。
-    void PropagateRenderSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4& parentRenderWorld);
+    void PropagateRenderSubtree(CCL::ECS::EntityID firstChild, const DirectX::XMFLOAT4X4 &parentRenderWorld);
 
     // 当該エンティティが Model を持つなら、確定した描画用 world でノード行列を焼き直す。
-    void BakeModelIfPresent(CCL::ECS::EntityID id, const DirectX::XMFLOAT4X4& world);
+    void BakeModelIfPresent(CCL::ECS::EntityID id, const DirectX::XMFLOAT4X4 &world);
 };

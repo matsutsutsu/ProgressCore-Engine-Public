@@ -14,7 +14,6 @@
 
 #include <new> // placement new
 
-
 namespace CCL::ECS
 {
     // ------------------------------------------------------------------
@@ -59,7 +58,7 @@ namespace CCL::ECS
          * @brief 登録済みの破棄関数を実行する。
          * @param dataPtr 破棄したいオブジェクトへの生ポインタ
          */
-        void Destruct(void* dataPtr) const
+        void Destruct(void *dataPtr) const
         {
             if (destructFunc) destructFunc(dataPtr);
         }
@@ -72,10 +71,10 @@ namespace CCL::ECS
          * delete ではなく明示的なデストラクタ呼び出しが必要です。
          */
         template <class T>
-        static void CallDestructorFromPtr(void* dataPtr)
+        static void CallDestructorFromPtr(void *dataPtr)
         {
             // void* → T* に復元してデストラクタを呼ぶ
-            if (dataPtr) reinterpret_cast<T*>(dataPtr)->~T();
+            if (dataPtr) reinterpret_cast<T *>(dataPtr)->~T();
         }
 
     private:
@@ -83,9 +82,8 @@ namespace CCL::ECS
         //   void  (*destructFunc)(void*) = nullptr;
         //    └戻値  └ポインタ名         └引数リスト
         // → 「void* を1つ受け取って void を返す関数」を指すポインタ
-        void (*destructFunc)(void*) = nullptr;
+        void (*destructFunc)(void *) = nullptr;
     };
-
 
     // ------------------------------------------------------------------
     // Copier
@@ -117,7 +115,7 @@ namespace CCL::ECS
          * @param dst コピー先の未初期化メモリ
          * @param src コピー元のオブジェクト
          */
-        void Copy(void* dst, const void* src) const
+        void Copy(void *dst, const void *src) const
         {
             if (copyFunc) copyFunc(dst, src);
         }
@@ -131,12 +129,12 @@ namespace CCL::ECS
          *    └─ placement new: 既に確保済みのメモリ位置に直接構築
          */
         template <class T>
-        static void CallCopyFromPtr(void* dst, const void* src)
+        static void CallCopyFromPtr(void *dst, const void *src)
         {
-            new (dst) T(*reinterpret_cast<const T*>(src));
+            new (dst) T(*reinterpret_cast<const T *>(src));
         }
 
-        void (*copyFunc)(void*, const void*) = nullptr;
+        void (*copyFunc)(void *, const void *) = nullptr;
     };
 
 } // namespace CCL::ECS

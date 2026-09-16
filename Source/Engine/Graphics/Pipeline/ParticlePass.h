@@ -5,6 +5,6 @@
 class ParticlePass : public IRenderPass
 {
 public:
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "ParticlePass"; }
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "ParticlePass"; }
 };

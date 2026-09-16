@@ -21,20 +21,22 @@
 //      SetExclude で Chunk 単位から丸ごと除外する（ループ内の毎エンティティ判定を撤廃）。
 // ===================================================================================
 
-
 // 1. 物理の時間を進めるシステム
-class JoltStepSystem : public CCL::ECS::IfSystem<JoltStepSystem> {
-  public:
+class JoltStepSystem : public CCL::ECS::IfSystem<JoltStepSystem>
+{
+public:
     JoltStepSystem() : IfSystem("JoltStepSystem") {}
     void Update(float dt) override;
 };
 
 // 2. 計算結果をECSのTransformに同期するシステム
 class JoltPullSystem : public CCL::ECS::IfSystem<JoltPullSystem,
-                           CCL::ECS::Write<TransformComponent>,
-                           CCL::ECS::Read<JoltHandleComponent>> {
-  public:
-    JoltPullSystem() : IfSystem("JoltPullSystem") {
+                                                 CCL::ECS::Write<TransformComponent>,
+                                                 CCL::ECS::Read<JoltHandleComponent>>
+{
+public:
+    JoltPullSystem() : IfSystem("JoltPullSystem")
+    {
         // キャラクターは CharacterUpdateSystem が既に正しい位置に同期している。
         // ここで Pull すると競合してカクつくため、Chunk ごと対象から外す。
         SetExclude<JoltCharacterHandleComponent>();

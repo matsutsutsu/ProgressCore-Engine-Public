@@ -12,7 +12,7 @@
 
 class TextRenderer
 {
-  public:
+public:
     TextRenderer();
     ~TextRenderer();
 
@@ -22,14 +22,14 @@ class TextRenderer
 
     // 文字列を (x,y) 左上基準・指定ピクセル高で描画。
     void DrawText(ID3D11DeviceContext *dc, const std::string &text,
-        float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color);
+                  float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color);
 
     // 文字列の描画幅(px)を計算（レイアウト用）。
     float MeasureWidth(const std::string &text, float pixelSize) const;
     // 1行の高さ(px)。
     float LineHeight(float pixelSize) const;
 
-  private:
+private:
     struct Impl;
     std::unique_ptr<Impl> m_impl;
 };

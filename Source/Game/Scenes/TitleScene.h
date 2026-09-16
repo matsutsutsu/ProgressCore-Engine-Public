@@ -8,10 +8,10 @@
 
 class TitleScene : public BaseScene
 {
-  public:
+public:
     void Initialize() override; // 共通初期化＋タイトル用レベルの読み込み
 
-  protected:
+protected:
     // BaseScene::Initialize から呼ばれる拡張ポイント。ここで登録するシステムを絞る。
     void RegisterSystems() override;
 };

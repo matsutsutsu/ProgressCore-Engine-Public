@@ -16,18 +16,19 @@
 //   ※ システムの処理負荷計測は Tracy と System Manager ウィンドウに集約したため、
 //      当ウィンドウからは Profiler / Pending Ops を撤去した。
 // =========================================================
-class ECSDebugWindow : public EditorWindow {
+class ECSDebugWindow : public EditorWindow
+{
 public:
     ECSDebugWindow();
 
 protected:
-    void DrawContents(EditorContext& context) override;
+    void DrawContents(EditorContext &context) override;
 
 private:
     // 各タブの描画処理
-    void DrawMemoryTab(CCL::ECS::World* world);
-    void DrawExecutionGraphTab(CCL::ECS::SystemManager* systemManager);
+    void DrawMemoryTab(CCL::ECS::World *world);
+    void DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManager);
 
     // 型IDから名前を取得するヘルパー
-    const char* GetFriendlyTypeName(uint32_t id);
+    const char *GetFriendlyTypeName(uint32_t id);
 };

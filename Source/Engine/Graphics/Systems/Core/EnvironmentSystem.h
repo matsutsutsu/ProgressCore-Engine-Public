@@ -33,7 +33,7 @@ public:
     void Initialize() override;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
-    void Update(float dt) override;
+    void                          Update(float dt) override;
 
     /**
      * @brief フォグ・IBL・ノイズを GPU にバインドし、CbScene も pipeline にバインドする。
@@ -42,10 +42,9 @@ public:
      * @note  CbScene の内容更新（UpdateSubresource）は行わない。
      *        Graphics::Update() で更新済みのバッファをそのままバインドするだけ。
      */
-    void BindGlobalResources(ID3D11DeviceContext* dc, const RenderServices& s);
+    void BindGlobalResources(ID3D11DeviceContext *dc, const RenderServices &s);
 
 private:
-
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_fogConstantBuffer;
 
     // グローバルテクスチャ（既定＝SkyboxComponent 未設定時のフォールバック）

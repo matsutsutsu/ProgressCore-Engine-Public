@@ -11,30 +11,30 @@ struct GPUParticleBufferSet;
 // パーティクルのシミュレーションを行うシステム
 // SystemPriority::Render グループで実行推奨 (描画前)
 class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSystem,
-                                    CCL::ECS::Write<GPUParticleComponent>,
-                                    CCL::ECS::Read<TransformComponent>,
-                                    CCL::ECS::Read<TimeStateComponent>> {
-  public:
+                                                          CCL::ECS::Write<GPUParticleComponent>,
+                                                          CCL::ECS::Read<TransformComponent>,
+                                                          CCL::ECS::Read<TimeStateComponent>>
+{
+public:
     GPUParticleUpdateSystem() : IfSystem("GPUParticleUpdateSystem") {}
-    ~GPUParticleUpdateSystem();   // unique_ptr<前方宣言型> のため .cpp で = default
+    ~GPUParticleUpdateSystem(); // unique_ptr<前方宣言型> のため .cpp で = default
 
     // CS管理クラス・サンプラー・ノイズテクスチャを用意する。
     void Initialize() override;
 
     void Update(float dt) override;
 
-  private:
-
+private:
     // 「そのフレームの、効果全体で共通の値」。
     // time や前フレーム姿勢はエンティティ単位の値なので、エミッタのループに
     // 入る前に1回だけ確定させ、各エミッタへ読み取り専用で配る。
     // （time をループ内で進めるとエミッタ数ぶん多重に加算されてしまう）
     struct EffectFrame
     {
-        float           time    = 0.0f;                  // 累積時間（加算済みの値）
-        float           dt      = 0.0f;                  // このフレームの経過秒
-        GpuData::float3 prevPos = { 0.0f, 0.0f, 0.0f };  // 前フレームのワールド座標
-        GpuData::float4 prevRot = { 0.0f, 0.0f, 0.0f, 1.0f };
+        float           time    = 0.0f;               // 累積時間（加算済みの値）
+        float           dt      = 0.0f;               // このフレームの経過秒
+        GpuData::float3 prevPos = {0.0f, 0.0f, 0.0f}; // 前フレームのワールド座標
+        GpuData::float4 prevRot = {0.0f, 0.0f, 0.0f, 1.0f};
     };
 
     // エミッタ実体に一意な乱数種を発行する（0 は「未割り当て」なので返さない）。
@@ -44,23 +44,22 @@ class GPUParticleUpdateSystem : public CCL::ECS::IfSystem<GPUParticleUpdateSyste
     GpuData::uint NextInstanceSeed();
 
     // StructuredBuffer / UAV / SRV / 定数バッファ一式を作り直す（重い処理）。
-    void RebuildParticleBuffer(ParticleEmitter& emitter);
+    void RebuildParticleBuffer(ParticleEmitter &emitter);
 
-    void CreateNoiseTexture(ID3D11Device* device);
+    void CreateNoiseTexture(ID3D11Device *device);
 
     // 1エミッタ分の初期化CSをDispatch。終了後 needsGpuInit を false にする。
-    void DispatchInitCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
-        ParticleEmitter& emitter, const TransformComponent& transform,
-        GPUParticleBufferSet* buffers, const EffectFrame& frame);
+    void DispatchInitCS(ID3D11DeviceContext *dc, ParticleComputeShader *cs,
+                        ParticleEmitter &emitter, const TransformComponent &transform,
+                        GPUParticleBufferSet *buffers, const EffectFrame &frame);
 
     // 1エミッタ分の更新CSをDispatch。CB更新・ランプ/ノイズ/サンプラーをバインド。
-    void DispatchUpdateCS(ID3D11DeviceContext* dc, ParticleComputeShader* cs,
-        ParticleEmitter& emitter, const TransformComponent& transform,
-        GPUParticleBufferSet* buffers, const EffectFrame& frame);
+    void DispatchUpdateCS(ID3D11DeviceContext *dc, ParticleComputeShader *cs,
+                          ParticleEmitter &emitter, const TransformComponent &transform,
+                          GPUParticleBufferSet *buffers, const EffectFrame &frame);
 
 private:
-
-    ID3D11Device* m_device = nullptr;
+    ID3D11Device *m_device = nullptr;
 
     // 次に発行する乱数種。0 は「未割り当て」の意味に使うので 1 から始める。
     GpuData::uint m_nextInstanceSeed = 1;
@@ -70,6 +69,4 @@ private:
     Microsoft::WRL::ComPtr<ID3D11SamplerState>       m_sampler;
     Microsoft::WRL::ComPtr<ID3D11Texture3D>          m_noiseTexture;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_noiseSRV;
-
-
 };

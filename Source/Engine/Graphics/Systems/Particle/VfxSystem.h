@@ -36,7 +36,7 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
                                             CCL::ECS::Write<GPUParticleComponent>,
                                             CCL::ECS::Read<TimeStateComponent>>
 {
-  public:
+public:
     VFXSystem()
         : IfSystem("VFXSystem")
     {
@@ -63,7 +63,7 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
     // 既に破棄待ちのVFXに対しては何もしない（毎フレーム呼ばれても寿命が延びない）。
     void Stop(CCL::ECS::EntityID handle);
 
-  private:
+private:
     // 破棄待ちのVFX1件（EntityIDと残り時間）。
     struct ActiveVFX
     {
@@ -89,9 +89,9 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
 // 呼び出し側向けの入口。World を渡すだけで使える。
 namespace VFX
 {
-// 指定位置にVFXを1つ出す。実体は VFXSystem::Play
-CCL::ECS::EntityID Play(CCL::ECS::World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos);
+    // 指定位置にVFXを1つ出す。実体は VFXSystem::Play
+    CCL::ECS::EntityID Play(CCL::ECS::World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos);
 
-// 再生中のVFXを止める。実体は VFXSystem::Stop
-void Stop(CCL::ECS::World &world, CCL::ECS::EntityID handle);
+    // 再生中のVFXを止める。実体は VFXSystem::Stop
+    void Stop(CCL::ECS::World &world, CCL::ECS::EntityID handle);
 } // namespace VFX

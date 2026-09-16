@@ -8,11 +8,11 @@ using namespace JPH;
 BPLayerInterfaceImpl::BPLayerInterfaceImpl()
 {
     // 「ObjectLayer の X」を持った奴を、どの「BroadPhase バケツ」に入れるかの対応表
-    mObjectToBroadPhase[PhysicsLayers::NON_MOVING]    = BroadPhaseLayers::NON_MOVING;
-    mObjectToBroadPhase[PhysicsLayers::PLAYER]        = BroadPhaseLayers::MOVING;
-    mObjectToBroadPhase[PhysicsLayers::BOSS]          = BroadPhaseLayers::MOVING; // ボスも動くキャラ扱い
-    mObjectToBroadPhase[PhysicsLayers::PLAYER_ATTACK] = BroadPhaseLayers::MOVING; // 攻撃判定も動くもの側
-    mObjectToBroadPhase[PhysicsLayers::BOSS_ATTACK]   = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::NON_MOVING]     = BroadPhaseLayers::NON_MOVING;
+    mObjectToBroadPhase[PhysicsLayers::PLAYER]         = BroadPhaseLayers::MOVING;
+    mObjectToBroadPhase[PhysicsLayers::BOSS]           = BroadPhaseLayers::MOVING; // ボスも動くキャラ扱い
+    mObjectToBroadPhase[PhysicsLayers::PLAYER_ATTACK]  = BroadPhaseLayers::MOVING; // 攻撃判定も動くもの側
+    mObjectToBroadPhase[PhysicsLayers::BOSS_ATTACK]    = BroadPhaseLayers::MOVING;
     mObjectToBroadPhase[PhysicsLayers::INVISIBLE_WALL] = BroadPhaseLayers::NON_MOVING; // 見えない壁も静止物バケツ
 }
 
@@ -89,17 +89,11 @@ bool ObjectLayerPairFilterImpl::ShouldCollide(ObjectLayer inObject1, ObjectLayer
 
     case PhysicsLayers::PLAYER:
         // プレイヤー本体は 壁・見えない壁・ボス本体・ボスの攻撃 と当たる。
-        return inObject2 == PhysicsLayers::NON_MOVING
-               || inObject2 == PhysicsLayers::INVISIBLE_WALL
-               || inObject2 == PhysicsLayers::BOSS
-               || inObject2 == PhysicsLayers::BOSS_ATTACK;
+        return inObject2 == PhysicsLayers::NON_MOVING || inObject2 == PhysicsLayers::INVISIBLE_WALL || inObject2 == PhysicsLayers::BOSS || inObject2 == PhysicsLayers::BOSS_ATTACK;
 
     case PhysicsLayers::BOSS:
         // ボス本体は 壁・見えない壁・プレイヤー本体・プレイヤーの攻撃 と当たる。
-        return inObject2 == PhysicsLayers::NON_MOVING
-               || inObject2 == PhysicsLayers::INVISIBLE_WALL
-               || inObject2 == PhysicsLayers::PLAYER
-               || inObject2 == PhysicsLayers::PLAYER_ATTACK;
+        return inObject2 == PhysicsLayers::NON_MOVING || inObject2 == PhysicsLayers::INVISIBLE_WALL || inObject2 == PhysicsLayers::PLAYER || inObject2 == PhysicsLayers::PLAYER_ATTACK;
 
     case PhysicsLayers::PLAYER_ATTACK:
         // プレイヤーの攻撃は「ボス本体」にだけ命中。

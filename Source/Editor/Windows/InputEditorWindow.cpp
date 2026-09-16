@@ -132,8 +132,8 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
     ImGui::SameLine();
     // GamePadはタブによって初期値を変える（Axisタブなら軸を初期選択）
     radio("ゲームパッド", DC::GamePad,
-        isAxis ? "GamePad_AxisLX" : "GamePad_Button",
-        "NONE");
+          isAxis ? "GamePad_AxisLX" : "GamePad_Button",
+          "NONE");
 }
 
 // =====================================================================

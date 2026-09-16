@@ -46,7 +46,7 @@ namespace
         for (uint8_t i = 0; i < box.hitCount && used + 24 < outSize; ++i)
             used += static_cast<size_t>(
                 std::snprintf(out + used, outSize - used, "%llu,",
-                    static_cast<unsigned long long>(box.hitTargets[i])));
+                              static_cast<unsigned long long>(box.hitTargets[i])));
     }
 #endif
 
@@ -83,7 +83,7 @@ void HitboxCollisionSystem::Update(float /*dt*/)
 }
 
 void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate,
-    const DirectX::XMFLOAT3 &contactPos)
+                                                     const DirectX::XMFLOAT3 &contactPos)
 {
     // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
     auto *hitbox  = m_world->GetComponent<HitboxComponent>(attackerCandidate);
@@ -96,15 +96,15 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     if (!hurtbox)
     {
         HITDIAG_LOG(LogCategory::Game,
-            "[HitDiag/Reject] no-hurtbox  atk=%llu vic=%llu", attackerCandidate, victimCandidate);
+                    "[HitDiag/Reject] no-hurtbox  atk=%llu vic=%llu", attackerCandidate, victimCandidate);
         return;
     }
 
     if (!hitbox->isActive)
     {
         HITDIAG_LOG(LogCategory::Game,
-            "[HitDiag/Reject] inactive    atk=%llu vic=%llu (判定区間が閉じている)",
-            attackerCandidate, victimCandidate);
+                    "[HitDiag/Reject] inactive    atk=%llu vic=%llu (判定区間が閉じている)",
+                    attackerCandidate, victimCandidate);
         return;
     }
 
@@ -112,7 +112,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     if (hitbox->ownerID == victimCandidate)
     {
         HITDIAG_LOG(LogCategory::Game,
-            "[HitDiag/Reject] self-hit    atk=%llu vic=%llu", attackerCandidate, victimCandidate);
+                    "[HitDiag/Reject] self-hit    atk=%llu vic=%llu", attackerCandidate, victimCandidate);
         return;
     }
 
@@ -123,9 +123,9 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         char targets[128];
         FormatHitTargets(*hitbox, targets, sizeof(targets));
         HITDIAG_LOG(LogCategory::Game,
-            "[HitDiag/Reject] AlreadyHit  atk=%llu vic=%llu hitCount=%u targets=[%s]",
-            attackerCandidate, victimCandidate,
-            static_cast<unsigned>(hitbox->hitCount), targets);
+                    "[HitDiag/Reject] AlreadyHit  atk=%llu vic=%llu hitCount=%u targets=[%s]",
+                    attackerCandidate, victimCandidate,
+                    static_cast<unsigned>(hitbox->hitCount), targets);
 #endif
         return;
     }
@@ -139,7 +139,6 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
 
     // 4. 命中位置：物理衝突の接触点(ワールド座標)をそのまま使う。加工しない。
     const Vector3 hitPos(contactPos);
-
 
     // 5. ノックバック方向
     //    定石（DMC/ベヨネッタ/GoW系）に倣い「攻撃が方向を決める」。衝突法線や剣先の一瞬の
@@ -167,21 +166,25 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             // (a) 攻撃者の前方（技が意図する主方向）
             Vector3 fwd(atkT->GetForward());
             fwd.y = 0.0f;
-            if (fwd.LengthSquared() > 1e-6f) fwd.Normalize();
-            else                             fwd = Vector3::Zero;
+            if (fwd.LengthSquared() > 1e-6f)
+                fwd.Normalize();
+            else
+                fwd = Vector3::Zero;
 
             // (b) 放射方向（攻撃者→被弾者）。GetWorldPosition() 基準で空間を揃える。
             Vector3 radial = Vector3(vicT->GetWorldPosition()) - Vector3(atkT->GetWorldPosition());
-            radial.y = 0.0f;
-            if (radial.LengthSquared() > 1e-6f) radial.Normalize();
-            else                                radial = Vector3::Zero;
+            radial.y       = 0.0f;
+            if (radial.LengthSquared() > 1e-6f)
+                radial.Normalize();
+            else
+                radial = Vector3::Zero;
 
             // 前方0.75 : 放射0.25 でブレンド（将来はHitBoxイベント側で技ごとに指定できるとよい）。
             //   攻撃体自身が原点のとき(ドローン)は前方を混ぜない。原点が接触点の
             //   すぐそばに在るので放射方向がそのまま進行方向になり、かつ機体の
             //   forward 軸がモデルの前方と一致している保証も要らなくなる。
             const float kForwardWeight = hitbox->useSelfAsHitOrigin ? 0.0f : 0.75f;
-            Vector3 blended = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
+            Vector3     blended        = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
             if (blended.LengthSquared() > 1e-6f)
             {
                 blended.Normalize();
@@ -207,20 +210,20 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     auto                   entityRef       = m_world->Spawn(damageArchetype);
 
     DamageEventComponent dmg{};
-    dmg.targetID       = victimCandidate;
-    dmg.attackerID     = hitbox->ownerID;
-    dmg.hitOriginID    = hitOrigin;
-    dmg.finalDamage    = finalDamage;
-    dmg.knockbackDir   = knockDir;
-    dmg.knockbackForce = knockForce;
+    dmg.targetID        = victimCandidate;
+    dmg.attackerID      = hitbox->ownerID;
+    dmg.hitOriginID     = hitOrigin;
+    dmg.finalDamage     = finalDamage;
+    dmg.knockbackDir    = knockDir;
+    dmg.knockbackForce  = knockForce;
     dmg.hitStopDuration = hitbox->hitStopDuration;
     dmg.hitStopScale    = hitbox->hitStopScale;
     dmg.hitPosition     = hitPos;
     entityRef.Set(dmg);
 
     HITDIAG_LOG(LogCategory::Game,
-        "[HitDiag/Hit]    %llu -> %llu  dmg=%.1f",
-        attackerCandidate, victimCandidate, finalDamage);
+                "[HitDiag/Hit]    %llu -> %llu  dmg=%.1f",
+                attackerCandidate, victimCandidate, finalDamage);
 }
 
 REGISTER_LOGIC_SYSTEM(HitboxCollisionSystem, Priority::LogicStage::L05_Collision);

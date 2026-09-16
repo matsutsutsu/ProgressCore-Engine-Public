@@ -8,8 +8,9 @@
 class Camera;
 
 class CameraBrainSystem
-    : public CCL::ECS::IfSystem<CameraBrainSystem, CCL::ECS::Read<VirtualCamera>> {
-  private:
+    : public CCL::ECS::IfSystem<CameraBrainSystem, CCL::ECS::Read<VirtualCamera>>
+{
+private:
     // ブレンド管理用
     CCL::ECS::EntityID m_currentCamID = CCL::ECS::InvalidEntityID; // 現在のメイン
     CCL::ECS::EntityID m_prevCamID    = CCL::ECS::InvalidEntityID; // 遷移元
@@ -26,12 +27,12 @@ class CameraBrainSystem
     float m_lastNear = 0.1f;
     float m_lastFar  = 1000.0f;
 
-  public:
+public:
     CameraBrainSystem() : IfSystem("CameraBrainSystem") {}
 
     void Update(float dt) override;
 
-  private:
+private:
     /**
      * @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
      * @param outID   選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）

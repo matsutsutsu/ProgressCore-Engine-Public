@@ -58,6 +58,6 @@ public:
      * @return 1つ以上の登録に成功したら true。ファイル欠落/パース失敗/全滅で false。
      * @note 個々のエントリの失敗はスキップしてログに残し、可能な限り登録を続行する。
      */
-    static bool LoadAndRegister(const std::string& manifestVirtualPath,
-                               ShaderRegistry& registry);
+    static bool LoadAndRegister(const std::string &manifestVirtualPath,
+                                ShaderRegistry    &registry);
 };

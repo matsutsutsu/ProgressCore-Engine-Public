@@ -12,11 +12,11 @@ struct DroneComponent; // ポインタ参照のみのため前方宣言で足り
 // TimeStateComponent が Write なのは、成立時に Time::HitStopEntity が
 // hitStopTimer / freezeScale を書き換えるため（読み取りだけではない）。
 class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
-                            CCL::ECS::Write<JustEvadeComponent>,
-                            CCL::ECS::Write<DashComponent>,
-                            CCL::ECS::Write<TimeStateComponent>>
+                                                  CCL::ECS::Write<JustEvadeComponent>,
+                                                  CCL::ECS::Write<DashComponent>,
+                                                  CCL::ECS::Write<TimeStateComponent>>
 {
-  public:
+public:
     JustEvadeSystem()
         : IfSystem("JustEvadeSystem")
     {
@@ -37,7 +37,7 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
         return {"JoltCollisionEventSystem"};
     }
 
-  private:
+private:
     void CheckJustEvade(CCL::ECS::EntityID playerCandidate, CCL::ECS::EntityID otherCandidate);
 
     // このフレームに届いた接触。コールバックが積み、Update が消費して空にする。

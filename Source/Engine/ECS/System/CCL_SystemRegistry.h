@@ -3,11 +3,13 @@
 #include <functional>
 #include <vector>
 
-namespace CCL::ECS {
+namespace CCL::ECS
+{
 
     // 全システムの登録手続きを一時的に溜め込む受付窓口
-    class SystemRegistry {
-      public:
+    class SystemRegistry
+    {
+    public:
         using RegisterFunc = std::function<void(SystemManager &)>;
 
         // シングルトン（mainより前にアクセスされるため、静的ローカル変数で安全に初期化）
@@ -22,17 +24,19 @@ namespace CCL::ECS {
         // ゲーム起動時に1回だけ呼ばれる
         void RegisterAll(SystemManager &manager)
         {
-            for (auto &reg : m_registrations) {
+            for (auto &reg : m_registrations)
+            {
                 reg(manager); // 溜め込んだ登録処理を一斉に実行
             }
         }
 
-      private:
+    private:
         std::vector<RegisterFunc> m_registrations;
     };
 
     // グローバル変数の初期化タイミングを利用して受付を済ませるためのヘルパー
-    struct SystemRegistrar {
+    struct SystemRegistrar
+    {
         SystemRegistrar(SystemRegistry::RegisterFunc func)
         {
             SystemRegistry::Instance().AddRegistration(func);
@@ -44,16 +48,18 @@ namespace CCL::ECS {
 // 自動登録用マクロ
 // 各システムの .cpp ファイルの末尾にこれを書くだけで登録が完了する。
 // =========================================================================
-#define REGISTER_LOGIC_SYSTEM(SystemClass, Stage)                                                  \
-    namespace {                                                                                    \
-        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass(                             \
-            [](CCL::ECS::SystemManager &m) { m.RegisterSystem<SystemClass>(Stage); });             \
+#define REGISTER_LOGIC_SYSTEM(SystemClass, Stage)                                      \
+    namespace                                                                          \
+    {                                                                                  \
+        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass(                 \
+            [](CCL::ECS::SystemManager &m) { m.RegisterSystem<SystemClass>(Stage); }); \
     }
 
-#define REGISTER_RENDER_SYSTEM(SystemClass, Stage, ...)                                            \
-    namespace {                                                                                    \
-        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass(                             \
-            [](CCL::ECS::SystemManager &m) {                                                       \
-                m.RegisterSystem<SystemClass>(Stage, __VA_ARGS__);                                 \
-            });                                                                                    \
+#define REGISTER_RENDER_SYSTEM(SystemClass, Stage, ...)                \
+    namespace                                                          \
+    {                                                                  \
+        static CCL::ECS::SystemRegistrar const auto_reg_##SystemClass( \
+            [](CCL::ECS::SystemManager &m) {                           \
+                m.RegisterSystem<SystemClass>(Stage, __VA_ARGS__);     \
+            });                                                        \
     }

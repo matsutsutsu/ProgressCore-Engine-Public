@@ -13,8 +13,9 @@
 
 // 1. BoxCollider 専用更新システム
 class JoltBoxShapeUpdateSystem : public CCL::ECS::IfSystem<JoltBoxShapeUpdateSystem,
-                                     CCL::ECS::Read<JoltHandleComponent>,
-                                     CCL::ECS::Write<JoltBoxColliderComponent>> {
+                                                           CCL::ECS::Read<JoltHandleComponent>,
+                                                           CCL::ECS::Write<JoltBoxColliderComponent>>
+{
 public:
     JoltBoxShapeUpdateSystem() : IfSystem("JoltBoxShapeUpdateSystem") {}
 
@@ -27,8 +28,9 @@ public:
 
 // 2. SphereCollider 専用更新システム
 class JoltSphereShapeUpdateSystem : public CCL::ECS::IfSystem<JoltSphereShapeUpdateSystem,
-                                        CCL::ECS::Read<JoltHandleComponent>,
-                                        CCL::ECS::Write<JoltSphereColliderComponent>> {
+                                                              CCL::ECS::Read<JoltHandleComponent>,
+                                                              CCL::ECS::Write<JoltSphereColliderComponent>>
+{
 public:
     JoltSphereShapeUpdateSystem() : IfSystem("JoltSphereShapeUpdateSystem") {}
 
@@ -41,10 +43,12 @@ public:
 
 // 3. CapsuleCollider 専用更新システム
 class JoltCapsuleShapeUpdateSystem : public CCL::ECS::IfSystem<JoltCapsuleShapeUpdateSystem,
-                                         CCL::ECS::Read<JoltHandleComponent>,
-                                         CCL::ECS::Write<JoltCapsuleColliderComponent>> {
+                                                               CCL::ECS::Read<JoltHandleComponent>,
+                                                               CCL::ECS::Write<JoltCapsuleColliderComponent>>
+{
 public:
-    JoltCapsuleShapeUpdateSystem() : IfSystem("JoltCapsuleShapeUpdateSystem") {
+    JoltCapsuleShapeUpdateSystem() : IfSystem("JoltCapsuleShapeUpdateSystem")
+    {
         // キャラの presence プロキシは CharacterSetup が「足元オフセット付き」で作る。
         //   このシステムは capsule.localOffset を使うため、キャラに適用すると
         //   CharacterVirtual と形状がズレる。よってキャラは除外する。

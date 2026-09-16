@@ -23,7 +23,7 @@ void TitleScene::Initialize()
     {
         // 背景が出ないだけでメニューは機能する（黒背景のタイトルになる）ので止めない。
         CCL_LOG_ERROR(LogCategory::Core, "TitleScene: タイトル背景の読み込みに失敗: %s",
-            titleLevel.c_str());
+                      titleLevel.c_str());
     }
 
     CCL_LOG_INFO(LogCategory::Core, "TitleScene Initialize");

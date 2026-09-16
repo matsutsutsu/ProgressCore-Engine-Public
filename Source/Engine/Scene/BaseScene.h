@@ -12,14 +12,15 @@
 
 #include "Engine/UI/ECS/UIRenderer.h" // ECSネイティブUIの2Dパス描画
 
-class BaseScene : public Scene {
-  protected:
+class BaseScene : public Scene
+{
+protected:
     std::unique_ptr<CCL::ECS::ECSContext> m_ecsContext;
-    CCL::ECS::World *m_worldPtr = nullptr;
+    CCL::ECS::World                      *m_worldPtr = nullptr;
 
     UIRenderer m_uiRenderer; // UIDrawList を2Dパスで描画する
 
-  public:
+public:
     BaseScene()                   = default;
     virtual ~BaseScene() override = default;
 
@@ -35,9 +36,9 @@ class BaseScene : public Scene {
     // =========================================================
     // 外部（ImGui等）から呼ばれる「安全なリクエスト関数」
     // =========================================================
-    
-    CCL::ECS::World* GetWorld() override { return m_worldPtr; }
-    CCL::ECS::SystemManager* GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
+
+    CCL::ECS::World         *GetWorld() override { return m_worldPtr; }
+    CCL::ECS::SystemManager *GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
 
     /**
      * @brief GPU デバイスロストからの復帰後に Framework から呼ばれる。
@@ -47,7 +48,7 @@ class BaseScene : public Scene {
      */
     virtual void OnDeviceRecreated();
 
-  protected:
+protected:
     // --- 派生クラスでの拡張ポイント ---
 
     // システム登録 (必須)
@@ -58,7 +59,4 @@ class BaseScene : public Scene {
 
     // ImGui描画 (Window, Inspectorなど)
     virtual void OnDrawImGui() {}
-
-
-
 };

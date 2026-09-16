@@ -9,20 +9,20 @@ class ShellIconLoader
 public:
     // ファイル/フォルダどちらも対応
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetIconSRV(
-        const std::wstring& filePath, ID3D11Device* device);
+        const std::wstring &filePath, ID3D11Device *device);
 
     // エンジン終了時（デバイス破棄前）に必ず呼ぶ
     static void ClearCache();
 
 private:
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> LoadShellIconSRV(
-        const std::wstring& filePath, ID3D11Device* device);
+        const std::wstring &filePath, ID3D11Device *device);
 
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> LoadFolderIconSRV(
-        const std::wstring& folderPath, ID3D11Device* device);
+        const std::wstring &folderPath, ID3D11Device *device);
 
     static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateSRVFromHICON(
-        ID3D11Device* device, HICON hIcon);
+        ID3D11Device *device, HICON hIcon);
 
     static std::unordered_map<std::wstring, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> cache;
     static std::unordered_map<std::wstring, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> folderCache;

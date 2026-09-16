@@ -13,9 +13,9 @@
  * @warning R01_Camera より前に実行すること（カメラが補間後位置を追従できるようにするため）。
  */
 class TransformInterpolationSystem : public CCL::ECS::IfSystem<TransformInterpolationSystem,
-                                         CCL::ECS::Write<TransformComponent>>
+                                                               CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     TransformInterpolationSystem()
         : IfSystem("TransformInterpolationSystem")
     {

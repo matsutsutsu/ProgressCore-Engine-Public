@@ -44,7 +44,7 @@ public:
         DirectX::XMFLOAT2 uv; // x=尾の長さ方向, y=幅方向。テクスチャ貼付け用。
     };
 
-    static TrailRenderer& Instance()
+    static TrailRenderer &Instance()
     {
         static TrailRenderer instance;
         return instance;
@@ -56,26 +56,26 @@ public:
      * @param texture このトレイルに貼るテクスチャSRV。null なら白（＝従来の単色）。
      *               全トレイルを1バッファに詰めつつ、SRV 単位でドローを分けて描く。
      */
-    void SubmitTriangleList(const Vertex* verts, size_t vertexCount,
-                            ID3D11ShaderResourceView* texture = nullptr);
+    void SubmitTriangleList(const Vertex *verts, size_t vertexCount,
+                            ID3D11ShaderResourceView *texture = nullptr);
 
     // 歪みレイヤの三角形頂点を積む（スレッド安全）。形状は加算と同一。
-    void SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount);
+    void SubmitDistortTriangleList(const Vertex *verts, size_t vertexCount);
 
     // TrailPass から毎フレーム呼ばれる。溜めた頂点を描画してリストを空にする。
-    void Render(const RenderServices& services, const RenderFrameContext& ctx);
+    void Render(const RenderServices &services, const RenderFrameContext &ctx);
 
     // GPU リソースを解放する（エンジン終了時）。
     void Shutdown();
 
 private:
-    TrailRenderer() = default;
-    ~TrailRenderer() = default;
-    TrailRenderer(const TrailRenderer&) = delete;
-    TrailRenderer& operator=(const TrailRenderer&) = delete;
+    TrailRenderer()                                 = default;
+    ~TrailRenderer()                                = default;
+    TrailRenderer(const TrailRenderer &)            = delete;
+    TrailRenderer &operator=(const TrailRenderer &) = delete;
 
     // 初回のみ device からシェーダ/入力レイアウト/動的バッファ/PSO を生成。
-    void EnsureInitialized(ID3D11Device* device);
+    void EnsureInitialized(ID3D11Device *device);
 
     // m_mutex 保持前提。上限に収まる追加数を返す（三角形境界で丸める）。
     size_t ClampToCapacity(size_t vertexCount) const;
@@ -103,8 +103,8 @@ private:
     // SRV が変わる境界で1バッチにする（加算は順序非依存なので分割自由）。
     struct AddBatch
     {
-        ID3D11ShaderResourceView* srv = nullptr; // null は白テクスチャ
-        size_t                    count = 0;     // この範囲の頂点数
+        ID3D11ShaderResourceView *srv   = nullptr; // null は白テクスチャ
+        size_t                    count = 0;       // この範囲の頂点数
     };
 
     std::vector<Vertex>   m_vertices;        // フレーム内の加算レイヤ頂点（全バッチ連結）

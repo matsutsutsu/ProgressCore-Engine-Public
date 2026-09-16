@@ -18,16 +18,16 @@
 class GameResultSystem
     : public CCL::ECS::IfSystem<GameResultSystem, CCL::ECS::Read<HealthComponent>>
 {
-  public:
+public:
     GameResultSystem() : IfSystem("GameResultSystem")
     {
     }
 
-    void Initialize() override; // ボタンイベント購読
+    void Initialize() override;     // ボタンイベント購読
     void Update(float dt) override; // 勝敗検知
     void OnGui() override;          // デバッグ表示（検知状態の可視化＋有効/無効トグル）
 
-  private:
+private:
     void ShowResultUI(bool win); // リザルトUI（暗転＋文字＋ボタン）を生成
 
     bool  m_resultShown   = false; // 一度出したら維持（多重生成防止）
@@ -37,9 +37,9 @@ class GameResultSystem
     float m_winDelay      = 0.0f;  // 勝利リザルト表示までの残り時間（秒・実時間）
 
     // --- デバッグ/セーフガード ---
-    bool  m_debugEnabled     = true;  // false で勝敗判定・リザルト表示を停止（デバッグ用の全体OFF）
-    bool  m_dbgPlayerPresent = false; // 直近フレームでプレイヤーを検知したか（GUI表示用）
-    int   m_dbgAliveEnemies  = 0;     // 直近フレームの生存敵数（GUI表示用）
+    bool m_debugEnabled     = true;  // false で勝敗判定・リザルト表示を停止（デバッグ用の全体OFF）
+    bool m_dbgPlayerPresent = false; // 直近フレームでプレイヤーを検知したか（GUI表示用）
+    int  m_dbgAliveEnemies  = 0;     // 直近フレームの生存敵数（GUI表示用）
 
     // 勝利検知からリザルト表示までの待ち時間(秒)。DefeatSlowMotionSystem の
     // クライマックススロー(kClimaxDur≈0.85s)より少し長くして、スローが完全に戻ってから出す。

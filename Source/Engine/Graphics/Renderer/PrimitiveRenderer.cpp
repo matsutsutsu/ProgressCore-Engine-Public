@@ -12,12 +12,12 @@ using namespace DirectX;
 
 namespace
 {
-// メッシュ作成時に使用する頂点構造体
-struct Vertex
-{
-    DirectX::XMFLOAT3 position;
-    DirectX::XMFLOAT3 normal;
-};
+    // メッシュ作成時に使用する頂点構造体
+    struct Vertex
+    {
+        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT3 normal;
+    };
 } // namespace
 
 // 静的メンバの実体化

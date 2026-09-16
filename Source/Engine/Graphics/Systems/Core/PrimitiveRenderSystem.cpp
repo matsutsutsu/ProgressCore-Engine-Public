@@ -4,7 +4,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-
 using namespace CCL::ECS;
 
 PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem") {}
@@ -12,12 +11,11 @@ PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem
 void PrimitiveRenderSystem::Update(float dt)
 {
     // Worldからレンダラーのポインタを取得
-    if (!m_world->HasResource<PrimitiveRenderer*>()) return;
-    auto* renderer = m_world->GetResource<PrimitiveRenderer*>();
+    if (!m_world->HasResource<PrimitiveRenderer *>()) return;
+    auto *renderer = m_world->GetResource<PrimitiveRenderer *>();
     if (!renderer) return;
 
-    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, const VisibilityComponent& vis) {
-
+    ForEachParallel([&](const TransformComponent &trans, const PrimitiveComponent &prim, const VisibilityComponent &vis) {
         // ここでカリング結果を見てスキップ
         if (!vis.isVisible) return;
 
@@ -26,13 +24,14 @@ void PrimitiveRenderSystem::Update(float dt)
 
         // ゼロスケールによるNaN爆弾（画面崩壊）を防ぐ安全値
         float minS = 0.0001f;
-        float r = (std::max)(prim.radius, minS);
-        float h = (std::max)(prim.height, minS);
+        float r    = (std::max)(prim.radius, minS);
+        float h    = (std::max)(prim.height, minS);
 
         // =========================================================
         // 1. 図形ごとのスケール計算
         // =========================================================
-        switch (prim.type) {
+        switch (prim.type)
+        {
         case PrimitiveType::Box:
             scaleMat = DirectX::XMMatrixScaling(
                 (std::max)(prim.size.x, minS),
@@ -50,8 +49,7 @@ void PrimitiveRenderSystem::Update(float dt)
             scaleMat = DirectX::XMMatrixScaling(r, h, r);
             break;
 
-        case PrimitiveType::Capsule:
-        {
+        case PrimitiveType::Capsule: {
             scaleMat = DirectX::XMMatrixIdentity();
             break;
         }
@@ -60,45 +58,71 @@ void PrimitiveRenderSystem::Update(float dt)
         // =========================================================
         // 2. 行列の合成とフラグの埋め込み
         // =========================================================
-        DirectX::XMMATRIX finalWorldMat = scaleMat * worldMat;
+        DirectX::XMMATRIX   finalWorldMat = scaleMat * worldMat;
         DirectX::XMFLOAT4X4 finalWorld;
         DirectX::XMStoreFloat4x4(&finalWorld, finalWorldMat);
 
         // 定数バッファを増やさずに済ませるため、ワールド行列の未使用列にパラメータを載せて送る
-        if (prim.type == PrimitiveType::Capsule) {
-            float totalHeight = (std::max)(h, r * 2.0f);
+        if (prim.type == PrimitiveType::Capsule)
+        {
+            float totalHeight    = (std::max)(h, r * 2.0f);
             float cylinderHeight = totalHeight - (r * 2.0f);
 
             finalWorld._14 = 1.0f;           // [0].w : カプセルであるというフラグ
             finalWorld._24 = r;              // [1].w : カプセルの半径 (Radius)
             finalWorld._34 = cylinderHeight; // [2].w : 円柱部分の長さ (Height)
         }
-        else {
+        else
+        {
             finalWorld._14 = 0.0f;
         }
 
         // =========================================================
         // 3. レンダラーへの描画登録
         // =========================================================
-        if (prim.isWireframe) {
-            switch (prim.type) {
-            case PrimitiveType::Box:      renderer->DrawWireframeBox(finalWorld, prim.color); break;
-            case PrimitiveType::Sphere:   renderer->DrawWireframeSphere(finalWorld, prim.color); break;
-            case PrimitiveType::Cylinder: renderer->DrawWireframeCylinder(finalWorld, prim.color); break;
-            case PrimitiveType::Capsule:  renderer->DrawWireframeCapsule(finalWorld, prim.color); break;
-            case PrimitiveType::Cone:     renderer->DrawWireframeCone(finalWorld, prim.color); break;
+        if (prim.isWireframe)
+        {
+            switch (prim.type)
+            {
+            case PrimitiveType::Box:
+                renderer->DrawWireframeBox(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Sphere:
+                renderer->DrawWireframeSphere(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Cylinder:
+                renderer->DrawWireframeCylinder(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Capsule:
+                renderer->DrawWireframeCapsule(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Cone:
+                renderer->DrawWireframeCone(finalWorld, prim.color);
+                break;
             }
         }
-        else {
-            switch (prim.type) {
-            case PrimitiveType::Box:      renderer->DrawBox(finalWorld, prim.color); break;
-            case PrimitiveType::Sphere:   renderer->DrawSphere(finalWorld, prim.color); break;
-            case PrimitiveType::Cylinder: renderer->DrawCylinder(finalWorld, prim.color); break;
-            case PrimitiveType::Capsule:  renderer->DrawCapsule(finalWorld, prim.color); break;
-            case PrimitiveType::Cone:     renderer->DrawCone(finalWorld, prim.color); break;
+        else
+        {
+            switch (prim.type)
+            {
+            case PrimitiveType::Box:
+                renderer->DrawBox(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Sphere:
+                renderer->DrawSphere(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Cylinder:
+                renderer->DrawCylinder(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Capsule:
+                renderer->DrawCapsule(finalWorld, prim.color);
+                break;
+            case PrimitiveType::Cone:
+                renderer->DrawCone(finalWorld, prim.color);
+                break;
             }
         }
-        });
+    });
 }
 
 REGISTER_RENDER_SYSTEM(PrimitiveRenderSystem, Priority::RenderStage::R08_Main);

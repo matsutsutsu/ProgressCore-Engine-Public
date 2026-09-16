@@ -28,23 +28,23 @@ using namespace DirectX;
 
 namespace
 {
-// b0 に積む定数バッファ。row_major で HLSL の cbuffer と一致させる。
-struct CbTrail
-{
-    XMFLOAT4X4 viewProjection;
-};
+    // b0 に積む定数バッファ。row_major で HLSL の cbuffer と一致させる。
+    struct CbTrail
+    {
+        XMFLOAT4X4 viewProjection;
+    };
 } // namespace
 
-void TrailRenderer::EnsureInitialized(ID3D11Device* device)
+void TrailRenderer::EnsureInitialized(ID3D11Device *device)
 {
     if (m_initialized || !device)
         return;
 
     // 入力レイアウト: POSITION(float3) + COLOR(float4) + TEXCOORD(float2)
     const D3D11_INPUT_ELEMENT_DESC layout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,                            D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
 
     GpuResourceUtils::LoadVertexShader(
@@ -60,10 +60,10 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
 
     // 動的頂点バッファ（毎フレーム WRITE_DISCARD で上書き。加算→歪みの順に詰める）
     D3D11_BUFFER_DESC vbDesc = {};
-    vbDesc.ByteWidth      = static_cast<UINT>(sizeof(Vertex) * MAX_VERTICES);
-    vbDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    vbDesc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
-    vbDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    vbDesc.ByteWidth         = static_cast<UINT>(sizeof(Vertex) * MAX_VERTICES);
+    vbDesc.Usage             = D3D11_USAGE_DYNAMIC;
+    vbDesc.BindFlags         = D3D11_BIND_VERTEX_BUFFER;
+    vbDesc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
     device->CreateBuffer(&vbDesc, nullptr, m_vertexBuffer.GetAddressOf());
 
     // 動的定数バッファ（viewProjection）
@@ -79,7 +79,7 @@ void TrailRenderer::EnsureInitialized(ID3D11Device* device)
     desc.depth      = DepthState::TestOnly;
     desc.rasterizer = RasterizerState::SolidCullNone;
     desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    m_pso = PipelineState(desc);
+    m_pso           = PipelineState(desc);
 
     // PSO: 歪み。背景を屈折像で置き換えるので αブレンド。RGB のみ書く
     // UITransparency を使い、HDR ターゲットの α=1 を保つ。
@@ -101,8 +101,8 @@ size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
     return std::min(vertexCount, remain);
 }
 
-void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount,
-                                       ID3D11ShaderResourceView* texture)
+void TrailRenderer::SubmitTriangleList(const Vertex *verts, size_t vertexCount,
+                                       ID3D11ShaderResourceView *texture)
 {
     if (!verts || vertexCount == 0)
         return;
@@ -119,10 +119,10 @@ void TrailRenderer::SubmitTriangleList(const Vertex* verts, size_t vertexCount,
     if (!m_addBatches.empty() && m_addBatches.back().srv == texture)
         m_addBatches.back().count += vertexCount;
     else
-        m_addBatches.push_back({ texture, vertexCount });
+        m_addBatches.push_back({texture, vertexCount});
 }
 
-void TrailRenderer::SubmitDistortTriangleList(const Vertex* verts, size_t vertexCount)
+void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertexCount)
 {
     if (!verts || vertexCount == 0)
         return;
@@ -136,7 +136,7 @@ void TrailRenderer::SubmitDistortTriangleList(const Vertex* verts, size_t vertex
     m_distortVertices.insert(m_distortVertices.end(), verts, verts + vertexCount);
 }
 
-void TrailRenderer::Render(const RenderServices& services, const RenderFrameContext& ctx)
+void TrailRenderer::Render(const RenderServices &services, const RenderFrameContext &ctx)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -161,7 +161,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         return;
     }
 
-    ID3D11DeviceContext* dc = ctx.dc;
+    ID3D11DeviceContext *dc = ctx.dc;
 
     const size_t additiveCount = m_vertices.size();
     const size_t distortCount  = m_distortVertices.size();
@@ -183,7 +183,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
-            Vertex* dst = static_cast<Vertex*>(mapped.pData);
+            Vertex *dst = static_cast<Vertex *>(mapped.pData);
             if (additiveCount > 0)
                 std::memcpy(dst, m_vertices.data(), additiveCount * sizeof(Vertex));
             if (distortCount > 0)
@@ -195,17 +195,17 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
     // 3. 共通ステート
     dc->IASetInputLayout(m_inputLayout.Get());
 
-    UINT stride = sizeof(Vertex), offset = 0;
-    ID3D11Buffer* vb = m_vertexBuffer.Get();
+    UINT          stride = sizeof(Vertex), offset = 0;
+    ID3D11Buffer *vb = m_vertexBuffer.Get();
     dc->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
 
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 
-    ID3D11Buffer* cb = m_constantBuffer.Get();
+    ID3D11Buffer *cb = m_constantBuffer.Get();
     dc->VSSetConstantBuffers(0, 1, &cb); // b0
 
     // 4. 歪みレイヤ（加算の芯を上に乗せるため先に描く）
-    ID3D11ShaderResourceView* sceneColorSRV = nullptr;
+    ID3D11ShaderResourceView *sceneColorSRV = nullptr;
     if (distortCount > 0 && services.postProcess)
         sceneColorSRV = services.postProcess->GetSceneColorSRV();
 
@@ -214,11 +214,11 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         // 歪み PS は gView / gTimeParams / gScreenParams を CbScene(b8) から読む。
         if (services.sceneConstantBuffer)
         {
-            ID3D11Buffer* sceneCb = services.sceneConstantBuffer;
+            ID3D11Buffer *sceneCb = services.sceneConstantBuffer;
             dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCb);
         }
 
-        ID3D11SamplerState* sampler = services.renderState->GetSamplerState(SamplerState::LinearClamp);
+        ID3D11SamplerState *sampler = services.renderState->GetSamplerState(SamplerState::LinearClamp);
         dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &sampler);
         dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &sceneColorSRV);
 
@@ -227,7 +227,7 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         dc->Draw(static_cast<UINT>(distortCount), static_cast<UINT>(additiveCount));
 
         // 後続パスが同じスロットを RTV として使えるよう SRV を外す。
-        ID3D11ShaderResourceView* nullSRV = nullptr;
+        ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &nullSRV);
     }
 
@@ -238,23 +238,23 @@ void TrailRenderer::Render(const RenderServices& services, const RenderFrameCont
         dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
         // トレイルテクスチャは繰り返し/スクロールを効かせたいので Wrap サンプラ。
-        ID3D11SamplerState* trailSmp = services.renderState->GetSamplerState(SamplerState::LinearWrap);
+        ID3D11SamplerState *trailSmp = services.renderState->GetSamplerState(SamplerState::LinearWrap);
         dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &trailSmp);
 
         UINT start = 0;
-        for (const AddBatch& batch : m_addBatches)
+        for (const AddBatch &batch : m_addBatches)
         {
             if (batch.count == 0)
                 continue;
             // null は白テクスチャで代替（＝色そのまま＝従来の単色トレイル）。
-            ID3D11ShaderResourceView* srv = batch.srv ? batch.srv : m_whiteTex.Get();
+            ID3D11ShaderResourceView *srv = batch.srv ? batch.srv : m_whiteTex.Get();
             dc->PSSetShaderResources(0, 1, &srv); // t0: gTrailTex
             dc->Draw(static_cast<UINT>(batch.count), start);
             start += static_cast<UINT>(batch.count);
         }
 
         // 後続パスへ SRV を残さない。
-        ID3D11ShaderResourceView* nullSRV = nullptr;
+        ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->PSSetShaderResources(0, 1, &nullSRV);
     }
 

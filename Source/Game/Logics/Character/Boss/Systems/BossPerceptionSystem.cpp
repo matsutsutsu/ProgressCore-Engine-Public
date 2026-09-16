@@ -32,7 +32,6 @@ void BossPerceptionSystem::Initialize()
     });
 }
 
-
 void BossPerceptionSystem::Update(float /*rawDt*/)
 {
     if (!m_world->HasResource<BattleContext>()) return;
@@ -87,12 +86,11 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
     });
 }
 
-
 float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &trans,
                                                    const Vector3            &targetPos) const
 {
     Vector3 toTarget = targetPos - Vector3(trans.position);
-    toTarget.y       = 0.0f;  // 見上げ角は落とす。間合いの判断は真上から見た角度で足りる
+    toTarget.y       = 0.0f;                              // 見上げ角は落とす。間合いの判断は真上から見た角度で足りる
     if (toTarget.LengthSquared() <= 0.0001f) return 0.0f; // 完全に重なっている。前回値を汚さない
 
     const Vector3 forward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
@@ -102,12 +100,13 @@ float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &tra
     const float targetYaw = atan2f(toTarget.x, toTarget.z);
 
     float diff = targetYaw - myYaw;
-    while (diff >  DirectX::XM_PI) diff -= DirectX::XM_2PI;
-    while (diff < -DirectX::XM_PI) diff += DirectX::XM_2PI;
+    while (diff > DirectX::XM_PI)
+        diff -= DirectX::XM_2PI;
+    while (diff < -DirectX::XM_PI)
+        diff += DirectX::XM_2PI;
 
     return DirectX::XMConvertToDegrees(diff);
 }
-
 
 float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
                                                const Vector3 &targetPos,
@@ -119,7 +118,7 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
     targetToMe.Normalize();
 
     Vector3 velocity = targetVelocity;
-    velocity.y       = 0.0f;  // 跳躍の上下動を「詰めてきた」と読み違えないため
+    velocity.y       = 0.0f; // 跳躍の上下動を「詰めてきた」と読み違えないため
 
     return velocity.Dot(targetToMe);
 }
@@ -127,4 +126,4 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
 // BehaviorTreeSystem(L02_Update) が blackboard を読む前に認識を確定させる。
 // 同ステージの BossPhaseSystem / DroneBrainSystem は blackboard を読まないので
 // 互いの順序は問わない。
-REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L02_PreUpdate);
+REGISTER_LOGIC_SYSTEM(BossPerceptionSystem, Priority::LogicStage::L02_PreUpdate);

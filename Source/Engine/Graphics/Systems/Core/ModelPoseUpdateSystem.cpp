@@ -4,17 +4,18 @@
 
 using namespace CCL::ECS;
 
-void ModelPoseUpdateSystem::Update(float dt) {
+void ModelPoseUpdateSystem::Update(float dt)
+{
     // 全エンティティのモデルポーズを並列更新
-    ForEachParallel([&](const TransformComponent& trans, ModelComponent& model) {
-        auto* modelPtr = model.GetModel();
+    ForEachParallel([&](const TransformComponent &trans, ModelComponent &model) {
+        auto *modelPtr = model.GetModel();
         if (!modelPtr) return;
 
         // モデル内部のノード階層に行列を流し込む
         // (アニメーションが有効な場合は、ここでボーンの計算も行う)
         // worldMatrix を渡すことで、モデル内の各メッシュがどこに居るべきか確定させる
         modelPtr->UpdateTransform(trans.renderWorldMatrix);
-        });
+    });
 }
 
 // Logic(L02) から Render に移動。補間(R00)の後・BoundsUpdate(R04)/描画(R08)の前。

@@ -11,14 +11,12 @@
 #include "Engine/Time/TimeState.h"
 #include <SimpleMath.h>
 
-
 class BossPerceptionSystem : public CCL::ECS::IfSystem<
-    BossPerceptionSystem,
-    CCL::ECS::Write<BehaviorTreeComponent>,
-    CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Read<HealthComponent>,
-    CCL::ECS::Read<TimeStateComponent>
->
+                                 BossPerceptionSystem,
+                                 CCL::ECS::Write<BehaviorTreeComponent>,
+                                 CCL::ECS::Read<TransformComponent>,
+                                 CCL::ECS::Read<HealthComponent>,
+                                 CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     BossPerceptionSystem() : IfSystem("BossPerceptionSystem") {}

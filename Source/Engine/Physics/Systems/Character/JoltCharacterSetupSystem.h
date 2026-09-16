@@ -6,12 +6,13 @@
 
 // プレイヤー専用のコントローラーを生成するファクトリーシステム
 class JoltCharacterSetupSystem : public CCL::ECS::IfSystem<JoltCharacterSetupSystem,
-                                     CCL::ECS::Read<TransformComponent>,
-                                     CCL::ECS::Read<JoltCharacterConfigComponent>> {
-  public:
-    JoltCharacterSetupSystem() : IfSystem("JoltCharacterSetupSystem") 
+                                                           CCL::ECS::Read<TransformComponent>,
+                                                           CCL::ECS::Read<JoltCharacterConfigComponent>>
+{
+public:
+    JoltCharacterSetupSystem() : IfSystem("JoltCharacterSetupSystem")
     {
-		SetExclude<JoltCharacterHandleComponent>();
+        SetExclude<JoltCharacterHandleComponent>();
     }
     virtual ~JoltCharacterSetupSystem() = default;
 

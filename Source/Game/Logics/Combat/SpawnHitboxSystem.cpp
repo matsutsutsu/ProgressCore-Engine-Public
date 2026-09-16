@@ -16,7 +16,7 @@
 #include "SpawnHitboxSystem.h"
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
-#include "CombatComponents.h"  // HitboxComponent
+#include "CombatComponents.h" // HitboxComponent
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
@@ -35,19 +35,18 @@ using namespace DirectX;
 
 namespace
 {
-// 区間長ゼロ(点イベント)で来たときの最小生存時間。
-// FixedUpdate(60Hz) で数フレーム＝センサーが確実に1回は重なりを検出できる長さ。
-constexpr float kMinHitboxLifetime = 0.05f;
+    // 区間長ゼロ(点イベント)で来たときの最小生存時間。
+    // FixedUpdate(60Hz) で数フレーム＝センサーが確実に1回は重なりを検出できる長さ。
+    constexpr float kMinHitboxLifetime = 0.05f;
 } // namespace
 
 void SpawnHitboxSystem::Initialize()
 {
     // 生成依頼は AnimationSystem(L02_PostUpdate) が同期 Publish する。
     // 本コールバックはその Publish 内で実行され、Spawn は遅延構造変更として積まれる。
-    ListenEvent<AnimEventSpawnHitboxMessage>([this](const AnimEventSpawnHitboxMessage& msg) {
+    ListenEvent<AnimEventSpawnHitboxMessage>([this](const AnimEventSpawnHitboxMessage &msg) {
         OnSpawnHitbox(msg);
     });
-
 }
 
 void SpawnHitboxSystem::Update(float dt)
@@ -55,21 +54,21 @@ void SpawnHitboxSystem::Update(float dt)
     // 生成した判定球の寿命を減算し、尽きたら自身を破棄する。
     // 破棄は遅延処理(次の ScrutinyAndApply で反映)。剛体は JoltCleanupSystem が回収。
     // ※生成そのものは ListenEvent コールバック(OnSpawnHitbox)側で行う。
-    ForEachWithID([&](CCL::ECS::EntityID id, HitboxLifetimeComponent& life) {
+    ForEachWithID([&](CCL::ECS::EntityID id, HitboxLifetimeComponent &life) {
         life.remainingLife -= dt;
         if (life.remainingLife <= 0.0f)
             m_world->Destroy(id);
     });
 }
 
-void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
+void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
 {
     // ── 1. 生成基準(owner)の Transform。無ければ位置が定まらないので生成しない ──
-    const auto* ownerT = m_world->GetComponent<TransformComponent>(msg.owner);
+    const auto *ownerT = m_world->GetComponent<TransformComponent>(msg.owner);
     if (!ownerT)
     {
         CCL_LOG_WARN(LogCategory::Game,
-            "[SpawnHitbox] owner %llu に Transform 無し。生成中止", msg.owner);
+                     "[SpawnHitbox] owner %llu に Transform 無し。生成中止", msg.owner);
         return;
     }
 
@@ -101,7 +100,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     t.position = spawnPosF;
     t.rotation = ownerRot; // 球は回転無関係だが、向きを揃えておく
     t.isDirty  = true;
-    t.UpdateMatrix();      // worldMatrix 即時ベイク
+    t.UpdateMatrix(); // worldMatrix 即時ベイク
     ref.Set(t);
 
     // Hitbox: 生成時から判定ON。ownerEntity=Invalid のまま＝常時判定の弾扱い。
@@ -134,9 +133,9 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage& msg)
     ref.Set(life);
 
     CCL_LOG_INFO(LogCategory::Game,
-        "[SpawnHitbox] owner=%llu pos=(%.2f,%.2f,%.2f) r=%.2f dmg=%.1f life=%.2fs layer=%d",
-        msg.owner, spawnPosF.x, spawnPosF.y, spawnPosF.z,
-        msg.radius, msg.damage, life.remainingLife, static_cast<int>(layer));
+                 "[SpawnHitbox] owner=%llu pos=(%.2f,%.2f,%.2f) r=%.2f dmg=%.1f life=%.2fs layer=%d",
+                 msg.owner, spawnPosF.x, spawnPosF.y, spawnPosF.z,
+                 msg.radius, msg.damage, life.remainingLife, static_cast<int>(layer));
 }
 
 // イベント駆動のため Update ステージは実質不問。命中判定(HitboxCollisionSystem)と

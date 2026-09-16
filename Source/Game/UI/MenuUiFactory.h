@@ -64,11 +64,11 @@ namespace CCL::GameUI
      *        ※3D の Transform は親子リンク専用で、動かしてもUIの位置には効かない。
      */
     inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name,
-        DirectX::XMFLOAT2 offset = {0.0f, 0.0f})
+                                          DirectX::XMFLOAT2 offset = {0.0f, 0.0f})
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-            UICanvasComponent>();
-        auto e = EntityFactory::SpawnNamed(world, name, arch);
+                                                        UICanvasComponent>();
+        auto e    = EntityFactory::SpawnNamed(world, name, arch);
 
         UITransformComponent t;
         t.offset = offset;
@@ -83,11 +83,11 @@ namespace CCL::GameUI
      * @param parent      UI親（Canvas等）。指定するとその子になり矩形も親基準で解決される。
      */
     inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
-        const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
-        float appearDelay = -1.0f, CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
+                                         const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
+                                         float appearDelay = -1.0f, CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-            UITextComponent, UIAppearComponent>();
+                                                        UITextComponent, UIAppearComponent>();
         auto e    = EntityFactory::SpawnNamed(world, name, arch);
 
         UITransformComponent t;
@@ -116,13 +116,13 @@ namespace CCL::GameUI
      *        暗転パネルは真っ黒のベタより、上下で濃さを変えたほうが安っぽく見えない。
      */
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
-        DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
-        float appearDelay = -1.0f, float appearSlideY = 28.0f,
-        CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID,
-        const DirectX::XMFLOAT4 *colorBottom = nullptr)
+                                         DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
+                                         float appearDelay = -1.0f, float appearSlideY = 28.0f,
+                                         CCL::ECS::EntityID       parent      = CCL::ECS::InvalidEntityID,
+                                         const DirectX::XMFLOAT4 *colorBottom = nullptr)
     {
         auto arch = CCL::ECS::ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-            UIImageComponent, UIAppearComponent>();
+                                                        UIImageComponent, UIAppearComponent>();
         auto e    = EntityFactory::SpawnNamed(world, name, arch);
 
         UITransformComponent t;
@@ -156,17 +156,17 @@ namespace CCL::GameUI
      *        ボタン本体とラベルの両方に同じ遅延で適用する。
      */
     inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
-        const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
-        const std::string &action, bool focused, int sortOrder = 10, float appearDelay = -1.0f,
-        CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
+                                     const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
+                                     const std::string &action, bool focused, int sortOrder = 10, float appearDelay = -1.0f,
+                                     CCL::ECS::EntityID parent = CCL::ECS::InvalidEntityID)
     {
         using namespace CCL::ECS;
 
         // --- ボタン本体 ---
         auto btnArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-            UIImageComponent, UIInteractableComponent, UIButtonComponent, UIAnimationComponent,
-            UIAppearComponent>();
-        auto btn = EntityFactory::SpawnNamed(world, btnName, btnArch);
+                                                 UIImageComponent, UIInteractableComponent, UIButtonComponent, UIAnimationComponent,
+                                                 UIAppearComponent>();
+        auto btn     = EntityFactory::SpawnNamed(world, btnName, btnArch);
 
         UITransformComponent bt;
         bt.anchor = {0.5f, 0.5f};
@@ -194,7 +194,7 @@ namespace CCL::GameUI
 
         // --- ラベル（別エンティティ・左パディングで配置。ボタンと同じ親の下に置く） ---
         auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-            UITextComponent, UIAppearComponent>();
+                                                   UITextComponent, UIAppearComponent>();
         auto lbl       = EntityFactory::SpawnNamed(world, labelName, labelArch);
 
         UITransformComponent lt;
@@ -231,16 +231,22 @@ namespace CCL::GameUI
      * @note アイコンの実体は InputIconSystem が毎フレーム解決する。ここは種別を宣言するだけ。
      */
     inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
-        std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f,
-        float xOffset = 0.0f)
+                               std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f,
+                               float xOffset = 0.0f)
     {
         using namespace CCL::ECS;
 
-        struct HintDef { InputIconKind kind; const char *label; const char *name; float x; };
+        struct HintDef
+        {
+            InputIconKind kind;
+            const char   *label;
+            const char   *name;
+            float         x;
+        };
         // 決定を左、選択を右。押す頻度が高いものを先に読ませる。
         const HintDef defs[] = {
-            {InputIconKind::MenuConfirm,  "CONFIRM", "HintConfirm",  -150.0f},
-            {InputIconKind::MenuNavigate, "SELECT",  "HintNavigate",   30.0f},
+            {InputIconKind::MenuConfirm, "CONFIRM", "HintConfirm", -150.0f},
+            {InputIconKind::MenuNavigate, "SELECT", "HintNavigate", 30.0f},
         };
 
         constexpr float kIcon = 28.0f;
@@ -249,8 +255,8 @@ namespace CCL::GameUI
         for (const HintDef &d : defs)
         {
             auto iconArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-                UIImageComponent, InputIconComponent, UIAppearComponent>();
-            auto icon = EntityFactory::SpawnNamed(world, d.name, iconArch);
+                                                      UIImageComponent, InputIconComponent, UIAppearComponent>();
+            auto icon     = EntityFactory::SpawnNamed(world, d.name, iconArch);
 
             UITransformComponent it;
             it.anchor = {0.5f, 0.5f};
@@ -274,8 +280,8 @@ namespace CCL::GameUI
 
             // ラベルはアイコンの右隣。文字は左上基準なので縦中央へ寄せる。
             auto lblArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-                UITextComponent, UIAppearComponent>();
-            auto lbl = EntityFactory::SpawnNamed(world, (std::string(d.name) + "Label").c_str(), lblArch);
+                                                     UITextComponent, UIAppearComponent>();
+            auto lbl     = EntityFactory::SpawnNamed(world, (std::string(d.name) + "Label").c_str(), lblArch);
 
             UITransformComponent lt;
             lt.anchor = {0.5f, 0.5f};

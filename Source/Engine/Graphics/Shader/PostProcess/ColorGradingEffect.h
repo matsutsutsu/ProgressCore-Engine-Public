@@ -9,22 +9,23 @@
 class ColorGradingEffect : public IPostEffect
 {
 public:
-    ColorGradingEffect() = default;
+    ColorGradingEffect()           = default;
     ~ColorGradingEffect() override = default;
 
-    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
-    void Resize(ID3D11Device* device, UINT width, UINT height) override;
-    void Process(ID3D11DeviceContext* dc,
-                 ID3D11ShaderResourceView* inputSRV,
-                 ID3D11RenderTargetView* outputRTV) override;
+    void Initialize(ID3D11Device *device, UINT width, UINT height) override;
+    void Resize(ID3D11Device *device, UINT width, UINT height) override;
+    void Process(ID3D11DeviceContext      *dc,
+                 ID3D11ShaderResourceView *inputSRV,
+                 ID3D11RenderTargetView   *outputRTV) override;
 
-    const char* GetName() const override { return "ColorGrading"; }
-    void UpdateParams(const GpuData::CbColorGradingData& data) { m_cbData = data; }
+    const char *GetName() const override { return "ColorGrading"; }
+    void        UpdateParams(const GpuData::CbColorGradingData &data) { m_cbData = data; }
 
 private:
     GpuData::CbColorGradingData m_cbData{};
 
-    struct Resources {
+    struct Resources
+    {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader>  ps;
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;

@@ -28,7 +28,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
     ForEachWithID([&](EntityID                            id,
                       TransformComponent                 &trans,
                       const JoltCharacterHandleComponent &handle,
-                      CharacterMovementComponent    &movement,
+                      CharacterMovementComponent         &movement,
                       const JoltCharacterConfigComponent &config,
                       const TimeStateComponent           &time) {
         if (!handle.character)
@@ -40,7 +40,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         //   ヒットストップ/スロー/ポーズといった時間スケールを移動にも一貫して反映させ、
         //   「タイマーは localDt・移動は実時間」の不整合（ジャスト回避スロー中にダッシュが
         //   何倍にも伸びる不具合）を解消する。通常時は localDt==rawDt なので挙動は不変。
-        float safeDt     = (std::max)(0.0001f, (std::min)(time.localDt, 0.0333f));
+        float safeDt = (std::max)(0.0001f, (std::min)(time.localDt, 0.0333f));
         // presenceプロキシ(Kinematic剛体)の MoveKinematic 用 dt。
         // 物理本体の Step(dt) は常に実時間で回る（JoltStepSystem は time スケールを掛けない）。
         //   MoveKinematic は「dt 秒で目標へ到達する速度」を内部で速度化するため、ここに
@@ -95,9 +95,9 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
         // 無視して velocity3D を丸ごと使う＝向いた方向へ上下含めて真っ直ぐ飛ぶ。
         if (movement.use3DVelocity)
         {
-            finalVel              = JPH::Vec3(movement.velocity3D.x, movement.velocity3D.y, movement.velocity3D.z);
+            finalVel                 = JPH::Vec3(movement.velocity3D.x, movement.velocity3D.y, movement.velocity3D.z);
             movement.currentVelocity = movement.velocity3D; // 突進解除後の慣性引き継ぎ用に更新
-            movement.use3DVelocity   = false;            // 1フレーム限りの依頼として消費する
+            movement.use3DVelocity   = false;               // 1フレーム限りの依頼として消費する
         }
 
         ch->SetLinearVelocity(finalVel);
@@ -136,8 +136,8 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     if (movement.jumpImpulse)
     {
         movement.jumpImpulse = false;
-        vy                = config.jumpSpeed;
-        isGrounded        = false; // ジャンプした瞬間は空中扱いにする
+        vy                   = config.jumpSpeed;
+        isGrounded           = false; // ジャンプした瞬間は空中扱いにする
     }
 
     // 空中の時のみ重力を適用する
@@ -169,7 +169,7 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
     //   -1.0f を書き戻す必要が消える。以前は解除の書き忘れが「ずっと速い／ずっと止まる」
     //   として残り続けていた（RootMotionSystem の早期 return が典型）。
     const float requestedSpeed = movement.overrideSpeed;
-    movement.overrideSpeed        = -1.0f;
+    movement.overrideSpeed     = -1.0f;
 
     // 1. ルートモーション中: 慣性(Lerp)を殺し、アニメーションの速度を100%適用する
     if (movement.isRootMotionActive)
@@ -201,7 +201,7 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
     // Lerp の係数は [0,1] に収める。rate * safeDt が 1 を超えると目標を通り越して
     //   逆方向へ飛び、係数が大きいほど発振する（rate=30, dt=0.0333 で既に 1.0）。
     //   config で加減速を上げたときに「速くなる」ではなく「暴れる」になるのを防ぐ。
-    const float t        = (std::min)(rate * safeDt, 1.0f);
+    const float t            = (std::min)(rate * safeDt, 1.0f);
     movement.currentVelocity = Vector3::Lerp(movement.currentVelocity, targetVelocity, t);
 
     return movement.currentVelocity;
@@ -211,7 +211,7 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt,
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();
     JoltHandleComponent        *kinBody       = m_world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
-    JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());         // 自分のプロキシは無視
+    JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());          // 自分のプロキシは無視
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
     updateSettings.mWalkStairsStepUp     = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
@@ -235,7 +235,7 @@ void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt,
     // CharacterVirtual が返すのはワールド座標。position はローカル欄なので変換して書く
     // （回転はゲーム層が別途 ch->SetRotation で流しているのでここでは触らない）。
     TransformUpdateSystem::WriteWorldPosition(*m_world, id, trans,
-        {pos.GetX(), pos.GetY(), pos.GetZ()});
+                                              {pos.GetX(), pos.GetY(), pos.GetZ()});
 
     // presence プロキシ（Kinematic 剛体）を CharacterVirtual に追従させる。
     //   SetPosition のテレポートではなく MoveKinematic を使うことで、

@@ -30,11 +30,11 @@ struct AnimSequence;
 // ===================================================================================
 
 class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
-                            CCL::ECS::Write<AnimatorComponent>,
-                            CCL::ECS::Write<ModelComponent>,
-                            CCL::ECS::Read<TimeStateComponent>>
+                                                  CCL::ECS::Write<AnimatorComponent>,
+                                                  CCL::ECS::Write<ModelComponent>,
+                                                  CCL::ECS::Read<TimeStateComponent>>
 { // 個別の時間を受け取る
-  public:
+public:
     AnimationSystem();
     virtual ~AnimationSystem() = default;
 
@@ -43,7 +43,7 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
     // エディタ用の手動更新関数
     void UpdateManual(CCL::ECS::EntityID entity, float time);
 
-  private:
+private:
     // --- Update() を構成する各フェーズ（m_world アクセスが必要なもののみメンバ関数化） ---
 
     // 台本の点イベント(Sound/Effect/SpawnHitbox)を EventBus 経由で発火する。
@@ -51,5 +51,5 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
     // 区間状態イベント(HitBox/Trail/Blackboard)はここでは発火しない
     // （専用システムが区間ポーリングで読む）。
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
-        const AnimSequence *seq, bool movedForward);
+                             const AnimSequence *seq, bool movedForward);
 };

@@ -10,7 +10,8 @@ using namespace DirectX;
 
 TransformUpdateSystem::TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
 
-static inline XMMATRIX ComposeLocal(const TransformComponent& t) {
+static inline XMMATRIX ComposeLocal(const TransformComponent &t)
+{
     return XMMatrixAffineTransformation(
         XMLoadFloat3(&t.scale), XMVectorZero(),
         XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
@@ -30,7 +31,8 @@ void TransformUpdateSystem::Update(float dt)
     ProcessPendingParents();
 
     // 1. トポロジ変化検出＋ゴースト修復（compose しない＝軽量シリアル）
-    if (ScanDetectTopology()) {
+    if (ScanDetectTopology())
+    {
         RepairBrokenLinks();
         m_cache.Rebuild(*m_world);
     }
@@ -47,31 +49,41 @@ void TransformUpdateSystem::Update(float dt)
 // =========================================================================
 bool TransformUpdateSystem::ScanDetectTopology()
 {
-    bool   needRebuild = false;
+    bool   needRebuild     = false;
     size_t matchedNonRoots = 0;
 
-    ForEachWithID([&](EntityID id, TransformComponent& t) {
+    ForEachWithID([&](EntityID id, TransformComponent &t) {
         EntityID parentId = t.parent;
 
         // ゴーストリンク修復（IsEntityValid は軽い。ここ1か所に集約）
-        if (parentId != 0 && !m_world->IsEntityValid(parentId)) {
-            t.parent = 0; t.prevSiblingID = 0; t.nextSiblingID = 0; t.isDirty = true;
-            parentId = 0; needRebuild = true;
+        if (parentId != 0 && !m_world->IsEntityValid(parentId))
+        {
+            t.parent        = 0;
+            t.prevSiblingID = 0;
+            t.nextSiblingID = 0;
+            t.isDirty       = true;
+            parentId        = 0;
+            needRebuild     = true;
         }
 
         const int oi = m_cache.OrderOf(id);
 
-        if (parentId == 0) {
-            if (oi >= 0) needRebuild = true;   // 非ルート→ルートに変化
-            return;                            // ルートはキャッシュ対象外
+        if (parentId == 0)
+        {
+            if (oi >= 0) needRebuild = true; // 非ルート→ルートに変化
+            return;                          // ルートはキャッシュ対象外
         }
         // 非ルート
-        if (oi < 0) { needRebuild = true; return; }      // 新規の非ルート
+        if (oi < 0)
+        {
+            needRebuild = true;
+            return;
+        } // 新規の非ルート
         ++matchedNonRoots;
-        if (m_cache.ParentIdOf(oi) != parentId) needRebuild = true;  // 再親付け
-        });
+        if (m_cache.ParentIdOf(oi) != parentId) needRebuild = true; // 再親付け
+    });
 
-    if (matchedNonRoots != m_cache.Count()) needRebuild = true;       // 非ルートの破棄
+    if (matchedNonRoots != m_cache.Count()) needRebuild = true; // 非ルートの破棄
     return needRebuild;
 }
 
@@ -80,12 +92,12 @@ bool TransformUpdateSystem::ScanDetectTopology()
 // =========================================================================
 void TransformUpdateSystem::ComputeRootsParallel()
 {
-    ForEachParallel([](TransformComponent& t) {
+    ForEachParallel([](TransformComponent &t) {
         if (t.parent != 0) return;                               // 子は SolveHierarchy で
         if (t.isStatic && !t.isDirty && !t.isTeleported) return; // 静止物のみスキップ
         XMStoreFloat4x4(&t.worldMatrix, ComposeLocal(t));
         t.isDirty = false;
-        });
+    });
 }
 
 // =========================================================================
@@ -94,24 +106,27 @@ void TransformUpdateSystem::ComputeRootsParallel()
 void TransformUpdateSystem::SolveHierarchy()
 {
     const size_t n = m_cache.Count();
-    for (size_t i = 0; i < n; ++i) {
-        const int idx = static_cast<int>(i);
-        const EntityID id = m_cache.EntityAt(idx);
+    for (size_t i = 0; i < n; ++i)
+    {
+        const int      idx = static_cast<int>(i);
+        const EntityID id  = m_cache.EntityAt(idx);
 
-        auto* t = m_world->GetComponent<TransformComponent>(id);
+        auto *t = m_world->GetComponent<TransformComponent>(id);
         if (!t) continue;
 
         const XMMATRIX local = ComposeLocal(*t);
 
         // 親world：非ルート親 → dense（既に算出済み）／ルート親 → コンポーネント（並列パスで算出済み）
         const int p = m_cache.ParentInOrderOf(idx);
-        XMMATRIX parentW;
-        if (p >= 0) {
+        XMMATRIX  parentW;
+        if (p >= 0)
+        {
             parentW = m_cache.WorldAt(p);
         }
-        else {
-            auto* pt = m_world->GetComponent<TransformComponent>(m_cache.ParentIdOf(idx));
-            parentW = pt ? XMLoadFloat4x4(&pt->worldMatrix) : XMMatrixIdentity();
+        else
+        {
+            auto *pt = m_world->GetComponent<TransformComponent>(m_cache.ParentIdOf(idx));
+            parentW  = pt ? XMLoadFloat4x4(&pt->worldMatrix) : XMMatrixIdentity();
         }
 
         const XMMATRIX world = XMMatrixMultiply(local, parentW);
@@ -129,22 +144,28 @@ void TransformUpdateSystem::ProcessPendingParents()
     // 注意: View は全 Chunk 走査。0 件なら body は回らないが、頻発するなら
     //       PendingParentComponent 件数カウンタで早期 return 化するとさらに軽い。
     std::vector<EntityID> pending;
-    for (auto id : m_world->View<PendingParentComponent>()) {
+    for (auto id : m_world->View<PendingParentComponent>())
+    {
         pending.push_back(id);
     }
 
-    for (auto id : pending) {
-        auto* p = m_world->GetComponent<PendingParentComponent>(id);
-        if (p) {
-            if (p->parentID == 0 || p->parentID == InvalidEntityID) {
-                if (m_world->IsEntityValid(id)) {
+    for (auto id : pending)
+    {
+        auto *p = m_world->GetComponent<PendingParentComponent>(id);
+        if (p)
+        {
+            if (p->parentID == 0 || p->parentID == InvalidEntityID)
+            {
+                if (m_world->IsEntityValid(id))
+                {
                     DetachChild(*m_world, id);
-                    if (auto* trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
+                    if (auto *trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
                 }
             }
-            else if (m_world->IsEntityValid(p->parentID) && m_world->IsEntityValid(id)) {
+            else if (m_world->IsEntityValid(p->parentID) && m_world->IsEntityValid(id))
+            {
                 SetParent(*m_world, id, p->parentID);
-                if (auto* trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
+                if (auto *trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
             }
         }
         m_world->RequestRemoveComponent<PendingParentComponent>(id);
@@ -156,24 +177,27 @@ void TransformUpdateSystem::ProcessPendingParents()
 // =========================================================================
 void TransformUpdateSystem::RepairBrokenLinks()
 {
-    ForEachWithID([&](EntityID id, TransformComponent& trans) {
-        if (trans.parent != 0) {
-            auto* parentTrans = m_world->GetComponent<TransformComponent>(trans.parent);
-            if (parentTrans) {
+    ForEachWithID([&](EntityID id, TransformComponent &trans) {
+        if (trans.parent != 0)
+        {
+            auto *parentTrans = m_world->GetComponent<TransformComponent>(trans.parent);
+            if (parentTrans)
+            {
                 const bool isFirstChild = (parentTrans->firstChildID == id);
-                const bool hasSibling = (trans.nextSiblingID != 0 || trans.prevSiblingID != 0);
-                if (!isFirstChild && !hasSibling) {
-                    SetParent(*m_world, id, trans.parent);  // 正しい親子関係を結び直す
+                const bool hasSibling   = (trans.nextSiblingID != 0 || trans.prevSiblingID != 0);
+                if (!isFirstChild && !hasSibling)
+                {
+                    SetParent(*m_world, id, trans.parent); // 正しい親子関係を結び直す
                 }
             }
         }
-        });
+    });
 }
 
 // =========================================================================
 // ↓↓↓ 以下 static ヘルパーは既存のまま（変更なし） ↓↓↓
 // =========================================================================
-void TransformUpdateSystem::SetParent(World& world, EntityID childID, EntityID newParentID)
+void TransformUpdateSystem::SetParent(World &world, EntityID childID, EntityID newParentID)
 {
     if (childID == newParentID) return;
     if (!world.IsEntityValid(childID)) return;
@@ -183,70 +207,84 @@ void TransformUpdateSystem::SetParent(World& world, EntityID childID, EntityID n
     if (newParentID == 0) return;
     if (!world.IsEntityValid(newParentID)) return;
 
-    auto* childTrans = world.GetComponent<TransformComponent>(childID);
-    auto* parentTrans = world.GetComponent<TransformComponent>(newParentID);
+    auto *childTrans  = world.GetComponent<TransformComponent>(childID);
+    auto *parentTrans = world.GetComponent<TransformComponent>(newParentID);
     if (!childTrans || !parentTrans) return;
 
     childTrans->parent = newParentID;
 
-    EntityID oldFirstChildID = parentTrans->firstChildID;
+    EntityID oldFirstChildID  = parentTrans->firstChildID;
     childTrans->nextSiblingID = oldFirstChildID;
     childTrans->prevSiblingID = 0;
 
-    if (oldFirstChildID != 0) {
-        if (auto* oldFirstTrans = world.GetComponent<TransformComponent>(oldFirstChildID)) {
+    if (oldFirstChildID != 0)
+    {
+        if (auto *oldFirstTrans = world.GetComponent<TransformComponent>(oldFirstChildID))
+        {
             oldFirstTrans->prevSiblingID = childID;
         }
     }
     parentTrans->firstChildID = childID;
 }
 
-void TransformUpdateSystem::DetachChild(World& world, EntityID childID)
+void TransformUpdateSystem::DetachChild(World &world, EntityID childID)
 {
-    auto* childTrans = world.GetComponent<TransformComponent>(childID);
+    auto *childTrans = world.GetComponent<TransformComponent>(childID);
     if (!childTrans || childTrans->parent == 0) return;
 
-    EntityID parentID = childTrans->parent;
-    auto* parentTrans = world.GetComponent<TransformComponent>(parentID);
+    EntityID parentID    = childTrans->parent;
+    auto    *parentTrans = world.GetComponent<TransformComponent>(parentID);
 
-    if (parentTrans) {
-        if (parentTrans->firstChildID == childID) {
+    if (parentTrans)
+    {
+        if (parentTrans->firstChildID == childID)
+        {
             parentTrans->firstChildID = childTrans->nextSiblingID;
         }
     }
-    if (childTrans->prevSiblingID != 0) {
-        if (auto* prevTrans = world.GetComponent<TransformComponent>(childTrans->prevSiblingID))
+    if (childTrans->prevSiblingID != 0)
+    {
+        if (auto *prevTrans = world.GetComponent<TransformComponent>(childTrans->prevSiblingID))
             prevTrans->nextSiblingID = childTrans->nextSiblingID;
     }
-    if (childTrans->nextSiblingID != 0) {
-        if (auto* nextTrans = world.GetComponent<TransformComponent>(childTrans->nextSiblingID))
+    if (childTrans->nextSiblingID != 0)
+    {
+        if (auto *nextTrans = world.GetComponent<TransformComponent>(childTrans->nextSiblingID))
             nextTrans->prevSiblingID = childTrans->prevSiblingID;
     }
-    childTrans->parent = 0;
+    childTrans->parent        = 0;
     childTrans->prevSiblingID = 0;
     childTrans->nextSiblingID = 0;
 }
 
-void TransformUpdateSystem::DestroyEntityWithHierarchy(World& world, EntityID entity, bool destroyChildren)
+void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;
-    auto* trans = world.GetComponent<TransformComponent>(entity);
-    if (!trans) { world.RequestDestroyEntity(entity); return; }
+    auto *trans = world.GetComponent<TransformComponent>(entity);
+    if (!trans)
+    {
+        world.RequestDestroyEntity(entity);
+        return;
+    }
 
-    if (destroyChildren) {
+    if (destroyChildren)
+    {
         EntityID childID = trans->firstChildID;
-        while (childID != 0) {
-            auto* childTrans = world.GetComponent<TransformComponent>(childID);
+        while (childID != 0)
+        {
+            auto *childTrans = world.GetComponent<TransformComponent>(childID);
             if (!childTrans) break;
             EntityID nextChild = childTrans->nextSiblingID;
             DestroyEntityWithHierarchy(world, childID, true);
             childID = nextChild;
         }
     }
-    else {
+    else
+    {
         EntityID childID = trans->firstChildID;
-        while (childID != 0) {
-            auto* childTrans = world.GetComponent<TransformComponent>(childID);
+        while (childID != 0)
+        {
+            auto *childTrans = world.GetComponent<TransformComponent>(childID);
             if (!childTrans) break;
             EntityID nextChild = childTrans->nextSiblingID;
             DetachChild(world, childID);
@@ -260,24 +298,26 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(World& world, EntityID en
 // =========================================================================
 // ワールド値 → ローカル欄への書き戻し (static)
 // =========================================================================
-void TransformUpdateSystem::WriteWorldTransform(World& world, EntityID entity,
-    TransformComponent& trans, const DirectX::XMFLOAT3& worldPos,
-    const DirectX::XMFLOAT4& worldRot)
+void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
+                                                TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
+                                                const DirectX::XMFLOAT4 &worldRot)
 {
     using namespace DirectX;
 
     const EntityID parentID = trans.parent.id;
 
     // 親がいなければローカル＝ワールド。大多数はここで終わる（追加コストなし）。
-    if (parentID == 0) {
+    if (parentID == 0)
+    {
         trans.position = worldPos;
         trans.rotation = worldRot;
         trans.isStatic = false;
         return;
     }
 
-    const auto* parentTrans = world.GetComponent<TransformComponent>(parentID);
-    if (!parentTrans) {
+    const auto *parentTrans = world.GetComponent<TransformComponent>(parentID);
+    if (!parentTrans)
+    {
         // 親リンクが切れている（破棄直後など）。ワールド値のまま置くのが最も無難。
         trans.position = worldPos;
         trans.rotation = worldRot;
@@ -295,12 +335,14 @@ void TransformUpdateSystem::WriteWorldTransform(World& world, EntityID entity,
 
     // 回転: 親のワールド回転の逆をかける
     XMVECTOR pScale, pRot, pTrans;
-    if (XMMatrixDecompose(&pScale, &pRot, &pTrans, parentWorld)) {
+    if (XMMatrixDecompose(&pScale, &pRot, &pTrans, parentWorld))
+    {
         XMVECTOR localRot = XMQuaternionMultiply(
             XMLoadFloat4(&worldRot), XMQuaternionInverse(pRot));
         XMStoreFloat4(&trans.rotation, XMQuaternionNormalize(localRot));
     }
-    else {
+    else
+    {
         // 分解できない行列（スケール0など）。回転は触らず位置だけ反映しておく。
         trans.rotation = worldRot;
     }
@@ -308,8 +350,8 @@ void TransformUpdateSystem::WriteWorldTransform(World& world, EntityID entity,
     trans.isStatic = false;
 }
 
-void TransformUpdateSystem::WriteWorldPosition(World& world, EntityID entity,
-    TransformComponent& trans, const DirectX::XMFLOAT3& worldPos)
+void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
+                                               TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos)
 {
     // 回転を据え置くため、現在のローカル回転を「そのまま維持する」ように渡す。
     //   親がいる場合は WriteWorldTransform が rotation を書き換えてしまうので、
@@ -317,41 +359,45 @@ void TransformUpdateSystem::WriteWorldPosition(World& world, EntityID entity,
     using namespace DirectX;
 
     const EntityID parentID = trans.parent.id;
-    if (parentID == 0) {
+    if (parentID == 0)
+    {
         trans.position = worldPos;
         trans.isStatic = false;
         return;
     }
 
-    const auto* parentTrans = world.GetComponent<TransformComponent>(parentID);
-    if (!parentTrans) {
+    const auto *parentTrans = world.GetComponent<TransformComponent>(parentID);
+    if (!parentTrans)
+    {
         trans.position = worldPos;
         trans.isStatic = false;
         return;
     }
 
     const XMMATRIX parentWorld = XMLoadFloat4x4(&parentTrans->worldMatrix);
-    XMVECTOR localPos = XMVector3Transform(
+    XMVECTOR       localPos    = XMVector3Transform(
         XMVectorSet(worldPos.x, worldPos.y, worldPos.z, 1.0f),
         XMMatrixInverse(nullptr, parentWorld));
     XMStoreFloat3(&trans.position, localPos);
     trans.isStatic = false;
 }
 
-void TransformUpdateSystem::MarkForDestruction(World& world, EntityID entity, bool destroyChildren)
+void TransformUpdateSystem::MarkForDestruction(World &world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;
     if (world.HasComponent<Tag::DestroyTag>(entity)) return;
 
     world.AddComponent<Tag::DestroyTag>(entity);
 
-    auto* trans = world.GetComponent<TransformComponent>(entity);
+    auto *trans = world.GetComponent<TransformComponent>(entity);
     if (!trans) return;
 
-    if (destroyChildren) {
+    if (destroyChildren)
+    {
         EntityID childID = trans->firstChildID;
-        while (childID != 0) {
-            auto* childTrans = world.GetComponent<TransformComponent>(childID);
+        while (childID != 0)
+        {
+            auto *childTrans = world.GetComponent<TransformComponent>(childID);
             if (!childTrans) break;
             EntityID nextChild = childTrans->nextSiblingID;
             MarkForDestruction(world, childID, true);

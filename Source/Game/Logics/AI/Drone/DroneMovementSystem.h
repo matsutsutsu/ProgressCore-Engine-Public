@@ -17,7 +17,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
                                 CCL::ECS::Write<DroneComponent>,
                                 CCL::ECS::Read<TimeStateComponent>>
 {
-  public:
+public:
     DroneMovementSystem()
         : IfSystem("DroneMovementSystem")
     {
@@ -26,7 +26,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
 
     virtual void Update(float dt) override;
 
-  private:
+private:
     // 各関数は drone.currentVelocity と rotation だけを計算する。
     // trans.position への積分は Update 側の共通処理が担う。
 
@@ -51,7 +51,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     //   includePitch=false は Idle のように「水平だけ向かせたい」場面用。
     //   includePitch=true のときだけ look の正規化が要る（asin に渡すため）。
     DirectX::SimpleMath::Quaternion LookToRotation(const DirectX::SimpleMath::Vector3 &look,
-                                                   bool includePitch) const;
+                                                   bool                                includePitch) const;
 
     // 予告の震えの位置オフセット [m]。t は構え始めてからの経過秒。
     //   t を取るのは前フレームぶんを引いて差分だけ動かすため（足しっぱなしにすると
@@ -67,16 +67,16 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     inline void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 陣形へ戻る（MoveToTarget）。隊列を「直す」局面なので Idle より強い。
-    static constexpr float kMoveToTargetGain    = 20.0f;
-    static constexpr float kMoveToTargetDamping = 15.0f;
+    static constexpr float kMoveToTargetGain       = 20.0f;
+    static constexpr float kMoveToTargetDamping    = 15.0f;
     static constexpr float kMoveToTargetSpeedScale = 2.5f;
 
     // 陣形を保つ（Idle）。強くすると目標に貼り付いてホバーのゆらぎが消える。
-    static constexpr float kIdleGain        = 10.0f;
-    static constexpr float kIdleDamping     =  8.0f;
-    static constexpr float kIdleSpeedScale  =  1.5f;
+    static constexpr float kIdleGain       = 10.0f;
+    static constexpr float kIdleDamping    = 8.0f;
+    static constexpr float kIdleSpeedScale = 1.5f;
 
-    static constexpr float kHoverFrequency = 1.0f;   // kHoverPhasePeriod の巻き戻しが成立するよう整数にする
+    static constexpr float kHoverFrequency = 1.0f; // kHoverPhasePeriod の巻き戻しが成立するよう整数にする
     static constexpr float kHoverAmplitude = 3.0f;
 
     // 突撃のタメ。「静止 → 加速」の2段でジャスト回避を読ませる。
@@ -124,7 +124,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     static constexpr float kTurnWindup       = 20.0f;
     static constexpr float kTurnCharge       = 25.0f;
     static constexpr float kTurnSoftFollow   = 12.0f;
-    static constexpr float kTurnReturning    =  8.0f;
+    static constexpr float kTurnReturning    = 8.0f;
 
     static constexpr float kStunTumbleRate = 4.0f;  // 吹き飛ばし中の回転 [rad/s]
     static constexpr float kKnockbackDecay = 6.0f;  // 吹き飛ばし速度の減衰率 [1/s]
@@ -134,10 +134,10 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     // 突き抜けた瞬間に軌道が跳ね上がる。
     static constexpr float kBreakawayFastSpeed = 40.0f;
 
-    static constexpr float kBreakawayDrag = 2.5f;   // 離脱中の減速率 [1/s]
+    static constexpr float kBreakawayDrag = 2.5f; // 離脱中の減速率 [1/s]
 
     // 隊列追従の滑らかさと最高速度倍率（頭の突入速度を上回る必要がある）。
-    static constexpr float kSoftFollowDamping = 10.0f;
+    static constexpr float kSoftFollowDamping       = 10.0f;
     static constexpr float kSoftFollowMaxSpeedScale = 2.4f;
 
     // slotInSquad から追従の鈍さ係数を出す。後方の機ほどワンテンポ遅れて曲がるので
@@ -145,7 +145,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
     float SlotLag(const DroneComponent &drone) const
     {
         const float lag = 1.0f - static_cast<float>(drone.slotInSquad) * m_slotLagPerSlot;
-        return (lag < 0.15f) ? 0.15f : lag;   // 遅すぎて隊列から千切れないよう下限を置く
+        return (lag < 0.15f) ? 0.15f : lag; // 遅すぎて隊列から千切れないよう下限を置く
     }
 
     // SquadTuning から Update の先頭で写し取る（並列ループから resource を引かない）。

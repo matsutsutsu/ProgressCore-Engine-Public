@@ -16,14 +16,13 @@
 #include "Engine/Core/Components/EntityLabel.h"
 #include <SimpleMath.h>
 
-
 #include <imgui.h>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // ドローンのプレハブパス
-static constexpr const char* kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
+static constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
 // Update：生存数を数えて BattleContext に反映する（毎フレーム）。
 void DroneManagerSystem::Update(float /*dt*/)
@@ -32,7 +31,7 @@ void DroneManagerSystem::Update(float /*dt*/)
     TryAutoSpawnInitial();
 
     if (!m_world->HasResource<BattleContext>()) return;
-    auto& battle = m_world->GetResource<BattleContext>();
+    auto &battle = m_world->GetResource<BattleContext>();
 
     int alive = GetAliveCount();
 
@@ -40,7 +39,6 @@ void DroneManagerSystem::Update(float /*dt*/)
     //   減る経路も無いため値は動かない（詳細は Drone_Guide.md §9）。
     battle.droneAliveCount = alive;
 }
-
 
 // シーン開始時の初期配備（1回だけ）。
 void DroneManagerSystem::TryAutoSpawnInitial()
@@ -53,12 +51,11 @@ void DroneManagerSystem::TryAutoSpawnInitial()
     int spawned = SpawnDrones(m_initialSpawnCount);
     if (spawned > 0)
     {
-        m_autoSpawnDone = true;   // 成功したらラッチして二度と自動生成しない
+        m_autoSpawnDone = true; // 成功したらラッチして二度と自動生成しない
         CCL_LOG_INFO(LogCategory::Game,
-            "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
+                     "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
     }
 }
-
 
 // 数えるだけなので確保しない（View だと機数ぶんの vector を作ってから捨てることになる）。
 int DroneManagerSystem::GetAliveCount() const
@@ -129,17 +126,15 @@ void DroneManagerSystem::ReindexAllDrones()
         // 満杯（32小隊×5機＝160機超）なら無所属のまま。その機は大技で使われる。
     }
 }
- 
 
 // 最初のボスを探す。
 EntityID DroneManagerSystem::FindBoss() const
 {
     auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
-    for (auto b : bossView) return b;   // 最初の1体
+    for (auto b : bossView)
+        return b; // 最初の1体
     return InvalidEntityID;
 }
-
-
 
 int DroneManagerSystem::SpawnDrones(int count)
 {
@@ -171,7 +166,7 @@ int DroneManagerSystem::SpawnDrones(int count)
             // 生成時の初期陣形はボスの頭上高くで旋回する HighOrbit。
             d->currentFormation = DroneFormationType::HighOrbit;
             d->orbitRadius      = 8.0f;
-            d->hasReachedSlot   = false;   // スポーン直後は必ず MoveToSlot から開始
+            d->hasReachedSlot   = false; // スポーン直後は必ず MoveToSlot から開始
 
             // 揺れの位相を個体ごとに散らす。EntityID を撹拌してから使うのは、連番の
             // まま等間隔に配ると、遅いホバーはばらけても速い震えの側では位相が一周ぶん
@@ -195,17 +190,17 @@ int DroneManagerSystem::SpawnDrones(int count)
     ReindexAllDrones();
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機スポーン（合計 %d）",
-        spawned, GetAliveCount());
+                 spawned, GetAliveCount());
     return spawned;
 }
-
 
 // 先頭から count 機破壊する。
 int DroneManagerSystem::DestroyDrones(int count)
 {
-    int destroyed = 0;
-    auto view = m_world->View<DroneComponent>();
-    for (auto e : view) {
+    int  destroyed = 0;
+    auto view      = m_world->View<DroneComponent>();
+    for (auto e : view)
+    {
         if (destroyed >= count) break;
         m_world->Destroy(e);
         ++destroyed;
@@ -214,11 +209,11 @@ int DroneManagerSystem::DestroyDrones(int count)
     return destroyed;
 }
 
-
 void DroneManagerSystem::DestroyAll()
 {
     auto view = m_world->View<DroneComponent>();
-    for (auto e : view) m_world->Destroy(e);
+    for (auto e : view)
+        m_world->Destroy(e);
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
@@ -323,7 +318,6 @@ void DroneManagerSystem::SetAllDronesArrived(bool treatAsArrived)
                  count, treatAsArrived ? "到着済み" : "未到着(再接近)");
 }
 
-
 // OnGui：生成・破壊・カウント確認のデバッグUI。
 void DroneManagerSystem::OnGui()
 {
@@ -337,7 +331,7 @@ void DroneManagerSystem::OnGui()
         ImGui::SliderInt("Initial Count", &m_initialSpawnCount, 1, 1000);
         ImGui::Text("Auto Spawn Done: %s", m_autoSpawnDone ? "yes" : "no");
         if (ImGui::Button("Re-arm Auto Spawn", ImVec2(160, 24)))
-            m_autoSpawnDone = false;   // もう一度シーン開始時のように配備し直す
+            m_autoSpawnDone = false; // もう一度シーン開始時のように配備し直す
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "Spawn Settings");
@@ -346,15 +340,16 @@ void DroneManagerSystem::OnGui()
         int alive = GetAliveCount();
         ImGui::Text("Current Active Drones: %d", alive);
 
-        if (m_world->HasResource<BattleContext>()) {
-            auto& b = m_world->GetResource<BattleContext>();
+        if (m_world->HasResource<BattleContext>())
+        {
+            auto &b = m_world->GetResource<BattleContext>();
             ImGui::Text("BattleContext.droneAliveCount: %d", b.droneAliveCount);
             // 構想上の段階分け。これを読む BT 条件はまだ無く、ドローンも減らないので
             //   実際の挙動は変わらない（初期配備100機なら常に "Final"）。
-            const char* tactic =
-                b.droneAliveCount <= 100 ? "Final" :
-                b.droneAliveCount <= 400 ? "Aggressive" :
-                b.droneAliveCount <= 700 ? "Pressure" : "Control";
+            const char *tactic =
+                b.droneAliveCount <= 100 ? "Final" : b.droneAliveCount <= 400 ? "Aggressive"
+                                                 : b.droneAliveCount <= 700   ? "Pressure"
+                                                                              : "Control";
             ImGui::TextDisabled("→ 想定戦術(未接続): %s", tactic);
         }
 
@@ -377,7 +372,7 @@ void DroneManagerSystem::OnGui()
 
         {
             int   total = 0, wants = 0, reached = 0, moving = 0;
-            int   st[5] = {0, 0, 0, 0, 0};
+            int   st[5]        = {0, 0, 0, 0, 0};
             float sumProgress  = 0.0f;
             int   telegraphing = 0;
             float sumWindup    = 0.0f;
@@ -430,7 +425,7 @@ void DroneManagerSystem::OnGui()
             DestroyAll();
         ImGui::PopStyleColor();
 
-         ImGui::Spacing();
+        ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "State Debug (動作確認用)");
 
         // currentState は判断層が毎フレーム決める。ここから触れるのは、
@@ -487,14 +482,14 @@ void DroneManagerSystem::OnGui()
 
             if (ImGui::TreeNodeEx("予告の震え", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                ImGui::SliderFloat("振れ幅",   &shiver.amplitude, 0.0f,  1.0f, "%.2f m");
-                ImGui::SliderFloat("速さ",     &shiver.frequency, 0.5f, 20.0f, "%.1f Hz");
+                ImGui::SliderFloat("振れ幅", &shiver.amplitude, 0.0f, 1.0f, "%.2f m");
+                ImGui::SliderFloat("速さ", &shiver.frequency, 0.5f, 20.0f, "%.1f Hz");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("上げすぎるとノイズに見えて予告にならない。5〜8Hz が目安");
-                ImGui::SliderFloat("溜め時間", &shiver.rampTime,  0.1f,  4.0f, "%.1f s");
+                ImGui::SliderFloat("溜め時間", &shiver.rampTime, 0.1f, 4.0f, "%.1f s");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("この秒数で振れ幅が最大になる。BT の Wait(予備動作) より短くすると、撃つ前に溜まり切る");
-                ImGui::SliderFloat("ばらつき", &shiver.scatter,   0.0f,  1.0f, "%.2f");
+                ImGui::SliderFloat("ばらつき", &shiver.scatter, 0.0f, 1.0f, "%.2f");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("0 にすると全機が同じ拍で揺れて「呼吸」に見える。1 でバラバラの震え");
 
@@ -512,7 +507,7 @@ void DroneManagerSystem::OnGui()
             if (ImGui::TreeNodeEx("小隊の調整", ImGuiTreeNodeFlags_DefaultOpen))
             {
                 ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "蛇のしなり");
-                ImGui::SliderFloat("追従バネ",   &tuning.followGain,     1.0f, 30.0f, "%.1f");
+                ImGui::SliderFloat("追従バネ", &tuning.followGain, 1.0f, 30.0f, "%.1f");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("間隔のずれを直す強さ。小さいほど胴体が伸び縮みして柔らかく見える");
                 ImGui::SliderFloat("後席の鈍さ", &tuning.slotLagPerSlot, 0.0f, 0.25f, "%.2f");
@@ -527,11 +522,11 @@ void DroneManagerSystem::OnGui()
 
                 ImGui::Spacing();
                 ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "突入");
-                ImGui::SliderFloat("突入速度",   &tuning.strikeSpeed,      10.0f, 90.0f, "%.0f m/s");
-                ImGui::SliderFloat("突入時間",   &tuning.strikeDuration,    0.5f,  5.0f, "%.1f s");
-                ImGui::SliderFloat("再突入間隔", &tuning.approachMinTime,   0.0f,  6.0f, "%.1f s");
-                ImGui::SliderFloat("旋回上限",   &tuning.maxTurnRateDeg,   10.0f, 360.0f, "%.0f deg/s");
-                ImGui::SliderFloat("直線化距離", &tuning.terminalLockDist,  0.0f, 30.0f, "%.1f m");
+                ImGui::SliderFloat("突入速度", &tuning.strikeSpeed, 10.0f, 90.0f, "%.0f m/s");
+                ImGui::SliderFloat("突入時間", &tuning.strikeDuration, 0.5f, 5.0f, "%.1f s");
+                ImGui::SliderFloat("再突入間隔", &tuning.approachMinTime, 0.0f, 6.0f, "%.1f s");
+                ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 360.0f, "%.0f deg/s");
+                ImGui::SliderFloat("直線化距離", &tuning.terminalLockDist, 0.0f, 30.0f, "%.1f m");
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("この距離まで詰めたら追尾をやめて直線になる。0 にすると完全追尾＝ジャスト回避が成立しない");
 
@@ -556,15 +551,15 @@ void DroneManagerSystem::OnGui()
         // 小隊の中身（頭の位置とフェーズ）。
         if (m_world->HasResource<SquadRegistry>())
         {
-            const auto &reg = m_world->GetResource<SquadRegistry>();
+            const auto &reg   = m_world->GetResource<SquadRegistry>();
             int         shown = 0;
             for (uint8_t i = 0; i < SquadRegistry::kMaxSquads && shown < 6; ++i)
             {
                 const auto &s = reg.squads[i];
                 if (s.aliveCount == 0) continue;
-                const char *phaseName = (s.phase == SquadPhase::Regroup)  ? "Regroup"
-                                      : (s.phase == SquadPhase::Approach) ? "Approach"
-                                                                          : "Strike";
+                const char *phaseName = (s.phase == SquadPhase::Regroup)    ? "Regroup"
+                                        : (s.phase == SquadPhase::Approach) ? "Approach"
+                                                                            : "Strike";
                 ImGui::Text("小隊%2d: %d機  %-8s  (%.0f, %.0f, %.0f)",
                             i, s.aliveCount, phaseName,
                             s.anchorPos.x, s.anchorPos.y, s.anchorPos.z);

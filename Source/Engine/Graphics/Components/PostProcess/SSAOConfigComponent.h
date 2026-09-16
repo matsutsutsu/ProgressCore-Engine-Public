@@ -15,5 +15,5 @@ struct SSAOConfigComponent
     bool enable = true;
 
     // radius=0.5m / intensity=0.8 / bias=0.02 / maxDistance=50m
-    GpuData::CbSSAOData data{ 0.5f, 0.8f, 0.02f, 50.0f };
+    GpuData::CbSSAOData data{0.5f, 0.8f, 0.02f, 50.0f};
 };

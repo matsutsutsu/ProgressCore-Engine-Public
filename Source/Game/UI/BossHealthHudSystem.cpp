@@ -21,9 +21,9 @@ using namespace CCL::ECS;
 
 namespace
 {
-// ボスHPバーは残量で色を変えず、威圧感のあるクリムゾン固定。失った分はアンバーで見せる。
-const DirectX::XMFLOAT4 kBossFill  = {0.80f, 0.15f, 0.18f, 1.0f}; // 深紅
-const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f}; // アンバー（失った分）
+    // ボスHPバーは残量で色を変えず、威圧感のあるクリムゾン固定。失った分はアンバーで見せる。
+    const DirectX::XMFLOAT4 kBossFill  = {0.80f, 0.15f, 0.18f, 1.0f};  // 深紅
+    const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f}; // アンバー（失った分）
 } // namespace
 
 void BossHealthHudSystem::Initialize()
@@ -33,31 +33,31 @@ void BossHealthHudSystem::Initialize()
 
     // --- ゲージ本体（画面上部中央・アンカー方式） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UIProgressBarComponent>();
+                                             UIProgressBarComponent>();
     auto bar     = EntityFactory::SpawnNamed(*m_world, "BossHpGauge", barArch);
 
     UITransformComponent t;
-    t.anchor = {0.5f, 0.0f};   // 画面上辺の中央
-    t.pivot  = {0.5f, 0.0f};   // 自身の上辺中央をアンカーに合わせる
-    t.offset = {0.0f, 44.0f};  // 上端から44px下
+    t.anchor = {0.5f, 0.0f};  // 画面上辺の中央
+    t.pivot  = {0.5f, 0.0f};  // 自身の上辺中央をアンカーに合わせる
+    t.offset = {0.0f, 44.0f}; // 上端から44px下
     t.size   = {900.0f, 26.0f};
 
     UIProgressBarComponent b;
     b.sortOrder  = 100;
-    b.showTrail  = true;       // 遅延ダメージ（チップ）バーを有効化
+    b.showTrail  = true; // 遅延ダメージ（チップ）バーを有効化
     b.fillColor  = kBossFill;
     b.trailColor = kBossTrail;
-    b.gradient   = 0.45f;      // 下端を暗く＝ベタ塗りに見えない
+    b.gradient   = 0.45f; // 下端を暗く＝ベタ塗りに見えない
     b.value      = 1.0f;
     b.trailValue = 1.0f;
-    b.visible    = false;      // 出現するまで隠しておく
+    b.visible    = false; // 出現するまで隠しておく
 
     bar.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(b);
     m_barID = bar.ID();
 
     // --- ラベル（ゲージの上・中央寄せは近似オフセット） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UITextComponent>();
+                                               UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*m_world, "BossHpLabel", labelArch);
 
     UITransformComponent lt;
@@ -90,28 +90,32 @@ void BossHealthHudSystem::Update(float dt)
     EntityID               bossID = InvalidEntityID;
     ForEachWithID([&](EntityID id, const HealthComponent &hp, const BossActionComponent & /*tag*/) {
         if (boss) return;
-        if (hp.currentHealth > 0.0f) { boss = &hp; bossID = id; }
+        if (hp.currentHealth > 0.0f)
+        {
+            boss   = &hp;
+            bossID = id;
+        }
     });
 
     if (!boss)
     {
         bar->visible = false;
         if (txt) txt->visible = false;
-        m_init = false; // 次のボスに備えて初回スナップし直す
+        m_init  = false; // 次のボスに備えて初回スナップし直す
         m_shake = 0.0f;
         return;
     }
 
     const float ratio = (boss->maxHealth > 0.0f)
-                      ? std::clamp(boss->currentHealth / boss->maxHealth, 0.0f, 1.0f)
-                      : 0.0f;
+                            ? std::clamp(boss->currentHealth / boss->maxHealth, 0.0f, 1.0f)
+                            : 0.0f;
 
     // 初回は瞬時に合わせる（出現時にバーがスッと減って見えないように）。
     if (!m_init)
     {
         bar->trailValue = ratio;
-        m_prevRatio      = ratio;
-        m_init           = true;
+        m_prevRatio     = ratio;
+        m_init          = true;
     }
 
     bar->visible = true;
@@ -122,13 +126,13 @@ void BossHealthHudSystem::Update(float dt)
     if (ratio < m_prevRatio - 1e-4f)
     {
         m_trailHold = kTrailHold;
-        m_shake     = 1.0f;   // 当たった瞬間にゲージを揺らす
-        m_shakeTime = 0.0f;   // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+        m_shake     = 1.0f; // 当たった瞬間にゲージを揺らす
+        m_shakeTime = 0.0f; // 位相を頭出し＝毎回同じ「ビクッ」から始まる
     }
 
     // 揺れは指数減衰。ウィジェットは揺れ量を持つだけで、減らすのは供給側の仕事。
-    m_shakeTime      += dt;
-    m_shake          -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
+    m_shakeTime += dt;
+    m_shake -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
     if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
     bar->shake        = m_shake;
     bar->shakeElapsed = m_shakeTime;

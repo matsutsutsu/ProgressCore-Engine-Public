@@ -52,7 +52,7 @@ void GameResultSystem::Initialize()
 void GameResultSystem::Update(float dt)
 {
     if (!m_debugEnabled) return; // デバッグ用の全体OFF（ステージ確認中などに勝敗判定を止める）
-    if (m_resultShown) return; // 既に表示済みなら何もしない
+    if (m_resultShown) return;   // 既に表示済みなら何もしない
 
     // 勝利演出の待機中：撃破スローの余韻を見せてからリザルトを出す。
     // dt はスロー非依存の実時間なので、実時間でカウントダウンすればスロー終了後に表示される。
@@ -84,7 +84,7 @@ void GameResultSystem::Update(float dt)
         }
         else
         {
-            anyEnemy = true;      // 敵が存在する
+            anyEnemy = true; // 敵が存在する
             if (!dead) ++aliveEnemies;
         }
     });
@@ -128,19 +128,19 @@ void GameResultSystem::ShowResultUI(bool win)
     // 出現アニメ：要素ごとに遅延を少しずつ増やして上から順にスッと出す（暗転→見出し→ボタン）。
     // 暗転パネルはスライド無し(0)のフェードのみ、それ以外は上スライド付きで現れる。
     SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.6f}, 200,
-        0.00f, 0.0f, canvas);
+               0.00f, 0.0f, canvas);
 
     // 見出し（勝敗で文言と色を変える。中央寄せは近似オフセット）
-    const char             *title = win ? "GAME CLEAR" : "GAME OVER";
-    const DirectX::XMFLOAT4 color = win ? DirectX::XMFLOAT4{1.0f, 0.9f, 0.4f, 1.0f}  // 金
-                                        : DirectX::XMFLOAT4{1.0f, 0.4f, 0.4f, 1.0f}; // 赤
-    EntityID titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220, 0.08f, canvas);
+    const char             *title   = win ? "GAME CLEAR" : "GAME OVER";
+    const DirectX::XMFLOAT4 color   = win ? DirectX::XMFLOAT4{1.0f, 0.9f, 0.4f, 1.0f}  // 金
+                                          : DirectX::XMFLOAT4{1.0f, 0.4f, 0.4f, 1.0f}; // 赤
+    EntityID                titleId = SpawnLabel(w, "ResultTitle", title, {-190.0f, -140.0f}, 64.0f, 220, 0.08f, canvas);
     if (auto *tx = w.GetComponent<UITextComponent>(titleId)) tx->color = color;
 
     // ボタン（RETRY が初期フォーカス）
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, 0.0f}, "retry", true, 210, 0.16f, canvas);
     SpawnButton(w, "BtnResultTitle", "LblResultTitle", "TITLE", {0.0f, 90.0f}, "result_title",
-        false, 210, 0.24f, canvas);
+                false, 210, 0.24f, canvas);
 
     // 操作ヒント（[決定] [選択]）。Canvas の子なので、この画面を畳むときに一緒に消える。
     //   ここでは受け皿だけ用意する（Canvas ごと破棄するため個別のIDは持たない）。

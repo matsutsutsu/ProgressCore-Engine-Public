@@ -22,9 +22,9 @@
 #include "Engine/Animation/Core/AnimStateMachine.h"
 
 class AnimSetupSystem : public CCL::ECS::IfSystem<AnimSetupSystem,
-                            CCL::ECS::Read<AnimatorComponent>>
+                                                  CCL::ECS::Read<AnimatorComponent>>
 {
-  public:
+public:
     AnimSetupSystem()
         : IfSystem("AnimSetupSystem")
     {

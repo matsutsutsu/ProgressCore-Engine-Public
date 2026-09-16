@@ -6,10 +6,10 @@
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"
 
 class UIAppearSystem : public CCL::ECS::IfSystem<UIAppearSystem,
-                           CCL::ECS::Write<UITransformComponent>,
-                           CCL::ECS::Write<UIAppearComponent>>
+                                                 CCL::ECS::Write<UITransformComponent>,
+                                                 CCL::ECS::Write<UIAppearComponent>>
 {
-  public:
+public:
     UIAppearSystem()
         : IfSystem("UIAppearSystem")
     {

@@ -57,12 +57,14 @@
 #include <atomic>
 
 // 前方宣言（このヘッダはECS側の実装詳細に依存しない）
-namespace CCL::ECS { class JobSystem; }
-
+namespace CCL::ECS
+{
+    class JobSystem;
+}
 
 class JoltJobSystemAdapter final : public JPH::JobSystemWithBarrier
 {
-  public:
+public:
     JoltJobSystemAdapter() = default;
 
     // 積んだジョブが全て消化されるのを待ってから破棄する（詳細は .cpp）
@@ -86,12 +88,12 @@ class JoltJobSystemAdapter final : public JPH::JobSystemWithBarrier
     int GetMaxConcurrency() const override;
 
     // ジョブを1つ確保する。依存が0なら即座にキューへ積まれる。
-    JobHandle CreateJob(const char           *inName,
-                        JPH::ColorArg         inColor,
-                        const JobFunction    &inJobFunction,
-                        JPH::uint32           inNumDependencies = 0) override;
+    JobHandle CreateJob(const char        *inName,
+                        JPH::ColorArg      inColor,
+                        const JobFunction &inJobFunction,
+                        JPH::uint32        inNumDependencies = 0) override;
 
-  protected:
+protected:
     // 実行可能になったジョブを1件キューへ積む
     void QueueJob(Job *inJob) override;
 
@@ -101,7 +103,7 @@ class JoltJobSystemAdapter final : public JPH::JobSystemWithBarrier
     // ジョブの後始末（参照カウントが0になったとき Jolt から呼ばれる）
     void FreeJob(Job *inJob) override;
 
-  private:
+private:
     // ワーカースレッド上で実際にジョブを走らせる。Tracyゾーンはここで張る。
     void RunJob(Job *inJob);
 

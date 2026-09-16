@@ -19,7 +19,7 @@ class CharacterAnimSyncSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Write<AnimParametersComponent>,
                                     CCL::ECS::Write<AnimatorComponent>>
 {
-  public:
+public:
     CharacterAnimSyncSystem()
         : IfSystem("CharacterAnimSyncSystem")
     {

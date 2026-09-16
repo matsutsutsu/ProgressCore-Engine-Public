@@ -68,10 +68,9 @@ struct AnimCondition
 // 遷移の矢印
 struct AnimTransition
 {
-    uint32_t                   targetStateHash = 0;
-    float                      blendDuration   = 0.2f;
-    AnimTransitionLogic        logicType       = AnimTransitionLogic::AND;
-
+    uint32_t            targetStateHash = 0;
+    float               blendDuration   = 0.2f;
+    AnimTransitionLogic logicType       = AnimTransitionLogic::AND;
 
     // 文字列を完全に廃止し、ビットマスクに変更
     uint32_t requiredCancelMask = 0;
@@ -116,9 +115,9 @@ struct AnimState
     float nodePosX = 0.0f;
     float nodePosY = 0.0f;
 
-    const CurveData  *speedCurve      = nullptr;
-    const CurveData  *rootMotionCurve = nullptr; // rootMotionCurveName から束縛
-    const AnimSequence   *sequence   = nullptr;
+    const CurveData    *speedCurve      = nullptr;
+    const CurveData    *rootMotionCurve = nullptr; // rootMotionCurveName から束縛
+    const AnimSequence *sequence        = nullptr;
 
     std::vector<AnimTransition> transitions;
 
@@ -166,30 +165,15 @@ struct AnimStateGraph
 //   コピーは subGraph を「新しい実体」として複製するディープコピー。
 //   （葉ステートは subGraph==nullptr なので複製コストはゼロ）
 // -----------------------------------------------------------------
-inline AnimState::AnimState()                              = default;
-inline AnimState::~AnimState()                             = default;
-inline AnimState::AnimState(AnimState &&) noexcept         = default;
+inline AnimState::AnimState()                                 = default;
+inline AnimState::~AnimState()                                = default;
+inline AnimState::AnimState(AnimState &&) noexcept            = default;
 inline AnimState &AnimState::operator=(AnimState &&) noexcept = default;
 
 inline AnimState::AnimState(const AnimState &o)
-    : stateHash(o.stateHash)
-    , sequenceName(o.sequenceName)
-    , sequenceFilePath(o.sequenceFilePath)
-    , isLoop(o.isLoop)
-    , playbackSpeed(o.playbackSpeed)
-    , speedCurveName(o.speedCurveName)
-    , rootMotionCurveName(o.rootMotionCurveName)
-    , applyRootMotion(o.applyRootMotion)
-    , lockVerticalRootMotion(o.lockVerticalRootMotion)
-    , groupId(o.groupId)
-    , nodePosX(o.nodePosX)
-    , nodePosY(o.nodePosY)
-    , speedCurve(o.speedCurve)           // 束縛ポインタは共有資源なので浅コピーでよい
-    , rootMotionCurve(o.rootMotionCurve)
-    , sequence(o.sequence)
-    , transitions(o.transitions)
-    , isSubMachine(o.isSubMachine)
-    , subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
+    : stateHash(o.stateHash), sequenceName(o.sequenceName), sequenceFilePath(o.sequenceFilePath), isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), speedCurveName(o.speedCurveName), rootMotionCurveName(o.rootMotionCurveName), applyRootMotion(o.applyRootMotion), lockVerticalRootMotion(o.lockVerticalRootMotion), groupId(o.groupId), nodePosX(o.nodePosX), nodePosY(o.nodePosY), speedCurve(o.speedCurve) // 束縛ポインタは共有資源なので浅コピーでよい
+      ,
+      rootMotionCurve(o.rootMotionCurve), sequence(o.sequence), transitions(o.transitions), isSubMachine(o.isSubMachine), subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
 {
 }
 
@@ -417,7 +401,7 @@ struct AnimStateMachineComponent
 
     // 実際に再生中の「葉」ステートの hash（= activePath の末尾）。
     // 他システム(RootMotion/エディタ表示)はこれを「今のステート」として読む。
-    uint32_t       currentStateHash = 0;
+    uint32_t currentStateHash = 0;
 
     // 階層ステートマシンの現在地パス [root側..., 葉]。
     // 例: [Combat, Attack_1] = トップで Combat(サブマシン)、その中で Attack_1(葉)。

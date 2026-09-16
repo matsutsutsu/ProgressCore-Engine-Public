@@ -12,8 +12,8 @@
 
 class HitEffectSystem : public CCL::ECS::IfSystem<HitEffectSystem>
 {
-  public:
-    HitEffectSystem() : IfSystem("HitEffectSystem"){}
+public:
+    HitEffectSystem() : IfSystem("HitEffectSystem") {}
 
     void Initialize() override;     // HitImpactEvent を購読
     void Update(float dt) override; // 毎フレームの仕事は無い（再生と寿命は VFXSystem 側）

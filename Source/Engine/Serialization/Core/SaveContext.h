@@ -23,10 +23,11 @@
 #include <unordered_map>
 #include "Engine/ECS/Common/CCL_Types.h"
 
-namespace CCL::Serialization {
+namespace CCL::Serialization
+{
 
-
-    class SaveContext {
+    class SaveContext
+    {
     public:
         // ローカルインデックスの型。32bit で十分 (1 シーン 40 億エンティティはまずない)。
         using LocalIndex = uint32_t;
@@ -73,7 +74,7 @@ namespace CCL::Serialization {
 
     private:
         std::unordered_map<CCL::ECS::EntityID, LocalIndex> m_idToLocal;
-        LocalIndex m_nextLocalIndex = 1; // 1 から発行 (0 は無効)
+        LocalIndex                                         m_nextLocalIndex = 1; // 1 から発行 (0 は無効)
     };
 
 } // namespace CCL::Serialization

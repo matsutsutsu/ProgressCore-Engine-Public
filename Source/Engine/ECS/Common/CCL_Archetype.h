@@ -15,7 +15,6 @@
 #include "CCL_Types.h"
 #include "CCL_TypeInfo.h"
 
-
 namespace CCL::ECS
 {
     // ------------------------------------------------------------------
@@ -46,9 +45,8 @@ namespace CCL::ECS
         ~Archetype() = default;
 
         // コピー・代入は内包する std::vector<TypeData> がきちんと処理する
-        Archetype(const Archetype& other)            = default;
-        Archetype& operator=(const Archetype& other) = default;
-
+        Archetype(const Archetype &other)            = default;
+        Archetype &operator=(const Archetype &other) = default;
 
         /**
          * @brief 型 T を Archetype に追加する（TypeID 昇順ソート維持）。
@@ -71,21 +69,21 @@ namespace CCL::ECS
          *
          * @return 追加先（または既存）のインデックス
          */
-        size_t Add(const TypeData& typeData)
+        size_t Add(const TypeData &typeData)
         {
             // 挿入位置を二分探索で見つける
             auto it = std::lower_bound(
                 m_data.begin(),
                 m_data.end(),
                 typeData.id,
-                [](const TypeData& td, TypeID targetId) {
+                [](const TypeData &td, TypeID targetId) {
                     return td.id < targetId;
-                }
-            );
+                });
 
             // 既に同じ TypeID があれば追加せず、その位置を返す
             // これよくわからん
-            if (it != m_data.end() && it->id == typeData.id) {
+            if (it != m_data.end() && it->id == typeData.id)
+            {
                 return std::distance(m_data.begin(), it);
             }
 
@@ -113,16 +111,15 @@ namespace CCL::ECS
                 m_data.begin(),
                 m_data.end(),
                 id,
-                [](const TypeData& td, TypeID targetId) {
+                [](const TypeData &td, TypeID targetId) {
                     return td.id < targetId;
-                }
-            );
+                });
 
-            if (it != m_data.end() && it->id == id) {
+            if (it != m_data.end() && it->id == id)
+            {
                 m_data.erase(it);
             }
         }
-
 
         // ------------------------------------------------------------
         // 検索・比較
@@ -139,12 +136,12 @@ namespace CCL::ECS
                 m_data.begin(),
                 m_data.end(),
                 id,
-                [](const TypeData& td, TypeID targetId) {
+                [](const TypeData &td, TypeID targetId) {
                     return td.id < targetId;
-                }
-            );
+                });
 
-            if (it != m_data.end() && it->id == id) {
+            if (it != m_data.end() && it->id == id)
+            {
                 return std::distance(m_data.begin(), it);
             }
             return InvalidIndex;
@@ -154,31 +151,29 @@ namespace CCL::ECS
          * @brief 二つの Archetype が「同じコンポーネント構成」かを判定する。
          * @note TypeData が常にソート済みのため O(N) で高速比較できる。
          */
-        bool operator==(const Archetype& r) const
+        bool operator==(const Archetype &r) const
         {
             if (m_data.size() != r.m_data.size()) return false;
             return std::equal(m_data.begin(), m_data.end(), r.m_data.begin());
         }
 
-
         // ------------------------------------------------------------
         // 読み取り専用アクセサ
         // ------------------------------------------------------------
-        const TypeData& at(size_t i)         const { return m_data.at(i); }
-        const TypeData& operator[](size_t i) const { return m_data[i]; }
+        const TypeData &at(size_t i) const { return m_data.at(i); }
+        const TypeData &operator[](size_t i) const { return m_data[i]; }
 
-        size_t size()   const { return m_data.size(); }
-        bool   empty()  const { return m_data.empty(); }
+        size_t size() const { return m_data.size(); }
+        bool   empty() const { return m_data.empty(); }
 
         // 範囲for対応
         std::vector<TypeData>::const_iterator begin() const { return m_data.cbegin(); }
-        std::vector<TypeData>::const_iterator end()   const { return m_data.cend(); }
+        std::vector<TypeData>::const_iterator end() const { return m_data.cend(); }
 
     private:
         // 継承ではなく包含。常に TypeID 昇順ソート済みであることが不変条件。
         std::vector<TypeData> m_data;
     };
-
 
     // ------------------------------------------------------------------
     // ArchetypeHelper
@@ -204,11 +199,11 @@ namespace CCL::ECS
          * 内部で `(a.Add<Types>(), ...);` という C++17 fold expression を
          * 使い、Add を引数の数だけ展開しています。
          */
-        template <class ...Types>
+        template <class... Types>
         static Archetype Generate()
         {
             Archetype a;
-			// ... のTypesを順に展開して a.Add<Types>() を呼び出す fold expression
+            // ... のTypesを順に展開して a.Add<Types>() を呼び出す fold expression
             (a.Add<Types>(), ...);
             return a;
         }
@@ -226,7 +221,7 @@ namespace CCL::ECS
          * @param filter_R  フィルタ側 Archetype（包含される側）
          * @return filter_R が chunk_L に包含されていれば true
          */
-        static bool LhasR(const Archetype& chunk_L, const Archetype& filter_R)
+        static bool LhasR(const Archetype &chunk_L, const Archetype &filter_R)
         {
             // フィルタ filter_R が空なら、無条件で全チャンクが対象
             if (filter_R.size() == 0) return true;
@@ -236,7 +231,7 @@ namespace CCL::ECS
             return std::includes(
                 chunk_L.begin(), chunk_L.end(),
                 filter_R.begin(), filter_R.end(),
-                [](const TypeData& a, const TypeData& b) {
+                [](const TypeData &a, const TypeData &b) {
                     return a.id < b.id;
                 });
         }
@@ -254,13 +249,13 @@ namespace CCL::ECS
          * @param exclude  除外したいコンポーネント集合
          * @return exclude のどれも l に含まれていなければ true
          */
-        static bool LExcludesR(const Archetype& l, const Archetype& exclude)
+        static bool LExcludesR(const Archetype &l, const Archetype &exclude)
         {
             // 除外指定が無ければ常にOK（誰も弾かれない）
             if (exclude.empty()) return true;
 
             // exclude の各型について、l が1つでも持っていたら除外（false）
-            for (const TypeData& ex : exclude)
+            for (const TypeData &ex : exclude)
             {
                 // GetComponentIndex は O(log N) の二分探索
                 if (l.GetComponentIndex(ex.id) != InvalidIndex)
@@ -270,7 +265,6 @@ namespace CCL::ECS
             }
             return true; // どれも持っていなかった → 対象
         }
-
     };
 
     // ------------------------------------------------------------------

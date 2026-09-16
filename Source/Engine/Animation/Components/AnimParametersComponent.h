@@ -117,7 +117,7 @@ struct AnimParametersComponent
     {
         triggers.erase(
             std::remove_if(triggers.begin(), triggers.end(),
-                [hash](const TriggerParam &t) { return t.hash == hash; }),
+                           [hash](const TriggerParam &t) { return t.hash == hash; }),
             triggers.end());
     }
 
@@ -136,7 +136,7 @@ struct AnimParametersComponent
         // 寿命が0以下のトリガーを一括削除 (Erase-Remove Idiom)
         triggers.erase(
             std::remove_if(triggers.begin(), triggers.end(),
-                [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),
+                           [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),
             triggers.end());
     }
 
@@ -170,5 +170,4 @@ struct AnimParametersComponent
     {
         triggers.clear();
     }
-
 };

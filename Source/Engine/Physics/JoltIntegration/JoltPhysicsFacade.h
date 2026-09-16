@@ -5,38 +5,43 @@
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyID.h>
 
-namespace JPH { class BodyInterface; class PhysicsSystem; }
+namespace JPH
+{
+    class BodyInterface;
+    class PhysicsSystem;
+} // namespace JPH
 
-class JoltPhysicsFacade : public IPhysicsAPI {
+class JoltPhysicsFacade : public IPhysicsAPI
+{
 private:
-    CCL::ECS::World* m_world;
+    CCL::ECS::World *m_world;
 
 public:
-    JoltPhysicsFacade(CCL::ECS::World* world) : m_world(world) {}
+    JoltPhysicsFacade(CCL::ECS::World *world) : m_world(world) {}
     virtual ~JoltPhysicsFacade() = default;
 
     // Linear
-    void AddForce(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& force) override;
-    void AddImpulse(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& impulse) override;
-    void SetLinearVelocity(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& velocity) override;
+    void              AddForce(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &force) override;
+    void              AddImpulse(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &impulse) override;
+    void              SetLinearVelocity(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &velocity) override;
     DirectX::XMFLOAT3 GetLinearVelocity(CCL::ECS::EntityID entity) override;
 
     // Angular
-    void AddTorque(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& torque) override;
-    void AddAngularImpulse(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& impulse) override;
-    void SetAngularVelocity(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& velocity) override;
+    void              AddTorque(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &torque) override;
+    void              AddAngularImpulse(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &impulse) override;
+    void              SetAngularVelocity(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &velocity) override;
     DirectX::XMFLOAT3 GetAngularVelocity(CCL::ECS::EntityID entity) override;
 
     // Warp
-    void SetPosition(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& position) override;
-    void SetRotation(CCL::ECS::EntityID entity, const DirectX::XMFLOAT4& rotation) override;
+    void SetPosition(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &position) override;
+    void SetRotation(CCL::ECS::EntityID entity, const DirectX::XMFLOAT4 &rotation) override;
 
-    void SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3& direction) override;
+    void SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &direction) override;
 
     // Queries (剛体)
-    bool CheckGrounded(CCL::ECS::EntityID entity, float distance) override;
-    PhysicsHitInfo RayCast(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance, CCL::ECS::EntityID ignoreEntity) override;
-    PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3& origin, const DirectX::XMFLOAT3& direction, float maxDistance) override;
+    bool           CheckGrounded(CCL::ECS::EntityID entity, float distance) override;
+    PhysicsHitInfo RayCast(const DirectX::XMFLOAT3 &origin, const DirectX::XMFLOAT3 &direction, float maxDistance, CCL::ECS::EntityID ignoreEntity) override;
+    PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3 &origin, const DirectX::XMFLOAT3 &direction, float maxDistance) override;
 
     // Queries (CharacterVirtual)
     bool IsCharacterGrounded(CCL::ECS::EntityID entity) override;
@@ -56,7 +61,7 @@ private:
      * @return 解決できたら true。false のとき出力引数は不定なので触らないこと。
      */
     bool ResolveBody(CCL::ECS::EntityID entity,
-        JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface);
+                     JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface);
 
     /// 剛体を持たない問い合わせ用。PhysicsSystem だけ取れれば良いとき。
     JPH::PhysicsSystem *GetPhysicsSystem() const;

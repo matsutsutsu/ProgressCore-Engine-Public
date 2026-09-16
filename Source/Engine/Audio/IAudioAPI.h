@@ -16,7 +16,8 @@
 #include <DirectXMath.h>
 #include "Engine/Core/Math/StringHash.h" // イベント名をハッシュ化して引くため
 
-class IAudioAPI {
+class IAudioAPI
+{
 public:
     virtual ~IAudioAPI() = default;
 
@@ -42,15 +43,15 @@ public:
      * @brief JSON から「イベント名 → 音源ファイル」の対応を一括ロードする。
      * @param configFilePath 実運用のパスは "Assets/Config/AudioConfigDXTK.json"（Framework が渡す）
      */
-    virtual void LoadConfig(const std::string& configFilePath) = 0;
+    virtual void LoadConfig(const std::string &configFilePath) = 0;
 
     // 音声波形の塊をメモリへ載せる。
     //
     // FMOD 時代の API。DirectXTK バックエンドでは Bank の概念が無く空実装。
-    virtual void LoadBank(const char* bankFilePath) = 0;
+    virtual void LoadBank(const char *bankFilePath) = 0;
 
     // イベント名を辞書へ1件登録する。通常は LoadConfig が内部で呼ぶ。
-    virtual void LoadEvent(const char* eventPath) = 0;
+    virtual void LoadEvent(const char *eventPath) = 0;
 
     // 辞書をソートして検索可能な状態にする。ロード完了後に必ず1回呼ぶこと。
     //
@@ -65,7 +66,7 @@ public:
     virtual void PlayOneShot(uint32_t eventHash) = 0;
 
     // ワールド座標で再生する。発音位置はその瞬間に固定され、以降は追従しない。
-    virtual void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3& position) = 0;
+    virtual void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) = 0;
 
     // ---- 継続再生（後から制御する音）----------------------------------------
     // BGM・エンジン音など、停止やピッチ変更が要る音。
@@ -81,7 +82,7 @@ public:
      * @brief ワールド座標で再生し、制御用IDを発行する。座標は SetEvent3DAttributes で更新できる。
      * @return 再生インスタンスのID。再生に失敗した場合は 0（＝無効値）。
      */
-    virtual uint32_t PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOAT3& position) = 0;
+    virtual uint32_t PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) = 0;
 
     /**
      * @brief 指定IDの音を止める。
@@ -101,15 +102,15 @@ public:
      * @brief 再生中の音へ動的パラメータを送る。
      * @param paramName バックエンドが解釈する名前（"volume" / "pitch" / "pan"）
      */
-    virtual void SetEventParameter(uint32_t playingId, const char* paramName, float value) = 0;
+    virtual void SetEventParameter(uint32_t playingId, const char *paramName, float value) = 0;
 
     // 継続再生中の音の発音位置を更新する。移動する音源は毎フレーム呼ぶ。
-    virtual void SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3& pos) = 0;
+    virtual void SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3 &pos) = 0;
 
     // ---- 3Dリスナー --------------------------------------------------------
 
     // 聴き手（＝カメラ）の位置と姿勢を渡す。距離減衰とパンニングの基準になる。
-    virtual void SetListenerPosition(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& up) = 0;
+    virtual void SetListenerPosition(const DirectX::XMFLOAT3 &pos, const DirectX::XMFLOAT3 &forward, const DirectX::XMFLOAT3 &up) = 0;
 
     // ---- 演出フック --------------------------------------------------------
 
@@ -128,7 +129,7 @@ public:
     // ---- 文字列で呼ぶためのヘルパー ----------------------------------------
     // ハッシュ版へ委譲するだけ。ホットパスでは呼び出し側でハッシュを持ち回ること。
 
-    void PlayOneShot(const char* eventPath) { PlayOneShot(CCL::Utils::HashString(eventPath)); }
-    void PlayOneShot3D(const char* eventPath, const DirectX::XMFLOAT3& position) { PlayOneShot3D(CCL::Utils::HashString(eventPath), position); }
-    uint32_t PlayEvent(const char* eventPath) { return PlayEvent(CCL::Utils::HashString(eventPath)); }
+    void     PlayOneShot(const char *eventPath) { PlayOneShot(CCL::Utils::HashString(eventPath)); }
+    void     PlayOneShot3D(const char *eventPath, const DirectX::XMFLOAT3 &position) { PlayOneShot3D(CCL::Utils::HashString(eventPath), position); }
+    uint32_t PlayEvent(const char *eventPath) { return PlayEvent(CCL::Utils::HashString(eventPath)); }
 };

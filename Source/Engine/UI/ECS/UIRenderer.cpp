@@ -50,7 +50,7 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
 {
     for (const UIDrawItem *item : ordered)
     {
-        if (pass == BlendPass::Normal   &&  item->additive) continue;
+        if (pass == BlendPass::Normal && item->additive) continue;
         if (pass == BlendPass::Additive && !item->additive) continue;
 
         if (item->kind == UIDrawKind::Image)
@@ -64,17 +64,17 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
             const float texH = sprite->GetHeight();
 
             // 上端=color / 下端=colorBottom。単色なら4隅とも同じ色になる。
-            const DirectX::XMFLOAT4 top = item->color;
-            const DirectX::XMFLOAT4 bot = item->useGradient ? item->colorBottom : item->color;
+            const DirectX::XMFLOAT4 top        = item->color;
+            const DirectX::XMFLOAT4 bot        = item->useGradient ? item->colorBottom : item->color;
             const DirectX::XMFLOAT4 corners[4] = {top, top, bot, bot}; // 左上/右上/左下/右下
 
             sprite->Render(dc,
-                item->pos.x, item->pos.y, 0.0f,
-                item->size.x, item->size.y,
-                item->uvRect.x * texW, item->uvRect.y * texH,
-                item->uvRect.z * texW, item->uvRect.w * texH,
-                item->rotation,
-                corners);
+                           item->pos.x, item->pos.y, 0.0f,
+                           item->size.x, item->size.y,
+                           item->uvRect.x * texW, item->uvRect.y * texH,
+                           item->uvRect.z * texW, item->uvRect.w * texH,
+                           item->rotation,
+                           corners);
         }
         else // Text
         {
@@ -96,10 +96,10 @@ void UIRenderer::Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList
     for (const auto &it : list.items)
         ordered.push_back(&it);
     std::stable_sort(ordered.begin(), ordered.end(),
-        [](const UIDrawItem *a, const UIDrawItem *b) { return a->sortOrder < b->sortOrder; });
+                     [](const UIDrawItem *a, const UIDrawItem *b) { return a->sortOrder < b->sortOrder; });
 
     const bool hasAdditive = renderState && std::any_of(ordered.begin(), ordered.end(),
-        [](const UIDrawItem *i) { return i->additive; });
+                                                        [](const UIDrawItem *i) { return i->additive; });
 
     if (!hasAdditive)
     {

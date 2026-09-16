@@ -9,8 +9,8 @@
 #include "Game/Logics/Combat/CombatComponents.h"
 
 class DroneHitSystem : public CCL::ECS::IfSystem<DroneHitSystem,
-                           CCL::ECS::Read<DroneComponent>,
-                           CCL::ECS::Write<HitboxComponent>>
+                                                 CCL::ECS::Read<DroneComponent>,
+                                                 CCL::ECS::Write<HitboxComponent>>
 {
 public:
     DroneHitSystem() : IfSystem("DroneHitSystem") {}
@@ -30,8 +30,8 @@ public:
     /// 「形状が届いていない」のかを切り分けるために出す。
     void OnGui() override;
 
-  private:
-    int m_droneCount   = 0;
-    int m_activeCount  = 0;
+private:
+    int m_droneCount    = 0;
+    int m_activeCount   = 0;
     int m_stateCount[5] = {0, 0, 0, 0, 0};
 };

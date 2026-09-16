@@ -19,8 +19,8 @@ using namespace CCL::ECS;
 
 namespace
 {
-const DirectX::XMFLOAT4 kColReady  = {1.0f, 0.843f, 0.235f, 1.0f}; // ストックあり：ゴールド
-const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // ストック0で蓄積中：ブルー
+    const DirectX::XMFLOAT4 kColReady  = {1.0f, 0.843f, 0.235f, 1.0f}; // ストックあり：ゴールド
+    const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // ストック0で蓄積中：ブルー
 } // namespace
 
 void CleaveGaugeHudSystem::Initialize()
@@ -30,7 +30,7 @@ void CleaveGaugeHudSystem::Initialize()
 
     // --- ゲージ本体（左下・アンカー方式。次のストックまでの蓄積を表示） ---
     auto gaugeArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UIProgressBarComponent>();
+                                               UIProgressBarComponent>();
     auto gauge     = EntityFactory::SpawnNamed(*m_world, "CleaveGauge", gaugeArch);
 
     UITransformComponent gt;
@@ -49,7 +49,7 @@ void CleaveGaugeHudSystem::Initialize()
 
     // --- ラベル（ゲージの上。ストック数を表示） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UITextComponent>();
+                                               UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*m_world, "CleaveLabel", labelArch);
 
     UITransformComponent lt;

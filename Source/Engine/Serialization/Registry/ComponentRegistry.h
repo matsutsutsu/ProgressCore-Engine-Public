@@ -26,19 +26,22 @@
 //   特殊化が isSerializable を持たない場合は「保存対象 (true)」とみなす。
 // ==========================================================
 template <typename T, typename = void>
-struct HasIsSerializable : std::true_type {};
+struct HasIsSerializable : std::true_type
+{
+};
 
 template <typename T>
 struct HasIsSerializable<T, std::void_t<decltype(ComponentMeta<T>::isSerializable)>>
-    : std::bool_constant<ComponentMeta<T>::isSerializable> {
+    : std::bool_constant<ComponentMeta<T>::isSerializable>
+{
 };
 
-
-class ComponentRegistry {
+class ComponentRegistry
+{
 public:
-    using SerializeFunc = std::function<void(nlohmann::json&, const void*, CCL::Serialization::SaveContext*)>;
-    using DeserializeToWorldFunc = std::function<void(CCL::ECS::World*, CCL::ECS::EntityID,
-        const nlohmann::json&, CCL::Serialization::LoadContext*)>;
+    using SerializeFunc          = std::function<void(nlohmann::json &, const void *, CCL::Serialization::SaveContext *)>;
+    using DeserializeToWorldFunc = std::function<void(CCL::ECS::World *, CCL::ECS::EntityID,
+                                                      const nlohmann::json &, CCL::Serialization::LoadContext *)>;
 
     struct MetaInfo
     {
@@ -50,9 +53,9 @@ public:
         bool isSerializable = true;
     };
 
-    static ComponentRegistry& Instance();
+    static ComponentRegistry &Instance();
 
-    const std::unordered_map<std::string, MetaInfo>& GetAllMeta() const { return m_nameToMeta; }
+    const std::unordered_map<std::string, MetaInfo> &GetAllMeta() const { return m_nameToMeta; }
 
     template <typename T>
     void Register(const std::string &name)
@@ -66,10 +69,10 @@ public:
         };
 
         // ---- 復元: LoadContext を渡す (EntityLink が自動 Resolve される) ----
-        info.deserializeToWorld = [](CCL::ECS::World            *world,
-                                      CCL::ECS::EntityID               entity,
-                                      const nlohmann::json            &j,
-                                      CCL::Serialization::LoadContext *ctx) {
+        info.deserializeToWorld = [](CCL::ECS::World                 *world,
+                                     CCL::ECS::EntityID               entity,
+                                     const nlohmann::json            &j,
+                                     CCL::Serialization::LoadContext *ctx) {
             T temp{};
             ComponentMetaJson::ComponentSerializer<T>::Load(j, temp, ctx);
             world->AddComponent<T>(entity, std::move(temp));
@@ -83,22 +86,22 @@ public:
         m_typeIdToName[CCL::ECS::TypeInfo<T>::ID()] = name;
     }
 
-    const MetaInfo* GetInfoByName(const std::string& name) const {
+    const MetaInfo *GetInfoByName(const std::string &name) const
+    {
         auto it = m_nameToMeta.find(name);
         return (it != m_nameToMeta.end()) ? &it->second : nullptr;
     }
 
-    std::string GetNameByTypeID(CCL::ECS::TypeID id) const {
+    std::string GetNameByTypeID(CCL::ECS::TypeID id) const
+    {
         auto it = m_typeIdToName.find(id);
         return (it != m_typeIdToName.end()) ? it->second : std::string{};
     }
 
-
 private:
-    std::unordered_map<std::string, MetaInfo> m_nameToMeta;
+    std::unordered_map<std::string, MetaInfo>         m_nameToMeta;
     std::unordered_map<CCL::ECS::TypeID, std::string> m_typeIdToName;
 };
-
 
 // =====================================================================
 // REGISTER_COMPONENT マクロ
@@ -109,7 +112,7 @@ private:
 // =====================================================================
 #ifdef _MSC_VER
 #define _CCL_LINK_IMPL(sym) __pragma(comment(linker, "/include:" #sym))
-#define _CCL_LINK(sym)      _CCL_LINK_IMPL(sym)
+#define _CCL_LINK(sym) _CCL_LINK_IMPL(sym)
 #define _CCL_USED
 #elif defined(__GNUC__) || defined(__clang__)
 #define _CCL_LINK(sym)
@@ -123,16 +126,20 @@ private:
 // 再度追跡したくなったら、下を Debug 限定の OutputDebugStringA 実装に差し戻せばよい。
 #define _CCL_DIAG_REG(Name, T) ((void)0)
 
-#define REGISTER_COMPONENT(T, Name)                                                               \
-    namespace {                                                                                   \
-        struct AutoReg_##T {                                                                      \
-            AutoReg_##T() {                                                                       \
-                _CCL_DIAG_REG(Name, T);                                                           \
-                if (!ComponentRegistry::Instance().GetInfoByName(Name)) {                         \
-                    ComponentRegistry::Instance().Register<T>(Name);                              \
-                }                                                                                 \
-            }                                                                                     \
-        };                                                                                        \
-    }                                                                                             \
-    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);                               \
+#define REGISTER_COMPONENT(T, Name)                                     \
+    namespace                                                           \
+    {                                                                   \
+        struct AutoReg_##T                                              \
+        {                                                               \
+            AutoReg_##T()                                               \
+            {                                                           \
+                _CCL_DIAG_REG(Name, T);                                 \
+                if (!ComponentRegistry::Instance().GetInfoByName(Name)) \
+                {                                                       \
+                    ComponentRegistry::Instance().Register<T>(Name);    \
+                }                                                       \
+            }                                                           \
+        };                                                              \
+    }                                                                   \
+    extern "C" _CCL_USED int g_MetaAnchor_##T = (AutoReg_##T{}, 1);     \
     _CCL_LINK(g_MetaAnchor_##T)

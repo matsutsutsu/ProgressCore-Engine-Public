@@ -30,20 +30,20 @@
 
 namespace CCL::AI::Formation
 {
-struct FormationAsset;
-struct FormationLayer;
+    struct FormationAsset;
+    struct FormationLayer;
 } // namespace CCL::AI::Formation
 
 class FormationEditorWindow : public EditorWindow
 {
-  public:
+public:
     /// 既定は非表示。ドローンの居るシーンでしか意味が無いので Window メニューから開く。
     FormationEditorWindow()
         : EditorWindow("Formation Editor", false)
     {
     }
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
     /// 閉じられた・畳まれたフレームでも必ず呼ばれる。実機の掌握を解くのに使う。
@@ -51,7 +51,7 @@ class FormationEditorWindow : public EditorWindow
     /// 瞬間にボスが永久に停止したままになる。
     void OnFrameBegin(EditorContext &context) override;
 
-  private:
+private:
     using Asset = CCL::AI::Formation::FormationAsset;
     using Layer = CCL::AI::Formation::FormationLayer;
 

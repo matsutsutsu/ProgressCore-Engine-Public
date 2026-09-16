@@ -12,13 +12,13 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // 毎フレームの HashString 計算を省くための事前計算（キャッシュ）
-static const uint32_t HASH_SPEED       =  CCL::Utils::HashString("Speed");
-static const uint32_t HASH_Y_VELOCITY  =  CCL::Utils::HashString("YVelocity");
-static const uint32_t HASH_IS_GROUNDED =  CCL::Utils::HashString("IsGrounded");
+static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
+static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("YVelocity");
+static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
 // トリガー用（エッジ検出）
-static const uint32_t HASH_TRIG_JUMP =  CCL::Utils::HashString("OnJump");
-static const uint32_t HASH_TRIG_LAND =  CCL::Utils::HashString("OnLand");
+static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("OnJump");
+static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("OnLand");
 
 void CharacterAnimSyncSystem::Update(float /*dt*/)
 {

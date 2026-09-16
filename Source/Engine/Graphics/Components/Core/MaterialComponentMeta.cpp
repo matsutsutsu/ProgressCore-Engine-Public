@@ -28,68 +28,68 @@
 // =====================================================================
 namespace ComponentMetaJson
 {
-template <>
-struct ComponentSerializer<MaterialComponent>
-{
-    static void Save(json &j, const MaterialComponent &c, CCL::Serialization::SaveContext *)
+    template <>
+    struct ComponentSerializer<MaterialComponent>
     {
-        // スロット数は overrideMaterials 基準。パスは並走列から取る（無ければ空）。
-        json paths = json::array();
-        for (size_t i = 0; i < c.overrideMaterials.size(); ++i)
+        static void Save(json &j, const MaterialComponent &c, CCL::Serialization::SaveContext *)
         {
-            const char *p = (i < c.overridePaths.size()) ? c.overridePaths[i].c_str() : "";
-            paths.push_back(p ? p : "");
-        }
-        j["paths"] = paths;
-        j["customParams"] =
-            json::array({c.customParams.x, c.customParams.y, c.customParams.z, c.customParams.w});
-    }
-
-    static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
-    {
-        // 同じコンポーネントへ再ロードされた場合に備え、古いハンドルを先に返す。
-        // （「既定に戻す」ボタンと同じ後始末。ここだけ抜けているとプール枠が漏れる）
-        for (auto handle : c.overrideMaterials)
-            ResourceManager::Instance().UnloadMaterial(handle);
-
-        c.overrideMaterials.clear();
-        c.overridePaths.clear();
-
-        if (j.contains("paths") && j["paths"].is_array())
-        {
-            const auto &paths = j["paths"];
-            c.ResizeSlots(paths.size());
-            for (size_t i = 0; i < paths.size(); ++i)
+            // スロット数は overrideMaterials 基準。パスは並走列から取る（無ければ空）。
+            json paths = json::array();
+            for (size_t i = 0; i < c.overrideMaterials.size(); ++i)
             {
-                std::string path = paths[i].is_string() ? paths[i].get<std::string>() : std::string();
-                c.overridePaths[i] = path;
-                if (!path.empty())
+                const char *p = (i < c.overridePaths.size()) ? c.overridePaths[i].c_str() : "";
+                paths.push_back(p ? p : "");
+            }
+            j["paths"] = paths;
+            j["customParams"] =
+                json::array({c.customParams.x, c.customParams.y, c.customParams.z, c.customParams.w});
+        }
+
+        static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
+        {
+            // 同じコンポーネントへ再ロードされた場合に備え、古いハンドルを先に返す。
+            // （「既定に戻す」ボタンと同じ後始末。ここだけ抜けているとプール枠が漏れる）
+            for (auto handle : c.overrideMaterials)
+                ResourceManager::Instance().UnloadMaterial(handle);
+
+            c.overrideMaterials.clear();
+            c.overridePaths.clear();
+
+            if (j.contains("paths") && j["paths"].is_array())
+            {
+                const auto &paths = j["paths"];
+                c.ResizeSlots(paths.size());
+                for (size_t i = 0; i < paths.size(); ++i)
                 {
-                    // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）。
-                    MaterialHandle h = ResourceManager::Instance().LoadMaterialAsset(path);
-                    c.overrideMaterials[i] = h; // 失敗時は無効ハンドル＝共有マテリアルへフォールバック
+                    std::string path   = paths[i].is_string() ? paths[i].get<std::string>() : std::string();
+                    c.overridePaths[i] = path;
+                    if (!path.empty())
+                    {
+                        // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）。
+                        MaterialHandle h       = ResourceManager::Instance().LoadMaterialAsset(path);
+                        c.overrideMaterials[i] = h; // 失敗時は無効ハンドル＝共有マテリアルへフォールバック
+                    }
                 }
             }
-        }
 
-        if (j.contains("customParams") && j["customParams"].is_array() && j["customParams"].size() >= 4)
-        {
-            const auto &a  = j["customParams"];
-            c.customParams = {a[0].get<float>(), a[1].get<float>(), a[2].get<float>(), a[3].get<float>()};
+            if (j.contains("customParams") && j["customParams"].is_array() && j["customParams"].size() >= 4)
+            {
+                const auto &a  = j["customParams"];
+                c.customParams = {a[0].get<float>(), a[1].get<float>(), a[2].get<float>(), a[3].get<float>()};
+            }
         }
-    }
-};
+    };
 } // namespace ComponentMetaJson
 
 template <>
 struct ComponentMeta<MaterialComponent>
 {
-    static constexpr const char *displayName    = "Material";
-    static constexpr const char *category       = CCL::Categories::Rendering;
-    static constexpr int         sortPriority   = 20; // Modelの直後に配置
+    static constexpr const char *displayName       = "Material";
+    static constexpr const char *category          = CCL::Categories::Rendering;
+    static constexpr int         sortPriority      = 20; // Modelの直後に配置
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
     // シェーダー名リストと、現在の shaderHash に対応する index を集める共通処理。
@@ -101,7 +101,7 @@ struct ComponentMeta<MaterialComponent>
     };
     static ShaderList GatherShaders(uint32_t currentHash)
     {
-        ShaderList out;
+        ShaderList  out;
         const auto &registered = ShaderRegistry::Instance().GetRegisteredNames();
         out.names.reserve(registered.size());
         for (size_t s = 0; s < registered.size(); ++s)
@@ -199,8 +199,8 @@ struct ComponentMeta<MaterialComponent>
 
                 if (ImGui::Button("全スロットにシェーダー適用"))
                 {
-                    const auto &registered  = ShaderRegistry::Instance().GetRegisteredNames();
-                    uint32_t    targetHash  = registered[idx].second;
+                    const auto &registered = ShaderRegistry::Instance().GetRegisteredNames();
+                    uint32_t    targetHash = registered[idx].second;
                     for (auto handle : comp->overrideMaterials)
                     {
                         if (!handle.IsValid()) continue;
@@ -275,7 +275,7 @@ struct ComponentMeta<MaterialComponent>
                 ImGui::Separator();
 
                 // --- シェーダー選択 ---
-                ShaderList sl = GatherShaders(matPtr->shaderHash);
+                ShaderList sl  = GatherShaders(matPtr->shaderHash);
                 int        cur = sl.current < 0 ? 0 : sl.current;
                 if (!sl.names.empty() &&
                     ImGui::Combo("シェーダー", &cur, sl.names.data(), (int)sl.names.size()))

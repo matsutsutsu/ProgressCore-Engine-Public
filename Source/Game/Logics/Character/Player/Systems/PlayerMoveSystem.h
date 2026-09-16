@@ -12,14 +12,14 @@
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 
 class PlayerMoveSystem : public CCL::ECS::IfSystem<PlayerMoveSystem,
-    CCL::ECS::Write<TransformComponent>, 
-    CCL::ECS::Write<CharacterMovementComponent>,
-    CCL::ECS::Read<PlayerInputComponent>,
-    CCL::ECS::Read<JoltCharacterConfigComponent>,
-    CCL::ECS::Read<JoltCharacterHandleComponent>,
-    CCL::ECS::Write<PlayerComponent>,
-    CCL::ECS::Write<AnimParametersComponent>, 
-    CCL::ECS::Read<TimeStateComponent>>
+                                                   CCL::ECS::Write<TransformComponent>,
+                                                   CCL::ECS::Write<CharacterMovementComponent>,
+                                                   CCL::ECS::Read<PlayerInputComponent>,
+                                                   CCL::ECS::Read<JoltCharacterConfigComponent>,
+                                                   CCL::ECS::Read<JoltCharacterHandleComponent>,
+                                                   CCL::ECS::Write<PlayerComponent>,
+                                                   CCL::ECS::Write<AnimParametersComponent>,
+                                                   CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     PlayerMoveSystem() : IfSystem("PlayerMoveSystem") {}

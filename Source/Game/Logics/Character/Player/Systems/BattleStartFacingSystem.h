@@ -31,7 +31,7 @@ class BattleStartFacingSystem : public CCL::ECS::IfSystem<
                                     BattleStartFacingSystem,
                                     CCL::ECS::Write<CameraBodyTPSComponent>>
 {
-  public:
+public:
     BattleStartFacingSystem()
         : IfSystem("BattleStartFacingSystem")
     {
@@ -43,7 +43,7 @@ class BattleStartFacingSystem : public CCL::ECS::IfSystem<
     // currentYaw を読んで Transform を作る側より先に走る。
     std::vector<const char *> GetRunBefore() const override { return {"PlayerMoveSystem"}; }
 
-  private:
+private:
     /// プレイヤーとボスが揃っていれば向きを確定させる。
     /// @return 確定できたか。false の間は毎フレーム再試行する
     ///         （プレハブ生成は遅延されるので開始直後は揃っていない）。

@@ -24,9 +24,10 @@
 // ===================================================================================
 // 1. BoxCollider の更新
 // ===================================================================================
-void JoltBoxShapeUpdateSystem::Update(float dt) {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+void JoltBoxShapeUpdateSystem::Update(float dt)
+{
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager *>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltBoxColliderComponent &box) {
         if (!box.isDirty) return;
@@ -34,7 +35,7 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
         if (handle.bodyID.IsInvalid()) return;
 
         JPH::BoxShapeSettings baseSettings(JPH::Vec3(box.halfExtent.x, box.halfExtent.y, box.halfExtent.z));
-        JPH::ShapeRefC shape = JoltShapeFactory::CreateOffsetShape(
+        JPH::ShapeRefC        shape = JoltShapeFactory::CreateOffsetShape(
             baseSettings, box.localOffset, box.localRotationEuler, id, "Box");
         if (shape == nullptr) return;
 
@@ -45,9 +46,10 @@ void JoltBoxShapeUpdateSystem::Update(float dt) {
 // ===================================================================================
 // 2. SphereCollider の更新
 // ===================================================================================
-void JoltSphereShapeUpdateSystem::Update(float dt) {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+void JoltSphereShapeUpdateSystem::Update(float dt)
+{
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager *>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltSphereColliderComponent &sphere) {
         if (!sphere.isDirty) return;
@@ -67,9 +69,10 @@ void JoltSphereShapeUpdateSystem::Update(float dt) {
 // ===================================================================================
 // 3. CapsuleCollider の更新
 // ===================================================================================
-void JoltCapsuleShapeUpdateSystem::Update(float dt) {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager*>()->GetBodyInterface();
+void JoltCapsuleShapeUpdateSystem::Update(float dt)
+{
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    JPH::BodyInterface &bodyInterface = m_world->GetResource<JoltPhysicsManager *>()->GetBodyInterface();
 
     ForEachWithID([&](CCL::ECS::EntityID id, const JoltHandleComponent &handle, JoltCapsuleColliderComponent &capsule) {
         if (!capsule.isDirty) return;
@@ -77,7 +80,7 @@ void JoltCapsuleShapeUpdateSystem::Update(float dt) {
         if (handle.bodyID.IsInvalid()) return;
 
         JPH::CapsuleShapeSettings baseSettings(capsule.halfHeight, capsule.radius);
-        JPH::ShapeRefC shape = JoltShapeFactory::CreateOffsetShape(
+        JPH::ShapeRefC            shape = JoltShapeFactory::CreateOffsetShape(
             baseSettings, capsule.localOffset, capsule.localRotationEuler, id, "Capsule");
         if (shape == nullptr) return;
 
@@ -85,6 +88,6 @@ void JoltCapsuleShapeUpdateSystem::Update(float dt) {
     });
 }
 
-REGISTER_LOGIC_SYSTEM(JoltBoxShapeUpdateSystem,     Priority::LogicStage::L03_PrePhysics);
-REGISTER_LOGIC_SYSTEM(JoltSphereShapeUpdateSystem,  Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltBoxShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);
+REGISTER_LOGIC_SYSTEM(JoltSphereShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);
 REGISTER_LOGIC_SYSTEM(JoltCapsuleShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);

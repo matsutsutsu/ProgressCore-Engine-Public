@@ -40,11 +40,9 @@
 
 #include "Engine/Core/Components/DestroyTag.h"
 
-
 namespace CCL::ECS
 {
     using namespace CCL::ECS;
-
 
     /**
      * @brief エンティティの「現在地」を表す住所構造体。
@@ -55,10 +53,9 @@ namespace CCL::ECS
      */
     struct EntityLocation
     {
-        Chunk* chunk = nullptr; // どの Chunk か
+        Chunk *chunk = nullptr; // どの Chunk か
         size_t index = 0;       // その Chunk 内のインデックス
     };
-
 
     // ======================================================================
     // World
@@ -79,12 +76,11 @@ namespace CCL::ECS
         World();
         ~World();
 
-        World(const World&)            = delete;
-        World& operator=(const World&) = delete;
+        World(const World &)            = delete;
+        World &operator=(const World &) = delete;
 
         // 全エンティティを削除し World を初期状態に戻す
         void Clear();
-
 
         // --------------------------------------------------------
         // Frame API (更新フロー)
@@ -100,7 +96,6 @@ namespace CCL::ECS
          * 通常は ECSContext から「System 実行の前」に呼ばれます。
          */
         void ScrutinyAndApply();
-
 
         // --------------------------------------------------------
         // Component Operations (Template API)
@@ -118,7 +113,7 @@ namespace CCL::ECS
         void AddComponent(EntityID entity)
         {
             // 1. プレースメント new を行うラムダ（コンストラクタ呼出器）
-            auto ctor = [](void* ptr) { new (ptr) T(); };
+            auto ctor = [](void *ptr) { new (ptr) T(); };
 
             // 2. TypeData::Create<T>() で必要な関数ポインタを一括生成
             //    （destructor / constructor / assigner / mover / name）
@@ -127,14 +122,14 @@ namespace CCL::ECS
 
             // 3. 内部リクエストへ
             RequestAddComponent(entity,
-                TypeInfo<T>::ID(),
-                sizeof(T),
-                ctor,
-                td.destructor,
-                td.constructor,
-                td.assigner,
-                td.mover,
-                td.name);
+                                TypeInfo<T>::ID(),
+                                sizeof(T),
+                                ctor,
+                                td.destructor,
+                                td.constructor,
+                                td.assigner,
+                                td.mover,
+                                td.name);
         }
 
         /**
@@ -150,10 +145,10 @@ namespace CCL::ECS
          * @endcode
          */
         template <class T, typename... Args>
-        void AddComponent(EntityID entity, Args&&... args)
+        void AddComponent(EntityID entity, Args &&...args)
         {
             // 1. FrameAllocator から一時メモリを借りる（ヒープより遥かに高速）
-            void* tempMem = m_frameAllocator.Alloc(sizeof(T));
+            void *tempMem = m_frameAllocator.Alloc(sizeof(T));
 
             // 2. その場で T を構築
             new (tempMem) T(std::forward<Args>(args)...);
@@ -185,7 +180,6 @@ namespace CCL::ECS
             RequestRemoveComponent(entity, TypeInfo<T>::ID());
         }
 
-
         // --------------------------------------------------------
         // Entity Operations
         // --------------------------------------------------------
@@ -196,7 +190,7 @@ namespace CCL::ECS
          * ID は即座に返るので呼び出し直後から AddComponent 等で参照できますが、
          * 実体 Chunk への配置は ScrutinyAndApply まで遅延されます。
          */
-        EntityID RequestSpawnEntity(const Archetype& archetype);
+        EntityID RequestSpawnEntity(const Archetype &archetype);
 
         /**
          * @brief Archetype から生成し、メソッドチェーン用ラッパーを返す（推奨 API）。
@@ -209,8 +203,7 @@ namespace CCL::ECS
          *
          * @note 実装は本ヘッダ末尾。
          */
-        EntityRef Spawn(const Archetype& archetype);
-
+        EntityRef Spawn(const Archetype &archetype);
 
         /**
          * @brief 親子関係対応の安全な破棄（推奨：ゲーム側用）。
@@ -228,7 +221,8 @@ namespace CCL::ECS
             if (!IsEntityValid(id)) return;
 
             // 既にタグが付いていなければ付ける（多重付与防止）
-            if (!HasComponent<Tag::DestroyTag>(id)) {
+            if (!HasComponent<Tag::DestroyTag>(id))
+            {
                 AddComponent<Tag::DestroyTag>(id);
             }
         }
@@ -243,18 +237,16 @@ namespace CCL::ECS
          */
         void RequestDestroyEntity(EntityID entity);
 
-
         // --------------------------------------------------------
         // Accessors（内部コンテナへの参照取得）
         // --------------------------------------------------------
 
         // ChunkManager への参照を返す（System / Editor 用）
-        ChunkManager&       GetChunkManager()       { return m_chunkManager; }
-        const ChunkManager& GetChunkManager() const { return m_chunkManager; }
+        ChunkManager       &GetChunkManager() { return m_chunkManager; }
+        const ChunkManager &GetChunkManager() const { return m_chunkManager; }
 
         // PendingOps への参照を返す（高度な利用向け）
-        PendingOps& GetPendingOps() { return m_pendingOps; }
-
+        PendingOps &GetPendingOps() { return m_pendingOps; }
 
         // --------------------------------------------------------
         // 世代管理・妥当性チェック
@@ -274,7 +266,6 @@ namespace CCL::ECS
             return IsEntityValid(entity);
         }
 
-
         // --------------------------------------------------------
         // Resource Management (Singleton Component, O(1) Access)
         // --------------------------------------------------------
@@ -292,10 +283,11 @@ namespace CCL::ECS
          * @tparam Args T のコンストラクタに渡す引数
          */
         template <typename T, typename... Args>
-        void AddResource(Args&&... args)
+        void AddResource(Args &&...args)
         {
             const size_t id = ResourceIDGenerator::GetID<T>();
-            if (id >= m_resourcesArray.size()) {
+            if (id >= m_resourcesArray.size())
+            {
                 m_resourcesArray.resize(id + 1);
             }
             m_resourcesArray[id] =
@@ -309,13 +301,12 @@ namespace CCL::ECS
          *       Initialize 時に必ず AddResource しておく運用にしてください。
          */
         template <typename T>
-        T& GetResource()
+        T &GetResource()
         {
             // 型 T → ID → 配列インデックス という O(1) アクセス
             const size_t id = ResourceIDGenerator::GetID<T>();
-            assert(id < m_resourcesArray.size() && m_resourcesArray[id] != nullptr
-                   && "Requested resource not found!");
-            return static_cast<ResourceWrapper<T>*>(m_resourcesArray[id].get())->data;
+            assert(id < m_resourcesArray.size() && m_resourcesArray[id] != nullptr && "Requested resource not found!");
+            return static_cast<ResourceWrapper<T> *>(m_resourcesArray[id].get())->data;
         }
 
         // リソース T が登録済みかを判定する
@@ -326,7 +317,6 @@ namespace CCL::ECS
             return id < m_resourcesArray.size() && m_resourcesArray[id] != nullptr;
         }
 
-
         // --------------------------------------------------------
         // Component Access
         // --------------------------------------------------------
@@ -336,7 +326,7 @@ namespace CCL::ECS
          * @return 見つかれば T*、無ければ nullptr
          */
         template <class T>
-        inline T* GetComponent(EntityID entity);
+        inline T *GetComponent(EntityID entity);
 
         // 指定 Entity が Component T を持っているかを判定する
         template <class T>
@@ -348,7 +338,6 @@ namespace CCL::ECS
         // 動的型 (TypeID) 版の HasComponent
         bool HasComponent(EntityID entity, TypeID tid);
 
-
         /**
          * @brief 構造変更に強い ComponentHandle を取得する（推奨）。
          *
@@ -358,15 +347,15 @@ namespace CCL::ECS
         template <typename T>
         ComponentHandle<T> GetHandle(EntityID entity)
         {
-            if (HasComponent<T>(entity)) {
+            if (HasComponent<T>(entity))
+            {
                 return ComponentHandle<T>(this, entity);
             }
             return ComponentHandle<T>();
         }
 
         // TypeID 指定の低レベル取得（エディタ・シリアライザ用）
-        void* GetComponentOfEntity(EntityID entity, TypeID tid);
-
+        void *GetComponentOfEntity(EntityID entity, TypeID tid);
 
         // --------------------------------------------------------
         // Editor / Inspection API
@@ -378,8 +367,7 @@ namespace CCL::ECS
          * エディタが Chunk 内部構造を知らずに「このエンティティは何を持って
          * いるか」を一覧化するために使用します。
          */
-        const Archetype& GetEntityArchetype(EntityID entity) const;
-
+        const Archetype &GetEntityArchetype(EntityID entity) const;
 
         // --------------------------------------------------------
         // View / Query
@@ -417,12 +405,11 @@ namespace CCL::ECS
          *       本関数は「自分のアーキタイプ外を覗きたい」ときの手段。
          */
         template <class... Components, class Func>
-        inline void ViewEach(Func&& fn);
+        inline void ViewEach(Func &&fn);
 
-
-		// --------------------------------------------------------
-		// Singleton Component Access
-		// --------------------------------------------------------
+        // --------------------------------------------------------
+        // Singleton Component Access
+        // --------------------------------------------------------
 
         /**
          * @brief シングルトンコンポーネントを取得する。
@@ -435,8 +422,7 @@ namespace CCL::ECS
          *       保持したい場合は GetHandle() を使うこと。
          */
         template <typename T>
-        inline T* GetSingletonComponent();
-
+        inline T *GetSingletonComponent();
 
         // --------------------------------------------------------
         // 内部実装用（テンプレートでない方の AddComponent ルート）
@@ -446,19 +432,18 @@ namespace CCL::ECS
          * @brief 非テンプレート版 AddComponent。テンプレ版から呼ばれて
          *        実際の PendingOp を組み立てる。
          */
-        void RequestAddComponent(EntityID                          entity,
-                                  TypeID                            tid,
-                                  size_t                            size,
-                                  const std::function<void(void*)>& ctor,
-                                  const Destructor&                 dtor,
-                                  TypeData::ConstructFunc           copyCtor,
-                                  TypeData::AssignFunc              assigner,
-                                  TypeData::MoveFunc                mover,
-                                  const char*                       name);
+        void RequestAddComponent(EntityID                           entity,
+                                 TypeID                             tid,
+                                 size_t                             size,
+                                 const std::function<void(void *)> &ctor,
+                                 const Destructor                  &dtor,
+                                 TypeData::ConstructFunc            copyCtor,
+                                 TypeData::AssignFunc               assigner,
+                                 TypeData::MoveFunc                 mover,
+                                 const char                        *name);
 
         // 非テンプレート版 RequestRemoveComponent
         void RequestRemoveComponent(EntityID entity, TypeID tid);
-
 
         // --------------------------------------------------------
         // Component Patching (Prefab 生成後の部分修正用)
@@ -477,7 +462,7 @@ namespace CCL::ECS
          * @endcode
          */
         template <class T>
-        void PatchComponent(EntityID entity, std::function<void(T&)> action)
+        void PatchComponent(EntityID entity, std::function<void(T &)> action)
         {
             if (!IsEntityValid(entity)) return;
 
@@ -487,27 +472,25 @@ namespace CCL::ECS
             op.type   = TypeInfo<T>::ID();
 
             // 型安全な action を、void* インタフェースのラムダにラップ
-            op.patcher = [action](void* ptr) {
-                action(*reinterpret_cast<T*>(ptr));
+            op.patcher = [action](void *ptr) {
+                action(*reinterpret_cast<T *>(ptr));
             };
 
             m_pendingOps.Add(op);
         }
-
 
         // --------------------------------------------------------
         // Event / Dirty フラグ
         // --------------------------------------------------------
 
         // 「ECS 外との橋渡し」用の郵便局（イベントバス）
-        EventBus& GetEventBus() { return m_eventBus; }
+        EventBus &GetEventBus() { return m_eventBus; }
 
         // 構造変更が今フレーム発生したかを返す（最適化フラグ）
         bool IsStructureDirty() const { return m_isStructureDirty; }
 
         // Dirty フラグを下ろす（ECSContext が再解決後に呼ぶ）
         void ResetStructureDirty() { m_isStructureDirty = false; }
-
 
     private:
         // ----------------------------------------------------------
@@ -516,14 +499,13 @@ namespace CCL::ECS
 
         // デバッグ用フォールバック取得（キャッシュミス用）
         template <class T>
-        inline T* GetComponentDebug(EntityID entity);
+        inline T *GetComponentDebug(EntityID entity);
 
         /**
          * @brief 削除されたエンティティの ID を世代インクリメントして再利用
          *        プールへ戻す。
          */
         void RecycleEntityID(EntityID id);
-
 
     private:
         // ----------------------------------------------------------
@@ -536,16 +518,15 @@ namespace CCL::ECS
         EventBus       m_eventBus;       // World 専属のイベント配信ハブ
 
         // --- 世代管理 ---
-        std::vector<uint32_t> m_entityGenerations;     // インデックスごとの現世代
-        std::vector<uint32_t> m_freeIndices;           // 再利用待ちインデックス
-        uint32_t              m_nextUnusedIndex = 1;   // 未使用領域の先頭インデックス
+        std::vector<uint32_t> m_entityGenerations;   // インデックスごとの現世代
+        std::vector<uint32_t> m_freeIndices;         // 再利用待ちインデックス
+        uint32_t              m_nextUnusedIndex = 1; // 未使用領域の先頭インデックス
 
         bool m_isStructureDirty = true; // 構造変更フラグ（ECSContext と連動）
 
         // 型消去で保持されるリソース群（GridResource 等）
         std::vector<std::unique_ptr<ResourceBase>> m_resourcesArray;
     };
-
 
     // ============================================================
     // Inline Implementations
@@ -569,33 +550,30 @@ namespace CCL::ECS
         return true;
     }
 
-
     template <class T>
-    inline T* World::GetComponentDebug(EntityID entity)
+    inline T *World::GetComponentDebug(EntityID entity)
     {
         if (!IsEntityValid(entity)) return nullptr;
 
         size_t entityIdxInChunk = 0;
-        size_t chunkIdx = m_chunkManager.SearchEntityIn(entity, &entityIdxInChunk);
+        size_t chunkIdx         = m_chunkManager.SearchEntityIn(entity, &entityIdxInChunk);
         if (chunkIdx == InvalidIndex) return nullptr;
 
-        auto& chunk = m_chunkManager.GetChunks()[chunkIdx];
+        auto &chunk = m_chunkManager.GetChunks()[chunkIdx];
 
         // 削除予約済みなら無効
         if (chunk->IsEntityDestroyed(entityIdxInChunk)) return nullptr;
 
-        return static_cast<T*>(
+        return static_cast<T *>(
             chunk->GetComponentPtrByType(TypeInfo<T>::ID(), entityIdxInChunk));
     }
 
-
     template <class T>
-    inline T* World::GetComponent(EntityID entity)
+    inline T *World::GetComponent(EntityID entity)
     {
         if (!IsEntityValid(entity)) return nullptr;
-        return static_cast<T*>(GetComponentOfEntity(entity, TypeInfo<T>::ID()));
+        return static_cast<T *>(GetComponentOfEntity(entity, TypeInfo<T>::ID()));
     }
-
 
     template <class... Components>
     inline std::vector<EntityID> World::View()
@@ -606,37 +584,40 @@ namespace CCL::ECS
         Archetype filter = ArchetypeHelper::Generate<Components...>();
 
         // 2. 全 Chunk を走査
-        auto& chunks = m_chunkManager.GetChunks();
-        for (const auto& upChunk : chunks) {
+        auto &chunks = m_chunkManager.GetChunks();
+        for (const auto &upChunk : chunks)
+        {
             if (!upChunk) continue;
-            Chunk* chunk = upChunk.get();
+            Chunk *chunk = upChunk.get();
 
             // 3. Chunk が filter を包含していれば、その全エンティティを採用
-            if (ArchetypeHelper::LhasR(chunk->GetArchetype(), filter)) {
-                const size_t   count = chunk->GetEntityCount();
-                const EntityID* ids  = chunk->GetEntityIDs();
+            if (ArchetypeHelper::LhasR(chunk->GetArchetype(), filter))
+            {
+                const size_t    count = chunk->GetEntityCount();
+                const EntityID *ids   = chunk->GetEntityIDs();
                 entities.insert(entities.end(), ids, ids + count);
             }
         }
         return entities;
     }
 
-
     template <class... Components, class Func>
-    inline void World::ViewEach(Func&& fn)
+    inline void World::ViewEach(Func &&fn)
     {
         const Archetype filter = ArchetypeHelper::Generate<Components...>();
 
-        for (const auto& upChunk : m_chunkManager.GetChunks()) {
+        for (const auto &upChunk : m_chunkManager.GetChunks())
+        {
             if (!upChunk) continue;
-            Chunk* chunk = upChunk.get();
+            Chunk *chunk = upChunk.get();
             if (!ArchetypeHelper::LhasR(chunk->GetArchetype(), filter)) continue;
 
-            const size_t    count         = chunk->GetEntityCount();
-            const EntityID* ids           = chunk->GetEntityIDs();
-            const bool      hasDestroyed  = chunk->HasDestroyedEntities();
+            const size_t    count        = chunk->GetEntityCount();
+            const EntityID *ids          = chunk->GetEntityIDs();
+            const bool      hasDestroyed = chunk->HasDestroyedEntities();
 
-            for (size_t i = 0; i < count; ++i) {
+            for (size_t i = 0; i < count; ++i)
+            {
                 // RemoveEntity で空いた席（穴は CompactHoles まで詰められない）
                 if (ids[i] == InvalidEntityID) continue;
                 // 削除予約済み。hasDestroyed が false の間は判定自体を飛ばす
@@ -647,55 +628,54 @@ namespace CCL::ECS
         }
     }
 
-
     template <typename T>
-    inline T* World::GetSingletonComponent()
+    inline T *World::GetSingletonComponent()
     {
         const Archetype filter = ArchetypeHelper::Generate<T>();
         const TypeID    tid    = TypeInfo<T>::ID();
 
         // 1件見つけた時点で返す。vector に貯めてから先頭を取り直す必要はない。
-        for (const auto& upChunk : m_chunkManager.GetChunks()) {
+        for (const auto &upChunk : m_chunkManager.GetChunks())
+        {
             if (!upChunk) continue;
-            Chunk* chunk = upChunk.get();
+            Chunk *chunk = upChunk.get();
             if (!ArchetypeHelper::LhasR(chunk->GetArchetype(), filter)) continue;
 
             const size_t    count        = chunk->GetEntityCount();
-            const EntityID* ids          = chunk->GetEntityIDs();
+            const EntityID *ids          = chunk->GetEntityIDs();
             const bool      hasDestroyed = chunk->HasDestroyedEntities();
 
-            for (size_t i = 0; i < count; ++i) {
+            for (size_t i = 0; i < count; ++i)
+            {
                 if (ids[i] == InvalidEntityID) continue;
                 if (hasDestroyed && chunk->IsEntityDestroyed(i)) continue;
 
-                return static_cast<T*>(chunk->GetComponentPtrByType(tid, i));
+                return static_cast<T *>(chunk->GetComponentPtrByType(tid, i));
             }
         }
         return nullptr;
     }
 
-
     // ----- EntityRef のテンプレ実装（World の完全定義が必要なため、ここ） -----
 
     template <typename T>
-    inline EntityRef& EntityRef::Set(T&& component)
+    inline EntityRef &EntityRef::Set(T &&component)
     {
         world->AddComponent<std::decay_t<T>>(id, std::forward<T>(component));
         return *this;
     }
 
     template <typename T, typename Func>
-    inline EntityRef& EntityRef::Patch(Func&& func)
+    inline EntityRef &EntityRef::Patch(Func &&func)
     {
         world->PatchComponent<T>(id, std::forward<Func>(func));
         return *this;
     }
 
-
     // ----- ComponentHandle のテンプレ実装（同上） -----
 
     template <typename T>
-    inline T* ComponentHandle<T>::Get() const
+    inline T *ComponentHandle<T>::Get() const
     {
         if (!m_world) return nullptr;
         return m_world->GetComponent<T>(m_id);
@@ -707,12 +687,11 @@ namespace CCL::ECS
         return Get() != nullptr;
     }
 
-
     // ----- World::Spawn の実装 -----
-    inline EntityRef World::Spawn(const Archetype& archetype)
+    inline EntityRef World::Spawn(const Archetype &archetype)
     {
         EntityID id = RequestSpawnEntity(archetype);
-        return EntityRef{ this, id };
+        return EntityRef{this, id};
     }
 
 } // namespace CCL::ECS

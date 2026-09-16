@@ -3,7 +3,6 @@
 #include "SimpleMath.h"
 #include "Engine/Graphics/RHI/Camera.h" // 提供されたカメラクラス
 
-
 /**
  * @brief 画面の2D座標から、3D空間への変換を行う数学ユーティリティ
  */
@@ -22,7 +21,7 @@ public:
     static DirectX::SimpleMath::Vector3 GetRayIntersectionY0(
         float mouseX, float mouseY,
         float screenWidth, float screenHeight,
-        const Camera& camera);
+        const Camera &camera);
 
     /**
      * @brief スクリーン座標から、ワールド空間のピッキング用レイ(始点+方向)を生成する。
@@ -41,7 +40,7 @@ public:
     static void GetRay(
         float mouseX, float mouseY,
         float screenWidth, float screenHeight,
-        const Camera& camera,
-        DirectX::SimpleMath::Vector3& outOrigin,
-        DirectX::SimpleMath::Vector3& outDir);
+        const Camera                 &camera,
+        DirectX::SimpleMath::Vector3 &outOrigin,
+        DirectX::SimpleMath::Vector3 &outDir);
 };

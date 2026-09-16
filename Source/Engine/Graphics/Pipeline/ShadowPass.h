@@ -11,20 +11,22 @@
 class ShadowPass : public IRenderPass
 {
 public:
-    void Initialize(const RenderServices& services) override;
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "ShadowPass"; }
+    void        Initialize(const RenderServices &services) override;
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "ShadowPass"; }
 
 private:
     // カスケード毎のソート/バッチ処理用の型。
     // メンバのスクラッチ領域(m_itemsScratch/m_batchesScratch)でしか使わないためここに置く。
-    struct SortItem {
-        const Model::Mesh* mesh;
+    struct SortItem
+    {
+        const Model::Mesh  *mesh;
         DirectX::XMFLOAT4X4 worldMatrix;
-        uint8_t cascadeMask;
+        uint8_t             cascadeMask;
     };
-    struct Batch {
-        const Model::Mesh* mesh = nullptr;
+    struct Batch
+    {
+        const Model::Mesh        *mesh = nullptr;
         std::vector<InstanceData> data;
     };
 

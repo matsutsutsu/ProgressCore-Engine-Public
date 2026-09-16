@@ -34,13 +34,13 @@ class RenderQueue;
 struct RenderServices
 {
     // ---- RHI / アセット ----
-    ID3D11Device* device = nullptr;
+    ID3D11Device *device = nullptr;
     // CbScene 定数バッファ (b8)。Graphics が所有し lifetime を管理する。
-    ID3D11Buffer* sceneConstantBuffer = nullptr;
+    ID3D11Buffer *sceneConstantBuffer = nullptr;
 
-    ResourceManager* resources = nullptr;
-    ShaderRegistry* shaders = nullptr;
-    const RenderState* renderState = nullptr;
+    ResourceManager   *resources   = nullptr;
+    ShaderRegistry    *shaders     = nullptr;
+    const RenderState *renderState = nullptr;
 
     // GPU 計測用の Tracy コンテキスト（GraphicsDevice が所有）。
     // これを Services に載せることで、RenderPipeline が Graphics シングルトンを
@@ -48,16 +48,16 @@ struct RenderServices
     TracyD3D11Ctx tracyContext = nullptr;
 
     // ---- 描画サブシステム（常駐レンダラ） ----
-    ModelConstantBuffers* modelConstants = nullptr;
-    ParticleRenderer* particleRenderer = nullptr;
-    PrimitiveRenderer* primitiveRenderer = nullptr;
-    ShapeRenderer* shapeRenderer = nullptr;
-    PostProcessManager* postProcess = nullptr;
+    ModelConstantBuffers *modelConstants    = nullptr;
+    ParticleRenderer     *particleRenderer  = nullptr;
+    PrimitiveRenderer    *primitiveRenderer = nullptr;
+    ShapeRenderer        *shapeRenderer     = nullptr;
+    PostProcessManager   *postProcess       = nullptr;
 
     // ---- シーン情報（オブジェクト自体は永続。中身はフレーム毎に更新される） ----
-    LightManager* lightManager = nullptr;
-    ShadowMap* shadowMap = nullptr;
-    RenderQueue* renderQueue = nullptr;
+    LightManager *lightManager = nullptr;
+    ShadowMap    *shadowMap    = nullptr;
+    RenderQueue  *renderQueue  = nullptr;
 
     UINT screenWidth  = 0;
     UINT screenHeight = 0;
@@ -75,19 +75,19 @@ struct RenderServices
 struct RenderFrameContext
 {
     // ---- アクティブな描画コンテキスト ----
-    ID3D11DeviceContext* dc = nullptr;
-    const Camera* camera = nullptr;
+    ID3D11DeviceContext *dc     = nullptr;
+    const Camera        *camera = nullptr;
 
     // ---- 出力先（パイプライン最終出力。途中パスで切り替わる場合あり） ----
-    ID3D11RenderTargetView* targetRTV = nullptr;
-    ID3D11DepthStencilView* targetDSV = nullptr;
-    ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
-    ID3D11ShaderResourceView* sceneNormalSRV = nullptr;
+    ID3D11RenderTargetView   *targetRTV      = nullptr;
+    ID3D11DepthStencilView   *targetDSV      = nullptr;
+    ID3D11ShaderResourceView *sceneDepthSRV  = nullptr;
+    ID3D11ShaderResourceView *sceneNormalSRV = nullptr;
 
     // 現在のスカイボックス背景 SRV（SkyboxComponent 由来 or 既定）。
     // EnvironmentSystem が解決して Graphics に預け、MakeFrameContext がここへ渡す。
     // SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
-    ID3D11ShaderResourceView* skyboxSRV = nullptr;
+    ID3D11ShaderResourceView *skyboxSRV = nullptr;
 
     // ---- 描画先のサイズ（targetRTV の実寸） ----
     uint32_t viewportW = 0;

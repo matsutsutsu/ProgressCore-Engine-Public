@@ -10,31 +10,37 @@
 
 namespace
 {
-const char* KindLabel(DebugTexKind k)
-{
-    switch (k)
+    const char *KindLabel(DebugTexKind k)
     {
-        case DebugTexKind::Color:         return "Color";
-        case DebugTexKind::HDRColor:      return "HDR";
-        case DebugTexKind::Depth:         return "Depth (線形化)";
-        case DebugTexKind::SingleChannel: return "R (grayscale)";
-        case DebugTexKind::Normal:        return "Normal (remap)";
-        case DebugTexKind::Array:         return "Array (slice)";
+        switch (k)
+        {
+        case DebugTexKind::Color:
+            return "Color";
+        case DebugTexKind::HDRColor:
+            return "HDR";
+        case DebugTexKind::Depth:
+            return "Depth (線形化)";
+        case DebugTexKind::SingleChannel:
+            return "R (grayscale)";
+        case DebugTexKind::Normal:
+            return "Normal (remap)";
+        case DebugTexKind::Array:
+            return "Array (slice)";
+        }
+        return "?";
     }
-    return "?";
-}
 } // namespace
 #endif // ENABLE_EDITOR
 
-void RenderDebugWindow::DrawContents(EditorContext& context)
+void RenderDebugWindow::DrawContents(EditorContext &context)
 {
 #ifdef ENABLE_EDITOR
-    const auto& entries = RenderDebugRegistry::Instance().GetEntries();
+    const auto &entries = RenderDebugRegistry::Instance().GetEntries();
 
     // --- 深度線形化用の near/far をカメラから自動取得（無ければ手動値を使う） ---
-    if (context.world && context.world->HasResource<Camera*>())
+    if (context.world && context.world->HasResource<Camera *>())
     {
-        if (Camera* cam = context.world->GetResource<Camera*>())
+        if (Camera *cam = context.world->GetResource<Camera *>())
         {
             m_nearZ = cam->GetNear();
             m_farZ  = cam->GetFar();
@@ -44,7 +50,7 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
     // --- 共通コントロール ---
     ImGui::SliderFloat("Thumbnail Width", &m_thumbWidth, 128.0f, 640.0f, "%.0f px");
     ImGui::SliderFloat("HDR Exposure", &m_exposure, 0.05f, 8.0f, "%.2f");
-    const char* channelItems[] = { "RGB", "R", "G", "B", "A" };
+    const char *channelItems[] = {"RGB", "R", "G", "B", "A"};
     ImGui::Combo("Channel", &m_channelSelect, channelItems, IM_ARRAYSIZE(channelItems));
     ImGui::InputInt("Array Slice", &m_arraySlice);
     if (m_arraySlice < 0) m_arraySlice = 0;
@@ -59,10 +65,10 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
         return;
     }
 
-    ID3D11DeviceContext* dc = Graphics::Instance().GetDeviceContext();
+    ID3D11DeviceContext *dc = Graphics::Instance().GetDeviceContext();
     m_viz.BeginFrame();
 
-    for (const auto& e : entries)
+    for (const auto &e : entries)
     {
         ImGui::PushID(&e); // アドレスで一意化
 
@@ -80,11 +86,11 @@ void RenderDebugWindow::DrawContents(EditorContext& context)
         p.arraySlice    = m_arraySlice;
         p.channelSelect = m_channelSelect;
 
-        ID3D11ShaderResourceView* shown = m_viz.Visualize(dc, e.srv, e.width, e.height, p);
+        ID3D11ShaderResourceView *shown = m_viz.Visualize(dc, e.srv, e.width, e.height, p);
 
         if (shown)
         {
-            const float aspect = (e.width > 0) ? (float)e.height / (float)e.width : 9.0f / 16.0f;
+            const float  aspect = (e.width > 0) ? (float)e.height / (float)e.width : 9.0f / 16.0f;
             const ImVec2 size(m_thumbWidth, m_thumbWidth * aspect);
             ImGui::Image((ImTextureID)shown, size);
 

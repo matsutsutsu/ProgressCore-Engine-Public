@@ -40,7 +40,7 @@ void Graphics::Initialize(HWND hWnd)
 {
     // ---- Phase 1: D3D11 RHI 層 ----
     m_gfxDevice.Initialize(hWnd);
-    ID3D11Device* device = m_gfxDevice.GetDevice();
+    ID3D11Device *device = m_gfxDevice.GetDevice();
 
     // Camera::Camera() がデフォルト値で初期化済み。
     // アスペクト比だけ実際のウィンドウサイズで上書きする（BaseScene が後でゲーム固有値を設定する）。
@@ -48,12 +48,12 @@ void Graphics::Initialize(HWND hWnd)
     m_mainCamera.SetPerspectiveFov(DirectX::XMConvertToRadians(45.0f), aspect, 0.1f, 1000.0f);
 
     // ---- Phase 2: 描画サブシステム生成 ----
-    m_renderState = std::make_unique<RenderState>(device);
+    m_renderState       = std::make_unique<RenderState>(device);
     m_primitiveRenderer = std::make_unique<PrimitiveRenderer>(device);
-    m_shapeRenderer = std::make_unique<ShapeRenderer>(device);
-    m_modelConstants = std::make_unique<ModelConstantBuffers>(device);
-    m_shadowMap = std::make_unique<ShadowMap>(device, 2048, 2048);
-    m_particleRenderer = std::make_unique<ParticleRenderer>();
+    m_shapeRenderer     = std::make_unique<ShapeRenderer>(device);
+    m_modelConstants    = std::make_unique<ModelConstantBuffers>(device);
+    m_shadowMap         = std::make_unique<ShadowMap>(device, 2048, 2048);
+    m_particleRenderer  = std::make_unique<ParticleRenderer>();
     m_particleRenderer->Initialize(device);
     m_lightManager = std::make_unique<LightManager>();
     m_lightManager->Initialize(device);
@@ -64,11 +64,11 @@ void Graphics::Initialize(HWND hWnd)
     m_modelConstants->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
 
     // ---- Phase 3: シェーダー登録 ----
-    auto& reg = ShaderRegistry::Instance();
+    auto &reg = ShaderRegistry::Instance();
 
     // マテリアルは Assets/Shader/shaders.json に1行足すだけ（C++・再ビルド不要）
     ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
-        ShaderRegistry::Instance());
+                                    ShaderRegistry::Instance());
 
     // ---- Phase 4: レンダリングパイプライン構築 ----
     SetupRenderPipeline();
@@ -77,22 +77,22 @@ void Graphics::Initialize(HWND hWnd)
 void Graphics::SetupRenderPipeline()
 {
     // RenderServices を構築してキャッシュ
-    m_renderServices.device = m_gfxDevice.GetDevice();
+    m_renderServices.device              = m_gfxDevice.GetDevice();
     m_renderServices.sceneConstantBuffer = m_gfxDevice.GetSceneConstantBuffer();
-    m_renderServices.renderState = m_renderState.get();
-    m_renderServices.resources = &ResourceManager::Instance();
-    m_renderServices.shaders = &ShaderRegistry::Instance();
-    m_renderServices.modelConstants = m_modelConstants.get();
-    m_renderServices.primitiveRenderer = m_primitiveRenderer.get();
-    m_renderServices.shapeRenderer = m_shapeRenderer.get();
-    m_renderServices.particleRenderer = m_particleRenderer.get();
-    m_renderServices.shadowMap = m_shadowMap.get();
-    m_renderServices.renderQueue = &RenderQueue::Instance();
-    m_renderServices.lightManager = m_lightManager.get();
-    m_renderServices.postProcess = m_postProcess.get();
-    m_renderServices.screenWidth = m_gfxDevice.GetWidthU();
-    m_renderServices.screenHeight = m_gfxDevice.GetHeightU();
-    m_renderServices.tracyContext = m_gfxDevice.GetTracyContext();
+    m_renderServices.renderState         = m_renderState.get();
+    m_renderServices.resources           = &ResourceManager::Instance();
+    m_renderServices.shaders             = &ShaderRegistry::Instance();
+    m_renderServices.modelConstants      = m_modelConstants.get();
+    m_renderServices.primitiveRenderer   = m_primitiveRenderer.get();
+    m_renderServices.shapeRenderer       = m_shapeRenderer.get();
+    m_renderServices.particleRenderer    = m_particleRenderer.get();
+    m_renderServices.shadowMap           = m_shadowMap.get();
+    m_renderServices.renderQueue         = &RenderQueue::Instance();
+    m_renderServices.lightManager        = m_lightManager.get();
+    m_renderServices.postProcess         = m_postProcess.get();
+    m_renderServices.screenWidth         = m_gfxDevice.GetWidthU();
+    m_renderServices.screenHeight        = m_gfxDevice.GetHeightU();
+    m_renderServices.tracyContext        = m_gfxDevice.GetTracyContext();
 
     // RenderQueue にも ShaderRegistry を注入し、ソート処理から singleton 参照を無くす
     RenderQueue::Instance().Initialize(m_renderServices.shaders);
@@ -145,16 +145,19 @@ void Graphics::Update()
     //   将来リサイズ処理を足したときにカメラ側は自動で追従する。
     //   （fovY == 0 は正射影の番兵。その場合は触らない）
     // ------------------------------------------------------------------
-    if (m_gfxDevice.GetHeight() > 0.0f && m_mainCamera.GetFovY() > 0.0f) {
+    if (m_gfxDevice.GetHeight() > 0.0f && m_mainCamera.GetFovY() > 0.0f)
+    {
         const float aspect = m_gfxDevice.GetWidth() / m_gfxDevice.GetHeight();
-        if (std::fabs(aspect - m_mainCamera.GetAspect()) > 1e-4f) {
+        if (std::fabs(aspect - m_mainCamera.GetAspect()) > 1e-4f)
+        {
             m_mainCamera.SetPerspectiveFov(m_mainCamera.GetFovY(), aspect,
                                            m_mainCamera.GetNear(), m_mainCamera.GetFar());
         }
     }
 
     // CbLight (b9) を GPU に転送・バインド（毎フレーム最初に実行）
-    if (m_lightManager) {
+    if (m_lightManager)
+    {
         m_lightManager->Bind(m_gfxDevice.GetContext(), SLOT_CB_LIGHT);
     }
 
@@ -168,29 +171,30 @@ void Graphics::Update()
     data.gView          = m_mainCamera.GetView();
     data.gProjection    = m_mainCamera.GetProjection();
 
-    const DirectX::XMFLOAT3& pos = m_mainCamera.GetEye();
-    data.cameraPosition = { pos.x, pos.y, pos.z, 1.0f };
+    const DirectX::XMFLOAT3 &pos = m_mainCamera.GetEye();
+    data.cameraPosition          = {pos.x, pos.y, pos.z, 1.0f};
 
-    if (m_lightManager) {
-        const DirectionalLight& dir = m_lightManager->GetDirectionalLight();
-        data.lightDirection = { dir.direction.x, dir.direction.y, dir.direction.z, 0.0f };
-        data.lightColor = { dir.color.x,     dir.color.y,     dir.color.z, dir.intensity };
+    if (m_lightManager)
+    {
+        const DirectionalLight &dir = m_lightManager->GetDirectionalLight();
+        data.lightDirection         = {dir.direction.x, dir.direction.y, dir.direction.z, 0.0f};
+        data.lightColor             = {dir.color.x, dir.color.y, dir.color.z, dir.intensity};
     }
 
     {
-        static const auto s_start = std::chrono::high_resolution_clock::now();
-        static auto s_prev = s_start;
-        const auto now = std::chrono::high_resolution_clock::now();
-        const float timeSec  = std::chrono::duration<float>(now - s_start).count();
-        const float deltaSec = std::chrono::duration<float>(now - s_prev).count();
-        s_prev = now;
-        data.gTimeParams = { timeSec, deltaSec, sinf(timeSec), 0.0f };
+        static const auto s_start  = std::chrono::high_resolution_clock::now();
+        static auto       s_prev   = s_start;
+        const auto        now      = std::chrono::high_resolution_clock::now();
+        const float       timeSec  = std::chrono::duration<float>(now - s_start).count();
+        const float       deltaSec = std::chrono::duration<float>(now - s_prev).count();
+        s_prev                     = now;
+        data.gTimeParams           = {timeSec, deltaSec, sinf(timeSec), 0.0f};
     }
 
     {
-        const float sw = m_gfxDevice.GetWidth();
-        const float sh = m_gfxDevice.GetHeight();
-        data.gScreenParams = { sw, sh, (sw > 0 ? 1.0f / sw : 0.0f), (sh > 0 ? 1.0f / sh : 0.0f) };
+        const float sw     = m_gfxDevice.GetWidth();
+        const float sh     = m_gfxDevice.GetHeight();
+        data.gScreenParams = {sw, sh, (sw > 0 ? 1.0f / sw : 0.0f), (sh > 0 ? 1.0f / sh : 0.0f)};
     }
 
     m_gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
@@ -199,7 +203,7 @@ void Graphics::Update()
 // ============================================================
 //  Render（毎フレーム）
 // ============================================================
-void Graphics::Render(const RenderFrameContext& ctx)
+void Graphics::Render(const RenderFrameContext &ctx)
 {
     // このスコープ内の D3D11 描画コマンド群を GPU タイムラインとして記録する
     TracyD3D11Zone(m_gfxDevice.GetTracyContext(), "Graphics::Render Pipeline (GPU)");
@@ -211,29 +215,29 @@ void Graphics::Render(const RenderFrameContext& ctx)
 // ============================================================
 //  MakeFrameContext
 // ============================================================
-RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView* overrideRTV) noexcept
+RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRTV) noexcept
 {
     RenderFrameContext ctx;
-    ctx.dc = m_gfxDevice.GetContext();
-    ctx.camera = &m_mainCamera; // ← 直接参照
-    ctx.targetRTV = (overrideRTV != nullptr) ? overrideRTV : m_gfxDevice.GetGameRTV();
-    ctx.targetDSV = m_gfxDevice.GetDepthStencilView();
-    ctx.sceneDepthSRV = m_gfxDevice.GetDepthSRV();
+    ctx.dc             = m_gfxDevice.GetContext();
+    ctx.camera         = &m_mainCamera; // ← 直接参照
+    ctx.targetRTV      = (overrideRTV != nullptr) ? overrideRTV : m_gfxDevice.GetGameRTV();
+    ctx.targetDSV      = m_gfxDevice.GetDepthStencilView();
+    ctx.sceneDepthSRV  = m_gfxDevice.GetDepthSRV();
     ctx.sceneNormalSRV = m_sceneNormalSRV;
-    ctx.skyboxSRV = m_pendingSkyboxSRV; // EnvironmentSystem が解決した現在の空
-    ctx.viewportW = m_gfxDevice.GetWidthU();
-    ctx.viewportH = m_gfxDevice.GetHeightU();
+    ctx.skyboxSRV      = m_pendingSkyboxSRV; // EnvironmentSystem が解決した現在の空
+    ctx.viewportW      = m_gfxDevice.GetWidthU();
+    ctx.viewportH      = m_gfxDevice.GetHeightU();
     return ctx;
 }
 
 // ============================================================
 //  UnbindAllResources（パイプライン実行後のクリーンアップ）
 // ============================================================
-void Graphics::UnbindAllResources(ID3D11DeviceContext* dc)
+void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 {
-    ID3D11Buffer* nullCB = nullptr;
-    ID3D11SamplerState* nullSampler = nullptr;
-    ID3D11ShaderResourceView* nullSRV = nullptr;
+    ID3D11Buffer             *nullCB      = nullptr;
+    ID3D11SamplerState       *nullSampler = nullptr;
+    ID3D11ShaderResourceView *nullSRV     = nullptr;
 
     dc->VSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
     dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &nullCB);
@@ -263,13 +267,13 @@ void Graphics::Shutdown()
     // ==============================================================
     // 2. パイプライン・パスの破棄
     // ==============================================================
-    if (m_gfxDevice.GetContext()) {
+    if (m_gfxDevice.GetContext())
+    {
         UnbindAllResources(m_gfxDevice.GetContext());
     }
 
     // パイプラインを解放（各パスの Shutdown が走る）
     m_pipeline.Shutdown();
-
 
     // 描画サブシステムを生成の逆順に解放
     m_postProcess.reset();
@@ -284,8 +288,6 @@ void Graphics::Shutdown()
     // D3D11 RHI 層を最後に解放
     m_gfxDevice.Shutdown();
 }
-
-
 
 // ============================================================
 //  Present（デバイスロスト検出付き）
@@ -308,11 +310,11 @@ bool Graphics::Present(UINT syncInterval)
     {
         // 実際の原因コードをログに残す
         const HRESULT reason = m_gfxDevice.GetDeviceRemovedReason();
-        char buf[128];
+        char          buf[128];
         sprintf_s(buf,
-            "[Graphics] !!! Device lost detected. Reason=0x%08X "
-            "(HUNG=0x887A0006 RESET=0x887A0007 REMOVED=0x887A0005 DRIVER=0x887A0020)\n",
-            static_cast<unsigned int>(reason));
+                  "[Graphics] !!! Device lost detected. Reason=0x%08X "
+                  "(HUNG=0x887A0006 RESET=0x887A0007 REMOVED=0x887A0005 DRIVER=0x887A0020)\n",
+                  static_cast<unsigned int>(reason));
         OutputDebugStringA(buf);
 
         m_deviceLost = true;

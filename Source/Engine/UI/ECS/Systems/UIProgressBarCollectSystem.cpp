@@ -18,9 +18,9 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 {
     if (!m_world->HasResource<UIDrawList>()) return;
 
-    auto       &gfx     = Graphics::Instance();
-    const float screenW = gfx.GetScreenWidth();
-    const float screenH = gfx.GetScreenHeight();
+    auto       &gfx      = Graphics::Instance();
+    const float screenW  = gfx.GetScreenWidth();
+    const float screenH  = gfx.GetScreenHeight();
     auto       &drawList = m_world->GetResource<UIDrawList>();
 
     ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIProgressBarComponent &bar) {
@@ -63,7 +63,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
         if (bar.showTrail)
         {
             const float tv = std::clamp(bar.trailValue, 0.0f, 1.0f);
-            UIDrawItem trail;
+            UIDrawItem  trail;
             trail.kind      = UIDrawKind::Image;
             trail.pos       = origin;
             trail.size      = {t.computedSize.x * tv, t.computedSize.y};
@@ -74,7 +74,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 
         // フィル（幅 × value）。gradient>0 なら下端を暗くして立体感を出す。
         const float fillW = t.computedSize.x * v;
-        UIDrawItem fill;
+        UIDrawItem  fill;
         fill.kind      = UIDrawKind::Image;
         fill.pos       = origin;
         fill.size      = {fillW, t.computedSize.y};
@@ -82,10 +82,10 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
         fill.sortOrder = kLayerFill;
         if (bar.gradient > 0.0f)
         {
-            const float k     = 1.0f - std::clamp(bar.gradient, 0.0f, 1.0f);
-            fill.useGradient  = true;
-            fill.colorBottom  = {bar.fillColor.x * k, bar.fillColor.y * k, bar.fillColor.z * k,
-                                 bar.fillColor.w};
+            const float k    = 1.0f - std::clamp(bar.gradient, 0.0f, 1.0f);
+            fill.useGradient = true;
+            fill.colorBottom = {bar.fillColor.x * k, bar.fillColor.y * k, bar.fillColor.z * k,
+                                bar.fillColor.w};
         }
         drawList.items.push_back(fill);
     });

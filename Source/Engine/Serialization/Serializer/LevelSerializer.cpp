@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 // =====================================================================
 // 保存
 // =====================================================================
-bool LevelSerializer::SaveLevel(World* world, const std::string& levelPath)
+bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
 {
     if (!world) return false;
 
@@ -42,44 +42,48 @@ bool LevelSerializer::SaveLevel(World* world, const std::string& levelPath)
     }
 
     const std::string sceneRel  = stem + ".scene.json";
-    const fs::path     scenePath = lp.parent_path() / sceneRel;
+    const fs::path    scenePath = lp.parent_path() / sceneRel;
 
     // 出力先を正規化する。ダイアログが拡張子なし/`.json`を返しても、必ず
     //    `<stem>.level.json` と `<stem>.scene.json` のペアで書き出す。
-    const fs::path     levelOut  = lp.parent_path() / (stem + ".level.json");
+    const fs::path levelOut = lp.parent_path() / (stem + ".level.json");
 
     // ---- 1) ステージをベイク保存(プレハブ実体は SceneSerializer 側で自動除外) ----
-    if (!SceneSerializer::Serialize(world, scenePath.string())) {
+    if (!SceneSerializer::Serialize(world, scenePath.string()))
+    {
         CCL_LOG_ERROR(LogCategory::Core,
-            "[Level] ステージ保存に失敗: %s", scenePath.string().c_str());
+                      "[Level] ステージ保存に失敗: %s", scenePath.string().c_str());
         return false;
     }
 
     // ---- 2) プレハブ実体(参照配置)を収集 ----
-    nlohmann::json instances = nlohmann::json::array();
-    int placedCount = 0;
+    nlohmann::json instances   = nlohmann::json::array();
+    int            placedCount = 0;
 
-    auto& chunkMgr = world->GetChunkManager();
-    for (auto& upChunk : chunkMgr.GetChunks()) {
+    auto &chunkMgr = world->GetChunkManager();
+    for (auto &upChunk : chunkMgr.GetChunks())
+    {
         if (!upChunk) continue;
-        Chunk* chunk = upChunk.get();
+        Chunk *chunk = upChunk.get();
         if (!chunk->HasComponent<PrefabInstanceComponent>()) continue;
 
-        PrefabInstanceComponent* insts = chunk->GetComponentArray<PrefabInstanceComponent>();
-        const EntityID*          ids   = chunk->GetEntityIDs();
+        PrefabInstanceComponent *insts = chunk->GetComponentArray<PrefabInstanceComponent>();
+        const EntityID          *ids   = chunk->GetEntityIDs();
         const size_t             count = chunk->GetEntityCount();
 
-        for (size_t i = 0; i < count; ++i) {
+        for (size_t i = 0; i < count; ++i)
+        {
             if (chunk->IsEntityDestroyed(i)) continue;
-            const std::string& path = insts[i].prefabPath;
+            const std::string &path = insts[i].prefabPath;
             if (path.empty()) continue; // ルートのみ(子は空パス)を対象
 
             nlohmann::json e;
             e["prefab"] = path;
-            if (auto* t = world->GetComponent<TransformComponent>(ids[i])) {
-                e["position"] = { t->position.x, t->position.y, t->position.z };
-                e["rotation"] = { t->rotation.x, t->rotation.y, t->rotation.z, t->rotation.w };
-                e["scale"]    = { t->scale.x,    t->scale.y,    t->scale.z };
+            if (auto *t = world->GetComponent<TransformComponent>(ids[i]))
+            {
+                e["position"] = {t->position.x, t->position.y, t->position.z};
+                e["rotation"] = {t->rotation.x, t->rotation.y, t->rotation.z, t->rotation.w};
+                e["scale"]    = {t->scale.x, t->scale.y, t->scale.z};
             }
             instances.push_back(std::move(e));
             ++placedCount;
@@ -90,47 +94,54 @@ bool LevelSerializer::SaveLevel(World* world, const std::string& levelPath)
     nlohmann::json root;
     root["type"]      = "level";
     root["version"]   = 1;
-    root["scene"]     = sceneRel;      // level ファイルからの相対名
+    root["scene"]     = sceneRel; // level ファイルからの相対名
     root["instances"] = std::move(instances);
 
-    if (!FileSystem::WriteAllText(levelOut.string(), root.dump(4))) {
+    if (!FileSystem::WriteAllText(levelOut.string(), root.dump(4)))
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[Level] レベル保存に失敗: %s", levelOut.string().c_str());
         return false;
     }
 
     CCL_LOG_INFO(LogCategory::Core,
-        "[Level] 保存完了: %s (scene=%s, prefab=%d)", levelOut.string().c_str(), sceneRel.c_str(), placedCount);
+                 "[Level] 保存完了: %s (scene=%s, prefab=%d)", levelOut.string().c_str(), sceneRel.c_str(), placedCount);
     return true;
 }
 
 // =====================================================================
 // ロード
 // =====================================================================
-bool LevelSerializer::LoadLevel(World* world, const std::string& levelPath)
+bool LevelSerializer::LoadLevel(World *world, const std::string &levelPath)
 {
     if (!world) return false;
 
     const std::string jsonStr = FileSystem::ReadAllText(levelPath);
-    if (jsonStr.empty()) {
+    if (jsonStr.empty())
+    {
         CCL_LOG_ERROR(LogCategory::Core,
-            "[Level] 読み込み中止: ファイルが無いか空です (%s)", levelPath.c_str());
+                      "[Level] 読み込み中止: ファイルが無いか空です (%s)", levelPath.c_str());
         return false;
     }
 
     nlohmann::json root;
-    try { root = nlohmann::json::parse(jsonStr); }
-    catch (const std::exception& ex) {
+    try
+    {
+        root = nlohmann::json::parse(jsonStr);
+    }
+    catch (const std::exception &ex)
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[Level] JSON parse 失敗 (%s): %s", levelPath.c_str(), ex.what());
         return false;
     }
 
     const std::string sceneRel = root.value("scene", std::string{});
-    if (sceneRel.empty()) {
+    if (sceneRel.empty())
+    {
         CCL_LOG_ERROR(LogCategory::Core, "[Level] scene 参照がありません: %s", levelPath.c_str());
         return false;
     }
 
-    fs::path lp(levelPath);
+    fs::path       lp(levelPath);
     const fs::path scenePath = lp.parent_path() / sceneRel;
 
     // ---- 1) ステージをロード(既存ワールドを全消去して差し替え) ----
@@ -138,40 +149,46 @@ bool LevelSerializer::LoadLevel(World* world, const std::string& levelPath)
 
     // ---- 2) プレハブ実体を再生成 ----
     int spawned = 0;
-    if (root.contains("instances") && root["instances"].is_array()) {
-        for (const auto& e : root["instances"]) {
+    if (root.contains("instances") && root["instances"].is_array())
+    {
+        for (const auto &e : root["instances"])
+        {
             const std::string prefab = e.value("prefab", std::string{});
             if (prefab.empty()) continue;
 
-            DirectX::XMFLOAT3 pos{ 0, 0, 0 };
-            DirectX::XMFLOAT4 rot{ 0, 0, 0, 1 };
-            DirectX::XMFLOAT3 scl{ 1, 1, 1 };
+            DirectX::XMFLOAT3 pos{0, 0, 0};
+            DirectX::XMFLOAT4 rot{0, 0, 0, 1};
+            DirectX::XMFLOAT3 scl{1, 1, 1};
 
-            if (e.contains("position") && e["position"].is_array() && e["position"].size() == 3) {
-                pos = { e["position"][0].get<float>(), e["position"][1].get<float>(), e["position"][2].get<float>() };
+            if (e.contains("position") && e["position"].is_array() && e["position"].size() == 3)
+            {
+                pos = {e["position"][0].get<float>(), e["position"][1].get<float>(), e["position"][2].get<float>()};
             }
-            if (e.contains("rotation") && e["rotation"].is_array() && e["rotation"].size() == 4) {
-                rot = { e["rotation"][0].get<float>(), e["rotation"][1].get<float>(),
-                        e["rotation"][2].get<float>(), e["rotation"][3].get<float>() };
+            if (e.contains("rotation") && e["rotation"].is_array() && e["rotation"].size() == 4)
+            {
+                rot = {e["rotation"][0].get<float>(), e["rotation"][1].get<float>(),
+                       e["rotation"][2].get<float>(), e["rotation"][3].get<float>()};
             }
-            if (e.contains("scale") && e["scale"].is_array() && e["scale"].size() == 3) {
-                scl = { e["scale"][0].get<float>(), e["scale"][1].get<float>(), e["scale"][2].get<float>() };
+            if (e.contains("scale") && e["scale"].is_array() && e["scale"].size() == 3)
+            {
+                scl = {e["scale"][0].get<float>(), e["scale"][1].get<float>(), e["scale"][2].get<float>()};
             }
 
             EntityID rootId = Prefab::SpawnPrefab(*world, prefab, pos, rot);
-            if (rootId == InvalidEntityID) {
+            if (rootId == InvalidEntityID)
+            {
                 CCL_LOG_WARN(LogCategory::Core, "[Level] プレハブ生成に失敗: %s", prefab.c_str());
                 continue;
             }
             // スケール適用 + 参照マーカー再付与(次回のレベル保存で往復できるように)
-            world->PatchComponent<TransformComponent>(rootId, [scl](TransformComponent& t) { t.scale = scl; });
-            world->AddComponent<PrefabInstanceComponent>(rootId, PrefabInstanceComponent{ prefab });
+            world->PatchComponent<TransformComponent>(rootId, [scl](TransformComponent &t) { t.scale = scl; });
+            world->AddComponent<PrefabInstanceComponent>(rootId, PrefabInstanceComponent{prefab});
             ++spawned;
         }
     }
 
     world->ScrutinyAndApply();
     CCL_LOG_INFO(LogCategory::Core,
-        "[Level] 読み込み完了: %s (scene=%s, prefab=%d)", levelPath.c_str(), sceneRel.c_str(), spawned);
+                 "[Level] 読み込み完了: %s (scene=%s, prefab=%d)", levelPath.c_str(), sceneRel.c_str(), spawned);
     return true;
 }

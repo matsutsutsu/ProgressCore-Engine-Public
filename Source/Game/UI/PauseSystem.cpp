@@ -12,7 +12,7 @@
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Game/UI/MenuUiFactory.h"
 #include "Engine/Core/App/GameFlowState.h"
-#include "Engine/Time/TimeState.h" // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
+#include "Engine/Time/TimeState.h"   // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
 #include "Engine/Time/TimeService.h" // ポーズは意図ファサード経由
 
 #include <cstdint>
@@ -21,7 +21,7 @@ using namespace CCL::ECS;
 
 namespace
 {
-constexpr int VKEY_ESCAPE = 0x1B; // windows.h を持ち込まないための ESC 仮想キーコード
+    constexpr int VKEY_ESCAPE = 0x1B; // windows.h を持ち込まないための ESC 仮想キーコード
 }
 
 void PauseSystem::Initialize()
@@ -62,20 +62,20 @@ void PauseSystem::Update(float /*dt*/)
     Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
-    const bool toggle = input->GetKeyboard().IsTriggered(VKEY_ESCAPE)
-                     || input->GetGamePad().IsTriggered(GamePad::BTN_START);
+    const bool toggle = input->GetKeyboard().IsTriggered(VKEY_ESCAPE) || input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
     // カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
     //    ESC/START のポーズ切替を無視する（既にポーズ中の解除は許可）。
-    if (!m_paused && m_world->HasResource<GameFlowState>()
-        && m_world->GetResource<GameFlowState>().uiInteract)
+    if (!m_paused && m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract)
     {
         return;
     }
 
-    if (!m_paused) OpenPause();
-    else          ClosePause();
+    if (!m_paused)
+        OpenPause();
+    else
+        ClosePause();
 }
 
 void PauseSystem::OpenPause()
@@ -102,7 +102,7 @@ void PauseSystem::OpenPause()
     // 中央付近が薄いほうが背後のゲーム画面が残って「一時停止している」感が出る。
     static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.78f};
     m_overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
-        {0.0f, 0.0f, 0.0f, 0.45f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
+                                   {0.0f, 0.0f, 0.0f, 0.45f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
     m_overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
 
     auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f, canvas);
@@ -112,7 +112,7 @@ void PauseSystem::OpenPause()
     // 抜け道はタイトルへ戻すだけにする。アプリ終了はタイトル画面の QUIT に集約した
     // （ゲーム中から即終了できると、押し間違えたときに戻る手段が無い）。
     auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
-        "pause_title", false, 210, 0.24f, canvas);
+                               "pause_title", false, 210, 0.24f, canvas);
     m_overlay.push_back(toTitle.button);
     m_overlay.push_back(toTitle.label);
 

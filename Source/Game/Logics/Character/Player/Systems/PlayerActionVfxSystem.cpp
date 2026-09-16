@@ -14,9 +14,9 @@ using namespace CCL::ECS;
 
 namespace
 {
-// バーストエミッタ・プレハブ（.json は Prefab 側が補完する）。見た目はエディタで調整する。
-const char *kJumpVfxPrefab = "Assets/Prefabs/Particles/VFX_Jump";
-const char *kDashVfxPrefab = "Assets/Prefabs/Particles/VFX_Dash";
+    // バーストエミッタ・プレハブ（.json は Prefab 側が補完する）。見た目はエディタで調整する。
+    const char *kJumpVfxPrefab = "Assets/Prefabs/Particles/VFX_Jump";
+    const char *kDashVfxPrefab = "Assets/Prefabs/Particles/VFX_Dash";
 } // namespace
 
 void PlayerActionVfxSystem::Initialize()

@@ -7,34 +7,35 @@
 #include <cstdint>
 #include <vector>
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"        // BTNodeState, ActionID, BTNodeID
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"  // BehaviorTreeComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"       // BTNodeState, ActionID, BTNodeID
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/ECS/Common/CCL_TypeInfo.h"   // アクセス申告（TypeInfo<T>::ID）
+#include "Engine/ECS/Common/CCL_TypeInfo.h" // アクセス申告（TypeInfo<T>::ID）
 
-namespace CCL::ECS { class World; }
+namespace CCL::ECS
+{
+    class World;
+}
 struct TransformComponent;
-
 
 namespace CCL::AI::BT
 {
     // アクション/条件が受け取る情報。どのエンティティのBTでも使える汎用データだけ。
     struct BTContext
     {
-        CCL::ECS::World* world  = nullptr;
-        CCL::ECS::EntityID     entity = 0;
+        CCL::ECS::World   *world  = nullptr;
+        CCL::ECS::EntityID entity = 0;
 
-        BehaviorTreeComponent* bt = nullptr;
+        BehaviorTreeComponent *bt = nullptr;
 
-        const TransformComponent* myTransform = nullptr;
+        const TransformComponent *myTransform = nullptr;
 
-        BTNodeID nodeId = 0;   // nodeTimers[nodeId] を引くのに使う
+        BTNodeID nodeId = 0; // nodeTimers[nodeId] を引くのに使う
         float    dt     = 0.0f;
 
         // ノードの数値パラメータ。待機の秒数や硬直など行動の引数（既定 0）。
-        float    param  = 0.0f;
+        float param = 0.0f;
     };
-
 
     // アクセス申告 — スケジューラへ「BTが何を触るか」を伝える。
     //
@@ -49,27 +50,27 @@ namespace CCL::AI::BT
     template <typename... Ts>
     inline std::vector<CCL::ECS::TypeID> TypeIDsOf()
     {
-        return { CCL::ECS::TypeInfo<Ts>::ID()... };
+        return {CCL::ECS::TypeInfo<Ts>::ID()...};
     }
 
     struct IBTAction
     {
         virtual ~IBTAction() = default;
         /// 1フレームの行動。Success / Failure / Running を返す。
-        virtual BTNodeState Execute(BTContext& ctx) = 0;
+        virtual BTNodeState Execute(BTContext &ctx) = 0;
 
         /// GetComponent<T>() で書き換える／読むコンポーネント（上の説明を参照）。
         virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
-        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes()  const { return {}; }
+        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }
     };
 
     struct IBTCondition
     {
-        virtual ~IBTCondition() = default;
-        virtual bool Evaluate(BTContext& ctx) = 0;
+        virtual ~IBTCondition()               = default;
+        virtual bool Evaluate(BTContext &ctx) = 0;
 
         virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
-        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes()  const { return {}; }
+        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }
     };
 
 } // namespace CCL::AI::BT

@@ -12,15 +12,15 @@
 //   「外部が移動を制御中だから root motion を止めたい」という判断は
 //   RootMotionComponent.externallyDriven（ゲーム側の移動アクションが設定）で受け取る。
 class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
-                             CCL::ECS::Write<RootMotionComponent>,
-                             CCL::ECS::Write<CharacterMovementComponent>,
-                             CCL::ECS::Read<AnimatorComponent>,
-                             CCL::ECS::Read<AnimStateMachineComponent>,
-                             CCL::ECS::Read<TransformComponent>,
-                             CCL::ECS::Read<TimeStateComponent>,
-                             CCL::ECS::Read<ModelComponent>>
+                                                   CCL::ECS::Write<RootMotionComponent>,
+                                                   CCL::ECS::Write<CharacterMovementComponent>,
+                                                   CCL::ECS::Read<AnimatorComponent>,
+                                                   CCL::ECS::Read<AnimStateMachineComponent>,
+                                                   CCL::ECS::Read<TransformComponent>,
+                                                   CCL::ECS::Read<TimeStateComponent>,
+                                                   CCL::ECS::Read<ModelComponent>>
 {
-  public:
+public:
     RootMotionSystem()
         : IfSystem("RootMotionSystem")
     {

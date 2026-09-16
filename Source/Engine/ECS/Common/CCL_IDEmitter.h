@@ -8,7 +8,6 @@
 
 #include "CCL_Types.h"
 
-
 namespace CCL::ECS
 {
     /**

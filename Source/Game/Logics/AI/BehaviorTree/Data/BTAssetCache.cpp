@@ -52,16 +52,18 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
 {
     auto asset = std::make_shared<BTAsset>();
-    if (!BehaviorTreeLoader::LoadFromJson(path, *asset)) {
+    if (!BehaviorTreeLoader::LoadFromJson(path, *asset))
+    {
         m_failed.insert(path);
         CCL_LOG_WARN(LogCategory::AI,
-            "[BTAssetCache] 読み込みに失敗したので、このパスは以降スキップする: %s "
-            "(直したらインスペクタの「AI再読込」を押す)", path.c_str());
+                     "[BTAssetCache] 読み込みに失敗したので、このパスは以降スキップする: %s "
+                     "(直したらインスペクタの「AI再読込」を押す)",
+                     path.c_str());
         return nullptr;
     }
 
     std::shared_ptr<const BTAsset> shared = asset;
-    m_assets[path] = shared;
+    m_assets[path]                        = shared;
     return shared;
 }
 

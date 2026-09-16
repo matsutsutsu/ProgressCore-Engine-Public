@@ -12,9 +12,9 @@
 class TransparentPass : public IRenderPass
 {
 public:
-    void Initialize(const RenderServices& services) override;
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "TransparentPass"; }
+    void        Initialize(const RenderServices &services) override;
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "TransparentPass"; }
 
 private:
     PipelineState  m_psoTransparent;

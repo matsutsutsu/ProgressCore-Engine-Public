@@ -5,7 +5,7 @@
 #include <cstring>
 #include <vector>
 #include <d3d11.h>
-#include <wrl/client.h>   // ComPtr (proceduralRampSRV 用)
+#include <wrl/client.h> // ComPtr (proceduralRampSRV 用)
 
 // =========================================================================
 // ParticleEmitterDesc — 権威データ（デザイナーが編集・シリアライズ対象）
@@ -26,77 +26,77 @@ struct ParticleEmitterDesc
     // 絵には一切影響しない、編集のためだけの情報。1エフェクトが複数の層で
     // できていると、モードと個数だけでは開くまで中身が分からないため。
     // texturePath と同じく固定長配列（desc を素直にコピーできる形を保つ）。
-    char            name[32]          = "";
+    char name[32] = "";
 
     // ---- 発生形状 ----
-    GpuData::float2 emitRadius        = { 0.0f, 0.5f };    // emit_radius    発生半径 min/max
-    GpuData::float2 emitSize          = { 0.1f, 0.05f };   // emit_size      サイズ 誕生/消滅
+    GpuData::float2 emitRadius = {0.0f, 0.5f};  // emit_radius    発生半径 min/max
+    GpuData::float2 emitSize   = {0.1f, 0.05f}; // emit_size      サイズ 誕生/消滅
 
     // サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
     //
     // 既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
     // 衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
-    float           sizeRandom        = 1.0f;              // size_random
-    GpuData::float2 coneAngle         = { 0.0f, 0.3f };    // cone_angle     放出角度範囲 (rad)
-    GpuData::float2 emitSpeed         = { 1.0f, 3.0f };    // emit_speed     初速度範囲
-    GpuData::float2 angularSpeed      = { 0.0f, 0.0f };    // emit_angular_speed
-    GpuData::float2 lifespan          = { 1.0f, 2.0f };    // lifespan       寿命範囲 (秒)
-    GpuData::float2 spawnDelay        = { 0.0f, 0.0f };    // spawn_delay    出現遅延範囲 (秒)
-    GpuData::float2 fadeDuration      = { 0.2f, 0.3f };    // fade_duration  フェード in/out (秒)
+    float           sizeRandom   = 1.0f;         // size_random
+    GpuData::float2 coneAngle    = {0.0f, 0.3f}; // cone_angle     放出角度範囲 (rad)
+    GpuData::float2 emitSpeed    = {1.0f, 3.0f}; // emit_speed     初速度範囲
+    GpuData::float2 angularSpeed = {0.0f, 0.0f}; // emit_angular_speed
+    GpuData::float2 lifespan     = {1.0f, 2.0f}; // lifespan       寿命範囲 (秒)
+    GpuData::float2 spawnDelay   = {0.0f, 0.0f}; // spawn_delay    出現遅延範囲 (秒)
+    GpuData::float2 fadeDuration = {0.2f, 0.3f}; // fade_duration  フェード in/out (秒)
 
     // ---- 発生位置 ----
-    GpuData::float3 localOffset       = { 0, 0, 0 };       // emit_local_offset.xyz (線分モードでは始点=根本)
-    float           localOffsetY      = 0.0f;              // emit_local_offset.w (Y揺らぎ幅・ディスクモード用)
-    GpuData::float2 emitStretch       = { 1.0f, 1.0f };    // emit_stretch   x:X軸 y:Z軸倍率
+    GpuData::float3 localOffset  = {0, 0, 0};    // emit_local_offset.xyz (線分モードでは始点=根本)
+    float           localOffsetY = 0.0f;         // emit_local_offset.w (Y揺らぎ幅・ディスクモード用)
+    GpuData::float2 emitStretch  = {1.0f, 1.0f}; // emit_stretch   x:X軸 y:Z軸倍率
 
     // ---- 発生形状 (剣の刃に沿って撒く線分モード) ----
-    int             emitShape         = 0;                 // emit_shape 0:ディスク(既存) 1:線分(剣)
-    GpuData::float3 lineEnd           = { 0.0f, 1.0f, 0.0f }; // emit_line_end: localOffset を始点とする刃先までのローカルオフセット
+    int             emitShape = 0;                  // emit_shape 0:ディスク(既存) 1:線分(剣)
+    GpuData::float3 lineEnd   = {0.0f, 1.0f, 0.0f}; // emit_line_end: localOffset を始点とする刃先までのローカルオフセット
 
     // ---- 色 ----
-    GpuData::float4 color             = { 1, 1, 1, 1 };    // manual_color
-    int             colorMode         = 0;                  // 0:手動 1:カラーランプ
-    int             renderMode        = 0;                  // 0:加算 1:半透明
+    GpuData::float4 color      = {1, 1, 1, 1}; // manual_color
+    int             colorMode  = 0;            // 0:手動 1:カラーランプ
+    int             renderMode = 0;            // 0:加算 1:半透明
 
     // ---- 物理 ----
-    float           gravity           = 0.0f;
+    float gravity = 0.0f;
     // 速度の上限 (units/s)。0以下 = 無制限。
     //
     // 既定の 10 は、以前シェーダにハードコードされていた値。既存アセットの
     // 見た目を変えないためこの値にしてある。速い火花を作るなら上げること。
-    float           maxSpeed          = 10.0f;              // max_speed
-    float           velocityStretch   = 0.0f;
-    float           noiseScale        = 1.0f;
-    float           noiseStrength     = 0.0f;
-    GpuData::float2 uvScrollSpeed     = { 0.0f, 0.0f };
+    float           maxSpeed        = 10.0f; // max_speed
+    float           velocityStretch = 0.0f;
+    float           noiseScale      = 1.0f;
+    float           noiseStrength   = 0.0f;
+    GpuData::float2 uvScrollSpeed   = {0.0f, 0.0f};
 
     // ---- 見た目 ----
-    GpuData::float2 scale             = { 1.0f, 1.0f };    // particle_scale (spawn 時にベイク)
-    GpuData::uint2  spriteGrid        = { 1, 1 };           // sprite_sheet_grid
-    int             spriteMode        = 0;                  // sprite_anim_mode 0:ランダム 1:寿命
+    GpuData::float2 scale      = {1.0f, 1.0f}; // particle_scale (spawn 時にベイク)
+    GpuData::uint2  spriteGrid = {1, 1};       // sprite_sheet_grid
+    int             spriteMode = 0;            // sprite_anim_mode 0:ランダム 1:寿命
 
     // ---- 放出設定 ----
-    int             maxCount          = 1000;              // max_count 唯一の権威
-    int             particleType      = 1;                  // particle_type 0:Point 1:Quad
-    int             emitMode          = 0;                  // emit_mode 0:継続 1:バースト
-    int             burstCount        = 0;                  // burst_count
+    int maxCount     = 1000; // max_count 唯一の権威
+    int particleType = 1;    // particle_type 0:Point 1:Quad
+    int emitMode     = 0;    // emit_mode 0:継続 1:バースト
+    int burstCount   = 0;    // burst_count
 
     // ---- Force Field (引力/斥力/渦/ドラッグ。全て 0/既定 = 無効で従来挙動) ----
-    GpuData::float3 attractorPos      = { 0, 0, 0 };   // 中心 (attractorLocal=true なら emitter 相対)
-    float           attractorStrength = 0.0f;          // 正:引力 負:斥力 (中心での加速度 u/s^2)
-    float           attractorRadius   = 0.0f;          // 影響半径 (0=無限, >0 で滑らかに減衰)
-    float           vortexStrength    = 0.0f;          // 中心軸まわりの渦 (0=無し。引力と併用推奨)
-    float           drag              = 0.0f;          // 速度減衰 1/s (0=無し)
-    bool            attractorLocal    = true;          // true:emitter相対 false:world絶対
+    GpuData::float3 attractorPos      = {0, 0, 0}; // 中心 (attractorLocal=true なら emitter 相対)
+    float           attractorStrength = 0.0f;      // 正:引力 負:斥力 (中心での加速度 u/s^2)
+    float           attractorRadius   = 0.0f;      // 影響半径 (0=無限, >0 で滑らかに減衰)
+    float           vortexStrength    = 0.0f;      // 中心軸まわりの渦 (0=無し。引力と併用推奨)
+    float           drag              = 0.0f;      // 速度減衰 1/s (0=無し)
+    bool            attractorLocal    = true;      // true:emitter相対 false:world絶対
 
     // ---- アセット参照（POD 維持のため固定長配列） ----
-    char            texturePath[128]  = {};
-    char            colorRampPath[128]= {};
+    char texturePath[128]   = {};
+    char colorRampPath[128] = {};
 
     ParticleEmitterDesc()
     {
-        std::memset(texturePath,    0, sizeof(texturePath));
-        std::memset(colorRampPath,  0, sizeof(colorRampPath));
+        std::memset(texturePath, 0, sizeof(texturePath));
+        std::memset(colorRampPath, 0, sizeof(colorRampPath));
     }
 };
 
@@ -113,17 +113,17 @@ struct ParticleEmitterDesc
 // =========================================================================
 struct ParticleEmitter
 {
-    ParticleEmitterDesc desc;               // 権威データ（編集・保存対象）
+    ParticleEmitterDesc desc; // 権威データ（編集・保存対象）
 
     // ---- ランタイム状態（非シリアライズ） ----
     TextureHandle        texture;
     TextureHandle        colorRamp;
     ParticleBufferHandle computeBuffer;
 
-    bool  isInitialized = false;            // false → UpdateSystem がバッファを再構築
-    bool  needsGpuInit  = true;             // true  → InitCS を走らせる
-    bool  staticDirty   = true;             // true  → staticCB を再 upload する
-    float burstTrigger  = 0.0f;             // TriggerBurst() で立て、UpdateSystem が消費
+    bool  isInitialized = false; // false → UpdateSystem がバッファを再構築
+    bool  needsGpuInit  = true;  // true  → InitCS を走らせる
+    bool  staticDirty   = true;  // true  → staticCB を再 upload する
+    float burstTrigger  = 0.0f;  // TriggerBurst() で立て、UpdateSystem が消費
 
     // このエミッタ実体の乱数種。GPU へ instance_seed として渡る。
     //
@@ -135,7 +135,7 @@ struct ParticleEmitter
     // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
     // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
     // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
-    bool emitting = true;                   // 発生マスタースイッチ。GPUへ emit_enabled として渡る。
+    bool emitting = true; // 発生マスタースイッチ。GPUへ emit_enabled として渡る。
 
     // インスペクタでの表示 ON/OFF。false の間は描画コマンドを積まない。
     //
@@ -158,10 +158,10 @@ struct ParticleEmitter
 struct GPUParticleComponent
 {
     // このエフェクトを構成するエミッタ群。常に1個以上（エディタで増減）。
-    std::vector<ParticleEmitter> emitters{ ParticleEmitter{} };
+    std::vector<ParticleEmitter> emitters{ParticleEmitter{}};
 
     // ---- 効果全体で共通のランタイム状態 ----
-    float time = 0.0f;                      // 累積経過時間（エミッタ間で共有）
+    float time = 0.0f; // 累積経過時間（エミッタ間で共有）
 
     // true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
     // false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
@@ -175,18 +175,30 @@ struct GPUParticleComponent
     // 速い剣の振りでもスポーンが1フレームの「櫛」にならず軌道上に連続配置されるよう、
     // UpdateSystem が毎フレーム「前フレームのワールド姿勢」を保持し、spawn 時に補間する。
     // エミッタは同じエンティティに乗っているので、この値は全エミッタで共通。
-    GpuData::float3 prevWorldPos     = { 0.0f, 0.0f, 0.0f };
-    GpuData::float4 prevWorldRot     = { 0.0f, 0.0f, 0.0f, 1.0f };
+    GpuData::float3 prevWorldPos     = {0.0f, 0.0f, 0.0f};
+    GpuData::float4 prevWorldRot     = {0.0f, 0.0f, 0.0f, 1.0f};
     bool            hasPrevTransform = false; // false の初回は現在姿勢で初期化(スメアなし)
 
     GPUParticleComponent() = default;
 
     // 全エミッタのバーストを1フレームだけ発動させる。
-    void TriggerBurst() { for (auto& e : emitters) e.burstTrigger = 1.0f; }
+    void TriggerBurst()
+    {
+        for (auto &e : emitters)
+            e.burstTrigger = 1.0f;
+    }
 
     // desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    void MarkDescChanged() { for (auto& e : emitters) e.staticDirty = true; }
+    void MarkDescChanged()
+    {
+        for (auto &e : emitters)
+            e.staticDirty = true;
+    }
 
     // 全エミッタの発生ゲートを一括で開閉する（アニメ連動用）。
-    void SetEmitting(bool on) { for (auto& e : emitters) e.emitting = on; }
+    void SetEmitting(bool on)
+    {
+        for (auto &e : emitters)
+            e.emitting = on;
+    }
 };

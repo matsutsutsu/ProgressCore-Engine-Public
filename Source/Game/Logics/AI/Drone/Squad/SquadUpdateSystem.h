@@ -28,7 +28,7 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Read<DroneComponent>,
                                     CCL::ECS::Read<TransformComponent>>;
 
-  public:
+public:
     SquadUpdateSystem()
         : IfSystem("SquadUpdateSystem")
     {
@@ -55,7 +55,7 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
 
     void Update(float dt) override;
 
-  private:
+private:
     /// SquadRegistry が未登録なら作る。World を作り直しても復帰できるよう Update からも
     /// 毎フレーム呼ぶ。データを持つ側が自分で用意し、シーン側に依存させない。
     void EnsureRegistry();
@@ -82,22 +82,14 @@ class SquadUpdateSystem : public CCL::ECS::IfSystem<
     /// 先渡しで受け取るので、頭が下を向いたままだと胴体が床へ押し込まれ続ける）。
     void ClampAltitude(SquadState &squad, const SquadTuning &tuning) const;
 
-
     // 待機時にボス頭上のどの高さへ置くか。地上の間合いを塞がない高さ。
     static constexpr float kRegroupHeight = 22.0f;
 
     // 待機時のボス中心からの水平距離。小隊ごとに角度をずらして並ぶ。
     static constexpr float kRegroupRadius = 18.0f;
 
-
-
     // 接近位置がゆっくり回る速さ [rad/s]。止まって見えないようにする。
     static constexpr float kApproachDrift = 0.35f;
-
-
-
-
-
 
     // 頭を目標へ寄せるバネの強さと減衰、最高速度 [m/s]（突入より遅くして緩急を作る）。
     static constexpr float kAnchorGain = 1.8f;

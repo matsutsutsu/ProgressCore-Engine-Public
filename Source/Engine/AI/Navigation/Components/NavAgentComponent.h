@@ -14,9 +14,10 @@
 // 物理計算やAIの具体的なステートは持たず、移動に必要な「純粋な数値」のみを管理する。
 // ===================================================================================
 
-struct NavAgentComponent {
+struct NavAgentComponent
+{
     // 目的地
-    DirectX::XMFLOAT3 targetPosition = { 0.0f, 0.0f, 0.0f };
+    DirectX::XMFLOAT3 targetPosition = {0.0f, 0.0f, 0.0f};
 
     // String Pulling で計算された最短経路の頂点リスト（最大16〜32個程度で十分）
     std::vector<DirectX::XMFLOAT3> waypoints;

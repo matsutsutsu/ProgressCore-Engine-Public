@@ -1,11 +1,12 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 
-class InspectorWindow : public EditorWindow {
-  public:
+class InspectorWindow : public EditorWindow
+{
+public:
     InspectorWindow();
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
 private:
@@ -17,5 +18,4 @@ private:
 
     // ② 一括開閉の一時指令: -1=なし / 0=全部閉じる / 1=全部開く
     int m_forceOpenState = -1;
-
 };

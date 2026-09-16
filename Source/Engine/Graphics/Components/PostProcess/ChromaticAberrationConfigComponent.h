@@ -22,7 +22,7 @@ struct ChromaticAberrationConfigComponent
     bool enable = true;
 
     // choromaCenter, chromaStrength, chromaFalloff
-    GpuData::CbChromaticData data{ { 0.5f, 0.5f }, 0.0f, 2.0f };
+    GpuData::CbChromaticData data{{0.5f, 0.5f}, 0.0f, 2.0f};
 
     PostEffectOverrides<ChromaticOverrideParams> overrides;
 

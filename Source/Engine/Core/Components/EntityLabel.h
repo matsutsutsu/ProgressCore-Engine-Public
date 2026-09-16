@@ -17,11 +17,11 @@
 
 namespace CCL
 {
-// ログ用の表示名を返す。例: "Player(#12)" / 名前が無ければ "Entity(#12)"。
-inline std::string EntityLabel(ECS::World &world, ECS::EntityID id)
-{
-    const NameComponent *nc   = world.GetComponent<NameComponent>(id);
-    const char          *name = (nc && nc->name[0] != '\0') ? nc->name : "Entity";
-    return std::string(name) + "(#" + std::to_string(static_cast<unsigned long long>(id)) + ")";
-}
+    // ログ用の表示名を返す。例: "Player(#12)" / 名前が無ければ "Entity(#12)"。
+    inline std::string EntityLabel(ECS::World &world, ECS::EntityID id)
+    {
+        const NameComponent *nc   = world.GetComponent<NameComponent>(id);
+        const char          *name = (nc && nc->name[0] != '\0') ? nc->name : "Entity";
+        return std::string(name) + "(#" + std::to_string(static_cast<unsigned long long>(id)) + ")";
+    }
 } // namespace CCL

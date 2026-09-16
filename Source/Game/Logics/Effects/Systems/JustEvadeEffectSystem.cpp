@@ -33,35 +33,35 @@ using namespace DirectX;
 
 namespace
 {
-// スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
-// 命中バースト(10)より強くしておき、同時に出たら回避側が前に出るようにする。
-const uint32_t kSource   = CCL::Utils::HashString("JustEvade");
-constexpr int  kPriority = 20;
+    // スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
+    // 命中バースト(10)より強くしておき、同時に出たら回避側が前に出るようにする。
+    const uint32_t kSource   = CCL::Utils::HashString("JustEvade");
+    constexpr int  kPriority = 20;
 
-// スタイルごとの色プリセット（脱色先・色味・コントラスト・ビネット色）。
-struct StylePreset
-{
-    XMFLOAT3 tint;      // ColorGrading の乗算色
-    float    saturation; // 彩度（1=そのまま, 0=白黒）
-    float    contrast;   // コントラスト
-    XMFLOAT3 vigColor;    // ビネットの色
-};
-
-StylePreset GetStylePreset(uint8_t style)
-{
-    switch (static_cast<JustEvadeStyle>(style))
+    // スタイルごとの色プリセット（脱色先・色味・コントラスト・ビネット色）。
+    struct StylePreset
     {
-    case JustEvadeStyle::WitchPurple:
-        return {{0.80f, 0.50f, 1.00f}, 0.30f, 1.05f, {0.08f, 0.02f, 0.12f}};
-    case JustEvadeStyle::Monochrome:
-        return {{0.90f, 0.95f, 1.00f}, 0.05f, 1.20f, {0.00f, 0.00f, 0.00f}};
-    case JustEvadeStyle::CoolBlue:
-    default:
-        return {{0.55f, 0.75f, 1.00f}, 0.25f, 1.05f, {0.02f, 0.05f, 0.12f}};
-    }
-}
+        XMFLOAT3 tint;       // ColorGrading の乗算色
+        float    saturation; // 彩度（1=そのまま, 0=白黒）
+        float    contrast;   // コントラスト
+        XMFLOAT3 vigColor;   // ビネットの色
+    };
 
-inline float Sat01(float v) { return std::clamp(v, 0.0f, 1.0f); }
+    StylePreset GetStylePreset(uint8_t style)
+    {
+        switch (static_cast<JustEvadeStyle>(style))
+        {
+        case JustEvadeStyle::WitchPurple:
+            return {{0.80f, 0.50f, 1.00f}, 0.30f, 1.05f, {0.08f, 0.02f, 0.12f}};
+        case JustEvadeStyle::Monochrome:
+            return {{0.90f, 0.95f, 1.00f}, 0.05f, 1.20f, {0.00f, 0.00f, 0.00f}};
+        case JustEvadeStyle::CoolBlue:
+        default:
+            return {{0.55f, 0.75f, 1.00f}, 0.25f, 1.05f, {0.02f, 0.05f, 0.12f}};
+        }
+    }
+
+    inline float Sat01(float v) { return std::clamp(v, 0.0f, 1.0f); }
 } // namespace
 
 std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetReadTypes() const
@@ -95,10 +95,10 @@ void JustEvadeEffectSystem::Update(float dt)
     {
         if (m_wasActive)
         {
-            if (cg)  cg->overrides.Release(kSource);
+            if (cg) cg->overrides.Release(kSource);
             if (vig) vig->overrides.Release(kSource);
-            if (rb)  rb->overrides.Release(kSource);
-            if (ca)  ca->overrides.Release(kSource);
+            if (rb) rb->overrides.Release(kSource);
+            if (ca) ca->overrides.Release(kSource);
             m_wasActive = false;
         }
         return;
@@ -114,8 +114,8 @@ void JustEvadeEffectSystem::Update(float dt)
     // ── 2. エンベロープ算出 ──
     //  hold 中：モノクロを body=1 で維持し、スパイク(放射ブラー/色収差)は出さない。
     //           色スタイルも serialized な fx->style に依らず Monochrome を強制する。
-    float body;
-    float spike;
+    float       body;
+    float       spike;
     StylePreset preset;
     if (holding)
     {

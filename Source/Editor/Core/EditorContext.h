@@ -12,13 +12,14 @@
 #endif
 
 // エディタ内で共有されるコンテキストデータ
-struct EditorContext {
-    CCL::ECS::World *world          = nullptr;
-    CCL::ECS::SystemManager *systemManager  = nullptr;
+struct EditorContext
+{
+    CCL::ECS::World         *world         = nullptr;
+    CCL::ECS::SystemManager *systemManager = nullptr;
 
     // アクティブ(主)選択。Inspector/Gizmo/各種エディタが「今フォーカス中の1体」
     //   として参照する。複数選択時は「最後に触れた1体」を指す。
-    CCL::ECS::EntityID       selectedEntity = CCL::ECS::InvalidEntityID;
+    CCL::ECS::EntityID selectedEntity = CCL::ECS::InvalidEntityID;
 
     // 選択セット (複数選択)。selectedEntity は常にこの中の1つ(主選択)。
     //   ハイライトや一括操作(複製/削除)はこのセット全体を対象にする。
@@ -26,40 +27,49 @@ struct EditorContext {
     std::vector<CCL::ECS::EntityID> selectedEntities;
 
     // ---- 選択操作ヘルパー (選択の変更は必ずこれらを通す) --------------------
-    bool IsSelected(CCL::ECS::EntityID e) const {
-        for (auto id : selectedEntities) if (id == e) return true;
+    bool IsSelected(CCL::ECS::EntityID e) const
+    {
+        for (auto id : selectedEntities)
+            if (id == e) return true;
         return false;
     }
 
-    void ClearSelection() {
+    void ClearSelection()
+    {
         selectedEntities.clear();
         selectedEntity = CCL::ECS::InvalidEntityID;
     }
 
     // 単一選択に置き換える (通常クリック)
-    void SetSingleSelection(CCL::ECS::EntityID e) {
+    void SetSingleSelection(CCL::ECS::EntityID e)
+    {
         selectedEntities.clear();
         if (e != CCL::ECS::InvalidEntityID) selectedEntities.push_back(e);
         selectedEntity = e;
     }
 
     // セットへ追加 (既にあれば主選択に昇格するだけ)
-    void AddSelection(CCL::ECS::EntityID e) {
+    void AddSelection(CCL::ECS::EntityID e)
+    {
         if (e == CCL::ECS::InvalidEntityID) return;
         if (!IsSelected(e)) selectedEntities.push_back(e);
         selectedEntity = e; // 最後に触れたものを主選択に
     }
 
     // トグル (Ctrl+クリック)
-    void ToggleSelection(CCL::ECS::EntityID e) {
+    void ToggleSelection(CCL::ECS::EntityID e)
+    {
         if (e == CCL::ECS::InvalidEntityID) return;
-        for (size_t i = 0; i < selectedEntities.size(); ++i) {
-            if (selectedEntities[i] == e) {
+        for (size_t i = 0; i < selectedEntities.size(); ++i)
+        {
+            if (selectedEntities[i] == e)
+            {
                 selectedEntities.erase(selectedEntities.begin() + i);
                 // 主選択が外れたら、残りの末尾を主選択にする
                 if (selectedEntity == e)
                     selectedEntity = selectedEntities.empty()
-                        ? CCL::ECS::InvalidEntityID : selectedEntities.back();
+                                         ? CCL::ECS::InvalidEntityID
+                                         : selectedEntities.back();
                 return;
             }
         }
@@ -68,30 +78,41 @@ struct EditorContext {
     }
 
     // 選択から取り除く (削除時などに使用)
-    void RemoveFromSelection(CCL::ECS::EntityID e) {
-        for (size_t i = 0; i < selectedEntities.size(); ++i) {
-            if (selectedEntities[i] == e) {
+    void RemoveFromSelection(CCL::ECS::EntityID e)
+    {
+        for (size_t i = 0; i < selectedEntities.size(); ++i)
+        {
+            if (selectedEntities[i] == e)
+            {
                 selectedEntities.erase(selectedEntities.begin() + i);
                 break;
             }
         }
         if (selectedEntity == e)
             selectedEntity = selectedEntities.empty()
-                ? CCL::ECS::InvalidEntityID : selectedEntities.back();
+                                 ? CCL::ECS::InvalidEntityID
+                                 : selectedEntities.back();
     }
 
     // 一括操作(複製/削除)用: 選択セットから「祖先も選択されている」ものを除いた
     // トップレベル集合を返す。親を操作すれば子も巻き込まれるため二重処理を防ぐ。
-    std::vector<CCL::ECS::EntityID> GetTopLevelSelection() const {
+    std::vector<CCL::ECS::EntityID> GetTopLevelSelection() const
+    {
         std::vector<CCL::ECS::EntityID> result;
         if (!world) return result;
-        for (CCL::ECS::EntityID id : selectedEntities) {
-            bool ancestorSelected = false;
-            auto* t = world->GetComponent<TransformComponent>(id);
-            int guard = 0;
-            while (t && t->parent.IsValid() && guard++ < 4096) {
+        for (CCL::ECS::EntityID id : selectedEntities)
+        {
+            bool  ancestorSelected = false;
+            auto *t                = world->GetComponent<TransformComponent>(id);
+            int   guard            = 0;
+            while (t && t->parent.IsValid() && guard++ < 4096)
+            {
                 CCL::ECS::EntityID p = t->parent.id;
-                if (IsSelected(p)) { ancestorSelected = true; break; }
+                if (IsSelected(p))
+                {
+                    ancestorSelected = true;
+                    break;
+                }
                 t = world->GetComponent<TransformComponent>(p);
             }
             if (!ancestorSelected) result.push_back(id);
@@ -132,34 +153,34 @@ struct EditorContext {
     bool cursorFreeToggle = false;
 
     // アニメーションエディタとの連携用
-     bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
-     float animEditTime   = 0.0f;
+    bool  isAnimEditMode = false; // これらもポインタではなく実体値にするのが安全です
+    float animEditTime   = 0.0f;
 
 #ifdef ENABLE_EDITOR
-     // ImGuizmo用の状態管理
-     ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-     ImGuizmo::MODE      currentGizmoMode = ImGuizmo::LOCAL;
+    // ImGuizmo用の状態管理
+    ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE      currentGizmoMode      = ImGuizmo::LOCAL;
 #endif
 
-     // パスエディタと3Dビューポートの連携用
-     int editingPathNodeIndex = -1; // -1 なら何も選択していない
+    // パスエディタと3Dビューポートの連携用
+    int editingPathNodeIndex = -1; // -1 なら何も選択していない
 
-     // ImGuiに渡すためのゲーム画面テクスチャ
-     void* gameSRV = nullptr;
+    // ImGuiに渡すためのゲーム画面テクスチャ
+    void *gameSRV = nullptr;
 
-     // ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
-     //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
-     //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
-     bool gameViewFocused = false;
+    // ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
+    //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
+    //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
+    bool gameViewFocused = false;
 
-     // 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
-     //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる。
-     //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
-     //   負荷が気になる場面では false にして描画を止められる。既定は有効。
-     bool renderExternalWindows = true;
+    // 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
+    //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる。
+    //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
+    //   負荷が気になる場面では false にして描画を止められる。既定は有効。
+    bool renderExternalWindows = true;
 
-     // 切り離した OS ウィンドウを、操作していない間だけ低頻度で描くか。
-     //   触っていない窓をゲームと同じ 60fps で Present し続けるのをやめる。
-     //   プレイ中に別画面の数値を滑らかに眺めたいときは false にする。既定は有効。
-     bool throttleExternalWindows = true;
+    // 切り離した OS ウィンドウを、操作していない間だけ低頻度で描くか。
+    //   触っていない窓をゲームと同じ 60fps で Present し続けるのをやめる。
+    //   プレイ中に別画面の数値を滑らかに眺めたいときは false にする。既定は有効。
+    bool throttleExternalWindows = true;
 };

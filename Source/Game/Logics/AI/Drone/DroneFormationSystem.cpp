@@ -20,8 +20,8 @@ using namespace CCL::AI::Formation;
 
 namespace
 {
-// 予告の溜めの上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
-constexpr float kWindupTimerCap = 10.0f;
+    // 予告の溜めの上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
+    constexpr float kWindupTimerCap = 10.0f;
 } // namespace
 
 void DroneFormationSystem::Initialize()
@@ -54,7 +54,7 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         for (auto b : bossView)
         {
             if (auto *t = m_world->GetComponent<TransformComponent>(b))
-                ctx.bossPos = t->GetWorldPosition();   // position はローカル。陣形の中心はワールドで置く
+                ctx.bossPos = t->GetWorldPosition(); // position はローカル。陣形の中心はワールドで置く
             if (auto *c = m_world->GetComponent<BossCommandComponent>(b))
                 attackActive = c->droneAttackActive;
             break;
@@ -83,7 +83,7 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     if (attackActive && !m_prevAttackActive)
     {
         DirectX::SimpleMath::Vector3 aim = ctx.playerPos - ctx.bossPos;
-        aim.y = 0.0f;
+        aim.y                            = 0.0f;
         if (aim.LengthSquared() < 0.001f) aim = DirectX::SimpleMath::Vector3::UnitZ;
         aim.Normalize();
 

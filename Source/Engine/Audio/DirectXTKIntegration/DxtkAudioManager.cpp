@@ -33,116 +33,122 @@ using namespace DirectX;
 
 namespace
 {
-// スロー最大時のピッチ低下量（オクターブ単位。DXTKの SetPitch は [-1,1]=±1オクターブ）。
-constexpr float kSlowMaxPitch = 0.8f; // slow=1 で約 2^-0.8≒0.57倍speed の“ｳﾞｫﾜｰﾝ”
-// スロー度をスナップさせず滑らかに追従させるための追従速度(1秒あたり)。Damp(rate, dt) 経由で使う。
-//   旧実装は「呼ばれるたびに 0.25 ずつ寄る」係数だったが、呼び出し元が FixedUpdate に
-//   あったため、1フレームに固定ステップが何回走ったかで追従の速さが変わっていた
-//   （60fps なら1回、処理落ちで2〜4回）。1秒あたりの割合へ直してフレーム非依存にする。
-//   17.26 = -60 * ln(1 - 0.25) ＝ 60Hz で毎ステップ 0.25 ずつ寄っていた頃と同じ体感。
-constexpr float kSlowSmoothRate = 17.26f;
-// スロー中にリバーブを掛け始めるしきい値。
-constexpr float kReverbSlowThreshold = 0.15f;
+    // スロー最大時のピッチ低下量（オクターブ単位。DXTKの SetPitch は [-1,1]=±1オクターブ）。
+    constexpr float kSlowMaxPitch = 0.8f; // slow=1 で約 2^-0.8≒0.57倍speed の“ｳﾞｫﾜｰﾝ”
+    // スロー度をスナップさせず滑らかに追従させるための追従速度(1秒あたり)。Damp(rate, dt) 経由で使う。
+    //   旧実装は「呼ばれるたびに 0.25 ずつ寄る」係数だったが、呼び出し元が FixedUpdate に
+    //   あったため、1フレームに固定ステップが何回走ったかで追従の速さが変わっていた
+    //   （60fps なら1回、処理落ちで2〜4回）。1秒あたりの割合へ直してフレーム非依存にする。
+    //   17.26 = -60 * ln(1 - 0.25) ＝ 60Hz で毎ステップ 0.25 ずつ寄っていた頃と同じ体感。
+    constexpr float kSlowSmoothRate = 17.26f;
+    // スロー中にリバーブを掛け始めるしきい値。
+    constexpr float kReverbSlowThreshold = 0.15f;
 
-// UTF-8(std::string) → ワイド文字列（SoundEffect が wchar_t* を要求するため）。
-std::wstring ToWide(const std::string &s)
-{
-    if (s.empty()) return std::wstring();
-    const int len = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), static_cast<int>(s.size()), nullptr, 0);
-    std::wstring w(static_cast<size_t>(len), L'\0');
-    ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), static_cast<int>(s.size()), w.data(), len);
-    return w;
-}
-
-float Clamp(float v, float lo, float hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
-
-// パスの拡張子を小文字で返す（例: ".wav" / ".mp3"）。
-std::string LowerExt(const std::string &path)
-{
-    const size_t dot = path.find_last_of('.');
-    if (dot == std::string::npos) return std::string();
-    std::string ext = path.substr(dot);
-    for (char &c : ext) c = static_cast<char>(::tolower(static_cast<unsigned char>(c)));
-    return ext;
-}
-
-// Media Foundation で圧縮音声(mp3/wma/aac 等)を PCM へデコードし、
-// [WAVEFORMATEX][PCM...] の単一バッファに詰めて返す。DXTK SoundEffect にそのまま渡せる形。
-//   outBuffer  : デコード結果（先頭に WAVEFORMATEX、続けて PCM 本体）。SoundEffect がこれを所有する。
-//   outWfx     : outBuffer 先頭を指すフォーマット。outStart/outBytes : PCM 本体の開始と長さ。
-bool DecodeAudioFileToPcm(const std::wstring &path,
-    std::unique_ptr<uint8_t[]> &outBuffer, WAVEFORMATEX **outWfx,
-    const uint8_t **outStart, size_t *outBytes)
-{
-    using Microsoft::WRL::ComPtr;
-
-    ComPtr<IMFSourceReader> reader;
-    if (FAILED(MFCreateSourceReaderFromURL(path.c_str(), nullptr, reader.GetAddressOf())))
-        return false;
-
-    // 最初の音声ストリームだけを選択する。
-    reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE);
-    reader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE);
-
-    // 出力を「PCM」に要求する（必要なデコーダは MF が自動で挿す）。
-    ComPtr<IMFMediaType> want;
-    if (FAILED(MFCreateMediaType(want.GetAddressOf()))) return false;
-    want->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
-    want->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
-    if (FAILED(reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, want.Get())))
-        return false;
-
-    // 実際に決まった出力フォーマットを WAVEFORMATEX として取得。
-    ComPtr<IMFMediaType> actual;
-    if (FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, actual.GetAddressOf())))
-        return false;
-
-    WAVEFORMATEX *wfx = nullptr;
-    UINT32        wfxSize = 0;
-    if (FAILED(MFCreateWaveFormatExFromMFMediaType(actual.Get(), &wfx, &wfxSize)))
-        return false;
-
-    // 全サンプルを読み出して PCM を連結する。
-    std::vector<uint8_t> pcm;
-    for (;;)
+    // UTF-8(std::string) → ワイド文字列（SoundEffect が wchar_t* を要求するため）。
+    std::wstring ToWide(const std::string &s)
     {
-        DWORD             flags = 0;
-        ComPtr<IMFSample> sample;
-        if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &flags, nullptr,
-                sample.GetAddressOf())))
+        if (s.empty()) return std::wstring();
+        const int    len = ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), static_cast<int>(s.size()), nullptr, 0);
+        std::wstring w(static_cast<size_t>(len), L'\0');
+        ::MultiByteToWideChar(CP_UTF8, 0, s.c_str(), static_cast<int>(s.size()), w.data(), len);
+        return w;
+    }
+
+    float Clamp(float v, float lo, float hi) { return (v < lo) ? lo : (v > hi) ? hi
+                                                                               : v; }
+
+    // パスの拡張子を小文字で返す（例: ".wav" / ".mp3"）。
+    std::string LowerExt(const std::string &path)
+    {
+        const size_t dot = path.find_last_of('.');
+        if (dot == std::string::npos) return std::string();
+        std::string ext = path.substr(dot);
+        for (char &c : ext)
+            c = static_cast<char>(::tolower(static_cast<unsigned char>(c)));
+        return ext;
+    }
+
+    // Media Foundation で圧縮音声(mp3/wma/aac 等)を PCM へデコードし、
+    // [WAVEFORMATEX][PCM...] の単一バッファに詰めて返す。DXTK SoundEffect にそのまま渡せる形。
+    //   outBuffer  : デコード結果（先頭に WAVEFORMATEX、続けて PCM 本体）。SoundEffect がこれを所有する。
+    //   outWfx     : outBuffer 先頭を指すフォーマット。outStart/outBytes : PCM 本体の開始と長さ。
+    bool DecodeAudioFileToPcm(const std::wstring         &path,
+                              std::unique_ptr<uint8_t[]> &outBuffer, WAVEFORMATEX **outWfx,
+                              const uint8_t **outStart, size_t *outBytes)
+    {
+        using Microsoft::WRL::ComPtr;
+
+        ComPtr<IMFSourceReader> reader;
+        if (FAILED(MFCreateSourceReaderFromURL(path.c_str(), nullptr, reader.GetAddressOf())))
+            return false;
+
+        // 最初の音声ストリームだけを選択する。
+        reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE);
+        reader->SetStreamSelection(MF_SOURCE_READER_FIRST_AUDIO_STREAM, TRUE);
+
+        // 出力を「PCM」に要求する（必要なデコーダは MF が自動で挿す）。
+        ComPtr<IMFMediaType> want;
+        if (FAILED(MFCreateMediaType(want.GetAddressOf()))) return false;
+        want->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Audio);
+        want->SetGUID(MF_MT_SUBTYPE, MFAudioFormat_PCM);
+        if (FAILED(reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, nullptr, want.Get())))
+            return false;
+
+        // 実際に決まった出力フォーマットを WAVEFORMATEX として取得。
+        ComPtr<IMFMediaType> actual;
+        if (FAILED(reader->GetCurrentMediaType(MF_SOURCE_READER_FIRST_AUDIO_STREAM, actual.GetAddressOf())))
+            return false;
+
+        WAVEFORMATEX *wfx     = nullptr;
+        UINT32        wfxSize = 0;
+        if (FAILED(MFCreateWaveFormatExFromMFMediaType(actual.Get(), &wfx, &wfxSize)))
+            return false;
+
+        // 全サンプルを読み出して PCM を連結する。
+        std::vector<uint8_t> pcm;
+        for (;;)
+        {
+            DWORD             flags = 0;
+            ComPtr<IMFSample> sample;
+            if (FAILED(reader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, nullptr, &flags, nullptr,
+                                          sample.GetAddressOf())))
+            {
+                CoTaskMemFree(wfx);
+                return false;
+            }
+            if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
+            if (!sample) continue; // 一時的に空のサンプルはスキップ
+
+            ComPtr<IMFMediaBuffer> buf;
+            if (FAILED(sample->ConvertToContiguousBuffer(buf.GetAddressOf()))) continue;
+
+            BYTE *data = nullptr;
+            DWORD len  = 0;
+            if (SUCCEEDED(buf->Lock(&data, nullptr, &len)))
+            {
+                pcm.insert(pcm.end(), data, data + len);
+                buf->Unlock();
+            }
+        }
+
+        if (pcm.empty())
         {
             CoTaskMemFree(wfx);
             return false;
         }
-        if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
-        if (!sample) continue; // 一時的に空のサンプルはスキップ
 
-        ComPtr<IMFMediaBuffer> buf;
-        if (FAILED(sample->ConvertToContiguousBuffer(buf.GetAddressOf()))) continue;
+        // [WAVEFORMATEX][PCM...] を単一バッファへ。DXTK がこのバッファごと所有する。
+        const size_t total = static_cast<size_t>(wfxSize) + pcm.size();
+        outBuffer          = std::make_unique<uint8_t[]>(total);
+        std::memcpy(outBuffer.get(), wfx, wfxSize);
+        std::memcpy(outBuffer.get() + wfxSize, pcm.data(), pcm.size());
+        *outWfx   = reinterpret_cast<WAVEFORMATEX *>(outBuffer.get());
+        *outStart = outBuffer.get() + wfxSize;
+        *outBytes = pcm.size();
 
-        BYTE *data = nullptr;
-        DWORD len  = 0;
-        if (SUCCEEDED(buf->Lock(&data, nullptr, &len)))
-        {
-            pcm.insert(pcm.end(), data, data + len);
-            buf->Unlock();
-        }
+        CoTaskMemFree(wfx);
+        return true;
     }
-
-    if (pcm.empty()) { CoTaskMemFree(wfx); return false; }
-
-    // [WAVEFORMATEX][PCM...] を単一バッファへ。DXTK がこのバッファごと所有する。
-    const size_t total = static_cast<size_t>(wfxSize) + pcm.size();
-    outBuffer = std::make_unique<uint8_t[]>(total);
-    std::memcpy(outBuffer.get(), wfx, wfxSize);
-    std::memcpy(outBuffer.get() + wfxSize, pcm.data(), pcm.size());
-    *outWfx   = reinterpret_cast<WAVEFORMATEX *>(outBuffer.get());
-    *outStart = outBuffer.get() + wfxSize;
-    *outBytes = pcm.size();
-
-    CoTaskMemFree(wfx);
-    return true;
-}
 } // namespace
 
 // =============================================================================
@@ -154,9 +160,9 @@ struct DxtkAudioManager::Impl
     struct Playing
     {
         std::unique_ptr<SoundEffectInstance> inst;
-        AudioEmitter emitter;         // 3D用（is3D=false のときは未使用）
-        float        userPitch = 0.0f; // SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
-        bool         is3D      = false;
+        AudioEmitter                         emitter;          // 3D用（is3D=false のときは未使用）
+        float                                userPitch = 0.0f; // SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
+        bool                                 is3D      = false;
     };
 
     std::unique_ptr<AudioEngine> engine;
@@ -235,7 +241,7 @@ void DxtkAudioManager::Initialize()
         m_impl->engine = std::make_unique<AudioEngine>(flags);
         m_impl->ready  = true;
         CCL_LOG_INFO(LogCategory::Core, "[Audio] DirectXTK Audio 初期化完了%s",
-            m_impl->engine->IsAudioDevicePresent() ? "" : "（音声デバイスなし→サイレント動作）");
+                     m_impl->engine->IsAudioDevicePresent() ? "" : "（音声デバイスなし→サイレント動作）");
     }
     catch (const std::exception &ex)
     {
@@ -252,7 +258,7 @@ void DxtkAudioManager::Initialize()
     else
     {
         CCL_LOG_WARN(LogCategory::Core,
-            "[Audio] Media Foundation 初期化失敗。mp3等のデコードは無効（WAVのみ再生可）");
+                     "[Audio] Media Foundation 初期化失敗。mp3等のデコードは無効（WAVのみ再生可）");
     }
 }
 
@@ -320,11 +326,14 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
     }
 
     nlohmann::json root;
-    try { root = nlohmann::json::parse(jsonStr); }
+    try
+    {
+        root = nlohmann::json::parse(jsonStr);
+    }
     catch (const std::exception &ex)
     {
         CCL_LOG_ERROR(LogCategory::Core, "[Audio] AudioConfig の JSON parse 失敗 (%s): %s",
-            configFilePath.c_str(), ex.what());
+                      configFilePath.c_str(), ex.what());
         return;
     }
 
@@ -368,7 +377,7 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
                 throw std::runtime_error("非WAVの再生には Media Foundation が必要（初期化失敗）");
             }
 
-            const uint32_t hash = CCL::Utils::HashString(event.c_str());
+            const uint32_t hash  = CCL::Utils::HashString(event.c_str());
             m_impl->sounds[hash] = std::move(sfx);
             m_impl->eventNames.push_back(event); // インスペクタのドロップダウン用
             ++loaded;
@@ -379,15 +388,15 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
             ++skipped;
             (void)ex; // Shipping で WARN が引数を評価しない構成でも未使用警告を出さない
             CCL_LOG_WARN(LogCategory::Core, "[Audio] 読み込み失敗（スキップ）: %s (%s) : %s",
-                event.c_str(), file.c_str(), ex.what());
+                         event.c_str(), file.c_str(), ex.what());
         }
     }
     CCL_LOG_INFO(LogCategory::Core, "[Audio] サウンド読み込み: 成功%d / スキップ%d", loaded, skipped);
 }
 
-void DxtkAudioManager::LoadBank(const char * /*bankFilePath*/) {}    // DXTKでは不要
-void DxtkAudioManager::LoadEvent(const char * /*eventPath*/) {}       // configで一括ロード
-void DxtkAudioManager::FinalizeEventLoading() {}                       // no-op
+void DxtkAudioManager::LoadBank(const char * /*bankFilePath*/) {} // DXTKでは不要
+void DxtkAudioManager::LoadEvent(const char * /*eventPath*/) {}   // configで一括ロード
+void DxtkAudioManager::FinalizeEventLoading() {}                  // no-op
 
 // =============================================================================
 // ワンショット
@@ -469,7 +478,7 @@ uint32_t DxtkAudioManager::PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOA
 void DxtkAudioManager::StopEvent(uint32_t playingId, bool allowFadeOut)
 {
     std::lock_guard<std::mutex> lk(m_impl->mtx);
-    auto it = m_impl->playing.find(playingId);
+    auto                        it = m_impl->playing.find(playingId);
     if (it == m_impl->playing.end()) return;
     if (it->second.inst) it->second.inst->Stop(/*immediate*/ !allowFadeOut);
     m_impl->playing.erase(it);
@@ -494,7 +503,7 @@ void DxtkAudioManager::SetEventParameter(uint32_t playingId, const char *paramNa
 {
     if (!paramName) return;
     std::lock_guard<std::mutex> lk(m_impl->mtx);
-    auto it = m_impl->playing.find(playingId);
+    auto                        it = m_impl->playing.find(playingId);
     if (it == m_impl->playing.end() || !it->second.inst) return;
 
     // DXTKは任意パラメータを持たないので、基本パラメータ(volume/pitch/pan)に読み替える。
@@ -509,7 +518,7 @@ void DxtkAudioManager::SetEventParameter(uint32_t playingId, const char *paramNa
 void DxtkAudioManager::SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3 &pos)
 {
     std::lock_guard<std::mutex> lk(m_impl->mtx);
-    auto it = m_impl->playing.find(playingId);
+    auto                        it = m_impl->playing.find(playingId);
     if (it == m_impl->playing.end() || !it->second.inst || !it->second.is3D) return;
     it->second.emitter.SetPosition(pos);
     it->second.inst->Apply3D(m_impl->listener, it->second.emitter, false);
@@ -519,7 +528,7 @@ void DxtkAudioManager::SetEvent3DAttributes(uint32_t playingId, const DirectX::X
 // 3Dリスナー
 // =============================================================================
 void DxtkAudioManager::SetListenerPosition(const DirectX::XMFLOAT3 &pos,
-    const DirectX::XMFLOAT3 &forward, const DirectX::XMFLOAT3 &up)
+                                           const DirectX::XMFLOAT3 &forward, const DirectX::XMFLOAT3 &up)
 {
     std::lock_guard<std::mutex> lk(m_impl->mtx);
     m_impl->listener.SetPosition(pos);

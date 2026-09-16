@@ -23,11 +23,13 @@
 //     EntityID x = link1  → 暗黙変換で取れる (既存コードと互換)
 // =====================================================================
 #pragma once
-#include "Engine/ECS/Common/CCL_Types.h"   // CCL::ECS::EntityID, InvalidEntityID の正式な定義元
+#include "Engine/ECS/Common/CCL_Types.h" // CCL::ECS::EntityID, InvalidEntityID の正式な定義元
 
-namespace CCL::Serialization {
+namespace CCL::Serialization
+{
 
-    struct EntityLink {
+    struct EntityLink
+    {
         CCL::ECS::EntityID id = CCL::ECS::InvalidEntityID;
 
         // ---- 構築 ----
@@ -49,20 +51,26 @@ namespace CCL::Serialization {
         constexpr operator CCL::ECS::EntityID() const { return id; }
 
         // ---- 代入 ----
-        EntityLink& operator=(CCL::ECS::EntityID e) { id = e; return *this; }
+        EntityLink &operator=(CCL::ECS::EntityID e)
+        {
+            id = e;
+            return *this;
+        }
 
         // ---- 状態確認 ----
-        bool IsValid() const {
+        bool IsValid() const
+        {
             return id != CCL::ECS::InvalidEntityID && id != 0;
         }
 
-        void Reset() {
+        void Reset()
+        {
             id = CCL::ECS::InvalidEntityID;
         }
     };
 
     // sizeof 保証: offsetof で安全に扱えるよう、EntityID と同サイズであること
     static_assert(sizeof(EntityLink) == sizeof(CCL::ECS::EntityID),
-        "EntityLink must be same size as EntityID.");
+                  "EntityLink must be same size as EntityID.");
 
 } // namespace CCL::Serialization

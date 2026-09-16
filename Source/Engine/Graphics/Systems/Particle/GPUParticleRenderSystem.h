@@ -5,8 +5,9 @@
 
 // 描画コマンドを収集して ParticleRenderer のバケツへ積むだけの軽量システム。
 class GPUParticleRenderSystem : public CCL::ECS::IfSystem<GPUParticleRenderSystem,
-    CCL::ECS::Write<GPUParticleComponent>,
-    CCL::ECS::Read<TransformComponent>> {
+                                                          CCL::ECS::Write<GPUParticleComponent>,
+                                                          CCL::ECS::Read<TransformComponent>>
+{
 public:
     GPUParticleRenderSystem() : IfSystem("GPUParticleRenderSystem") {}
     ~GPUParticleRenderSystem() { ReleaseAllResources(); }

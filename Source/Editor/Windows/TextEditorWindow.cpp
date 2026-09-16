@@ -29,9 +29,10 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     // ---------------------------------------------------------
     ImGui::InputText("File Path", m_filePath, sizeof(m_filePath));
     ImGui::SameLine();
-    if (ImGui::Button("Browse...")) {
+    if (ImGui::Button("Browse..."))
+    {
         if (auto path = FileDialog::OpenPreset("TextEditor", "Select File to Edit",
-            Graphics::Instance().GetWindowHandle()))
+                                               Graphics::Instance().GetWindowHandle()))
         {
             const auto s = path->string();
             strcpy_s(m_filePath, sizeof(m_filePath), s.c_str());
@@ -42,24 +43,26 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     ImGui::Separator();
 
     // 操作ボタン群
-    if (ImGui::Button("Load")) {
+    if (ImGui::Button("Load"))
+    {
         LoadFile(m_filePath);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Save")) {
+    if (ImGui::Button("Save"))
+    {
         SaveFile(m_filePath);
     }
     ImGui::SameLine();
 
     // ホットリロードボタン（ファイルに応じて処理を分ける）
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-    if (ImGui::Button("Apply (Save & Reload)")) {
+    if (ImGui::Button("Apply (Save & Reload)"))
+    {
         SaveFile(m_filePath);
 
         // ファイルパスを文字列として判定
         std::string pathStr(m_filePath);
 
-      
         // Luaスクリプトの場合の処理（必要になれば拡張してください）
         // else if (pathStr.find(".lua") != std::string::npos) {
         //     // TODO: Lua VMをリロードしたり、コンポーネントに再読み込み指令を出す
@@ -78,23 +81,24 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     // =========================================================
     // ここから下をエディタ専用フォント(Ricty)に切り替える！
     // =========================================================
-    if (ImFont *editorFont = ImGuiRenderer::GetEditorFont()) {
+    if (ImFont *editorFont = ImGuiRenderer::GetEditorFont())
+    {
         ImGui::PushFont(editorFont);
     }
 
     // ImGui標準の複数行テキストボックスを描画！
     // ImGuiInputTextFlags_AllowTabInput を付けることで、Tabキーで空白が入力できるようになります。
     ImGui::InputTextMultiline("##TextEditor",
-        m_textBuffer.data(),
-        m_textBuffer.size(),
-        availableSize,
-        ImGuiInputTextFlags_AllowTabInput);
-
+                              m_textBuffer.data(),
+                              m_textBuffer.size(),
+                              availableSize,
+                              ImGuiInputTextFlags_AllowTabInput);
 
     // =========================================================
     // フォントの切り替えを元に戻す！
     // =========================================================
-    if (ImGuiRenderer::GetEditorFont()) {
+    if (ImGuiRenderer::GetEditorFont())
+    {
         ImGui::PopFont();
     }
 }
@@ -103,13 +107,15 @@ void TextEditorWindow::DrawContents(EditorContext &context)
  * @brief 指定されたテキストファイルをメモリバッファにロードします。
  * @param path 読み込むファイルの仮想パス
  */
-void TextEditorWindow::LoadFile(const char* path)
+void TextEditorWindow::LoadFile(const char *path)
 {
     // VFSから読み込み
     std::string rawText = FileSystem::ReadAllText(path);
-    if (!rawText.empty()) {
+    if (!rawText.empty())
+    {
         // もし読み込んだファイルがバッファよりデカかったら拡張する安全設計
-        if (rawText.size() >= m_textBuffer.size()) {
+        if (rawText.size() >= m_textBuffer.size())
+        {
             m_textBuffer.resize(rawText.size() * 2, '\0');
         }
 
@@ -125,7 +131,7 @@ void TextEditorWindow::LoadFile(const char* path)
  * @brief メモリバッファのテキストデータを指定されたファイルに保存します。
  * @param path 保存先の仮想パス
  */
-void TextEditorWindow::SaveFile(const char* path)
+void TextEditorWindow::SaveFile(const char *path)
 {
     // VFSへ書き込み (バッファの生ポインタを渡す)
     FileSystem::WriteAllText(path, m_textBuffer.data());

@@ -14,16 +14,17 @@ class LightManager;
 
 // シャドウマップ専用の描画システム
 class ShadowMapRenderSystem : public CCL::ECS::IfSystem<ShadowMapRenderSystem,
-                                  CCL::ECS::Read<TransformComponent>,
-                                  CCL::ECS::Read<ModelComponent>,
-                                  CCL::ECS::Read<BoundingBoxComponent>>{
+                                                        CCL::ECS::Read<TransformComponent>,
+                                                        CCL::ECS::Read<ModelComponent>,
+                                                        CCL::ECS::Read<BoundingBoxComponent>>
+{
 
-  public:
+public:
     ShadowMapRenderSystem();
     virtual ~ShadowMapRenderSystem() = default;
 
     void Update(float dt) override;
 
-  private:
+private:
     void RenderShadowMap();
 };

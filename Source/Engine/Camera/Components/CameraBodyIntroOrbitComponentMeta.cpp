@@ -143,27 +143,26 @@ struct ComponentMeta<CameraBodyIntroOrbit>
         // 毎フレーム書き換わる実行時状態なので、意図的にシリアライズしない。
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(target, "注視対象", "Target")
-            CFIELD_FLOAT3_FAST(targetOffset, "注視オフセット", 0.1f, "Target")
+                CFIELD_FLOAT3_FAST(targetOffset, "注視オフセット", 0.1f, "Target")
 
-            CFIELD_FLOAT_RANGED(startAngle, "開始 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
-            CFIELD_FLOAT_RANGED(endAngle, "終了 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
-            CFIELD_FLOAT_RANGED(startRadius, "開始 距離", 0.5f, 0.5f, 200.0f, "Orbit")
-            CFIELD_FLOAT_RANGED(endRadius, "終了 距離", 0.5f, 0.5f, 200.0f, "Orbit")
-            CFIELD_FLOAT_RANGED(startHeight, "開始 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
-            CFIELD_FLOAT_RANGED(endHeight, "終了 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
+                    CFIELD_FLOAT_RANGED(startAngle, "開始 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
+                        CFIELD_FLOAT_RANGED(endAngle, "終了 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
+                            CFIELD_FLOAT_RANGED(startRadius, "開始 距離", 0.5f, 0.5f, 200.0f, "Orbit")
+                                CFIELD_FLOAT_RANGED(endRadius, "終了 距離", 0.5f, 0.5f, 200.0f, "Orbit")
+                                    CFIELD_FLOAT_RANGED(startHeight, "開始 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
+                                        CFIELD_FLOAT_RANGED(endHeight, "終了 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
 
-            CFIELD_FLOAT_RANGED(startFov, "開始 画角", 0.5f, 10.0f, 150.0f, "Lens")
-            CFIELD_FLOAT_RANGED(endFov, "終了 画角", 0.5f, 10.0f, 150.0f, "Lens")
+                                            CFIELD_FLOAT_RANGED(startFov, "開始 画角", 0.5f, 10.0f, 150.0f, "Lens")
+                                                CFIELD_FLOAT_RANGED(endFov, "終了 画角", 0.5f, 10.0f, 150.0f, "Lens")
 
-            CFIELD_ENUM_U8(easeMode, "補間カーブ", kCameraEaseModeNames, kCameraEaseModeCount, "Playback")
-            CFIELD_FLOAT_RANGED(duration, "演出の長さ", 0.1f, 0.1f, 60.0f, "Playback")
-            CFIELD_FLOAT_RANGED(startDelay, "開始待ち", 0.05f, 0.0f, 10.0f, "Playback")
-            CFIELD(playOnStart, "シーン開始で自動再生", "Playback")
-            CFIELD(allowSkip, "スキップ許可", "Playback")
+                                                    CFIELD_ENUM_U8(easeMode, "補間カーブ", kCameraEaseModeNames, kCameraEaseModeCount, "Playback")
+                                                        CFIELD_FLOAT_RANGED(duration, "演出の長さ", 0.1f, 0.1f, 60.0f, "Playback")
+                                                            CFIELD_FLOAT_RANGED(startDelay, "開始待ち", 0.05f, 0.0f, 10.0f, "Playback")
+                                                                CFIELD(playOnStart, "シーン開始で自動再生", "Playback")
+                                                                    CFIELD(allowSkip, "スキップ許可", "Playback")
 
-            CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priority")
-            CFIELD_INT_RANGED(idlePriority, "待機中の優先度", -1000, 1000, "Priority")
-        };
+                                                                        CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priority")
+                                                                            CFIELD_INT_RANGED(idlePriority, "待機中の優先度", -1000, 1000, "Priority")};
         return fields;
     }
 };

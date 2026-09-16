@@ -4,7 +4,7 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
-#include "Engine/Core/App/GameFlowState.h"                          // cinematic
+#include "Engine/Core/App/GameFlowState.h"                           // cinematic
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -31,34 +31,32 @@ namespace
             angle += DirectX::XM_2PI;
         return angle;
     }
-    
+
     /// 目標方向を向く。lookDir はワールド座標系の方向ベクトル。
     void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
     {
         if (lookDir.LengthSquared() <= 0.001f) return;
-    
+
         float targetYaw = atan2f(lookDir.x, lookDir.z);
-    
+
         Vector3 currentForward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
         float   currentYaw     = atan2f(currentForward.x, currentForward.z);
-    
+
         float diff   = WrapAngle(targetYaw - currentYaw);
         float newYaw = currentYaw + diff * (std::min)(turnSpeed * dt, 1.0f);
-    
+
         trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
         trans.isDirty  = true;
     }
-    
+
     /// Jolt の CharacterVirtual に TransformComponent の回転を反映する。
     void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
     {
         if (!character) return;
-    
+
         character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
     }
-} 
-
-
+} // namespace
 
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
@@ -76,17 +74,16 @@ void BossActionSystem::Update(float rawDt)
     Vector3 playerPos(battle.playerPos);
 
     // 演出中は全個体まとめて止める。World リソースなので個体ループの外で1回だけ読む。
-    const bool cinematic = m_world->HasResource<GameFlowState>()
-                        && m_world->GetResource<GameFlowState>().cinematic;
+    const bool cinematic = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
 
-    ForEachWithID([&](EntityID entity,
-                      CharacterMovementComponent &movement,
-                      BossActionComponent &bossDef,
-                      TransformComponent &trans,
-                      const BossCommandComponent &cmd,
+    ForEachWithID([&](EntityID                            entity,
+                      CharacterMovementComponent         &movement,
+                      BossActionComponent                &bossDef,
+                      TransformComponent                 &trans,
+                      const BossCommandComponent         &cmd,
                       const JoltCharacterConfigComponent &config,
                       const JoltCharacterHandleComponent &joltHandle,
-                      const TimeStateComponent &time) {
+                      const TimeStateComponent           &time) {
         if (!joltHandle.character) return;
 
         float dt = time.localDt;
@@ -129,7 +126,6 @@ void BossActionSystem::Update(float rawDt)
     });
 }
 
-
 void BossActionSystem::OnGui()
 {
     if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
@@ -163,11 +159,11 @@ void BossActionSystem::OnGui()
 }
 
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                   CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                   const Vector3 &playerPos, float dt)
 {
     bossDef.currentMoveSpeed = (std::max)(0.0f,
-        bossDef.currentMoveSpeed - bossDef.deceleration * dt);
+                                          bossDef.currentMoveSpeed - bossDef.deceleration * dt);
 
     // 上書きは書かない＝config.walkSpeed 基準へ戻る。
     movement.desiredVelocity = Vector3::Zero;
@@ -181,9 +177,9 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterConfigComponent &config,
-    const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                   CharacterMovementComponent &movement, const JoltCharacterConfigComponent &config,
+                                   const JoltCharacterHandleComponent &joltHandle,
+                                   const Vector3 &playerPos, float dt)
 {
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
@@ -191,14 +187,14 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     if (dirToPlayer.LengthSquared() <= 0.001f)
     {
         bossDef.currentMoveSpeed = 0.0f;
-        movement.desiredVelocity    = Vector3::Zero;
+        movement.desiredVelocity = Vector3::Zero;
         return;
     }
 
     dirToPlayer.Normalize();
 
     bossDef.currentMoveSpeed = (std::min)(bossDef.walkSpeed,
-        bossDef.currentMoveSpeed + bossDef.acceleration * dt);
+                                          bossDef.currentMoveSpeed + bossDef.acceleration * dt);
 
     movement.desiredVelocity = dirToPlayer;
     movement.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
@@ -208,13 +204,13 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
 }
 
 void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                        const Vector3 &playerPos, float dt)
 {
     // 足を止めて踏ん張る。アニメ本体は BT の SetTrigger で再生済みで、当たり判定は
     // アニメ内の HitBox イベントが握る。
     bossDef.currentMoveSpeed = 0.0f;
-    movement.desiredVelocity    = Vector3::Zero;
+    movement.desiredVelocity = Vector3::Zero;
 
     // 相手の方を向くのは「振りかぶり」の間だけ。回り続けると横へ回り込んでも刃が
     // 付いてきて当たり、避けた側に後隙を狩る余地が残らない。
@@ -229,23 +225,22 @@ void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformC
 
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
-    if (actionId == ::CCL::AI::A_Move)           return BossActionState::Move;
-    if (actionId == ::CCL::AI::A_BossSlash)      return BossActionState::Melee;
-    if (actionId == ::CCL::AI::A_BossDashSlash)  return BossActionState::DashSlash;
+    if (actionId == ::CCL::AI::A_Move) return BossActionState::Move;
+    if (actionId == ::CCL::AI::A_BossSlash) return BossActionState::Melee;
+    if (actionId == ::CCL::AI::A_BossDashSlash) return BossActionState::DashSlash;
     if (actionId == ::CCL::AI::A_BossJumpAttack) return BossActionState::JumpAttack;
-    if (actionId == ::CCL::AI::A_BossBackStep)   return BossActionState::BackStep;
+    if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
     return BossActionState::None;
 }
 
-
 void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &bossDef,
                                     const TransformComponent &trans,
-                                    const Vector3 &playerPos) const
+                                    const Vector3            &playerPos) const
 {
     bossDef.actionTimer = 0.0f;
 
     // 進行方向はここで1回だけ決める。以降プレイヤーが動いても追わない。
-    Vector3     toPlayer = playerPos - Vector3(trans.position);
+    Vector3 toPlayer     = playerPos - Vector3(trans.position);
     toPlayer.y           = 0.0f;
     const float distance = toPlayer.Length();
     if (distance > 0.001f)
@@ -268,10 +263,9 @@ void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &b
     }
 }
 
-
 void BossActionSystem::ProcessDashSlash(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                        const Vector3 &playerPos, float dt)
 {
     const float t = bossDef.actionTimer;
 
@@ -311,10 +305,9 @@ void BossActionSystem::ProcessDashSlash(BossActionComponent &bossDef, TransformC
     movement.desiredVelocity = Vector3::Zero;
 }
 
-
 void BossActionSystem::ProcessJumpAttack(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                         CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                         const Vector3 &playerPos, float dt)
 {
     const float t = bossDef.actionTimer;
 
@@ -342,11 +335,11 @@ void BossActionSystem::ProcessJumpAttack(BossActionComponent &bossDef, Transform
 
         // 水平は等速。垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへ
         // ちょうど戻るので、着地フレームがずれない。
-        const float u  = elapsedFlight / flightTime;
-        Vector3     v  = horizontal / flightTime;
-        v.y            = (4.0f * bossDef.jumpHeight / flightTime) * (1.0f - 2.0f * u);
+        const float u = elapsedFlight / flightTime;
+        Vector3     v = horizontal / flightTime;
+        v.y           = (4.0f * bossDef.jumpHeight / flightTime) * (1.0f - 2.0f * u);
 
-        movement.use3DVelocity = true;  // 重力・水平計算を止めてこの速度をそのまま使う
+        movement.use3DVelocity = true; // 重力・水平計算を止めてこの速度をそのまま使う
         movement.velocity3D    = v;
 
         bossDef.currentMoveSpeed = horizontal.Length() / flightTime;
@@ -359,10 +352,9 @@ void BossActionSystem::ProcessJumpAttack(BossActionComponent &bossDef, Transform
     movement.desiredVelocity = Vector3::Zero;
 }
 
-
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
-    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-    const Vector3 &playerPos, float dt)
+                                       CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                       const Vector3 &playerPos, float dt)
 {
     const float t = bossDef.actionTimer;
 
@@ -401,7 +393,6 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
     bossDef.currentMoveSpeed = speed;
     bossDef.moveDirection    = bossDef.lockedDirection;
 }
-
 
 // BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前。
 REGISTER_LOGIC_SYSTEM(BossActionSystem, Priority::LogicStage::L02_PostUpdate);

@@ -9,21 +9,25 @@
 
 // 1. BoxCollider 可視化システム
 class JoltBoxDebugDrawSystem : public CCL::ECS::IfSystem<JoltBoxDebugDrawSystem,
-                                     CCL::ECS::Read<TransformComponent>,
-                                     CCL::ECS::Read<JoltBoxColliderComponent>> {
+                                                         CCL::ECS::Read<TransformComponent>,
+                                                         CCL::ECS::Read<JoltBoxColliderComponent>>
+{
 public:
-    JoltBoxDebugDrawSystem() : IfSystem("JoltBoxDebugDrawSystem") {
-        //this->isDebugVisible = true;        
+    JoltBoxDebugDrawSystem() : IfSystem("JoltBoxDebugDrawSystem")
+    {
+        //this->isDebugVisible = true;
     }
     void Update(float dt) override;
 };
 
 // 2. SphereCollider 可視化システム
 class JoltSphereDebugDrawSystem : public CCL::ECS::IfSystem<JoltSphereDebugDrawSystem,
-                                         CCL::ECS::Read<TransformComponent>,
-                                         CCL::ECS::Read<JoltSphereColliderComponent>> {
+                                                            CCL::ECS::Read<TransformComponent>,
+                                                            CCL::ECS::Read<JoltSphereColliderComponent>>
+{
 public:
-    JoltSphereDebugDrawSystem() : IfSystem("JoltSphereDebugDrawSystem") {
+    JoltSphereDebugDrawSystem() : IfSystem("JoltSphereDebugDrawSystem")
+    {
         //this->isDebugVisible = true;
     }
     void Update(float dt) override;
@@ -31,10 +35,12 @@ public:
 
 // 3. CapsuleCollider 可視化システム
 class JoltCapsuleDebugDrawSystem : public CCL::ECS::IfSystem<JoltCapsuleDebugDrawSystem,
-                                         CCL::ECS::Read<TransformComponent>,
-                                         CCL::ECS::Read<JoltCapsuleColliderComponent>> {
+                                                             CCL::ECS::Read<TransformComponent>,
+                                                             CCL::ECS::Read<JoltCapsuleColliderComponent>>
+{
 public:
-    JoltCapsuleDebugDrawSystem() : IfSystem("JoltCapsuleDebugDrawSystem") {
+    JoltCapsuleDebugDrawSystem() : IfSystem("JoltCapsuleDebugDrawSystem")
+    {
         //this->isDebugVisible = true;
     }
     void Update(float dt) override;
@@ -42,11 +48,13 @@ public:
 
 // 4. MeshCollider 可視化システム
 class JoltMeshDebugDrawSystem : public CCL::ECS::IfSystem<JoltMeshDebugDrawSystem,
-                                         CCL::ECS::Read<TransformComponent>,
-                                         CCL::ECS::Read<JoltMeshColliderComponent>,
-                                         CCL::ECS::Read<ModelComponent>> {
+                                                          CCL::ECS::Read<TransformComponent>,
+                                                          CCL::ECS::Read<JoltMeshColliderComponent>,
+                                                          CCL::ECS::Read<ModelComponent>>
+{
 public:
-    JoltMeshDebugDrawSystem() : IfSystem("JoltMeshDebugDrawSystem") {
+    JoltMeshDebugDrawSystem() : IfSystem("JoltMeshDebugDrawSystem")
+    {
         //this->isDebugVisible = true;
     }
     void Update(float dt) override;

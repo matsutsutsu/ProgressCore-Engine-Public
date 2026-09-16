@@ -21,22 +21,22 @@
 
 class JoltCharacterContactListener : public JPH::CharacterContactListener
 {
-  private:
+private:
     JoltContactListener *m_sink; // 収集先バッファ（剛体側と共有）
     CCL::ECS::EntityID   m_playerID;
     JPH::BodyInterface  *m_bodyInterface;
 
-  public:
+public:
     JoltCharacterContactListener(JoltContactListener *sink,
-        CCL::ECS::EntityID                            playerID,
-        JPH::BodyInterface                           *bodyInterface);
+                                 CCL::ECS::EntityID   playerID,
+                                 JPH::BodyInterface  *bodyInterface);
 
-    virtual void OnContactAdded(const JPH::CharacterVirtual *inCharacter,
-        const JPH::BodyID                                   &inBodyID2,
-        const JPH::SubShapeID                               &inSubShapeID2,
-        JPH::RVec3Arg                                        inContactPosition,
-        JPH::Vec3Arg                                         inContactNormal,
-        JPH::CharacterContactSettings                       &ioSettings) override;
+    virtual void OnContactAdded(const JPH::CharacterVirtual   *inCharacter,
+                                const JPH::BodyID             &inBodyID2,
+                                const JPH::SubShapeID         &inSubShapeID2,
+                                JPH::RVec3Arg                  inContactPosition,
+                                JPH::Vec3Arg                   inContactNormal,
+                                JPH::CharacterContactSettings &ioSettings) override;
 
     // 接触継続フレームに呼ばれる。Added と全く同じ扱いにする。
     //
@@ -44,30 +44,30 @@ class JoltCharacterContactListener : public JPH::CharacterContactListener
     // 既知の対を Added ではなく Persisted に回す(CharacterVirtual.cpp)。
     // ここを実装しないと重なり続けている間の接触が全て消え、攻撃判定の窓より
     // 先に武器が相手へ入っているケース（突進攻撃など）が丸ごと不発になる。
-    virtual void OnContactPersisted(const JPH::CharacterVirtual *inCharacter,
-        const JPH::BodyID                                       &inBodyID2,
-        const JPH::SubShapeID                                   &inSubShapeID2,
-        JPH::RVec3Arg                                            inContactPosition,
-        JPH::Vec3Arg                                             inContactNormal,
-        JPH::CharacterContactSettings                           &ioSettings) override;
+    virtual void OnContactPersisted(const JPH::CharacterVirtual   *inCharacter,
+                                    const JPH::BodyID             &inBodyID2,
+                                    const JPH::SubShapeID         &inSubShapeID2,
+                                    JPH::RVec3Arg                  inContactPosition,
+                                    JPH::Vec3Arg                   inContactNormal,
+                                    JPH::CharacterContactSettings &ioSettings) override;
 
     // 接触が解消された時に呼ばれる。
     //
     // 計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
     virtual void OnContactRemoved(const JPH::CharacterVirtual *inCharacter,
-        const JPH::BodyID                                     &inBodyID2,
-        const JPH::SubShapeID                                 &inSubShapeID2) override;
+                                  const JPH::BodyID           &inBodyID2,
+                                  const JPH::SubShapeID       &inSubShapeID2) override;
 
-  private:
+private:
     /**
      * @brief Added / Persisted 共通の実体。接触1件をイベント化して sink へ積む。
      * @param inPhase 計測ログ用の表示ラベル("Add" / "Persist")。判定には影響しない。
      */
     void EmitContactEvent(const JPH::CharacterVirtual *inCharacter,
-        const JPH::BodyID                             &inBodyID2,
-        JPH::RVec3Arg                                  inContactPosition,
-        JPH::Vec3Arg                                   inContactNormal,
-        const char                                    *inPhase);
+                          const JPH::BodyID           &inBodyID2,
+                          JPH::RVec3Arg                inContactPosition,
+                          JPH::Vec3Arg                 inContactNormal,
+                          const char                  *inPhase);
 
     // 攻撃レイヤー(PLAYER_ATTACK / BOSS_ATTACK)との接触かを判定する。
     //

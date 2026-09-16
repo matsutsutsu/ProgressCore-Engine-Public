@@ -10,7 +10,6 @@
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Engine/Core/Math/StringHash.h"
 
-
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
@@ -23,7 +22,7 @@ void PlayerMoveSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID                            id,
                       TransformComponent                 &trans,
-                      CharacterMovementComponent    &movement,
+                      CharacterMovementComponent         &movement,
                       const PlayerInputComponent         &pin,
                       const JoltCharacterConfigComponent &config,
                       const JoltCharacterHandleComponent &joltHandle,

@@ -29,8 +29,8 @@
 #include "Engine/Time/TimeState.h"
 
 class HealthSystem : public CCL::ECS::IfSystem<HealthSystem,
-    CCL::ECS::Write<HealthComponent>,
-    CCL::ECS::Read<TimeStateComponent>>
+                                               CCL::ECS::Write<HealthComponent>,
+                                               CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     HealthSystem() : IfSystem("HealthSystem")

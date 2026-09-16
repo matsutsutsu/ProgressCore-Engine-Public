@@ -20,19 +20,19 @@
 // v2 の可視化シェーダーで対応予定（本 enum はその足場）。
 enum class DebugTexKind : uint8_t
 {
-    Color,          // LDR/SDR カラー。そのまま正しく見える。
-    HDRColor,       // HDR カラー。露出未適用で白飛び/黒潰れしやすい。
-    Depth,          // 深度。非線形でほぼ白く見える（線形化は v2）。
-    SingleChannel,  // R 成分のみ（AO 等）。赤単色で見える。
-    Normal,         // 法線。[-1,1]→[0,1] 変換前で暗く見える。
-    Array,          // Texture2DArray（カスケードシャドウ等）。生 SRV では表示不可（v2 でスライス選択）。
+    Color,         // LDR/SDR カラー。そのまま正しく見える。
+    HDRColor,      // HDR カラー。露出未適用で白飛び/黒潰れしやすい。
+    Depth,         // 深度。非線形でほぼ白く見える（線形化は v2）。
+    SingleChannel, // R 成分のみ（AO 等）。赤単色で見える。
+    Normal,        // 法線。[-1,1]→[0,1] 変換前で暗く見える。
+    Array,         // Texture2DArray（カスケードシャドウ等）。生 SRV では表示不可（v2 でスライス選択）。
 };
 
 // デバッグ表示 1 件分の情報。SRV は「そのフレームで RTV バインドを外した後」のものを渡すこと。
 struct DebugTexEntry
 {
-    const char*               name   = nullptr; // 静的文字列を想定（フレームを跨いで安全な寿命のもの）。
-    ID3D11ShaderResourceView* srv    = nullptr;
+    const char               *name   = nullptr; // 静的文字列を想定（フレームを跨いで安全な寿命のもの）。
+    ID3D11ShaderResourceView *srv    = nullptr;
     uint32_t                  width  = 0;
     uint32_t                  height = 0;
     DebugTexKind              kind   = DebugTexKind::Color;
@@ -44,7 +44,7 @@ struct DebugTexEntry
 class RenderDebugRegistry
 {
 public:
-    static RenderDebugRegistry& Instance()
+    static RenderDebugRegistry &Instance()
     {
         static RenderDebugRegistry s;
         return s;
@@ -54,7 +54,7 @@ public:
     void BeginFrame() noexcept { m_entries.clear(); }
 
     // 中間テクスチャを 1 件登録する。Release ビルドでは何もしない（ゼロコスト）。
-    void Register(const DebugTexEntry& e)
+    void Register(const DebugTexEntry &e)
     {
 #ifdef ENABLE_EDITOR
         if (!e.srv) return;
@@ -65,7 +65,7 @@ public:
     }
 
     // 登録済み一覧を取得する（RenderDebugWindow が読む）。
-    const std::vector<DebugTexEntry>& GetEntries() const noexcept { return m_entries; }
+    const std::vector<DebugTexEntry> &GetEntries() const noexcept { return m_entries; }
 
 private:
     RenderDebugRegistry() { m_entries.reserve(16); }

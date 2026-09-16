@@ -9,18 +9,19 @@
 
 #include <vector>
 
-void JoltCleanupSystem::Update(float dt) {
+void JoltCleanupSystem::Update(float dt)
+{
     ExecuteCleanup(*m_world);
 }
 
 // 消えるEntityのJolt剛体を確実に破棄する
-void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
-    bool hasJolt = world.HasResource<JoltPhysicsManager*>();
-    JoltPhysicsManager* joltManager = hasJolt ? world.GetResource<JoltPhysicsManager*>() : nullptr;
+    bool                hasJolt     = world.HasResource<JoltPhysicsManager *>();
+    JoltPhysicsManager *joltManager = hasJolt ? world.GetResource<JoltPhysicsManager *>() : nullptr;
     if (!joltManager) return;
 
-    JPH::BodyInterface& bodyInterface = joltManager->GetBodyInterface();
+    JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
     // DestroyTag で絞り込んではいけない。
     //   DestroyTag は「削除の起点」にしか付かないのに、HierarchyCleanupSystem は
@@ -32,19 +33,21 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
     doomed.reserve(64);
     HierarchyCleanupSystem::CollectDoomedEntities(world, doomed);
 
-    for (CCL::ECS::EntityID id : doomed) {
+    for (CCL::ECS::EntityID id : doomed)
+    {
         // 破棄済みの席なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
-        auto* handle = world.GetComponent<JoltHandleComponent>(id);
+        auto *handle = world.GetComponent<JoltHandleComponent>(id);
         if (!handle) continue;
 
-        JPH::BodyID& bodyID = handle->bodyID;
+        JPH::BodyID &bodyID = handle->bodyID;
 
         // 防波堤1: すでに破棄済み（無効なID）、または未初期化なら絶対にJoltへ渡さない
         if (bodyID.IsInvalid()) continue;
 
         // 防波堤2: Jolt空間に「追加(Add)」されている場合のみRemoveする
         // (CreateはしたがAddしていない剛体をRemoveすると別のアサートが鳴るため)
-        if (bodyInterface.IsAdded(bodyID)) {
+        if (bodyInterface.IsAdded(bodyID))
+        {
             bodyInterface.RemoveBody(bodyID);
         }
 

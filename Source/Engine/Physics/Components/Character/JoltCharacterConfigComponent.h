@@ -45,5 +45,4 @@ struct JoltCharacterConfigComponent
     // --- 空中のタメ（Apex Hang Time）パラメータ ---
     float apexGravityScale      = 0.3f; // 頂点付近での重力倍率（軽いほどフワッとする）
     float apexVelocityThreshold = 1.5f; // 頂点と判定するY軸速度の閾値
-
 };

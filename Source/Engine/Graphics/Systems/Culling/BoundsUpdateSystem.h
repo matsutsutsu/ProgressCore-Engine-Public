@@ -9,9 +9,9 @@
 // Model用のAABB更新システム
 // ====================================================================
 class ModelBoundsUpdateSystem : public CCL::ECS::IfSystem<ModelBoundsUpdateSystem,
-    CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Read<ModelComponent>,
-    CCL::ECS::Write<BoundingBoxComponent>>
+                                                          CCL::ECS::Read<TransformComponent>,
+                                                          CCL::ECS::Read<ModelComponent>,
+                                                          CCL::ECS::Write<BoundingBoxComponent>>
 {
 public:
     ModelBoundsUpdateSystem();
@@ -34,9 +34,9 @@ public:
 // Primitive用のAABB更新システム
 // ====================================================================
 class PrimitiveBoundsUpdateSystem : public CCL::ECS::IfSystem<PrimitiveBoundsUpdateSystem,
-    CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Read<PrimitiveComponent>,
-    CCL::ECS::Write<BoundingBoxComponent>>
+                                                              CCL::ECS::Read<TransformComponent>,
+                                                              CCL::ECS::Read<PrimitiveComponent>,
+                                                              CCL::ECS::Write<BoundingBoxComponent>>
 {
 public:
     PrimitiveBoundsUpdateSystem();

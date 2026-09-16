@@ -23,18 +23,17 @@
 // を付与し、二度とこの工場を通さないようにする。
 // ===================================================================================
 
-
 // 物理の「設計図」から「実体」を自動生成するファクトリーシステム
 class JoltBodySetupSystem : public CCL::ECS::IfSystem<JoltBodySetupSystem,
-                                CCL::ECS::Read<TransformComponent>,
-                                CCL::ECS::Read<JoltRigidbodyComponent>> {
-  public:
-    JoltBodySetupSystem() : IfSystem("JoltBodySetupSystem") 
+                                                      CCL::ECS::Read<TransformComponent>,
+                                                      CCL::ECS::Read<JoltRigidbodyComponent>>
+{
+public:
+    JoltBodySetupSystem() : IfSystem("JoltBodySetupSystem")
     {
-		SetExclude<JoltHandleComponent>(); // JoltHandleComponent を持つ Entity は処理対象外
+        SetExclude<JoltHandleComponent>(); // JoltHandleComponent を持つ Entity は処理対象外
     }
     virtual ~JoltBodySetupSystem() = default;
 
     void Update(float dt) override;
-
 };

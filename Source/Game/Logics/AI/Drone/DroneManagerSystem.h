@@ -12,13 +12,13 @@
 
 namespace CCL::ECS
 {
-class World;
+    class World;
 }
 
 class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
-      CCL::ECS::Read<DroneComponent>> // 数えるだけなので Read
+                                                     CCL::ECS::Read<DroneComponent>> // 数えるだけなので Read
 {
-  public:
+public:
     DroneManagerSystem()
         : IfSystem("DroneManagerSystem")
     {
@@ -52,7 +52,7 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
 
     /// 現在の生存数を返す（View で数える）。
     int GetAliveCount() const;
-    
+
     /// 全ドローンに対して localIndex / totalDrones を振り直す。
     void ReindexAllDrones();
 
@@ -65,7 +65,7 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     /// @param treatAsArrived true=到着済み扱い(Idleで留まる) / false=再接近させる
     void SetAllDronesArrived(bool treatAsArrived);
 
-  private:
+private:
     /// ボスが準備でき次第、初期ドローンを1回だけ配備する。シーン開始直後はボス未生成の
     /// フレームがあるため、揃うまで毎フレーム再試行する。
     void TryAutoSpawnInitial();
@@ -88,9 +88,9 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     float m_spawnRadius = 8.0f;
     float m_spawnSpeed  = 40.0f;
 
-    bool m_autoSpawnEnabled = true;  // シーン開始時に初期ドローンを自動配備するか
-    bool m_autoSpawnDone    = false; // 初回配備が完了したか（1回だけ実行するためのラッチ）
-    int  m_initialSpawnCount = 100;  // 初期配備数（展示会向け。スペックに応じて調整可）
+    bool m_autoSpawnEnabled  = true;  // シーン開始時に初期ドローンを自動配備するか
+    bool m_autoSpawnDone     = false; // 初回配備が完了したか（1回だけ実行するためのラッチ）
+    int  m_initialSpawnCount = 100;   // 初期配備数（展示会向け。スペックに応じて調整可）
 
     // 陣形テストで選んでいる陣形と、その1つ前。
     //   C++実装とデータ実装が同じ絵になるかは、交互に出して目で見比べるしかない。
@@ -98,6 +98,6 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
     DroneFormationType m_testFormation     = DroneFormationType::GuillotineSlam;
     DroneFormationType m_testPrevFormation = DroneFormationType::DataSlot00;
 
-  public:
+public:
     void OnGui() override; // 生成/破壊のデバッグUI
 };

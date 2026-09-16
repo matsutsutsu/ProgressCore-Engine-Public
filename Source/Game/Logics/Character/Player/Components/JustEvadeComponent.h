@@ -2,7 +2,8 @@
 #include "Engine/ECS/Common/CCL_IDEmitter.h"
 
 // JUST回避の成功状態を管理するコンポーネント
-struct JustEvadeComponent {
+struct JustEvadeComponent
+{
     bool isJustSuccess = false;
 
     // 多段発動・無限ループ防止 (Traffic Control) 用データ

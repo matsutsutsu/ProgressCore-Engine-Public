@@ -12,11 +12,11 @@ using namespace CCL::ECS;
 
 namespace
 {
-constexpr const char *kDirKM  = "Assets/Textures/UI/InputPrompts/KM/";
-constexpr const char *kDirPad = "Assets/Textures/UI/InputPrompts/Pad/";
+    constexpr const char *kDirKM  = "Assets/Textures/UI/InputPrompts/KM/";
+    constexpr const char *kDirPad = "Assets/Textures/UI/InputPrompts/Pad/";
 
-std::string KM(const char *file) { return std::string(kDirKM) + file; }
-std::string Pad(const char *file) { return std::string(kDirPad) + file; }
+    std::string KM(const char *file) { return std::string(kDirKM) + file; }
+    std::string Pad(const char *file) { return std::string(kDirPad) + file; }
 } // namespace
 
 std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
@@ -30,14 +30,22 @@ std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
         {
             switch (binding.keyCode)
             {
-            case GamePad::BTN_A:              return Pad("btn_a.png");
-            case GamePad::BTN_B:              return Pad("btn_b.png");
-            case GamePad::BTN_X:              return Pad("btn_x.png");
-            case GamePad::BTN_LEFT_SHOULDER:  return Pad("lb.png");
-            case GamePad::BTN_RIGHT_SHOULDER: return Pad("rb.png");
-            case GamePad::BTN_RIGHT_TRIGGER:  return Pad("rt.png");
-            case GamePad::BTN_RIGHT_THUMB:    return Pad("stick_r_press.png");
-            default: break;
+            case GamePad::BTN_A:
+                return Pad("btn_a.png");
+            case GamePad::BTN_B:
+                return Pad("btn_b.png");
+            case GamePad::BTN_X:
+                return Pad("btn_x.png");
+            case GamePad::BTN_LEFT_SHOULDER:
+                return Pad("lb.png");
+            case GamePad::BTN_RIGHT_SHOULDER:
+                return Pad("rb.png");
+            case GamePad::BTN_RIGHT_TRIGGER:
+                return Pad("rt.png");
+            case GamePad::BTN_RIGHT_THUMB:
+                return Pad("stick_r_press.png");
+            default:
+                break;
             }
         }
         return {};
@@ -45,7 +53,7 @@ std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
 
     if (binding.deviceType == InputDeviceType::Mouse_Button)
     {
-        if (binding.keyCode == Mouse::BTN_LEFT)  return KM("mouse_left.png");
+        if (binding.keyCode == Mouse::BTN_LEFT) return KM("mouse_left.png");
         if (binding.keyCode == Mouse::BTN_RIGHT) return KM("mouse_right.png");
         return {};
     }
@@ -54,10 +62,14 @@ std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
     {
         switch (binding.keyCode)
         {
-        case VK_SPACE: return KM("key_space.png");
-        case VK_SHIFT: return KM("key_shift.png");
-        case 'R':      return KM("key_r.png");
-        default: break;
+        case VK_SPACE:
+            return KM("key_space.png");
+        case VK_SHIFT:
+            return KM("key_shift.png");
+        case 'R':
+            return KM("key_r.png");
+        default:
+            break;
         }
     }
     return {};
@@ -68,11 +80,16 @@ std::string InputIconSystem::ResolveFixedIcon(InputIconKind kind, ActiveDeviceTy
     const bool pad = (device == ActiveDeviceType::GamePad);
     switch (kind)
     {
-    case InputIconKind::Move:         return pad ? Pad("stick_l.png")  : KM("arrows_all.png");
-    case InputIconKind::Camera:       return pad ? Pad("stick_r.png")  : KM("mouse_move.png");
-    case InputIconKind::MenuConfirm:  return pad ? Pad("btn_a.png")    : KM("key_enter.png");
-    case InputIconKind::MenuNavigate: return pad ? Pad("dpad_all.png") : KM("arrows_all.png");
-    default: break;
+    case InputIconKind::Move:
+        return pad ? Pad("stick_l.png") : KM("arrows_all.png");
+    case InputIconKind::Camera:
+        return pad ? Pad("stick_r.png") : KM("mouse_move.png");
+    case InputIconKind::MenuConfirm:
+        return pad ? Pad("btn_a.png") : KM("key_enter.png");
+    case InputIconKind::MenuNavigate:
+        return pad ? Pad("dpad_all.png") : KM("arrows_all.png");
+    default:
+        break;
     }
     return {};
 }

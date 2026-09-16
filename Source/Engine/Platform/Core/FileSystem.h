@@ -12,7 +12,8 @@
  * メモリロードや暗号化の復号を、ゲームロジックに意識させることなく透過的に行います。
  * エンジン内のすべてのアセット（JSON, テクスチャ等）はこのクラスを経由して読み込んでください。
  */
-class FileSystem {
+class FileSystem
+{
 public:
     /**
      * @brief VFSの初期化処理を行います。
@@ -26,7 +27,7 @@ public:
      * @param virtualPath 仮想ルートからの相対パス (例: "Assets/Scene/Stage1.json")
      * @return 読み込んだファイル全体の文字列。ファイルが存在しない・読み込み失敗時は空文字列を返します。
      */
-    static std::string ReadAllText(const std::string& virtualPath);
+    static std::string ReadAllText(const std::string &virtualPath);
 
     /**
      * @brief 指定されたパスにテキストデータを書き込みます。
@@ -35,21 +36,21 @@ public:
      * @return 書き込みに成功した場合は true、失敗した場合は false
      * @warning Shippingビルドではアセットへの直接書き込みが禁止されるため、将来的にこの関数はセーブデータ専用領域などにルーティングされます。
      */
-    static bool WriteAllText(const std::string& virtualPath, const std::string& content);
+    static bool WriteAllText(const std::string &virtualPath, const std::string &content);
 
     /**
      * @brief 指定されたパスのバイナリファイルを読み込み、バイト配列として返します。
      * @param virtualPath 仮想ルートからの相対パス
      * @return 読み込んだバイト配列 (std::vector<uint8_t>)。失敗時は空の配列を返します。
      */
-    static std::vector<uint8_t> ReadAllBytes(const std::string& virtualPath);
+    static std::vector<uint8_t> ReadAllBytes(const std::string &virtualPath);
 
     /**
      * @brief 指定されたファイルが存在するかどうかを判定します。
      * @param virtualPath 仮想ルートからの相対パス
      * @return 存在する場合は true、それ以外は false
      */
-    static bool Exists(const std::string& virtualPath);
+    static bool Exists(const std::string &virtualPath);
 
     /**
      * @brief ディレクトリ直下のファイルを列挙します（再帰しません）。
@@ -62,8 +63,8 @@ public:
      *          起動時・リロード時にだけ呼んでください。
      *          .pak 化したときはここが目次の列挙に置き換わります。
      */
-    static std::vector<std::string> ListFiles(const std::string& virtualDir,
-                                              const std::string& extension);
+    static std::vector<std::string> ListFiles(const std::string &virtualDir,
+                                              const std::string &extension);
 
 private:
     /**
@@ -71,5 +72,5 @@ private:
      * @param virtualPath 仮想ルートからの相対パス
      * @return OSが認識できる物理パス
      */
-    static std::filesystem::path ResolvePhysicalPath(const std::string& virtualPath);
+    static std::filesystem::path ResolvePhysicalPath(const std::string &virtualPath);
 };

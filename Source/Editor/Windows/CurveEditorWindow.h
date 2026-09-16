@@ -20,17 +20,17 @@
 // ===========================================================================
 class CurveEditorWindow : public EditorWindow
 {
-  public:
+public:
     CurveEditorWindow()
         : EditorWindow("Curve Editor")
     {
     }
     virtual ~CurveEditorWindow() = default;
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
-  private:
+private:
     // ドラッグ操作の状態
     enum class DragMode
     {

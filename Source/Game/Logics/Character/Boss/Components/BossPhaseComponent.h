@@ -24,7 +24,10 @@ enum class BossPhase : uint8_t
 
 // 表示名。名前の二重管理を避けるため enum の隣に置く。
 inline constexpr const char *kBossPhaseNames[] = {
-    "Combat", "Dead", "Transition", "Combat2",
+    "Combat",
+    "Dead",
+    "Transition",
+    "Combat2",
 };
 inline constexpr size_t kBossPhaseCount = sizeof(kBossPhaseNames) / sizeof(kBossPhaseNames[0]);
 

@@ -5,5 +5,5 @@ struct DepthOfFieldConfigComponent
 {
     bool enable = false;
 
-    GpuData::CbDepthOfFieldData data{ 10.0f, 3.0f, 8.0f, 0.01f };
+    GpuData::CbDepthOfFieldData data{10.0f, 3.0f, 8.0f, 0.01f};
 };

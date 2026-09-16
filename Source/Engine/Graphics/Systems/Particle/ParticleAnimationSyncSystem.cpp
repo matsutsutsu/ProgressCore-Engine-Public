@@ -24,8 +24,7 @@ using namespace CCL::ECS;
 
 void ParticleAnimationSyncSystem::Update(float /*dt*/)
 {
-    ForEachWithID([this](EntityID /*id*/, const TransformComponent& transform, GPUParticleComponent& particle) {
-
+    ForEachWithID([this](EntityID /*id*/, const TransformComponent &transform, GPUParticleComponent &particle) {
         // 手動運用のエミッタには触れない（emitting はインスペクタ/常時ON のまま）。
         if (!particle.animControlled)
             return;
@@ -39,15 +38,15 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             {
                 if (m_world->GetComponent<AnimatorComponent>(cur))
                     break; // 台本の持ち主を発見
-                const auto* pt = m_world->GetComponent<TransformComponent>(cur);
-                cur = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
+                const auto *pt = m_world->GetComponent<TransformComponent>(cur);
+                cur            = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
             }
             particle.ownerEntity = (cur != 0) ? cur : InvalidEntityID;
             // 見つからなければ Invalid のまま。次フレーム再挑戦する。
         }
 
         // ── 2. owner の Animator を読む（別エンティティ・読み取り専用） ──
-        const AnimatorComponent* animator =
+        const AnimatorComponent *animator =
             (particle.ownerEntity != InvalidEntityID)
                 ? m_world->GetComponent<AnimatorComponent>(particle.ownerEntity)
                 : nullptr;
@@ -59,9 +58,9 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
         }
 
         // ── 3. 現在時刻が Particle 区間内かを判定して emitting へ反映 ──
-        const AnimSequence* seq = animator->currentSequence;
-        bool inside = false;
-        for (const auto& ev : seq->events)
+        const AnimSequence *seq    = animator->currentSequence;
+        bool                inside = false;
+        for (const auto &ev : seq->events)
         {
             if (ev.type != AnimEventType::Particle)
                 continue;

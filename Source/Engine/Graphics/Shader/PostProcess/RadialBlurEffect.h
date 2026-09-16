@@ -19,14 +19,14 @@
 class RadialBlurEffect : public IPostEffect
 {
 public:
-    RadialBlurEffect() = default;
+    RadialBlurEffect()           = default;
     ~RadialBlurEffect() override = default;
 
     // シェーダー・定数バッファ・サンプラを生成する。中間RTは持たない。
-    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
+    void Initialize(ID3D11Device *device, UINT width, UINT height) override;
 
     // リサイズ時の処理。中間RTを持たないため何もしない。
-    void Resize(ID3D11Device* device, UINT width, UINT height) override;
+    void Resize(ID3D11Device *device, UINT width, UINT height) override;
 
     /**
      * @brief 放射状ブラーを適用する。
@@ -34,19 +34,20 @@ public:
      * @param outputRTV 書き出し先(ping-pong により inputSRV とは別テクスチャ)。
      * @note  strength<=0 のときは CopyResource でパススルーする。
      */
-    void Process(ID3D11DeviceContext* dc,
-                 ID3D11ShaderResourceView* inputSRV,
-                 ID3D11RenderTargetView* outputRTV) override;
+    void Process(ID3D11DeviceContext      *dc,
+                 ID3D11ShaderResourceView *inputSRV,
+                 ID3D11RenderTargetView   *outputRTV) override;
 
-    const char* GetName() const override { return "RadialBlur"; }
+    const char *GetName() const override { return "RadialBlur"; }
 
     // ECS(PostProcessSystem)からパラメータを受け取る。
-    void UpdateParams(const GpuData::CbRadialBlurData& data) { m_cbData = data; }
+    void UpdateParams(const GpuData::CbRadialBlurData &data) { m_cbData = data; }
 
 private:
     GpuData::CbRadialBlurData m_cbData{};
 
-    struct Resources {
+    struct Resources
+    {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader>  ps;
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;

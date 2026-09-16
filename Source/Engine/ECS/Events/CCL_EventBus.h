@@ -19,19 +19,23 @@
  * 例：UI更新・サウンド再生・実績の解除など、ECSの外部に影響を与えるイベントを発行するために使う
  */
 
-namespace CCL::ECS {
+namespace CCL::ECS
+{
 
     // Subscribe/Unsubscribe の friend 指定に使う前方宣言。
-    template <class Derived, class... AccessTypes> class IfSystem;
+    template <class Derived, class... AccessTypes>
+    class IfSystem;
 
     // =======================================================
     // 1. 型IDジェネレータ（RTTI の typeid を使わず、型ごとに連番を割り当てる）
     // =======================================================
-    class EventTypeIDGenerator {
+    class EventTypeIDGenerator
+    {
         static inline uint32_t counter = 0;
 
-      public:
-        template <typename T> static uint32_t GetID()
+    public:
+        template <typename T>
+        static uint32_t GetID()
         {
             // 型 T ごとに、この static 変数が「たった一つだけ」作られる
             static uint32_t id = counter++;
@@ -59,7 +63,8 @@ namespace CCL::ECS {
 #ifdef TRACY_ENABLE
     // typeid(T).name() は静的な寿命を持つ文字列。MSVC は "struct Foo" を返すので
     // 接頭辞だけ飛ばして読みやすくする（ポインタを進めるだけなのでコピーは不要）。
-    template <typename T> inline const char *EventZoneName()
+    template <typename T>
+    inline const char *EventZoneName()
     {
         static const char *const name = [] {
             const char *n = typeid(T).name();
@@ -70,7 +75,8 @@ namespace CCL::ECS {
         return name;
     }
 
-    template <typename T> inline const tracy::SourceLocationData *EventPublishSrcLoc()
+    template <typename T>
+    inline const tracy::SourceLocationData *EventPublishSrcLoc()
     {
         static const tracy::SourceLocationData loc{
             EventZoneName<T>(), // ゾーン名 = イベント型名
@@ -82,10 +88,10 @@ namespace CCL::ECS {
         return &loc;
     }
 
-    // Publish 1回ぶんのスコープ。TRACY_ENABLE が無ければ丸ごと消える。
-    #define CCL_EVENTBUS_PUBLISH_ZONE(EventT)         tracy::ScopedZone _ccl_publish_zone(CCL::ECS::EventPublishSrcLoc<EventT>())
+// Publish 1回ぶんのスコープ。TRACY_ENABLE が無ければ丸ごと消える。
+#define CCL_EVENTBUS_PUBLISH_ZONE(EventT) tracy::ScopedZone _ccl_publish_zone(CCL::ECS::EventPublishSrcLoc<EventT>())
 #else
-    #define CCL_EVENTBUS_PUBLISH_ZONE(EventT) (void)0
+#define CCL_EVENTBUS_PUBLISH_ZONE(EventT) (void)0
 #endif
 
     // 購読解除用のチケット
@@ -94,17 +100,21 @@ namespace CCL::ECS {
     // =======================================================
     // 2. イベントの箱 (型の消失 / 型消去)
     // =======================================================
-    class IEventWrapper {
-      public:
+    class IEventWrapper
+    {
+    public:
         virtual ~IEventWrapper() = default;
     };
 
-    template <typename EventType> class EventWrapper : public IEventWrapper {
-      public:
+    template <typename EventType>
+    class EventWrapper : public IEventWrapper
+    {
+    public:
         using CallbackType = std::function<void(const EventType &)>;
 
         // 誰の関数かを特定するために、チケットIDと一緒に保存する
-        struct Subscriber {
+        struct Subscriber
+        {
             EventSubscriptionID id;
             CallbackType        callback;
         };
@@ -124,9 +134,10 @@ namespace CCL::ECS {
         void Remove(EventSubscriptionID id)
         {
             auto it = std::remove_if(subscribers.begin(),
-                subscribers.end(),
-                [id](const Subscriber &s) { return s.id == id; });
-            if (it != subscribers.end()) {
+                                     subscribers.end(),
+                                     [id](const Subscriber &s) { return s.id == id; });
+            if (it != subscribers.end())
+            {
                 subscribers.erase(it, subscribers.end());
             }
         }
@@ -134,7 +145,8 @@ namespace CCL::ECS {
         // 全員に手紙を配る (イベント発火)
         void Trigger(const EventType &eventData)
         {
-            for (auto &s : subscribers) {
+            for (auto &s : subscribers)
+            {
                 s.callback(eventData);
             }
         }
@@ -143,8 +155,9 @@ namespace CCL::ECS {
     // =======================================================
     // 3. 郵便局本体 (EventBus)
     // =======================================================
-    class EventBus {
-      private:
+    class EventBus
+    {
+    private:
         // 「型のID」と「そのイベント専用の箱」のペアを管理する名簿
         std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> m_subscribers;
 
@@ -158,7 +171,8 @@ namespace CCL::ECS {
         //
         // 購読したい System は IfSystem を継承して ListenEvent<EventType>(...) を使うこと。
         // -------------------------------------------------------
-        template <class Derived, class... AccessTypes> friend class IfSystem;
+        template <class Derived, class... AccessTypes>
+        friend class IfSystem;
 
         // 購読する (手紙が欲しいと登録する)
         template <typename EventType>
@@ -166,7 +180,8 @@ namespace CCL::ECS {
         {
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (m_subscribers.find(typeId) == m_subscribers.end()) {
+            if (m_subscribers.find(typeId) == m_subscribers.end())
+            {
                 m_subscribers[typeId] = std::make_unique<EventWrapper<EventType>>();
             }
 
@@ -175,19 +190,22 @@ namespace CCL::ECS {
         }
 
         // 購読を解除する (もう手紙は要らないと伝える)
-        template <typename EventType> void Unsubscribe(EventSubscriptionID subId)
+        template <typename EventType>
+        void Unsubscribe(EventSubscriptionID subId)
         {
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (m_subscribers.find(typeId) != m_subscribers.end()) {
+            if (m_subscribers.find(typeId) != m_subscribers.end())
+            {
                 auto wrapper = static_cast<EventWrapper<EventType> *>(m_subscribers[typeId].get());
                 wrapper->Remove(subId);
             }
         }
 
-      public:
+    public:
         // 手紙を投函する (全員に配る)
-        template <typename EventType> void Publish(const EventType &eventData)
+        template <typename EventType>
+        void Publish(const EventType &eventData)
         {
             // ここは同期呼び出し。購読者のコストは呼び出し元のゾーンに乗る。
             //   イベント型ごとに別名のゾーンが自動で出るので、Tracy 上で
@@ -196,7 +214,8 @@ namespace CCL::ECS {
 
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();
 
-            if (m_subscribers.find(typeId) != m_subscribers.end()) {
+            if (m_subscribers.find(typeId) != m_subscribers.end())
+            {
                 auto wrapper = static_cast<EventWrapper<EventType> *>(m_subscribers[typeId].get());
                 wrapper->Trigger(eventData);
             }

@@ -16,26 +16,26 @@ public:
      * @brief 指定解像度でRTを生成する。
      * @return 生成に成功したら true。
      */
-    bool Create(ID3D11Device* device, UINT width, UINT height);
+    bool Create(ID3D11Device *device, UINT width, UINT height);
 
     // 解像度変更時に作り直す。
-    void Resize(ID3D11Device* device, UINT width, UINT height);
+    void Resize(ID3D11Device *device, UINT width, UINT height);
 
     /**
      * @brief RTをクリアし、描画先として設定する。
      * @param dsv シーンの深度バッファ。深度テストを効かせて正しい前後関係で法線を書く。
      */
-    void Activate(ID3D11DeviceContext* dc, ID3D11DepthStencilView* dsv);
+    void Activate(ID3D11DeviceContext *dc, ID3D11DepthStencilView *dsv);
 
-    ID3D11RenderTargetView*   GetRTV() const noexcept { return m_rtv.Get(); }
-    ID3D11ShaderResourceView* GetSRV() const noexcept { return m_srv.Get(); }
-    UINT                      GetWidth()  const noexcept { return m_width; }
+    ID3D11RenderTargetView   *GetRTV() const noexcept { return m_rtv.Get(); }
+    ID3D11ShaderResourceView *GetSRV() const noexcept { return m_srv.Get(); }
+    UINT                      GetWidth() const noexcept { return m_width; }
     UINT                      GetHeight() const noexcept { return m_height; }
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D>          m_texture;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_rtv;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_srv;
-    UINT m_width  = 0;
-    UINT m_height = 0;
+    UINT                                             m_width  = 0;
+    UINT                                             m_height = 0;
 };

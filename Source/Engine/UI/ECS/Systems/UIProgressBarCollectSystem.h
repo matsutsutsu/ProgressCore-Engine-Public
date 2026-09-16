@@ -6,15 +6,14 @@
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 
 class UIProgressBarCollectSystem : public CCL::ECS::IfSystem<UIProgressBarCollectSystem,
-                                       CCL::ECS::Write<UITransformComponent>,
-                                       CCL::ECS::Read<UIProgressBarComponent>>
+                                                             CCL::ECS::Write<UITransformComponent>,
+                                                             CCL::ECS::Read<UIProgressBarComponent>>
 {
-  public:
+public:
     UIProgressBarCollectSystem()
         : IfSystem("UIProgressBarCollectSystem")
     {
     }
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // UILayout が確定した computedPos/computedSize を読んで描画リストへ積む。

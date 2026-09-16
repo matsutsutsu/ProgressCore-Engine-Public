@@ -28,119 +28,119 @@
 
 namespace
 {
-// -----------------------------------------------------------------------------------
-// [責務] m_world に依存しない純粋な計算群。
-//        単体テストしやすく、ヘッダにも公開しない（実装詳細のため匿名namespaceに隔離）。
-// -----------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------
+    // [責務] m_world に依存しない純粋な計算群。
+    //        単体テストしやすく、ヘッダにも公開しない（実装詳細のため匿名namespaceに隔離）。
+    // -----------------------------------------------------------------------------------
 
-// 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
-//
-// 実効速度 = ステートの速度 × 足滑り補正 × 速度カーブ。
-//   playbackSpeed(ステート由来)と footSlideMultiplier(CharacterAnimSyncSystem 由来)を
-//   別フィールドに分けて、ここで掛け合わせる。同じ変数を2つのシステムで奪い合うと、
-//   ループするステートで「遷移フレームだけステートの速度が効く」状態になる。
-//
-// 旧 TODO「まれにこの部分の処理負荷がとてつもないフレームがある」について:
-//   ここに ZoneScopedN を置いていたのが原因で、コードの問題ではなかった。
-//   ・CurveData::Evaluate は std::upper_bound の O(log n)（キー数は高々数十）
-//   ・AnimatorComponent を持つのは Player と Muriel の2体だけ（ドローンは Model のみ）
-//   つまり計測対象は数十ナノ秒の処理で、Tracy のゾーン自体のコストと同程度。
-//   まれに出る巨大値は OS がスレッドをプリエンプトした時間を拾っているだけなので、
-//   ゾーンは意味のある粒度(AnimationSystem::Update / ComputeAndApplyPose)に留める。
-float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
-{
-    float curveMultiplier = 1.0f;
-    if (animator.activeCurve)
+    // 速度カーブによる時間の歪み(Time Warping)を考慮した実効再生速度を返す。
+    //
+    // 実効速度 = ステートの速度 × 足滑り補正 × 速度カーブ。
+    //   playbackSpeed(ステート由来)と footSlideMultiplier(CharacterAnimSyncSystem 由来)を
+    //   別フィールドに分けて、ここで掛け合わせる。同じ変数を2つのシステムで奪い合うと、
+    //   ループするステートで「遷移フレームだけステートの速度が効く」状態になる。
+    //
+    // 旧 TODO「まれにこの部分の処理負荷がとてつもないフレームがある」について:
+    //   ここに ZoneScopedN を置いていたのが原因で、コードの問題ではなかった。
+    //   ・CurveData::Evaluate は std::upper_bound の O(log n)（キー数は高々数十）
+    //   ・AnimatorComponent を持つのは Player と Muriel の2体だけ（ドローンは Model のみ）
+    //   つまり計測対象は数十ナノ秒の処理で、Tracy のゾーン自体のコストと同程度。
+    //   まれに出る巨大値は OS がスレッドをプリエンプトした時間を拾っているだけなので、
+    //   ゾーンは意味のある粒度(AnimationSystem::Update / ComputeAndApplyPose)に留める。
+    float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
     {
-        float progress  = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
-        // ループ境界を跨いだフレームでは currentTimer が duration を超え progress>1 になり、
-        //   速度カーブが外挿されて速度が一瞬跳ねる。進捗を [0,1] に丸めて外挿スパイクを防ぐ。
-        progress        = std::clamp(progress, 0.0f, 1.0f);
-        curveMultiplier = animator.activeCurve->Evaluate(progress);
+        float curveMultiplier = 1.0f;
+        if (animator.activeCurve)
+        {
+            float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
+            // ループ境界を跨いだフレームでは currentTimer が duration を超え progress>1 になり、
+            //   速度カーブが外挿されて速度が一瞬跳ねる。進捗を [0,1] に丸めて外挿スパイクを防ぐ。
+            progress        = std::clamp(progress, 0.0f, 1.0f);
+            curveMultiplier = animator.activeCurve->Evaluate(progress);
+        }
+        return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
     }
-    return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
-}
 
-/**
+    /**
  * @brief currentTimer（と、ブレンド中なら previousTimer）を dt ぶん進める。
  * @return 順方向に進んだか（逆再生・シーク検出用。イベント発火可否の判定に使う）。
  */
-bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
-{
-    const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
-    const float prevTime       = animator.currentTimer;
-
-    // このフレームで進める前の時刻を記録（区間HitBoxのスイープ判定に使う）。
-    animator.previousFrameTimer = prevTime;
-
-    animator.currentTimer += localDt * effectiveSpeed;
-    const bool movedForward = (animator.currentTimer >= prevTime);
-
-    // 過去の記憶（ブレンド）のタイマーを進行させる
-    if (animator.isBlending)
+    bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
     {
-        animator.currentBlendTime += localDt;
+        const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
+        const float prevTime       = animator.currentTimer;
 
-        // 過去のモーションは「過去のスピード」で進める
-        animator.previousTimer += localDt * animator.previousPlaybackSpeed;
+        // このフレームで進める前の時刻を記録（区間HitBoxのスイープ判定に使う）。
+        animator.previousFrameTimer = prevTime;
 
-        if (animator.previousSequence && animator.previousSequence->duration > 0.0f)
+        animator.currentTimer += localDt * effectiveSpeed;
+        const bool movedForward = (animator.currentTimer >= prevTime);
+
+        // 過去の記憶（ブレンド）のタイマーを進行させる
+        if (animator.isBlending)
         {
-            if (!animator.previousLoop)
+            animator.currentBlendTime += localDt;
+
+            // 過去のモーションは「過去のスピード」で進める
+            animator.previousTimer += localDt * animator.previousPlaybackSpeed;
+
+            if (animator.previousSequence && animator.previousSequence->duration > 0.0f)
             {
-                // 非ループ (JumpEndなど): durationを超えたら末尾でフリーズさせる
-                animator.previousTimer = (std::min)(animator.previousTimer, animator.previousSequence->duration);
+                if (!animator.previousLoop)
+                {
+                    // 非ループ (JumpEndなど): durationを超えたら末尾でフリーズさせる
+                    animator.previousTimer = (std::min)(animator.previousTimer, animator.previousSequence->duration);
+                }
+                else
+                {
+                    // ループ (Runなど): 安全に剰余計算してループさせる
+                    animator.previousTimer = std::fmod(animator.previousTimer, animator.previousSequence->duration);
+                    if (animator.previousTimer < 0.0f)
+                        animator.previousTimer += animator.previousSequence->duration;
+                }
+            }
+
+            if (animator.currentBlendTime >= animator.blendDuration)
+            {
+                animator.isBlending       = false;
+                animator.previousSequence = nullptr;
+            }
+        }
+
+        return movedForward;
+    }
+
+    // duration境界でのループ/終了判定。currentTimer を正規化する。
+    void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
+    {
+        if (seq->duration <= 0.0f) return;
+
+        if (animator.currentTimer >= seq->duration)
+        {
+            if (animator.isLoop)
+            {
+                animator.currentTimer   = std::fmod(animator.currentTimer, seq->duration);
+                animator.nextEventIndex = 0;
             }
             else
             {
-                // ループ (Runなど): 安全に剰余計算してループさせる
-                animator.previousTimer = std::fmod(animator.previousTimer, animator.previousSequence->duration);
-                if (animator.previousTimer < 0.0f)
-                    animator.previousTimer += animator.previousSequence->duration;
+                animator.currentTimer = seq->duration;
+                animator.isFinished   = true;
             }
         }
-
-        if (animator.currentBlendTime >= animator.blendDuration)
+        else if (animator.currentTimer < 0.0f)
         {
-            animator.isBlending       = false;
-            animator.previousSequence = nullptr;
+            if (animator.isLoop)
+            {
+                animator.currentTimer = std::fmod(animator.currentTimer, seq->duration) + seq->duration;
+                animator.SyncEventCursor();
+            }
+            else
+            {
+                animator.currentTimer = 0.0f;
+            }
         }
     }
-
-    return movedForward;
-}
-
-// duration境界でのループ/終了判定。currentTimer を正規化する。
-void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
-{
-    if (seq->duration <= 0.0f) return;
-
-    if (animator.currentTimer >= seq->duration)
-    {
-        if (animator.isLoop)
-        {
-            animator.currentTimer   = std::fmod(animator.currentTimer, seq->duration);
-            animator.nextEventIndex = 0;
-        }
-        else
-        {
-            animator.currentTimer = seq->duration;
-            animator.isFinished   = true;
-        }
-    }
-    else if (animator.currentTimer < 0.0f)
-    {
-        if (animator.isLoop)
-        {
-            animator.currentTimer = std::fmod(animator.currentTimer, seq->duration) + seq->duration;
-            animator.SyncEventCursor();
-        }
-        else
-        {
-            animator.currentTimer = 0.0f;
-        }
-    }
-}
 
 } // namespace
 
@@ -161,7 +161,6 @@ void AnimationSystem::Update(float dt)
     // ModelComponent はクエリの絞り込み（Model を持つキャラだけを対象にする）目的でのみ
     // 受け取っており、ここでは触らない。ポーズ計算は AnimationPoseSystem が行う。
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
-
         // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence) return;
 
@@ -188,7 +187,7 @@ void AnimationSystem::Update(float dt)
 }
 
 void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
-    const AnimSequence *seq, bool movedForward)
+                                          const AnimSequence *seq, bool movedForward)
 {
     ZoneScopedN("AnimationSystem::DispatchPointEvents");
 
@@ -220,8 +219,7 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
                 AnimEventEffectMessage{id, evt.stringParam, evt.offset, evt.effectScale, evt.effectFollow});
             break;
 
-        case AnimEventType::SpawnHitbox:
-        {
+        case AnimEventType::SpawnHitbox: {
             // 点イベント: 空間に独立した球状ヒットボックスを生成依頼。
             //   球の生存時間は Sequencer のブロック長(区間)をそのまま渡す。
             //   点(startTime==endTime)なら 0 になり、購読側が最小寿命へフォールバックする。

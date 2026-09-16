@@ -23,8 +23,8 @@
 // Trail アニメイベント区間で TrailComponent::emitting を駆動するシステム。
 class TrailAnimationSyncSystem
     : public CCL::ECS::IfSystem<TrailAnimationSyncSystem,
-          CCL::ECS::Read<TransformComponent>,
-          CCL::ECS::Write<TrailComponent>>
+                                CCL::ECS::Read<TransformComponent>,
+                                CCL::ECS::Write<TrailComponent>>
 {
 public:
     TrailAnimationSyncSystem() : IfSystem("TrailAnimationSyncSystem") {}

@@ -29,7 +29,10 @@ enum class CameraEaseMode : std::uint8_t
 // 並び順がそのままインスペクタの列挙値になるので、途中に挿すと
 // 保存済みプレハブの値がずれる。増やすときは末尾に足すこと。
 inline constexpr const char *kCameraEaseModeNames[] = {
-    "Linear", "EaseIn", "EaseOut", "EaseInOut",
+    "Linear",
+    "EaseIn",
+    "EaseOut",
+    "EaseInOut",
 };
 inline constexpr std::size_t kCameraEaseModeCount =
     sizeof(kCameraEaseModeNames) / sizeof(kCameraEaseModeNames[0]);
@@ -60,10 +63,10 @@ struct CameraBodyIntroOrbit
     CameraEaseMode easeMode = CameraEaseMode::EaseOut;
 
     // --- 再生 -------------------------------------------------------------
-    float duration    = 4.0f;  // 演出の長さ(秒)
-    float startDelay  = 0.3f;  // シーン開始から再生を始めるまでの待ち(秒)
-    bool  playOnStart = true;  // シーン開始時に自動再生するか
-    bool  allowSkip   = true;  // 攻撃/ジャンプ入力でスキップできるか（展示会向け）
+    float duration    = 4.0f; // 演出の長さ(秒)
+    float startDelay  = 0.3f; // シーン開始から再生を始めるまでの待ち(秒)
+    bool  playOnStart = true; // シーン開始時に自動再生するか
+    bool  allowSkip   = true; // 攻撃/ジャンプ入力でスキップできるか（展示会向け）
 
     // 再生中の VirtualCamera.priority。プレイヤー追従カメラ(200)より高くすること。
     int activePriority = 300;
@@ -80,9 +83,9 @@ struct CameraBodyIntroOrbit
     // プレハブ生成は遅延(ScrutinyAndApply待ち)なので、シーン開始直後は
     // ボスがまだ存在しない。1フレーム見つからないだけで打ち切ると
     // 演出が毎回スキップされるため、少し待ってから諦める。
-    float resolveTimer = 0.0f;
+    float resolveTimer  = 0.0f;
     bool  autoPlayArmed = true; // playOnStart の自動再生をまだ撃っていないか
     // インスペクタのスクラブで絵作り中か（エディタ専用の一時状態）。
     // 再生していなくてもカメラを掌握させ、任意の進行度の絵を見えるようにする。
-    bool  previewing = false;
+    bool previewing = false;
 };

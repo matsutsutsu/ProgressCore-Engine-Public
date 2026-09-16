@@ -13,7 +13,7 @@
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/InputIconComponent.h"
-#include "Game/UI/MenuUiFactory.h" // SpawnCanvas / MakeUINode
+#include "Game/UI/MenuUiFactory.h"               // SpawnCanvas / MakeUINode
 #include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
 
 #include <cstdio>
@@ -26,7 +26,7 @@ using json = nlohmann::json;
 
 namespace
 {
-constexpr const char *kConfigPath = "Assets/Config/InputPromptConfig.json";
+    constexpr const char *kConfigPath = "Assets/Config/InputPromptConfig.json";
 } // namespace
 
 void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
@@ -57,15 +57,12 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
     //   操作説明が出ないのは「機能が無い」に見えるので、静かに空にしない。
     if (outRows.empty())
     {
-        outRows = {{"", "Move", "MOVE"},      {"", "Camera", "CAMERA"},
-                   {"Attack", "", "ATTACK"},  {"Cleave", "", "CLEAVE"},
-                   {"Dash", "", "DODGE"},     {"Jump", "", "JUMP"},
-                   {"LockOn", "", "LOCK ON"}};
+        outRows = {{"", "Move", "MOVE"}, {"", "Camera", "CAMERA"}, {"Attack", "", "ATTACK"}, {"Cleave", "", "CLEAVE"}, {"Dash", "", "DODGE"}, {"Jump", "", "JUMP"}, {"LockOn", "", "LOCK ON"}};
     }
 }
 
 void InputPromptSystem::ComputeRow(size_t index, UITransformComponent &outIcon,
-                                    UITransformComponent &outLabel) const
+                                   UITransformComponent &outLabel) const
 {
     const float y = m_marginTop + m_rowHeight * static_cast<float>(index);
 
@@ -129,9 +126,9 @@ void InputPromptSystem::BuildRows()
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "InputPromptCanvas");
 
     auto iconArch  = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UIImageComponent, InputIconComponent>();
+                                               UIImageComponent, InputIconComponent>();
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UITextComponent>();
+                                               UITextComponent>();
 
     for (size_t i = 0; i < rows.size(); ++i)
     {
@@ -146,15 +143,17 @@ void InputPromptSystem::BuildRows()
         auto icon = EntityFactory::SpawnNamed(*m_world, ("Prompt_" + suffix).c_str(), iconArch);
 
         UIImageComponent img;
-        img.sortOrder = 120;        // ゲージ(100〜102)より手前
-        img.visible   = false;      // InputIconSystem が張り替えるまで出さない
+        img.sortOrder = 120;   // ゲージ(100〜102)より手前
+        img.visible   = false; // InputIconSystem が張り替えるまで出さない
 
         // どのアイコンかは宣言だけして、解決は InputIconSystem に任せる。
         InputIconComponent ic;
         if (cfg.action.empty())
         {
-            if (cfg.icon == "Camera") ic.kind = InputIconKind::Camera;
-            else                      ic.kind = InputIconKind::Move;
+            if (cfg.icon == "Camera")
+                ic.kind = InputIconKind::Camera;
+            else
+                ic.kind = InputIconKind::Move;
         }
         else
         {
@@ -210,20 +209,20 @@ void InputPromptSystem::OnGui()
     ImGui::Separator();
 
     bool changed = false;
-    changed |= ImGui::SliderFloat("Icon Size",    &m_iconSize,    8.0f,  128.0f, "%.0f px");
-    changed |= ImGui::SliderFloat("Row Height",   &m_rowHeight,   8.0f,  160.0f, "%.0f px");
-    changed |= ImGui::SliderFloat("Margin Right", &m_marginRight, 0.0f,  400.0f, "%.0f px");
-    changed |= ImGui::SliderFloat("Margin Top",   &m_marginTop,   0.0f,  600.0f, "%.0f px");
-    changed |= ImGui::SliderFloat("Label Width",  &m_labelWidth,  20.0f, 320.0f, "%.0f px");
-    changed |= ImGui::SliderFloat("Label Gap",    &m_labelGap,    0.0f,  80.0f,  "%.0f px");
-    changed |= ImGui::SliderFloat("Text Size",    &m_textSize,    6.0f,  64.0f,  "%.0f px");
-    changed |= ImGui::SliderFloat("Alpha",        &m_alpha,       0.0f,  1.0f,   "%.2f");
+    changed |= ImGui::SliderFloat("Icon Size", &m_iconSize, 8.0f, 128.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Row Height", &m_rowHeight, 8.0f, 160.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Margin Right", &m_marginRight, 0.0f, 400.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Margin Top", &m_marginTop, 0.0f, 600.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Label Width", &m_labelWidth, 20.0f, 320.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Label Gap", &m_labelGap, 0.0f, 80.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Text Size", &m_textSize, 6.0f, 64.0f, "%.0f px");
+    changed |= ImGui::SliderFloat("Alpha", &m_alpha, 0.0f, 1.0f, "%.2f");
 
     // 行送りがアイコンより狭いと上下で重なる。値だけでは気付けないので明示する。
     if (m_rowHeight < m_iconSize)
     {
         ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.35f, 1.0f),
-            "Row Height < Icon Size：行が %.0fpx 重なります", m_iconSize - m_rowHeight);
+                           "Row Height < Icon Size：行が %.0fpx 重なります", m_iconSize - m_rowHeight);
     }
 
     ImGui::Separator();

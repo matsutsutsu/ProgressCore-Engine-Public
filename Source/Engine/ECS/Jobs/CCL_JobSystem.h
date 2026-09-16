@@ -25,8 +25,8 @@
 //   - JobCounter    : 料理が全部出たか確認する「伝票の残り枚数」
 // ===================================================================================
 
-
-namespace CCL::ECS {
+namespace CCL::ECS
+{
 
     // Job = 「引数なし・戻り値なし」の関数（ラムダ式など）
     // 例：「野菜を切る」「皿を洗う」「Chunk0番を更新する」といった具体的な作業内容
@@ -37,12 +37,14 @@ namespace CCL::ECS {
     // -----------------------------------------------------------------------
     // 素の int では複数スレッドからの増減が競合して値が壊れるため、
     // 不可分に増減できる std::atomic を使う。
-    struct JobCounter {
+    struct JobCounter
+    {
         std::atomic<int> count{0};
     };
 
-    class JobSystem {
-      public:
+    class JobSystem
+    {
+    public:
         // コンストラクタ：厨房を開き、シェフを雇う
         JobSystem();
 
@@ -90,7 +92,7 @@ namespace CCL::ECS {
          */
         unsigned int GetWorkerCount() const { return static_cast<unsigned int>(m_workers.size()); }
 
-      private:
+    private:
         // シェフ（ワーカースレッド）が実行する業務マニュアル
         // 生まれた瞬間から死ぬまで、このループの中で働き続けます。
         //
@@ -99,9 +101,10 @@ namespace CCL::ECS {
         // 物理(Jolt Worker N)との棲み分けも見えなくなるため通し番号を振る。
         void WorkerLoop(unsigned int workerIndex);
 
-      private:
+    private:
         // 内部で扱うジョブ構造体
-        struct InternalJob {
+        struct InternalJob
+        {
             Job         task;    // やるべき仕事
             JobCounter *counter; // 終わったら減らすカウンター
         };
@@ -110,7 +113,7 @@ namespace CCL::ECS {
         std::queue<InternalJob>  m_jobQueue; // 仕事の注文票ボード
 
         std::mutex m_queueMutex; // ボードを守る「鍵」（排他制御）
-                                // これがないと複数のシェフが同時にチケットを取ろうとして破れます。
+                                 // これがないと複数のシェフが同時にチケットを取ろうとして破れます。
 
         std::condition_variable m_condition; // 寝ているシェフを起こす「ベル」
 

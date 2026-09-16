@@ -15,10 +15,10 @@
 #include <string>
 
 class InputIconSystem : public CCL::ECS::IfSystem<InputIconSystem,
-                            CCL::ECS::Write<UIImageComponent>,
-                            CCL::ECS::Read<InputIconComponent>>
+                                                  CCL::ECS::Write<UIImageComponent>,
+                                                  CCL::ECS::Read<InputIconComponent>>
 {
-  public:
+public:
     InputIconSystem()
         : IfSystem("InputIconSystem")
     {
@@ -26,7 +26,7 @@ class InputIconSystem : public CCL::ECS::IfSystem<InputIconSystem,
 
     void Update(float dt) override;
 
-  private:
+private:
     /**
      * @brief 割り当て(デバイス種別＋キーコード)をアイコンPNGのパスへ変換する。
      * @return 対応表に無ければ空文字（＝呼び出し側がその行を隠す）。

@@ -8,7 +8,7 @@
 using namespace CCL::ECS;
 
 // 8頂点完全再計算による正確なAABB生成ヘルパー (Model用)
-static DirectX::BoundingBox CalculateAccurateWorldAABB(const DirectX::BoundingBox& localAABB, const DirectX::XMFLOAT4X4& worldMatrix)
+static DirectX::BoundingBox CalculateAccurateWorldAABB(const DirectX::BoundingBox &localAABB, const DirectX::XMFLOAT4X4 &worldMatrix)
 {
     std::array<DirectX::XMFLOAT3, 8> corners;
     localAABB.GetCorners(corners.data());
@@ -20,7 +20,7 @@ static DirectX::BoundingBox CalculateAccurateWorldAABB(const DirectX::BoundingBo
 
     for (int i = 0; i < 8; ++i)
     {
-        DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&corners[i]);
+        DirectX::XMVECTOR v            = DirectX::XMLoadFloat3(&corners[i]);
         DirectX::XMVECTOR transformedV = DirectX::XMVector3TransformCoord(v, matWorld);
 
         minVec = DirectX::XMVectorMin(minVec, transformedV);
@@ -45,12 +45,13 @@ void ModelBoundsUpdateSystem::Update(float dt)
     //   以前は worldMatrix（固定ステップ）から AABB を作っていたため、カリング判定が
     //   「実際に見えている位置」ではなく最大1固定ステップぶん古い位置を見ていた。
     //   ※ Primitive 側は描画も worldMatrix なので、あちらは揃っている（変更しない）。
-    ForEachParallel([&](const TransformComponent& trans, const ModelComponent& modelComp, BoundingBoxComponent& bounds) {
-        Model* model = modelComp.GetModel();
-        if (model && model->GetResource()) {
+    ForEachParallel([&](const TransformComponent &trans, const ModelComponent &modelComp, BoundingBoxComponent &bounds) {
+        Model *model = modelComp.GetModel();
+        if (model && model->GetResource())
+        {
             bounds.worldAABB = CalculateAccurateWorldAABB(model->GetResource()->GetBoundingBox(), trans.renderWorldMatrix);
         }
-        });
+    });
 }
 
 // ====================================================================
@@ -60,22 +61,22 @@ PrimitiveBoundsUpdateSystem::PrimitiveBoundsUpdateSystem() : IfSystem("Primitive
 
 void PrimitiveBoundsUpdateSystem::Update(float dt)
 {
-    ForEachParallel([&](const TransformComponent& trans, const PrimitiveComponent& prim, BoundingBoxComponent& bounds) {
+    ForEachParallel([&](const TransformComponent &trans, const PrimitiveComponent &prim, BoundingBoxComponent &bounds) {
         // 大まかな最大サイズを計算（Boxならsizeの最大値、他ならradiusかheight）
-        float maxLocalScale = (std::max)({ prim.size.x, prim.size.y, prim.size.z, prim.radius, prim.height });
+        float maxLocalScale = (std::max)({prim.size.x, prim.size.y, prim.size.z, prim.radius, prim.height});
 
         // ワールド行列からスケール成分を抽出して掛け合わせる（簡易的なAABB半径）
         //   ここで欲しいのは「X軸方向のスケール」と「平行移動」だけ。
         //   XMMatrixDecompose は回転を求めるために反復的な極分解を回すので、
         //   この用途には桁違いに重い。基底ベクトルの長さと平行移動行を直接読む。
-        const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
-        const DirectX::XMVECTOR pos   = world.r[3];
-        const float worldScale   = DirectX::XMVectorGetX(DirectX::XMVector3Length(world.r[0]));
-        const float finalExtents = maxLocalScale * worldScale;
+        const DirectX::XMMATRIX world        = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
+        const DirectX::XMVECTOR pos          = world.r[3];
+        const float             worldScale   = DirectX::XMVectorGetX(DirectX::XMVector3Length(world.r[0]));
+        const float             finalExtents = maxLocalScale * worldScale;
 
         DirectX::XMStoreFloat3(&bounds.worldAABB.Center, pos);
-        bounds.worldAABB.Extents = { finalExtents, finalExtents, finalExtents };
-        });
+        bounds.worldAABB.Extents = {finalExtents, finalExtents, finalExtents};
+    });
 }
 
 // ====================================================================

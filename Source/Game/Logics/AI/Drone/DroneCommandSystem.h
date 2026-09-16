@@ -11,11 +11,11 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 class DroneCommandSystem : public CCL::ECS::IfSystem<DroneCommandSystem,
-      CCL::ECS::Write<DroneComponent>>
+                                                     CCL::ECS::Write<DroneComponent>>
 {
     using Base = CCL::ECS::IfSystem<DroneCommandSystem, CCL::ECS::Write<DroneComponent>>;
 
-  public:
+public:
     DroneCommandSystem()
         : IfSystem("DroneCommandSystem")
     {

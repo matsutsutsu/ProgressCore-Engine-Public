@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cstring>
 #include <string>
-#include <vector>         
-#include <unordered_map>  
+#include <vector>
+#include <unordered_map>
 #include <windows.h>
 
 #include "Engine/Core/Components/NameComponent.h"
@@ -13,53 +13,55 @@
 #include "Engine/Serialization/Serializer/PrefabSerializer.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 
-
-namespace {
+namespace
+{
     // カテゴリ見出し(英語の内部キー)を日本語の表示名に変換する。
     //   ※ 内部キー(ComponentMeta の category)は英語のまま。ここは「見た目だけ」を訳す。
     //     未知のカテゴリは nullptr を返し、呼び出し側で元の文字列を使う。
-    const char* CategoryDisplayName(const std::string& cat)
+    const char *CategoryDisplayName(const std::string &cat)
     {
-        if (cat == "Transform")  return "トランスフォーム";
-        if (cat == "Hierarchy")  return "階層";
-        if (cat == "Rendering")  return "描画";
-        if (cat == "Animation")  return "アニメーション";
-        if (cat == "Camera")     return "カメラ";
-        if (cat == "Light")      return "ライト";
-        if (cat == "Effect")     return "エフェクト";
-        if (cat == "Gameplay")   return "ゲームプレイ";
-        if (cat == "Combat")     return "戦闘";
-        if (cat == "Movement")   return "移動";
-        if (cat == "AI")         return "AI";
-        if (cat == "Physics")    return "物理";
-        if (cat == "Audio")      return "オーディオ";
-        if (cat == "UI")         return "UI";
-        if (cat == "Meta")       return "メタ情報";
-        if (cat == "Internal")   return "内部";
-        if (cat == "Debug")      return "デバッグ";
-        if (cat == "Misc")       return "その他";
+        if (cat == "Transform") return "トランスフォーム";
+        if (cat == "Hierarchy") return "階層";
+        if (cat == "Rendering") return "描画";
+        if (cat == "Animation") return "アニメーション";
+        if (cat == "Camera") return "カメラ";
+        if (cat == "Light") return "ライト";
+        if (cat == "Effect") return "エフェクト";
+        if (cat == "Gameplay") return "ゲームプレイ";
+        if (cat == "Combat") return "戦闘";
+        if (cat == "Movement") return "移動";
+        if (cat == "AI") return "AI";
+        if (cat == "Physics") return "物理";
+        if (cat == "Audio") return "オーディオ";
+        if (cat == "UI") return "UI";
+        if (cat == "Meta") return "メタ情報";
+        if (cat == "Internal") return "内部";
+        if (cat == "Debug") return "デバッグ";
+        if (cat == "Misc") return "その他";
         return nullptr; // 未知カテゴリは元の名前を使う
     }
-}
+} // namespace
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 
 void InspectorWindow::DrawContents(EditorContext &context)
 {
     // ポインタではなく実体を直接取得
-    CCL::ECS::EntityID     selected = context.selectedEntity;
-    CCL::ECS::World *world    = context.world;
+    CCL::ECS::EntityID selected = context.selectedEntity;
+    CCL::ECS::World   *world    = context.world;
 
     // 1. エンティティ未選択時のガード
     // InvalidEntityID または 0 なら描画しない
-    if (selected == CCL::ECS::InvalidEntityID || selected == 0) {
+    if (selected == CCL::ECS::InvalidEntityID || selected == 0)
+    {
         ImGui::TextColored(ImVec4(1, 1, 0, 1), "エンティティを選択してください");
         return;
     }
 
     // world は「アクティブなシーンが無い」ときに nullptr になる（Framework が毎フレーム設定）。
     //   以降は無条件に world-> を辿るので、ここで必ず止める。
-    if (!world) {
+    if (!world)
+    {
         ImGui::TextColored(ImVec4(1, 1, 0, 1), "シーンが読み込まれていません");
         return;
     }
@@ -71,27 +73,33 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     char filenameBuf[256] = "NewPrefab";
 
-    if (nameComp) {
-        if (ImGui::InputText("エンティティ名", nameComp->name, sizeof(nameComp->name))) {
+    if (nameComp)
+    {
+        if (ImGui::InputText("エンティティ名", nameComp->name, sizeof(nameComp->name)))
+        {
             context.entityNames[selected] = nameComp->name;
         }
-        if (strlen(nameComp->name) > 0) {
+        if (strlen(nameComp->name) > 0)
+        {
             strcpy_s(filenameBuf, sizeof(filenameBuf), nameComp->name);
         }
     }
-    else {
+    else
+    {
         ImGui::AlignTextToFramePadding();
         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "（名前コンポーネントなし）");
 
         ImGui::SameLine();
-        if (ImGui::Button("＋ 名前を追加")) {
+        if (ImGui::Button("＋ 名前を追加"))
+        {
             std::string defaultName = "Entity_" + std::to_string(selected);
             world->AddComponent<NameComponent>(selected, NameComponent(defaultName.c_str()));
             context.entityNames[selected] = defaultName;
         }
 
         auto it = context.entityNames.find(selected);
-        if (it != context.entityNames.end()) {
+        if (it != context.entityNames.end())
+        {
             strcpy_s(filenameBuf, sizeof(filenameBuf), it->second.c_str());
         }
     }
@@ -103,34 +111,41 @@ void InspectorWindow::DrawContents(EditorContext &context)
     // 複数選択中はその旨を表示し、複製/削除は選択全体に適用されることを明示する。
     //   ※ コンポーネント編集はアクティブ(主選択)の1体に対してのみ行う。
     const size_t selCount = context.selectedEntities.size();
-    if (selCount > 1) {
+    if (selCount > 1)
+    {
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f),
-            "%zu 個を選択中 (編集はアクティブの1体のみ / 複製・削除は全体)", selCount);
+                           "%zu 個を選択中 (編集はアクティブの1体のみ / 複製・削除は全体)", selCount);
     }
 
     // 複製ボタン (選択エンティティを階層ごと複製し、複製先を選択状態にする)
     ImGui::SameLine(ImGui::GetWindowWidth() - 200);
-    if (ImGui::Button("複製", ImVec2(75, 0))) {
+    if (ImGui::Button("複製", ImVec2(75, 0)))
+    {
         std::vector<CCL::ECS::EntityID> roots = context.GetTopLevelSelection();
         if (roots.empty()) roots.push_back(selected); // 保険
         std::vector<CCL::ECS::EntityID> newRoots;
-        for (CCL::ECS::EntityID src : roots) {
+        for (CCL::ECS::EntityID src : roots)
+        {
             auto created = SceneSerializer::DuplicateHierarchy(world, src);
             if (!created.empty()) newRoots.push_back(created[0]);
         }
-        if (!newRoots.empty()) {
+        if (!newRoots.empty())
+        {
             context.ClearSelection();
-            for (CCL::ECS::EntityID r : newRoots) context.AddSelection(r);
+            for (CCL::ECS::EntityID r : newRoots)
+                context.AddSelection(r);
         }
         return; // 選択が切り替わったのでこのフレームの描画は中止
     }
 
     // 削除ボタン (選択中すべてを削除)
     ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-    if (ImGui::Button("エンティティを削除", ImVec2(110, 0))) {
+    if (ImGui::Button("エンティティを削除", ImVec2(110, 0)))
+    {
         std::vector<CCL::ECS::EntityID> toDelete = context.selectedEntities;
         if (toDelete.empty()) toDelete.push_back(selected); // 保険
-        for (CCL::ECS::EntityID id : toDelete) {
+        for (CCL::ECS::EntityID id : toDelete)
+        {
             world->Destroy(id);
         }
         context.ClearSelection();
@@ -141,12 +156,15 @@ void InspectorWindow::DrawContents(EditorContext &context)
     // Prefab保存ボタン
     // =========================================================
     ImGui::Spacing();
-    if (ImGui::Button("プレハブJSONとして保存", ImVec2(-1, 0))) {
+    if (ImGui::Button("プレハブJSONとして保存", ImVec2(-1, 0)))
+    {
         char filename[256] = {0};
-        if (strlen(filenameBuf) > 0) {
+        if (strlen(filenameBuf) > 0)
+        {
             sprintf_s(filename, "%s.json", filenameBuf);
         }
-        else {
+        else
+        {
             strcpy_s(filename, "NewPrefab.json");
         }
 
@@ -154,7 +172,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         static const char *filter = "JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0";
 
         if (auto path = FileDialog::SavePreset("Prefab", "プレハブを保存",
-            {}, Graphics::Instance().GetWindowHandle()))
+                                               {}, Graphics::Instance().GetWindowHandle()))
         {
             PrefabSerializer::Save(path->string().c_str(), world, selected, std::string(filenameBuf));
         }
@@ -176,7 +194,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     {
         ImGui::SetNextItemWidth(-160.0f);
         ImGui::InputTextWithHint("##InspectorFilter", "コンポーネントを検索...",
-            m_inspectorFilterBuffer, sizeof(m_inspectorFilterBuffer));
+                                 m_inspectorFilterBuffer, sizeof(m_inspectorFilterBuffer));
 
         ImGui::SameLine();
         if (ImGui::SmallButton("全展開"))
@@ -191,7 +209,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     // フィルタ文字列を小文字化（大文字小文字を区別しない）
     std::string inspectorFilter = m_inspectorFilterBuffer;
     std::transform(inspectorFilter.begin(), inspectorFilter.end(),
-        inspectorFilter.begin(), ::tolower);
+                   inspectorFilter.begin(), ::tolower);
     const bool filtering = !inspectorFilter.empty();
 
     // -------------------------------------------------------------
@@ -203,13 +221,16 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
         // 未登録（Unknown）の場合、C++が自動取得した型名を使う
         if (compName.find("Unknown") != std::string::npos &&
-            typeData.name != nullptr) {
+            typeData.name != nullptr)
+        {
             compName = typeData.name; // 例: "struct JoltRigidbodyComponent"
 
             // MSVCの typeid().name() は先頭に "struct " や "class " を付けるので削る
             const std::string prefixes[] = {"struct ", "class "};
-            for (const auto &prefix : prefixes) {
-                if (compName.find(prefix) == 0) {
+            for (const auto &prefix : prefixes)
+            {
+                if (compName.find(prefix) == 0)
+                {
                     compName.erase(0, prefix.length());
                     break;
                 }
@@ -241,7 +262,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         {
             std::string compNameLower = compName;
             std::transform(compNameLower.begin(), compNameLower.end(),
-                compNameLower.begin(), ::tolower);
+                           compNameLower.begin(), ::tolower);
             if (compNameLower.find(inspectorFilter) == std::string::npos)
             {
                 return;
@@ -263,8 +284,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
         // No GUI コンポーネントは名前をくすませ、編集可能なものと区別する
         bool isNoGui = (compName.find("（GUIなし）") != std::string::npos);
         ImGui::PushStyleColor(ImGuiCol_Text,
-            isNoGui ? ImVec4(0.55f, 0.55f, 0.58f, 1.0f)   // ディム
-                    : ImVec4(0.92f, 0.92f, 0.94f, 1.0f)); // 通常（ほぼ白）
+                              isNoGui ? ImVec4(0.55f, 0.55f, 0.58f, 1.0f)   // ディム
+                                      : ImVec4(0.92f, 0.92f, 0.94f, 1.0f)); // 通常（ほぼ白）
 
         // ② 一括開閉の指令があればこのフレームだけ強制（storage に永続化される）
         if (m_forceOpenState != -1)
@@ -293,7 +314,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.1f, 0.1f, 0.8f));
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.2f, 0.2f, 1.0f));
 
-        if (ImGui::Button("x", ImVec2(buttonSize, 18))) {
+        if (ImGui::Button("x", ImVec2(buttonSize, 18)))
+        {
             world->RequestRemoveComponent(selected, typeID);
         }
         ImGui::PopStyleColor(4);
@@ -323,14 +345,16 @@ void InspectorWindow::DrawContents(EditorContext &context)
     //     → priority 0 の Transform を持つ "Transform" カテゴリが必ず先頭に来る。
     // -------------------------------------------------------------
     using TypeDataT = std::decay_t<decltype(*archetype.begin())>;
-    struct CatEntry {
-        std::vector<const TypeDataT*> comps;
-        int minPriority = 100000;
+    struct CatEntry
+    {
+        std::vector<const TypeDataT *> comps;
+        int                            minPriority = 100000;
     };
     std::unordered_map<std::string, CatEntry> catMap;
 
-    for (const auto &typeData : archetype) {
-        if (registry.IsHidden(typeData.id)) continue;   // ④/③ 非表示はスキップ
+    for (const auto &typeData : archetype)
+    {
+        if (registry.IsHidden(typeData.id)) continue; // ④/③ 非表示はスキップ
 
         std::string cat = registry.GetCategory(typeData.id);
         if (cat.empty()) cat = "Misc";
@@ -342,43 +366,51 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
 
     // カテゴリ内を priority 昇順（同点は表示名）でソート
-    for (auto &[cat, ce] : catMap) {
+    for (auto &[cat, ce] : catMap)
+    {
         std::sort(ce.comps.begin(), ce.comps.end(),
-            [&](const TypeDataT* a, const TypeDataT* b) {
-                int pa = registry.GetSortPriority(a->id);
-                int pb = registry.GetSortPriority(b->id);
-                if (pa != pb) return pa < pb;
-                return registry.GetName(a->id) < registry.GetName(b->id);
-            });
+                  [&](const TypeDataT *a, const TypeDataT *b) {
+                      int pa = registry.GetSortPriority(a->id);
+                      int pb = registry.GetSortPriority(b->id);
+                      if (pa != pb) return pa < pb;
+                      return registry.GetName(a->id) < registry.GetName(b->id);
+                  });
     }
 
     // カテゴリ見出しを「最小priority → 名前」で並べた順序リストにする
-    std::vector<const std::string*> orderedCats;
+    std::vector<const std::string *> orderedCats;
     orderedCats.reserve(catMap.size());
-    for (auto &[cat, ce] : catMap) orderedCats.push_back(&cat);
+    for (auto &[cat, ce] : catMap)
+        orderedCats.push_back(&cat);
     std::sort(orderedCats.begin(), orderedCats.end(),
-        [&](const std::string* a, const std::string* b) {
-            int pa = catMap[*a].minPriority;
-            int pb = catMap[*b].minPriority;
-            if (pa != pb) return pa < pb;
-            return *a < *b;
-        });
+              [&](const std::string *a, const std::string *b) {
+                  int pa = catMap[*a].minPriority;
+                  int pb = catMap[*b].minPriority;
+                  if (pa != pb) return pa < pb;
+                  return *a < *b;
+              });
 
     // -------------------------------------------------------------
     // カテゴリ見出し（折りたたみ可能）→ 中に各コンポーネント
     // -------------------------------------------------------------
     int drawnCategoryCount = 0; // 検索時に「該当なし」を出すための実描画カウント
-    for (const std::string* catPtr : orderedCats) {
-        const std::string& category = *catPtr;
-        auto& comps = catMap[category].comps;
+    for (const std::string *catPtr : orderedCats)
+    {
+        const std::string &category = *catPtr;
+        auto              &comps    = catMap[category].comps;
 
         // 検索中：一致コンポーネントが1つも無いカテゴリは見出しごと隠す
         //   （空のカテゴリ帯が並んで「絞り込めていない」ように見えるのを防ぐ）
         if (filtering)
         {
             bool anyMatch = false;
-            for (const TypeDataT* td : comps) {
-                if (componentMatches(*td)) { anyMatch = true; break; }
+            for (const TypeDataT *td : comps)
+            {
+                if (componentMatches(*td))
+                {
+                    anyMatch = true;
+                    break;
+                }
             }
             if (!anyMatch) continue;
         }
@@ -396,13 +428,15 @@ void InspectorWindow::DrawContents(EditorContext &context)
         //   ・コンポーネントヘッダーより明るい/彩度の高い色にして「親」だと分からせる
         //   ・日本語表示名（未知カテゴリは英語大文字）＋左のアクセントバーで存在感を出す
         std::string categoryLabel;
-        if (const char* jp = CategoryDisplayName(category)) {
+        if (const char *jp = CategoryDisplayName(category))
+        {
             categoryLabel = jp; // 既知カテゴリは日本語
         }
-        else {
+        else
+        {
             categoryLabel = category; // 未知カテゴリは大文字化した英語
             std::transform(categoryLabel.begin(), categoryLabel.end(),
-                categoryLabel.begin(), ::toupper);
+                           categoryLabel.begin(), ::toupper);
         }
 
         // 帯の上下に薄い余白を作り、前後のセクションと視覚的に切り離す
@@ -418,7 +452,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 3.0f)); // y を 7.0 → 3.0 に縮小
 
         bool catOpen = ImGui::CollapsingHeader(categoryLabel.c_str(),
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap);
+                                               ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap);
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(4);
@@ -452,7 +486,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     {
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-            "「%s」に一致するコンポーネントはありません", m_inspectorFilterBuffer);
+                           "「%s」に一致するコンポーネントはありません", m_inspectorFilterBuffer);
     }
 
     // ② このフレームで消費した一括開閉指令をクリア
@@ -462,7 +496,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
     ImGui::Spacing();
 
     // --- 新規コンポーネント追加メニュー ---
-    if (ImGui::Button("＋ コンポーネントを追加", ImVec2(-1, 30))) {
+    if (ImGui::Button("＋ コンポーネントを追加", ImVec2(-1, 30)))
+    {
         ImGui::OpenPopup("AddComponentMenu");
         // メニューを開いた瞬間に検索ワードをリセットする
         m_compSearchBuffer[0] = '\0';
@@ -470,15 +505,17 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     // ポップアップの初期サイズを固定し、見栄えを整える
     ImGui::SetNextWindowSize(ImVec2(280, 400), ImGuiCond_Appearing);
-    
-    if (ImGui::BeginPopup("AddComponentMenu")) {
+
+    if (ImGui::BeginPopup("AddComponentMenu"))
+    {
         // 1. 自動フォーカス付きの検索バー
-        if (ImGui::IsWindowAppearing()) {
+        if (ImGui::IsWindowAppearing())
+        {
             ImGui::SetKeyboardFocusHere(); // ポップアップが開いた瞬間、自動で文字入力状態にする
         }
         ImGui::SetNextItemWidth(-1.0f);
         ImGui::InputTextWithHint("##CompSearch", "コンポーネントを検索...", m_compSearchBuffer, sizeof(m_compSearchBuffer));
-        
+
         ImGui::Separator();
         ImGui::Spacing();
 
@@ -491,14 +528,17 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
         auto allAvailableTypes = registry.GetAllTypeIDs();
 
-        for (auto typeID : allAvailableTypes) {
+        for (auto typeID : allAvailableTypes)
+        {
             std::string compName = registry.GetName(typeID);
 
             // 検索フィルタリング処理
-            if (!searchStr.empty()) {
+            if (!searchStr.empty())
+            {
                 std::string compNameLower = compName;
                 std::transform(compNameLower.begin(), compNameLower.end(), compNameLower.begin(), ::tolower);
-                if (compNameLower.find(searchStr) == std::string::npos) {
+                if (compNameLower.find(searchStr) == std::string::npos)
+                {
                     continue; // 検索に引っかからなかったコンポーネントは非表示
                 }
             }
@@ -508,18 +548,19 @@ void InspectorWindow::DrawContents(EditorContext &context)
             if (alreadyHas) ImGui::BeginDisabled();
 
             // コンポーネントの選択ボタン
-            if (ImGui::Selectable(compName.c_str())) {
+            if (ImGui::Selectable(compName.c_str()))
+            {
                 auto &entry = registry.GetEntry(typeID);
                 world->RequestAddComponent(selected,
-                    typeID,
-                    entry.size,
-                    entry.ctor,
-                    entry.dtor,
-                    entry.constructor,
-                    entry.assigner,
-                    entry.mover,
-                    entry.name.c_str());
-                
+                                           typeID,
+                                           entry.size,
+                                           entry.ctor,
+                                           entry.dtor,
+                                           entry.constructor,
+                                           entry.assigner,
+                                           entry.mover,
+                                           entry.name.c_str());
+
                 // 追加したら自動でポップアップを閉じる（UX向上）
                 ImGui::CloseCurrentPopup();
             }
@@ -529,5 +570,4 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::EndChild(); // スクロール領域終了
         ImGui::EndPopup();
     }
-
 }

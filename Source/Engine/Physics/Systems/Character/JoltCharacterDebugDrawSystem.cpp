@@ -14,9 +14,9 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
-    ForEach([&](const TransformComponent              &trans,
-                const CharacterMovementComponent &movement,
-                const JoltCharacterHandleComponent    &handle) {
+    ForEach([&](const TransformComponent           &trans,
+                const CharacterMovementComponent   &movement,
+                const JoltCharacterHandleComponent &handle) {
         if (!handle.character) return;
 
         XMFLOAT3 pos = trans.GetWorldPosition();

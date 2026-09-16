@@ -5,7 +5,7 @@
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Core/App/GameFlowState.h"
-#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（揺れ要求の唯一の入口）
+#include "Engine/Camera/CameraEvents.h"     // CameraShakeRequestEvent（揺れ要求の唯一の入口）
 #include "Engine/Core/Math/Interpolation.h" // Damp() / SmootherStep()
 // ※ target の役割ベース自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が担う。
 #include <SimpleMath.h>
@@ -46,14 +46,16 @@ void CameraFollowSystem::Update(float dt)
 
         // Y軸固定オプション：高さだけターゲットに追従させず、指定高さに貼り付ける。
         // 階段や段差でカメラが上下に跳ねるのを止めたい時に使う。
-        if (body.lockY) {
+        if (body.lockY)
+        {
             desiredPos = XMVectorSetY(desiredPos, body.lockedY);
         }
 
         // 初期化フレーム対策（まだ一度も位置を書いていないならワープ）
         // 注視点側(CameraLookAtSystem)とはフラグを分けている。1bit を共有していた頃は、
         // 先に走った側がフラグを立て、もう片方が原点から補間を始めていた。
-        if (!vcam.posInitialized) {
+        if (!vcam.posInitialized)
+        {
             XMStoreFloat3(&vcam.resultPos, desiredPos);
             vcam.posInitialized = true;
             vcam.RefreshValid();
@@ -62,8 +64,8 @@ void CameraFollowSystem::Update(float dt)
 
         // 現在位置からの補間 (Damping)
         XMVECTOR currentPos = XMLoadFloat3(&vcam.resultPos);
-        float    t      = CCL::Math::Damp(body.damping, dt);
-        XMVECTOR newPos = XMVectorLerp(currentPos, desiredPos, t);
+        float    t          = CCL::Math::Damp(body.damping, dt);
+        XMVECTOR newPos     = XMVectorLerp(currentPos, desiredPos, t);
 
         XMStoreFloat3(&vcam.resultPos, newPos);
         vcam.RefreshValid();
@@ -86,7 +88,8 @@ void CameraLookAtSystem::Update(float dt)
         XMVECTOR desiredLook = targetPos + offset;
 
         // 初期化フレーム対策
-        if (!vcam.lookInitialized) {
+        if (!vcam.lookInitialized)
+        {
             XMStoreFloat3(&vcam.resultLookAt, desiredLook);
             vcam.lookInitialized = true;
             vcam.RefreshValid();
@@ -278,14 +281,16 @@ void CameraShakeSystem::OnGui()
 bool CameraFreeControlSystem::IsInputBlocked() const
 {
     // ポーズ中 / カーソル自由(UI操作)モード中は、フリーカメラも動かさない。
-    if (m_world->HasResource<GameFlowState>()) {
+    if (m_world->HasResource<GameFlowState>())
+    {
         const auto &flow = m_world->GetResource<GameFlowState>();
         if (flow.paused || flow.uiInteract) return true;
     }
 
     // エディタで他ウィンドウ(ImGuiのテキスト入力など)を操作中なら食わない。
     // これが無いと、インスペクタに数値を打ち込んでいる最中に WASD でカメラが飛ぶ。
-    if (m_world->HasResource<std::shared_ptr<IInputAPI>>()) {
+    if (m_world->HasResource<std::shared_ptr<IInputAPI>>())
+    {
         auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
         if (inputAPI && !inputAPI->IsGameInputActive()) return true;
     }
@@ -314,7 +319,8 @@ void CameraFreeControlSystem::Update(float dt)
 
     ForEach([&](VirtualCamera &vcam, CameraBodyFree &body, TransformComponent &trans) {
         // --- 1. 回転計算 (FreeCameraSystemと同じロジック) ---
-        if (rmbHeld) {
+        if (rmbHeld)
+        {
             // 感度適用 (body.lookSpeedは度数法想定: 0.2f程度)
             body.currentYaw += deltaX * body.lookSpeed;
             body.currentPitch -= deltaY * body.lookSpeed;
@@ -326,7 +332,8 @@ void CameraFreeControlSystem::Update(float dt)
             body.currentYaw = std::fmod(body.currentYaw, 360.0f);
 
             // 移動速度調整をここ（右クリック中）に移動する
-            if (wheelDelta != 0) {
+            if (wheelDelta != 0)
+            {
                 body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
                 body.moveSpeed = std::clamp(body.moveSpeed, 0.1f, 1000.0f);
             }
@@ -350,7 +357,8 @@ void CameraFreeControlSystem::Update(float dt)
         float    s   = body.moveSpeed * dt;
 
         // FreeCameraComponentと同じ操作系
-        if (!inputBlocked) {
+        if (!inputBlocked)
+        {
             if (kb.IsDown('W')) Pos += Front * s;
             if (kb.IsDown('S')) Pos -= Front * s;
             if (kb.IsDown('D')) Pos += Right * s;
@@ -386,7 +394,6 @@ void CameraFreeControlSystem::Update(float dt)
         vcam.MarkResolved();
     });
 }
-
 
 // =========================================================
 // 自動登録マクロ群（必ず .cpp の末尾に1回だけ書く）

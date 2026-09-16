@@ -23,35 +23,37 @@ public:
     //   チャンク幅を決めていた。この既定引数を変えるだけで両者が食い違い、Write が
     //   切り詰めた先を DrawInstanced が読む（＝未初期化のインスタンスが描かれる）。
     //   エラーは一切出ないため、容量の二重管理そのものを無くしてある。
-    void Create(ID3D11Device* device, size_t maxInstances = 4096)
+    void Create(ID3D11Device *device, size_t maxInstances = 4096)
     {
         m_maxInstances = maxInstances;
 
         // StructuredBuffer の作成
-        D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth = static_cast<UINT>(sizeof(InstanceData) * maxInstances);
-        desc.Usage = D3D11_USAGE_DYNAMIC; // CPUから頻繁に書き換える
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+        D3D11_BUFFER_DESC desc   = {};
+        desc.ByteWidth           = static_cast<UINT>(sizeof(InstanceData) * maxInstances);
+        desc.Usage               = D3D11_USAGE_DYNAMIC; // CPUから頻繁に書き換える
+        desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
+        desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
         desc.StructureByteStride = sizeof(InstanceData);
 
-        if (FAILED(device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf()))) {
+        if (FAILED(device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf())))
+        {
             // 生成に失敗すると Map が毎回 null を返し、描画が無言で消える。
             CCL_LOG_ERROR(LogCategory::Render,
-                "[InstanceBuffer] インスタンスバッファの生成に失敗しました (max=%zu)", maxInstances);
+                          "[InstanceBuffer] インスタンスバッファの生成に失敗しました (max=%zu)", maxInstances);
             m_maxInstances = 0;
             return;
         }
 
         // シェーダーリソースビュー (SRV) の作成
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-        srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-        srvDesc.Buffer.FirstElement = 0;
-        srvDesc.Buffer.NumElements = static_cast<UINT>(maxInstances);
+        srvDesc.Format                          = DXGI_FORMAT_UNKNOWN;
+        srvDesc.ViewDimension                   = D3D11_SRV_DIMENSION_BUFFER;
+        srvDesc.Buffer.FirstElement             = 0;
+        srvDesc.Buffer.NumElements              = static_cast<UINT>(maxInstances);
 
-        if (FAILED(device->CreateShaderResourceView(m_buffer.Get(), &srvDesc, m_srv.GetAddressOf()))) {
+        if (FAILED(device->CreateShaderResourceView(m_buffer.Get(), &srvDesc, m_srv.GetAddressOf())))
+        {
             CCL_LOG_ERROR(LogCategory::Render, "[InstanceBuffer] インスタンス SRV の生成に失敗しました。");
             m_maxInstances = 0;
         }
@@ -59,31 +61,31 @@ public:
 
     // マップ（書き込み開始）
     // 直接ポインタを取得して書き込むことで高速化します
-    InstanceData* Map(ID3D11DeviceContext* dc)
+    InstanceData *Map(ID3D11DeviceContext *dc)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(m_buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
-            return static_cast<InstanceData*>(mapped.pData);
+            return static_cast<InstanceData *>(mapped.pData);
         }
         return nullptr;
     }
 
     // アンマップ（書き込み終了）
-    void Unmap(ID3D11DeviceContext* dc)
+    void Unmap(ID3D11DeviceContext *dc)
     {
         dc->Unmap(m_buffer.Get(), 0);
     }
 
     // データの書き込み
-    void Write(ID3D11DeviceContext* dc, const std::vector<InstanceData>& data)
+    void Write(ID3D11DeviceContext *dc, const std::vector<InstanceData> &data)
     {
         if (data.empty()) return;
 
         // 容量を超えたぶんは切り捨てる（描画されない）
         size_t count = (std::min)(data.size(), m_maxInstances);
 
-        InstanceData* ptr = Map(dc);
+        InstanceData *ptr = Map(dc);
         if (ptr)
         {
             memcpy(ptr, data.data(), sizeof(InstanceData) * count);
@@ -92,11 +94,11 @@ public:
     }
 
     // データの書き込み（ポインタと要素数を直接受け取る高速版）
-    void Write(ID3D11DeviceContext* dc, const InstanceData* data, size_t count)
+    void Write(ID3D11DeviceContext *dc, const InstanceData *data, size_t count)
     {
         if (count == 0 || !data) return;
-        size_t writeCount = (std::min)(count, m_maxInstances);
-        InstanceData* ptr = Map(dc);
+        size_t        writeCount = (std::min)(count, m_maxInstances);
+        InstanceData *ptr        = Map(dc);
         if (ptr)
         {
             memcpy(ptr, data, sizeof(InstanceData) * writeCount);
@@ -105,22 +107,22 @@ public:
     }
 
     // 頂点シェーダーにバインド
-    void Bind(ID3D11DeviceContext* dc, UINT slot)
+    void Bind(ID3D11DeviceContext *dc, UINT slot)
     {
         dc->VSSetShaderResources(slot, 1, m_srv.GetAddressOf());
     }
 
     // 解除
-    void Unbind(ID3D11DeviceContext* dc, UINT slot)
+    void Unbind(ID3D11DeviceContext *dc, UINT slot)
     {
-        ID3D11ShaderResourceView* nullSRV = nullptr;
+        ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->VSSetShaderResources(slot, 1, &nullSRV);
     }
 
     size_t GetMaxInstances() const { return m_maxInstances; }
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_buffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer>             m_buffer;
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_srv;
-    size_t m_maxInstances = 0;
+    size_t                                           m_maxInstances = 0;
 };

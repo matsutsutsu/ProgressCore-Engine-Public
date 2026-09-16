@@ -21,14 +21,14 @@ enum class UIDrawKind
 struct UIDrawItem
 {
     UIDrawKind        kind      = UIDrawKind::Image;
-    DirectX::XMFLOAT2 pos       = {0.0f, 0.0f};       // 画面左上(px)
-    DirectX::XMFLOAT2 size      = {0.0f, 0.0f};       // 矩形サイズ(px)。Textでは未使用。
+    DirectX::XMFLOAT2 pos       = {0.0f, 0.0f}; // 画面左上(px)
+    DirectX::XMFLOAT2 size      = {0.0f, 0.0f}; // 矩形サイズ(px)。Textでは未使用。
     DirectX::XMFLOAT4 color     = {1.0f, 1.0f, 1.0f, 1.0f};
-    float             rotation  = 0.0f;               // 度（Imageのみ）
-    int               sortOrder = 0;                  // 大きいほど手前
+    float             rotation  = 0.0f; // 度（Imageのみ）
+    int               sortOrder = 0;    // 大きいほど手前
 
     // --- Image 用 ---
-    std::string texturePath;                          // 空なら単色塗り
+    std::string texturePath; // 空なら単色塗り
 
     // 下端の色。useGradient=true のときだけ使う（上端は color）。
     // なぜ2色だけか: UIの矩形は縦方向のグラデがあれば大半の質感が出る。
@@ -48,12 +48,12 @@ struct UIDrawItem
     DirectX::XMFLOAT4 uvRect = {0.0f, 0.0f, 1.0f, 1.0f};
 
     // Text 用
-    std::string text;                                 // 描画文字列
-    float       pixelSize = 24.0f;                    // 文字の高さ(px)
+    std::string text;              // 描画文字列
+    float       pixelSize = 24.0f; // 文字の高さ(px)
 };
 
 struct UIDrawList
 {
     std::vector<UIDrawItem> items;
-    void Clear() { items.clear(); }
+    void                    Clear() { items.clear(); }
 };

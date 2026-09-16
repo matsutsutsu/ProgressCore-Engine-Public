@@ -11,17 +11,18 @@
 
 using namespace CCL::ECS;
 
-void AudioCleanupSystem::Update(float /*dt*/) {
+void AudioCleanupSystem::Update(float /*dt*/)
+{
     if (!m_world) return;
     ExecuteCleanup(*m_world);
 }
 
 // 消えるEntityの AudioEmitter を狙い撃ち、鳴っている音を止める。
 // JoltCleanupSystem::ExecuteCleanup と同じ方式（破棄確定の前に確実に後始末する）。
-void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     if (!world.HasResource<std::shared_ptr<IAudioAPI>>()) return;
-    auto& api = world.GetResource<std::shared_ptr<IAudioAPI>>();
+    auto &api = world.GetResource<std::shared_ptr<IAudioAPI>>();
     if (!api) return;
 
     // DestroyTag で絞り込んではいけない。DestroyTag は「削除の起点」にしか付かず、
@@ -32,12 +33,14 @@ void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
     doomed.reserve(64);
     HierarchyCleanupSystem::CollectDoomedEntities(world, doomed);
 
-    for (EntityID id : doomed) {
+    for (EntityID id : doomed)
+    {
         // 破棄済みの席なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
-        auto* e = world.GetComponent<AudioEmitterComponent>(id);
+        auto *e = world.GetComponent<AudioEmitterComponent>(id);
         if (!e) continue;
 
-        if (e->playingId != 0) {
+        if (e->playingId != 0)
+        {
             // フェードアウトは待たず即停止（実体がもう消えるため）。
             api->StopEvent(e->playingId, /*allowFadeOut*/ false);
         }

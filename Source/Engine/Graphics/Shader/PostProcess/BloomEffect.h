@@ -44,21 +44,21 @@ public:
     BloomEffect() = default;
     ~BloomEffect() override;
 
-    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
-    void Resize(ID3D11Device* device, UINT width, UINT height) override;
+    void Initialize(ID3D11Device *device, UINT width, UINT height) override;
+    void Resize(ID3D11Device *device, UINT width, UINT height) override;
 
     /**
      * @param inputSRV シーン HDR テクスチャ
      * @return シーン + Bloom グロー の合成済み HDR SRV（次のエフェクトの入力）
      */
     void Process(
-        ID3D11DeviceContext* dc,
-        ID3D11ShaderResourceView* inputSRV,
-        ID3D11RenderTargetView* outputRTV) override;
+        ID3D11DeviceContext      *dc,
+        ID3D11ShaderResourceView *inputSRV,
+        ID3D11RenderTargetView   *outputRTV) override;
 
-    const char* GetName() const override { return "Bloom"; }
+    const char *GetName() const override { return "Bloom"; }
 
-   void UpdateParams(const GpuData::CbBloomData& data) { cbData = data; } // ECSからのデータ受け取り用
+    void UpdateParams(const GpuData::CbBloomData &data) { cbData = data; } // ECSからのデータ受け取り用
 
 private:
     static constexpr int kMaxIterations = 6;
@@ -67,14 +67,15 @@ private:
     GpuData::CbBloomData cbData{};
 
     // ---- GPU リソース（旧 static グローバルをメンバに移動）----
-    struct BloomResources {
-        Microsoft::WRL::ComPtr<ID3D11VertexShader>  vs;
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>   psExtract;   // 輝度抽出
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>   psDown;      // ダウンサンプル
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>   psUp;        // アップサンプル
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>   psComposite; // scene + glow 合成 (新規)
-        Microsoft::WRL::ComPtr<ID3D11Buffer>         cbBloom;
-        Microsoft::WRL::ComPtr<ID3D11SamplerState>  sampler;
+    struct BloomResources
+    {
+        Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psExtract;   // 輝度抽出
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psDown;      // ダウンサンプル
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psUp;        // アップサンプル
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psComposite; // scene + glow 合成 (新規)
+        Microsoft::WRL::ComPtr<ID3D11Buffer>       cbBloom;
+        Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
     std::unique_ptr<BloomResources> m_res;
 
@@ -84,8 +85,8 @@ private:
     // RT チェーン
     std::vector<RenderTargetHandle> m_downChain;
     std::vector<RenderTargetHandle> m_upChain;
-  
+
     void CreateChains(UINT width, UINT height);
     void ReleaseChains();
-    void UpdateCbBloom(ID3D11DeviceContext* dc, const GpuData::CbBloomData& data);
+    void UpdateCbBloom(ID3D11DeviceContext *dc, const GpuData::CbBloomData &data);
 };

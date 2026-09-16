@@ -2,10 +2,10 @@
 #include <tracy/Tracy.hpp>
 
 static const int KeyMap[] =
-{
-    VK_LBUTTON,        // 左ボタン
-    VK_MBUTTON,        // 中ボタン
-    VK_RBUTTON,        // 右ボタン
+    {
+        VK_LBUTTON, // 左ボタン
+        VK_MBUTTON, // 中ボタン
+        VK_RBUTTON, // 右ボタン
 };
 // コンストラクタ
 Mouse::Mouse(HWND hWnd)
@@ -13,7 +13,7 @@ Mouse::Mouse(HWND hWnd)
 {
     RECT rc;
     GetClientRect(hWnd, &rc);
-    screenWidth = rc.right - rc.left;
+    screenWidth  = rc.right - rc.left;
     screenHeight = rc.bottom - rc.top;
 }
 // 更新
@@ -34,10 +34,10 @@ void Mouse::Update()
     wheel[1] = wheel[0];
     wheel[0] = 0;
     // ボタン情報更新
-    buttonState[1] = buttonState[0];    // スイッチ履歴
+    buttonState[1] = buttonState[0]; // スイッチ履歴
     buttonState[0] = newButtonState;
-    buttonDown = ~buttonState[1] & newButtonState;    // 押した瞬間
-    buttonUp = ~newButtonState & buttonState[1];    // 離した瞬間
+    buttonDown     = ~buttonState[1] & newButtonState; // 押した瞬間
+    buttonUp       = ~newButtonState & buttonState[1]; // 離した瞬間
     // カーソル位置の取得
     POINT cursor;
     ::GetCursorPos(&cursor);
@@ -45,8 +45,8 @@ void Mouse::Update()
     // 画面のサイズを取得する。
     RECT rc;
     GetClientRect(hWnd, &rc);
-    UINT screenW = rc.right - rc.left;
-    UINT screenH = rc.bottom - rc.top;
+    UINT screenW   = rc.right - rc.left;
+    UINT screenH   = rc.bottom - rc.top;
     UINT viewportW = screenWidth;
     UINT viewportH = screenHeight;
     // 画面補正
@@ -87,7 +87,7 @@ void Mouse::Update()
         }
 
         // 物理カーソルをクライアント中央へ戻す
-        POINT c = { cxClient, cyClient };
+        POINT c = {cxClient, cyClient};
         ::ClientToScreen(hWnd, &c);
         ::SetCursorPos(c.x, c.y);
     }

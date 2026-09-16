@@ -7,11 +7,11 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 
 class PlayerLockOnSystem : public CCL::ECS::IfSystem<PlayerLockOnSystem,
-                               CCL::ECS::Write<PlayerComponent>,
-                               CCL::ECS::Read<PlayerInputComponent>,
-                               CCL::ECS::Read<TransformComponent>>
+                                                     CCL::ECS::Write<PlayerComponent>,
+                                                     CCL::ECS::Read<PlayerInputComponent>,
+                                                     CCL::ECS::Read<TransformComponent>>
 {
-  public:
+public:
     PlayerLockOnSystem()
         : IfSystem("PlayerLockOnSystem")
     {

@@ -3,7 +3,7 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 
-ErrorShader::ErrorShader(ID3D11Device* device)
+ErrorShader::ErrorShader(ID3D11Device *device)
 {
     // 標準モデルレイアウトでロードする理由:
     // Opaque/Transparent が用意する頂点・インスタンスバッファをそのまま流用でき、
@@ -22,12 +22,12 @@ ErrorShader::ErrorShader(ID3D11Device* device)
     InitializeReflection(device, "Assets/Shader/ErrorPS.cso");
 }
 
-void ErrorShader::Begin(ID3D11DeviceContext* dc, const RenderServices&, const RenderFrameContext&)
+void ErrorShader::Begin(ID3D11DeviceContext *dc, const RenderServices &, const RenderFrameContext &)
 {
     ApplyShaderPipeline(dc, m_vs.Get(), m_ps.Get(), m_inputLayout.Get());
 }
 
-void ErrorShader::End(ID3D11DeviceContext* dc, const RenderServices&)
+void ErrorShader::End(ID3D11DeviceContext *dc, const RenderServices &)
 {
     UnbindResources(dc);
 }

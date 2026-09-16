@@ -3,7 +3,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 画角要求(wideFovRequest)をカメラへ push する
-#include "Engine/Animation/Components/RootMotionComponent.h" // ダッシュ中の外部移動制御を伝える
+#include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中の外部移動制御を伝える
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵：被弾処理が見る i-frame タイマーへ反映する
 #include "Game/Logics/GameEvent/GameEvents.h"   // ダッシュ開始を announce（その場VFX用）
@@ -19,14 +19,14 @@ void PlayerDashSystem::Update(float rawDt)
     const BattleContext *battle  = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
     const TimeContext   *timeCtx = m_world->HasResource<TimeContext>() ? &m_world->GetResource<TimeContext>() : nullptr;
 
-    ForEachWithID([&](EntityID                        id,
-                CharacterMovementComponent &movement,
-                DashComponent                   &dash,
-                PlayerComponent                 &player,
-                const PlayerInputComponent      &pin,
-                const CleaveComponent           &cleave,
-                const TransformComponent        &trans,
-                TimeStateComponent              &time) {
+    ForEachWithID([&](EntityID                    id,
+                      CharacterMovementComponent &movement,
+                      DashComponent              &dash,
+                      PlayerComponent            &player,
+                      const PlayerInputComponent &pin,
+                      const CleaveComponent      &cleave,
+                      const TransformComponent   &trans,
+                      TimeStateComponent         &time) {
         // ルートモーション対応キャラなら、後段でダッシュ状態を「外部移動制御中」として伝える。
         RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
 
@@ -110,16 +110,16 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
 
     // ボス方向へ高速移動。接近中は無敵でスロー中の群れをすり抜ける。
     toBoss.Normalize();
-    dash.dashDirection    = toBoss;
-    dash.isInvincible     = true;
+    dash.dashDirection       = toBoss;
+    dash.isInvincible        = true;
     movement.desiredVelocity = toBoss;
     movement.overrideSpeed   = dash.approachSpeed;
 
     // 世界スロー(globalScale × 勢力倍率)を打ち消し、プレイヤーだけ実効時間で動かす。
     if (timeCtx)
     {
-        float worldScale = timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)];
-        float safe       = (worldScale > 0.0001f) ? worldScale : 0.0001f;
+        float worldScale    = timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)];
+        float safe          = (worldScale > 0.0001f) ? worldScale : 0.0001f;
         time.cinematicScale = dash.approachPlayerScale / safe;
     }
     return true;
@@ -161,7 +161,7 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, 
         dash.dashDirection.Normalize();
 
         // その場VFX用に「ダッシュ開始」を announce する（VFX/プレハブは購読側が知る）。
-        m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position,id});
+        m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position, id});
     }
 
     if (!dash.isDashing) return false; // ダッシュしていない → 呼び出し側で歩き/走り
@@ -228,7 +228,7 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
     if (player.isRunning)
     {
         movement.overrideSpeed = player.runSpeed; // 走行速度で維持
-        player.locomotion   = PlayerComponent::GroundLocomotion::Run;
+        player.locomotion      = PlayerComponent::GroundLocomotion::Run;
     }
     else
     {

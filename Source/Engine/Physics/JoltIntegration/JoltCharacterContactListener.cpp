@@ -1,6 +1,6 @@
 #include "JoltCharacterContactListener.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // レイヤー定義（責務分離済み）
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"  // レイヤー定義（責務分離済み）
 #include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
 
 using namespace CCL::ECS;
@@ -15,17 +15,17 @@ bool JoltCharacterContactListener::IsAttackLayer(const JPH::BodyID &bodyID) cons
 }
 
 JoltCharacterContactListener::JoltCharacterContactListener(JoltContactListener *sink,
-    EntityID                                                                    playerID,
-    JPH::BodyInterface                                                         *bodyInterface)
+                                                           EntityID             playerID,
+                                                           JPH::BodyInterface  *bodyInterface)
     : m_sink(sink), m_playerID(playerID), m_bodyInterface(bodyInterface)
 {
 }
 
 void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual *inCharacter,
-    const JPH::BodyID                                                           &inBodyID2,
-    JPH::RVec3Arg                                                                inContactPosition,
-    JPH::Vec3Arg                                                                 inContactNormal,
-    const char                                                                  *inPhase)
+                                                    const JPH::BodyID           &inBodyID2,
+                                                    JPH::RVec3Arg                inContactPosition,
+                                                    JPH::Vec3Arg                 inContactNormal,
+                                                    const char                  *inPhase)
 {
     // =================================================================================
     // イベントストームの遮断
@@ -46,8 +46,8 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
     if (IsAttackLayer(inBodyID2))
     {
         HITDIAG_LOG(LogCategory::Physics,
-            "[HitDiag/Contact] Char %-7s self=%llu other=%llu (body %u, layer %d) -> イベント発行",
-            inPhase, m_playerID, hitEntityID, inBodyID2.GetIndex(), static_cast<int>(hitLayer));
+                    "[HitDiag/Contact] Char %-7s self=%llu other=%llu (body %u, layer %d) -> イベント発行",
+                    inPhase, m_playerID, hitEntityID, inBodyID2.GetIndex(), static_cast<int>(hitLayer));
     }
 
     if (hitEntityID != 0 && hitEntityID != InvalidEntityID)
@@ -68,21 +68,21 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
 }
 
 void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *inCharacter,
-    const JPH::BodyID                                                         &inBodyID2,
-    const JPH::SubShapeID                                                     & /*inSubShapeID2*/,
-    JPH::RVec3Arg                                                              inContactPosition,
-    JPH::Vec3Arg                                                               inContactNormal,
-    JPH::CharacterContactSettings                                             & /*ioSettings*/)
+                                                  const JPH::BodyID           &inBodyID2,
+                                                  const JPH::SubShapeID & /*inSubShapeID2*/,
+                                                  JPH::RVec3Arg inContactPosition,
+                                                  JPH::Vec3Arg  inContactNormal,
+                                                  JPH::CharacterContactSettings & /*ioSettings*/)
 {
     EmitContactEvent(inCharacter, inBodyID2, inContactPosition, inContactNormal, "Add");
 }
 
 void JoltCharacterContactListener::OnContactPersisted(const JPH::CharacterVirtual *inCharacter,
-    const JPH::BodyID                                                             &inBodyID2,
-    const JPH::SubShapeID                                                         & /*inSubShapeID2*/,
-    JPH::RVec3Arg                                                                  inContactPosition,
-    JPH::Vec3Arg                                                                   inContactNormal,
-    JPH::CharacterContactSettings                                                 & /*ioSettings*/)
+                                                      const JPH::BodyID           &inBodyID2,
+                                                      const JPH::SubShapeID & /*inSubShapeID2*/,
+                                                      JPH::RVec3Arg inContactPosition,
+                                                      JPH::Vec3Arg  inContactNormal,
+                                                      JPH::CharacterContactSettings & /*ioSettings*/)
 {
     // Added と全く同じ扱いにする。CharacterVirtual は前フレームの接触を
     // mListenerContacts に持ち越し、既知の対を Added ではなく Persisted に回すため
@@ -92,14 +92,14 @@ void JoltCharacterContactListener::OnContactPersisted(const JPH::CharacterVirtua
 }
 
 void JoltCharacterContactListener::OnContactRemoved(const JPH::CharacterVirtual * /*inCharacter*/,
-    const JPH::BodyID                                                           &inBodyID2,
-    const JPH::SubShapeID                                                       & /*inSubShapeID2*/)
+                                                    const JPH::BodyID &inBodyID2,
+                                                    const JPH::SubShapeID & /*inSubShapeID2*/)
 {
     if (!IsAttackLayer(inBodyID2))
         return;
 
     // これが出れば接触は解放済み＝次の接近は Added として来るはず。
     HITDIAG_LOG(LogCategory::Physics,
-        "[HitDiag/Contact] Char Remove  self=%llu (body %u)",
-        m_playerID, inBodyID2.GetIndex());
+                "[HitDiag/Contact] Char Remove  self=%llu (body %u)",
+                m_playerID, inBodyID2.GetIndex());
 }

@@ -9,46 +9,53 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-namespace ComponentMetaJson {
+namespace ComponentMetaJson
+{
     template <>
-    struct ComponentSerializer<SSAOConfigComponent> {
-        static void Save(json& j, const SSAOConfigComponent& c, SaveContext* /*ctx*/) {
+    struct ComponentSerializer<SSAOConfigComponent>
+    {
+        static void Save(json &j, const SSAOConfigComponent &c, SaveContext * /*ctx*/)
+        {
             j["enable"]      = c.enable;
             j["radius"]      = c.data.ssaoRadius;
             j["intensity"]   = c.data.ssaoIntensity;
             j["bias"]        = c.data.ssaoBias;
             j["maxDistance"] = c.data.ssaoMaxDistance;
         }
-        static void Load(const json& j, SSAOConfigComponent& c, LoadContext* /*ctx*/) {
-            if (j.contains("enable"))      c.enable                  = j["enable"].get<bool>();
-            if (j.contains("radius"))      c.data.ssaoRadius         = j["radius"].get<float>();
-            if (j.contains("intensity"))   c.data.ssaoIntensity      = j["intensity"].get<float>();
-            if (j.contains("bias"))        c.data.ssaoBias           = j["bias"].get<float>();
-            if (j.contains("maxDistance")) c.data.ssaoMaxDistance    = j["maxDistance"].get<float>();
+        static void Load(const json &j, SSAOConfigComponent &c, LoadContext * /*ctx*/)
+        {
+            if (j.contains("enable")) c.enable = j["enable"].get<bool>();
+            if (j.contains("radius")) c.data.ssaoRadius = j["radius"].get<float>();
+            if (j.contains("intensity")) c.data.ssaoIntensity = j["intensity"].get<float>();
+            if (j.contains("bias")) c.data.ssaoBias = j["bias"].get<float>();
+            if (j.contains("maxDistance")) c.data.ssaoMaxDistance = j["maxDistance"].get<float>();
         }
     };
-}
+} // namespace ComponentMetaJson
 
-template <> struct ComponentMeta<SSAOConfigComponent> {
-    static constexpr const char* displayName       = "SSAO";
-    static constexpr const char* category          = CCL::Categories::Effect;
-    static constexpr int         sortPriority       = 520;
-    static constexpr bool        hiddenInInspector  = false;
-    static constexpr bool        hasCustomGui       = true;
-    static constexpr bool        isSerializable     = true;
+template <>
+struct ComponentMeta<SSAOConfigComponent>
+{
+    static constexpr const char *displayName       = "SSAO";
+    static constexpr const char *category          = CCL::Categories::Effect;
+    static constexpr int         sortPriority      = 520;
+    static constexpr bool        hiddenInInspector = false;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(SSAOConfigComponent& c,
-                          unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+    static bool CustomGui(SSAOConfigComponent &c,
+                          unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
+    {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
         changed |= mi::Checkbox("有効", &c.enable);
 
         ImGui::BeginDisabled(!c.enable);
-        changed |= mi::DragFloat("半径(m)",     &c.data.ssaoRadius,      0.01f,  0.05f, 3.0f);
-        changed |= mi::DragFloat("強度",        &c.data.ssaoIntensity,   0.01f,  0.0f,  1.0f);
-        changed |= mi::DragFloat("バイアス",     &c.data.ssaoBias,        0.001f, 0.0f,  0.2f);
-        changed |= mi::DragFloat("最大距離(m)", &c.data.ssaoMaxDistance, 1.0f,   1.0f,  500.0f);
+        changed |= mi::DragFloat("半径(m)", &c.data.ssaoRadius, 0.01f, 0.05f, 3.0f);
+        changed |= mi::DragFloat("強度", &c.data.ssaoIntensity, 0.01f, 0.0f, 1.0f);
+        changed |= mi::DragFloat("バイアス", &c.data.ssaoBias, 0.001f, 0.0f, 0.2f);
+        changed |= mi::DragFloat("最大距離(m)", &c.data.ssaoMaxDistance, 1.0f, 1.0f, 500.0f);
 
         ImGui::Separator();
         ImGui::TextDisabled("AOは演出ではなく絵の基礎品質。\n薄く常時掛けるのが正しい使い方。");
@@ -57,10 +64,11 @@ template <> struct ComponentMeta<SSAOConfigComponent> {
         return changed;
     }
 #else
-    static bool CustomGui(SSAOConfigComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(SSAOConfigComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }

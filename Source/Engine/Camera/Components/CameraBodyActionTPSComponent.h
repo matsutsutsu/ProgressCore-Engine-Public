@@ -16,7 +16,7 @@ struct CameraBodyTPSComponent
     float dashFov  = 70.0f; // ダッシュ（加速）時の最大視野角
     // 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する。
     // カメラがゲーム固有の DashComponent を読みに行かずに済むようにするためのフィールド。
-    bool  wideFovRequest = false;
+    bool wideFovRequest = false;
 
     // --- 寄り（クローズアップ）要求：切り払い準備などで一時的にカメラを近づける ---
     // true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する。
@@ -40,9 +40,9 @@ struct CameraBodyTPSComponent
     float lookSpeedY = 120.0f; // ゲームパッド右スティックY軸の回転速度(度/秒)。dtで積分される。
 
     // --- マウス視点操作（デルタ入力：dtを掛けない） ---
-    float mouseSensitivityX      = 0.15f; // マウス水平感度(度/ピクセル)。移動量に直接掛ける。
-    float mouseSensitivityY      = 0.15f; // マウス垂直感度(度/ピクセル)。
-    bool  mouseInvertY           = false; // 上下反転（true=マウス下でカメラ上向き）。
+    float mouseSensitivityX       = 0.15f; // マウス水平感度(度/ピクセル)。移動量に直接掛ける。
+    float mouseSensitivityY       = 0.15f; // マウス垂直感度(度/ピクセル)。
+    bool  mouseInvertY            = false; // 上下反転（true=マウス下でカメラ上向き）。
     bool  mouseLookRequiresButton = false; // true=右クリック押下中のみ視点回転。false=常時マウス視点(TPS標準)。
     bool  enableCursorLock        = true;  // マウスルック中、カーソルを画面中央へ固定＋非表示にする（端の頭打ち防止）。
 
@@ -59,9 +59,9 @@ struct CameraBodyTPSComponent
 
     // カメラが寄った時に、足元ではなく頭付近の高さへ持ち上げる強さ。
     //   引き込み量に応じてカメラYを pivot(頭)の高さへ寄せる。0=そのまま(足元に落ちる), 1=完全に頭の高さ。
-    float collisionHeadBias    = 1.0f;
+    float collisionHeadBias = 1.0f;
 
-    float currentCamDistance = 0.0f;    // 衝突を反映した現在のカメラ距離（実行時内部状態）
+    float currentCamDistance = 0.0f; // 衝突を反映した現在のカメラ距離（実行時内部状態）
 
     // --- ルックアヘッド（進行方向への注視） ---
     float lookaheadMultiplier = 0.3f; // 速度に対する注視点の前方移動量
@@ -128,7 +128,6 @@ struct CameraBodyTPSComponent
     float lockOnManualOverrideTimer = 0.0f;
 
     bool wasLockOnActive = false;
-
 
     // --- 実行時内部状態（シリアライズ不要） ---
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; // 補間計算用の仮想注視点座標

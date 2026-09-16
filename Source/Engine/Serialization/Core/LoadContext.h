@@ -21,11 +21,13 @@
 #include <cstdint>
 #include <vector>
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "SaveContext.h"  // LocalIndex の定義を共有
+#include "SaveContext.h" // LocalIndex の定義を共有
 
-namespace CCL::Serialization {
+namespace CCL::Serialization
+{
 
-    class LoadContext {
+    class LoadContext
+    {
     public:
         using LocalIndex = SaveContext::LocalIndex;
 
@@ -51,7 +53,7 @@ namespace CCL::Serialization {
         CCL::ECS::EntityID Resolve(LocalIndex localIdx) const
         {
             if (localIdx == SaveContext::InvalidLocalIndex) return CCL::ECS::InvalidEntityID;
-            if (localIdx >= m_localToEntity.size())          return CCL::ECS::InvalidEntityID;
+            if (localIdx >= m_localToEntity.size()) return CCL::ECS::InvalidEntityID;
             return m_localToEntity[localIdx];
         }
 
@@ -62,11 +64,12 @@ namespace CCL::Serialization {
 
     private:
         // [0] は「無効」用にダミー値 (InvalidEntityID) で確保しておく
-        std::vector<CCL::ECS::EntityID> m_localToEntity{ CCL::ECS::InvalidEntityID };
+        std::vector<CCL::ECS::EntityID> m_localToEntity{CCL::ECS::InvalidEntityID};
 
         void EnsureSize(size_t needed)
         {
-            if (m_localToEntity.size() < needed) {
+            if (m_localToEntity.size() < needed)
+            {
                 m_localToEntity.resize(needed, CCL::ECS::InvalidEntityID);
             }
         }

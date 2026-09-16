@@ -10,7 +10,6 @@
 #include <json.hpp>
 #include <filesystem> // std::filesystem を使用
 
-
 //==========================================================================
 // 内部ユーティリティ (匿名名前空間)
 //==========================================================================
@@ -23,11 +22,11 @@ namespace
     {
         if (utf8.empty()) return {};
         int len = ::MultiByteToWideChar(CP_UTF8, 0,
-            utf8.data(), static_cast<int>(utf8.size()), nullptr, 0);
+                                        utf8.data(), static_cast<int>(utf8.size()), nullptr, 0);
         if (len <= 0) return {};
         std::wstring out(static_cast<size_t>(len), L'\0');
         ::MultiByteToWideChar(CP_UTF8, 0,
-            utf8.data(), static_cast<int>(utf8.size()), out.data(), len);
+                              utf8.data(), static_cast<int>(utf8.size()), out.data(), len);
         return out;
     }
 
@@ -36,11 +35,11 @@ namespace
     {
         if (w.empty()) return {};
         int len = ::WideCharToMultiByte(CP_UTF8, 0,
-            w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
+                                        w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
         if (len <= 0) return {};
         std::string out(static_cast<size_t>(len), '\0');
         ::WideCharToMultiByte(CP_UTF8, 0,
-            w.data(), static_cast<int>(w.size()), out.data(), len, nullptr, nullptr);
+                              w.data(), static_cast<int>(w.size()), out.data(), len, nullptr, nullptr);
         return out;
     }
 
@@ -58,14 +57,13 @@ namespace
      * Win32 OFN の lpstrFilter 形式に変換する
      * 形式: "Label\0Pattern\0Label2\0Pattern2\0\0"
      */
-    std::wstring BuildFilterStringW(const std::vector<FileFilter>& filters)
+    std::wstring BuildFilterStringW(const std::vector<FileFilter> &filters)
     {
         std::wstring result;
-        auto append = [&](std::wstring_view s)
-            {
-                result.append(s);
-                result.push_back(L'\0');
-            };
+        auto         append = [&](std::wstring_view s) {
+            result.append(s);
+            result.push_back(L'\0');
+        };
 
         if (filters.empty())
         {
@@ -74,7 +72,7 @@ namespace
         }
         else
         {
-            for (const auto& f : filters)
+            for (const auto &f : filters)
             {
                 append(Utf8ToWide(f.label));
                 append(Utf8ToWide(f.pattern));
@@ -87,10 +85,10 @@ namespace
     //--- ヘルパー --------------------------------------------------------
 
     // 履歴キー解決 : contextId > title > "Default"
-    std::string ResolveContextId(const FileDialogParams& params)
+    std::string ResolveContextId(const FileDialogParams &params)
     {
         if (!params.contextId.empty()) return params.contextId;
-        if (!params.title.empty())     return params.title;
+        if (!params.title.empty()) return params.title;
         return "Default";
     }
 
@@ -102,7 +100,7 @@ namespace
      *   4. 空 (Win32 が現在のドキュメントフォルダ等を使う)
      */
     std::filesystem::path ResolveInitialDir(
-        const FileDialogParams& params, const std::string& contextId)
+        const FileDialogParams &params, const std::string &contextId)
     {
         // 1. 明示パス最優先
         if (!params.initialPath.empty())
@@ -132,32 +130,39 @@ namespace
     }
 
     // 履歴に保存する (選択されたパスからディレクトリ部分のみ)
-    void StoreHistory(const std::string& contextId, const std::filesystem::path& selected)
+    void StoreHistory(const std::string &contextId, const std::filesystem::path &selected)
     {
         if (selected.empty()) return;
-        const auto dir = selected.has_filename() ? selected.parent_path() : selected;
+        const auto dir       = selected.has_filename() ? selected.parent_path() : selected;
         s_history[contextId] = dir;
     }
 
     // パス区切りを Windows 用 (バックスラッシュ) に正規化
     std::wstring NormalizeSeparatorW(std::wstring s)
     {
-        for (auto& c : s) if (c == L'/') c = L'\\';
+        for (auto &c : s)
+            if (c == L'/') c = L'\\';
         return s;
     }
 
     // --- パス変換ユーティリティ ---
     // 絶対パスをカレントパス基準の相対パスに変換
-    std::filesystem::path MakeRelative(const std::filesystem::path& p) {
+    std::filesystem::path MakeRelative(const std::filesystem::path &p)
+    {
         if (p.is_relative()) return p;
-        try {
+        try
+        {
             return std::filesystem::relative(p, std::filesystem::current_path());
         }
-        catch (...) { return p; }
+        catch (...)
+        {
+            return p;
+        }
     }
 
     // 相対パスを絶対パスへ復元
-    std::filesystem::path MakeAbsolute(const std::filesystem::path& p) {
+    std::filesystem::path MakeAbsolute(const std::filesystem::path &p)
+    {
         if (p.is_absolute()) return p;
         return std::filesystem::absolute(p);
     }
@@ -166,28 +171,28 @@ namespace
 
     struct OpenInvokeResult
     {
-        bool ok = false;
+        bool                               ok = false;
         std::vector<std::filesystem::path> paths;
     };
 
-    OpenInvokeResult InvokeOpenW(const FileDialogParams& params, bool multiSelect)
+    OpenInvokeResult InvokeOpenW(const FileDialogParams &params, bool multiSelect)
     {
-        const std::string contextId = ResolveContextId(params);
-        const auto initialDir = ResolveInitialDir(params, contextId);
+        const std::string contextId  = ResolveContextId(params);
+        const auto        initialDir = ResolveInitialDir(params, contextId);
 
-        const std::wstring wTitle = Utf8ToWide(params.title);
-        const std::wstring wFilter = BuildFilterStringW(params.filters);
+        const std::wstring wTitle      = Utf8ToWide(params.title);
+        const std::wstring wFilter     = BuildFilterStringW(params.filters);
         const std::wstring wInitialDir = NormalizeSeparatorW(initialDir.wstring());
 
         // マルチ選択時のフォーマット ("Dir\0F1\0F2\0\0") に備え十分大きく確保
-        constexpr DWORD kBufElements = 32 * 1024;
+        constexpr DWORD      kBufElements = 32 * 1024;
         std::vector<wchar_t> fileBuf(kBufElements, L'\0');
 
         // initialPath にファイル名まで含まれていればそれを初期値に
         if (!params.initialPath.empty() && params.initialPath.has_filename())
         {
-            const auto wname = params.initialPath.filename().wstring();
-            const size_t n = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
+            const auto   wname = params.initialPath.filename().wstring();
+            const size_t n     = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
             std::copy_n(wname.begin(), n, fileBuf.begin());
         }
 
@@ -196,22 +201,22 @@ namespace
         // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする。
         //   オーナー無しのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
         //   ゲームループを止めたまま前面に出ず「フリーズ」に見える事故を防ぐ。
-        ofn.hwndOwner = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
-        ofn.lpstrFilter = wFilter.c_str();
-        ofn.nFilterIndex = 1;
-        ofn.lpstrFile = fileBuf.data();
-        ofn.nMaxFile = kBufElements;
-        ofn.lpstrTitle = wTitle.empty() ? nullptr : wTitle.c_str();
+        ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
+        ofn.lpstrFilter     = wFilter.c_str();
+        ofn.nFilterIndex    = 1;
+        ofn.lpstrFile       = fileBuf.data();
+        ofn.nMaxFile        = kBufElements;
+        ofn.lpstrTitle      = wTitle.empty() ? nullptr : wTitle.c_str();
         ofn.lpstrInitialDir = wInitialDir.empty() ? nullptr : wInitialDir.c_str();
-        ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+        ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
         if (multiSelect)
         {
             ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
         }
 
         // OFN_NOCHANGEDIR を指定しているが、念のためカレントディレクトリを保護
-        wchar_t curDir[MAX_PATH] = {};
-        const DWORD cdLen = ::GetCurrentDirectoryW(MAX_PATH, curDir);
+        wchar_t     curDir[MAX_PATH] = {};
+        const DWORD cdLen            = ::GetCurrentDirectoryW(MAX_PATH, curDir);
 
         const BOOL ret = ::GetOpenFileNameW(&ofn);
 
@@ -227,7 +232,7 @@ namespace
         {
             // "Dir\0File1\0File2\0\0" 形式 / または単一フルパス
             const std::filesystem::path dir(fileBuf.data());
-            wchar_t* p = fileBuf.data() + std::wcslen(fileBuf.data()) + 1;
+            wchar_t                    *p = fileBuf.data() + std::wcslen(fileBuf.data()) + 1;
             if (*p == L'\0')
             {
                 // 単一選択された
@@ -255,71 +260,71 @@ namespace
         return result;
     }
 
-} // namespace (anonymous)
+} // namespace
 
 //==========================================================================
 // FileDialog::Initialize
 //==========================================================================
 
-void FileDialog::Initialize(const std::filesystem::path& settingsPath)
+void FileDialog::Initialize(const std::filesystem::path &settingsPath)
 {
     // ----------------------------------------------------------------
     // エンジン共通プリセットを一括登録
     // ※ defaultDir はプロジェクト構成に合わせて変更する
     // ----------------------------------------------------------------
     RegisterPreset("Assets", {
-    .filters = { {"Assets Files", "*.json"}, {"All Files", "*.*"} },
-    .defaultDir = "Assets",
-    .defaultExt = "json",
-    });
-    
+                                 .filters    = {{"Assets Files", "*.json"}, {"All Files", "*.*"}},
+                                 .defaultDir = "Assets",
+                                 .defaultExt = "json",
+                             });
+
     RegisterPreset("Scene", {
-        .filters = { {"Scene Files", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Scene",
-        .defaultExt = "json",
-        });
+                                .filters    = {{"Scene Files", "*.json"}, {"All Files", "*.*"}},
+                                .defaultDir = "Assets/Scene",
+                                .defaultExt = "json",
+                            });
     RegisterPreset("Model", {
-        .filters = { {"Model Files", "*.fbx;*.obj;*.gltf;*.glb"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Models",
-        });
+                                .filters    = {{"Model Files", "*.fbx;*.obj;*.gltf;*.glb"}, {"All Files", "*.*"}},
+                                .defaultDir = "Assets/Models",
+                            });
     RegisterPreset("Texture", {
-        .filters = { {"Image Files", "*.png;*.jpg;*.tga;*.bmp;*.dds"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Textures",
-        });
+                                  .filters    = {{"Image Files", "*.png;*.jpg;*.tga;*.bmp;*.dds"}, {"All Files", "*.*"}},
+                                  .defaultDir = "Assets/Textures",
+                              });
     RegisterPreset("TextEditor", {
-        .filters = {
-            {"Supported Files", "*.json;*.lua;*.cpp;*.h;*.hlsl;*.hlsli"},
-            {"HLSL Shaders",    "*.hlsl;*.hlsli"},
-            {"JSON Files",      "*.json"},
-            {"Lua Scripts",     "*.lua"},
-            {"All Files",       "*.*"},
-        },
-        .defaultDir = "Assets",
-        });
+                                     .filters = {
+                                         {"Supported Files", "*.json;*.lua;*.cpp;*.h;*.hlsl;*.hlsli"},
+                                         {"HLSL Shaders", "*.hlsl;*.hlsli"},
+                                         {"JSON Files", "*.json"},
+                                         {"Lua Scripts", "*.lua"},
+                                         {"All Files", "*.*"},
+                                     },
+                                     .defaultDir = "Assets",
+                                 });
     RegisterPreset("AnimSequence", {
-        .filters = { {"JSON Files", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Animations/Sequencer",
-        .defaultExt = "json",
-        });
+                                       .filters    = {{"JSON Files", "*.json"}, {"All Files", "*.*"}},
+                                       .defaultDir = "Assets/Animations/Sequencer",
+                                       .defaultExt = "json",
+                                   });
     RegisterPreset("AnimNode", {
-        .filters = { {"JSON Files", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Animations/Nodes",
-        .defaultExt = "json",
-        });
+                                   .filters    = {{"JSON Files", "*.json"}, {"All Files", "*.*"}},
+                                   .defaultDir = "Assets/Animations/Nodes",
+                                   .defaultExt = "json",
+                               });
     RegisterPreset("Prefab", {
-        .filters = { {"JSON Files", "*.json"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Prefabs",
-        .defaultExt = "json",
-        });
+                                 .filters    = {{"JSON Files", "*.json"}, {"All Files", "*.*"}},
+                                 .defaultDir = "Assets/Prefabs",
+                                 .defaultExt = "json",
+                             });
     RegisterPreset("Audio", {
-        .filters = { {"Audio Files", "*.wav;*.ogg;*.mp3;*.flac"}, {"All Files", "*.*"} },
-        .defaultDir = "Assets/Audio",
-        });
+                                .filters    = {{"Audio Files", "*.wav;*.ogg;*.mp3;*.flac"}, {"All Files", "*.*"}},
+                                .defaultDir = "Assets/Audio",
+                            });
     RegisterPreset("BehaviorTreeNode", {
-    .filters    =  { { "Behavior Tree", "*.json" } },
-    .defaultDir = "Assets/BehaviorTree",
-    .defaultExt = "json",
-    });
+                                           .filters    = {{"Behavior Tree", "*.json"}},
+                                           .defaultDir = "Assets/BehaviorTree",
+                                           .defaultExt = "json",
+                                       });
 
     // ----------------------------------------------------------------
     // 前回の履歴を読み込む
@@ -331,25 +336,25 @@ void FileDialog::Initialize(const std::filesystem::path& settingsPath)
 // FileDialog public API
 //==========================================================================
 
-std::optional<std::filesystem::path> FileDialog::Open(const FileDialogParams& params)
+std::optional<std::filesystem::path> FileDialog::Open(const FileDialogParams &params)
 {
     auto r = InvokeOpenW(params, /*multiSelect=*/false);
     if (!r.ok || r.paths.empty()) return std::nullopt;
     return r.paths.front();
 }
 
-std::vector<std::filesystem::path> FileDialog::OpenMulti(const FileDialogParams& params)
+std::vector<std::filesystem::path> FileDialog::OpenMulti(const FileDialogParams &params)
 {
     return InvokeOpenW(params, /*multiSelect=*/true).paths;
 }
 
-std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams& params)
+std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &params)
 {
-    const std::string contextId = ResolveContextId(params);
-    const auto initialDir = ResolveInitialDir(params, contextId);
+    const std::string contextId  = ResolveContextId(params);
+    const auto        initialDir = ResolveInitialDir(params, contextId);
 
-    const std::wstring wTitle = Utf8ToWide(params.title);
-    const std::wstring wFilter = BuildFilterStringW(params.filters);
+    const std::wstring wTitle      = Utf8ToWide(params.title);
+    const std::wstring wFilter     = BuildFilterStringW(params.filters);
     const std::wstring wInitialDir = NormalizeSeparatorW(initialDir.wstring());
 
     // デフォルト拡張子 (paramsで指定が無ければプリセットから補完)
@@ -362,38 +367,37 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams& pa
         }
     }
 
-    constexpr DWORD kBufElements = 32 * 1024;
+    constexpr DWORD      kBufElements = 32 * 1024;
     std::vector<wchar_t> fileBuf(kBufElements, L'\0');
 
     // デフォルトファイル名を埋める
     std::filesystem::path defaultName = params.defaultFileName;
-    if (defaultName.empty() && !params.initialPath.empty()
-        && params.initialPath.has_filename())
+    if (defaultName.empty() && !params.initialPath.empty() && params.initialPath.has_filename())
     {
         defaultName = params.initialPath.filename();
     }
     if (!defaultName.empty())
     {
-        const auto wname = defaultName.wstring();
-        const size_t n = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
+        const auto   wname = defaultName.wstring();
+        const size_t n     = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
         std::copy_n(wname.begin(), n, fileBuf.begin());
     }
 
     OPENFILENAMEW ofn{};
     ofn.lStructSize = sizeof(ofn);
     // オーナー窓が未指定なら現在アクティブなアプリ窓を親にする（Open 側と同じ理由）。
-    ofn.hwndOwner = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
-    ofn.lpstrFilter = wFilter.c_str();
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFile = fileBuf.data();
-    ofn.nMaxFile = kBufElements;
-    ofn.lpstrTitle = wTitle.empty() ? nullptr : wTitle.c_str();
+    ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
+    ofn.lpstrFilter     = wFilter.c_str();
+    ofn.nFilterIndex    = 1;
+    ofn.lpstrFile       = fileBuf.data();
+    ofn.nMaxFile        = kBufElements;
+    ofn.lpstrTitle      = wTitle.empty() ? nullptr : wTitle.c_str();
     ofn.lpstrInitialDir = wInitialDir.empty() ? nullptr : wInitialDir.c_str();
-    ofn.lpstrDefExt = wExt.empty() ? nullptr : wExt.c_str();
-    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+    ofn.lpstrDefExt     = wExt.empty() ? nullptr : wExt.c_str();
+    ofn.Flags           = OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
 
-    wchar_t curDir[MAX_PATH] = {};
-    const DWORD cdLen = ::GetCurrentDirectoryW(MAX_PATH, curDir);
+    wchar_t     curDir[MAX_PATH] = {};
+    const DWORD cdLen            = ::GetCurrentDirectoryW(MAX_PATH, curDir);
 
     const BOOL ret = ::GetSaveFileNameW(&ofn);
 
@@ -408,7 +412,7 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams& pa
     return selected;
 }
 
-std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absolutePath)
+std::string FileDialog::ConvertToRelativePath(const std::filesystem::path &absolutePath)
 {
     if (absolutePath.empty()) return "";
 
@@ -416,7 +420,8 @@ std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absol
     // 現在の作業ディレクトリ（通常はプロジェクトのルート、または実行ファイルのある場所）を取得
     std::filesystem::path currentPath = std::filesystem::current_path(ec);
 
-    if (ec) {
+    if (ec)
+    {
         // カレントディレクトリの取得に失敗した場合は、UTF-8文字列としてそのまま返す
         return WideToUtf8(absolutePath.wstring());
     }
@@ -424,7 +429,8 @@ std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absol
     // absolutePath を currentPath を基準とした相対パスに変換する
     std::filesystem::path relativePath = std::filesystem::proximate(absolutePath, currentPath, ec);
 
-    if (ec) {
+    if (ec)
+    {
         // 別のドライブ（C: と D: など）に跨っている等の理由で変換に失敗した場合
         return WideToUtf8(absolutePath.wstring());
     }
@@ -438,7 +444,7 @@ std::string FileDialog::ConvertToRelativePath(const std::filesystem::path& absol
 
 //--- プリセット ---------------------------------------------------------
 
-void FileDialog::RegisterPreset(std::string_view contextId, const FileDialogPreset& preset)
+void FileDialog::RegisterPreset(std::string_view contextId, const FileDialogPreset &preset)
 {
     s_presets[std::string(contextId)] = preset;
 }
@@ -448,7 +454,7 @@ std::optional<std::filesystem::path> FileDialog::OpenPreset(
 {
     FileDialogParams p;
     p.contextId = std::string(contextId);
-    p.title = title.empty() ? p.contextId : std::string(title);
+    p.title     = title.empty() ? p.contextId : std::string(title);
     p.ownerHwnd = ownerHwnd;
     if (auto it = s_presets.find(p.contextId); it != s_presets.end())
     {
@@ -459,16 +465,16 @@ std::optional<std::filesystem::path> FileDialog::OpenPreset(
 
 std::optional<std::filesystem::path> FileDialog::SavePreset(
     std::string_view contextId, std::string_view title,
-    const std::filesystem::path& defaultFileName, HWND ownerHwnd)
+    const std::filesystem::path &defaultFileName, HWND ownerHwnd)
 {
     FileDialogParams p;
-    p.contextId = std::string(contextId);
-    p.title = title.empty() ? p.contextId : std::string(title);
+    p.contextId       = std::string(contextId);
+    p.title           = title.empty() ? p.contextId : std::string(title);
     p.defaultFileName = defaultFileName;
-    p.ownerHwnd = ownerHwnd;
+    p.ownerHwnd       = ownerHwnd;
     if (auto it = s_presets.find(p.contextId); it != s_presets.end())
     {
-        p.filters = it->second.filters;
+        p.filters    = it->second.filters;
         p.defaultExt = it->second.defaultExt;
     }
     return Save(p);
@@ -476,7 +482,7 @@ std::optional<std::filesystem::path> FileDialog::SavePreset(
 
 //--- 履歴 ---------------------------------------------------------------
 
-void FileDialog::LoadHistory(const std::filesystem::path& settingsPath)
+void FileDialog::LoadHistory(const std::filesystem::path &settingsPath)
 {
     std::ifstream file(settingsPath);
     if (!file.is_open()) return;
@@ -486,7 +492,7 @@ void FileDialog::LoadHistory(const std::filesystem::path& settingsPath)
         file >> j;
         if (j.contains("DialogHistory"))
         {
-            for (auto& item : j["DialogHistory"].items())
+            for (auto &item : j["DialogHistory"].items())
             {
                 std::string utf8 = item.value().get<std::string>();
                 // 保存されている相対パスを絶対パスに戻す
@@ -500,7 +506,7 @@ void FileDialog::LoadHistory(const std::filesystem::path& settingsPath)
     }
 }
 
-void FileDialog::SaveHistory(const std::filesystem::path& settingsPath)
+void FileDialog::SaveHistory(const std::filesystem::path &settingsPath)
 {
     nlohmann::json j;
 
@@ -509,14 +515,19 @@ void FileDialog::SaveHistory(const std::filesystem::path& settingsPath)
         std::ifstream inFile(settingsPath);
         if (inFile.is_open())
         {
-            try { inFile >> j; }
-            catch (...) {}
+            try
+            {
+                inFile >> j;
+            }
+            catch (...)
+            {
+            }
         }
     }
 
     // 履歴部分を上書き
     j["DialogHistory"] = nlohmann::json::object();
-    for (const auto& [key, path] : s_history)
+    for (const auto &[key, path] : s_history)
     {
         // 絶対パスを相対パスに変換してから保存
         j["DialogHistory"][key] = WideToUtf8(MakeRelative(path).wstring());
@@ -539,8 +550,8 @@ void FileDialog::SaveHistory(const std::filesystem::path& settingsPath)
 
 void FileDialog::ClearHistory(std::string_view contextId)
 {
-    if (contextId.empty()) s_history.clear();
-    else                   s_history.erase(std::string(contextId));
+    if (contextId.empty())
+        s_history.clear();
+    else
+        s_history.erase(std::string(contextId));
 }
-
-

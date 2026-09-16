@@ -17,44 +17,44 @@
 
 void GPUParticleRenderSystem::Update(float dt)
 {
-    if (!m_world->HasResource<ParticleRenderer*>()) return;
-    auto* renderer = m_world->GetResource<ParticleRenderer*>();
+    if (!m_world->HasResource<ParticleRenderer *>()) return;
+    auto *renderer = m_world->GetResource<ParticleRenderer *>();
 
-    ForEach([&](GPUParticleComponent& particle,
-        const TransformComponent& /*transform*/) {
+    ForEach([&](GPUParticleComponent &particle,
+                const TransformComponent & /*transform*/) {
+        // エフェクトを構成するエミッタごとに1コマンド積む。
+        //   ParticleRenderer 側が renderMode → テクスチャ順にソートするので、
+        //   ここでは順序を気にせず積んでよい。
+        for (const ParticleEmitter &emitter : particle.emitters)
+        {
+            if (!emitter.isInitialized || !emitter.computeBuffer.IsValid()) continue;
 
-            // エフェクトを構成するエミッタごとに1コマンド積む。
-            //   ParticleRenderer 側が renderMode → テクスチャ順にソートするので、
-            //   ここでは順序を気にせず積んでよい。
-            for (const ParticleEmitter& emitter : particle.emitters)
-            {
-                if (!emitter.isInitialized || !emitter.computeBuffer.IsValid()) continue;
+            // インスペクタで非表示にされた層は描画コマンドを積まない。
+            //   シミュレーション(R07)は止めないので、表示に戻せば続きから見える。
+            //   製品ビルドでは常に true（非シリアライズのプレビュー用スイッチ）。
+            if (!emitter.previewVisible) continue;
 
-                // インスペクタで非表示にされた層は描画コマンドを積まない。
-                //   シミュレーション(R07)は止めないので、表示に戻せば続きから見える。
-                //   製品ビルドでは常に true（非シリアライズのプレビュー用スイッチ）。
-                if (!emitter.previewVisible) continue;
-
-                ParticleDrawCommand cmd;
-                cmd.computeBuffer = emitter.computeBuffer;
-                cmd.texture       = emitter.texture;
-                cmd.maxCount      = emitter.desc.maxCount;
-                cmd.renderMode    = emitter.desc.renderMode;
-                renderer->Draw(cmd);
-            }
-        });
+            ParticleDrawCommand cmd;
+            cmd.computeBuffer = emitter.computeBuffer;
+            cmd.texture       = emitter.texture;
+            cmd.maxCount      = emitter.desc.maxCount;
+            cmd.renderMode    = emitter.desc.renderMode;
+            renderer->Draw(cmd);
+        }
+    });
 }
 
 void GPUParticleRenderSystem::ReleaseAllResources()
 {
-    ForEach([](GPUParticleComponent& particle, const TransformComponent&) {
-        for (ParticleEmitter& emitter : particle.emitters) {
+    ForEach([](GPUParticleComponent &particle, const TransformComponent &) {
+        for (ParticleEmitter &emitter : particle.emitters)
+        {
             if (!emitter.computeBuffer.IsValid()) continue;
             ResourceManager::Instance().UnloadParticleBuffer(emitter.computeBuffer);
-            emitter.computeBuffer  = ParticleBufferHandle{};
-            emitter.isInitialized  = false;
+            emitter.computeBuffer = ParticleBufferHandle{};
+            emitter.isInitialized = false;
         }
-        });
+    });
 }
 
 REGISTER_RENDER_SYSTEM(GPUParticleRenderSystem, Priority::RenderStage::R08_Main);

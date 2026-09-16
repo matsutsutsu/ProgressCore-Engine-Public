@@ -9,9 +9,9 @@
 
 struct UITextComponent
 {
-    std::string       text      = "Text";                    // 描画文字列（現状ASCII）
-    float             pixelSize = 24.0f;                      // 文字の高さ(px)
-    DirectX::XMFLOAT4 color     = {1.0f, 1.0f, 1.0f, 1.0f};   // 文字色
-    bool              visible   = true;                       // 描画するか
-    int               sortOrder = 10;                         // 大きいほど手前（既定で画像より上）
+    std::string       text      = "Text";                   // 描画文字列（現状ASCII）
+    float             pixelSize = 24.0f;                    // 文字の高さ(px)
+    DirectX::XMFLOAT4 color     = {1.0f, 1.0f, 1.0f, 1.0f}; // 文字色
+    bool              visible   = true;                     // 描画するか
+    int               sortOrder = 10;                       // 大きいほど手前（既定で画像より上）
 };

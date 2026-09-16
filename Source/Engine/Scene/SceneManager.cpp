@@ -1,10 +1,9 @@
-#include"SceneManager.h"
-#include"SceneFactory.h"
+#include "SceneManager.h"
+#include "SceneFactory.h"
 
 // 具体シーンは各 .cpp の REGISTER_SCENE で SceneFactory へ自己登録される。
 // ここで include すると Engine→Game 依存になるため、名前(文字列)だけで扱う。
 #include "Engine/Scene/SceneLoading.h" // 非同期ロード用のローディングシーン
-
 
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
@@ -20,7 +19,6 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
-
 // タグとシステム
 #include "Engine/Core/Components/PersistentTag.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
@@ -28,164 +26,161 @@
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
 #include "Engine/Audio/Systems/AudioCleanupSystem.h"
 
- 
 #include "tracy/Tracy.hpp"
-
 
 using namespace CCL::ECS;
 
 // コンストラクタ／デストラクタは、m_fadeQuad(unique_ptr<Sprite>) の破棄に
 // Sprite の完全型が必要なため、Sprite を include したこの .cpp 側で定義する。
-SceneManager::SceneManager() = default;
+SceneManager::SceneManager()  = default;
 SceneManager::~SceneManager() = default;
 
 //初期化
 void SceneManager::Initialize()
 {
-	ZoneScopedN("SceneManager::Initialize");
+    ZoneScopedN("SceneManager::Initialize");
 
-	// シーン登録は各シーンの .cpp 末尾にある REGISTER_SCENE マクロが
-	// 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
-	// ここでは名前で参照するだけなので、具体シーンのヘッダは不要。
+// シーン登録は各シーンの .cpp 末尾にある REGISTER_SCENE マクロが
+// 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
+// ここでは名前で参照するだけなので、具体シーンのヘッダは不要。
 
-	// 最初に表示するシーン。
-	// 製品ビルドは TitleScene から始める。展示会ビルドで Game 直行にしていたのは
-	// 待ち時間を削るためだったが、企業提出は「起動して最初に何が出るか」も作品の一部なので、
-	// タイトル（軽量レベル＋群れの演出）を挟む。
-    #ifdef SHIPPING_BUILD
-	constexpr const char *kStartupScene = "Title";
-    #else
-	constexpr const char *kStartupScene = "Editor";
-    #endif
-	ChangeSceneAsync(kStartupScene);
+// 最初に表示するシーン。
+// 製品ビルドは TitleScene から始める。展示会ビルドで Game 直行にしていたのは
+// 待ち時間を削るためだったが、企業提出は「起動して最初に何が出るか」も作品の一部なので、
+// タイトル（軽量レベル＋群れの演出）を挟む。
+#ifdef SHIPPING_BUILD
+    constexpr const char *kStartupScene = "Title";
+#else
+    constexpr const char *kStartupScene = "Editor";
+#endif
+    ChangeSceneAsync(kStartupScene);
 
-	// 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。
-	FadeInFromBlack();
+    // 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。
+    FadeInFromBlack();
 }
 
 // --- 追加：固定更新の実装 ---
 void SceneManager::FixedUpdate(float fixedTime)
 {
-	// シーン遷移待ちの状態では物理演算を行わないのが安全
-	if (nextScene == nullptr && currentScene != nullptr)
-	{
-		currentScene->FixedUpdate(fixedTime);
-	}
+    // シーン遷移待ちの状態では物理演算を行わないのが安全
+    if (nextScene == nullptr && currentScene != nullptr)
+    {
+        currentScene->FixedUpdate(fixedTime);
+    }
 }
 
 //更新処理
 void SceneManager::Update(float elapsedTime)
 {
-	ZoneScopedN("SceneManager::Update");
+    ZoneScopedN("SceneManager::Update");
 
-	// フェードを先に進める。黒に達した瞬間に「予約された切替」を発火し、
-	// nextScene をセットするので、直後の切替ブロックが同じフレームで処理する。
-	// （黒で完全に隠れている間に重い切替・初期化が走る＝ポップインが見えない）
-	AdvanceFade(elapsedTime);
+    // フェードを先に進める。黒に達した瞬間に「予約された切替」を発火し、
+    // nextScene をセットするので、直後の切替ブロックが同じフレームで処理する。
+    // （黒で完全に隠れている間に重い切替・初期化が走る＝ポップインが見えない）
+    AdvanceFade(elapsedTime);
 
-	if (nextScene != nullptr)
-	{
-		// シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
-		ZoneScopedN("SceneManager: Scene Switch");
+    if (nextScene != nullptr)
+    {
+        // シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
+        ZoneScopedN("SceneManager: Scene Switch");
 
-		//古いシーンを終了処理
-		Clear();
+        //古いシーンを終了処理
+        Clear();
 
-		// 切替の通し番号を進める。World もエンティティも作り直されるので、
-		// 前のシーンを指していた参照（エディタの Undo 履歴・選択）は
-		// ここを境に全部無効になる。
-		++m_sceneSerial;
+        // 切替の通し番号を進める。World もエンティティも作り直されるので、
+        // 前のシーンを指していた参照（エディタの Undo 履歴・選択）は
+        // ここを境に全部無効になる。
+        ++m_sceneSerial;
 
-		//新しいシーンを設定
-		currentScene = nextScene;
-		nextScene = nullptr;
+        //新しいシーンを設定
+        currentScene = nextScene;
+        nextScene    = nullptr;
 
-		//シーン初期化処理
+        //シーン初期化処理
         // 【1段階目】: 重いデータロード (Initialize)
         // もし SceneLoading を経由して既に行われていれば、IsReady() が true
         // なのでスキップされる
-        if (!currentScene->IsReady()) {
+        if (!currentScene->IsReady())
+        {
             {
                 ZoneScopedN("Scene::Initialize (heavy load)");
                 currentScene->Initialize();
             }
 
-			// 終わった瞬間にマネージャーが責任を持ってフラグを立てる
+            // 終わった瞬間にマネージャーが責任を持ってフラグを立てる
             currentScene->SetReady();
         }
 
-		// 【2段階目】: GPUへのセットアップ (Start)
+        // 【2段階目】: GPUへのセットアップ (Start)
         // これは絶対にメインスレッドのこのタイミングで1回だけ呼ばれる。
         // dc->Map などGPUリソースのバインドはここで行う。
         {
             ZoneScopedN("Scene::Start (GPU setup)");
             currentScene->Start();
         }
-	}
+    }
 
-	if (currentScene != nullptr)
-	{
-		currentScene->Update(elapsedTime);
-	}
-
+    if (currentScene != nullptr)
+    {
+        currentScene->Update(elapsedTime);
+    }
 }
 
 //描画処理
 void SceneManager::Render()
 {
-	if (currentScene != nullptr)
-	{
-		currentScene->Render();
-	}
+    if (currentScene != nullptr)
+    {
+        currentScene->Render();
+    }
 
-	// 遷移フェードの黒矩形は最前面。シーン描画（UI含む）の後に全ての上へ被せる。
-	// BaseScene 側に描画を書かず、遷移の所有者であるここで一元的に描く。
-	DrawFade();
+    // 遷移フェードの黒矩形は最前面。シーン描画（UI含む）の後に全ての上へ被せる。
+    // BaseScene 側に描画を書かず、遷移の所有者であるここで一元的に描く。
+    DrawFade();
 }
 
 //GUI描画
 void SceneManager::DrawGUI()
 {
-	if (currentScene != nullptr)
-	{
-		currentScene->DrawGUI();
-	}
+    if (currentScene != nullptr)
+    {
+        currentScene->DrawGUI();
+    }
 }
 
 //シーンクリア
 void SceneManager::Clear()
 {
-	if (currentScene != nullptr)
-	{
-		currentScene->Finalize();
-		delete currentScene;
-		currentScene = nullptr;
-	}
+    if (currentScene != nullptr)
+    {
+        currentScene->Finalize();
+        delete currentScene;
+        currentScene = nullptr;
+    }
 
-	// SceneManager 自身は Meyer's Singleton（static ローカル変数）のため、
-	// このインスタンスの実体の破棄は wWinMain リターン後の静的破棄タイミングまで
-	// 起きない＝Graphics::Shutdown()（デバイス破棄・リークレポート）より後になる。
-	// m_fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
-	// の ReportLiveDeviceObjects で「真のリーク」として誤検出されてしまう。
-	m_fadeQuad.reset();
+    // SceneManager 自身は Meyer's Singleton（static ローカル変数）のため、
+    // このインスタンスの実体の破棄は wWinMain リターン後の静的破棄タイミングまで
+    // 起きない＝Graphics::Shutdown()（デバイス破棄・リークレポート）より後になる。
+    // m_fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
+    // の ReportLiveDeviceObjects で「真のリーク」として誤検出されてしまう。
+    m_fadeQuad.reset();
 }
-
 
 // =========================================================================
 // ECSシーンの保存 (Save)
 // =========================================================================
-void SceneManager::SaveScene(CCL::ECS::World* world, const std::string& filepath)
+void SceneManager::SaveScene(CCL::ECS::World *world, const std::string &filepath)
 {
-	// 1. 写真撮影前の「世界の整理」
-	// 今溜まっている RequestDestroy などのペンディング操作を完全に終わらせ、
-	// 中途半端な半死半生のエンティティがセーブデータに混ざるのを防ぐ
-	world->ScrutinyAndApply();
+    // 1. 写真撮影前の「世界の整理」
+    // 今溜まっている RequestDestroy などのペンディング操作を完全に終わらせ、
+    // 中途半端な半死半生のエンティティがセーブデータに混ざるのを防ぐ
+    world->ScrutinyAndApply();
 
-	// 2. 翻訳家（シリアライザ）に現在の状態をJSONに書き出させる
-	SceneSerializer::Serialize(world, filepath);
+    // 2. 翻訳家（シリアライザ）に現在の状態をJSONに書き出させる
+    SceneSerializer::Serialize(world, filepath);
 }
 
-void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath)
+void SceneManager::LoadScene(CCL::ECS::World *world, const std::string &filepath)
 {
     // ==========================================================
     // 0. 事前検証 (破壊する前にロード可能か確かめる)
@@ -196,27 +191,32 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
     //   ここで読めないと判明したら、現在の世界には一切手を付けずに中止する。
     // ==========================================================
     const std::string jsonStr = FileSystem::ReadAllText(filepath);
-    if (jsonStr.empty()) {
+    if (jsonStr.empty())
+    {
         CCL_LOG_ERROR(LogCategory::Core,
-            "[SceneManager] LoadScene 中止: ファイルが存在しないか空です (%s)。"
-            "現在のワールドは破壊しません。", filepath.c_str());
+                      "[SceneManager] LoadScene 中止: ファイルが存在しないか空です (%s)。"
+                      "現在のワールドは破壊しません。",
+                      filepath.c_str());
         return;
     }
 
     // ==========================================================
     // 1. 破壊の宣告 (Marking)
     // ==========================================================
-    auto& chunks = world->GetChunkManager().GetChunks();
-    for (auto& chunkPtr : chunks) {
+    auto &chunks = world->GetChunkManager().GetChunks();
+    for (auto &chunkPtr : chunks)
+    {
         if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
+        auto *chunk = chunkPtr.get();
 
         // PersistentTag（シーンを跨ぐシステム等）は絶対に破壊しない
         if (chunk->HasComponent<Tag::PersistentTag>()) continue;
 
-        for (size_t i = 0; i < chunk->GetEntityCount(); ++i) {
+        for (size_t i = 0; i < chunk->GetEntityCount(); ++i)
+        {
             CCL::ECS::EntityID entity = chunk->GetEntityByIndex(i);
-            if (entity != CCL::ECS::InvalidEntityID) {
+            if (entity != CCL::ECS::InvalidEntityID)
+            {
                 // 階層ごと安全に削除予約（DestroyTag を付与）
                 TransformUpdateSystem::MarkForDestruction(*world, entity, true);
             }
@@ -244,9 +244,6 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
     // ③ 世界に溜まった RequestDestroy を「今すぐ確定」させる
     world->ScrutinyAndApply();
 
-
-
-
     // ==========================================================
     // 3. シーン構築
     //   旧版にあった「手動 ID リマップ」ブロックを削除。
@@ -259,28 +256,26 @@ void SceneManager::LoadScene(CCL::ECS::World* world, const std::string& filepath
     //
     // ==========================================================
     SceneSerializer::Deserialize(world, filepath);
-
 }
 
-
 //シーン切り替え
-void SceneManager::ChangeScene(const std::string& name)
+void SceneManager::ChangeScene(const std::string &name)
 {
     // 名前を記録しておく
     m_currentSceneName = name;
 
-	Scene* newScene = SceneFactory::Instance().Create(name);
-	if (newScene) {
-		nextScene = newScene;
-	}
+    Scene *newScene = SceneFactory::Instance().Create(name);
+    if (newScene)
+    {
+        nextScene = newScene;
+    }
 }
 
-
 // 非同期シーン切り替え
-void SceneManager::ChangeSceneAsync(const std::string& name)
+void SceneManager::ChangeSceneAsync(const std::string &name)
 {
     // 対象シーンを生成（この時点では Initialize は走らせない＝軽い）
-    Scene* target = SceneFactory::Instance().Create(name);
+    Scene *target = SceneFactory::Instance().Create(name);
     if (!target) return;
 
     // 表示上のシーン名は「最終的に遷移する先」を指しておく
@@ -291,12 +286,12 @@ void SceneManager::ChangeSceneAsync(const std::string& name)
     ChangeScene(new SceneLoading(target));
 }
 
-
 void SceneManager::ChangeScene(Scene *scene)
 {
     // ※ここでは m_currentSceneName は自動更新されない
     // 呼び出し側（GateSystem）で SetCurrentSceneName を呼んでからこれを使う
-    if (nextScene != nullptr) {
+    if (nextScene != nullptr)
+    {
         delete nextScene;
     }
 
@@ -304,12 +299,11 @@ void SceneManager::ChangeScene(Scene *scene)
     nextScene = scene;
 }
 
-
 // =========================================================================
 //  画面遷移フェード（SceneManager が統括）
 // =========================================================================
 
-bool SceneManager::RequestTransition(const std::string& name, bool async)
+bool SceneManager::RequestTransition(const std::string &name, bool async)
 {
     if (IsTransitioning()) return false; // 遷移中の多重要求は無視
 
@@ -322,7 +316,7 @@ bool SceneManager::RequestTransition(const std::string& name, bool async)
     return true;
 }
 
-bool SceneManager::RequestTransition(Scene* readyScene)
+bool SceneManager::RequestTransition(Scene *readyScene)
 {
     if (!readyScene) return false;
 
@@ -352,7 +346,7 @@ bool SceneManager::RequestTransition(Scene* readyScene)
 void SceneManager::FadeInFromBlack(float dur)
 {
     m_fadeInDur = (dur > 0.0001f) ? dur : 0.0001f;
-    m_fadeAlpha = 1.0f;        // 黒から
+    m_fadeAlpha = 1.0f; // 黒から
     m_fade      = FadeState::In;
 }
 
@@ -368,7 +362,7 @@ void SceneManager::AdvanceFade(float dt)
             // 完全な黒の瞬間に、予約された切替を実行（nextScene がセットされる）。
             BeginPendingChange();
             m_fadeHoldTimer = 0.0f;
-            m_fade = FadeState::Hold; // 黒を少し保持してから明転へ
+            m_fade          = FadeState::Hold; // 黒を少し保持してから明転へ
         }
         break;
 
@@ -428,8 +422,8 @@ void SceneManager::DrawFade()
 {
     if (m_fadeAlpha <= 0.001f) return; // 透明なら描かない
 
-    auto& gfx = Graphics::Instance();
-    auto* dc  = gfx.GetDeviceContext();
+    auto &gfx = Graphics::Instance();
+    auto *dc  = gfx.GetDeviceContext();
     if (!dc) return;
 
     // 半透明合成・深度無効を明示的に設定（他パスの状態に依存しない）。
@@ -445,6 +439,6 @@ void SceneManager::DrawFade()
     // 黒の全画面矩形（白ダミーテクスチャに黒＋alpha を掛ける）。遅延生成。
     if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
     m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f,
-        gfx.GetScreenWidth(), gfx.GetScreenHeight(), 0.0f,
-        0.0f, 0.0f, 0.0f, eased);
+                       gfx.GetScreenWidth(), gfx.GetScreenHeight(), 0.0f,
+                       0.0f, 0.0f, 0.0f, eased);
 }

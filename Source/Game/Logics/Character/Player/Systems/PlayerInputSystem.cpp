@@ -4,11 +4,10 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/App/GameFlowState.h" // エディタ操作中(F2=uiInteract)は入力を遮断する
+#include "Engine/Core/App/GameFlowState.h"                          // エディタ操作中(F2=uiInteract)は入力を遮断する
 #include "Engine/Physics/Components/Character/KnockbackComponent.h" // 被弾硬直中は入力を遮断する
 
 #include "Engine/Core/Math/ScreenToWorld.h"
-
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -21,10 +20,10 @@ PlayerInputSystem::PlayerInputSystem()
 void PlayerInputSystem::Update(float dt)
 {
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
-    if (!m_world->HasResource<Camera*>()) return;
+    if (!m_world->HasResource<Camera *>()) return;
 
-    auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
-    Camera* mainCamera = m_world->GetResource<Camera*>();
+    auto    inputAPI   = m_world->GetResource<std::shared_ptr<IInputAPI>>();
+    Camera *mainCamera = m_world->GetResource<Camera *>();
 
     // エディタ操作中(F2でカーソル自由=uiInteract / シーケンサEditMode)は、ゲームを止めずに
     // カーソルだけ解放して ImGui を触れる。この間は全ゲーム入力を無視する（右クリックの技暴発防止）。
@@ -57,8 +56,10 @@ void PlayerInputSystem::Update(float dt)
 
         Vector3 camForward = mainCamera->GetFront();
         Vector3 camRight   = mainCamera->GetRight();
-        camForward.y = 0.0f; camForward.Normalize();
-        camRight.y   = 0.0f; camRight.Normalize();
+        camForward.y       = 0.0f;
+        camForward.Normalize();
+        camRight.y = 0.0f;
+        camRight.Normalize();
 
         moveDir = (camRight * moveX) + (camForward * moveY);
         if (moveDir.LengthSquared() > 0.001f)
@@ -66,7 +67,6 @@ void PlayerInputSystem::Update(float dt)
     }
 
     ForEachWithID([&](EntityID id, CharacterMovementComponent &movement, PlayerInputComponent &pin) {
-
         // 被弾硬直中は操作を受け付けない。KnockbackComponent は被弾するキャラに常設だが、
         // 万一付いていなくても「操作できないまま復帰できない」より「硬直しない」方が
         // 安全なので、アーキタイプ条件にはせず任意依存として引く。
@@ -98,7 +98,6 @@ void PlayerInputSystem::Update(float dt)
         pin.lockOnPressed = edge(rawLockOn, pin.prevLockOn);
     });
 }
-
 
 // ステージ L01: 全ての物理・移動処理の「前」に入力を確定させる
 REGISTER_LOGIC_SYSTEM(PlayerInputSystem, Priority::LogicStage::L01_Input);

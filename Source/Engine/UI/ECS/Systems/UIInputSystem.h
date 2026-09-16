@@ -13,15 +13,14 @@
 #include "Engine/UI/ECS/Components/UIInteractableComponent.h"
 
 class UIInputSystem : public CCL::ECS::IfSystem<UIInputSystem,
-                          CCL::ECS::Write<UITransformComponent>,
-                          CCL::ECS::Write<UIInteractableComponent>>
+                                                CCL::ECS::Write<UITransformComponent>,
+                                                CCL::ECS::Write<UIInteractableComponent>>
 {
-  public:
+public:
     UIInputSystem()
         : IfSystem("UIInputSystem")
     {
     }
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // UILayout が確定した computedPos/computedSize に対してヒット判定する。

@@ -25,125 +25,140 @@ using json = nlohmann::json;
 // =====================================================================
 namespace
 {
-inline float SafeF(float v) { return std::isfinite(v) ? v : 0.0f; }
+    inline float SafeF(float v) { return std::isfinite(v) ? v : 0.0f; }
 
-void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
-{
-    j["emitRadius"]    = {SafeF(d.emitRadius.x), SafeF(d.emitRadius.y)};
-    j["emitSize"]      = {SafeF(d.emitSize.x), SafeF(d.emitSize.y)};
-    j["sizeRandom"]    = SafeF(d.sizeRandom);
-    j["coneAngle"]     = {SafeF(d.coneAngle.x), SafeF(d.coneAngle.y)};
-    j["emitSpeed"]     = {SafeF(d.emitSpeed.x), SafeF(d.emitSpeed.y)};
-    j["angularSpeed"]  = {SafeF(d.angularSpeed.x), SafeF(d.angularSpeed.y)};
-    j["lifespan"]      = {SafeF(d.lifespan.x), SafeF(d.lifespan.y)};
-    j["spawnDelay"]    = {SafeF(d.spawnDelay.x), SafeF(d.spawnDelay.y)};
-    j["fadeDuration"]  = {SafeF(d.fadeDuration.x), SafeF(d.fadeDuration.y)};
-    j["localOffset"]   = {SafeF(d.localOffset.x), SafeF(d.localOffset.y), SafeF(d.localOffset.z)};
-    j["emitStretch"]   = {SafeF(d.emitStretch.x), SafeF(d.emitStretch.y)};
-    j["lineEnd"]       = {SafeF(d.lineEnd.x), SafeF(d.lineEnd.y), SafeF(d.lineEnd.z)};
-    j["emitShape"]     = d.emitShape;
-    j["uvScrollSpeed"] = {SafeF(d.uvScrollSpeed.x), SafeF(d.uvScrollSpeed.y)};
-    j["scale"]         = {SafeF(d.scale.x), SafeF(d.scale.y)};
-    j["color"]         = {SafeF(d.color.x), SafeF(d.color.y), SafeF(d.color.z), SafeF(d.color.w)};
-    j["spriteGrid"]    = {d.spriteGrid.x, d.spriteGrid.y};
-
-    j["localOffsetY"]    = SafeF(d.localOffsetY);
-    j["gravity"]         = SafeF(d.gravity);
-    j["maxSpeed"]        = SafeF(d.maxSpeed);
-    j["velocityStretch"] = SafeF(d.velocityStretch);
-    j["noiseScale"]      = SafeF(d.noiseScale);
-    j["noiseStrength"]   = SafeF(d.noiseStrength);
-
-    j["colorMode"]    = d.colorMode;
-    j["renderMode"]   = d.renderMode;
-    j["spriteMode"]   = d.spriteMode;
-    j["maxCount"]     = d.maxCount;
-    j["particleType"] = d.particleType;
-    j["emitMode"]     = d.emitMode;
-    j["burstCount"]   = d.burstCount;
-
-    j["attractorPos"]      = {d.attractorPos.x, d.attractorPos.y, d.attractorPos.z};
-    j["attractorStrength"] = d.attractorStrength;
-    j["attractorRadius"]   = d.attractorRadius;
-    j["vortexStrength"]    = d.vortexStrength;
-    j["drag"]              = d.drag;
-    j["attractorLocal"]    = d.attractorLocal;
-
-    j["name"]          = std::string(d.name);
-    j["texturePath"]   = std::string(d.texturePath);
-    j["colorRampPath"] = std::string(d.colorRampPath);
-}
-
-void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
-{
-    auto F  = [&](const char *k, float &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<float>(); };
-    auto I  = [&](const char *k, int &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<int>(); };
-    auto F2 = [&](const char *k, GpuData::float2 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 2) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); }
-    };
-    auto F3 = [&](const char *k, GpuData::float3 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 3) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); }
-    };
-    auto F4 = [&](const char *k, GpuData::float4 &v) {
-        if (j.contains(k) && j[k].is_array() && j[k].size() >= 4) { v.x = j[k][0].get<float>(); v.y = j[k][1].get<float>(); v.z = j[k][2].get<float>(); v.w = j[k][3].get<float>(); }
-    };
-    auto STR = [&](const char *k, char *dst, size_t cap) {
-        if (j.contains(k) && j[k].is_string()) strcpy_s(dst, cap, j[k].get<std::string>().c_str());
-    };
-
-    F2("emitRadius", d.emitRadius);
-    F2("emitSize", d.emitSize);
-    // 旧アセットには sizeRandom が無い。その場合は既定の 1（＝従来のランダム）を保つ。
-    F("sizeRandom", d.sizeRandom);
-    F2("coneAngle", d.coneAngle);
-    F2("emitSpeed", d.emitSpeed);
-    F2("angularSpeed", d.angularSpeed);
-    F2("lifespan", d.lifespan);
-    F2("spawnDelay", d.spawnDelay);
-    F2("fadeDuration", d.fadeDuration);
-    F3("localOffset", d.localOffset);
-    F2("emitStretch", d.emitStretch);
-    F2("uvScrollSpeed", d.uvScrollSpeed);
-    F2("scale", d.scale);
-    F4("color", d.color);
-
-    F("localOffsetY", d.localOffsetY);
-    F("gravity", d.gravity);
-    // 旧アセットには maxSpeed が無い。その場合は既定の 10（＝以前のハードコード値）
-    // が維持されるので、読み込んだだけで見た目が変わることはない。
-    F("maxSpeed", d.maxSpeed);
-    F("velocityStretch", d.velocityStretch);
-    F("noiseScale", d.noiseScale);
-    F("noiseStrength", d.noiseStrength);
-
-    I("colorMode", d.colorMode);
-    I("renderMode", d.renderMode);
-    I("spriteMode", d.spriteMode);
-    I("maxCount", d.maxCount);
-    I("particleType", d.particleType);
-    I("emitMode", d.emitMode);
-    I("burstCount", d.burstCount);
-    I("emitShape", d.emitShape);
-    F3("lineEnd", d.lineEnd);
-    d.attractorLocal = j.value("attractorLocal", true);
-
-    if (j.contains("spriteGrid") && j["spriteGrid"].is_array() && j["spriteGrid"].size() >= 2)
+    void WriteDescToJson(json &j, const ParticleEmitterDesc &d)
     {
-        d.spriteGrid.x = j["spriteGrid"][0].get<uint32_t>();
-        d.spriteGrid.y = j["spriteGrid"][1].get<uint32_t>();
+        j["emitRadius"]    = {SafeF(d.emitRadius.x), SafeF(d.emitRadius.y)};
+        j["emitSize"]      = {SafeF(d.emitSize.x), SafeF(d.emitSize.y)};
+        j["sizeRandom"]    = SafeF(d.sizeRandom);
+        j["coneAngle"]     = {SafeF(d.coneAngle.x), SafeF(d.coneAngle.y)};
+        j["emitSpeed"]     = {SafeF(d.emitSpeed.x), SafeF(d.emitSpeed.y)};
+        j["angularSpeed"]  = {SafeF(d.angularSpeed.x), SafeF(d.angularSpeed.y)};
+        j["lifespan"]      = {SafeF(d.lifespan.x), SafeF(d.lifespan.y)};
+        j["spawnDelay"]    = {SafeF(d.spawnDelay.x), SafeF(d.spawnDelay.y)};
+        j["fadeDuration"]  = {SafeF(d.fadeDuration.x), SafeF(d.fadeDuration.y)};
+        j["localOffset"]   = {SafeF(d.localOffset.x), SafeF(d.localOffset.y), SafeF(d.localOffset.z)};
+        j["emitStretch"]   = {SafeF(d.emitStretch.x), SafeF(d.emitStretch.y)};
+        j["lineEnd"]       = {SafeF(d.lineEnd.x), SafeF(d.lineEnd.y), SafeF(d.lineEnd.z)};
+        j["emitShape"]     = d.emitShape;
+        j["uvScrollSpeed"] = {SafeF(d.uvScrollSpeed.x), SafeF(d.uvScrollSpeed.y)};
+        j["scale"]         = {SafeF(d.scale.x), SafeF(d.scale.y)};
+        j["color"]         = {SafeF(d.color.x), SafeF(d.color.y), SafeF(d.color.z), SafeF(d.color.w)};
+        j["spriteGrid"]    = {d.spriteGrid.x, d.spriteGrid.y};
+
+        j["localOffsetY"]    = SafeF(d.localOffsetY);
+        j["gravity"]         = SafeF(d.gravity);
+        j["maxSpeed"]        = SafeF(d.maxSpeed);
+        j["velocityStretch"] = SafeF(d.velocityStretch);
+        j["noiseScale"]      = SafeF(d.noiseScale);
+        j["noiseStrength"]   = SafeF(d.noiseStrength);
+
+        j["colorMode"]    = d.colorMode;
+        j["renderMode"]   = d.renderMode;
+        j["spriteMode"]   = d.spriteMode;
+        j["maxCount"]     = d.maxCount;
+        j["particleType"] = d.particleType;
+        j["emitMode"]     = d.emitMode;
+        j["burstCount"]   = d.burstCount;
+
+        j["attractorPos"]      = {d.attractorPos.x, d.attractorPos.y, d.attractorPos.z};
+        j["attractorStrength"] = d.attractorStrength;
+        j["attractorRadius"]   = d.attractorRadius;
+        j["vortexStrength"]    = d.vortexStrength;
+        j["drag"]              = d.drag;
+        j["attractorLocal"]    = d.attractorLocal;
+
+        j["name"]          = std::string(d.name);
+        j["texturePath"]   = std::string(d.texturePath);
+        j["colorRampPath"] = std::string(d.colorRampPath);
     }
 
-    F3("attractorPos", d.attractorPos);
-    F("attractorStrength", d.attractorStrength);
-    F("attractorRadius", d.attractorRadius);
-    F("vortexStrength", d.vortexStrength);
-    F("drag", d.drag);
+    void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
+    {
+        auto F  = [&](const char *k, float &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<float>(); };
+        auto I  = [&](const char *k, int &dst) { if (j.contains(k) && j[k].is_number()) dst = j[k].get<int>(); };
+        auto F2 = [&](const char *k, GpuData::float2 &v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 2)
+            {
+                v.x = j[k][0].get<float>();
+                v.y = j[k][1].get<float>();
+            }
+        };
+        auto F3 = [&](const char *k, GpuData::float3 &v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 3)
+            {
+                v.x = j[k][0].get<float>();
+                v.y = j[k][1].get<float>();
+                v.z = j[k][2].get<float>();
+            }
+        };
+        auto F4 = [&](const char *k, GpuData::float4 &v) {
+            if (j.contains(k) && j[k].is_array() && j[k].size() >= 4)
+            {
+                v.x = j[k][0].get<float>();
+                v.y = j[k][1].get<float>();
+                v.z = j[k][2].get<float>();
+                v.w = j[k][3].get<float>();
+            }
+        };
+        auto STR = [&](const char *k, char *dst, size_t cap) {
+            if (j.contains(k) && j[k].is_string()) strcpy_s(dst, cap, j[k].get<std::string>().c_str());
+        };
 
-    STR("name", d.name, sizeof(d.name));
-    STR("texturePath", d.texturePath, sizeof(d.texturePath));
-    STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
-}
-// 自前で std::filesystem を使った ToRelativePath を完全削除
+        F2("emitRadius", d.emitRadius);
+        F2("emitSize", d.emitSize);
+        // 旧アセットには sizeRandom が無い。その場合は既定の 1（＝従来のランダム）を保つ。
+        F("sizeRandom", d.sizeRandom);
+        F2("coneAngle", d.coneAngle);
+        F2("emitSpeed", d.emitSpeed);
+        F2("angularSpeed", d.angularSpeed);
+        F2("lifespan", d.lifespan);
+        F2("spawnDelay", d.spawnDelay);
+        F2("fadeDuration", d.fadeDuration);
+        F3("localOffset", d.localOffset);
+        F2("emitStretch", d.emitStretch);
+        F2("uvScrollSpeed", d.uvScrollSpeed);
+        F2("scale", d.scale);
+        F4("color", d.color);
+
+        F("localOffsetY", d.localOffsetY);
+        F("gravity", d.gravity);
+        // 旧アセットには maxSpeed が無い。その場合は既定の 10（＝以前のハードコード値）
+        // が維持されるので、読み込んだだけで見た目が変わることはない。
+        F("maxSpeed", d.maxSpeed);
+        F("velocityStretch", d.velocityStretch);
+        F("noiseScale", d.noiseScale);
+        F("noiseStrength", d.noiseStrength);
+
+        I("colorMode", d.colorMode);
+        I("renderMode", d.renderMode);
+        I("spriteMode", d.spriteMode);
+        I("maxCount", d.maxCount);
+        I("particleType", d.particleType);
+        I("emitMode", d.emitMode);
+        I("burstCount", d.burstCount);
+        I("emitShape", d.emitShape);
+        F3("lineEnd", d.lineEnd);
+        d.attractorLocal = j.value("attractorLocal", true);
+
+        if (j.contains("spriteGrid") && j["spriteGrid"].is_array() && j["spriteGrid"].size() >= 2)
+        {
+            d.spriteGrid.x = j["spriteGrid"][0].get<uint32_t>();
+            d.spriteGrid.y = j["spriteGrid"][1].get<uint32_t>();
+        }
+
+        F3("attractorPos", d.attractorPos);
+        F("attractorStrength", d.attractorStrength);
+        F("attractorRadius", d.attractorRadius);
+        F("vortexStrength", d.vortexStrength);
+        F("drag", d.drag);
+
+        STR("name", d.name, sizeof(d.name));
+        STR("texturePath", d.texturePath, sizeof(d.texturePath));
+        STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
+    }
+    // 自前で std::filesystem を使った ToRelativePath を完全削除
 } // namespace
 
 // =====================================================================
@@ -151,68 +166,68 @@ void ReadDescFromJson(const json &j, ParticleEmitterDesc &d)
 // =====================================================================
 namespace ComponentMetaJson
 {
-template <>
-struct ComponentSerializer<GPUParticleComponent>
-{
-    // 保存は常に新フォーマット（emitters 配列）で書く。
-    static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
+    template <>
+    struct ComponentSerializer<GPUParticleComponent>
     {
-        json arr = json::array();
-        for (const auto &emitter : comp.emitters)
+        // 保存は常に新フォーマット（emitters 配列）で書く。
+        static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
         {
-            json ej;
-            WriteDescToJson(ej, emitter.desc); // 1エミッタぶんの変換は既存関数をそのまま使う
-            arr.push_back(ej);
+            json arr = json::array();
+            for (const auto &emitter : comp.emitters)
+            {
+                json ej;
+                WriteDescToJson(ej, emitter.desc); // 1エミッタぶんの変換は既存関数をそのまま使う
+                arr.push_back(ej);
+            }
+            j["emitters"]       = arr;
+            j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
         }
-        j["emitters"]       = arr;
-        j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
-    }
 
-    // 読み込みは新旧どちらのフォーマットも受け付ける。
-    //
-    // 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
-    // （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
-    // その場合は「エミッタ1個のエフェクト」として読む。
-    static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
-    {
-        comp.emitters.clear();
-
-        if (j.contains("emitters") && j["emitters"].is_array())
+        // 読み込みは新旧どちらのフォーマットも受け付ける。
+        //
+        // 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
+        // （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
+        // その場合は「エミッタ1個のエフェクト」として読む。
+        static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
         {
-            for (const auto &ej : j["emitters"])
+            comp.emitters.clear();
+
+            if (j.contains("emitters") && j["emitters"].is_array())
+            {
+                for (const auto &ej : j["emitters"])
+                {
+                    ParticleEmitter emitter;
+                    ReadDescFromJson(ej, emitter.desc);
+                    comp.emitters.push_back(emitter);
+                }
+            }
+            else
             {
                 ParticleEmitter emitter;
-                ReadDescFromJson(ej, emitter.desc);
+                ReadDescFromJson(j, emitter.desc); // 旧フォーマット
                 comp.emitters.push_back(emitter);
             }
+
+            // 空配列は許容しない（システム側が最低1個を前提にできるようにする）。
+            if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
+
+            comp.animControlled = j.value("animControlled", false);
+
+            auto &rm = ResourceManager::Instance();
+            for (auto &emitter : comp.emitters)
+            {
+                emitter.texture =
+                    (emitter.desc.texturePath[0] != '\0') ? rm.LoadTexture(emitter.desc.texturePath) : TextureHandle{};
+                emitter.colorRamp =
+                    (emitter.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(emitter.desc.colorRampPath) : TextureHandle{};
+
+                emitter.isInitialized = false;
+                emitter.needsGpuInit  = true;
+                emitter.staticDirty   = true;
+                emitter.burstTrigger  = 0.0f;
+            }
         }
-        else
-        {
-            ParticleEmitter emitter;
-            ReadDescFromJson(j, emitter.desc); // 旧フォーマット
-            comp.emitters.push_back(emitter);
-        }
-
-        // 空配列は許容しない（システム側が最低1個を前提にできるようにする）。
-        if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
-
-        comp.animControlled = j.value("animControlled", false);
-
-        auto &rm = ResourceManager::Instance();
-        for (auto &emitter : comp.emitters)
-        {
-            emitter.texture =
-                (emitter.desc.texturePath[0] != '\0') ? rm.LoadTexture(emitter.desc.texturePath) : TextureHandle{};
-            emitter.colorRamp =
-                (emitter.desc.colorRampPath[0] != '\0') ? rm.LoadTexture(emitter.desc.colorRampPath) : TextureHandle{};
-
-            emitter.isInitialized = false;
-            emitter.needsGpuInit  = true;
-            emitter.staticDirty   = true;
-            emitter.burstTrigger  = 0.0f;
-        }
-    }
-};
+    };
 } // namespace ComponentMetaJson
 
 // =====================================================================
@@ -223,12 +238,12 @@ struct ComponentMeta<GPUParticleComponent>
 {
     CCL_META_USING_THIS(GPUParticleComponent)
 
-    static constexpr const char *displayName    = "GPU Particle Emitter";
-    static constexpr const char *category       = CCL::Categories::Effect;
-    static constexpr int         sortPriority   = 450;
+    static constexpr const char *displayName       = "GPU Particle Emitter";
+    static constexpr const char *category          = CCL::Categories::Effect;
+    static constexpr int         sortPriority      = 450;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
     // -----------------------------------------------------------------
@@ -315,20 +330,23 @@ struct ComponentMeta<GPUParticleComponent>
         {
             ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
                                u8"※ 継続放出のエミッタが %d 個あります。"
-                               u8"これらは発火に関係なく出続けます", continuousCount);
+                               u8"これらは発火に関係なく出続けます",
+                               continuousCount);
         }
 
         // 非表示の層があるまま調整を続けると「なぜか薄い」の原因になる。
         //   保存されない設定なので、気付ける形で常に出しておく。
         int hiddenCount = 0;
-        for (const auto &e : p->emitters) if (!e.previewVisible) ++hiddenCount;
+        for (const auto &e : p->emitters)
+            if (!e.previewVisible) ++hiddenCount;
         if (hiddenCount > 0)
         {
             ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
                                u8"※ %d 個のエミッタを非表示中（プレビュー用・保存されません）", hiddenCount);
             ImGui::SameLine();
             if (ImGui::SmallButton(u8"全部表示に戻す"))
-                for (auto &e : p->emitters) e.previewVisible = true;
+                for (auto &e : p->emitters)
+                    e.previewVisible = true;
         }
 
         if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
@@ -378,9 +396,9 @@ struct ComponentMeta<GPUParticleComponent>
                 // ### 以降が ImGui の識別子になる。前半(表示文字)が名前や値の
                 //   変更で変わってもタブの選択状態が飛ばないよう、ここは必ず固定する。
                 std::string caption = (ed.name[0] != '\0')
-                    ? std::string(ed.name)
-                    : (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
-                                        : u8"継続 " + std::to_string(ed.maxCount));
+                                          ? std::string(ed.name)
+                                          : (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
+                                                              : u8"継続 " + std::to_string(ed.maxCount));
 
                 // 非表示中はひと目で分かるようにする。戻し忘れ防止。
                 if (!em.previewVisible) caption = u8"[非表示] " + caption;
@@ -416,7 +434,9 @@ struct ComponentMeta<GPUParticleComponent>
 
         // 表示スイッチ。1層ずつ消して「どれがどれか」を目で確かめるための道具。
         //   保存されないので、戻し忘れてもアセットは壊れない。
-        if (ImGui::Checkbox(u8"表示", &emitter.previewVisible)) {}
+        if (ImGui::Checkbox(u8"表示", &emitter.previewVisible))
+        {
+        }
         Help(u8"チェックを外すとこのエミッタだけ描画しません。\n"
              u8"どの層がどの見た目を担当しているか確かめるのに使います。\n"
              u8"プレビュー用の設定でプレハブには保存されません。");
@@ -430,7 +450,8 @@ struct ComponentMeta<GPUParticleComponent>
         ImGui::SameLine();
         if (ImGui::SmallButton(u8"全部表示"))
         {
-            for (auto &e : p->emitters) e.previewVisible = true;
+            for (auto &e : p->emitters)
+                e.previewVisible = true;
         }
 
         // 追加と削除は「このGUIを描き終えてから」行う。ここで vector を触ると
@@ -438,7 +459,7 @@ struct ComponentMeta<GPUParticleComponent>
         bool requestErase     = false;
         bool requestDuplicate = false;
 
-        if (ImGui::SmallButton(u8"このエミッタを複製"))  requestDuplicate = true;
+        if (ImGui::SmallButton(u8"このエミッタを複製")) requestDuplicate = true;
         Help(u8"選択中のエミッタを丸ごとコピーして末尾に追加します。\n"
              u8"似た層をもう1枚重ねたいとき、一から設定し直さずに済みます。");
         if (p->emitters.size() > 1)
@@ -596,7 +617,7 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"運動・物理 (Movement)"))
             {
-                currentActiveTabId = 1; 
+                currentActiveTabId = 1;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"速度 (Velocity)");
                 if (RangeDrag(u8"初速度", d.emitSpeed, 0.1f, -100.0f, 100.0f, "%.2f")) changed = true;
@@ -663,7 +684,7 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"サイズ・寿命 (Size & Life)"))
             {
-                currentActiveTabId = 2; 
+                currentActiveTabId = 2;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"寿命 (Lifespan)");
                 if (RangeDrag(u8"生存時間 (秒)", d.lifespan, 0.05f, 0.01f, 60.0f, "%.2f")) changed = true;
@@ -719,7 +740,7 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"描画・テクスチャ (Graphics)"))
             {
-                currentActiveTabId = 3; 
+                currentActiveTabId = 3;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"カラー・ブレンド (Color & Blend)");
                 const char *renderModes[] = {"Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)"};
@@ -775,7 +796,7 @@ struct ComponentMeta<GPUParticleComponent>
                     {
                         memset(d.texturePath, 0, sizeof(d.texturePath));
                         emitter.texture = TextureHandle{};
-                        changed    = true;
+                        changed         = true;
                     }
                 }
 
@@ -794,7 +815,7 @@ struct ComponentMeta<GPUParticleComponent>
                     {
                         memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
                         emitter.colorRamp = TextureHandle{};
-                        changed      = true;
+                        changed           = true;
                     }
                 }
 
@@ -825,8 +846,8 @@ struct ComponentMeta<GPUParticleComponent>
             // 名前の重複を避けて " copy" を足す。ただし入りきる時だけ。
             //   strcat_s はバッファ不足だと不正パラメータハンドラを呼んで落ちるので、
             //   長い名前を付けられていても安全なように、事前に空きを確かめる。
-            const char *suffix = " copy";
-            const size_t used  = strnlen_s(copy.desc.name, sizeof(copy.desc.name));
+            const char  *suffix = " copy";
+            const size_t used   = strnlen_s(copy.desc.name, sizeof(copy.desc.name));
             if (used + strlen(suffix) < sizeof(copy.desc.name))
                 strcat_s(copy.desc.name, sizeof(copy.desc.name), suffix);
 

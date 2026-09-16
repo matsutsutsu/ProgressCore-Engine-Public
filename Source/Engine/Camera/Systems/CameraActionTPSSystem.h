@@ -10,9 +10,9 @@ class CameraActionTPSSystem : public CCL::ECS::IfSystem<
                                   CameraActionTPSSystem,
                                   CCL::ECS::Write<VirtualCamera>,
                                   CCL::ECS::Write<CameraBodyTPSComponent>, // 内部状態(Pitch/Yaw等)を更新するためWrite
-                                  CCL::ECS::Write<TransformComponent>>  // カメラ自身のTransformを確定させるためWrite
+                                  CCL::ECS::Write<TransformComponent>>     // カメラ自身のTransformを確定させるためWrite
 {
-  public:
+public:
     CameraActionTPSSystem()
         : IfSystem("CameraActionTPSSystem")
     {

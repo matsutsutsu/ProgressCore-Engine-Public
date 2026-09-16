@@ -16,9 +16,9 @@ LightSystem::LightSystem() : SystemBase("LightSystem") {}
 std::vector<CCL::ECS::TypeID> LightSystem::GetReadTypes() const
 {
     return {CCL::ECS::TypeInfo<DirectionalLightComponent>::ID(),
-        CCL::ECS::TypeInfo<PointLightComponent>::ID(),
-        CCL::ECS::TypeInfo<SpotLightComponent>::ID(),
-        CCL::ECS::TypeInfo<TransformComponent>::ID()};
+            CCL::ECS::TypeInfo<PointLightComponent>::ID(),
+            CCL::ECS::TypeInfo<SpotLightComponent>::ID(),
+            CCL::ECS::TypeInfo<TransformComponent>::ID()};
 }
 
 void LightSystem::Update(float dt)
@@ -34,7 +34,8 @@ void LightSystem::Update(float dt)
 
     // 2. DirectionalLightComponent を持っているエンティティを収集
     auto dirView = m_world->View<DirectionalLightComponent, TransformComponent>();
-    for (auto entity : dirView) {
+    for (auto entity : dirView)
+    {
         auto *lightComp = m_world->GetComponent<DirectionalLightComponent>(entity);
         auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 
@@ -58,7 +59,8 @@ void LightSystem::Update(float dt)
 
     // --- 2. Point Light ---
     auto pointView = m_world->View<PointLightComponent, TransformComponent>();
-    for (auto entity : pointView) {
+    for (auto entity : pointView)
+    {
         auto *lightComp = m_world->GetComponent<PointLightComponent>(entity);
         auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 
@@ -81,7 +83,8 @@ void LightSystem::Update(float dt)
 
     // --- 3. Spot Light ---
     auto spotView = m_world->View<SpotLightComponent, TransformComponent>();
-    for (auto entity : spotView) {
+    for (auto entity : spotView)
+    {
         auto *lightComp = m_world->GetComponent<SpotLightComponent>(entity);
         auto *transComp = m_world->GetComponent<TransformComponent>(entity);
 

@@ -1,6 +1,9 @@
 #pragma once
 
-namespace Tag {
+namespace Tag
+{
     // このタグが付いているエンティティは、シーンロード時（World Clear）に破壊されず生き残る
-    struct PersistentTag {};
-}
+    struct PersistentTag
+    {
+    };
+} // namespace Tag

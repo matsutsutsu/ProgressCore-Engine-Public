@@ -11,9 +11,9 @@
  * @warning 入力・物理より前に必ず実行すること（L01_Input と同優先度で並列可）。
  */
 class TransformSnapshotSystem : public CCL::ECS::IfSystem<TransformSnapshotSystem,
-                                    CCL::ECS::Write<TransformComponent>>
+                                                          CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     TransformSnapshotSystem()
         : IfSystem("TransformSnapshotSystem")
     {

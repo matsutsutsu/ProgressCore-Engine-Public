@@ -5,15 +5,16 @@
 #include <cstdint>
 
 // 1. 仮想カメラの基本情報 (vCam)
-struct VirtualCamera {
-    int priority = 0;
-    float blendTime = 1.0f;
-    float fov = 45.0f;
-    float nearClip = 0.1f;
-    float farClip = 1000.0f;
-    DirectX::XMFLOAT3 resultPos = { 0, 0, 0 };
-    DirectX::XMFLOAT3 resultLookAt = { 0, 0, 1 };
-    DirectX::XMFLOAT3 resultUp = { 0, 1, 0 };
+struct VirtualCamera
+{
+    int               priority     = 0;
+    float             blendTime    = 1.0f;
+    float             fov          = 45.0f;
+    float             nearClip     = 0.1f;
+    float             farClip      = 1000.0f;
+    DirectX::XMFLOAT3 resultPos    = {0, 0, 0};
+    DirectX::XMFLOAT3 resultLookAt = {0, 0, 1};
+    DirectX::XMFLOAT3 resultUp     = {0, 1, 0};
 
     // -----------------------------------------------------------------
     // 初期化フラグ
@@ -23,16 +24,16 @@ struct VirtualCamera {
     //   1bit を両者で共有していた頃は、先に走った側のフラグを見て
     //   もう片方が初回ワープをスキップし、原点から補間を始めていた。
     // -----------------------------------------------------------------
-    bool posInitialized = false;  // resultPos が一度でも確定したか
+    bool posInitialized  = false; // resultPos が一度でも確定したか
     bool lookInitialized = false; // resultLookAt が一度でも確定したか
-    bool isValid = false;         // 位置・注視点が揃って採用可能か
+    bool isValid         = false; // 位置・注視点が揃って採用可能か
 
     // 位置・注視点の両方を自前で確定させる Body（TPS/Free/Dolly）用。
     void MarkResolved()
     {
-        posInitialized = true;
+        posInitialized  = true;
         lookInitialized = true;
-        isValid = true;
+        isValid         = true;
     }
 
     // 片側だけを書くシステム（Follow / LookAt）から呼ぶ。両方揃って初めて有効化する。
@@ -40,21 +41,23 @@ struct VirtualCamera {
 };
 
 // 2. 「移動」戦略: ターゲット追従 (Body)
-struct CameraBodyFollow {
+struct CameraBodyFollow
+{
     // 生のIDではなく安全なEntityLinkを使用する
     CCL::Serialization::EntityLink target;
-    DirectX::XMFLOAT3  offset = { 0, 0, 0 };
-    float              damping = 10.0f;
-    bool               lockY = false;   // true: 高さ(Y)をターゲットに追従させず lockedY に固定する
-    float              lockedY = 0.0f;  // lockY 有効時に維持する高さ(m)
+    DirectX::XMFLOAT3              offset  = {0, 0, 0};
+    float                          damping = 10.0f;
+    bool                           lockY   = false; // true: 高さ(Y)をターゲットに追従させず lockedY に固定する
+    float                          lockedY = 0.0f;  // lockY 有効時に維持する高さ(m)
 };
 
 // 3. 「回転」戦略: ターゲット注視 (Aim)
-struct CameraAimLookAt {
+struct CameraAimLookAt
+{
     // EntityLinkを使用する
     CCL::Serialization::EntityLink target;
-    DirectX::XMFLOAT3  offset = { 0, 0, 0 };
-    float              damping = 10.0f;
+    DirectX::XMFLOAT3              offset  = {0, 0, 0};
+    float                          damping = 10.0f;
 };
 
 // 4. 「揺れ」演出用コンポーネント (Shake)
@@ -77,7 +80,8 @@ struct CameraAimLookAt {
 //    このコンポーネントが「揺れてよいカメラ」の目印も兼ねる。揺らしたくないカメラ
 //    (導入演出・デバッグ用のフリーカメラ)には付けなければよく、システム側に
 //    対象を選ぶ条件を書かずに済む。
-struct CameraShake {
+struct CameraShake
+{
     // --- チューニング（シリアライズする） ---
     float amplitude     = 3.0f;  // trauma=1.0 のときの最大振幅(ワールド単位)
     float frequency     = 22.0f; // 揺れの周波数(Hz)。大きいほど細かく震える。
@@ -96,7 +100,8 @@ struct CameraShake {
 
         // 波形を作り直すのは止まっている時だけ。揺れの最中に種や位相を変えると
         // ノイズが不連続に飛び、揺れではなく「カメラのワープ」に見える。
-        if (trauma <= 0.0f) {
+        if (trauma <= 0.0f)
+        {
             elapsed = 0.0f;
             seed    = seed * 1664525u + 1013904223u;
         }
@@ -108,9 +113,10 @@ struct CameraShake {
 // ---------------------------------------------------------
 // 新しい拡張: 自由移動用ボディコンポーネント
 // ---------------------------------------------------------
-struct CameraBodyFree {
-    float moveSpeed = 10.0f;
-    float lookSpeed = 0.2f;
-    float currentYaw = 0.0f;
+struct CameraBodyFree
+{
+    float moveSpeed    = 10.0f;
+    float lookSpeed    = 0.2f;
+    float currentYaw   = 0.0f;
     float currentPitch = 0.0f;
 };

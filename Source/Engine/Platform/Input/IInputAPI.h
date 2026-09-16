@@ -4,7 +4,8 @@
 #include "Engine/Core/Math/StringHash.h"
 
 // 1. 入力デバイスの種類
-enum class InputDeviceType {
+enum class InputDeviceType
+{
     Keyboard,         // キーボード
     Mouse_Button,     // マウスボタン
     GamePad_Button,   // ゲームパッドのボタン
@@ -17,48 +18,57 @@ enum class InputDeviceType {
 };
 
 // 2. マッピング（割り当て）の情報
-struct InputBinding {
+struct InputBinding
+{
     InputDeviceType deviceType;
-    unsigned int    keyCode;    // キーボードのVK_Wや、GamePad::BTN_Aなどのビットフラグ
+    unsigned int    keyCode;      // キーボードのVK_Wや、GamePad::BTN_Aなどのビットフラグ
     float           scale = 1.0f; // 軸の方向や感度（Wなら1.0、Sなら-1.0等）
 };
 
 // 2.3 アクションの発火タイミング種別（エディタで設定する）
-enum class TriggerType {
-    Down,       // 押しっぱなし（押されている間ずっと true）
-    Triggered,  // 押した瞬間だけ true
-    Released    // 離した瞬間だけ true
+enum class TriggerType
+{
+    Down,      // 押しっぱなし（押されている間ずっと true）
+    Triggered, // 押した瞬間だけ true
+    Released   // 離した瞬間だけ true
 };
 
 // 文字列 <-> TriggerType （JSON保存/読込用）
-inline const char* TriggerTypeToString(TriggerType t) {
-    switch (t) {
-    case TriggerType::Triggered: return "Triggered";
-    case TriggerType::Released:  return "Released";
+inline const char *TriggerTypeToString(TriggerType t)
+{
+    switch (t)
+    {
+    case TriggerType::Triggered:
+        return "Triggered";
+    case TriggerType::Released:
+        return "Released";
     case TriggerType::Down:
-    default:                     return "Down";
+    default:
+        return "Down";
     }
 }
-inline TriggerType StringToTriggerType(const std::string& s) {
+inline TriggerType StringToTriggerType(const std::string &s)
+{
     if (s == "Triggered") return TriggerType::Triggered;
-    if (s == "Released")  return TriggerType::Released;
+    if (s == "Released") return TriggerType::Released;
     return TriggerType::Down;
 }
 
 // 2.5 アクティブな操作デバイス（UIのアイコン表示切り替え用）
-enum class ActiveDeviceType {
+enum class ActiveDeviceType
+{
     KeyboardMouse,
     GamePad
 };
 
 // 3. 純粋な入力API
-class IInputAPI 
+class IInputAPI
 {
 public:
     virtual ~IInputAPI() = default;
 
     // エディタからホットリロードを叩けるようにインターフェースにも公開
-    virtual bool LoadConfig(const std::string& filePath) = 0;
+    virtual bool LoadConfig(const std::string &filePath) = 0;
 
     // 現在使用中のデバイスカテゴリを取得
     virtual ActiveDeviceType GetActiveDeviceType() const = 0;
@@ -68,9 +78,9 @@ public:
     virtual float GetMouseY() const = 0;
     // マウスの毎フレーム移動量（デルタ、ピクセル単位）。TPSの視点回転などに使う。
     // スティックと違い「倒し量」ではなく既に「移動量」なので、利用側で dt を掛けないこと。
-    virtual float GetMouseDeltaX() const = 0;
-    virtual float GetMouseDeltaY() const = 0;
-    virtual float GetScreenWidth() const = 0;
+    virtual float GetMouseDeltaX() const  = 0;
+    virtual float GetMouseDeltaY() const  = 0;
+    virtual float GetScreenWidth() const  = 0;
     virtual float GetScreenHeight() const = 0;
 
     // --- マウスカーソルのロック（マウスルック） ---
@@ -84,11 +94,11 @@ public:
     virtual bool IsGameInputActive() const { return true; }
 
     // --- 設定（バインディング） ---
-    virtual void AddActionBinding(const std::string& actionName, InputDeviceType device, unsigned int keyCode) = 0;
-    virtual void AddAxisBinding(const std::string& axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;
+    virtual void AddActionBinding(const std::string &actionName, InputDeviceType device, unsigned int keyCode)                 = 0;
+    virtual void AddAxisBinding(const std::string &axisName, InputDeviceType device, unsigned int keyCode, float scale = 1.0f) = 0;
 
     // アクションの発火種別を設定（LoadConfig / エディタから使用）
-    virtual void SetActionTriggerType(const std::string& actionName, TriggerType type) = 0;
+    virtual void SetActionTriggerType(const std::string &actionName, TriggerType type) = 0;
 
     // =======================================================
     // 入力の取得（コア機能：超高速版）
@@ -96,15 +106,17 @@ public:
     //   (Down / Triggered / Released) に従って評価される。
     //   ゲーム側はこの1関数を呼ぶだけでよい。
     // =======================================================
-    virtual bool GetAction(uint32_t actionHash) const = 0;
-    virtual float GetAxis(uint32_t axisHash) const = 0;
+    virtual bool  GetAction(uint32_t actionHash) const = 0;
+    virtual float GetAxis(uint32_t axisHash) const     = 0;
 
     // 文字列で呼べる安全なヘルパー関数
-    bool GetAction(const char* actionName) const { 
-        return GetAction(CCL::Utils::HashString(actionName)); 
+    bool GetAction(const char *actionName) const
+    {
+        return GetAction(CCL::Utils::HashString(actionName));
     }
-    float GetAxis(const char* axisName) const { 
-        return GetAxis(CCL::Utils::HashString(axisName)); 
+    float GetAxis(const char *axisName) const
+    {
+        return GetAxis(CCL::Utils::HashString(axisName));
     }
 
     // =======================================================

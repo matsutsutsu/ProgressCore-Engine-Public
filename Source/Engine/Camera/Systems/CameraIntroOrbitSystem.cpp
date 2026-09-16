@@ -23,18 +23,18 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-// スキップ入力を受け付けるまでの猶予(秒)。
-// シーン開始直後にボタンを押しっぱなしだと事故で飛んでしまうため。
-constexpr float kSkipGraceSeconds = 0.5f;
+    // スキップ入力を受け付けるまでの猶予(秒)。
+    // シーン開始直後にボタンを押しっぱなしだと事故で飛んでしまうため。
+    constexpr float kSkipGraceSeconds = 0.5f;
 
-// 注視対象が見つかるまで待つ上限(秒)。
-// これを超えたら演出を諦めてゲームを進行させる。
-//
-// 実測(Debug)で、レベルロード完了から対象の解決まで約1.1秒かかった。
-// ロード直後の1フレーム目は dt が大きく跳ねるため、短すぎると遅い環境で
-// 「ボスを見つける前に諦める」事故になる。待ちが長引いて困るのは
-// 対象が本当に存在しない時だけなので、余裕を持たせるほうが安全側。
-constexpr float kTargetResolveTimeout = 5.0f;
+    // 注視対象が見つかるまで待つ上限(秒)。
+    // これを超えたら演出を諦めてゲームを進行させる。
+    //
+    // 実測(Debug)で、レベルロード完了から対象の解決まで約1.1秒かかった。
+    // ロード直後の1フレーム目は dt が大きく跳ねるため、短すぎると遅い環境で
+    // 「ボスを見つける前に諦める」事故になる。待ちが長引いて困るのは
+    // 対象が本当に存在しない時だけなので、余裕を持たせるほうが安全側。
+    constexpr float kTargetResolveTimeout = 5.0f;
 } // namespace
 
 void CameraIntroOrbitSystem::Initialize()
@@ -62,11 +62,15 @@ float CameraIntroOrbitSystem::ApplyEase(float t, CameraEaseMode mode)
     t = std::clamp(t, 0.0f, 1.0f);
     switch (mode)
     {
-    case CameraEaseMode::EaseIn:    return t * t;
-    case CameraEaseMode::EaseOut:   return 1.0f - (1.0f - t) * (1.0f - t);
-    case CameraEaseMode::EaseInOut: return CCL::Math::SmoothStep(t);
+    case CameraEaseMode::EaseIn:
+        return t * t;
+    case CameraEaseMode::EaseOut:
+        return 1.0f - (1.0f - t) * (1.0f - t);
+    case CameraEaseMode::EaseInOut:
+        return CCL::Math::SmoothStep(t);
     case CameraEaseMode::Linear:
-    default:                        return t;
+    default:
+        return t;
     }
 }
 
@@ -231,11 +235,11 @@ void CameraIntroOrbitSystem::Update(float dt)
             //   プレイヤーが永久に操作できなくなる。
             //   演出の失敗は必ず「ゲームが進む」方向へ倒す。
             CCL_LOG_WARN(LogCategory::Game,
-                "[CameraIntroOrbit] 対象エンティティが %.1f 秒見つからないため導入演出を中止します "
-                "(camera=%llu, target=%llu)",
-                kTargetResolveTimeout,
-                static_cast<unsigned long long>(id),
-                static_cast<unsigned long long>(intro.target.id));
+                         "[CameraIntroOrbit] 対象エンティティが %.1f 秒見つからないため導入演出を中止します "
+                         "(camera=%llu, target=%llu)",
+                         kTargetResolveTimeout,
+                         static_cast<unsigned long long>(id),
+                         static_cast<unsigned long long>(intro.target.id));
             Abort(vcam, intro);
             finished.push_back({id, false});
             return;
@@ -252,9 +256,9 @@ void CameraIntroOrbitSystem::Update(float dt)
         if (!wasPlaying && intro.playing)
         {
             CCL_LOG_INFO(LogCategory::Game,
-                "[CameraIntroOrbit] 導入演出を開始 (camera=%s, target=%s, duration=%.2fs)",
-                CCL::EntityLabel(*m_world, id).c_str(),
-                CCL::EntityLabel(*m_world, intro.target.id).c_str(), intro.duration);
+                         "[CameraIntroOrbit] 導入演出を開始 (camera=%s, target=%s, duration=%.2fs)",
+                         CCL::EntityLabel(*m_world, id).c_str(),
+                         CCL::EntityLabel(*m_world, intro.target.id).c_str(), intro.duration);
         }
 
         // 進行度。待ち時間中(playing=false かつ未終了)は 0 のまま＝開始位置で待機する。
@@ -268,7 +272,7 @@ void CameraIntroOrbitSystem::Update(float dt)
         if (justFinished)
         {
             CCL_LOG_INFO(LogCategory::Game, "[CameraIntroOrbit] 導入演出が終了 (camera=%s, skipped=%s)",
-                CCL::EntityLabel(*m_world, id).c_str(), intro.skipped ? "yes" : "no");
+                         CCL::EntityLabel(*m_world, id).c_str(), intro.skipped ? "yes" : "no");
 
             vcam.priority = intro.idlePriority; // ここで Brain が自動的に次のカメラへブレンドする
             finished.push_back({id, intro.skipped});

@@ -3,7 +3,7 @@
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"  // 陣形ごとの当たり方
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 陣形ごとの当たり方
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -22,16 +22,16 @@ namespace
     // 硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
     // まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
     // 自動的に出てくるもので、専用の判定は要らない。
-    bool IsDangerous(const DroneComponent& d)
+    bool IsDangerous(const DroneComponent &d)
     {
-        if (d.knockbackTimer > 0.0f)                  return false;   // 切り払いで吹き飛ばし中は無害
-        if (d.currentState != DroneState::FireCharge) return false;   // Stunned / Returning もここで落ちる
-        if (d.fireDelay > 0.0f)                       return false;   // 発射待ち中
+        if (d.knockbackTimer > 0.0f) return false;                  // 切り払いで吹き飛ばし中は無害
+        if (d.currentState != DroneState::FireCharge) return false; // Stunned / Returning もここで落ちる
+        if (d.fireDelay > 0.0f) return false;                       // 発射待ち中
         // 追従系（剛体・バネ）はタメを持たないので突入中ずっと危険。
         // 直進系だけがタメ（stateTimer>0）の間は無害。
         return d.chargeMode != ChargeMode::Straight || d.stateTimer <= 0.0f;
     }
-}
+} // namespace
 
 void DroneHitSystem::Update(float /*dt*/)
 {
@@ -56,9 +56,9 @@ void DroneHitSystem::Update(float /*dt*/)
         if (!cacheValid || cacheType != type)
         {
             const auto *impl = registry.Get(type);
-            cacheCombat = impl ? impl->GetCombat() : CCL::AI::Formation::FormationCombat{};
-            cacheType   = type;
-            cacheValid  = true;
+            cacheCombat      = impl ? impl->GetCombat() : CCL::AI::Formation::FormationCombat{};
+            cacheType        = type;
+            cacheValid       = true;
         }
         return cacheCombat;
     };
@@ -67,8 +67,7 @@ void DroneHitSystem::Update(float /*dt*/)
     int activeCount   = 0;
     int stateCount[5] = {0, 0, 0, 0, 0};
 
-    ForEach([&](const DroneComponent &drone, HitboxComponent &box)
-    {
+    ForEach([&](const DroneComponent &drone, HitboxComponent &box) {
         ++droneCount;
         {
             const int s = static_cast<int>(drone.currentState);
@@ -106,7 +105,8 @@ void DroneHitSystem::Update(float /*dt*/)
 
     m_droneCount  = droneCount;
     m_activeCount = activeCount;
-    for (int i = 0; i < 5; ++i) m_stateCount[i] = stateCount[i];
+    for (int i = 0; i < 5; ++i)
+        m_stateCount[i] = stateCount[i];
 }
 
 void DroneHitSystem::OnGui()

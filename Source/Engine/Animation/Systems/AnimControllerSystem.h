@@ -8,7 +8,7 @@
 // ===================================================================================
 // ファイル: AnimControllerSystem.h
 // 概要: アニメーションの状態遷移を決定する「評価器（舞台監督）」システム
-// 
+//
 // [ 役割 ]
 // 毎フレーム、AnimParametersComponent（掲示板）の値を読み取り、
 // AnimStateMachine（ルールブック）の遷移条件を満たしているかをチェックする。
@@ -18,18 +18,17 @@
 // ===================================================================================
 
 class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
-    CCL::ECS::Write<AnimStateMachineComponent>,
-    CCL::ECS::Write<AnimatorComponent>,
-    CCL::ECS::Write<AnimParametersComponent>,
-    CCL::ECS::Read<TimeStateComponent>>
+                                                       CCL::ECS::Write<AnimStateMachineComponent>,
+                                                       CCL::ECS::Write<AnimatorComponent>,
+                                                       CCL::ECS::Write<AnimParametersComponent>,
+                                                       CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     // 基底クラスのコンストラクタ呼び出しもフルパスで指定
-    AnimControllerSystem() : IfSystem("AnimControllerSystem") 
+    AnimControllerSystem() : IfSystem("AnimControllerSystem")
     {
     }
     virtual ~AnimControllerSystem() = default;
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // AnimSetup が不足コンポーネントを付与してから状態遷移を評価する。
@@ -40,7 +39,7 @@ public:
     // エディタ用のシステムインスペクタ描画
     void OnGui() override;
 
-  private:
+private:
     // 状態遷移ログを出力するかどうかのフラグ（デフォルトOFFでコンソール汚染を防ぐ）
     bool m_enableTransitionLog = false;
 };

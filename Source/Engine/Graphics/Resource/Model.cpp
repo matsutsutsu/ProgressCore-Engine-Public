@@ -23,7 +23,7 @@ static bool ContainsCI(const std::string &name, const char *needle)
 {
     std::string lower = name;
     std::transform(lower.begin(), lower.end(), lower.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return lower.find(needle) != std::string::npos;
 }
 
@@ -53,7 +53,7 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
 
     // 二分探索 (O(log N)) で現在の時間を超える最初のキーフレームを探す
     auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
-        [](const T &kf, float t) { return kf.seconds < t; });
+                               [](const T &kf, float t) { return kf.seconds < t; });
 
     outK1 = &(*it);
     outK0 = &(*(it - 1));
@@ -532,10 +532,10 @@ ModelResource *Model::GetResourceMutable()
     return ResourceManager::Instance().GetModel(resource);
 }
 
-std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
-    const std::vector<ModelResource::Vertex>              &vertices,
-    const std::vector<uint32_t>                           &indices,
-    std::shared_ptr<MaterialData>                          baseMaterial)
+std::shared_ptr<Model> Model::CreateFromData(ID3D11Device                             *device,
+                                             const std::vector<ModelResource::Vertex> &vertices,
+                                             const std::vector<uint32_t>              &indices,
+                                             std::shared_ptr<MaterialData>             baseMaterial)
 {
     // 1. 空のモデルインスタンスを作成
     // ダミーパスを渡すが、ロード失敗前提で進める
@@ -558,16 +558,16 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     if (!mesh.vertices.empty())
     {
         GpuResourceUtils::CreateVertexBuffer(device,
-            mesh.vertices.data(),
-            static_cast<UINT>(mesh.vertices.size() * sizeof(ModelResource::Vertex)),
-            mesh.vertexBuffer.GetAddressOf());
+                                             mesh.vertices.data(),
+                                             static_cast<UINT>(mesh.vertices.size() * sizeof(ModelResource::Vertex)),
+                                             mesh.vertexBuffer.GetAddressOf());
     }
     if (!mesh.indices.empty())
     {
         GpuResourceUtils::CreateIndexBuffer(device,
-            mesh.indices.data(),
-            static_cast<UINT>(mesh.indices.size() * sizeof(uint32_t)),
-            mesh.indexBuffer.GetAddressOf());
+                                            mesh.indices.data(),
+                                            static_cast<UINT>(mesh.indices.size() * sizeof(uint32_t)),
+                                            mesh.indexBuffer.GetAddressOf());
     }
 
     // メンバ変数の設定
@@ -641,9 +641,9 @@ std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
     DirectX::XMStoreFloat4x4(&model->nodes[0].localTransform, DirectX::XMMatrixIdentity());
     DirectX::XMStoreFloat4x4(&model->nodes[0].globalTransform, DirectX::XMMatrixIdentity());
     DirectX::XMStoreFloat4x4(&model->nodes[0].worldTransform, DirectX::XMMatrixIdentity());
-    model->nodes[0].position = {0, 0, 0};
-    model->nodes[0].scale    = {1, 1, 1};
-    model->nodes[0].rotation = {0, 0, 0, 1};
+    model->nodes[0].position       = {0, 0, 0};
+    model->nodes[0].scale          = {1, 1, 1};
+    model->nodes[0].rotation       = {0, 0, 0, 1};
     model->nodes[0].isRootOrPelvis = true; // index0=ルート。通常ロードのフラグ計算と整合させる
 
     // --- Materialの同期 ---

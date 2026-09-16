@@ -7,13 +7,17 @@
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // シーン非同期ロード用の汎用スレッドプール
 
 // World クラスが存在することをコンパイラに教える
-namespace CCL::ECS { class World; }
+namespace CCL::ECS
+{
+    class World;
+}
 
 // フェード用の全画面矩形（黒オーバーレイ）。実体は .cpp で生成する。
 class Sprite;
 
 // シーンマネージャー
-class SceneManager {
+class SceneManager
+{
 private:
     // unique_ptr<Sprite> を持つため、Sprite が完全型になる .cpp 側で定義する
     //（ヘッダでは Sprite は前方宣言のみ＝不完全型で ~unique_ptr が組めない）。
@@ -22,7 +26,8 @@ private:
 
 public:
     // 唯一のインスタンス取得
-    static SceneManager& Instance() {
+    static SceneManager &Instance()
+    {
         static SceneManager instance;
         return instance;
     }
@@ -49,14 +54,14 @@ public:
     void Clear();
 
     // シーン切り替え
-    void ChangeScene(const std::string& name);
+    void ChangeScene(const std::string &name);
 
     // インスタンスを直接渡すオーバーロード
     void ChangeScene(Scene *scene);
 
     // 非同期シーン切り替え：ローディング画面を挟み、対象シーンの重い
     // Initialize() を裏（ワーカースレッド）で走らせてから遷移する。
-    void ChangeSceneAsync(const std::string& name);
+    void ChangeSceneAsync(const std::string &name);
 
     // =====================================================================
     //  画面遷移（フェード）の統括
@@ -72,11 +77,11 @@ public:
     // 遷移を要求する。フェードアウト→黒の瞬間に切替→フェードインを自動で行う。
     // async=true なら SceneLoading を挟んで裏読みする。
     // 既に遷移中なら false を返して無視する（二重遷移防止）。
-    bool RequestTransition(const std::string& name, bool async = false);
+    bool RequestTransition(const std::string &name, bool async = false);
 
     // 既に生成・ロード済みのシーン実体へフェード遷移する。
     // SceneLoading が「裏読み完了した本命シーン」へ切り替えるときに使う。
-    bool RequestTransition(Scene* readyScene);
+    bool RequestTransition(Scene *readyScene);
 
     // 黒→表示のフェードインのみ（起動直後の初回シーンのポップイン隠し）。
     void FadeInFromBlack(float dur = 0.65f);
@@ -86,24 +91,23 @@ public:
 
     // シーンロード専用の汎用スレッドプール（各Worldの並列プールとは独立）。
     // SceneLoading がここへ「対象シーンの Initialize」ジョブを投げる。
-    CCL::ECS::JobSystem& GetLoaderJobs() { return m_loaderJobs; }
+    CCL::ECS::JobSystem &GetLoaderJobs() { return m_loaderJobs; }
 
     // 現在のシーン名を取得・設定
-    const std::string& GetCurrentSceneName() const { return m_currentSceneName; }
-    void SetCurrentSceneName(const std::string& name) { m_currentSceneName = name; }
+    const std::string &GetCurrentSceneName() const { return m_currentSceneName; }
+    void               SetCurrentSceneName(const std::string &name) { m_currentSceneName = name; }
 
     // --- ECSデータ駆動のシーン保存・読み込み ---
-    void SaveScene(CCL::ECS::World* world, const std::string& filepath);
-    void LoadScene(CCL::ECS::World* world, const std::string& filepath);
+    void SaveScene(CCL::ECS::World *world, const std::string &filepath);
+    void LoadScene(CCL::ECS::World *world, const std::string &filepath);
 
-	Scene* GetCurrentScene() const { return dynamic_cast<Scene*>(currentScene); }
+    Scene *GetCurrentScene() const { return dynamic_cast<Scene *>(currentScene); }
 
     // シーンが切り替わるたびに増える通し番号。
     //   「前回見たときから変わったか」を呼び出し側が1つの整数比較で判定できる。
     //   World* の比較だと、新しい World がたまたま同じ番地に確保されたときに
     //   取りこぼす。エディタ側の Undo 履歴・選択の破棄がこれを見る。
     uint32_t GetSceneSerial() const noexcept { return m_sceneSerial; }
-
 
 private:
     // フェードの進行を1ステップ進める（黒の瞬間に予約された切替を発火する）。
@@ -117,19 +121,25 @@ private:
     //   Out（暗転）→ Hold（黒で少しタメる）→ In（明転）の3段。
     //   Hold を挟むことで「黒に着いた瞬間に即バウンド」する軽さを消し、
     //   その裏で新シーンの初回フレームを描き切ってからフェードインできる。
-    enum class FadeState { None, Out, Hold, In };
-    FadeState m_fade      = FadeState::None;
-    float     m_fadeAlpha = 0.0f;  // 0=透明 / 1=黒
-    float     m_fadeOutDur = 0.55f; // 暗転にかける秒数
-    float     m_fadeInDur  = 0.65f; // 明転にかける秒数
-    float     m_fadeHoldDur = 0.15f; // 完全な黒を保持する秒数
+    enum class FadeState
+    {
+        None,
+        Out,
+        Hold,
+        In
+    };
+    FadeState m_fade          = FadeState::None;
+    float     m_fadeAlpha     = 0.0f;  // 0=透明 / 1=黒
+    float     m_fadeOutDur    = 0.55f; // 暗転にかける秒数
+    float     m_fadeInDur     = 0.65f; // 明転にかける秒数
+    float     m_fadeHoldDur   = 0.15f; // 完全な黒を保持する秒数
     float     m_fadeHoldTimer = 0.0f;
 
     // 黒の瞬間に実行する「予約された切替」。名前指定と実体指定のどちらか。
-    bool        m_pendingValid    = false;
+    bool        m_pendingValid = false;
     std::string m_pendingName;
-    bool        m_pendingAsync    = false;
-    Scene*      m_pendingScene    = nullptr; // 実体指定（SceneLoading からの本命切替）
+    bool        m_pendingAsync = false;
+    Scene      *m_pendingScene = nullptr; // 実体指定（SceneLoading からの本命切替）
 
     // 非同期ロードの「黒保持」中フラグ。
     //   true の間はローディング画面を見せず、黒（alpha=1）のまま裏読み完了を待つ。
@@ -139,8 +149,8 @@ private:
 
     std::unique_ptr<Sprite> m_fadeQuad; // 黒矩形（遅延生成）
 
-    Scene* currentScene = nullptr; // 現在のシーン
-    Scene* nextScene = nullptr;    // 次に遷移するシーン
+    Scene *currentScene = nullptr; // 現在のシーン
+    Scene *nextScene    = nullptr; // 次に遷移するシーン
 
     // 現在のシーン名を保持する変数
     std::string m_currentSceneName = "";

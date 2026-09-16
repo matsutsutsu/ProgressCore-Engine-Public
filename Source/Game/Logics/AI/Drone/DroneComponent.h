@@ -17,7 +17,6 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 
-
 // 陣形の一覧 (識別子, 保存値, 表示名)。enum も表示名もこの表から作る。
 //   値を手で書くのは、この数値がプレハブとシーンに保存されているため。欠番は
 //   削除跡なので埋めず、増やすときは 49 以降。追加時は FormationRegistry への
@@ -28,34 +27,34 @@
 // この表と ActionRegistry を編集してリビルドするのでは、エディタで組む意味が
 // 半分消えるため。枠を使い切ったら 49 以降を足す。
 #define DRONE_FORMATION_LIST(X)                             \
-    X(Hidden,                   0, "収納（命令なし）")      \
-    X(OrbitCircle,              1, "降下円陣")              \
-    X(HighOrbit,                5, "頭上円陣")              \
-    X(KamikazeSwarm,           17, "弾幕")                  \
-    X(SideSlapWhip,            22, "横なぎ回転")            \
-    X(GuillotineSlam,          24, "縦割り")                \
-    X(ClapSlam,                25, "挟み込み1段")           \
-    X(TsunamiWave,             26, "波状縦割り・左→右")     \
+    X(Hidden, 0, "収納（命令なし）")                        \
+    X(OrbitCircle, 1, "降下円陣")                           \
+    X(HighOrbit, 5, "頭上円陣")                             \
+    X(KamikazeSwarm, 17, "弾幕")                            \
+    X(SideSlapWhip, 22, "横なぎ回転")                       \
+    X(GuillotineSlam, 24, "縦割り")                         \
+    X(ClapSlam, 25, "挟み込み1段")                          \
+    X(TsunamiWave, 26, "波状縦割り・左→右")                 \
     X(MegaClapSlam_UpperFirst, 27, "挟み込み2段・上段先攻") \
     X(MegaClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
-    X(TsunamiWave_RL,          31, "波状縦割り・右→左")     \
-    X(SquadAssault,            32, "小隊突撃")              \
-    X(DataSlot00,              33, "[データ] 枠0")          \
-    X(DataSlot01,              34, "[データ] 枠1")          \
-    X(DataSlot02,              35, "[データ] 枠2")          \
-    X(DataSlot03,              36, "[データ] 枠3")          \
-    X(DataSlot04,              37, "[データ] 枠4")          \
-    X(DataSlot05,              38, "[データ] 枠5")          \
-    X(DataSlot06,              39, "[データ] 枠6")          \
-    X(DataSlot07,              40, "[データ] 枠7")          \
-    X(DataSlot08,              41, "[データ] 枠8")          \
-    X(DataSlot09,              42, "[データ] 枠9")          \
-    X(DataSlot10,              43, "[データ] 枠10")         \
-    X(DataSlot11,              44, "[データ] 枠11")         \
-    X(DataSlot12,              45, "[データ] 枠12")         \
-    X(DataSlot13,              46, "[データ] 枠13")         \
-    X(DataSlot14,              47, "[データ] 枠14")         \
-    X(DataSlot15,              48, "[データ] 枠15")
+    X(TsunamiWave_RL, 31, "波状縦割り・右→左")              \
+    X(SquadAssault, 32, "小隊突撃")                         \
+    X(DataSlot00, 33, "[データ] 枠0")                       \
+    X(DataSlot01, 34, "[データ] 枠1")                       \
+    X(DataSlot02, 35, "[データ] 枠2")                       \
+    X(DataSlot03, 36, "[データ] 枠3")                       \
+    X(DataSlot04, 37, "[データ] 枠4")                       \
+    X(DataSlot05, 38, "[データ] 枠5")                       \
+    X(DataSlot06, 39, "[データ] 枠6")                       \
+    X(DataSlot07, 40, "[データ] 枠7")                       \
+    X(DataSlot08, 41, "[データ] 枠8")                       \
+    X(DataSlot09, 42, "[データ] 枠9")                       \
+    X(DataSlot10, 43, "[データ] 枠10")                      \
+    X(DataSlot11, 44, "[データ] 枠11")                      \
+    X(DataSlot12, 45, "[データ] 枠12")                      \
+    X(DataSlot13, 46, "[データ] 枠13")                      \
+    X(DataSlot14, 47, "[データ] 枠14")                      \
+    X(DataSlot15, 48, "[データ] 枠15")
 
 // ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う。
 enum class DroneFormationType : uint8_t
@@ -79,7 +78,8 @@ inline constexpr uint8_t kDataFormationSlotLast  = 48;
 static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
 {
     std::array<const char *, kDroneFormationSlotCount> names{};
-    for (auto &n : names) n = "(欠番)";
+    for (auto &n : names)
+        n = "(欠番)";
 #define CCL_DRONE_FORMATION_NAME(Name, Value, Display) names[Value] = Display;
     DRONE_FORMATION_LIST(CCL_DRONE_FORMATION_NAME)
 #undef CCL_DRONE_FORMATION_NAME
@@ -100,7 +100,6 @@ enum class DroneState : uint8_t
     Returning,    // 【離脱】突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ
 };
 
-
 // FireCharge 中の移動方式。書き手は攻撃陣形（Formation）。
 enum class ChargeMode : uint8_t
 {
@@ -108,7 +107,6 @@ enum class ChargeMode : uint8_t
     RigidFollow, // targetPosition へ毎フレーム貼り付け＝形が一切歪まない（縦割り・挟み込み）
     SoftFollow,  // targetPosition へバネで寄る＝速いほど後ろへ流れ、曲がると遅れて曲がる（小隊）
 };
-
 
 // 突撃1回ぶんの寿命を「個体が」持つためのフェーズ。
 //   信号を毎フレーム全機へ配ると、飛び切った機が次フレームに攻撃へ引き戻されて
@@ -121,7 +119,6 @@ enum class DroneAttackPhase : uint8_t
     Charging,  // 突撃中。飛距離か経過時間で各機が自分で切り上げる
     Returning, // 突き抜けた後の離脱中。当たり判定を持たない
 };
-
 
 // ホバー揺れの位相の周期 [秒]。掛ける係数が整数なので 2π で折り返しても
 // 波形が途切れない。この位相を使う係数を足すときは整数のままにすること。
@@ -140,7 +137,7 @@ struct DroneShiverTuning
 // 全ドローンの硬い床。ステージ床のワールドY と、そこから浮かせておく最低高度 [m]。
 //   吹き飛ばし・帰投・バネ追従の行き過ぎは targetPosition を経由しないので、
 //   陣形側のクランプでは止まらない。起伏を作るならレイキャストへ差し替える。
-inline constexpr float kDroneGroundY        = 0.0f;
+inline constexpr float kDroneGroundY         = 0.0f;
 inline constexpr float kDroneGroundClearance = 0.5f;
 
 // 突撃時に moveSpeed へ掛ける倍率。狙いを決める側（弾幕の陣形）も
@@ -154,20 +151,20 @@ struct DroneComponent
 
     CCL::Serialization::EntityLink ownerBossId; // 所属ボス。生成時に設定
 
-    uint16_t localIndex  = 0;   // [RT] 群れ全体の通し番号。陣形が「何番目か」から座標を出す
-    uint16_t totalDrones = 1;   // [RT] 群れの総数。0除算を避けるため既定1
+    uint16_t localIndex  = 0; // [RT] 群れ全体の通し番号。陣形が「何番目か」から座標を出す
+    uint16_t totalDrones = 1; // [RT] 群れの総数。0除算を避けるため既定1
 
     // 所属小隊。0xFF は無所属。一度割り当てたら維持する（撃破のたびに振り直すと
     // 生き残った機の所属まで入れ替わり、同じ部隊で組んでいるように見えない）。
     uint8_t squadId = 0xFF;
 
-    uint8_t slotInSquad = 0;    // 小隊内の位置。0=先頭機。後ろほど追従を鈍らせる（SlotLag）
+    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。後ろほど追従を鈍らせる（SlotLag）
 
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
     DroneFormationType currentFormation = DroneFormationType::Hidden; // [RT] 今どの形を作るか
 
-    bool wantsAttack = false;   // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
+    bool wantsAttack = false; // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
 
     // 突撃1回ぶんの進行フェーズ。終了判断だけ DroneBrainSystem。
     // Broadcast 寿命の陣形では常に None。
@@ -204,9 +201,9 @@ struct DroneComponent
     // targetPosition との距離では MoveToTarget へ戻さない（点滅するため）。
     bool hasReachedSlot = false;
 
-    float stateTimer   = 0.0f;  // [RT] 汎用の状態タイマー [秒]。タメ時間と離脱カーブに使い回す
-    float chargeTimer  = 0.0f;  // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時の保険
-    float recoverTimer = 0.0f;  // [RT] 吹き飛ばし後の立て直し [秒]。localIndex でばらつかせる
+    float stateTimer   = 0.0f; // [RT] 汎用の状態タイマー [秒]。タメ時間と離脱カーブに使い回す
+    float chargeTimer  = 0.0f; // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時の保険
+    float recoverTimer = 0.0f; // [RT] 吹き飛ばし後の立て直し [秒]。localIndex でばらつかせる
 
     DirectX::SimpleMath::Vector3 chargeStartPos = DirectX::SimpleMath::Vector3::Zero; // [RT] 突撃開始地点。飛距離判定の基準
 
@@ -228,8 +225,8 @@ struct DroneComponent
 
     // ---- 個体パラメータ（インスペクタで調整）----
 
-    float moveSpeed   = 30.0f;  // 基準速度 [m/s]。各ステートがこれに倍率を掛けて上限にする
-    float orbitRadius =  8.0f;  // 旋回半径 [m]。降下円陣が円の半径として読む
+    float moveSpeed   = 30.0f; // 基準速度 [m/s]。各ステートがこれに倍率を掛けて上限にする
+    float orbitRadius = 8.0f;  // 旋回半径 [m]。降下円陣が円の半径として読む
 };
 
 // 1000機ぶんが連続配置されるので、増やすほど帯域を食う。

@@ -22,13 +22,13 @@ using namespace CCL::ECS;
 
 namespace
 {
-// windows.h を持ち込まないための仮想キーコード（VK_*）。
-constexpr int VKEY_LEFT   = 0x25;
-constexpr int VKEY_UP     = 0x26;
-constexpr int VKEY_RIGHT  = 0x27;
-constexpr int VKEY_DOWN   = 0x28;
-constexpr int VKEY_RETURN = 0x0D;
-constexpr int VKEY_SPACE  = 0x20;
+    // windows.h を持ち込まないための仮想キーコード（VK_*）。
+    constexpr int VKEY_LEFT   = 0x25;
+    constexpr int VKEY_UP     = 0x26;
+    constexpr int VKEY_RIGHT  = 0x27;
+    constexpr int VKEY_DOWN   = 0x28;
+    constexpr int VKEY_RETURN = 0x0D;
+    constexpr int VKEY_SPACE  = 0x20;
 } // namespace
 
 void UIInputSystem::Update(float /*dt*/)
@@ -38,9 +38,9 @@ void UIInputSystem::Update(float /*dt*/)
     if (!input) return;
 
     // --- 入力（マウス／キー／パッド） ---
-    Mouse      &mouse    = input->GetMouse();
-    const bool  pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
-    const bool  released = mouse.IsReleased(Mouse::BTN_LEFT);
+    Mouse     &mouse    = input->GetMouse();
+    const bool pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
+    const bool released = mouse.IsReleased(Mouse::BTN_LEFT);
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
@@ -76,14 +76,13 @@ void UIInputSystem::Update(float /*dt*/)
         }
     }
 
-    Keyboard &kb = input->GetKeyboard();
-    GamePad  &gp = input->GetGamePad();
-    const bool navUp    = kb.IsTriggered(VKEY_UP)    || gp.IsTriggered(GamePad::BTN_UP);
-    const bool navDown  = kb.IsTriggered(VKEY_DOWN)  || gp.IsTriggered(GamePad::BTN_DOWN);
-    const bool navLeft  = kb.IsTriggered(VKEY_LEFT)  || gp.IsTriggered(GamePad::BTN_LEFT);
+    Keyboard  &kb       = input->GetKeyboard();
+    GamePad   &gp       = input->GetGamePad();
+    const bool navUp    = kb.IsTriggered(VKEY_UP) || gp.IsTriggered(GamePad::BTN_UP);
+    const bool navDown  = kb.IsTriggered(VKEY_DOWN) || gp.IsTriggered(GamePad::BTN_DOWN);
+    const bool navLeft  = kb.IsTriggered(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT);
     const bool navRight = kb.IsTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
-    const bool confirm  = inputUsable
-                       && (kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
+    const bool confirm  = inputUsable && (kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
     const bool anyDir   = inputUsable && (navUp || navDown || navLeft || navRight);
 
     auto inRect = [&](const UITransformComponent &t) {
@@ -95,7 +94,11 @@ void UIInputSystem::Update(float /*dt*/)
     EntityID topID       = InvalidEntityID; // マウスが乗っている最前面
     int      topPriority = 0;
     EntityID focusedID   = InvalidEntityID; // 現在のフォーカス
-    struct Cand { EntityID id; float cx, cy; };
+    struct Cand
+    {
+        EntityID id;
+        float    cx, cy;
+    };
     std::vector<Cand> cands;
 
     ForEachWithID([&](EntityID id, UITransformComponent &t, UIInteractableComponent &inter) {
@@ -113,7 +116,7 @@ void UIInputSystem::Update(float /*dt*/)
         if (inter.focusable)
         {
             cands.push_back({id, t.computedPos.x + t.computedSize.x * 0.5f,
-                                 t.computedPos.y + t.computedSize.y * 0.5f});
+                             t.computedPos.y + t.computedSize.y * 0.5f});
             if (inter.isFocused) focusedID = id;
         }
     });
@@ -130,7 +133,12 @@ void UIInputSystem::Update(float /*dt*/)
         {
             float fx = 0.0f, fy = 0.0f;
             for (const auto &c : cands)
-                if (c.id == focusedID) { fx = c.cx; fy = c.cy; break; }
+                if (c.id == focusedID)
+                {
+                    fx = c.cx;
+                    fy = c.cy;
+                    break;
+                }
 
             float    best   = FLT_MAX;
             EntityID bestId = focusedID;
@@ -141,11 +149,19 @@ void UIInputSystem::Update(float /*dt*/)
                 float       score = FLT_MAX;
                 const float eps   = 1.0f;
                 // 押した方向にある候補のみ対象。直交ズレを重み付けして最も素直な隣を選ぶ。
-                if (navDown && dy > eps)       score = dy + std::abs(dx) * 2.0f;
-                else if (navUp && dy < -eps)   score = -dy + std::abs(dx) * 2.0f;
-                else if (navRight && dx > eps) score = dx + std::abs(dy) * 2.0f;
-                else if (navLeft && dx < -eps) score = -dx + std::abs(dy) * 2.0f;
-                if (score < best) { best = score; bestId = c.id; }
+                if (navDown && dy > eps)
+                    score = dy + std::abs(dx) * 2.0f;
+                else if (navUp && dy < -eps)
+                    score = -dy + std::abs(dx) * 2.0f;
+                else if (navRight && dx > eps)
+                    score = dx + std::abs(dy) * 2.0f;
+                else if (navLeft && dx < -eps)
+                    score = -dx + std::abs(dy) * 2.0f;
+                if (score < best)
+                {
+                    best   = score;
+                    bestId = c.id;
+                }
             }
             newFocus = bestId;
         }

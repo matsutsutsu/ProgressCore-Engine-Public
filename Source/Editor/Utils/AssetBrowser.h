@@ -12,14 +12,14 @@ namespace fs = std::filesystem;
 
 class AssetBrowser
 {
-  public:
+public:
     AssetBrowser(const std::string &rootPath, ID3D11Device *device);
     ~AssetBrowser();
 
     void Draw();
     void Refresh();
 
-  private:
+private:
     struct AssetNode
     {
         std::string            name;                // ファイル/フォルダ名
@@ -28,7 +28,6 @@ class AssetBrowser
         std::vector<AssetNode> children;            // 子要素
         AssetNode             *parent = nullptr;    // 親ノードへのポインタ（パンくずリスト用）
     };
-
 
     // ディレクトリ走査
     void LoadDirectory(const fs::path &dirPath, AssetNode &node);
@@ -48,10 +47,10 @@ class AssetBrowser
     void DrawSearchBar();
 
     // ユーティリティ
-    AssetNode  *FindNodeByPath(AssetNode &node, const fs::path &path);
-    bool        FilterAsset(const AssetNode &node);
+    AssetNode *FindNodeByPath(AssetNode &node, const fs::path &path);
+    bool       FilterAsset(const AssetNode &node);
 
-  private:
+private:
     AssetNode   rootNode; // ルートノード
     std::string rootPath; // ルートパス
 

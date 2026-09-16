@@ -22,11 +22,11 @@ struct BTAsset;
 class ShapeRenderer;
 
 class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
-                                AIDebugSpatialSystem,
-                                CCL::ECS::Read<TransformComponent>,
-                                CCL::ECS::Read<BossActionComponent>>
+                                 AIDebugSpatialSystem,
+                                 CCL::ECS::Read<TransformComponent>,
+                                 CCL::ECS::Read<BossActionComponent>>
 {
-  public:
+public:
     AIDebugSpatialSystem() : IfSystem("AIDebugSpatialSystem") {}
 
     /// ShapeRenderer への描画発行（毎フレーム）。
@@ -38,7 +38,7 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
     ///   検証用のボスでリングが黙って消える）。申告だけをここで足す。
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
-  private:
+private:
     using Base = CCL::ECS::IfSystem<
         AIDebugSpatialSystem,
         CCL::ECS::Read<TransformComponent>,
@@ -55,7 +55,7 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
     struct RangeRing
     {
         float   radius = 0.0f;
-        uint8_t kinds  = 0;   // RangeKind のビット和
+        uint8_t kinds  = 0; // RangeKind のビット和
     };
 
     /// 木を走査して距離条件の param を集める。半径ごとに1本へまとめる。
@@ -82,8 +82,8 @@ class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
                      float rInner, float rOuter, const DirectX::XMFLOAT4 &color) const;
 
     bool m_enabled  = true;
-    bool m_drawLine = true;   // ボス→プレイヤーの照準線
-    bool m_drawNow  = true;   // 今の間合いを示すリング
+    bool m_drawLine = true; // ボス→プレイヤーの照準線
+    bool m_drawNow  = true; // 今の間合いを示すリング
 
     /// しきい値の間を地面の帯で塗る。読みやすさはこれが本命。
     bool m_groundFill = true;

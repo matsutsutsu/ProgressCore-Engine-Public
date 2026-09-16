@@ -11,10 +11,11 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include <string>
 
-class PrefabSerializer {
+class PrefabSerializer
+{
 public:
-    static bool Save(const std::string& filepath,
-        CCL::ECS::World* world,
-        CCL::ECS::EntityID rootEntity,
-        const std::string& name);
+    static bool Save(const std::string &filepath,
+                     CCL::ECS::World   *world,
+                     CCL::ECS::EntityID rootEntity,
+                     const std::string &name);
 };

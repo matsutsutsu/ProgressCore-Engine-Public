@@ -12,60 +12,60 @@ void GamePad::Update(float dt)
 {
     ZoneScopedN("GamePad::Update");
 
-	axisLx = axisLy = 0.0f;
-	axisRx = axisRy = 0.0f;
-	triggerL = triggerR = 0.0f;
+    axisLx = axisLy = 0.0f;
+    axisRx = axisRy = 0.0f;
+    triggerL = triggerR = 0.0f;
 
-	GamePadButton newButtonState = 0;
+    GamePadButton newButtonState = 0;
 
-	// ボタン情報取得
-	XINPUT_STATE xinputState;
-	if (XInputGetState(slot, &xinputState) == ERROR_SUCCESS)
-	{
-		//XINPUT_CAPABILITIES caps;
-		//XInputGetCapabilities(m_slot, XINPUT_FLAG_GAMEPAD, &caps);
-		XINPUT_GAMEPAD& pad = xinputState.Gamepad;
+    // ボタン情報取得
+    XINPUT_STATE xinputState;
+    if (XInputGetState(slot, &xinputState) == ERROR_SUCCESS)
+    {
+        //XINPUT_CAPABILITIES caps;
+        //XInputGetCapabilities(m_slot, XINPUT_FLAG_GAMEPAD, &caps);
+        XINPUT_GAMEPAD &pad = xinputState.Gamepad;
 
-		if (pad.wButtons & XINPUT_GAMEPAD_DPAD_UP)					newButtonState |= BTN_UP;
-		if (pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)				newButtonState |= BTN_RIGHT;
-		if (pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)				newButtonState |= BTN_DOWN;
-		if (pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)				newButtonState |= BTN_LEFT;
-		if (pad.wButtons & XINPUT_GAMEPAD_A)						newButtonState |= BTN_A;
-		if (pad.wButtons & XINPUT_GAMEPAD_B)						newButtonState |= BTN_B;
-		if (pad.wButtons & XINPUT_GAMEPAD_X)						newButtonState |= BTN_X;
-		if (pad.wButtons & XINPUT_GAMEPAD_Y)						newButtonState |= BTN_Y;
-		if (pad.wButtons & XINPUT_GAMEPAD_START)					newButtonState |= BTN_START;
-		if (pad.wButtons & XINPUT_GAMEPAD_BACK)						newButtonState |= BTN_BACK;
-		if (pad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)				newButtonState |= BTN_LEFT_THUMB;
-		if (pad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)				newButtonState |= BTN_RIGHT_THUMB;
-		if (pad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)			newButtonState |= BTN_LEFT_SHOULDER;
-		if (pad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)			newButtonState |= BTN_RIGHT_SHOULDER;
-		if (pad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)	newButtonState |= BTN_LEFT_TRIGGER;
-		if (pad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)	newButtonState |= BTN_RIGHT_TRIGGER;
+        if (pad.wButtons & XINPUT_GAMEPAD_DPAD_UP) newButtonState |= BTN_UP;
+        if (pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) newButtonState |= BTN_RIGHT;
+        if (pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) newButtonState |= BTN_DOWN;
+        if (pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) newButtonState |= BTN_LEFT;
+        if (pad.wButtons & XINPUT_GAMEPAD_A) newButtonState |= BTN_A;
+        if (pad.wButtons & XINPUT_GAMEPAD_B) newButtonState |= BTN_B;
+        if (pad.wButtons & XINPUT_GAMEPAD_X) newButtonState |= BTN_X;
+        if (pad.wButtons & XINPUT_GAMEPAD_Y) newButtonState |= BTN_Y;
+        if (pad.wButtons & XINPUT_GAMEPAD_START) newButtonState |= BTN_START;
+        if (pad.wButtons & XINPUT_GAMEPAD_BACK) newButtonState |= BTN_BACK;
+        if (pad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) newButtonState |= BTN_LEFT_THUMB;
+        if (pad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) newButtonState |= BTN_RIGHT_THUMB;
+        if (pad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) newButtonState |= BTN_LEFT_SHOULDER;
+        if (pad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) newButtonState |= BTN_RIGHT_SHOULDER;
+        if (pad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) newButtonState |= BTN_LEFT_TRIGGER;
+        if (pad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) newButtonState |= BTN_RIGHT_TRIGGER;
 
-		if ((pad.sThumbLX <  XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && pad.sThumbLX > -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) &&
-			(pad.sThumbLY <  XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && pad.sThumbLY > -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE))
-		{
-			pad.sThumbLX = 0;
-			pad.sThumbLY = 0;
-		}
+        if ((pad.sThumbLX < XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && pad.sThumbLX > -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) &&
+            (pad.sThumbLY < XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && pad.sThumbLY > -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE))
+        {
+            pad.sThumbLX = 0;
+            pad.sThumbLY = 0;
+        }
 
-		if ((pad.sThumbRX <  XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE && pad.sThumbRX > -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) &&
-			(pad.sThumbRY <  XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE && pad.sThumbRY > -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE))
-		{
-			pad.sThumbRX = 0;
-			pad.sThumbRY = 0;
-		}
+        if ((pad.sThumbRX < XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE && pad.sThumbRX > -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) &&
+            (pad.sThumbRY < XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE && pad.sThumbRY > -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE))
+        {
+            pad.sThumbRX = 0;
+            pad.sThumbRY = 0;
+        }
 
-		triggerL = static_cast<float>(pad.bLeftTrigger) / 255.0f;
-		triggerR = static_cast<float>(pad.bRightTrigger) / 255.0f;
-		axisLx = static_cast<float>(pad.sThumbLX) / static_cast<float>(0x8000);
-		axisLy = static_cast<float>(pad.sThumbLY) / static_cast<float>(0x8000);
-		axisRx = static_cast<float>(pad.sThumbRX) / static_cast<float>(0x8000);
-		axisRy = static_cast<float>(pad.sThumbRY) / static_cast<float>(0x8000);
-	}
-	else
-	{
+        triggerL = static_cast<float>(pad.bLeftTrigger) / 255.0f;
+        triggerR = static_cast<float>(pad.bRightTrigger) / 255.0f;
+        axisLx   = static_cast<float>(pad.sThumbLX) / static_cast<float>(0x8000);
+        axisLy   = static_cast<float>(pad.sThumbLY) / static_cast<float>(0x8000);
+        axisRx   = static_cast<float>(pad.sThumbRX) / static_cast<float>(0x8000);
+        axisRy   = static_cast<float>(pad.sThumbRY) / static_cast<float>(0x8000);
+    }
+    else
+    {
 #if 0
 		// XInputで入力情報が取得出来なかった場合はWindowsAPIで取得する
 		JOYINFOEX joyInfo;
@@ -133,98 +133,97 @@ void GamePad::Update(float dt)
 			}
 		}
 #endif
-	}
-//
-//	// キーボードでエミュレーション
-//	{
-//		float lx = 0.0f;
-//		float ly = 0.0f;
-//		float rx = 0.0f;
-//		float ry = 0.0f;
-//		if (GetAsyncKeyState('W') & 0x8000) { ly = 1.0f; newButtonState |= BTN_UP; }
-//		if (GetAsyncKeyState('S') & 0x8000) { ly = -1.0f; newButtonState |= BTN_DOWN; }
-//		if (GetAsyncKeyState('A') & 0x8000) { lx = -1.0f; newButtonState |= BTN_LEFT; }
-//		if (GetAsyncKeyState('D') & 0x8000) { lx = 1.0f; newButtonState |= BTN_RIGHT; }
-//		if (GetAsyncKeyState('I') & 0x8000) ry = 1.0f;
-//		if (GetAsyncKeyState('J') & 0x8000) rx = -1.0f;
-//		if (GetAsyncKeyState('K') & 0x8000) ry = -1.0f;
-//		if (GetAsyncKeyState('L') & 0x8000) rx = 1.0f;
-//		if (GetAsyncKeyState('Z') & 0x8000) newButtonState |= BTN_A;
-//		if (GetAsyncKeyState('X') & 0x8000) newButtonState |= BTN_B;
-//		if (GetAsyncKeyState('C') & 0x8000) newButtonState |= BTN_X;
-//		if (GetAsyncKeyState('V') & 0x8000) newButtonState |= BTN_Y;
-//		if (GetAsyncKeyState(' ') & 0x8000) newButtonState |= BTN_SPACE;
-//		if (GetAsyncKeyState('E') & 0x8000) newButtonState |= BTN_E;
-//		if (GetAsyncKeyState('Q') & 0x8000) newButtonState |= BTN_Q;
-//		if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) newButtonState |= BTN_ESC;
-//		if (GetAsyncKeyState(VK_UP) & 0x8000)	newButtonState |= BTN_UP;
-//		if (GetAsyncKeyState(VK_RIGHT) & 0x8000)	newButtonState |= BTN_RIGHT;
-//		if (GetAsyncKeyState(VK_DOWN) & 0x8000)	newButtonState |= BTN_DOWN;
-//		if (GetAsyncKeyState(VK_LEFT) & 0x8000)	newButtonState |= BTN_LEFT;
-//
-//#if 1
-//		if (newButtonState & BTN_UP)    ly = 1.0f;
-//		if (newButtonState & BTN_RIGHT) lx = 1.0f;
-//		if (newButtonState & BTN_DOWN)  ly = -1.0f;
-//		if (newButtonState & BTN_LEFT)  lx = -1.0f;
-//#endif
+    }
+    //
+    //	// キーボードでエミュレーション
+    //	{
+    //		float lx = 0.0f;
+    //		float ly = 0.0f;
+    //		float rx = 0.0f;
+    //		float ry = 0.0f;
+    //		if (GetAsyncKeyState('W') & 0x8000) { ly = 1.0f; newButtonState |= BTN_UP; }
+    //		if (GetAsyncKeyState('S') & 0x8000) { ly = -1.0f; newButtonState |= BTN_DOWN; }
+    //		if (GetAsyncKeyState('A') & 0x8000) { lx = -1.0f; newButtonState |= BTN_LEFT; }
+    //		if (GetAsyncKeyState('D') & 0x8000) { lx = 1.0f; newButtonState |= BTN_RIGHT; }
+    //		if (GetAsyncKeyState('I') & 0x8000) ry = 1.0f;
+    //		if (GetAsyncKeyState('J') & 0x8000) rx = -1.0f;
+    //		if (GetAsyncKeyState('K') & 0x8000) ry = -1.0f;
+    //		if (GetAsyncKeyState('L') & 0x8000) rx = 1.0f;
+    //		if (GetAsyncKeyState('Z') & 0x8000) newButtonState |= BTN_A;
+    //		if (GetAsyncKeyState('X') & 0x8000) newButtonState |= BTN_B;
+    //		if (GetAsyncKeyState('C') & 0x8000) newButtonState |= BTN_X;
+    //		if (GetAsyncKeyState('V') & 0x8000) newButtonState |= BTN_Y;
+    //		if (GetAsyncKeyState(' ') & 0x8000) newButtonState |= BTN_SPACE;
+    //		if (GetAsyncKeyState('E') & 0x8000) newButtonState |= BTN_E;
+    //		if (GetAsyncKeyState('Q') & 0x8000) newButtonState |= BTN_Q;
+    //		if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) newButtonState |= BTN_ESC;
+    //		if (GetAsyncKeyState(VK_UP) & 0x8000)	newButtonState |= BTN_UP;
+    //		if (GetAsyncKeyState(VK_RIGHT) & 0x8000)	newButtonState |= BTN_RIGHT;
+    //		if (GetAsyncKeyState(VK_DOWN) & 0x8000)	newButtonState |= BTN_DOWN;
+    //		if (GetAsyncKeyState(VK_LEFT) & 0x8000)	newButtonState |= BTN_LEFT;
+    //
+    //#if 1
+    //		if (newButtonState & BTN_UP)    ly = 1.0f;
+    //		if (newButtonState & BTN_RIGHT) lx = 1.0f;
+    //		if (newButtonState & BTN_DOWN)  ly = -1.0f;
+    //		if (newButtonState & BTN_LEFT)  lx = -1.0f;
+    //#endif
 
-	//	if (lx >= 1.0f || lx <= -1.0f || ly >= 1.0f || ly <= -1.0)
-	//	{
-	//		float power = ::sqrtf(lx * lx + ly * ly);
-	//		axisLx = lx / power;
-	//		axisLy = ly / power;
-	//	}
+    //	if (lx >= 1.0f || lx <= -1.0f || ly >= 1.0f || ly <= -1.0)
+    //	{
+    //		float power = ::sqrtf(lx * lx + ly * ly);
+    //		axisLx = lx / power;
+    //		axisLy = ly / power;
+    //	}
 
-	//	if (rx >= 1.0f || rx <= -1.0f || ry >= 1.0f || ry <= -1.0)
-	//	{
-	//		float power = ::sqrtf(rx * rx + ry * ry);
-	//		axisRx = rx / power;
-	//		axisRy = ry / power;
-	//	}
-	//}
+    //	if (rx >= 1.0f || rx <= -1.0f || ry >= 1.0f || ry <= -1.0)
+    //	{
+    //		float power = ::sqrtf(rx * rx + ry * ry);
+    //		axisRx = rx / power;
+    //		axisRy = ry / power;
+    //	}
+    //}
 
-	// ボタン情報の更新
-	{
-		buttonState[1] = buttonState[0];	// スイッチ履歴
-		buttonState[0] = newButtonState;
+    // ボタン情報の更新
+    {
+        buttonState[1] = buttonState[0]; // スイッチ履歴
+        buttonState[0] = newButtonState;
 
-		buttonDown = ~buttonState[1] & newButtonState;	// 押した瞬間
-		buttonUp = ~newButtonState & buttonState[1];	// 離した瞬間
-	}
+        buttonDown = ~buttonState[1] & newButtonState; // 押した瞬間
+        buttonUp   = ~newButtonState & buttonState[1]; // 離した瞬間
+    }
 
-	// 振動の寿命管理
-	if (m_vibrationTimer > 0.0f)
-	{
-		m_vibrationTimer -= dt;
-		if (m_vibrationTimer <= 0.0f)
-		{
-			m_vibrationTimer = 0.0f;
-			m_currentLeft = 0.0f;
-			m_currentRight = 0.0f;
-			ApplyVibrationHardware(0.0f, 0.0f); // モーター停止
-		}
-	}
+    // 振動の寿命管理
+    if (m_vibrationTimer > 0.0f)
+    {
+        m_vibrationTimer -= dt;
+        if (m_vibrationTimer <= 0.0f)
+        {
+            m_vibrationTimer = 0.0f;
+            m_currentLeft    = 0.0f;
+            m_currentRight   = 0.0f;
+            ApplyVibrationHardware(0.0f, 0.0f); // モーター停止
+        }
+    }
 }
 
 void GamePad::ForceBottonUp(GamePadButton btn)
 {
-	buttonUp |= btn;
-	buttonState[0] &= ~btn;
+    buttonUp |= btn;
+    buttonState[0] &= ~btn;
 }
 
 void GamePad::SetVibration(float left, float right, float duration)
 {
-	// 合成ロジックの例：より強い振動、またはより長い振動が来た場合のみ上書きする
-	if (left >= m_currentLeft || right >= m_currentRight || duration >= m_vibrationTimer)
-	{
-		m_currentLeft = left;
-		m_currentRight = right;
-		m_vibrationTimer = duration;
-		ApplyVibrationHardware(left, right);
-	}
+    // 合成ロジックの例：より強い振動、またはより長い振動が来た場合のみ上書きする
+    if (left >= m_currentLeft || right >= m_currentRight || duration >= m_vibrationTimer)
+    {
+        m_currentLeft    = left;
+        m_currentRight   = right;
+        m_vibrationTimer = duration;
+        ApplyVibrationHardware(left, right);
+    }
 }
-
 
 // =================================================================
 // 実際のハードウェア（XInput）にモーターの回転命令を送る処理
@@ -233,23 +232,23 @@ void GamePad::ApplyVibrationHardware(float left, float right)
 {
     ZoneScopedN("GamePad::ApplyVibrationHardware"); // モーター制御の負荷追跡
 
-	// 1. 安全確保 (フェイルセーフ)
-	// 外部から 1.5f や -0.5f などの異常値が送られてきた場合に備え、
-	// 確実に 0.0f ～ 1.0f の範囲にクランプ（制限）します。
-	left = std::clamp(left, 0.0f, 1.0f);
-	right = std::clamp(right, 0.0f, 1.0f);
+    // 1. 安全確保 (フェイルセーフ)
+    // 外部から 1.5f や -0.5f などの異常値が送られてきた場合に備え、
+    // 確実に 0.0f ～ 1.0f の範囲にクランプ（制限）します。
+    left  = std::clamp(left, 0.0f, 1.0f);
+    right = std::clamp(right, 0.0f, 1.0f);
 
-	// 2. XInput用の構造体を初期化
-	XINPUT_VIBRATION vibration;
-	ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
+    // 2. XInput用の構造体を初期化
+    XINPUT_VIBRATION vibration;
+    ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
 
-	// 3. 浮動小数点数 (0.0f ~ 1.0f) を WORD型 (0 ~ 65535) に変換
-	// 左モーター：低周波（重い・鈍い振動）
-	vibration.wLeftMotorSpeed = static_cast<WORD>(left * 65535.0f);
-	// 右モーター：高周波（軽い・鋭い振動）
-	vibration.wRightMotorSpeed = static_cast<WORD>(right * 65535.0f);
+    // 3. 浮動小数点数 (0.0f ~ 1.0f) を WORD型 (0 ~ 65535) に変換
+    // 左モーター：低周波（重い・鈍い振動）
+    vibration.wLeftMotorSpeed = static_cast<WORD>(left * 65535.0f);
+    // 右モーター：高周波（軽い・鋭い振動）
+    vibration.wRightMotorSpeed = static_cast<WORD>(right * 65535.0f);
 
-	// 4. API呼び出し
-	// 自身の管理している slot（プレイヤー番号）に対して命令を送信
-	XInputSetState(slot, &vibration);
+    // 4. API呼び出し
+    // 自身の管理している slot（プレイヤー番号）に対して命令を送信
+    XInputSetState(slot, &vibration);
 }

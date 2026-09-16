@@ -3,8 +3,8 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <typeinfo> 
-#include <string>   
+#include <typeinfo>
+#include <string>
 
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
@@ -34,17 +34,17 @@
 class RenderPipeline
 {
 public:
-    RenderPipeline() = default;
+    RenderPipeline()  = default;
     ~RenderPipeline() = default;
 
-    RenderPipeline(const RenderPipeline&) = delete;
-    RenderPipeline& operator=(const RenderPipeline&) = delete;
+    RenderPipeline(const RenderPipeline &)            = delete;
+    RenderPipeline &operator=(const RenderPipeline &) = delete;
 
     /**
      * @brief パイプラインを初期化する。AddPass より前に必ず1回呼ぶこと。
      * @details 以降の AddPass に渡すサービス群をここで保持する。
      */
-    void Initialize(const RenderServices& services);
+    void Initialize(const RenderServices &services);
 
     /**
      * @brief 全パスを Shutdown して破棄する。パスは追加と逆順で破棄される。
@@ -59,23 +59,23 @@ public:
      * @note  戻り値はパスのプロパティ調整等に使う。寿命管理は RenderPipeline が行う。
      */
     template <typename T, typename... Args>
-    T* AddPass(Args&&... args)
+    T *AddPass(Args &&...args)
     {
         static_assert(std::is_base_of_v<IRenderPass, T>,
-            "T must derive from IRenderPass");
+                      "T must derive from IRenderPass");
 
         auto pass = std::make_unique<T>(std::forward<Args>(args)...);
-        T* raw = pass.get();
+        T   *raw  = pass.get();
 
         // =========================================================================
         // クラスの型情報(typeid)から名前を自動抽出し、キャッシュする
         // MSVCの場合、typeid(T).name() は "class ShadowPass" のように prefix が付くので除去する
         // =========================================================================
         std::string name = typeid(T).name();
-        if (name.find("class ") == 0)  name = name.substr(6);
+        if (name.find("class ") == 0) name = name.substr(6);
         if (name.find("struct ") == 0) name = name.substr(7);
 
-        raw->m_passName = name;
+        raw->m_passName      = name;
         raw->m_tracyZoneName = "Pass: " + name;
 
         // =========================================================
@@ -83,14 +83,13 @@ public:
         // =========================================================
 #if defined(TRACY_ENABLE)
         // テンプレート関数内の static は型(T)ごとに別実体になるため、パス種別ごとに1つ確保される
-        static std::string staticGpuName = "GPU: " + name;
-        static const tracy::SourceLocationData loc = {
-            staticGpuName.c_str(), __FUNCTION__, __FILE__, (uint32_t)__LINE__, 0
-        };
+        static std::string                     staticGpuName = "GPU: " + name;
+        static const tracy::SourceLocationData loc           = {
+            staticGpuName.c_str(), __FUNCTION__, __FILE__, (uint32_t)__LINE__, 0};
         raw->m_gpuSourceLocation = &loc;
 #endif
 
-        pass->Initialize(m_services);        // m_services は Initialize() 後にのみ有効
+        pass->Initialize(m_services); // m_services は Initialize() 後にのみ有効
         m_passes.push_back(std::move(pass));
         return raw;
     }
@@ -101,7 +100,7 @@ public:
      *  - enabled == false のパスはスキップ
      *  - Debug/Profile ビルドでは ID3DUserDefinedAnnotation で各パスを囲む
      */
-    void Execute(const RenderFrameContext& ctx);
+    void Execute(const RenderFrameContext &ctx);
 
     /**
      * @brief ウィンドウリサイズを全パスに伝播する。
@@ -117,9 +116,7 @@ public:
     * @details EnvironmentSystem 等のパイプライン外システムが services を
     *          参照できるようにするアクセサ。Graphics::GetRenderServices() 経由で公開される。
     */
-    const RenderServices& GetServices() const noexcept { return m_services; }
-
-
+    const RenderServices &GetServices() const noexcept { return m_services; }
 
 private:
     RenderServices                            m_services{};

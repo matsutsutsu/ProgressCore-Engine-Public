@@ -41,9 +41,9 @@
 
 class HitboxCollisionSystem
     : public CCL::ECS::IfSystem<HitboxCollisionSystem,
-          CCL::ECS::Write<HitboxComponent>,   // 多段ヒット履歴(hitTargets/hitCount)を書く
-          CCL::ECS::Read<HurtboxComponent>,   // 被ダメ倍率を読む
-          CCL::ECS::Read<TransformComponent>> // ノックバック方向の算出に読む
+                                CCL::ECS::Write<HitboxComponent>,   // 多段ヒット履歴(hitTargets/hitCount)を書く
+                                CCL::ECS::Read<HurtboxComponent>,   // 被ダメ倍率を読む
+                                CCL::ECS::Read<TransformComponent>> // ノックバック方向の算出に読む
 {
 public:
     HitboxCollisionSystem() : IfSystem("HitboxCollisionSystem") {}
@@ -76,9 +76,9 @@ private:
      * @param contactPos        物理衝突の接触点(ワールド座標)。命中エフェクト位置にそのまま使う。
      * @note  双方向(A→B, B→A)は呼び出し側で2回呼ぶことで担保する。
      */
-    void CheckAndSpawnDamageEvent(CCL::ECS::EntityID attackerCandidate,
-        CCL::ECS::EntityID victimCandidate,
-        const DirectX::XMFLOAT3 &contactPos);
+    void CheckAndSpawnDamageEvent(CCL::ECS::EntityID       attackerCandidate,
+                                  CCL::ECS::EntityID       victimCandidate,
+                                  const DirectX::XMFLOAT3 &contactPos);
 
     // このフレームに届いた接触。コールバックが積み、Update が消費して空にする。
     //

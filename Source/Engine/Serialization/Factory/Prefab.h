@@ -6,7 +6,8 @@
 #include <string>
 #include <unordered_map>
 
-namespace Prefab {
+namespace Prefab
+{
 
     using namespace CCL::ECS;
 
@@ -34,15 +35,15 @@ namespace Prefab {
         World &world, const std::string &path, const DirectX::XMFLOAT3 &position);
 
     // 座標・回転(Quaternion)指定で生成
-    EntityID SpawnPrefab(World &world,
-        const std::string            &path,
-        const DirectX::XMFLOAT3      &position,
-        const DirectX::XMFLOAT4      &rotation);
+    EntityID SpawnPrefab(World                   &world,
+                         const std::string       &path,
+                         const DirectX::XMFLOAT3 &position,
+                         const DirectX::XMFLOAT4 &rotation);
 
     // 座標・Y軸回転(度数法)指定で生成
-    EntityID SpawnPrefab(World &world,
-        const std::string            &path,
-        const DirectX::XMFLOAT3      &position,
-        float                         rotationY);
+    EntityID SpawnPrefab(World                   &world,
+                         const std::string       &path,
+                         const DirectX::XMFLOAT3 &position,
+                         float                    rotationY);
 
-} // namespace CCL::Prefab
+} // namespace Prefab

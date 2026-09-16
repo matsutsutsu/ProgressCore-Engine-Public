@@ -28,7 +28,7 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
                             CCL::ECS::Write<HealthComponent>,
                             CCL::ECS::Read<TimeStateComponent>>
 {
-  public:
+public:
     BossPhaseSystem()
         : IfSystem("BossPhaseSystem")
     {
@@ -44,7 +44,7 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
 
     void Update(float dt) override;
 
-  private:
+private:
     /// 今フレームの遷移先を決める。優先度順で、上から最初に成立したものが勝つ。
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
                               const HealthComponent    &health) const;
@@ -65,7 +65,7 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
     // どちらも Muriel の AnimGraph にステートが無いので、今は発火しても何も起きない
     // （追加すればそのまま繋がる）。アニメ無しでも移行そのものは成立する。
     static constexpr const char *kDeathTrigger = "Death";
-    static constexpr const char *kRoarTrigger = "Roar";
+    static constexpr const char *kRoarTrigger  = "Roar";
 
     // 形態移行の演出時間 [秒]。この間ボスは無敵で、BTは止まる。
     static constexpr float kTransitionDuration = 2.5f;

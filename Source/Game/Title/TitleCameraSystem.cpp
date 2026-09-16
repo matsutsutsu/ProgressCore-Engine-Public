@@ -46,7 +46,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 }
 
 void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
-    const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
+                                     const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
 {
     using CCL::Title::CompositionBoard;
 
@@ -100,7 +100,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
 }
 
 void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
-    const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
+                                  const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
 {
     vcam.resultPos    = eye;
     vcam.resultLookAt = pivot;
@@ -143,8 +143,8 @@ void TitleCameraSystem::OnGui()
         const auto &board = m_world->GetResource<CCL::Title::CompositionBoard>();
         ImGui::Text("視点   (%.2f, %.2f, %.2f)", board.eye.x, board.eye.y, board.eye.z);
         ImGui::Text("注視点 (%.2f, %.2f, %.2f)%s", board.lookTarget.x, board.lookTarget.y,
-            board.lookTarget.z,
-            (m_lookTargetID != InvalidEntityID) ? "" : "  ※目印なし(既定値)");
+                    board.lookTarget.z,
+                    (m_lookTargetID != InvalidEntityID) ? "" : "  ※目印なし(既定値)");
         ImGui::Text("画角 %.1f度 / 構図の更新回数 %u", board.fov, board.revision);
     }
 

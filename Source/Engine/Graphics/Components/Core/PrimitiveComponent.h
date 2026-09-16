@@ -1,9 +1,17 @@
 #pragma once
 #include <DirectXMath.h>
 
-enum class PrimitiveType { Box, Sphere, Cylinder, Capsule, Cone };
+enum class PrimitiveType
+{
+    Box,
+    Sphere,
+    Cylinder,
+    Capsule,
+    Cone
+};
 
-struct PrimitiveComponent {
+struct PrimitiveComponent
+{
     PrimitiveType type = PrimitiveType::Box;
 
     // 形状ごとのパラメータ（共用してメモリ節約してもいいですが、分かりやすさ優先で羅列します）

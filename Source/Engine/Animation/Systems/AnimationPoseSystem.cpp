@@ -32,7 +32,6 @@ void AnimationPoseSystem::Update(float dt)
     // 安易な並列化はポーズの競合を招く。並列化する場合は Model のポーズ書き込みを
     // エンティティ単位に分離してから行うこと。
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
-
         // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence) return;
 
@@ -45,7 +44,7 @@ void AnimationPoseSystem::Update(float dt)
 }
 
 void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
-    Model *model, const AnimSequence *seq)
+                                              Model *model, const AnimSequence *seq)
 {
     ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose");
 

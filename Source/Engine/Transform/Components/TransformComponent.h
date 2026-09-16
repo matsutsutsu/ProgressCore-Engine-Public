@@ -1,7 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/Serialization/Core/EntityLink.h" 
+#include "Engine/Serialization/Core/EntityLink.h"
 
 // ===================================================================================
 // TransformComponent 物理同期に関するルール
@@ -17,12 +17,12 @@
  * @brief エンティティの空間的な位置、回転、スケールを管理するコンポーネント。
  * @note データ指向設計（DOD）に基づき、ローカル座標（保存対象）とワールド行列（計算キャッシュ）を分離しています。
  */
-struct TransformComponent {
+struct TransformComponent
+{
     // --- 【データ部】（保存・編集する値 = Local） ---
-    DirectX::XMFLOAT3   position    = {0, 0, 0};    // 親からの相対位置 (Local Position)
-    DirectX::XMFLOAT4   rotation    = {0, 0, 0, 1}; // 親からの相対回転 (Local Rotation)
-    DirectX::XMFLOAT3   scale       = {1, 1, 1};    // 親からの相対サイズ (Local Scale)
-
+    DirectX::XMFLOAT3 position = {0, 0, 0};    // 親からの相対位置 (Local Position)
+    DirectX::XMFLOAT4 rotation = {0, 0, 0, 1}; // 親からの相対回転 (Local Rotation)
+    DirectX::XMFLOAT3 scale    = {1, 1, 1};    // 親からの相対サイズ (Local Scale)
 
     // 描画補間用（Fix Your Timestepパターン）
     /**
@@ -37,7 +37,6 @@ struct TransformComponent {
      * @note prevPosition と同じ役割。用途はRender補間専用。
      */
     DirectX::XMFLOAT4 prevRotation = {0, 0, 0, 1};
-
 
     // 静的オブジェクトフラグ (trueなら更新しない)
     bool isStatic = false;
@@ -54,7 +53,6 @@ struct TransformComponent {
      * @warning 実行時の一時データであるため、シリアライズ（保存）の対象には含めないでください。
      */
     bool isDirty = true;
-
 
     // --- 【キャッシュ部】（システムが計算して書き込む値 = World） ---
     // ※手動では書き換えず、TransformUpdateSystemに計算させる
@@ -82,7 +80,7 @@ struct TransformComponent {
     //   → もしくは Fields() に含めなければ最初からスキップ。
     //     (現状実装では Fields() に含めない方が明快)
     // =========================================================
-    CCL::Serialization::EntityLink parent;         // 保存対象: 親エンティティ参照
+    CCL::Serialization::EntityLink parent; // 保存対象: 親エンティティ参照
 
     CCL::ECS::EntityID firstChildID  = 0; // 最初の子 (リストの先頭)
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
@@ -101,21 +99,21 @@ struct TransformComponent {
     // CCL::ECS::EntityID get_parentID() const { return parent.id; }
     // void set_parentID(CCL::ECS::EntityID id) { parent.id = id; }
 
-
-
     // =========================================================
     // 開発体験(DX)を最高にするための直感的Setter
     // =========================================================
-    void SetPosition(const DirectX::XMFLOAT3 &newPos) {
-      position = newPos;
-      isTeleported = true; // 裏で自動的にフラグを立てる
-      isStatic = false;    // 行列の再計算も要求
+    void SetPosition(const DirectX::XMFLOAT3 &newPos)
+    {
+        position     = newPos;
+        isTeleported = true;  // 裏で自動的にフラグを立てる
+        isStatic     = false; // 行列の再計算も要求
     }
 
-    void SetPosition(float x, float y, float z) {
-      position = {x, y, z};
-      isTeleported = true;
-      isStatic = false;
+    void SetPosition(float x, float y, float z)
+    {
+        position     = {x, y, z};
+        isTeleported = true;
+        isStatic     = false;
     }
 
     // ------------------------------------------------------------------
@@ -204,11 +202,11 @@ struct TransformComponent {
      * @brief TRS からローカル行列（S * R * T）を合成する。
      * @note 親変換は含まない純粋なローカル。階層解決・ボーン追従で共用。
      */
-    DirectX::XMMATRIX ComposeLocalMatrix() const {
+    DirectX::XMMATRIX ComposeLocalMatrix() const
+    {
         using namespace DirectX;
         return XMMatrixAffineTransformation(
             XMLoadFloat3(&scale), XMVectorZero(),
             XMLoadFloat4(&rotation), XMLoadFloat3(&position));
     }
-
 };

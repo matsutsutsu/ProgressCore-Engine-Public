@@ -6,7 +6,6 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-
 void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
@@ -19,17 +18,15 @@ void ParticleScene::Initialize()
         // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
         std::string particleLevel = "Assets/Scene/ParticleScene.level.json";
 
-
         ZoneScopedN("ParticleScene: LoadLevel ParticleScene");
         if (!LevelSerializer::LoadLevel(m_worldPtr, particleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "ParticleScene: パーティクルシーンレベルの読み込みに失敗: %s", particleLevel.c_str());
     }
-  
 }
 
 void ParticleScene::Finalize()
 {
-    BaseScene::Finalize(); 
+    BaseScene::Finalize();
 }
 
 void ParticleScene::RegisterSystems()

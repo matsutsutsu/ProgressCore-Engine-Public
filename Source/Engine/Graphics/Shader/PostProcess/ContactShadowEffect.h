@@ -18,30 +18,31 @@
 class ContactShadowEffect : public IPostEffect
 {
 public:
-    ContactShadowEffect() = default;
+    ContactShadowEffect()           = default;
     ~ContactShadowEffect() override = default;
 
-    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
-    void Resize(ID3D11Device* device, UINT width, UINT height) override;
+    void Initialize(ID3D11Device *device, UINT width, UINT height) override;
+    void Resize(ID3D11Device *device, UINT width, UINT height) override;
 
     // コンタクトシャドウを適用する。t4のシーン深度は Manager がバインド済みである前提。
-    void Process(ID3D11DeviceContext* dc,
-                 ID3D11ShaderResourceView* inputSRV,
-                 ID3D11RenderTargetView* outputRTV) override;
+    void Process(ID3D11DeviceContext      *dc,
+                 ID3D11ShaderResourceView *inputSRV,
+                 ID3D11RenderTargetView   *outputRTV) override;
 
-    const char* GetName() const override { return "ContactShadow"; }
+    const char *GetName() const override { return "ContactShadow"; }
 
-    void UpdateParams(const GpuData::CbContactShadowData& data) { m_cbData = data; }
+    void UpdateParams(const GpuData::CbContactShadowData &data) { m_cbData = data; }
 
 private:
     GpuData::CbContactShadowData m_cbData{};
 
-    struct Resources {
+    struct Resources
+    {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader>  ps;
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
     Microsoft::WRL::ComPtr<ID3D11BlendState> m_opaqueBlendState;
-    std::unique_ptr<Resources> m_res;
+    std::unique_ptr<Resources>               m_res;
 };

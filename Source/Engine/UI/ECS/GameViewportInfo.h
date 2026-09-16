@@ -31,14 +31,14 @@
 //   メインビューポート原点を引いてクライアント基準へ直してから書き込むこと。
 struct GameViewportInfo
 {
-    float x = 0.0f; // ゲーム画像の左上X（ウィンドウ・クライアントpx）
-    float y = 0.0f; // ゲーム画像の左上Y（ウィンドウ・クライアントpx）
-    float w = 0.0f; // ゲーム画像の表示幅（レターボックス後の実サイズpx）
-    float h = 0.0f; // ゲーム画像の表示高（レターボックス後の実サイズpx）
+    float x     = 0.0f;  // ゲーム画像の左上X（ウィンドウ・クライアントpx）
+    float y     = 0.0f;  // ゲーム画像の左上Y（ウィンドウ・クライアントpx）
+    float w     = 0.0f;  // ゲーム画像の表示幅（レターボックス後の実サイズpx）
+    float h     = 0.0f;  // ゲーム画像の表示高（レターボックス後の実サイズpx）
     bool  valid = false; // エディタで GameView にRTが貼られているフレームだけ true
 
     // エディタUIが表示されているフレームだけ true（全画面プレイ/Shipping では false）。
     //   editorVisible && !valid ＝「エディタは動いているがゲーム画面は出ていない」。
     //   このときゲームUIは入力を受け取ってはいけない。
-    bool  editorVisible = false;
+    bool editorVisible = false;
 };

@@ -5,138 +5,151 @@
 
 #ifdef __cplusplus
 #include <DirectXMath.h>
-namespace GpuData {
-using float2 = DirectX::XMFLOAT2;
-using float3 = DirectX::XMFLOAT3;
-using float4 = DirectX::XMFLOAT4;
+namespace GpuData
+{
+    using float2 = DirectX::XMFLOAT2;
+    using float3 = DirectX::XMFLOAT3;
+    using float4 = DirectX::XMFLOAT4;
 #define PP_STRUCT(name, slot) struct name
 #else
 #define PP_STRUCT(name, slot) cbuffer name : register(REG_CB(slot))
 #endif
 
-// ============================================================================
-// Bloom パラメータレイアウト（16バイトアライメント厳守：合計32バイト）
-// ============================================================================
-PP_STRUCT(CbBloomData, SLOT_CB_BLOOM) {
-  float threshold;
-  float softKnee;
-  float intensity;
-  float radius;
+    // ============================================================================
+    // Bloom パラメータレイアウト（16バイトアライメント厳守：合計32バイト）
+    // ============================================================================
+    PP_STRUCT(CbBloomData, SLOT_CB_BLOOM)
+    {
+        float threshold;
+        float softKnee;
+        float intensity;
+        float radius;
 
-  float texelWidth;
-  float texelHeight;
-  float pad[2];
-};
+        float texelWidth;
+        float texelHeight;
+        float pad[2];
+    };
 
-// ============================================================================
-// ToneMap パラメータレイアウト（合計32バイト）
-// ============================================================================
-PP_STRUCT(CbToneMapData, SLOT_CB_TONEMAP) {
-  float  exposure;
-  float  chromaticAberration;
-  float  pad2[2];
-  float4 colorTint; // RGB=Tint, W=1.0
-};
+    // ============================================================================
+    // ToneMap パラメータレイアウト（合計32バイト）
+    // ============================================================================
+    PP_STRUCT(CbToneMapData, SLOT_CB_TONEMAP)
+    {
+        float  exposure;
+        float  chromaticAberration;
+        float  pad2[2];
+        float4 colorTint; // RGB=Tint, W=1.0
+    };
 
-// ============================================================================
-// Distortion パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION) {
-  float time;
-  float strength;
-  float pad3[2];
-};
+    // ============================================================================
+    // Distortion パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION)
+    {
+        float time;
+        float strength;
+        float pad3[2];
+    };
 
-// ============================================================================
-// RadialBlur パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR) {
-  float2 blurCenter;
-  float  blurStrength;
-  float  blurFalloff;
-};
+    // ============================================================================
+    // RadialBlur パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR)
+    {
+        float2 blurCenter;
+        float  blurStrength;
+        float  blurFalloff;
+    };
 
-// ============================================================================
-// Vignette パラメータレイアウト（合計48バイト）
-// ============================================================================
-PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE) {
-  float4 vigColor;
-  float  vigIntensity;
-  float  vigRadius;
-  float  vigSoftness;
-  float  vigPulseSpeed;
-  float  vigTime;
-  float  vigPad[3];
-};
+    // ============================================================================
+    // Vignette パラメータレイアウト（合計48バイト）
+    // ============================================================================
+    PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE)
+    {
+        float4 vigColor;
+        float  vigIntensity;
+        float  vigRadius;
+        float  vigSoftness;
+        float  vigPulseSpeed;
+        float  vigTime;
+        float  vigPad[3];
+    };
 
-// ============================================================================
-// ChromaticAberration パラメータレイアウト（合計16バイト）
-// ============================================================================
-// ============================================================================
-// PauseBlur パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbPauseBlurData, SLOT_CB_PAUSEBLUR) {
-  float pauseBlurRadius; // サンプル円の半径(UV単位)。0 で素通し。
-  float pauseBlurPad[3];
-};
+    // ============================================================================
+    // ChromaticAberration パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    // ============================================================================
+    // PauseBlur パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbPauseBlurData, SLOT_CB_PAUSEBLUR)
+    {
+        float pauseBlurRadius; // サンプル円の半径(UV単位)。0 で素通し。
+        float pauseBlurPad[3];
+    };
 
-PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC) {
-  float2 chromaCenter;
-  float  chromaStrength;
-  float  chromaFalloff;
-};
+    PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC)
+    {
+        float2 chromaCenter;
+        float  chromaStrength;
+        float  chromaFalloff;
+    };
 
-// ============================================================================
-// ColorGrading パラメータレイアウト（合計32バイト）
-// ============================================================================
-PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING) {
-  float4 gradeTint;
-  float  gradeSaturation;
-  float  gradeContrast;
-  float  gradeBrightness;
-  float  gradeMixAmount;
-};
+    // ============================================================================
+    // ColorGrading パラメータレイアウト（合計32バイト）
+    // ============================================================================
+    PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING)
+    {
+        float4 gradeTint;
+        float  gradeSaturation;
+        float  gradeContrast;
+        float  gradeBrightness;
+        float  gradeMixAmount;
+    };
 
-// ============================================================================
-// DepthOfField パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF) {
-  float dofFocusDistance;
-  float dofFocusRange;
-  float dofFalloff;
-  float dofMaxBlur;
-};
+    // ============================================================================
+    // DepthOfField パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF)
+    {
+        float dofFocusDistance;
+        float dofFocusRange;
+        float dofFalloff;
+        float dofMaxBlur;
+    };
 
-// ============================================================================
-// SSAO パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbSSAOData, SLOT_CB_SSAO) {
-  float ssaoRadius;
-  float ssaoIntensity;
-  float ssaoBias;
-  float ssaoMaxDistance;
-};
+    // ============================================================================
+    // SSAO パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbSSAOData, SLOT_CB_SSAO)
+    {
+        float ssaoRadius;
+        float ssaoIntensity;
+        float ssaoBias;
+        float ssaoMaxDistance;
+    };
 
-// ============================================================================
-// SSAOBlur パラメータレイアウト（合計16バイト）
-// ============================================================================
-PP_STRUCT(CbSSAOBlurData, SLOT_CB_SSAO_BLUR) {
-  float2 blurTexelStep;
-  float  blurDepthSigma;
-  float  blurMaxDistance;
-};
+    // ============================================================================
+    // SSAOBlur パラメータレイアウト（合計16バイト）
+    // ============================================================================
+    PP_STRUCT(CbSSAOBlurData, SLOT_CB_SSAO_BLUR)
+    {
+        float2 blurTexelStep;
+        float  blurDepthSigma;
+        float  blurMaxDistance;
+    };
 
-// ============================================================================
-// ContactShadow パラメータレイアウト（合計32バイト）
-// ============================================================================
-PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW) {
-  float csRayLength;
-  float csThickness;
-  float csBias;
-  float csIntensity;
-  float csMaxDistance;
-  float3 csPad;
-};
+    // ============================================================================
+    // ContactShadow パラメータレイアウト（合計32バイト）
+    // ============================================================================
+    PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW)
+    {
+        float  csRayLength;
+        float  csThickness;
+        float  csBias;
+        float  csIntensity;
+        float  csMaxDistance;
+        float3 csPad;
+    };
 
 #ifdef __cplusplus
 } // namespace GpuData

@@ -16,10 +16,9 @@
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 
-
 class PlayerInputSystem : public CCL::ECS::IfSystem<PlayerInputSystem,
-    CCL::ECS::Write<CharacterMovementComponent>,
-    CCL::ECS::Write<PlayerInputComponent>>
+                                                    CCL::ECS::Write<CharacterMovementComponent>,
+                                                    CCL::ECS::Write<PlayerInputComponent>>
 {
 public:
     PlayerInputSystem();

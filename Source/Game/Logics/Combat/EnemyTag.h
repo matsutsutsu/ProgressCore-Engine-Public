@@ -1,6 +1,7 @@
 #pragma once
 
-namespace Tag {
+namespace Tag
+{
 
     // 【タグ】このコンポーネントを持つEntityは「敵」とみなす。
     //
@@ -18,6 +19,8 @@ namespace Tag {
     //
     // 使いどころ:
     //   撃破カウント、ロックオン候補、ウェーブのクリア判定など「敵を数える/探す」処理。
-    struct EnemyTag {};
+    struct EnemyTag
+    {
+    };
 
-}
+} // namespace Tag

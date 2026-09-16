@@ -30,7 +30,7 @@ class IMaterialShader;
  */
 class OpaquePass : public IRenderPass
 {
-  public:
+public:
     /**
      * @brief PSO とインスタンスバッファを生成する。
      * @param services 永続サービス群（device / shaders / resources 等が
@@ -61,7 +61,7 @@ class OpaquePass : public IRenderPass
         return m_stat_culledMeshes;
     }
 
-  private:
+private:
     // ソート済みキー列のうち、同一バッチキーが連続している区間。
     // count がそのままバッチ内のインスタンス数（＝同じモデルの配置数）になる。
     struct BatchRange

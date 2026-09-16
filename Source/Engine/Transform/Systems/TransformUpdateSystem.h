@@ -1,15 +1,18 @@
 #pragma once
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Engine/Transform/Core/TransformHierarchyCache.h"  
+#include "Engine/Transform/Core/TransformHierarchyCache.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Core/Components/DestroyTag.h"
 
 // 前方宣言
-namespace CCL::ECS { class World; }
+namespace CCL::ECS
+{
+    class World;
+}
 
-
-class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CCL::ECS::Write<TransformComponent>> {
-  public:
+class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem, CCL::ECS::Write<TransformComponent>>
+{
+public:
     TransformUpdateSystem();
     virtual ~TransformUpdateSystem() = default;
 
@@ -18,7 +21,6 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     // TransformInterpolationSystem(Render Stage)が同じdepth順を読むために使う。
     // 所有権は本システムのまま（m_cacheへの生ポインタを渡すだけ）。
     void Initialize() override;
-
 
     // フレーム毎の更新処理
 
@@ -33,7 +35,6 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
 
     void Update(float dt) override;
 
-
     // --- 親子関係操作用ヘルパー関数 (static) ---
     // 外部（PrefabやLogic）から TransformUpdateSystem::SetParent(...) として呼び出します
     static void SetParent(
@@ -46,7 +47,6 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
     // destroyChildren: trueなら子供も道連れにする（通常はtrue推奨）
     static void DestroyEntityWithHierarchy(
         CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
-
 
     // DestroyTagを引数のEntityの子供含めて全て立てる処理
     static void MarkForDestruction(
@@ -68,14 +68,14 @@ class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem,CC
      *       無いため、並列ループから呼んでも安全。
      */
     static void WriteWorldTransform(CCL::ECS::World &world, CCL::ECS::EntityID entity,
-        TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
-        const DirectX::XMFLOAT4 &worldRot);
+                                    TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
+                                    const DirectX::XMFLOAT4 &worldRot);
 
     /// 回転は変えずワールド座標だけ書き戻す版（CharacterVirtual 用）。
     static void WriteWorldPosition(CCL::ECS::World &world, CCL::ECS::EntityID entity,
-        TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos);
+                                   TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos);
 
-  private:
+private:
     // 保留中の親子関係を適用する関数
     void ProcessPendingParents();
 

@@ -7,13 +7,11 @@
 #include <algorithm>
 
 MemoryAnalyzerWindow::MemoryAnalyzerWindow()
-    : EditorWindow("Memory Analyzer")
-    , m_cachedTotalVram(0)
-    , m_updateTimer(0.2f)
+    : EditorWindow("Memory Analyzer"), m_cachedTotalVram(0), m_updateTimer(0.2f)
 {
 }
 
-void MemoryAnalyzerWindow::DrawContents(EditorContext& context)
+void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
 {
     // 1. スロットリング（間引き）処理: 0.2秒（約12フレーム）に1回だけプールを走査する
     m_updateTimer += ImGui::GetIO().DeltaTime;
@@ -23,24 +21,24 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext& context)
         m_cachedTextures.clear();
         m_cachedTotalVram = 0;
 
-        auto& rm = ResourceManager::Instance();
+        auto &rm = ResourceManager::Instance();
 
         // ResourceManagerの連続メモリプール（ResourcePool）を一直線にスキャン
-        rm.GetTexturePool().ForEachActive([&](const TextureResource& tex) {
+        rm.GetTexturePool().ForEachActive([&](const TextureResource &tex) {
             CachedAssetInfo info;
-            info.path = tex.debugPath;
+            info.path      = tex.debugPath;
             info.sizeBytes = tex.byteSize;
-            info.width = tex.width;
-            info.height = tex.height;
+            info.width     = tex.width;
+            info.height    = tex.height;
 
             m_cachedTextures.push_back(info);
             m_cachedTotalVram += tex.byteSize;
-            });
+        });
 
         // 重いアセット（VRAM消費量が多い順）に降順ソート
-        std::sort(m_cachedTextures.begin(), m_cachedTextures.end(), [](const CachedAssetInfo& a, const CachedAssetInfo& b) {
+        std::sort(m_cachedTextures.begin(), m_cachedTextures.end(), [](const CachedAssetInfo &a, const CachedAssetInfo &b) {
             return a.sizeBytes > b.sizeBytes;
-            });
+        });
     }
 
     // 2. 実際のUI描画（キャッシュされたデータから描画するため超高速）
@@ -55,9 +53,9 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext& context)
 
 void MemoryAnalyzerWindow::DrawOverviewSection()
 {
-    float vramMb = static_cast<float>(m_cachedTotalVram) / (1024.0f * 1024.0f);
+    float vramMb   = static_cast<float>(m_cachedTotalVram) / (1024.0f * 1024.0f);
     float budgetMb = static_cast<float>(VRAM_BUDGET_BYTES) / (1024.0f * 1024.0f);
-    float ratio = static_cast<float>(m_cachedTotalVram) / VRAM_BUDGET_BYTES;
+    float ratio    = static_cast<float>(m_cachedTotalVram) / VRAM_BUDGET_BYTES;
 
     ImGui::Text("VRAM Budget Status:");
     ImGui::SameLine();
@@ -67,8 +65,10 @@ void MemoryAnalyzerWindow::DrawOverviewSection()
     ImGui::TextColored(textColor, "%.1f MB / %.0f MB (%.1f%%)", vramMb, budgetMb, ratio * 100.0f);
 
     // プログレスバーのカラーカスタム（予算オーバーで赤化）
-    if (ratio > 0.85f) ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-    else               ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+    if (ratio > 0.85f)
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    else
+        ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
 
     ImGui::ProgressBar(ratio, ImVec2(-1, 25), "");
     ImGui::PopStyleColor();
@@ -86,7 +86,7 @@ void MemoryAnalyzerWindow::DrawTextureTableSection()
         ImGui::TableSetupColumn("VRAM Size", ImGuiTableColumnFlags_WidthFixed, 120.0f);
         ImGui::TableHeadersRow();
 
-        for (const auto& tex : m_cachedTextures)
+        for (const auto &tex : m_cachedTextures)
         {
             ImGui::TableNextRow();
 
@@ -100,10 +100,12 @@ void MemoryAnalyzerWindow::DrawTextureTableSection()
 
             // カラム3: 読みやすい単位に変換した容量
             ImGui::TableNextColumn();
-            if (tex.sizeBytes >= 1024 * 1024) {
+            if (tex.sizeBytes >= 1024 * 1024)
+            {
                 ImGui::Text("%.2f MB", static_cast<float>(tex.sizeBytes) / (1024.0f * 1024.0f));
             }
-            else {
+            else
+            {
                 ImGui::Text("%.1f KB", static_cast<float>(tex.sizeBytes) / 1024.0f);
             }
         }

@@ -34,7 +34,7 @@ namespace CCL::Math
     {
         return 1.0f - std::exp(-speed * dt);
     }
-    
+
     // 0..1 を S 字に整形する（両端で速度 0）。
     //
     // 1階微分までが連続。線形のままだと開始と終了が唐突に見える演出に使う。
@@ -44,7 +44,7 @@ namespace CCL::Math
         if (t >= 1.0f) return 1.0f;
         return t * t * (3.0f - 2.0f * t);
     }
-    
+
     // 0..1 を S 字に整形する（両端で加速度まで 0）。
     //
     // 2階微分までが連続なのが SmoothStep との違い。区間をまたぐ瞬間に

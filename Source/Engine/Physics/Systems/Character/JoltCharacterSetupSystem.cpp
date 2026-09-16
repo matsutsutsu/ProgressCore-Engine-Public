@@ -23,7 +23,6 @@ void JoltCharacterSetupSystem::Update(float dt)
     ForEachWithID([&](CCL::ECS::EntityID                  id,
                       const TransformComponent           &trans,
                       const JoltCharacterConfigComponent &config) {
-
         // キャラクターは基本的にカプセル形状で作る（段差を登りやすくするため）
         auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id);
         if (!capsule) return; // カプセルが無ければ作れない
@@ -59,9 +58,9 @@ void JoltCharacterSetupSystem::Update(float dt)
         settings.mPredictiveContactDistance = 0.1f;
 
         auto character = new JPH::CharacterVirtual(&settings,
-            JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
-            JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w),
-            physicsSystem);
+                                                   JPH::RVec3(trans.position.x, trans.position.y, trans.position.z),
+                                                   JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w),
+                                                   physicsSystem);
 
         JoltCharacterHandleComponent handleComp;
         handleComp.character = character;

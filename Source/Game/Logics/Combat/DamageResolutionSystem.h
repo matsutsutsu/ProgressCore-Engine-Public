@@ -30,7 +30,8 @@
 #include "Game/Logics/Combat/CombatComponents.h"
 
 class DamageResolutionSystem : public CCL::ECS::IfSystem<DamageResolutionSystem,
-    CCL::ECS::Write<DamageEventComponent>> {
+                                                         CCL::ECS::Write<DamageEventComponent>>
+{
 public:
     DamageResolutionSystem() : IfSystem("DamageResolutionSystem") {}
     void Update(float dt) override;

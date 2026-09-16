@@ -1,8 +1,11 @@
 #pragma once
 
-namespace Tag {
+namespace Tag
+{
 
     // 【タグ】このコンポーネントを持つEntityは死亡しているとみなす
-    struct DeadTag {};
+    struct DeadTag
+    {
+    };
 
-} 
+} // namespace Tag

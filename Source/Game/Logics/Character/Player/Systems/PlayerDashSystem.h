@@ -13,13 +13,13 @@ struct BattleContext;
 struct RootMotionComponent;
 
 class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
-    CCL::ECS::Write<CharacterMovementComponent>,
-    CCL::ECS::Write<DashComponent>,
-    CCL::ECS::Write<PlayerComponent>,
-    CCL::ECS::Read<PlayerInputComponent>,
-    CCL::ECS::Read<CleaveComponent>,
-    CCL::ECS::Read<TransformComponent>,
-    CCL::ECS::Write<TimeStateComponent>>
+                                                   CCL::ECS::Write<CharacterMovementComponent>,
+                                                   CCL::ECS::Write<DashComponent>,
+                                                   CCL::ECS::Write<PlayerComponent>,
+                                                   CCL::ECS::Read<PlayerInputComponent>,
+                                                   CCL::ECS::Read<CleaveComponent>,
+                                                   CCL::ECS::Read<TransformComponent>,
+                                                   CCL::ECS::Write<TimeStateComponent>>
 {
 public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}

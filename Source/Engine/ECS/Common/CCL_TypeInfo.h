@@ -11,16 +11,15 @@
 
 #include <cstddef>
 #include <string>
-#include <new>           // placement new
-#include <type_traits>   // std::is_copy_constructible_v 等
+#include <new>         // placement new
+#include <type_traits> // std::is_copy_constructible_v 等
 #include <typeinfo>
 #include <cassert>
-#include <utility>       // std::move
+#include <utility> // std::move
 
 #include "CCL_Types.h"
 #include "CCL_IDEmitter.h"
 #include "CCL_TypeErasure.h"
-
 
 namespace CCL::ECS
 {
@@ -79,13 +78,12 @@ namespace CCL::ECS
         }
 
         // 型名（実装依存。デバッグ・シリアライズで使用）
-        static const char* Name()
+        static const char *Name()
         {
             static std::string name = typeid(T).name(); // "struct Transform" 等
             return name.c_str();
         }
     };
-
 
     // ------------------------------------------------------------------
     // TypeData
@@ -119,11 +117,10 @@ namespace CCL::ECS
         ~TypeData() = default;
 
         // コピー・ムーブは全て有効化（vector 等に格納するため）
-        TypeData(const TypeData&)            = default;
-        TypeData& operator=(const TypeData&) = default;
-        TypeData(TypeData&&)                 = default;
-        TypeData& operator=(TypeData&&)      = default;
-
+        TypeData(const TypeData &)            = default;
+        TypeData &operator=(const TypeData &) = default;
+        TypeData(TypeData &&)                 = default;
+        TypeData &operator=(TypeData &&)      = default;
 
         /**
          * @brief 型 T から TypeData の各フィールドを一括初期化する。
@@ -141,77 +138,78 @@ namespace CCL::ECS
             id       = TypeInfo<T>::ID();
             typeSize = TypeInfo<T>::Size();
             destructor.template Create<T>();
-            name     = TypeInfo<T>::Name();
+            name = TypeInfo<T>::Name();
 
             // ---- デフォルトコンストラクタ ----
-            defaultConstructor = [](void* dst) {
+            defaultConstructor = [](void *dst) {
                 new (dst) T();
             };
 
             // ---- コピー構築 (placement new) ----
             // 未初期化メモリへの新規構築。assigner と違って operator= は呼ばない。
-            if constexpr (std::is_copy_constructible_v<T>) {
-                constructor = [](void* dst, const void* src) {
-                    new (dst) T(*reinterpret_cast<const T*>(src));
+            if constexpr (std::is_copy_constructible_v<T>)
+            {
+                constructor = [](void *dst, const void *src) {
+                    new (dst) T(*reinterpret_cast<const T *>(src));
                 };
             }
-            else {
-                constructor = [](void*, const void*) {
+            else
+            {
+                constructor = [](void *, const void *) {
                     assert(false && "Copy constructor called for non-copyable type!");
                 };
             }
 
             // ---- コピー代入 (operator=) ----
-            if constexpr (std::is_copy_assignable_v<T>) {
-                assigner = [](void* dst, const void* src) {
-                    T*       dstObj = reinterpret_cast<T*>(dst);
-                    const T* srcObj = reinterpret_cast<const T*>(src);
-                    *dstObj = *srcObj;
+            if constexpr (std::is_copy_assignable_v<T>)
+            {
+                assigner = [](void *dst, const void *src) {
+                    T       *dstObj = reinterpret_cast<T *>(dst);
+                    const T *srcObj = reinterpret_cast<const T *>(src);
+                    *dstObj         = *srcObj;
                 };
             }
-            else {
-                assigner = [](void*, const void*) {
+            else
+            {
+                assigner = [](void *, const void *) {
                     assert(false && "Copy assignment called for non-copyable type!");
                 };
             }
 
             // ---- ムーブ構築 (CompactHoles / MoveEntityBetweenChunks で使用) ----
             // dst は未初期化メモリなので operator= ではなく placement new + std::move
-            mover = [](void* dst, void* src) {
-                new (dst) T(std::move(*reinterpret_cast<T*>(src)));
+            mover = [](void *dst, void *src) {
+                new (dst) T(std::move(*reinterpret_cast<T *>(src)));
             };
         }
-
 
         // ----------------------------------------------------------
         // データメンバ
         // ----------------------------------------------------------
         // コンポーネント型を識別する ID（整数比較なので最速）
-        TypeID     id        = InvalidTypeID;
+        TypeID id = InvalidTypeID;
 
         // 1個あたりのメモリサイズ（SoA 配置・コピー計算に使用）
-        size_t     typeSize  = 0;
+        size_t typeSize = 0;
 
         // デストラクタ呼出を型消去で保持
         Destructor destructor;
 
         // デバッグ・シリアライズ用の型名
-        const char* name     = nullptr;
-
+        const char *name = nullptr;
 
         // ----------------------------------------------------------
         // 関数ポインタ型エイリアス
         // ----------------------------------------------------------
-        using ConstructFunc        = void(*)(void*, const void*); // placement new
-        using AssignFunc           = void(*)(void*, const void*); // operator=
-        using MoveFunc             = void(*)(void*, void*);       // ムーブ構築
-        using DefaultConstructFunc = void(*)(void*);              // デフォルト構築
+        using ConstructFunc        = void (*)(void *, const void *); // placement new
+        using AssignFunc           = void (*)(void *, const void *); // operator=
+        using MoveFunc             = void (*)(void *, void *);       // ムーブ構築
+        using DefaultConstructFunc = void (*)(void *);               // デフォルト構築
 
         ConstructFunc        constructor        = nullptr;
         AssignFunc           assigner           = nullptr;
         MoveFunc             mover              = nullptr;
         DefaultConstructFunc defaultConstructor = nullptr;
-
 
         // ----------------------------------------------------------
         // 比較演算子
@@ -226,8 +224,8 @@ namespace CCL::ECS
         //     B: [ Position(1), Velocity(2) ]  →ソート→ [Position(1), Velocity(2)]
         //     A == B ⇒ true
         // ----------------------------------------------------------
-        bool operator<(const TypeData& r)  const { return id < r.id; }
-        bool operator==(const TypeData& r) const { return id == r.id; }
+        bool operator<(const TypeData &r) const { return id < r.id; }
+        bool operator==(const TypeData &r) const { return id == r.id; }
     };
 
 } // namespace CCL::ECS

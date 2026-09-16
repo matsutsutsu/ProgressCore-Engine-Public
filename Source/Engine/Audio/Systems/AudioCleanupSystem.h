@@ -17,11 +17,12 @@
  *  - ExecuteCleanup(): シーン遷移などで手動一括破棄する経路からも呼べる静的版。
  */
 class AudioCleanupSystem : public CCL::ECS::IfSystem<AudioCleanupSystem,
-    CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Write<AudioEmitterComponent>> {
+                                                     CCL::ECS::Read<Tag::DestroyTag>, CCL::ECS::Write<AudioEmitterComponent>>
+{
 public:
     AudioCleanupSystem() : IfSystem("AudioCleanupSystem") {}
     void Update(float dt) override;
 
     // 外部から強制的にクリーンアップを走らせる静的関数（シーン遷移時のteardown用）。
-    static void ExecuteCleanup(CCL::ECS::World& world);
+    static void ExecuteCleanup(CCL::ECS::World &world);
 };

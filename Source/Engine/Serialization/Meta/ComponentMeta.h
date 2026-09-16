@@ -21,20 +21,21 @@
 // フィールド種別
 //   ※ EntityID は撤去。エンティティ参照は EntityLink のみ。
 // ---------------------------------------------------------------------
-enum class FieldKind : uint8_t {
+enum class FieldKind : uint8_t
+{
     Float,
     Int,
     Bool,
     UInt8,
     UInt16,
     UInt32,
-    EntityLink,   // エンティティ参照。保存時にローカルインデックスへ自動変換される。
+    EntityLink, // エンティティ参照。保存時にローカルインデックスへ自動変換される。
     EnumU8,
     EnumInt,
     Float2,
     Float3,
     Float4,
-    Color,      
+    Color,
     String
 };
 
@@ -42,22 +43,23 @@ enum class FieldKind : uint8_t {
 // フィールド 1 つ分の記述子。
 //   メンバー順は FD_* ビルダーの brace 初期化順と一致させること。
 // ---------------------------------------------------------------------
-struct FieldDescriptor {
-    const char* name = nullptr;            // インスペクタ表示名
-    const char* jsonName = nullptr;            // JSON 保存キー
-    FieldKind          kind = FieldKind::Float;
-    size_t             offset = 0;                  // 構造体先頭からのバイトオフセット
-    float              dragSpeed = 0.05f;
-    float              rangeMin = 0.0f;
-    float              rangeMax = 0.0f;
-    const char* category = nullptr;            // インスペクタの折りたたみ見出し
-    const char* const* enumNames = nullptr;            // enum 系のみ使用
-    int                enumCount = 0;                  // enum 系のみ使用
-    bool               serialize = true;               // false なら JSON に書き出さない
-    const char        *tooltip   = nullptr;            // ホバー時のヒント (nullptr で無し)
-    bool               readonly  = false;              // true なら表示のみ (編集不可)
-    const char        *filePreset = nullptr;           // 非nullなら String をファイルダイアログ付きで描く
-                                                       // (FileDialog のプリセット名。例 "Texture")
+struct FieldDescriptor
+{
+    const char        *name       = nullptr; // インスペクタ表示名
+    const char        *jsonName   = nullptr; // JSON 保存キー
+    FieldKind          kind       = FieldKind::Float;
+    size_t             offset     = 0; // 構造体先頭からのバイトオフセット
+    float              dragSpeed  = 0.05f;
+    float              rangeMin   = 0.0f;
+    float              rangeMax   = 0.0f;
+    const char        *category   = nullptr; // インスペクタの折りたたみ見出し
+    const char *const *enumNames  = nullptr; // enum 系のみ使用
+    int                enumCount  = 0;       // enum 系のみ使用
+    bool               serialize  = true;    // false なら JSON に書き出さない
+    const char        *tooltip    = nullptr; // ホバー時のヒント (nullptr で無し)
+    bool               readonly   = false;   // true なら表示のみ (編集不可)
+    const char        *filePreset = nullptr; // 非nullなら String をファイルダイアログ付きで描く
+                                             // (FileDialog のプリセット名。例 "Texture")
 };
 
 // ---------------------------------------------------------------------
@@ -65,84 +67,97 @@ struct FieldDescriptor {
 //   引数順: 表示名, JSONキー, offset, (種別ごとの追加引数...), category, serialize
 //   返り値: FieldDescriptor のメンバー順そのままの brace 初期化。
 // ---------------------------------------------------------------------
-inline FieldDescriptor FD_Float(const char* name, const char* jsonName, size_t offset,
-    float speed = 0.05f, float rmin = 0.0f, float rmax = 0.0f,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Float, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset,
+                                float speed = 0.05f, float rmin = 0.0f, float rmax = 0.0f,
+                                const char *category = nullptr, bool serialize = true,
+                                const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Float, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Int(const char* name, const char* jsonName, size_t offset,
-    float rmin = 0.0f, float rmax = 0.0f,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Int, offset, 0.05f, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Int(const char *name, const char *jsonName, size_t offset,
+                              float rmin = 0.0f, float rmax = 0.0f,
+                              const char *category = nullptr, bool serialize = true,
+                              const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Int, offset, 0.05f, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Bool(const char* name, const char* jsonName, size_t offset,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Bool, offset, 0.05f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Bool(const char *name, const char *jsonName, size_t offset,
+                               const char *category = nullptr, bool serialize = true,
+                               const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Bool, offset, 0.05f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_UInt8(const char* name, const char* jsonName, size_t offset,
-    float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::UInt8, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_UInt8(const char *name, const char *jsonName, size_t offset,
+                                float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
+                                const char *category = nullptr, bool serialize = true,
+                                const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::UInt8, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_UInt16(const char* name, const char* jsonName, size_t offset,
-    float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::UInt16, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_UInt16(const char *name, const char *jsonName, size_t offset,
+                                 float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
+                                 const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::UInt16, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_UInt32(const char* name, const char* jsonName, size_t offset,
-    float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::UInt32, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_UInt32(const char *name, const char *jsonName, size_t offset,
+                                 float speed = 1.0f, float rmin = 0.0f, float rmax = 0.0f,
+                                 const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::UInt32, offset, speed, rmin, rmax, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_EntityLink(const char* name, const char* jsonName, size_t offset,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::EntityLink, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_EntityLink(const char *name, const char *jsonName, size_t offset,
+                                     const char *category = nullptr, bool serialize = true,
+                                     const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::EntityLink, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_EnumU8(const char* name, const char* jsonName, size_t offset,
-    const char* const* enumNames, int enumCount,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::EnumU8, offset, 0.0f, 0.0f, 0.0f, category, enumNames, enumCount, serialize, tooltip, readonly };
+inline FieldDescriptor FD_EnumU8(const char *name, const char *jsonName, size_t offset,
+                                 const char *const *enumNames, int enumCount,
+                                 const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::EnumU8, offset, 0.0f, 0.0f, 0.0f, category, enumNames, enumCount, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_EnumInt(const char* name, const char* jsonName, size_t offset,
-    const char* const* enumNames, int enumCount,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::EnumInt, offset, 0.0f, 0.0f, 0.0f, category, enumNames, enumCount, serialize, tooltip, readonly };
+inline FieldDescriptor FD_EnumInt(const char *name, const char *jsonName, size_t offset,
+                                  const char *const *enumNames, int enumCount,
+                                  const char *category = nullptr, bool serialize = true,
+                                  const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::EnumInt, offset, 0.0f, 0.0f, 0.0f, category, enumNames, enumCount, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Float2(const char* name, const char* jsonName, size_t offset,
-    float speed = 0.05f, const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Float2, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Float2(const char *name, const char *jsonName, size_t offset,
+                                 float speed = 0.05f, const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Float2, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Float3(const char* name, const char* jsonName, size_t offset,
-    float speed = 0.05f, const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Float3, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Float3(const char *name, const char *jsonName, size_t offset,
+                                 float speed = 0.05f, const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Float3, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Float4(const char* name, const char* jsonName, size_t offset,
-    float speed = 0.05f, const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Float4, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Float4(const char *name, const char *jsonName, size_t offset,
+                                 float speed = 0.05f, const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Float4, offset, speed, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_Color(const char* name, const char* jsonName, size_t offset,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false) {
-    return { name, jsonName, FieldKind::Color, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly };
+inline FieldDescriptor FD_Color(const char *name, const char *jsonName, size_t offset,
+                                const char *category = nullptr, bool serialize = true,
+                                const char *tooltip = nullptr, bool readonly = false)
+{
+    return {name, jsonName, FieldKind::Color, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly};
 }
-inline FieldDescriptor FD_String(const char* name, const char* jsonName, size_t offset,
-    const char* category = nullptr, bool serialize = true,
-    const char* tooltip = nullptr, bool readonly = false, const char* filePreset = nullptr) {
-    return { name, jsonName, FieldKind::String, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly, filePreset };
+inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t offset,
+                                 const char *category = nullptr, bool serialize = true,
+                                 const char *tooltip = nullptr, bool readonly = false, const char *filePreset = nullptr)
+{
+    return {name, jsonName, FieldKind::String, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly, filePreset};
 }
-
 
 // =====================================================================
 // ComponentMeta<T>  : コンポーネント型ごとのメタデータ
@@ -159,7 +174,8 @@ inline FieldDescriptor FD_String(const char* name, const char* jsonName, size_t 
 //     (ComponentMetaJson.h)。ここには serialize 系メンバーを持たせない。
 // =====================================================================
 template <typename T>
-struct ComponentMeta {
+struct ComponentMeta
+{
     static constexpr const char *displayName       = "(unregistered)";
     static constexpr const char *category          = "Misc";
     static constexpr int         sortPriority      = 1000;  // 小さいほど先頭。既定は後方。
@@ -168,11 +184,13 @@ struct ComponentMeta {
     static constexpr bool        isSerializable    = true;
 
     // 戻り値: 値が変更されたら true (Undo/Redo フラグ用)。
-    static bool CustomGui(T& /*comp*/, unsigned long long /*entityID*/ = 0, void* /*world*/ = nullptr) {
+    static bool CustomGui(T & /*comp*/, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
+    {
         return false;
     }
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> empty;
         return empty;
     }
@@ -184,29 +202,43 @@ struct ComponentMeta {
 //   無ければプライマリテンプレートの既定値にフォールバックする用。
 // =====================================================================
 template <typename T, typename = void>
-struct HasCategory : std::false_type {};
+struct HasCategory : std::false_type
+{
+};
 template <typename T>
-struct HasCategory<T, std::void_t<decltype(ComponentMeta<T>::category)>> : std::true_type {};
+struct HasCategory<T, std::void_t<decltype(ComponentMeta<T>::category)>> : std::true_type
+{
+};
 
 template <typename T, typename = void>
-struct HasSortPriority : std::false_type {};
+struct HasSortPriority : std::false_type
+{
+};
 template <typename T>
-struct HasSortPriority<T, std::void_t<decltype(ComponentMeta<T>::sortPriority)>> : std::true_type {};
+struct HasSortPriority<T, std::void_t<decltype(ComponentMeta<T>::sortPriority)>> : std::true_type
+{
+};
 
 template <typename T, typename = void>
-struct HasHiddenInInspector : std::false_type {};
+struct HasHiddenInInspector : std::false_type
+{
+};
 template <typename T>
-struct HasHiddenInInspector<T, std::void_t<decltype(ComponentMeta<T>::hiddenInInspector)>> : std::true_type {};
+struct HasHiddenInInspector<T, std::void_t<decltype(ComponentMeta<T>::hiddenInInspector)>> : std::true_type
+{
+};
 
 // =====================================================================
 // RawField : 「先頭アドレス + offset」を任意型として読む低レベルヘルパー。
 //   FieldDescriptor.offset を使ってメンバーへ型安全にアクセスするために使う。
 // =====================================================================
 template <typename FieldT>
-inline FieldT& RawField(void* base, size_t offset) {
-    return *reinterpret_cast<FieldT*>(static_cast<char*>(base) + offset);
+inline FieldT &RawField(void *base, size_t offset)
+{
+    return *reinterpret_cast<FieldT *>(static_cast<char *>(base) + offset);
 }
 template <typename FieldT>
-inline const FieldT& RawField(const void* base, size_t offset) {
-    return *reinterpret_cast<const FieldT*>(static_cast<const char*>(base) + offset);
+inline const FieldT &RawField(const void *base, size_t offset)
+{
+    return *reinterpret_cast<const FieldT *>(static_cast<const char *>(base) + offset);
 }

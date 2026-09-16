@@ -22,7 +22,6 @@ using PointLights = GpuData::PointLight;
 // 旧 struct SpotLights → GpuData::SpotLight （単数形に統一）
 using SpotLights = GpuData::SpotLight;
 
-
 class LightManager
 {
 public:
@@ -44,35 +43,41 @@ public:
     LightManager() = default;
 
     // 初期化：定数バッファの作成
-    void Initialize(ID3D11Device* device);
+    void Initialize(ID3D11Device *device);
 
     // CPU上のデータをGPUの定数バッファに転送し、パイプラインにバインドする
-    void Bind(ID3D11DeviceContext* dc, int slot);
+    void Bind(ID3D11DeviceContext *dc, int slot);
 
     // GUI描画
     void DrawGUI();
 
     // 全クリア
-    void Clear() { pointLights.clear(); spotLights.clear(); }
+    void Clear()
+    {
+        pointLights.clear();
+        spotLights.clear();
+    }
 
     // ディレクショナルライト設定・取得
-    void SetDirectionalLight(const DirectionalLight& light) { cbData.gDirLight = light; }
-    const DirectionalLight& GetDirectionalLight() const { return cbData.gDirLight; }
-    DirectionalLight& GetDirectionalLight() { return cbData.gDirLight; }
+    void                    SetDirectionalLight(const DirectionalLight &light) { cbData.gDirLight = light; }
+    const DirectionalLight &GetDirectionalLight() const { return cbData.gDirLight; }
+    DirectionalLight       &GetDirectionalLight() { return cbData.gDirLight; }
 
     // 点光源追加
-    void AddPointLight(const PointLights& light) {
+    void AddPointLight(const PointLights &light)
+    {
         if (pointLights.size() < MAX_POINT_LIGHTS) pointLights.push_back(light);
     }
 
     // スポットライト追加
-    void AddSpotLight(const SpotLights& light) {
+    void AddSpotLight(const SpotLights &light)
+    {
         if (spotLights.size() < MAX_SPOT_LIGHTS) spotLights.push_back(light);
     }
 
-    static const char* GetBufferName() { return "CbLight"; }
+    static const char *GetBufferName() { return "CbLight"; }
 
-    const DirectX::XMFLOAT4X4& GetLightViewProjection() const { return m_lightViewProjection; }
+    const DirectX::XMFLOAT4X4 &GetLightViewProjection() const { return m_lightViewProjection; }
 
 private:
     LightConstantBuffer cbData;
@@ -86,6 +91,5 @@ private:
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0, 1
-    };
+        0, 0, 0, 1};
 };

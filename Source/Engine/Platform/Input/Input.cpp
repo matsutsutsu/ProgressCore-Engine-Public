@@ -5,19 +5,19 @@
 // 初期化
 void Input::Initialize(HWND hWnd)
 {
-	gamePad = std::make_unique<GamePad>();
-	mouse = std::make_unique<Mouse>(hWnd);
+    gamePad  = std::make_unique<GamePad>();
+    mouse    = std::make_unique<Mouse>(hWnd);
     keyboard = std::make_unique<Keyboard>();
 }
 
 // 更新処理
 void Input::Update(float dt)
 {
-    ZoneScopedN("Input::Update"); 
+    ZoneScopedN("Input::Update");
 
-	gamePad->Update(dt);
-	mouse->Update();
-    keyboard->Update(); 
+    gamePad->Update(dt);
+    mouse->Update();
+    keyboard->Update();
 
     // =======================================================
     // 1. アクティブデバイスの自動検知 (Auto-Detection)
@@ -41,31 +41,32 @@ void Input::Update(float dt)
         m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
     }
 
-	// 2. Logic用の入力バッファに「蓄積」する
-	//    |= (OR演算) を使うことで、Clearされるまでの間に一度でも押されれば
-	//    フラグが立ったままになります。
-	m_logicPadButtonDown |= gamePad->GetButtonDown();
-	m_logicMouseButtonDown |= mouse->GetButtonDown();
-	
+    // 2. Logic用の入力バッファに「蓄積」する
+    //    |= (OR演算) を使うことで、Clearされるまでの間に一度でも押されれば
+    //    フラグが立ったままになります。
+    m_logicPadButtonDown |= gamePad->GetButtonDown();
+    m_logicMouseButtonDown |= mouse->GetButtonDown();
+
     // キーボードのトリガー蓄積 & アクティブデバイス判定
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
         bool triggered = keyboard->IsTriggered(i);
         m_logicKeyTriggered[i] |= triggered;
 
         // [Keyboard の判定]
         // 何かキーが押されたら、強制的にキーボード＆マウス操作とみなす
-        if (triggered) {
+        if (triggered)
+        {
             m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
         }
-	}
+    }
 }
-
 
 // --- リセット処理 ---
 // ※ FrameWork.cpp の FixedUpdate が終わった後に呼ばれる
 void Input::ClearLogicInput()
 {
-	m_logicPadButtonDown = 0;
-	m_logicMouseButtonDown = 0;
-	std::memset(m_logicKeyTriggered, 0, sizeof(m_logicKeyTriggered));
+    m_logicPadButtonDown   = 0;
+    m_logicMouseButtonDown = 0;
+    std::memset(m_logicKeyTriggered, 0, sizeof(m_logicKeyTriggered));
 }

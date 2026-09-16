@@ -26,13 +26,12 @@ void EditorScene::Initialize()
             CCL_LOG_ERROR(LogCategory::Core, "EditorScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
 }
 
-void EditorScene::Finalize() 
+void EditorScene::Finalize()
 {
-    BaseScene::Finalize(); 
+    BaseScene::Finalize();
 }
 
 void EditorScene::RegisterSystems()
@@ -51,7 +50,7 @@ void EditorScene::RegisterSystems()
     sysManager.RegisterSystem<PauseSystem>(Priority::RenderStage::R10_UI);
 }
 
-void EditorScene::FixedUpdate(float dt) 
+void EditorScene::FixedUpdate(float dt)
 {
     BaseScene::FixedUpdate(dt);
 }
@@ -60,13 +59,11 @@ void EditorScene::FixedUpdate(float dt)
 void EditorScene::Update(float dt)
 {
     BaseScene::Update(dt);
-    
 }
 
 void EditorScene::Render()
 {
     BaseScene::Render();
 }
-
 
 REGISTER_SCENE(EditorScene, "Editor")

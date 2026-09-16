@@ -3,7 +3,6 @@
 #include <cstring>
 #include <cassert>
 
-
 namespace CCL::ECS
 {
     using namespace CCL::ECS;
@@ -23,7 +22,6 @@ namespace CCL::ECS
     {
         Finalize();
     }
-
 
     // ============================================================================
     // Chunk::Create  ─ 箱を作ってメモリを一括確保する
@@ -51,13 +49,14 @@ namespace CCL::ECS
     //    そのため Velocity 配列は 8192 バイトも先から始まる（実験1で見る値）。
     //    この設計のおかげで、以降エンティティを何体足してもメモリ確保は二度と起きない。
     // ============================================================================
-    void Chunk::Create(const Archetype& archetype, size_t initialEntityCapacity)
+    void Chunk::Create(const Archetype &archetype, size_t initialEntityCapacity)
     {
 
-        m_archetype = archetype;
-		m_capacity = initialEntityCapacity;
+        m_archetype    = archetype;
+        m_capacity     = initialEntityCapacity;
         m_entityStride = 0;
-        for (const TypeData& t : m_archetype) m_entityStride += t.typeSize;
+        for (const TypeData &t : m_archetype)
+            m_entityStride += t.typeSize;
 
         m_ownerEntities.assign(initialEntityCapacity, InvalidEntityID);
 
@@ -65,7 +64,7 @@ namespace CCL::ECS
         size_t compCount = m_archetype.size();
         m_componentOffsets.resize(compCount); // 白線を引く準備
 
-        size_t       currentOffset = 0; // 現在の白線の位置（0バイト目からスタート）
+        size_t       currentOffset = 0;  // 現在の白線の位置（0バイト目からスタート）
         const size_t ALIGNMENT     = 16; // SIMD命令等を見据えた16バイトアライメント
 
         for (size_t i = 0; i < compCount; ++i)
@@ -99,11 +98,10 @@ namespace CCL::ECS
     // ============================================================================
     void Chunk::CreateNull(size_t initialEntityCapacity)
     {
-        m_archetype = Archetype();
-        m_capacity = initialEntityCapacity;
+        m_archetype    = Archetype();
+        m_capacity     = initialEntityCapacity;
         m_entityStride = 0;
         m_ownerEntities.assign(initialEntityCapacity, InvalidEntityID);
-
 
         m_componentOffsets.clear();
         m_memoryBlock.clear();
@@ -136,13 +134,16 @@ namespace CCL::ECS
         if (m_componentOffsets.empty()) return;
 
         // 1. 体育館の中にいる全員のデストラクタ（お掃除関数）を呼ぶ
-        for (size_t ci = 0; ci < m_archetype.size(); ++ci) {
+        for (size_t ci = 0; ci < m_archetype.size(); ++ci)
+        {
 
             size_t sz         = m_archetype[ci].typeSize;
             size_t baseOffset = m_componentOffsets[ci]; // 白線の位置
 
-            for (size_t i = 0; i < m_entityCount; ++i) {
-                if (!IsEntityDestroyed(i)) {
+            for (size_t i = 0; i < m_entityCount; ++i)
+            {
+                if (!IsEntityDestroyed(i))
+                {
                     // 体育館の正確な場所を特定して、お掃除を実行
                     void *ptr = m_memoryBlock.data() + baseOffset + (i * sz);
                     m_archetype[ci].destructor.Destruct(ptr);
@@ -156,9 +157,7 @@ namespace CCL::ECS
         m_ownerEntities.clear();    // 座席表をクリア
         m_destroyedEntities.clear();
         m_entityCount = 0;
-
     }
-
 
     // ============================================================================
     // Chunk::InsertEntity  ─ 席を取ってゼロ初期化する
@@ -174,20 +173,19 @@ namespace CCL::ECS
     //  呼ばれる場所
     //    ChunkManager::AddEntity と MoveEntityBetweenChunks（引っ越し先の席確保）。
     // ============================================================================
-    void* Chunk::InsertEntity(EntityID entity)
+    void *Chunk::InsertEntity(EntityID entity)
     {
         // 1. AddEntity内で「満員でないか」だけをチェックし、座席番号をもらう
         size_t writeIndex = AddEntity(entity);
 
         // 2. 各コンポーネントのエリアに行き、そこを「ゼロ」で水拭き（初期化）する
-        for (size_t ci = 0; ci < m_archetype.size(); ++ci) {
+        for (size_t ci = 0; ci < m_archetype.size(); ++ci)
+        {
             void *dst = GetComponentPtr(ci, writeIndex); // 体育館の正確な場所
             std::memset(dst, 0, m_archetype[ci].typeSize);
         }
         return GetComponentPtr(0, writeIndex);
     }
-
-
 
     // ============================================================================
     // Chunk::RemoveEntity  ─ その席のデストラクタを呼んで名簿を無効化する
@@ -207,7 +205,8 @@ namespace CCL::ECS
         if (entityIndex >= m_entityCount) return;
 
         // このエンティティが持つ全てのコンポーネントの「お掃除関数」を実行
-        for (size_t ci = 0; ci < m_archetype.size(); ++ci) {
+        for (size_t ci = 0; ci < m_archetype.size(); ++ci)
+        {
             // 新設計：専用関数を使って、体育館の床の正確なポインタを一発で取得
             void *ptr = GetComponentPtr(ci, entityIndex);
 
@@ -247,8 +246,6 @@ namespace CCL::ECS
         m_destroyedEntities.push_back(entityIndex);
     }
 
-
-
     // ============================================================================
     // Chunk::CompactHoles  ─ 穴を詰めて生存要素を前へ寄せる
     // ----------------------------------------------------------------------------
@@ -282,19 +279,19 @@ namespace CCL::ECS
         // 削除されたエンティティが一つもなければ、穴埋めする必要なし
         if (m_destroyedEntities.empty()) return;
 
-
         // ? ２ポインタアルゴリズム　もっとイメージ持てるように理解する
         size_t read  = 0; // 読み込み用の指（走査用）
         size_t write = 0; // 書き込み用の指（詰め先用）
 
-        while (read < m_entityCount) 
+        while (read < m_entityCount)
         {
             EntityID currentID = m_ownerEntities[read];
 
             // この座席が「空席（すでに死んでいる）」かどうかの判定
             bool isDead = (currentID == InvalidEntityID);
 
-            if (isDead) {
+            if (isDead)
+            {
                 // すでに RemoveEntity でデストラクタは呼ばれている。
                 // したがって、ここは「書き込み位置(write)」を進めずに、
                 // 「読み込み位置(read)」だけを1つ進める（穴をスキップする）だけでよい。
@@ -304,23 +301,26 @@ namespace CCL::ECS
             }
 
             // 生きているエンティティで、かつ前に「穴」があった（read と write がズレた）場合のみ前に詰める
-            if (read != write) {
+            if (read != write)
+            {
                 // 名簿の書き換え
                 m_ownerEntities[write] = currentID;
-               
 
                 // 各コンポーネントのデータを、後ろの席(read)から前の席(write)へ移動
-                for (size_t ci = 0; ci < m_archetype.size(); ++ci) {
+                for (size_t ci = 0; ci < m_archetype.size(); ++ci)
+                {
                     size_t baseOffset = m_componentOffsets[ci];
                     void  *dst =
                         m_memoryBlock.data() + baseOffset + (write * m_archetype[ci].typeSize);
                     void *src = m_memoryBlock.data() + baseOffset + (read * m_archetype[ci].typeSize);
 
-                    if (m_archetype[ci].mover) {
+                    if (m_archetype[ci].mover)
+                    {
                         // ムーブコンストラクタ等の専用移動関数があればそれを使う
                         m_archetype[ci].mover(dst, src);
                     }
-                    else {
+                    else
+                    {
                         // なければメモリごと物理コピー
                         std::memmove(dst, src, m_archetype[ci].typeSize);
                     }
@@ -333,7 +333,8 @@ namespace CCL::ECS
                 }
 
                 // 移動が発生した事実を、ChunkManagerに報告して全体マップを更新してもらう
-                if (onMoveCallback) {
+                if (onMoveCallback)
+                {
                     onMoveCallback(currentID, this, write);
                 }
             }
@@ -348,7 +349,6 @@ namespace CCL::ECS
         // ゴミ箱を空にする
         m_destroyedEntities.clear();
     }
-
 
     // ============================================================================
     // Chunk::AddEntity  ─ 席を1つ確保して席番号を返す
@@ -366,7 +366,8 @@ namespace CCL::ECS
     //    満員時は assert のみ。NDEBUG（Release）では assert が消えるため、
     //    呼び出し側が定員を守る前提になっている（既知の弱点）。
     // ============================================================================
-    size_t Chunk::AddEntity(EntityID entity) {
+    size_t Chunk::AddEntity(EntityID entity)
+    {
 
         // 満員でないかチェック
         if (m_entityCount >= m_capacity)
@@ -386,4 +387,4 @@ namespace CCL::ECS
         return index; // ① インデックスを返す
     }
 
-}
+} // namespace CCL::ECS

@@ -51,7 +51,7 @@ void SquadUpdateSystem::Update(float dt)
                 attacking = cmd->droneAttackActive;
             }
             if (const auto *t = m_world->GetComponent<TransformComponent>(b))
-                bossPos = Vector3(t->GetWorldPosition());   // position はローカル
+                bossPos = Vector3(t->GetWorldPosition()); // position はローカル
             break;
         }
     }
@@ -103,7 +103,6 @@ void SquadUpdateSystem::Update(float dt)
     }
 }
 
-
 void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
                                     uint8_t            squadId,
                                     bool               ordered,
@@ -119,7 +118,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     SquadPhase next;
     if (ordered == false)
     {
-        next = SquadPhase::Regroup;   // 別の陣形を指示された＝小隊行動は解除
+        next = SquadPhase::Regroup; // 別の陣形を指示された＝小隊行動は解除
     }
     else if (squad.phase == SquadPhase::Strike)
     {
@@ -207,7 +206,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     }
     squad.anchorVelocity = Vector3::Lerp(squad.anchorVelocity, targetVel,
                                          (std::min)(kAnchorDamping * dt, 1.0f));
-    squad.anchorPos = squad.anchorPos + squad.anchorVelocity * dt;
+    squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
 
     // 接近中はプレイヤーを睨む（これから来ると読ませる）、待機中は進行方向。
     Vector3 face = squad.anchorVelocity;
@@ -230,7 +229,6 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     ClampAltitude(squad, tuning);
 }
 
-
 void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuning) const
 {
     const float floorY = kSquadGroundY + tuning.minAltitude;
@@ -248,11 +246,10 @@ void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuni
     {
         squad.anchorForward.y = 0.0f;
         if (squad.anchorForward.LengthSquared() < 0.001f)
-            squad.anchorForward = Vector3::UnitZ;   // 真下を向いていた場合の退避
+            squad.anchorForward = Vector3::UnitZ; // 真下を向いていた場合の退避
         squad.anchorForward.Normalize();
     }
 }
-
 
 void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
                                           const Vector3     &playerPos,

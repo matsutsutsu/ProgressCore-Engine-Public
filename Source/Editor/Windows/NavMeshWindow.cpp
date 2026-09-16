@@ -3,7 +3,7 @@
 
 NavMeshWindow::NavMeshWindow() : EditorWindow("NavMesh Builder") {}
 
-void NavMeshWindow::DrawContents(EditorContext& context)
+void NavMeshWindow::DrawContents(EditorContext &context)
 {
     // 世界が存在しない（ロード前など）場合は何も描画・実行しない
     if (!context.world) return;
@@ -24,7 +24,8 @@ void NavMeshWindow::DrawContents(EditorContext& context)
     // 2. 詳細パラメータ (ボクセルの解像度など)
     // ※普段は隠しておき、精度を追い込みたい時だけ開く設計
     // =======================================================
-    if (ImGui::CollapsingHeader("Advanced Settings")) {
+    if (ImGui::CollapsingHeader("Advanced Settings"))
+    {
         ImGui::DragFloat("Cell Size (XY解像度)", &m_navSettings.cellSize, 0.05f, 0.1f, 1.0f);
         ImGui::DragFloat("Cell Height (Z解像度)", &m_navSettings.cellHeight, 0.05f, 0.1f, 1.0f);
         ImGui::DragFloat("Region Min Size", &m_navSettings.regionMinSize, 1.0f, 0.0f, 50.0f);
@@ -43,7 +44,8 @@ void NavMeshWindow::DrawContents(EditorContext& context)
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 0.3f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.1f, 1.0f));
 
-    if (ImGui::Button("Bake NavMesh", ImVec2(-1, 40))) {
+    if (ImGui::Button("Bake NavMesh", ImVec2(-1, 40)))
+    {
         // コンテキストから最新のWorldを渡し、Bakeを実行する
         // ※内部で以前のNavMeshメモリは解放(dtFree)されるため、何度押しても安全
         NavMeshBuilder::BuildNavMesh(*context.world, m_navSettings);

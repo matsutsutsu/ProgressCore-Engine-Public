@@ -83,7 +83,7 @@ struct CurveData
     void SortByTime()
     {
         std::stable_sort(keys.begin(), keys.end(),
-            [](const CurveKeyframe &a, const CurveKeyframe &b) { return a.time < b.time; });
+                         [](const CurveKeyframe &a, const CurveKeyframe &b) { return a.time < b.time; });
     }
 
     // キー追加。追加後のインデックスを返す
@@ -166,7 +166,7 @@ struct CurveData
 
         // 内部区間: t を挟むキー k0,k1 を二分探索
         auto it = std::upper_bound(keys.begin(), keys.end(), t,
-            [](float val, const CurveKeyframe &k) { return val < k.time; });
+                                   [](float val, const CurveKeyframe &k) { return val < k.time; });
         if (it == keys.begin()) return first.value;
         if (it == keys.end()) return last.value;
         const CurveKeyframe &k1 = *it;
@@ -216,7 +216,7 @@ struct CurveData
         }
     }
 
-  private:
+private:
     // 1区間のエルミート評価
     static float EvaluateSegment(const CurveKeyframe &k0, const CurveKeyframe &k1, float t)
     {
@@ -310,10 +310,7 @@ struct CurveData
 inline void to_json(nlohmann::json &j, const CurveKeyframe &k)
 {
     j = nlohmann::json{
-        {"time", k.time}, {"value", k.value},
-        {"inTangent", k.inTangent}, {"outTangent", k.outTangent},
-        {"interp", (int)k.interp},
-        {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
+        {"time", k.time}, {"value", k.value}, {"inTangent", k.inTangent}, {"outTangent", k.outTangent}, {"interp", (int)k.interp}, {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
 }
 inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
 {
@@ -330,9 +327,7 @@ inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
 inline void to_json(nlohmann::json &j, const CurveData &c)
 {
     j = nlohmann::json{
-        {"name", c.name}, {"color", c.color}, {"visible", c.visible},
-        {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity},
-        {"keys", c.keys}};
+        {"name", c.name}, {"color", c.color}, {"visible", c.visible}, {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity}, {"keys", c.keys}};
 }
 inline void from_json(const nlohmann::json &j, CurveData &c)
 {

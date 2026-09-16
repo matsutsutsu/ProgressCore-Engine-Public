@@ -12,6 +12,6 @@ struct GPUParticleBufferSet
     Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> particleUAV;    // CS 書き込み用
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  particleSRV;    // VS 読み取り用
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer>              staticCB;       // CbParticleStatic
-    Microsoft::WRL::ComPtr<ID3D11Buffer>              dynamicCB;      // CbParticleDynamic
+    Microsoft::WRL::ComPtr<ID3D11Buffer> staticCB;  // CbParticleStatic
+    Microsoft::WRL::ComPtr<ID3D11Buffer> dynamicCB; // CbParticleDynamic
 };

@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <cstddef>
 
-
 namespace CCL::ECS
 {
     // ------------------------------------------------------------------
@@ -49,14 +48,13 @@ namespace CCL::ECS
     // ------------------------------------------------------------------
 
     // 個々のエンティティを識別するID。上位32bitに世代、下位32bitにIndex。
-    using EntityID    = uint64_t;
+    using EntityID = uint64_t;
 
     // コンポーネント型（クラス）を識別するID（Position(1), Velocity(2)など）
-    using TypeID      = uint16_t;
+    using TypeID = uint16_t;
 
     // 個々のシステムを識別するID
-    using SystemID    = uint16_t;
-
+    using SystemID = uint16_t;
 
     // ------------------------------------------------------------------
     // サイズ前提のコンパイル時検証
@@ -67,15 +65,14 @@ namespace CCL::ECS
     // ------------------------------------------------------------------
 
     static_assert(sizeof(EntityID) == 8,
-        "EntityID は 上位32bit=世代 / 下位32bit=Index のビットパッキングを前提としているため、"
-        "ちょうど64bitである必要があります");
+                  "EntityID は 上位32bit=世代 / 下位32bit=Index のビットパッキングを前提としているため、"
+                  "ちょうど64bitである必要があります");
 
     static_assert(sizeof(TypeID) == 2,
-        "TypeID は 16bit（最大65,535種類のコンポーネント型）を前提としています");
+                  "TypeID は 16bit（最大65,535種類のコンポーネント型）を前提としています");
 
     static_assert(sizeof(SystemID) == 2,
-        "SystemID は 16bit を前提としています");
-
+                  "SystemID は 16bit を前提としています");
 
     // ------------------------------------------------------------------
     // 無効値 (constexpr)
@@ -90,17 +87,16 @@ namespace CCL::ECS
     // ------------------------------------------------------------------
 
     // 無効な EntityID（全ビット1）
-    constexpr EntityID    InvalidEntityID    = static_cast<EntityID>(-1);
+    constexpr EntityID InvalidEntityID = static_cast<EntityID>(-1);
 
     // 無効な TypeID（全ビット1）
-    constexpr TypeID      InvalidTypeID      = static_cast<TypeID>(-1);
+    constexpr TypeID InvalidTypeID = static_cast<TypeID>(-1);
 
     // 無効な SystemID（全ビット1）
-    constexpr SystemID    InvalidSystemID    = static_cast<SystemID>(-1);
+    constexpr SystemID InvalidSystemID = static_cast<SystemID>(-1);
 
     // 配列・チャンク内インデックスの無効値（size_t 用）
-    constexpr size_t      InvalidIndex       = static_cast<size_t>(-1);
-
+    constexpr size_t InvalidIndex = static_cast<size_t>(-1);
 
     // ------------------------------------------------------------------
     // EntityHandle
@@ -129,12 +125,12 @@ namespace CCL::ECS
         static constexpr EntityID INDEX_MASK = 0xFFFFFFFFULL;
 
         // 世代部のシフト量（32bit分上にずらす）
-        static constexpr EntityID GEN_SHIFT  = 32;
+        static constexpr EntityID GEN_SHIFT = 32;
 
         // EntityID から配列インデックス部を取り出す
         static uint32_t GetIndex(EntityID id)
         {
-			// 64bitのEntityIDをINDEX_MASKとビットANDすることで、
+            // 64bitのEntityIDをINDEX_MASKとビットANDすることで、
             // 下位32bitのインデックスだけが残る
             // & は両方のビットが1の場合だけ１を返す
             return static_cast<uint32_t>(id & INDEX_MASK);
@@ -143,8 +139,8 @@ namespace CCL::ECS
         // EntityID から世代カウンタ部を取り出す
         static uint32_t GetGeneration(EntityID id)
         {
-			// 32bit右シフトすることで、上位32bitの世代カウンタだけが残る
-			// 例えば、EntityIDが0x00000002 / 00000003の場合、右シフトすると0x00000002になり、これが世代カウンタとなる
+            // 32bit右シフトすることで、上位32bitの世代カウンタだけが残る
+            // 例えば、EntityIDが0x00000002 / 00000003の場合、右シフトすると0x00000002になり、これが世代カウンタとなる
             return static_cast<uint32_t>(id >> GEN_SHIFT);
         }
 
@@ -152,9 +148,8 @@ namespace CCL::ECS
         static EntityID Combine(uint32_t index, uint32_t gen)
         {
             // 世代のbitを左に32bitずらして上位32bitの位置にセットする
-			// | はビット単位の論理和演算子で、これにより世代とインデックスが1つの64bit整数にパックされる
-            return (static_cast<EntityID>(gen) << GEN_SHIFT)
-                 |  static_cast<EntityID>(index);
+            // | はビット単位の論理和演算子で、これにより世代とインデックスが1つの64bit整数にパックされる
+            return (static_cast<EntityID>(gen) << GEN_SHIFT) | static_cast<EntityID>(index);
         }
     };
 

@@ -9,11 +9,11 @@
 
 class CameraPathEditorWindow : public EditorWindow
 {
-  public:
+public:
     CameraPathEditorWindow();
     virtual ~CameraPathEditorWindow() = default;
 
-  public:
+public:
     // 編集中の軌道をJSONアセットとしてファイルに上書き保存する。
     //
     // 以前は points だけを受け取っていたため、保存するたびに isLoop が
@@ -25,11 +25,10 @@ class CameraPathEditorWindow : public EditorWindow
     // もう片方が消す、という事故が起きる（実際に起きていた）。
     static void SavePathToJson(const std::string &relativePath, const CameraPathAsset &asset);
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
-  private:
-
+private:
     // 内部状態
     int  m_selectedPointIndex = -1;    // 現在選択している頂点のインデックス
     bool m_isAutoSave         = false; // (オプション) 値を変えたら自動保存するか

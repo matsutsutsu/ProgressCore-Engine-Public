@@ -37,14 +37,14 @@ public:
     size_t Count() const;
 
 private:
-    BTAssetCache() = default;
+    BTAssetCache()                                = default;
     BTAssetCache(const BTAssetCache &)            = delete;
     BTAssetCache &operator=(const BTAssetCache &) = delete;
 
     /// 実際に読む。m_mutex を持った状態で呼ぶこと。
     std::shared_ptr<const BTAsset> LoadLocked(const std::string &path);
 
-    mutable std::mutex                                            m_mutex;
+    mutable std::mutex                                              m_mutex;
     std::unordered_map<std::string, std::shared_ptr<const BTAsset>> m_assets;
-    std::unordered_set<std::string>                               m_failed;
+    std::unordered_set<std::string>                                 m_failed;
 };

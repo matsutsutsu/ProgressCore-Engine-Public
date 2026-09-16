@@ -23,15 +23,15 @@ namespace CCL::ECS
     // 構造的変更要求をカプセル化
     struct PendingOp
     {
-        PendingOpKind kind = PendingOpKind::None;     // 実行する操作の種類
-        EntityID entity = 0;        // 操作対象のエンティティID
+        PendingOpKind kind   = PendingOpKind::None; // 実行する操作の種類
+        EntityID      entity = 0;                   // 操作対象のエンティティID
 
-        TypeID type = 0;            // 操作対象のコンポーネントのTypeID  
-        size_t typeSize = 0;        // 操作対象のコンポーネントのサイズ
+        TypeID type     = 0; // 操作対象のコンポーネントのTypeID
+        size_t typeSize = 0; // 操作対象のコンポーネントのサイズ
 
         // data=nullptr の場合もある
-        void* data = nullptr;   // AddComponentの場合追加されるコンポーネント初期データが格納されているヒープメモリへのポインタ
-        Destructor destructor;  // dataに格納されたコンポーネントデータを破棄するためのオブジェクト
+        void      *data = nullptr; // AddComponentの場合追加されるコンポーネント初期データが格納されているヒープメモリへのポインタ
+        Destructor destructor;     // dataに格納されたコンポーネントデータを破棄するためのオブジェクト
 
         // 生成用ファクトリ関数 (Emplace用)
         // AddComponentで渡されたラムダ式をここに保存し、ChunkManagerまで運びます
@@ -66,18 +66,18 @@ namespace CCL::ECS
         ~PendingOps() { Clear(); }
 
         // 新しいPendingOpをリスト_opsに追加します
-        void Add(const PendingOp& op)
+        void Add(const PendingOp &op)
         {
             m_ops.push_back(op);
         }
 
-        std::vector<PendingOp>& Ops() { return m_ops; }
+        std::vector<PendingOp> &Ops() { return m_ops; }
 
         // リストをクリアする際に、AddComponentの操作で一時的に確保された
         // ヒープメモリ（op.data）を安全に解放します
         void Clear()
         {
-            for (auto& op : m_ops)
+            for (auto &op : m_ops)
             {
                 if (op.data == nullptr) continue;
 
@@ -96,4 +96,4 @@ namespace CCL::ECS
     private:
         std::vector<PendingOp> m_ops;
     };
-}
+} // namespace CCL::ECS

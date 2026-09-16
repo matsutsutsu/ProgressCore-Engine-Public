@@ -22,11 +22,11 @@ static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 
 namespace
 {
-// --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
-constexpr float kFaceDuration = 0.22f;              // 攻撃時に敵へ回頭させる時間(秒)
-const     float kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積閾値（cos70°）
-//   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
-}
+    // --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
+    constexpr float kFaceDuration = 0.22f;               // 攻撃時に敵へ回頭させる時間(秒)
+    const float     kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積閾値（cos70°）
+    //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
+} // namespace
 
 // プレイヤーの前方の一番近い敵を探す処理
 EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
@@ -46,8 +46,8 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
         const auto *tr = m_world->GetComponent<TransformComponent>(id);
         if (!tr) return;
 
-        Vector3 to = Vector3(tr->position) - selfPos;
-        to.y       = 0.0f;
+        Vector3 to         = Vector3(tr->position) - selfPos;
+        to.y               = 0.0f;
         const float distSq = to.LengthSquared();
         if (distSq < 1e-4f || distSq > bestDistSq) return;
 
@@ -99,12 +99,12 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
 
 void PlayerAttackSystem::Update(float dt)
 {
-    ForEachWithID([&](EntityID playerID,
-                const PlayerInputComponent &pin,
-                DashComponent              &dash,
-                AnimParametersComponent    &animParams,
-                PlayerComponent            &player,
-                const CleaveComponent      &cleave) {
+    ForEachWithID([&](EntityID                    playerID,
+                      const PlayerInputComponent &pin,
+                      DashComponent              &dash,
+                      AnimParametersComponent    &animParams,
+                      PlayerComponent            &player,
+                      const CleaveComponent      &cleave) {
         // 攻撃ボタンは Idle のときだけ「攻撃」を意味する。Ready/Lunging 中の解釈は
         // PlayerCleaveSystem が持つ（対応表は CleavePhase の宣言を参照）。
         if (cleave.phase != CleavePhase::Idle)

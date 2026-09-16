@@ -5,9 +5,9 @@
 #include "AIDebugOverlaySystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
-#include "Game/Logics/AI/Battle/BattleContext.h"             // ドローン残数
-#include "Game/Logics/Combat/HealthComponent.h"              // ボスHP
-#include "Engine/UI/ECS/GameViewportInfo.h"                  // ゲーム画像の画面矩形（位置ズレ対策）
+#include "Game/Logics/AI/Battle/BattleContext.h" // ドローン残数
+#include "Game/Logics/Combat/HealthComponent.h"  // ボスHP
+#include "Engine/UI/ECS/GameViewportInfo.h"      // ゲーム画像の画面矩形（位置ズレ対策）
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -35,22 +35,22 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     //   エディタ: ゲームは GameView パネル内の部分矩形に画像表示される → その矩形へ写像。
     //   フルスクリーン/未取得: OS ウィンドウ全体へフォールバック。
     const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
-    float ox, oy, vw, vh;
+    float        ox, oy, vw, vh;
     if (m_world->HasResource<GameViewportInfo>() && m_world->GetResource<GameViewportInfo>().valid)
     {
         const auto &vp = m_world->GetResource<GameViewportInfo>();
-        ox = mainPos.x + vp.x;
-        oy = mainPos.y + vp.y;
-        vw = vp.w;
-        vh = vp.h;
+        ox             = mainPos.x + vp.x;
+        oy             = mainPos.y + vp.y;
+        vw             = vp.w;
+        vh             = vp.h;
     }
     else
     {
         const ImVec2 disp = ImGui::GetIO().DisplaySize;
-        ox = mainPos.x;
-        oy = mainPos.y;
-        vw = disp.x;
-        vh = disp.y;
+        ox                = mainPos.x;
+        oy                = mainPos.y;
+        vw                = disp.x;
+        vh                = disp.y;
     }
     if (vw <= 0.0f || vh <= 0.0f) return;
 
@@ -105,11 +105,15 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
                 snprintf(line3, sizeof(line3), "HP %.0f/%.0f", hp->currentHealth, hp->maxHealth);
         }
 
-        struct DbgLine { const char *text; ImU32 col; };
+        struct DbgLine
+        {
+            const char *text;
+            ImU32       col;
+        };
         const DbgLine lines[3] = {
-            {line1,               IM_COL32(255, 200,  80, 255)},  // 大状態：オレンジ
-            {actionName.c_str(),  IM_COL32(255, 255, 255, 255)},  // 行動：白
-            {line3,               IM_COL32(150, 235, 150, 255)},  // ステータス：緑
+            {line1, IM_COL32(255, 200, 80, 255)},               // 大状態：オレンジ
+            {actionName.c_str(), IM_COL32(255, 255, 255, 255)}, // 行動：白
+            {line3, IM_COL32(150, 235, 150, 255)},              // ステータス：緑
         };
         const int lineCount = (line3[0] != '\0') ? 3 : 2;
 
@@ -131,10 +135,11 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
             ImVec2(pixelX + maxW * 0.5f + paddingX, topY + totalH + paddingY),
             IM_COL32(0, 0, 0, 160), 6.0f);
 
-        const ImU32 outlineCol = IM_COL32(0, 0, 0, 255);
+        const ImU32 outlineCol   = IM_COL32(0, 0, 0, 255);
         auto        DrawOutlined = [&](float x, float y, ImU32 col, const char *text) {
             static const float offs[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-            for (auto &o : offs) drawList->AddText(font, m_fontSize, ImVec2(x + o[0], y + o[1]), outlineCol, text);
+            for (auto &o : offs)
+                drawList->AddText(font, m_fontSize, ImVec2(x + o[0], y + o[1]), outlineCol, text);
             drawList->AddText(font, m_fontSize, ImVec2(x, y), col, text);
         };
 

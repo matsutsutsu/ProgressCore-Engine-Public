@@ -26,14 +26,14 @@
 //   追加するときは下の LIST に 1行追加するだけ
 //==============================================================================
 #define CCL_LOG_CATEGORY_LIST(X) \
-    X(Core,    "Core")    \
-    X(ECS,     "ECS")     \
-    X(Editor,  "Editor")  \
-    X(Physics, "Physics") \
-    X(Render,  "Render")  \
-    X(Audio,   "Audio")   \
-    X(Game,    "Game")    \
-    X(AI,      "AI")
+    X(Core, "Core")              \
+    X(ECS, "ECS")                \
+    X(Editor, "Editor")          \
+    X(Physics, "Physics")        \
+    X(Render, "Render")          \
+    X(Audio, "Audio")            \
+    X(Game, "Game")              \
+    X(AI, "AI")
 
 /**
  * @brief ログのカテゴリ。新しいカテゴリは CCL_LOG_CATEGORY_LIST に追加する
@@ -49,9 +49,9 @@ enum class LogCategory : uint8_t
 /**
  * @brief LogCategory を表示用文字列に変換する
  */
-constexpr const char* GetLogCategoryName(LogCategory c) noexcept
+constexpr const char *GetLogCategoryName(LogCategory c) noexcept
 {
-    constexpr const char* kNames[] = {
+    constexpr const char *kNames[] = {
 #define CCL_X(name, str) str,
         CCL_LOG_CATEGORY_LIST(CCL_X)
 #undef CCL_X
@@ -77,10 +77,10 @@ enum class LogLevel : uint8_t
 struct LogMessage
 {
     LogCategory                           category = LogCategory::Core;
-    LogLevel                              level = LogLevel::Info;
+    LogLevel                              level    = LogLevel::Info;
     std::chrono::system_clock::time_point time{};
     std::thread::id                       threadId{};
-    std::string                           file;       // ファイル名 (フルパスではなく短縮済み)
+    std::string                           file; // ファイル名 (フルパスではなく短縮済み)
     int                                   line = 0;
     std::string                           text;
 };
@@ -96,7 +96,7 @@ public:
     virtual ~ILogSink() = default;
 
     // ログ1件を受け取り、シンク固有の方法で出力する
-    virtual void Write(const LogMessage& msg) = 0;
+    virtual void Write(const LogMessage &msg) = 0;
 
     // 出力をフラッシュする (ファイルバッファを書き出す等)
     virtual void Flush() {}
@@ -115,13 +115,13 @@ class Logger
 {
 public:
     // シングルトンアクセス
-    static Logger& Instance();
+    static Logger &Instance();
 
     // シンクを登録する (起動時に推奨)
     void AddSink(std::shared_ptr<ILogSink> sink);
 
     // シンクを除去する
-    void RemoveSink(const std::shared_ptr<ILogSink>& sink);
+    void RemoveSink(const std::shared_ptr<ILogSink> &sink);
 
     // 全シンクをクリアする
     void ClearSinks();
@@ -134,7 +134,7 @@ public:
      * @param fmt       printf 形式の書式文字列
      */
     void Log(LogCategory category, LogLevel level,
-        const std::source_location& loc, const char* fmt, ...);
+             const std::source_location &loc, const char *fmt, ...);
 
     // 全シンクの履歴クリアを要求 (ImGuiBufferSink等のみ反応)
     void Clear();
@@ -145,8 +145,8 @@ public:
 private:
     Logger() = default;
     ~Logger();
-    Logger(const Logger&) = delete;
-    Logger& operator=(const Logger&) = delete;
+    Logger(const Logger &)            = delete;
+    Logger &operator=(const Logger &) = delete;
 
     mutable std::mutex                     m_mutex;
     std::vector<std::shared_ptr<ILogSink>> m_sinks;
@@ -160,16 +160,16 @@ private:
 // ERROR は常に記録される (販売後のクラッシュ解析の生命線)
 //==============================================================================
 #ifdef _DEBUG
-#define CCL_LOG_INFO(category, ...)    \
-        Logger::Instance().Log((category), LogLevel::Info,    std::source_location::current(), __VA_ARGS__)
+#define CCL_LOG_INFO(category, ...) \
+    Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)
 #define CCL_LOG_SUCCESS(category, ...) \
-        Logger::Instance().Log((category), LogLevel::Success, std::source_location::current(), __VA_ARGS__)
-#define CCL_LOG_WARN(category, ...)    \
-        Logger::Instance().Log((category), LogLevel::Warning, std::source_location::current(), __VA_ARGS__)
+    Logger::Instance().Log((category), LogLevel::Success, std::source_location::current(), __VA_ARGS__)
+#define CCL_LOG_WARN(category, ...) \
+    Logger::Instance().Log((category), LogLevel::Warning, std::source_location::current(), __VA_ARGS__)
 #else
-#define CCL_LOG_INFO(category, ...)    ((void)0)
+#define CCL_LOG_INFO(category, ...) ((void)0)
 #define CCL_LOG_SUCCESS(category, ...) ((void)0)
-#define CCL_LOG_WARN(category, ...)    ((void)0)
+#define CCL_LOG_WARN(category, ...) ((void)0)
 #endif
 
 #define CCL_LOG_ERROR(category, ...) \

@@ -9,19 +9,19 @@ using namespace CCL::ECS;
 
 namespace
 {
-// cinematicSlow（全体スローの単一チャネル）を武装する共通処理。
-//   ・強い方（scale が小さい）を優先、残り時間は長い方（timer 大）を優先＝複数要求が喧嘩しても壊れない。
-//   ・duration=timer に揃えるため、武装中は progress=0（＝ピーク維持）。武装をやめると
-//     TimeScaleSystem がイーズしながら 1.0 へ戻す。
-void ArmCinematic(TimeContext &ctx, float scale, float seconds)
-{
-    auto      &cs = ctx.cinematicSlow;
-    const bool on = (cs.timer > 0.0f);
-    cs.targetScale = on ? (std::min)(scale, cs.targetScale) : scale;
-    const float t  = on ? (std::max)(seconds, cs.timer) : seconds;
-    cs.timer    = t;
-    cs.duration = t;
-}
+    // cinematicSlow（全体スローの単一チャネル）を武装する共通処理。
+    //   ・強い方（scale が小さい）を優先、残り時間は長い方（timer 大）を優先＝複数要求が喧嘩しても壊れない。
+    //   ・duration=timer に揃えるため、武装中は progress=0（＝ピーク維持）。武装をやめると
+    //     TimeScaleSystem がイーズしながら 1.0 へ戻す。
+    void ArmCinematic(TimeContext &ctx, float scale, float seconds)
+    {
+        auto      &cs  = ctx.cinematicSlow;
+        const bool on  = (cs.timer > 0.0f);
+        cs.targetScale = on ? (std::min)(scale, cs.targetScale) : scale;
+        const float t  = on ? (std::max)(seconds, cs.timer) : seconds;
+        cs.timer       = t;
+        cs.duration    = t;
+    }
 } // namespace
 
 void Time::HitStop(World &world, float seconds, float freezeScale)

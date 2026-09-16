@@ -29,8 +29,8 @@
 // 武器トレイルの区間記録とリボン生成を担うシステム。
 class TrailSystem
     : public CCL::ECS::IfSystem<TrailSystem,
-          CCL::ECS::Read<TransformComponent>,
-          CCL::ECS::Write<TrailComponent>>
+                                CCL::ECS::Read<TransformComponent>,
+                                CCL::ECS::Write<TrailComponent>>
 {
 public:
     TrailSystem() : IfSystem("TrailSystem") {}
@@ -104,7 +104,7 @@ private:
      * @param vCoord テクスチャ V 座標（幅方向。Ribbon/Cross は根本0/先端1、Tube は円周位置）。
      *              U（長さ方向）は age から算出し、tiling/scroll を掛けて uv を組む。
      */
-    VertexPair MakeVertex(const TrailComponent &trail,
+    VertexPair MakeVertex(const TrailComponent    &trail,
                           const DirectX::XMFLOAT3 &pos,
                           float age, float intensity, float vCoord) const;
 

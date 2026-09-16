@@ -41,15 +41,15 @@ class JoltPhysicsManager;
 
 class JoltCharacterUpdateSystem
     : public CCL::ECS::IfSystem<JoltCharacterUpdateSystem,
-    CCL::ECS::Write<TransformComponent>,
-    CCL::ECS::Read<JoltCharacterHandleComponent>,
-    CCL::ECS::Write<CharacterMovementComponent>,
-    CCL::ECS::Read<JoltCharacterConfigComponent>,
-    CCL::ECS::Read<TimeStateComponent>> {
+                                CCL::ECS::Write<TransformComponent>,
+                                CCL::ECS::Read<JoltCharacterHandleComponent>,
+                                CCL::ECS::Write<CharacterMovementComponent>,
+                                CCL::ECS::Read<JoltCharacterConfigComponent>,
+                                CCL::ECS::Read<TimeStateComponent>>
+{
 public:
     JoltCharacterUpdateSystem() : IfSystem("JoltCharacterUpdateSystem") {}
     virtual ~JoltCharacterUpdateSystem() = default;
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // Setup が生成した JoltCharacterHandle を使う。生成が後に回ると1フレーム空振りする。

@@ -10,21 +10,22 @@ using namespace DirectX::SimpleMath;
 
 CameraListenerSystem::CameraListenerSystem() : SystemBase("CameraListenerSystem") {}
 
-void CameraListenerSystem::Update(float dt) {
+void CameraListenerSystem::Update(float dt)
+{
     if (!m_world) return;
 
     // カメラとオーディオの両方が存在するかチェック
-    if (!m_world->HasResource<Camera*>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (!m_world->HasResource<Camera *>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
-    Camera* mainCamera = m_world->GetResource<Camera*>();
-    auto& audioAPI = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
+    Camera *mainCamera = m_world->GetResource<Camera *>();
+    auto   &audioAPI   = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
 
     if (!mainCamera || !audioAPI) return;
 
     // カメラの情報を取得
-    Vector3 pos = mainCamera->GetEye();
+    Vector3 pos    = mainCamera->GetEye();
     Vector3 lookAt = mainCamera->GetFocus();
-    Vector3 up = mainCamera->GetUp();
+    Vector3 up     = mainCamera->GetUp();
 
     // 視線ベクトル（Forward）を計算
     Vector3 forward = lookAt - pos;
@@ -32,10 +33,9 @@ void CameraListenerSystem::Update(float dt) {
 
     // FMODにリスナー（耳）の情報を送信
     audioAPI->SetListenerPosition(
-        { pos.x, pos.y, pos.z },
-        { forward.x, forward.y, forward.z },
-        { up.x, up.y, up.z }
-    );
+        {pos.x, pos.y, pos.z},
+        {forward.x, forward.y, forward.z},
+        {up.x, up.y, up.z});
 }
 
 // カメラの位置が確定した後（RenderStageの最初の方）で実行する

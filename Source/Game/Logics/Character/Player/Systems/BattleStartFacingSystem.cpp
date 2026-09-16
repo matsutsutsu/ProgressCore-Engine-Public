@@ -69,8 +69,8 @@ bool BattleStartFacingSystem::TryApplyFacing()
     });
 
     CCL_LOG_INFO(LogCategory::Game,
-        "[BattleStartFacing] 開始向きを確定 (プレイヤーyaw=%.1f deg / カメラyaw=%.1f deg / カメラ%d台)",
-        XMConvertToDegrees(std::atan2(toBoss.x, toBoss.z)), camYawDeg, oriented);
+                 "[BattleStartFacing] 開始向きを確定 (プレイヤーyaw=%.1f deg / カメラyaw=%.1f deg / カメラ%d台)",
+                 XMConvertToDegrees(std::atan2(toBoss.x, toBoss.z)), camYawDeg, oriented);
 
     return true;
 }

@@ -31,14 +31,15 @@
 
 using namespace DirectX::SimpleMath;
 
-namespace Prefab {
+namespace Prefab
+{
 
     using namespace CCL::ECS;
 
     // =====================================================================
     // ライフサイクル
     // =====================================================================
-    void Initialize(ID3D11Device* /*device*/)
+    void Initialize(ID3D11Device * /*device*/)
     {
         // 保持するグローバル状態は無い。生成した Entity の寿命は World が握る。
         // 将来デバイス依存の事前生成が必要になったらここで行う。
@@ -69,7 +70,7 @@ namespace Prefab {
     {
         struct CachedPrefab
         {
-            nlohmann::json                 entities;  // 検証済みの entities 配列
+            nlohmann::json                  entities;    // 検証済みの entities 配列
             std::filesystem::file_time_type writeTime{}; // エディタでの編集検知用
         };
 
@@ -79,10 +80,10 @@ namespace Prefab {
         std::unordered_map<std::string, CachedPrefab> g_prefabCache;
 
         // 現在の更新時刻を取得する。取れなければ既定値（＝比較で必ず不一致になる）。
-        std::filesystem::file_time_type CurrentWriteTime(const std::string& path)
+        std::filesystem::file_time_type CurrentWriteTime(const std::string &path)
         {
             std::error_code ec;
-            auto t = std::filesystem::last_write_time(path, ec);
+            auto            t = std::filesystem::last_write_time(path, ec);
             return ec ? std::filesystem::file_time_type{} : t;
         }
     } // namespace
@@ -103,7 +104,7 @@ namespace Prefab {
     // =====================================================================
     // 汎用 SpawnPrefab (SceneSerializer を使う)
     // =====================================================================
-    EntityID SpawnPrefab(World& world, const std::string& prefabPath)
+    EntityID SpawnPrefab(World &world, const std::string &prefabPath)
     {
         ZoneScopedN("Prefab::SpawnPrefab");
 
@@ -154,51 +155,59 @@ namespace Prefab {
             return InvalidEntityID;
 
         EntityID rootID = created[0];
-        for (EntityID id : created) {
-            auto* t = world.GetComponent<TransformComponent>(id);
-            if (t && t->parent == 0) { rootID = id; break; }
+        for (EntityID id : created)
+        {
+            auto *t = world.GetComponent<TransformComponent>(id);
+            if (t && t->parent == 0)
+            {
+                rootID = id;
+                break;
+            }
         }
         return rootID;
     }
 
-    EntityID SpawnPrefab(World& world, const std::string& path,
-        const DirectX::XMFLOAT3& position)
+    EntityID SpawnPrefab(World &world, const std::string &path,
+                         const DirectX::XMFLOAT3 &position)
     {
         EntityID id = SpawnPrefab(world, path);
-        if (id != CCL::ECS::InvalidEntityID) {
+        if (id != CCL::ECS::InvalidEntityID)
+        {
             world.PatchComponent<TransformComponent>(id,
-                [position](TransformComponent& t) { t.position = position; });
+                                                     [position](TransformComponent &t) { t.position = position; });
         }
         return id;
     }
 
-    EntityID SpawnPrefab(World& world, const std::string& path,
-        const DirectX::XMFLOAT3& position,
-        const DirectX::XMFLOAT4& rotation)
+    EntityID SpawnPrefab(World &world, const std::string &path,
+                         const DirectX::XMFLOAT3 &position,
+                         const DirectX::XMFLOAT4 &rotation)
     {
         EntityID id = SpawnPrefab(world, path);
-        if (id != CCL::ECS::InvalidEntityID) {
+        if (id != CCL::ECS::InvalidEntityID)
+        {
             world.PatchComponent<TransformComponent>(id,
-                [position, rotation](TransformComponent& t) {
-                    t.position = position;
-                    t.rotation = rotation;
-                });
+                                                     [position, rotation](TransformComponent &t) {
+                                                         t.position = position;
+                                                         t.rotation = rotation;
+                                                     });
         }
         return id;
     }
 
-    EntityID SpawnPrefab(World& world, const std::string& path,
-        const DirectX::XMFLOAT3& position, float rotationY)
+    EntityID SpawnPrefab(World &world, const std::string &path,
+                         const DirectX::XMFLOAT3 &position, float rotationY)
     {
         EntityID id = SpawnPrefab(world, path);
-        if (id != CCL::ECS::InvalidEntityID) {
+        if (id != CCL::ECS::InvalidEntityID)
+        {
             world.PatchComponent<TransformComponent>(id,
-                [position, rotationY](TransformComponent& t) {
-                    t.position = position;
-                    DirectX::XMVECTOR q = DirectX::XMQuaternionRotationRollPitchYaw(
-                        0.0f, DirectX::XMConvertToRadians(rotationY), 0.0f);
-                    DirectX::XMStoreFloat4(&t.rotation, q);
-                });
+                                                     [position, rotationY](TransformComponent &t) {
+                                                         t.position          = position;
+                                                         DirectX::XMVECTOR q = DirectX::XMQuaternionRotationRollPitchYaw(
+                                                             0.0f, DirectX::XMConvertToRadians(rotationY), 0.0f);
+                                                         DirectX::XMStoreFloat4(&t.rotation, q);
+                                                     });
         }
         return id;
     }

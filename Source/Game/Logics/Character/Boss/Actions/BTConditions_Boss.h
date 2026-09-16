@@ -10,44 +10,44 @@
 
 namespace CCL::AI::BT::BossConditions
 {
-// 第2形態か。大状態が唯一の情報源なので blackboard へ写さず直接読む。
-struct IsPhase2 : public IBTCondition
-{
-    std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+    // 第2形態か。大状態が唯一の情報源なので blackboard へ写さず直接読む。
+    struct IsPhase2 : public IBTCondition
     {
-        return TypeIDsOf<BossPhaseComponent>();
-    }
+        std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+        {
+            return TypeIDsOf<BossPhaseComponent>();
+        }
 
-    bool Evaluate(BTContext &ctx) override
+        bool Evaluate(BTContext &ctx) override
+        {
+            const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
+            return phase && phase->phase == BossPhase::Combat2;
+        }
+    };
+
+    // 第1形態で、HPが移行閾値を割っているか。
+    struct ShouldTransitionPhase2 : public IBTCondition
     {
-        const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
-        return phase && phase->phase == BossPhase::Combat2;
-    }
-};
+        std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+        {
+            return TypeIDsOf<BossPhaseComponent>();
+        }
 
-// 第1形態で、HPが移行閾値を割っているか。
-struct ShouldTransitionPhase2 : public IBTCondition
-{
-    std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+        bool Evaluate(BTContext &ctx) override
+        {
+            const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
+            if (!phase || phase->phase != BossPhase::Combat) return false;
+
+            return ctx.bt->blackboard.healthPercentage <= phase->phase2HealthThreshold;
+        }
+    };
+
+    inline void RegisterAll()
     {
-        return TypeIDsOf<BossPhaseComponent>();
+        auto &reg = BTActionRegistry::Instance();
+
+        reg.RegisterCondition<IsPhase2>(::CCL::AI::C_IsPhase2);
+        reg.RegisterCondition<ShouldTransitionPhase2>(::CCL::AI::C_ShouldTransitionPhase2);
     }
-
-    bool Evaluate(BTContext &ctx) override
-    {
-        const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
-        if (!phase || phase->phase != BossPhase::Combat) return false;
-
-        return ctx.bt->blackboard.healthPercentage <= phase->phase2HealthThreshold;
-    }
-};
-
-inline void RegisterAll()
-{
-    auto &reg = BTActionRegistry::Instance();
-
-    reg.RegisterCondition<IsPhase2>(::CCL::AI::C_IsPhase2);
-    reg.RegisterCondition<ShouldTransitionPhase2>(::CCL::AI::C_ShouldTransitionPhase2);
-}
 
 } // namespace CCL::AI::BT::BossConditions

@@ -43,20 +43,20 @@ static constexpr int JustEvadeStyleCount = 3;
 struct JustEvadeEffectComponent
 {
     // --- チューニング（シリアライズ） ---
-    uint8_t style        = static_cast<uint8_t>(JustEvadeStyle::CoolBlue); // 色味スタイル
-    float   duration     = 0.5f;   // 演出全体の長さ(実秒)。スロー窓(globalHitStopTimer)と合わせる。
-    float   attackTime   = 0.03f;  // 立ち上がり時間(秒)。0→ピークへ一気に。
-    float   releaseTime  = 0.18f;  // 戻り時間(秒)。ピーク→0へスッと戻す。
-    float   spikeDecay   = 0.18f;  // 放射ブラー/色収差スパイクの減衰時間(秒)。t=0最大→0。
+    uint8_t style       = static_cast<uint8_t>(JustEvadeStyle::CoolBlue); // 色味スタイル
+    float   duration    = 0.5f;                                           // 演出全体の長さ(実秒)。スロー窓(globalHitStopTimer)と合わせる。
+    float   attackTime  = 0.03f;                                          // 立ち上がり時間(秒)。0→ピークへ一気に。
+    float   releaseTime = 0.18f;                                          // 戻り時間(秒)。ピーク→0へスッと戻す。
+    float   spikeDecay  = 0.18f;                                          // 放射ブラー/色収差スパイクの減衰時間(秒)。t=0最大→0。
 
-    float   radialPeak   = 0.35f;  // 放射ブラーのピーク強度
-    float   chromaPeak   = 0.02f;  // 色収差のピーク強度(画面比)
-    float   gradeMixPeak = 0.9f;   // 色調グレーディングの適用量ピーク(0..1)
-    float   vignettePeak = 0.6f;   // ビネットの暗さピーク
-    float   vignettePulse = 5.0f;  // ビネットの脈動速度(0で脈動なし)
+    float radialPeak    = 0.35f; // 放射ブラーのピーク強度
+    float chromaPeak    = 0.02f; // 色収差のピーク強度(画面比)
+    float gradeMixPeak  = 0.9f;  // 色調グレーディングの適用量ピーク(0..1)
+    float vignettePeak  = 0.6f;  // ビネットの暗さピーク
+    float vignettePulse = 5.0f;  // ビネットの脈動速度(0で脈動なし)
 
     // --- ランタイム状態（非シリアライズ） ---
-    float timer = 0.0f; // 残り時間(秒)。>0 の間だけ演出が出る。
+    float timer = 0.0f;  // 残り時間(秒)。>0 の間だけ演出が出る。
     bool  hold  = false; // true の間はモノクロを「サステイン保持」（切り払い準備の照準中など）。
                          // スパイク(放射ブラー/色収差)は出さず、静かな脱色だけを維持する。
 

@@ -12,9 +12,9 @@
 class SkyboxPass : public IRenderPass
 {
 public:
-    void Initialize(const RenderServices& services) override;
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "SkyboxPass"; }
+    void        Initialize(const RenderServices &services) override;
+    void        Execute(const RenderFrameContext &ctx) override;
+    const char *GetName() const override { return "SkyboxPass"; }
 
 private:
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_skyboxTex;
@@ -22,7 +22,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>        m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11Buffer>             m_cbSkybox;
 
-    struct CbSkybox {
+    struct CbSkybox
+    {
         DirectX::XMFLOAT4X4 invViewProj;
     };
 };

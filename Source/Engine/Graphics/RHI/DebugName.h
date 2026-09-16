@@ -29,10 +29,10 @@
  *  上書き前に一度クリアしておけば、サイズ違いとして検出されず警告が出ない。
  */
 template <typename T>
-void SetDebugName(T* child, const std::string& name)
+void SetDebugName(T *child, const std::string &name)
 {
     if (!child) return;
     child->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
     child->SetPrivateData(WKPDID_D3DDebugObjectName,
-        static_cast<UINT>(name.size()), name.c_str());
+                          static_cast<UINT>(name.size()), name.c_str());
 }

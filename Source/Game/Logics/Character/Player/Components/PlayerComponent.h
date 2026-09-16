@@ -2,11 +2,17 @@
 #pragma once
 #include "Engine/Serialization/Core/EntityLink.h"
 
-struct PlayerComponent {
+struct PlayerComponent
+{
 
     // 地上ロコモーション状態。PlayerDashSystem が一元的に更新する。
     // 空中かどうかは isAirborne が別管理（地上/空中は直交する軸）。
-    enum class GroundLocomotion : unsigned char { Walk, Run, Dodge };
+    enum class GroundLocomotion : unsigned char
+    {
+        Walk,
+        Run,
+        Dodge
+    };
 
     float turnSpeed = 10.0f;
 
@@ -16,11 +22,11 @@ struct PlayerComponent {
     //   移動入力がある限り維持し、無入力が runIdleReleaseTime 続いたら歩きへ自動解除。
     //   isRunning はダッシュ攻撃の作動条件にも使う（＝走っている間ずっとダッシュ攻撃が出せる）。
     // =========================================================
-    float runSpeed           = 24.0f; // 走行状態の移動速度（walkSpeed と dashSpeed の中間が目安）
-    float runIdleReleaseTime = 0.4f;  // 無入力がこの秒数続いたら走行を自動解除して歩きへ
-    bool  isRunning          = false; // 走行状態か
-    float runIdleTimer       = 0.0f;  // 無入力の継続時間（>=runIdleReleaseTime で解除）
-    GroundLocomotion locomotion = GroundLocomotion::Walk; // 現在の地上ロコモーション（アニメ/演出参照用）
+    float            runSpeed           = 24.0f;                  // 走行状態の移動速度（walkSpeed と dashSpeed の中間が目安）
+    float            runIdleReleaseTime = 0.4f;                   // 無入力がこの秒数続いたら走行を自動解除して歩きへ
+    bool             isRunning          = false;                  // 走行状態か
+    float            runIdleTimer       = 0.0f;                   // 無入力の継続時間（>=runIdleReleaseTime で解除）
+    GroundLocomotion locomotion         = GroundLocomotion::Walk; // 現在の地上ロコモーション（アニメ/演出参照用）
 
     // --- 2段ジャンプ設定・状態 ---
     //   押下の立ち上がり判定は PlayerInputComponent.jumpPressed が済ませている。
@@ -55,13 +61,12 @@ struct PlayerComponent {
     // --- 攻撃時のターゲット自動フェイシング（オートエイム） ---
     //   攻撃入力の瞬間、PlayerAttackSystem が対象（ロックオン先／前方最寄り敵）方向の yaw を求めて
     //   attackFaceTimer を立てる。PlayerMoveSystem が >0 の間、移動より優先で currentYaw を敵へ回頭させる。
-    float attackFaceYaw      = 0.0f; // 攻撃時に向くべき yaw(rad)
-    float attackFaceTimer    = 0.0f; // 自動フェイシングの残り時間(秒)。>0 の間だけ有効。
+    float attackFaceYaw         = 0.0f; // 攻撃時に向くべき yaw(rad)
+    float attackFaceTimer       = 0.0f; // 自動フェイシングの残り時間(秒)。>0 の間だけ有効。
     float attackFaceMaxDistance = 5.0f; // この距離以内の敵にだけ攻撃時オートフェイシングする(m)。
                                         // 遠い敵（ロックオン中でも）には向かず、入力方向のまま攻撃する。
 
     // --- ロックオン ---
     //   切り替え要求は PlayerInputComponent.lockOnPressed。ここは結果だけを持つ。
     CCL::Serialization::EntityLink lockOnTargetID = CCL::ECS::InvalidEntityID; // 現在ロックオンしている敵のEntityID
-
 };

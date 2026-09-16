@@ -44,10 +44,10 @@ public:
     virtual ~IPostEffect() = default;
 
     /** デバイス生成時に 1 回呼ぶ。RTの確保もここで行う。 */
-    virtual void Initialize(ID3D11Device* device, UINT width, UINT height) = 0;
+    virtual void Initialize(ID3D11Device *device, UINT width, UINT height) = 0;
 
     /** ウィンドウリサイズ時に呼ぶ。中間 RT の再生成を行う。 */
-    virtual void Resize(ID3D11Device* device, UINT width, UINT height) = 0;
+    virtual void Resize(ID3D11Device *device, UINT width, UINT height) = 0;
 
     /**
      * @brief エフェクトを 1 段適用する。
@@ -56,15 +56,15 @@ public:
      * @param outputRTV 書き込み先。素通しの場合も含め、必ず全面を書くこと。
      */
     virtual void Process(
-        ID3D11DeviceContext* dc,
-        ID3D11ShaderResourceView* inputSRV,
-        ID3D11RenderTargetView* outputRTV) = 0;
+        ID3D11DeviceContext      *dc,
+        ID3D11ShaderResourceView *inputSRV,
+        ID3D11RenderTargetView   *outputRTV) = 0;
 
     /** ImGui 等で表示するエフェクト名 */
-    virtual const char* GetName() const = 0;
+    virtual const char *GetName() const = 0;
 
-    bool IsEnabled()     const noexcept { return m_enabled; }
-    void SetEnabled(bool v)    noexcept { m_enabled = v; }
+    bool IsEnabled() const noexcept { return m_enabled; }
+    void SetEnabled(bool v) noexcept { m_enabled = v; }
 
 protected:
     // 既定は OFF（opt-in）。PostProcessSystem は「対応する設定コンポーネントが

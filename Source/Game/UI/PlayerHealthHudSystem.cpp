@@ -22,13 +22,13 @@ using namespace CCL::ECS;
 
 namespace
 {
-// HP比で色を変える（緑→黄→赤）。エディタのHP表と同系色。
-DirectX::XMFLOAT4 HpColor(float ratio)
-{
-    if (ratio > 0.5f)  return {0.30f, 0.82f, 0.35f, 1.0f}; // 緑
-    if (ratio > 0.25f) return {0.95f, 0.78f, 0.15f, 1.0f}; // 黄
-    return {0.90f, 0.25f, 0.20f, 1.0f};                    // 赤
-}
+    // HP比で色を変える（緑→黄→赤）。エディタのHP表と同系色。
+    DirectX::XMFLOAT4 HpColor(float ratio)
+    {
+        if (ratio > 0.5f) return {0.30f, 0.82f, 0.35f, 1.0f};  // 緑
+        if (ratio > 0.25f) return {0.95f, 0.78f, 0.15f, 1.0f}; // 黄
+        return {0.90f, 0.25f, 0.20f, 1.0f};                    // 赤
+    }
 } // namespace
 
 void PlayerHealthHudSystem::Initialize()
@@ -38,20 +38,20 @@ void PlayerHealthHudSystem::Initialize()
 
     // --- ゲージ本体（左上・アンカー方式） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UIProgressBarComponent>();
+                                             UIProgressBarComponent>();
     auto bar     = EntityFactory::SpawnNamed(*m_world, "PlayerHpGauge", barArch);
 
     UITransformComponent t;
-    t.anchor = {0.0f, 0.0f};   // 画面左上
+    t.anchor = {0.0f, 0.0f}; // 画面左上
     t.pivot  = {0.0f, 0.0f};
     t.offset = {48.0f, 48.0f};
     t.size   = {420.0f, 28.0f};
 
     UIProgressBarComponent b;
     b.sortOrder  = 100;
-    b.showTrail  = true;       // 遅延ダメージ（チップ）バーを有効化
+    b.showTrail  = true; // 遅延ダメージ（チップ）バーを有効化
     b.fillColor  = HpColor(1.0f);
-    b.gradient   = 0.45f;  // 下端を暗く＝ベタ塗りに見えない
+    b.gradient   = 0.45f; // 下端を暗く＝ベタ塗りに見えない
     b.value      = 1.0f;
     b.trailValue = 1.0f;
 
@@ -60,7 +60,7 @@ void PlayerHealthHudSystem::Initialize()
 
     // --- ラベル（ゲージの上） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-        UITextComponent>();
+                                               UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*m_world, "PlayerHpLabel", labelArch);
 
     UITransformComponent lt;
@@ -91,15 +91,15 @@ void PlayerHealthHudSystem::Update(float dt)
         found = true;
 
         const float ratio = (hp.maxHealth > 0.0f)
-                          ? std::clamp(hp.currentHealth / hp.maxHealth, 0.0f, 1.0f)
-                          : 0.0f;
+                                ? std::clamp(hp.currentHealth / hp.maxHealth, 0.0f, 1.0f)
+                                : 0.0f;
 
         // 初回は瞬時に合わせる（起動時にバーがスッと減って見えないように）。
         if (!m_init)
         {
             bar->trailValue = ratio;
-            m_prevRatio      = ratio;
-            m_init           = true;
+            m_prevRatio     = ratio;
+            m_init          = true;
         }
 
         // 本体フィルは現在HPへ即追従＋残量で色分け。
@@ -111,13 +111,13 @@ void PlayerHealthHudSystem::Update(float dt)
         if (ratio < m_prevRatio - 1e-4f)
         {
             m_trailHold = kTrailHold;
-            m_shake     = 1.0f;   // 「今当たった」をゲージの震えで伝える（遅延バーは「失った量」）
-            m_shakeTime = 0.0f;   // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+            m_shake     = 1.0f; // 「今当たった」をゲージの震えで伝える（遅延バーは「失った量」）
+            m_shakeTime = 0.0f; // 位相を頭出し＝毎回同じ「ビクッ」から始まる
         }
 
         // 揺れの減衰は供給側の仕事。ウィジェットは揺れ量を持つだけにしておく。
-        m_shakeTime      += dt;
-        m_shake          -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
+        m_shakeTime += dt;
+        m_shake -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
         if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
         bar->shake        = m_shake;
         bar->shakeElapsed = m_shakeTime;
@@ -129,18 +129,18 @@ void PlayerHealthHudSystem::Update(float dt)
         }
         else if (m_trailHold > 0.0f)
         {
-            m_trailHold -= dt;        // 溜め中は失った分を保持して見せる
+            m_trailHold -= dt; // 溜め中は失った分を保持して見せる
         }
         else
         {
             const float k = CCL::Math::Damp(kTrailSpeed, dt);
-            bar->trailValue += (ratio - bar->trailValue) * k;   // スッと value まで追いつく
+            bar->trailValue += (ratio - bar->trailValue) * k; // スッと value まで追いつく
         }
 
         if (txt)
         {
             txt->visible = true;
-            char buf[32];
+            char      buf[32];
             const int cur = static_cast<int>(std::max(0.0f, hp.currentHealth) + 0.5f);
             const int max = static_cast<int>(hp.maxHealth + 0.5f);
             std::snprintf(buf, sizeof(buf), "HP  %d / %d", cur, max);

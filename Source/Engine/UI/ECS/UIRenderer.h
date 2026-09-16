@@ -19,7 +19,7 @@ struct UIDrawItem;
 
 class UIRenderer
 {
-  public:
+public:
     // Sprite/TextRenderer が前方宣言（unique_ptr）のため特殊メンバは .cpp で定義する。
     UIRenderer();
     ~UIRenderer();
@@ -32,7 +32,7 @@ class UIRenderer
     void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
                RenderState *renderState = nullptr);
 
-  private:
+private:
     // DrawItems がどのアイテムを描くか。
     enum class BlendPass
     {

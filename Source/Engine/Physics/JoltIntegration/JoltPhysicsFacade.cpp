@@ -24,28 +24,28 @@ using namespace DirectX;
 // ===================================================================================
 namespace
 {
-class RaycastBodyFilter final : public JPH::BodyFilter
-{
-  public:
-    explicit RaycastBodyFilter(JPH::BodyID ignore)
-        : m_ignore(ignore)
+    class RaycastBodyFilter final : public JPH::BodyFilter
     {
-    }
+    public:
+        explicit RaycastBodyFilter(JPH::BodyID ignore)
+            : m_ignore(ignore)
+        {
+        }
 
-    bool ShouldCollide(const JPH::BodyID &inBodyID) const override
-    {
-        return inBodyID != m_ignore;
-    }
+        bool ShouldCollide(const JPH::BodyID &inBodyID) const override
+        {
+            return inBodyID != m_ignore;
+        }
 
-    bool ShouldCollideLocked(const JPH::Body &inBody) const override
-    {
-        // センサー（弾・トリガー等）はレイの障害物にしない
-        return !inBody.IsSensor();
-    }
+        bool ShouldCollideLocked(const JPH::Body &inBody) const override
+        {
+            // センサー（弾・トリガー等）はレイの障害物にしない
+            return !inBody.IsSensor();
+        }
 
-  private:
-    JPH::BodyID m_ignore;
-};
+    private:
+        JPH::BodyID m_ignore;
+    };
 } // namespace
 
 // =======================================================
@@ -61,7 +61,7 @@ bool JoltPhysicsFacade::ResolveBody(
     auto *manager = m_world->GetResource<JoltPhysicsManager *>();
     if (!manager) return false;
 
-    outBodyID   = handle->bodyID;
+    outBodyID    = handle->bodyID;
     outInterface = &manager->GetBodyInterface();
     return true;
 }
@@ -78,7 +78,8 @@ JPH::PhysicsSystem *JoltPhysicsFacade::GetPhysicsSystem() const
 // =======================================================
 void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &force)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->AddForce(bodyID, JPH::Vec3(force.x, force.y, force.z));
     bi->ActivateBody(bodyID);
@@ -86,7 +87,8 @@ void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &forc
 
 void JoltPhysicsFacade::AddImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &impulse)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->AddImpulse(bodyID, JPH::Vec3(impulse.x, impulse.y, impulse.z));
     bi->ActivateBody(bodyID);
@@ -94,14 +96,16 @@ void JoltPhysicsFacade::AddImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &im
 
 void JoltPhysicsFacade::SetLinearVelocity(CCL::ECS::EntityID entity, const XMFLOAT3 &velocity)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetLinearVelocity(bodyID, JPH::Vec3(velocity.x, velocity.y, velocity.z));
 }
 
 XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return XMFLOAT3(0, 0, 0);
     JPH::Vec3 vel = bi->GetLinearVelocity(bodyID);
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
@@ -112,7 +116,8 @@ XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
 // =======================================================
 void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &torque)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->AddTorque(bodyID, JPH::Vec3(torque.x, torque.y, torque.z));
     bi->ActivateBody(bodyID);
@@ -120,7 +125,8 @@ void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &tor
 
 void JoltPhysicsFacade::AddAngularImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &impulse)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->AddAngularImpulse(bodyID, JPH::Vec3(impulse.x, impulse.y, impulse.z));
     bi->ActivateBody(bodyID);
@@ -128,14 +134,16 @@ void JoltPhysicsFacade::AddAngularImpulse(CCL::ECS::EntityID entity, const XMFLO
 
 void JoltPhysicsFacade::SetAngularVelocity(CCL::ECS::EntityID entity, const XMFLOAT3 &velocity)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetAngularVelocity(bodyID, JPH::Vec3(velocity.x, velocity.y, velocity.z));
 }
 
 XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return XMFLOAT3(0, 0, 0);
     JPH::Vec3 vel = bi->GetAngularVelocity(bodyID);
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
@@ -146,23 +154,26 @@ XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
 // =======================================================
 void JoltPhysicsFacade::SetPosition(CCL::ECS::EntityID entity, const XMFLOAT3 &position)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetPosition(bodyID, JPH::RVec3(position.x, position.y, position.z), JPH::EActivation::Activate);
 }
 
 void JoltPhysicsFacade::SetRotation(CCL::ECS::EntityID entity, const XMFLOAT4 &rotation)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetRotation(bodyID,
-        JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w).Normalized(),
-        JPH::EActivation::Activate);
+                    JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w).Normalized(),
+                    JPH::EActivation::Activate);
 }
 
 void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &direction)
 {
-    JPH::BodyID bodyID; JPH::BodyInterface *bi;
+    JPH::BodyID         bodyID;
+    JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
 
     // 1. 水平化 (Y軸の無効化): Yaw(左右)だけの回転にする
@@ -175,8 +186,8 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
     //   ときに回転軸が定まらず、Jolt が任意の垂直軸（X軸になりうる）を選ぶ。
     //   その場合ボディが横倒しにひっくり返る。真後ろを向く＝180度ターンは実際に頻出するので、
     //   atan2 から Y軸回転を直接組み立てて特異点そのものを無くす。
-    const float    yaw            = std::atan2(direction.x, direction.z);
-    JPH::Quat      targetRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), yaw);
+    const float yaw            = std::atan2(direction.x, direction.z);
+    JPH::Quat   targetRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), yaw);
 
     // 4. 回転を適用し、スリープ状態なら叩き起こす(Activate)
     bi->SetRotation(bodyID, targetRotation, JPH::EActivation::Activate);
@@ -197,9 +208,9 @@ bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
 
     // ローカル欄の position ではなくワールド座標から飛ばす（親を持つ剛体でも正しくする）
     const DirectX::XMFLOAT3 worldPos = trans->GetWorldPosition();
-    JPH::RVec3         rayStart(worldPos.x, worldPos.y, worldPos.z);
-    JPH::RVec3         rayDir(0.0f, -distance, 0.0f);
-    JPH::RayCastResult hit;
+    JPH::RVec3              rayStart(worldPos.x, worldPos.y, worldPos.z);
+    JPH::RVec3              rayDir(0.0f, -distance, 0.0f);
+    JPH::RayCastResult      hit;
 
     // fix: 素通しフィルタをやめ、地面(NON_MOVING)だけにヒットさせる。
     //   これで弾(センサー)・他キャラ・敵に接地判定が誤反応しなくなる。

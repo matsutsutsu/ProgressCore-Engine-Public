@@ -19,7 +19,6 @@
 #include <string_view>
 #include <vector>
 
-
 /**
  * @brief ダイアログの結果コード
  */
@@ -37,8 +36,8 @@ enum class DialogResult
  */
 struct FileFilter
 {
-    std::string label;     // 表示名
-    std::string pattern;   // セミコロン区切りのワイルドカード
+    std::string label;   // 表示名
+    std::string pattern; // セミコロン区切りのワイルドカード
 };
 
 /**
@@ -50,13 +49,13 @@ struct FileFilter
  */
 struct FileDialogParams
 {
-    std::string title;                       // ダイアログタイトル (UTF-8)
-    std::string contextId;                   // 履歴キー ("Model","Scene"等). 空ならtitle使用
-    std::vector<FileFilter> filters;         // ファイルフィルタ. 空ならAll Files
-    std::filesystem::path initialPath;       // 明示初期パス. 設定時は履歴より優先
-    std::filesystem::path defaultFileName;   // Save時のデフォルトファイル名
-    std::string defaultExt;                  // Save時のデフォルト拡張子 (例: "scene")
-    HWND ownerHwnd = nullptr;                // オーナーウィンドウ
+    std::string             title;               // ダイアログタイトル (UTF-8)
+    std::string             contextId;           // 履歴キー ("Model","Scene"等). 空ならtitle使用
+    std::vector<FileFilter> filters;             // ファイルフィルタ. 空ならAll Files
+    std::filesystem::path   initialPath;         // 明示初期パス. 設定時は履歴より優先
+    std::filesystem::path   defaultFileName;     // Save時のデフォルトファイル名
+    std::string             defaultExt;          // Save時のデフォルト拡張子 (例: "scene")
+    HWND                    ownerHwnd = nullptr; // オーナーウィンドウ
 };
 
 /**
@@ -65,8 +64,8 @@ struct FileDialogParams
 struct FileDialogPreset
 {
     std::vector<FileFilter> filters;
-    std::filesystem::path defaultDir;        // 履歴が無い時のデフォルト初期位置
-    std::string defaultExt;
+    std::filesystem::path   defaultDir; // 履歴が無い時のデフォルト初期位置
+    std::string             defaultExt;
 };
 
 /**
@@ -105,7 +104,7 @@ public:
      *  | "Prefab"      | *.json                                  | プレハブ Save         |
      *  | "Audio"       | *.wav;*.ogg;*.mp3;*.flac                | オーディオアセット    |
      */
-    static void Initialize(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+    static void Initialize(const std::filesystem::path &settingsPath = "Build/EditorPrefs.json");
 
     //------------------------------------------------------------------
     // 基本API
@@ -116,28 +115,28 @@ public:
      * @param params ダイアログパラメータ
      * @return 選択されたパス. キャンセル時は std::nullopt
      */
-    static std::optional<std::filesystem::path> Open(const FileDialogParams& params);
+    static std::optional<std::filesystem::path> Open(const FileDialogParams &params);
 
     /**
      * @brief 複数ファイルを開くダイアログを表示する
      * @param params ダイアログパラメータ
      * @return 選択されたパス群. キャンセル時は空ベクター
      */
-    static std::vector<std::filesystem::path> OpenMulti(const FileDialogParams& params);
+    static std::vector<std::filesystem::path> OpenMulti(const FileDialogParams &params);
 
     /**
      * @brief 保存ダイアログを表示する
      * @param params ダイアログパラメータ
      * @return 保存パス. キャンセル時は std::nullopt
      */
-    static std::optional<std::filesystem::path> Save(const FileDialogParams& params);
+    static std::optional<std::filesystem::path> Save(const FileDialogParams &params);
 
     /**
      * @brief 絶対パスをプロジェクトのルート（または実行ファイル位置）からの相対パスに変換する
      * @param absolutePath ダイアログ等で取得した絶対パス
      * @return 変換後の相対パス（文字列）。変換に失敗した場合（別ドライブ等）はそのまま返す。
      */
-    static std::string ConvertToRelativePath(const std::filesystem::path& absolutePath);
+    static std::string ConvertToRelativePath(const std::filesystem::path &absolutePath);
 
     //------------------------------------------------------------------
     // プリセット - 呼び出し側を簡潔にする
@@ -149,7 +148,7 @@ public:
      * @param preset 設定内容
      * @details 一度登録すれば OpenPreset / SavePreset でワンライナー呼び出し可能
      */
-    static void RegisterPreset(std::string_view contextId, const FileDialogPreset& preset);
+    static void RegisterPreset(std::string_view contextId, const FileDialogPreset &preset);
 
     /**
      * @brief 登録済みプリセットでファイルを開く
@@ -159,17 +158,17 @@ public:
      */
     static std::optional<std::filesystem::path> OpenPreset(
         std::string_view contextId,
-        std::string_view title = {},
-        HWND ownerHwnd = nullptr);
+        std::string_view title     = {},
+        HWND             ownerHwnd = nullptr);
 
     /**
      * @brief 登録済みプリセットで保存ダイアログを表示する
      */
     static std::optional<std::filesystem::path> SavePreset(
-        std::string_view contextId,
-        std::string_view title = {},
-        const std::filesystem::path& defaultFileName = {},
-        HWND ownerHwnd = nullptr);
+        std::string_view             contextId,
+        std::string_view             title           = {},
+        const std::filesystem::path &defaultFileName = {},
+        HWND                         ownerHwnd       = nullptr);
 
     //------------------------------------------------------------------
     // 履歴管理
@@ -179,13 +178,13 @@ public:
      * @brief 履歴をJSONファイルから読み込む
      * @param settingsPath 設定ファイルのパス
      */
-    static void LoadHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
+    static void LoadHistory(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
 
     /**
      * @brief 履歴をJSONファイルに書き込む
      * @param settingsPath 設定ファイルのパス
      */
-    static void SaveHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
+    static void SaveHistory(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
 
     /**
      * @brief 履歴をクリアする
@@ -193,5 +192,3 @@ public:
      */
     static void ClearHistory(std::string_view contextId = {});
 };
-
-

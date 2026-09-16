@@ -8,7 +8,7 @@ struct CurveData;
 // ===================================================================================
 // ファイル: AnimatorComponent.h
 // 概要: アニメーションの「再生状態」を保持するコンポーネント
-// 
+//
 // [ 役割 ]
 // AnimControllerSystem から渡された台本（AnimSequence）を記憶し、
 // 現在の再生時間（タイマー）や、次に発火すべきイベントの栞（インデックス）を持つ。
@@ -16,9 +16,10 @@ struct CurveData;
 // キャッシュとして内部に保持する（DOD的最適化）。
 // ===================================================================================
 
-struct AnimatorComponent {
+struct AnimatorComponent
+{
     // --- 再生する台本データ ---
-    const AnimSequence* currentSequence = nullptr; // 共有データへのポインタ（8バイト）
+    const AnimSequence *currentSequence = nullptr; // 共有データへのポインタ（8バイト）
 
     // 再生速度を動的に変化させるカーブのポインタ
     const CurveData *activeCurve = nullptr;
@@ -44,8 +45,8 @@ struct AnimatorComponent {
     // 実効速度は AnimationSystem が playbackSpeed × footSlideMultiplier で合成する。
     float footSlideMultiplier = 1.0f;
 
-    bool  isLoop = true;
-    bool  isFinished = false;
+    bool isLoop     = true;
+    bool isFinished = false;
 
     // O(1)アクセスのための「栞（しおり）」
     // 次にチェックするイベントのインデックス
@@ -54,11 +55,11 @@ struct AnimatorComponent {
     // =========================================================
     // クロスフェード・ブレンディング用データ
     // =========================================================
-    const AnimSequence* previousSequence = nullptr;
-    float previousTimer = 0.0f;
-    float blendDuration = 0.0f;
-    float currentBlendTime = 0.0f;
-    bool isBlending = false;
+    const AnimSequence *previousSequence = nullptr;
+    float               previousTimer    = 0.0f;
+    float               blendDuration    = 0.0f;
+    float               currentBlendTime = 0.0f;
+    bool                isBlending       = false;
 
     // 過去のモーションをブレンド中に正しく制御するための記憶
     bool  previousLoop          = false;
@@ -78,12 +79,12 @@ struct AnimatorComponent {
     // メンバの宣言順（blendTime → loop → speed → curve）で初期化すること。
     struct PlayParams
     {
-        float                 blendTime = 0.2f;    // クロスフェード時間（秒）。0なら即時切替
-        bool                  loop      = true;    // ループ再生するか
-        float                 speed     = 1.0f;    // 再生速度倍率
-        const CurveData    *curve           = nullptr; // 速度カーブ（nullで等速）
-        const CurveData    *rootMotionCurve = nullptr; // ルートモーション量カーブ（nullでボーン駆動）
-        bool                  lockVerticalRootMotion = false;   // Force Root LockでYも固定するか（ステートから伝播）
+        float            blendTime              = 0.2f;    // クロスフェード時間（秒）。0なら即時切替
+        bool             loop                   = true;    // ループ再生するか
+        float            speed                  = 1.0f;    // 再生速度倍率
+        const CurveData *curve                  = nullptr; // 速度カーブ（nullで等速）
+        const CurveData *rootMotionCurve        = nullptr; // ルートモーション量カーブ（nullでボーン駆動）
+        bool             lockVerticalRootMotion = false;   // Force Root LockでYも固定するか（ステートから伝播）
 
         // 同じクリップでも頭から再生し直すか。
         //
@@ -94,7 +95,7 @@ struct AnimatorComponent {
         //   例: Muriel の HitFront と HitBack は同じ Hit_Front.json を指しており、
         //       連続被弾で HitFront→HitBack に入ると isFinished が true のままなので
         //       次フレームに Finished 条件が成立し、リアクションが丸ごと飛ぶ。
-        bool                  restart = false;
+        bool restart = false;
     };
 
     // 新しいシーケンスの再生を開始する（必要ならクロスフェード）。
@@ -188,5 +189,4 @@ struct AnimatorComponent {
             ++nextEventIndex;
         }
     }
-
 };

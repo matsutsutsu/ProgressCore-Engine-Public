@@ -13,9 +13,10 @@
 // Body: 追従ロジック
 // ---------------------------------------------------------
 class CameraFollowSystem : public CCL::ECS::IfSystem<CameraFollowSystem,
-                               CCL::ECS::Write<VirtualCamera>,
-                               CCL::ECS::Write<CameraBodyFollow>> { // target 自動接続のため Write
-  public:
+                                                     CCL::ECS::Write<VirtualCamera>,
+                                                     CCL::ECS::Write<CameraBodyFollow>>
+{ // target 自動接続のため Write
+public:
     CameraFollowSystem() : IfSystem("CameraFollowSystem") {}
     void Update(float dt) override; // 中身は書かない
 };
@@ -24,9 +25,10 @@ class CameraFollowSystem : public CCL::ECS::IfSystem<CameraFollowSystem,
 // Aim: 注視ロジック
 // ---------------------------------------------------------
 class CameraLookAtSystem : public CCL::ECS::IfSystem<CameraLookAtSystem,
-                               CCL::ECS::Write<VirtualCamera>,
-                               CCL::ECS::Write<CameraAimLookAt>> { // target 自動接続のため Write
-  public:
+                                                     CCL::ECS::Write<VirtualCamera>,
+                                                     CCL::ECS::Write<CameraAimLookAt>>
+{ // target 自動接続のため Write
+public:
     CameraLookAtSystem() : IfSystem("CameraLookAtSystem") {}
     void Update(float dt) override;
 
@@ -39,9 +41,10 @@ class CameraLookAtSystem : public CCL::ECS::IfSystem<CameraLookAtSystem,
 // Shake: カメラ揺れ
 // ---------------------------------------------------------
 class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
-                              CCL::ECS::Write<VirtualCamera>,
-                              CCL::ECS::Write<CameraShake>> {
-  public:
+                                                    CCL::ECS::Write<VirtualCamera>,
+                                                    CCL::ECS::Write<CameraShake>>
+{
+public:
     CameraShakeSystem() : IfSystem("CameraShakeSystem")
     {
     }
@@ -70,7 +73,7 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
                 "CameraFreeControlSystem", "CameraIntroOrbitSystem"};
     }
 
-  private:
+private:
     // 32bit 整数ハッシュ。ノイズの格子点から擬似乱数を作る。
     static std::uint32_t HashUInt(std::uint32_t x);
 
@@ -93,14 +96,15 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
 // Free: 自由移動カメラ
 // ---------------------------------------------------------
 class CameraFreeControlSystem : public CCL::ECS::IfSystem<CameraFreeControlSystem,
-                                    CCL::ECS::Write<VirtualCamera>,
-                                    CCL::ECS::Write<CameraBodyFree>,
-                                    CCL::ECS::Write<TransformComponent>> {
-  public:
+                                                          CCL::ECS::Write<VirtualCamera>,
+                                                          CCL::ECS::Write<CameraBodyFree>,
+                                                          CCL::ECS::Write<TransformComponent>>
+{
+public:
     CameraFreeControlSystem() : IfSystem("CameraFreeControlSystem") {}
     void Update(float dt) override;
 
-  private:
+private:
     // ポーズ中/UI操作中/エディタの他ウィンドウ操作中は入力を食わない、の判定。
     // TPS カメラ側と同じ条件に揃えるためのヘルパ。
     bool IsInputBlocked() const;

@@ -18,77 +18,77 @@
 // ===========================================================================
 namespace
 {
-// 「きりの良い」目盛り間隔を選ぶ（1,2,5 * 10^n）
-float NiceStep(float range, float targetLines)
-{
-    if (range <= 0.0f || targetLines <= 0.0f) return 1.0f;
-    const float raw  = range / targetLines;
-    const float mag  = std::pow(10.0f, std::floor(std::log10(raw)));
-    const float norm = raw / mag; // 1..10
-    float       nice;
-    if (norm < 1.5f)
-        nice = 1.0f;
-    else if (norm < 3.0f)
-        nice = 2.0f;
-    else if (norm < 7.0f)
-        nice = 5.0f;
-    else
-        nice = 10.0f;
-    return nice * mag;
-}
-
-// 桁数を範囲に応じて可変にした数値整形
-void FormatTick(char *buf, size_t n, float v, float step)
-{
-    int decimals = 0;
-    if (step < 1.0f) decimals = 1;
-    if (step < 0.1f) decimals = 2;
-    if (step < 0.01f) decimals = 3;
-    std::snprintf(buf, n, "%.*f", decimals, v);
-}
-
-// 破線
-void AddDashedLine(ImDrawList *dl, ImVec2 a, ImVec2 b, ImU32 col, float thickness, float dash = 6.0f, float gap = 5.0f)
-{
-    ImVec2      d   = ImVec2(b.x - a.x, b.y - a.y);
-    const float len = std::sqrt(d.x * d.x + d.y * d.y);
-    if (len < 0.001f) return;
-    d.x /= len;
-    d.y /= len;
-    float pos = 0.0f;
-    while (pos < len)
+    // 「きりの良い」目盛り間隔を選ぶ（1,2,5 * 10^n）
+    float NiceStep(float range, float targetLines)
     {
-        float e0 = pos;
-        float e1 = std::min(pos + dash, len);
-        dl->AddLine(ImVec2(a.x + d.x * e0, a.y + d.y * e0), ImVec2(a.x + d.x * e1, a.y + d.y * e1), col, thickness);
-        pos += dash + gap;
+        if (range <= 0.0f || targetLines <= 0.0f) return 1.0f;
+        const float raw  = range / targetLines;
+        const float mag  = std::pow(10.0f, std::floor(std::log10(raw)));
+        const float norm = raw / mag; // 1..10
+        float       nice;
+        if (norm < 1.5f)
+            nice = 1.0f;
+        else if (norm < 3.0f)
+            nice = 2.0f;
+        else if (norm < 7.0f)
+            nice = 5.0f;
+        else
+            nice = 10.0f;
+        return nice * mag;
     }
-}
 
-float Dist2(const ImVec2 &a, const ImVec2 &b)
-{
-    const float dx = a.x - b.x, dy = a.y - b.y;
-    return dx * dx + dy * dy;
-}
+    // 桁数を範囲に応じて可変にした数値整形
+    void FormatTick(char *buf, size_t n, float v, float step)
+    {
+        int decimals = 0;
+        if (step < 1.0f) decimals = 1;
+        if (step < 0.1f) decimals = 2;
+        if (step < 0.01f) decimals = 3;
+        std::snprintf(buf, n, "%.*f", decimals, v);
+    }
 
-// 新規カーブ用の色パレット（IM_COL32）
-ImU32 PaletteColor(uint32_t i)
-{
-    static const ImU32 palette[] = {
-        IM_COL32(0, 255, 128, 255),   // green
-        IM_COL32(255, 90, 90, 255),   // red
-        IM_COL32(90, 170, 255, 255),  // blue
-        IM_COL32(255, 200, 60, 255),  // yellow
-        IM_COL32(200, 120, 255, 255), // purple
-        IM_COL32(60, 230, 230, 255),  // cyan
-        IM_COL32(255, 140, 60, 255),  // orange
-    };
-    return palette[i % (sizeof(palette) / sizeof(palette[0]))];
-}
+    // 破線
+    void AddDashedLine(ImDrawList *dl, ImVec2 a, ImVec2 b, ImU32 col, float thickness, float dash = 6.0f, float gap = 5.0f)
+    {
+        ImVec2      d   = ImVec2(b.x - a.x, b.y - a.y);
+        const float len = std::sqrt(d.x * d.x + d.y * d.y);
+        if (len < 0.001f) return;
+        d.x /= len;
+        d.y /= len;
+        float pos = 0.0f;
+        while (pos < len)
+        {
+            float e0 = pos;
+            float e1 = std::min(pos + dash, len);
+            dl->AddLine(ImVec2(a.x + d.x * e0, a.y + d.y * e0), ImVec2(a.x + d.x * e1, a.y + d.y * e1), col, thickness);
+            pos += dash + gap;
+        }
+    }
 
-const char *kInterpNames[]  = {"定数", "線形", "3次"};
-const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
-const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
+    float Dist2(const ImVec2 &a, const ImVec2 &b)
+    {
+        const float dx = a.x - b.x, dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    }
+
+    // 新規カーブ用の色パレット（IM_COL32）
+    ImU32 PaletteColor(uint32_t i)
+    {
+        static const ImU32 palette[] = {
+            IM_COL32(0, 255, 128, 255),   // green
+            IM_COL32(255, 90, 90, 255),   // red
+            IM_COL32(90, 170, 255, 255),  // blue
+            IM_COL32(255, 200, 60, 255),  // yellow
+            IM_COL32(200, 120, 255, 255), // purple
+            IM_COL32(60, 230, 230, 255),  // cyan
+            IM_COL32(255, 140, 60, 255),  // orange
+        };
+        return palette[i % (sizeof(palette) / sizeof(palette[0]))];
+    }
+
+    const char *kInterpNames[]  = {"定数", "線形", "3次"};
+    const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
+    const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
 
 } // namespace
 
@@ -233,7 +233,7 @@ void CurveEditorWindow::DrawToolbar()
     ImGui::TextDisabled("| %s", m_currentFilePath.empty() ? "[ 未保存 ]" : m_currentFilePath.c_str());
 
     ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f),
-        "キャンバス: ダブルクリック=キー追加 / ドラッグ=移動 / 右or中ドラッグ=パン / ホイール=ズーム(Ctrl:横 Shift:縦) / 右クリック=メニュー / Alt+ハンドル=接線を割る");
+                       "キャンバス: ダブルクリック=キー追加 / ドラッグ=移動 / 右or中ドラッグ=パン / ホイール=ズーム(Ctrl:横 Shift:縦) / 右クリック=メニュー / Alt+ハンドル=接線を割る");
 }
 
 // ===========================================================================
@@ -259,7 +259,7 @@ void CurveEditorWindow::DrawCurveList()
         // 色スウォッチ
         ImVec4 col = ImGui::ColorConvertU32ToFloat4(c.color);
         if (ImGui::ColorEdit4("##col", &col.x,
-                ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel))
+                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel))
         {
             c.color = ImGui::ColorConvertFloat4ToU32(col);
         }
@@ -345,7 +345,7 @@ void CurveEditorWindow::DrawCanvas(float height)
 
     // --- パン（右 or 中ドラッグ） ---
     const bool panning = hovered && (ImGui::IsMouseDragging(ImGuiMouseButton_Right, 2.0f) ||
-                                        ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 2.0f));
+                                     ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 2.0f));
     if (panning)
     {
         ImVec2 d   = io.MouseDelta;
@@ -393,7 +393,7 @@ void CurveEditorWindow::DrawCanvas(float height)
             ImVec2 p    = ToScreen(gx, viewMin.y);
             bool   axis = std::fabs(gx) < stepX * 0.001f;
             dl->AddLine(ImVec2(p.x, canvasPos.y), ImVec2(p.x, canvasEnd.y),
-                axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
+                        axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
             char buf[32];
             FormatTick(buf, sizeof(buf), gx, stepX);
             dl->AddText(ImVec2(p.x + 3, canvasEnd.y - 16), IM_COL32(170, 170, 175, 255), buf);
@@ -406,7 +406,7 @@ void CurveEditorWindow::DrawCanvas(float height)
             ImVec2 p    = ToScreen(viewMin.x, gy);
             bool   axis = std::fabs(gy) < stepY * 0.001f;
             dl->AddLine(ImVec2(canvasPos.x, p.y), ImVec2(canvasEnd.x, p.y),
-                axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
+                        axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
             char buf[32];
             FormatTick(buf, sizeof(buf), gy, stepY);
             dl->AddText(ImVec2(canvasPos.x + 3, p.y - 14), IM_COL32(170, 170, 175, 255), buf);
@@ -645,9 +645,9 @@ void CurveEditorWindow::DrawCanvas(float height)
             // 矩形をプレビュー描画
             ImVec2 a = m_boxStartScreen, b = io.MousePos;
             dl->AddRectFilled(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
-                ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 40));
+                              ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 40));
             dl->AddRect(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
-                ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 200));
+                        ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 200));
         }
     }
 
@@ -936,8 +936,8 @@ void CurveEditorWindow::DeleteSelectedKeys()
     CurveData *curve = ActiveCurve();
     if (!curve) return;
     curve->keys.erase(std::remove_if(curve->keys.begin(), curve->keys.end(),
-                          [&](const CurveKeyframe &k) { return m_selectedKeys.count(k.id) > 0; }),
-        curve->keys.end());
+                                     [&](const CurveKeyframe &k) { return m_selectedKeys.count(k.id) > 0; }),
+                      curve->keys.end());
     m_selectedKeys.clear();
     curve->RecalculateTangents();
 }
@@ -958,8 +958,8 @@ void CurveEditorWindow::FrameAll()
 
     float tPad = std::max(0.1f, (tMax - tMin) * 0.1f);
     float vPad = std::max(0.1f, (vMax - vMin) * 0.15f);
-    viewMin   = ImVec2(tMin - tPad, vMin - vPad);
-    viewMax   = ImVec2(tMax + tPad, vMax + vPad);
+    viewMin    = ImVec2(tMin - tPad, vMin - vPad);
+    viewMax    = ImVec2(tMax + tPad, vMax + vPad);
 }
 
 // ===========================================================================
@@ -985,12 +985,12 @@ void CurveEditorWindow::SaveToFile(const std::string &path)
             for (const auto &k : c.keys)
             {
                 jc["keys"].push_back({{"time", k.time},
-                    {"value", k.value},
-                    {"inTangent", k.inTangent},
-                    {"outTangent", k.outTangent},
-                    {"interp", (int)k.interp},
-                    {"tangentIn", (int)k.tangentIn},
-                    {"tangentOut", (int)k.tangentOut}});
+                                      {"value", k.value},
+                                      {"inTangent", k.inTangent},
+                                      {"outTangent", k.outTangent},
+                                      {"interp", (int)k.interp},
+                                      {"tangentIn", (int)k.tangentIn},
+                                      {"tangentOut", (int)k.tangentOut}});
             }
             j["curves"].push_back(jc);
         }

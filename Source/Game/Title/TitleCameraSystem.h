@@ -29,32 +29,32 @@
 
 class TitleCameraSystem
     : public CCL::ECS::IfSystem<TitleCameraSystem, CCL::ECS::Write<VirtualCamera>,
-          CCL::ECS::Write<TransformComponent>>
+                                CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     TitleCameraSystem() : IfSystem("TitleCameraSystem") {}
 
     void Update(float dt) override;
 
     void OnGui() override; // 構図調整用（Shipping では空実装）
 
-  private:
+private:
     /// 注視点を返す。目印エンティティ(kLookTargetName)が居ればその位置、無ければ既定値。
     DirectX::SimpleMath::Vector3 ResolveLookTarget();
 
     /// 構図（揺れる前の視点・注視点・画角）を共有ボードへ載せる。
     void PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
-        const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam);
+                      const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam);
 
     /// 注視点を軸に横へ流した視点を返す。平行移動ではなく回転させるのは、
     /// 平行移動だと注視点が画面内で横滑りして構図そのものが崩れるため。
     DirectX::SimpleMath::Vector3 DriftedEye(const DirectX::SimpleMath::Vector3 &base,
-        const DirectX::SimpleMath::Vector3 &pivot) const;
+                                            const DirectX::SimpleMath::Vector3 &pivot) const;
 
     /// vcam へ姿勢を書き、Transform には回転だけを焼く。
     void ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
-        const DirectX::SimpleMath::Vector3 &eye,
-        const DirectX::SimpleMath::Vector3 &pivot) const;
+                   const DirectX::SimpleMath::Vector3 &eye,
+                   const DirectX::SimpleMath::Vector3 &pivot) const;
 
     float m_elapsed = 0.0f;
 

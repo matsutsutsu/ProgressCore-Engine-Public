@@ -1,7 +1,13 @@
 #pragma once
 #include "Engine/ECS/Common/CCL_Types.h" // CCL::ECS::EntityID
 
-namespace CCL { namespace ECS { class World; } }
+namespace CCL
+{
+    namespace ECS
+    {
+        class World;
+    }
+} // namespace CCL
 
 // =====================================================================
 // Time ─ 時間スケール操作の統一ファサード
@@ -36,4 +42,4 @@ namespace Time
     void Pause(CCL::ECS::World &world);
     void Resume(CCL::ECS::World &world);
     void StepFrame(CCL::ECS::World &world); // 一時停止中に1フレームだけ進める
-}
+} // namespace Time

@@ -84,51 +84,51 @@ void EditorWindowManager::Initialize()
 // =========================================================
 namespace
 {
-struct PrefabNode
-{
-    bool                                               isFile = false;
-    std::string                                        fullPath;
-    std::map<std::string, std::unique_ptr<PrefabNode>> children;
-};
-
-void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, EditorContext &context)
-{
-    if (node.isFile)
+    struct PrefabNode
     {
-        std::string displayName = std::filesystem::path(nodeName).stem().string();
-        std::string menuText    = "  " + displayName;
+        bool                                               isFile = false;
+        std::string                                        fullPath;
+        std::map<std::string, std::unique_ptr<PrefabNode>> children;
+    };
 
-        if (ImGui::MenuItem(menuText.c_str()))
+    void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, EditorContext &context)
+    {
+        if (node.isFile)
         {
-            if (context.world)
+            std::string displayName = std::filesystem::path(nodeName).stem().string();
+            std::string menuText    = "  " + displayName;
+
+            if (ImGui::MenuItem(menuText.c_str()))
             {
-                DirectX::XMFLOAT3 spawnPos = {0, 5, 0};
-                CCL::ECS::EntityID e = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
-                // プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
-                //    シーン(ベイク)保存では除外対象になる。
-                if (e != CCL::ECS::InvalidEntityID)
-                    context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{ node.fullPath });
-                CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
+                if (context.world)
+                {
+                    DirectX::XMFLOAT3  spawnPos = {0, 5, 0};
+                    CCL::ECS::EntityID e        = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                    // プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
+                    //    シーン(ベイク)保存では除外対象になる。
+                    if (e != CCL::ECS::InvalidEntityID)
+                        context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{node.fullPath});
+                    CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
+                }
+            }
+        }
+        else
+        {
+            std::string menuText = "[+] " + nodeName;
+            if (ImGui::BeginMenu(menuText.c_str()))
+            {
+                for (const auto &[childName, childNode] : node.children)
+                {
+                    if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                for (const auto &[childName, childNode] : node.children)
+                {
+                    if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                ImGui::EndMenu();
             }
         }
     }
-    else
-    {
-        std::string menuText = "[+] " + nodeName;
-        if (ImGui::BeginMenu(menuText.c_str()))
-        {
-            for (const auto &[childName, childNode] : node.children)
-            {
-                if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
-            }
-            for (const auto &[childName, childNode] : node.children)
-            {
-                if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
-            }
-            ImGui::EndMenu();
-        }
-    }
-}
 } // namespace
 
 void RefreshPrefabList(EditorContext &context)
@@ -455,7 +455,7 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
         std::vector<std::string> sceneNames = SceneFactory::Instance().GetSceneNames();
         std::sort(sceneNames.begin(), sceneNames.end());
 
-        const std::string &currentName  = sceneMgr.GetCurrentSceneName();
+        const std::string &currentName   = sceneMgr.GetCurrentSceneName();
         const bool         transitioning = sceneMgr.IsTransitioning();
 
         if (transitioning)
@@ -663,11 +663,8 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
             }
         }
 
-
-
         ImGui::EndMenu();
     }
-
 }
 
 void EditorWindowManager::SaveLayout(const std::string &path)
@@ -679,7 +676,7 @@ void EditorWindowManager::SaveLayout(const std::string &path)
     for (auto &window : m_windows)
     {
         j["windows"].push_back({{"name", window->GetName()},
-            {"visible", window->GetVisible()}});
+                                {"visible", window->GetVisible()}});
     }
 
     FileSystem::WriteAllText(path, j.dump(4));

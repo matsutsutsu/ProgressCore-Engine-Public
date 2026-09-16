@@ -8,8 +8,8 @@
 
 void JoltStepSystem::Update(float dt)
 {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    auto &joltManager = m_world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    auto &joltManager = m_world->GetResource<JoltPhysicsManager *>();
 
     // 物理の時間を dt 秒だけ進める（内部でJoltの並列計算が走る）
     joltManager->Step(dt);
@@ -17,8 +17,8 @@ void JoltStepSystem::Update(float dt)
 
 void JoltPullSystem::Update(float dt)
 {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    auto &joltManager = m_world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    auto &joltManager = m_world->GetResource<JoltPhysicsManager *>();
 
     // fix: Step 完了後・誰も物理ボディに書き込まないフェーズなので、
     //   ロックなし BodyInterface を使う（並列読み取り時のロック競合をなくす）。
@@ -27,16 +27,17 @@ void JoltPullSystem::Update(float dt)
 
     // ※キャラクター(JoltCharacterHandleComponent)は SetExclude 済みなので、
     //   ここには流れてこない。旧来の HasComponent 判定は不要になった。
-    ForEachWithIDParallel([&](CCL::ECS::EntityID id, TransformComponent& trans, const JoltHandleComponent& joltBody) {
-
+    ForEachWithIDParallel([&](CCL::ECS::EntityID id, TransformComponent &trans, const JoltHandleComponent &joltBody) {
         // Kinematic (アニメーション駆動) の剛体はPullしてはいけない。
         // Kinematicの「正しい座標」は常にECS側(TransformUpdate)にあるため、Joltから上書きさせない。
-        if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic) {
+        if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic)
+        {
             return;
         }
 
         // スリープ状態（止まっている物体）なら、座標コピーの無駄な処理を省く
-        if (!bodyInterface.IsActive(joltBody.bodyID)) {
+        if (!bodyInterface.IsActive(joltBody.bodyID))
+        {
             return;
         }
 
@@ -49,8 +50,8 @@ void JoltPullSystem::Update(float dt)
         //   Jolt が返すのはワールド値、position/rotation はローカル欄なので、
         //   親を持つEntityでは変換が要る（中で isStatic=false も立てる）。
         TransformUpdateSystem::WriteWorldTransform(*m_world, id, trans,
-            {pos.GetX(), pos.GetY(), pos.GetZ()},
-            {rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW()});
+                                                   {pos.GetX(), pos.GetY(), pos.GetZ()},
+                                                   {rot.GetX(), rot.GetY(), rot.GetZ(), rot.GetW()});
     });
 }
 

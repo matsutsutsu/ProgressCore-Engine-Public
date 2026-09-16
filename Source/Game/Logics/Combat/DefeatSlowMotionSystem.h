@@ -18,12 +18,12 @@
 class DefeatSlowMotionSystem
     : public CCL::ECS::IfSystem<DefeatSlowMotionSystem, CCL::ECS::Write<HealthComponent>>
 {
-  public:
+public:
     DefeatSlowMotionSystem() : IfSystem("DefeatSlowMotionSystem") {}
 
     void Update(float dt) override;
 
-  private:
+private:
     float m_cooldown = 0.0f; // 通常撃破スローの連発防止（秒・実時間）
 
     // --- チューニング用パラメータ（ここを触れば手触りを調整できる） ---

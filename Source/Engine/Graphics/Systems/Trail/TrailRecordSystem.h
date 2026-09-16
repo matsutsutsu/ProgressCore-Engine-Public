@@ -30,7 +30,7 @@
 // トレイルの老化と「刻んでよい」印の発行を担うロジックシステム。
 class TrailRecordSystem
     : public CCL::ECS::IfSystem<TrailRecordSystem,
-          CCL::ECS::Write<TrailComponent>>
+                                CCL::ECS::Write<TrailComponent>>
 {
 public:
     TrailRecordSystem() : IfSystem("TrailRecordSystem") {}

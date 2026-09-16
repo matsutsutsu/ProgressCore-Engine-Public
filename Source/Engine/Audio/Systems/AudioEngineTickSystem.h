@@ -22,11 +22,12 @@
 // 発音の指示（AudioSystem）・リスナー位置（CameraListenerSystem）が出揃った後に
 // 反映したいので、Render グループの最後段（R11_AudioTick）に置く。
 // ===================================================================================
-class AudioEngineTickSystem : public CCL::ECS::SystemBase {
+class AudioEngineTickSystem : public CCL::ECS::SystemBase
+{
 public:
     AudioEngineTickSystem();
     virtual ~AudioEngineTickSystem() = default;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override { return {}; }
-    void Update(float dt) override;
+    void                          Update(float dt) override;
 };

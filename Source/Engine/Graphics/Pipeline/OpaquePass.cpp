@@ -81,7 +81,7 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
         // 透明判定はバッチ単位（シェーダー単位）で決まるので、GPU 状態を触る前に済ませる。
         //   半透明バッチは TransparentPass へ転送するだけで 1 ドローも出さない。
         //   Begin / PSO 適用 / End はそのぶん丸ごと無駄になっていた。
-        const PipelineState *batchPso         = shader->GetPSO();
+        const PipelineState *batchPso           = shader->GetPSO();
         const bool           batchIsTransparent = batchPso && batchPso->IsBlendEnabled();
 
         const BatchRange batch = ConsumeBatch(sortKeys, cursor);

@@ -1,8 +1,9 @@
 #pragma once
 #include <Windows.h>
 
-class Keyboard {
-  public:
+class Keyboard
+{
+public:
     Keyboard()  = default;
     ~Keyboard() = default;
 
@@ -18,7 +19,7 @@ class Keyboard {
     // キーが離された瞬間か
     bool IsReleased(int key) const;
 
-  private:
+private:
     // 現在のフレームのキー状態 (0: 押されていない, 1: 押されている)
     BYTE currentState[256] = {0};
 

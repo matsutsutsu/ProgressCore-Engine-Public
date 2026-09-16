@@ -20,16 +20,16 @@ public:
     void SetBufferSink(std::shared_ptr<ImGuiBufferSink> sink) { m_bufferSink = std::move(sink); }
 
 protected:
-    void DrawContents(EditorContext& context) override;
+    void DrawContents(EditorContext &context) override;
 
 private:
     std::shared_ptr<ImGuiBufferSink> m_bufferSink;
 
     // レベルフィルタ
-    bool m_showInfo = true;
+    bool m_showInfo    = true;
     bool m_showSuccess = true;
     bool m_showWarning = true;
-    bool m_showError = true;
+    bool m_showError   = true;
 
     bool m_autoScroll = true;
 

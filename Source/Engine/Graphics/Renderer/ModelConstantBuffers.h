@@ -35,37 +35,38 @@ public:
      * @brief スケルトン定数バッファを生成する。
      * @note  パイプラインは別途 Graphics::SetupRenderPipeline() で構築する。
      */
-    explicit ModelConstantBuffers(ID3D11Device* device);
+    explicit ModelConstantBuffers(ID3D11Device *device);
     ~ModelConstantBuffers() = default;
 
-    ModelConstantBuffers(const ModelConstantBuffers&) = delete;
-    ModelConstantBuffers& operator=(const ModelConstantBuffers&) = delete;
+    ModelConstantBuffers(const ModelConstantBuffers &)            = delete;
+    ModelConstantBuffers &operator=(const ModelConstantBuffers &) = delete;
 
     /**
      * @brief CbScene バッファポインタをキャッシュする（Graphics から 1 回だけ呼ぶ）。
      * @details Graphics が所有する buffer を非所有ポインタとして保持する。
      */
-    void SetSceneConstantBuffer(ID3D11Buffer* sceneCB) noexcept { m_sceneCB = sceneCB; }
+    void SetSceneConstantBuffer(ID3D11Buffer *sceneCB) noexcept { m_sceneCB = sceneCB; }
 
     /**
      * @brief CbScene・CbSkeleton を VS/PS の全スロットにバインドする。
      * @details EnvironmentSystem::BindGlobalResources() から呼ばれる。
      */
-    void BindAllGlobalConstantBuffers(ID3D11DeviceContext* dc);
+    void BindAllGlobalConstantBuffers(ID3D11DeviceContext *dc);
 
     /**
      * @brief メッシュのボーン行列を GPU へ転送し、VS スロット SLOT_CB_SKELETON にバインドする。
      * @param mesh スキンドメッシュ（bones が空でも安全）。
      */
-    void UpdateSkeletonConstants(ID3D11DeviceContext* dc, const Model::Mesh& mesh);
+    void UpdateSkeletonConstants(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbSkeletonBuffer; // CbSkeleton (b12)
 
     // CbScene (b8) への非所有ポインタ。Graphics が所有し SetSceneConstantBuffer で受け取る。
-    ID3D11Buffer* m_sceneCB = nullptr;
+    ID3D11Buffer *m_sceneCB = nullptr;
 
-    struct CbSkeleton {
+    struct CbSkeleton
+    {
         DirectX::XMFLOAT4X4 boneTransforms[MAX_BONES];
     };
     CbSkeleton m_cbSkeletonCache = {};

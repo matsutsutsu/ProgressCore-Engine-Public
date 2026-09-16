@@ -46,8 +46,7 @@ namespace
 
     // 地面の帯は輪郭の線より少しだけ下へ置く。同じ高さだとちらつく。
     constexpr float kFillDrop = 0.02f;
-}
-
+} // namespace
 
 void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &center,
                                        float rInner, float rOuter, const XMFLOAT4 &color) const
@@ -78,7 +77,6 @@ void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &
     }
 }
 
-
 void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOAT3 &footCenter) const
 {
     const XMFLOAT3 ground(footCenter.x, footCenter.y - kFillDrop, footCenter.z);
@@ -89,11 +87,11 @@ void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOA
         const RangeRing &ring = m_rings[i];
 
         // 帯の色は外側の境界線に合わせる。線と塗りで意味が食い違わないようにするため。
-        const bool isInside  = (ring.kinds & kInside)  != 0;
-        const bool isOutside = (ring.kinds & kOutside) != 0;
-        const XMFLOAT4 &base = (isInside && isOutside) ? kColBoth
-                             : isInside                ? kColInside
-                                                       : kColOutside;
+        const bool      isInside  = (ring.kinds & kInside) != 0;
+        const bool      isOutside = (ring.kinds & kOutside) != 0;
+        const XMFLOAT4 &base      = (isInside && isOutside) ? kColBoth
+                                    : isInside              ? kColInside
+                                                            : kColOutside;
 
         // 外側の帯ほど薄くする。手前ほど濃いので「近いほど危ない」がそのまま形に出る。
         const float t     = static_cast<float>(i) / static_cast<float>(m_rings.size());
@@ -103,7 +101,6 @@ void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOA
         inner = ring.radius;
     }
 }
-
 
 void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 &footCenter,
                                         float radius, const XMFLOAT4 &color) const
@@ -134,7 +131,6 @@ void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 
     }
 }
 
-
 void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3 &footCenter,
                                          float radius, const XMFLOAT4 &color) const
 {
@@ -152,14 +148,12 @@ void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3
     if (m_wallAlpha > 0.001f) DrawRingWall(renderer, footCenter, radius, color);
 }
 
-
 std::vector<CCL::ECS::TypeID> AIDebugSpatialSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
     types.push_back(CCL::ECS::TypeInfo<BehaviorTreeComponent>::ID());
     return types;
 }
-
 
 void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
 {
@@ -169,13 +163,13 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
     for (const BTNode &node : asset.nodes)
     {
         if (node.type != BTNodeType::Condition) continue;
-        if (node.param <= 0.0f) continue;   // 未設定のノードは線にしない
+        if (node.param <= 0.0f) continue; // 未設定のノードは線にしない
 
         // ステージ端だけは中心がボスではなくワールド原点。同じ「距離を持つ条件」でも
         // ボス中心で描くと嘘になるので、集める先から分ける。
         if (node.actionOrConditionId == ::CCL::AI::C_IsAtStageEdge)
         {
-            const int key = RadiusKey(node.param);
+            const int  key   = RadiusKey(node.param);
             const bool known = std::any_of(m_edgeRings.begin(), m_edgeRings.end(),
                                            [key](float r) { return RadiusKey(r) == key; });
             if (!known) m_edgeRings.push_back(node.param);
@@ -183,16 +177,21 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
         }
 
         uint8_t kind = 0;
-        if (node.actionOrConditionId == ::CCL::AI::C_DistanceLessThan)         kind = kInside;
-        else if (node.actionOrConditionId == ::CCL::AI::C_DistanceGreaterThan) kind = kOutside;
-        else continue;
+        if (node.actionOrConditionId == ::CCL::AI::C_DistanceLessThan)
+            kind = kInside;
+        else if (node.actionOrConditionId == ::CCL::AI::C_DistanceGreaterThan)
+            kind = kOutside;
+        else
+            continue;
 
         // 同じ半径は1本にまとめ、どちら向きに使われているかだけを足していく。
         const int key   = RadiusKey(node.param);
         auto      found = std::find_if(m_rings.begin(), m_rings.end(),
                                        [key](const RangeRing &r) { return RadiusKey(r.radius) == key; });
-        if (found != m_rings.end()) found->kinds |= kind;
-        else                        m_rings.push_back({node.param, kind});
+        if (found != m_rings.end())
+            found->kinds |= kind;
+        else
+            m_rings.push_back({node.param, kind});
     }
 
     // 内側から順に並べる。GUIの一覧を間合いの順に読めるようにするため。
@@ -200,7 +199,6 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
               [](const RangeRing &a, const RangeRing &b) { return a.radius < b.radius; });
     std::sort(m_edgeRings.begin(), m_edgeRings.end());
 }
-
 
 void AIDebugSpatialSystem::Update(float /*dt*/)
 {
@@ -217,30 +215,35 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
-        playerPos = XMFLOAT3(battle.playerPos.x, battle.playerPos.y, battle.playerPos.z);
-        hasPlayer = battle.HasPlayer();
+        playerPos          = XMFLOAT3(battle.playerPos.x, battle.playerPos.y, battle.playerPos.z);
+        hasPlayer          = battle.HasPlayer();
     }
 
-    ForEachWithID([&](EntityID entity,
+    ForEachWithID([&](EntityID                  entity,
                       const TransformComponent &trans,
                       const BossActionComponent & /*boss*/) {
         // 地面から浮かせて Z ファイティングを避ける。埋もれるときは GUI で上げる。
         const XMFLOAT3 center(trans.position.x, trans.position.y + m_heightOffset, trans.position.z);
 
         const auto *bt = m_world->GetComponent<BehaviorTreeComponent>(entity);
-        if (bt && bt->sharedAsset) CollectRings(*bt->sharedAsset);
-        else                       { m_rings.clear(); m_edgeRings.clear(); }
+        if (bt && bt->sharedAsset)
+            CollectRings(*bt->sharedAsset);
+        else
+        {
+            m_rings.clear();
+            m_edgeRings.clear();
+        }
 
         // 塗りを先に置いてから線を重ねる。輪郭が帯に食われないようにするため。
         if (m_groundFill) DrawGroundBands(renderer, center);
 
         for (const RangeRing &ring : m_rings)
         {
-            const bool inside  = (ring.kinds & kInside)  != 0;
-            const bool outside = (ring.kinds & kOutside) != 0;
-            const XMFLOAT4 &col = (inside && outside) ? kColBoth
-                                : inside              ? kColInside
-                                                      : kColOutside;
+            const bool      inside  = (ring.kinds & kInside) != 0;
+            const bool      outside = (ring.kinds & kOutside) != 0;
+            const XMFLOAT4 &col     = (inside && outside) ? kColBoth
+                                      : inside            ? kColInside
+                                                          : kColOutside;
             DrawRangeRing(renderer, center, ring.radius, col);
         }
 
@@ -271,7 +274,6 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
     });
 }
 
-
 void AIDebugSpatialSystem::OnGui()
 {
     // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す。
@@ -297,15 +299,15 @@ void AIDebugSpatialSystem::OnGui()
     // 何mの線がどの向きの条件なのかを並べる。色だけでは戦闘中に読み切れない。
     for (const RangeRing &ring : m_rings)
     {
-        const bool inside  = (ring.kinds & kInside)  != 0;
+        const bool inside  = (ring.kinds & kInside) != 0;
         const bool outside = (ring.kinds & kOutside) != 0;
 
         ImVec4 col = (inside && outside) ? ImVec4(0.45f, 1.0f, 0.55f, 1.0f)
-                   : inside              ? ImVec4(1.0f, 0.35f, 0.20f, 1.0f)
+                     : inside            ? ImVec4(1.0f, 0.35f, 0.20f, 1.0f)
                                          : ImVec4(0.20f, 0.70f, 1.0f, 1.0f);
 
         const char *label = (inside && outside) ? "内側 / 外側（間合いの境目）"
-                          : inside              ? "内側で成立 (<)"
+                            : inside            ? "内側で成立 (<)"
                                                 : "外側で成立 (>)";
 
         ImGui::TextColored(col, "%6.1f m  %s", ring.radius, label);
@@ -315,7 +317,6 @@ void AIDebugSpatialSystem::OnGui()
         ImGui::TextColored(ImVec4(0.80f, 0.55f, 1.0f, 1.0f),
                            "%6.1f m  ステージ端（原点中心）", radius);
 }
-
 
 // NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。
 //

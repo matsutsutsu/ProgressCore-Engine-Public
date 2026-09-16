@@ -25,8 +25,8 @@
 // Particle アニメイベント区間で GPUParticleComponent::emitting を駆動するシステム。
 class ParticleAnimationSyncSystem
     : public CCL::ECS::IfSystem<ParticleAnimationSyncSystem,
-          CCL::ECS::Read<TransformComponent>,
-          CCL::ECS::Write<GPUParticleComponent>>
+                                CCL::ECS::Read<TransformComponent>,
+                                CCL::ECS::Write<GPUParticleComponent>>
 {
 public:
     ParticleAnimationSyncSystem() : IfSystem("ParticleAnimationSyncSystem") {}

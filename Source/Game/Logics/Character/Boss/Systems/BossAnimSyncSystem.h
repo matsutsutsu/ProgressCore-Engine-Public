@@ -16,7 +16,7 @@ class BossAnimSyncSystem : public CCL::ECS::IfSystem<
                                CCL::ECS::Read<BossActionComponent>,
                                CCL::ECS::Write<AnimParametersComponent>>
 {
-  public:
+public:
     BossAnimSyncSystem()
         : IfSystem("BossAnimSyncSystem")
     {

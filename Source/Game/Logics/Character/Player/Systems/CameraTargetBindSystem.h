@@ -24,9 +24,9 @@
 
 class CameraTargetBindSystem
     : public CCL::ECS::IfSystem<CameraTargetBindSystem,
-          CCL::ECS::Read<VirtualCamera>>
+                                CCL::ECS::Read<VirtualCamera>>
 {
-  public:
+public:
     CameraTargetBindSystem()
         : IfSystem("CameraTargetBindSystem")
     {
@@ -35,7 +35,7 @@ class CameraTargetBindSystem
 
     void Update(float dt) override;
 
-  private:
+private:
     // PlayerComponent を持つ最初のエンティティ(=プレイヤー)を役割で探す。
     CCL::ECS::EntityID FindPlayer();
 

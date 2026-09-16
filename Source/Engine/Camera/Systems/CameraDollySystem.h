@@ -16,7 +16,7 @@ class CameraDollySystem : public CCL::ECS::IfSystem<
                               CCL::ECS::Write<CameraDollyCartComponent>,
                               CCL::ECS::Read<TimeStateComponent>> // 時間管理厳守: TimeScaleを読む
 {
-  public:
+public:
     CameraDollySystem()
         : IfSystem("CameraDollySystem")
     {
@@ -52,7 +52,7 @@ class CameraDollySystem : public CCL::ECS::IfSystem<
     // ループ軌道用に距離を [0, totalLength) へ巻き戻す。
     static float WrapDistance(float dist, float totalLength);
 
-  private:
+private:
     // --- リソース ---------------------------------------------------------
     // pathAsset の JSON を読み込み、LUT まで構築する。失敗時は hasLoadError を立てる。
     //

@@ -27,41 +27,47 @@ static const char *DroneStateNames[] = {
 // =======================================================================
 // 1. BehaviorTreeComponent
 // =======================================================================
-template <> struct ComponentMeta<BehaviorTreeComponent> {
+template <>
+struct ComponentMeta<BehaviorTreeComponent>
+{
     CCL_META_USING_THIS(BehaviorTreeComponent)
 
-    static constexpr const char *displayName    = "Behavior Tree";
-    static constexpr const char *category       = CCL::Categories::AI;
-    static constexpr int         sortPriority   = 150;
+    static constexpr const char *displayName       = "Behavior Tree";
+    static constexpr const char *category          = CCL::Categories::AI;
+    static constexpr int         sortPriority      = 150;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr) {
+    static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    {
         bool changed = false;
 
         ImGui::TextDisabled("BTファイル: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
 
-        if (ImGui::Button("ビヘイビアツリーを読込... (JSON)", ImVec2(-1, 0))) {
-            if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow())) {
+        if (ImGui::Button("ビヘイビアツリーを読込... (JSON)", ImVec2(-1, 0)))
+        {
+            if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow()))
+            {
                 comp.assetPath = FileDialog::ConvertToRelativePath(*pathOpt);
 
                 // その場で1回取りに行く（BehaviorTreeSystem も次のフレームに同じことをするが、
                 // ゲームを止めて編集しているときにノード数が出ないと不便なため）。
                 comp.sharedAsset     = BTAssetCache::Instance().GetOrLoad(comp.assetPath);
                 comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
-                changed = true;
+                changed              = true;
             }
         }
 
         ImGui::Separator();
         // キャッシュを捨てて読み直す。同じ木を使っている他のエンティティも、
         // 次のフレームの BehaviorTreeSystem::SyncAssets で新しい木を受け取り直す。
-        if (ImGui::Button("AI再読込")) {
+        if (ImGui::Button("AI再読込"))
+        {
             comp.sharedAsset     = BTAssetCache::Instance().Reload(comp.assetPath);
             comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
-            changed = true;
+            changed              = true;
         }
         ImGui::SameLine();
         ImGui::TextDisabled("(読込済みの木: %zu 本)", BTAssetCache::Instance().Count());
@@ -77,7 +83,8 @@ template <> struct ComponentMeta<BehaviorTreeComponent> {
     static bool CustomGui(BehaviorTreeComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor> &Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         // 第2形態のパスとHP閾値は BossPhaseComponent へ移動済み
         // （どの敵でも持つ汎用データではないため）。
         static const std::vector<FieldDescriptor> fields = {
@@ -91,17 +98,20 @@ REGISTER_COMPONENT_EDITOR_GUI(BehaviorTreeComponent)
 // =======================================================================
 // 2. DroneComponent
 // =======================================================================
-template <> struct ComponentMeta<DroneComponent> {
+template <>
+struct ComponentMeta<DroneComponent>
+{
     CCL_META_USING_THIS(DroneComponent)
 
-    static constexpr const char *displayName    = "Drone";
-    static constexpr const char *category       = CCL::Categories::AI;
-    static constexpr int         sortPriority   = 170;
+    static constexpr const char *displayName       = "Drone";
+    static constexpr const char *category          = CCL::Categories::AI;
+    static constexpr int         sortPriority      = 170;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = true;
 
-    static const std::vector<FieldDescriptor> &Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
             // 保存するのは「所属」と「個体パラメータ」だけ。
             //   下の _RT 群は書き手がシステムなので保存しない（CFIELD_RT の説明を参照）。
@@ -109,16 +119,16 @@ template <> struct ComponentMeta<DroneComponent> {
             //   localIndex / totalDrones はその中の ReindexAllDrones が振り直す。
             //   シーンに手置きされたドローンは存在しないので、保存しなくても復元できる。
             CFIELD(ownerBossId, "親ボスID", "Hierarchy")
-            CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
-            CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")
+                CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
+                    CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")
 
-            CFIELD_RT(localIndex, "ローカルインデックス", "Formation")
-            CFIELD_RT(totalDrones, "総ドローン数", "Formation")
-            CFIELD_ENUM_U8_RT(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
-            CFIELD_ENUM_U8_RT(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
-            CFIELD_RT(hasReachedSlot, "スロット到着済み", "State")
-            CFIELD_RT(stateTimer, "状態タイマー", "State")
-            CFIELD_FLOAT3_RT(targetPosition, "目標座標", 0.1f, "State")};
+                        CFIELD_RT(localIndex, "ローカルインデックス", "Formation")
+                            CFIELD_RT(totalDrones, "総ドローン数", "Formation")
+                                CFIELD_ENUM_U8_RT(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
+                                    CFIELD_ENUM_U8_RT(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
+                                        CFIELD_RT(hasReachedSlot, "スロット到着済み", "State")
+                                            CFIELD_RT(stateTimer, "状態タイマー", "State")
+                                                CFIELD_FLOAT3_RT(targetPosition, "目標座標", 0.1f, "State")};
         return fields;
     }
 };

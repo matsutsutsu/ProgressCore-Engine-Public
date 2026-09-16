@@ -13,9 +13,9 @@
 
 namespace
 {
-// 進捗バーが目標値へ追いつく速さ。大きいほどキビキビ動くが、
-// 速すぎると読み込みが一瞬で終わったように見えて不安を与える。
-constexpr float kProgressDamping = 8.0f;
+    // 進捗バーが目標値へ追いつく速さ。大きいほどキビキビ動くが、
+    // 速すぎると読み込みが一瞬で終わったように見えて不安を与える。
+    constexpr float kProgressDamping = 8.0f;
 } // namespace
 
 SceneLoading::SceneLoading(Scene *nextScene) : m_nextScene(nextScene) {}
@@ -38,7 +38,7 @@ void SceneLoading::Initialize()
 
     if (m_nextScene)
     {
-        Scene            *target   = m_nextScene;
+        Scene             *target   = m_nextScene;
         std::atomic<bool> *finished = &m_isFinished;
 
         // 自作の汎用 JobSystem を「フレーム並列」だけでなく
@@ -142,10 +142,10 @@ void SceneLoading::OnRenderUI()
 
     // 背景（少し大きめの暗い矩形＝枠代わり）
     m_white->Render(dc, barX - 2.0f, barY - 2.0f, 0.0f, barW + 4.0f, barH + 4.0f, 0.0f,
-        0.08f, 0.08f, 0.10f, 0.85f);
+                    0.08f, 0.08f, 0.10f, 0.85f);
     // フィル（進捗ぶんだけ幅を掛ける）
     m_white->Render(dc, barX, barY, 0.0f, barW * m_progress, barH, 0.0f,
-        0.20f, 0.65f, 1.0f, 1.0f);
+                    0.20f, 0.65f, 1.0f, 1.0f);
 
     // ================= テキスト =================
     if (m_text->IsReady())
@@ -155,15 +155,16 @@ void SceneLoading::OnRenderUI()
         // "NOW LOADING" ＋ time に応じて 0..3 個のドットを点滅（左寄せ）
         const int   dots = static_cast<int>(time * 2.0f) % 4;
         std::string msg  = "NOW LOADING";
-        for (int i = 0; i < dots; ++i) msg += ".";
+        for (int i = 0; i < dots; ++i)
+            msg += ".";
         m_text->DrawText(dc, msg, barX, barY - px - 10.0f, px,
-            DirectX::XMFLOAT4{1.0f, 1.0f, 1.0f, 1.0f});
+                         DirectX::XMFLOAT4{1.0f, 1.0f, 1.0f, 1.0f});
 
         // パーセンテージ（バー右端に右寄せ）
         std::string pct = std::to_string(static_cast<int>(m_progress * 100.0f)) + "%";
         const float pw  = m_text->MeasureWidth("100%", px); // 右端固定で桁揺れを防ぐ
         m_text->DrawText(dc, pct, barX + barW - pw, barY - px - 10.0f, px,
-            DirectX::XMFLOAT4{0.7f, 0.85f, 1.0f, 1.0f});
+                         DirectX::XMFLOAT4{0.7f, 0.85f, 1.0f, 1.0f});
     }
 }
 

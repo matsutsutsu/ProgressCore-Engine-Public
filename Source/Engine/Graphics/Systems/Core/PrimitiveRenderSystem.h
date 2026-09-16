@@ -5,10 +5,11 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 
 class PrimitiveRenderSystem : public CCL::ECS::IfSystem<PrimitiveRenderSystem,
-                                  CCL::ECS::Read<TransformComponent>,
-                                  CCL::ECS::Read<PrimitiveComponent>,
-                                  CCL::ECS::Read<VisibilityComponent>> { 
-  public:
+                                                        CCL::ECS::Read<TransformComponent>,
+                                                        CCL::ECS::Read<PrimitiveComponent>,
+                                                        CCL::ECS::Read<VisibilityComponent>>
+{
+public:
     PrimitiveRenderSystem();
     virtual ~PrimitiveRenderSystem() = default;
 

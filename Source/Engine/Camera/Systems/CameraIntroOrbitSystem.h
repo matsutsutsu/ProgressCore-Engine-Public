@@ -21,7 +21,7 @@ class CameraIntroOrbitSystem : public CCL::ECS::IfSystem<
                                    CCL::ECS::Write<CameraBodyIntroOrbit>,
                                    CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     CameraIntroOrbitSystem()
         : IfSystem("CameraIntroOrbitSystem")
     {
@@ -31,7 +31,7 @@ class CameraIntroOrbitSystem : public CCL::ECS::IfSystem<
     void Initialize() override;
     void Update(float dt) override;
 
-  private:
+private:
     // 0..1 の進行度へカーブを適用する。
     static float ApplyEase(float t, CameraEaseMode mode);
 
@@ -42,7 +42,7 @@ class CameraIntroOrbitSystem : public CCL::ECS::IfSystem<
 
     // 進行度に応じたカメラ位置・注視点・画角を vcam と trans へ書き込む。
     void ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
-                   const CameraBodyIntroOrbit &intro,
+                   const CameraBodyIntroOrbit         &intro,
                    const DirectX::SimpleMath::Vector3 &pivot, float eased) const;
 
     // 演出を打ち切って待機状態にする（対象消失などの保険）。

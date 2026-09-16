@@ -10,8 +10,10 @@ void Keyboard::Update()
 
     // 修正点：OSから全キーの状態を「1回の呼び出し」で配列として取得
     BYTE tempState[256];
-    if (GetKeyboardState(tempState)) {
-        for (int i = 0; i < 256; i++) {
+    if (GetKeyboardState(tempState))
+    {
+        for (int i = 0; i < 256; i++)
+        {
             // GetKeyboardStateは最上位ビット(0x80)が立っていれば押下状態
             currentState[i] = (tempState[i] & 0x80) ? 1 : 0;
         }

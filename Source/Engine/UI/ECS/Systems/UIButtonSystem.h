@@ -9,16 +9,15 @@
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 
 class UIButtonSystem : public CCL::ECS::IfSystem<UIButtonSystem,
-                           CCL::ECS::Read<UIInteractableComponent>,
-                           CCL::ECS::Read<UIButtonComponent>,
-                           CCL::ECS::Write<UIImageComponent>>
+                                                 CCL::ECS::Read<UIInteractableComponent>,
+                                                 CCL::ECS::Read<UIButtonComponent>,
+                                                 CCL::ECS::Write<UIImageComponent>>
 {
-  public:
+public:
     UIButtonSystem()
         : IfSystem("UIButtonSystem")
     {
     }
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // UIInput が更新した UIInteractableComponent の状態を読んで見た目を切り替える。

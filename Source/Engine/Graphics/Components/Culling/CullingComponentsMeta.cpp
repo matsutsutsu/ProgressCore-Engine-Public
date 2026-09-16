@@ -14,29 +14,31 @@
 #endif
 
 // ===========================================================================
-// BoundingBoxComponent 
+// BoundingBoxComponent
 // ===========================================================================
-template <> struct ComponentMeta<BoundingBoxComponent> {
+template <>
+struct ComponentMeta<BoundingBoxComponent>
+{
     CCL_META_USING_THIS(BoundingBoxComponent)
 
-    static constexpr const char* displayName    = "Bounding Box";
-    static constexpr const char* category       = CCL::Categories::Internal; // 内部ステートとして隔離
-    static constexpr int         sortPriority   = 900; // インスペクタの最下層へ
+    static constexpr const char *displayName       = "Bounding Box";
+    static constexpr const char *category          = CCL::Categories::Internal; // 内部ステートとして隔離
+    static constexpr int         sortPriority      = 900;                       // インスペクタの最下層へ
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false; 
-    static constexpr bool        isSerializable = false; 
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = false;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(BoundingBoxComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(BoundingBoxComponent &, unsigned long long, void *) { return false; }
 #else
-    static bool CustomGui(BoundingBoxComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(BoundingBoxComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT3_FAST(worldAABB.Center, "中心", 0.1f, "カリング")
-            CFIELD_FLOAT3_FAST(worldAABB.Extents, "範囲(半径)", 0.1f, "カリング")
-        };
+                CFIELD_FLOAT3_FAST(worldAABB.Extents, "範囲(半径)", 0.1f, "カリング")};
         return fields;
     }
 };
@@ -44,28 +46,30 @@ REGISTER_COMPONENT(BoundingBoxComponent, "Bounding Box")
 REGISTER_COMPONENT_EDITOR_GUI(BoundingBoxComponent)
 
 // ===========================================================================
-// VisibilityComponent 
+// VisibilityComponent
 // ===========================================================================
-template <> struct ComponentMeta<VisibilityComponent> {
+template <>
+struct ComponentMeta<VisibilityComponent>
+{
     CCL_META_USING_THIS(VisibilityComponent)
 
-    static constexpr const char* displayName    = "Visibility";
-    static constexpr const char* category       = CCL::Categories::Internal;
-    static constexpr int         sortPriority   = 910;
+    static constexpr const char *displayName       = "Visibility";
+    static constexpr const char *category          = CCL::Categories::Internal;
+    static constexpr int         sortPriority      = 910;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false; 
-    static constexpr bool        isSerializable = false; 
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = false;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(VisibilityComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(VisibilityComponent &, unsigned long long, void *) { return false; }
 #else
-    static bool CustomGui(VisibilityComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(VisibilityComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(isVisible, "表示中", "カリング")
-        };
+            CFIELD(isVisible, "表示中", "カリング")};
         return fields;
     }
 };
@@ -78,19 +82,22 @@ REGISTER_COMPONENT_EDITOR_GUI(VisibilityComponent)
 //   ためフィールドは持たない。見えない壁/床に使う。
 //   作者が付ける設定データなので isSerializable = true（シーン/プレハブに保存）。
 // ===========================================================================
-template <> struct ComponentMeta<NoRenderTag> {
+template <>
+struct ComponentMeta<NoRenderTag>
+{
     CCL_META_USING_THIS(NoRenderTag)
 
-    static constexpr const char* displayName    = "No Render (Collider Only)";
-    static constexpr const char* category       = CCL::Categories::Rendering;
-    static constexpr int         sortPriority   = 920;
+    static constexpr const char *displayName       = "No Render (Collider Only)";
+    static constexpr const char *category          = CCL::Categories::Rendering;
+    static constexpr int         sortPriority      = 920;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false;
-    static constexpr bool        isSerializable = true; // 保存する（次回ロードでも透明のまま）
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = true; // 保存する（次回ロードでも透明のまま）
 
-    static bool CustomGui(NoRenderTag&, unsigned long long, void*) { return false; }
+    static bool CustomGui(NoRenderTag &, unsigned long long, void *) { return false; }
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         // フィールド無し（タグの有無だけが意味を持つ）
         static const std::vector<FieldDescriptor> fields = {};
         return fields;
@@ -106,19 +113,22 @@ REGISTER_COMPONENT_EDITOR_GUI(NoRenderTag)
 //   （ドローン等）に付けると描画負荷が大きく下がる。
 //   絵の判断なので作者が付ける設定データ。isSerializable = true。
 // ===========================================================================
-template <> struct ComponentMeta<NoShadowTag> {
+template <>
+struct ComponentMeta<NoShadowTag>
+{
     CCL_META_USING_THIS(NoShadowTag)
 
-    static constexpr const char* displayName    = "No Shadow";
-    static constexpr const char* category       = CCL::Categories::Rendering;
-    static constexpr int         sortPriority   = 921;
+    static constexpr const char *displayName       = "No Shadow";
+    static constexpr const char *category          = CCL::Categories::Rendering;
+    static constexpr int         sortPriority      = 921;
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = false;
-    static constexpr bool        isSerializable = true; // 保存する（次回ロードでも影なしのまま）
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = true; // 保存する（次回ロードでも影なしのまま）
 
-    static bool CustomGui(NoShadowTag&, unsigned long long, void*) { return false; }
+    static bool CustomGui(NoShadowTag &, unsigned long long, void *) { return false; }
 
-    static const std::vector<FieldDescriptor>& Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         // フィールド無し（タグの有無だけが意味を持つ）
         static const std::vector<FieldDescriptor> fields = {};
         return fields;

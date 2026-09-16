@@ -14,7 +14,9 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-template <> struct ComponentMeta<BossCommandComponent> {
+template <>
+struct ComponentMeta<BossCommandComponent>
+{
     CCL_META_USING_THIS(BossCommandComponent)
 
     static constexpr const char *displayName       = "Boss Command (AI Output)";
@@ -24,7 +26,8 @@ template <> struct ComponentMeta<BossCommandComponent> {
     static constexpr bool        hasCustomGui      = false;
     static constexpr bool        isSerializable    = true;
 
-    static const std::vector<FieldDescriptor> &Fields() {
+    static const std::vector<FieldDescriptor> &Fields()
+    {
         static const std::vector<FieldDescriptor> fields = {
             // このコンポーネントは「AIが今フレーム何をやってほしいか」の伝票で、
             // 全フィールドが毎フレーム上書きされる実行時の値。保存してはいけない。
@@ -32,8 +35,7 @@ template <> struct ComponentMeta<BossCommandComponent> {
             //   requestFormation=5 が焼き付いており、ボスが「薙ぎ払いの最中」として
             //   生まれてきていた。インスペクタでは見たいので、保存だけ止める。
             CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
-            CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")
-        };
+                CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};
         return fields;
     }
 };

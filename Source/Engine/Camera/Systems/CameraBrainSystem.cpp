@@ -25,7 +25,8 @@ const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &ou
         // 最高優先度になった瞬間、メインカメラが原点にスナップする。
         if (!vCam.isValid) return;
 
-        if (highestVCam == nullptr) {
+        if (highestVCam == nullptr)
+        {
             maxPriority  = vCam.priority;
             highestCamID = id;
             highestVCam  = &vCam;
@@ -38,7 +39,8 @@ const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &ou
         //   再現しない不具合になる。EntityID で決定的に決める（後勝ち）。
         const bool wins = (vCam.priority > maxPriority) ||
                           (vCam.priority == maxPriority && id > highestCamID);
-        if (wins) {
+        if (wins)
+        {
             maxPriority  = vCam.priority;
             highestCamID = id;
             highestVCam  = &vCam;
@@ -67,13 +69,16 @@ void CameraBrainSystem::Update(float dt)
     // -------------------------------------------------------
     // 2. カメラ切り替え検知 & ブレンド開始
     // -------------------------------------------------------
-    if (highestCamID != m_currentCamID) {
+    if (highestCamID != m_currentCamID)
+    {
         // 初回起動時なら即切り替え
-        if (m_currentCamID == InvalidEntityID) {
+        if (m_currentCamID == InvalidEntityID)
+        {
             m_currentCamID = highestCamID;
             m_blendTimer   = highestVCam->blendTime + 1.0f; // スキップ
         }
-        else {
+        else
+        {
             // 遷移開始
             m_prevCamID    = m_currentCamID;
             m_currentCamID = highestCamID;
@@ -106,7 +111,8 @@ void CameraBrainSystem::Update(float dt)
     // ここで「ブレンド中か」を判定してから割り算する。
     bool isBlending = (m_blendDuration > 0.0f) && (m_blendTimer < m_blendDuration);
 
-    if (isBlending) {
+    if (isBlending)
+    {
         m_blendTimer += dt;
         // SmoothStep が 0..1 に丸めるので、ここでの上限クランプは不要。
         const float t = CCL::Math::SmoothStep(m_blendTimer / m_blendDuration);
@@ -118,7 +124,8 @@ void CameraBrainSystem::Update(float dt)
 
         // 遷移元がまだ生きていても、無効化されていれば値は信用できない。
         // その場合は前フレームのバックアップから繋ぐ。
-        if (prevVCam && prevVCam->isValid) {
+        if (prevVCam && prevVCam->isValid)
+        {
             srcPos  = XMLoadFloat3(&prevVCam->resultPos);
             srcLook = XMLoadFloat3(&prevVCam->resultLookAt);
             srcUp   = XMLoadFloat3(&prevVCam->resultUp);
@@ -126,7 +133,8 @@ void CameraBrainSystem::Update(float dt)
             srcNear = prevVCam->nearClip;
             srcFar  = prevVCam->farClip;
         }
-        else {
+        else
+        {
             // バックアップを使用
             srcPos  = XMLoadFloat3(&m_lastPos);
             srcLook = XMLoadFloat3(&m_lastLook);
@@ -143,11 +151,13 @@ void CameraBrainSystem::Update(float dt)
         finalNear = srcNear + (targetNear - srcNear) * t;
         finalFar  = srcFar + (targetFar - srcFar) * t;
 
-        if (t >= 1.0f) {
+        if (t >= 1.0f)
+        {
             m_prevCamID = InvalidEntityID;
         }
     }
-    else {
+    else
+    {
         // ブレンドなし
         finalPos  = targetPos;
         finalLook = targetLook;
@@ -168,7 +178,8 @@ void CameraBrainSystem::Update(float dt)
     // 以前は {0,1,0} を直書きしていたので resultUp が完全な死にフィールドだった。
     // 補間の結果ゼロベクトルに縮退した場合だけワールド上向きへフォールバックする。
     finalUp = XMVector3Normalize(finalUp);
-    if (XMVector3Equal(finalUp, XMVectorZero()) || XMVector3IsNaN(finalUp)) {
+    if (XMVector3Equal(finalUp, XMVectorZero()) || XMVector3IsNaN(finalUp))
+    {
         finalUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     }
     XMStoreFloat3(&fUp, finalUp);

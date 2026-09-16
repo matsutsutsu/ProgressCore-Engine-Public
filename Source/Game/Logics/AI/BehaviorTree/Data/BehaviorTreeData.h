@@ -18,34 +18,38 @@
 
 using BTNodeID = uint16_t; // ノードのインデックス（配列の添字）
 using ActionID = uint16_t; // 行動・条件の種類を判別するID
-using AssetID = uint32_t;  // BTAsset の種類を判別するID
+using AssetID  = uint32_t; // BTAsset の種類を判別するID
 
 // デバッグ用のノード状態（実行時の可視化専用）。
-enum class BTDebugState : uint8_t {
+enum class BTDebugState : uint8_t
+{
     None = 0,
     Success,
     Failure,
     Running
 };
 
-enum class BTDecoratorType : uint8_t {
+enum class BTDecoratorType : uint8_t
+{
     Inverter = 0, // 結果を反転 (Success <-> Failure)
     Cooldown = 1, // クールダウン (指定秒数経過するまでFailure)
     Retry    = 2, // 失敗しても指定回数リトライする
     Async    = 3  // 非同期実行（筋肉を待たずに即Successを返す）
 };
 
-enum class BTNodeType : uint8_t {
-    Selector,       // 順に評価し、最初に成功した子の結果を返す
-    Sequence,       // 順に評価し、最初に失敗した子の結果を返す
-    Condition,      // 条件を評価して成功/失敗を返す
-    Action,         // 行動を実行して成功/失敗/実行中を返す
-    Decorator,      // 子の結果を修飾する
-    RandomSelector  // ランダムな順で評価し、最初に成功した子の結果を返す
+enum class BTNodeType : uint8_t
+{
+    Selector,      // 順に評価し、最初に成功した子の結果を返す
+    Sequence,      // 順に評価し、最初に失敗した子の結果を返す
+    Condition,     // 条件を評価して成功/失敗を返す
+    Action,        // 行動を実行して成功/失敗/実行中を返す
+    Decorator,     // 子の結果を修飾する
+    RandomSelector // ランダムな順で評価し、最初に成功した子の結果を返す
 };
 
 // ノードの評価結果。Running は Action だけが返しうる（次フレームも同じノードを評価する）。
-enum class BTNodeState : uint8_t {
+enum class BTNodeState : uint8_t
+{
     Success,
     Failure,
     Running
@@ -56,10 +60,11 @@ enum class BTNodeState : uint8_t {
 inline constexpr int kMaxRandomSelectorChildren = 16;
 
 // 1つのノード定義。既定値は、読み込み側が代入を1つ忘れても不定値を読まないために書く。
-struct BTNode {
-	BTNodeType type = BTNodeType::Action;
+struct BTNode
+{
+    BTNodeType type = BTNodeType::Action;
 
-    ActionID   actionOrConditionId = 0;
+    ActionID actionOrConditionId = 0;
 
     // Decorator のときだけ意味を持つ修飾の種類。
     BTDecoratorType decoratorType = BTDecoratorType::Inverter;
@@ -79,7 +84,8 @@ struct BTNode {
 // 並列で走るので、同じ float への同時書き込みにもなる。
 // 状態は個体側（BehaviorTreeComponent）が、ノードIDをそのまま添字にした配列で持つ。
 // BTAssetCache が const で配ることで、「書けない」ことを型で守っている。
-struct BTAsset {
-    AssetID id;
+struct BTAsset
+{
+    AssetID             id;
     std::vector<BTNode> nodes;
 };

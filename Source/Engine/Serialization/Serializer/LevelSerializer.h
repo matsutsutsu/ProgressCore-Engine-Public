@@ -14,12 +14,13 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include <string>
 
-class LevelSerializer {
+class LevelSerializer
+{
 public:
     // level ファイルと、その隣に <stem>.scene.json を書き出す。失敗時 false。
-    static bool SaveLevel(CCL::ECS::World* world, const std::string& levelPath);
+    static bool SaveLevel(CCL::ECS::World *world, const std::string &levelPath);
 
     // level を読み、参照シーンをロード(ワールド全消去→復元)後、
     // プレハブ実体を再生成して配置する。失敗時 false。
-    static bool LoadLevel(CCL::ECS::World* world, const std::string& levelPath);
+    static bool LoadLevel(CCL::ECS::World *world, const std::string &levelPath);
 };

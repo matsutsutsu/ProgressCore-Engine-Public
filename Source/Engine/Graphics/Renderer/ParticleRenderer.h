@@ -8,17 +8,18 @@
 #include "Engine/Graphics/RHI/PipelineState.h"
 
 // 描画に必要な情報の「引換券（コマンド）」
-struct ParticleDrawCommand {
+struct ParticleDrawCommand
+{
     ParticleBufferHandle computeBuffer;
     TextureHandle        texture;
-    int                  maxCount;    
-    int                  renderMode;  // 0:加算 1:半透明
+    int                  maxCount;
+    int                  renderMode; // 0:加算 1:半透明
 };
 
-
 // パーティクルの描画を専任で行うクラス
-class ParticleRenderer {
-  public:
+class ParticleRenderer
+{
+public:
     ParticleRenderer()  = default;
     ~ParticleRenderer() = default;
 
@@ -33,9 +34,9 @@ class ParticleRenderer {
     // =========================================================
     // 最新のコンテキスト分離（Services / FrameCtx）に対応
     // =========================================================
-    void Render(const RenderServices& services, const RenderFrameContext& frameCtx);
+    void Render(const RenderServices &services, const RenderFrameContext &frameCtx);
 
-  private:
+private:
     std::vector<ParticleDrawCommand> m_drawCommands;
 
     // --- 描画用リソース ---

@@ -7,19 +7,22 @@
 // =========================================================
 // 1. 命令書の基本インターフェース
 // =========================================================
-class IEditorCommand {
+class IEditorCommand
+{
 public:
     virtual ~IEditorCommand() = default;
-    virtual void Execute() = 0; // 実行 (Redo)
-    virtual void Undo() = 0;    // 取り消し (Undo)
+    virtual void Execute()    = 0; // 実行 (Redo)
+    virtual void Undo()       = 0; // 取り消し (Undo)
 };
 
 // =========================================================
 // 2. 履歴マネージャー (どこからでも呼べるシングルトン)
 // =========================================================
-class EditorCommandHistory {
+class EditorCommandHistory
+{
 public:
-    static EditorCommandHistory& Instance() {
+    static EditorCommandHistory &Instance()
+    {
         static EditorCommandHistory instance;
         return instance;
     }
@@ -30,7 +33,8 @@ public:
     // 2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる。
     static constexpr size_t kMaxHistory = 128;
 
-    void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd) {
+    void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd)
+    {
         cmd->Execute();
         m_undoStack.push_back(std::move(cmd));
         m_redoStack.clear(); // 新しい操作をしたら未来は消える
@@ -49,7 +53,8 @@ public:
     // 仮に World が生きていたとしても、EntityID の世代は World ごとに 1 から
     // 振り直される（CCL_World.cpp の m_entityGenerations）ため、旧シーンの ID が
     // 新シーンの無関係なエンティティに命中する。どちらの意味でも残してはいけない。
-    void Clear() {
+    void Clear()
+    {
         const size_t dropped = m_undoStack.size() + m_redoStack.size();
         m_undoStack.clear();
         m_redoStack.clear();
@@ -57,8 +62,10 @@ public:
             CCL_LOG_INFO(LogCategory::Editor, "[CommandHistory] 履歴を破棄しました (%zu 件)", dropped);
     }
 
-    void Undo() {
-        if (m_undoStack.empty()) {
+    void Undo()
+    {
+        if (m_undoStack.empty())
+        {
             CCL_LOG_WARN(LogCategory::Editor, "[CommandHistory] Undo failed: Stack is empty.");
             return;
         }
@@ -71,8 +78,10 @@ public:
         CCL_LOG_SUCCESS(LogCategory::Editor, "[CommandHistory] UNDO Performed. Remaining Undo: %zu, Redo: %zu", m_undoStack.size(), m_redoStack.size());
     }
 
-    void Redo() {
-        if (m_redoStack.empty()) {
+    void Redo()
+    {
+        if (m_redoStack.empty())
+        {
             CCL_LOG_WARN(LogCategory::Editor, "[CommandHistory] Redo failed: Stack is empty.");
             return;
         }
@@ -95,26 +104,32 @@ private:
 // 3. 汎用コマンド：任意のコンポーネント(T)の変更前後を保持して Undo/Redo する
 // =========================================================
 template <typename T>
-class ChangeComponentCommand : public IEditorCommand {
+class ChangeComponentCommand : public IEditorCommand
+{
 private:
-    CCL::ECS::World* m_world;
+    CCL::ECS::World   *m_world;
     CCL::ECS::EntityID m_entity;
-    T m_oldData;
-    T m_newData;
+    T                  m_oldData;
+    T                  m_newData;
 
 public:
-    ChangeComponentCommand(CCL::ECS::World* world, CCL::ECS::EntityID entity, const T& oldData, const T& newData)
-        : m_world(world), m_entity(entity), m_oldData(oldData), m_newData(newData) {
+    ChangeComponentCommand(CCL::ECS::World *world, CCL::ECS::EntityID entity, const T &oldData, const T &newData)
+        : m_world(world), m_entity(entity), m_oldData(oldData), m_newData(newData)
+    {
     }
 
-    void Execute() override {
-        if (auto* comp = m_world->GetComponent<T>(m_entity)) {
+    void Execute() override
+    {
+        if (auto *comp = m_world->GetComponent<T>(m_entity))
+        {
             *comp = m_newData;
         }
     }
 
-    void Undo() override {
-        if (auto* comp = m_world->GetComponent<T>(m_entity)) {
+    void Undo() override
+    {
+        if (auto *comp = m_world->GetComponent<T>(m_entity))
+        {
             *comp = m_oldData;
         }
     }

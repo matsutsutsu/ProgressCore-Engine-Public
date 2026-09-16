@@ -8,10 +8,10 @@
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // 画面モノクロ演出を流用
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"      // 寄り(クローズアップ)要求をpush
-#include "Engine/Time/TimeService.h"                                   // 全体スローは意図ファサード経由
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"   // 寄り(クローズアップ)要求をpush
+#include "Engine/Time/TimeService.h"                                 // 全体スローは意図ファサード経由
 #include "Game/Logics/AI/Drone/DroneComponent.h"
-#include "Game/Logics/GameEvent/GameEvents.h"                          // ゲージ供給：ジャスト回避イベント
+#include "Game/Logics/GameEvent/GameEvents.h" // ゲージ供給：ジャスト回避イベント
 
 #include <DirectXMath.h>
 #include <memory>
@@ -68,14 +68,13 @@ void PlayerCleaveSystem::Update(float rawDt)
 
     // 準備の猶予・クールダウンは「実時間(rawDt)」で進める。全体スロー中でも一定の秒数で
     // 解除されるようにするため（スローされた localDt を使うと時間が伸びてしまう）。
-    ForEachWithID([&](EntityID                        id,
+    ForEachWithID([&](EntityID                    id,
                       CharacterMovementComponent &movement,
-                      CleaveComponent                 &cleave,
-                      PlayerComponent                 &player,
-                      const PlayerInputComponent      &pin,
-                      const DashComponent             &dash,
-                      const TransformComponent        &trans)
-        {
+                      CleaveComponent            &cleave,
+                      PlayerComponent            &player,
+                      const PlayerInputComponent &pin,
+                      const DashComponent        &dash,
+                      const TransformComponent   &trans) {
         // 入力の意思（PlayerInputSystem が押した瞬間まで解決済み）：
         //   右クリック=準備 / 左クリック=突進・チェイン。
         //   左クリックは Ready のときだけここへ届く（対応表は CleavePhase の宣言を参照）。
@@ -105,15 +104,15 @@ void PlayerCleaveSystem::Update(float rawDt)
 
         // 準備状態：狙いを定めるフェーズ。左クリックで突進、放置で自動解除。
         case CleavePhase::Ready:
-            cleave.direction = camAim;    // 常にカメラの3D方向を狙う
-            FaceAim(player, camAim);      // 「向いている方向」を（水平に）見せる
-            HoldGlobalSlow(cleave);       // 全体スローを維持
+            cleave.direction = camAim; // 常にカメラの3D方向を狙う
+            FaceAim(player, camAim);   // 「向いている方向」を（水平に）見せる
+            HoldGlobalSlow(cleave);    // 全体スローを維持
             cleave.phaseTimer -= rawDt;
 
             if (releasePressed)
                 StartLunge(cleave, camAim); // 左クリック→突進
             else if (cleave.phaseTimer <= 0.0f)
-                ExitToIdle(cleave, rm);  // 放置→自動解除
+                ExitToIdle(cleave, rm); // 放置→自動解除
             break;
 
         // 突進状態：突進中のフェーズ。
@@ -165,8 +164,11 @@ void PlayerCleaveSystem::EnterReady(CleaveComponent &cleave, const Vector3 &dir)
 float PlayerCleaveSystem::CurrentSlowScale(const CleaveComponent &cleave) const
 {
     int s = cleave.enableStageDecay ? cleave.chainCount : 0;
-    if (s < 0) s = 0; else if (s > 2) s = 2;
-    const float v[3] = { cleave.slowScale1, cleave.slowScale2, cleave.slowScale3 };
+    if (s < 0)
+        s = 0;
+    else if (s > 2)
+        s = 2;
+    const float v[3] = {cleave.slowScale1, cleave.slowScale2, cleave.slowScale3};
     return v[s];
 }
 
@@ -174,8 +176,11 @@ float PlayerCleaveSystem::CurrentSlowScale(const CleaveComponent &cleave) const
 float PlayerCleaveSystem::CurrentReadyDuration(const CleaveComponent &cleave) const
 {
     int s = cleave.enableStageDecay ? cleave.chainCount : 0;
-    if (s < 0) s = 0; else if (s > 2) s = 2;
-    const float v[3] = { cleave.readyDuration1, cleave.readyDuration2, cleave.readyDuration3 };
+    if (s < 0)
+        s = 0;
+    else if (s > 2)
+        s = 2;
+    const float v[3] = {cleave.readyDuration1, cleave.readyDuration2, cleave.readyDuration3};
     return v[s];
 }
 
@@ -277,9 +282,9 @@ void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
 //       走査自体は ViewEach で確保なしにしてあるので、残るコストは距離計算のみ。
 void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponent &cleave)
 {
-    const float rangeSq = cleave.fanRange * cleave.fanRange;
-    const float cosHalf = std::cos(DirectX::XMConvertToRadians(cleave.fanHalfAngle));
-    const Vector3 fwd   = cleave.direction; // 正規化済み（3D：上下含む進行方向）
+    const float   rangeSq = cleave.fanRange * cleave.fanRange;
+    const float   cosHalf = std::cos(DirectX::XMConvertToRadians(cleave.fanHalfAngle));
+    const Vector3 fwd     = cleave.direction; // 正規化済み（3D：上下含む進行方向）
 
     // ドローンのみ走査＝ボスは自動的に対象外（切り払いは攻撃ではなく「道を作る技」）。
     // 突進中は毎フレーム走るので、機数ぶんの vector を作らない ViewEach を使う。
@@ -292,7 +297,7 @@ void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponen
         if (drone->knockbackTimer > 0.0f) return;
 
         // 進行方向(3D)を軸にした扇で判定＝上下に斬り上げ/斬り下げても道が開く。
-        Vector3 to = Vector3(t->position) - origin;
+        Vector3     to     = Vector3(t->position) - origin;
         const float distSq = to.LengthSquared();
         if (distSq < 1e-4f || distSq > rangeSq) return;
 

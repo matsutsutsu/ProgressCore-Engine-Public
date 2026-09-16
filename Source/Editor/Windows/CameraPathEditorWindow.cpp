@@ -25,7 +25,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
     static CCL::ECS::EntityID lastSelectedEntity = CCL::ECS::InvalidEntityID;
     if (context.selectedEntity != lastSelectedEntity)
     {
-        m_selectedPointIndex          = -1;
+        m_selectedPointIndex         = -1;
         context.editingPathNodeIndex = -1;
         lastSelectedEntity           = context.selectedEntity;
     }
@@ -105,7 +105,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
             points.push_back(last + Vector3(0, 0, 1.0f));
         }
         m_selectedPointIndex = static_cast<int>(points.size()) - 1;
-        pathModified        = true;
+        pathModified         = true;
     }
 
     ImGui::SameLine();
@@ -218,8 +218,8 @@ void CameraPathEditorWindow::SavePathToJson(const std::string &relativePath, con
     for (const auto &p : asset.points)
     {
         j["points"].push_back({{"x", p.x},
-            {"y", p.y},
-            {"z", p.z}});
+                               {"y", p.y},
+                               {"z", p.z}});
     }
 
     // ループ設定も書き出す（CameraDollySystem がロード時に読む）

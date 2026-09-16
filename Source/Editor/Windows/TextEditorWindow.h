@@ -2,19 +2,20 @@
 #include "Editor/Core/EditorWindow.h"
 #include <vector>
 
-class TextEditorWindow : public EditorWindow {
-  public:
+class TextEditorWindow : public EditorWindow
+{
+public:
     TextEditorWindow();
     virtual ~TextEditorWindow() = default;
 
-  protected:
+protected:
     void DrawContents(EditorContext &context) override;
 
-  private:
+private:
     void LoadFile(const char *path);
     void SaveFile(const char *path);
 
-  private:
-    char       m_filePath[256];
+private:
+    char              m_filePath[256];
     std::vector<char> m_textBuffer; // テキスト編集用の巨大バッファ
 };

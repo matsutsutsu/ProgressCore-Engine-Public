@@ -12,9 +12,9 @@
 
 class CombatAnimationSyncSystem
     : public CCL::ECS::IfSystem<CombatAnimationSyncSystem,
-          CCL::ECS::Write<HitboxComponent>>
+                                CCL::ECS::Write<HitboxComponent>>
 {
-  public:
+public:
     CombatAnimationSyncSystem()
         : IfSystem("CombatAnimationSyncSystem")
     {

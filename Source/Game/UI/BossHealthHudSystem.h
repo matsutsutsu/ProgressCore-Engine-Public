@@ -12,10 +12,10 @@
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
 class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
-                                CCL::ECS::Read<HealthComponent>,
-                                CCL::ECS::Read<BossActionComponent>>
+                                                      CCL::ECS::Read<HealthComponent>,
+                                                      CCL::ECS::Read<BossActionComponent>>
 {
-  public:
+public:
     BossHealthHudSystem()
         : IfSystem("BossHealthHudSystem")
     {
@@ -24,7 +24,7 @@ class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
     void Initialize() override;
     void Update(float dt) override;
 
-  private:
+private:
     CCL::ECS::EntityID m_barID   = CCL::ECS::InvalidEntityID; // ゲージ本体（UIProgressBar）
     CCL::ECS::EntityID m_labelID = CCL::ECS::InvalidEntityID; // ラベル（UIText）
 

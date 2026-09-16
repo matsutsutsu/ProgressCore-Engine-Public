@@ -4,16 +4,16 @@
 #include <cstdint>
 #include <vector>
 
- 
 #include "tracy/Tracy.hpp"
 
-
-namespace CCL::ECS {
+namespace CCL::ECS
+{
 
     // フレーム毎にリセットする超高速アロケータ
-    class FrameAllocator {
-      public:
-        // 1024 * 1024 = 1MB  
+    class FrameAllocator
+    {
+    public:
+        // 1024 * 1024 = 1MB
         FrameAllocator(size_t pageSize = 1024 * 1024) : m_pageSize(pageSize)
         {
             // 最初から1ページ確保しておく
@@ -28,8 +28,9 @@ namespace CCL::ECS {
             // 重要: 終了時にデストラクタを呼ぶ
             RunDestructors();
 
-            for (auto *p : m_pages) {
- 
+            for (auto *p : m_pages)
+            {
+
                 // OSにメモリを返す瞬間をTracyに通知
                 TracyFree(p);
 
@@ -38,7 +39,7 @@ namespace CCL::ECS {
         }
 
         // メモリ確保（アライメント指定に対応）
-        void* Alloc(size_t size, size_t alignment = 16)
+        void *Alloc(size_t size, size_t alignment = 16)
         {
             // サイズではなく「現在の書き込み位置(m_offset)」を、
             // 指定されたアライメント（16バイト）の倍数にぴったり揃うように切り上げます。
@@ -46,7 +47,8 @@ namespace CCL::ECS {
             size_t alignedOffset = (m_offset + alignment - 1) & ~(alignment - 1);
 
             // 切り上げた安全な位置 + 今回使うサイズ が、ページに収まるかチェック
-            if (alignedOffset + size > m_pageSize) {
+            if (alignedOffset + size > m_pageSize)
+            {
                 AllocateNewPage(size);
 
                 // 新しいページをもらったので、書き込み位置はページの先頭（0）になります。
@@ -55,7 +57,7 @@ namespace CCL::ECS {
             }
 
             // 安全な開始位置からポインタを計算
-            void* ptr = m_currentPage + alignedOffset;
+            void *ptr = m_currentPage + alignedOffset;
 
             // 「次に書き始める位置」は、今回データを置いた末尾に設定します。
             m_offset = alignedOffset + size;
@@ -65,7 +67,8 @@ namespace CCL::ECS {
 
         //Alloc は単なる「メモリの場所」を返すだけですが、New
         //はそこで「クラスの初期化（コンストラクタ）」までやってくれます。
-        template <class T, typename... Args> T *New(Args &&...args)
+        template <class T, typename... Args>
+        T *New(Args &&...args)
         {
             // 1. 場所を確保
             //new (mem) T(...)
@@ -87,11 +90,12 @@ namespace CCL::ECS {
             //std::string を持っているクラスなら、中身を delete しないとメモリリークします。
             //そういう「難しいクラス」の場合だけ、「リセットするときにこのデストラクタを呼んでね」と
             //m_destructors リストにメモしておきます。
-            if constexpr (!std::is_trivially_destructible_v<T>) {
+            if constexpr (!std::is_trivially_destructible_v<T>)
+            {
                 m_destructors.push_back([ptr]() { ptr->~T(); });
             }
 
-              return ptr;
+            return ptr;
         }
 
         // フレームの終わりに呼ぶ（デストラクタは呼ばず、ポインタを戻すだけ）
@@ -102,14 +106,10 @@ namespace CCL::ECS {
             //などを持っているオブジェクトの中身を綺麗にします。
             RunDestructors();
 
-            
- 
             // このフレームで「実際に消費したバイト数」をグラフにプロット
             size_t totalUsed = (m_pageIndex * m_pageSize) + m_offset;
             // "FrameAllocator Usage" という名前の折れ線グラフがTracy上に作成されます
             TracyPlot("FrameAllocator Usage", static_cast<int64_t>(totalUsed));
-
-
 
             //確保したメモリ（ページ）を delete（OSへ返却）しません。
             //ただ **「書き込み位置を0ページ目の、0行目に戻す」 **だけです。
@@ -119,12 +119,13 @@ namespace CCL::ECS {
             if (!m_pages.empty()) m_currentPage = m_pages[0];
         }
 
-      private:
+    private:
         // デストラクタを一括実行する関数
         void RunDestructors()
         {
             // 生成と逆順に破棄するのが安全
-            for (auto it = m_destructors.rbegin(); it != m_destructors.rend(); ++it) {
+            for (auto it = m_destructors.rbegin(); it != m_destructors.rend(); ++it)
+            {
                 (*it)();
             }
             m_destructors.clear();
@@ -137,22 +138,22 @@ namespace CCL::ECS {
 
             m_pageIndex++;
             // ページが足りなければ新規確保、あれば再利用
-            if (m_pageIndex < m_pages.size()) {
-                 //すでに前のフレームで作った2ページ目、3ページ目があるなら、それを再利用！
+            if (m_pageIndex < m_pages.size())
+            {
+                //すでに前のフレームで作った2ページ目、3ページ目があるなら、それを再利用！
                 m_currentPage = m_pages[m_pageIndex];
             }
-            else {
+            else
+            {
                 // 本当に足りない時だけ、OSからメモリをもらう (::operator new)
                 uint8_t *ptr = static_cast<uint8_t *>(::operator new(sizeToAlloc));
                 m_pages.push_back(ptr);
                 m_currentPage = ptr;
 
- 
                 // OSから新たに「ページ」という物理メモリを確保した瞬間を通知
                 TracyAlloc(ptr, sizeToAlloc);
-
             }
-            m_offset = 0;  // 新しいページなので、書き込み位置は0から
+            m_offset = 0; // 新しいページなので、書き込み位置は0から
         }
 
         std::vector<uint8_t *> m_pages;       // 落書き帳のページ（メモリの塊）のリスト

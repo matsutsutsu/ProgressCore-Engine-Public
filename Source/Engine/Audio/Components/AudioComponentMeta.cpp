@@ -8,8 +8,8 @@
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/ECS/Core/CCL_World.h"              // World からオーディオ資源を引く
-#include "Engine/Audio/IAudioAPI.h" // イベント名一覧（カタログ）
+#include "Engine/ECS/Core/CCL_World.h" // World からオーディオ資源を引く
+#include "Engine/Audio/IAudioAPI.h"    // イベント名一覧（カタログ）
 #include <memory>
 #include <vector>
 #include <cstdio>
@@ -121,9 +121,9 @@ struct ComponentMeta<AudioEmitterComponent>
         // 保存の正は eventName（人間可読）。eventHash は実行時に名前から導出するので保存しない。
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(eventName, "サウンド名", "オーディオ")
-            CFIELD(volume, "音量", "オーディオ")
-            CFIELD(is3D, "3D空間音", "オーディオ")
-            CFIELD(autoPlay, "自動再生", "オーディオ")};
+                CFIELD(volume, "音量", "オーディオ")
+                    CFIELD(is3D, "3D空間音", "オーディオ")
+                        CFIELD(autoPlay, "自動再生", "オーディオ")};
         return fields;
     }
 };

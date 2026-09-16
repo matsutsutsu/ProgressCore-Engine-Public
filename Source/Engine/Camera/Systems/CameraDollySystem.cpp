@@ -110,9 +110,9 @@ float CameraDollySystem::GetTFromDistance(const CameraPathAsset &asset, float ta
 
     // 二分探索 (std::lower_bound) で目標距離に近いサンプルを見つける
     auto it = std::lower_bound(asset.lut.begin(), asset.lut.end(), targetDist,
-        [](const PathSample &sample, float dist) {
-            return sample.distance < dist;
-        });
+                               [](const PathSample &sample, float dist) {
+                                   return sample.distance < dist;
+                               });
 
     if (it == asset.lut.begin())
         return it->t;
@@ -175,8 +175,8 @@ void CameraDollySystem::LoadPathIfNeeded(CameraDollyCartComponent &cart) const
         BuildLookupTable(*cart.loadedPath);
 
         CCL_LOG_SUCCESS(LogCategory::Game, "Loaded Camera Path: %s (Length: %.2fm, Loop: %s)",
-            cart.pathAsset.c_str(), cart.loadedPath->totalLength,
-            cart.loadedPath->isLoop ? "yes" : "no");
+                        cart.pathAsset.c_str(), cart.loadedPath->totalLength,
+                        cart.loadedPath->isLoop ? "yes" : "no");
     }
     catch (const std::exception &e)
     {

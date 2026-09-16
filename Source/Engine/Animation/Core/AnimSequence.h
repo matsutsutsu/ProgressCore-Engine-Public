@@ -26,17 +26,17 @@
 // ===================================================================================
 namespace DirectX::SimpleMath
 {
-    inline void to_json(nlohmann::json& j, const Vector3& v)
+    inline void to_json(nlohmann::json &j, const Vector3 &v)
     {
-        j = nlohmann::json{ {"x", v.x}, {"y", v.y}, {"z", v.z} };
+        j = nlohmann::json{{"x", v.x}, {"y", v.y}, {"z", v.z}};
     }
-    inline void from_json(const nlohmann::json& j, Vector3& v)
+    inline void from_json(const nlohmann::json &j, Vector3 &v)
     {
         j.at("x").get_to(v.x);
         j.at("y").get_to(v.y);
         j.at("z").get_to(v.z);
     }
-}
+} // namespace DirectX::SimpleMath
 
 // ===================================================================================
 // キャンセルグループのビットマスク定義
@@ -82,15 +82,15 @@ inline const std::vector<CancelFlagDef> &GetCancelFlagDefs()
 // シリアライズは int 値で行うため、末尾追加のみ可・途中挿入禁止。
 enum class AnimEventType : uint8_t
 {
-    HitBox = 0,  // 武器タグに紐づく攻撃判定(区間)
-    Sound,       // FMOD イベント再生(点)
-    Effect,      // Effekseer エフェクト生成(点/区間)
-    Blackboard,  // BB フラグの ON/OFF (区間 → True/False 2点に展開)
-    SpawnHitbox, // 空間に独立した球状ヒットボックスを生成(区間)
-    Trail,       // 武器の軌跡エフェクト ON/OFF(区間)
-    ComboWindow, // コンボ先行入力の受付区間。stringParam=受付名
+    HitBox = 0,   // 武器タグに紐づく攻撃判定(区間)
+    Sound,        // FMOD イベント再生(点)
+    Effect,       // Effekseer エフェクト生成(点/区間)
+    Blackboard,   // BB フラグの ON/OFF (区間 → True/False 2点に展開)
+    SpawnHitbox,  // 空間に独立した球状ヒットボックスを生成(区間)
+    Trail,        // 武器の軌跡エフェクト ON/OFF(区間)
+    ComboWindow,  // コンボ先行入力の受付区間。stringParam=受付名
     CancelWindow, // 行動キャンセルの受付区間。stringParam=受付名
-    Particle,    // GPUパーティクル発生の ON/OFF(区間)。剣にまとう演出等。stringParam=タグ
+    Particle,     // GPUパーティクル発生の ON/OFF(区間)。剣にまとう演出等。stringParam=タグ
 
     Count
 };
@@ -154,10 +154,8 @@ struct AnimSequence
     // 必ず startTime 昇順でソートされていること。
     std::vector<AnimNotifyEvent> events;
 
-     CurveData   speedCurve;      // 再生速度カーブ(進捗→速度倍率)
-     CurveData rootMotionCurve; // ルートモーションカーブ(進捗→累積前進距離 m)
-
-
+    CurveData speedCurve;      // 再生速度カーブ(進捗→速度倍率)
+    CurveData rootMotionCurve; // ルートモーションカーブ(進捗→累積前進距離 m)
 };
 
 // ===================================================================================
@@ -169,14 +167,7 @@ using json = nlohmann::json;
 inline void to_json(json &j, const AnimNotifyEvent &e)
 {
     j = json{
-        {"startTime", e.startTime}, {"endTime", e.endTime},
-        {"type", (int)e.type}, {"stringParam", e.stringParam},
-        {"cancelMask", e.cancelMask},
-        {"damage", e.damage}, {"knockback", e.knockback},
-        {"hitStopDuration", e.hitStopDuration},
-        {"hitStopScale", e.hitStopScale},
-        {"radius", e.radius}, {"attackLayer", e.attackLayer},
-        {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
+        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
 
     // Vector3 は初期化子リスト内で直接変換できない（ADL未解決でエラーになる）ため、
     // リスト構築後に個別代入する。これで to_json(json&, const Vector3&) が呼ばれる。
@@ -204,10 +195,7 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
 inline void to_json(json &j, const AnimSequence &s)
 {
     j = json{
-        {"sequenceName", s.sequenceName}, {"targetModelPath", s.targetModelPath},
-        {"targetAnimName", s.targetAnimName}, {"duration", s.duration},
-        {"events", s.events},
-        {"speedCurve", s.speedCurve}, {"rootMotionCurve", s.rootMotionCurve}};
+        {"sequenceName", s.sequenceName}, {"targetModelPath", s.targetModelPath}, {"targetAnimName", s.targetAnimName}, {"duration", s.duration}, {"events", s.events}, {"speedCurve", s.speedCurve}, {"rootMotionCurve", s.rootMotionCurve}};
 }
 inline void from_json(const json &j, AnimSequence &s)
 {

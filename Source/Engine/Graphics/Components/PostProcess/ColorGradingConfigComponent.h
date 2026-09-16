@@ -28,9 +28,11 @@ struct ColorGradingConfigComponent
     bool enable = true;
 
     GpuData::CbColorGradingData data{
-        { 1.0f, 1.0f, 1.0f, 1.0f },
-        1.0f, 1.0f, 1.0f, 1.0f
-    };
+        {1.0f, 1.0f, 1.0f, 1.0f},
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f};
 
     PostEffectOverrides<ColorGradingOverrideParams> overrides;
 
@@ -57,5 +59,4 @@ struct ColorGradingConfigComponent
         });
         return out;
     }
-
 };

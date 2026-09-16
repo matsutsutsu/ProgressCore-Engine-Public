@@ -11,15 +11,14 @@
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 
 class UITextCollectSystem : public CCL::ECS::IfSystem<UITextCollectSystem,
-                                CCL::ECS::Write<UITransformComponent>,
-                                CCL::ECS::Read<UITextComponent>>
+                                                      CCL::ECS::Write<UITransformComponent>,
+                                                      CCL::ECS::Read<UITextComponent>>
 {
-  public:
+public:
     UITextCollectSystem()
         : IfSystem("UITextCollectSystem")
     {
     }
-
 
     // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
     // UILayout が確定した computedPos/computedSize を読んで描画リストへ積む。

@@ -25,11 +25,11 @@
 // ============================================================================
 class ResourceManager
 {
-  private:
+private:
     ResourceManager()  = default;
     ~ResourceManager() = default;
 
-  public:
+public:
     static ResourceManager &Instance()
     {
         static ResourceManager instance;
@@ -114,7 +114,7 @@ class ResourceManager
     // ---------------------------------------------------------
     void DrawDebugGUI();
 
-  private:
+private:
     // --- Resource Pools (連続メモリ配置) ---
     CCL::ResourcePool<TextureResource>      m_texturePool;
     CCL::ResourcePool<ModelResource>        m_modelPool;

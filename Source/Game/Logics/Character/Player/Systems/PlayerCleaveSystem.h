@@ -4,13 +4,12 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h" // Archetype条件（回頭に書く）
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"      // Archetype条件（回頭に書く）
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h" // 準備/発動の押下
-#include "Game/Logics/Character/Player/Components/DashComponent.h"   // Archetype条件（救済ゲージで読む）
+#include "Game/Logics/Character/Player/Components/DashComponent.h"        // Archetype条件（救済ゲージで読む）
 
 // RootMotion は実行時後付け(AnimSetupSystem)＝任意依存なので前方宣言＋GetComponentで扱う。
 struct RootMotionComponent;
-
 
 /**
  * @brief プレイヤーの特殊アクション切り払い（CLEAVE）の処理を行うシステム
@@ -22,14 +21,14 @@ struct RootMotionComponent;
  * ※ 押下の立ち上がり判定は PlayerInputSystem が済ませている（PlayerInputComponent）。
  */
 class PlayerCleaveSystem : public CCL::ECS::IfSystem<PlayerCleaveSystem,
-                               CCL::ECS::Write<CharacterMovementComponent>,
-                               CCL::ECS::Write<CleaveComponent>,
-                               CCL::ECS::Write<PlayerComponent>,
-                               CCL::ECS::Read<PlayerInputComponent>,
-                               CCL::ECS::Read<DashComponent>,
-                               CCL::ECS::Read<TransformComponent>>
+                                                     CCL::ECS::Write<CharacterMovementComponent>,
+                                                     CCL::ECS::Write<CleaveComponent>,
+                                                     CCL::ECS::Write<PlayerComponent>,
+                                                     CCL::ECS::Read<PlayerInputComponent>,
+                                                     CCL::ECS::Read<DashComponent>,
+                                                     CCL::ECS::Read<TransformComponent>>
 {
-  public:
+public:
     PlayerCleaveSystem() : IfSystem("PlayerCleaveSystem") {}
     void Initialize() override;
     void Update(float dt) override;

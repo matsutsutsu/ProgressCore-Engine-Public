@@ -51,7 +51,7 @@ struct SquadState
     // 上の値が有効か。撃破されて欠けた席を追うと隊列が原点へ吸い込まれる。
     std::array<bool, 5> memberValid{};
 
-    uint8_t aliveCount = 0;      // 生存機数。0 の小隊は計算をスキップ
+    uint8_t aliveCount = 0; // 生存機数。0 の小隊は計算をスキップ
 
     // 頭の位置を一度でも決めたか。false の間は目標へ瞬間移動させる
     // （無いと初回だけワールド原点から飛んでくる）。
@@ -62,7 +62,7 @@ struct SquadState
 // constexpr にせず実行時に触れるようにする。
 struct SquadTuning
 {
-    float chainGap = 2.5f;   // 前の機体との間隔 [m]。小さいほど蛇が詰まって見える
+    float chainGap = 2.5f; // 前の機体との間隔 [m]。小さいほど蛇が詰まって見える
 
     float followGain     = 10.0f; // 間隔のずれを直す強さ。小さいほど胴体が伸び縮みする
     float slotLagPerSlot = 0.06f; // 後ろの席ほどバネを弱める割合。大きいほど尾が遅れて曲がる
@@ -74,7 +74,7 @@ struct SquadTuning
     float terminalLockDist = 8.0f;   // この距離まで詰めたら追尾をやめ直線に固定 [m]
 
     float approachRadius = 26.0f; // プレイヤーからどれだけ離れて構えるか [m]
-    float approachHeight =  9.0f; // 接近時の高度（プレイヤー基準）[m]
+    float approachHeight = 9.0f;  // 接近時の高度（プレイヤー基準）[m]
 
     // 床からの最低高度 [m]。突入は地面の高さへ直進し通り過ぎても走り続けるので必ず
     // 床を突き抜ける。物理で押し返さず、頭の高度を先に止めて隊列ごと床を這わせる。
@@ -85,10 +85,10 @@ struct SquadTuning
 struct SquadRegistry
 {
     static constexpr uint8_t kMaxSquads = 32;
-    static constexpr uint8_t kSquadSize = 5;   // 先頭1機＋追従4機
+    static constexpr uint8_t kSquadSize = 5; // 先頭1機＋追従4機
 
-    static constexpr uint8_t kNoSquad = 0xFF;  // 無所属。大技はこちらのまま動く
+    static constexpr uint8_t kNoSquad = 0xFF; // 無所属。大技はこちらのまま動く
 
     std::array<SquadState, kMaxSquads> squads{};
-    SquadTuning tuning{};
+    SquadTuning                        tuning{};
 };

@@ -5,7 +5,7 @@
 #include "CCL_Chunk.h"
 #include "CCL_PendingOps.h"
 #include <functional>
-#include <unordered_map> 
+#include <unordered_map>
 #include <unordered_set>
 #include <shared_mutex>
 
@@ -29,11 +29,11 @@ namespace CCL::ECS
     class ChunkManager
     {
     public:
-        ChunkManager() = default;
+        ChunkManager()  = default;
         ~ChunkManager() = default;
 
         // 指定 Archetype 用の新しい Chunk を作成して保持リストに追加
-        void CreateChunk(const Archetype& archetype);
+        void CreateChunk(const Archetype &archetype);
 
         // 全 Chunk に Finalize を呼び、全 Entity とデータを破棄
         void FinalizeAll();
@@ -42,7 +42,7 @@ namespace CCL::ECS
          * @brief 新しいエンティティを生成し、指定 Archetype に対応する Chunk
          *        へ挿入する。
          */
-        void AddEntity(EntityID entity, const Archetype& archetype);
+        void AddEntity(EntityID entity, const Archetype &archetype);
 
         // 指定 Entity を破棄リストに入れる（即時実行）
         void DestroyEntity(EntityID entity);
@@ -65,8 +65,7 @@ namespace CCL::ECS
          *       - ApplyPatchOps           : Patch 確定処理
          *       - CompactAllChunks        : 全 Chunk の穴詰め
          */
-        std::vector<EntityID> ApplyPendingOperations(PendingOps& pendingOps);
-
+        std::vector<EntityID> ApplyPendingOperations(PendingOps &pendingOps);
 
         /**
          * @brief Archetype 遷移の中核ロジック。
@@ -82,29 +81,27 @@ namespace CCL::ECS
          *   5. 古い倉庫の席を空ける（削除マーク）
          */
         bool MoveEntityBetweenChunks(
-            Chunk& srcChunk, size_t srcIndex,
-            Chunk& dstChunk, EntityID entity,
-            const std::vector<PendingOp*>& addOps,
-            const std::vector<TypeID>& removeTypeIDs
-        );
+            Chunk &srcChunk, size_t srcIndex,
+            Chunk &dstChunk, EntityID entity,
+            const std::vector<PendingOp *> &addOps,
+            const std::vector<TypeID>      &removeTypeIDs);
 
         // 指定 Archetype と完全一致する Chunk のインデックスを返す
-        size_t SearchEqualChunk(const Archetype& a) const;
+        size_t SearchEqualChunk(const Archetype &a) const;
 
-        std::vector<std::unique_ptr<Chunk>>& GetChunks() { return m_chunks; }
-        const std::vector<std::unique_ptr<Chunk>>& GetChunks() const { return m_chunks; }
+        std::vector<std::unique_ptr<Chunk>>       &GetChunks() { return m_chunks; }
+        const std::vector<std::unique_ptr<Chunk>> &GetChunks() const { return m_chunks; }
 
         // 指定 EntityID がどの Chunk のどのインデックスにあるかを検索
-        size_t SearchEntityIn(EntityID entity, size_t* entityIndexOut = nullptr) const;
+        size_t SearchEntityIn(EntityID entity, size_t *entityIndexOut = nullptr) const;
 
         // Entity 移動時の通知コールバック型
-        using EntityMoveCallback = std::function<void(EntityID, Chunk*, size_t)>;
+        using EntityMoveCallback = std::function<void(EntityID, Chunk *, size_t)>;
         void SetEntityMoveCallback(EntityMoveCallback cb) { m_onEntityMove = cb; }
 
         // 構造変更用 mutex（System 側の shared_lock 用）
-        std::shared_mutex&       GetStructureMutex()       { return m_structureMutex; }
-        const std::shared_mutex& GetStructureMutex() const { return m_structureMutex; }
-
+        std::shared_mutex       &GetStructureMutex() { return m_structureMutex; }
+        const std::shared_mutex &GetStructureMutex() const { return m_structureMutex; }
 
     private:
         // ----------------------------------------------------------
@@ -112,18 +109,16 @@ namespace CCL::ECS
         // ----------------------------------------------------------
 
         // 指定 Archetype で空きがある Chunk を返す（無ければ作成）
-        Chunk& GetOrCreateAvailableChunk(const Archetype& archetype);
+        Chunk &GetOrCreateAvailableChunk(const Archetype &archetype);
 
         /**
          * @brief 新規 Entity を指定 Chunk に挿入し、コンポーネントデータを
          *        初期化する（Spawn 経路で使用）。
          */
         void InsertNewEntity(
-            Chunk& dstChunk,
-            EntityID entity,
-            const std::vector<PendingOp*>& addOps
-        );
-
+            Chunk                          &dstChunk,
+            EntityID                        entity,
+            const std::vector<PendingOp *> &addOps);
 
         // ----------------------------------------------------------
         // ApplyPendingOperations の責務分割関数群
@@ -150,8 +145,8 @@ namespace CCL::ECS
          *
          * これにより、1 Entity の最終構成を一気に計算できるようになります。
          */
-        std::unordered_map<EntityID, std::vector<PendingOp*>>
-        GroupOpsByEntity(PendingOps& pendingOps);
+        std::unordered_map<EntityID, std::vector<PendingOp *>>
+        GroupOpsByEntity(PendingOps &pendingOps);
 
         /**
          * @brief 1 Entity 分の全 PendingOp を処理する（最重要オーケストレータ）。
@@ -165,13 +160,13 @@ namespace CCL::ECS
          * @param destroyedEntities 実際に削除された Entity の蓄積先
          */
         void ProcessEntityOps(
-            EntityID entity,
-            const std::vector<PendingOp*>& ops,
-            std::unordered_set<EntityID>& alreadyDestroyed,
-            std::vector<EntityID>& destroyedEntities);
+            EntityID                        entity,
+            const std::vector<PendingOp *> &ops,
+            std::unordered_set<EntityID>   &alreadyDestroyed,
+            std::vector<EntityID>          &destroyedEntities);
 
         // ops に Destroy マーカーが含まれているかを判定する
-        bool HasDestroyOp(const std::vector<PendingOp*>& ops) const;
+        bool HasDestroyOp(const std::vector<PendingOp *> &ops) const;
 
         /**
          * @brief Destroy マーカーが付いた Entity の実際の破棄処理。
@@ -180,9 +175,9 @@ namespace CCL::ECS
          * から抹消、destroyedEntities への登録までを実行します。
          */
         void ApplyDestroyOp(
-            EntityID entity,
-            std::unordered_set<EntityID>& alreadyDestroyed,
-            std::vector<EntityID>& destroyedEntities);
+            EntityID                      entity,
+            std::unordered_set<EntityID> &alreadyDestroyed,
+            std::vector<EntityID>        &destroyedEntities);
 
         /**
          * @brief この Entity が次に持つべき Archetype のベースを決定する。
@@ -193,10 +188,10 @@ namespace CCL::ECS
          * @return Archetype を決められなければ false（既存もなく Spawn もない）
          */
         bool DetermineNextArchetype(
-            const std::vector<PendingOp*>& ops,
-            Chunk* srcChunk,
-            Archetype& outArchetype,
-            bool& outIsNewSpawn) const;
+            const std::vector<PendingOp *> &ops,
+            Chunk                          *srcChunk,
+            Archetype                      &outArchetype,
+            bool                           &outIsNewSpawn) const;
 
         /**
          * @brief ops の Add / Remove 操作を走査し、nextArch を最終形へ更新する。
@@ -207,10 +202,10 @@ namespace CCL::ECS
          * @param outRemoveIDs 削除対象 TypeID の抽出先
          */
         void CalculateArchetypeDiff(
-            const std::vector<PendingOp*>& ops,
-            Archetype& nextArch,
-            std::vector<PendingOp*>& outAddOps,
-            std::vector<TypeID>& outRemoveIDs) const;
+            const std::vector<PendingOp *> &ops,
+            Archetype                      &nextArch,
+            std::vector<PendingOp *>       &outAddOps,
+            std::vector<TypeID>            &outRemoveIDs) const;
 
         /**
          * @brief 既存 Entity の Archetype が変わらなかった場合の、コンポーネント
@@ -220,8 +215,8 @@ namespace CCL::ECS
          * - data がある場合         : assigner で代入（コピー可能型）
          */
         void UpdateExistingComponents(
-            Chunk* srcChunk, size_t srcIndex,
-            const std::vector<PendingOp*>& ops);
+            Chunk *srcChunk, size_t srcIndex,
+            const std::vector<PendingOp *> &ops);
 
         /**
          * @brief Patch 操作（部分書き換え）を Entity の最終位置に対して適用。
@@ -229,8 +224,8 @@ namespace CCL::ECS
          * Spawn や Move が完了した後の確定アドレスに対して patcher ラムダを呼びます。
          */
         void ApplyPatchOps(
-            EntityID entity,
-            const std::vector<PendingOp*>& ops);
+            EntityID                        entity,
+            const std::vector<PendingOp *> &ops);
 
         /**
          * @brief 全 Chunk に対して CompactHoles を呼び、削除穴を詰める。
@@ -239,7 +234,6 @@ namespace CCL::ECS
          * コールバック (m_onEntityMove) の両方を更新します。
          */
         void CompactAllChunks();
-
 
         // ----------------------------------------------------------
         // EntityLocation キャッシュ管理
@@ -264,11 +258,10 @@ namespace CCL::ECS
         void RemoveEntityLocation(EntityID entity);
 
         // Chunk* から内部配列のインデックスを取得
-        size_t GetChunkIndex(const Chunk* chunk) const;
+        size_t GetChunkIndex(const Chunk *chunk) const;
 
         // 1 Chunk あたりの収容人数を Archetype から算出
-        size_t CalculateChunkCapacity(const Archetype& archetype) const;
-
+        size_t CalculateChunkCapacity(const Archetype &archetype) const;
 
     private:
         // ----------------------------------------------------------

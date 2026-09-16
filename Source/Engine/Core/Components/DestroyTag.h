@@ -1,9 +1,12 @@
 #pragma once
 
-namespace Tag {
+namespace Tag
+{
 
     // 削除待ちであることを示すタグコンポーネント
     // データサイズは0です
-    struct DestroyTag {};
+    struct DestroyTag
+    {
+    };
 
 } // namespace Tag

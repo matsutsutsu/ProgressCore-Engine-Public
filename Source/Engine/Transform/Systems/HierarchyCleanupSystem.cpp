@@ -31,23 +31,26 @@ void HierarchyCleanupSystem::Update(float dt)
 // 実際のクリーンアップ処理 (static)
 // =========================================================================
 void HierarchyCleanupSystem::CollectDoomedEntities(
-    CCL::ECS::World& world, std::vector<EntityID>& outList)
+    CCL::ECS::World &world, std::vector<EntityID> &outList)
 {
     // 1. DestroyTag を持つ「削除起点」を見つけ、子も収集する(チャンク手動走査)。
-    auto& chunks = world.GetChunkManager().GetChunks();
-    for (auto& chunkPtr : chunks) {
+    auto &chunks = world.GetChunkManager().GetChunks();
+    for (auto &chunkPtr : chunks)
+    {
         if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
+        auto *chunk = chunkPtr.get();
         if (!chunk->HasComponent<Tag::DestroyTag>()) continue;
 
-        size_t count = chunk->GetEntityCount();
-        const EntityID* entityIDs = chunk->GetEntityIDs();
+        size_t          count     = chunk->GetEntityCount();
+        const EntityID *entityIDs = chunk->GetEntityIDs();
 
-        for (size_t i = 0; i < count; ++i) {
+        for (size_t i = 0; i < count; ++i)
+        {
             if (chunk->IsEntityDestroyed(i)) continue;
             EntityID id = entityIDs[i];
             outList.push_back(id);
-            if (world.HasComponent<TransformComponent>(id)) {
+            if (world.HasComponent<TransformComponent>(id))
+            {
                 CollectChildrenRecursive(world, id, outList);
             }
         }
@@ -58,7 +61,7 @@ void HierarchyCleanupSystem::CollectDoomedEntities(
     outList.erase(std::unique(outList.begin(), outList.end()), outList.end());
 }
 
-void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     std::vector<EntityID> executionList;
     executionList.reserve(64);
@@ -66,23 +69,27 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
     CollectDoomedEntities(world, executionList);
 
     // 3. 削除の実行。
-    for (EntityID targetID : executionList) {
+    for (EntityID targetID : executionList)
+    {
 
-        if (world.HasComponent<TransformComponent>(targetID)) {
-            auto* trans = world.GetComponent<TransformComponent>(targetID);
+        if (world.HasComponent<TransformComponent>(targetID))
+        {
+            auto *trans = world.GetComponent<TransformComponent>(targetID);
 
             // 死ぬ前に直下の子をルート化(死んだ親IDを子のparentに残さない)。
-            if (trans && trans->firstChildID != 0) {
+            if (trans && trans->firstChildID != 0)
+            {
                 EntityID childID = trans->firstChildID;
-                while (childID != 0) {
-                    auto* childTrans = world.GetComponent<TransformComponent>(childID);
+                while (childID != 0)
+                {
+                    auto *childTrans = world.GetComponent<TransformComponent>(childID);
                     if (!childTrans) break;
-                    EntityID nextChild = childTrans->nextSiblingID;
-                    childTrans->parent = 0;
+                    EntityID nextChild        = childTrans->nextSiblingID;
+                    childTrans->parent        = 0;
                     childTrans->prevSiblingID = 0;
                     childTrans->nextSiblingID = 0;
-                    childTrans->isDirty = true;
-                    childID = nextChild;
+                    childTrans->isDirty       = true;
+                    childID                   = nextChild;
                 }
                 trans->firstChildID = 0;
             }
@@ -98,14 +105,15 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
 // 子供の再帰的収集 (static)
 // =========================================================================
 void HierarchyCleanupSystem::CollectChildrenRecursive(
-    CCL::ECS::World& world, EntityID currentID, std::vector<EntityID>& outList)
+    CCL::ECS::World &world, EntityID currentID, std::vector<EntityID> &outList)
 {
-    auto* trans = world.GetComponent<TransformComponent>(currentID);
+    auto *trans = world.GetComponent<TransformComponent>(currentID);
     if (!trans) return;
 
     EntityID childID = trans->firstChildID;
-    while (childID != 0) {
-        auto* childTrans = world.GetComponent<TransformComponent>(childID);
+    while (childID != 0)
+    {
+        auto *childTrans = world.GetComponent<TransformComponent>(childID);
         if (!childTrans) break;
 
         outList.push_back(childID);

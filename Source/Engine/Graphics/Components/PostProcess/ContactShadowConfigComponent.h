@@ -14,5 +14,5 @@ struct ContactShadowConfigComponent
     bool enable = true;
 
     // rayLength=0.3m / thickness=0.1m / bias=0.02 / intensity=0.7 / maxDistance=30m
-    GpuData::CbContactShadowData data{ 0.3f, 0.1f, 0.02f, 0.7f, 30.0f, {} };
+    GpuData::CbContactShadowData data{0.3f, 0.1f, 0.02f, 0.7f, 30.0f, {}};
 };

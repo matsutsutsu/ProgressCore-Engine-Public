@@ -26,23 +26,27 @@
 //==============================================================================
 namespace LogFormat
 {
-    inline const char* LevelLabel(LogLevel level) noexcept
+    inline const char *LevelLabel(LogLevel level) noexcept
     {
         switch (level)
         {
-        case LogLevel::Error:   return "ERROR";
-        case LogLevel::Warning: return "WARN";
-        case LogLevel::Success: return "SUCCESS";
+        case LogLevel::Error:
+            return "ERROR";
+        case LogLevel::Warning:
+            return "WARN";
+        case LogLevel::Success:
+            return "SUCCESS";
         case LogLevel::Info:
-        default:                return "INFO";
+        default:
+            return "INFO";
         }
     }
 
     // 整形済みの1行ログを生成 (タイムスタンプ含む)
-    inline std::string Format(const LogMessage& msg)
+    inline std::string Format(const LogMessage &msg)
     {
         using namespace std::chrono;
-        const auto t = system_clock::to_time_t(msg.time);
+        const auto t   = system_clock::to_time_t(msg.time);
         const auto sub = duration_cast<milliseconds>(msg.time.time_since_epoch()).count() % 1000;
 
         std::tm local{};
@@ -54,14 +58,14 @@ namespace LogFormat
 
         std::ostringstream os;
         os << std::put_time(&local, "%H:%M:%S")
-            << '.' << std::setfill('0') << std::setw(3) << sub << ' '
-            << '[' << LevelLabel(msg.level) << "] "
-            << '[' << GetLogCategoryName(msg.category) << "] "
-            << '[' << msg.file << ':' << msg.line << "] "
-            << msg.text;
+           << '.' << std::setfill('0') << std::setw(3) << sub << ' '
+           << '[' << LevelLabel(msg.level) << "] "
+           << '[' << GetLogCategoryName(msg.category) << "] "
+           << '[' << msg.file << ':' << msg.line << "] "
+           << msg.text;
         return os.str();
     }
-}
+} // namespace LogFormat
 
 //==============================================================================
 // DebugStreamSink
@@ -70,7 +74,7 @@ namespace LogFormat
 class DebugStreamSink : public ILogSink
 {
 public:
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         const std::string line = LogFormat::Format(msg) + '\n';
 
@@ -85,7 +89,6 @@ public:
         ::OutputDebugStringW(wline.c_str());
     }
 };
-
 
 //==============================================================================
 // FileSink
@@ -121,7 +124,7 @@ public:
         }
     }
 
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         std::lock_guard lock(m_mutex);
 
@@ -192,7 +195,7 @@ class ImGuiBufferSink : public ILogSink
 public:
     explicit ImGuiBufferSink(size_t capacity = 1000) : m_capacity(capacity) {}
 
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         std::lock_guard lock(m_mutex);
         if (m_buffer.size() >= m_capacity)

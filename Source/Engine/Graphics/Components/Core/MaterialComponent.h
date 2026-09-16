@@ -23,11 +23,13 @@ struct MaterialComponent
     //   path を渡すと同スロットのアセット参照パスも更新する（空なら据え置き）。
     void SetData(size_t index, MaterialHandle sourceHandle, const std::string &path = "")
     {
-        if (index >= overrideMaterials.size()) {
+        if (index >= overrideMaterials.size())
+        {
             // 足りない分は「無効なチケット(中身が空のHandle)」で埋める
             overrideMaterials.resize(index + 1, MaterialHandle{});
         }
-        if (index >= overridePaths.size()) {
+        if (index >= overridePaths.size())
+        {
             overridePaths.resize(index + 1);
         }
         // チケットをコピーするだけなので処理速度は実質ゼロ

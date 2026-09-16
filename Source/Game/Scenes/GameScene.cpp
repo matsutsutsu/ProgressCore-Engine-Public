@@ -8,13 +8,10 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-
 #include "Game/UI/GameResultSystem.h" // ゲームオーバー/クリア検知＋リザルトUI
 #include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
 #include "tracy/Tracy.hpp"
-
-
 
 void GameScene::Initialize()
 {
@@ -22,14 +19,13 @@ void GameScene::Initialize()
 
     BaseScene::Initialize(); // 共通初期化（リソース登録＋RegisterSystems）
 
-    // 戦場レベルを読み込む 
+    // 戦場レベルを読み込む
     // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
 
         // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
         std::string bossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
-
 
         if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
@@ -47,7 +43,7 @@ void GameScene::Initialize()
         {
             // 演出が出ないだけでゲームは成立するので、失敗しても止めない。
             CCL_LOG_ERROR(LogCategory::Core,
-                "GameScene: 導入カメラ演出の生成に失敗: %s", introCameraPrefab.c_str());
+                          "GameScene: 導入カメラ演出の生成に失敗: %s", introCameraPrefab.c_str());
         }
     }
 

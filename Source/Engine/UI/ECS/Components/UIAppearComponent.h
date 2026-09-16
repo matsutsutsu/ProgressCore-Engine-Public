@@ -12,14 +12,14 @@
 struct UIAppearComponent
 {
     // --- 設定 ---
-    bool  play     = false;  // 出現アニメを再生するか（false=無効・既定）
-    float delay    = 0.0f;   // 再生開始までの待ち(秒)。要素ごとにずらして波及感を出す。
-    float duration = 0.28f;  // フェード/スライドにかける時間(秒)
-    float slideY   = 28.0f;  // 開始時の下方向オフセット(px)。0でスライド無し（フェードのみ）。
+    bool  play     = false; // 出現アニメを再生するか（false=無効・既定）
+    float delay    = 0.0f;  // 再生開始までの待ち(秒)。要素ごとにずらして波及感を出す。
+    float duration = 0.28f; // フェード/スライドにかける時間(秒)
+    float slideY   = 28.0f; // 開始時の下方向オフセット(px)。0でスライド無し（フェードのみ）。
 
     // --- 内部状態（システムが更新） ---
-    float elapsed     = 0.0f;   // 経過時間(秒)
-    bool  captured    = false;  // 基準offsetを取得済みか
-    bool  done        = false;  // 完了済みか（完了後は何もしない）
-    float baseOffsetY = 0.0f;   // 演出前の offset.y（着地・復元用）
+    float elapsed     = 0.0f;  // 経過時間(秒)
+    bool  captured    = false; // 基準offsetを取得済みか
+    bool  done        = false; // 完了済みか（完了後は何もしない）
+    float baseOffsetY = 0.0f;  // 演出前の offset.y（着地・復元用）
 };

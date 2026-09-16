@@ -18,11 +18,12 @@
 #pragma once
 #include <cstdint>
 
-namespace CCL::Serialization {
+namespace CCL::Serialization
+{
 
     // ファイルマジックナンバー ('CCLS' を little-endian で uint32_t に詰めた値)
     // ロード時にこの値を見て、フォーマットが正しいか即判定する。
-    inline constexpr uint32_t SceneFileMagic = 0x53'4C'43'43u;   // 'C','C','L','S'
+    inline constexpr uint32_t SceneFileMagic = 0x53'4C'43'43u; // 'C','C','L','S'
 
     // 現在のシーンフォーマットバージョン。
     // 互換性破壊を伴う変更を入れたら必ずインクリメントすること。
@@ -32,15 +33,16 @@ namespace CCL::Serialization {
     inline constexpr uint32_t MinSupportedSceneVersion = 1;
 
     // ヘッダの JSON キー (タイポ防止のため定数化)
-    namespace Keys {
-        inline constexpr const char* Magic = "magic";
-        inline constexpr const char* Version = "version";
-        inline constexpr const char* EngineVer = "engineVersion";
-        inline constexpr const char* Timestamp = "timestamp";
-        inline constexpr const char* Entities = "entities";
-        inline constexpr const char* EntityLocal = "lid";        // local index
-        inline constexpr const char* Components = "components";
-        inline constexpr const char* Name = "name";       // prefab name 等
-    }
+    namespace Keys
+    {
+        inline constexpr const char *Magic       = "magic";
+        inline constexpr const char *Version     = "version";
+        inline constexpr const char *EngineVer   = "engineVersion";
+        inline constexpr const char *Timestamp   = "timestamp";
+        inline constexpr const char *Entities    = "entities";
+        inline constexpr const char *EntityLocal = "lid"; // local index
+        inline constexpr const char *Components  = "components";
+        inline constexpr const char *Name        = "name"; // prefab name 等
+    } // namespace Keys
 
 } // namespace CCL::Serialization

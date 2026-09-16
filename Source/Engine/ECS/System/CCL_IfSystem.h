@@ -46,10 +46,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
- 
 #include "tracy/Tracy.hpp"
-
-
 
 namespace CCL::ECS
 {
@@ -72,7 +69,7 @@ namespace CCL::ECS
          * @brief コンストラクタで AccessTypes... から Filter (Archetype) を自動構築。
          * @param name：デバッグ・GUI表示用の名前
          */
-        IfSystem(const std::string& name) : SystemBase(name)
+        IfSystem(const std::string &name) : SystemBase(name)
         {
             // Read<T>/Write<T> のラッパーから生の型 RawType を取り出して Filter を生成
             m_filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
@@ -81,12 +78,12 @@ namespace CCL::ECS
         // デストラクタ。登録済みイベント購読を全て自動解除する。
         virtual ~IfSystem() override
         {
-            for (auto& cleanup : m_eventCleanups) {
+            for (auto &cleanup : m_eventCleanups)
+            {
                 cleanup();
             }
             m_eventCleanups.clear();
         }
-
 
     private:
         /**
@@ -96,7 +93,6 @@ namespace CCL::ECS
          * 焼き付けつつ表面上は型消去できる（C++ の強力なパターン）。
          */
         std::vector<std::function<void()>> m_eventCleanups;
-
 
     protected:
         // ============================================================
@@ -114,7 +110,7 @@ namespace CCL::ECS
          * @param callback   受信時に呼ばれるコールバック
          */
         template <typename EventType>
-        void ListenEvent(std::function<void(const EventType&)> callback)
+        void ListenEvent(std::function<void(const EventType &)> callback)
         {
             if (!m_world) return;
 
@@ -124,7 +120,8 @@ namespace CCL::ECS
             // 2. 「このイベントを解除する」処理そのものをラムダにカプセル化して保管
             //    （EventType が何だったかをラムダ内に焼き付けて保存）
             m_eventCleanups.push_back([this, ticketID]() {
-                if (this->m_world) {
+                if (this->m_world)
+                {
                     this->m_world->GetEventBus().Unsubscribe<EventType>(ticketID);
                 }
             });
@@ -156,7 +153,6 @@ namespace CCL::ECS
             m_excludeFilter = ArchetypeHelper::Generate<ExcludeTypes...>();
         }
 
-
         // ============================================================
         // ForEach（シングルスレッド）
         // ============================================================
@@ -176,21 +172,20 @@ namespace CCL::ECS
          * @endcode
          */
         template <typename Func>
-        void ForEach(Func&& func)
+        void ForEach(Func &&func)
         {
             using namespace CCL::ECS;
 
-            for (Chunk* chunk : m_targetChunks)
+            for (Chunk *chunk : m_targetChunks)
             {
                 const size_t count = chunk->GetEntityCount();
                 if (count == 0) continue;
 
                 // 1. 各コンポーネント配列の生ポインタを一括取得（ループ外で1回だけ）
                 auto componentArrays = std::make_tuple(
-                    static_cast<typename AccessTypes::RawType*>(
+                    static_cast<typename AccessTypes::RawType *>(
                         chunk->GetComponentPtrByType(
-                            TypeInfo<typename AccessTypes::RawType>::ID(), 0))...
-                );
+                            TypeInfo<typename AccessTypes::RawType>::ID(), 0))...);
 
                 const bool hasDestroyed = chunk->HasDestroyedEntities();
 
@@ -205,13 +200,12 @@ namespace CCL::ECS
                     // index_sequence で生成した整数列を使って tuple から
                     // 各コンポーネント配列を取り出し、func に展開して渡す
                     ForEachImpl(func,
-                        componentArrays,
-                        i,
-                        std::make_index_sequence<sizeof...(AccessTypes)>{});
+                                componentArrays,
+                                i,
+                                std::make_index_sequence<sizeof...(AccessTypes)>{});
                 }
             }
         }
-
 
         // ============================================================
         // ForEachParallel（並列）
@@ -228,12 +222,13 @@ namespace CCL::ECS
          *       データ競合は発生しません（Chunk が SoA で独立しているため）。
          */
         template <typename Func>
-        void ForEachParallel(Func&& func)
+        void ForEachParallel(Func &&func)
         {
             using namespace CCL::ECS;
 
             // 並列化が不可能/不要な状況なら直列版にフォールバック
-            if (!m_jobSystem || !this->enableMultiThread) {
+            if (!m_jobSystem || !this->enableMultiThread)
+            {
                 ForEach(func);
                 return;
             }
@@ -245,7 +240,8 @@ namespace CCL::ECS
             if (threadCount == 0) threadCount = 4;
 
             // Chunk 数がスレッド数の 2 倍以下なら準備コスト負けするので直列
-            if (totalChunks < threadCount * 2) {
+            if (totalChunks < threadCount * 2)
+            {
                 ForEach(func);
                 return;
             }
@@ -271,31 +267,32 @@ namespace CCL::ECS
                         std::string batchName = " [Batch]" + m_name;
                         ZoneName(batchName.c_str(), batchName.size());
 
-
                         // --- ワーカースレッド内 ---
                         // [中ループ]: 担当範囲の Chunk を順に処理
-                        for (size_t k = i; k < end; ++k) {
-                            Chunk*       chunk = m_targetChunks[k];
+                        for (size_t k = i; k < end; ++k)
+                        {
+                            Chunk       *chunk = m_targetChunks[k];
                             const size_t count = chunk->GetEntityCount();
                             if (count == 0) continue;
 
                             // ループ外で全コンポーネント配列を一括取得（高速化の鉄則）
                             auto componentArrays = std::make_tuple(
-                                static_cast<typename AccessTypes::RawType*>(
+                                static_cast<typename AccessTypes::RawType *>(
                                     chunk->GetComponentPtrByType(
                                         TypeInfo<typename AccessTypes::RawType>::ID(), 0))...);
 
                             const bool hasDestroyed = chunk->HasDestroyedEntities();
 
                             // [内ループ]: Chunk 内の Entity を全走査
-                            for (size_t entIdx = 0; entIdx < count; ++entIdx) {
+                            for (size_t entIdx = 0; entIdx < count; ++entIdx)
+                            {
                                 // 短絡評価による劇的最適化
                                 if (hasDestroyed && chunk->IsEntityDestroyed(entIdx)) continue;
 
                                 this->ForEachImpl(func,
-                                    componentArrays,
-                                    entIdx,
-                                    std::make_index_sequence<sizeof...(AccessTypes)>{});
+                                                  componentArrays,
+                                                  entIdx,
+                                                  std::make_index_sequence<sizeof...(AccessTypes)>{});
                             }
                         }
                     },
@@ -304,13 +301,12 @@ namespace CCL::ECS
 
             // 全ジョブ完了待ち（メインスレッドも暇なら手伝う設計）
             {
- 
+
                 ZoneScopedN("MainThread Wait");
 
                 m_jobSystem->WaitForCounter(&counter);
             }
         }
-
 
         // ============================================================
         // ForEachWithID（EntityID 付き、シングルスレッド）
@@ -326,22 +322,21 @@ namespace CCL::ECS
          * @endcode
          */
         template <typename Func>
-        void ForEachWithID(Func&& func)
+        void ForEachWithID(Func &&func)
         {
             using namespace CCL::ECS;
 
-            for (Chunk* chunk : m_targetChunks)
+            for (Chunk *chunk : m_targetChunks)
             {
                 const size_t count = chunk->GetEntityCount();
                 if (count == 0) continue;
 
                 auto componentArrays = std::make_tuple(
-                    static_cast<typename AccessTypes::RawType*>(
+                    static_cast<typename AccessTypes::RawType *>(
                         chunk->GetComponentPtrByType(
-                            TypeInfo<typename AccessTypes::RawType>::ID(), 0))...
-                );
+                            TypeInfo<typename AccessTypes::RawType>::ID(), 0))...);
 
-                const EntityID* entityIDs    = chunk->GetEntityIDs();
+                const EntityID *entityIDs    = chunk->GetEntityIDs();
                 const bool      hasDestroyed = chunk->HasDestroyedEntities();
 
                 for (size_t i = 0; i < count; ++i)
@@ -352,14 +347,13 @@ namespace CCL::ECS
                     const EntityID id = entityIDs[i];
 
                     ForEachWithIDImpl(func,
-                        id,
-                        componentArrays,
-                        i,
-                        std::make_index_sequence<sizeof...(AccessTypes)>{});
+                                      id,
+                                      componentArrays,
+                                      i,
+                                      std::make_index_sequence<sizeof...(AccessTypes)>{});
                 }
             }
         }
-
 
         // ============================================================
         // ForEachWithIDParallel（EntityID 付き、並列）
@@ -369,11 +363,12 @@ namespace CCL::ECS
          * @brief ForEachWithID の並列実行版。実装は ForEachParallel と同形。
          */
         template <typename Func>
-        void ForEachWithIDParallel(Func&& func)
+        void ForEachWithIDParallel(Func &&func)
         {
             using namespace CCL::ECS;
 
-            if (!m_jobSystem || !this->enableMultiThread) {
+            if (!m_jobSystem || !this->enableMultiThread)
+            {
                 ForEachWithID(func);
                 return;
             }
@@ -384,7 +379,8 @@ namespace CCL::ECS
             unsigned int threadCount = std::thread::hardware_concurrency();
             if (threadCount == 0) threadCount = 4;
 
-            if (totalChunks < threadCount * 2) {
+            if (totalChunks < threadCount * 2)
+            {
                 ForEachWithID(func);
                 return;
             }
@@ -408,31 +404,32 @@ namespace CCL::ECS
                         std::string batchName = " [ Batch ] " + m_name;
                         ZoneName(batchName.c_str(), batchName.size());
 
-
-                        for (size_t k = i; k < end; ++k) {
-                            Chunk*       chunk = m_targetChunks[k];
+                        for (size_t k = i; k < end; ++k)
+                        {
+                            Chunk       *chunk = m_targetChunks[k];
                             const size_t count = chunk->GetEntityCount();
                             if (count == 0) continue;
 
                             // 鉄則: ループ前に全ポインタと状態を抽出
                             auto componentArrays = std::make_tuple(
-                                static_cast<typename AccessTypes::RawType*>(
+                                static_cast<typename AccessTypes::RawType *>(
                                     chunk->GetComponentPtrByType(
                                         TypeInfo<typename AccessTypes::RawType>::ID(), 0))...);
 
-                            const EntityID* entityIDs    = chunk->GetEntityIDs();
+                            const EntityID *entityIDs    = chunk->GetEntityIDs();
                             const bool      hasDestroyed = chunk->HasDestroyedEntities();
 
-                            for (size_t entIdx = 0; entIdx < count; ++entIdx) {
+                            for (size_t entIdx = 0; entIdx < count; ++entIdx)
+                            {
                                 if (hasDestroyed && chunk->IsEntityDestroyed(entIdx)) continue;
 
                                 const EntityID id = entityIDs[entIdx];
 
                                 this->ForEachWithIDImpl(func,
-                                    id,
-                                    componentArrays,
-                                    entIdx,
-                                    std::make_index_sequence<sizeof...(AccessTypes)>{});
+                                                        id,
+                                                        componentArrays,
+                                                        entIdx,
+                                                        std::make_index_sequence<sizeof...(AccessTypes)>{});
                             }
                         }
                     },
@@ -440,13 +437,12 @@ namespace CCL::ECS
             }
 
             {
- 
+
                 ZoneScopedN("MainThread Wait");
 
                 m_jobSystem->WaitForCounter(&counter);
             }
         }
-
 
         // ============================================================
         // 依存解析用の自動申告
@@ -461,9 +457,9 @@ namespace CCL::ECS
             // C++17 fold expression で AccessTypes... を順に展開
             // IsWrite が false のものだけリストに加える
             (...,
-                (AccessTypes::IsWrite
-                     ? void()
-                     : res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())));
+             (AccessTypes::IsWrite
+                  ? void()
+                  : res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())));
             return res;
         }
 
@@ -474,12 +470,11 @@ namespace CCL::ECS
         {
             std::vector<TypeID> res;
             (...,
-                (AccessTypes::IsWrite
-                     ? res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())
-                     : void()));
+             (AccessTypes::IsWrite
+                  ? res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())
+                  : void()));
             return res;
         }
-
 
     private:
         // ============================================================
@@ -494,7 +489,7 @@ namespace CCL::ECS
          * 不可となります（コンパイル時に型レベルで保証）。
          */
         template <typename Func, typename Tuple, size_t... Is>
-        void ForEachImpl(Func&& func, Tuple& arrays, size_t i, std::index_sequence<Is...>)
+        void ForEachImpl(Func &&func, Tuple &arrays, size_t i, std::index_sequence<Is...>)
         {
             func(
                 static_cast<
@@ -504,13 +499,13 @@ namespace CCL::ECS
 
         // ForEachImpl の EntityID 付き版
         template <typename Func, typename Tuple, size_t... Is>
-        void ForEachWithIDImpl(Func&& func, EntityID id, Tuple& arrays, size_t i,
-                                std::index_sequence<Is...>)
+        void ForEachWithIDImpl(Func &&func, EntityID id, Tuple &arrays, size_t i,
+                               std::index_sequence<Is...>)
         {
             func(id,
-                static_cast<
-                    typename std::tuple_element_t<Is, std::tuple<AccessTypes...>>::ParamType>(
-                    std::get<Is>(arrays)[i])...);
+                 static_cast<
+                     typename std::tuple_element_t<Is, std::tuple<AccessTypes...>>::ParamType>(
+                     std::get<Is>(arrays)[i])...);
         }
     };
 

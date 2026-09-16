@@ -13,19 +13,19 @@
 class NormalPrepass : public IRenderPass
 {
 public:
-    void Initialize(const RenderServices& services) override;
-    void Execute(const RenderFrameContext& ctx) override;
-    void OnResize(uint32_t width, uint32_t height) override;
-    const char* GetName() const override { return "NormalPrepass"; }
+    void        Initialize(const RenderServices &services) override;
+    void        Execute(const RenderFrameContext &ctx) override;
+    void        OnResize(uint32_t width, uint32_t height) override;
+    const char *GetName() const override { return "NormalPrepass"; }
 
-    ID3D11ShaderResourceView* GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
+    ID3D11ShaderResourceView *GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
     // 現在の法線バッファ SRV を Graphics へ預ける（生成・再生成の直後に呼ぶ）。
     void PublishNormalSRV();
 
-    PipelineState  m_pso;
-    InstanceBuffer m_instanceBuffer;
-    NormalBuffer   m_normalBuffer;
+    PipelineState             m_pso;
+    InstanceBuffer            m_instanceBuffer;
+    NormalBuffer              m_normalBuffer;
     std::vector<InstanceData> m_instanceScratch;
 };

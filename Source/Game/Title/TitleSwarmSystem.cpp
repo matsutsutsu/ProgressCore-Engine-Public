@@ -26,17 +26,17 @@ using HighRing = CCL::AI::Formation::Basic::HighRing;
 
 namespace
 {
-// ゲーム本編と同じドローン。見た目を共有するのが要点で、タイトルだけ別物にすると
-// 「この群れが操作対象なのか」が伝わらなくなる。
-constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
+    // ゲーム本編と同じドローン。見た目を共有するのが要点で、タイトルだけ別物にすると
+    // 「この群れが操作対象なのか」が伝わらなくなる。
+    constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
-// 輪の中心を決めるために探すボス像の名前。像を動かせば輪も追従する。
-constexpr const char *kBossName = "TitleBossStatue";
+    // 輪の中心を決めるために探すボス像の名前。像を動かせば輪も追従する。
+    constexpr const char *kBossName = "TitleBossStatue";
 
-// 速さの個体差。全機同速だと回る輪が完全な剛体に見えるので、追従に個体差を付ける。
-// 既存の moveSpeed（Idle の追従速度上限にそのまま効く）へ掛ける倍率の幅。
-constexpr float kSpeedSpreadMin = 0.90f;
-constexpr float kSpeedSpreadMax = 1.10f;
+    // 速さの個体差。全機同速だと回る輪が完全な剛体に見えるので、追従に個体差を付ける。
+    // 既存の moveSpeed（Idle の追従速度上限にそのまま効く）へ掛ける倍率の幅。
+    constexpr float kSpeedSpreadMin = 0.90f;
+    constexpr float kSpeedSpreadMax = 1.10f;
 } // namespace
 
 std::vector<TypeID> TitleSwarmSystem::GetWriteTypes() const
@@ -124,7 +124,7 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
             drone->slotInSquad = static_cast<uint8_t>(i % kSquadSize);
 
             drone->moveSpeed *= kSpeedSpreadMin +
-                (kSpeedSpreadMax - kSpeedSpreadMin) * Hash01(i * 37u + 41u);
+                                (kSpeedSpreadMax - kSpeedSpreadMin) * Hash01(i * 37u + 41u);
 
             // 生成位置がそのまま持ち場。到着済みで始めるので、開幕から輪が完成している。
             drone->targetPosition = slot;
@@ -180,7 +180,7 @@ void TitleSwarmSystem::Update(float dt)
         const uint16_t index = drone.localIndex;
         if (index >= kDroneCount) return;
 
-        const Vector3 slot  = SlotPosition(bossPos, index);
+        const Vector3 slot   = SlotPosition(bossPos, index);
         drone.targetPosition = slot;
 
         Vector3 look = slot - bossPos;
@@ -198,16 +198,16 @@ void TitleSwarmSystem::OnGui()
 #ifdef ENABLE_EDITOR
     ImGui::TextUnformatted("タイトルの群れ（ボス頭上の円陣）");
     ImGui::Text("機数 %d / 生成 %s / ボス像 %s", kDroneCount, m_spawned ? "済" : "未",
-        (m_bossID != InvalidEntityID) ? "検出" : "未検出");
+                (m_bossID != InvalidEntityID) ? "検出" : "未検出");
 
     // 広さは本編の HighRing に従う。変えたい場合は Formations_Basic.h を触る
     //（＝ゲーム中の頭上円陣も一緒に変わる。それが狙いなので値を分けていない）。
     ImGui::SeparatorText("本編の値（Formations_Basic.h の HighRing）");
     ImGui::Text("半径 %.1fm / 高さ %.1fm / 回転 %.2frad/s", HighRing::kRadius, HighRing::kHeight,
-        HighRing::kSpin);
+                HighRing::kSpin);
 
     const float gap = DirectX::XM_2PI * HighRing::kRadius / static_cast<float>(kDroneCount);
     ImGui::Text("機体間隔 %.2fm（機体の見た目は約3m）%s", gap,
-        (gap < 3.0f) ? "  ← 隣と重なる" : "");
+                (gap < 3.0f) ? "  ← 隣と重なる" : "");
 #endif
 }

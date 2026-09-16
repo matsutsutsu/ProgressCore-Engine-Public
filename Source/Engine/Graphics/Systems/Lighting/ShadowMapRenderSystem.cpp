@@ -21,8 +21,6 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-
-
 ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
 {
@@ -64,19 +62,20 @@ void ShadowMapRenderSystem::RenderShadowMap()
     // ------------------------------------------------------------------
     // 1. 必要なリソースの取得（どれか欠けていたら何もしない）
     // ------------------------------------------------------------------
-    if (!m_world->HasResource<ShadowMap*>() || !m_world->HasResource<Camera*>() || !m_world->HasResource<LightManager*>()) return;
+    if (!m_world->HasResource<ShadowMap *>() || !m_world->HasResource<Camera *>() || !m_world->HasResource<LightManager *>()) return;
 
-    ShadowMap* shadowMap = m_world->GetResource<ShadowMap*>();
-    Camera* camera = m_world->GetResource<Camera*>();
-    LightManager* lightManager = m_world->GetResource<LightManager*>();
+    ShadowMap    *shadowMap    = m_world->GetResource<ShadowMap *>();
+    Camera       *camera       = m_world->GetResource<Camera *>();
+    LightManager *lightManager = m_world->GetResource<LightManager *>();
 
     // ------------------------------------------------------------------
     // 2. 設定コンポーネント(SSOT)からシャドウパラメータを同期する。
     //    テンプレートのクエリ対象に縛られず、シングルトン設定だけ拾って上書き。
     // ------------------------------------------------------------------
-    if (auto* config = m_world->GetSingletonComponent<ShadowMapConfigComponent>()) {
-        shadowMap->params.shadowBias = config->shadowBias;
-        shadowMap->params.shadowColor = config->shadowColor;
+    if (auto *config = m_world->GetSingletonComponent<ShadowMapConfigComponent>())
+    {
+        shadowMap->params.shadowBias       = config->shadowBias;
+        shadowMap->params.shadowColor      = config->shadowColor;
         shadowMap->params.cascadeSplits[0] = config->cascadeSplits.x;
         shadowMap->params.cascadeSplits[1] = config->cascadeSplits.y;
         shadowMap->params.cascadeSplits[2] = config->cascadeSplits.z;
@@ -93,20 +92,20 @@ void ShadowMapRenderSystem::RenderShadowMap()
         camera->GetAspect(),
         lightManager->GetDirectionalLight().direction,
         shadowMap->params.cascadeSplits,
-        lightVPs
-    );
+        lightVPs);
 
     DirectX::BoundingOrientedBox cascadeOBBs[3];
     // DirectXのNDC空間の箱 (X,Yは -1~1, Zは 0~1) => Center(0,0,0.5), Extents(1,1,0.5)
     DirectX::BoundingBox ndcBox(DirectX::XMFLOAT3(0.0f, 0.0f, 0.5f), DirectX::XMFLOAT3(1.0f, 1.0f, 0.5f));
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 3; ++i)
+    {
         DirectX::BoundingOrientedBox::CreateFromBoundingBox(cascadeOBBs[i], ndcBox);
         // ライト行列の「逆行列」を掛けることで、NDCの立方体をワールド空間の傾いた箱(OBB)に逆変換する
         cascadeOBBs[i].Transform(cascadeOBBs[i], DirectX::XMMatrixInverse(nullptr, lightVPs[i]));
     }
 
-    auto& renderQueue = RenderQueue::Instance();
+    auto &renderQueue = RenderQueue::Instance();
 
     // メッシュのローカル AABB 構築は MeshCull::BuildLocalAABB に集約済み
     // （Opaque/Normal/Shadow で同一実装を共有し、縮退メッシュは安全側に倒れる）。
@@ -115,8 +114,8 @@ void ShadowMapRenderSystem::RenderShadowMap()
     // 4. エンティティを走査してシャドウコマンドを積む
     //    （TransformComponent / ModelComponent / BoundingBoxComponent を持つもの）
     // ------------------------------------------------------------------
-    ForEach([&](const TransformComponent& trans, const ModelComponent& model, const BoundingBoxComponent& bounds) {
-        Model* pModel = model.GetModel();
+    ForEach([&](const TransformComponent &trans, const ModelComponent &model, const BoundingBoxComponent &bounds) {
+        Model *pModel = model.GetModel();
         if (!pModel) return;
 
         // --- (A) モデル単位の早期棄却 ------------------------------------
@@ -137,22 +136,26 @@ void ShadowMapRenderSystem::RenderShadowMap()
         // --- (B) メッシュ単位の絞り込み ----------------------------------
         // Sponza のような巨大単一モデルは、モデル全体 AABB では全カスケードに
         // 掛かってしまう。メッシュ個別に AABB を作って cascadeMask を精密化する。
-        for (const auto& mesh : pModel->GetMeshes()) {
+        for (const auto &mesh : pModel->GetMeshes())
+        {
             if (!mesh.data) continue;
 
             const bool isSkinned = !mesh.bones.empty();
 
             uint8_t meshMask;
-            if (isSkinned) {
+            if (isSkinned)
+            {
                 // スキンドはアニメーションで実形状がレストポーズ AABB を超えうるため、
                 // メッシュ単位では絞らずモデル単位のマスクを踏襲する（影欠けを防ぐ安全側）。
                 meshMask = modelMask;
             }
-            else {
+            else
+            {
                 // このメッシュのワールド行列を作る。
                 // 描画時の世界変換（node->globalTransform * entityWorld）と一致させること。
                 DirectX::XMMATRIX meshWorld = entityWorld;
-                if (mesh.node) {
+                if (mesh.node)
+                {
                     meshWorld = DirectX::XMLoadFloat4x4(&mesh.node->globalTransform) * entityWorld;
                 }
 
@@ -173,7 +176,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
             // 影用の伝票を作成
             ShadowCommand cmd;
             cmd.model = pModel;
-            cmd.mesh = &mesh;
+            cmd.mesh  = &mesh;
             // worldMatrix は「エンティティのワールド行列」をそのまま積む。
             //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない。
             //   上の entityWorld と同じ renderWorldMatrix を使うこと（判定と描画の一致）。
@@ -184,6 +187,5 @@ void ShadowMapRenderSystem::RenderShadowMap()
         }
     });
 }
-
 
 REGISTER_RENDER_SYSTEM(ShadowMapRenderSystem, Priority::RenderStage::R06_Shadow);

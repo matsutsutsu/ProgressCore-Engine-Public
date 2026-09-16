@@ -3,10 +3,10 @@
 
 namespace
 {
-// 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
-//   8 と 16 の見た目の差は小さく、8 でも斜め面のボケはほぼ解消する。
-//   数値はサンプリング回数の上限なので、上げるほど帯域を食う。
-constexpr UINT kMaxAnisotropy = 8;
+    // 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
+    //   8 と 16 の見た目の差は小さく、8 でも斜め面のボケはほぼ解消する。
+    //   数値はサンプリング回数の上限なので、上げるほど帯域を食う。
+    constexpr UINT kMaxAnisotropy = 8;
 } // namespace
 
 // コンストラクタ
@@ -174,7 +174,6 @@ RenderState::RenderState(ID3D11Device *device)
                                                               depthStencilStates[static_cast<int>(DepthState::NoTestNoWrite)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
-
 
     // 合成なし
     {
