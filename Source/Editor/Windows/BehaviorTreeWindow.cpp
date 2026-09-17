@@ -255,6 +255,11 @@ namespace
         if (node.type == EditorBTNodeType::Action || node.type == EditorBTNodeType::Decorator ||
             node.type == EditorBTNodeType::Condition)
             j["param"] = node.param;
+
+        // 重みは既定(1.0)から動かしたときだけ書く。全ノードに "weight": 1.0 が並ぶと
+        // JSONが読みづらくなるうえ、読み込み側の既定値も 1.0 なので意味が同じ。
+        if (node.weight != 1.0f)
+            j["weight"] = node.weight;
     }
 
     // 待ち時間がActionIDに埋まっていた頃のグラフを「A_Wait + param」へ読み替える。
@@ -370,6 +375,12 @@ nlohmann::json BehaviorTreeWindow::GetGraphStateAsJson()
             jn["decoratorType"] = node.decoratorType;
         }
 
+        // 抽選の重み（既定から動かしたときだけ）
+        if (node.weight != 1.0f)
+        {
+            jn["weight"] = node.weight;
+        }
+
         jNodes.push_back(jn);
     }
     root["editor_nodes"] = jNodes;
@@ -428,7 +439,8 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json &state)
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn.value("name", "Unknown");
         RestoreActionId(node, jn);
-        node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.param  = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.weight = jn.value("weight", 1.0f);
         MigrateLegacyWait(node);
         MigrateLegacyCondition(node, jn);
         node.posX = jn.value("posX", 0.0f);
@@ -687,9 +699,14 @@ void BehaviorTreeWindow::UpdateExecutionOrder()
             }
         }
 
-        // 子ノードを X 座標順（左→右）に並べ、その順を実行順とする
-        std::sort(children.begin(), children.end(), [](EditorBTNode *a, EditorBTNode *b) {
-            return a->posX < b->posX;
+        // 子ノードを「左→右、同じ位置なら上→下」に並べ、その順を実行順とする。
+        //   Y を第2キーにしているのは、縦に並べて X が揃ったときに順序が
+        //   決まらなくなるのを避けるため（Parallel は 0番目が主なので、
+        //   ここが不定だと「技」と「おまけ」が入れ替わる）。
+        //   焼き込み(BakeToRuntimeNodes)と自動整列も同じ規則にしてある。
+        std::stable_sort(children.begin(), children.end(), [](EditorBTNode *a, EditorBTNode *b) {
+            if (a->posX != b->posX) return a->posX < b->posX;
+            return a->posY < b->posY;
         });
 
         // 3. 順序番号を割り当てる（1から開始）
@@ -902,7 +919,10 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext &context)
         case EditorBTNodeType::Action:
             headerColor = ImColor(40, 100, 150);
             break; // 明るい青
-        case EditorBTNodeType::RandomSelector:
+        case EditorBTNodeType::Parallel:
+            headerColor = ImColor(20, 120, 120); // 青緑。「同時に動く」ことを色で区別する
+            break;
+        case EditorBTNodeType::ShuffleSelector: // 重み付きセレクター
             headerColor = ImColor(180, 80, 180); // 紫色にして一目で「運要素」だと分かるようにする
             break;
         default:
@@ -1414,10 +1434,21 @@ void BehaviorTreeWindow::DrawInspector()
                             "複数のノードを視覚的に囲んで整理するための枠です。\n"
                             "💡 使い方：AIの実行ロジックには一切影響を与えません。メモや整理に使ってください。");
                 break;
-            case EditorBTNodeType::RandomSelector:
-                ImGui::Text("【Random Selector (ランダムセレクター)】\n"
-                            "子ノードの中から毎回「ランダムな順番」で実行を試み、1つでも成功すれば終了します。\n"
-                            "💡 使い方：敵の近接攻撃の3択など、プレイヤーに次の行動を予測させない「揺さぶり（Mix-up）」に最適です。");
+            case EditorBTNodeType::Parallel:
+                ImGui::Text("【Parallel (並行ノード)】\n"
+                            "一番上に繋いだ子が「主」で、その結果がこのノードの結果になります。\n"
+                            "2つ目以降は「従」で、主が実行中の間だけ毎フレーム動き、結果は無視されます。\n"
+                            "💡 使い方：技を出しながら、その間ドローンにも指示を出す、といった同時進行に使います。\n"
+                            "⚠ 従にはボス本体の技（薙ぎ払い・突進・跳躍・移動）を置かないでください。"
+                            "主が終わると従は止まりますが、体への要求が下りず技が続いてしまいます。");
+                break;
+            case EditorBTNodeType::ShuffleSelector:
+                ImGui::Text("【Weighted Selector (重み付きセレクター)】\n"
+                            "子ノードの「重み」に比例して1つ抽選し、その枝を実行します。\n"
+                            "失敗したらその枝を候補から外して、残りから引き直します。\n"
+                            "重みを全部同じにすれば、ただの均等ランダムになります（既定は 1.0）。\n"
+                            "💡 使い方：敵の近接攻撃の3択など、プレイヤーに次の行動を予測させない「揺さぶり（Mix-up）」に最適です。\n"
+                            "💡 重みは子ノードを選んで設定します。実際の確率もそこに出ます。");
                 break;
             }
             ImGui::PopTextWrapPos(); // 自動折り返し終了
@@ -1535,7 +1566,8 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::Separator();
                 ImGui::Text("デコレーター設定 (Decorator):");
 
-                const char *decNames[] = {"0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)", "3: 非同期 (Async)"};
+                // 旧「3: 非同期 (Async)」は削除した。同じ用途は Parallel ノードで書く。
+                const char *decNames[] = {"0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)"};
                 if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
                     // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
@@ -1576,6 +1608,59 @@ void BehaviorTreeWindow::DrawInspector()
                     {
                         needsUndo   = true;
                         undoMessage = "Change Retry Count";
+                    }
+                }
+            }
+
+            // 親が重み付きセレクターのときだけ、重みの欄を出す。
+            //   重みは他の親の下では意味を持たないので、常時出すと
+            //   「効かない設定」が並んで混乱する。
+            {
+                const EditorBTNode *parent = nullptr;
+                for (const auto &lk : m_links)
+                {
+                    if (lk.endPinId != it->inputPin.id) continue;
+                    for (const auto &n : m_nodes)
+                    {
+                        if (n.outputPin.id == lk.startPinId) { parent = &n; break; }
+                    }
+                    break;
+                }
+
+                if (parent && parent->type == EditorBTNodeType::ShuffleSelector)
+                {
+                    ImGui::Separator();
+                    ImGui::Text("抽選の重み (Weight):");
+
+                    ImGui::DragFloat("重み", &it->weight, 0.1f, 0.0f, 100.0f, "%.2f");
+                    if (ImGui::IsItemDeactivatedAfterEdit())
+                    {
+                        m_executionOrderDirty = true;
+                        needsUndo             = true;
+                        undoMessage           = "Change Weight";
+                    }
+
+                    // 数字だけでは何%になるか分からないので、兄弟の重みを合計して出す。
+                    float total = 0.0f;
+                    for (const auto &lk : m_links)
+                    {
+                        if (lk.startPinId != parent->outputPin.id) continue;
+                        for (const auto &n : m_nodes)
+                        {
+                            if (n.inputPin.id == lk.endPinId && n.weight > 0.0f) total += n.weight;
+                        }
+                    }
+
+                    if (it->weight <= 0.0f)
+                    {
+                        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f),
+                                           "重みが0以下なので、この枝は一度も選ばれません");
+                    }
+                    else if (total > 0.0f)
+                    {
+                        ImGui::Text("選ばれる確率  %.1f %%   (兄弟の重みの合計 %.2f)",
+                                    it->weight / total * 100.0f, total);
+                        ImGui::TextDisabled("条件で弾かれた枝は候補から外れるので、実際はこれより上がります");
                     }
                 }
             }
@@ -1714,11 +1799,12 @@ void BehaviorTreeWindow::AutoLayout()
     // 相対順序が保たれ、実行順は整列の前後で変わらない。
     for (auto &kv : childrenOf)
     {
-        std::sort(kv.second.begin(), kv.second.end(), [&](uint32_t a, uint32_t b) {
+        std::stable_sort(kv.second.begin(), kv.second.end(), [&](uint32_t a, uint32_t b) {
             const EditorBTNode *na = find(a);
             const EditorBTNode *nb = find(b);
             if (!na || !nb) return false;
-            return na->posX < nb->posX;
+            if (na->posX != nb->posX) return na->posX < nb->posX;
+            return na->posY < nb->posY;   // X が同じなら上が先（実行順の表示・焼き込みと同じ規則）
         });
     }
 
@@ -1968,9 +2054,13 @@ void BehaviorTreeWindow::HandleContextMenu()
 
         if (ImGui::MenuItem("セレクター (Selector)")) CreateNode(EditorBTNodeType::Selector, "セレクター (Selector)", canvasPos.x, canvasPos.y);
         if (ImGui::MenuItem("シーケンス (Sequence)")) CreateNode(EditorBTNodeType::Sequence, "シーケンス (Sequence)", canvasPos.x, canvasPos.y);
-        if (ImGui::MenuItem("ランダムセレクター（Random Selector）"))
+        if (ImGui::MenuItem("並行ノード（Parallel）"))
         {
-            CreateNode(EditorBTNodeType::RandomSelector, "ランダムセレクター（Random Selector）", canvasPos.x, canvasPos.y);
+            CreateNode(EditorBTNodeType::Parallel, "並行ノード（Parallel）", canvasPos.x, canvasPos.y);
+        }
+        if (ImGui::MenuItem("重み付きセレクター（Weighted Selector）"))
+        {
+            CreateNode(EditorBTNodeType::ShuffleSelector, "重み付きセレクター（Weighted Selector）", canvasPos.x, canvasPos.y);
         }
         ImGui::Separator();
 
@@ -2109,8 +2199,12 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
                 }
             }
         }
-        std::sort(children.begin(), children.end(), [](EditorBTNode *a, EditorBTNode *b) {
-            return a->posX < b->posX;
+        // 「左が先。X が同じなら上が先」。この順がそのまま children の並びになり、
+        //   Sequence の実行順と、Parallel の主(0番目)／従を決める。
+        //   X だけで比べると、縦にきれいに並べた瞬間に順序が不定になる。
+        std::stable_sort(children.begin(), children.end(), [](EditorBTNode *a, EditorBTNode *b) {
+            if (a->posX != b->posX) return a->posX < b->posX;
+            return a->posY < b->posY;
         });
         return children;
     };
@@ -2139,8 +2233,10 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
             return "Action";
         case EditorBTNodeType::Decorator:
             return "Decorator";
-        case EditorBTNodeType::RandomSelector:
-            return "RandomSelector";
+        case EditorBTNodeType::ShuffleSelector:
+            return "WeightedSelector";
+        case EditorBTNodeType::Parallel:
+            return "Parallel";
 
         default:
             return "Unknown";
@@ -2244,7 +2340,8 @@ void BehaviorTreeWindow::LoadGraph(const std::string &path)
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn["name"];
         RestoreActionId(node, jn);
-        node.param = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.param  = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.weight = jn.value("weight", 1.0f);
         MigrateLegacyWait(node);
         MigrateLegacyCondition(node, jn);
         node.posX = jn["posX"];

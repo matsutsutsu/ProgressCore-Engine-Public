@@ -1212,7 +1212,7 @@
             ]
         },
         {
-            "type": "RandomSelector",
+            "type": "WeightedSelector",
             "actionOrConditionId": 0,
             "children": [
                 22,
@@ -1417,7 +1417,7 @@
             "children": []
         },
         {
-            "type": "RandomSelector",
+            "type": "WeightedSelector",
             "actionOrConditionId": 0,
             "children": [
                 67,

@@ -37,12 +37,44 @@ namespace
         return state;
     }
 
+    /// [0,1) の実数を1つ引く。上位24bitだけ使う（xorshift は下位bitの質が落ちる）。
+    float NextRandom01(uint32_t &state)
+    {
+        return static_cast<float>(NextRandom(state) >> 8) * (1.0f / 16777216.0f);
+    }
+
     // 0 は「未初期化」の印なので必ず非ゼロにする。
     void SeedRandomIfNeeded(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity)
     {
         if (btComp.rngState != 0) return;
         btComp.rngState = (static_cast<uint32_t>(entity) * 2654435761u) ^ 0x9E3779B9u;
         if (btComp.rngState == 0) btComp.rngState = 0x6D2B79F5u;
+    }
+
+    /// サブツリーの実行状態（しおりと行動の残り時間）をまとめて捨てる。
+    ///
+    /// ResetChildActionsRecursive との違いは、しおり(runningNodes)も消すこと。
+    /// Parallel が「従」を切り離すときに使う。従は次のフレームから評価されなく
+    /// なるので、途中のしおりと残り時間を残すと、次にこの枝へ来たときに
+    /// 「前回の続き」から再開してしまう。
+    ///
+    /// Cooldown のタイマーは消さない（Action だけ -1 に戻す）。クールダウンは
+    /// 枝をまたいで持ち越すべき情報で、ここで消すと封印が解けてしまう。
+    void ResetSubtreeStateRecursive(BTNodeID nodeId, BehaviorTreeComponent &btComp, const BTAsset &asset)
+    {
+        const auto &node = asset.nodes[nodeId];
+        if (node.type == BTNodeType::Action && nodeId < btComp.nodeTimers.size())
+        {
+            btComp.nodeTimers[nodeId] = -1.0f;
+        }
+        if (nodeId < btComp.runningNodes.size())
+        {
+            btComp.runningNodes[nodeId] = -1;
+        }
+        for (auto childId : node.children)
+        {
+            ResetSubtreeStateRecursive(childId, btComp, asset);
+        }
     }
 
     /// 特定のサブツリー配下の Action ノードのタイマーだけをリセットする。
@@ -58,7 +90,7 @@ namespace
             ResetChildActionsRecursive(childId, btComp, asset);
         }
     }
-} // namespace
+} 
 
 BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 {
@@ -171,10 +203,10 @@ void BehaviorTreeSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<GameFlowState>()) return;
 
-    // カットシーン中はAIの思考を止める。
+    // カットシーン中はAIの思考を止める
     const bool cinematic = m_world->GetResource<GameFlowState>().cinematic;
 
-    // ① アセットの解決。並列ループへ持ち込まないことでファイルI/Oもログもメインに留まる。
+    // ① BTアセットのセットアップ
     SyncAssets();
 
     // ② 評価（並列）。
@@ -184,6 +216,7 @@ void BehaviorTreeSystem::Update(float rawDt)
                                             const TimeStateComponent &time) {
         float dt = time.localDt;
 
+        // アセットが無いならreturn
         if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty()) return;
 
         const size_t nodeCount = btComp.sharedAsset->nodes.size();
@@ -191,10 +224,7 @@ void BehaviorTreeSystem::Update(float rawDt)
         // バッファは SyncAssets が揃えてある。並列ループ内で伸ばさず、ずれていたら見送る。
         if (btComp.nodeTimers.size() != nodeCount) return;
 
-        // 評価を止める。タイマー減算より前に抜けないと、止めている間に進んだ Wait が
-        // 再開の瞬間に一気に消化されて枝が飛ぶ（木は「凍る」のが正しい）。
-        // 状態表示も消さないと BTウィンドウに緑が残って動いて見える。
-        // 「強制実行」中は止めない。両方有効だと「実行」を押しても何も起きなくなる。
+        // 一時停止やカットシーン中はreturnで止める
         const bool forcing = (btComp.debugForcedNodeId >= 0);
         if ((btComp.debugPaused && !forcing) || cinematic)
         {
@@ -217,7 +247,7 @@ void BehaviorTreeSystem::Update(float rawDt)
         // Running しおりのリセット。
         btComp.runningNodeId = 0xFFFF;
 
-        // 抽選の種は個体ごとに1回だけ蒔く。
+        // 抽選の種は個体ごとに1回だけ蒔く
         SeedRandomIfNeeded(btComp, entity);
 
         // 強制ノードが切り替わったら実行状態を捨てる（前の技の途中経過が新しい枝へ
@@ -247,15 +277,17 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     EntityID                  entity,
     float                     dt)
 {
+    // ノードの存在チェック
     const BTNode &node   = asset.nodes[nodeId];
     BTNodeState   result = BTNodeState::Failure;
 
     // ノードの種類ごとに処理を分ける
     switch (node.type)
     {
-
-    case BTNodeType::Selector: {
+    case BTNodeType::Selector: {        
         int runningIndex = btComp.runningNodes[nodeId];
+
+        // 直前に Running だった子がいれば、まずその子を再評価する。
         if (runningIndex >= 0 && runningIndex < (int)node.children.size())
         {
             result = EvaluateTreeRecursive(node.children[runningIndex], btComp, myTrans, asset, entity, dt);
@@ -263,6 +295,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             btComp.runningNodes[nodeId] = -1;
             if (result == BTNodeState::Success) break;
         }
+
         result = BTNodeState::Failure;
         for (size_t i = 0; i < node.children.size(); ++i)
         {
@@ -284,8 +317,13 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     case BTNodeType::Sequence: {
         int startIndex   = 0;
         int runningIndex = btComp.runningNodes[nodeId];
-        if (runningIndex >= 0 && runningIndex < (int)node.children.size()) startIndex = runningIndex;
+        if (runningIndex >= 0 && runningIndex < (int)node.children.size())
+        {
+            // 直前にRunningだった子ノードがあれば、そこから再開する
+            startIndex = runningIndex;
+        }
 
+        // 子が１つもなければ即 Success。子があれば順に評価する。
         result = BTNodeState::Success;
         for (size_t i = startIndex; i < node.children.size(); ++i)
         {
@@ -304,7 +342,9 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         }
         if (result == BTNodeState::Success)
         {
+            // 成功したらRunningのしおりをリセットする
             btComp.runningNodes[nodeId] = -1;
+            // その子供のActionノードのタイマーも全てリセットする
             ResetChildActionsRecursive(nodeId, btComp, asset);
         }
         break;
@@ -319,13 +359,16 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             break;
         }
 
+        // 条件の実装を取得して評価する。条件が無い場合は Failure。
+        // 並列処理内でInstance()を読んでいるけれど
+        // データの書き込みをせずに読み取り専用なので競合は起きない
         IBTCondition *cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
         if (cond)
         {
             BTContext ctx;
             ctx.world       = m_world;
             ctx.entity      = entity;
-            ctx.bt          = &btComp;
+            ctx.bt          = &btComp;  // ブラックボードの状態など
             ctx.myTransform = &myTrans;
             ctx.nodeId      = nodeId;
             ctx.dt          = dt;
@@ -386,8 +429,14 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 
         const BTNodeID childId = node.children[0];
 
+        // Retry は子を複数回評価する。
+        // 子が Success か Running ならループを抜ける。
         if (decType == BTDecoratorType::Retry)
         {
+            // ※同じフレーム内に繰り返して評価するので
+            // 　Conditionの距離などを図っても結果は変わらない
+            // 　使い道としては乱数や確率で失敗する行動を「何度か試す」くらい
+
             // param は試行回数。0 だと一度も子を評価しないので最低1回は回す。
             const int retryCount = (std::max)(1, static_cast<int>(node.param));
             for (int r = 0; r < retryCount; ++r)
@@ -398,6 +447,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         }
         else
         {
+            // ここで子の評価を行い、結果を取得する
             result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
         }
 
@@ -411,26 +461,11 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             break;
 
         case BTDecoratorType::Cooldown:
-            // 子が「やり切った」ときだけ待ち時間を開始する。Running で始めると技の途中から
-            // 減って体感の間隔が短くなり、Failure で始めると出していない技に待ちがかかる。
+            // 子が「やり切った」ときだけ待ち時間を開始する。
+            // Running で始めると技の途中からタイマー開始してしまい
+            // Failure で始めると出していない技に待ちがかかる
             if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
             break;
-
-        case BTDecoratorType::Async: {
-            if (result != BTNodeState::Running) break;
-            const BTNode &childNode = asset.nodes[childId];
-            if (childNode.type == BTNodeType::Action)
-            {
-                result = (btComp.nodeTimers[childId] != -1.0f)
-                             ? BTNodeState::Success
-                             : BTNodeState::Running;
-            }
-            else
-            {
-                result = BTNodeState::Success;
-            }
-            break;
-        }
 
         case BTDecoratorType::Retry:
             break; // 上のループで結果は確定済み
@@ -438,63 +473,132 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         break;
     }
 
-    case BTNodeType::RandomSelector: {
+    // 主従型の並行ノード。0番目の子が「主」で、その結果をそのまま返す。
+    //   1番目以降の「従」は主が走っている間だけ動かし、結果は捨てる。
+    //   しおりを持たないのが Selector / Sequence との違い。毎フレーム全部の子を
+    //   評価し直すことが目的なので、途中から再開する必要がない
+    //   （各子のサブツリーは自分のしおりで正しく再開する）。
+    case BTNodeType::Parallel: {
+        if (node.children.empty()) break;   // result は Failure のまま
+
+        result = EvaluateTreeRecursive(node.children[0], btComp, myTrans, asset, entity, dt);
+
+        if (result == BTNodeState::Running)
+        {
+            // 従を回す。戻り値は使わない。主が終わったフレームには回さない
+            // （終わった技の後ろで、従の指示だけが1回余計に飛ぶのを避ける）。
+            for (size_t i = 1; i < node.children.size(); ++i)
+            {
+                EvaluateTreeRecursive(node.children[i], btComp, myTrans, asset, entity, dt);
+            }
+        }
+        else
+        {
+            // 主が終わった＝この並行区間は終わり。従の実行状態を畳む。
+            //   畳まないと、従の中の行動の残り時間が 0.0 のまま残り、次に
+            //   この枝へ来たとき「もう終わっている」扱いで一度も発火しない
+            //   （Action の後始末は、その行動が評価されたときにしか走らないため）。
+            for (size_t i = 1; i < node.children.size(); ++i)
+            {
+                ResetSubtreeStateRecursive(node.children[i], btComp, asset);
+            }
+        }
+        break;
+    }
+
+    // 子の weight に比例して1つ引き、失敗したらその枝を候補から外して引き直す。
+    //   全部の重みが同じなら均等ランダムと同じ動作になる。
+    case BTNodeType::WeightedSelector: {
+        // すでに Running だった子がいれば、まずその子を再評価する。
+        // 引き直すと出している途中の技が変わってしまうため、抽選はしない。
         int runningIndex = btComp.runningNodes[nodeId];
         if (runningIndex >= 0 && runningIndex < (int)node.children.size())
         {
             result = EvaluateTreeRecursive(node.children[runningIndex], btComp, myTrans, asset, entity, dt);
             if (result == BTNodeState::Running) break;
             btComp.runningNodes[nodeId] = -1;
+
+            // Failure でも、Selector のように他の子へは落ちない。今この場で引き直すと、
+            // たった今失敗した枝をまた引く可能性がある。1フレーム譲って、次の
+            // フレームに抽選からやり直す。
             break;
         }
-        // 上限を超える木は読み込み時に警告済み（黙って切り捨てると実行中に気づけない）。
-        BTNodeID shuffled[kMaxRandomSelectorChildren];
-        int      count = (std::min)((int)node.children.size(), kMaxRandomSelectorChildren);
-        for (int i = 0; i < count; ++i)
-            shuffled[i] = node.children[i];
-        for (int i = count - 1; i > 0; --i)
+
+        // 候補を作る。重み0以下の枝は最初から入れない（読み込み時に警告済み）。
+        // 上限を超えるぶんも切り捨てる（同じく警告済み）。
+        // どちらもスタックの固定長で持つ。評価はワーカースレッドで走るので、
+        // ここでヒープを触るとスレッド間でアロケータを奪い合う。
+        BTNodeID cand[kMaxWeightedSelectorChildren];
+        float    w[kMaxWeightedSelectorChildren];
+        int      count = 0;
+        float    total = 0.0f;
+
+        const int limit = (std::min)((int)node.children.size(), kMaxWeightedSelectorChildren);
+        for (int i = 0; i < limit; ++i)
         {
-            const int j = static_cast<int>(NextRandom(btComp.rngState) % static_cast<uint32_t>(i + 1));
-            std::swap(shuffled[i], shuffled[j]);
+            const float weight = asset.nodes[node.children[i]].weight;
+            if (weight <= 0.0f) continue;
+
+            cand[count] = node.children[i];
+            w[count]    = weight;
+            total      += weight;
+            ++count;
         }
 
         result = BTNodeState::Failure;
-        for (int i = 0; i < count; ++i)
+        while (count > 0)
         {
-            BTNodeID childId = shuffled[i];
-            result           = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
-            if (result == BTNodeState::Running)
+            // 重みに比例して1つ引く。累積和を乱数が超えた所が当選。
+            float r    = NextRandom01(btComp.rngState) * total;
+            int   pick = count - 1; // 丸め誤差で最後まで超えなかったときの保険
+            for (int i = 0; i < count; ++i)
             {
-                for (size_t origIdx = 0; origIdx < node.children.size(); ++origIdx)
+                r -= w[i];
+                if (r <= 0.0f) { pick = i; break; }
+            }
+
+            const BTNodeID childId = cand[pick];
+            result = EvaluateTreeRecursive(childId, btComp, myTrans, asset, entity, dt);
+
+            if (result != BTNodeState::Failure)
+            {
+                btComp.runningNodes[nodeId] = -1;
+                if (result == BTNodeState::Running)
                 {
-                    if (node.children[origIdx] == childId)
+                    // しおりは node.children の添字。候補配列は詰め替えているので、
+                    // 元の並びから引き直す。
+                    for (size_t origIdx = 0; origIdx < node.children.size(); ++origIdx)
                     {
-                        btComp.runningNodes[nodeId] = (int)origIdx;
-                        break;
+                        if (node.children[origIdx] == childId)
+                        {
+                            btComp.runningNodes[nodeId] = (int)origIdx;
+                            break;
+                        }
                     }
                 }
                 break;
             }
-            if (result == BTNodeState::Success)
-            {
-                btComp.runningNodes[nodeId] = -1;
-                break;
-            }
+
+            // 失敗した枝を候補から外す。末尾を詰めるので順番は崩れるが、
+            // 抽選は重みだけで決まるので並びは関係ない。
+            total     -= w[pick];
+            cand[pick] = cand[count - 1];
+            w[pick]    = w[count - 1];
+            --count;
         }
         break;
     }
     }
 
     // デバッグ状態の保存
+    // BTエディタの色分け表示
     BTDebugState dbgState = BTDebugState::None;
-    if (result == BTNodeState::Success)
-        dbgState = BTDebugState::Success;
-    else if (result == BTNodeState::Failure)
-        dbgState = BTDebugState::Failure;
-    else if (result == BTNodeState::Running)
-        dbgState = BTDebugState::Running;
+    if (result == BTNodeState::Success)      dbgState = BTDebugState::Success;
+    else if (result == BTNodeState::Failure) dbgState = BTDebugState::Failure;
+    else if (result == BTNodeState::Running) dbgState = BTDebugState::Running;
     btComp.debugNodeStates[nodeId] = dbgState;
 
+    // デバッグ情報になんのノードを通ったか残す
     if (result == BTNodeState::Running && btComp.runningNodeId == 0xFFFF)
     {
         btComp.runningNodeId = nodeId;
@@ -552,8 +656,10 @@ namespace
             return "Action";
         case BTNodeType::Decorator:
             return "Decorator";
-        case BTNodeType::RandomSelector:
-            return "RandomSelector";
+        case BTNodeType::WeightedSelector:
+            return "WeightedSelector";
+        case BTNodeType::Parallel:
+            return "Parallel";
         default:
             return "Unknown";
         }

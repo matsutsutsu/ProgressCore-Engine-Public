@@ -32,7 +32,9 @@ enum class EditorBTNodeType
     Action,        // 葉ノード：実際の行動（攻撃、移動）を行う。出力ピンを持たない。
     Group,         // コメント用グループノード（機能的な実行順序は持たない）
     Decorator,     // デコレータノード（子ノードの挙動を修飾する。例: Inverter, Cooldown, Retryなど）
-    RandomSelector // ランダムセレクター
+    ShuffleSelector, // 重み付きセレクター（旧称シャッフル。並び順を変えると保存済みの
+                     // editor_nodes が別の種別になるので、列挙子の位置は動かさない）
+    Parallel         // 並行ノード（0番目の子が主、それ以降は従）
 };
 
 /**
@@ -98,6 +100,10 @@ struct EditorBTNode
     // Action    … 行動の引数（待機の秒数、近接の硬直など）
     // Decorator … クールダウン秒数 / リトライ回数
     float param = 0.0f;
+
+    // 親が重み付きセレクターのときの「選ばれやすさ」。BTNode::weight と1対1。
+    // 既定 1.0 で均等。0 以下にすると抽選の候補から外れる。
+    float weight = 1.0f;
 
     // ランタイム側のノードと対応付けるためのインデックス。
     // Bake 時に「フラット配列の何番目になったか」を記憶しておく

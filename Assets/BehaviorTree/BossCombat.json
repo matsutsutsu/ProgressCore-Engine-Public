@@ -1349,7 +1349,7 @@
                 24,
                 25
             ],
-            "type": "RandomSelector"
+            "type": "WeightedSelector"
         },
         {
             "actionOrConditionId": 0,
@@ -1569,7 +1569,7 @@
                 68,
                 69
             ],
-            "type": "RandomSelector"
+            "type": "WeightedSelector"
         },
         {
             "action": "A_Wait",

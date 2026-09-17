@@ -392,6 +392,21 @@ inline bool IsBossMeleeAction(ActionID id)
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
 inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackStep; }
 
+// この行動は BossCommandComponent::currentActionId を書くか。
+//
+//   これらは「毎フレーム評価される」ことを前提に2つの後始末をしている。
+//     ・currentActionId を毎フレーム書き直す
+//     ・硬直が終わったフレームに ClearCommandIfMine で要求を下ろす
+//   BossActionSystem は currentActionId を毎フレーム読んで体を動かすので、
+//   評価が止まると技が終わっても体がその技を続ける。
+//   Parallel の「従」に置いてはいけない行動の判定に使う。
+inline bool IsCommandWritingAction(ActionID id)
+{
+    return IsBossPhysicalAction(id)   // A_Move / A_BossAdvance
+        || IsBossMeleeAction(id)      // 薙ぎ払い / 突進斬り / 跳躍斬り
+        || IsBossEvadeAction(id);     // 後方ステップ
+}
+
 // この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、
 // これらだけで枝を作ると Selector がそこで打ち切り、下の枝が一度も評価されない
 // （外からは「固まって何もしない」に見えるので読み込み時に警告する）。

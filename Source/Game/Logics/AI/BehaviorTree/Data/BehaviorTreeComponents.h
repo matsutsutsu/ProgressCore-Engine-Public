@@ -59,7 +59,7 @@ struct BehaviorTreeComponent
     std::vector<int>   runningNodes;      // 複合ノードのしおり。次にどの子から再開するか
     BTNodeID           runningNodeId = 0; // 今フレーム Running を返した最初のノード
 
-    /// RandomSelector の抽選に使う乱数の状態。0 は「まだ種を蒔いていない」。
+    /// WeightedSelector の抽選に使う乱数の状態。0 は「まだ種を蒔いていない」。
     ///
     /// 個体ごとに持つ主な理由は、評価が ForEachWithIDParallel で並列に走るため。
     /// グローバルに1本置くと、複数のワーカースレッドが同じ state を同時に読み書き

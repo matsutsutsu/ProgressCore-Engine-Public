@@ -29,12 +29,21 @@ enum class BTDebugState : uint8_t
     Running
 };
 
+// 修飾の種類。アセットが実際に使っているのは Cooldown だけで、
+// 残り2つは実装だけがある状態。
+//
+// 旧 Async(3) は削除した。「子を開始させて手を離す」という作りが、
+// currentActionId を毎フレーム書き直して硬直終了時に下ろす行動の実装と
+// 噛み合わず、技が終わっても体が動き続けたため。同じ用途は
+// BTNodeType::Parallel（主は評価され続ける）で書くこと。
+// 旧アセットが decoratorType=3 を持っていたら読み込み時に警告する。
 enum class BTDecoratorType : uint8_t
 {
-    Inverter = 0, // 結果を反転 (Success <-> Failure)
+    Inverter = 0, // 結果を反転 (Success <-> Failure)。Running は反転しない
     Cooldown = 1, // クールダウン (指定秒数経過するまでFailure)
-    Retry    = 2, // 失敗しても指定回数リトライする
-    Async    = 3  // 非同期実行（筋肉を待たずに即Successを返す）
+    Retry    = 2  // 失敗しても指定回数リトライする。
+                  //   ただし繰り返すのは「同じフレームの中で」。条件のように
+                  //   同一フレームでは結果が変わらない子に付けても意味がない
 };
 
 enum class BTNodeType : uint8_t
@@ -44,7 +53,31 @@ enum class BTNodeType : uint8_t
     Condition,     // 条件を評価して成功/失敗を返す
     Action,        // 行動を実行して成功/失敗/実行中を返す
     Decorator,     // 子の結果を修飾する
-    RandomSelector // ランダムな順で評価し、最初に成功した子の結果を返す
+    // 子の weight に比例して1つ引き、成功するまで引き直す。
+    //   失敗した枝は候補から外して残りから引き直すので、条件で弾かれる枝が
+    //   あっても「出せる技のどれか」が必ず出る。全部の重みを同じにすれば
+    //   単純な均等ランダムになる（既定の weight は 1.0）。
+    //
+    //   このプロジェクトの「ランダムに技を選ぶ」はすべてこのノードに寄せてある。
+    //   今後の袋方式（引いた技を一巡するまで出さない）も、条件付きの重み変更も、
+    //   このノードの重みの決め方を差し替えるだけで足せる。
+    //
+    //   旧称 RandomSelector / ShuffleSelector。どちらの文字列も
+    //   StringToNodeType が読み替える。
+    WeightedSelector,
+
+    // 子を並行して動かす。0番目の子が「主」で、その結果がこのノードの結果になる。
+    // 1番目以降は「従」で、主が Running の間だけ毎フレーム評価され、結果は捨てられる。
+    //
+    //   「技を出しながら、その間ドローンにも指示を出す」を書くためのノード。
+    //   主は毎フレーム評価され続けるので、毎フレームの後始末を持つ行動
+    //   （currentActionId を書く技）をそのまま置ける。削除した Async 修飾は
+    //   そこが逆で、手を離した技の要求が下りないまま残る作りだった。
+    //
+    //   従には「毎フレーム評価されても安いもの」だけを置くこと。主が終わると従は
+    //   評価されなくなるので、従に currentActionId を書く行動を置くと、要求が
+    //   下りないまま残る（読み込み時に ValidateNodes が警告する）。
+    Parallel
 };
 
 // ノードの評価結果。Running は Action だけが返しうる（次フレームも同じノードを評価する）。
@@ -55,9 +88,10 @@ enum class BTNodeState : uint8_t
     Running
 };
 
-// RandomSelector が抽選できる子の上限。並べ替えバッファをスタックの固定長で取るため
-// （評価はワーカースレッドで走る）。超えた木は読み込み時に警告する。
-inline constexpr int kMaxRandomSelectorChildren = 16;
+// WeightedSelector が抽選できる子の上限。候補バッファをスタックの固定長で取るため
+// （評価はワーカースレッドで走るので、ヒープ確保を持ち込みたくない）。
+// 超えた木は読み込み時に警告する。
+inline constexpr int kMaxWeightedSelectorChildren = 16;
 
 // 1つのノード定義。既定値は、読み込み側が代入を1つ忘れても不定値を読まないために書く。
 struct BTNode
@@ -73,6 +107,18 @@ struct BTNode
     //   Action    … その行動の引数（待機の秒数、近接の硬直など）
     //   Decorator … クールダウン秒数 / リトライ回数
     float param = 0.0f;
+
+    // 親が WeightedSelector のときの「選ばれやすさ」。既定 1.0 で均等。
+    //
+    //   param と分けてあるのは、param が「そのノード自身の設定」だから。
+    //   突進斬りの param は技の全体時間(1.6秒)で既に埋まっており、そこへ重みを
+    //   入れると技の長さが消える。weight は「親から見たときの比」で持ち主が違う。
+    //
+    //   重みを親に配列で持たせない理由：children と長さがずれうるため。
+    //   子が自分で持てば、子を足しても消してもずれようがない。
+    //
+    //   0 以下にすると抽選の候補から外れる（読み込み時に警告する）。
+    float weight = 1.0f;
 
     std::vector<BTNodeID> children;
 };

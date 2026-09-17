@@ -53,6 +53,10 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
             // decoratorParam は Decorator しか値を持たなかった頃の名前。
             node.param = jNode.value("param", jNode.value("decoratorParam", 0.0f));
 
+            // 抽選の重み。書かれていなければ 1.0＝均等。
+            //   既定値があるので、weight を持たない古いアセットも今までどおり動く。
+            node.weight = jNode.value("weight", 1.0f);
+
             MigrateLegacyWait(node);
             MigrateLegacyCondition(node, jNode.value("condition", std::string()), path);
 
@@ -170,7 +174,19 @@ namespace
         return false;
     }
 
-    /// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
+    /// 枝の中に「currentActionId を書く行動」が1つでもあるか。
+/// Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
+bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
+{
+    const BTNode &node = asset.nodes[nodeId];
+    if (node.type == BTNodeType::Action && IsCommandWritingAction(node.actionOrConditionId))
+        return true;
+    for (BTNodeID c : node.children)
+        if (SubtreeWritesCommand(asset, c)) return true;
+    return false;
+}
+
+/// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
     bool SubtreeHasCondition(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -313,11 +329,65 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                 CCL_LOG_WARN(LogCategory::AI,
                              "[BT] nodes[%zu] のデコレーターに子が繋がっていない: %s", i, path.c_str());
             }
+            // 削除した修飾（旧 Async = 3）を持つ古い木。素通りするだけで害はないが、
+            // 置いた本人の意図は実現しないので知らせる。
+            if (static_cast<int>(node.decoratorType) > static_cast<int>(BTDecoratorType::Retry))
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%zu] の修飾の種類が %d。この番号はもう存在しないので"
+                             "何も修飾せず素通りする（旧 Async は Parallel ノードへ置き換えた）: %s",
+                             i, static_cast<int>(node.decoratorType), path.c_str());
+            }
+        }
+
+        // 並行ノードの検査。主(children[0])と従(それ以降)で意味が違うので、
+        // 置き間違えると「従が一度も動かない」「技が終わっても体が止まらない」に
+        // なる。どちらも実行中は静かなので、ここで言う。
+        if (node.type == BTNodeType::Parallel)
+        {
+            if (node.children.empty())
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%zu] の並行ノードに子が繋がっていない: %s", i, path.c_str());
+            }
+            else
+            {
+                // 主が Running を返さないなら、従は一度も評価されない。
+                // 陣形指示のように即 Success を返す行動を主に置くと起きる。
+                if (!SubtreeCanBlock(asset, node.children[0]) && node.children.size() > 1)
+                {
+                    CCL_LOG_ERROR(LogCategory::AI,
+                                  "[BT] nodes[%zu] の並行ノードの主(nodes[%u])は Running を返さない"
+                                  "（待機も時間のかかる技も無い）。従は一度も評価されない: %s",
+                                  i, static_cast<unsigned>(node.children[0]), path.c_str());
+                }
+
+                // 従に「currentActionId を書く行動」があると、主が終わった後
+                // その要求が下りないまま残り、BossActionSystem が技を続けてしまう。
+                for (size_t k = 1; k < node.children.size(); ++k)
+                {
+                    if (!SubtreeWritesCommand(asset, node.children[k])) continue;
+
+                    CCL_LOG_ERROR(LogCategory::AI,
+                                  "[BT] nodes[%zu] の並行ノードの従(nodes[%u])に、ボスの行動要求を"
+                                  "書く技がある。主が終わると従は評価されなくなるので要求が下りず、"
+                                  "技が終わっても体がその技を続ける。主へ移すこと: %s",
+                                  i, static_cast<unsigned>(node.children[k]), path.c_str());
+                }
+
+                if (node.children.size() == 1)
+                {
+                    CCL_LOG_INFO(LogCategory::AI,
+                                 "[BT] nodes[%zu] の並行ノードに子が1つしかない。"
+                                 "この場合は何も並行していないので、外しても挙動は変わらない: %s",
+                                 i, path.c_str());
+                }
+            }
         }
 
         // 選択系の子に「毎フレーム即 Success を返す枝」があると、そこから下が死ぬ。
         // 失敗して譲ることも無いので、外からは固まって見える。
-        if (node.type == BTNodeType::Selector || node.type == BTNodeType::RandomSelector)
+        if (node.type == BTNodeType::Selector || node.type == BTNodeType::WeightedSelector)
         {
             for (size_t k = 0; k + 1 < node.children.size(); ++k)
             {
@@ -360,13 +430,37 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         }
 
         // 抽選バッファはスタック固定長。超えたぶんは黙って抽選から漏れる。
-        if (node.type == BTNodeType::RandomSelector &&
-            node.children.size() > static_cast<size_t>(kMaxRandomSelectorChildren))
+        // 重みの検査。0以下の枝は候補に入らないので、置いた本人は「たまたま出ない」と
+        // 思うだけで、一生出ないことに気づけない。
+        if (node.type == BTNodeType::WeightedSelector && !node.children.empty())
+        {
+            float total = 0.0f;
+            for (const BTNodeID c : node.children)
+            {
+                const float w = asset.nodes[c].weight;
+                if (w > 0.0f) { total += w; continue; }
+
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%zu] の重み付きセレクターの枝 nodes[%u] は重みが %.2f。"
+                             "0以下の枝は抽選の候補に入らないので一度も選ばれない: %s",
+                             i, static_cast<unsigned>(c), w, path.c_str());
+            }
+            if (total <= 0.0f)
+            {
+                CCL_LOG_ERROR(LogCategory::AI,
+                              "[BT] nodes[%zu] の重み付きセレクターは、全ての枝の重みが0以下。"
+                              "候補が1つも無いので常に Failure を返す: %s",
+                              i, path.c_str());
+            }
+        }
+
+        if (node.type == BTNodeType::WeightedSelector &&
+            node.children.size() > static_cast<size_t>(kMaxWeightedSelectorChildren))
         {
             CCL_LOG_ERROR(LogCategory::AI,
-                          "[BT] nodes[%zu] の RandomSelector に子が %zu 個ある。%d 個までしか抽選されない"
+                          "[BT] nodes[%zu] の重み付きセレクターに子が %zu 個ある。%d 個までしか抽選されない"
                           "（超えたぶんの技は一生出ない）: %s",
-                          i, node.children.size(), kMaxRandomSelectorChildren, path.c_str());
+                          i, node.children.size(), kMaxWeightedSelectorChildren, path.c_str());
         }
     }
 }
@@ -377,6 +471,11 @@ BTNodeType BehaviorTreeLoader::StringToNodeType(const std::string &typeStr)
     if (typeStr == "Sequence") return BTNodeType::Sequence;
     if (typeStr == "Condition") return BTNodeType::Condition;
     if (typeStr == "Decorator") return BTNodeType::Decorator;
-    if (typeStr == "RandomSelector") return BTNodeType::RandomSelector;
+    if (typeStr == "WeightedSelector") return BTNodeType::WeightedSelector;
+    // 旧称。アセットを移行済みでも、手元のバックアップや作業中のブランチから
+    // 古い木を開いたときに黙って Action 扱いにならないよう残す。
+    if (typeStr == "ShuffleSelector") return BTNodeType::WeightedSelector;
+    if (typeStr == "RandomSelector")  return BTNodeType::WeightedSelector;
+    if (typeStr == "Parallel") return BTNodeType::Parallel;
     return BTNodeType::Action;
 }

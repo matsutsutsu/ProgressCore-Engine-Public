@@ -30,11 +30,11 @@
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Formation Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Camera Path Editor",
