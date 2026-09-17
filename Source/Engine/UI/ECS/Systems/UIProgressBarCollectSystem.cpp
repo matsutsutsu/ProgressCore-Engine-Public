@@ -5,9 +5,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/UI/ECS/UIDrawList.h"
-#include "Engine/UI/ECS/UILayoutUtil.h"
 
 #include <algorithm>
 #include <cmath>
@@ -18,13 +16,9 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 {
     if (!m_world->HasResource<UIDrawList>()) return;
 
-    auto       &gfx      = Graphics::Instance();
-    const float screenW  = gfx.GetScreenWidth();
-    const float screenH  = gfx.GetScreenHeight();
-    auto       &drawList = m_world->GetResource<UIDrawList>();
+    auto &drawList = m_world->GetResource<UIDrawList>();
 
-    ForEachWithID([&](CCL::ECS::EntityID id, UITransformComponent &t, const UIProgressBarComponent &bar) {
-        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH);
+    ForEach([&](const UITransformComponent &t, const UIProgressBarComponent &bar) {
         if (!bar.visible) return;
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);
@@ -91,4 +85,4 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
     });
 }
 
-REGISTER_RENDER_SYSTEM(UIProgressBarCollectSystem, Priority::RenderStage::R10_UI);
+REGISTER_RENDER_SYSTEM(UIProgressBarCollectSystem, Priority::RenderStage::R10b_UICollect);

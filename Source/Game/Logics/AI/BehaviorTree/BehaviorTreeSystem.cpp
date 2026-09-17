@@ -481,12 +481,15 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     case BTNodeType::Parallel: {
         if (node.children.empty()) break;   // result は Failure のまま
 
+        // 主を評価する。結果はそのまま返す。
         result = EvaluateTreeRecursive(node.children[0], btComp, myTrans, asset, entity, dt);
 
         if (result == BTNodeState::Running)
         {
             // 従を回す。戻り値は使わない。主が終わったフレームには回さない
             // （終わった技の後ろで、従の指示だけが1回余計に飛ぶのを避ける）。
+            // ※従は主が終わるまでに回り続けるので何度も繰り返される
+            //   これを防ぐなら最後に長い待機アクションなど入れる
             for (size_t i = 1; i < node.children.size(); ++i)
             {
                 EvaluateTreeRecursive(node.children[i], btComp, myTrans, asset, entity, dt);
@@ -524,8 +527,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             break;
         }
 
-        // 候補を作る。重み0以下の枝は最初から入れない（読み込み時に警告済み）。
-        // 上限を超えるぶんも切り捨てる（同じく警告済み）。
+        // 候補を作る
         // どちらもスタックの固定長で持つ。評価はワーカースレッドで走るので、
         // ここでヒープを触るとスレッド間でアロケータを奪い合う。
         BTNodeID cand[kMaxWeightedSelectorChildren];
@@ -533,11 +535,12 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         int      count = 0;
         float    total = 0.0f;
 
+        // 上限を超える分を切り捨てる
         const int limit = (std::min)((int)node.children.size(), kMaxWeightedSelectorChildren);
         for (int i = 0; i < limit; ++i)
         {
             const float weight = asset.nodes[node.children[i]].weight;
-            if (weight <= 0.0f) continue;
+            if (weight <= 0.0f) continue; //重み0以下の枝は最初から入れない
 
             cand[count] = node.children[i];
             w[count]    = weight;

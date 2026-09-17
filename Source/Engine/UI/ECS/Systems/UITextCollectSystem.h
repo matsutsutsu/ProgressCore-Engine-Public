@@ -1,17 +1,17 @@
 #pragma once
-// UITextComponent のレイアウト計算＋テキスト描画アイテムの収集システム。
+// 可視な UITextComponent を UIDrawList へ積む収集システム。
 //
 // 役割:
-//   - UITransform のアンカーから画面px矩形を確定し、可視テキストを UIDrawList へ積む。
+//   - UILayoutSystem が確定した computedPos を読み、テキスト描画アイテムを積む（矩形計算はしない）。
 //   - 実描画は2DパスのUIRenderer→TextRenderer が行う（ここでは積むだけ）。
 // 位置付け:
-//   - RenderStage::R10_UI（UpdateRender中）。UILayoutSystem(画像)と別集合を走査するため別System。
+//   - RenderStage::R10b_UICollect。UIの状態が全部決まった後の帯。
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 
 class UITextCollectSystem : public CCL::ECS::IfSystem<UITextCollectSystem,
-                                                      CCL::ECS::Write<UITransformComponent>,
+                                                      CCL::ECS::Read<UITransformComponent>,
                                                       CCL::ECS::Read<UITextComponent>>
 {
 public:
@@ -20,9 +20,10 @@ public:
     {
     }
 
-    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    // UILayout が確定した computedPos/computedSize を読んで描画リストへ積む。
-    std::vector<const char *> GetRunAfter() const override { return {"UILayoutSystem"}; }
+    // 同じ UIDrawList へ積む収集System同士は直列でなければならない。
+    // 全員 Read のみなのでスケジューラは並列可と判断してしまう（リソースの共有は見えない）。
+    // 詳細は UIImageCollectSystem.h を参照。
+    std::vector<const char *> GetRunAfter() const override { return {"UIImageCollectSystem"}; }
 
     void Update(float dt) override;
 };

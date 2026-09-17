@@ -130,5 +130,6 @@ void InputIconSystem::Update(float /*dt*/)
     });
 }
 
-// HUD同期の帯。ゲージ類と同じタイミングで表示だけを更新する。
-REGISTER_LOGIC_SYSTEM(InputIconSystem, Priority::LogicStage::L06_HudSync);
+// UI帯(R10_UI)。ロジックではなく描画ステージに置く理由はヘッダの「実行ステージ」を参照
+// （ポーズ中に生成されたヒントアイコンを解決するため）。
+REGISTER_RENDER_SYSTEM(InputIconSystem, Priority::RenderStage::R10_UI);

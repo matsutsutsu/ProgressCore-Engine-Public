@@ -7,12 +7,19 @@
 //   - 毎フレーム解決し、変わったものだけ書き込む（差分書き込み）。持ち替え時だけ処理すると、
 //     ポーズメニューのように後から生成されたアイコンが次の持ち替えまで空のままになる。
 //   - デバイス判定そのものは Input が持つ（スティックのドリフト対策済み）。ここは使うだけ。
+//
+// 実行ステージ:
+//   描画ステージ(R10_UI)に置く。ロジックステージだとポーズ中に走らないため、
+//   ポーズ中に生成されたメニューのヒントアイコン（生成時 visible=false）が、
+//   ポーズを解除するまで一度も解決されず出てこない
+//   （ポーズ中は ECSContext::UpdatePaused が UpdateRender しか回さない）。
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Game/UI/InputIconComponent.h"
 
 #include <string>
+#include <vector>
 
 class InputIconSystem : public CCL::ECS::IfSystem<InputIconSystem,
                                                   CCL::ECS::Write<UIImageComponent>,
@@ -23,6 +30,12 @@ public:
         : IfSystem("InputIconSystem")
     {
     }
+
+    // 同じ UIImageComponent を書く UIButtonSystem との前後を宣言する。
+    //   宣言しないと TaskScheduler に「順序不定」として警告される
+    //   （どちらが先かが並び順まかせになる）。
+    //   収集System(R10b_UICollect)より前の帯なので、ここで差し替えた見た目は同じフレームで絵に出る。
+    std::vector<const char *> GetRunAfter() const override { return {"UIButtonSystem"}; }
 
     void Update(float dt) override;
 

@@ -45,11 +45,15 @@ private:
     void DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                    const std::vector<const UIDrawItem *> &ordered, BlendPass pass);
 
+    Sprite       *GetWhite(ID3D11Device *device);                            // 単色塗り用の白1枚（遅延生成）
     Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パス=白ダミー
     TextRenderer *GetText(ID3D11Device *device);                            // 遅延初期化
 
-    std::unique_ptr<Sprite>                                  m_white; // 単色塗り用
-    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache; // テクスチャ別
+    std::unique_ptr<Sprite> m_white; // 単色塗り用
+
+    // テクスチャ別のキャッシュ。値が null のエントリは「そのパスは読めなかった」印で、
+    // 再読み込みと警告の連打を止めるために残す（描画には白ダミーを使う）。
+    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache;
     std::unique_ptr<TextRenderer>                            m_text;  // フォント（遅延初期化）
     bool                                                     m_textTried = false;
 };

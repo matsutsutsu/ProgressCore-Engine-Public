@@ -25,12 +25,19 @@ namespace CCL::UI
         float  scale = 1.0f;
     };
 
+    // 親をたどる深さの上限。UIの入れ子は Canvas→パネル→部品で数段しか要らないので、
+    // これを超えるのは親子リンクが循環している（A の親が B、B の親が A）とき。
+    // ヒエラルキーのドラッグ&ドロップで作れてしまい、素の再帰だとスタックを食い潰して
+    // 即クラッシュするため、ここで打ち切って画面基準へ落とす。
+    inline constexpr int kMaxUIDepth = 16;
+
     // エンティティのUI矩形と実効スケールを、親(TransformComponent.parent)をたどって解決する。
     // - UICanvasComponent → 画面全体を offset で平行移動・scale で拡縮した「可動ルート」。
     // - 親が UITransformComponent を持つ → その親矩形・親スケールを基準に入れ子配置。
     // - それ以外（親なし/UIでない）→ 画面全体を親矩形・scale=1 とする（後方互換の画面基準）。
     inline UIResolved ResolveUINode(CCL::ECS::World &world, CCL::ECS::EntityID id,
-                                    const UITransformComponent &t, float screenW, float screenH)
+                                    const UITransformComponent &t, float screenW, float screenH,
+                                    int depth = 0)
     {
         // --- Canvas：画面全体を基準に、自身の offset/scale を「グループ変換」として適用 ---
         if (world.HasComponent<UICanvasComponent>(id))
@@ -42,16 +49,20 @@ namespace CCL::UI
         UIRect parentRect{0.0f, 0.0f, screenW, screenH};
         float  parentScale = 1.0f;
 
-        if (auto *tr = world.GetComponent<TransformComponent>(id))
+        // depth 上限に達したら親を見に行かない＝画面全体を親として扱う（循環時の安全弁）。
+        if (depth < kMaxUIDepth)
         {
-            const CCL::ECS::EntityID pid = tr->parent;
-            if (pid != 0 && pid != CCL::ECS::InvalidEntityID)
+            if (auto *tr = world.GetComponent<TransformComponent>(id))
             {
-                if (auto *pt = world.GetComponent<UITransformComponent>(pid))
+                const CCL::ECS::EntityID pid = tr->parent;
+                if (pid != 0 && pid != CCL::ECS::InvalidEntityID && pid != id)
                 {
-                    const UIResolved p = ResolveUINode(world, pid, *pt, screenW, screenH);
-                    parentRect         = p.rect;
-                    parentScale        = p.scale;
+                    if (auto *pt = world.GetComponent<UITransformComponent>(pid))
+                    {
+                        const UIResolved p = ResolveUINode(world, pid, *pt, screenW, screenH, depth + 1);
+                        parentRect         = p.rect;
+                        parentScale        = p.scale;
+                    }
                 }
             }
         }

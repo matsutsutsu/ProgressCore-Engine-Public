@@ -720,6 +720,9 @@
     <ClInclude Include="Source\Engine\UI\ECS\UIRenderer.h">
       <Filter>Source\Engine\UI\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\Systems\UIImageCollectSystem.h">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
@@ -2072,6 +2075,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp">
       <Filter>Source\Engine\UI\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\Systems\UIImageCollectSystem.cpp">
+      <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>

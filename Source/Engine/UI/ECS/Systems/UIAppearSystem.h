@@ -15,5 +15,10 @@ public:
     {
     }
 
+    // UIAnimationSystem と同じ UITransform を書くので直列化される（触る中身は
+    // scale と alpha/offset.y で重ならないため、順序はどちらでも結果は同じ）。
+    // ただし宣言が無いと「順序不定」の警告に出続けるので、意図として固定しておく。
+    std::vector<const char *> GetRunAfter() const override { return {"UIAnimationSystem"}; }
+
     void Update(float dt) override;
 };

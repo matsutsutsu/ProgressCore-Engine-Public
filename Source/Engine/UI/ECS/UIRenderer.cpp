@@ -3,10 +3,12 @@
 
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
+#include "Engine/Platform/Core/Logger.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Engine/UI/Text/TextRenderer.h"
 
 #include <algorithm>
+#include <filesystem>
 
 // Slice 2 の既定フォント（日本語対応の Ricty。現状は ASCII を焼いて使用）。
 static const char *kDefaultFontPath = "Assets/Fonts/RictyDiminished-Regular.ttf";
@@ -14,18 +16,36 @@ static const char *kDefaultFontPath = "Assets/Fonts/RictyDiminished-Regular.ttf"
 UIRenderer::UIRenderer()  = default;
 UIRenderer::~UIRenderer() = default;
 
+Sprite *UIRenderer::GetWhite(ID3D11Device *device)
+{
+    if (!m_white)
+        m_white = std::make_unique<Sprite>(device);
+    return m_white.get();
+}
+
 Sprite *UIRenderer::GetSprite(ID3D11Device *device, const std::string &path)
 {
     if (path.empty())
-    {
-        if (!m_white)
-            m_white = std::make_unique<Sprite>(device);
-        return m_white.get();
-    }
+        return GetWhite(device); // 単色塗り
 
     auto it = m_cache.find(path);
     if (it != m_cache.end())
-        return it->second.get();
+        return it->second ? it->second.get() : GetWhite(device); // null = 読めなかったパス
+
+    // 読み込む前にファイルの有無を確かめる。
+    //   texturePath は Inspector から手打ちできるので、打ち間違いが普通に起きる。
+    //   Sprite のコンストラクタは失敗しても止まらず、Debug では _ASSERT_EXPR で落ち、
+    //   Release では未初期化の D3D11_TEXTURE2D_DESC から幅/高さを読んでしまう
+    //   （その壊れた Sprite がキャッシュに残り、以後ずっと使われる）。
+    //   ここで弾いて白ダミーへ逃がし、「UIが消える」ではなく「白い矩形が出る」で気付かせる。
+    std::error_code ec;
+    if (!std::filesystem::exists(path, ec))
+    {
+        CCL_LOG_WARN(LogCategory::Render,
+                     "[UIRenderer] テクスチャが見つかりません: '%s'（白ダミーで代替）", path.c_str());
+        m_cache.emplace(path, nullptr); // 失敗も覚える＝毎フレーム同じ警告を出さない
+        return GetWhite(device);
+    }
 
     auto    sprite = std::make_unique<Sprite>(device, path.c_str());
     Sprite *ptr    = sprite.get();

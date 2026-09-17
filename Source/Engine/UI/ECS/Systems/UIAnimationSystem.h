@@ -15,5 +15,11 @@ public:
     {
     }
 
+    // UIButtonSystem が hover/focus を見て targetScale を書いた後に追従させる。
+    //   逆順だと、押した瞬間の拡大が次フレームまで反映されない。
+    //   （Button は UIAnimationComponent を GetComponent で触るため型競合としては現れない。
+    //     明示宣言が無いとスケジューラからは独立に見えるので、ここで順序を固定する）
+    std::vector<const char *> GetRunAfter() const override { return {"UIButtonSystem"}; }
+
     void Update(float dt) override;
 };

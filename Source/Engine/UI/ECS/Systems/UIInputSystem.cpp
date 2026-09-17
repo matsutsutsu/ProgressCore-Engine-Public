@@ -9,7 +9,6 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/UI/ECS/UILayoutUtil.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/GamePad.h"
@@ -41,6 +40,14 @@ void UIInputSystem::Update(float /*dt*/)
     Mouse     &mouse    = input->GetMouse();
     const bool pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
     const bool released = mouse.IsReleased(Mouse::BTN_LEFT);
+
+    // カーソルがこのフレームで動いたか。
+    //   「hover した要素へフォーカスを移す」を無条件にやると、キーで選び直した直後の
+    //   フレームに、止まっているカーソルの下の要素へフォーカスが引き戻されてしまう。
+    //   動いたフレームだけ奪わせることで、マウスとパッドのどちらで操作しても
+    //   「今光っている1つ」が操作対象だと一致する。
+    const bool mouseMoved = (mouse.GetPositionX() != mouse.GetOldPositionX()) ||
+                            (mouse.GetPositionY() != mouse.GetOldPositionY());
 
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();
@@ -91,8 +98,9 @@ void UIInputSystem::Update(float /*dt*/)
     };
 
     // --- Pass 1: 矩形計算 ＋ マウス最前面ヒット ＋ フォーカス候補(中心)の収集 ---
-    EntityID topID       = InvalidEntityID; // マウスが乗っている最前面
-    int      topPriority = 0;
+    EntityID topID        = InvalidEntityID; // マウスが乗っている最前面
+    int      topPriority  = 0;
+    bool     topFocusable = false; // その最前面がフォーカス対象か（hoverでフォーカスを移すのに使う）
     EntityID focusedID   = InvalidEntityID; // 現在のフォーカス
     struct Cand
     {
@@ -101,15 +109,15 @@ void UIInputSystem::Update(float /*dt*/)
     };
     std::vector<Cand> cands;
 
-    ForEachWithID([&](EntityID id, UITransformComponent &t, UIInteractableComponent &inter) {
-        CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH); // 階層(Canvas offset/scale)込みで解決
+    ForEachWithID([&](EntityID id, const UITransformComponent &t, UIInteractableComponent &inter) {
         if (!inter.interactable) return;
 
         // マウスヒット（最前面優先）。ゲーム画面が出ていないフレームは誰にも当てない。
         if (inputUsable && inRect(t) && (topID == InvalidEntityID || inter.priority >= topPriority))
         {
-            topID       = id;
-            topPriority = inter.priority;
+            topID        = id;
+            topPriority  = inter.priority;
+            topFocusable = inter.focusable;
         }
 
         // フォーカス候補
@@ -167,8 +175,15 @@ void UIInputSystem::Update(float /*dt*/)
         }
     }
 
+    // カーソルを動かして要素に乗せたら、そこへフォーカスも移す。
+    //   これが無いと「キーで選んでいる要素」と「マウスが乗っている要素」が別々に
+    //   ハイライトされ（UIButtonSystem は hover と focus を同じ色にする）、
+    //   決定キーがどちらに効くのか画面から読めなくなる。
+    if (mouseMoved && topID != InvalidEntityID && topFocusable)
+        newFocus = topID;
+
     // --- Pass 2: 状態確定（hover/press/click/focus） ---
-    ForEachWithID([&](EntityID id, UITransformComponent & /*t*/, UIInteractableComponent &inter) {
+    ForEachWithID([&](EntityID id, const UITransformComponent & /*t*/, UIInteractableComponent &inter) {
         inter.clicked = false;
 
         // マウス hover/press/click
