@@ -36,7 +36,6 @@ enum class BTDebugState : uint8_t
 // currentActionId を毎フレーム書き直して硬直終了時に下ろす行動の実装と
 // 噛み合わず、技が終わっても体が動き続けたため。同じ用途は
 // BTNodeType::Parallel（主は評価され続ける）で書くこと。
-// 旧アセットが decoratorType=3 を持っていたら読み込み時に警告する。
 enum class BTDecoratorType : uint8_t
 {
     Inverter = 0, // 結果を反転 (Success <-> Failure)。Running は反転しない
@@ -48,11 +47,11 @@ enum class BTDecoratorType : uint8_t
 
 enum class BTNodeType : uint8_t
 {
-    Selector,      // 順に評価し、最初に成功した子の結果を返す
-    Sequence,      // 順に評価し、最初に失敗した子の結果を返す
-    Condition,     // 条件を評価して成功/失敗を返す
-    Action,        // 行動を実行して成功/失敗/実行中を返す
-    Decorator,     // 子の結果を修飾する
+    Selector,  // 順に評価し、最初に成功した子の結果を返す
+    Sequence,  // 順に評価し、最初に失敗した子の結果を返す
+    Condition, // 条件を評価して成功/失敗を返す
+    Action,    // 行動を実行して成功/失敗/実行中を返す
+    Decorator, // 子の結果を修飾する
     // 子の weight に比例して1つ引き、成功するまで引き直す。
     //   失敗した枝は候補から外して残りから引き直すので、条件で弾かれる枝が
     //   あっても「出せる技のどれか」が必ず出る。全部の重みを同じにすれば
@@ -62,8 +61,6 @@ enum class BTNodeType : uint8_t
     //   今後の袋方式（引いた技を一巡するまで出さない）も、条件付きの重み変更も、
     //   このノードの重みの決め方を差し替えるだけで足せる。
     //
-    //   旧称 RandomSelector / ShuffleSelector。どちらの文字列も
-    //   StringToNodeType が読み替える。
     WeightedSelector,
 
     // 子を並行して動かす。0番目の子が「主」で、その結果がこのノードの結果になる。

@@ -199,50 +199,6 @@ inline constexpr std::string_view RedirectKey(std::string_view key)
     return key;
 }
 
-// 旧条件（間合いがIDに焼き込まれていた頃）から「新しいID + param」への対応表。
-// RedirectKey は名前→名前しか移せず、旧条件は名前の中に数値を持っていたので、
-// 読み替えと同時に param を与えないと意味が復元できない。
-struct LegacyConditionEntry
-{
-    const char *key;       // 旧アセットに書かれているキー
-    ActionID    legacyId;  // 旧アセットの数値ID（キーが欠けている古い木のため）
-    ActionID    newId;     // 読み替え先
-    float       param;     // 旧IDが意味していた距離
-    bool        ambiguous; // 1ノードでは意味を完全に復元できない（下記参照）
-};
-
-inline constexpr LegacyConditionEntry g_LegacyConditions[] = {
-    {"C_RangeMostClose", 5, CCL::AI::C_DistanceLessThan, 8.0f, false},
-    {"C_RangeClose", 1, CCL::AI::C_DistanceLessThan, 15.0f, false},
-    {"C_RangeFar", 7, CCL::AI::C_DistanceGreaterThan, 40.0f, false},
-
-    // C_RangeMedium は「15〜40m」の帯。上下2つの境界を1ノードでは表せないので上限だけ
-    // 引き継ぐ。近い順に並べた Selector の下なら挙動は変わらないが、単独で置かれていた
-    // 場合だけ意味が広がるので読み込み側がログを出す（ambiguous）。
-    {"C_RangeMedium", 2, CCL::AI::C_DistanceLessThan, 40.0f, true},
-};
-inline constexpr int g_LegacyConditionCount =
-    sizeof(g_LegacyConditions) / sizeof(LegacyConditionEntry);
-
-/// 旧条件なら読み替え先を返す。現行のキー/IDなら nullptr。
-/// numericId はキーが欠けている古い木のための保険。
-inline const LegacyConditionEntry *FindLegacyCondition(std::string_view key, ActionID numericId)
-{
-    for (int i = 0; i < g_LegacyConditionCount; ++i)
-    {
-        if (!key.empty() && key == g_LegacyConditions[i].key) return &g_LegacyConditions[i];
-    }
-    // 現行の条件と番号が衝突しないよう、旧IDは g_ConditionRegistry から外してある。
-    if (key.empty())
-    {
-        for (int i = 0; i < g_LegacyConditionCount; ++i)
-        {
-            if (numericId == g_LegacyConditions[i].legacyId) return &g_LegacyConditions[i];
-        }
-    }
-    return nullptr;
-}
-
 inline const ActionEntry *FindActionEntry(ActionID id)
 {
     for (int i = 0; i < g_ActionRegistryCount; ++i)
@@ -402,9 +358,9 @@ inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackSte
 //   Parallel の「従」に置いてはいけない行動の判定に使う。
 inline bool IsCommandWritingAction(ActionID id)
 {
-    return IsBossPhysicalAction(id)   // A_Move / A_BossAdvance
-        || IsBossMeleeAction(id)      // 薙ぎ払い / 突進斬り / 跳躍斬り
-        || IsBossEvadeAction(id);     // 後方ステップ
+    return IsBossPhysicalAction(id)  // A_Move / A_BossAdvance
+           || IsBossMeleeAction(id)  // 薙ぎ払い / 突進斬り / 跳躍斬り
+           || IsBossEvadeAction(id); // 後方ステップ
 }
 
 // この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、

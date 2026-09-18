@@ -37,6 +37,13 @@ public:
     //   同じものを書く別システムと並列に走らせてしまう。
     //   レジストリが集めた申告をここで足すことで、「BTエンジンは敵の種類を知らない」を
     //   保ったまま依存解析を正しくする。
+    //
+    //   ただし効くのは同じステージ（優先度）にいる相手だけで、ステージが違えば型に
+    //   関係なく直列になる。今 L02_Update で AnimParametersComponent を書くのは
+    //   AnimControllerSystem だけなので、その型に限れば下の GetRunBefore と重なる。
+    //   それでも型で申告するのは、順序宣言が名前で1対1にしか効かないのに対し、型は
+    //   「それを触る全員」に効くから。後から同じステージへシステムを足して前後の宣言を
+    //   忘れても、型が競合していれば直列化され、順序未定として起動時のログにも上がる。
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 

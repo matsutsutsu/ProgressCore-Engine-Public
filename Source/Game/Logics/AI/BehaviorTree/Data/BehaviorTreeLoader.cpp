@@ -1,9 +1,8 @@
 // BTアセット（JSON）をランタイム用の BTAsset へ読み込む実装。
-// 行動・条件は保存キー（"A_BossSlash" などの文字列）で解決し、数値IDは旧アセット
-// 互換のフォールバックとしてのみ使う。
 //
-// 古い書式のアセットはここで新しい形へ読み替える。読み替わるのはメモリ上だけなので、
-// ファイル自体を新形式にするにはBTエディタで開いて保存し直す必要がある。
+// 行動・条件は保存キー（"A_BossSlash" などの文字列）で解決する。キーにしてあるのは、
+// 数値IDだと辞書の並びを変えた瞬間に保存済みのアセットが別の技を指すため。
+// アセットには数値IDも併記されていて、キーを引けなかったときだけそちらを使う。
 #include "BehaviorTreeLoader.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
@@ -50,15 +49,12 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
 
             node.decoratorType = static_cast<BTDecoratorType>(jNode.value("decoratorType", 0));
 
-            // decoratorParam は Decorator しか値を持たなかった頃の名前。
-            node.param = jNode.value("param", jNode.value("decoratorParam", 0.0f));
+            node.param = jNode.value("param", 0.0f);
 
             // 抽選の重み。書かれていなければ 1.0＝均等。
-            //   既定値があるので、weight を持たない古いアセットも今までどおり動く。
+            //   エディタは 1.0 のとき "weight" を書き出さないので、重みを一度も
+            //   触っていない木にはキー自体が無い。既定値はその穴を埋めるためにある。
             node.weight = jNode.value("weight", 1.0f);
-
-            MigrateLegacyWait(node);
-            MigrateLegacyCondition(node, jNode.value("condition", std::string()), path);
 
             if (jNode.contains("children") && jNode["children"].is_array())
             {
@@ -116,51 +112,6 @@ ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void *jNodePtr, BT
     return numericId;
 }
 
-void BehaviorTreeLoader::MigrateLegacyWait(BTNode &node)
-{
-    if (node.type != BTNodeType::Action) return;
-
-    // 旧 A_Wait0_5s(100) 〜 A_Wait10_0s(111)。順序がそのまま秒数だった。
-    static constexpr float kLegacyWaitSeconds[] = {
-        0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f};
-    constexpr ActionID kFirst = 100;
-    constexpr ActionID kLast  = 111;
-
-    if (node.actionOrConditionId < kFirst || node.actionOrConditionId > kLast) return;
-
-    node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
-    node.actionOrConditionId = CCL::AI::A_Wait;
-}
-
-void BehaviorTreeLoader::MigrateLegacyCondition(BTNode &node, const std::string &savedKey,
-                                                const std::string &path)
-{
-    if (node.type != BTNodeType::Condition) return;
-
-    // 現行の条件として解決済みなら何もしない。
-    const LegacyConditionEntry *legacy = FindLegacyCondition(savedKey, node.actionOrConditionId);
-    if (!legacy) return;
-
-    node.actionOrConditionId = legacy->newId;
-    node.param               = legacy->param;
-
-    if (legacy->ambiguous)
-    {
-        // 帯は1ノードでは表せず上限だけを引き継ぐので、単独で置かれていた場合は
-        // 意味が広がる。黙って変えると気づけないのでファイル名つきで知らせる。
-        CCL_LOG_WARN(LogCategory::AI,
-                     "[BT] 旧条件 \"%s\" を「距離 < %.1fm」へ読み替えた: %s "
-                     "（元は帯だったので、下限が必要なら条件ノードを2つに分けること）",
-                     legacy->key, legacy->param, path.c_str());
-    }
-    else
-    {
-        CCL_LOG_INFO(LogCategory::AI,
-                     "[BT] 旧条件 \"%s\" を param %.1f 付きの新条件へ読み替えた: %s",
-                     legacy->key, legacy->param, path.c_str());
-    }
-}
-
 namespace
 {
     /// 枝の中に「Running を返しうる行動」が1つでもあるか。
@@ -175,18 +126,18 @@ namespace
     }
 
     /// 枝の中に「currentActionId を書く行動」が1つでもあるか。
-/// Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
-bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
-{
-    const BTNode &node = asset.nodes[nodeId];
-    if (node.type == BTNodeType::Action && IsCommandWritingAction(node.actionOrConditionId))
-        return true;
-    for (BTNodeID c : node.children)
-        if (SubtreeWritesCommand(asset, c)) return true;
-    return false;
-}
+    /// Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
+    bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
+    {
+        const BTNode &node = asset.nodes[nodeId];
+        if (node.type == BTNodeType::Action && IsCommandWritingAction(node.actionOrConditionId))
+            return true;
+        for (BTNodeID c : node.children)
+            if (SubtreeWritesCommand(asset, c)) return true;
+        return false;
+    }
 
-/// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
+    /// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
     bool SubtreeHasCondition(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -329,13 +280,13 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                 CCL_LOG_WARN(LogCategory::AI,
                              "[BT] nodes[%zu] のデコレーターに子が繋がっていない: %s", i, path.c_str());
             }
-            // 削除した修飾（旧 Async = 3）を持つ古い木。素通りするだけで害はないが、
-            // 置いた本人の意図は実現しないので知らせる。
+            // 存在しない種別。評価の switch はどの case にも当たらず素通りするので、
+            // 修飾を付けたつもりのノードが何もしない。
             if (static_cast<int>(node.decoratorType) > static_cast<int>(BTDecoratorType::Retry))
             {
                 CCL_LOG_WARN(LogCategory::AI,
-                             "[BT] nodes[%zu] の修飾の種類が %d。この番号はもう存在しないので"
-                             "何も修飾せず素通りする（旧 Async は Parallel ノードへ置き換えた）: %s",
+                             "[BT] nodes[%zu] の修飾の種類が %d。この番号は存在しないので"
+                             "何も修飾せず素通りする: %s",
                              i, static_cast<int>(node.decoratorType), path.c_str());
             }
         }
@@ -438,7 +389,11 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             for (const BTNodeID c : node.children)
             {
                 const float w = asset.nodes[c].weight;
-                if (w > 0.0f) { total += w; continue; }
+                if (w > 0.0f)
+                {
+                    total += w;
+                    continue;
+                }
 
                 CCL_LOG_WARN(LogCategory::AI,
                              "[BT] nodes[%zu] の重み付きセレクターの枝 nodes[%u] は重みが %.2f。"
@@ -472,10 +427,9 @@ BTNodeType BehaviorTreeLoader::StringToNodeType(const std::string &typeStr)
     if (typeStr == "Condition") return BTNodeType::Condition;
     if (typeStr == "Decorator") return BTNodeType::Decorator;
     if (typeStr == "WeightedSelector") return BTNodeType::WeightedSelector;
-    // 旧称。アセットを移行済みでも、手元のバックアップや作業中のブランチから
-    // 古い木を開いたときに黙って Action 扱いにならないよう残す。
-    if (typeStr == "ShuffleSelector") return BTNodeType::WeightedSelector;
-    if (typeStr == "RandomSelector")  return BTNodeType::WeightedSelector;
     if (typeStr == "Parallel") return BTNodeType::Parallel;
+
+    // 知らない種別は Action として読む。ここで弾くと木が丸ごと無反応になるので、
+    // 行動として読み込んでおき、おかしさは ValidateNodes に報告させる。
     return BTNodeType::Action;
 }

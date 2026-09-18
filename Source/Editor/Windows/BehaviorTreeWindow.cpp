@@ -262,44 +262,8 @@ namespace
             j["weight"] = node.weight;
     }
 
-    // 待ち時間がActionIDに埋まっていた頃のグラフを「A_Wait + param」へ読み替える。
-    //
-    // ランタイム側（BehaviorTreeLoader::MigrateLegacyWait）と同じ変換。
-    // エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
-    void MigrateLegacyWait(EditorBTNode &node)
-    {
-        if (node.type != EditorBTNodeType::Action) return;
-
-        static constexpr float kLegacyWaitSeconds[] = {
-            0.5f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f};
-        constexpr ActionID kFirst = 100;
-        constexpr ActionID kLast  = 111;
-
-        if (node.actionOrConditionId < kFirst || node.actionOrConditionId > kLast) return;
-
-        node.param               = kLegacyWaitSeconds[node.actionOrConditionId - kFirst];
-        node.actionOrConditionId = CCL::AI::A_Wait;
-    }
-
-    // 間合いがIDに埋まっていた頃の条件を「距離条件 + param」へ読み替える。
-    //
-    // ランタイム側（BehaviorTreeLoader::MigrateLegacyCondition）と同じ変換で、
-    // 対応表は ActionRegistry.h の g_LegacyConditions を共有している。
-    // エディタで開いて保存し直せば、そのアセットは新形式へ移行する。
-    void MigrateLegacyCondition(EditorBTNode &node, const nlohmann::json &jn)
-    {
-        if (node.type != EditorBTNodeType::Condition) return;
-
-        const std::string           savedKey = jn.value("condition", std::string());
-        const LegacyConditionEntry *legacy =
-            FindLegacyCondition(savedKey, node.actionOrConditionId);
-        if (!legacy) return;
-
-        node.actionOrConditionId = legacy->newId;
-        node.param               = legacy->param;
-    }
-
-    // 保存された行動/条件を復元する。キーが正で、数値IDは旧アセット互換。
+    // 保存された行動/条件を復元する。併記された保存キーが正で、
+    // 数値IDはキーを引けなかったときの保険。
     void RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
     {
         node.actionOrConditionId = static_cast<ActionID>(jn.value("actionId", 0));
@@ -439,12 +403,10 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json &state)
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn.value("name", "Unknown");
         RestoreActionId(node, jn);
-        node.param  = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.param  = jn.value("param", 0.0f);
         node.weight = jn.value("weight", 1.0f);
-        MigrateLegacyWait(node);
-        MigrateLegacyCondition(node, jn);
-        node.posX = jn.value("posX", 0.0f);
-        node.posY = jn.value("posY", 0.0f);
+        node.posX   = jn.value("posX", 0.0f);
+        node.posY   = jn.value("posY", 0.0f);
 
         if (node.type == EditorBTNodeType::Group)
         {
@@ -922,7 +884,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext &context)
         case EditorBTNodeType::Parallel:
             headerColor = ImColor(20, 120, 120); // 青緑。「同時に動く」ことを色で区別する
             break;
-        case EditorBTNodeType::ShuffleSelector: // 重み付きセレクター
+        case EditorBTNodeType::WeightedSelector: // 重み付きセレクター
             headerColor = ImColor(180, 80, 180); // 紫色にして一目で「運要素」だと分かるようにする
             break;
         default:
@@ -1442,7 +1404,7 @@ void BehaviorTreeWindow::DrawInspector()
                             "⚠ 従にはボス本体の技（薙ぎ払い・突進・跳躍・移動）を置かないでください。"
                             "主が終わると従は止まりますが、体への要求が下りず技が続いてしまいます。");
                 break;
-            case EditorBTNodeType::ShuffleSelector:
+            case EditorBTNodeType::WeightedSelector:
                 ImGui::Text("【Weighted Selector (重み付きセレクター)】\n"
                             "子ノードの「重み」に比例して1つ抽選し、その枝を実行します。\n"
                             "失敗したらその枝を候補から外して、残りから引き直します。\n"
@@ -1557,7 +1519,7 @@ void BehaviorTreeWindow::DrawInspector()
                 else if (!FindActionEntry(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
-                                       "⚠ 未登録ID（旧BTからの互換データの可能性）");
+                                       "⚠ 未登録ID（辞書に載っていない番号）");
                 }
             }
 
@@ -1622,12 +1584,16 @@ void BehaviorTreeWindow::DrawInspector()
                     if (lk.endPinId != it->inputPin.id) continue;
                     for (const auto &n : m_nodes)
                     {
-                        if (n.outputPin.id == lk.startPinId) { parent = &n; break; }
+                        if (n.outputPin.id == lk.startPinId)
+                        {
+                            parent = &n;
+                            break;
+                        }
                     }
                     break;
                 }
 
-                if (parent && parent->type == EditorBTNodeType::ShuffleSelector)
+                if (parent && parent->type == EditorBTNodeType::WeightedSelector)
                 {
                     ImGui::Separator();
                     ImGui::Text("抽選の重み (Weight):");
@@ -1804,7 +1770,7 @@ void BehaviorTreeWindow::AutoLayout()
             const EditorBTNode *nb = find(b);
             if (!na || !nb) return false;
             if (na->posX != nb->posX) return na->posX < nb->posX;
-            return na->posY < nb->posY;   // X が同じなら上が先（実行順の表示・焼き込みと同じ規則）
+            return na->posY < nb->posY; // X が同じなら上が先（実行順の表示・焼き込みと同じ規則）
         });
     }
 
@@ -2060,7 +2026,7 @@ void BehaviorTreeWindow::HandleContextMenu()
         }
         if (ImGui::MenuItem("重み付きセレクター（Weighted Selector）"))
         {
-            CreateNode(EditorBTNodeType::ShuffleSelector, "重み付きセレクター（Weighted Selector）", canvasPos.x, canvasPos.y);
+            CreateNode(EditorBTNodeType::WeightedSelector, "重み付きセレクター（Weighted Selector）", canvasPos.x, canvasPos.y);
         }
         ImGui::Separator();
 
@@ -2233,7 +2199,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
             return "Action";
         case EditorBTNodeType::Decorator:
             return "Decorator";
-        case EditorBTNodeType::ShuffleSelector:
+        case EditorBTNodeType::WeightedSelector:
             return "WeightedSelector";
         case EditorBTNodeType::Parallel:
             return "Parallel";
@@ -2340,12 +2306,10 @@ void BehaviorTreeWindow::LoadGraph(const std::string &path)
         node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
         node.name = jn["name"];
         RestoreActionId(node, jn);
-        node.param  = jn.value("param", jn.value("decoratorParam", 0.0f));
+        node.param  = jn.value("param", 0.0f);
         node.weight = jn.value("weight", 1.0f);
-        MigrateLegacyWait(node);
-        MigrateLegacyCondition(node, jn);
-        node.posX = jn["posX"];
-        node.posY = jn["posY"];
+        node.posX   = jn["posX"];
+        node.posY   = jn["posY"];
         // グループサイズを復元
         if (node.type == EditorBTNodeType::Group)
         {
