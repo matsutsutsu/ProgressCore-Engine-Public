@@ -284,7 +284,8 @@ void FileDialog::Initialize(const std::filesystem::path &settingsPath)
                                 .defaultExt = "json",
                             });
     RegisterPreset("Model", {
-                                .filters    = {{"Model Files", "*.fbx;*.obj;*.gltf;*.glb"}, {"All Files", "*.*"}},
+                                // *.model.json は本体モデルと追加アニメーションを束ねた定義ファイル
+                                .filters    = {{"Model Files", "*.fbx;*.obj;*.gltf;*.glb;*.model.json"}, {"All Files", "*.*"}},
                                 .defaultDir = "Assets/Models",
                             });
     RegisterPreset("Texture", {

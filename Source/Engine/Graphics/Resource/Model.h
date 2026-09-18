@@ -202,6 +202,11 @@ private:
     // ---------------------------------------------------------------
     mutable std::vector<int> m_rootMotionNodeCache;
 
+    // 位置リターゲットを行うか（ModelResource から複製した静的な性質）。
+    //   false のときは isRootOrPelvis に関係なくアニメの移動をそのまま使う。
+    //   詳細は ModelResource::GetTranslationRetargeting() のコメントを参照。
+    bool m_translationRetargeting = true;
+
     // ---------------------------------------------------------------
     // アニメ名 → インデックスのキャッシュ。
     //   GetAnimationIndex は毎フレーム（ブレンド時は2回）呼ばれる。名前とインデックスの

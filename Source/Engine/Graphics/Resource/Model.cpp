@@ -98,6 +98,8 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
 
     // ModelResourceに格納された階層情報（Nodes）を
     // Modelのインスタンスにコピーして親子関係を再構築する
+    m_translationRetargeting = ResourceManager::Instance().GetModel(resource)->GetTranslationRetargeting();
+
     const std::vector<ModelResource::Node> &resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
     nodes.resize(resNodes.size());
     for (size_t i = 0; i < nodes.size(); ++i)
@@ -387,7 +389,11 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     //   isRootOrPelvis が true なのはリグ全体で1〜3本だけなので、位置チャンネルの
     //   キーフレーム探索と Lerp はほぼ全ノードで消える。
     //   nodePose.position は上でバインドポーズ済みなので、else 側の代入は不要。
-    if (bindNode.isRootOrPelvis)
+    // リターゲットを切っているモデルでは、全ボーンの移動をそのまま採用する。
+    //   モデルとアニメの骨格が同一であることが前提。スライドするボーン
+    //   （Muriel の wing_blade_track など）は移動そのものが演出なので、
+    //   バインドポーズで上書きすると配下のボーンごと位置が破綻する。
+    if (bindNode.isRootOrPelvis || !m_translationRetargeting)
     {
         const ModelResource::VectorKeyframe *posK0, *posK1;
         EvaluateKeyframes(nodeAnim.positionKeyframes, time, rate, posK0, posK1);

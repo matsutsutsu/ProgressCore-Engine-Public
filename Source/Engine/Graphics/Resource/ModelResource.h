@@ -193,6 +193,21 @@ public:
     // アニメーション追加読み込み
     void AppendAnimations(const char *filename);
 
+    // 位置リターゲットを行うか。
+    //   true (既定) = Root/Pelvis/Hips 以外のボーンはアニメの移動を無視し、
+    //                 バインドポーズの骨の長さを使う（プロポーション崩壊対策）。
+    //   false       = アニメの移動をそのまま使う。モデルとアニメの骨格が同一で、
+    //                 スライドするボーンなど「移動そのものが演出」の場合に必要。
+    //   .model.json の "translationRetargeting" で切り替える。cereal には保存せず、
+    //   キャッシュから復元した場合でも毎回 JSON の値で上書きする。
+    bool  GetTranslationRetargeting() const { return translationRetargeting; }
+    void  SetTranslationRetargeting(bool enable) { translationRetargeting = enable; }
+
+    // モデル定義ファイル（.model.json）かどうかの判定。
+    // 本体モデルと追加アニメーションの組を1枚のJSONで宣言する形式で、
+    // アセットブラウザ側の種別判定でも同じ関数を使う。
+    static bool IsModelSetFile(const char *filename);
+
     // メッシュのバウンディング計算
     void ComputeMeshBounds(Mesh &mesh);
 
@@ -202,6 +217,10 @@ public:
     const DirectX::BoundingBox &GetBoundingBox() const { return m_boundingBox; }
 
 protected:
+    // モデル定義ファイル（.model.json）の読み込み。
+    // Load() から分岐して呼ばれ、キャッシュ判定・構築・AABB計算まで完結させる。
+    void LoadModelSet(ID3D11Device *device, const char *filename);
+
     // モデルセットアップ
     void BuildModel(ID3D11Device *device, const char *dirname);
 
@@ -216,6 +235,8 @@ protected:
     std::vector<Material>  materials;
     std::vector<Mesh>      meshes;
     std::vector<Animation> animations;
+
+    bool translationRetargeting = true; // 既定は従来どおり有効
 
     DirectX::BoundingBox m_boundingBox; // モデル全体のローカルAABB
 };

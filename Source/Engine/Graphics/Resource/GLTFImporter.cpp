@@ -221,6 +221,16 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                         mesh.indices.at(i) = indicesU16[i];
                     }
                 }
+                else if (gltfAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+                {
+                    // glTF仕様ではインデックスに UNSIGNED_BYTE も認められている。
+                    // 頂点数がごく少ないプリミティブで実際に使われるため、対応が必要。
+                    const uint8_t *indicesU8 = static_cast<const uint8_t *>(indices);
+                    for (size_t i = 0; i < gltfAccessor.count; ++i)
+                    {
+                        mesh.indices.at(i) = indicesU8[i];
+                    }
+                }
                 else
                 {
                     _ASSERT_EXPR_A(false, "This accessor component type is not supported.");

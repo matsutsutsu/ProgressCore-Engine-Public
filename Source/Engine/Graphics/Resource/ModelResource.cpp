@@ -7,7 +7,12 @@
 #include <cereal/types/vector.hpp>
 
 #include <filesystem>
+#include <algorithm>
+#include <json.hpp>
 #include "GLTFImporter.h"
+
+#include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
@@ -213,6 +218,15 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
     std::filesystem::path dirpath(filepath.parent_path());
     std::filesystem::path extension = filepath.extension();
 
+    // モデル定義ファイル（.model.json）は本体モデルと追加アニメーションを
+    // 束ねた別形式なので、専用の経路に丸ごと委譲する。
+    // 既存の .glb / .gltf / .cereal の読み込みには一切触れない。
+    if (IsModelSetFile(filename))
+    {
+        LoadModelSet(device, filename);
+        return;
+    }
+
     //// 独自形式のモデルファイルの存在確認
     filepath.replace_extension(".cereal");
     if (std::filesystem::exists(filepath))
@@ -254,25 +268,205 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
     ComputeModelLocalAABB();
 }
 
-// アニメーション追加読み込み
-void ModelResource::AppendAnimations(const char *filename)
+// ============================================================================
+// モデル定義ファイル（.model.json）
+//   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
+//
+//     {
+//         "model": "Muriel_GDC.glb",
+//         "animations": [
+//             "Animations/Idle.gltf",
+//             "Animations/ConsecratedGround_Cast.gltf"
+//         ]
+//     }
+//
+//   パスはこのJSONが置かれたディレクトリからの相対で書く。
+//   アニメーションをモデルへ焼き込まず別ファイルのまま扱えるようにするための形式で、
+//   従来どおり .glb を直接指定する使い方もそのまま残っている。
+// ============================================================================
+bool ModelResource::IsModelSetFile(const char *filename)
 {
-    std::filesystem::path filepath(filename);
-    std::filesystem::path dirpath(filepath.parent_path());
+    if (filename == nullptr) return false;
 
-    if (filepath.extension() == ".gltf" ||
-        filepath.extension() == ".glb")
+    std::string path(filename);
+    std::transform(path.begin(), path.end(), path.begin(), tolower); // 小文字化
+
+    const std::string suffix = ".model.json";
+    if (path.size() < suffix.size()) return false;
+
+    return path.compare(path.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+// モデル定義ファイルの読み込み
+void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
+{
+    const std::filesystem::path jsonPath(filename);
+    const std::filesystem::path baseDir = jsonPath.parent_path();
+
+    // ---- 定義の読み取り ----
+    const std::string text = FileSystem::ReadAllText(jsonPath.string());
+    if (text.empty())
     {
-        // 汎用モデルファイルの読み込み
-        GLTFImporter importer(filename);
+        CCL_LOG_ERROR(LogCategory::Render, "モデル定義ファイルを読み込めません: %s", filename);
+        return;
+    }
 
-        // アニメーションデータ読み取り
-        importer.LoadAnimations(animations, nodes);
+    std::string              modelRelative;
+    std::vector<std::string> animationRelatives;
+    bool                     useTranslationRetargeting = true;
+    try
+    {
+        const nlohmann::json j = nlohmann::json::parse(text);
+        modelRelative          = j.at("model").get<std::string>();
+        if (j.contains("animations"))
+        {
+            animationRelatives = j.at("animations").get<std::vector<std::string>>();
+        }
+        if (j.contains("translationRetargeting"))
+        {
+            useTranslationRetargeting = j.at("translationRetargeting").get<bool>();
+        }
+    }
+    catch (const std::exception &e)
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "モデル定義ファイルの解析に失敗しました: %s (%s)", filename, e.what());
+        return;
+    }
+
+    // 参照先はJSONからの相対パスとして解決する
+    const std::filesystem::path        modelPath = baseDir / modelRelative;
+    std::vector<std::filesystem::path> animationPaths;
+    animationPaths.reserve(animationRelatives.size());
+    for (const std::string &relative : animationRelatives)
+    {
+        animationPaths.emplace_back(baseDir / relative);
+    }
+
+    if (!std::filesystem::exists(modelPath))
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "本体モデルが見つかりません: %s", modelPath.string().c_str());
+        return;
+    }
+
+    // ---- キャッシュの鮮度判定 ----
+    // .glb を直接指定する経路は「.cereal があれば無条件に採用」だが、
+    // この形式はアニメーションを何度も差し替えながら使うことを想定している。
+    // 元ファイルの方が新しければ作り直しておかないと、書き出したのに
+    // 反映されない、という原因の分かりにくい足止めが起きる。
+    std::filesystem::path cachePath = jsonPath;
+    cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
+
+    bool cacheUsable = std::filesystem::exists(cachePath);
+    if (cacheUsable)
+    {
+        const std::filesystem::file_time_type cacheTime = std::filesystem::last_write_time(cachePath);
+
+        // キャッシュより新しい元ファイルが1つでもあれば作り直す
+        auto isNewerThanCache = [&cacheTime](const std::filesystem::path &path) {
+            std::error_code                       ec;
+            const std::filesystem::file_time_type time = std::filesystem::last_write_time(path, ec);
+            return !ec && time > cacheTime;
+        };
+
+        cacheUsable = !isNewerThanCache(jsonPath) && !isNewerThanCache(modelPath);
+        for (const std::filesystem::path &animationPath : animationPaths)
+        {
+            if (!cacheUsable) break;
+            cacheUsable = !isNewerThanCache(animationPath);
+        }
+    }
+
+    if (cacheUsable)
+    {
+        Deserialize(cachePath.string().c_str());
     }
     else
     {
-        _ASSERT_EXPR_A(false, "found not model file");
+        // ---- 本体モデル ----
+        {
+            GLTFImporter importer(modelPath.string().c_str());
+            importer.LoadMaterials(materials, nullptr);
+            importer.LoadNodes(nodes);
+            importer.LoadMeshes(meshes, nodes);
+            // 本体側にアニメーションが含まれていればそれも採用する
+            importer.LoadAnimations(animations, nodes, 30.0f);
+        }
+
+        // ---- 追加アニメーション ----
+        for (const std::filesystem::path &animationPath : animationPaths)
+        {
+            AppendAnimations(animationPath.string().c_str());
+        }
+
+        Serialize(cachePath.string().c_str());
     }
+
+    // 位置リターゲットの設定は cereal に保存していないため、
+    // キャッシュから復元した場合も含めて毎回ここで反映する。
+    SetTranslationRetargeting(useTranslationRetargeting);
+
+    // テクスチャの探索起点は「定義ファイル」ではなく「本体モデル」の置き場所にする。
+    // glb の埋め込みテクスチャは GLTFImporter が glb と同じ階層の Textures/ へ
+    // 展開するため、ここを合わせておけば定義ファイルを別フォルダに置いても壊れない。
+    char modelDrive[32], modelDir[256], modelDirName[256];
+    const std::string modelPathString = modelPath.string();
+    ::_splitpath_s(modelPathString.c_str(), modelDrive, sizeof(modelDrive), modelDir, sizeof(modelDir), nullptr, 0, nullptr, 0);
+    ::_makepath_s(modelDirName, sizeof(modelDirName), modelDrive, modelDir, nullptr, nullptr);
+
+    // モデル構築
+    BuildModel(device, modelDirName);
+
+    // モデル全体のAABBを計算
+    ComputeModelLocalAABB();
+}
+
+// アニメーション追加読み込み
+void ModelResource::AppendAnimations(const char *filename)
+{
+    const std::filesystem::path filepath(filename);
+    const std::filesystem::path extension = filepath.extension();
+
+    if (extension != ".gltf" && extension != ".glb")
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "アニメーションの形式が未対応です: %s", filename);
+        return;
+    }
+    if (!std::filesystem::exists(filepath))
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "アニメーションファイルが見つかりません: %s", filename);
+        return;
+    }
+
+    GLTFImporter importer(filename);
+
+    // GLTFImporter::LoadAnimations はチャンネルを「ノード名」ではなく
+    // 「ノード番号」で引き当てる。そのためノードの並びが本体モデルとズレていると、
+    // 別のボーンへ平然と適用されて姿勢が壊れる。しかもエラーにはならないため
+    // 原因の特定が難しい。ここで名前の並びを突き合わせ、合わなければ取り込まない。
+    std::vector<Node> animationNodes;
+    importer.LoadNodes(animationNodes);
+
+    if (animationNodes.size() != nodes.size())
+    {
+        CCL_LOG_ERROR(LogCategory::Render,
+                      "アニメーションのノード数がモデルと一致しません: %s (モデル %zu / アニメ %zu)",
+                      filename, nodes.size(), animationNodes.size());
+        return;
+    }
+    for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
+    {
+        if (nodes.at(nodeIndex).name == animationNodes.at(nodeIndex).name) continue;
+
+        CCL_LOG_ERROR(LogCategory::Render,
+                      "アニメーションのボーンの並びがモデルと一致しません: %s (%zu番目 モデル\"%s\" / アニメ\"%s\")",
+                      filename, nodeIndex,
+                      nodes.at(nodeIndex).name.c_str(),
+                      animationNodes.at(nodeIndex).name.c_str());
+        return;
+    }
+
+    // アニメーションデータ読み取り
+    importer.LoadAnimations(animations, nodes);
 }
 
 void ModelResource::ComputeMeshBounds(Mesh &mesh)

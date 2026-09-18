@@ -7,6 +7,7 @@
 #include <imgui_internal.h>
 #include "ShellIconLoader.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/Resource/ModelResource.h" // .model.json の判定を共有する
 
 // Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
@@ -407,7 +408,13 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
         {
             std::string filePath = node.path.string();
-            if (filePath.find(".json") != std::string::npos)
+            // .model.json も拡張子は .json なので、プレハブより先に判定する
+            if (ModelResource::IsModelSetFile(filePath.c_str()))
+            {
+                ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
+                ImGui::Text("Load Model: %s", node.name.c_str());
+            }
+            else if (filePath.find(".json") != std::string::npos)
             {
                 ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
                 ImGui::Text("Spawn Prefab: %s", node.name.c_str());
@@ -509,7 +516,13 @@ void AssetBrowser::DrawGridView()
                 if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
                 {
                     std::string filePath = child.path.string();
-                    if (filePath.find(".json") != std::string::npos)
+                    // .model.json も拡張子は .json なので、プレハブより先に判定する
+                    if (ModelResource::IsModelSetFile(filePath.c_str()))
+                    {
+                        ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
+                        ImGui::Text("Load Model: %s", child.name.c_str());
+                    }
+                    else if (filePath.find(".json") != std::string::npos)
                     {
                         ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
                         ImGui::Text("Spawn Prefab: %s", child.name.c_str());
@@ -552,6 +565,12 @@ bool AssetBrowser::FilterAsset(const AssetNode &node)
         {
             return false;
         }
+    }
+
+    // .model.json は拡張子が .json だが中身はモデルなので、モデル側に分類する
+    if (ModelResource::IsModelSetFile(node.path.string().c_str()))
+    {
+        return typeFilters.count("model") == 0 || typeFilters["model"];
     }
 
     auto ext = node.path.extension().string();

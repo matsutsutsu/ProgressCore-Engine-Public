@@ -360,6 +360,15 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
         }
         m_prevSelectedAnimIndex = m_selectedAnimIndex;
 
+        // 選択中のアニメーション名をシーケンスへ書き戻す。
+        //   新規シーケンス（targetAnimName が空）や、モデルに存在しない名前が
+        //   入っていた場合はここで 0 番へフォールバックしているため、
+        //   名前を同期しないと targetAnimName が空のまま残る。
+        //   コンボボックスは animations[] 側の名前を表示するので見た目は正しく、
+        //   一方 AnimationSystem::UpdateManual は targetAnimName で
+        //   GetAnimationIndex() を引くため -1 になり、再生しても姿勢が一切変わらない。
+        m_editingSequence.targetAnimName = animations[m_selectedAnimIndex].name;
+
         // アセットの長さに強制同期
         m_editingSequence.duration = (std::max)(0.01f, animations[m_selectedAnimIndex].secondsLength);
         m_sequencerImpl->SyncFrameCache();

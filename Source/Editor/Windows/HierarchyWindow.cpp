@@ -11,6 +11,10 @@
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Graphics/Resource/ModelResource.h"
+#include <filesystem>
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
 
@@ -185,6 +189,51 @@ void HierarchyWindow::DrawContents(EditorContext &context)
                     newEntity, PrefabInstanceComponent{prefabPath});
                 context.SetSingleSelection(newEntity);
             }
+        }
+        // =====================================================================
+        // モデルファイルのドロップ
+        //   プレハブを作らずにモデル単体を置けるようにする。
+        //   アニメーションの確認を、何もないシーンでそのまま行うための入口。
+        // =====================================================================
+        else if (const ImGuiPayload *modelPayload = ImGui::AcceptDragDropPayload("ASSET_MODEL"))
+        {
+            const char *modelPath = (const char *)modelPayload->Data;
+
+            // 先に読み込んでしまい、アニメーションを持つモデルにだけ
+            // AnimatorComponent を付ける。アニメーションシーケンサは
+            // ModelComponent と AnimatorComponent の両方がある
+            // エンティティだけを対象にするため、ここで揃えておく。
+            ModelComponent modelComponent(modelPath);
+
+            bool hasAnimation = false;
+            if (const Model *model = modelComponent.GetModel())
+            {
+                if (const ModelResource *resource = model->GetResource())
+                {
+                    hasAnimation = !resource->GetAnimations().empty();
+                }
+            }
+
+            // "Muriel.model.json" は stem が "Muriel.model" になるので、もう一段落とす
+            std::string entityName = std::filesystem::path(modelPath).stem().string();
+            if (ModelResource::IsModelSetFile(modelPath))
+            {
+                entityName = std::filesystem::path(entityName).stem().string();
+            }
+
+            auto arch = hasAnimation
+                            ? ArchetypeHelper::Generate<TransformComponent, NameComponent, ModelComponent, AnimatorComponent>()
+                            : ArchetypeHelper::Generate<TransformComponent, NameComponent, ModelComponent>();
+
+            auto ref = EntityFactory::SpawnNamed(*context.world, entityName.c_str(), arch);
+            ref.Set(TransformComponent{}).Set(std::move(modelComponent));
+
+            // SpawnNamed は生成予約を積むだけなので、選択する前に確定させる
+            context.world->ScrutinyAndApply();
+            context.SetSingleSelection(ref.id);
+
+            CCL_LOG_INFO(LogCategory::Editor, "モデルを配置しました: %s (アニメーション %s)",
+                         modelPath, hasAnimation ? "あり" : "なし");
         }
         ImGui::EndDragDropTarget();
     }
