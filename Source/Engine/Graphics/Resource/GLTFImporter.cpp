@@ -2,6 +2,7 @@
 #include <cstring>    // memcmp 用
 #include <windows.h>  // OutputDebugStringA 用
 #include <filesystem> // パス検証用
+#include <unordered_map>
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -12,6 +13,7 @@
 #include "Engine/Graphics/RHI/DebugName.h"
 #include "GLTFImporter.h"
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
+#include "Engine/Platform/Core/Logger.h"
 
 bool LoadImageData(tinygltf::Image *, const int, std::string *,
                    std::string *, int, int,
@@ -597,6 +599,29 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
 {
     DirectX::XMVECTOR Epsilon = DirectX::XMVectorReplicate(0.00001f);
 
+    // チャンネルの適用先は glTF のノード番号で書かれているが、これは
+    // 「そのファイルの中での番号」でしかない。別ファイルのアニメーションを
+    // 取り込む場合、モデル側の並びと一致している保証はどこにも無い。
+    // 番号のまま引くと、ズレたときにエラーも出さず別のボーンへ適用されて
+    // 姿勢が壊れるため、ボーン名でモデル側の番号へ読み替えてから使う。
+    std::unordered_map<std::string, int> modelNodeIndexByName;
+    modelNodeIndexByName.reserve(nodes.size());
+    for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
+    {
+        // 同名ノードは先勝ち（Model::GetAnimationIndex と同じ方針）
+        modelNodeIndexByName.emplace(nodes.at(nodeIndex).name, static_cast<int>(nodeIndex));
+    }
+
+    std::vector<int> modelNodeIndices(gltfModel.nodes.size(), -1);
+    for (size_t gltfNodeIndex = 0; gltfNodeIndex < gltfModel.nodes.size(); ++gltfNodeIndex)
+    {
+        const auto it = modelNodeIndexByName.find(gltfModel.nodes.at(gltfNodeIndex).name);
+        if (it != modelNodeIndexByName.end())
+        {
+            modelNodeIndices.at(gltfNodeIndex) = it->second;
+        }
+    }
+
     for (const tinygltf::Animation &gltfAnimation : gltfModel.animations)
     {
         ModelResource::Animation &animation = animations.emplace_back();
@@ -604,12 +629,26 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
         animation.nodeAnims.resize(nodes.size());
         animation.secondsLength = 0;
 
-        float minTime = FLT_MAX;
-        float maxTime = 0;
+        float minTime               = FLT_MAX;
+        float maxTime               = 0;
+        int   unresolvedChannels    = 0;
         for (const tinygltf::AnimationChannel &gltfAnimationChannel : gltfAnimation.channels)
         {
+            // 適用先のボーンをモデル側の番号へ読み替える。
+            // モデルに存在しないボーンのチャンネルは捨て、最後にまとめて報告する。
+            const int targetNode = gltfAnimationChannel.target_node;
+            const int modelNodeIndex =
+                (targetNode >= 0 && static_cast<size_t>(targetNode) < modelNodeIndices.size())
+                    ? modelNodeIndices.at(targetNode)
+                    : -1;
+            if (modelNodeIndex < 0)
+            {
+                ++unresolvedChannels;
+                continue;
+            }
+
             // ノードアニメーションデータを読み取り開始
-            ModelResource::NodeAnim          &nodeAnim             = animation.nodeAnims.at(gltfAnimationChannel.target_node);
+            ModelResource::NodeAnim          &nodeAnim             = animation.nodeAnims.at(modelNodeIndex);
             const tinygltf::AnimationSampler &gltfAnimationSampler = gltfAnimation.samplers.at(gltfAnimationChannel.sampler);
             const tinygltf::Accessor         &gltfInputAccessor    = gltfModel.accessors.at(gltfAnimationSampler.input);
             const tinygltf::Accessor         &gltfOutputAccessor   = gltfModel.accessors.at(gltfAnimationSampler.output);
@@ -722,6 +761,20 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                     nodeAnim.positionKeyframes.resize(1);
                 }
             }
+        }
+
+        if (unresolvedChannels > 0)
+        {
+            CCL_LOG_WARN(LogCategory::Render,
+                         "アニメーション \"%s\": モデルに無いボーンのチャンネルを %d 本読み飛ばしました",
+                         animation.name.c_str(), unresolvedChannels);
+        }
+
+        // 1本も取り込めなかった場合、minTime が初期値のままで
+        // 再生時間が負の巨大値になる。後続の引き算ごと潰れるのでここで倒しておく。
+        if (minTime > maxTime)
+        {
+            minTime = maxTime;
         }
 
         // 先頭キーフレームの時間が0じゃない場合があるので調整する

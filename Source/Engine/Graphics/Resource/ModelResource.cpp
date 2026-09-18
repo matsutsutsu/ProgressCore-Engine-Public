@@ -8,6 +8,7 @@
 
 #include <filesystem>
 #include <algorithm>
+#include <unordered_set>
 #include <json.hpp>
 #include "GLTFImporter.h"
 
@@ -273,14 +274,16 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 //   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
 //
 //     {
-//         "model": "Muriel_GDC.glb",
-//         "animations": [
-//             "Animations/Idle.gltf",
-//             "Animations/ConsecratedGround_Cast.gltf"
-//         ]
+//         "model": "Muriel_GDC.glb"
 //     }
 //
 //   パスはこのJSONが置かれたディレクトリからの相対で書く。
+//
+//   "animations" の書き方は3通り。
+//     省略   … 既定の "Animations" フォルダを走査する（推奨）
+//     文字列 … 指定したフォルダを走査する
+//     配列   … 書いたファイルだけを、書いた順に読む
+//   走査にしておけば、アニメーションを増やすたびにこのJSONを編集しなくてよい。
 //   アニメーションをモデルへ焼き込まず別ファイルのまま扱えるようにするための形式で、
 //   従来どおり .glb を直接指定する使い方もそのまま残っている。
 // ============================================================================
@@ -313,14 +316,25 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
 
     std::string              modelRelative;
     std::vector<std::string> animationRelatives;
+    std::string              animationDirRelative;      // 空でなければフォルダ走査
     bool                     useTranslationRetargeting = true;
     try
     {
         const nlohmann::json j = nlohmann::json::parse(text);
         modelRelative          = j.at("model").get<std::string>();
-        if (j.contains("animations"))
+
+        // 配列のときだけ明示列挙。それ以外（文字列 / 省略）はフォルダ走査にする。
+        if (j.contains("animations") && j.at("animations").is_array())
         {
             animationRelatives = j.at("animations").get<std::vector<std::string>>();
+        }
+        else if (j.contains("animations") && j.at("animations").is_string())
+        {
+            animationDirRelative = j.at("animations").get<std::string>();
+        }
+        else
+        {
+            animationDirRelative = "Animations";
         }
         if (j.contains("translationRetargeting"))
         {
@@ -336,10 +350,37 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     // 参照先はJSONからの相対パスとして解決する
     const std::filesystem::path        modelPath = baseDir / modelRelative;
     std::vector<std::filesystem::path> animationPaths;
-    animationPaths.reserve(animationRelatives.size());
-    for (const std::string &relative : animationRelatives)
+    std::filesystem::path              animationDir; // 走査したフォルダ（鮮度判定で使う）
+
+    if (!animationDirRelative.empty())
     {
-        animationPaths.emplace_back(baseDir / relative);
+        animationDir = baseDir / animationDirRelative;
+        if (std::filesystem::is_directory(animationDir))
+        {
+            for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(animationDir))
+            {
+                if (!entry.is_regular_file()) continue;
+
+                std::string extension = entry.path().extension().string();
+                std::transform(extension.begin(), extension.end(), extension.begin(), tolower);
+                if (extension != ".gltf" && extension != ".glb") continue;
+
+                animationPaths.emplace_back(entry.path());
+            }
+
+            // directory_iterator の順序はファイルシステム依存なので並べ直す。
+            // 照合は名前で行うため順序は動作に影響しないが、
+            // .cereal の中身が実行のたびに入れ替わるのを防ぐ。
+            std::sort(animationPaths.begin(), animationPaths.end());
+        }
+    }
+    else
+    {
+        animationPaths.reserve(animationRelatives.size());
+        for (const std::string &relative : animationRelatives)
+        {
+            animationPaths.emplace_back(baseDir / relative);
+        }
     }
 
     if (!std::filesystem::exists(modelPath))
@@ -369,6 +410,15 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         };
 
         cacheUsable = !isNewerThanCache(jsonPath) && !isNewerThanCache(modelPath);
+
+        // フォルダ走査のときはフォルダ自体の更新時刻も見る。
+        // ファイルの追加・削除は個々の mtime には現れないが、
+        // 親ディレクトリの mtime は動くのでこれで増減を検知できる。
+        if (cacheUsable && !animationDir.empty())
+        {
+            cacheUsable = !isNewerThanCache(animationDir);
+        }
+
         for (const std::filesystem::path &animationPath : animationPaths)
         {
             if (!cacheUsable) break;
@@ -439,30 +489,54 @@ void ModelResource::AppendAnimations(const char *filename)
 
     GLTFImporter importer(filename);
 
-    // GLTFImporter::LoadAnimations はチャンネルを「ノード名」ではなく
-    // 「ノード番号」で引き当てる。そのためノードの並びが本体モデルとズレていると、
-    // 別のボーンへ平然と適用されて姿勢が壊れる。しかもエラーにはならないため
-    // 原因の特定が難しい。ここで名前の並びを突き合わせ、合わなければ取り込まない。
+    // GLTFImporter::LoadAnimations はボーン名でモデル側へ対応付けるので、
+    // ノードの並びが違っていても正しく適用される。
+    // ただし骨格そのものが別物だと全チャンネルが適用先を失い、
+    // 「読めたのに動かない」という分かりにくい結果になる。
+    // フォルダ走査では無関係のファイルが紛れ込むこともあるため、
+    // 名前がどれだけ重なっているかを先に見ておく。
     std::vector<Node> animationNodes;
     importer.LoadNodes(animationNodes);
 
-    if (animationNodes.size() != nodes.size())
+    std::unordered_set<std::string> modelNodeNames;
+    modelNodeNames.reserve(nodes.size());
+    for (const Node &node : nodes)
+    {
+        if (!node.name.empty()) modelNodeNames.insert(node.name);
+    }
+
+    // 名無しノード（glTF のルートなど）は空名同士で何にでも一致して
+    // しまうので、数えるのは名前のあるノードだけにする。
+    size_t      namedNodeCount   = 0;
+    size_t      matchedNodeCount = 0;
+    std::string firstUnmatchedName;
+    for (const Node &node : animationNodes)
+    {
+        if (node.name.empty()) continue;
+        ++namedNodeCount;
+
+        if (modelNodeNames.count(node.name) > 0)
+        {
+            ++matchedNodeCount;
+        }
+        else if (firstUnmatchedName.empty())
+        {
+            firstUnmatchedName = node.name;
+        }
+    }
+
+    if (matchedNodeCount == 0)
     {
         CCL_LOG_ERROR(LogCategory::Render,
-                      "アニメーションのノード数がモデルと一致しません: %s (モデル %zu / アニメ %zu)",
-                      filename, nodes.size(), animationNodes.size());
+                      "ボーン名がモデルと一つも一致しません。別の骨格のアニメーションの可能性があります: %s",
+                      filename);
         return;
     }
-    for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
+    if (matchedNodeCount < namedNodeCount)
     {
-        if (nodes.at(nodeIndex).name == animationNodes.at(nodeIndex).name) continue;
-
-        CCL_LOG_ERROR(LogCategory::Render,
-                      "アニメーションのボーンの並びがモデルと一致しません: %s (%zu番目 モデル\"%s\" / アニメ\"%s\")",
-                      filename, nodeIndex,
-                      nodes.at(nodeIndex).name.c_str(),
-                      animationNodes.at(nodeIndex).name.c_str());
-        return;
+        CCL_LOG_WARN(LogCategory::Render,
+                     "モデルに存在しないボーンが %zu / %zu 本あります: %s (例 \"%s\")",
+                     namedNodeCount - matchedNodeCount, namedNodeCount, filename, firstUnmatchedName.c_str());
     }
 
     // アニメーションデータ読み取り
