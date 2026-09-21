@@ -1,16 +1,17 @@
 // 陣形アセット（Assets/Formations/*.json）の読み書きと検証。
 //
 // 責務: ディスク上の表現と FormationAsset の相互変換だけ。形の意味は知らない。
-//       BehaviorTreeData / BehaviorTreeLoader と同じ分け方で、理由も同じ——
-//       アセットが壊れていることに気づける場所はここしかないため。
+//       どの項目をどのキーで書くかは FormationAssetMeta.h の表が決め、ここはそれを回すだけ。
 //
-// nlohmann::json をヘッダへ出さない理由:
-//   このヘッダはエディタとランタイムの両方が持つ。to_json/from_json を公開すると
-//   「どこでも陣形を直接 JSON 化できる」ことになり、検証を通らない経路が生まれる。
-//   入口を Load/Save の2つに絞れば、検証は必ず通る。
+// 入口を Load / Save の2つに絞っているのは、検証を必ず通すため。
+// JSON を直接組み立てる経路を外へ出すと、Validate を通らないアセットが作れてしまう。
 #pragma once
 #include <string>
+#include <vector>
 
+#include <json_fwd.hpp>
+
+#include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
 
 namespace CCL::AI::Formation
@@ -35,6 +36,16 @@ namespace CCL::AI::Formation
         /// @param  context ログに出す文脈（ファイルパス等）。空でもよい
         /// @return 1箇所でも直したら true
         static bool Validate(FormationAsset &asset, const std::string &context);
+
+    private:
+        static nlohmann::json ToJson(const FormationAsset &asset);
+        static void           FromJson(const nlohmann::json &j, FormationAsset &asset);
+
+        /// 表の1つぶんを obj から j へ書く。enum は数値でなく名前で書く。
+        static void WriteFields(nlohmann::json &j, const std::vector<FieldDescriptor> &fields, const void *obj);
+
+        /// 表の1つぶんを j から obj へ読む。キーが無い項目は既定値のまま残す。
+        static void ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj);
     };
 
 } // namespace CCL::AI::Formation

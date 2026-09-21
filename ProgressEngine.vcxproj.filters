@@ -1872,6 +1872,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAsset.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetMeta.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>

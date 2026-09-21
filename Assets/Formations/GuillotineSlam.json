@@ -1,59 +1,53 @@
 {
-  "name": "縦割り（データ）",
-  "slot": 33,
   "assign": {
-    "sideGroups": 1,
-    "tierGroups": 1,
-    "split": "Block",
+    "fillOrder": "ColumnFirst",
     "rows": 0,
-    "fillOrder": "ColumnFirst"
+    "sideGroups": 1,
+    "split": "Block",
+    "tierGroups": 1
   },
+  "attackSeconds": 0.4,
+  "layers": [
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "from": 0.0,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 108.862,
+      "type": "Rotate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
   "layout": {
-    "columnAxis": "Right",
-    "centerColumns": true,
     "baseA": 0.0,
-    "spacingA": 2.5,
     "baseB": 0.0,
+    "centerColumns": true,
+    "columnAxis": "Right",
+    "spacingA": 2.5,
     "spacingB": 2.5,
     "tierStepB": 0.0
   },
-  "layers": [
-    {
-      "type": "Rotate",
-      "axis": "Right",
-      "from": 0.0,
-      "to": 108.862,
-      "window": [
-        0.0,
-        1.0
-      ],
-      "duration": 1.0,
-      "phase": {
-        "source": "None",
-        "reverse": false
-      },
-      "mirror": false
-    }
-  ],
+  "name": "縦割り（データ）",
   "origin": {
     "forward": 5.0,
-    "up": 2.0,
-    "right": 0.0
-  },
-  "timing": {
-    "attackSeconds": 0.4
+    "right": 0.0,
+    "up": 2.0
   },
   "output": {
-    "look": "Auto",
     "chargeMode": "RigidFollow",
     "clampToGround": false,
-    "useShiverTelegraph": true,
     "combat": {
-      "hitRadius": 2.5,
       "damage": 8.0,
-      "knockback": 12.0,
+      "hitRadius": 2.5,
       "hitStopDuration": 0.05,
-      "hitStopScale": 0.0
-    }
-  }
+      "hitStopScale": 0.0,
+      "knockback": 12.0
+    },
+    "look": "Auto",
+    "useShiverTelegraph": true
+  },
+  "slot": 33
 }

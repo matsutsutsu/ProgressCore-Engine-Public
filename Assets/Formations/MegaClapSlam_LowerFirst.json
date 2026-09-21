@@ -1,77 +1,67 @@
 {
-  "name": "挟み込み2段・下段先攻（データ）",
-  "slot": 39,
   "assign": {
-    "sideGroups": 2,
-    "tierGroups": 2,
-    "split": "Block",
+    "fillOrder": "RowFirst",
     "rows": 2,
-    "fillOrder": "RowFirst"
+    "sideGroups": 2,
+    "split": "Block",
+    "tierGroups": 2
   },
+  "attackSeconds": 0.8333,
+  "layers": [
+    {
+      "axis": "Right",
+      "duration": 0.5,
+      "from": 12.0,
+      "mirror": true,
+      "phaseReverse": false,
+      "phaseSource": "Group",
+      "to": 1.2,
+      "type": "Translate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    },
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "frequency": 10.0,
+      "from": 0.0,
+      "leadThreshold": 0.18,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "Group",
+      "to": 0.6,
+      "type": "Shiver",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
   "layout": {
-    "columnAxis": "Forward",
-    "centerColumns": true,
     "baseA": 0.0,
-    "spacingA": 2.5,
     "baseB": 0.4,
+    "centerColumns": true,
+    "columnAxis": "Forward",
+    "spacingA": 2.5,
     "spacingB": 1.2,
     "tierStepB": 2.4
   },
-  "layers": [
-    {
-      "type": "Translate",
-      "axis": "Right",
-      "from": 12.0,
-      "to": 1.2,
-      "window": [
-        0.0,
-        1.0
-      ],
-      "duration": 0.5,
-      "phase": {
-        "source": "Group",
-        "reverse": false
-      },
-      "mirror": true
-    },
-    {
-      "type": "Shiver",
-      "axis": "Right",
-      "from": 0.0,
-      "to": 0.6,
-      "window": [
-        0.0,
-        1.0
-      ],
-      "duration": 1.0,
-      "phase": {
-        "source": "Group",
-        "reverse": false
-      },
-      "mirror": false,
-      "frequency": 10.0,
-      "leadThreshold": 0.18
-    }
-  ],
+  "name": "挟み込み2段・下段先攻（データ）",
   "origin": {
     "forward": 6.0,
-    "up": 0.0,
-    "right": 0.0
-  },
-  "timing": {
-    "attackSeconds": 0.8333
+    "right": 0.0,
+    "up": 0.0
   },
   "output": {
-    "look": "Inward",
     "chargeMode": "RigidFollow",
     "clampToGround": false,
-    "useShiverTelegraph": true,
     "combat": {
-      "hitRadius": 2.5,
       "damage": 8.0,
-      "knockback": 12.0,
+      "hitRadius": 2.5,
       "hitStopDuration": 0.05,
-      "hitStopScale": 0.0
-    }
-  }
+      "hitStopScale": 0.0,
+      "knockback": 12.0
+    },
+    "look": "Inward",
+    "useShiverTelegraph": true
+  },
+  "slot": 39
 }

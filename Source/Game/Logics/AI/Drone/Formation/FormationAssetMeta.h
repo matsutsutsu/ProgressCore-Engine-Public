@@ -1,0 +1,146 @@
+// FormationAsset の各部を「どう保存し、どう画面に出すか」を1箇所に書いた表。
+//
+// FieldDescriptor は engine 既存の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
+// インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれ1つを読む。
+// 項目を増やすときはここへ1行足すだけで、保存と UI の両方が付いてくる。
+//
+// 構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。
+// 入れ子の構造体は別の表として持ち、JSON もその単位で入れ子になる。
+//
+// CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
+// マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
+// 2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
+//
+// 表に載らないもの:
+//   FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
+//   FormationAsset::sourcePath … 保存も表示もしない
+#pragma once
+#include <iterator>
+#include <vector>
+
+#include "Engine/Serialization/Meta/ComponentMeta.h"
+#include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
+
+namespace CCL::AI::Formation::Meta
+{
+
+    // enum の値の名前。並びは enum の宣言順そのまま（添字がそのまま値になる）。
+    // JSON にもこの綴りで書くので、一度公開したら変えない。
+    inline constexpr const char *kAxisNames[]       = {"Right", "Up", "Forward"};
+    inline constexpr const char *kSplitNames[]      = {"Block", "Interleaved"};
+    inline constexpr const char *kFillOrderNames[]  = {"ColumnFirst", "RowFirst"};
+    inline constexpr const char *kLayerTypeNames[]  = {"Rotate", "Translate", "Shiver"};
+    inline constexpr const char *kPhaseNames[]      = {"None", "Column", "Row", "Group"};
+    inline constexpr const char *kLookNames[]       = {"Auto", "ToPlayer", "Inward"};
+    inline constexpr const char *kChargeModeNames[] = {"Straight", "RigidFollow", "SoftFollow"};
+
+    /// 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す。
+    template <size_t N>
+    constexpr int NameCount(const char *const (&)[N])
+    {
+        return static_cast<int>(N);
+    }
+
+    /// (1) 割付：通し番号 → 席
+    inline const std::vector<FieldDescriptor> &AssignFields()
+    {
+        using T                                          = FormationAssign;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_Int("左右のグループ数", "sideGroups", offsetof(T, sideGroups), 1, 8, nullptr, true, "2 にすると左右から挟み込む形になる"),
+            FD_Int("上下のグループ数", "tierGroups", offsetof(T, tierGroups), 1, 8, nullptr, true, "2 にすると上段・下段に分かれ、先攻後攻を付けられる"),
+            FD_EnumU8("グループへの配り方", "split", offsetof(T, split), kSplitNames, NameCount(kSplitNames), nullptr, true, "Block=前半と後半で分ける / Interleaved=1機ずつ交互に分ける"),
+            FD_Int("行数", "rows", offsetof(T, rows), 0, 32, nullptr, true, "0 なら機数から正方に近い格子を自動で組む"),
+            FD_EnumU8("格子の埋め順", "fillOrder", offsetof(T, fillOrder), kFillOrderNames, NameCount(kFillOrderNames), nullptr, true, "ColumnFirst=1列を縦に埋めてから次の列へ / RowFirst=1行を横に埋めてから次の行へ"),
+        };
+        return fields;
+    }
+
+    /// (2) 形：席 → ローカル座標（動かす前の待機の形）
+    inline const std::vector<FieldDescriptor> &LayoutFields()
+    {
+        using T                                          = FormationLayout;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_EnumU8("列を並べる向き", "columnAxis", offsetof(T, columnAxis), kAxisNames, NameCount(kAxisNames), nullptr, true, "行方向は常に上"),
+            FD_Bool("列を左右対称に置く", "centerColumns", offsetof(T, centerColumns), nullptr, true, "原点を挟んで並べる。切ると片側へ伸びる"),
+            FD_Float("列方向の起点 [m]", "baseA", offsetof(T, baseA), 0.1f, 0.0f, 0.0f, nullptr, true, "原点から最初の列までの距離"),
+            FD_Float("列の間隔 [m]", "spacingA", offsetof(T, spacingA), 0.1f, 0.0f, 0.0f, nullptr, true, "ドローンは見た目 約3m。3 未満だと画面上で1枚の塊に潰れる"),
+            FD_Float("行方向の起点 [m]", "baseB", offsetof(T, baseB), 0.1f, 0.0f, 0.0f, nullptr, true, "原点から最初の行までの高さ"),
+            FD_Float("行の間隔 [m]", "spacingB", offsetof(T, spacingB), 0.1f, 0.0f, 0.0f, nullptr, true, "ドローンは見た目 約3m"),
+            FD_Float("段ごとのずらし量 [m]", "tierStepB", offsetof(T, tierStepB), 0.1f, 0.0f, 0.0f, nullptr, true, "上下グループ1つぶん、行方向へずらす量"),
+        };
+        return fields;
+    }
+
+    /// (3) 動き：形を加工する1枚
+    inline const std::vector<FieldDescriptor> &LayerFields()
+    {
+        using T                                          = FormationLayer;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_EnumU8("動きの種類", "type", offsetof(T, type), kLayerTypeNames, NameCount(kLayerTypeNames), nullptr, true, "Rotate=原点まわりに回す / Translate=軸方向へ平行移動 / Shiver=予告の震え"),
+            FD_EnumU8("軸", "axis", offsetof(T, axis), kAxisNames, NameCount(kAxisNames), nullptr, true, "Rotate ならこの軸まわりに回る"),
+            FD_Float("始まりの値", "from", offsetof(T, from), 0.5f, 0.0f, 0.0f, nullptr, true, "Rotate は角度[度] / Translate は距離[m] / Shiver は未使用"),
+            FD_Float("終わりの値", "to", offsetof(T, to), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver はここを振れ幅[m]として読む"),
+            FD_Float("動く時間帯 開始", "windowBegin", offsetof(T, windowBegin), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃全体を 0〜1 とした割合"),
+            FD_Float("動く時間帯 終了", "windowEnd", offsetof(T, windowEnd), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃全体を 0〜1 とした割合"),
+            FD_Float("1席が動き切る量", "duration", offsetof(T, duration), 0.01f, 0.0f, 1.0f, nullptr, true, "時間帯より短くすると、その差が席ごとの開始のずれに配られる＝波になる"),
+            FD_EnumU8("ずらす単位", "phaseSource", offsetof(T, phaseSource), kPhaseNames, NameCount(kPhaseNames), nullptr, true, "None=全機いっせい / Column=列ごと / Row=段ごと / Group=割付グループごと（先攻後攻）"),
+            FD_Bool("ずらす向きを逆に", "phaseReverse", offsetof(T, phaseReverse), nullptr, true, "端から始めるか、反対の端から始めるか"),
+            FD_Bool("左右で反転", "mirror", offsetof(T, mirror), nullptr, true, "左右グループごとに始まり／終わりの符号を入れ替える"),
+            FD_Float("震えの速さ [Hz]", "frequency", offsetof(T, frequency), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver 専用"),
+            FD_Float("機首を振る振れ幅 [m]", "leadThreshold", offsetof(T, leadThreshold), 0.01f, 0.0f, 0.0f, nullptr, true, "Shiver 専用。これを超えたら機首を進行方向へ向ける"),
+        };
+        return fields;
+    }
+
+    /// (4) 配置：ボスからのオフセット（レイヤーの回転軸の位置でもある）
+    inline const std::vector<FieldDescriptor> &OriginFields()
+    {
+        using T                                          = FormationOrigin;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_Float("前へ [m]", "forward", offsetof(T, forward), 0.1f),
+            FD_Float("上へ [m]", "up", offsetof(T, up), 0.1f),
+            FD_Float("右へ [m]", "right", offsetof(T, right), 0.1f),
+        };
+        return fields;
+    }
+
+    /// 当たり方と痛さ
+    inline const std::vector<FieldDescriptor> &CombatFields()
+    {
+        using T                                          = FormationCombat;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_Float("接触半径 [m]", "hitRadius", offsetof(T, hitRadius), 0.1f, 0.0f, 0.0f, nullptr, true, "現在は未使用。実際の半径は Drone.json の Jolt Sphere が持つ"),
+            FD_Float("ダメージ", "damage", offsetof(T, damage), 0.5f),
+            FD_Float("ノックバック", "knockback", offsetof(T, knockback), 0.5f),
+            FD_Float("ヒットストップ [秒]", "hitStopDuration", offsetof(T, hitStopDuration), 0.01f, 0.0f, 1.0f, nullptr, true, "0 で無効"),
+            FD_Float("ヒットストップ中の時間倍率", "hitStopScale", offsetof(T, hitStopScale), 0.01f, 0.0f, 1.0f, nullptr, true, "0 で完全停止"),
+        };
+        return fields;
+    }
+
+    /// 見せ方
+    inline const std::vector<FieldDescriptor> &OutputFields()
+    {
+        using T                                          = FormationOutput;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_EnumU8("機首の向け方", "look", offsetof(T, look), kLookNames, NameCount(kLookNames), nullptr, true, "Auto=形と動きから決める / ToPlayer=プレイヤーを向く / Inward=陣形の中心を向く"),
+            FD_EnumU8("突撃中の移動方式", "chargeMode", offsetof(T, chargeMode), kChargeModeNames, NameCount(kChargeModeNames), nullptr, true, "RigidFollow=形が歪まない / SoftFollow=バネで遅れて追う / Straight=直進"),
+            FD_Bool("地面へ潜らせない", "clampToGround", offsetof(T, clampToGround), nullptr, true, "席の高さを持ち上げて地面より下へ行かせない"),
+            FD_Bool("撃つ前に震わせる", "useShiverTelegraph", offsetof(T, useShiverTelegraph), nullptr, true, "予告。切ると前触れなく飛ぶ"),
+        };
+        return fields;
+    }
+
+    /// 陣形そのものの情報（入れ子でない部分）
+    inline const std::vector<FieldDescriptor> &RootFields()
+    {
+        using T                                          = FormationAsset;
+        static const std::vector<FieldDescriptor> fields = {
+            FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
+            FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, kDataFormationSlotFirst, kDataFormationSlotLast, nullptr, true, "BT もプレハブもこの数値で技を指す。一度公開したら変えない"),
+            FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
+        };
+        return fields;
+    }
+
+} // namespace CCL::AI::Formation::Meta

@@ -708,6 +708,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetMeta.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAsset.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />

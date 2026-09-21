@@ -1,234 +1,138 @@
 // 陣形アセットの JSON 変換と検証の実装。
 //
-// enum を数値ではなく名前で保存する。数値だと "columnAxis": 2 と出て、意味を知るのに
-// 毎回ヘッダを引くことになり、手で読み書きできるアセットという前提が崩れる。
+// 項目の読み書きは FormationAssetMeta.h の表を回すだけで、ここに項目名は出てこない。
+// 表に載らない2つ（layers の配列と、各層の curve）だけを手で扱う。
 //
-// 読み込みは全フィールドがフォールバック付き。項目を後から足したときに既存の *.json が
-// 読めなくなると、その時点で全アセットの手直しが要る。
+// enum は数値ではなく名前で保存する。数値だと "columnAxis": 2 と出て、意味を知るのに
+// 毎回ヘッダを引くことになり、手で読み書きできるアセットという前提が崩れる。
 #include "FormationAssetIO.h"
 
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Serialization/Meta/ComponentMetaJson.h"
+#include "Game/Logics/AI/Drone/Formation/FormationAssetMeta.h"
 
 #include <json.hpp>
 
 #include <algorithm>
+#include <charconv>
 #include <exception>
-#include <vector>
-
-// ChargeMode は DroneComponent.h がグローバル名前空間に置いている。nlohmann は型の属する
-// 名前空間から変換関数を引く（ADL）ので、ここもグローバルに書かないと数値のまま保存される。
-NLOHMANN_JSON_SERIALIZE_ENUM(ChargeMode, {
-                                             {ChargeMode::Straight, "Straight"},
-                                             {ChargeMode::RigidFollow, "RigidFollow"},
-                                             {ChargeMode::SoftFollow, "SoftFollow"},
-                                         })
+#include <string>
 
 namespace CCL::AI::Formation
 {
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(AssetAxis, {
-                                                {AssetAxis::Right, "Right"},
-                                                {AssetAxis::Up, "Up"},
-                                                {AssetAxis::Forward, "Forward"},
-                                            })
-    NLOHMANN_JSON_SERIALIZE_ENUM(AssetSplit, {
-                                                 {AssetSplit::Block, "Block"},
-                                                 {AssetSplit::Interleaved, "Interleaved"},
-                                             })
-    NLOHMANN_JSON_SERIALIZE_ENUM(AssetFillOrder, {
-                                                     {AssetFillOrder::ColumnFirst, "ColumnFirst"},
-                                                     {AssetFillOrder::RowFirst, "RowFirst"},
-                                                 })
-    NLOHMANN_JSON_SERIALIZE_ENUM(LayerType, {
-                                                {LayerType::Rotate, "Rotate"},
-                                                {LayerType::Translate, "Translate"},
-                                                {LayerType::Shiver, "Shiver"},
-                                            })
-    NLOHMANN_JSON_SERIALIZE_ENUM(PhaseSource, {
-                                                  {PhaseSource::None, "None"},
-                                                  {PhaseSource::Column, "Column"},
-                                                  {PhaseSource::Row, "Row"},
-                                                  {PhaseSource::Group, "Group"},
-                                              })
-    NLOHMANN_JSON_SERIALIZE_ENUM(LookMode, {
-                                               {LookMode::Auto, "Auto"},
-                                               {LookMode::ToPlayer, "ToPlayer"},
-                                               {LookMode::Inward, "Inward"},
-                                           })
+    // ---------------------------------------------------------------------------
+    // 表 1つぶんの読み書き
+    // ---------------------------------------------------------------------------
+
+    void FormationAssetIO::WriteFields(nlohmann::json &j, const std::vector<FieldDescriptor> &fields, const void *obj)
+    {
+        for (const FieldDescriptor &fd : fields)
+        {
+            if (fd.kind == FieldKind::EnumU8)
+            {
+                const uint8_t v = RawField<const uint8_t>(obj, fd.offset);
+                if (v < fd.enumCount)
+                {
+                    j[fd.jsonName] = fd.enumNames[v];
+                    continue;
+                }
+            }
+            if (fd.kind == FieldKind::Float)
+            {
+                // JSON の数値は double なので、float をそのまま渡すと 0.8 が 0.800000011920929 と出る。
+                // float として元に戻せる最短の10進表記に丸めてから書く。
+                char       buf[32];
+                const auto end = std::to_chars(buf, buf + sizeof(buf), RawField<const float>(obj, fd.offset)).ptr;
+                j[fd.jsonName] = std::stod(std::string(buf, end));
+                continue;
+            }
+            ComponentMetaJson::SerializeField(j, fd, obj, nullptr);
+        }
+    }
+
+    void FormationAssetIO::ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj)
+    {
+        for (const FieldDescriptor &fd : fields)
+        {
+            if (fd.kind == FieldKind::EnumU8 && j.contains(fd.jsonName) && j.at(fd.jsonName).is_string())
+            {
+                const std::string  name  = j.at(fd.jsonName).get<std::string>();
+                const char *const *first = fd.enumNames;
+                const char *const *last  = fd.enumNames + fd.enumCount;
+                const auto         it    = std::find_if(first, last, [&](const char *n) { return name == n; });
+
+                if (it != last)
+                    RawField<uint8_t>(obj, fd.offset) = static_cast<uint8_t>(it - first);
+                else
+                    CCL_LOG_ERROR(LogCategory::AI, "[Formation] %s=\"%s\" は知らない値。既定値のまま読んだ",
+                                  fd.jsonName, name.c_str());
+                continue;
+            }
+            ComponentMetaJson::DeserializeField(j, fd, obj, nullptr);
+        }
+    }
 
     // ---------------------------------------------------------------------------
-    // JSON 変換
+    // アセット全体の組み立て
     // ---------------------------------------------------------------------------
-    // nlohmann が std::vector<FormationLayer> を自動で回せるよう、ADL で引ける名前で置く。
 
-    static void to_json(nlohmann::json &j, const FormationCombat &c)
+    nlohmann::json FormationAssetIO::ToJson(const FormationAsset &a)
     {
-        j = nlohmann::json{
-            {"hitRadius", c.hitRadius},
-            {"damage", c.damage},
-            {"knockback", c.knockback},
-            {"hitStopDuration", c.hitStopDuration},
-            {"hitStopScale", c.hitStopScale},
-        };
-    }
+        nlohmann::json j;
+        WriteFields(j, Meta::RootFields(), &a);
+        WriteFields(j["assign"], Meta::AssignFields(), &a.assign);
+        WriteFields(j["layout"], Meta::LayoutFields(), &a.layout);
 
-    static void from_json(const nlohmann::json &j, FormationCombat &c)
-    {
-        c.hitRadius       = j.value("hitRadius", 2.5f);
-        c.damage          = j.value("damage", 8.0f);
-        c.knockback       = j.value("knockback", 12.0f);
-        c.hitStopDuration = j.value("hitStopDuration", 0.05f);
-        c.hitStopScale    = j.value("hitStopScale", 0.0f);
-    }
-
-    static void to_json(nlohmann::json &j, const FormationLayer &l)
-    {
-        j = nlohmann::json{
-            {"type", l.type},
-            {"axis", l.axis},
-            {"from", l.from},
-            {"to", l.to},
-            {"window", {l.windowBegin, l.windowEnd}},
-            {"duration", l.duration},
-            {"phase", {{"source", l.phaseSource}, {"reverse", l.phaseReverse}}},
-            {"mirror", l.mirror},
-        };
-
-        // キーが無いカーブ＝既定の easeIn。空の CurveData を毎層に書くと全レイヤーが
-        // 10行ずつ膨らんで、手で読む前提の JSON が読めなくなる。
-        if (!l.curve.empty()) j["curve"] = l.curve;
-
-        // Shiver でしか意味を持たない値を常に書くと、他の層で「何の周波数だ」と読まれる。
-        if (l.type == LayerType::Shiver)
+        j["layers"] = nlohmann::json::array();
+        for (const FormationLayer &l : a.layers)
         {
-            j["frequency"]     = l.frequency;
-            j["leadThreshold"] = l.leadThreshold;
-        }
-    }
+            nlohmann::json jl;
+            WriteFields(jl, Meta::LayerFields(), &l);
 
-    static void from_json(const nlohmann::json &j, FormationLayer &l)
-    {
-        l.type = j.value("type", LayerType::Rotate);
-        l.axis = j.value("axis", AssetAxis::Right);
-        l.from = j.value("from", 0.0f);
-        l.to   = j.value("to", 0.0f);
+            // Shiver でしか意味を持たない値を他の層に書くと、「何の周波数だ」と読まれる。
+            if (l.type != LayerType::Shiver)
+            {
+                jl.erase("frequency");
+                jl.erase("leadThreshold");
+            }
+            // キーが無いカーブ＝既定の easeIn。空の CurveData を毎層に書くと JSON が膨らむ。
+            if (!l.curve.empty()) jl["curve"] = l.curve;
 
-        if (j.contains("window") && j["window"].is_array() && j["window"].size() == 2)
-        {
-            l.windowBegin = j["window"][0].get<float>();
-            l.windowEnd   = j["window"][1].get<float>();
-        }
-        l.duration = j.value("duration", 1.0f);
-
-        if (j.contains("phase"))
-        {
-            const auto &p  = j["phase"];
-            l.phaseSource  = p.value("source", PhaseSource::None);
-            l.phaseReverse = p.value("reverse", false);
+            j["layers"].push_back(std::move(jl));
         }
 
-        l.mirror = j.value("mirror", false);
-
-        // null を書いて「カーブ無し＝p*p」を明示できるようにしてある。
-        if (j.contains("curve") && !j["curve"].is_null()) l.curve = j["curve"].get<CurveData>();
-
-        l.frequency     = j.value("frequency", 10.0f);
-        l.leadThreshold = j.value("leadThreshold", 0.18f);
+        WriteFields(j["origin"], Meta::OriginFields(), &a.origin);
+        WriteFields(j["output"], Meta::OutputFields(), &a.output);
+        WriteFields(j["output"]["combat"], Meta::CombatFields(), &a.output.combat);
+        return j;
     }
 
-    static void to_json(nlohmann::json &j, const FormationAsset &a)
+    void FormationAssetIO::FromJson(const nlohmann::json &j, FormationAsset &a)
     {
-        j = nlohmann::json{
-            {"name", a.name},
-            {"slot", a.slot},
-            {"assign",
-             {
-                 {"sideGroups", a.assign.sideGroups},
-                 {"tierGroups", a.assign.tierGroups},
-                 {"split", a.assign.split},
-                 {"rows", a.assign.rows},
-                 {"fillOrder", a.assign.fillOrder},
-             }},
-            {"layout",
-             {
-                 {"columnAxis", a.layout.columnAxis},
-                 {"centerColumns", a.layout.centerColumns},
-                 {"baseA", a.layout.baseA},
-                 {"spacingA", a.layout.spacingA},
-                 {"baseB", a.layout.baseB},
-                 {"spacingB", a.layout.spacingB},
-                 {"tierStepB", a.layout.tierStepB},
-             }},
-            {"layers", a.layers},
-            {"origin",
-             {
-                 {"forward", a.origin.forward},
-                 {"up", a.origin.up},
-                 {"right", a.origin.right},
-             }},
-            {"timing", {{"attackSeconds", a.attackSeconds}}},
-            {"output",
-             {
-                 {"look", a.output.look},
-                 {"chargeMode", a.output.chargeMode},
-                 {"clampToGround", a.output.clampToGround},
-                 {"useShiverTelegraph", a.output.useShiverTelegraph},
-                 {"combat", a.output.combat},
-             }},
-        };
-    }
+        // 入れ子が丸ごと無いファイルも読めるよう、無ければ空オブジェクト（＝全項目既定値）で回す。
+        const nlohmann::json none = nlohmann::json::object();
 
-    static void from_json(const nlohmann::json &j, FormationAsset &a)
-    {
-        a.name = j.value("name", std::string("Formation"));
-        a.slot = j.value("slot", static_cast<uint8_t>(0));
-
-        if (j.contains("assign"))
-        {
-            const auto &s       = j["assign"];
-            a.assign.sideGroups = s.value("sideGroups", 1);
-            a.assign.tierGroups = s.value("tierGroups", 1);
-            a.assign.split      = s.value("split", AssetSplit::Block);
-            a.assign.rows       = s.value("rows", 0);
-            a.assign.fillOrder  = s.value("fillOrder", AssetFillOrder::RowFirst);
-        }
-
-        if (j.contains("layout"))
-        {
-            const auto &s          = j["layout"];
-            a.layout.columnAxis    = s.value("columnAxis", AssetAxis::Right);
-            a.layout.centerColumns = s.value("centerColumns", true);
-            a.layout.baseA         = s.value("baseA", 0.0f);
-            a.layout.spacingA      = s.value("spacingA", 2.5f);
-            a.layout.baseB         = s.value("baseB", 0.0f);
-            a.layout.spacingB      = s.value("spacingB", 2.5f);
-            a.layout.tierStepB     = s.value("tierStepB", 0.0f);
-        }
+        ReadFields(j, Meta::RootFields(), &a);
+        ReadFields(j.value("assign", none), Meta::AssignFields(), &a.assign);
+        ReadFields(j.value("layout", none), Meta::LayoutFields(), &a.layout);
 
         a.layers.clear();
-        if (j.contains("layers") && j["layers"].is_array())
-            a.layers = j["layers"].get<std::vector<FormationLayer>>();
-
-        if (j.contains("origin"))
+        for (const nlohmann::json &jl : j.value("layers", nlohmann::json::array()))
         {
-            const auto &s    = j["origin"];
-            a.origin.forward = s.value("forward", 0.0f);
-            a.origin.up      = s.value("up", 0.0f);
-            a.origin.right   = s.value("right", 0.0f);
+            FormationLayer &l = a.layers.emplace_back();
+            ReadFields(jl, Meta::LayerFields(), &l);
+
+            // null を書いて「カーブ無し＝p*p」を明示できるようにしてある。
+            if (jl.contains("curve") && !jl.at("curve").is_null()) l.curve = jl.at("curve").get<CurveData>();
         }
 
-        if (j.contains("timing")) a.attackSeconds = j["timing"].value("attackSeconds", 0.4f);
+        ReadFields(j.value("origin", none), Meta::OriginFields(), &a.origin);
 
-        if (j.contains("output"))
-        {
-            const auto &s               = j["output"];
-            a.output.look               = s.value("look", LookMode::Auto);
-            a.output.chargeMode         = s.value("chargeMode", ChargeMode::RigidFollow);
-            a.output.clampToGround      = s.value("clampToGround", false);
-            a.output.useShiverTelegraph = s.value("useShiverTelegraph", true);
-            if (s.contains("combat")) a.output.combat = s["combat"].get<FormationCombat>();
-        }
+        const nlohmann::json output = j.value("output", none);
+        ReadFields(output, Meta::OutputFields(), &a.output);
+        ReadFields(output.value("combat", none), Meta::CombatFields(), &a.output.combat);
     }
 
     // ---------------------------------------------------------------------------
@@ -347,31 +251,20 @@ namespace CCL::AI::Formation
             return false;
         }
 
-        nlohmann::json j;
+        // 構文エラーも、型が想定外（数値が文字列で書かれている等）も例外で来るので、まとめて包む。
         try
         {
-            j = nlohmann::json::parse(text);
+            FormationAsset asset;
+            FromJson(nlohmann::json::parse(text), asset);
+            outAsset = std::move(asset);
         }
         catch (const std::exception &e)
         {
-            CCL_LOG_ERROR(LogCategory::AI, "[Formation] JSON 解析エラー %s: %s",
-                          virtualPath.c_str(), e.what());
+            CCL_LOG_ERROR(LogCategory::AI, "[Formation] 読み込みエラー %s: %s", virtualPath.c_str(), e.what());
             return false;
         }
 
-        // 型が想定外（数値が文字列で書かれている等）でも例外が出るので、構築ごと包む。
-        try
-        {
-            outAsset = j.get<FormationAsset>();
-        }
-        catch (const std::exception &e)
-        {
-            CCL_LOG_ERROR(LogCategory::AI, "[Formation] 構築エラー %s: %s",
-                          virtualPath.c_str(), e.what());
-            return false;
-        }
-
-        // 保存先を覚えさせるのは読み込み側の仕事（from_json は JSON しか知らない）。
+        // 保存先を覚えさせるのは読み込み側の仕事（JSON にはパスを書かない）。
         outAsset.sourcePath = virtualPath;
 
         Validate(outAsset, virtualPath);
@@ -384,8 +277,7 @@ namespace CCL::AI::Formation
         FormationAsset checked = asset;
         Validate(checked, virtualPath);
 
-        const nlohmann::json j = checked;
-        if (!FileSystem::WriteAllText(virtualPath, j.dump(2)))
+        if (!FileSystem::WriteAllText(virtualPath, ToJson(checked).dump(2)))
         {
             CCL_LOG_ERROR(LogCategory::AI, "[Formation] 保存失敗: %s", virtualPath.c_str());
             return false;
