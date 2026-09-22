@@ -43,4 +43,9 @@ private:
     /// ステージの端まであと何 m か。正=内側。真上から見た距離だけを測る。
     float DistanceToArenaEdge(const DirectX::SimpleMath::Vector3 &myWorldPos,
                               const BattleContext                &battle) const;
+
+    /// 自分から見た「中央の方向」と「相手の方向」のなす角 [度]。0=相手が中央側を塞いでいる。
+    float TargetAngleFromCenterDeg(const DirectX::SimpleMath::Vector3 &myWorldPos,
+                                   const DirectX::SimpleMath::Vector3 &targetPos,
+                                   const BattleContext                &battle) const;
 };

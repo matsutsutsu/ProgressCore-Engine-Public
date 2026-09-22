@@ -74,6 +74,9 @@ namespace CCL::AI
     inline constexpr ActionID C_TargetAngleGreaterThan = 12; // 相手が正面 ±param 度の外側
     inline constexpr ActionID C_TargetApproaching      = 13; // 相手が param m/s 以上で接近
     inline constexpr ActionID C_TargetRetreating       = 14; // 相手が param m/s 以上で後退
+    // 追い込まれの判定は「端に居る」とこれを Sequence で並べて作る。1つの条件にまとめると
+    // param が1つしか持てず、端からの距離か角度のどちらかが即値に固まる。
+    inline constexpr ActionID C_TargetOnCenterSide = 15; // 相手が中央の方向 ±param 度にいる
 
     // --- 行動 ---
     // 100〜111 は「待機0.5秒」〜「待機10.0秒」だった欠番。param へ移して1つに畳んである。
@@ -94,6 +97,10 @@ namespace CCL::AI
     // 技と技の間に入れて、待機時間を「棒立ち」から「圧をかける時間」へ変える
     // （A_Move は「遠いから追う」行動で、こちらは待つことが目的）。
     inline constexpr ActionID A_BossAdvance = 1106; // 詰めながら待つ。param 秒
+
+    // 跳躍系。跳び方は共通で、違いは着地点（BossLeapLanding）だけ。
+    inline constexpr ActionID A_BossLeapEscape = 1107; // 中央を挟んで相手の反対側へ跳ぶ
+    inline constexpr ActionID A_BossLeapAttack = 1108; // 相手の手前へ跳び、着地で斬る
 
 // --- ドローン陣形技 (2000番台) ---
 #define CCL_BT_DEFINE_DRONE_ID(Name, Id, Formation, Display) inline constexpr ActionID Name = Id;
@@ -160,6 +167,8 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     {CCL::AI::A_BossBackStep, "A_BossBackStep", "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]"},
     {CCL::AI::A_BossHitWait, "A_BossHitWait", "ボス：被弾後の様子見", BTCategory::Boss, "待つ長さ [秒]"},
     {CCL::AI::A_BossAdvance, "A_BossAdvance", "ボス：詰めながら待つ", BTCategory::Boss, "長さ [秒]"},
+    {CCL::AI::A_BossLeapEscape, "A_BossLeapEscape", "ボス：中央へ跳んで逃げる (Leap Escape)", BTCategory::Boss, "全体時間 [秒]"},
+    {CCL::AI::A_BossLeapAttack, "A_BossLeapAttack", "ボス：跳躍攻撃 (Leap Attack)", BTCategory::Boss, "全体時間 [秒]"},
 
     {CCL::AI::A_DroneStrike, "A_DroneStrike", "ドローン：攻撃実行 (Strike)", BTCategory::Drone, ""},
 
@@ -181,6 +190,7 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
     {CCL::AI::C_TargetApproaching, "C_TargetApproaching", "相手が N m/s 以上で詰めてきている", BTCategory::Spatial, "速さ [m/s]"},
     {CCL::AI::C_TargetRetreating, "C_TargetRetreating", "相手が N m/s 以上で離れている", BTCategory::Spatial, "速さ [m/s]"},
     {CCL::AI::C_IsAtStageEdge, "C_IsAtStageEdge", "ステージの端から N m 以内", BTCategory::Spatial, "端からの距離 [m]"},
+    {CCL::AI::C_TargetOnCenterSide, "C_TargetOnCenterSide", "相手が中央側 ±N 度にいる（追い込まれ）", BTCategory::Spatial, "角度 [度]"},
 
     {CCL::AI::C_IsPhase2, "C_IsPhase2", "フェーズ >= 2", BTCategory::State, ""},
     {CCL::AI::C_ShouldTransitionPhase2, "C_ShouldTransitionPhase2", "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, ""},
@@ -340,11 +350,14 @@ inline bool IsBossPhysicalAction(ActionID id)
 // ボスの近接アクションか。物理挙動の分岐ではない（それは BossActionSystem が決める）。
 inline bool IsBossMeleeAction(ActionID id)
 {
-    return id == CCL::AI::A_BossSlash;
+    return id == CCL::AI::A_BossSlash || id == CCL::AI::A_BossLeapAttack;
 }
 
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
-inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackStep; }
+inline bool IsBossEvadeAction(ActionID id)
+{
+    return id == CCL::AI::A_BossBackStep || id == CCL::AI::A_BossLeapEscape;
+}
 
 // この行動は BossCommandComponent::currentActionId を書くか。
 //
@@ -357,8 +370,8 @@ inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackSte
 inline bool IsCommandWritingAction(ActionID id)
 {
     return IsBossPhysicalAction(id)  // A_Move / A_BossAdvance
-           || IsBossMeleeAction(id)  // 薙ぎ払い
-           || IsBossEvadeAction(id); // 後方ステップ
+           || IsBossMeleeAction(id)  // 薙ぎ払い / 跳躍攻撃
+           || IsBossEvadeAction(id); // 後方ステップ / 中央へ跳んで逃げる
 }
 
 // この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、

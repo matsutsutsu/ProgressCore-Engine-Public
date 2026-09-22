@@ -36,6 +36,11 @@ struct AIBlackboard
     // 「端から 8m 以内」という木の書き方がそのまま通るようにするため。
     float distanceToArenaEdge = 9999.0f;
 
+    // 自分から見た「ステージ中央の方向」と「相手の方向」のなす角 [度]。0〜180。
+    // 0 に近いほど相手が自分と中央の間に立っている＝逃げ道を塞がれている。
+    // 端に居るだけでは追い込まれではない（相手が外側に居れば中央へ歩けば済む）。
+    float targetAngleFromCenter = 180.0f;
+
     float healthPercentage = 100.0f; // 残りHPの割合（0〜100）
 
     // 被弾の蓄積。閾値はここに持たずBTノードの param（最大HPに対する％）で決める。

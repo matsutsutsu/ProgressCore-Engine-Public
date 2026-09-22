@@ -40,6 +40,11 @@ struct ComponentMeta<BehaviorTreeComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
+    // sharedAsset はここで書かない。書き手は BehaviorTreeSystem::SyncAssets だけ。
+    //   SyncAssets は「欲しい木 != 今の sharedAsset」で差し替えを検知し、その時だけ
+    //   nodeTimers などを新しい木の長さで作り直す。ここで先に sharedAsset を差し替えると
+    //   検知がすり抜け、前の木の長さのバッファが残って評価が毎フレーム見送られる。
+    //   ここがやるのは「どの木を使うか（パス）」と「キャッシュを新しくする」ことだけ。
     static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
         bool changed = false;
@@ -51,30 +56,29 @@ struct ComponentMeta<BehaviorTreeComponent>
             if (auto pathOpt = FileDialog::OpenPreset("BehaviorTree", "Select Behavior Tree", GetActiveWindow()))
             {
                 comp.assetPath = FileDialog::ConvertToRelativePath(*pathOpt);
-
-                // その場で1回取りに行く（BehaviorTreeSystem も次のフレームに同じことをするが、
-                // ゲームを止めて編集しているときにノード数が出ないと不便なため）。
-                comp.sharedAsset     = BTAssetCache::Instance().GetOrLoad(comp.assetPath);
-                comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
-                changed              = true;
+                changed        = true;
             }
         }
 
         ImGui::Separator();
-        // キャッシュを捨てて読み直す。同じ木を使っている他のエンティティも、
-        // 次のフレームの BehaviorTreeSystem::SyncAssets で新しい木を受け取り直す。
+        // キャッシュを捨てて読み直す。キャッシュの中身が新しい木に替わるので、この個体も
+        // 同じ木を使っている他の個体も、次のフレームの SyncAssets で受け取り直す。
         if (ImGui::Button("AI再読込"))
         {
-            comp.sharedAsset     = BTAssetCache::Instance().Reload(comp.assetPath);
-            comp.loadedAssetPath = comp.sharedAsset ? comp.assetPath : std::string();
-            changed              = true;
+            BTAssetCache::Instance().Reload(comp.assetPath);
+            changed = true;
         }
         ImGui::SameLine();
         ImGui::TextDisabled("(読込済みの木: %zu 本)", BTAssetCache::Instance().Count());
 
         ImGui::Separator();
-        size_t nodeCount = comp.sharedAsset ? comp.sharedAsset->nodes.size() : 0;
+        // ノード数はキャッシュから引く。ゲームを止めて編集している間は SyncAssets が
+        // 回らないので、sharedAsset を見ると選び直した木のノード数が出ない。
+        // GetOrLoad は2回目以降は検索だけで、失敗したパスも読みに行かない。
+        const auto pending   = BTAssetCache::Instance().GetOrLoad(comp.assetPath);
+        size_t     nodeCount = pending ? pending->nodes.size() : 0;
         ImGui::LabelText("Nodes", "%zu", nodeCount);
+        if (pending != comp.sharedAsset) ImGui::TextDisabled("（次のフレームで反映）");
         ImGui::LabelText("Current Node", "%u", comp.runningNodeId);
 
         return changed;

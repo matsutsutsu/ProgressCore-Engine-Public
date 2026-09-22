@@ -69,8 +69,8 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
     case BossPhase::Transition:
         // BTを完全に止める。assetPath を空にすると BehaviorTreeSystem が早期 return し、
         // BossCommandComponent が上書きされないので下の指示がそのまま効く。
+        // sharedAsset は触らない（書き手は SyncAssets だけ。同じフレームに null を配る）。
         bt.assetPath.clear();
-        bt.sharedAsset.reset();
 
         // 攻撃を止めて群れを頭上へ退避させる。Hidden は DroneCommandSystem が
         // 「命令なし」として無視するので使わない。

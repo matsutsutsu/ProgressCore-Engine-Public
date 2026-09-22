@@ -1,5 +1,6 @@
 // ボスのAI状態を移動アニメの掲示板(AnimParameters)へ翻訳する。技の一発トリガーは
-// TriggeredMotionAction が引き、ここは Idle / Move の切替だけを書く唯一の書き手。
+// TriggeredMotionAction が引き、ここは Idle / Move の切替と、跳躍の空中→着地の切替を
+// 書く唯一の書き手。
 //
 // 物理速度ではなく「AIが出したい速度」を載せるのは、ボスが Jolt Character を持たず
 // CharacterAnimSyncSystem の対象外だから。物理由来のジッタが混ざらない利点もある。

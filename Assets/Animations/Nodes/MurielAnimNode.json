@@ -17,34 +17,6 @@
             "targetStateHash": 1898928778
         },
         {
-            "blendDuration": 0.15,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1991396666,
-                    "paramName": "DashSlash",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1991396666
-        },
-        {
-            "blendDuration": 0.15,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1204849781,
-                    "paramName": "JumpAttack",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1204849781
-        },
-        {
             "blendDuration": 0.1,
             "conditions": [
                 {
@@ -57,6 +29,20 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "targetStateHash": 1451197408
+        },
+        {
+            "blendDuration": 0.15,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2423584467,
+                    "paramName": "Leap",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "targetStateHash": 1883154177
         }
     ],
     "entryPosX": -48.0,
@@ -115,23 +101,30 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 1991396666,
-            "name": "DashSlash",
-            "type": 2
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
-            "hash": 1204849781,
-            "name": "JumpAttack",
-            "type": 2
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
             "hash": 1451197408,
             "name": "BackStep",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2423584467,
+            "name": "Leap",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 79417333,
+            "name": "IsLeaping",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2627339593,
+            "name": "LeapStrike",
+            "type": 1
         }
     ],
     "states": [
@@ -369,104 +362,6 @@
             "isLoop": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 298.0,
-            "nodePosY": 260.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashSlash.json",
-            "sequenceName": "DashSlash",
-            "speedCurveName": "",
-            "stateHash": 1991396666,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 400.0,
-            "playbackSpeed": 0.8,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/JumpAttack.json",
-            "sequenceName": "JumpAttack",
-            "speedCurveName": "",
-            "stateHash": 1204849781,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
             "nodePosY": 540.0,
             "playbackSpeed": 2.0,
             "rootMotionCurveName": "",
@@ -491,6 +386,190 @@
                 },
                 {
                     "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 560.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapStart.json",
+            "sequenceName": "LeapStart",
+            "speedCurveName": "",
+            "stateHash": 1883154177,
+            "transitions": [
+                {
+                    "blendDuration": 0.1,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 2627339593,
+                            "paramName": "LeapStrike",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1102133334
+                },
+                {
+                    "blendDuration": 0.1,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3315573261
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 760.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapAir.json",
+            "sequenceName": "LeapAir",
+            "speedCurveName": "",
+            "stateHash": 3315573261,
+            "transitions": [
+                {
+                    "blendDuration": 0.1,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 2627339593,
+                            "paramName": "LeapStrike",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1102133334
+                },
+                {
+                    "blendDuration": 0.1,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 79417333,
+                            "paramName": "IsLeaping",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 3620505358
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 960.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
+            "sequenceName": "LeapLand",
+            "speedCurveName": "",
+            "stateHash": 3620505358,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "isLoop": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 960.0,
+            "nodePosY": 820.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapSlam.json",
+            "sequenceName": "LeapSlam",
+            "speedCurveName": "",
+            "stateHash": 1102133334,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.2,
                     "conditions": [
                         {
                             "op": 4,

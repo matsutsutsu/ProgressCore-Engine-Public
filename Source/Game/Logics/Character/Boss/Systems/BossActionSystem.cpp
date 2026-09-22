@@ -97,7 +97,7 @@ void BossActionSystem::Update(float rawDt)
                                             : TranslateAction(cmd.currentActionId);
 
         // 動く技は「どこへ向かうか」をこの1回で決め、以後は更新しない。
-        if (next != bossDef.currentState) OnEnterState(next, bossDef, trans, playerPos);
+        if (next != bossDef.currentState) OnEnterState(next, cmd.currentActionId, bossDef, trans, playerPos);
 
         bossDef.currentState = next;
         bossDef.actionTimer += dt;
@@ -112,6 +112,9 @@ void BossActionSystem::Update(float rawDt)
             break;
         case BossActionState::BackStep:
             ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
+            break;
+        case BossActionState::Leap:
+            ProcessLeap(bossDef, trans, movement, joltHandle, playerPos, battle, dt);
             break;
         default:
             ProcessIdle(bossDef, trans, movement, joltHandle, playerPos, dt);
@@ -222,10 +225,12 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
     if (actionId == ::CCL::AI::A_Move) return BossActionState::Move;
     if (actionId == ::CCL::AI::A_BossSlash) return BossActionState::Melee;
     if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
+    if (actionId == ::CCL::AI::A_BossLeapEscape) return BossActionState::Leap;
+    if (actionId == ::CCL::AI::A_BossLeapAttack) return BossActionState::Leap;
     return BossActionState::None;
 }
 
-void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &bossDef,
+void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossDef,
                                     const TransformComponent &trans,
                                     const Vector3            &playerPos) const
 {
@@ -244,6 +249,31 @@ void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &b
     // 後方ステップだけは進行方向が逆（lockedDirection は常に「進む向き」）。
     if (next == BossActionState::BackStep)
         bossDef.lockedDirection = -bossDef.lockedDirection;
+
+    // 跳躍は「どの技か」で着地点の決め方と調整値を選ぶ。着地点そのものはまだ決めない
+    // （踏み切りの瞬間に BeginLeapFlight が決める）。
+    if (next == BossActionState::Leap)
+    {
+        bossDef.leapPhase       = BossLeapPhase::Windup;
+        bossDef.leapTouchedDown = false;
+
+        if (actionId == ::CCL::AI::A_BossLeapEscape)
+        {
+            bossDef.leapLanding    = BossLeapLanding::AwayToCenter;
+            bossDef.leapWindupTime = bossDef.escapeWindupTime;
+            bossDef.leapFlightTime = bossDef.escapeFlightTime;
+            bossDef.leapHeight     = bossDef.escapeHeight;
+            bossDef.leapStrikeLead = 0.0f;
+        }
+        else if (actionId == ::CCL::AI::A_BossLeapAttack)
+        {
+            bossDef.leapLanding    = BossLeapLanding::TowardTarget;
+            bossDef.leapWindupTime = bossDef.attackWindupTime;
+            bossDef.leapFlightTime = bossDef.attackFlightTime;
+            bossDef.leapHeight     = bossDef.attackHeight;
+            bossDef.leapStrikeLead = bossDef.attackStrikeLead;
+        }
+    }
 }
 
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
@@ -287,6 +317,196 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
 
     bossDef.currentMoveSpeed = speed;
     bossDef.moveDirection    = bossDef.lockedDirection;
+}
+
+void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformComponent &trans,
+                                   CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
+                                   const Vector3 &playerPos, const BattleContext &battle, float dt)
+{
+    JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
+    const JPH::RVec3       jp = ch->GetPosition();
+    const Vector3          now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
+
+    const float t = bossDef.actionTimer;
+
+    // 溜め：足を止めて相手を睨む。着地点はまだ決めない。
+    if (t < bossDef.leapWindupTime)
+    {
+        bossDef.leapPhase        = BossLeapPhase::Windup;
+        bossDef.currentMoveSpeed = 0.0f;
+        movement.desiredVelocity = Vector3::Zero;
+
+        Vector3 dirToPlayer = playerPos - trans.position;
+        dirToPlayer.y       = 0.0f;
+        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, ch);
+        return;
+    }
+
+    if (bossDef.leapPhase == BossLeapPhase::Windup)
+    {
+        BeginLeapFlight(bossDef, now, playerPos, battle);
+        bossDef.leapPhase = BossLeapPhase::Flight;
+    }
+
+    if (bossDef.leapPhase == BossLeapPhase::Flight || bossDef.leapPhase == BossLeapPhase::Strike)
+    {
+        const float flightTime = (std::max)(0.05f, bossDef.leapFlightTime);
+        const float u          = (std::min)((t - bossDef.leapWindupTime) / flightTime, 1.0f);
+
+        // 着地攻撃は、着地の leapStrikeLead 秒前から振り下ろしのアニメへ入る。
+        // 着地してから切り替えるとクリップの攻撃判定の開始ぶん刃が遅れて、
+        // 降りてから斬る絵になる。動き自体は Flight のまま変えない。
+        const float remaining = flightTime * (1.0f - u);
+        if (bossDef.leapStrikeLead > 0.0f && remaining <= bossDef.leapStrikeLead)
+            bossDef.leapPhase = BossLeapPhase::Strike;
+
+        // このフレームの積分が終わった時点で居るべき位置へ届く速度。Jolt 側と同じ dt で
+        // 割らないと、スロー中やヒットストップ中に行き過ぎる（JoltCharacterUpdateSystem の
+        // safeDt と同じ式）。
+        const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f));
+        Vector3     v      = (LeapPositionAt(bossDef, u) - now) / stepDt;
+
+        // 空中で相手や壁に引っかかったあと、遅れを1フレームで取り返そうとして
+        // 瞬間移動に見えないようにする蓋。普段の飛行速度（60m/s 前後）より十分上。
+        constexpr float kMaxLeapSpeed = 150.0f;
+        if (v.LengthSquared() > kMaxLeapSpeed * kMaxLeapSpeed)
+        {
+            v.Normalize();
+            v *= kMaxLeapSpeed;
+        }
+
+        movement.use3DVelocity = true; // 毎フレーム書く。書くのをやめたフレームに重力で落ちる
+        movement.velocity3D    = v;
+
+        // 跳んでいる向きへ体を向ける。相手を向いたまま飛ぶと、頭上を越える軌道で
+        // 背中から着地する。
+        TurnToward(trans, bossDef.lockedDirection, bossDef.turnSpeed, dt);
+        SyncCharacterRotation(trans, ch);
+
+        // アニメの Idle/Move を動かさない（空中の絵は IsLeaping 側の遷移が持つ）。
+        bossDef.currentMoveSpeed = 0.0f;
+        bossDef.moveDirection    = bossDef.lockedDirection;
+
+        if (u >= 1.0f) bossDef.leapPhase = BossLeapPhase::Recovery;
+        return;
+    }
+
+    // 着地硬直。着地した最初のフレームだけ速度を 0 で上書きする。飛行中の速度が
+    // currentVelocity に残っており、放っておくと減速のぶんだけ地面を滑る。
+    // 2フレーム目以降は書かない＝重力が戻り、段差があってもそのまま接地する。
+    if (!bossDef.leapTouchedDown)
+    {
+        movement.use3DVelocity  = true;
+        movement.velocity3D     = Vector3::Zero;
+        bossDef.leapTouchedDown = true;
+    }
+
+    bossDef.currentMoveSpeed = 0.0f;
+    movement.desiredVelocity = Vector3::Zero;
+
+    // 着地攻撃の硬直は向きを固定する。振り下ろしながら相手を追うと、横へ抜けても
+    // 刃が付いてきて後隙を狩れない（薙ぎ払いの meleeTurnTime と同じ理由）。
+    if (bossDef.leapStrikeLead > 0.0f) return;
+
+    Vector3 dirToPlayer = playerPos - trans.position;
+    dirToPlayer.y       = 0.0f;
+    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
+    SyncCharacterRotation(trans, ch);
+}
+
+void BossActionSystem::BeginLeapFlight(BossActionComponent &bossDef, const Vector3 &takeoffPos,
+                                       const Vector3 &playerPos, const BattleContext &battle) const
+{
+    bossDef.leapTakeoffPos = takeoffPos;
+
+    switch (bossDef.leapLanding)
+    {
+    case BossLeapLanding::AwayToCenter:
+        bossDef.leapLandingPos = AwayToCenterLandingPoint(bossDef, takeoffPos, playerPos, battle);
+        break;
+    case BossLeapLanding::TowardTarget:
+        bossDef.leapLandingPos = TowardTargetLandingPoint(bossDef, takeoffPos, playerPos);
+        break;
+    }
+
+    // 相手が壁際に立っていると、その手前でも壁の外に出ることがある。空中で見えない壁に
+    // 当たると位置の追従が壁を押し続け、着地の時刻と攻撃判定がずれる。
+    bossDef.leapLandingPos = ClampInsideArena(bossDef.leapLandingPos, battle);
+
+    Vector3 travel = bossDef.leapLandingPos - takeoffPos;
+    travel.y       = 0.0f;
+    if (travel.LengthSquared() > 0.0001f)
+    {
+        travel.Normalize();
+        bossDef.lockedDirection = travel;
+    }
+}
+
+Vector3 BossActionSystem::AwayToCenterLandingPoint(const BossActionComponent &bossDef, const Vector3 &takeoffPos,
+                                                   const Vector3 &playerPos, const BattleContext &battle) const
+{
+    Vector3 center(battle.arenaCenter);
+    center.y = takeoffPos.y; // 平らなステージ前提。起伏を付けるなら接地点を引く
+
+    // 相手→中央の向きへ抜ける。中央のさらに向こうへ降りるので、相手から見ると
+    // 頭上を越えて距離を取られる形になる。
+    Vector3 away = center - playerPos;
+    away.y       = 0.0f;
+
+    // 相手がちょうど中央に居ると向きが決まらない。その場合は自分→中央で代用する。
+    if (away.LengthSquared() <= 0.0001f)
+    {
+        away   = center - takeoffPos;
+        away.y = 0.0f;
+    }
+    if (away.LengthSquared() <= 0.0001f) return center; // 全員が中央に重なっている
+    away.Normalize();
+
+    // 0.9 で頭打ち。1 に近いと反対側の端に降り、今度はそちらで追い込まれる。
+    const float ratio = (std::max)(0.0f, (std::min)(bossDef.escapeLandingRatio, 0.9f));
+    return center + away * (battle.arenaRadius * ratio);
+}
+
+Vector3 BossActionSystem::TowardTargetLandingPoint(const BossActionComponent &bossDef, const Vector3 &takeoffPos,
+                                                   const Vector3 &playerPos) const
+{
+    Vector3 toTarget = playerPos - takeoffPos;
+    toTarget.y       = 0.0f;
+
+    const float distance = toTarget.Length();
+    if (distance <= 0.001f) return takeoffPos; // 真上に居る。その場で跳ぶ
+
+    // 手前で止めるぶんを引いてから射程で打ち切る。近すぎれば 0 ＝その場で跳んで叩く。
+    const float reach = (std::max)(0.0f, (std::min)(distance - bossDef.attackStandOff, bossDef.attackMaxRange));
+    return takeoffPos + toTarget * (reach / distance);
+}
+
+Vector3 BossActionSystem::ClampInsideArena(const Vector3 &point, const BattleContext &battle) const
+{
+    // カプセル半径（1.4m）に余裕を足した分だけ壁から離す。
+    constexpr float kWallMargin = 3.0f;
+
+    const Vector3 center(battle.arenaCenter);
+    Vector3       fromCenter = point - center;
+    fromCenter.y             = 0.0f;
+
+    const float limit    = (std::max)(0.0f, battle.arenaRadius - kWallMargin);
+    const float distance = fromCenter.Length();
+    if (distance <= limit) return point;
+
+    Vector3 clamped = center + fromCenter * (limit / distance);
+    clamped.y       = point.y; // 高さは着地点の決め方に任せる
+    return clamped;
+}
+
+Vector3 BossActionSystem::LeapPositionAt(const BossActionComponent &bossDef, float u) const
+{
+    Vector3 p = Vector3::Lerp(bossDef.leapTakeoffPos, bossDef.leapLandingPos, u);
+
+    // 4h*u(1-u) は u=0.5 で h、両端で 0。着地の高さは踏み切りと同じに戻る。
+    p.y += 4.0f * bossDef.leapHeight * u * (1.0f - u);
+    return p;
 }
 
 // BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前。

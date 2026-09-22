@@ -88,6 +88,16 @@ namespace CCL::AI::BT::CommonConditions
         }
     };
 
+    // 相手が「自分から見た中央の方向」±param 度の内側に立っている（逃げ道を塞がれている）。
+    // C_IsAtStageEdge と Sequence で並べて「追い込まれた」を作る。param=60 で中央側の扇。
+    struct TargetOnCenterSide : public IBTCondition
+    {
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.targetAngleFromCenter <= ctx.param;
+        }
+    };
+
     inline void RegisterAll()
     {
         auto &reg = BTActionRegistry::Instance();
@@ -100,6 +110,7 @@ namespace CCL::AI::BT::CommonConditions
         reg.RegisterCondition<TargetRetreating>(::CCL::AI::C_TargetRetreating);
         reg.RegisterCondition<DamageThresholdExceeded>(::CCL::AI::C_DamageThresholdExceeded);
         reg.RegisterCondition<IsAtStageEdge>(::CCL::AI::C_IsAtStageEdge);
+        reg.RegisterCondition<TargetOnCenterSide>(::CCL::AI::C_TargetOnCenterSide);
     }
 
 } // namespace CCL::AI::BT::CommonConditions

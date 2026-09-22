@@ -84,8 +84,9 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         btComp.blackboard.targetClosingSpeed =
             TargetClosingSpeed(Vector3(trans.position), targetPos, targetVelocity);
 
-        btComp.blackboard.distanceToArenaEdge =
-            DistanceToArenaEdge(Vector3(trans.GetWorldPosition()), battle);
+        const Vector3 myWorldPos(trans.GetWorldPosition());
+        btComp.blackboard.distanceToArenaEdge   = DistanceToArenaEdge(myWorldPos, battle);
+        btComp.blackboard.targetAngleFromCenter = TargetAngleFromCenterDeg(myWorldPos, targetPos, battle);
     });
 }
 
@@ -133,6 +134,27 @@ float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,
     fromCenter.y       = 0.0f; // 跳んでいる最中に「端へ寄った」と読み違えないため
 
     return battle.arenaRadius - fromCenter.Length();
+}
+
+float BossPerceptionSystem::TargetAngleFromCenterDeg(const Vector3       &myWorldPos,
+                                                     const Vector3       &targetPos,
+                                                     const BattleContext &battle) const
+{
+    Vector3 toCenter = Vector3(battle.arenaCenter) - myWorldPos;
+    Vector3 toTarget = targetPos - myWorldPos;
+    toCenter.y       = 0.0f;
+    toTarget.y       = 0.0f;
+
+    // 中央に立っている／相手と重なっているときは「塞がれていない」側へ倒す。
+    // 0 に倒すと、中央に居るのに追い込まれたと読んで逃げ出す。
+    if (toCenter.LengthSquared() <= 0.0001f || toTarget.LengthSquared() <= 0.0001f) return 180.0f;
+
+    toCenter.Normalize();
+    toTarget.Normalize();
+
+    // 左右は問わないので内積で足りる（SignedAngleToTargetDeg と違い符号が要らない）。
+    const float cosAngle = (std::max)(-1.0f, (std::min)(1.0f, toCenter.Dot(toTarget)));
+    return DirectX::XMConvertToDegrees(std::acos(cosAngle));
 }
 
 // BehaviorTreeSystem(L02_Update) が blackboard を読む前に認識を確定させる。
