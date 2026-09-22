@@ -25,6 +25,7 @@
 
 struct BattleContext;
 
+/// ボスの「今どの技を出しているか」(currentActionId) を、体の動き（速度・向き）へ変換する。
 class BossActionSystem : public CCL::ECS::IfSystem<
                              BossActionSystem,
                              CCL::ECS::Write<CharacterMovementComponent>,
@@ -49,84 +50,80 @@ public:
     BossActionSystem() : IfSystem("BossActionSystem") {}
     ~BossActionSystem() override = default;
 
+    /// 全ボスについて、技の切り替わりを検知し、今の動きを1フレーム分進める。
     void Update(float dt) override;
+
+    /// デバッグ用。ボスの位置をインスペクタから直接動かせる。
     void OnGui() override;
 
-    // Update が BehaviorTreeComponent::debugPaused を GetComponent で読む。
-    //   テンプレート引数には足さない（ForEach の絞り込みも兼ねるので、BTを持たない
-    //   検証用のボスでこの層が黙って動かなくなる）。申告だけをここで足す。
+    /// Update が BehaviorTreeComponent::debugPaused を GetComponent で読む。
+    /// テンプレート引数には足さない（ForEach の絞り込みも兼ねるので、BTを持たない
+    /// 検証用のボスでこの層が黙って動かなくなる）。申告だけをここで足す。
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
+    /// 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る。
     void ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
                      CharacterMovementComponent         &movement,
                      const JoltCharacterHandleComponent &joltHandle,
                      const DirectX::SimpleMath::Vector3 &playerPos, float dt);
 
+    /// 相手へ歩いて近づく。acceleration で walkSpeed まで加速する。
     void ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
                      CharacterMovementComponent         &movement,
                      const JoltCharacterConfigComponent &config,
                      const JoltCharacterHandleComponent &joltHandle,
                      const DirectX::SimpleMath::Vector3 &playerPos, float dt);
 
-    // 薙ぎ払い中の物理挙動。足を止めてプレイヤーを向くだけ。
-    void ProcessMeleeHold(BossActionComponent &bossDef, TransformComponent &trans,
-                          CharacterMovementComponent         &movement,
-                          const JoltCharacterHandleComponent &joltHandle,
-                          const DirectX::SimpleMath::Vector3 &playerPos, float dt);
-
-    // 後方ステップ。減速しながら後ろへ抜け、そのあと硬直する。
-    //
-    // 退きながらプレイヤーを向き続ける。背を向けると「逃げた」に見えてしまい、
-    // 間合いを切って仕切り直す技だと読めなくなる。
-    //   空中は use3DVelocity で速度を直接与える。重力に任せると着地の時刻が
-    //   キャラ設定に左右され、backStepTime と合わなくなる。
+    /// 後方ステップ。減速しながら弧を描いて後ろへ抜け、そのあと硬直する。
+    /// 退きながらも相手を向き続ける。背を向けると「逃げた」に見え、間合いを切って
+    /// 仕切り直す技だと読めなくなる。
     void ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
                          CharacterMovementComponent         &movement,
                          const JoltCharacterHandleComponent &joltHandle,
                          const DirectX::SimpleMath::Vector3 &playerPos, float dt);
 
-    // 跳躍。溜め → 飛行 → 着地硬直。どの跳躍系の技もここを通り、違いは着地点だけ。
-    //
-    // 飛行中は「今あるべき位置」を曲線から出し、そこへ届く速度を毎フレーム与える。
-    // 速度の式を積み上げる方式だと、壁や相手に触れたずれが着地点まで残る。
+    /// 跳躍。溜め → 飛行 → 着地硬直。跳躍系の技はすべてここを通り、違いは着地点だけ。
+    /// 飛行中は「今あるべき位置」を曲線から出し、そこへ届く速度を毎フレーム与える
+    /// （速度を積み上げる方式だと、壁や相手に触れたずれが着地点まで残る）。
     void ProcessLeap(BossActionComponent &bossDef, TransformComponent &trans,
                      CharacterMovementComponent         &movement,
                      const JoltCharacterHandleComponent &joltHandle,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext &battle, float dt);
 
-    // 踏み切りの瞬間に1回だけ呼ぶ。着地点と飛ぶ向きをここで確定させる。
+    /// 踏み切りの瞬間に1回だけ呼ぶ。着地点（ステージ内に収めた値）と飛ぶ向きを確定させる。
     void BeginLeapFlight(BossActionComponent                &bossDef,
                          const DirectX::SimpleMath::Vector3 &takeoffPos,
                          const DirectX::SimpleMath::Vector3 &playerPos,
                          const BattleContext                &battle) const;
 
-    // 中央を挟んで相手と反対側の着地点。高さは踏み切り地点に揃える。
+    /// 中央を挟んで相手と反対側の着地点（中心から 半径×escapeLandingRatio）。
+    /// 高さは踏み切り地点に揃える。
     DirectX::SimpleMath::Vector3 AwayToCenterLandingPoint(const BossActionComponent          &bossDef,
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos,
                                                           const BattleContext                &battle) const;
 
-    // 相手の手前 attackStandOff の地点。遠ければ attackMaxRange で打ち切る。
+    /// 相手の位置から attackStandOff だけ手前の着地点。距離の上限は無い。
     DirectX::SimpleMath::Vector3 TowardTargetLandingPoint(const BossActionComponent          &bossDef,
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos) const;
 
-    // 着地点をステージの内側へ引き戻す。どの着地点の決め方でも最後に通す。
+    /// 着地点がステージの円（BattleContext::arenaRadius − 壁からの余白）の外なら、
+    /// 中心へ向かって円の縁まで引き戻す。どの着地点の決め方でも最後に通す。
     DirectX::SimpleMath::Vector3 ClampInsideArena(const DirectX::SimpleMath::Vector3 &point,
                                                   const BattleContext                &battle) const;
 
-    // 飛行の進み具合 u (0=踏み切り, 1=着地) での位置。水平は等速、垂直は放物線。
+    /// 飛行の進み具合 u（0=踏み切り, 1=着地）での位置。水平は等速、垂直は放物線。
     DirectX::SimpleMath::Vector3 LeapPositionAt(const BossActionComponent &bossDef, float u) const;
 
-    // AIの意図(ActionID) を物理ステートへ翻訳する。
+    /// BTが出した技(ActionID) を、体の動き(BossActionState) へ翻訳する。知らない技は None。
     BossActionState TranslateAction(ActionID actionId) const;
 
-    // 技に入った瞬間だけ走る処理。タイマーの初期化と、進行方向の確定。
-    // 跳躍系は、どの技かで着地点の決め方と調整値を選ぶので actionId も受け取る。
-    //
-    // 方向をここで1回だけ決めるのが、動く技が「避けられる技」である根拠。
+    /// 技に入った瞬間だけ走る処理。タイマーを 0 に戻し、進行方向を確定させる。
+    /// 跳躍系は、どの技かで着地点の決め方と調整値を選ぶので actionId も受け取る。
+    /// 方向をここで1回だけ決めるのが、動く技が「避けられる技」である根拠。
     void OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossDef,
                       const TransformComponent           &trans,
                       const DirectX::SimpleMath::Vector3 &playerPos) const;

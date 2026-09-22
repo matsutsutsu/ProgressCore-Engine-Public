@@ -12,7 +12,6 @@
 static const char *BossStateNames[] = {
     "None",
     "Move",
-    "Melee",
     "BackStep",
     "Leap",
 };
@@ -21,7 +20,6 @@ static const char *BossStateNames[] = {
 static const char *BossLeapPhaseNames[] = {
     "Windup",
     "Flight",
-    "Strike",
     "Recovery",
 };
 
@@ -45,7 +43,6 @@ struct ComponentMeta<BossActionComponent>
                     CFIELD_FLOAT_RANGED(advanceStopDistance, "詰めるのを止める距離 [m]", 0.5f, 0.0f, 60.0f, "Stats")
                         CFIELD_FLOAT_RANGED(acceleration, "加速度", 0.1f, 0.0f, 100.0f, "Inertia")
                             CFIELD_FLOAT_RANGED(deceleration, "減速度", 0.1f, 0.0f, 100.0f, "Inertia")
-                                CFIELD_FLOAT_RANGED(meleeTurnTime, "薙ぎ払い：追従して向く時間 [秒]", 0.01f, 0.0f, 3.0f, "Melee")
                                     CFIELD_FLOAT_RANGED(backStepSpeed, "後退：踏み切り速度 [m/s]", 0.5f, 0.0f, 100.0f, "Back Step")
                 CFIELD_FLOAT_RANGED(backStepTime, "後退：後退時間 [秒]", 0.01f, 0.01f, 2.0f, "Back Step")
                 CFIELD_FLOAT_RANGED(backStepHeight, "後退：跡の高さ [m]", 0.1f, 0.0f, 10.0f, "Back Step")
@@ -56,9 +53,7 @@ struct ComponentMeta<BossActionComponent>
                 CFIELD_FLOAT_RANGED(attackWindupTime, "跳躍攻撃：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Attack")
                 CFIELD_FLOAT_RANGED(attackFlightTime, "跳躍攻撃：滞空 [秒]", 0.01f, 0.1f, 5.0f, "Leap Attack")
                 CFIELD_FLOAT_RANGED(attackHeight, "跳躍攻撃：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Attack")
-                CFIELD_FLOAT_RANGED(attackMaxRange, "跳躍攻撃：最大水平距離 [m]", 0.5f, 0.0f, 100.0f, "Leap Attack")
                 CFIELD_FLOAT_RANGED(attackStandOff, "跳躍攻撃：相手の手前に降りる距離 [m]", 0.1f, 0.0f, 20.0f, "Leap Attack")
-                CFIELD_FLOAT_RANGED(attackStrikeLead, "跳躍攻撃：振り下ろしを始める着地前 [秒]", 0.01f, 0.0f, 2.0f, "Leap Attack")
             // ここから下は書き手が BossActionSystem の実行時の値。保存しない。
             //   保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、
             //   次に生成された個体がその状態で生まれてくる。

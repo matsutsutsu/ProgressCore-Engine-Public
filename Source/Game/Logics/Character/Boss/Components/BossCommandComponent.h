@@ -5,17 +5,19 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
 #include "Game/Logics/AI/Drone/DroneComponent.h"               // DroneFormationType
 
+/// BT（脳）が書き、BossActionSystem / ドローン側（筋肉）が読む指示。
 struct BossCommandComponent
 {
+    /// ドローン群に組ませたい陣形。陣形指示ノード（DroneAction）が書く。
     DroneFormationType requestFormation = DroneFormationType::Hidden;
 
-    // 「筋肉にやってほしい」行動。BossActionSystem が BossActionState へ翻訳する。
+    /// ボス本体にやってほしい技。BossActionSystem が BossActionState へ翻訳する。0 は何もしない。
     ActionID currentActionId = 0;
 
-    // ドローンへの「今撃て」信号。DroneStrikeAction が立て、陣形指示が下ろす。
+    /// ドローンへの「今撃て」信号。DroneStrikeAction が立て、次の陣形指示が下ろす。
     bool droneAttackActive = false;
 
-    // 上の前フレーム値。立ち上がりを取って個別寿命の突撃を1回だけ発火させる
-    // （無いと信号が立っている間ずっと全機が攻撃へ引き戻され、個別帰投が成立しない）。
+    /// droneAttackActive の前フレーム値。立ち上がりを取って個別寿命の突撃を1回だけ発火させる
+    /// （無いと信号が立っている間ずっと全機が攻撃へ引き戻され、個別帰投が成立しない）。
     bool prevDroneAttackActive = false;
 };

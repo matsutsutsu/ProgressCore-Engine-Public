@@ -86,9 +86,8 @@ namespace CCL::AI
     inline constexpr ActionID A_DroneStrike = 1006; // ドローンへ「今撃て」信号（陣形攻撃のリリース）
     // 1100番台は「アニメのトリガーを引き、param 秒だけBTを留める」同じ形。
     // 違いは物理挙動だけで、それは BossActionSystem が ActionID ごとに分岐して担当する。
-    // 1102/1103 は突進斬り・跳躍斬りを削除した欠番。再利用すると、数値IDで残った古いノードが
-    // 別の技として動き出す。
-    inline constexpr ActionID A_BossSlash    = 1101; // 薙ぎ払い。足を止めて斬る自衛技
+    // 1101〜1103 は剣の技（薙ぎ払い・突進斬り・跳躍斬り）を削除した欠番。再利用すると、
+    // 数値IDで残った古いノードが別の技として動き出す。
     inline constexpr ActionID A_BossBackStep = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
 
     // 被弾はモーションを中断せず、止めるのは「次の技を選ぶ」判断だけ。その猶予を作る。
@@ -100,7 +99,7 @@ namespace CCL::AI
 
     // 跳躍系。跳び方は共通で、違いは着地点（BossLeapLanding）だけ。
     inline constexpr ActionID A_BossLeapEscape = 1107; // 中央を挟んで相手の反対側へ跳ぶ
-    inline constexpr ActionID A_BossLeapAttack = 1108; // 相手の手前へ跳び、着地で斬る
+    inline constexpr ActionID A_BossLeapAttack = 1108; // 相手の位置へ跳び、着地の衝撃で当てる
 
 // --- ドローン陣形技 (2000番台) ---
 #define CCL_BT_DEFINE_DRONE_ID(Name, Id, Formation, Display) inline constexpr ActionID Name = Id;
@@ -163,7 +162,6 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
 
     {CCL::AI::A_Move, "A_Move", "ボス：移動 (Move To Player)", BTCategory::Boss, ""},
     {CCL::AI::A_ResetDamage, "A_ResetDamage", "ボス：蓄積ダメージリセット", BTCategory::Boss, ""},
-    {CCL::AI::A_BossSlash, "A_BossSlash", "ボス：薙ぎ払い (Slash)", BTCategory::Boss, "全体時間 [秒]"},
     {CCL::AI::A_BossBackStep, "A_BossBackStep", "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]"},
     {CCL::AI::A_BossHitWait, "A_BossHitWait", "ボス：被弾後の様子見", BTCategory::Boss, "待つ長さ [秒]"},
     {CCL::AI::A_BossAdvance, "A_BossAdvance", "ボス：詰めながら待つ", BTCategory::Boss, "長さ [秒]"},
@@ -203,7 +201,7 @@ inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / si
 // Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下部の static_assert が落とす。
 inline constexpr std::string_view RedirectKey(std::string_view key)
 {
-    // 例: if (key == "A_BossSlash") return "A_BossSweep";
+    // 例: if (key == "A_BossJumpSlam") return "A_BossLeapAttack";
     return key;
 }
 
@@ -296,7 +294,7 @@ inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view 
 {
     return RegistryHasKey(newKey) && !RegistryHasKey(oldKey) && RedirectKey(oldKey) == newKey;
 }
-// 例: static_assert(IsRedirectValid("A_BossSlash", "A_BossSweep"), "読み替えが不正");
+// 例: static_assert(IsRedirectValid("A_BossJumpSlam", "A_BossLeapAttack"), "読み替えが不正");
 
 // ドローン技のキーは陣形技として引けるか（マクロ生成部と手書き部の突き合わせ）。
 inline constexpr bool DroneEntriesArePresent()
@@ -350,7 +348,7 @@ inline bool IsBossPhysicalAction(ActionID id)
 // ボスの近接アクションか。物理挙動の分岐ではない（それは BossActionSystem が決める）。
 inline bool IsBossMeleeAction(ActionID id)
 {
-    return id == CCL::AI::A_BossSlash || id == CCL::AI::A_BossLeapAttack;
+    return id == CCL::AI::A_BossLeapAttack;
 }
 
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
@@ -370,7 +368,7 @@ inline bool IsBossEvadeAction(ActionID id)
 inline bool IsCommandWritingAction(ActionID id)
 {
     return IsBossPhysicalAction(id)  // A_Move / A_BossAdvance
-           || IsBossMeleeAction(id)  // 薙ぎ払い / 跳躍攻撃
+           || IsBossMeleeAction(id)  // 跳躍攻撃
            || IsBossEvadeAction(id); // 後方ステップ / 中央へ跳んで逃げる
 }
 

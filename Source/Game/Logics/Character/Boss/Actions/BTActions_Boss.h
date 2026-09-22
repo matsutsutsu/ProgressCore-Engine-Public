@@ -23,7 +23,7 @@ namespace CCL::AI::BT::BossActions
             if (cmd->currentActionId == expected) cmd->currentActionId = 0;
     }
 
-    // ① 待機（汎用：bt の nodeTimers だけ使う）。待ち時間はノードの param（秒）。
+    /// ① 待機（汎用：bt の nodeTimers だけ使う）。待ち時間はノードの param（秒）。
     struct WaitAction : public IBTAction
     {
         BTNodeState Execute(BTContext &ctx) override
@@ -42,7 +42,7 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ② 蓄積ダメージのリセット（汎用：bt のみ）。
+    /// ② 蓄積ダメージのリセット（汎用：bt のみ）。
     struct ResetDamageAction : public IBTAction
     {
         BTNodeState Execute(BTContext &ctx) override
@@ -52,12 +52,12 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ②-2 被弾後の様子見（攻撃ヒット時待ち時間）。大原則は「被弾は今の行動を中断せず、
-    // 次に何をするかの判断にだけ影響する」。
-    //
-    // Selector の先頭に置いても技を潰さないのは、Selector が Running 中の子を先に再開
-    // するから。技を出している間はこの枝まで評価が降りてこない。
-    // 怒り状態で OFF にするには木からこのノードを外すか param を 0 にする。
+    /// ②-2 被弾後の様子見（攻撃ヒット時待ち時間）。大原則は「被弾は今の行動を中断せず、
+    /// 次に何をするかの判断にだけ影響する」。
+    ///
+    /// Selector の先頭に置いても技を潰さないのは、Selector が Running 中の子を先に再開
+    /// するから。技を出している間はこの枝まで評価が降りてこない。
+    /// 怒り状態で OFF にするには木からこのノードを外すか param を 0 にする。
     struct HitWaitAction : public IBTAction
     {
         BTNodeState Execute(BTContext &ctx) override
@@ -71,8 +71,8 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ③ 移動（Move）。意図を currentActionId に書き、0.5s で一旦 Success させて
-    // BT に再評価させる。
+    /// ③ 移動（Move）。意図を currentActionId に書き、0.5s で一旦 Success させて
+    /// BT に再評価させる。
     struct MoveAction : public IBTAction
     {
         // world から直接書くので申告する（BTAction.h の説明を参照）。
@@ -108,12 +108,12 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ③-2 詰めながら待つ（Advance）。技と技の間に入れる「間」で、A_Wait と差し替えて使う。
-    // 技の後ろに A_Wait を素で置くと、8〜40m の帯でボスは一歩も動かず陣形だけを飛ばす
-    // 置物になる（A_Move は「距離 > 40m」の枝にしかなく、上の枝が先に通るため）。
-    //
-    // 近づき切っても Success にはせず、止めるのは足だけで param 秒最後まで Running。
-    // 途中で完了させると間の長さがプレイヤーの位置で変わり、後隙が読めなくなる。
+    /// ③-2 詰めながら待つ（Advance）。技と技の間に入れる「間」で、A_Wait と差し替えて使う。
+    /// 技の後ろに A_Wait を素で置くと、8〜40m の帯でボスは一歩も動かず陣形だけを飛ばす
+    /// 置物になる（A_Move は「距離 > 40m」の枝にしかなく、上の枝が先に通るため）。
+    ///
+    /// 近づき切っても Success にはせず、止めるのは足だけで param 秒最後まで Running。
+    /// 途中で完了させると間の長さがプレイヤーの位置で変わり、後隙が読めなくなる。
     struct AdvanceAction : public IBTAction
     {
         std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
@@ -142,7 +142,7 @@ namespace CCL::AI::BT::BossActions
             if (timers[ctx.nodeId] == -1.0f)
                 timers[ctx.nodeId] = (ctx.param > 0.0f) ? ctx.param : 2.0f;
 
-            float stopDistance = 7.0f; // 引けなければ薙ぎ払いの間合いを仮に使う
+            float stopDistance = 7.0f; // BossActionComponent が無いときの仮の間合い
             if (const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity))
                 stopDistance = act->advanceStopDistance;
 
@@ -158,15 +158,16 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ④ ドローン陣形の指示（2000番台）。「この形を作れ」と指示して即完了する。
-    // 予告の長さも硬直の長さも持たず、技1回分はBTグラフの並びで表す。
-    //
-    //     [陣形] [Wait 予告] [Strike] [Wait 攻撃＋硬直] [帰投] [Wait 次までの間]
-    //
-    // 一度は時間割を陣形クラス側へ移したが、数字の出どころが C++ と BT の2か所に分かれ、
-    // 両方が攻撃信号を立てて同じ技が2度当たる不具合を出した。調整する数字はエディタ側へ。
+    /// ④ ドローン陣形の指示（2000番台）。「この形を作れ」と指示して即完了する。
+    /// 予告の長さも硬直の長さも持たず、技1回分はBTグラフの並びで表す。
+    ///
+    ///     [陣形] [Wait 予告] [Strike] [Wait 攻撃＋硬直] [帰投] [Wait 次までの間]
+    ///
+    /// 一度は時間割を陣形クラス側へ移したが、数字の出どころが C++ と BT の2か所に分かれ、
+    /// 両方が攻撃信号を立てて同じ技が2度当たる不具合を出した。調整する数字はエディタ側へ。
     struct DroneAction : public IBTAction
     {
+        /// どの陣形指示か（2000番台）。DRONE_ACTION_LIST で陣形へ引く。
         ActionID id;
         explicit DroneAction(ActionID actionId) : id(actionId) {}
 
@@ -194,9 +195,9 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ⑤ ドローン攻撃リリース（Strike）。「今撃て」信号を立て、DroneCommandSystem 経由で
-    // 各ドローンが FireCharge へ入る。[陣形] の後ろにこれが無い枝は形を作って帰るだけに
-    // なる（読み込み時に BehaviorTreeLoader が見張っている）。下ろすのは次の陣形指示の役目。
+    /// ⑤ ドローン攻撃リリース（Strike）。「今撃て」信号を立て、DroneCommandSystem 経由で
+    /// 各ドローンが FireCharge へ入る。[陣形] の後ろにこれが無い枝は形を作って帰るだけに
+    /// なる（読み込み時に BehaviorTreeLoader が見張っている）。下ろすのは次の陣形指示の役目。
     struct DroneStrikeAction : public IBTAction
     {
         std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
@@ -215,16 +216,21 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
-    // ⑥ トリガー駆動の技：アニメのトリガーを引いて param 秒 BT を留める。
-    // AIは「技を決めてトリガーを引く」だけで、当たり判定のタイミングはアニメクリップ内の
-    // HitBox イベントが握り、物理挙動は BossActionSystem が担当する。
-    //
-    // 「近接攻撃」ではなく「トリガー駆動」なのは、後方ステップも同じ形だから。
-    // 違いは triggerHash と物理側だけ。前提は triggerHash に対応する遷移があること。
+    /// ⑥ トリガー駆動の技：アニメのトリガーを引いて param 秒 BT を留める。
+    /// AIは「技を決めてトリガーを引く」だけで、当たり判定のタイミングはアニメクリップ内の
+    /// HitBox イベントが握り、物理挙動は BossActionSystem が担当する。
+    ///
+    /// 「近接攻撃」ではなく「トリガー駆動」なのは、後方ステップも同じ形だから。
+    /// 違いは triggerHash と物理側だけ。前提は triggerHash に対応する遷移があること。
     struct TriggeredMotionAction : public IBTAction
     {
+        /// 開始フレームに引くアニメのトリガー名のハッシュ。
         uint32_t triggerHash;
-        float    defaultDuration; // ノードの param が未設定(0)のときに使う硬直
+
+        /// ノードの param が未設定(0)のときに使う、技の全体時間 [秒]。
+        float defaultDuration;
+
+        /// この技の ActionID。currentActionId に書き、終わったら取り下げる。
         ActionID id;
 
         TriggeredMotionAction(uint32_t hash, float fallbackDur, ActionID actionId)
@@ -267,16 +273,13 @@ namespace CCL::AI::BT::BossActions
         }
     };
 
+    /// ボス用の行動をすべて BTActionRegistry へ登録する。起動時に1回だけ呼ぶ。
     inline void RegisterAll()
     {
         auto &reg = BTActionRegistry::Instance();
 
         // 各技の秒数は「BTがこの技に留まる全体時間」＝後隙の長さ。段ごとの内訳は
         // BossActionComponent 側で調整する。ノードに param があればそちらが勝つ。
-
-        // 薙ぎ払い。
-        reg.RegisterActionInstance(::CCL::AI::A_BossSlash,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
 
         // 後方ステップ：後退0.35 + 硬直。攻撃判定は持たない。硬直をステップ本体より長く
         // 取るのは、0だと「殴られる→即離脱→即接近」を繰り返して手を出す隙が消えるため。
@@ -289,8 +292,8 @@ namespace CCL::AI::BT::BossActions
         reg.RegisterActionInstance(::CCL::AI::A_BossLeapEscape,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, ::CCL::AI::A_BossLeapEscape));
 
-        // 跳躍攻撃：溜め0.35 + 滞空0.8 + 着地硬直。振り下ろしへの切り替えは
-        // LeapStrike（BossAnimSyncSystem）が運ぶので、引くトリガーは逃げる跳躍と同じ。
+        // 跳躍攻撃：溜め0.35 + 滞空0.8 + 着地硬直。攻撃の着地クリップへの切り替えは
+        // LeapAttack（BossAnimSyncSystem）が運ぶので、引くトリガーは逃げる跳躍と同じ。
         reg.RegisterActionInstance(::CCL::AI::A_BossLeapAttack,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, ::CCL::AI::A_BossLeapAttack));
 

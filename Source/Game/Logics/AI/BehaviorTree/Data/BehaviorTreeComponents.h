@@ -12,62 +12,83 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 #include "Engine/ECS/Common/CCL_Types.h"
 
-// AIの判断材料（ブラックボード）。
-//   知覚システムが毎フレーム書き、BTの条件・行動が読む。書き手はその1系統だけ。
+/// AIの判断材料（ブラックボード）。
+/// 知覚システムが毎フレーム書き、BTの条件・行動が読む。書き手はその1系統だけ。
 struct AIBlackboard
 {
-    // 座標だけでなくIDを持つのは、行動側が座標以外（HPや状態）も引けるようにするため。
-    CCL::ECS::EntityID           targetEntity = CCL::ECS::InvalidEntityID; // 狙っている相手
-    DirectX::SimpleMath::Vector3 targetPosition;                           // その座標
-    float                        distanceToTarget = 0.0f;                  // そこまでの距離
+    /// 狙っている相手。座標だけでなくIDを持つのは、行動側が座標以外（HPや状態）も引けるようにするため。
+    CCL::ECS::EntityID targetEntity = CCL::ECS::InvalidEntityID;
 
-    // 自分の正面から見た相手の角度 [度]。正=右、負=左、±180=真後ろ。
-    // 距離だけだと「正面8m」と「背後8m」が同じ値になり、回り込まれたことに気付けない。
-    // 背後を取られたら振り向く・正面に捉えている間だけ突進する、はこれが無いと書けない。
+    /// 狙っている相手の足元（ワールド）。
+    DirectX::SimpleMath::Vector3 targetPosition;
+
+    /// 相手までの距離 [m]。
+    float distanceToTarget = 0.0f;
+
+    /// 自分の正面から見た相手の角度 [度]。正=右、負=左、±180=真後ろ。
+    /// 距離だけだと「正面8m」と「背後8m」が同じ値になり、回り込まれたことに気付けない。
     float angleToTarget = 0.0f;
 
-    // 相手が自分へ詰めてくる速さ [m/s]。正=接近、負=後退。
-    // 自分の移動は混ぜない。混ぜると、逃げる相手を追いかけている自分の速度が乗って
-    // 「相手が詰めてきている」と誤認する。読みたいのは相手の意思なので相手の速度だけ。
+    /// 相手が自分へ詰めてくる速さ [m/s]。正=接近、負=後退。
+    /// 自分の移動は混ぜない。混ぜると、逃げる相手を追いかけている自分の速度が乗って
+    /// 「相手が詰めてきている」と誤認する。読みたいのは相手の意思なので相手の速度だけ。
     float targetClosingSpeed = 0.0f;
 
-    // ステージの端（BattleContext の円）まであと何 m か。正=内側、負=外へはみ出している。
-    // 中心からの距離でなく端までの残りで持つのは、ステージの大きさを変えても
-    // 「端から 8m 以内」という木の書き方がそのまま通るようにするため。
+    /// ステージの端（BattleContext の円）まであと何 m か。正=内側、負=外へはみ出している。
+    /// 中心からの距離でなく端までの残りで持つのは、ステージの大きさを変えても
+    /// 「端から 8m 以内」という木の書き方がそのまま通るようにするため。
     float distanceToArenaEdge = 9999.0f;
 
-    // 自分から見た「ステージ中央の方向」と「相手の方向」のなす角 [度]。0〜180。
-    // 0 に近いほど相手が自分と中央の間に立っている＝逃げ道を塞がれている。
-    // 端に居るだけでは追い込まれではない（相手が外側に居れば中央へ歩けば済む）。
+    /// 自分から見た「ステージ中央の方向」と「相手の方向」のなす角 [度]。0〜180。
+    /// 0 に近いほど相手が自分と中央の間に立っている＝逃げ道を塞がれている。
     float targetAngleFromCenter = 180.0f;
 
-    float healthPercentage = 100.0f; // 残りHPの割合（0〜100）
+    /// 残りHPの割合 [%]（0〜100）。
+    float healthPercentage = 100.0f;
 
-    // 被弾の蓄積。閾値はここに持たずBTノードの param（最大HPに対する％）で決める。
-    // 絶対量で見ると、最大HPを増やした瞬間に「1%削っただけで退く」になる。
-    float accumulatedDamage      = 0.0f; // 前回リセットからの被弾量（実数値）
-    float accumulatedDamageRatio = 0.0f; // 上を最大HPで割ったもの [%]
+    /// 前回 A_ResetDamage してからの被弾量（実数値）。
+    float accumulatedDamage = 0.0f;
 
-    // 直近の被弾からの経過秒。被弾は「今の行動」を中断せず、「次に何をするか」の
-    // 判断にだけ影響させる。残り時間でなく経過時間なのは、待つ長さを木が決めるため。
+    /// accumulatedDamage を最大HPで割ったもの [%]。閾値はBTノードの param（最大HPに対する％）
+    /// で決める。絶対量で見ると、最大HPを増やした瞬間に「1%削っただけで退く」になる。
+    float accumulatedDamageRatio = 0.0f;
+
+    /// 直近の被弾からの経過 [秒]。被弾は「今の行動」を中断せず、「次に何をするか」の
+    /// 判断にだけ影響させる。残り時間でなく経過時間なのは、待つ長さを木が決めるため。
     float timeSinceLastHit = 9999.0f;
 };
 
-// BehaviorTreeの実行状態を保持するコンポーネント
+/// ビヘイビアツリーの実行状態。木そのもの（sharedAsset）は全個体で共有し、
+/// 個体が持つのは「どこまで進んだか」だけ。
 struct BehaviorTreeComponent
 {
     // --- ツリーデータ ---
-    std::shared_ptr<const BTAsset> sharedAsset;     // 木の実体。BTAssetCache が全Entityで1本だけ持つ
-    std::string                    assetPath;       // 読み込むBTのパス。空なら評価しない
-    std::string                    loadedAssetPath; // 実際に読み込めたパス。表示と差し替え判定に使う
+
+    /// 今評価している木。BTAssetCache が全Entityで1本だけ持つ。
+    /// 書き手は BehaviorTreeSystem::SyncAssets だけ（他から書くと実行状態のリセットがすり抜ける）。
+    std::shared_ptr<const BTAsset> sharedAsset;
+
+    /// 使いたい木のパス。これを書き換えると次のフレームに SyncAssets が差し替える。空なら評価しない。
+    std::string assetPath;
+
+    /// 実際に読み込めた木のパス。表示用。
+    std::string loadedAssetPath;
 
     // --- 判断材料 ---
+
+    /// 知覚システムが書く判断材料。
     AIBlackboard blackboard;
 
     // --- 実行状態（配列は木と同じ長さ。確保は BehaviorTreeSystem::SyncAssets）---
-    std::vector<float> nodeTimers;        // ノードごとの残り時間。-1 は未開始
-    std::vector<int>   runningNodes;      // 複合ノードのしおり。次にどの子から再開するか
-    BTNodeID           runningNodeId = 0; // 今フレーム Running を返した最初のノード
+
+    /// ノードごとの残り時間 [秒]。-1 は未開始、0 は時間切れ。
+    std::vector<float> nodeTimers;
+
+    /// 複合ノードのしおり。次にどの子から再開するか。-1 は先頭から。
+    std::vector<int> runningNodes;
+
+    /// 今フレーム Running を返した最初のノード。0xFFFF は無し。
+    BTNodeID runningNodeId = 0;
 
     /// WeightedSelector の抽選に使う乱数の状態。0 は「まだ種を蒔いていない」。
     ///
@@ -83,9 +104,19 @@ struct BehaviorTreeComponent
     uint32_t rngState = 0;
 
     // --- デバッグ（実行時のみ・非シリアライズ）---
-    std::vector<BTDebugState> debugNodeStates;                   // 今フレームの評価結果。BTウィンドウの色分けに使う
-    ActionID                  lastLogActionId          = 0xFFFF; // 最後に実行した行動。デバッガの見出しに出す
-    int                       debugForcedNodeId        = -1;     // この枝だけを評価する。-1 で通常どおりルートから
-    int                       debugAppliedForcedNodeId = -1;     // 上を適用済みか。切り替わった瞬間に実行状態を捨てる
-    bool                      debugPaused              = false;  // 木を凍らせる（強制実行中は無効）
+
+    /// 今フレームの各ノードの評価結果。BTウィンドウの色分けに使う。
+    std::vector<BTDebugState> debugNodeStates;
+
+    /// 最後に実行した行動。デバッガの見出しに出す。
+    ActionID lastLogActionId = 0xFFFF;
+
+    /// この枝だけを評価する（BTウィンドウの「今すぐ出す」）。-1 で通常どおりルートから。
+    int debugForcedNodeId = -1;
+
+    /// debugForcedNodeId を適用済みか。切り替わった瞬間に実行状態を捨てるのに使う。
+    int debugAppliedForcedNodeId = -1;
+
+    /// 木を凍らせる（強制実行中は無効）。
+    bool debugPaused = false;
 };

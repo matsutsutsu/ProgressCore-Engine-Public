@@ -3,20 +3,6 @@
     "anyStatePosY": -16.0,
     "anyStateTransitions": [
         {
-            "blendDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1898928778,
-                    "paramName": "Slash",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1898928778
-        },
-        {
             "blendDuration": 0.1,
             "conditions": [
                 {
@@ -62,13 +48,6 @@
             "hash": 3816806871,
             "name": "IsMoving",
             "type": 1
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
-            "hash": 1898928778,
-            "name": "Slash",
-            "type": 2
         },
         {
             "defaultBool": false,
@@ -122,8 +101,8 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 2627339593,
-            "name": "LeapStrike",
+            "hash": 2693360683,
+            "name": "LeapAttack",
             "type": 1
         }
     ],
@@ -189,55 +168,6 @@
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "targetStateHash": 1168775091
-                }
-            ]
-        },
-        {
-            "applyRootMotion": true,
-            "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 114.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Slash.json",
-            "sequenceName": "Slash",
-            "speedCurveName": "",
-            "stateHash": 1898928778,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
                 }
             ]
         },
@@ -423,20 +353,6 @@
                     "blendDuration": 0.1,
                     "conditions": [
                         {
-                            "op": 0,
-                            "paramHash": 2627339593,
-                            "paramName": "LeapStrike",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1102133334
-                },
-                {
-                    "blendDuration": 0.1,
-                    "conditions": [
-                        {
                             "op": 4,
                             "paramHash": 0,
                             "paramName": "",
@@ -467,14 +383,20 @@
                     "conditions": [
                         {
                             "op": 0,
-                            "paramHash": 2627339593,
-                            "paramName": "LeapStrike",
+                            "paramHash": 79417333,
+                            "paramName": "IsLeaping",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 2693360683,
+                            "paramName": "LeapAttack",
                             "threshold": 1.0
                         }
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
-                    "targetStateHash": 1102133334
+                    "targetStateHash": 2893681322
                 },
                 {
                     "blendDuration": 0.1,
@@ -549,10 +471,10 @@
             "nodePosY": 820.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapSlam.json",
-            "sequenceName": "LeapSlam",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapLandAttack.json",
+            "sequenceName": "LeapLandAttack",
             "speedCurveName": "",
-            "stateHash": 1102133334,
+            "stateHash": 2893681322,
             "transitions": [
                 {
                     "blendDuration": 0.2,

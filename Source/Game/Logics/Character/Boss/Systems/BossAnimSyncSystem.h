@@ -12,6 +12,8 @@
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 
+/// BossActionComponent の状態を、アニメグラフのパラメータ
+/// （Speed / IsMoving / IsLeaping / LeapAttack）へ写す。
 class BossAnimSyncSystem : public CCL::ECS::IfSystem<
                                BossAnimSyncSystem,
                                CCL::ECS::Read<BossActionComponent>,
@@ -22,5 +24,7 @@ public:
         : IfSystem("BossAnimSyncSystem")
     {
     }
+
+    /// 全ボスのアニメパラメータを、今の動きに合わせて書き直す。
     void Update(float dt) override;
 };

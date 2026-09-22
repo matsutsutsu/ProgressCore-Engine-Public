@@ -17,9 +17,9 @@ static const uint32_t HASH_IS_MOVING = CCL::Utils::HashString("IsMoving");
 // なったときに遷移する。滞空の長さは技ごとに違うので、クリップの長さでは着地を決められない。
 static const uint32_t HASH_IS_LEAPING = CCL::Utils::HashString("IsLeaping");
 
-// 着地攻撃の振り下ろしが始まった（着地の少し前から true）。グラフは IsLeaping より先に
-// これを見るので、着地攻撃のときは空中ループから LeapLand ではなく LeapSlam へ抜ける。
-static const uint32_t HASH_LEAP_STRIKE = CCL::Utils::HashString("LeapStrike");
+// この跳躍は着地で攻撃するか（跳躍攻撃の間ずっと true）。グラフは着地のときに
+// これを見て、攻撃判定を持つ LeapLandAttack と持たない LeapLand を選び分ける。
+static const uint32_t HASH_LEAP_ATTACK = CCL::Utils::HashString("LeapAttack");
 
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
@@ -32,10 +32,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         anim.SetBool(HASH_IS_MOVING, isMoving);
 
         const bool leap      = (boss.currentState == BossActionState::Leap);
-        const bool isLeaping = leap && (boss.leapPhase == BossLeapPhase::Windup
-                                        || boss.leapPhase == BossLeapPhase::Flight);
+        const bool isLeaping = leap && (boss.leapPhase != BossLeapPhase::Recovery);
         anim.SetBool(HASH_IS_LEAPING, isLeaping);
-        anim.SetBool(HASH_LEAP_STRIKE, leap && boss.leapPhase == BossLeapPhase::Strike);
+        anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapLandAttack);
     });
 }
 

@@ -7,26 +7,6 @@
             "startPin": 2
         },
         {
-            "endPin": 7,
-            "id": 113,
-            "startPin": 5
-        },
-        {
-            "endPin": 10,
-            "id": 114,
-            "startPin": 8
-        },
-        {
-            "endPin": 12,
-            "id": 115,
-            "startPin": 8
-        },
-        {
-            "endPin": 14,
-            "id": 116,
-            "startPin": 8
-        },
-        {
             "endPin": 25,
             "id": 121,
             "startPin": 5
@@ -332,52 +312,6 @@
             "posX": 0.0,
             "posY": 150.0,
             "type": 1
-        },
-        {
-            "actionId": 0,
-            "id": 6,
-            "inputPinId": 7,
-            "name": "近接(張り付き)",
-            "outputPinId": 8,
-            "posX": 0.0,
-            "posY": 400.0,
-            "type": 2
-        },
-        {
-            "actionId": 9,
-            "id": 9,
-            "inputPinId": 10,
-            "name": "距離<8m",
-            "outputPinId": 0,
-            "posX": 0.0,
-            "posY": 560.0,
-            "type": 3,
-            "condition": "C_DistanceLessThan",
-            "param": 8.0
-        },
-        {
-            "actionId": 1101,
-            "id": 11,
-            "inputPinId": 12,
-            "name": "薙ぎ払い",
-            "outputPinId": 0,
-            "posX": 260.0,
-            "posY": 560.0,
-            "type": 4,
-            "action": "A_BossSlash",
-            "param": 0.0
-        },
-        {
-            "actionId": 112,
-            "id": 13,
-            "inputPinId": 14,
-            "name": "Wait0.5(硬直)",
-            "outputPinId": 0,
-            "posX": 520.0,
-            "posY": 560.0,
-            "type": 4,
-            "param": 0.5,
-            "action": "A_Wait"
         },
         {
             "actionId": 0,
@@ -1052,14 +986,14 @@
             "children": [
                 1,
                 2,
-                3,
-                4
+                3
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                4,
                 5,
                 6,
                 7,
@@ -1068,37 +1002,27 @@
                 10,
                 11,
                 12,
-                13,
-                14
+                13
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                15,
-                16,
-                17
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
-                18,
-                19
+                14,
+                15
             ]
         },
         {
             "type": "WeightedSelector",
             "actionOrConditionId": 0,
             "children": [
+                16,
+                17,
+                18,
+                19,
                 20,
-                21,
-                22,
-                23,
-                24,
-                25
+                21
             ]
         },
         {
@@ -1173,27 +1097,6 @@
         },
         {
             "type": "Condition",
-            "condition": "C_DistanceLessThan",
-            "param": 8.0,
-            "actionOrConditionId": 9,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "action": "A_BossSlash",
-            "param": 0.0,
-            "actionOrConditionId": 1101,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "action": "A_Wait",
-            "param": 0.5,
-            "actionOrConditionId": 112,
-            "children": []
-        },
-        {
-            "type": "Condition",
             "condition": "C_DistanceGreaterThan",
             "param": 30.0,
             "actionOrConditionId": 10,
@@ -1210,72 +1113,72 @@
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
+                22,
+                23,
+                24,
+                25,
                 26,
-                27,
+                27
+            ]
+        },
+        {
+            "type": "Sequence",
+            "actionOrConditionId": 0,
+            "children": [
                 28,
                 29,
                 30,
-                31
+                31,
+                32,
+                33
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                32,
-                33,
                 34,
                 35,
                 36,
-                37
+                37,
+                38,
+                39
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                38,
-                39,
                 40,
                 41,
                 42,
-                43
+                43,
+                44,
+                45
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                44,
-                45,
                 46,
                 47,
                 48,
-                49
+                49,
+                50,
+                51
             ]
         },
         {
             "type": "Sequence",
             "actionOrConditionId": 0,
             "children": [
-                50,
-                51,
                 52,
                 53,
                 54,
-                55
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "children": [
+                55,
                 56,
-                57,
-                58,
-                59,
-                60,
-                61
+                57
             ]
         },
         {

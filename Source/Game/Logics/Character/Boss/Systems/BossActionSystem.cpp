@@ -23,6 +23,7 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
+    /// 角度 [rad] を -π〜π に収める。yaw の差を「近い回り方」で取るために使う。
     float WrapAngle(float angle)
     {
         while (angle > DirectX::XM_PI)
@@ -32,7 +33,8 @@ namespace
         return angle;
     }
 
-    /// 目標方向を向く。lookDir はワールド座標系の方向ベクトル。
+    /// lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直る。
+    /// 1フレームで回り切らないので、呼び続けると滑らかに正対する。
     void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
     {
         if (lookDir.LengthSquared() <= 0.001f) return;
@@ -49,7 +51,8 @@ namespace
         trans.isDirty  = true;
     }
 
-    /// Jolt の CharacterVirtual に TransformComponent の回転を反映する。
+    /// TransformComponent の回転を Jolt のキャラクターへ写す。
+    /// TurnToward の後に呼ばないと、物理側の向きが古いまま残る。
     void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
     {
         if (!character) return;
@@ -71,7 +74,7 @@ void BossActionSystem::Update(float rawDt)
     const auto &battle = m_world->GetResource<BattleContext>();
     if (!battle.HasPlayer()) return;
 
-    Vector3 playerPos(battle.playerPos);
+    const Vector3 playerPos(battle.playerPos); // プレイヤーの足元（ワールド）
 
     // 演出中は全個体まとめて止める。World リソースなので個体ループの外で1回だけ読む。
     const bool cinematic = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
@@ -86,13 +89,14 @@ void BossActionSystem::Update(float rawDt)
                       const TimeStateComponent           &time) {
         if (!joltHandle.character) return;
 
-        float dt = time.localDt;
+        const float dt = time.localDt; // この個体の時計の dt（ヒットストップ・スローを含む）
 
         // BT は凍っても currentActionId を下ろさないので、ここで見ないと止めた瞬間の技を
         // そのまま実行し続ける。凍っている間は意図を読まず待機へ倒す。
         const auto *bt     = m_world->GetComponent<BehaviorTreeComponent>(entity);
         const bool  frozen = cinematic || (bt && bt->debugPaused);
 
+        // このフレームにやるべき動き。
         const BossActionState next = frozen ? BossActionState::None
                                             : TranslateAction(cmd.currentActionId);
 
@@ -106,9 +110,6 @@ void BossActionSystem::Update(float rawDt)
         {
         case BossActionState::Move:
             ProcessMove(bossDef, trans, movement, config, joltHandle, playerPos, dt);
-            break;
-        case BossActionState::Melee:
-            ProcessMeleeHold(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
         case BossActionState::BackStep:
             ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
@@ -200,30 +201,9 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     SyncCharacterRotation(trans, joltHandle.character.GetPtr());
 }
 
-void BossActionSystem::ProcessMeleeHold(BossActionComponent &bossDef, TransformComponent &trans,
-                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-                                        const Vector3 &playerPos, float dt)
-{
-    // 足を止めて踏ん張る。アニメ本体は BT の SetTrigger で再生済みで、当たり判定は
-    // アニメ内の HitBox イベントが握る。
-    bossDef.currentMoveSpeed = 0.0f;
-    movement.desiredVelocity = Vector3::Zero;
-
-    // 相手の方を向くのは「振りかぶり」の間だけ。回り続けると横へ回り込んでも刃が
-    // 付いてきて当たり、避けた側に後隙を狩る余地が残らない。
-    if (bossDef.actionTimer < bossDef.meleeTurnTime)
-    {
-        Vector3 dirToPlayer = playerPos - trans.position;
-        dirToPlayer.y       = 0.0f;
-        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
-    }
-}
-
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == ::CCL::AI::A_Move) return BossActionState::Move;
-    if (actionId == ::CCL::AI::A_BossSlash) return BossActionState::Melee;
     if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
     if (actionId == ::CCL::AI::A_BossLeapEscape) return BossActionState::Leap;
     if (actionId == ::CCL::AI::A_BossLeapAttack) return BossActionState::Leap;
@@ -263,7 +243,7 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
             bossDef.leapWindupTime = bossDef.escapeWindupTime;
             bossDef.leapFlightTime = bossDef.escapeFlightTime;
             bossDef.leapHeight     = bossDef.escapeHeight;
-            bossDef.leapStrikeLead = 0.0f;
+            bossDef.leapLandAttack = false;
         }
         else if (actionId == ::CCL::AI::A_BossLeapAttack)
         {
@@ -271,7 +251,7 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
             bossDef.leapWindupTime = bossDef.attackWindupTime;
             bossDef.leapFlightTime = bossDef.attackFlightTime;
             bossDef.leapHeight     = bossDef.attackHeight;
-            bossDef.leapStrikeLead = bossDef.attackStrikeLead;
+            bossDef.leapLandAttack = true;
         }
     }
 }
@@ -280,7 +260,7 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
                                        const Vector3 &playerPos, float dt)
 {
-    const float t = bossDef.actionTimer;
+    const float t = bossDef.actionTimer; // 後方ステップに入ってからの経過 [秒]
 
     // 退く間も正対し続ける。向いていないと、間合いを切って仕切り直す技ではなく
     // 「逃げ出した」に見える。
@@ -300,8 +280,8 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
     // 溜めを持たないのは被弾への反応だから（予備動作を入れると避けている感じが出ない）。
     // 垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへちょうど戻るので、
     // 着地の時刻が backStepTime からずれない。
-    const float T = (std::max)(0.01f, bossDef.backStepTime);
-    const float u = t / T;
+    const float T = (std::max)(0.01f, bossDef.backStepTime); // 退く長さ [秒]
+    const float u = t / T;                                   // 退きの進み具合 0〜1
 
     // 水平は直線減速のまま。退く距離 = backStepSpeed * backStepTime / 2 という
     // 読める式を残す（間合いの設計はこの数字でやる）。
@@ -324,10 +304,12 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
                                    const Vector3 &playerPos, const BattleContext &battle, float dt)
 {
     JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
-    const JPH::RVec3       jp = ch->GetPosition();
-    const Vector3          now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
 
-    const float t = bossDef.actionTimer;
+    // 今の位置。Transform ではなく Jolt から取る（こちらが物理の正で、1フレーム遅れない）。
+    const JPH::RVec3 jp = ch->GetPosition();
+    const Vector3    now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
+
+    const float t = bossDef.actionTimer; // 跳躍に入ってからの経過 [秒]
 
     // 溜め：足を止めて相手を睨む。着地点はまだ決めない。
     if (t < bossDef.leapWindupTime)
@@ -349,23 +331,16 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
         bossDef.leapPhase = BossLeapPhase::Flight;
     }
 
-    if (bossDef.leapPhase == BossLeapPhase::Flight || bossDef.leapPhase == BossLeapPhase::Strike)
+    if (bossDef.leapPhase == BossLeapPhase::Flight)
     {
         const float flightTime = (std::max)(0.05f, bossDef.leapFlightTime);
-        const float u          = (std::min)((t - bossDef.leapWindupTime) / flightTime, 1.0f);
-
-        // 着地攻撃は、着地の leapStrikeLead 秒前から振り下ろしのアニメへ入る。
-        // 着地してから切り替えるとクリップの攻撃判定の開始ぶん刃が遅れて、
-        // 降りてから斬る絵になる。動き自体は Flight のまま変えない。
-        const float remaining = flightTime * (1.0f - u);
-        if (bossDef.leapStrikeLead > 0.0f && remaining <= bossDef.leapStrikeLead)
-            bossDef.leapPhase = BossLeapPhase::Strike;
+        const float u          = (std::min)((t - bossDef.leapWindupTime) / flightTime, 1.0f); // 飛行の進み具合 0〜1
 
         // このフレームの積分が終わった時点で居るべき位置へ届く速度。Jolt 側と同じ dt で
         // 割らないと、スロー中やヒットストップ中に行き過ぎる（JoltCharacterUpdateSystem の
         // safeDt と同じ式）。
-        const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f));
-        Vector3     v      = (LeapPositionAt(bossDef, u) - now) / stepDt;
+        const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f)); // Jolt が積分に使う dt
+        Vector3     v      = (LeapPositionAt(bossDef, u) - now) / stepDt;      // 今あるべき位置へ届く速度
 
         // 空中で相手や壁に引っかかったあと、遅れを1フレームで取り返そうとして
         // 瞬間移動に見えないようにする蓋。普段の飛行速度（60m/s 前後）より十分上。
@@ -405,9 +380,9 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = 0.0f;
     movement.desiredVelocity = Vector3::Zero;
 
-    // 着地攻撃の硬直は向きを固定する。振り下ろしながら相手を追うと、横へ抜けても
-    // 刃が付いてきて後隙を狩れない（薙ぎ払いの meleeTurnTime と同じ理由）。
-    if (bossDef.leapStrikeLead > 0.0f) return;
+    // 着地攻撃の硬直は向きを固定する。着地の攻撃判定が出ている間に相手を追うと、
+    // 横へ抜けても判定が付いてきて後隙を狩れない。
+    if (bossDef.leapLandAttack) return;
 
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
@@ -477,8 +452,8 @@ Vector3 BossActionSystem::TowardTargetLandingPoint(const BossActionComponent &bo
     const float distance = toTarget.Length();
     if (distance <= 0.001f) return takeoffPos; // 真上に居る。その場で跳ぶ
 
-    // 手前で止めるぶんを引いてから射程で打ち切る。近すぎれば 0 ＝その場で跳んで叩く。
-    const float reach = (std::max)(0.0f, (std::min)(distance - bossDef.attackStandOff, bossDef.attackMaxRange));
+    // 手前で止めるぶんだけ引く。近すぎれば 0 ＝その場で跳んで叩く。
+    const float reach = (std::max)(0.0f, distance - bossDef.attackStandOff);
     return takeoffPos + toTarget * (reach / distance);
 }
 

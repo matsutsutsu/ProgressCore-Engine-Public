@@ -13,6 +13,7 @@
 
 struct BattleContext;
 
+/// BattleContext（世界の事実）から、各ボスの blackboard（主観の判断材料）を毎フレーム書く。
 class BossPerceptionSystem : public CCL::ECS::IfSystem<
                                  BossPerceptionSystem,
                                  CCL::ECS::Write<BehaviorTreeComponent>,
@@ -23,9 +24,10 @@ class BossPerceptionSystem : public CCL::ECS::IfSystem<
 public:
     BossPerceptionSystem() : IfSystem("BossPerceptionSystem") {}
 
-    // DamageTakenEvent の購読を張る。
+    /// DamageTakenEvent の購読を張る。被弾のたびに被弾量を積み、被弾からの経過時間を 0 に戻す。
     void Initialize() override;
 
+    /// 距離・角度・HP割合・ステージ端までの距離などを blackboard へ書き直す。
     void Update(float dt) override;
 
 private:

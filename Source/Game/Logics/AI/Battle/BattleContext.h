@@ -9,38 +9,47 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
+/// 戦闘中の「誰から見ても同じ事実」。書き手は主に BattleContextSyncSystem（L01_WorldState）。
 struct BattleContext
 {
-    // 今は1対1なので探索が要らない。雑魚敵を足すときは配列になる。
+    /// プレイヤーのエンティティ。居なければ InvalidEntityID。今は1対1なので探索が要らない。
     CCL::ECS::EntityID playerEntity = CCL::ECS::InvalidEntityID;
-    CCL::ECS::EntityID bossEntity   = CCL::ECS::InvalidEntityID;
 
-    // 足元の座標。狙う・当てるのには使わない（カプセルは全高9mあるので、足元基準だと
-    // 胸を貫いても「4.5m 離れている」と判定される）。そちらは playerCenter。
+    /// ボスのエンティティ。居なければ InvalidEntityID。
+    CCL::ECS::EntityID bossEntity = CCL::ECS::InvalidEntityID;
+
+    /// プレイヤーの足元（ワールド）。狙う・当てるのには使わない（カプセルは全高9mあるので、
+    /// 足元基準だと胸を貫いても「4.5m 離れている」と判定される）。そちらは playerCenter。
     DirectX::XMFLOAT3 playerPos = {0, 0, 0};
-    DirectX::XMFLOAT3 bossPos   = {0, 0, 0};
 
-    // 体の中心。狙う・当てるのはすべてこちら。オフセットの式は
-    // JoltCharacterSetupSystem がカプセルを載せるときと同じものを使う。
+    /// ボスの足元（ワールド）。
+    DirectX::XMFLOAT3 bossPos = {0, 0, 0};
+
+    /// プレイヤーの体の中心（ワールド）。狙う・当てるのはすべてこちら。オフセットの式は
+    /// JoltCharacterSetupSystem がカプセルを載せるときと同じものを使う。
     DirectX::XMFLOAT3 playerCenter = {0, 0, 0};
 
-    // 速度 [m/s]。飛翔時間のある攻撃の偏差射撃に使う。共有するのは、各AIが個別に
-    // 前フレーム座標を覚えると平滑化の強さが別々になって挙動が揃わないため。
+    /// プレイヤーの速度 [m/s]（平滑化済み）。飛翔時間のある攻撃の偏差射撃に使う。
+    /// 共有するのは、各AIが個別に前フレーム座標を覚えると平滑化の強さが別々になるため。
     DirectX::XMFLOAT3 playerVelocity = {0, 0, 0};
 
-    // ドローンの生存数。残数がそのままボスの体力を表す。書き手は DroneManagerSystem。
+    /// ドローンの生存数。残数がそのままボスの体力を表す。書き手は DroneManagerSystem。
     int droneAliveCount = 1000;
 
-    // 戦える範囲（真上から見た円）。見えない壁の内側に合わせる。書き手はまだ居らず既定値のまま。
-    //   端の判定と跳躍の着地点が同じ円を見ないと、「端だから中央へ逃げる」の着地点が
-    //   壁の外に出て、空中で壁に引っかかる。
+    /// 戦える範囲（真上から見た円）の中心（ワールド）。書き手はまだ居らず既定値のまま。
     DirectX::XMFLOAT3 arenaCenter = {0, 0, 0};
-    float             arenaRadius = 48.0f;
 
+    /// 戦える範囲の半径 [m]。見えない壁の内側に合わせる。端の判定（C_IsAtStageEdge）と
+    /// 跳躍の着地点が同じ円を見ないと、「端だから中央へ逃げる」の着地点が壁の外に出る。
+    float arenaRadius = 90.0f;
+
+    /// プレイヤーが居るか。
     bool HasPlayer() const
     {
         return playerEntity != CCL::ECS::InvalidEntityID;
     }
+
+    /// ボスが居るか。
     bool HasBoss() const
     {
         return bossEntity != CCL::ECS::InvalidEntityID;
