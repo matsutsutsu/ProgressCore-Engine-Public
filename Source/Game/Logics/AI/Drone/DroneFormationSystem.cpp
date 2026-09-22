@@ -119,7 +119,8 @@ void DroneFormationSystem::Update(float dt)
         {
             // 未登録の陣形（Hidden等）は何もしない。溜めだけは戻す（抱えたままだと
             // 次に出てきた瞬間から全開で震える）。
-            drone.windupTimer = 0.0f;
+            drone.windupTimer   = 0.0f;
+            drone.telegraphTime = 0.0f;
             return;
         }
 
@@ -136,6 +137,11 @@ void DroneFormationSystem::Update(float dt)
         drone.windupTimer = telegraphing
                                 ? (std::min)(kWindupTimerCap, drone.windupTimer + dt)
                                 : 0.0f;
+
+        // 予告の時計。震わせる設定かどうかに関係なく、同じ時間帯（着いてから撃つまで）で進む。
+        drone.telegraphTime = (drone.hasReachedSlot && !drone.wantsAttack)
+                                  ? (std::min)(kWindupTimerCap, drone.telegraphTime + dt)
+                                  : 0.0f;
     });
 }
 

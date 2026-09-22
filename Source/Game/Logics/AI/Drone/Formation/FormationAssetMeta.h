@@ -76,18 +76,18 @@ namespace CCL::AI::Formation::Meta
     {
         using T                                          = FormationLayer;
         static const std::vector<FieldDescriptor> fields = {
-            FD_EnumU8("動きの種類", "type", offsetof(T, type), kLayerTypeNames, NameCount(kLayerTypeNames), nullptr, true, "Rotate=原点まわりに回す / Translate=軸方向へ平行移動 / Shiver=予告の震え"),
+            FD_EnumU8("動きの種類", "type", offsetof(T, type), kLayerTypeNames, NameCount(kLayerTypeNames), nullptr, true, "Rotate=原点まわりに回す / Translate=軸方向へ平行移動 / Shiver=撃つ前の予告の震え（予告の区間に置く）"),
             FD_EnumU8("軸", "axis", offsetof(T, axis), kAxisNames, NameCount(kAxisNames), nullptr, true, "Rotate ならこの軸まわりに回る"),
-            FD_Float("始まりの値", "from", offsetof(T, from), 0.5f, 0.0f, 0.0f, nullptr, true, "Rotate は角度[度] / Translate は距離[m] / Shiver は未使用"),
-            FD_Float("終わりの値", "to", offsetof(T, to), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver はここを振れ幅[m]として読む"),
-            FD_Float("動く時間帯 開始", "windowBegin", offsetof(T, windowBegin), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃全体を 0〜1 とした割合"),
-            FD_Float("動く時間帯 終了", "windowEnd", offsetof(T, windowEnd), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃全体を 0〜1 とした割合"),
+            FD_Float("始まりの値", "from", offsetof(T, from), 0.5f, 0.0f, 0.0f, nullptr, true, "Rotate は角度[度] / Translate は距離[m] / Shiver は振れ幅[m]"),
+            FD_Float("終わりの値", "to", offsetof(T, to), 0.5f, 0.0f, 0.0f, nullptr, true, "始まりの値からここまで、緩急をつけて変わる"),
+            FD_Float("動く時間帯 開始", "windowBegin", offsetof(T, windowBegin), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃の長さを 0〜1 とした割合。Shiver だけは予告の長さに対して"),
+            FD_Float("動く時間帯 終了", "windowEnd", offsetof(T, windowEnd), 0.01f, 0.0f, 1.0f, nullptr, true, "攻撃の長さを 0〜1 とした割合。Shiver だけは予告の長さに対して"),
             FD_Float("1席が動き切る量", "duration", offsetof(T, duration), 0.01f, 0.0f, 1.0f, nullptr, true, "時間帯より短くすると、その差が席ごとの開始のずれに配られる＝波になる"),
             FD_EnumU8("ずらす単位", "phaseSource", offsetof(T, phaseSource), kPhaseNames, NameCount(kPhaseNames), nullptr, true, "None=全機いっせい / Column=列ごと / Row=段ごと / Group=割付グループごと（先攻後攻）"),
             FD_Bool("ずらす向きを逆に", "phaseReverse", offsetof(T, phaseReverse), nullptr, true, "端から始めるか、反対の端から始めるか"),
             FD_Bool("左右で反転", "mirror", offsetof(T, mirror), nullptr, true, "左右グループごとに始まり／終わりの符号を入れ替える"),
             FD_Float("震えの速さ [Hz]", "frequency", offsetof(T, frequency), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver 専用"),
-            FD_Float("機首を振る振れ幅 [m]", "leadThreshold", offsetof(T, leadThreshold), 0.01f, 0.0f, 0.0f, nullptr, true, "Shiver 専用。これを超えたら機首を進行方向へ向ける"),
+            FD_Float("先に動く側の範囲", "leadThreshold", offsetof(T, leadThreshold), 0.01f, 0.0f, 1.0f, nullptr, true, "Shiver 専用。ずらし順がこれ以下の席だけ震える。1 なら全席、小さいほど先頭だけ"),
         };
         return fields;
     }
@@ -126,7 +126,7 @@ namespace CCL::AI::Formation::Meta
             FD_EnumU8("機首の向け方", "look", offsetof(T, look), kLookNames, NameCount(kLookNames), nullptr, true, "Auto=形と動きから決める / ToPlayer=プレイヤーを向く / Inward=陣形の中心を向く"),
             FD_EnumU8("突撃中の移動方式", "chargeMode", offsetof(T, chargeMode), kChargeModeNames, NameCount(kChargeModeNames), nullptr, true, "RigidFollow=形が歪まない / SoftFollow=バネで遅れて追う / Straight=直進"),
             FD_Bool("地面へ潜らせない", "clampToGround", offsetof(T, clampToGround), nullptr, true, "席の高さを持ち上げて地面より下へ行かせない"),
-            FD_Bool("撃つ前に震わせる", "useShiverTelegraph", offsetof(T, useShiverTelegraph), nullptr, true, "予告。切ると前触れなく飛ぶ"),
+            FD_Bool("撃つ前に震わせる", "useShiverTelegraph", offsetof(T, useShiverTelegraph), nullptr, true, "全体のざわつき（移動側の共通の震え）。Shiver の帯とは別。切ると帯の震えだけになる"),
         };
         return fields;
     }
@@ -139,6 +139,7 @@ namespace CCL::AI::Formation::Meta
             FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
             FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, kDataFormationSlotFirst, kDataFormationSlotLast, nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
             FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
+            FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。ボスBTの予告の Wait と同じ値にする（今は BT がこの値を読まない）"),
         };
         return fields;
     }

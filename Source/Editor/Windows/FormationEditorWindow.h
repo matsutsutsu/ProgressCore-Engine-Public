@@ -101,9 +101,10 @@ private:
     std::string m_status; // 直近の保存・読込の結果。押した手応えが無いと二重に押される
 
     // 実機の掌握
-    bool  m_staged   = false;
-    float m_progress = 0.0f;
-    bool  m_playing  = false;
+    bool  m_staged     = false;
+    float m_time       = 0.0f; // 予告の始まりからの経過 [秒]。予告の長さを過ぎたら攻撃の時間
+    bool  m_playing    = false;
+    bool  m_slowMotion = false; // 1/4 倍で再生する（本番の速さだと攻撃は目で追えない）
 
     // タイムライン
     std::unique_ptr<LayerSequence> m_sequence;

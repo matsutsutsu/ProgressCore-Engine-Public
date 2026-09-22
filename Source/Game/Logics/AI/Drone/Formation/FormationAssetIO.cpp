@@ -182,6 +182,16 @@ namespace CCL::AI::Formation
             repaired            = true;
         }
 
+        // Shiver の時間帯を「予告の何割か」に直すときの割る数。0以下だと震えの位置が inf になる。
+        if (asset.telegraphSeconds <= 0.0f)
+        {
+            CCL_LOG_ERROR(LogCategory::AI,
+                          "[Formation] %s: telegraphSeconds=%.3f が0以下。震えの位置が決まらないため 1.0 に直した",
+                          ctx, asset.telegraphSeconds);
+            asset.telegraphSeconds = 1.0f;
+            repaired               = true;
+        }
+
         for (size_t i = 0; i < asset.layers.size(); ++i)
         {
             FormationLayer &l = asset.layers[i];

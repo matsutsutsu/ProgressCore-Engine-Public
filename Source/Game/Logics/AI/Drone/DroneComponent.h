@@ -182,6 +182,11 @@ struct DroneComponent
     // 振幅ではなく秒数なので、BTの Wait(予告) を伸ばせば自動で長く震える。
     float windupTimer = 0.0f;
 
+    // 予告の経過時間 [秒]。持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
+    // windupTimer と違って「撃つ前に震わせる」の設定に関係なく進む。データ陣形の
+    // Shiver の帯はこれを時計にして、予告の中のどこで震えるかを決める。
+    float telegraphTime = 0.0f;
+
     ChargeMode chargeMode = ChargeMode::Straight; // [RT] FireCharge 中の移動方式
 
     // 発射待ち時間 [秒]。>0 の間はその場で待つ。弾幕が localIndex から

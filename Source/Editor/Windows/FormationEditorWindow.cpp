@@ -43,19 +43,36 @@ FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 //   データ → m_frames : Sync()。掴んでいる間は呼ばない（ドラッグ中の値を毎フレーム巻き戻してしまう）
 //   m_frames → データ : Flush()。掴んだ帯が実際に動いたときだけ書き戻す（クリックしただけで
 //                       書き戻すと、欄に打った 0.333 が刻みの 0.34 へ丸められる）
+//
+// タイムラインは左右2つの区間に分かれる。左が予告（Shiver の帯だけが置ける）、右が攻撃。
+// 区間の幅は秒数に比例させない。攻撃は0.4秒ほどしかなく、比例させると一番触りたい攻撃の帯が
+// 予告の半分以下に潰れる。
 
 class FormationEditorWindow::LayerSequence : public ImSequencer::SequenceInterface
 {
 public:
-    /// 0〜1 を何等分するか。攻撃が0.4秒なら1刻み8ミリ秒で、ゲームの1コマ(16ミリ秒)より細かい。
+    /// 各区間を何等分するか。攻撃が0.4秒なら1刻み8ミリ秒で、ゲームの1コマ(16ミリ秒)より細かい。
     /// ImSequencer は1刻みを既定で10pxで描くので、増やすと横スクロールが要るようになる。
-    static constexpr int kFrames = 50;
+    static constexpr int kTelegraphFrames = 20;
+    static constexpr int kAttackFrames    = 50;
 
-    static int   ToFrame(float t) { return static_cast<int>(std::lround(t * kFrames)); }
-    static float ToTime(int frame) { return static_cast<float>(frame) / kFrames; }
+    /// 予告の始まりからの秒数 ⇔ タイムラインのフレーム。
+    static int TimeToFrame(const Asset &asset, float time)
+    {
+        if (time < asset.telegraphSeconds)
+            return static_cast<int>(std::lround(time / asset.telegraphSeconds * kTelegraphFrames));
+        const float progress = (time - asset.telegraphSeconds) / asset.attackSeconds;
+        return kTelegraphFrames + static_cast<int>(std::lround(std::min(progress, 1.0f) * kAttackFrames));
+    }
+    static float FrameToTime(const Asset &asset, int frame)
+    {
+        if (frame < kTelegraphFrames)
+            return static_cast<float>(frame) / kTelegraphFrames * asset.telegraphSeconds;
+        return asset.telegraphSeconds + static_cast<float>(frame - kTelegraphFrames) / kAttackFrames * asset.attackSeconds;
+    }
 
-    Asset *asset    = nullptr;
-    float  progress = 0.0f; // 帯の濃淡に使う（再生位置が帯の中にあるか）
+    Asset *asset  = nullptr;
+    int    cursor = 0; // 再生位置のフレーム。帯の明暗に使う
 
     bool IsEditing() const { return m_editIndex >= 0; }
 
@@ -73,18 +90,20 @@ public:
         m_releasedIndex = -1;
         if (index < 0 || index >= static_cast<int>(asset->layers.size())) return false;
 
-        // ImSequencer は左端のはみ出しは止めるが、右端は止めない。
-        auto &[start, end] = m_frames[index];
-        end                = std::min(end, kFrames - 1);
-        start              = std::min(start, end);
-
         FormationLayer &layer = asset->layers[index];
+        const Section   sec   = SectionOf(layer);
+
+        // 帯を自分の区間の外へは出さない（ImSequencer は左端 0 しか止めない）。
+        auto &[start, end] = m_frames[index];
+        start              = std::clamp(start, sec.first, sec.first + sec.length - 1);
+        end                = std::clamp(end, start, sec.first + sec.length - 1);
+
         if (m_frames[index] == ToFrames(layer)) return false;
 
         // 帯は「開始のコマの左端」から「終了のコマの右端」まで描かれるので、終了は +1 して戻す。
         const float oldWidth = layer.windowEnd - layer.windowBegin;
-        layer.windowBegin    = ToTime(start);
-        layer.windowEnd      = ToTime(end + 1);
+        layer.windowBegin    = static_cast<float>(start - sec.first) / sec.length;
+        layer.windowEnd      = static_cast<float>(end + 1 - sec.first) / sec.length;
         const float newWidth = layer.windowEnd - layer.windowBegin;
 
         // 動きの長さは帯の幅ではなく duration が決める（評価器は windowBegin から duration かけて進む）。
@@ -95,7 +114,7 @@ public:
     }
 
     int GetFrameMin() const override { return 0; }
-    int GetFrameMax() const override { return kFrames; }
+    int GetFrameMax() const override { return kTelegraphFrames + kAttackFrames; }
     int GetItemCount() const override { return static_cast<int>(asset->layers.size()); }
 
     void BeginEdit(int index) override { m_editIndex = index; }
@@ -130,14 +149,14 @@ public:
         if (color)
         {
             // 再生位置が帯の中にある間だけ明るくする。今どの動きが形を動かしているかが一目で分かる。
-            const bool  active = (layer.windowBegin <= progress && progress <= layer.windowEnd);
+            const bool  active = (m_frames[index].first <= cursor && cursor <= m_frames[index].second + 1);
             const ImU32 base   = kTypeColors[static_cast<int>(layer.type)];
             *color             = active ? base : ((base >> 1) & 0x007F7F7F);
         }
     }
 
-    /// 帯の上に斜線を描く。1本 = 1つの席（列・段）が動き始めてから動き切るまで。
-    /// 扇状に広がっていれば「波」、1本なら全機いっせい。
+    /// 帯の上に斜線を、行の上に予告と攻撃の境目と、その帯を置けない側の区間の目隠しを描く。
+    /// 斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで。扇状に広がっていれば「波」。
     void CustomDrawCompact(int index, ImDrawList *draw, const ImRect &rc, const ImRect &clip) override
     {
         // 波の本数は目安。実際の列数を出すには割付の式をここへ書き直すことになり、評価器と二重管理になる。
@@ -147,32 +166,64 @@ public:
         // しかも ImSequencer 内の子ウィンドウの余白(FramePadding)ぶん右へずれて描かれるので、両方を足して揃える。
         const float cell = (rc.Max.x - rc.Min.x) / (GetFrameMax() - GetFrameMin() + 1);
         const float left = rc.Min.x + ImGui::GetStyle().FramePadding.x - 0.5f * cell;
-        const auto  toX  = [&](float t) { return left + t * kFrames * cell; };
+        const auto  toX  = [&](float frame) { return left + frame * cell; };
         const float y0   = rc.Min.y + 4.0f;
         const float y1   = rc.Max.y - 3.0f;
 
-        const FormationLayer &layer    = asset->layers[index];
+        const FormationLayer &layer = asset->layers[index];
+        const Section         sec   = SectionOf(layer);
+
+        draw->PushClipRect(clip.Min, clip.Max, true);
+
+        // 置けない側を暗くして、そこに何を置く区間かを書く。空いているだけだと、
+        // 帯が 0 から置けない理由が画面から分からない。
+        const float sectionL = toX(static_cast<float>(sec.first));
+        const float sectionR = toX(static_cast<float>(sec.first + sec.length));
+        const float blockedL = (sec.first == 0) ? sectionR : toX(0.0f);
+        const float blockedR = (sec.first == 0) ? toX(static_cast<float>(GetFrameMax() + 1)) : sectionL;
+        draw->AddRectFilled(ImVec2(blockedL, rc.Min.y), ImVec2(blockedR, rc.Max.y), IM_COL32(0, 0, 0, 120));
+        draw->AddText(ImVec2(blockedL + 4.0f, rc.Min.y + 2.0f), IM_COL32(255, 255, 255, 100),
+                      (sec.first == 0) ? "攻撃（動きの帯を置く）" : "予告（震えの帯を置く）");
+
+        const float border = toX(static_cast<float>(kTelegraphFrames));
+        draw->AddLine(ImVec2(border, rc.Min.y), ImVec2(border, rc.Max.y), IM_COL32(255, 255, 255, 60), 2.0f);
+
         const int             lines    = (layer.phaseSource == PhaseSource::None) ? 1 : kFanLines;
         const float           width    = layer.windowEnd - layer.windowBegin;
         const float           duration = std::min(layer.duration, width); // 評価器と同じ抑え方
         const float           slack    = width - duration;
 
-        draw->PushClipRect(clip.Min, clip.Max, true);
         for (int k = 0; k < lines; ++k)
         {
             // 評価器の start = windowBegin + seatT * (窓幅 - duration) と同じ式で引く。
             const float seatT = (lines == 1) ? 0.0f : static_cast<float>(k) / (lines - 1);
             const float start = layer.windowBegin + seatT * slack;
-            draw->AddLine(ImVec2(toX(start), y1), ImVec2(toX(start + duration), y0), IM_COL32(255, 255, 255, 170));
+            draw->AddLine(ImVec2(toX(sec.first + start * sec.length), y1),
+                          ImVec2(toX(sec.first + (start + duration) * sec.length), y0),
+                          IM_COL32(255, 255, 255, 170));
         }
         draw->PopClipRect();
     }
 
 private:
+    /// 帯を置ける区間。Shiver は予告、それ以外は攻撃。
+    struct Section
+    {
+        int first;
+        int length;
+    };
+    static Section SectionOf(const FormationLayer &layer)
+    {
+        if (layer.type == LayerType::Shiver) return {0, kTelegraphFrames};
+        return {kTelegraphFrames, kAttackFrames};
+    }
+
     static std::pair<int, int> ToFrames(const FormationLayer &layer)
     {
-        const int start = ToFrame(layer.windowBegin);
-        return {start, std::max(start, ToFrame(layer.windowEnd) - 1)};
+        const Section sec   = SectionOf(layer);
+        const int     start = sec.first + static_cast<int>(std::lround(layer.windowBegin * sec.length));
+        const int     end   = sec.first + static_cast<int>(std::lround(layer.windowEnd * sec.length)) - 1;
+        return {start, std::max(start, end)};
     }
 
     std::vector<std::pair<int, int>> m_frames;
@@ -212,14 +263,22 @@ void FormationEditorWindow::PushStage(EditorContext &context)
 {
     if (!m_staged || !context.world) return;
 
+    const Asset *asset = CurrentAsset();
+    if (!asset) return;
+
     if (m_playing)
     {
-        // 自動再生。振り切ったら頭へ戻して繰り返す（毎回押し直すのは確認にならない）。
-        m_progress += ImGui::GetIO().DeltaTime * 0.35f;
-        if (m_progress > 1.0f) m_progress = 0.0f;
+        // 本番と同じ速さで流す。攻撃は0.4秒ほどで終わるので、目で追うためのスローも持つ。
+        // 振り切った形を少し見せてから頭へ戻して繰り返す（毎回押し直すのは確認にならない）。
+        constexpr float kHoldSeconds = 0.5f;
+        m_time += ImGui::GetIO().DeltaTime * (m_slowMotion ? 0.25f : 1.0f);
+        if (m_time > asset->telegraphSeconds + asset->attackSeconds + kHoldSeconds) m_time = 0.0f;
     }
 
-    if (!CurrentAsset()) return;
+    // 本編と同じ順番で見せる。予告の間は撃つ合図を落として待機させ（向きは追い続け、当たらない）、
+    // 予告が終わったら合図を立てて攻撃へ進む。
+    const bool  telegraph = (m_time < asset->telegraphSeconds);
+    const float progress  = telegraph ? 0.0f : std::min(1.0f, (m_time - asset->telegraphSeconds) / asset->attackSeconds);
 
     auto view = context.world->View<BossCommandComponent>();
     for (auto boss : view)
@@ -232,14 +291,14 @@ void FormationEditorWindow::PushStage(EditorContext &context)
         if (auto *cmd = context.world->GetComponent<BossCommandComponent>(boss))
         {
             cmd->requestFormation  = m_slot;
-            cmd->droneAttackActive = true;
+            cmd->droneAttackActive = !telegraph;
         }
         break; // 1v1 前提。最初の1体だけ
     }
 
-    // 進行度を握る。陣形が毎フレーム書くフィールドなので、外から握るにはここを通す。
+    // 時間を握る。陣形が毎フレーム書くフィールドなので、外から握るにはここを通す。
     if (auto *data = dynamic_cast<DataDrivenFormation *>(FormationRegistry::Instance().Get(m_slot)))
-        data->SetProgressOverride(m_progress);
+        data->SetPreview(telegraph ? m_time : asset->telegraphSeconds, progress);
 }
 
 void FormationEditorWindow::Unstage(EditorContext &context)
@@ -248,13 +307,13 @@ void FormationEditorWindow::Unstage(EditorContext &context)
     m_staged  = false;
     m_playing = false;
 
-    // 握っていた進行度を全データ陣形ぶん解放する。選択を切り替えながら掌握を
+    // 握っていた時間を全データ陣形ぶん解放する。選択を切り替えながら掌握を
     // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る。
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
         auto *data = dynamic_cast<DataDrivenFormation *>(
             FormationRegistry::Instance().Get(static_cast<DroneFormationType>(slot)));
-        if (data) data->ClearProgressOverride();
+        if (data) data->ClearPreview();
     }
 
     if (!context.world) return;
@@ -378,21 +437,25 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
 {
     bool changed = false;
 
-    // 再生の操作はタイムラインの真上に置く。進行度と帯が同じ時間軸だと目で分かるように。
+    // 再生の操作はタイムラインの真上に置く。再生位置と帯が同じ時間軸だと目で分かるように。
     ImGui::BeginDisabled(!m_staged);
     if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(70, 0))) m_playing = !m_playing;
     ImGui::SameLine();
-    if (ImGui::Button("0 に戻す", ImVec2(80, 0)))
+    if (ImGui::Button("頭に戻す", ImVec2(80, 0)))
     {
-        m_progress = 0.0f;
-        m_playing  = false;
+        m_time    = 0.0f;
+        m_playing = false;
     }
+    ImGui::SameLine();
+    ImGui::Checkbox("1/4 倍", &m_slowMotion);
     ImGui::EndDisabled();
     ImGui::SameLine();
-    if (m_staged)
-        ImGui::Text("進行度 %.2f", m_progress);
-    else
+    if (!m_staged)
         ImGui::TextDisabled("右の「実機に出す」を ON にすると形が動く");
+    else if (m_time < asset.telegraphSeconds)
+        ImGui::Text("予告 %.2f / %.2f 秒", m_time, asset.telegraphSeconds);
+    else
+        ImGui::Text("攻撃 %.2f / %.2f 秒", std::min(m_time - asset.telegraphSeconds, asset.attackSeconds), asset.attackSeconds);
 
     changed |= DrawTimeline(asset);
 
@@ -409,6 +472,20 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
         added.type            = LayerType::Translate;
         added.axis            = AssetAxis::Up;
         added.to              = 5.0f;
+        m_selectedLayer       = count;
+        changed               = true;
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("+ 震えを足す"))
+    {
+        // 予告の区間いっぱいに、全席をだんだん強くざわつかせる震えを置く。
+        // 振れ幅を 0 から始めるので、既定の緩急(p*p)で撃つ直前ほど強くなる。
+        FormationLayer &added = asset.layers.emplace_back();
+        added.type            = LayerType::Shiver;
+        added.axis            = AssetAxis::Right;
+        added.to              = 0.6f;
+        added.leadThreshold   = 1.0f;
         m_selectedLayer       = count;
         changed               = true;
     }
@@ -458,7 +535,11 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す。
     constexpr ImVec4 kWarn(1.0f, 0.75f, 0.2f, 1.0f);
     if (layer.type == LayerType::Shiver)
-        ImGui::TextColored(kWarn, "Shiver は撃つ前（進行度 0）の震え。時間帯は使わず、攻撃中は何もしない");
+    {
+        ImGui::TextDisabled("Shiver は予告の区間に置く震え。撃つ合図で攻撃が始まると止まる");
+        if (layer.from == 0.0f && layer.to == 0.0f)
+            ImGui::TextColored(kWarn, "振れ幅が始まりも終わりも 0 なので震えない");
+    }
     else if (layer.from == layer.to)
         ImGui::TextColored(kWarn, "始まりと終わりが同じなので、この動きは形を変えない");
 
@@ -472,20 +553,30 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
 
 bool FormationEditorWindow::DrawTimeline(Asset &asset)
 {
+    ImGui::TextDisabled("左 : 予告 %.2f 秒（震えだけ）  |  右 : 攻撃 %.2f 秒", asset.telegraphSeconds, asset.attackSeconds);
+
+    // 帯を1本も置かなくても、この設定が ON だと予告の間ずっと全機が震える。
+    // 予告の震えを探すのはこのタイムラインなので、「見せ方」の中ではなくここにも出す。
+    ImGui::SameLine();
+    bool changed = ImGui::Checkbox("全体のざわつき", &asset.output.useShiverTelegraph);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("予告の間、帯とは別に全機を共通の震えでざわつかせる（「見せ方」の「撃つ前に震わせる」と同じ設定）\n"
+                          "切ると、置いた Shiver の帯の震えだけになる");
+
     // ImSequencer は動きが1つも無いと何も描かない。
     if (asset.layers.empty())
     {
         ImGui::TextDisabled("動きがありません（待機の形のまま）");
-        return false;
+        return changed;
     }
 
     LayerSequence &sequence = *m_sequence;
     sequence.asset          = &asset;
-    sequence.progress       = m_progress;
     if (!sequence.IsEditing()) sequence.Sync();
 
-    int       frame  = LayerSequence::ToFrame(m_progress);
+    int       frame  = LayerSequence::TimeToFrame(asset, m_time);
     const int before = frame;
+    sequence.cursor  = frame;
 
     // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める。
     //   目盛り(20) + 行(20 x 数) + 下の横スクロール(14) + 内側の余白(8) + 少しの余裕
@@ -497,19 +588,21 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
                            ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
     ImGui::EndChild();
 
-    ImGui::TextDisabled("帯の端 : 伸び縮み / 帯の中 : 丸ごと移動 / 上の目盛り : 進行度 / Ctrl+ホイール : 拡大");
+    ImGui::TextDisabled("帯の端 : 伸び縮み / 帯の中 : 丸ごと移動 / 上の目盛り : 再生位置 / Ctrl+ホイール : 拡大");
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("帯 = この動きが働く時間帯\n"
                           "斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで\n"
-                          "帯が明るい間 = 今この動きが形を動かしている");
+                          "帯が明るい間 = 今この動きが形を動かしている\n"
+                          "目盛りの数字はコマ番号（左 20 コマが予告、右 50 コマが攻撃）");
 
     if (frame != before)
     {
-        m_progress = LayerSequence::ToTime(frame);
-        m_playing  = false;
+        m_time    = LayerSequence::FrameToTime(asset, frame);
+        m_playing = false;
     }
 
-    return sequence.Flush();
+    changed |= sequence.Flush();
+    return changed;
 }
 
 // ---------------------------------------------------------------------------

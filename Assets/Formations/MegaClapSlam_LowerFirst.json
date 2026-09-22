@@ -24,7 +24,7 @@
       "axis": "Right",
       "duration": 1.0,
       "frequency": 10.0,
-      "from": 0.0,
+      "from": 0.6,
       "leadThreshold": 0.18,
       "mirror": false,
       "phaseReverse": false,

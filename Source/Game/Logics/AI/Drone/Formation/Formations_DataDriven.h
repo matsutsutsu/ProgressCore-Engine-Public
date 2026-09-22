@@ -61,14 +61,21 @@ namespace CCL::AI::Formation::Data
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 
-        /// 進行度を外から固定する（エディタの手送り）。負で通常どおり dt で進む。
+        /// 予告の経過秒数と攻撃の進行度を外から固定する（エディタの手送り）。
         ///
         /// ランタイムには存在しない状態をここへ置いているのは、「陣形が attackProgress を
         /// 毎フレーム書く」という規約を破らずに止める方法が他に無いため。外から
         /// DroneComponent へ書いても、次のフレームに陣形が上書きしてしまう。
-        void  SetProgressOverride(float progress) { m_progressOverride = progress; }
-        void  ClearProgressOverride() { m_progressOverride = -1.0f; }
-        float GetProgressOverride() const { return m_progressOverride; }
+        void SetPreview(float telegraphSeconds, float progress)
+        {
+            m_telegraphOverride = telegraphSeconds;
+            m_progressOverride  = progress;
+        }
+        void ClearPreview()
+        {
+            m_telegraphOverride = -1.0f;
+            m_progressOverride  = -1.0f;
+        }
 
         /// 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
         /// 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに嘘の数字が出る。
@@ -98,8 +105,12 @@ namespace CCL::AI::Formation::Data
 
         FormationAsset m_asset;
 
-        /// エディタが進行度を握っている間だけ 0〜1。負なら通常どおり dt で進む。
-        float m_progressOverride = -1.0f;
+        /// この席が予告の中のどこにいるか（予告の長さを 1 とした割合）。1 を超えたら予告は終わっている。
+        float TelegraphT(const DroneComponent &drone) const;
+
+        // エディタが時間を握っている間だけ 0 以上。負なら通常どおりゲームの時間で進む。
+        float m_telegraphOverride = -1.0f; // 予告の経過 [秒]
+        float m_progressOverride  = -1.0f; // 攻撃の進行度 0〜1
     };
 
     // ---------------------------------------------------------------------------
@@ -233,6 +244,12 @@ namespace CCL::AI::Formation::Data
         return std::clamp(t, 0.0f, 1.0f);
     }
 
+    inline float DataDrivenFormation::TelegraphT(const DroneComponent &drone) const
+    {
+        const float seconds = (m_telegraphOverride >= 0.0f) ? m_telegraphOverride : drone.telegraphTime;
+        return seconds / m_asset.telegraphSeconds; // 上限で止めない。帯の外＝予告の後は震えない
+    }
+
     inline float DataDrivenFormation::SideSign(const Seat &seat) const
     {
         const int n = m_asset.assign.sideGroups;
@@ -265,15 +282,21 @@ namespace CCL::AI::Formation::Data
     {
         if (layer.type == LayerType::Shiver)
         {
-            // 予告なので、進行度が動き出した時点で消える。震えるのは「先に動く側」だけで、
-            // それが「どちらが先に来るか」をプレイヤーへ伝える唯一の手がかりになる。
+            // 震えだけは攻撃ではなく「予告」の時間の上に置く。撃つ合図で進行度が動き出したら消える。
+            // 予告の間は向きが固定されず、触っても当たらない（攻撃の中に置くとその両方が変わる）。
             if (p > 0.0f) return;
+
+            const float u = TelegraphT(drone);
+            if (u < layer.windowBegin || u > layer.windowEnd) return;
+
+            // leadThreshold で「先に動く側」だけを震わせると、どちらが先に来るかの手がかりになる。
             if (SeatPhaseT(layer, seat) > layer.leadThreshold) return;
 
-            // 位相を localIndex でずらす。揃えると群れが1枚の板として揺れて予告に見えない。
-            const float offset = std::sin(ctx.time * layer.frequency +
-                                          static_cast<float>(drone.localIndex)) *
-                                 layer.to;
+            // 振れ幅は他の動きと同じく「始まり → 終わり」を緩急つきで進める。既定の p*p なら
+            // 撃つ直前ほど強くざわつく。位相を localIndex でずらすのは、揃えると群れが
+            // 1枚の板として揺れて予告に見えないため。
+            const float amplitude = LayerValue(layer, seat, u);
+            const float offset    = std::sin(ctx.time * layer.frequency + static_cast<float>(drone.localIndex)) * amplitude;
             local += AxisVector(layer.axis) * offset;
             return;
         }

@@ -38,7 +38,7 @@ namespace CCL::AI::Formation
     {
         Rotate,    // ローカル原点まわりに回す
         Translate, // 軸方向へ平行移動する
-        Shiver,    // 予告として小刻みに震わせる
+        Shiver,    // 撃つ前の予告として小刻みに震わせる（時間帯は予告の中で数える）
     };
 
     /// 動き出す時刻を「何の単位で」ずらすか。席ごとに開始をずらして波を作る。
@@ -90,10 +90,10 @@ namespace CCL::AI::Formation
         LayerType type = LayerType::Rotate;
         AssetAxis axis = AssetAxis::Right;
 
-        float from = 0.0f; // Rotate は角度[度]、Translate は距離[m]、Shiver は未使用
-        float to   = 0.0f; // Shiver はここを振れ幅[m]として読む
+        float from = 0.0f; // Rotate は角度[度]、Translate は距離[m]、Shiver は振れ幅[m]
+        float to   = 0.0f;
 
-        float windowBegin = 0.0f; // この層が動く時間帯（攻撃全体を 0〜1 とした割合）
+        float windowBegin = 0.0f; // この層が動く時間帯。攻撃の長さを 0〜1 とした割合（Shiver だけは予告の長さに対して）
         float windowEnd   = 1.0f;
 
         /// 1席（1列・1段）が動き切るのに使う量。
@@ -112,7 +112,7 @@ namespace CCL::AI::Formation
 
         // Shiver 専用
         float frequency     = 10.0f; // 震えの速さ [Hz]
-        float leadThreshold = 0.18f; // この振れ幅を超えたら機首を進行方向へ向ける
+        float leadThreshold = 0.18f; // ずらし順がこれ以下の席（先に動く側）だけを震わせる。1 なら全席
     };
 
     /// (4) 配置：ボスからのオフセット
@@ -159,6 +159,11 @@ namespace CCL::AI::Formation
         /// 撃つ合図から形が動き切るまで [秒]。
         /// 画面でも JSON でもそのまま読める単位にしてある。
         float attackSeconds = 0.4f;
+
+        /// 撃つ前に震える予告の長さ [秒]。Shiver の時間帯はこの長さに対する割合で置く。
+        /// ゲーム中に予告を何秒続けるかはボスBTの Wait が決めるので、同じ値にしておく
+        /// （今は BT がこの値を読まない。ずれると、震えが途中で切れるか、震え終わっても撃たない）。
+        float telegraphSeconds = 1.0f;
 
         FormationOutput output;
     };
