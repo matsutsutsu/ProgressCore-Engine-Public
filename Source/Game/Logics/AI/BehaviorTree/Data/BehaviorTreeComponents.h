@@ -31,6 +31,11 @@ struct AIBlackboard
     // 「相手が詰めてきている」と誤認する。読みたいのは相手の意思なので相手の速度だけ。
     float targetClosingSpeed = 0.0f;
 
+    // ステージの端（BattleContext の円）まであと何 m か。正=内側、負=外へはみ出している。
+    // 中心からの距離でなく端までの残りで持つのは、ステージの大きさを変えても
+    // 「端から 8m 以内」という木の書き方がそのまま通るようにするため。
+    float distanceToArenaEdge = 9999.0f;
+
     float healthPercentage = 100.0f; // 残りHPの割合（0〜100）
 
     // 被弾の蓄積。閾値はここに持たずBTノードの param（最大HPに対する％）で決める。

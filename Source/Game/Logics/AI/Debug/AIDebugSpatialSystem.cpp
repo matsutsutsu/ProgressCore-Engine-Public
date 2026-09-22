@@ -163,10 +163,10 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
     for (const BTNode &node : asset.nodes)
     {
         if (node.type != BTNodeType::Condition) continue;
-        if (node.param <= 0.0f) continue; // 未設定のノードは線にしない
 
-        // ステージ端だけは中心がボスではなくワールド原点。同じ「距離を持つ条件」でも
-        // ボス中心で描くと嘘になるので、集める先から分ける。
+        // ステージ端だけは中心がボスではなくステージの中心。同じ「距離を持つ条件」でも
+        // ボス中心で描くと嘘になるので、集める先から分ける。param は端からの幅なので
+        // 0 も「壁際」という有効な値（下の未設定判定より先に拾う）。
         if (node.actionOrConditionId == ::CCL::AI::C_IsAtStageEdge)
         {
             const int  key   = RadiusKey(node.param);
@@ -175,6 +175,8 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
             if (!known) m_edgeRings.push_back(node.param);
             continue;
         }
+
+        if (node.param <= 0.0f) continue; // 未設定のノードは線にしない
 
         uint8_t kind = 0;
         if (node.actionOrConditionId == ::CCL::AI::C_DistanceLessThan)
@@ -212,12 +214,19 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
     // プレイヤー座標は BattleContext（世界の事実）から。無ければ照準線だけ省く。
     XMFLOAT3 playerPos(0, 0, 0);
     bool     hasPlayer = false;
+
+    // ステージ端のリングの中心と半径。条件と同じ円を描かないと、線と判定がずれる。
+    XMFLOAT3 arenaCenter(0, 0, 0);
+    float    arenaRadius = 0.0f;
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
         playerPos          = XMFLOAT3(battle.playerPos.x, battle.playerPos.y, battle.playerPos.z);
         hasPlayer          = battle.HasPlayer();
+        arenaCenter        = battle.arenaCenter;
+        arenaRadius        = battle.arenaRadius;
     }
+    m_arenaRadius = arenaRadius;
 
     ForEachWithID([&](EntityID                  entity,
                       const TransformComponent &trans,
@@ -265,10 +274,13 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
             renderer->DrawArrow(center, pTarget, 0.5f, kColLine);
         }
 
-        // ステージ端は原点中心。ボスの足元の高さに合わせておく。
-        for (float radius : m_edgeRings)
+        // ステージ端はステージの中心から。ボスの足元の高さに合わせておく。
+        for (float margin : m_edgeRings)
         {
-            const XMFLOAT3 origin(0.0f, center.y, 0.0f);
+            const float radius = arenaRadius - margin;
+            if (radius <= 0.0f) continue; // 幅がステージより広い＝常に成立。描く輪が無い
+
+            const XMFLOAT3 origin(arenaCenter.x, center.y, arenaCenter.z);
             DrawRangeRing(renderer, origin, radius, kColEdge);
         }
     });
@@ -313,9 +325,9 @@ void AIDebugSpatialSystem::OnGui()
         ImGui::TextColored(col, "%6.1f m  %s", ring.radius, label);
     }
 
-    for (float radius : m_edgeRings)
+    for (float margin : m_edgeRings)
         ImGui::TextColored(ImVec4(0.80f, 0.55f, 1.0f, 1.0f),
-                           "%6.1f m  ステージ端（原点中心）", radius);
+                           "%6.1f m  ステージ端から（中心から %.1f m）", margin, m_arenaRadius - margin);
 }
 
 // NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。

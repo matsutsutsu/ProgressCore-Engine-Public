@@ -65,7 +65,7 @@ namespace CCL::AI
     inline constexpr ActionID C_IsPhase2                = 3;  // フェーズ >= 2
     inline constexpr ActionID C_ShouldTransitionPhase2  = 4;  // 第1形態 かつ HP <= 閾値
     inline constexpr ActionID C_DamageThresholdExceeded = 6;  // 蓄積被弾 >= 最大HPの param %
-    inline constexpr ActionID C_IsAtStageEdge           = 8;  // 原点から param m 以上
+    inline constexpr ActionID C_IsAtStageEdge           = 8;  // ステージの端から param m 以内
     inline constexpr ActionID C_DistanceLessThan        = 9;  // ターゲットとの距離 < param
     inline constexpr ActionID C_DistanceGreaterThan     = 10; // ターゲットとの距離 > param
     // 位置関係。距離だけだと「正面8m」と「背後8m」が同じ状況になり、回り込みにも
@@ -83,10 +83,10 @@ namespace CCL::AI
     inline constexpr ActionID A_DroneStrike = 1006; // ドローンへ「今撃て」信号（陣形攻撃のリリース）
     // 1100番台は「アニメのトリガーを引き、param 秒だけBTを留める」同じ形。
     // 違いは物理挙動だけで、それは BossActionSystem が ActionID ごとに分岐して担当する。
-    inline constexpr ActionID A_BossSlash      = 1101; // 薙ぎ払い。足を止めて斬る自衛技
-    inline constexpr ActionID A_BossDashSlash  = 1102; // 突進斬り。方向を固定して踏み込む
-    inline constexpr ActionID A_BossJumpAttack = 1103; // 跳躍斬り。放物線で跳び、着地で斬る
-    inline constexpr ActionID A_BossBackStep   = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
+    // 1102/1103 は突進斬り・跳躍斬りを削除した欠番。再利用すると、数値IDで残った古いノードが
+    // 別の技として動き出す。
+    inline constexpr ActionID A_BossSlash    = 1101; // 薙ぎ払い。足を止めて斬る自衛技
+    inline constexpr ActionID A_BossBackStep = 1104; // 後方ステップ。被弾がかさんだら間合いを切る
 
     // 被弾はモーションを中断せず、止めるのは「次の技を選ぶ」判断だけ。その猶予を作る。
     inline constexpr ActionID A_BossHitWait = 1105; // 被弾後の様子見。param 秒だけ次の技を選ばない
@@ -157,8 +157,6 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     {CCL::AI::A_Move, "A_Move", "ボス：移動 (Move To Player)", BTCategory::Boss, ""},
     {CCL::AI::A_ResetDamage, "A_ResetDamage", "ボス：蓄積ダメージリセット", BTCategory::Boss, ""},
     {CCL::AI::A_BossSlash, "A_BossSlash", "ボス：薙ぎ払い (Slash)", BTCategory::Boss, "全体時間 [秒]"},
-    {CCL::AI::A_BossDashSlash, "A_BossDashSlash", "ボス：突進斬り (Dash Slash)", BTCategory::Boss, "全体時間 [秒]"},
-    {CCL::AI::A_BossJumpAttack, "A_BossJumpAttack", "ボス：跳躍斬り (Jump Attack)", BTCategory::Boss, "全体時間 [秒]"},
     {CCL::AI::A_BossBackStep, "A_BossBackStep", "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]"},
     {CCL::AI::A_BossHitWait, "A_BossHitWait", "ボス：被弾後の様子見", BTCategory::Boss, "待つ長さ [秒]"},
     {CCL::AI::A_BossAdvance, "A_BossAdvance", "ボス：詰めながら待つ", BTCategory::Boss, "長さ [秒]"},
@@ -182,11 +180,11 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
     {CCL::AI::C_TargetAngleGreaterThan, "C_TargetAngleGreaterThan", "相手が正面 ±N 度の外側（回り込み）", BTCategory::Spatial, "角度 [度]"},
     {CCL::AI::C_TargetApproaching, "C_TargetApproaching", "相手が N m/s 以上で詰めてきている", BTCategory::Spatial, "速さ [m/s]"},
     {CCL::AI::C_TargetRetreating, "C_TargetRetreating", "相手が N m/s 以上で離れている", BTCategory::Spatial, "速さ [m/s]"},
+    {CCL::AI::C_IsAtStageEdge, "C_IsAtStageEdge", "ステージの端から N m 以内", BTCategory::Spatial, "端からの距離 [m]"},
 
     {CCL::AI::C_IsPhase2, "C_IsPhase2", "フェーズ >= 2", BTCategory::State, ""},
     {CCL::AI::C_ShouldTransitionPhase2, "C_ShouldTransitionPhase2", "第2形態移行条件 (HP半分以下 & 第1形態)", BTCategory::State, ""},
     {CCL::AI::C_DamageThresholdExceeded, "C_DamageThresholdExceeded", "被弾の蓄積 >= 最大HPの N %", BTCategory::State, "最大HPに対する割合 [%]"},
-    {CCL::AI::C_IsAtStageEdge, "C_IsAtStageEdge", "原点から N m 以上（ステージの端）", BTCategory::State, "原点からの距離 [m]"},
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
 
@@ -342,7 +340,7 @@ inline bool IsBossPhysicalAction(ActionID id)
 // ボスの近接アクションか。物理挙動の分岐ではない（それは BossActionSystem が決める）。
 inline bool IsBossMeleeAction(ActionID id)
 {
-    return id == CCL::AI::A_BossSlash || id == CCL::AI::A_BossDashSlash || id == CCL::AI::A_BossJumpAttack;
+    return id == CCL::AI::A_BossSlash;
 }
 
 // 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
@@ -359,7 +357,7 @@ inline bool IsBossEvadeAction(ActionID id) { return id == CCL::AI::A_BossBackSte
 inline bool IsCommandWritingAction(ActionID id)
 {
     return IsBossPhysicalAction(id)  // A_Move / A_BossAdvance
-           || IsBossMeleeAction(id)  // 薙ぎ払い / 突進斬り / 跳躍斬り
+           || IsBossMeleeAction(id)  // 薙ぎ払い
            || IsBossEvadeAction(id); // 後方ステップ
 }
 

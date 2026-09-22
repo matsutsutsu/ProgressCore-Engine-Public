@@ -881,6 +881,7 @@ void BehaviorTreeSystem::OnGui()
                     (btComp->blackboard.angleToTarget >= 0.0f) ? "右" : "左");
         ImGui::Text("Closing Speed    : %+.2f m/s  [%s]", btComp->blackboard.targetClosingSpeed,
                     (btComp->blackboard.targetClosingSpeed >= 0.0f) ? "接近" : "後退");
+        ImGui::Text("To Arena Edge    : %+.1f m", btComp->blackboard.distanceToArenaEdge);
 
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
 

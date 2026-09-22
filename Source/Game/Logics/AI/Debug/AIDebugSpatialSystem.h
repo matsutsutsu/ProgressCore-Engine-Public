@@ -109,6 +109,10 @@ private:
     ///   移行でも、インスペクタの「AI再読込」でも、黙って追従してほしい。
     std::vector<RangeRing> m_rings;
 
-    /// 原点中心のリング（C_IsAtStageEdge）。中心が違うのでボス中心とは分けて持つ。
+    /// ステージ端のリング（C_IsAtStageEdge）。持つのは端からの幅で、半径ではない。
+    ///   中心が違うのでボス中心とは分けて持つ。
     std::vector<float> m_edgeRings;
+
+    /// 最後に描いたときのステージ半径。GUI の一覧で「中心から何 m か」を出すのに使う。
+    float m_arenaRadius = 0.0f;
 };

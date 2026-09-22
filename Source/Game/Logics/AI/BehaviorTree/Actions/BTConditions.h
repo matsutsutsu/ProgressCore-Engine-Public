@@ -6,7 +6,6 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
-#include "Engine/Transform/Components/TransformComponent.h"
 #include <cmath>
 
 namespace CCL::AI::BT::CommonConditions
@@ -79,17 +78,13 @@ namespace CCL::AI::BT::CommonConditions
         }
     };
 
-    // 原点から param m 以上離れている（ステージの端に寄っている）。未設定なら 48m。
+    // ステージの端から param m 以内に居る。param=0 で「壁際まで来た」。
+    // 円の中心と半径は BattleContext が持つので、ステージを差し替えても木は直さなくてよい。
     struct IsAtStageEdge : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
         {
-            if (!ctx.myTransform) return false;
-
-            const float radius = (ctx.param > 0.0f) ? ctx.param : 48.0f;
-            const float x      = ctx.myTransform->position.x;
-            const float z      = ctx.myTransform->position.z;
-            return std::sqrt(x * x + z * z) >= radius;
+            return ctx.bt->blackboard.distanceToArenaEdge <= ctx.param;
         }
     };
 

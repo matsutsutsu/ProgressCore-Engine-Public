@@ -96,7 +96,7 @@ void BossActionSystem::Update(float rawDt)
         const BossActionState next = frozen ? BossActionState::None
                                             : TranslateAction(cmd.currentActionId);
 
-        // 突進・跳躍は「どこへ向かうか」をこの1回で決め、以後は更新しない。
+        // 動く技は「どこへ向かうか」をこの1回で決め、以後は更新しない。
         if (next != bossDef.currentState) OnEnterState(next, bossDef, trans, playerPos);
 
         bossDef.currentState = next;
@@ -109,12 +109,6 @@ void BossActionSystem::Update(float rawDt)
             break;
         case BossActionState::Melee:
             ProcessMeleeHold(bossDef, trans, movement, joltHandle, playerPos, dt);
-            break;
-        case BossActionState::DashSlash:
-            ProcessDashSlash(bossDef, trans, movement, joltHandle, playerPos, dt);
-            break;
-        case BossActionState::JumpAttack:
-            ProcessJumpAttack(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
         case BossActionState::BackStep:
             ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
@@ -227,8 +221,6 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == ::CCL::AI::A_Move) return BossActionState::Move;
     if (actionId == ::CCL::AI::A_BossSlash) return BossActionState::Melee;
-    if (actionId == ::CCL::AI::A_BossDashSlash) return BossActionState::DashSlash;
-    if (actionId == ::CCL::AI::A_BossJumpAttack) return BossActionState::JumpAttack;
     if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
     return BossActionState::None;
 }
@@ -252,104 +244,6 @@ void BossActionSystem::OnEnterState(BossActionState next, BossActionComponent &b
     // 後方ステップだけは進行方向が逆（lockedDirection は常に「進む向き」）。
     if (next == BossActionState::BackStep)
         bossDef.lockedDirection = -bossDef.lockedDirection;
-
-    if (next == BossActionState::JumpAttack)
-    {
-        // 着地点も踏み切り前に確定させる。真上へ吸い付くと回避不能になるので、
-        // 「ここへ跳ぶ」を先に決めて退く時間を与える。
-        bossDef.jumpTakeoffPos = Vector3(trans.position);
-        const float reach      = (std::min)(distance, bossDef.jumpMaxRange);
-        bossDef.jumpLandingPos = bossDef.jumpTakeoffPos + bossDef.lockedDirection * reach;
-    }
-}
-
-void BossActionSystem::ProcessDashSlash(BossActionComponent &bossDef, TransformComponent &trans,
-                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-                                        const Vector3 &playerPos, float dt)
-{
-    const float t = bossDef.actionTimer;
-
-    // 溜め：足を止めて正対する。踏み込む方向はこの間だけ更新し続ける。
-    if (t < bossDef.dashWindupTime)
-    {
-        bossDef.currentMoveSpeed = 0.0f;
-        movement.desiredVelocity = Vector3::Zero;
-
-        Vector3 dirToPlayer = playerPos - trans.position;
-        dirToPlayer.y       = 0.0f;
-        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
-
-        if (dirToPlayer.LengthSquared() > 0.001f)
-        {
-            dirToPlayer.Normalize();
-            bossDef.lockedDirection = dirToPlayer; // 溜め終了時の向きが最終的な突進方向になる
-        }
-        return;
-    }
-
-    // 踏み込み：方向は固定。旋回しないので横へ抜ければ避けられる。
-    if (t < bossDef.dashWindupTime + bossDef.dashDriveTime)
-    {
-        bossDef.currentMoveSpeed = bossDef.chargeSpeed;
-        bossDef.moveDirection    = bossDef.lockedDirection;
-        movement.desiredVelocity = bossDef.lockedDirection;
-
-        // config.walkSpeed で頭打ちにしない。歩行上限で丸めると踏み込みが消える。
-        movement.overrideSpeed = bossDef.chargeSpeed;
-        return;
-    }
-
-    // 硬直。後隙の長さは BT が param 秒この技に留まることで決まる。
-    bossDef.currentMoveSpeed = 0.0f;
-    movement.desiredVelocity = Vector3::Zero;
-}
-
-void BossActionSystem::ProcessJumpAttack(BossActionComponent &bossDef, TransformComponent &trans,
-                                         CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-                                         const Vector3 &playerPos, float dt)
-{
-    const float t = bossDef.actionTimer;
-
-    // 溜め：踏み切るまで足を止めて正対する。
-    if (t < bossDef.jumpWindupTime)
-    {
-        bossDef.currentMoveSpeed = 0.0f;
-        movement.desiredVelocity = Vector3::Zero;
-
-        Vector3 dirToPlayer = playerPos - trans.position;
-        dirToPlayer.y       = 0.0f;
-        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-        SyncCharacterRotation(trans, joltHandle.character.GetPtr());
-        return;
-    }
-
-    const float flightTime    = (std::max)(0.05f, bossDef.jumpFlightTime);
-    const float elapsedFlight = t - bossDef.jumpWindupTime;
-
-    // 滞空：着地時刻から逆算した放物線を速度として与える。
-    if (elapsedFlight <= flightTime)
-    {
-        Vector3 horizontal = bossDef.jumpLandingPos - bossDef.jumpTakeoffPos;
-        horizontal.y       = 0.0f;
-
-        // 水平は等速。垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへ
-        // ちょうど戻るので、着地フレームがずれない。
-        const float u = elapsedFlight / flightTime;
-        Vector3     v = horizontal / flightTime;
-        v.y           = (4.0f * bossDef.jumpHeight / flightTime) * (1.0f - 2.0f * u);
-
-        movement.use3DVelocity = true; // 重力・水平計算を止めてこの速度をそのまま使う
-        movement.velocity3D    = v;
-
-        bossDef.currentMoveSpeed = horizontal.Length() / flightTime;
-        bossDef.moveDirection    = bossDef.lockedDirection;
-        return;
-    }
-
-    // 着地硬直。use3DVelocity を書かない＝重力が戻り、地面へ落ち着く。
-    bossDef.currentMoveSpeed = 0.0f;
-    movement.desiredVelocity = Vector3::Zero;
 }
 
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
@@ -374,7 +268,8 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
     // 後退。弧を描いて「強く引かれる」形にする。地上を滑らせるとどんなに速くしても
     // クリップの足と合わず「後ろ歩き」に見えるが、空中なら接地感が問われない。
     // 溜めを持たないのは被弾への反応だから（予備動作を入れると避けている感じが出ない）。
-    // 式は跳躍斬りと同じで、着地の時刻が backStepTime からずれない。
+    // 垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへちょうど戻るので、
+    // 着地の時刻が backStepTime からずれない。
     const float T = (std::max)(0.01f, bossDef.backStepTime);
     const float u = t / T;
 

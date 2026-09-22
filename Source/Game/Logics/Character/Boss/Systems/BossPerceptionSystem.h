@@ -11,6 +11,8 @@
 #include "Engine/Time/TimeState.h"
 #include <SimpleMath.h>
 
+struct BattleContext;
+
 class BossPerceptionSystem : public CCL::ECS::IfSystem<
                                  BossPerceptionSystem,
                                  CCL::ECS::Write<BehaviorTreeComponent>,
@@ -37,4 +39,8 @@ private:
     float TargetClosingSpeed(const DirectX::SimpleMath::Vector3 &myPos,
                              const DirectX::SimpleMath::Vector3 &targetPos,
                              const DirectX::SimpleMath::Vector3 &targetVelocity) const;
+
+    /// ステージの端まであと何 m か。正=内側。真上から見た距離だけを測る。
+    float DistanceToArenaEdge(const DirectX::SimpleMath::Vector3 &myWorldPos,
+                              const BattleContext                &battle) const;
 };

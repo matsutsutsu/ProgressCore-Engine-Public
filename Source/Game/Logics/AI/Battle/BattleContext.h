@@ -31,6 +31,12 @@ struct BattleContext
     // ドローンの生存数。残数がそのままボスの体力を表す。書き手は DroneManagerSystem。
     int droneAliveCount = 1000;
 
+    // 戦える範囲（真上から見た円）。見えない壁の内側に合わせる。書き手はまだ居らず既定値のまま。
+    //   端の判定と跳躍の着地点が同じ円を見ないと、「端だから中央へ逃げる」の着地点が
+    //   壁の外に出て、空中で壁に引っかかる。
+    DirectX::XMFLOAT3 arenaCenter = {0, 0, 0};
+    float             arenaRadius = 48.0f;
+
     bool HasPlayer() const
     {
         return playerEntity != CCL::ECS::InvalidEntityID;

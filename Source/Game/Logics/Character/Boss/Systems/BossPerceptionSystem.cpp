@@ -83,6 +83,9 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 
         btComp.blackboard.targetClosingSpeed =
             TargetClosingSpeed(Vector3(trans.position), targetPos, targetVelocity);
+
+        btComp.blackboard.distanceToArenaEdge =
+            DistanceToArenaEdge(Vector3(trans.GetWorldPosition()), battle);
     });
 }
 
@@ -121,6 +124,15 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
     velocity.y       = 0.0f; // 跳躍の上下動を「詰めてきた」と読み違えないため
 
     return velocity.Dot(targetToMe);
+}
+
+float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,
+                                                const BattleContext &battle) const
+{
+    Vector3 fromCenter = myWorldPos - Vector3(battle.arenaCenter);
+    fromCenter.y       = 0.0f; // 跳んでいる最中に「端へ寄った」と読み違えないため
+
+    return battle.arenaRadius - fromCenter.Length();
 }
 
 // BehaviorTreeSystem(L02_Update) が blackboard を読む前に認識を確定させる。

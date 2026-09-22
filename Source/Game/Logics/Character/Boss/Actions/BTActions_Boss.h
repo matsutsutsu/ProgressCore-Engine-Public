@@ -278,14 +278,6 @@ namespace CCL::AI::BT::BossActions
         reg.RegisterActionInstance(::CCL::AI::A_BossSlash,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Slash"), 0.8f, ::CCL::AI::A_BossSlash));
 
-        // 突進斬り：溜め0.35 + 踏み込み0.35 + 硬直。
-        reg.RegisterActionInstance(::CCL::AI::A_BossDashSlash,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("DashSlash"), 1.4f, ::CCL::AI::A_BossDashSlash));
-
-        // 跳躍斬り：溜め0.15 + 滞空0.45 + 着地硬直。
-        reg.RegisterActionInstance(::CCL::AI::A_BossJumpAttack,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("JumpAttack"), 1.1f, ::CCL::AI::A_BossJumpAttack));
-
         // 後方ステップ：後退0.35 + 硬直。攻撃判定は持たない。硬直をステップ本体より長く
         // 取るのは、0だと「殴られる→即離脱→即接近」を繰り返して手を出す隙が消えるため。
         reg.RegisterActionInstance(::CCL::AI::A_BossBackStep,

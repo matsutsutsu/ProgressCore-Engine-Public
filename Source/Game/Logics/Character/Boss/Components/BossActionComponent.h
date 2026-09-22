@@ -7,16 +7,14 @@
 #pragma once
 #include <SimpleMath.h>
 
-// 並び順がそのままインスペクタの列挙値になる。増やすときは末尾に足すこと
-// （途中に挿すと保存済みプレハブの値がずれる）。
+// currentState は保存しないので、並びを変えてもプレハブは壊れない。
+// ただしインスペクタの名前表 BossStateNames は同じ並びで直すこと。
 enum class BossActionState : uint8_t
 {
-    None,       // 待機
-    Move,       // プレイヤーへの移動中
-    Melee,      // 薙ぎ払い。足を止めて斬る
-    DashSlash,  // 突進斬り。溜め→固定方向へ踏み込み→硬直
-    JumpAttack, // 跳躍斬り。溜め→放物線で跳ぶ→着地硬直
-    BackStep,   // 後方ステップ。被弾がかさんだら間合いを切る
+    None,     // 待機
+    Move,     // プレイヤーへの移動中
+    Melee,    // 薙ぎ払い。足を止めて斬る
+    BackStep, // 後方ステップ。被弾がかさんだら間合いを切る
 };
 
 struct BossActionComponent
@@ -24,7 +22,6 @@ struct BossActionComponent
     // 移動。実効速度は JoltCharacterConfigComponent::walkSpeed を上限にする。
     float walkSpeed     = 4.0f;  // 様子見・通常接近
     float runSpeed      = 8.0f;  // 距離を詰める走行（将来の行動用・未使用）
-    float chargeSpeed   = 25.0f; // 突進斬りの踏み込み
     float turnSpeed     = 8.0f;  // 移動中の旋回
     float idleTurnSpeed = 4.0f;  // 待機中の旋回（ゆっくり睨む演出）
     float acceleration  = 8.0f;
@@ -37,18 +34,6 @@ struct BossActionComponent
     // 薙ぎ払いで相手を追って向きを合わせる長さ [秒]。過ぎたら技が終わるまで固定。
     // 最後まで回り続けると横へ回り込んでも刃が付いてきて「後隙を狩る」が成立しない。
     float meleeTurnTime = 0.35f;
-
-    // 突進斬り。溜めの間だけプレイヤーを追う（0 だと「見てから避ける」が成立しない）。
-    float dashWindupTime = 0.35f; // 溜め [秒]
-    float dashDriveTime  = 0.35f; // 踏み込み [秒]。到達距離 = chargeSpeed * この値
-
-    // 跳躍斬り。溜め＋滞空の合計が着地の時刻になる。アニメの攻撃判定が滞空区間へ
-    // 収まるようにすること（ずれると空中攻撃なのに着地後に斬る絵になる）。
-    float jumpWindupTime = 0.10f;
-    float jumpFlightTime = 0.40f;
-
-    float jumpHeight   = 4.5f;  // 放物線の頂点の高さ [m]
-    float jumpMaxRange = 18.0f; // 跳べる最大水平距離 [m]。無いと瞬間移動に見える
 
     // 後方ステップの初速 [m/s]。backStepTime かけて直線的に 0 まで落とす
     // （等速のまま急停止すると「滑って突然止まる」に見える）。退く距離は速度×時間÷2。
@@ -72,8 +57,4 @@ struct BossActionComponent
     // 技に入った瞬間に固定した進行方向。毎フレーム取り直すとホーミング攻撃になり
     // 原理的に避けられない。「進む向き」であって「見ている向き」ではない。
     DirectX::SimpleMath::Vector3 lockedDirection = DirectX::SimpleMath::Vector3::UnitZ;
-
-    // 跳躍の着地予定地点と踏み切り地点。踏み切った瞬間に確定する。
-    DirectX::SimpleMath::Vector3 jumpLandingPos = DirectX::SimpleMath::Vector3::Zero;
-    DirectX::SimpleMath::Vector3 jumpTakeoffPos = DirectX::SimpleMath::Vector3::Zero;
 };
