@@ -41,11 +41,7 @@ namespace CCL::AI::Formation
             }
             if (fd.kind == FieldKind::Float)
             {
-                // JSON の数値は double なので、float をそのまま渡すと 0.8 が 0.800000011920929 と出る。
-                // float として元に戻せる最短の10進表記に丸めてから書く。
-                char       buf[32];
-                const auto end = std::to_chars(buf, buf + sizeof(buf), RawField<const float>(obj, fd.offset)).ptr;
-                j[fd.jsonName] = std::stod(std::string(buf, end));
+                j[fd.jsonName] = ShortestDouble(RawField<const float>(obj, fd.offset));
                 continue;
             }
             ComponentMetaJson::SerializeField(j, fd, obj, nullptr);
@@ -74,6 +70,13 @@ namespace CCL::AI::Formation
         }
     }
 
+    double FormationAssetIO::ShortestDouble(float v)
+    {
+        char       buf[32];
+        const auto end = std::to_chars(buf, buf + sizeof(buf), v).ptr;
+        return std::stod(std::string(buf, end));
+    }
+
     // ---------------------------------------------------------------------------
     // アセット全体の組み立て
     // ---------------------------------------------------------------------------
@@ -98,7 +101,19 @@ namespace CCL::AI::Formation
                 jl.erase("leadThreshold");
             }
             // キーが無いカーブ＝既定の easeIn。空の CurveData を毎層に書くと JSON が膨らむ。
-            if (!l.curve.empty()) jl["curve"] = l.curve;
+            if (!l.curve.empty())
+            {
+                jl["curve"] = l.curve;
+                nlohmann::json &keys = jl["curve"]["keys"];
+                for (size_t i = 0; i < l.curve.keys.size(); ++i)
+                {
+                    const CurveKeyframe &k = l.curve.keys[i];
+                    keys[i]["time"]        = ShortestDouble(k.time);
+                    keys[i]["value"]       = ShortestDouble(k.value);
+                    keys[i]["inTangent"]   = ShortestDouble(k.inTangent);
+                    keys[i]["outTangent"]  = ShortestDouble(k.outTangent);
+                }
+            }
 
             j["layers"].push_back(std::move(jl));
         }

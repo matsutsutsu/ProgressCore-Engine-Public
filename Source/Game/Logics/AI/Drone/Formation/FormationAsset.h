@@ -142,7 +142,7 @@ namespace CCL::AI::Formation
     {
         std::string name = "Formation";
 
-        /// 名乗る DroneFormationType の枠（kDataFormationSlotFirst 〜 Last）。
+        /// 名乗る DroneFormationType の枠。名前のある枠（縦割り等）も空き枠も名乗れる。
         /// BT もプレハブもこの数値で技を指すので、一度公開したら変えない
         /// （変えると保存済みの木が別の技を指す。BTAsset の assetId と同じ扱い）。
         uint8_t slot = 0;

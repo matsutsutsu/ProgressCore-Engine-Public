@@ -29,7 +29,7 @@ void DroneFormationSystem::Initialize()
     // このシステムが評価する陣形クラスを登録する。陣形を追加したときは
     // 各 Formations_*.h の RegisterAll() に1行足せば全シーンへ自動反映される。
     CCL::AI::Formation::Basic::RegisterAll();
-    CCL::AI::Formation::Attack::RegisterAll(); // 攻撃陣形（縦割り等）
+    CCL::AI::Formation::Attack::RegisterAll(); // データで書けない攻撃陣形（弾幕）
     CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
 
     // データ陣形は最後。C++ 実装の枠を上書きしないことを登録側でも確かめられる

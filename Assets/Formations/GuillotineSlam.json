@@ -30,7 +30,7 @@
     "spacingB": 2.5,
     "tierStepB": 0.0
   },
-  "name": "縦割り（データ）",
+  "name": "縦割り",
   "origin": {
     "forward": 5.0,
     "right": 0.0,
@@ -49,5 +49,6 @@
     "look": "Auto",
     "useShiverTelegraph": true
   },
-  "slot": 33
+  "slot": 24,
+  "telegraphSeconds": 1.5
 }

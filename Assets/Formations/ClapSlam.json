@@ -42,7 +42,7 @@
     "spacingB": 2.2,
     "tierStepB": 0.0
   },
-  "name": "挟み込み1段（データ）",
+  "name": "挟み込み1段",
   "origin": {
     "forward": 0.0,
     "right": 0.0,
@@ -61,5 +61,6 @@
     "look": "ToPlayer",
     "useShiverTelegraph": true
   },
-  "slot": 35
+  "slot": 25,
+  "telegraphSeconds": 1.5
 }

@@ -68,9 +68,8 @@ enum class DroneFormationType : uint8_t
 // 名前テーブルは詰めた長さではなくこの長さで作る。
 inline constexpr size_t kDroneFormationSlotCount = 49;
 
-// データ陣形に予約した枠の範囲（両端を含む）。JSON の "slot" がこの外を名乗ったら
-// 読み込み側が弾く。C++ 実装のある枠を JSON に上書きさせると、同じ技の定義が
-// 2箇所に並んで片方だけ更新される事故が起きるため。
+// 名前を持たない、新しい技のための空き枠（両端を含む）。エディタの複製はここから空きを探す。
+// 名前のある枠（縦割り等）も JSON が名乗れる。C++ 実装のある枠だけは登録時に弾く。
 inline constexpr uint8_t kDataFormationSlotFirst = 33;
 inline constexpr uint8_t kDataFormationSlotLast  = 48;
 

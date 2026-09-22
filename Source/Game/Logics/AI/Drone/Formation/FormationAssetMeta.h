@@ -124,7 +124,7 @@ namespace CCL::AI::Formation::Meta
         using T                                          = FormationOutput;
         static const std::vector<FieldDescriptor> fields = {
             FD_EnumU8("機首の向け方", "look", offsetof(T, look), kLookNames, NameCount(kLookNames), nullptr, true, "Auto=形と動きから決める / ToPlayer=プレイヤーを向く / Inward=陣形の中心を向く"),
-            FD_EnumU8("突撃中の移動方式", "chargeMode", offsetof(T, chargeMode), kChargeModeNames, NameCount(kChargeModeNames), nullptr, true, "RigidFollow=形が歪まない / SoftFollow=バネで遅れて追う / Straight=直進"),
+            FD_EnumU8("突撃中の移動方式", "chargeMode", offsetof(T, chargeMode), kChargeModeNames, NameCount(kChargeModeNames), nullptr, true, "RigidFollow=形が崩れない / SoftFollow=バネで遅れて追う / Straight=直進"),
             FD_Bool("地面へ潜らせない", "clampToGround", offsetof(T, clampToGround), nullptr, true, "席の高さを持ち上げて地面より下へ行かせない"),
             FD_Bool("撃つ前に震わせる", "useShiverTelegraph", offsetof(T, useShiverTelegraph), nullptr, true, "全体のざわつき（移動側の共通の震え）。Shiver の帯とは別。切ると帯の震えだけになる"),
         };
@@ -137,7 +137,7 @@ namespace CCL::AI::Formation::Meta
         using T                                          = FormationAsset;
         static const std::vector<FieldDescriptor> fields = {
             FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
-            FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, kDataFormationSlotFirst, kDataFormationSlotLast, nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
+            FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, 0.0f, static_cast<float>(kDroneFormationSlotCount - 1), nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
             FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
             FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。ボスBTの予告の Wait と同じ値にする（今は BT がこの値を読まない）"),
         };

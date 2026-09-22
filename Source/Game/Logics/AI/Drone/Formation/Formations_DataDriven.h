@@ -9,14 +9,14 @@
 //   回転がそのまま陣形ローカルの回転になる。おかげでレイヤーごとに基底を
 //   掛け直さずに済み、最後の1回だけ Right/Up/Forward を展開すればよい。
 //
-// 既存の C++ 陣形（Formations_Attack.h）との関係:
-//   同じ技を両方に持たせない。JSON が名乗れるのは kDataFormationSlotFirst〜Last の
-//   予約枠だけで、C++ 実装のある枠は登録時に弾く。同じ技の定義が2箇所に並ぶと、
-//   片方だけ更新されたときに気づけないため。
+// C++ で書いた陣形（Formations_*.h）との関係:
+//   同じ技を両方に持たせない。C++ の登録が先に走り、C++ 実装のある枠を名乗った JSON は
+//   登録時に弾く。同じ技の定義が2箇所に並ぶと、片方だけ更新されたときに気づけないため。
 #pragma once
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "Engine/Platform/Core/FileSystem.h"
@@ -80,6 +80,13 @@ namespace CCL::AI::Formation::Data
         /// 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
         /// 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに嘘の数字が出る。
         static void GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows);
+
+        /// 緩急。席ごとの進み t（0〜1）を、始まり→終わりのどこまで進んだか（0〜1）へ曲げる。
+        /// キーの無いカーブは easeIn（t*t）。エディタの緩急のグラフもこれを描く。
+        static float Ease(const FormationLayer &layer, float t)
+        {
+            return layer.curve.empty() ? (t * t) : layer.curve.Evaluate(t);
+        }
 
     private:
         using Vector3 = DirectX::SimpleMath::Vector3;
@@ -268,10 +275,7 @@ namespace CCL::AI::Formation::Data
         const float start    = layer.windowBegin + SeatPhaseT(layer, seat) * (width - duration);
         const float t        = std::clamp((p - start) / duration, 0.0f, 1.0f);
 
-        // キーの無いカーブは従来どおり easeIn。既存陣形と絵を揃えるための既定。
-        const float eased = layer.curve.empty() ? (t * t) : layer.curve.Evaluate(t);
-
-        float value = layer.from + (layer.to - layer.from) * eased;
+        float value = layer.from + (layer.to - layer.from) * Ease(layer, t);
         if (layer.mirror) value *= SideSign(seat);
         return value;
     }
@@ -392,7 +396,7 @@ namespace CCL::AI::Formation::Data
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
     // ---------------------------------------------------------------------------
 
-    /// Assets/Formations/*.json を読み、各アセットが名乗る予約枠へ登録する。
+    /// Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
     ///
     /// ファイル名ではなく JSON 内の "slot" で枠を決める。ファイル名を枠にすると
     /// 技の名前を変えた瞬間に保存済みの BT が別の技を指す。
@@ -408,19 +412,21 @@ namespace CCL::AI::Formation::Data
             FormationAsset asset;
             if (!FormationAssetIO::Load(path, asset)) continue;
 
-            if (asset.slot < kDataFormationSlotFirst || asset.slot > kDataFormationSlotLast)
+            // 欠番は BT から指す手段が無いので、登録しても誰にも呼ばれない。
+            if (asset.slot >= kDroneFormationSlotCount ||
+                std::string_view(kDroneFormationNames[asset.slot]) == "(欠番)")
             {
-                CCL_LOG_ERROR(LogCategory::AI,
-                              "[Formation] %s: slot=%u は予約枠(%u〜%u)の外。C++実装の枠を上書きしないため登録しない",
-                              path.c_str(), asset.slot, kDataFormationSlotFirst, kDataFormationSlotLast);
+                CCL_LOG_ERROR(LogCategory::AI, "[Formation] %s: slot=%u は陣形の枠として定義されていない",
+                              path.c_str(), asset.slot);
                 continue;
             }
 
+            // 先に登録した C++ 陣形か、同じ枠を名乗る別の JSON が居る。
             const auto type = static_cast<DroneFormationType>(asset.slot);
             if (registry.Has(type))
             {
                 CCL_LOG_ERROR(LogCategory::AI,
-                              "[Formation] %s: slot=%u は既に埋まっている。同じ枠を名乗るアセットが2つある",
+                              "[Formation] %s: slot=%u は既に埋まっている（C++ 実装か、同じ枠を名乗る別のアセット）",
                               path.c_str(), asset.slot);
                 continue;
             }

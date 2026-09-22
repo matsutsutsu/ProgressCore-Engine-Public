@@ -44,7 +44,7 @@
     "spacingB": 1.2,
     "tierStepB": 2.4
   },
-  "name": "挟み込み2段・下段先攻（データ）",
+  "name": "挟み込み2段・下段先攻",
   "origin": {
     "forward": 6.0,
     "right": 0.0,
@@ -63,5 +63,6 @@
     "look": "Inward",
     "useShiverTelegraph": true
   },
-  "slot": 39
+  "slot": 28,
+  "telegraphSeconds": 1.5
 }

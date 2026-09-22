@@ -13,6 +13,7 @@
 //   コピーを持つと「エディタでは変わったのに画面は変わらない」が必ず起きる。
 #pragma once
 #include "Editor/Core/EditorWindow.h"
+#include "Editor/Utils/CurveEditorWidget.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include <memory>
@@ -24,6 +25,7 @@ struct FieldDescriptor;
 namespace CCL::AI::Formation
 {
     struct FormationAsset;
+    struct FormationLayer;
 } // namespace CCL::AI::Formation
 
 class FormationEditorWindow : public EditorWindow
@@ -45,6 +47,7 @@ protected:
 
 private:
     using Asset = CCL::AI::Formation::FormationAsset;
+    using Layer = CCL::AI::Formation::FormationLayer;
 
     /// ImSequencer と layers のつなぎ。定義は .cpp（ImSequencer をヘッダへ出さないため）。
     class LayerSequence;
@@ -64,6 +67,10 @@ private:
     ///   帯の並び = 適用順 / 帯の左右端 = windowBegin〜End / 縦線 = 進行度。
     /// 帯の端や中をドラッグすると時間帯が変わる。値を変えたら true。
     bool DrawTimeline(Asset &asset);
+
+    /// 選んでいる動きの緩急。型の一覧から選び、グラフで形を見せる。細かい形は
+    /// アニメーションと同じカーブエディタで直す。値を変えたら true。
+    bool DrawEase(Layer &layer);
 
     // ---- 実機の掌握 ----
 
@@ -91,7 +98,7 @@ private:
 
     // ---- 状態 ----
 
-    DroneFormationType m_slot = DroneFormationType::DataSlot00;
+    DroneFormationType m_slot = DroneFormationType::GuillotineSlam; // 開いたときに選んでいる技
 
     /// 保存していない変更があるか。ImGui のウィジェットが値の変更時に返す true を
     /// 溜めるだけ。元へ戻したかまでは見ない（「触った以上まだ保存していない」を
@@ -110,6 +117,10 @@ private:
     std::unique_ptr<LayerSequence> m_sequence;
     int                            m_selectedLayer = 0; // 選んでいる動き。下に詳細を出す
     int                            m_firstFrame    = 0; // 横スクロールの位置（ImSequencer が書く）
+
+    // 緩急
+    CurveEditorWidget m_curveWidget;
+    const Layer      *m_curveLayer = nullptr; // カーブエディタが今見ている動き。変わったら表示範囲を合わせ直す
 
     char m_newFileName[64] = "NewFormation"; // 複製ダイアログの入力欄
 };

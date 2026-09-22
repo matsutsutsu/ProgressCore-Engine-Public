@@ -30,7 +30,7 @@
     "spacingB": 1.5,
     "tierStepB": 0.0
   },
-  "name": "横なぎ回転（データ）",
+  "name": "横なぎ回転",
   "origin": {
     "forward": 0.0,
     "right": 0.0,
@@ -49,5 +49,6 @@
     "look": "Auto",
     "useShiverTelegraph": true
   },
-  "slot": 34
+  "slot": 22,
+  "telegraphSeconds": 1.5
 }

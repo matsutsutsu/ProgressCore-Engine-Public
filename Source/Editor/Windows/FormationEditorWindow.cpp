@@ -309,7 +309,7 @@ void FormationEditorWindow::Unstage(EditorContext &context)
 
     // 握っていた時間を全データ陣形ぶん解放する。選択を切り替えながら掌握を
     // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る。
-    for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
+    for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
         auto *data = dynamic_cast<DataDrivenFormation *>(
             FormationRegistry::Instance().Get(static_cast<DroneFormationType>(slot)));
@@ -433,6 +433,172 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
     return changed;
 }
 
+// ---------------------------------------------------------------------------
+// 緩急の型
+// ---------------------------------------------------------------------------
+// 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ。
+// どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）。
+// 接線は手動(Broken)で持たせる。Auto だと読み込み時の接線の再計算で形が変わる。
+
+namespace
+{
+    struct EaseKey
+    {
+        float       time;
+        float       value;
+        float       inTangent;
+        float       outTangent;
+        CurveInterp interp;
+    };
+
+    struct EasePreset
+    {
+        const char *id; // CurveData::name に入れる。JSON に残るので英字
+        const char *label;
+        const char *tooltip;
+        int         keyCount; // 0 = キー無し（評価器の既定 t*t）
+        EaseKey     keys[3];
+    };
+
+    constexpr EasePreset kEasePresets[] = {
+        {"EaseIn", "だんだん速く（既定）", "溜めてから速くなる。振り下ろす・たたきつける動きに", 0, {}},
+        {"Linear", "直線", "最初から最後まで同じ速さ", 2,
+         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Linear}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Linear}}},
+        {"EaseOut", "だんだん遅く", "勢いよく出て、止まる前に減速する。構え直し・引き戻しに", 2,
+         {{0.0f, 0.0f, 0.0f, 2.0f, CurveInterp::Cubic}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+        {"EaseInOut", "ゆっくり始めてゆっくり止まる", "両端がなめらか。形を組み替えるときに", 2,
+         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+        {"Anticipate", "溜めてから一気に", "一度少し逆へ引いてから、一気に振り切る。予備動作が目で読める", 3,
+         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic},
+          {0.35f, -0.12f, 0.0f, 0.0f, CurveInterp::Cubic},
+          {1.0f, 1.0f, 3.0f, 0.0f, CurveInterp::Cubic}}},
+        {"Overshoot", "行き過ぎて戻る", "終わりの値を少し越えてから戻る。止まった瞬間に重さが出る", 3,
+         {{0.0f, 0.0f, 0.0f, 2.5f, CurveInterp::Cubic},
+          {0.7f, 1.1f, 0.0f, 0.0f, CurveInterp::Cubic},
+          {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+    };
+    constexpr const char *kCustomEaseId = "Custom"; // カーブエディタで手を入れたもの
+} // namespace
+
+bool FormationEditorWindow::DrawEase(Layer &layer)
+{
+    bool changed = false;
+
+    const auto setCurve = [&](const char *id, const EaseKey *keys, int count) {
+        CurveData curve;
+        curve.name = id;
+        for (int k = 0; k < count; ++k)
+        {
+            CurveKeyframe key;
+            key.time       = keys[k].time;
+            key.value      = keys[k].value;
+            key.inTangent  = keys[k].inTangent;
+            key.outTangent = keys[k].outTangent;
+            key.interp     = keys[k].interp;
+            key.tangentIn  = TangentMode::Broken;
+            key.tangentOut = TangentMode::Broken;
+            key.id         = curve.GenId();
+            curve.keys.push_back(key);
+        }
+        layer.curve  = std::move(curve);
+        m_curveLayer = nullptr; // カーブエディタの表示範囲を新しい形に合わせ直す
+        changed      = true;
+    };
+
+    // 今の型。キーが無ければ既定、name が一覧にあればその型、どれでもなければ手で直した形。
+    int current = -1;
+    for (int i = 0; i < IM_ARRAYSIZE(kEasePresets); ++i)
+    {
+        const EasePreset &preset = kEasePresets[i];
+        if (preset.keyCount == 0 ? layer.curve.empty() : (!layer.curve.empty() && layer.curve.name == preset.id))
+        {
+            current = i;
+            break;
+        }
+    }
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("緩急");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(240.0f);
+    if (ImGui::BeginCombo("##ease", current >= 0 ? kEasePresets[current].label : "手で直した形"))
+    {
+        for (int i = 0; i < IM_ARRAYSIZE(kEasePresets); ++i)
+        {
+            const EasePreset &preset = kEasePresets[i];
+            if (ImGui::Selectable(preset.label, i == current)) setCurve(preset.id, preset.keys, preset.keyCount);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", preset.tooltip);
+        }
+        ImGui::EndCombo();
+    }
+
+    // 形のグラフ。横 = 席ごとの進み、縦 = 始まり(下の線)→終わり(上の線)のどこまで進んだか。
+    // 評価器と同じ Ease を引いて描くので、ここで見える形がそのまま実機の動きになる。
+    {
+        constexpr float kWidth  = 240.0f;
+        constexpr float kHeight = 80.0f;
+        constexpr float kMinY   = -0.2f; // 溜め・行き過ぎが枠からはみ出さないよう上下に余白を取る
+        constexpr float kMaxY   = 1.2f;
+
+        const ImVec2 p0 = ImGui::GetCursorScreenPos();
+        const ImVec2 p1(p0.x + kWidth, p0.y + kHeight);
+        const auto   toY = [&](float v) { return p1.y - (v - kMinY) / (kMaxY - kMinY) * kHeight; };
+
+        ImDrawList *draw = ImGui::GetWindowDrawList();
+        draw->AddRectFilled(p0, p1, IM_COL32(30, 30, 34, 255));
+        draw->AddLine(ImVec2(p0.x, toY(0.0f)), ImVec2(p1.x, toY(0.0f)), IM_COL32(255, 255, 255, 50));
+        draw->AddLine(ImVec2(p0.x, toY(1.0f)), ImVec2(p1.x, toY(1.0f)), IM_COL32(255, 255, 255, 50));
+
+        constexpr int kSamples = 48;
+        ImVec2        points[kSamples + 1];
+        for (int i = 0; i <= kSamples; ++i)
+        {
+            const float t = static_cast<float>(i) / kSamples;
+            points[i]     = ImVec2(p0.x + t * kWidth, toY(DataDrivenFormation::Ease(layer, t)));
+        }
+        draw->PushClipRect(p0, p1, true);
+        draw->AddPolyline(points, kSamples + 1, IM_COL32(120, 220, 255, 255), ImDrawFlags_None, 2.0f);
+        draw->PopClipRect();
+
+        ImGui::Dummy(ImVec2(kWidth, kHeight));
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("横 : 1つの席が動き始めてから動き切るまで\n"
+                              "縦 : 下の線 = 始まりの値 / 上の線 = 終わりの値");
+    }
+
+    // 細かい形はアニメーションと同じカーブエディタで直す。既定（キー無し）は直す対象のキーが無いので、
+    // 同じ形（t*t）のキーを置いてから始める。
+    if (ImGui::TreeNode("形を手で直す"))
+    {
+        if (layer.curve.empty())
+        {
+            if (ImGui::Button("既定の形から直し始める"))
+            {
+                // エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど t*t になる。
+                constexpr EaseKey kEaseInKeys[] = {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic},
+                                                   {1.0f, 1.0f, 2.0f, 0.0f, CurveInterp::Cubic}};
+                setCurve(kCustomEaseId, kEaseInKeys, IM_ARRAYSIZE(kEaseInKeys));
+            }
+        }
+        else
+        {
+            CurveEditorWidget::Options options;
+            options.height       = 200.0f;
+            options.fitRequested = (m_curveLayer != &layer);
+            m_curveLayer         = &layer;
+
+            if (m_curveWidget.Draw("##easeCurve", {&layer.curve}, options))
+            {
+                layer.curve.name = kCustomEaseId;
+                changed          = true;
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    return changed;
+}
+
 bool FormationEditorWindow::DrawLayers(Asset &asset)
 {
     bool changed = false;
@@ -543,10 +709,7 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     else if (layer.from == layer.to)
         ImGui::TextColored(kWarn, "始まりと終わりが同じなので、この動きは形を変えない");
 
-    if (layer.curve.empty())
-        ImGui::TextDisabled("緩急 : 既定（p*p。溜めてから速くなる）");
-    else
-        ImGui::TextDisabled("緩急 : カーブ %zu 点（JSON の curve で編集）", layer.curve.keys.size());
+    changed |= DrawEase(layer);
 
     return changed;
 }
@@ -633,8 +796,9 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
 {
     ImGui::SeparatorText("陣形");
 
+    // 名前のある枠（縦割り等）も空き枠も、データ陣形なら全部並べる。
     auto &registry = FormationRegistry::Instance();
-    for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
+    for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
         const auto type = static_cast<DroneFormationType>(slot);
         auto      *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
@@ -815,6 +979,7 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &) {}
 void FormationEditorWindow::DrawListPane(EditorContext &) {}
 void FormationEditorWindow::DrawEditPane(EditorContext &) {}
 bool FormationEditorWindow::DrawTimeline(Asset &) { return false; }
+bool FormationEditorWindow::DrawEase(Layer &) { return false; }
 void FormationEditorWindow::DrawViewPane(EditorContext &) {}
 bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &, void *) { return false; }
 bool FormationEditorWindow::DrawLayers(Asset &) { return false; }
