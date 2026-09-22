@@ -1,167 +1,31 @@
 // 陣形エディタの実装。FormationRegistry が持つ実体を直接書き換える。
 #include "FormationEditorWindow.h"
 
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
 #include "Game/Logics/AI/Drone/Formation/FormationAssetIO.h"
+#include "Game/Logics/AI/Drone/Formation/FormationAssetMeta.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <utility>
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
+#include <imgui_internal.h> // ImRect（ImSequencer の描画コールバックが受け取る）
+
+#include "ImSequencer.h"
+
+#include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
 using namespace CCL::AI::Formation;
 using CCL::AI::Formation::Data::DataDrivenFormation;
-
-#ifdef ENABLE_EDITOR
-namespace
-{
-    // ---------------------------------------------------------------------------
-    // 画面に出す言葉と、内部の値の対応表
-    // ---------------------------------------------------------------------------
-
-    // 形。内部では「列の軸・中央揃え・列の起点」の3項目だが、既存の全技は
-    // この3通りのどれかに収まる。3項目を別々に出すと組み合わせを自分で考えることになり、
-    // 何から始めればいいか分からなくなる。
-    enum class ShapeKind
-    {
-        WallSide,  // 壁：横に敷く（刃・縦割り）
-        WallDepth, // 壁：前後に敷く（挟み込み2段）
-        Arm,       // 腕：前へ伸ばす（薙ぎ払い・挟み込み1段）
-    };
-    constexpr const char *kShapeNames[] = {
-        "壁：横に敷く", "壁：前後に敷く", "腕：前へ伸ばす"};
-
-    // 動き。内部の「種類 × 軸」を、見たままの動作1つに畳んである。
-    // 「Rotate の軸が Right」から「前へ倒れる」を頭の中で復元させない。
-    struct MotionKind
-    {
-        LayerType type;
-        AssetAxis axis;
-    };
-    constexpr MotionKind kMotions[] = {
-        {LayerType::Rotate, AssetAxis::Right},      // 前へ倒す
-        {LayerType::Rotate, AssetAxis::Up},         // 横へ振る
-        {LayerType::Rotate, AssetAxis::Forward},    // 横へ倒す
-        {LayerType::Translate, AssetAxis::Right},   // 横へ動かす
-        {LayerType::Translate, AssetAxis::Up},      // 上下に動かす
-        {LayerType::Translate, AssetAxis::Forward}, // 前後に動かす
-        {LayerType::Shiver, AssetAxis::Right},      // 横に震わせる
-        {LayerType::Shiver, AssetAxis::Up},         // 上下に震わせる
-        {LayerType::Shiver, AssetAxis::Forward},    // 前後に震わせる
-    };
-    constexpr const char *kMotionNames[] = {
-        "前へ倒す", "横へ振る", "横へ倒す",
-        "横へ動かす", "上下に動かす", "前後に動かす",
-        "横に震わせる（予告）", "上下に震わせる（予告）", "前後に震わせる（予告）"};
-    constexpr int kMotionCount = static_cast<int>(std::size(kMotions));
-
-    int MotionIndexOf(const FormationLayer &layer)
-    {
-        for (int i = 0; i < kMotionCount; ++i)
-            if (kMotions[i].type == layer.type && kMotions[i].axis == layer.axis) return i;
-        return 0;
-    }
-
-    // 動き方。内部の「ずらす基準(None/Column/Row/Group) × 逆順」を1つの選択肢に畳む。
-    // 2つの項目を見比べて頭の中で合成させない。
-    struct OrderKind
-    {
-        PhaseSource source;
-        bool        reverse;
-    };
-    constexpr OrderKind kOrders[] = {
-        {PhaseSource::None, false},
-        {PhaseSource::Column, false},
-        {PhaseSource::Column, true},
-        {PhaseSource::Row, false},
-        {PhaseSource::Row, true},
-        {PhaseSource::Group, false},
-        {PhaseSource::Group, true},
-    };
-    constexpr int kOrderCount = static_cast<int>(std::size(kOrders));
-
-    // 列の並ぶ向きで言葉が変わる。横に敷いた壁の「列」は左右だが、
-    // 前後に敷いた壁の「列」は手前と奥になる。
-    const char *OrderName(int index, AssetAxis columnAxis)
-    {
-        const bool depth = (columnAxis == AssetAxis::Forward);
-        switch (index)
-        {
-        case 0:
-            return "全機いっせいに";
-        case 1:
-            return depth ? "手前から順に" : "左から順に";
-        case 2:
-            return depth ? "奥から順に" : "右から順に";
-        case 3:
-            return "低いほうから順に";
-        case 4:
-            return "高いほうから順に";
-        case 5:
-            return "下の段から順に";
-        case 6:
-            return "上の段から順に";
-        default:
-            return "?";
-        }
-    }
-
-    int OrderIndexOf(const FormationLayer &layer)
-    {
-        for (int i = 0; i < kOrderCount; ++i)
-            if (kOrders[i].source == layer.phaseSource && kOrders[i].reverse == layer.phaseReverse)
-                return i;
-        return 0;
-    }
-
-    constexpr const char *kLookNames[] = {
-        "動きに合わせる", "プレイヤーのほうを向く", "内側を向く（左右で向かい合う）"};
-    constexpr const char *kChargeNames[] = {
-        "向きを決めて直進する", "形を保ったまま動く", "バネで遅れて追いつく"};
-
-    constexpr const char *kTemplateNames[] = {
-        "壁を作って倒す（縦割り系）",
-        "腕を伸ばして薙ぐ（横なぎ系）",
-        "左右から挟む（挟み込み系）",
-        "空から作る",
-    };
-
-    ShapeKind ShapeOf(const FormationLayout &layout)
-    {
-        if (!layout.centerColumns) return ShapeKind::Arm;
-        return (layout.columnAxis == AssetAxis::Forward) ? ShapeKind::WallDepth : ShapeKind::WallSide;
-    }
-
-    void ApplyShape(FormationLayout &layout, ShapeKind kind)
-    {
-        switch (kind)
-        {
-        case ShapeKind::WallSide:
-            layout.columnAxis    = AssetAxis::Right;
-            layout.centerColumns = true;
-            break;
-        case ShapeKind::WallDepth:
-            layout.columnAxis    = AssetAxis::Forward;
-            layout.centerColumns = true;
-            break;
-        case ShapeKind::Arm:
-            layout.columnAxis    = AssetAxis::Forward;
-            layout.centerColumns = false;
-            // 腕は「ボスから離れた位置」から伸びる。0 のままだとボスに刺さる。
-            if (layout.baseA <= 0.0f) layout.baseA = 3.0f;
-            break;
-        }
-    }
-} // namespace
-#endif // ENABLE_EDITOR
-
-// ---------------------------------------------------------------------------
 
 FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 {
@@ -171,12 +35,160 @@ FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 
 #ifdef ENABLE_EDITOR
 
-void FormationEditorWindow::Help(const char *title, const char *body)
+// ---------------------------------------------------------------------------
+// ImSequencer とのつなぎ
+// ---------------------------------------------------------------------------
+// ImSequencer は帯の両端を int のフレームで受け取り、ドラッグ中はそのアドレスへ直接書き込む。
+// こちらの時間帯は 0〜1 の float なので、int の置き場所(m_frames)を別に持って往復させる。
+//   データ → m_frames : Sync()。掴んでいる間は呼ばない（ドラッグ中の値を毎フレーム巻き戻してしまう）
+//   m_frames → データ : Flush()。掴んだ帯が実際に動いたときだけ書き戻す（クリックしただけで
+//                       書き戻すと、欄に打った 0.333 が刻みの 0.34 へ丸められる）
+
+class FormationEditorWindow::LayerSequence : public ImSequencer::SequenceInterface
 {
-    if (!ImGui::IsItemHovered()) return;
-    m_helpTitle = title;
-    m_helpBody  = body;
+public:
+    /// 0〜1 を何等分するか。攻撃が0.4秒なら1刻み8ミリ秒で、ゲームの1コマ(16ミリ秒)より細かい。
+    /// ImSequencer は1刻みを既定で10pxで描くので、増やすと横スクロールが要るようになる。
+    static constexpr int kFrames = 50;
+
+    static int   ToFrame(float t) { return static_cast<int>(std::lround(t * kFrames)); }
+    static float ToTime(int frame) { return static_cast<float>(frame) / kFrames; }
+
+    Asset *asset    = nullptr;
+    float  progress = 0.0f; // 帯の濃淡に使う（再生位置が帯の中にあるか）
+
+    bool IsEditing() const { return m_editIndex >= 0; }
+
+    void Sync()
+    {
+        m_frames.resize(asset->layers.size());
+        for (size_t i = 0; i < asset->layers.size(); ++i)
+            m_frames[i] = ToFrames(asset->layers[i]);
+    }
+
+    /// 掴んでいた帯が動いていたらデータへ書き戻す。書き戻したら true。
+    bool Flush()
+    {
+        const int index = m_editIndex >= 0 ? m_editIndex : m_releasedIndex;
+        m_releasedIndex = -1;
+        if (index < 0 || index >= static_cast<int>(asset->layers.size())) return false;
+
+        // ImSequencer は左端のはみ出しは止めるが、右端は止めない。
+        auto &[start, end] = m_frames[index];
+        end                = std::min(end, kFrames - 1);
+        start              = std::min(start, end);
+
+        FormationLayer &layer = asset->layers[index];
+        if (m_frames[index] == ToFrames(layer)) return false;
+
+        // 帯は「開始のコマの左端」から「終了のコマの右端」まで描かれるので、終了は +1 して戻す。
+        const float oldWidth = layer.windowEnd - layer.windowBegin;
+        layer.windowBegin    = ToTime(start);
+        layer.windowEnd      = ToTime(end + 1);
+        const float newWidth = layer.windowEnd - layer.windowBegin;
+
+        // 動きの長さは帯の幅ではなく duration が決める（評価器は windowBegin から duration かけて進む）。
+        // 帯と一緒に duration も同じ比率で伸び縮みさせないと、帯を縮めても動きは縮まない。
+        // 比率で持つので、波の扇の開き方（duration / 帯の幅）はドラッグしても変わらない。
+        if (oldWidth > 0.0f) layer.duration = std::min(newWidth, layer.duration * newWidth / oldWidth);
+        return true;
+    }
+
+    int GetFrameMin() const override { return 0; }
+    int GetFrameMax() const override { return kFrames; }
+    int GetItemCount() const override { return static_cast<int>(asset->layers.size()); }
+
+    void BeginEdit(int index) override { m_editIndex = index; }
+    void EndEdit() override
+    {
+        m_releasedIndex = m_editIndex;
+        m_editIndex     = -1;
+    }
+
+    const char *GetItemLabel(int index) const override
+    {
+        const FormationLayer &layer = asset->layers[index];
+        std::snprintf(m_label, sizeof(m_label), "%d. %s / %s", index + 1,
+                      Meta::kLayerTypeNames[static_cast<int>(layer.type)],
+                      Meta::kAxisNames[static_cast<int>(layer.axis)]);
+        return m_label;
+    }
+
+    void Get(int index, int **start, int **end, int *type, unsigned int *color) override
+    {
+        // 種類ごとの帯の色。並びは LayerType の宣言順（Rotate / Translate / Shiver）。
+        constexpr ImU32 kTypeColors[] = {
+            IM_COL32(80, 140, 230, 255),
+            IM_COL32(90, 190, 120, 255),
+            IM_COL32(230, 160, 60, 255),
+        };
+
+        const FormationLayer &layer = asset->layers[index];
+        if (start) *start = &m_frames[index].first;
+        if (end) *end = &m_frames[index].second;
+        if (type) *type = static_cast<int>(layer.type);
+        if (color)
+        {
+            // 再生位置が帯の中にある間だけ明るくする。今どの動きが形を動かしているかが一目で分かる。
+            const bool  active = (layer.windowBegin <= progress && progress <= layer.windowEnd);
+            const ImU32 base   = kTypeColors[static_cast<int>(layer.type)];
+            *color             = active ? base : ((base >> 1) & 0x007F7F7F);
+        }
+    }
+
+    /// 帯の上に斜線を描く。1本 = 1つの席（列・段）が動き始めてから動き切るまで。
+    /// 扇状に広がっていれば「波」、1本なら全機いっせい。
+    void CustomDrawCompact(int index, ImDrawList *draw, const ImRect &rc, const ImRect &clip) override
+    {
+        // 波の本数は目安。実際の列数を出すには割付の式をここへ書き直すことになり、評価器と二重管理になる。
+        constexpr int kFanLines = 6;
+
+        // rc は「フレーム -0.5 〜 最終フレーム +0.5」の範囲で渡される。一方で帯はコマの左端から、
+        // しかも ImSequencer 内の子ウィンドウの余白(FramePadding)ぶん右へずれて描かれるので、両方を足して揃える。
+        const float cell = (rc.Max.x - rc.Min.x) / (GetFrameMax() - GetFrameMin() + 1);
+        const float left = rc.Min.x + ImGui::GetStyle().FramePadding.x - 0.5f * cell;
+        const auto  toX  = [&](float t) { return left + t * kFrames * cell; };
+        const float y0   = rc.Min.y + 4.0f;
+        const float y1   = rc.Max.y - 3.0f;
+
+        const FormationLayer &layer    = asset->layers[index];
+        const int             lines    = (layer.phaseSource == PhaseSource::None) ? 1 : kFanLines;
+        const float           width    = layer.windowEnd - layer.windowBegin;
+        const float           duration = std::min(layer.duration, width); // 評価器と同じ抑え方
+        const float           slack    = width - duration;
+
+        draw->PushClipRect(clip.Min, clip.Max, true);
+        for (int k = 0; k < lines; ++k)
+        {
+            // 評価器の start = windowBegin + seatT * (窓幅 - duration) と同じ式で引く。
+            const float seatT = (lines == 1) ? 0.0f : static_cast<float>(k) / (lines - 1);
+            const float start = layer.windowBegin + seatT * slack;
+            draw->AddLine(ImVec2(toX(start), y1), ImVec2(toX(start + duration), y0), IM_COL32(255, 255, 255, 170));
+        }
+        draw->PopClipRect();
+    }
+
+private:
+    static std::pair<int, int> ToFrames(const FormationLayer &layer)
+    {
+        const int start = ToFrame(layer.windowBegin);
+        return {start, std::max(start, ToFrame(layer.windowEnd) - 1)};
+    }
+
+    std::vector<std::pair<int, int>> m_frames;
+
+    int m_editIndex     = -1; // 掴んでいる帯。離すと -1
+    int m_releasedIndex = -1; // 離したフレームだけ、離した帯の番号が入る
+
+    mutable char m_label[64] = {}; // GetItemLabel の戻り値の置き場所（呼び出し側はすぐ描いて捨てる）
+};
+
+FormationEditorWindow::FormationEditorWindow()
+    : EditorWindow("Formation Editor", false), m_sequence(std::make_unique<LayerSequence>())
+{
 }
+
+FormationEditorWindow::~FormationEditorWindow() = default;
 
 int FormationEditorWindow::CountDrones(EditorContext &context) const
 {
@@ -207,8 +219,7 @@ void FormationEditorWindow::PushStage(EditorContext &context)
         if (m_progress > 1.0f) m_progress = 0.0f;
     }
 
-    auto *asset = CurrentAsset();
-    if (!asset) return;
+    if (!CurrentAsset()) return;
 
     auto view = context.world->View<BossCommandComponent>();
     for (auto boss : view)
@@ -273,13 +284,23 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &context)
 }
 
 // ---------------------------------------------------------------------------
-// 新規作成
+// 複製
 // ---------------------------------------------------------------------------
 
-bool FormationEditorWindow::CreateFromTemplate(int templateIndex, const char *fileName)
+bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
 {
-    auto &registry = FormationRegistry::Instance();
+    const Asset *src = CurrentAsset();
+    if (!src) return false;
 
+    // 同名のファイルを黙って上書きすると、別の技が消える。
+    const std::string path = std::string("Assets/Formations/") + fileName + ".json";
+    if (FileSystem::Exists(path))
+    {
+        m_status = "同じ名前のファイルがあります : " + path;
+        return false;
+    }
+
+    auto   &registry = FormationRegistry::Instance();
     uint8_t freeSlot = 0;
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
@@ -295,118 +316,10 @@ bool FormationEditorWindow::CreateFromTemplate(int templateIndex, const char *fi
         return false;
     }
 
-    Asset asset;
-    asset.slot       = freeSlot;
-    asset.name       = fileName;
-    asset.sourcePath = std::string("Assets/Formations/") + fileName + ".json";
-
-    // 雛形は「出発点」であって完成形ではない。ここから層を足す・消す・並べ替えると
-    // 別の技になる。プリセットを選ぶだけのUIに退行させないための線引き。
-    FormationLayer layer;
-    switch (templateIndex)
-    {
-    case 0: // 壁を作って倒す
-        ApplyShape(asset.layout, ShapeKind::WallSide);
-        asset.layout.spacingA = asset.layout.spacingB = 2.5f;
-        asset.origin.forward                          = 5.0f;
-        asset.origin.up                               = 2.0f;
-        asset.attackSeconds                           = 0.4000f;
-        layer.type                                    = LayerType::Rotate;
-        layer.axis                                    = AssetAxis::Right;
-        layer.from                                    = 0.0f;
-        layer.to                                      = 109.0f;
-        asset.layers.push_back(layer);
-        break;
-
-    case 1: // 腕を伸ばして薙ぐ
-        ApplyShape(asset.layout, ShapeKind::Arm);
-        asset.assign.rows     = 3;
-        asset.layout.baseA    = 4.0f;
-        asset.layout.spacingA = 2.0f;
-        asset.layout.baseB    = 1.5f;
-        asset.layout.spacingB = 1.5f;
-        asset.attackSeconds   = 0.6250f;
-        layer.type            = LayerType::Rotate;
-        layer.axis            = AssetAxis::Up;
-        layer.from            = 100.0f;
-        layer.to              = -100.0f;
-        asset.layers.push_back(layer);
-        break;
-
-    case 2: // 左右から挟む
-        ApplyShape(asset.layout, ShapeKind::Arm);
-        asset.assign.sideGroups = 2;
-        asset.assign.split      = AssetSplit::Interleaved;
-        asset.assign.rows       = 2;
-        asset.layout.baseA      = 3.0f;
-        asset.layout.spacingA   = 1.8f;
-        asset.layout.baseB      = 0.8f;
-        asset.layout.spacingB   = 1.5f;
-        asset.attackSeconds     = 0.3333f;
-        asset.output.look       = LookMode::ToPlayer;
-        layer.type              = LayerType::Rotate;
-        layer.axis              = AssetAxis::Up;
-        layer.from              = 86.0f;
-        layer.to                = 0.0f;
-        layer.mirror            = true;
-        asset.layers.push_back(layer);
-        layer        = FormationLayer{};
-        layer.type   = LayerType::Translate;
-        layer.axis   = AssetAxis::Right;
-        layer.from   = 0.0f;
-        layer.to     = 0.8f;
-        layer.mirror = true;
-        asset.layers.push_back(layer);
-        break;
-
-    default: // 空から
-        ApplyShape(asset.layout, ShapeKind::WallSide);
-        asset.origin.forward = 5.0f;
-        asset.origin.up      = 2.0f;
-        break;
-    }
-
-    if (!FormationAssetIO::Save(asset.sourcePath, asset))
-    {
-        m_status = "作成に失敗しました（コンソールを確認）";
-        return false;
-    }
-
-    registry.Register<DataDrivenFormation>(static_cast<DroneFormationType>(freeSlot))
-        ->SetAsset(asset);
-
-    m_slot   = static_cast<DroneFormationType>(freeSlot);
-    m_dirty  = false;
-    m_status = "作成しました : " + asset.sourcePath;
-    return true;
-}
-
-bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
-{
-    const Asset *src = CurrentAsset();
-    if (!src) return false;
-
-    auto &registry = FormationRegistry::Instance();
-
-    uint8_t freeSlot = 0;
-    for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
-    {
-        if (!registry.Has(static_cast<DroneFormationType>(slot)))
-        {
-            freeSlot = slot;
-            break;
-        }
-    }
-    if (freeSlot == 0)
-    {
-        m_status = "空き枠がありません";
-        return false;
-    }
-
     Asset copy      = *src;
     copy.slot       = freeSlot; // 枠は技の識別子。複製で同じ番号を名乗らせない
     copy.name       = fileName;
-    copy.sourcePath = std::string("Assets/Formations/") + fileName + ".json";
+    copy.sourcePath = path;
 
     if (!FormationAssetIO::Save(copy.sourcePath, copy))
     {
@@ -414,13 +327,189 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
         return false;
     }
 
-    registry.Register<DataDrivenFormation>(static_cast<DroneFormationType>(freeSlot))
-        ->SetAsset(copy);
+    registry.Register<DataDrivenFormation>(static_cast<DroneFormationType>(freeSlot))->SetAsset(copy);
 
     m_slot   = static_cast<DroneFormationType>(freeSlot);
     m_dirty  = false;
     m_status = "複製しました : " + copy.sourcePath;
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// 表を描く
+// ---------------------------------------------------------------------------
+
+bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &fields, void *obj)
+{
+    // 同じ表を動きの層ごとに何度も描くので、ID は描く対象のアドレスで分ける。
+    ImGui::PushID(obj);
+
+    bool changed = false;
+    if (ImGui::BeginTable("fields", 2))
+    {
+        ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthFixed, 170.0f);
+        ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+
+        for (const FieldDescriptor &fd : fields)
+        {
+            ImGui::PushID(fd.jsonName);
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(fd.name);
+            // 入力欄だけでなく表示名にマウスを乗せても説明を出す（こちらの方が狙いやすい）。
+            if (fd.tooltip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fd.tooltip);
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            changed |= ComponentMetaImGui::DrawField(fd, obj);
+
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::PopID();
+    return changed;
+}
+
+bool FormationEditorWindow::DrawLayers(Asset &asset)
+{
+    bool changed = false;
+
+    // 再生の操作はタイムラインの真上に置く。進行度と帯が同じ時間軸だと目で分かるように。
+    ImGui::BeginDisabled(!m_staged);
+    if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(70, 0))) m_playing = !m_playing;
+    ImGui::SameLine();
+    if (ImGui::Button("0 に戻す", ImVec2(80, 0)))
+    {
+        m_progress = 0.0f;
+        m_playing  = false;
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (m_staged)
+        ImGui::Text("進行度 %.2f", m_progress);
+    else
+        ImGui::TextDisabled("右の「実機に出す」を ON にすると形が動く");
+
+    changed |= DrawTimeline(asset);
+
+    // 追加・並べ替え・削除は「選んでいる動き」に対して行う。
+    const int count         = static_cast<int>(asset.layers.size());
+    m_selectedLayer         = std::clamp(m_selectedLayer, 0, std::max(0, count - 1));
+    const bool hasSelection = (count > 0);
+
+    if (ImGui::Button("+ 動きを足す"))
+    {
+        // 既定値（始まりも終わりも 0）のままだと、足しても形が動かず効いているか分からない。
+        // 足した瞬間に実機で見て取れるよう、全体を 5m 持ち上げる動きで始める。
+        FormationLayer &added = asset.layers.emplace_back();
+        added.type            = LayerType::Translate;
+        added.axis            = AssetAxis::Up;
+        added.to              = 5.0f;
+        m_selectedLayer       = count;
+        changed               = true;
+    }
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!hasSelection || m_selectedLayer == 0);
+    if (ImGui::ArrowButton("up", ImGuiDir_Up))
+    {
+        std::swap(asset.layers[m_selectedLayer], asset.layers[m_selectedLayer - 1]);
+        --m_selectedLayer;
+        changed = true;
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!hasSelection || m_selectedLayer == count - 1);
+    if (ImGui::ArrowButton("down", ImGuiDir_Down))
+    {
+        std::swap(asset.layers[m_selectedLayer], asset.layers[m_selectedLayer + 1]);
+        ++m_selectedLayer;
+        changed = true;
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!hasSelection);
+    if (ImGui::Button("消す"))
+    {
+        asset.layers.erase(asset.layers.begin() + m_selectedLayer);
+        m_selectedLayer = std::max(0, m_selectedLayer - 1);
+        changed         = true;
+    }
+    ImGui::EndDisabled();
+
+    if (asset.layers.empty()) return changed;
+
+    FormationLayer &layer = asset.layers[m_selectedLayer];
+
+    char title[64];
+    std::snprintf(title, sizeof(title), "選んでいる動き : %d. %s / %s", m_selectedLayer + 1,
+                  Meta::kLayerTypeNames[static_cast<int>(layer.type)],
+                  Meta::kAxisNames[static_cast<int>(layer.axis)]);
+    ImGui::SeparatorText(title);
+
+    changed |= DrawFields(Meta::LayerFields(), &layer);
+
+    // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す。
+    constexpr ImVec4 kWarn(1.0f, 0.75f, 0.2f, 1.0f);
+    if (layer.type == LayerType::Shiver)
+        ImGui::TextColored(kWarn, "Shiver は撃つ前（進行度 0）の震え。時間帯は使わず、攻撃中は何もしない");
+    else if (layer.from == layer.to)
+        ImGui::TextColored(kWarn, "始まりと終わりが同じなので、この動きは形を変えない");
+
+    if (layer.curve.empty())
+        ImGui::TextDisabled("緩急 : 既定（p*p。溜めてから速くなる）");
+    else
+        ImGui::TextDisabled("緩急 : カーブ %zu 点（JSON の curve で編集）", layer.curve.keys.size());
+
+    return changed;
+}
+
+bool FormationEditorWindow::DrawTimeline(Asset &asset)
+{
+    // ImSequencer は動きが1つも無いと何も描かない。
+    if (asset.layers.empty())
+    {
+        ImGui::TextDisabled("動きがありません（待機の形のまま）");
+        return false;
+    }
+
+    LayerSequence &sequence = *m_sequence;
+    sequence.asset          = &asset;
+    sequence.progress       = m_progress;
+    if (!sequence.IsEditing()) sequence.Sync();
+
+    int       frame  = LayerSequence::ToFrame(m_progress);
+    const int before = frame;
+
+    // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める。
+    //   目盛り(20) + 行(20 x 数) + 下の横スクロール(14) + 内側の余白(8) + 少しの余裕
+    constexpr float kItemHeight = 20.0f;
+    const float     height      = kItemHeight * (asset.layers.size() + 1) + 14.0f + 8.0f + 4.0f;
+
+    ImGui::BeginChild("timeline", ImVec2(0.0f, height));
+    ImSequencer::Sequencer(&sequence, &frame, nullptr, &m_selectedLayer, &m_firstFrame,
+                           ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
+    ImGui::EndChild();
+
+    ImGui::TextDisabled("帯の端 : 伸び縮み / 帯の中 : 丸ごと移動 / 上の目盛り : 進行度 / Ctrl+ホイール : 拡大");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("帯 = この動きが働く時間帯\n"
+                          "斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで\n"
+                          "帯が明るい間 = 今この動きが形を動かしている");
+
+    if (frame != before)
+    {
+        m_progress = LayerSequence::ToTime(frame);
+        m_playing  = false;
+    }
+
+    return sequence.Flush();
 }
 
 // ---------------------------------------------------------------------------
@@ -430,7 +519,7 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
 void FormationEditorWindow::DrawContents(EditorContext &context)
 {
     constexpr float kListWidth = 170.0f;
-    constexpr float kViewWidth = 280.0f;
+    constexpr float kViewWidth = 220.0f;
 
     ImGui::BeginChild("list", ImVec2(kListWidth, 0), true);
     DrawListPane(context);
@@ -449,8 +538,7 @@ void FormationEditorWindow::DrawContents(EditorContext &context)
 
 void FormationEditorWindow::DrawListPane(EditorContext &context)
 {
-    ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f), "陣形");
-    ImGui::Separator();
+    ImGui::SeparatorText("陣形");
 
     auto &registry = FormationRegistry::Instance();
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
@@ -459,47 +547,25 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
         auto      *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
         if (!data) continue;
 
-        const bool selected = (type == m_slot);
-        if (ImGui::Selectable(data->GetAsset().name.c_str(), selected))
+        if (ImGui::Selectable(data->GetAsset().name.c_str(), type == m_slot))
         {
-            m_slot  = type;
-            m_dirty = false;
+            m_slot          = type;
+            m_selectedLayer = 0;
+            m_dirty         = false;
             m_status.clear();
 
-            // 掌握中に選び直したら、そのまま新しい陣形を出す。いちいち
-            // 「実機に出す」を押し直させない。
+            // 掌握中に選び直したら、そのまま新しい陣形を出す（「実機に出す」を押し直させない）。
             if (m_staged) PushStage(context);
         }
     }
 
     ImGui::Separator();
 
-    if (ImGui::Button("+ 新しく", ImVec2(-1, 0))) ImGui::OpenPopup("新しい陣形");
-    if (ImGui::Button("複製", ImVec2(-1, 0)))
-    {
-        if (CurrentAsset()) ImGui::OpenPopup("陣形の複製");
-    }
-
-    if (ImGui::BeginPopupModal("新しい陣形", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::TextUnformatted("どんな技から始めますか？");
-        ImGui::Combo("##tpl", &m_newTemplate, kTemplateNames,
-                     static_cast<int>(std::size(kTemplateNames)));
-        ImGui::TextDisabled("雛形は出発点です。あとから動きを足す・消す・\n"
-                            "並べ替えると別の技になります。");
-        ImGui::Spacing();
-        ImGui::InputText("ファイル名", m_newFileName, sizeof(m_newFileName));
-        ImGui::TextDisabled("Assets/Formations/%s.json に保存されます", m_newFileName);
-
-        ImGui::Spacing();
-        if (ImGui::Button("作成", ImVec2(100, 0)))
-        {
-            if (CreateFromTemplate(m_newTemplate, m_newFileName)) ImGui::CloseCurrentPopup();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("やめる", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
-        ImGui::EndPopup();
-    }
+    ImGui::BeginDisabled(!CurrentAsset());
+    if (ImGui::Button("複製して新しく作る", ImVec2(-1, 0))) ImGui::OpenPopup("陣形の複製");
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("選んでいる技を別名で複製する。近い技を選んでから押すと早い。");
 
     if (ImGui::BeginPopupModal("陣形の複製", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -512,6 +578,7 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
         }
         ImGui::SameLine();
         if (ImGui::Button("やめる", ImVec2(100, 0))) ImGui::CloseCurrentPopup();
+        if (!m_status.empty()) ImGui::TextWrapped("%s", m_status.c_str());
         ImGui::EndPopup();
     }
 }
@@ -521,22 +588,10 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
     Asset *asset = CurrentAsset();
     if (!asset)
     {
-        ImGui::TextWrapped("左の「+ 新しく」から陣形を作ってください。");
+        ImGui::TextWrapped("左の一覧から陣形を選んでください。");
         return;
     }
 
-    // 名前とファイル。名前は BT の候補にも出るので、ここで直せるようにしておく。
-    char nameBuf[64];
-    std::snprintf(nameBuf, sizeof(nameBuf), "%s", asset->name.c_str());
-    ImGui::SetNextItemWidth(-140.0f);
-    if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)))
-    {
-        asset->name = nameBuf;
-        m_dirty     = true;
-    }
-    Help("陣形の名前", "左の一覧と、ボスBTの候補に出る名前。ファイル名とは別。");
-
-    ImGui::SameLine();
     if (ImGui::Button("保存", ImVec2(60, 0)))
     {
         if (FormationAssetIO::Save(asset->sourcePath, *asset))
@@ -550,8 +605,6 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
             m_status = "保存に失敗しました（コンソールを確認）";
         }
     }
-    Help("保存", "編集した内容をファイルへ書き出す。保存前に検証を通すので、\n"
-                 "保存できたものは必ず読み直せる。");
 
     ImGui::SameLine();
     if (ImGui::Button("戻す", ImVec2(60, 0)))
@@ -564,7 +617,7 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
             m_status = "ファイルから読み直しました";
         }
     }
-    Help("戻す", "編集中の内容を捨てて、保存済みのファイルの状態へ巻き戻す。");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("編集中の内容を捨てて、保存済みのファイルの状態へ戻す。");
 
     if (m_dirty)
     {
@@ -574,412 +627,42 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
 
     ImGui::Separator();
 
-    DrawShapeSection(*asset, context);
-    ImGui::Spacing();
-    DrawPlacementSection(*asset);
-    ImGui::Spacing();
-    DrawMotionSection(*asset);
-    ImGui::Spacing();
-    DrawSpeedSection(*asset);
-    ImGui::Spacing();
-    DrawCombatSection(*asset);
-}
+    // 画面の主役は「動き」。評価器も「待機の形を作る → 動きを順にかける」の2段なので、
+    // 待機の形（割付・形・配置）は1つにまとめ、見出しに結果だけを出して既定では畳む。
+    bool changed = false;
 
-void FormationEditorWindow::DrawShapeSection(Asset &asset, EditorContext &context)
-{
-    ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f), "並べ方");
-
-    int shape = static_cast<int>(ShapeOf(asset.layout));
-    ImGui::SetNextItemWidth(200.0f);
-    if (ImGui::Combo("形", &shape, kShapeNames, static_cast<int>(std::size(kShapeNames))))
-    {
-        ApplyShape(asset.layout, static_cast<ShapeKind>(shape));
-        m_dirty = true;
-    }
-    Help("形",
-         "壁：横に敷く    ボスの正面に立つ一枚の壁。縦割りの刃はこれ。\n"
-         "壁：前後に敷く  奥行き方向に長い壁。挟み込み2段の左右の壁。\n"
-         "腕：前へ伸ばす  ボスから前へ伸びる一本の線。回す動きと組むと薙ぎ払いになる。");
-
-    if (ShapeOf(asset.layout) == ShapeKind::Arm)
-    {
-        ImGui::SetNextItemWidth(120.0f);
-        m_dirty |= ImGui::DragFloat("根元の距離", &asset.layout.baseA, 0.05f, 0.0f, 50.0f, "%.2f m");
-        Help("根元の距離", "腕の内側の端をボスからどれだけ離すか。0 にするとボスに刺さる。");
-    }
-
-    ImGui::SetNextItemWidth(120.0f);
-    m_dirty |= ImGui::DragInt("1列の機数", &asset.assign.rows, 0.1f, 0, 32,
-                              asset.assign.rows <= 0 ? "自動" : "%d");
-    Help("1列の機数",
-         "1本の列に何機を縦に積むか。0 にすると機数から正方形に近い格子を自動で組む。\n"
-         "3 にすれば「高さ3機の列」が横にずらりと並ぶ。");
+    if (ImGui::CollapsingHeader("基本", ImGuiTreeNodeFlags_DefaultOpen))
+        changed |= DrawFields(Meta::RootFields(), asset);
 
     int cols = 1, rows = 1;
-    DataDrivenFormation::GridSize(asset, CountDrones(context), cols, rows);
-    ImGui::TextDisabled("  -> %d 列 x %d 行", cols, rows);
-
-    m_dirty |= ImGui::DragFloat("列の間隔", &asset.layout.spacingA, 0.05f, 0.0f, 20.0f, "%.2f m");
-    Help("列の間隔",
-         "隣り合う列の距離。ドローンは画面上でおよそ3mに見えるので、\n"
-         "3m を切ると1枚の塊に潰れて「1000機の個別制御」が読めなくなる。");
-
-    m_dirty |= ImGui::DragFloat("段の間隔", &asset.layout.spacingB, 0.05f, 0.0f, 20.0f, "%.2f m");
-    Help("段の間隔", "同じ列の中で、上へ積むときの距離。");
-
-    m_dirty |= ImGui::DragFloat("下端の高さ", &asset.layout.baseB, 0.05f, -20.0f, 50.0f, "%.2f m");
-    Help("下端の高さ", "形のいちばん下の高さ。回転の軸はここではなく「置く場所」で決まる。");
-
-    ImGui::Spacing();
-
-    bool twoSides = (asset.assign.sideGroups > 1);
-    if (ImGui::Checkbox("左右2つに分ける", &twoSides))
+    DataDrivenFormation::GridSize(*asset, CountDrones(context), cols, rows);
+    char shapeTitle[96];
+    std::snprintf(shapeTitle, sizeof(shapeTitle), "待機の形 : %d 列 x %d 行 / ボスの前 %.1fm###shape",
+                  cols, rows, asset->origin.forward);
+    if (ImGui::CollapsingHeader(shapeTitle))
     {
-        asset.assign.sideGroups = twoSides ? 2 : 1;
-        m_dirty                 = true;
-    }
-    Help("左右2つに分ける",
-         "機体を2組に分け、動きの向きを左右で反転できるようにする。\n"
-         "挟み込みのように「2本の腕が対称に閉じる」技に使う。\n"
-         "分けると、各レイヤーに「左右で対称に動かす」が出る。");
-
-    if (twoSides)
-    {
-        bool interleaved = (asset.assign.split == AssetSplit::Interleaved);
-        if (ImGui::Checkbox("1機ずつ交互に配る", &interleaved))
-        {
-            asset.assign.split = interleaved ? AssetSplit::Interleaved : AssetSplit::Block;
-            m_dirty            = true;
-        }
-        Help("配り方",
-             "ON   0,1,0,1, と1機ずつ左右へ配る\n"
-             "OFF  前半を左、後半を右にまとめて配る\n"
-             "撃破で機体が減ったときの崩れ方が変わる。交互のほうが左右が均等に減る。");
+        ImGui::SeparatorText("割付 : 何番の機体がどの席に着くか");
+        changed |= DrawFields(Meta::AssignFields(), &asset->assign);
+        ImGui::SeparatorText("形 : 席をどう並べるか");
+        changed |= DrawFields(Meta::LayoutFields(), &asset->layout);
+        ImGui::SeparatorText("配置 : ボスからどれだけ離すか（回転の軸の位置）");
+        changed |= DrawFields(Meta::OriginFields(), &asset->origin);
     }
 
-    bool twoTiers = (asset.assign.tierGroups > 1);
-    if (ImGui::Checkbox("上下2段に分ける", &twoTiers))
-    {
-        asset.assign.tierGroups = twoTiers ? 2 : 1;
-        m_dirty                 = true;
-    }
-    Help("上下2段に分ける",
-         "機体を上下2組に分ける。段ごとに動き出す時刻をずらせるようになり、\n"
-         "「下の段が先に閉じて、あとから上の段が来る」が作れる。\n"
-         "分けると、各レイヤーの「動き方」に段の選択肢が出る。");
+    if (ImGui::CollapsingHeader("動き : 上から順に待機の形へかかる", ImGuiTreeNodeFlags_DefaultOpen))
+        changed |= DrawLayers(*asset);
 
-    if (twoTiers)
-    {
-        m_dirty |= ImGui::DragFloat("段の高さ差", &asset.layout.tierStepB, 0.05f, -20.0f, 20.0f, "%.2f m");
-        Help("段の高さ差", "下の段と上の段の高さの差。プレイヤーのジャンプ高さと\n"
-                           "合わせて「跳んで避ける／伏せて避ける」を決める。");
-    }
-}
+    if (ImGui::CollapsingHeader("見せ方"))
+        changed |= DrawFields(Meta::OutputFields(), &asset->output);
+    if (ImGui::CollapsingHeader("当たり"))
+        changed |= DrawFields(Meta::CombatFields(), &asset->output.combat);
 
-void FormationEditorWindow::DrawPlacementSection(Asset &asset)
-{
-    ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f), "置く場所（ボスから）");
-
-    m_dirty |= ImGui::DragFloat("前へ", &asset.origin.forward, 0.05f, -50.0f, 50.0f, "%.2f m");
-    m_dirty |= ImGui::DragFloat("高さ", &asset.origin.up, 0.05f, -20.0f, 50.0f, "%.2f m");
-    m_dirty |= ImGui::DragFloat("横へ", &asset.origin.right, 0.05f, -50.0f, 50.0f, "%.2f m");
-    Help("置く場所",
-         "形をボスからどれだけずらして置くか。\n"
-         "回す動きはこの点を軸に回るので、ここが「蝶番の位置」になる。\n"
-         "縦割りの「高さ 2.0」がそのまま蝶番の高さ。軸の位置と回す量が\n"
-         "別々になっているので、片方だけ調整できる。");
-}
-
-void FormationEditorWindow::DrawMotionSection(Asset &asset)
-{
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "動き（上から順に重ねる）");
-    ImGui::SameLine();
-    if (ImGui::SmallButton("+ 追加")) ImGui::OpenPopup("動きを追加");
-
-    if (ImGui::BeginPopup("動きを追加"))
-    {
-        for (int i = 0; i < kMotionCount; ++i)
-        {
-            if (!ImGui::Selectable(kMotionNames[i])) continue;
-
-            FormationLayer layer;
-            layer.type = kMotions[i].type;
-            layer.axis = kMotions[i].axis;
-            if (layer.type == LayerType::Shiver) layer.to = 0.5f;
-            asset.layers.push_back(layer);
-            m_dirty = true;
-        }
-        ImGui::EndPopup();
-    }
-
-    if (asset.layers.empty())
-    {
-        ImGui::TextDisabled("  動きがありません（形が止まったままになります）");
-        return;
-    }
-
-    // 削除と並べ替えはループの後で反映する。走査中に vector を触ると
-    // 次の周回が別の要素を指す。
-    int removeIndex = -1, moveIndex = -1, moveDelta = 0;
-
-    for (int i = 0; i < static_cast<int>(asset.layers.size()); ++i)
-    {
-        FormationLayer &layer = asset.layers[i];
-        ImGui::PushID(i);
-
-        char header[96];
-        std::snprintf(header, sizeof(header), "%d. %s", i + 1,
-                      kMotionNames[MotionIndexOf(layer)]);
-
-        const bool open = ImGui::CollapsingHeader(header, ImGuiTreeNodeFlags_DefaultOpen);
-
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 78.0f);
-        if (ImGui::SmallButton("^"))
-        {
-            moveIndex = i;
-            moveDelta = -1;
-        }
-        Help("順番を上げる", "動きは上から順に重なる。順番を変えると別の技になる。\n"
-                             "「倒してから上げる」と「上げてから倒す」は着地点が違う。");
-        ImGui::SameLine();
-        if (ImGui::SmallButton("v"))
-        {
-            moveIndex = i;
-            moveDelta = +1;
-        }
-        ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
-        if (ImGui::SmallButton("x")) removeIndex = i;
-        ImGui::PopStyleColor();
-
-        if (open)
-        {
-            ImGui::Indent();
-            DrawLayerBody(asset, layer);
-            ImGui::Unindent();
-        }
-        ImGui::PopID();
-    }
-
-    if (moveIndex >= 0)
-    {
-        const int target = moveIndex + moveDelta;
-        if (target >= 0 && target < static_cast<int>(asset.layers.size()))
-        {
-            std::swap(asset.layers[moveIndex], asset.layers[target]);
-            m_dirty = true;
-        }
-    }
-    if (removeIndex >= 0)
-    {
-        asset.layers.erase(asset.layers.begin() + removeIndex);
-        m_dirty = true;
-    }
-}
-
-void FormationEditorWindow::DrawLayerBody(Asset &asset, Layer &layer)
-{
-    int motion = MotionIndexOf(layer);
-    ImGui::SetNextItemWidth(200.0f);
-    if (ImGui::Combo("動き", &motion, kMotionNames, kMotionCount))
-    {
-        layer.type = kMotions[motion].type;
-        layer.axis = kMotions[motion].axis;
-        m_dirty    = true;
-    }
-    Help("動き",
-         "形をどう加工するか。\n"
-         "前へ倒す      置く場所を蝶番にして、上へ伸びた形を前へ倒す\n"
-         "横へ振る      縦の軸まわりに形ごと回す（薙ぎ払い）\n"
-         "横へ動かす    形を保ったまま平行移動する（挟む・広げる）\n"
-         "震わせる      撃つ前だけ小さく揺らす。次に来る側を読ませる予告");
-
-    if (layer.type == LayerType::Shiver)
-    {
-        m_dirty |= ImGui::DragFloat("揺れ幅", &layer.to, 0.01f, 0.0f, 5.0f, "%.2f m");
-        Help("揺れ幅", "撃つ前の小刻みな揺れの大きさ。");
-
-        m_dirty |= ImGui::DragFloat("揺れの速さ", &layer.frequency, 0.1f, 0.5f, 30.0f, "%.1f");
-        Help("揺れの速さ", "上げすぎるとノイズに見えて予告として読めなくなる。");
-
-        const int shiverOrder = OrderIndexOf(layer);
-        ImGui::SetNextItemWidth(200.0f);
-        if (ImGui::BeginCombo("どれが揺れるか", OrderName(shiverOrder, asset.layout.columnAxis)))
-        {
-            for (int i = 0; i < kOrderCount; ++i)
-            {
-                if (kOrders[i].source == PhaseSource::Group && asset.assign.tierGroups <= 1)
-                    continue;
-                if (ImGui::Selectable(OrderName(i, asset.layout.columnAxis), i == shiverOrder))
-                {
-                    layer.phaseSource  = kOrders[i].source;
-                    layer.phaseReverse = kOrders[i].reverse;
-                    m_dirty            = true;
-                }
-            }
-            ImGui::EndCombo();
-        }
-        Help("どれが揺れるか",
-             "最初に動く側だけを揺らして「次はこっちから来る」を読ませる。\n"
-             "全機が揺れると、どちらが先か分からなくなって予告の意味が消える。");
-
-        m_dirty |= ImGui::DragFloat("揺れる範囲", &layer.leadThreshold, 0.01f, 0.0f, 1.0f, "%.2f");
-        Help("揺れる範囲", "先頭から何割までを揺らすか。0.18 なら先頭の2割弱だけ。");
-
-        ImGui::TextDisabled("撃つ合図が出るまでの間だけ効きます");
-        return;
-    }
-
-    const char *unit = (layer.type == LayerType::Rotate) ? "%.1f 度" : "%.2f m";
-    m_dirty |= ImGui::DragFloat("はじめ", &layer.from, 0.5f, -720.0f, 720.0f, unit);
-    m_dirty |= ImGui::DragFloat("おわり", &layer.to, 0.5f, -720.0f, 720.0f, unit);
-    Help("はじめ / おわり",
-         "撃つ前の値と、振り切ったときの値。\n"
-         "「はじめ」が待機中にプレイヤーへ見せる形になる。ここを読んで避ける。");
-
-    // 動き方。ずらす基準と逆順を1つに畳んである。
-    const AssetAxis columnAxis = asset.layout.columnAxis;
-    const bool      hasTiers   = (asset.assign.tierGroups > 1);
-
-    int order = OrderIndexOf(layer);
-    ImGui::SetNextItemWidth(200.0f);
-    if (ImGui::BeginCombo("動き方", OrderName(order, columnAxis)))
-    {
-        for (int i = 0; i < kOrderCount; ++i)
-        {
-            // 段に分けていないのに段の選択肢を出すと、選んでも何も起きない。
-            if (kOrders[i].source == PhaseSource::Group && !hasTiers) continue;
-
-            if (ImGui::Selectable(OrderName(i, columnAxis), i == order))
-            {
-                layer.phaseSource  = kOrders[i].source;
-                layer.phaseReverse = kOrders[i].reverse;
-
-                // 「いっせいに」へ戻したら、ずれ幅も戻す。残っていると
-                // 全機同時のはずなのに動きが速くなる。
-                if (kOrders[i].source == PhaseSource::None)
-                    layer.duration = layer.windowEnd - layer.windowBegin;
-
-                m_dirty = true;
-            }
-        }
-        ImGui::EndCombo();
-    }
-    Help("動き方",
-         "全機いっせいに  全部が同時に動く\n"
-         "左から順に      左端から順に動き出して、波のように伝わる\n"
-         "下の段から順に  段ごとに時間差をつける（先攻・後攻）\n"
-         "\n"
-         "順番にすると「1つが動き切る長さ」が出る。そこで波の細さを決める。");
-
-    if (layer.phaseSource != PhaseSource::None)
-    {
-        m_dirty |= ImGui::DragFloat("1つが動き切る長さ", &layer.duration, 0.01f, 0.05f, 1.0f, "%.2f");
-        Help("1つが動き切る長さ",
-             "全体を 1 としたとき、1つの列（や段）が動き切るのに使う割合。\n"
-             "小さいほど順番がはっきり見える（波が細くなる）。\n"
-             "1.00 にすると全機同時と同じになる。");
-    }
-
-    float window[2] = {layer.windowBegin, layer.windowEnd};
-    if (ImGui::DragFloat2("動く時間帯", window, 0.01f, 0.0f, 1.0f, "%.2f"))
-    {
-        layer.windowBegin = window[0];
-        layer.windowEnd   = window[1];
-        if (layer.phaseSource == PhaseSource::None)
-            layer.duration = layer.windowEnd - layer.windowBegin;
-        m_dirty = true;
-    }
-    Help("動く時間帯",
-         "技全体を 0〜1 としたとき、この動きが効く区間。\n"
-         "既定は 0.00〜1.00（最初から最後まで）。\n"
-         "\n"
-         "動きを2つ重ねて時間帯をずらすと、多段技になる。\n"
-         "  1つ目 0.00〜0.40 上へ持ち上げる\n"
-         "  2つ目 0.40〜1.00 前へ倒す\n"
-         "  は 振りかぶってから叩きつける");
-
-    if (asset.assign.sideGroups > 1)
-    {
-        m_dirty |= ImGui::Checkbox("左右で対称に動かす", &layer.mirror);
-        Help("左右で対称に動かす",
-             "左右に分けた2組で、値の符号を反転する。\n"
-             "「はじめ 86度 -> おわり 0度」なら、片方は +86->0、もう片方は -86->0。\n"
-             "2本の腕が向かい合って閉じる動きになる。");
-    }
-
-    if (layer.curve.empty())
-        ImGui::TextDisabled("動きの緩急 : 既定（はじめゆっくり、後半で加速）");
-    else
-        ImGui::TextDisabled("動きの緩急 : カーブ %zu 点", layer.curve.keys.size());
-}
-
-void FormationEditorWindow::DrawSpeedSection(Asset &asset)
-{
-    ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f), "速さ");
-
-    ImGui::SetNextItemWidth(160.0f);
-    m_dirty |= ImGui::DragFloat("振り切るまで", &asset.attackSeconds, 0.01f, 0.05f, 10.0f, "%.2f 秒");
-    Help("振り切るまで",
-         "撃つ合図が出てから、形が最後まで動き切るのにかかる秒数。\n"
-         "短いほど避けにくい。ジャスト回避を成立させたいなら、\n"
-         "予告（BTの待ち時間）を長く取って、ここは短くする。");
-}
-
-void FormationEditorWindow::DrawCombatSection(Asset &asset)
-{
-    ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 1.0f), "当たり方・見た目");
-
-    FormationOutput &o = asset.output;
-
-    int look = static_cast<int>(o.look);
-    ImGui::SetNextItemWidth(220.0f);
-    if (ImGui::Combo("機首の向き", &look, kLookNames, static_cast<int>(std::size(kLookNames))))
-    {
-        o.look  = static_cast<LookMode>(look);
-        m_dirty = true;
-    }
-    Help("機首の向き",
-         "動きに合わせる  回した動きと同じだけ機首も回る（倒れる刃は倒れる先を向く）\n"
-         "プレイヤーのほう  形がどこにあってもプレイヤーを向く\n"
-         "内側を向く        左右に分けた2組が向かい合う（挟み込みの壁）");
-
-    int charge = static_cast<int>(o.chargeMode);
-    ImGui::SetNextItemWidth(220.0f);
-    if (ImGui::Combo("動き方（機体）", &charge, kChargeNames,
-                     static_cast<int>(std::size(kChargeNames))))
-    {
-        o.chargeMode = static_cast<ChargeMode>(charge);
-        m_dirty      = true;
-    }
-    Help("機体の動き方",
-         "形を保ったまま動く  目標へ毎フレーム貼り付く。形が一切歪まない（壁・刃）\n"
-         "向きを決めて直進    撃った瞬間の方向へまっすぐ飛ぶ（弾幕）\n"
-         "バネで遅れて追いつく  速いほど後ろへ流れる（隊列）");
-
-    m_dirty |= ImGui::Checkbox("地面より下へ行かない", &o.clampToGround);
-    Help("地面より下へ行かない", "水平を越えて倒れる形が床へ潜るのを止める。");
-
-    m_dirty |= ImGui::Checkbox("予告の震えを出す", &o.useShiverTelegraph);
-    Help("予告の震え",
-         "全機共通の予告（Drone Manager で調整するもの）を使うか。\n"
-         "動きそのもので予告する技は切る。予告が二重になるとどちらを読むか濁る。");
-
-    ImGui::Spacing();
-    FormationCombat &c = o.combat;
-    m_dirty |= ImGui::DragFloat("当たる半径", &c.hitRadius, 0.05f, 0.1f, 10.0f, "%.2f m");
-    m_dirty |= ImGui::DragFloat("ダメージ", &c.damage, 0.5f, 0.0f, 200.0f, "%.1f");
-    m_dirty |= ImGui::DragFloat("ノックバック", &c.knockback, 0.5f, 0.0f, 100.0f, "%.1f");
-    m_dirty |= ImGui::DragFloat("ヒットストップ", &c.hitStopDuration, 0.005f, 0.0f, 1.0f, "%.3f 秒");
-    Help("ヒットストップ",
-         "当たった瞬間に時間を止める長さ。大技ほど長くすると重さが出るが、\n"
-         "伸ばしすぎると操作が途切れる。");
+    if (changed) m_dirty = true;
 }
 
 void FormationEditorWindow::DrawViewPane(EditorContext &context)
 {
-    ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.8f, 1.0f), "見る");
-    ImGui::Separator();
+    ImGui::SeparatorText("見る");
 
     bool staged = m_staged;
     if (ImGui::Checkbox("実機に出す", &staged))
@@ -989,40 +672,15 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
         else
             Unstage(context);
     }
-    Help("実機に出す",
-         "編集中の陣形をその場でドローンに組ませる。同時に4つを行う。\n"
-         "  1. ボスAIを凍らせる（でないと次のフレームに元の技へ戻る）\n"
-         "  2. この陣形を指示する\n"
-         "  3. 攻撃信号を立てる\n"
-         "  4. 進行度を手送りに切り替える\n"
-         "OFF にすると全部元へ戻す。");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("ボスAIを止めて、この陣形をその場でドローンに組ませる。\n"
+                          "進行度はタイムラインで動かす。OFF にすると元へ戻る。");
 
     if (m_staged)
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "ボスAIは停止中");
     else
         ImGui::TextDisabled("ボスAIは通常どおり");
 
-    ImGui::Spacing();
-
-    ImGui::BeginDisabled(!m_staged);
-    ImGui::SetNextItemWidth(-1.0f);
-    if (ImGui::SliderFloat("##progress", &m_progress, 0.0f, 1.0f, "進行度 %.2f"))
-        m_playing = false; // 手で掴んだら自動再生は止める
-    Help("進行度",
-         "技の始まり(0)から振り切り(1)までを手で送る。\n"
-         "技は本来0.4秒ほどで終わるので、ここで止めないと途中の形を見られない。\n"
-         "0 のままにすれば「撃つ前の待機の形」になる。");
-
-    if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(70, 0))) m_playing = !m_playing;
-    ImGui::SameLine();
-    if (ImGui::Button("0 に戻す", ImVec2(80, 0)))
-    {
-        m_progress = 0.0f;
-        m_playing  = false;
-    }
-    ImGui::EndDisabled();
-
-    ImGui::Spacing();
     ImGui::Separator();
 
     if (const Asset *asset = CurrentAsset())
@@ -1032,11 +690,11 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
         DataDrivenFormation::GridSize(*asset, total, cols, rows);
 
         ImGui::Text("出ている機数 %d", total);
-        ImGui::Text("格子         %d 列 x %d 行", cols, rows);
-        ImGui::Text("待機の大きさ 幅 %.1fm  高さ %.1fm",
+        ImGui::Text("格子 %d 列 x %d 行", cols, rows);
+        ImGui::Text("待機の大きさ 幅 %.1fm / 高さ %.1fm",
                     (cols - 1) * asset->layout.spacingA,
                     (rows - 1) * asset->layout.spacingB);
-        ImGui::TextDisabled("枠 %u / %s", asset->slot, asset->sourcePath.c_str());
+        ImGui::TextDisabled("%s", asset->sourcePath.c_str());
     }
 
     if (!m_status.empty())
@@ -1044,41 +702,33 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
         ImGui::Separator();
         ImGui::TextWrapped("%s", m_status.c_str());
     }
-
-    ImGui::Separator();
-    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "この項目について");
-
-    if (m_helpTitle.empty())
-    {
-        ImGui::TextDisabled("項目にマウスを乗せると\nここに説明が出ます。");
-        return;
-    }
-    ImGui::TextUnformatted(m_helpTitle.c_str());
-    ImGui::Separator();
-    ImGui::PushTextWrapPos(0.0f);
-    ImGui::TextUnformatted(m_helpBody.c_str());
-    ImGui::PopTextWrapPos();
 }
 
 #else // ENABLE_EDITOR
+
+class FormationEditorWindow::LayerSequence
+{
+};
+
+FormationEditorWindow::FormationEditorWindow()
+    : EditorWindow("Formation Editor", false)
+{
+}
+
+FormationEditorWindow::~FormationEditorWindow() = default;
 
 void FormationEditorWindow::DrawContents(EditorContext &) {}
 void FormationEditorWindow::OnFrameBegin(EditorContext &) {}
 void FormationEditorWindow::DrawListPane(EditorContext &) {}
 void FormationEditorWindow::DrawEditPane(EditorContext &) {}
+bool FormationEditorWindow::DrawTimeline(Asset &) { return false; }
 void FormationEditorWindow::DrawViewPane(EditorContext &) {}
-void FormationEditorWindow::DrawShapeSection(Asset &, EditorContext &) {}
-void FormationEditorWindow::DrawPlacementSection(Asset &) {}
-void FormationEditorWindow::DrawMotionSection(Asset &) {}
-void FormationEditorWindow::DrawLayerBody(Asset &, Layer &) {}
-void FormationEditorWindow::DrawSpeedSection(Asset &) {}
-void FormationEditorWindow::DrawCombatSection(Asset &) {}
+bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &, void *) { return false; }
+bool FormationEditorWindow::DrawLayers(Asset &) { return false; }
 void FormationEditorWindow::Stage(EditorContext &) {}
 void FormationEditorWindow::Unstage(EditorContext &) {}
 void FormationEditorWindow::PushStage(EditorContext &) {}
-bool FormationEditorWindow::CreateFromTemplate(int, const char *) { return false; }
 bool FormationEditorWindow::DuplicateCurrent(const char *) { return false; }
-void FormationEditorWindow::Help(const char *, const char *) {}
 int  FormationEditorWindow::CountDrones(EditorContext &) const { return 0; }
 
 #endif // ENABLE_EDITOR

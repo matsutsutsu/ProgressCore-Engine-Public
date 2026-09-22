@@ -243,11 +243,13 @@ namespace CCL::AI::Formation::Data
     inline float DataDrivenFormation::LayerValue(
         const FormationLayer &layer, const Seat &seat, float p) const
     {
-        // 窓幅と duration の正当性は FormationAssetIO::Validate が保証している
-        // （0除算になる値は読み込み時に直され、どのファイルが悪いかがログに出る）。
-        const float width = layer.windowEnd - layer.windowBegin;
-        const float start = layer.windowBegin + SeatPhaseT(layer, seat) * (width - layer.duration);
-        const float t     = std::clamp((p - start) / layer.duration, 0.0f, 1.0f);
+        // 0除算になる値（窓幅0・duration 0以下）は FormationAssetIO::Validate が読み込み時に直す。
+        // duration を窓幅までに抑えるのは、エディタで窓を縮めている最中の値でも、保存後
+        // （Validate が同じように詰める）と同じ動きをプレビューで見せるため。
+        const float width    = layer.windowEnd - layer.windowBegin;
+        const float duration = (std::min)(layer.duration, width);
+        const float start    = layer.windowBegin + SeatPhaseT(layer, seat) * (width - duration);
+        const float t        = std::clamp((p - start) / duration, 0.0f, 1.0f);
 
         // キーの無いカーブは従来どおり easeIn。既存陣形と絵を揃えるための既定。
         const float eased = layer.curve.empty() ? (t * t) : layer.curve.Evaluate(t);

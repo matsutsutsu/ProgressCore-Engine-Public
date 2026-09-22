@@ -2,46 +2,38 @@
 //
 // 責務: 実機で動いている FormationAsset を直接書き換え、保存する。
 //       形の意味は知らない（計算は Formations_DataDriven、保存は FormationAssetIO）。
+//       どの項目をどう描くかは FormationAssetMeta.h の表が決め、ここはそれを回すだけ。
 //
 // 画面は3ペイン。「一覧 / 編集 / 見る」を同時に出す。
-//   触った結果が見えないと、どの数値が何を変えたのか分からない。編集と確認を
-//   別ウィンドウに分けた最初の版は、確認のたびに Drone Manager へ切り替えて
-//   技を出し直す必要があり、しかも技は0.4秒で終わるので実質使えなかった。
+//   技は0.4秒ほどで終わるので、数値を触った結果をその場で止めて見られないと、
+//   どの数値が何を変えたのか分からない。
 //
-// コピーを持たない理由:
-//   編集用のコピーを持つと「エディタでは変わったのに画面は変わらない」が必ず起きる。
-//   FormationRegistry が持っている実体をそのまま触れば、スライダーを動かした
-//   フレームで100機の座標が変わる。
-//
-// 模式図を描かない理由:
-//   ウィンドウ内に点群を描いても、実機では同じ形が100機の3Dで動いている。模式図は
-//   その劣化コピーで、座標変換のコードを抱えるわりに情報が少ない。実機を止めて
-//   進行度を手で送る方が確実。
-//
-// 内部用語を画面に出さない:
-//   「席」「窓」「ずらす基準」は設計を説明するための言葉で、使う側の言葉ではない。
-//   画面には動作で書く（「前へ倒す」「左から順に」）。この対応表は .cpp の
-//   kMotionNames / kOrderNames にある。
+// 編集用のコピーを持たない理由:
+//   FormationRegistry が持つ実体をそのまま触れば、数値を動かしたフレームで実機の形が変わる。
+//   コピーを持つと「エディタでは変わったのに画面は変わらない」が必ず起きる。
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
+#include <memory>
 #include <string>
+#include <vector>
+
+struct FieldDescriptor;
 
 namespace CCL::AI::Formation
 {
     struct FormationAsset;
-    struct FormationLayer;
 } // namespace CCL::AI::Formation
 
 class FormationEditorWindow : public EditorWindow
 {
 public:
     /// 既定は非表示。ドローンの居るシーンでしか意味が無いので Window メニューから開く。
-    FormationEditorWindow()
-        : EditorWindow("Formation Editor", false)
-    {
-    }
+    FormationEditorWindow();
+
+    /// LayerSequence は .cpp にしか定義が無いので、破棄も .cpp で行う。
+    ~FormationEditorWindow() override;
 
 protected:
     void DrawContents(EditorContext &context) override;
@@ -53,20 +45,25 @@ protected:
 
 private:
     using Asset = CCL::AI::Formation::FormationAsset;
-    using Layer = CCL::AI::Formation::FormationLayer;
+
+    /// ImSequencer と layers のつなぎ。定義は .cpp（ImSequencer をヘッダへ出さないため）。
+    class LayerSequence;
 
     // ---- 3ペイン ----
     void DrawListPane(EditorContext &context);
     void DrawEditPane(EditorContext &context);
     void DrawViewPane(EditorContext &context);
 
-    // ---- 編集ペインの中身 ----
-    void DrawShapeSection(Asset &asset, EditorContext &context);
-    void DrawPlacementSection(Asset &asset);
-    void DrawMotionSection(Asset &asset);
-    void DrawLayerBody(Asset &asset, Layer &layer);
-    void DrawSpeedSection(Asset &asset);
-    void DrawCombatSection(Asset &asset);
+    /// 表1つぶんを「表示名 | 入力欄」の2列で描く。値が変わったら true。
+    bool DrawFields(const std::vector<FieldDescriptor> &fields, void *obj);
+
+    /// 「動き」セクション全体。再生の操作・タイムライン・選んだ1枚の詳細を縦に並べる。
+    bool DrawLayers(Asset &asset);
+
+    /// 動きの層を ImSequencer の帯として並べる。評価器の for (layer : layers) をそのまま絵にしたもの。
+    ///   帯の並び = 適用順 / 帯の左右端 = windowBegin〜End / 縦線 = 進行度。
+    /// 帯の端や中をドラッグすると時間帯が変わる。値を変えたら true。
+    bool DrawTimeline(Asset &asset);
 
     // ---- 実機の掌握 ----
 
@@ -80,21 +77,11 @@ private:
     /// 掌握中に毎フレーム行う押し込み。BT以外がボスの命令を書いても取り返せる。
     void PushStage(EditorContext &context);
 
-    // ---- 新規作成 ----
-
-    /// 雛形から陣形を1つ作り、空き枠へ登録して選択状態にする。
-    /// 白紙から組ませないのは、「何から始めればいいか分からない」が
-    /// このエディタで最初にぶつかる壁だったため。
-    bool CreateFromTemplate(int templateIndex, const char *fileName);
-
-    /// 今選んでいる陣形を、名前とファイルを変えて複製する。
-    bool DuplicateCurrent(const char *fileName);
-
     // ---- 補助 ----
 
-    /// 直前に描いたウィジェットにマウスが乗っていたら、右ペインへ出す説明を差し替える。
-    /// ツールチップにしないのは、読みながら操作できないため（離すと消える）。
-    void Help(const char *title, const char *body);
+    /// 今選んでいる陣形を、名前とファイルを変えて複製する。新しい陣形の作り方はこれだけで、
+    /// 既存の技がそのまま雛形になる。
+    bool DuplicateCurrent(const char *fileName);
 
     /// 今選んでいる枠の陣形。データ陣形でなければ nullptr。
     Asset *CurrentAsset() const;
@@ -118,11 +105,10 @@ private:
     float m_progress = 0.0f;
     bool  m_playing  = false;
 
-    // 右ペインの説明欄。ホバーが外れても消さない（読んでいる途中で消えるため）
-    std::string m_helpTitle;
-    std::string m_helpBody;
+    // タイムライン
+    std::unique_ptr<LayerSequence> m_sequence;
+    int                            m_selectedLayer = 0; // 選んでいる動き。下に詳細を出す
+    int                            m_firstFrame    = 0; // 横スクロールの位置（ImSequencer が書く）
 
-    // 新規作成・複製のダイアログ
-    int  m_newTemplate     = 0;
-    char m_newFileName[64] = "NewFormation";
+    char m_newFileName[64] = "NewFormation"; // 複製ダイアログの入力欄
 };

@@ -38,8 +38,8 @@
     "baseB": 0.8,
     "centerColumns": false,
     "columnAxis": "Forward",
-    "spacingA": 1.8,
-    "spacingB": 1.5,
+    "spacingA": 2.5,
+    "spacingB": 2.2,
     "tierStepB": 0.0
   },
   "name": "挟み込み1段（データ）",

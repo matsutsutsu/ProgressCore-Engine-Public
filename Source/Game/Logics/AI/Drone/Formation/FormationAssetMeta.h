@@ -137,7 +137,7 @@ namespace CCL::AI::Formation::Meta
         using T                                          = FormationAsset;
         static const std::vector<FieldDescriptor> fields = {
             FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
-            FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, kDataFormationSlotFirst, kDataFormationSlotLast, nullptr, true, "BT もプレハブもこの数値で技を指す。一度公開したら変えない"),
+            FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, kDataFormationSlotFirst, kDataFormationSlotLast, nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
             FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
         };
         return fields;
