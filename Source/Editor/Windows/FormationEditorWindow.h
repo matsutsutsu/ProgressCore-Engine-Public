@@ -17,10 +17,13 @@
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
 struct FieldDescriptor;
+struct BehaviorTreeComponent;
+struct BossCommandComponent;
 
 namespace CCL::AI::Formation
 {
@@ -64,7 +67,7 @@ private:
     bool DrawLayers(Asset &asset);
 
     /// 動きの層を ImSequencer の帯として並べる。評価器の for (layer : layers) をそのまま絵にしたもの。
-    ///   帯の並び = 適用順 / 帯の左右端 = windowBegin〜End / 縦線 = 進行度。
+    ///   帯の並び = 適用順 / 帯の左右端 = windowBegin〜End / 縦線 = 予告の始まりからの経過。
     /// 帯の端や中をドラッグすると時間帯が変わる。値を変えたら true。
     bool DrawTimeline(Asset &asset);
 
@@ -74,15 +77,23 @@ private:
 
     // ---- 実機の掌握 ----
 
-    /// 陣形を実機へ出す。ボス停止・陣形指示・攻撃信号・進行度の手送りを一度に行う。
+    /// 陣形を実機へ出す。ボス停止・陣形指示・攻撃信号・時間の手送りを一度に行う。
     /// 4つ揃わないと何も見えないので、手順ではなく1つの操作にしている。
     void Stage(EditorContext &context);
 
-    /// 掌握を解いてゲームの流れへ戻す。BTの凍結も進行度の手送りも解除する。
+    /// 掌握を解いてゲームの流れへ戻す。BTの凍結も時間の手送りも解除する。
     void Unstage(EditorContext &context);
 
     /// 掌握中に毎フレーム行う押し込み。BT以外がボスの命令を書いても取り返せる。
     void PushStage(EditorContext &context);
+
+    /// 掌握で触るボスの部品。1v1 前提なので、シーンで最初に見つかったボスだけを使う。
+    struct BossHandles
+    {
+        BehaviorTreeComponent *bt  = nullptr;
+        BossCommandComponent  *cmd = nullptr;
+    };
+    BossHandles FindBoss(EditorContext &context) const;
 
     // ---- 補助 ----
 
@@ -100,10 +111,11 @@ private:
 
     DroneFormationType m_slot = DroneFormationType::GuillotineSlam; // 開いたときに選んでいる技
 
-    /// 保存していない変更があるか。ImGui のウィジェットが値の変更時に返す true を
+    /// 保存していない変更のある技。ImGui のウィジェットが値の変更時に返す true を
     /// 溜めるだけ。元へ戻したかまでは見ない（「触った以上まだ保存していない」を
-    /// 出す方が事故が少ない）。
-    bool m_dirty = false;
+    /// 出す方が事故が少ない）。技ごとに持つのは、編集は実機の実体を直接書き換えるので、
+    /// 別の技へ切り替えても変更がメモリに残り続けるため。
+    std::set<DroneFormationType> m_dirtySlots;
 
     std::string m_status; // 直近の保存・読込の結果。押した手応えが無いと二重に押される
 

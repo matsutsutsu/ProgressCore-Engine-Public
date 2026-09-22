@@ -35,6 +35,9 @@ FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 
 #ifdef ENABLE_EDITOR
 
+// 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通。
+constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
+
 // ---------------------------------------------------------------------------
 // ImSequencer とのつなぎ
 // ---------------------------------------------------------------------------
@@ -177,21 +180,22 @@ public:
 
         // 置けない側を暗くして、そこに何を置く区間かを書く。空いているだけだと、
         // 帯が 0 から置けない理由が画面から分からない。
-        const float sectionL = toX(static_cast<float>(sec.first));
-        const float sectionR = toX(static_cast<float>(sec.first + sec.length));
-        const float blockedL = (sec.first == 0) ? sectionR : toX(0.0f);
-        const float blockedR = (sec.first == 0) ? toX(static_cast<float>(GetFrameMax() + 1)) : sectionL;
+        const bool  inTelegraph = (sec.first == 0); // この帯は予告の区間に置く（＝攻撃の区間を隠す）
+        const float sectionL    = toX(static_cast<float>(sec.first));
+        const float sectionR    = toX(static_cast<float>(sec.first + sec.length));
+        const float blockedL    = inTelegraph ? sectionR : toX(0.0f);
+        const float blockedR    = inTelegraph ? toX(static_cast<float>(GetFrameMax() + 1)) : sectionL;
         draw->AddRectFilled(ImVec2(blockedL, rc.Min.y), ImVec2(blockedR, rc.Max.y), IM_COL32(0, 0, 0, 120));
         draw->AddText(ImVec2(blockedL + 4.0f, rc.Min.y + 2.0f), IM_COL32(255, 255, 255, 100),
-                      (sec.first == 0) ? "攻撃（動きの帯を置く）" : "予告（震えの帯を置く）");
+                      inTelegraph ? "攻撃（動きの帯を置く）" : "予告（震えの帯を置く）");
 
         const float border = toX(static_cast<float>(kTelegraphFrames));
         draw->AddLine(ImVec2(border, rc.Min.y), ImVec2(border, rc.Max.y), IM_COL32(255, 255, 255, 60), 2.0f);
 
-        const int             lines    = (layer.phaseSource == PhaseSource::None) ? 1 : kFanLines;
-        const float           width    = layer.windowEnd - layer.windowBegin;
-        const float           duration = std::min(layer.duration, width); // 評価器と同じ抑え方
-        const float           slack    = width - duration;
+        const int   lines    = (layer.phaseSource == PhaseSource::None) ? 1 : kFanLines;
+        const float width    = layer.windowEnd - layer.windowBegin;
+        const float duration = std::min(layer.duration, width); // 評価器と同じ抑え方
+        const float slack    = width - duration;
 
         for (int k = 0; k < lines; ++k)
         {
@@ -280,20 +284,15 @@ void FormationEditorWindow::PushStage(EditorContext &context)
     const bool  telegraph = (m_time < asset->telegraphSeconds);
     const float progress  = telegraph ? 0.0f : std::min(1.0f, (m_time - asset->telegraphSeconds) / asset->attackSeconds);
 
-    auto view = context.world->View<BossCommandComponent>();
-    for (auto boss : view)
-    {
-        // ボスBTを凍らせる。これをしないと次のフレームに requestFormation を
-        // 書き戻され、押しても元の技へ戻る。
-        if (auto *bt = context.world->GetComponent<BehaviorTreeComponent>(boss))
-            bt->debugPaused = true;
+    const BossHandles boss = FindBoss(context);
 
-        if (auto *cmd = context.world->GetComponent<BossCommandComponent>(boss))
-        {
-            cmd->requestFormation  = m_slot;
-            cmd->droneAttackActive = !telegraph;
-        }
-        break; // 1v1 前提。最初の1体だけ
+    // ボスBTを凍らせる。これをしないと次のフレームに requestFormation を
+    // 書き戻され、押しても元の技へ戻る。
+    if (boss.bt) boss.bt->debugPaused = true;
+    if (boss.cmd)
+    {
+        boss.cmd->requestFormation  = m_slot;
+        boss.cmd->droneAttackActive = !telegraph;
     }
 
     // 時間を握る。陣形が毎フレーム書くフィールドなので、外から握るにはここを通す。
@@ -316,18 +315,23 @@ void FormationEditorWindow::Unstage(EditorContext &context)
         if (data) data->ClearPreview();
     }
 
-    if (!context.world) return;
+    const BossHandles boss = FindBoss(context);
+    if (boss.bt) boss.bt->debugPaused = false;
+    if (boss.cmd) boss.cmd->droneAttackActive = false; // 攻撃信号は落とす。形はBTが次に指示する
+}
 
-    auto view = context.world->View<BossCommandComponent>();
-    for (auto boss : view)
+FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext &context) const
+{
+    BossHandles handles;
+    if (!context.world) return handles;
+
+    for (auto boss : context.world->View<BossCommandComponent>())
     {
-        if (auto *bt = context.world->GetComponent<BehaviorTreeComponent>(boss))
-            bt->debugPaused = false;
-
-        if (auto *cmd = context.world->GetComponent<BossCommandComponent>(boss))
-            cmd->droneAttackActive = false; // 攻撃信号は落とす。形はBTが次に指示する
-        break;
+        handles.bt  = context.world->GetComponent<BehaviorTreeComponent>(boss);
+        handles.cmd = context.world->GetComponent<BossCommandComponent>(boss);
+        break; // 1v1 前提。最初の1体だけ
     }
+    return handles;
 }
 
 void FormationEditorWindow::OnFrameBegin(EditorContext &context)
@@ -389,7 +393,6 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     registry.Register<DataDrivenFormation>(static_cast<DroneFormationType>(freeSlot))->SetAsset(copy);
 
     m_slot   = static_cast<DroneFormationType>(freeSlot);
-    m_dirty  = false;
     m_status = "複製しました : " + copy.sourcePath;
     return true;
 }
@@ -699,15 +702,14 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     changed |= DrawFields(Meta::LayerFields(), &layer);
 
     // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す。
-    constexpr ImVec4 kWarn(1.0f, 0.75f, 0.2f, 1.0f);
     if (layer.type == LayerType::Shiver)
     {
         ImGui::TextDisabled("Shiver は予告の区間に置く震え。撃つ合図で攻撃が始まると止まる");
         if (layer.from == 0.0f && layer.to == 0.0f)
-            ImGui::TextColored(kWarn, "振れ幅が始まりも終わりも 0 なので震えない");
+            ImGui::TextColored(kWarnColor, "振れ幅が始まりも終わりも 0 なので震えない");
     }
     else if (layer.from == layer.to)
-        ImGui::TextColored(kWarn, "始まりと終わりが同じなので、この動きは形を変えない");
+        ImGui::TextColored(kWarnColor, "始まりと終わりが同じなので、この動きは形を変えない");
 
     changed |= DrawEase(layer);
 
@@ -804,11 +806,13 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
         auto      *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
         if (!data) continue;
 
-        if (ImGui::Selectable(data->GetAsset().name.c_str(), type == m_slot))
+        // 未保存の技には * を付ける。### 以降が ID なので、* が付いても選択は外れない。
+        const bool        dirty = m_dirtySlots.count(type) > 0;
+        const std::string label = data->GetAsset().name + (dirty ? " *" : "") + "###" + std::to_string(slot);
+        if (ImGui::Selectable(label.c_str(), type == m_slot))
         {
             m_slot          = type;
             m_selectedLayer = 0;
-            m_dirty         = false;
             m_status.clear();
 
             // 掌握中に選び直したら、そのまま新しい陣形を出す（「実機に出す」を押し直させない）。
@@ -853,7 +857,7 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
     {
         if (FormationAssetIO::Save(asset->sourcePath, *asset))
         {
-            m_dirty  = false;
+            m_dirtySlots.erase(m_slot);
             m_status = "保存しました : " + asset->sourcePath;
         }
         else
@@ -870,16 +874,16 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
         if (FormationAssetIO::Load(asset->sourcePath, reloaded))
         {
             *asset   = reloaded;
-            m_dirty  = false;
+            m_dirtySlots.erase(m_slot);
             m_status = "ファイルから読み直しました";
         }
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("編集中の内容を捨てて、保存済みのファイルの状態へ戻す。");
 
-    if (m_dirty)
+    if (m_dirtySlots.count(m_slot) > 0)
     {
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.2f, 1.0f), "未保存");
+        ImGui::TextColored(kWarnColor, "未保存");
     }
 
     ImGui::Separator();
@@ -914,7 +918,7 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
     if (ImGui::CollapsingHeader("当たり"))
         changed |= DrawFields(Meta::CombatFields(), &asset->output.combat);
 
-    if (changed) m_dirty = true;
+    if (changed) m_dirtySlots.insert(m_slot);
 }
 
 void FormationEditorWindow::DrawViewPane(EditorContext &context)
@@ -931,10 +935,10 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
     }
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("ボスAIを止めて、この陣形をその場でドローンに組ませる。\n"
-                          "進行度はタイムラインで動かす。OFF にすると元へ戻る。");
+                          "動きは「再生」かタイムラインの目盛りで見る。OFF にすると元へ戻る。");
 
     if (m_staged)
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "ボスAIは停止中");
+        ImGui::TextColored(kWarnColor, "ボスAIは停止中");
     else
         ImGui::TextDisabled("ボスAIは通常どおり");
 
@@ -988,5 +992,6 @@ void FormationEditorWindow::Unstage(EditorContext &) {}
 void FormationEditorWindow::PushStage(EditorContext &) {}
 bool FormationEditorWindow::DuplicateCurrent(const char *) { return false; }
 int  FormationEditorWindow::CountDrones(EditorContext &) const { return 0; }
+FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext &) const { return {}; }
 
 #endif // ENABLE_EDITOR
