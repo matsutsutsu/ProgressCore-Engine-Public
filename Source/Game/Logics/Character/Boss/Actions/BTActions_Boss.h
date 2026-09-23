@@ -286,16 +286,19 @@ namespace CCL::AI::BT::BossActions
         reg.RegisterActionInstance(::CCL::AI::A_BossBackStep,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("BackStep"), 0.9f, ::CCL::AI::A_BossBackStep));
 
-        // 中央へ跳んで逃げる：溜め0.25 + 滞空1.1 + 着地硬直。全体時間が溜め＋滞空より短いと
-        // 空中で要求が下りて待機へ戻り、重力で落ちる。跳躍系はどれも同じ "Leap" を引き、
-        // 着地までの絵は IsLeaping（BossAnimSyncSystem）が運ぶ。
+        // 中央へ跳んで逃げる：溜め0.25 + 滞空1.1 + 着地硬直（LeapLand クリップ 0.63秒）。
+        // 全体時間が溜め＋滞空より短いと空中で要求が下りて待機へ戻り、重力で落ちる。
+        // 跳躍系はどれも同じ "Leap" を引き、着地までの絵は IsLeaping（BossAnimSyncSystem）が運ぶ。
         reg.RegisterActionInstance(::CCL::AI::A_BossLeapEscape,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, ::CCL::AI::A_BossLeapEscape));
 
-        // 跳躍攻撃：溜め0.35 + 滞空0.8 + 着地硬直。攻撃の着地クリップへの切り替えは
-        // LeapAttack（BossAnimSyncSystem）が運ぶので、引くトリガーは逃げる跳躍と同じ。
+        // 跳躍攻撃：溜め0.35 + 滞空0.8 + 着地硬直。既定の全体時間は、攻撃判定を持つ着地
+        // クリップ（Ultimate_Land・1.47秒）が終わるまでの長さにしてある。短くすると
+        // 判定が出ている最中に次の技が始まる。
+        // 攻撃の着地クリップへの切り替えは LeapAttack（BossAnimSyncSystem）が運ぶので、
+        // 引くトリガーは逃げる跳躍と同じ。
         reg.RegisterActionInstance(::CCL::AI::A_BossLeapAttack,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, ::CCL::AI::A_BossLeapAttack));
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 2.6f, ::CCL::AI::A_BossLeapAttack));
 
         reg.RegisterAction<WaitAction>(::CCL::AI::A_Wait);
 

@@ -274,7 +274,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 //   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
 //
 //     {
-//         "model": "Muriel_GDC.glb"
+//         "model": "Muriel.glb"
 //     }
 //
 //   パスはこのJSONが置かれたディレクトリからの相対で書く。

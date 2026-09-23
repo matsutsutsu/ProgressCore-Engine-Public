@@ -1,5 +1,5 @@
 {
-    "duration": 0.5833333134651184,
+    "duration": 0.6333333253860474,
     "events": [],
     "rootMotionCurve": {
         "color": 4286643968,
@@ -18,6 +18,6 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jump_Combat_End_0_Seq_0",
+    "targetAnimName": "Jump_Recovery_0",
     "targetModelPath": ""
 }
