@@ -8,6 +8,7 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
@@ -35,6 +36,7 @@ public:
     {
         auto types = Base::GetReadTypes();
         types.push_back(CCL::ECS::TypeInfo<BossCommandComponent>::ID());
+        types.push_back(CCL::ECS::TypeInfo<BossActionComponent>::ID()); // 浮いているかを見る
         types.push_back(CCL::ECS::TypeInfo<TransformComponent>::ID());
         return types;
     }

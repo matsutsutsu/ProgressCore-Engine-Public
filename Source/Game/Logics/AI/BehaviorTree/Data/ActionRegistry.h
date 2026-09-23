@@ -100,6 +100,7 @@ namespace CCL::AI
     // 跳躍系。跳び方は共通で、違いは着地点（BossLeapLanding）だけ。
     inline constexpr ActionID A_BossLeapEscape = 1107; // 中央を挟んで相手の反対側へ跳ぶ
     inline constexpr ActionID A_BossLeapAttack = 1108; // 相手の位置へ跳び、着地の衝撃で当てる
+    inline constexpr ActionID A_BossAirHover  = 1109; // その場へ跳び上がり、頂点に留まる（滞空）
 
 // --- ドローン陣形技 (2000番台) ---
 #define CCL_BT_DEFINE_DRONE_ID(Name, Id, Formation, Display) inline constexpr ActionID Name = Id;
@@ -143,14 +144,30 @@ inline const char *CategoryName(BTCategory c)
     return "?";
 }
 
+// 行動がBTに対してどう振る舞うか。読み込み時の検査（BehaviorTreeLoader）が引く。
+//
+// 表の列にしてあるのは、以前これを表の外の if 連鎖2本で持っていて、技を1つ足すたびに
+// 両方を手で直す必要があったため。片方を忘れても当然コンパイルは通り、Parallel の
+// 置き間違いを見逃す検査が黙って出来上がる。
+//
+// Driving は Blocking を兼ねる（要求を毎フレーム書く技は必ず時間がかかる）ので、
+// 2つのフラグではなく1列3値で持つ。
+enum class BTActionKind : uint8_t
+{
+    Instant,  // 即 Success。陣形指示・攻撃信号・リセット
+    Blocking, // Running を返しうる（時間がかかる）が、体へは何も要求しない。待機系
+    Driving,  // 時間がかかり、体の要求(currentActionId)も毎フレーム書く。ボス本体の技
+};
+
 // 辞書（エディタ表示とアセットの名前解決に共用）。
 struct ActionEntry
 {
-    ActionID    id;
-    const char *key;        // アセットに保存される名前。定数名と同じ綴りにする
-    const char *name;       // エディタ表示名
-    BTCategory  category;   // 分類。数値IDの桁ではなくこれが唯一の情報源
-    const char *paramLabel; // param の意味。空文字なら param を使わない
+    ActionID     id;
+    const char  *key;                          // アセットに保存される名前。定数名と同じ綴りにする
+    const char  *name;                         // エディタ表示名
+    BTCategory   category;                     // 分類。数値IDの桁ではなくこれが唯一の情報源
+    const char  *paramLabel;                   // param の意味。空文字なら param を使わない
+    BTActionKind kind = BTActionKind::Instant; // BTに対する振る舞い。条件の表では使わない
 };
 
 // 並びは分類ごとにまとめる。エディタのコンボが「分類が変わった所で見出しを打つ」
@@ -158,15 +175,16 @@ struct ActionEntry
 inline constexpr ActionEntry g_ActionRegistry[] = {
     {0, "None", "なし (None)", BTCategory::None, ""},
 
-    {CCL::AI::A_Wait, "A_Wait", "待機", BTCategory::Common, "待ち時間 [秒]"},
+    {CCL::AI::A_Wait, "A_Wait", "待機", BTCategory::Common, "待ち時間 [秒]", BTActionKind::Blocking},
 
-    {CCL::AI::A_Move, "A_Move", "ボス：移動 (Move To Player)", BTCategory::Boss, ""},
+    {CCL::AI::A_Move, "A_Move", "ボス：移動 (Move To Player)", BTCategory::Boss, "", BTActionKind::Driving},
     {CCL::AI::A_ResetDamage, "A_ResetDamage", "ボス：蓄積ダメージリセット", BTCategory::Boss, ""},
-    {CCL::AI::A_BossBackStep, "A_BossBackStep", "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]"},
-    {CCL::AI::A_BossHitWait, "A_BossHitWait", "ボス：被弾後の様子見", BTCategory::Boss, "待つ長さ [秒]"},
-    {CCL::AI::A_BossAdvance, "A_BossAdvance", "ボス：詰めながら待つ", BTCategory::Boss, "長さ [秒]"},
-    {CCL::AI::A_BossLeapEscape, "A_BossLeapEscape", "ボス：中央へ跳んで逃げる (Leap Escape)", BTCategory::Boss, "全体時間 [秒]"},
-    {CCL::AI::A_BossLeapAttack, "A_BossLeapAttack", "ボス：跳躍攻撃 (Leap Attack)", BTCategory::Boss, "全体時間 [秒]"},
+    {CCL::AI::A_BossBackStep, "A_BossBackStep", "ボス：後方ステップ (Back Step)", BTCategory::Boss, "全体時間 [秒]", BTActionKind::Driving},
+    {CCL::AI::A_BossHitWait, "A_BossHitWait", "ボス：被弾後の様子見", BTCategory::Boss, "待つ長さ [秒]", BTActionKind::Blocking},
+    {CCL::AI::A_BossAdvance, "A_BossAdvance", "ボス：詰めながら待つ", BTCategory::Boss, "長さ [秒]", BTActionKind::Driving},
+    {CCL::AI::A_BossLeapEscape, "A_BossLeapEscape", "ボス：中央へ跳んで逃げる (Leap Escape)", BTCategory::Boss, "全体時間 [秒]", BTActionKind::Driving},
+    {CCL::AI::A_BossLeapAttack, "A_BossLeapAttack", "ボス：跳躍攻撃 (Leap Attack)", BTCategory::Boss, "全体時間 [秒]", BTActionKind::Driving},
+    {CCL::AI::A_BossAirHover, "A_BossAirHover", "ボス：その場で滞空 (Air Hover)", BTCategory::Boss, "全体時間 [秒]", BTActionKind::Driving},
 
     {CCL::AI::A_DroneStrike, "A_DroneStrike", "ドローン：攻撃実行 (Strike)", BTCategory::Drone, ""},
 
@@ -345,18 +363,6 @@ inline bool IsBossPhysicalAction(ActionID id)
     return id == CCL::AI::A_Move || id == CCL::AI::A_BossAdvance;
 }
 
-// ボスの近接アクションか。物理挙動の分岐ではない（それは BossActionSystem が決める）。
-inline bool IsBossMeleeAction(ActionID id)
-{
-    return id == CCL::AI::A_BossLeapAttack;
-}
-
-// 後方ステップ（回避）か。攻撃ではないので上の近接判定には含めない。
-inline bool IsBossEvadeAction(ActionID id)
-{
-    return id == CCL::AI::A_BossBackStep || id == CCL::AI::A_BossLeapEscape;
-}
-
 // この行動は BossCommandComponent::currentActionId を書くか。
 //
 //   これらは「毎フレーム評価される」ことを前提に2つの後始末をしている。
@@ -367,9 +373,8 @@ inline bool IsBossEvadeAction(ActionID id)
 //   Parallel の「従」に置いてはいけない行動の判定に使う。
 inline bool IsCommandWritingAction(ActionID id)
 {
-    return IsBossPhysicalAction(id)  // A_Move / A_BossAdvance
-           || IsBossMeleeAction(id)  // 跳躍攻撃
-           || IsBossEvadeAction(id); // 後方ステップ / 中央へ跳んで逃げる
+    const ActionEntry *e = FindActionEntry(id);
+    return e && e->kind == BTActionKind::Driving;
 }
 
 // この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、
@@ -377,7 +382,8 @@ inline bool IsCommandWritingAction(ActionID id)
 // （外からは「固まって何もしない」に見えるので読み込み時に警告する）。
 inline bool IsBlockingAction(ActionID id)
 {
-    return id == CCL::AI::A_Wait || id == CCL::AI::A_BossHitWait || id == CCL::AI::A_BossAdvance || id == CCL::AI::A_Move || IsBossMeleeAction(id) || IsBossEvadeAction(id);
+    const ActionEntry *e = FindActionEntry(id);
+    return e && e->kind != BTActionKind::Instant;
 }
 
 // この行動が使う param の意味。使わないなら nullptr（エディタの入力欄の有無）。

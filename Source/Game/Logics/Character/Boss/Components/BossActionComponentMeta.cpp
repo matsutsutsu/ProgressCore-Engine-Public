@@ -18,9 +18,10 @@ static const char *BossStateNames[] = {
 
 // BossLeapPhase と1対1で並べる。
 static const char *BossLeapPhaseNames[] = {
-    "Windup",
-    "Flight",
-    "Recovery",
+    "Windup",   // 溜め
+    "Flight",   // 空中
+    "Hover",    // 頂点で停止
+    "Recovery", // 着地硬直
 };
 
 template <>
@@ -40,20 +41,25 @@ struct ComponentMeta<BossActionComponent>
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(walkSpeed, "歩行速度（行動用）", 0.1f, 0.0f, 100.0f, "Action Speed")
                 CFIELD_FLOAT_RANGED(turnSpeed, "旋回速度(移動中)", 0.1f, 0.0f, 100.0f, "Stats")
+                CFIELD_FLOAT_RANGED(idleTurnSpeed, "旋回速度(待機中)", 0.1f, 0.0f, 100.0f, "Stats")
                     CFIELD_FLOAT_RANGED(advanceStopDistance, "詰めるのを止める距離 [m]", 0.5f, 0.0f, 60.0f, "Stats")
                         CFIELD_FLOAT_RANGED(acceleration, "加速度", 0.1f, 0.0f, 100.0f, "Inertia")
                             CFIELD_FLOAT_RANGED(deceleration, "減速度", 0.1f, 0.0f, 100.0f, "Inertia")
                                     CFIELD_FLOAT_RANGED(backStepSpeed, "後退：踏み切り速度 [m/s]", 0.5f, 0.0f, 100.0f, "Back Step")
                 CFIELD_FLOAT_RANGED(backStepTime, "後退：後退時間 [秒]", 0.01f, 0.01f, 2.0f, "Back Step")
                 CFIELD_FLOAT_RANGED(backStepHeight, "後退：跡の高さ [m]", 0.1f, 0.0f, 10.0f, "Back Step")
-                CFIELD_FLOAT_RANGED(escapeWindupTime, "中央へ逃げる：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Escape")
-                CFIELD_FLOAT_RANGED(escapeFlightTime, "中央へ逃げる：滞空 [秒]", 0.01f, 0.1f, 5.0f, "Leap Escape")
-                CFIELD_FLOAT_RANGED(escapeHeight, "中央へ逃げる：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Escape")
+                CFIELD_FLOAT_RANGED(escapeLeap.windup, "中央へ逃げる：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Escape")
+                CFIELD_FLOAT_RANGED(escapeLeap.flight, "中央へ逃げる：滞空 [秒]", 0.01f, 0.1f, 5.0f, "Leap Escape")
+                CFIELD_FLOAT_RANGED(escapeLeap.height, "中央へ逃げる：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Escape")
                 CFIELD_FLOAT_RANGED(escapeLandingRatio, "中央へ逃げる：着地点（半径に対する割合）", 0.01f, 0.0f, 0.9f, "Leap Escape")
-                CFIELD_FLOAT_RANGED(attackWindupTime, "跳躍攻撃：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Attack")
-                CFIELD_FLOAT_RANGED(attackFlightTime, "跳躍攻撃：滞空 [秒]", 0.01f, 0.1f, 5.0f, "Leap Attack")
-                CFIELD_FLOAT_RANGED(attackHeight, "跳躍攻撃：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Attack")
+                CFIELD_FLOAT_RANGED(attackLeap.windup, "跳躍攻撃：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Attack")
+                CFIELD_FLOAT_RANGED(attackLeap.flight, "跳躍攻撃：滞空 [秒]", 0.01f, 0.1f, 5.0f, "Leap Attack")
+                CFIELD_FLOAT_RANGED(attackLeap.height, "跳躍攻撃：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Attack")
                 CFIELD_FLOAT_RANGED(attackStandOff, "跳躍攻撃：相手の手前に降りる距離 [m]", 0.1f, 0.0f, 20.0f, "Leap Attack")
+                CFIELD_FLOAT_RANGED(hoverLeap.windup, "滞空：溜め [秒]", 0.01f, 0.0f, 2.0f, "Air Hover")
+                CFIELD_FLOAT_RANGED(hoverLeap.flight, "滞空：上昇＋下降 [秒]", 0.01f, 0.1f, 5.0f, "Air Hover")
+                CFIELD_FLOAT_RANGED(hoverTime, "滞空：頂点に留まる長さ [秒]", 0.05f, 0.0f, 15.0f, "Air Hover")
+                CFIELD_FLOAT_RANGED(hoverLeap.height, "滞空：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Air Hover")
             // ここから下は書き手が BossActionSystem の実行時の値。保存しない。
             //   保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、
             //   次に生成された個体がその状態で生まれてくる。

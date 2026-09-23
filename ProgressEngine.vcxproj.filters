@@ -2889,6 +2889,9 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Actions\BTActions_Boss.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Actions</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>

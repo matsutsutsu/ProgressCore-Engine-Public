@@ -8,7 +8,7 @@
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include <cmath>
 
-namespace CCL::AI::BT::CommonConditions
+namespace CCL::AI::BT
 {
     // ターゲットとの距離が param 未満。
     struct DistanceLessThan : public IBTCondition
@@ -98,7 +98,8 @@ namespace CCL::AI::BT::CommonConditions
         }
     };
 
-    inline void RegisterAll()
+    /// どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ。
+    inline void RegisterCommonConditions()
     {
         auto &reg = BTActionRegistry::Instance();
 
@@ -113,4 +114,4 @@ namespace CCL::AI::BT::CommonConditions
         reg.RegisterCondition<TargetOnCenterSide>(::CCL::AI::C_TargetOnCenterSide);
     }
 
-} // namespace CCL::AI::BT::CommonConditions
+} // namespace CCL::AI::BT

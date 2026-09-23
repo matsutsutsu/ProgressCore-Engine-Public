@@ -33,9 +33,13 @@ namespace
         return angle;
     }
 
-    /// lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直る。
+    /// lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直り、Jolt へも写す。
     /// 1フレームで回り切らないので、呼び続けると滑らかに正対する。
-    void TurnToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt)
+    ///
+    /// 描画と物理の向きを必ず一緒に動かすため1つにしてある。別々の関数だと、
+    /// 片方だけ呼んだ場所で物理側の向きが古いまま取り残される。
+    void FaceToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt,
+                    JPH::CharacterVirtual *character)
     {
         if (lookDir.LengthSquared() <= 0.001f) return;
 
@@ -49,15 +53,9 @@ namespace
 
         trans.rotation = Quaternion::CreateFromAxisAngle(Vector3::UnitY, newYaw);
         trans.isDirty  = true;
-    }
 
-    /// TransformComponent の回転を Jolt のキャラクターへ写す。
-    /// TurnToward の後に呼ばないと、物理側の向きが古いまま残る。
-    void SyncCharacterRotation(const TransformComponent &trans, JPH::CharacterVirtual *character)
-    {
-        if (!character) return;
-
-        character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
+        if (character)
+            character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
     }
 } // namespace
 
@@ -170,8 +168,7 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
     // 要点で、即座に正対すると背後を取る価値が消え、回らないと置物に見える。
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
-    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    FaceToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt, joltHandle.character.GetPtr());
 }
 
 void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformComponent &trans,
@@ -197,8 +194,7 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     movement.desiredVelocity = dirToPlayer;
     movement.overrideSpeed   = (std::min)(bossDef.currentMoveSpeed, config.walkSpeed);
 
-    TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    FaceToward(trans, dirToPlayer, bossDef.turnSpeed, dt, joltHandle.character.GetPtr());
 }
 
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
@@ -207,6 +203,7 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
     if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
     if (actionId == ::CCL::AI::A_BossLeapEscape) return BossActionState::Leap;
     if (actionId == ::CCL::AI::A_BossLeapAttack) return BossActionState::Leap;
+    if (actionId == ::CCL::AI::A_BossAirHover) return BossActionState::Leap;
     return BossActionState::None;
 }
 
@@ -236,22 +233,25 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
     {
         bossDef.leapPhase       = BossLeapPhase::Windup;
         bossDef.leapTouchedDown = false;
+        bossDef.leapHoverTime   = 0.0f;  // 頂点で止まるのは滞空だけ
+        bossDef.leapLandAttack  = false; // 着地に判定を出すのは跳躍攻撃だけ
 
         if (actionId == ::CCL::AI::A_BossLeapEscape)
         {
-            bossDef.leapLanding    = BossLeapLanding::AwayToCenter;
-            bossDef.leapWindupTime = bossDef.escapeWindupTime;
-            bossDef.leapFlightTime = bossDef.escapeFlightTime;
-            bossDef.leapHeight     = bossDef.escapeHeight;
-            bossDef.leapLandAttack = false;
+            bossDef.leapDef     = bossDef.escapeLeap;
+            bossDef.leapLanding = BossLeapLanding::AwayToCenter;
         }
         else if (actionId == ::CCL::AI::A_BossLeapAttack)
         {
+            bossDef.leapDef        = bossDef.attackLeap;
             bossDef.leapLanding    = BossLeapLanding::TowardTarget;
-            bossDef.leapWindupTime = bossDef.attackWindupTime;
-            bossDef.leapFlightTime = bossDef.attackFlightTime;
-            bossDef.leapHeight     = bossDef.attackHeight;
             bossDef.leapLandAttack = true;
+        }
+        else if (actionId == ::CCL::AI::A_BossAirHover)
+        {
+            bossDef.leapDef       = bossDef.hoverLeap;
+            bossDef.leapLanding   = BossLeapLanding::InPlace;
+            bossDef.leapHoverTime = bossDef.hoverTime;
         }
     }
 }
@@ -264,8 +264,7 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
 
     // 退く間も正対し続ける。向いていないと、間合いを切って仕切り直す技ではなく
     // 「逃げ出した」に見える。
-    TurnToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt);
-    SyncCharacterRotation(trans, joltHandle.character.GetPtr());
+    FaceToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt, joltHandle.character.GetPtr());
 
     // 硬直。長さは技の全体時間(BTノードの param)から backStepTime を引いたぶん。
     if (t >= bossDef.backStepTime)
@@ -312,7 +311,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
     const float t = bossDef.actionTimer; // 跳躍に入ってからの経過 [秒]
 
     // 溜め：足を止めて相手を睨む。着地点はまだ決めない。
-    if (t < bossDef.leapWindupTime)
+    if (t < bossDef.leapDef.windup)
     {
         bossDef.leapPhase        = BossLeapPhase::Windup;
         bossDef.currentMoveSpeed = 0.0f;
@@ -320,8 +319,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
 
         Vector3 dirToPlayer = playerPos - trans.position;
         dirToPlayer.y       = 0.0f;
-        TurnToward(trans, dirToPlayer, bossDef.turnSpeed, dt);
-        SyncCharacterRotation(trans, ch);
+        FaceToward(trans, dirToPlayer, bossDef.turnSpeed, dt, ch);
         return;
     }
 
@@ -331,10 +329,29 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
         bossDef.leapPhase = BossLeapPhase::Flight;
     }
 
-    if (bossDef.leapPhase == BossLeapPhase::Flight)
+    if (bossDef.leapPhase != BossLeapPhase::Recovery)
     {
-        const float flightTime = (std::max)(0.05f, bossDef.leapFlightTime);
-        const float u          = (std::min)((t - bossDef.leapWindupTime) / flightTime, 1.0f); // 飛行の進み具合 0〜1
+        const float flightTime = (std::max)(0.05f, bossDef.leapDef.flight);
+        const float elapsed    = t - bossDef.leapDef.windup; // 踏み切ってからの経過 [秒]
+
+        // 滞空は「曲線の進み具合を頂点で止める」だけで表す。上がり方も降り方も跳躍と
+        // 同じ式のままなので、留まる長さを変えても踏み切りと着地の速さは変わらない。
+        const float hold   = (std::max)(0.0f, bossDef.leapHoverTime); // 頂点に留まる長さ [秒]
+        const float toApex = flightTime * 0.5f;                       // 頂点に着くまで [秒]
+
+        float u        = 0.0f; // 飛行の進み具合 0〜1
+        bool  hovering = false;
+        if (hold <= 0.0f || elapsed < toApex)
+            u = (std::min)(elapsed / flightTime, 1.0f); // 上昇（留まらない跳躍はそのまま着地まで）
+        else if (elapsed < toApex + hold)
+        {
+            u        = 0.5f; // 頂点で足踏み。高さも水平位置もここで止まる
+            hovering = true;
+        }
+        else
+            u = (std::min)((elapsed - hold) / flightTime, 1.0f); // 下降（留まった分だけ時計を戻す）
+
+        bossDef.leapPhase = hovering ? BossLeapPhase::Hover : BossLeapPhase::Flight;
 
         // このフレームの積分が終わった時点で居るべき位置へ届く速度。Jolt 側と同じ dt で
         // 割らないと、スロー中やヒットストップ中に行き過ぎる（JoltCharacterUpdateSystem の
@@ -355,9 +372,14 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
         movement.velocity3D    = v;
 
         // 跳んでいる向きへ体を向ける。相手を向いたまま飛ぶと、頭上を越える軌道で
-        // 背中から着地する。
-        TurnToward(trans, bossDef.lockedDirection, bossDef.turnSpeed, dt);
-        SyncCharacterRotation(trans, ch);
+        // 背中から着地する。滞空だけは進まないので、浮いたまま相手を向き続ける。
+        Vector3 lookDir = bossDef.lockedDirection;
+        if (bossDef.leapLanding == BossLeapLanding::InPlace)
+        {
+            lookDir   = playerPos - trans.position;
+            lookDir.y = 0.0f;
+        }
+        FaceToward(trans, lookDir, bossDef.turnSpeed, dt, ch);
 
         // アニメの Idle/Move を動かさない（空中の絵は IsLeaping 側の遷移が持つ）。
         bossDef.currentMoveSpeed = 0.0f;
@@ -386,8 +408,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
 
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
-    TurnToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt);
-    SyncCharacterRotation(trans, ch);
+    FaceToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt, ch);
 }
 
 void BossActionSystem::BeginLeapFlight(BossActionComponent &bossDef, const Vector3 &takeoffPos,
@@ -402,6 +423,9 @@ void BossActionSystem::BeginLeapFlight(BossActionComponent &bossDef, const Vecto
         break;
     case BossLeapLanding::TowardTarget:
         bossDef.leapLandingPos = TowardTargetLandingPoint(bossDef, takeoffPos, playerPos);
+        break;
+    case BossLeapLanding::InPlace:
+        bossDef.leapLandingPos = takeoffPos; // 上がって同じ所へ降りる（滞空）
         break;
     }
 
@@ -480,7 +504,7 @@ Vector3 BossActionSystem::LeapPositionAt(const BossActionComponent &bossDef, flo
     Vector3 p = Vector3::Lerp(bossDef.leapTakeoffPos, bossDef.leapLandingPos, u);
 
     // 4h*u(1-u) は u=0.5 で h、両端で 0。着地の高さは踏み切りと同じに戻る。
-    p.y += 4.0f * bossDef.leapHeight * u * (1.0f - u);
+    p.y += 4.0f * bossDef.leapDef.height * u * (1.0f - u);
     return p;
 }
 

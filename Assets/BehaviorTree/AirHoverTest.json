@@ -1,0 +1,282 @@
+{
+    "assetId": 1,
+    "editor_links": [
+        {
+            "endPin": 5,
+            "id": 7,
+            "startPin": 3
+        },
+        {
+            "endPin": 26,
+            "id": 28,
+            "startPin": 6
+        },
+        {
+            "endPin": 30,
+            "id": 31,
+            "startPin": 27
+        },
+        {
+            "endPin": 33,
+            "id": 35,
+            "startPin": 27
+        },
+        {
+            "endPin": 37,
+            "id": 38,
+            "startPin": 34
+        },
+        {
+            "endPin": 40,
+            "id": 42,
+            "startPin": 34
+        },
+        {
+            "endPin": 44,
+            "id": 45,
+            "startPin": 41
+        },
+        {
+            "endPin": 47,
+            "id": 48,
+            "startPin": 41
+        },
+        {
+            "endPin": 50,
+            "id": 51,
+            "startPin": 41
+        },
+        {
+            "endPin": 53,
+            "id": 54,
+            "startPin": 27
+        },
+        {
+            "endPin": 56,
+            "id": 57,
+            "startPin": 6
+        }
+    ],
+    "editor_nodes": [
+        {
+            "actionId": 0,
+            "id": 2,
+            "inputPinId": 0,
+            "name": "ROOT",
+            "outputPinId": 3,
+            "posX": 0.0,
+            "posY": 0.0,
+            "type": 0
+        },
+        {
+            "actionId": 0,
+            "id": 4,
+            "inputPinId": 5,
+            "name": "セレクター (Selector)",
+            "outputPinId": 6,
+            "posX": 0.0,
+            "posY": 160.0,
+            "type": 1
+        },
+        {
+            "actionId": 0,
+            "id": 25,
+            "inputPinId": 26,
+            "name": "遠距離：詰めながら弾幕",
+            "outputPinId": 27,
+            "posX": 150.0,
+            "posY": 320.0,
+            "type": 2
+        },
+        {
+            "actionId": 10,
+            "condition": "C_DistanceGreaterThan",
+            "id": 29,
+            "inputPinId": 30,
+            "name": "条件 (Condition)",
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 40.0,
+            "posY": 480.0,
+            "type": 3
+        },
+        {
+            "actionId": 0,
+            "id": 32,
+            "inputPinId": 33,
+            "name": "並行ノード（Parallel）",
+            "outputPinId": 34,
+            "posX": 280.0,
+            "posY": 480.0,
+            "type": 8
+        },
+        {
+            "action": "A_BossAirHover",
+            "actionId": 1109,
+            "id": 36,
+            "inputPinId": 37,
+            "name": "[主] 詰めながら待つ",
+            "outputPinId": 0,
+            "param": 4.4,
+            "posX": 180.0,
+            "posY": 640.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 39,
+            "inputPinId": 40,
+            "name": "[従] ドローンに弾幕を撃たせる",
+            "outputPinId": 41,
+            "posX": 430.0,
+            "posY": 640.0,
+            "type": 2
+        },
+        {
+            "action": "A_DroneKamikazeSwarm",
+            "actionId": 2016,
+            "id": 43,
+            "inputPinId": 44,
+            "name": "ドローン:弾幕",
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 340.0,
+            "posY": 800.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 112,
+            "id": 46,
+            "inputPinId": 47,
+            "name": "待機",
+            "outputPinId": 0,
+            "param": 1.2000000476837158,
+            "posX": 480.0,
+            "posY": 800.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionId": 1006,
+            "id": 49,
+            "inputPinId": 50,
+            "name": "ドローン:攻撃実行",
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 620.0,
+            "posY": 800.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionId": 2004,
+            "id": 52,
+            "inputPinId": 53,
+            "name": "ドローン:頭上円陣",
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 560.0,
+            "posY": 480.0,
+            "type": 4
+        },
+        {
+            "action": "A_Move",
+            "actionId": 1000,
+            "id": 55,
+            "inputPinId": 56,
+            "name": "移動",
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 850.0,
+            "posY": 320.0,
+            "type": 4
+        }
+    ],
+    "last_id_counter": 57,
+    "nodes": [
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                1,
+                2
+            ],
+            "type": "Selector"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                3,
+                4,
+                5
+            ],
+            "type": "Sequence"
+        },
+        {
+            "action": "A_Move",
+            "actionOrConditionId": 1000,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 10,
+            "children": [],
+            "condition": "C_DistanceGreaterThan",
+            "param": 0.0,
+            "type": "Condition"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                6,
+                7
+            ],
+            "type": "Parallel"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 2004,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_BossAirHover",
+            "actionOrConditionId": 1109,
+            "children": [],
+            "param": 4.4,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                8,
+                9,
+                10
+            ],
+            "type": "Sequence"
+        },
+        {
+            "action": "A_DroneKamikazeSwarm",
+            "actionOrConditionId": 2016,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 112,
+            "children": [],
+            "param": 1.2000000476837158,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionOrConditionId": 1006,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        }
+    ]
+}

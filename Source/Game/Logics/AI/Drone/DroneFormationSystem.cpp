@@ -55,6 +55,15 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         {
             if (auto *t = m_world->GetComponent<TransformComponent>(b))
                 ctx.bossPos = t->GetWorldPosition(); // position はローカル。陣形の中心はワールドで置く
+            // 陣形の中心はボスの足元の高さに置く。跳躍や滞空で浮くと中心ごと持ち上がり、
+            // 地面を薙ぐ技がプレイヤーの頭上を素通りする（各機はボス相対で並ぶため）。
+            // 踏み切った地点の高さがそのときの地面なので、浮いている間はそれで代用する。
+            if (const auto *act = m_world->GetComponent<BossActionComponent>(b))
+            {
+                if (act->currentState == BossActionState::Leap && act->leapPhase != BossLeapPhase::Windup)
+                    ctx.bossPos.y = act->leapTakeoffPos.y;
+            }
+
             if (auto *c = m_world->GetComponent<BossCommandComponent>(b))
                 attackActive = c->droneAttackActive;
             break;

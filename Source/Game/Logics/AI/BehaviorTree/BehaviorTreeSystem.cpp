@@ -100,9 +100,9 @@ void BehaviorTreeSystem::Initialize()
 {
     // 敵の種類を足したら、その敵の RegisterAll をここに1行足す。自己登録マクロにも
     // できるが、「どの敵の行動が生きているか」が1画面で分かる利点のほうが大きい。
-    BT::CommonConditions::RegisterAll();
-    BT::BossConditions::RegisterAll();
-    BT::BossActions::RegisterAll();
+    BT::RegisterCommonConditions();
+    BT::RegisterBossConditions();
+    BT::RegisterBossActions();
 
     VerifyRegistrations();
 

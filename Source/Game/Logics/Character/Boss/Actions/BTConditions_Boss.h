@@ -8,7 +8,7 @@
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
-namespace CCL::AI::BT::BossConditions
+namespace CCL::AI::BT
 {
     // 第2形態か。大状態が唯一の情報源なので blackboard へ写さず直接読む。
     struct IsPhase2 : public IBTCondition
@@ -42,7 +42,8 @@ namespace CCL::AI::BT::BossConditions
         }
     };
 
-    inline void RegisterAll()
+    /// ボス固有の条件を登録する。起動時に1回だけ呼ぶ。
+    inline void RegisterBossConditions()
     {
         auto &reg = BTActionRegistry::Instance();
 
@@ -50,4 +51,4 @@ namespace CCL::AI::BT::BossConditions
         reg.RegisterCondition<ShouldTransitionPhase2>(::CCL::AI::C_ShouldTransitionPhase2);
     }
 
-} // namespace CCL::AI::BT::BossConditions
+} // namespace CCL::AI::BT
