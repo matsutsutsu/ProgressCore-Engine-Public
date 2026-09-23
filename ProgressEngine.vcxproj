@@ -677,6 +677,7 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -700,6 +701,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationType.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h" />

@@ -199,11 +199,11 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
 
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
-    if (actionId == ::CCL::AI::A_Move) return BossActionState::Move;
-    if (actionId == ::CCL::AI::A_BossBackStep) return BossActionState::BackStep;
-    if (actionId == ::CCL::AI::A_BossLeapEscape) return BossActionState::Leap;
-    if (actionId == ::CCL::AI::A_BossLeapAttack) return BossActionState::Leap;
-    if (actionId == ::CCL::AI::A_BossAirHover) return BossActionState::Leap;
+    if (actionId == A_Move) return BossActionState::Move;
+    if (actionId == A_BossBackStep) return BossActionState::BackStep;
+    if (actionId == A_BossLeapEscape) return BossActionState::Leap;
+    if (actionId == A_BossLeapAttack) return BossActionState::Leap;
+    if (actionId == A_BossAirHover) return BossActionState::Leap;
     return BossActionState::None;
 }
 
@@ -236,18 +236,18 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
         bossDef.leapHoverTime   = 0.0f;  // 頂点で止まるのは滞空だけ
         bossDef.leapLandAttack  = false; // 着地に判定を出すのは跳躍攻撃だけ
 
-        if (actionId == ::CCL::AI::A_BossLeapEscape)
+        if (actionId == A_BossLeapEscape)
         {
             bossDef.leapDef     = bossDef.escapeLeap;
             bossDef.leapLanding = BossLeapLanding::AwayToCenter;
         }
-        else if (actionId == ::CCL::AI::A_BossLeapAttack)
+        else if (actionId == A_BossLeapAttack)
         {
             bossDef.leapDef        = bossDef.attackLeap;
             bossDef.leapLanding    = BossLeapLanding::TowardTarget;
             bossDef.leapLandAttack = true;
         }
-        else if (actionId == ::CCL::AI::A_BossAirHover)
+        else if (actionId == A_BossAirHover)
         {
             bossDef.leapDef       = bossDef.hoverLeap;
             bossDef.leapLanding   = BossLeapLanding::InPlace;

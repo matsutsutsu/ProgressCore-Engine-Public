@@ -55,7 +55,7 @@
         },
         {
             "action": "A_DroneMegaClapUpperFirst",
-            "actionId": 2026,
+            "actionId": 108,
             "id": 12,
             "inputPinId": 13,
             "name": "アクション (Action)",
@@ -67,7 +67,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 15,
             "inputPinId": 16,
             "name": "アクション (Action)",
@@ -98,14 +98,14 @@
         },
         {
             "action": "A_DroneMegaClapUpperFirst",
-            "actionOrConditionId": 2026,
+            "actionOrConditionId": 108,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 3.200000047683716,
             "type": "Action",

@@ -103,15 +103,15 @@ namespace CCL::AI::BT
     {
         auto &reg = BTActionRegistry::Instance();
 
-        reg.RegisterCondition<DistanceLessThan>(::CCL::AI::C_DistanceLessThan);
-        reg.RegisterCondition<DistanceGreaterThan>(::CCL::AI::C_DistanceGreaterThan);
-        reg.RegisterCondition<TargetAngleLessThan>(::CCL::AI::C_TargetAngleLessThan);
-        reg.RegisterCondition<TargetAngleGreaterThan>(::CCL::AI::C_TargetAngleGreaterThan);
-        reg.RegisterCondition<TargetApproaching>(::CCL::AI::C_TargetApproaching);
-        reg.RegisterCondition<TargetRetreating>(::CCL::AI::C_TargetRetreating);
-        reg.RegisterCondition<DamageThresholdExceeded>(::CCL::AI::C_DamageThresholdExceeded);
-        reg.RegisterCondition<IsAtStageEdge>(::CCL::AI::C_IsAtStageEdge);
-        reg.RegisterCondition<TargetOnCenterSide>(::CCL::AI::C_TargetOnCenterSide);
+        reg.RegisterCondition<DistanceLessThan>(C_DistanceLessThan);
+        reg.RegisterCondition<DistanceGreaterThan>(C_DistanceGreaterThan);
+        reg.RegisterCondition<TargetAngleLessThan>(C_TargetAngleLessThan);
+        reg.RegisterCondition<TargetAngleGreaterThan>(C_TargetAngleGreaterThan);
+        reg.RegisterCondition<TargetApproaching>(C_TargetApproaching);
+        reg.RegisterCondition<TargetRetreating>(C_TargetRetreating);
+        reg.RegisterCondition<DamageThresholdExceeded>(C_DamageThresholdExceeded);
+        reg.RegisterCondition<IsAtStageEdge>(C_IsAtStageEdge);
+        reg.RegisterCondition<TargetOnCenterSide>(C_TargetOnCenterSide);
     }
 
 } // namespace CCL::AI::BT

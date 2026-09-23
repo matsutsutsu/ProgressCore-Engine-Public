@@ -66,7 +66,7 @@ namespace CCL::AI::BT
     {
         BTNodeState Execute(BTContext &ctx) override
         {
-            ctx.bt->lastLogActionId = ::CCL::AI::A_BossHitWait;
+            ctx.bt->lastLogActionId = A_BossHitWait;
 
             // 自分のタイマーを持たず、知覚側の値を param と見比べるだけ。
             // 途中でもう一発殴られたら自動で延びる。
@@ -91,13 +91,13 @@ namespace CCL::AI::BT
             if (ctx.nodeId >= timers.size())
                 return BTNodeState::Failure;
 
-            ctx.bt->lastLogActionId = ::CCL::AI::A_Move;
+            ctx.bt->lastLogActionId = A_Move;
 
             // 完了したら要求を取り下げる。消さないと BossActionSystem が最後の依頼を握った
             // ままになり、次にボス本体の行動が選ばれるまでその姿勢で固まる。
             if (timers[ctx.nodeId] == 0.0f)
             {
-                ClearCommandIfMine(ctx, ::CCL::AI::A_Move);
+                ClearCommandIfMine(ctx, A_Move);
                 return BTNodeState::Success;
             }
 
@@ -106,7 +106,7 @@ namespace CCL::AI::BT
 
             if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
             {
-                cmd->currentActionId = ::CCL::AI::A_Move;
+                cmd->currentActionId = A_Move;
             }
             return BTNodeState::Running;
         }
@@ -135,11 +135,11 @@ namespace CCL::AI::BT
             auto &timers = ctx.bt->nodeTimers;
             if (ctx.nodeId >= timers.size()) return BTNodeState::Failure;
 
-            ctx.bt->lastLogActionId = ::CCL::AI::A_BossAdvance;
+            ctx.bt->lastLogActionId = A_BossAdvance;
 
             if (timers[ctx.nodeId] == 0.0f)
             {
-                ClearCommandIfMine(ctx, ::CCL::AI::A_Move);
+                ClearCommandIfMine(ctx, A_Move);
                 return BTNodeState::Success;
             }
 
@@ -154,9 +154,9 @@ namespace CCL::AI::BT
             if (!cmd) return BTNodeState::Running;
 
             if (ctx.bt->blackboard.distanceToTarget > stopDistance)
-                cmd->currentActionId = ::CCL::AI::A_Move; // 歩く（旋回も ProcessMove がやる）
+                cmd->currentActionId = A_Move; // 歩く（旋回も ProcessMove がやる）
             else
-                ClearCommandIfMine(ctx, ::CCL::AI::A_Move); // 足を止めて構える（待機旋回へ戻る）
+                ClearCommandIfMine(ctx, A_Move); // 足を止めて構える（待機旋回へ戻る）
 
             return BTNodeState::Running;
         }
@@ -210,7 +210,7 @@ namespace CCL::AI::BT
 
         BTNodeState Execute(BTContext &ctx) override
         {
-            ctx.bt->lastLogActionId = ::CCL::AI::A_DroneStrike;
+            ctx.bt->lastLogActionId = A_DroneStrike;
             if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
             {
                 cmd->droneAttackActive = true;
@@ -281,40 +281,40 @@ namespace CCL::AI::BT
 
         // 後方ステップ：後退0.35 + 硬直。攻撃判定は持たない。硬直をステップ本体より長く
         // 取るのは、0だと「殴られる→即離脱→即接近」を繰り返して手を出す隙が消えるため。
-        reg.RegisterActionInstance(::CCL::AI::A_BossBackStep,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("BackStep"), 0.9f, ::CCL::AI::A_BossBackStep));
+        reg.RegisterActionInstance(A_BossBackStep,
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("BackStep"), 0.9f, A_BossBackStep));
 
         // 中央へ跳んで逃げる：溜め0.25 + 滞空1.1 + 着地硬直（LeapLand クリップ 0.63秒）。
         // 全体時間が溜め＋滞空より短いと空中で要求が下りて待機へ戻り、重力で落ちる。
         // 跳躍系はどれも同じ "Leap" を引き、着地までの絵は IsLeaping（BossAnimSyncSystem）が運ぶ。
-        reg.RegisterActionInstance(::CCL::AI::A_BossLeapEscape,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, ::CCL::AI::A_BossLeapEscape));
+        reg.RegisterActionInstance(A_BossLeapEscape,
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 1.9f, A_BossLeapEscape));
 
         // 跳躍攻撃：溜め0.35 + 滞空0.8 + 着地硬直。既定の全体時間は、攻撃判定を持つ着地
         // クリップ（Ultimate_Land・1.47秒）が終わるまでの長さにしてある。短くすると
         // 判定が出ている最中に次の技が始まる。
         // 攻撃の着地クリップへの切り替えは LeapAttack（BossAnimSyncSystem）が運ぶので、
         // 引くトリガーは逃げる跳躍と同じ。
-        reg.RegisterActionInstance(::CCL::AI::A_BossLeapAttack,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 2.6f, ::CCL::AI::A_BossLeapAttack));
+        reg.RegisterActionInstance(A_BossLeapAttack,
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 2.6f, A_BossLeapAttack));
 
         // その場で滞空：溜め0.3 + 上昇下降0.9 + 頂点で2.5 + 着地硬直（LeapLand・0.63秒）。
         // 短くすると頂点に居るまま要求が下りて、待機へ戻った瞬間に重力で落ちる。
         // ドローンの陣形攻撃は Parallel の従に置き、滞空（主）が全体の長さを決める。
-        reg.RegisterActionInstance(::CCL::AI::A_BossAirHover,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 4.4f, ::CCL::AI::A_BossAirHover));
+        reg.RegisterActionInstance(A_BossAirHover,
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 4.4f, A_BossAirHover));
 
-        reg.RegisterAction<WaitAction>(::CCL::AI::A_Wait);
+        reg.RegisterAction<WaitAction>(A_Wait);
 
-        reg.RegisterAction<ResetDamageAction>(::CCL::AI::A_ResetDamage);
-        reg.RegisterAction<MoveAction>(::CCL::AI::A_Move);
-        reg.RegisterAction<DroneStrikeAction>(::CCL::AI::A_DroneStrike);
-        reg.RegisterAction<HitWaitAction>(::CCL::AI::A_BossHitWait);
-        reg.RegisterAction<AdvanceAction>(::CCL::AI::A_BossAdvance);
+        reg.RegisterAction<ResetDamageAction>(A_ResetDamage);
+        reg.RegisterAction<MoveAction>(A_Move);
+        reg.RegisterAction<DroneStrikeAction>(A_DroneStrike);
+        reg.RegisterAction<HitWaitAction>(A_BossHitWait);
+        reg.RegisterAction<AdvanceAction>(A_BossAdvance);
 
         // 陣形指示は全部おなじ DroneAction。表から直接登録するので技を足しても触らない
         // （連番ループだと欠番も登録してしまう）。
-#define CCL_REGISTER_DRONE_ACTION(Name, Id, Formation, Display) reg.RegisterActionInstance(::CCL::AI::Name, std::make_unique<DroneAction>(::CCL::AI::Name));
+#define CCL_REGISTER_DRONE_ACTION(Name, Id, Formation, Role, Display) reg.RegisterActionInstance(Name, std::make_unique<DroneAction>(Name));
         BT_DRONE_ACTION_LIST(CCL_REGISTER_DRONE_ACTION)
 #undef CCL_REGISTER_DRONE_ACTION
     }

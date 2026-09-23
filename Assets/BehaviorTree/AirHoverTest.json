@@ -89,7 +89,7 @@
             "type": 2
         },
         {
-            "actionId": 10,
+            "actionId": 2,
             "condition": "C_DistanceGreaterThan",
             "id": 29,
             "inputPinId": 30,
@@ -112,7 +112,7 @@
         },
         {
             "action": "A_BossAirHover",
-            "actionId": 1109,
+            "actionId": 9,
             "id": 36,
             "inputPinId": 37,
             "name": "[主] 詰めながら待つ",
@@ -134,7 +134,7 @@
         },
         {
             "action": "A_DroneKamikazeSwarm",
-            "actionId": 2016,
+            "actionId": 103,
             "id": 43,
             "inputPinId": 44,
             "name": "ドローン:弾幕",
@@ -146,7 +146,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 46,
             "inputPinId": 47,
             "name": "待機",
@@ -158,7 +158,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 49,
             "inputPinId": 50,
             "name": "ドローン:攻撃実行",
@@ -170,7 +170,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 52,
             "inputPinId": 53,
             "name": "ドローン:頭上円陣",
@@ -182,7 +182,7 @@
         },
         {
             "action": "A_Move",
-            "actionId": 1000,
+            "actionId": 2,
             "id": 55,
             "inputPinId": 56,
             "name": "移動",
@@ -214,13 +214,13 @@
         },
         {
             "action": "A_Move",
-            "actionOrConditionId": 1000,
+            "actionOrConditionId": 2,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 10,
+            "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
             "param": 0.0,
@@ -236,14 +236,14 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAirHover",
-            "actionOrConditionId": 1109,
+            "actionOrConditionId": 9,
             "children": [],
             "param": 4.4,
             "type": "Action"
@@ -259,21 +259,21 @@
         },
         {
             "action": "A_DroneKamikazeSwarm",
-            "actionOrConditionId": 2016,
+            "actionOrConditionId": 103,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 1.2000000476837158,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"

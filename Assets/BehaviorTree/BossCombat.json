@@ -340,7 +340,7 @@
         },
         {
             "action": "A_DroneGuillotineSlam",
-            "actionId": 2023,
+            "actionId": 105,
             "id": 30,
             "inputPinId": 31,
             "name": "縦割り",
@@ -352,7 +352,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 38,
             "inputPinId": 39,
             "name": "Orbit(帰投)",
@@ -364,7 +364,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 40,
             "inputPinId": 41,
             "name": "詰めながら待つ",
@@ -386,7 +386,7 @@
         },
         {
             "action": "A_DroneClapSlam",
-            "actionId": 2024,
+            "actionId": 106,
             "id": 45,
             "inputPinId": 46,
             "name": "挟み込み",
@@ -398,7 +398,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 53,
             "inputPinId": 54,
             "name": "Orbit(帰投)",
@@ -410,7 +410,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 55,
             "inputPinId": 56,
             "name": "詰めながら待つ",
@@ -432,7 +432,7 @@
         },
         {
             "action": "A_DroneSquadAssault",
-            "actionId": 2031,
+            "actionId": 111,
             "id": 107,
             "inputPinId": 108,
             "name": "小隊突撃(編隊)",
@@ -444,7 +444,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 119,
             "inputPinId": 120,
             "name": "HighOrbit(帰投)",
@@ -456,7 +456,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 122,
             "inputPinId": 123,
             "name": "詰めながら待つ",
@@ -477,7 +477,7 @@
             "type": 2
         },
         {
-            "actionId": 6,
+            "actionId": 11,
             "condition": "C_DamageThresholdExceeded",
             "id": 152,
             "inputPinId": 153,
@@ -489,7 +489,7 @@
             "type": 3
         },
         {
-            "actionId": 9,
+            "actionId": 1,
             "condition": "C_DistanceLessThan",
             "id": 154,
             "inputPinId": 155,
@@ -502,7 +502,7 @@
         },
         {
             "action": "A_ResetDamage",
-            "actionId": 1005,
+            "actionId": 3,
             "id": 156,
             "inputPinId": 157,
             "name": "被弾カウントを戻す",
@@ -514,7 +514,7 @@
         },
         {
             "action": "A_BossBackStep",
-            "actionId": 1104,
+            "actionId": 4,
             "id": 158,
             "inputPinId": 159,
             "name": "後方ステップ",
@@ -571,7 +571,7 @@
             "type": 2
         },
         {
-            "actionId": 10,
+            "actionId": 2,
             "condition": "C_DistanceGreaterThan",
             "id": 210,
             "inputPinId": 211,
@@ -584,7 +584,7 @@
         },
         {
             "action": "A_DroneKamikazeSwarm",
-            "actionId": 2016,
+            "actionId": 103,
             "id": 212,
             "inputPinId": 213,
             "name": "弾幕",
@@ -596,7 +596,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 220,
             "inputPinId": 221,
             "name": "Orbit(帰投)",
@@ -608,7 +608,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 222,
             "inputPinId": 223,
             "name": "詰めながら待つ",
@@ -630,7 +630,7 @@
         },
         {
             "action": "A_DroneSideSlapWhip",
-            "actionId": 2021,
+            "actionId": 104,
             "id": 235,
             "inputPinId": 236,
             "name": "横なぎ回転",
@@ -642,7 +642,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 243,
             "inputPinId": 244,
             "name": "Orbit(帰投)",
@@ -654,7 +654,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 245,
             "inputPinId": 246,
             "name": "詰めながら待つ",
@@ -666,7 +666,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 253,
             "inputPinId": 254,
             "name": "Wait(予備動作)",
@@ -678,7 +678,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 256,
             "inputPinId": 257,
             "name": "攻撃実行",
@@ -690,7 +690,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 259,
             "inputPinId": 260,
             "name": "Wait(攻撃中)",
@@ -702,7 +702,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 262,
             "inputPinId": 263,
             "name": "Wait(予備動作)",
@@ -714,7 +714,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 265,
             "inputPinId": 266,
             "name": "攻撃実行",
@@ -726,7 +726,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 268,
             "inputPinId": 269,
             "name": "Wait(攻撃中)",
@@ -738,7 +738,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 271,
             "inputPinId": 272,
             "name": "Wait(予備動作)",
@@ -750,7 +750,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 274,
             "inputPinId": 275,
             "name": "攻撃実行",
@@ -762,7 +762,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 277,
             "inputPinId": 278,
             "name": "Wait(攻撃中)",
@@ -774,7 +774,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 280,
             "inputPinId": 281,
             "name": "Wait(予備動作)",
@@ -786,7 +786,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 283,
             "inputPinId": 284,
             "name": "攻撃実行",
@@ -798,7 +798,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 286,
             "inputPinId": 287,
             "name": "Wait(攻撃中)",
@@ -810,7 +810,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 289,
             "inputPinId": 290,
             "name": "Wait(予備動作)",
@@ -822,7 +822,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 292,
             "inputPinId": 293,
             "name": "攻撃実行",
@@ -834,7 +834,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 295,
             "inputPinId": 296,
             "name": "Wait(攻撃中)",
@@ -846,7 +846,7 @@
         },
         {
             "action": "A_DroneGuillotineSlam",
-            "actionId": 2023,
+            "actionId": 105,
             "id": 301,
             "inputPinId": 302,
             "name": "援護：縦割り",
@@ -858,7 +858,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 304,
             "inputPinId": 305,
             "name": "Wait(予備動作)",
@@ -870,7 +870,7 @@
         },
         {
             "action": "A_DroneStrike",
-            "actionId": 1006,
+            "actionId": 100,
             "id": 307,
             "inputPinId": 308,
             "name": "攻撃実行",
@@ -882,7 +882,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 310,
             "inputPinId": 311,
             "name": "Wait(攻撃中)",
@@ -894,7 +894,7 @@
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionId": 2004,
+            "actionId": 102,
             "id": 313,
             "inputPinId": 314,
             "name": "Orbit(帰投)",
@@ -906,7 +906,7 @@
         },
         {
             "action": "A_Wait",
-            "actionId": 112,
+            "actionId": 1,
             "id": 316,
             "inputPinId": 317,
             "name": "Wait(間)",
@@ -927,7 +927,7 @@
             "type": 2
         },
         {
-            "actionId": 10,
+            "actionId": 2,
             "condition": "C_DistanceGreaterThan",
             "id": 323,
             "inputPinId": 324,
@@ -940,7 +940,7 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionId": 1106,
+            "actionId": 6,
             "id": 326,
             "inputPinId": 327,
             "name": "詰めながら待つ",
@@ -1055,7 +1055,7 @@
             "width": 3506.0
         },
         {
-            "actionId": 10,
+            "actionId": 2,
             "condition": "C_DistanceGreaterThan",
             "id": 344,
             "inputPinId": 345,
@@ -1067,7 +1067,7 @@
             "type": 3
         },
         {
-            "actionId": 9,
+            "actionId": 1,
             "condition": "C_DistanceLessThan",
             "id": 348,
             "inputPinId": 349,
@@ -1079,7 +1079,7 @@
             "type": 3
         },
         {
-            "actionId": 9,
+            "actionId": 1,
             "condition": "C_DistanceLessThan",
             "id": 351,
             "inputPinId": 352,
@@ -1091,7 +1091,7 @@
             "type": 3
         },
         {
-            "actionId": 10,
+            "actionId": 2,
             "condition": "C_DistanceGreaterThan",
             "id": 357,
             "inputPinId": 358,
@@ -1177,14 +1177,14 @@
             "type": "Sequence"
         },
         {
-            "actionOrConditionId": 6,
+            "actionOrConditionId": 11,
             "children": [],
             "condition": "C_DamageThresholdExceeded",
             "param": 8.0,
             "type": "Condition"
         },
         {
-            "actionOrConditionId": 9,
+            "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
             "param": 12.0,
@@ -1192,56 +1192,56 @@
         },
         {
             "action": "A_ResetDamage",
-            "actionOrConditionId": 1005,
+            "actionOrConditionId": 3,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_DroneGuillotineSlam",
-            "actionOrConditionId": 2023,
+            "actionOrConditionId": 105,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossBackStep",
-            "actionOrConditionId": 1104,
+            "actionOrConditionId": 4,
             "children": [],
             "param": 0.8999999761581421,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 0.6000000238418579,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 3.0,
             "type": "Action"
@@ -1312,7 +1312,7 @@
             "type": "Sequence"
         },
         {
-            "actionOrConditionId": 10,
+            "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
             "param": 40.0,
@@ -1320,13 +1320,13 @@
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 1.5,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 10,
+            "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
             "param": 30.0,
@@ -1334,48 +1334,48 @@
         },
         {
             "action": "A_DroneGuillotineSlam",
-            "actionOrConditionId": 2023,
+            "actionOrConditionId": 105,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 1.5,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 3.0,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 9,
+            "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
             "param": 20.0,
@@ -1383,48 +1383,48 @@
         },
         {
             "action": "A_DroneSideSlapWhip",
-            "actionOrConditionId": 2021,
+            "actionOrConditionId": 104,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 1.5,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 3.0,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 9,
+            "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
             "param": 40.0,
@@ -1432,48 +1432,48 @@
         },
         {
             "action": "A_DroneClapSlam",
-            "actionOrConditionId": 2024,
+            "actionOrConditionId": 106,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 1.5,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 3.0,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 10,
+            "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
             "param": 40.0,
@@ -1481,48 +1481,48 @@
         },
         {
             "action": "A_DroneSquadAssault",
-            "actionOrConditionId": 2031,
+            "actionOrConditionId": 111,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 10.0,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 3.0,
             "type": "Action"
         },
         {
-            "actionOrConditionId": 10,
+            "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
             "param": 40.0,
@@ -1530,42 +1530,42 @@
         },
         {
             "action": "A_DroneKamikazeSwarm",
-            "actionOrConditionId": 2016,
+            "actionOrConditionId": 103,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 1.2000000476837158,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
-            "actionOrConditionId": 1006,
+            "actionOrConditionId": 100,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": [],
             "param": 4.199999809265137,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 2004,
+            "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_BossAdvance",
-            "actionOrConditionId": 1106,
+            "actionOrConditionId": 6,
             "children": [],
             "param": 3.0,
             "type": "Action"

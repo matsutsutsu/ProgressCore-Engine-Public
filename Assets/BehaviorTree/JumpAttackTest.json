@@ -60,7 +60,7 @@
         },
         {
             "action": "A_BossLeapAttack",
-            "actionId": 1108,
+            "actionId": 8,
             "id": 12,
             "inputPinId": 13,
             "name": "アクション (Action)",
@@ -71,7 +71,7 @@
             "type": 4
         },
         {
-            "actionId": 9,
+            "actionId": 1,
             "condition": "C_DistanceLessThan",
             "id": 15,
             "inputPinId": 16,
@@ -122,7 +122,7 @@
             "type": "Sequence"
         },
         {
-            "actionOrConditionId": 9,
+            "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
             "param": 30.0,
@@ -130,7 +130,7 @@
         },
         {
             "action": "A_BossLeapAttack",
-            "actionOrConditionId": 1108,
+            "actionOrConditionId": 8,
             "children": [],
             "param": 1.0,
             "type": "Action"

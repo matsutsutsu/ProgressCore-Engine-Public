@@ -167,7 +167,7 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
         // ステージ端だけは中心がボスではなくステージの中心。同じ「距離を持つ条件」でも
         // ボス中心で描くと嘘になるので、集める先から分ける。param は端からの幅なので
         // 0 も「壁際」という有効な値（下の未設定判定より先に拾う）。
-        if (node.actionOrConditionId == ::CCL::AI::C_IsAtStageEdge)
+        if (node.actionOrConditionId == C_IsAtStageEdge)
         {
             const int  key   = RadiusKey(node.param);
             const bool known = std::any_of(m_edgeRings.begin(), m_edgeRings.end(),
@@ -179,9 +179,9 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
         if (node.param <= 0.0f) continue; // 未設定のノードは線にしない
 
         uint8_t kind = 0;
-        if (node.actionOrConditionId == ::CCL::AI::C_DistanceLessThan)
+        if (node.actionOrConditionId == C_DistanceLessThan)
             kind = kInside;
-        else if (node.actionOrConditionId == ::CCL::AI::C_DistanceGreaterThan)
+        else if (node.actionOrConditionId == C_DistanceGreaterThan)
             kind = kOutside;
         else
             continue;

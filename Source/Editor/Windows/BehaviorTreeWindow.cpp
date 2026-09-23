@@ -166,7 +166,7 @@ bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
             const ActionEntry &e = g_ActionRegistry[i];
             if (i == 0 || e.category != lastCategory)
             {
-                ImGui::SeparatorText(CategoryName(e.category));
+                ImGui::SeparatorText(BTCategoryName(e.category));
                 lastCategory = e.category;
             }
             const bool selected = (e.id == currentId);
@@ -196,7 +196,7 @@ bool BehaviorTreeWindow::DrawConditionCombo(const char *label, ActionID &current
             const ActionEntry &e = g_ConditionRegistry[i];
             if (i == 0 || e.category != lastCategory)
             {
-                ImGui::SeparatorText(CategoryName(e.category));
+                ImGui::SeparatorText(BTCategoryName(e.category));
                 lastCategory = e.category;
             }
             const bool selected = (e.id == currentId);
@@ -1496,10 +1496,10 @@ void BehaviorTreeWindow::DrawInspector()
                 }
 
                 // 選択中アクションの補足（最小構成 BossAction との対応）
-                if (IsBossPhysicalAction(it->actionOrConditionId))
+                if (IsCommandWritingAction(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f),
-                                       "→ BossActionSystem が物理移動を実行");
+                                       "→ BossActionSystem が体を動かす（Parallel では主に置く）");
                 }
                 else if (IsDroneAction(it->actionOrConditionId))
                 {
@@ -1511,7 +1511,7 @@ void BehaviorTreeWindow::DrawInspector()
                     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f),
                                        "→ nodeTimers で待機（BossAction 非依存）");
                 }
-                else if (it->actionOrConditionId == CCL::AI::A_ResetDamage)
+                else if (it->actionOrConditionId == A_ResetDamage)
                 {
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
                                        "→ ブラックボードの蓄積ダメージをリセット");

@@ -1041,6 +1041,9 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h">
       <Filter>Source\Game\Logics\Combat</Filter>
     </ClInclude>
@@ -1828,6 +1831,9 @@
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h">
+      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationType.h">
       <Filter>Source\Game\Logics\AI\Drone</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h">

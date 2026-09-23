@@ -34,7 +34,7 @@
             "type": 1
         },
         {
-            "actionId": 112,
+            "actionId": 1,
             "id": 8,
             "inputPinId": 9,
             "name": "アクション (Action)",
@@ -59,7 +59,7 @@
             "type": "Action",
             "action": "A_Wait",
             "param": 10.0,
-            "actionOrConditionId": 112,
+            "actionOrConditionId": 1,
             "children": []
         }
     ]

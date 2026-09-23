@@ -47,8 +47,8 @@ namespace CCL::AI::BT
     {
         auto &reg = BTActionRegistry::Instance();
 
-        reg.RegisterCondition<IsPhase2>(::CCL::AI::C_IsPhase2);
-        reg.RegisterCondition<ShouldTransitionPhase2>(::CCL::AI::C_ShouldTransitionPhase2);
+        reg.RegisterCondition<IsPhase2>(C_IsPhase2);
+        reg.RegisterCondition<ShouldTransitionPhase2>(C_ShouldTransitionPhase2);
     }
 
 } // namespace CCL::AI::BT

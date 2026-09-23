@@ -362,7 +362,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             {
                 const BTNode &kid = asset.nodes[child];
                 if (kid.type != BTNodeType::Action) continue;
-                if (kid.actionOrConditionId == CCL::AI::A_DroneStrike)
+                if (kid.actionOrConditionId == A_DroneStrike)
                 {
                     lastFormation = -1;
                 }
