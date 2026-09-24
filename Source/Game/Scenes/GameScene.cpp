@@ -1,6 +1,5 @@
-// 役割・設計方針は GameScene.h を参照。
 #include "GameScene.h"
-#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
+#include "Engine/Scene/SceneFactory.h"
 
 #include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
 #include "Engine/Serialization/Factory/Prefab.h"             // 導入カメラ演出の生成

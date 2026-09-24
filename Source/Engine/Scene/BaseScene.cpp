@@ -170,13 +170,19 @@ void BaseScene::Update(float elapsedTime)
 {
     ZoneScopedN("BaseScene::Update");
 
-    RenderQueue::Instance().BeginFrame();
-    RenderDebugRegistry::Instance().BeginFrame(); // デバッグテクスチャ一覧もフレーム先頭でクリア
-    Graphics::Instance().GetParticleRenderer()->BeginFrame();
+    {
+        ZoneScopedN("BaseScene: RenderQueue/DebugRegistry BeginFrame");
+        RenderQueue::Instance().BeginFrame();
+        RenderDebugRegistry::Instance().BeginFrame(); // デバッグテクスチャ一覧もフレーム先頭でクリア
+        Graphics::Instance().GetParticleRenderer()->BeginFrame();
+    }
 
-    // カメラ行列・CbScene の更新と CbLight のバインドを行う。
-    // lightManager->Bind は Graphics::Update 内で実行される。
-    Graphics::Instance().Update();
+    {
+        ZoneScopedN("BaseScene: Graphics::Update");
+        // カメラ行列・CbScene の更新と CbLight のバインドを行う。
+        // lightManager->Bind は Graphics::Update 内で実行される。
+        Graphics::Instance().Update();
+    }
 
     if (m_ecsContext)
     {
