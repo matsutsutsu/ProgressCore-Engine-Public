@@ -1,11 +1,18 @@
 #pragma once
+// ===========================================================================
+// 概要: 文字列をコンパイル時に32bit整数へ変換する FNV-1a ハッシュと、"_hash" リテラル。
+//
+// 責務:
+//   - HashString: 文字列 → 32bit ハッシュ（constexpr）
+//   - "abc"_hash: 文字列リテラルをコンパイル時にハッシュ化する
+// ===========================================================================
 #include <cstdint>
 #include <string_view>
 
 namespace CCL::Utils
 {
-    // コンパイル時に計算可能なFNV-1aハッシュ関数
-    // 文字列を瞬時に単一の整数(32bit)に変換し、検索速度をO(1)かつ最速にします
+    // FNV-1a ハッシュ。文字列キーを整数で比較・検索できるようにする。
+    // 2166136261 と 16777619 は FNV-1a（32bit）で決められた初期値と素数
     constexpr uint32_t HashString(std::string_view str)
     {
         uint32_t hash = 2166136261u;
@@ -18,8 +25,7 @@ namespace CCL::Utils
     }
 } // namespace CCL::Utils
 
-// namespaceの外にユーザー定義リテラルを配置することで、
-// 文字列リテラルに直接 "_hash" を付けてコンパイル時ハッシュ化が可能になります。
+// 名前空間の外に置くことで、どこでも "abc"_hash と書けるようにする
 constexpr uint32_t operator"" _hash(const char *str, size_t)
 {
     return CCL::Utils::HashString(str);

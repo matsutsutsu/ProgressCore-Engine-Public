@@ -7,10 +7,10 @@ using namespace CCL::ECS;
 
 void TimeScaleSetupSystem::Update(float dt)
 {
-    // 追加対象のIDを一時保存するリスト（Foreach中の構造変更を避けるため）
+    // ForEach 中は World::HasComponent で判定するだけにし、付与はループの後で行う
     std::vector<EntityID> needsTimeState;
 
-    // 1. Transformを持つが TimeState を持たないエンティティを抽出
+    // 1. Transform を持つが TimeState を持たない Entity を集める
     ForEachWithID([&](EntityID id, const TransformComponent &transform) {
         if (!m_world->HasComponent<TimeStateComponent>(id))
         {
@@ -18,14 +18,12 @@ void TimeScaleSetupSystem::Update(float dt)
         }
     });
 
-    // 2. 足りないエンティティに一括付与
-    // ※これはプレハブ側の設定漏れに対する救済措置であり、
-    // 実行中に頻発する場合はエディタ側でPrefabを修正すべきです。
+    // 2. 足りない Entity に一括で付ける（プレハブの設定漏れの救済）
     for (auto id : needsTimeState)
     {
         m_world->AddComponent<TimeStateComponent>(id);
 
-        // 警告ログを出すことで、プログラマにプレハブの修正を促す（DODの観点から重要）
+        // 付与のたびに Archetype 遷移が起きて Chunk が細切れになるので、警告でプレハブの修正を促す
         CCL_LOG_WARN(LogCategory::Game,
                      "TimeState was automatically added to %s. "
                      "To avoid chunk fragmentation, please add TimeState in the Editor Prefab.",
@@ -33,5 +31,5 @@ void TimeScaleSetupSystem::Update(float dt)
     }
 }
 
-// 初期化やセットアップを行うため、TimeScaleSystem本体よりも早い段階に登録する
+// TimeScaleSystem が localDt を書く前に TimeState をそろえておくため、1段前のステージに置く
 REGISTER_LOGIC_SYSTEM(TimeScaleSetupSystem, Priority::LogicStage::L01_TimeSetup)

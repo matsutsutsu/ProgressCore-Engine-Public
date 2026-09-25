@@ -1,5 +1,4 @@
 // NameComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -10,9 +9,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// ============================================================================
-// パターンC: NameComponent 用カスタムシリアライズ
-// ============================================================================
+// パターンC（カスタムシリアライズ）。char 配列は汎用のフィールド記述で扱えないので自前で書く
 namespace ComponentMetaJson
 {
     template <>
@@ -35,9 +32,6 @@ namespace ComponentMetaJson
     };
 } // namespace ComponentMetaJson
 
-// ============================================================================
-// ComponentMeta<NameComponent>
-// ============================================================================
 template <>
 struct ComponentMeta<NameComponent>
 {

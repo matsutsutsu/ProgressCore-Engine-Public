@@ -41,37 +41,15 @@
 #include "tracy/TracyD3D11.hpp"
 #include "Engine/Core/Profiling/TracySection.h" // フレーム内フェーズ(Simulation/Render)の帯
 
-#if defined(_DEBUG)
-// D3D11 デバッグレイヤーで、致命的なメッセージが出た時点でデバッガを止める。
-// 現状どこからも呼んでいない（必要になったら Graphics 初期化直後に呼ぶ）。
-//
-// WARNING では止めない：D3D は実害のない警告も出すため、ここで止めると
-// 通常の起動すら進まなくなる。原因調査中に一時的に有効化する用途に留める。
-void InitializeDebugLayer(ID3D11Device *device)
-{
-    ID3D11InfoQueue *infoQueue = nullptr;
-    device->QueryInterface(__uuidof(ID3D11InfoQueue), (void **)&infoQueue);
-
-    if (infoQueue)
-    {
-        infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-        infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
-        infoQueue->Release();
-    }
-}
-#endif
-
-// 垂直同期間隔設定
+// Present の垂直同期間隔（1 = 毎 VSync で表示）
 static const int syncInterval = 1;
 
-// コンストラクタ
 Framework::Framework(HWND hWnd)
     : hWnd(hWnd)
 {
-
     ZoneScopedN("Framework::Constructor");
 
-    // 最初にLoggerをセットアップ (他システムが起動時に CCL_LOG を呼ぶため)
+    // 最初に Logger をセットアップする（他システムが起動時に CCL_LOG を呼ぶため）
     {
         ZoneScopedN("Init: Logger");
         Logger::Instance().AddSink(std::make_shared<DebugStreamSink>());
@@ -88,22 +66,20 @@ Framework::Framework(HWND hWnd)
         Logger::Instance().AddSink(m_consoleLogSink);
     }
 
-    // グラフィックス初期化
     {
         ZoneScopedN("Init: Graphics");
         Graphics::Instance().Initialize(hWnd);
     }
 #ifdef ENABLE_EDITOR
-    // IMGUI初期化
     {
         ZoneScopedN("Init: ImGuiRenderer");
         ImGuiRenderer::Initialize(hWnd, Graphics::Instance().GetDevice(), Graphics::Instance().GetDeviceContext());
     }
 #endif
-    // FileDialog を一括初期化（エディタ専用）
-    //    プリセット登録 + 前回の履歴ロード（Build/User/EditorPrefs.json）がここで完結する。
-    //    ネイティブのファイル選択ダイアログはエディタ機能なので、Shipping では初期化しない
-    //    （＝EditorPrefs.json を生成しない）。
+    // FileDialog を一括初期化する（エディタ専用）。
+    //   プリセット登録 + 前回の履歴ロード（Build/User/EditorPrefs.json）がここで完結する。
+    //   ネイティブのファイル選択ダイアログはエディタ機能なので、Shipping では初期化しない
+    //   （＝EditorPrefs.json を生成しない）。
 #ifdef ENABLE_EDITOR
     {
         ZoneScopedN("Init: FileDialog");
@@ -111,21 +87,18 @@ Framework::Framework(HWND hWnd)
     }
 #endif
 
-    // Input 初期化
     {
         ZoneScopedN("Init: Input");
         Input::Instance().Initialize(hWnd);
     }
 
-    // =========================================================
-    //  システムを生成・初期化し、仲介役に預ける
-    // =========================================================
+    // エンジン全体で共有するサービスを生成し、EngineServices に預ける
     auto &services = EngineServices::Instance();
 
     {
         ZoneScopedN("Init: JobSystem (shared frame pool)");
-        // ECSのフレーム並列で全Worldが共有する唯一のジョブプールを、ここ（上層）で1つだけ生成。
-        // 以降 SystemManager はこれを注入して使う（各Worldでプールを持たない）。
+        // ECS のフレーム並列で全 World が共有する唯一のジョブプールを、ここ（上層）で1つだけ生成する。
+        // 以降 SystemManager はこれを注入して使う（各 World でプールを持たない）
         services.jobSystem = std::make_shared<CCL::ECS::JobSystem>();
     }
 
@@ -154,58 +127,51 @@ Framework::Framework(HWND hWnd)
         services.physicsManager->Initialize(services.jobSystem.get());
     }
 
-    // シーンマネージャー初期化（この中で最初のシーン生成予約まで行う）
+    // この中で最初のシーン生成予約まで行う
     {
         ZoneScopedN("Init: SceneManager");
         SceneManager::Instance().Initialize();
     }
 
 #ifdef ENABLE_EDITOR
-    // エディタの初期化をフレームワーク層で行う
+    // エディタの初期化は Engine 層ではなくフレームワーク層で行う
     {
         ZoneScopedN("Init: EditorWindowManager + LoadLayout");
         m_editorWindowManager = std::make_unique<EditorWindowManager>();
         m_editorWindowManager->Initialize();
-        // 2. 状態の復元
         m_editorWindowManager->LoadLayout("Build/User/WindowLayout.json");
 
-        // ConsoleWindow に Sink を渡す
+        // ConsoleWindow がログを表示できるよう、共有のシンクを渡す
         if (auto *console = m_editorWindowManager->GetWindow<ConsoleWindow>())
             console->SetBufferSink(m_consoleLogSink);
     }
 #endif
 }
 
-// デストラクタ
 Framework::~Framework()
 {
-    ZoneScopedN("Framework::Destrucor");
+    ZoneScopedN("Framework::Destructor");
 
 #ifdef ENABLE_EDITOR
-    // 終了時に必ず保存
     m_editorWindowManager->SaveLayout("Build/User/WindowLayout.json");
-    // エディタの解放を明示的に行う（スマートポインタなので自動解放されるが順序の担保として）
+    // unique_ptr なので自動でも解放されるが、シーンより先に壊す順序を明示する
     m_editorWindowManager.reset();
 #endif
 
-    // シーン終了化
     {
         ZoneScopedN("Finalize: SceneManager");
         SceneManager::Instance().Clear();
     }
-#ifdef ENABLE_EDITOR
 
+#ifdef ENABLE_EDITOR
     {
         ZoneScopedN("Finalize: ImGuiRenderer");
-        // IMGUI終了化
         ImGuiRenderer::Finalize();
     }
 
-#endif
-#ifdef ENABLE_EDITOR
     {
-        ZoneScopedN("Finalize:  SaveFileDialogHistory");
-        // ダイアログ履歴を保存（エディタ専用。Shipping では初期化もしないので保存もしない）
+        ZoneScopedN("Finalize: SaveFileDialogHistory");
+        // エディタ専用。Shipping では初期化もしないので保存もしない
         FileDialog::SaveHistory();
     }
 #endif
@@ -218,21 +184,15 @@ Framework::~Framework()
 
     {
         ZoneScopedN("Finalize: Graphics::Shutdown");
-        // ④ 描画パイプラインの破棄 (ここで ResourceManager のクリアも行われる)
-        // 最後に残ったGPUの親玉を破壊します。
-        // ここでついに、あの「ReportLiveDeviceObjects」のレポートが出力されます！
+        // 描画パイプラインを最後に破棄する（ResourceManager のクリアもここで行われる）。
+        // デバッグビルドでは、ここで解放漏れの GPU オブジェクトが ReportLiveDeviceObjects で出力される
         Graphics::Instance().Shutdown();
     }
 }
 
-// ---------------------------------------------------------
-// 固定更新：物理演算などの「結果が変わってはいけない処理」
-// ---------------------------------------------------------
+// 物理・ロジックなど、フレームレートで結果が変わってはいけない処理だけを進める
 void Framework::FixedUpdate(float fixedTime)
 {
-    // ここでは「物理・ロジック系」の更新のみを行う
-
-    // 固定フレームごとの更新時間を計測
     ZoneScopedN("Framework::FixedUpdate");
 
     // 一時停止/コマ送りの判断は Run() 側で一元管理する。
@@ -240,40 +200,29 @@ void Framework::FixedUpdate(float fixedTime)
     //   本関数は無条件にロジックを進める（停止中は Run() が本関数を呼ばない）。
     SceneManager::Instance().FixedUpdate(fixedTime);
 
-    // 使い終わった入力フラグをここでリセット
+    // このステップで消費した「押した瞬間」系の入力フラグを下ろす
     Input::Instance().ClearLogicInput();
 }
 
-// ---------------------------------------------------------
-// 可変更新：描画準備、入力、UIなど「毎フレーム行いたい処理」
-// ---------------------------------------------------------
+// 描画準備・UI など、毎フレーム行いたい処理
 void Framework::Update(float elapsedTime)
 {
-
-    // 毎フレームのロジック更新時間を計測
     ZoneScopedN("Framework::Update");
 
 #ifdef ENABLE_EDITOR
     {
-
         ZoneScopedN("Framework::ImGuiRenderer::NewFrame");
-
-        // IMGUIフレーム開始処理
         ImGuiRenderer::NewFrame();
     }
 #endif
 
     {
-
         ZoneScopedN("Framework::SceneManager::Update");
-
-        // シーン更新処理
         SceneManager::Instance().Update(elapsedTime);
     }
 
 #ifdef ENABLE_EDITOR
     {
-
         ZoneScopedN("Framework::EditorUpdate");
 
         // シーンが切り替わったら、前のシーンを指していたエディタ側の参照を全部捨てる。
@@ -296,8 +245,7 @@ void Framework::Update(float elapsedTime)
             }
         }
 
-        // 重要: 現在アクティブなシーンの情報をエディタに供給する（オブザーバー的アプローチ）
-        // ※ SceneManager に GetCurrentScene() などのアクセス関数を追加する必要があります
+        // エディタが今のシーンの World / SystemManager を見られるよう、毎フレーム渡し直す
         auto *currentScene = SceneManager::Instance().GetCurrentScene();
         if (currentScene)
         {
@@ -309,95 +257,69 @@ void Framework::Update(float elapsedTime)
             m_editorContext.world         = nullptr;
             m_editorContext.systemManager = nullptr;
         }
-
-        // UIからのリクエスト（シーン遷移など）があれば、ここでFrameworkやSceneManagerに指示を出す
-        if (!m_editorContext.pendingLoadScenePath.empty())
-        {
-            // 例: SceneManager::Instance().LoadScene(m_editorContext.pendingLoadScenePath);
-            m_editorContext.pendingLoadScenePath.clear();
-        }
     }
 #endif
 }
 
-// 描画処理
 void Framework::Render(float elapsedTime)
 {
-    // =========================================================
     // Tracy の GPU タイムスタンプ回収はフレーム先頭で行う。
     // 前フレームの Present / Flush から最も時間が経っており、
     // GPU 側の書き込みが完了している可能性が最も高いため。
-    // =========================================================
     if (auto tracyCtx = Graphics::Instance().GetTracyContext())
     {
         TracyD3D11Collect(tracyCtx);
     }
 
-    // 描画コマンド発行全体を計測
     ZoneScopedN("Framework::Render");
 
     ID3D11DeviceContext *dc = Graphics::Instance().GetDeviceContext();
 
-    // =========================================================
-    // 　ビルド構成による描画先の切り替え
-    // =========================================================
+    // ビルド構成で描画先を切り替える
 #ifdef ENABLE_EDITOR
-    // 【エディタあり (Development)】: ゲームは裏画面(gameRTV)に描画する
+    // エディタあり（Development）: ゲームは裏画面（gameRTV）に描き、エディタの GameView に貼る
     bool useGameRTV = true;
 #else
-    // 【エディタなし (Shipping)】: ゲームは直接実際の画面(バックバッファ)に描画する
+    // エディタなし（Shipping）: ゲームは直接バックバッファに描く
     bool useGameRTV = false;
 #endif
 
-    // 画面クリア
     Graphics::Instance().Clear(0.5f, 0.5f, 0.5f, 1, useGameRTV);
-    // レンダーターゲット設定
     Graphics::Instance().SetRenderTargets(useGameRTV);
 
-    // シーンマネージャーを介して現在のシーンを描画
     {
-        // シーンの描画（不透明、半透明、パーティクルなど）を細分化して計測
         ZoneScopedN("SceneManager::Render");
 
         SceneManager::Instance().Render();
     }
 
 #ifdef ENABLE_EDITOR
-
     {
         ZoneScopedN("Framework::Clear SetRenderTargets");
 
-        // ここがCPU側で重いと見えた時は、この処理のCPUが重いのではなく
-        // GPUの描画が終わるまでCPU側が待たされていることが多いのが原因
+        // ここが CPU 側で重く見えるときは、この処理自体ではなく
+        // GPU の描画完了を CPU が待たされていることが多い
 
-        // =========================================================
-        // 2. エディタ(UI)の描画（実際の画面＝バックバッファへ）
-        // =========================================================
-        // false を渡して行き先をモニターに出力する実際の画面に戻す
+        // エディタ UI はバックバッファへ描くので、描画先を戻す
         Graphics::Instance().Clear(0.1f, 0.1f, 0.1f, 1.0f, false);
         Graphics::Instance().SetRenderTargets(false);
     }
 
-    // ImGuiの描画を計測
     {
-
         ZoneScopedN("FrameWork::ImGui");
 
         {
-
             ZoneScopedN("FrameWork::SceneManager::DrawGUI");
-
             SceneManager::Instance().DrawGUI();
         }
 
         {
-
             ZoneScopedN("FrameWork::EditorUI::Render");
 
-            // ゲームUIの後に、覆いかぶさるようにエディタUIを描画する
+            // ゲーム UI の後に、覆いかぶさるようにエディタ UI を描く
             if (m_editorWindowManager)
             {
-                // ここで完成したゲーム画面のテクスチャをUIに渡す！
+                // 完成したゲーム画面のテクスチャを GameView に渡す
                 m_editorContext.gameSRV = (void *)Graphics::Instance().GetGameSRV();
 
                 // デバッグ表示（Render Debug ウィンドウ）へ device レベルの SRV を登録する。
@@ -421,7 +343,7 @@ void Framework::Render(float elapsedTime)
         {
             ZoneScopedN("FrameWork::ImGuiRenderer::Render");
 
-            // GPU側のImGui処理時間も計測する
+            // GPU 側の ImGui 処理時間も計測する
             if (auto tracyCtx = Graphics::Instance().GetTracyContext())
             {
                 TracyD3D11Zone(tracyCtx, "ImGui Pass (GPU)");
@@ -433,77 +355,43 @@ void Framework::Render(float elapsedTime)
             const bool allowPlatformWindows =
                 m_editorWindowManager &&
                 m_editorWindowManager->IsVisible() &&
-                m_editorContext.renderExternalWindows; // pause縛りを外し、UI表示中は常に外部ウィンドウを描画
+                m_editorContext.renderExternalWindows;
             ImGuiRenderer::SetPlatformWindowsEnabled(allowPlatformWindows);
             ImGuiRenderer::SetPlatformWindowsThrottled(m_editorContext.throttleExternalWindows);
 
-            // IMGUI描画
             ImGuiRenderer::Render(dc);
         }
     }
-
 #endif
 
     {
-        // 超重要: GPUの描画待ち（VSync同期）の時間を計測
+        // GPU の描画待ち（VSync 同期）の時間はここに乗る
         ZoneScopedN("Graphics::Present (VSync Wait)");
 
-        // 画面表示
         if (Graphics::Instance().Present(syncInterval))
         {
-            // 成功時のみ: GPUのキューを確実に押し出す
+            // 成功時のみ GPU のキューを押し出す
             if (dc) dc->Flush();
         }
         else
         {
-            // 失敗時(デバイスロスト等): 絶対に Flush や Collect を呼んではいけない
-            // ① GPU リソース再構築
+            // 失敗時（デバイスロスト等）は Flush や Collect を呼んではいけない。
+            // GPU リソースを作り直し、シーンにも作り直しを知らせる
             Graphics::Instance().RecoverFromDeviceLost();
-            // ② 現在のシーンに通知
             if (auto *scene = dynamic_cast<BaseScene *>(SceneManager::Instance().GetCurrentScene()))
                 scene->OnDeviceRecreated();
         }
     }
 }
 
-// フレームレート計算
-void Framework::CalculateFrameStats()
-{
-    // Code computes the average frames per second, and also the
-    // average time it takes to render one frame.  These stats
-    // are appended to the window caption bar.
-    static int   frames       = 0;
-    static float time_tlapsed = 0.0f;
-
-    frames++;
-
-    // Compute averages over one second period.
-    if ((timer.TimeStamp() - time_tlapsed) >= 1.0f)
-    {
-        float              fps  = static_cast<float>(frames); // fps = frameCnt / 1
-        float              mspf = 1000.0f / fps;
-        std::ostringstream outs;
-        outs.precision(6);
-        outs << "FPS : " << fps << " / " << "Frame Time : " << mspf << " (ms)";
-        //SetWindowTextA(hWnd, outs.str().c_str());
-
-        // Reset for next average.
-        frames = 0;
-        time_tlapsed += 1.0f;
-    }
-}
-
-// ---------------------------------------------------------
-// メインループ（Accumulator パターンの実装）
-// ---------------------------------------------------------
+// メインループ。固定タイムステップは Accumulator パターン（Fix Your Timestep）で回す
 int Framework::Run()
 {
     MSG msg = {};
 
-    // 時間の貯金箱
+    // まだ FixedUpdate に消化していない経過時間（秒）
     double accumulator = 0.0;
 
-    // 初回の時間計測
     timer.Tick();
 
     while (WM_QUIT != msg.message)
@@ -526,29 +414,17 @@ int Framework::Run()
             }
 
             timer.Tick();
-            CalculateFrameStats();
 
-            // 1. 経過時間を取得
+            // 1. 前フレームからの経過時間を取得する
             float frameTime = timer.TimeInterval();
 
-            // メモリリーク検出を有効化 (すでにあるはず)
-            _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+            // TODO(2026-09-16): シャドウマップ周りでメモリリークの疑い。
+            //   リークダンプの確保番号を _CrtSetBreakAlloc に渡して確保箇所を特定する
+            //   （実行ごとに番号が変わる場合はこの方法は使えない）
 
-            // この番号のメモリ確保の瞬間にブレークする
-            // ダンプに出ている番号（例: 2575）を指定します
-            // ※実行するたびに番号が変わる場合は、この方法は使えません
-
-            // TODO:シャドウマップでメモリリーク
-            //_CrtSetBreakAlloc(47488014);
-            //_CrtSetBreakAlloc(12539300);
-            //_CrtSetBreakAlloc(221793);
-            //_CrtSetBreakAlloc(221800);
-
-            //_CrtSetBreakAlloc(57272);
-
-            // 2. 「死の螺旋」防止（Safety Cap）
-            // どんなに重くても、現実時間が 0.25秒 進んだことにして計算を打ち切る
-            // これがないと、処理落ち→計算量増える→さらに処理落ち... で停止する
+            // 2. 「死の螺旋」防止（Safety Cap）。
+            //    どんなに重くても 0.1秒 進んだことにして打ち切る。
+            //    これがないと、処理落ち→消化すべきステップが増える→さらに処理落ち… で止まる
             if (frameTime > 0.1f) frameTime = 0.1f;
 
             // 一時停止中はゲーム内時間(accumulator)を進めない。
@@ -567,8 +443,8 @@ int Framework::Run()
             m_editorContext.stepOneFrame = false; // 要求は毎フレーム消費（連続送りはキー側のedge検出で防ぐ）
 #endif
 
-            // ゲームのポーズ（PauseSystem）でも世界の時計は止まる。エディタ非依存・Shipping対応の
-            //   ため、engine層の TimeContext.isPaused を見て logicFrozen に合流させる。これを入れないと
+            // ゲームのポーズ（PauseSystem）でも世界の時計は止まる。エディタ非依存・Shipping 対応の
+            //   ため、Engine 層の TimeContext.isPaused を見て logicFrozen に合流させる。これを入れないと
             //   accumulator だけ実時間で溜まり、alpha が 0↔1 に揺れて prev/current の固定姿勢を往復補間し、
             //   ポーズ中なのにキャラ/パーティクルが「震える」。（上の解説コメント参照）
             if (auto *pausedScene = SceneManager::Instance().GetCurrentScene())
@@ -595,43 +471,36 @@ int Framework::Run()
                 accumulator += frameTime;
             }
 
-            // 1秒ごとの計測処理
+            // 1秒ごとに、ウィンドウタイトルへ FPS と FixedUpdate 回数を出す
             m_debugTimer += frameTime;
             if (m_debugTimer >= 1.0f)
             {
 #ifdef ENABLE_EDITOR
-                // ウィンドウタイトルにFPSとFixedUpdate回数を表示
                 std::string title = "FPS: " + std::to_string(ImGui::GetIO().Framerate) +
                                     " | Fixed Updates: " + std::to_string(m_fixedUpdateCounter);
                 SetWindowTextA(hWnd, title.c_str());
 #endif
 
-                // カウンタをリセット
                 m_fixedUpdateCounter = 0;
                 m_debugTimer         = 0.0f;
             }
 
-            // =========================================================
-            //  ループ(FixedUpdate)に入る前に、必ず最新のハードウェア入力を取得する
-            // =========================================================
+            // FixedUpdate のループに入る前に、必ず最新のハードウェア入力を取得する
             {
                 ZoneScopedN("Framework::Input::Update");
                 Input::Instance().Update(frameTime);
             }
 
-            // ===========================================================================
-            // シーン切り替えをフレーム先頭の一点に集約する
-            //   誰も世界の処理を始めていないこのクリーンな瞬間に対処することで、
+            // エディタからのロード/セーブ要求を、フレーム先頭の一点で消化する。
+            //   誰も世界の処理を始めていないこの瞬間に対処することで、
             //   以降の FixedUpdate, Update, Render は一貫して「新しい世界」を走る。
-            // ===========================================================================
 #ifdef ENABLE_EDITOR
-
             if (auto *currentScene = SceneManager::Instance().GetCurrentScene())
             {
                 auto *world = currentScene->GetWorld();
                 if (world)
                 {
-                    // ① ロード要求の一括検知
+                    // ① シーンのロード要求
                     if (!m_editorContext.pendingLoadScenePath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingLoad");
@@ -639,12 +508,11 @@ int Framework::Run()
                         // シーンマネージャーを直接叩いて、この世界のエンティティを入れ替える
                         SceneManager::Instance().LoadScene(world, m_editorContext.pendingLoadScenePath);
 
-                        // リクエストを完全に消化したのでクリア
                         m_editorContext.pendingLoadScenePath.clear();
                         m_editorContext.ClearSelection();
                     }
 
-                    // ② セーブ要求の一括検知
+                    // ② シーンのセーブ要求
                     if (!m_editorContext.pendingSaveScenePath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingSave");
@@ -674,13 +542,11 @@ int Framework::Run()
                 }
             }
 #endif
-            // ===========================================================================
 
-            // ループ回数制限用のカウンタ
             int       updateCount = 0;
-            const int MAX_STEPS   = 4; // 1フレームに許容する最大更新回数
+            const int MAX_STEPS   = 4; // 1フレームに許容する FixedUpdate の最大回数
 
-            // --- Simulation フェーズ（固定タイムステップの論理・物理）---
+            // 3. Simulation フェーズ（固定タイムステップの論理・物理）。
             //   Tracy Section で1つの帯にする。プロファイラ側で「この工程だけ」に時間範囲を
             //   絞れるので、ForEachParallel のフォークジョイン（join待ちのカーネル時間）を
             //   この帯の中だけで追跡でき、固定タイムステップ構造の説明にも使える。
@@ -702,33 +568,25 @@ int Framework::Run()
                     accumulator -= FIXED_DT;
                     updateCount++;
 
-                    // カウントアップ
                     m_fixedUpdateCounter++;
                 }
 
-                // もし最大回数を超えてまだ時間が余っている場合、
-                // 無理に消化せず捨てる（処理落ち時にゲーム速度がスローになるが、カクつきは防げる）
+                // 最大回数を超えてまだ時間が余っている場合は、無理に消化せず
+                // FIXED_DT 未満の余りだけ残して捨てる
+                // （処理落ち時にゲーム速度がスローになるが、カクつきは防げる）
                 if (accumulator >= FIXED_DT)
                 {
-                    // 残った時間を捨てる、あるいは次のフレームに持ち越すが
-                    // ここでは大きく溜まりすぎた分をカットしてリセットする例
-                    // accumulator = 0.0; // 完全に時間を捨てる場合
-
-                    // または、FIXED_DT未満になるように余りだけ残す（推奨）
                     accumulator = fmod(accumulator, FIXED_DT);
                 }
+            }
 
-            } // ← Simulation セクション終了
-
-            // ===============================================================
-            // 描画補間係数の算出とWorldへの供給
-            //   accumulator / FIXED_DT = 次の物理ステップに対してどれだけ「先読み」しているか
-            // ===============================================================
+            // 4. 描画補間係数を算出して World へ渡す。
+            //   accumulator / FIXED_DT = 次の物理ステップに対してどれだけ進んでいるか（0..1）
             if (auto *currentScene = SceneManager::Instance().GetCurrentScene())
             {
                 if (auto *world = currentScene->GetWorld())
                 {
-                    // 規約準拠：必ず HasResource でガードしてから参照更新（O(1)・ヒープ確保なし）
+                    // GetResource は未登録だと assert で落ちるので、必ず HasResource で確かめる
                     if (world->HasResource<RenderInterpState>())
                     {
                         // 一時停止中は補間せず最新の確定姿勢(alpha=1)を表示して震えを止める
@@ -738,8 +596,7 @@ int Framework::Run()
                 }
             }
 
-            // 5. 残った時間 (accumulator) を使って「補間」を行うのが理想だが、
-            //    まずは可変フレームで描画更新を行う
+            // 5. 可変フレームの更新と描画。
             //   Update / Render もそれぞれ Section の帯にして、タイムライン上で
             //   Simulation と描画工程を色分け・絞り込みできるようにする。
             {
@@ -751,14 +608,13 @@ int Framework::Run()
                 Render(frameTime);
             }
 
-            // ここで1フレーム終了をTracyに通知
+            // 1フレームの終わりを Tracy に通知する
             FrameMark;
         }
     }
     return static_cast<int>(msg.wParam);
 }
 
-// メッセージハンドラ
 LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     // OSからのメッセージ処理がスパイクの原因になることもあるため追跡
@@ -772,7 +628,7 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
     switch (msg)
     {
     case WM_MOUSEWHEEL: {
-        // 1カリッ（120）を WHEEL_DELTA（120）で割って、+1 または -1 にする
+        // ホイール1ノッチ（120）を WHEEL_DELTA（120）で割って、+1 または -1 にする
         int scroll = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
         Input::Instance().GetMouse().SetWheel(scroll);
         return 0;
@@ -794,12 +650,12 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
         // アプリ終了はウィンドウの×ボタン（WM_CLOSE→WM_DESTROY）だけ。
         break;
     case WM_ENTERSIZEMOVE:
-        // WM_EXITSIZEMOVE is sent when the user grabs the resize bars.
+        // ウィンドウの移動・リサイズ操作の開始。操作中はタイマーを止め、
+        // 解放後に大きな経過時間がまとめて流れ込むのを防ぐ
         timer.Stop();
         break;
     case WM_EXITSIZEMOVE:
-        // WM_EXITSIZEMOVE is sent when the user releases the resize bars.
-        // Here we reset everything based on the new window dimensions.
+        // 移動・リサイズ操作の終了。タイマーを再開する
         timer.Start();
         break;
     default:

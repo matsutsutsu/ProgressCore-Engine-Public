@@ -1,5 +1,12 @@
 #pragma once
-
+// ===========================================================================
+// 概要: アプリ全体の起動・メインループ・終了を受け持つ最上位クラス Framework。
+//
+// 責務:
+//   - エンジンの各サービス（ログ・描画・入力・音・物理・シーン・エディタ）の初期化と破棄
+//   - 固定タイムステップ（FixedUpdate）と可変フレーム（Update/Render）のメインループ
+//   - Win32 メッセージの処理
+// ===========================================================================
 #include <windows.h>
 #include "Engine/Core/Time/HighResolutionTimer.h"
 
@@ -26,8 +33,6 @@ private:
     // 描画実行：毎フレーム呼ばれる
     void Render(float elapsedTime);
 
-    void CalculateFrameStats();
-
 public:
     int              Run();
     LRESULT CALLBACK HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -36,19 +41,17 @@ private:
     const HWND          hWnd;
     HighResolutionTimer timer;
 
-    // 固定タイムステップ設定 (60FPS = 0.01666...秒)
+    // 固定タイムステップ（60FPS = 0.01666...秒）
     static constexpr float FIXED_DT = 1.0f / 60.0f;
 
-    // デバッグ用：計測用変数
-    int   m_fixedUpdateCounter = 0;    // 1秒間に何回回ったか数える
-    float m_debugTimer         = 0.0f; // 1秒経過計測用
+    // ウィンドウタイトルへの計測表示用
+    int   m_fixedUpdateCounter = 0;    // 直近1秒間の FixedUpdate 回数
+    float m_debugTimer         = 0.0f; // 1秒の経過計測（秒）
     int   m_displayFixedCount  = 0;    // 表示用の確定値
 
     std::shared_ptr<ImGuiBufferSink> m_consoleLogSink; // コンソールウィンドウと共有するログシンク
 
-// =========================================================
 // エディタ層のインスタンス群
-// =========================================================
 #ifdef ENABLE_EDITOR
     std::unique_ptr<EditorWindowManager> m_editorWindowManager;
     EditorContext                        m_editorContext;

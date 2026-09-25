@@ -1,5 +1,11 @@
 #pragma once
-
+// ===========================================================================
+// 概要: QueryPerformanceCounter による高精度タイマー HighResolutionTimer。
+//
+// 責務:
+//   - フレーム間の経過時間（TimeInterval）と、停止時間を除いた累計時間（TimeStamp）の計測
+//   - 停止・再開（ウィンドウのドラッグ中などに時間を進めない）
+// ===========================================================================
 #include <windows.h>
 
 class HighResolutionTimer
@@ -16,14 +22,12 @@ public:
         last_time = this_time;
     }
 
-    // Returns the total time elapsed since Reset() was called, NOT counting any
-    // time when the clock is stopped.
-    float TimeStamp() const // in seconds
+    // Reset() からの累計時間（秒）を返す。停止していた時間は含めない
+    float TimeStamp() const
     {
-        // If we are stopped, do not count the time that has passed since we stopped.
-        // Moreover, if we previously already had a pause, the distance
-        // stop_time - base_time includes paused time, which we do not want to count.
-        // To correct this, we can subtract the paused time from mStopTime:
+        // 停止中なら、止めた時点以降の時間は数えない。
+        // さらに過去にも停止があった場合、stop_time - base_time にはその停止時間が
+        // 含まれているので、paused_time を引いて取り除く:
         //
         //                     |<--paused_time-->|
         // ----*---------------*-----------------*------------*------------*------> time
@@ -34,9 +38,8 @@ public:
             return static_cast<float>(((stop_time - paused_time) - base_time) * seconds_per_count);
         }
 
-        // The distance this_time - mBaseTime includes paused time,
-        // which we do not want to count.  To correct this, we can subtract
-        // the paused time from this_time:
+        // 動作中も、this_time - base_time には過去の停止時間が含まれているので、
+        // paused_time を引いて取り除く:
         //
         //  (this_time - paused_time) - base_time
         //
@@ -49,12 +52,14 @@ public:
         }
     }
 
-    float TimeInterval() const // in seconds
+    // 直近の Tick 間の経過時間（秒）
+    float TimeInterval() const
     {
         return static_cast<float>(delta_time);
     }
 
-    void Reset() // Call before message loop.
+    // メッセージループの前に呼ぶ
+    void Reset()
     {
         QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&this_time));
         base_time = this_time;
@@ -64,12 +69,13 @@ public:
         stopped   = false;
     }
 
-    void Start() // Call when unpaused.
+    // 停止を解除するときに呼ぶ
+    void Start()
     {
         LONGLONG start_time;
         QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&start_time));
 
-        // Accumulate the time elapsed between stop and start pairs.
+        // Stop から Start までの時間を paused_time に積み上げる
         //
         //                     |<-------d------->|
         // ----*---------------*-----------------*------------> time
@@ -83,7 +89,8 @@ public:
         }
     }
 
-    void Stop() // Call when paused.
+    // 停止するときに呼ぶ
+    void Stop()
     {
         if (!stopped)
         {
@@ -92,7 +99,8 @@ public:
         }
     }
 
-    void Tick() // Call every frame.
+    // 毎フレーム呼ぶ
+    void Tick()
     {
         if (stopped)
         {
@@ -101,15 +109,12 @@ public:
         }
 
         QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER *>(&this_time));
-        // Time difference between this frame and the previous.
         delta_time = (this_time - last_time) * seconds_per_count;
 
-        // Prepare for next frame.
         last_time = this_time;
 
-        // Force nonnegative.  The DXSDK's CDXUTTimer mentions that if the
-        // processor goes into a power save mode or we get shuffled to another
-        // processor, then mDeltaTime can be negative.
+        // 負の値は 0 に丸める。CPU が省電力モードに入ったり、別のコアへ移されたり
+        // すると、delta_time が負になることがある（DXSDK の CDXUTTimer の注記より）
         if (delta_time < 0.0)
         {
             delta_time = 0.0;
@@ -117,14 +122,15 @@ public:
     }
 
 private:
-    double seconds_per_count;
-    double delta_time;
+    double seconds_per_count; // カウンタ1刻みの秒数
+    double delta_time;        // 直近の Tick 間の経過時間（秒）
 
-    LONGLONG base_time;
-    LONGLONG paused_time;
-    LONGLONG stop_time;
-    LONGLONG last_time;
-    LONGLONG this_time;
+    // 以下はすべて QueryPerformanceCounter のカウント値
+    LONGLONG base_time;   // Reset した時刻
+    LONGLONG paused_time; // これまでに停止していた時間の合計
+    LONGLONG stop_time;   // 最後に Stop した時刻
+    LONGLONG last_time;   // 前回 Tick の時刻
+    LONGLONG this_time;   // 今回 Tick の時刻
 
     bool stopped;
 };

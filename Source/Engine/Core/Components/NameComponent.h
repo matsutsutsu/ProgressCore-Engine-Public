@@ -1,5 +1,11 @@
 #pragma once
-#include <cstring> // for strncpy_s
+// ===========================================================================
+// 概要: Entity の表示名を持つコンポーネント NameComponent。
+//
+// 責務:
+//   - エディタのヒエラルキー表示・ログ（EntityLabel）で使う名前を保持する
+// ===========================================================================
+#include <cstring> // strncpy_s
 
 struct NameComponent
 {
@@ -7,13 +13,12 @@ struct NameComponent
     // 全エンティティ走査時のキャッシュ効率が落ちるため。32文字で足りている。
     char name[32] = "Entity";
 
-    // コンストラクタで初期化しやすくする
     NameComponent() = default;
     NameComponent(const char *str)
     {
         if (str)
         {
-            // 安全にコピー（バッファオーバーラン防止）
+            // 32文字を超える名前は切り詰める（バッファオーバーラン防止）
             strncpy_s(name, str, sizeof(name) - 1);
         }
     }

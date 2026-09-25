@@ -6,24 +6,11 @@
 
 #include "Framework.h"
 
-//#include "PxPhysicsAPI.h"
-//#pragma comment(lib, "PhysX_64.lib")
-//#pragma comment(lib, "PhysXCommon_64.lib")
-//#pragma comment(lib, "PhysXCooking_64.lib")
-//#pragma comment(lib, "PhysXExtensions_static_64.lib")
-//#pragma comment(lib, "PhysXFoundation_64.lib")
-//#pragma comment(lib, "PhysXPvdSDK_static_64.lib")
-//#pragma comment(lib, "PhysXTask_static_64.lib")
-//#pragma comment(lib, "SceneQuery_static_64.lib")
-//#pragma comment(lib, "SimulationController_static_64.lib")
-
-// ===================================================================
 // ハイブリッドGPU(Optimus/PowerXpress)搭載PCで、Windows が内蔵GPU(Intel等)を
 // 自動選択してしまう問題への対策。ドライバはexe側がこのシンボルをexportして
 // いるかを見て「高性能GPUを使いたい」という意思表示だと解釈する。
 // GraphicsDevice::Initialize 側の IDXGIFactory6::EnumAdapterByGpuPreference
 // による明示的なアダプタ選択と合わせた二重対策（こちらはドライバ側のフォールバック）。
-// ===================================================================
 extern "C"
 {
     __declspec(dllexport) DWORD NvOptimusEnablement                  = 0x00000001;
@@ -32,10 +19,9 @@ extern "C"
 
 #define SCREEN_MODE false // true: フルスクリーン、false: ウィンドウモード
 
+// フルスクリーン時の解像度（ウィンドウモードはモニタの解像度に合わせる）
 const LONG SCREEN_WIDTH  = 1920;
 const LONG SCREEN_HEIGHT = 1080;
-//const LONG SCREEN_WIDTH = 1280;
-//const LONG SCREEN_HEIGHT = 720;
 
 #if SCREEN_MODE
 const BOOL FULLSCREEN = TRUE;
@@ -43,6 +29,7 @@ const BOOL FULLSCREEN = TRUE;
 const BOOL FULLSCREEN = FALSE;
 #endif
 
+// ウィンドウに紐付けた Framework へメッセージを転送する
 LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     Framework *f = reinterpret_cast<Framework *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -52,8 +39,8 @@ LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, INT cmd_show)
 {
 #if defined(DEBUG) || defined(_DEBUG)
+    // 終了時にメモリリークをダンプする
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(237);
 #endif
     WNDCLASSEX wcex;
     wcex.cbSize        = sizeof(WNDCLASSEX);
@@ -85,7 +72,7 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
         ChangeDisplaySettings(&devMode, CDS_FULLSCREEN);
 
         DWORD style   = WS_POPUP | WS_VISIBLE;
-        DWORD exStyle = 0; // WS_EX_TOPMOSTは付けない！
+        DWORD exStyle = 0; // WS_EX_TOPMOST は付けない（常に最前面に残り、他のウィンドウを隠してしまう）
 
         hWnd = CreateWindowEx(exStyle, _T("Game"), _T("OVERCLEAVE"), style,
                               0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -93,9 +80,7 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
     }
     else
     {
-        // ---------------------------------------------------------
-        // ボーダーレスウィンドウの実装
-        // ---------------------------------------------------------
+        // ボーダーレスウィンドウ（モニタ全体を覆う枠なしウィンドウ）
         // 1. 画面サイズをシステムから取得
         int screenW = GetSystemMetrics(SM_CXSCREEN);
         int screenH = GetSystemMetrics(SM_CYSCREEN);
