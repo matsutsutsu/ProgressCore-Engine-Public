@@ -1274,7 +1274,7 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
 
 void AnimGraphWindow::LoadGraph(const std::string &path)
 {
-    if (AnimGraphSerializer::LoadFromJSON(m_rootGraph, path, {}))
+    if (AnimGraphSerializer::LoadFromJSON(m_rootGraph, path))
     {
         ed::ClearSelection();
         m_editPath.clear(); // 読込後は root 表示から始める

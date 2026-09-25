@@ -22,16 +22,15 @@ SceneLoading::SceneLoading(Scene *nextScene) : m_nextScene(nextScene) {}
 
 SceneLoading::~SceneLoading()
 {
-    // 念のため：ロードジョブが走っていれば完了を待ってから破棄する。
-    // （通常は Finalize 済みで即返るが、二重の安全弁。）
-    // loadCounterでワーカースレッドの仕事のカウントが０になるまで待つ
+    // ロードジョブが走っていれば、完了（m_loadCounter が 0）を待ってから破棄する。
+    // 通常は Finalize 済みですぐ返るが、Finalize を経ずに破棄された場合の安全弁
     SceneManager::Instance().GetLoaderJobs().WaitForCounter(&m_loadCounter);
 }
 
 void SceneLoading::Initialize()
 {
-    // 共通初期化（カメラ/リソース登録など）。重い処理はここでは行わない。
-    // ※ SceneLoading は RegisterSystems を持たない＝システム0個なので軽い。
+    // 共通初期化（カメラ/リソース登録など）だけ行う。
+    // SceneLoading は RegisterSystems を上書きしない（System 0個）ので軽い
     BaseScene::Initialize();
 
     m_isFinished = false;
@@ -41,26 +40,26 @@ void SceneLoading::Initialize()
         Scene             *target   = m_nextScene;
         std::atomic<bool> *finished = &m_isFinished;
 
-        // 自作の汎用 JobSystem を「フレーム並列」だけでなく
-        // 「シーン非同期ロード」にも使い回す。ここでは WaitForCounter で
+        // 自作の JobSystem を「シーンの非同期ロード」にも使う。ここでは WaitForCounter で
         // 待たずに投げっぱなしにし、m_isFinished を毎フレーム覗く（fire-and-poll）。
-        // Executeの中身はメインではなくワーカースレッドで実行される、これが非同期ロード
-        // Execute(job, counter) ... Execute(ワーカースレッドで実行する処理, カウンター)
+        //   Execute(job, counter) … job はメインではなくワーカースレッドで実行される。
+        //                           counter は Finalize / デストラクタで完了を待つために渡す
         SceneManager::Instance().GetLoaderJobs().Execute(
             [target, finished]() {
                 // WIC 経由のテクスチャ読み込みには、このスレッドでの COM 初期化が要る。
                 HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
                 // ここで対象シーンの重いロードが走る。
-                //    DeviceContext（描画コマンド）は触らないこと。
-                //    リソース生成（CreateBuffer/CreateTexture）はフリースレッドなので可。
+                //   DeviceContext（描画コマンド）は触らないこと。
+                //   リソース生成（CreateBuffer/CreateTexture）はスレッドセーフなので可
                 target->Initialize();
-                // SetReadyで中身のisReadyをtrueにする、これで他のスレッドが正しい値を確認できる
-                target->SetReady(); // release：以降 world の中身がメインから安全に見える
+                // release で立てるので、メインスレッドが acquire で true を見た時点で
+                // Initialize が作った World の中身も全て見えている
+                target->SetReady();
 
                 if (SUCCEEDED(hr)) CoUninitialize();
 
-                // 最後に完了を通知（Update 側がこれを覗いて遷移する）
+                // 最後に完了を通知する（Update 側がこれを覗いて遷移する）
                 finished->store(true, std::memory_order_release);
             },
             &m_loadCounter);
@@ -69,8 +68,8 @@ void SceneLoading::Initialize()
 
 void SceneLoading::Finalize()
 {
-    // ロードジョブが完了するまでブロック（join 相当）。
-    // これ以降 m_nextScene の所有権は SceneManager 側に渡っている。
+    // ロードジョブが完了するまでブロックする（スレッドの join 相当）。
+    // 裏読み中のまま this を壊すと、ジョブが m_isFinished に書き込めなくなるため
     SceneManager::Instance().GetLoaderJobs().WaitForCounter(&m_loadCounter);
 
     BaseScene::Finalize();
@@ -82,27 +81,21 @@ void SceneLoading::Update(float elapsedTime)
 
     BaseScene::Update(elapsedTime);
 
-    // ワーカースレッドで書き込まれたデータを読み込む、acquireでしっかりと正しい値を確認できる
+    // ワーカースレッドの release と対になる acquire で読む
     const bool done = m_isFinished.load(std::memory_order_acquire);
 
-    // --- 表示用進捗のスムージング ---
-    // 実ロードは進捗量を取れない（Initialize はブラックボックス）ため「見せかけ」で作る:
-    //   ・ロード中は最低表示時間に比例して 0→90% まで伸ばす（作業中の演出）
+    // 表示用の進捗。実際のロードは進捗量を取れない（Initialize の中は見えない）ので、見せかけで作る:
+    //   ・ロード中は最低待機時間に比例して 0→90% まで伸ばす
     //   ・完了したら 100% を目標にする
-    //   ・指数減衰でヌルっと追従させる
+    //   ・指数減衰で滑らかに追従させる
     const float target = done ? 1.0f
                               : std::min(0.9f, (time / kMinLoadTime) * 0.9f);
     m_progress += (target - m_progress) * CCL::Math::Damp(kProgressDamping, elapsedTime);
 
-    // --- 遷移条件 ---
-    //   ① 裏読み完了（done） かつ
-    //   ② 最低表示時間を経過（一瞬で終わってもロード画面を必ず見せる） かつ
-    //   ③ バーが満タン付近（100% を見せてから切り替える）
-    // 裏読みが終わり次第、本命シーンへ引き渡す。
-    //   画面は SceneManager が「黒のまま保持」しているため、ローディング画面は
-    //   見えていない。よって「最低表示時間」や「バー100%待ち」の演出条件は不要で、
-    //   完了したら即引き渡してよい（黒→ゲームの1回フェードインにつながる）。
-    //   RequestTransition は黒保持を解いて本命へ差し替え、フェードインを開始する。
+    // 裏読みが終わり、最低待機時間も過ぎたら本命シーンへ引き渡す。
+    //   画面は SceneManager が「黒のまま保持」しているので、ローディング画面は見えていない。
+    //   そのため「バー100%を見せてから」のような演出上の待ちは入れない。
+    //   RequestTransition は黒の保持を解いて本命へ差し替え、フェードインを始める
     if (done && time >= kMinLoadTime && m_nextScene)
     {
         if (SceneManager::Instance().RequestTransition(m_nextScene))
@@ -131,28 +124,28 @@ void SceneLoading::OnRenderUI()
     }
     if (!m_white)
     {
-        m_white = std::make_unique<Sprite>(device); // 白ダミーテクスチャ。色を掛けて単色矩形に
+        m_white = std::make_unique<Sprite>(device); // 白のダミーテクスチャ。色を掛けて単色矩形にする
     }
 
-    // ================= プログレスバー =================
+    // プログレスバー
     const float barW = sw * 0.5f; // 画面幅の半分
     const float barH = 16.0f;
     const float barX = (sw - barW) * 0.5f; // 中央寄せ
     const float barY = sh * 0.72f;
 
-    // 背景（少し大きめの暗い矩形＝枠代わり）
+    // 背景（少し大きめの暗い矩形を枠の代わりにする）
     m_white->Render(dc, barX - 2.0f, barY - 2.0f, 0.0f, barW + 4.0f, barH + 4.0f, 0.0f,
                     0.08f, 0.08f, 0.10f, 0.85f);
     // フィル（進捗ぶんだけ幅を掛ける）
     m_white->Render(dc, barX, barY, 0.0f, barW * m_progress, barH, 0.0f,
                     0.20f, 0.65f, 1.0f, 1.0f);
 
-    // ================= テキスト =================
+    // テキスト
     if (m_text->IsReady())
     {
         const float px = 28.0f;
 
-        // "NOW LOADING" ＋ time に応じて 0..3 個のドットを点滅（左寄せ）
+        // "NOW LOADING" + 経過時間に応じて 0〜3 個のドットを付ける（左寄せ）
         const int   dots = static_cast<int>(time * 2.0f) % 4;
         std::string msg  = "NOW LOADING";
         for (int i = 0; i < dots; ++i)
@@ -160,9 +153,9 @@ void SceneLoading::OnRenderUI()
         m_text->DrawText(dc, msg, barX, barY - px - 10.0f, px,
                          DirectX::XMFLOAT4{1.0f, 1.0f, 1.0f, 1.0f});
 
-        // パーセンテージ（バー右端に右寄せ）
+        // パーセンテージ（バーの右端に右寄せ）
         std::string pct = std::to_string(static_cast<int>(m_progress * 100.0f)) + "%";
-        const float pw  = m_text->MeasureWidth("100%", px); // 右端固定で桁揺れを防ぐ
+        const float pw  = m_text->MeasureWidth("100%", px); // 最大幅で位置を固定し、桁数が変わっても揺れないようにする
         m_text->DrawText(dc, pct, barX + barW - pw, barY - px - 10.0f, px,
                          DirectX::XMFLOAT4{0.7f, 0.85f, 1.0f, 1.0f});
     }

@@ -1,4 +1,3 @@
-// BoneAttachmentRenderSystem.cpp
 #include "BoneAttachmentRenderSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
@@ -30,14 +29,14 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     Model *model = parentModel->GetModel();
     if (!model) return;
 
-    // boneName の解決結果(cachedBoneIndex)は Logic版が既に埋めている前提。
-    //    未解決(-1)なら Logic版がまだ走っていない初回等なので、描画は1フレームだけスキップして待つ。
+    // boneName の解決結果（cachedBoneIndex）は、ロジック版が既に埋めている前提。
+    // 未解決（-1）ならロジック版がまだ走っていない初回などなので、描画は1フレームだけ待つ
     if (attach.cachedBoneIndex == -1) return;
 
     const auto &nodes = model->GetNodes();
     if (attach.cachedBoneIndex >= static_cast<int>(nodes.size())) return;
 
-    // globalTransform はルート非依存＝Logic版と同一の値。ここでは「親の補間済みworld」を掛ける点だけが違う。
+    // globalTransform はルート非依存なので、ロジック版と同じ値。違うのは「親の補間済みワールド」を掛ける点だけ
     const XMMATRIX boneGlobal   = XMLoadFloat4x4(&nodes[attach.cachedBoneIndex].globalTransform);
     const XMMATRIX parentRWorld = XMLoadFloat4x4(&parentTrans->renderWorldMatrix); // 補間済み
     const XMMATRIX boneRWorld   = XMMatrixMultiply(boneGlobal, parentRWorld);
@@ -46,16 +45,16 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
 
     XMFLOAT4X4 world4;
     XMStoreFloat4x4(&world4, world);
-    trans.renderWorldMatrix = world4; // 描画専用行列にのみ書き込む（worldMatrixは触らない）
+    trans.renderWorldMatrix = world4; // 描画用の行列にだけ書く（worldMatrix は触らない）
 
     BakeModelIfPresent(id, world4); // 自分が Model を持つなら、確定した world で焼き直す
     PropagateRenderSubtree(trans.firstChildID, world4);
 }
 
-// ModelPoseUpdateSystem(R03) は attach 先も「前フレームの renderWorldMatrix」で
-// 先に焼いてしまう。本システム(R04)で正しい renderWorldMatrix が確定した後に
-// 焼き直すことで、last-write-wins で同フレーム整合を取る。
-//   ※ これをやらないと、武器などのアタッチ物だけ描画が1フレーム遅れる。
+// ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で
+// 先に焼いてしまう。このシステム（R04）で正しい renderWorldMatrix が確定した後に
+// 焼き直し、後から書いた方を採用させることで同じフレームの中で整合を取る。
+//   ※ これをやらないと、武器などの追従物だけ描画が1フレーム遅れる。
 void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4 &world)
 {
     if (auto *mc = m_world->GetComponent<ModelComponent>(id))
@@ -92,7 +91,7 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
         const XMMATRIX world = XMMatrixMultiply(t->ComposeLocalMatrix(), XMLoadFloat4x4(&pw));
         XMFLOAT4X4     world4;
         XMStoreFloat4x4(&world4, world);
-        t->renderWorldMatrix = world4; // 描画専用のみ
+        t->renderWorldMatrix = world4; // 描画用の行列だけ
 
         BakeModelIfPresent(cid, world4);
 
@@ -108,7 +107,6 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
     }
 }
 
-// R00_Interpolation(親のrenderWorldMatrix確定)の後、R08_Main(描画)の前。
-//    親のボーン姿勢(globalTransform)は Render版ModelPoseUpdateSystem(R03)が
-//    renderWorldMatrix基準で焼くので、その後段のR04帯に置くのが安全。
+// R00_Interpolation（親の renderWorldMatrix 確定）の後、R08_Main（描画）の前に置く。
+// 親のボーン姿勢（globalTransform）は ModelPoseUpdateSystem（R03）が焼くので、その後の R04 帯にする
 REGISTER_RENDER_SYSTEM(BoneAttachmentRenderSystem, Priority::RenderStage::R04_BoundsUpdate);

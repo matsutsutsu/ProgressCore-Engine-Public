@@ -1,18 +1,15 @@
 #pragma once
-// =====================================================================
-// InputKeyTable.h
-// ---------------------------------------------------------------------
-// 入力キー定義の「単一の真実の源 (Single Source of Truth)」。
+// ===========================================================================
+// 概要: InputConfig.json に書くキー名と、実際のキーコードの対応表。
 //
-// ・InputEditorWindow のコンボボックス選択肢
-// ・InputFacade::StringToKeyCode の文字列 -> キーコード変換
+// 責務:
+//   - キーボード／マウス／ゲームパッドのキー名 -> キーコードの変換
+//   - InputEditorWindow の選択肢と表示名、押されたキーの検出（キー割り当て用）
 //
-// この2つは必ず同じ定義から生成すること。
-// 片方にだけキーを追加して「保存できるのに反応しない」という
-// 不整合バグを構造的に防ぐためのテーブル。
-//
-// キーを増やしたい場合は、このファイルの該当テーブルに1行足すだけでよい。
-// =====================================================================
+// 備考: エディタの選択肢と InputFacade の文字列変換を同じ表から作ることで、
+//       片方にだけキーを足して「保存できるのに反応しない」状態を防ぐ。
+//       キーを増やすときは、該当する表に1行足す。
+// ===========================================================================
 
 #include <Windows.h>
 #include <Xinput.h>
@@ -38,7 +35,7 @@ namespace InputKeyTable
     inline constexpr std::array<KeyDef, 96> Keyboard = {{
         {"NONE", 0},
 
-        // --- 修飾キー (今まで設定できなかったもの) ---
+        // --- 修飾キー ---
         {"SHIFT", VK_SHIFT},
         {"L_SHIFT", VK_LSHIFT},
         {"R_SHIFT", VK_RSHIFT},
@@ -149,7 +146,7 @@ namespace InputKeyTable
     // ---------------------------------------------------------------
     // ゲームパッドボタン (GamePad:: のビットフラグ)
     // ---------------------------------------------------------------
-    inline constexpr std::array<KeyDef, 20> GamePadButtons = {{
+    inline constexpr std::array<KeyDef, 17> GamePadButtons = {{
         {"NONE", 0},
         {"BTN_A", GamePad::BTN_A},
         {"BTN_B", GamePad::BTN_B},
@@ -167,21 +164,14 @@ namespace InputKeyTable
         {"BTN_RIGHT_THUMB", GamePad::BTN_RIGHT_THUMB},
         {"BTN_START", GamePad::BTN_START},
         {"BTN_BACK", GamePad::BTN_BACK},
-        // 軸系では使われないがボタン割り当て用に予約
-        {"BTN_SPACE", GamePad::BTN_SPACE},
-        {"BTN_Q", GamePad::BTN_Q},
-        {"BTN_E", GamePad::BTN_E},
     }};
 
-    // =================================================================
-    // 統合エントリ
-    // -----------------------------------------------------------------
-    // エディタの「キーを直接選ぶ」UI用。
-    // Device文字列(JSON保存される) と Key文字列(JSON保存される) と
-    // 人が読む表示名(PS表記など) をひとまとめにしている。
-    //
-    // ここに1行足せば、エディタの選択肢に自動で増える。
-    // =================================================================
+    // ============================================================
+    // エディタの選択肢
+    //   「キーを直接選ぶ」UI 用。JSON に保存する Device 文字列・Key 文字列と、
+    //   人が読む表示名（PS 表記など）をまとめている。
+    //   ここに1行足せば、エディタの選択肢に増える。
+    // ============================================================
     struct UnifiedEntry
     {
         std::string_view device;  // JSON "Device" (例 "GamePad_Button")
@@ -215,8 +205,8 @@ namespace InputKeyTable
         return v;
     }
 
-    // ----- ゲームパッド（ボタンは直接ここに並ぶ）-----
-    //   display にXbox/PS両方の呼び名を併記して分かりやすく。
+    // ----- ゲームパッド（ボタン）-----
+    //   display に Xbox と PS の両方の呼び名を併記する。
     inline const std::vector<UnifiedEntry> &GamePadEntries()
     {
         static const std::vector<UnifiedEntry> v = {
@@ -276,9 +266,8 @@ namespace InputKeyTable
     }
 
     // ---------------------------------------------------------------
-    // キャプチャ用: 現在押されているゲームパッドのボタンを検出。
-    //   見つかった (device,key) を返す。なければ false。
-    //   ※ XInputState は呼び出し側で取得済みのものを渡す。
+    // キー割り当て用: 押されているゲームパッドのボタンを1つ検出する。
+    //   wButtons は呼び出し側が取得した XINPUT_GAMEPAD::wButtons。見つからなければ false。
     // ---------------------------------------------------------------
     struct PadHit
     {
@@ -294,20 +283,20 @@ namespace InputKeyTable
             std::string_view key;
         };
         static const Map maps[] = {
-            {0x1000 /*A*/, "BTN_A"},
-            {0x2000 /*B*/, "BTN_B"},
-            {0x4000 /*X*/, "BTN_X"},
-            {0x8000 /*Y*/, "BTN_Y"},
-            {0x0001 /*DPAD_UP*/, "BTN_DPAD_UP"},
-            {0x0002 /*DPAD_DOWN*/, "BTN_DPAD_DOWN"},
-            {0x0004 /*DPAD_LEFT*/, "BTN_DPAD_LEFT"},
-            {0x0008 /*DPAD_RIGHT*/, "BTN_DPAD_RIGHT"},
-            {0x0100 /*LEFT_SHOULDER*/, "BTN_LEFT_SHOULDER"},
-            {0x0200 /*RIGHT_SHOULDER*/, "BTN_RIGHT_SHOULDER"},
-            {0x0040 /*LEFT_THUMB*/, "BTN_LEFT_THUMB"},
-            {0x0080 /*RIGHT_THUMB*/, "BTN_RIGHT_THUMB"},
-            {0x0010 /*START*/, "BTN_START"},
-            {0x0020 /*BACK*/, "BTN_BACK"},
+            {XINPUT_GAMEPAD_A, "BTN_A"},
+            {XINPUT_GAMEPAD_B, "BTN_B"},
+            {XINPUT_GAMEPAD_X, "BTN_X"},
+            {XINPUT_GAMEPAD_Y, "BTN_Y"},
+            {XINPUT_GAMEPAD_DPAD_UP, "BTN_DPAD_UP"},
+            {XINPUT_GAMEPAD_DPAD_DOWN, "BTN_DPAD_DOWN"},
+            {XINPUT_GAMEPAD_DPAD_LEFT, "BTN_DPAD_LEFT"},
+            {XINPUT_GAMEPAD_DPAD_RIGHT, "BTN_DPAD_RIGHT"},
+            {XINPUT_GAMEPAD_LEFT_SHOULDER, "BTN_LEFT_SHOULDER"},
+            {XINPUT_GAMEPAD_RIGHT_SHOULDER, "BTN_RIGHT_SHOULDER"},
+            {XINPUT_GAMEPAD_LEFT_THUMB, "BTN_LEFT_THUMB"},
+            {XINPUT_GAMEPAD_RIGHT_THUMB, "BTN_RIGHT_THUMB"},
+            {XINPUT_GAMEPAD_START, "BTN_START"},
+            {XINPUT_GAMEPAD_BACK, "BTN_BACK"},
         };
         for (const auto &m : maps)
         {
@@ -344,8 +333,7 @@ namespace InputKeyTable
     }
 
     // ---------------------------------------------------------------
-    // 文字列 -> キーコード
-    //   InputFacade から呼ぶ。全テーブルを横断検索する。
+    // 文字列 -> キーコード。InputFacade から呼ぶ。全テーブルを順に探す
     // ---------------------------------------------------------------
     inline unsigned int StringToKeyCode(std::string_view str)
     {
@@ -360,8 +348,7 @@ namespace InputKeyTable
     }
 
     // ---------------------------------------------------------------
-    // キャプチャ用: 現在押されているキーボードVKを探して文字列ラベルを返す。
-    //   見つからなければ空文字。NONE はスキップ。
+    // キー割り当て用: 押されているキーボードのキーを探してキー名を返す。見つからなければ空
     // ---------------------------------------------------------------
     inline std::string_view DetectPressedKeyboardLabel()
     {

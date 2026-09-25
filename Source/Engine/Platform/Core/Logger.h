@@ -1,16 +1,13 @@
 #pragma once
-//==============================================================================
-// Logger.h
+// ===========================================================================
+// 概要: カテゴリ・レベル付きのログを、登録された出力先（シンク）へ配信するロガー。
 //
-// 販売エンジン向けロガー
-//
-// 主な特徴:
-//   - LogCategory は X-Macro で一元定義 → 追加時の修正は1箇所だけ
-//   - Sink (出力先) を差し替え可能 (Debug出力 / ファイル / ImGui / ネットワーク...)
-//   - std::source_location で __FILE__/__LINE__ を自動取得
-//   - タイムスタンプ + スレッドID を必ず記録
-//   - Error は Release でも残し、即フラッシュ
-//==============================================================================
+// 責務:
+//   - LogCategory を X-Macro で1か所に定義する（追加は1行で済む）
+//   - printf 形式のログに時刻・スレッドID・呼び出し元（source_location）を付ける
+//   - 登録されたシンク（LogSinks.h）へ配信し、Error はすぐフラッシュする
+//   - CCL_LOG_* マクロの提供（Debug 構成以外では Error 以外を消す）
+// ===========================================================================
 
 #include <chrono>
 #include <cstdint>
@@ -21,10 +18,9 @@
 #include <thread>
 #include <vector>
 
-//==============================================================================
-// LogCategory - X-Macro で一元定義
-//   追加するときは下の LIST に 1行追加するだけ
-//==============================================================================
+// ============================================================
+// LogCategory（X-Macro で一元定義。追加は下の LIST に1行足すだけ）
+// ============================================================
 #define CCL_LOG_CATEGORY_LIST(X) \
     X(Core, "Core")              \
     X(ECS, "ECS")                \
@@ -60,9 +56,7 @@ constexpr const char *GetLogCategoryName(LogCategory c) noexcept
     return (i < static_cast<size_t>(LogCategory::Count)) ? kNames[i] : "Unknown";
 }
 
-//==============================================================================
-// LogLevel
-//==============================================================================
+// ログの重要度
 enum class LogLevel : uint8_t
 {
     Info,
@@ -71,25 +65,19 @@ enum class LogLevel : uint8_t
     Error,
 };
 
-//==============================================================================
-// LogMessage - 1件分のログデータ
-//==============================================================================
+// ログ1件分のデータ
 struct LogMessage
 {
     LogCategory                           category = LogCategory::Core;
     LogLevel                              level    = LogLevel::Info;
-    std::chrono::system_clock::time_point time{};
-    std::thread::id                       threadId{};
-    std::string                           file; // ファイル名 (フルパスではなく短縮済み)
-    int                                   line = 0;
-    std::string                           text;
+    std::chrono::system_clock::time_point time{};     // 記録した時刻
+    std::thread::id                       threadId{}; // 記録したスレッド
+    std::string                           file;       // ファイル名（フルパスではなく名前だけ）
+    int                                   line = 0;   // 行番号
+    std::string                           text;       // 書式展開済みの本文
 };
 
-//==============================================================================
-// ILogSink - 出力先の抽象インターフェース
-//
-// 実装例: DebugStreamSink (OutputDebugString), FileSink, ImGuiBufferSink, etc
-//==============================================================================
+// ログの出力先の抽象インターフェース。実装は LogSinks.h
 class ILogSink
 {
 public:
@@ -101,45 +89,37 @@ public:
     // 出力をフラッシュする (ファイルバッファを書き出す等)
     virtual void Flush() {}
 
-    // 履歴をクリアする (ImGuiBufferSink等で使用、不要なシンクは何もしなくて良い)
+    // 履歴をクリアする（履歴を持つ ImGuiBufferSink だけが実装する）
     virtual void Clear() {}
 };
 
-//==============================================================================
-// Logger - 中央ハブ
-//
 // 各シンクへログを配信する。Logger 自身は履歴を持たない。
 // UI 表示が必要な場合は ImGuiBufferSink を AddSink して、そのスナップショットを使う。
-//==============================================================================
 class Logger
 {
 public:
-    // シングルトンアクセス
     static Logger &Instance();
 
-    // シンクを登録する (起動時に推奨)
+    // シンクを登録する（起動時に登録する）
     void AddSink(std::shared_ptr<ILogSink> sink);
 
-    // シンクを除去する
-    void RemoveSink(const std::shared_ptr<ILogSink> &sink);
-
-    // 全シンクをクリアする
+    // 全シンクを登録解除する
     void ClearSinks();
 
     /**
      * @brief printf スタイルでログを記録する
-     * @param category  ログカテゴリ
-     * @param level     重要度
-     * @param loc       呼び出し元情報 (マクロから std::source_location::current() が渡される)
-     * @param fmt       printf 形式の書式文字列
+     * @param category ログカテゴリ
+     * @param level 重要度
+     * @param loc 呼び出し元情報（マクロから std::source_location::current() が渡される）
+     * @param fmt printf 形式の書式文字列
      */
     void Log(LogCategory category, LogLevel level,
              const std::source_location &loc, const char *fmt, ...);
 
-    // 全シンクの履歴クリアを要求 (ImGuiBufferSink等のみ反応)
+    // 全シンクに履歴クリアを要求する（ImGuiBufferSink だけが反応する）
     void Clear();
 
-    // 全シンクのフラッシュを要求
+    // 全シンクにフラッシュを要求する
     void Flush();
 
 private:
@@ -152,13 +132,13 @@ private:
     std::vector<std::shared_ptr<ILogSink>> m_sinks;
 };
 
-//==============================================================================
-// マクロ群
+// ============================================================
+// マクロ
 //
-// Debug ビルド:   INFO / SUCCESS / WARN は記録される
-// Release ビルド: INFO / SUCCESS / WARN は完全に消滅 ((void)0)
-// ERROR は常に記録される (販売後のクラッシュ解析の生命線)
-//==============================================================================
+// _DEBUG 定義時（Debug 構成）: INFO / SUCCESS / WARN を記録する
+// それ以外（Development / Release）: INFO / SUCCESS / WARN は ((void)0) になり、引数も評価されない
+// ERROR は全構成で記録する（配布後の不具合を追えるように）
+// ============================================================
 #ifdef _DEBUG
 #define CCL_LOG_INFO(category, ...) \
     Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)

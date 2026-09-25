@@ -1,26 +1,21 @@
 #include "AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <fstream>
-#include <iomanip> // std::setw 用
 
-// グラフを JSON ファイルへ書き出す。
-//
-// 「先に全部を文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
-//   ofstream はコンストラクタで開いた瞬間に既存ファイルを空にする。先に開いてから
-//   to_json を走らせると、シリアライズが投げたとき catch には入るものの
-//   【元のファイルは既に失われている】。手で組んだアニメグラフが一瞬で消える経路。
-//   （BT・シーケンサー・カーブエディタは元からこの順序）
+// 「先に全て文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
+//   ofstream は開いた時点で既存ファイルを空にする。先に開いてから to_json が例外を投げると、
+//   catch には入るが元のファイルは既に失われている
 bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::string &filepath)
 {
     std::string text;
     try
     {
-        json j = graph; // to_json が自動的に呼ばれる
+        json j = graph; // to_json が呼ばれる
         text   = j.dump(4);
     }
     catch (const std::exception &e)
     {
-        // ここで抜ければ既存ファイルは無傷のまま。
+        // ここで抜ければ既存ファイルは無傷のまま
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Save Error: %s", e.what());
         return false;
     }
@@ -36,14 +31,14 @@ bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::str
     os.flush();
     if (!os)
     {
-        // 書き込み中の失敗（ディスク不足など）。ここまで来るとファイルは壊れている。
+        // 書き込み中の失敗（ディスク不足など）。この場合はファイルが壊れている
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Save: write failed '%s'", filepath.c_str());
         return false;
     }
     return true;
 }
 
-bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath, const std::vector<AnimSequence> &availableSequences)
+bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath)
 {
     std::ifstream is(filepath);
     if (!is.is_open())
@@ -53,7 +48,7 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
     {
         json j;
         is >> j;
-        outGraph = j.get<AnimStateGraph>(); // from_json が自動的に呼ばれる
+        outGraph = j.get<AnimStateGraph>(); // from_json が呼ばれる
     }
     catch (const std::exception &e)
     {
@@ -61,36 +56,5 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
         return false;
     }
 
-    // AnimSequence ポインタの紐付け (Binding)
-    //   注意: availableSequences の要素アドレスを保持するため、
-    //   この vector は呼び出し側でロード後も生存している必要がある。
-    //   呼び出し側が空(ResourceManager経由で後から紐付け)の場合は nullptr のまま。
-    BindSequencesRecursive(outGraph, availableSequences);
-
     return true;
-}
-
-// サブマシンの子グラフまで再帰して束縛する。
-//   トップ階層だけ束縛していたため、階層ステートマシンでは子グラフのステートが
-//   nullptr のまま残っていた。ランタイムは AnimControllerSystem の
-//   BindGraphResources（再帰する）を別途通るので実害は出ていなかったが、
-//   束縛経路が2つあって挙動が違うのは罠なので揃える。
-void AnimGraphSerializer::BindSequencesRecursive(
-    AnimStateGraph &graph, const std::vector<AnimSequence> &availableSequences)
-{
-    for (auto &state : graph.states)
-    {
-        state.sequence = nullptr;
-        for (const auto &seq : availableSequences)
-        {
-            if (seq.sequenceName == state.sequenceName)
-            {
-                state.sequence = &seq;
-                break;
-            }
-        }
-
-        if (state.isSubMachine && state.subGraph)
-            BindSequencesRecursive(*state.subGraph, availableSequences);
-    }
 }

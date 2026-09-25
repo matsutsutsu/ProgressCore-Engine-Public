@@ -13,12 +13,6 @@
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
 
-// ===================================================================================
-// ファイル: AnimationPoseSystem.cpp
-// 概要: 骨格ポーズの確定と Model への適用（元 AnimationSystem::ComputeAndApplyPose）。
-//       分離の理由はヘッダのコメントを参照。
-// ===================================================================================
-
 using CCL::Anim::PinRootMotionNode;
 
 AnimationPoseSystem::AnimationPoseSystem()
@@ -28,14 +22,12 @@ AnimationPoseSystem::AnimationPoseSystem()
 
 void AnimationPoseSystem::Update(float dt)
 {
-    // 直列実行。Model は共有インスタンスを書き換える(SetNodePoses)ため、
-    // 安易な並列化はポーズの競合を招く。並列化する場合は Model のポーズ書き込みを
-    // エンティティ単位に分離してから行うこと。
+    // 直列に回す。SetNodePoses は共有の Model インスタンスを書き換えるので、
+    // 並列にするなら先に Model のポーズの書き込み先を Entity ごとに分けること
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
-        // 台本（Sequence）がセットされていなければ何もしない
         if (!animator.currentSequence) return;
 
-        // エディタで操作中の場合は AnimationSystem::UpdateManual が姿勢を作るので触らない
+        // エディタで操作中は AnimationSystem::UpdateManual がポーズを作るので触らない
         if (animator.isEditorOverride) return;
 
         if (Model *model = modelComp.GetModel())
@@ -51,7 +43,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
     if (animIndex == -1) return;
 
-    // 数学的アプローチによる真のルートボーン特定
+    // 名前ではなく、実際に移動量を持つノードをルートボーンとして特定する
     const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
     if (animator.isBlending && animator.previousSequence)
@@ -61,21 +53,19 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
         int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
         if (prevAnimIndex != -1)
         {
-            // バッファサイズの同期
+            // バッファのサイズを揃える
             size_t nodeCount = animator.poseBufferA.size();
             if (animator.poseBufferB.size() != nodeCount)
                 animator.poseBufferB.resize(nodeCount);
 
-            // 過去と現在のポーズを計算
+            // 前のクリップと現在のクリップのポーズを計算する
             model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
             model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
 
-            // Force Root Lock (ブレンド中の過去・現在両方のピン留め)
-            //   非ブレンド経路と同じく「真のルートボーン」のXZだけを0秒姿勢へ固定する。
-            //   [0]固定にすると、rootNodeIndex が0番以外(通常Hips=1)のリグでは遷移
-            //   ブレンド中だけ焼き込み前進が漏れ、ブレンド終了でその場へ戻る「前に出て
-            //   すぐ戻る」不具合になる。過去バッファは別クリップ(=別のルートボーン番号)
-            //   なので個別に特定してピン留めする。
+            // Force Root Lock（ブレンド中は前と現在の両方を固定する）。
+            //   ノード [0] を固定すると、ルートボーンが 0 番以外（通常は Hips=1）のリグでは
+            //   ブレンド中だけクリップの前進が漏れ、ブレンド終了でその場へ戻ってしまう。
+            //   前のクリップはルートボーンの番号が違うことがあるので、個別に特定して固定する
             const int prevRootNodeIndex = model->FindRealRootMotionNodeIndex(prevAnimIndex);
             PinRootMotionNode(model, prevAnimIndex, prevRootNodeIndex, animator.poseBufferB, animator.lockVerticalRootMotion);
             PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
@@ -83,7 +73,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
             float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
             blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
 
-            // クリーンアップされたポーズ同士をブレンド
+            // 固定済みのポーズ同士をブレンドする
             Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
         }
         else
@@ -95,29 +85,23 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     {
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Model->ComputeAnimation");
 
-        // ブレンドしていない通常再生
         model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
     }
 
-    // Force Root Lock (真のルートボーンのピン留め)
-    //   ルートモーション対応キャラ(RootMotionComponent 保持)は、
-    //   「位置の権威は常に Transform 側」なので enabled に関係なく必ずピン留めする。
-    //     ・enabled  : 抽出した差分が Transform を動かす → ピンしないと二重に前進する
-    //     ・disabled : プログラム(ダッシュ等)が Transform を動かす → ピンしないと
-    //                  クリップに焼き込まれた前進でモデルだけが滑っていく
-    //   ※ enabled のときだけピン留めしてはいけない。ブレンド中(上の分岐では無条件に
-    //     ピン留め)は正常なのに、ブレンド終了と同時にダッシュのモデルが滑り出す。
+    // Force Root Lock。RootMotionComponent を持つキャラは位置を常に Transform 側で決めるので、
+    // enabled に関係なく必ず固定する。
+    //   enabled : 抽出した差分で Transform を動かす → 固定しないと二重に前進する
+    //   disabled: コード（ダッシュ等）が Transform を動かす → 固定しないとクリップの前進でモデルだけ滑る
     auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
     if (rootMotion && !animator.poseBufferA.empty())
         PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
 
-    // 最終確定したポーズを行列へ反映（SetNodePosesはここに1回だけ！）
+    // 確定したポーズを Model に書く（SetNodePoses はここで 1 回だけ）
     {
         ZoneScopedN("AnimationPoseSystem::SetNodePoses");
         model->SetNodePoses(animator.poseBufferA);
     }
 }
 
-// ModelPoseUpdateSystem(R03_Animation) より必ず前のステージへ置く。
-//   ポーズ(node.position/rotation/scale)を確定させてから、あちらが行列へ変換する。
+// ModelPoseUpdateSystem（R03_Animation）がこのポーズを行列へ変換するので、それより前のステージに置く
 REGISTER_RENDER_SYSTEM(AnimationPoseSystem, Priority::RenderStage::R02b_SkeletalPose);

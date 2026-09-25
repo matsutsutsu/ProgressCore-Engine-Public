@@ -1,7 +1,3 @@
-// 役割・設計方針は UIInputSystem.h を参照。
-//
-// このSystemは「マウス（hover/press/click）」と「パッド/キーのフォーカス移動＋決定」の
-// 両方を1箇所で扱う。clicked のリセット/確定を単一Systemに集約し、二重書きの競合を防ぐ。
 #include "UIInputSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -21,7 +17,7 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // windows.h を持ち込まないための仮想キーコード（VK_*）。
+    // windows.h を持ち込まないための仮想キーコード（VK_*）
     constexpr int VKEY_LEFT   = 0x25;
     constexpr int VKEY_UP     = 0x26;
     constexpr int VKEY_RIGHT  = 0x27;
@@ -36,16 +32,15 @@ void UIInputSystem::Update(float /*dt*/)
     Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
-    // --- 入力（マウス／キー／パッド） ---
     Mouse     &mouse    = input->GetMouse();
     const bool pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
     const bool released = mouse.IsReleased(Mouse::BTN_LEFT);
 
     // カーソルがこのフレームで動いたか。
-    //   「hover した要素へフォーカスを移す」を無条件にやると、キーで選び直した直後の
-    //   フレームに、止まっているカーソルの下の要素へフォーカスが引き戻されてしまう。
-    //   動いたフレームだけ奪わせることで、マウスとパッドのどちらで操作しても
-    //   「今光っている1つ」が操作対象だと一致する。
+    //   hover した要素へ無条件にフォーカスを移すと、キーで選び直した直後に、
+    //   止まっているカーソルの下の要素へフォーカスが戻されてしまう。
+    //   動いたフレームだけ移すことで、マウスとパッドのどちらで操作しても
+    //   ハイライトされている 1 つが操作対象になる
     const bool mouseMoved = (mouse.GetPositionX() != mouse.GetOldPositionX()) ||
                             (mouse.GetPositionY() != mouse.GetOldPositionY());
 
@@ -53,17 +48,16 @@ void UIInputSystem::Update(float /*dt*/)
     const float screenW = gfx.GetScreenWidth();
     const float screenH = gfx.GetScreenHeight();
 
-    // マウスの「ウィンドウ・クライアント座標」を UI オーサリング空間(=RT解像度)へ写像する。
-    //   全画面/Shipping: GameViewInfo が無い or invalid → 恒等写像（クライアント==RT で一致）。
-    //   エディタ: GameView がRTをレターボックス縮小して貼るため、その表示矩形で正規化して戻す。
+    // マウスのクライアント座標を UI の座標系（RT の解像度）へ変換する。
+    //   全画面 / Shipping: GameViewportInfo が無いか valid=false なので変換しない（クライアント == RT）。
+    //   エディタ: GameView が RT を縮小表示しているので、その表示矩形で正規化して戻す
     float mx = static_cast<float>(mouse.GetPositionX());
     float my = static_cast<float>(mouse.GetPositionY());
 
     // ゲーム画面が実際に出ているフレームか。出ていないなら入力を一切受けない。
-    //   エディタで GameView が別タブの裏に隠れていると、誰も矩形を書かないので
-    //   valid=false になる。そこで恒等写像へ落とすと、画面に出ていないボタンの矩形へ
-    //   生のクライアント座標が当たり、他のエディタウィンドウ上のクリックが
-    //   それを踏んでしまう（BTウィンドウのクリックがポーズメニューのQUITを押した）。
+    //   エディタで GameView が別タブの裏に隠れていると誰も矩形を書かず valid=false になる。
+    //   そこで変換なしにすると、画面に出ていないボタンの矩形に他のエディタウィンドウ上の
+    //   クリックが当たる（BT ウィンドウのクリックがポーズメニューの QUIT を押した）
     bool inputUsable = true;
 
     if (m_world->HasResource<GameViewportInfo>())
@@ -71,14 +65,14 @@ void UIInputSystem::Update(float /*dt*/)
         const GameViewportInfo &vp = m_world->GetResource<GameViewportInfo>();
         if (vp.valid && vp.w > 0.0f && vp.h > 0.0f)
         {
-            mx = (mx - vp.x) / vp.w * screenW; // 画像内ローカル → [0..1] → UI空間
+            mx = (mx - vp.x) / vp.w * screenW; // 画像内の位置 → [0,1] → UI の座標
             my = (my - vp.y) / vp.h * screenH;
         }
         else if (vp.editorVisible)
         {
-            // エディタは動いているのに GameView が描かれていない。
-            //   キーの決定も止める。BTノードの名前入力中に Enter を押すと、
-            //   裏のUIボタンが決定されるのが同じ理屈で起きるため。
+            // エディタは動いているのに GameView が表示されていない。
+            //   キーの決定も止める。止めないと BT ノードの名前入力中の Enter で
+            //   裏の UI ボタンが決定されてしまう
             inputUsable = false;
         }
     }
@@ -97,10 +91,10 @@ void UIInputSystem::Update(float /*dt*/)
                my >= t.computedPos.y && my <= t.computedPos.y + t.computedSize.y;
     };
 
-    // --- Pass 1: 矩形計算 ＋ マウス最前面ヒット ＋ フォーカス候補(中心)の収集 ---
-    EntityID topID        = InvalidEntityID; // マウスが乗っている最前面
+    // 1 周目: マウスが乗っている最前面の要素と、フォーカス候補（要素の中心）を集める
+    EntityID topID        = InvalidEntityID; // マウスが乗っている最前面の要素
     int      topPriority  = 0;
-    bool     topFocusable = false; // その最前面がフォーカス対象か（hoverでフォーカスを移すのに使う）
+    bool     topFocusable = false; // その要素がフォーカス対象か（hover でフォーカスを移すのに使う）
     EntityID focusedID   = InvalidEntityID; // 現在のフォーカス
     struct Cand
     {
@@ -112,7 +106,7 @@ void UIInputSystem::Update(float /*dt*/)
     ForEachWithID([&](EntityID id, const UITransformComponent &t, UIInteractableComponent &inter) {
         if (!inter.interactable) return;
 
-        // マウスヒット（最前面優先）。ゲーム画面が出ていないフレームは誰にも当てない。
+        // マウスのヒット（最前面を優先）。ゲーム画面が出ていないフレームは誰にも当てない
         if (inputUsable && inRect(t) && (topID == InvalidEntityID || inter.priority >= topPriority))
         {
             topID        = id;
@@ -129,13 +123,13 @@ void UIInputSystem::Update(float /*dt*/)
         }
     });
 
-    // --- フォーカスの移動先を決定 ---
+    // フォーカスの移動先を決める
     EntityID newFocus = focusedID;
     if (!cands.empty())
     {
         if (focusedID == InvalidEntityID)
         {
-            if (anyDir) newFocus = cands.front().id; // 初回入力でどれかへ
+            if (anyDir) newFocus = cands.front().id; // 最初の方向入力で先頭の候補へ
         }
         else if (anyDir)
         {
@@ -156,7 +150,7 @@ void UIInputSystem::Update(float /*dt*/)
                 const float dx = c.cx - fx, dy = c.cy - fy;
                 float       score = FLT_MAX;
                 const float eps   = 1.0f;
-                // 押した方向にある候補のみ対象。直交ズレを重み付けして最も素直な隣を選ぶ。
+                // 押した方向にある候補だけを対象にする。直交方向のずれを 2 倍で罰し、まっすぐ隣にある候補を選ぶ
                 if (navDown && dy > eps)
                     score = dy + std::abs(dx) * 2.0f;
                 else if (navUp && dy < -eps)
@@ -176,17 +170,16 @@ void UIInputSystem::Update(float /*dt*/)
     }
 
     // カーソルを動かして要素に乗せたら、そこへフォーカスも移す。
-    //   これが無いと「キーで選んでいる要素」と「マウスが乗っている要素」が別々に
-    //   ハイライトされ（UIButtonSystem は hover と focus を同じ色にする）、
-    //   決定キーがどちらに効くのか画面から読めなくなる。
+    //   これが無いと、キーで選んでいる要素とマウスが乗っている要素が別々にハイライトされ
+    //   （UIButtonSystem は hover と focus を同じ色にする）、決定キーがどちらに効くか分からなくなる
     if (mouseMoved && topID != InvalidEntityID && topFocusable)
         newFocus = topID;
 
-    // --- Pass 2: 状態確定（hover/press/click/focus） ---
+    // 2 周目: hover / press / click / focus の状態を確定する
     ForEachWithID([&](EntityID id, const UITransformComponent & /*t*/, UIInteractableComponent &inter) {
         inter.clicked = false;
 
-        // マウス hover/press/click
+        // マウスの hover / press / click
         const bool hotMouse = (id == topID) && inter.interactable;
         inter.isHovered     = hotMouse;
         if (pressed && hotMouse)
@@ -197,7 +190,7 @@ void UIInputSystem::Update(float /*dt*/)
             inter.isPressed = false;
         }
 
-        // パッド/キー focus と決定
+        // パッド/キーの focus と決定
         inter.isFocused = inter.interactable && inter.focusable && (id == newFocus);
         if (confirm && inter.isFocused)
             inter.clicked = true;

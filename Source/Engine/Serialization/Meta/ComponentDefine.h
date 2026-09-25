@@ -1,23 +1,17 @@
-// =====================================================================
-// ComponentDefine.h
-//   コンポーネントメタ定義の DSL。
-//
-//   フィールド宣言は CFIELD 系マクロに一本化 (旧 META_FIELD_* は撤去)。
-//
-//   使い分け:
-//     ┌─────────────────────────────────┬───────────────────────────────────┐
-//     │ シンプルなコンポーネント        │ COMPONENT_META_BEGIN/END で完結    │
-//     │ (フィールドのみ・GUI 自動生成)  │ → CFIELD だけ書く                  │
-//     ├─────────────────────────────────┼───────────────────────────────────┤
-//     │ カスタム GUI が必要             │ ComponentMeta<T> を手書きする。    │
-//     │ (Transform 等)                  │ 冒頭に CCL_META_USING_THIS(T) を   │
-//     │                                 │ 書けば Fields() 内で CFIELD 可。   │
-//     └─────────────────────────────────┴───────────────────────────────────┘
-//
-//   カスタムシリアライズが要る場合は ComponentMetaJson::ComponentSerializer<T>
-//   を特殊化する (ComponentMetaJson.h を参照)。このマクロ群とは独立。
-// =====================================================================
 #pragma once
+// ===========================================================================
+// 概要: コンポーネントのメタ定義を書くためのマクロ群（CFIELD / COMPONENT_META_BEGIN 等）。
+//
+// 責務:
+//   - フィールドの型から FieldDescriptor を自動で作る（CFIELD 系）
+//   - ComponentMeta<T> の特殊化と登録を 1 ブロックで書けるようにする（COMPONENT_META_BEGIN 系）
+//
+// 備考: 使い分け
+//   - フィールドだけのコンポーネント: COMPONENT_META_BEGIN 〜 END の中に CFIELD を並べる
+//   - 独自の GUI が要るコンポーネント: ComponentMeta<T> を手書きし、冒頭に
+//     CCL_META_USING_THIS(T) を書けば Fields() の中で CFIELD が使える
+//   - 保存形式そのものを変えたい場合は ComponentMetaJson::ComponentSerializer<T> を特殊化する
+// ===========================================================================
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
@@ -30,10 +24,7 @@
 namespace ComponentMetaHelpers
 {
 
-    // -----------------------------------------------------------------
-    // フィールド型 → FieldDescriptor の自動マッピング。
-    //   if constexpr で型ごとに分岐。未対応型はコンパイル時エラー。
-    // -----------------------------------------------------------------
+    // フィールドの型から FieldDescriptor を作る。if constexpr で型ごとに分け、未対応の型はコンパイルエラーにする
     template <typename ClassT, typename FieldT>
     constexpr FieldDescriptor MakeFieldAuto(
         const char *displayName,
@@ -100,15 +91,14 @@ namespace ComponentMetaHelpers
 
 } // namespace ComponentMetaHelpers
 
-// =====================================================================
-// CFIELD: 自動型推論で 1 フィールドを宣言する。
-//   使い方: CFIELD(fieldName, "Display Name", "Category")
-//   推論可能型: float / int / bool / uint8_t / uint16_t / uint32_t /
-//               XMFLOAT2 / XMFLOAT3 / XMFLOAT4 / std::string / EntityLink
-//   ※ ThisType に依存するため、COMPONENT_META_BEGIN か CCL_META_USING_THIS の
-//     文脈でのみ使用できる。
-// =====================================================================
-// 基本形は従来通り: CFIELD(field, "表示名", "カテゴリ")
+// ===========================================================================
+// CFIELD 系: フィールドを 1 つ宣言する
+//   型から自動で決まる: float / int / bool / uint8_t / uint16_t / uint32_t /
+//                       XMFLOAT2 / XMFLOAT3 / XMFLOAT4 / std::string / EntityLink
+//   ThisType を使うので、COMPONENT_META_BEGIN か CCL_META_USING_THIS の中でだけ使える。
+// ===========================================================================
+
+// 基本形: CFIELD(field, "表示名", "カテゴリ")
 #define CFIELD(Field, Display, Category)                                                                                        \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                                                               \
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
@@ -120,103 +110,75 @@ namespace ComponentMetaHelpers
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip),
 
-// 読み取り専用: CFIELD_RO(field, "表示名", "カテゴリ", "説明")  ※説明不要なら nullptr
+// 読み取り専用: CFIELD_RO(field, "表示名", "カテゴリ", "説明")。説明が不要なら nullptr
 #define CFIELD_RO(Field, Display, Category, Tooltip)                                                                            \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                                                               \
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip, true),
 
-// =====================================================================
-// CFIELD_*_RT: 実行時専用フィールド。インスペクタには出すが JSON へは書き出さない。
-//
-// 何のためにあるか:
-//   書き手がシステムのフィールド（現在ステート・タイマー・計算済みの目標座標など）は、
-//   保存すると「たまたま保存した瞬間の実行時の値」がプレハブやシーンに焼き付く。
-//   次にそのプレハブから生成された個体は、その古い値を持って生まれてくる。
-//   実際に Drone.json には currentState=FireCharge が焼き付いていた。
-//
-// なぜ非表示にはしないか:
-//   インスペクタで今の状態を見られること自体はデバッグに要る。
-//   問題は「見えること」ではなく「保存されること」なので、保存だけを止める。
-//
-// FieldDescriptor::serialize は以前から Save/Load 両方で見られていたが、
-// それを渡せるマクロが無かったため使われていなかった。
-// =====================================================================
+// CFIELD_*_RT: 実行時専用のフィールド。インスペクタには出すが保存しない。
+//   System が書くフィールド（現在のステート・タイマー・計算済みの目標など）を保存すると、
+//   保存した瞬間の値がプレハブに残り、そこから生成した Entity がその値で始まってしまう
+//   （Drone.json に currentState=FireCharge が残っていた）。
+//   今の値を見られること自体はデバッグに要るので、表示は残して保存だけを止める
 #define CFIELD_RT(Field, Display, Category)                                                                                     \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                                                               \
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
         Display, #Field, offsetof(ThisType, Field), Category, nullptr, false, false),
 
-// uint8 ベースの enum の実行時専用版
+// uint8 の enum（実行時専用）
 #define CFIELD_ENUM_U8_RT(Field, Display, EnumNames, EnumCount, Category) \
     FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames,      \
               static_cast<int>(EnumCount), Category, false),
 
-// Float3 の実行時専用版
+// Float3（実行時専用）
 #define CFIELD_FLOAT3_RT(Field, Display, Speed, Category) \
     FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category, false),
 
-// 色 (XMFLOAT4 を ColorEdit4 で): CFIELD_COLOR(field, "表示名", "カテゴリ")
+// 色（XMFLOAT4 をカラーピッカーで編集）: CFIELD_COLOR(field, "表示名", "カテゴリ")
 #define CFIELD_COLOR(Field, Display, Category) \
     FD_Color(Display, #Field, offsetof(ThisType, Field), Category),
 
-// 色＋説明
-#define CFIELD_COLOR_T(Field, Display, Category, Tooltip) \
-    FD_Color(Display, #Field, offsetof(ThisType, Field), Category, true, Tooltip),
-
-// ファイルパス (std::string) を「テキスト＋[...]ダイアログ」で編集する。
-//   Preset は FileDialog のプリセット名 (例 "Texture")。直打ちに加えダイアログで選べる。
-//   使い方: CFIELD_ASSET(field, "表示名", "カテゴリ", "Texture", "説明")  ※説明不要なら nullptr
+// ファイルパス（std::string）をテキスト入力とファイルダイアログで編集する。
+//   Preset は FileDialog のプリセット名（例 "Texture"）。説明が不要なら nullptr
+//   CFIELD_ASSET(field, "表示名", "カテゴリ", "Texture", "説明")
 #define CFIELD_ASSET(Field, Display, Category, Preset, Tooltip) \
     FD_String(Display, #Field, offsetof(ThisType, Field), Category, true, Tooltip, false, Preset),
 
-// --- 細かい制御が必要な特殊版 (デフォルト推論を上書き) -----------------------
+// 以下は型からの自動推論を使わず、範囲などを指定する版
 
-/** @brief range / drag speed を指定する float */
+// 範囲とドラッグ速度を指定する float
 #define CFIELD_FLOAT_RANGED(Field, Display, Speed, Min, Max, Category) \
     FD_Float(Display, #Field, offsetof(ThisType, Field), Speed, Min, Max, Category),
 
-/** @brief range を指定する int */
+// 範囲を指定する int
 #define CFIELD_INT_RANGED(Field, Display, Min, Max, Category) \
     FD_Int(Display, #Field, offsetof(ThisType, Field), Min, Max, Category),
 
-/** @brief uint8 ベースの enum (ImGui Combo に enum 名を出す)
- *  @note EnumCount には std::size(...) を渡すのが自然だが戻り値は size_t で、
- *        FieldDescriptor::enumCount は int。呼び出し側に static_cast を書かせず
- *        済むよう、ここで畳んで縮小変換警告を断つ。enum の要素数が int を
- *        溢れることは無いので情報は落ちない。 */
+// uint8 の enum（コンボボックスに enum 名を出す）。
+//   EnumCount には std::size(...)（size_t）を渡せるよう、ここで int にキャストする
 #define CFIELD_ENUM_U8(Field, Display, EnumNames, EnumCount, Category) \
     FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames, static_cast<int>(EnumCount), Category),
 
-/** @brief int ベースの enum */
+// int の enum
 #define CFIELD_ENUM_INT(Field, Display, EnumNames, EnumCount, Category) \
     FD_EnumInt(Display, #Field, offsetof(ThisType, Field), EnumNames, static_cast<int>(EnumCount), Category),
 
-/** @brief drag speed を指定する Float3 (Position や Scale など) */
+// ドラッグ速度を指定する Float3（位置やスケールなど）
 #define CFIELD_FLOAT3_FAST(Field, Display, Speed, Category) \
     FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category),
 
-// =====================================================================
-// COMPONENT_META_BEGIN 系 / COMPONENT_META_END
-//   シンプルなコンポーネントを 1 ブロックで完結させる。
-//     1. ComponentMeta<T> の特殊化
-//     2. Fields() の自動生成
-//     3. REGISTER_COMPONENT (ランタイム登録)
-//     4. REGISTER_COMPONENT_EDITOR_GUI (エディタのみ)
-//
-//   3 種類の入口 (どれも END で閉じる):
-//     COMPONENT_META_BEGIN(T, "表示名")
-//         → カテゴリ "Misc" / 並び順 1000 / 非表示なし
-//     COMPONENT_META_BEGIN_CAT(T, "表示名", "カテゴリ")
-//         → カテゴリ指定 / 並び順 1000 / 非表示なし
-//     COMPONENT_META_BEGIN_FULL(T, "表示名", "カテゴリ", 並び順, 非表示)
-//         → 全指定 (並び順は小さいほどインスペクタ上段)
-//
-//   ※ 同じ T を別の翻訳単位で特殊化しないこと (ODR)。
-//     通常は 1 コンポーネント = 1 cpp なので問題ない。
-// =====================================================================
+// ===========================================================================
+// COMPONENT_META_BEGIN 系 〜 COMPONENT_META_END
+//   ComponentMeta<T> の特殊化・Fields()・REGISTER_COMPONENT・
+//   REGISTER_COMPONENT_EDITOR_GUI を 1 ブロックで書く。入口は 3 種類（どれも END で閉じる）:
+//     COMPONENT_META_BEGIN(T, "表示名")                               カテゴリ Misc / 並び順 1000
+//     COMPONENT_META_BEGIN_CAT(T, "表示名", "カテゴリ")               並び順 1000
+//     COMPONENT_META_BEGIN_FULL(T, "表示名", "カテゴリ", 並び順, 非表示) 全て指定（並び順は小さいほど上段）
+//   同じ T を別の翻訳単位で特殊化しないこと（ODR 違反になる）。
+// ===========================================================================
 
-// --- 基本形: カテゴリ・並び順・非表示まで全指定 (他の BEGIN はこれに委譲) ---
+// 全て指定する版（他の BEGIN はこれを呼ぶ）
 #define COMPONENT_META_BEGIN_FULL(T, NameStr, CategoryStr, Priority, Hidden)                                                  \
     template <>                                                                                                               \
     struct ComponentMeta<T>                                                                                                   \
@@ -233,15 +195,15 @@ namespace ComponentMetaHelpers
         {                                                                                                                     \
             static const std::vector<FieldDescriptor> fields = {
 
-// --- カテゴリ指定版: 並び順は既定(1000)、非表示なし ---
+// カテゴリだけ指定する版
 #define COMPONENT_META_BEGIN_CAT(T, NameStr, CategoryStr) \
     COMPONENT_META_BEGIN_FULL(T, NameStr, CategoryStr, 1000, false)
 
-// --- 無印版: カテゴリ "Misc"、並び順は既定(1000)、非表示なし ---
+// 表示名だけ指定する版
 #define COMPONENT_META_BEGIN(T, NameStr) \
     COMPONENT_META_BEGIN_FULL(T, NameStr, "Misc", 1000, false)
 
-// --- 終端: すべての BEGIN 系はこれで閉じる ---
+// BEGIN 系を閉じる
 #define COMPONENT_META_END(T)                            \
     }                                                    \
     ;                                                    \
@@ -252,9 +214,5 @@ namespace ComponentMetaHelpers
     REGISTER_COMPONENT(T, ComponentMeta<T>::displayName) \
     REGISTER_COMPONENT_EDITOR_GUI(T)
 
-// =====================================================================
-// CCL_META_USING_THIS
-//   手書きの ComponentMeta<T> 特殊化の中で CFIELD を使えるようにする。
-//   ComponentMeta<T> の冒頭に書く。
-// =====================================================================
+// 手書きの ComponentMeta<T> の中で CFIELD を使えるようにする（ComponentMeta<T> の冒頭に書く）
 #define CCL_META_USING_THIS(T) using ThisType = T;

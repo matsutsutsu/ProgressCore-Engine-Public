@@ -8,13 +8,11 @@
 #include "Engine/Platform/Core/Logger.h"
 #include <tracy/Tracy.hpp>
 
-// ===========================================================================
-// 超速化: ビットマスクによるキャンセルウィンドウの評価
-// ===========================================================================
+// 再生中クリップの ComboWindow / CancelWindow のうち、requiredMask とビットが重なる区間の中にいるか
 static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t requiredMask)
 {
     if (requiredMask == 0)
-        return true; // マスク指定なし(0)なら常時許可
+        return true; // マスク指定なしなら常に許可
 
     const AnimSequence *seq = animator.currentSequence;
     if (!seq)
@@ -26,7 +24,6 @@ static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t require
             ev.type != AnimEventType::CancelWindow)
             continue;
 
-        // DODの極み: 窓のマスクと、遷移が要求するマスクのビットが「1つでも」被っていればOK
         if ((ev.cancelMask & requiredMask) == 0)
             continue;
 
@@ -38,15 +35,16 @@ static bool IsInCancelWindow(const AnimatorComponent &animator, uint32_t require
 }
 
 // ===========================================================================
-// 階層ステートマシン（サブステートマシン）評価の補助関数群
-//   設計：現在地は fsm.activePath [root側..., 葉]。評価は「外→内」に降りる。
-//   各階層で ① このグラフの anyState（外側の割り込み）→ ② 現在ステートがサブマシンなら
-//   その out 遷移（＝サブマシン全体の出口）→ ③ 子グラフへ降下、の順に見る。
-//   これで「外側（親）の割り込みが内側（子）より優先」という階層FSMの意味論になる。
+// 階層ステートマシンの評価
+//   現在地は fsm.activePath [ルート側..., 葉]。各階層で
+//     1. このグラフの anyState（外側からの割り込み）
+//     2. 今のステートがサブマシンなら、その遷移（サブマシン全体の出口）
+//     3. 子グラフへ降りる
+//   の順に見るので、外側（親）の遷移が内側（子）より優先される。
 // ===========================================================================
 namespace
 {
-    // このグラフの直下ステートを hash で引く（子グラフは辿らない）。
+    // このグラフの直下のステートを hash で引く（子グラフはたどらない）
     const AnimState *FindDirectState(const AnimStateGraph &g, uint32_t hash)
     {
         for (const auto &s : g.states)
@@ -54,8 +52,8 @@ namespace
         return nullptr;
     }
 
-    // graph 内の target へ「入り」、サブマシンなら entry へ潜って葉まで path を伸ばす。
-    //   戻り値は葉ステート（実際に再生する対象）。path には target 以降の hash を積む。
+    // graph 内の target に入り、サブマシンなら entry へ降りて葉まで path を伸ばす。
+    //   戻り値は葉ステート（実際に再生する対象）。path には target 以降の hash を積む
     const AnimState *EnterResolveLeaf(const AnimStateGraph &graph, uint32_t targetHash,
                                       std::vector<uint32_t> &path)
     {
@@ -65,15 +63,15 @@ namespace
         while (st->isSubMachine && st->subGraph)
         {
             const AnimState *child = FindDirectState(*st->subGraph, st->subGraph->entryStateHash);
-            if (!child) break; // entry 未設定などの安全策
+            if (!child) break; // entry が未設定
             path.push_back(child->stateHash);
             st = child;
         }
         return st;
     }
 
-    // hash のステートを階層のどこかから探し、root からの完全パスを out に構築（葉まで解決）。
-    //   currentStateHash から activePath を作り直す時（初期化・エディタジャンプ）に使う。
+    // hash のステートを階層全体から探し、ルートから葉までのパスを out に作る。
+    //   currentStateHash から activePath を作り直すとき（初期化・エディタからのジャンプ）に使う
     const AnimState *BuildPathTo(const AnimStateGraph &g, uint32_t hash, std::vector<uint32_t> &out)
     {
         for (const auto &s : g.states)
@@ -82,7 +80,7 @@ namespace
             {
                 const AnimState *st = &s;
                 out.push_back(hash);
-                while (st->isSubMachine && st->subGraph) // サブマシンを指していたら葉へ
+                while (st->isSubMachine && st->subGraph) // サブマシンなら葉まで降りる
                 {
                     const AnimState *child = FindDirectState(*st->subGraph, st->subGraph->entryStateHash);
                     if (!child) break;
@@ -101,7 +99,7 @@ namespace
         return nullptr;
     }
 
-    // 条件式1本の判定。結合（AND/OR）は呼び出し側が行う。
+    // 条件 1 つの判定。AND/OR の結合は呼び出し側が行う
     bool EvaluateCondition(const AnimatorComponent &animator, const AnimParametersComponent &params,
                            const AnimCondition &cond)
     {
@@ -126,23 +124,19 @@ namespace
         }
     }
 
-    // 1本の遷移（キャンセル窓＋条件式）が満たされるか。
-    //   文脈依存の「自己遷移スキップ」「グループスコープ」判定は呼び出し側で行う。
-    //
-    // 条件式の結合は t.logicType（AND / OR）に従う。エディタには
-    // 「すべて満たす(AND) / いずれかを満たす(OR)」のドロップダウンがあるのに、
-    // ここが logicType を読まず常に AND で畳んでいたため OR が無言で効いていなかった。
-    //
-    // キャンセル窓(requiredCancelMask)は OR の対象に含めない。窓は「この遷移を
-    // 受け付けてよい時間帯か」というゲートであり、条件式の一項目ではないため、
-    // OR を選んでも窓の外で遷移が通ってはいけない。
+    /**
+     * @brief 遷移 1 本（受付区間 + 条件）が満たされるか。
+     * @note 条件は t.logicType（AND / OR）で結合する。
+     *       受付区間（requiredCancelMask）は OR の対象に含めない。受付区間は「この遷移を受け付けてよい
+     *       時間帯か」という前提で、条件の 1 つではないので、OR でも区間の外では遷移させない。
+     *       自己遷移の除外とグループの判定は呼び出し側で行う。
+     */
     bool ConditionsMet(const AnimatorComponent &animator, const AnimParametersComponent &params,
                        const AnimTransition &t)
     {
         if (!IsInCancelWindow(animator, t.requiredCancelMask)) return false;
 
-        // 条件ゼロは「無条件」。AND/OR どちらでも成立とする（OR で false にすると
-        // 条件を消しただけで遷移が死ぬ）。
+        // 条件が無ければ無条件で成立（OR で false にすると、条件を消しただけで遷移しなくなる）
         if (t.conditions.empty()) return true;
 
         if (t.logicType == AnimTransitionLogic::OR)
@@ -157,38 +151,35 @@ namespace
         return true;
     }
 
-    // 遷移を実行：target を葉まで解決し、成功したらトリガーを消費して path を張り替え、葉を再生。
-    //   graph は「遷移が発火した階層」（target はこの graph の兄弟ステート）。
-    //
-    // @return 実際に遷移したか。false のとき fsm / params は【一切変更していない】。
-    //
-    // 順序が重要。「トリガー消費 → path 切り詰め → 解決」の順にしてはいけない。解決に
-    // 失敗すると "トリガーは消えた・path は壊れた・ステートは変わらない" で抜ける。
-    // プレイヤーから見ると「ボタンを押したのに何も起きず、入力だけ消える」で、しかも
-    // 壊れた path は次フレームの再構築が黙って直すので痕跡が残らない。
-    // 失敗しうる処理を先に済ませ、確定してから状態を触ること。
+    /**
+     * @brief 遷移を実行する。target を葉まで解決し、トリガーを消費して path を張り替え、葉を再生する。
+     * @param graph 遷移が発火した階層（target はこの graph の直下のステート）
+     * @return 実際に遷移したか。false のとき fsm / params は一切変更していない
+     * @note 失敗しうる判定を先に済ませ、確定してから状態を変えること。
+     *       「トリガー消費 → path 切り詰め → 解決」の順にすると、解決に失敗したとき
+     *       トリガーだけ消えてステートは変わらない（ボタンを押したのに入力だけ消える）。
+     *       壊れた path は次のステップの再構築で直ってしまうので、痕跡も残らない。
+     */
     bool FireTransition(const AnimStateGraph &graph, int level, const AnimTransition &t,
                         AnimStateMachineComponent &fsm, AnimatorComponent &animator,
                         AnimParametersComponent &params, bool enableLog)
     {
-        // --- ここまでは副作用なし（失敗しても何も壊さない） ---
-        // EnterResolveLeaf が nullptr を返す唯一の経路が「target がこの階層に居ない」なので、
-        // 同じ判定を先出しすれば path を触る前に失敗を検出できる。
+        // ここまでは状態を変えない。EnterResolveLeaf が nullptr を返すのは
+        // target がこの階層に無いときだけなので、同じ判定を先に行えば path を触る前に失敗を検出できる
         if (!FindDirectState(graph, t.targetStateHash))
         {
-            // 無言で捨てるとステートを消した後の残存リンクに気付けない。
+            // 黙って捨てると、ステートを消した後に残った遷移に気付けない
             CCL_LOG_WARN(LogCategory::Game,
                          "[AnimController] 遷移先のステート(hash=%u)がこの階層に見つかりません。遷移を中止します",
                          t.targetStateHash);
             return false;
         }
 
-        // --- ここから確定。状態を変更する ---
+        // ここから状態を変更する
         for (const auto &cond : t.conditions)
         {
-            // OR 結合では「成立していない条件」も並ぶため、実際に立っているトリガーだけ消費する。
-            //   全部消すと、この遷移に寄与していない先行入力まで巻き添えで消える。
-            //   AND のときは全条件が成立済み＝全トリガーが立っているので従来と同じ挙動になる。
+            // OR では成立していない条件も並ぶので、実際に立っているトリガーだけ消費する。
+            //   全て消すと、この遷移に関係ない先行入力まで消える
             if (cond.op == AnimConditionOp::Trigger && params.HasTrigger(cond.paramHash))
                 params.ConsumeTrigger(cond.paramHash);
         }
@@ -206,15 +197,13 @@ namespace
                            .curve                  = leaf->speedCurve,
                            .rootMotionCurve        = leaf->rootMotionCurve,
                            .lockVerticalRootMotion = leaf->lockVerticalRootMotion,
-                           // ステートに「入る」ので必ず頭から再生する。ここを渡さないと、別ステートでも
-                           // クリップが同一だと Play が何もせず、再生位置・isFinished・イベント栞が
-                           // 前のステートから引き継がれる（例: HitFront と HitBack は同じクリップ）。
+                           // ステートに入るので必ず頭から再生する（理由は PlayParams::restart を参照）
                            .restart = true});
         }
         else
         {
-            // クリップ未設定のステートへ入ると、FSM は新ステートのつもり・Animator は
-            // 古いクリップを再生し続ける、という無言の食い違いになる。必ず気付けるようにする。
+            // クリップ未設定のステートに入ると、ステートは変わったのに前のクリップが再生され続ける。
+            // 気付けるよう警告を出す
             CCL_LOG_WARN(LogCategory::Game,
                          "[AnimController] ステート[%s]にクリップが設定されていません（再生は前のまま）",
                          leaf->sequenceName.c_str());
@@ -226,7 +215,7 @@ namespace
         return true;
     }
 
-    // level 階層を評価。発火して path/再生を更新したら true（このフレームの評価は打ち切り）。
+    // level 階層を評価する。遷移したら true（このステップの評価はそこで終わる）
     bool EvaluateLevel(const AnimStateGraph &graph, int level, AnimStateMachineComponent &fsm,
                        AnimatorComponent &animator, AnimParametersComponent &params, bool enableLog)
     {
@@ -236,13 +225,13 @@ namespace
         const AnimState *activeState = FindDirectState(graph, activeHash);
         const uint32_t   activeGroup = activeState ? activeState->groupId : 0u;
 
-        // ① このグラフの anyState（グローバル＋グループ限定）＝外側の割り込みを最優先で見る
+        // 1. このグラフの anyState（全体 + グループ限定）を最優先で見る
         for (const auto &t : graph.anyStateTransitions)
         {
-            if (t.targetStateHash == activeHash) continue;                        // 自己遷移は無視
-            if (t.sourceGroupId != 0 && t.sourceGroupId != activeGroup) continue; // グループ限定
+            if (t.targetStateHash == activeHash) continue;                        // 自己遷移は無視する
+            if (t.sourceGroupId != 0 && t.sourceGroupId != activeGroup) continue; // 別グループ限定の遷移
             if (!ConditionsMet(animator, params, t)) continue;
-            // 発火に失敗（遷移先が壊れている）なら、その1本を諦めて次の候補を見る
+            // 遷移先が見つからず失敗したら、その 1 本は諦めて次の候補を見る
             if (FireTransition(graph, level, t, fsm, animator, params, enableLog)) return true;
         }
 
@@ -250,17 +239,17 @@ namespace
 
         if (activeState->isSubMachine && activeState->subGraph)
         {
-            // ② サブマシン自身の out 遷移＝親レベルの出口（例: Combat 全体 → Locomotion）
+            // 2. サブマシン自身の遷移（サブマシン全体の出口。例: Combat 全体 → Locomotion）
             for (const auto &t : activeState->transitions)
             {
                 if (!ConditionsMet(animator, params, t)) continue;
                 if (FireTransition(graph, level, t, fsm, animator, params, enableLog)) return true;
             }
-            // ③ 子グラフへ降りて内側を評価（外側で発火しなかった時だけ）
+            // 3. 外側で遷移しなかったときだけ、子グラフへ降りて評価する
             return EvaluateLevel(*activeState->subGraph, level + 1, fsm, animator, params, enableLog);
         }
 
-        // 葉：自身の遷移を評価
+        // 葉: 自身の遷移を評価する
         for (const auto &t : activeState->transitions)
         {
             if (!ConditionsMet(animator, params, t)) continue;
@@ -269,7 +258,7 @@ namespace
         return false;
     }
 
-    // グラフ内の全ステートの sequence/curve を束縛（サブマシンの子も再帰的に）。
+    // グラフ内の全ステートの sequence / curve を束縛する（サブマシンの子も再帰的に）
     void BindGraphResources(AnimStateGraph &g, ResourceManager &rm)
     {
         for (auto &state : g.states)
@@ -281,27 +270,20 @@ namespace
             if (!state.rootMotionCurveName.empty())
                 state.rootMotionCurve = rm.LoadAnimCurve(state.rootMotionCurveName.c_str());
             if (state.isSubMachine && state.subGraph)
-                BindGraphResources(*state.subGraph, rm); // 子グラフも束縛
+                BindGraphResources(*state.subGraph, rm);
         }
     }
 } // namespace
 
-// ステートマシン評価。ロード/束縛（シリアル）と評価（並列）を2フェーズに分離する。
-//
-// フェーズ1で全ポインタ(sequence/speedCurve)を束縛し、フェーズ2の並列評価から
-// ResourceManager（共有シングルトン）・ファイルI/Oを完全に排除してレースを防ぐ。
 void AnimControllerSystem::Update(float dt)
 {
     ZoneScopedN("AnimControllerSystem::Update");
 
     auto &resourceManager = ResourceManager::Instance();
 
-    // =====================================================================
-    // フェーズ1【シリアル】グラフのロード・ポインタ束縛・初期再生
-    //   ファイルI/O と ResourceManager 変更はスレッド非安全のため、並列ループから
-    //   分離し必ずメインスレッドで実行する。定常状態では states が非空なので、
-    //   この走査は先頭の早期 return でほぼ分岐1回だけで抜ける（実質ノーコスト）。
-    // =====================================================================
+    // 1 段目（直列）: グラフの読込・ポインタの束縛・初回の再生。
+    //   ファイル I/O と ResourceManager の変更はスレッドセーフでないので、並列ループから外す。
+    //   読込済みなら先頭の早期 return で抜けるので、普段はほぼコストが無い
     ForEachWithID([&resourceManager](CCL::ECS::EntityID /*id*/,
                                      AnimStateMachineComponent &fsm,
                                      AnimatorComponent         &animator,
@@ -310,32 +292,30 @@ void AnimControllerSystem::Update(float dt)
         if (animator.isEditorOverride)
             return;
 
-        // 未ロードのグラフのみ処理（ロード済み or パス未設定なら即 return）
+        // 未読込のグラフだけ処理する（読込済みかパス未設定なら何もしない）
         if (!fsm.internalGraph.states.empty() || fsm.graphPath.empty())
             return;
 
-        // ここに来るのは初回のみ（グラフJSONロード＋シーケンス/カーブのディスクロード）。
-        // 起動直後は全キャラ分がこのフレームに集中するため、初回スパイクの正体はここ。
+        // ここに来るのは初回だけ。起動直後は全キャラ分がこのフレームに集中し、処理が一時的に重くなる
         ZoneScopedN("AnimCtrl: LoadGraph+Bind (first frame)");
 
-        if (!AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
+        if (!AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath))
         {
-            fsm.graphPath = ""; // ロード失敗時はクリア（毎フレーム再試行しない）
+            fsm.graphPath = ""; // 失敗したらパスを消し、毎フレーム再試行しない
             return;
         }
 
-        // 全ステートの sequence/curve を束縛（サブマシンの子も再帰的に）。
-        //   これで並列評価フェーズ(2)から ResourceManager を呼ぶ必要がなくなる。
+        // ここで束縛しておけば、2 段目の並列評価で ResourceManager を呼ばずに済む
         BindGraphResources(fsm.internalGraph, resourceManager);
 
-        // 初期状態：entry へ入り、サブマシンなら葉まで潜って activePath を構築する。
+        // entry に入り、サブマシンなら葉まで降りて activePath を作る
         fsm.activePath.clear();
         const AnimState *leaf = EnterResolveLeaf(fsm.internalGraph,
                                                  fsm.internalGraph.entryStateHash, fsm.activePath);
         fsm.currentStateHash  = fsm.activePath.empty() ? fsm.internalGraph.entryStateHash
                                                        : fsm.activePath.back();
 
-        // 初期再生のブートストラップ（最初の再生なのでブレンドは0）
+        // 最初の再生なのでブレンドしない
         if (leaf && leaf->sequence)
         {
             animator.Play(leaf->sequence,
@@ -348,32 +328,24 @@ void AnimControllerSystem::Update(float dt)
         }
     });
 
-    // ログフラグをローカルにコピーし、ラムダ式にキャプチャさせてスレッドセーフにする
+    // 並列のラムダからメンバを読まないよう、ローカルにコピーしてキャプチャする
     const bool enableLog = m_enableTransitionLog;
 
-    // =====================================================================
-    // フェーズ2【並列】純粋なステートマシン評価
-    //   ResourceManager / ファイルI/O は一切呼ばない（フェーズ1で束縛済み）。
-    // =====================================================================
+    // 2 段目（並列）: ステートマシンの評価。ResourceManager / ファイル I/O は呼ばない
     ForEachWithIDParallel([enableLog](CCL::ECS::EntityID         id,
                                       AnimStateMachineComponent &fsm,
                                       AnimatorComponent         &animator,
                                       AnimParametersComponent   &params,
-                                      const TimeStateComponent  &time) { // TimeStateComponent を追加
+                                      const TimeStateComponent  &time) {
         if (animator.isEditorOverride) return;
 
-        // コアロジック: ステート評価の前に、先行入力バッファの寿命を削ぎ落とす
-        // time.localDt を使うことで、ヒットストップやスローモーション中も完璧に同期する
+        // 評価の前に先行入力の寿命を進める。localDt を使うので、ヒットストップやスロー中は寿命も遅く減る
         params.TickTriggers(time.localDt);
 
         if (fsm.internalGraph.states.empty()) return;
 
-        // ====================================================================
-        // 階層評価：activePath を currentStateHash と整合させてから、外→内に評価する
-        // ====================================================================
-
-        // 初期化直後・エディタからのジャンプ等で activePath が空/末尾不一致なら作り直す。
-        //   まず currentStateHash を起点に階層パスを構築、見つからなければ entry から再構築。
+        // 初期化直後やエディタからのジャンプで activePath が空か末尾が食い違っていたら作り直す。
+        //   まず currentStateHash からパスを作り、見つからなければ entry から作り直す
         if (fsm.activePath.empty() || fsm.activePath.back() != fsm.currentStateHash)
         {
             fsm.activePath.clear();
@@ -382,19 +354,17 @@ void AnimControllerSystem::Update(float dt)
             {
                 fsm.activePath.clear();
                 cur = EnterResolveLeaf(fsm.internalGraph, fsm.internalGraph.entryStateHash, fsm.activePath);
-                if (!cur) return; // グラフが壊れている等の安全策
+                if (!cur) return; // entry も見つからない（グラフが壊れている）
             }
             if (!fsm.activePath.empty())
                 fsm.currentStateHash = fsm.activePath.back();
         }
 
-        // 階層を root→葉へ評価。どこか1階層で遷移が発火したらそのフレームは打ち切り。
-        //   外側(親)の割り込みが内側(子)より優先される（EvaluateLevel が先に親を見る）。
+        // ルートから葉へ評価する。どこかの階層で遷移したら、このステップはそこで終わる
         EvaluateLevel(fsm.internalGraph, 0, fsm, animator, params, enableLog);
     });
 }
 
-// システムのインスペクタ表示
 void AnimControllerSystem::OnGui()
 {
     ImGui::Text("Animation Controller Settings");

@@ -10,6 +10,7 @@ using namespace DirectX;
 
 TransformUpdateSystem::TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
 
+// ローカルの TRS から行列を作る（S * R * T）
 static inline XMMATRIX ComposeLocal(const TransformComponent &t)
 {
     return XMMatrixAffineTransformation(
@@ -19,7 +20,7 @@ static inline XMMATRIX ComposeLocal(const TransformComponent &t)
 
 void TransformUpdateSystem::Initialize()
 {
-    // Render Stageの補間システムが同じ階層順序を参照できるよう公開する
+    // Render ステージの補間システムが同じ並び順を参照できるよう公開する
     if (!m_world->HasResource<TransformHierarchyCache *>())
     {
         m_world->AddResource<TransformHierarchyCache *>(&m_cache);
@@ -30,23 +31,21 @@ void TransformUpdateSystem::Update(float dt)
 {
     ProcessPendingParents();
 
-    // 1. トポロジ変化検出＋ゴースト修復（compose しない＝軽量シリアル）
+    // 1. 親子関係の変化検出とゴーストリンクの修復（行列は計算しないので、直列でも軽い）
     if (ScanDetectTopology())
     {
         RepairBrokenLinks();
         m_cache.Rebuild(*m_world);
     }
 
-    // 2. ホットパス：ルートを並列インプレース計算（1万体の上下運動はここでスケール）
+    // 2. ルートを並列にその場で計算する。Entity 数が多いのはここなので、並列化の効果が大きい
     ComputeRootsParallel();
 
-    // 3. 非ルート（少数）を depth 順に解決。フラットシーンでは Count()==0 で即抜け。
+    // 3. 非ルート（少数）を親が先の順に解決する。親子の無いシーンでは Count() == 0 ですぐ抜ける
     SolveHierarchy();
 }
 
-// =========================================================================
-// 変化検出（compose なし）。重い処理を入れないことが性能の肝。
-// =========================================================================
+// 毎ステップ全 Transform を回るので、行列計算などの重い処理は入れない
 bool TransformUpdateSystem::ScanDetectTopology()
 {
     bool   needRebuild     = false;
@@ -55,7 +54,7 @@ bool TransformUpdateSystem::ScanDetectTopology()
     ForEachWithID([&](EntityID id, TransformComponent &t) {
         EntityID parentId = t.parent;
 
-        // ゴーストリンク修復（IsEntityValid は軽い。ここ1か所に集約）
+        // 破棄済みの親を指したままのリンクを外す（IsEntityValid は軽い。ここ1か所に集約）
         if (parentId != 0 && !m_world->IsEntityValid(parentId))
         {
             t.parent        = 0;
@@ -70,39 +69,35 @@ bool TransformUpdateSystem::ScanDetectTopology()
 
         if (parentId == 0)
         {
-            if (oi >= 0) needRebuild = true; // 非ルート→ルートに変化
-            return;                          // ルートはキャッシュ対象外
+            if (oi >= 0) needRebuild = true; // 非ルートからルートに変わった
+            return;                          // ルートはキャッシュの対象外
         }
-        // 非ルート
+
         if (oi < 0)
         {
+            // キャッシュに無い非ルート＝新しく親子付けされた
             needRebuild = true;
             return;
-        } // 新規の非ルート
+        }
         ++matchedNonRoots;
-        if (m_cache.ParentIdOf(oi) != parentId) needRebuild = true; // 再親付け
+        if (m_cache.ParentIdOf(oi) != parentId) needRebuild = true; // 別の親に付け替えられた
     });
 
-    if (matchedNonRoots != m_cache.Count()) needRebuild = true; // 非ルートの破棄
+    if (matchedNonRoots != m_cache.Count()) needRebuild = true; // キャッシュ上の非ルートが破棄された
     return needRebuild;
 }
 
-// =========================================================================
-// ルートの並列インプレース計算
-// =========================================================================
 void TransformUpdateSystem::ComputeRootsParallel()
 {
     ForEachParallel([](TransformComponent &t) {
-        if (t.parent != 0) return;                               // 子は SolveHierarchy で
-        if (t.isStatic && !t.isDirty && !t.isTeleported) return; // 静止物のみスキップ
+        if (t.parent != 0) return;                               // 子は SolveHierarchy で計算する
+        if (t.isStatic && !t.isDirty && !t.isTeleported) return; // 動いていない静的物体だけ省く
         XMStoreFloat4x4(&t.worldMatrix, ComposeLocal(t));
         t.isDirty = false;
     });
 }
 
-// =========================================================================
-// 非ルートを depth 順に解決（compose + 親world継承 + 書き戻しを1ループで）
-// =========================================================================
+// ローカル行列の合成・親のワールド行列の継承・書き戻しを1つのループで行う
 void TransformUpdateSystem::SolveHierarchy()
 {
     const size_t n = m_cache.Count();
@@ -116,7 +111,8 @@ void TransformUpdateSystem::SolveHierarchy()
 
         const XMMATRIX local = ComposeLocal(*t);
 
-        // 親world：非ルート親 → dense（既に算出済み）／ルート親 → コンポーネント（並列パスで算出済み）
+        // 親のワールド行列: 親が非ルートならキャッシュの作業領域（算出済み）、
+        //                   ルートならコンポーネント（並列パスで算出済み）から読む
         const int p = m_cache.ParentInOrderOf(idx);
         XMMATRIX  parentW;
         if (p >= 0)
@@ -130,19 +126,16 @@ void TransformUpdateSystem::SolveHierarchy()
         }
 
         const XMMATRIX world = XMMatrixMultiply(local, parentW);
-        m_cache.StoreWorld(idx, world);          // 後続の子が読むため dense にも残す
+        m_cache.StoreWorld(idx, world);          // 後続の子が読むため作業領域にも残す
         XMStoreFloat4x4(&t->worldMatrix, world); // その場で書き戻し
         t->isDirty = false;
     }
 }
 
-// =========================================================================
-// 保留親の適用（既存ロジック）
-// =========================================================================
 void TransformUpdateSystem::ProcessPendingParents()
 {
-    // 注意: View は全 Chunk 走査。0 件なら body は回らないが、頻発するなら
-    //       PendingParentComponent 件数カウンタで早期 return 化するとさらに軽い。
+    // View は全 Chunk を走査する。0 件なら中身は回らないが、重くなるようなら
+    // PendingParentComponent の件数を数えておき、0 なら先に抜けるようにする
     std::vector<EntityID> pending;
     for (auto id : m_world->View<PendingParentComponent>())
     {
@@ -154,6 +147,7 @@ void TransformUpdateSystem::ProcessPendingParents()
         auto *p = m_world->GetComponent<PendingParentComponent>(id);
         if (p)
         {
+            // 親が 0 / 無効なら、親から切り離す予約
             if (p->parentID == 0 || p->parentID == InvalidEntityID)
             {
                 if (m_world->IsEntityValid(id))
@@ -168,13 +162,12 @@ void TransformUpdateSystem::ProcessPendingParents()
                 if (auto *trans = m_world->GetComponent<TransformComponent>(id)) trans->isDirty = true;
             }
         }
+        // 親が無効で適用できなかった予約も、残し続けないよう必ず外す
         m_world->RequestRemoveComponent<PendingParentComponent>(id);
     }
 }
 
-// =========================================================================
-// リンク切れ修復（既存ロジック・Rebuild 直前のみ実行）
-// =========================================================================
+// キャッシュを作り直す直前だけ実行する
 void TransformUpdateSystem::RepairBrokenLinks()
 {
     ForEachWithID([&](EntityID id, TransformComponent &trans) {
@@ -187,16 +180,18 @@ void TransformUpdateSystem::RepairBrokenLinks()
                 const bool hasSibling   = (trans.nextSiblingID != 0 || trans.prevSiblingID != 0);
                 if (!isFirstChild && !hasSibling)
                 {
-                    SetParent(*m_world, id, trans.parent); // 正しい親子関係を結び直す
+                    SetParent(*m_world, id, trans.parent); // 兄弟リストに繋ぎ直す
                 }
             }
         }
     });
 }
 
-// =========================================================================
-// ↓↓↓ 以下 static ヘルパーは既存のまま（変更なし） ↓↓↓
-// =========================================================================
+// ============================================================
+// 親子関係の操作
+// ============================================================
+
+// 子は親の子リストの先頭に挿入する
 void TransformUpdateSystem::SetParent(World &world, EntityID childID, EntityID newParentID)
 {
     if (childID == newParentID) return;
@@ -295,9 +290,9 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID en
     world.RequestDestroyEntity(entity);
 }
 
-// =========================================================================
-// ワールド値 → ローカル欄への書き戻し (static)
-// =========================================================================
+// ============================================================
+// 物理との受け渡し（ワールド値 → ローカル値）
+// ============================================================
 void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
                                                 TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
                                                 const DirectX::XMFLOAT4 &worldRot)
@@ -353,9 +348,8 @@ void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
 void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
                                                TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos)
 {
-    // 回転を据え置くため、現在のローカル回転を「そのまま維持する」ように渡す。
-    //   親がいる場合は WriteWorldTransform が rotation を書き換えてしまうので、
-    //   ここでは位置だけを自前で処理する。
+    // 親がいる場合、WriteWorldTransform は rotation も書き換えてしまうので、
+    // 回転を据え置くためにここでは位置だけを自前で処理する
     using namespace DirectX;
 
     const EntityID parentID = trans.parent.id;

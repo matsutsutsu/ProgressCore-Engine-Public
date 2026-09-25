@@ -1,9 +1,5 @@
-// RootMotionComponent のメタ定義。
-//
-// 設計方針(Why):
-//   実行時(Runtime)データであるため、中身はシリアライズさせず
-//   パターンC（カスタムシリアライズ）を用いて空枠のみをセーブ・ロードする。
-
+// RootMotionComponent のシリアライズ/インスペクタ定義。
+// 中身は実行時の状態なので、カスタムシリアライザで空の枠だけを保存・読込する。
 #include "RootMotionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -35,7 +31,7 @@ struct ComponentMeta<RootMotionComponent>
     CCL_META_USING_THIS(RootMotionComponent)
 
     static constexpr const char *displayName       = "Root Motion";
-    static constexpr const char *category          = CCL::Categories::Animation; // 定数を使用
+    static constexpr const char *category          = CCL::Categories::Animation;
     static constexpr int         sortPriority      = 110;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;

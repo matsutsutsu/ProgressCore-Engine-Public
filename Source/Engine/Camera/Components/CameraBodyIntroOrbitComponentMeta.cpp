@@ -111,12 +111,12 @@ struct ComponentMeta<CameraBodyIntroOrbit>
             changed            = true;
         }
         ImGui::SameLine();
-        // 進行度を手で掴んで絵作りする（プレビュー用スクラブ）。
-        // Dolly には無かった機能で、これが無いと毎回再生し直すしかない。
+        // 進行度をスライダーで直接動かして絵を確認する（プレビュー用スクラブ）。
+        // これが無いと、絵を確認するたびに最初から再生し直すことになる。
         if (ImGui::SliderFloat(u8"スクラブ", &comp.elapsed, 0.0f, comp.duration, "%.2fs"))
         {
             // 掴んでいる間は自動進行を止め、previewing でカメラだけ掌握させる。
-            // previewing を立てないと「再生していない＝出番待ち」と判定され、
+            // previewing を立てないと「再生していない＝再生待ち」と判定され、
             // 演出システムがカメラを譲ってしまい絵が見えない。
             comp.playing    = false;
             comp.finished   = false;
@@ -139,30 +139,30 @@ struct ComponentMeta<CameraBodyIntroOrbit>
 
     static const std::vector<FieldDescriptor> &Fields()
     {
-        // playing / finished / skipped / elapsed / delayTimer / autoPlayArmed は
-        // 毎フレーム書き換わる実行時状態なので、意図的にシリアライズしない。
+        // playing / finished / skipped / elapsed / delayTimer / resolveTimer /
+        // autoPlayArmed / previewing は実行時状態なので、シリアライズしない。
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(target, "注視対象", "Target")
-                CFIELD_FLOAT3_FAST(targetOffset, "注視オフセット", 0.1f, "Target")
+            CFIELD_FLOAT3_FAST(targetOffset, "注視オフセット", 0.1f, "Target")
 
-                    CFIELD_FLOAT_RANGED(startAngle, "開始 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
-                        CFIELD_FLOAT_RANGED(endAngle, "終了 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
-                            CFIELD_FLOAT_RANGED(startRadius, "開始 距離", 0.5f, 0.5f, 200.0f, "Orbit")
-                                CFIELD_FLOAT_RANGED(endRadius, "終了 距離", 0.5f, 0.5f, 200.0f, "Orbit")
-                                    CFIELD_FLOAT_RANGED(startHeight, "開始 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
-                                        CFIELD_FLOAT_RANGED(endHeight, "終了 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(startAngle, "開始 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(endAngle, "終了 水平角", 1.0f, -720.0f, 720.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(startRadius, "開始 距離", 0.5f, 0.5f, 200.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(endRadius, "終了 距離", 0.5f, 0.5f, 200.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(startHeight, "開始 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
+            CFIELD_FLOAT_RANGED(endHeight, "終了 高さ", 0.2f, -50.0f, 100.0f, "Orbit")
 
-                                            CFIELD_FLOAT_RANGED(startFov, "開始 画角", 0.5f, 10.0f, 150.0f, "Lens")
-                                                CFIELD_FLOAT_RANGED(endFov, "終了 画角", 0.5f, 10.0f, 150.0f, "Lens")
+            CFIELD_FLOAT_RANGED(startFov, "開始 画角", 0.5f, 10.0f, 150.0f, "Lens")
+            CFIELD_FLOAT_RANGED(endFov, "終了 画角", 0.5f, 10.0f, 150.0f, "Lens")
 
-                                                    CFIELD_ENUM_U8(easeMode, "補間カーブ", kCameraEaseModeNames, kCameraEaseModeCount, "Playback")
-                                                        CFIELD_FLOAT_RANGED(duration, "演出の長さ", 0.1f, 0.1f, 60.0f, "Playback")
-                                                            CFIELD_FLOAT_RANGED(startDelay, "開始待ち", 0.05f, 0.0f, 10.0f, "Playback")
-                                                                CFIELD(playOnStart, "シーン開始で自動再生", "Playback")
-                                                                    CFIELD(allowSkip, "スキップ許可", "Playback")
+            CFIELD_ENUM_U8(easeMode, "補間カーブ", kCameraEaseModeNames, kCameraEaseModeCount, "Playback")
+            CFIELD_FLOAT_RANGED(duration, "演出の長さ", 0.1f, 0.1f, 60.0f, "Playback")
+            CFIELD_FLOAT_RANGED(startDelay, "開始待ち", 0.05f, 0.0f, 10.0f, "Playback")
+            CFIELD(playOnStart, "シーン開始で自動再生", "Playback")
+            CFIELD(allowSkip, "スキップ許可", "Playback")
 
-                                                                        CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priority")
-                                                                            CFIELD_INT_RANGED(idlePriority, "待機中の優先度", -1000, 1000, "Priority")};
+            CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priority")
+            CFIELD_INT_RANGED(idlePriority, "待機中の優先度", -1000, 1000, "Priority")};
         return fields;
     }
 };

@@ -1,6 +1,5 @@
-
 #include "CharacterAnimSyncSystem.h"
-#include "Engine/Animation/Components/RootMotionComponent.h" // externallyDriven（外部が移動を駆動中か）
+#include "Engine/Animation/Components/RootMotionComponent.h" // externallyDriven
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -11,12 +10,12 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 毎フレームの HashString 計算を省くための事前計算（キャッシュ）
+// パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）
 static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
 static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("YVelocity");
 static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
-// トリガー用（エッジ検出）
+// 接地状態の変化で立てるトリガー
 static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("OnJump");
 static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("OnLand");
 
@@ -31,9 +30,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
             return;
         JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
-        // ====================================================================
-        // 1. 物理データの抽出
-        // ====================================================================
+        // 1. 物理の状態を取り出す
         JPH::Vec3 linearVel = ch->GetLinearVelocity();
         Vector3   horizontalVel(linearVel.GetX(), 0.0f, linearVel.GetZ());
 
@@ -41,80 +38,59 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         float currentYVel  = linearVel.GetY();
         bool  isGrounded   = (ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
-        // 前フレームの接地状態を読み取る（エッジ検出用）
+        // 前のステップの接地状態（変化の検出用）
         bool wasGrounded = animParams.GetBool(HASH_IS_GROUNDED);
 
-        // 「外部（ゲーム側の移動アクション）が移動を駆動中か」を取得する。
-        // ダッシュ等でゲーム側が速度を握っている間は足滑り補正を掛けない。
-        // ※ ゲーム固有の DashComponent を直接読まず、Engine 側のこのフラグ経由で見る。
-        //    PlayerDashSystem が rm->externallyDriven = dash.isDashing を毎フレーム設定する。
+        // ゲーム側の移動アクション（ダッシュ等）が速度を制御中なら、足滑り補正を掛けない。
+        //   ゲーム固有の DashComponent を読まず、Engine 側の externallyDriven を見る
         bool externallyDriven = false;
         if (auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id))
         {
             externallyDriven = rootMotion->externallyDriven;
         }
 
-        // ====================================================================
-        // 2. 掲示板（AnimParameters）への書き込み
-        // ====================================================================
+        // 2. パラメータに書き込む
         animParams.SetFloat(HASH_SPEED, currentSpeed);
         animParams.SetFloat(HASH_Y_VELOCITY, currentYVel);
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
-        // IsDashing はゲーム側(PlayerAnimParamSyncSystem)が同ステージで書き込む。
 
-        // エッジ検出によるトリガー発行（ジャンプと着地）
+        // 接地状態が変わった瞬間にトリガーを立てる
         if (isGrounded && !wasGrounded)
         {
-            animParams.SetTrigger(HASH_TRIG_LAND); // 着地した瞬間
+            animParams.SetTrigger(HASH_TRIG_LAND);
         }
         else if (!isGrounded && wasGrounded)
         {
-            // 上向きの明確な速度がある場合のみ「ジャンプ」とみなす
-            // それ以外（歩いて落ちた等）はトリガーを飛ばさない。
-            // グラフ側の [IsGrounded == false] の条件によって自動的に Fall へ遷移させる。
+            // 上向きの速度があるときだけジャンプとみなす。歩いて落ちた場合はトリガーを立てず、
+            // グラフ側の [IsGrounded == false] の条件で Fall へ遷移させる
             if (currentYVel > 0.1f)
             {
-                animParams.SetTrigger(HASH_TRIG_JUMP); // ジャンプした瞬間
+                animParams.SetTrigger(HASH_TRIG_JUMP);
             }
         }
 
-        // ====================================================================
-        // 3. フットスライディング（足滑り）防止
-        // ====================================================================
-        // 移動速度がConfigの基準速度(walkSpeed)より速い/遅い場合、
-        // アニメーションの再生速度(playbackSpeed)を動的に伸縮させて足の接地点を床に噛み合わせる。
-
-        // フットスライド補正（再生速度の伸縮）は「ロコモーション＝ループ再生のクリップ」
-        // にのみ適用する。攻撃などの一撃モーション(非ループ)は移動速度で高速化させたくない
-        // ため対象外。※これを外すと走行(Run)中の高速度で攻撃アニメまで最大2.5倍速になる。
-        //
-        // 書き込み先は playbackSpeed ではなく専用の footSlideMultiplier。
-        //   playbackSpeed は AnimState.playbackSpeed の置き場で、Play() が所有する。
-        //   そこへ毎フレーム書き込むと、ループするステートではステートに設定した
-        //   再生速度が遷移フレーム以外すべて踏み潰されてしまう。
-        //   実効速度は AnimationSystem が playbackSpeed × footSlideMultiplier で合成する。
-        //
-        // 倍率は毎フレーム必ず代入する（条件分岐で書かない経路を作らない）。
-        //   書かない経路があると、ロコモーションで付いた倍率が攻撃モーションへ
-        //   そのまま持ち越されて残り続ける。
+        // 3. 足滑りの防止。
+        //   移動速度と基準速度（walkSpeed）の比で再生速度を伸縮させ、足の接地を床に合わせる。
+        //   ループするクリップ（ロコモーション）にだけ掛ける。攻撃などの非ループのクリップに掛けると、
+        //   走行中の速度で攻撃アニメまで最大 2.5 倍速になる。
+        //   書き込み先は playbackSpeed ではなく footSlideMultiplier（理由は AnimatorComponent.h を参照）。
+        //   倍率は毎ステップ必ず代入する。書かない経路があると、ロコモーションの倍率が攻撃へ持ち越される
         if (animator.isLoop && isGrounded && currentSpeed > 0.1f && !externallyDriven)
         {
-            // 歩き/走り中: 実際の移動速度 ÷ 基準歩行速度 = 再生倍率
-            // (例: 速度が12なら、基準6の2倍速でアニメを再生し、足が滑るのを防ぐ)
+            // 再生倍率 = 実際の移動速度 ÷ 基準の歩行速度（例: 速度 12、基準 6 なら 2 倍速）
             float speedRatio = currentSpeed / (std::max)(0.1f, config.walkSpeed);
 
-            // 倍率が極端にならないようクランプ（0.5倍 ～ 2.5倍）
+            // 極端にならないよう 0.5〜2.5 倍に収める
             animator.footSlideMultiplier = std::clamp(speedRatio, 0.5f, 2.5f);
         }
         else
         {
-            // 停止時・空中・ダッシュ中・非ループ(攻撃等)は等倍に戻し、
-            // ステートが指定した再生速度をそのまま通す。
+            // 停止中・空中・ダッシュ中・非ループ（攻撃等）は等倍にし、ステートの再生速度をそのまま使う
             animator.footSlideMultiplier = 1.0f;
         }
     });
 }
 
-// 物理エンジン(L03)の計算結果を受け取り、アニメーション評価(L02)の「前」に実行したいが、
-// ループ順の都合上、PreUpdateの最後か、Updateの先頭付近に配置する。
+// アニメーションの遷移評価（L02_Update の AnimControllerSystem）より前に置く。
+// 読むのは前のステップの物理（L04_Physics）の結果
 REGISTER_LOGIC_SYSTEM(CharacterAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);

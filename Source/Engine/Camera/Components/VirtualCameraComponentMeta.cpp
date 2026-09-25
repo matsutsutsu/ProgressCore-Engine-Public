@@ -11,8 +11,7 @@
 #endif
 
 // ============================================================================
-// Virtual Camera Base
-// BEGIN_FULL を使用し、カテゴリと優先度を明記
+// VirtualCamera
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(VirtualCamera, "VirtualCamera", CCL::Categories::Camera, 300, false)
 CFIELD_INT_RANGED(priority, "優先度", -100, 100, "Camera Settings")
@@ -23,7 +22,7 @@ CFIELD_FLOAT_RANGED(farClip, "ファークリップ", 10.0f, 1.0f, 100000.0f, "L
 COMPONENT_META_END(VirtualCamera)
 
 // ============================================================================
-// Camera Body Follow
+// CameraBodyFollow
 // ============================================================================
 template <>
 struct ComponentMeta<CameraBodyFollow>
@@ -85,10 +84,10 @@ struct ComponentMeta<CameraBodyFollow>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(target, "ターゲット", "Follow Settings")
-                CFIELD(offset, "追従オフセット", "Follow Settings")
-                    CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Follow Settings")
-                        CFIELD(lockY, "Y高さを固定", "Follow Settings")
-                            CFIELD_FLOAT_RANGED(lockedY, "固定する高さ", 0.1f, -1000.0f, 1000.0f, "Follow Settings")};
+            CFIELD(offset, "追従オフセット", "Follow Settings")
+            CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Follow Settings")
+            CFIELD(lockY, "Y高さを固定", "Follow Settings")
+            CFIELD_FLOAT_RANGED(lockedY, "固定する高さ", 0.1f, -1000.0f, 1000.0f, "Follow Settings")};
         return fields;
     }
 };
@@ -96,7 +95,7 @@ REGISTER_COMPONENT(CameraBodyFollow, "CameraBodyFollow")
 REGISTER_COMPONENT_EDITOR_GUI(CameraBodyFollow)
 
 // ============================================================================
-// Camera Aim LookAt
+// CameraAimLookAt
 // ============================================================================
 template <>
 struct ComponentMeta<CameraAimLookAt>
@@ -152,8 +151,8 @@ struct ComponentMeta<CameraAimLookAt>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(target, "ターゲット", "Aim Settings")
-                CFIELD(offset, "注視オフセット", "Aim Settings")
-                    CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Aim Settings")};
+            CFIELD(offset, "注視オフセット", "Aim Settings")
+            CFIELD_FLOAT_RANGED(damping, "減衰", 0.1f, 0.0f, 100.0f, "Aim Settings")};
         return fields;
     }
 };
@@ -161,8 +160,7 @@ REGISTER_COMPONENT(CameraAimLookAt, "CameraAimLookAt")
 REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 
 // ============================================================================
-// Camera Shake
-// BEGIN_CAT を使用
+// CameraShake
 // ============================================================================
 // trauma(蓄積量) / elapsed / seed は要求が来るたびに書き換わる実行時状態なので
 // シリアライズ対象から外している。保存しておくと、非ゼロの蓄積量が焼き込まれた
@@ -177,8 +175,7 @@ CFIELD_FLOAT_RANGED(decayRate, "減衰速度(/秒)", 0.05f, 0.05f, 20.0f, "Shake
 COMPONENT_META_END(CameraShake)
 
 // ============================================================================
-// Camera Body Free
-// BEGIN_CAT を使用
+// CameraBodyFree
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(CameraBodyFree, "CameraBodyFree", CCL::Categories::Camera, 340, false)
 CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Settings")

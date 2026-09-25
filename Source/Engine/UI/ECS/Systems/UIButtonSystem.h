@@ -1,8 +1,13 @@
 #pragma once
-// UIInteractable の状態を見た目(UIImage.color)へ反映し、クリックでイベント発火するシステム。
+// ===========================================================================
+// 概要: UIInteractable の状態をボタンの見た目に反映し、クリックを通知する System（R10_UI）。
 //
-// 位置付け:
-//   - RenderStage::R10_UI。UIInputSystem が更新した状態を読む（同ステージのため色反映は最大1F遅延だが体感無問題）。
+// 責務:
+//   - 状態に応じて UIImage.color を差し替え、UIAnimationComponent の目標スケールを書く
+//   - クリックされたら UIButtonClickedEvent を発行する
+//
+// 備考: UIInputSystem の後に走るので、入力と同じフレームで見た目が変わる。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIInteractableComponent.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
@@ -19,8 +24,7 @@ public:
     {
     }
 
-    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    // UIInput が更新した UIInteractableComponent の状態を読んで見た目を切り替える。
+    // UIInputSystem が書いた UIInteractableComponent の状態を、同じフレームのうちに読む
     std::vector<const char *> GetRunAfter() const override { return {"UIInputSystem"}; }
 
     void Update(float dt) override;

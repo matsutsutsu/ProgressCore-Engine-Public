@@ -1,5 +1,3 @@
-// CameraIntroOrbitSystem の実装。
-
 #include "Engine/Camera/Systems/CameraIntroOrbitSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Camera/CameraEvents.h"
@@ -88,7 +86,7 @@ bool CameraIntroOrbitSystem::AdvancePlayback(CameraBodyIntroOrbit &intro, float 
             intro.playing       = true;
             intro.autoPlayArmed = false;
         }
-        // 待ちの間もカメラは開始位置に置いておきたいので、ここでは return しない。
+        // 待ちの間も呼び出し側が ApplyPose するので、カメラは開始位置に置かれる。
         return false;
     }
 
@@ -97,9 +95,9 @@ bool CameraIntroOrbitSystem::AdvancePlayback(CameraBodyIntroOrbit &intro, float 
     intro.elapsed += dt;
 
     // --- スキップ ---
-    // 「即終了」ではなく「進行度を終端へ飛ばす」だけにしている。
-    // こうすると次フレームで通常どおり finished になり、Brain の blendTime に
-    // 乗って滑らかにプレイヤーカメラへ戻る（ハードカットにならない）。
+    // その場で終了扱いにはせず、進行度を終端へ飛ばすだけにする。
+    // すぐ下の終端判定で通常どおり finished になり、Brain の blendTime で
+    // 補間しながらプレイヤーカメラへ戻る（ハードカットにならない）。
     if (skipRequested && intro.allowSkip && intro.elapsed > kSkipGraceSeconds &&
         intro.elapsed < intro.duration)
     {
@@ -122,7 +120,7 @@ void CameraIntroOrbitSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &
                                        const CameraBodyIntroOrbit &intro,
                                        const Vector3 &pivot, float eased) const
 {
-    // 角度・半径・高さを individually 補間する。
+    // 角度・半径・高さを個別に補間する。
     // 最短回転にはしない：200→20 と書いたら「180度回り込む」という意図をそのまま出す。
     const float angleDeg = std::lerp(intro.startAngle, intro.endAngle, eased);
     const float radius   = std::lerp(intro.startRadius, intro.endRadius, eased);
@@ -137,7 +135,7 @@ void CameraIntroOrbitSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &
     eye.z = pivot.z + sinf(angleRad) * radius;
 
     vcam.resultPos    = eye;
-    vcam.resultLookAt = pivot; // 常に対象を見る＝対象が画面外へ出る事故が起きない
+    vcam.resultLookAt = pivot; // 常に対象を見るので、対象が画面外へ出ない
     vcam.resultUp     = Vector3::Up;
     vcam.fov          = std::lerp(intro.startFov, intro.endFov, eased);
     vcam.MarkResolved();
@@ -199,10 +197,10 @@ void CameraIntroOrbitSystem::Update(float dt)
             return;
         }
 
-        // 出番待ちのカメラは、カメラも操作も一切掌握しない。
+        // 再生を待っているカメラは、カメラも操作も一切掌握しない。
         //   playOnStart=false（イベント再生を待つ設定）のとき、ここを通さないと
-        //   「再生が始まらないのに cinematic を握り続ける」＝操作不能のまま
-        //   詰む。掌握してよいのは
+        //   再生が始まらないのに cinematic が立ち続け、操作できなくなる。
+        //   掌握してよいのは
         //     ・再生中
         //     ・自動再生の開始待ち（startDelay の消化中）
         //     ・インスペクタでスクラブ中
@@ -231,9 +229,8 @@ void CameraIntroOrbitSystem::Update(float dt)
                 return;
             }
 
-            //   ここで諦めないと、対象が現れないまま cinematic が立ち続け、
-            //   プレイヤーが永久に操作できなくなる。
-            //   演出の失敗は必ず「ゲームが進む」方向へ倒す。
+            // ここで諦めないと、対象が現れないまま cinematic が立ち続け、
+            // プレイヤーが操作できなくなる。演出が失敗したときは必ずゲームを進める。
             CCL_LOG_WARN(LogCategory::Game,
                          "[CameraIntroOrbit] 対象エンティティが %.1f 秒見つからないため導入演出を中止します "
                          "(camera=%llu, target=%llu)",
@@ -285,7 +282,7 @@ void CameraIntroOrbitSystem::Update(float dt)
         }
     });
 
-    // カットシーン中フラグ。プレイヤー操作とボスBTを止めるための唯一の口。
+    // カットシーン中フラグ。PlayerInputSystem・BehaviorTreeSystem・BossActionSystem がこれを見て止まる。
     if (m_world->HasResource<GameFlowState>())
     {
         m_world->GetResource<GameFlowState>().cinematic = anyCinematicActive;

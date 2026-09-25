@@ -1,5 +1,4 @@
 // TransformComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -13,6 +12,7 @@
 
 namespace
 {
+    // インスペクタで回転を度数のオイラー角で編集するための相互変換
     DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4 &q)
     {
         float pitch = std::asin(std::clamp(2.0f * (q.w * q.x - q.y * q.z), -1.0f, 1.0f));
@@ -39,7 +39,7 @@ struct ComponentMeta<TransformComponent>
 
     static constexpr const char *displayName       = "Transform";
     static constexpr const char *category          = CCL::Categories::Transform;
-    static constexpr int         sortPriority      = 0; // マニュアル通り「常に最上段」を強制
+    static constexpr int         sortPriority      = 0; // インスペクタで常に最上段に出す
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
     static constexpr bool        isSerializable    = true;
@@ -50,6 +50,7 @@ struct ComponentMeta<TransformComponent>
         namespace mi = ComponentMetaImGui;
         bool changed = false;
 
+        // 位置・回転を手で動かしたら、物理側にもワープとして反映させる
         if (mi::DragFloat3("位置", &comp.position.x, 0.1f))
         {
             comp.isTeleported = true;

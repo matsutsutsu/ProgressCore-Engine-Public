@@ -1,13 +1,14 @@
 #include "Mouse.h"
 #include <tracy/Tracy.hpp>
 
+// 並び順が Mouse::BTN_* のビット位置に対応する
 static const int KeyMap[] =
     {
-        VK_LBUTTON, // 左ボタン
-        VK_MBUTTON, // 中ボタン
-        VK_RBUTTON, // 右ボタン
+        VK_LBUTTON, // BTN_LEFT
+        VK_MBUTTON, // BTN_MIDDLE
+        VK_RBUTTON, // BTN_RIGHT
 };
-// コンストラクタ
+
 Mouse::Mouse(HWND hWnd)
     : hWnd(hWnd)
 {
@@ -16,12 +17,11 @@ Mouse::Mouse(HWND hWnd)
     screenWidth  = rc.right - rc.left;
     screenHeight = rc.bottom - rc.top;
 }
-// 更新
+
 void Mouse::Update()
 {
     ZoneScopedN("Mouse::Update");
 
-    // スイッチ情報
     MouseButton newButtonState = 0;
     for (int i = 0; i < ARRAYSIZE(KeyMap); ++i)
     {
@@ -30,36 +30,33 @@ void Mouse::Update()
             newButtonState |= (1 << i);
         }
     }
-    // ホイール
+    // ホイール: 前フレームまでに溜めた量を今フレームの値として確定する
     wheel[1] = wheel[0];
     wheel[0] = 0;
-    // ボタン情報更新
-    buttonState[1] = buttonState[0]; // スイッチ履歴
+
+    buttonState[1] = buttonState[0];
     buttonState[0] = newButtonState;
     buttonDown     = ~buttonState[1] & newButtonState; // 押した瞬間
     buttonUp       = ~newButtonState & buttonState[1]; // 離した瞬間
-    // カーソル位置の取得
+
     POINT cursor;
     ::GetCursorPos(&cursor);
     ::ScreenToClient(hWnd, &cursor);
-    // 画面のサイズを取得する。
     RECT rc;
     GetClientRect(hWnd, &rc);
     UINT screenW   = rc.right - rc.left;
     UINT screenH   = rc.bottom - rc.top;
     UINT viewportW = screenWidth;
     UINT viewportH = screenHeight;
-    // 画面補正
+    // クライアント座標を、起動時のクライアントサイズ（screenWidth/Height）との比で換算する
     positionX[1] = positionX[0];
     positionY[1] = positionY[0];
     positionX[0] = (LONG)(cursor.x / static_cast<float>(viewportW) * static_cast<float>(screenW));
     positionY[0] = (LONG)(cursor.y / static_cast<float>(viewportH) * static_cast<float>(screenH));
 
-    // =========================================================
-    // カーソルロック（マウスルック）：カーソルを画面中央へ戻し、端で頭打ちさせない。
-    //   ・非フォーカス時は安全のため自動解除（alt-tab でカーソルが囚われない）。
-    //   ・ロック開始フレームは視点が飛ばないよう移動量を0にする。
-    // =========================================================
+    // カーソルロック（マウスルック）：カーソルを画面中央へ戻し、画面端で止まらないようにする。
+    //   ・ウィンドウが非フォーカスならロックしない（alt-tab でカーソルが閉じ込められない）。
+    //   ・ロック開始フレームは視点が飛ばないよう移動量を 0 にする。
     bool focused       = (::GetForegroundWindow() == hWnd);
     bool effectiveLock = m_lockRequested && focused && screenW > 0 && screenH > 0;
 

@@ -1,13 +1,23 @@
 #pragma once
+// ===========================================================================
+// 概要: ゲームパッド・マウス・キーボードをまとめて保持し、毎フレーム更新するシングルトン。
+//
+// 責務:
+//   - 3デバイスの生成と毎フレームの Update
+//   - 「押した瞬間」の入力を固定ステップのロジック更新まで溜めておく
+//   - 直近に操作されたデバイス（キーボード＆マウス／ゲームパッド）の判定
+//
+// 備考: ゲーム側は IInputAPI（InputFacade）経由で読む。ここを直接使うのは
+//       Framework・BaseScene・InputFacade と、デバッグ用のフリーカメラだけ。
+// ===========================================================================
 
 #include <memory>
 #include "GamePad.h"
 #include "Mouse.h"
 #include "Keyboard.h"
 
-#include "IInputAPI.h" // ActiveDeviceType を使うためにインクルード
+#include "IInputAPI.h" // ActiveDeviceType
 
-// インプット
 class Input
 {
 private:
@@ -15,61 +25,49 @@ private:
     ~Input() = default;
 
 public:
-    // インスタンス取得
     static Input &Instance()
     {
         static Input instance;
         return instance;
     }
 
-    // 初期化
+    // 各デバイスを生成する。hWnd はマウス座標の基準にするウィンドウ
     void Initialize(HWND hWnd);
 
-    // 更新処理
+    // 描画フレームごとに呼ぶ。デバイスを更新し、「押した瞬間」を溜める
     void Update(float dt);
 
-    // ゲームパッド取得
-    GamePad &GetGamePad() { return *gamePad; }
-
-    // マウス取得
-    Mouse &GetMouse() { return *mouse; }
-
-    // キーボード取得 (追加)
+    GamePad  &GetGamePad() { return *gamePad; }
+    Mouse    &GetMouse() { return *mouse; }
     Keyboard &GetKeyboard() { return *keyboard; }
 
-    // --- Logic更新用（固定フレーム用）の入力取得関数 ---
-    // 瞬間的な入力（GetButtonDown）を取りこぼさないために、
-    // ClearLogicInput() が呼ばれるまでフラグを保持し続けます。
-    unsigned int GetPadButtonDownLogic() const { return m_logicPadButtonDown; }
-    unsigned int GetMouseButtonDownLogic() const { return m_logicMouseButtonDown; }
-
-    // 指定キーボードのトリガー蓄積確認
-    bool GetKeyboardLogicTriggered(int key) const
+    // --- ロジック（固定ステップ）用の「押した瞬間」 ---
+    // 描画フレームと固定ステップの回数は一致しないので、1フレームだけの「押した瞬間」を
+    // そのまま読むと、ステップが走らなかったフレームの入力を取りこぼす。
+    // ClearLogicInput() が呼ばれるまで OR で溜めておく。
+    bool GetLogicKeyTriggered(int keyCode) const
     {
-        if (key < 0 || key >= 256) return false;
-        return m_logicKeyTriggered[key];
+        if (keyCode < 0 || keyCode >= 256) return false;
+        return m_logicKeyTriggered[keyCode];
     }
-
-    // Logic更新が終わったら呼ぶリセット関数
-    void ClearLogicInput();
-
-    // 直近で操作されたデバイスを取得
-    ActiveDeviceType GetActiveDeviceType() const { return m_activeDeviceType; }
-
-    bool         GetLogicKeyTriggered(int keyCode) const { return m_logicKeyTriggered[keyCode]; }
     unsigned int GetLogicMouseButtonDown() const { return m_logicMouseButtonDown; }
     unsigned int GetLogicPadButtonDown() const { return m_logicPadButtonDown; }
+
+    // 固定ステップの処理が終わったら呼び、溜めた「押した瞬間」を下ろす
+    void ClearLogicInput();
+
+    // 直近で操作されたデバイス
+    ActiveDeviceType GetActiveDeviceType() const { return m_activeDeviceType; }
 
 private:
     std::unique_ptr<GamePad>  gamePad;
     std::unique_ptr<Mouse>    mouse;
     std::unique_ptr<Keyboard> keyboard;
 
-    // --- アクティブデバイス保持用 ---
     ActiveDeviceType m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
 
-    // --- 入力蓄積用変数 ---
+    // ClearLogicInput までに溜めた「押した瞬間」
     unsigned int m_logicPadButtonDown     = 0;
     unsigned int m_logicMouseButtonDown   = 0;
-    bool         m_logicKeyTriggered[256] = {false}; // キーボード用蓄積バッファ
+    bool         m_logicKeyTriggered[256] = {false};
 };

@@ -1,5 +1,5 @@
 ﻿#include "FileSystem.h"
-#include "Engine/Platform/Core/Logger.h" // ログ機能 (CCL_LOG等) に合わせて変更してください
+#include "Engine/Platform/Core/Logger.h"
 #include <fstream>
 #include <algorithm>
 #include <cctype>
@@ -18,9 +18,9 @@
 // 呼び出し元ごとにゾーンを仕込んで回らなくても、この2関数を押さえれば
 // 「いつ・どのファイルが・何ms」が Tracy に残る。
 //
-//  ・ゾーンにファイルパスを ZoneText で貼る → タイムライン上でゾーンを掴めば読める
-//  ・閾値を超えた読み込みは TracyMessage も出す → メッセージ一覧から一発で探せる
-//    （タイムラインを目視で探し回らなくて済む。稀にしか出ないスパイク向け）
+//  ・ゾーンにファイルパスを ZoneText で貼る → タイムライン上でゾーンを選べば読める
+//  ・閾値を超えた読み込みは TracyMessage も出す → メッセージ一覧から探せる
+//    （タイムラインを目視で探し回らなくて済む。まれにしか出ないスパイク向け）
 // ===========================================================================
 namespace
 {
@@ -28,7 +28,7 @@ namespace
     constexpr double kSlowFileReadMs = 2.0;
 
     // 遅い読み込みだけメッセージ一覧へ流す。
-    //   ※ ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
+    //   ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
     //     ゾーン変数(___tracy_scoped_zone)を参照するマクロなので、必ず呼び出し側に置く。
     void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
     {
@@ -52,25 +52,17 @@ namespace
 
 void FileSystem::Initialize()
 {
-    // 将来的にはここで
-    // #ifdef SHIPPING_BUILD
-    // MountPak("Data.pak", "パスワード");
-    // #endif
-    // のような処理が入る
     CCL_LOG_INFO(LogCategory::Core, "[FileSystem] Initialized.");
 }
 
 std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtualPath)
 {
-    // 現在は Assets フォルダを直接見に行くだけ。
-    // 将来的に「セーブデータは AppData 配下へ」「アセットは .pak 内へ」といった
-    // ルーティングをここで行う。
+    // 現在は仮想パスをそのまま物理パスとして使う（作業ディレクトリ基準）
     return std::filesystem::path(virtualPath);
 }
 
 bool FileSystem::Exists(const std::string &virtualPath)
 {
-    // 将来的には .pak 内の目次 (Trie木など) を検索する処理に分岐する
     return std::filesystem::exists(ResolvePhysicalPath(virtualPath));
 }
 
@@ -110,7 +102,6 @@ std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
 
 std::string FileSystem::ReadAllText(const std::string &virtualPath)
 {
-    // TODO: Shipping構成時は .pak から展開したメモリブロックを std::string にして返す処理に分岐
     ZoneScopedN("FileSystem::ReadAllText");
     ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
 
@@ -125,7 +116,7 @@ std::string FileSystem::ReadAllText(const std::string &virtualPath)
         return "";
     }
 
-    // ストリームバッファ全体を一気に文字列として読み込む高速な手法
+    // ストリームバッファ全体を一度に文字列へ読み込む
     std::ostringstream ss;
     ss << file.rdbuf();
     std::string result = ss.str();
@@ -140,9 +131,8 @@ std::string FileSystem::ReadAllText(const std::string &virtualPath)
 bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string &content)
 {
 #ifdef SHIPPING_BUILD
-    // 製品版で Assets フォルダを上書きしようとするのは通常バグか不正アクセス
-    // セーブデータの場合は SaveData フォルダなどに分けるルーティングが必要
-    CCL_LOG_WARN(LogCategory::System, "[FileSystem] Attempting to write file in Shipping build: %s", virtualPath.c_str());
+    // 製品版で Assets フォルダを上書きしようとするのは、通常はバグ
+    CCL_LOG_WARN(LogCategory::Core, "[FileSystem] Attempting to write file in Shipping build: %s", virtualPath.c_str());
 #endif
 
     auto physicalPath = ResolvePhysicalPath(virtualPath);
@@ -163,8 +153,8 @@ bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string 
     file.write(content.data(), content.size());
     file.flush();
 
-    // write/flush の成否を見ずに true を返していた。ディスク不足などで
-    // 途中までしか書けていなくても「保存できた」と報告されてしまう。
+    // write/flush の成否を確認する。見ないと、ディスク不足などで途中までしか
+    // 書けていなくても「保存できた」と報告してしまう。
     if (!file)
     {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Write failed (disk full?): %s", virtualPath.c_str());
@@ -175,7 +165,6 @@ bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string 
 
 std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string &virtualPath)
 {
-    // TODO: Shipping構成時は .pak から解凍したバイト配列を返す処理に分岐
     ZoneScopedN("FileSystem::ReadAllBytes");
     ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
 

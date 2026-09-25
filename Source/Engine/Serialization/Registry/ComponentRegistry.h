@@ -1,15 +1,13 @@
-// =====================================================================
-// ComponentRegistry.h
-//   コンポーネント型 ↔ 文字列名のマッピングと、Save/Load 関数の保持。
-//
-//   リファクタリング方針:
-//     - シリアライズは ComponentMetaJson::ComponentSerializer<T> 一本に統一。
-//       Register<T> から旧 HasCustomSerialize 分岐を撤去 (経路が分岐しない)。
-//     - 旧 RemapFunc / HasRemap / MetaInfo::remap (生 EntityID 時代の遺物) を撤去。
-//       エンティティ参照の付け替えは FieldKind::EntityLink が自動で行うため不要。
-//     - ImGui 関連は ComponentRegistry_Editor.h に分離済み (本ヘッダは引かない)。
-// =====================================================================
 #pragma once
+// ===========================================================================
+// 概要: コンポーネントの型と保存名の対応、保存・読込関数を持つレジストリ ComponentRegistry。
+//
+// 責務:
+//   - 型 ID ⇔ 保存名の対応と、型ごとの保存・読込関数を保持する（シングルトン）
+//   - REGISTER_COMPONENT マクロで、各コンポーネントを静的初期化時に登録する
+//
+// 備考: エディタ用の GUI 登録は ComponentRegistry_Editor.h に分けている（このヘッダは ImGui を使わない）。
+// ===========================================================================
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -21,10 +19,7 @@
 #include "Engine/Serialization/Core/LoadContext.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
 
-// ==========================================================
-// SFINAE: ComponentMeta<T>::isSerializable の検出
-//   特殊化が isSerializable を持たない場合は「保存対象 (true)」とみなす。
-// ==========================================================
+// ComponentMeta<T>::isSerializable の値（持っていなければ true）
 template <typename T, typename = void>
 struct HasIsSerializable : std::true_type
 {
@@ -46,11 +41,9 @@ public:
     struct MetaInfo
     {
         std::string            name;
-        SerializeFunc          serialize;          // (json, comp*, SaveContext) -> void
-        DeserializeToWorldFunc deserializeToWorld; // (world, entity, json, LoadContext) -> void
-
-        // false の型はシーン/プレハブ保存からスキップされる (実行時専用コンポーネント等)
-        bool isSerializable = true;
+        SerializeFunc          serialize;             // コンポーネントを JSON に書く
+        DeserializeToWorldFunc deserializeToWorld;    // JSON から作って Entity に AddComponent する
+        bool                   isSerializable = true; // false ならシーン・プレハブに保存しない（実行時専用のコンポーネント等）
     };
 
     static ComponentRegistry &Instance();
@@ -63,12 +56,12 @@ public:
         MetaInfo info;
         info.name = name;
 
-        // ---- 保存: SaveContext を渡す (EntityLink が自動 remap される) ----
+        // SaveContext を渡すので、EntityLink はローカルインデックスに変換される
         info.serialize = [](nlohmann::json &j, const void *ptr, CCL::Serialization::SaveContext *ctx) {
             ComponentMetaJson::ComponentSerializer<T>::Save(j, *static_cast<const T *>(ptr), ctx);
         };
 
-        // ---- 復元: LoadContext を渡す (EntityLink が自動 Resolve される) ----
+        // LoadContext を渡すので、EntityLink は新しい EntityID に変換される
         info.deserializeToWorld = [](CCL::ECS::World                 *world,
                                      CCL::ECS::EntityID               entity,
                                      const nlohmann::json            &j,
@@ -78,8 +71,6 @@ public:
             world->AddComponent<T>(entity, std::move(temp));
         };
 
-        // ---- 保存可否フラグ (実際の保存経路がこの値を見てスキップする) ----
-        //   ComponentMeta<T>::isSerializable が無ければ true、false 指定なら false。
         info.isSerializable = HasIsSerializable<T>::value;
 
         m_nameToMeta[name]                          = std::move(info);
@@ -103,13 +94,12 @@ private:
     std::unordered_map<CCL::ECS::TypeID, std::string> m_typeIdToName;
 };
 
-// =====================================================================
-// REGISTER_COMPONENT マクロ
-//   - リンカ最適化 (/OPT:REF) で消されない強制保護
-//   - 診断ログは NDEBUG で消える (リリースビルドではゼロコスト)
-//   - エディタ向け ImGui 登録は REGISTER_COMPONENT_EDITOR_GUI に分離
-//     (ComponentRegistry_Editor.h)
-// =====================================================================
+// ===========================================================================
+// REGISTER_COMPONENT(T, Name)
+//   静的初期化で ComponentRegistry に T を登録する。
+//   登録用の変数はどこからも参照されないので、リンカの最適化（/OPT:REF）で
+//   消されないよう /include で残す。
+// ===========================================================================
 #ifdef _MSC_VER
 #define _CCL_LINK_IMPL(sym) __pragma(comment(linker, "/include:" #sym))
 #define _CCL_LINK(sym) _CCL_LINK_IMPL(sym)
@@ -122,10 +112,6 @@ private:
 #define _CCL_USED
 #endif
 
-// コンポーネント自動登録時の診断ログ（[CCL_DIAG]/[CCL_DIAG_ID]）は不要になったため無効化。
-// 再度追跡したくなったら、下を Debug 限定の OutputDebugStringA 実装に差し戻せばよい。
-#define _CCL_DIAG_REG(Name, T) ((void)0)
-
 #define REGISTER_COMPONENT(T, Name)                                     \
     namespace                                                           \
     {                                                                   \
@@ -133,7 +119,6 @@ private:
         {                                                               \
             AutoReg_##T()                                               \
             {                                                           \
-                _CCL_DIAG_REG(Name, T);                                 \
                 if (!ComponentRegistry::Instance().GetInfoByName(Name)) \
                 {                                                       \
                     ComponentRegistry::Instance().Register<T>(Name);    \

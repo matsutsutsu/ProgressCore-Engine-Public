@@ -10,7 +10,7 @@ Scene *SceneFactory::Create(const std::string &name)
     auto it = registry.find(name);
     if (it != registry.end())
     {
-        return it->second(); // 登録された関数を実行 → Scene* を返す
+        return it->second();
     }
     return nullptr;
 }

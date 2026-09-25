@@ -1,5 +1,4 @@
 // アニメーション関連コンポーネントのシリアライズ/インスペクタ定義。
-
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
@@ -18,9 +17,9 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// ===================================================================
-// 1. AnimatorComponent
-// ===================================================================
+// ===========================================================================
+// AnimatorComponent
+// ===========================================================================
 template <>
 struct ComponentMeta<AnimatorComponent>
 {
@@ -84,16 +83,16 @@ struct ComponentMeta<AnimatorComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(playbackSpeed, "再生速度", 0.05f, -5.0f, 5.0f, "再生")
-                CFIELD(isLoop, "ループ", "再生")};
+            CFIELD(isLoop, "ループ", "再生")};
         return fields;
     }
 };
 REGISTER_COMPONENT(AnimatorComponent, "Animator")
 REGISTER_COMPONENT_EDITOR_GUI(AnimatorComponent)
 
-// ===================================================================
-// 2. AnimStateMachineComponent
-// ===================================================================
+// ===========================================================================
+// AnimStateMachineComponent
+// ===========================================================================
 template <>
 struct ComponentMeta<AnimStateMachineComponent>
 {
@@ -114,7 +113,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         ImGui::TextDisabled("グラフファイル: %s", fsm.graphPath.empty() ? "なし" : fsm.graphPath.c_str());
 
         auto reloadGraph = [&]() {
-            if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath, {}))
+            if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath))
             {
                 for (auto &state : fsm.internalGraph.states)
                 {
@@ -210,9 +209,9 @@ struct ComponentMeta<AnimStateMachineComponent>
 REGISTER_COMPONENT(AnimStateMachineComponent, "AnimStateMachine")
 REGISTER_COMPONENT_EDITOR_GUI(AnimStateMachineComponent)
 
-// ===================================================================
-// 3. AnimParametersComponent
-// ===================================================================
+// ===========================================================================
+// AnimParametersComponent（値は実行時に書かれるので保存しない）
+// ===========================================================================
 template <>
 struct ComponentMeta<AnimParametersComponent>
 {

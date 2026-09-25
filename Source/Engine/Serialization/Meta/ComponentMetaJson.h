@@ -1,18 +1,15 @@
-// =====================================================================
-// ComponentMetaJson.h
-//   コンポーネント ⇔ JSON 変換。
-//
-//   リファクタリング方針:
-//     - シリアライズ経路を「1 つ」に統一した。
-//       唯一のカスタマイズ口は ComponentSerializer<T> 構造体テンプレート。
-//         既定動作: ComponentMeta<T>::Fields() を走査して自動変換。
-//         カスタム : ComponentSerializer<T> を特殊化し Save/Load を書く。
-//     - 旧 HasCustomSerialize トレイト / hasCustomSerialize メンバー /
-//       関数テンプレート Serialize<T> の明示的特殊化 / 二重 if constexpr 分岐は
-//       すべて撤去。経路が分岐しない。
-//     - FieldKind::EntityID は撤去 (EntityLink のみ)。
-// =====================================================================
 #pragma once
+// ===========================================================================
+// 概要: コンポーネントと JSON の相互変換。
+//
+// 責務:
+//   - FieldDescriptor 1 つ分の JSON への書き出しと読込（SerializeField / DeserializeField）
+//   - コンポーネント全体の変換（ComponentSerializer<T>）
+//
+// 備考:
+//   - 保存形式を変える方法は ComponentSerializer<T> の特殊化だけ。既定は Fields() を順に変換する。
+//   - EntityLink は SaveContext / LoadContext でローカルインデックスと EntityID を変換する。
+// ===========================================================================
 #include "ComponentMeta.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include "Engine/Serialization/Core/SaveContext.h"
@@ -62,9 +59,7 @@ namespace ComponentMetaJson
     using CCL::Serialization::LoadContext;
     using CCL::Serialization::SaveContext;
 
-    // -----------------------------------------------------------------------
-    // フィールド単位の変換 (FieldDescriptor 1 つ分)
-    // -----------------------------------------------------------------------
+    // FieldDescriptor 1 つ分を JSON に書く
     inline void SerializeField(json &j, const FieldDescriptor &fd, const void *obj, SaveContext *saveCtx)
     {
         if (!fd.serialize || !fd.jsonName) return;
@@ -91,7 +86,7 @@ namespace ComponentMetaJson
             break;
 
         case FieldKind::EntityLink: {
-            // エンティティ参照は raw ID ではなくローカルインデックスで書き出す。
+            // Entity への参照は EntityID ではなくローカルインデックスで書く（ctx が無ければ EntityID のまま）
             const EntityLink &link = RawField<const EntityLink>(obj, fd.offset);
             j[fd.jsonName]         = saveCtx ? saveCtx->GetOrRegister(link.id)
                                              : static_cast<uint64_t>(link.id);
@@ -125,6 +120,7 @@ namespace ComponentMetaJson
         }
     }
 
+    // FieldDescriptor 1 つ分を JSON から読む。キーが無ければ既定値のまま
     inline void DeserializeField(const json &j, const FieldDescriptor &fd, void *obj, LoadContext *loadCtx)
     {
         if (!fd.serialize || !fd.jsonName || !j.contains(fd.jsonName)) return;
@@ -192,23 +188,19 @@ namespace ComponentMetaJson
         }
     }
 
-    // =====================================================================
-    // 唯一のシリアライズ・カスタマイズ口
-    //
-    //   既定 (特殊化なし): ComponentMeta<T>::Fields() を走査して全自動変換。
-    //   カスタム          : この構造体を特殊化し、Save / Load を自前で書く。
-    //
-    //   使い方 (カスタム例):
-    //     namespace ComponentMetaJson {
-    //         template <>
-    //         struct ComponentSerializer<MyComponent> {
-    //             static void Save(json& j, const MyComponent& c, SaveContext* ctx) { ... }
-    //             static void Load(const json& j, MyComponent& c, LoadContext* ctx) { ... }
-    //         };
-    //     }
-    //
-    //   経路はこれ 1 本だけ。フラグもトレイトも分岐も無い。
-    // =====================================================================
+    /**
+     * @brief コンポーネント全体の変換。既定は Fields() を順に変換する。
+     * @note 保存形式を変えたいときはこの構造体を特殊化し、Save / Load を書く。
+     * @code
+     *   namespace ComponentMetaJson {
+     *       template <>
+     *       struct ComponentSerializer<MyComponent> {
+     *           static void Save(json &j, const MyComponent &c, SaveContext *ctx) { ... }
+     *           static void Load(const json &j, MyComponent &c, LoadContext *ctx) { ... }
+     *       };
+     *   }
+     * @endcode
+     */
     template <typename T>
     struct ComponentSerializer
     {
@@ -226,10 +218,7 @@ namespace ComponentMetaJson
         }
     };
 
-    // -----------------------------------------------------------------------
-    // 利便関数 (常に ComponentSerializer<T> を経由する薄いラッパ)。
-    //   呼び出し側はこちらを使ってよい。挙動は完全に ComponentSerializer に従う。
-    // -----------------------------------------------------------------------
+    // ComponentSerializer<T> を呼ぶだけの関数（型を推論させて呼べる）
     template <typename T>
     inline void Serialize(json &j, const T &component, SaveContext *ctx = nullptr)
     {

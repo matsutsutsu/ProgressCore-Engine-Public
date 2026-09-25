@@ -1,26 +1,24 @@
-// =====================================================================
-// ComponentMeta.h
-//   コンポーネントの「フィールド記述子 (FieldDescriptor)」と
-//   メタデータテンプレート (ComponentMeta<T>) の定義。
-//
-//   リファクタリング方針:
-//     - 旧 FieldKind::EntityID / FD_EntityID は完全撤去 (EntityLink に一本化)。
-//     - FD_* ビルダーの記法を全種類で統一 (旧 TODO: 文法バラバラ問題を解消)。
-//     - ComponentMeta<T> から未使用メンバー (registered / version /
-//       hasCustomSerialize) を撤去。役割のあるメンバーだけ残す。
-//     - 旧 META_FIELD_* マクロは撤去。フィールド宣言は CFIELD 系に一本化
-//       (ComponentDefine.h)。
-// =====================================================================
 #pragma once
+// ===========================================================================
+// 概要: コンポーネントのフィールド記述子（FieldDescriptor）とメタデータ（ComponentMeta<T>）の定義。
+//
+// 責務:
+//   - フィールド 1 つ分の情報（名前・型・オフセット・表示設定・保存するか）を表す
+//   - コンポーネント型ごとの表示名・カテゴリ・フィールド一覧を ComponentMeta<T> で表す
+//   - FieldDescriptor を作る FD_* 関数と、オフセットでフィールドを読む RawField
+//
+// 備考: 定義は直接書かず、ComponentDefine.h の CFIELD / COMPONENT_META_BEGIN 系マクロで書く。
+// ===========================================================================
 #include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
 
-// ---------------------------------------------------------------------
-// フィールド種別
-//   ※ EntityID は撤去。エンティティ参照は EntityLink のみ。
-// ---------------------------------------------------------------------
+// ===========================================================================
+// FieldDescriptor
+// ===========================================================================
+
+// フィールドの種別
 enum class FieldKind : uint8_t
 {
     Float,
@@ -29,7 +27,7 @@ enum class FieldKind : uint8_t
     UInt8,
     UInt16,
     UInt32,
-    EntityLink, // エンティティ参照。保存時にローカルインデックスへ自動変換される。
+    EntityLink, // Entity への参照。保存時はローカルインデックスに変換される
     EnumU8,
     EnumInt,
     Float2,
@@ -39,34 +37,27 @@ enum class FieldKind : uint8_t
     String
 };
 
-// ---------------------------------------------------------------------
-// フィールド 1 つ分の記述子。
-//   メンバー順は FD_* ビルダーの brace 初期化順と一致させること。
-// ---------------------------------------------------------------------
+// フィールド 1 つ分の記述子。メンバーの順は FD_* 関数の波括弧初期化の順と一致させること
 struct FieldDescriptor
 {
     const char        *name       = nullptr; // インスペクタ表示名
     const char        *jsonName   = nullptr; // JSON 保存キー
     FieldKind          kind       = FieldKind::Float;
-    size_t             offset     = 0; // 構造体先頭からのバイトオフセット
-    float              dragSpeed  = 0.05f;
-    float              rangeMin   = 0.0f;
+    size_t             offset     = 0;       // 構造体の先頭からのバイトオフセット
+    float              dragSpeed  = 0.05f;   // インスペクタのドラッグ速度
+    float              rangeMin   = 0.0f;    // 範囲（min == max なら制限なし）
     float              rangeMax   = 0.0f;
     const char        *category   = nullptr; // インスペクタの折りたたみ見出し
-    const char *const *enumNames  = nullptr; // enum 系のみ使用
-    int                enumCount  = 0;       // enum 系のみ使用
-    bool               serialize  = true;    // false なら JSON に書き出さない
-    const char        *tooltip    = nullptr; // ホバー時のヒント (nullptr で無し)
-    bool               readonly   = false;   // true なら表示のみ (編集不可)
-    const char        *filePreset = nullptr; // 非nullなら String をファイルダイアログ付きで描く
-                                             // (FileDialog のプリセット名。例 "Texture")
+    const char *const *enumNames  = nullptr; // enum 系でのみ使う
+    int                enumCount  = 0;       // enum 系でのみ使う
+    bool               serialize  = true;    // false なら保存しない（読込もしない）
+    const char        *tooltip    = nullptr; // ホバー時の説明（nullptr なら無し）
+    bool               readonly   = false;   // true なら表示だけで編集できない
+    const char        *filePreset = nullptr; // null 以外なら String をファイルダイアログ付きで描く（FileDialog のプリセット名。例 "Texture"）
 };
 
-// ---------------------------------------------------------------------
-// FieldDescriptor ビルダー (全種類で同一記法に統一)
-//   引数順: 表示名, JSONキー, offset, (種別ごとの追加引数...), category, serialize
-//   返り値: FieldDescriptor のメンバー順そのままの brace 初期化。
-// ---------------------------------------------------------------------
+// FieldDescriptor を作る関数。引数の順は全種類で共通:
+//   表示名, JSON キー, offset, （種別ごとの追加引数...）, category, serialize, tooltip, readonly
 inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset,
                                 float speed = 0.05f, float rmin = 0.0f, float rmax = 0.0f,
                                 const char *category = nullptr, bool serialize = true,
@@ -159,31 +150,26 @@ inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t 
     return {name, jsonName, FieldKind::String, offset, 0.0f, 0.0f, 0.0f, category, nullptr, 0, serialize, tooltip, readonly, filePreset};
 }
 
-// =====================================================================
-// ComponentMeta<T>  : コンポーネント型ごとのメタデータ
-//
-//   役割を持つメンバーだけを残した最小構成:
-//     displayName    : インスペクタ / JSON 上の名前
-//     hasCustomGui   : true なら CustomGui() を使って手描画 (ComponentMetaImGui)
-//     isSerializable : false ならシーン保存対象外 (ComponentRegistry)
-//     CustomGui()    : hasCustomGui = true のときの描画関数
-//     Fields()       : シリアライズ & 自動インスペクタの対象フィールド一覧
-//
-//   シリアライズのカスタマイズは ComponentMeta ではなく
-//     ComponentMetaJson::ComponentSerializer<T> を特殊化して行う
-//     (ComponentMetaJson.h)。ここには serialize 系メンバーを持たせない。
-// =====================================================================
+// ===========================================================================
+// ComponentMeta<T>: コンポーネント型ごとのメタデータ（この既定は未登録の型用）
+//   displayName    : インスペクタ上の名前
+//   hasCustomGui   : true なら CustomGui() で描く（ComponentMetaImGui）
+//   isSerializable : false ならシーン・プレハブに保存しない（ComponentRegistry）
+//   CustomGui()    : hasCustomGui == true のときの描画関数
+//   Fields()       : 保存と自動インスペクタの対象フィールド
+//   保存形式を変えたい場合はここではなく ComponentMetaJson::ComponentSerializer<T> を特殊化する。
+// ===========================================================================
 template <typename T>
 struct ComponentMeta
 {
     static constexpr const char *displayName       = "(unregistered)";
     static constexpr const char *category          = "Misc";
-    static constexpr int         sortPriority      = 1000;  // 小さいほど先頭。既定は後方。
-    static constexpr bool        hiddenInInspector = false; // true でインスペクタ非表示
+    static constexpr int         sortPriority      = 1000;  // 小さいほどインスペクタの上に並ぶ
+    static constexpr bool        hiddenInInspector = false; // true ならインスペクタに出さない
     static constexpr bool        hasCustomGui      = false;
     static constexpr bool        isSerializable    = true;
 
-    // 戻り値: 値が変更されたら true (Undo/Redo フラグ用)。
+    // 値を変更したら true を返す（Undo の記録に使う）
     static bool CustomGui(T & /*comp*/, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
     {
         return false;
@@ -196,11 +182,10 @@ struct ComponentMeta
     }
 };
 
-// =====================================================================
-// SFINAE: ComponentMeta<T> が category / sortPriority / hiddenInInspector を
-//   持っているかを検出する。手書き特殊化ではこれらを書き忘れることがあるため、
-//   無ければプライマリテンプレートの既定値にフォールバックする用。
-// =====================================================================
+// ===========================================================================
+// SFINAE: ComponentMeta<T> が category / sortPriority / hiddenInInspector を持つか。
+//   手書きの特殊化では書き忘れることがあるので、無ければ既定値を使うために調べる。
+// ===========================================================================
 template <typename T, typename = void>
 struct HasCategory : std::false_type
 {
@@ -228,10 +213,7 @@ struct HasHiddenInInspector<T, std::void_t<decltype(ComponentMeta<T>::hiddenInIn
 {
 };
 
-// =====================================================================
-// RawField : 「先頭アドレス + offset」を任意型として読む低レベルヘルパー。
-//   FieldDescriptor.offset を使ってメンバーへ型安全にアクセスするために使う。
-// =====================================================================
+// 「先頭アドレス + offset」の位置を FieldT として参照する（FieldDescriptor.offset でメンバーを読むため）
 template <typename FieldT>
 inline FieldT &RawField(void *base, size_t offset)
 {

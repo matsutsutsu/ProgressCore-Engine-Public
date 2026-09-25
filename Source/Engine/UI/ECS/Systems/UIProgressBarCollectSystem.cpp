@@ -1,4 +1,3 @@
-// 役割・設計方針は UIProgressBarCollectSystem.h を参照。
 #include "UIProgressBarCollectSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -23,21 +22,20 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);
 
-        // 被弾の揺れ。ゲージを構成する矩形すべてに同じオフセットを足すので、
-        // 部品がバラバラにずれず「ゲージが1つの物として殴られた」ように見える。
-        //   XとYで振動数をずらしているのは、同じにすると斜め45度の直線往復になり、
-        //   振動でなく「スライド」に見えてしまうため（軌跡をリサージュに崩す）。
+        // 被弾の揺れ。ゲージを構成する全ての矩形に同じオフセットを足し、部品をまとめて揺らす。
+        //   X と Y で振動数をずらしているのは、同じにすると斜め 45 度の直線往復になり、
+        //   揺れではなくスライドに見えるため（軌跡をリサージュ曲線にする）
         DirectX::XMFLOAT2 origin = t.computedPos;
         if (bar.shake > 0.0f)
         {
             const float amp   = bar.shakeAmplitude * bar.shake * bar.shake;
             const float phase = bar.shakeElapsed * bar.shakeFrequency * 6.2831853f;
             origin.x += std::sin(phase) * amp;
-            origin.y += std::sin(phase * 1.7f) * amp * 0.5f; // 縦は控えめ＝横棒が跳ねて見えない
+            origin.y += std::sin(phase * 1.7f) * amp * 0.5f; // 縦は半分にして、横長のバーが跳ねて見えないようにする
         }
 
-        // 層の割り当ては固定にする（showTrail の有無で番号がズレると、
-        // 同じ sortOrder を指定した外側の要素との前後関係が条件によって変わる）。
+        // 描画順の割り当ては固定にする（showTrail の有無で番号がずれると、
+        // 同じ sortOrder を指定した他の要素との前後関係が条件によって変わる）。
         //   +0 背景 / +1 遅延バー / +2 フィル
         const int kLayerBg    = bar.sortOrder;
         const int kLayerTrail = bar.sortOrder + 1;
@@ -52,8 +50,8 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
         bg.sortOrder = kLayerBg;
         drawList.items.push_back(bg);
 
-        // 遅延ダメージ（チップ）バー：背景とフィルの間に幅 × trailValue で描く。
-        // フィルが value まで手前を覆うので、value..trailValue の差分だけが色付きで残る。
+        // 遅延ダメージバー: 背景とフィルの間に幅 × trailValue で描く。
+        // フィルが value までを手前で覆うので、value〜trailValue の差分だけが色付きで残る
         if (bar.showTrail)
         {
             const float tv = std::clamp(bar.trailValue, 0.0f, 1.0f);
@@ -66,7 +64,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
             drawList.items.push_back(trail);
         }
 
-        // フィル（幅 × value）。gradient>0 なら下端を暗くして立体感を出す。
+        // フィル（幅 × value）。gradient>0 なら下端を暗くする
         const float fillW = t.computedSize.x * v;
         UIDrawItem  fill;
         fill.kind      = UIDrawKind::Image;

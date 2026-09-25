@@ -1,6 +1,4 @@
-// ECSネイティブUIコンポーネントのメタ定義（インスペクタ編集・シリアライズ）。
-// computed*（レイアウト結果）は保存対象外。
-
+// UI コンポーネントのシリアライズ/インスペクタ定義。computed*（レイアウト結果）は保存しない。
 #include "UITransformComponent.h"
 #include "UIImageComponent.h"
 #include "UITextComponent.h"

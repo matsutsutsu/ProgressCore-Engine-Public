@@ -1,6 +1,10 @@
 #pragma once
-// UIAppearComponent を駆動し、オーバーレイの出現アニメ（フェード＋上スライド）を再生する。
-// 位置付け: RenderStage::R10_UI（UpdateRender中・毎フレーム1回、dtで進行）。
+// ===========================================================================
+// 概要: UIAppearComponent の出現アニメ（フェードイン + 下からのスライド）を進める System（R10_UI）。
+//
+// 責務:
+//   - UITransform の alpha と offset.y を、経過時間に合わせて開始状態から定位置へ動かす
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"
@@ -15,9 +19,9 @@ public:
     {
     }
 
-    // UIAnimationSystem と同じ UITransform を書くので直列化される（触る中身は
-    // scale と alpha/offset.y で重ならないため、順序はどちらでも結果は同じ）。
-    // ただし宣言が無いと「順序不定」の警告に出続けるので、意図として固定しておく。
+    // UIAnimationSystem と同じ UITransform を書くので直列に走る。触るのは scale と
+    // alpha/offset.y で重ならず、順序はどちらでも結果は同じだが、
+    // 宣言が無いと「順序不定」の警告が出続けるので固定しておく
     std::vector<const char *> GetRunAfter() const override { return {"UIAnimationSystem"}; }
 
     void Update(float dt) override;

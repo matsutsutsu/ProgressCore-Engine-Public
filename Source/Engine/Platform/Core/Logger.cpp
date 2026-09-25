@@ -1,6 +1,3 @@
-//==============================================================================
-// Logger.cpp
-//==============================================================================
 #include "Logger.h"
 
 #include <algorithm>
@@ -39,12 +36,6 @@ void Logger::AddSink(std::shared_ptr<ILogSink> sink)
     m_sinks.push_back(std::move(sink));
 }
 
-void Logger::RemoveSink(const std::shared_ptr<ILogSink> &sink)
-{
-    std::lock_guard lock(m_mutex);
-    m_sinks.erase(std::remove(m_sinks.begin(), m_sinks.end(), sink), m_sinks.end());
-}
-
 void Logger::ClearSinks()
 {
     std::lock_guard lock(m_mutex);
@@ -54,14 +45,14 @@ void Logger::ClearSinks()
 void Logger::Log(LogCategory category, LogLevel level,
                  const std::source_location &loc, const char *fmt, ...)
 {
-    // 1. メッセージ展開
+    // 1. 書式を展開する（2048 バイトを超えた分は切り捨て）
     char    buffer[2048];
     va_list args;
     va_start(args, fmt);
     std::vsnprintf(buffer, sizeof(buffer), fmt ? fmt : "", args);
     va_end(args);
 
-    // 2. LogMessage 構築
+    // 2. LogMessage を組み立てる
     LogMessage msg;
     msg.category = category;
     msg.level    = level;
@@ -71,7 +62,7 @@ void Logger::Log(LogCategory category, LogLevel level,
     msg.line     = static_cast<int>(loc.line());
     msg.text     = buffer;
 
-    // 3. 各シンクへ配信
+    // 3. 各シンクへ配信する
     std::lock_guard lock(m_mutex);
     for (const auto &sink : m_sinks)
     {
@@ -85,7 +76,7 @@ void Logger::Log(LogCategory category, LogLevel level,
         }
     }
 
-    // 4. Error は即フラッシュ (クラッシュ直前の取りこぼし防止)
+    // 4. Error はすぐフラッシュする（直後にクラッシュしてもファイルに残すため）
     if (level == LogLevel::Error)
     {
         for (const auto &sink : m_sinks)

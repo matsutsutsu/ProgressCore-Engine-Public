@@ -1,4 +1,15 @@
 #pragma once
+// ===========================================================================
+// 概要: 汎用の vCam 用 System 群（追従・注視・揺れ・自由移動）。
+//
+// 責務:
+//   - CameraFollowSystem: CameraBodyFollow に従って resultPos を書く
+//   - CameraLookAtSystem: CameraAimLookAt に従って resultLookAt を書く
+//   - CameraShakeSystem: 揺れ要求を受けて、Body が確定した結果に揺れを加算する
+//   - CameraFreeControlSystem: デバッグ用の自由移動カメラを操作する
+//
+// 備考: すべて R01_Camera ステージで動き、CameraBrainSystem(R01b) より前に結果を確定させる。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -7,27 +18,21 @@
 #include <cstdint>
 #include <vector>
 
-// ※ Input.h や SimpleMath.h などはここではインクルード不要になります
-
-// ---------------------------------------------------------
-// Body: 追従ロジック
-// ---------------------------------------------------------
+// Body: ターゲットへ追従する
 class CameraFollowSystem : public CCL::ECS::IfSystem<CameraFollowSystem,
                                                      CCL::ECS::Write<VirtualCamera>,
-                                                     CCL::ECS::Write<CameraBodyFollow>>
-{ // target 自動接続のため Write
+                                                     CCL::ECS::Read<CameraBodyFollow>>
+{
 public:
     CameraFollowSystem() : IfSystem("CameraFollowSystem") {}
-    void Update(float dt) override; // 中身は書かない
+    void Update(float dt) override;
 };
 
-// ---------------------------------------------------------
-// Aim: 注視ロジック
-// ---------------------------------------------------------
+// Aim: ターゲットを注視する
 class CameraLookAtSystem : public CCL::ECS::IfSystem<CameraLookAtSystem,
                                                      CCL::ECS::Write<VirtualCamera>,
-                                                     CCL::ECS::Write<CameraAimLookAt>>
-{ // target 自動接続のため Write
+                                                     CCL::ECS::Read<CameraAimLookAt>>
+{
 public:
     CameraLookAtSystem() : IfSystem("CameraLookAtSystem") {}
     void Update(float dt) override;
@@ -37,9 +42,7 @@ public:
     std::vector<const char *> GetRunAfter() const override { return {"CameraFollowSystem"}; }
 };
 
-// ---------------------------------------------------------
-// Shake: カメラ揺れ
-// ---------------------------------------------------------
+// Shake: Body が確定した結果に揺れを加算する
 class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
                                                     CCL::ECS::Write<VirtualCamera>,
                                                     CCL::ECS::Write<CameraShake>>
@@ -63,7 +66,7 @@ public:
     // 揺らせるカメラが 0 台なら要求は捨てられている（CameraShake の付け忘れ）。
     void OnGui() override;
 
-    // 【重要】シェイクは「Body が確定させた resultPos / resultLookAt への加算」である。
+    // シェイクは「Body が確定させた resultPos / resultLookAt への加算」である。
     // Body より先に走ると加算結果がそのまま上書きされ、揺れが完全に消える。
     // 同一ステージ(R01_Camera)に並んでいるだけでは順序は保証されないため、
     // すべての Body システムより後ろに来ることをここで宣言する。
@@ -92,9 +95,7 @@ private:
     float m_lastTrauma          = 0.0f; // 最後に見たカメラの蓄積量
 };
 
-// ---------------------------------------------------------
-// Free: 自由移動カメラ
-// ---------------------------------------------------------
+// Free: デバッグ用の自由移動カメラ
 class CameraFreeControlSystem : public CCL::ECS::IfSystem<CameraFreeControlSystem,
                                                           CCL::ECS::Write<VirtualCamera>,
                                                           CCL::ECS::Write<CameraBodyFree>,
@@ -105,7 +106,7 @@ public:
     void Update(float dt) override;
 
 private:
-    // ポーズ中/UI操作中/エディタの他ウィンドウ操作中は入力を食わない、の判定。
-    // TPS カメラ側と同じ条件に揃えるためのヘルパ。
+    // ポーズ中・UI 操作中・エディタの他ウィンドウ操作中なら true（入力を使わない）。
+    // TPS カメラ側と同じ条件に揃えている。
     bool IsInputBlocked() const;
 };

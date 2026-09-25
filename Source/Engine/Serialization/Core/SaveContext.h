@@ -1,24 +1,17 @@
-// =====================================================================
-// SaveContext.h
-//   シーン保存(Serialize)中に生きる、EntityID → ローカルインデックスの辞書。
-//
-//   設計のキモ:
-//     - ファイルに書き出されるのは raw EntityID ではなく「ローカルインデックス」
-//       (0, 1, 2, ... の連番)
-//     - 同じファイル内で発行された ID は一貫している
-//     - 別ファイル/別シーンとマージしても衝突しない
-//     - DCC ツール (Blender 等) から手書き JSON を流し込むのも容易
-//
-//   なぜ vector ではなく unordered_map を保存側に使うか:
-//     - 保存側は「ある EntityID を見たことがあるか?」が頻繁なクエリ
-//     - 連番割当は付加情報なので、ハッシュ引きが自然
-//     - 復元側 (LoadContext) は配列インデックス引きなので vector で OK
-//
-//   将来拡張:
-//     - 外部参照 (別シーンのエンティティ) を表す「特殊ローカルインデックス」を
-//       予約済み範囲 (例: 0xFFFFFF00 以上) で扱える設計にしておく
-// =====================================================================
 #pragma once
+// ===========================================================================
+// 概要: 保存中に使う「EntityID → ローカルインデックス」の対応表 SaveContext。
+//
+// 責務:
+//   - 保存する Entity に 1 からの連番（ローカルインデックス）を割り当てる
+//   - EntityLink を書き出すときに、参照先の EntityID をローカルインデックスに変換する
+//
+// 備考:
+//   - ファイルには実行時の EntityID ではなくローカルインデックスを書く。
+//     EntityID は実行ごとに変わるが、ローカルインデックスならファイルの中で閉じている。
+//   - EntityID は連番ではないので、保存側は unordered_map で引く
+//     （読込側の LoadContext は連番のローカルインデックスで引くので vector）。
+// ===========================================================================
 #include <cstdint>
 #include <unordered_map>
 #include "Engine/ECS/Common/CCL_Types.h"
@@ -29,23 +22,18 @@ namespace CCL::Serialization
     class SaveContext
     {
     public:
-        // ローカルインデックスの型。32bit で十分 (1 シーン 40 億エンティティはまずない)。
+        // ローカルインデックスの型（1 ファイルの Entity 数には 32bit で十分）
         using LocalIndex = uint32_t;
 
-        // 0 は「無効/未参照」を意味する予約値。実エンティティには 1 以降を割り当てる。
-        // (JSON で 0 を見たら「参照なし」と即判断できるよう、設計上のルールとする)
+        // 0 は「参照なし」を表す予約値。実際の Entity には 1 以降を割り当てる
         static constexpr LocalIndex InvalidLocalIndex = 0;
 
-        // EntityID を渡し、まだ登録されていなければ新しいローカルインデックスを発行する。
-        // 既に登録済みならその値を返す。常に同じ EntityID には同じインデックスが返る。
+        // EntityID のローカルインデックスを返す。未登録なら新しく割り当てる
         LocalIndex GetOrRegister(CCL::ECS::EntityID realID)
         {
-            // 無効 ID は即 0 を返す (ファイル上の「参照なし」表現)
-            if (realID == CCL::ECS::InvalidEntityID) return InvalidLocalIndex;
-
-            // このエンジンは ID=0 を実エンティティへ割り当てるため、0 を無効値として
-            // 早期リターンしてはいけない（先頭エンティティへの参照が全て潰れる）。
-            // 無効判定は InvalidEntityID との比較だけで行う。
+            // 0 と InvalidEntityID は「参照なし」（EntityLink::IsValid と同じ判定）。
+            //   EntityID は上位 32bit に 1 から始まる世代を持つので、実在する Entity が 0 になることは無い
+            if (realID == CCL::ECS::InvalidEntityID || realID == 0) return InvalidLocalIndex;
 
             auto it = m_idToLocal.find(realID);
             if (it != m_idToLocal.end()) return it->second;
@@ -55,26 +43,25 @@ namespace CCL::Serialization
             return newIdx;
         }
 
-        // 純粋なルックアップ (副作用なし)。未登録なら 0 を返す。
-        // ヘッダ書き出し時など、登録済みであるべき場面で使う。
+        // 登録せずに引く。未登録なら 0 を返す
         LocalIndex Lookup(CCL::ECS::EntityID realID) const
         {
             auto it = m_idToLocal.find(realID);
             return it != m_idToLocal.end() ? it->second : InvalidLocalIndex;
         }
 
-        // 登録されているエンティティ数
+        // 登録されている Entity の数
         size_t Size() const { return m_idToLocal.size(); }
 
         void Clear()
         {
             m_idToLocal.clear();
-            m_nextLocalIndex = 1; // 0 は「無効」予約
+            m_nextLocalIndex = 1;
         }
 
     private:
         std::unordered_map<CCL::ECS::EntityID, LocalIndex> m_idToLocal;
-        LocalIndex                                         m_nextLocalIndex = 1; // 1 から発行 (0 は無効)
+        LocalIndex                                         m_nextLocalIndex = 1; // 次に割り当てる番号（0 は予約）
     };
 
 } // namespace CCL::Serialization

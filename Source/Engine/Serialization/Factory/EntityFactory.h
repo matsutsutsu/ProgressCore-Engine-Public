@@ -1,30 +1,32 @@
 #pragma once
+// ===========================================================================
+// 概要: 名前付きの Entity やプレハブを生成して EntityRef で返すヘルパー関数群。
+//
+// 責務:
+//   - NameComponent を付けて Entity を生成する（NameComponent を ECS のコアに持ち込まないため）
+//   - プレハブを生成して EntityRef で返す
+// ===========================================================================
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/NameComponent.h"
 
-// ゲームレイヤー専用のユーティリティ名前空間
 namespace EntityFactory
 {
 
-    // ========================================================================
-    //  名前付き生成のヘルパー。NameComponent の付与を ECS コア側に持ち込まないための層。
-    // ========================================================================
-    // アーキタイプと名前を渡すと、NameComponent を付けたエンティティを生成して返す。
+    // Archetype と名前から、NameComponent を付けた Entity を生成する
     inline CCL::ECS::EntityRef SpawnNamed(CCL::ECS::World           &world,
                                           const char                *name,
                                           const CCL::ECS::Archetype &baseArch)
     {
-        // 1. World の純粋な機能を使ってエンティティを生成
         auto ref = world.Spawn(baseArch);
 
-        // 2. 名前をセット（NameComponentを持っていなければ、自動的に追加キューに乗る）
+        // NameComponent が Archetype に無ければ、追加が予約される
         ref.Set(NameComponent{name});
 
         return ref;
     }
 
-    // プレハブをSpawnして、便利な EntityRef を返す
+    // プレハブを生成し、ルートの EntityRef を返す
     inline CCL::ECS::EntityRef SpawnPrefab(CCL::ECS::World &world,
                                            const char      *prefabPath)
     {

@@ -1,14 +1,18 @@
 #pragma once
+// ===========================================================================
+// 概要: アニメーションの遷移条件が参照するパラメータを持つコンポーネント AnimParametersComponent。
+//
+// 責務:
+//   - Float / Bool / Trigger のパラメータを名前ハッシュで保持する
+//   - Trigger の先行入力の寿命を管理する
+//
+// 備考: 書くのはゲーム側や CharacterAnimSyncSystem、読むのは AnimControllerSystem。
+//       件数が少ないので map ではなく vector の線形探索で持つ。
+// ===========================================================================
 #include <vector>
 #include <cstdint>
 #include <algorithm>
 
-// ===================================================================================
-// ファイル: AnimParametersComponent.h
-// 概要: アニメーション状態遷移のための「パラメータ掲示板」コンポーネント
-// ===================================================================================
-
-// CPUキャッシュラインに収まりやすいフラットなパラメータボード
 struct AnimParametersComponent
 {
     struct FloatParam
@@ -22,7 +26,7 @@ struct AnimParametersComponent
         bool     value;
     };
 
-    // トリガーに寿命(先行入力猶予時間)を持たせる
+    // 寿命（先行入力の猶予時間）付きのトリガー
     struct TriggerParam
     {
         uint32_t hash;
@@ -31,7 +35,7 @@ struct AnimParametersComponent
 
     std::vector<FloatParam>   floats;
     std::vector<BoolParam>    bools;
-    std::vector<TriggerParam> triggers; // IDリストから構造体にアップグレード
+    std::vector<TriggerParam> triggers;
 
     void SetFloat(uint32_t hash, float val)
     {
@@ -53,7 +57,7 @@ struct AnimParametersComponent
             if (p.hash == hash)
                 return p.value;
         }
-        return 0.0f; // デフォルト値
+        return 0.0f; // 未登録なら 0
     }
 
     void SetBool(uint32_t hash, bool val)
@@ -80,14 +84,13 @@ struct AnimParametersComponent
     }
 
     /**
-     * @brief トリガーを発火させる（先行入力バッファへの登録）
-     * @param hash トリガーのハッシュ
-     * @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約9フレーム）
-     * @note  「押した瞬間」を bufferTime だけ生かしておくのが役割で、遷移してよい
-     *        タイミングまでは決めない。実際に遷移が通るのは、寿命が残っていることに
-     *        加えてシーケンサの ComboWindow / CancelWindow の区間内にいる時だけ
-     *        （AnimControllerSystem::ConditionsMet が両方を AND で見る）。
-     *        早すぎる入力を「待たせる」のがここ、「弾く」のが窓側。
+     * @brief トリガーを立てる（先行入力として登録する）。
+     * @param hash       トリガーのハッシュ
+     * @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約 9 フレーム）
+     * @note 押した瞬間を bufferTime だけ残しておくのが役割で、遷移してよいタイミングは決めない。
+     *       遷移が通るのは、寿命が残っていて、かつシーケンサの ComboWindow / CancelWindow の
+     *       区間内にいるときだけ（AnimControllerSystem の ConditionsMet が両方を見る）。
+     *       早すぎる入力を待たせるのがここ、弾くのが窓の側。
      */
     void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
     {
@@ -95,7 +98,7 @@ struct AnimParametersComponent
         {
             if (t.hash == hash)
             {
-                // 既に存在する場合は、寿命を上書き(延長)する
+                // 既にあれば寿命を上書きする
                 t.lifetime = bufferTime;
                 return;
             }
@@ -121,25 +124,25 @@ struct AnimParametersComponent
             triggers.end());
     }
 
-    // 毎フレーム呼ばれ、バッファの寿命を減らし、切れたものを掃除する
+    // 寿命を dt だけ減らし、切れたトリガーを消す（AnimControllerSystem が毎ステップ呼ぶ）
     void TickTriggers(float dt)
     {
         if (triggers.empty())
             return;
 
-        // 寿命を減らす
         for (auto &t : triggers)
         {
             t.lifetime -= dt;
         }
 
-        // 寿命が0以下のトリガーを一括削除 (Erase-Remove Idiom)
+        // 寿命が 0 以下のトリガーをまとめて削除する（erase-remove）
         triggers.erase(
             std::remove_if(triggers.begin(), triggers.end(),
                            [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),
             triggers.end());
     }
 
+    // Float か Bool（1/0 として）の値を取り出す。どちらにも無ければ false
     bool TryGetNumeric(uint32_t hash, float &outValue) const
     {
         for (const auto &p : floats)
@@ -161,11 +164,7 @@ struct AnimParametersComponent
         return false;
     }
 
-    // -----------------------------------------------------------------------
-    // 暴発防止用：トリガーの全消去（フラッシュ）
-    // ダメージを受けた瞬間や、回避・死亡時など、
-    // 過去の入力を無効化したい「割り込み処理」が発生した際に呼び出す。
-    // -----------------------------------------------------------------------
+    // トリガーを全て消す。被弾・回避・死亡など、それまでの先行入力を無効にしたいときに呼ぶ
     void ClearTriggers()
     {
         triggers.clear();

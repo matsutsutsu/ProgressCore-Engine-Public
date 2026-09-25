@@ -1,8 +1,7 @@
 #include "InputFacade.h"
-#include "InputKeyTable.h" // 共通キーテーブル（StringToKeyCode 委譲用）
+#include "InputKeyTable.h"
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -13,9 +12,7 @@ using json = nlohmann::json;
 
 namespace
 {
-    // ---------------------------------------------------------
-    // ヘルパー: 文字列 -> デバイスタイプ変換
-    // ---------------------------------------------------------
+    // JSON の "Device" 文字列 -> デバイス種別。未知の文字列は Keyboard 扱い
     InputDeviceType StringToDeviceType(const std::string &str)
     {
         if (str == "Keyboard") return InputDeviceType::Keyboard;
@@ -27,23 +24,19 @@ namespace
         if (str == "GamePad_AxisRY") return InputDeviceType::GamePad_AxisRY;
         if (str == "GamePad_TriggerL") return InputDeviceType::GamePad_TriggerL;
         if (str == "GamePad_TriggerR") return InputDeviceType::GamePad_TriggerR;
-        return InputDeviceType::Keyboard; // Default
+        return InputDeviceType::Keyboard;
     }
 
-    // ---------------------------------------------------------
-    // ヘルパー: 文字列 -> キーコード変換
-    //   共通テーブル(InputKeyTable)へ委譲。
-    //   キー定義の追加は InputKeyTable.h 側で行うこと。
-    // ---------------------------------------------------------
+    // JSON の "Key" 文字列 -> キーコード。キーの追加は InputKeyTable.h で行う
     unsigned int StringToKeyCode(const std::string &str)
     {
         return InputKeyTable::StringToKeyCode(str);
     }
 } // namespace
 
-// =======================================================
-// JSONファイルからのロード処理
-// =======================================================
+// ============================================================
+// 読み込みと登録
+// ============================================================
 bool InputFacade::LoadConfig(const std::string &filePath)
 {
     std::ifstream file(filePath);
@@ -62,12 +55,10 @@ bool InputFacade::LoadConfig(const std::string &filePath)
         return false;
     }
 
-    // 既存のバインディングをクリア（再読み込みに対応するため）
+    // 既存の割り当てを捨てる（ホットリロードで読み直すため）
     m_actionBindings.clear();
     m_axisBindings.clear();
     m_actionTriggerTypes.clear();
-    m_actionNames.clear();
-    m_axisNames.clear();
 
     // 1. Actions の読み込み
     if (doc.contains("Actions"))
@@ -109,23 +100,15 @@ bool InputFacade::LoadConfig(const std::string &filePath)
     return true;
 }
 
-// =======================================================
-// 辞書への登録 (文字列をハッシュ化して登録する)
-// =======================================================
 void InputFacade::AddActionBinding(const std::string &actionName, InputDeviceType device, unsigned int keyCode)
 {
     uint32_t hash = CCL::Utils::HashString(actionName);
-    m_actionNames.push_back(actionName);
     m_actionBindings[hash].push_back({device, keyCode, 1.0f});
 }
 
 void InputFacade::AddAxisBinding(const std::string &axisName, InputDeviceType device, unsigned int keyCode, float scale)
 {
     uint32_t hash = CCL::Utils::HashString(axisName);
-    if (std::find(m_axisNames.begin(), m_axisNames.end(), axisName) == m_axisNames.end())
-    {
-        m_axisNames.push_back(axisName);
-    }
     m_axisBindings[hash].push_back({device, keyCode, scale});
 }
 
@@ -135,9 +118,9 @@ void InputFacade::SetActionTriggerType(const std::string &actionName, TriggerTyp
     m_actionTriggerTypes[hash] = type;
 }
 
-// =======================================================
-// 内部評価ヘルパー（種別ごとの実処理）
-// =======================================================
+// ============================================================
+// 評価
+// ============================================================
 bool InputFacade::EvalActionDown(const std::vector<InputBinding> &binds) const
 {
     for (const auto &bind : binds)
@@ -167,7 +150,7 @@ bool InputFacade::EvalActionTriggered(const std::vector<InputBinding> &binds) co
         switch (bind.deviceType)
         {
         case InputDeviceType::Keyboard:
-            // 毎フレームの蓄積トリガーを参照（取りこぼし防止）
+            // ロジックは固定ステップで読むので、ClearLogicInput まで溜めた「押した瞬間」を見る
             if (m_rawInput->GetLogicKeyTriggered(bind.keyCode)) return true;
             break;
         case InputDeviceType::Mouse_Button:
@@ -208,15 +191,13 @@ bool InputFacade::EvalActionReleased(const std::vector<InputBinding> &binds) con
 #ifdef ENABLE_EDITOR
 namespace
 {
-    // ---------------------------------------------------------
-    // B案: エディタでウィジェットを能動操作している間はゲーム入力を殺す。
+    // エディタでウィジェットを操作している間はゲーム入力を止める。
     //   ・WantCaptureKeyboard : テキスト/数値欄にフォーカスがあり、キー入力を
-    //                           ImGui が奪っている（名前入力中の WASD 漏れ防止）
-    //   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中＝値調整中
-    //   ※ GameView 自体が ImGui ウィンドウのため WantCaptureMouse は
-    //     「画面にマウスを乗せただけ」で true になり通常プレイを阻害する。
-    //     ゆえにマウスフラグは意図的に見ない。
-    // ---------------------------------------------------------
+    //                           ImGui が受け取っている（名前入力中の WASD 漏れ防止）
+    //   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中（値の調整中）
+    //   GameView 自体が ImGui ウィンドウなので、WantCaptureMouse は
+    //   画面にマウスを乗せただけで true になり、通常のプレイを妨げる。
+    //   そのためマウスのフラグは意図的に見ない。
     inline bool EditorIsConsumingInput()
     {
         if (!ImGui::GetCurrentContext()) return false;
@@ -225,10 +206,6 @@ namespace
 } // namespace
 #endif
 
-// =======================================================
-// アクション取得（統一窓口）
-//   エディタで設定された種別に従って評価する。
-// =======================================================
 bool InputFacade::GetAction(uint32_t actionHash) const
 {
     if (!m_rawInput) return false;
@@ -256,9 +233,6 @@ bool InputFacade::GetAction(uint32_t actionHash) const
     }
 }
 
-// =======================================================
-// アナログ入力（Axis）の取得 (ハッシュで最速検索)
-// =======================================================
 float InputFacade::GetAxis(uint32_t axisHash) const
 {
     if (!m_rawInput) return 0.0f;
@@ -314,7 +288,7 @@ float InputFacade::GetAxis(uint32_t axisHash) const
 
 void InputFacade::SetVibration(float leftMotor, float rightMotor, float duration)
 {
-    // アクティブなデバイスがGamePadの時のみ振動させる
+    // 直近の操作がゲームパッドのときだけ振動させる
     if (m_rawInput && GetActiveDeviceType() == ActiveDeviceType::GamePad)
     {
         m_rawInput->GetGamePad().SetVibration(leftMotor, rightMotor, duration);

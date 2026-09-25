@@ -1,7 +1,5 @@
-// 役割・設計方針は TextRenderer.h を参照。
-//
-// stb_truetype はこの翻訳単位でのみ実装展開する。STBTT_STATIC で関数を static 化し、
-// ImGui が内部に持つ同名 stb 実装とリンク衝突しないようにする。
+// stb_truetype の実装はこの翻訳単位でだけ展開する。STBTT_STATIC で関数を static にし、
+// ImGui が内部に持つ同名の stb 実装とリンク時に衝突しないようにする。
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include "stb_truetype.h"
@@ -16,7 +14,7 @@
 
 using Microsoft::WRL::ComPtr;
 
-// stb 依存の状態はここ（.cpp）に隠す。
+// stb に依存する状態はここに隠す
 struct TextRenderer::Impl
 {
     static constexpr int kFirst = 32; // ' '
@@ -30,7 +28,7 @@ struct TextRenderer::Impl
     stbtt_bakedchar         chars[kCount] = {};
     std::unique_ptr<Sprite> atlas;
 
-    // バインド高(bakePixel)での縦メトリクス(px)。descent は負。
+    // 焼いたときの高さ（bakePixel）での縦方向のメトリクス（px）。descent は負
     float ascent  = 0.0f;
     float descent = 0.0f;
     float lineGap = 0.0f;
@@ -52,7 +50,7 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
 {
     if (!device || !ttfPath) return false;
 
-    // --- TTF をメモリへ ---
+    // TTF をメモリへ読む
     std::ifstream ifs(ttfPath, std::ios::binary);
     if (!ifs) return false;
     std::vector<unsigned char> ttf((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
@@ -60,14 +58,14 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
 
     m_impl->bakePixel = bakePixelHeight;
 
-    // --- ASCII をアトラス(1ch)へ焼く ---
+    // ASCII を 1 チャンネルのアトラスへ焼く
     std::vector<unsigned char> bitmap(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     stbtt_BakeFontBitmap(ttf.data(), 0, bakePixelHeight,
                          bitmap.data(), m_impl->atlasW, m_impl->atlasH,
                          Impl::kFirst, Impl::kCount, m_impl->chars);
-    // ※ 戻り値が負でも一部は焼けている。ASCIIなら 512x512/48px で収まる想定。
+    // 戻り値が負なら入りきらなかったが、入った分は焼けている。ASCII なら 512x512 / 48px で収まる
 
-    // --- 縦メトリクス取得 ---
+    // 縦方向のメトリクスを取得する
     stbtt_fontinfo info;
     if (stbtt_InitFont(&info, ttf.data(), stbtt_GetFontOffsetForIndex(ttf.data(), 0)))
     {
@@ -79,16 +77,16 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
         m_impl->lineGap = g * sc;
     }
 
-    // --- 1ch カバレッジ → RGBA(白 + カバレッジα)。Spriteは texColor*頂点色なので
-    //     rgb=白にして頂点色で着色、α=カバレッジで縁を出す。---
+    // 1 チャンネルのカバレッジを RGBA（白 + カバレッジを α）へ変換する。
+    //   Sprite はテクスチャ色 × 頂点色で描くので、RGB を白にして頂点色で着色する
     std::vector<uint32_t> rgba(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     for (size_t i = 0; i < rgba.size(); ++i)
     {
         const uint32_t cov = bitmap[i];
-        rgba[i]            = 0x00FFFFFFu | (cov << 24); // R8G8B8A8: R,G,B=255, A=cov
+        rgba[i]            = 0x00FFFFFFu | (cov << 24); // R8G8B8A8: R,G,B=255, A=カバレッジ
     }
 
-    // --- テクスチャ + SRV 生成 ---
+    // テクスチャと SRV を作る
     D3D11_TEXTURE2D_DESC td = {};
     td.Width                = m_impl->atlasW;
     td.Height               = m_impl->atlasH;
@@ -122,7 +120,7 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
 
     const float scale = pixelSize / m_impl->bakePixel;
     float       penX  = x;
-    float       baseY = y + m_impl->ascent * scale; // yは上端。ベースラインへ下ろす。
+    float       baseY = y + m_impl->ascent * scale; // y は上端なので、ベースラインまで下げる
 
     for (unsigned char ch : text)
     {
@@ -136,13 +134,13 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
 
         const stbtt_bakedchar &b = m_impl->chars[ch - Impl::kFirst];
 
-        // アトラス上のピクセル矩形（Spriteの切り抜きはピクセル指定）
+        // アトラス上の矩形（Sprite の切り抜きはピクセル指定）
         const float sx = static_cast<float>(b.x0);
         const float sy = static_cast<float>(b.y0);
         const float sw = static_cast<float>(b.x1 - b.x0);
         const float sh = static_cast<float>(b.y1 - b.y0);
 
-        // 画面配置（bake空間のoffsetをscale倍）
+        // 画面上の配置（焼いたときの高さ基準のオフセットを scale 倍する）
         const float gx = penX + b.xoff * scale;
         const float gy = baseY + b.yoff * scale;
         const float gw = sw * scale;
@@ -177,6 +175,6 @@ float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
 float TextRenderer::LineHeight(float pixelSize) const
 {
     const float scale = pixelSize / m_impl->bakePixel;
-    // descent は負なので (ascent - descent) が高さ。lineGap を加える。
+    // descent は負なので (ascent - descent) が文字の高さ。これに行間を足す
     return (m_impl->ascent - m_impl->descent + m_impl->lineGap) * scale;
 }

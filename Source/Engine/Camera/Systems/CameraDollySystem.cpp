@@ -1,5 +1,3 @@
-// CameraDollySystemの実装。弧長パラメータ化を用いた等速移動レールカメラ。
-
 #include "Engine/Camera/Systems/CameraDollySystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/FileSystem.h"
@@ -15,9 +13,9 @@ using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-// -------------------------------------------------------------------------
-// 座標取得とCatmull-Rom計算
-// -------------------------------------------------------------------------
+// =========================================================================
+// スプライン評価
+// =========================================================================
 const Vector3 &CameraDollySystem::GetPoint(const std::vector<Vector3> &pts, int index, bool loop)
 {
     const int n = static_cast<int>(pts.size());
@@ -61,10 +59,9 @@ float CameraDollySystem::MaxParam(const CameraPathAsset &asset)
     return asset.isLoop ? n : (n - 1.0f);
 }
 
-// -------------------------------------------------------------------------
-// LUT (Look-Up Table) の構築
-// JSONロード直後に1回だけ実行し、軌道の「距離とtの関係」をキャッシュする
-// -------------------------------------------------------------------------
+// =========================================================================
+// 弧長パラメータ化
+// =========================================================================
 void CameraDollySystem::BuildLookupTable(CameraPathAsset &asset)
 {
     asset.lut.clear();
@@ -96,9 +93,6 @@ void CameraDollySystem::BuildLookupTable(CameraPathAsset &asset)
     asset.totalLength = accumulatedDistance;
 }
 
-// -------------------------------------------------------------------------
-// 距離(m)からパラメータ t を逆算する (LUTの二分探索)
-// -------------------------------------------------------------------------
 float CameraDollySystem::GetTFromDistance(const CameraPathAsset &asset, float targetDist)
 {
     if (asset.lut.empty())
@@ -108,7 +102,7 @@ float CameraDollySystem::GetTFromDistance(const CameraPathAsset &asset, float ta
     if (targetDist >= asset.totalLength)
         return asset.lut.back().t;
 
-    // 二分探索 (std::lower_bound) で目標距離に近いサンプルを見つける
+    // 目標距離以上になる最初のサンプルを二分探索で探す
     auto it = std::lower_bound(asset.lut.begin(), asset.lut.end(), targetDist,
                                [](const PathSample &sample, float dist) {
                                    return sample.distance < dist;
@@ -137,12 +131,12 @@ float CameraDollySystem::WrapDistance(float dist, float totalLength)
     return d;
 }
 
-// -------------------------------------------------------------------------
-// パス（JSON）の読み込み
-// -------------------------------------------------------------------------
+// =========================================================================
+// 読み込みと Update
+// =========================================================================
 void CameraDollySystem::LoadPathIfNeeded(CameraDollyCartComponent &cart) const
 {
-    // 未ロード かつ エラー未発生 の場合のみ試行
+    // 未読み込みで、まだ失敗していないときだけ試す
     if (cart.loadedPath || cart.pathAsset.empty() || cart.hasLoadError)
         return;
 
@@ -168,8 +162,7 @@ void CameraDollySystem::LoadPathIfNeeded(CameraDollyCartComponent &cart) const
             }
         }
 
-        // isLoop は構造体に存在するのに一度も読まれていなかった（＝死にフィールド）。
-        // エディタ側の書き出しキー揺れに備えて "loop" も受ける。
+        // CameraPathEditorWindow は "isLoop" で書き出す。手書きの JSON に備えて "loop" も受ける。
         cart.loadedPath->isLoop = j.value("isLoop", j.value("loop", false));
 
         BuildLookupTable(*cart.loadedPath);
@@ -186,17 +179,11 @@ void CameraDollySystem::LoadPathIfNeeded(CameraDollyCartComponent &cart) const
     }
 }
 
-// -------------------------------------------------------------------------
-// システムの Update 実装
-// -------------------------------------------------------------------------
 void CameraDollySystem::Update(float /*rawDt*/)
 {
-    // 警告: 物理時間は必ず time.localDt を使う
-
+    // 引数の dt ではなく time.localDt で進める（TimeScale とヒットストップを反映するため）
     ForEach([this](VirtualCamera &vcam, CameraDollyCartComponent &cart, const TimeStateComponent &time) {
-        // 1. リソースの遅延ロード
-        //    ※ 同期I/O + JSONパースを Update 内で行うため、初回フレームでヒッチする。
-        //       将来はアセットマネージャ側へ移し、パス単位でキャッシュを共有すること。
+        // 1. 軌道の遅延読み込み
         LoadPathIfNeeded(cart);
 
         if (!cart.loadedPath || cart.loadedPath->points.size() < 2 || cart.loadedPath->totalLength <= 0.0f)

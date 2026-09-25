@@ -1,18 +1,32 @@
 #pragma once
+// ===========================================================================
+// 概要: アニメーションのステートマシン（グラフ・ステート・遷移・条件）のデータ定義。
+//
+// 責務:
+//   - AnimStateGraph / AnimState / AnimTransition / AnimCondition / AnimParamDef の定義
+//   - nlohmann::json との相互変換（グラフファイルの保存形式）
+//   - 実行時の現在地を持つ AnimStateMachineComponent の定義
+//
+// 備考:
+//   - AnimState はサブステートマシンとして子グラフを持てる（階層ステートマシン）。
+//   - 評価は AnimControllerSystem、編集は AnimGraphWindow が行う。
+// ===========================================================================
 #include <vector>
 #include <string>
 #include <cstdint>
-#include <memory> // 階層ステートマシン：AnimState が子グラフを unique_ptr で持つ
+#include <memory>
 #include <json.hpp>
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Core/Math/StringHash.h"
 
 struct CurveData;
+struct AnimStateGraph; // AnimState が子グラフを持つため先に宣言する
 
-// 階層ステートマシンの再帰参照（AnimState が子 AnimStateGraph を持つ）用の前方宣言。
-struct AnimStateGraph;
+// ===========================================================================
+// データ定義
+// ===========================================================================
 
-// 条件演算子
+// 遷移条件の演算子
 enum class AnimConditionOp
 {
     Equal,
@@ -22,17 +36,15 @@ enum class AnimConditionOp
     Finished
 };
 
-// 複数条件の結合方法。AND=全て満たす / OR=いずれか満たす。
+// 複数の条件の結合方法（AND=全て満たす / OR=いずれかを満たす）
 enum class AnimTransitionLogic
 {
     AND,
     OR
 };
 
-// パラメータの型。Unity Animator の Float/Bool/Trigger に相当。
-//
-// Int は当面 Float で代用できるため持たない（必要になれば末尾に追加）。
-// シリアライズは int 値。途中挿入禁止・末尾追加のみ。
+// パラメータの型（Unity Animator の Float / Bool / Trigger に相当）。
+//   Int は Float で代用できるので持たない。int で保存するので、追加は末尾だけ
 enum class AnimParamType : uint8_t
 {
     Float,
@@ -40,20 +52,16 @@ enum class AnimParamType : uint8_t
     Trigger
 };
 
-// パラメータの定義（グラフが所有する「宣言」）。
-//
-// ランタイムの実値は AnimParametersComponent が持つ。本構造体は名前・型・
-// デフォルト値のみを保持し、エディタのパラメータパネルで編集される。
-//
-// hash は name の派生（HashString(name)）。name 変更時は hash を再計算し、
-// 参照している AnimCondition.paramHash も張り替えること（エディタ側責務）。
+// パラメータの定義（名前・型・初期値）。実行時の値は AnimParametersComponent が持つ。
+//   hash は HashString(name)。name を変えたら hash と、それを参照する
+//   AnimCondition.paramHash も張り替えること（エディタが行う）
 struct AnimParamDef
 {
     std::string   name         = "NewParam";
     uint32_t      hash         = 0;
     AnimParamType type         = AnimParamType::Float;
-    float         defaultFloat = 0.0f;  // type==Float のときの初期値
-    bool          defaultBool  = false; // type==Bool のときの初期値
+    float         defaultFloat = 0.0f;  // type==Float の初期値
+    bool          defaultBool  = false; // type==Bool の初期値
 };
 
 // 遷移条件
@@ -65,28 +73,26 @@ struct AnimCondition
     float           threshold = 0.0f;
 };
 
-// 遷移の矢印
+// ステート間の遷移
 struct AnimTransition
 {
     uint32_t            targetStateHash = 0;
     float               blendDuration   = 0.2f;
     AnimTransitionLogic logicType       = AnimTransitionLogic::AND;
 
-    // この遷移を受け付けてよいキャンセル窓。0 = 常時許可。
-    //   非0なら、再生中クリップの ComboWindow/CancelWindow イベントのうち
-    //   ビットが1つでも重なる区間の中にいるときだけ遷移できる。
+    // この遷移を受け付けてよい CancelGroup のマスク。0 なら常に許可。
+    //   0 以外なら、再生中クリップの ComboWindow / CancelWindow のうち
+    //   ビットが 1 つでも重なる区間の中にいるときだけ遷移できる
     uint32_t requiredCancelMask = 0;
 
-    // 軽量サブステートマシン用。0=どこからでも（従来の anyState）。
-    // 非0の時は「現在ステートの groupId がこの値と一致する場合のみ有効」な
-    // グループ・スコープ付き anyState 遷移になる（＝そのグループ内からの割り込み）。
-    // 通常ステートの transitions では未使用（0のまま）。anyStateTransitions でのみ意味を持つ。
+    // anyStateTransitions でだけ使う。0 ならどのステートからでも遷移できる。
+    //   0 以外なら、今のステートの groupId が一致するときだけ有効（そのグループ内からの割り込み）
     uint32_t sourceGroupId = 0;
 
     std::vector<AnimCondition> conditions;
 };
 
-// ステート (ノード)
+// ステート（グラフのノード）
 struct AnimState
 {
     uint32_t    stateHash = 0;
@@ -98,41 +104,36 @@ struct AnimState
     std::string speedCurveName;
     std::string rootMotionCurveName;
 
-    // このステートでルートモーション(rootMotionCurve駆動の前進)を適用するか。
-    //
-    // Unity の "Apply Root Motion" 相当。遷移時に RootMotionComponent.enabled へ反映。
+    // このステートでルートモーションを適用するか（Unity の "Apply Root Motion" 相当）。
+    //   RootMotionSystem が RootMotionComponent.enabled に反映する
     bool applyRootMotion = false;
 
-    // true なら Force Root Lock でルートボーンのYも初期姿勢へピン留めする。
-    // 地上攻撃など「浮いてほしくない」ステート用。
-    // false（既定）は従来通りYをクリップの動きのまま活かす（ジャンプ攻撃等向け）。
+    // true なら Force Root Lock でルートボーンの Y もバインドポーズへ固定する（地上攻撃など浮かせたくないステート用）。
+    // false ならクリップの Y の動きをそのまま使う（ジャンプ攻撃など）
     bool lockVerticalRootMotion = false;
 
-    // 軽量サブステートマシン用のグループID（0=無所属）。同じ groupId のステート群に対し、
-    // anyStateTransitions 側の sourceGroupId で「そのグループ限定の割り込み遷移」を1本張れる。
-    // 例：Combat 群に groupId=1 を付け、AnyState に「sourceGroupId=1 → Idle [Finished]」を
-    // 1本置けば、各攻撃ステートから個別に Idle 線を引かずに済む（減線）。
+    // グループ ID（0 は所属なし）。anyStateTransitions の sourceGroupId と組み合わせ、
+    //   グループ限定の割り込み遷移を 1 本で張れる。
+    //   例: 攻撃ステート群に groupId=1 を付け、AnyState に「sourceGroupId=1 → Idle [Finished]」を
+    //       1 本置けば、各攻撃ステートから個別に Idle への遷移を引かずに済む
     uint32_t groupId = 0;
 
-    float nodePosX = 0.0f;
+    float nodePosX = 0.0f; // エディタ上のノード位置
     float nodePosY = 0.0f;
 
+    // 名前から束縛した実体（所有しない。ResourceManager が持つ）
     const CurveData    *speedCurve      = nullptr;
-    const CurveData    *rootMotionCurve = nullptr; // rootMotionCurveName から束縛
+    const CurveData    *rootMotionCurve = nullptr;
     const AnimSequence *sequence        = nullptr;
 
     std::vector<AnimTransition> transitions;
 
-    // =====================================================================
-    // 階層ステートマシン（サブステートマシン）
-    //   isSubMachine==false（葉）：従来通り sequence を再生するステート。
-    //   isSubMachine==true（節）：自分は再生せず、子グラフ(subGraph)を内包する。
-    //     ランタイムはこのステートに「入る」と subGraph の entry へ潜り、
-    //     エディタはこのノードを「ダブルクリックで潜る」対象として扱う。
-    //   ※ AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型のため subGraph は
-    //     unique_ptr で保持する。値コピー時は subGraph をディープコピーする
-    //     （特殊メンバは AnimStateGraph 定義後に out-of-line 定義。pimpl と同型）。
-    // =====================================================================
+    // サブステートマシン。
+    //   isSubMachine==false（葉）: sequence を再生するステート。
+    //   isSubMachine==true（節）: 自分は再生せず子グラフ（subGraph）を持つ。
+    //     実行時はこのステートに入ると subGraph の entry へ降り、エディタではダブルクリックで中に入る。
+    //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なので subGraph は unique_ptr で持ち、
+    //   コピー時はディープコピーする（特殊メンバは AnimStateGraph の定義後に定義する）
     bool                            isSubMachine = false;
     std::unique_ptr<AnimStateGraph> subGraph; // isSubMachine のときのみ有効
 
@@ -140,42 +141,45 @@ struct AnimState
     ~AnimState();
     AnimState(const AnimState &other);            // ディープコピー（subGraph を複製）
     AnimState &operator=(const AnimState &other); // ディープコピー
-    AnimState(AnimState &&) noexcept;             // move は既定
-    AnimState &operator=(AnimState &&) noexcept;  // move は既定
+    AnimState(AnimState &&) noexcept;
+    AnimState &operator=(AnimState &&) noexcept;
 };
 
-// グラフ全体
+// グラフ全体（1 階層分）
 struct AnimStateGraph
 {
     std::vector<AnimState> states;
     uint32_t               entryStateHash = 0;
 
-    float entryPosX = 0.0f;
+    float entryPosX = 0.0f; // エディタ上の Entry ノード位置
     float entryPosY = 0.0f;
 
-    std::vector<AnimTransition> anyStateTransitions;
-    float                       anyStatePosX = 0.0f;
+    std::vector<AnimTransition> anyStateTransitions; // どのステートからでも評価する遷移
+    float                       anyStatePosX = 0.0f; // エディタ上の AnyState ノード位置
     float                       anyStatePosY = 0.0f;
 
-    // このグラフで使うパラメータ定義の一覧（Unity の Parameters タブ相当）。
+    // このグラフで使うパラメータの定義（Unity の Parameters タブ相当）
     std::vector<AnimParamDef> parameters;
 };
 
-// -----------------------------------------------------------------
-// AnimState の特殊メンバ（AnimStateGraph が完全型になったここで定義する）。
-//   unique_ptr<AnimStateGraph> の複製/破棄には完全型が要るため out-of-line。
-//   コピーは subGraph を「新しい実体」として複製するディープコピー。
-//   （葉ステートは subGraph==nullptr なので複製コストはゼロ）
-// -----------------------------------------------------------------
+// AnimState の特殊メンバ。unique_ptr<AnimStateGraph> の複製・破棄には完全型が要るので、
+// AnimStateGraph を定義したここで定義する。コピーは subGraph を新しい実体として複製する
+// （葉ステートは subGraph==nullptr なので複製しない）
 inline AnimState::AnimState()                                 = default;
 inline AnimState::~AnimState()                                = default;
 inline AnimState::AnimState(AnimState &&) noexcept            = default;
 inline AnimState &AnimState::operator=(AnimState &&) noexcept = default;
 
 inline AnimState::AnimState(const AnimState &o)
-    : stateHash(o.stateHash), sequenceName(o.sequenceName), sequenceFilePath(o.sequenceFilePath), isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), speedCurveName(o.speedCurveName), rootMotionCurveName(o.rootMotionCurveName), applyRootMotion(o.applyRootMotion), lockVerticalRootMotion(o.lockVerticalRootMotion), groupId(o.groupId), nodePosX(o.nodePosX), nodePosY(o.nodePosY), speedCurve(o.speedCurve) // 束縛ポインタは共有資源なので浅コピーでよい
-      ,
-      rootMotionCurve(o.rootMotionCurve), sequence(o.sequence), transitions(o.transitions), isSubMachine(o.isSubMachine), subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
+    : stateHash(o.stateHash), sequenceName(o.sequenceName), sequenceFilePath(o.sequenceFilePath),
+      isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), speedCurveName(o.speedCurveName),
+      rootMotionCurveName(o.rootMotionCurveName), applyRootMotion(o.applyRootMotion),
+      lockVerticalRootMotion(o.lockVerticalRootMotion), groupId(o.groupId),
+      nodePosX(o.nodePosX), nodePosY(o.nodePosY),
+      // 束縛済みのポインタは共有リソースなので浅いコピーでよい
+      speedCurve(o.speedCurve), rootMotionCurve(o.rootMotionCurve), sequence(o.sequence),
+      transitions(o.transitions), isSubMachine(o.isSubMachine),
+      subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
 {
 }
 
@@ -203,13 +207,13 @@ inline AnimState &AnimState::operator=(const AnimState &o)
     return *this;
 }
 
-// =================================================================
-// nlohmann/json 変換
-// =================================================================
+// ===========================================================================
+// nlohmann::json 変換
+//   読込は、後から追加したキーが無い古いファイルでも読めるよう既定値で補う。
+// ===========================================================================
 using json = nlohmann::json;
 
-// 階層（再帰）シリアライズの相互参照解決：AnimState⇄AnimStateGraph の
-//   to_json/from_json が互いを呼ぶため、AnimStateGraph 側を前方宣言しておく。
+// AnimState と AnimStateGraph の変換関数は互いを呼ぶので、AnimStateGraph 側を先に宣言する
 inline void to_json(json &j, const AnimStateGraph &g);
 inline void from_json(const json &j, AnimStateGraph &g);
 
@@ -281,11 +285,8 @@ inline void from_json(const json &j, AnimTransition &t)
     else
         t.logicType = AnimTransitionLogic::AND;
 
-    // 文字列からの移行対応：もし古いrequiredWindowがあれば無視し、Maskを読む
     t.requiredCancelMask = j.value("requiredCancelMask", 0u);
-
-    // 軽量サブステートマシン用（未指定の旧データは 0＝従来のどこからでも）。
-    t.sourceGroupId = j.value("sourceGroupId", 0u);
+    t.sourceGroupId      = j.value("sourceGroupId", 0u);
 
     j.at("conditions").get_to(t.conditions);
 }
@@ -309,7 +310,7 @@ inline void to_json(json &j, const AnimState &s)
         {"isSubMachine", s.isSubMachine},
         {"transitions", s.transitions}};
 
-    // サブマシンのときだけ子グラフを再帰的に書き出す（葉ステートには出さない）。
+    // サブマシンのときだけ子グラフを再帰的に書き出す
     if (s.isSubMachine && s.subGraph)
         j["subGraph"] = *s.subGraph;
 }
@@ -331,14 +332,14 @@ inline void from_json(const json &j, AnimState &s)
         j.at("applyRootMotion").get_to(s.applyRootMotion);
     if (j.contains("lockVerticalRootMotion"))
         j.at("lockVerticalRootMotion").get_to(s.lockVerticalRootMotion);
-    s.groupId = j.value("groupId", 0u); // 軽量サブステートマシン用（旧データは 0＝無所属）
+    s.groupId = j.value("groupId", 0u);
     if (j.contains("nodePosX"))
         j.at("nodePosX").get_to(s.nodePosX);
     if (j.contains("nodePosY"))
         j.at("nodePosY").get_to(s.nodePosY);
     j.at("transitions").get_to(s.transitions);
 
-    // 階層ステートマシン：サブマシンなら子グラフを再帰読込（旧データは false＝葉）。
+    // サブマシンなら子グラフを再帰的に読み込む
     s.isSubMachine = j.value("isSubMachine", false);
     if (s.isSubMachine && j.contains("subGraph"))
     {
@@ -382,8 +383,12 @@ inline void from_json(const json &j, AnimStateGraph &g)
     j.at("states").get_to(g.states);
 }
 
-// 階層のどの深さにある stateHash でも再帰的に探す（葉/サブマシン問わず）。
-//   ※ stateHash は名前ハッシュのため、階層をまたいで一意である前提（同名衝突は避ける）。
+// ===========================================================================
+// 検索・コンポーネント
+// ===========================================================================
+
+// どの階層にあるステートでも再帰的に探す（葉・サブマシンを問わない）。
+//   stateHash は名前のハッシュなので、階層をまたいでも同名のステートを作らないこと
 inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t hash)
 {
     for (const auto &s : g.states)
@@ -396,17 +401,18 @@ inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t has
     return nullptr;
 }
 
+// Entity ごとのステートマシンの状態
 struct AnimStateMachineComponent
 {
-    std::string    graphPath;
-    AnimStateGraph internalGraph;
+    std::string    graphPath;     // グラフファイルのパス（保存対象）
+    AnimStateGraph internalGraph; // 読み込んだグラフ（Entity ごとに持つ）
 
-    // 実際に再生中の「葉」ステートの hash（= activePath の末尾）。
-    // 他システム(RootMotion/エディタ表示)はこれを「今のステート」として読む。
+    // 再生中の葉ステートの hash（activePath の末尾）。
+    //   他の System（RootMotion・エディタ表示）はこれを今のステートとして読む
     uint32_t currentStateHash = 0;
 
-    // 階層ステートマシンの現在地パス [root側..., 葉]。
-    // 例: [Combat, Attack_1] = トップで Combat(サブマシン)、その中で Attack_1(葉)。
-    // AnimControllerSystem が外→内に評価し毎フレーム維持する。空なら entry から再構築。
+    // 階層ステートマシンの現在地 [ルート側..., 葉]。
+    //   例: [Combat, Attack_1] はトップで Combat（サブマシン）、その中で Attack_1（葉）。
+    //   AnimControllerSystem が毎ステップ維持する。空なら entry から作り直す
     std::vector<uint32_t> activePath;
 };

@@ -1,10 +1,9 @@
-// --- AudioCleanupSystem.cpp ---
 #include "AudioCleanupSystem.h"
 #include "Engine/Audio/IAudioAPI.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Transform/Systems/HierarchyCleanupSystem.h" // 「誰が消えるか」の唯一の定義元
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h" // 「誰が消えるか」の判定
 
 #include <memory>
 #include <vector>
@@ -17,39 +16,36 @@ void AudioCleanupSystem::Update(float /*dt*/)
     ExecuteCleanup(*m_world);
 }
 
-// 消えるEntityの AudioEmitter を狙い撃ち、鳴っている音を止める。
-// JoltCleanupSystem::ExecuteCleanup と同じ方式（破棄確定の前に確実に後始末する）。
 void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     if (!world.HasResource<std::shared_ptr<IAudioAPI>>()) return;
     auto &api = world.GetResource<std::shared_ptr<IAudioAPI>>();
     if (!api) return;
 
-    // DestroyTag で絞り込んではいけない。DestroyTag は「削除の起点」にしか付かず、
-    //   子孫は HierarchyCleanupSystem が直接破棄するため、チャンクを DestroyTag で
-    //   絞ると子Entityの鳴っている音を取りこぼす（実体が消えた後も鳴り続ける）。
-    //   「誰が消えるか」の判定は HierarchyCleanupSystem に一本化する。
+    // DestroyTag で絞り込んではいけない。DestroyTag は削除の起点にしか付かず、
+    //   子孫は HierarchyCleanupSystem が直接破棄するため、DestroyTag で絞ると
+    //   子 Entity の音を止め損ねる（Entity が消えた後も鳴り続ける）
     std::vector<EntityID> doomed;
     doomed.reserve(64);
     HierarchyCleanupSystem::CollectDoomedEntities(world, doomed);
 
     for (EntityID id : doomed)
     {
-        // 破棄済みの席なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
+        // 破棄済みの ID なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
         auto *e = world.GetComponent<AudioEmitterComponent>(id);
         if (!e) continue;
 
         if (e->playingId != 0)
         {
-            // フェードアウトは待たず即停止（実体がもう消えるため）。
+            // Entity がもう消えるので、最後まで鳴らさず即停止する
             api->StopEvent(e->playingId, /*allowFadeOut*/ false);
         }
-        // 二重処理防止のため実行時状態を無効化しておく。
+        // 二重に止めないよう実行時の状態を無効化しておく
         e->playingId  = 0;
         e->isPlaying  = false;
         e->activeHash = 0;
     }
 }
 
-// 通常のゲーム内破棄（RequestDestroy → DestroyTag）を毎フレーム回収する。
+// ゲーム中の通常の破棄（RequestDestroy → DestroyTag）は毎ステップここで拾う
 REGISTER_LOGIC_SYSTEM(AudioCleanupSystem, Priority::LogicStage::L07_Cleanup);

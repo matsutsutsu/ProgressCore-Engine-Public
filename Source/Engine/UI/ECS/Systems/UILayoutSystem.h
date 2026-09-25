@@ -1,23 +1,19 @@
 #pragma once
-// すべての UITransformComponent の矩形を画面ピクセルへ確定させるシステム。
+// ===========================================================================
+// 概要: 全ての UITransformComponent の矩形を画面上のピクセルに確定させる System（R10_UI）。
 //
-// 役割:
-//   - アンカー/ピボット/親子/Canvas を解決し、computedPos/computedSize を書き込む（解像度非依存）。
-//   - 「UIの座標を決める場所」はここ1箇所だけ。収集System(画像/文字/ゲージ)も入力判定も、
-//     自分で計算せずこの結果を読む。
+// 責務:
+//   - anchor / pivot / 親子 / Canvas を解決し、computedPos / computedSize を書き込む
+//   - UI 描画リスト（UIDrawList）のリソースを用意する
 //
-// なぜ収集(描画リスト構築)と分けたか:
-//   以前はこのSystemが「画像の矩形計算＋画像の収集」を兼ねており、文字・ゲージ・入力判定の
-//   各Systemがそれぞれ同じ計算をやり直していた（同じ処理が4箇所）。計算の置き場が散ると、
-//   直したつもりが1箇所だけ古いままになる。矩形はここで全部決め、他は読むだけにする。
-//
-// 対象:
-//   UITransformComponent だけを宣言している＝UIImage も UIText も持たない「入れ物」
-//   （Canvas や、まとめて動かすためのグループノード）も漏れなく確定される。
-//
-// 位置付け:
-//   - RenderStage::R10_UI。アニメ・出現演出が UITransform を動かし終えた後に走る。
-//   - 収集は次の帯(R10b_UICollect)。ステージが違うので前後は自動的に保証される。
+// 備考:
+//   - UI の座標を決めるのはここだけ。収集 System（画像・文字・ゲージ）も入力判定も、
+//     自分で計算せずこの結果を読む。計算を各所に持つと、直したときに 1 か所だけ古いまま残るため。
+//   - UITransformComponent だけを条件にしているので、画像も文字も持たない入れ物
+//     （Canvas や、まとめて動かすためのグループ）の矩形も確定する。
+//   - アニメ・出現演出が UITransform を動かし終えた後に走る。
+//     収集は次の帯（R10b_UICollect）なので、前後はステージの順で保証される。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 
@@ -32,8 +28,7 @@ public:
 
     void Initialize() override;
 
-    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    // アニメ・出現演出が UITransform を動かし終えてから画面ピクセルへ確定させる。
+    // アニメ・出現演出が UITransform を動かし終えてから矩形を確定させる
     std::vector<const char *> GetRunAfter() const override
     {
         return {"UIAnimationSystem", "UIAppearSystem"};

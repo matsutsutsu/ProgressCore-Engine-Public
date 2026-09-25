@@ -1,33 +1,32 @@
 #pragma once
+// ===========================================================================
+// 概要: 骨格ポーズの後処理の共通関数。
+//
+// 責務:
+//   - ルートボーンを基準姿勢へ固定する（Force Root Lock）
+//
+// 備考: 実行時（AnimationPoseSystem）とエディタのプレビュー（AnimationSystem::UpdateManual）の
+//       両方から使うのでヘッダに置いている。
+// ===========================================================================
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include <vector>
 
-// ===================================================================================
-// ファイル: AnimPoseUtils.h
-// 概要: 骨格ポーズの後処理のうち、実行時(AnimationPoseSystem)とエディタプレビュー
-//       (AnimationSystem::UpdateManual)の両方から使う共通ヘルパー。
-//
-// 呼び出し元が2つの .cpp にまたがるのでヘッダへ出してある。どちらかの .cpp の
-// 匿名 namespace へ戻すと、もう一方に同じ実装が要る。
-// ===================================================================================
-
 namespace CCL::Anim
 {
-    // ルートボーンのXZ（と条件付きでY）を基準姿勢へピン留めする共通ヘルパー。
-    //
-    // XZは常に「対象クリップ自身の0秒目」を基準にする（前進量を殺す目的なので
-    // クリップごとの基準で正しい）。Yは lockVertical が true のときだけ、
-    // ModelResource のバインドポーズ（実行中不変の基準姿勢）を基準にする。
-    // クリップ自身の0秒目のYを基準にすると、そこが既に膝を曲げた姿勢の場合
-    // アニメ全体がその分浮く/沈む不具合になるため（過去に実際に発生した不具合）。
+    /**
+     * @brief ルートボーンの XZ（lockVertical なら Y も）を基準姿勢へ固定する。
+     * @note XZ はクリップ自身の 0 秒目を基準にする（前進量を消すのが目的なので、クリップごとの基準でよい）。
+     *       Y は ModelResource のバインドポーズを基準にする。クリップの 0 秒目の Y を基準にすると、
+     *       その姿勢が膝を曲げている場合にアニメ全体がその分浮く・沈むため。
+     */
     inline void PinRootMotionNode(Model *model, int animIndex, int rootNodeIndex,
                                   std::vector<Model::NodePose> &poseBuffer, bool lockVertical)
     {
         if (!model || rootNodeIndex < 0 || rootNodeIndex >= (int)poseBuffer.size())
             return;
 
-        // 0秒ポーズ（前進量を殺すためのXZ基準）はクリップ不変。キャッシュから取得して毎フレーム再計算を避ける。
+        // 0 秒目のポーズはクリップごとに変わらないので、キャッシュから取得する
         const Model::NodePose &initPose      = model->GetPinnedPoseAtZero(animIndex, rootNodeIndex);
         poseBuffer[rootNodeIndex].position.x = initPose.position.x;
         poseBuffer[rootNodeIndex].position.z = initPose.position.z;

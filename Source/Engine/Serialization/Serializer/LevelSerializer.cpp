@@ -1,7 +1,3 @@
-// =====================================================================
-// LevelSerializer.cpp
-//   案B(2ファイル): ステージはベイク、プレハブは参照で保存/復元する。
-// =====================================================================
 #include "LevelSerializer.h"
 
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
@@ -27,13 +23,13 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
 {
     if (!world) return false;
 
-    // 半死のエンティティを混ぜないよう、保留操作を確定させてから撮影する。
+    // 生成・破棄の予約を確定させてから保存する（途中の状態の Entity を混ぜないため）
     world->ScrutinyAndApply();
 
     // level ファイルの隣に <stem>.scene.json を書く。
     fs::path    lp(levelPath);
     std::string stem = lp.stem().string();
-    // "Foo.level.json" のように二重拡張子なら ".level" を剥がす。
+    // "Foo.level.json" のような二重拡張子なら ".level" を外す
     const std::string levelSuffix = ".level";
     if (stem.size() > levelSuffix.size() &&
         stem.compare(stem.size() - levelSuffix.size(), levelSuffix.size(), levelSuffix) == 0)
@@ -44,11 +40,10 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
     const std::string sceneRel  = stem + ".scene.json";
     const fs::path    scenePath = lp.parent_path() / sceneRel;
 
-    // 出力先を正規化する。ダイアログが拡張子なし/`.json`を返しても、必ず
-    //    `<stem>.level.json` と `<stem>.scene.json` のペアで書き出す。
+    // ダイアログが拡張子なしや .json を返しても、必ず <stem>.level.json と <stem>.scene.json の組で書く
     const fs::path levelOut = lp.parent_path() / (stem + ".level.json");
 
-    // ---- 1) ステージをベイク保存(プレハブ実体は SceneSerializer 側で自動除外) ----
+    // 1. ステージを保存する（プレハブの Entity は SceneSerializer が除外する）
     if (!SceneSerializer::Serialize(world, scenePath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Core,
@@ -56,7 +51,7 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
         return false;
     }
 
-    // ---- 2) プレハブ実体(参照配置)を収集 ----
+    // 2. プレハブの配置を集める
     nlohmann::json instances   = nlohmann::json::array();
     int            placedCount = 0;
 
@@ -75,7 +70,7 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
         {
             if (chunk->IsEntityDestroyed(i)) continue;
             const std::string &path = insts[i].prefabPath;
-            if (path.empty()) continue; // ルートのみ(子は空パス)を対象
+            if (path.empty()) continue; // パスを持つのはプレハブのルートだけ
 
             nlohmann::json e;
             e["prefab"] = path;
@@ -90,11 +85,11 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
         }
     }
 
-    // ---- 3) レベルファイル書き出し ----
+    // 3. level ファイルを書く
     nlohmann::json root;
     root["type"]      = "level";
     root["version"]   = 1;
-    root["scene"]     = sceneRel; // level ファイルからの相対名
+    root["scene"]     = sceneRel; // level ファイルからの相対パス
     root["instances"] = std::move(instances);
 
     if (!FileSystem::WriteAllText(levelOut.string(), root.dump(4)))
@@ -144,10 +139,10 @@ bool LevelSerializer::LoadLevel(World *world, const std::string &levelPath)
     fs::path       lp(levelPath);
     const fs::path scenePath = lp.parent_path() / sceneRel;
 
-    // ---- 1) ステージをロード(既存ワールドを全消去して差し替え) ----
+    // 1. ステージを読み込む（World を全て消して差し替える）
     SceneManager::Instance().LoadScene(world, scenePath.string());
 
-    // ---- 2) プレハブ実体を再生成 ----
+    // 2. プレハブを生成し直す
     int spawned = 0;
     if (root.contains("instances") && root["instances"].is_array())
     {
@@ -180,7 +175,7 @@ bool LevelSerializer::LoadLevel(World *world, const std::string &levelPath)
                 CCL_LOG_WARN(LogCategory::Core, "[Level] プレハブ生成に失敗: %s", prefab.c_str());
                 continue;
             }
-            // スケール適用 + 参照マーカー再付与(次回のレベル保存で往復できるように)
+            // スケールを適用し、次にレベルを保存するときも参照で保存されるよう PrefabInstanceComponent を付ける
             world->PatchComponent<TransformComponent>(rootId, [scl](TransformComponent &t) { t.scale = scl; });
             world->AddComponent<PrefabInstanceComponent>(rootId, PrefabInstanceComponent{prefab});
             ++spawned;

@@ -9,30 +9,17 @@
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
-// ===================================================================================
-// 【 ナビゲーション (操舵) : NavSteeringSystem 】
-//
-// [ 役割 ]
-// 計算された道筋（Waypoints）を辿り、物理エンジンへ渡すための移動ベクトルを作る「操舵手」。
-//
-// [ 実行順序 ]
-// L02_AI_Act (230) : 経路が確定し、速度指示が出た後に、具体的な移動ベクトルを算出する。
-//
-// [ ECSデータパイプライン ]
-// WRITE : TransformComponent (現在地)
-// WRITE : NavAgentComponent  (waypoints, currentDesiredSpeed)
-// WRITE : CharacterMovementComponent (物理エンジンへの入力速度)
-// WRITE : NavAgentComponent  (currentWaypointIndex の更新)
-// ===================================================================================
-
+// 読み書きするデータ:
+//   WRITE : TransformComponent（向き。位置は物理が動かす）
+//   WRITE : NavAgentComponent（currentWaypointIndex の更新）
+//   WRITE : CharacterMovementComponent（物理へ渡す移動速度）
 void NavSteeringSystem::Update(float dt)
 {
-
     ForEachWithID([&](EntityID                    entity,
                       TransformComponent         &transform,
                       NavAgentComponent          &navAgent,
                       CharacterMovementComponent &movement) {
-        // 1. パスがない、または到着済みの場合は停止命令を出す
+        // 1. 経路が無い、または最後まで着いたなら止める
         if (navAgent.waypoints.empty() || navAgent.currentWaypointIndex >= navAgent.waypoints.size())
         {
             movement.desiredVelocity = Vector3::Zero;
@@ -42,43 +29,40 @@ void NavSteeringSystem::Update(float dt)
         Vector3 currentPos = transform.position;
         Vector3 targetPos  = navAgent.waypoints[navAgent.currentWaypointIndex];
 
-        // 2. 水平方向へのベクトル計算（ガタつき防止の鉄則）
+        // 2. 今の waypoint への方向。高さの差で斜めに進もうとしないよう、水平成分だけにする
         Vector3 dirToTarget = targetPos - currentPos;
         dirToTarget.y       = 0.0f;
 
         float distToTarget = dirToTarget.Length();
 
-        // 到着判定は PathfindingSystem 側でやるのが理想ですが、一旦ここで処理
+        // waypoint に着いたかの判定もここで行う
         if (distToTarget <= navAgent.stopDistance)
         {
             // 次の目印へターゲットを切り替える
             navAgent.currentWaypointIndex++;
 
-            // 切り替えた直後なので、このフレームはいったん処理を終え、
-            // 次のフレームで新しい目標に向かって計算を再開させる
+            // このステップは速度を更新せず、次のステップで新しい目標に向かって計算する
             return;
         }
 
-        // 3. AI（外部）が指定した速度を取得
+        // 3. 速度は AI が NavAgentComponent に書いた値を使う
         float speed = navAgent.currentDesiredSpeed;
 
-        // 4. キャラクターコントローラーへの「最終入力ベクトル」を生成
+        // 4. 物理（キャラクターコントローラー）へ渡す速度を作る
         if (distToTarget > 0.001f && speed > 0.0f)
         {
             dirToTarget.Normalize();
             movement.desiredVelocity = dirToTarget * speed;
-            //movement.desiredLookDir = dirToTarget;
 
-            // AIの視線を滑らかに回転させる (Y軸回転)
-            // atan2f を使って、XとZのベクトルから「向くべき角度(Yaw)」を計算
+            // 進行方向へ滑らかに向きを変える（Y 軸回転）。
+            // atan2f で X と Z から向くべき角度（ヨー）を求める
             float      targetYaw = atan2f(dirToTarget.x, dirToTarget.z);
             Quaternion targetRot = Quaternion::CreateFromAxisAngle(Vector3::UnitY, targetYaw);
 
-            // フレーム落ちした際に係数が1.0を超えて逆回転するのを防ぐ
+            // dt が大きいと係数が 1.0 を超えて行き過ぎるので、1.0 で止める
             float slerpAmount  = (std::min)(10.0f * dt, 1.0f);
             transform.rotation = Quaternion::Slerp(transform.rotation, targetRot, slerpAmount);
         }
-
         else
         {
             movement.desiredVelocity = Vector3::Zero;
@@ -86,4 +70,6 @@ void NavSteeringSystem::Update(float dt)
     });
 }
 
-//REGISTER_LOGIC_SYSTEM(NavSteeringSystem, Priority::LogicStage::L02_AI_Act)
+// TODO(2026-07-11): 移動方針（Nav）を実装するときに REGISTER_LOGIC_SYSTEM で登録し直す。
+//   以前の登録先ステージ（L02_AI_Act）は廃止済み。NavPathfindingSystem の後、
+//   物理（L04）より前のステージに置くこと

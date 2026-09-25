@@ -45,11 +45,9 @@ void BaseScene::Initialize()
     float         screenWidth  = gfx.GetScreenWidth();
     float         screenHeight = gfx.GetScreenHeight();
 
-    // =========================================================
-    // カメラ初期設定
-    //   Graphics が m_mainCamera を所有。BaseScene はここで初期値を書き込み、
-    //   以降は CameraBrainSystem に全て任せる。
-    // =========================================================
+    // カメラの初期設定。
+    //   カメラは Graphics が所有する。BaseScene はここで初期値を書くだけで、
+    //   以降は CameraBrainSystem に任せる
     Camera *cam = gfx.GetMainCamera();
     cam->SetPerspectiveFov(
         DirectX::XMConvertToRadians(45.0f),
@@ -57,33 +55,32 @@ void BaseScene::Initialize()
         0.1f, 1000.0f);
     cam->SetLookAt({0.0f, 10.0f, -10.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-    // ECSコンテキストの生成
-    // フレーム並列用の共有ジョブプール（EngineServices所有）を注入する。
-    // これで各Worldが自前のプールを持たず、アプリ全体で1プールを共有する。
+    // ECSContext を生成する。
+    // フレーム並列用の共有ジョブプール（EngineServices 所有）を注入し、
+    // 各 World が自前のプールを持たず、アプリ全体で1つのプールを共有する
     {
         ZoneScopedN("BaseScene: ECSContext create");
         m_ecsContext = std::make_unique<CCL::ECS::ECSContext>(
             EngineServices::Instance().jobSystem.get());
     }
-    m_worldPtr = m_ecsContext->GetWorld(); // 互換性用
+    m_worldPtr = m_ecsContext->GetWorld();
 
-    // リソース登録
+    // 各 System が World から引けるよう、共通のサービスをリソースとして登録する
     m_worldPtr->AddResource<Input *>(&Input::Instance());
 
-    //  RenderInterpState は、RenderInterpSystem が参照するためにリソースとして登録する。
+    // Framework が毎フレーム alpha を書き、TransformInterpolationSystem が読む
     m_worldPtr->AddResource<RenderInterpState>();
 
     auto &services = EngineServices::Instance();
 
-    // 1. InputとAudioは、そのままResourceに登録
+    // 1. 入力と音はそのまま登録する
     m_worldPtr->AddResource<std::shared_ptr<IInputAPI>>(services.inputFacade);
     m_worldPtr->AddResource<std::shared_ptr<IAudioAPI>>(services.audioManager);
 
-    // 2. Physics (Jolt)
-    // JoltPhysicsManager 本体はEngineServicesのものを使う
+    // 2. 物理（Jolt）。JoltPhysicsManager 本体は EngineServices のものを共有する
     m_worldPtr->AddResource<JoltPhysicsManager *>(services.physicsManager.get());
 
-    // 箱の型として「IPhysicsAPIのshared_ptr」を明示し、中身として「Joltのshared_ptr」を渡す
+    // ゲーム側は IPhysicsAPI として引くので、リソースの型は IPhysicsAPI の shared_ptr にする
     auto myFacade = std::make_shared<JoltPhysicsFacade>(m_worldPtr);
     m_worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
 
@@ -98,16 +95,13 @@ void BaseScene::Initialize()
     m_worldPtr->AddResource<PrimitiveRenderer *>(gfx.GetPrimitiveRenderer());
     m_worldPtr->AddResource<ShapeRenderer *>(gfx.GetShapeRenderer());
 
-    // SystemManager のポインタをリソースとして登録
-    //m_worldPtr->AddResource<CCL::ECS::SystemManager *>(m_ecsContext->GetSystemManager());
-
     m_worldPtr->AddResource<TimeContext>();
 
-    // ゲーム画面(RT)の表示矩形。エディタ(GameViewWindow)が毎フレーム書き込み、UIInputSystem が
-    // マウス座標をUI空間へ写像するのに使う。Shipping/全画面では valid=false のまま（恒等写像）。
+    // ゲーム画面（RT）の表示矩形。エディタ（GameViewWindow）が毎フレーム書き込み、UIInputSystem が
+    // マウス座標を UI 空間へ写像するのに使う。Shipping/全画面では valid=false のまま（変換なし）
     m_worldPtr->AddResource<GameViewportInfo>();
 
-    // システム登録 (派生クラスの処理が走る)。全システムのインスタンス生成・登録がここで走る。
+    // 派生クラスの System 登録。リソースを全て登録した後に呼ぶ（System の Initialize がリソースを読むため）
     {
         ZoneScopedN("BaseScene: RegisterSystems");
         RegisterSystems();
@@ -118,11 +112,11 @@ void BaseScene::Start() {}
 
 void BaseScene::Finalize()
 {
-    // C++シーンそのものが消滅する前に、物理空間を安全に掃除する
+    // シーンが消える前に、共有の物理空間・オーディオを掃除する
     if (m_worldPtr)
     {
-        // 全エンティティに破壊予約をつける
-        // (ここでは PersistentTag も関係なく全て破壊してよい。世界が終わるため)
+        // 全 Entity に破棄の印を付ける
+        // （World ごと消えるので、ここでは PersistentTag も関係なく全て破棄してよい）
         auto &chunks = m_worldPtr->GetChunkManager().GetChunks();
         for (auto &chunkPtr : chunks)
         {
@@ -140,16 +134,15 @@ void BaseScene::Finalize()
 
         // DestroyTag を「今すぐ」適用する。AddComponent<DestroyTag> は遅延(pendingOps)なので、
         //   これを挟まないと下の JoltCleanup が「DestroyTag付きチャンク」を1つも見つけられず、
-        //   共有 Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる原因）。
+        //   共有の Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる）。
         m_worldPtr->ScrutinyAndApply();
 
-        // Jolt剛体の即時消去
         JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
         // 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する。
         //   このシーンの World はこの直後に完全破棄されるので、per-emitter の StopEvent
-        //   （DestroyTagが正しく付き playingId が正確、という前提に依存＝取りこぼしやすい）
-        //   ではなく、前提ゼロの StopAll で確実に止める。再戦時にBGMが二重に鳴る不具合の根治。
+        //   （DestroyTag が正しく付き playingId が正確、という前提に依存＝取りこぼしやすい）
+        //   ではなく、前提の要らない StopAll で確実に止める（再戦時に BGM が二重に鳴るのを防ぐ）。
         if (m_worldPtr->HasResource<std::shared_ptr<IAudioAPI>>())
         {
             if (auto &audio = m_worldPtr->GetResource<std::shared_ptr<IAudioAPI>>())
@@ -158,12 +151,12 @@ void BaseScene::Finalize()
 
         HierarchyCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
-        // ゴミ箱を空にする
+        // 積んだ破棄予約を確定させる
         m_worldPtr->ScrutinyAndApply();
     }
 
-    // この直後、SceneManager側のClear()によって m_ecsContext が破棄され、
-    // Worldもシステムも完全にメモリから解放されます。
+    // この直後、SceneManager::Clear() がシーンを delete し、m_ecsContext ごと
+    // World も System も解放される
 }
 
 void BaseScene::Update(float elapsedTime)
@@ -173,21 +166,20 @@ void BaseScene::Update(float elapsedTime)
     {
         ZoneScopedN("BaseScene: RenderQueue/DebugRegistry BeginFrame");
         RenderQueue::Instance().BeginFrame();
-        RenderDebugRegistry::Instance().BeginFrame(); // デバッグテクスチャ一覧もフレーム先頭でクリア
+        RenderDebugRegistry::Instance().BeginFrame(); // デバッグ用テクスチャの一覧もフレーム先頭でクリアする
         Graphics::Instance().GetParticleRenderer()->BeginFrame();
     }
 
     {
         ZoneScopedN("BaseScene: Graphics::Update");
-        // カメラ行列・CbScene の更新と CbLight のバインドを行う。
-        // lightManager->Bind は Graphics::Update 内で実行される。
+        // カメラ行列・CbScene の更新と CbLight のバインドを行う
         Graphics::Instance().Update();
     }
 
     if (m_ecsContext)
     {
-        // ポーズ中は UpdatePaused（構造変更の適用＋描画のみ）に切替える。
-        // これによりポーズ中でもオーバーレイの生成/破棄が反映され、UIも描ける。
+        // ポーズ中は UpdatePaused（構造変更の適用 + 描画のみ）に切り替える。
+        // ポーズ中でもオーバーレイの生成/破棄が反映され、UI も描ける
         const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>() && m_worldPtr->GetResource<GameFlowState>().paused;
         if (paused)
             m_ecsContext->UpdatePaused(elapsedTime);
@@ -204,7 +196,7 @@ void BaseScene::FixedUpdate(float fixedTime)
     const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>() && m_worldPtr->GetResource<GameFlowState>().paused;
     if (paused) return;
 
-    // ECSコンテキストに更新を委譲（これだけで全てが正しい順序で回る）
+    // System の実行順は ECSContext / SystemManager が決める
     if (m_ecsContext)
     {
         m_ecsContext->UpdateLogic(fixedTime);
@@ -213,12 +205,12 @@ void BaseScene::FixedUpdate(float fixedTime)
 
 void BaseScene::Render()
 {
-    ZoneScopedN("BaseScene::Render Pipeline"); // シーン描画全体
+    ZoneScopedN("BaseScene::Render Pipeline");
 
     auto &gfx = Graphics::Instance();
     auto *dc  = gfx.GetDeviceContext();
 
-    // EnvironmentSystem: フォグ / IBL / ノイズのバインド + CbScene のバインド
+    // EnvironmentSystem がフォグ / IBL / ノイズと CbScene をバインドする。
     // CbScene の中身は触らない（Graphics::Update() が書き込み済み）
     if (m_ecsContext && m_ecsContext->GetSystemManager())
     {
@@ -229,28 +221,28 @@ void BaseScene::Render()
         }
     }
 
-    // MakeFrameContext でフレームコンテキストを構築し、パイプラインを一括実行する。
+    // 描画先を決めてフレームコンテキストを作り、描画パイプラインを一括実行する
 #ifdef ENABLE_EDITOR
     auto ctx = gfx.MakeFrameContext(gfx.GetGameRTV());
 #else
     auto ctx = gfx.MakeFrameContext(gfx.GetBackBufferRTV());
 #endif
 
-    gfx.Render(ctx); // ← Graphics が直接パイプラインを回す
+    gfx.Render(ctx);
 
     // 2D UI
     {
         ZoneScopedN("UI Render");
 
-        // UI専用のα合成：色はストレートα合成のまま、RTのアルファは書き換えない。
-        // これで不透明シーンのα=1が保たれ、テキスト透明部分にαの穴が開かず、
-        // エディタ GameView(ImGui::Image) で「黒い枠」が出なくなる。
+        // UI 専用のα合成: 色はストレートα合成のまま、RT のアルファは書き換えない。
+        // 不透明シーンの α=1 が保たれ、文字の透明部分に α の穴が開かないので、
+        // エディタの GameView（ImGui::Image）で「黒い枠」が出ない
         dc->OMSetBlendState(
             gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
         dc->OMSetDepthStencilState(
             gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
-        // ECSネイティブUI: UILayoutSystem(UpdateRender)が構築した UIDrawList を描く。
+        // ECS の UI: 各 UI 収集 System（R10b）が積んだ UIDrawList を描く
         if (m_worldPtr && m_worldPtr->HasResource<UIDrawList>())
             m_uiRenderer.Flush(dc, gfx.GetDevice(), m_worldPtr->GetResource<UIDrawList>(),
                                gfx.GetRenderState());
@@ -264,40 +256,22 @@ void BaseScene::Render()
 
 void BaseScene::DrawGUI()
 {
-    // 拡張ポイント: ImGui描画
     OnDrawImGui();
 }
 
-// ============================================================
-//  OnDeviceRecreated（デバイスロスト復帰後）
-// ============================================================
-/**
- * @brief GPU デバイス復帰後に Framework から呼ばれるデフォルト実装。
- *
- * @details
- *  Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
- *  D3D パイプライン・シェーダー・PostProcessManager はすべて再構築済みの状態でここに来る。
- *
- *  この実装では ECS ワールドを作り直して Initialize → Start を再呼び出しする。
- *  これにより ResourceManager にロードし直された新しいリソースで正常動作する。
- *
- *   ゲームの進行状態（エンティティ位置・HP など）はリセットされる。
- *  状態を保持したい場合は派生クラスでオーバーライドし、
- *  セーブデータから復元するなどの処理を追加してください。
- */
+// Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
+// D3D パイプライン・シェーダー・PostProcessManager は全て作り直された状態でここに来る。
+// World を作り直して Initialize → Start を呼び直すことで、ResourceManager に
+// ロードし直された新しいリソースを使うようにする（ゲームの進行状態はリセットされる）
 void BaseScene::OnDeviceRecreated()
 {
     CCL_LOG_INFO(LogCategory::Core, "[BaseScene] OnDeviceRecreated: Device lost recovered. Reinitializing scene...\n");
 
-    // --- 旧 ECS ワールドを安全に破棄 ---
-    // m_ecsContext がリセットされると、内部のすべてのエンティティ・コンポーネント・
-    // システムが解放される。この時点で旧リソースのハンドルも無効になる。
+    // 古い World を破棄する。全 Entity・コンポーネント・System と、旧リソースへのハンドルが解放される
     m_ecsContext.reset();
     m_worldPtr = nullptr;
 
-    // --- シーンを完全に再初期化 ---
-    // Initialize() でECSインフラを再構築 → RegisterSystems() で全システムを再登録
-    // シーンファイルのロードが必要な場合は派生クラスの Initialize() または Start() で行う
+    // シーンを最初から初期化し直す（シーンファイルのロードは派生クラスの Initialize / Start が行う）
     Initialize();
     Start();
 

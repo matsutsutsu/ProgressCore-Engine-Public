@@ -1,10 +1,15 @@
 #pragma once
-// ボタンの状態別見た目とクリック時アクション。
+// ===========================================================================
+// 概要: ボタンの状態ごとの色と、クリック時のアクション名を持つコンポーネント UIButtonComponent。
 //
-// 設計方針:
-//   - UIInteractableComponent の hover/press/click 状態に応じ、UIButtonSystem が
-//     UIImageComponent.color を状態色へ差し替える（Slice 3 は色遷移。スプライト遷移は後続）。
-//   - clicked 時に onClickAction（文字列）のハッシュを UIButtonClickedEvent で発火。ゲーム側が解釈。
+// 責務:
+//   - 通常 / hover / 押下 / 無効 の色と、hover 時の拡大率を保持する
+//   - クリック時に通知するアクション名を保持する
+//
+// 備考: UIButtonSystem が UIInteractableComponent の状態を見て UIImageComponent.color を差し替え、
+//       クリックされたら onClickAction のハッシュを UIButtonClickedEvent で発行する。
+//       状態ごとの画像の切り替えは未対応（色だけ）。
+// ===========================================================================
 #include <DirectXMath.h>
 #include <string>
 
@@ -15,7 +20,7 @@ struct UIButtonComponent
     DirectX::XMFLOAT4 pressedColor  = {0.15f, 0.18f, 0.26f, 1.0f};
     DirectX::XMFLOAT4 disabledColor = {0.20f, 0.20f, 0.22f, 0.5f};
 
-    float hoverScale = 1.08f; // hover/focus 時の拡大率（UIAnimationComponent があれば追従演出）
+    float hoverScale = 1.08f; // hover/focus 時の拡大率（UIAnimationComponent がある場合だけ効く）
 
-    std::string onClickAction; // クリック時に発火する識別名（空可）。ハッシュ化してイベントで通知。
+    std::string onClickAction; // クリック時に通知するアクション名（空可）。ハッシュにしてイベントで送る
 };

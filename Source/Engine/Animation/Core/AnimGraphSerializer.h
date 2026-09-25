@@ -1,22 +1,23 @@
 #pragma once
+// ===========================================================================
+// 概要: アニメーションのステートグラフ（AnimStateGraph）を JSON ファイルへ保存・読込するクラス。
+//
+// 責務:
+//   - AnimStateGraph と JSON ファイルの相互変換
+//
+// 備考: 読み込んだグラフの sequence / curve ポインタは nullptr のまま。
+//       ResourceManager から実体を引いて束縛するのは呼び出し側
+//       （AnimControllerSystem の BindGraphResources など）。
+// ===========================================================================
 #include "AnimStateMachine.h"
 #include <string>
 
-// AnimSequence の解決は名前引きに留め、ResourceManager への依存はここに持ち込まない。
-// （保存/読込だけを担い、実体の取得は呼び出し側の責務とする）
 class AnimGraphSerializer
 {
 public:
-    // グラフをJSONファイルとして保存する
+    // グラフを JSON ファイルとして保存する。失敗しても既存のファイルは壊さない
     static bool SaveToJSON(const AnimStateGraph &graph, const std::string &filepath);
 
-    // JSONファイルからグラフを読み込む
-    // 引数 availableSequences: ポインタを紐付けるための実体リスト（あるいはResourceManager）
-    static bool LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath, const std::vector<AnimSequence> &availableSequences);
-
-private:
-    // sequence ポインタの束縛をサブマシンの子グラフまで再帰で行う。
-    //   束縛経路が2つあって挙動が違うのを避ける。
-    static void BindSequencesRecursive(
-        AnimStateGraph &graph, const std::vector<AnimSequence> &availableSequences);
+    // JSON ファイルからグラフを読み込む
+    static bool LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath);
 };

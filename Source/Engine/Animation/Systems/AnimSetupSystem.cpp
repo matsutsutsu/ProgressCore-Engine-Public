@@ -1,6 +1,3 @@
-// ===================================================================================
-// ファイル: AnimSetupSystem.cpp
-// ===================================================================================
 #include "AnimSetupSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -8,15 +5,15 @@
 
 using namespace CCL::ECS;
 
-void AnimSetupSystem::Update(float dt)
+void AnimSetupSystem::Update(float /*dt*/)
 {
-    // コンポーネントの追加（アーキタイプの移動）をループ内で行うと
-    // イテレータが破壊されるため、対象となるエンティティIDを一度キャッシュする
+    // コンポーネントの追加（アーキタイプの移動）を走査中に行うとイテレータが壊れるので、
+    // 対象の ID を先に集めてから付ける
     std::vector<EntityID> needsParams;
     std::vector<EntityID> needsStateMachine;
     std::vector<EntityID> needsRootMotion;
 
-    // 1. 足りないコンポーネントを【個別に】調査する
+    // 足りないコンポーネントを個別に調べる
     ForEachWithID([&](EntityID id, const AnimatorComponent &animator) {
         if (!m_world->HasComponent<AnimParametersComponent>(id))
         {
@@ -32,7 +29,7 @@ void AnimSetupSystem::Update(float dt)
         }
     });
 
-    // 2. 足りないものだけを【個別に】付与する（ループ外での安全な構造変更）
+    // 走査が終わってから、足りないものだけを付ける
     for (auto id : needsParams)
     {
         m_world->AddComponent<AnimParametersComponent>(id);
@@ -47,6 +44,5 @@ void AnimSetupSystem::Update(float dt)
     }
 }
 
-// 実行順序：AnimControllerSystem などのアニメーションロジックが走る前に
-// 依存コンポーネントを確定させるため、L02_Update ステージに登録する。
+// 同じステージの AnimControllerSystem は GetRunAfter でこの System の後に走る
 REGISTER_LOGIC_SYSTEM(AnimSetupSystem, Priority::LogicStage::L02_Update);

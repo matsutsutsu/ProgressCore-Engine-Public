@@ -1,8 +1,15 @@
 #pragma once
+// ===========================================================================
+// 概要: XInput のゲームパッド1台分の入力状態と振動を扱うクラス。
+//
+// 責務:
+//   - ボタン（押下中・押した瞬間・離した瞬間）とスティック・トリガーの読み取り
+//   - スティックのデッドゾーン処理と -1..1 / 0..1 への正規化
+//   - 振動の開始と、指定時間後の自動停止
+// ===========================================================================
 
 using GamePadButton = unsigned int;
 
-// ゲームパッド
 class GamePad
 {
 public:
@@ -20,30 +27,26 @@ public:
     static const GamePadButton BTN_RIGHT_THUMB    = (1 << 11);
     static const GamePadButton BTN_LEFT_SHOULDER  = (1 << 12);
     static const GamePadButton BTN_RIGHT_SHOULDER = (1 << 13);
-    static const GamePadButton BTN_LEFT_TRIGGER   = (1 << 14);
+    static const GamePadButton BTN_LEFT_TRIGGER   = (1 << 14); // トリガーを閾値以上引いたらボタン扱い
     static const GamePadButton BTN_RIGHT_TRIGGER  = (1 << 15);
-    static const GamePadButton BTN_SPACE          = (1 << 16);
-    static const GamePadButton BTN_ESC            = (1 << 17);
-    static const GamePadButton BTN_Q              = (1 << 18);
-    static const GamePadButton BTN_E              = (1 << 19);
 
 public:
     GamePad() {}
     ~GamePad() {}
 
-    // 更新
+    // XInput から状態を読み直し、振動の残り時間を dt（秒）だけ進める
     void Update(float dt);
 
-    // スロット設定
+    // 読み取るコントローラーの番号（0〜3）
     void SetSlot(int slot) { this->slot = slot; }
 
-    // ボタン入力状態の取得
+    // 押されているボタンのビット集合
     GamePadButton GetButton() const { return buttonState[0]; }
 
-    // ボタン押下状態の取得
+    // このフレームに押されたボタンのビット集合
     GamePadButton GetButtonDown() const { return buttonDown; }
 
-    // ボタン押上状態の取得
+    // このフレームに離されたボタンのビット集合
     GamePadButton GetButtonUp() const { return buttonUp; }
 
     // 押しっぱなし判定
@@ -64,31 +67,27 @@ public:
         return (buttonUp & button) != 0;
     }
 
-    // 左スティックX軸入力状態の取得
+    // スティックの傾き（-1..1、デッドゾーン内は 0）
     float GetAxisLX() const { return axisLx; }
-
-    // 左スティックY軸入力状態の取得
     float GetAxisLY() const { return axisLy; }
-
-    // 右スティックX軸入力状態の取得
     float GetAxisRX() const { return axisRx; }
-
-    // 右スティックY軸入力状態の取得
     float GetAxisRY() const { return axisRy; }
 
-    // 左トリガー入力状態の取得
+    // トリガーの引き量（0..1）
     float GetTriggerL() const { return triggerL; }
-
-    // 右トリガー入力状態の取得
     float GetTriggerR() const { return triggerR; }
 
-    void ForceBottonUp(GamePadButton btn);
-
-    // ECSシステムから呼ばれる窓口
+    /**
+     * @brief 振動を始める。
+     * @param left 左モーター（低周波）の強さ 0..1
+     * @param right 右モーター（高周波）の強さ 0..1
+     * @param duration 振動を続ける時間（秒）。経過すると Update が止める
+     * @note 振動中に呼ばれた場合、強さか時間のどれかが今の値以上なら上書きする。
+     */
     void SetVibration(float left, float right, float duration);
 
 private:
-    GamePadButton buttonState[2] = {0};
+    GamePadButton buttonState[2] = {0}; // [0] = 今フレーム、[1] = 前フレーム
     GamePadButton buttonDown     = 0;
     GamePadButton buttonUp       = 0;
     float         axisLx         = 0.0f;
@@ -100,10 +99,10 @@ private:
     int           slot           = 0;
 
 private:
-    float m_vibrationTimer = 0.0f;
-    float m_currentLeft    = 0.0f;
-    float m_currentRight   = 0.0f;
+    float m_vibrationTimer = 0.0f; // 振動の残り時間（秒）
+    float m_currentLeft    = 0.0f; // 現在の左モーターの強さ
+    float m_currentRight   = 0.0f; // 現在の右モーターの強さ
 
-    // 実際にXInputに命令を送る（内部用）
+    // XInput へモーターの強さを送る
     void ApplyVibrationHardware(float left, float right);
 };

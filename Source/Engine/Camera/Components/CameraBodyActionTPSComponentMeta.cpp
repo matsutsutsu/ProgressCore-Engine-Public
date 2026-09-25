@@ -1,3 +1,4 @@
+// CameraBodyTPSComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -14,7 +15,7 @@
 #endif
 
 #ifdef ENABLE_EDITOR
-// "(?)" ヘルプは MetaImGui の標準機能へ移設済み。既存呼び出しを壊さない薄い委譲。
+// ComponentMetaImGui::Help の短縮名（直前の項目に "(?)" ヘルプを付ける）
 static void Help(const char *text) { ComponentMetaImGui::Help(text); }
 #endif
 
@@ -266,49 +267,49 @@ struct ComponentMeta<CameraBodyTPSComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(target, "追従ターゲット", "Settings")
-                CFIELD_FLOAT3_FAST(targetOffset, "注視点オフセット", 0.1f, "Positioning")
-                    CFIELD_FLOAT_RANGED(distance, "カメラ距離", 0.1f, 1.0f, 100.0f, "Positioning")
+            CFIELD_FLOAT3_FAST(targetOffset, "注視点オフセット", 0.1f, "Positioning")
+            CFIELD_FLOAT_RANGED(distance, "カメラ距離", 0.1f, 1.0f, 100.0f, "Positioning")
 
-                        CFIELD_FLOAT_RANGED(baseFov, "基本視野角", 1.0f, 10.0f, 120.0f, "Dynamic Lens")
-                            CFIELD_FLOAT_RANGED(dashFov, "ダッシュ視野角", 1.0f, 10.0f, 160.0f, "Dynamic Lens")
+            CFIELD_FLOAT_RANGED(baseFov, "基本視野角", 1.0f, 10.0f, 120.0f, "Dynamic Lens")
+            CFIELD_FLOAT_RANGED(dashFov, "ダッシュ視野角", 1.0f, 10.0f, 160.0f, "Dynamic Lens")
 
-                                CFIELD_FLOAT_RANGED(currentPitch, "初期ピッチ角", 1.0f, -85.0f, 85.0f, "Orbit Settings")
-                                    CFIELD_FLOAT_RANGED(currentYaw, "初期ヨー角", 1.0f, -360.0f, 360.0f, "Orbit Settings")
-                                        CFIELD_FLOAT_RANGED(minPitch, "最小ピッチ制限", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
-                                            CFIELD_FLOAT_RANGED(maxPitch, "最大ピッチ制限", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
-                                                CFIELD_FLOAT_RANGED(lookSpeedX, "回転速度X", 1.0f, 0.0f, 500.0f, "Control Settings")
-                                                    CFIELD_FLOAT_RANGED(lookSpeedY, "回転速度Y", 1.0f, 0.0f, 500.0f, "Control Settings")
+            CFIELD_FLOAT_RANGED(currentPitch, "初期ピッチ角", 1.0f, -85.0f, 85.0f, "Orbit Settings")
+            CFIELD_FLOAT_RANGED(currentYaw, "初期ヨー角", 1.0f, -360.0f, 360.0f, "Orbit Settings")
+            CFIELD_FLOAT_RANGED(minPitch, "最小ピッチ制限", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
+            CFIELD_FLOAT_RANGED(maxPitch, "最大ピッチ制限", 1.0f, -89.0f, 89.0f, "Orbit Constraints")
+            CFIELD_FLOAT_RANGED(lookSpeedX, "回転速度X", 1.0f, 0.0f, 500.0f, "Control Settings")
+            CFIELD_FLOAT_RANGED(lookSpeedY, "回転速度Y", 1.0f, 0.0f, 500.0f, "Control Settings")
 
-                                                        CFIELD(mouseLookRequiresButton, "右クリック中のみ視点回転", "Mouse Look")
-                                                            CFIELD_FLOAT_RANGED(mouseSensitivityX, "マウス水平感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
-                                                                CFIELD_FLOAT_RANGED(mouseSensitivityY, "マウス垂直感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
-                                                                    CFIELD(mouseInvertY, "上下反転", "Mouse Look")
-                                                                        CFIELD(enableCursorLock, "カーソル中央固定", "Mouse Look")
+            CFIELD(mouseLookRequiresButton, "右クリック中のみ視点回転", "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityX, "マウス水平感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD_FLOAT_RANGED(mouseSensitivityY, "マウス垂直感度", 0.01f, 0.0f, 2.0f, "Mouse Look")
+            CFIELD(mouseInvertY, "上下反転", "Mouse Look")
+            CFIELD(enableCursorLock, "カーソル中央固定", "Mouse Look")
 
-                                                                            CFIELD_FLOAT_RANGED(positionDamping, "位置追従遅延", 0.1f, 0.0f, 50.0f, "Smoothing")
-                                                                                CFIELD_FLOAT_RANGED(fovDamping, "視野角補間速度", 0.1f, 0.0f, 50.0f, "Smoothing")
+            CFIELD_FLOAT_RANGED(positionDamping, "位置追従遅延", 0.1f, 0.0f, 50.0f, "Smoothing")
+            CFIELD_FLOAT_RANGED(fovDamping, "視野角補間速度", 0.1f, 0.0f, 50.0f, "Smoothing")
 
-                                                                                    CFIELD(collisionEnabled, "衝突回避", "Collision")
-                                                                                        CFIELD_FLOAT_RANGED(collisionRadius, "衝突半径", 0.01f, 0.0f, 2.0f, "Collision")
-                                                                                            CFIELD_FLOAT_RANGED(collisionMinDistance, "最小距離", 0.05f, 0.1f, 10.0f, "Collision")
-                                                                                                CFIELD_FLOAT_RANGED(collisionInDamping, "寄せる速さ", 0.5f, 1.0f, 100.0f, "Collision")
-                                                                                                    CFIELD_FLOAT_RANGED(collisionOutDamping, "戻す速さ", 0.5f, 1.0f, 100.0f, "Collision")
-                                                                                                        CFIELD_FLOAT_RANGED(collisionHeadBias, "頭寄せ", 0.01f, 0.0f, 1.0f, "Collision")
+            CFIELD(collisionEnabled, "衝突回避", "Collision")
+            CFIELD_FLOAT_RANGED(collisionRadius, "衝突半径", 0.01f, 0.0f, 2.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionMinDistance, "最小距離", 0.05f, 0.1f, 10.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionInDamping, "寄せる速さ", 0.5f, 1.0f, 100.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionOutDamping, "戻す速さ", 0.5f, 1.0f, 100.0f, "Collision")
+            CFIELD_FLOAT_RANGED(collisionHeadBias, "頭寄せ", 0.01f, 0.0f, 1.0f, "Collision")
 
-                                                                                                            CFIELD_FLOAT_RANGED(lookaheadMultiplier, "前方注視係数", 0.05f, 0.0f, 5.0f, "Lookahead")
-                                                                                                                CFIELD_FLOAT_RANGED(lookaheadDamping, "注視遅延", 0.1f, 0.0f, 50.0f, "Lookahead")
+            CFIELD_FLOAT_RANGED(lookaheadMultiplier, "前方注視係数", 0.05f, 0.0f, 5.0f, "Lookahead")
+            CFIELD_FLOAT_RANGED(lookaheadDamping, "注視遅延", 0.1f, 0.0f, 50.0f, "Lookahead")
 
-                                                                                                                    CFIELD_FLOAT_RANGED(lockOnPitch, "ロックオン開始ピッチ", 0.5f, -60.0f, 60.0f, "LockOn")
-                                                                                                                        CFIELD_FLOAT_RANGED(lockOnPitchDamping, "ロックオン開始ピッチ補間", 0.1f, 0.0f, 50.0f, "LockOn")
-                                                                                                                            CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, "敵への注視偏重率", 0.01f, 0.0f, 0.5f, "LockOn")
-                                                                                                                                CFIELD_FLOAT_RANGED(lockOnMaxLookShift, "注視ずれ上限", 0.1f, 0.0f, 15.0f, "LockOn")
-                                                                                                                                    CFIELD_FLOAT_RANGED(lockOnDistanceGain, "離間による引き量", 0.01f, 0.0f, 2.0f, "LockOn")
-                                                                                                                                        CFIELD_FLOAT_RANGED(lockOnMaxExtraDistance, "引き量の上限", 0.1f, 0.0f, 30.0f, "LockOn")
-                                                                                                                                            CFIELD(lockOnAllowManualCamera, "ロックオン中の手動操作", "LockOn")
-                                                                                                                                                CFIELD_FLOAT_RANGED(lockOnYawDeadZone, "Yawデッドゾーン", 0.5f, 0.0f, 180.0f, "LockOn")
-                                                                                                                                                    CFIELD_FLOAT_RANGED(lockOnAssistStrength, "自動補正の強さ", 0.1f, 0.0f, 20.0f, "LockOn")
-                                                                                                                                                        CFIELD_FLOAT_RANGED(lockOnMaxCorrectionSpeed, "自動補正最大速度", 1.0f, 0.0f, 500.0f, "LockOn")
-                                                                                                                                                            CFIELD_FLOAT_RANGED(lockOnManualOverrideTime, "手動操作後の補正停止時間", 0.01f, 0.0f, 5.0f, "LockOn")};
+            CFIELD_FLOAT_RANGED(lockOnPitch, "ロックオン開始ピッチ", 0.5f, -60.0f, 60.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnPitchDamping, "ロックオン開始ピッチ補間", 0.1f, 0.0f, 50.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, "敵への注視偏重率", 0.01f, 0.0f, 0.5f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxLookShift, "注視ずれ上限", 0.1f, 0.0f, 15.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnDistanceGain, "離間による引き量", 0.01f, 0.0f, 2.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxExtraDistance, "引き量の上限", 0.1f, 0.0f, 30.0f, "LockOn")
+            CFIELD(lockOnAllowManualCamera, "ロックオン中の手動操作", "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnYawDeadZone, "Yawデッドゾーン", 0.5f, 0.0f, 180.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnAssistStrength, "自動補正の強さ", 0.1f, 0.0f, 20.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnMaxCorrectionSpeed, "自動補正最大速度", 1.0f, 0.0f, 500.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnManualOverrideTime, "手動操作後の補正停止時間", 0.01f, 0.0f, 5.0f, "LockOn")};
         return fields;
     }
 };

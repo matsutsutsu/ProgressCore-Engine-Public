@@ -1,8 +1,8 @@
 #include "Input.h"
-#include <cmath> // std::abs 用
+#include <cmath>
+#include <cstring>
 #include <tracy/Tracy.hpp>
 
-// 初期化
 void Input::Initialize(HWND hWnd)
 {
     gamePad  = std::make_unique<GamePad>();
@@ -10,7 +10,6 @@ void Input::Initialize(HWND hWnd)
     keyboard = std::make_unique<Keyboard>();
 }
 
-// 更新処理
 void Input::Update(float dt)
 {
     ZoneScopedN("Input::Update");
@@ -19,12 +18,9 @@ void Input::Update(float dt)
     mouse->Update();
     keyboard->Update();
 
-    // =======================================================
-    // 1. アクティブデバイスの自動検知 (Auto-Detection)
-    // =======================================================
-    // [GamePad の判定]
-    // スティックの「ドリフト（指を離しても微小な値が出続ける現象）」によって
-    // 意図せずUIが切り替わってチラつくのを防ぐため、必ず 0.1f 以上のデッドゾーンを設ける。
+    // 1. 直近に操作されたデバイスの判定
+    // ゲームパッド: スティックのドリフト（指を離しても微小な値が出続ける現象）で
+    // UI のアイコン表示が勝手に切り替わらないよう、0.1 未満の傾きは無視する。
     if (gamePad->GetButtonDown() != 0 ||
         std::abs(gamePad->GetAxisLX()) > 0.1f || std::abs(gamePad->GetAxisLY()) > 0.1f ||
         std::abs(gamePad->GetAxisRX()) > 0.1f || std::abs(gamePad->GetAxisRY()) > 0.1f ||
@@ -33,28 +29,24 @@ void Input::Update(float dt)
         m_activeDeviceType = ActiveDeviceType::GamePad;
     }
 
-    // [Mouse の判定]
-    // マウスのクリック、または移動（微小な振動を弾くため 0.1f を閾値とする）を検知
+    // マウス: クリックか移動（1ピクセル以上）でキーボード＆マウスに戻す
     if (mouse->GetButtonDown() != 0 ||
         std::abs(mouse->GetVelocityX()) > 0.1f || std::abs(mouse->GetVelocityY()) > 0.1f)
     {
         m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
     }
 
-    // 2. Logic用の入力バッファに「蓄積」する
-    //    |= (OR演算) を使うことで、Clearされるまでの間に一度でも押されれば
-    //    フラグが立ったままになります。
+    // 2. ロジック用に「押した瞬間」を溜める。
+    //    OR で溜めるので、ClearLogicInput までに一度でも押されればフラグが立ったままになる。
     m_logicPadButtonDown |= gamePad->GetButtonDown();
     m_logicMouseButtonDown |= mouse->GetButtonDown();
 
-    // キーボードのトリガー蓄積 & アクティブデバイス判定
+    // キーボードの「押した瞬間」を溜め、何か押されたらキーボード＆マウスとみなす
     for (int i = 0; i < 256; i++)
     {
         bool triggered = keyboard->IsTriggered(i);
         m_logicKeyTriggered[i] |= triggered;
 
-        // [Keyboard の判定]
-        // 何かキーが押されたら、強制的にキーボード＆マウス操作とみなす
         if (triggered)
         {
             m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
@@ -62,8 +54,6 @@ void Input::Update(float dt)
     }
 }
 
-// --- リセット処理 ---
-// ※ FrameWork.cpp の FixedUpdate が終わった後に呼ばれる
 void Input::ClearLogicInput()
 {
     m_logicPadButtonDown   = 0;

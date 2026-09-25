@@ -1,4 +1,3 @@
-// 役割・設計方針は UIImageCollectSystem.h を参照。
 #include "UIImageCollectSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -13,21 +12,21 @@ void UIImageCollectSystem::Update(float /*dt*/)
 {
     if (!m_world->HasResource<UIDrawList>()) return;
 
+    // クリアは UIRenderer::Flush の末尾で行うので、ここでは積むだけ
     auto &drawList = m_world->GetResource<UIDrawList>();
-    // ※ クリアは消費側(UIRenderer::Flush 末尾)が行う。ここでは積むだけ。
 
     ForEach([&](const UITransformComponent &t, const UIImageComponent &img) {
         if (!img.visible) return;
 
         UIDrawItem item;
         item.kind  = UIDrawKind::Image;
-        item.pos   = t.computedPos; // 矩形は UILayoutSystem が確定済み
+        item.pos   = t.computedPos;
         item.size  = t.computedSize;
         item.color = img.color;
-        item.color.w *= t.alpha; // 演出用の不透明度を反映（フェードイン等）
+        item.color.w *= t.alpha; // 出現アニメ等の不透明度を掛ける
         item.useGradient = img.useGradient;
         item.colorBottom = img.colorBottom;
-        item.colorBottom.w *= t.alpha; // 下端にも同じフェードを掛ける（片側だけ残らないように）
+        item.colorBottom.w *= t.alpha; // 下端にも掛ける（グラデーションの下側だけ残らないように）
         item.additive    = img.additive;
         item.rotation    = t.rotation;
         item.sortOrder   = img.sortOrder;

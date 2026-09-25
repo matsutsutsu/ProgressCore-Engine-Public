@@ -1,23 +1,19 @@
 #include "VisualCameraSystem.h"
 
-// 実装で必要なものをここで初めてインクルードする
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Camera/CameraEvents.h"     // CameraShakeRequestEvent（揺れ要求の唯一の入口）
 #include "Engine/Core/Math/Interpolation.h" // Damp() / SmootherStep()
-// ※ target の役割ベース自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が担う。
 #include <SimpleMath.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <memory>
 
-// Shipping(Release)では ImGui 本体もインクルードパスも構成から外れる。
 #include <imgui.h>
 
-// システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -25,12 +21,12 @@ using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
 // =========================================================
-// 1. CameraFollowSystem
+// CameraFollowSystem
 // =========================================================
 void CameraFollowSystem::Update(float dt)
 {
-    ForEach([&](VirtualCamera &vcam, CameraBodyFollow &body) {
-        // ターゲットのTransformを取得
+    // target の役割による自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が済ませている。
+    ForEach([&](VirtualCamera &vcam, const CameraBodyFollow &body) {
         auto *targetTrans = m_world->GetComponent<TransformComponent>(body.target);
         if (!targetTrans) return;
 
@@ -41,7 +37,7 @@ void CameraFollowSystem::Update(float dt)
         XMVECTOR targetPos = XMLoadFloat3(&worldPos);
         XMVECTOR offset    = XMLoadFloat3(&body.offset);
 
-        // シンプルな加算（本来はターゲットの回転を考慮して回すべきだが、まずは固定オフセットで）
+        // オフセットはワールド軸のまま加算する（ターゲットの回転は考慮しない）
         XMVECTOR desiredPos = targetPos + offset;
 
         // Y軸固定オプション：高さだけターゲットに追従させず、指定高さに貼り付ける。
@@ -51,9 +47,8 @@ void CameraFollowSystem::Update(float dt)
             desiredPos = XMVectorSetY(desiredPos, body.lockedY);
         }
 
-        // 初期化フレーム対策（まだ一度も位置を書いていないならワープ）
-        // 注視点側(CameraLookAtSystem)とはフラグを分けている。1bit を共有していた頃は、
-        // 先に走った側がフラグを立て、もう片方が原点から補間を始めていた。
+        // まだ一度も位置を書いていないなら、補間せず目標位置へ置く。
+        // 注視点側(CameraLookAtSystem)とはフラグを分けている（理由は VirtualCamera の初期化フラグ参照）。
         if (!vcam.posInitialized)
         {
             XMStoreFloat3(&vcam.resultPos, desiredPos);
@@ -62,7 +57,7 @@ void CameraFollowSystem::Update(float dt)
             return;
         }
 
-        // 現在位置からの補間 (Damping)
+        // 現在位置から指数減衰で追従する
         XMVECTOR currentPos = XMLoadFloat3(&vcam.resultPos);
         float    t          = CCL::Math::Damp(body.damping, dt);
         XMVECTOR newPos     = XMVectorLerp(currentPos, desiredPos, t);
@@ -73,11 +68,11 @@ void CameraFollowSystem::Update(float dt)
 }
 
 // =========================================================
-// 2. CameraLookAtSystem
+// CameraLookAtSystem
 // =========================================================
 void CameraLookAtSystem::Update(float dt)
 {
-    ForEach([&](VirtualCamera &vcam, CameraAimLookAt &aim) {
+    ForEach([&](VirtualCamera &vcam, const CameraAimLookAt &aim) {
         auto *targetTrans = m_world->GetComponent<TransformComponent>(aim.target);
         if (!targetTrans) return;
 
@@ -87,7 +82,7 @@ void CameraLookAtSystem::Update(float dt)
         XMVECTOR offset      = XMLoadFloat3(&aim.offset);
         XMVECTOR desiredLook = targetPos + offset;
 
-        // 初期化フレーム対策
+        // まだ一度も注視点を書いていないなら、補間せず目標へ置く
         if (!vcam.lookInitialized)
         {
             XMStoreFloat3(&vcam.resultLookAt, desiredLook);
@@ -96,7 +91,7 @@ void CameraLookAtSystem::Update(float dt)
             return;
         }
 
-        // 現在のLookAtからの補間
+        // 現在の注視点から指数減衰で追従する
         XMVECTOR currentLook = XMLoadFloat3(&vcam.resultLookAt);
         float    t           = CCL::Math::Damp(aim.damping, dt);
         XMVECTOR newLook     = XMVectorLerp(currentLook, desiredLook, t);
@@ -107,7 +102,7 @@ void CameraLookAtSystem::Update(float dt)
 }
 
 // =========================================================
-// 3. CameraShakeSystem
+// CameraShakeSystem
 // =========================================================
 
 std::uint32_t CameraShakeSystem::HashUInt(std::uint32_t x)
@@ -188,7 +183,6 @@ void CameraShakeSystem::Update(float dt)
         ++m_shakableCameraCount;
         m_lastTrauma = shake.trauma;
 
-        // シェイク終了なら何もしない
         if (shake.trauma <= 0.0f) return;
 
         // 1. 蓄積量から今フレームの強さを出す
@@ -273,7 +267,7 @@ void CameraShakeSystem::OnGui()
 }
 
 // =========================================================
-// 4. CameraFreeControlSystem
+// CameraFreeControlSystem
 // =========================================================
 
 bool CameraFreeControlSystem::IsInputBlocked() const
@@ -297,18 +291,14 @@ bool CameraFreeControlSystem::IsInputBlocked() const
 
 void CameraFreeControlSystem::Update(float dt)
 {
-    // シングルトンから入力取得
     auto &input = Input::Instance();
     auto &mouse = input.GetMouse();
     auto &kb    = input.GetKeyboard();
-
-    using namespace DirectX;
 
     // TPS カメラ側(cursorFreeOverride)と同じ条件で入力を遮断する。
     // 遮断中も vcam の同期だけは続けたいので、入力量をゼロにする形で扱う。
     const bool inputBlocked = IsInputBlocked();
 
-    // マウスデルタ
     float deltaX     = inputBlocked ? 0.0f : static_cast<float>(mouse.GetPositionX() - mouse.GetOldPositionX());
     float deltaY     = inputBlocked ? 0.0f : static_cast<float>(mouse.GetPositionY() - mouse.GetOldPositionY());
     int   wheelDelta = inputBlocked ? 0 : mouse.GetWheel();
@@ -316,20 +306,19 @@ void CameraFreeControlSystem::Update(float dt)
     const bool rmbHeld = !inputBlocked && mouse.IsDown(Mouse::BTN_RIGHT);
 
     ForEach([&](VirtualCamera &vcam, CameraBodyFree &body, TransformComponent &trans) {
-        // --- 1. 回転計算 (FreeCameraSystemと同じロジック) ---
+        // 1. 右クリック中だけマウスで視点を回す
         if (rmbHeld)
         {
-            // 感度適用 (body.lookSpeedは度数法想定: 0.2f程度)
             body.currentYaw += deltaX * body.lookSpeed;
             body.currentPitch -= deltaY * body.lookSpeed;
 
-            // ピッチ制限 (-89 ~ 89度)
+            // 真上・真下で前方ベクトルが縮退しないよう ±89.9 度に制限する
             body.currentPitch = std::clamp(body.currentPitch, -89.9f, 89.9f);
 
             // ヨーは無限に積算すると float 精度が落ちて回転がカクつくため畳んでおく
             body.currentYaw = std::fmod(body.currentYaw, 360.0f);
 
-            // 移動速度調整をここ（右クリック中）に移動する
+            // ホイールでの移動速度調整も右クリック中だけ受ける
             if (wheelDelta != 0)
             {
                 body.moveSpeed *= (wheelDelta > 0) ? 1.2f : 0.8f;
@@ -337,38 +326,33 @@ void CameraFreeControlSystem::Update(float dt)
             }
         }
 
-        // 度数 -> ラジアン変換
         float yawRad   = XMConvertToRadians(body.currentYaw);
         float pitchRad = XMConvertToRadians(body.currentPitch);
 
-        // 前方ベクトル (Front) の計算: 球面座標系
-        // これにより「常に水平を保ちつつ上下を向く」FPS挙動になります
+        // ヨー・ピッチから前方ベクトルを求める。ロールを持たないので、水平を保ったまま上下を向く
         XMVECTOR Front = XMVector3Normalize(XMVectorSet(
             cosf(pitchRad) * sinf(yawRad), sinf(pitchRad), cosf(pitchRad) * cosf(yawRad), 0.0f));
 
-        // 右ベクトル (Right) の計算
         XMVECTOR WorldUp = XMVectorSet(0, 1, 0, 0);
         XMVECTOR Right   = XMVector3Normalize(XMVector3Cross(WorldUp, Front));
 
-        // --- 2. 移動計算 ---
+        // 2. WASD で前後左右、E/Q で真上・真下へ移動する
         XMVECTOR Pos = XMLoadFloat3(&trans.position);
         float    s   = body.moveSpeed * dt;
 
-        // FreeCameraComponentと同じ操作系
         if (!inputBlocked)
         {
             if (kb.IsDown('W')) Pos += Front * s;
             if (kb.IsDown('S')) Pos -= Front * s;
             if (kb.IsDown('D')) Pos += Right * s;
             if (kb.IsDown('A')) Pos -= Right * s;
-            if (kb.IsDown('E')) Pos += WorldUp * s; // 真上上昇
-            if (kb.IsDown('Q')) Pos -= WorldUp * s; // 真下下降
+            if (kb.IsDown('E')) Pos += WorldUp * s;
+            if (kb.IsDown('Q')) Pos -= WorldUp * s;
         }
 
-        // 結果をTransformに書き戻す
         XMStoreFloat3(&trans.position, Pos);
 
-        // 回転もTransformに反映させておく（デバッグ表示などで正しい向きに見えるように）
+        // 回転も Transform に反映しておく（ギズモ・デバッグ表示で正しい向きに見えるように）
         // CreateFromYawPitchRoll は座標系の取り方で Pitch の符号が反転するため、
         // Front ベクトルから LookTo 行列を作り、それを逆行列化して分解する。
         XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), Front, WorldUp);
@@ -377,15 +361,10 @@ void CameraFreeControlSystem::Update(float dt)
         XMMATRIX worldRot = XMMatrixInverse(&det, lookMat);
         trans.rotation    = Quaternion::CreateFromRotationMatrix(worldRot);
 
-        // --- 3. VirtualCameraへの同期 ---
-        // 現在の位置
-        vcam.resultPos = trans.position;
-
-        // 見ている先 = 現在位置 + 前方ベクトル
-        // (注視点を遠くに置くことで回転を安定させる)
+        // 3. VirtualCamera へ反映する
+        // 注視点を 10m 先に置き、揺れなどで注視点がずれたときの向きの変化を小さくする
+        vcam.resultPos    = trans.position;
         vcam.resultLookAt = trans.position + (Vector3(Front) * 10.0f);
-
-        // アップベクトル
         vcam.resultUp = Vector3(0, 1, 0);
 
         // 位置・注視点とも自前で確定させたので採用可能
@@ -393,9 +372,6 @@ void CameraFreeControlSystem::Update(float dt)
     });
 }
 
-// =========================================================
-// 自動登録マクロ群（必ず .cpp の末尾に1回だけ書く）
-// =========================================================
 REGISTER_RENDER_SYSTEM(CameraFollowSystem, Priority::RenderStage::R01_Camera);
 REGISTER_RENDER_SYSTEM(CameraLookAtSystem, Priority::RenderStage::R01_Camera);
 REGISTER_RENDER_SYSTEM(CameraShakeSystem, Priority::RenderStage::R01_Camera);
