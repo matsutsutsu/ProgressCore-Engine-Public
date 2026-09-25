@@ -1,7 +1,7 @@
 #include "JoltShapeUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
-#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h" // 形状生成＋Result検証の共通窓口
+#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h" // 形状生成と Result の検証
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -10,20 +10,20 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// ===================================================================================
-// 3システムに共通する骨格:
+// ============================================================
+// 3つの System に共通する流れ:
 //   isDirty を見る → 基本形状を作る → localOffset/localRotation で包む → SetShape → dirty解除
 //
 // 「基本形状の作り方」だけが形状ごとに違うので、それ以外は
 // JoltShapeFactory::CreateOffsetShape に寄せてある（Result の検証も向こう持ち）。
 //
 // 形状生成に失敗したときは isDirty を下ろしてから抜ける。
-// 下ろさないと毎フレーム同じ失敗ログを吐き続けてログが埋まるため。
-// ===================================================================================
+// 下ろさないと毎フレーム同じ失敗ログを出し続けてログが埋まるため。
+// ============================================================
 
-// ===================================================================================
-// 1. BoxCollider の更新
-// ===================================================================================
+// ============================================================
+// BoxCollider
+// ============================================================
 void JoltBoxShapeUpdateSystem::Update(float dt)
 {
     if (!m_world->HasResource<JoltPhysicsManager *>()) return;
@@ -43,9 +43,9 @@ void JoltBoxShapeUpdateSystem::Update(float dt)
     });
 }
 
-// ===================================================================================
-// 2. SphereCollider の更新
-// ===================================================================================
+// ============================================================
+// SphereCollider
+// ============================================================
 void JoltSphereShapeUpdateSystem::Update(float dt)
 {
     if (!m_world->HasResource<JoltPhysicsManager *>()) return;
@@ -66,9 +66,9 @@ void JoltSphereShapeUpdateSystem::Update(float dt)
     });
 }
 
-// ===================================================================================
-// 3. CapsuleCollider の更新
-// ===================================================================================
+// ============================================================
+// CapsuleCollider
+// ============================================================
 void JoltCapsuleShapeUpdateSystem::Update(float dt)
 {
     if (!m_world->HasResource<JoltPhysicsManager *>()) return;

@@ -1,3 +1,5 @@
+// ColorGradingConfigComponent のシリアライズ/インスペクタ定義。
+
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

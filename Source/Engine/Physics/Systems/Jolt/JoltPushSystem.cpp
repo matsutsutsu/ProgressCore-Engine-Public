@@ -3,7 +3,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// Joltのモーションタイプ判定用
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
 
@@ -14,30 +13,24 @@ void JoltPushSystem::Update(float dt)
     auto               &joltManager   = m_world->GetResource<JoltPhysicsManager *>();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
-    // 並列処理で全エンティティを最速チェック
+    // BodyInterface（ロック付き）への書き込みはボディ単位で排他されるので、並列で回してよい
     ForEachParallel(
         [&](TransformComponent &trans, const JoltHandleComponent &joltBody, const JoltRigidbodyComponent &rigid) {
-            // ====================================================================
-            //  エディタで Dynamic <-> Kinematic に変更された場合、即座にJoltへ反映させる！
-            // ====================================================================
+            // エディタで Dynamic <-> Kinematic を切り替えたら、すぐ Jolt へ反映する
             if (bodyInterface.GetMotionType(joltBody.bodyID) != rigid.motionType)
             {
                 bodyInterface.SetMotionType(joltBody.bodyID, rigid.motionType, JPH::EActivation::Activate);
             }
 
-            // ====================================================================
-            //  ローカル座標ではなく、最新のワールド(絶対)座標を抽出する
-            // ====================================================================
+            // ローカルではなくワールドの位置・回転を渡す
             DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
             DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
 
             JPH::RVec3 joltPos(worldPos.x, worldPos.y, worldPos.z);
             JPH::Quat  joltRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
-            joltRot = joltRot.Normalized(); // 超重要: わずかな計算誤差でもJoltは荒ぶるため必ず正規化する
+            joltRot = joltRot.Normalized(); // 計算誤差で長さが 1 からずれた回転を Jolt へ渡さない
 
-            // ====================================================================
-            // 処理A: フラグが立った時の「強制ワープ」
-            // ====================================================================
+            // 強制ワープの要求
             if (trans.isTeleported)
             {
                 bodyInterface.SetPositionAndRotation(
@@ -48,16 +41,11 @@ void JoltPushSystem::Update(float dt)
 
                 trans.isTeleported = false;
             }
-            // ====================================================================
-            //  アニメーションで動く物体（Kinematic剛体）の「毎フレーム同期」
-            // ====================================================================
+            // Kinematic（プログラム/アニメーション駆動）の剛体は毎ステップ ECS 側の位置へ合わせる
             else
             {
-                // この剛体が「Kinematic（プログラム/アニメーション駆動）」なら、
-                // 毎フレームECS側の最新のワールド座標を物理エンジンに押し付ける
                 if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic)
                 {
-
                     // SetPositionAndRotation（瞬間移動）で「遅延ゼロ」に追従させる。
                     //   MoveKinematic は目標到達がステップ末＝1フレーム遅れ、速い攻撃の振りでは
                     //   大きくズレてしまう（遅い移動では当たるのに攻撃で当たらない原因になる）。

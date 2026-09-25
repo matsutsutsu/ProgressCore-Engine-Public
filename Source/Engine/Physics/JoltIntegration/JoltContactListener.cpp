@@ -1,8 +1,8 @@
 #include "JoltContactListener.h"
-#include <Jolt/Physics/Body/Body.h> // Bodyの中身(完全な型)を知るために絶対に必要
+#include <Jolt/Physics/Body/Body.h> // Body の完全な型（GetUserData などを呼ぶため）
 #include <utility>                  // std::swap
 
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"  // IsStaticWorldLayer
 
 namespace
@@ -23,10 +23,9 @@ namespace
     // (HitboxCollisionSystem / JustEvadeSystem) は全イベントを自前の vector へ
     // コピーしてから絞り込むので、コストは二重に乗る。
     //
-    // 背景との接触を必要とする購読者は存在しない（攻撃レイヤーは pair フィルタで
-    // そもそも壁と当たらない）ので、ここで捨てて良い。
-    // キャラ側の JoltCharacterContactListener には元から同じ遮断があり、
-    // 剛体側にだけ無かったものを揃える。
+    // 背景との接触を必要とする購読者はいない（攻撃レイヤーは pair フィルタで
+    // そもそも壁と当たらない）ので、ここで捨ててよい。
+    // キャラ側の JoltCharacterContactListener も同じ条件で捨てている。
     bool IsStaticWorldContact(const JPH::Body &a, const JPH::Body &b)
     {
         return PhysicsLayers::IsStaticWorldLayer(a.GetObjectLayer()) || PhysicsLayers::IsStaticWorldLayer(b.GetObjectLayer());
@@ -37,17 +36,17 @@ void JoltContactListener::EmitContactEvent(const JPH::Body &inBody1, const JPH::
                                            const JPH::ContactManifold &inManifold,
                                            const char                 *inPhase)
 {
-    // 1. Joltの剛体に埋め込んでおいた ECSの EntityID を取り出す
+    // 1. 剛体の UserData に入れておいた EntityID を取り出す（0 は Entity を持たない剛体）
     auto entityA = static_cast<CCL::ECS::EntityID>(inBody1.GetUserData());
     auto entityB = static_cast<CCL::ECS::EntityID>(inBody2.GetUserData());
 
-    // 両方とも正しくEntityIDが取れなかった場合は無視（壁同士など）
+    // 両方とも Entity を持たないなら無視する
     if (entityA == 0 && entityB == 0) return;
 
     // 背景が絡む接触はイベント化しない（上の IsStaticWorldContact のコメント参照）
     if (IsStaticWorldContact(inBody1, inBody2)) return;
 
-    // 2. 衝突座標と法線を計算
+    // 2. 接触点・法線・相対速度を求める（接触点は1点目だけを使う）
     JPH::RVec3 pos    = inManifold.mBaseOffset + inManifold.mRelativeContactPointsOn1[0];
     JPH::Vec3  normal = inManifold.mWorldSpaceNormal;
     JPH::Vec3  relVel = inBody1.GetLinearVelocity() - inBody2.GetLinearVelocity();
@@ -59,7 +58,7 @@ void JoltContactListener::EmitContactEvent(const JPH::Body &inBody1, const JPH::
     newEvent.contactNormal    = {normal.GetX(), normal.GetY(), normal.GetZ()};
     newEvent.relativeVelocity = {relVel.GetX(), relVel.GetY(), relVel.GetZ()};
 
-    // 3. スレッドセーフに配列へ追加
+    // 3. mutex で守ったバッファへ積む
     PushEvent(newEvent);
 
     if (IsAttackContact(inBody1, inBody2))
@@ -108,8 +107,7 @@ void JoltContactListener::PushEvent(const JoltCollisionEvent &ev)
 
 std::vector<JoltCollisionEvent> JoltContactListener::GetAndClearEvents()
 {
-    // fix: コピーではなく swap で受け渡す。
-    //   ロックを保持する時間はポインタ入れ替えの一瞬だけで済み、コピーコストもゼロになる。
+    // コピーではなく swap で受け渡す。ロックを持つのは中身の入れ替えの間だけで済み、要素のコピーも起きない。
     std::vector<JoltCollisionEvent> out;
     {
         std::lock_guard<std::mutex> lock(m_mutex);

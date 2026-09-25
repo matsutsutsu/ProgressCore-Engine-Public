@@ -1,7 +1,7 @@
 #include "JoltCharacterContactListener.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"  // レイヤー定義（責務分離済み）
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ
 
 using namespace CCL::ECS;
 
@@ -15,9 +15,9 @@ bool JoltCharacterContactListener::IsAttackLayer(const JPH::BodyID &bodyID) cons
 }
 
 JoltCharacterContactListener::JoltCharacterContactListener(JoltContactListener *sink,
-                                                           EntityID             playerID,
+                                                           EntityID             selfID,
                                                            JPH::BodyInterface  *bodyInterface)
-    : m_sink(sink), m_playerID(playerID), m_bodyInterface(bodyInterface)
+    : m_sink(sink), m_selfID(selfID), m_bodyInterface(bodyInterface)
 {
 }
 
@@ -27,14 +27,10 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
                                                     JPH::Vec3Arg                 inContactNormal,
                                                     const char                  *inPhase)
 {
-    // =================================================================================
-    // イベントストームの遮断
-    // 相手が「動かない背景（壁・床・落下防止の見えない壁）」なら、
-    // イベントを発行せずここで即座に捨てる。
-    //   判定を PhysicsLayers::IsStaticWorldLayer に預けているのは、レイヤーを増やした
-    //   ときにここの条件を足し忘れないため。実際 INVISIBLE_WALL は後から追加された際に
-    //   NON_MOVING 直書きの条件から漏れ、壁に押し付けている間ずっとイベントが出ていた。
-    // =================================================================================
+    // 相手が動かない背景（壁・床・落下防止の見えない壁）なら、イベントを出さずに捨てる。
+    //   接触が続く限り毎フレーム呼ばれるので、背景を通すとバッファがそれで埋まる。
+    //   判定を PhysicsLayers::IsStaticWorldLayer に任せているのは、レイヤーを増やした
+    //   ときにここの条件を足し忘れないため（NON_MOVING だけを直書きすると INVISIBLE_WALL が漏れる）。
     JPH::ObjectLayer hitLayer = m_bodyInterface->GetObjectLayer(inBodyID2);
 
     if (PhysicsLayers::IsStaticWorldLayer(hitLayer)) return;
@@ -47,13 +43,13 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
     {
         HITDIAG_LOG(LogCategory::Physics,
                     "[HitDiag/Contact] Char %-7s self=%llu other=%llu (body %u, layer %d) -> イベント発行",
-                    inPhase, m_playerID, hitEntityID, inBodyID2.GetIndex(), static_cast<int>(hitLayer));
+                    inPhase, m_selfID, hitEntityID, inBodyID2.GetIndex(), static_cast<int>(hitLayer));
     }
 
     if (hitEntityID != 0 && hitEntityID != InvalidEntityID)
     {
         JoltCollisionEvent ev;
-        ev.entityA         = m_playerID;
+        ev.entityA         = m_selfID;
         ev.entityB         = hitEntityID;
         ev.contactPosition = {inContactPosition.GetX(), inContactPosition.GetY(), inContactPosition.GetZ()};
         ev.contactNormal   = {inContactNormal.GetX(), inContactNormal.GetY(), inContactNormal.GetZ()};
@@ -61,8 +57,7 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
         JPH::Vec3 relVel    = inCharacter->GetLinearVelocity() - m_bodyInterface->GetLinearVelocity(inBodyID2);
         ev.relativeVelocity = {relVel.GetX(), relVel.GetY(), relVel.GetZ()};
 
-        // fix: EventBus 即時発行をやめ、剛体側と同じバッファへ蓄積する。
-        //   物理更新の途中でゲームロジックを割り込ませないための一貫化。
+        // EventBus へ直接出さず、剛体側と同じバッファへ積む（物理更新の途中でゲームロジックを走らせない）
         if (m_sink) m_sink->PushEvent(ev);
     }
 }
@@ -98,8 +93,8 @@ void JoltCharacterContactListener::OnContactRemoved(const JPH::CharacterVirtual 
     if (!IsAttackLayer(inBodyID2))
         return;
 
-    // これが出れば接触は解放済み＝次の接近は Added として来るはず。
+    // これが出れば接触は解放済みで、次の接近は Added として来る。
     HITDIAG_LOG(LogCategory::Physics,
                 "[HitDiag/Contact] Char Remove  self=%llu (body %u)",
-                m_playerID, inBodyID2.GetIndex());
+                m_selfID, inBodyID2.GetIndex());
 }

@@ -14,9 +14,9 @@ namespace JoltShapeFactory
 
         if (result.HasError())
         {
-            // ERROR は全構成で残る（Logger.h: 販売後のクラッシュ解析の生命線）。
-            // 無言で nullptr を返すと「一部のオブジェクトだけ当たり判定が無い」という
-            // 極めて追いにくい症状になるため、必ず理由ごと残す。
+            // ERROR は全構成で残る（Logger.h）。
+            // 何も出さずに nullptr を返すと「一部のオブジェクトだけ当たり判定が無い」という
+            // 原因を追いにくい症状になるため、必ず理由ごと残す。
             CCL_LOG_ERROR(LogCategory::Physics,
                           "%s の形状生成に失敗しました (Entity %llu): %s",
                           what,

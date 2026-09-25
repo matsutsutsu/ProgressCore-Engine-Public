@@ -1,6 +1,4 @@
-// 武器トレイル(TrailComponent)のシリアライズ/インスペクタ定義。
-// ランタイムのリングバッファ(segments/head/count)は Fields() に載せない
-// ＝保存対象外。config フィールドのみ保存・編集する。
+// TrailComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"
@@ -18,7 +16,8 @@
 using json = nlohmann::json;
 
 // ===========================================================================
-// TrailComponent（Effect カテゴリ。Model/Material の少し後ろに並べる）
+// TrailComponent
+//   リングバッファ（segments/head/count）は Fields() に載せないので、保存も編集もしない。
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
 CFIELD_ENUM_U8(shape, "断面の形", TrailShapeNames, TrailShapeCount, "形状")
@@ -54,5 +53,5 @@ CFIELD_RO(burstTimer, "一時Trail表示の残り時間", "時間", nullptr)
 CFIELD(emitting, "発生中", "状態")
 CFIELD_T(animControlled, "アニメ制御", "状態",
          "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")
-CFIELD(useInterpolation, "CatMull-Rom補間切り替えフラグ", "状態")
+CFIELD(useInterpolation, "Catmull-Rom補間", "状態")
 COMPONENT_META_END(TrailComponent)

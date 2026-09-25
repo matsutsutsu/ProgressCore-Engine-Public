@@ -397,41 +397,6 @@ HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT
     return hr;
 }
 
-// 頂点バッファ作成
-HRESULT GpuResourceUtils::CreateVertexBuffer(
-    ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer)
-{
-    D3D11_BUFFER_DESC desc{};
-    desc.Usage          = D3D11_USAGE_DEFAULT; // CPUからの書き換えなし
-    desc.ByteWidth      = size;
-    desc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
-    desc.CPUAccessFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA subData{};
-    subData.pSysMem = data;
-
-    return device->CreateBuffer(&desc, &subData, buffer);
-}
-
-// インデックスバッファ作成
-HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device  *device,
-                                            const UINT    *data, // ここも合わせる
-                                            UINT           size,
-                                            ID3D11Buffer **buffer)
-{
-    // 中身はそのまま
-    D3D11_BUFFER_DESC desc{};
-    desc.Usage          = D3D11_USAGE_DEFAULT;
-    desc.ByteWidth      = size;
-    desc.BindFlags      = D3D11_BIND_INDEX_BUFFER;
-    desc.CPUAccessFlags = 0;
-
-    D3D11_SUBRESOURCE_DATA subData{};
-    subData.pSysMem = data;
-
-    return device->CreateBuffer(&desc, &subData, buffer);
-}
-
 bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
                                           const std::wstring &hlslPath,
                                           const char         *entryPoint,

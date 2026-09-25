@@ -3,8 +3,8 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
-#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" // カプセルコライダーを使用前提
-#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"               // presenceプロキシのHandle
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h" // presence プロキシの Handle
 
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
@@ -23,15 +23,13 @@ void JoltCharacterSetupSystem::Update(float dt)
     ForEachWithID([&](CCL::ECS::EntityID                  id,
                       const TransformComponent           &trans,
                       const JoltCharacterConfigComponent &config) {
-        // キャラクターは基本的にカプセル形状で作る（段差を登りやすくするため）
+        // キャラクターはカプセル形状で作る（角が無いので段差や坂を滑らかに越えられる）
         auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id);
-        if (!capsule) return; // カプセルが無ければ作れない
+        if (!capsule) return;
 
-        // ===============================================================
-        // 1. カプセル形状の作成（足元を原点に合わせるオフセット付き）
-        //    ※この characterShape を CharacterVirtual と presenceプロキシで共有し、
-        //      両者の当たり判定を完全に一致させる。
-        // ===============================================================
+        // 1. カプセル形状の作成（足元を原点に合わせるオフセット付き）。
+        //    この characterShape を CharacterVirtual と presence プロキシで共有し、
+        //    両者の当たり判定を一致させる。
         JPH::RefConst<JPH::ShapeSettings> capsuleSettings =
             new JPH::CapsuleShapeSettings(capsule->halfHeight, capsule->radius);
 
@@ -45,9 +43,7 @@ void JoltCharacterSetupSystem::Update(float dt)
             JoltShapeFactory::CreateChecked(*rotTransSettings, static_cast<uint64_t>(id), "Character Capsule");
         if (characterShape == nullptr) return; // 失敗はログ済み。キャラを作らずスキップする
 
-        // ===============================================================
         // 2. CharacterVirtual の設定と生成
-        // ===============================================================
         JPH::CharacterVirtualSettings settings;
         settings.mShape                     = characterShape;
         settings.mSupportingVolume          = JPH::Plane(JPH::Vec3::sAxisY(), -capsule->radius); // 足元の判定面
@@ -66,15 +62,13 @@ void JoltCharacterSetupSystem::Update(float dt)
         handleComp.character = character;
         m_world->AddComponent<JoltCharacterHandleComponent>(id, handleComp);
 
-        // ===============================================================
-        // 3. presence プロキシ（Kinematic 剛体）の生成
-        //    CharacterVirtual は既定でブロードフェーズに存在せず、他者(弾/レイ/敵)から
-        //    見えない。そこで同一形状の Kinematic 剛体を1つ持たせ、毎フレーム
+        // 3. presence プロキシ（Kinematic 剛体）の生成。
+        //    CharacterVirtual はブロードフェーズに入らないので、他者（攻撃判定/レイ/敵）から
+        //    見えない。そこで同じ形状の Kinematic 剛体を1つ持たせ、毎フレーム
         //    CharacterVirtual に追従させることで「他者から見える体」を用意する。
         //    - レイヤーは config.objectLayer（剛体と同じ ObjectLayer 体系）
-        //    - UserData に EntityID を刻み、レイキャスト/接触からエンティティを解決可能にする
-        //    - CharacterVirtual 側は UpdatePhysicsAndSync 内で自分(このID)を無視する
-        // ===============================================================
+        //    - UserData に EntityID を入れ、レイキャスト/接触から Entity を引けるようにする
+        //    - CharacterVirtual 側は UpdatePhysicsAndSync でこのプロキシを無視する
         JPH::Quat initRot(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w);
         initRot = initRot.Normalized();
 
@@ -99,5 +93,4 @@ void JoltCharacterSetupSystem::Update(float dt)
     });
 }
 
-// 物理実体が生成される前に呼ばれるようにする
 REGISTER_LOGIC_SYSTEM(JoltCharacterSetupSystem, Priority::LogicStage::L03_PrePhysics);

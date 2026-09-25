@@ -1,4 +1,4 @@
-// GPUParticleComponent のシリアライズ/インスペクタ定義 (タブ最適化版)。
+// GPUParticleComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
@@ -108,7 +108,7 @@ namespace
 
         F2("emitRadius", d.emitRadius);
         F2("emitSize", d.emitSize);
-        // 旧アセットには sizeRandom が無い。その場合は既定の 1（＝従来のランダム）を保つ。
+        // sizeRandom が無い JSON は、既定の 1（0〜emitSize の一様ランダム）のまま読む。
         F("sizeRandom", d.sizeRandom);
         F2("coneAngle", d.coneAngle);
         F2("emitSpeed", d.emitSpeed);
@@ -124,8 +124,8 @@ namespace
 
         F("localOffsetY", d.localOffsetY);
         F("gravity", d.gravity);
-        // 旧アセットには maxSpeed が無い。その場合は既定の 10（＝以前のハードコード値）
-        // が維持されるので、読み込んだだけで見た目が変わることはない。
+        // maxSpeed が無い JSON は既定の 10 のまま読む。シェーダーに固定で入っていた値と同じなので、
+        // 読み込むだけで見た目は変わらない。
         F("maxSpeed", d.maxSpeed);
         F("velocityStretch", d.velocityStretch);
         F("noiseScale", d.noiseScale);
@@ -158,36 +158,33 @@ namespace
         STR("texturePath", d.texturePath, sizeof(d.texturePath));
         STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
     }
-    // 自前で std::filesystem を使った ToRelativePath を完全削除
 } // namespace
 
 // =====================================================================
-// CustomSerialize
+// シリアライズ
 // =====================================================================
 namespace ComponentMetaJson
 {
     template <>
     struct ComponentSerializer<GPUParticleComponent>
     {
-        // 保存は常に新フォーマット（emitters 配列）で書く。
+        // 保存は常に emitters 配列の形式で書く
         static void Save(json &j, const GPUParticleComponent &comp, SaveContext * /*ctx*/)
         {
             json arr = json::array();
             for (const auto &emitter : comp.emitters)
             {
                 json ej;
-                WriteDescToJson(ej, emitter.desc); // 1エミッタぶんの変換は既存関数をそのまま使う
+                WriteDescToJson(ej, emitter.desc);
                 arr.push_back(ej);
             }
             j["emitters"]       = arr;
             j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
         }
 
-        // 読み込みは新旧どちらのフォーマットも受け付ける。
-        //
-        // 旧フォーマットはエミッタ設定がトップレベルにベタ書きされている
-        // （emitters 配列が無い）。既存プレハブを作り直さずに済むよう、
-        // その場合は「エミッタ1個のエフェクト」として読む。
+        // 読み込みは2つの形式を受け付ける。
+        // emitters 配列が無く、エミッタの設定がトップレベルに直接書かれている JSON は、
+        // エミッタ1個のエフェクトとして読む。これでエミッタ配列を持たないプレハブも作り直さずに読める。
         static void Load(const json &j, GPUParticleComponent &comp, LoadContext * /*ctx*/)
         {
             comp.emitters.clear();
@@ -204,11 +201,11 @@ namespace ComponentMetaJson
             else
             {
                 ParticleEmitter emitter;
-                ReadDescFromJson(j, emitter.desc); // 旧フォーマット
+                ReadDescFromJson(j, emitter.desc); // トップレベルに直接書かれた形式
                 comp.emitters.push_back(emitter);
             }
 
-            // 空配列は許容しない（システム側が最低1個を前提にできるようにする）。
+            // 空配列にはしない（System 側が「最低1個ある」前提で書けるようにする）
             if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
 
             comp.animControlled = j.value("animControlled", false);
@@ -254,9 +251,8 @@ struct ComponentMeta<GPUParticleComponent>
 
     // 「最小〜最大」の対を1行で編集する。
     //
-    // DragFloat2 と違い、どちらが最小かが画面に出て、かつ ImGui 側が
-    // 最小>最大への入れ替わりを抑えてくれる。呼び出し側で毎回書いていた
-    // 手動クランプ( if (x > y) y = x; )が不要になる。
+    // DragFloat2 と違い、どちらが最小かが画面に出て、最小 > 最大にならないよう ImGui が抑える。
+    // 呼び出し側で if (x > y) y = x; のようなクランプを書かずに済む。
     static bool RangeDrag(const char *label, GpuData::float2 &range,
                           float speed, float lo, float hi, const char *fmt)
     {
@@ -283,8 +279,7 @@ struct ComponentMeta<GPUParticleComponent>
         return true;
     }
 
-    // 「(?)」ヘルプは MetaImGui の標準機能へ移設済み。ここは委譲するだけ
-    // （既存の多数の呼び出し `Help("...")` を壊さないための薄いラッパ）。
+    // 「(?)」ヘルプを出す。ComponentMetaImGui::Help へ渡すだけの短縮名
     static void Help(const char *text) { ComponentMetaImGui::Help(text); }
 
     static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
@@ -368,7 +363,6 @@ struct ComponentMeta<GPUParticleComponent>
         int        currentActiveTabId = -1;
 
         auto pickTexture = [&](char *dst, size_t cap, TextureHandle &handle, const char *title) {
-            // エンジン管轄の FileDialog::ConvertToRelativePath を正しく使用
             if (auto path = FileDialog::OpenPreset("Texture", title, hWnd))
             {
                 strcpy_s(dst, cap, FileDialog::ConvertToRelativePath(*path).c_str());
@@ -420,7 +414,7 @@ struct ComponentMeta<GPUParticleComponent>
             if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエフェクトにエミッタを追加します");
             ImGui::EndTabBar();
         }
-        if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // 保険
+        if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // エミッタが減った後は範囲外になり得る
 
         auto &emitter = p->emitters[selected];
         auto &d       = emitter.desc;
@@ -535,8 +529,8 @@ struct ComponentMeta<GPUParticleComponent>
                     }
                 }
 
-                // ※ アニメ制御はエフェクト全体の設定なので、このタブではなく
-                //    上の「エフェクト全体」に置いてある（エミッタ個別と誤解されるため）。
+                // アニメ制御はエフェクト全体の設定なので、このタブではなく上の「エフェクト全体」に置く
+                // （ここに置くとエミッタごとの設定と誤解される）。
 
                 if (d.emitMode == 1)
                 {

@@ -1,6 +1,6 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // レイヤー定数（接地判定のフィルタに使う）
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 接地判定のレイヤーフィルタに使う
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -8,7 +8,7 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Body/BodyFilter.h>
-#include <Jolt/Physics/Body/Body.h> // IsSensor() を使うため
+#include <Jolt/Physics/Body/Body.h> // IsSensor()
 
 #include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Body/BodyLockInterface.h>
@@ -17,11 +17,9 @@
 
 using namespace DirectX;
 
-// ===================================================================================
-// レイキャスト用のボディフィルター
-//   - 指定ボディ（自分自身）を無視
-//   - センサー（弾など「すり抜ける」判定用ボディ）はレイを遮らない
-// ===================================================================================
+// レイキャスト用のボディフィルタ
+//   - 指定ボディ（自分自身）を無視する
+//   - センサー（攻撃判定などのすり抜けるボディ）はレイを遮らない
 namespace
 {
     class RaycastBodyFilter final : public JPH::BodyFilter
@@ -39,7 +37,7 @@ namespace
 
         bool ShouldCollideLocked(const JPH::Body &inBody) const override
         {
-            // センサー（弾・トリガー等）はレイの障害物にしない
+            // センサーはレイの障害物にしない
             return !inBody.IsSensor();
         }
 
@@ -48,9 +46,9 @@ namespace
     };
 } // namespace
 
-// =======================================================
-// 解決ヘルパー（全メソッド共通の前処理）
-// =======================================================
+// ============================================================
+// 共通の前処理
+// ============================================================
 bool JoltPhysicsFacade::ResolveBody(
     CCL::ECS::EntityID entity, JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface)
 {
@@ -73,9 +71,9 @@ JPH::PhysicsSystem *JoltPhysicsFacade::GetPhysicsSystem() const
     return manager ? manager->GetPhysicsSystem() : nullptr;
 }
 
-// =======================================================
-// Linear (直進)
-// =======================================================
+// ============================================================
+// 並進
+// ============================================================
 void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &force)
 {
     JPH::BodyID         bodyID;
@@ -111,9 +109,9 @@ XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
 
-// =======================================================
-// Angular (回転)
-// =======================================================
+// ============================================================
+// 回転
+// ============================================================
 void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &torque)
 {
     JPH::BodyID         bodyID;
@@ -149,9 +147,9 @@ XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
 
-// =======================================================
-// Kinematic Warp (強制制御)
-// =======================================================
+// ============================================================
+// 位置・回転の強制設定
+// ============================================================
 void JoltPhysicsFacade::SetPosition(CCL::ECS::EntityID entity, const XMFLOAT3 &position)
 {
     JPH::BodyID         bodyID;
@@ -176,12 +174,12 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
     JPH::BodyInterface *bi;
     if (!ResolveBody(entity, bodyID, bi)) return;
 
-    // 1. 水平化 (Y軸の無効化): Yaw(左右)だけの回転にする
-    // 2. デッドゾーンのチェック（到着時の荒ぶる回転を防止）
+    // Y を無視して水平方向だけを見る。水平成分がほぼ 0 なら回さない
+    // （目標に到着した瞬間の微小な差で向きが大きく振れるのを防ぐ）
     const float lenSq = direction.x * direction.x + direction.z * direction.z;
     if (lenSq <= 1e-4f) return;
 
-    // 3. Yaw を直接作る。
+    // atan2 から Y 軸回転を直接作る。
     //   Quat::sFromTo(+Z, dir) は「2ベクトル間の最短弧」なので、dir がちょうど真後ろ(-Z)の
     //   ときに回転軸が定まらず、Jolt が任意の垂直軸（X軸になりうる）を選ぶ。
     //   その場合ボディが横倒しにひっくり返る。真後ろを向く＝180度ターンは実際に頻出するので、
@@ -189,13 +187,13 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
     const float yaw            = std::atan2(direction.x, direction.z);
     JPH::Quat   targetRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), yaw);
 
-    // 4. 回転を適用し、スリープ状態なら叩き起こす(Activate)
+    // 回転を適用し、スリープ中なら起こす
     bi->SetRotation(bodyID, targetRotation, JPH::EActivation::Activate);
 }
 
-// =======================================================
-// Queries (レイキャスト・接地)
-// =======================================================
+// ============================================================
+// 空間クエリ
+// ============================================================
 bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
 {
     auto *handle = m_world->GetComponent<JoltHandleComponent>(entity);
@@ -212,8 +210,7 @@ bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
     JPH::RVec3              rayDir(0.0f, -distance, 0.0f);
     JPH::RayCastResult      hit;
 
-    // fix: 素通しフィルタをやめ、地面(NON_MOVING)だけにヒットさせる。
-    //   これで弾(センサー)・他キャラ・敵に接地判定が誤反応しなくなる。
+    // 地面(NON_MOVING)だけに当てる。センサー・他キャラ・敵には接地判定を反応させない。
     JPH::SpecifiedBroadPhaseLayerFilter bpFilter(BroadPhaseLayers::NON_MOVING);
     JPH::SpecifiedObjectLayerFilter     objFilter(PhysicsLayers::NON_MOVING);
     JPH::IgnoreSingleBodyFilter         ignoreSelf(handle->bodyID);
@@ -254,8 +251,7 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3
         }
     }
 
-    // fix: IgnoreSingleBodyFilter の代わりに、自分＋センサーを除外するフィルタを使う。
-    //   （弾同士や自弾のセンサーがレイを遮ってしまう誤爆を防ぐ）
+    // 自分とセンサーを除外するフィルタを使う（攻撃判定などのセンサーがレイを遮らないように）
     RaycastBodyFilter bodyFilter(ignoreBodyID);
 
     JPH::RayCastResult hit;
@@ -324,9 +320,9 @@ PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XM
     return info;
 }
 
-// =======================================================
-// Character Queries (CharacterVirtual)
-// =======================================================
+// ============================================================
+// キャラクター専用クエリ
+// ============================================================
 bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity)
 {
     // CharacterVirtual の内部状態を直接参照する（段差・坂・床速度を考慮した正確な接地判定）。

@@ -1,32 +1,39 @@
 #pragma once
+// ===========================================================================
+// 概要: 色調補正の設定と、演出からの一時的な上書きを持つシングルトンコンポーネント。
+//
+// 責務:
+//   - シーンが持つ普段の設定（enable / data）を持つ
+//   - 演出ごとの一時的な上書き（overrides）を持つ
+//   - 両方を重ねた最終的なパラメータを求める（Resolve）
+//
+// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
+//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
+// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
-#include <cmath> // std::lerp
+#include <cmath>
 
-// 色調補正の一時上書きの中身。寄せ先の目標値だけを持つ（強さは weight 側）。
+// 色調補正の一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）。
 struct ColorGradingOverrideParams
 {
-    DirectX::XMFLOAT4 tint       = {1.0f, 1.0f, 1.0f, 1.0f};
-    float             saturation = 1.0f;
-    float             contrast   = 1.0f;
+    DirectX::XMFLOAT4 tint       = {1.0f, 1.0f, 1.0f, 1.0f}; // 色味
+    float             saturation = 1.0f;                     // 彩度
+    float             contrast   = 1.0f;                     // コントラスト
 
-    // この演出が要求する mix のピーク。素の mix を下回らせない。
-    //
-    // mix だけ他項目と扱いが違うのは「色調をどれだけ画面へ効かせるか」の
-    // マスターつまみであり、素の設定より弱めてはいけないため。
+    // この演出が求める mix のピーク。普段の mix より小さくはしない。
+    // mix は「色調補正をどれだけ画面に効かせるか」の全体の強さなので、
+    // 演出で普段の設定より弱めてはいけない。そのため他の項目と違い最大値で合わせる。
     float mixPeak = 0.0f;
 };
 
-// 色調補正の「素の設定」と、演出からの一時的な上書きを保持する singleton。
-//
-// enable / data はシーンが持つ定常設定で、演出システムは書き換えない。
-// スロットの仕組みと背景は PostEffectOverrides.h を参照。
 struct ColorGradingConfigComponent
 {
     bool enable = true;
 
+    // 色味 / 彩度 / コントラスト / 明るさ / mix
     GpuData::CbColorGradingData data{
         {1.0f, 1.0f, 1.0f, 1.0f},
         1.0f,
@@ -36,12 +43,11 @@ struct ColorGradingConfigComponent
 
     PostEffectOverrides<ColorGradingOverrideParams> overrides;
 
-    // 素の設定が OFF でも、演出中は描画する必要がある。
+    // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 描画へ渡す最終パラメータ。素の設定に上書きを priority 昇順で重ねる。
-    //
-    // 明るさ(gradeBrightness)はどの演出も触らないので素の値のまま通す。
+    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる。
+    // 明るさ（gradeBrightness）はどの演出も触らないので、普段の値のまま渡す。
     GpuData::CbColorGradingData Resolve() const
     {
         GpuData::CbColorGradingData out = data;

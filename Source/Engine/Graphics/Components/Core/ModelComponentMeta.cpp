@@ -1,5 +1,4 @@
 // ModelComponent のシリアライズ/インスペクタ定義。
-// assetHash は保存せず、解決済みの assetPath を保存する (カスタムシリアライズ)。
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
@@ -17,7 +16,8 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 
 // ============================================================================
-// カスタムシリアライズ:
+// シリアライズ
+//   assetHash はパスに戻せないので、ResourceManager で引いたパスを保存する。
 // ============================================================================
 namespace ComponentMetaJson
 {
@@ -46,7 +46,7 @@ struct ComponentMeta<ModelComponent>
 {
     static constexpr const char *displayName       = "Model";
     static constexpr const char *category          = CCL::Categories::Rendering;
-    static constexpr int         sortPriority      = 10; // Transformの直後に配置されるべき重要コンポーネント
+    static constexpr int         sortPriority      = 10; // Transform の直後に並べる
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
     static constexpr bool        isSerializable    = true;
@@ -68,7 +68,6 @@ struct ComponentMeta<ModelComponent>
 
         if (ImGui::Button("モデルを読み込む...", ImVec2(-1, 0)))
         {
-            // std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
             if (auto path = FileDialog::OpenPreset("Model", "モデルを選択",
                                                    Graphics::Instance().GetWindowHandle()))
             {

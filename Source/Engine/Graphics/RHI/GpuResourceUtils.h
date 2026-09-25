@@ -63,16 +63,6 @@ public:
         UINT           bufferSize,
         ID3D11Buffer **constantBuffer);
 
-    // 頂点バッファ作成
-    static HRESULT CreateVertexBuffer(
-        ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer);
-
-    // インデックスバッファ作成
-    static HRESULT CreateIndexBuffer(ID3D11Device  *device,
-                                     const UINT    *data, // uint32_t を UINT に変更
-                                     UINT           size,
-                                     ID3D11Buffer **buffer);
-
     // HLSLから直接ピクセルシェーダーをコンパイルする関数
     static bool CompilePixelShader(ID3D11Device       *device,
                                    const std::wstring &hlslPath,

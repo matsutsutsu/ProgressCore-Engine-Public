@@ -1,13 +1,10 @@
-// JoltCharacterConfigComponent のシリアライズおよびインスペクタGUI定義
+// JoltCharacterConfigComponent のシリアライズ/インスペクタ定義。
 
 #include "JoltCharacterConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // LayerNames / LayerCount
 
-// ===========================================================================
-// JoltCharacterConfigComponent メタデータ定義
-// ===========================================================================
 COMPONENT_META_BEGIN_FULL(JoltCharacterConfigComponent, "Jolt Character Config", CCL::Categories::Physics, 205, false)
 
 // presence プロキシの物理レイヤー（剛体と同じ LayerNames を共有）

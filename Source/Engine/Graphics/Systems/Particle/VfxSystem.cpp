@@ -1,7 +1,3 @@
-// ===========================================================================
-// VFXSystem.cpp
-// 役割・前提はヘッダを参照。
-// ===========================================================================
 #include "VFXSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -17,15 +13,14 @@ using namespace CCL::ECS;
 void VFXSystem::Initialize()
 {
     // VFX::Play から自分を引けるようにする。
-    // World が消えればこの登録も一緒に消えるので、シーンを切り替えても
-    // 古いポインタが残らない。
+    // World が消えるとこの登録も消えるので、シーンを切り替えても古いポインタは残らない。
     m_world->AddResource<VFXSystem *>(this);
 }
 
 // =========================================================================
 EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &worldPos)
 {
-    // ① プレハブ(JSON)から1エンティティを作る
+    // 1. プレハブ（JSON）から1 Entity を作る
     EntityID id = Prefab::SpawnPrefab(*m_world, path);
     if (id == InvalidEntityID) return InvalidEntityID;
 
@@ -39,25 +34,24 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
         return InvalidEntityID;
     }
 
-    // ② 指定位置へ置く
-    //    プレハブをエディタで保存し直すと親IDが焼き込まれることがあるので、念のため切る。
+    // 2. 指定位置に置く
+    //    エディタで保存し直したプレハブには親の ID が入っていることがあるので、切り離しておく。
     TransformUpdateSystem::DetachChild(*m_world, id);
     transform->position = worldPos;
     transform->isDirty  = true;
 
-    // ③ ワールド行列をこの場で計算しておく
-    //    パーティクルの発生位置は worldMatrix から読まれるが、その計算は
-    //    TransformUpdateSystem が次のフレームに行う。待つと最初の1フレームだけ
-    //    原点で粒子が出てしまうので、ここで1回だけ自分で計算する。
+    // 3. ワールド行列をここで計算する
+    //    パーティクルの発生位置はワールド行列から読むが、TransformUpdateSystem が計算するのは
+    //    次のフレーム。待つと最初の1フレームだけ原点で粒子が出るので、ここで1回計算しておく。
     transform->UpdateMatrix();
 
-    // ④ 全エミッタのバーストを発火する
+    // 4. 全エミッタのバーストを起こす
     particle->hasPrevTransform = false; // 前フレームの位置を今の位置で初期化させる
     particle->TriggerBurst();
 
-    // ⑤ 後始末の予約。
-    //    継続放出は「いつ終わるか」がデータから決まらないので、ここでは予約しない。
-    //    呼び出し側が Stop() を呼ぶまで出続ける（ループVFXが勝手に消えないように）。
+    // 5. 破棄を予約する
+    //    継続放出はいつ終わるかがデータから決まらないので予約しない。
+    //    呼び出し側が Stop() を呼ぶまで出し続ける（ループする VFX が勝手に消えないように）。
     if (!HasContinuousEmitter(*particle))
         m_active.push_back({id, CalcParticleLifetime(*particle)});
 
@@ -75,17 +69,16 @@ void VFXSystem::Stop(EntityID handle)
     auto *particle = m_world->GetComponent<GPUParticleComponent>(handle);
     if (!particle)
     {
-        // パーティクルでないものが渡された。待つ理由が無いのでそのまま破棄する。
+        // パーティクルでないものが渡された。待つ理由が無いのですぐ破棄する
         TransformUpdateSystem::MarkForDestruction(*m_world, handle);
         return;
     }
 
-    // 発生だけ止める（GPU へ emit_enabled=0 として渡る）。
-    //   既にいる粒子は寿命まで生きて自然に消える。即座に破棄すると
-    //   粒子がブツッと途切れて不自然になるため。
+    // 発生だけを止める（GPU へ emit_enabled=0 として渡る）。
+    //   出ている粒子は寿命まで残る。すぐに破棄すると粒子が途中で途切れる。
     particle->SetEmitting(false);
 
-    // 最後の粒子が消えたころに破棄する。
+    // 最後の粒子が消えたころに破棄する
     m_active.push_back({handle, CalcParticleLifetime(*particle)});
 }
 
@@ -96,7 +89,7 @@ void VFXSystem::Update(float dt)
     {
         const EntityID id = m_active[i].id;
 
-        // 他所から先に消されていたら、待つ意味がないので予約を捨てる。
+        // 他から先に消されていたら、予約を捨てる
         if (!m_world->IsEntityValid(id))
         {
             m_active[i] = m_active.back();
@@ -104,11 +97,10 @@ void VFXSystem::Update(float dt)
             continue;
         }
 
-        // 秒読みは「そのエンティティの時計」で進める。
-        //   粒子の見た目は GPUParticleUpdateSystem が localDt で動かしているので、
-        //   ここだけ実時間で数えると、ヒットストップやジャスト回避のスロー中に
-        //   粒子がまだ飛んでいるのに寿命切れと判定して消してしまう。
-        //   （0.3倍のスロー中なら、粒子の人生の3割しか進んでいない時点で破棄される）
+        // 残り時間はその Entity の時間（localDt）で減らす。
+        //   粒子は GPUParticleUpdateSystem が localDt で動かしているので、ここだけ実時間で数えると、
+        //   ヒットストップやジャスト回避のスロー中に、まだ飛んでいる粒子を消してしまう
+        //   （0.3 倍のスロー中なら、寿命の3割しか進んでいない時点で破棄される）。
         float step = dt;
         if (const auto *time = m_world->GetComponent<TimeStateComponent>(id))
             step = time->localDt;
@@ -121,10 +113,10 @@ void VFXSystem::Update(float dt)
             continue;
         }
 
-        // 破棄する。実際に消すのは HierarchyCleanupSystem(L07)。
+        // 破棄の印を付ける。実際に消すのは HierarchyCleanupSystem（L07）
         TransformUpdateSystem::MarkForDestruction(*m_world, id);
 
-        // 末尾を持ってきて詰める(順番はどうでもいいので これが一番速い)。
+        // 順番は問わないので、末尾の要素を持ってきて詰める
         m_active[i] = m_active.back();
         m_active.pop_back();
     }
@@ -141,13 +133,13 @@ bool VFXSystem::HasContinuousEmitter(const GPUParticleComponent &particle) const
 // =========================================================================
 float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) const
 {
-    // 一番長生きする粒子が消えるまでの時間を探す。
+    // 一番長く残る粒子が消えるまでの時間を探す
     float longest = 0.0f;
 
     for (const auto &emitter : particle.emitters)
     {
-        // spawnDelay は「生まれるまでの待ち時間」。継続放出のときだけ効く
-        //   （バーストは spawn 時に age=0 で始まり、遅延を使わない）。
+        // spawnDelay（生まれるまでの待ち時間）は継続放出のときだけ効く
+        //   （バーストは生成時に age=0 から始まり、遅れを使わない）。
         const float delay = (emitter.desc.emitMode == 1) ? 0.0f : emitter.desc.spawnDelay.y;
         const float life  = delay + emitter.desc.lifespan.y;
         if (life > longest) longest = life;

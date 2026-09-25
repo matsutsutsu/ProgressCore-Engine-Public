@@ -1,3 +1,5 @@
+// DepthOfFieldConfigComponent のシリアライズ/インスペクタ定義。
+
 #include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

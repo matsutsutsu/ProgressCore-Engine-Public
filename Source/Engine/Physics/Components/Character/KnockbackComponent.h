@@ -1,27 +1,22 @@
 #pragma once
 // ===========================================================================
-// KnockbackComponent.h
-// --------------------
-// 役割:
-//   被弾時の「吹き飛ばし」状態を保持する常設コンポーネント。被弾させたいキャラ
-//   （プレイヤー／ボス等）に付けておく。
+// 概要: 被弾時の吹き飛ばしと硬直の状態を保持する常設コンポーネント。被弾させたい
+//       キャラ（プレイヤー／ボス等）に付けておく。
 //
 // 責務:
-//   - config: 吹き飛ばしの適用時間 duration と、操作を受け付けない硬直時間 stunDuration。
-//   - runtime: 現在のノックバック速度 velocity と残り時間 timer、硬直の残り stunTimer。
-//     DamageResolutionSystem が命中時に velocity/timer/stunTimer を書き込み、
-//     JoltCharacterUpdateSystem が水平速度へ加算しつつ両タイマーを減衰させる。
+//   - 設定: 吹き飛ばしの適用時間 duration と、操作を受け付けない硬直時間 stunDuration
+//   - 実行時状態: ノックバック速度 velocity と残り時間 timer、硬直の残り stunTimer
+//     （DamageResolutionSystem が命中時に書き、JoltCharacterUpdateSystem が
+//       水平速度へ加算しつつ両タイマーを減らす）
 //
-// なぜ「滑る時間」と「動かせない時間」を分けるか:
-//   吹き飛ばしの距離は duration×velocity で決まるが、手触りとして欲しい硬直は
-//   それより長いことが多い。1つのタイマーを共用すると「硬直を伸ばしたら
-//   吹き飛び過ぎる」となって、どちらも詰められなくなる。
-//
-// 設計方針:
-//   - CharacterVirtual の速度へ加算する形で動かすため、押し出し・壁は物理が処理する
+// 備考:
+//   - 「滑る時間」と「動かせない時間」を分けるのは、吹き飛ばしの距離は
+//     duration×velocity で決まるが、手触りとして欲しい硬直はそれより長いことが多いため。
+//     1つのタイマーを共用すると「硬直を伸ばしたら吹き飛び過ぎる」となる。
+//   - CharacterVirtual の速度へ加算する形で動かすので、押し出し・壁は物理が処理する
 //     （直接 SetPosition しないので壁抜けしない）。
-//   - AddComponent はしない「常設」方式。多数同時被弾でもアーキタイプ移動が発生しない。
-//   - velocity/timer はランタイム値なので Fields() に載せない＝保存対象外。
+//   - 被弾時に AddComponent しない常設方式。多数同時被弾でもアーキタイプ移動が起きない。
+//   - velocity/timer は実行時の値なので Fields() に載せない（保存しない）。
 // ===========================================================================
 #include <SimpleMath.h>
 
@@ -29,7 +24,7 @@
 struct KnockbackComponent
 {
     // --- config（シリアライズ／インスペクタ） ---
-    float duration = 0.18f; // ノックバックの適用時間(秒)。短いほどキビキビ。
+    float duration = 0.18f; // ノックバックの適用時間(秒)。短いほど鋭く止まる。
 
     // 被弾後、操作を受け付けない時間(秒)。0 で硬直なし。
     //
@@ -38,7 +33,7 @@ struct KnockbackComponent
     float stunDuration = 0.35f;
 
     // --- runtime（非シリアライズ） ---
-    DirectX::SimpleMath::Vector3 velocity  = {0.0f, 0.0f, 0.0f}; // 現在のノックバック速度
+    DirectX::SimpleMath::Vector3 velocity  = {0.0f, 0.0f, 0.0f}; // 命中時のノックバック速度（m/秒）。残り時間の比で弱めて加算する
     float                        timer     = 0.0f;               // 残り時間(秒)。>0 の間だけ適用。
     float                        stunTimer = 0.0f;               // 硬直の残り(秒)。>0 の間は操作不能。
 

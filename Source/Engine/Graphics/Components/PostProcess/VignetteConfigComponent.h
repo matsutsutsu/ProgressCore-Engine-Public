@@ -1,29 +1,37 @@
 #pragma once
+// ===========================================================================
+// 概要: ビネットの設定と、演出からの一時的な上書きを持つシングルトンコンポーネント。
+//
+// 責務:
+//   - シーンが持つ普段の設定（enable / data）を持つ
+//   - 演出ごとの一時的な上書き（overrides）を持つ
+//   - 両方を重ねた最終的なパラメータを求める（Resolve）
+//
+// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
+//       最終的な値は PostProcessSystem が Resolve() で求める。
+//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
+// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
-#include <cmath> // std::lerp
+#include <cmath>
 
-// ビネットの一時上書きの中身。寄せ先の目標値だけを持つ（強さは weight 側）。
+// ビネットの一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）。
 struct VignetteOverrideParams
 {
-    DirectX::XMFLOAT4 color      = {0.0f, 0.0f, 0.0f, 1.0f};
-    float             intensity  = 0.0f;
-    float             radius     = 0.55f;
-    float             softness   = 0.35f;
-    float             pulseSpeed = 0.0f;
+    DirectX::XMFLOAT4 color      = {0.0f, 0.0f, 0.0f, 1.0f}; // 周辺を塗る色
+    float             intensity  = 0.0f;                     // 強さ
+    float             radius     = 0.55f;                    // かかり始める半径（画面中心から, UV）
+    float             softness   = 0.35f;                    // 境目のぼかし幅
+    float             pulseSpeed = 0.0f;                     // 脈打つ速さ（回/秒。0 で脈打たない）
 };
 
-// ビネットの「素の設定」と、演出からの一時的な上書きを保持する singleton。
-//
-// enable / data はシーンが持つ定常設定で、演出システムは書き換えない。
-// 最終値は PostProcessSystem が Resolve() で合成する。
-// スロットの仕組みと背景は PostEffectOverrides.h を参照。
 struct VignetteConfigComponent
 {
     bool enable = true;
 
+    // 色 / 強さ / 半径 / ぼかし幅 / 脈打つ速さ / 時間
     GpuData::CbVignetteData data{
         {0.0f, 0.0f, 0.0f, 1.0f},
         0.4f,
@@ -34,16 +42,13 @@ struct VignetteConfigComponent
 
     PostEffectOverrides<VignetteOverrideParams> overrides;
 
-    // 素の設定が OFF でも、演出中は描画する必要がある。
+    // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 描画へ渡す最終パラメータ。素の設定に上書きを priority 昇順で重ねる。
-    //
-    // 最大値合成ではなく重ね順にしているのは、ビネットが色・半径・脈動という
-    // 「組み合わせで意味を持つ」パラメータ群だから。各項目を独立に最大化すると
-    // どの演出とも違う色と形になってしまう。
-    //
-    // vigTime は演出ではなく PostProcessSystem が進める連続値なので触らない。
+    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる。
+    // 色収差のように最大値をとらないのは、ビネットの色・半径・脈動が組み合わせで
+    // 意味を持つため。項目ごとに最大値をとると、どの演出とも違う色と形になる。
+    // vigTime は演出ではなく PostProcessSystem が進める値なので触らない。
     GpuData::CbVignetteData Resolve() const
     {
         GpuData::CbVignetteData out = data;

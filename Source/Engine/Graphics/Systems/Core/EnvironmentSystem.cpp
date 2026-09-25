@@ -9,7 +9,6 @@
 
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/RenderContext.h" // RenderServices
-#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
@@ -28,7 +27,7 @@ void EnvironmentSystem::Initialize()
     if (noiseHandle.IsValid())
         m_globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
-    // IBL テクスチャ（既定＝SkyboxComponent 未設定時のフォールバック）
+    // 既定の IBL とスカイボックス（SkyboxComponent が無いか、パスが空のときに使う）
     auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
     auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
     auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
@@ -51,24 +50,15 @@ std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
 
 void EnvironmentSystem::Update(float /*dt*/)
 {
-    // EnvironmentSystem::Update はフォグ・IBL コンポーネントの読み取りのみ担当。
-    // CbScene（カメラ行列・ライト情報）は Graphics::Update() が管理するため、
-    // ここでは一切触れない。
+    // 処理はすべて BindGlobalResources で行う（描画パスの直前に呼ばれる）
 }
 
 void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const RenderServices &s)
 {
     if (!m_world) return;
 
-    // =================================================================
-    // Bug Fix: CbScene の UpdateSubresource をここから削除した。
-    //   Graphics::Update() が正しい行列データを書き込んだ後、
-    //   EnvironmentSystem が古い / 未更新の m_sceneData で上書きすると
-    //   InstanceData がゼロ、CbScene の行列が壊れる等の描画バグを引き起こす。
-    //   ここでは BindAllGlobalConstantBuffers でバインドするだけ。
-    // =================================================================
-
-    // 1. CbScene (b8) / CbSkeleton (b12) をパイプラインにバインドする
+    // 1. CbScene (b8) / CbSkeleton (b12) をバインドする。
+    //    中身は Graphics::Update() が書いた後なので、ここで書き換えてはいけない。
     if (m_world->HasResource<ModelConstantBuffers *>())
     {
         if (auto *renderer = m_world->GetResource<ModelConstantBuffers *>())
@@ -85,9 +75,9 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     }
 
     // 3. フォグ定数バッファ (b11)
-    //   既定は「フォグ無し」。gFogColor.a=0 が geo(ApplyHeightFog) と
-    //   skybox(地平線フォグ) の両方のマスター強度を無効化する。
-    //   FogComponent が無い / enabled=false のときはこの既定のまま送る＝完全にOFF。
+    //   既定はフォグ無し。gFogColor.a=0 で、ジオメトリ（ApplyHeightFog）と
+    //   スカイボックス（地平線フォグ）の両方のフォグが消える。
+    //   FogComponent が無いか enabled=false なら、この既定のまま送る。
     GpuData::CbFog            fogData     = {{0.5f, 0.5f, 0.5f, 0.0f}, {0.0f, 1000.0f, 10.0f, 0.0f}, {}, {}, {}, {}, {}};
     ID3D11ShaderResourceView *fogNoiseSrv = nullptr;
 
@@ -101,23 +91,18 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
         fogData.gFogRimColor    = {fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f};
         fogData.gFogRimParams   = {fog->rimPower, fog->rimStrength, 0.0f, 0.0f};
         fogData.gSkyFogParams   = {fog->skyFogHeight, fog->skyFogSoftness, 0.0f, 0.0f};
-        // --------------------------------------------------------
-        // 【遅延ロードとバインド準備】
-        // --------------------------------------------------------
-        // UIで新しいテクスチャパスが設定された（ハンドルが無効）場合、ResourceManager経由でロードする
+        // ノイズテクスチャの読み込み。パスがあってハンドルが無効なら読む（パスを変えるとハンドルが無効になる）
         if (fog->noiseTexturePath[0] != '\0' && !fog->noiseTextureHandle.IsValid())
         {
             fog->noiseTextureHandle = ResourceManager::Instance().LoadTexture(fog->noiseTexturePath);
         }
 
-        // ここで内側に再宣言していたため外側の fogNoiseSrv に反映されず、
-        //         フォグノイズSRV(t9)が常に null だった。外側の変数へ代入する。
         if (fog->noiseTextureHandle.IsValid())
         {
             fogNoiseSrv = ResourceManager::Instance().GetTexture(fog->noiseTextureHandle);
         }
 
-        // 万が一ロードに失敗した場合や未設定時のフェールセーフ（デフォルトノイズの使用）
+        // 未設定や読み込み失敗のときは、グローバルノイズで代用する
         if (!fogNoiseSrv && m_globalNoiseSRV)
         {
             fogNoiseSrv = m_globalNoiseSRV.Get();
@@ -137,11 +122,10 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     dc->PSSetShaderResources(SLOT_SRV_FOG_NOISE, 1, &fogNoiseSrv);
 
     // =================================================================
-    // 4. スカイボックス / IBL の解決（SkyboxComponent 由来 or 既定）
-    //   SkyboxComponent(singleton) が空・IEM・PMREM の .dds パスを持つ。
-    //   FogComponent.noiseTexturePath と同じ遅延ロード方式で解決し、
-    //   未設定/失敗時は Initialize で用意した既定へフォールバックする。
-    //   → 「1コンポーネントに指すだけで空とIBLがセットで差し替わる」を実現。
+    // 4. スカイボックスと IBL を決める
+    //   SkyboxComponent（シングルトン）が空・IEM・PMREM の .dds パスを持つ。
+    //   フォグのノイズと同じく、ハンドルが無効なときに読み込む。
+    //   パスが空か読み込みに失敗したら、Initialize で用意した既定を使う。
     // =================================================================
     ID3D11ShaderResourceView *skyboxSRV     = m_defaultSkyboxSRV.Get();
     ID3D11ShaderResourceView *irradianceSRV = m_irradianceMapSRV.Get();
@@ -151,7 +135,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     {
         auto &rm = ResourceManager::Instance();
 
-        // パスが設定されていてハンドルが未解決なら遅延ロード（パス変更→handle無効化で再ロード）。
+        // パスがあってハンドルが無効なら読み込む（パスを変えるとインスペクタがハンドルを無効にする）
         auto resolve = [&](char *path, TextureHandle &handle,
                            ID3D11ShaderResourceView *fallback) -> ID3D11ShaderResourceView * {
             if (path[0] == '\0') return fallback; // 空欄は既定
@@ -165,12 +149,12 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
         prefilterSRV  = resolve(sky->prefilterPath, sky->prefilterHandle, m_prefilterMapSRV.Get());
     }
 
-    // 4a. IBL テクスチャ (t14 IEM, t15 PMREM, t16 BRDF LUT=空非依存の定数)
+    // 4a. IBL テクスチャ (t14 IEM, t15 PMREM, t16 BRDF LUT。LUT は空に依存しない)
     ID3D11ShaderResourceView *iblSRVs[3] = {irradianceSRV, prefilterSRV, m_brdfLutSRV.Get()};
     dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
 
-    // 4b. スカイボックス背景は SkyboxPass が描画時に t17 へ刺す。ここでは Graphics に預けるだけ
-    //     （SkyboxPass はワールドを見られないため、MakeFrameContext 経由で渡す）。
+    // 4b. スカイボックスの背景は SkyboxPass が描くときに t17 へバインドする。ここでは Graphics に渡すだけ
+    //     （SkyboxPass は World を参照できないので、MakeFrameContext 経由で渡す）。
     Graphics::Instance().SetSkyboxSRV(skyboxSRV);
 
     // 5. IBL 用サンプラ (s3)

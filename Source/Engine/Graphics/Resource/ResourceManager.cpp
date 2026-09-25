@@ -744,35 +744,3 @@ bool ResourceManager::SaveMaterialAsset(MaterialHandle handle, const std::string
         return false;
     }
 }
-
-//  目的:
-//    Model::CreateFromData() が返す shared_ptr<Model>（ランタイム生成メッシュ）を
-//    インスタンスプールに登録し、ModelComponent が持てる ModelInstanceHandle を返す。
-//
-//  背景:
-//    現プロジェクトの ModelComponent は ModelInstanceHandle で Model を参照する。
-//    既存の CreateModelInstance(filename) はファイルパスからしか生成できないため、
-//    ランタイム生成 Model をプールに預ける口をここで足す。
-//
-//  なぜムーブで安全か:
-//    Model::CreateFromData は ModelResource 側にメッシュを構築し、Model::meshes
-//    （Mesh::node / material といった自己参照ポインタを持つ vector）は空のまま返す。
-//    描画も MeshBatcher も model->GetResource()->GetMeshes() を参照するため、
-//    Model 自体をムーブしても自己参照ポインタ問題は描画経路に影響しない。
-//    （resource は CCL::Handle<ModelResource> = ただの index/gen 値なのでムーブ安全）
-//
-//  組み込み:
-//    ResourceManager.h の [3] Model Instance に下記を追加:
-//
-//        // 構築済み Model をプール登録してハンドル化（ランタイム生成メッシュ用）
-//        ModelInstanceHandle RegisterModelInstance(std::shared_ptr<Model> model);
-//============================================================================
-ModelInstanceHandle ResourceManager::RegisterModelInstance(std::shared_ptr<Model> model)
-{
-    if (!model) return ModelInstanceHandle{};
-
-    std::lock_guard<std::mutex> lock(m_mutex);
-    // ResourcePool<Model>::Create(Args&&...) は内部で placement-new Model(args...)。
-    // Model のムーブコンストラクタ（暗黙 or 既存）でプールへ収める。
-    return m_modelInstancePool.Create(std::move(*model));
-}

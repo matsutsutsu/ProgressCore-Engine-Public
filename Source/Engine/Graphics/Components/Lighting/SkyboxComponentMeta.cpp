@@ -1,5 +1,4 @@
 // SkyboxComponent のシリアライズ/インスペクタ定義。
-// 空(スカイボックス)と IBL(IEM/PMREM) を1セットで差し替えるための設定。
 
 #include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -18,7 +17,7 @@
 #endif
 
 // ---------------------------------------------------------------------------
-// シリアライズ：3つのパスを保存/復元する（これが「シーンごとに空を保存」の要）。
+// シリアライズ: 3つのパスを保存・復元する。これでシーンごとに空を持てる。
 // ---------------------------------------------------------------------------
 namespace ComponentMetaJson
 {
@@ -67,8 +66,8 @@ struct ComponentMeta<SkyboxComponent>
                             u8"空欄なら既定の空にフォールバックします。");
         ImGui::Separator();
 
-        // パス1行分：ラベル左 → 現在パス → [読込...] [クリア]。
-        // handle を無効化すると EnvironmentSystem が次フレームで再ロードする。
+        // パス1行分: ラベル → 現在のパス → [読込...] [クリア]。
+        // handle を無効にすると、EnvironmentSystem が次のフレームで読み直す。
         auto pathRow = [&](const char *label, char *path, TextureHandle &handle) {
             ComponentMetaImGui::Prop(label);
             ImGui::TextUnformatted(path[0] ? path : u8"(既定)");
@@ -123,9 +122,8 @@ struct ComponentMeta<SkyboxComponent>
     }
 };
 
-// 登録名は必ず displayName から取る。ここに文字列を直書きすると、インスペクタの
-// 見出し(displayName)と JSONキー/追加メニュー(登録名)が食い違い、プレハブに
-// 見出しどおりのキーを書いても無言でコンポーネントが付かなくなる。
-// （COMPONENT_META_END マクロが自動でやっている事を、手書きメタでも守る）
+// 登録名は displayName から取る。文字列を直接書くと、インスペクタの見出し（displayName）と
+// JSON のキー・追加メニュー（登録名）が食い違い、見出しどおりのキーをプレハブに書いても
+// コンポーネントが付かない（エラーも出ない）。COMPONENT_META_END マクロは自動でこうしている。
 REGISTER_COMPONENT(SkyboxComponent, ComponentMeta<SkyboxComponent>::displayName)
 REGISTER_COMPONENT_EDITOR_GUI(SkyboxComponent)

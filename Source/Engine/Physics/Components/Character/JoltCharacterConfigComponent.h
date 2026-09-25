@@ -1,24 +1,18 @@
 #pragma once
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // objectLayer (JPH::ObjectLayer) 用
-
-// ===================================================================================
-// ファイル名: JoltCharacterConfigComponent.h
-// 役割: 仮想キャラクター（CharacterVirtual）の運動性能を定義する「設計図」。
+// ===========================================================================
+// 概要: 仮想キャラクター（CharacterVirtual）の運動性能と物理レイヤーの設定。
 //
-// 【アーキテクチャ仕様】
-// -
-// 段差の乗り越え高さや、登れる坂の角度など、アクションゲーム特有のパラメータを保持。
-// - 物理レイヤー(objectLayer)もここで持つ。剛体(JoltRigidbodyComponent.objectLayer)と
-//   同じ ObjectLayer の仕組みに乗せることで、キャラのレイヤー分けを一元管理する。
+// 責務:
+//   - 登れる坂の角度・乗り越えられる段差などの地形との関わり方
+//   - 歩行速度・ジャンプ・重力・加減速の手触り
+//   - キャラクターの物理レイヤー（剛体と同じ ObjectLayer の仕組みで管理する）
 //
-// 【使い方・ルール】
-// - プレイヤーや敵AIにアタッチする。JoltCharacterSetupSystem
-// がこれを見てキャラクター本体(CharacterVirtual)と
-//   presence用のKinematicプロキシ剛体を生成する。
-// - 生成後も walkSpeed などをゲームロジック（PlayerMoveSystem等）から参照して使用する。
-// ===================================================================================
+// 備考: プレイヤーやボスに付けると、JoltCharacterSetupSystem がこれを見て
+//       CharacterVirtual と presence 用の Kinematic プロキシ剛体を生成する。
+//       生成後も walkSpeed などを PlayerMoveSystem / BossActionSystem が参照する。
+// ===========================================================================
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
-// キャラクターの運動性能（プランナーが調整する値）
 struct JoltCharacterConfigComponent
 {
     // --- 物理レイヤー ---
@@ -27,22 +21,22 @@ struct JoltCharacterConfigComponent
     JPH::ObjectLayer objectLayer = PhysicsLayers::PLAYER;
 
     float maxSlopeAngle = 45.0f; // 登れる最大角度（度）
-    float maxStepHeight = 0.5f;  // 乗り越えられる段差の最大高
-    float walkSpeed     = 6.0f;  // 歩行速度
-    float jumpSpeed     = 10.0f; // ジャンプの初速
-    float characterMass = 70.0f; // 体重（押し出し計算などに影響）
+    float maxStepHeight = 0.5f;  // 乗り越えられる段差の最大高（m）
+    float walkSpeed     = 6.0f;  // 歩行速度（m/秒）
+    float jumpSpeed     = 10.0f; // ジャンプの初速（m/秒）
+    float characterMass = 70.0f; // 体重（kg）。他の物体を押す力（mMaxStrength）の元になる
 
-    // --- キビキビ着地のための追加パラメータ ---
-    float gravityScale     = 1.0f; // 通常重力（上昇用）
-    float fallGravityScale = 2.5f; // 落下時は2.5倍強く引っ張る！
+    // --- 重力（上昇より落下を速くして、着地を締める） ---
+    float gravityScale     = 1.0f; // 上昇中の重力倍率
+    float fallGravityScale = 2.5f; // 落下中の重力倍率
 
     // --- 加減速の手触り（水平移動の速度追従レート） ---
-    // 目標速度へ寄せる Lerp レート。加速と減速で別々に持たせ、ハイスピードの
-    // 「キビキビ加速して、狙ったぶんだけ滑って止まる」を作れるようにする。
-    float acceleration = 12.0f; // 加速の速さ（高いほど即最高速へ乗る）
-    float deceleration = 8.0f;  // 減速の速さ（低いほどダッシュ後によく滑る）
+    // 目標速度へ寄せる Lerp のレート（/秒）。加速と減速で別々に持たせ、
+    // 「素早く加速して、狙ったぶんだけ滑って止まる」を作れるようにする。
+    float acceleration = 12.0f; // 加速のレート（高いほどすぐ最高速へ乗る）
+    float deceleration = 8.0f;  // 減速のレート（低いほどダッシュ後によく滑る）
 
-    // --- 空中のタメ（Apex Hang Time）パラメータ ---
-    float apexGravityScale      = 0.3f; // 頂点付近での重力倍率（軽いほどフワッとする）
-    float apexVelocityThreshold = 1.5f; // 頂点と判定するY軸速度の閾値
+    // --- ジャンプ頂点付近の滞空（Apex Hang Time） ---
+    float apexGravityScale      = 0.3f; // 頂点付近での重力倍率（小さいほど長く浮く）
+    float apexVelocityThreshold = 1.5f; // 頂点付近とみなす Y 速度の絶対値の上限（m/秒）
 };

@@ -14,7 +14,7 @@ void FrustumCullingSystem::Update(float dt)
     auto *camera = m_world->GetResource<Camera *>();
     if (!camera) return;
 
-    // カメラ自身が計算済みの、絶対的に正確な最新Frustumを取得
+    // カメラが今フレーム計算した視錐台
     const DirectX::BoundingFrustum &frustum = camera->GetFrustum();
 
     ForEachParallel([&](const BoundingBoxComponent &bounds, VisibilityComponent &vis) {

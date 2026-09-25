@@ -1,14 +1,3 @@
-// ===========================================================================
-// GPUParticleRenderSystem.cpp
-// ---------------------------
-// 役割・責務はヘッダを参照。描画コマンドを ParticleRenderer のバケツへ積むだけ。
-//
-// 実装の意図(Why):
-//   - 描画可否は「GPUバッファが用意できているか」だけで判定する。
-//   - parent==0(ルート)のエミッタを弾いてはいけない。VFXSystem がワールド座標へ置く
-//     VFX の root は当然 parent==0 なので、ルートに直接エミッタを持つプレハブが
-//     無言で描画されなくなる。
-// ===========================================================================
 #include "GPUParticleRenderSystem.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
@@ -22,16 +11,15 @@ void GPUParticleRenderSystem::Update(float dt)
 
     ForEach([&](GPUParticleComponent &particle,
                 const TransformComponent & /*transform*/) {
-        // エフェクトを構成するエミッタごとに1コマンド積む。
-        //   ParticleRenderer 側が renderMode → テクスチャ順にソートするので、
-        //   ここでは順序を気にせず積んでよい。
+        // エミッタごとに1コマンド積む。
+        //   ParticleRenderer が renderMode → テクスチャの順にソートするので、ここでは順番を気にしない。
         for (const ParticleEmitter &emitter : particle.emitters)
         {
             if (!emitter.isInitialized || !emitter.computeBuffer.IsValid()) continue;
 
-            // インスペクタで非表示にされた層は描画コマンドを積まない。
-            //   シミュレーション(R07)は止めないので、表示に戻せば続きから見える。
-            //   製品ビルドでは常に true（非シリアライズのプレビュー用スイッチ）。
+            // インスペクタで非表示にした層は積まない。
+            //   シミュレーション（R07）は止めないので、表示に戻すと続きから見える。
+            //   保存しない値なので、エディタを含まないビルドでは常に true。
             if (!emitter.previewVisible) continue;
 
             ParticleDrawCommand cmd;

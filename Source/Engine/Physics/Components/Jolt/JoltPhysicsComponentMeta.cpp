@@ -1,5 +1,5 @@
-// Jolt Physics 関連コンポーネント (Collider, Rigidbody) のメタ定義。
-// すべて標準的なデータ構造のため、パターンA (全自動マクロ) でシリアライズとGUIを構築する。
+// Jolt の Collider / Rigidbody コンポーネントのシリアライズ/インスペクタ定義。
+// どれも単純なデータなので、CFIELD マクロだけで定義する（カスタム GUI なし）。
 
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
@@ -53,7 +53,7 @@ namespace
 {
     const char *const MotionTypeNames[] = {"Static", "Kinematic", "Dynamic"};
     // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（ここに手書き配列を置かない）。
-    //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで自動反映される。
+    //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで反映される。
 } // namespace
 
 COMPONENT_META_BEGIN_FULL(JoltRigidbodyComponent, "Jolt Rigidbody", CCL::Categories::Physics, 200, false)

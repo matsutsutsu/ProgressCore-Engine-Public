@@ -1,4 +1,3 @@
-// --- JoltCleanupSystem.cpp ---
 #include "JoltCleanupSystem.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -14,7 +13,6 @@ void JoltCleanupSystem::Update(float dt)
     ExecuteCleanup(*m_world);
 }
 
-// 消えるEntityのJolt剛体を確実に破棄する
 void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     bool                hasJolt     = world.HasResource<JoltPhysicsManager *>();
@@ -35,23 +33,22 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 
     for (CCL::ECS::EntityID id : doomed)
     {
-        // 破棄済みの席なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
+        // 破棄済みの Entity なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
         auto *handle = world.GetComponent<JoltHandleComponent>(id);
         if (!handle) continue;
 
         JPH::BodyID &bodyID = handle->bodyID;
 
-        // 防波堤1: すでに破棄済み（無効なID）、または未初期化なら絶対にJoltへ渡さない
+        // すでに破棄済み（無効な ID）なら Jolt へ渡さない
         if (bodyID.IsInvalid()) continue;
 
-        // 防波堤2: Jolt空間に「追加(Add)」されている場合のみRemoveする
-        // (CreateはしたがAddしていない剛体をRemoveすると別のアサートが鳴るため)
+        // Jolt 空間に追加されている場合だけ Remove する
+        // （Create はしたが Add していない剛体を Remove するとアサートになるため）
         if (bodyInterface.IsAdded(bodyID))
         {
             bodyInterface.RemoveBody(bodyID);
         }
 
-        // 剛体の完全消去
         bodyInterface.DestroyBody(bodyID);
 
         // Jolt から破棄したらコンポーネント側のIDも無効化する。

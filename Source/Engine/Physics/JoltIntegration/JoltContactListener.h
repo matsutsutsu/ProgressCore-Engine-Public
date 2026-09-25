@@ -1,12 +1,16 @@
-// Jolt物理空間とECS空間を繋ぐ、スレッドセーフな衝突イベントの蓄積バッファ（ポスト）
-//
-// Joltのワーカースレッドから非同期に呼ばれるため、内部状態の変更には必ずミューテックスによる保護が必要。
-//
-// 注意: このクラス内で直接ECSのWorldやコンポーネントにアクセスしてはならない（データ競合によるクラッシュを招く）。
-//
-// キャラクター側(JoltCharacterContactListener)もこのバッファに PushEvent() で相乗りし、
-// 物理更新後の L05 で JoltCollisionEventSystem が一括配送する。
 #pragma once
+// ===========================================================================
+// 概要: 剛体の接触リスナー兼、接触イベントのスレッドセーフな蓄積バッファ。
+//
+// 責務:
+//   - 剛体どうしの接触の追加・継続を JoltCollisionEvent にしてバッファへ積む
+//   - キャラクター側（JoltCharacterContactListener）からの PushEvent も受け付ける
+//   - 溜めたイベントを GetAndClearEvents でまとめて渡す
+//
+// 備考: コールバックは Jolt のワーカースレッドから並列に呼ばれるので、バッファは
+//       mutex で守る。World やコンポーネントには触れない（データ競合になる）。
+//       配送は物理更新後の L05 で JoltCollisionEventSystem が行う。
+// ===========================================================================
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <mutex>
@@ -22,7 +26,7 @@ public:
      * @param inBody2 衝突した剛体2
      * @param inManifold 衝突の接触点や法線情報を持つ多様体
      * @param ioSettings 接触に対する反発係数や摩擦を上書きするための設定値
-     * * @note 実行コンテキスト: Jolt Worker Thread (マルチスレッド)
+     * @note 実行コンテキスト: Jolt のワーカースレッド（並列に呼ばれる）
      */
     virtual void OnContactAdded(const JPH::Body &inBody1, const JPH::Body &inBody2,
                                 const JPH::ContactManifold &inManifold,
@@ -34,7 +38,7 @@ public:
      *        なく Persisted に回すため(ContactListener.h の注記)、ここを実装しないと
      *        「重なり続けている間」の接触が全て消え、攻撃判定の窓より先に武器が相手へ
      *        入っているケース（突進攻撃など）が丸ごと不発になる。
-     * @note  実行コンテキスト: Jolt Worker Thread (マルチスレッド)
+     * @note  実行コンテキスト: Jolt のワーカースレッド（並列に呼ばれる）
      */
     virtual void OnContactPersisted(const JPH::Body &inBody1, const JPH::Body &inBody2,
                                     const JPH::ContactManifold &inManifold,
@@ -57,8 +61,7 @@ public:
     /**
      * @brief 蓄積された全ての衝突イベントを一括で取得し、内部バッファをクリアする
      * @return 蓄積されていた JoltCollisionEvent の配列
-     * * @note 実行コンテキスト: ECS Main Thread (またはTask Thread)
-     * @warning 内部でロックを取得するため、1フレームに1回だけ（バッチ処理として）呼び出すこと。
+     * @note 呼ぶのは物理更新後の JoltCollisionEventSystem だけ（1ステップに1回）。
      */
     std::vector<JoltCollisionEvent> GetAndClearEvents();
 

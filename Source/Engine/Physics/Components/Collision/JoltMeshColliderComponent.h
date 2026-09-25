@@ -1,9 +1,14 @@
 #pragma once
-
-// 描画用モデル(ModelComponent)の頂点データから、
-// 自動的に地形用のMeshShapeを生成させるための「目印（タグ）」コンポーネント。
-// 注意: このコンポーネントと同時に ModelComponent をアタッチしておくこと。
+// ===========================================================================
+// 概要: 描画用モデル（ModelComponent）の頂点から地形用の MeshShape を作らせる目印。
+//
+// 責務:
+//   - メッシュ判定を作るかどうかの切り替えを持つ
+//
+// 備考: ModelComponent と JoltRigidbodyComponent を一緒に付けておくこと。
+//       Transform のスケールも形状に反映される（JoltBodySetupSystem）。
+// ===========================================================================
 struct JoltMeshColliderComponent
 {
-    bool isEnabled = true; // インスペクタ表示用のダミー変数
+    bool isEnabled = true; // false なら形状を作らず、デバッグ表示もしない
 };

@@ -1,4 +1,18 @@
 #pragma once
+// ===========================================================================
+// 概要: CharacterVirtual 専用の接触リスナー。接触をイベントにして共有バッファへ積む。
+//
+// 責務:
+//   - 接触の追加・継続を JoltCollisionEvent にして JoltContactListener のバッファへ積む
+//   - 背景（壁・床・見えない壁）との接触は捨てる
+//   - 攻撃レイヤーとの接触だけ計測ログ（HitDiagnostics）を出す
+//
+// 備考: JoltCharacterUpdateSystem が ExtendedUpdate の間だけキャラクターに付ける。
+//       ここから EventBus へ直接 Publish しない。物理更新の途中でゲームロジックが
+//       割り込むと構造変更などが混ざるため、剛体側と同じバッファへ積み、
+//       物理更新後の L05 で JoltCollisionEventSystem がまとめて配送する。
+//       World には触れない（ワーカースレッドとのデータ競合を避ける）。
+// ===========================================================================
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
@@ -6,29 +20,16 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Physics/JoltIntegration/JoltContactListener.h" // 収集先バッファ(sink)
 
-// ===================================================================================
-// ファイル: JoltCharacterContactListener.h
-// 役割: 仮想キャラクター (CharacterVirtual) 専用の物理衝突検知リスナー。
-//
-// 【アーキテクチャ仕様】
-// - CharacterVirtual の ExtendedUpdate 実行中に一時的にアタッチされる。
-// - ここから EventBus へ即時 Publish してはいけない。物理更新の途中でゲームロジックが
-//   割り込むと構造変更等が混ざって危険。剛体側と同じ JoltContactListener のバッファへ
-//   PushEvent() で蓄積する。
-//   実際の配送は物理更新後の L05 (JoltCollisionEventSystem) が一括で行う。
-// - World には依存しない（データ競合の温床を断つ）。
-// ===================================================================================
-
 class JoltCharacterContactListener : public JPH::CharacterContactListener
 {
 private:
-    JoltContactListener *m_sink; // 収集先バッファ（剛体側と共有）
-    CCL::ECS::EntityID   m_playerID;
-    JPH::BodyInterface  *m_bodyInterface;
+    JoltContactListener *m_sink;          // 収集先バッファ（剛体側と共有。所有しない）
+    CCL::ECS::EntityID   m_selfID;        // このリスナーを付けたキャラクター自身の Entity
+    JPH::BodyInterface  *m_bodyInterface; // 相手ボディのレイヤーや UserData を引くため（所有しない）
 
 public:
     JoltCharacterContactListener(JoltContactListener *sink,
-                                 CCL::ECS::EntityID   playerID,
+                                 CCL::ECS::EntityID   selfID,
                                  JPH::BodyInterface  *bodyInterface);
 
     virtual void OnContactAdded(const JPH::CharacterVirtual   *inCharacter,

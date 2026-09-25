@@ -1,4 +1,4 @@
-// RadialBlurConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
+// RadialBlurConfigComponent のシリアライズ/インスペクタ定義。
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

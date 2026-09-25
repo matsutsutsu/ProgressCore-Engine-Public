@@ -1,4 +1,13 @@
 #pragma once
+// ===========================================================================
+// 概要: IPhysicsAPI の Jolt 実装。EntityID から剛体（JoltHandleComponent の BodyID）を引いて操作する。
+//
+// 責務:
+//   - IPhysicsAPI の各操作を JPH::BodyInterface / NarrowPhaseQuery の呼び出しへ変換する
+//   - レイキャストで自分自身とセンサーを除外する
+//
+// 備考: JoltPhysicsManager は World のリソースから毎回引く（保持しない）。
+// ===========================================================================
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
@@ -14,7 +23,7 @@ namespace JPH
 class JoltPhysicsFacade : public IPhysicsAPI
 {
 private:
-    CCL::ECS::World *m_world;
+    CCL::ECS::World *m_world; // 所有しない
 
 public:
     JoltPhysicsFacade(CCL::ECS::World *world) : m_world(world) {}
@@ -50,19 +59,14 @@ private:
     /**
      * @brief EntityID から「操作対象の BodyID」と「BodyInterface」を解決する。
      *
-     * @details
-     *  全ての操作系メソッドが
-     *      handle 取得 → null なら return → Manager 取得 → BodyInterface 取得
-     *  という同じ4行を書いていた（11箇所）。ここに集約する。
-     *
-     *  ついでに JoltPhysicsManager の存在確認も入れる。System 側は例外なく
-     *  HasResource で守っているのに、Facade だけ無条件に GetResource していた。
+     * JoltHandleComponent と JoltPhysicsManager リソースの存在も確認する。
+     * 操作系の全メソッドはこれを通してから JPH を呼ぶ。
      *
      * @return 解決できたら true。false のとき出力引数は不定なので触らないこと。
      */
     bool ResolveBody(CCL::ECS::EntityID entity,
                      JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface);
 
-    /// 剛体を持たない問い合わせ用。PhysicsSystem だけ取れれば良いとき。
+    // 剛体を指定しない問い合わせ用。PhysicsSystem だけ取れればよいとき。無ければ nullptr
     JPH::PhysicsSystem *GetPhysicsSystem() const;
 };

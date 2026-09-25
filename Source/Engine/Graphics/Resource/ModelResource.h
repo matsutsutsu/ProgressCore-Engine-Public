@@ -182,10 +182,6 @@ public:
     std::vector<Animation>      &GetAnimationsMutable() { return animations; }
     const std::vector<Material> &GetMaterials() const { return materials; }
 
-    void SetMeshes(const std::vector<Mesh> &m) { meshes = m; }
-    void SetNodes(const std::vector<Node> &n) { nodes = n; }
-    void SetMaterials(const std::vector<Material> &m) { materials = m; }
-    void SetAnimations(const std::vector<Animation> &a) { animations = a; }
 
     // 読み込み
     void Load(ID3D11Device *device, const char *filename);

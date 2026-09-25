@@ -7,7 +7,7 @@
 
 using namespace CCL::ECS;
 
-// 8頂点完全再計算による正確なAABB生成ヘルパー (Model用)
+// ローカル AABB の8頂点を worldMatrix で変換し、それを包むワールド AABB を作る
 static DirectX::BoundingBox CalculateAccurateWorldAABB(const DirectX::BoundingBox &localAABB, const DirectX::XMFLOAT4X4 &worldMatrix)
 {
     std::array<DirectX::XMFLOAT3, 8> corners;
@@ -42,9 +42,9 @@ ModelBoundsUpdateSystem::ModelBoundsUpdateSystem() : IfSystem("ModelBoundsUpdate
 void ModelBoundsUpdateSystem::Update(float dt)
 {
     // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列。
-    //   worldMatrix（固定ステップ）を使ってはいけない。カリング判定が「実際に見えている
-    //   位置」ではなく最大1固定ステップぶん古い位置を見ることになる。
-    //   ※ Primitive 側は描画も worldMatrix なので、あちらは揃っている（変更しない）。
+    //   worldMatrix（固定ステップ）を使うと、カリングが画面に見えている位置ではなく、
+    //   最大1固定ステップ分古い位置で判定してしまう。
+    //   Primitive は描画も worldMatrix なので、そちらは worldMatrix で揃えている。
     ForEachParallel([&](const TransformComponent &trans, const ModelComponent &modelComp, BoundingBoxComponent &bounds) {
         Model *model = modelComp.GetModel();
         if (model && model->GetResource())
@@ -62,13 +62,12 @@ PrimitiveBoundsUpdateSystem::PrimitiveBoundsUpdateSystem() : IfSystem("Primitive
 void PrimitiveBoundsUpdateSystem::Update(float dt)
 {
     ForEachParallel([&](const TransformComponent &trans, const PrimitiveComponent &prim, BoundingBoxComponent &bounds) {
-        // 大まかな最大サイズを計算（Boxならsizeの最大値、他ならradiusかheight）
+        // 形によらず、寸法の最大値を半径とする立方体で包む（大きめだが安全側）
         float maxLocalScale = (std::max)({prim.size.x, prim.size.y, prim.size.z, prim.radius, prim.height});
 
-        // ワールド行列からスケール成分を抽出して掛け合わせる（簡易的なAABB半径）
-        //   ここで欲しいのは「X軸方向のスケール」と「平行移動」だけ。
-        //   XMMatrixDecompose は回転を求めるために反復的な極分解を回すので、
-        //   この用途には桁違いに重い。基底ベクトルの長さと平行移動行を直接読む。
+        // ワールド行列から X 軸のスケールと平行移動だけを読む。
+        //   XMMatrixDecompose は回転を求めるために反復計算の極分解をするので、この用途には重すぎる。
+        //   基底ベクトルの長さと平行移動の行を直接読む。
         const DirectX::XMMATRIX world        = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
         const DirectX::XMVECTOR pos          = world.r[3];
         const float             worldScale   = DirectX::XMVectorGetX(DirectX::XMVector3Length(world.r[0]));
@@ -79,9 +78,6 @@ void PrimitiveBoundsUpdateSystem::Update(float dt)
     });
 }
 
-// ====================================================================
-// システムの登録 (Priorityは余計なプレフィックスを含まない元の定義を使用)
-// ※CullingSystem等の前（Animationフェーズなど）で実行されるようにします
-// ====================================================================
+// カリング（R05）の前に AABB を更新する
 REGISTER_RENDER_SYSTEM(ModelBoundsUpdateSystem, Priority::RenderStage::R04_BoundsUpdate);
 REGISTER_RENDER_SYSTEM(PrimitiveBoundsUpdateSystem, Priority::RenderStage::R04_BoundsUpdate);

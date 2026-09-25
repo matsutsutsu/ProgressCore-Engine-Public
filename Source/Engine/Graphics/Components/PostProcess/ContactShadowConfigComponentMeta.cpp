@@ -1,4 +1,4 @@
-// ContactShadowConfigComponent のシリアライズ/インスペクタ定義(パターンC)。
+// ContactShadowConfigComponent のシリアライズ/インスペクタ定義。
 #include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"

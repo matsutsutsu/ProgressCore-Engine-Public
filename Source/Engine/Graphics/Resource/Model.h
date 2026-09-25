@@ -155,12 +155,6 @@ public:
         return materials;
     }
 
-    // 頂点・インデックス配列からモデルを生成する静的関数
-    static std::shared_ptr<Model> CreateFromData(ID3D11Device                             *device,
-                                                 const std::vector<ModelResource::Vertex> &vertices,
-                                                 const std::vector<uint32_t>              &indices,
-                                                 std::shared_ptr<MaterialData>             baseMaterial);
-
     // ルートモーションの抽出と固定の対象となる、真のルートボーンを探して返す
     int GetRootMotionNodeIndex() const;
 

@@ -1,4 +1,4 @@
-// ライト関連コンポーネント (Directional, Point, Spot) のシリアライズ/インスペクタ定義。
+// DirectionalLight・PointLight・SpotLight のシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -29,7 +29,6 @@ struct ComponentMeta<DirectionalLightComponent>
     {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
-        // 1行ヘルパーで「ラベル左・幅いっぱい」に統一。
         changed |= mi::Color3("ライト色", &comp.color.x);
         changed |= mi::DragFloat("強度", &comp.intensity, 0.05f, 0.0f, 100.0f);
         ImGui::Separator();
@@ -45,9 +44,9 @@ struct ComponentMeta<DirectionalLightComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(color, "色", "Lighting")
-                CFIELD(intensity, "強度", "Lighting")
-                    CFIELD(skyColor, "空の色", "Hemisphere")
-                        CFIELD(groundColor, "地面の色", "Hemisphere")};
+            CFIELD(intensity, "強度", "Lighting")
+            CFIELD(skyColor, "空の色", "Hemisphere")
+            CFIELD(groundColor, "地面の色", "Hemisphere")};
         return fields;
     }
 };
@@ -90,11 +89,11 @@ struct ComponentMeta<PointLightComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(color, "色", "Lighting")
-                CFIELD(intensity, "強度", "Lighting")
-                    CFIELD(range, "範囲", "Lighting")
-                        CFIELD(constant, "定数減衰", "Attenuation")
-                            CFIELD(linear, "線形減衰", "Attenuation")
-                                CFIELD(quadratic, "二次減衰", "Attenuation")};
+            CFIELD(intensity, "強度", "Lighting")
+            CFIELD(range, "範囲", "Lighting")
+            CFIELD(constant, "定数減衰", "Attenuation")
+            CFIELD(linear, "線形減衰", "Attenuation")
+            CFIELD(quadratic, "二次減衰", "Attenuation")};
         return fields;
     }
 };
@@ -126,6 +125,7 @@ struct ComponentMeta<SpotLightComponent>
         ImGui::Text("コーン角度(Cos値)");
         changed |= mi::SliderFloat("内側コーン(Cos)", &comp.innerCos, 0.0f, 1.0f);
         changed |= mi::SliderFloat("外側コーン(Cos)", &comp.outerCos, 0.0f, 1.0f);
+        // 内側が外側より広いと、シェーダーの角度減衰 (cos - outer) / (inner - outer) の符号が逆になる
         if (comp.innerCos < comp.outerCos)
         {
             comp.innerCos = comp.outerCos;
@@ -141,10 +141,10 @@ struct ComponentMeta<SpotLightComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(color, "色", "Lighting")
-                CFIELD(intensity, "強度", "Lighting")
-                    CFIELD(range, "範囲", "Lighting")
-                        CFIELD(innerCos, "内側コーン(Cos)", "Cone")
-                            CFIELD(outerCos, "外側コーン(Cos)", "Cone")};
+            CFIELD(intensity, "強度", "Lighting")
+            CFIELD(range, "範囲", "Lighting")
+            CFIELD(innerCos, "内側コーン(Cos)", "Cone")
+            CFIELD(outerCos, "外側コーン(Cos)", "Cone")};
         return fields;
     }
 };

@@ -26,14 +26,12 @@
 
 void PostProcessSystem::Update(float dt)
 {
-    // Worldからリソースとして取得する
     if (!m_world->HasResource<PostProcessManager *>()) return;
     auto *postProcess = m_world->GetResource<PostProcessManager *>();
 
     // -------------------------------------------------------
-    // 1. デフォルト値でリセット
+    // 1. 既定値。コンポーネントが無ければブルームはオフ、露出は 1.0
     // -------------------------------------------------------
-    // エンティティが一つもない場合、ブルームはOFF、露出は標準(1.0)にする
     BloomConfigComponent finalBloom;
     finalBloom.enable = false;
 
@@ -41,22 +39,15 @@ void PostProcessSystem::Update(float dt)
     finalToneMap.data.exposure = 1.0f;
 
     // -------------------------------------------------------
-    // 2. BloomConfigComponent を検索
+    // 2. ブルーム（シングルトン）。有効なら採用する
     // -------------------------------------------------------
-    // ※ 本来は「GlobalVolume」タグやカメラ位置判定を行うが、
-    //    ここではシンプルに「有効になっているものが見つかったら採用」する
-    if (auto *comp = m_world->GetSingletonComponent<BloomConfigComponent>())
+    if (auto *comp = m_world->GetSingletonComponent<BloomConfigComponent>(); comp && comp->enable)
     {
-
-        // 有効な設定が見つかったら上書き（後勝ち）
-        if (comp && comp->enable)
-        {
-            finalBloom = *comp;
-        }
+        finalBloom = *comp;
     }
 
     // -------------------------------------------------------
-    // 3. ToneMapConfigComponent を検索
+    // 3. トーンマッピング
     // -------------------------------------------------------
     if (auto *comp = m_world->GetSingletonComponent<ToneMapConfigComponent>())
     {
@@ -64,16 +55,13 @@ void PostProcessSystem::Update(float dt)
     }
 
     // -------------------------------------------------------
-    // 4. マネージャーへ一括転送
+    // 4. 各エフェクトへ渡す
     // -------------------------------------------------------
-    // 重要: SetEnabled() は「コンポーネントが見つかった時だけ」ではなく、
-    // 見つからない場合も含めて毎フレーム無条件で呼ぶこと。
-    // PostProcessManager のエフェクトはアプリ全体で使い回されるシングルトンなので、
-    // 「コンポーネントが無いシーンでは何もしない」実装だと、以前別のシーンで
-    // ONにしたエフェクトが次のシーンに持ち越されたまま(sticky)残ってしまう
-    // (実際に発生：ポストエフェクト用コンポーネントの無い旧シーンで、以前有効化
-    //  されたエフェクトが動き続けて負荷が高くなっていた)。
-    // 「コンポーネント無し = 無効」を毎フレーム明示するのが唯一の正しい実装。
+    // SetEnabled() は、コンポーネントが無いときも含めて毎フレーム必ず呼ぶ。
+    // PostProcessManager のエフェクトはアプリ全体で使い回すので、「コンポーネントが無ければ
+    // 何もしない」作りだと、前のシーンでオンにしたエフェクトが次のシーンでも動き続ける
+    // （実際に、ポストエフェクトの設定が無いシーンで前のシーンのエフェクトが動き続け、負荷が上がった）。
+    // 「コンポーネントが無い = 無効」を毎フレーム渡す。
 
     if (auto *ssao = postProcess->GetEffect<SSAOEffect>())
     {
@@ -95,15 +83,14 @@ void PostProcessSystem::Update(float dt)
         distortion->SetEnabled(comp && comp->enable);
         if (comp)
         {
-            comp->data.time += dt; // システム側でアニメーション時間を進める
+            comp->data.time += dt; // 歪みのアニメーション時間はここで進める
             distortion->UpdateParams(comp->data);
         }
     }
 
-    // 放射ブラー / 色収差は複数の演出システムが同時に要求しうる。
-    // 各システムは自分の burst スロットへ書くだけで、最終値の決定はここに集約する。
-    // enable(素の設定)が false でも演出は出す必要があるため、パスのON/OFFは
-    // 合成後の強度が 0 かどうかで判断する。
+    // 放射状ブラーと色収差は、複数の演出が同時に求めることがある。
+    // 各演出は自分のスロットに書くだけで、最終的な値はここで決める。
+    // enable（普段の設定）が false でも演出は出すので、パスのオン/オフは合成後の強さが 0 かどうかで決める。
     if (auto *radial = postProcess->GetEffect<RadialBlurEffect>())
     {
         auto       *comp     = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
@@ -149,7 +136,7 @@ void PostProcessSystem::Update(float dt)
         vignette->SetEnabled(comp && comp->ResolvedEnable());
         if (comp)
         {
-            // 脈動の位相は演出ではなく常に進む連続値。ここだけが所有者。
+            // 脈動の時間は演出と関係なく常に進める。進めるのはここだけ
             comp->data.vigTime += dt;
             vignette->UpdateParams(comp->Resolve());
         }
@@ -163,13 +150,13 @@ void PostProcessSystem::Update(float dt)
     }
 
     // ポーズ中の背景ぼかし。
-    //   世界の時計は止まっていても、このSystemは描画ステージなので実時間の dt が来る。
-    //   だから「止まっている間に演出が進む」ことができ、パッと切り替わらずに沈み込む。
+    //   世界の時計が止まっていても、この System は描画ステージなので実時間の dt が来る。
+    //   そのためポーズ中でもぼかしの量が徐々に変わり、一瞬で切り替わらない。
     if (auto *blur = postProcess->GetEffect<PauseBlurEffect>())
     {
         const bool paused = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
 
-        // 目標へ指数で寄せる。ポーズ解除は入りより速くして、操作再開を待たせない。
+        // 目標へ指数的に寄せる。解除は入るときより速くして、操作の再開を待たせない
         const float target = paused ? 1.0f : 0.0f;
         const float speed  = paused ? kPauseBlurInSpeed : kPauseBlurOutSpeed;
         m_pauseBlur += (target - m_pauseBlur) * CCL::Math::Damp(speed, dt);

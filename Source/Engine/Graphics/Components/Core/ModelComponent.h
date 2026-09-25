@@ -1,4 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: Entity に表示するモデルを1つ持たせるコンポーネント。
+//
+// 責務:
+//   - モデルインスタンスのハンドルと、読み込み元パスのハッシュを持つ
+//   - コピー・ムーブ・破棄に合わせてモデルインスタンスを生成・解放する
+//
+// 備考: ECS は Chunk 間の移動でコンポーネントをコピー・ムーブするので、
+//       Rule of 5 を明示して二重解放と解放漏れを防ぐ。
+//       コピーは同じハンドルを共有せず、assetHash から新しいインスタンスを作る
+//       （アニメーション姿勢などをインスタンスごとに持つため）。
+// ===========================================================================
 #include <cstdint>
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
@@ -6,136 +18,98 @@
 
 struct ModelComponent
 {
-    // =================================================================
-    // [Data Layout]
-    //   modelHandle(8) + assetHash(4) + isRuntime(1) + ownsHandle(1) = 14B
-    //   ※ ランタイム生成メッシュ（ダンジョンのチャンク等）対応のため
-    //      isRuntime / ownsHandle を追加。ファイル由来モデルの挙動は不変。
-    // =================================================================
-    ModelInstanceHandle modelHandle;   // 8 byte (Index 4 + Gen 4)
-    uint32_t            assetHash = 0; // 4 byte (文字列パスのハッシュ)
-
-    // ▼ ランタイム生成ハンドル保護用フラグ
-    //   isRuntime  : true ならファイル(assetHash)から再生成できない実体ハンドル
-    //   ownsHandle : true のときだけデストラクタで UnloadModelInstance を行う
-    bool isRuntime  = false;
-    bool ownsHandle = true;
+    ModelInstanceHandle modelHandle;   // モデルインスタンスのハンドル（このコンポーネントが解放する）
+    uint32_t            assetHash = 0; // 読み込み元パスのハッシュ。0 はモデル無し
 
     ModelComponent() = default;
 
-    // パスから初期化
     ModelComponent(const char *path)
     {
         SetModel(path);
     }
 
-    // =================================================================
-    // [Rule of 5] ECS Chunk 移動に伴うライフサイクル管理
-    // =================================================================
+    // ============================================================
+    // Rule of 5
+    // ============================================================
 
     ~ModelComponent()
     {
-        // 所有者のときだけ解放（ランタイムハンドルのコピーは非所有なので解放しない）
-        if (modelHandle.IsValid() && ownsHandle)
+        if (modelHandle.IsValid())
         {
             ResourceManager::Instance().UnloadModelInstance(modelHandle);
             modelHandle = ModelInstanceHandle{};
         }
     }
 
-    // コピーコンストラクタ
-    //   - ファイル由来 (assetHash!=0)   : 従来どおりハッシュから新インスタンスを複製
-    //   - ランタイム生成 (isRuntime)    : 再生成不可なのでハンドルを共有し「非所有」にする
-    //                                     （二重解放防止。元が生きている前提）
+    // assetHash から新しいインスタンスを作る
     ModelComponent(const ModelComponent &other)
-        : assetHash(other.assetHash), isRuntime(other.isRuntime)
+        : assetHash(other.assetHash)
     {
-        if (isRuntime)
-        {
-            modelHandle = other.modelHandle;
-            ownsHandle  = false; // コピーは Unload しない
-        }
-        else if (assetHash != 0)
+        if (assetHash != 0)
         {
             modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
-            ownsHandle  = true;
         }
     }
 
-    // コピー代入
     ModelComponent &operator=(const ModelComponent &other)
     {
         if (this != &other)
         {
-            if (modelHandle.IsValid() && ownsHandle)
+            if (modelHandle.IsValid())
             {
                 ResourceManager::Instance().UnloadModelInstance(modelHandle);
             }
             assetHash = other.assetHash;
-            isRuntime = other.isRuntime;
-            if (isRuntime)
-            {
-                modelHandle = other.modelHandle;
-                ownsHandle  = false;
-            }
-            else if (assetHash != 0)
+            if (assetHash != 0)
             {
                 modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
-                ownsHandle  = true;
             }
             else
             {
                 modelHandle = ModelInstanceHandle{};
-                ownsHandle  = true;
             }
         }
         return *this;
     }
 
-    // ムーブコンストラクタ（noexcept 必須：vector 再配置でコピーに落ちないように）
-    //   所有権（ownsHandle 含む）をそのまま移譲し、元を空にする。
+    // noexcept が無いと vector の再配置でコピーが選ばれ、インスタンスが作り直される
     ModelComponent(ModelComponent &&other) noexcept
-        : modelHandle(other.modelHandle), assetHash(other.assetHash),
-          isRuntime(other.isRuntime), ownsHandle(other.ownsHandle)
+        : modelHandle(other.modelHandle), assetHash(other.assetHash)
     {
         other.modelHandle = ModelInstanceHandle{};
         other.assetHash   = 0;
-        other.ownsHandle  = false; // 元は所有権を失う
     }
 
-    // ムーブ代入
     ModelComponent &operator=(ModelComponent &&other) noexcept
     {
         if (this != &other)
         {
-            if (modelHandle.IsValid() && ownsHandle)
+            if (modelHandle.IsValid())
             {
                 ResourceManager::Instance().UnloadModelInstance(modelHandle);
             }
             modelHandle = other.modelHandle;
             assetHash   = other.assetHash;
-            isRuntime   = other.isRuntime;
-            ownsHandle  = other.ownsHandle;
 
             other.modelHandle = ModelInstanceHandle{};
             other.assetHash   = 0;
-            other.ownsHandle  = false;
         }
         return *this;
     }
 
-    // =================================================================
-    // [Accessors]
-    // =================================================================
+    // ============================================================
+    // アクセサ
+    // ============================================================
 
     Model *GetModel() const
     {
         return ResourceManager::Instance().GetModelInstance(modelHandle);
     }
 
+    // 今のモデルを解放し、path のモデルに差し替える。空文字ならモデル無しにする
     void SetModel(const char *path)
     {
-        if (modelHandle.IsValid() && ownsHandle)
+        if (modelHandle.IsValid())
         {
             ResourceManager::Instance().UnloadModelInstance(modelHandle);
             modelHandle = ModelInstanceHandle{};
@@ -145,28 +119,10 @@ struct ModelComponent
         {
             assetHash   = CCL::Utils::HashString(path);
             modelHandle = ResourceManager::Instance().CreateModelInstance(path);
-            isRuntime   = false;
-            ownsHandle  = true;
         }
         else
         {
-            assetHash  = 0;
-            isRuntime  = false;
-            ownsHandle = true;
+            assetHash = 0;
         }
-    }
-
-    // ランタイム生成 Model（Model::CreateFromData → RegisterModelInstance）の
-    //    ハンドルを差し込む専用セッター。ダンジョンのチャンク等で使用。
-    void SetRuntimeModel(ModelInstanceHandle handle)
-    {
-        if (modelHandle.IsValid() && ownsHandle)
-        {
-            ResourceManager::Instance().UnloadModelInstance(modelHandle);
-        }
-        modelHandle = handle;
-        assetHash   = 0; // ファイル由来でない
-        isRuntime   = true;
-        ownsHandle  = true; // 最初の所有者
     }
 };

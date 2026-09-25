@@ -1,4 +1,4 @@
-// 環境設定関連コンポーネントのシリアライズ/インスペクタ定義。
+// ToneMap・Bloom・Distortion・Fog・ShadowMap 設定のシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
@@ -49,8 +49,8 @@ struct ComponentMeta<ToneMapConfigComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(data.exposure, "露出", 0.05f, 0.0f, 20.0f, "Settings")
-                CFIELD_FLOAT_RANGED(data.chromaticAberration, "色収差", 0.001f, -0.1f, 0.1f, "Settings")
-                    CFIELD(data.colorTint, "色補正(Tint)", "Settings")};
+            CFIELD_FLOAT_RANGED(data.chromaticAberration, "色収差", 0.001f, -0.1f, 0.1f, "Settings")
+            CFIELD(data.colorTint, "色補正(Tint)", "Settings")};
         return fields;
     }
 };
@@ -59,7 +59,7 @@ REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
 
 // ============================================================================
 // Bloom / Distortion
-// BEGIN_FULL を使用してエフェクトとして明示的にカテゴリ化
+// カテゴリを Effect にするため BEGIN_FULL を使う
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(BloomConfigComponent, "BloomConfig", CCL::Categories::Effect, 510, false)
 CFIELD(enable, "有効", "Setup")
@@ -156,7 +156,7 @@ struct ComponentMeta<FogComponent>
         {
             changed |= mi::Color3("リム色", &comp.rimColor.x);
             changed |= mi::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
-            changed |= mi::DragFloat("強度(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
+            changed |= mi::DragFloat("鋭さ(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
         }
 
         return changed;
@@ -169,19 +169,19 @@ struct ComponentMeta<FogComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(enabled, "有効", "Base")
-                CFIELD(color, "色", "Base")
-                    CFIELD(start, "開始距離", "Dist")
-                        CFIELD(end, "終了距離", "Dist")
-                            CFIELD(heightStart, "高さ開始", "Height")
-                                CFIELD_FLOAT_RANGED(heightDensity, "高さ密度", 0.01f, 0.0f, 1.0f, "Height")
-                                    CFIELD_FLOAT_RANGED(noiseStrength, "ノイズ強度", 0.01f, 0.0f, 1.0f, "Noise")
-                                        CFIELD(noiseScale, "ノイズスケール", "Noise")
-                                            CFIELD(noiseSpeed, "ノイズ速度", "Noise")
-                                                CFIELD_FLOAT_RANGED(skyFogHeight, "地平線高さ", 0.01f, -1.0f, 1.0f, "SkyFog")
-                                                    CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")
-                                                        CFIELD(rimColor, "リム色", "Rim")
-                                                            CFIELD_FLOAT_RANGED(rimStrength, "リム強度", 0.1f, 0.0f, 10.0f, "Rim")
-                                                                CFIELD_FLOAT_RANGED(rimPower, "リム強度(Power)", 0.1f, 0.0f, 20.0f, "Rim")};
+            CFIELD(color, "色", "Base")
+            CFIELD(start, "開始距離", "Dist")
+            CFIELD(end, "終了距離", "Dist")
+            CFIELD(heightStart, "高さ開始", "Height")
+            CFIELD_FLOAT_RANGED(heightDensity, "高さ密度", 0.01f, 0.0f, 1.0f, "Height")
+            CFIELD_FLOAT_RANGED(noiseStrength, "ノイズ強度", 0.01f, 0.0f, 1.0f, "Noise")
+            CFIELD(noiseScale, "ノイズスケール", "Noise")
+            CFIELD(noiseSpeed, "ノイズ速度", "Noise")
+            CFIELD_FLOAT_RANGED(skyFogHeight, "地平線高さ", 0.01f, -1.0f, 1.0f, "SkyFog")
+            CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")
+            CFIELD(rimColor, "リム色", "Rim")
+            CFIELD_FLOAT_RANGED(rimStrength, "リム強度", 0.1f, 0.0f, 10.0f, "Rim")
+            CFIELD_FLOAT_RANGED(rimPower, "リムの鋭さ(Power)", 0.1f, 0.0f, 20.0f, "Rim")};
         return fields;
     }
 };
@@ -224,8 +224,8 @@ struct ComponentMeta<ShadowMapConfigComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(shadowBias, "シャドウバイアス", 0.0001f, 0.0f, 0.01f, "Settings")
-                CFIELD(shadowColor, "シャドウ色", "Settings")
-                    CFIELD(cascadeSplits, "カスケード分割", "Settings")};
+            CFIELD(shadowColor, "シャドウ色", "Settings")
+            CFIELD(cascadeSplits, "カスケード分割", "Settings")};
         return fields;
     }
 };

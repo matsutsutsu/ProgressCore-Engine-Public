@@ -10,19 +10,17 @@ PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem
 
 void PrimitiveRenderSystem::Update(float dt)
 {
-    // Worldからレンダラーのポインタを取得
     if (!m_world->HasResource<PrimitiveRenderer *>()) return;
     auto *renderer = m_world->GetResource<PrimitiveRenderer *>();
     if (!renderer) return;
 
     ForEachParallel([&](const TransformComponent &trans, const PrimitiveComponent &prim, const VisibilityComponent &vis) {
-        // ここでカリング結果を見てスキップ
         if (!vis.isVisible) return;
 
         DirectX::XMMATRIX worldMat = DirectX::XMLoadFloat4x4(&trans.worldMatrix);
         DirectX::XMMATRIX scaleMat = DirectX::XMMatrixIdentity();
 
-        // ゼロスケールによるNaN爆弾（画面崩壊）を防ぐ安全値
+        // 寸法 0 のスケールだと法線の計算などで NaN が出るので、最小値で抑える
         float minS = 0.0001f;
         float r    = (std::max)(prim.radius, minS);
         float h    = (std::max)(prim.height, minS);
@@ -45,18 +43,19 @@ void PrimitiveRenderSystem::Update(float dt)
 
         case PrimitiveType::Cylinder:
         case PrimitiveType::Cone:
-            // 円柱と円錐はそのまま 半径・高さ・半径 を適用
+            // 円柱・円錐のメッシュは半径 1・高さ 1 なので、そのまま掛ける
             scaleMat = DirectX::XMMatrixScaling(r, h, r);
             break;
 
         case PrimitiveType::Capsule: {
+            // カプセルは拡大すると半球がつぶれるので拡大せず、寸法は下で行列の未使用列に載せて送る
             scaleMat = DirectX::XMMatrixIdentity();
             break;
         }
         }
 
         // =========================================================
-        // 2. 行列の合成とフラグの埋め込み
+        // 2. 行列を合成し、カプセルの寸法を埋め込む
         // =========================================================
         DirectX::XMMATRIX   finalWorldMat = scaleMat * worldMat;
         DirectX::XMFLOAT4X4 finalWorld;
@@ -70,7 +69,7 @@ void PrimitiveRenderSystem::Update(float dt)
 
             finalWorld._14 = 1.0f;           // [0].w : カプセルであるというフラグ
             finalWorld._24 = r;              // [1].w : カプセルの半径 (Radius)
-            finalWorld._34 = cylinderHeight; // [2].w : 円柱部分の長さ (Height)
+            finalWorld._34 = cylinderHeight; // [2].w : 円柱部分の長さ
         }
         else
         {
@@ -78,7 +77,7 @@ void PrimitiveRenderSystem::Update(float dt)
         }
 
         // =========================================================
-        // 3. レンダラーへの描画登録
+        // 3. 形と描き方に応じてレンダラーへ積む
         // =========================================================
         if (prim.isWireframe)
         {

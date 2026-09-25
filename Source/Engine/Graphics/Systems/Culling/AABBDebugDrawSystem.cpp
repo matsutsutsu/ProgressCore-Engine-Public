@@ -11,21 +11,18 @@ void AABBDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
 
-    // ShapeRendererが存在しない場合はスキップ
     if (!m_world->HasResource<ShapeRenderer *>()) return;
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
-    // ヘッダで指定した Read / Write の型と完全に一致する引数で ForEach を回す
     ForEach([&](const BoundingBoxComponent &bounds, const VisibilityComponent &vis) {
-        // カリング判定結果で色を変える
-        // 見えている(true)なら緑、カリングで消された(false)なら赤
-        DirectX::XMFLOAT4 color = vis.isVisible ? DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) : // Green
-                                      DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);              // Red
+        // 見えているなら緑、カリングされたなら赤
+        DirectX::XMFLOAT4 color = vis.isVisible ? DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+                                                : DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 
         DirectX::XMFLOAT3 zeroEuler = {0.0f, 0.0f, 0.0f};
 
-        // ShapeRendererのDrawBoxで描画 (Center, Rotation, Extents, Color, Wireframe)
+        // AABB なので回転は 0
         renderer->DrawBox(
             bounds.worldAABB.Center,
             zeroEuler,
@@ -34,5 +31,4 @@ void AABBDebugDrawSystem::Update(float dt)
     });
 }
 
-// メイン描画フェーズでギズモ等と一緒に描画する
 REGISTER_RENDER_SYSTEM(AABBDebugDrawSystem, Priority::RenderStage::R08_Main);

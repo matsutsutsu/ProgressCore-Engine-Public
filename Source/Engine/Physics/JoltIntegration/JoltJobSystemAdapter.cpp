@@ -121,8 +121,8 @@ JoltJobSystemAdapter::JobHandle JoltJobSystemAdapter::CreateJob(
     //    JobSystemWithBarrier の private クラスなので手を入れられない。
     //    そして物理は「投げてすぐ待つ」ため、経路B で消化される割合が高い。
     //
-    //    RunJob にゾーンを置いていた最初の実装では、この経路B のジョブが
-    //    まるごと計測から漏れていた（＝Tracyに何も出ない）。
+    //    RunJob にゾーンを置くと、この経路B のジョブがまるごと計測から漏れる
+    //    （Tracy に何も出ない）。
     //
     //  なぜここなら全部拾えるのか
     //    どちらの経路も最終的に Job::Execute() → mJobFunction() を呼ぶ。

@@ -1,21 +1,3 @@
-// ===========================================================================
-// TrailSystem.cpp
-// 役割・責務・位置付けは TrailSystem.h を参照。
-//
-// 実装の意図(Why):
-//   - サンプルは renderWorldMatrix(補間済み)基準。ゲームロジックの worldMatrix ではなく
-//     描画に見える位置に軌跡を合わせるため（ModelRenderSystem と同じ思想）。
-//   - 「速く振ったときだけ尾が出る」剣らしさのため、先端が minDistance 以上動いたときのみ
-//     新区間を刻む。静止時は追記されず、既存区間が lifeTime で自然に消える。
-//   - ただし刻む頻度は描画レートではなく TrailRecordSystem(ロジック相・60Hz固定)が握る。
-//     剣の振りはアニメーション＝ロジック相でしか進まないので、描画レートで刻むと
-//     高リフレッシュレート環境で同じ姿勢の断面が重複し、尾が二重の線になる。
-//   - リングは固定長。満杯時は最古を捨てて上書きし、ヒープ確保を避ける。
-//   - 「区間の補間(BuildRings)」と「形状の生成(Emit*)」を分けている。板1枚では面が
-//     視線と平行になった瞬間に線へ潰れるため、同じ断面列から十字・筒も作れるようにした。
-//   - ジグザグは断面列の「中心」だけをずらす後処理にした。形状生成の前に挟むことで、
-//     板・十字・筒のどれでも同じ稲妻の芯線を共有できる。
-// ===========================================================================
 #include "TrailSystem.h"
 
 #include "Engine/Graphics/Renderer/TrailRenderer.h"
@@ -142,7 +124,7 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
     }
 
     // =========================================================
-    // 補間あり（現在のCatmull-Rom処理）
+    // 補間あり（Catmull-Rom）
     // =========================================================
 
     const float invLife =
@@ -659,8 +641,8 @@ void TrailSystem::Update(float dt)
             break;
         }
 
-        // テクスチャを解決（パス設定時のみ）。ResourceManager はパスでキャッシュするため
-        // 毎フレーム呼んでもロードは初回だけ。パスを変えれば別ハンドルへ自動追従する。
+        // テクスチャを引く（パスがあるときだけ）。ResourceManager はパスでキャッシュするので、
+        // 毎フレーム呼んでも読み込むのは初回だけ。パスを変えれば新しいハンドルになる。
         ID3D11ShaderResourceView *trailSRV = nullptr;
         if (!trail.texturePath.empty())
         {
@@ -674,5 +656,5 @@ void TrailSystem::Update(float dt)
     });
 }
 
-// メイン描画ステージで区間更新＆頂点提出。実際の描画は同フレームの TrailPass。
+// 実際の描画は同じフレームの TrailPass が行う
 REGISTER_RENDER_SYSTEM(TrailSystem, Priority::RenderStage::R08_Main);

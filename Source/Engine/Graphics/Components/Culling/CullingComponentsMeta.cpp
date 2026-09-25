@@ -1,10 +1,8 @@
-// カリング関連コンポーネント (BoundingBox, Visibility) のメタ定義。
-// ランタイム専用データとして扱うため、isSerializable = false に設定し、
-// インスペクタ表示のみを自動有効化する。
+// BoundingBox・Visibility・NoRenderTag・NoShadowTag のシリアライズ/インスペクタ定義。
 
 #include "CullingComponents.h"
-#include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリ用タグ
-#include "Engine/Graphics/Components/Core/NoShadowTag.h" // 影を落とさせない用タグ
+#include "Engine/Graphics/Components/Core/NoRenderTag.h"
+#include "Engine/Graphics/Components/Core/NoShadowTag.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -15,6 +13,7 @@
 
 // ===========================================================================
 // BoundingBoxComponent
+//   実行時に計算する値なので保存しない（isSerializable = false）。確認用に表示だけする。
 // ===========================================================================
 template <>
 struct ComponentMeta<BoundingBoxComponent>
@@ -22,23 +21,19 @@ struct ComponentMeta<BoundingBoxComponent>
     CCL_META_USING_THIS(BoundingBoxComponent)
 
     static constexpr const char *displayName       = "Bounding Box";
-    static constexpr const char *category          = CCL::Categories::Internal; // 内部ステートとして隔離
-    static constexpr int         sortPriority      = 900;                       // インスペクタの最下層へ
+    static constexpr const char *category          = CCL::Categories::Internal;
+    static constexpr int         sortPriority      = 900; // インスペクタの一番下に並べる
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = false;
     static constexpr bool        isSerializable    = false;
 
-#ifdef ENABLE_EDITOR
     static bool CustomGui(BoundingBoxComponent &, unsigned long long, void *) { return false; }
-#else
-    static bool CustomGui(BoundingBoxComponent &, unsigned long long, void *) { return false; }
-#endif
 
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT3_FAST(worldAABB.Center, "中心", 0.1f, "カリング")
-                CFIELD_FLOAT3_FAST(worldAABB.Extents, "範囲(半径)", 0.1f, "カリング")};
+            CFIELD_FLOAT3_FAST(worldAABB.Extents, "範囲(半径)", 0.1f, "カリング")};
         return fields;
     }
 };
@@ -47,6 +42,7 @@ REGISTER_COMPONENT_EDITOR_GUI(BoundingBoxComponent)
 
 // ===========================================================================
 // VisibilityComponent
+//   FrustumCullingSystem が毎フレーム書き換えるので保存しない。
 // ===========================================================================
 template <>
 struct ComponentMeta<VisibilityComponent>
@@ -60,11 +56,7 @@ struct ComponentMeta<VisibilityComponent>
     static constexpr bool        hasCustomGui      = false;
     static constexpr bool        isSerializable    = false;
 
-#ifdef ENABLE_EDITOR
     static bool CustomGui(VisibilityComponent &, unsigned long long, void *) { return false; }
-#else
-    static bool CustomGui(VisibilityComponent &, unsigned long long, void *) { return false; }
-#endif
 
     static const std::vector<FieldDescriptor> &Fields()
     {
@@ -78,9 +70,8 @@ REGISTER_COMPONENT_EDITOR_GUI(VisibilityComponent)
 
 // ===========================================================================
 // NoRenderTag
-//   「描画しない（当たり判定専用）」を表すタグ。付いていること自体が意味を持つ
-//   ためフィールドは持たない。見えない壁/床に使う。
-//   作者が付ける設定データなので isSerializable = true（シーン/プレハブに保存）。
+//   付いているかどうかだけが意味を持つので、フィールドは無い。
+//   シーンを作る人が付ける設定なので、シーン/プレハブに保存する。
 // ===========================================================================
 template <>
 struct ComponentMeta<NoRenderTag>
@@ -92,7 +83,7 @@ struct ComponentMeta<NoRenderTag>
     static constexpr int         sortPriority      = 920;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = false;
-    static constexpr bool        isSerializable    = true; // 保存する（次回ロードでも透明のまま）
+    static constexpr bool        isSerializable    = true;
 
     static bool CustomGui(NoRenderTag &, unsigned long long, void *) { return false; }
 
@@ -108,10 +99,7 @@ REGISTER_COMPONENT_EDITOR_GUI(NoRenderTag)
 
 // ===========================================================================
 // NoShadowTag
-//   「影を落とさない」を表すタグ。通常描画には出る点が NoRenderTag と違う。
-//   カスケード3枚ぶんのラスタライズを丸ごと省けるので、大量に出る小物
-//   （ドローン等）に付けると描画負荷が大きく下がる。
-//   絵の判断なので作者が付ける設定データ。isSerializable = true。
+//   NoRenderTag と同じく、フィールドを持たずシーン/プレハブに保存する。
 // ===========================================================================
 template <>
 struct ComponentMeta<NoShadowTag>
@@ -123,7 +111,7 @@ struct ComponentMeta<NoShadowTag>
     static constexpr int         sortPriority      = 921;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = false;
-    static constexpr bool        isSerializable    = true; // 保存する（次回ロードでも影なしのまま）
+    static constexpr bool        isSerializable    = true;
 
     static bool CustomGui(NoShadowTag &, unsigned long long, void *) { return false; }
 
@@ -134,7 +122,7 @@ struct ComponentMeta<NoShadowTag>
         return fields;
     }
 };
-// 登録名は displayName と一致させる（プレハブ JSON のキーになるため、
-// 表示名とズレると「付けたのに読まれない」無言の不具合になる）。
+// 登録名は displayName から取る。登録名はプレハブ JSON のキーになるので、
+// 表示名とずれると、表示名どおりにキーを書いても読み込まれない（エラーも出ない）。
 REGISTER_COMPONENT(NoShadowTag, ComponentMeta<NoShadowTag>::displayName)
 REGISTER_COMPONENT_EDITOR_GUI(NoShadowTag)

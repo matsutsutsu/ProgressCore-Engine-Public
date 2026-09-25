@@ -1,16 +1,16 @@
 #pragma once
 // ===========================================================================
-// CharacterMovementComponent.h
-// ----------------------------
-// 役割:
-//   「キャラクターをどう動かしてほしいか」を、動かす側(JoltCharacterUpdateSystem)へ
-//   渡すための共通の窓口。プレイヤーもボスも AI も、移動はすべてここを経由する。
+// 概要: 「キャラクターをどう動かしてほしいか」を、動かす側(JoltCharacterUpdateSystem)へ
+//       渡すための共通の窓口。プレイヤーもボスも AI も、移動はすべてここを経由する。
 //
-// なぜ名前に Input が付かないか:
-//   ボタン入力は PlayerInputComponent が持つ。こちらは入力・AI・アクション・アニメの
-//   どこからでも書かれる「移動の指令と結果」で、入力由来のフィールドは desiredVelocity
-//   だけ。旧名 CharacterMovementInputComponent は PlayerInputComponent と紛らわしく、
-//   どちらが本物の入力か読み手が判断できなかった。
+// 責務:
+//   - 移動の意思（desiredVelocity）と、1フレーム限りの上書き要求を受け取る
+//   - 持続する速度倍率と、ルートモーションの速度を受け取る
+//   - 物理側が確定した実際の水平速度（currentVelocity）を公開する
+//
+// 備考: 名前に Input を付けていないのは、ボタン入力（PlayerInputComponent）と
+//       区別するため。こちらは入力・AI・アクション・アニメのどこからでも書かれる
+//       「移動の指令と結果」で、入力由来のフィールドは desiredVelocity だけ。
 //
 // 誰が書くか（層）:
 //   ・移動の意思      … 入力(PlayerInputSystem) / AI(BossActionSystem 等)
@@ -18,12 +18,12 @@
 //   ・成立した命令    … キャラ制御(PlayerMoveSystem)
 //   ・結果            … JoltCharacterUpdateSystem（読むのはカメラ/アニメ/演出）
 //
-// 【重要】上書き要求は「1フレーム限りの依頼」:
+// 上書き要求は「1フレーム限りの依頼」:
 //   overrideSpeed / use3DVelocity / jumpImpulse は、JoltCharacterUpdateSystem が
 //   読んだ時点で既定値へ戻される（consume-on-read）。
-//   → 依頼する側は「効かせたいフレームに毎回書く」だけでよく、解除処理を書かない。
-//   これは書き忘れ対策。解除を各アクション側の責任にすると、離脱経路が1つでも
-//   忘れた瞬間「ずっと速い／ずっと止まる」が残り続ける。
+//   依頼する側は「効かせたいフレームに毎回書く」だけでよく、解除処理を書かない。
+//   解除を各アクション側の責任にすると、離脱経路のどれか1つで書き忘れただけで
+//   「ずっと速い／ずっと止まる」が残り続けるため。
 // ===========================================================================
 #include <SimpleMath.h>
 
@@ -38,14 +38,14 @@ struct CharacterMovementComponent
     // =======================================================================
     // 上書き要求（consume-on-read。効かせたいフレームだけ書く）
     // =======================================================================
-    // 速度の上書き。負値＝上書きなし（config.walkSpeed を使う）。
+    // 速度の上書き（m/秒）。負値＝上書きなし（config.walkSpeed を使う）。
     float overrideSpeed = -1.0f;
 
     // true の間は重力も水平計算も無視して velocity3D をそのまま速度に使う。
     //
     // 切り払いのように「向いた方向へ上下含めて突進」する技で使う。
     bool                         use3DVelocity = false;
-    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f};
+    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度（m/秒）
 
     // このフレームにジャンプが成立した。押下ではなく「跳ぶと決まった」の意味。
     //
@@ -66,11 +66,11 @@ struct CharacterMovementComponent
     // ルートモーション専用の通信領域（RootMotionSystem が唯一の書き手）
     // =======================================================================
     bool                         isRootMotionActive = false;              // ルートモーション中か
-    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメからの絶対移動速度
+    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメから求めたワールド空間の移動速度（m/秒）
 
     // =======================================================================
     // 結果（JoltCharacterUpdateSystem が唯一の書き手。他は読むだけ）
     // =======================================================================
-    // 慣性を含む実際の水平速度。カメラの寄り・バンク角・ダッシュ攻撃判定が読む。
+    // 慣性を含む実際の水平速度（m/秒）。カメラのルックアヘッドやアニメ・演出が読む。
     DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
 };

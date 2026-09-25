@@ -1,4 +1,4 @@
-// プリミティブ描画用コンポーネントのシリアライズおよびインスペクタ定義。
+// PrimitiveComponent のシリアライズ/インスペクタ定義。
 
 #include "PrimitiveComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -11,9 +11,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// ============================================================================
-// エディタのプルダウン表示用の文字列定義
-// ============================================================================
+// PrimitiveType の並び順と一致させる
 static const char *PrimitiveTypeNames[] = {
     "Box", "Sphere", "Cylinder", "Capsule", "Cone"};
 
@@ -24,7 +22,7 @@ struct ComponentMeta<PrimitiveComponent>
 
     static constexpr const char *displayName       = "Primitive Renderer";
     static constexpr const char *category          = CCL::Categories::Rendering;
-    static constexpr int         sortPriority      = 80; // 描画系の並び順
+    static constexpr int         sortPriority      = 80;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
     static constexpr bool        isSerializable    = true;
@@ -75,11 +73,11 @@ struct ComponentMeta<PrimitiveComponent>
     {
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_ENUM_INT(type, "形状タイプ", PrimitiveTypeNames, std::size(PrimitiveTypeNames), "見た目")
-                CFIELD_FLOAT3_FAST(size, "サイズ", 0.1f, "寸法")
-                    CFIELD_FLOAT_RANGED(radius, "半径", 0.1f, 0.0f, 1000.0f, "寸法")
-                        CFIELD_FLOAT_RANGED(height, "高さ", 0.1f, 0.0f, 1000.0f, "寸法")
-                            CFIELD(color, "色", "見た目")
-                                CFIELD(isWireframe, "ワイヤーフレーム", "見た目")};
+            CFIELD_FLOAT3_FAST(size, "サイズ", 0.1f, "寸法")
+            CFIELD_FLOAT_RANGED(radius, "半径", 0.1f, 0.0f, 1000.0f, "寸法")
+            CFIELD_FLOAT_RANGED(height, "高さ", 0.1f, 0.0f, 1000.0f, "寸法")
+            CFIELD(color, "色", "見た目")
+            CFIELD(isWireframe, "ワイヤーフレーム", "見た目")};
         return fields;
     }
 };

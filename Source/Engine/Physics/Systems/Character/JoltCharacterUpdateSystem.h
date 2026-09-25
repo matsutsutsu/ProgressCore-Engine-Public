@@ -1,4 +1,23 @@
 #pragma once
+// ===========================================================================
+// 概要: CharacterVirtual の移動・壁ずり・段差登り・重力・ジャンプ・ノックバックを計算する System。
+//
+// 責務:
+//   - 移動の意思（desiredVelocity）と上書き要求から、水平・鉛直の速度を決める
+//   - ExtendedUpdate で地形との干渉を解き、位置を Transform へ書き戻す
+//   - presence プロキシ（Kinematic 剛体）を CharacterVirtual に追従させる
+//   - ノックバックの加算と、ノックバック・硬直タイマーの消化
+//
+// 備考:
+//   - L03_PrePhysics で、JoltStepSystem（L04）より前に動く。
+//   - 接地状態は CharacterVirtual::GetGroundState() を正とする。
+//     Facade のレイキャスト接地（剛体向け）はキャラクター移動には使わない。
+//   - Transform へ書き戻すのは位置だけ。回転はゲーム層が ch->SetRotation で流す。
+//   - overrideSpeed / use3DVelocity / jumpImpulse は読んだ時点で既定値へ戻す
+//     （理由は CharacterMovementComponent.h）。
+//   - ForEachWithID（直列）で回している。ループ内で共有の TempAllocator を使い、
+//     BodyInterface へ MoveKinematic で書き込むので、並列版へ置き換えるとデータ競合になる。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
@@ -6,37 +25,6 @@
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Time/TimeState.h"
 
-// ===================================================================================
-// ファイル名: JoltCharacterUpdateSystem.h
-// 役割:
-// 仮想キャラクター（CharacterVirtual）の移動・壁ずり・段差登り・重力・ジャンプを
-// 計算する専用システム。
-//
-// 【アーキテクチャ仕様】
-// - 実行フェーズ: PrePhysics (JoltStepSystem が走る前に終わらせるのが公式の絶対ルール)
-// - 対象: CharacterVirtual / Input / Config をすべて持つ Entity。
-//
-// 【接地判定の唯一の真実】
-// - 接地状態は CharacterVirtual::GetGroundState() を権威とする。
-//   Facade のレイキャスト接地（剛体対象）はキャラクター移動には使わない。
-//
-// 【使い方・ルール】
-// - 「意思（desiredVelocity）」と上書き要求を受け取り、地形との干渉を計算する。
-// - 計算結果の「位置(Position)」だけを Transform に書き戻す。回転(Rotation)は同期しない。
-// - isTeleported フラグが立っている場合は、計算前にワープ処理を優先して行う。
-//
-// 【1フレーム限りの要求はここで消費する】
-// - overrideSpeed / use3DVelocity / jumpImpulse は読んだ時点で既定値へ戻す。
-//   要求側は効かせたいフレームに書くだけでよく、解除処理を持たない。
-//   詳しい理由は CharacterMovementComponent.h を参照。
-//
-// 【並列化に関する重大な注意】
-// - 本システムは ForEachWithID（シングルスレッド）で実行している。
-//   ループ内で BodyInterface（非ロック版）へ書き込みを行うため、
-//   ForEachWithIDParallel へ安易に置き換えると並列書き込みでクラッシュする。
-// ===================================================================================
-
-// 前方宣言
 class JoltPhysicsManager;
 
 class JoltCharacterUpdateSystem
@@ -57,7 +45,8 @@ public:
 
     void Update(float dt) override;
 
-    // 強制ワープフラグが立っていればJoltを即座に移動させる
+private:
+    // isTeleported が立っていれば、CharacterVirtual を Transform のワールド位置・回転へ移す
     void ApplyTeleportIfNeeded(TransformComponent &trans, JPH::CharacterVirtual *ch);
 
     // 重力積分とジャンプ処理を行い、新たなY軸の速度を返す。
@@ -65,11 +54,11 @@ public:
     // jumpImpulse をここで消費する（1フレーム限りの命令）。
     float CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY);
 
-    // 慣性の引き継ぎ(Exponential Decay)を計算し、新たな水平速度ベクトルを返す。
+    // 現在速度から目標速度へ Lerp で寄せ（加速/減速でレートを分ける）、新たな水平速度を返す。
     //
     // overrideSpeed をここで消費する（1フレーム限りの依頼）。
     DirectX::SimpleMath::Vector3 CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement);
 
-    // 地形干渉計算を実行し、結果をTransformやKinematic剛体へ書き戻す
+    // ExtendedUpdate で地形との干渉を解き、結果を Transform と presence プロキシへ書き戻す
     void UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, CCL::ECS::EntityID id);
 };

@@ -1,10 +1,8 @@
 #include "LightSystem.h"
 
-// 実装で必要なヘッダ群
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/RHI/Light.h"
 
-// システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -23,16 +21,15 @@ std::vector<CCL::ECS::TypeID> LightSystem::GetReadTypes() const
 
 void LightSystem::Update(float dt)
 {
-    // Worldからライトマネージャーを取得
     if (!m_world || !m_world->HasResource<LightManager *>()) return;
     LightManager *lightManager = m_world->GetResource<LightManager *>();
     if (!lightManager) return;
 
-    // 1. マネージャーの状態をリセット
-    // (Systemを分けてしまうと、これがうまく制御できなくなります)
+    // 1. 毎フレーム空にしてから積み直す。
+    //    Clear と積み込みを別の System に分けると順番が保証されないので、1つの System で行う。
     lightManager->Clear();
 
-    // 2. DirectionalLightComponent を持っているエンティティを収集
+    // 2. 平行光源
     auto dirView = m_world->View<DirectionalLightComponent, TransformComponent>();
     for (auto entity : dirView)
     {
@@ -41,23 +38,20 @@ void LightSystem::Update(float dt)
 
         if (!lightComp || !transComp) continue;
 
-        // グラフィックス用の構造体を作成してデータを詰める
         DirectionalLight gfxLight;
-        gfxLight.color     = lightComp->color; // アロー演算子(->)を使う
+        gfxLight.color     = lightComp->color;
         gfxLight.intensity = lightComp->intensity;
 
-        // 環境光のコピー
+        // 半球ライティングの空と地面の色
         gfxLight.gSkyColor    = lightComp->skyColor;
         gfxLight.gGroundColor = lightComp->groundColor;
 
-        // 向きは Transform の回転から計算して詰める
         gfxLight.direction = CalculateDirection(transComp->rotation);
 
-        // 1つの構造体として渡す
         lightManager->SetDirectionalLight(gfxLight);
     }
 
-    // --- 2. Point Light ---
+    // 3. 点光源
     auto pointView = m_world->View<PointLightComponent, TransformComponent>();
     for (auto entity : pointView)
     {
@@ -66,8 +60,7 @@ void LightSystem::Update(float dt)
 
         if (!lightComp || !transComp) continue;
 
-        // グラフィックス用の構造体を作成
-        PointLights gfxLight; // Light.h で定義されている構造体名
+        PointLights gfxLight;
         gfxLight.color                = lightComp->color;
         gfxLight.intensity            = lightComp->intensity;
         gfxLight.range                = lightComp->range;
@@ -75,13 +68,12 @@ void LightSystem::Update(float dt)
         gfxLight.linearAttenuation    = lightComp->linear;
         gfxLight.quadraticAttenuation = lightComp->quadratic;
 
-        // 位置は Transform からコピー
         gfxLight.position = transComp->GetWorldPosition();
 
         lightManager->AddPointLight(gfxLight);
     }
 
-    // --- 3. Spot Light ---
+    // 4. スポットライト
     auto spotView = m_world->View<SpotLightComponent, TransformComponent>();
     for (auto entity : spotView)
     {
@@ -97,15 +89,12 @@ void LightSystem::Update(float dt)
         gfxLight.innerCos  = lightComp->innerCos;
         gfxLight.outerCos  = lightComp->outerCos;
 
-        // 位置と向きを Transform からコピー
         gfxLight.position  = transComp->GetWorldPosition();
         gfxLight.direction = CalculateDirection(transComp->rotation);
 
         lightManager->AddSpotLight(gfxLight);
     }
 
-    // ここでは LightManager に値を積むところまで。
-    // GPU への転送（CbLight のバインド）は Graphics::Update が毎フレーム行う。
 }
 
 DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotation)
@@ -120,7 +109,4 @@ DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotat
     return result;
 }
 
-// ==========================================
-// マクロは必ず .cpp の末尾に1回だけ書く
-// ==========================================
 REGISTER_RENDER_SYSTEM(LightSystem, Priority::RenderStage::R02_Environment);

@@ -5,14 +5,13 @@
 #include "Engine/Graphics/RHI/Light.h"
 #include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Resource/Model.h"
-#include "Engine/Graphics/Components/Core/NoRenderTag.h" // 当たり判定専用ジオメトリの除外用
-#include "Engine/Graphics/Components/Core/NoShadowTag.h" // 影を落とさせないものの除外用
+#include "Engine/Graphics/Components/Core/NoRenderTag.h"
+#include "Engine/Graphics/Components/Core/NoShadowTag.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ AABB 構築（Opaque/Normal と共有）
+#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュの AABB（Opaque/Normal と同じ関数を使う）
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// ShadowMapリソースへのアクセス用
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 
@@ -25,24 +24,20 @@ ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
 {
     // 影を落とさない2種を走査対象から外す。
-    //    NoRenderTag  : 当たり判定専用ジオメトリ。無いと「見えないのに影だけ出る」。
-    //    NoShadowTag  : 見えるが影は落とさないもの。カスケード3枚ぶんのラスタライズが
-    //                   丸ごと消えるため、大量に出る小物（ドローン等）に効く。
-    // ※ SetExclude は代入なので必ず1回で列挙すること。2回呼ぶと先の指定が消える。
+    //    NoRenderTag: 当たり判定だけのジオメトリ。外さないと、見えないのに影だけ出る。
+    //    NoShadowTag: 見えるが影は落とさないもの。カスケード3枚分のラスタライズが無くなる。
+    // SetExclude は上書きなので、1回の呼び出しでまとめて並べる。2回呼ぶと先の指定が消える。
     SetExclude<NoRenderTag, NoShadowTag>();
 }
 
 void ShadowMapRenderSystem::Update(float dt)
 {
-    // シャドウマップへの描画コマンドを積む処理。
-    // 実際の描画（ラスタライズ）は ShadowPass が行う。ここはあくまで
-    // 「どのメッシュを・どのカスケードに描くか」を選別してキューへ積むだけ。
     RenderShadowMap();
 }
 
 // ============================================================================
-// シャドウ描画コマンドの生成（提出）
-//   役割：
+// 影描画コマンドを作って積む
+//   手順:
 //     1. カメラのビュー錐台を距離で 3 分割し、各カスケードのライト空間 VP 行列を作る
 //     2. その VP の逆行列で「NDCの立方体 → ワールド空間の傾いた箱(OBB)」を復元し、
 //        各カスケードが実際にワールド上でカバーする領域を表す OBB を 3 つ得る
@@ -50,7 +45,7 @@ void ShadowMapRenderSystem::Update(float dt)
 //        「入っているカスケードだけ」を示すビットマスク(cascadeMask)を作る
 //     4. どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）
 //
-//   カリングの二段構え：
+//   カリングは2段階:
 //     - モデル単位の早期棄却：モデル全体の AABB が全カスケード外なら、
 //       メッシュを一つも調べずにエンティティごと捨てる（最速の枝刈り）
 //     - メッシュ単位の絞り込み：Sponza のような「1体で数百メッシュ」のモデルは
@@ -69,8 +64,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
     LightManager *lightManager = m_world->GetResource<LightManager *>();
 
     // ------------------------------------------------------------------
-    // 2. 設定コンポーネント(SSOT)からシャドウパラメータを同期する。
-    //    テンプレートのクエリ対象に縛られず、シングルトン設定だけ拾って上書き。
+    // 2. ShadowMapConfigComponent（シングルトン）の値をシャドウマップへ写す
     // ------------------------------------------------------------------
     if (auto *config = m_world->GetSingletonComponent<ShadowMapConfigComponent>())
     {
@@ -106,9 +100,6 @@ void ShadowMapRenderSystem::RenderShadowMap()
     }
 
     auto &renderQueue = RenderQueue::Instance();
-
-    // メッシュのローカル AABB 構築は MeshCull::BuildLocalAABB に集約済み
-    // （Opaque/Normal/Shadow で同一実装を共有し、縮退メッシュは安全側に倒れる）。
 
     // ------------------------------------------------------------------
     // 4. エンティティを走査してシャドウコマンドを積む
@@ -173,7 +164,6 @@ void ShadowMapRenderSystem::RenderShadowMap()
             // どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）。
             if (meshMask == 0) continue;
 
-            // 影用の伝票を作成
             ShadowCommand cmd;
             cmd.model = pModel;
             cmd.mesh  = &mesh;

@@ -1,17 +1,3 @@
-// ===========================================================================
-// ParticleAnimationSyncSystem.cpp
-// 役割・設計方針は ParticleAnimationSyncSystem.h を参照。
-//
-// 実装の意図(Why):
-//   - owner 解決は「親を辿って最初の Animator 保持エンティティ」。エミッタは剣ボーン等の
-//     子孫にぶら下がる前提なので、これで確実に台本の持ち主へ辿り着く。
-//   - 解決できたら ownerEntity にキャッシュし、以降は親辿りをしない。未解決(Invalid)の
-//     間は毎フレーム再挑戦する（階層が後から組まれるケースに追従。上限32でループ保護）。
-//   - タグ絞り込みは行わず owner の「いずれかの Particle 区間」で ON。単一エミッタの運用では
-//     これで十分。複数エミッタをタグ別に出し分けたい場合は ev.tagHash との照合を足す。
-//   - emitting=false の反映先は GPU 側の emit_enabled（GPUParticleUpdateSystem 経由）。
-//     停止しても既存粒子は寿命まで生きて自然に消えるため、区間終端で尾を引いて消える。
-// ===========================================================================
 #include "ParticleAnimationSyncSystem.h"
 
 #include "Engine/Animation/Components/AnimatorComponent.h"
@@ -25,11 +11,13 @@ using namespace CCL::ECS;
 void ParticleAnimationSyncSystem::Update(float /*dt*/)
 {
     ForEachWithID([this](EntityID /*id*/, const TransformComponent &transform, GPUParticleComponent &particle) {
-        // 手動運用のエミッタには触れない（emitting はインスペクタ/常時ON のまま）。
+        // 手動のエミッタには触れない（emitting はインスペクタの値のまま）
         if (!particle.animControlled)
             return;
 
-        // ── 1. owner(Animator を持つ祖先)を解決・キャッシュ ──
+        // ── 1. owner（Animator を持つ祖先）を探して持つ ──
+        //   見つかったら以後は親をたどらない。見つからない間は毎フレーム探し直す
+        //   （階層が後から組まれる場合に追従する）。親の循環に備えて 32 段で打ち切る。
         if (particle.ownerEntity == InvalidEntityID)
         {
             EntityID cur   = transform.parent; // EntityLink → EntityID 暗黙変換
@@ -37,15 +25,14 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
             {
                 if (m_world->GetComponent<AnimatorComponent>(cur))
-                    break; // 台本の持ち主を発見
+                    break;
                 const auto *pt = m_world->GetComponent<TransformComponent>(cur);
                 cur            = pt ? static_cast<EntityID>(pt->parent) : InvalidEntityID;
             }
             particle.ownerEntity = (cur != 0) ? cur : InvalidEntityID;
-            // 見つからなければ Invalid のまま。次フレーム再挑戦する。
         }
 
-        // ── 2. owner の Animator を読む（別エンティティ・読み取り専用） ──
+        // ── 2. owner の Animator を読む（別の Entity なので読むだけ） ──
         const AnimatorComponent *animator =
             (particle.ownerEntity != InvalidEntityID)
                 ? m_world->GetComponent<AnimatorComponent>(particle.ownerEntity)
@@ -53,11 +40,13 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
 
         if (!animator || !animator->currentSequence)
         {
-            particle.SetEmitting(false); // 台本なし → 全エミッタ発生停止（安全側）
+            particle.SetEmitting(false); // 再生中のアニメーションが無いので出さない
             return;
         }
 
-        // ── 3. 現在時刻が Particle 区間内かを判定して emitting へ反映 ──
+        // ── 3. 今の再生時刻が Particle 区間に入っているかで emitting を決める ──
+        //   タグは見ず、どれか1つの Particle 区間に入っていればオンにする。
+        //   止めても出ている粒子は寿命まで残るので、区間の終わりで尾を引いて消える。
         const AnimSequence *seq    = animator->currentSequence;
         bool                inside = false;
         for (const auto &ev : seq->events)
@@ -71,8 +60,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
                 break;
             }
         }
-        // 区間の内外を全エミッタへ一括反映する。タグ別に出し分けたくなったら、
-        //   ev.tagHash と各エミッタを対応づける仕組みをここに足す。
+        // 全エミッタへまとめて反映する。タグで出し分けるなら、ev.tagHash とエミッタを対応づける
         particle.SetEmitting(inside);
     });
 }
