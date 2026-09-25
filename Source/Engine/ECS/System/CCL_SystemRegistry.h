@@ -1,4 +1,20 @@
 #pragma once
+// ===========================================================================
+// 概要: System を各 .cpp から自動登録するための受付窓口とマクロ。
+//
+// 責務:
+//   - 静的初期化時に登録処理を溜め込む（SystemRegistry / SystemRegistrar）
+//   - 起動時に溜めた登録処理を SystemManager へまとめて流す（RegisterAll）
+//   - REGISTER_LOGIC_SYSTEM / REGISTER_RENDER_SYSTEM マクロの提供
+//
+// 備考: 溜め込む順番は翻訳単位をまたぐ静的初期化順序で決まり、不定。
+//       実行順は SystemManager 側でステージと System 名で並べ直すので影響しない。
+//
+// @code
+//   // MovementSystem.cpp の末尾
+//   REGISTER_LOGIC_SYSTEM(MovementSystem, Priority::LogicStage::L02_Update)
+// @endcode
+// ===========================================================================
 #include "CCL_SystemManager.h"
 #include <functional>
 #include <vector>
@@ -6,13 +22,13 @@
 namespace CCL::ECS
 {
 
-    // 全システムの登録手続きを一時的に溜め込む受付窓口
+    // 全 System の登録手続きを起動時まで溜め込む受付窓口
     class SystemRegistry
     {
     public:
         using RegisterFunc = std::function<void(SystemManager &)>;
 
-        // シングルトン（mainより前にアクセスされるため、静的ローカル変数で安全に初期化）
+        // main より前（静的初期化中）に呼ばれるため、静的ローカル変数で初回アクセス時に初期化する
         static SystemRegistry &Instance()
         {
             static SystemRegistry instance;
@@ -21,12 +37,12 @@ namespace CCL::ECS
 
         void AddRegistration(RegisterFunc func) { m_registrations.push_back(func); }
 
-        // ゲーム起動時に1回だけ呼ばれる
+        // 溜め込んだ登録処理を一斉に実行する（起動時に1回だけ呼ばれる）
         void RegisterAll(SystemManager &manager)
         {
             for (auto &reg : m_registrations)
             {
-                reg(manager); // 溜め込んだ登録処理を一斉に実行
+                reg(manager);
             }
         }
 
@@ -34,7 +50,7 @@ namespace CCL::ECS
         std::vector<RegisterFunc> m_registrations;
     };
 
-    // グローバル変数の初期化タイミングを利用して受付を済ませるためのヘルパー
+    // グローバル変数のコンストラクタで受付を済ませるためのヘルパー
     struct SystemRegistrar
     {
         SystemRegistrar(SystemRegistry::RegisterFunc func)
@@ -44,10 +60,12 @@ namespace CCL::ECS
     };
 } // namespace CCL::ECS
 
-// =========================================================================
-// 自動登録用マクロ
-// 各システムの .cpp ファイルの末尾にこれを書くだけで登録が完了する。
-// =========================================================================
+// ============================================================
+// 自動登録マクロ
+// ============================================================
+// 各 System の .cpp の末尾に書くだけで登録が完了する。
+// 無名名前空間に置くので、変数名が他の翻訳単位と衝突しない。
+
 #define REGISTER_LOGIC_SYSTEM(SystemClass, Stage)                                      \
     namespace                                                                          \
     {                                                                                  \
@@ -55,6 +73,7 @@ namespace CCL::ECS
             [](CCL::ECS::SystemManager &m) { m.RegisterSystem<SystemClass>(Stage); }); \
     }
 
+// 可変長引数は System のコンストラクタへそのまま転送される
 #define REGISTER_RENDER_SYSTEM(SystemClass, Stage, ...)                \
     namespace                                                          \
     {                                                                  \

@@ -1,6 +1,16 @@
 #pragma once
-// CCL_SystemManager.h
-// System登録 & Update管理
+// ===========================================================================
+// 概要: System の登録・並び替え・更新を一括で管理するクラス。
+//
+// 責務:
+//   - System を Logic / Render の2グループに分けて保持する
+//   - 登録時に World・ジョブプール・優先度を注入し、Initialize を呼ぶ
+//   - TaskScheduler で依存グラフを構築し、グループごとに並列実行する
+//   - 型指定での System 取得（GetSystem<T>）
+//
+// 備考: 実行順は「ステージ（優先度）→ 同値なら System 名」で決まる。
+//       順序を保証したい組は GetRunAfter / GetRunBefore で明示すること。
+// ===========================================================================
 
 #include <vector>
 #include <memory>
@@ -12,12 +22,12 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
-// Priority定義を知る必要がある
+// Priority::LogicStage / RenderStage の定義
 #include "Engine/Core/Systems/SystemPriority.h"
 
 namespace CCL::ECS
 {
-    // システムの種類を定義
+    // System の実行タイミングの区分
     enum class SystemGroup
     {
         Logic, // 固定時間で動く（物理、AI、入力、移動）
@@ -30,29 +40,40 @@ namespace CCL::ECS
         SystemManager()  = default;
         ~SystemManager() = default;
 
-        // Worldをセットする（EditorScene::Initializeなどで呼ぶ）
+        // ============================================================
+        // 初期設定
+        // ============================================================
+
+        // 登録する System へ配る World を設定する（EditorScene::Initialize などで呼ぶ）
         void SetWorld(World *world) { m_world = world; }
 
-        // 共有ジョブプールを注入する（上層=EngineServicesが持つ唯一のプールを渡す）。
-        // ※ RegisterSystems の前に呼ぶこと（各システムへ配るのは登録時のため）。
+        /**
+         * @brief 共有ジョブプールを注入する（EngineServices が持つ唯一のプールを渡す）。
+         *
+         * @note RegisterSystem より前に呼ぶこと。各 System へ配るのは登録時のため。
+         */
         void SetJobSystem(JobSystem *js) { m_jobSystem = js; }
 
-        // ------------------------------------------------------------------
-        // 改良: ステージEnumを使った登録関数 (推奨)
-        // ------------------------------------------------------------------
+        // ============================================================
+        // System 登録
+        // ============================================================
 
-        // Logic用: SystemGroup::Logic を自動指定
+        /**
+         * @brief Logic グループへ System を登録する。
+         *
+         * @tparam T    登録する System 型（SystemBase 派生）
+         * @param stage 実行ステージ。値が小さいほど先に実行される
+         * @param args  T のコンストラクタへ転送する引数
+         * @return 登録した System へのポインタ（所有は SystemManager）
+         */
         template <class T, class... Args>
         T *RegisterSystem(Priority::LogicStage stage, Args &&...args)
         {
-            // Enumをintにキャストして内部登録へ
             return RegisterSystemInternal<T>(
                 SystemGroup::Logic, static_cast<int>(stage), std::forward<Args>(args)...);
         }
 
-        // ------------------------------------------------------------------
-        // 旧登録関数 / 内部実装
-        // ------------------------------------------------------------------
+        // Render グループへ System を登録する。引数は Logic 版と同じ
         template <class T, class... Args>
         T *RegisterSystem(Priority::RenderStage stage, Args &&...args)
         {
@@ -60,88 +81,27 @@ namespace CCL::ECS
                 SystemGroup::Render, static_cast<int>(stage), std::forward<Args>(args)...);
         }
 
-        // 登録関数：グループを指定できるようにする
-        template <class T, class... Args>
-        T *RegisterSystemInternal(SystemGroup group, int priority, Args &&...args)
-        {
-            // 追加しようとしている型Tが必ずSystemBaseの派生クラスであることを
-            // コンパイル時に強制している
-            static_assert(std::is_base_of<SystemBase, T>::value, "T must be derived from SystemBase");
-
-            // Systemオブジェクトをヒープ上に構築する
-            auto sys = std::make_unique<T>(std::forward<Args>(args)...);
-
-            // 生ポインタを取得（戻り値用）
-            T *ptr = sys.get();
-
-            // インスペクタに出すかは OnGui を override したかで決まる。
-            //   派生側にフラグを書かせない。書き忘れると一覧から静かに消えるだけで
-            //   気付けないので、宣言そのものを唯一の情報源にする。
-            ptr->hasGui = HasOwnOnGui<T>;
-
-            // --- 重要：初期化処理 ---
-            // 生成時にWorldを渡す
-            if (m_world) ptr->SetWorld(m_world);
-
-            // 優先度もセット
-            ptr->SetPriority(priority);
-
-            // ChunkManagerのmutexを設定
-            if (m_world)
-            {
-                ptr->SetStructureMutex(&m_world->GetChunkManager().GetStructureMutex());
-            }
-
-            // 生成したシステムに共有ジョブプールを渡しておく
-            // これで各システムは自動的に並列処理機能を使えるようになる
-            // （m_jobSystem は EngineServices が持つ共有プールへのポインタ）
-            sys->SetJobSystem(m_jobSystem);
-
-            // =======================================================
-            // 全ての準備が整ったので、システムの初期化を自動実行する
-            // =======================================================
-            ptr->Initialize();
-
-            // グループに応じてリストに振り分け
-            if (group == SystemGroup::Logic)
-            {
-                m_logicSystems.push_back(std::move(sys));
-            }
-            else
-            {
-                m_renderSystems.push_back(std::move(sys));
-            }
-
-            // システムが増えたので依存関係グラフを再構築する必要がある
-            m_isGraphDirty = true;
-
-            // --- 重要：ソート処理 ---
-            // 登録されたグループのリストだけソートすればOK
-            SortSystems(group);
-
-            return ptr;
-        }
-
-        // 登録済みの全システムを破棄する
+        // 登録済みの全 System を破棄する
         void SystemClear()
         {
             m_logicSystems.clear();
             m_renderSystems.clear();
 
-            // システムが空になったので、グラフもリセットさせる
             m_isGraphDirty = true;
         }
 
-        // クエリ解決とデータ割り当て
-        // 全てのSystemの_targetChunksリストを、そのSystemのArchetypeフィルタに
-        // 合致するデータ（Chunk）で更新することです
+        // 各 System の処理対象 Chunk リストを、Filter に合致する Chunk で更新する
         void ResolveTargetChunks(ChunkManager *cm);
 
-        // 物理・ロジック系の更新（FixedUpdateから呼ばれる）
+        // ============================================================
+        // 更新
+        // ============================================================
+
+        // Logic グループを実行する（FixedUpdate から呼ばれる）
         void UpdateLogic(float dt)
         {
-
-            // グラフが古ければ再構築（ゲーム起動時やシステム動的追加時に1回だけ走る）
+            // 依存グラフの再構築は起動時と System 追加時だけ走る。
+            // Render 側も System 追加で古くなるので、ここでまとめて作り直す。
             if (m_isGraphDirty)
             {
                 m_logicScheduler.BuildGraph(m_logicSystems);
@@ -159,45 +119,49 @@ namespace CCL::ECS
                 }
             }
 
-            // スケジューラによる超並列実行！
             m_logicScheduler.Execute(dt, m_jobSystem);
         }
 
-        // 描画系の更新（Renderから呼ばれる）
+        // Render グループを実行する（Render から呼ばれる）
         void UpdateRender(float dt)
         {
-
-            // Render側のシステムもスケジューラで実行
             m_renderScheduler.Execute(dt, m_jobSystem);
         }
 
-        // ImGuiによるデバッグGUI描画
+        // ============================================================
+        // 取得・デバッグ
+        // ============================================================
+
+        // System Manager ウィンドウ（ImGui）を描画する
         void OnGui();
 
-        // 外部（Worldクラスなど）からシステムリストを取得できる関数を追加
         const std::vector<std::unique_ptr<SystemBase>> &GetLogicSystems() const { return m_logicSystems; }
         const std::vector<std::unique_ptr<SystemBase>> &GetRenderSystems() const { return m_renderSystems; }
 
-        // 外部（エディタ）からタスクスケジューラを読み取るための関数
+        // エディタが依存グラフを表示するために読む
         const TaskScheduler &GetLogicScheduler() const { return m_logicScheduler; }
         const TaskScheduler &GetRenderScheduler() const { return m_renderScheduler; }
 
-        // 指定した型のシステムを取得する関数
-        // 使用例: auto* animSys = systemManager->GetSystem<AnimationSystem>();
+        /**
+         * @brief 指定した型の System を取得する。Logic → Render の順に探す。
+         *
+         * @return 見つかった System。未登録なら nullptr
+         *
+         * @code
+         *   auto *animSys = systemManager->GetSystem<AnimationSystem>();
+         * @endcode
+         */
         template <typename T>
         T *GetSystem() const
         {
-            // 1. Logic Systems から検索
             for (const auto &sys : m_logicSystems)
             {
-                // dynamic_cast で型チェックを行う
                 if (T *casted = dynamic_cast<T *>(sys.get()))
                 {
                     return casted;
                 }
             }
 
-            // 2. Render Systems から検索
             for (const auto &sys : m_renderSystems)
             {
                 if (T *casted = dynamic_cast<T *>(sys.get()))
@@ -206,12 +170,10 @@ namespace CCL::ECS
                 }
             }
 
-            // 見つからなければ nullptr
             return nullptr;
         }
 
-        // 全システムのマルチスレッドを一括で強制OFFにするフラグ
-        // (デバッグ時に「とりあえず全部シングルで動かしてみる」用)
+        // 全 System のマルチスレッドを一括で OFF にする（並列起因のバグ切り分け用）
         bool globalMultiThreadEnabled = true;
 
         // 依存グラフ構築時に「順序が不定なペア」をログへ出すか。
@@ -219,7 +181,63 @@ namespace CCL::ECS
         bool logSchedulerAmbiguities = true;
 
     private:
-        // 優先度（昇順）でシステムを並び替える
+        /**
+         * @brief RegisterSystem の実体。System を生成し、依存を注入して初期化する。
+         *
+         * 生成 → World/ミューテックス/ジョブプール/優先度の注入 → Initialize →
+         * グループのリストへ追加 → 並び替え、の順で行う。
+         * Initialize は注入が全て済んでから呼ぶ必要がある（中で World を使う System があるため）。
+         */
+        template <class T, class... Args>
+        T *RegisterSystemInternal(SystemGroup group, int priority, Args &&...args)
+        {
+            // T が SystemBase 派生であることをコンパイル時に強制する
+            static_assert(std::is_base_of<SystemBase, T>::value, "T must be derived from SystemBase");
+
+            auto sys = std::make_unique<T>(std::forward<Args>(args)...);
+
+            // 所有権は sys がリストへ移すので、戻り値用に生ポインタを先に取っておく
+            T *ptr = sys.get();
+
+            // インスペクタに出すかは OnGui を override したかで決まる。
+            //   派生側にフラグを書かせない。書き忘れると一覧から静かに消えるだけで
+            //   気付けないので、宣言そのものを唯一の情報源にする。
+            ptr->hasGui = HasOwnOnGui<T>;
+
+            if (m_world) ptr->SetWorld(m_world);
+
+            ptr->SetPriority(priority);
+
+            // 構造変更（Entity 生成・削除）を ChunkManager と排他するためのミューテックス
+            if (m_world)
+            {
+                ptr->SetStructureMutex(&m_world->GetChunkManager().GetStructureMutex());
+            }
+
+            // ジョブプールを渡しておくと、System 側で ForEachParallel などが使える
+            ptr->SetJobSystem(m_jobSystem);
+
+            ptr->Initialize();
+
+            if (group == SystemGroup::Logic)
+            {
+                m_logicSystems.push_back(std::move(sys));
+            }
+            else
+            {
+                m_renderSystems.push_back(std::move(sys));
+            }
+
+            // System が増えたので、次の UpdateLogic で依存グラフを作り直させる
+            m_isGraphDirty = true;
+
+            // 並び替えは登録したグループのリストだけでよい
+            SortSystems(group);
+
+            return ptr;
+        }
+
+        // 優先度（昇順）で System を並び替える
         void SortSystems(SystemGroup group)
         {
             auto &targetList = (group == SystemGroup::Logic) ? m_logicSystems : m_renderSystems;
@@ -249,19 +267,16 @@ namespace CCL::ECS
         // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される。
         JobSystem *m_jobSystem = nullptr;
 
-        // 2つのリストに分離
         std::vector<std::unique_ptr<SystemBase>> m_logicSystems;
         std::vector<std::unique_ptr<SystemBase>> m_renderSystems;
 
-        World *m_world = nullptr;
+        World *m_world = nullptr; // 登録時に各 System へ配る（所有しない）
 
         TaskScheduler m_logicScheduler;
         TaskScheduler m_renderScheduler;
-        bool          m_isGraphDirty = true; // システムが追加されたらtrueにする
+        bool          m_isGraphDirty = true; // true なら次の UpdateLogic で依存グラフを作り直す
 
-        // ==========================================
-        //  キャッシュ用: 前回分配したチャンクのポインタ配列
-        // ==========================================
+        // 前回 ResolveTargetChunks で配った Chunk のポインタ列。変化が無ければ再分配を省く
         std::vector<void *> m_cachedChunkPointers;
     };
 
