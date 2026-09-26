@@ -16,10 +16,23 @@
                 "BossActionComponent": {
                     "acceleration": 10.0,
                     "advanceStopDistance": 7.0,
+                    "attackLeap.flight": 1.0,
+                    "attackLeap.height": 20.0,
+                    "attackLeap.windup": 0.3499999940395355,
+                    "attackStandOff": 3.0,
                     "backStepHeight": 2.0,
                     "backStepSpeed": 40.0,
                     "backStepTime": 1.0,
                     "deceleration": 15.0,
+                    "escapeLandingRatio": 0.30000001192092896,
+                    "escapeLeap.flight": 1.100000023841858,
+                    "escapeLeap.height": 30.0,
+                    "escapeLeap.windup": 0.25,
+                    "hoverLeap.flight": 0.8999999761581421,
+                    "hoverLeap.height": 16.0,
+                    "hoverLeap.windup": 0.30000001192092896,
+                    "hoverTime": 2.5,
+                    "idleTurnSpeed": 4.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
@@ -30,9 +43,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        21.869781494140625,
-                        -18.164236068725586,
-                        -43.815589904785156
+                        0.0,
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -47,7 +60,7 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 500.0,
+                    "currentHealth": 485.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 500.0
                 },
@@ -116,159 +129,26 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 3,
+                    "parent": 0,
                     "position": [
-                        -28.975801467895508,
-                        2.3448922634124756,
-                        -23.771148681640625
+                        25.054513931274414,
+                        0.49632009863853455,
+                        -10.096841812133789
                     ],
                     "rotation": [
-                        0.0,
-                        0.973700761795044,
-                        0.0,
-                        0.2278304398059845
+                        -0.0,
+                        -0.5381861329078674,
+                        -0.0,
+                        0.8428260087966919
                     ],
                     "scale": [
-                        5,
-                        5,
-                        5
+                        5.0,
+                        5.0,
+                        5.0
                     ]
                 }
             },
             "lid": 1
-        },
-        {
-            "components": {
-                "BoneAttachmentComponent": {
-                    "boneName": "hand_r"
-                },
-                "Hitbox": {
-                    "damageAmount": 9.0,
-                    "hitStopDuration": 0.25,
-                    "hitStopScale": 0.0,
-                    "isActive": false,
-                    "knockback": 22.0
-                },
-                "Jolt Capsule Collider": {
-                    "halfHeight": 3.700000047683716,
-                    "localOffset": [
-                        0.0,
-                        1.7000000476837158,
-                        0.0
-                    ],
-                    "localRotationEuler": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "radius": 1.2999999523162842
-                },
-                "Jolt Rigidbody": {
-                    "friction": 0.20000000298023224,
-                    "gravityFactor": 1.0,
-                    "initialVelocity": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "isSensor": true,
-                    "motionType": 1,
-                    "objectLayer": 4,
-                    "restitution": 0.0,
-                    "useCCD": false
-                },
-                "Material": {
-                    "customParams": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "paths": []
-                },
-                "Model": {
-                    "assetPath": "Assets/Models/Weapon/MurielSword/MurielSword.gltf"
-                },
-                "Name": {
-                    "name": "MurielSword"
-                },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 1,
-                    "position": [
-                        0.05000000074505806,
-                        0.0,
-                        0.019999999552965164
-                    ],
-                    "rotation": [
-                        0.0,
-                        0.0,
-                        -0.06975647062063217,
-                        0.9975640773773193
-                    ],
-                    "scale": [
-                        0.5,
-                        0.5,
-                        0.5
-                    ]
-                },
-                "Weapon Trail": {
-                    "animControlled": true,
-                    "baseOffset": [
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "burstDuration": 0.25,
-                    "burstTimer": 0.0,
-                    "color": [
-                        0.7722007632255554,
-                        1.0,
-                        0.9920841455459595,
-                        1.0
-                    ],
-                    "distortion": 0.0,
-                    "distortionChroma": 0.0,
-                    "distortionNoise": 0.0,
-                    "emitting": false,
-                    "lifeTime": 0.18000000715255737,
-                    "minDistance": 0.019999999552965164,
-                    "rimPower": 0.699999988079071,
-                    "shape": 0,
-                    "texturePath": "",
-                    "thickness": 0.0,
-                    "tipOffset": [
-                        0.0,
-                        2.4700000286102295,
-                        0.0
-                    ],
-                    "tubeSides": 6,
-                    "useInterpolation": true,
-                    "useZigZag": false,
-                    "uvScroll": [
-                        0.0,
-                        0.0
-                    ],
-                    "uvTiling": [
-                        1.0,
-                        1.0
-                    ],
-                    "width": 1.0,
-                    "widthCurvePower": 0.5,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
-                }
-            },
-            "lid": 2
         }
     ],
     "magic": 1397506883,
