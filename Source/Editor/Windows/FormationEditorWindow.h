@@ -24,6 +24,7 @@
 struct FieldDescriptor;
 struct BehaviorTreeComponent;
 struct BossCommandComponent;
+class FormationLayerSequence;
 
 namespace CCL::AI::Formation
 {
@@ -37,7 +38,7 @@ public:
     /// 既定は非表示。ドローンの居るシーンでしか意味が無いので Window メニューから開く。
     FormationEditorWindow();
 
-    /// LayerSequence は .cpp にしか定義が無いので、破棄も .cpp で行う。
+    /// FormationLayerSequence の定義はこのヘッダに無いので、破棄も .cpp で行う。
     ~FormationEditorWindow() override;
 
 protected:
@@ -52,9 +53,6 @@ private:
     using Asset = CCL::AI::Formation::FormationAsset;
     using Layer = CCL::AI::Formation::FormationLayer;
 
-    /// ImSequencer と layers のつなぎ。定義は .cpp（ImSequencer をヘッダへ出さないため）。
-    class LayerSequence;
-
     // ---- 3ペイン ----
     void DrawListPane(EditorContext &context);
     void DrawEditPane(EditorContext &context);
@@ -63,8 +61,17 @@ private:
     /// 表1つぶんを「表示名 | 入力欄」の2列で描く。値が変わったら true。
     bool DrawFields(const std::vector<FieldDescriptor> &fields, void *obj);
 
-    /// 「動き」セクション全体。再生の操作・タイムライン・選んだ1枚の詳細を縦に並べる。
+    /// 「動き」セクション全体。下の4つを縦に並べるだけ。値が変わったら true。
     bool DrawLayers(Asset &asset);
+
+    /// 再生・停止・スロー。タイムラインの真上に置く（再生位置と帯が同じ時間軸だと目で分かるように）。
+    void DrawPlayback(const Asset &asset);
+
+    /// 動きの追加・並べ替え・削除。操作の対象は「選んでいる動き」。値が変わったら true。
+    bool DrawLayerButtons(Asset &asset);
+
+    /// 選んでいる動き1枚の詳細。項目の表と、置いても効かない組み合わせの警告。値が変わったら true。
+    bool DrawLayerDetail(Layer &layer);
 
     /// 動きの層を ImSequencer の帯として並べる。評価器の for (layer : layers) をそのまま絵にしたもの。
     ///   帯の並び = 適用順 / 帯の左右端 = windowBegin〜End / 縦線 = 予告の始まりからの経過。
@@ -74,6 +81,12 @@ private:
     /// 選んでいる動きの緩急。型の一覧から選び、グラフで形を見せる。細かい形は
     /// アニメーションと同じカーブエディタで直す。値を変えたら true。
     bool DrawEase(Layer &layer);
+
+    /// 緩急の形のグラフ。評価器と同じ Ease を引くので、ここで見える形がそのまま実機の動きになる。
+    void DrawEaseGraph(const Layer &layer);
+
+    /// 緩急の型のキーから、動きの層へ入れるカーブを作る。id は「どの型から作ったか」の覚え書き。
+    static CurveData MakeEaseCurve(const char *id, const CurveKeyframe *keys, int count);
 
     // ---- 実機の掌握 ----
 
@@ -126,9 +139,9 @@ private:
     bool  m_slowMotion = false; // 1/4 倍で再生する（本番の速さだと攻撃は目で追えない）
 
     // タイムライン
-    std::unique_ptr<LayerSequence> m_sequence;
-    int                            m_selectedLayer = 0; // 選んでいる動き。下に詳細を出す
-    int                            m_firstFrame    = 0; // 横スクロールの位置（ImSequencer が書く）
+    std::unique_ptr<FormationLayerSequence> m_sequence;      // 動きの層と ImSequencer のつなぎ
+    int                                    m_selectedLayer = 0; // 選んでいる動き。下に詳細を出す
+    int                                    m_firstFrame    = 0; // 横スクロールの位置（ImSequencer が書く）
 
     // 緩急
     CurveEditorWidget m_curveWidget;

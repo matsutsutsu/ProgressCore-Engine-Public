@@ -1,6 +1,27 @@
 {
     "duration": 1.4666666984558105,
-    "events": [],
+    "events": [
+        {
+            "attackLayer": 4,
+            "cancelMask": 0,
+            "damage": 35.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.3499999940395355,
+            "hitStopDuration": 0.07999999821186066,
+            "hitStopScale": 0.0,
+            "knockback": 30.0,
+            "offset": {
+                "x": 0.0,
+                "y": 2.0,
+                "z": 0.0
+            },
+            "radius": 8.0,
+            "startTime": 0.10000000149011612,
+            "stringParam": "",
+            "type": 4
+        }
+    ],
     "rootMotionCurve": {
         "color": 4286643968,
         "keys": [],

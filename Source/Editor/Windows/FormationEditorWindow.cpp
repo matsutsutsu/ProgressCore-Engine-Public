@@ -17,10 +17,10 @@
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
-#include <imgui_internal.h> // ImRect（ImSequencer の描画コールバックが受け取る）
 
 #include "ImSequencer.h"
 
+#include "Editor/Windows/FormationLayerSequence.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
@@ -38,208 +38,8 @@ FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 // 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通。
 constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
 
-// ---------------------------------------------------------------------------
-// ImSequencer とのつなぎ
-// ---------------------------------------------------------------------------
-// ImSequencer は帯の両端を int のフレームで受け取り、ドラッグ中はそのアドレスへ直接書き込む。
-// こちらの時間帯は 0〜1 の float なので、int の置き場所(m_frames)を別に持って往復させる。
-//   データ → m_frames : Sync()。掴んでいる間は呼ばない（ドラッグ中の値を毎フレーム巻き戻してしまう）
-//   m_frames → データ : Flush()。掴んだ帯が実際に動いたときだけ書き戻す（クリックしただけで
-//                       書き戻すと、欄に打った 0.333 が刻みの 0.34 へ丸められる）
-//
-// タイムラインは左右2つの区間に分かれる。左が予告（Shiver の帯だけが置ける）、右が攻撃。
-// 区間の幅は秒数に比例させない。攻撃は0.4秒ほどしかなく、比例させると一番触りたい攻撃の帯が
-// 予告の半分以下に潰れる。
-
-class FormationEditorWindow::LayerSequence : public ImSequencer::SequenceInterface
-{
-public:
-    /// 各区間を何等分するか。攻撃が0.4秒なら1刻み8ミリ秒で、ゲームの1コマ(16ミリ秒)より細かい。
-    /// ImSequencer は1刻みを既定で10pxで描くので、増やすと横スクロールが要るようになる。
-    static constexpr int kTelegraphFrames = 20;
-    static constexpr int kAttackFrames    = 50;
-
-    /// 予告の始まりからの秒数 ⇔ タイムラインのフレーム。
-    static int TimeToFrame(const Asset &asset, float time)
-    {
-        if (time < asset.telegraphSeconds)
-            return static_cast<int>(std::lround(time / asset.telegraphSeconds * kTelegraphFrames));
-        const float progress = (time - asset.telegraphSeconds) / asset.attackSeconds;
-        return kTelegraphFrames + static_cast<int>(std::lround(std::min(progress, 1.0f) * kAttackFrames));
-    }
-    static float FrameToTime(const Asset &asset, int frame)
-    {
-        if (frame < kTelegraphFrames)
-            return static_cast<float>(frame) / kTelegraphFrames * asset.telegraphSeconds;
-        return asset.telegraphSeconds + static_cast<float>(frame - kTelegraphFrames) / kAttackFrames * asset.attackSeconds;
-    }
-
-    Asset *asset  = nullptr;
-    int    cursor = 0; // 再生位置のフレーム。帯の明暗に使う
-
-    bool IsEditing() const { return m_editIndex >= 0; }
-
-    void Sync()
-    {
-        m_frames.resize(asset->layers.size());
-        for (size_t i = 0; i < asset->layers.size(); ++i)
-            m_frames[i] = ToFrames(asset->layers[i]);
-    }
-
-    /// 掴んでいた帯が動いていたらデータへ書き戻す。書き戻したら true。
-    bool Flush()
-    {
-        const int index = m_editIndex >= 0 ? m_editIndex : m_releasedIndex;
-        m_releasedIndex = -1;
-        if (index < 0 || index >= static_cast<int>(asset->layers.size())) return false;
-
-        FormationLayer &layer = asset->layers[index];
-        const Section   sec   = SectionOf(layer);
-
-        // 帯を自分の区間の外へは出さない（ImSequencer は左端 0 しか止めない）。
-        auto &[start, end] = m_frames[index];
-        start              = std::clamp(start, sec.first, sec.first + sec.length - 1);
-        end                = std::clamp(end, start, sec.first + sec.length - 1);
-
-        if (m_frames[index] == ToFrames(layer)) return false;
-
-        // 帯は「開始のコマの左端」から「終了のコマの右端」まで描かれるので、終了は +1 して戻す。
-        const float oldWidth = layer.windowEnd - layer.windowBegin;
-        layer.windowBegin    = static_cast<float>(start - sec.first) / sec.length;
-        layer.windowEnd      = static_cast<float>(end + 1 - sec.first) / sec.length;
-        const float newWidth = layer.windowEnd - layer.windowBegin;
-
-        // 動きの長さは帯の幅ではなく duration が決める（評価器は windowBegin から duration かけて進む）。
-        // 帯と一緒に duration も同じ比率で伸び縮みさせないと、帯を縮めても動きは縮まない。
-        // 比率で持つので、波の扇の開き方（duration / 帯の幅）はドラッグしても変わらない。
-        if (oldWidth > 0.0f) layer.duration = std::min(newWidth, layer.duration * newWidth / oldWidth);
-        return true;
-    }
-
-    int GetFrameMin() const override { return 0; }
-    int GetFrameMax() const override { return kTelegraphFrames + kAttackFrames; }
-    int GetItemCount() const override { return static_cast<int>(asset->layers.size()); }
-
-    void BeginEdit(int index) override { m_editIndex = index; }
-    void EndEdit() override
-    {
-        m_releasedIndex = m_editIndex;
-        m_editIndex     = -1;
-    }
-
-    const char *GetItemLabel(int index) const override
-    {
-        const FormationLayer &layer = asset->layers[index];
-        std::snprintf(m_label, sizeof(m_label), "%d. %s / %s", index + 1,
-                      Meta::kLayerTypeNames[static_cast<int>(layer.type)],
-                      Meta::kAxisNames[static_cast<int>(layer.axis)]);
-        return m_label;
-    }
-
-    void Get(int index, int **start, int **end, int *type, unsigned int *color) override
-    {
-        // 種類ごとの帯の色。並びは LayerType の宣言順（Rotate / Translate / Shiver）。
-        constexpr ImU32 kTypeColors[] = {
-            IM_COL32(80, 140, 230, 255),
-            IM_COL32(90, 190, 120, 255),
-            IM_COL32(230, 160, 60, 255),
-        };
-
-        const FormationLayer &layer = asset->layers[index];
-        if (start) *start = &m_frames[index].first;
-        if (end) *end = &m_frames[index].second;
-        if (type) *type = static_cast<int>(layer.type);
-        if (color)
-        {
-            // 再生位置が帯の中にある間だけ明るくする。今どの動きが形を動かしているかが一目で分かる。
-            const bool  active = (m_frames[index].first <= cursor && cursor <= m_frames[index].second + 1);
-            const ImU32 base   = kTypeColors[static_cast<int>(layer.type)];
-            *color             = active ? base : ((base >> 1) & 0x007F7F7F);
-        }
-    }
-
-    /// 帯の上に斜線を、行の上に予告と攻撃の境目と、その帯を置けない側の区間の目隠しを描く。
-    /// 斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで。扇状に広がっていれば「波」。
-    void CustomDrawCompact(int index, ImDrawList *draw, const ImRect &rc, const ImRect &clip) override
-    {
-        // 波の本数は目安。実際の列数を出すには割付の式をここへ書き直すことになり、評価器と二重管理になる。
-        constexpr int kFanLines = 6;
-
-        // rc は「フレーム -0.5 〜 最終フレーム +0.5」の範囲で渡される。一方で帯はコマの左端から、
-        // しかも ImSequencer 内の子ウィンドウの余白(FramePadding)ぶん右へずれて描かれるので、両方を足して揃える。
-        const float cell = (rc.Max.x - rc.Min.x) / (GetFrameMax() - GetFrameMin() + 1);
-        const float left = rc.Min.x + ImGui::GetStyle().FramePadding.x - 0.5f * cell;
-        const auto  toX  = [&](float frame) { return left + frame * cell; };
-        const float y0   = rc.Min.y + 4.0f;
-        const float y1   = rc.Max.y - 3.0f;
-
-        const FormationLayer &layer = asset->layers[index];
-        const Section         sec   = SectionOf(layer);
-
-        draw->PushClipRect(clip.Min, clip.Max, true);
-
-        // 置けない側を暗くして、そこに何を置く区間かを書く。空いているだけだと、
-        // 帯が 0 から置けない理由が画面から分からない。
-        const bool  inTelegraph = (sec.first == 0); // この帯は予告の区間に置く（＝攻撃の区間を隠す）
-        const float sectionL    = toX(static_cast<float>(sec.first));
-        const float sectionR    = toX(static_cast<float>(sec.first + sec.length));
-        const float blockedL    = inTelegraph ? sectionR : toX(0.0f);
-        const float blockedR    = inTelegraph ? toX(static_cast<float>(GetFrameMax() + 1)) : sectionL;
-        draw->AddRectFilled(ImVec2(blockedL, rc.Min.y), ImVec2(blockedR, rc.Max.y), IM_COL32(0, 0, 0, 120));
-        draw->AddText(ImVec2(blockedL + 4.0f, rc.Min.y + 2.0f), IM_COL32(255, 255, 255, 100),
-                      inTelegraph ? "攻撃（動きの帯を置く）" : "予告（震えの帯を置く）");
-
-        const float border = toX(static_cast<float>(kTelegraphFrames));
-        draw->AddLine(ImVec2(border, rc.Min.y), ImVec2(border, rc.Max.y), IM_COL32(255, 255, 255, 60), 2.0f);
-
-        const int   lines    = (layer.phaseSource == PhaseSource::None) ? 1 : kFanLines;
-        const float width    = layer.windowEnd - layer.windowBegin;
-        const float duration = std::min(layer.duration, width); // 評価器と同じ抑え方
-        const float slack    = width - duration;
-
-        for (int k = 0; k < lines; ++k)
-        {
-            // 評価器の start = windowBegin + seatT * (窓幅 - duration) と同じ式で引く。
-            const float seatT = (lines == 1) ? 0.0f : static_cast<float>(k) / (lines - 1);
-            const float start = layer.windowBegin + seatT * slack;
-            draw->AddLine(ImVec2(toX(sec.first + start * sec.length), y1),
-                          ImVec2(toX(sec.first + (start + duration) * sec.length), y0),
-                          IM_COL32(255, 255, 255, 170));
-        }
-        draw->PopClipRect();
-    }
-
-private:
-    /// 帯を置ける区間。Shiver は予告、それ以外は攻撃。
-    struct Section
-    {
-        int first;
-        int length;
-    };
-    static Section SectionOf(const FormationLayer &layer)
-    {
-        if (layer.type == LayerType::Shiver) return {0, kTelegraphFrames};
-        return {kTelegraphFrames, kAttackFrames};
-    }
-
-    static std::pair<int, int> ToFrames(const FormationLayer &layer)
-    {
-        const Section sec   = SectionOf(layer);
-        const int     start = sec.first + static_cast<int>(std::lround(layer.windowBegin * sec.length));
-        const int     end   = sec.first + static_cast<int>(std::lround(layer.windowEnd * sec.length)) - 1;
-        return {start, std::max(start, end)};
-    }
-
-    std::vector<std::pair<int, int>> m_frames;
-
-    int m_editIndex     = -1; // 掴んでいる帯。離すと -1
-    int m_releasedIndex = -1; // 離したフレームだけ、離した帯の番号が入る
-
-    mutable char m_label[64] = {}; // GetItemLabel の戻り値の置き場所（呼び出し側はすぐ描いて捨てる）
-};
-
 FormationEditorWindow::FormationEditorWindow()
-    : EditorWindow("Formation Editor", false), m_sequence(std::make_unique<LayerSequence>())
+    : EditorWindow("Formation Editor", false), m_sequence(std::make_unique<FormationLayerSequence>())
 {
 }
 
@@ -441,72 +241,108 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
 // ---------------------------------------------------------------------------
 // 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ。
 // どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）。
-// 接線は手動(Broken)で持たせる。Auto だと読み込み時の接線の再計算で形が変わる。
 
 namespace
 {
-    struct EaseKey
-    {
-        float       time;
-        float       value;
-        float       inTangent;
-        float       outTangent;
-        CurveInterp interp;
-    };
-
+    /// 緩急の型ひとつ。キーは「進み 0〜1 → 動きの進み 0〜1」を描く。
     struct EasePreset
     {
-        const char *id; // CurveData::name に入れる。JSON に残るので英字
-        const char *label;
-        const char *tooltip;
-        int         keyCount; // 0 = キー無し（評価器の既定 t*t）
-        EaseKey     keys[3];
+        const char   *id; // CurveData::name に入れる。JSON に残るので英字
+        const char   *label;
+        const char   *tooltip;
+        int           keyCount; // 0 = キー無し（評価器の既定 t*t）
+        CurveKeyframe keys[3];
     };
 
     constexpr EasePreset kEasePresets[] = {
         {"EaseIn", "だんだん速く（既定）", "溜めてから速くなる。振り下ろす・たたきつける動きに", 0, {}},
+
         {"Linear", "直線", "最初から最後まで同じ速さ", 2,
-         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Linear}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Linear}}},
+         {{.time = 0.0f, .value = 0.0f, .interp = CurveInterp::Linear},
+          {.time = 1.0f, .value = 1.0f, .interp = CurveInterp::Linear}}},
+
         {"EaseOut", "だんだん遅く", "勢いよく出て、止まる前に減速する。構え直し・引き戻しに", 2,
-         {{0.0f, 0.0f, 0.0f, 2.0f, CurveInterp::Cubic}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+         {{.time = 0.0f, .value = 0.0f, .outTangent = 2.0f},
+          {.time = 1.0f, .value = 1.0f}}},
+
         {"EaseInOut", "ゆっくり始めてゆっくり止まる", "両端がなめらか。形を組み替えるときに", 2,
-         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic}, {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+         {{.time = 0.0f, .value = 0.0f},
+          {.time = 1.0f, .value = 1.0f}}},
+
         {"Anticipate", "溜めてから一気に", "一度少し逆へ引いてから、一気に振り切る。予備動作が目で読める", 3,
-         {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic},
-          {0.35f, -0.12f, 0.0f, 0.0f, CurveInterp::Cubic},
-          {1.0f, 1.0f, 3.0f, 0.0f, CurveInterp::Cubic}}},
+         {{.time = 0.0f, .value = 0.0f},
+          {.time = 0.35f, .value = -0.12f}, // 少し逆へ引く
+          {.time = 1.0f, .value = 1.0f, .inTangent = 3.0f}}},
+
         {"Overshoot", "行き過ぎて戻る", "終わりの値を少し越えてから戻る。止まった瞬間に重さが出る", 3,
-         {{0.0f, 0.0f, 0.0f, 2.5f, CurveInterp::Cubic},
-          {0.7f, 1.1f, 0.0f, 0.0f, CurveInterp::Cubic},
-          {1.0f, 1.0f, 0.0f, 0.0f, CurveInterp::Cubic}}},
+         {{.time = 0.0f, .value = 0.0f, .outTangent = 2.5f},
+          {.time = 0.7f, .value = 1.1f}, // 終わりの値を1割越える
+          {.time = 1.0f, .value = 1.0f}}},
     };
+
+    /// エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど評価器の既定 t*t になる。
+    /// 「既定の形から手で直し始める」ための出発点。
+    constexpr CurveKeyframe kEaseInKeys[] = {
+        {.time = 0.0f, .value = 0.0f},
+        {.time = 1.0f, .value = 1.0f, .inTangent = 2.0f},
+    };
+
     constexpr const char *kCustomEaseId = "Custom"; // カーブエディタで手を入れたもの
 } // namespace
+
+CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyframe *keys, int count)
+{
+    CurveData curve;
+    curve.name = id;
+    for (int k = 0; k < count; ++k)
+    {
+        CurveKeyframe key = keys[k];
+
+        // 接線は手動(Broken)で持たせる。Auto のままだと読み込み時の接線の再計算で形が変わる。
+        key.tangentIn  = TangentMode::Broken;
+        key.tangentOut = TangentMode::Broken;
+        key.id         = curve.GenId();
+        curve.keys.push_back(key);
+    }
+    return curve;
+}
+
+void FormationEditorWindow::DrawEaseGraph(const Layer &layer)
+{
+    constexpr float kWidth  = 240.0f;
+    constexpr float kHeight = 80.0f;
+    constexpr float kMinY   = -0.2f; // 溜め・行き過ぎが枠からはみ出さないよう上下に余白を取る
+    constexpr float kMaxY   = 1.2f;
+
+    const ImVec2 p0 = ImGui::GetCursorScreenPos();
+    const ImVec2 p1(p0.x + kWidth, p0.y + kHeight);
+    const auto   toY = [&](float v) { return p1.y - (v - kMinY) / (kMaxY - kMinY) * kHeight; };
+
+    ImDrawList *draw = ImGui::GetWindowDrawList();
+    draw->AddRectFilled(p0, p1, IM_COL32(30, 30, 34, 255));
+    draw->AddLine(ImVec2(p0.x, toY(0.0f)), ImVec2(p1.x, toY(0.0f)), IM_COL32(255, 255, 255, 50));
+    draw->AddLine(ImVec2(p0.x, toY(1.0f)), ImVec2(p1.x, toY(1.0f)), IM_COL32(255, 255, 255, 50));
+
+    constexpr int kSamples = 48;
+    ImVec2        points[kSamples + 1];
+    for (int i = 0; i <= kSamples; ++i)
+    {
+        const float t = static_cast<float>(i) / kSamples;
+        points[i]     = ImVec2(p0.x + t * kWidth, toY(DataDrivenFormation::Ease(layer, t)));
+    }
+    draw->PushClipRect(p0, p1, true);
+    draw->AddPolyline(points, kSamples + 1, IM_COL32(120, 220, 255, 255), ImDrawFlags_None, 2.0f);
+    draw->PopClipRect();
+
+    ImGui::Dummy(ImVec2(kWidth, kHeight));
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("横 : 1つの席が動き始めてから動き切るまで\n"
+                          "縦 : 下の線 = 始まりの値 / 上の線 = 終わりの値");
+}
 
 bool FormationEditorWindow::DrawEase(Layer &layer)
 {
     bool changed = false;
-
-    const auto setCurve = [&](const char *id, const EaseKey *keys, int count) {
-        CurveData curve;
-        curve.name = id;
-        for (int k = 0; k < count; ++k)
-        {
-            CurveKeyframe key;
-            key.time       = keys[k].time;
-            key.value      = keys[k].value;
-            key.inTangent  = keys[k].inTangent;
-            key.outTangent = keys[k].outTangent;
-            key.interp     = keys[k].interp;
-            key.tangentIn  = TangentMode::Broken;
-            key.tangentOut = TangentMode::Broken;
-            key.id         = curve.GenId();
-            curve.keys.push_back(key);
-        }
-        layer.curve  = std::move(curve);
-        m_curveLayer = nullptr; // カーブエディタの表示範囲を新しい形に合わせ直す
-        changed      = true;
-    };
 
     // 今の型。キーが無ければ既定、name が一覧にあればその型、どれでもなければ手で直した形。
     int current = -1;
@@ -529,58 +365,30 @@ bool FormationEditorWindow::DrawEase(Layer &layer)
         for (int i = 0; i < IM_ARRAYSIZE(kEasePresets); ++i)
         {
             const EasePreset &preset = kEasePresets[i];
-            if (ImGui::Selectable(preset.label, i == current)) setCurve(preset.id, preset.keys, preset.keyCount);
+            if (ImGui::Selectable(preset.label, i == current))
+            {
+                layer.curve  = MakeEaseCurve(preset.id, preset.keys, preset.keyCount);
+                m_curveLayer = nullptr; // カーブエディタの表示範囲を新しい形に合わせ直す
+                changed      = true;
+            }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", preset.tooltip);
         }
         ImGui::EndCombo();
     }
 
-    // 形のグラフ。横 = 席ごとの進み、縦 = 始まり(下の線)→終わり(上の線)のどこまで進んだか。
-    // 評価器と同じ Ease を引いて描くので、ここで見える形がそのまま実機の動きになる。
-    {
-        constexpr float kWidth  = 240.0f;
-        constexpr float kHeight = 80.0f;
-        constexpr float kMinY   = -0.2f; // 溜め・行き過ぎが枠からはみ出さないよう上下に余白を取る
-        constexpr float kMaxY   = 1.2f;
+    DrawEaseGraph(layer);
 
-        const ImVec2 p0 = ImGui::GetCursorScreenPos();
-        const ImVec2 p1(p0.x + kWidth, p0.y + kHeight);
-        const auto   toY = [&](float v) { return p1.y - (v - kMinY) / (kMaxY - kMinY) * kHeight; };
-
-        ImDrawList *draw = ImGui::GetWindowDrawList();
-        draw->AddRectFilled(p0, p1, IM_COL32(30, 30, 34, 255));
-        draw->AddLine(ImVec2(p0.x, toY(0.0f)), ImVec2(p1.x, toY(0.0f)), IM_COL32(255, 255, 255, 50));
-        draw->AddLine(ImVec2(p0.x, toY(1.0f)), ImVec2(p1.x, toY(1.0f)), IM_COL32(255, 255, 255, 50));
-
-        constexpr int kSamples = 48;
-        ImVec2        points[kSamples + 1];
-        for (int i = 0; i <= kSamples; ++i)
-        {
-            const float t = static_cast<float>(i) / kSamples;
-            points[i]     = ImVec2(p0.x + t * kWidth, toY(DataDrivenFormation::Ease(layer, t)));
-        }
-        draw->PushClipRect(p0, p1, true);
-        draw->AddPolyline(points, kSamples + 1, IM_COL32(120, 220, 255, 255), ImDrawFlags_None, 2.0f);
-        draw->PopClipRect();
-
-        ImGui::Dummy(ImVec2(kWidth, kHeight));
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("横 : 1つの席が動き始めてから動き切るまで\n"
-                              "縦 : 下の線 = 始まりの値 / 上の線 = 終わりの値");
-    }
-
-    // 細かい形はアニメーションと同じカーブエディタで直す。既定（キー無し）は直す対象のキーが無いので、
-    // 同じ形（t*t）のキーを置いてから始める。
+    // 細かい形はアニメーションと同じカーブエディタで直す。既定（キー無し）は直す対象のキーが
+    // 無いので、同じ形のキーを置いてから始める。
     if (ImGui::TreeNode("形を手で直す"))
     {
         if (layer.curve.empty())
         {
             if (ImGui::Button("既定の形から直し始める"))
             {
-                // エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど t*t になる。
-                constexpr EaseKey kEaseInKeys[] = {{0.0f, 0.0f, 0.0f, 0.0f, CurveInterp::Cubic},
-                                                   {1.0f, 1.0f, 2.0f, 0.0f, CurveInterp::Cubic}};
-                setCurve(kCustomEaseId, kEaseInKeys, IM_ARRAYSIZE(kEaseInKeys));
+                layer.curve  = MakeEaseCurve(kCustomEaseId, kEaseInKeys, IM_ARRAYSIZE(kEaseInKeys));
+                m_curveLayer = nullptr;
+                changed      = true;
             }
         }
         else
@@ -604,9 +412,18 @@ bool FormationEditorWindow::DrawEase(Layer &layer)
 
 bool FormationEditorWindow::DrawLayers(Asset &asset)
 {
-    bool changed = false;
+    DrawPlayback(asset);
 
-    // 再生の操作はタイムラインの真上に置く。再生位置と帯が同じ時間軸だと目で分かるように。
+    bool changed = DrawTimeline(asset);
+    changed |= DrawLayerButtons(asset);
+
+    if (asset.layers.empty()) return changed;
+    changed |= DrawLayerDetail(asset.layers[m_selectedLayer]);
+    return changed;
+}
+
+void FormationEditorWindow::DrawPlayback(const Asset &asset)
+{
     ImGui::BeginDisabled(!m_staged);
     if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(70, 0))) m_playing = !m_playing;
     ImGui::SameLine();
@@ -618,6 +435,7 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     ImGui::SameLine();
     ImGui::Checkbox("1/4 倍", &m_slowMotion);
     ImGui::EndDisabled();
+
     ImGui::SameLine();
     if (!m_staged)
         ImGui::TextDisabled("右の「実機に出す」を ON にすると形が動く");
@@ -625,10 +443,14 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
         ImGui::Text("予告 %.2f / %.2f 秒", m_time, asset.telegraphSeconds);
     else
         ImGui::Text("攻撃 %.2f / %.2f 秒", std::min(m_time - asset.telegraphSeconds, asset.attackSeconds), asset.attackSeconds);
+}
 
-    changed |= DrawTimeline(asset);
+bool FormationEditorWindow::DrawLayerButtons(Asset &asset)
+{
+    bool changed = false;
 
-    // 追加・並べ替え・削除は「選んでいる動き」に対して行う。
+    // 追加・並べ替え・削除は「選んでいる動き」に対して行う。層が減った直後でも
+    // 指している先が居るように、ここで選択を範囲内へ入れ直す。
     const int count         = static_cast<int>(asset.layers.size());
     m_selectedLayer         = std::clamp(m_selectedLayer, 0, std::max(0, count - 1));
     const bool hasSelection = (count > 0);
@@ -689,17 +511,18 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     }
     ImGui::EndDisabled();
 
-    if (asset.layers.empty()) return changed;
+    return changed;
+}
 
-    FormationLayer &layer = asset.layers[m_selectedLayer];
-
+bool FormationEditorWindow::DrawLayerDetail(Layer &layer)
+{
     char title[64];
     std::snprintf(title, sizeof(title), "選んでいる動き : %d. %s / %s", m_selectedLayer + 1,
                   Meta::kLayerTypeNames[static_cast<int>(layer.type)],
                   Meta::kAxisNames[static_cast<int>(layer.axis)]);
     ImGui::SeparatorText(title);
 
-    changed |= DrawFields(Meta::LayerFields(), &layer);
+    bool changed = DrawFields(Meta::LayerFields(), &layer);
 
     // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す。
     if (layer.type == LayerType::Shiver)
@@ -712,7 +535,6 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
         ImGui::TextColored(kWarnColor, "始まりと終わりが同じなので、この動きは形を変えない");
 
     changed |= DrawEase(layer);
-
     return changed;
 }
 
@@ -735,13 +557,9 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
         return changed;
     }
 
-    LayerSequence &sequence = *m_sequence;
-    sequence.asset          = &asset;
-    if (!sequence.IsEditing()) sequence.Sync();
-
-    int       frame  = LayerSequence::TimeToFrame(asset, m_time);
+    int       frame  = FormationLayerSequence::TimeToFrame(asset, m_time);
     const int before = frame;
-    sequence.cursor  = frame;
+    m_sequence->Begin(asset, frame);
 
     // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める。
     //   目盛り(20) + 行(20 x 数) + 下の横スクロール(14) + 内側の余白(8) + 少しの余裕
@@ -749,7 +567,7 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
     const float     height      = kItemHeight * (asset.layers.size() + 1) + 14.0f + 8.0f + 4.0f;
 
     ImGui::BeginChild("timeline", ImVec2(0.0f, height));
-    ImSequencer::Sequencer(&sequence, &frame, nullptr, &m_selectedLayer, &m_firstFrame,
+    ImSequencer::Sequencer(m_sequence.get(), &frame, nullptr, &m_selectedLayer, &m_firstFrame,
                            ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
     ImGui::EndChild();
 
@@ -762,11 +580,11 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
 
     if (frame != before)
     {
-        m_time    = LayerSequence::FrameToTime(asset, frame);
+        m_time    = FormationLayerSequence::FrameToTime(asset, frame);
         m_playing = false;
     }
 
-    changed |= sequence.Flush();
+    changed |= m_sequence->Flush();
     return changed;
 }
 
@@ -967,7 +785,9 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
 
 #else // ENABLE_EDITOR
 
-class FormationEditorWindow::LayerSequence
+/// Release ではつなぎの実体（FormationLayerSequence.cpp）をビルドしないので、
+/// unique_ptr が要求する「完全な型」だけをここで用意する。
+class FormationLayerSequence
 {
 };
 
@@ -987,6 +807,11 @@ bool FormationEditorWindow::DrawEase(Layer &) { return false; }
 void FormationEditorWindow::DrawViewPane(EditorContext &) {}
 bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &, void *) { return false; }
 bool FormationEditorWindow::DrawLayers(Asset &) { return false; }
+void FormationEditorWindow::DrawPlayback(const Asset &) {}
+bool FormationEditorWindow::DrawLayerButtons(Asset &) { return false; }
+bool FormationEditorWindow::DrawLayerDetail(Layer &) { return false; }
+void FormationEditorWindow::DrawEaseGraph(const Layer &) {}
+CurveData FormationEditorWindow::MakeEaseCurve(const char *, const CurveKeyframe *, int) { return {}; }
 void FormationEditorWindow::Stage(EditorContext &) {}
 void FormationEditorWindow::Unstage(EditorContext &) {}
 void FormationEditorWindow::PushStage(EditorContext &) {}
