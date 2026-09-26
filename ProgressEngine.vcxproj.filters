@@ -1017,6 +1017,9 @@
     <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\BehaviorTreeEditorCommon.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
@@ -2287,6 +2290,18 @@
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Graph.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Layout.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Canvas.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Inspector.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
