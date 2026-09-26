@@ -175,7 +175,7 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     }
     if (freeSlot == 0)
     {
-        m_status = "空き枠がありません（DroneComponent.h の予約枠を増やしてください）";
+        m_status = "空き枠がありません（DroneFormationType.h の枠を増やしてください）";
         return false;
     }
 

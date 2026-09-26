@@ -424,13 +424,13 @@
             "type": 2
         },
         {
-            "action": "A_DroneGuillotineSlam",
-            "actionId": 105,
+            "action": "A_DroneFormation",
+            "actionId": 128,
             "id": 30,
             "inputPinId": 31,
             "name": "縦割り",
             "outputPinId": 0,
-            "param": 0.0,
+            "param": 24.0,
             "posX": 5296.0,
             "posY": 1040.0,
             "type": 4
@@ -470,13 +470,13 @@
             "type": 2
         },
         {
-            "action": "A_DroneClapSlam",
-            "actionId": 106,
+            "action": "A_DroneFormation",
+            "actionId": 128,
             "id": 45,
             "inputPinId": 46,
             "name": "挟み込み",
             "outputPinId": 0,
-            "param": 0.0,
+            "param": 25.0,
             "posX": 8896.0,
             "posY": 1008.0,
             "type": 4
@@ -714,13 +714,13 @@
             "type": 2
         },
         {
-            "action": "A_DroneSideSlapWhip",
-            "actionId": 104,
+            "action": "A_DroneFormation",
+            "actionId": 128,
             "id": 235,
             "inputPinId": 236,
             "name": "横なぎ回転",
             "outputPinId": 0,
-            "param": 0.0,
+            "param": 22.0,
             "posX": 7280.0,
             "posY": 1008.0,
             "type": 4
@@ -930,13 +930,13 @@
             "type": 4
         },
         {
-            "action": "A_DroneGuillotineSlam",
-            "actionId": 105,
+            "action": "A_DroneFormation",
+            "actionId": 128,
             "id": 301,
             "inputPinId": 302,
             "name": "援護：縦割り",
             "outputPinId": 0,
-            "param": 0.0,
+            "param": 24.0,
             "posX": 695.0,
             "posY": 676.0,
             "type": 4
@@ -1489,10 +1489,10 @@
             "type": "Action"
         },
         {
-            "action": "A_DroneGuillotineSlam",
-            "actionOrConditionId": 105,
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
             "children": [],
-            "param": 0.0,
+            "param": 24.0,
             "type": "Action"
         },
         {
@@ -1671,10 +1671,10 @@
             "type": "Condition"
         },
         {
-            "action": "A_DroneGuillotineSlam",
-            "actionOrConditionId": 105,
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
             "children": [],
-            "param": 0.0,
+            "param": 24.0,
             "type": "Action"
         },
         {
@@ -1720,10 +1720,10 @@
             "type": "Condition"
         },
         {
-            "action": "A_DroneSideSlapWhip",
-            "actionOrConditionId": 104,
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
             "children": [],
-            "param": 0.0,
+            "param": 22.0,
             "type": "Action"
         },
         {
@@ -1769,10 +1769,10 @@
             "type": "Condition"
         },
         {
-            "action": "A_DroneClapSlam",
-            "actionOrConditionId": 106,
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
             "children": [],
-            "param": 0.0,
+            "param": 25.0,
             "type": "Action"
         },
         {

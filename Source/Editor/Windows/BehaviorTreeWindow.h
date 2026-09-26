@@ -252,6 +252,12 @@ private:
     // カテゴリ別プルダウンで ActionID を選択させる
     bool DrawActionCombo(const char *label, ActionID &currentId);
 
+    /// 「ドローン：データの技」のノードに出す文字。枠番号から技の名前を引く。
+    static const char *GetDroneFormationLabel(float slotParam);
+
+    /// データの技を選ぶプルダウン。読み込まれている陣形を名前で並べ、枠番号を param へ書く。
+    bool DrawDroneFormationCombo(const char *label, float &slotParam);
+
     // カテゴリ別プルダウンで ConditionID を選択させる
     bool DrawConditionCombo(const char *label, ActionID &currentId);
 

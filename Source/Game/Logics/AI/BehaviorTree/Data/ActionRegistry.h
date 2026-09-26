@@ -288,6 +288,7 @@ inline bool TryGetDroneFormation(ActionID id, DroneFormationType &outFormation)
 
 inline bool IsDroneAction(ActionID id)
 {
+    if (id == A_DroneFormation) return true; // データの技。どの技かは param の枠番号が決める
     DroneFormationType ignored;
     return TryGetDroneFormation(id, ignored);
 }
@@ -296,6 +297,9 @@ inline bool IsDroneAction(ActionID id)
 // 除外リストを書かず表の役割列を引くので、攻撃しない隊形を足してもここは触らない。
 inline bool IsDroneAttackFormation(ActionID id)
 {
+    // データの技は当たり判定を持つ攻撃技として作る前提（攻撃しない隊形は C++ 側にある）。
+    if (id == A_DroneFormation) return true;
+
     switch (id)
     {
 #define CCL_BT_DRONE_ROLE(Name, Id, Formation, Role, Display) \

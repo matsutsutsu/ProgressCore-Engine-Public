@@ -17,6 +17,8 @@
 #include "Engine/Animation/Components/AnimParametersComponent.h" // SetTrigger（近接アニメ）
 #include "Engine/Core/Math/StringHash.h"                         // HashString
 
+#include <cmath> // 枠番号は param（float）で来るので丸める
+
 namespace CCL::AI::BT
 {
     /// 自分が出した行動要求だけを取り下げる。別の行動が既に書き換えていたら触らない
@@ -183,9 +185,19 @@ namespace CCL::AI::BT
         {
             ctx.bt->lastLogActionId = id;
 
-            // ActionRegistry.h の DRONE_ACTION_LIST が唯一の対応表。
             DroneFormationType formation = DroneFormationType::Hidden;
-            if (!TryGetDroneFormation(id, formation)) return BTNodeState::Failure;
+            if (id == A_DroneFormation)
+            {
+                // データの技は param の枠番号で指す。名前で指さないのは、エディタで名前を
+                // 変えた瞬間に BT が技を見失うため（枠番号は技の識別子）。
+                const int slot = static_cast<int>(std::lround(ctx.param));
+                if (slot <= 0 || slot >= static_cast<int>(kDroneFormationSlotCount))
+                    return BTNodeState::Failure;
+                formation = static_cast<DroneFormationType>(slot);
+            }
+            // C++ で書いた陣形は BT_DRONE_ACTION_LIST が唯一の対応表。
+            else if (!TryGetDroneFormation(id, formation))
+                return BTNodeState::Failure;
 
             auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
             if (!cmd) return BTNodeState::Failure;
@@ -312,7 +324,10 @@ namespace CCL::AI::BT
         reg.RegisterAction<HitWaitAction>(A_BossHitWait);
         reg.RegisterAction<AdvanceAction>(A_BossAdvance);
 
-        // 陣形指示は全部おなじ DroneAction。表から直接登録するので技を足しても触らない
+        // データの技はこの1つ。どの技かは枠番号（param）が決めるので、技が増えても触らない。
+        reg.RegisterActionInstance(A_DroneFormation, std::make_unique<DroneAction>(A_DroneFormation));
+
+        // C++ で書いた陣形も同じ DroneAction。表から直接登録するので技を足しても触らない
         // （連番ループだと欠番も登録してしまう）。
 #define CCL_REGISTER_DRONE_ACTION(Name, Id, Formation, Role, Display) reg.RegisterActionInstance(Name, std::make_unique<DroneAction>(Name));
         BT_DRONE_ACTION_LIST(CCL_REGISTER_DRONE_ACTION)

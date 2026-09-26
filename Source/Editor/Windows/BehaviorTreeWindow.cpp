@@ -3,10 +3,12 @@
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // データの技の名前を引く
 #include <imgui_node_editor.h>
 #include <imgui.h>
 #include <algorithm>
 #include <cfloat>
+#include <cmath> // 枠番号は param（float）で来るので丸める
 #include <functional>
 #include <queue>
 #include <unordered_map>
@@ -151,6 +153,60 @@ const char *BehaviorTreeWindow::GetConditionDisplayName(ActionID id)
     static thread_local char buf[64];
     snprintf(buf, sizeof(buf), "不明なCondition (ID:%d)", static_cast<int>(id));
     return buf;
+}
+
+const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam)
+{
+    static thread_local char buf[96];
+
+    const int slot = static_cast<int>(std::lround(slotParam));
+    if (slot <= 0 || slot >= static_cast<int>(kDroneFormationSlotCount))
+    {
+        snprintf(buf, sizeof(buf), "ドローン：データの技（技が選ばれていません）");
+        return buf;
+    }
+
+    const auto  type = static_cast<DroneFormationType>(slot);
+    const char *name = CCL::AI::Formation::FormationRegistry::Instance().DataFormationName(type);
+
+    // 名前が無い＝その枠に陣形が入っていない。指しても静止するので、そう見えるように出す。
+    if (!name)
+        snprintf(buf, sizeof(buf), "ドローン：枠%d に陣形がありません", slot);
+    else
+        snprintf(buf, sizeof(buf), "ドローン：%s  (枠%d)", name, slot);
+    return buf;
+}
+
+bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotParam)
+{
+    bool      changed = false;
+    const int current = static_cast<int>(std::lround(slotParam));
+
+    if (ImGui::BeginCombo(label, GetDroneFormationLabel(slotParam)))
+    {
+        auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
+        for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
+        {
+            const char *name = registry.DataFormationName(static_cast<DroneFormationType>(slot));
+            if (!name) continue; // C++ 実装の枠と空き枠は出さない（ここで選べるのはデータの技だけ）
+
+            char item[96];
+            snprintf(item, sizeof(item), "%s  (枠%zu)", name, slot);
+
+            const bool selected = (static_cast<int>(slot) == current);
+            if (ImGui::Selectable(item, selected))
+            {
+                slotParam = static_cast<float>(slot);
+                changed   = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("陣形エディタで作った技が並ぶ。BTが覚えるのは枠番号なので、技の名前は後から変えてよい。");
+
+    return changed;
 }
 
 bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
@@ -988,7 +1044,12 @@ void BehaviorTreeWindow::DrawNodeWorkspace(EditorContext &context)
 
         if (node.type == EditorBTNodeType::Action)
         {
-            if (const char *paramLabel = GetActionParamLabel(node.actionOrConditionId))
+            // データの技は「どの技か」が param にあるので、行動名ではなく技の名前を出す。
+            if (node.actionOrConditionId == A_DroneFormation)
+            {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s", GetDroneFormationLabel(node.param));
+            }
+            else if (const char *paramLabel = GetActionParamLabel(node.actionOrConditionId))
             {
                 ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "> %s  [%s %.2f]",
                                    GetActionDisplayName(node.actionOrConditionId), paramLabel, node.param);
@@ -1398,7 +1459,7 @@ void BehaviorTreeWindow::DrawInspector()
                 break;
             case EditorBTNodeType::Parallel:
                 ImGui::Text("【Parallel (並行ノード)】\n"
-                            "一番上に繋いだ子が「主」で、その結果がこのノードの結果になります。\n"
+                            "一番上につないだ子が「主」で、その結果がこのノードの結果になります。\n"
                             "2つ目以降は「従」で、主が実行中の間だけ毎フレーム動き、結果は無視されます。\n"
                             "💡 使い方：技を出しながら、その間ドローンにも指示を出す、といった同時進行に使います。\n"
                             "⚠ 従にはボス本体の技（跳躍・後方ステップ・移動）を置かないでください。"
@@ -1481,12 +1542,23 @@ void BehaviorTreeWindow::DrawInspector()
 
                     // 引数を使う行動へ切り替えたのに 0 のままだと「置いたのに何も起きない」
                     // ように見えるので、最初の1回だけ既定値を入れておく。
-                    if (GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
+                    // データの技は枠番号なので既定値を入れない（1 は別の技の枠になる）。
+                    if (it->actionOrConditionId != A_DroneFormation &&
+                        GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 1.0f;
                 }
 
+                // データの技は数値ではなく技の名前で選ぶ。
+                if (it->actionOrConditionId == A_DroneFormation)
+                {
+                    if (DrawDroneFormationCombo("技を選ぶ", it->param))
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Drone Formation";
+                    }
+                }
                 // 引数を持つ行動（待機の秒数、近接の硬直など）だけ入力欄を出す
-                if (const char *paramLabel = GetActionParamLabel(it->actionOrConditionId))
+                else if (const char *paramLabel = GetActionParamLabel(it->actionOrConditionId))
                 {
                     if (ImGui::DragFloat(paramLabel, &it->param, 0.1f, 0.0f, 60.0f, "%.2f"))
                     {
@@ -2214,7 +2286,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
     // =======================================================
     if (rootChildren.size() > 1)
     {
-        CCL_LOG_ERROR(LogCategory::Editor, "【BTエラー】ROOTノードには複数の線を繋げません！必ず1つの「Selector」等に繋いでから分岐させてください。");
+        CCL_LOG_ERROR(LogCategory::Editor, "【BTエラー】ROOTノードには複数の線はつなげません！必ず1つの「Selector」等につないでから分岐させてください。");
     }
 
     EditorBTNode *actualRoot = rootChildren[0];

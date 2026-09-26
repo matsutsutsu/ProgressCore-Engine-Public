@@ -53,6 +53,7 @@
     X(A_BossAirHover,   9,   Boss,    Driving,  "全体時間 [秒]", "ボス：その場で滞空 (Air Hover)")         \
                                                                                                            \
     /* Drone */                                                                                            \
+    X(A_DroneFormation, 128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                    \
     X(A_DroneStrike,    100, Drone,   Instant,  "",              "ドローン：攻撃実行 (Strike)")
 
 //=============================================================================
@@ -85,6 +86,10 @@
 // Drone Formation Actions
 //=============================================================================
 //
+// ここに並ぶのは C++ クラスで書いた陣形だけ。データ（Assets/Formations/*.json）で書いた技は
+// 行を持たず、A_DroneFormation に枠番号を渡して指す。技を1つ作るたびにこの表を編集して
+// リビルドするなら、エディタで組む意味が半分消えるため。
+//
 // Role      Attack   当たり判定を持つ技
 //           Standby  隊形。攻撃しない
 // Formation DroneFormationType の識別子。陣形の実装が無い枠を指すと静止する
@@ -104,35 +109,11 @@ enum class DroneActionRole : uint8_t
 //    Name                       ID   Formation                Role     Display
 // ----------------------------------------------------------------------------
 #define BT_DRONE_ACTION_LIST(X) \
-    /* Standby */                                                                                                      \
-    X(A_DroneOrbit,              101, OrbitCircle,             Standby, "ドローン：降下円陣 (Orbit Circle)")           \
-    X(A_DroneHighOrbit,          102, HighOrbit,               Standby, "ドローン：頭上円陣 (High Orbit)")             \
-                                                                                                                       \
-    /* Attack */                                                                                                       \
-    X(A_DroneKamikazeSwarm,      103, KamikazeSwarm,           Attack,  "ドローン：弾幕 (Kamikaze Swarm)")             \
-    X(A_DroneSideSlapWhip,       104, SideSlapWhip,            Attack,  "ドローン：横なぎ回転 (Side Slap Whip)")       \
-    X(A_DroneGuillotineSlam,     105, GuillotineSlam,          Attack,  "ドローン：縦割り (Guillotine Slam)")          \
-    X(A_DroneClapSlam,           106, ClapSlam,                Attack,  "ドローン：挟み込み1段 (Clap Slam)")           \
-    X(A_DroneTsunamiWave,        107, TsunamiWave,             Attack,  "ドローン：波状縦割り・左→右 (Wave)")          \
-    X(A_DroneMegaClapUpperFirst, 108, MegaClapSlam_UpperFirst, Attack,  "ドローン：挟み込み2段・上段先攻 (Mega Clap)") \
-    X(A_DroneMegaClapLowerFirst, 109, MegaClapSlam_LowerFirst, Attack,  "ドローン：挟み込み2段・下段先攻 (Mega Clap)") \
-    X(A_DroneTsunamiWaveRL,      110, TsunamiWave_RL,          Attack,  "ドローン：波状縦割り・右→左 (Wave)")          \
-    X(A_DroneSquadAssault,       111, SquadAssault,            Attack,  "ドローン：小隊突撃 (Squad Assault)")          \
-                                                                                                                       \
-    /* Editor Data Slots */                                                                                            \
-    X(A_DroneDataSlot00,         112, DataSlot00,              Attack,  "ドローン：[データ] 枠0")                      \
-    X(A_DroneDataSlot01,         113, DataSlot01,              Attack,  "ドローン：[データ] 枠1")                      \
-    X(A_DroneDataSlot02,         114, DataSlot02,              Attack,  "ドローン：[データ] 枠2")                      \
-    X(A_DroneDataSlot03,         115, DataSlot03,              Attack,  "ドローン：[データ] 枠3")                      \
-    X(A_DroneDataSlot04,         116, DataSlot04,              Attack,  "ドローン：[データ] 枠4")                      \
-    X(A_DroneDataSlot05,         117, DataSlot05,              Attack,  "ドローン：[データ] 枠5")                      \
-    X(A_DroneDataSlot06,         118, DataSlot06,              Attack,  "ドローン：[データ] 枠6")                      \
-    X(A_DroneDataSlot07,         119, DataSlot07,              Attack,  "ドローン：[データ] 枠7")                      \
-    X(A_DroneDataSlot08,         120, DataSlot08,              Attack,  "ドローン：[データ] 枠8")                      \
-    X(A_DroneDataSlot09,         121, DataSlot09,              Attack,  "ドローン：[データ] 枠9")                      \
-    X(A_DroneDataSlot10,         122, DataSlot10,              Attack,  "ドローン：[データ] 枠10")                     \
-    X(A_DroneDataSlot11,         123, DataSlot11,              Attack,  "ドローン：[データ] 枠11")                     \
-    X(A_DroneDataSlot12,         124, DataSlot12,              Attack,  "ドローン：[データ] 枠12")                     \
-    X(A_DroneDataSlot13,         125, DataSlot13,              Attack,  "ドローン：[データ] 枠13")                     \
-    X(A_DroneDataSlot14,         126, DataSlot14,              Attack,  "ドローン：[データ] 枠14")                     \
-    X(A_DroneDataSlot15,         127, DataSlot15,              Attack,  "ドローン：[データ] 枠15")
+    /* Standby */                                                                            \
+    X(A_DroneOrbit,         101, OrbitCircle,   Standby, "ドローン：降下円陣 (Orbit Circle)") \
+    X(A_DroneHighOrbit,     102, HighOrbit,     Standby, "ドローン：頭上円陣 (High Orbit)")   \
+                                                                                             \
+    /* Attack */                                                                             \
+    X(A_DroneKamikazeSwarm, 103, KamikazeSwarm, Attack,  "ドローン：弾幕 (Kamikaze Swarm)")   \
+    X(A_DroneSquadAssault,  111, SquadAssault,  Attack,  "ドローン：小隊突撃 (Squad Assault)")
+

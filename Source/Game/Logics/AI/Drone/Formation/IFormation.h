@@ -89,6 +89,10 @@ namespace CCL::AI::Formation
         /// 発生前の予告を「震え」で出すか。false にするのは隊形と、動きで予告する技（弾幕）。
         /// 既定が true なのは、false 既定だと新しい技で予告だけ静かに消えるため。
         virtual bool UsesShiverTelegraph() const { return true; }
+
+        /// 画面に出す技の名前。名乗るのはデータ陣形だけで、C++ 実装は nullptr を返す。
+        /// BTエディタが「枠24」ではなく「縦割り」と出せるのはこれを引くから。
+        virtual const char *DisplayName() const { return nullptr; }
     };
 
 } // namespace CCL::AI::Formation

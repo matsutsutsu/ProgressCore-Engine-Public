@@ -58,6 +58,9 @@ namespace CCL::AI::Formation::Data
         /// フィールドへ状態をラッチするので、そもそもこの形式では書けない。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Broadcast; }
 
+        /// 技の名前はアセットが持つ。エディタで名前を変えれば BTエディタの表示も変わる。
+        const char *DisplayName() const override { return m_asset.name.c_str(); }
+
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 

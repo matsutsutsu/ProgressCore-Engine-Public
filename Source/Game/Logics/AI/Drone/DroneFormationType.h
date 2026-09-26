@@ -30,22 +30,22 @@
     X(MegaClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
     X(TsunamiWave_RL, 31, "波状縦割り・右→左")              \
     X(SquadAssault, 32, "小隊突撃")                         \
-    X(DataSlot00, 33, "[データ] 枠0")                       \
-    X(DataSlot01, 34, "[データ] 枠1")                       \
-    X(DataSlot02, 35, "[データ] 枠2")                       \
-    X(DataSlot03, 36, "[データ] 枠3")                       \
-    X(DataSlot04, 37, "[データ] 枠4")                       \
-    X(DataSlot05, 38, "[データ] 枠5")                       \
-    X(DataSlot06, 39, "[データ] 枠6")                       \
-    X(DataSlot07, 40, "[データ] 枠7")                       \
-    X(DataSlot08, 41, "[データ] 枠8")                       \
-    X(DataSlot09, 42, "[データ] 枠9")                       \
-    X(DataSlot10, 43, "[データ] 枠10")                      \
-    X(DataSlot11, 44, "[データ] 枠11")                      \
-    X(DataSlot12, 45, "[データ] 枠12")                      \
-    X(DataSlot13, 46, "[データ] 枠13")                      \
-    X(DataSlot14, 47, "[データ] 枠14")                      \
-    X(DataSlot15, 48, "[データ] 枠15")
+    X(DataSlot00, 33, "[空き枠] 枠0")                       \
+    X(DataSlot01, 34, "[空き枠] 枠1")                       \
+    X(DataSlot02, 35, "[空き枠] 枠2")                       \
+    X(DataSlot03, 36, "[空き枠] 枠3")                       \
+    X(DataSlot04, 37, "[空き枠] 枠4")                       \
+    X(DataSlot05, 38, "[空き枠] 枠5")                       \
+    X(DataSlot06, 39, "[空き枠] 枠6")                       \
+    X(DataSlot07, 40, "[空き枠] 枠7")                       \
+    X(DataSlot08, 41, "[空き枠] 枠8")                       \
+    X(DataSlot09, 42, "[空き枠] 枠9")                       \
+    X(DataSlot10, 43, "[空き枠] 枠10")                      \
+    X(DataSlot11, 44, "[空き枠] 枠11")                      \
+    X(DataSlot12, 45, "[空き枠] 枠12")                      \
+    X(DataSlot13, 46, "[空き枠] 枠13")                      \
+    X(DataSlot14, 47, "[空き枠] 枠14")                      \
+    X(DataSlot15, 48, "[空き枠] 枠15")
 
 // ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う。
 enum class DroneFormationType : uint8_t
