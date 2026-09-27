@@ -364,16 +364,18 @@ const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &con
 
 ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
 {
+    // 8種類の色相を 40〜50° ずつ離して、似た色が隣り合わないようにしてある。
+    // 明るさは、暗い背景の上で色の差が出て、かつ白い文字が読める程度にそろえている。
     switch (type)
     {
-    case EditorBTNodeType::Root: return ImColor(40, 40, 40);
-    case EditorBTNodeType::Selector: return ImColor(120, 30, 30);
-    case EditorBTNodeType::Sequence: return ImColor(30, 80, 120);
-    case EditorBTNodeType::Decorator: return ImColor(120, 100, 20);
-    case EditorBTNodeType::Condition: return ImColor(30, 120, 60);
-    case EditorBTNodeType::Action: return ImColor(40, 100, 150);
-    case EditorBTNodeType::Parallel: return ImColor(20, 120, 120);         // 青緑：「同時に動く」
-    case EditorBTNodeType::WeightedSelector: return ImColor(180, 80, 180); // 紫：「運要素」
+    case EditorBTNodeType::Root: return ImColor(90, 90, 96);              // 灰：始点（色を持たない）
+    case EditorBTNodeType::Selector: return ImColor(180, 50, 50);         // 赤（色相 0°）
+    case EditorBTNodeType::WeightedSelector: return ImColor(190, 70, 140); // ピンク（325°）：赤の仲間＝Selector の一種
+    case EditorBTNodeType::Action: return ImColor(120, 70, 195);          // 紫（265°）：一番数が多いので他と被らない色。UE5 の Task と同じ
+    case EditorBTNodeType::Sequence: return ImColor(40, 95, 195);         // 青（220°）
+    case EditorBTNodeType::Parallel: return ImColor(20, 145, 150);        // 青緑（180°）
+    case EditorBTNodeType::Condition: return ImColor(50, 150, 70);        // 緑（130°）
+    case EditorBTNodeType::Decorator: return ImColor(180, 140, 30);       // 金（45°）
     default: return ImColor(100, 100, 100);
     }
 }
