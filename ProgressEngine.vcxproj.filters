@@ -2304,6 +2304,9 @@
     <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Inspector.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Outliner.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>

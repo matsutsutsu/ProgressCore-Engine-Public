@@ -36,19 +36,28 @@ void BehaviorTreeWindow::DrawInspector()
             bool        needsUndo   = false;
             std::string undoMessage = "Inspector Changed";
 
-            // ノード名（コメント枠では見出しになる）
-            char nameBuf[256];
-            strcpy_s(nameBuf, it->name.c_str());
-            if (ImGui::InputText("名前 (Name)", nameBuf, sizeof(nameBuf)))
+            // ノード名。自分で付けるのはまとまり（Selector など）とコメント枠だけ。
+            // Action / Condition / Decorator は下で選んだ内容から名前が決まるので、入力欄は出さず表示だけする。
+            if (UsesCustomName(it->type))
             {
-                it->name = nameBuf;
-            }
+                char nameBuf[256];
+                strcpy_s(nameBuf, it->name.c_str());
+                if (ImGui::InputText("名前 (Name)", nameBuf, sizeof(nameBuf)))
+                {
+                    it->name = nameBuf;
+                }
 
-            // 入力が完了（エンターかフォーカス外れ）した時だけUndo記録
-            if (ImGui::IsItemDeactivatedAfterEdit())
+                // 入力が完了（エンターかフォーカス外れ）した時だけUndo記録
+                if (ImGui::IsItemDeactivatedAfterEdit())
+                {
+                    needsUndo   = true;
+                    undoMessage = "Change Node Name";
+                }
+            }
+            else
             {
-                needsUndo   = true;
-                undoMessage = "Change Node Name";
+                ImGui::Text("名前: %s", GetDisplayName(*it).c_str());
+                ImGui::TextDisabled("（下の設定から自動で決まります）");
             }
 
             if (CanCollapse(*it) && HasChildren(it->id))

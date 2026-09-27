@@ -62,8 +62,8 @@ nlohmann::json BehaviorTreeWindow::NodeToJson(const EditorBTNode &node) const
     nlohmann::json jn;
     jn["id"]       = node.id;
     jn["type"]     = static_cast<int>(node.type);
-    jn["name"]     = node.name;
     jn["actionId"] = static_cast<int>(node.actionOrConditionId);
+    if (UsesCustomName(node.type)) jn["name"] = node.name; // Action などの名前は中身から作るので保存しない
     WriteKeyAndParam(jn, node);
 
     // ピンのID。リンクはピンIDで繋がっているので、これが無いとリンクを復元できない。
@@ -97,7 +97,8 @@ EditorBTNode BehaviorTreeWindow::NodeFromJson(const nlohmann::json &jn)
     EditorBTNode node;
     node.id   = jn["id"];
     node.type = static_cast<EditorBTNodeType>(jn["type"].get<int>());
-    node.name = jn.value("name", "Unknown");
+    // 古いファイルの Action などには "name" が残っているが、表示に使わないので読まない
+    if (UsesCustomName(node.type)) node.name = jn.value("name", "");
     RestoreActionId(node, jn);
     node.param     = jn.value("param", 0.0f);
     node.weight    = jn.value("weight", 1.0f);

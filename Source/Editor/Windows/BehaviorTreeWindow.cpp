@@ -97,20 +97,25 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
     const BehaviorTreeComponent *activeAI = FindActiveAI(context);
 
-    if (ImGui::BeginTable("BTEditorTable", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, availableSize))
+    if (ImGui::BeginTable("BTEditorTable", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, availableSize))
     {
-        // 初期幅の比率（ワークスペース75% / インスペクタ25%）
-        ImGui::TableSetupColumn("Workspace", ImGuiTableColumnFlags_WidthStretch, 0.75f);
-        ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.25f);
+        // 初期幅の比率（アウトライン18% / ワークスペース60% / インスペクタ22%）
+        ImGui::TableSetupColumn("Outline", ImGuiTableColumnFlags_WidthStretch, 0.18f);
+        ImGui::TableSetupColumn("Workspace", ImGuiTableColumnFlags_WidthStretch, 0.60f);
+        ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.22f);
         ImGui::TableNextRow();
 
-        // --- 左ペイン (ツールバー ＋ ノードエディタ) ---
+        // --- 左ペイン (アウトライン) ---
         ImGui::TableSetColumnIndex(0);
+        DrawOutliner(activeAI);
+
+        // --- 中央ペイン (ツールバー ＋ ノードエディタ) ---
+        ImGui::TableSetColumnIndex(1);
         DrawToolbar();
         DrawNodeWorkspace(activeAI);
 
         // --- 右ペイン (インスペクタ) ---
-        ImGui::TableSetColumnIndex(1);
+        ImGui::TableSetColumnIndex(2);
         DrawInspector();
 
         ImGui::EndTable();
@@ -213,7 +218,7 @@ void BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string &na
     EditorBTNode node;
     node.id   = GetNextId();
     node.type = type;
-    node.name = name;
+    node.name = UsesCustomName(type) ? name : ""; // 中身から名前を作る種類は名前を持たない
 
     // グループとルート以外は入力ピンを持つ
     if (type != EditorBTNodeType::Root && type != EditorBTNodeType::Group)
@@ -381,6 +386,100 @@ const char *BehaviorTreeWindow::DecoratorNameOf(int decoratorType)
     case 1: return "Cooldown (待機)";
     case 2: return "Retry (再試行)";
     default: return "Unknown";
+    }
+}
+
+bool BehaviorTreeWindow::UsesCustomName(EditorBTNodeType type)
+{
+    switch (type)
+    {
+    case EditorBTNodeType::Action:
+    case EditorBTNodeType::Condition:
+    case EditorBTNodeType::Decorator:
+        return false;
+    default:
+        return true;
+    }
+}
+
+std::string BehaviorTreeWindow::FormatParam(const char *label, float value)
+{
+    // %g は 1.50 → "1.5"、25.0 → "25" のように余計な 0 を付けない
+    char number[32];
+    snprintf(number, sizeof(number), "%g", value);
+
+    // "長さ [秒]" → 名前 "長さ" と 単位 "秒" に分ける。[単位] が無ければ名前だけ
+    const std::string text    = label;
+    const size_t      bracket = text.find(" [");
+    if (bracket == std::string::npos || text.back() != ']')
+        return text + " " + number;
+
+    const std::string name = text.substr(0, bracket);
+    const std::string unit = text.substr(bracket + 2, text.size() - bracket - 3);
+    return name + " " + number + unit;
+}
+
+std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node)
+{
+    // ----------------------------------------------------------------
+    // まとまり（Selector など）とコメント枠：自分で付けた名前
+    // ----------------------------------------------------------------
+    if (UsesCustomName(node.type)) return node.name;
+
+    char number[32];
+    snprintf(number, sizeof(number), "%g", node.param);
+
+    // ----------------------------------------------------------------
+    // Condition：表示名の "N" を param の値に置き換える
+    //   登録表の表示名は「距離が N m 未満」の形なので、値を入れるとそのまま読める文になる
+    // ----------------------------------------------------------------
+    if (node.type == EditorBTNodeType::Condition)
+    {
+        std::string name = GetConditionDisplayName(node.actionOrConditionId);
+
+        // 単独の "N" を探す（前後が英字なら単語の一部なので飛ばす）
+        auto isAlpha = [](char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); };
+        for (size_t i = 0; i < name.size(); ++i)
+        {
+            const bool alone = name[i] == 'N' && (i == 0 || !isAlpha(name[i - 1])) &&
+                               (i + 1 == name.size() || !isAlpha(name[i + 1]));
+            if (alone)
+                return name.replace(i, 1, number);
+        }
+
+        // "N" を含まない表示名でも param を使うなら、後ろに添える
+        if (const char *label = GetConditionParamLabel(node.actionOrConditionId))
+            return name + "（" + FormatParam(label, node.param) + "）";
+        return name;
+    }
+
+    // ----------------------------------------------------------------
+    // Action：行動名＋param（データの技は技の名前）
+    // ----------------------------------------------------------------
+    if (node.type == EditorBTNodeType::Action)
+    {
+        if (node.actionOrConditionId == A_DroneFormation)
+            return GetDroneFormationLabel(node.param);
+
+        // 末尾の英語の併記「(Move To Player)」は外す。一覧が横に長くなりすぎるため
+        std::string  name  = GetActionDisplayName(node.actionOrConditionId);
+        const size_t paren = name.rfind(" (");
+        if (paren != std::string::npos && name.back() == ')')
+            name.erase(paren);
+
+        if (const char *label = GetActionParamLabel(node.actionOrConditionId))
+            return name + "（" + FormatParam(label, node.param) + "）";
+        return name;
+    }
+
+    // ----------------------------------------------------------------
+    // Decorator：種類＋param
+    // ----------------------------------------------------------------
+    switch (node.decoratorType)
+    {
+    case 1: return std::string("Cooldown ") + number + "秒";
+    case 2: return std::string("Retry ") + number + "回";
+    default: return DecoratorNameOf(node.decoratorType);
     }
 }
 

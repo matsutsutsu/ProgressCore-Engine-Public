@@ -15,6 +15,7 @@
 //   BehaviorTreeWindow_Layout.cpp     自動整列・コメント枠の配置
 //   BehaviorTreeWindow_Canvas.cpp     キャンバスの描画と入力
 //   BehaviorTreeWindow_Inspector.cpp  右ペイン：選択ノードの編集
+//   BehaviorTreeWindow_Outliner.cpp   左ペイン：木の一覧
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
@@ -108,7 +109,7 @@ public:
     void RestoreGraphState(const nlohmann::json &state);
 
 protected:
-    /// 2列（キャンバス｜インスペクタ）を描く
+    /// 3列（アウトライン｜キャンバス｜インスペクタ）を描く
     virtual void DrawContents(EditorContext &context) override;
 
 private:
@@ -154,6 +155,16 @@ private:
 
     /// デコレータ種類の表示名
     static const char *DecoratorNameOf(int decoratorType);
+
+    /// 名前を自分で付ける種類か（Selector などのまとまり・コメント枠）。
+    /// Action / Condition / Decorator は中身から名前を自動で作るので false
+    static bool UsesCustomName(EditorBTNodeType type);
+
+    /// 画面に出す名前。まとまりは付けた名前、それ以外は選んだ内容＋パラメータから作る
+    static std::string GetDisplayName(const EditorBTNode &node);
+
+    /// param を「長さ 1.5秒」の形にする。label は登録表の「長さ [秒]」形式（[単位] は省略可）
+    static std::string FormatParam(const char *label, float value);
 
     /// 実行中の評価結果（実行中でない・対応が無いなら None）
     static BTDebugState DebugStateOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI);
@@ -281,6 +292,16 @@ private:
 
     /// データの技（陣形）を名前で選ぶプルダウン。枠番号を param へ書く。変えたら true
     bool DrawDroneFormationCombo(const char *label, float &slotParam);
+
+    // ---------------------------------------------------------------
+    // BehaviorTreeWindow_Outliner.cpp : 左ペイン
+    // ---------------------------------------------------------------
+
+    /// 木の一覧。行を押すとキャンバスがそのノードへ移動する
+    void DrawOutliner(const BehaviorTreeComponent *activeAI);
+
+    /// 一覧の1行と、その子の行を再帰で描く。visited は同じノードを2回描かないための記録
+    void DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComponent *activeAI, std::unordered_set<uint32_t> &visited);
 
 private:
     ax::NodeEditor::EditorContext *m_nodeContext = nullptr; // ノードエディタの内部状態（視点・選択など）

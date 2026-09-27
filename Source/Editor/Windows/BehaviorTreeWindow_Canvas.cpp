@@ -204,14 +204,23 @@ bool BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     }
 
     // 見出し：種類の色の帯に名前
+    //   自動で作る名前は長くなることがあるので、ノード幅で折り返し、帯の高さを行数に合わせて伸ばす。
+    //   先に折り返した文字の高さを測り（CalcTextSize）、その高さで帯を塗ってから文字を書く。
+    const std::string title      = GetDisplayName(node);
+    const float       titleWrapW = kNodeWidth - 10.0f - 26.0f; // 左の余白と、右端の開閉ボタンの分を除いた幅
+    const float       titleH     = ImGui::CalcTextSize(title.c_str(), nullptr, false, titleWrapW).y;
+    const float       headerH    = (std::max)(32.0f, titleH + 16.0f); // 1行なら従来どおり 32px
+
     ImGui::BeginGroup();
     const ImVec2 headerStart = ImGui::GetCursorScreenPos();
-    ImGui::Dummy(ImVec2(kNodeWidth, 32.0f));
+    ImGui::Dummy(ImVec2(kNodeWidth, headerH));
     const ImVec2 headerEnd = ImGui::GetItemRectMax();
     drawList->AddRectFilled(headerStart, headerEnd, HeaderColorOf(node.type), 4.0f, ImDrawFlags_RoundCornersTop);
 
     ImGui::SetCursorScreenPos(ImVec2(headerStart.x + 10, headerStart.y + 8));
-    ImGui::Text("%s", node.name.c_str());
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + titleWrapW); // ここから titleWrapW の幅で折り返す
+    ImGui::TextUnformatted(title.c_str());
+    ImGui::PopTextWrapPos();
 
     // 開閉ボタン（見出しの右端）。矢印はフォントの字形でなく図形で描かれるので、日本語フォントでも欠けない。
     if (CanCollapse(node) && hasChildren)
@@ -270,8 +279,7 @@ bool BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
 
 void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, bool isCollapsed)
 {
-    const ImVec4 kDetailColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
-
+    // 行動名・条件名・デコレータ名は見出しに出ているので、ここには実行中の情報だけを出す
     ImGui::BeginGroup();
     ImGui::Indent(10.0f);
     ImGui::Spacing();
@@ -284,31 +292,14 @@ void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const Beha
 
     const std::optional<float> timer = DebugTimerOf(node, activeAI);
 
+    // Wait 系の残り時間（ゲーム実行中のみ）
     if (node.type == EditorBTNodeType::Action)
     {
-        // データの技は「どの技か」が param にあるので、行動名ではなく技の名前を出す
-        if (node.actionOrConditionId == A_DroneFormation)
-            ImGui::TextColored(kDetailColor, "> %s", GetDroneFormationLabel(node.param));
-        else if (const char *paramLabel = GetActionParamLabel(node.actionOrConditionId))
-            ImGui::TextColored(kDetailColor, "> %s  [%s %.2f]", GetActionDisplayName(node.actionOrConditionId), paramLabel, node.param);
-        else
-            ImGui::TextColored(kDetailColor, "> %s", GetActionDisplayName(node.actionOrConditionId));
-
         if (timer && *timer > 0.0f && IsWaitAction(node.actionOrConditionId))
             ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "Wait: %.1fs", *timer);
     }
-    else if (node.type == EditorBTNodeType::Condition)
-    {
-        // 間合いなどの param も出す。出さないと「距離が N m 未満」が並ぶだけで、どれが何mか分からない
-        if (const char *paramLabel = GetConditionParamLabel(node.actionOrConditionId))
-            ImGui::TextColored(kDetailColor, "? %s  [%s %.1f]", GetConditionDisplayName(node.actionOrConditionId), paramLabel, node.param);
-        else
-            ImGui::TextColored(kDetailColor, "? %s", GetConditionDisplayName(node.actionOrConditionId));
-    }
     else if (node.type == EditorBTNodeType::Decorator)
     {
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.2f, 1.0f), "* %s", DecoratorNameOf(node.decoratorType));
-
         // Cooldown の残り時間（ゲーム実行中のみ）。ゲージは溜まるほど右へ伸びる
         const bool isCooldown = (node.decoratorType == 1);
         if (isCooldown && timer && *timer > 0.0f)
