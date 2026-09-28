@@ -77,13 +77,19 @@ void UIInputSystem::Update(float /*dt*/)
         }
     }
 
-    Keyboard  &kb       = input->GetKeyboard();
+    // キーボードはエディタの別ウィンドウ（BT エディタなど）を操作中なら受けない。
+    //   Space や Enter はエディタでも使うので、そのまま読むと裏のボタンまで決定してしまう。
+    //   パッドはエディタで使わないので止めない。
+    const bool keyUsable = !m_world->HasResource<GameViewportInfo>() ||
+                           m_world->GetResource<GameViewportInfo>().KeyboardToGame();
+    auto keyTriggered = [&](int vk) { return keyUsable && input->GetKeyboard().IsTriggered(vk); };
+
     GamePad   &gp       = input->GetGamePad();
-    const bool navUp    = kb.IsTriggered(VKEY_UP) || gp.IsTriggered(GamePad::BTN_UP);
-    const bool navDown  = kb.IsTriggered(VKEY_DOWN) || gp.IsTriggered(GamePad::BTN_DOWN);
-    const bool navLeft  = kb.IsTriggered(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT);
-    const bool navRight = kb.IsTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
-    const bool confirm  = inputUsable && (kb.IsTriggered(VKEY_RETURN) || kb.IsTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
+    const bool navUp    = keyTriggered(VKEY_UP) || gp.IsTriggered(GamePad::BTN_UP);
+    const bool navDown  = keyTriggered(VKEY_DOWN) || gp.IsTriggered(GamePad::BTN_DOWN);
+    const bool navLeft  = keyTriggered(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT);
+    const bool navRight = keyTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
+    const bool confirm  = inputUsable && (keyTriggered(VKEY_RETURN) || keyTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
     const bool anyDir   = inputUsable && (navUp || navDown || navLeft || navRight);
 
     auto inRect = [&](const UITransformComponent &t) {

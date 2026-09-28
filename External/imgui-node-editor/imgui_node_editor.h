@@ -222,6 +222,7 @@ struct Style
     float   GroupBorderWidth;
     float   HighlightConnectedLinks;
     float   SnapLinkToPinDir; // when true link will start on the line defined by pin direction
+    float   GridSize;         // ProgressCore 追加: 背景グリッドの間隔（キャンバス座標）。元は 32 固定
     ImVec4  Colors[StyleColor_Count];
 
     Style()
@@ -257,6 +258,7 @@ struct Style
         GroupBorderWidth         = 1.0f;
         HighlightConnectedLinks  = 0.0f;
         SnapLinkToPinDir         = 0.0f;
+        GridSize                 = 32.0f;
 
         Colors[StyleColor_Bg]                 = ImColor( 60,  60,  70, 200);
         Colors[StyleColor_Grid]               = ImColor(120, 120, 120,  40);

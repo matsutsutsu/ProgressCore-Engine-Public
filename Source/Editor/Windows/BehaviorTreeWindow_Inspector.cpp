@@ -60,20 +60,6 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::TextDisabled("（下の設定から自動で決まります）");
             }
 
-            if (CanCollapse(*it) && HasChildren(it->id))
-            {
-                bool collapsed = it->collapsed;
-                if (ImGui::Checkbox("子孫を畳む (Collapse)", &collapsed))
-                {
-                    it->collapsed     = collapsed;
-                    needsUndo         = true;
-                    undoMessage       = collapsed ? "Collapse Node" : "Expand Node";
-                    m_layoutRequested = true; // 畳んだぶん詰める／開いたぶん広げる
-                }
-                ImGui::SameLine();
-                ImGui::TextDisabled("(%d ノード)", CountDescendants(it->id));
-            }
-
             // =========================================================
             // ノード種類ごとの説明
             // =========================================================
@@ -133,6 +119,14 @@ void BehaviorTreeWindow::DrawInspector()
                             "重みを全部同じにすれば、ただの均等ランダムになります（既定は 1.0）。\n"
                             "💡 使い方：敵の近接攻撃の3択など、プレイヤーに次の行動を予測させない「揺さぶり（Mix-up）」に最適です。\n"
                             "💡 重みは子ノードを選んで設定します。実際の確率もそこに出ます。");
+                break;
+            case EditorBTNodeType::SubTree:
+                ImGui::Text("【SubTree (サブツリー)】\n"
+                            "中に木を1本しまっておく箱です。実行すると、中の「入口」に繋いだ木がこの場所で動きます。\n"
+                            "保存時に中身へ置き換わるので、ゲームの動きは中身を直接置いた場合と同じです。\n"
+                            "💡 使い方：ひとまとまりの行動（近接の3択など）を箱に入れて、外側の木を短く保ちます。"
+                            "既存のノードは、選んで右クリック →「選択をサブツリーにまとめる」で箱に入れられます。\n"
+                            "💡 ダブルクリックで中へ入り、ツールバーの下のパンくずで外へ戻れます。");
                 break;
             }
             ImGui::PopTextWrapPos(); // 自動折り返し終了
@@ -252,6 +246,14 @@ void BehaviorTreeWindow::DrawInspector()
                     ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
                                        "⚠ 未登録ID（辞書に載っていない番号）");
                 }
+            }
+
+            if (it->type == EditorBTNodeType::SubTree)
+            {
+                ImGui::Separator();
+                ImGui::Text("サブツリー (SubTree):");
+                ImGui::TextDisabled("中のノード数: %d", static_cast<int>(CollectSubTreeContents(it->id).size()));
+                if (ImGui::Button("中へ入る")) RequestEnterSubTree(it->id);
             }
 
             if (it->type == EditorBTNodeType::Decorator)

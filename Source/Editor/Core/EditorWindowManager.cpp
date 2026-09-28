@@ -230,6 +230,7 @@ void EditorWindowManager::Draw(EditorContext &context)
         auto &vp         = context.world->GetResource<GameViewportInfo>();
         vp.valid         = false;
         vp.editorVisible = m_isVisible;
+        vp.keyboardFocus = false; // GameView がフォーカスを持つフレームだけ書き直す
     }
 
     if (!m_isVisible)

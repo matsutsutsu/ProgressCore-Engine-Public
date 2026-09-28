@@ -4,6 +4,7 @@
 // BehaviorTreeWindow の private メンバにして、クラス宣言から辿れるようにしてある。
 #pragma once
 #include <cstdint>
+#include <string>
 #include <imgui.h>
 #include <imgui_node_editor.h>
 
@@ -39,7 +40,9 @@ namespace BTEditor
         return kGroupPalette[(index >= 0 && index < kGroupPaletteCount) ? index : 0];
     }
 
-    inline constexpr float kNodeWidth = 180.0f; // 通常ノードの幅。名前が1行に収まる程度
+    // 通常ノードの幅。名前の長さに合わせて、この範囲で決める（短い名前のノードは細くなる）
+    inline constexpr float kNodeMinWidth = 100.0f; // 下限。「Priority: 3」が収まる程度
+    inline constexpr float kNodeMaxWidth = 180.0f; // 上限。これを超える名前は折り返す
 
     // 自動整列の間隔
     inline constexpr float kLayoutHGap     = 40.0f;  // 兄弟どうしの間隔
@@ -54,4 +57,13 @@ namespace BTEditor
     /// ライブラリが返すID(uintptr_t)をこちらのID型へ戻す。
     //   ID はこちらが uint32_t で発行して預けているだけなので、切り詰めても情報は落ちない。
     inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
+
+    // "Assets/BehaviorTree/Common.json" → "Common.json"。
+    //   std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して
+    //   std::string へそのまま繋げないため（パスは '/' 区切りに揃えてある）。
+    inline std::string FileNameOf(const std::string &path)
+    {
+        const size_t slash = path.find_last_of("/\\");
+        return (slash == std::string::npos) ? path : path.substr(slash + 1);
+    }
 } // namespace BTEditor

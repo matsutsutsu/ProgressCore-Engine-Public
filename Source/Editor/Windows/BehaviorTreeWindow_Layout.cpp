@@ -22,6 +22,9 @@ void BehaviorTreeWindow::AutoLayout()
 
     RecordStateForUndo("Auto Layout");
 
+    // 親子・隠れているノードを最新にする。1. のグループ判定も隠れたノードを除くのでここで先に作る。
+    RebuildHierarchy();
+
     // IDからノードを引く表。毎回 find_if すると O(N^2) になる。
     std::unordered_map<uint32_t, EditorBTNode *> byId;
     for (auto &n : m_nodes)
@@ -50,7 +53,7 @@ void BehaviorTreeWindow::AutoLayout()
     };
     std::vector<GroupSnapshot> groups;
     for (const auto &n : m_nodes)
-        if (n.type == EditorBTNodeType::Group)
+        if (n.type == EditorBTNodeType::Group && n.graphId == CurrentGraphId())
             groups.push_back({n.id, CollectNodesInGroup(n.id)});
 
     // ---------------------------------------------------------------
@@ -59,13 +62,7 @@ void BehaviorTreeWindow::AutoLayout()
     //    ここが整列の安全性の要で、その順序のまま左から詰めるので、
     //    実行順は整列の前後で変わらない。
     // ---------------------------------------------------------------
-    RebuildHierarchy(); // 同じフレームで先に開閉された分も反映させる
     const auto &childrenOf = m_childrenOf;
-
-    auto isCollapsedLeaf = [&](uint32_t id) {
-        const EditorBTNode *n = find(id);
-        return n && n->collapsed;
-    };
 
     // ---------------------------------------------------------------
     // 3. 部分木の幅と深さを求める（葉から根へ）
@@ -81,9 +78,8 @@ void BehaviorTreeWindow::AutoLayout()
         depthOf[id]     = depth;
         const float own = sizeOf(id).x;
 
-        // 畳んだノードは葉として幅を取る。これで畳んだぶん横幅が縮む。
         auto it = childrenOf.find(id);
-        if (it == childrenOf.end() || it->second.empty() || isCollapsedLeaf(id))
+        if (it == childrenOf.end() || it->second.empty())
         {
             widthOf[id] = own;
             return own;
@@ -103,13 +99,18 @@ void BehaviorTreeWindow::AutoLayout()
     };
 
     // 根＝親を持たないノード。Root 型が先頭（RebuildHierarchy で並べ済み）。
-    std::vector<uint32_t> roots = m_roots;
+    //   並べるのは今見ている階層だけ（サブツリーの中身や外側は、その階層に入ったときに並べる）。
+    std::vector<uint32_t> roots;
+    for (uint32_t r : m_roots)
+    {
+        if (!m_hiddenNodes.count(r)) roots.push_back(r);
+    }
 
     for (uint32_t r : roots)
         measure(r, 0);
 
     // どの根からも辿れなかったノード（リンクが循環している塊など）も置き去りにしない。
-    //   畳まれて隠れているノードは下の 5. で祖先と一緒に仕舞うので、ここでは拾わない。
+    //   別の階層のノードはその階層に入ったときに並べるので、ここでは拾わない。
     for (const auto &n : m_nodes)
     {
         if (n.type == EditorBTNodeType::Group) continue;
@@ -164,40 +165,6 @@ void BehaviorTreeWindow::AutoLayout()
         auto it = childrenOf.find(id);
         if (it == childrenOf.end()) return;
 
-        if (n->collapsed)
-        {
-            // 隠れた子孫は畳んだノードの位置に重ねて仕舞う。
-            //
-            // 右へ 1px ずつずらす理由:
-            //   実行順は兄弟の X 順で決まる。全員を同じ座標に置くと順序が消える。
-            //   行きがけ順に番号を振ってずらすと、兄弟は必ず左→右の順に並ぶ。
-            //   ed::SetNodePosition は座標を整数に切り捨てる（FloorRect）ので、1px 未満では潰れる。
-            //
-            // 元の配置のまま残さない理由:
-            //   畳むと周りが詰まるので、元の場所は他のノードの上になる。開いた後の
-            //   整列でグループ枠の所属を判定するときに、隣の枠へ紛れ込んでしまう。
-            //   祖先の位置に重ねておけば、祖先と同じ枠に属したまま戻ってこられる。
-            float                          rank  = 0.0f;
-            std::function<void(uint32_t)> stash = [&](uint32_t pid) {
-                auto cit = childrenOf.find(pid);
-                if (cit == childrenOf.end()) return;
-                for (uint32_t c : cit->second)
-                {
-                    if (!placed.insert(c).second) continue;
-                    if (EditorBTNode *cn = find(c))
-                    {
-                        rank += 1.0f;
-                        cn->posX                = n->posX + rank;
-                        cn->posY                = n->posY;
-                        cn->positionInitialized = false;
-                    }
-                    stash(c);
-                }
-            };
-            stash(id);
-            return;
-        }
-
         float cursor = left;
         for (uint32_t c : it->second)
         {
@@ -226,11 +193,8 @@ void BehaviorTreeWindow::AutoLayout()
         float                        minX = FLT_MAX, minY = FLT_MAX, maxX = -FLT_MAX, maxY = -FLT_MAX;
         int                          used = 0;
         std::unordered_set<uint32_t> counted;
-        for (uint32_t member : g.members)
+        for (uint32_t m : g.members)
         {
-            // 畳まれて隠れたメンバーは、それを隠している祖先で代表させる。
-            //   枠の中身を丸ごと畳んだとき、枠が取り残されず畳んだノードを囲むようになる。
-            const uint32_t m = VisibleAncestorOf(member);
             if (!counted.insert(m).second) continue;
 
             const EditorBTNode *n = find(m);
@@ -274,6 +238,9 @@ std::vector<uint32_t> BehaviorTreeWindow::CollectNodesInGroup(uint32_t groupId) 
     {
         if (n.id == groupId) continue;
         if (n.type == EditorBTNodeType::Group) continue; // 入れ子は今は扱わない
+
+        // 別の階層のノードは、同じキャンバス座標にあっても別の画面にいるので判定しない
+        if (m_hiddenNodes.count(n.id)) continue;
 
         const ImVec2 p  = ed::GetNodePosition(n.id);
         const ImVec2 s  = ed::GetNodeSize(n.id);

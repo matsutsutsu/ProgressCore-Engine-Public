@@ -135,6 +135,8 @@ void GameViewWindow::DrawContents(EditorContext &context)
             vp.w                      = imageSize.x;
             vp.h                      = imageSize.y;
             vp.valid                  = true;
+            // キーボードをゲームへ渡すのは、GameView を触っていて、UI 操作モード（F2）でないときだけ
+            vp.keyboardFocus = context.gameViewFocused && !context.cursorFreeToggle && !context.isAnimEditMode;
         }
     }
     else

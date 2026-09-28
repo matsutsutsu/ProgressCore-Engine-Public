@@ -11,7 +11,7 @@
 //
 // 実装は役割ごとに分けてある（同じクラスのメンバ関数を別 .cpp で定義）:
 //   BehaviorTreeWindow.cpp            ウィンドウ枠・ツールバー・編集操作・Undo・表示名
-//   BehaviorTreeWindow_Graph.cpp      保存・読込・Bake・親子関係と折りたたみ（描画なし）
+//   BehaviorTreeWindow_Graph.cpp      保存・読込・Bake・親子関係と表示する階層（描画なし）
 //   BehaviorTreeWindow_Layout.cpp     自動整列・コメント枠の配置
 //   BehaviorTreeWindow_Canvas.cpp     キャンバスの描画と入力
 //   BehaviorTreeWindow_Inspector.cpp  右ペイン：選択ノードの編集
@@ -49,7 +49,8 @@ enum class EditorBTNodeType
     Group,            // コメント枠。実行には関わらない
     Decorator,        // 子1つの結果を修飾する（Inverter / Cooldown / Retry）
     WeightedSelector, // 子を重みで抽選する
-    Parallel          // 0番目の子が主、残りは従で同時に動かす
+    Parallel,         // 0番目の子が主、残りは従で同時に動かす
+    SubTree           // 中に木を1本持つ箱。ダブルクリックで中へ入る。Bake で中身に置き換わる
 };
 
 /// ノードの接続口
@@ -88,9 +89,13 @@ struct EditorBTNode
     int   groupColorIndex = 0;      // コメント枠の色（BTEditor::kGroupPalette の添字）
     int   decoratorType   = 0;      // デコレータの種類（0=Inverter, 1=Cooldown, 2=Retry）
 
-    float param     = 0.0f;  // 数値パラメータ。BTNode::param と1対1（待機秒数・クールダウン秒数など）
-    float weight    = 1.0f;  // 重み付きセレクターの子としての選ばれやすさ。0 以下で候補外
-    bool  collapsed = false; // キャンバスで子孫を畳んでいるか（エディタ専用。Bake には出ない）
+    float param  = 0.0f; // 数値パラメータ。BTNode::param と1対1（待機秒数・クールダウン秒数など）
+    float weight = 1.0f; // 重み付きセレクターの子としての選ばれやすさ。0 以下で候補外
+
+    // どの階層に置かれているか。0 は一番外、それ以外はそのノードを中に持つ SubTree のID。
+    //   サブツリーの中身も同じ m_nodes に入れておき、キャンバスには今の階層のものだけ描く。
+    //   入れ子の構造体にしないのは、保存・Undo・複製などの既存処理を平らな配列のまま使えるため。
+    uint32_t graphId = 0;
 
     int runtimeFlatIndex = -1; // Bake 後の配列での添字。実行中の状態表示の対応付けに使う
 };
@@ -120,14 +125,61 @@ private:
     /// 保存・開く・整列などのボタン列
     void DrawToolbar();
 
-    /// 指定位置にノードを作る（ピンは種類に応じて発行する）
-    void CreateNode(EditorBTNodeType type, const std::string &name, float x, float y);
+    // 「一番外 > 近接 > ...」のパンくず。押した段の階層へ戻る
+    void DrawBreadcrumb();
+
+    /// 指定位置にノードを作る（ピンは種類に応じて発行する）。置く階層は今見ている階層。作ったノードのIDを返す
+    uint32_t CreateNode(EditorBTNodeType type, const std::string &name, float x, float y);
+
+    // 空のサブツリーを作る。中に入口（ROOT）を1つ置く。作った SubTree のIDを返す
+    uint32_t CreateSubTreeNode(float x, float y);
+
+    // 選択中のノードを1つのサブツリーへまとめる（UE の Blueprint の Collapse Nodes と同じ）。
+    //   選択は「根が1つの枝」でなければならない（途中の親が選択外だと、どこへ繋ぎ直すか決まらない）。
+    void CollapseSelectionToSubTree();
+
+    // サブツリーの中へ入る。実際に切り替えるのは次のフレームの頭（描画中に階層を変えないため）
+    void RequestEnterSubTree(uint32_t subTreeId) { m_pendingEnterId = subTreeId; }
+
+    // 今見ている階層（0 は一番外）
+    uint32_t CurrentGraphId() const { return m_viewPath.empty() ? 0 : m_viewPath.back(); }
+
+    // subTreeId の中に（入れ子も含めて）置かれているノードのID
+    std::vector<uint32_t> CollectSubTreeContents(uint32_t subTreeId) const;
+
+    // サブツリーの入口（中の ROOT）。無ければ nullptr
+    EditorBTNode *FindSubTreeEntry(uint32_t subTreeId);
 
     /// ノードと、それに繋がるリンクを消す
     void DeleteNodeAndLinks(uint32_t nodeId);
 
-    /// 選択中のノードと、その間のリンクを複製する
+    /// 選択中のノードと、その間のリンクを複製する（コピーして右下へずらして貼るのと同じ）
     void DuplicateSelectedNodes();
+
+    // 選択中のノードを OS のクリップボードへ JSON で書く（Ctrl+C）。別の BT ファイルへも貼れる
+    void CopySelection();
+
+    // コピーしてから選択中のノードを消す（Ctrl+X）
+    void CutSelection();
+
+    // クリップボードの内容を canvasPos に貼る（Ctrl+V）。このエディタの形式でなければ何もしない
+    void PasteClipboard(ImVec2 canvasPos);
+
+    /**
+     * @brief 選択中のノードを、貼り付けに使える JSON にする。選択が空なら null。
+     *
+     * 選んだ SubTree は中身ごと入れる（中身が無いと入口も無く動かない）。
+     * リンクは、両端がコピーに含まれるものだけを入れる。
+     */
+    nlohmann::json CopySelectionToJson();
+
+    /**
+     * @brief CopySelectionToJson の内容を、新しいIDで今の階層へ貼る。
+     *
+     * 選んだノード（外側）は、選択範囲の左上が anchor に来るようにずらす。
+     * SubTree の中身は別の階層にいるので、元の位置のまま新しい SubTree の中へ入れる。
+     */
+    void PasteFromJson(const nlohmann::json &clip, ImVec2 anchor);
 
     /// 直前の状態と比べて変わっていれば Undo に積む。グラフ変更の集約点
     void RecordStateForUndo(const std::string &commandName);
@@ -179,8 +231,8 @@ private:
     /// エディタ用グラフとランタイム用配列（Bake）を1ファイルに書く
     void SaveGraph(const std::string &path);
 
-    /// ファイルを読み、Undo の基準も引き直す
-    void LoadGraph(const std::string &path);
+    /// ファイルを読み、Undo の基準も引き直す。読めなければ false（今のグラフはそのまま）
+    bool LoadGraph(const std::string &path);
 
     /// ノード1個を JSON にする（保存項目を足すのはここと NodeFromJson だけ）
     nlohmann::json NodeToJson(const EditorBTNode &node) const;
@@ -205,20 +257,11 @@ private:
     //   追うより毎回作る。数百ノードまでなら無視できるコスト。
     void RebuildHierarchy();
 
-    /// 畳める種類か（子を持てる種類。ROOT は畳むと全部消えるので除く）
-    static bool CanCollapse(const EditorBTNode &node);
-
     /// 子を1つ以上持つか
     bool HasChildren(uint32_t nodeId) const;
 
-    /// 子孫の数（畳んだノードの「+N」表示用）
+    /// 子孫の数（リンクで辿れる範囲。サブツリーの中身は含まない）
     int CountDescendants(uint32_t nodeId) const;
-
-    /// 隠れているノードの代わりに見えている最も近い祖先（見えていれば自分）
-    uint32_t VisibleAncestorOf(uint32_t nodeId) const;
-
-    /// 1ノードの畳みを切り替え、Undo に積み、整列を予約する
-    void SetCollapsed(uint32_t nodeId, bool collapsed);
 
     // ---------------------------------------------------------------
     // BehaviorTreeWindow_Layout.cpp : 自動整列・コメント枠
@@ -249,11 +292,14 @@ private:
     /// コメント枠を1つ描く。ユーザーが変えた枠の大きさもここで読み返す
     void DrawGroupNode(EditorBTNode &node);
 
-    /// 通常ノードを1つ描く。見出しの開閉ボタンが押されたら true
-    bool DrawTreeNode(EditorBTNode &node, const BehaviorTreeComponent *activeAI);
+    /// 通常ノードを1つ描く
+    void DrawTreeNode(EditorBTNode &node, const BehaviorTreeComponent *activeAI);
 
-    /// 通常ノードの本文（Priority・行動名・残り時間など）
-    void DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, bool isCollapsed);
+    /// 通常ノードの本文（Priority・行動名・残り時間など）。nodeWidth はゲージの長さに使う
+    void DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, float nodeWidth);
+
+    // 通常ノードの幅。名前と本文の一番長い行に合わせ、kNodeMinWidth〜kNodeMaxWidth に収める
+    float TreeNodeWidthOf(const EditorBTNode &node, const std::string &title) const;
 
     /// 通常ノードの枠線の色と太さ（実行中・成功・失敗で色を変える）
     void GetTreeNodeBorder(const EditorBTNode &node, const BehaviorTreeComponent *activeAI,
@@ -265,14 +311,21 @@ private:
     /// 自動追従：実行中のノード（Action 優先）へカメラを寄せる
     void FollowRunningNode(const BehaviorTreeComponent *activeAI);
 
-    /// ピンのドラッグでリンクを作る
+    /// ピンのドラッグでリンクを作る。何も無い所で離したら、ノード追加メニューを予約する
     void HandleLinkCreation();
+
+    // 線を伸ばした先に作ったノードを、伸ばし元のピンへ繋ぐ（出力から伸ばしたなら子、入力からなら親）
+    void LinkNewNodeToPin(uint32_t newNodeId, uint32_t fromPinId);
 
     /// Delete キーでのノード・リンク削除
     void HandleDeletion();
 
     /// 背景の右クリック / Space で出るノード追加メニュー
     void HandleContextMenu();
+
+    // Ctrl+V の貼り先（キャンバス座標）。カーソルがキャンバスの上ならその位置、外なら見えている範囲の中央。
+    //   ed::Begin〜End の中で呼ぶ
+    ImVec2 PasteTargetOnCanvas();
 
     /// 開いた直後に全体が収まる倍率へ合わせる
     void FitInitialView();
@@ -313,7 +366,15 @@ private:
 
     // --- ファイルと Undo ---
     nlohmann::json m_lastSavedState;  // 直前に Undo へ記録した状態（変化の判定用）
+    std::string    m_currentPath;     // 開いているファイル（未保存の新規なら空）
     std::string    m_pendingOpenPath; // 未保存確認中に「開く」予定のパス
+
+    // --- サブツリーの階層 ---
+    std::vector<uint32_t> m_viewPath;           // 潜っている SubTree のID（外側から順。空なら一番外）
+    uint32_t              m_pendingEnterId = 0; // 次のフレームで入る SubTree（0 なら無し）
+
+    // 貼り付けたノード。まだ一度も描かれていないノードは選択できないので、描いた後のフレームで選ぶ
+    std::vector<uint32_t> m_pendingSelectIds;
 
     // 保存していない変更があるか。RecordStateForUndo で立て、保存・読込で下ろす。
     //   ノードを「動かしただけ」は RecordStateForUndo を通らないので検出しない。誤検出で毎回
@@ -324,6 +385,12 @@ private:
     bool   m_needInitialZoom   = true;          // 開いた直後に全体へ合わせる
     int    m_framesSinceOpen   = 0;             // 全体合わせをノードのサイズ確定まで待つためのカウンタ
     ImVec2 m_newNodeSpawnPos   = {0.0f, 0.0f};  // 右クリックした画面座標（新規ノードの置き場所）
+
+    // 線を何も無い所で離して開いたメニューの、伸ばし元のピン（0 なら普通の右クリック／Space で開いた）
+    uint32_t m_newNodeLinkPin        = 0;
+    bool     m_openCreateMenuForLink = false; // 次の HandleContextMenu でメニューを開く（線を離したフレームに立つ）
+    ImVec2 m_canvasScreenMin   = {0.0f, 0.0f};  // キャンバスの左上（画面座標）。毎フレーム描く前に取る
+    ImVec2 m_canvasScreenSize  = {0.0f, 0.0f};  // キャンバスの大きさ（画面上のピクセル）
     bool   m_layoutRequested   = false;         // 整列の予約。ed::Begin の中でしかサイズが取れないので持ち越す
     bool   m_autoFollow        = false;         // 実行中ノードへの自動追従
     uint32_t m_lastTrackedNodeId = 0;           // 最後に追従したノード
@@ -332,6 +399,6 @@ private:
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_childrenOf;   // 親ID → 子ID（実行順）
     std::unordered_map<uint32_t, uint32_t>              m_parentOf;     // 子ID → 親ID
     std::unordered_map<uint32_t, uint32_t>              m_pinOwner;     // ピンID → ノードID
-    std::unordered_set<uint32_t>                        m_hiddenNodes;  // 畳まれた祖先を持つノード
+    std::unordered_set<uint32_t>                        m_hiddenNodes;  // 描かないノード（今見ている階層に無いもの）
     std::vector<uint32_t>                               m_roots;        // 親を持たないノード（ROOT が先頭）
 };

@@ -34,4 +34,13 @@ struct GameViewportInfo
     //   editorVisible && !valid は「エディタは動いているがゲーム画面は出ていない」状態で、
     //   このときゲーム UI は入力を受け取ってはいけない
     bool editorVisible = false;
+
+    // エディタ表示中に、キーボードをゲームへ渡してよいフレームだけ true。
+    //   GameView にフォーカスがあり、かつ UI 操作モード（F2）でないときに限る。
+    //   これが無いと、BT エディタで押した Space（ノード追加）や Esc が、裏のポーズメニューの
+    //   決定・解除としても効いてしまう（生のキー入力を読むので ImGui のゲートを通らない）。
+    bool keyboardFocus = false;
+
+    // ゲーム UI（ポーズメニューなど）がキーボードを受け付けてよいか。全画面 / Shipping では常に true
+    bool KeyboardToGame() const { return !editorVisible || keyboardFocus; }
 };

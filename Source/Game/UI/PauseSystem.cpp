@@ -10,6 +10,7 @@
 #include "Engine/Platform/Input/GamePad.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
+#include "Engine/UI/ECS/GameViewportInfo.h" // エディタ操作中は Esc をゲームへ渡さない
 #include "Game/UI/MenuUiFactory.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeState.h"   // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
@@ -62,7 +63,12 @@ void PauseSystem::Update(float /*dt*/)
     Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
-    const bool toggle = input->GetKeyboard().IsTriggered(VKEY_ESCAPE) || input->GetGamePad().IsTriggered(GamePad::BTN_START);
+    // Esc はエディタの別ウィンドウ操作中・UI 操作モード（F2）中は受けない（GameViewportInfo.h）。
+    //   エディタで押した Esc がポーズの解除として効くのを防ぐ。パッドの START は止めない。
+    const bool keyUsable = !m_world->HasResource<GameViewportInfo>() ||
+                           m_world->GetResource<GameViewportInfo>().KeyboardToGame();
+    const bool toggle    = (keyUsable && input->GetKeyboard().IsTriggered(VKEY_ESCAPE)) ||
+                        input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
     // カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
