@@ -1,5 +1,16 @@
 #pragma once
-
+// ===========================================================================
+// 概要: 1つのモデルファイルの共有データ（ノード・メッシュ・マテリアル・アニメーション）。
+//
+// 責務:
+//   - glTF（.glb / .gltf）かモデル定義ファイル（.model.json）を読み込む
+//   - 読んだ結果を .cereal にキャッシュし、次回からはそれを読む
+//   - 頂点・インデックスバッファとテクスチャなど、GPU のリソースを作る
+//   - メッシュごとと、モデル全体のローカル AABB を求める
+//
+// 備考: ResourceManager が1ファイルにつき1つだけ持ち、同じモデルの全インスタンス（Model）が共有する。
+//       .model.json の書き方は ModelResource.cpp の LoadModelSet の前のコメントを参照。
+// ===========================================================================
 #include <string>
 #include <vector>
 #include <wrl.h>
@@ -15,18 +26,19 @@ public:
     ModelResource() {}
     virtual ~ModelResource() {}
 
-    static const std::vector<D3D11_INPUT_ELEMENT_DESC> InputElementDescs;
+    static const std::vector<D3D11_INPUT_ELEMENT_DESC> InputElementDescs; // Vertex に合わせた入力レイアウト
 
     using NodeId = UINT64;
 
     struct Node
     {
-        NodeId      id;               // 識別用の一意なID
-        std::string name;             // ノード名（例："Head"）
-        std::string path;             // モデル内での階層パス
-        int         parentIndex = -1; // 親ノードのインデックス（-1 ならルート）
+        // id と path は今は使っていないが、.cereal キャッシュの形式に含まれるので残している
+        NodeId      id;
+        std::string name;             // ノード名（例: "Head"）。アニメーションの対応づけにも使う
+        std::string path;
+        int         parentIndex = -1; // 親ノードの番号（-1 ならルート）
 
-        // ノードの初期Transform情報（ローカル座標）
+        // 初期姿勢（親ノードに対する位置・回転・スケール）
         DirectX::XMFLOAT3 scale     = {1.0f, 1.0f, 1.0f};
         DirectX::XMFLOAT4 rotate    = {0.0f, 0.0f, 0.0f, 1.0f}; // クォータニオンの単位元
         DirectX::XMFLOAT3 translate = {0.0f, 0.0f, 0.0f};
@@ -38,8 +50,8 @@ public:
     // スキニング用のボーン情報
     struct Bone
     {
-        int                 nodeIndex;       // 対応するノードのインデックス
-        DirectX::XMFLOAT4X4 offsetTransform; // モデル空間からボーン空間への変換行列
+        int                 nodeIndex;       // 対応するノードの番号
+        DirectX::XMFLOAT4X4 offsetTransform; // モデル空間からボーン空間への変換行列（逆バインド行列）
 
         template <class Archive>
         void serialize(Archive &archive, int version);
@@ -50,14 +62,14 @@ public:
     {
         std::string name; // マテリアル名
 
-        // 各種テクスチャファイル名
+        // テクスチャのファイル名（モデルのディレクトリからの相対パス）
         std::string baseTextureFileName;
         std::string normalTextureFileName;
         std::string emissiveTextureFileName;
         std::string occlusionTextureFileName;
         std::string metalnessRoughnessTextureFileName;
 
-        // 基本的なマテリアルパラメータ
+        // 値
         DirectX::XMFLOAT4 baseColor         = {1, 1, 1, 1};
         DirectX::XMFLOAT3 emissiveColor     = {1, 1, 1};
         float             metalness         = 0.0f;
@@ -66,7 +78,7 @@ public:
         float             alphaCutoff       = 0.5f;
         AlphaMode         alphaMode         = AlphaMode::Opaque;
 
-        // DirectXリソース（読み込まれたテクスチャの実体）
+        // 読み込んだテクスチャ（BuildModel が作る。保存しない）
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> baseMap;
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> normalMap;
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> emissiveMap;
@@ -77,53 +89,53 @@ public:
         void serialize(Archive &archive, int version);
     };
 
-    // １つのメッシュ内で、異なるマテリアルを適用する部分
+    // 1つのメッシュの中で、同じマテリアルで描く範囲
     struct Subset
     {
-        UINT startIndex    = 0; // 描画開始インデックス
-        UINT indexCount    = 0; // このサブセットのインデックス数
-        int  materialIndex = 0; // 使用するマテリアルのインデックス
+        UINT startIndex    = 0; // 描き始めるインデックスの位置
+        UINT indexCount    = 0; // インデックスの数
+        int  materialIndex = 0; // 使うマテリアルの番号
 
-        Material *material = nullptr; // マテリアル参照（実体は上のMaterial配列）
+        Material *material = nullptr; // materials の要素（所有しない。BuildModel が入れる）
 
         template <class Archive>
         void serialize(Archive &archive, int version);
     };
 
-    // 頂点データ構造
     struct Vertex
     {
-        DirectX::XMFLOAT3 position = {0, 0, 0};    // 頂点位置
-        DirectX::XMFLOAT3 normal   = {0, 0, 0};    // 法線
-        DirectX::XMFLOAT4 tangent  = {0, 0, 0, 0}; // 接線
-        DirectX::XMFLOAT2 texcoord = {0, 0};       // UV座標
+        DirectX::XMFLOAT3 position = {0, 0, 0};
+        DirectX::XMFLOAT3 normal   = {0, 0, 0};
+        DirectX::XMFLOAT4 tangent  = {0, 0, 0, 0}; // 接線。w は従接線の向き（±1）
+        DirectX::XMFLOAT2 texcoord = {0, 0};
 
-        // スキニング情報
-        DirectX::XMFLOAT4 boneWeight = {1, 0, 0, 0}; // 各ボーンの影響度
-        DirectX::XMUINT4  boneIndex  = {0, 0, 0, 0}; // ボーンインデックス
+        // スキニング（最大4本のボーン）
+        DirectX::XMFLOAT4 boneWeight = {1, 0, 0, 0}; // 各ボーンの重み
+        DirectX::XMUINT4  boneIndex  = {0, 0, 0, 0}; // Mesh::bones の中の番号
 
         template <class Archive>
         void serialize(Archive &archive, int version);
     };
 
-    // モデルのジオメトリ情報
     struct Mesh
     {
-        std::vector<Vertex> vertices; // 頂点配列
-        std::vector<UINT>   indices;  // インデックス配列
-        std::vector<Subset> subsets;  // マテリアルごとのサブセット
-        std::vector<Bone>   bones;    // このメッシュに影響を与えるボーン群
+        std::vector<Vertex> vertices;
+        std::vector<UINT>   indices;
+        std::vector<Subset> subsets; // マテリアルごとの描画範囲
+        std::vector<Bone>   bones;   // このメッシュを動かすボーン。空ならスキンメッシュではない
 
-        int                              nodeIndex;        // このメッシュがぶら下がるノードのインデックス
-        int                              materialIndex;    // メッシュ全体のマテリアル
-        std::vector<int>                 nodeIndices;      // 複数ノードに紐づく場合（スキニングなど）
-        std::vector<DirectX::XMFLOAT4X4> offsetTransforms; // 各ボーンのオフセット行列
+        int nodeIndex;     // このメッシュが付いているノードの番号
+        int materialIndex; // メッシュ全体のマテリアルの番号
 
-        // バウンディング情報（当たり判定やカリング用）
+        // nodeIndices と offsetTransforms は今は読んでいないが、.cereal キャッシュの形式に含まれるので残している
+        std::vector<int>                 nodeIndices;
+        std::vector<DirectX::XMFLOAT4X4> offsetTransforms;
+
+        // ローカル空間の AABB（ComputeMeshBounds が求める。カリングに使う）
         DirectX::XMFLOAT3 boundsMin;
         DirectX::XMFLOAT3 boundsMax;
 
-        // DirectXの頂点・インデックスバッファ
+        // GPU のバッファ（BuildModel が作る。保存しない）
         Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
         Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
@@ -131,29 +143,27 @@ public:
         void serialize(Archive &archive, int version);
     };
 
-    // アニメーション関連構造体
-
-    // ベクトル（位置・スケール）キーフレーム
+    // 位置・スケールのキーフレーム
     struct VectorKeyframe
     {
-        float             seconds;
+        float             seconds; // 時刻（秒）
         DirectX::XMFLOAT3 value;
 
         template <class Archive>
         void serialize(Archive &archive, int version);
     };
 
-    // クォータニオン（回転）キーフレーム
+    // 回転（クォータニオン）のキーフレーム
     struct QuaternionKeyframe
     {
-        float             seconds;
+        float             seconds; // 時刻（秒）
         DirectX::XMFLOAT4 value;
 
         template <class Archive>
         void serialize(Archive &archive, int version);
     };
 
-    // ノードごとのアニメーションデータ
+    // 1ノード分のキーフレーム
     struct NodeAnim
     {
         std::vector<VectorKeyframe>     positionKeyframes;
@@ -167,63 +177,60 @@ public:
     struct Animation
     {
         std::string           name;
-        float                 secondsLength;
-        std::vector<NodeAnim> nodeAnims;
+        float                 secondsLength; // 長さ（秒）
+        std::vector<NodeAnim> nodeAnims;     // nodes と同じ並び（添字 = ノードの番号）
 
         template <class Archive>
         void serialize(Archive &archive, int version);
     };
 
-    // 各種データ取得
     const std::vector<Mesh>      &GetMeshes() const { return meshes; }
     const std::vector<Node>      &GetNodes() const { return nodes; }
     const std::vector<Animation> &GetAnimations() const { return animations; }
-    // 書き込み可能 (エディタ用)
+    // エディタでアニメーションを書き換えるとき用
     std::vector<Animation>      &GetAnimationsMutable() { return animations; }
     const std::vector<Material> &GetMaterials() const { return materials; }
 
 
-    // 読み込み
+    // .glb / .gltf / .model.json を読む（.cereal があればそれを読む）。GPU のリソースも作る
     void Load(ID3D11Device *device, const char *filename);
 
-    // アニメーション追加読み込み
+    // 別ファイルのアニメーションを読み、animations の末尾に足す（ボーン名で対応づける）
     void AppendAnimations(const char *filename);
 
-    // 位置リターゲットを行うか。
-    //   true (既定) = Root/Pelvis/Hips 以外のボーンはアニメの移動を無視し、
-    //                 バインドポーズの骨の長さを使う（プロポーション崩壊対策）。
-    //   false       = アニメの移動をそのまま使う。モデルとアニメの骨格が同一で、
-    //                 スライドするボーンなど「移動そのものが演出」の場合に必要。
+    // 位置のリターゲットをするか。
+    //   true（既定）= ルート・Pelvis・Hips 以外のボーンはアニメーションの移動を使わず、
+    //                 バインドポーズの骨の長さを使う（体型の崩れを防ぐ）。
+    //   false       = アニメーションの移動をそのまま使う。モデルとアニメーションの骨格が同じで、
+    //                 スライドするボーンのように移動そのものが演出のときに使う。
     //   .model.json の "translationRetargeting" で切り替える。cereal には保存せず、
-    //   キャッシュから復元した場合でも毎回 JSON の値で上書きする。
+    //   キャッシュから読んだときも毎回 JSON の値で上書きする。
     bool  GetTranslationRetargeting() const { return translationRetargeting; }
     void  SetTranslationRetargeting(bool enable) { translationRetargeting = enable; }
 
-    // モデル定義ファイル（.model.json）かどうかの判定。
-    // 本体モデルと追加アニメーションの組を1枚のJSONで宣言する形式で、
-    // アセットブラウザ側の種別判定でも同じ関数を使う。
+    // モデル定義ファイル（.model.json）か。本体モデルと追加のアニメーションを1つの JSON で指定する形式。
+    // アセットブラウザの種類の判定でも使う。
     static bool IsModelSetFile(const char *filename);
 
-    // メッシュのバウンディング計算
+    // 頂点から mesh.boundsMin / boundsMax を求める
     void ComputeMeshBounds(Mesh &mesh);
 
+    // 全メッシュの AABB を合わせて、モデル全体の AABB を求める。
+    // ノードの変換は掛けず、各メッシュの頂点の座標のまま合わせる
     void ComputeModelLocalAABB();
 
-    // モデル全体のバウンディング取得
+    // モデル全体のローカル AABB
     const DirectX::BoundingBox &GetBoundingBox() const { return m_boundingBox; }
 
 protected:
-    // モデル定義ファイル（.model.json）の読み込み。
-    // Load() から分岐して呼ばれ、キャッシュ判定・構築・AABB計算まで完結させる。
+    // .model.json を読む。Load() から呼ばれ、キャッシュの判定・GPU リソースの作成・AABB まで行う
     void LoadModelSet(ID3D11Device *device, const char *filename);
 
-    // モデルセットアップ
+    // GPU のリソース（テクスチャ・頂点・インデックスバッファ）を作る。dirname はテクスチャを探す起点
     void BuildModel(ID3D11Device *device, const char *dirname);
 
-    // シリアライズ
+    // .cereal へ書き出す・.cereal から読む
     void Serialize(const char *filename);
-
-    // デシリアライズ
     void Deserialize(const char *filename);
 
 protected:
@@ -232,7 +239,7 @@ protected:
     std::vector<Mesh>      meshes;
     std::vector<Animation> animations;
 
-    bool translationRetargeting = true; // 既定は従来どおり有効
+    bool translationRetargeting = true;
 
     DirectX::BoundingBox m_boundingBox; // モデル全体のローカルAABB
 };

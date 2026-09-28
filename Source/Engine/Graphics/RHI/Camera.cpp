@@ -1,38 +1,33 @@
 #include "Camera.h"
 
-// コンストラクタ
 Camera::Camera()
 {
-    // カメラ設定
     SetPerspectiveFov(
         DirectX::XMConvertToRadians(45), // 画角
-        1280.0f / 720.0f,                // 画面アスペクト比
-        0.1f,                            // ニアクリップ
-        1000.0f                          // ファークリップ
+        1280.0f / 720.0f,                // アスペクト比
+        0.1f,                            // 近クリップ
+        1000.0f                          // 遠クリップ
     );
     SetLookAt(
         {0, 0, -5}, // 視点
         {0, 0, 0},  // 注視点
-        {0, 1, 0}   // 上ベクトル
+        {0, 1, 0}   // 上方向
     );
 }
 
-// 指定方向を向く
 void Camera::SetLookAt(const DirectX::XMFLOAT3 &eye, const DirectX::XMFLOAT3 &focus, const DirectX::XMFLOAT3 &up)
 {
-    // 視点、注視点、上方向からビュー行列を作成
     DirectX::XMVECTOR Eye   = DirectX::XMLoadFloat3(&eye);
     DirectX::XMVECTOR Focus = DirectX::XMLoadFloat3(&focus);
     DirectX::XMVECTOR Up    = DirectX::XMLoadFloat3(&up);
     DirectX::XMMATRIX View  = DirectX::XMMatrixLookAtLH(Eye, Focus, Up);
     DirectX::XMStoreFloat4x4(&view, View);
 
-    // ビューを逆行列化し、ワールド行列に戻す
+    // ビュー行列の逆行列はカメラのワールド行列。その各行が右・上・前の向きになる
     DirectX::XMMATRIX   World = DirectX::XMMatrixInverse(nullptr, View);
     DirectX::XMFLOAT4X4 world;
     DirectX::XMStoreFloat4x4(&world, World);
 
-    // カメラの方向を取り出す
     this->right.x = world._11;
     this->right.y = world._12;
     this->right.z = world._13;
@@ -45,67 +40,48 @@ void Camera::SetLookAt(const DirectX::XMFLOAT3 &eye, const DirectX::XMFLOAT3 &fo
     this->front.y = world._32;
     this->front.z = world._33;
 
-    // 視点、注視点を保存
     this->eye   = eye;
     this->focus = focus;
 
-    // 行列が変わったのでFrustumを更新
     UpdateFrustum();
 }
 
-// パースペクティブ設定
 void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ)
 {
-    // 画角、画面比率、クリップ距離からプロジェクション行列を作成
     DirectX::XMMATRIX Projection = DirectX::XMMatrixPerspectiveFovLH(fovY, aspect, nearZ, farZ);
     DirectX::XMStoreFloat4x4(&projection, Projection);
 
-    // 計算に使った値をメンバ変数として保存する処理を追加！
-    // これがないと GetAspect() や GetNear() が正しい値を返せません
+    // GetAspect() などが返せるように、作るのに使った値も持っておく
     this->fovY   = fovY;
     this->aspect = aspect;
     this->nearZ  = nearZ;
     this->farZ   = farZ;
 
-    // 行列が変わったのでFrustumを更新
     UpdateFrustum();
 }
 
-//正射影設定（追加）
 void Camera::SetOrthographic(float width, float height, float nearZ, float farZ)
 {
-    // 幅・高さ・クリップ距離から正射影行列を作成
     DirectX::XMMATRIX Ortho = DirectX::XMMatrixOrthographicLH(width, height, nearZ, farZ);
     DirectX::XMStoreFloat4x4(&projection, Ortho);
 
-    // パラメーターだけ保存
+    this->fovY  = 0.0f;
     this->nearZ = nearZ;
     this->farZ  = farZ;
-
-    // 以前ここは this->fovY = fovY; / this->aspect = aspect; と書かれていたが、
-    // 引数に fovY / aspect は無いため「自分自身への代入」＝何もしないコードだった。
-    // その結果、正射影へ切り替えても GetFovY() / GetAspect() は透視時の古い値を
-    // 返し続けていた（ShadowMapRenderSystem が GetAspect() を読んでいる）。
-    // 正射影に画角の概念は無いので 0 を番兵として入れ、アスペクトは実寸から求める。
-    this->fovY = 0.0f;
     if (height != 0.0f) this->aspect = width / height;
 
-    // 行列が変わったのでFrustumを更新
     UpdateFrustum();
 }
 
-// ====================================================================
-// ローカルFrustumを作成し、最新のビュー逆行列でワールド空間へ配置する
-// ====================================================================
 void Camera::UpdateFrustum()
 {
-    // 1. プロジェクション行列（画角や遠近感）から、原点ベースの視界（ローカルFrustum）を作成
+    // 1. プロジェクション行列から、原点にあるカメラの視錐台（ビュー空間）を作る
     DirectX::BoundingFrustum frustumLocal;
     DirectX::BoundingFrustum::CreateFromMatrix(frustumLocal, DirectX::XMLoadFloat4x4(&projection));
 
-    // 2. ビュー行列の「逆行列」を計算（カメラのワールドTransformを表す行列）
+    // 2. ビュー行列の逆行列（カメラのワールド行列）を求める
     DirectX::XMMATRIX invView = DirectX::XMMatrixInverse(nullptr, DirectX::XMLoadFloat4x4(&view));
 
-    // 3. ローカルFrustumをカメラの位置・角度に合わせてワールド空間に変換
+    // 3. 視錐台をカメラの位置と向きに合わせてワールド空間へ移す
     frustumLocal.Transform(frustum, invView);
 }

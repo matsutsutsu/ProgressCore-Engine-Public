@@ -77,6 +77,9 @@ public:
     // 単一ファイルを開くダイアログを表示する。キャンセル時は std::nullopt
     static std::optional<std::filesystem::path> Open(const FileDialogParams &params);
 
+    // 複数ファイルを選べる、開くダイアログを表示する。キャンセル時は空
+    static std::vector<std::filesystem::path> OpenMulti(const FileDialogParams &params);
+
     // 保存ダイアログを表示する。キャンセル時は std::nullopt
     static std::optional<std::filesystem::path> Save(const FileDialogParams &params);
 
@@ -121,4 +124,7 @@ public:
 
     // 履歴を JSON ファイルに書き込む。同じファイルの他のキーは残す
     static void SaveHistory(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
+
+    // contextId の履歴を消す。空なら全部消す
+    static void ClearHistory(std::string_view contextId = {});
 };

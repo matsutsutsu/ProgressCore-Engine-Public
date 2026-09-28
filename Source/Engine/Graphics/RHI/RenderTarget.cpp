@@ -1,7 +1,5 @@
 #include "RenderTarget.h"
 
-// 既存のロガーを使用。CCL_LOG_ERROR / LogCategory がプロジェクト側で定義されている前提。
-// 別ロガーを使う場合はここを差し替える。
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Graphics/RHI/DebugName.h"
 
@@ -29,7 +27,7 @@ bool RenderTarget::Create(ID3D11Device *device, UINT width, UINT height, DXGI_FO
         return false;
     }
 
-    // 既存リソースを確実に解放してから再生成
+    // 前のリソースを解放してから作る
     Release();
     m_width  = width;
     m_height = height;
@@ -86,7 +84,7 @@ bool RenderTarget::Create(ID3D11Device *device, UINT width, UINT height, DXGI_FO
         Release();
         return false;
     }
-    // 生成に成功してから名前を付ける（失敗時は m_srv が null で無意味なため）。
+    // 名前は作れた後に付ける（失敗すると m_srv が null なので付けられない）
     SetDebugName(m_srv.Get(), "RenderTarget_SRV");
 
     // 4. ビューポート設定

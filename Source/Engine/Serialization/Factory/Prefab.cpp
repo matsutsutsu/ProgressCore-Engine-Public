@@ -53,6 +53,12 @@ namespace Prefab
         }
     } // namespace
 
+    void ClearPrefabCache()
+    {
+        std::lock_guard<std::mutex> lock(g_prefabCacheMutex);
+        g_prefabCache.clear();
+    }
+
     // ===========================================================================
     // 生成
     // ===========================================================================

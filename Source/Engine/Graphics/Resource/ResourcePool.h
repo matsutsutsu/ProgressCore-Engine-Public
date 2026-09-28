@@ -1,4 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: 世代付きハンドル（Handle<T>）で要素を参照する、型ごとのオブジェクトプール。
+//
+// 責務:
+//   - Handle<T>: 添字と世代の2つの uint32 だけを持つ軽いハンドル（コンポーネントに持たせる）
+//   - ResourcePool<T>: スロットに T を直接構築・破棄し、空いたスロットを使い回す
+//
+// 備考: 破棄するとスロットの世代が1つ進むので、破棄前のハンドルで Get すると nullptr が返る
+//       （解放済みの領域を読まない）。
+//       スロットは std::deque に並べる。deque は末尾に足しても既存の要素を動かさないので、
+//       Get で返したポインタは、その要素を破棄するまで有効なまま残る。
+// ===========================================================================
 #include <cassert>
 #include <cstdint>
 #include <utility>
@@ -8,165 +20,134 @@
 namespace CCL
 {
 
-    // 8バイトの超軽量ハンドル（ECSコンポーネントに持たせる用）
-    //
     template <typename T>
     struct Handle
     {
-        //0xFFF...はuint32の一番大きな数字、無効な値を表すために
-        uint32_t index      = 0xFFFFFFFF; // 配列の何番目にあるか
-        uint32_t generation = 0;          // その場所が「何回使い回されたか」
+        uint32_t index      = 0xFFFFFFFF; // スロットの添字。0xFFFFFFFF（uint32 の最大値）は無効
+        uint32_t generation = 0;          // 発行したときのスロットの世代
 
-        // このチケットが空っぽじゃないかどうかを確認するための関数
         bool IsValid() const { return index != 0xFFFFFFFF; }
 
-        // !=　２つを比較して同じものを指しているかどうかの比較演算子
         bool operator==(const Handle &other) const
         {
             return index == other.index && generation == other.generation;
         }
         bool operator!=(const Handle &other) const { return !(*this == other); }
 
-        // ソート（std::sort）やマップ（std::map）で使うために必須
+        // std::sort や std::map のキーに使うための順序。添字、世代の順に比べる
         bool operator<(const Handle &other) const
         {
-            // まず部屋番号(index)で比較
             if (index != other.index)
             {
                 return index < other.index;
             }
-            // 部屋番号が同じなら、世代(generation)で比較
             return generation < other.generation;
         }
     };
 
-    // 型安全かつキャッシュ効率が極大化されたメモリプール
     template <typename T>
     class ResourcePool
     {
     private:
         struct Slot
         {
-            // alignas(T)　メモリの部屋を用意するための指示　メモリアライメント
-            // unsigned char data[...]　ただの空間（バイト配列）
-            // sizeof(T)　Tクラスのデータの広さ
-            alignas(T) unsigned char data[sizeof(T)]; // 型Tのサイズ分の「単なるバイト配列」
-            uint32_t generation = 0;
-            bool     active     = false; // 部屋に有効なデータが入っているかどうかのフラグ
+            // T を後から構築するための生のメモリ領域。
+            // alignas(T)             T と同じアラインメントにそろえる
+            // unsigned char [sizeof(T)] T 1個分の大きさのバイト列（この時点では T ではない）
+            alignas(T) unsigned char data[sizeof(T)];
+            uint32_t generation = 0;     // 破棄するたびに1つ進む
+            bool     active     = false; // T が構築されているか
 
-            // dataはただのバイトの集まりなので
-            // そのままだとモデルだとは認識してもらえないので
-            // reinterpret_castは「このバイトの塊を、強制的に型Tのポインタ
-            // として解釈して返す」 翻訳機
+            // バイト列を T として読むためのキャスト（active のときだけ使う）
             T *GetPtr() { return reinterpret_cast<T *>(data); }
 
-            // =========================================================
-            // 読み取り専用(const)でプールを走査された時用のGetPtr
-            // これがないと const 関数である ForEachActive から呼び出せません
-            // =========================================================
+            // const のプールを走査するとき用（ForEachActive は const 関数なので必要）
             const T *GetPtr() const { return reinterpret_cast<const T *>(data); }
         };
 
-        // アパートの部屋全体の配列
-        // ===================================================================
-        // vector を deque に変更！
-        // これにより、アパートの増築時に住人の「お引越し」が絶対に発生しなくなり、
-        // 外部に配ったポインタ(T*)が永遠に安全に保たれるようになります。
-        // ===================================================================
-        std::deque<Slot> m_slots;
-        // 空き部屋リスト
-        // 大挙して空っぽになった部屋の番号(index)を保管する場所
-        std::vector<uint32_t> m_freeIndices;
+        std::deque<Slot>      m_slots;       // スロットの列（追加しても既存のスロットは動かない）
+        std::vector<uint32_t> m_freeIndices; // 破棄されて空いたスロットの添字
 
     public:
         ~ResourcePool() { Clear(); }
 
+        // T を args で構築し、そのハンドルを返す
         template <typename... Args>
         Handle<T> Create(Args &&...args)
         {
             uint32_t index;
             if (!m_freeIndices.empty())
             {
-                // もし空き部屋リストにメモがあれば
-                // そこから一つの番号を取り出して使う
+                // 空いたスロットがあれば使い回す
                 index = m_freeIndices.back();
                 m_freeIndices.pop_back();
             }
             else
             {
-                // 空き部屋が一つもなければ、アパートを増築（配列を一つ拡張）
-                // して新しい部屋番号にする
+                // 無ければ末尾にスロットを1つ足す
                 index = static_cast<uint32_t>(m_slots.size());
                 m_slots.emplace_back();
             }
 
-            // 決まった部屋番号のスロット（部屋）を取り出す
             Slot &slot = m_slots[index];
 
-            // slot.data（用意しておいた空部屋）の中にT（データ）を直接組み立てる
-            new (slot.data) T(std::forward<Args>(args)...); // Placement New
-            slot.active = true;                             // 入居中のフラグを立てる
+            // placement new: 確保済みの slot.data の上に、T のコンストラクタを直接呼んで構築する
+            // （新しくメモリを確保しない）
+            new (slot.data) T(std::forward<Args>(args)...);
+            slot.active = true;
 
-            // 部屋番号と、その部屋の今の世代を書き込んだチケット(Handle)を発行して返す
             return Handle<T>{index, slot.generation};
         }
 
-        // クラッシュさせないための最大防壁
-        // 中身のハンドルが古くてもnullptrを渡して安全に処理をスキップできる
+        // ハンドルが指す T を返す。無効・範囲外・破棄済み（世代が違う）なら nullptr
         T *Get(Handle<T> handle)
         {
-            // チケットが空っぽ（0xFFFFFFFF）か、
-            // アパートの部屋数より大きいデタラメな番号なら追い返す
             if (!handle.IsValid() || handle.index >= m_slots.size()) return nullptr;
 
-            // チケットの部屋番号へ行く
             Slot &slot = m_slots[handle.index];
 
-            // 「現在入居中(active)」かつ「チケットの世代と、
-            // 部屋の今の世代が一致している」か確認する
+            // 世代が違うのは、このスロットが一度破棄されて別の T が入っている場合
             if (slot.active && slot.generation == handle.generation)
             {
-                // 面会許可。翻訳機を通してポインタを渡す
                 return slot.GetPtr();
             }
-            return nullptr; // 世代が違う（＝前の住人のチケットで来ている）場合は絶対に会わせない
+            return nullptr;
         }
 
-        // 部屋の中をデストラクタを呼び出して破壊する
+        // ハンドルが指す T を破棄し、スロットを空きに戻す。無効・破棄済みなら何もしない
         void Destroy(Handle<T> handle)
         {
-            // デタラメな番号なら何もしない
             if (!handle.IsValid() || handle.index >= m_slots.size()) return;
 
             Slot &slot = m_slots[handle.index];
             if (slot.active && slot.generation == handle.generation)
             {
-                // この書き方は部屋のメモリは壊さないで
-                // 中身のデータだけをデストラクタするための呼び方
-                slot.GetPtr()->~T(); // デストラクタの明示的呼び出し
-                slot.active = false; // 「空き部屋」の札を下げる
-                slot.generation++;   // 「次の住人は○代目ですよ」と世代を1つ進める
+                // placement new で作ったので delete ではなく、デストラクタだけを明示して呼ぶ
+                // （メモリは slot.data のまま残し、次の Create で使い回す）
+                slot.GetPtr()->~T();
+                slot.active = false;
+                slot.generation++; // 古いハンドルで Get しても nullptr になるように
 
-                // この部屋番号を「空き部屋リスト」に追加する
                 m_freeIndices.push_back(handle.index);
             }
         }
 
-        // 次のシーンに行くときなどメモリリークを防ぐための終了関数
+        // 全要素を破棄してスロットも空にする（シーン切り替えやシャットダウンで使う）
         void Clear()
         {
             for (auto &slot : m_slots)
             {
                 if (slot.active)
                 {
-                    slot.GetPtr()->~T(); // 住んでいる部屋だけ、全員の荷物を片付ける
+                    slot.GetPtr()->~T();
                     slot.active = false;
                 }
             }
-            m_slots.clear();       // アパートの配列自体を空にする
-            m_freeIndices.clear(); // 空き部屋リストもリセット
+            m_slots.clear();
+            m_freeIndices.clear();
         }
 
+        // 構築済みの全要素を func(const T&) に渡す
         template <typename Func>
         void ForEachActive(Func &&func) const
         {
@@ -174,7 +155,6 @@ namespace CCL
             {
                 if (m_slots[i].active)
                 {
-                    // ラムダ式に実体（T）を渡す
                     func(*m_slots[i].GetPtr());
                 }
             }

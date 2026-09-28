@@ -1,18 +1,27 @@
 #pragma once
+// ===========================================================================
+// 概要: マテリアルの値（シェーダー・アルファの扱い・スカラー・色・テクスチャ）を持つデータ。
+//
+// 責務:
+//   - 名前のハッシュをキーに、スカラー・色・テクスチャを設定・取得する
+//   - .mat.json との相互変換（nlohmann::json）を定義する
+//
+// 備考: 値は名前のハッシュと値の組を vector に並べて持つ。プロパティは数個〜十数個なので、
+//       map を使うより線形探索の方が速く、メモリも連続する。
+//       シェーダーはリフレクションで得た変数名のハッシュで値を引く。
+// ===========================================================================
 #include <DirectXMath.h>
 #include <vector>
 #include <string>
-#include "Engine/Core/Math/StringHash.h" // テクスチャ名をハッシュ化して引くため
+#include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 #include "Engine/Graphics/Resource/ResourcePool.h"
-
-// 新しく作った型定義専用ヘッダーを読み込む
 #include "ResourceTypes.h"
 
 #include <json.hpp>
 
 // ===================================================================================
-// DirectXMath ⇔ json 変換 (ADL解決用)
+// DirectXMath ⇔ json の変換（ADL で見つかるよう DirectX 名前空間に置く）
 // ===================================================================================
 namespace DirectX
 {
@@ -29,10 +38,9 @@ namespace DirectX
     }
 } // namespace DirectX
 
-// 1つのプロパティを表現する最小単位の構造体
 struct MaterialScalar
 {
-    uint32_t nameHash;
+    uint32_t nameHash; // シェーダー変数名のハッシュ
     float    value;
 };
 
@@ -45,29 +53,24 @@ struct MaterialColor
 struct MaterialTextureRef
 {
     uint32_t      nameHash;
-    TextureHandle handle;    // 実行時のみ有効
-    std::string   assetPath; // 保存用（ファイルパス）
+    TextureHandle handle;    // 読み込んだテクスチャ（実行時だけ有効。保存しない）
+    std::string   assetPath; // テクスチャのパス（保存する）
 };
 
-// 完全に連続したメモリレイアウトを持つ新生 MaterialData
 struct MaterialData
 {
-    uint32_t shaderHash = 0; // 使用するシェーダー
+    uint32_t shaderHash = 0; // 使うシェーダーの名前のハッシュ
 
-    // =======================================================
-    // アルファ・ブレンディングの設定 (コンパイルエラー解消)
-    // =======================================================
-    AlphaMode alphaMode   = static_cast<AlphaMode>(0); // 通常は 0 (Opaque) が入ります
-    float     alphaCutoff = 0.5f;
+    AlphaMode alphaMode   = AlphaMode::Opaque;
+    float     alphaCutoff = 0.5f; // AlphaMode::Mask で、これより小さいアルファを捨てる
 
-    // ヒープの断片化を防ぐため、std::vectorで一列に並べる
     std::vector<MaterialScalar>     scalars;
     std::vector<MaterialColor>      colors;
     std::vector<MaterialTextureRef> textures;
 
-    // =======================================================
-    // 値のセット（設定）関数: O(N) 線形探索 + 末尾追加
-    // =======================================================
+    // ============================================================
+    // 設定。同じハッシュがあれば上書きし、無ければ末尾に足す（線形探索）
+    // ============================================================
     void SetScalar(uint32_t hash, float value)
     {
         for (auto &prop : scalars)
@@ -76,7 +79,7 @@ struct MaterialData
             {
                 prop.value = value;
                 return;
-            } // 上書き
+            }
         }
         scalars.push_back({hash, value});
     }
@@ -94,7 +97,7 @@ struct MaterialData
         colors.push_back({hash, value});
     }
 
-    // テクスチャのパスも受け取って保存できるようにする
+    // path が空でなければ、保存用のパスも更新する
     void SetTexture(uint32_t hash, TextureHandle handle, const std::string &path = "")
     {
         for (auto &prop : textures)
@@ -109,9 +112,9 @@ struct MaterialData
         textures.push_back({hash, handle, path});
     }
 
-    // =======================================================
-    // 値のゲット（取得）関数: O(N) 線形探索
-    // =======================================================
+    // ============================================================
+    // 取得。見つかれば out に入れて true（線形探索）
+    // ============================================================
     bool GetScalar(uint32_t hash, float &outValue) const
     {
         for (const auto &prop : scalars)
@@ -153,7 +156,7 @@ struct MaterialData
 };
 
 // ===================================================================================
-// nlohmann::json 変換関数 (Single Source of Truth)
+// nlohmann::json との変換（.mat.json の形式はここで決まる）
 // ===================================================================================
 
 inline void to_json(nlohmann::json &j, const MaterialScalar &s)
@@ -178,21 +181,21 @@ inline void from_json(const nlohmann::json &j, MaterialColor &c)
 
 inline void to_json(nlohmann::json &j, const MaterialTextureRef &t)
 {
-    // 実行時専用の handle は保存せず、パスとハッシュのみ保存する
+    // handle は実行時だけのものなので保存せず、ハッシュとパスだけを保存する
     j = nlohmann::json{{"nameHash", t.nameHash}, {"assetPath", t.assetPath}};
 }
 inline void from_json(const nlohmann::json &j, MaterialTextureRef &t)
 {
     j.at("nameHash").get_to(t.nameHash);
     j.at("assetPath").get_to(t.assetPath);
-    t.handle = TextureHandle{}; // ロード直後はハンドル未解決状態にする
+    t.handle = TextureHandle{}; // テクスチャは ResourceManager::LoadMaterialAsset が読み込む
 }
 
 inline void to_json(nlohmann::json &j, const MaterialData &m)
 {
     j = nlohmann::json{
         {"shaderHash", m.shaderHash},
-        {"alphaMode", static_cast<int>(m.alphaMode)}, // enumはintとして保存
+        {"alphaMode", static_cast<int>(m.alphaMode)}, // enum は int で保存する
         {"alphaCutoff", m.alphaCutoff},
         {"scalars", m.scalars},
         {"colors", m.colors},

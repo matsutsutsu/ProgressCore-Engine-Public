@@ -58,6 +58,8 @@ public:
 
     // 前フレームの間に回されたホイール量（正 = 上方向）
     int GetWheel() const { return wheel[1]; }
+    bool IsWheelUp() const { return wheel[1] > 0; }
+    bool IsWheelDown() const { return wheel[1] < 0; }
 
     // カーソル座標
     DirectX::XMFLOAT2 GetPosition() const
@@ -69,6 +71,11 @@ public:
     int GetPositionY() const { return positionY[0]; }
 
     // 前フレームのカーソル座標
+    DirectX::XMFLOAT2 GetOldPosition() const
+    {
+        return DirectX::XMFLOAT2(static_cast<float>(positionX[1]), static_cast<float>(positionY[1]));
+    }
+
     int GetOldPositionX() const { return positionX[1]; }
     int GetOldPositionY() const { return positionY[1]; }
 

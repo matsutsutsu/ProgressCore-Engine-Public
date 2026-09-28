@@ -222,55 +222,94 @@ void FileDialog::Initialize(const std::filesystem::path &settingsPath)
 // 基本 API
 // ============================================================
 
+namespace
+{
+    // 開くダイアログを表示し、選ばれたファイルのパスを返す。キャンセル時は空
+    std::vector<std::filesystem::path> ShowOpenDialog(const FileDialogParams &params, bool multiSelect)
+    {
+        const std::string contextId  = ResolveContextId(params);
+        const auto        initialDir = ResolveInitialDir(params, contextId);
+
+        const std::wstring wTitle      = Utf8ToWide(params.title);
+        const std::wstring wFilter     = BuildFilterStringW(params.filters);
+        const std::wstring wInitialDir = NormalizeSeparatorW(initialDir.wstring());
+
+        // 複数選択の結果（"フォルダ\0ファイル1\0ファイル2\0\0"）も入る大きさを取る
+        constexpr DWORD      kBufElements = 32 * 1024;
+        std::vector<wchar_t> fileBuf(kBufElements, L'\0');
+
+        // initialPath にファイル名まで含まれていればそれを初期値に
+        if (!params.initialPath.empty() && params.initialPath.has_filename())
+        {
+            const auto   wname = params.initialPath.filename().wstring();
+            const size_t n     = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
+            std::copy_n(wname.begin(), n, fileBuf.begin());
+        }
+
+        OPENFILENAMEW ofn{};
+        ofn.lStructSize = sizeof(ofn);
+        // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする。
+        //   オーナー無しのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
+        //   ゲームループを止めたまま前面に出ず、フリーズしたように見えるため。
+        ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
+        ofn.lpstrFilter     = wFilter.c_str();
+        ofn.nFilterIndex    = 1;
+        ofn.lpstrFile       = fileBuf.data();
+        ofn.nMaxFile        = kBufElements;
+        ofn.lpstrTitle      = wTitle.empty() ? nullptr : wTitle.c_str();
+        ofn.lpstrInitialDir = wInitialDir.empty() ? nullptr : wInitialDir.c_str();
+        ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
+        if (multiSelect)
+        {
+            ofn.Flags |= OFN_ALLOWMULTISELECT | OFN_EXPLORER;
+        }
+
+        // OFN_NOCHANGEDIR を指定しているが、念のためカレントディレクトリを保護
+        wchar_t     curDir[MAX_PATH] = {};
+        const DWORD cdLen            = ::GetCurrentDirectoryW(MAX_PATH, curDir);
+
+        const BOOL ret = ::GetOpenFileNameW(&ofn);
+
+        if (cdLen > 0 && cdLen < MAX_PATH)
+        {
+            ::SetCurrentDirectoryW(curDir);
+        }
+
+        std::vector<std::filesystem::path> paths;
+        if (!ret) return paths;
+
+        // 複数選択のときは "フォルダ\0ファイル1\0ファイル2\0\0" で返る。
+        // 1つだけ選んだときは、単一選択と同じくフルパス1つが返る
+        const wchar_t *p = fileBuf.data() + std::wcslen(fileBuf.data()) + 1;
+        if (!multiSelect || *p == L'\0')
+        {
+            paths.emplace_back(fileBuf.data());
+        }
+        else
+        {
+            const std::filesystem::path dir(fileBuf.data());
+            while (*p)
+            {
+                paths.push_back(dir / std::filesystem::path(p));
+                p += std::wcslen(p) + 1;
+            }
+        }
+
+        StoreHistory(contextId, paths.front());
+        return paths;
+    }
+} // namespace
+
 std::optional<std::filesystem::path> FileDialog::Open(const FileDialogParams &params)
 {
-    const std::string contextId  = ResolveContextId(params);
-    const auto        initialDir = ResolveInitialDir(params, contextId);
+    auto paths = ShowOpenDialog(params, false);
+    if (paths.empty()) return std::nullopt;
+    return paths.front();
+}
 
-    const std::wstring wTitle      = Utf8ToWide(params.title);
-    const std::wstring wFilter     = BuildFilterStringW(params.filters);
-    const std::wstring wInitialDir = NormalizeSeparatorW(initialDir.wstring());
-
-    constexpr DWORD      kBufElements = 32 * 1024;
-    std::vector<wchar_t> fileBuf(kBufElements, L'\0');
-
-    // initialPath にファイル名まで含まれていればそれを初期値に
-    if (!params.initialPath.empty() && params.initialPath.has_filename())
-    {
-        const auto   wname = params.initialPath.filename().wstring();
-        const size_t n     = (std::min)(wname.size(), static_cast<size_t>(kBufElements - 1));
-        std::copy_n(wname.begin(), n, fileBuf.begin());
-    }
-
-    OPENFILENAMEW ofn{};
-    ofn.lStructSize = sizeof(ofn);
-    // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする。
-    //   オーナー無しのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
-    //   ゲームループを止めたまま前面に出ず、フリーズしたように見えるため。
-    ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
-    ofn.lpstrFilter     = wFilter.c_str();
-    ofn.nFilterIndex    = 1;
-    ofn.lpstrFile       = fileBuf.data();
-    ofn.nMaxFile        = kBufElements;
-    ofn.lpstrTitle      = wTitle.empty() ? nullptr : wTitle.c_str();
-    ofn.lpstrInitialDir = wInitialDir.empty() ? nullptr : wInitialDir.c_str();
-    ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NOCHANGEDIR;
-
-    // OFN_NOCHANGEDIR を指定しているが、念のためカレントディレクトリを保護
-    wchar_t     curDir[MAX_PATH] = {};
-    const DWORD cdLen            = ::GetCurrentDirectoryW(MAX_PATH, curDir);
-
-    const BOOL ret = ::GetOpenFileNameW(&ofn);
-
-    if (cdLen > 0 && cdLen < MAX_PATH)
-    {
-        ::SetCurrentDirectoryW(curDir);
-    }
-    if (!ret) return std::nullopt;
-
-    std::filesystem::path selected(fileBuf.data());
-    StoreHistory(contextId, selected);
-    return selected;
+std::vector<std::filesystem::path> FileDialog::OpenMulti(const FileDialogParams &params)
+{
+    return ShowOpenDialog(params, true);
 }
 
 std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &params)
@@ -407,6 +446,14 @@ std::optional<std::filesystem::path> FileDialog::SavePreset(
 // ============================================================
 // 履歴
 // ============================================================
+
+void FileDialog::ClearHistory(std::string_view contextId)
+{
+    if (contextId.empty())
+        s_history.clear();
+    else
+        s_history.erase(std::string(contextId));
+}
 
 void FileDialog::LoadHistory(const std::filesystem::path &settingsPath)
 {

@@ -1,7 +1,7 @@
 #include <fstream>
-#include <cstring>    // memcmp 用
-#include <windows.h>  // OutputDebugStringA 用
-#include <filesystem> // パス検証用
+#include <cstring>
+#include <windows.h>
+#include <filesystem>
 #include <unordered_map>
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -23,9 +23,9 @@ bool LoadImageData(tinygltf::Image *, const int, std::string *,
     return true;
 }
 
-// 画像バイト列の先頭マジックナンバーから拡張子を判定する。
-// glb 埋め込みテクスチャは mimeType が "image/unknown" 等で当てにならない
-// ことがあるため、実データの先頭バイトで形式を決める。
+// 画像データの先頭のマジックナンバーから拡張子を決める。
+// glb に埋め込まれたテクスチャは mimeType が "image/unknown" などで当てにならないことがあるので、
+// 実データの先頭のバイトで判定する。
 static const char *DetectImageExtensionFromBytes(const unsigned char *data, size_t size)
 {
     if (data == nullptr) return "bin";
@@ -37,42 +37,15 @@ static const char *DetectImageExtensionFromBytes(const unsigned char *data, size
     return "bin";
 }
 
-// コンストラクタ
 GLTFImporter::GLTFImporter(const char *filename)
     : filepath(filename)
 {
-    // =====================================================================
-    // デバッグ用：OSレベルでファイルが見えているかを「絶対パス」で検証
-    // =====================================================================
-    //std::filesystem::path absolutePath = std::filesystem::absolute(filepath);
-
-    //// std::filesystem::exists は Windows OS に直接「このファイルある？」と聞く関数
-    //if (!std::filesystem::exists(filepath)) {
-    //	char errBuf[2048];
-    //	snprintf(errBuf, sizeof(errBuf),
-    //		"\n=======================================================\n"
-    //		"[GLTF FATAL ERROR] OSからモデルファイルが見えません！\n"
-    //		"  指定されたパス : %s\n"
-    //		"  探した絶対パス : %s\n"
-    //		"  現在の作業DIR  : %s\n"
-    //		"=======================================================\n\n",
-    //		filename,
-    //		absolutePath.string().c_str(),
-    //		std::filesystem::current_path().string().c_str()
-    //	);
-    //	OutputDebugStringA(errBuf); // Visual Studio の出力ウィンドウに強制表示
-
-    //	// ファイルが無いのに tinygltf に渡すとバグるため、ここで安全に終了する
-    //	return;
-    //}
-
-    // 拡張子取得
     std::string extension = filepath.extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(), tolower); // 小文字化
+    std::transform(extension.begin(), extension.end(), extension.begin(), tolower);
 
     tinygltf::TinyGLTF gltf;
 
-    // 勝手にイメージを読み込まないようにする
+    // tinygltf に画像をデコードさせない（テクスチャは LoadMaterials で書き出し、BuildModel で読む）
     gltf.SetImageLoader(LoadImageData, this);
 
     std::string error, warning;
@@ -98,9 +71,10 @@ GLTFImporter::GLTFImporter(const char *filename)
     }
 }
 
-// ノードデータを読み込み
+// ノードを glTF の並び順のまま読む（並べ替えはしない）
 void GLTFImporter::LoadNodes(NodeList &nodes)
 {
+    // glTF にノードが無いときも、ファイル名のノードが1つ残るようにする
     ModelResource::Node &node = nodes.emplace_back();
     node.name                 = filepath.filename().stem().string();
 
@@ -110,7 +84,6 @@ void GLTFImporter::LoadNodes(NodeList &nodes)
         const tinygltf::Node &gltfNode = gltfModel.nodes.at(gltfNodeIndex);
         ModelResource::Node  &node     = nodes.at(gltfNodeIndex);
 
-        // データ取得
         node.name = gltfNode.name;
 
         for (int gltfChildNodeIndex : gltfNode.children)
@@ -149,7 +122,7 @@ void GLTFImporter::LoadNodes(NodeList &nodes)
     }
 }
 
-// メッシュデータを読み込み
+// メッシュを読む。primitive 1つを ModelResource::Mesh 1つにする
 void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
 {
     for (int gltfNodeIndex = 0; gltfNodeIndex < gltfModel.nodes.size(); ++gltfNodeIndex)
@@ -164,20 +137,17 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
             ModelResource::Mesh &mesh = meshes.emplace_back();
             mesh.nodeIndex            = gltfNodeIndex;
             mesh.materialIndex        = gltfPrimitive.material;
-            // materialIndex は ModelResource::Mesh に直接ない場合があるが、
-            // とりあえず primitive の material index を subsets 等で使う想定で保存しておく。
-            // ここでは subsets の materialIndex を後で埋めるため mesh.subsets.emplace_back() などの
-            // 処理は次の改修で追加する想定。
-            // mesh.materialIndex = gltfPrimitive.material; // if needed
+
+            // primitive 1つ = メッシュ1つなので、サブセットは全体を覆う1つだけ
             {
                 ModelResource::Subset subset;
                 subset.materialIndex = gltfPrimitive.material;
-                subset.startIndex    = 0; // このPrimitiveでの開始インデックス（後で正確に設定）
-                subset.indexCount    = 0; // このPrimitiveのインデックス数（後で設定）
+                subset.startIndex    = 0;
+                subset.indexCount    = 0; // インデックスを読んだ後に入れる
                 mesh.subsets.push_back(subset);
             }
 
-            // ボーン
+            // ボーン（逆バインド行列と、対応するノード）
             if (gltfNode.skin >= 0)
             {
                 const tinygltf::Skin       &gltfSkin       = gltfModel.skins.at(gltfNode.skin);
@@ -193,13 +163,13 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 }
             }
 
-            // インデックスバッファ
+            // インデックス
             {
                 const tinygltf::Accessor   &gltfAccessor   = gltfModel.accessors.at(gltfPrimitive.indices);
                 const tinygltf::BufferView &gltfBufferView = gltfModel.bufferViews.at(gltfAccessor.bufferView);
                 const void                 *indices        = gltfModel.buffers.at(gltfBufferView.buffer).data.data() + gltfBufferView.byteOffset + gltfAccessor.byteOffset;
                 mesh.indices.resize(gltfAccessor.count);
-                // ---- インデックス読み込み完了後に subset 情報更新 ----
+                // サブセットの範囲をインデックス全体にする
                 if (!mesh.subsets.empty())
                 {
                     auto &subset      = mesh.subsets.back();
@@ -225,8 +195,7 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 }
                 else if (gltfAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
                 {
-                    // glTF仕様ではインデックスに UNSIGNED_BYTE も認められている。
-                    // 頂点数がごく少ないプリミティブで実際に使われるため、対応が必要。
+                    // glTF ではインデックスに UNSIGNED_BYTE も使える。頂点がごく少ない primitive で実際に使われる
                     const uint8_t *indicesU8 = static_cast<const uint8_t *>(indices);
                     for (size_t i = 0; i < gltfAccessor.count; ++i)
                     {
@@ -240,7 +209,7 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 }
             }
 
-            // 頂点バッファ領域確保
+            // 頂点の配列を確保する
             {
                 std::map<std::string, int>::const_iterator gltfAttribute = gltfPrimitive.attributes.find("POSITION");
                 _ASSERT_EXPR(gltfAttribute != gltfPrimitive.attributes.end(), "");
@@ -248,7 +217,7 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 mesh.vertices.resize(gltfAccessor.count);
             }
 
-            // 頂点バッファ
+            // 頂点の属性
             for (std::map<std::string, int>::const_reference gltfAttribute : gltfPrimitive.attributes)
             {
                 const tinygltf::Accessor   &gltfAccessor   = gltfModel.accessors.at(gltfAttribute.second);
@@ -423,7 +392,7 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 }
             }
 
-            // タンジェントがなかった場合は自力で計算
+            // 接線が無ければ、UV から求める
             if (gltfPrimitive.attributes.find("TANGENT") == gltfPrimitive.attributes.end() &&
                 gltfPrimitive.attributes.find("POSITION") != gltfPrimitive.attributes.end() &&
                 gltfPrimitive.attributes.find("TEXCOORD_0") != gltfPrimitive.attributes.end())
@@ -437,10 +406,9 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
     }
 }
 
-// マテリアルデータを読み込み
+// マテリアルを読み、埋め込みテクスチャはファイルに書き出す
 void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
 {
-    // ディレクトリパス取得
     std::filesystem::path dirpath(filepath.parent_path());
 
     for (const tinygltf::Material &gltfMaterial : gltfModel.materials)
@@ -521,7 +489,7 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                 }
                 else
                 {
-                    // 埋め込みバイト列を取得（マジック判定・書き出しに使用）
+                    // 埋め込まれた画像データ（形式の判定と書き出しに使う）
                     const byte *imageData = nullptr;
                     size_t      imageSize = 0;
                     if (gltfImage.bufferView >= 0)
@@ -532,27 +500,26 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                         imageSize                       = bv.byteLength;
                     }
 
-                    // テクスチャファイルパス作成
+                    // 書き出すテクスチャのパスを決める
                     std::filesystem::path textureFilePath(gltfImage.uri);
                     if (textureFilePath.empty())
                     {
-                        // テクスチャファイル名がなかった場合はマテリアル名とテクスチャタイプから作成。
-                        // 拡張子は mimeType が "image/unknown" 等で信用できないため、
-                        // 実データの先頭マジックナンバーから判定する。
+                        // 画像に名前が無ければ、マテリアル名とテクスチャの種類から作る。
+                        // 拡張子は mimeType が当てにならないので、実データの先頭から決める。
                         const char *extension = DetectImageExtensionFromBytes(
                             reinterpret_cast<const unsigned char *>(imageData), imageSize);
                         textureFilePath = material.name + "_" + textureType + "." + extension;
                     }
                     textureFilePath = "Textures" / textureFilePath.filename();
 
-                    // 埋め込みテクスチャを出力するディレクトリを確認
+                    // 書き出し先のディレクトリ（glb と同じ階層の Textures/）
                     std::filesystem::path outputDirPath(dirpath / textureFilePath.parent_path());
                     if (!std::filesystem::exists(outputDirPath))
                     {
-                        // なかったらディレクトリ作成
+                        // 無ければ作る
                         std::filesystem::create_directories(outputDirPath);
                     }
-                    // 出力ディレクトリに画像ファイルを保存
+                    // 画像を書き出す
                     std::filesystem::path outputFilePath(dirpath / textureFilePath);
                     if (!std::filesystem::exists(outputFilePath))
                     {
@@ -567,7 +534,7 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                         }
                         else
                         {
-                            // リニアな画像データは.pngで出力
+                            // デコード済みの画素データは .png で書き出す
                             textureFilePath = textureFilePath.replace_extension(".png");
                             stbi_write_png(
                                 outputFilePath.string().c_str(),
@@ -577,7 +544,7 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                                 gltfImage.image.data(), 0);
                         }
                     }
-                    // テクスチャファイルパスを格納
+                    // マテリアルにはパスだけを持たせる（読み込みは BuildModel）
                     textureFilename = textureFilePath.string();
                 }
             }
@@ -594,21 +561,20 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
     }
 }
 
-// アニメーションデータを読み込み
+// アニメーションを読み、nodes の番号に合わせた NodeAnim を作る
 void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nodes, float sampleRate)
 {
     DirectX::XMVECTOR Epsilon = DirectX::XMVectorReplicate(0.00001f);
 
-    // チャンネルの適用先は glTF のノード番号で書かれているが、これは
-    // 「そのファイルの中での番号」でしかない。別ファイルのアニメーションを
-    // 取り込む場合、モデル側の並びと一致している保証はどこにも無い。
-    // 番号のまま引くと、ズレたときにエラーも出さず別のボーンへ適用されて
-    // 姿勢が壊れるため、ボーン名でモデル側の番号へ読み替えてから使う。
+    // チャンネルの適用先は glTF のノード番号で書かれているが、これはそのファイルの中での番号でしかない。
+    // 別ファイルのアニメーションを取り込むとき、モデル側の並びと一致する保証は無い。
+    // 番号のまま使うと、ずれたときにエラーも出ずに別のボーンに適用されて姿勢が壊れるので、
+    // ボーン名でモデル側の番号に読み替えてから使う。
     std::unordered_map<std::string, int> modelNodeIndexByName;
     modelNodeIndexByName.reserve(nodes.size());
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
-        // 同名ノードは先勝ち（Model::GetAnimationIndex と同じ方針）
+        // 同じ名前のノードがあれば、先に見つかった方を使う（Model::GetAnimationIndex と同じ）
         modelNodeIndexByName.emplace(nodes.at(nodeIndex).name, static_cast<int>(nodeIndex));
     }
 
@@ -634,8 +600,8 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
         int   unresolvedChannels    = 0;
         for (const tinygltf::AnimationChannel &gltfAnimationChannel : gltfAnimation.channels)
         {
-            // 適用先のボーンをモデル側の番号へ読み替える。
-            // モデルに存在しないボーンのチャンネルは捨て、最後にまとめて報告する。
+            // 適用先のボーンをモデル側の番号に読み替える。
+            // モデルに無いボーンのチャンネルは捨て、最後にまとめてログに出す。
             const int targetNode = gltfAnimationChannel.target_node;
             const int modelNodeIndex =
                 (targetNode >= 0 && static_cast<size_t>(targetNode) < modelNodeIndices.size())
@@ -647,7 +613,7 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                 continue;
             }
 
-            // ノードアニメーションデータを読み取り開始
+            // キーフレームを読む
             ModelResource::NodeAnim          &nodeAnim             = animation.nodeAnims.at(modelNodeIndex);
             const tinygltf::AnimationSampler &gltfAnimationSampler = gltfAnimation.samplers.at(gltfAnimationChannel.sampler);
             const tinygltf::Accessor         &gltfInputAccessor    = gltfModel.accessors.at(gltfAnimationSampler.input);
@@ -659,14 +625,13 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
             minTime                        = (std::min)(minTime, gltfKeyframeTimes[0]);
             maxTime                        = (std::max)(animation.secondsLength, gltfKeyframeTimes[gltfInputAccessor.count - 1]);
 
-            // 補間モードの取得。
-            // glTF仕様: interpolation が "CUBICSPLINE" の場合、出力バッファは
-            // 1キーフレームにつき [入接線, 値, 出接線] の3要素組で並ぶ。
-            // これを見落として「1キーフレーム=1要素」のまま読むと、値ではなく
-            // 接線ベクトルを姿勢として誤読してしまう（該当チャンネルのボーンだけ
-            // 「向きがおかしい」不具合の直接原因）。未指定時の既定は "LINEAR"。
+            // 補間の種類。
+            // glTF では interpolation が "CUBICSPLINE" のとき、出力のバッファは1キーフレームにつき
+            // [入りの接線, 値, 出の接線] の3つ組で並ぶ。1キーフレーム = 1要素のまま読むと、値ではなく
+            // 接線のベクトルを姿勢として読んでしまい、そのボーンだけ向きがおかしくなる。
+            // 指定が無ければ "LINEAR"。
             const bool isCubicSpline = (gltfAnimationSampler.interpolation == "CUBICSPLINE");
-            const int  valueStride   = isCubicSpline ? 3 : 1; // CUBICSPLINEは3つ組の中央(値)だけを使う
+            const int  valueStride   = isCubicSpline ? 3 : 1; // CUBICSPLINE は3つ組の真ん中（値）だけを使う
 
             if (gltfAnimationChannel.target_path == "scale")
             {
@@ -702,16 +667,10 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                 const DirectX::XMFLOAT4 *gltfKeyframeValues = reinterpret_cast<const DirectX::XMFLOAT4 *>(gltfModel.buffers.at(gltfOutputBufferView.buffer).data.data() + gltfOutputBufferView.byteOffset + gltfOutputAccessor.byteOffset);
                 for (int i = 0; i < gltfInputAccessor.count; ++i)
                 {
-                    // なぜかUnityで出力したアニメーションデータにはゴミと思われるキーフレームが存在している場合がある。
-                    // 小数点が存在するフレーム（時間）がゴミデータっぽいので除外する。
-                    //float frame = gltfKeyframeTimes[i] * sampleRate;
-                    //if (fabs(std::round(frame) - frame) > 0.001) continue;
-
                     ModelResource::QuaternionKeyframe &keyframe = nodeAnim.rotationKeyframes.emplace_back();
                     keyframe.seconds                            = gltfKeyframeTimes[i];
-                    // CUBICSPLINEは [in-tangent, value, out-tangent] の中央(添字+1)が実際の値。
-                    // ここを誤って先頭(in-tangent)のまま読むと、接線ベクトルを回転として
-                    // 誤読することになり、そのボーンだけ向きが破綻する。
+                    // CUBICSPLINE は [in-tangent, value, out-tangent] の真ん中（添字 +1）が値。
+                    // 先頭（in-tangent）を読むと接線のベクトルを回転として扱い、そのボーンだけ向きが壊れる。
                     keyframe.value = gltfKeyframeValues[i * valueStride + (isCubicSpline ? 1 : 0)];
                 }
 
@@ -770,14 +729,14 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                          animation.name.c_str(), unresolvedChannels);
         }
 
-        // 1本も取り込めなかった場合、minTime が初期値のままで
-        // 再生時間が負の巨大値になる。後続の引き算ごと潰れるのでここで倒しておく。
+        // チャンネルを1本も取り込めなかったときは minTime が初期値のままで、再生時間が負の大きな値になる。
+        // その後の引き算も壊れるので、ここで 0 にしておく。
         if (minTime > maxTime)
         {
             minTime = maxTime;
         }
 
-        // 先頭キーフレームの時間が0じゃない場合があるので調整する
+        // 最初のキーフレームの時間が 0 でないことがあるので、0 から始まるようにずらす
         for (ModelResource::NodeAnim &nodeAnim : animation.nodeAnims)
         {
             for (ModelResource::VectorKeyframe &keyframe : nodeAnim.positionKeyframes)
@@ -793,13 +752,13 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                 keyframe.seconds -= minTime;
             }
         }
-        // アニメーション再生時間
+        // 再生時間（秒）
         animation.secondsLength = maxTime - minTime;
 
-        // 座標系変換
+        // 右手系（glTF）から左手系（D3D）へ
         ConvertAnimationAxisSystem(animation);
 
-        // アニメーションがなかったノードに対して初期姿勢のキーフレームを追加する
+        // キーフレームが無いノードには、初期姿勢のキーフレームを1つ入れる
         for (size_t nodeIndex = 0; nodeIndex < animation.nodeAnims.size(); ++nodeIndex)
         {
             const ModelResource::Node &node     = nodes.at(nodeIndex);
@@ -888,7 +847,7 @@ DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<doubl
         static_cast<float>(gltfValue.at(15)));
 }
 
-// 座標系変換
+// 右手系（glTF）から左手系（D3D）への変換
 void GLTFImporter::ConvertPositionAxisSystem(DirectX::XMFLOAT3 &v)
 {
     v.x = -v.x;
@@ -937,7 +896,7 @@ void GLTFImporter::ConvertMeshAxisSystem(ModelResource::Mesh &mesh)
         p[2]           = temp;
     }
 
-    // ボーンがない（静的メッシュの）場合、ウェイトのゴミデータを確実にゼロにする
+    // ボーンの無いメッシュでは、ウェイトとボーン番号に残っている不定の値を消す
     if (mesh.bones.empty())
     {
         for (auto &v : mesh.vertices)
@@ -968,7 +927,7 @@ void GLTFImporter::ConvertAnimationAxisSystem(ModelResource::Animation &animatio
     }
 }
 
-// タンジェント計算
+// 頂点の位置と UV から接線を求める（接線が入っていない glTF 用）
 void GLTFImporter::ComputeTangents(std::vector<ModelResource::Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
     size_t                               vertexCount = vertices.size();
@@ -1014,10 +973,10 @@ void GLTFImporter::ComputeTangents(std::vector<ModelResource::Vertex> &vertices,
         DirectX::XMVECTOR N  = DirectX::XMLoadFloat3(&v.normal);
         DirectX::XMVECTOR T1 = DirectX::XMLoadFloat3(&tan1[i]);
 
-        // Gram-Schmidt orthogonalize
+        // グラム・シュミットで法線に直交させる
         DirectX::XMVECTOR T = DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(T1, DirectX::XMVectorScale(N, DirectX::XMVectorGetX(DirectX::XMVector3Dot(N, T1)))));
 
-        // Calculate handedness
+        // 従接線の向き（w = ±1）
         DirectX::XMVECTOR T2         = DirectX::XMLoadFloat3(&tan2[i]);
         float             handedness = (DirectX::XMVectorGetX(DirectX::XMVector3Dot(DirectX::XMVector3Cross(N, T1), T2)) < 0.0f) ? -1.0f : 1.0f;
         DirectX::XMStoreFloat4(&v.tangent, DirectX::XMVectorSetW(T, handedness));

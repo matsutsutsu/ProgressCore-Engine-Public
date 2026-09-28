@@ -103,6 +103,9 @@ public:
     // シンクを登録する（起動時に登録する）
     void AddSink(std::shared_ptr<ILogSink> sink);
 
+    // sink の登録を解除する
+    void RemoveSink(const std::shared_ptr<ILogSink> &sink);
+
     // 全シンクを登録解除する
     void ClearSinks();
 

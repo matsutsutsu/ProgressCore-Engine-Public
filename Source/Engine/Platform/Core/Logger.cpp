@@ -36,6 +36,12 @@ void Logger::AddSink(std::shared_ptr<ILogSink> sink)
     m_sinks.push_back(std::move(sink));
 }
 
+void Logger::RemoveSink(const std::shared_ptr<ILogSink> &sink)
+{
+    std::lock_guard lock(m_mutex);
+    m_sinks.erase(std::remove(m_sinks.begin(), m_sinks.end(), sink), m_sinks.end());
+}
+
 void Logger::ClearSinks()
 {
     std::lock_guard lock(m_mutex);

@@ -1,19 +1,18 @@
 #pragma once
+// ===========================================================================
+// 概要: テクスチャ・RTV・SRV を1組にしたレンダーターゲット。
+//
+// 責務:
+//   - 指定サイズ・フォーマットでテクスチャと RTV・SRV を作り、持つ
+//   - クリアと、出力先への設定（ビューポート込み）を行う
+//
+// 備考: オフスクリーン描画やポストエフェクトの中間バッファに使う。
+//       Create() で作り、Release() かデストラクタで解放する。Create() し直せば作り直せる。
+//       多くのファイルが include するので、実装は .cpp に置く（インラインにするとビルドが遅くなる）。
+// ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
 
-/**
- * @brief レンダーターゲット（テクスチャ + RTV + SRV）の所有者。
- * @details
- *  オフスクリーン描画やポストエフェクトの中継バッファに使用。
- *  実装は .cpp 側に置く。広く include される共有ヘッダなので、インライン実装を
- *  戻すとビルド時間に直接効く。
- *
- *  ライフサイクル：
- *  - Create() でリソース生成
- *  - Release() または デストラクタで解放
- *  - 再 Create() で安全に作り直し可能
- */
 class RenderTarget
 {
 public:
@@ -24,29 +23,23 @@ public:
     RenderTarget &operator=(const RenderTarget &) = delete;
 
     /**
-     * @brief GPU リソースを生成する。既存があれば破棄して作り直す。
-     * @return 成功時 true。失敗時はログ出力後 false（既存リソースは解放済）。
+     * @brief GPU リソースを作る。既にあれば解放してから作り直す。
+     * @return 成功なら true。失敗したらログを出して false（前のリソースは解放済み）。
      */
     bool Create(ID3D11Device *device, UINT width, UINT height, DXGI_FORMAT format);
 
-    /**
-     * @brief 保持リソースを明示的に解放する。
-     */
+    // 持っているリソースを解放する
     void Release();
 
-    /**
-     * @brief 有効なリソースを保持しているか。
-     */
+    // リソースを持っているか
     bool IsValid() const noexcept { return m_rtv != nullptr; }
 
-    /**
-     * @brief このレンダーターゲットを指定色でクリアする。
-     */
+    // 指定色でクリアする
     void Clear(ID3D11DeviceContext *dc, const float color[4]);
 
     /**
-     * @brief 出力先として設定する（ビューポートも自動セット）。
-     * @param dsv 深度ステンシルビュー。不要なら nullptr。
+     * @brief 出力先に設定する（ビューポートも合わせて設定する）。
+     * @param dsv 深度ステンシルビュー。使わないなら nullptr
      */
     void Activate(ID3D11DeviceContext *dc, ID3D11DepthStencilView *dsv = nullptr);
 

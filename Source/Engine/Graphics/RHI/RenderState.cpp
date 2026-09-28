@@ -4,12 +4,11 @@
 namespace
 {
     // 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
-    //   8 と 16 の見た目の差は小さく、8 でも斜め面のボケはほぼ解消する。
-    //   数値はサンプリング回数の上限なので、上げるほど帯域を食う。
+    //   8 と 16 の見た目の差は小さく、8 でも斜めの面のぼけはほぼ消える。
+    //   値はサンプリング回数の上限なので、上げるほどメモリ帯域を使う。
     constexpr UINT kMaxAnisotropy = 8;
 } // namespace
 
-// コンストラクタ
 RenderState::RenderState(ID3D11Device *device)
 {
     // ポイントサンプリング＆テクスチャ繰り返しあり
@@ -144,7 +143,7 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 深度テストあり（LESS_EQUAL）＆深度書き込みなし
-    //   Skybox の「Z=1.0 の奥底へ描く」用途もこれで賄える（1.0 <= 1.0 が通る）。
+    //   スカイボックスを Z=1.0 の一番奥へ描くのもこれで足りる（1.0 <= 1.0 が通る）。
     {
         D3D11_DEPTH_STENCIL_DESC desc{};
         desc.DepthEnable    = true;
@@ -261,9 +260,9 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // UI用の通常合成（色はストレートα合成。ただしRTのアルファは書き換えない）
-    //   Transparency との違いは RenderTargetWriteMask から ALPHA を外した点だけ。
-    //   これで不透明シーンが埋めた α=1 が保たれ、テキストの透明部分にαの穴が開かない
-    //   → エディタ GameView(ImGui::Image) で「黒い枠」が出なくなる。
+    //   Transparency との違いは、RenderTargetWriteMask から ALPHA を外したことだけ。
+    //   不透明なシーンが書いた α=1 が残り、文字の透明部分に α の穴が開かないので、
+    //   エディタの GameView（ImGui::Image）で黒い枠が出ない。
     {
         D3D11_BLEND_DESC desc{};
         desc.AlphaToCoverageEnable          = false;
@@ -352,23 +351,22 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // ⑤ 影生成用：ソリッド、裏面カリング、デプスバイアス有効
+    // シャドウマップ用: 塗りつぶし・裏面カリング・深度バイアスあり
     {
         D3D11_RASTERIZER_DESC desc{};
         desc.FillMode = D3D11_FILL_SOLID;
 
-        // バックカリング（裏面カリング）
         desc.CullMode              = D3D11_CULL_BACK;
         desc.FrontCounterClockwise = false;
 
-        // --- 最終チューニング値 ---
-        // 押し込みのベース値（少し下げる）
+        // 見た目で合わせた値。影のにじみ（シャドウアクネ）と影の浮きの兼ね合いで決める
+        // 深度に一律で足す量
         desc.DepthBias = 2000;
 
-        // スロープバイアス（少し下げる）
+        // 面の傾きに比例して足す量
         desc.SlopeScaledDepthBias = 1.5f;
 
-        // 垂直な壁でのバイアス暴走を止める上限値 (環境のスケールに合わせて微調整)
+        // バイアスの上限。光に対して垂直に近い壁で、傾き分が大きくなりすぎるのを抑える
         desc.DepthBiasClamp = 0.005f;
 
         desc.DepthClipEnable       = true;

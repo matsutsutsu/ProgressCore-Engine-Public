@@ -17,7 +17,7 @@
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/Resource/ResourceManager.h" // テクスチャSRVのパス単位キャッシュ
+#include "Engine/Graphics/Resource/ResourceManager.h" // テクスチャをパス単位でキャッシュして読むため
 #include <winsock.h>
 
 #include "ModelResource.h"
@@ -205,12 +205,10 @@ void ModelResource::Animation::serialize(Archive &archive, int version)
         CEREAL_NVP(nodeAnims));
 }
 
-// 読み込み
-// cerealがあればDeserializeで読み込み、
-// なければ汎用GLTFImporterで読み込み
+// .cereal のキャッシュがあればそれを読み、無ければ glTF を読んでキャッシュを書く
 void ModelResource::Load(ID3D11Device *device, const char *filename)
 {
-    // ディレクトリパス取得
+    // テクスチャを探す起点になるディレクトリ
     char drive[32], dir[256], dirname[256];
     ::_splitpath_s(filename, drive, sizeof(drive), dir, sizeof(dir), nullptr, 0, nullptr, 0);
     ::_makepath_s(dirname, sizeof(dirname), drive, dir, nullptr, nullptr);
@@ -219,42 +217,31 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
     std::filesystem::path dirpath(filepath.parent_path());
     std::filesystem::path extension = filepath.extension();
 
-    // モデル定義ファイル（.model.json）は本体モデルと追加アニメーションを
-    // 束ねた別形式なので、専用の経路に丸ごと委譲する。
-    // 既存の .glb / .gltf / .cereal の読み込みには一切触れない。
+    // モデル定義ファイル（.model.json）は本体モデルと追加アニメーションをまとめた別の形式なので、
+    // 専用の関数に任せる
     if (IsModelSetFile(filename))
     {
         LoadModelSet(device, filename);
         return;
     }
 
-    //// 独自形式のモデルファイルの存在確認
+    // キャッシュ（.cereal）があればそれを読む
     filepath.replace_extension(".cereal");
     if (std::filesystem::exists(filepath))
     {
-        // 独自形式のモデルファイルの読み込み
         Deserialize(filepath.string().c_str());
     }
     else if (extension == ".gltf" || extension == ".glb")
     {
-        // 汎用モデルファイルの読み込み
-        // GLTFImporterを使用してモデルデータをリソース用に読み込む
-        // これはデータをCPUメモリ上に読み込むだけで、GPUリソースは作成しない
+        // glTF を読む。ここでは CPU のメモリに読むだけで、GPU のリソースは BuildModel で作る
         GLTFImporter importer(filename);
 
-        // マテリアルデータ読み取り
         importer.LoadMaterials(materials, nullptr);
-
-        // ノードデータ読み取り
         importer.LoadNodes(nodes);
-
-        // メッシュデータ読み取り
         importer.LoadMeshes(meshes, nodes);
+        importer.LoadAnimations(animations, nodes, 30.0f); // 30fps でサンプリング
 
-        // アニメーションデータ読み取り
-        importer.LoadAnimations(animations, nodes, 30.0f); // 第3引数はサンプリングレート(fps)
-
-        //独自形式のモデルファイルを保存
+        // 次回からはキャッシュを読む
         Serialize(filepath.string().c_str());
     }
     else
@@ -262,10 +249,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
         _ASSERT_EXPR_A(false, "found not model file");
     }
 
-    // モデル構築
     BuildModel(device, dirname);
-
-    // モデル全体のAABBを計算
     ComputeModelLocalAABB();
 }
 
@@ -284,15 +268,15 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 //     文字列 … 指定したフォルダを走査する
 //     配列   … 書いたファイルだけを、書いた順に読む
 //   走査にしておけば、アニメーションを増やすたびにこのJSONを編集しなくてよい。
-//   アニメーションをモデルへ焼き込まず別ファイルのまま扱えるようにするための形式で、
-//   従来どおり .glb を直接指定する使い方もそのまま残っている。
+//   アニメーションをモデルに焼き込まず、別ファイルのまま扱うための形式。
+//   .glb を直接指定する使い方もできる。
 // ============================================================================
 bool ModelResource::IsModelSetFile(const char *filename)
 {
     if (filename == nullptr) return false;
 
     std::string path(filename);
-    std::transform(path.begin(), path.end(), path.begin(), tolower); // 小文字化
+    std::transform(path.begin(), path.end(), path.begin(), tolower);
 
     const std::string suffix = ".model.json";
     if (path.size() < suffix.size()) return false;
@@ -300,7 +284,6 @@ bool ModelResource::IsModelSetFile(const char *filename)
     return path.compare(path.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-// モデル定義ファイルの読み込み
 void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
 {
     const std::filesystem::path jsonPath(filename);
@@ -389,11 +372,10 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         return;
     }
 
-    // ---- キャッシュの鮮度判定 ----
-    // .glb を直接指定する経路は「.cereal があれば無条件に採用」だが、
-    // この形式はアニメーションを何度も差し替えながら使うことを想定している。
-    // 元ファイルの方が新しければ作り直しておかないと、書き出したのに
-    // 反映されない、という原因の分かりにくい足止めが起きる。
+    // ---- キャッシュが古くないか ----
+    // .glb を直接指定したときは「.cereal があればそのまま使う」が、この形式はアニメーションを
+    // 何度も差し替えながら使う前提なので、元のファイルの方が新しければ作り直す。
+    // 作り直さないと、書き出したのに反映されないという、原因の分かりにくい状態になる。
     std::filesystem::path cachePath = jsonPath;
     cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
 
@@ -451,26 +433,22 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         Serialize(cachePath.string().c_str());
     }
 
-    // 位置リターゲットの設定は cereal に保存していないため、
-    // キャッシュから復元した場合も含めて毎回ここで反映する。
+    // 位置リターゲットの設定は cereal に保存していないので、キャッシュから読んだときも含めて毎回ここで入れる
     SetTranslationRetargeting(useTranslationRetargeting);
 
-    // テクスチャの探索起点は「定義ファイル」ではなく「本体モデル」の置き場所にする。
-    // glb の埋め込みテクスチャは GLTFImporter が glb と同じ階層の Textures/ へ
-    // 展開するため、ここを合わせておけば定義ファイルを別フォルダに置いても壊れない。
+    // テクスチャを探す起点は、定義ファイルではなく本体モデルの場所にする。
+    // glb に埋め込まれたテクスチャは GLTFImporter が glb と同じ階層の Textures/ に書き出すので、
+    // こうしておけば定義ファイルを別のフォルダに置いても壊れない。
     char modelDrive[32], modelDir[256], modelDirName[256];
     const std::string modelPathString = modelPath.string();
     ::_splitpath_s(modelPathString.c_str(), modelDrive, sizeof(modelDrive), modelDir, sizeof(modelDir), nullptr, 0, nullptr, 0);
     ::_makepath_s(modelDirName, sizeof(modelDirName), modelDrive, modelDir, nullptr, nullptr);
 
-    // モデル構築
     BuildModel(device, modelDirName);
-
-    // モデル全体のAABBを計算
     ComputeModelLocalAABB();
 }
 
-// アニメーション追加読み込み
+// 別ファイルのアニメーションを読み、animations の末尾に足す
 void ModelResource::AppendAnimations(const char *filename)
 {
     const std::filesystem::path filepath(filename);
@@ -539,7 +517,6 @@ void ModelResource::AppendAnimations(const char *filename)
                      namedNodeCount - matchedNodeCount, namedNodeCount, filename, firstUnmatchedName.c_str());
     }
 
-    // アニメーションデータ読み取り
     importer.LoadAnimations(animations, nodes);
 }
 
@@ -565,29 +542,28 @@ void ModelResource::ComputeMeshBounds(Mesh &mesh)
     mesh.boundsMax = maxV;
 }
 
-// モデル構築
-// 実際にGPUリソースを作成する場所
+// テクスチャ・頂点バッファ・インデックスバッファなど、GPU のリソースを作る
 void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
 {
     for (Material &material : materials)
     {
-        // 共通テクスチャローダ
+        // テクスチャを読む。無ければ白の 1x1 を代わりに使う
         auto loadTexture = [&](const std::string                                &textureFileName,
                                Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> &outSRV) {
             if (textureFileName.empty())
             {
-                // ダミーテクスチャを作成
+                // 指定が無ければ白で代用する
                 HRESULT hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, outSRV.GetAddressOf());
                 _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
                 return;
             }
 
-            // パス解決
+            // モデルのディレクトリからのパスにする
             char fullpath[256];
             ::_makepath_s(fullpath, 256, nullptr, dirname, textureFileName.c_str(), nullptr);
 
-            // 同名の .dds があればそれを優先（PNG参照のまま、圧縮済みDDSへ透過的に差し替え）。
-            // texconv で生成した BCn/DDS を隣に置くだけでVRAM削減＆sRGB正常化が効く。
+            // 同じ名前の .dds があれば、そちらを使う（モデルは PNG を指したままでよい）。
+            // texconv で作った BCn 圧縮の DDS を隣に置くだけで、VRAM が減り sRGB も正しく扱われる。
             {
                 char drive[8], dir[256], fname[256], ext[64];
                 ::_splitpath_s(fullpath, drive, dir, fname, ext);
@@ -597,27 +573,26 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
                     ::strcpy_s(fullpath, ddspath);
             }
 
-            // 実際にテクスチャをロード。
-            // GpuResourceUtils を直に叩くとモデルごとに毎回デコードが走るため、
-            // パス単位でSRVをキャッシュする ResourceManager を経由する。
-            // 同じテクスチャを複数モデルが参照していても実デコードは1回で済む。
-            // （BuildModel は ResourceManager::LoadModelResource の「ロック外」区間から
-            //   呼ばれる契約なので、ここで LoadTexture を呼んでも自己デッドロックしない）
+            // GpuResourceUtils を直接呼ぶとモデルごとに毎回デコードが走るので、
+            // パス単位でキャッシュする ResourceManager を通す。同じテクスチャを複数のモデルが
+            // 使っていてもデコードは1回で済む。
+            // （BuildModel は ResourceManager::LoadModelResource のロックの外から呼ばれるので、
+            //   ここで LoadTexture を呼んでもデッドロックしない）
             ResourceManager &resourceManager = ResourceManager::Instance();
             TextureHandle    handle          = resourceManager.LoadTexture(fullpath);
             if (ID3D11ShaderResourceView *srv = resourceManager.GetTexture(handle))
             {
-                outSRV = srv; // ComPtr の代入で AddRef されるので寿命は独立
+                outSRV = srv; // ComPtr の代入で AddRef されるので、ResourceManager と別に寿命を持つ
             }
             else
             {
-                // ロード失敗時は白テクスチャを代用
+                // 読めなかったら白で代用する
                 HRESULT hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, outSRV.GetAddressOf());
                 _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
             }
         };
 
-        // 各マップをロード
+        // 各マップを読む
         loadTexture(material.baseTextureFileName, material.baseMap);
         loadTexture(material.normalTextureFileName, material.normalMap);
         loadTexture(material.emissiveTextureFileName, material.emissiveMap);
@@ -627,7 +602,7 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
 
     for (Mesh &mesh : meshes)
     {
-        // サブセット
+        // サブセットからマテリアルを指す
         for (Subset &subset : mesh.subsets)
         {
             subset.material = &materials.at(subset.materialIndex);
@@ -639,7 +614,6 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
             D3D11_SUBRESOURCE_DATA subresourceData = {};
 
             bufferDesc.ByteWidth = static_cast<UINT>(sizeof(Vertex) * mesh.vertices.size());
-            //bufferDesc.Usage = D3D11_USAGE_DEFAULT;
             bufferDesc.Usage                 = D3D11_USAGE_IMMUTABLE;
             bufferDesc.BindFlags             = D3D11_BIND_VERTEX_BUFFER;
             bufferDesc.CPUAccessFlags        = 0;
@@ -649,20 +623,11 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
             subresourceData.SysMemPitch      = 0;
             subresourceData.SysMemSlicePitch = 0;
 
-            /*HRESULT hr = device->CreateBuffer(&bufferDesc, &subresourceData, mesh.vertexBuffer.GetAddressOf());
-			_ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));*/
-
-            HRESULT hr = device->CreateBuffer(&bufferDesc, &subresourceData, mesh.vertexBuffer.GetAddressOf());
+HRESULT hr = device->CreateBuffer(&bufferDesc, &subresourceData, mesh.vertexBuffer.GetAddressOf());
             if (FAILED(hr))
             {
                 printf(" VertexBuffer creation failed: hr=0x%08X, vertexCount=%zu\n", hr, mesh.vertices.size());
-                mesh.vertexBuffer.Reset(); // 安全にnullへ
-            }
-            else
-            {
-                auto d = mesh.vertices.size();
-                auto e = bufferDesc.ByteWidth;
-                int  a = 1;
+                mesh.vertexBuffer.Reset();
             }
         }
 
@@ -672,25 +637,22 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
             D3D11_SUBRESOURCE_DATA subresourceData = {};
 
             bufferDesc.ByteWidth = static_cast<UINT>(sizeof(u_int) * mesh.indices.size());
-            //bufferDesc.Usage = D3D11_USAGE_DEFAULT;
             bufferDesc.Usage                 = D3D11_USAGE_IMMUTABLE;
             bufferDesc.BindFlags             = D3D11_BIND_INDEX_BUFFER;
             bufferDesc.CPUAccessFlags        = 0;
             bufferDesc.MiscFlags             = 0;
             bufferDesc.StructureByteStride   = 0;
             subresourceData.pSysMem          = mesh.indices.data();
-            subresourceData.SysMemPitch      = 0; //Not use for index buffers.
-            subresourceData.SysMemSlicePitch = 0; //Not use for index buffers.
+            subresourceData.SysMemPitch      = 0; // インデックスバッファでは使わない
+            subresourceData.SysMemSlicePitch = 0;
             HRESULT hr                       = device->CreateBuffer(&bufferDesc, &subresourceData, mesh.indexBuffer.GetAddressOf());
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
         }
 
-        // バウンディング計算
         ComputeMeshBounds(mesh);
     }
 }
 
-// モデル全体のAABBを計算
 void ModelResource::ComputeModelLocalAABB()
 {
     using namespace DirectX;
@@ -732,7 +694,7 @@ void ModelResource::ComputeModelLocalAABB()
     }
 }
 
-// シリアライズ
+// .cereal（バイナリ）に書き出す
 void ModelResource::Serialize(const char *filename)
 {
     std::ofstream ostream(filename, std::ios::binary);
@@ -758,7 +720,7 @@ void ModelResource::Serialize(const char *filename)
     }
 }
 
-// デシリアライズ
+// .cereal から読む
 void ModelResource::Deserialize(const char *filename)
 {
     std::ifstream istream(filename, std::ios::binary);

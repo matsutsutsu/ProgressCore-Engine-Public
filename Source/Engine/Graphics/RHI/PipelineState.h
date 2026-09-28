@@ -1,8 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: ブレンド・深度・ラスタライザ・トポロジーの組み合わせ（パイプラインステート）。
+//
+// 責務:
+//   - PipelineStateDesc: 4つの設定の組と、よく使う組み合わせの既定値を持つ
+//   - PipelineState: 設定の組をデバイスコンテキストへまとめて設定する
+//
+// 備考: ステートオブジェクトの実体は RenderState が持つ。ここは列挙値を持つだけ。
+// ===========================================================================
 #include "Engine/Graphics/RHI/RenderState.h"
 #include <d3d11.h>
 
-// 1. PSOの「設計図」
 struct PipelineStateDesc
 {
     BlendState               blend      = BlendState::Opaque;
@@ -10,11 +18,11 @@ struct PipelineStateDesc
     RasterizerState          rasterizer = RasterizerState::SolidCullBack;
     D3D11_PRIMITIVE_TOPOLOGY topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-    // =========================================================
-    //  テンプレート工場：ここからベースをもらえば1行で済む！
-    // =========================================================
+    // ============================================================
+    // よく使う組み合わせ。ここから取って必要な項目だけ変える
+    // ============================================================
 
-    // ① 不透明オブジェクト用のベース（基本中の基本）
+    // 不透明
     static PipelineStateDesc DefaultOpaque()
     {
         PipelineStateDesc desc;
@@ -25,40 +33,38 @@ struct PipelineStateDesc
         return desc;
     }
 
-    // ② 半透明・UI用のベース（深度書き込みなし）
+    // 半透明・UI（深度は書かない）
     static PipelineStateDesc DefaultTransparent()
     {
         PipelineStateDesc desc;
         desc.blend      = BlendState::Transparency;
-        desc.depth      = DepthState::TestOnly;           // 奥が消えないようにテストのみ
-        desc.rasterizer = RasterizerState::SolidCullNone; // 裏面も描画する
+        desc.depth      = DepthState::TestOnly;           // 奥のものを消さないよう、テストだけする
+        desc.rasterizer = RasterizerState::SolidCullNone; // 裏面も描く
         desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         return desc;
     }
 
-    // 影生成専用のベース金型
+    // シャドウマップ
     static PipelineStateDesc DefaultShadow()
     {
         PipelineStateDesc desc;
         desc.blend = BlendState::Opaque;
         desc.depth = DepthState::TestAndWrite;
-        // 影専用のラスタライザステートを指定（スロープスケールドバイアス適用）
+        // 影専用のラスタライザ（深度バイアスとスロープスケールドバイアスを掛ける）
         desc.rasterizer = RasterizerState::ShadowCullBack;
         desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         return desc;
     }
 };
 
-// 2. 完成した「金型（PSO）」本体
 class PipelineState
 {
 public:
     PipelineState() = default;
 
-    // 設計図を受け取って金型を固める
     PipelineState(const PipelineStateDesc &desc) : m_desc(desc) {}
 
-    // 描画の直前に、GPUに対して「この金型通りにしろ！」と強制上書きする
+    // 描画の直前に呼び、4つの設定をまとめてデバイスコンテキストへ設定する
     void Apply(ID3D11DeviceContext *dc, const RenderState *rs) const
     {
         dc->IASetPrimitiveTopology(m_desc.topology);
@@ -67,7 +73,7 @@ public:
         dc->RSSetState(rs->GetRasterizerState(m_desc.rasterizer));
     }
 
-    // Opaque 以外のブレンド（Transparency / Additive 等）が有効か。
+    // Opaque 以外のブレンド（Transparency / Additive など）か
     bool IsBlendEnabled() const { return m_desc.blend != BlendState::Opaque; }
 
 private:
