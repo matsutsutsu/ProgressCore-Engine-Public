@@ -1,4 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: シェーダーをハッシュで登録し、初めて使うときに作ってキャッシュする入れ物。
+//
+// 責務:
+//   - シェーダーの作り方（ファクトリ）をハッシュごとに登録する
+//   - GetShader で作る・キャッシュを返す。未登録なら ErrorShader を返す
+//   - RenderQueue の並べ替えで使う 8bit の番号を、登録した順に振る
+//   - エディタのシェーダー選択に出す名前を、登録した順に持つ
+//
+// 備考: 登録は ShaderManifest が shaders.json から行う。
+//       ErrorShader だけは、shaders.json が壊れていても使えるよう Graphics::Initialize が C++ から登録する。
+// ===========================================================================
 #include <unordered_map>
 #include <functional>
 #include <memory>
@@ -20,7 +32,7 @@ public:
         return instance;
     }
 
-    // シングルトンの寿命が尽きる前に、明示的にリソースを手放す
+    // 全部を捨てる（静的変数の破棄より前に、デバイスと一緒に GPU リソースを手放すため）
     void ClearAll()
     {
         m_shaders.clear();
@@ -29,26 +41,23 @@ public:
         m_warnedMissing.clear();
     }
 
-    // エンジン起動時等にシェーダーを登録する関数
+    // T(device) で作るシェーダーを登録する
     template <typename T>
     void RegisterShader(uint32_t shaderHash)
     {
         m_factories[shaderHash] = [](ID3D11Device *device) {
             return std::make_unique<T>(device);
         };
-        // 新しいシェーダーが登録されるたびに、0から順にソート用の連番IDを割り当てる
         m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
-    // =======================================================
-    // 汎用マテリアルシェーダー用の登録関数
-    // =======================================================
+    // MaterialShader を登録する。psoDesc は写して持つ（nullptr なら PSO を持たない）
     void RegisterMaterialShader(uint32_t           shaderHash,
                                 const std::string &vsCso, const std::wstring &vsHlsl,
                                 const std::string &psCso, const std::wstring &psHlsl,
                                 const PipelineStateDesc *psoDesc = nullptr)
     {
-        // PSO 設計図は factory ラムダの寿命まで生存させる必要があるため optional にコピー保持
+        // ファクトリは後で呼ばれるので、psoDesc の指す先ではなく値をラムダに持たせる
         std::optional<PipelineStateDesc> psoCopy;
         if (psoDesc) psoCopy = *psoDesc;
         m_factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl, psoCopy](ID3D11Device *device) {
@@ -58,7 +67,7 @@ public:
         m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
-    // 全シェーダーの監視を一斉実行する関数
+    // 作ったシェーダーの CheckAndReload を呼ぶ（Graphics が毎フレーム呼ぶ）
     void UpdateHotReload(ID3D11Device *device)
     {
         for (auto &pair : m_shaders)
@@ -67,14 +76,12 @@ public:
         }
     }
 
-    // 必要な時に生成、あるいはキャッシュを返す。未登録なら ErrorShader を返す。
+    // 作ってあればそれを、無ければファクトリで作って返す。未登録なら ErrorShader を返す
     Shader *GetShader(uint32_t shaderHash, ID3D11Device *device)
     {
-        // 1. すでにインスタンスがあればそれを返す
         auto it = m_shaders.find(shaderHash);
         if (it != m_shaders.end()) return it->second.get();
 
-        // 2. ファクトリから生成
         auto factoryIt = m_factories.find(shaderHash);
         if (factoryIt != m_factories.end())
         {
@@ -82,11 +89,11 @@ public:
             return m_shaders[shaderHash].get();
         }
 
-        // 3. フォールバック：未登録ハッシュはマゼンタの ErrorShader で代替する
-        //    Error 自身が未登録の場合のみ nullptr
+        // 未登録なら、画面で気付けるようマゼンタの ErrorShader を返す。
+        // ErrorShader も未登録なら nullptr
         if (shaderHash != "Error"_hash)
         {
-            // 毎フレーム呼ばれ得るので、同一ハッシュは一度だけ警告（スパム防止）
+            // 毎フレーム呼ばれるので、同じハッシュの警告は1回だけ出す
             if (m_warnedMissing.insert(shaderHash).second)
             {
                 CCL_LOG_WARN(LogCategory::Core,
@@ -101,7 +108,7 @@ public:
         return nullptr;
     }
 
-    // ハッシュ値から、8bitに収まる小さな連番IDを取得する
+    // 登録した順の番号（0〜255）。未登録なら 0（最初に登録する ErrorShader と同じ番号。未登録は ErrorShader で描くので合っている）
     uint8_t GetSortID(uint32_t shaderHash) const
     {
         auto it = m_shaderSortIDs.find(shaderHash);
@@ -109,28 +116,21 @@ public:
     }
 
     // ============================================================
-    //  表示名レジストリ（エディタのシェーダー選択コンボ用）
-    // ------------------------------------------------------------
-    //  ShaderManifest が shaders.json から読んだ "name" をここに登録する。
-    //  material/custom を問わず、JSON に書かれた登録順を保持する。
-    //  これにより、新しいシェーダーを shaders.json に足すだけで
-    //  エディタのドロップダウンにも自動で反映される
-    //  エディタ側は一覧を持たず、この登録順をそのまま使う。
+    // 表示名（エディタのシェーダー選択用）
     // ============================================================
+    //   ShaderManifest が shaders.json の "name" を、書かれた順に登録する。
+    //   エディタは自分で一覧を持たずにこれを使うので、shaders.json に足すだけで選択肢にも出る
+
     void RegisterName(uint32_t shaderHash, const std::string &name)
     {
         if (m_hashToName.find(shaderHash) == m_hashToName.end())
         {
             m_orderedNames.push_back({name, shaderHash});
         }
-        m_hashToName[shaderHash] = name; // 再登録（ホットリロード等）時は上書きのみ
+        m_hashToName[shaderHash] = name; // 2回目からは名前を書き換えるだけで、順番は変えない
     }
 
-    /**
-     * @brief 登録順の (表示名, ハッシュ) 一覧。
-     * @details エディタの ImGui::Combo 等はこれを毎回変換して使う想定
-     *          （名前→ハッシュの再計算をしなくて済むよう、ハッシュも一緒に返す）。
-     */
+    // 登録した順の (表示名, ハッシュ)。選んだ名前からハッシュを計算し直さなくて済むよう、ハッシュも持つ
     const std::vector<std::pair<std::string, uint32_t>> &GetRegisteredNames() const
     {
         return m_orderedNames;
@@ -140,12 +140,11 @@ private:
     std::unordered_map<uint32_t, std::function<std::unique_ptr<Shader>(ID3D11Device *)>> m_factories;
     std::unordered_map<uint32_t, std::unique_ptr<Shader>>                                m_shaders;
 
-    // ソートID管理用
-    uint8_t                               m_nextSortID = 0;
+    uint8_t                               m_nextSortID = 0; // 次に振る番号
     std::unordered_map<uint32_t, uint8_t> m_shaderSortIDs;
 
-    std::unordered_set<uint32_t> m_warnedMissing; // 警告済みハッシュ（once-warn）
+    std::unordered_set<uint32_t> m_warnedMissing; // 未登録の警告を出したハッシュ
 
-    std::unordered_map<uint32_t, std::string>     m_hashToName;   // 重複登録の検出用
-    std::vector<std::pair<std::string, uint32_t>> m_orderedNames; // 表示順を保持
+    std::unordered_map<uint32_t, std::string>     m_hashToName;   // 2回目の登録かを見分ける
+    std::vector<std::pair<std::string, uint32_t>> m_orderedNames; // 登録した順
 };

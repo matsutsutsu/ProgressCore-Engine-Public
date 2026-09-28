@@ -159,6 +159,9 @@ private:
     std::vector<Mesh> meshes;
     std::vector<Node> nodes; // Mesh・Bone・Node::parent がこの要素を指す
 
+    // UpdateTransform でノードを計算する順番（nodes の番号。親が必ず子より先）
+    std::vector<int> m_nodeUpdateOrder;
+
     // FindRealRootMotionNodeIndex の結果のキャッシュ（添字はアニメーションの番号）。
     //   どのボーンがルートかはアニメーションのデータだけで決まり、後から変わらない。
     //   一方で毎フレーム呼ばれる（AnimationSystem・RootMotionSystem）ので、キャッシュが無いと

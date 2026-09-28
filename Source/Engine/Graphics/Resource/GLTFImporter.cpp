@@ -71,7 +71,7 @@ GLTFImporter::GLTFImporter(const char *filename)
     }
 }
 
-// ノードを glTF の並び順のまま読む（並べ替えはしない）
+// ノードを glTF の並び順のまま読む（並べ替えはしない。親が先になる計算の順番は Model が作る）
 void GLTFImporter::LoadNodes(NodeList &nodes)
 {
     // glTF にノードが無いときも、ファイル名のノードが1つ残るようにする

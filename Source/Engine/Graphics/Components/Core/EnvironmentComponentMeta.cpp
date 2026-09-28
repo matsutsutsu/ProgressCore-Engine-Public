@@ -7,9 +7,6 @@
 #include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
-#include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Platform/Core/Dialog.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -105,46 +102,6 @@ struct ComponentMeta<FogComponent>
             changed |= mi::DragFloat("高さ密度", &comp.heightDensity, 0.01f);
         }
 
-        if (ImGui::CollapsingHeader("ノイズとアニメーション", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::Text("ノイズテクスチャ:");
-            ImGui::SameLine();
-            if (ImGui::Button("読込...##FogNoise"))
-            {
-                if (auto path = FileDialog::OpenPreset("Texture", "テクスチャを選択", Graphics::Instance().GetWindowHandle()))
-                {
-
-                    std::string relativePath = FileDialog::ConvertToRelativePath(*path);
-
-                    strcpy_s(comp.noiseTexturePath, relativePath.c_str());
-                    comp.noiseTextureHandle = TextureHandle{};
-                    changed                 = true;
-                }
-            }
-
-            ID3D11ShaderResourceView *previewSRV = nullptr;
-            if (comp.noiseTextureHandle.IsValid())
-            {
-                previewSRV = ResourceManager::Instance().GetTexture(comp.noiseTextureHandle);
-            }
-
-            if (previewSRV)
-            {
-                ImGui::Image((void *)previewSRV, ImVec2(64, 64));
-                ImGui::SameLine();
-                if (ImGui::Button("クリア##FogNoise"))
-                {
-                    comp.noiseTextureHandle  = TextureHandle{};
-                    comp.noiseTexturePath[0] = '\0';
-                    changed                  = true;
-                }
-            }
-
-            changed |= mi::DragFloat("ノイズ強度", &comp.noiseStrength, 0.01f, 0.0f, 1.0f);
-            changed |= mi::DragFloat("スケール", &comp.noiseScale, 0.001f);
-            changed |= mi::DragFloat2("スクロール速度", &comp.noiseSpeed.x, 0.01f);
-        }
-
         if (ImGui::CollapsingHeader("スカイボックス地平線フォグ", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::TextDisabled("空(虚空)を基本色で霧化。強度は基本色のαと連動。");
@@ -174,9 +131,6 @@ struct ComponentMeta<FogComponent>
             CFIELD(end, "終了距離", "Dist")
             CFIELD(heightStart, "高さ開始", "Height")
             CFIELD_FLOAT_RANGED(heightDensity, "高さ密度", 0.01f, 0.0f, 1.0f, "Height")
-            CFIELD_FLOAT_RANGED(noiseStrength, "ノイズ強度", 0.01f, 0.0f, 1.0f, "Noise")
-            CFIELD(noiseScale, "ノイズスケール", "Noise")
-            CFIELD(noiseSpeed, "ノイズ速度", "Noise")
             CFIELD_FLOAT_RANGED(skyFogHeight, "地平線高さ", 0.01f, -1.0f, 1.0f, "SkyFog")
             CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")
             CFIELD(rimColor, "リム色", "Rim")

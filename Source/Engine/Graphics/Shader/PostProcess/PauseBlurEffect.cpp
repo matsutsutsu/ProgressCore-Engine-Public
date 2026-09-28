@@ -1,4 +1,3 @@
-// 役割・設計方針は PauseBlurEffect.h を参照。
 #include "PauseBlurEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -14,8 +13,7 @@ void PauseBlurEffect::Initialize(ID3D11Device *device, UINT /*width*/, UINT /*he
     GpuResourceUtils::CreateDynamicConstantBuffer(device,
                                                   sizeof(GpuData::CbPauseBlurData), m_res->cb.GetAddressOf());
 
-    // CLAMP なのが重要。WRAP だと画面端のサンプルが反対側の色を拾い、
-    // ぼかした瞬間に四辺へ異物の帯が出る。
+    // CLAMP にする。WRAP だと画面の端で反対側の色を拾い、ぼかすと四辺に違う色の帯が出る
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter             = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampDesc.AddressU           = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -32,9 +30,8 @@ void PauseBlurEffect::Process(ID3D11DeviceContext      *dc,
                               ID3D11ShaderResourceView *inputSRV,
                               ID3D11RenderTargetView   *outputRTV)
 {
-    // 半径0（＝ポーズしていない）ならコピーで素通しする。
-    //   チェーンは「入力SRV→出力RTV」を必ず埋める約束なので、何も描かずに帰ると
-    //   出力に前フレームの残骸が残る。他のエフェクトと同じ扱いに揃えている。
+    // 半径が 0（ポーズしていない）なら入力を写すだけにする。出力の全面を必ず書く決まりなので、
+    // 何も書かずに戻ると前のフレームの絵が残る（IPostEffect.h を参照）
     if (!m_res || m_cbData.pauseBlurRadius <= 0.0f)
     {
         ID3D11Resource *src = nullptr;

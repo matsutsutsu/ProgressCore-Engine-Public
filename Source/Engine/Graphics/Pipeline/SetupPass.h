@@ -1,12 +1,14 @@
 #pragma once
+// ===========================================================================
+// 概要: フレームの最初に HDR バッファをクリアし、描画先としてバインドするパス。
+//
+// 責務:
+//   - PostProcessManager::BeginScene を呼ぶ
+// ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
-/**
- * @brief フレーム冒頭で HDR バッファをクリアし、出力先としてバインドするパス。
- */
 class SetupPass : public IRenderPass
 {
 public:
-    void        Execute(const RenderFrameContext &ctx) override;
-    const char *GetName() const override { return "SetupPass"; }
+    void Execute(const RenderFrameContext &ctx) override;
 };

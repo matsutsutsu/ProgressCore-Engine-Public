@@ -1,19 +1,28 @@
 #pragma once
-
+// ===========================================================================
+// 概要: デバッグ用の塗り・ワイヤーフレームの図形（球・箱・円柱・カプセル・円錐）を描くクラス。
+//
+// 責務:
+//   - Draw* で図形をインスタンスとして積む（別スレッドから呼んでよい）
+//   - Render で、図形と塗り方の組ごとにインスタンシングでまとめて描き、積んだものを空にする
+//
+// 備考: 大きさ 1 の図形を用意しておき、大きさ・向き・位置は呼び出し側が行列に入れて渡す。
+//       スレッドごとの配列に積む仕組みは ShapeRenderer と同じ。
+//       IsVisible と m_frustum は用意してあるが、今の Draw* はカリングしていない。
+// ===========================================================================
 #include <vector>
 #include <wrl.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
-// カリング計算用ヘッダ
 #include <DirectXCollision.h>
-#include <mutex> // マルチスレッド用
+#include <mutex>
 #include <memory>
 #include <atomic>
-#include "Engine/Graphics/Renderer/InstanceBuffer.h" // インスタンスバッファ用
-#include "Engine/Graphics/RHI/PipelineState.h"       // PSO（金型）
-#include "Engine/Graphics/RHI/RenderContext.h"       // RenderContext
+#include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/RHI/PipelineState.h"
+#include "Engine/Graphics/RHI/RenderContext.h"
 
-// 頂点とインデックスのバッファをまとめる構造体
+// 頂点バッファとインデックスバッファの組
 struct GeometryBuffer
 {
     Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -21,7 +30,7 @@ struct GeometryBuffer
     UINT                                 indexCount = 0;
 };
 
-// スレッドが個別に持つ「専用の袋（バッファ）」
+// スレッド1つ分の、図形と塗り方ごとのインスタンスの配列
 struct PrimitiveDrawList
 {
     std::vector<InstanceData> opaqueSpheres;
@@ -42,26 +51,21 @@ public:
     PrimitiveRenderer(ID3D11Device *device);
     ~PrimitiveRenderer() {}
 
-public:
     /**
-	 * @brief 積まれた描画コマンドを一括インスタンシング描画する。
-	 * @param dc   デバイスコンテキスト。
-	 * @param s    永続サービス（renderState, sceneConstantBuffer を参照）。
-	 *             Graphics::Instance() を完全除去した。
-	 * @param view 視点行列。視錐台カリング更新にも使用する。
-	 * @param projection 投影行列。視錐台構築に使用する。
-	 */
+     * @brief 積んだ図形を描いて空にする。
+     * @param s renderState と sceneConstantBuffer を使う
+     * @param view 視錐台の更新にも使う
+     * @param projection 視錐台の更新にも使う
+     */
     void Render(ID3D11DeviceContext       *dc,
                 const RenderServices      &s,
                 const DirectX::XMFLOAT4X4 &view,
                 const DirectX::XMFLOAT4X4 &projection);
 
-    // カリングの有効/無効切り替え（デバッグで全部見たい時などに使う）
+    // false にすると IsVisible が常に true を返す
     void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
 
-    // ====================================================================
-    // 描画登録関数の引数を変更（サイズ・半径は ECS 側で行列に焼き込む）
-    // ====================================================================
+    // transform は大きさ 1 の図形に掛けるワールド行列（大きさ・向き・位置を入れる）
     void DrawSphere(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
     void DrawWireframeSphere(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
 
@@ -78,22 +82,21 @@ public:
     void DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
 
 private:
-    // カリング判定用ヘルパー
     bool IsVisible(const DirectX::BoundingSphere &sphere);
     bool IsVisible(const DirectX::BoundingOrientedBox &box);
 
-    // 視錐台データ
-    DirectX::BoundingFrustum m_frustum;
+    DirectX::BoundingFrustum m_frustum; // 前の Render で求めたワールド空間の視錐台
     bool                     m_cullingEnabled = true;
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;
 
-    // デバッグ描画が使う PSO はこの2つだけ。個別のステートは持たず、これを切り替える。
+    // 使う PSO はこの2つだけで、ステートを個別に持たずにこれを切り替える
     PipelineState m_psoOpaque;
     PipelineState m_psoWireframe;
 
+    // 大きさ 1 の図形
     GeometryBuffer sphereBuffer;
     GeometryBuffer halfSphereBuffer;
     GeometryBuffer boxBuffer;
@@ -101,29 +104,22 @@ private:
     GeometryBuffer coneBuffer;
     GeometryBuffer capsuleBuffer;
 
-    InstanceBuffer m_instanceBuffer; // GPUへの転送バッファ
+    InstanceBuffer m_instanceBuffer;
 
-    // =========================================================
-    // TLS (スレッドローカルストレージ) 管理機構
-    // =========================================================
-    uint64_t                     m_instanceId; // このレンダラー固有のID
+    // スレッドごとの配列の持ち主を見分ける番号（ShapeRenderer::m_instanceId と同じ）
+    uint64_t                     m_instanceId;
     static std::atomic<uint64_t> s_instanceCounter;
 
-    std::mutex m_listMutex; // 初回のポインタ登録用
+    std::mutex                                      m_listMutex; // m_drawLists への追加と Render を守る
+    std::vector<std::unique_ptr<PrimitiveDrawList>> m_drawLists; // 全スレッドの配列（PrimitiveRenderer が持つ）
 
-    // 全スレッドの「専用の袋」の場所(ポインタ)を記憶しておく名簿
-    // 生ポインタではなく、レンダラー自身がメモリの所有権を持つ（安全）
-    std::vector<std::unique_ptr<PrimitiveDrawList>> m_drawLists;
-
-    // 自分のスレッドの袋を取得する関数
+    // 呼んだスレッドの配列を返す。初めてのスレッドなら作って m_drawLists に登録する
     PrimitiveDrawList &GetDrawList();
 
-    // ====================================================================
-    // メッシュ生成関数
-    // ====================================================================
     void CreateBoxMesh(ID3D11Device *device, float radius, float height, float depth, GeometryBuffer &buffer);
     void CreateSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer);
     void CreateHalfSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer);
     void CreateCylinderMesh(ID3D11Device *device, float radius1, float radius2, float start, float height, int slices, int stacks, GeometryBuffer &buffer);
+    // capsuleBuffer に作る
     void CreateCapsuleMesh(ID3D11Device *device, float radius, float cylinderHeight, int slices, int rings);
 };

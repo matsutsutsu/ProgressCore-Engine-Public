@@ -1,3 +1,13 @@
+// ===========================================================================
+// 概要: ポストプロセスの各エフェクトで C++ と HLSL が共有する定数バッファ。
+//
+// 責務:
+//   - エフェクトごとの定数バッファの構造体を定義する
+//   - C++ 側で大きさを static_assert する（理由は ShaderShared.h を参照）
+//
+// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::CbBloomData など、HLSL では cbuffer になる。
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// ===========================================================================
 #ifndef POST_PROCESS_SHARED_H
 #define POST_PROCESS_SHARED_H
 
@@ -15,9 +25,7 @@ namespace GpuData
 #define PP_STRUCT(name, slot) cbuffer name : register(REG_CB(slot))
 #endif
 
-    // ============================================================================
-    // Bloom パラメータレイアウト（16バイトアライメント厳守：合計32バイト）
-    // ============================================================================
+    // Bloom（32 バイト）
     PP_STRUCT(CbBloomData, SLOT_CB_BLOOM)
     {
         float threshold;
@@ -30,20 +38,16 @@ namespace GpuData
         float pad[2];
     };
 
-    // ============================================================================
-    // ToneMap パラメータレイアウト（合計32バイト）
-    // ============================================================================
+    // ToneMap（32 バイト）
     PP_STRUCT(CbToneMapData, SLOT_CB_TONEMAP)
     {
         float  exposure;
         float  chromaticAberration;
         float  pad2[2];
-        float4 colorTint; // RGB=Tint, W=1.0
+        float4 colorTint; // rgb = 掛ける色, w = 1
     };
 
-    // ============================================================================
-    // Distortion パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // Distortion（16 バイト）
     PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION)
     {
         float time;
@@ -51,9 +55,7 @@ namespace GpuData
         float pad3[2];
     };
 
-    // ============================================================================
-    // RadialBlur パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // RadialBlur（16 バイト）
     PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR)
     {
         float2 blurCenter;
@@ -61,9 +63,7 @@ namespace GpuData
         float  blurFalloff;
     };
 
-    // ============================================================================
-    // Vignette パラメータレイアウト（合計48バイト）
-    // ============================================================================
+    // Vignette（48 バイト）
     PP_STRUCT(CbVignetteData, SLOT_CB_VIGNETTE)
     {
         float4 vigColor;
@@ -75,18 +75,14 @@ namespace GpuData
         float  vigPad[3];
     };
 
-    // ============================================================================
-    // ChromaticAberration パラメータレイアウト（合計16バイト）
-    // ============================================================================
-    // ============================================================================
-    // PauseBlur パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // PauseBlur（16 バイト）
     PP_STRUCT(CbPauseBlurData, SLOT_CB_PAUSEBLUR)
     {
-        float pauseBlurRadius; // サンプル円の半径(UV単位)。0 で素通し。
+        float pauseBlurRadius; // サンプルする円の半径（UV）。0 ならぼかさない
         float pauseBlurPad[3];
     };
 
+    // ChromaticAberration（16 バイト）
     PP_STRUCT(CbChromaticData, SLOT_CB_CHROMATIC)
     {
         float2 chromaCenter;
@@ -94,9 +90,7 @@ namespace GpuData
         float  chromaFalloff;
     };
 
-    // ============================================================================
-    // ColorGrading パラメータレイアウト（合計32バイト）
-    // ============================================================================
+    // ColorGrading（32 バイト）
     PP_STRUCT(CbColorGradingData, SLOT_CB_COLORGRADING)
     {
         float4 gradeTint;
@@ -106,9 +100,7 @@ namespace GpuData
         float  gradeMixAmount;
     };
 
-    // ============================================================================
-    // DepthOfField パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // DepthOfField（16 バイト）
     PP_STRUCT(CbDepthOfFieldData, SLOT_CB_DOF)
     {
         float dofFocusDistance;
@@ -117,9 +109,7 @@ namespace GpuData
         float dofMaxBlur;
     };
 
-    // ============================================================================
-    // SSAO パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // SSAO（16 バイト）
     PP_STRUCT(CbSSAOData, SLOT_CB_SSAO)
     {
         float ssaoRadius;
@@ -128,9 +118,7 @@ namespace GpuData
         float ssaoMaxDistance;
     };
 
-    // ============================================================================
-    // SSAOBlur パラメータレイアウト（合計16バイト）
-    // ============================================================================
+    // SSAOBlur（16 バイト）
     PP_STRUCT(CbSSAOBlurData, SLOT_CB_SSAO_BLUR)
     {
         float2 blurTexelStep;
@@ -138,9 +126,7 @@ namespace GpuData
         float  blurMaxDistance;
     };
 
-    // ============================================================================
-    // ContactShadow パラメータレイアウト（合計32バイト）
-    // ============================================================================
+    // ContactShadow（32 バイト）
     PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW)
     {
         float  csRayLength;
@@ -153,7 +139,6 @@ namespace GpuData
 
 #ifdef __cplusplus
 } // namespace GpuData
-// C++側のサイズ検証。ずれていたらコンパイルが止まる
 static_assert(sizeof(GpuData::CbBloomData) == 32, "CbBloomData size mismatch");
 static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");
@@ -165,6 +150,8 @@ static_assert(
     sizeof(GpuData::CbVignetteData) == 48, "CbVignetteData size mismatch");
 static_assert(
     sizeof(GpuData::CbChromaticData) == 16, "CbChromaticData size mismatch");
+static_assert(
+    sizeof(GpuData::CbPauseBlurData) == 16, "CbPauseBlurData size mismatch");
 static_assert(
     sizeof(GpuData::CbColorGradingData) == 32, "CbColorGradingData size mismatch");
 static_assert(

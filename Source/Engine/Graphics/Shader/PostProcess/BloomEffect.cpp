@@ -4,6 +4,21 @@
 #include "Engine/Core/Math/Misc.h"
 #include <algorithm>
 
+namespace
+{
+    // 途中で描けなくなったときに、入力をそのまま出力へ写す（出力を書かずに戻ると次のエフェクトが古い絵を読む）
+    void CopyInputToOutput(ID3D11DeviceContext      *dc,
+                           ID3D11ShaderResourceView *inputSRV,
+                           ID3D11RenderTargetView   *outputRTV)
+    {
+        Microsoft::WRL::ComPtr<ID3D11Resource> src;
+        Microsoft::WRL::ComPtr<ID3D11Resource> dst;
+        inputSRV->GetResource(&src);
+        outputRTV->GetResource(&dst);
+        if (src && dst) dc->CopyResource(dst.Get(), src.Get());
+    }
+} // namespace
+
 BloomEffect::~BloomEffect()
 {
     ReleaseChains();
@@ -11,7 +26,6 @@ BloomEffect::~BloomEffect()
 
 void BloomEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
 {
-    // ---- シェーダーリソース（旧 static g_bloomResources → メンバ m_res）----
     m_res = std::make_unique<BloomResources>();
 
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/FullscreenVS.cso",
@@ -22,7 +36,6 @@ void BloomEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
                                       m_res->psDown.GetAddressOf());
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomUpsamplePS.cso",
                                       m_res->psUp.GetAddressOf());
-    // 新規: scene + glow 合成シェーダー (BloomCompositePS.cso)
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/BloomCompositePS.cso",
                                       m_res->psComposite.GetAddressOf());
 
@@ -36,8 +49,6 @@ void BloomEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
     sampDesc.AddressW           = D3D11_TEXTURE_ADDRESS_CLAMP;
     device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 
-    // ---- Opaque BlendState（旧 Graphics::Instance() 依存を完全排除）----
-    // パーティクル等の加算設定が残っている場合の安全リセット用
     D3D11_BLEND_DESC blendDesc                      = {};
     blendDesc.RenderTarget[0].BlendEnable           = FALSE;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
@@ -96,28 +107,33 @@ void BloomEffect::Process(
     ID3D11ShaderResourceView *inputSRV,
     ID3D11RenderTargetView   *outputRTV)
 {
-    if (!m_res || m_downChain.empty() || !inputSRV) return;
+    if (!inputSRV) return;
+    if (!m_res || m_downChain.empty())
+    {
+        CopyInputToOutput(dc, inputSRV, outputRTV);
+        return;
+    }
 
-    // ---- 共通ステート ----
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     dc->VSSetShader(m_res->vs.Get(), nullptr, 0);
 
-    // パーティクル等の加算ブレンドが残っている場合のリセット
-    // 旧: Graphics::Instance().GetRenderState()->GetBlendState(BlendState::Opaque)
-    // 新: 自前の OpaqueBlendState（Initialize 時に生成済み）
+    // パーティクルなどの加算ブレンドが残っていても、上書きで描く
     dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
 
     ID3D11SamplerState *samplers[] = {m_res->sampler.Get()};
     dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
 
-    // =================================================================
-    // 1. 輝度抽出 (inputSRV → m_downChain[0])
-    // =================================================================
+    // 明るい所を抜き出す（inputSRV → m_downChain[0]）
     {
         RenderTarget *down0 = ResourceManager::Instance().GetRenderTarget(m_downChain[0]);
-        if (!down0) return;
+        if (!down0)
+        {
+            CopyInputToOutput(dc, inputSRV, outputRTV);
+            return;
+        }
 
+        // テクセルの大きさは入力（フル解像度 = down0 の2倍）のもの
         cbData.texelWidth  = 1.0f / (down0->GetWidth() * 2.0f);
         cbData.texelHeight = 1.0f / (down0->GetHeight() * 2.0f);
         UpdateCbBloom(dc, cbData);
@@ -132,9 +148,7 @@ void BloomEffect::Process(
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
     }
 
-    // =================================================================
-    // 2. ダウンサンプリング (m_downChain[i] → m_downChain[i+1])
-    // =================================================================
+    // 縮小（m_downChain[i] → m_downChain[i + 1]）
     dc->PSSetShader(m_res->psDown.Get(), nullptr, 0);
 
     for (size_t i = 0; i < m_downChain.size() - 1; ++i)
@@ -158,9 +172,8 @@ void BloomEffect::Process(
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
     }
 
-    // =================================================================
-    // 3. アップサンプリング (m_downChain[last] → ... → m_upChain[0])
-    // =================================================================
+    // 拡大（m_downChain の一番小さいもの → ... → m_upChain[0]）。
+    // 1つ大きい m_downChain と足しながら大きくしていく
     dc->PSSetShader(m_res->psUp.Get(), nullptr, 0);
 
     RenderTarget             *lastDown   = ResourceManager::Instance().GetRenderTarget(m_downChain.back());
@@ -172,6 +185,7 @@ void BloomEffect::Process(
         RenderTarget *highRes = ResourceManager::Instance().GetRenderTarget(m_downChain[i]);
         if (!dst || !highRes) continue;
 
+        // radius を掛けて、サンプルする間隔を広げる（にじみが大きくなる）
         cbData.texelWidth  = (1.0f / dst->GetWidth()) * cbData.radius;
         cbData.texelHeight = (1.0f / dst->GetHeight()) * cbData.radius;
         UpdateCbBloom(dc, cbData);
@@ -189,20 +203,20 @@ void BloomEffect::Process(
         currentSRV = dst->GetSRV();
     }
 
-    // m_upChain[0] = bloom グロー (half-res)
     RenderTarget *finalGlow = ResourceManager::Instance().GetRenderTarget(m_upChain[0]);
-    if (!finalGlow) return;
+    if (!finalGlow)
+    {
+        CopyInputToOutput(dc, inputSRV, outputRTV);
+        return;
+    }
 
-    // =================================================================
-    // 4. 合成 (scene + glow → Managerから指定された outputRTV へ直接書く！)
-    // =================================================================
+    // 合成（シーン + 光 → outputRTV）
     {
         UpdateCbBloom(dc, cbData);
         dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, m_res->cbBloom.GetAddressOf());
         dc->PSSetShader(m_res->psComposite.Get(), nullptr, 0);
 
-        // 合成描画の前に、出力先(outputRTV)に対応する解像度でViewportを再設定する
-        // 出力先の実サイズは inputSRV(sceneHDR) から取得する（縮小バッファのままだと合成がずれる）
+        // ビューポートが縮小バッファの大きさのままなので、出力と同じ大きさ（= 入力の大きさ）に戻す
         D3D11_TEXTURE2D_DESC                   desc;
         Microsoft::WRL::ComPtr<ID3D11Resource> res;
         inputSRV->GetResource(&res);
@@ -224,6 +238,6 @@ void BloomEffect::Process(
 
         ID3D11ShaderResourceView *nullSRVs[] = {nullptr, nullptr};
         dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
-        // ここでの OMSetRenderTargets の解除は Manager 側でやるので不要
+        // 描画先から外すのは PostProcessManager が行う
     }
 }

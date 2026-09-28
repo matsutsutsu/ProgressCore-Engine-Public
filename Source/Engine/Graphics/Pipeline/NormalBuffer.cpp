@@ -1,4 +1,3 @@
-// NormalBuffer の実装。
 #include "NormalBuffer.h"
 #include "Engine/Platform/Core/Logger.h"
 

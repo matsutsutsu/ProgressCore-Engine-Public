@@ -216,7 +216,7 @@ public:
     void ComputeMeshBounds(Mesh &mesh);
 
     // 全メッシュの AABB を合わせて、モデル全体の AABB を求める。
-    // ノードの変換は掛けず、各メッシュの頂点の座標のまま合わせる
+    // スキンメッシュ以外は、ノードの初期姿勢の行列を掛けた位置で合わせる
     void ComputeModelLocalAABB();
 
     // モデル全体のローカル AABB

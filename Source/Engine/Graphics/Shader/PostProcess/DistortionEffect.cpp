@@ -34,13 +34,12 @@ void DistortionEffect::Resize(ID3D11Device *device, UINT width, UINT height)
     {
         ResourceManager::Instance().UnloadRenderTarget(m_intermediateRT);
     }
-    // 中間描画用バッファ（HDRフォーマット）
     m_intermediateRT = ResourceManager::Instance().LoadRenderTarget("DistortionRT", device, width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
 }
 
 void DistortionEffect::Process(ID3D11DeviceContext *dc, ID3D11ShaderResourceView *inputSRV, ID3D11RenderTargetView *outputRTV)
 {
-    // 描画不要な場合は「CopyResource」でスルーさせる（帯域の大幅な節約）
+    // 効果をかけないときは、入力を出力へ写すだけにする（描くより軽い）
     if (!m_enabled || m_cbData.strength <= 0.0f)
     {
         ID3D11Resource *srcRes = nullptr;
@@ -53,7 +52,6 @@ void DistortionEffect::Process(ID3D11DeviceContext *dc, ID3D11ShaderResourceView
         return;
     }
 
-    // 定数バッファの更新
     D3D11_MAPPED_SUBRESOURCE mapped;
     if (SUCCEEDED(dc->Map(m_res->cbDistortion.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
     {
@@ -61,11 +59,11 @@ void DistortionEffect::Process(ID3D11DeviceContext *dc, ID3D11ShaderResourceView
         dc->Unmap(m_res->cbDistortion.Get(), 0);
     }
 
-    // 中間レンダーターゲットの取得
     RenderTarget *target = ResourceManager::Instance().GetRenderTarget(m_intermediateRT);
     if (!target) return;
 
-    // 1. 中間RTに歪ませた絵を描画
+    // 途中のバッファに歪ませた絵を描き、それを出力へ写す
+    // （RadialBlurEffect のように outputRTV へ直接描けば、この写しは要らない）
     target->Activate(dc);
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -78,13 +76,11 @@ void DistortionEffect::Process(ID3D11DeviceContext *dc, ID3D11ShaderResourceView
     dc->PSSetConstantBuffers(SLOT_CB_DISTORTION, 1, m_res->cbDistortion.GetAddressOf());
     dc->PSSetShaderResources(SLOT_SRV_PP_DISTORTION_MAP, 1, &inputSRV);
 
-    dc->Draw(3, 0); // Fullscreen Quad
+    dc->Draw(3, 0); // 画面全体を覆う三角形
 
-    // SRVの解除
     ID3D11ShaderResourceView *nullSRV = nullptr;
     dc->PSSetShaderResources(SLOT_SRV_PP_DISTORTION_MAP, 1, &nullSRV);
 
-    // 2. 中間バッファの結果を要求された出力先(outputRTV)へコピー
     ID3D11Resource *srcRT = nullptr;
     ID3D11Resource *dstRT = nullptr;
     target->GetSRV()->GetResource(&srcRT);

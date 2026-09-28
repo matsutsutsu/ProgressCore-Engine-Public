@@ -1,14 +1,22 @@
 #pragma once
+// ===========================================================================
+// 概要: shaders.json の materialShaders に書いた、モデル描画用のシェーダー。
+//
+// 責務:
+//   - 頂点・ピクセルシェーダーの .cso を読み、モデルの共通の入力レイアウトを作る
+//   - メッシュのマテリアル（または上書きのマテリアル）を送る
+//   - shaders.json の blend / cull / depth から作った PSO を持つ
+//   - 頂点・ピクセルシェーダーの HLSL が更新されたら、コンパイルし直す
+// ===========================================================================
 #include "Engine/Graphics/Shader/Core/Shader.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include <string>
 
-// すべてのモデル描画用シェーダーを統合する汎用クラス
 class MaterialShader : public IMaterialShader
 {
 public:
-    // CSOファイルのパスを受け取るコンストラクタ
-    // ホットリロード対応でhlslファイルのパスも受け取るように拡張
+    // cso は起動時に読むもの、hlsl はホットリロードで監視してコンパイルし直すもの。
+    // psoDesc が nullptr なら PSO を持たない（各パスの既定を使う）
     MaterialShader(ID3D11Device      *device,
                    const std::string &vsCsoPath, const std::wstring &vsHlslPath,
                    const std::string &psCsoPath, const std::wstring &psHlslPath,
@@ -16,18 +24,14 @@ public:
     ~MaterialShader() override = default;
 
     void Begin(ID3D11DeviceContext *dc, const RenderServices &s, const RenderFrameContext &ctx) override;
-    /**
-    * @brief overrideMaterial が非 null の場合はそちらを優先してプロパティを転送する。
-    *        mesh.material を一切書き換えない。
-    */
+    // 上書きのマテリアルがあればそれを送る。テクスチャが無いスロットはメッシュのマテリアルで補う
     void Update(ID3D11DeviceContext *dc, const Model::Mesh &mesh,
                 const MaterialData *overrideMaterial = nullptr) override;
     void End(ID3D11DeviceContext *dc, const RenderServices &s) override;
 
-    // JSON 由来の PSO を持っていれば返す。無ければ nullptr（パス既定を使わせる）。
     const PipelineState *GetPSO() const override { return m_hasPso ? &m_pso : nullptr; }
 
-    // ファイルの更新を監視し、再コンパイルを実行する
+    // ピクセルシェーダーの HLSL が更新されていたらコンパイルし直す（頂点シェーダーは見ていない）
     void CheckAndReload(ID3D11Device *device) override;
 
 private:
@@ -35,12 +39,11 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;
 
-    // シェーダー固有 PSO（m_hasPso が false なら未設定）
-    PipelineState m_pso;
+    PipelineState m_pso; // m_hasPso が false なら使わない
     bool          m_hasPso = false;
 
     std::wstring                    m_vsHlslPath;
     std::wstring                    m_psHlslPath;
-    std::filesystem::file_time_type m_vsLastWriteTime;
+    std::filesystem::file_time_type m_vsLastWriteTime; // 前に見た HLSL の更新時刻
     std::filesystem::file_time_type m_psLastWriteTime;
 };

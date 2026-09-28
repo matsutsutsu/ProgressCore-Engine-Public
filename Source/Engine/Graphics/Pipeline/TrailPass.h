@@ -1,14 +1,17 @@
-﻿#pragma once
+#pragma once
+// ===========================================================================
+// 概要: 武器のトレイル（背景を歪ませる層と、加算合成の帯）を描くパス。
+//
+// 責務:
+//   - TrailRenderer にこのフレームの頂点を描かせる
+//
+// 備考: 歪みは SceneColorGrabPass が写したシーンの色を読むので、それより後に置く。
+//       ブルームが明るい軌跡を拾えるよう、ポストプロセスより前に置く。
+// ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
-// 武器トレイル（歪みレイヤ＋加算リボン）を描画するパス。半透明/パーティクルの後、
-// ポストプロセスの前に置き、Bloom が明るい軌跡を拾えるようにする。
-//
-// 歪みは SceneColorGrabPass が確保したシーンカラーを読むため、
-// このパスは必ずグラブより後になければならない。
 class TrailPass : public IRenderPass
 {
 public:
-    void        Execute(const RenderFrameContext &ctx) override;
-    const char *GetName() const override { return "TrailPass"; }
+    void Execute(const RenderFrameContext &ctx) override;
 };

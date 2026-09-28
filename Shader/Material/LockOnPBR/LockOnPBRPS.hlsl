@@ -74,7 +74,7 @@ float4 main(VS_OUT pin) : SV_TARGET
                                          rimPower, rimColor.rgb, lockOnIntensity * pulse);
     }
 
-    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
+    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);
 
     return float4(finalColor, alpha);
 }

@@ -1,45 +1,40 @@
-// NormalPrepass の実装。ShadowPass と同型の「専用シェーダー二度描き」パターン。
 #include "NormalPrepass.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/RenderDebugRegistry.h" // デバッグテクスチャ登録
-#include "Engine/Graphics/Renderer/MeshCulling.h"         // メッシュ単位カリング（OpaquePass と共有）
+#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
+#include "Engine/Graphics/Renderer/MeshCulling.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include <DirectXCollision.h> // メッシュ単位フラスタムカリング用
+#include <DirectXCollision.h>
 #include <wrl/client.h>
 #include <algorithm>
 
-// [ cutout(アルファクリップ)マテリアルを足すときの注意 ]
-//   このパスの共有 PS は clip() を行わない。つまり「テクスチャのアルファで
-//   切り抜く」マテリアルをここに通すと、切り捨てられるはずの透明な部分にも
-//   深度が書き込まれる。草の葉と葉の隙間や金網の網目から背景が見えるべき所が
-//   塞がって穴になり、しかも OpaquePass 側の絵は正しいので原因が見えにくい。
+// 切り抜き（clip でピクセルを捨てる）マテリアルについて:
+//   このパスのピクセルシェーダーは clip() をしないので、切り抜くマテリアルを通すと、
+//   捨てるはずの部分にも深度が書かれる。その奥にあるものは深度テストで弾かれるので、
+//   後ろが見えるはずの所に何も描かれない（OpaquePass の絵自体は正しいので原因が見えにくい）。
 //
-//   現在このパスに cutout は1つも通っていないので、除外の判定も置いていない。
-//   cutout を足すときは、そのマテリアルを本パスから除外して OpaquePass の自前描画に委ねること
-//   （early-Z の恩恵は失うが、cutout では元々ほぼ効かない）。
+//   今のシェーダーには切り抜くものが無いので、除外する判定は置いていない。
+//   切り抜くマテリアルを使うときは、このパスから外して OpaquePass に深度も書かせること
+//   （early-Z は効かなくなるが、切り抜くピクセルではもともとほとんど効かない）。
 
 void NormalPrepass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
 
-    // Z プリパスを兼ねるため深度書き込みを有効化（DefaultOpaque = TestAndWrite）。
-    // このパスが不透明ジオメトリの深度を先に確定させ、後続 OpaquePass は early-Z で
-    // 隠れピクセルの重い PBR ピクセルシェーダをスキップできる。
+    // 深度も書く（DefaultOpaque は TestAndWrite）。ここで不透明の深度を先に決めておくと、
+    // OpaquePass では early-Z で隠れたピクセルの PBR のピクセルシェーダーを飛ばせる
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
     m_pso                  = PipelineState(desc);
 
     m_instanceBuffer.Create(services.device, 8192);
     m_normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
 
-    // 法線バッファの SRV は「生成された時点」で登録する。
-    //   Graphics::MakeFrameContext はパイプライン実行の *前* に ctx を組み立てるので、
-    //   Execute の末尾で登録していた頃は ctx.sceneNormalSRV が必ず1フレーム古かった
-    //  （初回フレームは null）。SRV は生成時以外変わらないので、ここで渡しておけば
-    //   初回から正しい値が入り、かつ「古い SRV を掴んだまま作り直される」窓も消える。
+    // SRV は作った時点で Graphics に渡す。Graphics::MakeFrameContext はパイプラインを
+    // 実行する前に ctx を作るので、Execute の中で渡すと ctx.sceneNormalSRV が1フレーム遅れる
+    // （最初のフレームは null になる）。SRV は作り直すとき以外は変わらない
     PublishNormalSRV();
 }
 
@@ -48,12 +43,11 @@ void NormalPrepass::OnResize(uint32_t width, uint32_t height)
     if (m_services && m_services->device)
     {
         m_normalBuffer.Resize(m_services->device, width, height);
-        // Resize は SRV を作り直す。登録しなおさないと解放済みの SRV が残る。
+        // Resize で SRV が作り直されるので、渡し直さないと Graphics に解放済みの SRV が残る
         PublishNormalSRV();
     }
 }
 
-// 現在の法線バッファ SRV を Graphics へ預ける（MakeFrameContext が ctx へ渡す）。
 void NormalPrepass::PublishNormalSRV()
 {
     Graphics::Instance().SetSceneNormalSRV(m_normalBuffer.GetSRV());
@@ -68,15 +62,13 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
 
-    // OpaquePass より前に実行されるため、ソート済みキーをここで構築する。
-    // フレーム内で既に構築済みなら RenderQueue 側のガードで no-op になる（二重ソート防止）。
+    // OpaquePass より先に走るので、ここで並べる。OpaquePass も呼ぶが、
+    // RenderQueue がそのフレームで並べ済みなら何もしない
     queue->SortAndBuildBatches();
 
     Shader *shader = m_services->shaders->GetShader("NormalPrepass"_hash, m_services->device);
     if (!shader) return;
 
-    // メッシュ単位フラスタムカリング用のワールド空間 frustum（OpaquePass と同一方式）。
-    // camera は上流パイプラインが保証するが、念のため null なら法線書き出しをスキップする。
     if (!ctx.camera) return;
     const DirectX::BoundingFrustum &frustum = ctx.camera->GetFrustum();
 
@@ -130,8 +122,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
 
             const bool isSkinned = !mesh.bones.empty();
 
-            // このメッシュのローカル AABB（非スキンドのカリングで使い回す）。
-            // OpaquePass と同一の MeshCull ヘルパを使い、両パスのカリング基準を一致させる。
+            // OpaquePass と同じ MeshCull を使い、両方のパスでカリングの結果をそろえる
             const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
             m_instanceScratch.clear();
@@ -143,28 +134,25 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 data.customParams = cmd.customParams;
                 if (isSkinned)
                 {
-                    // スキンドはカリングせず全数積む（変形は骨行列側。姿勢で AABB が変わるため安全側で除外）
+                    // スキンメッシュはカリングせず全部積む。ワールド行列はボーン行列に入っているので単位行列
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
                     m_instanceScratch.push_back(data);
                 }
                 else
                 {
                     data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
-                    // OpaquePass と同じメッシュ単位フラスタムカリング。視界外は積まない。
                     if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue;
                     m_instanceScratch.push_back(data);
                 }
             }
 
-            // このメッシュの可視インスタンス列を OpaquePass へ渡す。
-            //   同じバッチ区切り・同じ MeshCull で走査しているので結果は完全に一致し、
-            //   OpaquePass 側は行列合成とフラスタム判定を丸ごと省ける。
-            //   空（全数カリング済み）も正当な結果なので、その事実ごと渡す。
+            // 見えるインスタンスの列を OpaquePass に残す。同じバッチの区切りと同じ MeshCull を
+            // 使っているので結果は一致し、OpaquePass は行列の計算とカリングを省ける。
+            // 空の列（全部カリングされた）も「見えるものが無い」という結果として残す
             queue->StoreVisibleInstances(
                 RenderQueue::MakeVisibleKey(batchStart, meshIdx),
                 m_instanceScratch.data(), m_instanceScratch.size());
 
-            // 可視インスタンスが 0 個なら、このメッシュの IA 設定・Map/Unmap・ドローを丸ごと回避する。
             if (m_instanceScratch.empty()) continue;
 
             UINT stride = sizeof(ModelResource::Vertex), offset = 0;
@@ -173,7 +161,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
 
             if (isSkinned)
             {
-                // スキンドはカリングしていないため m_instanceScratch.size() == batchCount
+                // スキンメッシュはカリングしていないので m_instanceScratch.size() == batchCount
                 for (size_t k = 0; k < m_instanceScratch.size(); ++k)
                 {
                     const auto &cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
@@ -185,7 +173,6 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             }
             else
             {
-                // batchCount ではなく「カリング後の可視インスタンス数」で描画する
                 const size_t visibleCount = m_instanceScratch.size();
                 size_t       curOffset    = 0;
                 while (curOffset < visibleCount)
@@ -207,12 +194,11 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
-    // 後続パスのシェーダーが t6 から読めるようにバインドする
-    //（Graphics への登録は Initialize / OnResize 済み）。
+    // 後のパスのシェーダーが t6 から読めるようにバインドする
     ID3D11ShaderResourceView *normalSRV = m_normalBuffer.GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_NORMAL, 1, &normalSRV);
 
-    // デバッグ表示へ登録（RTV は上で解除済み。SRV として安全に読める）
+    // デバッグ表示に登録する（描画先からは上で外したので、SRV として読める）
     RenderDebugRegistry::Instance().Register({"NormalPrepass", normalSRV,
                                               m_normalBuffer.GetWidth(), m_normalBuffer.GetHeight(), DebugTexKind::Normal});
 }

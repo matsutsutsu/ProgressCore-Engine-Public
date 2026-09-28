@@ -22,7 +22,6 @@ void ToneMapEffect::Process(ID3D11DeviceContext      *dc,
                             ID3D11RenderTargetView   *outputSDR,
                             ToneMapConfigComponent   &config)
 {
-    // 出力先をバインド (Viewport は Manager 側で設定済み)
     dc->OMSetRenderTargets(1, &outputSDR, nullptr);
 
     dc->IASetInputLayout(nullptr);
@@ -49,7 +48,6 @@ void ToneMapEffect::Process(ID3D11DeviceContext      *dc,
     dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &inputHDR);
     dc->Draw(3, 0);
 
-    // クリーンアップ
     ID3D11ShaderResourceView *nullSRV = nullptr;
     dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
 }

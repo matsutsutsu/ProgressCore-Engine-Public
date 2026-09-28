@@ -4,9 +4,6 @@
 
 namespace ShaderReflect
 {
-    // =======================================================
-    // ハッシュ値による検索の実装
-    // =======================================================
     const VariableInfo *ConstantBufferInfo::FindVariable(uint32_t nameHash) const
     {
         for (const auto &var : variables)
@@ -19,7 +16,6 @@ namespace ShaderReflect
         return nullptr;
     }
 
-    // (既存) 文字列による検索の実装
     const VariableInfo *ConstantBufferInfo::FindVariable(const std::string &name) const
     {
         for (const auto &var : variables)
@@ -32,10 +28,8 @@ namespace ShaderReflect
         return nullptr;
     }
 
-    // .csoファイルから読み込み
     bool ReflectionData::LoadFromCompiledFile(const char *filename)
     {
-        // ファイルを読み込む
         std::ifstream file(filename, std::ios::binary | std::ios::ate);
         if (!file.is_open())
         {
@@ -53,13 +47,10 @@ namespace ShaderReflect
         return LoadFromBytecode(bytecode.data(), bytecode.size());
     }
 
-    // バイトコードから読み込み
     bool ReflectionData::LoadFromBytecode(const void *bytecode, size_t bytecodeSize)
     {
         Microsoft::WRL::ComPtr<ID3D11ShaderReflection> reflection;
 
-        // D3DReflectで読み込んだ.csoファイルを解析（リフレクション）する
-        // これでシェーダーが何を要求しているか全情報を取得できる
         HRESULT hr = D3DReflect(
             bytecode,
             bytecodeSize,
@@ -72,16 +63,13 @@ namespace ShaderReflect
             return false;
         }
 
-        // この関数の中でその情報を取り出す
         ExtractReflectionInfo(reflection.Get());
         return true;
     }
 
-    // 既存情報を保持しつつ、別ステージのリフレクションを名前単位で合成する
     void ReflectionData::MergeFromBytecode(const void *bytecode, size_t bytecodeSize)
     {
-        // いったん一時オブジェクトへ抽出してから、名前で重複排除しつつ取り込む。
-        // （LoadFromBytecode は内部で clear するため、直接呼ぶと上書きになってしまう）
+        // LoadFromBytecode は前の結果を消すので、別のオブジェクトに読んでから名前で重複を除いて足す
         ReflectionData tmp;
         if (!tmp.LoadFromBytecode(bytecode, bytecodeSize)) return;
 
@@ -107,13 +95,12 @@ namespace ShaderReflect
         mergeByName(uavs, tmp.uavs);
     }
 
-    // リフレクション情報を抽出
     void ReflectionData::ExtractReflectionInfo(ID3D11ShaderReflection *reflection)
     {
         D3D11_SHADER_DESC shaderDesc;
         reflection->GetDesc(&shaderDesc);
 
-        // === 定数バッファの抽出 ===
+        // 定数バッファ
         constantBuffers.clear();
         for (UINT i = 0; i < shaderDesc.ConstantBuffers; ++i)
         {
@@ -125,7 +112,7 @@ namespace ShaderReflect
             cbInfo.name = bufferDesc.Name;
             cbInfo.size = bufferDesc.Size;
 
-            // バインドポイントを取得
+            // 定数バッファの説明にはスロットが無いので、同じ名前のリソースのバインド情報から取る
             for (UINT j = 0; j < shaderDesc.BoundResources; ++j)
             {
                 D3D11_SHADER_INPUT_BIND_DESC bindDesc;
@@ -134,13 +121,11 @@ namespace ShaderReflect
                 if (bindDesc.Type == D3D_SIT_CBUFFER &&
                     strcmp(bindDesc.Name, bufferDesc.Name) == 0)
                 {
-                    // レジスタ番号（スロット）が入る
                     cbInfo.bindPoint = bindDesc.BindPoint;
                     break;
                 }
             }
 
-            // 変数情報を取得
             for (UINT j = 0; j < bufferDesc.Variables; ++j)
             {
                 ID3D11ShaderReflectionVariable *var = cb->GetVariableByIndex(j);
@@ -166,14 +151,13 @@ namespace ShaderReflect
             constantBuffers.push_back(cbInfo);
         }
 
-        // === UAVの抽出 ===
+        // UAV
         uavs.clear();
         for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
         {
             D3D11_SHADER_INPUT_BIND_DESC bindDesc;
             reflection->GetResourceBindingDesc(i, &bindDesc);
 
-            // UAV (RWStructuredBuffer または RWTexture) かどうか判定
             if (bindDesc.Type == D3D_SIT_UAV_RWTYPED || bindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED ||
                 bindDesc.Type == D3D_SIT_UAV_APPEND_STRUCTURED ||
                 bindDesc.Type == D3D_SIT_UAV_CONSUME_STRUCTURED ||
@@ -182,13 +166,11 @@ namespace ShaderReflect
                 UnorderedAccessViewInfo uavInfo;
                 uavInfo.name      = bindDesc.Name;
                 uavInfo.bindPoint = bindDesc.BindPoint;
-                // サイズ等は必要なら bindDesc.NumSamples
-                // などから推測しますが、基本はBindPointが重要
                 uavs.push_back(uavInfo);
             }
         }
 
-        // === テクスチャの抽出 ===
+        // テクスチャ
         textures.clear();
         for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
         {
@@ -208,7 +190,7 @@ namespace ShaderReflect
             }
         }
 
-        // === サンプラーの抽出 ===
+        // サンプラー
         samplers.clear();
         for (UINT i = 0; i < shaderDesc.BoundResources; ++i)
         {
@@ -302,19 +284,20 @@ namespace ShaderReflect
         return nullptr;
     }
 
-    // === AutoConstantBuffer の実装 ===
+    // ============================================================
+    // AutoConstantBuffer
+    // ============================================================
 
     bool AutoConstantBuffer::Create(ID3D11Device *device, const ConstantBufferInfo &info)
     {
         bufferInfo = info;
-        cpuBuffer.resize(info.size, 0); // 1: CPU側のデータ置き場を作る
+        cpuBuffer.resize(info.size, 0);
 
         D3D11_BUFFER_DESC desc = {};
-        desc.ByteWidth         = info.size; // 2: シェーダーが要求した通りのサイズ
+        desc.ByteWidth         = info.size; // リフレクションの大きさは 16 バイトの倍数になっている
         desc.Usage             = D3D11_USAGE_DEFAULT;
         desc.BindFlags         = D3D11_BIND_CONSTANT_BUFFER;
 
-        // 3: GPUへの小包を作る
         HRESULT hr = device->CreateBuffer(&desc, nullptr, buffer.GetAddressOf());
         return SUCCEEDED(hr);
     }
@@ -323,7 +306,6 @@ namespace ShaderReflect
     {
         if (isDirty && buffer)
         {
-            // 3: CPUの作業台(cpuBuffer)の中身を、GPUの小包(buffer)へ一気に転送する
             dc->UpdateSubresource(buffer.Get(), 0, nullptr, cpuBuffer.data(), 0, 0);
             isDirty = false;
         }
@@ -341,8 +323,6 @@ namespace ShaderReflect
     {
         if (buffer)
         {
-            // ステップ1で取得したスロット番号(bindPoint)に、
-            // 　小包(buffer)をガチャンと挿し込む
             dc->PSSetConstantBuffers(bufferInfo.bindPoint, 1, buffer.GetAddressOf());
         }
     }
@@ -363,15 +343,11 @@ namespace ShaderReflect
         }
     }
 
-    // 追加実装
     void AutoConstantBuffer::SetRawData(const void *data, size_t size)
     {
         if (cpuBuffer.empty()) return;
 
-        // バッファサイズを超えないように安全策
         size_t copySize = (size < cpuBuffer.size()) ? size : cpuBuffer.size();
-
-        // メモリコピー
         std::memcpy(cpuBuffer.data(), data, copySize);
         isDirty = true;
     }

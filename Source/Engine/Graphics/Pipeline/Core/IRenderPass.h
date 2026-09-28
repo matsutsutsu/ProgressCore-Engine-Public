@@ -1,87 +1,70 @@
 #pragma once
+// ===========================================================================
+// 概要: 描画の1段階（影・不透明・半透明・ポストプロセスなど）を表すパスの基底クラス。
+//
+// 責務:
+//   - Initialize で受け取った RenderServices を保持し、派生クラスに m_services で渡す
+//   - 毎フレームの Execute、終了時の Shutdown、サイズ変更時の OnResize の口を用意する
+//   - RenderPipeline が設定する表示名と Tracy の計測用の情報を持つ
+//
+// 備考: エンジンが終わるまで変わらないもの（RenderServices）と、そのフレームだけ有効な
+//       もの（RenderFrameContext）を分けて受け取る。Execute が引数に取るのは後者だけにして、
+//       フレームごとに変わるデータがどれかを型で分かるようにしている。
+// ===========================================================================
 #include <cstdint>
 #include <string>
 #include "Engine/Graphics/RHI/RenderContext.h"
-
-// 各パスをTracyで追跡できるようにインクルード
 #include "tracy/Tracy.hpp"
 
-/**
- * @brief レンダリングパスの抽象基底インターフェース。
- * @details
- *  1 つの描画段階（影生成 / 不透明 / 半透明 / ポストエフェクト等）を表す。
- *  RenderPipeline から登録順に Execute される。
- *
- *  設計の核：Services（永続）と FrameContext（揮発）を明確に分離。
- *  - Initialize で受け取った Services は基底クラスが保持する → 派生クラスは m_services 経由で参照
- *  - Execute は FrameContext のみ受け取る → フレーム毎データが明示的
- */
 class IRenderPass
 {
 public:
     virtual ~IRenderPass() = default;
 
-    // =========================================================
-    //  TracyとUI表示用の自動キャッシュ名
-    // =========================================================
-    std::string m_passName      = "Unknown Pass";
-    std::string m_tracyZoneName = "Pass: Unknown";
+    // RenderPipeline::AddPass が型名から設定する
+    std::string m_passName      = "Unknown Pass"; // GPU マーカー（PIX / RenderDoc）に出す名前
+    std::string m_tracyZoneName = "Pass: Unknown"; // Tracy の CPU ゾーン名（毎フレームの文字列生成を避けるため持っておく）
 
-    // =========================================================
-    // テンプレートで自動生成される固有のGPUタグを保持する
-    // =========================================================
 #if defined(TRACY_ENABLE)
+    // Tracy の GPU ゾーンの情報（RenderPipeline::AddPass の関数内 static を指す。所有しない）
     const tracy::SourceLocationData *m_gpuSourceLocation = nullptr;
 #endif
 
     /**
-     * @brief 初期化。Services を保持し、必要に応じて GPU リソースを生成する。
-     * @param services 永続サービス群。ポインタはエンジン終了まで有効。
-     * @details
-     *  デフォルト実装は m_services の保持のみ。
-     *  GPU リソースが必要な派生クラスはオーバーライドして基底を呼ぶこと：
-     *  @code
-     *    void OpaquePass::Initialize(const RenderServices& services) override {
-     *        IRenderPass::Initialize(services);  // m_services を保持
+     * @brief services を保持し、派生クラスは GPU リソースを作る。
+     * @param services ポインタはエンジンの終了まで有効
+     *
+     * GPU リソースが要る派生クラスは、オーバーライドして先に基底を呼ぶ。
+     * @code
+     *    void OpaquePass::Initialize(const RenderServices &services)
+     *    {
+     *        IRenderPass::Initialize(services); // m_services を保持
      *        m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
      *        m_instanceBuffer.Create(services.device, 8192);
      *    }
-     *  @endcode
+     * @endcode
      */
     virtual void Initialize(const RenderServices &services)
     {
         m_services = &services;
     }
 
-    /**
-     * @brief 破棄（エンジン終了時に 1 回だけ呼ばれる）。
-     */
+    // エンジンの終了時に1回だけ呼ばれる
     virtual void Shutdown() {}
 
-    /**
-     * @brief 毎フレームの描画実行。
-     * @param ctx フレームコンテキスト（このフレームのみ有効）
-     */
+    // 毎フレームの描画。ctx はこのフレームの間だけ有効
     virtual void Execute(const RenderFrameContext &ctx) = 0;
 
-    /**
-     * @brief ウィンドウリサイズ時の内部 RT 再生成等。
-     */
+    // 画面サイズが変わったとき、中で持っているレンダーターゲットを作り直す
     virtual void OnResize(uint32_t width, uint32_t height)
     {
         (void)width;
         (void)height;
     }
 
-    /**
-     * @brief デバッグ表示名。GPU マーカー（Pix/RenderDoc）に出力される。
-     */
-    virtual const char *GetName() const { return "UnnamedPass"; }
-
-    // パスを一時的に無効化するフラグ。エディタからのトグル用。
+    // false のパスは RenderPipeline::Execute で飛ばす
     bool enabled = true;
 
 protected:
-    // Initialize 後にアクセス可能な永続サービスへのポインタ。
-    const RenderServices *m_services = nullptr;
+    const RenderServices *m_services = nullptr; // Initialize で受け取ったもの（所有しない）
 };

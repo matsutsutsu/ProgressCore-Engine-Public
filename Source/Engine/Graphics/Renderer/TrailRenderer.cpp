@@ -1,17 +1,3 @@
-// ===========================================================================
-// TrailRenderer.cpp
-// 役割・設計方針は TrailRenderer.h を参照。
-//
-// 実装の意図(Why):
-//   - viewProjection は Camera からそのまま(転置なし)アップロードする。エンジン共通の
-//     ShaderShared.h が row_major を採用しており、HLSL 側も row_major で受けるため一致する。
-//   - Additive ブレンドは (SrcAlpha, One)。従って頂点アルファがそのまま加算強度になり、
-//     rgb を事前乗算(premultiply)する必要はない。
-//   - RTV/DSV は明示バインドしない。先行パスが張った HDR ターゲットに重ねて描く。
-//   - 歪みレイヤは SceneColorGrabPass が確保したシーンカラーを読む。半透明/パーティクル
-//     パスが t5 を上書きしている可能性があるため、毎フレームここで取り直して張る。
-//     読むのは「コピー」なので、書き込み先の HDR ターゲットとの読み書き衝突は起きない。
-// ===========================================================================
 #include "TrailRenderer.h"
 
 #include "Engine/Graphics/RHI/RenderContext.h"
@@ -28,7 +14,8 @@ using namespace DirectX;
 
 namespace
 {
-    // b0 に積む定数バッファ。row_major で HLSL の cbuffer と一致させる。
+    // b0 の定数バッファ。ShaderShared.h と同じく HLSL 側も row_major で受けるので、
+    // Camera の行列を転置せずにそのまま送る
     struct CbTrail
     {
         XMFLOAT4X4 viewProjection;
@@ -40,7 +27,6 @@ void TrailRenderer::EnsureInitialized(ID3D11Device *device)
     if (m_initialized || !device)
         return;
 
-    // 入力レイアウト: POSITION(float3) + COLOR(float4) + TEXCOORD(float2)
     const D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -58,7 +44,7 @@ void TrailRenderer::EnsureInitialized(ID3D11Device *device)
     GpuResourceUtils::LoadPixelShader(
         device, "Assets/Shader/TrailDistortPS.cso", m_distortPixelShader.GetAddressOf());
 
-    // 動的頂点バッファ（毎フレーム WRITE_DISCARD で上書き。加算→歪みの順に詰める）
+    // 頂点バッファ（毎フレーム WRITE_DISCARD で書き直す。加算・歪みの順に詰める）
     D3D11_BUFFER_DESC vbDesc = {};
     vbDesc.ByteWidth         = static_cast<UINT>(sizeof(Vertex) * MAX_VERTICES);
     vbDesc.Usage             = D3D11_USAGE_DYNAMIC;
@@ -66,14 +52,14 @@ void TrailRenderer::EnsureInitialized(ID3D11Device *device)
     vbDesc.CPUAccessFlags    = D3D11_CPU_ACCESS_WRITE;
     device->CreateBuffer(&vbDesc, nullptr, m_vertexBuffer.GetAddressOf());
 
-    // 動的定数バッファ（viewProjection）
     GpuResourceUtils::CreateDynamicConstantBuffer(
         device, sizeof(CbTrail), m_constantBuffer.GetAddressOf());
 
-    // テクスチャ未設定トレイル用の 1x1 白（色×白＝そのまま＝従来の単色を再現）
+    // テクスチャの無いトレイル用の 1x1 の白（頂点の色 × 白 で、頂点の色がそのまま出る）
     GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, m_whiteTex.GetAddressOf());
 
-    // PSO: 加算 / 深度テストのみ / 両面 / 三角形リスト
+    // 加算の層。Additive は (SrcAlpha, One) なので、頂点のアルファがそのまま足す強さになる
+    // （rgb に前もってアルファを掛けておく必要はない）
     PipelineStateDesc desc;
     desc.blend      = BlendState::Additive;
     desc.depth      = DepthState::TestOnly;
@@ -81,8 +67,8 @@ void TrailRenderer::EnsureInitialized(ID3D11Device *device)
     desc.topology   = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     m_pso           = PipelineState(desc);
 
-    // PSO: 歪み。背景を屈折像で置き換えるので αブレンド。RGB のみ書く
-    // UITransparency を使い、HDR ターゲットの α=1 を保つ。
+    // 歪みの層。ずらした背景で置き換えるのでアルファブレンド。RGB だけを書く
+    // UITransparency を使い、HDR バッファのアルファ（1）を壊さない
     desc.blend   = BlendState::UITransparency;
     m_distortPso = PipelineState(desc);
 
@@ -95,7 +81,7 @@ size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
     if (used + vertexCount <= MAX_VERTICES)
         return vertexCount;
 
-    // 容量超過分は三角形境界(3頂点単位)で切り捨てる。
+    // 入りきらないぶんは、三角形の区切り（3頂点ずつ）で切り捨てる
     size_t remain = MAX_VERTICES - used;
     remain -= remain % 3;
     return std::min(vertexCount, remain);
@@ -115,7 +101,7 @@ void TrailRenderer::SubmitTriangleList(const Vertex *verts, size_t vertexCount,
 
     m_vertices.insert(m_vertices.end(), verts, verts + vertexCount);
 
-    // 直前バッチと同じテクスチャなら連結して1ドローにまとめる（頂点は連続なので安全）。
+    // 直前の区間と同じテクスチャならつなげて、1回のドローコールで描く
     if (!m_addBatches.empty() && m_addBatches.back().srv == texture)
         m_addBatches.back().count += vertexCount;
     else
@@ -143,7 +129,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     if (m_vertices.empty() && m_distortVertices.empty())
         return;
 
-    // 前提が欠けていたら安全側で破棄（次フレームに持ち越さない）。
+    // 描けないときも、次のフレームに持ち越さないよう捨てる
     if (!ctx.dc || !ctx.camera || !services.device || !services.renderState)
     {
         m_vertices.clear();
@@ -166,7 +152,6 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     const size_t additiveCount = m_vertices.size();
     const size_t distortCount  = m_distortVertices.size();
 
-    // 1. 定数バッファ（viewProjection をそのまま）
     {
         CbTrail cb;
         cb.viewProjection = ctx.camera->GetViewProjectionMatrix();
@@ -178,7 +163,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         }
     }
 
-    // 2. 頂点アップロード（加算を先頭、歪みをその後ろへ連結）
+    // 加算の頂点を先頭に、歪みの頂点をその後ろに詰める
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
@@ -192,7 +177,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         }
     }
 
-    // 3. 共通ステート
+    // 描画先は明示的にバインドしない（前のパスがバインドしたままの HDR バッファに重ねて描く）
     dc->IASetInputLayout(m_inputLayout.Get());
 
     UINT          stride = sizeof(Vertex), offset = 0;
@@ -204,14 +189,16 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     ID3D11Buffer *cb = m_constantBuffer.Get();
     dc->VSSetConstantBuffers(0, 1, &cb); // b0
 
-    // 4. 歪みレイヤ（加算の芯を上に乗せるため先に描く）
+    // 歪みの層。加算の芯を上に重ねるので先に描く。
+    // シーンの色（t5）は前のパスが別の SRV で上書きしている場合があるので、ここでバインドし直す。
+    // 読むのは写したテクスチャなので、描いている HDR バッファを同時に読むことにはならない
     ID3D11ShaderResourceView *sceneColorSRV = nullptr;
     if (distortCount > 0 && services.postProcess)
         sceneColorSRV = services.postProcess->GetSceneColorSRV();
 
     if (sceneColorSRV)
     {
-        // 歪み PS は gView / gTimeParams / gScreenParams を CbScene(b8) から読む。
+        // 歪みのピクセルシェーダーは gView / gTimeParams / gScreenParams を CbScene（b8）から読む
         if (services.sceneConstantBuffer)
         {
             ID3D11Buffer *sceneCb = services.sceneConstantBuffer;
@@ -226,18 +213,18 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         dc->PSSetShader(m_distortPixelShader.Get(), nullptr, 0);
         dc->Draw(static_cast<UINT>(distortCount), static_cast<UINT>(additiveCount));
 
-        // 後続パスが同じスロットを RTV として使えるよう SRV を外す。
+        // 後のパスに SRV のバインドを残さない
         ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &nullSRV);
     }
 
-    // 5. 加算レイヤ（テクスチャ単位でバッチを分けて描く）
+    // 加算の層。テクスチャが変わる区間ごとに描く
     if (additiveCount > 0)
     {
         m_pso.Apply(dc, services.renderState);
         dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
 
-        // トレイルテクスチャは繰り返し/スクロールを効かせたいので Wrap サンプラ。
+        // トレイルのテクスチャは繰り返したりスクロールさせたりするので Wrap
         ID3D11SamplerState *trailSmp = services.renderState->GetSamplerState(SamplerState::LinearWrap);
         dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &trailSmp);
 
@@ -246,19 +233,17 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         {
             if (batch.count == 0)
                 continue;
-            // null は白テクスチャで代替（＝色そのまま＝従来の単色トレイル）。
             ID3D11ShaderResourceView *srv = batch.srv ? batch.srv : m_whiteTex.Get();
             dc->PSSetShaderResources(0, 1, &srv); // t0: gTrailTex
             dc->Draw(static_cast<UINT>(batch.count), start);
             start += static_cast<UINT>(batch.count);
         }
 
-        // 後続パスへ SRV を残さない。
         ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->PSSetShaderResources(0, 1, &nullSRV);
     }
 
-    // 6. 後続パスへ状態を残さない（PrimitiveRenderer に倣う）
+    // 後のパスにステートを残さない
     dc->VSSetShader(nullptr, nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0);
     dc->RSSetState(nullptr);

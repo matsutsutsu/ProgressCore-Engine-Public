@@ -3,34 +3,10 @@
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュ単位カリング（NormalPrepass と共有）
+#include "Engine/Graphics/Renderer/MeshCulling.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <algorithm>
-
-// ============================================================================
-// OpaquePass
-//   役割：
-//     ModelRenderSystem が積んだ不透明 RenderCommand を消費して画面へ描画する。
-//     PSO が blend 有効（=半透明）と判定されたメッシュはここでは描かず、距離
-//     ソートが必要な TransparentPass 用の遅延キューへ転送する。
-//
-//   1 フレームの流れ（Execute が上から順に呼ぶ）：
-//     1. BindCommonResources  共通リソース（シャドウマップ・サンプラー・不透明PSO）
-//     2. SortAndBuildBatches  shader→model→material 順のソートキーを作る
-//     3. ConsumeBatch         同一バッチキーの連続コマンドを 1 バッチとして切り出す
-//     4. DrawBatch            バッチが指すモデルのメッシュを 1 枚ずつ処理する
-//          - ForwardMeshToTransparentQueue : 半透明なら後段へ転送して終わり
-//          - BuildVisibleInstances         : 非スキンドはここでフラスタムカリング
-//          - DrawInstancedBatched / DrawSkinnedInstances : 実際のドローコール
-//
-//   カリングの要点：
-//     - 視錐台はワールド空間（Camera::UpdateFrustum が invView 変換済み）。
-//       メッシュのワールド AABB を直接 frustum.Contains で判定できる。
-//     - メッシュのワールド行列は node->globalTransform * entityWorld。AABB も同じ
-//       変換で作り、描画とカリングの座標系を一致させる。
-//     - スキンドはアニメで実形状がレストポーズ AABB を超えうるため除外（安全側）。
-// ============================================================================
 
 void OpaquePass::Initialize(const RenderServices &services)
 {
@@ -39,9 +15,6 @@ void OpaquePass::Initialize(const RenderServices &services)
     m_instanceBuffer.Create(services.device, 8192);
 }
 
-// ----------------------------------------------------------------------------
-//  Execute : このフレームの手順書。個々の工程はヘルパへ委譲する。
-// ----------------------------------------------------------------------------
 void OpaquePass::Execute(const RenderFrameContext &ctx)
 {
     ID3D11DeviceContext *dc = ctx.dc;
@@ -51,13 +24,11 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
 
-    // カリング統計をフレーム毎にリセット（GetDrawnMeshCount / GetCulledMeshCount で参照）
     m_stat_drawnMeshes  = 0;
     m_stat_culledMeshes = 0;
 
     BindCommonResources(dc);
 
-    // 現在適用中の PSO。シェーダー固有 PSO と差があるときだけ切り替える。
     const PipelineState *lastPso = &m_psoOpaque;
 
     queue->SortAndBuildBatches();
@@ -73,14 +44,13 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
         IMaterialShader *matShader = shader ? shader->AsMaterial() : nullptr;
         if (!matShader)
         {
-            // 不透明パスはマテリアルシェーダー必須。描けないコマンドは 1 件だけ読み飛ばす。
+            // マテリアルシェーダーでなければ描けないので、このコマンドだけ飛ばす
             ++cursor;
             continue;
         }
 
-        // 透明判定はバッチ単位（シェーダー単位）で決まるので、GPU 状態を触る前に済ませる。
-        //   半透明バッチは TransparentPass へ転送するだけで 1 ドローも出さない。
-        //   Begin / PSO 適用 / End はそのぶん丸ごと無駄になっていた。
+        // 半透明かどうかはシェーダーで決まる（バッチの中では同じ）。半透明のバッチは
+        // TransparentPass へ回すだけで描かないので、Begin・PSO の適用・End を呼ばない
         const PipelineState *batchPso           = shader->GetPSO();
         const bool           batchIsTransparent = batchPso && batchPso->IsBlendEnabled();
 
@@ -88,7 +58,6 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
 
         if (batchIsTransparent)
         {
-            // 転送のみ。GPU 状態に触れないので lastPso も据え置きでよい。
             DrawBatch(ctx, batch, *shader, *matShader);
             continue;
         }
@@ -102,9 +71,6 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
     }
 }
 
-// ----------------------------------------------------------------------------
-//  1. 全バッチ共通のバインド
-// ----------------------------------------------------------------------------
 void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
 {
     if (m_services->shadowMap)
@@ -112,20 +78,16 @@ void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
 
-    // 材質テクスチャは異方性フィルタで引く。DDS化でミップチェーンが入ったことにより、
-    // トライリニアだと斜めに寝た面（床・壁）で必要より数段粗いミップが選ばれ、
-    // 遠景が淡く潰れる。ここは透明パスもそのまま引き継いで使う。
+    // マテリアルのテクスチャは異方性フィルタで読む。トライリニアだと、斜めに見る面（床・壁）で
+    // 必要より粗いミップが選ばれ、遠くがぼやける。TransparentPass はこの設定をそのまま使う
     ID3D11SamplerState *samplers[] = {m_services->renderState->GetSamplerState(SamplerState::AnisotropicWrap)};
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
 
     m_psoOpaque.Apply(dc, m_services->renderState);
 }
 
-// ----------------------------------------------------------------------------
-//  3. 同一バッチキーの連続区間を切り出す
-//     同じモデルを大量配置した場合、ここで束ねてインスタンシングが効く。
-//     Sponza のような単一モデルは count==1 になり、インスタンシングの恩恵は無い。
-// ----------------------------------------------------------------------------
+// 同じモデルを多く置くと count が大きくなり、インスタンシングが効く。
+// 1つしか置かないモデルは count == 1 で、1回ずつ描くのと変わらない
 OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor)
 {
     BatchRange     batch{cursor, 0};
@@ -138,7 +100,6 @@ OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &so
     return batch;
 }
 
-// シェーダー固有 PSO があれば上書き。無ければパス既定へ戻す。
 void OpaquePass::ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso)
 {
     const PipelineState *want = shader.GetPSO() ? shader.GetPSO() : &m_psoOpaque;
@@ -149,9 +110,6 @@ void OpaquePass::ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, c
     }
 }
 
-// ----------------------------------------------------------------------------
-//  4. バッチが指すモデルの各メッシュを処理する
-// ----------------------------------------------------------------------------
 void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, const Shader &shader,
                            IMaterialShader &matShader)
 {
@@ -160,11 +118,9 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
     const auto          &commands = m_services->renderQueue->GetOpaqueCommands();
     const RenderCommand &first    = commands[sortKeys[batch.start].originalIndex];
 
-    // NormalPrepass 側は同じ位置で null チェックしている。片方だけ無防備にしない。
     if (!first.model) return;
 
-    // 透明判定：シェーダー PSO の blend 設定で行う（cbuffer 変数名に依存しない）。
-    // シェーダーはバッチ単位で決まるため、メッシュごとに判定し直す必要はない。
+    // 半透明かどうかは、シェーダーの PSO でブレンドが有効かで決める
     const PipelineState *matPso             = shader.GetPSO();
     const bool           batchIsTransparent = matPso && matPso->IsBlendEnabled();
 
@@ -172,29 +128,27 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
     for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx)
     {
         const Model::Mesh &mesh = meshes[meshIdx];
-        if (!mesh.data) continue; // ジオメトリ実体なし：スキップ
+        if (!mesh.data) continue;
 
-        // 有効マテリアルの決定（override 優先。mesh.material は書き換えない）
+        // 上書きのマテリアルがあればそれを使う（mesh.material は書き換えない）
         MaterialData       *overrideMat = ResolveOverrideMaterial(first, meshIdx);
         const MaterialData *activeMat =
             overrideMat ? overrideMat : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
-        if (!activeMat) continue; // マテリアルなし：スキップ
+        if (!activeMat) continue;
 
         const bool isSkinned = !mesh.bones.empty();
 
-        // このメッシュのローカル AABB（全インスタンスで使い回す）
         const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
         if (batchIsTransparent)
         {
             ForwardMeshToTransparentQueue(ctx, mesh, meshIdx, batch, first.shaderHash, localAABB, isSkinned);
-            continue; // 半透明はここで完了（不透明描画へは進まない）
+            continue;
         }
 
         ResolveVisibleInstances(ctx, mesh, batch, meshIdx, localAABB, isSkinned);
 
-        // 可視インスタンスが 0 個なら、このメッシュを丸ごとスキップする。
-        // ここが最重要：ドローコール・マテリアル更新・IA 設定・Map/Unmap を全て回避。
+        // 見えるインスタンスが無ければ、マテリアルの更新・IA の設定・描画をすべて飛ばす
         if (m_visibleCount == 0)
         {
             ++m_stat_culledMeshes;
@@ -202,7 +156,6 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
         }
         ++m_stat_drawnMeshes;
 
-        // override を matShader.Update に明示的に渡す（mesh.material は書き換えない）
         matShader.Update(dc, mesh, overrideMat);
         BindMeshIA(dc, mesh);
 
@@ -223,9 +176,6 @@ MaterialData *OpaquePass::ResolveOverrideMaterial(const RenderCommand &cmd, size
     return m_services->resources->GetMaterial(handle);
 }
 
-// ----------------------------------------------------------------------------
-//  半透明：距離ソート用に後段へ転送（インスタンス単位でカリング）
-// ----------------------------------------------------------------------------
 void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                                const BatchRange &batch, uint32_t shaderHash,
                                                const DirectX::BoundingBox &localAABB, bool isSkinned)
@@ -242,10 +192,9 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
     {
         const RenderCommand &info = commands[sortKeys[batch.start + k].originalIndex];
 
-        // スキンドはワールド行列がそのまま（骨で変形）、非スキンドは node 合成
+        // スキンメッシュはエンティティのワールド行列のまま、それ以外はノードの行列も掛ける
         const XMFLOAT4X4 worldM = isSkinned ? info.worldMatrix : MeshCull::ComputeMeshWorld(mesh, info.worldMatrix);
 
-        // 非スキンドのみカリング（スキンドは姿勢で AABB が変わるため除外）
         if (!isSkinned && !MeshCull::IsMeshVisible(localAABB, worldM, frustum)) continue;
 
         TransparencyCommand tInfo;
@@ -262,19 +211,10 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
     }
 }
 
-// ----------------------------------------------------------------------------
-//  不透明：可視インスタンス列の確定
-//
-//  NormalPrepass（Zプリパス）は本パスと同じソート済みキー列を同じ区切りで走査し、
-//  同じ MeshCull でカリングしている。つまり各(バッチ, メッシュ)の可視インスタンス列は
-//  完全に同一なので、向こうの結果をそのまま使えば行列合成とフラスタム判定を丸ごと省ける。
-//  ドローンのように「同一モデルを大量配置」する構成ほど効く。
-//
-//  見つからない場合は自分で組み立てる。ミスは異常ではなく、
-//    ・blend 有効のバッチは NormalPrepass が飛ばす
-//    ・エディタから NormalPrepass 自体を無効化できる
-//  という正常な経路で起こる。
-// ----------------------------------------------------------------------------
+// NormalPrepass は同じキーの列を同じ区切りで回し、同じ MeshCull でカリングしているので、
+// (バッチ, メッシュ) ごとの見えるインスタンスの列は一致する。それを使えば行列の計算と
+// カリングを省ける（ドローンのように同じモデルを多く置くほど効く）。
+// NormalPrepass が走らなかったとき（シェーダーが取れない・enabled が false）は列が無いので、自分で作る
 void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh,
                                          const BatchRange &batch, size_t meshIdx,
                                          const DirectX::BoundingBox &localAABB, bool isSkinned)
@@ -287,9 +227,6 @@ void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Mo
     m_visibleCount = m_instanceScratch.size();
 }
 
-// ----------------------------------------------------------------------------
-//  不透明：インスタンスデータ構築（非スキンドはここでカリング）
-// ----------------------------------------------------------------------------
 void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned)
 {
@@ -309,14 +246,14 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
 
         if (isSkinned)
         {
-            // スキンドはカリングせず全数積む（ワールドは単位行列。変形は骨行列側）
+            // スキンメッシュはカリングせず全部積む。ワールド行列はボーン行列に入っているので単位行列
             DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
             m_instanceScratch.push_back(data);
             continue;
         }
 
         data.world = MeshCull::ComputeMeshWorld(mesh, cmd.worldMatrix);
-        if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue; // 視界外は積まない
+        if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue;
         m_instanceScratch.push_back(data);
     }
 }
@@ -330,8 +267,6 @@ void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-// batch.count ではなく「カリング後の可視インスタンス数」で描画する。
-// インスタンスバッファの容量を超える場合は複数回に分けて発行する。
 void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {
     const size_t visibleCount = m_visibleCount;
@@ -346,8 +281,8 @@ void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh
     }
 }
 
-// ボーン行列は 1 体ごとに異なるためインスタンシングでまとめられない。1 体ずつ描く。
-// スキンドはカリングしていないため m_visibleCount == batch.count。
+// スキンメッシュはカリングしていないので m_visibleCount == batch.count で、
+// k 番目の見えるインスタンスはバッチの k 番目のコマンドに対応する
 void OpaquePass::DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                       const BatchRange &batch)
 {

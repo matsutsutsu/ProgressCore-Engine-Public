@@ -20,8 +20,6 @@ void ShadowPass::Initialize(const RenderServices &services)
 
 void ShadowPass::Execute(const RenderFrameContext &ctx)
 {
-
-    // MakeLegacyContext 不要: m_services / ctx を直接参照
     RenderQueue          *queue          = m_services->renderQueue;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
@@ -39,12 +37,8 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     D3D11_VIEWPORT oldVP;
     dc->RSGetViewports(&numVP, &oldVP);
 
-    // ------------------------------------------------------------------
-    // カスケード非依存の前計算はループ外で 1 回だけ行う。
-    //    従来はカスケード 3 周それぞれで「シェーダー取得・カスケード行列計算・
-    //    items のコピー＆行列合成＆ソート」を丸ごとやり直しており、CPU を
-    //    3 倍浪費していた（Sponza のように影キャスタが多いと顕著）。
-    // ------------------------------------------------------------------
+    // シェーダーの取得・カスケードの行列・メッシュの一覧と並べ替えは、どのカスケードでも
+    // 同じなので、カスケードのループの外で1回だけ行う
     Shader *shader = m_services->shaders->GetShader("ShadowMap"_hash, m_services->device);
     if (!shader) return;
 
@@ -60,8 +54,8 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         shadowMap->params.cascadeSplits,
         lightVPs);
 
-    // 影キャスタの items 構築（node 合成）とソートは全カスケードで共通なので 1 回だけ。
-    // cascadeMask による絞り込みはカスケードごとのバッチ構築側で行う。
+    // 影を落とすメッシュを集め、同じメッシュが並ぶように並べる。
+    // cascadeMask での絞り込みは、カスケードごとにバッチを作るときに行う
     m_itemsScratch.clear();
     m_itemsScratch.reserve(shadowCommands.size());
     for (const auto &cmd : shadowCommands)
@@ -108,12 +102,9 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         shader->Begin(dc, *m_services, ctx);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        // items（m_itemsScratch）はループ外で構築＆ソート済み。ここでは cascadeMask で
-        // 絞り込みながらバッチを組むだけ。
-        const Model::Mesh *lastBound = nullptr;
+        const Model::Mesh *lastBound = nullptr; // 今 IA に設定しているメッシュ（スキンメッシュ用）
 
-        // batchesも同様にメンバのプールを使い回す。Batch::data の容量も維持されるため
-        // 数フレームで確保が収束する（RenderTargetVisualizer の RT プールと同じ考え方）。
+        // Batch は m_batchesScratch から使い回す（Batch::data の確保済みの容量も残る）
         m_batchCount      = 0;
         auto acquireBatch = [&]() -> Batch & {
             if (m_batchCount >= m_batchesScratch.size())
@@ -158,7 +149,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
             }
         }
 
-        // インスタンス SRV は毎バッチ同じものを指すので、バインドはループ外で 1 回だけ。
+        // インスタンスの SRV はどのバッチでも同じなので、バインドはループの外で1回だけ
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         for (size_t bi = 0; bi < m_batchCount; ++bi)
@@ -187,7 +178,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
-    // デバッグ表示へ登録（Texture2DArray のため v1 では一覧に注記のみ。実表示は v2 で対応）
+    // デバッグ表示に登録する（Texture2DArray なので、表示するスライスは RenderDebugWindow で選ぶ）
     RenderDebugRegistry::Instance().Register({"ShadowMap (Cascades)", shadowMap->GetShaderResourceView(),
                                               shadowMap->GetWidth(), shadowMap->GetHeight(), DebugTexKind::Array});
 }

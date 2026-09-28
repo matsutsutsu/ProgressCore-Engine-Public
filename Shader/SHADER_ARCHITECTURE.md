@@ -93,7 +93,6 @@ GS/CS や独自バインドが要るものは `RegisterShader<T>` が必要。`S
 | t1 | `SLOT_SRV_MAT_TEX1` | Normal |
 | t2 | `SLOT_SRV_MAT_TEX2` | MetalRough / Occlusion |
 | t3 | `SLOT_SRV_MAT_TEX3` | Emissive 等の追加マップ（※パーティクルbufと共有） |
-| t9 | Fog Noise | Per-frame |
 | t10 | Shadow (Array) | Per-frame |
 | t11/t12 | Instance / Bone | Per-object |
 | t14-17 | IBL / Skybox | Per-frame |
@@ -126,7 +125,7 @@ struct VS_OUT {
     float4 position   : POSITION;    // ワールド座標
     float4 tangent    : TANGENT;
     float4 shadowPos  : SHADOW_POS;
-    float4 customParams : CUSTOM_PARAMS; // 個体ごとの汎用値(x=ディゾルブ進行度など)
+    float4 customParams : CUSTOM_PARAMS; // 個体ごとの汎用値(Phong は z=被弾フラッシュ強度)
 };
 ```
 
@@ -136,7 +135,7 @@ struct VS_OUT {
 |------|---------|------|
 | `CalculateWorldTransform(...)` | `Transform.hlsli` | スキン/インスタンシング両対応のワールド変換（3オーバーロード：位置のみ/+法線/+タンジェント） |
 | `GetInstanceCustomParams(id)` | `Instancing.hlsli` | インスタンスの customParams 取得 |
-| `ApplyHeightFog(...)` | `Common.hlsli` | 高さ/距離/ノイズフォグ |
+| `ApplyHeightFog(...)` | `Common.hlsli` | 高さ/距離フォグ |
 | `CalculateIBL / CalculateAllLightsPBR` | `PBRLighting.hlsli` | PBR ライティング |
 | `CalculateShadowWeight(...)` | `ShadowMap.hlsli` | カスケードシャドウ |
 
@@ -209,31 +208,21 @@ PBR の陰影を保ったまま透明度だけ調整。
 ### Phong ✅ （lit・不透明・法線マップ対応）
 マテリアル系で**最も機能が多い**シェーダー。名前は Phong だが、実態は法線マップ＋各種エフェクト込み。
 - **CB**: `materialColor`(f4)
-- **Tex**: DiffuseMap t0 / NormalMap t1 / DissolveNoiseMap（グローバルノイズ枠）
-- **頂点経由**: `customParams.x`=ディゾルブ進行度, `customParams.z`=被弾フラッシュ強度
-- **処理**: ディゾルブクリップ → 法線マップ適用 → 影 → 全ライト計算 → 半球環境光
-  → リムライト → 高さフォグ → ヒットフラッシュ → ディゾルブ発光エッジ
+- **Tex**: DiffuseMap t0 / NormalMap t1
+- **頂点経由**: `customParams.z`=被弾フラッシュ強度
+- **処理**: 法線マップ適用 → 影 → 全ライト計算 → 半球環境光
+  → リムライト → 高さフォグ → ヒットフラッシュ
 - **PSO**: マニフェスト側に指定なし（既定の不透明設定）
-- **用途**: キャラクター・敵など、被弾演出と消滅演出が要るオブジェクトの標準シェーダー。
+- **用途**: キャラクター・敵など、被弾演出が要るオブジェクトの標準シェーダー。
 
 ### Toon ✅ （lit・不透明・セルルック）
 ランプテクスチャで階調を制御するセルシェーディング。
 - **CB**: `materialColor`(f4), `gRimColor`(f4), `gRimPower`(f), `gRimIntensity`(f), `gToonPadding`(f2)
-- **Tex**: DiffuseMap t0 / NormalMap t1 / ToonRampMap t2 / DissolveNoiseMap（グローバルノイズ枠）
-- **頂点経由**: `customParams.x`=ディゾルブ進行度
-- **処理**: ディゾルブクリップ → 法線マップ → `CalcToonDirectionalLight`（ランプ参照）
-  → 半球環境光 → Toon 専用リムライト → 影色 → 高さフォグ → ディゾルブ発光エッジ
+- **Tex**: DiffuseMap t0 / NormalMap t1 / ToonRampMap t2
+- **処理**: 法線マップ → `CalcToonDirectionalLight`（ランプ参照）
+  → 半球環境光 → Toon 専用リムライト → 影色 → 高さフォグ
 - **注意**: トゥーン化されるのは**平行光源のみ**。点光源・スポットライトは計算に入らない。
 - **用途**: セルルックのキャラクター。共通リムライトは呼ばず、専用リムで置き換えている。
-
-### Dissolve ⚠️ （未登録・現在は未使用）
-**`Assets/Shader/shaders.json` に登録されておらず、`Source`/`Assets` からの参照も無い。**
-PS のみ存在し VS が無いのは、マニフェスト経由で読み込まれていないため。
-ディゾルブ表現は現在 `MaterialEffect.hlsli` の `ApplyDissolveClip` / `ApplyDissolveEdge` として
-Phong・Toon に組み込む方式に移行しており、本ファイルはその前段階の実装。
-- **旧実装のCB**: `materialColor`(f4), `dissolveThreshold`(f), `edgeWidth`(f), `padding`(f2), `edgeColor`(f4)
-  ※現行方式が `customParams.x` を使うのに対し、こちらは**専用CBで進行度を渡す**設計だった
-- **扱い**: 使うならマニフェスト登録と VS の用意が必要。使わないなら削除してよい。
 
 ### Sprite ✅ （2D・マニフェスト外）
 2D スプライト用。`Source/Engine/Graphics/Renderer/Sprite.cpp` が直接扱い、
@@ -289,6 +278,5 @@ C++ とエンジン再ビルドは不要（②③の拡張が入るまで `.cso`
 1. **`useXxxMap` の自動化**: `MaterialShader::Update` でテクスチャ束縛の有無から `useXxxMap` を自動設定し、GUI から除外する（「真っ黒事故」の恒久対策）。
 2. **`shaders.json` に `defaults` ブロック**: `"defaults": { "ghostAlpha": 0.4 }` を材質生成時に流し込み、新規マテリアルを最初から使える状態にする。
 3. **VS の共通化**: 同一な材質 VS を `Transform.hlsli` のマクロに集約し、各 `<N>VS.hlsl` を数行化してドリフトを防ぐ。
-4. **Dissolve の登録経路の明文化**（VS 欠如問題）。
-5. **PBR emissive の `useEmissiveMap` ガード追加**（他マップと一貫させる）。
-6. （既出）② VS リフレクション対応 → 頂点アニメ（風揺れ等）を HLSL だけで。③ デバッグ時ランタイムコンパイル → `.cso` ビルド工程の廃止。
+4. **PBR emissive の `useEmissiveMap` ガード追加**（他マップと一貫させる）。
+5. （既出）② VS リフレクション対応 → 頂点アニメ（風揺れ等）を HLSL だけで。③ デバッグ時ランタイムコンパイル → `.cso` ビルド工程の廃止。

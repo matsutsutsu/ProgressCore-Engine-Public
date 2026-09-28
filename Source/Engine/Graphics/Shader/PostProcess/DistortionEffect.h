@@ -1,4 +1,11 @@
 #pragma once
+// ===========================================================================
+// 概要: 画面全体を時間で揺らす歪みのエフェクト。
+//
+// 責務:
+//   - DistortionPS で途中のバッファに描き、それを出力へ写す
+//   - 強さが 0 以下なら入力をそのまま写す
+// ===========================================================================
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
@@ -21,11 +28,9 @@ public:
 
     const char *GetName() const override { return "Distortion"; }
 
-    void SetEnabled(bool enabled) { m_enabled = enabled; }
     void UpdateParams(const GpuData::CbDistortionData &data) { m_cbData = data; }
 
 private:
-    bool                      m_enabled = true;
     GpuData::CbDistortionData m_cbData{};
 
     struct Resources
@@ -37,5 +42,5 @@ private:
     };
 
     std::unique_ptr<Resources> m_res;
-    RenderTargetHandle         m_intermediateRT;
+    RenderTargetHandle         m_intermediateRT; // 歪ませた絵を描く途中のバッファ（HDR）
 };

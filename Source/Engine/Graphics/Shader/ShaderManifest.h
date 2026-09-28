@@ -1,62 +1,53 @@
-// シェーダー登録をデータ駆動化する仕組み。
-// Assets/Shader/shaders.json を読み、記載されたシェーダーを
-// ShaderRegistry へ一括登録する。マテリアルシェーダーは C++ を
-// 一切書かずに JSON へ1行足すだけで追加できる（Graphics.cpp Phase3 の置換）。
 #pragma once
+// ===========================================================================
+// 概要: Assets/Shader/shaders.json を読み、書かれたシェーダーを ShaderRegistry に登録する。
+//
+// 責務:
+//   - materialShaders: 名前からファイルのパスを決め、MaterialShader として登録する
+//   - customShaders: 専用の C++ クラスを持つシェーダーを、クラス名から登録する
+//   - blend / cull / depth の指定から PSO の設定を作る
+//
+// 備考: マテリアルのシェーダーは JSON に1行足すだけで増やせる（C++ の変更もビルドも要らない）。
+//       専用のクラスが要るものだけ、ShaderManifest.cpp の CustomRegistrars に
+//       クラス名 → RegisterShader<T> の行を足す（文字列から C++ の型は作れないため）。
+//
+//       ファイルのパス（name = N）
+//         cso : Assets/Shader/<N>VS.cso, Assets/Shader/<N>PS.cso
+//         hlsl: Shader/Material/<N>/<N>VS.hlsl, Shader/Material/<N>/<N>PS.hlsl
+//
+//       PSO の指定（どれも省略できる。全部省略すると PSO を持たず、各パスの既定を使う）
+//         "blend": opaque | transparency (alpha) | additive (add) | subtract | multiply
+//         "cull" : back | none
+//         "depth": testWrite (default) | testOnly (readOnly) | writeOnly | none | testLessEqual
+//         blend が半透明の系統なら、深度を書かない・両面描画 を土台にする。
+//         cull / depth を書けばその項目だけ変えられる。
+// @code
+//    {
+//      "materialShaders": [
+//        { "name": "PBR" },                            // 不透明
+//        { "name": "GlowSigil", "blend": "additive" }, // 加算（深度を書かない・両面）
+//        { "name": "Banner",    "cull":  "none" },     // 両面
+//        { "name": "Marker",    "depth": "none" }      // 常に手前に描く
+//      ],
+//      "customShaders": [
+//        { "name": "Outline", "class": "OutlineShader" }
+//      ]
+//    }
+// @endcode
+// ===========================================================================
 #include <string>
 
 class ShaderRegistry;
 
-/**
- * @brief JSON マニフェストからシェーダーを一括登録する静的ユーティリティ。
- *
- * @details
- *  【設計意図】
- *   従来 Graphics.cpp Phase3 に手書きしていた RegisterMaterialShader /
- *   RegisterShader<T> の羅列を、外部 JSON (shaders.json) へ追い出す。
- *   - マテリアルシェーダー: JSON に1エントリ足すだけで増える（C++・再ビルド不要）。
- *   - カスタムシェーダー  : 独自 C++ クラスが要るものだけ、ShaderManifest.cpp の
- *                           レジストラ表にクラス名→RegisterShader<T> を1行追加する
- *                           （文字列から C++ 型は生成できないため、ここだけは避けられない）。
- *
- *  【JSON スキーマ】
- *  @code
- *   {
- *     "materialShaders": [
- *       { "name": "PBR" },                                    // 通常の不透明
- *       { "name": "GlowSigil", "blend": "additive" },         // 加算発光（深度書込なし/両面が既定に）
- *       { "name": "Banner",    "cull":  "none" },             // 両面描画
- *       { "name": "Marker",    "depth": "none" }              // 常に最前面
- *     ],
- *     "customShaders": [
- *       { "name": "Outline", "class": "OutlineShader" }
- *     ]
- *   }
- *  @endcode
- *
- *  【任意の PSO フィールド】(いずれも省略可。省略時はパス既定を使い、既存挙動を維持)
- *    "blend": opaque | transparency(alpha) | additive(add) | subtract | multiply
- *    "cull" : back | none
- *    "depth": testWrite(default) | testOnly(readOnly) | writeOnly | none | testLessEqual
- *    ※ blend が透明系のときはベースが自動で「深度書込なし・両面」になる。
- *       cull/depth を明示すればその軸だけ上書きできる。
- *
- *  【パス導出規約】(全シェーダー統一。name=N)
- *    cso : Assets/Shader/<N>VS.cso, Assets/Shader/<N>PS.cso
- *    hlsl: Shader/Material/<N>/<N>VS.hlsl, Shader/Material/<N>/<N>PS.hlsl
- *
- *  @note ファイル IO は必ず FileSystem 経由（将来の .pak 化/暗号化に透過対応するため）。
- *        本関数を呼ぶ前に FileSystem::Initialize() が完了していること。
- */
 class ShaderManifest
 {
 public:
     /**
-     * @brief マニフェストを読み込み、記載シェーダーを registry に登録する。
-     * @param manifestVirtualPath VFS 仮想パス（例: "Assets/Shader/shaders.json"）。
-     * @param registry 登録先。通常 ShaderRegistry::Instance()。
-     * @return 1つ以上の登録に成功したら true。ファイル欠落/パース失敗/全滅で false。
-     * @note 個々のエントリの失敗はスキップしてログに残し、可能な限り登録を続行する。
+     * @brief shaders.json を読み、書かれたシェーダーを registry に登録する。
+     * @param manifestVirtualPath FileSystem のパス（"Assets/Shader/shaders.json"）
+     * @return 1つ以上登録できたら true。ファイルが無い・JSON が壊れている・1つも登録できないなら false
+     * @note 失敗した項目はログに出して飛ばし、残りの登録を続ける。
+     *       FileSystem::Initialize() の後に呼ぶ。
      */
     static bool LoadAndRegister(const std::string &manifestVirtualPath,
                                 ShaderRegistry    &registry);

@@ -1,4 +1,3 @@
-// NormalPrepassShader の実装。
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ModelResource.h"

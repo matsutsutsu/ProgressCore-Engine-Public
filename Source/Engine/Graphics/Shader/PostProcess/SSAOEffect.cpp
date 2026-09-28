@@ -1,16 +1,10 @@
-// SSAOEffect の実装(4パス: 遮蔽値計算→深度考慮ブラーH/V→合成)。
+// 4回に分ける理由: 半球の中をいくつかサンプリングして求めた値は粒の粗いノイズが多く、
+// そのまま色に掛けると地面全体がざらざらして見えた。深度の差が大きい所はぼかさない
+// ぼかし（バイラテラル）で、物の輪郭を残したままノイズだけをならしてから掛ける。
 //
-// Why 4パスなのか:
-//   半球サンプリング由来のノイズを、ぼかし無しでそのまま最終カラーに乗算していたため
-//   「地面全体がザラザラする」症状が出ていた。BloomEffectと同じ「多段パスで
-//   品質を作ってから最後に合成する」構成に変更し、深度考慮ブラー(バイラテラル)で
-//   輪郭を保ったままノイズだけ均す。
-//
-// 重要: 各中間RTは「RTVとして書いた直後」に解除してから「SRVとして読む」。
-//   D3D11ではRTVバインドが残ったままSRVとして読もうとするとハザード検知で
-//   強制的に0埋めされる(合成で scene * 0 = 真っ黒になる)。
-//   BloomEffect.cpp のダウン/アップサンプルループと同じく、各パス直後に
-//   OMSetRenderTargets(1, &nullRTV, nullptr) を挟む。
+// 途中のバッファは、描いた直後に描画先から外してから SRV として読む。D3D11 は描画先に
+// バインドしたままのテクスチャを SRV として読ませず 0 を返すので、合成で scene × 0 = 真っ黒になる。
+// BloomEffect のダウン・アップサンプルと同じく、各回の後に OMSetRenderTargets(1, &nullRTV, nullptr) を呼ぶ
 #include "SSAOEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -122,7 +116,7 @@ void SSAOEffect::Process(ID3D11DeviceContext      *dc,
 
     ID3D11RenderTargetView *nullRTV = nullptr;
 
-    // ① 遮蔽値計算 (深度t4+法線t6 → rawAO)
+    // 遮られる度合いを求める（深度 t4・法線 t6 → rawAO）
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
         if (SUCCEEDED(dc->Map(m_res->cbSSAO.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
@@ -160,13 +154,13 @@ void SSAOEffect::Process(ID3D11DeviceContext      *dc,
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
     };
 
-    // ② ブラー H (rawAO → blurH)
+    // 横にぼかす（rawAO → blurH）
     runBlurPass(rawAO->GetSRV(), blurH, 1.0f / static_cast<float>(m_width), 0.0f);
 
-    // ③ ブラー V (blurH → blurV)
+    // 縦にぼかす（blurH → blurV）
     runBlurPass(blurH->GetSRV(), blurV, 0.0f, 1.0f / static_cast<float>(m_height));
 
-    // ④ 合成 (シーン色 × ぼかし済みAO → outputRTV)
+    // シーンの色 × ぼかした値 → outputRTV
     {
         dc->PSSetShader(m_res->psComposite.Get(), nullptr, 0);
         dc->OMSetRenderTargets(1, &outputRTV, nullptr);

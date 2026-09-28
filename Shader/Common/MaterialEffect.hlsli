@@ -5,38 +5,7 @@
 #include "Shader/Common/Scene.hlsli"
 
 // ==========================================================
-// 1. ディゾルブ (消滅) 判定
-// ==========================================================
-void ApplyDissolveClip(float dissolveThreshold, float2 uv, Texture2D noiseMap, SamplerState smp)
-{
-    if (dissolveThreshold > 0.0f)
-    {
-        float noiseScale = 0.1f;
-        float noiseValue = noiseMap.Sample(smp, uv * noiseScale).r;
-        clip(noiseValue - dissolveThreshold);
-    }
-}
-
-// ==========================================================
-// 2. ディゾルブのエッジ発光
-// ==========================================================
-float3 ApplyDissolveEdge(float3 baseColor, float dissolveThreshold, float2 uv, Texture2D noiseMap, SamplerState smp)
-{
-    if (dissolveThreshold > 0.0f)
-    {
-        float noiseValue = noiseMap.Sample(smp, uv * 3.0f).r;
-        float edgeWidth = 0.05f;
-        if (noiseValue - dissolveThreshold < edgeWidth)
-        {
-            // 発光するエッジカラー
-            return float3(3.0f, 1.0f, 0.2f);
-        }
-    }
-    return baseColor;
-}
-
-// ==========================================================
-// 3. リムライト (輪郭発光)
+// 1. リムライト (輪郭発光)
 // ==========================================================
 float3 ApplyRimLight(float3 baseColor, float3 normal, float3 viewDir)
 {
@@ -45,17 +14,17 @@ float3 ApplyRimLight(float3 baseColor, float3 normal, float3 viewDir)
 
     float NdotV = saturate(dot(normal, viewDir));
     float rimFactor = pow(1.0f - NdotV, gFogRimParams.x);
-    
+
     float curvature = length(fwidth(normal));
     float flatMask = saturate(curvature * 100.0f);
     float floorMask = 1.0f - step(0.9f, normal.y);
-    
+
     float3 rimLight = rimFactor * gFogRimColor.rgb * gFogRimParams.y * flatMask * floorMask;
     return baseColor + rimLight;
 }
 
 // ==========================================================
-// 4. ヒットフラッシュ (被ダメージ時の白点滅)
+// 2. ヒットフラッシュ (被ダメージ時の白点滅)
 // ==========================================================
 float3 ApplyHitFlash(float3 baseColor, float flashIntensity)
 {
@@ -63,7 +32,7 @@ float3 ApplyHitFlash(float3 baseColor, float flashIntensity)
 }
 
 // ==========================================================
-// 5. 時間ユーティリティ（CbScene.gTimeParams 由来）
+// 3. 時間ユーティリティ（CbScene.gTimeParams 由来）
 //   Scene.hlsli 経由で gTimeParams が見えている前提。
 //   x:経過秒 y:デルタ秒 z:sin(経過秒)
 // ==========================================================
@@ -85,7 +54,7 @@ float Pulse(float minV, float maxV, float speed)
 }
 
 // ==========================================================
-// 6. パラメータ化リムライト（マテリアルごとに制御可能）
+// 4. パラメータ化リムライト（マテリアルごとに制御可能）
 //   既存の ApplyRimLight は フォグ用グローバル gFogRimParams に依存していて
 //   マテリアル個別に設定できなかった。こちらは power/color/strength を
 //   引数で受け取るので、Hologram 等が自前のリムを持てる。
@@ -102,7 +71,7 @@ float3 ApplyRimLightParams(float3 baseColor, float3 normal, float3 viewDir,
 }
 
 // ==========================================================
-// 7. グローバルノイズを使った乱流サンプリング
+// 5. グローバルノイズを使った乱流サンプリング
 //   gGlobalNoiseMap (t13, Scene.hlsli で宣言) は EnvironmentSystem が
 //   毎フレーム無条件にバインドするため、マテリアル側でのテクスチャ設定が
 //   一切不要。Fire/Water 等の「揺らめき」表現の乱流源として使う。

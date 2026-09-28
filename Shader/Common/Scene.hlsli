@@ -5,7 +5,6 @@
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 
 // ノイズテクスチャ（フォグ用。FogComponent未設定時はnullバインドされる点に注意）
-Texture2D gFogNoiseMap : register(REG_SRV(SLOT_SRV_FOG_NOISE));
 
 // グローバルノイズテクスチャ(t13)。
 // EnvironmentSystem のコンストラクタで Assets/Textures/Shader/Noise.png を

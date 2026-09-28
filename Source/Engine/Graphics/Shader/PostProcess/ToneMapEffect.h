@@ -1,4 +1,14 @@
 #pragma once
+// ===========================================================================
+// 概要: HDR の画像を露出と色で調整し、SDR の出力先に書き出すトーンマップ。
+//
+// 責務:
+//   - 全画面の三角形で ToneMapPS を1回かける
+//   - ToneMapConfigComponent の値を CbToneMapData に入れて送る
+//
+// 備考: IPostEffect は継承しない。IPostEffect は2枚の HDR バッファの間で読み書きを入れ替える流れの1段だが、
+//       トーンマップは PostProcessManager が最後に1回だけ、SDR の出力先へ書くため。
+// ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <DirectXMath.h>
@@ -6,11 +16,6 @@
 
 struct ToneMapConfigComponent;
 
-// ToneMapEffect: HDR 画像を SDR に焼き付けるためのシェーダー効果クラス
-// ToneMapはIPostEffectを継承しない。
-// 理由: IPostEffect は「フルスクリーン四角形にシェーダーを適用する」という前提で設計されているが、
-// 	 トーンマッピングは「HDRテクスチャを受け取り、SDRテクスチャに書き出す」という処理であり、
-//   入力と出力が必ずしもフルスクリーン四角形とは限らないため。
 class ToneMapEffect
 {
 public:
@@ -19,7 +24,7 @@ public:
 
     void Initialize(ID3D11Device *device);
 
-    // HDR を受け取り、SDR に焼き付ける最終工程
+    // inputHDR を outputSDR に書く（ビューポートは PostProcessManager が設定済み）
     void Process(ID3D11DeviceContext      *dc,
                  ID3D11ShaderResourceView *inputHDR,
                  ID3D11RenderTargetView   *outputSDR,

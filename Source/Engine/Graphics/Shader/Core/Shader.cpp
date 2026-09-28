@@ -6,20 +6,16 @@
 
 bool Shader::InitializeReflection(ID3D11Device *device, const std::string &csoPath)
 {
-    // csoファイルからリフレクション情報をロードし、定数バッファの自動生成を行う
     if (!m_reflection.LoadFromCompiledFile(csoPath.c_str())) return false;
 
-    // 定数バッファの取得
     const auto &cbs = m_reflection.GetConstantBuffers();
     for (const auto &cbInfo : cbs)
     {
-        // SLOT_CB_SCENE(slot8)以降はシステム予約領域なので、
-        // ユーザー定数バッファのみを自動生成する
+        // b8（SLOT_CB_SCENE）以降は Graphics などがバインドするフレーム共通のものなので作らない
         if (cbInfo.bindPoint >= SLOT_CB_SCENE)
         {
-            continue; // システム予約領域は無視
+            continue;
         }
-        // AutoConstantBuffer を生成してマップに保存
         m_constantBuffers[cbInfo.name].Create(device, cbInfo);
     }
     return true;
@@ -48,12 +44,10 @@ int Shader::FetchSamplerSlot(const std::string &name)
 
 void Shader::ApplyShaderPipeline(ID3D11DeviceContext *dc, ID3D11VertexShader *vs, ID3D11PixelShader *ps, ID3D11InputLayout *layout)
 {
-    // シェーダーと入力レイアウトをセット
     dc->IASetInputLayout(layout);
     dc->VSSetShader(vs, nullptr, 0);
     dc->PSSetShader(ps, nullptr, 0);
 
-    // 定数バッファをバインド
     for (auto &pair : m_constantBuffers)
     {
         pair.second.BindVS(dc);
@@ -83,34 +77,24 @@ void Shader::UnbindResources(ID3D11DeviceContext *dc)
     dc->IASetInputLayout(nullptr);
 }
 
-// マテリアルのプロパティを定数バッファに転送し、テクスチャをバインドする
 void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialData &mat,
                                       const MaterialData *fallbackMat)
 {
-    // 定数バッファにマテリアルのスカラー値とカラー値を流し込む
+    // 定数バッファ:
+    //   定数バッファはシェーダー1つにつき1組で、そのシェーダーを使う全マテリアルが共有する。
+    //   なのでマテリアルごとに必ず 0 に戻し、このマテリアルの値を書き直して毎回送る。
+    //   「値を1つも書かなかったバッファは送らない」という最適化を入れてはいけない。
+    //   前に描いたオブジェクトの値が残って次のオブジェクトに漏れる（関係ない敵やドローンが真っ黒になった）。
+    //
+    //   対象は b0 だけでなく、このシェーダーの b0〜b7 の全部。OutlineShader は輪郭線の値
+    //   （gOutlineColor / gOutlineSize）を b1 の CbOutline に置いているので、b0 だけにすると輪郭線の太さが 0 になる。
+    //
+    //   逆に b0〜b7 にはマテリアル以外の値を置いてはいけない。ここで毎回 0 にするので、
+    //   前に書いた値は消える。メッシュごと・オブジェクトごとの値は b8 以降に置く。
     for (auto &cbPair : m_constantBuffers)
     {
         auto &cb = cbPair.second;
 
-        // ========================================================
-        // ① 定数バッファへの値の流し込み
-        //
-        //   定数バッファはシェーダー1インスタンスで共有される。
-        //   材質ごとに必ずゼロへ戻し、この材質の値を積み直して常にアップロードする。
-        //   「1つも値を書かなかったCBは再アップロードしない」最適化を入れてはいけない。
-        //   直前に描いたオブジェクトのCB値が残ったまま次のオブジェクトへ漏れる
-        //   （無関係な敵/ドローンが真っ黒になる）。
-        //
-        //   【対象範囲】m_constantBuffers はこのシェーダーが持つユーザーCB
-        //   （b0〜b7＝SLOT_CB_SCENE 未満）の「全部」であって、b0 だけではない。
-        //   b0 に限定してはいけない：OutlineShader は材質パラメータ
-        //   (gOutlineColor / gOutlineSize) を b1 の CbOutline に置いており、
-        //   ここで一緒に埋めないと輪郭線の太さが 0 になる。
-        //
-        //   【守るべき制約】逆に、b0〜b7 へ「材質以外の値」を置いてはいけない。
-        //   このループが毎回ゼロにするので、材質更新より前に書いた値は消える。
-        //   メッシュ単位/オブジェクト単位のデータは b8 以降（システム予約領域）に置く。
-        // ========================================================
         cb.ResetToZero();
 
         for (const auto &prop : mat.scalars)
@@ -122,21 +106,17 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
             cb.SetValue(prop.nameHash, prop.value);
         }
 
-        cb.UpdateBuffer(dc); // 常に転送（ゼロ初期化を確実に反映するため）
+        cb.UpdateBuffer(dc);
     }
 
-    // ========================================================
-    // ② テクスチャのバインド
-    // ========================================================
     const auto &shaderTextures = m_reflection.GetTextures();
 
     for (const auto &texInfo : shaderTextures)
     {
-        // SLOT_SRV_FOG_NOISE(slot9)以降はシステム予約領域なので、
-        // ユーザー定義テクスチャのみを処理する
-        if (texInfo.bindPoint >= SLOT_SRV_FOG_NOISE) continue;
-        // t4/t5 は SceneColorGrabPass 等がパイプライン側でバインドする per-pass リソース。
-        // マテリアルに無いから null を刺すと屈折等が常に黒になる。
+        // t10（SLOT_SRV_SHADOW）以降はフレーム共通・ドローごとのもので、マテリアルのテクスチャではない
+        if (texInfo.bindPoint >= SLOT_SRV_SHADOW) continue;
+        // t4〜t6（深度・シーンの色・法線）はパス側がバインドする。マテリアルに無いからと
+        // null をバインドすると、屈折などが常に黒くなる
         if (texInfo.bindPoint == SLOT_SRV_SCENE_DEPTH ||
             texInfo.bindPoint == SLOT_SRV_SCENE_COLOR ||
             texInfo.bindPoint == SLOT_SRV_SCENE_NORMAL)
@@ -144,15 +124,12 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
             continue;
         }
 
-        // テクスチャのスロット番号を取得　レジスタ番号
         UINT          slot = texInfo.bindPoint;
         TextureHandle texHandle;
 
-        // 実行時のハッシュ計算は不要。ロード時に算出済みの texInfo.nameHash をそのまま引く。
+        // 名前のハッシュはリフレクションを読んだときに求めてある
         bool hasTex = mat.GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid();
 
-        // override 材質がこのスロットのテクスチャを持たない（＝保存で失われた
-        // モデル埋め込みテクスチャ等）場合は、生きているモデル材質から補う。
         if (!hasTex && fallbackMat)
         {
             hasTex = fallbackMat->GetTexture(texInfo.nameHash, texHandle) && texHandle.IsValid();
@@ -160,7 +137,6 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
 
         if (hasTex)
         {
-            // cppに分けたことで、ここでResourceManagerを安全に呼び出せる
             ID3D11ShaderResourceView *srv = ResourceManager::Instance().GetTexture(texHandle);
             dc->PSSetShaderResources(slot, 1, &srv);
 

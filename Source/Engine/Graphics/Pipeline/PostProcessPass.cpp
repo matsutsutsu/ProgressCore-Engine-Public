@@ -4,7 +4,6 @@
 
 void PostProcessPass::Execute(const RenderFrameContext &ctx)
 {
-
     if (!m_services->postProcess) return;
 
     if (m_services->sceneConstantBuffer)

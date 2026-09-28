@@ -1,31 +1,37 @@
-// 不透明ジオメトリのビュー空間法線を法線バッファへ書き出すパス。
-// 役割      : SSAO/SSR等のスクリーンスペース技術に「法線」という情報源を供給する。
-// 責務      : 不透明コマンドを専用シェーダーで再提出し、NormalBuffer へ描く。
-// 位置付け  : OpaquePass の直後に実行する(方式B: 専用プリパス)。
 #pragma once
+// ===========================================================================
+// 概要: 不透明のメッシュを先に1回描き、深度とビュー空間の法線を書き出すパス。
+//
+// 責務:
+//   - 不透明のコマンドを法線用のシェーダーで描き、NormalBuffer（SSAO が t6 で読む）に書く
+//   - 深度も書いて、後の OpaquePass で early-Z が効くようにする
+//   - メッシュごとに視錐台カリングし、見えるインスタンスの列を RenderQueue に残す
+//     （OpaquePass は同じ列を使い、カリングをやり直さない）
+//
+// 備考: OpaquePass より前に置く。
+// ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/InstanceBuffer.h"
 #include "Engine/Graphics/Pipeline/NormalBuffer.h"
 #include <vector>
 
-// 不透明ジオメトリの法線を書き出すプリパス。
 class NormalPrepass : public IRenderPass
 {
 public:
-    void        Initialize(const RenderServices &services) override;
-    void        Execute(const RenderFrameContext &ctx) override;
-    void        OnResize(uint32_t width, uint32_t height) override;
-    const char *GetName() const override { return "NormalPrepass"; }
+    void Initialize(const RenderServices &services) override;
+    void Execute(const RenderFrameContext &ctx) override;
+    void OnResize(uint32_t width, uint32_t height) override;
 
     ID3D11ShaderResourceView *GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
-    // 現在の法線バッファ SRV を Graphics へ預ける（生成・再生成の直後に呼ぶ）。
+    // 法線バッファの SRV を Graphics に渡す（Graphics::MakeFrameContext が ctx.sceneNormalSRV に入れる）。
+    // SRV を作った・作り直した直後に呼ぶ
     void PublishNormalSRV();
 
     PipelineState             m_pso;
     InstanceBuffer            m_instanceBuffer;
     NormalBuffer              m_normalBuffer;
-    std::vector<InstanceData> m_instanceScratch;
+    std::vector<InstanceData> m_instanceScratch; // メッシュごとに使い回す作業用の配列
 };

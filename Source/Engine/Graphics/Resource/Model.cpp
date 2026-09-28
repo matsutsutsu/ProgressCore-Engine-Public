@@ -131,6 +131,26 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         }
     }
 
+    // 親が子より先に来る計算の順番を作る。glTF のノードは親が先に並ぶとは限らず、
+    // nodes を並べ替えるとメッシュやアニメーションが持つノード番号がずれるので、順番だけ別に持つ
+    m_nodeUpdateOrder.clear();
+    m_nodeUpdateOrder.reserve(nodes.size());
+    std::vector<int> pending;
+    for (size_t i = 0; i < nodes.size(); ++i)
+    {
+        if (nodes[i].parent == nullptr) pending.push_back(static_cast<int>(i));
+    }
+    while (!pending.empty())
+    {
+        const int index = pending.back();
+        pending.pop_back();
+        m_nodeUpdateOrder.push_back(index);
+        for (const Node *child : nodes[index].children)
+        {
+            pending.push_back(static_cast<int>(child - nodes.data()));
+        }
+    }
+
     // 3. ModelResource のマテリアルから、このインスタンスの MaterialData を作る
     const std::vector<ModelResource::Material> &resMaterials = ResourceManager::Instance().GetModel(resource)->GetMaterials();
     materials.resize(resMaterials.size());
@@ -300,17 +320,17 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 {
     DirectX::XMMATRIX ParentWorldTransform = DirectX::XMLoadFloat4x4(&worldTransform);
 
-    for (Node &node : nodes)
+    for (int nodeIndex : m_nodeUpdateOrder)
     {
+        Node &node = nodes[nodeIndex];
+
         // 親ノードに対する行列
         DirectX::XMMATRIX S              = DirectX::XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z);
         DirectX::XMMATRIX R              = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&node.rotation));
         DirectX::XMMATRIX T              = DirectX::XMMatrixTranslation(node.position.x, node.position.y, node.position.z);
         DirectX::XMMATRIX LocalTransform = S * R * T;
 
-        // モデルの原点に対する行列。
-        // nodes は親が子より先に並んでいる前提（親の globalTransform を先に求めておくため）。
-        // GLTFImporter は glTF の並びのまま読むので、glTF 側がこの順になっている必要がある
+        // モデルの原点に対する行列。m_nodeUpdateOrder の順に回すので、親の globalTransform は求め終わっている
         DirectX::XMMATRIX ParentGlobalTransform;
         if (node.parent != nullptr)
         {

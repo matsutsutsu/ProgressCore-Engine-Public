@@ -1,22 +1,22 @@
 #pragma once
 // ===========================================================================
-// TrailRenderer.h
-// ---------------
-// 役割:
-//   TrailSystem が積んだ三角形頂点を、1フレーム最小ドローで描画する常駐レンダラ。
-//   「加算レイヤ」と「歪み(屈折)レイヤ」の2枚を持つ。
+// 概要: TrailSystem が積んだトレイルの三角形を、1フレームにつき少ないドローコールで描くクラス。
 //
-// 設計方針:
-//   - RenderServices 構造体を変更せず配線を最小化するため、RenderQueue と同じく
-//     シングルトンにする。GPU リソースは初回 Render 時に device から遅延生成する。
-//   - 加算レイヤ: ブレンド Additive、深度 TestOnly(書き込み無し)、両面(CullNone)。
-//   - 歪みレイヤ: 同じ形状を αブレンドで背景の屈折像に置き換える。加算の芯が
-//     屈折の膜の上に乗るよう、歪み → 加算 の順に描く。
-//     RGB のみ書き込むブレンド(UITransparency)を使うのは、HDR ターゲットの
-//     α=1 を壊さないため（壊すとエディタ GameView が黒く抜ける）。
-//   - 2レイヤーは同じ動的頂点バッファに前後で詰め、Draw の開始位置を変えるだけ。
-//   - RTV/DSV は先行パス(SetupPass 等)がバインド済みの HDR ターゲットをそのまま使う。
-//   - 頂点はワールド空間で積み、VS で viewProjection(row_major) だけ掛ける。
+// 責務:
+//   - 加算の層と、背景を歪ませる層の2つの頂点の列をためる（別スレッドから積んでもよい）
+//   - TrailPass から呼ばれ、歪み → 加算 の順に描いて列を空にする
+//
+// 備考:
+//   - RenderQueue と同じくシングルトンにしている（RenderServices に項目を足さずに済む）。
+//     GPU リソースは最初の Render で作る。
+//   - 加算の層: ブレンドは Additive、深度はテストだけ（書かない）、両面を描く。
+//   - 歪みの層: 同じ形で、SceneColorGrabPass が写したシーンの色をずらして読み、アルファブレンドで重ねる。
+//     加算の明るい芯が上に来るよう、歪みを先に描く。
+//     ブレンドは RGB だけを書く UITransparency を使う。HDR バッファのアルファ（1）を
+//     壊すと、エディタの GameView が黒く抜けるため。
+//   - 2つの層は同じ DYNAMIC 頂点バッファに前後に詰め、Draw の開始位置だけ変える。
+//   - 描画先は、前のパスがバインドしたままの HDR バッファをそのまま使う。
+//   - 頂点はワールド座標で積み、頂点シェーダーで viewProjection（row_major）だけを掛ける。
 // ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -32,16 +32,14 @@ struct RenderFrameContext;
 class TrailRenderer
 {
 public:
-    // トレイルの1頂点（ワールド座標＋頂点カラー）。
-    //
-    // color の意味はレイヤで異なる。
-    // 加算レイヤ: rgb=加算色 / a=強度(尾ほど小さくフェード)
-    // 歪みレイヤ: r=歪み量(px) / g=色ズレ / b=陽炎ゆらぎ / a=尾のフェード
+    // トレイルの1頂点。color の意味は層によって違う。
+    //   加算の層: rgb = 足す色 / a = 強さ（尾ほど小さい）
+    //   歪みの層: r = ずらす量（px） / g = 色のずれ / b = 陽炎の揺らぎ / a = 尾のフェード
     struct Vertex
     {
-        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT3 position; // ワールド座標（m）
         DirectX::XMFLOAT4 color;
-        DirectX::XMFLOAT2 uv; // x=尾の長さ方向, y=幅方向。テクスチャ貼付け用。
+        DirectX::XMFLOAT2 uv; // x = 尾の長さの方向, y = 幅の方向
     };
 
     static TrailRenderer &Instance()
@@ -51,21 +49,21 @@ public:
     }
 
     /**
-     * @brief ECS(TrailSystem)から加算レイヤの三角形頂点を積む（スレッド安全）。
-     * @note  vertexCount は3の倍数を想定。容量超過分は三角形境界で切り捨てる。
-     * @param texture このトレイルに貼るテクスチャSRV。null なら白（＝従来の単色）。
-     *               全トレイルを1バッファに詰めつつ、SRV 単位でドローを分けて描く。
+     * @brief 加算の層に三角形の頂点を積む（別スレッドから呼んでよい）。
+     * @param vertexCount 3 の倍数。容量を超えたぶんは三角形の区切りで切り捨てる
+     * @param texture このトレイルのテクスチャ。null なら白（頂点の色だけになる）。
+     *                全トレイルを1つのバッファに詰め、テクスチャが変わる所でドローコールを分ける
      */
     void SubmitTriangleList(const Vertex *verts, size_t vertexCount,
                             ID3D11ShaderResourceView *texture = nullptr);
 
-    // 歪みレイヤの三角形頂点を積む（スレッド安全）。形状は加算と同一。
+    // 歪みの層に三角形の頂点を積む（別スレッドから呼んでよい）
     void SubmitDistortTriangleList(const Vertex *verts, size_t vertexCount);
 
-    // TrailPass から毎フレーム呼ばれる。溜めた頂点を描画してリストを空にする。
+    // ためた頂点を描いて空にする（TrailPass から毎フレーム呼ばれる）
     void Render(const RenderServices &services, const RenderFrameContext &ctx);
 
-    // GPU リソースを解放する（エンジン終了時）。
+    // GPU リソースを解放する（エンジンの終了時）
     void Shutdown();
 
 private:
@@ -74,15 +72,14 @@ private:
     TrailRenderer(const TrailRenderer &)            = delete;
     TrailRenderer &operator=(const TrailRenderer &) = delete;
 
-    // 初回のみ device からシェーダ/入力レイアウト/動的バッファ/PSO を生成。
+    // 最初の1回だけ、シェーダー・入力レイアウト・バッファ・PSO を作る
     void EnsureInitialized(ID3D11Device *device);
 
-    // m_mutex 保持前提。上限に収まる追加数を返す（三角形境界で丸める）。
+    // あと何頂点積めるか（三角形の区切りに丸める）。m_mutex を持った状態で呼ぶ
     size_t ClampToCapacity(size_t vertexCount) const;
 
-    // 1フレーム上限（2レイヤー合算）。筒(Tube)は1本で約3,300頂点使い、
-    // 歪みを付けるとその2倍積むため、板だけの頃の 8192 では全く足りない。
-    // 49152頂点でも動的VBは約1.3MB。
+    // 1フレームに積める頂点の数（2つの層の合計）。筒の形（Tube）は1本で約 3,300 頂点を使い、
+    // 歪みを付けるとその2倍を積む。49152 頂点でも頂点バッファは約 1.3MB
     static constexpr size_t MAX_VERTICES = 49152;
 
     bool m_initialized = false;
@@ -91,24 +88,24 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_distortPixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_inputLayout;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   // DYNAMIC 頂点バッファ
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_vertexBuffer;   // DYNAMIC の頂点バッファ
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_constantBuffer; // b0: viewProjection
 
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_whiteTex; // テクスチャ無しトレイル用の1x1白
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_whiteTex; // テクスチャの無いトレイル用の 1x1 の白
 
-    PipelineState m_pso;        // 加算 / TestOnly / CullNone / TriangleList
-    PipelineState m_distortPso; // αブレンド(RGBのみ) / TestOnly / CullNone
+    PipelineState m_pso;        // 加算 / 深度はテストだけ / 両面 / TriangleList
+    PipelineState m_distortPso; // アルファブレンド（RGB だけ） / 深度はテストだけ / 両面
 
-    // 加算レイヤの「テクスチャ単位ドロー範囲」。頂点は m_vertices に連続で詰め、
-    // SRV が変わる境界で1バッチにする（加算は順序非依存なので分割自由）。
+    // 加算の層のうち、同じテクスチャが続く区間（1回のドローコール）。
+    // 加算は描く順で結果が変わらないので、テクスチャごとに分けて描いてよい
     struct AddBatch
     {
-        ID3D11ShaderResourceView *srv   = nullptr; // null は白テクスチャ
-        size_t                    count = 0;       // この範囲の頂点数
+        ID3D11ShaderResourceView *srv   = nullptr; // null は白
+        size_t                    count = 0;       // この区間の頂点の数
     };
 
-    std::vector<Vertex>   m_vertices;        // フレーム内の加算レイヤ頂点（全バッチ連結）
-    std::vector<AddBatch> m_addBatches;      // m_vertices を SRV 単位に分ける範囲
-    std::vector<Vertex>   m_distortVertices; // フレーム内の歪みレイヤ頂点
+    std::vector<Vertex>   m_vertices;        // 加算の層の頂点（全区間をつなげたもの）
+    std::vector<AddBatch> m_addBatches;      // m_vertices をテクスチャごとに分けた区間
+    std::vector<Vertex>   m_distortVertices; // 歪みの層の頂点
     std::mutex            m_mutex;
 };

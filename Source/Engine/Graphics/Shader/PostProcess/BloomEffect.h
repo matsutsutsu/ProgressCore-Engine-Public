@@ -1,4 +1,19 @@
 #pragma once
+// ===========================================================================
+// 概要: 明るい所をにじませて光って見せるブルームのエフェクト。
+//
+// 責務:
+//   - 明るい所を抜き出し、縮小・拡大を繰り返してぼかした光を作る
+//   - シーン + 光 × 強さ を outputRTV に書く（出力は光だけでなく、合成済みの絵）
+//   - 縮小・拡大に使うバッファを持ち、Resize で作り直す
+//
+// 備考: 描く順
+//         inputSRV（シーンの HDR）
+//           → 明るい所を抜き出す（フル → 1/2）
+//           → 縮小 × (kMaxIterations - 1)
+//           → 拡大 × (kMaxIterations - 1) → m_upChain[0]（1/2 の大きさの光）
+//           → 合成: outputRTV = シーン + 光 × intensity（フル解像度）
+// ===========================================================================
 #include "IPostEffect.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
@@ -8,32 +23,6 @@
 #include <vector>
 #include <memory>
 
-/**
- * @brief Bloom エフェクト（IPostEffect 実装）。
- *
- * @details
- *  Process() の返値は「シーン + グロー」を合成済みの HDR。グローだけを返すのでは
- *  ないので、後段の Tone Mapper は 1 入力で受けること。
- *  リソースとブレンドステートは自前で所有する（グローバル・シングルトンを見ない）。
- *
- *  【内部パイプライン】
- *  @code
- *   inputSRV (sceneHDR)
- *     → Extraction (full→half)
- *     → Downsample × N
- *     → Upsample   × N → m_upChain[0] (half-res bloom glow)
- *     → Composite: m_compositeRT = scene + glow * intensity  (full-res HDR)
- *     ← 返す
- *  @endcode
- *
- *  【使い方】
- *  @code
- *   auto* bloom = m_postProcess->AddEffect<BloomEffect>();
- *   bloom->intensity  = 1.5f;
- *   bloom->threshold  = 0.9f;
- *   bloom->SetEnabled(true);
- *  @endcode
- */
 class BloomEffect : public IPostEffect
 {
 public:
@@ -43,10 +32,7 @@ public:
     void Initialize(ID3D11Device *device, UINT width, UINT height) override;
     void Resize(ID3D11Device *device, UINT width, UINT height) override;
 
-    /**
-     * @param inputSRV シーン HDR テクスチャ
-     * @return シーン + Bloom グロー の合成済み HDR SRV（次のエフェクトの入力）
-     */
+    // inputSRV にブルームをかけ、合成した絵を outputRTV に書く
     void Process(
         ID3D11DeviceContext      *dc,
         ID3D11ShaderResourceView *inputSRV,
@@ -54,33 +40,31 @@ public:
 
     const char *GetName() const override { return "Bloom"; }
 
-    void UpdateParams(const GpuData::CbBloomData &data) { cbData = data; } // ECSからのデータ受け取り用
+    // PostProcessSystem から値を受け取る（texelWidth / texelHeight は Process が入れ直す）
+    void UpdateParams(const GpuData::CbBloomData &data) { cbData = data; }
 
 private:
-    static constexpr int kMaxIterations = 6;
+    static constexpr int kMaxIterations = 6; // 縮小するバッファの枚数（1/2, 1/4, ... 1/64）
 
-    // 最新のパラメータを保持しておく
     GpuData::CbBloomData cbData{};
 
-    // ---- GPU リソース（旧 static グローバルをメンバに移動）----
     struct BloomResources
     {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psExtract;   // 輝度抽出
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psDown;      // ダウンサンプル
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psUp;        // アップサンプル
-        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psComposite; // scene + glow 合成 (新規)
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psExtract;   // 明るい所を抜き出す
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psDown;      // 縮小
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psUp;        // 拡大（1つ大きいバッファと足す）
+        Microsoft::WRL::ComPtr<ID3D11PixelShader>  psComposite; // シーン + 光
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cbBloom;
         Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
     };
     std::unique_ptr<BloomResources> m_res;
 
-    // Opaque ブレンドステート（旧 Graphics::Instance() 依存を排除）
+    // ブレンドなし。前の描画の加算などのブレンドが残っていても上書きで描くため
     Microsoft::WRL::ComPtr<ID3D11BlendState> m_opaqueBlendState;
 
-    // RT チェーン
-    std::vector<RenderTargetHandle> m_downChain;
-    std::vector<RenderTargetHandle> m_upChain;
+    std::vector<RenderTargetHandle> m_downChain; // 縮小した絵（[0] が 1/2）
+    std::vector<RenderTargetHandle> m_upChain;   // 拡大しながら足した光（[0] が最後の結果）
 
     void CreateChains(UINT width, UINT height);
     void ReleaseChains();

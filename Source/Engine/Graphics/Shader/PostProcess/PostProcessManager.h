@@ -1,4 +1,24 @@
 ﻿#pragma once
+// ===========================================================================
+// 概要: シーンを描く HDR バッファと、ポストプロセスのエフェクトの列、最後のトーンマップをまとめるクラス。
+//
+// 責務:
+//   - HDR バッファ2枚・SDR の出力・屈折用のシーンの色の写しを作る
+//   - BeginScene で HDR バッファをクリアして描画先にする
+//   - EndScene で有効なエフェクトを順にかけ、トーンマップで SDR に書き出す
+//   - SceneColorGrabPass のために、その時点の HDR バッファを写す
+//
+// 備考: エフェクトをかける順は Initialize の AddEffect の順。増やすときはそこに1行足す。
+//       値は PostProcessSystem が型で引いて毎フレーム渡す。
+// @code
+//    // PostProcessSystem から毎フレーム
+//    if (auto *bloom = postProcess->GetEffect<BloomEffect>())
+//    {
+//        bloom->SetEnabled(comp && comp->enable);
+//        if (comp) bloom->UpdateParams(comp->data);
+//    }
+// @endcode
+// ===========================================================================
 #include <memory>
 #include <vector>
 #include <type_traits>
@@ -9,31 +29,8 @@
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
-
-// PostProcessが直接ToneMapを保持して最後に使うためインクルード
 #include "ToneMapEffect.h"
 
-/**
- * @brief HDR → SDR パイプライン全体を管理するクラス。
- *
- * @details
- *  【設計変更後の責務】
- *   - BeginScene: シーンを HDR RT に切り替える
- *   - エフェクトチェーン実行（BloomEffect を含む全 IPostEffect）
- *   - ToneMapping（1 入力のみ、bloom 合成は BloomEffect が完結）
- *
- *  【使い方】
- *   - 実行順 = PostProcessManager::Initialize 内の AddEffect の並び順。
- *     エフェクトを増やすときは、そこに 1 行足す。
- *   - パラメータ更新は ECS 側（PostProcessSystem）から型で引いて行う。
- *  @code
- *   // PostProcessSystem から毎フレーム
- *   if (auto* bloom = postProcess->GetEffect<BloomEffect>()) {
- *       bloom->threshold = component.threshold;
- *       bloom->SetEnabled(component.enable);
- *   }
- *  @endcode
- */
 class PostProcessManager
 {
 public:
@@ -42,35 +39,38 @@ public:
 
     void Resize(ID3D11Device *device, UINT width, UINT height);
 
-    /** シーン描画前に HDR RT を設定する */
+    // HDR バッファ（1枚目）を clearColor でクリアし、dsv と一緒に描画先にする
     void BeginScene(ID3D11DeviceContext    *dc,
                     const float             clearColor[4],
                     ID3D11DepthStencilView *dsv);
 
     /**
-     * @brief エフェクトチェーン → ToneMap を一括実行する。
-     * @param targetRTV nullptr の場合は内部 SDR バッファに出力（ImGui 用）。
+     * @brief 有効なエフェクトを順にかけ、トーンマップして書き出す。
+     * @param targetRTV nullptr なら中で持つ SDR のバッファに書く（エディタの GameView に表示する用）
+     * @param sceneDepthSRV t4 にバインドする深度（SSAO・ContactShadow・DoF が読む）
+     * @param sceneNormalSRV t6 にバインドする法線（SSAO が読む）
+     * @return SDR のバッファの SRV
      */
     ID3D11ShaderResourceView *EndScene(ID3D11DeviceContext      *dc,
                                        ID3D11RenderTargetView   *targetRTV      = nullptr,
                                        ID3D11ShaderResourceView *sceneDepthSRV  = nullptr,
                                        ID3D11ShaderResourceView *sceneNormalSRV = nullptr);
 
+    // HDR バッファを写し、写しを t5 にバインドする（SceneColorGrabPass から呼ばれる）
     void GrabSceneColor(ID3D11DeviceContext *dc);
 
-    // GrabSceneColor が確保したシーンカラーのコピー。未確保なら nullptr。
-    //
-    // 半透明/パーティクル描画が t5 を上書きしている可能性があるため、
-    // 屈折を描くレンダラは毎回ここから取り直して自分でバインドする。
+    // GrabSceneColor の写し。作れていなければ nullptr。
+    // 半透明やパーティクルの描画が t5 を上書きしている場合があるので、
+    // 屈折を描くもの（TrailRenderer など）は毎回ここから取って自分でバインドする
     ID3D11ShaderResourceView *GetSceneColorSRV() const;
 
-    // ================================================================
-    //  エフェクト管理 API
-    // ================================================================
+    // ============================================================
+    // エフェクト
+    // ============================================================
 
     /**
-     * @brief エフェクトを末尾に追加して Initialize する。
-     * @tparam T IPostEffect を継承したクラス
+     * @brief エフェクトを末尾に足して Initialize する。
+     * @tparam T IPostEffect の派生クラス
      */
     template <typename T, typename... Args>
     T *AddEffect(Args &&...args)
@@ -84,9 +84,7 @@ public:
         return raw;
     }
 
-    /**
-     * @brief 型でエフェクトを検索する（最初に見つかったもの）。
-     */
+    // T のエフェクトを返す（最初に見つかったもの）。無ければ nullptr
     template <typename T>
     T *GetEffect() const
     {
@@ -100,26 +98,21 @@ public:
 
     size_t GetEffectCount() const noexcept { return m_effects.size(); }
 
-    // ToneMap の露出値（ECS から更新）
+    // トーンマップの設定（PostProcessSystem が毎フレーム写す）。
+    // 他のエフェクトの設定は、GetEffect<T>() で引いて UpdateParams で渡す
     ToneMapConfigComponent toneMapConfig;
-
-    // ToneMap 以外のエフェクトは設定用メンバを持たない。
-    // GetEffect<T>() で実体を引いて直接書き込む
-    // （例: GetEffect<BloomEffect>()->intensity = 1.0f;）。
 
 private:
     ID3D11Device *m_device = nullptr;
-    UINT          m_width  = 0;
-    UINT          m_height = 0;
+    UINT          m_width  = 0; // px
+    UINT          m_height = 0; // px
 
-    //  HDR キャンバスを 2枚 用意する（Ping-Pong用）
-    RenderTargetHandle m_hdrBuffers[2];
-    RenderTargetHandle m_outputSDR{};
-    RenderTargetHandle m_sceneColorCopy{};
+    RenderTargetHandle m_hdrBuffers[2];    // 読み書きを交互に入れ替える HDR バッファ。シーンは [0] に描く
+    RenderTargetHandle m_outputSDR{};      // targetRTV が無いときの出力
+    RenderTargetHandle m_sceneColorCopy{}; // GrabSceneColor の写し
 
-    std::vector<std::unique_ptr<IPostEffect>> m_effects;
+    std::vector<std::unique_ptr<IPostEffect>> m_effects; // かける順
 
-    // ToneMap は常に最終ステップとして PostProcessManager が保持
-    // BloomEffect が合成済み HDR を返すため 1 入力のみになった
+    // トーンマップは必ず最後に1回だけかけるので、エフェクトの列とは別に持つ
     std::unique_ptr<ToneMapEffect> m_toneMapEffect;
 };

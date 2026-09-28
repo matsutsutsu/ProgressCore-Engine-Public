@@ -106,7 +106,7 @@ float4 main(VS_OUT pin) : SV_TARGET
         finalColor += rimFactor * gFogRimColor.rgb * gFogRimParams.y * flatMask * floorMask;
     }
 
-    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
+    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);
 
     // ここだけがPBR_PS.hlslとの違い: 最終アルファに ghostAlpha を掛ける。
     //   色計算(finalColor)自体は完全に不透明PBRと同じで、

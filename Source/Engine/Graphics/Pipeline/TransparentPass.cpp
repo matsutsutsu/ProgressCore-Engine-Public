@@ -15,7 +15,6 @@ void TransparentPass::Initialize(const RenderServices &services)
 
 void TransparentPass::Execute(const RenderFrameContext &ctx)
 {
-
     ID3D11DeviceContext  *dc             = ctx.dc;
     RenderQueue          *queue          = m_services->renderQueue;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
@@ -29,8 +28,8 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
 
     const PipelineState *lastPso = &m_psoTransparent;
 
-    // OpaquePass が積んだ遅延半透明コマンドを距離降順（奥→手前）でその場ソートする。
-    // このリストは毎フレーム作り直されるため破壊的並べ替えで問題なく、コピーも発生しない。
+    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる。
+    // この配列は毎フレーム作り直すので、並べ替えて壊してかまわない
     auto &allTrans = queue->GetDeferredTransparentCommandsMutable();
     std::sort(allTrans.begin(), allTrans.end(),
               [](const TransparencyCommand &l, const TransparencyCommand &r) {
@@ -45,7 +44,7 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
         if (!matShader) continue;
         matShader->Begin(dc, *m_services, ctx);
 
-        // シェーダー固有 PSO があれば上書き。無ければパス既定へ戻す。
+        // シェーダーの PSO（無ければパスの既定）を、今の PSO と違うときだけ適用する
         {
             const PipelineState *want = shader->GetPSO() ? shader->GetPSO() : &m_psoTransparent;
             if (want != lastPso)
@@ -57,7 +56,7 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
 
         const Model::Mesh &mesh = *info.mesh;
 
-        // override は引数から取る。mesh.material は書き換えない（共有データなので波及する）。
+        // 上書きのマテリアルは引数で渡す。mesh.material に書くと、上書きをやめた後のフレームにも残るので書き換えない
         MaterialData *overrideMat = nullptr;
         if (info.overrideMaterial.IsValid())
         {
@@ -76,13 +75,11 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
             singleData.world = info.worldMatrix;
         }
 
-        // 1 体分をポインタ渡しの高速版で書き込む（毎ドローの vector 確保を回避）
         m_instanceBuffer.Write(dc, &singleData, 1);
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
         if (isSkinned) modelConstants->UpdateSkeletonConstants(dc, mesh);
 
-        // override を明示的に渡す（mesh.material への書き込みゼロ）
         matShader->Update(dc, mesh, overrideMat);
 
         UINT stride = sizeof(ModelResource::Vertex), offset = 0;
@@ -91,7 +88,6 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         dc->DrawIndexed(static_cast<UINT>(mesh.data->indices.size()), 0, 0);
 
-        // const_cast による restore 行 完全削除
         m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         matShader->End(dc, *m_services);
     }

@@ -427,9 +427,6 @@
     <Filter Include="Shader\Material\Sprite">
       <UniqueIdentifier>{3507bcf8-30c6-4874-acdd-63af07150527}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\DissolvePS">
-      <UniqueIdentifier>{3504f0f0-4cc8-46d3-8950-bee910685031}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Material\Lambert">
       <UniqueIdentifier>{c4ad84b2-9b2e-425f-8870-b9190a1ab854}</UniqueIdentifier>
     </Filter>
@@ -3129,9 +3126,6 @@
     </FxCompile>
     <FxCompile Include="Shader\Compute\GPUParticle\initialize_particle_cs.hlsl">
       <Filter>Shader\Compute\GPUParticle</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Dissolve\DissolvePS.hlsl">
-      <Filter>Shader\Material\DissolvePS</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
       <Filter>Shader\Material\PBR</Filter>

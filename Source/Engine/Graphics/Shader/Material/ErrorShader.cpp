@@ -1,13 +1,10 @@
-// ErrorShader の実装。標準モデルレイアウトで頂点を変換し、PSで一律マゼンタを出力する。
 #include "ErrorShader.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 
 ErrorShader::ErrorShader(ID3D11Device *device)
 {
-    // 標準モデルレイアウトでロードする理由:
-    // Opaque/Transparent が用意する頂点・インスタンスバッファをそのまま流用でき、
-    // どのマテリアルシェーダーの代替としても破綻なく描画できるため。
+    // モデルの共通の入力レイアウトで読むので、どのマテリアルのメッシュの代わりにも描ける
     GpuResourceUtils::LoadVertexShader(
         device,
         "Assets/Shader/ErrorVS.cso",
@@ -18,7 +15,7 @@ ErrorShader::ErrorShader(ID3D11Device *device)
 
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ErrorPS.cso", m_ps.GetAddressOf());
 
-    // CB/テクスチャは持たないが、基底の解放処理(UnbindResources)を共通化するため呼ぶ。
+    // 定数バッファもテクスチャも無いが、End で基底の UnbindResources を使うので読んでおく
     InitializeReflection(device, "Assets/Shader/ErrorPS.cso");
 }
 

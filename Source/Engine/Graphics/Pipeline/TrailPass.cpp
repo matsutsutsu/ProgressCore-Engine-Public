@@ -4,6 +4,6 @@
 void TrailPass::Execute(const RenderFrameContext &ctx)
 {
     if (!m_services) return;
-    // TrailSystem(R08)がこのフレームに積んだ頂点(歪み→加算)を描画してクリアする。
+    // TrailSystem（R08）がこのフレームに積んだ頂点を、歪み・加算の順に描いて空にする
     TrailRenderer::Instance().Render(*m_services, ctx);
 }

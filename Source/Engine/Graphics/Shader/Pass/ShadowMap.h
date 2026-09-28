@@ -1,67 +1,61 @@
 #pragma once
+// ===========================================================================
+// 概要: カスケードシャドウマップ（SHADOW_CASCADE_COUNT 枚の Texture2DArray の深度）。
+//
+// 責務:
+//   - 深度テクスチャと、カスケードごとの DSV・全カスケードを読む SRV を作る
+//   - カスケード1枚を描画先にする（ShadowPass）
+//   - シャドウマップ・比較サンプラー・CbShadow を、描画するシェーダーにバインドする
+//   - 影の色・濃さ・バイアス・カスケードの分割距離（params）を持つ
+//
+// 備考: Graphics が1つ作り、RenderServices::shadowMap で渡す。
+// ===========================================================================
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include <vector>
 #include <wrl/client.h>
 
-// カスケード（層）の数
-
-// ShadowMap.h
 class ShadowMap
 {
 public:
+    // width × height（px）の深度テクスチャをカスケードの数だけ作る
     ShadowMap(ID3D11Device *device, UINT width = 2048, UINT height = 2048);
 
-    // 切り替え関数
-    void Activate(ID3D11DeviceContext *dc, int cascadeIndex); // カスケードシャドウマップ用
-    void Deactivate(ID3D11DeviceContext *dc);                 // 元に戻す
+    // cascadeIndex 番目をクリアし、描画先とビューポートにする
+    void Activate(ID3D11DeviceContext *dc, int cascadeIndex);
+    // 描画先を外す
+    void Deactivate(ID3D11DeviceContext *dc);
 
-    // ゲッター
     ID3D11ShaderResourceView *GetShaderResourceView() const { return shaderResourceView.Get(); }
     ID3D11SamplerState       *GetSamplerState() const { return samplerState.Get(); }
 
-    UINT GetWidth() const { return width; }
-    UINT GetHeight() const { return height; }
+    UINT GetWidth() const { return width; }   // px
+    UINT GetHeight() const { return height; } // px
 
-    //void DrawGUI();
-
-    // 定数バッファのデータを更新するための関数
+    // CbShadow を書き込む
     void UpdateConstantBuffer(ID3D11DeviceContext *dc, const GpuData::CbShadow &data);
 
-    // ImGuiで操作したいパラメータを構造体にまとめる
+    // 影の設定（ShadowMapRenderSystem がコンポーネントから写し、ShadowPass が CbShadow に入れる）
     struct Parameters
     {
         float             shadowAttenuation                   = 0.5f;
         DirectX::XMFLOAT4 shadowColor                         = {0.0f, 0.0f, 0.0f, 0.5f};
-        float             shadowBias                          = 0.0015f;                // 初期値は小さめに
-        float             cascadeSplits[SHADOW_CASCADE_COUNT] = {15.0f, 50.0f, 200.0f}; // 境界距離の初期値
+        float             shadowBias                          = 0.0015f;                // 深度の比較に足すずれ（シャドウアクネを防ぐ）
+        float             cascadeSplits[SHADOW_CASCADE_COUNT] = {15.0f, 50.0f, 200.0f}; // カスケードの境目のカメラからの距離（m）
     } params;
 
-    // デフォルト引数を削除し、リフレクションから取得したスロットを渡す形にする
+    // それぞれのスロットにバインドする。-1 のものはバインドしない（ShadowPass は SRV とサンプラーを -1 にする）
     void Bind(ID3D11DeviceContext *dc, int srvSlot, int samplerSlot, int cbSlot);
 
-    // リフレクションで検索するための標準的な名前を定義
-    static const char *GetSrvName() { return "ShadowMap"; }
-    static const char *GetSamplerName() { return "ShadowSampler"; }
-    static const char *GetCbName() { return "CbShadow"; }
-
 private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer; // CbShadow（DYNAMIC）
 
-    // DSVをカスケードの数だけ持つ配列にする
-    std::vector<Microsoft::WRL::ComPtr<ID3D11DepthStencilView>> depthStencilViews;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>            shaderResourceView;
-    Microsoft::WRL::ComPtr<ID3D11SamplerState>                  samplerState;
+    std::vector<Microsoft::WRL::ComPtr<ID3D11DepthStencilView>> depthStencilViews;  // カスケードごとの DSV
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>            shaderResourceView; // 全カスケードを読む SRV
+    Microsoft::WRL::ComPtr<ID3D11SamplerState>                  samplerState;       // 比較サンプラー（LESS_EQUAL）
 
     D3D11_VIEWPORT viewport;
 
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> depthBuffer;
-
-    // 元の状態保存用
-    D3D11_VIEWPORT cachedViewport;
-    //Microsoft::WRL::ComPtr<ID3D11RenderTargetView> cachedRTV;
-    //Microsoft::WRL::ComPtr<ID3D11DepthStencilView> cachedDSV;
-
-    UINT width, height;
+    UINT width, height; // px
 };

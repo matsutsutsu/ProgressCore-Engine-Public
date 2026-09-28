@@ -22,7 +22,7 @@ void ShadowMapShader::Begin(ID3D11DeviceContext *dc,
 {
     dc->IASetInputLayout(inputLayout.Get());
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
-    dc->PSSetShader(nullptr, nullptr, 0); // 影書き込みにピクセルシェーダー不要
+    dc->PSSetShader(nullptr, nullptr, 0); // 深度だけを書く
 
     for (auto &pair : m_constantBuffers)
     {

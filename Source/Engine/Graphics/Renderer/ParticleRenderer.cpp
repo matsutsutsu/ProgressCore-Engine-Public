@@ -3,14 +3,13 @@
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Core/Math/StringHash.h" // "_hash" リテラル用
+#include "Engine/Core/Math/StringHash.h" // "_hash"
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
 void ParticleRenderer::Initialize(ID3D11Device *device)
 {
-    // 2. サンプラー作成
     D3D11_SAMPLER_DESC sampDesc = {};
     sampDesc.Filter             = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sampDesc.AddressU           = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -18,7 +17,7 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     sampDesc.AddressW           = D3D11_TEXTURE_ADDRESS_WRAP;
     device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
 
-    // 3. デフォルトテクスチャ作成 (白1x1ピクセル)
+    // テクスチャが無いエミッター用の 1x1 の白
     uint32_t             white      = 0xFFFFFFFF;
     D3D11_TEXTURE2D_DESC texDesc    = {};
     texDesc.Width                   = 1;
@@ -36,16 +35,13 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     device->CreateShaderResourceView(tex.Get(), nullptr, defaultTexture.GetAddressOf());
     SetDebugName(defaultTexture.Get(), "Particle_DefaultTexture_SRV");
 
-    // 金型の事前構築
-    // 半透明ベースをもらってきて、一部（トポロジーとブレンド）だけをパーティクル用に改造する！
+    // 半透明の既定の PSO から、トポロジ（点）とブレンドだけを変えて2つ作る
     PipelineStateDesc baseDesc = PipelineStateDesc::DefaultTransparent();
-    baseDesc.topology          = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; // 点に変更
+    baseDesc.topology          = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 
-    // ① 加算用
     baseDesc.blend = BlendState::Additive;
     m_psoAdditive  = PipelineState(baseDesc);
 
-    // ② 半透明用
     baseDesc.blend   = BlendState::Transparency;
     m_psoTransparent = PipelineState(baseDesc);
 
@@ -54,12 +50,12 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
 
 void ParticleRenderer::BeginFrame()
 {
-    m_drawCommands.clear(); // 毎フレームバケツを空にする
+    m_drawCommands.clear();
 }
 
 void ParticleRenderer::Draw(const ParticleDrawCommand &cmd)
 {
-    m_drawCommands.push_back(cmd); // バケツに積むだけ
+    m_drawCommands.push_back(cmd);
 }
 
 void ParticleRenderer::Render(const RenderServices &services, const RenderFrameContext &frameCtx)
@@ -69,23 +65,19 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
     ID3D11DeviceContext *dc = frameCtx.dc;
     const RenderState   *rs = services.renderState;
 
-    // =========================================================
-    // Registryからシェーダーを取得し、Begin()を委譲
-    // =========================================================
     Shader *shader = services.shaders->GetShader("Particle"_hash, services.device);
     if (!shader) return;
 
     shader->Begin(dc, services, frameCtx);
 
-    // 入力アセンブリ設定
+    // 頂点バッファは使わない（頂点シェーダーは SV_VertexID を渡すだけで、ジオメトリシェーダーが粒子のバッファを読む）
     dc->IASetInputLayout(nullptr);
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-    // サンプラー設定
     ID3D11SamplerState *samplers[] = {sampler.Get()};
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
 
-    // シーン定数バッファ (カメラ情報) を共通でバインド
+    // シーンの定数バッファ（カメラの行列など）。点を四角形に広げるジオメトリシェーダーでも使う
     if (services.sceneConstantBuffer)
     {
         ID3D11Buffer *cbs[] = {services.sceneConstantBuffer};
@@ -94,7 +86,7 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
         dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, cbs);
     }
 
-    // ソート: renderMode → テクスチャポインタ (ステート切替最小化)
+    // ブレンドの種類 → テクスチャ の順に並べ、PSO とテクスチャの切り替えを減らす
     std::sort(m_drawCommands.begin(), m_drawCommands.end(),
               [&services](const ParticleDrawCommand &a, const ParticleDrawCommand &b) {
                   if (a.renderMode != b.renderMode) return a.renderMode < b.renderMode;
@@ -103,6 +95,7 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
                   return ta < tb;
               });
 
+    // 今バインドしているもの。どの値とも一致しない値で始め、最初の1回は必ず設定させる
     int                       curRenderMode = -1;
     ID3D11ShaderResourceView *curTexSRV     = reinterpret_cast<ID3D11ShaderResourceView *>(-1);
 
@@ -111,7 +104,6 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
         GPUParticleBufferSet *buffers = services.resources->GetParticleBuffer(cmd.computeBuffer);
         if (!buffers || !buffers->particleSRV) continue;
 
-        // PSO 切り替え (renderMode が変わった時のみ)
         if (curRenderMode != cmd.renderMode)
         {
             (cmd.renderMode == 0 ? m_psoAdditive : m_psoTransparent).Apply(dc, rs);
@@ -119,12 +111,11 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
             curRenderMode = cmd.renderMode;
         }
 
-        // 粒子バッファ SRV (.Get() を追加)
         ID3D11ShaderResourceView *srvs[] = {buffers->particleSRV.Get()};
         dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
         dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, srvs);
 
-        // staticCB(b6) + dynamicCB(b7) を一括バインド (.Get() を追加)
+        // staticCB（b6）と dynamicCB（b7）は隣のスロットなので、1回でバインドする
         if (buffers->staticCB && buffers->dynamicCB)
         {
             ID3D11Buffer *cbs[2] = {buffers->staticCB.Get(), buffers->dynamicCB.Get()};
@@ -133,7 +124,6 @@ void ParticleRenderer::Render(const RenderServices &services, const RenderFrameC
             dc->PSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
         }
 
-        // テクスチャ (変わった時のみ)
         auto *mainSRV   = services.resources->GetTexture(cmd.texture);
         auto *actualSRV = mainSRV ? mainSRV : defaultTexture.Get();
         if (curTexSRV != actualSRV)

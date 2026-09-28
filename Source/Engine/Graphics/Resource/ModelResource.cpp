@@ -657,6 +657,23 @@ void ModelResource::ComputeModelLocalAABB()
 {
     using namespace DirectX;
 
+    // 各ノードの初期姿勢でのモデル空間の行列（親を先に求める。glTF のノードは親が先に並ぶとは限らない）
+    std::vector<XMFLOAT4X4> nodeGlobals(nodes.size());
+    std::vector<bool>       computed(nodes.size(), false);
+    std::function<XMMATRIX(int)> globalOf = [&](int index) -> XMMATRIX {
+        if (computed[index]) return XMLoadFloat4x4(&nodeGlobals[index]);
+
+        const Node    &node  = nodes[index];
+        const XMMATRIX local = XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z) *
+                               XMMatrixRotationQuaternion(XMLoadFloat4(&node.rotate)) *
+                               XMMatrixTranslation(node.translate.x, node.translate.y, node.translate.z);
+        const XMMATRIX global = (node.parentIndex >= 0) ? local * globalOf(node.parentIndex) : local;
+
+        XMStoreFloat4x4(&nodeGlobals[index], global);
+        computed[index] = true;
+        return global;
+    };
+
     XMFLOAT3 minP = {+FLT_MAX, +FLT_MAX, +FLT_MAX};
     XMFLOAT3 maxP = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
 
@@ -668,13 +685,26 @@ void ModelResource::ComputeModelLocalAABB()
 
         hasMesh = true;
 
-        minP.x = (std::min)(minP.x, mesh.boundsMin.x);
-        minP.y = (std::min)(minP.y, mesh.boundsMin.y);
-        minP.z = (std::min)(minP.z, mesh.boundsMin.z);
+        // 描くときと同じく、スキンメッシュ以外はノードの行列を掛けた位置に置く（MeshCull::ComputeMeshWorld）
+        BoundingBox box;
+        BoundingBox::CreateFromPoints(box, XMLoadFloat3(&mesh.boundsMin), XMLoadFloat3(&mesh.boundsMax));
+        if (mesh.bones.empty() && mesh.nodeIndex >= 0 && mesh.nodeIndex < static_cast<int>(nodes.size()))
+        {
+            box.Transform(box, globalOf(mesh.nodeIndex));
+        }
 
-        maxP.x = (std::max)(maxP.x, mesh.boundsMax.x);
-        maxP.y = (std::max)(maxP.y, mesh.boundsMax.y);
-        maxP.z = (std::max)(maxP.z, mesh.boundsMax.z);
+        XMFLOAT3 corners[BoundingBox::CORNER_COUNT];
+        box.GetCorners(corners);
+        for (const XMFLOAT3 &c : corners)
+        {
+            minP.x = (std::min)(minP.x, c.x);
+            minP.y = (std::min)(minP.y, c.y);
+            minP.z = (std::min)(minP.z, c.z);
+
+            maxP.x = (std::max)(maxP.x, c.x);
+            maxP.y = (std::max)(maxP.y, c.y);
+            maxP.z = (std::max)(maxP.z, c.z);
+        }
     }
 
     if (hasMesh)

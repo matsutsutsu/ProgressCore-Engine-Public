@@ -1,22 +1,18 @@
-#include <fstream>
 #include "Sprite.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
-// コンストラクタ
 Sprite::Sprite(ID3D11Device *device)
     : Sprite(device, nullptr)
 {
 }
 
-// コンストラクタ
 Sprite::Sprite(ID3D11Device *device, const char *filename)
 {
     HRESULT hr = S_OK;
 
-    // 頂点バッファの生成
+    // 4頂点。描くたびに書き直すので DYNAMIC
     {
-        // 頂点バッファを作成するための設定オプション
         D3D11_BUFFER_DESC buffer_desc   = {};
         buffer_desc.ByteWidth           = sizeof(Vertex) * 4;
         buffer_desc.Usage               = D3D11_USAGE_DYNAMIC;
@@ -24,14 +20,11 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
         buffer_desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
         buffer_desc.MiscFlags           = 0;
         buffer_desc.StructureByteStride = 0;
-        // 頂点バッファオブジェクトの生成
         hr = device->CreateBuffer(&buffer_desc, nullptr, vertexBuffer.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // 頂点シェーダー
     {
-        // 入力レイアウト
         D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
             {
                 {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -48,7 +41,6 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // ピクセルシェーダー
     {
         hr = GpuResourceUtils::LoadPixelShader(
             device,
@@ -57,8 +49,8 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // サンプラーステートの生成（s0）。SpritePS が register(s0) でサンプルするため、
-    // これを Render でバインドしないと DEVICE_DRAW_SAMPLER_NOT_SET 警告が出る。
+    // SpritePS は s0 でサンプリングするので、Render で必ずバインドする
+    // （しないと D3D11 のデバッグレイヤーが DEVICE_DRAW_SAMPLER_NOT_SET の警告を出す）
     {
         D3D11_SAMPLER_DESC desc = {};
         desc.Filter             = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -72,22 +64,17 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // テクスチャの生成
     if (filename != nullptr)
     {
-        // テクスチャファイル読み込み
         D3D11_TEXTURE2D_DESC desc;
         hr = GpuResourceUtils::LoadTexture(device, filename, shaderResourceView.GetAddressOf(), &desc);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
         textureWidth  = static_cast<float>(desc.Width);
         textureHeight = static_cast<float>(desc.Height);
-
-        OutputDebugStringA("Loading Sprite");
     }
     else
     {
-        // ダミーテクスチャ生成
         D3D11_TEXTURE2D_DESC desc;
         hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, shaderResourceView.GetAddressOf(),
                                                   &desc);
@@ -95,13 +82,10 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
 
         textureWidth  = static_cast<float>(desc.Width);
         textureHeight = static_cast<float>(desc.Height);
-
-        OutputDebugStringA("No Loading Sprite nullptr");
     }
 }
 
-// コンストラクタ（外部SRVを包む）: 既存コンストラクタに委譲してVS/PS/頂点バッファを
-// 用意し、ダミーテクスチャを渡されたSRV（フォントアトラス等）へ差し替える。
+// シェーダーと頂点バッファは Sprite(device) で作り、ダミーのテクスチャを srv に差し替える
 Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, float width, float height)
     : Sprite(device)
 {
@@ -110,18 +94,15 @@ Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResource
     textureHeight      = height;
 }
 
-// 描画実行
 void Sprite::Render(ID3D11DeviceContext *dc,
-                    float dx, float dy,                        // 左上位置
-                    float dz,                                  // 奥行
-                    float dw, float dh,                        // 幅、高さ
-                    float sx, float sy,                        // 画像切り抜き位置
-                    float sw, float sh,                        // 画像切り抜きサイズ
-                    float angle,                               // 角度
-                    const DirectX::XMFLOAT4 (&cornerColors)[4] // 左上/右上/左下/右下 の色
-) const
+                    float dx, float dy,
+                    float dz,
+                    float dw, float dh,
+                    float sx, float sy,
+                    float sw, float sh,
+                    float angle,
+                    const DirectX::XMFLOAT4 (&cornerColors)[4]) const
 {
-    // 頂点座標
     DirectX::XMFLOAT2 positions[] = {
         DirectX::XMFLOAT2(dx, dy),           // 左上
         DirectX::XMFLOAT2(dx + dw, dy),      // 右上
@@ -129,7 +110,6 @@ void Sprite::Render(ID3D11DeviceContext *dc,
         DirectX::XMFLOAT2(dx + dw, dy + dh), // 右下
     };
 
-    // テクスチャ座標
     DirectX::XMFLOAT2 texcoords[] = {
         DirectX::XMFLOAT2(sx, sy),           // 左上
         DirectX::XMFLOAT2(sx + sw, sy),      // 右上
@@ -137,8 +117,7 @@ void Sprite::Render(ID3D11DeviceContext *dc,
         DirectX::XMFLOAT2(sx + sw, sy + sh), // 右下
     };
 
-    // スプライトの中心で回転させるために４頂点の中心位置が
-    // 原点(0, 0)になるように一旦頂点を移動させる。
+    // 四角形の中心で回すため、中心が原点に来るように動かしてから回し、元に戻す
     float mx = dx + dw * 0.5f;
     float my = dy + dh * 0.5f;
     for (auto &p : positions)
@@ -147,7 +126,6 @@ void Sprite::Render(ID3D11DeviceContext *dc,
         p.y -= my;
     }
 
-    // 頂点を回転させる
     float theta = DirectX::XMConvertToRadians(angle);
     float c     = cosf(theta);
     float s     = sinf(theta);
@@ -158,33 +136,30 @@ void Sprite::Render(ID3D11DeviceContext *dc,
         p.y                 = s * r.x + c * r.y;
     }
 
-    // 回転のために移動させた頂点を元の位置に戻す
     for (auto &p : positions)
     {
         p.x += mx;
         p.y += my;
     }
 
-    // 現在設定されているビューポートからスクリーンサイズを取得する。
+    // 今のビューポートの大きさを画面の大きさとして使う
     D3D11_VIEWPORT viewport;
     UINT           numViewports = 1;
     dc->RSGetViewports(&numViewports, &viewport);
     float screenWidth  = viewport.Width;
     float screenHeight = viewport.Height;
 
-    // スクリーン座標系からNDC座標系へ変換する。
+    // ピクセル座標を NDC（-1〜1、y は上が正）に直す
     for (DirectX::XMFLOAT2 &p : positions)
     {
         p.x = 2.0f * p.x / screenWidth - 1.0f;
         p.y = 1.0f - 2.0f * p.y / screenHeight;
     }
 
-    // 頂点バッファの内容の編集を開始する。
     D3D11_MAPPED_SUBRESOURCE mappedSubresource;
     HRESULT                  hr = dc->Map(vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedSubresource);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-    // 頂点バッファの内容を編集
     Vertex *v = static_cast<Vertex *>(mappedSubresource.pData);
     for (int i = 0; i < 4; ++i)
     {
@@ -192,18 +167,14 @@ void Sprite::Render(ID3D11DeviceContext *dc,
         v[i].position.y = positions[i].y;
         v[i].position.z = dz;
 
-        // 4隅で別々の色を入れる。ラスタライザが間を補間するので、
-        // これだけでグラデーションになる（シェーダは変更不要）。
         v[i].color = cornerColors[i];
 
         v[i].texcoord.x = texcoords[i].x / textureWidth;
         v[i].texcoord.y = texcoords[i].y / textureHeight;
     }
 
-    // 頂点バッファの内容の編集を終了する。
     dc->Unmap(vertexBuffer.Get(), 0);
 
-    // GPUに描画するためのデータを渡す
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
     dc->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
@@ -214,11 +185,9 @@ void Sprite::Render(ID3D11DeviceContext *dc,
     dc->PSSetShaderResources(0, 1, shaderResourceView.GetAddressOf());
     dc->PSSetSamplers(0, 1, samplerState.GetAddressOf());
 
-    // 描画
     dc->Draw(4, 0);
 }
 
-// 描画実行（単色。4隅に同じ色を渡して本体へ委譲する）
 void Sprite::Render(ID3D11DeviceContext *dc,
                     float dx, float dy,
                     float dz,
@@ -233,32 +202,12 @@ void Sprite::Render(ID3D11DeviceContext *dc,
     Render(dc, dx, dy, dz, dw, dh, sx, sy, sw, sh, angle, corners);
 }
 
-// 描画実行（テクスチャ切り抜き指定なし）
 void Sprite::Render(ID3D11DeviceContext *dc,
-                    float dx, float dy,                // 左上位置
-                    float dz,                          // 奥行
-                    float dw, float dh,                // 幅、高さ
-                    float angle,                       // 角度
-                    float r, float g, float b, float a // 色
-) const
+                    float dx, float dy,
+                    float dz,
+                    float dw, float dh,
+                    float angle,
+                    float r, float g, float b, float a) const
 {
     Render(dc, dx, dy, dz, dw, dh, 0, 0, textureWidth, textureHeight, angle, r, g, b, a);
 }
-
-//void Sprite::Textout(ID3D11DeviceContext* dc,
-//	std::string s,
-//	float x, float y, float w, float h,
-//	float r, float g, float b, float a)
-//{
-//    float sw       = static_cast<float>(textureWidth / 16);
-//    float sh       = static_cast<float>(textureHeight / 16);
-//	float carriage = 0;
-//	for (const char c : s)
-//	{
-//        float sx = sw * (c & 0x0F);
-//        float sy = sh * (c >> 4);
-//
-//        Render(dc, x + carriage, y, 0, w, h, sx, sy, sw, sh, 0, r, g, b, a);
-//		carriage += w;
-//	}
-//}

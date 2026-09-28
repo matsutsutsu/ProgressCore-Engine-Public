@@ -1,13 +1,16 @@
-// 描画パス間で共有するメッシュ単位カリング / ワールド変換ヘルパ。
-//
-// 役割      : OpaquePass と NormalPrepass が「まったく同じ基準」でメッシュを
-//             カリング・ワールド変換することを型レベルで保証する。
-// 責務      : ローカル AABB 構築 / メッシュワールド行列合成 / フラスタム交差判定。
-// 位置付け  : 各 RenderPass の Execute から呼ばれる純粋関数群（状態を持たない）。
-// 設計方針  : 判定ロジックを 1 箇所に集約することで、パス間の実装ズレ
-//             （＝片方だけ描き漏れ / 描き過ぎ）という再発しやすいバグを構造的に防ぐ。
-//             ヘッダオンリー inline。ホットパスからの呼び出しを想定し確保は行わない。
 #pragma once
+// ===========================================================================
+// 概要: メッシュ単位の視錐台カリングと、メッシュのワールド行列を求める関数。
+//
+// 責務:
+//   - メッシュのローカル AABB を作る
+//   - ノードの行列とエンティティのワールド行列から、メッシュのワールド行列を求める
+//   - AABB が視錐台と重なるかを判定する
+//
+// 備考: OpaquePass と NormalPrepass が同じ基準でカリングするよう、判定を1か所にまとめている。
+//       基準がずれると、片方のパスだけで描かれない・余計に描かれるメッシュが出る。
+//       状態を持たない inline 関数で、メモリを確保しない。
+// ===========================================================================
 #include <DirectXCollision.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
@@ -15,11 +18,13 @@
 namespace MeshCull
 {
 
-    // メッシュのローカル空間 AABB を boundsMin/Max から構築する。
-    //
-    // 縮退メッシュ（頂点0）は extents が巨大化し「常に可視」＝安全側（描き漏れ防止）に倒れる。
-    //
-    // 注意: mesh.data が非 null であることは呼び出し側が保証すること。
+    /**
+     * @brief メッシュのローカル空間の AABB を boundsMin / boundsMax から作る。
+     *
+     * 頂点が無いメッシュは extents がとても大きくなり、常に見える扱いになる（描き漏れない側に倒れる）。
+     *
+     * @note mesh.data が null でないことは呼び出し側で確かめる。
+     */
     inline DirectX::BoundingBox BuildLocalAABB(const Model::Mesh &mesh)
     {
         using namespace DirectX;
@@ -31,9 +36,8 @@ namespace MeshCull
         return box;
     }
 
-    // メッシュのワールド行列を求める。node があれば node->globalTransform * entityWorld。
-    //
-    // 描画時とカリング時でこの合成順を一致させることが座標系整合の前提。
+    // メッシュのワールド行列。ノードがあれば node->globalTransform × entityWorld。
+    // 描くときとカリングするときで、この掛ける順をそろえる
     inline DirectX::XMFLOAT4X4 ComputeMeshWorld(const Model::Mesh         &mesh,
                                                 const DirectX::XMFLOAT4X4 &entityWorld)
     {
@@ -52,10 +56,10 @@ namespace MeshCull
     }
 
     /**
- * @brief ローカル AABB を world で変換し、frustum と交差するか判定する。
- * @note  Transform は回転を含んでも「包含する軸平行ボックス」を返すため保守的で正しい。
- * @return 視錐台と少しでも交差していれば true（DISJOINT のときのみ false）。
- */
+     * @brief ローカルの AABB を world で変換し、視錐台と重なるかを判定する。
+     * @note BoundingBox::Transform は、回転した箱を包む軸平行の箱を返すので、実際より大きめに判定する。
+     * @return 少しでも重なれば true（DISJOINT のときだけ false）
+     */
     inline bool IsMeshVisible(const DirectX::BoundingBox     &localAABB,
                               const DirectX::XMFLOAT4X4      &world,
                               const DirectX::BoundingFrustum &frustum)

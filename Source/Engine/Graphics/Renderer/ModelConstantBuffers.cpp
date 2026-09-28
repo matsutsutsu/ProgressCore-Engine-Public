@@ -6,7 +6,7 @@ ModelConstantBuffers::ModelConstantBuffers(ID3D11Device *device)
 {
     D3D11_BUFFER_DESC desc{};
     desc.ByteWidth = sizeof(CbSkeleton);
-    // 16 バイトアライメント
+    // 定数バッファの大きさは 16 バイトの倍数にする必要がある
     if (desc.ByteWidth % 16 != 0) desc.ByteWidth = ((desc.ByteWidth + 15) / 16) * 16;
     desc.Usage     = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;

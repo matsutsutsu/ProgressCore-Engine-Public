@@ -44,7 +44,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_fogConstantBuffer; // CbFog
 
     // 既定のテクスチャ。SkyboxComponent が無いか、パスが空・読み込み失敗のときに使う
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_globalNoiseSRV;   // グローバルノイズ（フォグノイズの代わりにも使う）
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_globalNoiseSRV;   // グローバルノイズ
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_irradianceMapSRV; // 既定の IEM
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_prefilterMapSRV;  // 既定の PMREM
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_brdfLutSRV;       // BRDF LUT（空に依存しないので差し替えない）

@@ -6,6 +6,7 @@
 #include "Engine/Graphics/RHI/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Graphics/Shader/Material/ErrorShader.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Renderer/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -56,6 +57,9 @@ void Graphics::Initialize(HWND hWnd)
     m_modelConstants->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
 
     // ---- 3. シェーダー登録 ----
+    // 未登録のシェーダーの代わりに描く ErrorShader は、shaders.json に頼らず先に登録する
+    ShaderRegistry::Instance().RegisterShader<ErrorShader>("Error"_hash);
+
     // マテリアルのシェーダーは Assets/Shader/shaders.json に1行足せば増やせる（再ビルド不要）
     ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
                                     ShaderRegistry::Instance());

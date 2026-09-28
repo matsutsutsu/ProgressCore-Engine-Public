@@ -3,7 +3,6 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
-#include "Engine/Graphics/Renderer/ImGuiRenderer.h"
 
 #include <imgui.h>
 #include <filesystem>
@@ -78,14 +77,6 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     // ウィンドウの残りの「縦横サイズ」を計算
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
 
-    // =========================================================
-    // ここから下をエディタ専用フォント(Ricty)に切り替える！
-    // =========================================================
-    if (ImFont *editorFont = ImGuiRenderer::GetEditorFont())
-    {
-        ImGui::PushFont(editorFont);
-    }
-
     // ImGui標準の複数行テキストボックスを描画！
     // ImGuiInputTextFlags_AllowTabInput を付けることで、Tabキーで空白が入力できるようになります。
     ImGui::InputTextMultiline("##TextEditor",
@@ -93,14 +84,6 @@ void TextEditorWindow::DrawContents(EditorContext &context)
                               m_textBuffer.size(),
                               availableSize,
                               ImGuiInputTextFlags_AllowTabInput);
-
-    // =========================================================
-    // フォントの切り替えを元に戻す！
-    // =========================================================
-    if (ImGuiRenderer::GetEditorFont())
-    {
-        ImGui::PopFont();
-    }
 }
 
 /**

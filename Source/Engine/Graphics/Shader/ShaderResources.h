@@ -1,127 +1,125 @@
-// Graphics/Shader/ShaderResources.h
+// ===========================================================================
+// 概要: 定数バッファ・テクスチャ・サンプラーのレジスタ番号を1か所で決めるヘッダー。
 //
-// ==================================================================
-// 【レジスタスロットの単一ソース】
-// ここに1回書くだけで C++ と HLSL の両方に適用される。
+// 責務:
+//   - C++ と HLSL の両方から include され、同じスロット番号を使わせる
+//   - HLSL 向けに、番号から register(b0) などの名前を作るマクロを用意する
 //
-// スロットは「更新頻度の層」で整理している:
-//   Per-frame   毎フレーム1回   Graphics / EnvironmentSystem がバインド
-//   Per-pass    パスごと        各 IRenderPass がバインド（ポストプロセス等）
-//   Per-material 材質ごと        Shader::Update がバインド
-//   Per-object  ドローごと       ModelConstantBuffers がバインド
-//
-// 同じスロット番号を複数の名前が共有している箇所がある（例: b0 が
-// CbMaterial と CbBloom）。これは意図的で、2つの用途は時間的に排他
-// （材質描画とポストプロセスは同時に起きない）なため衝突しない。
-// 詳細は ShaderBindingContract.md を参照。
-// ==================================================================
-
+// 備考: スロットはバインドする頻度でまとめている。
+//         フレームごと    Graphics / EnvironmentSystem がバインド
+//         パスごと        各 RenderPass（ポストプロセスなど）がバインド
+//         マテリアルごと  Shader::UpdateMaterialProperties がバインド
+//         ドローごと      ModelConstantBuffers などがバインド
+//       同じ番号を複数の名前で使っている所がある（例: b0 は CbMaterial と CbBloom）。
+//       マテリアルの描画とポストプロセスは同時に起きないので、ぶつからない。
+//       一覧は Shader/SHADER_ARCHITECTURE.md を参照。
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// ===========================================================================
 #ifndef SHADER_RESOURCES_H
 #define SHADER_RESOURCES_H
 
 // ==================================================================
-// Constant Buffers (CB)
+// 定数バッファ（b）
 // ==================================================================
 
-// --- Per-material (Shader::Update がバインド) ---
-#define SLOT_CB_MATERIAL 0 // 材質パラメータ (baseColor, roughness, useXXXMap...)
-#define SLOT_CB_MESH 1     // 材質パラメータの続き (OutlineShader の CbOutline 等)
-                           //   ※「メッシュ単位」ではない。b0〜b7 は
-                           //     Shader::UpdateMaterialProperties が材質ごとに
-                           //     ゼロクリアするので、材質以外の値は置けない。
+// --- マテリアルごと（Shader::UpdateMaterialProperties がバインド） ---
+#define SLOT_CB_MATERIAL 0 // マテリアルの値（baseColor, roughness, useXXXMap など）
+#define SLOT_CB_MESH 1     // マテリアルの値の続き（OutlineShader の CbOutline、Basic の CbMesh）
+                           //   名前は Mesh だが、メッシュごとの値ではない。b0〜b7 は
+                           //   Shader::UpdateMaterialProperties がマテリアルごとに
+                           //   0 に戻すので、マテリアル以外の値は置けない
 #define SLOT_CB_SKYBOX 2
 
-// --- Per-pass / ポストプロセス (各パスがバインド) ---
-//     ※ b0/b1 は per-material と物理スロットを共有（時間的に排他）
+// --- パスごと・ポストプロセス（各パスがバインド） ---
+//     b0〜b2 はマテリアルと同じ番号を使う（同時には使わない）
 #define SLOT_CB_BLOOM 0
 #define SLOT_CB_TONEMAP 1
-#define SLOT_CB_DISTORTION 2    // ディストーション用のスロットを確保
-#define SLOT_CB_RADIALBLUR 2    // 放射状ブラー(Distortionとb2を共有=時間的に排他)
-#define SLOT_CB_VIGNETTE 2      // ビネット(b2共有=時間的に排他)
-#define SLOT_CB_CHROMATIC 2     // 色収差(b2共有=時間的に排他)
-#define SLOT_CB_COLORGRADING 2  // カラーグレーディング(b2共有=時間的に排他)
-#define SLOT_CB_DOF 2           // 被写界深度(b2共有=時間的に排他)
-#define SLOT_CB_SSAO 2          // SSAO(b2共有=時間的に排他)
-#define SLOT_CB_SSAO_BLUR 2     // SSAOブラー(b2共有=時間的に排他)
-#define SLOT_CB_CONTACTSHADOW 2 // コンタクトシャドウ(b2共有=時間的に排他)
-#define SLOT_CB_PAUSEBLUR 2     // ポーズ中の背景ぼかし(b2共有=時間的に排他)
+#define SLOT_CB_DISTORTION 2    // 以下の b2 はどれも1つのエフェクトの中でだけ使う
+#define SLOT_CB_RADIALBLUR 2
+#define SLOT_CB_VIGNETTE 2
+#define SLOT_CB_CHROMATIC 2
+#define SLOT_CB_COLORGRADING 2
+#define SLOT_CB_DOF 2
+#define SLOT_CB_SSAO 2
+#define SLOT_CB_SSAO_BLUR 2
+#define SLOT_CB_CONTACTSHADOW 2
+#define SLOT_CB_PAUSEBLUR 2
 
-// --- Per-frame (Graphics / EnvironmentSystem がバインド) ---
-#define SLOT_CB_SCENE 8   // viewProjection, camera, dirLight ... Graphics::Update のみ書込
-#define SLOT_CB_LIGHT 9   // 点光源/スポットライト配列
-#define SLOT_CB_SHADOW 10 // カスケード行列, バイアス
-#define SLOT_CB_FOG 11    // 高さフォグ, ノイズ, リム
+// --- フレームごと（Graphics / EnvironmentSystem がバインド） ---
+#define SLOT_CB_SCENE 8   // viewProjection・カメラ・平行光源など。書くのは Graphics::Update だけ
+#define SLOT_CB_LIGHT 9   // 点光源・スポットライトの配列
+#define SLOT_CB_SHADOW 10 // カスケードの行列・バイアス
+#define SLOT_CB_FOG 11    // 高さフォグ・ノイズ・リム
 
-// --- Per-object (ModelConstantBuffers がバインド) ---
-#define SLOT_CB_SKELETON 12 // boneTransforms[256]
+// --- ドローごと（ModelConstantBuffers がバインド） ---
+#define SLOT_CB_SKELETON 12 // boneTransforms[MAX_BONES]
 
-// --- Per-emitter (GPUParticleUpdateSystem / ParticleRenderer がバインド) ---
-// Static : Desc 由来の設定値。変更時のみ upload (176 bytes)
-// Dynamic: ランタイム値。毎フレーム upload (48 bytes)
-// 2スロットを連続して取得し、SetConstantBuffers(STATIC, 2, ...) で一括バインド可能
-#define SLOT_CB_PARTICLE_STATIC 6  // 旧 13
-#define SLOT_CB_PARTICLE_DYNAMIC 7 // 旧 14 (範囲外だった)
+// --- エミッターごと（GPUParticleUpdateSystem / ParticleRenderer がバインド） ---
+// Static  : 設定（Desc）から作る値。変えたときだけ送る（240 バイト）
+// Dynamic : 実行中に変わる値。毎フレーム送る（80 バイト）
+// 隣り合う番号なので、SetConstantBuffers(STATIC, 2, ...) で1回でバインドできる
+#define SLOT_CB_PARTICLE_STATIC 6
+#define SLOT_CB_PARTICLE_DYNAMIC 7
 
 // ==================================================================
-// Shader Resources (SRV)
+// シェーダーリソース（t）
 // ==================================================================
 
-// --- Per-material テクスチャ (Shader::Update がバインド) ---
-#define SLOT_SRV_MAT_TEX0 0 // Albedo
-#define SLOT_SRV_MAT_TEX1 1 // Normal
-#define SLOT_SRV_MAT_TEX2 2 // MetalRough / Occlusion
-#define SLOT_SRV_MAT_TEX3 3 // Emissive 等の追加マップ
-//     ↑ t3 は per-object のパーティクルバッファと物理スロットを共有。
-//        ジオメトリ描画では4枚目の材質テクスチャ、パーティクル描画では
-//        構造化バッファ。両者は同時に発生しないため衝突しない。
-#define SLOT_SRV_PARTICLE_BUF 3 // (別名) パーティクル描画時の構造化バッファ
-#define SLOT_SRV_SCENE_DEPTH 4
-#define SLOT_SRV_SCENE_COLOR 5
-#define SLOT_SRV_SCENE_NORMAL 6
+// --- マテリアルのテクスチャ（Shader::UpdateMaterialProperties がバインド） ---
+#define SLOT_SRV_MAT_TEX0 0 // アルベド
+#define SLOT_SRV_MAT_TEX1 1 // 法線
+#define SLOT_SRV_MAT_TEX2 2 // メタリック・ラフネス / オクルージョン
+#define SLOT_SRV_MAT_TEX3 3 // エミッシブなど
+//     t3 はパーティクルのバッファと同じ番号。モデルの描画では4枚目のテクスチャ、
+//     パーティクルの描画では StructuredBuffer として使う（同時には使わない）
+#define SLOT_SRV_PARTICLE_BUF 3
+#define SLOT_SRV_SCENE_DEPTH 4  // シーンの深度
+#define SLOT_SRV_SCENE_COLOR 5  // SceneColorGrabPass が写したシーンの色
+#define SLOT_SRV_SCENE_NORMAL 6 // NormalPrepass の法線
 
-// --- Per-pass / ポストプロセス ---
-//     ※ t0/t1 は per-material と物理スロットを共有（時間的に排他）
+// --- パスごと・ポストプロセス ---
+//     t0〜t2 はマテリアルと同じ番号を使う（同時には使わない）
 #define SLOT_SRV_BLOOM_IN 0
 #define SLOT_SRV_BLOOM_HIGHRES 1
-#define SLOT_SRV_PP_DISTORTION_MAP 2 // 将来的に歪みテクスチャを刺すスロット
+#define SLOT_SRV_PP_DISTORTION_MAP 2 // DistortionEffect が読む、前のエフェクトまでの結果
 
-// --- Per-frame グローバルリソース (Graphics / EnvironmentSystem) ---
-#define SLOT_SRV_FOG_NOISE 9
-#define SLOT_SRV_SHADOW 10 // Texture2DArray (カスケード)
+// --- フレームごと（Graphics / EnvironmentSystem） ---
+#define SLOT_SRV_SHADOW 10 // Texture2DArray（カスケード）
 #define SLOT_SRV_GLOBAL_NOISE 13
 
-// --- Per-object ---
+// --- ドローごと ---
 #define SLOT_SRV_INSTANCE 11 // StructuredBuffer<InstanceData>
-#define SLOT_SRV_BONE 12
+#define SLOT_SRV_BONE 12     // 今は使っていない（ボーン行列は CbSkeleton で送る）
 
-// --- IBL (Per-frame, EnvironmentSystem) ---
+// --- IBL（フレームごと。EnvironmentSystem） ---
 #define SLOT_SRV_IBL_IRRADIANCE 14
 #define SLOT_SRV_IBL_PREFILTER 15
 #define SLOT_SRV_IBL_BRDFLUT 16
-#define SLOT_SRV_SKYBOX_BG 17 // Skybox 描画専用の高解像度テクスチャ
+#define SLOT_SRV_SKYBOX_BG 17 // スカイボックスの描画だけで使う高解像度のテクスチャ
 
 // ==================================================================
-// Unordered Access Views (UAV)
+// UAV（u）
 // ==================================================================
 #define SLOT_UAV_PARTICLE_BUF 0
 
 // ==================================================================
-// Samplers (SMP)
+// サンプラー（s）
 // ==================================================================
 #define SLOT_SMP_DEFAULT 0
-#define SLOT_SMP_LINEAR 1 // ポストプロセス/材質の標準リニアサンプラ
+#define SLOT_SMP_LINEAR 1 // ポストプロセスとマテリアルで使うリニア
 #define SLOT_SMP_ANISOTROPIC 2
 #define SLOT_SMP_IBL 3
 #define SLOT_SMP_SHADOW 10 // SamplerComparisonState
-//     ※ s1 は Bloom 用サンプラと共有
-#define SLOT_SMP_BLOOM 1
+#define SLOT_SMP_BLOOM 1   // s1 は SLOT_SMP_LINEAR と同じ番号
 
 // ==================================================================
-// 【HLSL専用】文字結合ギミック (C++コンパイラは無視する)
+// HLSL 用: スロット番号から register の名前を作るマクロ（C++ では使わない）
 // ==================================================================
 #ifndef __cplusplus
-// マクロ展開の仕様上、数値を "b" などの文字と結合するには
-// この「2段階クッション」が絶対に必要。
+// REG_CB(SLOT_CB_SCENE) → b8 のように、番号の前に文字を付ける。
+// ## は引数をマクロ展開する前に連結するので、REG_CB_IMPL(SLOT_CB_SCENE) と直接書くと
+// "bSLOT_CB_SCENE" になってしまう。REG_CB でいったん受けると、引数が 8 に展開されてから
+// REG_CB_IMPL(8) が呼ばれ、b8 になる
 #define REG_CB_IMPL(slot) b##slot
 #define REG_SRV_IMPL(slot) t##slot
 #define REG_UAV_IMPL(slot) u##slot

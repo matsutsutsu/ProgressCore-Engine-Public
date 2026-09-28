@@ -1,35 +1,47 @@
 #pragma once
+// ===========================================================================
+// 概要: インスタンシング描画で使う、インスタンスごとのデータの StructuredBuffer。
+//
+// 責務:
+//   - DYNAMIC の StructuredBuffer と、その SRV を作る
+//   - CPU から書き込み（Map / Unmap）、頂点シェーダーにバインドする
+//
+// 備考: 容量（最大インスタンス数）は Create で決まる。それより多く書こうとしたぶんは切り捨てる。
+// ===========================================================================
 #include <d3d11.h>
 #include <wrl.h>
 #include <vector>
 #include <DirectXMath.h>
 #include "Engine/Platform/Core/Logger.h"
 
-// GPUに送る1個分のインスタンスデータ
+// GPU に送るインスタンス1個分のデータ
 struct InstanceData
 {
     DirectX::XMFLOAT4X4 world; // ワールド行列
-    // 汎用パラメータ領域（x=ディゾルブ閾値, y=ダメージ点滅フラグ, など）
+
+    // シェーダーごとに意味を決める4つの値。
+    // Phong では z = 被弾フラッシュの強さ。
+    // ShapeRenderer / PrimitiveRenderer では図形の色
     DirectX::XMFLOAT4 customParams;
 };
 
 class InstanceBuffer
 {
 public:
-    // 初期化（最大インスタンス数を指定）
-    //
-    // 容量の問い合わせは必ず GetMaxInstances() を使うこと。
-    //   容量を表す定数を別に公開してはいけない。この既定引数と食い違った瞬間、
-    //   Write が切り詰めた先を DrawInstanced が読む（＝未初期化のインスタンスが
-    //   描かれる）。エラーは一切出ないので、気付けるのは目視だけ。
+    /**
+     * @brief maxInstances 個分のバッファを作る。
+     *
+     * 容量を知りたいときは必ず GetMaxInstances() を使う。容量を表す定数を別に作ると、
+     * この既定の引数と食い違ったとき、Write が切り捨てた先のまだ書いていないインスタンスを
+     * DrawInstanced が読んで描いてしまう。エラーは出ないので、見た目でしか気付けない。
+     */
     void Create(ID3D11Device *device, size_t maxInstances = 4096)
     {
         m_maxInstances = maxInstances;
 
-        // StructuredBuffer の作成
         D3D11_BUFFER_DESC desc   = {};
         desc.ByteWidth           = static_cast<UINT>(sizeof(InstanceData) * maxInstances);
-        desc.Usage               = D3D11_USAGE_DYNAMIC; // CPUから頻繁に書き換える
+        desc.Usage               = D3D11_USAGE_DYNAMIC; // 毎回 CPU から書き換える
         desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
         desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
         desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -37,14 +49,13 @@ public:
 
         if (FAILED(device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf())))
         {
-            // 生成に失敗すると Map が毎回 null を返し、描画が無言で消える。
+            // 作れないと Map が毎回 null を返し、エラーも出ないまま何も描かれなくなるのでログに出す
             CCL_LOG_ERROR(LogCategory::Render,
                           "[InstanceBuffer] インスタンスバッファの生成に失敗しました (max=%zu)", maxInstances);
             m_maxInstances = 0;
             return;
         }
 
-        // シェーダーリソースビュー (SRV) の作成
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.Format                          = DXGI_FORMAT_UNKNOWN;
         srvDesc.ViewDimension                   = D3D11_SRV_DIMENSION_BUFFER;
@@ -58,8 +69,7 @@ public:
         }
     }
 
-    // マップ（書き込み開始）
-    // 直接ポインタを取得して書き込むことで高速化します
+    // 書き込み先のポインタを返す（WRITE_DISCARD。前の中身は消える）。失敗したら nullptr
     InstanceData *Map(ID3D11DeviceContext *dc)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
@@ -70,18 +80,16 @@ public:
         return nullptr;
     }
 
-    // アンマップ（書き込み終了）
     void Unmap(ID3D11DeviceContext *dc)
     {
         dc->Unmap(m_buffer.Get(), 0);
     }
 
-    // データの書き込み
+    // data を先頭から書き込む。容量を超えたぶんは切り捨てる（描かれない）
     void Write(ID3D11DeviceContext *dc, const std::vector<InstanceData> &data)
     {
         if (data.empty()) return;
 
-        // 容量を超えたぶんは切り捨てる（描画されない）
         size_t count = (std::min)(data.size(), m_maxInstances);
 
         InstanceData *ptr = Map(dc);
@@ -92,7 +100,7 @@ public:
         }
     }
 
-    // データの書き込み（ポインタと要素数を直接受け取る高速版）
+    // data から count 個を書き込む（配列の一部を vector に写さずに渡せる）
     void Write(ID3D11DeviceContext *dc, const InstanceData *data, size_t count)
     {
         if (count == 0 || !data) return;
@@ -105,19 +113,19 @@ public:
         }
     }
 
-    // 頂点シェーダーにバインド
+    // 頂点シェーダーの slot にバインドする
     void Bind(ID3D11DeviceContext *dc, UINT slot)
     {
         dc->VSSetShaderResources(slot, 1, m_srv.GetAddressOf());
     }
 
-    // 解除
     void Unbind(ID3D11DeviceContext *dc, UINT slot)
     {
         ID3D11ShaderResourceView *nullSRV = nullptr;
         dc->VSSetShaderResources(slot, 1, &nullSRV);
     }
 
+    // 1回に書き込めるインスタンスの数（作れなかったときは 0）
     size_t GetMaxInstances() const { return m_maxInstances; }
 
 private:

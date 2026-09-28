@@ -2,7 +2,6 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "OutlineShader.h"
 #include "Engine/Graphics/RHI/RenderState.h"
-// Graphics.h インクルード不要（Graphics::Instance() を完全除去）
 
 OutlineShader::OutlineShader(ID3D11Device *device)
 {
@@ -41,8 +40,7 @@ void OutlineShader::Update(ID3D11DeviceContext *dc, const Model::Mesh &mesh, con
 
 void OutlineShader::End(ID3D11DeviceContext *dc, const RenderServices &s)
 {
-    // 後続の描画のためにラスタライザを既定へ戻す。取得は RenderServices 経由で、
-    // シングルトンは参照しない（シェーダは描画コンテキストを引数でしか知らない）。
+    // 後の描画のために、ラスタライザを既定（裏面カリング）に戻す
     if (s.renderState)
     {
         dc->RSSetState(s.renderState->GetRasterizerState(RasterizerState::SolidCullBack));
