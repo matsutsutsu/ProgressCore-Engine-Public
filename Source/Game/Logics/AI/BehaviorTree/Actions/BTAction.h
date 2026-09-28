@@ -59,6 +59,18 @@ namespace CCL::AI::BT
         /// 1フレームの行動。Success / Failure / Running を返す。
         virtual BTNodeState Execute(BTContext &ctx) = 0;
 
+        /// 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる。
+        ///
+        /// 拒否するのは「取り下げた瞬間に破綻する技」だけ。跳躍がその例で、空中で
+        /// 要求が下りると体を動かす側が待機へ倒れ、放物線の途中から重力で落ちる。
+        virtual bool CanAbort(BTContext &ctx) const { return true; }
+
+        /// 打ち切られたときの後始末。出しっぱなしの要求を取り下げるのに使う。
+        ///
+        /// 完了時の後始末を Execute の中に書いてある技は、ここにも同じ取り下げが要る。
+        /// 打ち切りでは Execute が最後まで走らないので、完了時の後始末を誰も通らない。
+        virtual void OnAbort(BTContext &ctx) {}
+
         /// GetComponent<T>() で書き換える／読むコンポーネント（上の説明を参照）。
         virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
         virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }

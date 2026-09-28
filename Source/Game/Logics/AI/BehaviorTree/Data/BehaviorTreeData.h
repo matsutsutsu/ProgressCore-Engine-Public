@@ -117,6 +117,17 @@ struct BTNode
     //   0 以下にすると抽選の候補から外れる（読み込み時に警告する）。
     float weight = 1.0f;
 
+    // 親（Selector）の下で、上の枝が Running でも割り込んで入ってよいか。
+    //
+    //   既定 false は「上の枝が終わるまで待つ」＝今までどおり。true を付けた枝だけが、
+    //   先頭に並ぶ条件（見張り条件）を毎フレーム見てもらえる。
+    //
+    //   全部の枝を毎フレーム見直さないのは、しおり（runningNodes）が技の継続そのもの
+    //   だから。Selector が Running の子を先に再開するおかげで、出している最中の技が
+    //   次のフレームに別の技へ差し替わらずに済んでいる。割り込みはその例外を枝ごとに
+    //   開ける仕組みで、既定は閉じている。
+    bool interrupt = false;
+
     std::vector<BTNodeID> children;
 };
 
@@ -132,3 +143,30 @@ struct BTAsset
     AssetID             id;
     std::vector<BTNode> nodes;
 };
+
+/// 割り込みの可否を判定できる形をしているか（＝枝の先頭に条件が並んでいるか）。
+///
+/// 割り込みたい枝が「今なら通るか」を見るには、行動を実行せずに調べられるものが
+/// 先頭に無いといけない。行動は実行＝副作用（アニメのトリガー・要求の書き込み）なので、
+/// 「試しに評価してみる」ができない。
+///
+/// 形の規則をここに1つだけ置き、読み込み時の検査（BehaviorTreeLoader）と実行時の
+/// 評価（BehaviorTreeSystem::GuardsPass）の両方から引く。別々に書くと、片方だけ直したとき
+/// 「エディタでは警告が出ないのに実行時は割り込まない」という追いにくい食い違いになる。
+inline bool HasReadableGuard(const BTAsset &asset, BTNodeID nodeId)
+{
+    if (nodeId >= asset.nodes.size()) return false;
+
+    const BTNode &node = asset.nodes[nodeId];
+    switch (node.type)
+    {
+    case BTNodeType::Condition: return true;
+
+    // 修飾と手順は「先頭の子」へ降りる。Decorator(Cooldown) → Sequence[条件, …] という
+    // よくある形が、そのまま2段降りて条件に行き着く。
+    case BTNodeType::Decorator:
+    case BTNodeType::Sequence: return !node.children.empty() && HasReadableGuard(asset, node.children[0]);
+
+    default: return false;
+    }
+}

@@ -691,7 +691,8 @@
             "posX": -500.0,
             "posY": 400.0,
             "inputPinId": 205,
-            "outputPinId": 206
+            "outputPinId": 206,
+            "interrupt": true
         },
         {
             "id": 207,
@@ -1283,7 +1284,8 @@
                 13,
                 14
             ],
-            "type": "Sequence"
+            "type": "Sequence",
+            "interrupt": true
         },
         {
             "actionOrConditionId": 0,

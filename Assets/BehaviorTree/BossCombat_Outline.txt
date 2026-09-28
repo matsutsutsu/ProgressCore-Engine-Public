@@ -1,0 +1,103 @@
+# ビヘイビアツリー: BossCombat.json
+#
+# 読み方
+#   - 字下げが親子関係。兄弟は上にあるものから順に評価される（上ほど優先）
+#   - 毎フレーム ROOT から評価する。ただし Selector / Sequence は「実行中(Running)の子」を覚えていて、
+#     次のフレームはその子から再開する。実行中の子より上の兄弟は、その子が終わるまで評価し直さない
+#
+# ノードの種類
+#   [Selector]         子を上から試し、成功か実行中の子が出たらそこで止まる（OR）。全部失敗なら失敗
+#   [Sequence]         子を上から順に実行し、1つ失敗したらそこで失敗（AND）。全部成功なら成功
+#   [WeightedSelector] 子を weight に比例した確率で1つ引いて実行する。失敗したら候補から外して引き直す
+#   [Parallel]         1番目の子（主）の結果を返す。主が実行中の間だけ、2番目以降（従）も毎フレーム動かす
+#   [Decorator]        1つだけの子の結果を修飾する
+#                        Cooldown N秒 : 子が成功したら、N 秒間この枝ごと失敗を返す
+#                        Retry N回    : 子が失敗したら、同じフレーム内で N 回まで試し直す
+#                        Inverter     : 成功と失敗を入れ替える
+#   [Condition]        条件を評価して成功/失敗を返す（その場で終わる）
+#   [Action]           行動を実行する。時間のかかる行動は、終わるまで実行中(Running)を返す
+#   [SubTree]          別に組んだ木をここに差し込んだもの（中身を字下げして展開してある）
+
+ROOT
+  [Selector] Root Selector
+    [Sequence] 被弾がかさんだら退く
+      [Condition] 被弾の蓄積 >= 最大HPの 8 %
+      [Action] ボス：蓄積ダメージリセット
+      [WeightedSelector] 重み付きセレクター（Weighted Selector）
+        [Sequence] ステージ中央に退避する（失敗しても再抽選で後退が選ばれる）  (weight 1)
+          [Condition] ステージの端から 15 m 以内
+          [Action] ボス：中央へ跳んで逃げる（全体時間 2秒）
+        [Sequence] シーケンス (Sequence)  (weight 1)
+          [Action] ドローン：縦割り  (枠24)
+          [Action] ボス：後方ステップ（全体時間 0.9秒）
+          [Action] 待機（待ち時間 0.6秒）
+          [Action] ドローン：攻撃実行
+          [Action] 待機（待ち時間 2秒）
+          [Action] ドローン：頭上円陣
+    [Decorator] Cooldown 14秒
+      [Sequence] 中央へ跳んで逃げる
+        [Condition] ステージの端から 15 m 以内
+        [Condition] 相手が中央側 ±70 度にいる（追い込まれ）
+        [Action] ボス：中央へ跳んで逃げる（全体時間 1.9秒）
+    [Decorator] Cooldown 10秒
+      [Sequence] 跳躍攻撃
+        [Condition] 距離が 25 m 超
+        [Action] ボス：跳躍攻撃（全体時間 2.6秒）
+    [Decorator] Cooldown 7秒
+      [Sequence] 縦割り
+        [Condition] 距離が 30 m 超
+        [Action] ドローン：縦割り  (枠24)
+        [Action] 待機（待ち時間 1.5秒）
+        [Action] ドローン：攻撃実行
+        [Action] 待機（待ち時間 2秒）
+        [Action] ドローン：頭上円陣
+        [Action] ボス：詰めながら待つ（長さ 3秒）
+    [WeightedSelector] ドローン戦(中距離2択)
+      [Sequence] 横なぎ回転  (weight 1)
+        [Condition] 距離が 20 m 未満
+        [Action] ドローン：横なぎ回転  (枠22)
+        [Action] 待機（待ち時間 1.5秒）
+        [Action] ドローン：攻撃実行
+        [Action] 待機（待ち時間 2秒）
+        [Action] ドローン：頭上円陣
+        [Action] ボス：詰めながら待つ（長さ 1秒）
+      [Sequence] 挟み込み  (weight 1)
+        [Condition] 距離が 40 m 未満
+        [Action] ドローン：挟み込み1段  (枠25)
+        [Action] 待機（待ち時間 1.5秒）
+        [Action] ドローン：攻撃実行
+        [Action] 待機（待ち時間 2秒）
+        [Action] ドローン：頭上円陣
+        [Action] ボス：詰めながら待つ（長さ 1秒）
+    [Decorator] Cooldown 25秒
+      [Sequence] 小隊突撃
+        [Condition] 距離が 40 m 超
+        [Action] ドローン：小隊突撃
+        [Action] 待機（待ち時間 2秒）
+        [Action] ドローン：攻撃実行
+        [Action] 待機（待ち時間 10秒）
+        [Action] ドローン：頭上円陣
+        [Action] ボス：詰めながら待つ（長さ 3秒）
+    [Decorator] Cooldown 8秒
+      [Sequence] 弾幕(遠距離)
+        [Condition] 距離が 40 m 超
+        [Action] ドローン：弾幕
+        [Action] 待機（待ち時間 1.2秒）
+        [Action] ドローン：攻撃実行
+        [Action] 待機（待ち時間 4.2秒）
+        [Action] ドローン：頭上円陣
+        [Action] ボス：詰めながら待つ（長さ 3秒）
+    [Sequence] 遠ければ詰める
+      [Condition] 距離が 40 m 超
+      [Action] ボス：詰めながら待つ（長さ 1.5秒）
+
+# 以下は ROOT に繋がっていないので、実行されない
+[Sequence] 滞空して陣形攻撃
+  [Condition] 距離が 20 m 超
+  [Parallel] 滞空(主)＋陣形(従)
+    [Action] ボス：その場で滞空（全体時間 4.4秒）  (主)
+    [Sequence] 陣形→撃つ  (従)
+      [Action] ドローン：弾幕
+      [Action] 待機（待ち時間 1.2秒）
+      [Action] ドローン：攻撃実行
+  [Action] ドローン：頭上円陣

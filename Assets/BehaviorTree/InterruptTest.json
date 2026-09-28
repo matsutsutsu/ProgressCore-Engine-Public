@@ -1,0 +1,213 @@
+{
+    "assetId": 90,
+    "editor_links": [
+        {
+            "endPin": 4,
+            "id": 6,
+            "startPin": 2
+        },
+        {
+            "endPin": 8,
+            "id": 19,
+            "startPin": 5
+        },
+        {
+            "endPin": 11,
+            "id": 20,
+            "startPin": 9
+        },
+        {
+            "endPin": 14,
+            "id": 21,
+            "startPin": 12
+        },
+        {
+            "endPin": 17,
+            "id": 22,
+            "startPin": 12
+        },
+        {
+            "endPin": 24,
+            "id": 32,
+            "startPin": 5
+        },
+        {
+            "endPin": 27,
+            "id": 33,
+            "startPin": 25
+        },
+        {
+            "endPin": 30,
+            "id": 34,
+            "startPin": 25
+        }
+    ],
+    "editor_nodes": [
+        {
+            "actionId": 0,
+            "id": 1,
+            "inputPinId": 0,
+            "name": "ROOT",
+            "outputPinId": 2,
+            "posX": 0.0,
+            "posY": 0.0,
+            "type": 0
+        },
+        {
+            "actionId": 0,
+            "id": 3,
+            "inputPinId": 4,
+            "name": "割り込みの検証",
+            "outputPinId": 5,
+            "posX": 0.0,
+            "posY": 200.0,
+            "type": 1
+        },
+        {
+            "actionId": 0,
+            "decoratorType": 1,
+            "id": 7,
+            "inputPinId": 8,
+            "name": "3秒ごとに割り込む",
+            "outputPinId": 9,
+            "param": 3.0,
+            "posX": -600.0,
+            "posY": 400.0,
+            "type": 6,
+            "interrupt": true
+        },
+        {
+            "actionId": 0,
+            "id": 10,
+            "inputPinId": 11,
+            "name": "割り込む側",
+            "outputPinId": 12,
+            "posX": -600.0,
+            "posY": 600.0,
+            "type": 2
+        },
+        {
+            "actionId": 1,
+            "condition": "C_DistanceLessThan",
+            "id": 13,
+            "inputPinId": 14,
+            "name": "常に真",
+            "outputPinId": 0,
+            "param": 999.0,
+            "posX": -750.0,
+            "posY": 800.0,
+            "type": 3
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 16,
+            "inputPinId": 17,
+            "name": "一瞬だけ待つ",
+            "outputPinId": 0,
+            "param": 0.2,
+            "posX": -450.0,
+            "posY": 800.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 23,
+            "inputPinId": 24,
+            "name": "割り込まれる側",
+            "outputPinId": 25,
+            "posX": 600.0,
+            "posY": 400.0,
+            "type": 2
+        },
+        {
+            "actionId": 1,
+            "condition": "C_DistanceLessThan",
+            "id": 26,
+            "inputPinId": 27,
+            "name": "常に真",
+            "outputPinId": 0,
+            "param": 999.0,
+            "posX": 450.0,
+            "posY": 600.0,
+            "type": 3
+        },
+        {
+            "action": "A_BossAdvance",
+            "actionId": 6,
+            "id": 29,
+            "inputPinId": 30,
+            "name": "詰めながら待つ 5秒",
+            "outputPinId": 0,
+            "param": 5.0,
+            "posX": 750.0,
+            "posY": 600.0,
+            "type": 4
+        }
+    ],
+    "last_id_counter": 34,
+    "nodes": [
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                1,
+                2
+            ],
+            "type": "Selector"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                3
+            ],
+            "decoratorType": 1,
+            "interrupt": true,
+            "param": 3.0,
+            "type": "Decorator"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                4,
+                5
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                6,
+                7
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 1,
+            "children": [],
+            "condition": "C_DistanceLessThan",
+            "param": 999.0,
+            "type": "Condition"
+        },
+        {
+            "action": "A_BossAdvance",
+            "actionOrConditionId": 6,
+            "children": [],
+            "param": 5.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 1,
+            "children": [],
+            "condition": "C_DistanceLessThan",
+            "param": 999.0,
+            "type": "Condition"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 0.2,
+            "type": "Action"
+        }
+    ]
+}

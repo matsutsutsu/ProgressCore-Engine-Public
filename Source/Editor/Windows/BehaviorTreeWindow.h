@@ -19,6 +19,7 @@
 #pragma once
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -91,6 +92,7 @@ struct EditorBTNode
 
     float param  = 0.0f; // 数値パラメータ。BTNode::param と1対1（待機秒数・クールダウン秒数など）
     float weight = 1.0f; // 重み付きセレクターの子としての選ばれやすさ。0 以下で候補外
+    bool  interrupt = false; // Selector の子として、上の枝が動いていても割り込んで入るか
 
     // どの階層に置かれているか。0 は一番外、それ以外はそのノードを中に持つ SubTree のID。
     //   サブツリーの中身も同じ m_nodes に入れておき、キャンバスには今の階層のものだけ描く。
@@ -233,6 +235,16 @@ private:
 
     /// ファイルを読み、Undo の基準も引き直す。読めなければ false（今のグラフはそのまま）
     bool LoadGraph(const std::string &path);
+
+    /// 木を字下げ付きの文章にしてファイルへ書く（AI に構造を渡して組み方を相談するため）
+    void ExportOutlineText(const std::filesystem::path &path);
+
+    /// 書き出す文章全体（凡例＋木＋未接続のノード）を作る
+    std::string BuildOutlineText();
+
+    /// 1ノード分の行と、その子の行を再帰で書く。parentId は注記（重み・主従）を決めるのに使う
+    void AppendOutlineLines(std::string &out, uint32_t nodeId, uint32_t parentId, int depth,
+                            std::unordered_set<uint32_t> &visited);
 
     /// ノード1個を JSON にする（保存項目を足すのはここと NodeFromJson だけ）
     nlohmann::json NodeToJson(const EditorBTNode &node) const;

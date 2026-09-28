@@ -70,6 +70,49 @@ private:
         CCL::ECS::EntityID        entity,
         float                     dt);
 
+    /// アクション・条件へ渡す情報を組み立てる。
+    CCL::AI::BT::BTContext MakeContext(BTNodeID                  nodeId,
+                                       BehaviorTreeComponent    &btComp,
+                                       const TransformComponent &myTrans,
+                                       CCL::ECS::EntityID        entity,
+                                       float                     dt,
+                                       float                     param);
+
+    /// 条件ノードを1つ評価する。木の評価と、割り込みの見張りの両方から呼ぶ。
+    bool EvaluateCondition(BTNodeID                  nodeId,
+                           BehaviorTreeComponent    &btComp,
+                           const TransformComponent &myTrans,
+                           const BTAsset            &asset,
+                           CCL::ECS::EntityID        entity,
+                           float                     dt);
+
+    /// 割り込みたい枝の「見張り条件」だけを評価する。行動は実行しない。
+    /// @note 行動を評価すると、アニメのトリガーを引き要求を書く＝出してしまう。
+    ///       「今なら通るか」を副作用なしに知るために、条件だけを辿る専用の経路がいる。
+    bool GuardsPass(BTNodeID                  nodeId,
+                    BehaviorTreeComponent    &btComp,
+                    const TransformComponent &myTrans,
+                    const BTAsset            &asset,
+                    CCL::ECS::EntityID        entity,
+                    float                     dt);
+
+    /// 走っている枝を打ち切ってよいか。配下の行動が1つでも拒否したら false。
+    /// @note 打ち切りは途中でやめられないので、畳む前に全員へ聞く2段構えにしてある。
+    bool CanAbortSubtree(BTNodeID                  nodeId,
+                         BehaviorTreeComponent    &btComp,
+                         const TransformComponent &myTrans,
+                         const BTAsset            &asset,
+                         CCL::ECS::EntityID        entity,
+                         float                     dt);
+
+    /// 枝を打ち切る。配下の行動に後始末をさせ、実行状態を畳む。
+    void AbortSubtree(BTNodeID                  nodeId,
+                      BehaviorTreeComponent    &btComp,
+                      const TransformComponent &myTrans,
+                      const BTAsset            &asset,
+                      CCL::ECS::EntityID        entity,
+                      float                     dt);
+
     /// デバッグUI：木を一覧にして「この枝を今すぐ実行」を選ばせる。
     /// 木のデータは書き換えず、評価の開始ノードを差し替えるだけ。
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);

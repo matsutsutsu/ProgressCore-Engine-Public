@@ -203,6 +203,25 @@ void BehaviorTreeWindow::DrawToolbar()
                 LoadGraph(rel);
         }
     }
+    ImGui::SameLine();
+    if (ImGui::Button("テキスト書き出し (AI相談用)"))
+    {
+        // 既定のファイル名は「開いている BT の名前_Outline.txt」（BossCombat.json → BossCombat_Outline.txt）
+        std::string base = m_currentPath.empty() ? "BehaviorTree" : FileNameOf(m_currentPath);
+        if (base.ends_with(".json")) base.resize(base.size() - 5);
+
+        auto picked = FileDialog::Save({.title           = "Export Behavior Tree as Text",
+                                        .contextId       = "BehaviorTreeOutline", // 前回選んだフォルダを覚えておく用
+                                        .filters         = {{"Text", "*.txt"}},
+                                        .defaultFileName = base + "_Outline.txt",
+                                        .defaultExt      = "txt"});
+        if (picked) ExportOutlineText(*picked);
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("木の構造を字下げ付きの文章にして書き出します。\n"
+                          "ノードの意味の説明も先頭に付くので、そのまま AI に渡して組み方を相談できます。");
+    }
 
     // 未保存の表示。ウィンドウ名に "*" を足す手もあるが、ImGui はウィンドウ名を
     //   ID に使っているため、名前を変えるとドッキング配置が別物として扱われる。

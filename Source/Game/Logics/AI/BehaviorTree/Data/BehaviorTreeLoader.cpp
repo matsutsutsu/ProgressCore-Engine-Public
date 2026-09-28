@@ -56,6 +56,9 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
             //   触っていない木にはキー自体が無い。既定値はその穴を埋めるためにある。
             node.weight = jNode.value("weight", 1.0f);
 
+            // 割り込みの印。付いていない枝は今までどおり、上の枝が終わるまで待つ。
+            node.interrupt = jNode.value("interrupt", false);
+
             if (jNode.contains("children") && jNode["children"].is_array())
             {
                 for (auto &childId : jNode["children"])
@@ -349,6 +352,37 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                               "[BT] nodes[%zu] の %zu 番目の枝(nodes[%u])は毎フレーム即 Success を返す"
                               "（待機も条件も無い）。この枝より下は一度も評価されない: %s",
                               i, k, static_cast<unsigned>(child), path.c_str());
+            }
+        }
+
+        // 割り込みの印が「効かない場所」に付いていないか。付けたのに何も起きない状態は、
+        // 木を見ても分からない（印は正しく保存されていて、ただ誰も見ないだけ）。
+        for (size_t k = 0; k < node.children.size(); ++k)
+        {
+            const BTNodeID child = node.children[k];
+            if (!asset.nodes[child].interrupt) continue;
+
+            if (node.type != BTNodeType::Selector)
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%u] に割り込みの印が付いているが、親の nodes[%zu] が Selector ではない。"
+                             "印は無視される（優先順位があるのは Selector だけ）: %s",
+                             static_cast<unsigned>(child), i, path.c_str());
+            }
+            else if (k + 1 == node.children.size())
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%u] は一番下の枝なので、割り込みの印は意味を持たない"
+                             "（押しのける相手が下に無い）: %s",
+                             static_cast<unsigned>(child), path.c_str());
+            }
+            else if (!HasReadableGuard(asset, child))
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%u] に割り込みの印が付いているが、枝の先頭に条件が無いので"
+                             "割り込んでよいかを判定できない（無条件の割り込みは許さない）。"
+                             "Sequence の先頭に条件を置くこと: %s",
+                             static_cast<unsigned>(child), path.c_str());
             }
         }
 

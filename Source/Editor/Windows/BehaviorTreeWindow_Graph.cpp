@@ -1,4 +1,4 @@
-// BehaviorTreeWindow：保存・読込・Bake と、親子関係（実行順・表示する階層）の計算。
+// BehaviorTreeWindow：保存・読込・テキスト書き出し・Bake と、親子関係（実行順・表示する階層）の計算。
 //
 // 描画はしない。ノードエディタのライブラリに触れるのは座標の読み出し（NodeToJson）だけ。
 //
@@ -9,9 +9,12 @@
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <algorithm>
+#include <cstdio>
+#include <fstream>
 #include <functional>
 #include <queue>
 
@@ -39,6 +42,10 @@ void BehaviorTreeWindow::WriteKeyAndParam(nlohmann::json &j, const EditorBTNode 
     // 重みは既定(1.0)から動かしたときだけ。読込側の既定も 1.0 なので意味は同じ
     if (node.weight != 1.0f)
         j["weight"] = node.weight;
+
+    // 割り込みの印も、付けたときだけ書く。既存の木にキーが増えないようにするため
+    if (node.interrupt)
+        j["interrupt"] = true;
 }
 
 void BehaviorTreeWindow::RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
@@ -101,8 +108,9 @@ EditorBTNode BehaviorTreeWindow::NodeFromJson(const nlohmann::json &jn)
     // 古いファイルの Action などには "name" が残っているが、表示に使わないので読まない
     if (UsesCustomName(node.type)) node.name = jn.value("name", "");
     RestoreActionId(node, jn);
-    node.param   = jn.value("param", 0.0f);
-    node.weight  = jn.value("weight", 1.0f);
+    node.param     = jn.value("param", 0.0f);
+    node.weight    = jn.value("weight", 1.0f);
+    node.interrupt = jn.value("interrupt", false);
     node.posX    = jn.value("posX", 0.0f);
     node.posY    = jn.value("posY", 0.0f);
     node.graphId = jn.value("graphId", 0u);
@@ -245,6 +253,163 @@ bool BehaviorTreeWindow::LoadGraph(const std::string &path)
 
     CCL_LOG_SUCCESS(LogCategory::Editor, "AIグラフをロードしました: %s", path.c_str());
     return true;
+}
+
+// ====================================================================
+// テキスト書き出し（AI に木を渡して、組み方を相談するため）
+//   出力の形:
+//     ROOT
+//       [Selector] Root Selector
+//         [Sequence] 縦割り
+//           [Decorator] Cooldown 7秒
+//             [Sequence] ...
+//   辿り方はアウトラインと同じ（一番外の根から m_childrenOf を再帰で辿り、SubTree は中の入口の子へ続ける）。
+//   冒頭の凡例は BehaviorTreeSystem.cpp の実際の評価の仕方に合わせてある。ランタイムの挙動を
+//   変えたら凡例も直すこと（AI はこの説明を前提に助言するので、ずれると誤った助言になる）。
+// ====================================================================
+void BehaviorTreeWindow::ExportOutlineText(const std::filesystem::path &path)
+{
+    // path をそのまま ofstream に渡す。Windows では wchar_t のパスとして開くので、日本語のフォルダでも開ける
+    std::ofstream file(path);
+    if (!file)
+    {
+        CCL_LOG_ERROR(LogCategory::Editor, "BTのテキストを書き出せませんでした: %s", FileDialog::ConvertToRelativePath(path).c_str());
+        return;
+    }
+
+    const std::string text = BuildOutlineText();
+    file.write(text.data(), static_cast<std::streamsize>(text.size()));
+    CCL_LOG_SUCCESS(LogCategory::Editor, "BTをテキストで書き出しました: %s", FileDialog::ConvertToRelativePath(path).c_str());
+}
+
+std::string BehaviorTreeWindow::BuildOutlineText()
+{
+    // ボタンはキャンバスより先に処理されるので、念のためこの時点の親子関係を作り直してから辿る
+    RebuildHierarchy();
+
+    std::string out;
+
+    // ----------------------------------------------------------------
+    // 凡例：AI が木を読むための前提（ノードの意味と評価の仕方）
+    // ----------------------------------------------------------------
+    out += "# ビヘイビアツリー: " + (m_currentPath.empty() ? std::string("(未保存)") : FileNameOf(m_currentPath)) + "\n";
+    out += R"(#
+# 読み方
+#   - 字下げが親子関係。兄弟は上にあるものから順に評価される（上ほど優先）
+#   - 毎フレーム ROOT から評価する。ただし Selector / Sequence は「実行中(Running)の子」を覚えていて、
+#     次のフレームはその子から再開する。実行中の子より上の兄弟は、その子が終わるまで評価し直さない
+#
+# ノードの種類
+#   [Selector]         子を上から試し、成功か実行中の子が出たらそこで止まる（OR）。全部失敗なら失敗
+#   [Sequence]         子を上から順に実行し、1つ失敗したらそこで失敗（AND）。全部成功なら成功
+#   [WeightedSelector] 子を weight に比例した確率で1つ引いて実行する。失敗したら候補から外して引き直す
+#   [Parallel]         1番目の子（主）の結果を返す。主が実行中の間だけ、2番目以降（従）も毎フレーム動かす
+#   [Decorator]        1つだけの子の結果を修飾する
+#                        Cooldown N秒 : 子が成功したら、N 秒間この枝ごと失敗を返す
+#                        Retry N回    : 子が失敗したら、同じフレーム内で N 回まで試し直す
+#                        Inverter     : 成功と失敗を入れ替える
+#   [Condition]        条件を評価して成功/失敗を返す（その場で終わる）
+#   [Action]           行動を実行する。時間のかかる行動は、終わるまで実行中(Running)を返す
+#   [SubTree]          別に組んだ木をここに差し込んだもの（中身を字下げして展開してある）
+
+)";
+
+    // ----------------------------------------------------------------
+    // 木：ROOT から辿る。ROOT に繋がっていない塊は後ろへ回す
+    // ----------------------------------------------------------------
+    std::unordered_set<uint32_t> visited;
+    std::vector<uint32_t>        unconnected;
+    for (uint32_t root : m_roots)
+    {
+        const EditorBTNode *n = FindNode(root);
+        if (!n || n->graphId != 0) continue; // サブツリーの中身は SubTree の行の下で書くので、ここでは飛ばす
+
+        if (n->type == EditorBTNodeType::Root)
+            AppendOutlineLines(out, root, 0, 0, visited);
+        else
+            unconnected.push_back(root);
+    }
+
+    // ----------------------------------------------------------------
+    // 未接続：作りかけのノードも見せておく（「これはなぜ動かないのか」を相談できるように）
+    // ----------------------------------------------------------------
+    if (!unconnected.empty())
+    {
+        out += "\n# 以下は ROOT に繋がっていないので、実行されない\n";
+        for (uint32_t id : unconnected)
+            AppendOutlineLines(out, id, 0, 0, visited);
+    }
+    return out;
+}
+
+void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, uint32_t parentId, int depth,
+                                            std::unordered_set<uint32_t> &visited)
+{
+    // 同じノードを2回書かない（リンクが輪になっていても止まる）。アウトラインと同じ理由
+    if (!visited.insert(nodeId).second) return;
+
+    const EditorBTNode *node = FindNode(nodeId);
+    if (!node) return;
+
+    // ----------------------------------------------------------------
+    // この行：「字下げ [種類] 表示名  (注記)」
+    // ----------------------------------------------------------------
+    std::string line(static_cast<size_t>(depth) * 2, ' '); // 1段につき空白2つ
+
+    const char *typeName = "";
+    switch (node->type)
+    {
+    case EditorBTNodeType::Selector: typeName = "Selector"; break;
+    case EditorBTNodeType::Sequence: typeName = "Sequence"; break;
+    case EditorBTNodeType::WeightedSelector: typeName = "WeightedSelector"; break;
+    case EditorBTNodeType::Parallel: typeName = "Parallel"; break;
+    case EditorBTNodeType::Decorator: typeName = "Decorator"; break;
+    case EditorBTNodeType::Condition: typeName = "Condition"; break;
+    case EditorBTNodeType::Action: typeName = "Action"; break;
+    case EditorBTNodeType::SubTree: typeName = "SubTree"; break;
+    default: break;
+    }
+
+    if (node->type == EditorBTNodeType::Root)
+        line += "ROOT";
+    else
+        line += std::string("[") + typeName + "] " + GetDisplayName(*node);
+
+    // 親から見た注記。重みと主従は、その子自身ではなく「親の種類」で意味が決まる値なので、親を見て付ける
+    if (const EditorBTNode *parent = FindNode(parentId))
+    {
+        if (parent->type == EditorBTNodeType::WeightedSelector)
+        {
+            char weight[32];
+            snprintf(weight, sizeof(weight), "%g", node->weight);
+            line += std::string("  (weight ") + weight + ")";
+        }
+        if (parent->type == EditorBTNodeType::Parallel)
+        {
+            const bool isMain = m_childrenOf[parentId].front() == nodeId; // 1番目の子が主
+            line += isMain ? "  (主)" : "  (従)";
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 子の行（再帰）。SubTree は中の入口（ROOT）の子を、自分の子として続ける
+    // ----------------------------------------------------------------
+    uint32_t childSource = nodeId;
+    if (node->type == EditorBTNodeType::SubTree)
+    {
+        const EditorBTNode *entry = FindSubTreeEntry(nodeId);
+        childSource               = entry ? entry->id : 0;
+    }
+
+    auto children = m_childrenOf.find(childSource);
+    if (node->type == EditorBTNodeType::SubTree && (children == m_childrenOf.end() || children->second.empty()))
+        line += "  (中身が空。常に失敗)"; // Bake でも空の Selector（常に失敗）になる
+
+    out += line + "\n";
+
+    if (children == m_childrenOf.end()) return;
+    for (uint32_t child : children->second)
+        AppendOutlineLines(out, child, nodeId, depth + 1, visited);
 }
 
 // ====================================================================

@@ -29,6 +29,15 @@ namespace CCL::AI::BT
             if (cmd->currentActionId == expected) cmd->currentActionId = 0;
     }
 
+    /// 足が地面から離れているか。跳躍の途中で要求を取り下げてよいかの判断に使う。
+    ///
+    /// 溜め（Windup）の間はまだ地面にいるので、打ち切っても破綻しない。
+    bool IsAirborne(BTContext &ctx)
+    {
+        const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity);
+        return act && act->currentState == BossActionState::Leap && act->leapPhase != BossLeapPhase::Windup;
+    }
+
     /// ① 待機（汎用：bt の nodeTimers だけ使う）。待ち時間はノードの param（秒）。
     struct WaitAction : public IBTAction
     {
@@ -112,6 +121,10 @@ namespace CCL::AI::BT
             }
             return BTNodeState::Running;
         }
+
+        // 打ち切られると上の「完了したら取り下げる」を通らない。歩く要求が残ったままだと、
+        // 割り込み先が要求を書かない技（様子見など）のとき、ボスは歩き続ける。
+        void OnAbort(BTContext &ctx) override { ClearCommandIfMine(ctx, A_Move); }
     };
 
     /// ③-2 詰めながら待つ（Advance）。技と技の間に入れる「間」で、A_Wait と差し替えて使う。
@@ -162,6 +175,8 @@ namespace CCL::AI::BT
 
             return BTNodeState::Running;
         }
+
+        void OnAbort(BTContext &ctx) override { ClearCommandIfMine(ctx, A_Move); }
     };
 
     /// ④ ドローン陣形の指示（2000番台）。「この形を作れ」と指示して即完了する。
@@ -254,6 +269,12 @@ namespace CCL::AI::BT
             return TypeIDsOf<BossCommandComponent, AnimParametersComponent>();
         }
 
+        // CanAbort が跳躍の段を読む。
+        std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const override
+        {
+            return TypeIDsOf<BossActionComponent>();
+        }
+
         BTNodeState Execute(BTContext &ctx) override
         {
             auto &timers = ctx.bt->nodeTimers;
@@ -282,7 +303,14 @@ namespace CCL::AI::BT
 
             return BTNodeState::Running;
         }
+
+        // 空中にいる間は打ち切らせない。要求が下りると体を動かす側が待機へ倒れ、
+        // 放物線の途中から重力で落ちる。着地した最初のフレームには許可が出る。
+        bool CanAbort(BTContext &ctx) const override { return !IsAirborne(ctx); }
+
+        void OnAbort(BTContext &ctx) override { ClearCommandIfMine(ctx, id); }
     };
+
     /// ボス用の行動をすべて BTActionRegistry へ登録する。起動時に1回だけ呼ぶ。
     void RegisterBossActions()
     {

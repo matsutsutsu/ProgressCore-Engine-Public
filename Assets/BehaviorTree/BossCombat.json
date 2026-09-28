@@ -561,6 +561,7 @@
             "actionId": 0,
             "id": 149,
             "inputPinId": 150,
+            "interrupt": true,
             "name": "被弾がかさんだら退く",
             "outputPinId": 151,
             "posX": -102.0,
@@ -1425,6 +1426,7 @@
                 10,
                 11
             ],
+            "interrupt": true,
             "type": "Sequence"
         },
         {

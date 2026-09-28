@@ -325,6 +325,21 @@ void BehaviorTreeWindow::DrawInspector()
                     break;
                 }
 
+                // 割り込みは Selector の下でしか意味を持たない（上下関係があるのはそこだけ）。
+                if (parent && parent->type == EditorBTNodeType::Selector)
+                {
+                    ImGui::Separator();
+                    ImGui::Text("割り込み (Interrupt):");
+
+                    if (ImGui::Checkbox("上の枝が動いていても割り込む", &it->interrupt))
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Interrupt";
+                    }
+                    ImGui::TextDisabled("枝の先頭に条件が要ります。条件が通ったフレームに、");
+                    ImGui::TextDisabled("走っている下の枝を畳んでこちらへ移ります");
+                }
+
                 if (parent && parent->type == EditorBTNodeType::WeightedSelector)
                 {
                     ImGui::Separator();

@@ -269,6 +269,154 @@ void BehaviorTreeSystem::Update(float rawDt)
     });
 }
 
+BTContext BehaviorTreeSystem::MakeContext(BTNodeID                  nodeId,
+                                          BehaviorTreeComponent    &btComp,
+                                          const TransformComponent &myTrans,
+                                          EntityID                  entity,
+                                          float                     dt,
+                                          float                     param)
+{
+    BTContext ctx;
+    ctx.world       = m_world;
+    ctx.entity      = entity;
+    ctx.bt          = &btComp; // ブラックボードの状態など
+    ctx.myTransform = &myTrans;
+    ctx.nodeId      = nodeId;  // nodeTimers[nodeId] を引くのに使う
+    ctx.dt          = dt;
+    ctx.param       = param;
+    return ctx;
+}
+
+bool BehaviorTreeSystem::EvaluateCondition(BTNodeID                  nodeId,
+                                           BehaviorTreeComponent    &btComp,
+                                           const TransformComponent &myTrans,
+                                           const BTAsset            &asset,
+                                           EntityID                  entity,
+                                           float                     dt)
+{
+    const BTNode &node = asset.nodes[nodeId];
+
+    // 並列処理内で Instance() を読んでいるけれど、読み取り専用なので競合は起きない。
+    IBTCondition *cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
+    if (!cond) return false;
+
+    BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
+    return cond->Evaluate(ctx);
+}
+
+bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
+                                    BehaviorTreeComponent    &btComp,
+                                    const TransformComponent &myTrans,
+                                    const BTAsset            &asset,
+                                    EntityID                  entity,
+                                    float                     dt)
+{
+    // 「どんな形なら見張れるか」は HasReadableGuard が持つ。ここは同じ形を辿って中身を見る。
+    if (!HasReadableGuard(asset, nodeId)) return false;
+
+    const BTNode &node = asset.nodes[nodeId];
+    switch (node.type)
+    {
+    case BTNodeType::Condition: {
+        const bool ok = EvaluateCondition(nodeId, btComp, myTrans, asset, entity, dt);
+
+        // 木の色分けにも残す。「印は付いているのに割り込まない」とき、どの条件で止まって
+        // いるかがエディタ上で分かる。
+        btComp.debugNodeStates[nodeId] = ok ? BTDebugState::Success : BTDebugState::Failure;
+        return ok;
+    }
+
+    case BTNodeType::Decorator:
+        switch (node.decoratorType)
+        {
+        // クールダウン中の枝へは割り込ませない。ここを見ないと、通常の評価では封印されて
+        // いる技が、割り込み経由でだけ素通りする。
+        case BTDecoratorType::Cooldown:
+            if (btComp.nodeTimers[nodeId] > 0.0f) return false;
+            break;
+
+        case BTDecoratorType::Inverter:
+            return !GuardsPass(node.children[0], btComp, myTrans, asset, entity, dt);
+
+        // Retry は同じフレームに繰り返すだけ。条件の結果は変わらないので素通しでよい。
+        case BTDecoratorType::Retry: break;
+        }
+        return GuardsPass(node.children[0], btComp, myTrans, asset, entity, dt);
+
+    // 先頭に並ぶ見張りを全部見る。見張れない子（＝行動）が来た所で終わり。
+    case BTNodeType::Sequence:
+        for (const BTNodeID childId : node.children)
+        {
+            if (!HasReadableGuard(asset, childId)) break;
+            if (!GuardsPass(childId, btComp, myTrans, asset, entity, dt)) return false;
+        }
+        return true;
+
+    default: return false;
+    }
+}
+
+bool BehaviorTreeSystem::CanAbortSubtree(BTNodeID                  nodeId,
+                                         BehaviorTreeComponent    &btComp,
+                                         const TransformComponent &myTrans,
+                                         const BTAsset            &asset,
+                                         EntityID                  entity,
+                                         float                     dt)
+{
+    const BTNode &node = asset.nodes[nodeId];
+
+    if (node.type == BTNodeType::Action)
+    {
+        if (IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId))
+        {
+            BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
+            if (!action->CanAbort(ctx)) return false;
+        }
+    }
+
+    for (const BTNodeID childId : node.children)
+        if (!CanAbortSubtree(childId, btComp, myTrans, asset, entity, dt)) return false;
+
+    return true;
+}
+
+void BehaviorTreeSystem::AbortSubtree(BTNodeID                  nodeId,
+                                      BehaviorTreeComponent    &btComp,
+                                      const TransformComponent &myTrans,
+                                      const BTAsset            &asset,
+                                      EntityID                  entity,
+                                      float                     dt)
+{
+    const BTNode &node = asset.nodes[nodeId];
+
+    if (node.type == BTNodeType::Action)
+    {
+        // 走っていなかった行動にも聞く。後始末はどれも「自分が出した要求なら取り下げる」
+        // 形なので、出していない行動が呼ばれても何も起きない（ClearCommandIfMine）。
+        // どれが走っていたかを正確に持つより、何度呼んでも同じ結果になる後始末の方が壊れにくい。
+        if (IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId))
+        {
+            BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
+            action->OnAbort(ctx);
+        }
+
+        // 残り時間を「未実行」へ戻す。途中の値が残ると、次にこの枝へ来たとき開始フレーム
+        // 扱いにならず、アニメのトリガーも引かれないまま残りだけを消化して終わる。
+        btComp.nodeTimers[nodeId] = -1.0f;
+    }
+    else if (node.type == BTNodeType::Decorator && node.decoratorType == BTDecoratorType::Cooldown)
+    {
+        // 打ち切りでもクールダウンは掛ける。技は出してしまっているので、掛けないと
+        // 割り込みで中断されるたびに即また出せることになる。
+        btComp.nodeTimers[nodeId] = node.param;
+    }
+
+    btComp.runningNodes[nodeId] = -1;
+
+    for (const BTNodeID childId : node.children)
+        AbortSubtree(childId, btComp, myTrans, asset, entity, dt);
+}
+
 BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     BTNodeID                  nodeId,
     BehaviorTreeComponent    &btComp,
@@ -286,6 +434,38 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     {
     case BTNodeType::Selector: {        
         int runningIndex = btComp.runningNodes[nodeId];
+
+        // 割り込み。しおりより上に印の付いた枝があり、その見張り条件が通るなら、
+        // 走っている枝を畳んでそちらへ譲る。
+        //
+        //   強制実行中は見ない。「この枝だけを実行」の最中に別の枝へ移ると、押した本人が
+        //   見たいものを見られない。
+        //
+        //   注意：割り込んだ枝が毎フレーム即 Failure に落ちると、下の枝を毎フレーム畳んでは
+        //   やり直す形になり、技が一度も完走しない。見張り条件は「通ったら本当にその枝が
+        //   動く」ものにすること（被弾の枝が蓄積をリセットして自分で降りるのが良い例）。
+        if (runningIndex > 0 && runningIndex < (int)node.children.size() && btComp.debugForcedNodeId < 0)
+        {
+            for (int i = 0; i < runningIndex; ++i)
+            {
+                if (!asset.nodes[node.children[i]].interrupt) continue;
+                if (!GuardsPass(node.children[i], btComp, myTrans, asset, entity, dt)) continue;
+
+                // 打ち切れない技が走っている間は見送る。次のフレームにまた見にくるので、
+                // 空中の技なら着地した最初のフレームに入れ替わる。
+                if (!CanAbortSubtree(node.children[runningIndex], btComp, myTrans, asset, entity, dt)) break;
+
+                // 割り込みは「何が起きたか画面から読み取りにくい」変化なので、起きた事実を残す。
+                // 毎フレーム出るなら、割り込んだ枝がすぐ失敗して奪い合っている（下の注記）。
+                CCL_LOG_INFO(LogCategory::AI, "[BT] 割り込み: %d 番目の枝が %d 番目の枝を打ち切った (nodes[%u])",
+                             i, runningIndex, static_cast<unsigned>(nodeId));
+
+                AbortSubtree(node.children[runningIndex], btComp, myTrans, asset, entity, dt);
+                btComp.runningNodes[nodeId] = -1;
+                runningIndex                = -1; // 下の再開を飛ばし、先頭から選び直させる
+                break;
+            }
+        }
 
         // 直前に Running だった子がいれば、まずその子を再評価する。
         if (runningIndex >= 0 && runningIndex < (int)node.children.size())
@@ -359,26 +539,8 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             break;
         }
 
-        // 条件の実装を取得して評価する。条件が無い場合は Failure。
-        // 並列処理内でInstance()を読んでいるけれど
-        // データの書き込みをせずに読み取り専用なので競合は起きない
-        IBTCondition *cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
-        if (cond)
-        {
-            BTContext ctx;
-            ctx.world       = m_world;
-            ctx.entity      = entity;
-            ctx.bt          = &btComp;  // ブラックボードの状態など
-            ctx.myTransform = &myTrans;
-            ctx.nodeId      = nodeId;
-            ctx.dt          = dt;
-            ctx.param       = node.param;
-            result          = cond->Evaluate(ctx) ? BTNodeState::Success : BTNodeState::Failure;
-        }
-        else
-        {
-            result = BTNodeState::Failure;
-        }
+        result = EvaluateCondition(nodeId, btComp, myTrans, asset, entity, dt) ? BTNodeState::Success
+                                                                              : BTNodeState::Failure;
         break;
     }
 
@@ -386,15 +548,8 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId);
         if (action)
         {
-            BTContext ctx;
-            ctx.world       = m_world;
-            ctx.entity      = entity;
-            ctx.bt          = &btComp;
-            ctx.myTransform = &myTrans;
-            ctx.nodeId      = nodeId;
-            ctx.dt          = dt;
-            ctx.param       = node.param;
-            result          = action->Execute(ctx);
+            BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
+            result        = action->Execute(ctx);
         }
         else
         {
