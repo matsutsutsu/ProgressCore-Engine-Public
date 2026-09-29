@@ -59,6 +59,9 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
             // 割り込みの印。付いていない枝は今までどおり、上の枝が終わるまで待つ。
             node.interrupt = jNode.value("interrupt", false);
 
+            // 自己中断の印。付いていない枝は、条件が崩れても最後まで走り切る。
+            node.abortSelf = jNode.value("abortSelf", false);
+
             if (jNode.contains("children") && jNode["children"].is_array())
             {
                 for (auto &childId : jNode["children"])
@@ -382,6 +385,28 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "[BT] nodes[%u] に割り込みの印が付いているが、枝の先頭に条件が無いので"
                              "割り込んでよいかを判定できない（無条件の割り込みは許さない）。"
                              "Sequence の先頭に条件を置くこと: %s",
+                             static_cast<unsigned>(child), path.c_str());
+            }
+        }
+
+        // 自己中断の印も同じ理由で検査する。一番下の枝でも意味はある（上へ押しのけられる
+        // のではなく自分から降りるので、下に相手が要らない）ため、その検査だけ無い。
+        for (const BTNodeID child : node.children)
+        {
+            if (!asset.nodes[child].abortSelf) continue;
+
+            if (node.type != BTNodeType::Selector)
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%u] に自己中断の印が付いているが、親の nodes[%zu] が Selector ではない。"
+                             "印は無視される（見直すのは Selector だけ）: %s",
+                             static_cast<unsigned>(child), i, path.c_str());
+            }
+            else if (!HasReadableGuard(asset, child))
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%u] に自己中断の印が付いているが、枝の先頭に条件が無いので"
+                             "続けてよいかを判定できない。Sequence の先頭に条件を置くこと: %s",
                              static_cast<unsigned>(child), path.c_str());
             }
         }

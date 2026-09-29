@@ -93,6 +93,7 @@ struct EditorBTNode
     float param  = 0.0f; // 数値パラメータ。BTNode::param と1対1（待機秒数・クールダウン秒数など）
     float weight = 1.0f; // 重み付きセレクターの子としての選ばれやすさ。0 以下で候補外
     bool  interrupt = false; // Selector の子として、上の枝が動いていても割り込んで入るか
+    bool  abortSelf = false; // Selector の子として、走っている間も自分の条件を見直し、崩れたら降りるか
 
     // どの階層に置かれているか。0 は一番外、それ以外はそのノードを中に持つ SubTree のID。
     //   サブツリーの中身も同じ m_nodes に入れておき、キャンバスには今の階層のものだけ描く。

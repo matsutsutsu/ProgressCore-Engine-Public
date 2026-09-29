@@ -128,6 +128,13 @@ struct BTNode
     //   開ける仕組みで、既定は閉じている。
     bool interrupt = false;
 
+    // 親（Selector）の下で自分が Running の間、自分の見張り条件を毎フレーム見直すか。
+    //
+    //   interrupt が「上の枝が下を押しのける」のに対し、こちらは「自分の条件が崩れたら
+    //   自分から降りる」。予備動作の最中に間合いを外れたら技を取りやめる、といった用途。
+    //   降りた後は Selector が先頭から選び直すので、その場に合った枝が自然に選ばれる。
+    bool abortSelf = false;
+
     std::vector<BTNodeID> children;
 };
 

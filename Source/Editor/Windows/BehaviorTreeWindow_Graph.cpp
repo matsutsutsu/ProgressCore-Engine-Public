@@ -46,6 +46,8 @@ void BehaviorTreeWindow::WriteKeyAndParam(nlohmann::json &j, const EditorBTNode 
     // 割り込みの印も、付けたときだけ書く。既存の木にキーが増えないようにするため
     if (node.interrupt)
         j["interrupt"] = true;
+    if (node.abortSelf)
+        j["abortSelf"] = true;
 }
 
 void BehaviorTreeWindow::RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
@@ -111,6 +113,7 @@ EditorBTNode BehaviorTreeWindow::NodeFromJson(const nlohmann::json &jn)
     node.param     = jn.value("param", 0.0f);
     node.weight    = jn.value("weight", 1.0f);
     node.interrupt = jn.value("interrupt", false);
+    node.abortSelf = jn.value("abortSelf", false);
     node.posX    = jn.value("posX", 0.0f);
     node.posY    = jn.value("posY", 0.0f);
     node.graphId = jn.value("graphId", 0u);

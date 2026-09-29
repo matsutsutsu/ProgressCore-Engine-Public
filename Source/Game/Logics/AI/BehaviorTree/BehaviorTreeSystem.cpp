@@ -467,6 +467,26 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
             }
         }
 
+        // 自己中断。走っている枝に印があり、その枝自身の見張り条件が崩れたなら、畳んで
+        // 先頭から選び直す。割り込みと違って譲る相手を決めないので、0 番目の枝でも見る。
+        //
+        //   割り込みで既に畳んだフレームは runningIndex が -1 なのでここは通らない。
+        if (runningIndex >= 0 && runningIndex < (int)node.children.size() && btComp.debugForcedNodeId < 0)
+        {
+            const BTNodeID runningChild = node.children[runningIndex];
+            if (asset.nodes[runningChild].abortSelf &&
+                !GuardsPass(runningChild, btComp, myTrans, asset, entity, dt) &&
+                CanAbortSubtree(runningChild, btComp, myTrans, asset, entity, dt))
+            {
+                CCL_LOG_INFO(LogCategory::AI, "[BT] 自己中断: %d 番目の枝が条件を外れて降りた (nodes[%u])",
+                             runningIndex, static_cast<unsigned>(nodeId));
+
+                AbortSubtree(runningChild, btComp, myTrans, asset, entity, dt);
+                btComp.runningNodes[nodeId] = -1;
+                runningIndex                = -1;
+            }
+        }
+
         // 直前に Running だった子がいれば、まずその子を再評価する。
         if (runningIndex >= 0 && runningIndex < (int)node.children.size())
         {

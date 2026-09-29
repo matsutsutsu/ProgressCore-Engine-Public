@@ -331,13 +331,28 @@ void BehaviorTreeWindow::DrawInspector()
                     ImGui::Separator();
                     ImGui::Text("割り込み (Interrupt):");
 
-                    if (ImGui::Checkbox("上の枝が動いていても割り込む", &it->interrupt))
+                    if (ImGui::Checkbox("下の枝の技の途中でも割り込む", &it->interrupt))
                     {
                         needsUndo   = true;
                         undoMessage = "Change Interrupt";
                     }
-                    ImGui::TextDisabled("枝の先頭に条件が要ります。条件が通ったフレームに、");
-                    ImGui::TextDisabled("走っている下の枝を畳んでこちらへ移ります");
+                    ImGui::TextDisabled("この枝より下の技が動いている最中も、この枝の");
+                    ImGui::TextDisabled("条件を毎フレーム確認します。条件を満たしたら");
+                    ImGui::TextDisabled("その技を途中で中断し、上から選び直します。");
+                    ImGui::TextDisabled("※枝の先頭に条件ノードが必要です");
+
+                    ImGui::Separator();
+                    ImGui::Text("自己中断 (Abort Self):");
+
+                    if (ImGui::Checkbox("条件が合わなくなったら技を中断する", &it->abortSelf))
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Abort Self";
+                    }
+                    ImGui::TextDisabled("この枝の技が動いている最中も、この枝の条件を");
+                    ImGui::TextDisabled("毎フレーム確認します。条件に合わなくなったら");
+                    ImGui::TextDisabled("技の途中でも中断し、上から選び直します。");
+                    ImGui::TextDisabled("※枝の先頭に条件ノードが必要です");
                 }
 
                 if (parent && parent->type == EditorBTNodeType::WeightedSelector)

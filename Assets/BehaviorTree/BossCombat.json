@@ -574,7 +574,7 @@
             "id": 152,
             "inputPinId": 153,
             "outputPinId": 0,
-            "param": 8.0,
+            "param": 6.0,
             "posX": -370.0,
             "posY": 670.0,
             "type": 3
@@ -591,6 +591,7 @@
             "type": 6
         },
         {
+            "abortSelf": true,
             "actionId": 0,
             "decoratorType": 1,
             "id": 197,
@@ -602,6 +603,7 @@
             "type": 6
         },
         {
+            "abortSelf": true,
             "actionId": 0,
             "decoratorType": 1,
             "id": 202,
@@ -875,6 +877,7 @@
             "type": 4
         },
         {
+            "abortSelf": true,
             "actionId": 0,
             "id": 319,
             "inputPinId": 320,
@@ -998,8 +1001,8 @@
             "width": 1660.0
         },
         {
-            "actionId": 2,
-            "condition": "C_DistanceGreaterThan",
+            "actionId": 1,
+            "condition": "C_DistanceLessThan",
             "id": 344,
             "inputPinId": 345,
             "outputPinId": 0,
@@ -1068,7 +1071,7 @@
             "id": 366,
             "inputPinId": 367,
             "outputPinId": 0,
-            "param": 15.0,
+            "param": 25.0,
             "posX": 1632.0,
             "posY": 878.0,
             "type": 3
@@ -1102,7 +1105,7 @@
             "name": "跳躍攻撃",
             "outputPinId": 382,
             "posX": 2694.0,
-            "posY": 690.0,
+            "posY": 686.0,
             "type": 2
         },
         {
@@ -1448,6 +1451,7 @@
             "type": "Decorator"
         },
         {
+            "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
                 14
@@ -1474,6 +1478,7 @@
             "type": "Decorator"
         },
         {
+            "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
                 18
@@ -1483,6 +1488,7 @@
             "type": "Decorator"
         },
         {
+            "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
                 19,
@@ -1494,7 +1500,7 @@
             "actionOrConditionId": 11,
             "children": [],
             "condition": "C_DamageThresholdExceeded",
-            "param": 8.0,
+            "param": 6.0,
             "type": "Condition"
         },
         {
@@ -1632,7 +1638,7 @@
             "actionOrConditionId": 7,
             "children": [],
             "condition": "C_IsAtStageEdge",
-            "param": 15.0,
+            "param": 25.0,
             "type": "Condition"
         },
         {
@@ -1664,9 +1670,9 @@
             "type": "Action"
         },
         {
-            "actionOrConditionId": 2,
+            "actionOrConditionId": 1,
             "children": [],
-            "condition": "C_DistanceGreaterThan",
+            "condition": "C_DistanceLessThan",
             "param": 30.0,
             "type": "Condition"
         },

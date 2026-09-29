@@ -21,8 +21,8 @@
                     "attackLeap.windup": 0.3499999940395355,
                     "attackStandOff": 3.0,
                     "backStepHeight": 2.0,
-                    "backStepSpeed": 40.0,
-                    "backStepTime": 1.0,
+                    "backStepSpeed": 60.0,
+                    "backStepTime": 2.0,
                     "deceleration": 15.0,
                     "escapeLandingRatio": 0.30000001192092896,
                     "escapeLeap.flight": 1.100000023841858,
@@ -43,9 +43,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
+                        2.877624129987742e-38,
                         0.0,
-                        0.0,
-                        0.0
+                        1.2818132475180007e-38
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -60,7 +60,7 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 485.0,
+                    "currentHealth": 500.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 500.0
                 },
@@ -131,15 +131,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        25.054513931274414,
-                        0.49632009863853455,
-                        -10.096841812133789
+                        76.24040985107422,
+                        -0.676510214805603,
+                        53.74135208129883
                     ],
                     "rotation": [
-                        -0.0,
-                        -0.5381861329078674,
-                        -0.0,
-                        0.8428260087966919
+                        0.0,
+                        0.5423926711082458,
+                        0.0,
+                        0.8401250839233398
                     ],
                     "scale": [
                         5.0,

@@ -7,21 +7,21 @@
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": false,
-                    "playbackSpeed": 0.699999988079071
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        23.588422775268555,
+                        3.8889851566636935e-05,
                         0.0,
-                        -11.84360122680664
+                        -2.1358520825742744e-05
                     ],
                     "desiredVelocity": [
-                        0.8936775326728821,
                         0.0,
-                        -0.44870996475219727
+                        0.0,
+                        0.0
                     ],
-                    "isRootMotionActive": true,
+                    "isRootMotionActive": false,
                     "jumpImpulse": false,
                     "overrideSpeed": -1.0,
                     "speedMultiplier": 1.0,
@@ -59,9 +59,9 @@
                     "currentTimer": -0.003333514556288719,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        0.9875395894050598,
+                        0.8933714032173157,
                         0.0,
-                        0.15737098455429077
+                        -0.4493190348148346
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -80,10 +80,10 @@
                     "damageMultiplier": 1.0
                 },
                 "Jolt Capsule Collider": {
-                    "halfHeight": 3.5,
+                    "halfHeight": 2.799999952316284,
                     "localOffset": [
                         0.0,
-                        3.200000047683716,
+                        3.799999952316284,
                         0.0
                     ],
                     "localRotationEuler": [
@@ -158,17 +158,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 5,
+                    "parent": 0,
                     "position": [
-                        32.49012756347656,
-                        0.013852653093636036,
-                        -44.84500503540039
+                        55.64505386352539,
+                        -0.03374272584915161,
+                        -22.16911506652832
                     ],
                     "rotation": [
-                        -2.610712552657774e-19,
-                        0.8510904908180237,
-                        -1.6104913135783934e-19,
-                        0.525019109249115
+                        -1.368516736564851e-12,
+                        0.8501117825508118,
+                        -8.477285171580584e-13,
+                        0.5266022682189941
                     ],
                     "scale": [
                         3.5,
