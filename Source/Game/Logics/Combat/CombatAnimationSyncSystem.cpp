@@ -69,12 +69,8 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
 
         for (const auto &ev : seq->events)
         {
+            // 区間のタグ（ev.tagHash）は見ない。1キャラが持つ攻撃判定は1つなので、どの HitBox 区間でも開く
             if (ev.type != AnimEventType::HitBox)
-                continue;
-
-            // tagHash が 0 なら、どの HitBox 区間でも有効にする（武器が1つの場合）。
-            // 0 以外なら、区間のタグと一致するものだけにする
-            if (hb.tagHash != 0 && ev.tagHash != hb.tagHash)
                 continue;
 
             // 今の時刻が区間に入っているかではなく、このフレームで進んだ範囲

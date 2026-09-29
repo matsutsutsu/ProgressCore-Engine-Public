@@ -33,7 +33,7 @@ namespace Priority
                               //     スケジューラはこの依存を検出できない。
 
         L02_PreUpdate = 150, // AI の感知フェーズ。L02_Update の入力を確定させるものをここへ。
-                             //   例: 知覚（BossPerceptionSystem）/ 大状態（BossPhaseSystem）/
+                             //   例: 知覚（BossPerceptionSystem）/ 形態（BossPhaseSystem）/
                              //       個体判断（DroneBrainSystem）
 
         L02_Update = 200, // AI・移動・弾の更新など（System 数が最も多く、並列化の効果が大きい）

@@ -11,7 +11,7 @@
 //       勝ちをすぐ出さないのは、最後の敵を倒したフレームから DefeatSlowMotionSystem のスローが
 //       始まるため。Update の dt はスローの影響を受けない実時間なので、kResultDelay 秒待てば
 //       スローが終わってから出せる。
-//       プレイヤーは HealthComponent と PlayerComponent を持つもの、敵は PlayerComponent を持たないもの。
+//       プレイヤーは HealthComponent と PlayerComponent を持つもの、敵は HealthComponent と EnemyTag を持つもの。
 //       全体登録（REGISTER_*）はせず、GameScene と EditorScene が登録する（ゲーム本編でだけ動かす）。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"

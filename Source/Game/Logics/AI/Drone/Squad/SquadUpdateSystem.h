@@ -47,9 +47,10 @@ public:
 
     // DroneCommandSystem が配った陣形指示を読んでから小隊の行動を決める。BehaviorTreeSystem も直接
     // 名指しする（間接的に後ろになるだけでは起動時に「順序不定」と報告される）。
+    // DroneManagerSystem は初回配備で squadId / slotInSquad を書くので、その後に走る。
     std::vector<const char *> GetRunAfter() const override
     {
-        return {"BehaviorTreeSystem", "DroneCommandSystem"};
+        return {"BehaviorTreeSystem", "DroneCommandSystem", "DroneManagerSystem"};
     }
 
     // Update がボスの BossCommandComponent を View で引く。テンプレート引数には

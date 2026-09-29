@@ -9,6 +9,7 @@
 #include "Game/UI/MenuUiFactory.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Game/Logics/Combat/DeadTag.h"
+#include "Game/Logics/Combat/EnemyTag.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 #include <cstdint>
@@ -69,7 +70,8 @@ void GameResultSystem::Update(float dt)
     bool anyEnemy      = false;
     int  aliveEnemies  = 0;
 
-    // HealthComponent を持つエンティティを、プレイヤーと敵に分けて数える
+    // HealthComponent を持つエンティティを、プレイヤーと敵に分けて数える。
+    // 敵かどうかは EnemyTag だけで決める（理由は EnemyTag.h を参照）
     ForEachWithID([&](EntityID id, const HealthComponent &hp) {
         const bool dead = (hp.currentHealth <= 0.0f) || m_world->HasComponent<Tag::DeadTag>(id);
 
@@ -78,7 +80,7 @@ void GameResultSystem::Update(float dt)
             playerPresent = true;
             if (dead) playerDead = true;
         }
-        else
+        else if (m_world->HasComponent<Tag::EnemyTag>(id))
         {
             anyEnemy = true;
             if (!dead) ++aliveEnemies;

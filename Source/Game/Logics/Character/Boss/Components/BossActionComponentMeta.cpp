@@ -40,7 +40,7 @@ struct ComponentMeta<BossActionComponent>
 {
     CCL_META_USING_THIS(BossActionComponent)
 
-    static constexpr const char *displayName       = "Boss Action (Muscle)";
+    static constexpr const char *displayName       = "Boss Action";
     static constexpr const char *category          = CCL::Categories::Combat;
     static constexpr int         sortPriority      = 180;
     static constexpr bool        hiddenInInspector = false;

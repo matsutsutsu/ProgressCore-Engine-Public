@@ -891,7 +891,7 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
         const int bookmark = btComp.runningNodes[nodeId];
         if (bookmark >= 0)
         {
-            std::snprintf(buf, sizeof(buf), "  しおり %d/%d",
+            std::snprintf(buf, sizeof(buf), "  再開位置 %d/%d",
                           bookmark + 1, static_cast<int>(node.children.size()));
             label += buf;
         }

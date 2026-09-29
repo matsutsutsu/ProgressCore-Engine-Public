@@ -488,19 +488,19 @@ void DroneManagerSystem::OnGui()
             auto &tuning = m_world->GetResource<SquadRegistry>().tuning;
             if (ImGui::TreeNodeEx("小隊の調整", ImGuiTreeNodeFlags_DefaultOpen))
             {
-                ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "蛇のしなり");
+                ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "隊列のしなり");
                 ImGui::SliderFloat("追従バネ", &tuning.followGain, 1.0f, 30.0f, "%.1f");
                 if (ImGui::IsItemHovered())
-                    ImGui::SetTooltip("間隔のずれを直す強さ。小さいほど胴体が伸び縮みして柔らかく見える");
+                    ImGui::SetTooltip("間隔のずれを直す強さ。小さいほど隊列が伸び縮みして柔らかく見える");
                 ImGui::SliderFloat("後席の鈍さ", &tuning.slotLagPerSlot, 0.0f, 0.25f, "%.2f");
                 if (ImGui::IsItemHovered())
-                    ImGui::SetTooltip("1つ後ろの席ごとにバネを弱める割合。大きいほど尾が遅れて曲がる");
+                    ImGui::SetTooltip("1つ後ろの席ごとにバネを弱める割合。大きいほど最後尾が遅れて曲がる");
 
                 ImGui::Spacing();
                 ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f), "隊列の形");
-                ImGui::SliderFloat("胴体の間隔", &tuning.chainGap, 1.0f, 10.0f, "%.1f m");
+                ImGui::SliderFloat("機体の間隔", &tuning.chainGap, 1.0f, 10.0f, "%.1f m");
                 if (ImGui::IsItemHovered())
-                    ImGui::SetTooltip("前の機体との距離。小さいほど蛇が詰まって1本に見える");
+                    ImGui::SetTooltip("前の機体との距離。小さいほど隊列が詰まって1本に見える");
 
                 ImGui::Spacing();
                 ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "突入");

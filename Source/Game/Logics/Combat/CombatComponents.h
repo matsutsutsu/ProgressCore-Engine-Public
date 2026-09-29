@@ -36,12 +36,9 @@ struct HitboxComponent
     // どちらでも ownerID（誰の攻撃か）は変えない。変えるのは向きの基準だけ
     bool useSelfAsHitOrigin = false;
 
-    // --- CombatAnimationSyncSystem が使う ---
-    // ownerEntity: 親をたどって見つけた、Animator を持つ持ち主（剣ならキャラ）
-    // tagHash    : どの HitBox 区間で開くかのタグのハッシュ。0 ならどの区間でも開く。
-    //              今は書いている所が無く、常に 0
+    // 親をたどって見つけた、Animator を持つ持ち主（剣ならキャラ）。CombatAnimationSyncSystem が使う。
+    // 持ち主の HitBox 区間はどれでもこの判定を開く（1キャラが持つ攻撃判定は1つの前提）。
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
-    uint32_t           tagHash     = 0;
 
     // ownerEntity を探したか。見つからなかったことも覚えておく。覚えないと、親を持たない判定
     // （SpawnHitboxSystem の球・ドローン）が毎フレーム親をたどり直すことになる

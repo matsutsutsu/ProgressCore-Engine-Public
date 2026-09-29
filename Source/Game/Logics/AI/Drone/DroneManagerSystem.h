@@ -23,8 +23,10 @@ namespace CCL::ECS
     class World;
 }
 
+// DroneComponent が Write なのは、Update の初回配備（TryAutoSpawnInitial → SpawnDrones）が
+// 生成した機の DroneComponent と、ReindexAllDrones で全機の通し番号・小隊を書き換えるため。
 class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
-                                                     CCL::ECS::Read<DroneComponent>>
+                                                     CCL::ECS::Write<DroneComponent>>
 {
 public:
     DroneManagerSystem()

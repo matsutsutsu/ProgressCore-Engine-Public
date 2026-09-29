@@ -29,6 +29,10 @@ public:
     {
     }
 
+    // CharacterAnimSyncSystem も同じ L02_PreUpdate でボスの Speed を（Jolt の実速度から）書く。
+    // その後に走り、BossActionSystem が決めた速度で必ず上書きする。
+    std::vector<const char *> GetRunAfter() const override { return {"CharacterAnimSyncSystem"}; }
+
     // 全ボスのアニメのパラメータを、今の動きに合わせて書き直す。
     void Update(float dt) override;
 };

@@ -151,7 +151,7 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::Checkbox("Show Floating Text", &m_enabled);
     ImGui::SliderFloat("Font Size", &m_fontSize, 10.0f, 100.0f);
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
-    ImGui::TextDisabled("ボス頭上に 大状態/行動/HP・ドローン数 を常時表示");
+    ImGui::TextDisabled("ボス頭上に 形態/行動/HP・ドローン数 を常時表示");
 }
 
 // ImGui::NewFrame の後（SceneManager::Render の中）に走らせる必要があるので、Render ステージに置く。

@@ -154,10 +154,9 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, 
     // 継続
     dash.currentTimer -= time.localDt;
 
-    // ダッシュ開始から justEvadeWindow × justEvadeWindowScale 秒が過ぎたら、ジャスト回避の受付だけを閉じる。
-    float elapsed         = dash.dashDuration - dash.currentTimer;
-    float effectiveWindow = dash.justEvadeWindow * dash.justEvadeWindowScale;
-    if (elapsed > effectiveWindow)
+    // ダッシュ開始から justEvadeWindow 秒が過ぎたら、ジャスト回避の受付だけを閉じる。
+    float elapsed = dash.dashDuration - dash.currentTimer;
+    if (elapsed > dash.justEvadeWindow)
         dash.isJustEvadeWindowActive = false;
 
     if (dash.currentTimer <= 0.0f)
