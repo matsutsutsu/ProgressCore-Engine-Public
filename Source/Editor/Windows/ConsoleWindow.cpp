@@ -1,12 +1,3 @@
-//==============================================================================
-// ConsoleWindow.cpp
-//
-// ログビューア。表示するのは LogSinks のリングバッファを Snapshot() で複製したもの。
-//   描画中にロックを持ち続けると、ログを吐く側のスレッドがその間止まる。
-// カテゴリ名は GetLogCategoryName() だけを使う。ここに独自の対応表を持つと、
-//   エンジン側にカテゴリを足したとき片方だけ古くなる。
-// 行のダブルクリックで Visual Studio の該当行へジャンプする。
-//==============================================================================
 #include "ConsoleWindow.h"
 #include "Engine/Platform/Core/LogSinks.h"
 
@@ -24,13 +15,10 @@ ConsoleWindow::ConsoleWindow() : EditorWindow("Console")
 
 namespace
 {
-    /**
-     * @brief Visual Studio で該当ファイル/行を開く
-     * @details VS の自動化用 ProgID 経由。失敗しても無害なように try/catch 相当の扱い
-     */
+    // devenv のコマンドラインで、Visual Studio に該当ファイル・行を開かせる。
+    //   devenv が PATH に無ければ CreateProcess が失敗し、何も起きない
     void OpenInVisualStudio(const std::string &file, int line)
     {
-        // 簡易実装: 既定のエディタで開く (devenv が PATH にあれば優先)
         char cmd[1024];
         std::snprintf(cmd, sizeof(cmd), "devenv /edit \"%s\" /command \"Edit.GoTo %d\"",
                       file.c_str(), line);
@@ -61,7 +49,7 @@ namespace
         }
     }
 
-    // 1行を CSV/コピー用に整形
+    // 1行をコピー用の文字列にする
     std::string FormatLine(const LogMessage &m)
     {
         char buf[2048];
@@ -84,9 +72,7 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
         return;
     }
 
-    // --------------------------------------------------------------------
-    // 1. ツールバー
-    // --------------------------------------------------------------------
+    // ---- ツールバー ----
     if (ImGui::Button("Clear"))
     {
         Logger::Instance().Clear();
@@ -110,9 +96,7 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
     ImGui::SetNextItemWidth(200);
     ImGui::InputTextWithHint("##search", "Search...", m_searchBuf, sizeof(m_searchBuf));
 
-    // --------------------------------------------------------------------
-    // 2. カテゴリフィルタ
-    // --------------------------------------------------------------------
+    // ---- カテゴリの絞り込み ----
     ImGui::Separator();
     ImGui::TextUnformatted("Categories:");
     ImGui::SameLine();
@@ -124,17 +108,14 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
     }
     ImGui::Separator();
 
-    // ====================================================================
-    // ログ件数が変わったときだけ Snapshot を取り直し、毎フレームのディープコピーを避ける
-    // ====================================================================
+    // ---- Snapshot の取得と絞り込み ----
+    // 0.1 秒に1回だけ Snapshot を取り直し、毎フレーム全ログを複製するのを避ける。
+    // 絞り込みの結果（s_cachedFiltered）も同じタイミングで作り直す。
     static std::vector<LogMessage> s_cachedMessages;
-    static std::vector<int>        s_cachedFiltered;
+    static std::vector<int>        s_cachedFiltered; // 表示する行の s_cachedMessages での添字
     static float                   s_updateTimer = 0.0f;
 
-    // ImGuiのDeltaTimeを使ってタイマーを進行
     s_updateTimer += ImGui::GetIO().DeltaTime;
-
-    // 前回の更新から0.1秒経過、または「Clear」ボタン等で強制更新が必要な場合のみコピーを走らせる
     if (s_updateTimer > 0.1f)
     {
         s_cachedMessages = m_bufferSink->Snapshot();
@@ -146,7 +127,6 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
         {
             const auto &m = s_cachedMessages[i];
 
-            // フィルタ条件のチェック...
             switch (m.level)
             {
             case LogLevel::Info:
@@ -172,25 +152,30 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
 
             s_cachedFiltered.push_back(i);
         }
-        s_updateTimer = 0.0f; // タイマーリセット
+        s_updateTimer = 0.0f;
     }
 
-    // ====================================================================
-    // スクロール可能なログ領域の開始
-    // ====================================================================
+    // 絞り込み後の全行をコピーする（画面に見えている行だけではない）
+    if (copyAllRequested)
+    {
+        std::string all;
+        for (int idx : s_cachedFiltered)
+        {
+            all += FormatLine(s_cachedMessages[idx]);
+            all += '\n';
+        }
+        ImGui::SetClipboardText(all.c_str());
+    }
+
+    // ---- ログの表示（ListClipper で見えている行だけを描く） ----
     ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    // --------------------------------------------------------------------
-    // 5. 描画 (Clipper で高速化)
-    // --------------------------------------------------------------------
-    // 以降の描画処理は、毎フレーム計算するのではなく、キャッシュされた s_cachedFiltered と s_cachedMessages を使う
     ImGuiListClipper clipper;
     clipper.Begin(static_cast<int>(s_cachedFiltered.size()));
     while (clipper.Step())
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
         {
-            // キャッシュから読み出し
             const auto &m       = s_cachedMessages[s_cachedFiltered[i]];
             const auto  color   = LevelColor(m.level);
             const auto *catName = GetLogCategoryName(m.category);
@@ -199,7 +184,7 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
             ImGui::TextColored(color, "[%s] [%s:%d] %s",
                                catName, m.file.c_str(), m.line, m.text.c_str());
 
-            // 行ダブルクリック → Visual Studio で開く
+            // 行のダブルクリックで Visual Studio を開く
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
                 OpenInVisualStudio(m.file, m.line);
@@ -224,14 +209,7 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
     }
     clipper.End();
 
-    if (copyAllRequested)
-    {
-        ImGui::LogFinish();
-    }
-
-    // --------------------------------------------------------------------
-    // 6. 自動スクロール
-    // --------------------------------------------------------------------
+    // 一番下を見ているときだけ、新しい行に合わせてスクロールする
     if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
     {
         ImGui::SetScrollHereY(1.0f);

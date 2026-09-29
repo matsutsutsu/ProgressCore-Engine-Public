@@ -1,9 +1,14 @@
-// ===================================================================================
-// ファイル名: MemoryAnalyzerWindow.h
-// 役割: ResourceManagerの連続メモリプールからアセットの消費容量を秒間60フレームを
-//       阻害せずに抽出し、視覚的な予算管理（Budget）を行うエディタウィンドウ。
-// ===================================================================================
 #pragma once
+// ===========================================================================
+// 概要: 読み込み済みテクスチャの VRAM 使用量を、予算に対する割合と一覧で表示するウィンドウ。
+//
+// 責務:
+//   - ResourceManager のテクスチャプールを 0.2 秒ごとに走査して集計する
+//   - 合計と予算（VRAM_BUDGET_BYTES）の比をバーで表示する
+//   - テクスチャを使用量の多い順に一覧表示する
+//
+// 備考: 走査はフレームごとに行わず、0.2 秒ごとの結果をキャッシュして描く。
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include <vector>
 #include <string>
@@ -15,11 +20,10 @@ public:
     virtual ~MemoryAnalyzerWindow() = default;
 
 protected:
-    // エディタマネージャーから毎フレーム呼ばれる描画関数
     void DrawContents(EditorContext &context) override;
 
 private:
-    // 毎フレームの集計負荷をゼロにするためのキャッシュ構造体
+    // テクスチャ1枚ぶんの集計結果
     struct CachedAssetInfo
     {
         std::string path;
@@ -28,15 +32,13 @@ private:
         uint32_t    height    = 0;
     };
 
-    // UI側のキャッシュデータ
-    std::vector<CachedAssetInfo> m_cachedTextures;
-    size_t                       m_cachedTotalVram = 0;
-    float                        m_updateTimer     = 0.0f;
+    std::vector<CachedAssetInfo> m_cachedTextures;       // 使用量の多い順
+    size_t                       m_cachedTotalVram = 0;  // 合計 [byte]
+    float                        m_updateTimer     = 0.0f; // 前回の走査からの経過 [秒]
 
-    // VRAM予算（例として2.0GBに設定。プロジェクトの規模に応じて調整可能）
+    // VRAM の予算（2GB）。プロジェクトの規模に合わせて変える
     const size_t VRAM_BUDGET_BYTES = 2ULL * 1024 * 1024 * 1024;
 
-    // 内部レイアウト描画ヘルパー
-    void DrawOverviewSection();
-    void DrawTextureTableSection();
+    void DrawOverviewSection();     // 合計と予算のバー
+    void DrawTextureTableSection(); // テクスチャの一覧
 };

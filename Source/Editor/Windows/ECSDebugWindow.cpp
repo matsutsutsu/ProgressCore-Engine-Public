@@ -8,9 +8,6 @@
 #include <string>
 #include <vector>
 
-// ---------------------------------------------------------
-// ECSDebugWindow の実装
-// ---------------------------------------------------------
 ECSDebugWindow::ECSDebugWindow() : EditorWindow("ECS Debugger") {}
 
 void ECSDebugWindow::DrawContents(EditorContext &context)
@@ -29,7 +26,6 @@ void ECSDebugWindow::DrawContents(EditorContext &context)
             ImGui::EndTabItem();
         }
 
-        // 実行グラフのタブ
         if (ImGui::BeginTabItem("Execution Graph"))
         {
             DrawExecutionGraphTab(context.systemManager);
@@ -39,29 +35,21 @@ void ECSDebugWindow::DrawContents(EditorContext &context)
     }
 }
 
-// =========================================================
-// ヘルパー関数: 型IDから一時的な文字列を生成
-// =========================================================
 const char *ECSDebugWindow::GetFriendlyTypeName(uint32_t id)
 {
-    // Registryの既存機能を使って名前を逆引きする
     const std::string &name = ComponentGuiRegistry::Instance().GetComponentName(id);
-
-    // 辞書に登録されていればその名前を返す
     if (!name.empty())
     {
         return name.c_str();
     }
 
-    // エディタ用GUIを持たない隠しコンポーネントなどの場合はIDでフォールバック
+    // GUI レジストリに登録されていない型は ID で表示する
     static char buf[64];
     snprintf(buf, sizeof(buf), "Unknown (ID:%u)", id);
     return buf;
 }
 
-// =========================================================
-// ヘルパー関数: 安全で美しい16進数（Hex）メモリダンプ描画
-// =========================================================
+// data から size バイトを、1行16バイトの16進数と ASCII で表示する
 static void DrawHexDump(const void *data, size_t size)
 {
     const unsigned char *bytes = static_cast<const unsigned char *>(data);
@@ -72,7 +60,6 @@ static void DrawHexDump(const void *data, size_t size)
     {
         int offset = snprintf(lineBuffer, sizeof(lineBuffer), "%04zX: ", i);
 
-        // 16進数部分
         for (size_t j = 0; j < 16; ++j)
         {
             if (i + j < size)
@@ -85,12 +72,11 @@ static void DrawHexDump(const void *data, size_t size)
             }
         }
 
-        // ASCII文字部分（右側に表示）
+        // 右側に ASCII。表示できない文字は '.' にする
         offset += snprintf(lineBuffer + offset, sizeof(lineBuffer) - offset, " | ");
         for (size_t j = 0; j < 16 && i + j < size; ++j)
         {
             char c = bytes[i + j];
-            // 表示可能な文字ならそのまま、それ以外はピリオド '.' にする
             lineBuffer[offset++] = (c >= 32 && c < 127) ? c : '.';
         }
         lineBuffer[offset] = '\0';
@@ -99,16 +85,14 @@ static void DrawHexDump(const void *data, size_t size)
     }
 }
 
-// =========================================================
-// タブ1: Memory & Chunks (メモリのヒートマップとインスペクタ)
-// =========================================================
+// ============================================================
+// Memory & Chunks（チャンクの使用状況と、エンティティの中身）
+// ============================================================
 void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
 {
     auto &chunks = world->GetChunkManager().GetChunks();
 
-    // =======================================================
-    // チャンクの全体統計
-    // =======================================================
+    // ---- 全チャンクの合計 ----
     size_t totalEntities = 0;
     size_t totalCapacity = 0;
     size_t totalMemory   = 0;
@@ -128,7 +112,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
     ImGui::Text("Est. Component Memory: %.3f MB", (float)totalMemory / (1024.0f * 1024.0f));
     ImGui::Spacing();
 
-    static int selectedChunkIdx = -1;
+    static int selectedChunkIdx = -1; // 右カラムに表示するチャンク
 
     ImGui::Columns(2, "MemoryTabSplitter", true);
     ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() * 0.40f);
@@ -139,8 +123,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
     // --- 左カラム: アーキタイプごとにグループ化されたチャンクリスト ---
     if (ImGui::BeginChild("ChunkList"))
     {
-
-        // 改良 1: チャンクをアーキタイプハッシュごとに分類する
+        // チャンクをアーキタイプのハッシュごとにまとめる
         std::map<uint64_t, std::vector<int>> chunksByArchetype;
         for (size_t i = 0; i < chunks.size(); ++i)
         {
@@ -153,9 +136,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
             uint64_t    hash         = pair.first;
             const auto &chunkIndices = pair.second;
 
-            // =========================================================
-            //  アーキタイプを構成するコンポーネント名を抽出して連結する
-            // =========================================================
+            // アーキタイプを構成するコンポーネント名を連結する
             std::string componentNames = "";
             if (!chunkIndices.empty() && chunks[chunkIndices[0]])
             {
@@ -163,13 +144,12 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
                 for (const auto &td : firstChunk->GetTypeDatas())
                 {
                     if (!componentNames.empty()) componentNames += ", ";
-                    // プレフィックス(Component等)が長すぎる場合は、ここで置換・省略処理を入れるとさらに綺麗になります
                     componentNames += GetFriendlyTypeName(td.id);
                 }
             }
 
-            // ツリーノードの表示（例: [TransformComponent, VelocityComponent] (3 Chunks) ）
-            // ImGuiの仕様上、名前被りを防ぐために末尾に ##ハッシュ値 をつけて隠しIDにします
+            // 例: [TransformComponent, VelocityComponent] (3 Chunks)
+            // 同じ表示名が並んでも ID が重ならないよう、末尾に ##ハッシュ値 を付ける
             char archLabel[1024];
             snprintf(archLabel, sizeof(archLabel), "[%s] (%zu Chunks)##%llu", componentNames.c_str(), chunkIndices.size(), hash);
 
@@ -191,11 +171,11 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
                         selectedChunkIdx = idx;
                     }
 
-                    // ヒートマップの描画
+                    // 使用状況のバー。1マスが1スロットで、緑が使用中、赤が削除済み
                     ImDrawList *drawList = ImGui::GetWindowDrawList();
                     ImVec2      p        = ImGui::GetCursorScreenPos();
                     float       width    = ImGui::GetContentRegionAvail().x;
-                    float       height   = 10.0f; // 少し高さを抑えてスタイリッシュに
+                    float       height   = 10.0f;
                     float       boxWidth = width / (cap > 0 ? cap : 1);
 
                     drawList->AddRectFilled(p, ImVec2(p.x + width, p.y + height), IM_COL32(30, 30, 30, 255), 2.0f);
@@ -209,7 +189,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
                             color = IM_COL32(200, 50, 50, 255);
                         }
                         drawList->AddRectFilled(
-                            ImVec2(p.x + e * boxWidth, p.y), // 隙間を無くしてソリッドなバーにする
+                            ImVec2(p.x + e * boxWidth, p.y),
                             ImVec2(p.x + (e + 1) * boxWidth - 0.5f, p.y + height),
                             color);
                     }
@@ -232,11 +212,10 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
     {
         auto &chunk = chunks[selectedChunkIdx];
         if (chunk)
-        { // まずチャンクの存在確認
+        {
             if (ImGui::BeginChild("EntityDetailList"))
             {
-
-                // チャンクに含まれるコンポーネントの種類を上部に表示
+                // チャンクに含まれるコンポーネントの種類
                 ImGui::Text("Components in this chunk:");
                 for (const auto &td : chunk->GetTypeDatas())
                 {
@@ -247,7 +226,7 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
 
                 for (size_t e = 0; e < chunk->GetEntityCount(); ++e)
                 {
-                    // 改良: 削除済みのエンティティはスキップするか、目立たなくする
+                    // 削除済みのスロットは出さない
                     if (chunk->HasDestroyedEntities() && chunk->IsEntityDestroyed(e)) continue;
 
                     CCL::ECS::EntityID id = chunk->GetEntityByIndex(e);
@@ -263,19 +242,14 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
                                 void *data = chunk->GetComponentPtrByType(td.id, e);
                                 if (data)
                                 {
-
-                                    // =========================================================
-                                    // 描画は GUI レジストリに委譲する
-                                    // =========================================================
+                                    // 値の表示と編集は GUI レジストリに任せる。
                                     // 型ごとのウィジェット（Transform なら Position の x/y/z スライダー等）は
-                                    // ComponentMeta の定義から生成される。Undo/Redo のフックも同様。
+                                    // ComponentMeta の定義から作られる。
                                     ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
 
                                     ImGui::Spacing();
 
-                                    // =========================================================
-                                    // 既存のHexダンプは「Advanced (詳細)」として折りたたんで残す
-                                    // =========================================================
+                                    // 生のメモリは折りたたんで出す
                                     if (ImGui::TreeNodeEx("Raw Memory (Hex Dump)"))
                                     {
                                         ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
@@ -301,12 +275,12 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
     ImGui::Columns(1);
 }
 
-// ---------------------------------------------------------
-//  実行グラフの可視化
-//    TaskScheduler が解決した「バッチ」を上から順に描く。
-//    同じバッチ内のシステムはワーカースレッドで並列実行される（依存が無い）。
-//    バッチは上から順に直列に処理される（前のバッチ完了を待つ）。
-// ---------------------------------------------------------
+// ============================================================
+// Execution Graph
+//   TaskScheduler が決めたバッチを上から順に描く。
+//   同じバッチ内の System は依存が無く、ワーカースレッドで並列に実行される。
+//   バッチ同士は上から順に直列に実行される（前のバッチの完了を待つ）。
+// ============================================================
 void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManager)
 {
     ImGui::TextWrapped(
@@ -317,7 +291,7 @@ void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManage
     auto drawGraph = [](const char *title, const CCL::ECS::TaskScheduler &scheduler) {
         const auto &batches = scheduler.GetBatches();
 
-        // 集計: 総システム数・最大並列幅（＝同時に走る最大本数）
+        // 総 System 数と、最大の並列幅（同時に走る最大数）
         size_t totalSystems = 0;
         size_t maxWidth     = 0;
         for (const auto &b : batches)
@@ -342,7 +316,7 @@ void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManage
             const auto &batch    = batches[i];
             const bool  parallel = batch.size() > 1;
 
-            // 並列バッチは緑（複数スレッドで同時実行）、単独バッチは灰（メイン等で直列）。
+            // 並列のバッチ（複数スレッドで同時に実行）は緑、1つだけのバッチは灰。
             const ImVec4 col = parallel ? ImVec4(0.40f, 0.90f, 0.50f, 1.0f)
                                         : ImVec4(0.70f, 0.70f, 0.70f, 1.0f);
             ImGui::TextColored(col, "Batch %zu  [%s x%zu]",

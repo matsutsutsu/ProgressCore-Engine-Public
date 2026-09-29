@@ -39,7 +39,7 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::GetIconSRV(
         return cache[ext];
 
     auto srv   = LoadShellIconSRV(filePath, device);
-    cache[ext] = srv; // 同じ拡張子のファイルは、二度とOSに問い合わせない
+    cache[ext] = srv; // 同じ拡張子のファイルは、二度と OS に問い合わせない
     return srv;
 }
 
@@ -97,7 +97,7 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::CreateSRVFromH
     BITMAPINFO bmi{};
     bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
     bmi.bmiHeader.biWidth       = width;
-    bmi.bmiHeader.biHeight      = -height; // 上下反転防止
+    bmi.bmiHeader.biHeight      = -height; // 負の高さでトップダウン（上の行から）の並びにする
     bmi.bmiHeader.biPlanes      = 1;
     bmi.bmiHeader.biBitCount    = 32;
     bmi.bmiHeader.biCompression = BI_RGB;

@@ -1,4 +1,3 @@
-// RenderDebugRegistry の一覧を、種別に応じて可視化して ImGui サムネイル表示する（v2）。
 #include "RenderDebugWindow.h"
 #include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
 
@@ -37,7 +36,7 @@ void RenderDebugWindow::DrawContents(EditorContext &context)
 #ifdef ENABLE_EDITOR
     const auto &entries = RenderDebugRegistry::Instance().GetEntries();
 
-    // --- 深度線形化用の near/far をカメラから自動取得（無ければ手動値を使う） ---
+    // --- 深度の線形化に使う near/far をカメラから取る（カメラが無ければ前の値のまま） ---
     if (context.world && context.world->HasResource<Camera *>())
     {
         if (Camera *cam = context.world->GetResource<Camera *>())
@@ -70,13 +69,13 @@ void RenderDebugWindow::DrawContents(EditorContext &context)
 
     for (const auto &e : entries)
     {
-        ImGui::PushID(&e); // アドレスで一意化
+        ImGui::PushID(&e); // エントリのアドレスを ID にする
 
         ImGui::Text("%s", e.name ? e.name : "(unnamed)");
         ImGui::SameLine();
         ImGui::TextDisabled("  %ux%u  [%s]", e.width, e.height, KindLabel(e.kind));
 
-        // 種別 → 可視化パラメータ
+        // 種別と表示設定から、変換のパラメータを作る
         RTVisualizeParams p;
         p.mode          = static_cast<int>(e.kind);
         p.exposure      = m_exposure;

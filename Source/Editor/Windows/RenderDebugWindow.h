@@ -1,19 +1,23 @@
-// RenderPass が RenderDebugRegistry に登録した中間テクスチャ(SRV)を一覧表示するデバッグウィンドウ。
-// 役割     : GBuffer/深度/法線/シャドウ等の中間バッファを ImGui 上で視認する。
-// 責務     : Registry の一覧を RenderTargetVisualizer で可視化し ImGui::Image で貼る（v2）。
-// 位置付け : 既存 EditorWindow 群の一つ。Window メニューからトグルする。
-// 設計方針 : パスとは疎結合（Registry 経由）。種別ごとに深度線形化/法線remap/AO/HDR/配列
-//            スライスを可視化シェーダーで正しく表示する。
 #pragma once
+// ===========================================================================
+// 概要: 描画パスが RenderDebugRegistry に登録した中間テクスチャを一覧表示するウィンドウ。
+//
+// 責務:
+//   - GBuffer・深度・法線・シャドウなどの中間バッファをサムネイルで表示する
+//   - 種別に応じて RenderTargetVisualizer で表示用の色に変換する
+//   - 露出・チャンネル・配列スライスなどの表示設定を持つ
+//
+// 備考: 描画パスとは RenderDebugRegistry を介してだけつながる。既定は非表示で、
+//       Window メニューから開く。
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Windows/RenderTargetVisualizer.h"
 
-// 中間レンダーテクスチャのデバッグ一覧ウィンドウ。
 class RenderDebugWindow : public EditorWindow
 {
 public:
     // 既定は非表示（必要時に Window メニューから開く）。
-    RenderDebugWindow() : EditorWindow("Render Debug", false) {}
+    RenderDebugWindow() : EditorWindow("Render Debug", false) {} // 既定は非表示
 
 protected:
     void DrawContents(EditorContext &context) override;
@@ -21,11 +25,11 @@ protected:
 private:
     RenderTargetVisualizer m_viz;
 
-    // 表示コントロール（全エントリ共通）
+    // 表示設定（全エントリ共通）
     float m_thumbWidth    = 320.0f; // サムネイルの表示幅（px）
     float m_exposure      = 1.0f;   // HDR 表示の露出
     int   m_channelSelect = 0;      // 0=RGB 1=R 2=G 3=B 4=A
     int   m_arraySlice    = 0;      // 配列テクスチャの表示スライス
-    float m_nearZ         = 0.1f;   // 深度線形化用（カメラから自動取得、無ければ手動）
-    float m_farZ          = 1000.0f;
+    float m_nearZ         = 0.1f;    // 深度の線形化に使う near。カメラがあれば毎フレーム取り直す
+    float m_farZ          = 1000.0f; // 同じく far
 };

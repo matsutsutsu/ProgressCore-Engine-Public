@@ -1,12 +1,20 @@
 #pragma once
+// ===========================================================================
+// 概要: エディタの Undo/Redo（コマンドパターン）。
+//
+// 責務:
+//   - IEditorCommand: 実行（Redo）と取り消し（Undo）を持つ操作1回ぶんのインターフェース
+//   - EditorCommandHistory: 実行済みのコマンドを積み、Undo/Redo を行うシングルトン
+//   - ChangeComponentCommand<T>: コンポーネント1つの変更前後を持つ汎用コマンド
+// ===========================================================================
 #include <vector>
 #include <memory>
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 
-// =========================================================
-// 1. 命令書の基本インターフェース
-// =========================================================
+// ============================================================
+// コマンドのインターフェース
+// ============================================================
 class IEditorCommand
 {
 public:
@@ -15,9 +23,9 @@ public:
     virtual void Undo()       = 0; // 取り消し (Undo)
 };
 
-// =========================================================
-// 2. 履歴マネージャー (どこからでも呼べるシングルトン)
-// =========================================================
+// ============================================================
+// 履歴（シングルトン）
+// ============================================================
 class EditorCommandHistory
 {
 public:
@@ -32,11 +40,12 @@ public:
     //   2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる。
     static constexpr size_t kMaxHistory = 128;
 
+    // コマンドを実行して履歴に積む
     void ExecuteCommand(std::unique_ptr<IEditorCommand> cmd)
     {
         cmd->Execute();
         m_undoStack.push_back(std::move(cmd));
-        m_redoStack.clear(); // 新しい操作をしたら未来は消える
+        m_redoStack.clear(); // 新しい操作をしたら Redo の履歴は捨てる
 
         if (m_undoStack.size() > kMaxHistory)
             m_undoStack.erase(m_undoStack.begin());
@@ -44,14 +53,16 @@ public:
         CCL_LOG_INFO(LogCategory::Editor, "[CommandHistory] Command Executed. UndoStack Size: %zu", m_undoStack.size());
     }
 
-    // 履歴を全部捨てる。シーンを切り替えるときに必ず呼ぶこと。
-    //
-    // ChangeComponentCommand は World* を生ポインタで、対象を EntityID で持つ。
-    // シーン切替は SceneManager::Clear() が currentScene ごと delete するので、
-    // 履歴を残したまま Ctrl+Z を押すと【解放済みの World】を書きに行く。
-    // 仮に World が生きていたとしても、EntityID の世代は World ごとに 1 から
-    // 振り直される（CCL_World.cpp の m_entityGenerations）ため、旧シーンの ID が
-    // 新シーンの無関係なエンティティに命中する。どちらの意味でも残してはいけない。
+    /**
+     * @brief 履歴を全部捨てる。シーンを切り替えるときに必ず呼ぶこと。
+     *
+     * ChangeComponentCommand は World* を生ポインタで、対象を EntityID で持つ。
+     * シーン切替は SceneManager::Clear() が currentScene ごと delete するので、
+     * 履歴を残したまま Ctrl+Z を押すと解放済みの World へ書き込む。
+     * World が生きていたとしても、EntityID の世代は World ごとに 1 から
+     * 振り直される（CCL_World.cpp の m_entityGenerations）ため、前のシーンの ID が
+     * 新しいシーンの無関係なエンティティを指す。どちらの理由でも残してはいけない。
+     */
     void Clear()
     {
         const size_t dropped = m_undoStack.size() + m_redoStack.size();
@@ -99,9 +110,9 @@ private:
     std::vector<std::unique_ptr<IEditorCommand>> m_redoStack;
 };
 
-// =========================================================
-// 3. 汎用コマンド：任意のコンポーネント(T)の変更前後を保持して Undo/Redo する
-// =========================================================
+// ============================================================
+// 汎用コマンド: コンポーネント T の変更前後を保持して Undo/Redo する
+// ============================================================
 template <typename T>
 class ChangeComponentCommand : public IEditorCommand
 {

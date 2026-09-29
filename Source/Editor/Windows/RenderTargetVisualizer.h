@@ -1,10 +1,15 @@
-// RenderDebugWindow(v2) 用の可視化ヘルパ。中間バッファの SRV を種別に応じて
-// 「表示可能な色」へ焼き直し、その SRV を返す（ImGui::Image で貼るため）。
-// 役割     : 深度線形化 / 法線remap / AOグレースケール / HDR露出 / 配列スライス選択。
-// 責務     : FullScreenVS + RenderTargetDebugPS で内部RTへ全画面描画する。
-// 位置付け : Editor 専用（Release ビルドからは除外）。RenderDebugWindow が所有する。
-// 設計方針 : サムネイル用途なので bake 解像度は上限でクランプ。RT はフレームで使い回す。
 #pragma once
+// ===========================================================================
+// 概要: 中間バッファの SRV を、種別に応じて表示できる色へ変換するヘルパー（RenderDebugWindow 用）。
+//
+// 責務:
+//   - 深度の線形化・法線の [-1,1]→[0,1] 変換・単チャンネルのグレー表示・HDR の露出・配列スライスの選択
+//   - FullScreenVS と RenderTargetDebugPS で内部の RenderTarget へ全画面描画し、その SRV を返す
+//   - 描画の前後でパイプラインの状態を退避・復元する
+//
+// 備考: エディタ専用（Release 構成ではビルドから除外）。RenderDebugWindow が所有する。
+//       サムネイル用なので変換後の解像度は上限で抑え、RenderTarget はフレームごとに使い回す。
+// ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <vector>
@@ -16,28 +21,27 @@ class RenderTarget;
 // 可視化パラメータ。RenderDebugWindow が種別と UI から組み立てる。
 struct RTVisualizeParams
 {
-    int   mode          = 0;    // DebugTexKind の整数値
-    float exposure      = 1.0f; // HDR 表示の露出
-    float nearZ         = 0.1f; // 深度線形化用
-    float farZ          = 1000.0f;
+    int   mode          = 0;       // DebugTexKind の整数値
+    float exposure      = 1.0f;    // HDR 表示の露出
+    float nearZ         = 0.1f;    // 深度の線形化に使う near
+    float farZ          = 1000.0f; // 同じく far
     int   arraySlice    = 0; // 配列テクスチャの表示スライス
     int   useArray      = 0; // 0=Texture2D / 1=Texture2DArray
     int   channelSelect = 0; // 0=RGB 1=R 2=G 3=B 4=A
 };
 
-// 中間バッファを可視化用 RT へ焼くヘルパ。
 class RenderTargetVisualizer
 {
 public:
-    // シェーダー等を遅延初期化する（初回のみ）。失敗時 false。
+    // シェーダーなどを初回だけ作る。失敗したら false
     bool EnsureInitialized(ID3D11Device *device);
 
     // フレーム先頭で RT プールのインデックスをリセットする。
     void BeginFrame() noexcept { m_poolIndex = 0; }
 
-    // src を可視化して内部 RT へ焼き、その SRV を返す。失敗時 src をそのまま返す。
+    // src を変換して内部の RenderTarget へ描き、その SRV を返す。失敗したら src をそのまま返す。
     //
-    // 返る SRV は「次に同じプール RT が再利用されるまで」有効（ImGui 描画までは安全）。
+    // 返す SRV は、同じ RenderTarget が次に使い回されるまで有効（そのフレームの ImGui 描画までは使える）。
     ID3D11ShaderResourceView *Visualize(ID3D11DeviceContext      *dc,
                                         ID3D11ShaderResourceView *src, uint32_t w, uint32_t h,
                                         const RTVisualizeParams &p);
@@ -62,13 +66,13 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_ps;
     Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cb;
     Microsoft::WRL::ComPtr<ID3D11SamplerState> m_sampler;
-    // 直前のパス(SSAO/Bloom等)が加算/乗算ブレンドや深度テストを残したまま
+    // 直前のパス（SSAO・Bloom 等）が加算・乗算のブレンドや深度テストを残したまま
     //   全画面三角形を描くと、意図した色で上書きされず黒く見える。
-    //   他の PostProcess エフェクト(SSAOEffect 等)と同じく明示的に不透明固定する。
+    //   他のポストエフェクト（SSAOEffect 等）と同じく、不透明・深度なしを明示的に設定する。
     Microsoft::WRL::ComPtr<ID3D11BlendState>        m_opaqueBlendState;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_noDepthState;
 
-    std::vector<std::unique_ptr<RenderTarget>> m_pool; // 表示エントリ数ぶん使い回す
-    size_t                                     m_poolIndex   = 0;
+    std::vector<std::unique_ptr<RenderTarget>> m_pool;            // 表示するエントリの数だけ作り、毎フレーム使い回す
+    size_t                                     m_poolIndex   = 0; // このフレームで次に使う m_pool の添字
     bool                                       m_initialized = false;
 };

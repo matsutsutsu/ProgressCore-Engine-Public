@@ -1,4 +1,3 @@
-
 #include "GameViewWindow.h"
 #include "Engine/Graphics/RHI/Camera.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
@@ -8,7 +7,6 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
-// ShapeRenderer のインクルード
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 
 // ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
@@ -28,21 +26,15 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-// =========================================================================
-// ローカルヘルパー群 (エディタ描画と保存を自己完結させるための一時的配置)
-// =========================================================================
+// スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
+// ここへ複製しない。複製すると CameraDollySystem を直したときに、エディタの
+// プレビュー線だけ古い計算のまま、という食い違いが起きる。
+// JSON への書き出しも CameraPathEditorWindow::SavePathToJson の1か所だけを使う。
 namespace
 {
-    // スプライン評価と LUT 構築は CameraDollySystem の public static を使う。
-    // ここへ複製してはいけない。CameraDollySystem 側に手を入れても、エディタの
-    // プレビュー線だけ旧仕様のまま、という食い違いが起きる。
-
-    // =========================================================================
-    // レイ-AABB による最近傍エンティティ選択(ピッキング)
-    //   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)へ
-    //   レイを飛ばし、最も手前でヒットしたエンティティを返す。
-    //   ※ 追加データ不要。BoundingBoxComponent は ModelCullingSetupSystem が自動付与する。
-    // =========================================================================
+    // レイと AABB で、最も手前に当たったエンティティを返す（ピッキング）。
+    //   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)を使うので、
+    //   追加のデータは要らない。BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける。
     CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
                                   const Vector3 &origin, const Vector3 &dir)
     {
@@ -82,15 +74,8 @@ namespace
         }
         return best;
     }
-
-    // JSON への書き出しは CameraPathEditorWindow::SavePathToJson に一本化した。
-    // ここにも複製があったため、isLoop を書き出さない旧版でギズモ操作のたびに
-    // ループ設定が消えていた。
 } // namespace
 
-// =========================================================================
-// GameViewWindow メイン描画
-// =========================================================================
 void GameViewWindow::DrawContents(EditorContext &context)
 {
     // この関数は ImGui::Begin("Game View") と End の間で呼ばれるので、
@@ -100,14 +85,14 @@ void GameViewWindow::DrawContents(EditorContext &context)
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
 
-    // 16:9 のアスペクト比を維持してピッタリ収まるサイズを計算
+    // 16:9 を保ったまま、ウィンドウに収まる最大のサイズを求める
     const float targetAspect = 16.0f / 9.0f;
     float       windowAspect = avail.x / avail.y;
     ImVec2      imageSize    = (windowAspect > targetAspect)
                                    ? ImVec2(avail.y * targetAspect, avail.y)
                                    : ImVec2(avail.x, avail.x / targetAspect);
 
-    // ウィンドウ内で中央に配置するための計算
+    // ウィンドウの中央に置く
     ImVec2 cursorPos = ImGui::GetCursorPos();
     ImVec2 drawPos   = ImVec2(
         cursorPos.x + (avail.x - imageSize.x) * 0.5f,
@@ -117,7 +102,6 @@ void GameViewWindow::DrawContents(EditorContext &context)
     // ImGuizmo 用にスクリーン座標を取得
     ImVec2 screenPos = ImGui::GetCursorScreenPos();
 
-    // 描画先テクスチャの描画
     if (context.gameSRV)
     {
         ImGui::Image(context.gameSRV, imageSize);
@@ -146,20 +130,17 @@ void GameViewWindow::DrawContents(EditorContext &context)
     }
 
 #ifdef ENABLE_EDITOR
-    // =========================================================================
-    // インゲーム・パスエディタ (軌道描画 & ImGuizmo連携)
-    // =========================================================================
+    // ============================================================
+    // カメラ台車の軌道の表示と、制御点のギズモ操作
+    // ============================================================
     if (context.world && context.selectedEntity != CCL::ECS::InvalidEntityID)
     {
-
         auto *cart = context.world->GetComponent<CameraDollyCartComponent>(context.selectedEntity);
         if (cart && cart->loadedPath)
         {
             const auto &asset = *cart->loadedPath;
 
-            // -----------------------------------------------------------------
-            // [Phase 1] 軌道と制御点の可視化
-            // -----------------------------------------------------------------
+            // ---- 軌道と制御点の表示 ----
             ShapeRenderer *shapeRenderer = nullptr;
             if (context.world->HasResource<ShapeRenderer *>())
             {
@@ -191,13 +172,10 @@ void GameViewWindow::DrawContents(EditorContext &context)
                 }
             }
 
-            // -----------------------------------------------------------------
-            // [Phase 2] ギズモ操作とデータエッジ同期
-            // -----------------------------------------------------------------
+            // ---- 選択中の制御点のギズモ操作（選択は CameraPathEditorWindow が行う） ----
             int idx = context.editingPathNodeIndex;
             if (idx >= 0 && idx < asset.points.size())
             {
-
                 Camera *camera = context.world->GetResource<Camera *>();
                 if (camera)
                 {
@@ -205,7 +183,6 @@ void GameViewWindow::DrawContents(EditorContext &context)
                     ImGuizmo::SetDrawlist();
                     ImGuizmo::SetRect(screenPos.x, screenPos.y, imageSize.x, imageSize.y);
 
-                    // ※エンジンのCamera仕様に合わせて GetViewMatrix() 等に変更済み
                     Matrix viewMat = camera->GetView();
                     Matrix projMat = camera->GetProjection();
 
@@ -219,20 +196,19 @@ void GameViewWindow::DrawContents(EditorContext &context)
                         context.currentGizmoMode,
                         reinterpret_cast<float *>(&transformMat));
 
-                    // エッジトリガー：操作中の処理と終了時の重い処理の分離
+                    // 操作中は座標だけを更新し、LUT の再構築と保存は操作を終えた瞬間に1回だけ行う
                     static bool wasUsingGizmo = false;
                     bool        isUsingGizmo  = ImGuizmo::IsUsing();
 
                     if (isUsingGizmo)
                     {
-                        // ドラッグ中：座標を更新してShapeRendererの描画に即時反映させる
-                        // ただしLUT(等速移動データ)の再計算は重いのでここではやらない
+                        // ドラッグ中は座標だけを更新し、軌道の表示にすぐ反映させる。
+                        // LUT（距離→t の対応表）の再計算は重いのでここでは行わない
                         targetPt = transformMat.Translation();
                     }
                     else if (wasUsingGizmo && !isUsingGizmo)
                     {
-                        // マウスを離した瞬間 (立ち下がりエッジ)
-                        // ここで初めてLUTを再構築し、JSONアセットとして上書き保存する
+                        // マウスを離した瞬間に LUT を再構築し、JSON に上書き保存する
                         CameraDollySystem::BuildLookupTable(*cart->loadedPath);
                         CameraPathEditorWindow::SavePathToJson(cart->pathAsset, *cart->loadedPath);
                     }
@@ -243,13 +219,13 @@ void GameViewWindow::DrawContents(EditorContext &context)
         }
     }
 
-    // =========================================================================
-    // クリックによるオブジェクト選択 (ピッキング)
-    //   ・一時停止中(=編集中)のみ有効。プレイ中はクリックをゲーム入力に回すため選択しない。
-    //   ・GameView画像の相対座標(local)で判定するので、ウィンドウ位置や内部解像度に依存しない
-    //     (= GameView越しでもクリック座標がズレない)。
-    //   ・ギズモ操作中/ホバー中は誤選択しない。ドラッグ(カメラ回転等)後のリリースも除外。
-    // =========================================================================
+    // ============================================================
+    // クリックによるエンティティの選択（ピッキング）
+    //   ・一時停止中だけ有効。実行中はクリックをゲームの入力に回すため選択しない。
+    //   ・ゲーム画像の左上からの座標（local）で判定するので、ウィンドウの位置や
+    //     内部解像度に依存しない。
+    //   ・ギズモの操作中・ホバー中は選択しない。ドラッグ（カメラ回転等）の後のリリースも除外する。
+    // ============================================================
     if (context.isPaused && context.world &&
         context.world->HasResource<Camera *>() &&
         ImGui::IsWindowHovered() &&
@@ -280,13 +256,13 @@ void GameViewWindow::DrawContents(EditorContext &context)
                 if (hit != CCL::ECS::InvalidEntityID)
                 {
                     if (io.KeyCtrl)
-                        context.ToggleSelection(hit); // 追加/解除
+                        context.ToggleSelection(hit); // 選択に追加 / 選択から外す
                     else
                         context.SetSingleSelection(hit);
                 }
                 else if (!io.KeyCtrl)
                 {
-                    // 何もない場所を通常クリック → 選択解除
+                    // 何もない場所を通常クリックしたら選択を解除する
                     context.ClearSelection();
                 }
             }

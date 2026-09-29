@@ -1,4 +1,12 @@
 #pragma once
+// ===========================================================================
+// 概要: 入力の割り当て（Assets/Config/InputConfig.json）を編集するウィンドウ。
+//
+// 責務:
+//   - アクション（デジタル）と軸（アナログ）の追加・削除と、割り当ての編集
+//   - 実際にキー・ボタンを押して割り当てる（キャプチャ）
+//   - JSON の読み書きと、保存したものを InputFacade に読み直させる
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include <vector>
 #include <string>
@@ -16,7 +24,7 @@ private:
     void LoadFromJson();
     void SaveToJson();
 
-    // 内部データ構造 (JSONと1対1で対応するエディタ用データ)
+    // JSON と1対1で対応する編集用のデータ
     struct BindingData
     {
         std::string device = "Keyboard";
@@ -42,21 +50,20 @@ private:
 
     std::string m_configPath = "Assets/Config/InputConfig.json";
 
-    // --- UI状態 ---
-    // 「キー押下キャプチャ」を待っている対象バインディング。
-    // nullptr のときはキャプチャ中でない。
+    // キャプチャ（キー入力待ち）の対象。nullptr ならキャプチャ中でない。
+    //   m_actions / m_axes の要素を指すので、それらを追加・削除したら必ず nullptr に戻す
     BindingData *m_captureTarget = nullptr;
 
-    // 1フレーム前のキャプチャ抑制用（ボタンを押した瞬間に確定しないように）
+    // キャプチャを受け付け始めたか。キャプチャのボタンを押したクリックそのものを
+    // 拾わないよう、マウスボタンが一度離されるまで待つ
     bool m_captureArmed = false;
 
-    // --- 描画ヘルパー ---
-    // 1つのバインディング行を描画する（Device / Key / Scale / Capture）
+    // 割り当て1つぶんを描く（デバイス / キー / キャプチャ / 軸なら感度）
     void DrawBindingParams(BindingData &b, bool isAxis);
 
-    // デバイス種別の選択（ラジオボタン）
+    // デバイスの種類の選択（ラジオボタン）
     void DrawDeviceSelector(BindingData &b, bool isAxis);
 
-    // 選択中デバイスに応じたキー候補のコンボボックスを描画
+    // 選択中のデバイスに応じたキーの候補をコンボボックスで出す
     void DrawKeyCombo(BindingData &b, bool isAxis);
 };

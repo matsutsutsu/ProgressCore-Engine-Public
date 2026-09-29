@@ -1,4 +1,14 @@
 #pragma once
+// ===========================================================================
+// 概要: テキストファイル（主にシェーダー）を開いて編集・保存する簡易エディタ。
+//
+// 責務:
+//   - ファイルの読み込み・保存（FileSystem 経由）
+//   - 複数行のテキスト編集欄を描く
+//
+// 備考: シェーダーは ShaderRegistry がファイルの更新時刻を毎フレーム見ているので、
+//       保存すれば自動で読み直される。
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include <vector>
 
@@ -16,6 +26,6 @@ private:
     void SaveFile(const char *path);
 
 private:
-    char              m_filePath[256];
-    std::vector<char> m_textBuffer; // テキスト編集用の巨大バッファ
+    char              m_filePath[256]; // 編集中のファイルのパス
+    std::vector<char> m_textBuffer;    // 編集用のバッファ（ImGui が直接書き込むので固定長で持つ）
 };

@@ -12,20 +12,15 @@
 
 TextEditorWindow::TextEditorWindow() : EditorWindow("Text Editor")
 {
-    // デフォルトパスの初期化
-    //strcpy_s(m_filePath, sizeof(m_filePath), "Assets/Weapon/AttachmentMaster.json");
     strcpy_s(m_filePath, sizeof(m_filePath), "Shader/Material/Phong/PhongPS.hlsl");
 
-    // 編集用のメモリバッファを大きめに確保（例：1MB = 1024 * 1024 バイト）
-    // これだけあれば数万行のシェーダーコードでも余裕で収まります。
+    // 1MB 確保する。数万行のシェーダーでも収まる（超えるファイルは LoadFile で広げる）
     m_textBuffer.resize(1024 * 1024, '\0');
 }
 
 void TextEditorWindow::DrawContents(EditorContext &context)
 {
-    // ---------------------------------------------------------
-    // ① ファイルパスと操作ボタン領域
-    // ---------------------------------------------------------
+    // ---- ファイルパスと操作ボタン ----
     ImGui::InputText("File Path", m_filePath, sizeof(m_filePath));
     ImGui::SameLine();
     if (ImGui::Button("Browse..."))
@@ -41,7 +36,6 @@ void TextEditorWindow::DrawContents(EditorContext &context)
 
     ImGui::Separator();
 
-    // 操作ボタン群
     if (ImGui::Button("Load"))
     {
         LoadFile(m_filePath);
@@ -53,32 +47,20 @@ void TextEditorWindow::DrawContents(EditorContext &context)
     }
     ImGui::SameLine();
 
-    // ホットリロードボタン（ファイルに応じて処理を分ける）
+    // 保存するだけで、読み直しはシェーダー側が更新時刻を見て自動で行う
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
     if (ImGui::Button("Apply (Save & Reload)"))
     {
         SaveFile(m_filePath);
-
-        // ファイルパスを文字列として判定
-        std::string pathStr(m_filePath);
-
-        // Luaスクリプトの場合の処理（必要になれば拡張してください）
-        // else if (pathStr.find(".lua") != std::string::npos) {
-        //     // TODO: Lua VMをリロードしたり、コンポーネントに再読み込み指令を出す
-        // }
     }
     ImGui::PopStyleColor();
 
     ImGui::Separator();
 
-    // ---------------------------------------------------------
-    // ② テキストエディタ領域 (ImGui標準)
-    // ---------------------------------------------------------
-    // ウィンドウの残りの「縦横サイズ」を計算
+    // ---- テキストの編集欄（ウィンドウの残り全体） ----
     ImVec2 availableSize = ImGui::GetContentRegionAvail();
 
-    // ImGui標準の複数行テキストボックスを描画！
-    // ImGuiInputTextFlags_AllowTabInput を付けることで、Tabキーで空白が入力できるようになります。
+    // AllowTabInput を付けると、Tab キーでタブ文字を入力できる
     ImGui::InputTextMultiline("##TextEditor",
                               m_textBuffer.data(),
                               m_textBuffer.size(),
@@ -86,36 +68,26 @@ void TextEditorWindow::DrawContents(EditorContext &context)
                               ImGuiInputTextFlags_AllowTabInput);
 }
 
-/**
- * @brief 指定されたテキストファイルをメモリバッファにロードします。
- * @param path 読み込むファイルの仮想パス
- */
+// 空のファイル・読み込めないファイルなら、バッファは前の内容のまま残す
 void TextEditorWindow::LoadFile(const char *path)
 {
-    // VFSから読み込み
     std::string rawText = FileSystem::ReadAllText(path);
     if (!rawText.empty())
     {
-        // もし読み込んだファイルがバッファよりデカかったら拡張する安全設計
+        // バッファより大きいファイルなら広げる（終端の '\0' の分も要るので >=）
         if (rawText.size() >= m_textBuffer.size())
         {
             m_textBuffer.resize(rawText.size() * 2, '\0');
         }
 
-        // 古い文字列のゴミが残らないようにクリア
+        // 前の内容が後ろに残らないよう、全体を '\0' で埋めてからコピーする
         std::fill(m_textBuffer.begin(), m_textBuffer.end(), '\0');
-
-        // バッファに文字列をコピー
         std::copy(rawText.begin(), rawText.end(), m_textBuffer.begin());
     }
 }
 
-/**
- * @brief メモリバッファのテキストデータを指定されたファイルに保存します。
- * @param path 保存先の仮想パス
- */
+// バッファを '\0' までの文字列として保存する
 void TextEditorWindow::SaveFile(const char *path)
 {
-    // VFSへ書き込み (バッファの生ポインタを渡す)
     FileSystem::WriteAllText(path, m_textBuffer.data());
 }

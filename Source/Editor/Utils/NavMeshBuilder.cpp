@@ -7,29 +7,47 @@
 
 #include "Engine/AI/Navigation/Core/NavigationData.h"
 
-// Recast & Detour ライブラリのインクルード
 #include <Recast.h>
 #include <DetourNavMesh.h>
 #include <DetourNavMeshBuilder.h>
 
+namespace
+{
+    // Recast の中間データ。どこで失敗しても、確保したものだけを確実に解放するためにまとめて持つ。
+    // rcFree* は nullptr を渡しても何もしない。
+    struct RecastWork
+    {
+        rcHeightfield        *solid = nullptr;
+        rcCompactHeightfield *chf   = nullptr;
+        rcContourSet         *cset  = nullptr;
+        rcPolyMesh           *pmesh = nullptr;
+        rcPolyMeshDetail     *dmesh = nullptr;
+
+        ~RecastWork()
+        {
+            rcFreeHeightField(solid);
+            rcFreeCompactHeightfield(chf);
+            rcFreeContourSet(cset);
+            rcFreePolyMesh(pmesh);
+            rcFreePolyMeshDetail(dmesh);
+        }
+    };
+} // namespace
+
 NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World &world)
 {
     NavMeshBuildData data;
-    int              vertexOffset = 0; // 複数のモデル・メッシュを繋ぎ合わせるための頂点オフセット
+    int              vertexOffset = 0; // 複数のモデル・メッシュを1つの配列へつなぐための頂点オフセット
 
-    // Transform と Model を併せ持つエンティティを列挙する
     std::vector<CCL::ECS::EntityID> entities = world.View<TransformComponent, ModelComponent>();
 
     for (CCL::ECS::EntityID entity : entities)
     {
-        // Worldからコンポーネントのポインタを取得
         TransformComponent *transform = world.GetComponent<TransformComponent>(entity);
         ModelComponent     *modelComp = world.GetComponent<ModelComponent>(entity);
-
-        // 安全のためのnullチェック
         if (!transform || !modelComp) continue;
 
-        // アーキテクチャの要：動くもの（キャラクター等）はNavMeshに焼き付けない
+        // 動くもの（キャラクター等）は NavMesh に含めない。isStatic の地形だけを使う
         if (!transform->isStatic)
         {
             continue;
@@ -41,40 +59,31 @@ NavMeshBuildData NavMeshBuilder::GatherGeometry(CCL::ECS::World &world)
         const ModelResource *resource = model->GetResource();
         if (!resource) continue;
 
-        // 1. ワールド行列の読み込み (DirectXMath型へ変換)
         DirectX::XMMATRIX worldMatrix = DirectX::XMLoadFloat4x4(&transform->worldMatrix);
 
-        // 2. ModelResource内の全てのMeshを走査する
         for (const auto &mesh : resource->GetMeshes())
         {
-
-            // 2-A. 頂点の抽出とワールド空間への変換
+            // 頂点をワールド座標へ変換し、Recast が受け取る xyz の並んだ float 配列に詰める
             for (const auto &v : mesh.vertices)
             {
-                // ローカル座標をベクトルに
                 DirectX::XMVECTOR localPos = DirectX::XMVectorSet(v.position.x, v.position.y, v.position.z, 1.0f);
-
-                // 行列を掛けてワールド座標へ変換
                 DirectX::XMVECTOR worldPos = DirectX::XMVector3TransformCoord(localPos, worldMatrix);
 
                 DirectX::XMFLOAT3 wp;
                 DirectX::XMStoreFloat3(&wp, worldPos);
 
-                // Recast用にフラットなfloat配列に詰め込む
                 data.vertices.push_back(wp.x);
                 data.vertices.push_back(wp.y);
                 data.vertices.push_back(wp.z);
             }
 
-            // 2-B. インデックスデータの抽出
+            // インデックスは、それまでに追加した頂点数を足す。
+            // 足さないと、別のモデル・メッシュの頂点を指してしまう
             for (UINT idx : mesh.indices)
             {
-                // ここが超重要！ 別のモデル/メッシュの頂点を参照しないように、
-                // これまで追加した全頂点数（オフセット）をインデックスに足し込む
                 data.indices.push_back(static_cast<int>(idx) + vertexOffset);
             }
 
-            // 次のメッシュの処理に向けて、今回追加した頂点数をオフセットに加算
             vertexOffset += static_cast<int>(mesh.vertices.size());
         }
     }
@@ -97,15 +106,14 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World &world, const NavMeshBuildSett
         return false;
     }
 
-    // Recastの処理コンテキスト（エラーログ等を出力するためのクラス）
-    rcContext ctx;
+    rcContext  ctx; // Recast のログ出力・計時の受け口
+    RecastWork work;
 
-    // 2. バウンディングボックス（地形全体の最小・最大座標）の計算
+    // 2. 地形全体のバウンディングボックス
     float bmin[3], bmax[3];
     rcCalcBounds(geom.vertices.data(), nverts, bmin, bmax);
 
-    // 3. Config (rcConfig) のセットアップ
-    // 人間の指定した「メートル」単位の数値を、Recastの「ボクセル（セル）数」に変換します。
+    // 3. rcConfig の設定。メートル単位の設定値を、Recast のセル（ボクセル）数に変換する
     rcConfig cfg;
     memset(&cfg, 0, sizeof(cfg));
     cfg.cs                     = settings.cellSize;
@@ -124,189 +132,168 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World &world, const NavMeshBuildSett
     rcVcopy(cfg.bmin, bmin);
     rcVcopy(cfg.bmax, bmax);
 
-    // グリッドサイズ（X軸とZ軸のボクセル総数）の計算
+    // X 軸と Z 軸のセル数
     rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
 
     CCL_LOG_INFO(LogCategory::Core, "NavMesh Voxel Grid Size: %d x %d", cfg.width, cfg.height);
 
-    // 4. ハイトフィールド（ボクセル空間）のメモリ確保
-    rcHeightfield *solid = rcAllocHeightfield();
-    if (!solid || !rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
+    // 4. ハイトフィールド（ボクセル空間）の確保
+    work.solid = rcAllocHeightfield();
+    if (!work.solid || !rcCreateHeightfield(&ctx, *work.solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not create solid heightfield.");
         return false;
     }
 
-    // 5. 三角形ポリゴンの歩行可能判定とボクセルへのラスタライズ（焼き込み）
-    // 法線角度から「傾斜がキツすぎる三角形」を弾き、平面の三角形だけをボクセル空間に刻み込みます。
+    // 5. 歩ける三角形の判定とラスタライズ。
+    //    法線の傾きが walkableSlopeAngle を超える三角形は歩けないものとして印を付ける
     std::vector<unsigned char> triAreas(ntris, 0);
     rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, geom.vertices.data(), nverts, geom.indices.data(), ntris, triAreas.data());
 
-    if (!rcRasterizeTriangles(&ctx, geom.vertices.data(), nverts, geom.indices.data(), triAreas.data(), ntris, *solid, cfg.walkableClimb))
+    if (!rcRasterizeTriangles(&ctx, geom.vertices.data(), nverts, geom.indices.data(), triAreas.data(), ntris, *work.solid, cfg.walkableClimb))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not rasterize triangles.");
-        rcFreeHeightField(solid);
         return false;
     }
 
-    // 6. フィルタリング（通れない場所の削除）
-    // 天井が低すぎる場所（机の下など）や、崖っぷちのボクセルを「歩行不可」として削り落とします。
-    rcFilterLowHangingWalkableObstacles(&ctx, cfg.walkableClimb, *solid);
-    rcFilterLedgeSpans(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid);
-    rcFilterWalkableLowHeightSpans(&ctx, cfg.walkableHeight, *solid);
+    // 6. 通れない場所を歩行不可にする（低い障害物の上・崖の縁・天井が低い場所）
+    rcFilterLowHangingWalkableObstacles(&ctx, cfg.walkableClimb, *work.solid);
+    rcFilterLedgeSpans(&ctx, cfg.walkableHeight, cfg.walkableClimb, *work.solid);
+    rcFilterWalkableLowHeightSpans(&ctx, cfg.walkableHeight, *work.solid);
 
     CCL_LOG_INFO(LogCategory::Core, "NavMesh Rasterization Success!");
 
-    // ---------------------------------------------------------
-    // 【Step 3】領域分割とPolyMeshの構築
-    // ---------------------------------------------------------
+    // ============================================================
+    // 領域分割と PolyMesh の構築
+    // ============================================================
 
-    // 7. コンパクト・ハイトフィールド（CHD）への圧縮
-    // 以降の処理を高速化するため、ボクセル空間をよりメモリ効率の良い構造体に変換します。
-    rcCompactHeightfield *chf = rcAllocCompactHeightfield();
-    if (!chf || !rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
+    // 7. コンパクトハイトフィールドへの変換。以降の処理はこちらの方が速い
+    work.chf = rcAllocCompactHeightfield();
+    if (!work.chf || !rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *work.solid, *work.chf))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build compact heightfield.");
         return false;
     }
-    // 古い重いボクセルデータはここで解放（メモリ節約）
-    rcFreeHeightField(solid);
+    // 元のハイトフィールドはもう使わないので、ここで解放してメモリを空ける
+    rcFreeHeightField(work.solid);
+    work.solid = nullptr;
 
-    // 8. 歩行可能エリアの「浸食（Erosion）」
-    // 壁からAIの半径（walkableRadius）分だけ歩ける領域を削り落とします。
-    if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
+    // 8. 壁からエージェントの半径（walkableRadius）ぶん、歩ける領域を削る
+    if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *work.chf))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not erode walkable area.");
         return false;
     }
 
-    // 9. 領域（Region）の分割
-    // 広大な空間を「小さな島」の集まりに分割します（Watershed法を使用）。
-    if (!rcBuildDistanceField(&ctx, *chf))
+    // 9. 領域（Region）の分割（Watershed 法）
+    if (!rcBuildDistanceField(&ctx, *work.chf))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build distance field.");
         return false;
     }
-    if (!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
+    if (!rcBuildRegions(&ctx, *work.chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build regions.");
         return false;
     }
 
-    // 10. 輪郭（Contour）の抽出
-    // ボクセルの境界をなぞり、ベクターデータの輪郭線を生成します。
-    rcContourSet *cset = rcAllocContourSet();
-    if (!cset || !rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
+    // 10. 領域の境界をなぞって輪郭線（Contour）を作る
+    work.cset = rcAllocContourSet();
+    if (!work.cset || !rcBuildContours(&ctx, *work.chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *work.cset))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build contours.");
         return false;
     }
 
-    // 11. ポリゴンメッシュ（PolyMesh）の構築
-    // 輪郭線から、A*探索のノードとなる凸ポリゴンを生成します。
-    rcPolyMesh *pmesh = rcAllocPolyMesh();
-    if (!pmesh || !rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
+    // 11. 輪郭線から、経路探索のノードになる凸ポリゴン（PolyMesh）を作る
+    work.pmesh = rcAllocPolyMesh();
+    if (!work.pmesh || !rcBuildPolyMesh(&ctx, *work.cset, cfg.maxVertsPerPoly, *work.pmesh))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build poly mesh.");
         return false;
     }
 
-    // ポリゴンに「歩行可能」のフラグを立てる
-    for (int i = 0; i < pmesh->npolys; ++i)
+    // 歩けるポリゴンにフラグを立てる
+    for (int i = 0; i < work.pmesh->npolys; ++i)
     {
-        if (pmesh->areas[i] == RC_WALKABLE_AREA)
+        if (work.pmesh->areas[i] == RC_WALKABLE_AREA)
         {
-            pmesh->areas[i] = 0; // Detourのデフォルトエリア（0）として扱う
-            pmesh->flags[i] = 1; // これが超重要！ 1 (0x01) を設定しないとフィルターで無視される
+            work.pmesh->areas[i] = 0; // Detour の既定のエリア（0）として扱う
+            work.pmesh->flags[i] = 1; // 0 のままだと、探索時のフィルタ（dtQueryFilter の既定値）で除外される
         }
     }
 
-    // 12. 詳細メッシュ（Detail Mesh）の構築
-    // Y軸（高さ）の精度を担保するため、ポリゴンの表面に地形の起伏を焼き付けます。
-    // （ランタイムでAIが地面にぴったり足を這わせるために必要です）
-    rcPolyMeshDetail *dmesh = rcAllocPolyMeshDetail();
-    if (!dmesh || !rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
+    // 12. 詳細メッシュ（Detail Mesh）。ポリゴンの表面に地形の起伏を持たせ、
+    //     経路上の高さ（Y）を地面に合わせられるようにする
+    work.dmesh = rcAllocPolyMeshDetail();
+    if (!work.dmesh || !rcBuildPolyMeshDetail(&ctx, *work.pmesh, *work.chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *work.dmesh))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build detail mesh.");
         return false;
     }
 
-    // 生成されたポリゴン数をログ出力
-    CCL_LOG_INFO(LogCategory::Core, "NavMesh PolyMesh Generated: %d Polygons", pmesh->npolys);
+    CCL_LOG_INFO(LogCategory::Core, "NavMesh PolyMesh Generated: %d Polygons", work.pmesh->npolys);
 
-    // ---------------------------------------------------------
-    // 【Step 4】Detourナビゲーション・バイナリのコンパイル
-    // ---------------------------------------------------------
-    // pmesh (ポリゴン) と dmesh (詳細地形) を統合し、
-    // AIが最速でA*探索できるメモリ構造 (Detourデータ) を作ります。
+    // ============================================================
+    // Detour のナビメッシュデータの作成
+    // ============================================================
+    // pmesh（ポリゴン）と dmesh（詳細な起伏）をまとめ、Detour が探索に使うバイナリにする
 
     dtNavMeshCreateParams params;
     memset(&params, 0, sizeof(params));
 
-    // 頂点とポリゴン情報
-    params.verts     = pmesh->verts;
-    params.vertCount = pmesh->nverts;
-    params.polys     = pmesh->polys;
-    params.polyAreas = pmesh->areas;
-    params.polyFlags = pmesh->flags;
-    params.polyCount = pmesh->npolys;
-    params.nvp       = pmesh->nvp;
+    params.verts     = work.pmesh->verts;
+    params.vertCount = work.pmesh->nverts;
+    params.polys     = work.pmesh->polys;
+    params.polyAreas = work.pmesh->areas;
+    params.polyFlags = work.pmesh->flags;
+    params.polyCount = work.pmesh->npolys;
+    params.nvp       = work.pmesh->nvp;
 
-    // 詳細メッシュ（AIが地面に足を這わせるためのY軸の起伏データ）
-    params.detailMeshes     = dmesh->meshes;
-    params.detailVerts      = dmesh->verts;
-    params.detailVertsCount = dmesh->nverts;
-    params.detailTris       = dmesh->tris;
-    params.detailTriCount   = dmesh->ntris;
+    params.detailMeshes     = work.dmesh->meshes;
+    params.detailVerts      = work.dmesh->verts;
+    params.detailVertsCount = work.dmesh->nverts;
+    params.detailTris       = work.dmesh->tris;
+    params.detailTriCount   = work.dmesh->ntris;
 
-    // エージェント（AI）のサイズ情報
+    // エージェントの大きさ（m）
     params.walkableHeight = settings.agentHeight;
     params.walkableRadius = settings.agentRadius;
     params.walkableClimb  = settings.agentMaxClimb;
-    rcVcopy(params.bmin, pmesh->bmin);
-    rcVcopy(params.bmax, pmesh->bmax);
+    rcVcopy(params.bmin, work.pmesh->bmin);
+    rcVcopy(params.bmax, work.pmesh->bmax);
     params.cs          = cfg.cs;
     params.ch          = cfg.ch;
-    params.buildBvTree = true; // 経路探索を爆速にするためのBVHツリーを構築
+    params.buildBvTree = true; // 最寄りポリゴンの検索を速くする BV ツリーを作る
 
     unsigned char *navData     = 0;
     int            navDataSize = 0;
 
-    // 最終コンパイル実行
     if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
     {
         CCL_LOG_ERROR(LogCategory::Core, "NavMesh Build Failed: Could not build Detour navmesh.");
-
-        // エラーで抜ける前に、必ず一時メモリを解放する
-        rcFreeCompactHeightfield(chf);
-        rcFreeContourSet(cset);
-        rcFreePolyMesh(pmesh);
-        rcFreePolyMeshDetail(dmesh);
-
         return false;
     }
 
     CCL_LOG_INFO(LogCategory::Core, "Detour NavMesh Binary Created: %d bytes", navDataSize);
 
-    // ---------------------------------------------------------
-    // メモリのクリーンアップ（一時データ群）
-    // ---------------------------------------------------------
-    rcFreeCompactHeightfield(chf);
-    rcFreeContourSet(cset);
-    rcFreePolyMesh(pmesh);
-    rcFreePolyMeshDetail(dmesh);
-
-    // 重要: この navData (と navDataSize) が、ファイルにセーブすべき「完成品」です。
-    // 今はテストのため、そのままランタイム用の dtNavMesh を作ってみます。
-
+    // navData はファイルへ保存していない。Bake のたびに作り直し、そのまま実行時の dtNavMesh にする
     dtNavMesh *runtimeNavMesh = dtAllocNavMesh();
-    // DT_ALLOC_PERM を指定すると、runtimeNavMesh が navData のメモリ所有権を持ちます
+    if (!runtimeNavMesh)
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "Failed to allocate Detour NavMesh");
+        dtFree(navData);
+        return false;
+    }
+
+    // DT_ALLOC_PERM を指定すると、init が成功した時点で runtimeNavMesh が navData を所有する
     dtStatus status = runtimeNavMesh->init(navData, navDataSize, DT_ALLOC_PERM);
 
     if (dtStatusFailed(status))
     {
         CCL_LOG_ERROR(LogCategory::Core, "Failed to init Detour NavMesh");
         dtFree(navData);
+        dtFreeNavMesh(runtimeNavMesh);
         return false;
     }
 
@@ -317,7 +304,7 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World &world, const NavMeshBuildSett
     }
     else
     {
-        // 既にデータが存在する（2回目以降のBake）なら、古いメモリを必ず解放する
+        // 2回目以降の Bake では、前回のデータを解放してから差し替える
         auto &oldData = world.GetResource<NavigationData>();
         if (oldData.navQuery)
         {
@@ -331,15 +318,13 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World &world, const NavMeshBuildSett
         }
     }
 
-    // 生成したNavMeshをシステム全体で共有
     world.GetResource<NavigationData>().navMesh = runtimeNavMesh;
 
-    // ---------------------------------------------------------
-    // 経路探索エンジン(NavMeshQuery)の初期化
-    // ---------------------------------------------------------
+    // ============================================================
+    // 経路探索（NavMeshQuery）の初期化
+    // ============================================================
     dtNavMeshQuery *runtimeNavQuery = dtAllocNavMeshQuery();
-    // 2048 は探索時の最大ノード数（A*のオープンリスト/クローズドリストのサイズ）
-    // 数千体の群集AIを動かす場合でも、一般的にはこれで十分です。
+    // 2048 は探索時に使うノード数の上限（A* のオープンリスト・クローズドリストの大きさ）
     dtStatus queryStatus = runtimeNavQuery->init(runtimeNavMesh, 2048);
 
     if (dtStatusFailed(queryStatus))
@@ -349,7 +334,6 @@ bool NavMeshBuilder::BuildNavMesh(CCL::ECS::World &world, const NavMeshBuildSett
         return false;
     }
 
-    // Queryもシステム全体で共有
     world.GetResource<NavigationData>().navQuery = runtimeNavQuery;
 
     return true;

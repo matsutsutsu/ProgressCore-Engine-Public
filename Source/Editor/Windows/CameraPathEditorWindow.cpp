@@ -1,5 +1,3 @@
-// CameraPathEditorWindowの実装。選択エンティティのパスアセットを抽出し、編集・保存を提供する。
-
 #include "CameraPathEditorWindow.h"
 #include "Engine/Camera/Components/CameraDollyCartComponent.h"
 #include "Engine/Camera/Systems/CameraDollySystem.h"
@@ -12,7 +10,7 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 CameraPathEditorWindow::CameraPathEditorWindow()
-    : EditorWindow("Camera Path Editor", false) // デフォルトは非表示
+    : EditorWindow("Camera Path Editor", false) // 既定は非表示
 {
 }
 
@@ -21,7 +19,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
     if (!context.world)
         return;
 
-    // 別のエンティティが選択されたらインデックスをリセットする保護処理
+    // 別のエンティティを選択したら、制御点の選択を解除する
     static CCL::ECS::EntityID lastSelectedEntity = CCL::ECS::InvalidEntityID;
     if (context.selectedEntity != lastSelectedEntity)
     {
@@ -30,7 +28,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         lastSelectedEntity           = context.selectedEntity;
     }
 
-    // 1. 対象エンティティのバリデーション
+    // 対象のエンティティと、台車・軌道アセットがそろっているか
     if (context.selectedEntity == InvalidEntityID)
     {
         ImGui::TextDisabled("No entity selected in Hierarchy.");
@@ -44,7 +42,6 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         return;
     }
 
-    // 2. アセットのロード状態チェック
     if (cart->pathAsset.empty())
     {
         ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Warning: pathAsset is empty.");
@@ -66,9 +63,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
     auto &points       = asset.points;
     bool  pathModified = false;
 
-    // -------------------------------------------------------------
-    // UI ヘッダー部 (保存や一括操作)
-    // -------------------------------------------------------------
+    // ---- 保存とループ設定 ----
     ImGui::Text("Editing Asset: %s", cart->pathAsset.c_str());
     ImGui::Separator();
 
@@ -89,9 +84,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
 
     ImGui::Spacing();
 
-    // -------------------------------------------------------------
-    // ノード操作 (追加・削除)
-    // -------------------------------------------------------------
+    // ---- 制御点の追加・挿入 ----
     if (ImGui::Button("Add Point at End"))
     {
         if (points.empty())
@@ -100,7 +93,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         }
         else
         {
-            // 最後の点から少しZ方向にずらして追加
+            // 最後の点から Z 方向に 1m ずらして追加する
             Vector3 last = points.back();
             points.push_back(last + Vector3(0, 0, 1.0f));
         }
@@ -127,9 +120,7 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
         pathModified = true;
     }
 
-    // -------------------------------------------------------------
-    // リスト表示部 (ListBox)
-    // -------------------------------------------------------------
+    // ---- 制御点の一覧 ----
     ImGui::Text("Waypoints (%zu)", points.size());
     if (ImGui::BeginListBox("##PathList", ImVec2(-FLT_MIN, 150)))
     {
@@ -144,19 +135,17 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
                 m_selectedPointIndex = i;
             }
 
-            // アイテムが表示領域に入った時にスクロールを合わせる
+            // 一覧を開いたとき、選択中の項目にフォーカスを合わせる
             if (isSelected)
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndListBox();
     }
 
-    // Contextへの同期（GameViewWindowのImGuizmoに伝えるため）
+    // GameViewWindow のギズモが動かす制御点を伝える
     context.editingPathNodeIndex = m_selectedPointIndex;
 
-    // -------------------------------------------------------------
-    // 選択頂点の編集部 (Inspector風)
-    // -------------------------------------------------------------
+    // ---- 選択中の制御点の編集 ----
     if (m_selectedPointIndex >= 0 && m_selectedPointIndex < points.size())
     {
         ImGui::SeparatorText("Edit Selected Point");
@@ -176,15 +165,9 @@ void CameraPathEditorWindow::DrawContents(EditorContext &context)
             }
             pathModified = true;
         }
-
-        // --- 3Dギズモ(ImGuizmo) 連携は未実装 ---
-        // 選択頂点を SceneView 側から掴めるようにするには、編集中の頂点ポインタを
-        // Context 経由で公開する必要がある。現状はリスト上の数値編集のみ。
     }
 
-    // -------------------------------------------------------------
-    // 変更の反映と自動保存
-    // -------------------------------------------------------------
+    // ---- 変更の反映と自動保存（ギズモで動かしたときの反映は GameViewWindow が行う） ----
     if (pathModified)
     {
         // 制御点や isLoop を触ったら LUT を作り直す。
@@ -225,7 +208,6 @@ void CameraPathEditorWindow::SavePathToJson(const std::string &relativePath, con
     // ループ設定も書き出す（CameraDollySystem がロード時に読む）
     j["isLoop"] = asset.isLoop;
 
-    // FileSystem経由で書き出し
     FileSystem::WriteAllText(relativePath, j.dump(4));
     CCL_LOG_SUCCESS(LogCategory::Editor, "Saved Camera Path to: %s", relativePath.c_str());
 }

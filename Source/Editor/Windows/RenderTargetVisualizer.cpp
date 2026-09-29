@@ -1,4 +1,3 @@
-// 中間バッファを可視化用 RT へ焼く実装（FullScreenVS + RenderTargetDebugPS）。
 #include "RenderTargetVisualizer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
@@ -6,7 +5,7 @@
 
 namespace
 {
-    // サムネイル用途なので bake 解像度はこの幅で頭打ちにする（VRAM/GPU の節約）。
+    // サムネイル用なので、変換後の幅はここで頭打ちにする（VRAM と GPU の負荷を抑える）。
     constexpr uint32_t kMaxBakeWidth = 512;
 } // namespace
 
@@ -15,7 +14,7 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
     if (m_initialized) return true;
     if (!device) return false;
 
-    // VS は既存の全画面三角形シェーダーを共用（SV_VertexID ベース、入力レイアウト不要）
+    // VS は既存の全画面三角形シェーダーを使う（SV_VertexID から頂点を作るので入力レイアウトは不要）
     if (FAILED(GpuResourceUtils::LoadVertexShader(
             device, "Assets/Shader/FullScreenVS.cso", nullptr, 0, nullptr, m_vs.GetAddressOf())))
         return false;
@@ -28,14 +27,14 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
             device, sizeof(Cb), m_cb.GetAddressOf())))
         return false;
 
-    // デバッグ表示は補間で誤魔化さず、ピクセルを正確に見たいので POINT サンプラ。
+    // デバッグ表示ではピクセルをそのまま見たいので、補間しない POINT サンプラーにする。
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter             = D3D11_FILTER_MIN_MAG_MIP_POINT;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     if (FAILED(device->CreateSamplerState(&sd, m_sampler.GetAddressOf())))
         return false;
 
-    // 不透明ブレンド（SSAOEffect 等と同じ防御）。直前パスの加算/乗算ブレンドが
+    // 不透明ブレンド（SSAOEffect 等と同じ）。直前のパスの加算・乗算ブレンドが
     // 残っていると、全画面三角形を描いても意図した色で上書きされず黒く見える。
     D3D11_BLEND_DESC bd                      = {};
     bd.RenderTarget[0].BlendEnable           = FALSE;
@@ -43,7 +42,7 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
     if (FAILED(device->CreateBlendState(&bd, m_opaqueBlendState.GetAddressOf())))
         return false;
 
-    // 深度テスト無効（描画先に DSV を付けないため、明示的に無効化して安全側に倒す）。
+    // 深度テストは無効（描画先に DSV を付けないので不要だが、残った状態の影響を受けないよう明示する）。
     D3D11_DEPTH_STENCIL_DESC dsd = {};
     dsd.DepthEnable              = FALSE;
     dsd.StencilEnable            = FALSE;
@@ -56,7 +55,7 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
 
 RenderTarget *RenderTargetVisualizer::AcquirePoolTarget(ID3D11Device *device, uint32_t w, uint32_t h)
 {
-    // 今フレームで poolIndex 番目の RT を確保（無ければ作る／サイズ不一致なら作り直す）。
+    // このフレームの m_poolIndex 番目の RenderTarget を返す（無ければ作り、サイズが違えば作り直す）。
     if (m_poolIndex >= m_pool.size())
         m_pool.push_back(std::make_unique<RenderTarget>());
 
@@ -73,11 +72,10 @@ RenderTarget *RenderTargetVisualizer::AcquirePoolTarget(ID3D11Device *device, ui
 
 namespace
 {
-    // ImGui の DX11 バックエンド(ImGui_ImplDX11_RenderDrawData)と同じ思想の
-    // 「変更するステートを丸ごと退避 → 描画 → 丸ごと復元」ヘルパ。
-    // 個々のハザード(SRV/DSVの同時バインド等)を都度潰すのではなく、触るステージ
-    // (IA/VS/PS/OM/RS)をまるごとスナップショットすることで、原因を特定しきれない
-    // GPU状態の汚染を構造的に防ぐ。
+    // ImGui の DX11 バックエンド（ImGui_ImplDX11_RenderDrawData）と同じく、
+    // 変更するステートを丸ごと退避 → 描画 → 丸ごと復元する。
+    // 個々のハザード（SRV と DSV の同時バインド等）を1つずつ対処するのではなく、触るステージ
+    // （IA/VS/PS/OM/RS）をまとめて保存しておくことで、描画後に状態が変わったまま残るのを防ぐ。
     struct PipelineStateBackup
     {
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   rtv;
@@ -155,7 +153,7 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     dc->GetDevice(device.GetAddressOf());
     if (!EnsureInitialized(device.Get())) return src;
 
-    // bake 解像度（アスペクト維持で幅をクランプ）
+    // 変換後の解像度（アスペクト比を保ったまま幅を上限で抑える）
     const float    aspect = (w > 0 && h > 0) ? (float)h / (float)w : 9.0f / 16.0f;
     const uint32_t bw     = (w == 0) ? kMaxBakeWidth : (std::min)(w, kMaxBakeWidth);
     const uint32_t bh     = (std::max)(1u, (uint32_t)(bw * aspect));
@@ -163,17 +161,16 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     RenderTarget *rt = AcquirePoolTarget(device.Get(), bw, bh);
     if (!rt) return src;
 
-    // ImGui バックエンドと同じ「全ステート退避」。個々のリソースが今この瞬間
-    // 別のステージ(DSV等)で使用中かどうかを気にせず、後で寸分違わず元に戻す。
+    // 全ステートを退避する。個々のリソースが今ほかのステージ（DSV 等）で使われているかに
+    // 関係なく、描画後にそのまま元へ戻せる。
     PipelineStateBackup backup;
     backup.Save(dc);
 
-    // 重要: 出力ステージ(RTV/DSV)を SRV バインドより前に完全に空にする。
-    // GraphicsDevice::SetRenderTargets() はエディタUI描画中も深度バッファを
-    // DSV として常時バインドし続けており、SceneDepth を可視化する際 src が
-    // その DSV と "同一リソース" になりうる。DSV を外さないまま同じリソースを
-    // SRV として束ねると D3D11 のハザード検出に触れ、出力バインドが強制的に
-    // 無効化されてパイプライン状態が壊れる。
+    // 出力ステージ（RTV/DSV）を、SRV をバインドする前に空にする。
+    // GraphicsDevice::SetRenderTargets() はエディタ UI の描画中も深度バッファを
+    // DSV としてバインドしたままなので、SceneDepth を表示するとき src がその DSV と
+    // 同じリソースになりうる。DSV を外さずに同じリソースを SRV としてバインドすると、
+    // D3D11 のハザード検出によって出力のバインドが外され、描画が壊れる。
     dc->OMSetRenderTargets(0, nullptr, nullptr);
 
     // 定数バッファ更新
@@ -192,7 +189,7 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
         dc->Unmap(m_cb.Get(), 0);
     }
 
-    // パイプライン設定（全画面三角形）
+    // 全画面三角形を描く設定
     dc->IASetInputLayout(nullptr);
     ID3D11Buffer *nullVB     = nullptr;
     UINT          zeroStride = 0, zeroOffset = 0;
@@ -207,7 +204,7 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(m_noDepthState.Get(), 0);
 
-    // ソースを t0(Texture2D) か t1(Texture2DArray) に束ねる
+    // src を t0（Texture2D）か t1（Texture2DArray）にバインドする
     ID3D11ShaderResourceView *nullSRV = nullptr;
     if (p.useArray != 0)
     {
@@ -220,10 +217,10 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
         dc->PSSetShaderResources(1, 1, &nullSRV);
     }
 
-    rt->Activate(dc); // RTV + ビューポートを RT サイズに設定
+    rt->Activate(dc); // RTV とビューポートを RenderTarget のサイズに設定する
     dc->Draw(3, 0);
 
-    // 描画後は即座に SRV/RTV を解除してから、退避した全ステートを復元する。
+    // 描画後はすぐ SRV と RTV を外してから、退避したステートを復元する。
     dc->PSSetShaderResources(0, 1, &nullSRV);
     dc->PSSetShaderResources(1, 1, &nullSRV);
     dc->OMSetRenderTargets(0, nullptr, nullptr);

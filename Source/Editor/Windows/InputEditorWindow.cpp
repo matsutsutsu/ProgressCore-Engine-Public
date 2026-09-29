@@ -3,8 +3,7 @@
 #include "Engine/Platform/Input/InputKeyTable.h" // 共通キーテーブル
 #include "Engine/Platform/Core/FileSystem.h"
 #include <imgui.h>
-#include <Xinput.h> // Capture用 (パッド検出)
-#include <fstream>
+#include <Xinput.h> // キャプチャでパッドのボタンを読む
 #include <json.hpp>
 #include <cstring>
 #include <cctype>
@@ -15,7 +14,6 @@ using json = nlohmann::json;
 
 InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
 {
-    // ウィンドウ起動時にとりあえず読み込んでおく
     LoadFromJson();
 }
 
@@ -23,9 +21,8 @@ void InputEditorWindow::LoadFromJson()
 {
     m_actions.clear();
     m_axes.clear();
-    m_captureTarget = nullptr; // データ作り直し時はキャプチャを必ず解除
+    m_captureTarget = nullptr; // データを作り直すので、キャプチャの対象を必ず外す
 
-    // VFSから読み込み
     std::string jsonStr = FileSystem::ReadAllText(m_configPath);
     if (jsonStr.empty()) return;
 
@@ -65,7 +62,7 @@ void InputEditorWindow::LoadFromJson()
     }
     catch (...)
     {
-        // パースエラー時は何もしない
+        // 構文エラーなどのときは、読めたところまでで終える
     }
 }
 
@@ -103,12 +100,9 @@ void InputEditorWindow::SaveToJson()
     FileSystem::WriteAllText(m_configPath, doc.dump(4));
 }
 
-// =====================================================================
-// デバイス選択（ラジオボタン）
-//   まず Keyboard / Mouse / GamePad を選ぶ。
-//   切り替えたら b.device/b.key を、そのデバイスの先頭候補にリセットする。
-//   isAxis=true の Axisタブでは GamePad に「軸」も含める。
-// =====================================================================
+// デバイスの選択（ラジオボタン）。
+//   切り替えたら b.device / b.key を、そのデバイスの既定値に戻す。
+//   軸のタブ（isAxis=true）ではゲームパッドの既定を左スティックにする。
 void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
 {
     using DC = InputKeyTable::DeviceClass;
@@ -119,7 +113,7 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
         if (ImGui::RadioButton(label, cur == cls))
         {
             if (cur != cls)
-            { // 実際に切り替わったときだけリセット
+            { // 実際に切り替わったときだけ戻す
                 b.device = defDevice;
                 b.key    = defKey;
             }
@@ -130,17 +124,15 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
     ImGui::SameLine();
     radio("マウス", DC::Mouse, "Mouse_Button", "BTN_LEFT");
     ImGui::SameLine();
-    // GamePadはタブによって初期値を変える（Axisタブなら軸を初期選択）
+    // ゲームパッドの既定値はタブで変える（軸のタブなら左スティック）
     radio("ゲームパッド", DC::GamePad,
           isAxis ? "GamePad_AxisLX" : "GamePad_Button",
           "NONE");
 }
 
-// =====================================================================
-// キー選択コンボ
-//   選択中デバイスに対応した候補のみ表示。フィルタ付き。
-//   GamePadは「ボタン」と「軸」を見出しで分けて1つのコンボに収める。
-// =====================================================================
+// キーの選択（コンボボックス）。
+//   選択中のデバイスに対応した候補だけを出す（絞り込みの入力欄つき）。
+//   軸のタブのゲームパッドは「スティック / トリガー」と「ボタン」を見出しで分ける。
 void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
 {
     using DC = InputKeyTable::DeviceClass;
@@ -150,7 +142,7 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
 
     if (ImGui::BeginCombo("キー##KeySelect", preview.c_str()))
     {
-        // --- フィルタ ---
+        // 絞り込みの文字列。選んだら空に戻す
         static char filter[32] = "";
         ImGui::SetNextItemWidth(-FLT_MIN);
         ImGui::InputTextWithHint("##filter", "絞り込み...", filter, sizeof(filter));
@@ -216,17 +208,12 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
     }
 }
 
-// =====================================================================
-// バインディング1行ぶんのGUI
-//   [デバイス選択ラジオ] → [キー選択コンボ] → [Capture] → (Scale)
-// =====================================================================
+// 割り当て1つぶんの GUI: デバイス → キー → キャプチャ →（軸なら）感度
 void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 {
-    // 1) デバイス種別
     DrawDeviceSelector(b, isAxis);
 
-    // 2) キー選択
-    //    軸系(L-Stick等)は具体キーが無いのでコンボは出さず固定表示
+    // 軸（左スティック等）には個別のキーが無いので、コンボは出さず読み取り専用で表示する
     if (InputKeyTable::IsAnalogDevice(b.device))
     {
         b.key            = "NONE";
@@ -241,7 +228,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
     {
         DrawKeyCombo(b, isAxis);
 
-        // 3) Capture（押して登録）— ボタン系のみ
+        // キャプチャ（押して登録）。ボタンのデバイスだけ
         ImGui::SameLine();
         if (m_captureTarget == &b)
         {
@@ -281,7 +268,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
                     }
                 }
                 else
-                { // Keyboard / Mouse は実押下からキーボードを拾う
+                { // キーボード・マウスのどちらのタブでも、拾うのはキーボードのキー
                     std::string_view kb = InputKeyTable::DetectPressedKeyboardLabel();
                     if (!kb.empty())
                     {
@@ -303,7 +290,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
         }
     }
 
-    // 4) AxisのみScale
+    // 軸だけ感度（符号で向き）を持つ
     if (isAxis)
     {
         ImGui::DragFloat("感度 / 方向##Scale", &b.scale, 0.1f, -1.0f, 1.0f);
@@ -312,9 +299,7 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 
 void InputEditorWindow::DrawContents(EditorContext &context)
 {
-    // -------------------------------------------------------------
-    // 上部ツールバー：保存とホットリロード
-    // -------------------------------------------------------------
+    // ---- 読み直しと保存 ----
     if (ImGui::Button("JSONから再読み込み"))
     {
         LoadFromJson();
@@ -326,7 +311,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
     {
         SaveToJson();
 
-        // エンジンのInputFacadeにホットリロード命令を出す
+        // 保存した JSON を InputFacade に読み直させる
         if (context.world && context.world->HasResource<std::shared_ptr<IInputAPI>>())
         {
             auto inputAPI = context.world->GetResource<std::shared_ptr<IInputAPI>>();
@@ -348,19 +333,14 @@ void InputEditorWindow::DrawContents(EditorContext &context)
     ImGui::Separator();
     ImGui::Spacing();
 
-    // -------------------------------------------------------------
-    // タブによる Action と Axis の切り替え
-    // -------------------------------------------------------------
     if (ImGui::BeginTabBar("InputTabs"))
     {
-
-        // ==========================================
-        // Actions (単発ボタン)
-        // ==========================================
+        // ---- アクション（ボタン） ----
         if (ImGui::BeginTabItem("アクション（デジタル）"))
         {
             if (ImGui::Button("＋ アクションを追加"))
             {
+                m_captureTarget = nullptr; // 追加で要素が移動しうるので、キャプチャの対象を外す
                 m_actions.push_back({"NewAction", {}});
             }
             ImGui::Separator();
@@ -380,15 +360,15 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
                 if (ImGui::Button("削除##Action"))
                 {
-                    m_captureTarget = nullptr; // dangling防止
+                    m_captureTarget = nullptr; // 削除した要素を指したまま残さない
                     m_actions.erase(m_actions.begin() + i);
                     ImGui::PopID();
                     break;
                 }
 
-                // --- 発火タイミング種別 ---
+                // 発火のタイミング
                 {
-                    // 表示は日本語、保存値は英字（JSON互換のため）
+                    // 表示は日本語、保存する値は英字（InputFacade が読む JSON の値）
                     const char *trigLabels[] = {"押しっぱなし", "押した瞬間", "離した瞬間"};
                     const char *trigValues[] = {"Down", "Triggered", "Released"};
                     const char *trigDesc[]   = {
@@ -422,7 +402,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::SameLine();
                     if (ImGui::Button("削除##Bind"))
                     {
-                        m_captureTarget = nullptr; // dangling防止
+                        m_captureTarget = nullptr; // 削除した要素を指したまま残さない
                         act.bindings.erase(act.bindings.begin() + j);
                         ImGui::PopID();
                         break;
@@ -434,6 +414,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
 
                 if (ImGui::Button("＋ 割り当てを追加"))
                 {
+                    m_captureTarget = nullptr; // 追加で要素が移動しうるので、キャプチャの対象を外す
                     act.bindings.push_back(BindingData());
                 }
                 ImGui::Unindent();
@@ -446,13 +427,12 @@ void InputEditorWindow::DrawContents(EditorContext &context)
             ImGui::EndTabItem();
         }
 
-        // ==========================================
-        // Axes (アナログ軸)
-        // ==========================================
+        // ---- 軸（アナログ） ----
         if (ImGui::BeginTabItem("軸（アナログ）"))
         {
             if (ImGui::Button("＋ 軸を追加"))
             {
+                m_captureTarget = nullptr; // 追加で要素が移動しうるので、キャプチャの対象を外す
                 m_axes.push_back({"NewAxis", {}});
             }
             ImGui::Separator();
@@ -472,7 +452,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                 ImGui::SameLine(ImGui::GetWindowWidth() - 100);
                 if (ImGui::Button("削除##Axis"))
                 {
-                    m_captureTarget = nullptr; // dangling防止
+                    m_captureTarget = nullptr; // 削除した要素を指したまま残さない
                     m_axes.erase(m_axes.begin() + i);
                     ImGui::PopID();
                     break;
@@ -486,7 +466,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
                     ImGui::SameLine();
                     if (ImGui::Button("削除##AxisBind"))
                     {
-                        m_captureTarget = nullptr; // dangling防止
+                        m_captureTarget = nullptr; // 削除した要素を指したまま残さない
                         ax.bindings.erase(ax.bindings.begin() + j);
                         ImGui::PopID();
                         break;
@@ -498,6 +478,7 @@ void InputEditorWindow::DrawContents(EditorContext &context)
 
                 if (ImGui::Button("＋ 割り当てを追加"))
                 {
+                    m_captureTarget = nullptr; // 追加で要素が移動しうるので、キャプチャの対象を外す
                     ax.bindings.push_back(BindingData());
                 }
                 ImGui::Unindent();

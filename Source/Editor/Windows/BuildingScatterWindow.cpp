@@ -1,6 +1,3 @@
-// BuildingScatterWindow の実装。中心から一定距離離した円環内に建物を
-// ランダム配置し、親グループ配下にまとめる。
-
 #include "Editor/Windows/BuildingScatterWindow.h"
 
 #include "Game/Core/AllComponents.h" // Model/Material/Name
@@ -25,7 +22,7 @@ namespace
 {
     constexpr float kTwoPi = 6.28318530718f;
 
-    // 建物モデルのパスを組み立てる (modelIndex は 0..7 → Scifi-Building_01..08)
+    // 建物モデルのパスを作る（modelIndex0 は 0〜7 → Scifi-Building_01〜08）
     std::string BuildModelPath(int modelIndex0)
     {
         char path[160];
@@ -128,9 +125,6 @@ void BuildingScatterWindow::DrawContents(EditorContext &context)
         ImGui::Text("直近の生成: %d 個の建物", m_lastSpawnedCount);
 }
 
-// =========================================================================
-// 生成: 建物群を1バッチ生成し、クラスタ親グループ配下にまとめる
-// =========================================================================
 void BuildingScatterWindow::Generate(EditorContext &context)
 {
     World *world = context.world;
@@ -148,11 +142,11 @@ void BuildingScatterWindow::Generate(EditorContext &context)
     const float maxR     = (std::max)(m_minRadius, m_maxRadius);
     const float spacing2 = m_minSpacing * m_minSpacing;
 
-    // バッチごとに配置が変わるよう、シードにバッチ番号を混ぜる
+    // 生成するたびに配置が変わるよう、シードに生成回数を混ぜる
     std::mt19937                          rng(static_cast<uint32_t>(m_seed) + static_cast<uint32_t>(m_batchCounter) * 2654435761u);
     std::uniform_real_distribution<float> u01(0.0f, 1.0f);
 
-    // アーキタイプ(設計図)。連続メモリ確保のため事前生成。
+    // アーキタイプはループの外で1回だけ作る
     const auto groupArch    = ArchetypeHelper::Generate<TransformComponent, NameComponent>();
     const auto buildingArch = ArchetypeHelper::Generate<TransformComponent, ModelComponent, MaterialComponent, NameComponent>();
 
@@ -164,7 +158,7 @@ void BuildingScatterWindow::Generate(EditorContext &context)
         baseModels[mi].SetModel(BuildModelPath(mi).c_str());
     }
 
-    // ---- 1) クラスタ親グループを生成 ----
+    // ---- 1. クラスタごとの親グループを生成 ----
     std::vector<EntityID> groups;
     groups.reserve(clusters);
     for (int c = 0; c < clusters; ++c)
@@ -180,7 +174,7 @@ void BuildingScatterWindow::Generate(EditorContext &context)
         m_spawnedGroups.push_back(gref.id);
     }
 
-    // ---- 2) 建物を生成(親付けは実体化後に行う) ----
+    // ---- 2. 建物を生成（親子付けは実体化した後に行う） ----
     struct Placed
     {
         float x, z;
@@ -193,15 +187,15 @@ void BuildingScatterWindow::Generate(EditorContext &context)
 
     for (int i = 0; i < count; ++i)
     {
-        const int c = i % clusters; // 塊(親グループ)への振り分け(ラウンドロビン)
+        const int c = i % clusters; // 親グループへ順番に振り分ける
 
-        // --- 位置決定: 最小間隔を満たす場所を数回試行(だめなら最後の候補を採用) ---
+        // 最小間隔を満たす場所を最大30回探す（見つからなければ最後の候補を使う）
         float px = m_center[0], pz = m_center[2];
         for (int attempt = 0; attempt < 30; ++attempt)
         {
-            // 面積的に均等になる半径サンプリング
+            // 面積あたりの密度が均一になるよう、半径は二乗で補間する
             const float r = std::sqrt(minR * minR + u01(rng) * (maxR * maxR - minR * minR));
-            // このクラスタの角度セクタ内に散らす(clusters>1 なら塊が空間的にも分かれる)
+            // このクラスタの角度の範囲内に散らす（clusters>1 なら塊が空間的にも分かれる）
             const float ang = (static_cast<float>(c) + u01(rng)) / static_cast<float>(clusters) * kTwoPi;
             px              = m_center[0] + r * std::cos(ang);
             pz              = m_center[2] + r * std::sin(ang);
@@ -220,11 +214,11 @@ void BuildingScatterWindow::Generate(EditorContext &context)
         }
         placed.push_back({px, pz});
 
-        // 親グループ(中心に配置)からのローカルオフセット
+        // 親グループ（中心に置く）からのオフセット
         const float lx = px - m_center[0];
         const float lz = pz - m_center[2];
 
-        // モデル/スケール/回転をランダムに
+        // モデル・スケール・回転をランダムに決める
         const int   mi  = models[static_cast<size_t>(rng() % models.size())];
         const float s   = m_scaleRange[0] + u01(rng) * (m_scaleRange[1] - m_scaleRange[0]);
         const float yaw = m_randomYaw ? (u01(rng) * kTwoPi) : 0.0f;
@@ -232,7 +226,7 @@ void BuildingScatterWindow::Generate(EditorContext &context)
         DirectX::XMFLOAT4 rot;
         DirectX::XMStoreFloat4(&rot, DirectX::XMQuaternionRotationRollPitchYaw(0.0f, yaw, 0.0f));
 
-        // 名前は必ず一意に(通し番号 + モデル番号)
+        // 名前は通し番号とモデル番号で必ず一意にする
         char bname[64];
         sprintf_s(bname, "Bld_%04d_S%02d", m_nameCounter, mi + 1);
         ++m_nameCounter;
@@ -242,12 +236,12 @@ void BuildingScatterWindow::Generate(EditorContext &context)
                     .position = {lx, m_baseY, lz},
                     .rotation = rot,
                     .scale    = {s, s, s}})
-            .Set(ModelComponent{baseModels[mi]}); // マスターをコピー(各自が別インスタンスを持つ)
+            .Set(ModelComponent{baseModels[mi]}); // 最初に作ったものをコピーする（各自が別のインスタンスを持つ）
 
         childToGroup.emplace_back(ref.id, groups[c]);
     }
 
-    // ---- 3) 実体化してから親子付け ----
+    // ---- 3. 実体化してから親子付け ----
     //   SpawnNamed は PendingOp に積むだけなので、SetParent の前に確定させる。
     world->ScrutinyAndApply();
     for (const auto &[child, group] : childToGroup)
@@ -261,9 +255,6 @@ void BuildingScatterWindow::Generate(EditorContext &context)
                  "[BuildingScatter] Generated %d buildings in %d group(s).", count, clusters);
 }
 
-// =========================================================================
-// 削除: このウィンドウが生成した全グループを破棄(配下の建物も連鎖破棄される)
-// =========================================================================
 void BuildingScatterWindow::DeleteAll(EditorContext &context)
 {
     World *world = context.world;

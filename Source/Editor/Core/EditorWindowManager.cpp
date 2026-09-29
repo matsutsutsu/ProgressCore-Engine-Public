@@ -15,7 +15,6 @@
 #include "Engine/Platform/Input/InputFacade.h"
 #include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形の毎フレーム無効化
 
-// 各ウィンドウのヘッダをインクルード
 #include "Editor/Windows/AssetBrowserWindow.h"
 #include "Editor/Windows/ECSDebugWindow.h"
 #include "Editor/Windows/GameViewWindow.h"
@@ -48,7 +47,6 @@
 #include <sstream>
 #include <algorithm> // std::sort（Sceneメニューの名前順ソート）
 
-// Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
 
 namespace fs = std::filesystem;
@@ -104,8 +102,8 @@ namespace
                 {
                     DirectX::XMFLOAT3  spawnPos = {0, 5, 0};
                     CCL::ECS::EntityID e        = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
-                    // プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
-                    //    シーン(ベイク)保存では除外対象になる。
+                    // プレハブの実体として印を付ける。レベル保存では {path, transform} の参照になり、
+                    // シーン（ベイク）保存では除外される。
                     if (e != CCL::ECS::InvalidEntityID)
                         context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{node.fullPath});
                     CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
@@ -129,34 +127,34 @@ namespace
             }
         }
     }
-} // namespace
-
-void RefreshPrefabList(EditorContext &context)
-{
-    ZoneScopedN("RefreshPrefabList");
-
-    context.prefabFiles.clear();
-
-    std::string targetPath = "Assets/Prefabs";
-
-    if (fs::exists(targetPath))
+    // Assets/Prefabs 以下の .json を集め直す
+    void RefreshPrefabList(EditorContext &context)
     {
-        try
+        ZoneScopedN("RefreshPrefabList");
+
+        context.prefabFiles.clear();
+
+        std::string targetPath = "Assets/Prefabs";
+
+        if (fs::exists(targetPath))
         {
-            for (const auto &entry : fs::recursive_directory_iterator(targetPath))
+            try
             {
-                if (entry.is_regular_file() && entry.path().extension() == ".json")
+                for (const auto &entry : fs::recursive_directory_iterator(targetPath))
                 {
-                    context.prefabFiles.push_back(entry.path().generic_string());
+                    if (entry.is_regular_file() && entry.path().extension() == ".json")
+                    {
+                        context.prefabFiles.push_back(entry.path().generic_string());
+                    }
                 }
             }
-        }
-        catch (const fs::filesystem_error &e)
-        {
-            OutputDebugStringA(e.what());
+            catch (const fs::filesystem_error &e)
+            {
+                OutputDebugStringA(e.what());
+            }
         }
     }
-}
+} // namespace
 
 void EditorWindowManager::Draw(EditorContext &context)
 {
@@ -178,8 +176,8 @@ void EditorWindowManager::Draw(EditorContext &context)
             m_isVisible = !m_isVisible;
         }
 
-        // TAB で一時停止/再開をトグル（ツールバーの Pause/Resume ボタンと同じ動作）。
-        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、誤爆させない。
+        // TAB で一時停止・再開を切り替える（ツールバーの Pause/Resume ボタンと同じ動作）。
+        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、切り替えない。
         if (ImGui::IsKeyPressed(ImGuiKey_Tab, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.isPaused = !context.isPaused;
@@ -191,15 +189,15 @@ void EditorWindowManager::Draw(EditorContext &context)
             context.stepOneFrame = true;
         }
 
-        // F2 で「カーソル自由(UI操作)モード」をトグル。ゲームは動いたままカーソルだけ解放し、
-        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。誤爆防止に入力中は無視。
+        // F2 で「カーソル自由(UI操作)モード」を切り替える。ゲームは動いたままカーソルだけ解放し、
+        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。テキスト入力中は無視する。
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.cursorFreeToggle = !context.cursorFreeToggle;
         }
 
         // 「カーソル自由」の最終状態を World リソースへ反映する。
-        //   F2トグル or シーケンサーEditMode 中は true。カメラ(カーソルロック)と
+        //   F2 が ON か、シーケンサーの Edit Mode 中なら true。カメラ(カーソルロック)と
         //   PauseSystem(ESC抑制)がこれを読む。
         if (context.world && context.world->HasResource<GameFlowState>())
         {
@@ -224,7 +222,7 @@ void EditorWindowManager::Draw(EditorContext &context)
     //   「全画面/Shipping なので恒等写像でよい」と
     //   「エディタは出ているが GameView が隠れていてゲーム画面が無い」
     // の2つが混ざっており、後者で恒等写像に落とすと、画面に出ていないボタンを
-    // 他のウィンドウ上のクリックが踏む（GameViewportInfo.h の説明を参照）。
+    // 他のウィンドウ上のクリックが押してしまう（GameViewportInfo.h の説明を参照）。
     if (context.world && context.world->HasResource<GameViewportInfo>())
     {
         auto &vp         = context.world->GetResource<GameViewportInfo>();
@@ -369,7 +367,7 @@ void EditorWindowManager::DrawEntityMenu(EditorContext &context)
 
 void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
 {
-    ZoneScopedN("EditorWindowManager::DrawPrefabMenu"); // ここが重い可能性も高い
+    ZoneScopedN("EditorWindowManager::DrawPrefabMenu");
     if (ImGui::BeginMenu("Prefab"))
     {
         if (ImGui::MenuItem("Refresh List"))
@@ -384,6 +382,7 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
         }
         else
         {
+            // パスを "/" で区切ってフォルダの木を組み、サブメニューとして出す
             PrefabNode  rootNode;
             std::string basePrefix = "Assets/Prefabs";
             std::replace(basePrefix.begin(), basePrefix.end(), '\\', '/');
@@ -451,8 +450,8 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
         auto &sceneMgr = SceneManager::Instance();
 
         // SceneFactory へ REGISTER_SCENE で自己登録された全シーンをそのまま列挙する。
-        //   これでシーンを1つ追加するたびにこのメニューへ手で書き足す必要がなくなる。
-        //   registry は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
+        //   シーンを追加しても、このメニューへ手で書き足す必要はない。
+        //   登録先は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
         std::vector<std::string> sceneNames = SceneFactory::Instance().GetSceneNames();
         std::sort(sceneNames.begin(), sceneNames.end());
 
@@ -471,8 +470,8 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
             ImGui::BeginDisabled(isCurrent || transitioning);
             if (ImGui::MenuItem(name.c_str(), nullptr, /*selected*/ isCurrent))
             {
-                // 全シーン共通で「フェード付き非同期遷移」に統一する。
-                //   RequestTransition(async=true): 暗転 → 黒の裏で対象シーンを裏読み
+                // 全シーン共通でフェード付きの非同期遷移にする。
+                //   RequestTransition(async=true): 暗転 → 暗転中に対象シーンを別スレッドで読み込む
                 //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない。
                 sceneMgr.RequestTransition(name, /*async*/ true);
 
@@ -501,7 +500,7 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる。
         ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
 
-        // 触っていない外部ウィンドウを約15fpsまで落とす。別画面の数値を
+        // 触っていない外部ウィンドウの描画を約15fpsまで落とす。別画面の数値を
         //   滑らかに眺めたいときだけ OFF にする（そのぶんFPSは下がる）。
         ImGui::MenuItem("外部ウィンドウを間引く", nullptr, &context.throttleExternalWindows);
 
@@ -522,8 +521,8 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawPlayControlBar");
 
-    // 「一時停止 / 再開」トグルのみ。
-    //   セーブやシーンのバックアップ/復元は一切行わない。押した瞬間に
+    // 一時停止・再開の切り替えだけを行う。
+    //   セーブやシーンのバックアップ・復元は行わない。押した瞬間に
     //   context.isPaused を反転するだけで、Framework 側がその間 FixedUpdate を止める。
     float  menuBarWidth = ImGui::GetWindowWidth();
     float  buttonWidth  = 90.0f;
@@ -584,6 +583,7 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
         ImGui::Text("Performance & ECS Status");
         ImGui::Separator();
 
+        // 直近120回ぶんのフレーム時間（ツールチップを出している間だけ記録する）
         static float frameTimes[120] = {0};
         static int   frameTimeIdx    = 0;
 
@@ -622,7 +622,6 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawToolsMenu");
     if (ImGui::BeginMenu("Tools"))
     {
-        // Tracy Profiler を起動するメニュー項目
         if (ImGui::MenuItem("Launch Tracy Profiler"))
         {
             HINSTANCE result = ShellExecuteA(
@@ -643,7 +642,6 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
             }
         }
 
-        // ModelEditor を起動するメニュー項目
         if (ImGui::MenuItem("Launch ModelEditor"))
         {
             HINSTANCE result = ShellExecuteA(

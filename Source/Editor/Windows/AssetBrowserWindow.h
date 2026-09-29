@@ -1,4 +1,10 @@
 #pragma once
+// ===========================================================================
+// 概要: Assets フォルダを閲覧するウィンドウ。AssetBrowser を所有して描くだけの枠。
+//
+// 責務:
+//   - AssetBrowser を生成・所有し、毎フレーム描く
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Utils/AssetBrowser.h"
 #include "Engine/Graphics/RHI/Graphics.h"
@@ -7,21 +13,17 @@
 class AssetBrowserWindow : public EditorWindow
 {
 private:
-    // ウィンドウ自身がアセットブラウザの実体を所有する
     std::unique_ptr<AssetBrowser> m_assetBrowser;
 
 public:
     AssetBrowserWindow() : EditorWindow("Asset Browser")
     {
-        // ウィンドウが作られた時に、1回だけ初期化する
-        // ※ フォルダパスはプロジェクト構造に合わせて "./Assets" または "./Data" などに変更する
         m_assetBrowser = std::make_unique<AssetBrowser>("./Assets", Graphics::Instance().GetDevice());
     }
 
 protected:
     void DrawContents(EditorContext &context) override
     {
-        // 保持しているアセットブラウザを描画する
         if (m_assetBrowser)
         {
             m_assetBrowser->Draw();

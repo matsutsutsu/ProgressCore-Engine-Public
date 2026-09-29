@@ -1,19 +1,16 @@
-// ===================================================================================
-// ファイル名: MemoryAnalyzerWindow.cpp
-// ===================================================================================
 #include "MemoryAnalyzerWindow.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <imgui.h>
 #include <algorithm>
 
 MemoryAnalyzerWindow::MemoryAnalyzerWindow()
-    : EditorWindow("Memory Analyzer"), m_cachedTotalVram(0), m_updateTimer(0.2f)
+    : EditorWindow("Memory Analyzer"), m_cachedTotalVram(0), m_updateTimer(0.2f) // 初回の描画ですぐ走査する
 {
 }
 
 void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
 {
-    // 1. スロットリング（間引き）処理: 0.2秒（約12フレーム）に1回だけプールを走査する
+    // 0.2 秒（60fps で約12フレーム）に1回だけプールを走査する
     m_updateTimer += ImGui::GetIO().DeltaTime;
     if (m_updateTimer >= 0.2f)
     {
@@ -23,7 +20,7 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
 
         auto &rm = ResourceManager::Instance();
 
-        // ResourceManagerの連続メモリプール（ResourcePool）を一直線にスキャン
+        // ResourceManager のテクスチャプールを走査する
         rm.GetTexturePool().ForEachActive([&](const TextureResource &tex) {
             CachedAssetInfo info;
             info.path      = tex.debugPath;
@@ -35,13 +32,13 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
             m_cachedTotalVram += tex.byteSize;
         });
 
-        // 重いアセット（VRAM消費量が多い順）に降順ソート
+        // VRAM の使用量が多い順に並べる
         std::sort(m_cachedTextures.begin(), m_cachedTextures.end(), [](const CachedAssetInfo &a, const CachedAssetInfo &b) {
             return a.sizeBytes > b.sizeBytes;
         });
     }
 
-    // 2. 実際のUI描画（キャッシュされたデータから描画するため超高速）
+    // 描画はキャッシュした結果から行う
     DrawOverviewSection();
 
     ImGui::Spacing();
@@ -60,11 +57,10 @@ void MemoryAnalyzerWindow::DrawOverviewSection()
     ImGui::Text("VRAM Budget Status:");
     ImGui::SameLine();
 
-    // 予算の使用率が85%を超えたらテキストを赤くして警告する（プロ用UX）
+    // 予算の 85% を超えたら文字とバーを赤くして警告する
     ImVec4 textColor = (ratio > 0.85f) ? ImVec4(1.0f, 0.4f, 0.4f, 1.0f) : ImVec4(0.4f, 1.0f, 0.4f, 1.0f);
     ImGui::TextColored(textColor, "%.1f MB / %.0f MB (%.1f%%)", vramMb, budgetMb, ratio * 100.0f);
 
-    // プログレスバーのカラーカスタム（予算オーバーで赤化）
     if (ratio > 0.85f)
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
     else
@@ -78,7 +74,6 @@ void MemoryAnalyzerWindow::DrawTextureTableSection()
 {
     ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Loaded Textures Breakdown (Sorted by Size)");
 
-    // スクロール可能なテーブルを構築
     if (ImGui::BeginTable("TextureMemoryTable", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0, 0)))
     {
         ImGui::TableSetupColumn("Asset Virtual Path", ImGuiTableColumnFlags_WidthStretch);
@@ -90,15 +85,15 @@ void MemoryAnalyzerWindow::DrawTextureTableSection()
         {
             ImGui::TableNextRow();
 
-            // カラム1: パス
+            // パス
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(tex.path.c_str());
 
-            // カラム2: 解像度 (例: 2048 x 2048)
+            // 解像度（例: 2048 x 2048）
             ImGui::TableNextColumn();
             ImGui::Text("%u x %u", tex.width, tex.height);
 
-            // カラム3: 読みやすい単位に変換した容量
+            // 使用量（1MB 以上は MB、それ未満は KB）
             ImGui::TableNextColumn();
             if (tex.sizeBytes >= 1024 * 1024)
             {
