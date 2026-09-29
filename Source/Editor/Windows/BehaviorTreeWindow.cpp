@@ -204,7 +204,7 @@ void BehaviorTreeWindow::DrawToolbar()
         }
     }
     ImGui::SameLine();
-    if (ImGui::Button("テキスト書き出し (AI相談用)"))
+    if (ImGui::Button("テキスト書き出し"))
     {
         // 既定のファイル名は「開いている BT の名前_Outline.txt」（BossCombat.json → BossCombat_Outline.txt）
         std::string base = m_currentPath.empty() ? "BehaviorTree" : FileNameOf(m_currentPath);

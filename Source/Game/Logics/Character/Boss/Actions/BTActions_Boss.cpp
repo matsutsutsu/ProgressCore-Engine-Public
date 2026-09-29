@@ -297,9 +297,12 @@ namespace CCL::AI::BT
                     anim->SetTrigger(triggerHash);
             }
 
-            // どの技を出しているかを BossActionSystem へ伝える。
+            // どの技を出しているかと、その全体時間を BossActionSystem へ伝える。
             if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
-                cmd->currentActionId = id;
+            {
+                cmd->currentActionId       = id;
+                cmd->currentActionDuration = (ctx.param > 0.0f) ? ctx.param : defaultDuration;
+            }
 
             return BTNodeState::Running;
         }
@@ -338,8 +341,9 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossLeapAttack,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 2.6f, A_BossLeapAttack));
 
-        // その場で滞空：溜め0.3 + 上昇下降0.9 + 頂点で2.5 + 着地硬直（LeapLand・0.63秒）。
-        // 短くすると頂点に居るまま要求が下りて、待機へ戻った瞬間に重力で落ちる。
+        // その場で滞空：溜め0.3 + 上昇下降0.9 + 頂点 + 着地硬直0.63（LeapLand）。
+        // 頂点に留まる長さは全体時間の残り（BossActionSystem が逆算する）なので、ノードの
+        // param を延ばせばそのまま頂点が延びる。既定の 4.4秒で頂点は約2.6秒。
         // ドローンの陣形攻撃は Parallel の従に置き、滞空（主）が全体の長さを決める。
         reg.RegisterActionInstance(A_BossAirHover,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 4.4f, A_BossAirHover));

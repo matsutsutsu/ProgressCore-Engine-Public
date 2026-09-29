@@ -123,8 +123,9 @@ private:
 
     /// 技に入った瞬間だけ走る処理。タイマーを 0 に戻し、進行方向を確定させる。
     /// 跳躍系は、どの技かで着地点の決め方と調整値を選ぶので actionId も受け取る。
+    /// actionDuration は技の全体時間（BTノードの param）。滞空が頂点の長さを逆算するのに使う。
     /// 方向をここで1回だけ決めるのが、動く技が「避けられる技」である根拠。
-    void OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossDef,
+    void OnEnterState(BossActionState next, ActionID actionId, float actionDuration, BossActionComponent &bossDef,
                       const TransformComponent           &trans,
                       const DirectX::SimpleMath::Vector3 &playerPos) const;
 };

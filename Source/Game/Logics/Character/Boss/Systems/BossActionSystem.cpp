@@ -99,7 +99,8 @@ void BossActionSystem::Update(float rawDt)
                                             : TranslateAction(cmd.currentActionId);
 
         // 動く技は「どこへ向かうか」をこの1回で決め、以後は更新しない。
-        if (next != bossDef.currentState) OnEnterState(next, cmd.currentActionId, bossDef, trans, playerPos);
+        if (next != bossDef.currentState)
+            OnEnterState(next, cmd.currentActionId, cmd.currentActionDuration, bossDef, trans, playerPos);
 
         bossDef.currentState = next;
         bossDef.actionTimer += dt;
@@ -207,7 +208,8 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
     return BossActionState::None;
 }
 
-void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossDef,
+void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, float actionDuration,
+                                    BossActionComponent &bossDef,
                                     const TransformComponent &trans,
                                     const Vector3            &playerPos) const
 {
@@ -251,7 +253,11 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
         {
             bossDef.leapDef       = bossDef.hoverLeap;
             bossDef.leapLanding   = BossLeapLanding::InPlace;
-            bossDef.leapHoverTime = bossDef.hoverTime;
+            // 頂点に留まる長さは、BT の全体時間から他の段を引いた残り。長さの数字を
+            // BT ノードの1か所に置くため（プレハブ側にも持つと、片方だけ直してずれる）。
+            const BossLeapDef &def = bossDef.hoverLeap;
+            bossDef.leapHoverTime =
+                (std::max)(0.0f, actionDuration - def.windup - def.flight - bossDef.hoverLandRecovery);
         }
     }
 }

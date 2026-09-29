@@ -58,7 +58,7 @@ struct ComponentMeta<BossActionComponent>
                 CFIELD_FLOAT_RANGED(attackStandOff, "跳躍攻撃：相手の手前に降りる距離 [m]", 0.1f, 0.0f, 20.0f, "Leap Attack")
                 CFIELD_FLOAT_RANGED(hoverLeap.windup, "滞空：溜め [秒]", 0.01f, 0.0f, 2.0f, "Air Hover")
                 CFIELD_FLOAT_RANGED(hoverLeap.flight, "滞空：上昇＋下降 [秒]", 0.01f, 0.1f, 5.0f, "Air Hover")
-                CFIELD_FLOAT_RANGED(hoverTime, "滞空：頂点に留まる長さ [秒]", 0.05f, 0.0f, 15.0f, "Air Hover")
+                CFIELD_FLOAT_RANGED(hoverLandRecovery, "滞空：着地硬直 [秒]（頂点の長さはBTノードの全体時間から逆算）", 0.01f, 0.0f, 3.0f, "Air Hover")
                 CFIELD_FLOAT_RANGED(hoverLeap.height, "滞空：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Air Hover")
             // ここから下は書き手が BossActionSystem の実行時の値。保存しない。
             //   保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、

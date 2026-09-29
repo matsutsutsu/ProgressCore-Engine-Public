@@ -76,7 +76,7 @@ struct BossActionComponent
     float       attackStandOff = 3.0f;         // 相手のどれだけ手前に降りるか [m]。0だと真上に降りてカプセルが押し合う
 
     BossLeapDef hoverLeap{0.3f, 0.9f, 16.0f}; // その場で滞空(A_BossAirHover)。頂点はプレイヤーの攻撃が届かない高さに
-    float       hoverTime = 2.5f;             // 頂点に留まる長さ [秒]。ドローンが陣形を組んで撃ち終わるまでの猶予
+    float       hoverLandRecovery = 0.63f;    // 着地硬直 [秒]。頂点に留まる長さ＝BTノードの全体時間−溜め−上昇下降−これ
 
     // --- ランタイム状態。書き手はすべて BossActionSystem（保存しない）---
     //

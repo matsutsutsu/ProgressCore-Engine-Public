@@ -35,6 +35,7 @@ struct ComponentMeta<BossCommandComponent>
             //   requestFormation=5 が焼き付いており、ボスが「薙ぎ払いの最中」として
             //   生まれてきていた。インスペクタでは見たいので、保存だけ止める。
             CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
+                CFIELD_RT(currentActionDuration, "現在の技の全体時間 [秒]", "Current Command")
                 CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};
         return fields;
     }

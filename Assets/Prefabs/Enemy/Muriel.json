@@ -31,7 +31,7 @@
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.windup": 0.30000001192092896,
-                    "hoverTime": 2.5,
+                    "hoverLandRecovery": 0.63,
                     "idleTurnSpeed": 4.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0

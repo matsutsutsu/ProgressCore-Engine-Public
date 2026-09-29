@@ -14,6 +14,10 @@ struct BossCommandComponent
     /// ボス本体にやってほしい技。BossActionSystem が BossActionState へ翻訳する。0 は何もしない。
     ActionID currentActionId = 0;
 
+    /// currentActionId の技の全体時間 [秒]。BTノードの param（未設定なら技の既定値）。
+    /// 体の動きの長さを BT 側の数字に合わせたい技（滞空の頂点に留まる長さ）が読む。
+    float currentActionDuration = 0.0f;
+
     /// ドローンへの「今撃て」信号。DroneStrikeAction が立て、次の陣形指示が下ろす。
     bool droneAttackActive = false;
 
