@@ -1,12 +1,14 @@
 #pragma once
-// タイトル画面のメニューUIを生成し、ボタンクリックでシーン遷移するシステム。
+// ===========================================================================
+// 概要: タイトル画面のメニューを作り、ボタンでシーンを切り替える System。
 //
-// 設計方針:
-//   - タイトル文字＋START/QUIT ボタンを ECS UI として生成。文字は画面左に寄せ、
-//     右半分は3D背景（群れが組む斬線）のために空ける。
-//   - UIButtonClickedEvent を購読し、onClickAction のハッシュで遷移を分岐。
-//   - グローバル登録（REGISTER_*_SYSTEM）はしない。TitleScene が手動登録する
-//     （ゲーム本編でタイトルメニューが湧かないようにするため）。
+// 責務:
+//   - タイトルの文字・START / QUIT ボタン・操作のヒントを作る
+//   - START ならゲームへの切り替えを頼み、QUIT なら終了の要求を立てる
+//
+// 備考: 文字は画面の左に寄せ、右と上は 3D の背景（ボスと群れ）のために空ける。
+//       全体登録（REGISTER_*）はせず、TitleScene が登録する（ゲーム本編でメニューが出ないように）。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
 
@@ -16,18 +18,16 @@ class TitleMenuSystem
 public:
     TitleMenuSystem() : IfSystem("TitleMenuSystem") {}
 
-    void Initialize() override; // イベント購読のみ
+    void Initialize() override; // ボタンのイベントを購読するだけ
     void Update(float dt) override;
 
 private:
-    /// タイトル文字とボタンを生成する。
-    ///
-    /// なぜ Initialize ではなく最初の Update か:
-    ///   システムの Initialize は登録時（= TitleScene::Initialize の中）に走る。その後で
-    ///   3D背景レベルを読むと、LoadScene が PersistentTag 以外を全消去するのでUIごと消える。
-    ///   レベル読み込みが終わったあと＝最初の Update まで待つ。
+    // タイトルの文字とボタンを作る。
+    // Initialize ではなく最初の Update で呼ぶ。System の Initialize は登録時（TitleScene::Initialize の中）に
+    // 走り、その後で背景のレベルを読むと、LoadScene が PersistentTag の無いエンティティを全部消して
+    // メニューも消えるため
     void SpawnMenu();
 
-    bool m_menuSpawned   = false; // 生成済みか（1回だけ生成するためのラッチ）
-    bool m_transitioning = false; // 遷移予約後か（連打・多重発火対策）
+    bool m_menuSpawned   = false; // メニューを作ったか（1回だけ作るため）
+    bool m_transitioning = false; // 切り替えを頼んだ後か（連打や何度も呼ばれるのを無視するため）
 };

@@ -1,16 +1,3 @@
-// ===========================================================================
-// HealthSystem.cpp
-// ----------------
-// 役割・責務はヘッダを参照。
-//
-// 実装の意図(Why):
-//   - 無敵時間は localDt で減算する。ヒットストップ中は localDt=0 になるため
-//     無敵時間の消費も止まり、ヒットストップ演出と自然に整合する。
-//   - DeadTag は HasComponent で二重付与ガードをしてから AddComponent する。
-//     同フレームに複数のダメージが入った場合でも1度だけ付与される。
-//   - OnGui の HP バーは ProgressBar で「今いくつか」を直感的に示す。
-//     DeadTag 付与済みの行は赤でハイライトし、消滅直前の状態も見えるようにする。
-// ===========================================================================
 #include "HealthSystem.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Engine/Core/Components/NameComponent.h"
@@ -27,14 +14,13 @@ void HealthSystem::Update(float dt)
                       const TimeStateComponent &time) {
         const float ldt = time.localDt;
 
-        // 1. 無敵時間のカウントダウン
         if (health.invincibilityTimer > 0.0f)
             health.invincibilityTimer -= ldt;
 
-        // 2. 死亡判定と DeadTag 付与
         if (health.currentHealth <= 0.0f)
         {
             health.currentHealth = 0.0f;
+            // 付いているのにもう一度 AddComponent しないよう確かめる
             if (!m_world->HasComponent<Tag::DeadTag>(id))
                 m_world->AddComponent<Tag::DeadTag>(id);
         }
@@ -46,7 +32,7 @@ void HealthSystem::OnGui()
     ImGui::Text("Health Monitor");
     ImGui::Separator();
 
-    // 生存数・死亡数の集計
+    // 生きている数と倒れた数
     int aliveCount = 0;
     int deadCount  = 0;
     ForEachWithID([&](CCL::ECS::EntityID id, HealthComponent &health,
@@ -60,7 +46,7 @@ void HealthSystem::OnGui()
     ImGui::Text("Alive: %d  /  Dead(pending): %d", aliveCount, deadCount);
     ImGui::Separator();
 
-    // エンティティごとの詳細一覧
+    // エンティティごとの表
     if (ImGui::BeginTable("HealthTable", 4,
                           ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
                           ImVec2(0.0f, 300.0f)))
@@ -78,12 +64,12 @@ void HealthSystem::OnGui()
 
             ImGui::TableNextRow();
 
-            // 死亡エンティティは行を赤くハイライト
+            // 倒れたエンティティの行は赤くする
             if (isDead)
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
                                        IM_COL32(160, 30, 30, 120));
 
-            // 名前（NameComponent があれば name を、なければ ID をフォールバック）
+            // 名前（NameComponent が無ければ ID を出す）
             ImGui::TableSetColumnIndex(0);
             {
                 const auto *nameComp = m_world->GetComponent<NameComponent>(id);
@@ -100,7 +86,7 @@ void HealthSystem::OnGui()
                                         ? (health.currentHealth / health.maxHealth)
                                         : 0.0f;
 
-                // バーの色を HP に応じて変える（緑→黄→赤）
+                // HP の割合で色を変える（50% より上は緑、25% より上は黄、それ以下は赤）
                 const ImVec4 color = (ratio > 0.5f)
                                          ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f)
                                      : (ratio > 0.25f)

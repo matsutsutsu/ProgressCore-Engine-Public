@@ -1,18 +1,24 @@
-// FormationAsset を解釈して座標を出す唯一の陣形クラス。
+#pragma once
+// ===========================================================================
+// 概要: FormationAsset（JSON）を解釈して持ち場を出す陣形クラスと、その登録処理。
 //
-// 責務: ①割付 ②形 ③動き ④配置 の4段を1回だけ実装する。技ごとの違いはすべて
-//       FormationAsset の数値に入っているので、技が増えてもこのファイルは増えない。
+// 責務:
+//   - (1)割付 (2)形 (3)動き (4)配置 の4段を1回だけ実装する
+//   - Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する
+//   - エディタの手送り（予告の経過・進行度の固定）を受ける
 //
-// 計算はすべて「陣形ローカル座標」で行い、最後に一度だけワールドへ移す。
+// 備考:
+//   技ごとの違いはすべて FormationAsset の数値に入っているので、技が増えてもこの
+//   ファイルは増えない。
+//   計算はすべて陣形ローカル座標で行い、最後に一度だけワールドへ移す。
 //   ローカルの x = Right / y = Up / z = Forward。この3軸は正規直交で、
 //   Right = Up × Forward が X = Y × Z と同じ関係なので、ワールドの単位軸まわりの
-//   回転がそのまま陣形ローカルの回転になる。おかげでレイヤーごとに基底を
+//   回転がそのまま陣形ローカルの回転になる。そのためレイヤーごとに基底を
 //   掛け直さずに済み、最後の1回だけ Right/Up/Forward を展開すればよい。
-//
-// C++ で書いた陣形（Formations_*.h）との関係:
-//   同じ技を両方に持たせない。C++ の登録が先に走り、C++ 実装のある枠を名乗った JSON は
-//   登録時に弾く。同じ技の定義が2箇所に並ぶと、片方だけ更新されたときに気づけないため。
-#pragma once
+//   C++ で書いた陣形（Formations_*.h）と同じ技を両方に持たせない。C++ の登録が先に
+//   走り、C++ 実装のある枠を名乗った JSON は登録時に弾く。同じ技の定義が2箇所に
+//   並ぶと、片方だけ更新されたときに気づけないため。
+// ===========================================================================
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -29,7 +35,7 @@
 namespace CCL::AI::Formation::Data
 {
 
-    // ① 割付の出力。1機が座る「席」。
+    // (1) 割付の出力。1機が入る「席」。
     //   colCount / rowCount を持ち回るのは、中央揃えと波の位相がどちらも
     //   「全体の中で自分が何番目か」を必要とするため。
     struct Seat
@@ -48,27 +54,29 @@ namespace CCL::AI::Formation::Data
         void                  SetAsset(const FormationAsset &asset) { m_asset = asset; }
         const FormationAsset &GetAsset() const { return m_asset; }
 
-        /// エディタが実機の陣形を直接編集するための口。コピーを持たせると
-        /// 「エディタでは変わったのに画面は変わらない」が起きる。
+        // エディタが実行中の陣形を直接編集するための入口。コピーを持たせると
+        // 「エディタでは変わったのに画面は変わらない」が起きる。
         FormationAsset &GetMutableAsset() { return m_asset; }
 
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override;
 
-        /// データ陣形は必ず Broadcast。個体が自分で攻撃を終わらせる技（弾幕・小隊）は
-        /// フィールドへ状態をラッチするので、そもそもこの形式では書けない。
+        // データ陣形は必ず Broadcast。個体が自分で攻撃を終わらせる技（弾幕）は
+        // 機体ごとに状態を保持するので、この形式では書けない。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Broadcast; }
 
-        /// 技の名前はアセットが持つ。エディタで名前を変えれば BTエディタの表示も変わる。
+        // 技の名前はアセットが持つ。エディタで名前を変えれば BTエディタの表示も変わる。
         const char *DisplayName() const override { return m_asset.name.c_str(); }
 
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 
-        /// 予告の経過秒数と攻撃の進行度を外から固定する（エディタの手送り）。
-        ///
-        /// ランタイムには存在しない状態をここへ置いているのは、「陣形が attackProgress を
-        /// 毎フレーム書く」という規約を破らずに止める方法が他に無いため。外から
-        /// DroneComponent へ書いても、次のフレームに陣形が上書きしてしまう。
+        /**
+         * @brief 予告の経過秒数と攻撃の進行度を外から固定する（エディタの手送り）。
+         *
+         * ゲーム中には使わない状態をここへ置いているのは、「陣形が attackProgress を
+         * 毎フレーム書く」という規約を破らずに止める方法が他に無いため。外から
+         * DroneComponent へ書いても、次のフレームに陣形が上書きしてしまう。
+         */
         void SetPreview(float telegraphSeconds, float progress)
         {
             m_telegraphOverride = telegraphSeconds;
@@ -80,12 +88,12 @@ namespace CCL::AI::Formation::Data
             m_progressOverride  = -1.0f;
         }
 
-        /// 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
-        /// 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに嘘の数字が出る。
+        // 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
+        // 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに誤った数字が出る。
         static void GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows);
 
-        /// 緩急。席ごとの進み t（0〜1）を、始まり→終わりのどこまで進んだか（0〜1）へ曲げる。
-        /// キーの無いカーブは easeIn（t*t）。エディタの緩急のグラフもこれを描く。
+        // 緩急。席ごとの進み t（0〜1）を、始まり→終わりのどこまで進んだか（0〜1）へ変換する。
+        // キーの無いカーブは easeIn（t*t）。エディタの緩急のグラフもこれを描く。
         static float Ease(const FormationLayer &layer, float t)
         {
             return layer.curve.empty() ? (t * t) : layer.curve.Evaluate(t);
@@ -94,19 +102,19 @@ namespace CCL::AI::Formation::Data
     private:
         using Vector3 = DirectX::SimpleMath::Vector3;
 
-        /// ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する。
+        // ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する。
         static Vector3 AxisVector(AssetAxis axis);
 
         Seat    AssignSeat(const DroneComponent &drone) const;
         Vector3 MakeLocal(const Seat &seat) const;
 
-        /// この席が「何番目に動くか」を 0〜1 で返す。波も先攻後攻もこの1つに集約される。
+        // この席が「何番目に動くか」を 0〜1 で返す。波も先攻後攻もこの値で表す。
         float SeatPhaseT(const FormationLayer &layer, const Seat &seat) const;
 
-        /// 進行度 p におけるこの層の変換量。角度[度] または 距離[m]。
+        // 進行度 p におけるこの層の変換量。角度[度]、距離[m]、または振れ幅[m]。
         float LayerValue(const FormationLayer &layer, const Seat &seat, float p) const;
 
-        /// mirror が掛ける符号。sideGroups=2 なら side0=-1 / side1=+1。
+        // mirror が掛ける符号。sideGroups=2 なら side0=-1 / side1=+1。
         float SideSign(const Seat &seat) const;
 
         void ApplyLayer(const FormationLayer &layer, const Seat &seat, float p,
@@ -115,10 +123,10 @@ namespace CCL::AI::Formation::Data
 
         FormationAsset m_asset;
 
-        /// この席が予告の中のどこにいるか（予告の長さを 1 とした割合）。1 を超えたら予告は終わっている。
+        // この席が予告の中のどこにいるか（予告の長さを 1 とした割合）。1 を超えたら予告は終わっている。
         float TelegraphT(const DroneComponent &drone) const;
 
-        // エディタが時間を握っている間だけ 0 以上。負なら通常どおりゲームの時間で進む。
+        // エディタが時間を固定している間だけ 0 以上。負なら通常どおりゲームの時間で進む。
         float m_telegraphOverride = -1.0f; // 予告の経過 [秒]
         float m_progressOverride  = -1.0f; // 攻撃の進行度 0〜1
     };
@@ -138,7 +146,6 @@ namespace CCL::AI::Formation::Data
         }
     }
 
-    // 席の格子の大きさ。割付とエディタ表示で同じ式を使うため切り出してある。
     inline void DataDrivenFormation::GridSize(
         const FormationAsset &asset, int totalDrones, int &outCols, int &outRows)
     {
@@ -166,7 +173,7 @@ namespace CCL::AI::Formation::Data
         outRows = rows;
     }
 
-    // ① localIndex → 席
+    // (1) localIndex → 席
     inline Seat DataDrivenFormation::AssignSeat(const DroneComponent &drone) const
     {
         const FormationAssign &as = m_asset.assign;
@@ -216,7 +223,7 @@ namespace CCL::AI::Formation::Data
         return seat;
     }
 
-    // ② 席 → ローカル座標（動かす前の「待機の形」）
+    // (2) 席 → ローカル座標（動かす前の「待機の形」）
     inline DataDrivenFormation::Vector3 DataDrivenFormation::MakeLocal(const Seat &seat) const
     {
         const FormationLayout &lo = m_asset.layout;
@@ -283,7 +290,7 @@ namespace CCL::AI::Formation::Data
         return value;
     }
 
-    // ③ 動き：1枚ぶん
+    // (3) 動き: 1枚ぶん
     inline void DataDrivenFormation::ApplyLayer(const FormationLayer &layer, const Seat &seat, float p,
                                                 const FormationContext &ctx, const DroneComponent &drone, Vector3 &local, Vector3 &look) const
     {
@@ -300,7 +307,7 @@ namespace CCL::AI::Formation::Data
             if (SeatPhaseT(layer, seat) > layer.leadThreshold) return;
 
             // 振れ幅は他の動きと同じく「始まり → 終わり」を緩急つきで進める。既定の p*p なら
-            // 撃つ直前ほど強くざわつく。位相を localIndex でずらすのは、揃えると群れが
+            // 撃つ直前ほど強く震える。位相を localIndex でずらすのは、揃えると群れが
             // 1枚の板として揺れて予告に見えないため。
             const float amplitude = LayerValue(layer, seat, u);
             const float offset    = std::sin(ctx.time * layer.frequency + static_cast<float>(drone.localIndex)) * amplitude;
@@ -333,7 +340,7 @@ namespace CCL::AI::Formation::Data
 
         drone.chargeMode = m_asset.output.chargeMode;
 
-        // 撃つ合図が来るまで進行度を0に張り付け、予備動作の「形」で待つ。
+        // 撃つ合図が来るまで進行度を 0 に保ち、予備動作の「形」で待つ。
         // プレイヤーはこの静止した形から回避方向を読む。
         if (m_progressOverride >= 0.0f)
             drone.attackProgress = (std::min)(1.0f, m_progressOverride); // エディタの手送り
@@ -351,16 +358,16 @@ namespace CCL::AI::Formation::Data
         for (const FormationLayer &layer : m_asset.layers)
             ApplyLayer(layer, seat, p, ctx, drone, local, look);
 
-        // ④ ローカル → ワールド。
-        //    AimDirection() は「撃つと決めた瞬間」に焼かれた向きを返すので、倒れている
-        //    最中にプレイヤーが横へ動いても形は追わない（＝避けた者勝ちが成立する）。
+        // (4) ローカル → ワールド。
+        //    AimDirection() は「撃つと決めた瞬間」に固定した向きを返すので、倒れている
+        //    最中にプレイヤーが横へ動いても形は追わない（避ければ当たらない）。
         const Vector3 forward = ctx.AimDirection();
         Vector3       right   = Vector3::UnitY.Cross(forward);
         if (right.LengthSquared() < 0.001f) right = Vector3::UnitX;
         right.Normalize();
 
-        // origin は回転を受けない。これが「軸の位置」であって形の一部ではないから
-        // ＝ ヒンジの高さ(origin.up)を変えても倒れ方は変わらない、という分離になる。
+        // origin は回転を受けない。origin は「軸の位置」であって形の一部ではないため、
+        // ヒンジの高さ(origin.up)を変えても倒れ方は変わらない。
         Vector3 world = ctx.bossPos + right * (local.x + m_asset.origin.right) + Vector3::UnitY * (local.y + m_asset.origin.up) + forward * (local.z + m_asset.origin.forward);
 
         if (m_asset.output.clampToGround)
@@ -378,7 +385,7 @@ namespace CCL::AI::Formation::Data
 
         // 左右対称の内側。mirror が使う符号の逆を向くので、2本の壁が必ず互いを向く。
         // 座標から中心線を引く方式にしないのは、奥行きのある壁だと先端ほど内を向いて
-        // 壁が弓なりに見えるため（挟み込み2段は前後に長い）。
+        // 壁が弧を描いて見えるため（挟み込み2段は前後に長い）。
         case LookMode::Inward:
             lookWorld = right * -SideSign(seat);
             break;
@@ -399,10 +406,10 @@ namespace CCL::AI::Formation::Data
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
     // ---------------------------------------------------------------------------
 
-    /// Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
-    ///
-    /// ファイル名ではなく JSON 内の "slot" で枠を決める。ファイル名を枠にすると
-    /// 技の名前を変えた瞬間に保存済みの BT が別の技を指す。
+    // Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
+    //
+    // ファイル名ではなく JSON 内の "slot" で枠を決める。ファイル名を枠にすると
+    // 技の名前を変えた瞬間に保存済みの BT が別の技を指す。
     inline void RegisterAll()
     {
         auto &registry = FormationRegistry::Instance();
@@ -442,7 +449,7 @@ namespace CCL::AI::Formation::Data
         }
 
         // 空き枠は BT の候補には出るが実行すると静止する。どこが空いているかを
-        // 起動時に必ず言っておかないと、選んだ本人が原因に辿り着けない。
+        // 起動時に必ずログへ出しておかないと、選んだ人が原因に辿り着けない。
         std::string empties;
         for (uint8_t s = kDataFormationSlotFirst; s <= kDataFormationSlotLast; ++s)
         {

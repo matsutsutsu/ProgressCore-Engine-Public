@@ -1,4 +1,3 @@
-// 役割・設計方針は PlayerActionVfxSystem.h を参照。
 #include "PlayerActionVfxSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -14,66 +13,57 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // バーストエミッタ・プレハブ（.json は Prefab 側が補完する）。見た目はエディタで調整する。
+    // バーストエミッタのプレハブ（拡張子 .json は Prefab 側が付ける）。見た目はエディタで調整する。
     const char *kJumpVfxPrefab = "Assets/Prefabs/Particles/VFX_Jump";
     const char *kDashVfxPrefab = "Assets/Prefabs/Particles/VFX_Dash";
 } // namespace
 
 void PlayerActionVfxSystem::Initialize()
 {
-    // 2段ジャンプ（jumpCount>=2）の瞬間だけ、その場に土煙VFXを出す。
-    //   1段目（地上ジャンプ）では出さない＝空中で「もう一度蹴った」感触を強調する。
+    // 2段ジャンプ（jumpCount>=2）の瞬間だけ、その場に土煙の VFX を出す。
+    //   地上からの1段目では出さず、空中でもう一度跳んだことを目立たせる。
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
         if (e.jumpCount >= 2)
             VFX::Play(*m_world, kJumpVfxPrefab, e.position);
     });
 
-    // ダッシュ（回避）開始の瞬間に、その場にVFXを出す。
+    // ダッシュ（回避）開始の瞬間に、その場に VFX を出し、足元のトレイルを出す。
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
         float             vfxYOffset  = 2.0f;
         DirectX::XMFLOAT3 vfxPosition = {e.position.x, e.position.y + vfxYOffset, e.position.z};
 
         VFX::Play(*m_world, kDashVfxPrefab, vfxPosition);
 
-        // プレイヤーの足元のトレイルを表示する
-        ActivePlayerFootTrails(e.playerID);
+        ActivatePlayerFootTrails(e.playerID);
     });
 }
 
 void PlayerActionVfxSystem::Update(float /*dt*/)
 {
-    // 何もしない。再生中インスタンスの後始末は VFXSystem(L08) が持つ。
-    //   購読のためだけに System として存在している。
+    // 毎フレームの処理は無い。再生中の VFX の片付けは VFXSystem が行う。
+    //   イベントを購読するためだけに System にしている。
 }
 
-void PlayerActionVfxSystem::ActivePlayerFootTrails(CCL::ECS::EntityID playerID)
+void PlayerActionVfxSystem::ActivatePlayerFootTrails(CCL::ECS::EntityID playerID)
 {
-    // 子供捜索のためにTransformComponentを取得
     auto *playerTransform = m_world->GetComponent<TransformComponent>(playerID);
     if (!playerTransform) return;
 
-    // 最初の子供Entityを取得
+    // 直接の子を兄弟リンク（firstChildID → nextSiblingID）でたどる。終端は 0（InvalidEntityID ではない）。
     EntityID childID = playerTransform->firstChildID;
-
-    // 子供EntityにTrailComponentがあるか調べて
-    // そこから双方向リンクリストなので次の子供IDをセットしてループする
-    while (childID != InvalidEntityID)
+    while (childID != 0)
     {
-        // このEntity自身にTrailがあればON
         if (auto *trail = m_world->GetComponent<TrailComponent>(childID))
         {
             trail->ActivateFor(trail->burstDuration);
         }
 
         auto *childTransform = m_world->GetComponent<TransformComponent>(childID);
-
-        // 子供操作し終わったら処理を抜ける
         if (!childTransform) break;
 
-        // 同じ子供階層の次の子供にchildIDをセットしてループ
         childID = childTransform->nextSiblingID;
     }
 }
 
-// 実処理はイベント駆動。片付け相当のタイミングに置く（HitEffectSystem と同じ L07）。
+// 処理はイベントで行う。HitEffectSystem と同じ L07_Cleanup に置く。
 REGISTER_LOGIC_SYSTEM(PlayerActionVfxSystem, Priority::LogicStage::L07_Cleanup);

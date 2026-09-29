@@ -1,5 +1,3 @@
-// 危険な区間だけドローンの Hitbox を開ける実装。
-// 役割・なぜ距離判定をやめたかは DroneHitSystem.h を参照。
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -15,9 +13,9 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // このドローンが「今まさに突撃していて危険」か。
-    //        タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
-    //        陣形追従の突撃(縦割り等)は突入中ずっと危険、直進系はタメ後のみ危険。
+    // このドローンが突撃中で危険か。
+    //   タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
+    //   陣形追従の突撃(縦割り等)は突入中ずっと危険、直進系はタメの後だけ危険。
     //
     // 硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
     // まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
@@ -44,8 +42,8 @@ void DroneHitSystem::Update(float /*dt*/)
         owner = m_world->GetResource<BattleContext>().bossEntity;
 
     // 陣形ごとの当たり方を引く。
-    //   仮想呼び出しは「陣形の種類が変わったときだけ」に留める（IFormation.h の方針）。
-    //   実際には全機が同じ陣形なので、1フレームあたり1回で済む。
+    //   仮想呼び出しは陣形の種類が変わったときだけにする（IFormation.h の方針）。
+    //   通常は全機が同じ陣形なので、1フレームあたり1回で済む。
     auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
 
     bool                                cacheValid = false;
@@ -79,8 +77,7 @@ void DroneHitSystem::Update(float /*dt*/)
         // 判定が開いた瞬間に多段ヒットの履歴を捨てる。
         //   HitboxComponent は「1回の攻撃で同じ相手を二度叩かない」ために
         //   命中済みの相手を覚える。捨てないと2回目の突撃が当たらなくなる。
-        //   剣は攻撃アニメの開始で捨てているが、ドローンは
-        //   「危険区間の立ち上がり」がそれに当たる。
+        //   剣は攻撃アニメの開始で捨てる。ドローンでは危険区間の立ち上がりがそれに当たる。
         if (dangerous && !box.isActive) box.hitCount = 0;
 
         box.isActive = dangerous;
@@ -130,7 +127,5 @@ void DroneHitSystem::OnGui()
         "・開いているのに当たらない → 球の半径か、プレイヤー側の Hurtbox を疑う");
 }
 
-// L03_PrePhysics: 物理ステップ(L04)より前に判定の開け閉めを終わらせる。
-//                 接触は Jolt が拾い、L05 の HitboxCollisionSystem が
-//                 Hitbox×Hurtbox を見て DamageEvent を積む。
+// 物理ステップ(L04)より前に判定の開け閉めを終わらせる。
 REGISTER_LOGIC_SYSTEM(DroneHitSystem, Priority::LogicStage::L03_PrePhysics);

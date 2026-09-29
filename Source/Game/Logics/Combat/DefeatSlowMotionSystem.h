@@ -1,17 +1,17 @@
 #pragma once
-// 敵を撃破した瞬間に、世界全体を短時間スローにする「撃破スロー」演出システム。
+// ===========================================================================
+// 概要: 敵を倒した瞬間に、ゲーム全体を短い間スローにする System。
 //
-// 設計方針:
-//   - 死亡は HealthComponent.currentHealth<=0 で判定。1体につき1回だけ発火するよう
-//     HealthComponent.deathFxFired フラグで多重発火を防ぐ（死亡エンティティは破棄されず
-//     残り続けるため、フラグが無いと毎フレーム再発火してしまう）。
-//   - 演出は TimeContext.cinematicSlow（SlowMotionData）へ書き込むだけ。
-//     TimeScaleSystem(L01) がこれを globalScale に折り込み、easeOut で通常速度へ戻す。
-//     globalScale は group に依らず全 TimeStateComponent に効くので、スローが確実に見える。
-//   - ボス撃破 or 最後の1体（ワールドクリア）は大きく長いスロー＝クライマックス。
-//     通常撃破は短いスロー＋クールダウンで、連続撃破時のスロー連発を防ぐ。
-//   - ヒットストップ（命中時の一瞬停止）は DamageResolutionSystem 側で実装済み。
-//     本システムは「撃破の瞬間の余韻」だけを担当する（責務分離）。
+// 責務:
+//   - HP が 0 以下になった敵を1体につき1回だけ見つける（HealthComponent::deathFxFired）
+//   - ボスを倒したとき・最後の敵を倒したときは、大きく長いスローにする
+//   - 普通に倒したときは短いスローにし、続けて倒してもスローが続かないよう間を空ける
+//
+// 備考: 倒れたエンティティは消えずに残るので、フラグが無いと毎フレーム見つけてしまう。
+//       スローは Time::SlowWorld で TimeContext.cinematicSlow に書くだけ。TimeScaleSystem（L01）が
+//       globalScale に掛け、ease-out で元の速さに戻す。globalScale は TimeStateComponent の
+//       group に関係なく全部に効く。命中の瞬間のヒットストップは DamageResolutionSystem が行う。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 
@@ -24,12 +24,12 @@ public:
     void Update(float dt) override;
 
 private:
-    float m_cooldown = 0.0f; // 通常撃破スローの連発防止（秒・実時間）
+    float m_cooldown = 0.0f; // 次の普通のスローを出せるまでの残り時間（実時間の秒）
 
-    // --- チューニング用パラメータ（ここを触れば手触りを調整できる） ---
-    static constexpr float kCooldown    = 0.6f;  // 通常撃破スローの再発火間隔(秒)
-    static constexpr float kNormalDur   = 0.30f; // 通常撃破スローの長さ(秒)
-    static constexpr float kNormalScale = 0.35f; // 通常撃破スローの速度倍率(0で停止/1で等速)
-    static constexpr float kClimaxDur   = 0.85f; // ボス/ワールドクリアの長さ(秒)
-    static constexpr float kClimaxScale = 0.10f; // ボス/ワールドクリアの速度倍率
+    // --- 調整値 ---
+    static constexpr float kCooldown    = 0.6f;  // 普通のスローを出してから次に出せるまでの時間（秒）
+    static constexpr float kNormalDur   = 0.30f; // 普通のスローの長さ（秒）
+    static constexpr float kNormalScale = 0.35f; // 普通のスローの時間の速さ（0 で止まる、1 で等速）
+    static constexpr float kClimaxDur   = 0.85f; // ボス・最後の敵を倒したときのスローの長さ（秒）
+    static constexpr float kClimaxScale = 0.10f; // ボス・最後の敵を倒したときの時間の速さ
 };

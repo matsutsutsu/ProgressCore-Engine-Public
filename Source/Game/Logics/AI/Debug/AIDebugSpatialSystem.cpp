@@ -1,4 +1,3 @@
-// AIDebugSpatialSystem の実装。ShapeRenderer で間合いリングと照準線を描く。
 #include "AIDebugSpatialSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -27,11 +26,11 @@ namespace
     const XMFLOAT4 kColInside(1.0f, 0.35f, 0.20f, 1.0f);  // 内側で成立：赤オレンジ
     const XMFLOAT4 kColOutside(0.20f, 0.70f, 1.0f, 1.0f); // 外側で成立：シアン
     const XMFLOAT4 kColBoth(0.45f, 1.0f, 0.55f, 1.0f);    // 両方が使う境目：緑
-    const XMFLOAT4 kColEdge(0.80f, 0.55f, 1.0f, 1.0f);    // ステージ端（原点中心）：紫
+    const XMFLOAT4 kColEdge(0.80f, 0.55f, 1.0f, 1.0f);    // ステージ端（ステージの中心から）：紫
     const XMFLOAT4 kColNow(1.0f, 0.35f, 1.0f, 1.0f);      // 今の間合い：マゼンタ
     const XMFLOAT4 kColLine(1.0f, 0.90f, 0.20f, 1.0f);    // 照準線：黄
 
-    // 同じ半径をまとめるためのキー。JSONから来た値をそのまま float 比較すると、
+    // 同じ半径をまとめるためのキー。JSON から読んだ値をそのまま float で比べると、
     // 見た目が同じ 25.0 でも別リングとして二重に描かれることがある。
     int RadiusKey(float radius) { return static_cast<int>(std::lroundf(radius * 100.0f)); }
 
@@ -41,7 +40,7 @@ namespace
     // 塗りの分割。円周は DrawWireframeCircle と同じ 24 にして、線と面の輪郭を揃える。
     constexpr int kWallSegments = 24;
 
-    // 縦の段数。色は面ごとにしか変えられないので、段を重ねて薄れさせる。
+    // 縦の段数。色は面ごとにしか変えられないので、段を重ねて上へ行くほど薄くする。
     constexpr int kWallBands = 4;
 
     // 地面の帯は輪郭の線より少しだけ下へ置く。同じ高さだとちらつく。
@@ -112,7 +111,9 @@ void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 
         const float y0 = footCenter.y + bandHeight * band;
         const float y1 = y0 + bandHeight;
 
-        const XMFLOAT4 c(color.x, color.y, color.z, m_wallAlpha);
+        // 足元の段が m_wallAlpha で、上の段ほど薄くする。
+        const float    fade = 1.0f - static_cast<float>(band) / kWallBands;
+        const XMFLOAT4 c(color.x, color.y, color.z, m_wallAlpha * fade);
 
         for (int seg = 0; seg < kWallSegments; ++seg)
         {
@@ -164,9 +165,9 @@ void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
     {
         if (node.type != BTNodeType::Condition) continue;
 
-        // ステージ端だけは中心がボスではなくステージの中心。同じ「距離を持つ条件」でも
-        // ボス中心で描くと嘘になるので、集める先から分ける。param は端からの幅なので
-        // 0 も「壁際」という有効な値（下の未設定判定より先に拾う）。
+        // ステージ端だけは、中心がボスではなくステージの中心。同じ距離の条件でも
+        // ボス中心で描くと実際の判定と違うので、集める配列を分ける。param は端からの幅なので
+        // 0 も「壁際」という有効な値（下の未設定の判定より先に拾う）。
         if (node.actionOrConditionId == C_IsAtStageEdge)
         {
             const int  key   = RadiusKey(node.param);
@@ -206,12 +207,12 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
 {
     if (!m_enabled) return;
 
-    // ShapeRenderer が無ければ描けない（NavMesh 等と同じ前提）。
+    // ShapeRenderer が無ければ描けない（NavMeshDebugDrawSystem などと同じ前提）。
     if (!m_world->HasResource<ShapeRenderer *>()) return;
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
-    // プレイヤー座標は BattleContext（世界の事実）から。無ければ照準線だけ省く。
+    // プレイヤーの座標は BattleContext から取る。プレイヤーが居なければ照準線だけ描かない。
     XMFLOAT3 playerPos(0, 0, 0);
     bool     hasPlayer = false;
 
@@ -231,7 +232,7 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
     ForEachWithID([&](EntityID                  entity,
                       const TransformComponent &trans,
                       const BossActionComponent & /*boss*/) {
-        // 地面から浮かせて Z ファイティングを避ける。埋もれるときは GUI で上げる。
+        // 地面から浮かせて Z ファイティングを避ける。地面に埋もれるときは GUI で上げる。
         const XMFLOAT3 center(trans.position.x, trans.position.y + m_heightOffset, trans.position.z);
 
         const auto *bt = m_world->GetComponent<BehaviorTreeComponent>(entity);
@@ -278,7 +279,7 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
         for (float margin : m_edgeRings)
         {
             const float radius = arenaRadius - margin;
-            if (radius <= 0.0f) continue; // 幅がステージより広い＝常に成立。描く輪が無い
+            if (radius <= 0.0f) continue; // 幅がステージより広いと常に成立するので、描く輪が無い
 
             const XMFLOAT3 origin(arenaCenter.x, center.y, arenaCenter.z);
             DrawRangeRing(renderer, origin, radius, kColEdge);
@@ -332,8 +333,8 @@ void AIDebugSpatialSystem::OnGui()
 
 // NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。
 //
-// 登録ごと切ることで「製品ビルドには存在しない」を1行で言い切る。
-// 中身を #ifdef で刻むと、動かないコードが実行順の解決対象としてだけ残る。
+// 登録ごと #ifdef で外し、製品ビルドにはこの System が存在しないようにする。
+// 中身だけを #ifdef で外すと、何もしない System が実行順の解決の対象としてだけ残る。
 #ifdef ENABLE_EDITOR
 REGISTER_RENDER_SYSTEM(AIDebugSpatialSystem, Priority::RenderStage::R08_Main);
 #endif

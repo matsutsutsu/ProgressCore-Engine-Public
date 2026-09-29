@@ -1,5 +1,13 @@
-// 基本的な陣形クラスをまとめて定義（役割ごとに1ファイル）。
 #pragma once
+// ===========================================================================
+// 概要: 攻撃しない中立の陣形（降下円陣・頭上円陣）と、頭上の待機リング。
+//
+// 責務:
+//   - OrbitCircle: ボスの周りを低い高さで周回する
+//   - HighOrbit: ボスの頭上高くで周回する（攻撃と攻撃のあいだに使う）
+//   - HighRing: 頭上円陣と弾幕が共有する待機リングの位置計算
+//   - 攻撃で使った値（attackProgress・fireDelay・chargeMode）を戻す
+// ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include <cmath>
@@ -16,7 +24,7 @@ namespace CCL::AI::Formation::Basic
         static constexpr float kHeight = 20.0f; // ボス頭上の高さ [m]（地上の間合いを塞がない）
         static constexpr float kSpin   = 0.5f;  // 回転速度 [rad/s]
 
-        /// ボス位置からの相対オフセット。ボス位置を足せば持ち場の座標になる。
+        // ボス位置からの相対オフセット。ボス位置を足せば持ち場の座標になる。
         static DirectX::SimpleMath::Vector3 SlotOffset(uint16_t localIndex,
                                                        uint16_t totalDrones,
                                                        float    time)
@@ -57,7 +65,7 @@ namespace CCL::AI::Formation::Basic
             look.Normalize();
             drone.targetLookDirection = look;
 
-            // 周回＝中立状態。攻撃で使ったスクラッチをここでリセットする
+            // 周回は中立状態。攻撃で使った一時的な値をここで戻す
             // （BT が攻撃の合間に必ず挟むので、次の攻撃へ前回の値が漏れない）。
             drone.attackProgress = 0.0f;
             drone.fireDelay      = 0.0f;
@@ -90,7 +98,7 @@ namespace CCL::AI::Formation::Basic
                 drone.targetLookDirection = look;
             }
 
-            // OrbitCircle と同じく、攻撃で使ったスクラッチをリセットする。
+            // OrbitCircle と同じく、攻撃で使った一時的な値を戻す。
             drone.attackProgress = 0.0f;
             drone.fireDelay      = 0.0f;
             drone.chargeMode     = ChargeMode::Straight;

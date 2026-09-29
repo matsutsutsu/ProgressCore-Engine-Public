@@ -1,18 +1,18 @@
 #pragma once
-// InputIconComponent を持つ UIImage のアイコンを、今触っているデバイスへ合わせる。
+// ===========================================================================
+// 概要: InputIconComponent を持つ UIImage のアイコンを、今使っているデバイスに合わせる System。
 //
-// 設計方針:
-//   - 「どのアイコンか」を決めるのはこのSystemだけ。操作説明・メニューの決定表示など
-//     アイコンを出す画面が増えても、対応表はここ1箇所にしか無い。
-//   - 毎フレーム解決し、変わったものだけ書き込む（差分書き込み）。持ち替え時だけ処理すると、
-//     ポーズメニューのように後から生成されたアイコンが次の持ち替えまで空のままになる。
-//   - デバイス判定そのものは Input が持つ（スティックのドリフト対策済み）。ここは使うだけ。
+// 責務:
+//   - 割り当て（デバイスの種類とキーコード）や固定の種類から、アイコンの画像のパスを決める
+//   - パスが変わったときだけ texturePath を書き換え、アイコンが無ければ隠す
 //
-// 実行ステージ:
-//   描画ステージ(R10_UI)に置く。ロジックステージだとポーズ中に走らないため、
-//   ポーズ中に生成されたメニューのヒントアイコン（生成時 visible=false）が、
-//   ポーズを解除するまで一度も解決されず出てこない
-//   （ポーズ中は ECSContext::UpdatePaused が UpdateRender しか回さない）。
+// 備考: どのアイコンを出すかを決めるのはこの System だけで、対応表はここにしか無い。
+//       デバイスの判定は Input が行う（スティックのドリフトも考慮済み）。
+//       毎フレーム決め直すのは、デバイスを持ち替えたときだけにすると、後から作られたアイコン
+//       （ポーズメニューのヒントなど）が次に持ち替えるまで空のままになるため。
+//       描画ステージ（R10_UI）に置くのも同じ理由。ポーズ中は ECSContext::UpdatePaused が描画の
+//       System しか回さないので、ロジックステージだとポーズ中に作ったヒントが出てこない。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
@@ -31,21 +31,20 @@ public:
     {
     }
 
-    // 同じ UIImageComponent を書く UIButtonSystem との前後を宣言する。
-    //   宣言しないと TaskScheduler に「順序不定」として警告される
-    //   （どちらが先かが並び順まかせになる）。
-    //   収集System(R10b_UICollect)より前の帯なので、ここで差し替えた見た目は同じフレームで絵に出る。
+    // 同じ UIImageComponent を書く UIButtonSystem との順番を決める。
+    // 決めないと、どちらが先かが登録順で変わり、TaskScheduler が順序不定の警告を出す。
+    // 描画用に集める System（R10b_UICollect）より前なので、ここで変えた見た目は同じフレームで出る
     std::vector<const char *> GetRunAfter() const override { return {"UIButtonSystem"}; }
 
     void Update(float dt) override;
 
 private:
     /**
-     * @brief 割り当て(デバイス種別＋キーコード)をアイコンPNGのパスへ変換する。
-     * @return 対応表に無ければ空文字（＝呼び出し側がその行を隠す）。
+     * @brief 割り当て（デバイスの種類とキーコード）を、アイコンの PNG のパスに変える。
+     * @return 対応表に無ければ空の文字列（呼び出し側がそのアイコンを隠す）
      */
     std::string ResolveBindingIcon(const InputBinding &binding, ActiveDeviceType device) const;
 
-    // 割り当てに依らない固定アイコン（移動/カメラ/メニュー操作）を返す。
+    // 割り当てに依らない固定のアイコン（移動・カメラ・メニューの操作）のパスを返す
     std::string ResolveFixedIcon(InputIconKind kind, ActiveDeviceType device) const;
 };

@@ -1,14 +1,13 @@
-// 役割・設計方針は BossHealthHudSystem.h を参照。
 #include "BossHealthHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
+#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
+#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
@@ -21,41 +20,41 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // ボスHPバーは残量で色を変えず、威圧感のあるクリムゾン固定。失った分はアンバーで見せる。
-    const DirectX::XMFLOAT4 kBossFill  = {0.80f, 0.15f, 0.18f, 1.0f};  // 深紅
-    const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f}; // アンバー（失った分）
+    // ボスの HP バーは残りの量で色を変えず、深紅のままにする。失った分は琥珀色で見せる
+    const DirectX::XMFLOAT4 kBossFill  = {0.80f, 0.15f, 0.18f, 1.0f};
+    const DirectX::XMFLOAT4 kBossTrail = {1.00f, 0.82f, 0.35f, 0.95f};
 } // namespace
 
 void BossHealthHudSystem::Initialize()
 {
-    // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
+    // ゲージとラベルはこの Canvas の子にする
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "BossHpCanvas");
 
-    // --- ゲージ本体（画面上部中央・アンカー方式） ---
+    // --- ゲージ（画面上部の中央） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                              UIProgressBarComponent>();
     auto bar     = EntityFactory::SpawnNamed(*m_world, "BossHpGauge", barArch);
 
     UITransformComponent t;
-    t.anchor = {0.5f, 0.0f};  // 画面上辺の中央
-    t.pivot  = {0.5f, 0.0f};  // 自身の上辺中央をアンカーに合わせる
-    t.offset = {0.0f, 44.0f}; // 上端から44px下
+    t.anchor = {0.5f, 0.0f};  // 画面の上辺の中央
+    t.pivot  = {0.5f, 0.0f};  // 自分の上辺の中央をアンカーに合わせる
+    t.offset = {0.0f, 44.0f}; // 上端から 44px 下
     t.size   = {900.0f, 26.0f};
 
     UIProgressBarComponent b;
     b.sortOrder  = 100;
-    b.showTrail  = true; // 遅延ダメージ（チップ）バーを有効化
+    b.showTrail  = true; // 失った分を遅れて減らすバーを出す
     b.fillColor  = kBossFill;
     b.trailColor = kBossTrail;
-    b.gradient   = 0.45f; // 下端を暗く＝ベタ塗りに見えない
+    b.gradient   = 0.45f; // 下端を暗くして、一色の塗りに見えないようにする
     b.value      = 1.0f;
     b.trailValue = 1.0f;
-    b.visible    = false; // 出現するまで隠しておく
+    b.visible    = false; // ボスが出るまで隠す
 
     bar.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(b);
     m_barID = bar.ID();
 
-    // --- ラベル（ゲージの上・中央寄せは近似オフセット） ---
+    // --- ラベル（ゲージの上。中央に見えるよう offset で寄せている） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*m_world, "BossHpLabel", labelArch);
@@ -69,7 +68,7 @@ void BossHealthHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "BOSS";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
+    lx.sortOrder = 110; // ゲージは sortOrder から +2 までの層を使うので、それより手前に置く
     lx.visible   = false;
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
@@ -82,26 +81,18 @@ void BossHealthHudSystem::Update(float dt)
     auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar) return;
 
-    // 生存中(HP>0)のボスを1体選ぶ。撃破済み(DeadTag/HP0)のボスは対象外にして戦後は隠す。
-    // ID も控えるのは、BehaviorTreeComponent を型フィルタに足さずに引くため。
-    //   フィルタに足すと「BTを持たないボス」でHUDごと消えるので、任意所持の情報は
-    //   GetComponent で取りに行く。
-    const HealthComponent *boss   = nullptr;
-    EntityID               bossID = InvalidEntityID;
-    ForEachWithID([&](EntityID id, const HealthComponent &hp, const BossActionComponent & /*tag*/) {
+    // HP が 0 より大きいボスを1体選ぶ。倒したボスは対象にせず、戦闘の後はゲージを隠す
+    const HealthComponent *boss = nullptr;
+    ForEach([&](const HealthComponent &hp, const BossActionComponent & /*tag*/) {
         if (boss) return;
-        if (hp.currentHealth > 0.0f)
-        {
-            boss   = &hp;
-            bossID = id;
-        }
+        if (hp.currentHealth > 0.0f) boss = &hp;
     });
 
     if (!boss)
     {
         bar->visible = false;
         if (txt) txt->visible = false;
-        m_init  = false; // 次のボスに備えて初回スナップし直す
+        m_init  = false; // 次のボスが出たら値を合わせ直す
         m_shake = 0.0f;
         return;
     }
@@ -110,7 +101,7 @@ void BossHealthHudSystem::Update(float dt)
                             ? std::clamp(boss->currentHealth / boss->maxHealth, 0.0f, 1.0f)
                             : 0.0f;
 
-    // 初回は瞬時に合わせる（出現時にバーがスッと減って見えないように）。
+    // 最初は遅れて減るバーもすぐに合わせる（出た瞬間にバーが減っていくように見えないように）
     if (!m_init)
     {
         bar->trailValue = ratio;
@@ -122,22 +113,22 @@ void BossHealthHudSystem::Update(float dt)
     bar->value   = ratio;
     if (txt) txt->visible = true;
 
-    // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
+    // HP が減ったら、遅れて減るバーを少し止めて失った分を見せ、ゲージを揺らす
     if (ratio < m_prevRatio - 1e-4f)
     {
         m_trailHold = kTrailHold;
-        m_shake     = 1.0f; // 当たった瞬間にゲージを揺らす
-        m_shakeTime = 0.0f; // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+        m_shake     = 1.0f;
+        m_shakeTime = 0.0f; // 毎回同じ揺れ方から始める
     }
 
-    // 揺れは指数減衰。ウィジェットは揺れ量を持つだけで、減らすのは供給側の仕事。
+    // 揺れを指数関数的に減らす。ウィジェットは揺れの量を持つだけで、減らすのはこの System
     m_shakeTime += dt;
     m_shake -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
-    if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
+    if (m_shake < 0.02f) m_shake = 0.0f; // わずかな揺れが 1px 残り続けないように 0 にする
     bar->shake        = m_shake;
     bar->shakeElapsed = m_shakeTime;
 
-    // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
+    // 遅れて減るバー: 回復・変化なしならすぐ合わせ、被弾したら少し止めてから value へ近づける
     if (ratio >= bar->trailValue)
     {
         bar->trailValue = ratio;

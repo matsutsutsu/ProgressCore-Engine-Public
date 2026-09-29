@@ -1,99 +1,92 @@
 #pragma once
 // ===========================================================================
-// CombatComponents.h
-// ------------------
-// 役割:   戦闘の当たり判定(Hitbox/Hurtbox)とダメージイベントのデータ定義。
-// 責務:   攻撃側/被弾側の素パラメータと、命中という出来事(Event)のデータ表現。
-// 位置付け:
-//   HitboxCollisionSystem(L05) が判定し DamageEvent を生成、
-//   DamageResolutionSystem(L06) が消費して HP減算・ノックバック適用。
-// 設計方針: 全て POD。多段ヒット防止は固定長配列(ヒープ確保回避)。
-//           1対1アクションボス戦のためクリティカルの概念は持たない。
+// 概要: 戦闘の当たり判定（攻撃側の Hitbox・受ける側の Hurtbox）と、命中1回ぶんのイベントのコンポーネント。
+//
+// 責務:
+//   - 攻撃側と受ける側のパラメータを持つ
+//   - 命中1回ぶんの結果（DamageEventComponent）を持つ
+//   - SpawnHitboxSystem が作る判定の寿命を持つ
+//
+// 備考: HitboxCollisionSystem（L05）が命中を判定して DamageEvent を作り、
+//       DamageResolutionSystem（L06）が HP を減らしてノックバックを書く。
+//       すべて POD。多段ヒットの履歴はヒープを使わないよう固定長の配列にする。
+//       1対1のボス戦なので、クリティカルは持たない。
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "SimpleMath.h"
 
-// --- 1. 攻撃側の判定データ ---
-// 攻撃判定。剣・弾など「ダメージを与える側」が持つ。
+// 攻撃判定。剣・ドローンなどダメージを与える側が持つ
 struct HitboxComponent
 {
-    CCL::ECS::EntityID ownerID      = CCL::ECS::InvalidEntityID; // ダメージ帰属
-    float              damageAmount = 0.0f;                      // 基礎ダメージ量
-    bool               isActive     = false;                     // 判定が生きているか
+    CCL::ECS::EntityID ownerID      = CCL::ECS::InvalidEntityID; // 誰の攻撃か
+    float              damageAmount = 0.0f;                      // 基本のダメージ量
+    bool               isActive     = false;                     // 判定が開いているか
 
-    float knockback = 0.0f; // ノックバックの強さ(0で無効)
+    float knockback = 0.0f; // ノックバックの強さ（0 なら押さない）
 
-    // 多段ヒット防止用の固定長配列
+    // 多段ヒットを防ぐための、当てた相手の履歴
     static constexpr uint8_t MAX_HIT_TARGETS             = 8;
-    CCL::ECS::EntityID       hitTargets[MAX_HIT_TARGETS] = {}; // ヒット済み対象のID
-    uint8_t                  hitCount                    = 0;  // 現在ヒットした数
+    CCL::ECS::EntityID       hitTargets[MAX_HIT_TARGETS] = {}; // 当てた相手
+    uint8_t                  hitCount                    = 0;  // hitTargets に入っている数
 
-    // ノックバック方向・のけぞり方向を決めるときの幾何の原点。
-    //   false(既定) = ownerID。剣は持ち主の子なので、持ち主の前方を主軸にすると
-    //                 「振った向きへ飛ぶ」が成立する。
-    //   true        = この判定自身。ドローンのように攻撃体が持ち主から遠く離れる
-    //                 場合、ownerID を原点にすると背後から突っ込まれても
-    //                 「ボスの正面から食らった」向きに吹き飛ぶ。
-    //   ダメージの帰属(ownerID)は変えない。分けたいのは幾何だけ。
+    // ノックバックとのけぞりの向きを決めるときの基準の位置。
+    //   false（既定）: ownerID。剣は持ち主の子なので、持ち主の前方を基準にすると振った向きへ飛ぶ。
+    //   true         : この判定自身。ドローンのように持ち主から遠く離れて当たる場合、ownerID を基準にすると
+    //                  背後から当たってもボスの正面から当たった向きに飛んでしまう。
+    // どちらでも ownerID（誰の攻撃か）は変えない。変えるのは向きの基準だけ
     bool useSelfAsHitOrigin = false;
 
-    // --- CombatAnimationSyncSystem による Hitbox 駆動用 ---
-    // ownerEntity = Animator + CombatRoster を持つルート(剣→キャラの逆引き)。
-    // tagHash     = roster.entries[i].tag のハッシュ("RightHand"等)。
+    // --- CombatAnimationSyncSystem が使う ---
+    // ownerEntity: 親をたどって見つけた、Animator を持つ持ち主（剣ならキャラ）
+    // tagHash    : どの HitBox 区間で開くかのタグのハッシュ。0 ならどの区間でも開く。
+    //              今は書いている所が無く、常に 0
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
     uint32_t           tagHash     = 0;
 
-    // ownerEntity の逆引きを試したか。
-    //   「解決できなかった」も結果なので覚えておく。覚えないと、親を持たない判定
-    //   （空間生成の弾・ドローン）は毎フレーム親を辿り直すことになる。
+    // ownerEntity を探したか。見つからなかったことも覚えておく。覚えないと、親を持たない判定
+    // （SpawnHitboxSystem の球・ドローン）が毎フレーム親をたどり直すことになる
     bool ownerResolved = false;
 
-    // --- ヒットストップ(命中時に時間制御側へ伝える受け皿。配線は別途) ---
-    float hitStopDuration = 0.0f; // 命中時のヒットストップ時間(秒)
-    float hitStopScale    = 1.0f; // ヒットストップ中のタイムスケール
+    // --- ヒットストップ（DamageResolutionSystem が攻撃した側と受けた側の両方にかける） ---
+    float hitStopDuration = 0.0f; // 長さ（秒）
+    float hitStopScale    = 1.0f; // その間の時間の速さ
 };
 
-// --- 2. 被弾側の判定データ ---
-// 被弾判定。敵・プレイヤーなど「ダメージを受ける側」が持つ。
+// 被弾判定。敵・プレイヤーなどダメージを受ける側が持つ
 struct HurtboxComponent
 {
-    float damageMultiplier = 1.0f; // 弱点なら2.0など
+    float damageMultiplier = 1.0f; // 受けるダメージの倍率（弱点なら 2.0 など）
 };
 
-// --- 3. ダメージイベント・エンティティ用コンポーネント ---
-// 1回の命中という「出来事」。判定Systemが生成し、解決Systemが消費して破棄する。
+// 命中1回ぶんの結果。HitboxCollisionSystem がこれを持つエンティティを作り、
+// DamageResolutionSystem が処理して消す
 struct DamageEventComponent
 {
-    CCL::ECS::EntityID targetID    = CCL::ECS::InvalidEntityID; // 誰がダメージを受けるか
-    CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; // 誰が攻撃したか（帰属）
-    float              finalDamage = 0.0f;                      // 計算済み最終ダメージ
+    CCL::ECS::EntityID targetID    = CCL::ECS::InvalidEntityID; // ダメージを受ける相手
+    CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; // 誰の攻撃か
+    float              finalDamage = 0.0f;                      // 倍率をかけた後のダメージ
 
-    // 「どこから来た攻撃か」の幾何の原点。剣なら持ち主、ドローンならその機体。
-    //   attackerID（帰属先）と別に持つのは、ドローンの攻撃をボスの手柄にしたまま
-    //   のけぞり方向だけは実際に当てた機体から取りたいため。
+    // 攻撃が来た位置の基準（剣なら持ち主、ドローンならその機体）。
+    // attackerID と別に持つのは、ドローンの攻撃をボスの攻撃として扱いつつ、
+    // のけぞりの向きは実際に当たった機体から求めたいため
     CCL::ECS::EntityID hitOriginID = CCL::ECS::InvalidEntityID;
 
     DirectX::SimpleMath::Vector3 knockbackDir   = DirectX::SimpleMath::Vector3::Zero;
     float                        knockbackForce = 0.0f;
 
-    // --- ヒットストップ(判定時に確定、解決System が双方の時計へ適用) ---
-    float hitStopDuration = 0.0f; // ヒットストップ時間(秒)
-    float hitStopScale    = 0.0f; // 停止中のタイムスケール(0で完全停止)
+    // --- ヒットストップ（判定したときに決め、DamageResolutionSystem が両方にかける） ---
+    float hitStopDuration = 0.0f; // 長さ（秒）
+    float hitStopScale    = 0.0f; // その間の時間の速さ（0 で止まる）
 
-    // --- 命中エフェクト用の接触点(判定時に確定) ---
-    // 攻撃判定と被弾者の中点あたり。解決System が確定ヒット時に HitImpactEvent へ載せる。
+    // 当たった位置（物理の接触点。ワールド座標）。DamageResolutionSystem が HitImpactEvent に載せる
     DirectX::SimpleMath::Vector3 hitPosition = DirectX::SimpleMath::Vector3::Zero;
 };
 
-// --- 4. 生成型ヒットボックスの寿命(ランタイム専用) ---
-// アニメ由来で生成された球状 Hitbox の自動消滅タイマー。
-//
-// SpawnHitboxSystem が生成時に付与し、毎フレーム remainingLife を減らして
-// 0 以下で自身を Destroy する。剣など「既存の子コライダを ON/OFF する
-// Hitbox」には付与しない(そちらは寿命を持たず、アニメ区間で駆動される)。
-//
-// 転がり続ける弾ではなく一瞬の空間判定用。保存対象外・非表示の内部タグ。
+// SpawnHitboxSystem が作る球の攻撃判定の寿命。
+// SpawnHitboxSystem が付け、毎フレーム remainingLife を減らして 0 以下になったら消す。
+// 剣のように子のコライダを開け閉めする判定には付けない（そちらはアニメーションの区間で開け閉めする）。
+// 保存せず、インスペクタにも出さない
 struct HitboxLifetimeComponent
 {
-    float remainingLife = 0.0f; // 残り生存時間(秒)。0以下で Destroy 対象。
+    float remainingLife = 0.0f; // 残りの時間（秒）
 };

@@ -1,4 +1,3 @@
-
 #include "CameraTargetBindSystem.h"
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
@@ -46,20 +45,19 @@ EntityID CameraTargetBindSystem::FindBoss()
     return InvalidEntityID;
 }
 
-void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &target, EntityID player)
+void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &target, EntityID entity)
 {
-    if (player == InvalidEntityID) return;
-    if (!m_world->IsEntityValid(target.id)) target.id = player;
+    if (entity == InvalidEntityID) return;
+    if (!m_world->IsEntityValid(target.id)) target.id = entity;
 }
 
 void CameraTargetBindSystem::Update(float /*dt*/)
 {
     const EntityID playerId = FindPlayer();
-    const EntityID bossId   = FindBoss(); // 居ないシーンでは Invalid のまま（演出側が打ち切る）
+    const EntityID bossId   = FindBoss(); // ボスが居ないシーンでは Invalid のまま（演出側が打ち切る）
     if (playerId == InvalidEntityID && bossId == InvalidEntityID) return;
 
-    // カメラ本体(VirtualCamera)を持つエンティティを走査し、
-    // 載っている「体(Body)」の種類ごとに target を繋ぎ直す。
+    // VirtualCamera を持つエンティティを走査し、付いているカメラ Component の種類ごとに target を繋ぎ直す。
     ForEachWithID([&](EntityID camID, const VirtualCamera & /*vcam*/) {
         if (auto *follow = m_world->GetComponent<CameraBodyFollow>(camID))
             BindIfInvalid(follow->target, playerId);
@@ -71,7 +69,7 @@ void CameraTargetBindSystem::Update(float /*dt*/)
             BindIfInvalid(tps->target, playerId);
 
         // 導入演出カメラだけはプレイヤーではなくボスを見る。
-        // これでプレハブを置くだけで演出が成立し、EntityID の手動設定が要らない。
+        // プレハブを置くだけで演出が動き、EntityID を手で設定しなくてよい。
         if (auto *intro = m_world->GetComponent<CameraBodyIntroOrbit>(camID))
             BindIfInvalid(intro->target, bossId);
     });

@@ -1,8 +1,6 @@
 // BossCommandComponent のシリアライズ/インスペクタ定義。
 //
-// targetPlayerId は撤去した。シリアライズ欄はあったが、コード上どこからも
-// 読まれていない死にフィールドだった。「誰を狙うか」は
-// AIBlackboard::targetEntity（知覚システムが毎フレーム解決する）が持つ。
+// 狙う相手はここに持たない。AIBlackboard::targetEntity（BossPerceptionSystem が毎フレーム決める）が持つ。
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h" // kDroneFormationNames
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
@@ -29,14 +27,12 @@ struct ComponentMeta<BossCommandComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // このコンポーネントは「AIが今フレーム何をやってほしいか」の伝票で、
-            // 全フィールドが毎フレーム上書きされる実行時の値。保存してはいけない。
-            //   実際に Muriel.json には currentActionId=1101(薙ぎ払い) と
-            //   requestFormation=5 が焼き付いており、ボスが「薙ぎ払いの最中」として
-            //   生まれてきていた。インスペクタでは見たいので、保存だけ止める。
+            // どのフィールドも BT が実行中に書く値なので、保存しない。
+            //   保存すると、保存した瞬間の技や陣形がプレハブに残り、ボスが技の途中の状態から始まる。
+            //   インスペクタでは見たいので、保存だけを止める。
             CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
-                CFIELD_RT(currentActionDuration, "現在の技の全体時間 [秒]", "Current Command")
-                CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};
+            CFIELD_RT(currentActionDuration, "現在の技の全体時間 [秒]", "Current Command")
+            CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};
         return fields;
     }
 };

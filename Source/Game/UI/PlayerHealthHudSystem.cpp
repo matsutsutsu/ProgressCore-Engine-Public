@@ -1,14 +1,13 @@
-// 役割・設計方針は PlayerHealthHudSystem.h を参照。
 #include "PlayerHealthHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
+#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
+#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
@@ -22,36 +21,36 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // HP比で色を変える（緑→黄→赤）。エディタのHP表と同系色。
+    // HP の割合で色を変える（50% より上は緑、25% より上は黄、それ以下は赤）
     DirectX::XMFLOAT4 HpColor(float ratio)
     {
-        if (ratio > 0.5f) return {0.30f, 0.82f, 0.35f, 1.0f};  // 緑
-        if (ratio > 0.25f) return {0.95f, 0.78f, 0.15f, 1.0f}; // 黄
-        return {0.90f, 0.25f, 0.20f, 1.0f};                    // 赤
+        if (ratio > 0.5f) return {0.30f, 0.82f, 0.35f, 1.0f};
+        if (ratio > 0.25f) return {0.95f, 0.78f, 0.15f, 1.0f};
+        return {0.90f, 0.25f, 0.20f, 1.0f};
     }
 } // namespace
 
 void PlayerHealthHudSystem::Initialize()
 {
-    // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
+    // ゲージとラベルはこの Canvas の子にする
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "PlayerHpCanvas");
 
-    // --- ゲージ本体（左上・アンカー方式） ---
+    // --- ゲージ（画面左上） ---
     auto barArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                              UIProgressBarComponent>();
     auto bar     = EntityFactory::SpawnNamed(*m_world, "PlayerHpGauge", barArch);
 
     UITransformComponent t;
-    t.anchor = {0.0f, 0.0f}; // 画面左上
+    t.anchor = {0.0f, 0.0f}; // 画面の左上
     t.pivot  = {0.0f, 0.0f};
     t.offset = {48.0f, 48.0f};
     t.size   = {420.0f, 28.0f};
 
     UIProgressBarComponent b;
     b.sortOrder  = 100;
-    b.showTrail  = true; // 遅延ダメージ（チップ）バーを有効化
+    b.showTrail  = true; // 失った分を遅れて減らすバーを出す
     b.fillColor  = HpColor(1.0f);
-    b.gradient   = 0.45f; // 下端を暗く＝ベタ塗りに見えない
+    b.gradient   = 0.45f; // 下端を暗くして、一色の塗りに見えないようにする
     b.value      = 1.0f;
     b.trailValue = 1.0f;
 
@@ -72,7 +71,7 @@ void PlayerHealthHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "HP";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
+    lx.sortOrder = 110; // ゲージは sortOrder から +2 までの層を使うので、それより手前に置く
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();
@@ -80,21 +79,21 @@ void PlayerHealthHudSystem::Initialize()
 
 void PlayerHealthHudSystem::Update(float dt)
 {
-    // 生成直後はコンポーネントが未反映のことがあるので null 許容。
+    // 生成した直後はコンポーネントがまだ反映されていないことがあるので、null なら何もしない
     auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
     auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar) return;
 
     bool found = false;
     ForEach([&](const HealthComponent &hp, const PlayerComponent & /*tag*/) {
-        if (found) return; // プレイヤーは1体想定。最初の1つだけHUDへ。
+        if (found) return; // プレイヤーは1体の前提。最初の1つだけを表示する
         found = true;
 
         const float ratio = (hp.maxHealth > 0.0f)
                                 ? std::clamp(hp.currentHealth / hp.maxHealth, 0.0f, 1.0f)
                                 : 0.0f;
 
-        // 初回は瞬時に合わせる（起動時にバーがスッと減って見えないように）。
+        // 最初は遅れて減るバーもすぐに合わせる（起動した瞬間にバーが減っていくように見えないように）
         if (!m_init)
         {
             bar->trailValue = ratio;
@@ -102,39 +101,38 @@ void PlayerHealthHudSystem::Update(float dt)
             m_init          = true;
         }
 
-        // 本体フィルは現在HPへ即追従＋残量で色分け。
         bar->visible   = true;
         bar->value     = ratio;
         bar->fillColor = HpColor(ratio);
 
-        // 被弾（HPが減った）を検出したら、遅延バーの「溜め」をリセットして失った分を見せる。
+        // HP が減ったら、遅れて減るバーを少し止めて失った量を見せ、ゲージを揺らして当たったことを伝える
         if (ratio < m_prevRatio - 1e-4f)
         {
             m_trailHold = kTrailHold;
-            m_shake     = 1.0f; // 「今当たった」をゲージの震えで伝える（遅延バーは「失った量」）
-            m_shakeTime = 0.0f; // 位相を頭出し＝毎回同じ「ビクッ」から始まる
+            m_shake     = 1.0f;
+            m_shakeTime = 0.0f; // 毎回同じ揺れ方から始める
         }
 
-        // 揺れの減衰は供給側の仕事。ウィジェットは揺れ量を持つだけにしておく。
+        // 揺れを減らすのはこの System。ウィジェットは揺れの量を持つだけ
         m_shakeTime += dt;
         m_shake -= m_shake * CCL::Math::Damp(kShakeDecay, dt);
-        if (m_shake < 0.02f) m_shake = 0.0f; // 端数で1px残り続けないように切る
+        if (m_shake < 0.02f) m_shake = 0.0f; // わずかな揺れが 1px 残り続けないように 0 にする
         bar->shake        = m_shake;
         bar->shakeElapsed = m_shakeTime;
 
-        // 遅延バー：回復/据え置きは即追従、被弾直後は溜めのあと ease で value まで減っていく。
+        // 遅れて減るバー: 回復・変化なしならすぐ合わせ、被弾したら少し止めてから value へ近づける
         if (ratio >= bar->trailValue)
         {
-            bar->trailValue = ratio; // 増加・回復は差分を見せず即キャッチアップ
+            bar->trailValue = ratio;
         }
         else if (m_trailHold > 0.0f)
         {
-            m_trailHold -= dt; // 溜め中は失った分を保持して見せる
+            m_trailHold -= dt;
         }
         else
         {
             const float k = CCL::Math::Damp(kTrailSpeed, dt);
-            bar->trailValue += (ratio - bar->trailValue) * k; // スッと value まで追いつく
+            bar->trailValue += (ratio - bar->trailValue) * k;
         }
 
         if (txt)
@@ -150,7 +148,7 @@ void PlayerHealthHudSystem::Update(float dt)
         m_prevRatio = ratio;
     });
 
-    // プレイヤーが居ないシーン（タイトル等）ではHUDを隠す。
+    // プレイヤーが居ないシーン（タイトルなど）では隠す
     if (!found)
     {
         bar->visible = false;

@@ -1,13 +1,20 @@
-// ドローン個体の判断層。DroneComponent.currentState を決めるだけで、補間や
-// 速度計算には関与しない（それは実行層＝DroneMovementSystem の仕事）。
-//
-// BT のような汎用ステートマシンを使わないのは、状態が固定で木構造の可読性が効かず、
-// ノード評価ごとの GetComponent<> で 1000機×毎フレームの連続配置が崩れるため。
-// ボス1体のような「複雑で調整したい判断」とはコスト構造が逆になるのが線引き。
-//
-// 実行順序は L02_PreUpdate。陣形側(L02_Update)が今フレームの currentState を見て
-// 形を作れるようにする。ここを動かすと予備動作→突撃が1フレームずれる。
 #pragma once
+// ===========================================================================
+// 概要: ドローン個体の判断層。DroneComponent.currentState を毎フレーム決める System。
+//
+// 責務:
+//   - 硬直・突撃・離脱・接近・待機のうち、優先度順に最初に成立したものを選ぶ
+//   - 突撃の開始（方向の固定）と、個別寿命の突撃の終了判断を行う
+//   - 吹き飛ばし・立て直しのタイマーを進める
+//
+// 備考:
+//   補間や速度計算は行わない（DroneMovementSystem が担う）。
+//   BT を使わないのは、状態が固定で木構造にする利点が無く、ノード評価ごとの
+//   GetComponent<> で 1000機×毎フレームの連続アクセスが崩れるため。ボス1体のように
+//   判断が複雑で調整したい場合とは、コストの傾向が逆になる。
+//   実行は L02_PreUpdate。陣形側(L02_Update)が今フレームの currentState を見て
+//   形を作れるようにする。ステージを動かすと予備動作→突撃が1フレームずれる。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -31,25 +38,25 @@ private:
     // 閾値をまたいで MoveToTarget が点滅するので、hasReachedSlot にラッチする。
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
-    /// 吹き飛ばし・立て直しのタイマーを進める。true なら硬直中（通常AIを行わない）。
+    // 吹き飛ばし・立て直しのタイマーを進める。true なら硬直中（通常AIを行わない）。
     bool UpdateStun(DroneComponent &drone, float dt) const;
 
-    /// 突撃を切り上げるべきか（個別寿命の攻撃のみ）。飛距離が本命で、経過時間は
-    /// 壁際・遠距離で飛距離が伸びない場合の保険。
+    // 突撃を切り上げるべきか（個別寿命の攻撃のみ）。主に飛距離で判定し、経過時間は
+    // 壁際・遠距離で飛距離が伸びない場合の保険にする。
     bool HasFinishedCharge(const TransformComponent &trans, DroneComponent &drone, float dt) const;
 
-    /// FireCharge へ入った瞬間だけ走る初期化。ここで方向を固定するので、移動層の
-    /// 「タメ→リリース」がコミットした直進として成立する（ホーミングしない）。
+    // FireCharge へ入った瞬間だけ行う初期化。ここで方向を固定するので、移動層の
+    // 「タメ→リリース」は方向を変えない直進になる（ホーミングしない）。
     void BeginCharge(DroneComponent                     &drone,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      bool                                hasPlayer) const;
 
-    static constexpr float kArriveThreshold = 2.5f;  // 陣形スロットへ到着とみなす距離
+    static constexpr float kArriveThreshold = 2.5f;  // 陣形スロットへ到着とみなす距離 [m]
     static constexpr float kChargeWindup    = 0.4f;  // 突撃前のタメ時間 [秒]
     static constexpr float kRecoverBase     = 0.30f; // 吹き飛ばし後に通常AIへ戻るまで [秒]
     static constexpr float kRecoverStagger  = 0.08f; // 立て直しの機体差。一斉だと群れが機械的に見える
 
-    // この距離を飛んだら突撃終わり。短くすると「届く前にやめる」ので間合いから逆算する。
+    // この距離 [m] を飛んだら突撃を終える。短いと届く前にやめるので、間合いから逆算する。
     //   発射地点はボスの 14m 上、BTの発動条件は 距離>30m なので、水平 50m なら
     //   √(50²+14²) ≒ 52m の飛距離が要る。56m あれば水平 54m まで貫ける。
     static constexpr float kChargeRange = 56.0f;

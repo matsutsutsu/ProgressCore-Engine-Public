@@ -1,4 +1,3 @@
-// 役割・設計方針は CleaveGaugeHudSystem.h を参照。
 #include "CleaveGaugeHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -7,7 +6,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
+#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
@@ -19,24 +18,24 @@ using namespace CCL::ECS;
 
 namespace
 {
-    const DirectX::XMFLOAT4 kColReady  = {1.0f, 0.843f, 0.235f, 1.0f}; // ストックあり：ゴールド
-    const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // ストック0で蓄積中：ブルー
+    const DirectX::XMFLOAT4 kColReady  = {1.0f, 0.843f, 0.235f, 1.0f}; // ストックがあるとき（金）
+    const DirectX::XMFLOAT4 kColCharge = {0.275f, 0.667f, 1.0f, 1.0f}; // ストックが 0 でためているとき（青）
 } // namespace
 
 void CleaveGaugeHudSystem::Initialize()
 {
-    // UI階層のルート。配下(ゲージ/ラベル)をこの Canvas の子にしてヒエラルキーで束ねる。
+    // ゲージとラベルはこの Canvas の子にする
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "CleaveCanvas");
 
-    // --- ゲージ本体（左下・アンカー方式。次のストックまでの蓄積を表示） ---
+    // --- ゲージ（画面左下。次のストックまでのたまり具合） ---
     auto gaugeArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                UIProgressBarComponent>();
     auto gauge     = EntityFactory::SpawnNamed(*m_world, "CleaveGauge", gaugeArch);
 
     UITransformComponent gt;
-    gt.anchor = {0.0f, 1.0f};    // 画面左下
-    gt.pivot  = {0.0f, 0.0f};    // 自身の左上をアンカーに合わせる
-    gt.offset = {48.0f, -72.0f}; // 左から48px / 下端から72px上
+    gt.anchor = {0.0f, 1.0f};    // 画面の左下
+    gt.pivot  = {0.0f, 0.0f};    // 自分の左上をアンカーに合わせる
+    gt.offset = {48.0f, -72.0f}; // 左から 48px、下端から 72px 上
     gt.size   = {340.0f, 24.0f};
 
     UIProgressBarComponent gb;
@@ -47,7 +46,7 @@ void CleaveGaugeHudSystem::Initialize()
     gauge.Set(CCL::GameUI::MakeUINode(canvas)).Set(gt).Set(gb);
     m_gaugeID = gauge.ID();
 
-    // --- ラベル（ゲージの上。ストック数を表示） ---
+    // --- ラベル（ゲージの上。ストック数） ---
     auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                UITextComponent>();
     auto label     = EntityFactory::SpawnNamed(*m_world, "CleaveLabel", labelArch);
@@ -61,7 +60,7 @@ void CleaveGaugeHudSystem::Initialize()
     UITextComponent lx;
     lx.text      = "CLEAVE";
     lx.pixelSize = 18.0f;
-    lx.sortOrder = 110; // ゲージは sortOrder+4 まで使うので、被らない位置へ
+    lx.sortOrder = 110; // ゲージは sortOrder から +2 までの層を使うので、それより手前に置く
 
     label.Set(CCL::GameUI::MakeUINode(canvas)).Set(lt).Set(lx);
     m_labelID = label.ID();
@@ -69,14 +68,14 @@ void CleaveGaugeHudSystem::Initialize()
 
 void CleaveGaugeHudSystem::Update(float /*dt*/)
 {
-    // 生成直後はコンポーネントが未反映のことがあるので null 許容。
+    // 生成した直後はコンポーネントがまだ反映されていないことがあるので、null でも続ける
     auto *bar = (m_gaugeID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_gaugeID) : nullptr;
     auto *txt = (m_labelID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_labelID) : nullptr;
     if (!bar && !txt) return;
 
     bool found = false;
     ForEach([&](const CleaveComponent &c) {
-        if (found) return; // プレイヤーは1体想定。最初の1つだけHUDへ。
+        if (found) return; // プレイヤーは1体の前提。最初の1つだけを表示する
         found = true;
 
         const float ratio = (c.maxGauge > 0.0f) ? (c.gauge / c.maxGauge) : 0.0f;
@@ -96,7 +95,7 @@ void CleaveGaugeHudSystem::Update(float /*dt*/)
         }
     });
 
-    // Cleave を持つエンティティがまだ無ければHUDを隠す。
+    // CleaveComponent を持つエンティティが無ければ隠す
     if (!found)
     {
         if (bar) bar->visible = false;

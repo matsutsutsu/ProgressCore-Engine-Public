@@ -15,30 +15,28 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 攻撃の意思を表す唯一のトリガー。通常/ダッシュ/空中/コンボの分岐はグラフ側が
-//   パラメータ(Speed/IsAirborne/IsDashing)とキャンセル窓で判断するため、
-//   コードは DashAttack / AirAttack のトリガーを積まない（分岐知識をデータに一元化）。
+// 攻撃入力を表すトリガーはこれ1つだけ。通常/ダッシュ/空中/コンボの分岐はアニメグラフが
+//   パラメータ（DashAttackReady / IsAirborne など）とキャンセル区間で決めるため、
+//   コードは攻撃の種類ごとのトリガーを出さない（どの攻撃かの知識をグラフにまとめる）。
 static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 
 namespace
 {
-    // --- オートフェイシングのチューニング（定数のみ：変更頻度が低いため file-scope に置く） ---
-    constexpr float kFaceDuration = 0.22f;               // 攻撃時に敵へ回頭させる時間(秒)
-    const float     kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積閾値（cos70°）
-    //   ※自動フェイシングの最大距離は PlayerComponent.attackFaceMaxDistance（エディタ調整可）を使う。
+    // 攻撃時に敵の方へ向く処理の定数。最大距離は PlayerComponent.attackFaceMaxDistance（エディタで調整できる）
+    constexpr float kFaceDuration = 0.22f;               // 敵の方へ向き直る時間（秒）
+    const float     kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積のしきい値（cos70°）
 } // namespace
 
-// プレイヤーの前方の一番近い敵を探す処理
 EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
                                                 const Vector3 &forward, float range, float coneCos)
 {
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    // 候補はドローンぶんだけ増えるので、一覧に貯めずその場で絞り込む。
+    // 候補を一覧に溜めず、走査しながら最も近いものを残す。
     m_world->ViewEach<HealthComponent, TransformComponent>([&](EntityID id) {
         if (id == selfID) return;
-        if (m_world->HasComponent<PlayerComponent>(id)) return; // 味方（プレイヤー）は除外
+        if (m_world->HasComponent<PlayerComponent>(id)) return; // プレイヤーは除く
         if (m_world->HasComponent<Tag::DeadTag>(id)) return;
 
         const auto *hp = m_world->GetComponent<HealthComponent>(id);
@@ -55,7 +53,7 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
         dir.Normalize();
         if (dir.Dot(forward) < coneCos) return; // 前方コーンの外は無視
 
-        bestDistSq = distSq; // より近い敵を採用
+        bestDistSq = distSq;
         best       = id;
     });
     return best;
@@ -67,7 +65,7 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
     if (!ptrans) return;
     const Vector3 playerPos(ptrans->position);
 
-    // 1. 対象決定：ロックオン中の敵を最優先。無ければ前方最寄りの敵。
+    // 対象はロックオン中の敵を優先し、無ければ前方で最も近い敵にする。
     EntityID target = InvalidEntityID;
     if (player.lockOnTargetID != InvalidEntityID &&
         m_world->IsEntityValid(player.lockOnTargetID) &&
@@ -80,17 +78,17 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
         const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
         target = FindBestFrontEnemy(playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
     }
-    if (target == InvalidEntityID) return; // 敵が居なければ向いてる方向のまま攻撃
+    if (target == InvalidEntityID) return; // 敵が居なければ今の向きのまま攻撃する
 
-    // 2. 対象方向の yaw を求めて回頭を予約（実際の回頭は PlayerMoveSystem が担う）。
+    // 対象方向の yaw を書いておく（実際に向きを変えるのは PlayerMoveSystem）。
     const auto *etrans = m_world->GetComponent<TransformComponent>(target);
     if (!etrans) return;
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
     if (to.LengthSquared() < 1e-4f) return;
 
-    // 近いときだけ向く：対象が attackFaceMaxDistance より遠ければ回頭しない。
-    //   ロックオン中でも遠い敵には勝手に向かず、入力方向のまま攻撃できる（遠距離での暴発防止）。
+    // 対象が attackFaceMaxDistance より遠ければ向かない。
+    //   ロックオン中でも遠い敵には向かず、入力方向のまま攻撃できるようにする。
     if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance) return;
 
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
@@ -105,27 +103,23 @@ void PlayerAttackSystem::Update(float dt)
                       AnimParametersComponent    &animParams,
                       PlayerComponent            &player,
                       const CleaveComponent      &cleave) {
-        // 攻撃ボタンは Idle のときだけ「攻撃」を意味する。Ready/Lunging 中の解釈は
-        // PlayerCleaveSystem が持つ（対応表は CleavePhase の宣言を参照）。
+        // 攻撃ボタンが攻撃を意味するのは切り払いが Idle のときだけ。Ready/Lunging 中は
+        // PlayerCleaveSystem が扱う（対応表は CleavePhase の宣言を参照）。
         if (cleave.phase != CleavePhase::Idle)
             return;
 
         if (pin.attackPressed)
         {
-            // 攻撃の瞬間に対象へ回頭を予約（地上/空中どちらも）。
+            // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）。
             SetAttackFacing(playerID, player);
 
-            // 攻撃の意思は常に単一の Attack トリガーで表現する。
-            //   「通常 / ダッシュ攻撃 / 空中攻撃 / コンボ継続」の分岐は、アニメグラフが
-            //   パラメータ(Speed / IsAirborne / IsDashing)とキャンセル窓で判断する。
-            //   これで“どの攻撃か”の知識をグラフ(データ)へ一元化し、コードは状態名を見ない。
-            //   → ダッシュ攻撃後に速度が残っていても Attack を積み続けるだけで
-            //      DashAttack → Attack_1 → Attack_2 がグラフの遷移で自然に繋がる。
+            // 攻撃は常に Attack トリガー1つで出す（第2引数は先行入力として保持する秒数）。
+            //   通常 / ダッシュ攻撃 / 空中攻撃 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない。
+            //   そのため Attack を出し続けるだけで、DashAttack → Attack_1 → Attack_2 がグラフの遷移で繋がる。
             animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
 
-            // ダッシュ中に攻撃したら、ダッシュの無敵・ジャスト回避受付を打ち切り、
-            // 再ダッシュの暴発を防ぐクールダウンを入れる（グラフが DashAttack を選ぶ際の側効果）。
-            // ※状態名の直書きではなく、コンポーネントの実状態 dash.isDashing に基づく処理。
+            // ダッシュ中に攻撃したら、ダッシュの無敵とジャスト回避の受付を打ち切り、
+            // すぐに再ダッシュが出ないようクールダウンを入れる。
             if (dash.isDashing)
             {
                 dash.isDashing               = false;
@@ -137,5 +131,5 @@ void PlayerAttackSystem::Update(float dt)
     });
 }
 
-// 実行タイミング：PlayerInputSystem(L01_Input)の直後、AnimControllerSystem(L02_Update)より前
+// PlayerInputSystem(L01_Input) の後（GetRunAfter）、AnimControllerSystem(L02_Update) より前に走る。
 REGISTER_LOGIC_SYSTEM(PlayerAttackSystem, Priority::LogicStage::L01_Input);

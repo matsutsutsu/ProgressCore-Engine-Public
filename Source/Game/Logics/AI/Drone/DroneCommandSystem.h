@@ -1,9 +1,15 @@
-// ボスの命令（BossCommandComponent）を全ドローンへ配布する「伝令」システム。
-// ボスBT は自分の出力にだけ書き込み、1000機のドローンを直接触らない。
-//
-//   requestFormation  → 各 DroneComponent.currentFormation
-//   droneAttackActive → 各 DroneComponent.wantsAttack
 #pragma once
+// ===========================================================================
+// 概要: ボスの命令（BossCommandComponent）を全ドローンへ配布する System。
+//
+// 責務:
+//   - requestFormation を各 DroneComponent.currentFormation へ写す
+//   - droneAttackActive を各 DroneComponent.wantsAttack へ写す
+//   - 個別寿命の陣形では、信号の立ち上がりで attackPhase を Charging にする
+//
+// 備考: ボスBT は自分の BossCommandComponent にだけ書き込み、1000機のドローンを
+//       直接触らない。配布はこの System に集める。
+// ===========================================================================
 #include <vector>
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"

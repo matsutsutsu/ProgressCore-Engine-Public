@@ -1,4 +1,3 @@
-// ボス命令をドローンへ配布する実装。1v1 前提で最初のボスの命令を全機へ配る。
 #include "DroneCommandSystem.h"
 
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
@@ -25,8 +24,8 @@ void DroneCommandSystem::Update(float /*dt*/)
     const DroneFormationType formation = bossCmd->requestFormation;
     const bool               attack    = bossCmd->droneAttackActive;
 
-    // --- この陣形の攻撃は「誰が終わらせるか」を陣形ごとに1回だけ引く ---
-    //   機体ごとに引かないのが要点。仮想呼び出しはフレームあたり1回で済む。
+    // --- この陣形の攻撃を誰が終わらせるかを、フレームに1回だけ引く ---
+    //   機体ごとに引かないので、仮想呼び出しはフレームあたり1回で済む。
     const auto *formationImpl = CCL::AI::Formation::FormationRegistry::Instance().Get(formation);
     const bool  individual =
         formationImpl &&
@@ -44,7 +43,7 @@ void DroneCommandSystem::Update(float /*dt*/)
 
         if (!individual)
         {
-            // 【従来方式】信号が立っている間ずっと攻撃。
+            // Broadcast: 信号が立っている間ずっと攻撃。
             //   陣形自体が動く技（縦割り・挟み込み）は全機が同時に動き切る必要があるため、
             //   個体に終了判断を持たせない。
             drone.wantsAttack = attack;
@@ -52,7 +51,7 @@ void DroneCommandSystem::Update(float /*dt*/)
             return;
         }
 
-        // 【個別寿命方式】出撃は一斉、終了は各機が自分で決める。
+        // Individual: 出撃は一斉、終了は各機が自分で決める。
         if (rising)
         {
             drone.attackPhase = DroneAttackPhase::Charging;
@@ -60,13 +59,13 @@ void DroneCommandSystem::Update(float /*dt*/)
         }
         else if (!attack && drone.attackPhase == DroneAttackPhase::Charging)
         {
-            // ボスが号令を下ろした＝突撃の中断。
+            // ボスが信号を下ろした＝突撃の中断。
             //   既に離脱(Returning)へ移った機は巻き戻さない（帰り道は最後まで走らせる）。
             drone.attackPhase = DroneAttackPhase::None;
         }
 
-        // wantsAttack は個体が持つフェーズの写像。ここが「上書きされない」ことで
-        // 飛び切った機が攻撃へ引き戻されなくなる。
+        // wantsAttack は個体が持つフェーズから決める。信号をそのまま写さないので、
+        // 飛び切った機が攻撃へ引き戻されない。
         drone.wantsAttack = (drone.attackPhase == DroneAttackPhase::Charging);
     });
 
@@ -74,6 +73,6 @@ void DroneCommandSystem::Update(float /*dt*/)
     bossCmd->prevDroneAttackActive = attack;
 }
 
-// 伝令はボスBT(L02_Update)が書いた命令を読み、Formation より前に配りたい。
-// 同ステージ内の順序差は 1 フレーム程度で体感に影響しないため L02_Update に置く。
+// ボスBT(L02_Update)が書いた命令を読み、DroneFormationSystem より前に配る。
+// 同じステージ内の前後は GetRunAfter と、相手側の GetRunAfter で決まる。
 REGISTER_LOGIC_SYSTEM(DroneCommandSystem, Priority::LogicStage::L02_Update)

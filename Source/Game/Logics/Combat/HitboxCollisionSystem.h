@@ -1,35 +1,21 @@
 #pragma once
 // ===========================================================================
-// HitboxCollisionSystem.h
-// -----------------------
-// 役割:
-//   物理衝突(JoltCollisionEvent)を受け、Hitbox×Hurtbox の交差から
-//   ダメージイベント(DamageEventComponent)を生成する「判定」システム。
+// 概要: 物理の接触（JoltCollisionEvent）から、攻撃判定と被弾判定が当たったかを調べ、
+//       命中の結果（DamageEventComponent）を作る System。
 //
 // 責務:
-//   - 攻撃側Hitboxと被弾側Hurtboxの成立確認、多段ヒット防止。
-//   - クリティカル判定(CombatRng)と最終ダメージ・ノックバック方向の確定。
-//   - 結果を DamageEvent として一時エンティティに載せるところまで(HPは触らない)。
+//   - 攻撃側が Hitbox・受ける側が Hurtbox を持ち、判定が開いていて、自分でも同じ相手でもないかを確かめる
+//   - ダメージ（基本のダメージ × 受ける側の倍率）とノックバックの向きを決める
+//   - 結果を一時的なエンティティに載せる（HP や無敵時間は変えない）
 //
-// アーキテクチャ上の位置付け(戦闘パイプライン):
-//   [Jolt] 物理衝突 → EventBus
-//     │
-//   L05 HitboxCollisionSystem  ← 本ファイル(判定・イベント生成)
-//     ▼
-//   L06 DamageResolutionSystem (HP減算＋ノックバック付与)
-//     ▼
-//   L06 HealthSystem           (無敵更新・死亡判定)
-//
-// 設計方針:
-//   - 状態(HP・無敵)は一切変更しない。出来事(Event)をデータとして並べるのみ(DOD)。
-//   - クリ乱数は CombatRng(World Resource)を使い、DungeonRng とは分離する。
-//   - ノックバック方向は攻撃者→被弾者の Transform から算出(XZ平面)。位置が取れない
-//     場合は強さ0として無効化する(安全側)。
-//   - EventBus のコールバックでは「受け取って積む」だけにし、判定は自分の Update で行う。
-//     EventBus は同期配送なので、コールバックの中で判定すると処理が発行元
-//     (JoltCollisionEventSystem)のタスク上で走ってしまう。そうなると本システムが
-//     宣言した Read/Write 型はスケジューラから見えず、HitboxComponent を書く
-//     CombatAnimationSyncSystem と同じバッチに入って並列実行される＝データ競合になる。
+// 備考: 戦闘の流れ:
+//         L05 HitboxCollisionSystem  … この System
+//         L06 DamageResolutionSystem … HP を減らしてノックバックを書く
+//         L06 HealthSystem           … 無敵時間を減らし、倒れたかを判定する
+//       イベントのコールバックでは受け取って溜めるだけにし、判定は Update で行う。EventBus は
+//       その場で呼び出すので、コールバックの中で判定すると発行元（JoltCollisionEventSystem）の
+//       タスクの上で走る。するとこの System が申告した Read / Write がスケジューラに伝わらず、
+//       HitboxComponent を書く CombatAnimationSyncSystem と同時に走ってデータが競合する。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
@@ -41,8 +27,8 @@
 
 class HitboxCollisionSystem
     : public CCL::ECS::IfSystem<HitboxCollisionSystem,
-                                CCL::ECS::Write<HitboxComponent>,   // 多段ヒット履歴(hitTargets/hitCount)を書く
-                                CCL::ECS::Read<HurtboxComponent>,   // 被ダメ倍率を読む
+                                CCL::ECS::Write<HitboxComponent>,   // 多段ヒットの履歴（hitTargets / hitCount）を書く
+                                CCL::ECS::Read<HurtboxComponent>,   // 受けるダメージの倍率を読む
                                 CCL::ECS::Read<TransformComponent>> // ノックバック方向の算出に読む
 {
 public:
@@ -51,18 +37,13 @@ public:
     void Initialize() override;
     void Update(float dt) override;
 
-    // 判定に必要な入力が揃ってから走らせる。全て同じ L05_Collision のため、
-    // 明示宣言しないと順序が不定になる
-    // （型が同じでなくても宣言があれば TaskScheduler が直列化する）。
-    //
-    // JoltCollisionEventSystem: これより前だとその回の接触を丸ごと取りこぼす。
-    //
-    // CombatAnimationSyncSystem: これより前だと isActive が1フレーム古くなる。
-    //
-    // JoltPullSystem: ノックバック方向に使う Transform を物理結果の書き戻し後に
-    // 読むため。現状は剣(Kinematic)もキャラ(CharacterVirtual)も Pull 対象外
-    // なので実害は無いが、将来 Dynamic な剛体に Hurtbox を付けたときに
-    // 古い座標で吹き飛び方向を出さないよう向きを固定しておく。
+    // 判定に使う入力がそろってから走らせる。どれも同じ L05_Collision なので、
+    // 書かないと順番が決まらない（型が重ならなくても、書けば TaskScheduler が順番に走らせる）。
+    //   JoltCollisionEventSystem : これより前だと、そのフレームの接触を全部取りこぼす
+    //   CombatAnimationSyncSystem: これより前だと、isActive が1フレーム古くなる
+    //   JoltPullSystem           : ノックバックの向きに使う Transform を、物理の結果を書き戻した後に読むため。
+    //                              今は剣（Kinematic）もキャラ（CharacterVirtual）も書き戻しの対象外だが、
+    //                              Dynamic な剛体に Hurtbox を付けたときに古い位置で向きを決めないようにする
     std::vector<const char *> GetRunAfter() const override
     {
         return {"JoltCollisionEventSystem", "CombatAnimationSyncSystem", "JoltPullSystem"};
@@ -70,19 +51,18 @@ public:
 
 private:
     /**
-     * @brief attacker候補→victim候補の一方向で命中を検証し、成立すればDamageEventを生成する。
-     * @param attackerCandidate 攻撃側になり得るエンティティ(Hitbox所持を確認する)
-     * @param victimCandidate   被弾側になり得るエンティティ(Hurtbox所持を確認する)
-     * @param contactPos        物理衝突の接触点(ワールド座標)。命中エフェクト位置にそのまま使う。
-     * @note  双方向(A→B, B→A)は呼び出し側で2回呼ぶことで担保する。
+     * @brief attackerCandidate が victimCandidate に当てたかを調べ、当たっていれば DamageEvent を作る。
+     * @param attackerCandidate 攻撃側かもしれないエンティティ（Hitbox を持つかを確かめる）
+     * @param victimCandidate   受ける側かもしれないエンティティ（Hurtbox を持つかを確かめる）
+     * @param contactPos        物理の接触点（ワールド座標）。火花を出す位置にそのまま使う
+     * @note  どちらが攻撃側か分からないので、呼び出し側が A→B と B→A の2回呼ぶ。
      */
     void CheckAndSpawnDamageEvent(CCL::ECS::EntityID       attackerCandidate,
                                   CCL::ECS::EntityID       victimCandidate,
                                   const DirectX::XMFLOAT3 &contactPos);
 
-    // このフレームに届いた接触。コールバックが積み、Update が消費して空にする。
-    //
-    // 発行元は JoltCollisionEventSystem 1つだけで、GetRunAfter により本システムと
-    // 直列化されるため、積む側と消費する側が同時に走ることはない。
+    // このフレームに届いた接触。コールバックが追加し、Update が処理して空にする。
+    // 発行元は JoltCollisionEventSystem だけで、GetRunAfter でこの System の前に走るので、
+    // 追加と処理が同時に走ることはない
     std::vector<JoltCollisionEvent> m_pendingContacts;
 };

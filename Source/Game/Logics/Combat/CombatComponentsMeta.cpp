@@ -1,7 +1,7 @@
 // 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include <algorithm> // for std::clamp
+#include <algorithm>
 #include "Game/Logics/Combat/CombatComponents.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
@@ -24,8 +24,7 @@
 using json = nlohmann::json;
 
 // ===========================================================================
-// 1. Hitbox / Hurtbox
-// Combat カテゴリへの明示的配置
+// Hitbox / Hurtbox
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(HitboxComponent, "Hitbox", CCL::Categories::Combat, 170, false)
 CFIELD_FLOAT_RANGED(damageAmount, "ダメージ量", 1.0f, 0.0f, 9999.0f, "基本")
@@ -40,7 +39,7 @@ CFIELD_FLOAT_RANGED(damageMultiplier, "被ダメージ倍率", 0.05f, 0.0f, 10.0
 COMPONENT_META_END(HurtboxComponent)
 
 // ===================================================================
-// 2. BoneAttachmentComponent
+// BoneAttachmentComponent
 // ===================================================================
 template <>
 struct ComponentMeta<BoneAttachmentComponent>
@@ -49,7 +48,7 @@ struct ComponentMeta<BoneAttachmentComponent>
 
     static constexpr const char *displayName    = "Bone Attachment";
     static constexpr const char *category       = CCL::Categories::Hierarchy;
-    static constexpr int         sortPriority   = 5; // Transformの直後にする
+    static constexpr int         sortPriority   = 5; // Transform のすぐ後に出す
     static constexpr bool        hasCustomGui   = true;
     static constexpr bool        isSerializable = true;
 
@@ -140,7 +139,7 @@ REGISTER_COMPONENT(BoneAttachmentComponent, "BoneAttachmentComponent")
 REGISTER_COMPONENT_EDITOR_GUI(BoneAttachmentComponent)
 
 // ===================================================================
-// パターンC: CombatRoster / Health
+// JSON の読み書き（CombatRoster / Health）
 // ===================================================================
 namespace ComponentMetaJson
 {
@@ -162,8 +161,8 @@ namespace ComponentMetaJson
         }
         static void Load(const json &j, CombatRosterComponent &comp, LoadContext *ctx)
         {
-            // count は entries の実数から決める。JSON に count が無い場合でも読めるようにするため。
-            // （count だけを信用すると、キーが欠けたJSONで黙って0件になる）
+            // count は entries の数から決める。count だけを見ると、count のキーが無い JSON で
+            // 何も言わずに 0 件になってしまう
             comp.count = 0;
             if (j.contains("entries") && j["entries"].is_array())
             {
@@ -189,8 +188,8 @@ namespace ComponentMetaJson
                     if (entry.contains("id"))
                     {
                         uint64_t rawId = entry["id"].get<uint64_t>();
-                        // 保存時は EntityID ではなく LocalIndex(uint32) に変換されている。
-                        // 明示キャストしないと C4244（64→32 の暗黙縮小）が出る。
+                        // 保存するときに EntityID ではなく LocalIndex（uint32）に変えてある。
+                        // 明示的にキャストしないと C4244（64bit から 32bit への暗黙の縮小）の警告が出る
                         comp.entries[idx].id = ctx
                                                    ? ctx->Resolve(static_cast<CCL::Serialization::LoadContext::LocalIndex>(rawId))
                                                    : static_cast<CCL::ECS::EntityID>(rawId);
@@ -220,7 +219,7 @@ namespace ComponentMetaJson
 } // namespace ComponentMetaJson
 
 // ===================================================================
-// 3. CombatRosterComponent
+// CombatRosterComponent
 // ===================================================================
 template <>
 struct ComponentMeta<CombatRosterComponent>
@@ -360,7 +359,7 @@ REGISTER_COMPONENT(CombatRosterComponent, "CombatRosterComponent")
 REGISTER_COMPONENT_EDITOR_GUI(CombatRosterComponent)
 
 // ===================================================================
-// 4. DamageEventComponent (非保存タグ)
+// DamageEventComponent（保存しない）
 // ===================================================================
 template <>
 struct ComponentMeta<DamageEventComponent>
@@ -381,7 +380,7 @@ REGISTER_COMPONENT(DamageEventComponent, "DamageEventComponent")
 REGISTER_COMPONENT_EDITOR_GUI(DamageEventComponent)
 
 // ===================================================================
-// 4-2. HitboxLifetimeComponent (生成型Hitboxの寿命・非保存タグ)
+// HitboxLifetimeComponent（保存せず、インスペクタにも出さない）
 // ===================================================================
 template <>
 struct ComponentMeta<HitboxLifetimeComponent>
@@ -403,7 +402,7 @@ REGISTER_COMPONENT(HitboxLifetimeComponent, "HitboxLifetimeComponent")
 REGISTER_COMPONENT_EDITOR_GUI(HitboxLifetimeComponent)
 
 // ===================================================================
-// 5. HealthComponent
+// HealthComponent
 // ===================================================================
 template <>
 struct ComponentMeta<HealthComponent>

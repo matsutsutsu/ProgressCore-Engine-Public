@@ -1,14 +1,15 @@
-//=============================================================================
-// Behavior Tree Registry  —  GENERATED FROM BTActionList.h
-//=============================================================================
-//
-// [EDIT]
-//   技を足すときにこのファイルを触る必要はない。編集するのは BTActionList.h だけ。
-//
-// [IMPL]
-//   ID定数 / 辞書 / 陣形への変換 を表から作り、引く関数と検査を添える。
-//   引くのは読み込み時とエディタだけなので線形探索でよい（実行中の評価はIDのまま）。
 #pragma once
+// ===========================================================================
+// 概要: BTActionList.h の表から、BT の行動・条件の ID 定数と辞書を作るヘッダ。
+//
+// 責務:
+//   - ID 定数、辞書（表示名・分類・param の意味・振る舞い）、陣形への変換を表から作る
+//   - ID や保存キーから辞書を引く関数を提供する
+//   - 表の重複・分類の並び・ドローンの ID の区画を static_assert で検査する
+//
+// 備考: 技を足すときにこのファイルを触る必要はない。編集するのは BTActionList.h だけ。
+//       引くのは読み込み時とエディタだけなので線形探索でよい（実行中の評価は ID のまま）。
+// ===========================================================================
 #include <cstdint>
 #include <string_view>
 
@@ -16,11 +17,11 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"  // ActionID
 #include "Game/Logics/AI/Drone/DroneFormationType.h"            // 技IDから陣形を引くため
 
-//=============================================================================
-// Action IDs
-//=============================================================================
+// ============================================================
+// ID 定数
+// ============================================================
 //
-// [WHY] 辞書と同じ表から作るので、「IDはあるが辞書に無い」が構造的に起きない。
+// 辞書と同じ表から作るので、「ID はあるが辞書に無い」という状態が起きない。
 
 #define CCL_BT_DEFINE_ACTION_ID(Name, Id, Category, Kind, ParamLabel, Display) \
     inline constexpr ActionID Name = Id;
@@ -37,9 +38,9 @@ BT_CONDITION_LIST(CCL_BT_DEFINE_CONDITION_ID)
 BT_DRONE_ACTION_LIST(CCL_BT_DEFINE_DRONE_ID)
 #undef CCL_BT_DEFINE_DRONE_ID
 
-//=============================================================================
-// Dictionary
-//=============================================================================
+// ============================================================
+// 辞書
+// ============================================================
 
 // 行動・条件の分類。エディタのコンボの見出しになる。
 // ActionEntry を行動と条件で共用しているので enum も1つにまとめている。
@@ -84,8 +85,8 @@ inline const char *BTCategoryName(BTCategory c)
 //
 // Driving ⊂ Blocking。Driving は Parallel の主に置く必要がある。
 //
-// [WHY] 2つのフラグでなく1列3値なのは、「Driving だが Blocking でない」という
-//       有り得ない組み合わせを書けなくするため。
+// 2つのフラグではなく1列3値にしているのは、「Driving だが Blocking でない」という
+// あり得ない組み合わせを書けなくするため。
 enum class BTActionKind : uint8_t
 {
     Instant,
@@ -99,13 +100,13 @@ struct ActionEntry
     ActionID     id;
     const char  *key;                          // アセットに保存される名前。定数名と同じ綴りにする
     const char  *name;                         // エディタ表示名
-    BTCategory   category;                     // 分類。数値IDの桁ではなくこれが唯一の情報源
+    BTCategory   category;                     // 分類。数値 ID の桁ではなく、これで分類を判定する
     const char  *paramLabel;                   // param の意味。空文字なら param を使わない
     BTActionKind kind = BTActionKind::Instant; // BTに対する振る舞い。条件の表では使わない
 };
 
-// 並びは分類ごとにまとめる。エディタのコンボが「分類が変わった所で見出しを打つ」
-// 作りなので、散らばると同じ見出しが何度も出る（下部の static_assert が見張る）。
+// 並びは分類ごとにまとめる。エディタのコンボが「分類が変わった所で見出しを出す」
+// 作りなので、散らばると同じ見出しが何度も出る（下の static_assert で検査する）。
 inline constexpr ActionEntry g_ActionRegistry[] = {
     {0, "None", "なし (None)", BTCategory::None, ""},
 
@@ -132,14 +133,14 @@ inline constexpr ActionEntry g_ConditionRegistry[] = {
 };
 inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / sizeof(ActionEntry);
 
-//=============================================================================
-// Lookup
-//=============================================================================
+// ============================================================
+// 引く関数
+// ============================================================
 
-// 保存キーの読み替え（リネーム対応）。定数名を変えたら、ここに1行足す。
-// Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下部の static_assert が落とす。
+// 保存キーの読み替え（名前の変更への対応）。定数名を変えたら、ここに1行足す。
+// Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下の static_assert で検出する。
 //
-// [RULE] 返してよいのは文字列リテラルか引数の key のみ（string_view が中身を持たないため）。
+// 返してよいのは文字列リテラルか引数の key だけ（string_view は文字列の中身を持たないため）。
 inline constexpr std::string_view RedirectKey(std::string_view key)
 {
     // 例: if (key == "A_BossJumpSlam") return "A_BossLeapAttack";
@@ -186,9 +187,9 @@ inline bool TryFindConditionIdByKey(std::string_view key, ActionID &outId)
     return false;
 }
 
-//=============================================================================
-// Validation
-//=============================================================================
+// ============================================================
+// 検査
+// ============================================================
 
 // IDとキーが表の中で一意か。
 inline constexpr bool IsRegistryUnique(const ActionEntry *table, int count)
@@ -207,7 +208,7 @@ static_assert(IsRegistryUnique(g_ConditionRegistry, g_ConditionRegistryCount),
               "ConditionRegistry の ID かキーが重複している");
 
 // 分類ごとにまとまって並んでいるか。エディタのコンボは「分類が変わった所で見出しを
-// 打つ」作りなので、散らばっていると同じ見出しが何度も出る。
+// 出す」作りなので、散らばっていると同じ見出しが何度も出る。
 inline constexpr bool IsGroupedByCategory(const ActionEntry *table, int count)
 {
     for (int i = 1; i < count; ++i)
@@ -221,10 +222,10 @@ static_assert(IsGroupedByCategory(g_ActionRegistry, g_ActionRegistryCount),
 static_assert(IsGroupedByCategory(g_ConditionRegistry, g_ConditionRegistryCount),
               "ConditionRegistry の分類が飛び飛びになっている（表の並びを分類順に直すこと）");
 
-// 陣形技（Drone分類）は100番以上、それ以外は100番未満。
+// 陣形技（Drone 分類）は100番以上、それ以外は100番未満。
 //
-// [WHY] 区画を見た目だけの約束にしないため。番号を見て種別を推測した人の推測が、
-//       必ず当たる状態を保つ。データ枠を増やしても末尾に伸ばせる。
+// 番号の区画を決まりごとだけにせず、検査で守る。番号から種別を推測したときに
+// 必ず当たるようにするため。データの枠を増やしても末尾に伸ばせる。
 inline constexpr ActionID kDroneActionIdFirst = 100;
 
 inline constexpr bool DroneIdsAreInBlock()
@@ -261,14 +262,11 @@ inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view 
 }
 // 例: static_assert(IsRedirectValid("A_BossJumpSlam", "A_BossLeapAttack"), "読み替えが不正");
 
-// ID と辞書の突き合わせ（旧 DroneEntriesArePresent）は、どちらも同じ表から作るように
-// なったので不要。「IDはあるのに辞書に無い」という状態が構造的に作れない。
-
-//=============================================================================
-// Queries
-//=============================================================================
+// ============================================================
+// 問い合わせ
+// ============================================================
 //
-// [WHY] 桁の範囲ではなく表を引く。桁で判定すると番号の付け方を変えた瞬間に静かに壊れる。
+// 番号の範囲ではなく表を引く。番号で判定すると、番号の付け方を変えたときに何も言わずに壊れる。
 
 // ドローン技のActionIDから、作らせる陣形を引く。技でなければ false。
 inline bool TryGetDroneFormation(ActionID id, DroneFormationType &outFormation)
@@ -316,7 +314,7 @@ inline bool IsWaitAction(ActionID id) { return id == A_Wait; }
 
 // この行動は BossCommandComponent::currentActionId を書くか。
 //
-//   これらは「毎フレーム評価される」ことを前提に2つの後始末をしている。
+//   これらは毎フレーム評価されることを前提に、2つの後始末をしている。
 //     ・currentActionId を毎フレーム書き直す
 //     ・硬直が終わったフレームに ClearCommandIfMine で要求を下ろす
 //   BossActionSystem は currentActionId を毎フレーム読んで体を動かすので、
@@ -328,9 +326,9 @@ inline bool IsCommandWritingAction(ActionID id)
     return e && e->kind == BTActionKind::Driving;
 }
 
-// この行動は Running を返しうるか。陣形指示・突撃信号・リセットはどれも即 Success で、
-// これらだけで枝を作ると Selector がそこで打ち切り、下の枝が一度も評価されない
-// （外からは「固まって何もしない」に見えるので読み込み時に警告する）。
+// この行動は Running を返しうるか。陣形指示・攻撃信号・リセットはどれも即 Success で、
+// これらだけで枝を作ると Selector がそこで止まり、下の枝が一度も評価されない
+// （外からは固まって何もしないように見えるので、読み込み時に警告する）。
 inline bool IsBlockingAction(ActionID id)
 {
     const ActionEntry *e = FindActionEntry(id);

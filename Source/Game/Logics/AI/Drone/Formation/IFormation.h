@@ -1,7 +1,16 @@
-// 陣形計算の基底インターフェース。1陣形=1クラス（switch は使わない）。
-// 仮想関数をコンポーネントに持たせず、System が registry から1回引いてループを回す
-// ＝仮想呼び出しは陣形の種類ごとに1回だけで、数百機のループは連続アクセスのまま。
 #pragma once
+// ===========================================================================
+// 概要: 陣形計算の基底インターフェース（IFormation）と、陣形へ渡す情報の型。
+//
+// 責務:
+//   - 1機分の持ち場を計算する Calculate を定める
+//   - 攻撃の寿命（ChargeLifecycle）・当たり方（FormationCombat）・予告の有無を陣形ごとに返す
+//   - 陣形計算に要る情報（FormationContext）をまとめる
+//
+// 備考: 1陣形=1クラスにして switch を使わない。仮想関数をコンポーネントに持たせず、
+//       System が FormationRegistry から陣形を引いてからループを回すので、仮想呼び出しは
+//       陣形の種類ごとに1回で済み、数百機のループは連続アクセスのまま保てる。
+// ===========================================================================
 #include "SimpleMath.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 
@@ -22,21 +31,21 @@ namespace CCL::AI::Formation
         // プレイヤーの速度 [m/s]。飛翔時間のある技だけが偏差射撃に使う
         // （置き技は「撃つ瞬間の向きへコミットする」のが仕様なので読まない）。
         DirectX::SimpleMath::Vector3 playerVelocity = {};
-        float                        time           = 0.0f; // 経過時間（回転アニメ等に使う）
-        float                        dt             = 0.0f; // このフレームの経過時間（攻撃の進行度に使う）
+        float                        time           = 0.0f; // 経過時間 [秒]（陣形の回転などに使う）
+        float                        dt             = 0.0f; // このフレームの経過時間 [秒]（攻撃の進行度に使う）
 
-        // 「撃つと決めた瞬間」に焼いた狙いの向き（水平・正規化済み）と、それが有効か。
-        //   毎フレーム引き直すと技の発生後も形ごとプレイヤーを追い、横へ回り込んでも
-        //   刃が一緒に回ってきて当たる。焼くのは DroneFormationSystem で、信号の
-        //   立ち上がりに1回だけ書いて下りたら解除する。
+        // 「撃つと決めた瞬間」に固定した狙いの向き（水平・正規化済み）と、それが有効か。
+        //   毎フレーム取り直すと技の発生後も形ごとプレイヤーを追い、横へ回り込んでも
+        //   刃が一緒に回ってきて当たる。固定するのは DroneFormationSystem で、信号の
+        //   立ち上がりに1回だけ書き、信号が下りたら解除する。
         DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ;
         bool                         aimLocked = false;
 
         // 全小隊の状態（小隊陣形のみ使用。未登録なら nullptr）。
         const ::SquadRegistry *squads = nullptr;
 
-        /// 狙う向き（水平・正規化済み）。攻撃陣形は playerPos を直接見ず必ずこれを使う。
-        /// ロック前は生の方向、ロック後は焼いた方向を返す。
+        // 狙う向き（水平・正規化済み）。攻撃陣形は playerPos を直接見ず必ずこれを使う。
+        // 固定前はボス→プレイヤーの方向、固定後は固定した方向を返す。
         DirectX::SimpleMath::Vector3 AimDirection() const
         {
             using namespace DirectX::SimpleMath;
@@ -76,22 +85,22 @@ namespace CCL::AI::Formation
     {
         virtual ~IFormation() = default;
 
-        /// 1機分の目標座標・視線を計算して drone に書き込む。
+        // 1機分の目標座標・視線を計算して drone に書き込む。
         virtual void Calculate(DroneComponent         &drone,
                                const FormationContext &ctx) = 0;
 
-        /// 攻撃を誰が終わらせるか。陣形ごとに1回だけ引かれる。
+        // 攻撃を誰が終わらせるか。DroneCommandSystem がフレームに1回だけ引く。
         virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
 
-        /// 当たり方と痛さ。DroneHitSystem が引く。
+        // 当たり方と痛さ。DroneHitSystem が引く。
         virtual FormationCombat GetCombat() const { return {}; }
 
-        /// 発生前の予告を「震え」で出すか。false にするのは隊形と、動きで予告する技（弾幕）。
-        /// 既定が true なのは、false 既定だと新しい技で予告だけ静かに消えるため。
+        // 発生前の予告を「震え」で出すか。false にするのは隊形と、動きで予告する技（弾幕）。
+        // 既定を true にしているのは、false 既定だと新しい技で予告が出ないことに気づきにくいため。
         virtual bool UsesShiverTelegraph() const { return true; }
 
-        /// 画面に出す技の名前。名乗るのはデータ陣形だけで、C++ 実装は nullptr を返す。
-        /// BTエディタが「枠24」ではなく「縦割り」と出せるのはこれを引くから。
+        // 画面に出す技の名前。名乗るのはデータ陣形だけで、C++ 実装は nullptr を返す。
+        // BTエディタが「枠24」ではなく「縦割り」と出せるのは、これを引くため。
         virtual const char *DisplayName() const { return nullptr; }
     };
 

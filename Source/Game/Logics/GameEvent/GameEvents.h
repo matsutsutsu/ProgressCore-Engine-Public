@@ -1,42 +1,34 @@
 #pragma once
+// ===========================================================================
+// 概要: ゲームの System どうしが EventBus でやり取りするイベントの型。
+//
+// 責務:
+//   - ジャスト回避・被弾・命中・ジャンプ・ダッシュを知らせるイベントを定義する
+//
+// 備考: カメラへの演出の要求（CameraShakeRequestEvent など）は Engine/Camera/CameraEvents.h にある。
+//       カメラがゲーム側の型を知らずに済むようにするため。
+// ===========================================================================
+#include "Engine/ECS/Common/CCL_Types.h"
+#include <DirectXMath.h>
 
-#include "Engine/ECS/Common/CCL_Types.h" // CCL::ECS::EntityID を使うため
-#include <DirectXMath.h>                 // DirectX::XMFLOAT3 を使うため
-
-// JUST回避が成功した瞬間にEventBusへ放たれるイベント
+// ジャスト回避に成功した瞬間に出す。JustEvadeSystem が出し、JustEvadeSystem（スロー・接近）と
+// PlayerCleaveSystem（ゲージ加算）が受ける
 struct JustEvadeSuccessEvent
 {
-    CCL::ECS::EntityID playerID;   // 回避を成功させたプレイヤー
-    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。現状の購読側は未使用だが、反撃演出用に残す
+    CCL::ECS::EntityID playerID;   // 回避したプレイヤー
+    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。今は誰も読まないが、反撃の演出に使うため持たせておく
 };
 
-// ※ カメラへの演出要求（CameraShakeRequestEvent / CameraFovPunchRequestEvent）は
-//    Engine/Camera/CameraEvents.h へ移動した。カメラがゲーム側の型を知らずに済むようにするため。
-
-// GameEvents.h
-struct EntityKilledEvent
-{
-    CCL::ECS::EntityID killedEntityID;
-    DirectX::XMFLOAT3  position;
-    bool               isPlayer;
-    int                droppedCoinAmount; // 死亡時に落とす金額をイベントに持たせる
-};
-
-// 誰かがダメージを受けた時に発行されるイベント
-// 現在の使用System：PlayerFeedbackSystem,JustEvadeSystem
+// ダメージを受けたときに出す（受けた側のイベント）。
+// DamageResolutionSystem が出し、PlayerFeedbackSystem と BossPerceptionSystem が受ける
 struct DamageTakenEvent
 {
-    CCL::ECS::EntityID targetID;     // ダメージを受けた人
+    CCL::ECS::EntityID targetID;     // ダメージを受けたエンティティ
     float              damageAmount; // 受けたダメージ量
-    bool               isPlayer;     // プレイヤーかどうか（受け取り側が判定しやすくする便利フラグ）
+    bool               isPlayer;     // 受けたのがプレイヤーか（受け取る側でコンポーネントを引かずに済むように）
 };
 
-// ===========================================================================
-// 攻撃命中確定イベント
-//
-// 「攻撃者の攻撃が実際に相手へダメージを与えた」ことを通知する。
-// DamageTakenEvent が「被弾側」のイベントなのに対して、こちらは「攻撃側」のイベント。
-// ===========================================================================
+// 攻撃が相手にダメージを与えたときに出す（攻撃した側のイベント）
 struct AttackHitConfirmedEvent
 {
     CCL::ECS::EntityID attackerID;
@@ -44,31 +36,30 @@ struct AttackHitConfirmedEvent
 
     float damage = 0.0f;
 
-    // ヒットストップなど、命中の重さを判断するための情報。
+    // 命中の重さ（ヒットストップの長さと、その間の時間の速さ）
     float hitStopDuration = 0.0f;
     float hitStopScale    = 1.0f;
 };
 
-// 攻撃が「確定ヒット」した瞬間に発行されるイベント（無敵ですり抜けた時は出ない）。
-// 命中位置に衝突エフェクト(GPUパーティクル)を出すために HitEffectSystem が購読する。
+// 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）。
+// HitEffectSystem が受けて、当たった位置に GPU パーティクルを出す
 struct HitImpactEvent
 {
-    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 接触点(ワールド座標)
-    float             power    = 1.0f;               // 命中の強さ(ダメージ量など。演出スケール用)
+    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 当たった位置（ワールド座標）
+    float             power    = 1.0f;               // 命中の強さ（演出の大きさに使う）
 };
 
-// プレイヤーがジャンプした瞬間に発行されるイベント。
-// その場に土煙などのVFXを出すために PlayerActionVfxSystem が購読する
-// （移動系システムはVFX/プレハブを知らずに「跳んだ」事実だけを announce する）。
+// プレイヤーが跳んだ瞬間に出す。PlayerActionVfxSystem が受けて土煙などを出す。
+// 移動の System が VFX やプレハブを知らずに済むよう、跳んだことだけを知らせる
 struct PlayerJumpedEvent
 {
-    DirectX::XMFLOAT3 position  = {0.0f, 0.0f, 0.0f}; // ジャンプ時のプレイヤー位置(ワールド)
-    int               jumpCount = 1;                  // 何段目のジャンプか（2以上＝2段ジャンプ）
+    DirectX::XMFLOAT3 position  = {0.0f, 0.0f, 0.0f}; // 跳んだときのプレイヤーの位置（ワールド座標）
+    int               jumpCount = 1;                  // 何段目のジャンプか（2 以上なら2段ジャンプ）
 };
 
-// プレイヤーがダッシュ（回避バースト）を開始した瞬間に発行されるイベント。
+// プレイヤーがダッシュ（回避）を始めた瞬間に出す。PlayerActionVfxSystem が受ける
 struct PlayerDashedEvent
 {
-    DirectX::XMFLOAT3  position = {0.0f, 0.0f, 0.0f}; // ダッシュ開始時のプレイヤー位置(ワールド)
+    DirectX::XMFLOAT3  position = {0.0f, 0.0f, 0.0f}; // ダッシュを始めたときのプレイヤーの位置（ワールド座標）
     CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID;
 };

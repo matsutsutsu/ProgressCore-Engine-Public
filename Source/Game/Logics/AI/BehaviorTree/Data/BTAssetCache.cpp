@@ -1,8 +1,3 @@
-// BTアセットキャッシュの実装。
-//
-// 注意点:
-//   設計の理由と使い方は BTAssetCache.h に書いてある。ここには書かない
-//   （同じ説明が2箇所にあると、片方だけ古くなって嘘になる）。
 #include "BTAssetCache.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
@@ -23,7 +18,7 @@ std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
     auto it = m_assets.find(path);
     if (it != m_assets.end()) return it->second;
 
-    // 失敗済みは黙って諦める（ログは初回の1回だけ出してある）
+    // 失敗したことのあるパスは読みに行かない（ログは初回の1回だけ出してある）
     if (m_failed.count(path)) return nullptr;
 
     return LoadLocked(path);
@@ -38,11 +33,11 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
     // 失敗の記録も消して、m_assets と m_failed に同じパスが入らない状態を保つ。
     //
     //   消し忘れても読み直し自体は成功する。Reload は GetOrLoad を経由せず
-    //   LoadLocked を直接呼ぶので、m_failed の関所（毎フレーム再試行しないための
-    //   足切り）を通らないため。
-    //   ただし両方にパスが残り、「m_assets を先に見る」という GetOrLoad の順番に
-    //   依存して動いているだけの状態になる。順番を入れ替えた瞬間に
-    //   「直したのに読まれない」が本当に起きる。
+    //   LoadLocked を直接呼ぶので、m_failed の判定（毎フレーム再試行しないための
+    //   確認）を通らないため。
+    //   ただし両方にパスが残り、GetOrLoad が m_assets を先に見る順番に
+    //   頼って動いているだけの状態になる。順番を入れ替えると
+    //   「直したのに読まれない」が起きる。
     m_assets.erase(path);
     m_failed.erase(path);
 

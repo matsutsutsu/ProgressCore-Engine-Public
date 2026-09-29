@@ -1,28 +1,15 @@
 #pragma once
 // ===========================================================================
-// HealthSystem.h
-// --------------
-// 役割:
-//   HPの無敵時間更新と死亡判定を行う「管理」システム。
-//   エディタではOnGuiで全エンティティのHP状態をリアルタイム表示する。
+// 概要: 無敵時間を減らし、HP が 0 以下になったエンティティに DeadTag を付ける System。
 //
 // 責務:
-//   - 無敵タイマー(invincibilityTimer)の毎フレーム減算。
-//   - HP0以下のエンティティへの DeadTag 付与（死亡フラグ立て）。
-//   - [Editor] OnGui で HealthComponent 所持全エンティティのHP/無敵状態を一覧表示。
+//   - invincibilityTimer をエンティティごとの時間（localDt）で減らす
+//   - HP が 0 以下なら 0 にそろえ、DeadTag を付ける
+//   - OnGui で、HealthComponent を持つ全エンティティの HP と無敵の状態を表にする
 //
-// アーキテクチャ上の位置付け(戦闘パイプライン):
-//   [Jolt] 物理衝突 → EventBus
-//     │
-//   L05 HitboxCollisionSystem  (判定・DamageEvent生成)
-//     ▼
-//   L06 DamageResolutionSystem (HP減算・ノックバック付与)
-//     ▼
-//   L06 HealthSystem           ← 本ファイル(無敵更新・死亡判定)
-//
-// 設計方針:
-//   - 「誰がダメージを与えたか」を知らない。HPの最終状態だけを見て判定する。
-//     毒/落下/罠など将来のダメージソースが増えても本Systemは無変更で動く。
+// 備考: 戦闘の流れでは DamageResolutionSystem（L06）の後に走る。
+//       誰がダメージを与えたかは見ず、HP だけで判定するので、ダメージの原因が増えても変えずに済む。
+//       localDt で減らすので、ヒットストップで止まっている間は無敵時間も減らない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
@@ -39,6 +26,6 @@ public:
 
     void Update(float dt) override;
 
-    // 全エンティティのHP状態をImGuiで一覧表示する。
+    // HealthComponent を持つ全エンティティの HP と無敵の状態を表にする
     void OnGui() override;
 };

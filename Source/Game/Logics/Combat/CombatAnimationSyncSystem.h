@@ -1,12 +1,17 @@
-// HitboxComponent を主役にして走査し、ownerEntity の Animator を読んで
-// Hitbox のアクティブ状態を同期する「イテレーション反転」設計。
-//
-// Write<HitboxComponent> を正しく宣言。
-// Animator は別エンティティへの「読み取り専用」GetComponent で参照。
-// 読み取りのみなので、Animator を Write するシステムと同バッチにならない限りレースしない。
-// 本システムは L05_Collision(500)、Animator 書き込み系は L02_Update(200)/L02_PostUpdate(250)
-// なので、ステージの壁により完全に直列化されており安全が保証される。
 #pragma once
+// ===========================================================================
+// 概要: 攻撃判定（HitboxComponent）を、持ち主のアニメーションの HitBox 区間に合わせて開け閉めする System。
+//
+// 責務:
+//   - Hitbox の親をたどって Animator を持つ持ち主を探し、覚えておく
+//   - 今のフレームで進んだ再生時間が HitBox 区間に重なるかを調べ、isActive を切り替える
+//   - 区間に入ったフレームで多段ヒットの履歴を消し、区間の攻撃力・ノックバック・ヒットストップを書く
+//
+// 備考: Hitbox の側から回し、持ち主の Animator は GetComponent で読むだけにする。
+//       Animator を書く System は L02_Update / L02_PostUpdate、この System は L05_Collision なので、
+//       ステージの間で必ず順番に走り、同時に触ることはない。
+//       親を持たない判定（SpawnHitboxSystem が作る球・ドローン）は持ち主が見つからないので触らない。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"
 

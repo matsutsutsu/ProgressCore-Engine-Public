@@ -790,8 +790,6 @@
     <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\SpawnHitboxSystem.h" />
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h" />
-    <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h" />
-    <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h" />
     <ClInclude Include="Source\Engine\Scene\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />

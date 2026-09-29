@@ -1,14 +1,22 @@
-// ドローン1機ぶんの状態。ロジックを持たない、システム間の共有メモリ。
-//
-// 読むのは誰でもよいが、書くのは「1フィールドにつき、1ステージあたり1システム」。
-// 1000機を ForEachParallel で回せる根拠がこれで、破ると即データ競合になる。
-//
-// 下の「書き手＝…」は主たる持ち主のこと。ステージが違えば直列化されるので、
-// 別ステージから触っているものが実際にある（stateTimer と fireDelay は
-// 判断層/陣形が仕込んで移動層が減らす、など）。同じステージで2システムが
-// 同じフィールドを書いたらアウト、という読み方をすること。
-// [RT] は実行時専用（セーブにもプレハブにも乗らない）。
 #pragma once
+// ===========================================================================
+// 概要: ドローン1機ぶんの状態（DroneComponent）と、ドローン系で共有する型・定数。
+//
+// 責務:
+//   - 判断層・陣形・移動層など、ドローン系 System 間で受け渡す状態を持つ
+//   - 物理ステート（DroneState）・突撃の移動方式（ChargeMode）・攻撃フェーズを定義する
+//   - 床の高さ・突撃速度倍率・予告の震えの調整値など、複数の System が読む値を置く
+//
+// 備考:
+//   ロジックは持たない。読むのは誰でもよいが、書くのは「1フィールドにつき、
+//   1ステージあたり1システム」に限る。1000機を ForEachParallel で回せるのはこの
+//   規則があるからで、破るとデータ競合になる。
+//   各区分の「書き手=…」は主な書き手を示す。ステージが違えば直列化されるので、
+//   別ステージから書いているフィールドもある（stateTimer と fireDelay は判断層・陣形が
+//   設定して移動層が減らす、など）。同じステージで2つの System が同じフィールドを
+//   書かないこと。
+//   [RT] は実行時専用（セーブにもプレハブにも保存しない）。
+// ===========================================================================
 #include <array>
 #include <cstdint>
 #include <cstddef>
@@ -24,25 +32,25 @@
 //   専用コードが1行も要らない。
 enum class DroneState : uint8_t
 {
-    Idle,         // 【有機的追従】バネ制御でフワフワと目標へ追従する。待機・陣形維持
-    MoveToTarget, // 【機械的移動】直線的に持ち場へ素早く整列する
-    FireCharge,   // 【高速突撃】目標へ突撃する。この状態だけが有害＝ジャスト回避の対象
-    Stunned,      // 【硬直】切り払いで吹き飛ばされ制御を失って漂う。無害・通常AI停止
-    Returning,    // 【離脱】突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ
+    Idle,         // 追従: ホバーの揺れを伴うバネ制御で目標へ寄る。待機・陣形維持
+    MoveToTarget, // 移動: 持ち場へ直線的に素早く整列する
+    FireCharge,   // 突撃: 目標へ突撃する。この状態だけが有害で、ジャスト回避の対象になる
+    Stunned,      // 硬直: 切り払いで吹き飛ばされ、制御を失って漂う。無害で通常AIは止まる
+    Returning,    // 離脱: 突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ戻る
 };
 
 // FireCharge 中の移動方式。書き手は攻撃陣形（Formation）。
 enum class ChargeMode : uint8_t
 {
     Straight,    // fireDirection へ直進。方向は突入時にロックされる（弾幕・カミカゼ）
-    RigidFollow, // targetPosition へ毎フレーム貼り付け＝形が一切歪まない（縦割り・挟み込み）
-    SoftFollow,  // targetPosition へバネで寄る＝速いほど後ろへ流れ、曲がると遅れて曲がる（小隊）
+    RigidFollow, // targetPosition へ毎フレーム一致させる。形が歪まない（縦割り・挟み込み）
+    SoftFollow,  // targetPosition へバネで寄る。速いほど後ろへ流れ、曲がると遅れて曲がる（小隊）
 };
 
 // 突撃1回ぶんの寿命を「個体が」持つためのフェーズ。
 //   信号を毎フレーム全機へ配ると、飛び切った機が次フレームに攻撃へ引き戻されて
 //   個別行動が成立しない。立ち上がりでだけ Charging を立て、以降は各機が自分で
-//   進める＝出撃は一斉、帰投はバラバラ。
+//   進める。出撃は一斉、帰投は機体ごとに異なる。
 //   陣形自体が動く攻撃（縦割り等）はこれを使わない（IFormation::GetLifecycle）。
 enum class DroneAttackPhase : uint8_t
 {
@@ -62,7 +70,7 @@ struct DroneShiverTuning
     float amplitude = 0.25f; // 溜め切ったときの振れ幅 [m]
     float frequency = 7.0f;  // 震えの速さ [Hz]。上げすぎるとノイズに見えて予告にならない
     float rampTime  = 1.2f;  // この秒数で最大まで溜まる
-    float scatter   = 1.0f;  // 機体ごとの位相のばらけ具合 0＝全機同時 / 1＝バラバラ
+    float scatter   = 1.0f;  // 機体ごとの位相のずれ具合。0=全機同時 / 1=機体ごとに最大限ずらす
 };
 
 // 全ドローンの硬い床。ステージ床のワールドY と、そこから浮かせておく最低高度 [m]。
@@ -89,7 +97,7 @@ struct DroneComponent
     // 生き残った機の所属まで入れ替わり、同じ部隊で組んでいるように見えない）。
     uint8_t squadId = 0xFF;
 
-    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。後ろほど追従を鈍らせる（SlotLag）
+    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。後ろほど追従を弱める（SlotLag）
 
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
@@ -97,7 +105,7 @@ struct DroneComponent
 
     bool wantsAttack = false; // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
 
-    // 突撃1回ぶんの進行フェーズ。終了判断だけ DroneBrainSystem。
+    // 突撃1回ぶんの進行フェーズ。終了の判断（Charging→Returning）だけは DroneBrainSystem が書く。
     // Broadcast 寿命の陣形では常に None。
     DroneAttackPhase attackPhase = DroneAttackPhase::None;
 

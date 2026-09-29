@@ -1,12 +1,18 @@
-// C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけをここに置く。
-//
-// データで書けないのは、機体が自分の状態を覚えて振る舞いを変える技。弾幕は機体ごとに
-// 発射の順番(fireDelay)を持ち、撃つ瞬間まで先読みで狙い直し、撃った後は各機が
-// 独立して攻撃を終える。データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、
-// この3つはどれも表せない。
-//
-// 縦割り・挟み込み・横なぎ・波状縦割りは Assets/Formations/*.json にある（Formations_DataDriven が解釈する）。
 #pragma once
+// ===========================================================================
+// 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く。
+//
+// 責務:
+//   - 弾幕（KamikazeSwarm）: 頭上の輪から1機ずつ中心へ寄り、プレイヤーへ撃ち出す
+//
+// 備考:
+//   データで書けないのは、機体が自分の状態を覚えて振る舞いを変える技。弾幕は機体ごとに
+//   発射の順番(fireDelay)を持ち、撃つ瞬間まで先読みで狙い直し、撃った後は各機が
+//   独立して攻撃を終える。データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、
+//   この3つはどれも表せない。
+//   縦割り・挟み込み・横なぎ・波状縦割りは Assets/Formations/*.json にある
+//   （Formations_DataDriven.h が解釈する）。
+// ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
@@ -15,26 +21,26 @@
 
 namespace CCL::AI::Formation::Attack
 {
-    // 弾幕（KamikazeSwarm）── 要求回避＝ジャスト回避。
+    // 弾幕（KamikazeSwarm）。求める回避はジャスト回避。
     // 頭上の輪を回したまま1機ずつ中心へ降り、そこからプレイヤーへ高速で撃ち出す。
     //   輪の上で待つ → 自分の番の kGatherTime 秒前に中心へ寄る（これが予告）
     //   → fireDelay が 0 で発射（以降は直進）
     //
-    // 置き技（縦割り・挟み込み）と違い、発射の瞬間まで狙い続ける「1発ずつ今のあなたを
-    // 狙う」技。撃ち出した後は直進するので避ける余地はそこで担保される。
+    // 置き技（縦割り・挟み込み）と違い、発射の瞬間まで1機ずつ今のプレイヤーを狙い続ける。
+    // 撃ち出した後は直進するので、そこで避ける余地が残る。
     struct KamikazeSwarmFormation : public IFormation
     {
-        // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投がバラバラになる）。
+        // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投の時刻が機体ごとに異なる）。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
 
-        // 中心へ集まる移動そのものが予告。足すと予告が二重になってどちらを読むか濁る。
+        // 中心へ集まる移動そのものが予告。震えを足すと予告が二重になり、どちらを読むか分かりにくくなる。
         bool UsesShiverTelegraph() const override { return false; }
 
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;
 
-            // 陣形が手を引くのは「飛び出した後」だけ。順番待ちも中央でのタメもまだ撃って
+            // 陣形が持ち場を書かなくなるのは「飛び出した後」だけ。順番待ちも中央でのタメもまだ撃って
             // いないので狙いを更新し続ける（stateTimer を見落とすと着弾の 0.5 秒以上前の
             // 座標を撃つことになり、歩いているだけで当たらなくなる）。
             const bool launched = (drone.currentState == DroneState::FireCharge) &&
@@ -55,7 +61,7 @@ namespace CCL::AI::Formation::Attack
                 ctx.bossPos + Vector3::UnitY * (Basic::HighRing::kHeight - kGatherDrop);
 
             // 自分の番が近づくほど中心へ寄る。二乗で寄せるのは、序盤をほぼ動かさず
-            // 「直前にすっと吸い込まれる」形にするため（線形だといつ撃つのか読めない）。
+            // 直前に素早く中心へ寄る形にするため（線形だといつ撃つのか読めない）。
             float gather = 0.0f;
             if (drone.currentState == DroneState::FireCharge && drone.fireDelay <= 0.0f)
             {
@@ -112,8 +118,8 @@ namespace CCL::AI::Formation::Attack
         static constexpr float kGatherTime = 0.6f; // 発射の何秒前から中心へ寄り始めるか
         static constexpr float kGatherDrop = 6.0f; // 輪の高さから何m下を発射地点にするか
 
-        // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に凍るので、
-        // 「歩くだけで避けられる」を潰しつつ「避ければ避けられる」を残す値にする。
+        // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に固定されるので、
+        // 歩くだけでは避けられず、回避すれば避けられる値にする。
         static constexpr float kLeadFactor = 0.5f;
     };
 

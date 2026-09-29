@@ -4,9 +4,6 @@
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-// ===========================================================================
-// CleaveComponent メタデータ定義（Movement カテゴリ）
-// ===========================================================================
 COMPONENT_META_BEGIN_FULL(CleaveComponent, "Cleave Component", CCL::Categories::Movement, 157, false)
 CFIELD_FLOAT_RANGED(cleaveSpeed, "突進速度", 1.0f, 0.0f, 300.0f, "設定")
 CFIELD_FLOAT_RANGED(cleaveDuration, "突進時間", 0.01f, 0.0f, 2.0f, "設定")

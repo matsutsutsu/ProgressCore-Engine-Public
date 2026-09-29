@@ -1,5 +1,3 @@
-// ドローン移動システムの実装。FireCharge は内部で stateTimer を使い「タメ→リリース」の
-// 2フェーズを持つので、外からは1状態を見るだけで予兆表現が成立する。
 #include "DroneMovementSystem.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -63,7 +61,7 @@ void DroneMovementSystem::Update(float rawDt)
 
     ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
                            const TimeStateComponent &time) {
-        float dt = time.localDt; // 各自の時計。ヒットストップでピタッと止まる
+        float dt = time.localDt; // 各機の時間。ヒットストップ中は 0 になり止まる
 
         // 位相を進めて 2π で巻き戻す。放置すると単調増加して float の刻みが粗くなり、
         // 長時間プレイで震えが量子化する。
@@ -156,12 +154,12 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity,
                                           (std::min)(kIdleDamping * dt, 1.0f));
 
-    // ホバー感（フワフワ）。位相は個体ごとに違うので群れが同期して揺れない。
+    // ホバーの上下揺れ。位相は個体ごとに違うので群れが同期して揺れない。
     drone.currentVelocity.y +=
         std::cos(drone.hoverTimeOffset * kHoverFrequency) * kHoverAmplitude * dt;
 
     // 予告の震え。windupTimer は合図が立った瞬間 0 に落ちるので、撃つのと同時に止む。
-    // 二乗で立ち上げるのは「後半で急にざわつく」形にするため（線形だと発生直前が読めない）。
+    // 二乗で立ち上げるのは、後半で急に振れ幅が大きくなる形にするため（線形だと発生直前が読めない）。
     if (drone.windupTimer > 0.0f)
     {
         const float t   = (std::min)(1.0f, drone.windupTimer / m_shiver.rampTime);
@@ -182,6 +180,7 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
 }
 
 // 突撃。stateTimer > 0 の間が「タメ」、0 になった瞬間から「リリース」（高速直進）。
+// 内部で2段階を持つので、外からは FireCharge の1状態を見るだけで予兆を表現できる。
 inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // 追従モードは陣形自体が動く攻撃（縦割りのヒンジ回転など）。直進せず、Formation が
@@ -195,7 +194,7 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     if (drone.chargeMode == ChargeMode::RigidFollow)
     {
         // 形が動き切ったら剛体をやめ、Idle のバネへ渡して惰性で収める。
-        //   閉じ切った座標に固定し続けると全機が同時に静止して「ピシッと止まる」。
+        //   閉じ切った座標に固定し続けると全機が同時に静止して不自然に見える。
         //   手を離すのは動きだけで、危険な区間かどうかは currentState が持っている
         //   （DroneHitSystem）ので、当たり方はここでは変わらない。
         if (drone.attackProgress >= 1.0f)
@@ -237,9 +236,9 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
         return;
     }
 
-    // [dashモード：発射待ち] fireDelay>0 の間は自分の順番を待つ。
+    // 発射待ち: fireDelay>0 の間は自分の順番を待つ。
     //   待っている間も陣形の指示に従わせる。ここで静止させると Strike の瞬間に
-    //   輪の回転まで止まり、撃つ機以外が置物になる。陣形が「輪を回しつつ
+    //   輪の回転まで止まり、撃つ機以外が静止する。陣形が「輪を回しつつ
     //   番が近い機だけ中心へ寄せる」と書けるのは、ここが動いているから。
     if (drone.fireDelay > 0.0f)
     {
@@ -285,7 +284,7 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
 }
 
 // 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
-// 剛体追従にすると隊列が1ミリも歪まず「1枚の板が近づいてくる」絵になる。
+// 剛体追従にすると隊列がまったく歪まず、「1枚の板が近づいてくる」絵になる。
 inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     const float pGain = m_followGain * SlotLag(drone); // 後方の機ほど弱める＝しなる
@@ -294,7 +293,7 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     Vector3 displacement   = drone.targetPosition - trans.position;
     Vector3 targetVelocity = drone.followFeedForward + displacement * pGain;
 
-    // 頭の突入速度を追い越せる上限にする（低いと千切れて置いていかれる）。
+    // アンカーの突入速度を追い越せる上限にする（低いと隊列から離れて置いていかれる）。
     const float maxSpeed = drone.moveSpeed * kSoftFollowMaxSpeedScale;
     if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
     {
@@ -348,7 +347,7 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
 
     drone.currentVelocity += Vector3::UnitY * (kBreakawayLift * (1.0f - fast) * dt);
 
-    // 目標ではなく速度を見る＝飛行機的な挙動。
+    // 目標ではなく速度の向きを向く（航空機と同じく進行方向へ機首を向ける）。
     Vector3 look = drone.currentVelocity;
     if (look.LengthSquared() > 0.001f)
     {
@@ -359,5 +358,5 @@ inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, Dro
     }
 }
 
-// PushSystem より前に trans を仕上げる。
+// JoltPushSystem（L03_PushToPhysics）が物理へ渡す前に位置を確定する。
 REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);

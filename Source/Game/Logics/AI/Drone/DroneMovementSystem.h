@@ -1,11 +1,18 @@
-// 目標座標へドローンを物理的に移動・回転させるシステム。実行順序は L03_PrePhysics。
-//
-// 状態はボスの指示で動く3つ（Idle / MoveToTarget / FireCharge）と、個体が自分で
-// 入る2つ（Stunned / Returning）。演出は上乗せで表現し、ステートにはしない。
-//
-// 補間係数は必ず (std::min)(k * dt, 1.0f) で止める。1 を超えると外挿になって
-// 目標を通り越す（globalScale を 1 より大きくできるので dt 側では保証されない）。
 #pragma once
+// ===========================================================================
+// 概要: ドローンを目標座標へ移動・回転させる System（L03_PrePhysics）。
+//
+// 責務:
+//   - currentState ごとに速度（currentVelocity）と姿勢を計算する
+//   - 速度を位置へ積分し、床より下へ潜らせない
+//   - ホバーの揺れと予告の震えを位置に上乗せする
+//
+// 備考:
+//   状態はボスの指示で動く3つ（Idle / MoveToTarget / FireCharge）と、個体が自分で
+//   入る2つ（Stunned / Returning）。演出は上乗せで表現し、ステートにはしない。
+//   補間係数は必ず (std::min)(k * dt, 1.0f) で止める。1 を超えると外挿になって
+//   目標を通り越す（globalScale を 1 より大きくできるので dt 側では保証されない）。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/DroneComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -34,7 +41,7 @@ private:
     inline void ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt);
     inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むのがこの技の見た目の核。
+    // 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むことがこの技の見た目の要点。
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 進行方向 → 姿勢。yaw の式をここ1箇所に閉じ込める。
@@ -44,7 +51,7 @@ private:
     //     (0,0,-1)·Rx(p) = (0, +sin p, -cos p)        ← pitch = asin(look.y) と一致する
     //     ここへ Ry(θ) = (-cos p·sin θ, sin p, -cos p·cos θ)
     //   となり、look と突き合わせると θ = atan2(-x, -z)。
-    //   +Z 前提の atan2(x, z) や、以前ここにあった atan2(x, -z) と混ぜると
+    //   +Z 前提の atan2(x, z) や atan2(x, -z) と混ぜると
     //   Z軸に対する鏡像になり、状態が切り替わるたびに機首が最大180°反転する
     //   （±Z を向いているときだけ一致するので気づきにくい）。
     //
@@ -77,7 +84,7 @@ private:
     static constexpr float kIdleSpeedScale = 1.5f;
 
     static constexpr float kHoverFrequency = 1.0f; // kHoverPhasePeriod の巻き戻しが成立するよう整数にする
-    static constexpr float kHoverAmplitude = 3.0f;
+    static constexpr float kHoverAmplitude = 3.0f; // 上下揺れの加速度の振幅 [m/s²]
 
     // 突撃のタメ。「静止 → 加速」の2段でジャスト回避を読ませる。
     //
@@ -85,7 +92,7 @@ private:
     //     |<-- 静止 (0.2秒) -->|<-- kWindupLungeTime (0.2秒) -->| 射出
     //
     //   静止の長さは引き算で決まる。中央で一度止まることで「集まった」と「撃った」が
-    //   別々の出来事として読める。定速にすると速度の段差が2回できてカクつく。
+    //   別々の出来事として読める。定速にすると速度の段差が2回でき、動きが途切れて見える。
     static constexpr float kWindupLungeTime  = 0.2f;  // 加速にかける長さ [秒]
     static constexpr float kWindupLungeSpeed = 20.0f; // 加速の終速 [m/s]
 
@@ -107,8 +114,8 @@ private:
 
     // 剛体追従（縦割り・挟み込み等）の終わり際に残す惰性。
     //   形が動いている間の速度をこの割合だけ currentVelocity へ残し、動き切ったあとは
-    //   Idle のバネへ渡す。ここが 0 だと刃や腕が閉じ切った瞬間に全機が空中で同時停止し、
-    //   「ピシッと止まる」形で不自然に見える。
+    //   Idle のバネへ渡す。ここが 0 だと刃や腕が閉じ切った瞬間に全機が空中で同時に
+    //   静止し、不自然に見える。
     //   剛体そのものは壊れない（残した速度ぶんを座標から引いてから積分へ渡すので、
     //   倍率をいくつにしても着地点は targetPosition ちょうどになる）。
     static constexpr float kRigidFollowInertia = 0.35f;
@@ -128,7 +135,7 @@ private:
 
     static constexpr float kStunTumbleRate = 4.0f;  // 吹き飛ばし中の回転 [rad/s]
     static constexpr float kKnockbackDecay = 6.0f;  // 吹き飛ばし速度の減衰率 [1/s]
-    static constexpr float kBreakawayLift  = 18.0f; // 離脱時に上方向へ加える加速度
+    static constexpr float kBreakawayLift  = 18.0f; // 離脱時に上方向へ加える加速度 [m/s²]
 
     // 浮き上がりを効かせ始める速さ [m/s]。全速のまま上向きの力を加えると、
     // 突き抜けた瞬間に軌道が跳ね上がる。
@@ -136,16 +143,16 @@ private:
 
     static constexpr float kBreakawayDrag = 2.5f; // 離脱中の減速率 [1/s]
 
-    // 隊列追従の滑らかさと最高速度倍率（頭の突入速度を上回る必要がある）。
+    // 隊列追従の滑らかさと最高速度倍率（小隊のアンカーの突入速度を上回る必要がある）。
     static constexpr float kSoftFollowDamping       = 10.0f;
     static constexpr float kSoftFollowMaxSpeedScale = 2.4f;
 
-    // slotInSquad から追従の鈍さ係数を出す。後方の機ほどワンテンポ遅れて曲がるので
-    // 隊列がムチのようにしなる。「編隊で飛んでいる」感の大半はこの遅れから出ている。
+    // slotInSquad から追従の弱さの係数を出す。後方の機ほど遅れて曲がるので、
+    // 隊列が先頭から順に曲がっていく。編隊で飛んでいるように見えるのは主にこの遅れによる。
     float SlotLag(const DroneComponent &drone) const
     {
         const float lag = 1.0f - static_cast<float>(drone.slotInSquad) * m_slotLagPerSlot;
-        return (lag < 0.15f) ? 0.15f : lag; // 遅すぎて隊列から千切れないよう下限を置く
+        return (lag < 0.15f) ? 0.15f : lag; // 遅れすぎて隊列から離れないよう下限を置く
     }
 
     // SquadTuning から Update の先頭で写し取る（並列ループから resource を引かない）。

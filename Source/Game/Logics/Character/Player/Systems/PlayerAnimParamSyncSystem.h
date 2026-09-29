@@ -1,20 +1,20 @@
 #pragma once
-// ゲーム固有の状態を、アニメの「掲示板」(AnimParameters) へ転記するシステム。
+// ===========================================================================
+// 概要: プレイヤーのゲーム側の状態を、アニメーションのパラメータ(AnimParameters)へ書く System。
 //
-// 位置付け:
-//   物理(Jolt)由来の Speed / YVelocity / IsGrounded は Engine 側の
-//   CharacterAnimSyncSystem が担当する。こちらは「ダッシュ中か」のような
-//   ゲームのルールに属する状態だけを受け持つ。
+// 責務:
+//   - IsDashing / IsAirborne / MoveInput を書く
+//   - ダッシュ攻撃にするかを判定し、DashAttackReady を書く
 //
-// なぜ分けるか:
-//   Engine のシステムが DashComponent(Game) を読みに行くと Engine→Game 依存に
-//   なるため、ゲーム側の状態はゲーム側から掲示板へ push する。
+// 備考:
+//   物理(Jolt)から求める Speed / YVelocity / IsGrounded は、Engine 側の
+//   CharacterAnimSyncSystem が書く。こちらは「ダッシュ中か」のようなゲームのルールに属する状態だけを書く。
+//   Engine の System が DashComponent(Game) を読むと Engine→Game の依存になるため、ゲーム側から書き込む。
 //
-// 実行ステージ:
-//   L02_PreUpdate。掲示板を消費する AnimControllerSystem(L02_Update) より
-//   確実に前に走らせる必要がある（同一ステージだと順序が登録順依存になるため）。
-//   参照する DashComponent は前フレームの値で、これは移管前の
-//   CharacterAnimSyncSystem(L02_PreUpdate) と同じタイミング＝挙動は不変。
+//   実行ステージは L02_PreUpdate。AnimParameters を読む AnimControllerSystem(L02_Update) より
+//   前に走らせる（同じステージだと順序が登録順で決まってしまうため）。
+//   読む DashComponent は、PlayerDashSystem(L02_Update) が前のフレームで書いた値になる。
+// ===========================================================================
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"

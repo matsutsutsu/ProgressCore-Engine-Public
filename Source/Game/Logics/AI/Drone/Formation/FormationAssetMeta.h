@@ -1,20 +1,24 @@
-// FormationAsset の各部を「どう保存し、どう画面に出すか」を1箇所に書いた表。
-//
-// FieldDescriptor は engine 既存の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
-// インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれ1つを読む。
-// 項目を増やすときはここへ1行足すだけで、保存と UI の両方が付いてくる。
-//
-// 構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。
-// 入れ子の構造体は別の表として持ち、JSON もその単位で入れ子になる。
-//
-// CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
-// マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
-// 2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
-//
-// 表に載らないもの:
-//   FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
-//   FormationAsset::sourcePath … 保存も表示もしない
 #pragma once
+// ===========================================================================
+// 概要: FormationAsset の各項目を「どう保存し、どう画面に出すか」を書いた表。
+//
+// 責務:
+//   - 構造体ごとの FieldDescriptor 表（割付・形・動き・配置・当たり方・見せ方・全体）
+//   - enum の値の名前テーブル（JSON にもこの綴りで書く）
+//
+// 備考:
+//   FieldDescriptor は Engine の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
+//   インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれを読む。項目を増やす
+//   ときはここへ1行足せば、保存と UI の両方に反映される。
+//   構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。入れ子の
+//   構造体は別の表として持ち、JSON もその単位で入れ子になる。
+//   CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
+//   マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
+//   2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
+//   表に載らないもの:
+//     FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
+//     FormationAsset::sourcePath … 保存も表示もしない
+// ===========================================================================
 #include <iterator>
 #include <vector>
 
@@ -34,14 +38,14 @@ namespace CCL::AI::Formation::Meta
     inline constexpr const char *kLookNames[]       = {"Auto", "ToPlayer", "Inward"};
     inline constexpr const char *kChargeModeNames[] = {"Straight", "RigidFollow", "SoftFollow"};
 
-    /// 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す。
+    // 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す。
     template <size_t N>
     constexpr int NameCount(const char *const (&)[N])
     {
         return static_cast<int>(N);
     }
 
-    /// (1) 割付：通し番号 → 席
+    // (1) 割付: 通し番号 → 席
     inline const std::vector<FieldDescriptor> &AssignFields()
     {
         using T                                          = FormationAssign;
@@ -55,7 +59,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// (2) 形：席 → ローカル座標（動かす前の待機の形）
+    // (2) 形: 席 → ローカル座標（動かす前の待機の形）
     inline const std::vector<FieldDescriptor> &LayoutFields()
     {
         using T                                          = FormationLayout;
@@ -71,7 +75,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// (3) 動き：形を加工する1枚
+    // (3) 動き: 形を加工する1枚
     inline const std::vector<FieldDescriptor> &LayerFields()
     {
         using T                                          = FormationLayer;
@@ -92,7 +96,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// (4) 配置：ボスからのオフセット（レイヤーの回転軸の位置でもある）
+    // (4) 配置: ボスからのオフセット（レイヤーの回転軸の位置でもある）
     inline const std::vector<FieldDescriptor> &OriginFields()
     {
         using T                                          = FormationOrigin;
@@ -104,7 +108,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// 当たり方と痛さ
+    // 当たり方と痛さ
     inline const std::vector<FieldDescriptor> &CombatFields()
     {
         using T                                          = FormationCombat;
@@ -118,7 +122,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// 見せ方
+    // 見せ方
     inline const std::vector<FieldDescriptor> &OutputFields()
     {
         using T                                          = FormationOutput;
@@ -131,7 +135,7 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-    /// 陣形そのものの情報（入れ子でない部分）
+    // 陣形そのものの情報（入れ子でない部分）
     inline const std::vector<FieldDescriptor> &RootFields()
     {
         using T                                          = FormationAsset;

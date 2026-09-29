@@ -1,15 +1,23 @@
-// 小隊（5機編隊）の「頭」を動かすシステム。小隊単位の判断はここに集約する。
-//
-//   DroneCommandSystem   … ボスの命令を配る（伝令）
-//   SquadUpdateSystem    … 小隊の頭をどこへ動かすか決める  ← このファイル
-//   DroneFormationSystem … 頭からのオフセットで各機の持ち場を出す
-//   DroneBrainSystem     … 個体が今どうすべきか決める
-//   DroneMovementSystem  … 実際に動かす
-//
-// 独立したシステムなのは、小隊が最大32個なのに対しドローンは1000機あるから。
-// 機体ごとのループでやると同じ計算を5回繰り返した上に同じ小隊へ並列に書き込む。
-// 単スレッドで、SquadState への書き込みはここだけに閉じる。
 #pragma once
+// ===========================================================================
+// 概要: 小隊（5機編隊）のアンカーを動かす System。小隊単位の判断はここに集める。
+//
+// 責務:
+//   - 各小隊の生存数と、各席の前フレームの位置・速度を集める
+//   - フェーズ（Regroup / Approach / Strike）を遷移させる
+//   - アンカーの位置・速度・向きを更新し、床より下へ沈ませない
+//
+// 備考:
+//   ドローン系 System の分担は次のとおり。
+//     DroneCommandSystem   … ボスの命令を各機へ配る
+//     SquadUpdateSystem    … 小隊のアンカーをどこへ動かすか決める（この System）
+//     DroneFormationSystem … アンカーを起点に各機の持ち場を出す
+//     DroneBrainSystem     … 個体が今どうすべきか決める
+//     DroneMovementSystem  … 実際に動かす
+//   独立した System にしているのは、小隊が最大32個なのに対しドローンは1000機あるため。
+//   機体ごとのループで行うと同じ計算を5回繰り返し、同じ小隊へ並列に書き込むことになる。
+//   単スレッドで回し、SquadState への書き込みはここだけに限る。
+// ===========================================================================
 #include <vector>
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -37,7 +45,7 @@ public:
 
     void Initialize() override;
 
-    // 伝令が配った陣形指示を読んでから小隊の行動を決める。BehaviorTreeSystem も直接
+    // DroneCommandSystem が配った陣形指示を読んでから小隊の行動を決める。BehaviorTreeSystem も直接
     // 名指しする（間接的に後ろになるだけでは起動時に「順序不定」と報告される）。
     std::vector<const char *> GetRunAfter() const override
     {
@@ -56,11 +64,11 @@ public:
     void Update(float dt) override;
 
 private:
-    /// SquadRegistry が未登録なら作る。World を作り直しても復帰できるよう Update からも
-    /// 毎フレーム呼ぶ。データを持つ側が自分で用意し、シーン側に依存させない。
+    // SquadRegistry が未登録なら作る。World を作り直しても復帰できるよう Update からも
+    // 毎フレーム呼ぶ。データを持つ側が自分で用意し、シーン側に依存させない。
     void EnsureRegistry();
 
-    /// 小隊1個ぶんのフェーズ遷移と頭の移動。
+    // 小隊1個ぶんのフェーズ遷移とアンカーの移動。
     void UpdateSquad(SquadState                         &squad,
                      uint8_t                             squadId,
                      bool                                ordered,
@@ -70,34 +78,34 @@ private:
                      const SquadTuning                  &tuning,
                      float                               dt);
 
-    /// 頭をプレイヤーへ向けて曲げる（旋回上限つき）。無制限に追尾させると、避けても
-    /// 曲がって当たる攻撃になる。一定距離まで詰めたら直線＝回避できる窓にする。
+    // アンカーの向きをプレイヤーへ曲げる（旋回上限つき）。無制限に追尾させると、避けても
+    // 曲がって当たる攻撃になる。一定距離まで詰めたら直線にし、回避できる時間を残す。
     void SteerTowardPlayer(SquadState                         &squad,
                            const DirectX::SimpleMath::Vector3 &playerPos,
                            const SquadTuning                  &tuning,
                            float                               dt) const;
 
-    /// 頭が床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
-    /// 位置だけでなく速度と向きの下向き成分も抜くこと（追従機は「1つ前の機体の速度」を
-    /// 先渡しで受け取るので、頭が下を向いたままだと胴体が床へ押し込まれ続ける）。
+    // アンカーが床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
+    // 位置だけでなく速度と向きの下向き成分も抜くこと（追従機は「1つ前の機体の速度」を
+    // 先渡しで受け取るので、アンカーが下を向いたままだと後続機が床へ押し込まれ続ける）。
     void ClampAltitude(SquadState &squad, const SquadTuning &tuning) const;
 
-    // 待機時にボス頭上のどの高さへ置くか。地上の間合いを塞がない高さ。
+    // 待機時にボス頭上のどの高さへ置くか [m]。地上の間合いを塞がない高さにする。
     static constexpr float kRegroupHeight = 22.0f;
 
-    // 待機時のボス中心からの水平距離。小隊ごとに角度をずらして並ぶ。
+    // 待機時のボス中心からの水平距離 [m]。小隊ごとに角度をずらして並ぶ。
     static constexpr float kRegroupRadius = 18.0f;
 
     // 接近位置がゆっくり回る速さ [rad/s]。止まって見えないようにする。
     static constexpr float kApproachDrift = 0.35f;
 
-    // 頭を目標へ寄せるバネの強さと減衰、最高速度 [m/s]（突入より遅くして緩急を作る）。
+    // アンカーを目標へ寄せるバネの強さと減衰、最高速度 [m/s]（突入より遅くして緩急を作る）。
     static constexpr float kAnchorGain = 1.8f;
 
     static constexpr float kAnchorDamping = 3.0f;
 
     static constexpr float kCruiseSpeed = 26.0f;
 
-    // 待機・接近位置をゆっくり回すのに使う経過時間。
+    // 待機・接近位置をゆっくり回すのに使う経過時間 [秒]。
     float m_elapsed = 0.0f;
 };

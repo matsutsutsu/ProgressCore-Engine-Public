@@ -1,5 +1,15 @@
 #pragma once
-// 意思データを物理エンジン(Jolt CharacterVirtual)の速度情報へ変換し流し込むシステム。
+// ===========================================================================
+// 概要: プレイヤーのジャンプと向き（旋回・傾き）を処理する System。
+//
+// 責務:
+//   - 接地状態から isAirborne を猶予付きで決める
+//   - 2段ジャンプを判定し、物理へジャンプの要求を渡してイベントとアニメのトリガーを出す
+//   - 移動方向（攻撃時は敵の方向）へ向き直り、旋回時の傾きを付ける
+//   - 傾きを含む回転を Transform に、yaw だけを Jolt の CharacterVirtual に書く
+//
+// 備考: 移動速度は書かない（PlayerDashSystem と CharacterMovementComponent の担当）。
+// ===========================================================================
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -28,13 +38,13 @@ public:
     void Update(float dt) override;
 
 private:
-    // 接地状態の更新と、ジャンプ成立の判定（2段ジャンプの可否）。
-    // 押下の立ち上がりは PlayerInputComponent が解決済みなので、ここは
-    // 「跳んでよいか」だけを判断し、結果を jumpImpulse として物理へ渡す。
-    // 接地離れは airborneGraceTime の猶予付きで isAirborne へ反映する。
-    // ジャンプ成立時は worldPos を載せて PlayerJumpedEvent を発行する（その場VFX用）。
+    // 接地状態を更新し、ジャンプできるかを判定する（2段ジャンプを含む）。
+    // 押した瞬間の判定は PlayerInputComponent で済んでいるので、ここは
+    // 跳んでよいかだけを判断し、結果を jumpImpulse として物理へ渡す。
+    // 接地を離れたことは airborneGraceTime の猶予付きで isAirborne へ反映する。
+    // 跳んだときは worldPos を載せて PlayerJumpedEvent を出す（VFX 用）。
     void UpdateJumpLogic(float dt, bool isGrounded, bool jumpPressed, CharacterMovementComponent &movement, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos);
 
-    // プロシージャル・バンキング（傾き）の計算と、物理/描画の回転分離処理
+    // 向きと旋回時の傾きを計算し、傾きを含む回転を Transform に、yaw だけを Jolt に書く
     void UpdateBankingAndRotation(float dt, const CharacterMovementComponent &movement, float walkSpeed, PlayerComponent &player, TransformComponent &trans, JPH::CharacterVirtual *character);
 };

@@ -1,4 +1,3 @@
-// 役割・設計方針は InputPromptSystem.h を参照。
 #include "InputPromptSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -8,7 +7,7 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI階層（親子）
+#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
@@ -49,12 +48,12 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
         }
         catch (...)
         {
-            outRows.clear(); // 壊れたJSONは既定へ落とす（下で埋める）
+            outRows.clear(); // 壊れた JSON なら既定の並びにする（下で入れる）
         }
     }
 
-    // 設定が読めなくてもHUDが消えないよう既定を持つ。
-    //   操作説明が出ないのは「機能が無い」に見えるので、静かに空にしない。
+    // 設定が読めなくても操作の説明が消えないよう、既定の並びを持つ。
+    // 説明が出ないと、その操作が無いように見えるため
     if (outRows.empty())
     {
         outRows = {{"", "Move", "MOVE"}, {"", "Camera", "CAMERA"}, {"Attack", "", "ATTACK"}, {"Cleave", "", "CLEAVE"}, {"Dash", "", "DODGE"}, {"Jump", "", "JUMP"}, {"LockOn", "", "LOCK ON"}};
@@ -66,15 +65,15 @@ void InputPromptSystem::ComputeRow(size_t index, UITransformComponent &outIcon,
 {
     const float y = m_marginTop + m_rowHeight * static_cast<float>(index);
 
-    // アイコン：画面右上へ、自身の右上を合わせて右端から一定距離に置く。
+    // アイコン: 自分の右上を画面の右上に合わせ、右端から m_marginRight だけ離す
     outIcon.anchor = {1.0f, 0.0f};
     outIcon.pivot  = {1.0f, 0.0f};
     outIcon.offset = {-m_marginRight, y};
     outIcon.size   = {m_iconSize, m_iconSize};
     outIcon.alpha  = m_alpha;
 
-    // 行名：アイコンの左。
-    //   文字は computedPos の左上から描かれるので、アイコンの縦中央に来るよう少し下げる。
+    // 行名: アイコンの左。文字は computedPos を左上にして描かれるので、
+    // アイコンの縦の中央に来るよう少し下げる
     outLabel.anchor = {1.0f, 0.0f};
     outLabel.pivot  = {1.0f, 0.0f};
     outLabel.offset = {-(m_marginRight + m_iconSize + m_labelGap),
@@ -93,7 +92,7 @@ void InputPromptSystem::ApplyLayout()
         ComputeRow(i, it, lt);
 
         // computed* は UILayoutSystem が毎フレーム書くので触らない。
-        //   丸ごと代入すると計算済みの位置を1フレーム空にしてしまう。
+        // まるごと代入すると、求めてある位置が1フレームだけ消えてしまう
         if (auto *p = m_world->GetComponent<UITransformComponent>(m_iconIDs[i]))
         {
             p->anchor = it.anchor;
@@ -122,7 +121,7 @@ void InputPromptSystem::BuildRows()
     std::vector<ConfigRow> rows;
     LoadConfig(rows);
 
-    // UI階層のルート。配下をこの Canvas の子にしてヒエラルキーで束ねる。
+    // アイコンと行名はこの Canvas の子にする
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "InputPromptCanvas");
 
     auto iconArch  = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
@@ -143,10 +142,10 @@ void InputPromptSystem::BuildRows()
         auto icon = EntityFactory::SpawnNamed(*m_world, ("Prompt_" + suffix).c_str(), iconArch);
 
         UIImageComponent img;
-        img.sortOrder = 120;   // ゲージ(100〜102)より手前
-        img.visible   = false; // InputIconSystem が張り替えるまで出さない
+        img.sortOrder = 120;   // ゲージ（100〜102）より手前
+        img.visible   = false; // InputIconSystem が画像を決めるまで出さない
 
-        // どのアイコンかは宣言だけして、解決は InputIconSystem に任せる。
+        // どのアイコンかだけを指定し、画像は InputIconSystem が決める
         InputIconComponent ic;
         if (cfg.action.empty())
         {
@@ -179,8 +178,7 @@ void InputPromptSystem::BuildRows()
 
 void InputPromptSystem::Update(float /*dt*/)
 {
-    // プレイヤーが居ない画面（タイトル等）には操作説明を出さない。
-    // 生成そのものを遅らせるので、UIエンティティも作られない。
+    // プレイヤーが居ない画面（タイトルなど）には出さない。作るのを遅らせるので、UI エンティティも作られない
     if (!m_built)
     {
         if (!m_world->HasResource<BattleContext>()) return;
@@ -190,9 +188,8 @@ void InputPromptSystem::Update(float /*dt*/)
         m_built = true;
     }
 
-    // 行名の表示は、対になるアイコンが出ているかに合わせる。
-    //   割り当ての無い操作（パッドに無い FreeLook 等）でアイコンだけ消えると、
-    //   文字が宙に浮いて「アイコンの読み込みに失敗した」ように見えるため。
+    // 行名は、同じ行のアイコンが出ているときだけ出す。割り当ての無い操作（パッドに無い FreeLook など）で
+    // アイコンだけが消えると、文字だけが残ってアイコンの読み込みに失敗したように見えるため
     const size_t count = (std::min)(m_iconIDs.size(), m_labelIDs.size());
     for (size_t i = 0; i < count; ++i)
     {
@@ -218,7 +215,7 @@ void InputPromptSystem::OnGui()
     changed |= ImGui::SliderFloat("Text Size", &m_textSize, 6.0f, 64.0f, "%.0f px");
     changed |= ImGui::SliderFloat("Alpha", &m_alpha, 0.0f, 1.0f, "%.2f");
 
-    // 行送りがアイコンより狭いと上下で重なる。値だけでは気付けないので明示する。
+    // 行の高さがアイコンより小さいと上下で重なる。値だけでは気付きにくいので表示する
     if (m_rowHeight < m_iconSize)
     {
         ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.35f, 1.0f),
@@ -228,8 +225,8 @@ void InputPromptSystem::OnGui()
     ImGui::Separator();
     if (ImGui::Button("既定値に戻す"))
     {
-        // 調整値だけを戻す。既定値の定義はヘッダのメンバ初期化子1箇所しかないので、
-        // 一時オブジェクトから写して二重管理にしない（m_iconIDs 等は触らない）。
+        // 調整値だけを戻す（m_iconIDs などは触らない）。既定値はヘッダーのメンバ初期化子にしか
+        // 書いていないので、一時オブジェクトから写して、既定値を2か所に書かないようにする
         const InputPromptSystem def{};
         m_iconSize    = def.m_iconSize;
         m_rowHeight   = def.m_rowHeight;
@@ -250,5 +247,5 @@ void InputPromptSystem::OnGui()
     if (changed) ApplyLayout();
 }
 
-// HUD同期の帯。ゲージ類と同じタイミングで表示だけを更新する。
+// ゲージと同じ HUD のステージで表示を更新する
 REGISTER_LOGIC_SYSTEM(InputPromptSystem, Priority::LogicStage::L06_HudSync);

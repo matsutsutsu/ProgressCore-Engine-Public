@@ -1,5 +1,3 @@
-// BattleStartFacingSystem の実装。
-
 #include "BattleStartFacingSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -62,8 +60,8 @@ bool BattleStartFacingSystem::TryApplyFacing()
 
         tps.currentYaw = camYawDeg;
 
-        // 補間をワープさせる。これが無いと、誤った向きから positionDamping で
-        // ぬるりと滑ってきて「開始直後に勝手にカメラが回る」絵になる。
+        // 補間を飛ばして一度で合わせる。これが無いと、元の向きから positionDamping で
+        // 補間されて、開始直後にカメラが勝手に回って見える。
         tps.isFirstFrame = true;
         ++oriented;
     });
@@ -75,5 +73,5 @@ bool BattleStartFacingSystem::TryApplyFacing()
     return true;
 }
 
-// BattleContext(L01_WorldState) の後、PlayerMoveSystem(L02_Update) より前。
+// BattleContextSyncSystem(L01_WorldState) の後、PlayerMoveSystem より前（同じ L02_PreUpdate なので GetRunBefore で指定）。
 REGISTER_LOGIC_SYSTEM(BattleStartFacingSystem, Priority::LogicStage::L02_PreUpdate);

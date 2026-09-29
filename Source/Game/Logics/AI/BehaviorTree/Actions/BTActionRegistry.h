@@ -1,5 +1,12 @@
-// ActionID → アクション/条件クラスを解決するレジストリ
 #pragma once
+// ===========================================================================
+// 概要: ActionID から BT のアクション・条件のインスタンスを引くレジストリ（シングルトン）。
+//
+// 責務:
+//   - アクションと条件を ActionID ごとに1つずつ登録する
+//   - ActionID から登録済みのインスタンスを返す
+//   - 各アクション・条件が申告した Read/Write の型を和集合にまとめる
+// ===========================================================================
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -9,7 +16,6 @@
 
 namespace CCL::AI::BT
 {
-    // BTActionRegistry は、BTのアクション・条件を ActionID から解決するための辞書
     class BTActionRegistry
     {
     public:
@@ -38,7 +44,7 @@ namespace CCL::AI::BT
             AccumulateAccess(*m_conditions[id]);
         }
 
-        // コンストラクタ引数が要るアクション（Wait等）を構築済みで登録。
+        // コンストラクタ引数が要るアクション（TriggeredMotionAction など）を、作ったものごと登録する。
         void RegisterActionInstance(ActionID id, std::unique_ptr<IBTAction> action)
         {
             if (id >= m_actions.size()) m_actions.resize(id + 1);
@@ -50,14 +56,14 @@ namespace CCL::AI::BT
         IBTAction    *GetAction(ActionID id) const { return (id < m_actions.size()) ? m_actions[id].get() : nullptr; }
         IBTCondition *GetCondition(ActionID id) const { return (id < m_conditions.size()) ? m_conditions[id].get() : nullptr; }
 
-        // --- アクセス申告の集約結果（BehaviorTreeSystem がスケジューラへ中継する）---
+        // --- アクセス申告をまとめた結果（BehaviorTreeSystem がスケジューラへ渡す）---
         //
         // 登録済みの全アクション・条件が「world から直接触る」と申告した型の和集合。
-        // BTエンジン自身の Read<>/Write<> には現れない書き込みを、ここで表に出す。
+        // BehaviorTreeSystem 自身の Read<>/Write<> には現れない読み書きを、ここで申告に載せる。
         const std::vector<TypeID> &ExtraWriteTypes() const { return m_extraWrites; }
         const std::vector<TypeID> &ExtraReadTypes() const { return m_extraReads; }
 
-        // 登録されている行動・条件の数を数える（起動時の整合チェック用）。
+        // その ID の行動・条件が登録されているか（起動時の突き合わせ用）。
         bool HasAction(ActionID id) const { return GetAction(id) != nullptr; }
         bool HasCondition(ActionID id) const { return GetCondition(id) != nullptr; }
 
@@ -67,7 +73,7 @@ namespace CCL::AI::BT
         BTActionRegistry &operator=(const BTActionRegistry &) = delete;
 
         // 申告を和集合として溜める。件数が数個なので線形探索で足りる
-        // （登録は起動時に1回だけで、実行時には呼ばれない）。
+        // （登録は起動時に1回だけで、実行中には呼ばれない）。
         static void Merge(std::vector<TypeID> &dst, const std::vector<TypeID> &src)
         {
             for (TypeID t : src)

@@ -1,4 +1,3 @@
-// 小隊の頭（anchor）を動かす実装。フェーズ遷移＋1小隊ぶんの移動計算。
 #include "SquadUpdateSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -114,7 +113,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
 {
     if (squad.phaseTimer > 0.0f) squad.phaseTimer -= dt;
 
-    // フェーズ遷移（優先度順。上から最初に成立したものが勝つ）。
+    // フェーズ遷移（優先度順。上から最初に成立したものを採る）。
     SquadPhase next;
     if (ordered == false)
     {
@@ -153,12 +152,12 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
         else
         {
             // 隊列を組んだ直後は即座に突入できる状態にする。予備動作の長さは BT の Wait が
-            // 決めるので、ここでも待たせると二重に効いて噛み合わせ事故になる。
+            // 決めるので、ここでも待たせると待ち時間が二重になり、BT の想定とずれる。
             squad.phaseTimer = 0.0f;
         }
     }
 
-    // 突入：頭がプレイヤーを追い、編隊ごと引っ張っていく。
+    // 突入: アンカーがプレイヤーを追い、後続機はそれに付いていく。
     if (squad.phase == SquadPhase::Strike)
     {
         SteerTowardPlayer(squad, playerPos, tuning, dt);
@@ -176,7 +175,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     Vector3 desired;
     if (squad.phase == SquadPhase::Approach)
     {
-        // 斜め横から回り込むことで「側面から迫られる」圧を作る。
+        // 斜め横から回り込み、側面から迫られるように見せる。
         const float a = phaseAngle + m_elapsed * kApproachDrift;
         desired       = playerPos + Vector3(std::cos(a) * tuning.approachRadius,
                                             tuning.approachHeight,
@@ -208,7 +207,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
                                          (std::min)(kAnchorDamping * dt, 1.0f));
     squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
 
-    // 接近中はプレイヤーを睨む（これから来ると読ませる）、待機中は進行方向。
+    // 接近中はプレイヤーの方を向く（これから来ると読ませる）。待機中は進行方向を向く。
     Vector3 face = squad.anchorVelocity;
     if (squad.phase == SquadPhase::Approach)
     {
@@ -240,8 +239,8 @@ void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuni
     // followFeedForward として受け取って床へ押し込まれ続ける。
     if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
 
-    // 向きも寝かせる。真下を向いたまま突入速度を掛けると、速度の大半が止められた
-    // 縦方向に消えて床に貼り付く。水平成分だけ残せば床すれすれを這って通り過ぎる。
+    // 向きも水平にする。真下を向いたまま突入速度を掛けると、速度の大半が止められた
+    // 縦方向に消えて床に張り付く。水平成分だけ残せば床の近くを飛んで通り過ぎる。
     if (squad.anchorForward.y < 0.0f)
     {
         squad.anchorForward.y = 0.0f;
@@ -259,8 +258,8 @@ void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
     Vector3     toPlayer = playerPos - squad.anchorPos;
     const float dist     = toPlayer.Length();
 
-    // 終末ロック。突入の最後を直線に固定することで「読んで避ける」窓が必ず残る
-    // （完全追尾にすると、避けても曲がって当たる＝ジャスト回避が死ぬ）。
+    // 終末ロック。突入の最後を直線に固定するので、読んで避ける時間が必ず残る
+    // （完全追尾にすると、避けても曲がって当たり、ジャスト回避が成立しない）。
     if (dist <= tuning.terminalLockDist || dist < 0.001f) return;
 
     toPlayer /= dist;
@@ -285,5 +284,5 @@ void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
     }
 }
 
-// 伝令(DroneCommandSystem)の後、振付師(DroneFormationSystem)の前。
+// DroneCommandSystem の後、DroneFormationSystem の前（前後は両者の GetRunAfter で決める）。
 REGISTER_LOGIC_SYSTEM(SquadUpdateSystem, Priority::LogicStage::L02_Update)

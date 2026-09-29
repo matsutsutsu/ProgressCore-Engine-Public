@@ -1,9 +1,16 @@
-// DroneFormationType → IFormation クラスを解決するレジストリ。
-//        BTActionRegistry と同じ設計。switch を使わずに済ませるための核。
-//
-// 陣形の実装は C++ クラス1つ＝1陣形。追加するときは Formations_*.h に
-// クラスを書き、そのファイルの RegisterAll() へ1行足すだけでよい。
 #pragma once
+// ===========================================================================
+// 概要: DroneFormationType から IFormation の実装を引くレジストリ（シングルトン）。
+//
+// 責務:
+//   - 陣形の種類ごとに実装のインスタンスを1つ持つ
+//   - 種類から実装を引く（未登録なら nullptr）
+//   - データ陣形の表示名を返す
+//
+// 備考: BTActionRegistry と同じ設計で、陣形の分岐に switch を使わずに済ませる。
+//       C++ の陣形を追加するときは Formations_*.h にクラスを書き、そのファイルの
+//       RegisterAll() へ1行足す。データ陣形は JSON を置けば起動時に登録される。
+// ===========================================================================
 #include <array>
 #include <memory>
 
@@ -42,8 +49,8 @@ namespace CCL::AI::Formation
 
         bool Has(DroneFormationType type) const { return Get(type) != nullptr; }
 
-        /// データで書かれた技の名前（JSON の name）。C++ 実装の枠と空き枠は nullptr。
-        /// BTエディタが「データの技」の一覧と表示名を作るのに引く。
+        // データで書かれた技の名前（JSON の name）。C++ 実装の枠と空き枠は nullptr。
+        // BTエディタが「データの技」の一覧と表示名を作るのに引く。
         const char *DataFormationName(DroneFormationType type) const
         {
             IFormation *formation = Get(type);
@@ -55,7 +62,7 @@ namespace CCL::AI::Formation
         FormationRegistry(const FormationRegistry &)            = delete;
         FormationRegistry &operator=(const FormationRegistry &) = delete;
 
-        // DroneFormationType は uint8_t なので最大256個。密配列で高速アクセス。
+        // DroneFormationType は uint8_t なので最大256個。密配列にして添字で引く。
         std::array<std::unique_ptr<IFormation>, 256> m_formations;
     };
 

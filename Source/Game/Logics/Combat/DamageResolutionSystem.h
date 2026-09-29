@@ -1,30 +1,19 @@
 #pragma once
 // ===========================================================================
-// DamageResolutionSystem.h
-// ------------------------
-// 役割:
-//   ダメージイベント(DamageEventComponent)を消費し、HPの減算とノックバックの
-//   付与を行う「解決」システム。
+// 概要: 命中の結果（DamageEventComponent）を処理し、HP を減らしてノックバックを書く System。
 //
 // 責務:
-//   - DamageEvent を走査し、無敵時間を加味して HP を減算する。
-//   - ノックバック情報があれば対象に KnockbackComponent を付与(速度書き込みのみ)。
-//   - 消費したイベントエンティティを即破棄する(燃やして捨てる)。
+//   - 無敵中でなければ HP を減らし、無敵時間を始める
+//   - 攻撃した側と受けた側にヒットストップをかけ、KnockbackComponent に速度を書く
+//   - 画面の演出・カメラの揺れ・被弾と命中のイベント・のけぞりのアニメーションを出す
+//   - 処理した DamageEvent のエンティティを消す
 //
-// アーキテクチャ上の位置付け(戦闘パイプライン):
-//   [Jolt] 物理衝突 → EventBus
-//     │
-//   L05 HitboxCollisionSystem  (判定・DamageEvent生成・クリ/ノックバック方向確定)
-//     ▼
-//   L06 DamageResolutionSystem ← 本ファイル(HP減算・ノックバック付与・イベント破棄)
-//     ▼
-//   L06 HealthSystem           (無敵タイマー更新・死亡判定)
-//
-// 設計方針:
-//   - VFX/SE等の直接呼び出しは禁止。視覚効果が必要なら VFXRequest 等を別途生成し
-//     描画フェーズへデータで流す(疎結合・DOD)。
-//   - ノックバックは「速度を書き込む」だけ。減衰の継続処理は KnockbackSystem に委譲し
-//     本Systemの責務を「イベント解決」に限定する(単一責任)。
+// 備考: 戦闘の流れ:
+//         L05 HitboxCollisionSystem  … 命中を判定して DamageEvent を作る
+//         L06 DamageResolutionSystem … この System
+//         L06 HealthSystem           … 無敵時間を減らし、倒れたかを判定する
+//       VFX やカメラは直接呼ばず、イベントやコンポーネントのデータで渡す。
+//       ノックバックは速度を書くだけで、実際に動かして減らすのは JoltCharacterUpdateSystem。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/CombatComponents.h"

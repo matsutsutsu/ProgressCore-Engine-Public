@@ -2,11 +2,11 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 画角要求(wideFovRequest)をカメラへ push する
-#include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中の外部移動制御を伝える
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // カメラへ画角の要求(wideFovRequest)を書く
+#include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中はルートモーションの移動を止める
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵：被弾処理が見る i-frame タイマーへ反映する
-#include "Game/Logics/GameEvent/GameEvents.h"   // ダッシュ開始を announce（その場VFX用）
+#include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
+#include "Game/Logics/GameEvent/GameEvents.h"   // ダッシュ開始のイベント（VFX 用）
 
 #include <algorithm>
 
@@ -15,7 +15,7 @@ using namespace DirectX::SimpleMath;
 
 void PlayerDashSystem::Update(float rawDt)
 {
-    // 接近先(ボス)と世界スロー倍率をフレーム先頭で拾っておく（1対1なので探索不要）。
+    // 接近先のボスと世界スローの倍率を先に取っておく（BattleContext がボスを1体だけ持つので探さなくてよい）。
     const BattleContext *battle  = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
     const TimeContext   *timeCtx = m_world->HasResource<TimeContext>() ? &m_world->GetResource<TimeContext>() : nullptr;
 
@@ -27,38 +27,32 @@ void PlayerDashSystem::Update(float rawDt)
                       const CleaveComponent      &cleave,
                       const TransformComponent   &trans,
                       TimeStateComponent         &time) {
-        // ルートモーション対応キャラなら、後段でダッシュ状態を「外部移動制御中」として伝える。
+        // ルートモーションを持つキャラなら、後でダッシュ中かを externallyDriven に書く。
         RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
 
-        // 回避(ダッシュ/接近)中は、被弾処理が見る無敵タイマーを毎フレーム維持する。
         MaintainInvincibility(id, dash);
 
-        // 接近を消化したフレームは、以降のダッシュ/移動処理を行わない。
+        // 接近中のフレームは、以降のダッシュ・移動の処理を行わない。
         if (UpdateApproach(rawDt, battle, timeCtx, dash, movement, trans, time, rm))
             return;
 
-        // 切り払いの準備/突進中は回避を開始させない。切り払いは L02_PostUpdate で
-        // 速度を上書きするため、ここで回避が成立すると見た目は切り払いのまま
-        // 回避のクールダウンと無敵だけを消費してしまう。
+        // 切り払いの準備・突進中はダッシュを始めさせない。切り払いは L02_PostUpdate で
+        // 速度を上書きするため、ここでダッシュを始めると、見た目は切り払いのまま
+        // ダッシュのクールダウンと無敵だけを使ってしまう。
         const bool dashPressed = pin.dashPressed && (cleave.phase == CleavePhase::Idle);
 
-        // ダッシュ（開始/継続/終了→走行）。ダッシュでなければ地上ロコモーション（走行/歩き）。
         if (!UpdateDash(dash, player, dashPressed, movement, trans, time, id))
             UpdateGroundLocomotion(player, movement, time.localDt);
 
-        // ダッシュ中は「外部が移動を制御中」を root motion へ伝える（＝抽出を止めさせる）。
+        // ダッシュ中は、ルートモーションによる移動を止めさせる。
         if (rm) rm->externallyDriven = dash.isDashing;
 
-        // 画角ワイド要求をカメラへ push（ダッシュ中のみ広げる）。
+        // ダッシュ中だけ画角を広げるよう、カメラへ書く。
         PushWideFovRequest(id, dash.isDashing);
     });
 }
 
-// ---------------------------------------------------------------------------
-// 回避(ダッシュ/接近)中、被弾処理が実際に参照する HealthComponent.invincibilityTimer を
-// 毎フレーム invincibleWindow へ維持し、ダメージ/ドローン接触をすり抜けさせる。
-// ヒットストップ中は localDt=0 でこのタイマーが減らないため凍結され、接近の「溜め」中も無敵が保たれる。
-// ---------------------------------------------------------------------------
+// ヒットストップ中は localDt=0 なので無敵タイマーは減らず、接近を始める前の停止中も無敵が続く。
 void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &dash)
 {
     if (!dash.isInvincible) return;
@@ -69,11 +63,7 @@ void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &d
     }
 }
 
-// ---------------------------------------------------------------------------
-// 接近（ジャスト回避スロー中にボスへ詰める「接近専用時間」）を処理する。
-// 通常ダッシュより優先。世界はスローのまま、プレイヤーだけ実効時間で高速に寄る。
-// 接近中だった場合は true を返し、呼び出し側はこのフレームの残り処理をスキップする。
-// ---------------------------------------------------------------------------
+// 通常のダッシュより優先する。世界はスローのまま、プレイヤーだけ実時間の速さでボスへ近づく。
 bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, const TimeContext *timeCtx,
                                       DashComponent &dash, CharacterMovementComponent &movement,
                                       const TransformComponent &trans, TimeStateComponent &time,
@@ -81,8 +71,8 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
 {
     if (!dash.isApproaching) return false;
 
-    // 接近は非ダッシュ扱い（従来どおり root motion 抑制の対象外）。
-    // 接近中はこの関数が true を返して以降の処理を止めるため、ダッシュ入力は自然に無視される。
+    // 接近はダッシュとして扱わず、ルートモーションを止めない。
+    // 接近中はこの関数が true を返して以降の処理を止めるので、ダッシュの入力は無視される。
     if (rm) rm->externallyDriven = false;
 
     // 接近先(ボス)が居なければ打ち切る。
@@ -92,12 +82,12 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
         return true;
     }
 
-    // ヒットストップ中（ジャスト回避直後の一瞬の停止＝溜め）は待機。
-    // 明けてから接近を開始することで「停止→スリングショット」の手触りを作る。
+    // ヒットストップ中（ジャスト回避直後に一瞬止まっている間）は待つ。
+    // 止まった後に一気に飛び出す動きにするため、明けてから接近を始める。
     if (time.hitStopTimer > 0.0f)
         return true;
 
-    // 時間切れ、または殴れる距離まで詰めたら終了。
+    // 時間切れか、攻撃が届く距離まで近づいたら終える。
     Vector3 toBoss(battle->bossPos.x - trans.position.x, 0.0f, battle->bossPos.z - trans.position.z);
     float   dist = toBoss.Length();
 
@@ -108,14 +98,14 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
         return true;
     }
 
-    // ボス方向へ高速移動。接近中は無敵でスロー中の群れをすり抜ける。
+    // ボスの方向へ高速で移動する。接近中は無敵なので、スロー中のドローンに当たらない。
     toBoss.Normalize();
     dash.dashDirection       = toBoss;
     dash.isInvincible        = true;
     movement.desiredVelocity = toBoss;
     movement.overrideSpeed   = dash.approachSpeed;
 
-    // 世界スロー(globalScale × 勢力倍率)を打ち消し、プレイヤーだけ実効時間で動かす。
+    // 世界スロー（globalScale × グループ倍率）を打ち消し、プレイヤーだけ approachPlayerScale の速さで動かす。
     if (timeCtx)
     {
         float worldScale    = timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)];
@@ -125,29 +115,24 @@ bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, 
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// ダッシュ（回避バースト）の開始・継続・終了を処理する。
-// 終了時は歩きへ戻さず「走行(Run)」へ移行させる。
-// このフレームをダッシュとして消費したら true（呼び出し側は地上ロコモーションを行わない）。
-// ---------------------------------------------------------------------------
 bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, bool dashPressed,
                                   CharacterMovementComponent &movement, const TransformComponent &trans,
                                   const TimeStateComponent &time, CCL::ECS::EntityID id)
 {
-    // クールタイムの減算。
+    // クールダウン
     if (!dash.isDashing && dash.currentTimer > 0.0f)
         dash.currentTimer -= time.localDt;
 
-    // 開始判定。
+    // 開始
     if (dashPressed && !dash.isDashing && dash.currentTimer <= 0.0f)
     {
         dash.isDashing               = true;
         dash.isInvincible            = true;
-        dash.isJustEvadeWindowActive = true; // ダッシュ開始と同時にジャスト受付開始
+        dash.isJustEvadeWindowActive = true; // ダッシュ開始と同時にジャスト回避の受付を始める
         dash.currentTimer            = dash.dashDuration;
-        player.locomotion            = PlayerComponent::GroundLocomotion::Dodge; // 回避バースト中
+        player.locomotion            = PlayerComponent::GroundLocomotion::Dodge;
 
-        // 移動入力があればその方向、無入力ならキャラの正面方向へダッシュ。
+        // 移動入力があればその方向、無ければキャラの正面へダッシュする。
         if (movement.desiredVelocity.LengthSquared() > 0.001f)
         {
             dash.dashDirection = movement.desiredVelocity;
@@ -160,17 +145,16 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, 
         }
         dash.dashDirection.Normalize();
 
-        // その場VFX用に「ダッシュ開始」を announce する（VFX/プレハブは購読側が知る）。
+        // ダッシュ開始をイベントで知らせる（どの VFX を出すかは購読側が決める）。
         m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position, id});
     }
 
-    if (!dash.isDashing) return false; // ダッシュしていない → 呼び出し側で歩き/走り
+    if (!dash.isDashing) return false; // ダッシュしていなければ、呼び出し側で歩き/走りを処理する
 
-    // 継続：タイマーを進め、ジャスト受付窓の締め切りを判定する。
+    // 継続
     dash.currentTimer -= time.localDt;
 
-    // ダッシュ開始から指定時間(justEvadeWindow×チェイン倍率)が経過したら、ジャスト受付のみ終了する。
-    // チェインが伸びるほど windowScale が小さくなり、受付が厳しくなる（リスク上昇）。
+    // ダッシュ開始から justEvadeWindow × justEvadeWindowScale 秒が過ぎたら、ジャスト回避の受付だけを閉じる。
     float elapsed         = dash.dashDuration - dash.currentTimer;
     float effectiveWindow = dash.justEvadeWindow * dash.justEvadeWindowScale;
     if (elapsed > effectiveWindow)
@@ -178,36 +162,31 @@ bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, 
 
     if (dash.currentTimer <= 0.0f)
     {
-        // 終了（クールダウンへ移行）。受付窓は上の経過判定でも閉じるが、途中終了経路で
-        // 閉じ損ねるため終了時に必ず落とす。
+        // 終了してクールダウンに入る。受付は上の経過時間の判定でも閉じるが、
+        // それを通らずに終わる場合もあるので、終了時にも必ず閉じる。
         dash.isDashing               = false;
         dash.isInvincible            = false;
         dash.isJustEvadeWindowActive = false;
         dash.currentTimer            = dash.dashCooldown;
 
-        // 回避バースト終了 → 歩きへは戻さず「走行(Run)」へ移行する。
-        //   以降は地上ロコモーションが runSpeed を維持し、無入力が続いたら歩きへ自動解除する。
-        //   ダッシュ攻撃はこの走行中ずっと出せる。
+        // ダッシュが終わったら、歩きには戻さず走行に移る。
+        //   以降は UpdateGroundLocomotion が runSpeed を保ち、無入力が続いたら歩きに戻す。
+        //   ダッシュ攻撃は走行中ずっと出せる。
         player.isRunning    = true;
         player.runIdleTimer = 0.0f;
 
-        // 終了フレームは走行として扱わせる（false を返して地上ロコモーションへ渡す）。
-        //   上書き要求は1フレーム限りなので、ここで何も書かずに抜けると
-        //   このフレームだけ歩き速度に落ちて、ダッシュ→走行の繋ぎに段差ができる。
+        // 終了フレームは走行として扱う（false を返して UpdateGroundLocomotion に任せる）。
+        //   上書きの要求は1フレーム限りなので、ここで何も書かずに終えると、
+        //   このフレームだけ歩きの速度に落ち、ダッシュから走行への切り替えで速度が一瞬落ちる。
         return false;
     }
 
-    // 実行中：方向と速度を強制上書きする。
+    // ダッシュ中は方向と速度を上書きする。
     movement.desiredVelocity = dash.dashDirection;
     movement.overrideSpeed   = dash.dashSpeed;
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// 非ダッシュ時の地上ロコモーション（走行 or 歩き）。
-//   走行中は移動入力がある限り runSpeed を維持し、無入力が runIdleReleaseTime 続いたら
-//   歩きへ自動解除する（トグル＋自動解除）。
-// ---------------------------------------------------------------------------
 void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementComponent &movement, float dt)
 {
     if (player.isRunning)
@@ -221,27 +200,24 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
         {
             player.runIdleTimer += dt;
             if (player.runIdleTimer >= player.runIdleReleaseTime)
-                player.isRunning = false; // 無入力が続いた → 歩きへ
+                player.isRunning = false; // 無入力が続いたので歩きに戻す
         }
     }
 
     if (player.isRunning)
     {
-        movement.overrideSpeed = player.runSpeed; // 走行速度で維持
+        movement.overrideSpeed = player.runSpeed;
         player.locomotion      = PlayerComponent::GroundLocomotion::Run;
     }
     else
     {
-        // 歩きは何も書かない。overrideSpeed は読まれた時点で既定へ戻るため、
-        // 「書かない」ことが config.walkSpeed で歩くという表明になる。
+        // 歩きのときは overrideSpeed を書かない。overrideSpeed は読まれた時点で既定へ戻るので、
+        // 書かなければ config.walkSpeed で歩く。
         player.locomotion = PlayerComponent::GroundLocomotion::Walk;
     }
 }
 
-// ---------------------------------------------------------------------------
-// このプレイヤーを映している TPS カメラへ「画角を広げてほしい」要求を push する。
-// カメラ(Engine)が DashComponent(Game) を読みに来ないよう、状態の持ち主から伝える。
-// ---------------------------------------------------------------------------
+// カメラ(Engine)が DashComponent(Game) を読まずに済むよう、状態を持つ側から書き込む。
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {
     m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
@@ -251,17 +227,14 @@ void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
     });
 }
 
-// ---------------------------------------------------------------------------
-// 接近を終了し、プレイヤーの時計を通常へ戻す共通処理。
-// ---------------------------------------------------------------------------
 void PlayerDashSystem::EndApproach(DashComponent &dash, TimeStateComponent &time)
 {
     dash.isApproaching  = false;
     dash.isInvincible   = false;
     dash.approachTimer  = 0.0f;
-    dash.currentTimer   = dash.dashCooldown; // 接近後はダッシュのクールダウンへ
-    time.cinematicScale = 1.0f;              // 世界スロー打ち消しを解除（通常の時間へ復帰）
+    dash.currentTimer   = dash.dashCooldown; // 接近の後はダッシュのクールダウンに入る
+    time.cinematicScale = 1.0f;              // 世界スローの打ち消しをやめる
 }
 
-// MoveSystemで振り向かせる前(または同タイミング)に実行
+// PlayerInputSystem(L01_Input) が書いた移動の要求を読み、PlayerCleaveSystem(L02_PostUpdate) より前に速度を書く。
 REGISTER_LOGIC_SYSTEM(PlayerDashSystem, Priority::LogicStage::L02_Update);

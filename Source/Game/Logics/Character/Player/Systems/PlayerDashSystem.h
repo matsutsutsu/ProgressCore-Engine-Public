@@ -1,4 +1,14 @@
 #pragma once
+// ===========================================================================
+// 概要: プレイヤーの回避ダッシュ、ジャスト回避後の接近、歩きと走りの切り替えを処理する System。
+//
+// 責務:
+//   - ダッシュの開始・継続・終了と、ジャスト回避の受付時間を管理する
+//   - ジャスト回避後の接近で、世界スローを打ち消してボスへ近づける
+//   - 回避中は HealthComponent の無敵タイマーを保つ
+//   - ダッシュの後は走行に移り、無入力が続いたら歩きに戻す
+//   - ダッシュ中はカメラへ画角を広げる要求を書き、ルートモーションの移動を止める
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -6,9 +16,9 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中は回避を開始させない
+#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中はダッシュを始めさせない
 
-// ポインタ参照のみのため前方宣言で足りる（実体は .cpp で include）。
+// ポインタでしか使わないので前方宣言にする（.cpp で include する）。
 struct BattleContext;
 struct RootMotionComponent;
 
@@ -26,28 +36,28 @@ public:
     void Update(float dt) override;
 
 private:
-    // 回避(ダッシュ/接近)中、被弾処理が見る無敵タイマー(HealthComponent.invincibilityTimer)を維持する。
+    // 回避（ダッシュ/接近）中は、被弾処理が見る HealthComponent.invincibilityTimer を invincibleWindow 以上に保つ。
     void MaintainInvincibility(CCL::ECS::EntityID id, const DashComponent &dash);
 
-    // 接近（ジャスト回避スロー中にボスへ詰める専用時間）を処理する。
-    // 接近中だった場合は true を返し、呼び出し側はこのフレームの残り処理をスキップする。
+    // ジャスト回避後の接近を処理する。
+    // 接近中なら true を返し、呼び出し側はこのフレームの残りの処理を飛ばす。
     bool UpdateApproach(float rawDt, const BattleContext *battle, const TimeContext *timeCtx,
                         DashComponent &dash, CharacterMovementComponent &movement,
                         const TransformComponent &trans, TimeStateComponent &time,
                         RootMotionComponent *rm);
 
-    // ダッシュ（回避バースト）の開始/継続/終了→走行移行を処理する。
-    // このフレームをダッシュとして消費したら true（呼び出し側は地上ロコモーションを行わない）。
+    // ダッシュの開始・継続・終了を処理する。終了時は歩きに戻さず走行に移す。
+    // このフレームをダッシュとして処理したら true（呼び出し側は歩き/走りの処理を行わない）。
     bool UpdateDash(DashComponent &dash, PlayerComponent &player, bool dashPressed,
                     CharacterMovementComponent &movement, const TransformComponent &trans,
                     const TimeStateComponent &time, CCL::ECS::EntityID id);
 
-    // 非ダッシュ時の地上ロコモーション（走行/歩き）。走行はトグル＋無入力で自動解除。
+    // ダッシュしていないときの歩き/走り。走行中は、無入力が runIdleReleaseTime 続いたら歩きに戻す。
     void UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementComponent &movement, float dt);
 
-    // このプレイヤーを映す TPS カメラへ「画角を広げてほしい」要求を push する。
+    // このプレイヤーを映す TPS カメラへ、画角を広げる要求を書く。
     void PushWideFovRequest(CCL::ECS::EntityID playerID, bool wide);
 
-    // 接近を終了し、プレイヤーの時計を通常へ戻す共通処理。
+    // 接近を終え、プレイヤーの時間倍率を元に戻す。
     void EndApproach(DashComponent &dash, TimeStateComponent &time);
 };

@@ -1,4 +1,3 @@
-// 役割・設計方針は InputIconSystem.h を参照。
 #include "InputIconSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -102,11 +101,8 @@ void InputIconSystem::Update(float /*dt*/)
 
     const ActiveDeviceType device = inputAPI->GetActiveDeviceType();
 
-    // 毎フレーム解決し、変わったものだけ書き込む。
-    //   「持ち替えたフレームだけ処理する」ほうが軽いが、それだとポーズメニューのように
-    //   後から生成されたアイコンが、次に持ち替えるまで空のまま出てこない。
-    //   対象は画面に出ているアイコンだけ（十数個）なので、毎フレーム解決しても
-    //   switch 数回ぶんでしかない。取りこぼさない方を選ぶ。
+    // 毎フレーム決め直す（理由はヘッダーを参照）。対象は画面に出ているアイコン（十数個）だけなので、
+    // 毎フレームでも switch を数回回す程度で済む
     ForEachWithID([&](EntityID /*id*/, UIImageComponent &img, const InputIconComponent &icon) {
         std::string path;
         if (icon.kind == InputIconKind::Action)
@@ -120,16 +116,14 @@ void InputIconSystem::Update(float /*dt*/)
             path = ResolveFixedIcon(icon.kind, device);
         }
 
-        // 同じパスなら触らない。std::string の代入とテクスチャキャッシュ検索を毎フレーム
-        // 走らせないための差分書き込み。
+        // 同じパスなら書かない。std::string の代入と、テクスチャのキャッシュの検索を毎フレーム走らせないため
         if (img.texturePath != path) img.texturePath = path;
 
-        // 割り当てが無い／アイコンを用意していない操作は隠す。
-        //   空パスのままだと UIRenderer が白ダミーを貼り、白い四角が並んでしまう。
+        // 割り当てが無い操作・アイコンを用意していない操作は隠す。
+        // パスが空のままだと UIRenderer が白いダミーを貼り、白い四角が並んでしまう
         img.visible = !path.empty();
     });
 }
 
-// UI帯(R10_UI)。ロジックではなく描画ステージに置く理由はヘッダの「実行ステージ」を参照
-// （ポーズ中に生成されたヒントアイコンを解決するため）。
+// 描画ステージに置く理由はヘッダーを参照（ポーズ中に作ったヒントのアイコンを決めるため）
 REGISTER_RENDER_SYSTEM(InputIconSystem, Priority::RenderStage::R10_UI);

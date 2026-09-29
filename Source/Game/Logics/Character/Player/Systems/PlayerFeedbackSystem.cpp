@@ -1,23 +1,18 @@
-﻿#include "PlayerFeedbackSystem.h"
+#include "PlayerFeedbackSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
-#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（画面揺れの唯一の入口）
+#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（画面揺れの要求はこのイベントだけで出す）
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
-// Post Process
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
-// Other Effects
 
 #include "Engine/Platform/Input/IInputAPI.h"
 
-// System
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// Shipping(Release)ではImGui本体もインクルードパスも構成から外れるため、
-// エディタ有効時のみ取り込む。
 #include <imgui.h>
 #include "Engine/Core/Math/StringHash.h"
 
@@ -25,23 +20,16 @@
 
 namespace
 {
-    // =========================================================================
-    // PostProcess スロット
-    // =========================================================================
-    // スロットの識別子と重ね順。エンジンは中身を知らないので、名前と優先度は使う側が決める。
-    // 命中バースト(10)・ジャスト回避(20)より弱い。被弾は他の演出に譲る。
+    // PostProcess の上書きスロットの識別子と優先度。名前と優先度は使う側が決める。
+    // 被弾は、命中の演出(ScreenImpactSystem=10)・ジャスト回避(JustEvadeEffectSystem=20)より優先度を下げる。
 
     const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
     constexpr int  kPriority = 5;
 
-    // ダッシュ集中線は常時出る環境演出なので最弱。命中バーストやジャスト回避に前を譲る。
-    // （放射ブラーの合成は最大値なので実際は順序に依存しないが、意図として明示しておく）
+    // ダッシュの集中線はダッシュのたびに出るので、優先度を最も低くする。
+    // （放射ブラーの強さは各スロットの最大値を取るので、実際には優先度で結果は変わらない）
     const uint32_t kDashSource   = CCL::Utils::HashString("PlayerDash");
     constexpr int  kDashPriority = 1;
-
-    // =========================================================================
-    // Utility
-    // =========================================================================
 
     float TickTimer(float &timer, float dt)
     {
@@ -49,21 +37,8 @@ namespace
         return timer;
     }
 
-    // =========================================================================
-    // Envelope
-    // =========================================================================
-    //
-    // タイマーの残り時間を0～1へ正規化し、
-    // e^2のカーブを適用する。
-    //
-    // 被弾直後
-    //     env = 1
-    //
-    // 時間経過
-    //     env → 0
-    //
-    // 「パッと出て、スッと消える」演出にする。
-    // =========================================================================
+    // 残り時間を 0〜1 に正規化して2乗した値（演出の強さの係数）を返す。
+    // 開始直後が 1 で、前半に大きく下がり、後半はゆっくり 0 に近づく。
 
     float CalculateEnvelope(float timer, float duration)
     {
@@ -84,10 +59,6 @@ PlayerFeedbackSystem::PlayerFeedbackSystem()
 
 void PlayerFeedbackSystem::Initialize()
 {
-    // =========================================================================
-    // プレイヤー被弾
-    // =========================================================================
-
     ListenEvent<DamageTakenEvent>(
         [this](const DamageTakenEvent &event) {
             if (!event.isPlayer)
@@ -95,10 +66,6 @@ void PlayerFeedbackSystem::Initialize()
 
             OnPlayerDamaged(event);
         });
-
-    // =========================================================================
-    // プレイヤー攻撃命中
-    // =========================================================================
 
     ListenEvent<AttackHitConfirmedEvent>(
         [this](const AttackHitConfirmedEvent &event) {
@@ -115,17 +82,13 @@ void PlayerFeedbackSystem::Update(float dt)
     UpdateDashRadialBlur();
 }
 
-// ===================================================================================
-// Dash Radial Blur
-// ===================================================================================
-
 void PlayerFeedbackSystem::UpdateDashRadialBlur()
 {
     auto *blur = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
     if (!blur) return;
 
-    // ダッシュ状態そのものから毎フレーム引く。被弾演出のような専用タイマーは持たない。
-    // currentTimer はダッシュ終了後クールダウンに再利用されるため、必ず isDashing で門番する。
+    // ダッシュの状態から毎フレーム求める。被弾の演出のような専用タイマーは持たない。
+    // currentTimer はダッシュ終了後にクールダウンにも使うので、必ず isDashing を先に見る。
     float env  = 0.0f;
     float peak = 0.0f;
 
@@ -150,8 +113,8 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
         }
     });
 
-    // 誰もダッシュしていない → スロットを手放す。ForEach が空振りしても必ずここを通るので
-    // プレイヤーが消えた場合でも集中線が出っぱなしにならない。
+    // 誰もダッシュしていなければスロットを手放す。ForEach で1体も回らなくても必ずここを通るので、
+    // プレイヤーが消えても集中線が残らない。
     if (env <= 0.0f || peak <= 0.0f)
     {
         blur->overrides.Release(kDashSource);
@@ -167,10 +130,6 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
 
 void PlayerFeedbackSystem::OnGui()
 {
-    // =========================================================================
-    // Camera Shake
-    // =========================================================================
-
     if (ImGui::TreeNode("Damage Camera Shake"))
     {
         ImGui::TextWrapped(
@@ -204,10 +163,6 @@ void PlayerFeedbackSystem::OnGui()
         ImGui::TreePop();
     }
 
-    // =========================================================================
-    // Controller Vibration
-    // =========================================================================
-
     if (ImGui::TreeNode("Damage Controller Vibration"))
     {
         ImGui::SliderFloat(
@@ -234,10 +189,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-
-    // =========================================================================
-    // Attack Hit Controller Vibration
-    // =========================================================================
 
     if (ImGui::TreeNode("Attack Hit Controller Vibration"))
     {
@@ -272,10 +223,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-
-    // =========================================================================
-    // Damage Vignette
-    // =========================================================================
 
     if (ImGui::TreeNode("Damage Vignette"))
     {
@@ -315,10 +262,6 @@ void PlayerFeedbackSystem::OnGui()
         ImGui::TreePop();
     }
 
-    // =========================================================================
-    // Damage Chromatic Aberration
-    // =========================================================================
-
     if (ImGui::TreeNode("Damage Chromatic Aberration"))
     {
         ImGui::DragFloat(
@@ -338,10 +281,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-
-    // =========================================================================
-    // Dash Radial Blur
-    // =========================================================================
 
     if (ImGui::TreeNode("Dash Radial Blur"))
     {
@@ -365,10 +304,6 @@ void PlayerFeedbackSystem::OnGui()
     }
 }
 
-// ===================================================================================
-// Damage Feedback
-// ===================================================================================
-
 void PlayerFeedbackSystem::OnPlayerDamaged(
     const DamageTakenEvent &event)
 {
@@ -380,37 +315,24 @@ void PlayerFeedbackSystem::OnPlayerDamaged(
 
     StartDamageChromaticAberration();
 
-    // TODO:
-    // StartDamageSound();
+    // TODO(2026-08-25): 被弾の効果音を鳴らす
 }
-
-// ===================================================================================
-// Player Attack Hit
-// ===================================================================================
 
 void PlayerFeedbackSystem::OnPlayerAttackHit(
     const AttackHitConfirmedEvent &event)
 {
-    // 攻撃者がプレイヤーでなければ無視。
     if (!m_world->HasComponent<PlayerComponent>(event.attackerID)) return;
 
     StartAttackHitVibration(event);
 
-    // TODO:
-    // StartAttackHitCameraShake(event);
-    // StartAttackHitSound(event);
+    // TODO(2026-08-25): 命中時のカメラの揺れと効果音を足す
 }
-
-// ===================================================================================
-// Camera Shake
-// ===================================================================================
 
 void PlayerFeedbackSystem::StartDamageCameraShake(
     float damageAmount)
 {
-    // ここから VirtualCamera へ直接書いてはいけない。上書きになるので、着地の揺れを
-    // 被弾の揺れが消す。要求を出すだけにすれば、受け側(CameraShakeSystem)が蓄積して
-    // 1つの揺れにまとめてくれる。
+    // VirtualCamera へ直接書かない。直接書くと値の上書きになり、着地の揺れを被弾の揺れが消してしまう。
+    // 要求のイベントを出せば、受け側(CameraShakeSystem)が足し合わせて1つの揺れにする。
     const float trauma =
         std::clamp(
             damageAmount * m_traumaPerDamage,
@@ -419,10 +341,6 @@ void PlayerFeedbackSystem::StartDamageCameraShake(
 
     m_world->GetEventBus().Publish(CameraShakeRequestEvent{trauma});
 }
-
-// ===================================================================================
-// Controller Vibration
-// ===================================================================================
 
 void PlayerFeedbackSystem::StartDamageVibration()
 {
@@ -450,9 +368,7 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
 
     if (!inputAPI) return;
 
-    // ---------------------------------------------------------
-    // 命中の強さに応じて振動をスケーリング
-    // ---------------------------------------------------------
+    // 命中のダメージ量に応じて振動を強める（0.25〜1.0 倍）
 
     const float power =
         std::clamp(
@@ -470,25 +386,17 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
         m_attackHitVibrationDuration);
 }
 
-// ===================================================================================
-// Damage Vignette
-// ===================================================================================
-
 void PlayerFeedbackSystem::StartDamageVignette()
 {
     m_vignetteTimer = m_vignetteDuration;
 }
-
-// ===================================================================================
-// Update Damage Vignette
-// ===================================================================================
 
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
     auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
     if (!vignette) return;
 
-    // 演出終了。自分のスロットを手放すだけでよい（素の設定も他演出も触らない）。
+    // 演出が終わったら、自分のスロットを手放すだけでよい（元の設定にも他の演出にも触らない）。
     if (m_vignetteTimer <= 0.0f)
     {
         vignette->overrides.Release(kSource);
@@ -499,8 +407,8 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 
     const float env = CalculateEnvelope(m_vignetteTimer, m_vignetteDuration);
 
-    // 「どこへ寄せたいか(目標値)」と「どれだけ寄せるか(weight)」だけを書く。
-    // 素の設定からの補間と、他演出との重ね合わせは Resolve() が担当する。
+    // 目標値と、そこへ寄せる割合(weight)だけを書く。
+    // 元の設定からの補間と、他の演出との重ね合わせは Resolve() が行う。
     if (auto *ov = vignette->overrides.Acquire(kSource, kPriority))
     {
         ov->weight            = env;
@@ -512,18 +420,10 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
     }
 }
 
-// ===================================================================================
-// Damage Chromatic Aberration
-// ===================================================================================
-
 void PlayerFeedbackSystem::StartDamageChromaticAberration()
 {
     m_chromaticTimer = m_chromaticDuration;
 }
-
-// ===================================================================================
-// Update Damage Chromatic Aberration
-// ===================================================================================
 
 void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
 {
@@ -534,29 +434,15 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
     if (!chromatic)
         return;
 
-    // -------------------------------------------------------------------------
-    // 演出終了
-    // -------------------------------------------------------------------------
-    //
-    // 触るのは自分のスロットだけ。設定本体(enable/data)や他演出のスロットには
-    // 一切書かないので、命中バーストやジャスト回避演出の最中に被弾しても
-    // 互いを消し合わない。最終強度の合成は PostProcessSystem が行う。
-
+    // 触るのは自分のスロットだけ。設定本体(enable/data)や他の演出のスロットには書かないので、
+    // 命中やジャスト回避の演出の最中に被弾しても、互いを消し合わない。最終的な強さは PostProcessSystem が合成する。
     if (m_chromaticTimer <= 0.0f)
     {
         chromatic->overrides.Release(kSource);
         return;
     }
 
-    // -------------------------------------------------------------------------
-    // タイマー更新
-    // -------------------------------------------------------------------------
-
     TickTimer(m_chromaticTimer, dt);
-
-    // -------------------------------------------------------------------------
-    // エンベロープ → 上乗せ量
-    // -------------------------------------------------------------------------
 
     const float env =
         CalculateEnvelope(
@@ -570,5 +456,4 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
     }
 }
 
-// System Registration
 REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::L06_Resolution);

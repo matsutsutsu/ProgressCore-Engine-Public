@@ -1,8 +1,15 @@
-// どの敵でも使える汎用条件。ボス固有の条件は BTConditions_Boss.h。
-//
-// 間合いをIDではなく param で持つのは、距離を条件クラスに即値で埋めると
-// 「敵の種類 × 間合い」の数だけ ActionID が増え、中間の値も作れないため。
 #pragma once
+// ===========================================================================
+// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近の速さ・被弾量・ステージの端）。
+//
+// 責務:
+//   - blackboard の値とノードの param を比べる条件を定義する
+//   - それらを BTActionRegistry へ登録する（RegisterCommonConditions）
+//
+// 備考: ボス固有の条件は BTConditions_Boss.h。
+//       間合いを ID ではなく param で持つのは、距離を条件クラスに定数で埋めると
+//       「敵の種類 × 間合い」の数だけ ActionID が増え、中間の値も作れないため。
+// ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -28,9 +35,9 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が正面 ±param 度の内側にいる（＝正面に捉えている）。param=90 で前方の半分。
-    // 角度も距離と同じく param で持つ。「正面」「側面」「背後」をIDにすると、
-    // 技ごとに欲しい角度が違うたびにIDが増え、中間の値も作れない。
+    // 相手が正面 ±param 度の内側にいる（正面に捉えている）。param=90 で前方の半分。
+    // 角度も距離と同じく param で持つ。「正面」「側面」「背後」を ID にすると、
+    // 技ごとに欲しい角度が違うたびに ID が増え、中間の値も作れない。
     struct TargetAngleLessThan : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -39,7 +46,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が正面 ±param 度の外側にいる（＝回り込まれている）。param=120 で背後まわり。
+    // 相手が正面 ±param 度の外側にいる（回り込まれている）。param=120 で背後側。
     struct TargetAngleGreaterThan : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -48,7 +55,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が param m/s 以上の速さで詰めてきている。踏み込みを咎める置き技の引き金。
+    // 相手が param m/s 以上の速さで近づいてきている。踏み込んでくる相手に合わせて出す技の条件に使う。
     struct TargetApproaching : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -57,8 +64,8 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が param m/s 以上の速さで離れている。距離を取って粘る相手を咎めるのに使う。
-    // 符号を反転して比べるのは、閾値を負で書かせると木の上で読みにくいため。
+    // 相手が param m/s 以上の速さで離れている。距離を取り続ける相手への技の条件に使う。
+    // 符号を反転して比べるのは、しきい値を負の数で書かせると木の上で読みにくいため。
     struct TargetRetreating : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -67,8 +74,8 @@ namespace CCL::AI::BT
         }
     };
 
-    // 前回リセットしてからの被弾が、最大HPの param % に達した（未設定なら 20%）。
-    // 閾値をノードに置くと、形態ごと・敵ごとに退く頻度を変えてもIDが増えない。
+    // 前回リセットしてからの被弾が、最大 HP の param % に達した（未設定なら 20%）。
+    // しきい値をノードに置くので、形態ごと・敵ごとに退く頻度を変えても ID が増えない。
     struct DamageThresholdExceeded : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -78,8 +85,8 @@ namespace CCL::AI::BT
         }
     };
 
-    // ステージの端から param m 以内に居る。param=0 で「壁際まで来た」。
-    // 円の中心と半径は BattleContext が持つので、ステージを差し替えても木は直さなくてよい。
+    // ステージの端から param m 以内に居る。param=0 で壁際まで来たとき。
+    // 円の中心と半径は BattleContext が持つので、ステージを変えても木は直さなくてよい。
     struct IsAtStageEdge : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -98,7 +105,7 @@ namespace CCL::AI::BT
         }
     };
 
-    /// どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ。
+    // どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ。
     inline void RegisterCommonConditions()
     {
         auto &reg = BTActionRegistry::Instance();

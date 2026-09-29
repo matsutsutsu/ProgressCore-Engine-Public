@@ -1,8 +1,14 @@
 #pragma once
-#include "Editor/Core/EditorWindowManager.h"
+// ===========================================================================
+// 概要: エディタで開発するときのシーン。GameScene と同じ戦場レベルを読み、導入カメラ演出は出さない。
+//
+// 責務:
+//   - BossBattleStage のレベルを読み込む
+//   - 全 System と、ゲーム本編だけで使う System（リザルト・ポーズ）を登録する
+//
+// 備考: 導入カメラ演出は GameScene だけが出す。デバッグで起動するたびに数秒の演出を待たないため。
+// ===========================================================================
 #include "Engine/Scene/BaseScene.h"
-
-#include "Engine/Animation/Systems/AnimationSystem.h"
 
 class EditorScene : public BaseScene
 {

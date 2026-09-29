@@ -1,12 +1,22 @@
-// プレイヤー固有のステータス（速度や設定）のみを保持するコンポーネント
 #pragma once
+// ===========================================================================
+// 概要: プレイヤー固有の設定値と実行時の状態を持つ Component。
+//
+// 責務:
+//   - 歩き・走り・回避の地上移動の状態と、走行の設定値を持つ
+//   - 2段ジャンプの回数と、空中かどうかの判定を持つ
+//   - 向き（yaw）と旋回時の傾き（roll）を持つ
+//   - 攻撃時に敵の方へ向く処理と、ロックオン対象を持つ
+//
+// 備考: PlayerComponent を持つエンティティがプレイヤーとして扱われる
+//       （CameraTargetBindSystem、PlayerAttackSystem の敵の判定など）。
+// ===========================================================================
 #include "Engine/Serialization/Core/EntityLink.h"
 
 struct PlayerComponent
 {
-
-    // 地上ロコモーション状態。PlayerDashSystem が一元的に更新する。
-    // 空中かどうかは isAirborne が別管理（地上/空中は直交する軸）。
+    // 地上移動の状態。書くのは PlayerDashSystem だけ。
+    // 空中かどうかは isAirborne で別に持つ（地上移動の状態とは独立）。
     enum class GroundLocomotion : unsigned char
     {
         Walk,
@@ -14,59 +24,59 @@ struct PlayerComponent
         Dodge
     };
 
-    float turnSpeed = 10.0f;
+    float turnSpeed = 10.0f; // 移動方向へ向き直る速さ（角度差に掛ける係数、1/秒）
 
     // =========================================================
-    // 走行（Run）状態：歩き⇔走りの二段ロコモーション
-    //   回避（Dodge バースト）を終えると走行へ移行し、以降 runSpeed で走り続ける。
-    //   移動入力がある限り維持し、無入力が runIdleReleaseTime 続いたら歩きへ自動解除。
-    //   isRunning はダッシュ攻撃の作動条件にも使う（＝走っている間ずっとダッシュ攻撃が出せる）。
+    // 走行（Run）
     // =========================================================
-    float            runSpeed           = 24.0f;                  // 走行状態の移動速度（walkSpeed と dashSpeed の中間が目安）
-    float            runIdleReleaseTime = 0.4f;                   // 無入力がこの秒数続いたら走行を自動解除して歩きへ
-    bool             isRunning          = false;                  // 走行状態か
-    float            runIdleTimer       = 0.0f;                   // 無入力の継続時間（>=runIdleReleaseTime で解除）
-    GroundLocomotion locomotion         = GroundLocomotion::Walk; // 現在の地上ロコモーション（アニメ/演出参照用）
+    //   回避ダッシュを終えると走行に移り、以降は runSpeed で走り続ける。
+    //   移動入力がある間は続け、無入力が runIdleReleaseTime 続いたら歩きに戻る。
+    //   isRunning はダッシュ攻撃の条件にも使う（走っている間はダッシュ攻撃が出る）。
+    float            runSpeed           = 24.0f;                  // 走行速度（m/秒）。walkSpeed と dashSpeed の間を目安にする
+    float            runIdleReleaseTime = 0.4f;                   // 無入力がこの秒数続いたら歩きに戻す
+    bool             isRunning          = false;                  // 走行中か
+    float            runIdleTimer       = 0.0f;                   // 無入力が続いている時間（秒）
+    GroundLocomotion locomotion         = GroundLocomotion::Walk; // 現在の地上移動の状態（アニメ・演出が参照する）
 
-    // --- 2段ジャンプ設定・状態 ---
-    //   押下の立ち上がり判定は PlayerInputComponent.jumpPressed が済ませている。
-    //   ここが持つのは「何段目まで跳んだか」だけ。
-    int maxJumps         = 2; // 最大ジャンプ可能回数 (2段なら2)
-    int currentJumpCount = 0; // 現在消費したジャンプ回数
+    // --- 2段ジャンプ ---
+    //   押下の判定は PlayerInputComponent.jumpPressed で済んでいる。
+    //   ここは何段目まで跳んだかだけを持つ。
+    int maxJumps         = 2; // 着地までに跳べる回数
+    int currentJumpCount = 0; // 着地してから跳んだ回数
 
     // =========================================================
-    // 視覚的慣性 (バンキング)
+    // 向きと旋回時の傾き（バンキング）
     // =========================================================
     float bankingMultiplier = 0.5f;  // 傾きの強さ
-    float maxBankingAngle   = 30.0f; // 最大傾斜角 (度)
-    float currentYaw        = 0.0f;  // 純粋な進行方向 (ロジック用状態)
-    float currentRoll       = 0.0f;  // 現在の傾き角 (描画用状態)
+    float maxBankingAngle   = 30.0f; // 最大の傾き（度）
+    float currentYaw        = 0.0f;  // キャラの向き（rad）。0 が +Z。物理にはこの向きだけを渡す
+    float currentRoll       = 0.0f;  // 旋回時の傾き（rad）。見た目（Transform）にだけ反映する
 
     // =========================================================
-    // 空中状態（空中攻撃などの分岐に使う唯一の判定元）
+    // 空中の判定
     // =========================================================
-    // 接地していない＝空中にいるか。PlayerMoveSystem が接地判定から毎フレーム更新する。
-    // 空中攻撃の作動条件など「空中かどうか」を見たいシステムはこのフラグを参照する。
+    // 空中にいるか。PlayerMoveSystem が接地判定から毎フレーム書く。
+    // 空中攻撃の分岐など、空中かどうかを見たいときはこのフラグを使う。
     bool isAirborne = false;
 
-    // 接地を離れてからの経過時間(秒)。0=接地中。
-    // 小さな段差を降りた一瞬で空中扱いにしないためのグレース判定に使う。
+    // 接地を離れてからの経過時間（秒）。0=接地中。
     float timeSinceGrounded = 0.0f;
 
-    // この秒数までの「接地離れ」は空中とみなさない猶予。段差を降りただけで
-    // 空中攻撃が暴発したり地上攻撃がキャンセルされるのを防ぐ（コヨーテとは別物：
-    // ジャンプ成立判定には使わず、isAirborne の立ち上がりだけを遅らせる）。
+    // 接地を離れてからこの秒数までは空中とみなさない。段差を降りただけで
+    // 空中攻撃が出たり地上攻撃が中断されたりしないようにする。
+    // ジャンプできるかの判定には使わず、isAirborne が true になるのを遅らせるだけ（コヨーテタイムとは別）。
     float airborneGraceTime = 0.12f;
 
-    // --- 攻撃時のターゲット自動フェイシング（オートエイム） ---
-    //   攻撃入力の瞬間、PlayerAttackSystem が対象（ロックオン先／前方最寄り敵）方向の yaw を求めて
-    //   attackFaceTimer を立てる。PlayerMoveSystem が >0 の間、移動より優先で currentYaw を敵へ回頭させる。
-    float attackFaceYaw         = 0.0f; // 攻撃時に向くべき yaw(rad)
-    float attackFaceTimer       = 0.0f; // 自動フェイシングの残り時間(秒)。>0 の間だけ有効。
-    float attackFaceMaxDistance = 5.0f; // この距離以内の敵にだけ攻撃時オートフェイシングする(m)。
-                                        // 遠い敵（ロックオン中でも）には向かず、入力方向のまま攻撃する。
+    // --- 攻撃時に敵の方へ向く処理 ---
+    //   攻撃を押した瞬間に PlayerAttackSystem が対象（ロックオン先、なければ前方の最も近い敵）の yaw を求め、
+    //   attackFaceTimer を立てる。切り払いの準備中は PlayerCleaveSystem が照準方向を書く。
+    //   attackFaceTimer が 0 より大きい間、PlayerMoveSystem は移動方向より優先してこの yaw へ向ける。
+    float attackFaceYaw         = 0.0f; // 向く先の yaw（rad）
+    float attackFaceTimer       = 0.0f; // 向く処理の残り時間（秒）
+    float attackFaceMaxDistance = 5.0f; // この距離（m）以内の敵にだけ向く。
+                                        // 遠い敵にはロックオン中でも向かず、入力方向のまま攻撃する。
 
     // --- ロックオン ---
-    //   切り替え要求は PlayerInputComponent.lockOnPressed。ここは結果だけを持つ。
-    CCL::Serialization::EntityLink lockOnTargetID = CCL::ECS::InvalidEntityID; // 現在ロックオンしている敵のEntityID
+    //   切り替えの要求は PlayerInputComponent.lockOnPressed。ここは結果だけを持つ。
+    CCL::Serialization::EntityLink lockOnTargetID = CCL::ECS::InvalidEntityID; // ロックオン中の敵
 };

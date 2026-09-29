@@ -1,4 +1,3 @@
-// ドローン判断層の実装。優先度順に上から最初に成立したものが currentState になる。
 #include "DroneBrainSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -29,7 +28,8 @@ void DroneBrainSystem::Update(float /*dt*/)
         }
     }
 
-    // 各機の時計を使う（被弾でヒットストップがかかった機はタイマーも止まる）。
+    // 優先度順に上から判定し、最初に成立したものが currentState になる。
+    // 時間は各機の localDt を使う（ヒットストップがかかった機はタイマーも止まる）。
     ForEachParallel([&](const TransformComponent &trans, DroneComponent &drone,
                         const TimeStateComponent &time) {
         const float dt = time.localDt;
@@ -134,7 +134,7 @@ bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
     //   起点は FireCharge へ入った瞬間に記録されるが、弾幕はそこから順番待ち →
     //   輪から中央へ移動（約21m）→ タメ と続いてから飛び出す。置き直さないと
     //   「発射した時点で既に21m飛んだ」ことになり、上限に早く到達して届く前に
-    //   打ち切る＝「重なっているのに当たらない」形で表に出る。
+    //   打ち切る。症状としては「重なっているのに当たらない」になる。
     //   ここで置き直せば kChargeRange も kChargeTimeout も「飛び出してから」になる。
     if (drone.fireDelay > 0.0f || drone.stateTimer > 0.0f)
     {
@@ -179,7 +179,7 @@ void DroneBrainSystem::BeginCharge(DroneComponent &drone,
     // タメ時間。追従モードでは ProcessFireCharge がこれを無視する。
     drone.stateTimer = kChargeWindup;
 
-    // 陣形が予備動作中に既にセット済みならそれを尊重する。
+    // 陣形が予備動作中に方向を設定済みなら、それを使う。
     if (drone.fireDirection.LengthSquared() >= 0.001f) return;
 
     Vector3 dir = -Vector3::UnitZ;

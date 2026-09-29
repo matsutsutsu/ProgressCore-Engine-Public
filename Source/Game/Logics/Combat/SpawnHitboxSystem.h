@@ -1,39 +1,26 @@
 #pragma once
 // ===========================================================================
-// SpawnHitboxSystem.h
-// -------------------
-// 役割:
-//   アニメーションの点イベント AnimEventSpawnHitboxMessage を購読し、
-//   「空間に独立した球状ヒットボックス」を実体エンティティとして生成する。
+// 概要: アニメーションの SpawnHitbox イベントを受けて、その場に球の攻撃判定を作り、
+//       寿命が来たら消す System。
 //
 // 責務:
-//   - owner の Transform を基準に、offset をワールド回転で回して生成位置を確定。
-//   - 衝突レイヤーはイベントの attackLayer で明示指定（PLAYER_ATTACK/BOSS_ATTACK）。
-//   - Transform + Hitbox + Jolt(sensor) + SphereCollider + HitboxLifetime を載せて Spawn。
-//     以降は既存パイプラインに完全委譲する:
-//       JoltBodySetupSystem(L03) が sensor 剛体を生成
-//         → 物理衝突 → HitboxCollisionSystem(L05) が命中判定 → DamageEvent
-//         → 本システムの Update が寿命で Destroy → JoltCleanupSystem が剛体回収
+//   - 持ち主の Transform を基準に、offset を持ち主の回転で回して作る位置を決める
+//   - Transform・Hitbox・センサーの剛体・球のコライダ・寿命を持つエンティティを作る
+//     （当てる相手はイベントの attackLayer で決める: PLAYER_ATTACK / BOSS_ATTACK）
+//   - 寿命（HitboxLifetimeComponent）を減らし、尽きたら消す
 //
-// アーキテクチャ上の位置付け:
-//   剣など「既に存在する子コライダを区間で ON/OFF する」経路
-//   (CombatAnimationSyncSystem) の対になる、「攻撃の瞬間に判定を生成する」経路。
-//   生成した Hitbox は ownerEntity=Invalid のため CombatAnimationSyncSystem は
-//   一切触れず、寿命が尽きるまで常時アクティブな弾扱いとなる。
-//
-// 設計方針:
-//   - 生成は遅延構造変更(PendingOps)。ScrutinyAndApply はフレームワークに委ねる。
-//   - 寿命管理は自前。生成した Hitbox に HitboxLifetimeComponent を付け、Update で
-//     remainingLife を減算し 0 以下で Destroy する(汎用のタイマー機構は持たない)。
-//     Write は自身が生成したタグ型のみ宣言し、剣 Hitbox を駆動する
-//     CombatAnimationSyncSystem(Write<HitboxComponent>) とは競合しない。
+// 備考: 作った後は他の System に任せる。JoltBodySetupSystem（L03）がセンサーの剛体を作り、
+//       HitboxCollisionSystem（L05）が命中を判定し、消したら JoltCleanupSystem が剛体を片付ける。
+//       剣のように子のコライダを区間で開け閉めする CombatAnimationSyncSystem とは別の方法。
+//       作った判定は親を持たないので、CombatAnimationSyncSystem は触らず、寿命まで開いたままになる。
+//       Write するのは HitboxLifetimeComponent だけなので、HitboxComponent を書く
+//       CombatAnimationSyncSystem と競合しない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Combat/CombatComponents.h" // HitboxLifetimeComponent
+#include "Game/Logics/Combat/CombatComponents.h"
 
-struct AnimEventSpawnHitboxMessage; // 前方宣言
+struct AnimEventSpawnHitboxMessage;
 
-// アニメ由来の球状ヒットボックス生成と、その寿命管理を担うシステム。
 class SpawnHitboxSystem
     : public CCL::ECS::IfSystem<SpawnHitboxSystem,
                                 CCL::ECS::Write<HitboxLifetimeComponent>>
@@ -46,9 +33,9 @@ public:
 
 private:
     /**
-     * @brief 1通の生成依頼から、判定球エンティティを1つ生成する。
-     * @param msg 生成パラメータ(owner/offset/radius/damage/hitStop/lifeTime)。
-     * @note  owner に Transform が無い場合は基準が定まらないため生成しない(安全側)。
+     * @brief イベント1つから、球の攻撃判定のエンティティを1つ作る。
+     * @param msg 作るときの値（持ち主・位置・半径・ダメージ・ヒットストップ・寿命）
+     * @note  持ち主に Transform が無いと位置が決まらないので作らない。
      */
     void OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg);
 };

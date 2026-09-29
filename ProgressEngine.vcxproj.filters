@@ -825,12 +825,6 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\GameEvent\GameOverResource.h">
-      <Filter>Source\Game\Logics\GameEvent</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\GameEvent\GameStateMode.h">
-      <Filter>Source\Game\Logics\GameEvent</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h">
       <Filter>Source\Game\Logics\GameEvent</Filter>
     </ClInclude>

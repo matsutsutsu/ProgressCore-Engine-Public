@@ -16,24 +16,20 @@ void GameScene::Initialize()
 {
     ZoneScopedN("GameScene::Initialize");
 
-    BaseScene::Initialize(); // 共通初期化（リソース登録＋RegisterSystems）
+    BaseScene::Initialize(); // リソースの登録と RegisterSystems
 
-    // 戦場レベルを読み込む
-    // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
+    // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
 
-        // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
         std::string bossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
 
         if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-    // 導入カメラ演出
-    // レベル(BossBattleStage.level.json)ではなく、ここで足すのが要点。
-    //   レベルは EditorScene も読むため、レベル側に入れるとデバッグ起動のたびに
-    //   数秒のムービーを待たされる。「本編でだけ再生する」ものは本編のシーンが持つ。
+    // 導入カメラ演出はレベルに入れずここで足す。レベルは EditorScene も読むので、
+    // レベルに入れるとデバッグで起動するたびに数秒の演出を待つことになる
     {
         ZoneScopedN("GameScene: SpawnPrefab BossIntroCamera");
 
@@ -59,11 +55,10 @@ void GameScene::RegisterSystems()
     auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
-    // ゲーム本編専用：ゲームオーバー/クリア検知＋リザルトUIオーバーレイ。
+    // リザルトとポーズはゲーム本編でだけ動かしたいので、全体登録（REGISTER_*）せずここで登録する
     sysManager.RegisterSystem<GameResultSystem>(Priority::LogicStage::L02_PostUpdate);
 
-    // ゲーム本編専用：ポーズ（ESC/START）＋ポーズメニュー。
-    // 描画ステージに置き、ポーズ中も動いて解除入力を拾えるようにする。
+    // ポーズは描画ステージに置く。ロジックステージはポーズ中に止まり、解除の入力を拾えなくなる
     sysManager.RegisterSystem<PauseSystem>(Priority::RenderStage::R10_UI);
 }
 
@@ -82,5 +77,4 @@ void GameScene::Render()
     BaseScene::Render();
 }
 
-// SceneFactory への自動登録
 REGISTER_SCENE(GameScene, "Game")

@@ -1,5 +1,3 @@
-// BTアセット（JSON）をランタイム用の BTAsset へ読み込む実装。
-//
 // 行動・条件は保存キー（"A_BossLeapAttack" などの文字列）で解決する。キーにしてあるのは、
 // 数値IDだと辞書の並びを変えた瞬間に保存済みのアセットが別の技を指すため。
 // アセットには数値IDも併記されていて、キーを引けなかったときだけそちらを使う。
@@ -56,7 +54,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
             //   触っていない木にはキー自体が無い。既定値はその穴を埋めるためにある。
             node.weight = jNode.value("weight", 1.0f);
 
-            // 割り込みの印。付いていない枝は今までどおり、上の枝が終わるまで待つ。
+            // 割り込みの印。付いていない枝は、上の枝が終わるまで待つ。
             node.interrupt = jNode.value("interrupt", false);
 
             // 自己中断の印。付いていない枝は、条件が崩れても最後まで走り切る。
@@ -120,7 +118,7 @@ ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void *jNodePtr, BT
 
 namespace
 {
-    /// 枝の中に「Running を返しうる行動」が1つでもあるか。
+    // 枝の中に「Running を返しうる行動」が1つでもあるか。
     bool SubtreeCanBlock(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -131,8 +129,8 @@ namespace
         return false;
     }
 
-    /// 枝の中に「currentActionId を書く行動」が1つでもあるか。
-    /// Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
+    // 枝の中に「currentActionId を書く行動」が1つでもあるか。
+    // Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
     bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -143,7 +141,7 @@ namespace
         return false;
     }
 
-    /// 枝が条件を持つか（＝失敗して次の枝へ譲る可能性があるか）。
+    // 枝が条件を持つか（失敗して次の枝へ進む可能性があるか）。
     bool SubtreeHasCondition(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -342,8 +340,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             }
         }
 
-        // 選択系の子に「毎フレーム即 Success を返す枝」があると、そこから下が死ぬ。
-        // 失敗して譲ることも無いので、外からは固まって見える。
+        // 選択系の子に毎フレーム即 Success を返す枝があると、そこから下が一度も評価されない。
+        // 失敗して次の枝へ進むことも無いので、外からは固まって見える。
         if (node.type == BTNodeType::Selector || node.type == BTNodeType::WeightedSelector)
         {
             for (size_t k = 0; k + 1 < node.children.size(); ++k)
@@ -439,9 +437,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             }
         }
 
-        // 抽選バッファはスタック固定長。超えたぶんは黙って抽選から漏れる。
         // 重みの検査。0以下の枝は候補に入らないので、置いた本人は「たまたま出ない」と
-        // 思うだけで、一生出ないことに気づけない。
+        // 思うだけで、一度も出ないことに気づけない。
         if (node.type == BTNodeType::WeightedSelector && !node.children.empty())
         {
             float total = 0.0f;
@@ -468,6 +465,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             }
         }
 
+        // 抽選の候補はスタック上の固定長配列に入れるので、上限を超えた分は何も言わずに抽選から漏れる。
         if (node.type == BTNodeType::WeightedSelector &&
             node.children.size() > static_cast<size_t>(kMaxWeightedSelectorChildren))
         {

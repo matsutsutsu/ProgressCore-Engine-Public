@@ -1,5 +1,3 @@
-// 役割・設計方針は PauseSystem.h を参照。
-
 #include "PauseSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -10,11 +8,10 @@
 #include "Engine/Platform/Input/GamePad.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
-#include "Engine/UI/ECS/GameViewportInfo.h" // エディタ操作中は Esc をゲームへ渡さない
+#include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Game/UI/MenuUiFactory.h"
 #include "Engine/Core/App/GameFlowState.h"
-#include "Engine/Time/TimeState.h"   // TimeContext.isPaused（世界時計の凍結。RenderStageのVFXが尊重する）
-#include "Engine/Time/TimeService.h" // ポーズは意図ファサード経由
+#include "Engine/Time/TimeService.h"
 
 #include <cstdint>
 
@@ -27,11 +24,11 @@ namespace
 
 void PauseSystem::Initialize()
 {
-    // ポーズ状態の共有リソースを用意（BaseScene が参照する）。
+    // 一時停止の状態を置くリソース（BaseScene が見る）
     if (!m_world->HasResource<GameFlowState>())
         m_world->AddResource<GameFlowState>();
 
-    // ポーズメニューのボタン購読。
+    // ポーズメニューのボタンを購読する
     const uint32_t kResume = CCL::Utils::HashString("resume");
     const uint32_t kTitle  = CCL::Utils::HashString("pause_title");
 
@@ -43,15 +40,13 @@ void PauseSystem::Initialize()
             }
             else if (e.actionHash == kTitle)
             {
-                if (m_transitioning) return; // 遷移予約後は無視（二重遷移防止）
+                if (m_transitioning) return; // 切り替えを頼んだ後は無視する
 
-                // 「タイトルへ行きたい」と頼むだけ。フェード・裏読み・World 破棄の
-                // 順序は SceneManager が統括する（この購読はワーカースレッドで
-                // 走りうるので、ここで World を畳んではいけない）。
-                //
-                // ポーズを解除しないのは、暗転の裏でゲームが動き出すと
-                // 「止めたはずの世界」が数百ms進んでしまうため。世界時計も
-                // GameFlowState も World ごとなので、遷移先には持ち越されない。
+                // タイトルへの切り替えを頼むだけ。フェード・裏での読み込み・World の片付けの順番は
+                // SceneManager が決める。この購読はワーカースレッドで走ることがあるので、
+                // ここで World を片付けてはいけない。
+                // 一時停止は解除しない。解除すると、暗転している間にゲームが数百ms進んでしまう。
+                // 時間も GameFlowState も World ごとにあるので、切り替え先には残らない
                 m_transitioning = SceneManager::Instance().RequestTransition("Title", true);
             }
         });
@@ -63,16 +58,16 @@ void PauseSystem::Update(float /*dt*/)
     Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
-    // Esc はエディタの別ウィンドウ操作中・UI 操作モード（F2）中は受けない（GameViewportInfo.h）。
-    //   エディタで押した Esc がポーズの解除として効くのを防ぐ。パッドの START は止めない。
+    // エディタの別のウィンドウを操作している間と、UI 操作モード（F2）の間は Esc を受けない（GameViewportInfo.h）。
+    // エディタで押した Esc で一時停止が切り替わらないようにするため。パッドの START は止めない
     const bool keyUsable = !m_world->HasResource<GameViewportInfo>() ||
                            m_world->GetResource<GameViewportInfo>().KeyboardToGame();
     const bool toggle    = (keyUsable && input->GetKeyboard().IsTriggered(VKEY_ESCAPE)) ||
                         input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
-    // カーソル自由(UI操作)モード中は、編集中に誤ってポーズメニューが出ないよう
-    //    ESC/START のポーズ切替を無視する（既にポーズ中の解除は許可）。
+    // UI 操作モード（カーソルを自由に動かすモード）の間は、編集中にポーズメニューが出ないよう
+    // 一時停止しない（一時停止中の解除はできる）
     if (!m_paused && m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract)
     {
         return;
@@ -93,19 +88,19 @@ void PauseSystem::OpenPause()
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = true;
 
-    // 「世界の時計」も止める。FixedUpdate が凍って TimeScaleSystem(localDt生成) が走らないため、
-    // RenderStage で回り続ける VFX（GPUパーティクル等）はこのフラグを見て自前で dt=0 に凍る。
+    // ゲームの時間も止める。FixedUpdate が止まると TimeScaleSystem（localDt を作る）も走らないので、
+    // 描画ステージで動き続ける VFX（GPU パーティクルなど）は、このフラグを見て自分で dt を 0 にする
     Time::Pause(w);
 
-    // オーバーレイ生成（HUDより手前へ sortOrder 高め）。
-    // 出現アニメ：暗転→見出し→ボタンの順に少し遅延させてスッと出す（暗転はフェードのみ）。
-    // UI階層：Canvas を親にして配下を束ねる（ヒエラルキーで入れ子表示・一括破棄）。
+    // メニューを作る（HUD より手前に出すため sortOrder を高くする）。
+    // 暗転 → 見出し → ボタンの順に、出始めを少しずつ遅らせる（暗転はフェードだけ）。
+    // すべて Canvas の子にする
     m_overlay.clear();
     const EntityID canvas = SpawnCanvas(w, "PauseCanvas");
     m_overlay.push_back(canvas);
 
-    // 暗転は上下で濃さを変える。均一なベタ黒は「未実装の板」に見えやすく、
-    // 中央付近が薄いほうが背後のゲーム画面が残って「一時停止している」感が出る。
+    // 暗転は上下で濃さを変える。一色の黒は作りかけの板のように見えやすい。
+    // 上の方を薄くすると後ろのゲーム画面が見え、止まっていることが分かる
     static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.78f};
     m_overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
                                    {0.0f, 0.0f, 0.0f, 0.45f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
@@ -115,14 +110,14 @@ void PauseSystem::OpenPause()
     m_overlay.push_back(resume.button);
     m_overlay.push_back(resume.label);
 
-    // 抜け道はタイトルへ戻すだけにする。アプリ終了はタイトル画面の QUIT に集約した
-    // （ゲーム中から即終了できると、押し間違えたときに戻る手段が無い）。
+    // ここからはタイトルへ戻れるだけにする。アプリの終了はタイトル画面の QUIT だけ
+    // （ゲーム中からすぐ終了できると、押し間違えたときに戻れない）
     auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
                                "pause_title", false, 210, 0.24f, canvas);
     m_overlay.push_back(toTitle.button);
     m_overlay.push_back(toTitle.label);
 
-    // 操作ヒント（[決定] [選択]）。ボタンより一拍遅らせて出す。
+    // 操作のヒント（決定・選択）。ボタンより少し遅れて出す
     SpawnMenuHints(w, canvas, 175.0f, m_overlay, 230, 0.32f);
 }
 
@@ -134,10 +129,10 @@ void PauseSystem::ClosePause()
     if (w.HasResource<GameFlowState>())
         w.GetResource<GameFlowState>().paused = false;
 
-    // 世界の時計を再開（VFXも次フレームから通常速度に戻る）。
+    // ゲームの時間を再開する（VFX も次のフレームから元の速さに戻る）
     Time::Resume(w);
 
-    // 生成したオーバーレイ実体を破棄（ソフト削除：次の構造適用で消える）。
+    // 作ったメニューを消す（実際に消えるのは、次に構造の変更を反映したとき）
     for (EntityID id : m_overlay)
         w.Destroy(id);
     m_overlay.clear();

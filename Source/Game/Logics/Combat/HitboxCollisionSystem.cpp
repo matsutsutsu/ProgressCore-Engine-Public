@@ -1,13 +1,4 @@
-﻿// ===========================================================================
-// HitboxCollisionSystem.cpp
-// 役割・責務・パイプライン上の位置付けは HitboxCollisionSystem.h を参照。
-//
-// 実装の意図(Why):
-//   - 多段ヒット防止は最大8要素の固定長配列の線形探索(ヒープ確保回避・キャッシュ常駐)。
-//   - ノックバック方向は「攻撃者→被弾者」の位置差(XZ)から算出する。
-//   - 1対1アクションボス戦のためクリティカル判定は持たない。
-// ===========================================================================
-#include "HitboxCollisionSystem.h"
+﻿#include "HitboxCollisionSystem.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include "CombatComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -17,7 +8,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ(暫定)
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 当たり判定の調査用ログ
 
 #include <cstdio>
 
@@ -26,7 +17,7 @@ using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    // hitTargets に target が既に記録済みか(多段ヒット防止)。
+    // target にもう当てたか（多段ヒットを防ぐ）。最大8個なので線形に探す
     bool AlreadyHit(const HitboxComponent &box, EntityID target)
     {
         for (uint8_t i = 0; i < box.hitCount; ++i)
@@ -36,9 +27,8 @@ namespace
     }
 
 #if HITBOX_DIAGNOSTICS
-    // hitTargets の中身を "12,34," 形式に整形する（計測ログ用）。
-    //
-    // 多段ヒット履歴が前の攻撃から残っていないかを目視するために出す。
+    // hitTargets を "12,34," の形の文字列にする（調査用ログ）。
+    // 多段ヒットの履歴が前の攻撃から残っていないかを見るため
     void FormatHitTargets(const HitboxComponent &box, char *out, size_t outSize)
     {
         size_t used = 0;
@@ -50,7 +40,7 @@ namespace
     }
 #endif
 
-    // hitTargets に target を追記する(満杯なら何もしない)。
+    // hitTargets に target を足す（いっぱいなら何もしない）
     void RecordHit(HitboxComponent &box, EntityID target)
     {
         if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
@@ -60,10 +50,7 @@ namespace
 
 void HitboxCollisionSystem::Initialize()
 {
-    // 物理衝突(Jolt)の報告を購読する。
-    // EventBus は同期配送なので、ここで判定まで済ませると処理が発行元
-    // (JoltCollisionEventSystem)のタスク上で走り、本システムが宣言した Read/Write が
-    // スケジューラから見えなくなる。積むだけに留め、判定は自分の Update で行う。
+    // 物理の接触を購読する。溜めるだけにし、判定は Update で行う（理由はヘッダーを参照）
     ListenEvent<JoltCollisionEvent>([this](const JoltCollisionEvent &ev) {
         m_pendingContacts.push_back(ev);
     });
@@ -71,28 +58,28 @@ void HitboxCollisionSystem::Initialize()
 
 void HitboxCollisionSystem::Update(float /*dt*/)
 {
-    // 双方向(A→B, B→A)で命中判定する。どちらが攻撃側かは Hitbox の有無で決まる。
+    // A→B と B→A の両方で調べる。どちらが攻撃側かは Hitbox を持つかで決まる
     for (const JoltCollisionEvent &ev : m_pendingContacts)
     {
         CheckAndSpawnDamageEvent(ev.entityA, ev.entityB, ev.contactPosition);
         CheckAndSpawnDamageEvent(ev.entityB, ev.entityA, ev.contactPosition);
     }
 
-    // 消費済みは必ず捨てる。次フレームへ持ち越すと同じ接触を二重に評価してしまう。
+    // 処理した接触は必ず捨てる。次のフレームに残すと同じ接触を2回調べてしまう
     m_pendingContacts.clear();
 }
 
 void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate,
                                                      const DirectX::XMFLOAT3 &contactPos)
 {
-    // 1. Hitbox(攻撃) と Hurtbox(被弾) の成立確認
+    // 1. 攻撃側が Hitbox、受ける側が Hurtbox を持つか
     auto *hitbox  = m_world->GetComponent<HitboxComponent>(attackerCandidate);
     auto *hurtbox = m_world->GetComponent<HurtboxComponent>(victimCandidate);
 
-    // 攻撃側ですらない＝双方向呼び出しの片割れ。正常なので無言で戻る。
+    // 攻撃側ではない（2回呼ぶうちの片方）。いつものことなのでログは出さない
     if (!hitbox) return;
 
-    // ここから先は「Hitbox を持つ側からの呼び出し」なので、落ちた理由を必ず残す。
+    // ここからは Hitbox を持つ側なので、当たらなかった理由をログに残す
     if (!hurtbox)
     {
         HITDIAG_LOG(LogCategory::Game,
@@ -108,7 +95,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    // 自傷防止（owner と被弾者が同じなら無視）
+    // 自分の攻撃が自分に当たらないようにする
     if (hitbox->ownerID == victimCandidate)
     {
         HITDIAG_LOG(LogCategory::Game,
@@ -116,7 +103,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    // 2. 多段ヒット防止(同一攻撃が同一相手を二度叩かない)
+    // 2. 1回の攻撃で同じ相手に2回当てない
     if (AlreadyHit(*hitbox, victimCandidate))
     {
 #if HITBOX_DIAGNOSTICS
@@ -130,26 +117,20 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    // 当たった相手を記録しておく（多重ヒット防止のため）
     RecordHit(*hitbox, victimCandidate);
 
-    // 3. 最終ダメージ = 基礎 × 被ダメ倍率(弱点)
-    //    ※1対1ボス戦のためクリティカルは無し。
+    // 3. ダメージ = 基本のダメージ × 受ける側の倍率（弱点など）
     const float finalDamage = hitbox->damageAmount * hurtbox->damageMultiplier;
 
-    // 4. 命中位置：物理衝突の接触点(ワールド座標)をそのまま使う。加工しない。
+    // 4. 当たった位置は物理の接触点（ワールド座標）をそのまま使う
     const Vector3 hitPos(contactPos);
 
-    // 5. ノックバック方向
-    //    定石（DMC/ベヨネッタ/GoW系）に倣い「攻撃が方向を決める」。衝突法線や剣先の一瞬の
-    //    位置を基準にすると、横薙ぎで相手の真横に剣がある瞬間に当たり“真横へ吹っ飛ぶ”違和感が
-    //    出る。そこで【攻撃者(キャラ本体)の前方】を主軸に、【攻撃者→被弾者の放射方向】を従で
-    //    ブレンドする。前方主軸で「振った向き＝前へ」飛ばしつつ、中心を外した被弾では放射成分で
-    //    自然なズレが残る。※剣の場合の基準は剣ボディではなく攻撃の持ち主(ownerID)。
-    //
-    // 幾何の原点。ownerID は「誰の手柄か」であって「どこから来たか」ではない。
-    //   剣は持ち主の子なので owner でよいが、ドローンは持ち主から数十m離れた
-    //   攻撃体なので自分自身を原点にする（useSelfAsHitOrigin）。
+    // 5. ノックバックの向き。攻撃の向きで決める。衝突の法線や剣先の位置で決めると、横に振った剣が
+    //    相手の真横にある瞬間に当たったとき、真横へ飛んでしまう。そこで攻撃した側（剣なら持ち主）の
+    //    前方を主に、攻撃した側から受けた側への向きを少し混ぜる。前方を主にすると振った向きへ飛び、
+    //    中心から外れて当たったときは外側への向きが少し残る。
+    //    基準の位置は ownerID（誰の攻撃か）とは限らない。剣は持ち主の子なので持ち主でよいが、
+    //    ドローンは持ち主から数十 m 離れて当たるので、自分自身を基準にする（useSelfAsHitOrigin）
     const EntityID hitOrigin =
         (hitbox->useSelfAsHitOrigin || hitbox->ownerID == InvalidEntityID)
             ? attackerCandidate
@@ -163,7 +144,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         auto *vicT = m_world->GetComponent<TransformComponent>(victimCandidate);
         if (atkT && vicT)
         {
-            // (a) 攻撃者の前方（技が意図する主方向）
+            // (a) 攻撃した側の前方
             Vector3 fwd(atkT->GetForward());
             fwd.y = 0.0f;
             if (fwd.LengthSquared() > 1e-6f)
@@ -171,7 +152,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             else
                 fwd = Vector3::Zero;
 
-            // (b) 放射方向（攻撃者→被弾者）。GetWorldPosition() 基準で空間を揃える。
+            // (b) 攻撃した側から受けた側への向き。どちらもワールド座標で比べる
             Vector3 radial = Vector3(vicT->GetWorldPosition()) - Vector3(atkT->GetWorldPosition());
             radial.y       = 0.0f;
             if (radial.LengthSquared() > 1e-6f)
@@ -179,10 +160,11 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             else
                 radial = Vector3::Zero;
 
-            // 前方0.75 : 放射0.25 でブレンド（将来はHitBoxイベント側で技ごとに指定できるとよい）。
-            //   攻撃体自身が原点のとき(ドローン)は前方を混ぜない。原点が接触点の
-            //   すぐそばに在るので放射方向がそのまま進行方向になり、かつ機体の
-            //   forward 軸がモデルの前方と一致している保証も要らなくなる。
+            // 前方 0.75、外向き 0.25 で混ぜる。
+            // 判定自身が基準のとき（ドローン）は前方を混ぜない。基準が接触点のすぐそばにあるので、
+            // 外向きの向きがそのまま進んできた向きになる。機体の forward 軸がモデルの前方と
+            // 合っているかも気にしなくて済む
+            // TODO(2026-09-06): 混ぜる割合を HitBox 区間ごとに技で指定できるようにする
             const float kForwardWeight = hitbox->useSelfAsHitOrigin ? 0.0f : 0.75f;
             Vector3     blended        = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
             if (blended.LengthSquared() > 1e-6f)
@@ -193,19 +175,17 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             }
             else if (!hitbox->useSelfAsHitOrigin && fwd.LengthSquared() > 1e-6f)
             {
-                // 前方と放射が打ち消し合った稀なケースは前方で代替。
-                //   攻撃体自身が原点のときは代替しない。GetForward() は +Z 基準だが
-                //   ドローンのモデルは前方が -Z なので、ここで拾うと真後ろへ飛ばす。
-                //   （放射がゼロ＝ほぼ完全に重なっている状況なので、
-                //     knockForce=0 のまま押さない方が安全側）
+                // 前方と外向きが打ち消し合ったまれな場合は前方を使う。
+                // 判定自身が基準のときは使わない。GetForward() は +Z だがドローンのモデルは前方が -Z なので、
+                // 真後ろへ飛ばしてしまう（外向きが 0 ならほぼ重なっているので、押さない方がよい）
                 knockDir   = fwd;
                 knockForce = hitbox->knockback;
             }
-            // どちらも無効（真上重なり等）は knockForce=0 のまま(安全側)
+            // どちらの向きも求められないとき（真上で重なっているなど）は押さない
         }
     }
 
-    // 5. DamageEvent(一時エンティティ)を生成して結果を載せる。HPは触らない。
+    // 6. 結果を載せた DamageEvent のエンティティを作る。HP には触らない
     static const Archetype damageArchetype = ArchetypeHelper::Generate<DamageEventComponent>();
     auto                   entityRef       = m_world->Spawn(damageArchetype);
 

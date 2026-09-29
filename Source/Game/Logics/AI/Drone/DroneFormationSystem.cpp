@@ -1,4 +1,3 @@
-// IFormation 方式の陣形計算。registry から陣形を引いて targetPosition を計算。
 #include "DroneFormationSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -45,8 +44,8 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     ctx.time = m_elapsed;
     ctx.dt   = dt; // 攻撃の進行度（ヒンジ回転など）を進めるのに使う
 
-    // 「今撃て」信号。狙いを焼くタイミングの判定に使う。ボス位置とあわせて
-    // BossCommandComponent を持つ最初のEntityから取る。
+    // 「今撃て」信号。狙いを固定するタイミングの判定に使う。ボス位置とあわせて
+    // BossCommandComponent を持つ最初の Entity から取る。
     bool attackActive = false;
 
     {
@@ -82,13 +81,13 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         }
     }
 
-    // 小隊の頭（SquadUpdateSystem が今フレーム更新済み）。ここでは読むだけ。
+    // 小隊のアンカー（SquadUpdateSystem が今フレーム更新済み）。ここでは読むだけ。
     if (m_world->HasResource<SquadRegistry>())
         ctx.squads = &m_world->GetResource<SquadRegistry>();
 
-    // 狙う向きを「撃つと決めた瞬間」に1回だけ焼く。予備動作の間は追い続ける
-    // （形がプレイヤーを向くからこそ、どちらへ避けるかを読める）。信号が立った
-    // 瞬間から先は動かさず、避けた者勝ちにする。
+    // 狙う向きを「撃つと決めた瞬間」に1回だけ固定する。予備動作の間は追い続ける
+    // （形がプレイヤーを向くので、どちらへ避けるかを読める）。信号が立った後は
+    // 動かさないので、避ければ当たらない。
     if (attackActive && !m_prevAttackActive)
     {
         DirectX::SimpleMath::Vector3 aim = ctx.playerPos - ctx.bossPos;
@@ -135,8 +134,8 @@ void DroneFormationSystem::Update(float dt)
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
 
-        // 予告（震え）の溜めを進める。技であり、持ち場に着いていて、まだ撃つ合図が
-        // 来ていない——この3つが揃う時間帯が予備動作そのもの。
+        // 予告（震え）の溜めを進める。震えを使う技で、持ち場に着いていて、まだ撃つ合図が
+        // 来ていない。この3つが揃う時間帯が予備動作にあたる。
         //   hasReachedSlot は「一度でも着いたか」のラッチなので陣形を切り替えた直後も
         //   true のままで、溜めは BT が陣形を指示した時点から始まって Wait(予告) の
         //   長さと一致する。突撃から帰る途中だけ false に落ちるので帰りながらは震えない。

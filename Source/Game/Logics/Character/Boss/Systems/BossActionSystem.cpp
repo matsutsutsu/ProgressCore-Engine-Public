@@ -1,4 +1,3 @@
-// ボスアクションシステムの実装。
 #include "BossActionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -23,7 +22,7 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    /// 角度 [rad] を -π〜π に収める。yaw の差を「近い回り方」で取るために使う。
+    // 角度（rad）を -π〜π に収める。yaw の差を近い回り方で取るために使う。
     float WrapAngle(float angle)
     {
         while (angle > DirectX::XM_PI)
@@ -33,11 +32,11 @@ namespace
         return angle;
     }
 
-    /// lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直り、Jolt へも写す。
-    /// 1フレームで回り切らないので、呼び続けると滑らかに正対する。
-    ///
-    /// 描画と物理の向きを必ず一緒に動かすため1つにしてある。別々の関数だと、
-    /// 片方だけ呼んだ場所で物理側の向きが古いまま取り残される。
+    // lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直り、Jolt にも同じ向きを書く。
+    // 1フレームで回り切らないので、呼び続けると滑らかに正対する。
+    //
+    // 描画と物理の向きを必ず一緒に動かすため1つの関数にしている。別々の関数だと、
+    // 片方だけ呼んだ場所で物理側の向きが古いまま残る。
     void FaceToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt,
                     JPH::CharacterVirtual *character)
     {
@@ -165,11 +164,11 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = (std::max)(0.0f,
                                           bossDef.currentMoveSpeed - bossDef.deceleration * dt);
 
-    // 上書きは書かない＝config.walkSpeed 基準へ戻る。
+    // overrideSpeed は書かない（config.walkSpeed が基準に戻る）。
     movement.desiredVelocity = Vector3::Zero;
 
-    // 足は止めるが目は離さない。旋回を移動中より遅くする（idleTurnSpeed < turnSpeed）のが
-    // 要点で、即座に正対すると背後を取る価値が消え、回らないと置物に見える。
+    // 足は止めるが、相手の方へは向き直る。移動中より遅く回す（idleTurnSpeed < turnSpeed）。
+    // すぐ正対すると背後を取る意味が無くなり、回らないと止まっているだけに見える。
     Vector3 dirToPlayer = playerPos - trans.position;
     dirToPlayer.y       = 0.0f;
     FaceToward(trans, dirToPlayer, bossDef.idleTurnSpeed, dt, joltHandle.character.GetPtr());
@@ -280,8 +279,8 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
 {
     const float t = bossDef.actionTimer; // 後方ステップに入ってからの経過 [秒]
 
-    // 退く間も正対し続ける。向いていないと、間合いを切って仕切り直す技ではなく
-    // 「逃げ出した」に見える。
+    // 退く間も相手を向き続ける。向いていないと、間合いを取り直す技ではなく
+    // 逃げ出したように見える。
     FaceToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt, joltHandle.character.GetPtr());
 
     // 硬直。長さは技の全体時間(BTノードの param)から backStepTime を引いたぶん。
@@ -292,8 +291,8 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
         return;
     }
 
-    // 後退。弧を描いて「強く引かれる」形にする。地上を滑らせるとどんなに速くしても
-    // クリップの足と合わず「後ろ歩き」に見えるが、空中なら接地感が問われない。
+    // 後退。弧を描いて素早く下がる。地上を滑らせると、どんなに速くしても
+    // クリップの足の動きと合わず後ろ歩きに見えるが、空中なら足と地面のずれが目立たない。
     // 溜めを持たないのは被弾への反応だから（予備動作を入れると避けている感じが出ない）。
     // 垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへちょうど戻るので、
     // 着地の時刻が backStepTime からずれない。
@@ -307,8 +306,8 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformCo
     Vector3 v = bossDef.lockedDirection * speed;
     v.y       = (4.0f * bossDef.backStepHeight / T) * (1.0f - 2.0f * u);
 
-    // 重力と水平計算を止めてこの速度をそのまま使う。歩行上限で丸めると
-    // 「素早く退く」という技の中身が消えてただの後ずさりになる。
+    // 重力と水平の計算を止めてこの速度をそのまま使う。歩きの上限速度で丸めると、
+    // 素早く退く技ではなくただの後ずさりになる。
     movement.use3DVelocity = true;
     movement.velocity3D    = v;
 
@@ -322,13 +321,13 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
 {
     JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
-    // 今の位置。Transform ではなく Jolt から取る（こちらが物理の正で、1フレーム遅れない）。
+    // 今の位置。Transform ではなく Jolt から取る（Jolt の値が物理の正しい位置で、1フレーム遅れない）。
     const JPH::RVec3 jp = ch->GetPosition();
     const Vector3    now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
 
     const float t = bossDef.actionTimer; // 跳躍に入ってからの経過 [秒]
 
-    // 溜め：足を止めて相手を睨む。着地点はまだ決めない。
+    // 溜め：足を止めて相手の方を向く。着地点はまだ決めない。
     if (t < bossDef.leapDef.windup)
     {
         bossDef.leapPhase        = BossLeapPhase::Windup;
@@ -363,7 +362,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
             u = (std::min)(elapsed / flightTime, 1.0f); // 上昇（留まらない跳躍はそのまま着地まで）
         else if (elapsed < toApex + hold)
         {
-            u        = 0.5f; // 頂点で足踏み。高さも水平位置もここで止まる
+            u        = 0.5f; // 頂点で止める。高さも水平位置もここで止まる
             hovering = true;
         }
         else
@@ -377,8 +376,8 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
         const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f)); // Jolt が積分に使う dt
         Vector3     v      = (LeapPositionAt(bossDef, u) - now) / stepDt;      // 今あるべき位置へ届く速度
 
-        // 空中で相手や壁に引っかかったあと、遅れを1フレームで取り返そうとして
-        // 瞬間移動に見えないようにする蓋。普段の飛行速度（60m/s 前後）より十分上。
+        // 空中で相手や壁に引っかかった後、遅れを1フレームで取り戻そうとして
+        // 瞬間移動に見えないようにする上限。普段の飛行速度（60m/s 前後）より十分に大きくする。
         constexpr float kMaxLeapSpeed = 150.0f;
         if (v.LengthSquared() > kMaxLeapSpeed * kMaxLeapSpeed)
         {
@@ -399,7 +398,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
         }
         FaceToward(trans, lookDir, bossDef.turnSpeed, dt, ch);
 
-        // アニメの Idle/Move を動かさない（空中の絵は IsLeaping 側の遷移が持つ）。
+        // アニメの Idle/Move を動かさない（空中のアニメは IsLeaping による遷移で切り替える）。
         bossDef.currentMoveSpeed = 0.0f;
         bossDef.moveDirection    = bossDef.lockedDirection;
 
@@ -409,7 +408,7 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
 
     // 着地硬直。着地した最初のフレームだけ速度を 0 で上書きする。飛行中の速度が
     // currentVelocity に残っており、放っておくと減速のぶんだけ地面を滑る。
-    // 2フレーム目以降は書かない＝重力が戻り、段差があってもそのまま接地する。
+    // 2フレーム目以降は書かないので重力が戻り、段差があってもそのまま接地する。
     if (!bossDef.leapTouchedDown)
     {
         movement.use3DVelocity  = true;
@@ -420,8 +419,8 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = 0.0f;
     movement.desiredVelocity = Vector3::Zero;
 
-    // 着地攻撃の硬直は向きを固定する。着地の攻撃判定が出ている間に相手を追うと、
-    // 横へ抜けても判定が付いてきて後隙を狩れない。
+    // 着地攻撃の硬直中は向きを固定する。着地の攻撃判定が出ている間に相手を追うと、
+    // 横へ避けても判定が付いてきて、プレイヤーが後隙を攻撃できない。
     if (bossDef.leapLandAttack) return;
 
     Vector3 dirToPlayer = playerPos - trans.position;
@@ -515,7 +514,7 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
         movement.use3DVelocity = true; // 高さは突っ込んだ時点で地面に揃っているので y は 0
         movement.velocity3D    = bossDef.lockedDirection * speed;
 
-        bossDef.currentMoveSpeed = 0.0f; // 走りの絵は段が運ぶ（Idle/Move は動かさない）
+        bossDef.currentMoveSpeed = 0.0f; // 走るアニメは段(DashPhase)で切り替える（Idle/Move は動かさない）
         bossDef.moveDirection    = bossDef.lockedDirection;
         return;
     }
@@ -552,8 +551,8 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f));
     Vector3     v      = (want - now) / stepDt;
 
-    // 引っかかった遅れを1フレームで取り返して瞬間移動に見えないようにする蓋。
-    // 突進の速さを上げたときに蓋で頭打ちにならないよう、突進の倍は許す。
+    // 引っかかった遅れを1フレームで取り戻して瞬間移動に見えないようにする上限。
+    // 突進を速くしたときに上限で頭打ちにならないよう、突進の速さの2倍までは許す。
     const float maxSpeed = (std::max)(150.0f, bossDef.dashSpeed * 2.0f);
     if (v.LengthSquared() > maxSpeed * maxSpeed)
     {
@@ -564,7 +563,7 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     movement.use3DVelocity = true; // 毎フレーム書く。書くのをやめたフレームに重力で落ちる
     movement.velocity3D    = v;
 
-    // アニメの Idle/Move を動かさない（突進の絵はトリガーと段が運ぶ）。
+    // アニメの Idle/Move を動かさない（突進のアニメはトリガーと段で切り替える）。
     bossDef.currentMoveSpeed = 0.0f;
     bossDef.moveDirection    = bossDef.lockedDirection;
 }

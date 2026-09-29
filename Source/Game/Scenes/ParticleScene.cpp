@@ -1,8 +1,8 @@
 #include "ParticleScene.h"
-#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
-#include "Engine/Serialization/Factory/Prefab.h"
-#include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
+#include "Engine/Scene/SceneFactory.h"
+#include "Engine/Serialization/Serializer/LevelSerializer.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "tracy/Tracy.hpp"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
@@ -10,12 +10,9 @@ void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
 
-    // --- 戦場レベルを読み込む ---
-    // LoadLevel は内部で LoadScene（既存ワールドをPersistentTag以外全消去）→ ステージ復元
-    // → プレハブ実体(ライト/カメラ/プレイヤー/ボス/ステージ)を再生成する。BaseScene::Initialize は
-    // ゲーム実体を生成しないので、ここで全消去されて困るものは無い（リソース/システムは残る）。
+    // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む。
+    // BaseScene::Initialize はエンティティを作らないので、消されて困るものは無い
     {
-        // 起動時に読み込む戦場レベル。ライト/カメラ/プレイヤー/ボス/ステージを全て含む。
         std::string particleLevel = "Assets/Scene/ParticleScene.level.json";
 
         ZoneScopedN("ParticleScene: LoadLevel ParticleScene");
@@ -31,14 +28,9 @@ void ParticleScene::Finalize()
 
 void ParticleScene::RegisterSystems()
 {
-    // EditorSceneと全く同じ (SystemGroupsのおかげで短縮)
-    ID3D11Device *device = Graphics::Instance().GetDevice();
-
-    // SystemManagerへのアクセスを m_ecsContext 経由に変更
-    // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 }
 
-// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
+// SceneFactory へ登録する（SceneManager がこのクラスを include せずに済むように）
 REGISTER_SCENE(ParticleScene, "Particle")

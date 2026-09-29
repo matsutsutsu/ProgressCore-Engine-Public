@@ -1,11 +1,14 @@
 #pragma once
-// プレイヤーHPゲージHUDを ECS UI で構築し、HealthComponent に毎フレーム連動させる。
+// ===========================================================================
+// 概要: 画面左上にプレイヤーの HP ゲージを作り、HealthComponent に毎フレーム合わせる System。
 //
-// 設計方針:
-//   - CleaveGaugeHudSystem と同じ「Initialize で UI エンティティ生成 → Update でデータ連動」の型。
-//   - 本体フィルは現在HPへ即追従。被弾時は UIProgressBar の「遅延ダメージ（チップ）バー」を使い、
-//     失った分(value..trailValue)を一瞬見せてからスッと減らす（格ゲー風のHPバー演出）。
-//   - プレイヤー(HealthComponent かつ PlayerComponent)だけを対象にする。居ないシーンでは隠す。
+// 責務:
+//   - Initialize でゲージとラベルの UI エンティティを作る
+//   - HP の割合と色（残りに応じて緑・黄・赤）、HP の数値を毎フレーム書く
+//   - 被弾したら、失った分（value〜trailValue）を少し見せてから遅れて減らし、ゲージを揺らす
+//
+// 備考: 対象は HealthComponent と PlayerComponent を持つエンティティ。居ないシーンでは隠す。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
@@ -27,14 +30,14 @@ private:
     CCL::ECS::EntityID m_barID   = CCL::ECS::InvalidEntityID; // ゲージ本体（UIProgressBar）
     CCL::ECS::EntityID m_labelID = CCL::ECS::InvalidEntityID; // ラベル（UIText）
 
-    float m_prevRatio = 1.0f;  // 前フレームのHP比（被弾検出用）
-    float m_shake     = 0.0f;  // 被弾の揺れ残量 0..1（毎フレーム減衰させる）
-    float m_shakeTime = 0.0f;  // 揺れの位相[秒]。世界の時計(dt)で進めるのでポーズ中は止まる。
-    float m_trailHold = 0.0f;  // 被弾後、遅延バーが減り始めるまでの溜め(秒)
-    bool  m_init      = false; // 初回にゲージ値をスナップ済みか
+    float m_prevRatio = 1.0f;  // 前のフレームの HP の割合（被弾したかを見るため）
+    float m_shake     = 0.0f;  // 被弾の揺れの残り（0〜1。毎フレーム減らす）
+    float m_shakeTime = 0.0f;  // 揺れの経過時間（秒）。ゲームの dt で進めるのでポーズ中は止まる
+    float m_trailHold = 0.0f;  // 被弾してから遅れて減るバーが動き出すまでの残り時間（秒）
+    bool  m_init      = false; // ゲージの値を最初に合わせたか
 
-    // --- チューニング用 ---
-    static constexpr float kTrailSpeed = 6.0f;  // 遅延バーの追従速度（大きいほど速く追いつく）
-    static constexpr float kTrailHold  = 0.30f; // 被弾後、遅延バーが減り始めるまでの溜め(秒)
-    static constexpr float kShakeDecay = 9.0f;  // 揺れの減衰速度（大きいほど短くビクッと終わる）
+    // --- 調整値 ---
+    static constexpr float kTrailSpeed = 6.0f;  // 遅れて減るバーの追いつく速さ（大きいほど速い）
+    static constexpr float kTrailHold  = 0.30f; // 被弾してから遅れて減るバーが動き出すまでの時間（秒）
+    static constexpr float kShakeDecay = 9.0f;  // 揺れが収まる速さ（大きいほど短い）
 };
