@@ -1,7 +1,9 @@
 {
     "DialogHistory": {
+        "AnimNode": "Assets\\Animations\\Nodes",
+        "AnimSequence": "Assets\\Animations\\Sequencer\\Muriel",
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
-        "Prefab": "Assets\\Prefabs\\Player"
+        "Prefab": "Assets\\Prefabs\\Enemy"
     }
 }

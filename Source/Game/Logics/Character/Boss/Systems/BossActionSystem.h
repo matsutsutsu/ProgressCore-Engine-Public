@@ -92,6 +92,19 @@ private:
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext &battle, float dt);
 
+    /// 突進攻撃。後ろへ浮きながら下がる → 空中で止まって狙う → 下りながら直進 → 硬直。
+    /// 跳躍と同じく「今あるべき位置」へ届く速度を毎フレーム与える。
+    void ProcessDash(BossActionComponent &bossDef, TransformComponent &trans,
+                     CharacterMovementComponent         &movement,
+                     const JoltCharacterHandleComponent &joltHandle,
+                     const DirectX::SimpleMath::Vector3 &playerPos,
+                     const BattleContext &battle, float dt);
+
+    /// 予告の終わりに1回だけ呼ぶ。相手への方向を固定し、その方向へ dashDistance 進む終点と時間を決める。
+    void BeginDashCharge(BossActionComponent                &bossDef,
+                         const DirectX::SimpleMath::Vector3 &playerPos,
+                         const BattleContext                &battle) const;
+
     /// 踏み切りの瞬間に1回だけ呼ぶ。着地点（ステージ内に収めた値）と飛ぶ向きを確定させる。
     void BeginLeapFlight(BossActionComponent                &bossDef,
                          const DirectX::SimpleMath::Vector3 &takeoffPos,

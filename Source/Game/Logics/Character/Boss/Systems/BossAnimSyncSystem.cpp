@@ -21,6 +21,12 @@ static const uint32_t HASH_IS_LEAPING = CCL::Utils::HashString("IsLeaping");
 // これを見て、攻撃判定を持つ LeapLandAttack と持たない LeapLand を選び分ける。
 static const uint32_t HASH_LEAP_ATTACK = CCL::Utils::HashString("LeapAttack");
 
+// 突進の段。0 は突進していない、1〜6 が BossDashPhase の Retreat〜Recovery（+1 したもの）。
+// グラフは「しきい値より大きくなったら次の状態へ」で繋いでいるので、長さ 0 の段が
+// 飛ばされても途中で詰まらない。段の長さは技ごとの調整値で変わるので、クリップの
+// 長さでは切り替えを決められない（跳躍の IsLeaping と同じ理由）。
+static const uint32_t HASH_DASH_PHASE = CCL::Utils::HashString("DashPhase");
+
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const BossActionComponent &boss, AnimParametersComponent &anim) {
@@ -35,6 +41,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         const bool isLeaping = leap && (boss.leapPhase != BossLeapPhase::Recovery);
         anim.SetBool(HASH_IS_LEAPING, isLeaping);
         anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapLandAttack);
+
+        const bool dash = (boss.currentState == BossActionState::Dash);
+        anim.SetFloat(HASH_DASH_PHASE, dash ? static_cast<float>(boss.dashPhase) + 1.0f : 0.0f);
     });
 }
 

@@ -23,15 +23,24 @@
                     "backStepHeight": 2.0,
                     "backStepSpeed": 60.0,
                     "backStepTime": 2.0,
+                    "dashAimTime": 0.5,
+                    "dashDistance": 50.0,
+                    "dashRetreatDistance": 30.0,
+                    "dashRetreatHeight": 5.0,
+                    "dashRetreatTime": 0.6000000238418579,
+                    "dashSpeed": 150.0,
+                    "dashStopTime": 0.6000000238418579,
+                    "dashTravelSpeed": 130.0,
+                    "dashTravelTime": 0.2199999988079071,
                     "deceleration": 15.0,
                     "escapeLandingRatio": 0.30000001192092896,
                     "escapeLeap.flight": 1.100000023841858,
                     "escapeLeap.height": 30.0,
                     "escapeLeap.windup": 0.25,
+                    "hoverLandRecovery": 0.6299999952316284,
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.windup": 0.30000001192092896,
-                    "hoverLandRecovery": 0.63,
                     "idleTurnSpeed": 4.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
@@ -43,9 +52,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        2.877624129987742e-38,
-                        0.0,
-                        1.2818132475180007e-38
+                        142.46749877929688,
+                        -14.925540924072266,
+                        -44.49897384643555
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -60,7 +69,7 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 500.0,
+                    "currentHealth": 465.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 500.0
                 },
@@ -131,15 +140,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        76.24040985107422,
-                        -0.676510214805603,
-                        53.74135208129883
+                        -64.2706069946289,
+                        3.4695944786071777,
+                        33.020503997802734
                     ],
                     "rotation": [
                         0.0,
-                        0.5423926711082458,
+                        0.8056492209434509,
                         0.0,
-                        0.8401250839233398
+                        0.5923928618431091
                     ],
                     "scale": [
                         5.0,

@@ -15,6 +15,7 @@ enum class BossActionState : uint8_t
     Move,     // プレイヤーへ歩いて近づく
     BackStep, // 後方ステップ。被弾がかさんだら間合いを切る
     Leap,     // 跳躍。溜め→放物線で飛ぶ→着地硬直。どこへ降りるかは BossLeapLanding
+    Dash,     // 突進攻撃。後ろへ浮きながら下がる→止まって狙う→下りながら直進→硬直
 };
 
 // 跳躍の着地点の決め方。跳躍系の技は「どこへ降りるか」だけが違い、跳び方は共通。
@@ -34,6 +35,17 @@ enum class BossLeapPhase : uint8_t
     Flight,   // 空中。曲線上の位置を追いかけて飛ぶ
     Hover,    // 頂点で停止。滞空だけが通る（曲線の進みを頂点で止めている）
     Recovery, // 着地硬直
+};
+
+// 突進攻撃の段。跳躍と同じく、アニメの切り替えに使うので値で持つ。
+enum class BossDashPhase : uint8_t
+{
+    Retreat,  // 後ろへ浮きながら下がる
+    Aim,      // 空中で止まり、相手を向き続ける（予告）。この段の終わりに狙いを固定する
+    Charge,   // 狙った方向へ、空中から地面へ下りながら突っ込む
+    Travel,   // 地面に着いた後も同じ方向へ走り続ける。間合いを大きく離す
+    Stop,     // 走りを緩めて止まる
+    Recovery, // 止まった後の硬直
 };
 
 /// 跳躍1種ぶんの跳び方。跳躍はこの3つの値と「着地点の決め方」だけで区別する。
@@ -78,6 +90,22 @@ struct BossActionComponent
     BossLeapDef hoverLeap{0.3f, 0.9f, 16.0f}; // その場で滞空(A_BossAirHover)。頂点はプレイヤーの攻撃が届かない高さに
     float       hoverLandRecovery = 0.63f;    // 着地硬直 [秒]。頂点に留まる長さ＝BTノードの全体時間−溜め−上昇下降−これ
 
+    // --- 突進攻撃(A_BossDashAttack)。硬直＝BTノードの全体時間の残り ---
+    //
+    // 狙うのは「方向」だけ。予告の終わりに相手への向きを固定し、その方向へ突っ込んだ後も
+    // 走り続ける。相手の位置で止まらないので、近距離の攻撃と間合いを離す移動を兼ねる。
+    // 予告の間は相手を向き続けるので、プレイヤーは向きから方向を読み、固定された瞬間に横へ避ける。
+
+    float dashRetreatTime     = 0.5f;  // 後ろへ下がる長さ [秒]
+    float dashRetreatDistance = 6.0f;  // 後ろへ下がる距離 [m]
+    float dashRetreatHeight   = 3.0f;  // 下がりながら浮く高さ [m]。突進はここから地面へ下りる
+    float dashAimTime         = 0.5f;  // 空中で止まって狙う長さ [秒]。避けるための予告
+    float dashSpeed           = 45.0f; // 突っ込む速さ [m/s]
+    float dashDistance        = 15.0f; // 空中から地面へ突っ込む距離 [m]。この後の前進は別に数える
+    float dashTravelSpeed     = 25.0f; // 着地後に走り続ける速さ [m/s]
+    float dashTravelTime      = 1.0f;  // 走り続ける長さ [秒]。進む距離 ≒ 速さ × これ
+    float dashStopTime        = 0.4f;  // 走りを緩めて止まるまで [秒]
+
     // --- ランタイム状態。書き手はすべて BossActionSystem（保存しない）---
     //
     // 保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、次に生成された個体が
@@ -104,4 +132,14 @@ struct BossActionComponent
     float                        leapHoverTime   = 0.0f;                                 // 今の跳躍が頂点に留まる長さ [秒]。0なら止まらずそのまま降りる
     bool                         leapLandAttack  = false;                                // 着地を攻撃のクリップ(LeapLandAttack)で受けるか。アニメの LeapAttack に載る
     bool                         leapTouchedDown = false;                                // 着地の最初のフレームで速度を0にし終えたか。飛行中の速度が残って滑るのを防ぐ
+
+    // 以下は突進の実行時の値。下がり始めの地点は最初のフレームに、突進の終点は予告の
+    // 終わりに1回だけ決める。
+
+    BossDashPhase                dashPhase       = BossDashPhase::Retreat;               // 今の突進の段。アニメの切り替えにも使う
+    bool                         dashStarted     = false;                                // 下がり始めの地点を記録し終えたか
+    DirectX::SimpleMath::Vector3 dashStartPos    = DirectX::SimpleMath::Vector3::Zero;   // 下がり始めた地点。高さはここを地面とみなす
+    DirectX::SimpleMath::Vector3 dashAimPos      = DirectX::SimpleMath::Vector3::Zero;   // 下がり切って狙う地点（空中）
+    DirectX::SimpleMath::Vector3 dashEndPos      = DirectX::SimpleMath::Vector3::Zero;   // 突進の終点（地面・ステージの内側へ収めた後の値）
+    float                        dashChargeTime  = 0.0f;                                 // 突進にかける時間 [秒]。距離÷速さ
 };

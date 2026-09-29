@@ -14,6 +14,7 @@ static const char *BossStateNames[] = {
     "Move",
     "BackStep",
     "Leap",
+    "Dash",
 };
 
 // BossLeapPhase と1対1で並べる。
@@ -22,6 +23,16 @@ static const char *BossLeapPhaseNames[] = {
     "Flight",   // 空中
     "Hover",    // 頂点で停止
     "Recovery", // 着地硬直
+};
+
+// BossDashPhase と1対1で並べる。
+static const char *BossDashPhaseNames[] = {
+    "Retreat",  // 後ろへ下がる
+    "Aim",      // 止まって狙う
+    "Charge",   // 突っ込む
+    "Travel",   // 走り続ける
+    "Stop",     // 止まる
+    "Recovery", // 硬直
 };
 
 template <>
@@ -60,12 +71,22 @@ struct ComponentMeta<BossActionComponent>
                 CFIELD_FLOAT_RANGED(hoverLeap.flight, "滞空：上昇＋下降 [秒]", 0.01f, 0.1f, 5.0f, "Air Hover")
                 CFIELD_FLOAT_RANGED(hoverLandRecovery, "滞空：着地硬直 [秒]（頂点の長さはBTノードの全体時間から逆算）", 0.01f, 0.0f, 3.0f, "Air Hover")
                 CFIELD_FLOAT_RANGED(hoverLeap.height, "滞空：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Air Hover")
+                CFIELD_FLOAT_RANGED(dashRetreatTime, "突進：下がる時間 [秒]", 0.01f, 0.05f, 3.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashRetreatDistance, "突進：下がる距離 [m]", 0.1f, 0.0f, 30.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashRetreatHeight, "突進：浮く高さ [m]", 0.1f, 0.0f, 20.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashAimTime, "突進：狙う時間（予告）[秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashSpeed, "突進：突っ込む速さ [m/s]", 0.5f, 1.0f, 150.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashDistance, "突進：突っ込む距離 [m]", 0.5f, 1.0f, 150.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashTravelSpeed, "突進：着地後に走る速さ [m/s]", 0.5f, 0.0f, 150.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashTravelTime, "突進：走り続ける時間 [秒]", 0.01f, 0.0f, 5.0f, "Dash Attack")
+                CFIELD_FLOAT_RANGED(dashStopTime, "突進：止まるまでの時間 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             // ここから下は書き手が BossActionSystem の実行時の値。保存しない。
             //   保存すると「たまたま保存した瞬間の技」がプレハブへ焼き付き、
             //   次に生成された個体がその状態で生まれてくる。
             CFIELD_RT(currentMoveSpeed, "現在の移動速度", "State")
                 CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
-                CFIELD_ENUM_U8_RT(leapPhase, "跳躍の段", BossLeapPhaseNames, std::size(BossLeapPhaseNames), "State")};
+                CFIELD_ENUM_U8_RT(leapPhase, "跳躍の段", BossLeapPhaseNames, std::size(BossLeapPhaseNames), "State")
+                CFIELD_ENUM_U8_RT(dashPhase, "突進の段", BossDashPhaseNames, std::size(BossDashPhaseNames), "State")};
         return fields;
     }
 };

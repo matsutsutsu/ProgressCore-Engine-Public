@@ -32,10 +32,20 @@ namespace CCL::AI::BT
     /// 足が地面から離れているか。跳躍の途中で要求を取り下げてよいかの判断に使う。
     ///
     /// 溜め（Windup）の間はまだ地面にいるので、打ち切っても破綻しない。
+    /// 突進は下がり始めから浮き、突っ込み終わって地面に着くまでが空中。
+    /// 着地後の前進（Travel 以降）は地面を走っているだけなので、打ち切っても落ちない。
     bool IsAirborne(BTContext &ctx)
     {
         const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity);
-        return act && act->currentState == BossActionState::Leap && act->leapPhase != BossLeapPhase::Windup;
+        if (!act) return false;
+
+        if (act->currentState == BossActionState::Leap) return act->leapPhase != BossLeapPhase::Windup;
+        if (act->currentState == BossActionState::Dash)
+        {
+            return act->dashPhase == BossDashPhase::Retreat || act->dashPhase == BossDashPhase::Aim ||
+                   act->dashPhase == BossDashPhase::Charge;
+        }
+        return false;
     }
 
     /// ① 待機（汎用：bt の nodeTimers だけ使う）。待ち時間はノードの param（秒）。
@@ -347,6 +357,12 @@ namespace CCL::AI::BT
         // ドローンの陣形攻撃は Parallel の従に置き、滞空（主）が全体の長さを決める。
         reg.RegisterActionInstance(A_BossAirHover,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 4.4f, A_BossAirHover));
+
+        // 突進攻撃：下がる0.5 + 狙う0.5 + 突っ込む（15m÷45m/s ≒ 0.33）+ 走る1.0 + 止まる0.4
+        // + 硬直（残り）。全体時間が下がる＋狙う＋突っ込むより短いと、空中で要求が下りて
+        // 待機へ戻り、重力で落ちる。走る・止まるの途中で切れた場合は、その場で待機の減速に移る。
+        reg.RegisterActionInstance(A_BossDashAttack,
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Dash"), 3.3f, A_BossDashAttack));
 
         reg.RegisterAction<WaitAction>(A_Wait);
 

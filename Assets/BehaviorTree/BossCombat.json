@@ -420,6 +420,21 @@
             "endPin": 534,
             "id": 535,
             "startPin": 406
+        },
+        {
+            "endPin": 540,
+            "id": 541,
+            "startPin": 538
+        },
+        {
+            "endPin": 537,
+            "id": 542,
+            "startPin": 5
+        },
+        {
+            "endPin": 544,
+            "id": 550,
+            "startPin": 538
         }
     ],
     "editor_nodes": [
@@ -1483,9 +1498,41 @@
             "posX": 10550.0,
             "posY": 1278.0,
             "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 536,
+            "inputPinId": 537,
+            "name": "シーケンス (Sequence)",
+            "outputPinId": 538,
+            "posX": 4807.0,
+            "posY": 1342.0,
+            "type": 2
+        },
+        {
+            "action": "A_BossDashAttack",
+            "actionId": 10,
+            "id": 539,
+            "inputPinId": 540,
+            "outputPinId": 0,
+            "param": 3.0,
+            "posX": 4622.0,
+            "posY": 1582.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 543,
+            "inputPinId": 544,
+            "outputPinId": 0,
+            "param": 3.0,
+            "posX": 4907.0,
+            "posY": 1582.0,
+            "type": 4
         }
     ],
-    "last_id_counter": 535,
+    "last_id_counter": 550,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1497,16 +1544,17 @@
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "type": "Selector"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                9,
                 10,
-                11
+                11,
+                12
             ],
             "interrupt": true,
             "type": "Sequence"
@@ -1514,7 +1562,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                12
+                13
             ],
             "decoratorType": 1,
             "param": 14.0,
@@ -1523,7 +1571,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                13
+                14
             ],
             "decoratorType": 1,
             "param": 10.0,
@@ -1532,7 +1580,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                14
+                15
             ],
             "decoratorType": 1,
             "param": 7.0,
@@ -1541,15 +1589,23 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                15,
-                16
+                16,
+                17
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                18,
+                19
             ],
             "type": "WeightedSelector"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                17
+                20
             ],
             "decoratorType": 1,
             "param": 25.0,
@@ -1559,7 +1615,7 @@
             "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
-                18
+                21
             ],
             "decoratorType": 1,
             "param": 8.0,
@@ -1569,8 +1625,8 @@
             "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
-                19,
-                20
+                22,
+                23
             ],
             "type": "Sequence"
         },
@@ -1591,24 +1647,15 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                21,
-                22
+                24,
+                25
             ],
             "type": "WeightedSelector"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                23,
-                24,
-                25,
-                26
-            ],
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                26,
                 27,
                 28,
                 29
@@ -1620,43 +1667,57 @@
             "children": [
                 30,
                 31,
-                32,
+                32
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
                 33,
                 34,
                 35,
-                36
+                36,
+                37,
+                38,
+                39
             ],
             "type": "Sequence"
         },
         {
+            "action": "A_BossDashAttack",
+            "actionOrConditionId": 10,
+            "children": [],
+            "param": 3.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 3.0,
+            "type": "Action"
+        },
+        {
             "actionOrConditionId": 0,
             "children": [
-                37,
-                38,
-                39,
                 40,
                 41,
                 42,
-                43
+                43,
+                44,
+                45,
+                46
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                44,
-                45,
-                46,
                 47,
                 48,
                 49,
-                50
-            ],
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                50,
                 51,
                 52,
                 53
@@ -1668,11 +1729,20 @@
             "children": [
                 54,
                 55,
-                56,
+                56
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
                 57,
                 58,
                 59,
-                60
+                60,
+                61,
+                62,
+                63
             ],
             "type": "Sequence"
         },
@@ -1693,21 +1763,21 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                61,
-                62,
-                63
+                64,
+                65,
+                66
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                64,
-                65,
-                66,
                 67,
                 68,
-                69
+                69,
+                70,
+                71,
+                72
             ],
             "type": "Sequence"
         },
@@ -1917,8 +1987,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                70,
-                71
+                73,
+                74
             ],
             "type": "Parallel"
         },
@@ -2051,10 +2121,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                72,
-                73,
-                74,
-                75
+                75,
+                76,
+                77,
+                78
             ],
             "type": "Sequence"
         },
