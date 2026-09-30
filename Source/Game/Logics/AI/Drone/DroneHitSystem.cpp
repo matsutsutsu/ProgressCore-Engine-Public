@@ -96,6 +96,7 @@ void DroneHitSystem::Update(float /*dt*/)
         box.knockback       = combat.knockback;
         box.hitStopDuration = combat.hitStopDuration;
         box.hitStopScale    = combat.hitStopScale;
+        box.rehitInterval   = combat.rehitInterval;
 
         ++activeCount;
     });

@@ -118,6 +118,7 @@ namespace CCL::AI::Formation::Meta
             FD_Float("ノックバック", "knockback", offsetof(T, knockback), 0.5f),
             FD_Float("ヒットストップ [秒]", "hitStopDuration", offsetof(T, hitStopDuration), 0.01f, 0.0f, 1.0f, nullptr, true, "0 で無効"),
             FD_Float("ヒットストップ中の時間倍率", "hitStopScale", offsetof(T, hitStopScale), 0.01f, 0.0f, 1.0f, nullptr, true, "0 で完全停止"),
+            FD_Float("再ヒット間隔 [秒]", "rehitInterval", offsetof(T, rehitInterval), 0.05f, -1.0f, 10.0f, nullptr, true, "同じ機体が同じ相手にもう一度当たるまでの間隔。負なら突撃1回につき1ヒット"),
         };
         return fields;
     }

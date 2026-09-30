@@ -79,6 +79,10 @@ namespace CCL::AI::Formation
         float knockback       = 12.0f; // ノックバック強さ（0で無効）
         float hitStopDuration = 0.05f; // 命中時のヒットストップ [秒]
         float hitStopScale    = 0.0f;  // ヒットストップ中のタイムスケール（0=完全停止）
+
+        /// 同じ機体が同じ相手にもう一度当たるまでの間隔 [秒]。負なら突撃1回につき1ヒット。
+        /// 既定を負にするのは、縦割りのように形ごと通過する技が、重なっている間ずっと当たり続けないため
+        float rehitInterval = -1.0f;
     };
 
     // 陣形の基底。派生が localIndex / totalDrones から「1機分の目標座標」を計算する。

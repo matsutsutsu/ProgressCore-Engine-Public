@@ -21,6 +21,7 @@
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Combat/CombatComponents.h"
+#include "Game/Logics/Combat/HealthComponent.h"
 
 #include <DirectXMath.h>
 #include <vector>
@@ -29,6 +30,7 @@ class HitboxCollisionSystem
     : public CCL::ECS::IfSystem<HitboxCollisionSystem,
                                 CCL::ECS::Write<HitboxComponent>,   // 多段ヒットの履歴（hitTargets / hitCount）を書く
                                 CCL::ECS::Read<HurtboxComponent>,   // 受けるダメージの倍率を読む
+                                CCL::ECS::Read<HealthComponent>,    // 無敵中の相手を履歴に残さないため読む
                                 CCL::ECS::Read<TransformComponent>> // ノックバック方向の算出に読む
 {
 public:
@@ -65,4 +67,8 @@ private:
     // 発行元は JoltCollisionEventSystem だけで、GetRunAfter でこの System の前に走るので、
     // 追加と処理が同時に走ることはない
     std::vector<JoltCollisionEvent> m_pendingContacts;
+
+    /// 再ヒット間隔を測る時計（秒）。HitboxComponent::hitTimes はこの値で記録する。
+    /// 間隔が要る判定だけ毎フレーム経過時間を数える方法だと全 Hitbox を回すことになるので、1本の時計の差で測る
+    float m_clock = 0.0f;
 };

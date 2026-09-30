@@ -29,7 +29,13 @@ struct HitboxComponent
     // 多段ヒットを防ぐための、当てた相手の履歴
     static constexpr uint8_t MAX_HIT_TARGETS             = 8;
     CCL::ECS::EntityID       hitTargets[MAX_HIT_TARGETS] = {}; // 当てた相手
+    float                    hitTimes[MAX_HIT_TARGETS]   = {}; // その相手に最後に当てた時刻（HitboxCollisionSystem の時計）
     uint8_t                  hitCount                    = 0;  // hitTargets に入っている数
+
+    /// 同じ相手にもう一度当たるまでの間隔（秒）。負なら判定が開いている間は1回だけ。
+    /// 小隊突撃のように判定を開けたまま何度も往復する攻撃は、1回きりだと2周目から当たらない。
+    /// 逆に 0 近くにすると重なっている間ずっと当たり、受けた側の無敵時間だけが痛さを決めてしまう
+    float rehitInterval = -1.0f;
 
     // ノックバックとのけぞりの向きを決めるときの基準の位置。
     //   false（既定）: ownerID。剣は持ち主の子なので、持ち主の前方を基準にすると振った向きへ飛ぶ。

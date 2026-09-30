@@ -32,6 +32,7 @@ CFIELD(isActive, "有効", "状態")
 CFIELD_FLOAT_RANGED(knockback, "ノックバック力", 0.1f, 0.0f, 500.0f, "戦闘ステータス")
 CFIELD_FLOAT_RANGED(hitStopDuration, "ヒットストップ時間(秒)", 0.01f, 0.0f, 5.0f, "戦闘ステータス")
 CFIELD_FLOAT_RANGED(hitStopScale, "ヒットストップ時間倍率", 0.01f, 0.0f, 1.0f, "戦闘ステータス")
+CFIELD_FLOAT_RANGED(rehitInterval, "再ヒット間隔(秒・負で1回のみ)", 0.01f, -1.0f, 10.0f, "戦闘ステータス")
 COMPONENT_META_END(HitboxComponent)
 
 COMPONENT_META_BEGIN_FULL(HurtboxComponent, "Hurtbox", CCL::Categories::Combat, 171, false)

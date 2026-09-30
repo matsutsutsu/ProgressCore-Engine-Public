@@ -1,6 +1,7 @@
 ﻿#include "HitboxCollisionSystem.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include "CombatComponents.h"
+#include "HealthComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Core/CCL_PendingOps.h"
@@ -17,13 +18,13 @@ using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    // target にもう当てたか（多段ヒットを防ぐ）。最大8個なので線形に探す
-    bool AlreadyHit(const HitboxComponent &box, EntityID target)
+    // target が履歴の何番目か（無ければ -1）。最大8個なので線形に探す
+    int FindHitSlot(const HitboxComponent &box, EntityID target)
     {
         for (uint8_t i = 0; i < box.hitCount; ++i)
             if (box.hitTargets[i] == target)
-                return true;
-        return false;
+                return i;
+        return -1;
     }
 
 #if HITBOX_DIAGNOSTICS
@@ -40,11 +41,20 @@ namespace
     }
 #endif
 
-    // hitTargets に target を足す（いっぱいなら何もしない）
-    void RecordHit(HitboxComponent &box, EntityID target)
+    // target に now で当てたと記録する。履歴にあれば時刻だけ更新し、無ければ足す（いっぱいなら何もしない）
+    void RecordHit(HitboxComponent &box, int slot, EntityID target, float now)
     {
+        if (slot >= 0)
+        {
+            box.hitTimes[slot] = now;
+            return;
+        }
         if (box.hitCount < HitboxComponent::MAX_HIT_TARGETS)
-            box.hitTargets[box.hitCount++] = target;
+        {
+            box.hitTargets[box.hitCount] = target;
+            box.hitTimes[box.hitCount]   = now;
+            ++box.hitCount;
+        }
     }
 } // namespace
 
@@ -56,8 +66,10 @@ void HitboxCollisionSystem::Initialize()
     });
 }
 
-void HitboxCollisionSystem::Update(float /*dt*/)
+void HitboxCollisionSystem::Update(float dt)
 {
+    m_clock += dt;
+
     // A→B と B→A の両方で調べる。どちらが攻撃側かは Hitbox を持つかで決まる
     for (const JoltCollisionEvent &ev : m_pendingContacts)
     {
@@ -103,8 +115,22 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    // 2. 1回の攻撃で同じ相手に2回当てない
-    if (AlreadyHit(*hitbox, victimCandidate))
+    // 2. 受ける側が無敵なら、当たらなかったことにする。
+    //    ここで弾かずに履歴へ残すと、回避ですり抜けただけで「もう当てた」扱いになり、
+    //    無敵が切れた後もその攻撃では二度と当たらなくなる
+    if (const auto *health = m_world->GetComponent<HealthComponent>(victimCandidate);
+        health && health->invincibilityTimer > 0.0f)
+    {
+        HITDIAG_LOG(LogCategory::Game,
+                    "[HitDiag/Reject] invincible  atk=%llu vic=%llu", attackerCandidate, victimCandidate);
+        return;
+    }
+
+    // 3. 同じ相手に続けて当てない。rehitInterval が負なら判定が開いている間は1回だけ、
+    //    正ならその間隔が過ぎればもう一度当たる
+    const int slot = FindHitSlot(*hitbox, victimCandidate);
+    if (slot >= 0 &&
+        (hitbox->rehitInterval < 0.0f || m_clock - hitbox->hitTimes[slot] < hitbox->rehitInterval))
     {
 #if HITBOX_DIAGNOSTICS
         char targets[128];
@@ -117,15 +143,15 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    RecordHit(*hitbox, victimCandidate);
+    RecordHit(*hitbox, slot, victimCandidate, m_clock);
 
-    // 3. ダメージ = 基本のダメージ × 受ける側の倍率（弱点など）
+    // 4. ダメージ = 基本のダメージ × 受ける側の倍率（弱点など）
     const float finalDamage = hitbox->damageAmount * hurtbox->damageMultiplier;
 
-    // 4. 当たった位置は物理の接触点（ワールド座標）をそのまま使う
+    // 5. 当たった位置は物理の接触点（ワールド座標）をそのまま使う
     const Vector3 hitPos(contactPos);
 
-    // 5. ノックバックの向き。攻撃の向きで決める。衝突の法線や剣先の位置で決めると、横に振った剣が
+    // 6. ノックバックの向き。攻撃の向きで決める。衝突の法線や剣先の位置で決めると、横に振った剣が
     //    相手の真横にある瞬間に当たったとき、真横へ飛んでしまう。そこで攻撃した側（剣なら持ち主）の
     //    前方を主に、攻撃した側から受けた側への向きを少し混ぜる。前方を主にすると振った向きへ飛び、
     //    中心から外れて当たったときは外側への向きが少し残る。
@@ -185,7 +211,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         }
     }
 
-    // 6. 結果を載せた DamageEvent のエンティティを作る。HP には触らない
+    // 7. 結果を載せた DamageEvent のエンティティを作る。HP には触らない
     static const Archetype damageArchetype = ArchetypeHelper::Generate<DamageEventComponent>();
     auto                   entityRef       = m_world->Spawn(damageArchetype);
 

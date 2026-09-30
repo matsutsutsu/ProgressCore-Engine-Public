@@ -40,6 +40,15 @@ namespace CCL::AI::Formation::Squad
         // 先渡しの速度も自分で「1つ前の機体の速度」を入れる。
         bool FollowsBoss() const override { return false; }
 
+        // 突入中は判定を開けたまま何度も往復するので、1回きりだと2周目から当たらない。
+        // 1回すり抜けるのにかかる時間より長く取り、1回の通過で2度当たらないようにする。
+        FormationCombat GetCombat() const override
+        {
+            FormationCombat c;
+            c.rehitInterval = 1.0f;
+            return c;
+        }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;
