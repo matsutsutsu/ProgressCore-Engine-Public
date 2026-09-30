@@ -20,7 +20,9 @@ static const uint32_t HASH_IS_LEAPING = CCL::Utils::HashString("IsLeaping");
 // これを見て、攻撃判定を持つ LeapLandAttack と持たない LeapLand を選び分ける。
 static const uint32_t HASH_LEAP_ATTACK = CCL::Utils::HashString("LeapAttack");
 
-// 突進の段。0 は突進していない、1〜6 が BossDashPhase の Retreat〜Recovery（+1 したもの）。
+// 突進の段。0 は突進していない、1〜7 が BossDashPhase の Retreat〜Recovery（+1 したもの）。
+// 突進開始のクリップ（DashCharge 状態）は構え（3）から流し始め、突っ込む（4）の間も続ける。
+// 猛スピードが出る前に構えを見せ、それを予告として読ませるため。
 // グラフは「しきい値より大きくなったら次の状態へ」で繋いでいるので、長さ 0 の段が
 // 飛ばされても途中で詰まらない。段の長さは技ごとの調整値で変わるので、クリップの
 // 長さでは切り替えを決められない（跳躍の IsLeaping と同じ理由）。

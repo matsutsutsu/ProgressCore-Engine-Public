@@ -65,6 +65,10 @@ private:
     // で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
     void DrawRootMotionPreview(EditorContext &context, AnimatorComponent *animator);
 
+    // 編集モード中、SpawnHitbox の判定球を GameView に線で描き、大きさと位置を確かめられるようにする。
+    // 選んでいるイベントは常に、それ以外は今の再生時刻が区間に入っているときだけ描く
+    void DrawHitboxPreview(EditorContext &context);
+
 private:
     // --- pImpl（ImSequencer 依存をcppに隠蔽） ---
     std::unique_ptr<AnimationSequenceImpl> m_sequencerImpl;

@@ -265,7 +265,7 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, flo
     }
 
     // 突進は下がる向き（lockedDirection の逆）だけをここで決める。下がり始めの地点は
-    // Jolt の位置で取りたいので最初のフレームに、狙いは予告の終わりに決める。
+    // Jolt の位置で取りたいので最初のフレームに、狙いは構えに入る瞬間に決める。
     if (next == BossActionState::Dash)
     {
         bossDef.dashPhase   = BossDashPhase::Retreat;
@@ -321,9 +321,8 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossDef, TransformCompon
 {
     JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
-    // 今の位置。Transform ではなく Jolt から取る（Jolt の値が物理の正しい位置で、1フレーム遅れない）。
-    const JPH::RVec3 jp = ch->GetPosition();
-    const Vector3    now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
+    // 今の位置。Transform ではなく物理から取る（理由は GetCharacterWorldPosition のコメント）。
+    const Vector3 now = GetCharacterWorldPosition(joltHandle);
 
     const float t = bossDef.actionTimer; // 跳躍に入ってからの経過 [秒]
 
@@ -434,9 +433,8 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
 {
     JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
-    // 今の位置。跳躍と同じく Jolt から取る。
-    const JPH::RVec3 jp = ch->GetPosition();
-    const Vector3    now(static_cast<float>(jp.GetX()), static_cast<float>(jp.GetY()), static_cast<float>(jp.GetZ()));
+    // 今の位置。跳躍と同じく物理から取る。
+    const Vector3 now = GetCharacterWorldPosition(joltHandle);
 
     const float t = bossDef.actionTimer; // 突進に入ってからの経過 [秒]
 
@@ -457,18 +455,23 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     // 段は一方通行。時刻が閾値を越えたフレームに次へ進む（1フレームで複数進むこともある）。
     const float retreatEnd = (std::max)(0.05f, bossDef.dashRetreatTime);
     const float aimEnd     = retreatEnd + (std::max)(0.0f, bossDef.dashAimTime);
+    const float windupEnd  = aimEnd + (std::max)(0.0f, bossDef.dashWindupTime);
 
     if (bossDef.dashPhase == BossDashPhase::Retreat && t >= retreatEnd)
         bossDef.dashPhase = BossDashPhase::Aim;
 
+    // 構えに入った瞬間に方向を固定する。以後は相手が動いても向きを変えない。
     if (bossDef.dashPhase == BossDashPhase::Aim && t >= aimEnd)
     {
-        BeginDashCharge(bossDef, playerPos, battle);
-        bossDef.dashPhase = BossDashPhase::Charge;
+        LockDashAim(bossDef, playerPos, battle);
+        bossDef.dashPhase = BossDashPhase::Windup;
     }
 
-    // 突っ込む長さは BeginDashCharge が距離から決めるので、ここから先の時刻はその後で出す。
-    const float chargeEnd = aimEnd + bossDef.dashChargeTime;
+    if (bossDef.dashPhase == BossDashPhase::Windup && t >= windupEnd)
+        bossDef.dashPhase = BossDashPhase::Charge;
+
+    // 突っ込む長さは LockDashAim が距離から決めるので、ここから先の時刻はその後で出す。
+    const float chargeEnd = windupEnd + bossDef.dashChargeTime;
     const float travelEnd = chargeEnd + (std::max)(0.0f, bossDef.dashTravelTime);
     const float stopEnd   = travelEnd + (std::max)(0.0f, bossDef.dashStopTime);
 
@@ -534,11 +537,18 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     }
     case BossDashPhase::Aim:
         want    = bossDef.dashAimPos;
-        lookDir = playerPos - now; // 予告。向きが突進の方向になるので、プレイヤーはここを読む
+        lookDir = playerPos - now; // 相手を向き続ける。構えに入った瞬間のこの向きが突進の方向になる
+        break;
+
+    case BossDashPhase::Windup:
+        // 空中で止まったまま構える。向きは固定済みの方向。ここで相手を追うと、
+        // 「構えた＝方向が決まった」という読みが成り立たない。
+        want    = bossDef.dashAimPos;
+        lookDir = bossDef.lockedDirection;
         break;
 
     default: { // Charge：空中から地面の終点へ等速でまっすぐ突っ込む
-        const float s = (std::min)(1.0f, (t - aimEnd) / (std::max)(0.001f, bossDef.dashChargeTime));
+        const float s = (std::min)(1.0f, (t - windupEnd) / (std::max)(0.001f, bossDef.dashChargeTime));
         want          = Vector3::Lerp(bossDef.dashAimPos, bossDef.dashEndPos, s);
         lookDir       = bossDef.lockedDirection;
         break;
@@ -568,8 +578,8 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     bossDef.moveDirection    = bossDef.lockedDirection;
 }
 
-void BossActionSystem::BeginDashCharge(BossActionComponent &bossDef, const Vector3 &playerPos,
-                                       const BattleContext &battle) const
+void BossActionSystem::LockDashAim(BossActionComponent &bossDef, const Vector3 &playerPos,
+                                   const BattleContext &battle) const
 {
     // 狙うのは相手への「方向」だけ。突っ込む距離は相手の位置に関係なく dashDistance で決まり、
     // その後も同じ方向へ走り続ける（Travel）。

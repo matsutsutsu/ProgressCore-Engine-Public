@@ -652,7 +652,7 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 960.0,
             "nodePosY": 960.0,
-            "playbackSpeed": 2.0,
+            "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashCharge.json",
             "sequenceName": "DashCharge",
@@ -666,7 +666,7 @@
                             "op": 1,
                             "paramHash": 2969413448,
                             "paramName": "DashPhase",
-                            "threshold": 3.5
+                            "threshold": 4.5
                         }
                     ],
                     "logicType": 0,
@@ -698,7 +698,7 @@
                             "op": 1,
                             "paramHash": 2969413448,
                             "paramName": "DashPhase",
-                            "threshold": 4.5
+                            "threshold": 5.5
                         }
                     ],
                     "logicType": 0,

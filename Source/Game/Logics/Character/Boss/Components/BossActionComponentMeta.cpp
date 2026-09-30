@@ -29,6 +29,7 @@ static const char *BossLeapPhaseNames[] = {
 static const char *BossDashPhaseNames[] = {
     "Retreat",  // 後ろへ下がる
     "Aim",      // 止まって狙う
+    "Windup",   // 構え（方向は固定済み）
     "Charge",   // 突っ込む
     "Travel",   // 走り続ける
     "Stop",     // 止まる
@@ -74,7 +75,8 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(dashRetreatTime, "突進：下がる時間 [秒]", 0.01f, 0.05f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRetreatDistance, "突進：下がる距離 [m]", 0.1f, 0.0f, 30.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRetreatHeight, "突進：浮く高さ [m]", 0.1f, 0.0f, 20.0f, "Dash Attack")
-            CFIELD_FLOAT_RANGED(dashAimTime, "突進：狙う時間（予告）[秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
+            CFIELD_FLOAT_RANGED(dashAimTime, "突進：狙う時間（相手を向き続ける）[秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
+            CFIELD_FLOAT_RANGED(dashWindupTime, "突進：溜め（方向固定・避ける猶予）[秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashSpeed, "突進：突っ込む速さ [m/s]", 0.5f, 1.0f, 150.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashDistance, "突進：突っ込む距離 [m]", 0.5f, 1.0f, 150.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashTravelSpeed, "突進：着地後に走る速さ [m/s]", 0.5f, 0.0f, 150.0f, "Dash Attack")

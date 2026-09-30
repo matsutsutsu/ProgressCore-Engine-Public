@@ -116,6 +116,11 @@ struct AnimNotifyEvent
     //   Jolt に依存しないよう uint8_t で持ち、購読側で ObjectLayer にキャストする
     uint8_t attackLayer = 3;
 
+    // SpawnHitbox の判定球を持ち主に追従させるか。
+    //   false: 生成した瞬間のワールド位置に固定（衝撃波など）
+    //   true : offset を持ち主のローカル座標として付いていき、持ち主のアニメが切り替わったら消える（突進など）
+    bool hitboxFollow = false;
+
     // エフェクトのパラメータ（Effect 用）
     float effectScale  = 1.0f;  // スケール倍率
     bool  effectFollow = false; // 親（キャラ）に追従するか
@@ -153,7 +158,7 @@ using json = nlohmann::json;
 inline void to_json(json &j, const AnimNotifyEvent &e)
 {
     j = json{
-        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
+        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"hitboxFollow", e.hitboxFollow}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
 
     // Vector3 は初期化子リストの中では変換できない（ADL で解決されない）ので、後から代入する
     j["offset"] = e.offset;
@@ -172,6 +177,7 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
     if (j.contains("offset")) j.at("offset").get_to(e.offset);
     e.radius       = j.value("radius", 1.0f);
     e.attackLayer  = static_cast<uint8_t>(j.value("attackLayer", 3));
+    e.hitboxFollow = j.value("hitboxFollow", false);
     e.effectScale  = j.value("effectScale", 1.0f);
     e.effectFollow = j.value("effectFollow", false);
 }

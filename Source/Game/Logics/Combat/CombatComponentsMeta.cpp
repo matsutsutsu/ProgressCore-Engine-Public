@@ -402,6 +402,28 @@ REGISTER_COMPONENT(HitboxLifetimeComponent, "HitboxLifetimeComponent")
 REGISTER_COMPONENT_EDITOR_GUI(HitboxLifetimeComponent)
 
 // ===================================================================
+// HitboxLifeAnimComponent（保存せず、インスペクタにも出さない）
+// ===================================================================
+template <>
+struct ComponentMeta<HitboxLifeAnimComponent>
+{
+    static constexpr const char *displayName       = "Hitbox Life Anim";
+    static constexpr const char *category          = CCL::Categories::Internal;
+    static constexpr int         sortPriority      = 902;
+    static constexpr bool        hasCustomGui      = false;
+    static constexpr bool        isSerializable    = false;
+    static constexpr bool        hiddenInInspector = true;
+
+    static const std::vector<FieldDescriptor> &Fields()
+    {
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
+    }
+};
+REGISTER_COMPONENT(HitboxLifeAnimComponent, "HitboxLifeAnimComponent")
+REGISTER_COMPONENT_EDITOR_GUI(HitboxLifeAnimComponent)
+
+// ===================================================================
 // HealthComponent
 // ===================================================================
 template <>

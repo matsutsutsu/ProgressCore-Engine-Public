@@ -44,7 +44,7 @@ namespace CCL::AI::BT
         if (act->currentState == BossActionState::Dash)
         {
             return act->dashPhase == BossDashPhase::Retreat || act->dashPhase == BossDashPhase::Aim ||
-                   act->dashPhase == BossDashPhase::Charge;
+                   act->dashPhase == BossDashPhase::Windup || act->dashPhase == BossDashPhase::Charge;
         }
         return false;
     }
@@ -357,11 +357,12 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossAirHover,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Leap"), 4.4f, A_BossAirHover));
 
-        // 突進攻撃：下がる0.5 + 狙う0.5 + 突っ込む（15m÷45m/s ≒ 0.33）+ 走る1.0 + 止まる0.4
-        // + 硬直（残り）。全体時間が下がる＋狙う＋突っ込むより短いと、空中で要求が下りて
-        // 待機へ戻り、重力で落ちる。走る・止まるの途中で切れた場合は、その場で待機の減速に移る。
+        // 突進攻撃：下がる0.5 + 狙う0.5 + 構える0.4 + 突っ込む（15m÷45m/s ≒ 0.33）+ 走る1.0
+        // + 止まる0.4 + 硬直（残り）。全体時間が下がる＋狙う＋構える＋突っ込むより短いと、
+        // 空中で要求が下りて待機へ戻り、重力で落ちる。走る・止まるの途中で切れた場合は、
+        // その場で待機の減速に移る。
         reg.RegisterActionInstance(A_BossDashAttack,
-                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Dash"), 3.3f, A_BossDashAttack));
+                                   std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Dash"), 3.7f, A_BossDashAttack));
 
         reg.RegisterAction<WaitAction>(A_Wait);
 

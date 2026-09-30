@@ -44,4 +44,5 @@ struct AnimEventSpawnHitboxMessage
     float                        lifeTime;        // 判定球の生存時間（秒）
     uint8_t                      attackLayer;     // 判定球の物理レイヤー番号（誰に当てるか）
     float                        knockback;       // ノックバックの強さ（0 で無効）
+    bool                         follow;          // owner に追従するか（アニメが切り替わったら消える）
 };

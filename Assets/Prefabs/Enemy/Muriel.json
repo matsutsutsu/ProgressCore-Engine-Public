@@ -7,7 +7,7 @@
                     "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": true,
+                    "isLoop": false,
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
@@ -23,7 +23,7 @@
                     "backStepHeight": 2.0,
                     "backStepSpeed": 60.0,
                     "backStepTime": 2.0,
-                    "dashAimTime": 0.5,
+                    "dashAimTime": 0.30000001192092896,
                     "dashDistance": 50.0,
                     "dashRetreatDistance": 30.0,
                     "dashRetreatHeight": 5.0,
@@ -32,6 +32,7 @@
                     "dashStopTime": 0.6000000238418579,
                     "dashTravelSpeed": 130.0,
                     "dashTravelTime": 0.2199999988079071,
+                    "dashWindupTime": 0.4000000059604645,
                     "deceleration": 15.0,
                     "escapeLandingRatio": 0.30000001192092896,
                     "escapeLeap.flight": 1.100000023841858,
@@ -52,9 +53,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        142.46749877929688,
-                        -14.925540924072266,
-                        -44.49897384643555
+                        46.13078689575195,
+                        12.268537521362305,
+                        57.363277435302734
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -69,7 +70,7 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 465.0,
+                    "currentHealth": 500.0,
                     "invincibilityDuration": 0.20000000298023224,
                     "maxHealth": 500.0
                 },
@@ -140,15 +141,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -64.2706069946289,
-                        3.4695944786071777,
-                        33.020503997802734
+                        24.454015731811523,
+                        2.4258270263671875,
+                        -39.964317321777344
                     ],
                     "rotation": [
-                        0.0,
-                        0.8056492209434509,
-                        0.0,
-                        0.5923928618431091
+                        -0.0,
+                        -0.9428108930587769,
+                        -0.0,
+                        0.3333280384540558
                     ],
                     "scale": [
                         5.0,

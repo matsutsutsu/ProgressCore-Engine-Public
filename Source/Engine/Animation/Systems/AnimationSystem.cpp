@@ -198,7 +198,7 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             const float window = evt.endTime - evt.startTime;
             m_world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
                 id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window,
-                evt.attackLayer, evt.knockback});
+                evt.attackLayer, evt.knockback, evt.hitboxFollow});
             break;
         }
 

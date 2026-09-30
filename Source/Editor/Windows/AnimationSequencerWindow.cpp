@@ -15,6 +15,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
+#include "Engine/Graphics/Renderer/ShapeRenderer.h"      // SpawnHitbox の判定球のプレビュー
 
 // IO / Platform
 #include "Engine/Platform/Core/Dialog.h"
@@ -900,6 +901,47 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
                 model->UpdateTransform(tr->worldMatrix);
         }
     }
+
+    // ルートモーションで位置を確定させた後に描く（描く位置がキャラとずれないように）
+    DrawHitboxPreview(context);
+}
+
+void AnimationSequencerWindow::DrawHitboxPreview(EditorContext &context)
+{
+    if (!context.isAnimEditMode || !context.world) return;
+    if (!context.world->HasResource<ShapeRenderer *>()) return;
+    ShapeRenderer *shapeRenderer = context.world->GetResource<ShapeRenderer *>();
+    if (!shapeRenderer) return;
+
+    const auto *trans = context.world->GetComponent<TransformComponent>(context.selectedEntity);
+    if (!trans) return;
+
+    // SpawnHitboxSystem と同じ計算にする。offset はメートルで、キャラの回転だけを掛ける（scale は掛けない）
+    const DirectX::XMFLOAT3 ownerPos = trans->GetWorldPosition();
+    const DirectX::XMFLOAT4 ownerRot = trans->GetWorldRotation();
+    const DirectX::XMVECTOR rotQ     = DirectX::XMLoadFloat4(&ownerRot);
+
+    const float now = context.animEditTime;
+    for (size_t i = 0; i < m_editingSequence.events.size(); ++i)
+    {
+        const auto &ev = m_editingSequence.events[i];
+        if (ev.type != AnimEventType::SpawnHitbox) continue;
+
+        // イベントのインデックスは m_selectedEntry - 1（0 はマスタートラック）
+        const bool selected = (m_selectedEntry - 1 == static_cast<int>(i));
+        const bool active   = (ev.startTime <= now && now <= ev.endTime);
+        if (!selected && !active) continue;
+
+        const DirectX::XMVECTOR off = DirectX::XMVectorSet(ev.offset.x, ev.offset.y, ev.offset.z, 0.0f);
+        DirectX::XMFLOAT3       center;
+        DirectX::XMStoreFloat3(&center,
+                               DirectX::XMVectorAdd(DirectX::XMLoadFloat3(&ownerPos), DirectX::XMVector3Rotate(off, rotQ)));
+
+        // 区間に入っている（＝ゲームなら判定が出ている）ときは赤、選んでいるだけのときは薄い黄色
+        const DirectX::XMFLOAT4 color = active ? DirectX::XMFLOAT4(1.0f, 0.2f, 0.2f, 1.0f)
+                                               : DirectX::XMFLOAT4(1.0f, 0.9f, 0.3f, 0.5f);
+        shapeRenderer->DrawSphere(center, ev.radius, color);
+    }
 }
 
 void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
@@ -1035,6 +1077,12 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch = true;
             if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
                 ch = true;
+            if (ImGui::Checkbox("持ち主に追従", &e.hitboxFollow))
+                ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ON: キャラに付いていき、アニメが切り替わったら消える（突進など）\n"
+                                  "OFF: 生成した場所に残る（衝撃波など）\n"
+                                  "Offset はどちらもメートル単位（キャラの scale は掛からない）");
 
             // 攻撃レイヤー（＝誰に当てるか）。剛体レイヤーと同じ LayerNames から選ぶ。
             int atkLayer = e.attackLayer;

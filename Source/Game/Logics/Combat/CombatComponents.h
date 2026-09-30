@@ -15,6 +15,8 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "SimpleMath.h"
 
+struct AnimSequence;
+
 // 攻撃判定。剣・ドローンなどダメージを与える側が持つ
 struct HitboxComponent
 {
@@ -86,4 +88,14 @@ struct DamageEventComponent
 struct HitboxLifetimeComponent
 {
     float remainingLife = 0.0f; // 残りの時間（秒）
+};
+
+// SpawnHitboxSystem が作る球のうち、持ち主に追従するものだけが持つ。
+// 持ち主のアニメーションが生成したときから切り替わったら、寿命の途中でも消す
+// （突進がひるみで中断されたときなどに、判定だけが残らないようにする）。
+// 保存せず、インスペクタにも出さない
+struct HitboxLifeAnimComponent
+{
+    CCL::ECS::EntityID  owner    = CCL::ECS::InvalidEntityID; // 追従先（アニメーションを再生している持ち主）
+    const AnimSequence *sequence = nullptr;                    // 生成したときに持ち主が再生していたシーケンス
 };

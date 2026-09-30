@@ -106,10 +106,10 @@ private:
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext &battle, float dt);
 
-    // 予告の終わりに1回だけ呼ぶ。相手への方向を固定し、その方向へ dashDistance 進む終点と時間を決める。
-    void BeginDashCharge(BossActionComponent                &bossDef,
-                         const DirectX::SimpleMath::Vector3 &playerPos,
-                         const BattleContext                &battle) const;
+    // 構え（Windup）に入る瞬間に1回だけ呼ぶ。相手への方向を固定し、その方向へ dashDistance 進む終点と時間を決める。
+    void LockDashAim(BossActionComponent                &bossDef,
+                     const DirectX::SimpleMath::Vector3 &playerPos,
+                     const BattleContext                &battle) const;
 
     // 踏み切りの瞬間に1回だけ呼ぶ。着地点（ステージ内に収めた値）と飛ぶ向きを決める。
     void BeginLeapFlight(BossActionComponent                &bossDef,
