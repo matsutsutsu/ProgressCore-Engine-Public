@@ -21,40 +21,47 @@
 ROOT
   [Selector] Root Selector
     [Sequence] 被弾がかさんだら退く
-      [Condition] 被弾の蓄積 >= 最大HPの 8 %
+      [Condition] 被弾の蓄積 >= 最大HPの 6 %
       [Action] ボス：蓄積ダメージリセット
       [WeightedSelector] 重み付きセレクター（Weighted Selector）
         [Sequence] ステージ中央に退避する（失敗しても再抽選で後退が選ばれる）  (weight 1)
-          [Condition] ステージの端から 15 m 以内
+          [Condition] ステージの端から 25 m 以内
+          [Action] ドローン：頭上円陣
           [Action] ボス：中央へ跳んで逃げる（全体時間 2秒）
         [Sequence] シーケンス (Sequence)  (weight 1)
           [Action] ドローン：縦割り  (枠24)
           [Action] ボス：後方ステップ（全体時間 0.9秒）
           [Action] 待機（待ち時間 0.6秒）
           [Action] ドローン：攻撃実行
-          [Action] 待機（待ち時間 2秒）
+          [Action] 待機（待ち時間 1秒）
           [Action] ドローン：頭上円陣
-    [Decorator] Cooldown 14秒
+    [Decorator] Cooldown 30秒
       [Sequence] 中央へ跳んで逃げる
-        [Condition] ステージの端から 15 m 以内
+        [Condition] ステージの端から 25 m 以内
         [Condition] 相手が中央側 ±70 度にいる（追い込まれ）
+        [Action] ドローン：頭上円陣
         [Action] ボス：中央へ跳んで逃げる（全体時間 1.9秒）
     [Decorator] Cooldown 10秒
-      [Sequence] 跳躍攻撃
-        [Condition] 距離が 25 m 超
-        [Action] ボス：跳躍攻撃（全体時間 2.6秒）
+      [Sequence] シーケンス (Sequence)
+        [Condition] 距離が 25 m 未満
+        [Action] ボス：突進攻撃（全体時間 3秒）
+        [Action] 待機（待ち時間 3秒）
     [Decorator] Cooldown 7秒
       [Sequence] 縦割り
-        [Condition] 距離が 30 m 超
+        [Condition] 距離が 50 m 未満
         [Action] ドローン：縦割り  (枠24)
         [Action] 待機（待ち時間 1.5秒）
         [Action] ドローン：攻撃実行
         [Action] 待機（待ち時間 2秒）
         [Action] ドローン：頭上円陣
-        [Action] ボス：詰めながら待つ（長さ 3秒）
+    [Decorator] Cooldown 10秒
+      [Sequence] 跳躍攻撃
+        [Condition] 距離が 80 m 未満
+        [Action] ドローン：頭上円陣
+        [Action] ボス：跳躍攻撃（全体時間 2.6秒）
     [WeightedSelector] ドローン戦(中距離2択)
       [Sequence] 横なぎ回転  (weight 1)
-        [Condition] 距離が 20 m 未満
+        [Condition] 距離が 60 m 未満
         [Action] ドローン：横なぎ回転  (枠22)
         [Action] 待機（待ち時間 1.5秒）
         [Action] ドローン：攻撃実行
@@ -62,25 +69,27 @@ ROOT
         [Action] ドローン：頭上円陣
         [Action] ボス：詰めながら待つ（長さ 1秒）
       [Sequence] 挟み込み  (weight 1)
-        [Condition] 距離が 40 m 未満
+        [Condition] 距離が 50 m 未満
         [Action] ドローン：挟み込み1段  (枠25)
         [Action] 待機（待ち時間 1.5秒）
         [Action] ドローン：攻撃実行
         [Action] 待機（待ち時間 2秒）
         [Action] ドローン：頭上円陣
         [Action] ボス：詰めながら待つ（長さ 1秒）
-    [Decorator] Cooldown 25秒
-      [Sequence] 小隊突撃
-        [Condition] 距離が 40 m 超
-        [Action] ドローン：小隊突撃
-        [Action] 待機（待ち時間 2秒）
-        [Action] ドローン：攻撃実行
-        [Action] 待機（待ち時間 10秒）
+    [Decorator] Cooldown 40秒
+      [Sequence] 滞空して陣形攻撃
+        [Condition] 距離が 80 m 超
+        [Parallel] 滞空(主)＋陣形(従)
+          [Action] ボス：その場で滞空（全体時間 10秒）  (主)
+          [Sequence] 陣形→撃つ  (従)
+            [Action] ドローン：小隊突撃
+            [Action] 待機（待ち時間 1.2秒）
+            [Action] ドローン：攻撃実行
+            [Action] 待機（待ち時間 20秒）
         [Action] ドローン：頭上円陣
-        [Action] ボス：詰めながら待つ（長さ 3秒）
     [Decorator] Cooldown 8秒
       [Sequence] 弾幕(遠距離)
-        [Condition] 距離が 40 m 超
+        [Condition] 距離が 80 m 超
         [Action] ドローン：弾幕
         [Action] 待機（待ち時間 1.2秒）
         [Action] ドローン：攻撃実行
@@ -88,16 +97,5 @@ ROOT
         [Action] ドローン：頭上円陣
         [Action] ボス：詰めながら待つ（長さ 3秒）
     [Sequence] 遠ければ詰める
-      [Condition] 距離が 40 m 超
+      [Condition] 距離が 80 m 超
       [Action] ボス：詰めながら待つ（長さ 1.5秒）
-
-# 以下は ROOT に繋がっていないので、実行されない
-[Sequence] 滞空して陣形攻撃
-  [Condition] 距離が 20 m 超
-  [Parallel] 滞空(主)＋陣形(従)
-    [Action] ボス：その場で滞空（全体時間 4.4秒）  (主)
-    [Sequence] 陣形→撃つ  (従)
-      [Action] ドローン：弾幕
-      [Action] 待機（待ち時間 1.2秒）
-      [Action] ドローン：攻撃実行
-  [Action] ドローン：頭上円陣
