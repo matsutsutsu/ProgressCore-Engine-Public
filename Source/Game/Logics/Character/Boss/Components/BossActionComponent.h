@@ -22,6 +22,7 @@ enum class BossActionState : uint8_t
 {
     None,     // 待機。足を止め、相手の方へゆっくり向き直る
     Move,     // プレイヤーへ歩いて近づく
+    Strafe,   // 横歩き。相手を見たまま、間合いを保って回り込む（様子見）
     BackStep, // 後方ステップ。被弾がかさんだら間合いを切る
     Leap,     // 跳躍。溜め→放物線で飛ぶ→着地硬直。どこへ降りるかは BossLeapLanding
     Dash,     // 突進攻撃。後ろへ浮きながら下がる→止まって狙う→下りながら直進→硬直
@@ -79,6 +80,17 @@ struct BossActionComponent
     float deceleration        = 10.0f; // 止まるときの減速 [m/s²]
     float advanceStopDistance = 7.0f;  // 「詰めながら待つ」で足を止める距離 [m]。0だと押し続けて間合いを選べない
 
+    // --- 横歩き（様子見）---
+    //
+    // 進む向きは「相手への方向の直角」を毎フレーム取り直す。結果として相手を中心に
+    // 円を描くので、間合いは放っておいても保たれる。ワールド座標で向きを固定すると、
+    // 相対角度が変わった先で横歩きに見えなくなる。
+
+    float strafeSpeed        = 3.0f;  // 横へ回る速さ [m/s]。walkSpeed より遅くする（速いと逃げに見える）
+    float strafeTurnSpeed    = 6.0f;  // 回りながら相手へ向き直る速さ。turnSpeed と idleTurnSpeed の間
+    float strafeKeepDistance = 12.0f; // 保ちたい間合い [m]。間合い補正を有効にしたときだけ効く
+    float strafeDistanceGain = 0.5f;  // 間合いのずれをどれだけ詰めるか。0 で純粋な円
+
     // --- 後方ステップ（退く距離 = backStepSpeed × backStepTime ÷ 2）---
 
     float backStepSpeed  = 26.0f; // 踏み切りの速さ [m/s]。backStepTime かけて直線的に0まで落とす
@@ -127,6 +139,9 @@ struct BossActionComponent
     DirectX::SimpleMath::Vector3 moveDirection    = DirectX::SimpleMath::Vector3::Zero; // 今動いている向き（水平・正規化済み）
     BossActionState              currentState     = BossActionState::None;             // 今やっている動き
     float                        actionTimer      = 0.0f;                              // 今の動きに入ってからの経過 [秒]。段の切り替えはこれと閾値だけで決める
+
+    float strafeSign    = 1.0f;   // 横歩きの向き。+1=自分から見て右回り / -1=左回り。入るたびに反転する
+    bool  strafeFlipped = false;  // 壁に当たって向きを反転済みか。1回だけにしないと境界上でばたつく
 
     // 技に入った瞬間に固定した進行方向。毎フレーム取り直すと相手を追い続ける攻撃になり、
     // 避けられなくなる。「進む向き」であって「見ている向き」ではない。

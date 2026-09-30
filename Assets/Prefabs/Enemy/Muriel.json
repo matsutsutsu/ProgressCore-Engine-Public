@@ -43,6 +43,10 @@
                     "hoverLeap.height": 16.0,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
+                    "strafeDistanceGain": 3.0,
+                    "strafeKeepDistance": 40.5,
+                    "strafeSpeed": 8.0,
+                    "strafeTurnSpeed": 6.0,
                     "turnSpeed": 10.0,
                     "walkSpeed": 3.0
                 },
@@ -53,9 +57,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        46.13078689575195,
-                        12.268537521362305,
-                        57.363277435302734
+                        0.0,
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -141,15 +145,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        24.454015731811523,
-                        2.4258270263671875,
-                        -39.964317321777344
+                        41.53913879394531,
+                        0.628829300403595,
+                        -30.691482543945313
                     ],
                     "rotation": [
                         -0.0,
-                        -0.9428108930587769,
+                        -0.33738040924072266,
                         -0.0,
-                        0.3333280384540558
+                        0.9413684010505676
                     ],
                     "scale": [
                         5.0,

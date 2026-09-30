@@ -302,8 +302,12 @@ namespace CCL::AI::BT
             if (timers[ctx.nodeId] == -1.0f)
             {
                 timers[ctx.nodeId] = (ctx.param > 0.0f) ? ctx.param : defaultDuration;
-                if (auto *anim = ctx.world->GetComponent<AnimParametersComponent>(ctx.entity))
-                    anim->SetTrigger(triggerHash);
+
+                // ハッシュ0＝引くトリガーを持たない技。横歩きのように「続いている間ずっと
+                // 流れるクリップ」は、開始の合図ではなく状態（StrafeDir）で絵を選ぶ。
+                if (triggerHash != 0)
+                    if (auto *anim = ctx.world->GetComponent<AnimParametersComponent>(ctx.entity))
+                        anim->SetTrigger(triggerHash);
             }
 
             // どの技を出しているかと、その全体時間を BossActionSystem へ伝える。
@@ -361,6 +365,11 @@ namespace CCL::AI::BT
         // + 止まる0.4 + 硬直（残り）。全体時間が下がる＋狙う＋構える＋突っ込むより短いと、
         // 空中で要求が下りて待機へ戻り、重力で落ちる。走る・止まるの途中で切れた場合は、
         // その場で待機の減速に移る。
+        // 横歩き：相手を見たまま回り込むだけの技。当たり判定も溜めも持たない。
+        // 絵は状態（StrafeDir）で選ぶのでトリガーは引かない（ハッシュ0）。
+        reg.RegisterActionInstance(A_BossStrafe,
+                                   std::make_unique<TriggeredMotionAction>(0, 2.5f, A_BossStrafe));
+
         reg.RegisterActionInstance(A_BossDashAttack,
                                    std::make_unique<TriggeredMotionAction>(CCL::Utils::HashString("Dash"), 3.7f, A_BossDashAttack));
 

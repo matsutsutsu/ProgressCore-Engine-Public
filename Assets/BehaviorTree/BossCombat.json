@@ -32,11 +32,6 @@
             "startPin": 44
         },
         {
-            "endPin": 56,
-            "id": 95,
-            "startPin": 44
-        },
-        {
             "endPin": 150,
             "id": 160,
             "startPin": 5
@@ -382,11 +377,6 @@
             "startPin": 538
         },
         {
-            "endPin": 544,
-            "id": 550,
-            "startPin": 538
-        },
-        {
             "endPin": 537,
             "id": 555,
             "startPin": 554
@@ -498,17 +488,6 @@
             "type": 4
         },
         {
-            "action": "A_BossAdvance",
-            "actionId": 6,
-            "id": 55,
-            "inputPinId": 56,
-            "outputPinId": 0,
-            "param": 1.0,
-            "posX": 8728.0,
-            "posY": 960.0,
-            "type": 4
-        },
-        {
             "actionId": 0,
             "id": 149,
             "inputPinId": 150,
@@ -597,8 +576,8 @@
             "type": 4
         },
         {
-            "action": "A_BossAdvance",
-            "actionId": 6,
+            "action": "A_BossStrafe",
+            "actionId": 11,
             "id": 222,
             "inputPinId": 223,
             "outputPinId": 0,
@@ -805,8 +784,8 @@
             "type": 3
         },
         {
-            "action": "A_BossAdvance",
-            "actionId": 6,
+            "action": "A_BossStrafe",
+            "actionId": 11,
             "id": 326,
             "inputPinId": 327,
             "outputPinId": 0,
@@ -1359,19 +1338,8 @@
             "inputPinId": 540,
             "outputPinId": 0,
             "param": 3.0,
-            "posX": 2190.0,
-            "posY": 894.0,
-            "type": 4
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 543,
-            "inputPinId": 544,
-            "outputPinId": 0,
-            "param": 3.0,
-            "posX": 2491.0,
-            "posY": 894.0,
+            "posX": 2318.0,
+            "posY": 878.0,
             "type": 4
         },
         {
@@ -1405,8 +1373,8 @@
             "inputPinId": 558,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": 1945.0,
-            "posY": 910.0,
+            "posX": 2073.0,
+            "posY": 894.0,
             "type": 3
         }
     ],
@@ -1545,77 +1513,75 @@
             "actionOrConditionId": 0,
             "children": [
                 29,
-                30,
-                31
+                30
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                31,
                 32,
                 33,
                 34,
                 35,
-                36,
-                37
+                36
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                37,
                 38,
-                39,
-                40
+                39
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                40,
                 41,
                 42,
                 43,
                 44,
                 45,
-                46,
-                47
+                46
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                47,
                 48,
                 49,
                 50,
                 51,
-                52,
+                52
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
                 53,
-                54
+                54,
+                55
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                55,
                 56,
-                57
-            ],
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                57,
                 58,
                 59,
                 60,
                 61,
-                62,
-                63,
-                64
+                62
             ],
             "type": "Sequence"
         },
@@ -1627,8 +1593,8 @@
             "type": "Condition"
         },
         {
-            "action": "A_BossAdvance",
-            "actionOrConditionId": 6,
+            "action": "A_BossStrafe",
+            "actionOrConditionId": 11,
             "children": [],
             "param": 1.5,
             "type": "Action"
@@ -1636,21 +1602,21 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                65,
-                66,
-                67
+                63,
+                64,
+                65
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                66,
+                67,
                 68,
                 69,
                 70,
-                71,
-                72,
-                73
+                71
             ],
             "type": "Sequence"
         },
@@ -1692,13 +1658,6 @@
         {
             "action": "A_BossDashAttack",
             "actionOrConditionId": 10,
-            "children": [],
-            "param": 3.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
             "children": [],
             "param": 3.0,
             "type": "Action"
@@ -1858,13 +1817,6 @@
             "type": "Action"
         },
         {
-            "action": "A_BossAdvance",
-            "actionOrConditionId": 6,
-            "children": [],
-            "param": 1.0,
-            "type": "Action"
-        },
-        {
             "actionOrConditionId": 2,
             "children": [],
             "condition": "C_DistanceGreaterThan",
@@ -1874,8 +1826,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                74,
-                75
+                72,
+                73
             ],
             "type": "Parallel"
         },
@@ -1929,8 +1881,8 @@
             "type": "Action"
         },
         {
-            "action": "A_BossAdvance",
-            "actionOrConditionId": 6,
+            "action": "A_BossStrafe",
+            "actionOrConditionId": 11,
             "children": [],
             "param": 3.0,
             "type": "Action"
@@ -2008,10 +1960,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
+                74,
+                75,
                 76,
-                77,
-                78,
-                79
+                77
             ],
             "type": "Sequence"
         },

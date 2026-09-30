@@ -53,6 +53,7 @@
     X(A_BossLeapAttack, 8,   Boss,    Driving,  "全体時間 [秒]", "ボス：跳躍攻撃 (Leap Attack)")           \
     X(A_BossAirHover,   9,   Boss,    Driving,  "全体時間 [秒]", "ボス：その場で滞空 (Air Hover)")         \
     X(A_BossDashAttack, 10,  Boss,    Driving,  "全体時間 [秒]", "ボス：突進攻撃 (Dash Attack)")           \
+    X(A_BossStrafe,     11,  Boss,    Driving,  "全体時間 [秒]", "ボス：横歩きで様子見 (Strafe)")          \
                                                                                                            \
     /* Drone */                                                                                            \
     X(A_DroneFormation, 128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                    \

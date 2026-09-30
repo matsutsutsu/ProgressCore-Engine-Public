@@ -12,6 +12,7 @@
 static const char *BossStateNames[] = {
     "None",
     "Move",
+    "Strafe",
     "BackStep",
     "Leap",
     "Dash",
@@ -57,6 +58,10 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(advanceStopDistance, "詰めるのを止める距離 [m]", 0.5f, 0.0f, 60.0f, "Stats")
             CFIELD_FLOAT_RANGED(acceleration, "加速度", 0.1f, 0.0f, 100.0f, "Inertia")
             CFIELD_FLOAT_RANGED(deceleration, "減速度", 0.1f, 0.0f, 100.0f, "Inertia")
+            CFIELD_FLOAT_RANGED(strafeSpeed, "横歩き：速さ [m/s]", 0.1f, 0.0f, 30.0f, "Strafe")
+            CFIELD_FLOAT_RANGED(strafeTurnSpeed, "横歩き：向き直りの速さ", 0.1f, 0.0f, 100.0f, "Strafe")
+            CFIELD_FLOAT_RANGED(strafeKeepDistance, "横歩き：保ちたい間合い [m]（間合い補正が有効なときだけ）", 0.5f, 0.0f, 60.0f, "Strafe")
+            CFIELD_FLOAT_RANGED(strafeDistanceGain, "横歩き：間合いを詰める強さ（0で純粋な円）", 0.05f, 0.0f, 3.0f, "Strafe")
             CFIELD_FLOAT_RANGED(backStepSpeed, "後退：踏み切り速度 [m/s]", 0.5f, 0.0f, 100.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepTime, "後退：後退時間 [秒]", 0.01f, 0.01f, 2.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepHeight, "後退：弧の高さ [m]", 0.1f, 0.0f, 10.0f, "Back Step")

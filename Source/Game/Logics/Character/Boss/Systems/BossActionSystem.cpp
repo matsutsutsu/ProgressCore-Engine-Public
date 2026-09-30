@@ -109,6 +109,9 @@ void BossActionSystem::Update(float rawDt)
         case BossActionState::Move:
             ProcessMove(bossDef, trans, movement, config, joltHandle, playerPos, dt);
             break;
+        case BossActionState::Strafe:
+            ProcessStrafe(bossDef, trans, movement, config, joltHandle, playerPos, battle, dt);
+            break;
         case BossActionState::BackStep:
             ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
             break;
@@ -200,9 +203,68 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossDef, TransformCompon
     FaceToward(trans, dirToPlayer, bossDef.turnSpeed, dt, joltHandle.character.GetPtr());
 }
 
+void BossActionSystem::ProcessStrafe(BossActionComponent &bossDef, TransformComponent &trans,
+                                    CharacterMovementComponent &movement, const JoltCharacterConfigComponent &config,
+                                    const JoltCharacterHandleComponent &joltHandle,
+                                    const Vector3 &playerPos, const BattleContext &battle, float dt)
+{
+    // アニメの Speed は 0 へ落とす。Idle→Move の遷移条件が Speed なので、ここを上げると
+    // 前進のクリップに引っ張られる。実際に進む速さは overrideSpeed で別に渡す。
+    bossDef.currentMoveSpeed = (std::max)(0.0f, bossDef.currentMoveSpeed - bossDef.deceleration * dt);
+
+    Vector3 toPlayer = playerPos - Vector3(trans.position);
+    toPlayer.y       = 0.0f;
+
+    const float distance = toPlayer.Length();
+    if (distance <= 0.001f)
+    {
+        movement.desiredVelocity = Vector3::Zero;
+        return;
+    }
+    toPlayer /= distance;
+
+    // 相手への方向の直角（自分から見た右）。yaw は atan2(x, z) なので、前(fx,0,fz) に対する
+    // 右は (fz, 0, -fx) になる。strafeSign が +1 で右回り、-1 で左回り。
+    Vector3 moveDir(toPlayer.z * bossDef.strafeSign, 0.0f, -toPlayer.x * bossDef.strafeSign);
+
+    // --- 間合いのずれを詰める（要否を確かめるため、今は無効にしてある）---
+    //
+    //   円運動だけだと、相手が詰めてきた分そのまま距離が縮む。狙いの間合いからのずれを
+    //   半径方向に足すと、回りながら間合いを戻す動きになる。値を大きくすると円ではなく
+    //   螺旋を描くので、まず 0.5 あたりから試すこと。
+    
+     const float error  = (distance - bossDef.strafeKeepDistance) / (std::max)(1.0f, bossDef.strafeKeepDistance);
+     const float radial = std::clamp(error * bossDef.strafeDistanceGain, -1.0f, 1.0f);
+     moveDir += toPlayer * radial; // 正=遠いので近づく / 負=近いので離れる
+
+    moveDir.Normalize();
+
+    // 壁際では回る向きを内側へ取り直す。0.5秒先を見て、そこがステージの外なら反転する。
+    // 1回だけにしてあるのは、境界上で毎フレーム反転して足踏みになるのを避けるため。
+    if (!bossDef.strafeFlipped)
+    {
+        const Vector3 ahead = Vector3(trans.position) + moveDir * (bossDef.strafeSpeed * 0.5f);
+        if ((ClampInsideArena(ahead, battle) - ahead).LengthSquared() > 0.01f)
+        {
+            bossDef.strafeSign    = -bossDef.strafeSign;
+            bossDef.strafeFlipped = true;
+            moveDir               = Vector3(toPlayer.z * bossDef.strafeSign, 0.0f, -toPlayer.x * bossDef.strafeSign);
+        }
+    }
+
+    bossDef.moveDirection    = moveDir;
+    movement.desiredVelocity = moveDir;
+    movement.overrideSpeed   = (std::min)(bossDef.strafeSpeed, config.walkSpeed);
+
+    // 進む向きではなく相手を向き続ける。これが「様子見」の見た目そのもので、
+    // 横歩きのクリップ(Jog_Left/Right)が正しく見えるための前提でもある。
+    FaceToward(trans, toPlayer, bossDef.strafeTurnSpeed, dt, joltHandle.character.GetPtr());
+}
+
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == A_Move) return BossActionState::Move;
+    if (actionId == A_BossStrafe) return BossActionState::Strafe;
     if (actionId == A_BossBackStep) return BossActionState::BackStep;
     if (actionId == A_BossLeapEscape) return BossActionState::Leap;
     if (actionId == A_BossLeapAttack) return BossActionState::Leap;
@@ -231,6 +293,14 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, flo
     // 後方ステップだけは進行方向が逆（lockedDirection は常に「進む向き」）。
     if (next == BossActionState::BackStep)
         bossDef.lockedDirection = -bossDef.lockedDirection;
+
+    // 横歩きは前回と逆回りにする。毎回同じ向きに回ると、2回目以降は見ただけで先が読める。
+    // 壁際なら ProcessStrafe が内側へ向くよう回る向きを取り直す。
+    if (next == BossActionState::Strafe)
+    {
+        bossDef.strafeSign    = -bossDef.strafeSign;
+        bossDef.strafeFlipped = false;
+    }
 
     // 跳躍は「どの技か」で着地点の決め方と調整値を選ぶ。着地点そのものはまだ決めない
     // （踏み切りの瞬間に BeginLeapFlight が決める）。

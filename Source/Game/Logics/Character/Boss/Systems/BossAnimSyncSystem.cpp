@@ -12,6 +12,11 @@ using namespace CCL::ECS;
 static const uint32_t HASH_SPEED     = CCL::Utils::HashString("Speed");
 static const uint32_t HASH_IS_MOVING = CCL::Utils::HashString("IsMoving");
 
+// 横歩きの向き。-1=左回り / 0=横歩きしていない / +1=右回り。
+// グラフは Idle・Move から StrafeLeft / StrafeRight への遷移条件にこれを使う。
+// 真偽2つでなく1つの float なのは、「左でも右でもある」という有り得ない状態を書けなくするため。
+static const uint32_t HASH_STRAFE_DIR = CCL::Utils::HashString("StrafeDir");
+
 // 跳躍の「踏み切り前の溜め〜着地の瞬間」。グラフは LeapAir→LeapLand をこれが false に
 // なったときに遷移する。滞空の長さは技ごとに違うので、クリップの長さでは着地を決められない。
 static const uint32_t HASH_IS_LEAPING = CCL::Utils::HashString("IsLeaping");
@@ -37,6 +42,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
 
         anim.SetFloat(HASH_SPEED, boss.currentMoveSpeed);
         anim.SetBool(HASH_IS_MOVING, isMoving);
+
+        const bool strafe = (boss.currentState == BossActionState::Strafe);
+        anim.SetFloat(HASH_STRAFE_DIR, strafe ? boss.strafeSign : 0.0f);
 
         const bool leap      = (boss.currentState == BossActionState::Leap);
         const bool isLeaping = leap && (boss.leapPhase != BossLeapPhase::Recovery);

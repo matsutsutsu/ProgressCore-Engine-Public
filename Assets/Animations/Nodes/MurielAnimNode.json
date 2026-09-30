@@ -135,6 +135,13 @@
             "hash": 2969413448,
             "name": "DashPhase",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 641192933,
+            "name": "StrafeDir",
+            "type": 0
         }
     ],
     "states": [
@@ -153,6 +160,36 @@
             "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2907519899
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1019367652
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -191,6 +228,36 @@
             "speedCurveName": "",
             "stateHash": 2133600820,
             "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2907519899
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1019367652
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -773,6 +840,70 @@
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
                     "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/StrafeLeft.json",
+            "sequenceName": "StrafeLeft",
+            "speedCurveName": "",
+            "stateHash": 2907519899,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/StrafeRight.json",
+            "sequenceName": "StrafeRight",
+            "speedCurveName": "",
+            "stateHash": 1019367652,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
                 }
             ]
         }

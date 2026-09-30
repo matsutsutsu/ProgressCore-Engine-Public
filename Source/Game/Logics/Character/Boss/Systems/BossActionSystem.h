@@ -79,6 +79,15 @@ private:
                      const JoltCharacterHandleComponent &joltHandle,
                      const DirectX::SimpleMath::Vector3 &playerPos, float dt);
 
+    // 横歩き（様子見）。相手への方向の直角へ進み続けるので、相手を中心に円を描く。
+    // 向きは進行方向ではなく相手へ向け続ける。壁際では回る向きを内側へ反転する。
+    void ProcessStrafe(BossActionComponent &bossDef, TransformComponent &trans,
+                       CharacterMovementComponent         &movement,
+                       const JoltCharacterConfigComponent &config,
+                       const JoltCharacterHandleComponent &joltHandle,
+                       const DirectX::SimpleMath::Vector3 &playerPos,
+                       const BattleContext &battle, float dt);
+
     // 後方ステップ。減速しながら弧を描いて後ろへ下がり、その後は硬直する。
     // 退きながらも相手を向き続ける。背を向けると逃げたように見え、間合いを取り直す技だと読めなくなる。
     void ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
