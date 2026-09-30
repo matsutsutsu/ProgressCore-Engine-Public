@@ -8,8 +8,8 @@
 //   - キーの追加・移動・範囲選択・削除、接線の編集、補間と外挿の設定
 //
 // 備考: ウィンドウ枠やファイルの読み書きは持たない。CurveData はポインタで受け取り、
-//       所有しない。CurveEditorWindow とシーケンサーの Curve ペインがこれを共有し、
-//       同じ操作感と同じ評価処理（CurveData）を使う。
+//       所有しない。シーケンサーの Curve ペインと陣形エディタの緩急が使う。
+//       単独の CurveEditorWindow は同じ操作のキャンバスを自前で持っていて、これを使っていない。
 //
 // @code
 //   std::vector<CurveData*> targets = { &seq.speedCurve, &seq.rootMotionCurve };

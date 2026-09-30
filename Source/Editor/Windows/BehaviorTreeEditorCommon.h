@@ -1,8 +1,14 @@
-// BehaviorTreeWindow_*.cpp だけが共有する定数と小さな汎用関数。
-//
-// 状態を持たない値と純粋関数だけを置く。BT 固有の処理（色の決定・JSON 化など）は
-// BehaviorTreeWindow の private メンバにして、クラス宣言から辿れるようにしてある。
 #pragma once
+// ===========================================================================
+// 概要: BehaviorTreeWindow_*.cpp だけが共有する定数と小さな汎用関数。
+//
+// 責務:
+//   - コメント枠の配色、ノードの幅、自動整列の間隔などの定数
+//   - ノードエディタの ID の変換、パスからファイル名を取り出す関数
+//
+// 備考: 状態を持たない値と純粋関数だけを置く。BT 固有の処理（色の決定・JSON 化など）は
+//       BehaviorTreeWindow の private メンバにして、クラス宣言から辿れるようにしてある。
+// ===========================================================================
 #include <cstdint>
 #include <string>
 #include <imgui.h>
@@ -12,7 +18,7 @@ namespace ed = ax::NodeEditor;
 
 namespace BTEditor
 {
-    /// コメント枠の配色1組
+    // コメント枠の配色1組
     //   見出し帯を一番濃くするのは、内側の塗りがノード背景と重なるうえ面積が広く、
     //   濃くすると中のノードが読めなくなるため。色の違いは帯で見せる。
     struct GroupPalette
@@ -23,7 +29,7 @@ namespace BTEditor
         ImU32       bg;     // 内側の塗り
     };
 
-    /// コメント枠の色の候補。役割ごと（索敵／近接／遠距離…）に塗り分ける用
+    // コメント枠の色の候補。役割ごと（索敵／近接／遠距離…）に塗り分ける用
     inline constexpr GroupPalette kGroupPalette[] = {
         {"グレー", IM_COL32(78, 78, 84, 235), IM_COL32(150, 150, 158, 160), IM_COL32(32, 32, 36, 110)},
         {"青", IM_COL32(42, 84, 140, 235), IM_COL32(90, 160, 240, 190), IM_COL32(22, 34, 52, 110)},
@@ -34,7 +40,7 @@ namespace BTEditor
     };
     inline constexpr int kGroupPaletteCount = static_cast<int>(sizeof(kGroupPalette) / sizeof(kGroupPalette[0])); // 配色の数
 
-    /// 添字が範囲外（古いファイル・手編集）でもグレーに倒して落とさない
+    // 添字が範囲外（古いファイル・手編集）でもグレーに倒して落とさない
     inline const GroupPalette &GroupPaletteAt(int index)
     {
         return kGroupPalette[(index >= 0 && index < kGroupPaletteCount) ? index : 0];
@@ -54,7 +60,7 @@ namespace BTEditor
     inline constexpr float kGroupPad     = 24.0f; // コメント枠がノードを囲むときの余白
     inline constexpr float kGroupHeaderH = 30.0f; // コメント枠の見出し帯の高さ（＝掴める範囲）
 
-    /// ライブラリが返すID(uintptr_t)をこちらのID型へ戻す。
+    // ライブラリが返すID(uintptr_t)をこちらのID型へ戻す。
     //   ID はこちらが uint32_t で発行して預けているだけなので、切り詰めても情報は落ちない。
     inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
 

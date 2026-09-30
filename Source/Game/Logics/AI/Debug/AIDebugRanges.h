@@ -43,7 +43,7 @@ namespace AIDebugRanges
     inline const DirectX::XMFLOAT4 kColBoth(0.45f, 1.0f, 0.55f, 1.0f);    // 両方が使う境目：緑
     inline const DirectX::XMFLOAT4 kColEdge(0.80f, 0.55f, 1.0f, 1.0f);    // ステージ端（ステージの中心から）：紫
 
-    /// リングの色。帯の色も、その帯の外側の境界線の色に合わせる（線と塗りで意味を食い違わせない）。
+    // リングの色。帯の色も、その帯の外側の境界線の色に合わせる（線と塗りで意味を食い違わせない）。
     inline const DirectX::XMFLOAT4 &ColorOf(const RangeRing &ring)
     {
         const bool inside  = (ring.kinds & kInside) != 0;
@@ -51,13 +51,16 @@ namespace AIDebugRanges
         return (inside && outside) ? kColBoth : inside ? kColInside : kColOutside;
     }
 
-    /// 同じ半径をまとめるためのキー。JSON から読んだ値をそのまま float で比べると、
-    /// 見た目が同じ 25.0 でも別リングとして二重に描かれることがある。
+    // 同じ半径をまとめるためのキー。JSON から読んだ値をそのまま float で比べると、
+    // 見た目が同じ 25.0 でも別リングとして二重に描かれることがある。
     inline int RadiusKey(float radius) { return static_cast<int>(std::lroundf(radius * 100.0f)); }
 
-    /// 木を走査して距離条件の param を集める。同じ半径は1本にまとめ、内側から順に並べる。
-    ///   rings     … ボス中心のリング（C_DistanceLessThan / C_DistanceGreaterThan）
-    ///   edgeRings … ステージ端の条件（C_IsAtStageEdge）。持つのは端からの幅で、半径ではない
+    /**
+     * @brief 木を走査して距離条件の param を集める。同じ半径は1本にまとめ、内側から順に並べる。
+     *
+     * @param rings     ボス中心のリング（C_DistanceLessThan / C_DistanceGreaterThan）
+     * @param edgeRings ステージ端の条件（C_IsAtStageEdge）。持つのは端からの幅で、半径ではない
+     */
     inline void CollectRings(const BTAsset &asset, std::vector<RangeRing> &rings, std::vector<float> &edgeRings)
     {
         rings.clear();
@@ -104,8 +107,8 @@ namespace AIDebugRanges
         std::sort(edgeRings.begin(), edgeRings.end());
     }
 
-    /// distance が入っている帯の外側の境界（＝その帯の色を決めるリング）。
-    /// どのリングよりも外なら nullptr。rings は CollectRings で内側から並べたものを渡す。
+    // distance が入っている帯の外側の境界（＝その帯の色を決めるリング）。
+    // どのリングよりも外なら nullptr。rings は CollectRings で内側から並べたものを渡す。
     inline const RangeRing *BandOf(const std::vector<RangeRing> &rings, float distance)
     {
         for (const RangeRing &ring : rings)

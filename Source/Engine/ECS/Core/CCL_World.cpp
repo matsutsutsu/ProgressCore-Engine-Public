@@ -140,9 +140,9 @@ namespace CCL::ECS
 
         // Phase 2: PendingOp への登録
         //   Archetype は【値でコピー】して持たせる。
-        //   以前は FrameAllocator 上に Archetype を置いてポインタを渡していたが、
-        //   FrameAllocator::Reset() のタイミング次第で破棄済みメモリを指してしまい
-        //   クラッシュした。値で持てば PendingOp が生きている限り安全。
+        //   FrameAllocator 上に置いてポインタで渡すと、FrameAllocator::Reset() の
+        //   タイミング次第で破棄済みメモリを指してクラッシュする。
+        //   値で持てば PendingOp が生きている限り安全。
         PendingOp op;
         op.kind           = PendingOpKind::Spawn;
         op.entity         = id;

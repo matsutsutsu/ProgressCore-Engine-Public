@@ -1,4 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: カーブデータ（複数の CurveData を1ファイルにまとめたもの）を編集する単独のウィンドウ。
+//
+// 責務:
+//   - 複数のカーブ（RGB / XYZ / 各種スカラーの演出）の追加・削除・表示切り替え
+//   - キャンバスでのキーと接線の編集（補間: 定数 / 線形 / 3次エルミート、
+//     接線: 自動 / フラット / 揃える / 分離、外挿: 定数 / 線形 / 繰り返し / 往復 / オフセット繰り返し）
+//   - JSON の読み書き
+//
+// 備考: キャンバスの操作は CurveEditorWidget と同じだが、実装は共有していない（このウィンドウが
+//       自前で持つ）。
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Core/Math/CurveData.h"
 
@@ -11,13 +23,6 @@
 #include <imgui.h>
 #endif
 
-// ===========================================================================
-// 汎用カーブエディタ
-//   - 複数カーブ（RGB / XYZ / 各種スカラー演出）を1ドキュメントで編集
-//   - 補間: Constant / Linear / Cubic(エルミート)
-//   - 接線: Auto / Flat / Aligned / Broken（ハンドルドラッグ対応）
-//   - 外挿: Constant / Linear / Cycle / PingPong / CycleOffset
-// ===========================================================================
 class CurveEditorWindow : public EditorWindow
 {
 public:
@@ -68,16 +73,13 @@ private:
 
     std::set<uint32_t> m_selectedKeys; // アクティブカーブ内の選択キーID
 
-    // 表示範囲（time, value）。ズーム/パンで更新される
+    // 表示範囲（time, value）。ズーム・パンで更新される
     ImVec2 viewMin = ImVec2(-0.1f, -0.2f);
     ImVec2 viewMax = ImVec2(1.1f, 1.2f);
 
-    // プレビュー再生ヘッド
+    // プレビューの再生ヘッド
     float m_previewTime = 0.0f;
     bool  m_showPreview = true;
-
-    // 補助トグル
-    bool m_snap = false; // Ctrl中はグリッドスナップ（このフラグは常時ONにもできる）
 
     // -----------------------------------------------------------------------
     // 操作の一時状態
@@ -92,5 +94,5 @@ private:
     uint32_t m_ctxKeyId    = 0;
     ImVec2   m_ctxCurvePos = ImVec2(0, 0);
 
-    uint32_t m_paletteIndex = 0; // 新規カーブの色巡回
+    uint32_t m_paletteIndex = 0; // 新しいカーブに次に割り当てる色の番号
 };

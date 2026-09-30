@@ -1932,7 +1932,9 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponent.h">
       <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\RHI\DebugName.h" />
+    <ClInclude Include="Source\Engine\Graphics\RHI\DebugName.h">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>

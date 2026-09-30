@@ -995,12 +995,10 @@ void CurveEditorWindow::SaveToFile(const std::string &path)
             j["curves"].push_back(jc);
         }
 
-        // 戻り値を捨てていたため、失敗しても画面には何も出ていなかった。
         if (FileSystem::WriteAllText(path, j.dump(4)))
             CCL_LOG_SUCCESS(LogCategory::Editor, "カーブを保存しました: %s", path.c_str());
         else
             CCL_LOG_ERROR(LogCategory::Editor, "カーブの保存に失敗しました: %s", path.c_str());
-        CCL_LOG_INFO(LogCategory::Editor, "Saved Curve: %s", path.c_str());
     }
     catch (const std::exception &e)
     {

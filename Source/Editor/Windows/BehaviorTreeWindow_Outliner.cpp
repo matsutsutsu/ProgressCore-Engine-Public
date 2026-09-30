@@ -1,8 +1,3 @@
-// BehaviorTreeWindow：左ペイン（木の一覧）。
-//
-// キャンバスは木が横へ伸びるほど全体が読めなくなるので、文字の階層で全体を見せる場所を持つ。
-// 一覧は自分ではデータを持たず、RebuildHierarchy が毎フレーム作る親子関係
-// （m_roots / m_childrenOf）をなぞって描くだけ。だからリンクを繋ぎ替えれば次のフレームで一覧も変わる。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 
@@ -11,6 +6,10 @@ using namespace BTEditor;
 // ====================================================================
 // 一覧全体
 //   見出し → スクロール領域 → 根から1行ずつ（子は DrawOutlinerRow が再帰で描く）
+//
+// キャンバスは木が横へ伸びるほど全体が読めなくなるので、文字の階層で全体を見せる場所を持つ。
+// 一覧は自分ではデータを持たず、RebuildHierarchy が毎フレーム作る親子関係
+// （m_roots / m_childrenOf）をなぞって描くだけ。だからリンクを繋ぎ替えれば次のフレームで一覧も変わる。
 // ====================================================================
 void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
 {

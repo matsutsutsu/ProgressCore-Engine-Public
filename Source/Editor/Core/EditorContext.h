@@ -15,7 +15,6 @@
 #include "Engine/ECS/System/CCL_SystemManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
-#include <map>
 #include <string>
 #include <vector>
 
@@ -134,10 +133,6 @@ struct EditorContext
 
     // Assets/Prefabs 以下のプレハブのパス。メインメニューの Prefab メニューが使う
     std::vector<std::string> prefabFiles;
-
-    // InspectorWindow が名前を編集・追加したときに控える名前。
-    //   NameComponent を持たないエンティティの、プレハブ保存名の初期値に使う
-    std::map<CCL::ECS::EntityID, std::string> entityNames;
 
     // シーン（ステージ層）の読み込み・保存の予約パス。空なら予約なし
     std::string pendingLoadScenePath;

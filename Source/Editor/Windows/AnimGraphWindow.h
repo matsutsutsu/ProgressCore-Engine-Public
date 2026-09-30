@@ -1,4 +1,17 @@
 #pragma once
+// ===========================================================================
+// 概要: アニメーションのステートマシン（AnimStateGraph）をノードグラフで編集するウィンドウ。
+//
+// 責務:
+//   - ステート・遷移・サブステートマシンの追加・削除と、遷移条件の編集
+//   - パラメータ（Float / Bool / Trigger）の一覧編集と、実行中の値の表示
+//   - 選択中のエンティティで実行中のステートと、直前の遷移を強調表示する
+//   - JSON の読み書きと、構造のテキスト書き出し
+//
+// 備考: 編集対象は m_rootGraph（サブマシンの中身も含むツリー全体）。今見ている階層は
+//       m_editPath で決まる。リンクの削除・選択は、毎フレーム作り直す m_linkLut
+//       （linkId → 遷移の素性）で解決する。
+// ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include <string>
@@ -14,10 +27,6 @@ namespace ax
     }
 } // namespace ax
 
-// アニメーションのステートマシン(AnimStateGraph)をノードグラフで編集するウィンドウ。
-//
-// 編集対象は m_currentGraph。リンクの削除・選択は位置依存ではなく
-// 毎フレーム再構築する m_linkLut(linkId→遷移の素性)で解決する。
 class AnimGraphWindow : public EditorWindow
 {
 public:
@@ -56,7 +65,7 @@ private:
     //   潜っているか」の hash 列（空=root表示）。CurrentView() は m_editPath に
     //   沿って m_rootGraph を辿り「今編集中の階層グラフ」への参照を返す。
     //   各描画メソッドは冒頭で `AnimStateGraph& m_currentGraph = CurrentView();`
-    //   と局所参照を張るので、既存の描画コードは無修正で現在の階層を編集できる。
+    //   と局所参照を取り、以降は今の階層だけを編集する。
     // =====================================================================
     AnimStateGraph &CurrentView();
     void            DrawBreadcrumb();                         // 「Root > Combat > ...」パンくず。クリックで浅い階層へ戻る。
@@ -97,7 +106,7 @@ private:
     bool   m_needRestorePositions = false;
     ImVec2 m_newNodeSpawnPos      = {0.0f, 0.0f};
 
-    // デバッグ用：現在実行中のステート
+    // 選択中のエンティティで実行中のステート（強調表示に使う。0 なら無し）
     uint32_t m_runtimeActiveStateHash = 0;
 
     int  m_paramRenameIndex = -1; // リネーム編集中のパラメータindex（-1=なし）

@@ -1,9 +1,3 @@
-// ===================================================================================
-// ファイル: AnimationSequencerWindow.cpp
-// 役割       : AnimSequence 編集ウィンドウの実装。
-// 責務       : ImSequencer によるイベント編集、CurveEditorWidget による速度/RootMotion
-//              選択エンティティへのリアルタイムプレビュー。
-// ===================================================================================
 #include "AnimationSequencerWindow.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
@@ -31,9 +25,7 @@
 #include <cstdio>
 #include <vector>
 
-// -----------------------------------------------------------------------------------
-// 時間変換ヘルパー
-// -----------------------------------------------------------------------------------
+// 秒とフレーム（60fps）の変換
 inline int SecToFrame(float sec)
 {
     return (int)(sec * 60.0f);
@@ -43,9 +35,9 @@ inline float FrameToSec(int frame)
     return (float)frame / 60.0f;
 }
 
-// ===================================================================================
-// ImSequencer用のインターフェース(pImpl)実装クラス
-// ===================================================================================
+// ============================================================
+// ImSequencer へ AnimSequence のイベントを見せる橋渡し（pImpl）
+// ============================================================
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 {
 public:
@@ -198,8 +190,8 @@ public:
         if (!m_seq)
             return;
 
-        // 注意: ここにあった SyncFrameCache() を削除しました！
-        // 毎フレーム呼ばれる Get() 内でキャッシュを再生成するとドラッグ操作が破綻するためです。
+        // ここで SyncFrameCache() を呼ばない。Get() は毎フレーム呼ばれるので、ここでキャッシュを
+        // 作り直すと、ドラッグ中の値がデータの値へ毎フレーム戻されてドラッグできなくなる。
 
         if (index < 0 || index >= (int)m_frameCacheMap.size())
             return;
@@ -282,10 +274,9 @@ public:
     }
 };
 
-// ===================================================================================
-// ===================================================================================
-// AnimationSequencerWindow メンバ関数群の実装
-// ===================================================================================
+// ============================================================
+// AnimationSequencerWindow
+// ============================================================
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer")
 {
@@ -300,9 +291,6 @@ AnimationSequencerWindow::AnimationSequencerWindow()
 
 AnimationSequencerWindow::~AnimationSequencerWindow() = default;
 
-// -----------------------------------------------------------------------------------
-// メインの描画エントリー
-// -----------------------------------------------------------------------------------
 void AnimationSequencerWindow::DrawContents(EditorContext &context)
 {
     if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0)
@@ -428,9 +416,6 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
     ImGui::EndTable();
 }
 
-// -----------------------------------------------------------------------------------
-// サブ描画関数群
-// -----------------------------------------------------------------------------------
 
 void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
 {
@@ -461,7 +446,7 @@ void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
 
 void AnimationSequencerWindow::DrawFileIO()
 {
-    // Duration はアセットから自動取得されるため、テキスト表示(閲覧専用)に変更
+    // Duration はアセットから取るので、表示だけにする（編集できない）
     ImGui::Text("Editing: %s", m_savePath.empty() ? "(New Sequence)" : m_savePath.c_str());
     ImGui::SameLine();
 
@@ -483,9 +468,9 @@ void AnimationSequencerWindow::DrawFileIO()
             {
                 CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", m_savePath.c_str());
 
-                // 保存直後にランタイム側キャッシュを同一インスタンスへ上書き再読込。
+                // 保存した直後に、ResourceManager が持つ同じインスタンスへ読み直させる。
                 //   これをしないと ResourceManager が起動時の古い内容を返し続け、
-                //   ゲーム再生に編集が反映されない（＝「保存したのに変わらない」の原因）。
+                //   ゲームの再生に編集が反映されない。
                 ResourceManager::Instance().ReloadAnimSequence(m_savePath.c_str());
             }
             else
@@ -550,9 +535,7 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
     }
 }
 
-// -----------------------------------------------------------------------------------
-// 編集モードの解除（唯一の出口）。役割は AnimationSequencerWindow.h を参照。
-// -----------------------------------------------------------------------------------
+// 編集モードを抜ける経路はすべてここを通る
 void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target)
 {
     if (context.world && target != CCL::ECS::InvalidEntityID)
@@ -581,9 +564,7 @@ void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS:
     context.isAnimEditMode = false;
 }
 
-// -----------------------------------------------------------------------------------
-// 描画されなかったフレームの検出（ウィンドウを閉じた/畳んだ/選択を外した）。
-// -----------------------------------------------------------------------------------
+// 描画されなかったフレーム（ウィンドウを閉じた・畳んだ・選択を外した）を検出して編集モードを解く
 void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
 {
     if (m_editingEntity == CCL::ECS::InvalidEntityID)
@@ -872,13 +853,12 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
         }
     }
 
-    // curFrame != prevFrame は「ImSequencerウィジェット内部の量子化/丸め」だけでも
-    //   毎フレーム発生しうる（ユーザーが何も触っていなくても）。これを無条件に
-    //   「ユーザーがスクラブした」とみなして animEditTime を整数フレームへ強制スナップし
-    //   さらに m_isPlaying を止めてしまうと、再生中に不規則な停止と時間巻き戻り/早送りが
-    //   起き、体感で「速度が速くなったり遅くなったりする」不具合になっていた。
-    //   本物のドラッグ操作（左マウスボタン押下中）のときだけ反応するようにし、
-    //   通常再生中はスムーズな時間進行（上の m_isPlaying ブロック）を唯一の権威にする。
+    // curFrame != prevFrame は、ImSequencer 内部のフレームへの丸めだけでも毎フレーム起こりうる
+    //   （何も触っていなくても）。これをスクラブとみなして animEditTime を整数フレームへ丸め、
+    //   m_isPlaying を止めると、再生中に不規則な停止と時間の巻き戻り・早送りが起き、
+    //   速度が変わったように見える。
+    //   左ボタンを押している（実際にドラッグしている）ときだけ反応させ、再生中の時間の進行は
+    //   上の m_isPlaying のブロックだけが決める。
     if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
         m_isPlaying            = false;
@@ -955,7 +935,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         if (m_selectedEntry == 0)
         {
             ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Master Track (Duration)");
-            ImGui::TextDisabled("Modify the total length of the sequence.");
+            ImGui::TextDisabled("長さはアニメーションのアセットで決まる（ここでは変更できない）。");
         }
 
         // アセットロック済みなので閲覧のみ
@@ -1117,7 +1097,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;
         case AnimEventType::Sound:
-            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "FMOD Event Path");
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Sound Event");
             ImGui::SetNextItemWidth(-1);
             if (ImGui::InputText("##Snd", buf, sizeof(buf)))
             {
@@ -1125,7 +1105,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch            = true;
             }
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("event:/SFX/SwordSwing");
+                ImGui::SetTooltip("AudioConfigDXTK.json に登録したイベント名（例: sfx:/can）");
             break;
         case AnimEventType::Effect:
             ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Effekseer Path");
@@ -1151,7 +1131,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 
             ImGui::Text("許可するキャンセルアクション:");
 
-            // ① 現在選択されているフラグの名前を繋げてプレビュー文字列を作る
+            // 選択されているフラグの名前をつなげてプレビューの文字列を作る
             std::string preview = "";
             if (e.cancelMask == 0)
             {
@@ -1169,7 +1149,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 }
             }
 
-            // ② ドロップダウン（コンボボックス）の描画
+            // ドロップダウン（コンボボックス）
             ImGui::SetNextItemWidth(-1); // 横幅いっぱいに広げる
             if (ImGui::BeginCombo("##CancelMaskCombo", preview.c_str()))
             {
@@ -1210,17 +1190,16 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     ImGui::Separator();
     ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "アニメーションカーブ (横軸 = 進捗 0〜1)");
 
-    static bool showSpeed = true, showRoot = true;
-    ImGui::Checkbox("速度##cv", &showSpeed);
+    ImGui::Checkbox("速度##cv", &m_showSpeedCurve);
     ImGui::SameLine();
-    ImGui::Checkbox("ルートモーション##cv", &showRoot);
+    ImGui::Checkbox("ルートモーション##cv", &m_showRootCurve);
     ImGui::SameLine();
     if (ImGui::Button("全体表示##cv")) m_fitCurveView = true;
     ImGui::SameLine();
     ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / Alt+ハンドル=接線分離]");
 
-    m_editingSequence.speedCurve.visible      = showSpeed;
-    m_editingSequence.rootMotionCurve.visible = showRoot;
+    m_editingSequence.speedCurve.visible      = m_showSpeedCurve;
+    m_editingSequence.rootMotionCurve.visible = m_showRootCurve;
 
     const float dur      = m_editingSequence.duration;
     const float progress = (dur > 0.0f) ? std::clamp(animTime / dur, 0.0f, 1.0f) : 0.0f;
@@ -1235,13 +1214,11 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
 
     std::vector<CurveData *> targets = {&m_editingSequence.speedCurve, &m_editingSequence.rootMotionCurve};
 
-    // ================================================================
-    // ルートモーション編集時専用ツール
-    //   カーブは「進捗→累積前進距離(m)」。0から形を作るのは接線をいじる必要があって
-    //   面倒なので、プリセットボタンで単調増加の綺麗な形をワンクリックで用意する。
-    //   移動距離そのものは、他のキーと同じくキャンバス/インスペクタで末尾キーの
-    //   「値」を直接ドラッグして決める（専用の距離入力は用意しない＝操作がひとつで済む）。
-    // ================================================================
+    // ---- ルートモーションを編集しているときだけ出す形のプリセット ----
+    //   カーブは「進捗→累積前進距離(m)」。0 から形を作るには接線を触る必要があるので、
+    //   単調に増える形をボタン1つで作れるようにする。
+    //   移動距離は、他のキーと同じくキャンバスか設定欄で末尾のキーの「値」を動かして決める
+    //   （距離専用の入力欄は置かず、操作を1つにする）。
     if (active == 1)
     {
         CurveData &rc = m_editingSequence.rootMotionCurve;
@@ -1328,11 +1305,11 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
 
     m_curveWidget.Draw("##seqCurves", targets, opt);
 
-    // 現在の再生位置での評価値を即読み出し（数値でも確認できる）
+    // 今の再生位置での値を数値でも出す
     const float sp = m_editingSequence.speedCurve.empty() ? 1.0f : m_editingSequence.speedCurve.Evaluate(progress);
     const float rm = m_editingSequence.rootMotionCurve.empty() ? 0.0f : m_editingSequence.rootMotionCurve.Evaluate(progress);
 
-    // ルートモーションの瞬間速度（傾き）も出す：実際の動きの速さが直感的に分かる
+    // ルートモーションの瞬間の速さ（傾き）も出す。実際の動きの速さが分かる
     float rmSpeed = 0.0f;
     if (!m_editingSequence.rootMotionCurve.empty() && dur > 0.0f)
     {

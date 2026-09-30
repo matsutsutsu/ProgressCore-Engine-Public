@@ -37,7 +37,7 @@ void NavMeshDebugDrawSystem::Update(float dt)
                     const dtPoly *p = &tile->polys[j];
                     if (p->getType() == DT_POLYTYPE_OFFMESH_CONNECTION) continue;
 
-                    // ① ポリゴンの外周を黒い線で描く
+                    // ポリゴンの外周を黒い線で描く
                     for (int k = 0; k < p->vertCount; ++k)
                     {
                         float *v0 = &tile->verts[p->verts[k] * 3];
@@ -50,7 +50,7 @@ void NavMeshDebugDrawSystem::Update(float dt)
                         renderer->DrawLine(p0, p1, {0.0f, 0.0f, 0.0f, 1.0f});
                     }
 
-                    // ② ポリゴンの面を青い半透明で描く（詳細メッシュの三角形単位）
+                    // ポリゴンの面を青い半透明で描く（詳細メッシュの三角形単位）
                     const dtPolyDetail *pd = &tile->detailMeshes[j];
                     for (int k = 0; k < pd->triCount; ++k)
                     {
@@ -85,7 +85,7 @@ void NavMeshDebugDrawSystem::Update(float dt)
         auto *transform = m_world->GetComponent<TransformComponent>(entity);
         auto *agent     = m_world->GetComponent<NavAgentComponent>(entity);
 
-        // ① 自分の位置から、残りの waypoint を赤い線で結ぶ
+        // 自分の位置から、残りの waypoint を赤い線で結ぶ
         if (!agent->waypoints.empty() && agent->currentWaypointIndex < agent->waypoints.size())
         {
             DirectX::XMFLOAT3 prevPos = transform->position;
@@ -100,7 +100,7 @@ void NavMeshDebugDrawSystem::Update(float dt)
             }
         }
 
-        // ② 半径を黄色い円で描く（半径は固定の目安値）
+        // 半径を黄色い円で描く（半径は固定の目安値）
         float drawRadius = 0.6f;
         int   segments   = 16;
         for (int i = 0; i < segments; ++i)

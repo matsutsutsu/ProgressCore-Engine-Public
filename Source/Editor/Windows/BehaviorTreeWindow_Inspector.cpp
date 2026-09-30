@@ -1,8 +1,3 @@
-// BehaviorTreeWindow：右ペイン（選択中のノードの編集欄）。
-//
-// 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
-// 記録は関数の最後にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
-// イテレータを使い終わってから行う。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -14,6 +9,9 @@
 
 using namespace BTEditor;
 
+// 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
+// 記録は関数の最後にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
+// イテレータを使い終わってから行う。
 void BehaviorTreeWindow::DrawInspector()
 {
     ZoneScopedN("BTW: Inspector");
@@ -263,7 +261,7 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::Separator();
                 ImGui::Text("デコレーター設定 (Decorator):");
 
-                // 旧「3: 非同期 (Async)」は削除した。同じ用途は Parallel ノードで書く。
+                // 子を待たずに並行して動かしたいときは Parallel ノードで書く。
                 const char *decNames[] = {"0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)"};
                 if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
@@ -394,10 +392,8 @@ void BehaviorTreeWindow::DrawInspector()
                 }
             }
 
-            // =========================================================
-            // すべての `it` の使用が終わった「一番最後」にUndoを記録する！
-            // これによりイテレータ無効化によるクラッシュを完全に防ぐ
-            // =========================================================
+            // `it` を使い終わった一番最後に Undo を記録する。
+            // 記録で m_nodes を読み直すと it が無効になりうるため
             if (needsUndo)
             {
                 RecordStateForUndo(undoMessage);

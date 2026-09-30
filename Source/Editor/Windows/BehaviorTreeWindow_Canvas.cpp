@@ -1,9 +1,3 @@
-// BehaviorTreeWindow：キャンバス（ノード・リンクの描画と、マウス／キーの入力）。
-//
-// 1フレームの流れ（DrawNodeWorkspace）:
-//   整列の予約を実行 → ノードを描く（今の階層に無いものは飛ばす）→ リンクを描く
-//   → 自動追従・サブツリーへ入る → リンク作成・削除・メニュー の順。
-//   整列は ed::Begin の中でしかノードのサイズが取れないので、ここで処理する。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -12,6 +6,10 @@
 
 using namespace BTEditor;
 
+// 1フレームの流れ:
+//   整列の予約を実行 → ノードを描く（今の階層に無いものは飛ばす）→ リンクを描く
+//   → 自動追従・サブツリーへ入る → リンク作成・削除・メニュー の順。
+//   整列は ed::Begin の中でしかノードのサイズが取れないので、ここで処理する。
 void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI)
 {
     ZoneScopedN("BTW: NodeWorkspace");
@@ -154,7 +152,7 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
 
     // ノード背景は透明にする。コメント枠もノードなので、まず全面に StyleColor_NodeBg が敷かれ、
     // その上に薄い枠色を重ねてもほとんど色が出ない。
-    // 色は BeginNode の中で焼き込まれるので、Push は必ず BeginNode より前に置く。
+    // 色は BeginNode の時点で確定するので、Push は必ず BeginNode より前に置く。
     ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(0, 0, 0, 0));
     ed::PushStyleColor(ed::StyleColor_GroupBg, ImColor(palette.bg));
     ed::PushStyleColor(ed::StyleColor_GroupBorder, borderColor);
@@ -270,7 +268,7 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     //   先に折り返した文字の高さを測り（CalcTextSize）、その高さで帯を塗ってから文字を書く。
     const float       titleWrapW = nodeW - 20.0f; // 左右の余白を除いた幅
     const float       titleH     = ImGui::CalcTextSize(title.c_str(), nullptr, false, titleWrapW).y;
-    const float       headerH    = (std::max)(32.0f, titleH + 16.0f); // 1行なら従来どおり 32px
+    const float       headerH    = (std::max)(32.0f, titleH + 16.0f); // 1行なら 32px
 
     ImGui::BeginGroup();
     const ImVec2 headerStart = ImGui::GetCursorScreenPos();

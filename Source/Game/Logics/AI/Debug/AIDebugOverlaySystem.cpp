@@ -19,14 +19,14 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    /// ゲーム画面が映っている矩形（ImGui の画面座標）。
+    // ゲーム画面が映っている矩形（ImGui の画面座標）。
     struct ScreenRect
     {
         float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
     };
 
-    /// ワールド座標を画面座標へ変換する。カメラの後ろ・奥の切り捨て面より先なら false。
-    /// Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる。
+    // ワールド座標を画面座標へ変換する。カメラの後ろ・奥の切り捨て面より先なら false。
+    // Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる。
     bool WorldToScreen(const Vector3 &world, const Matrix &viewProj, const ScreenRect &rect, ImVec2 &out)
     {
         const Vector3 ndc = Vector3::Transform(world, viewProj);
@@ -37,7 +37,7 @@ namespace
         return true;
     }
 
-    /// 黒い縁取り付きで文字を描く。背景が明るくても暗くても読めるようにする。
+    // 黒い縁取り付きで文字を描く。背景が明るくても暗くても読めるようにする。
     void DrawOutlinedText(ImDrawList *drawList, ImFont *font, float size, const ImVec2 &pos, ImU32 col,
                           const char *text)
     {
@@ -47,11 +47,11 @@ namespace
         drawList->AddText(font, size, pos, col, text);
     }
 
-    /// 頭上に出す行動名。BT が今 Running にしている行動を優先する。
-    ///
-    /// lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように
-    /// 書かない行動の間は前の技の名前が残り、突進の後の待機中も「突進攻撃」と出続ける。
-    /// runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す。
+    // 頭上に出す行動名。BT が今 Running にしている行動を優先する。
+    //
+    // lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように
+    // 書かない行動の間は前の技の名前が残り、突進の後の待機中も「突進攻撃」と出続ける。
+    // runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す。
     const char *CurrentActionName(const BehaviorTreeComponent &bt)
     {
         if (bt.debugPaused && bt.debugForcedNodeId < 0) return "(AI 停止中)";

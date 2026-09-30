@@ -1,12 +1,3 @@
-// BehaviorTreeWindow：自動整列とコメント枠の配置。
-//
-// 整列が実行順を変えない理由:
-//   子の実行順は兄弟の X の左右で決まる。整列は各親の子を「今の実行順」のまま左から詰め直す
-//   だけなので、相対順序は必ず保たれる。
-//
-// コメント枠の座標の単位:
-//   ライブラリはコメント枠を「ノード全体＝余白＋見出し帯＋枠」で持つ。width/height は枠の寸法、
-//   posX/posY はノード全体の左上なので、囲みたい矩形から逆算するのに GroupFrameOffset/Extra を使う。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -16,6 +7,9 @@
 
 using namespace BTEditor;
 
+// 整列が実行順を変えない理由:
+//   子の実行順は兄弟の X の左右で決まる。整列は各親の子を「今の実行順」のまま左から詰め直す
+//   だけなので、相対順序は必ず保たれる。
 void BehaviorTreeWindow::AutoLayout()
 {
     if (m_nodes.empty()) return;
@@ -304,6 +298,9 @@ void BehaviorTreeWindow::GroupSelectedNodes()
     g.height        = (maxY - minY) + kGroupPad * 2.0f;
 }
 
+// コメント枠の座標の単位:
+//   ライブラリはコメント枠を「ノード全体＝余白＋見出し帯＋枠」で持つ。width/height は枠の寸法、
+//   posX/posY はノード全体の左上なので、囲みたい矩形から逆算するのに GroupFrameOffset/Extra を使う。
 ImVec2 BehaviorTreeWindow::GroupFrameOffset()
 {
     const ImVec4 pad = ed::GetStyle().NodePadding;

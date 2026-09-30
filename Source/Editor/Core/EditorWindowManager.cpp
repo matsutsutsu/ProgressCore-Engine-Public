@@ -297,7 +297,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawFileMenu");
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+        if (ImGui::MenuItem("Open Scene..."))
         {
             HWND hWnd = Graphics::Instance().GetWindowHandle();
             if (auto path = FileDialog::OpenPreset("Scene", "Open Scene", hWnd))
@@ -306,7 +306,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
                 context.ClearSelection();
             }
         }
-        if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+        if (ImGui::MenuItem("Save Scene"))
         {
             HWND hWnd = Graphics::Instance().GetWindowHandle();
             if (auto path = FileDialog::SavePreset("Scene", "Save Scene", {}, hWnd))

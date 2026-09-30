@@ -1,11 +1,3 @@
-// BehaviorTreeWindow：保存・読込・テキスト書き出し・Bake と、親子関係（実行順・表示する階層）の計算。
-//
-// 描画はしない。ノードエディタのライブラリに触れるのは座標の読み出し（NodeToJson）だけ。
-//
-// Bake の形式:
-//   幅優先の順でフラット配列にし、各ノードの "children" に子の添字を入れる。ランタイムは
-//   この配列だけを読むので、エディタ側の構造（ピン・リンク・コメント枠）は自由に変えてよい。
-//   サブツリーもエディタだけの構造で、SubTree の場所へ中身（入口の子）をそのまま差し込んで平らにする。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
@@ -417,6 +409,9 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
 
 // ====================================================================
 // Bake（ランタイム用のフラット配列）
+//   幅優先の順でフラット配列にし、各ノードの "children" に子の添字を入れる。ランタイムは
+//   この配列だけを読むので、エディタ側の構造（ピン・リンク・コメント枠）は自由に変えてよい。
+//   サブツリーもエディタだけの構造で、SubTree の場所へ中身（入口の子）をそのまま差し込んで平らにする。
 // ====================================================================
 nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
 {
@@ -463,8 +458,8 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
     };
 
     // ランタイム用の1ノード分。ROOT 直下も子も必ずここを通す。
-    //   以前は ROOT 直下だけ別に書いていて decoratorType が抜け、
-    //   ROOT 直下の Cooldown が読み込み側の既定値 0（Inverter）として動いていた。
+    //   ROOT 直下だけ別に書くと、書き漏れた項目（decoratorType 等）が読み込み側の既定値に
+    //   なる（Cooldown が既定値 0 の Inverter として動く）。
     auto bakeOne = [&](EditorBTNode &node) {
         nlohmann::json j;
         j["type"]                = runtimeTypeOf(node.type);

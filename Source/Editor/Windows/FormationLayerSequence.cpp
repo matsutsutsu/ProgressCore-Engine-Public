@@ -1,4 +1,3 @@
-// 動きの層と ImSequencer のつなぎの実装。
 #include "FormationLayerSequence.h"
 
 #include "Game/Logics/AI/Drone/Formation/FormationAsset.h"

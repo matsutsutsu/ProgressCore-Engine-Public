@@ -12,7 +12,7 @@
 #include "Engine/Platform/Core/Logger.h"
 #include <filesystem>
 #include "Engine/ECS/Core/CCL_World.h"
-#include <cmath> // sinf用
+#include <cmath>
 #include <unordered_map>
 #include <sstream>
 #include <iomanip>
@@ -379,9 +379,8 @@ void AnimGraphWindow::DrawContents(EditorContext &context)
 
     ImGui::NextColumn();
 
-    // 右カラムを上下分割：上=パラメータパネル / 下=インスペクタ（Unity Animator 風）
-    // 上部はパラメータ数に応じて高さを取りつつ、下部インスペクタを必ず残す。
-    // パラメータ一覧が潰れて見えないという要望を受け、上部の取り分を広げる（0.4→0.55）。
+    // 右カラムを上下に分ける：上=パラメータパネル / 下=インスペクタ（Unity Animator 風）
+    // パラメータの一覧が潰れて見えなくならないよう、上に 55% を割り当てる。
     const float paramPanelHeight = ImGui::GetContentRegionAvail().y * 0.55f;
 
     ImGui::BeginChild("ParameterPanelChild", ImVec2(0, paramPanelHeight), true);
@@ -412,16 +411,15 @@ void AnimGraphWindow::DrawNodeWorkspace()
     std::unordered_map<int, ImVec2> pinPositions;
     ImDrawList                     *drawList = ImGui::GetWindowDrawList();
 
-    // --- ① ピンIDは遷移ごとに一意な linkId から採番する ---
-    //   元は (src, dst) の組をハッシュしていたため、同じ元→先に遷移を2本張ると
-    //   両者が同一のピンIDになった。node-editor は同じフレームで同じIDの BeginPin を
-    //   2回受け取ると内部の対応表が壊れ、グラフを開いた瞬間にフリーズする。
-    //   ハッシュをやめて TransOutPin/TransInPin の採番規則に乗せたので、
+    // --- 1. ピンIDは遷移ごとに一意な linkId から採番する ---
+    //   (src, dst) の組をハッシュすると、同じ元→先に遷移を2本張ったとき両者が同じピンIDになる。
+    //   node-editor は同じフレームで同じIDの BeginPin を2回受け取ると内部の対応表が壊れ、
+    //   グラフを開いた瞬間にフリーズする。TransOutPin/TransInPin の採番規則に乗せれば、
     //   ステートノードとも、出力↔入力どうしでも、衝突しないことが式で保証される。
     auto GetOutPinId = [](int linkId) -> int { return TransOutPin(linkId); };
     auto GetInPinId  = [](int linkId) -> int { return TransInPin(linkId); };
 
-    // --- ② 全遷移の事前リスト化と、予測中心座標の計算 ---
+    // --- 2. 全遷移を先にリストにし、ノードの中心座標を求められるようにする ---
     struct TransInfo
     {
         uint32_t src;
@@ -486,7 +484,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
         return ImVec2(-dir.y * 8.0f, dir.x * 8.0f);
     };
 
-    // --- ③ ノード描画と「動的ピン配置」 ---
+    // --- 3. ノードの描画と、相手のノードの方向に合わせたピンの配置 ---
     auto DrawBlockNode = [&](int nodeId, uint32_t nodeHash, const char *title, ImVec4 bgColor, bool isActive) {
         // 強調の優先度: 実行中(青パルス) > エディタ選択(黄) > 通常
         const bool isSelected = (m_selectedNodeId == nodeId);
@@ -620,7 +618,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
             s_highlightSrc = s_prevActiveState;
             s_highlightDst = m_runtimeActiveStateHash;
 
-            // 高速遷移で残像が被らないよう、ハイライト時間を 0.3秒 に短縮
+            // 遷移が続けて起きても強調が重ならないよう、強調は 0.3秒と短くする
             s_highlightTimer = 0.3f;
         }
         s_prevActiveState = m_runtimeActiveStateHash;
@@ -632,7 +630,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
             s_highlightTimer = 0.0f;
     }
 
-    // --- ④ 標準リンクの描画（NodeEditorに当たり判定と描画順を任せる） ---
+    // --- 4. リンクの描画（当たり判定と描画順は NodeEditor に任せる） ---
     m_linkLut.clear();
     for (const auto &t : allTrans)
     {
@@ -686,8 +684,6 @@ void AnimGraphWindow::DrawNodeWorkspace()
         // リンクの描画
         ed::Link(t.linkId, srcPin, dstPin, linkColor, thickness);
 
-        // 視界のノイズになる ed::Flow は完全に削除しました
-
         m_linkLut.push_back({t.linkId, LinkRef{t.src, t.dst, t.isAny}});
 
         // 矢印(三角形)の描画
@@ -697,7 +693,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
         }
     }
 
-    // --- ⑤ Make Transition 中のテンポラリ線描画 ---
+    // --- 5. Make Transition 中の仮の線 ---
     if (m_editorMode == EditorMode::CreatingTransition)
     {
         uint32_t srcHash = m_isTransitionSourceAnyState ? ANY_HASH : m_transitionSourceHash;
@@ -791,10 +787,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
         ed::Resume();
 
-        // 左クリックでターゲット確定
-        // ... 以降は既存のまま
-
-        // 左クリックでターゲット確定
+        // 左クリックで遷移先を確定する
         if (ImGui::IsMouseClicked(0))
         {
             ed::NodeId hoveredNode = ed::GetHoveredNode();
@@ -1018,14 +1011,14 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
     {
         ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "開始地点 (Entry Node)");
         ImGui::Separator();
-        ImGui::TextDisabled("ここから最初に再生したいステートへ\nワイヤーを引いて接続してください。");
+        ImGui::TextDisabled("最初に再生するステートは、そのステートを\n右クリック → Set as Entry で指定します。");
         return;
     }
     if (nodeId == ANY_STATE_NODE_ID)
     {
         ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.8f, 1.0f), "特別ノード (Any State)");
         ImGui::Separator();
-        ImGui::TextDisabled("どのステートからでも遷移可能な特別遷移の起点です。\n出力ピンから各ステートへ接続してください。");
+        ImGui::TextDisabled("どのステートからでも遷移可能な特別遷移の起点です。\nこのノードを右クリック → Make Transition で、\n遷移先のステートをクリックします。");
         return;
     }
 
@@ -1150,7 +1143,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     ImGui::Separator();
 
     // 軽量サブステートマシン：AnyState 遷移のみ「グループ限定スコープ」を指定できる。
-    //   0=どこからでも（従来）。非0にすると、現在ステートの Group ID が一致する時だけ有効。
+    //   0=どこからでも。0 以外にすると、現在ステートの Group ID が一致する時だけ有効。
     if (ref->isAnyState)
     {
         int sg = (int)trans->sourceGroupId;
@@ -1163,7 +1156,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
         ImGui::Separator();
     }
 
-    // 共通関数に一本化（通常遷移／Any State 遷移で同一UI。二重管理を解消）
+    // 通常の遷移も Any State の遷移も同じ UI で編集する
     DrawTransitionConditionUI(*trans);
 }
 
@@ -1265,7 +1258,6 @@ void AnimGraphWindow::SaveGraph(const std::string &path)
         view.anyStatePosY = anyPos.y;
     }
     // 保存はツリー全体（root）を書き出す（サブマシンの中身も再帰的に含まれる）。
-    //   戻り値を捨てていたため、失敗しても画面には何も出ていなかった。
     if (AnimGraphSerializer::SaveToJSON(m_rootGraph, path))
         CCL_LOG_SUCCESS(LogCategory::Editor, "アニメグラフを保存しました: %s", path.c_str());
     else
@@ -1356,14 +1348,14 @@ void AnimGraphWindow::HandleContextMenu()
 
             if (ImGui::MenuItem("Duplicate"))
             {
-                // 同名+"_Copy" で複製。ハッシュは新規名から導出。
+                // 同名+"_Copy" で複製する。同じ名前が既にあれば "_Copy_2" 等にずらし、ハッシュの衝突を避ける。
                 for (const auto &s : m_currentGraph.states)
                 {
                     if (s.stateHash == ctxHash)
                     {
                         AnimState copy = s;
                         copy.sequenceName += "_Copy";
-                        copy.stateHash = CCL::Utils::HashString(copy.sequenceName.c_str());
+                        copy.stateHash = MakeUniqueStateHash(copy.sequenceName);
                         copy.nodePosX += 30.0f;
                         copy.nodePosY += 30.0f;
                         copy.transitions.clear(); // 複製は遷移を引き継がない（重複ハッシュ事故防止）
@@ -1477,7 +1469,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     ImGui::Text("遷移を許可する窓 (Required Cancel Mask):");
     ImGui::TextDisabled("※複数チェック時は「いずれかの窓」で許可されます。");
 
-    // ① プレビュー文字列の作成
+    // プレビューの文字列を作る
     std::string previewMask = "";
     if (trans.requiredCancelMask == 0)
     {
@@ -1496,7 +1488,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         }
     }
 
-    // ② ドロップダウン（コンボボックス）の描画
+    // ドロップダウン（コンボボックス）
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##ReqCancelMask", previewMask.c_str()))
     {
@@ -1824,7 +1816,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("このパラメータを削除");
 
-        // 右クリックでも削除メニューを出す（従来動作の互換）
+        // 右クリックでも削除メニューを出す
         if (ImGui::BeginPopupContextItem("paramCtx"))
         {
             if (ImGui::MenuItem("削除 (Delete)"))

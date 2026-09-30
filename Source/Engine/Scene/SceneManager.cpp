@@ -205,16 +205,16 @@ void SceneManager::LoadScene(CCL::ECS::World *world, const std::string &filepath
     //    DestroyTag の付与は遅延されるので、先に確定させないと下の Cleanup が対象を見つけられない
     world->ScrutinyAndApply();
 
-    // ① Jolt の剛体を消す
+    // Jolt の剛体を消す
     JoltCleanupSystem::ExecuteCleanup(*world);
 
-    // ② 破棄される AudioEmitter の再生中サウンドを止める（BGM 等が遷移後も鳴り続けるのを防ぐ）
+    // 破棄される AudioEmitter の再生中サウンドを止める（BGM 等が遷移後も鳴り続けるのを防ぐ）
     AudioCleanupSystem::ExecuteCleanup(*world);
 
-    // ③ 親子リンクを外し、破棄を予約する
+    // 親子リンクを外し、破棄を予約する
     HierarchyCleanupSystem::ExecuteCleanup(*world);
 
-    // ④ 積んだ破棄予約を今すぐ確定させる
+    // 積んだ破棄予約を今すぐ確定させる
     world->ScrutinyAndApply();
 
     // 3. ファイルから Entity を作り直す。

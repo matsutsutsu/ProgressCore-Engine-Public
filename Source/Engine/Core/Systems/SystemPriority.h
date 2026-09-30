@@ -48,10 +48,10 @@ namespace Priority
         L05_Collision = 500,     // 当たり判定（Broad -> Narrow）
 
         L06_Resolution       = 600, // 衝突の解決（めり込み押し出し、ダメージ計算）
-        L06_DamageApply      = 610, // ① ダメージイベントの消費と HP 減算（DamageResolutionSystem）
-        L06_StatusEffect     = 620, // ② 毒やバフの適用（現在この段に System は無い）
-        L06_HealthManagement = 630, // ③ HP の最終確認と死亡判定（HealthSystem）
-        L06_HudSync          = 650, // ④ 確定した HP/ゲージ等を HUD へ反映。
+        L06_DamageApply      = 610, // ダメージイベントの消費と HP 減算（DamageResolutionSystem）
+        L06_StatusEffect     = 620, // 毒やバフの適用（現在この段に System は無い）
+        L06_HealthManagement = 630, // HP の最終確認と死亡判定（HealthSystem）
+        L06_HudSync          = 650, // 確定した HP/ゲージ等を HUD へ反映。
                                     //   必ず HealthManagement(630) の後に置く。
                                     //   ※ここより前だと HUD が常に1フレーム前の値を表示する。
 

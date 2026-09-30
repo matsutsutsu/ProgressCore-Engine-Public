@@ -1,4 +1,3 @@
-// 陣形エディタの実装。FormationRegistry が持つ実体を直接書き換える。
 #include "FormationEditorWindow.h"
 
 #include "Engine/Platform/Core/FileSystem.h"
@@ -53,9 +52,9 @@ int FormationEditorWindow::CountDrones(EditorContext &context) const
     return count;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================
 // 実機の掌握
-// ---------------------------------------------------------------------------
+// ============================================================
 
 void FormationEditorWindow::Stage(EditorContext &context)
 {
@@ -86,7 +85,7 @@ void FormationEditorWindow::PushStage(EditorContext &context)
 
     const BossHandles boss = FindBoss(context);
 
-    // ボスBTを凍らせる。これをしないと次のフレームに requestFormation を
+    // ボスBTを止める。止めないと次のフレームに requestFormation を
     // 書き戻され、押しても元の技へ戻る。
     if (boss.bt) boss.bt->debugPaused = true;
     if (boss.cmd)
@@ -95,7 +94,7 @@ void FormationEditorWindow::PushStage(EditorContext &context)
         boss.cmd->droneAttackActive = !telegraph;
     }
 
-    // 時間を握る。陣形が毎フレーム書くフィールドなので、外から握るにはここを通す。
+    // 時間を固定する。陣形が毎フレーム書くフィールドなので、外から固定するにはここを通す。
     if (auto *data = dynamic_cast<DataDrivenFormation *>(FormationRegistry::Instance().Get(m_slot)))
         data->SetPreview(telegraph ? m_time : asset->telegraphSeconds, progress);
 }
@@ -106,7 +105,7 @@ void FormationEditorWindow::Unstage(EditorContext &context)
     m_staged  = false;
     m_playing = false;
 
-    // 握っていた時間を全データ陣形ぶん解放する。選択を切り替えながら掌握を
+    // 固定していた時間を全データ陣形ぶん解除する。選択を切り替えながら掌握を
     // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る。
     for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
@@ -137,7 +136,7 @@ FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext
 void FormationEditorWindow::OnFrameBegin(EditorContext &context)
 {
     // 閉じられた・畳まれたフレームでもここは走る。掌握したままウィンドウを閉じると
-    // ボスBTが凍ったままになるので、見えなくなった時点で必ず解く。
+    // ボスBTが止まったままになるので、見えなくなった時点で必ず解く。
     if (!GetVisible())
     {
         Unstage(context);
@@ -146,9 +145,9 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &context)
     PushStage(context);
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================
 // 複製
-// ---------------------------------------------------------------------------
+// ============================================================
 
 bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
 {
@@ -197,9 +196,9 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     return true;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================
 // 表を描く
-// ---------------------------------------------------------------------------
+// ============================================================
 
 bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &fields, void *obj)
 {
@@ -236,15 +235,15 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
     return changed;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================
 // 緩急の型
-// ---------------------------------------------------------------------------
+// ============================================================
 // 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ。
 // どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）。
 
 namespace
 {
-    /// 緩急の型ひとつ。キーは「進み 0〜1 → 動きの進み 0〜1」を描く。
+    // 緩急の型ひとつ。キーは「進み 0〜1 → 動きの進み 0〜1」を描く。
     struct EasePreset
     {
         const char   *id; // CurveData::name に入れる。JSON に残るので英字
@@ -280,8 +279,8 @@ namespace
           {.time = 1.0f, .value = 1.0f}}},
     };
 
-    /// エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど評価器の既定 t*t になる。
-    /// 「既定の形から手で直し始める」ための出発点。
+    // エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど評価器の既定 t*t になる。
+    // 「既定の形から手で直し始める」ための出発点。
     constexpr CurveKeyframe kEaseInKeys[] = {
         {.time = 0.0f, .value = 0.0f},
         {.time = 1.0f, .value = 1.0f, .inTangent = 2.0f},
@@ -588,9 +587,9 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
     return changed;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================
 // 3ペイン
-// ---------------------------------------------------------------------------
+// ============================================================
 
 void FormationEditorWindow::DrawContents(EditorContext &context)
 {
@@ -785,8 +784,8 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
 
 #else // ENABLE_EDITOR
 
-/// Release ではつなぎの実体（FormationLayerSequence.cpp）をビルドしないので、
-/// unique_ptr が要求する「完全な型」だけをここで用意する。
+// Release ではつなぎの実体（FormationLayerSequence.cpp）をビルドしないので、
+// unique_ptr が要求する「完全な型」だけをここで用意する。
 class FormationLayerSequence
 {
 };

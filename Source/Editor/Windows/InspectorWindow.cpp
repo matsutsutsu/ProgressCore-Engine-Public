@@ -73,10 +73,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     if (nameComp)
     {
-        if (ImGui::InputText("エンティティ名", nameComp->name, sizeof(nameComp->name)))
-        {
-            context.entityNames[selected] = nameComp->name;
-        }
+        ImGui::InputText("エンティティ名", nameComp->name, sizeof(nameComp->name));
         if (strlen(nameComp->name) > 0)
         {
             strcpy_s(filenameBuf, sizeof(filenameBuf), nameComp->name);
@@ -92,13 +89,6 @@ void InspectorWindow::DrawContents(EditorContext &context)
         {
             std::string defaultName = "Entity_" + std::to_string(selected);
             world->AddComponent<NameComponent>(selected, NameComponent(defaultName.c_str()));
-            context.entityNames[selected] = defaultName;
-        }
-
-        auto it = context.entityNames.find(selected);
-        if (it != context.entityNames.end())
-        {
-            strcpy_s(filenameBuf, sizeof(filenameBuf), it->second.c_str());
         }
     }
 

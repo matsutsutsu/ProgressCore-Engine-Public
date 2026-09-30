@@ -1,5 +1,3 @@
-// BehaviorTreeWindow の本体：ウィンドウ枠・ツールバー・編集操作・Undo・表示名。
-// 各ペインとグラフ処理は BehaviorTreeWindow_*.cpp に分けてある（一覧は BehaviorTreeWindow.h の冒頭）。
 #include "BehaviorTreeWindow.h"
 #include "BehaviorTreeEditorCommon.h"
 #include "Editor/Core/EditorCommandHistory.h"
@@ -16,7 +14,7 @@
 
 using namespace BTEditor;
 
-/// グラフの変更1回分。前後の状態を丸ごと持ち、Undo/Redo で差し替える
+// グラフの変更1回分。前後の状態を丸ごと持ち、Undo/Redo で差し替える
 class BTGraphChangeCommand : public IEditorCommand
 {
     BehaviorTreeWindow *m_window;   // 戻す先のウィンドウ

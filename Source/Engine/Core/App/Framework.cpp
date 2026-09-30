@@ -122,7 +122,7 @@ Framework::Framework(HWND hWnd)
         // 共有スレッドプールを渡すと、物理ジョブも ECS と同じプールで走る
         // （JoltJobSystemAdapter 経由。プールが1本になり、物理ジョブが
         //   Tracy にジョブ名付きゾーンとして表示されるようになる）。
-        // 従来どおり Jolt 純正プールに戻したい場合は、引数を外して
+        // Jolt 純正のプールを使いたい場合は、引数を外して
         // Initialize() と呼ぶだけでよい（比較計測用に両方残してある）。
         services.physicsManager->Initialize(services.jobSystem.get());
     }
@@ -500,7 +500,7 @@ int Framework::Run()
                 auto *world = currentScene->GetWorld();
                 if (world)
                 {
-                    // ① シーンのロード要求
+                    // シーンのロード要求
                     if (!m_editorContext.pendingLoadScenePath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingLoad");
@@ -512,7 +512,7 @@ int Framework::Run()
                         m_editorContext.ClearSelection();
                     }
 
-                    // ② シーンのセーブ要求
+                    // シーンのセーブ要求
                     if (!m_editorContext.pendingSaveScenePath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingSave");
@@ -521,7 +521,7 @@ int Framework::Run()
                         m_editorContext.pendingSaveScenePath.clear();
                     }
 
-                    // ③ レベル(ステージ+プレハブ参照)のロード要求
+                    // レベル(ステージ+プレハブ参照)のロード要求
                     if (!m_editorContext.pendingLoadLevelPath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingLoadLevel");
@@ -531,7 +531,7 @@ int Framework::Run()
                         m_editorContext.ClearSelection();
                     }
 
-                    // ④ レベルのセーブ要求
+                    // レベルのセーブ要求
                     if (!m_editorContext.pendingSaveLevelPath.empty())
                     {
                         ZoneScopedN("Editor::ExecutePendingSaveLevel");
