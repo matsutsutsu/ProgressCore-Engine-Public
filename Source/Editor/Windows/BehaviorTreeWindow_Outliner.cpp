@@ -14,6 +14,8 @@ using namespace BTEditor;
 // ====================================================================
 void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
 {
+    ZoneScopedN("BTW: Outliner");
+
     ImGui::TextUnformatted("アウトライン (Outline)");
     ImGui::Separator();
 
@@ -27,6 +29,7 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
         const EditorBTNode *n = FindNode(root);
         if (n && n->graphId == 0) DrawOutlinerRow(root, activeAI, visited);
     }
+    ZoneValue(visited.size()); // 描いた行数
 
     ImGui::EndChild();
 }

@@ -22,8 +22,9 @@ namespace CCL::AI::Formation
     // 陣形計算に必要な「場の情報」。System が組み立てて渡す。
     struct FormationContext
     {
-        DirectX::SimpleMath::Vector3 bossPos   = {}; // ボスの位置（陣形の中心）
-        DirectX::SimpleMath::Vector3 playerPos = {}; // プレイヤーの位置（足元。間合いの計算に使う）
+        DirectX::SimpleMath::Vector3 bossPos      = {}; // ボスの位置（陣形の中心）
+        DirectX::SimpleMath::Vector3 bossVelocity = {}; // 陣形の中心が動いている速度 [m/s]。bossPos の前フレームとの差から出す
+        DirectX::SimpleMath::Vector3 playerPos    = {}; // プレイヤーの位置（足元。間合いの計算に使う）
 
         // 狙うのはこちら。playerPos は足元なので、そこを狙うと身長ぶん下を撃つ。
         DirectX::SimpleMath::Vector3 playerCenter = {};
@@ -98,6 +99,18 @@ namespace CCL::AI::Formation
         // 発生前の予告を「震え」で出すか。false にするのは隊形と、動きで予告する技（弾幕）。
         // 既定を true にしているのは、false 既定だと新しい技で予告が出ないことに気づきにくいため。
         virtual bool UsesShiverTelegraph() const { return true; }
+
+        // 持ち場がボスに付いて動くか。true なら、ボスの速度を先渡しの速度（followFeedForward）として
+        // 乗せ、バネには持ち場からのずれだけを直させる。乗せないと、ボスが突進や跳躍で速く動いたとき
+        // バネの上限の速さでしか追えず、動き終わった後にのろのろと付いてくる。
+        // false にするのは、ボス以外を基準に動く陣形（小隊は先頭機を基準にする）。
+        virtual bool FollowsBoss() const { return true; }
+
+        // 跳躍・滞空で浮いている間も、ボスの実際の高さを陣形の中心にするか。
+        // 既定の false は「中心を地面の高さに残す」。地面を薙ぐ技が、ボスが浮いた瞬間に
+        // プレイヤーの頭上を素通りしないようにするため。
+        // true にするのは、ボスの周りに付いて回るだけの隊形（頭上円陣など）。
+        virtual bool FollowsBossHeight() const { return false; }
 
         // 画面に出す技の名前。名乗るのはデータ陣形だけで、C++ 実装は nullptr を返す。
         // BTエディタが「枠24」ではなく「縦割り」と出せるのは、これを引くため。

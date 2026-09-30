@@ -1028,17 +1028,10 @@ void BehaviorTreeSystem::OnGui()
         ImGui::Text("Entity ID: %llu", (unsigned long long)e);
         ImGui::Text("Asset Path: %s", btComp->assetPath.c_str());
 
-        // lastLogActionId から行動名を逆引きする。
-        std::string actionName = "Idle";
-        for (int i = 0; i < g_ActionRegistryCount; ++i)
-        {
-            if (g_ActionRegistry[i].id == btComp->lastLogActionId)
-            {
-                actionName = g_ActionRegistry[i].name;
-                break;
-            }
-        }
-        ImGui::TextColored(ImVec4(0.4f, 1.0f, 1.0f, 1.0f), "Current Action: %s", actionName.c_str());
+        // lastLogActionId から行動名を逆引きする。行動が自分で書く値なので、A_Wait のように
+        // 書かない行動の間は前の行動が残る（見出しを Last にしているのはそのため）。
+        const ActionEntry *lastAction = FindActionEntry(btComp->lastLogActionId);
+        ImGui::TextColored(ImVec4(0.4f, 1.0f, 1.0f, 1.0f), "Last Action: %s", lastAction ? lastAction->name : "Idle");
 
         ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
 

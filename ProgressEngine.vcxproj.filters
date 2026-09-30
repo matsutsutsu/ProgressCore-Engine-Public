@@ -1920,6 +1920,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugRanges.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>

@@ -14,6 +14,8 @@
 
 #include <algorithm>
 
+#include <imgui.h>
+
 using namespace CCL::ECS;
 using namespace CCL::AI::Formation;
 
@@ -47,16 +49,23 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     // 「今撃て」信号。狙いを固定するタイミングの判定に使う。ボス位置とあわせて
     // BossCommandComponent を持つ最初の Entity から取る。
     bool attackActive = false;
+    bool hasBoss      = false;
 
     {
         auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
         for (auto b : bossView)
         {
             if (auto *t = m_world->GetComponent<TransformComponent>(b))
-                ctx.bossPos = t->GetWorldPosition(); // position はローカル。陣形の中心はワールドで置く
+            {
+                ctx.bossPos   = t->GetWorldPosition(); // position はローカル。陣形の中心はワールドで置く
+                m_bossBodyPos = ctx.bossPos;           // 下で地面の高さに揃える前の、実際の位置
+                hasBoss       = true;
+            }
             // 陣形の中心はボスの足元の高さに置く。跳躍や滞空で浮くと中心ごと持ち上がり、
             // 地面を薙ぐ技がプレイヤーの頭上を素通りする（各機はボス相対で並ぶため）。
             // 踏み切った地点の高さがそのときの地面なので、浮いている間はそれで代用する。
+            //   突進で浮く間は揃えない。ドローンもボスと一緒に持ち上がるのが狙いの見た目。
+            //   頭上円陣のような隊形は、揃える前の m_bossBodyPos を使う（FollowsBossHeight）。
             if (const auto *act = m_world->GetComponent<BossActionComponent>(b))
             {
                 if (act->currentState == BossActionState::Leap && act->leapPhase != BossLeapPhase::Windup)
@@ -68,6 +77,24 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
             break;
         }
     }
+
+    // 陣形の中心が動いている速度。前フレームの中心との差から出すので、上の「地面の高さに揃える」も
+    // そのまま反映される（跳躍中に中心を持ち上げないなら、縦の速度も乗せない）。
+    // 実際の位置のほう（頭上円陣などが使う）も同じ方法で別に測る。
+    //   一定の速さを超えたら瞬間移動（エディタでの配置・リスポーン）とみなして乗せない。
+    //   乗せると、ドローンが1フレームだけ数百 m/s で飛んでいく。
+    constexpr float kTeleportSpeed = 300.0f; // ボスの最速（突進 150 m/s 前後）より十分上
+    auto velocityOf = [&](const DirectX::SimpleMath::Vector3 &now, const DirectX::SimpleMath::Vector3 &prev) {
+        if (!hasBoss || !m_hasPrevBossPos || dt <= 0.0f) return DirectX::SimpleMath::Vector3::Zero;
+        const DirectX::SimpleMath::Vector3 v = (now - prev) / dt;
+        return (v.LengthSquared() <= kTeleportSpeed * kTeleportSpeed) ? v : DirectX::SimpleMath::Vector3::Zero;
+    };
+    ctx.bossVelocity   = velocityOf(ctx.bossPos, m_prevBossPos);
+    m_bossBodyVelocity = velocityOf(m_bossBodyPos, m_prevBodyPos);
+
+    m_prevBossPos    = ctx.bossPos;
+    m_prevBodyPos    = m_bossBodyPos;
+    m_hasPrevBossPos = hasBoss;
 
     // プレイヤーが居ないフレームは playerPos を配らない（既定のまま＝原点を狙わせない）。
     if (m_world->HasResource<BattleContext>())
@@ -118,7 +145,13 @@ void DroneFormationSystem::Update(float dt)
 
     auto &registry = FormationRegistry::Instance();
 
-    const FormationContext ctx = MakeContext(dt);
+    // 陣形へ渡す情報は2通り。違うのはボスの位置と速度だけで、陣形ごとにどちらかを渡す。
+    //   groundCtx … 跳躍・滞空中も中心を地面の高さに残す（既定。地面を薙ぐ技など）
+    //   bodyCtx   … ボスの実際の高さを中心にする（FollowsBossHeight。頭上円陣など）
+    const FormationContext groundCtx = MakeContext(dt);
+    FormationContext       bodyCtx   = groundCtx;
+    bodyCtx.bossPos                  = m_bossBodyPos;
+    bodyCtx.bossVelocity             = m_bossBodyVelocity;
 
     // ポリモーフィズムは「陣形を引くとき」だけ。ループ自体は連続アクセス。
     ForEach([&](DroneComponent &drone) {
@@ -127,10 +160,18 @@ void DroneFormationSystem::Update(float dt)
         {
             // 未登録の陣形（Hidden等）は何もしない。溜めだけは戻す（抱えたままだと
             // 次に出てきた瞬間から全開で震える）。
-            drone.windupTimer   = 0.0f;
-            drone.telegraphTime = 0.0f;
+            drone.windupTimer       = 0.0f;
+            drone.telegraphTime     = 0.0f;
+            drone.followFeedForward = DirectX::SimpleMath::Vector3::Zero;
             return;
         }
+
+        const FormationContext &ctx = formation->FollowsBossHeight() ? bodyCtx : groundCtx;
+
+        // 先渡しの速度は Calculate の前に入れる。中心と同じ情報から取るので、頭上円陣なら
+        // 跳躍の上下も乗る。ボス以外を基準にする陣形（小隊）は、Calculate の中で自分の基準の
+        // 速度に上書きする。
+        drone.followFeedForward = formation->FollowsBoss() ? ctx.bossVelocity * m_bossCarry : DirectX::SimpleMath::Vector3::Zero;
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
 
@@ -151,6 +192,13 @@ void DroneFormationSystem::Update(float dt)
                                   ? (std::min)(kWindupTimerCap, drone.telegraphTime + dt)
                                   : 0.0f;
     });
+}
+
+void DroneFormationSystem::OnGui()
+{
+    ImGui::SliderFloat("ボスの速度を乗せる割合", &m_bossCarry, 0.0f, 1.0f);
+    ImGui::TextDisabled("1 でボスと一緒に動く。下げるほど少し遅れて引きずられる");
+    ImGui::TextDisabled("（小隊突撃は先頭機を基準にするので対象外）");
 }
 
 REGISTER_LOGIC_SYSTEM(DroneFormationSystem, Priority::LogicStage::L02_Update)

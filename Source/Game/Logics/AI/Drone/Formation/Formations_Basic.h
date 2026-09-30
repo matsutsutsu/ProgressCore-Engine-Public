@@ -81,6 +81,9 @@ namespace CCL::AI::Formation::Basic
         // 攻撃と攻撃の「あいだ」の中立。技ではないので震えない。
         bool UsesShiverTelegraph() const override { return false; }
 
+        // 攻撃の形ではなくボスの頭上を回るだけなので、跳躍・滞空でもボスと一緒に上下する。
+        bool FollowsBossHeight() const override { return true; }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;

@@ -701,6 +701,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugRanges.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationType.h" />

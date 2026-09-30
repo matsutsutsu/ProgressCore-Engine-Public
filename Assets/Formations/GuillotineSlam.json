@@ -1,7 +1,7 @@
 {
   "assign": {
     "fillOrder": "ColumnFirst",
-    "rows": 11,
+    "rows": 20,
     "sideGroups": 1,
     "split": "Block",
     "tierGroups": 1
@@ -26,8 +26,8 @@
     "baseB": 0.0,
     "centerColumns": true,
     "columnAxis": "Right",
-    "spacingA": 2.5,
-    "spacingB": 3.1,
+    "spacingA": 3.0,
+    "spacingB": 4.0,
     "tierStepB": 0.0
   },
   "name": "縦割り",

@@ -104,11 +104,11 @@ private:
     // （"[空き枠] 枠0" のままでは、どの技を選んでいるのか画面から分からない）。
     const char *FormationDisplayName(DroneFormationType type) const;
 
-    int m_spawnCount = 12; // GUI の「Spawn Drones」で生成する数
+    int m_spawnCount = 20; // GUI の「Spawn Drones」で生成する数
 
     bool m_autoSpawnEnabled  = true;  // シーン開始時に初期ドローンを自動配備するか
     bool m_autoSpawnDone     = false; // 初回配備が完了したか（1回だけ実行するためのラッチ）
-    int  m_initialSpawnCount = 100;   // 初期配備数。実行環境の性能に応じて調整する
+    int  m_initialSpawnCount = 120;   // 初期配備数。高度合成数を参考に120にした
 
     // 陣形テストで選んでいる陣形と、その1つ前。
     //   C++実装とデータ実装が同じ絵になるかは、交互に出して目で見比べるしかない。

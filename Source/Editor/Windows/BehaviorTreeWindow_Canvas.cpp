@@ -14,6 +14,8 @@ using namespace BTEditor;
 
 void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI)
 {
+    ZoneScopedN("BTW: NodeWorkspace");
+
     // 描画領域が極小のフレームは中身を描かない（ドッキング操作中にサイズが 0 付近まで潰れる）
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     if (avail.x < 50.0f || avail.y < 50.0f)
@@ -27,43 +29,54 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     m_canvasScreenSize = avail;
 
     ed::SetCurrentEditor(m_nodeContext);
-    ed::Begin("My Node Editor");
+    {
+        ZoneScopedN("BTW: ed::Begin");
+        ed::Begin("My Node Editor");
+    }
 
     // 整列はここで実行する。ed::GetNodeSize が前フレームの実サイズを返すので、
     // 種類ごとの高さの違いを織り込んだ段組みができる。ed::Begin の外だと値が取れない。
     if (m_layoutRequested)
     {
+        ZoneScopedN("BTW: AutoLayout");
         AutoLayout();
         m_layoutRequested = false;
     }
 
-    for (auto &node : m_nodes)
+    // ノードの描画。ZoneValue は実際に描いた数（隠れているノードは数えない）。
     {
-        // 生成・読込・Undo・整列の直後は、座標（とコメント枠の大きさ）をライブラリへ流し込む。
-        //   ed::Group(size) の引数は一度登録された後は無視されるので、大きさを外から変える口はここだけ。
-        //   全経路がこの分岐を通るので、呼び忘れる経路が無い。
-        if (!node.positionInitialized)
+        ZoneScopedN("BTW: DrawNodes");
+        int drawnNodes = 0;
+        for (auto &node : m_nodes)
         {
-            ed::SetNodePosition(node.id, ImVec2(node.posX, node.posY));
+            // 生成・読込・Undo・整列の直後は、座標（とコメント枠の大きさ）をライブラリへ流し込む。
+            //   ed::Group(size) の引数は一度登録された後は無視されるので、大きさを外から変える口はここだけ。
+            //   全経路がこの分岐を通るので、呼び忘れる経路が無い。
+            if (!node.positionInitialized)
+            {
+                ed::SetNodePosition(node.id, ImVec2(node.posX, node.posY));
+                if (node.type == EditorBTNodeType::Group)
+                    ed::SetGroupSize(node.id, ImVec2(node.width, node.height));
+                node.positionInitialized = true;
+            }
+
+            // 今の階層に無いノードは描かない。描かなかったノードとピンはライブラリ側で
+            // 「生きていない」扱いになり、選択・接続・当たり判定から外れる。座標は上で預けてあるので
+            // 保存時の GetNodePosition も正しく返る。
+            if (m_hiddenNodes.count(node.id)) continue;
+
+            ++drawnNodes;
             if (node.type == EditorBTNodeType::Group)
-                ed::SetGroupSize(node.id, ImVec2(node.width, node.height));
-            node.positionInitialized = true;
+                DrawGroupNode(node);
+            else
+                DrawTreeNode(node, activeAI);
+
+            // ユーザーのドラッグを手元の座標へ写す（実行順の判定はこの値を使う）
+            const ImVec2 p = ed::GetNodePosition(node.id);
+            node.posX      = p.x;
+            node.posY      = p.y;
         }
-
-        // 今の階層に無いノードは描かない。描かなかったノードとピンはライブラリ側で
-        // 「生きていない」扱いになり、選択・接続・当たり判定から外れる。座標は上で預けてあるので
-        // 保存時の GetNodePosition も正しく返る。
-        if (m_hiddenNodes.count(node.id)) continue;
-
-        if (node.type == EditorBTNodeType::Group)
-            DrawGroupNode(node);
-        else
-            DrawTreeNode(node, activeAI);
-
-        // ユーザーのドラッグを手元の座標へ写す（実行順の判定はこの値を使う）
-        const ImVec2 p = ed::GetNodePosition(node.id);
-        node.posX      = p.x;
-        node.posY      = p.y;
+        ZoneValue(drawnNodes);
     }
 
     // 貼り付けたノードを選択する。上のループで一度描いた後でないと、ライブラリが選択を受け付けない
@@ -78,7 +91,10 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     DrawLinks(activeAI);
 
     if (m_autoFollow)
+    {
+        ZoneScopedN("BTW: FollowRunningNode");
         FollowRunningNode(activeAI);
+    }
     else
         m_lastTrackedNodeId = 0;
 
@@ -89,7 +105,10 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
         if (n && n->type == EditorBTNodeType::SubTree) RequestEnterSubTree(dbl);
     }
 
-    HandleLinkCreation();
+    {
+        ZoneScopedN("BTW: HandleLinkCreation");
+        HandleLinkCreation();
+    }
 
     // 文字入力中（インスペクタの名前欄など）は効かせない。Ctrl+C が文字のコピーとノードのコピーの両方に効いてしまう
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && ImGui::GetIO().KeyCtrl && !ImGui::GetIO().WantTextInput)
@@ -101,11 +120,21 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
         if (ImGui::IsKeyPressed(ImGuiKey_V, false)) PasteClipboard(PasteTargetOnCanvas());
     }
 
-    HandleDeletion();
-    HandleContextMenu();
+    {
+        ZoneScopedN("BTW: HandleDeletion");
+        HandleDeletion();
+    }
+    {
+        ZoneScopedN("BTW: HandleContextMenu");
+        HandleContextMenu();
+    }
     FitInitialView();
 
-    ed::End();
+    // ライブラリ本体。ノードとリンクの実際の描画・当たり判定・選択はここでまとめて行われる。
+    {
+        ZoneScopedN("BTW: ed::End");
+        ed::End();
+    }
 }
 
 // ====================================================================
@@ -113,6 +142,9 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
 // ====================================================================
 void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
 {
+    ZoneScopedN("BTW: DrawGroupNode");
+    ZoneValue(node.id);
+
     // 選択中はオレンジで光らせ、それ以外は役割ごとの色。塗り分けておくと、
     // ズームアウトしたままでも「どの塊の話か」が読める。
     const GroupPalette &palette     = GroupPaletteAt(node.groupColorIndex);
@@ -200,6 +232,10 @@ ImVec2 BehaviorTreeWindow::PasteTargetOnCanvas()
 
 void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComponent *activeAI)
 {
+    // ノード1つ分。ZoneValue はノードID（重いノードをエディタ上で探すため）。
+    ZoneScopedN("BTW: DrawTreeNode");
+    ZoneValue(node.id);
+
     ImColor borderColor;
     float   borderWidth = 1.0f;
     GetTreeNodeBorder(node, activeAI, borderColor, borderWidth);
@@ -248,7 +284,10 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     ImGui::PopTextWrapPos();
     ImGui::EndGroup();
 
-    DrawTreeNodeDetail(node, activeAI, nodeW);
+    {
+        ZoneScopedN("BTW: DrawTreeNodeDetail");
+        DrawTreeNodeDetail(node, activeAI, nodeW);
+    }
 
     // 下辺：出力ピン
     if (node.outputPin.id != 0)
@@ -361,6 +400,9 @@ void BehaviorTreeWindow::GetTreeNodeBorder(const EditorBTNode &node, const Behav
 // ====================================================================
 void BehaviorTreeWindow::DrawLinks(const BehaviorTreeComponent *activeAI)
 {
+    ZoneScopedN("BTW: DrawLinks");
+    ZoneValue(m_links.size());
+
     for (const auto &link : m_links)
     {
         auto parent = m_pinOwner.find(link.startPinId);

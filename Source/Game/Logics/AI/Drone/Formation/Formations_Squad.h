@@ -36,6 +36,10 @@ namespace CCL::AI::Formation::Squad
         // （読むべき手掛かりが2つになるうえ、震えのずれが後ろの席へ伝わって隊列が乱れる）。
         bool UsesShiverTelegraph() const override { return false; }
 
+        // 基準は先頭機（SquadUpdateSystem が動かすアンカー）で、ボスではない。
+        // 先渡しの速度も自分で「1つ前の機体の速度」を入れる。
+        bool FollowsBoss() const override { return false; }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;

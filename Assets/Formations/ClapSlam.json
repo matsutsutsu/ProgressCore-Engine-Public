@@ -38,15 +38,15 @@
     "baseB": 0.8,
     "centerColumns": false,
     "columnAxis": "Forward",
-    "spacingA": 2.5,
-    "spacingB": 2.2,
+    "spacingA": 3.0,
+    "spacingB": 3.0,
     "tierStepB": 0.0
   },
   "name": "挟み込み1段",
   "origin": {
     "forward": 0.0,
     "right": 0.0,
-    "up": 0.0
+    "up": 1.0
   },
   "output": {
     "chargeMode": "RigidFollow",

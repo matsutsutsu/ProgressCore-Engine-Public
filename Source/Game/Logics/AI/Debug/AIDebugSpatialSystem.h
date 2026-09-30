@@ -21,9 +21,9 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/Logics/AI/Debug/AIDebugRanges.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
-struct BTAsset;
 class ShapeRenderer;
 
 class AIDebugSpatialSystem : public CCL::ECS::IfSystem<
@@ -49,22 +49,8 @@ private:
         CCL::ECS::Read<TransformComponent>,
         CCL::ECS::Read<BossActionComponent>>;
 
-    // どちら向きの条件がこの半径を使っているか。同じ半径を両方が使うこともある
-    // （近接の枝の上限と接近の枝の下限が同じ値なら、そこが間合いの境目）
-    enum RangeKind : uint8_t
-    {
-        kInside  = 1 << 0, // C_DistanceLessThan    … この内側で成立
-        kOutside = 1 << 1, // C_DistanceGreaterThan … この外側で成立
-    };
-
-    struct RangeRing
-    {
-        float   radius = 0.0f;
-        uint8_t kinds  = 0; // RangeKind のビット和
-    };
-
-    // 木を走査して距離条件の param を集める。同じ半径は1本にまとめる。
-    void CollectRings(const BTAsset &asset);
+    // リングの集め方と色は AIDebugOverlaySystem（距離の数字の色）と共有する。
+    using RangeRing = AIDebugRanges::RangeRing;
 
     // 間合いの線を1本描く。footCenter は足元の高さの中心。
     //   m_ringHeight が 0 に近ければ地面の円、そうでなければ縦に立ち上げた壁として描く。

@@ -120,12 +120,15 @@ inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, 
     Vector3 displacement   = drone.targetPosition - trans.position;
     Vector3 targetVelocity = displacement * pGain;
 
+    // 上限を掛けるのはバネ（持ち場とのずれを直す分）だけ。先渡しの速度は上限の外で足す。
+    // 先渡しまで丸めると、ボスが上限より速く動いたときに置いていかれる。
     const float maxSpeed = drone.moveSpeed * kMoveToTargetSpeedScale;
     if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
     {
         targetVelocity.Normalize();
         targetVelocity *= maxSpeed;
     }
+    targetVelocity += drone.followFeedForward;
 
     drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity, (std::min)(damping * dt, 1.0f));
 
@@ -144,12 +147,14 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     const float pGain          = kIdleGain * SlotLag(drone);
     Vector3     targetVelocity = displacement * pGain;
 
+    // 上限はバネの分だけ。先渡しの速度（持ち場ごと動いている分）は上限の外で足す（MoveToTarget と同じ）。
     const float maxSpeed = drone.moveSpeed * kIdleSpeedScale;
     if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
     {
         targetVelocity.Normalize();
         targetVelocity *= maxSpeed;
     }
+    targetVelocity += drone.followFeedForward;
 
     drone.currentVelocity = Vector3::Lerp(drone.currentVelocity, targetVelocity,
                                           (std::min)(kIdleDamping * dt, 1.0f));

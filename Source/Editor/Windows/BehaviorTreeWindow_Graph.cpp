@@ -577,6 +577,9 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
 // ====================================================================
 void BehaviorTreeWindow::RebuildHierarchy()
 {
+    ZoneScopedN("BTW: RebuildHierarchy");
+    ZoneValue(m_nodes.size());
+
     m_childrenOf.clear();
     m_parentOf.clear();
     m_pinOwner.clear();

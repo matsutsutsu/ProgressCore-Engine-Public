@@ -16,6 +16,8 @@ using namespace BTEditor;
 
 void BehaviorTreeWindow::DrawInspector()
 {
+    ZoneScopedN("BTW: Inspector");
+
     ImGui::Text("インスペクタ (Inspector)");
     ImGui::Separator();
 

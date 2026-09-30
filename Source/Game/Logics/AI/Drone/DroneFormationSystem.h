@@ -7,6 +7,7 @@
 //   - 起動時に全陣形（C++ 実装とデータ陣形）を FormationRegistry へ登録する
 //   - ボス位置・プレイヤー位置・狙う向きなどを FormationContext にまとめる
 //   - 陣形の Calculate を呼び、予告の溜め（windupTimer / telegraphTime）を進める
+//   - ボスに付いていく陣形には、ボスの速度を先渡しの速度（followFeedForward）として配る
 //
 // 備考: 実際に動かすのは DroneMovementSystem。仮想呼び出しは陣形を引くときだけで、
 //       ドローンのループ自体は連続アクセスのまま回す。
@@ -53,6 +54,9 @@ public:
 
     void Update(float dt) override;
 
+    // System Manager 内に出す調整 UI（ボスの速度を乗せる割合）。
+    void OnGui() override;
+
 private:
     // ボス位置・プレイヤー位置などの情報を組み立てる。
     // 狙いの固定（下の m_lockedAimDir）を更新するので const ではない。
@@ -66,4 +70,19 @@ private:
     DirectX::SimpleMath::Vector3 m_lockedAimDir     = DirectX::SimpleMath::Vector3::UnitZ;
     bool                         m_aimLocked        = false;
     bool                         m_prevAttackActive = false;
+
+    // ボスの速度を測るための前フレームの陣形の中心。ボスが居ないフレームを挟んだら測り直す。
+    //   地面の高さに揃えた中心と、ボスの実際の位置の2つを別々に測る（IFormation::FollowsBossHeight）。
+    DirectX::SimpleMath::Vector3 m_prevBossPos    = DirectX::SimpleMath::Vector3::Zero;
+    DirectX::SimpleMath::Vector3 m_prevBodyPos    = DirectX::SimpleMath::Vector3::Zero;
+    bool                         m_hasPrevBossPos = false;
+
+    // ボスの実際の位置と速度（跳躍中も持ち上げたまま）。MakeContext が書き、Update が
+    // FollowsBossHeight の陣形へ渡す情報を組むのに使う。
+    DirectX::SimpleMath::Vector3 m_bossBodyPos      = DirectX::SimpleMath::Vector3::Zero;
+    DirectX::SimpleMath::Vector3 m_bossBodyVelocity = DirectX::SimpleMath::Vector3::Zero;
+
+    // ボスの速度をドローンへ乗せる割合。1 でボスと一緒に動き、下げるほど少し遅れて引きずられる。
+    //   完全に一緒に動くと、ボスとドローンが1つの塊に見えて「群れ」らしさが消えるので、少しだけ下げる。
+    float m_bossCarry = 0.85f;
 };

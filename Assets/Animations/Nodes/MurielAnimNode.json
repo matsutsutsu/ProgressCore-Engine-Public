@@ -739,7 +739,7 @@
             "stateHash": 579086389,
             "transitions": [
                 {
-                    "blendDuration": 0.20000000298023224,
+                    "blendDuration": 0.3499999940395355,
                     "conditions": [
                         {
                             "op": 4,

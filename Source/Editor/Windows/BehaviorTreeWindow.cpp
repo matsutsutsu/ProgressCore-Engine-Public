@@ -67,6 +67,9 @@ BehaviorTreeWindow::~BehaviorTreeWindow()
 
 void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
 {
+    // グラフ全体を JSON にして比べるので重い。毎フレーム出ていたら、どこかが毎フレーム呼んでいる。
+    ZoneScopedN("BTW: RecordStateForUndo");
+
     nlohmann::json newState = GetGraphStateAsJson();
     // 状態が変わっていればコマンドをスタックに積む
     if (m_lastSavedState != newState)
@@ -92,6 +95,8 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
         ImGui::Dummy(ImVec2(50.0f, 50.0f));
         return;
     }
+
+    ZoneScopedN("BTW: DrawContents");
 
     // サブツリーへ入る予約を消化する（前フレームのダブルクリックなど）。
     //   描画の途中で階層を変えると、同じフレームの残りの処理が別の階層を触るので、フレームの頭でやる。
@@ -138,9 +143,13 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
     // 隠れたノードの選択は外す。見えないものがインスペクタに出続けたり、
     // Delete キーで見えないまま消えたりするのを防ぐ。
-    for (uint32_t id : m_hiddenNodes)
     {
-        if (ed::IsNodeSelected(id)) ed::DeselectNode(id);
+        ZoneScopedN("BTW: DeselectHidden");
+        ZoneValue(m_hiddenNodes.size());
+        for (uint32_t id : m_hiddenNodes)
+        {
+            if (ed::IsNodeSelected(id)) ed::DeselectNode(id);
+        }
     }
 
     const BehaviorTreeComponent *activeAI = FindActiveAI(context);
@@ -163,13 +172,17 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
         // --- 中央ペイン (ツールバー ＋ ノードエディタ) ---
         ImGui::TableSetColumnIndex(1);
-        DrawToolbar();
+        {
+            ZoneScopedN("BTW: Toolbar");
+            DrawToolbar();
+        }
         DrawNodeWorkspace(activeAI);
 
         // --- 右ペイン (インスペクタ) ---
         ImGui::TableSetColumnIndex(2);
         DrawInspector();
 
+        ZoneScopedN("BTW: EndTable");
         ImGui::EndTable();
     }
 }
