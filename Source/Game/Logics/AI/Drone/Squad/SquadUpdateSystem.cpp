@@ -6,6 +6,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Time/TimeState.h"
 
 #include <algorithm>
 #include <cmath>
@@ -29,10 +30,19 @@ void SquadUpdateSystem::EnsureRegistry()
     m_world->AddResource<SquadRegistry>();
 }
 
-void SquadUpdateSystem::Update(float dt)
+void SquadUpdateSystem::Update(float rawDt)
 {
     EnsureRegistry();
     auto &reg = m_world->GetResource<SquadRegistry>();
+
+    // 後続機と同じ時計で進める（DroneFormationSystem と同じ理由）。rawDt のままだと
+    // 世界スロー中にアンカーだけ等速で進み、スローで追う後続機との間で隊列がちぎれる。
+    float dt = rawDt;
+    if (m_world->HasResource<TimeContext>())
+    {
+        const auto &time = m_world->GetResource<TimeContext>();
+        dt *= time.globalScale * time.groupScales[static_cast<size_t>(TimeGroup::Enemy)];
+    }
 
     m_elapsed += dt;
 

@@ -11,6 +11,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
+#include "Engine/Time/TimeState.h"
 
 #include <algorithm>
 
@@ -137,9 +138,19 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     return ctx;
 }
 
-void DroneFormationSystem::Update(float dt)
+void DroneFormationSystem::Update(float rawDt)
 {
     ZoneScopedN("DroneFormationSystem::Update");
+
+    // ドローンと同じ時計で進める。rawDt のままだと、ジャスト回避の世界スロー中も陣形だけが
+    // 等速で動き、持ち場へ張り付く技（縦割り等）はスローにならない。
+    // ボスの localDt は使わない（命中でボスだけ止まると、陣形まで止まってしまう）。
+    float dt = rawDt;
+    if (m_world->HasResource<TimeContext>())
+    {
+        const auto &time = m_world->GetResource<TimeContext>();
+        dt *= time.globalScale * time.groupScales[static_cast<size_t>(TimeGroup::Enemy)];
+    }
 
     m_elapsed += dt;
 
