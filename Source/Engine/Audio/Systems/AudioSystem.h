@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - AudioEmitter の自動再生・音の切り替え・音量変更・3D 位置の追従
-//   - PlaySoundEvent を受けてワンショットの 3D 効果音を鳴らす
+//   - PlaySoundEvent / AnimEventSoundMessage（アニメの Sound イベント）を受けてワンショットの 3D 効果音を鳴らす
 //   - TimeContext の時間倍率を音のスロー度として IAudioAPI へ渡す
 //
 // 備考: エンジン自体の更新（IAudioAPI::Update）は呼ばない。理由は AudioEngineTickSystem.h を参照。

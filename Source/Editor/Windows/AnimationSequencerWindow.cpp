@@ -10,6 +10,7 @@
 #include "Game/Logics/Combat/CombatRosterComponent.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"      // SpawnHitbox の判定球のプレビュー
+#include "Engine/Audio/IAudioAPI.h"                       // Sound イベントの音名一覧
 
 // IO / Platform
 #include "Engine/Platform/Core/Dialog.h"
@@ -23,6 +24,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
+#include <memory>
 #include <vector>
 
 // 秒とフレーム（60fps）の変換
@@ -34,6 +37,9 @@ inline float FrameToSec(int frame)
 {
     return (float)frame / 60.0f;
 }
+
+// Effect イベントで選べる VFX プレハブの置き場所（VFX::Play と同じく拡張子なしのパスで保存する）
+constexpr const char *kVfxPrefabDir = "Assets/Prefabs/Particles";
 
 // ============================================================
 // ImSequencer へ AnimSequence のイベントを見せる橋渡し（pImpl）
@@ -234,10 +240,8 @@ public:
         ev.startTime = 0.0f;
         ev.endTime   = (std::min)(0.5f, m_seq->duration);
 
-        if (type == (int)AnimEventType::Sound)
-            ev.stringParam = "Cue_Default";
         if (type == (int)AnimEventType::Effect)
-            ev.stringParam = "VFX_Default";
+            ev.stringParam = std::string(kVfxPrefabDir) + "/VFX_HitSpark";
         if (type == (int)AnimEventType::HitBox)
             ev.stringParam = "Weapon_R";
         if (type == (int)AnimEventType::Trail)
@@ -1097,30 +1101,33 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;
         case AnimEventType::Sound:
-            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Sound Event");
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##Snd", buf, sizeof(buf)))
-            {
-                e.stringParam = buf;
-                ch            = true;
-            }
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("AudioConfigDXTK.json に登録したイベント名（例: sfx:/can）");
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Sound (効果音)");
+            if (DrawSoundPicker(context, e))
+                ch = true;
+            ImGui::Spacing();
+            ImGui::TextDisabled("開始時刻に、キャラの位置で 3D のワンショットとして鳴らします。");
+            ImGui::TextDisabled("区間の長さは使いません。");
             break;
         case AnimEventType::Effect:
-            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Effekseer Path");
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::InputText("##Efk", buf, sizeof(buf)))
-            {
-                e.stringParam = buf;
-                ch            = true;
-            }
+            ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "VFX (パーティクル)");
+            if (DrawVfxPrefabPicker(e))
+                ch = true;
             if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
                 ch = true;
-            if (ImGui::DragFloat("Scale", &e.effectScale, 0.05f, 0.0f, 100.0f, "%.2f x"))
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("キャラのローカル座標（Z+ が前方）。メートル単位で、キャラの scale は掛かりません");
+            if (ImGui::DragFloat("Scale", &e.effectScale, 0.05f, 0.01f, 100.0f, "%.2f x"))
                 ch = true;
-            if (ImGui::Checkbox("Follow Parent", &e.effectFollow))
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("粒子の大きさ・発生範囲・速度をまとめて拡大縮小します");
+            if (ImGui::Checkbox("持ち主に追従", &e.effectFollow))
                 ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ON: キャラの子になり付いていく（まとうオーラなど）\n"
+                                  "OFF: 出した場所に残る（衝撃波・砂煙など）。向きは出した瞬間のキャラに合わせる");
+            ImGui::Spacing();
+            ImGui::TextDisabled("開始時刻に 1 回出します。継続放出のエミッタを含む VFX は、");
+            ImGui::TextDisabled("区間の長さだけ出し続けてから止めます。");
             break;
         case AnimEventType::ComboWindow:
         case AnimEventType::CancelWindow: {
@@ -1182,6 +1189,99 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         if (ch)
             m_sequencerImpl->SyncFrameCache();
     }
+}
+
+bool AnimationSequencerWindow::DrawSoundPicker(EditorContext &context, AnimNotifyEvent &e)
+{
+    bool changed = false;
+
+    // AudioConfig からロード済みのイベント名一覧（AudioEmitterComponent のインスペクタと同じ出どころ）
+    std::vector<std::string> names;
+    if (context.world && context.world->HasResource<std::shared_ptr<IAudioAPI>>())
+        if (auto &api = context.world->GetResource<std::shared_ptr<IAudioAPI>>())
+            names = api->GetEventNames();
+
+    const std::string current = e.stringParam.empty() ? std::string("<未設定>") : e.stringParam;
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo("##SoundCombo", current.c_str()))
+    {
+        if (names.empty())
+            ImGui::TextDisabled("AudioConfig に登録がありません");
+        for (const std::string &n : names)
+        {
+            const bool selected = (n == e.stringParam);
+            if (ImGui::Selectable(n.c_str(), selected))
+            {
+                e.stringParam = n;
+                changed       = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます");
+
+    // 一覧に無い名前を直接指定する欄
+    char buf[256];
+    strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputText("##SoundName", buf, sizeof(buf)))
+    {
+        e.stringParam = buf;
+        changed       = true;
+    }
+    return changed;
+}
+
+bool AnimationSequencerWindow::DrawVfxPrefabPicker(AnimNotifyEvent &e)
+{
+    namespace fs = std::filesystem;
+    bool changed = false;
+
+    // 表示はファイル名だけにする（パスは長くて読みにくい）
+    const std::string current = e.stringParam.empty() ? std::string("<未設定>")
+                                                      : fs::path(e.stringParam).filename().string();
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::BeginCombo("##VfxCombo", current.c_str()))
+    {
+        // 一覧は開いている間だけ作る（閉じている間は毎フレームディレクトリを走査しない）
+        std::error_code ec;
+        bool            any = false;
+        for (const auto &entry : fs::directory_iterator(kVfxPrefabDir, ec))
+        {
+            if (!entry.is_regular_file() || entry.path().extension() != ".json")
+                continue;
+
+            // 拡張子を落として保存する（VFX::Play の呼び出し方にそろえる）
+            const std::string stem = entry.path().stem().string();
+            const std::string path = std::string(kVfxPrefabDir) + "/" + stem;
+            const bool        sel  = (path == e.stringParam);
+            if (ImGui::Selectable(stem.c_str(), sel))
+            {
+                e.stringParam = path;
+                changed       = true;
+            }
+            if (sel) ImGui::SetItemDefaultFocus();
+            any = true;
+        }
+        if (!any)
+            ImGui::TextDisabled("%s にプレハブがありません", kVfxPrefabDir);
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s の VFX プレハブから選びます\n（Transform・GPU Particle・TimeState を持つ 1 Entity のもの）", kVfxPrefabDir);
+
+    // 一覧の外のプレハブを直接指定する欄
+    char buf[256];
+    strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputText("##VfxPath", buf, sizeof(buf)))
+    {
+        e.stringParam = buf;
+        changed       = true;
+    }
+    return changed;
 }
 
 void AnimationSequencerWindow::DrawCurvePane(float animTime)

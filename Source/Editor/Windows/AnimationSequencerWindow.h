@@ -59,6 +59,12 @@ private:
     void DrawInspectorPane(EditorContext &context);
     void DrawCurvePane(float animTime);
 
+    // Sound イベントの音を、AudioConfig に登録済みのイベント名から選ぶ（手入力も可）。変えたら true
+    bool DrawSoundPicker(EditorContext &context, AnimNotifyEvent &e);
+
+    // Effect イベントの VFX を、Assets/Prefabs/Particles のプレハブから選ぶ（手入力も可）。変えたら true
+    bool DrawVfxPrefabPicker(AnimNotifyEvent &e);
+
     // 編集モード中、rootMotionCurve の進捗→累積前進距離を選択エンティティの
     // Transform に直接反映し、その場で移動量を確認できるようにする。
     //

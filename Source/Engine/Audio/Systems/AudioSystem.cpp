@@ -1,6 +1,7 @@
 #include "AudioSystem.h"
 #include "Engine/Audio/IAudioAPI.h"
 #include "Engine/Audio/Components/AudioEvents.h"
+#include "Engine/Animation/Core/AnimEventMessages.h" // アニメーションの Sound イベント
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Time/TimeState.h" // TimeContext（時間倍率 → 音のスロー演出）
 
@@ -20,6 +21,22 @@ void AudioSystem::Initialize()
         {
             api->PlayOneShot3D(e.eventHash, e.position);
         }
+    });
+
+    // アニメーションの Sound イベント（AnimationSystem が L02 で Publish する）。
+    //   鳴らす位置はその瞬間の entity のワールド位置で、以降は追従しない
+    ListenEvent<AnimEventSoundMessage>([this](const AnimEventSoundMessage &e) {
+        if (!m_world || e.eventPath.empty()) return;
+        if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+
+        auto &api = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
+        if (!api) return;
+
+        const auto *transform = m_world->GetComponent<TransformComponent>(e.entity);
+        if (!transform) return;
+
+        // アニメのイベントは数フレームに 1 回程度なので、ハッシュは毎回計算する
+        api->PlayOneShot3D(CCL::Utils::HashString(e.eventPath.c_str()), transform->GetWorldPosition());
     });
 }
 

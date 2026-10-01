@@ -6,8 +6,12 @@
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Animation/Core/AnimEventMessages.h" // アニメーションの Effect イベント
+
+#include <algorithm>
 
 using namespace CCL::ECS;
+using namespace DirectX;
 
 // =========================================================================
 void VFXSystem::Initialize()
@@ -15,6 +19,127 @@ void VFXSystem::Initialize()
     // VFX::Play から自分を引けるようにする。
     // World が消えるとこの登録も消えるので、シーンを切り替えても古いポインタは残らない。
     m_world->AddResource<VFXSystem *>(this);
+
+    // アニメーションの Effect イベント（AnimationSystem が L02 で Publish する）
+    ListenEvent<AnimEventEffectMessage>([this](const AnimEventEffectMessage &msg) { OnAnimEffect(msg); });
+}
+
+// =========================================================================
+void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
+{
+    if (msg.effectPath.empty()) return;
+
+    // 1. 持ち主の姿勢。無ければ位置が決まらないので出さない
+    const auto *ownerT = m_world->GetComponent<TransformComponent>(msg.entity);
+    if (!ownerT) return;
+
+    // 2. offset を持ち主の回転で回して、出す位置（ワールド座標）を求める（SpawnHitboxSystem と同じ規則）
+    const XMFLOAT3 ownerPos = ownerT->GetWorldPosition();
+    const XMFLOAT4 ownerRot = ownerT->GetWorldRotation();
+
+    const XMVECTOR off = XMVector3Rotate(XMVectorSet(msg.offset.x, msg.offset.y, msg.offset.z, 0.0f),
+                                         XMLoadFloat4(&ownerRot));
+    XMFLOAT3       spawnPos;
+    XMStoreFloat3(&spawnPos, XMVectorAdd(XMLoadFloat3(&ownerPos), off));
+
+    // 3. 出す。Play が位置を置き、バーストを起こし、バーストだけなら破棄も予約する
+    const EntityID id = Play(msg.effectPath, spawnPos);
+    if (id == InvalidEntityID) return;
+
+    auto *transform = m_world->GetComponent<TransformComponent>(id);
+    auto *particle  = m_world->GetComponent<GPUParticleComponent>(id);
+
+    // 4. 大きさ。バーストはこのフレームの更新で出るので、ここで設定を書き換えれば間に合う
+    ApplyScale(*particle, msg.scale);
+
+    // 5. 向きと追従
+    if (msg.follow)
+    {
+        // 持ち主の子にする。子の position には持ち主の scale が掛かる（Muriel は 5 倍）ので、
+        //   offset を持ち主の scale で割り、追従しないときと同じく「ワールドのメートル」にそろえる
+        const XMMATRIX ownerWorld = XMLoadFloat4x4(&ownerT->worldMatrix);
+        XMVECTOR       ownerScale, ownerRotQ, ownerTrans;
+        XMMatrixDecompose(&ownerScale, &ownerRotQ, &ownerTrans, ownerWorld);
+        XMFLOAT3 s;
+        XMStoreFloat3(&s, ownerScale);
+        const auto safeDiv = [](float v, float d) { return (d > 1e-6f) ? v / d : v; };
+
+        TransformUpdateSystem::SetParent(*m_world, id, msg.entity);
+        transform->position = XMFLOAT3(safeDiv(msg.offset.x, s.x), safeDiv(msg.offset.y, s.y), safeDiv(msg.offset.z, s.z));
+        transform->rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f); // 向きは持ち主に任せる
+        transform->isDirty  = true;
+        transform->UpdateMatrix(ownerWorld);
+    }
+    else
+    {
+        // 出した場所に残す。向きだけ持ち主にそろえる（前に飛ぶ・扇状に広がる VFX が正面を向くように）
+        transform->rotation = ownerRot;
+        transform->isDirty  = true;
+        transform->UpdateMatrix();
+    }
+
+    // 6. 継続放出を含むなら、ブロック長だけ出してから止める。
+    //    アニメのイベントから出した VFX には、Stop() を呼ぶ呼び出し側がいないため
+    if (HasContinuousEmitter(*particle))
+        m_timedStops.push_back({id, (std::max)(msg.duration, kMinEmitDuration)});
+}
+
+// =========================================================================
+void VFXSystem::ApplyScale(GPUParticleComponent &particle, float s) const
+{
+    if (s <= 0.0f || s == 1.0f) return;
+
+    // 長さの次元を持つ値（m・m/秒・m/秒^2）にだけ掛ける。時間や個数・色は変えない
+    const auto mul2 = [s](GpuData::float2 &v) { v.x *= s; v.y *= s; };
+    const auto mul3 = [s](GpuData::float3 &v) { v.x *= s; v.y *= s; v.z *= s; };
+
+    for (auto &emitter : particle.emitters)
+    {
+        ParticleEmitterDesc &d = emitter.desc;
+        mul2(d.emitRadius);
+        mul2(d.emitSize);
+        mul2(d.emitSpeed);
+        mul3(d.localOffset);
+        d.localOffsetY *= s;
+        mul3(d.lineEnd);
+        d.gravity *= s;
+        d.maxSpeed *= s;
+        mul3(d.attractorPos);
+        d.attractorStrength *= s;
+        d.attractorRadius *= s;
+    }
+    particle.MarkDescChanged();
+}
+
+// =========================================================================
+void VFXSystem::UpdateTimedStops(float dt)
+{
+    for (size_t i = 0; i < m_timedStops.size();)
+    {
+        const EntityID id = m_timedStops[i].id;
+
+        // 先に消えていたら予約を捨てる
+        bool done = !m_world->IsEntityValid(id);
+        if (!done)
+        {
+            // 粒子と同じく、その Entity の時間（localDt）で数える（ヒットストップ中は進まない）
+            const auto *time = m_world->GetComponent<TimeStateComponent>(id);
+            m_timedStops[i].remain -= time ? time->localDt : dt;
+            if (m_timedStops[i].remain <= 0.0f)
+            {
+                Stop(id); // 発生を止め、粒子が消えたころに破棄する
+                done = true;
+            }
+        }
+
+        if (!done)
+        {
+            ++i;
+            continue;
+        }
+        m_timedStops[i] = m_timedStops.back();
+        m_timedStops.pop_back();
+    }
 }
 
 // =========================================================================
@@ -85,6 +210,9 @@ void VFXSystem::Stop(EntityID handle)
 // =========================================================================
 void VFXSystem::Update(float dt)
 {
+    // 先に止める。止めたものは m_active に入り、下のループで破棄まで数える
+    UpdateTimedStops(dt);
+
     for (size_t i = 0; i < m_active.size();)
     {
         const EntityID id = m_active[i].id;

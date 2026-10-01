@@ -15,6 +15,10 @@
 //         終わらないので、いつ消すかをエンジンは決められない。戻り値を持っておき、
 //         要らなくなったら Stop() を呼ぶ。勝手に消すと、ループする VFX が再生中に突然消える。
 //
+//       アニメーションの Effect イベント（AnimEventEffectMessage）もここで受ける。
+//       持ち主の向き・オフセット・大きさの倍率・追従を反映して出し、継続放出の VFX は
+//       ブロック長だけ出してから Stop() する（アニメのイベントから出すものは呼び出し側が無いため）。
+//
 // @code
 //   VFX::Play(*m_world, "Assets/Prefabs/Particles/VFX_HitSpark", hitPos);
 // @endcode
@@ -29,6 +33,8 @@
 #include <string>
 #include <vector>
 
+struct AnimEventEffectMessage;
+
 class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
                                             CCL::ECS::Write<TransformComponent>,
                                             CCL::ECS::Write<GPUParticleComponent>,
@@ -40,10 +46,10 @@ public:
     {
     }
 
-    // 自分を World のリソースに登録する（VFX::Play から引くため）
+    // 自分を World のリソースに登録し（VFX::Play から引くため）、アニメの Effect イベントを購読する
     void Initialize() override;
 
-    // 破棄待ちの VFX の残り時間を減らし、尽きたものを破棄する
+    // 停止待ち・破棄待ちの VFX の残り時間を減らし、尽きたものを止める・破棄する
     void Update(float dt) override;
 
     /**
@@ -67,6 +73,22 @@ private:
         float              remain = 0.0f; // 破棄までの残り時間（秒）
     };
 
+    /**
+     * @brief アニメの Effect イベント1つから VFX を1つ出す。
+     * @note  持ち主に Transform が無いと位置が決まらないので出さない。
+     */
+    void OnAnimEffect(const AnimEventEffectMessage &msg);
+
+    /**
+     * @brief VFX 全体の大きさを倍率 s で変える（粒子の大きさ・発生範囲・速度・加速度）。
+     * @note  GPU パーティクルは Transform の scale を見ないので、エミッタの設定へ直接掛ける。
+     *        プレハブから作った直後の、この Entity 専用の設定にだけ使うこと。
+     */
+    void ApplyScale(GPUParticleComponent &particle, float s) const;
+
+    // 停止待ちの VFX の残り時間を減らし、尽きたものを Stop() する
+    void UpdateTimedStops(float dt);
+
     // 継続放出（emitMode==0）のエミッタを含むか。含むなら自動では破棄しない
     bool HasContinuousEmitter(const GPUParticleComponent &particle) const;
 
@@ -76,7 +98,11 @@ private:
     // handle が破棄待ちに入っているか
     bool IsPendingDestroy(CCL::ECS::EntityID handle) const;
 
-    std::vector<ActiveVFX> m_active; // 破棄待ちの VFX
+    std::vector<ActiveVFX> m_active;     // 破棄待ちの VFX
+    std::vector<ActiveVFX> m_timedStops; // 停止待ちの VFX（アニメから出した継続放出。remain は Stop までの時間）
+
+    // 区間の長さが 0（点）で来た継続放出の VFX を出し続ける最短の時間（秒）
+    static constexpr float kMinEmitDuration = 0.1f;
 
     // 破棄までに足す余裕（秒）。バーストは作った次のフレームに出るので、その分を吸収する
     static constexpr float kLifetimeMargin = 0.2f;

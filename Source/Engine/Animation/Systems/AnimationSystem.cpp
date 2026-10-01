@@ -181,14 +181,14 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         switch (evt.type)
         {
         case AnimEventType::Sound:
-            // サウンドの再生を依頼する（購読側は未実装。AnimEventMessages.h の TODO を参照）
+            // 効果音の再生を依頼する（AudioSystem が受ける）
             m_world->GetEventBus().Publish(AnimEventSoundMessage{id, evt.stringParam});
             break;
 
         case AnimEventType::Effect:
-            // Effekseer エフェクトの生成を依頼する
-            m_world->GetEventBus().Publish(
-                AnimEventEffectMessage{id, evt.stringParam, evt.offset, evt.effectScale, evt.effectFollow});
+            // VFX の生成を依頼する（VFXSystem が受ける）。継続放出の VFX はブロック長だけ出す
+            m_world->GetEventBus().Publish(AnimEventEffectMessage{
+                id, evt.stringParam, evt.offset, evt.effectScale, evt.effectFollow, evt.endTime - evt.startTime});
             break;
 
         case AnimEventType::SpawnHitbox: {

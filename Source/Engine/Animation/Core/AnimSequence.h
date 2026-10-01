@@ -78,8 +78,8 @@ inline const std::vector<CancelFlagDef> &GetCancelFlagDefs()
 enum class AnimEventType : uint8_t
 {
     HitBox = 0,   // 武器タグに紐づく攻撃判定（区間）
-    Sound,        // サウンドの再生（点）
-    Effect,       // Effekseer エフェクトの生成（点）
+    Sound,        // 効果音の再生（点）。stringParam=AudioConfigDXTK.json のイベント名
+    Effect,       // VFX プレハブの生成（点。継続放出を含むなら区間の長さだけ出す）。stringParam=プレハブのパス
     Blackboard,   // ブラックボードのフラグの ON/OFF（区間）。読む System は未実装
     SpawnHitbox,  // 空間に独立した球状の判定を生成（区間の長さが生存時間）
     Trail,        // 武器の軌跡エフェクトの ON/OFF（区間）
@@ -97,7 +97,7 @@ struct AnimNotifyEvent
     float         startTime = 0.0f;                  // 開始時刻（秒）
     float         endTime   = 0.0f;                  // 終了時刻（秒）。点イベントは startTime と同じ
     AnimEventType type      = AnimEventType::HitBox; // 種別
-    std::string   stringParam;                       // 武器タグ / サウンド名 / Effekseer のパス / フラグ名 など
+    std::string   stringParam;                       // 武器タグ / サウンド名 / VFX プレハブのパス / フラグ名 など
 
     uint32_t cancelMask = 0; // この受付区間が許可する CancelGroup のビットマスク
 
@@ -122,8 +122,8 @@ struct AnimNotifyEvent
     bool hitboxFollow = false;
 
     // エフェクトのパラメータ（Effect 用）
-    float effectScale  = 1.0f;  // スケール倍率
-    bool  effectFollow = false; // 親（キャラ）に追従するか
+    float effectScale  = 1.0f;  // 大きさの倍率（粒子の大きさ・発生範囲・速度にまとめて掛かる）
+    bool  effectFollow = false; // 持ち主（キャラ）に追従するか
 
     // stringParam のハッシュ（HitBox のみ。JSON には保存しない）。
     //   毎フレームのハッシュ計算を避けるため ResourceManager::LoadAnimSequence が計算する。

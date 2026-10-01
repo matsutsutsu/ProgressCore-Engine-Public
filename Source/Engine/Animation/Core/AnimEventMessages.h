@@ -12,22 +12,23 @@
 #include "SimpleMath.h"
 #include <string>
 
-// サウンドの再生を依頼する。
-// TODO(2026-09-25): 購読する System が無く、現在は鳴らない。AudioSystem で受けて Entity の位置で鳴らす
+// 効果音の再生を依頼する。AudioSystem が受け、entity のワールド位置で 3D のワンショットとして鳴らす
 struct AnimEventSoundMessage
 {
     CCL::ECS::EntityID entity;
     std::string        eventPath; // サウンドのイベント名（AudioConfigDXTK.json に登録した名前）
 };
 
-// Effekseer エフェクトの生成を依頼する
+// VFX（GPU パーティクルのプレハブ）の生成を依頼する。VFXSystem が受ける。
+//   offset は entity のローカル座標（前方 = キャラの向き）で、メートル単位（キャラの scale は掛からない）
 struct AnimEventEffectMessage
 {
     CCL::ECS::EntityID           entity;
-    std::string                  effectPath; // .efk / .efkefc パス
-    DirectX::SimpleMath::Vector3 offset;     // 発生位置のオフセット
-    float                        scale;      // スケール倍率
-    bool                         follow;     // 親（キャラ）に追従するか
+    std::string                  effectPath; // VFX プレハブのパス（例: "Assets/Prefabs/Particles/VFX_HitSpark"）
+    DirectX::SimpleMath::Vector3 offset;     // 発生位置のオフセット（entity のローカル座標）
+    float                        scale;      // 大きさの倍率
+    bool                         follow;     // entity に追従するか
+    float                        duration;   // 継続放出を出し続ける時間（秒。ブロック長）。バーストだけの VFX では使わない
 };
 
 // 空間に独立した球状の判定（ヒットボックス）の生成を依頼する。
