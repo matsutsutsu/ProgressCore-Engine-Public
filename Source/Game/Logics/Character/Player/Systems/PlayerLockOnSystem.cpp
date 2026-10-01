@@ -8,6 +8,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include <SimpleMath.h>
+#include <limits>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -45,8 +46,13 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 //    候補を一覧に溜めず、走査しながら最短を更新する。
                 //    候補は EnemyTag だけで絞る。特定の Component（BossActionComponent など）で絞ると、
                 //    敵の種類が増えるたびにここへ条件を足すことになる。
+                //
+                //    距離の上限は設けない。ステージが広く、ボスは跳躍や滞空で一気に間合いを
+                //    離すため、上限を置くと「離れた瞬間だけロックオンを受け付けない」という
+                //    操作感になる。遠い敵が小さく映る問題はカメラ側の引き
+                //    （lockOnDistanceGain）が吸収するので、ここで弾く必要がない。
                 EntityID closestEnemyID = InvalidEntityID;
-                float    closestDistSq  = 90.0f * 90.0f; // ロックオンできる最大距離（90m）の2乗
+                float    closestDistSq  = (std::numeric_limits<float>::max)();
 
                 m_world->ViewEach<Tag::EnemyTag, TransformComponent>([&](EntityID enemyID) {
                     if (m_world->HasComponent<Tag::DeadTag>(enemyID)) return;

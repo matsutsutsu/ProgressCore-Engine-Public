@@ -105,11 +105,11 @@ private:
     /// 手動の視点入力をオービット角へ積む。
     void ApplyManualLook(CameraContext &c) const;
 
-    /// ロックオン開始直後だけ、ピッチを lockOnPitch へ寄せる。
-    void UpdateLockOnPitchSettle(CameraContext &c) const;
-
-    /// 敵が画面中央から外れた分だけヨーを自動補正する。
+    /// 敵が画面中央から外れた分だけヨー（左右）を自動補正する。
     void ApplyLockOnYawAssist(CameraContext &c) const;
+
+    /// ピッチ（上下）を lockOnPitch へ寄せ、ロックオン中の見上げ角を保つ。
+    void ApplyLockOnPitchAssist(CameraContext &c) const;
 
     // =======================================================================
     // どこを中心に、どこへ置くか

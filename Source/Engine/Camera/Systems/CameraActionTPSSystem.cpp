@@ -26,10 +26,6 @@ namespace
 constexpr float kStickThreshold = 0.05f; // スティック倒し量（-1..1）
 constexpr float kMouseThreshold = 0.5f;  // マウス移動量（ピクセル/フレーム）
 
-// ロックオン開始時のピッチ寄せを打ち切る残り角度（度）。
-// 指数減衰は原理上目標へ到達しないので、この判定が無いと寄せが永久に続く。
-constexpr float kPitchSettleEpsilon = 0.1f;
-
 // 頭の高さへの持ち上げが「実質ゼロ」と見なせる量（0..1 の比率）。
 constexpr float kHeadLiftEpsilon = 0.001f;
 
@@ -206,28 +202,22 @@ void CameraActionTPSSystem::UpdateOrbitAngles(CameraContext &c) const
         tps.lockOnManualOverrideTimer = std::max(0.0f, tps.lockOnManualOverrideTimer - c.dt);
     }
 
-    // 3. ロックオン開始直後だけピッチを寄せる
-    //    見上げ／見下ろしの角度を戦闘向きの値へ1回揃えるだけで、以降は固定しない。
-    UpdateLockOnPitchSettle(c);
-
-    // 4. ロックオン中のヨーを敵の方向へ自動補正する
+    // 3. ロックオン中は、敵の方向（ヨー）と見上げ角（ピッチ）を自動補正する
     //    2 のタイマーが残っている間は走らない（手動操作を優先する）。
     if (c.enemy && tps.lockOnManualOverrideTimer <= 0.0f)
     {
         ApplyLockOnYawAssist(c);
+        ApplyLockOnPitchAssist(c);
     }
 
-    // 5. ピッチを制限する
+    // 4. ピッチを制限する
     //    手動入力も自動補正も通した後に掛ける。ここが角度の最終的な門。
     tps.currentPitch = std::clamp(tps.currentPitch, tps.minPitch, tps.maxPitch);
 
-    // 6. 次フレームのロックオン開始検出のために、今の状態を保存する
-    tps.wasLockOnActive = tps.isLockOnActive;
-
-    // 7. ヨーを ±360 に畳む
+    // 5. ヨーを ±360 に畳む
     //    周回するたび無限に積算されるので、放置すると float の有効桁が回転量に食われ、
     //    長時間プレイで視点がカクつくようになる（プレハブに -4572 度が保存されていた）。
-    //    4 のヨー補正は yawDiff で最短回転を取っているため、ここで角度が飛んでも
+    //    3 のヨー補正は yawDiff で最短回転を取っているため、ここで角度が飛んでも
     //    挙動は変わらない。
     tps.currentYaw = std::fmod(tps.currentYaw, 360.0f);
 }
@@ -249,29 +239,6 @@ void CameraActionTPSSystem::ApplyManualLook(CameraContext &c) const
         tps.currentYaw -= in.mouseDX * tps.mouseSensitivityX;
         tps.currentPitch += (-in.mouseDY) * tps.mouseSensitivityY * invert;
     }
-}
-
-void CameraActionTPSSystem::UpdateLockOnPitchSettle(CameraContext &c) const
-{
-    auto &tps = c.tps;
-
-    // 寄せるのはロックオンを始めた瞬間だけ。目標にほぼ届いたとき・プレイヤーが
-    // カメラを操作したとき・ロックオンが外れたときにやめるので、
-    // ロックオン中ずっとピッチを固定するわけではない。
-    if (tps.isLockOnActive && !tps.wasLockOnActive)
-        tps.lockOnPitchSettling = true;
-
-    if (!tps.isLockOnActive || c.in.hasManualLook)
-        tps.lockOnPitchSettling = false;
-
-    if (!tps.lockOnPitchSettling) return;
-
-    const float pitchBlend = CCL::Math::Damp(tps.lockOnPitchDamping, c.dt);
-
-    tps.currentPitch = std::lerp(tps.currentPitch, tps.lockOnPitch, pitchBlend);
-
-    if (std::abs(tps.lockOnPitch - tps.currentPitch) < kPitchSettleEpsilon)
-        tps.lockOnPitchSettling = false;
 }
 
 void CameraActionTPSSystem::ApplyLockOnYawAssist(CameraContext &c) const
@@ -308,6 +275,24 @@ void CameraActionTPSSystem::ApplyLockOnYawAssist(CameraContext &c) const
     const float correction = correctionSpeed * c.dt;
 
     tps.currentYaw += (yawDiff < 0.0f) ? -correction : correction;
+}
+
+void CameraActionTPSSystem::ApplyLockOnPitchAssist(CameraContext &c) const
+{
+    // ロックオン中は見上げ角を lockOnPitch へ寄せ続け、カメラを低く構えさせる。
+    //   ドローンが上空から攻めてくるので、戦闘中は空が画面に入っている必要がある。
+    //   カメラを下げると、注視点（プレイヤー〜ボス）は動かないまま視線が上を向くので、
+    //   同じ構図のまま頭上の空間だけが広がる。
+    //
+    //   開始時に一度だけ寄せる形にはしない。それだとプレイヤーがスティックに触れた
+    //   瞬間に解除され、以降は見下ろしのまま戻らず「ロックオン中は低い」という
+    //   状態にならない。手動操作の直後は呼び出し側のタイマーで止まるので、
+    //   自分で上下を見回す余地は残る。
+    auto &tps = c.tps;
+
+    const float pitchBlend = CCL::Math::Damp(tps.lockOnPitchDamping, c.dt);
+
+    tps.currentPitch = std::lerp(tps.currentPitch, tps.lockOnPitch, pitchBlend);
 }
 
 // ===========================================================================

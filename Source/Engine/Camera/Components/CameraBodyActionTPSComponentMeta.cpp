@@ -74,13 +74,14 @@ struct ComponentMeta<CameraBodyTPSComponent>
         Help(u8"ロックオンを有効にします。\n"
              u8"通常はゲーム側が自動的にON/OFFします。");
 
-        changed |= mi::DragFloat(u8"ロックオン開始ピッチ", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f, u8"変数名: lockOnPitch");
-        Help(u8"ロックオン開始時にカメラを向ける上下角度。\n"
-             u8"値を下げるほど上から見下ろす視点になります。\n"
-             u8"値を上げるほど下から見上げる視点になります。");
+        changed |= mi::DragFloat(u8"ロックオン中のピッチ", &comp.lockOnPitch, 0.5f, -60.0f, 60.0f, u8"変数名: lockOnPitch");
+        Help(u8"ロックオン中に保つカメラの上下角度。\n"
+             u8"値を下げるほどカメラが高くなり、上から見下ろす視点になります。\n"
+             u8"値を上げるほどカメラが低くなり、下から見上げる視点になります。\n"
+             u8"上空のドローンを見たいときは正の値にします。");
 
-        changed |= mi::DragFloat(u8"ロックオン開始ピッチ補間", &comp.lockOnPitchDamping, 0.1f, 0.0f, 50.0f, u8"変数名: lockOnPitchDamping");
-        Help(u8"ロックオン開始時に現在のピッチからlockOnPitchへ移動する速さ。\n"
+        changed |= mi::DragFloat(u8"ロックオン中のピッチ補間", &comp.lockOnPitchDamping, 0.1f, 0.0f, 50.0f, u8"変数名: lockOnPitchDamping");
+        Help(u8"現在のピッチからlockOnPitchへ寄る速さ。\n"
              u8"大きいほど素早く切り替わり、小さいほどゆっくり切り替わります。\n"
              u8"0にするとほぼ切り替わらなくなります。");
 
@@ -305,8 +306,8 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(lookaheadMultiplier, "前方注視係数", 0.05f, 0.0f, 5.0f, "Lookahead")
             CFIELD_FLOAT_RANGED(lookaheadDamping, "注視遅延", 0.1f, 0.0f, 50.0f, "Lookahead")
 
-            CFIELD_FLOAT_RANGED(lockOnPitch, "ロックオン開始ピッチ", 0.5f, -60.0f, 60.0f, "LockOn")
-            CFIELD_FLOAT_RANGED(lockOnPitchDamping, "ロックオン開始ピッチ補間", 0.1f, 0.0f, 50.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnPitch, "ロックオン中のピッチ", 0.5f, -60.0f, 60.0f, "LockOn")
+            CFIELD_FLOAT_RANGED(lockOnPitchDamping, "ロックオン中のピッチ補間", 0.1f, 0.0f, 50.0f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnSubjugationRatio, "敵への注視偏重率", 0.01f, 0.0f, 0.5f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnMaxLookShift, "注視ずれ上限", 0.1f, 0.0f, 15.0f, "LockOn")
             CFIELD_FLOAT_RANGED(lockOnDistanceGain, "離間による引き量", 0.01f, 0.0f, 2.0f, "LockOn")

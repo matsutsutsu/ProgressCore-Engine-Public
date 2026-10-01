@@ -86,9 +86,11 @@ struct CameraBodyTPSComponent
     CCL::Serialization::EntityLink lockOnTarget;           // ロックオン中の敵
     bool                           isLockOnActive = false; // ロックオン中か
 
-    // ロックオン開始時に currentPitch を寄せる目標（度）。
-    // 寄せるのは開始直後だけで、ロックオン中ずっと固定するわけではない。
-    float lockOnPitch = 12.0f;
+    // ロックオン中に保つ見上げ角（度）。ヨーの自動補正と同じく、手動操作の直後
+    // （lockOnManualOverrideTimer の間）を除いてロックオン中ずっと寄せ続ける。
+    //   符号は上の「ピッチの符号」と同じ。正にするほどカメラが低くなって見上げる。
+    //   ドローンが上空から来るゲームなので、既定は正（＝低く構えて空を入れる）。
+    float lockOnPitch = 8.0f;
     // 上の寄せの追従速度（CCL::Math::Damp の speed）。8 なら約 0.4 秒で 95% 寄る。
     float lockOnPitchDamping = 8.0f;
 
@@ -109,9 +111,7 @@ struct CameraBodyTPSComponent
     // 実行時状態（シリアライズしない）
     // =======================================================================
 
-    float lockOnManualOverrideTimer = 0.0f;  // 自動補正を止めている残り時間（秒）
-    bool  wasLockOnActive           = false; // 前フレームの isLockOnActive。ロックオン開始の検出に使う
-    bool  lockOnPitchSettling       = false; // ロックオン開始後、ピッチを lockOnPitch へ寄せている最中か
+    float lockOnManualOverrideTimer = 0.0f; // 自動補正を止めている残り時間（秒）
 
     DirectX::SimpleMath::Vector3 currentLookAt = {0.0f, 0.0f, 0.0f}; // 補間中の注視点
     DirectX::SimpleMath::Vector3 currentPivot  = {0.0f, 0.0f, 0.0f}; // 補間中の回り込み中心（ロックオン時はプレイヤー基準）
