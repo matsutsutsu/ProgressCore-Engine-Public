@@ -140,6 +140,11 @@ struct ComponentMeta<CameraBodyTPSComponent>
              u8"大きいほどカメラが後ろへ下がります。\n"
              u8"小さいほどキャラクターへ近づきます。");
 
+        changed |= mi::DragFloat(u8"寄り距離", &comp.closeUpDistance, 0.1f, 0.5f, 100.0f, u8"変数名: closeUpDistance");
+        Help(u8"寄り要求中（切り払い準備など）のカメラ距離(m)。\n"
+             u8"カメラ距離より小さくすると寄りになります。\n"
+             u8"要求のON/OFFはゲーム側(PlayerCleaveSystem)が行います。");
+
         ImGui::SeparatorText(u8"視野角・レンズ");
 
         changed |= mi::DragFloat(u8"基本視野角", &comp.baseFov, 0.1f, 10.0f, 120.0f, u8"変数名: baseFov");
@@ -269,6 +274,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD(target, "追従ターゲット", "Settings")
             CFIELD_FLOAT3_FAST(targetOffset, "注視点オフセット", 0.1f, "Positioning")
             CFIELD_FLOAT_RANGED(distance, "カメラ距離", 0.1f, 1.0f, 100.0f, "Positioning")
+            CFIELD_FLOAT_RANGED(closeUpDistance, "寄り距離", 0.1f, 0.5f, 100.0f, "Positioning")
 
             CFIELD_FLOAT_RANGED(baseFov, "基本視野角", 1.0f, 10.0f, 120.0f, "Dynamic Lens")
             CFIELD_FLOAT_RANGED(dashFov, "ダッシュ視野角", 1.0f, 10.0f, 160.0f, "Dynamic Lens")
