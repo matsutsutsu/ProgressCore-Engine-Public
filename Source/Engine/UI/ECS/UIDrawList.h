@@ -12,6 +12,8 @@
 //   - 画像と文字を 1 つの配列で持ち、sortOrder で前後を統一する。
 //   - クリアは消費側（UIRenderer::Flush の末尾）が行う。
 // ===========================================================================
+#include "Engine/Graphics/Shader/Shared/UIShared.h" // ゲージの値（シェーダーへそのまま渡す）
+
 #include <DirectXMath.h>
 #include <string>
 #include <vector>
@@ -20,6 +22,7 @@ enum class UIDrawKind
 {
     Image, // 画像 or 単色矩形
     Text,  // 文字列
+    Gauge, // ゲージ（UIGaugePS で1枚に描く）
 };
 
 struct UIDrawItem
@@ -47,6 +50,9 @@ struct UIDrawItem
     // テクスチャの切り出し範囲（正規化 [0,1]。xy=左上 / zw=幅と高さ）。既定は全体。
     //   アトラスの 1 コマを指す用途や、画像を引き伸ばさずに切って減らすゲージに使う
     DirectX::XMFLOAT4 uvRect = {0.0f, 0.0f, 1.0f, 1.0f};
+
+    // 以下は Gauge 用。pos / size はゲージの矩形（縁は含まない）、color.w は全体の不透明度
+    GpuData::CbUIGaugeData gauge{};
 
     // 以下は Text 用
     std::string text;              // 描く文字列

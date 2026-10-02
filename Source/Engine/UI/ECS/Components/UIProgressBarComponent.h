@@ -3,15 +3,19 @@
 // 概要: 横方向に伸び縮みするゲージ（HP など）のコンポーネント UIProgressBarComponent。
 //
 // 責務:
-//   - 充填率と色、遅延バー・グラデーション・被弾の揺れの設定を保持する
+//   - 充填率と色、遅延バー・被弾の揺れの設定を保持する
+//   - 形（傾き・縁・区切り）と光（先端の光・光沢・目印）の見た目の設定を保持する
+//   - 被弾・回復の演出（グリッチ・回復の光・外側の光）の設定と、その進み具合を保持する
 //
 // 備考:
-//   - UIProgressBarCollectSystem が UITransform の矩形から「背景 + フィル（幅 × value）」を
-//     単色の Image として UIDrawList に積む。
-//   - 値は別の System（例: Game 側の CleaveGaugeHudSystem）が毎フレーム書き込む。
-//   - showTrail=true で遅延ダメージバーを追加できる。背景とフィルの間に幅 × trailValue の帯を描き、
-//     被弾で value が減った後に trailValue を遅れて追従させると、失った分が一瞬色付きで残る。
-//     trailValue を動かすのも値を書き込む側の System。
+//   - UIProgressBarCollectSystem が UITransform の矩形と合わせて Gauge として UIDrawList に積み、
+//     UIRenderer が UIGaugePS で四角形1枚に描く。背景・遅延バー・フィルを別々の矩形にしないのは、
+//     傾いた形や区切りを、部品の継ぎ目なしに描くため。
+//   - 値は別の System（例: Game 側の PlayerHealthHudSystem）が毎フレーム書き込む。
+//   - showTrail=true で遅延ダメージバーを描く。被弾で value が減った後に trailValue を遅れて追従させると、
+//     失った分が一瞬色付きの帯で残る。trailValue を動かすのも値を書き込む側の System。
+//   - 時間で進む演出（グリッチ・回復の光）は、HUD が書く hitAge / healAge で進み具合を決める。
+//     収集 System は描画ステージで走るので、そこで時間を進めるとポーズ中も演出が進んでしまう。
 // ===========================================================================
 #include <DirectXMath.h>
 
@@ -21,7 +25,7 @@ struct UIProgressBarComponent
     DirectX::XMFLOAT4 bgColor   = {0.0f, 0.0f, 0.0f, 0.63f};  // 背景色
     DirectX::XMFLOAT4 fillColor = {0.27f, 0.67f, 1.0f, 1.0f}; // フィル色
     bool              visible   = true;
-    int               sortOrder = 0; // 背景の描画順。遅延バーは +1、フィルは +2 で描く（大きいほど手前）
+    int               sortOrder = 0; // 描画順（大きいほど手前）
 
     // 遅延ダメージバー（HP ゲージ等で使う）
     bool              showTrail  = false;                       // 遅延バーを描くか
@@ -32,10 +36,39 @@ struct UIProgressBarComponent
 
     // フィルの下端をどれだけ暗くするか [0,1]。0 ならフラット。
     //   2 色ではなく「暗くする率」で持つのは、値を書く側が fillColor を毎フレーム差し替える
-    //   （HP 残量で緑→黄→赤）ため。率なら色が変わってもグラデーションが追従する
+    //   （HP が少ないと赤くする）ため。率なら色が変わってもグラデーションが追従する
     float gradient = 0.0f;
 
-    // 被弾の揺れの強さ [0,1]。ゲージ全体（背景・遅延バー・フィル）をまとめて揺らす。
+    // ゲージの外側を囲む縁の太さ（px）。0 なら描かない。
+    //   明るい背景（床・空）の上では、淡い色のフィルの輪郭が背景に溶けて長さが読めなくなる。
+    //   暗い縁で囲むと、背景が何色でもゲージの範囲が分かる
+    float             frame      = 0.0f;
+    DirectX::XMFLOAT4 frameColor = {0.0f, 0.0f, 0.0f, 0.6f}; // 縁の色
+
+    // 上辺を右へずらす量（px）。0 なら長方形、正なら「/」に傾いた平行四辺形になる。
+    //   幅は矩形のまま変えず、両端を斜めに切る
+    float slant = 0.0f;
+
+    // 区切りの数と隙間の幅（px）。segments が 1 以下なら区切らない。
+    //   区切りがあると「あと何割」を目で数えられる
+    float segments   = 0.0f;
+    float segmentGap = 2.0f;
+
+    // フィル先端の光。減っている途中だけ出る（満タンと空では先端が無い）
+    float             glowWidth = 6.0f;                       // 光の広がり（px）
+    DirectX::XMFLOAT4 glowColor = {1.0f, 1.0f, 1.0f, 0.0f};   // rgb = 色、a = 強さ（0 なら光らせない）
+
+    // フィルの上を流れる光沢の強さ。0 なら流さない
+    float sheen = 0.0f;
+
+    // 目印の線を引く割合 [0,1]。負なら引かない。ボスの形態が変わる HP など「ここで何か起きる」位置に使う
+    float marker      = -1.0f;
+    float markerWidth = 2.0f; // 目印の線の太さ（px）
+
+    // 光沢が流れる位相（秒）。値を書く側が加算する（shakeElapsed と同じく、ポーズ中は止める）
+    float animTime = 0.0f;
+
+    // 被弾の揺れの強さ [0,1]。ゲージ全体をまとめて揺らし、同じ強さでフィルを白く飛ばす。
     //   減衰と位相の更新は値を書く側の System（HUD）が行い、ここは今の強さだけを持つ。
     //   収集 System は描画ステージで走るので、そこで時間を進めるとポーズ中も揺れ続けてしまう
     float shake        = 0.0f;
@@ -46,4 +79,23 @@ struct UIProgressBarComponent
     //   小刻みな揺れが残って見え、当たった瞬間の鋭さが出ない
     float shakeAmplitude = 5.0f;
     float shakeFrequency = 26.0f;
+
+    // 被弾したときにフィルを白く飛ばす最大量 [0,1]（shake の 2 乗を掛けて使う）
+    float hitFlash = 0.5f;
+
+    // ------------------------------------------------------------
+    // 演出の強さ（設定。HUD は Initialize で決め、エディタからも変えられる）
+    // ------------------------------------------------------------
+    float glitch = 0.0f; // 被弾したとき、横に裂けて色が分かれるグリッチの強さ [0,1]。0 なら出さない
+
+    float             auraWidth = 8.0f;                       // 外側の光の広がり（px）
+    DirectX::XMFLOAT4 auraColor = {1.0f, 0.2f, 0.15f, 0.0f}; // 外側の光（rgb = 色、a = 最大の強さ。auraLevel を掛けて使う）
+
+    // ------------------------------------------------------------
+    // 演出の進み具合（HUD が毎フレーム書く。保存しない）
+    // ------------------------------------------------------------
+    float hitAge    = 1000.0f; // 最後に被弾してからの秒数（大きい値なら演出は終わっている）
+    float healFrom  = 0.0f;    // 最後に回復する前の割合（光が満ちていく範囲は healFrom〜value）
+    float healAge   = 1000.0f; // 最後に回復してからの秒数
+    float auraLevel = 0.0f;    // 外側の光の今の強さ [0,1]。auraColor.a に掛ける
 };

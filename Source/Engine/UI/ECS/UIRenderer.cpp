@@ -4,6 +4,7 @@
 #include "Engine/Graphics/Renderer/Sprite.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/UI/ECS/UIDrawList.h"
+#include "Engine/UI/ECS/UIGaugeSprite.h"
 #include "Engine/UI/Text/TextRenderer.h"
 
 #include <algorithm>
@@ -52,6 +53,13 @@ Sprite *UIRenderer::GetSprite(ID3D11Device *device, const std::string &path)
     return ptr;
 }
 
+UIGaugeSprite *UIRenderer::GetGauge(ID3D11Device *device)
+{
+    if (!m_gauge)
+        m_gauge = std::make_unique<UIGaugeSprite>(device);
+    return m_gauge.get();
+}
+
 TextRenderer *UIRenderer::GetText(ID3D11Device *device)
 {
     if (!m_textTried)
@@ -93,6 +101,11 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                            item->uvRect.z * texW, item->uvRect.w * texH,
                            item->rotation,
                            corners);
+        }
+        else if (item->kind == UIDrawKind::Gauge)
+        {
+            GetGauge(device)->RenderGauge(dc, item->pos.x, item->pos.y, item->size.x, item->size.y,
+                                          item->gauge, item->color.w);
         }
         else // Text
         {

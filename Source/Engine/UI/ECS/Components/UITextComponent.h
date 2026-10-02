@@ -18,4 +18,7 @@ struct UITextComponent
     DirectX::XMFLOAT4 color     = {1.0f, 1.0f, 1.0f, 1.0f}; // 文字色
     bool              visible   = true;                     // 描画するか
     int               sortOrder = 10;                       // 大きいほど手前（既定で画像より上）
+
+    // 文字の右下に暗い影を重ねるか。HUD は明るい床や空の上にも乗るので、白い文字は影が無いと背景に溶ける
+    bool shadow = false;
 };

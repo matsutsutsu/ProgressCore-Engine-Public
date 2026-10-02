@@ -45,6 +45,9 @@
 #define SLOT_CB_CONTACTSHADOW 2
 #define SLOT_CB_PAUSEBLUR 2
 
+// --- UI の 2D パス（UIRenderer がドローごとにバインド） ---
+#define SLOT_CB_UIGAUGE 0 // ゲージ1本分の値（UIShared.h）。2D パスではマテリアルもポストプロセスも動かない
+
 // --- フレームごと（Graphics / EnvironmentSystem がバインド） ---
 #define SLOT_CB_SCENE 8   // viewProjection・カメラ・平行光源など。書くのは Graphics::Update だけ
 #define SLOT_CB_LIGHT 9   // 点光源・スポットライトの配列

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: UIDrawList を 2D パスで描くクラス UIRenderer（画像は Sprite、文字は TextRenderer）。
+// 概要: UIDrawList を 2D パスで描くクラス UIRenderer（画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer）。
 //
 // 責務:
 //   - 描画アイテムを sortOrder 昇順に描き、加算合成のものは最後にまとめて描く
@@ -16,6 +16,7 @@
 #include <vector>
 
 class Sprite;
+class UIGaugeSprite;
 class TextRenderer;
 class RenderState;
 struct UIDrawList;
@@ -52,8 +53,10 @@ private:
     Sprite       *GetWhite(ID3D11Device *device);                            // 単色塗り用の白テクスチャ（初回に生成）
     Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パスなら白テクスチャ
     TextRenderer *GetText(ID3D11Device *device);                            // 初回に初期化
+    UIGaugeSprite *GetGauge(ID3D11Device *device);                          // 初回に生成
 
-    std::unique_ptr<Sprite> m_white; // 単色塗り用
+    std::unique_ptr<Sprite>        m_white; // 単色塗り用
+    std::unique_ptr<UIGaugeSprite> m_gauge; // ゲージ用（全ゲージで1つを使い回す）
 
     // テクスチャ別のキャッシュ。値が null のエントリは「そのパスは読めなかった」印で、
     // 毎フレームの再読み込みと警告を止めるために残す（描画には白テクスチャを使う）

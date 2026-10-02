@@ -720,6 +720,9 @@
     <ClInclude Include="Source\Engine\UI\ECS\UIDrawList.h">
       <Filter>Source\Engine\UI\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\UI\ECS\UIGaugeSprite.h">
+      <Filter>Source\Engine\UI\ECS</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\UI\ECS\UIRenderer.h">
       <Filter>Source\Engine\UI\ECS</Filter>
     </ClInclude>
@@ -782,6 +785,9 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h">
       <Filter>Source\Game\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\GaugeLabGui.h">
+      <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h">
       <Filter>Source\Game\UI</Filter>
@@ -1608,6 +1614,9 @@
     <ClInclude Include="Source\Engine\ECS\CCL_ECSContext.h">
       <Filter>Source\Engine\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\UIShared.h">
+      <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h">
       <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
     </ClInclude>
@@ -2089,6 +2098,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp">
       <Filter>Source\Engine\UI\ECS\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\UI\ECS\UIGaugeSprite.cpp">
+      <Filter>Source\Engine\UI\ECS</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp">
       <Filter>Source\Engine\UI\ECS</Filter>
@@ -3071,6 +3083,9 @@
     </FxCompile>
     <FxCompile Include="Shader\Material\Toon\ToonPS.hlsl">
       <Filter>Shader\Material\Toon</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Sprite\UIGaugePS.hlsl">
+      <Filter>Shader\Material\Sprite</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\SpritePS.hlsl">
       <Filter>Shader\Material\Sprite</Filter>

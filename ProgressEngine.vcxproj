@@ -574,6 +574,7 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ParticleShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\PostProcessShared.h" />
+    <ClInclude Include="Source\Engine\Graphics\Shader\Shared\UIShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.h" />
@@ -740,6 +741,7 @@
     <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UIDrawList.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UIRenderer.h" />
+    <ClInclude Include="Source\Engine\UI\ECS\UIGaugeSprite.h" />
     <ClInclude Include="Source\Engine\UI\ECS\UILayoutUtil.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIImageCollectSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.h" />
@@ -761,6 +763,7 @@
     <ClInclude Include="Source\Game\Title\TitleCameraSystem.h" />
     <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h" />
+    <ClInclude Include="Source\Game\UI\GaugeLabGui.h" />
     <ClInclude Include="Source\Game\UI\GameResultSystem.h" />
     <ClInclude Include="Source\Game\UI\PauseSystem.h" />
     <ClInclude Include="Source\Game\UI\InputPromptSystem.h" />
@@ -1212,6 +1215,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />
+    <ClCompile Include="Source\Engine\UI\ECS\UIGaugeSprite.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIImageCollectSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UILayoutSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UITextCollectSystem.cpp" />
@@ -1479,6 +1483,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Material\Sprite\UIGaugePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\SpritePS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

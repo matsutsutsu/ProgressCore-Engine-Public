@@ -22,7 +22,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);
 
-        // 被弾の揺れ。ゲージを構成する全ての矩形に同じオフセットを足し、部品をまとめて揺らす。
+        // 被弾の揺れ。ゲージ全体の位置をずらす。
         //   X と Y で振動数をずらしているのは、同じにすると斜め 45 度の直線往復になり、
         //   揺れではなくスライドに見えるため（軌跡をリサージュ曲線にする）
         DirectX::XMFLOAT2 origin = t.computedPos;
@@ -34,52 +34,44 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
             origin.y += std::sin(phase * 1.7f) * amp * 0.5f; // 縦は半分にして、横長のバーが跳ねて見えないようにする
         }
 
-        // 描画順の割り当ては固定にする（showTrail の有無で番号がずれると、
-        // 同じ sortOrder を指定した他の要素との前後関係が条件によって変わる）。
-        //   +0 背景 / +1 遅延バー / +2 フィル
-        const int kLayerBg    = bar.sortOrder;
-        const int kLayerTrail = bar.sortOrder + 1;
-        const int kLayerFill  = bar.sortOrder + 2;
+        // ゲージ1本を Gauge アイテム1つにまとめる。形・縁・遅延バー・区切りなどはシェーダーが描く
+        GpuData::CbUIGaugeData g{};
+        g.slantPx     = std::max(0.0f, bar.slant);
+        g.value       = v;
+        g.trailValue  = bar.showTrail ? std::clamp(bar.trailValue, 0.0f, 1.0f) : 0.0f; // 描かないときはフィルの裏に隠れる 0 にする
+        g.segments    = bar.segments;
+        g.gapPx       = bar.segmentGap;
+        g.frameWidth  = std::max(0.0f, bar.frame);
+        g.glowWidth   = bar.glowWidth;
+        g.flash       = bar.hitFlash * bar.shake * bar.shake; // 揺れと同じ減り方にして、当たった瞬間だけ白く飛ばす
+        g.time        = bar.animTime;
+        g.marker      = bar.marker;
+        g.markerWidth = bar.markerWidth;
+        g.sheen       = bar.sheen;
+        g.gradient    = std::clamp(bar.gradient, 0.0f, 1.0f);
+        g.bgColor     = bar.bgColor;
+        g.fillColor   = bar.fillColor;
+        g.trailColor  = bar.trailColor;
+        g.frameColor  = bar.frameColor;
+        g.glowColor   = bar.glowColor;
 
-        // 背景（矩形全体）
-        UIDrawItem bg;
-        bg.kind      = UIDrawKind::Image;
-        bg.pos       = origin;
-        bg.size      = t.computedSize;
-        bg.color     = bar.bgColor;
-        bg.sortOrder = kLayerBg;
-        drawList.items.push_back(bg);
+        // 演出の強さと進み具合
+        g.hitAge    = bar.hitAge;
+        g.healFrom  = std::clamp(bar.healFrom, 0.0f, 1.0f);
+        g.healAge   = bar.healAge;
+        g.glitch    = std::clamp(bar.glitch, 0.0f, 1.0f);
+        g.auraWidth = bar.auraWidth;
+        g.auraColor = {bar.auraColor.x, bar.auraColor.y, bar.auraColor.z,
+                       bar.auraColor.w * std::clamp(bar.auraLevel, 0.0f, 1.0f)};
 
-        // 遅延ダメージバー: 背景とフィルの間に幅 × trailValue で描く。
-        // フィルが value までを手前で覆うので、value〜trailValue の差分だけが色付きで残る
-        if (bar.showTrail)
-        {
-            const float tv = std::clamp(bar.trailValue, 0.0f, 1.0f);
-            UIDrawItem  trail;
-            trail.kind      = UIDrawKind::Image;
-            trail.pos       = origin;
-            trail.size      = {t.computedSize.x * tv, t.computedSize.y};
-            trail.color     = bar.trailColor;
-            trail.sortOrder = kLayerTrail;
-            drawList.items.push_back(trail);
-        }
-
-        // フィル（幅 × value）。gradient>0 なら下端を暗くする
-        const float fillW = t.computedSize.x * v;
-        UIDrawItem  fill;
-        fill.kind      = UIDrawKind::Image;
-        fill.pos       = origin;
-        fill.size      = {fillW, t.computedSize.y};
-        fill.color     = bar.fillColor;
-        fill.sortOrder = kLayerFill;
-        if (bar.gradient > 0.0f)
-        {
-            const float k    = 1.0f - std::clamp(bar.gradient, 0.0f, 1.0f);
-            fill.useGradient = true;
-            fill.colorBottom = {bar.fillColor.x * k, bar.fillColor.y * k, bar.fillColor.z * k,
-                                bar.fillColor.w};
-        }
-        drawList.items.push_back(fill);
+        UIDrawItem item;
+        item.kind      = UIDrawKind::Gauge;
+        item.pos       = origin;
+        item.size      = t.computedSize;
+        item.color     = {1.0f, 1.0f, 1.0f, t.alpha}; // 出現アニメ等の不透明度
+        item.sortOrder = bar.sortOrder;
+        item.gauge     = g;
+        drawList.items.push_back(std::move(item));
     });
 }
 

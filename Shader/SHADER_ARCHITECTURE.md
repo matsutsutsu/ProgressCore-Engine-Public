@@ -84,6 +84,7 @@ GS/CS や独自バインドが要るものは `RegisterShader<T>` が必要。`S
 | b12 | `SLOT_CB_SKELETON` | Per-object | ModelRenderer |
 
 > b0/b1 は Per-pass のポスプロ（Bloom/ToneMap）と物理スロットを共有。時間的に排他なので衝突しない。
+> b0 は UI の 2D パスのゲージ（`SLOT_CB_UIGAUGE`、`UIGaugePS`）も使う。`UIRenderer` がドローごとにバインドする。
 
 ### Shader Resource / Texture (t)
 
