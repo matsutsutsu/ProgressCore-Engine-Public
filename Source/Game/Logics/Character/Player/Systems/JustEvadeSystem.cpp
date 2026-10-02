@@ -7,7 +7,7 @@
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Core/Math/StringHash.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
 #include "Game/Logics/GameEvent/GameEvents.h"
 #include "Game/Logics/Combat/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）

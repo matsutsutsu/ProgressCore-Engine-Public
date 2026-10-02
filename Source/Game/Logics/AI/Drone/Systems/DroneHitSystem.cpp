@@ -14,12 +14,16 @@ using namespace CCL::ECS;
 namespace
 {
     // このドローンが突撃中で危険か。
-    //   タメ(stateTimer>0)・発射待ち(fireDelay>0)は危険ではない。
-    //   陣形追従の突撃(縦割り等)は突入中ずっと危険、直進系はタメの後だけ危険。
+    //   - 発射待ち（fireDelay > 0）は危険ではない
+    //   - 陣形追従の突撃（縦割り・小隊など）は、突入中ずっと危険
+    //   - 直進系（弾幕）は、タメ（stateTimer > 0）が終わってからだけ危険
     //
-    // 硬直(Stunned)と離脱(Returning)は FireCharge ではないので、この1行で
-    // まとめて除外される。「突き抜けた後の帰り道は当たらない」は状態の分離から
-    // 自動的に出てくるもので、専用の判定は要らない。
+    // 硬直（Stunned）と離脱（Returning）は FireCharge ではないので、状態の1行でまとめて除外される。
+    // 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
+    //
+    // 吹き飛ばし中かは knockbackTimer を直接見る。
+    // 切り払い（L02_PostUpdate）は判断層（L02_PreUpdate）より後に書くので、切り払われたフレームは
+    // まだ状態が FireCharge のまま。ここで見れば同じフレームで判定が閉じる。
     bool IsDangerous(const DroneComponent &d)
     {
         if (d.knockbackTimer > 0.0f) return false;                  // 切り払いで吹き飛ばし中は無害
@@ -33,17 +37,25 @@ namespace
 
 void DroneHitSystem::Update(float /*dt*/)
 {
-    // ダメージの帰属先はボス。ドローン個体にしないのは、
-    //   ・撃破ログや被弾演出が「ボスにやられた」と読めること
-    //   ・自傷防止(ownerID == 被弾者)の判定が意味を持つこと
-    // の2つが理由。
+    // 処理フロー:
+    // 1. ダメージの帰属先（ボス）を決める
+    // 2. 陣形ごとの当たり方を引く準備をする
+    // 3. 機体ごとに判定を開け閉めし、当たり方を写す
+    // 4. デバッグ表示用の機数を残す
+
+    // --- 帰属先 ---
+
+    // ダメージの帰属先はボス。ドローン個体にしない理由は次の2つ。
+    //   - 撃破ログや被弾演出が「ボスにやられた」と読めること
+    //   - 自傷防止（ownerID == 被弾者）の判定が意味を持つこと
     EntityID owner = InvalidEntityID;
     if (m_world->HasResource<BattleContext>())
         owner = m_world->GetResource<BattleContext>().bossEntity;
 
-    // 陣形ごとの当たり方を引く。
-    //   仮想呼び出しは陣形の種類が変わったときだけにする（IFormation.h の方針）。
-    //   通常は全機が同じ陣形なので、1フレームあたり1回で済む。
+    // --- 当たり方のキャッシュ ---
+
+    // 陣形ごとの当たり方を引く仮想呼び出しは、陣形の種類が変わったときだけにする。
+    // 通常は全機が同じ陣形なので、1フレームあたり1回で済む。
     auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
 
     bool                                cacheValid = false;
@@ -61,6 +73,8 @@ void DroneHitSystem::Update(float /*dt*/)
         return cacheCombat;
     };
 
+    // --- 判定の開け閉め ---
+
     int droneCount    = 0;
     int activeCount   = 0;
     int stateCount[5] = {0, 0, 0, 0, 0};
@@ -75,9 +89,10 @@ void DroneHitSystem::Update(float /*dt*/)
         const bool dangerous = IsDangerous(drone);
 
         // 判定が開いた瞬間に多段ヒットの履歴を捨てる。
-        //   HitboxComponent は「1回の攻撃で同じ相手を二度叩かない」ために
-        //   命中済みの相手を覚える。捨てないと2回目の突撃が当たらなくなる。
-        //   剣は攻撃アニメの開始で捨てる。ドローンでは危険区間の立ち上がりがそれに当たる。
+        // HitboxComponent は「1回の攻撃で同じ相手を二度叩かない」ために命中済みの相手を覚えるので、
+        // 捨てないと2回目の突撃が当たらなくなる。
+
+        // 剣は攻撃アニメの開始で履歴を捨てる。ドローンでは危険区間の立ち上がりがそれに当たる。
         if (dangerous && !box.isActive) box.hitCount = 0;
 
         box.isActive = dangerous;
@@ -90,7 +105,7 @@ void DroneHitSystem::Update(float /*dt*/)
         if (!dangerous) return;
 
         // 痛さは陣形が持つ（IFormation::GetCombat）。
-        //   大技は痛く、牽制は軽い、という差をここで反映する。
+        // 大技は痛く、牽制は軽い、という差をここで反映する。
         const auto &combat  = combatOf(drone.currentFormation);
         box.damageAmount    = combat.damage;
         box.knockback       = combat.knockback;
@@ -100,6 +115,8 @@ void DroneHitSystem::Update(float /*dt*/)
 
         ++activeCount;
     });
+
+    // --- デバッグ表示 ---
 
     m_droneCount  = droneCount;
     m_activeCount = activeCount;

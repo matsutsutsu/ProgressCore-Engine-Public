@@ -76,6 +76,11 @@ namespace CCL::AI::Formation
 
     nlohmann::json FormationAssetIO::ToJson(const FormationAsset &a)
     {
+        // 処理フロー:
+        // 1. 全体・割付・形を書く
+        // 2. 動きの層を1枚ずつ書く
+        // 3. 配置・見せ方・当たり方を書く
+
         nlohmann::json j;
         WriteFields(j, Meta::RootFields(), &a);
         WriteFields(j["assign"], Meta::AssignFields(), &a.assign);
@@ -87,13 +92,16 @@ namespace CCL::AI::Formation
             nlohmann::json jl;
             WriteFields(jl, Meta::LayerFields(), &l);
 
-            // Shiver でしか意味を持たない値を他の層に書くと、「何の周波数だ」と読まれる。
+            // Shiver でしか意味を持たない値は、他の層には書かない。
+            // 書くと、ファイルを読んだ人に「何の周波数だ」と読まれる。
             if (l.type != LayerType::Shiver)
             {
                 jl.erase("frequency");
                 jl.erase("leadThreshold");
             }
-            // キーが無いカーブ＝既定の easeIn。空の CurveData を毎層に書くと JSON が膨らむ。
+
+            // キーが無いカーブは書かない（既定の easeIn として読まれる）。
+            // 空の CurveData を毎層に書くと JSON が膨らむ。
             if (!l.curve.empty())
             {
                 jl["curve"] = l.curve;
@@ -119,6 +127,11 @@ namespace CCL::AI::Formation
 
     void FormationAssetIO::FromJson(const nlohmann::json &j, FormationAsset &a)
     {
+        // 処理フロー:
+        // 1. 全体・割付・形を読む
+        // 2. 動きの層を1枚ずつ読む
+        // 3. 配置・見せ方・当たり方を読む
+
         // 入れ子が丸ごと無いファイルも読めるよう、無ければ空オブジェクト（＝全項目既定値）で回す。
         const nlohmann::json none = nlohmann::json::object();
 
@@ -146,14 +159,23 @@ namespace CCL::AI::Formation
     // ============================================================
     // 検証
     // ============================================================
-    // 直すのは「そのまま使うと座標が NaN / inf になる値」だけ。1000機を並列で回すので、
-    // NaN が1つ混ざると全機が消えて、原因のアセットまで辿り着けなくなる。
+
+    // 直すのは「そのまま使うと座標が NaN / inf になる値」と「形が永久に動かない値」だけ。
+    // 1000機を並列で回すので、NaN が1つ混ざると全機が消えて、原因のアセットまで辿り着けなくなる。
+
     // 見た目が変なだけの値（間隔0など）は作者の意図かもしれないので触らない。
 
     bool FormationAssetIO::Validate(FormationAsset &asset, const std::string &context)
     {
+        // 処理フロー:
+        // 1. 割付の値を直す
+        // 2. 攻撃と予告の長さを直す
+        // 3. 動きの層ごとに時間帯と震えの値を直す
+
         const char *ctx      = context.empty() ? asset.name.c_str() : context.c_str();
         bool        repaired = false;
+
+        // --- 割付 ---
 
         if (asset.assign.sideGroups < 1)
         {
@@ -179,6 +201,8 @@ namespace CCL::AI::Formation
             repaired          = true;
         }
 
+        // --- 攻撃と予告の長さ ---
+
         // 0以下だと attackProgress が進まず、形が永久に完成しない。
         // 「撃ったのに何も起きない」は原因が最も分かりにくい壊れ方なので必ず直す。
         if (asset.attackSeconds <= 0.0f)
@@ -190,7 +214,8 @@ namespace CCL::AI::Formation
             repaired            = true;
         }
 
-        // Shiver の時間帯を「予告の何割か」に直すときの割る数。0以下だと震えの位置が inf になる。
+        // Shiver の時間帯を「予告の何割か」に直すときの割る数。
+        // 0以下だと震えの位置が inf になる。
         if (asset.telegraphSeconds <= 0.0f)
         {
             CCL_LOG_ERROR(LogCategory::AI,
@@ -199,6 +224,8 @@ namespace CCL::AI::Formation
             asset.telegraphSeconds = 1.0f;
             repaired               = true;
         }
+
+        // --- 動きの層 ---
 
         for (size_t i = 0; i < asset.layers.size(); ++i)
         {
@@ -261,6 +288,12 @@ namespace CCL::AI::Formation
 
     bool FormationAssetIO::Load(const std::string &virtualPath, FormationAsset &outAsset)
     {
+        // 処理フロー:
+        // 1. ファイルを読む
+        // 2. JSON から組み立てる
+        // 3. 保存先を覚えさせる
+        // 4. 範囲外の値を直す
+
         const std::string text = FileSystem::ReadAllText(virtualPath);
         if (text.empty())
         {

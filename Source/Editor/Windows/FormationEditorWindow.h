@@ -18,7 +18,7 @@
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Utils/CurveEditorWidget.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
 #include <memory>
 #include <set>

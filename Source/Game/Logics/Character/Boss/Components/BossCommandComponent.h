@@ -11,7 +11,7 @@
 //       汎用のデータへ敵ごとの出力フィールドが増えていくため。
 // ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
-#include "Game/Logics/AI/Drone/DroneComponent.h"               // DroneFormationType
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"               // DroneFormationType
 
 struct BossCommandComponent
 {

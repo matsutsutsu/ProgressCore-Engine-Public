@@ -9,12 +9,16 @@
 //
 // 備考:
 //   状態はボスの指示で動く3つ（Idle / MoveToTarget / FireCharge）と、個体が自分で
-//   入る2つ（Stunned / Returning）。演出は上乗せで表現し、ステートにはしない。
+//   入る2つ（Stunned / Returning）。
+//
+//   ホバーの揺れや予告の震えなどの演出は上乗せで表現し、ステートにはしない。
+//
 //   補間係数は必ず (std::min)(k * dt, 1.0f) で止める。1 を超えると外挿になって
 //   目標を通り越す（globalScale を 1 より大きくできるので dt 側では保証されない）。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/TimeState.h"
 
@@ -91,33 +95,41 @@ private:
     //     |<------ DroneBrainSystem::kChargeWindup (0.4秒) ------>|
     //     |<-- 静止 (0.2秒) -->|<-- kWindupLungeTime (0.2秒) -->| 射出
     //
-    //   静止の長さは引き算で決まる。中央で一度止まることで「集まった」と「撃った」が
-    //   別々の出来事として読める。定速にすると速度の段差が2回でき、動きが途切れて見える。
+    //   静止の長さは、タメ全体から加速の長さを引いた残りで決まる。
+    //
+    //   中央で一度止まることで「集まった」と「撃った」が別々の出来事として読める。
+    //   定速にすると速度の段差が2回でき、動きが途切れて見える。
     static constexpr float kWindupLungeTime  = 0.2f;  // 加速にかける長さ [秒]
     static constexpr float kWindupLungeSpeed = 20.0f; // 加速の終速 [m/s]
 
-    // 陣形攻撃の予告（震え）。縦割りのように予備動作でほとんど動かない技は
-    // 動きで予告できないので、合図の前に震えを出す。弾幕はこれを使わない
-    // （動きで予告する技に足すと予告が二重になって読めなくなる）。
-    //   単位は m/s ではなく m。速度で揺らすと実際の幅が「振幅 ÷ 角速度」になる。
-    //   震え方は目で見ないと決まらないので定数にせず World リソースが持つ。
+    // 陣形攻撃の予告（震え）の調整値。Update の先頭で World リソースから写し取る。
+    //
+    // 縦割りのように予備動作でほとんど動かない技は、動きで予告できないので合図の前に震えを出す。
+    //
+    // 弾幕はこれを使わない。動きで予告する技に足すと、予告が二重になって読めなくなる。
+    //
+    // 振れ幅の単位は m/s ではなく m。速度で揺らすと、実際の幅が「振幅 ÷ 角速度」になる。
+    //
+    // 震え方は目で見ないと決まらないので、定数にせず World リソースが持つ。
     DroneShiverTuning m_shiver{};
 
     // 位相を機体ごとにずらす幅 [rad]。黄金角なので何機いても一様にばらける。
     static constexpr float kShiverPhaseStep = 2.39996323f;
 
-    // 突撃の速度倍率。実体が DroneComponent.h にあるのは弾幕の陣形も同じ値で
-    // 「飛翔時間 = 距離 ÷ 射出速度」を出すため。
-    //   上げすぎると擦り抜ける。1フレームの移動距離が当たり半径の2倍を超えると
-    //   跨いで通り過ぎる（半径2.5m・60fps なら 300 m/s が上限の目安）。
+    // 突撃の速度倍率。
+    // 実体が DroneTuning.h にあるのは、弾幕の陣形も同じ値で「飛翔時間 = 距離 ÷ 射出速度」を出すため。
+    //
+    // 上げすぎると擦り抜ける。1フレームの移動距離が当たり半径の2倍を超えると、
+    // 跨いで通り過ぎる（半径2.5m・60fps なら 300 m/s が上限の目安）。
     static constexpr float kChargeSpeedScale = kDroneChargeSpeedScale;
 
     // 剛体追従（縦割り・挟み込み等）の終わり際に残す惰性。
-    //   形が動いている間の速度をこの割合だけ currentVelocity へ残し、動き切ったあとは
-    //   Idle のバネへ渡す。ここが 0 だと刃や腕が閉じ切った瞬間に全機が空中で同時に
-    //   静止し、不自然に見える。
-    //   剛体そのものは壊れない（残した速度ぶんを座標から引いてから積分へ渡すので、
-    //   倍率をいくつにしても着地点は targetPosition ちょうどになる）。
+    // 形が動いている間の速度をこの割合だけ currentVelocity へ残し、動き切ったあとは Idle のバネへ渡す。
+    //
+    // ここが 0 だと、刃や腕が閉じ切った瞬間に全機が空中で同時に静止し、不自然に見える。
+    //
+    // 倍率をいくつにしても剛体そのものは壊れない。
+    // 残した速度ぶんを座標から引いてから積分へ渡すので、着地点は targetPosition ちょうどになる。
     static constexpr float kRigidFollowInertia = 0.35f;
 
     // 上で残す速度の上限（moveSpeed 倍）。腕の外側の機は回転半径ぶん速度が跳ね上がる

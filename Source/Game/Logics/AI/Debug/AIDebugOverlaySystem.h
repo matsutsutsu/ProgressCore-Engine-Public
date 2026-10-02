@@ -43,6 +43,10 @@ private:
     float m_fontSize    = 25.0f; // 文字の大きさ（ピクセル）
     float m_headOffsetY = 15.0f; // キャラの原点から頭上までのワールド Y オフセット（m）。体に重ならない高さにする
 
+    // プレイヤーとの距離 1m あたりに足す頭上の高さ（m）。文字の大きさは画面上で一定なのに、
+    // 遠いとボスは小さく映り、同じ高さだと文字の枠がボスに被る。離れるほど持ち上げてかわす。
+    float m_headOffsetPerMeter = 0.12f;
+
     // ボスとプレイヤーの距離。AIDebugSpatialSystem の照準線の中ほどに出るので、線と合わせて読める。
     bool  m_showDistance     = true;
     float m_distanceFontSize = 30.0f; // 戦闘中に一目で読めるよう、頭上の文字より少し大きくする

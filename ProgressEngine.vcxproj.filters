@@ -505,6 +505,12 @@
     <Filter Include="Source\Game\Logics\AI\Drone">
       <UniqueIdentifier>{1dcf7f43-80a3-4026-958c-8d279ef4bbb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Components">
+      <UniqueIdentifier>{bf0ec1e6-8d4b-418f-8ded-643834f583db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Systems">
+      <UniqueIdentifier>{2b6eeb49-e136-43e4-ba45-7eb93f93ada6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
@@ -1821,29 +1827,32 @@
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h">
       <Filter>Source\Game\Logics\AI\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneComponent.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneComponent.h">
+      <Filter>Source\Game\Logics\AI\Drone\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationType.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneFormationType.h">
+      <Filter>Source\Game\Logics\AI\Drone\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneTuning.h">
+      <Filter>Source\Game\Logics\AI\Drone\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneFormationSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\DroneHitSystem.h">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.h">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
@@ -2870,26 +2879,26 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneFormationSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneFormationSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneMovementSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneBrainSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Squad</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneManagerSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneCommandSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\DroneHitSystem.cpp">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\PhysicsLayers.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>

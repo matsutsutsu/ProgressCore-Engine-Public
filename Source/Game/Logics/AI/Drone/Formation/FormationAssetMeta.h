@@ -10,11 +10,14 @@
 //   FieldDescriptor は Engine の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
 //   インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれを読む。項目を増やす
 //   ときはここへ1行足せば、保存と UI の両方に反映される。
+//
 //   構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。入れ子の
 //   構造体は別の表として持ち、JSON もその単位で入れ子になる。
+//
 //   CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
 //   マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
 //   2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
+//
 //   表に載らないもの:
 //     FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
 //     FormationAsset::sourcePath … 保存も表示もしない

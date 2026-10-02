@@ -1,6 +1,6 @@
 #include "BossPhaseSystem.h"
 
-#include "Game/Logics/AI/Drone/DroneComponent.h" // DroneFormationType（ドローンへの指示）
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h" // DroneFormationType（ドローンへの指示）
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

@@ -152,8 +152,11 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         }
 
         // --- 頭上の文字 ---
+        //   離れるほど高く出す。距離は上の数字と同じ blackboard の値を使う（プレイヤーが居なければ足さない）。
+        const float headDistance = (battle && battle->HasPlayer()) ? bt->blackboard.distanceToTarget : 0.0f;
+
         Vector3 worldPos = trans->position;
-        worldPos.y += m_headOffsetY;
+        worldPos.y += m_headOffsetY + headDistance * m_headOffsetPerMeter;
 
         ImVec2 head;
         if (!WorldToScreen(worldPos, viewProj, rect, head)) continue; // 画面外・カメラ後方
@@ -226,6 +229,8 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::Checkbox("Show Floating Text", &m_enabled);
     ImGui::SliderFloat("Font Size", &m_fontSize, 10.0f, 100.0f);
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
+    ImGui::SliderFloat("距離1mあたりの追加の高さ", &m_headOffsetPerMeter, 0.0f, 0.5f);
+    ImGui::TextDisabled("プレイヤーから離れるほど頭上の表示を持ち上げ、遠くでボスに被らないようにする");
     ImGui::TextDisabled("ボス頭上に 形態/行動/HP・ドローン数 を常時表示");
 
     ImGui::Separator();

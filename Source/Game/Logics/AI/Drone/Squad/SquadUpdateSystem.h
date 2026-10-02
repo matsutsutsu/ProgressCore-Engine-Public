@@ -14,15 +14,17 @@
 //     DroneFormationSystem … アンカーを起点に各機の持ち場を出す
 //     DroneBrainSystem     … 個体が今どうすべきか決める
 //     DroneMovementSystem  … 実際に動かす
+//
 //   独立した System にしているのは、小隊が最大32個なのに対しドローンは1000機あるため。
 //   機体ごとのループで行うと同じ計算を5回繰り返し、同じ小隊へ並列に書き込むことになる。
+//
 //   単スレッドで回し、SquadState への書き込みはここだけに限る。
 // ===========================================================================
 #include <vector>
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"

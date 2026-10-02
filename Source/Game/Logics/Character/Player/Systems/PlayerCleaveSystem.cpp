@@ -9,7 +9,7 @@
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // ジャスト回避の画面演出をモノクロに使う
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"   // カメラへ寄りの要求を書く
 #include "Engine/Time/TimeService.h"                                 // 全体スローは Time:: の関数で操作する
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/GameEvent/GameEvents.h" // ジャスト回避成立でゲージを足す
 
 #include <DirectXMath.h>

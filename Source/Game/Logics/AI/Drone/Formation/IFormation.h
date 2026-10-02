@@ -7,12 +7,17 @@
 //   - 攻撃の寿命（ChargeLifecycle）・当たり方（FormationCombat）・予告の有無を陣形ごとに返す
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
-// 備考: 1陣形=1クラスにして switch を使わない。仮想関数をコンポーネントに持たせず、
-//       System が FormationRegistry から陣形を引いてからループを回すので、仮想呼び出しは
-//       陣形の種類ごとに1回で済み、数百機のループは連続アクセスのまま保てる。
+// 備考:
+//   1陣形=1クラスにして switch を使わない。
+//
+//   仮想関数はコンポーネントに持たせない。DroneComponent は数値だけの配列のまま保ち、
+//   陣形は FormationRegistry から種類で引く。数百機のループは連続アクセスのまま回る。
+//
+//   呼び出しの回数は System ごとに違う。DroneCommandSystem と DroneHitSystem は種類ごとに1回だけ引く。
+//   DroneFormationSystem は機体ごとに呼ぶが、全機がほぼ同じ陣形なので分岐予測が当たる。
 // ===========================================================================
 #include "SimpleMath.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
 // 小隊陣形だけが使う。前方宣言で足りるので、既存の陣形は小隊の実装に引きずられない。
 struct SquadRegistry;
@@ -36,9 +41,10 @@ namespace CCL::AI::Formation
         float                        dt             = 0.0f; // このフレームの経過時間 [秒]（攻撃の進行度に使う）
 
         // 「撃つと決めた瞬間」に固定した狙いの向き（水平・正規化済み）と、それが有効か。
-        //   毎フレーム取り直すと技の発生後も形ごとプレイヤーを追い、横へ回り込んでも
-        //   刃が一緒に回ってきて当たる。固定するのは DroneFormationSystem で、信号の
-        //   立ち上がりに1回だけ書き、信号が下りたら解除する。
+        //
+        // 毎フレーム取り直すと、技の発生後も形ごとプレイヤーを追い、横へ回り込んでも刃が一緒に回ってきて当たる。
+        //
+        // 固定するのは DroneFormationSystem。信号の立ち上がりに1回だけ書き、信号が下りたら解除する。
         DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ;
         bool                         aimLocked = false;
 
@@ -71,17 +77,18 @@ namespace CCL::AI::Formation
     // という対比が作れない。
     struct FormationCombat
     {
-        // ※ 現在このフィールドは誰も読んでいない。実際の接触半径はプレハブの
-        //    Jolt Sphere Collider が持つ（Drone.json の radius）。技ごとに変えたいなら
-        //    DroneHitSystem から JoltSphereColliderComponent へ書く配線が要る。
+        // 現在このフィールドは誰も読んでいない。
+        // 実際の接触半径はプレハブの Jolt Sphere Collider が持つ（Drone.json の radius）。
+        //
+        // 技ごとに変えたいなら、DroneHitSystem から JoltSphereColliderComponent へ書く配線が要る。
         float hitRadius       = 2.5f;  // ドローンとプレイヤーの接触半径 [m]
         float damage          = 8.0f;  // 1ヒットの基礎ダメージ
         float knockback       = 12.0f; // ノックバック強さ（0で無効）
         float hitStopDuration = 0.05f; // 命中時のヒットストップ [秒]
         float hitStopScale    = 0.0f;  // ヒットストップ中のタイムスケール（0=完全停止）
 
-        /// 同じ機体が同じ相手にもう一度当たるまでの間隔 [秒]。負なら突撃1回につき1ヒット。
-        /// 既定を負にするのは、縦割りのように形ごと通過する技が、重なっている間ずっと当たり続けないため
+        // 同じ機体が同じ相手にもう一度当たるまでの間隔 [秒]。負なら突撃1回につき1ヒット。
+        // 既定を負にするのは、縦割りのように形ごと通過する技が、重なっている間ずっと当たり続けないため。
         float rehitInterval = -1.0f;
     };
 
@@ -105,14 +112,19 @@ namespace CCL::AI::Formation
         virtual bool UsesShiverTelegraph() const { return true; }
 
         // 持ち場がボスに付いて動くか。true なら、ボスの速度を先渡しの速度（followFeedForward）として
-        // 乗せ、バネには持ち場からのずれだけを直させる。乗せないと、ボスが突進や跳躍で速く動いたとき
-        // バネの上限の速さでしか追えず、動き終わった後にのろのろと付いてくる。
+        // 乗せ、バネには持ち場からのずれだけを直させる。
+        //
+        // 乗せないと、ボスが突進や跳躍で速く動いたときにバネの上限の速さでしか追えず、
+        // 動き終わった後にのろのろと付いてくる。
+        //
         // false にするのは、ボス以外を基準に動く陣形（小隊は先頭機を基準にする）。
         virtual bool FollowsBoss() const { return true; }
 
         // 跳躍・滞空で浮いている間も、ボスの実際の高さを陣形の中心にするか。
-        // 既定の false は「中心を地面の高さに残す」。地面を薙ぐ技が、ボスが浮いた瞬間に
-        // プレイヤーの頭上を素通りしないようにするため。
+        //
+        // 既定の false は「中心を地面の高さに残す」。
+        // 地面を薙ぐ技が、ボスが浮いた瞬間にプレイヤーの頭上を素通りしないようにするため。
+        //
         // true にするのは、ボスの周りに付いて回るだけの隊形（頭上円陣など）。
         virtual bool FollowsBossHeight() const { return false; }
 

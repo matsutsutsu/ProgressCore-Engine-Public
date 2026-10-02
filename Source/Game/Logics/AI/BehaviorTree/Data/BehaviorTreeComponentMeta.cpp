@@ -1,7 +1,7 @@
 // 汎用 AI の Component（BehaviorTree / Drone）のエディタ・シリアライズ用のメタ定義。
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include <array>
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

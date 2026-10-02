@@ -15,7 +15,7 @@
 
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionList.h"      // 語彙の表（編集するのはこちら）
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"  // ActionID
-#include "Game/Logics/AI/Drone/DroneFormationType.h"            // 技IDから陣形を引くため
+#include "Game/Logics/AI/Drone/Components/DroneFormationType.h"            // 技IDから陣形を引くため
 
 // ============================================================
 // ID 定数

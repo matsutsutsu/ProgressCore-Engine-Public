@@ -112,7 +112,7 @@ namespace CCL::AI::Formation
         float duration = 1.0f;
 
         PhaseSource phaseSource  = PhaseSource::None;
-        bool        phaseReverse = false; // ずらす向きを逆にする（端から／中央から）
+        bool        phaseReverse = false; // ずらす向きを逆にする（反対の端から始める）
 
         // 進行度 → 変換量の効き方。キーが無ければ p*p（easeIn）。
         // 「溜めてから一気に」のような緩急はここで作る。
@@ -121,13 +121,17 @@ namespace CCL::AI::Formation
         bool mirror = false; // 側グループごとに from/to の符号を反転する
 
         // Shiver 専用
-        float frequency     = 10.0f; // 震えの速さ [Hz]
+        // frequency は sin の角速度としてそのまま使う（2π を掛けない）ので、単位は [rad/s]。
+        // エディタの表示は「[Hz]」のままなので、10 は約 1.6 回/秒になる。
+        float frequency     = 10.0f; // 震えの速さ [rad/s]
         float leadThreshold = 0.18f; // ずらし順がこれ以下の席（先に動く側）だけを震わせる。1 なら全席
     };
 
     // (4) 配置: ボスからのオフセット [m]
-    //   レイヤーの回転はローカル原点まわりなので、ここが「回転軸の位置」になる。
-    //   回す量(layer)と軸の位置(origin)が別々なので、片方だけ調整できる。
+    //
+    // レイヤーの回転はローカル原点まわりなので、ここが「回転軸の位置」になる。
+    //
+    // 回す量（layer）と軸の位置（origin）が別々なので、片方だけ調整できる。
     struct FormationOrigin
     {
         float forward = 0.0f;

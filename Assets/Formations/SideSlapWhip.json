@@ -1,7 +1,7 @@
 {
   "assign": {
     "fillOrder": "RowFirst",
-    "rows": 3,
+    "rows": 8,
     "sideGroups": 1,
     "split": "Block",
     "tierGroups": 1
@@ -23,11 +23,11 @@
   ],
   "layout": {
     "baseA": 4.0,
-    "baseB": 1.5,
+    "baseB": 2.0,
     "centerColumns": false,
     "columnAxis": "Forward",
-    "spacingA": 2.0,
-    "spacingB": 1.5,
+    "spacingA": 3.5,
+    "spacingB": 3.0,
     "tierStepB": 0.0
   },
   "name": "横なぎ回転",
@@ -44,7 +44,8 @@
       "hitRadius": 2.5,
       "hitStopDuration": 0.05,
       "hitStopScale": 0.0,
-      "knockback": 12.0
+      "knockback": 12.0,
+      "rehitInterval": -1.0
     },
     "look": "Auto",
     "useShiverTelegraph": true

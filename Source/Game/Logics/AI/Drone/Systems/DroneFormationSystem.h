@@ -9,15 +9,18 @@
 //   - 陣形の Calculate を呼び、予告の溜め（windupTimer / telegraphTime）を進める
 //   - ボスに付いていく陣形には、ボスの速度を先渡しの速度（followFeedForward）として配る
 //
-// 備考: 実際に動かすのは DroneMovementSystem。仮想呼び出しは陣形を引くときだけで、
-//       ドローンのループ自体は連続アクセスのまま回す。
+// 備考:
+//   実際に動かすのは DroneMovementSystem。
+//
+//   陣形の仮想関数は機体ごとに呼ぶ。全機がほぼ同じ陣形なので分岐予測が当たり、コストは小さい。
+//   ドローンのループ自体は DroneComponent の配列を連続アクセスのまま回す。
 // ===========================================================================
 #include <vector>
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
@@ -25,7 +28,7 @@
 class DroneFormationSystem : public CCL::ECS::IfSystem<DroneFormationSystem,
                                                        CCL::ECS::Write<DroneComponent>>
 {
-    using Base = CCL::ECS::IfSystem<DroneFormationSystem, CCL::ECS::Write<DroneComponent>>;
+    using Filter = CCL::ECS::IfSystem<DroneFormationSystem, CCL::ECS::Write<DroneComponent>>;
 
 public:
     DroneFormationSystem() : IfSystem("DroneFormationSystem") {}
@@ -45,7 +48,7 @@ public:
     // （テンプレート引数には足せない。ForEach の絞り込みまで変わってしまう）。
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
-        auto types = Base::GetReadTypes();
+        auto types = Filter::GetReadTypes();
         types.push_back(CCL::ECS::TypeInfo<BossCommandComponent>::ID());
         types.push_back(CCL::ECS::TypeInfo<BossActionComponent>::ID()); // 浮いているかを見る
         types.push_back(CCL::ECS::TypeInfo<TransformComponent>::ID());

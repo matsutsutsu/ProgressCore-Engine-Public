@@ -2,7 +2,7 @@
 //
 // 狙う相手はここに持たない。AIBlackboard::targetEntity（BossPerceptionSystem が毎フレーム決める）が持つ。
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h" // kDroneFormationNames
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h" // kDroneFormationNames
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

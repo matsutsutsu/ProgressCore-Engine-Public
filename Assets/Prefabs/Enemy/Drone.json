@@ -3,7 +3,7 @@
         {
             "components": {
                 "DroneComponent": {
-                    "moveSpeed": 30.0,
+                    "moveSpeed": 80.0,
                     "orbitRadius": 8.0,
                     "ownerBossId": 3
                 },
@@ -38,9 +38,9 @@
                         -0.8094090819358826
                     ],
                     "scale": [
-                        1.0,
-                        1.0,
-                        1.0
+                        1.2,
+                        1.2,
+                        1.2
                     ]
                 },
                 "Jolt Sphere Collider": {

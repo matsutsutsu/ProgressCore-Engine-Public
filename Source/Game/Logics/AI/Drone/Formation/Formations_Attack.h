@@ -10,9 +10,11 @@
 //   発射の順番(fireDelay)を持ち、撃つ瞬間まで先読みで狙い直し、撃った後は各機が
 //   独立して攻撃を終える。データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、
 //   この3つはどれも表せない。
+//
 //   縦割り・挟み込み・横なぎ・波状縦割りは Assets/Formations/*.json にある
 //   （Formations_DataDriven.h が解釈する）。
 // ===========================================================================
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 射出速度（kDroneChargeSpeedScale）
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
@@ -24,7 +26,7 @@ namespace CCL::AI::Formation::Attack
     // 弾幕（KamikazeSwarm）。求める回避はジャスト回避。
     // 頭上の輪を回したまま1機ずつ中心へ降り、そこからプレイヤーへ高速で撃ち出す。
     //   輪の上で待つ → 自分の番の kGatherTime 秒前に中心へ寄る（これが予告）
-    //   → fireDelay が 0 で発射（以降は直進）
+    //   → fireDelay が 0 になったら中心でタメ → 発射（以降は直進）
     //
     // 置き技（縦割り・挟み込み）と違い、発射の瞬間まで1機ずつ今のプレイヤーを狙い続ける。
     // 撃ち出した後は直進するので、そこで避ける余地が残る。
@@ -40,9 +42,19 @@ namespace CCL::AI::Formation::Attack
         {
             using namespace DirectX::SimpleMath;
 
-            // 陣形が持ち場を書かなくなるのは「飛び出した後」だけ。順番待ちも中央でのタメもまだ撃って
-            // いないので狙いを更新し続ける（stateTimer を見落とすと着弾の 0.5 秒以上前の
-            // 座標を撃つことになり、歩いているだけで当たらなくなる）。
+            // 処理フロー:
+            // 1. 飛び出した後の機には何も書かない
+            // 2. 持ち場を決める（輪の席から発射地点へ寄せる）
+            // 3. 偏差込みで狙いを決める
+            // 4. 攻撃に入る前だけ発射順を配る
+
+            // --- 飛び出した後 ---
+
+            // 陣形が持ち場を書かなくなるのは「飛び出した後」だけ。
+            // 順番待ちも中央でのタメもまだ撃っていないので、狙いを更新し続ける。
+
+            // 判定に stateTimer（タメ）を含めること。
+            // 見落とすと着弾の 0.5 秒以上前の座標を撃つことになり、歩いているだけで当たらなくなる。
             const bool launched = (drone.currentState == DroneState::FireCharge) &&
                                   (drone.fireDelay <= 0.0f) && (drone.stateTimer <= 0.0f);
             if (launched) return;
@@ -51,8 +63,10 @@ namespace CCL::AI::Formation::Attack
 
             const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
 
-            // 待機位置は頭上円陣と同じ輪。回転位相まで共有するので、BT が
-            // 頭上円陣 → 弾幕 と切り替えてもドローンは動かない。
+            // --- 持ち場 ---
+
+            // 待機位置は頭上円陣と同じ輪。
+            // 回転位相まで共有するので、BT が 頭上円陣 → 弾幕 と切り替えてもドローンは動かない。
             const Vector3 slot = ctx.bossPos + Basic::HighRing::SlotOffset(
                                                    drone.localIndex, drone.totalDrones, ctx.time);
 
@@ -60,13 +74,15 @@ namespace CCL::AI::Formation::Attack
             const Vector3 muzzle =
                 ctx.bossPos + Vector3::UnitY * (Basic::HighRing::kHeight - kGatherDrop);
 
-            // 自分の番が近づくほど中心へ寄る。二乗で寄せるのは、序盤をほぼ動かさず
-            // 直前に素早く中心へ寄る形にするため（線形だといつ撃つのか読めない）。
+            // 自分の番が近づくほど中心へ寄る。
+
+            // 寄せ方は二乗にする。
+            // 序盤をほぼ動かさず、直前に素早く中心へ寄る形にするため（線形だといつ撃つのか読めない）。
             float gather = 0.0f;
             if (drone.currentState == DroneState::FireCharge && drone.fireDelay <= 0.0f)
             {
-                // 中央でのタメ中は持ち場を発射地点のままにする。輪へ戻すと下の飛翔時間が
-                // 「輪から撃つ」前提になり、実際の発射地点とずれた先読みになる。
+                // 中央でのタメ中は持ち場を発射地点のままにする。
+                // 輪へ戻すと下の飛翔時間が「輪から撃つ」前提になり、実際の発射地点とずれた先読みになる。
                 gather = 1.0f;
             }
             else if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
@@ -77,8 +93,11 @@ namespace CCL::AI::Formation::Attack
 
             drone.targetPosition = Vector3::Lerp(slot, muzzle, gather);
 
-            // 偏差射撃。今いる場所を撃つと飛翔時間ぶん必ず後ろへ外れるので、
-            // 狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度) を解く。
+            // --- 狙い ---
+
+            // 偏差射撃。今いる場所を撃つと、飛翔時間ぶん必ず後ろへ外れる。
+            // そのため 狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度) を解く。
+
             // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる。
             const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
             const float windupLeft  = (drone.stateTimer > 0.0f) ? drone.stateTimer : 0.0f;
@@ -105,8 +124,12 @@ namespace CCL::AI::Formation::Attack
             drone.fireDirection       = toAim;
             drone.targetLookDirection = toAim;
 
-            // 発射順（先頭ほど早い）。撃つ合図が出た後に書き直すと順番がリセットされ続けて
-            // 永久に撃てなくなるので、まだ攻撃に入っていない間だけ割り振る。
+            // --- 発射順 ---
+
+            // 発射順は先頭（localIndex が小さい機）ほど早い。
+
+            // まだ攻撃に入っていない間だけ割り振る。
+            // 撃つ合図が出た後に書き直すと、順番がリセットされ続けて永久に撃てなくなる。
             if (drone.currentState != DroneState::FireCharge)
             {
                 drone.fireDelay =

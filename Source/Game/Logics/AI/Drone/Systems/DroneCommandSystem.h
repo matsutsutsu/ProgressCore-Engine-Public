@@ -13,7 +13,7 @@
 #include <vector>
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 class DroneCommandSystem : public CCL::ECS::IfSystem<DroneCommandSystem,
@@ -22,10 +22,7 @@ class DroneCommandSystem : public CCL::ECS::IfSystem<DroneCommandSystem,
     using Base = CCL::ECS::IfSystem<DroneCommandSystem, CCL::ECS::Write<DroneComponent>>;
 
 public:
-    DroneCommandSystem()
-        : IfSystem("DroneCommandSystem")
-    {
-    }
+    DroneCommandSystem() : IfSystem("DroneCommandSystem") {}
 
     // BossCommandComponent はテンプレート引数に足せない。Read<>/Write<> は ForEach の
     // 絞り込み条件も兼ねるので、足すとドローンが1機も回らなくなる。申告だけを足す。

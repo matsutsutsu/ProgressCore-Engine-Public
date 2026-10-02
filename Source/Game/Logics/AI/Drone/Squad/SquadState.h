@@ -9,6 +9,7 @@
 //
 // 備考:
 //   書き手は SquadUpdateSystem（単スレッド）だけで、陣形・移動の並列ループからは読むだけ。
+//
 //   実体のリーダー機を持たない。先頭の個体をリーダーにすると、撃破された瞬間に小隊が
 //   崩れ、追従機がリーダーの Transform を毎フレーム参照することになる。先頭の位置を
 //   データ（アンカー: anchorPos）として持てば、先頭機が落ちても隊列は保たれる。
@@ -16,7 +17,8 @@
 #include <array>
 #include <cstdint>
 #include "SimpleMath.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // kDroneGroundY
 
 // 小隊の高度制限の基準。床の高さを変えたときに小隊だけ取り残されないよう共有する。
 inline constexpr float kSquadGroundY = kDroneGroundY;

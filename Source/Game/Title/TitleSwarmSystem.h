@@ -17,7 +17,7 @@
 //       TitleScene だけが登録する（REGISTER_* はしない）。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
 #include <SimpleMath.h>
 #include <cstdint>

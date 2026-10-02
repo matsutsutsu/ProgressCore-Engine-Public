@@ -14,7 +14,7 @@
 #include <array>
 #include <memory>
 
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "IFormation.h"
 
 namespace CCL::AI::Formation

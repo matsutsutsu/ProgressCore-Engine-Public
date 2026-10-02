@@ -9,14 +9,16 @@
 //
 // 備考:
 //   補間や速度計算は行わない（DroneMovementSystem が担う）。
+//
 //   BT を使わないのは、状態が固定で木構造にする利点が無く、ノード評価ごとの
 //   GetComponent<> で 1000機×毎フレームの連続アクセスが崩れるため。ボス1体のように
 //   判断が複雑で調整したい場合とは、コストの傾向が逆になる。
+//
 //   実行は L02_PreUpdate。陣形側(L02_Update)が今フレームの currentState を見て
 //   形を作れるようにする。ステージを動かすと予備動作→突撃が1フレームずれる。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/TimeState.h"
 #include <SimpleMath.h>

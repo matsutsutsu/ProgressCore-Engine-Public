@@ -10,18 +10,15 @@
 //
 // 備考:
 //   陣形計算は DroneFormationSystem、個体の判断は DroneBrainSystem が担う。
+//
 //   droneAliveCount は「ドローン数 = ボスHP」という構想のための値だが、現時点で
 //   読むのはデバッグ表示だけで、BT の条件にも他の System にも繋がっていない。
 //   ドローンを減らす経路も無い（Drone_Guide.md §9）ので、値は常に初期配備数のまま。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/AI/Drone/DroneComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
-namespace CCL::ECS
-{
-    class World;
-}
+namespace CCL::ECS { class World;}
 
 // DroneComponent が Write なのは、Update の初回配備（TryAutoSpawnInitial → SpawnDrones）が
 // 生成した機の DroneComponent と、ReindexAllDrones で全機の通し番号・小隊を書き換えるため。
@@ -29,10 +26,7 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
                                                      CCL::ECS::Write<DroneComponent>>
 {
 public:
-    DroneManagerSystem()
-        : IfSystem("DroneManagerSystem")
-    {
-    }
+    DroneManagerSystem() : IfSystem("DroneManagerSystem") {}
 
     // 同じ L02_Update に居る他のドローン系との前後を宣言する。
     //   スポーン時に ReindexAllDrones() が localIndex / totalDrones / squadId /
@@ -92,10 +86,23 @@ private:
     // シーン内の最初のボス（BossCommandComponent と TransformComponent を持つ）を探す。
     CCL::ECS::EntityID FindBoss() const;
 
+    // ---- OnGui の各欄（画面の上から順） ----
+
+    void DrawAutoSpawn();      // 初回配備の設定
+    void DrawSpawnSettings();  // 生成数と生存数
+    void DrawAttackPipeline(); // ボスの指示と、個体がそれに追いつけているかの集計
+    void DrawSpawnButtons();   // 生成・破壊
+    void DrawArrivalDebug();   // 到着ラッチの操作
+
     // 陣形テスト UI。BT を組まずに、選んだ陣形の「形成 → 撃つ → 戻す」を手で送る。
     //   一覧に出すのは FormationRegistry に実装がある陣形だけ。enum には実装の無い枠
     //   （データの空き枠・欠番）が含まれていて、それを選ぶと静止するだけになる。
     void DrawFormationTest();
+
+    void DrawIndividualTest(); // 個別に帰投する行動（弾幕・小隊）のテスト
+    void DrawShiverTuning();   // 予告の震えの調整
+    void DrawSquadTuning();    // 小隊の調整
+    void DrawSquadList();      // 生きている小隊の一覧
 
     // ボスへ直接命令を入れる。BT が上書きするので、確認は BT を止めてから行う。
     void SetBossCommand(DroneFormationType formation, bool attack);
