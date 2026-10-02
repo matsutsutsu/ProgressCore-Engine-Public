@@ -85,7 +85,7 @@ enum class AnimEventType : uint8_t
     Trail,        // 武器の軌跡エフェクトの ON/OFF（区間）
     ComboWindow,  // コンボの先行入力の受付区間。stringParam=受付名
     CancelWindow, // 行動キャンセルの受付区間。stringParam=受付名
-    Particle,     // GPU パーティクルの発生の ON/OFF（区間。剣にまとう演出等）。stringParam=タグ
+    // 8 は Particle（武器に置いたエミッタの ON/OFF）だった。Effect の「基準＝武器」で代わりができるので削除した
 
     Count
 };
@@ -123,7 +123,15 @@ struct AnimNotifyEvent
 
     // エフェクトのパラメータ（Effect 用）
     float effectScale  = 1.0f;  // 大きさの倍率（粒子の大きさ・発生範囲・速度にまとめて掛かる）
-    bool  effectFollow = false; // 持ち主（キャラ）に追従するか
+    bool  effectFollow = false; // 基準（キャラ or 武器）に追従するか
+
+    // 基準にする武器のタグ（Effect 用。CombatRoster で引く）。空ならキャラが基準。
+    //   stringParam はプレハブのパスに使っているので別に持つ
+    std::string effectAttachTag;
+
+    // 効果音のパラメータ（Sound 用）
+    float soundVolume = 1.0f; // 音量の倍率（1 で等倍、0 で無音）
+    float soundPitch  = 0.0f; // ピッチ（オクターブ単位。0 で等倍、±1 で 1 オクターブ上下）
 
     // stringParam のハッシュ（HitBox のみ。JSON には保存しない）。
     //   毎フレームのハッシュ計算を避けるため ResourceManager::LoadAnimSequence が計算する。
@@ -158,7 +166,7 @@ using json = nlohmann::json;
 inline void to_json(json &j, const AnimNotifyEvent &e)
 {
     j = json{
-        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"hitboxFollow", e.hitboxFollow}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}};
+        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"hitboxFollow", e.hitboxFollow}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}, {"effectAttachTag", e.effectAttachTag}, {"soundVolume", e.soundVolume}, {"soundPitch", e.soundPitch}};
 
     // Vector3 は初期化子リストの中では変換できない（ADL で解決されない）ので、後から代入する
     j["offset"] = e.offset;
@@ -180,6 +188,9 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
     e.hitboxFollow = j.value("hitboxFollow", false);
     e.effectScale  = j.value("effectScale", 1.0f);
     e.effectFollow = j.value("effectFollow", false);
+    e.effectAttachTag = j.value("effectAttachTag", std::string{});
+    e.soundVolume  = j.value("soundVolume", 1.0f);
+    e.soundPitch   = j.value("soundPitch", 0.0f);
 }
 
 // AnimSequence ⇔ json

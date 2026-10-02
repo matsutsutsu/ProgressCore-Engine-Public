@@ -59,8 +59,15 @@ public:
     // 距離減衰なしで再生する（UI・システム音）
     virtual void PlayOneShot(uint32_t eventHash) = 0;
 
-    // ワールド座標で再生する。発音位置はその瞬間に固定され、以降は追従しない
-    virtual void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) = 0;
+    /**
+     * @brief ワールド座標で再生する。発音位置はその瞬間に固定され、以降は追従しない。
+     * @param volume 音量の倍率（1 で等倍、0 で無音）
+     * @param pitch  ピッチ（オクターブ単位。0 で等倍、±1 で 1 オクターブ上下）。スロー演出の分はこれに足される
+     */
+    virtual void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position, float volume, float pitch) = 0;
+
+    // 音量・ピッチを変えずにワールド座標で再生する
+    void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) { PlayOneShot3D(eventHash, position, 1.0f, 0.0f); }
 
     // ===========================================================================
     // 継続再生（後から制御する音）

@@ -8,6 +8,8 @@
 //
 // 備考: キャラのルートに付ける。std::map ではなく固定長の配列にして POD にし、チャンクに直接置けるようにする。
 //       AnimationSequencerWindow は、このタグの一覧を HitBox 区間の武器の選択肢に使う。
+//       VFXSystem は、Effect イベントの基準にする武器をこのタグで引く（そのため Engine 側に置く）。
+//       シリアライズとインスペクタの定義は Game 側の CombatComponentsMeta.cpp にある。
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <cstring>

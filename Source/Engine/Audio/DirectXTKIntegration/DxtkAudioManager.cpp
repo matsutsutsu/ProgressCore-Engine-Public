@@ -407,7 +407,7 @@ void DxtkAudioManager::PlayOneShot(uint32_t eventHash)
         sfx->Play(); // 2D ワンショットは DXTK がボイスをプールして自動で回収する
 }
 
-void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position)
+void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position, float volume, float pitch)
 {
     if (!m_impl->ready) return;
     std::lock_guard<std::mutex> lk(m_impl->mtx);
@@ -416,12 +416,14 @@ void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3
     if (!sfx) return;
 
     Impl::Playing p;
-    p.is3D = true;
-    p.inst = sfx->CreateInstance(SoundEffectInstance_Use3D);
+    p.is3D      = true;
+    p.userPitch = Clamp(pitch, -1.0f, 1.0f); // Update() でもスロー分と足して掛け直すので、ここで持たせる
+    p.inst      = sfx->CreateInstance(SoundEffectInstance_Use3D);
     if (!p.inst) return;
 
     p.emitter.SetPosition(position);
     p.inst->Apply3D(m_impl->listener, p.emitter, /*rhcoords*/ false);
+    p.inst->SetVolume((std::max)(volume, 0.0f));
     m_impl->ApplyPitch(p, -kSlowMaxPitch * m_impl->slow);
     p.inst->Play(false); // ループしない。終了後は Update() で回収する
     m_impl->oneShot3D.push_back(std::move(p));

@@ -7,7 +7,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/Animation/Components/CombatRosterComponent.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"      // SpawnHitbox の判定球のプレビュー
 #include "Engine/Audio/IAudioAPI.h"                       // Sound イベントの音名一覧
@@ -136,7 +136,7 @@ public:
     {
         static const char *names[] = {
             "HitBox", "Sound", "Effect", "Blackboard",
-            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow", "Particle"};
+            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow"};
         if (typeIndex < 0 || typeIndex >= (int)AnimEventType::Count)
             return "Unknown";
         return names[typeIndex];
@@ -174,9 +174,6 @@ public:
             break;
         case AnimEventType::Trail:
             snprintf(buf, sizeof(buf), "Trail: %s", ev.stringParam.c_str());
-            break;
-        case AnimEventType::Particle:
-            snprintf(buf, sizeof(buf), "Particle: %s", ev.stringParam.c_str());
             break;
         case AnimEventType::ComboWindow:
             snprintf(buf, sizeof(buf), "Combo: %s", ev.stringParam.c_str());
@@ -224,9 +221,8 @@ public:
             {
                 static const unsigned int colors[] = {
                     0xFF323296, 0xFF329632, 0xFF969632, 0xFF963296,
-                    0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050,
-                    0xFFC86432}; // Particle: 橙(まとい)
-                *color = colors[(int)m_seq->events[evIdx].type % 9];
+                    0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050};
+                *color = colors[(int)m_seq->events[evIdx].type % 8];
             }
         }
     }
@@ -245,8 +241,6 @@ public:
         if (type == (int)AnimEventType::HitBox)
             ev.stringParam = "Weapon_R";
         if (type == (int)AnimEventType::Trail)
-            ev.stringParam = "Weapon_R";
-        if (type == (int)AnimEventType::Particle)
             ev.stringParam = "Weapon_R";
 
         m_seq->events.push_back(ev);
@@ -775,9 +769,6 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     if (ImGui::Button("+ Trail"))
         AddEvt(AnimEventType::Trail);
     ImGui::SameLine();
-    if (ImGui::Button("+ Particle"))
-        AddEvt(AnimEventType::Particle);
-    ImGui::SameLine();
     if (ImGui::Button("+ Sound"))
         AddEvt(AnimEventType::Sound);
     ImGui::SameLine();
@@ -1090,20 +1081,19 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::Spacing();
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;
-        case AnimEventType::Particle:
-            ImGui::TextColored(ImVec4(0.85f, 0.5f, 0.25f, 1), "GPU Particle (まとい)");
-            drawWeaponTagPicker(e, ch);
-            ImGui::Spacing();
-            ImGui::TextDisabled("この区間中、対象エミッタの GPU Particle が emitting=ON になります。");
-            ImGui::TextDisabled("(エミッタ側で Anim Controlled を ON にし、剣ボーンに子付けしておくこと)。");
-            ImGui::TextDisabled("粒子の見た目・力場は GPU Particle Emitter コンポーネントで調整します。");
-            ImGui::Spacing();
-            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
-            break;
         case AnimEventType::Sound:
             ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Sound (効果音)");
             if (DrawSoundPicker(context, e))
                 ch = true;
+            if (ImGui::SliderFloat("音量", &e.soundVolume, 0.0f, 2.0f, "%.2f x"))
+                ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("1 で等倍、0 で無音。Ctrl+クリックで数値入力");
+            if (ImGui::SliderFloat("ピッチ", &e.soundPitch, -1.0f, 1.0f, "%.2f oct"))
+                ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("オクターブ単位。0 で等倍、+1 で 1 オクターブ上、-1 で 1 オクターブ下\n"
+                                  "スロー演出中は、これにさらにスロー分の低下が足されます");
             ImGui::Spacing();
             ImGui::TextDisabled("開始時刻に、キャラの位置で 3D のワンショットとして鳴らします。");
             ImGui::TextDisabled("区間の長さは使いません。");
@@ -1112,19 +1102,54 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "VFX (パーティクル)");
             if (DrawVfxPrefabPicker(e))
                 ch = true;
+
+            // 基準（キャラ or 武器）。武器の候補は選択中のキャラの CombatRoster から出す
+            {
+                auto       *roster  = context.world->GetComponent<CombatRosterComponent>(context.selectedEntity);
+                const char *preview = e.effectAttachTag.empty() ? "キャラ" : e.effectAttachTag.c_str();
+                if (ImGui::BeginCombo("基準", preview))
+                {
+                    if (ImGui::Selectable("キャラ", e.effectAttachTag.empty()))
+                    {
+                        e.effectAttachTag.clear();
+                        ch = true;
+                    }
+                    if (roster && roster->count > 0)
+                    {
+                        for (int i = 0; i < roster->count; ++i)
+                        {
+                            const bool sel = (e.effectAttachTag == roster->entries[i].tag);
+                            if (ImGui::Selectable(roster->entries[i].tag, sel))
+                            {
+                                e.effectAttachTag = roster->entries[i].tag;
+                                ch                = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ImGui::TextDisabled("CombatRoster が無いので武器は選べません");
+                    }
+                    ImGui::EndCombo();
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("VFX を出す位置・向きの基準と、追従するときの親\n"
+                                      "武器を選ぶと、剣にまとうオーラなどを剣に沿って出せます");
+            }
+
             if (ImGui::DragFloat3("Offset", &e.offset.x, 0.05f))
                 ch = true;
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("キャラのローカル座標（Z+ が前方）。メートル単位で、キャラの scale は掛かりません");
+                ImGui::SetTooltip("基準のローカル座標（キャラなら Z+ が前方）。メートル単位で、基準の scale は掛かりません");
             if (ImGui::DragFloat("Scale", &e.effectScale, 0.05f, 0.01f, 100.0f, "%.2f x"))
                 ch = true;
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("粒子の大きさ・発生範囲・速度をまとめて拡大縮小します");
-            if (ImGui::Checkbox("持ち主に追従", &e.effectFollow))
+            if (ImGui::Checkbox("基準に追従", &e.effectFollow))
                 ch = true;
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("ON: キャラの子になり付いていく（まとうオーラなど）\n"
-                                  "OFF: 出した場所に残る（衝撃波・砂煙など）。向きは出した瞬間のキャラに合わせる");
+                ImGui::SetTooltip("ON: 基準の子になり付いていく（まとうオーラなど）\n"
+                                  "OFF: 出した場所に残る（衝撃波・砂煙など）。向きは出した瞬間の基準に合わせる");
             ImGui::Spacing();
             ImGui::TextDisabled("開始時刻に 1 回出します。継続放出のエミッタを含む VFX は、");
             ImGui::TextDisabled("区間の長さだけ出し続けてから止めます。");

@@ -3,7 +3,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm>
 #include "Game/Logics/Combat/CombatComponents.h"
-#include "Game/Logics/Combat/CombatRosterComponent.h"
+#include "Engine/Animation/Components/CombatRosterComponent.h"
 #include "Game/Logics/Combat/HealthComponent.h"
 #include "Engine/Transform/Components/BoneAttachmentComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"

@@ -45,7 +45,7 @@ public:
     // ワンショット
     // ===========================================================================
     void PlayOneShot(uint32_t eventHash) override;
-    void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position) override;
+    void PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position, float volume, float pitch) override;
 
     // ===========================================================================
     // 継続再生と制御

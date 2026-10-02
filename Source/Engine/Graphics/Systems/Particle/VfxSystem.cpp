@@ -6,7 +6,8 @@
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Animation/Core/AnimEventMessages.h" // アニメーションの Effect イベント
+#include "Engine/Animation/Core/AnimEventMessages.h"         // アニメーションの Effect イベント
+#include "Engine/Animation/Components/CombatRosterComponent.h" // Effect の武器タグ → 武器の Entity
 
 #include <algorithm>
 
@@ -29,18 +30,19 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
 {
     if (msg.effectPath.empty()) return;
 
-    // 1. 持ち主の姿勢。無ければ位置が決まらないので出さない
-    const auto *ownerT = m_world->GetComponent<TransformComponent>(msg.entity);
-    if (!ownerT) return;
+    // 1. 基準にする Entity と、その姿勢。姿勢が無ければ位置が決まらないので出さない
+    const EntityID anchor  = ResolveAnchor(msg);
+    const auto    *anchorT = m_world->GetComponent<TransformComponent>(anchor);
+    if (!anchorT) return;
 
-    // 2. offset を持ち主の回転で回して、出す位置（ワールド座標）を求める（SpawnHitboxSystem と同じ規則）
-    const XMFLOAT3 ownerPos = ownerT->GetWorldPosition();
-    const XMFLOAT4 ownerRot = ownerT->GetWorldRotation();
+    // 2. offset を基準の回転で回して、出す位置（ワールド座標）を求める（SpawnHitboxSystem と同じ規則）
+    const XMFLOAT3 anchorPos = anchorT->GetWorldPosition();
+    const XMFLOAT4 anchorRot = anchorT->GetWorldRotation();
 
     const XMVECTOR off = XMVector3Rotate(XMVectorSet(msg.offset.x, msg.offset.y, msg.offset.z, 0.0f),
-                                         XMLoadFloat4(&ownerRot));
+                                         XMLoadFloat4(&anchorRot));
     XMFLOAT3       spawnPos;
-    XMStoreFloat3(&spawnPos, XMVectorAdd(XMLoadFloat3(&ownerPos), off));
+    XMStoreFloat3(&spawnPos, XMVectorAdd(XMLoadFloat3(&anchorPos), off));
 
     // 3. 出す。Play が位置を置き、バーストを起こし、バーストだけなら破棄も予約する
     const EntityID id = Play(msg.effectPath, spawnPos);
@@ -55,25 +57,25 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
     // 5. 向きと追従
     if (msg.follow)
     {
-        // 持ち主の子にする。子の position には持ち主の scale が掛かる（Muriel は 5 倍）ので、
-        //   offset を持ち主の scale で割り、追従しないときと同じく「ワールドのメートル」にそろえる
-        const XMMATRIX ownerWorld = XMLoadFloat4x4(&ownerT->worldMatrix);
-        XMVECTOR       ownerScale, ownerRotQ, ownerTrans;
-        XMMatrixDecompose(&ownerScale, &ownerRotQ, &ownerTrans, ownerWorld);
+        // 基準の子にする。子の position には基準の scale が掛かる（Muriel は 5 倍）ので、
+        //   offset を基準の scale で割り、追従しないときと同じく「ワールドのメートル」にそろえる
+        const XMMATRIX anchorWorld = XMLoadFloat4x4(&anchorT->worldMatrix);
+        XMVECTOR       anchorScale, anchorRotQ, anchorTrans;
+        XMMatrixDecompose(&anchorScale, &anchorRotQ, &anchorTrans, anchorWorld);
         XMFLOAT3 s;
-        XMStoreFloat3(&s, ownerScale);
+        XMStoreFloat3(&s, anchorScale);
         const auto safeDiv = [](float v, float d) { return (d > 1e-6f) ? v / d : v; };
 
-        TransformUpdateSystem::SetParent(*m_world, id, msg.entity);
+        TransformUpdateSystem::SetParent(*m_world, id, anchor);
         transform->position = XMFLOAT3(safeDiv(msg.offset.x, s.x), safeDiv(msg.offset.y, s.y), safeDiv(msg.offset.z, s.z));
-        transform->rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f); // 向きは持ち主に任せる
+        transform->rotation = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f); // 向きは基準に任せる
         transform->isDirty  = true;
-        transform->UpdateMatrix(ownerWorld);
+        transform->UpdateMatrix(anchorWorld);
     }
     else
     {
-        // 出した場所に残す。向きだけ持ち主にそろえる（前に飛ぶ・扇状に広がる VFX が正面を向くように）
-        transform->rotation = ownerRot;
+        // 出した場所に残す。向きだけ基準にそろえる（前に飛ぶ・扇状に広がる VFX が正面を向くように）
+        transform->rotation = anchorRot;
         transform->isDirty  = true;
         transform->UpdateMatrix();
     }
@@ -82,6 +84,24 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
     //    アニメのイベントから出した VFX には、Stop() を呼ぶ呼び出し側がいないため
     if (HasContinuousEmitter(*particle))
         m_timedStops.push_back({id, (std::max)(msg.duration, kMinEmitDuration)});
+}
+
+// =========================================================================
+EntityID VFXSystem::ResolveAnchor(const AnimEventEffectMessage &msg) const
+{
+    // タグが無ければキャラそのもの
+    if (msg.attachTag.empty()) return msg.entity;
+
+    // 持ち主の CombatRoster からタグの武器を引く。引けなければキャラで出す（VFX が消えるより気づきやすい）
+    const auto    *roster = m_world->GetComponent<CombatRosterComponent>(msg.entity);
+    const EntityID weapon = roster ? roster->Find(msg.attachTag.c_str()) : InvalidEntityID;
+    if (weapon == InvalidEntityID)
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[VFX] 武器タグ \"%s\" が CombatRoster に無いので、キャラの位置で出します",
+                     msg.attachTag.c_str());
+        return msg.entity;
+    }
+    return weapon;
 }
 
 // =========================================================================

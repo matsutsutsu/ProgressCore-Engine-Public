@@ -36,7 +36,7 @@ void AudioSystem::Initialize()
         if (!transform) return;
 
         // アニメのイベントは数フレームに 1 回程度なので、ハッシュは毎回計算する
-        api->PlayOneShot3D(CCL::Utils::HashString(e.eventPath.c_str()), transform->GetWorldPosition());
+        api->PlayOneShot3D(CCL::Utils::HashString(e.eventPath.c_str()), transform->GetWorldPosition(), e.volume, e.pitch);
     });
 }
 

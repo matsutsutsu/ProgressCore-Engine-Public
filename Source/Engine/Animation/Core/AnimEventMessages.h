@@ -17,6 +17,8 @@ struct AnimEventSoundMessage
 {
     CCL::ECS::EntityID entity;
     std::string        eventPath; // サウンドのイベント名（AudioConfigDXTK.json に登録した名前）
+    float              volume;    // 音量の倍率（1 で等倍）
+    float              pitch;     // ピッチ（オクターブ単位。0 で等倍）
 };
 
 // VFX（GPU パーティクルのプレハブ）の生成を依頼する。VFXSystem が受ける。
@@ -25,10 +27,11 @@ struct AnimEventEffectMessage
 {
     CCL::ECS::EntityID           entity;
     std::string                  effectPath; // VFX プレハブのパス（例: "Assets/Prefabs/Particles/VFX_HitSpark"）
-    DirectX::SimpleMath::Vector3 offset;     // 発生位置のオフセット（entity のローカル座標）
+    DirectX::SimpleMath::Vector3 offset;     // 発生位置のオフセット（基準のローカル座標）
     float                        scale;      // 大きさの倍率
-    bool                         follow;     // entity に追従するか
+    bool                         follow;     // 基準に追従するか
     float                        duration;   // 継続放出を出し続ける時間（秒。ブロック長）。バーストだけの VFX では使わない
+    std::string                  attachTag;  // 基準にする武器のタグ（entity の CombatRoster で引く）。空なら entity が基準
 };
 
 // 空間に独立した球状の判定（ヒットボックス）の生成を依頼する。

@@ -80,6 +80,13 @@ private:
     void OnAnimEffect(const AnimEventEffectMessage &msg);
 
     /**
+     * @brief Effect イベントの基準にする Entity を返す（位置・向き・追従の親）。
+     * @return attachTag が空ならキャラ、あれば持ち主の CombatRoster から引いた武器。
+     *         引けないときは警告を出してキャラを返す。
+     */
+    CCL::ECS::EntityID ResolveAnchor(const AnimEventEffectMessage &msg) const;
+
+    /**
      * @brief VFX 全体の大きさを倍率 s で変える（粒子の大きさ・発生範囲・速度・加速度）。
      * @note  GPU パーティクルは Transform の scale を見ないので、エミッタの設定へ直接掛ける。
      *        プレハブから作った直後の、この Entity 専用の設定にだけ使うこと。

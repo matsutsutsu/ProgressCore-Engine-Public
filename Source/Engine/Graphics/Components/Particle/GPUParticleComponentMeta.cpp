@@ -178,8 +178,7 @@ namespace ComponentMetaJson
                 WriteDescToJson(ej, emitter.desc);
                 arr.push_back(ej);
             }
-            j["emitters"]       = arr;
-            j["animControlled"] = comp.animControlled; // 発生をアニメ区間で駆動するか
+            j["emitters"] = arr;
         }
 
         // 読み込みは2つの形式を受け付ける。
@@ -207,8 +206,6 @@ namespace ComponentMetaJson
 
             // 空配列にはしない（System 側が「最低1個ある」前提で書けるようにする）
             if (comp.emitters.empty()) comp.emitters.push_back(ParticleEmitter{});
-
-            comp.animControlled = j.value("animControlled", false);
 
             auto &rm = ResourceManager::Instance();
             for (auto &emitter : comp.emitters)
@@ -342,21 +339,6 @@ struct ComponentMeta<GPUParticleComponent>
             if (ImGui::SmallButton(u8"全部表示に戻す"))
                 for (auto &e : p->emitters)
                     e.previewVisible = true;
-        }
-
-        if (ImGui::Checkbox(u8"アニメ制御 (Anim Controlled)", &p->animControlled)) changed = true;
-        Help(u8"ONにすると祖先(Animator)の Particle 区間イベント中だけ発生します。\n"
-             u8"剣ボーンに子付けして「まとい」演出に使います。\n"
-             u8"※これはエフェクト全体の設定で、全エミッタに一括で効きます。");
-
-        // アニメ制御は継続エミッタを完全に黙らせる。Animator を持つ祖先が居ない
-        //   エンティティで ON にすると「安全側」として発生停止のまま固定されるため、
-        //   単体で置いたエフェクトが無言で1粒も出なくなる。ここで気付けるようにする。
-        if (p->animControlled && continuousCount > 0)
-        {
-            ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
-                               u8"※ アニメ制御ON。Animator を持つ祖先の下に無いと"
-                               u8"継続エミッタは1粒も出ません");
         }
 
         static int lastActiveTabId    = -1;
@@ -521,16 +503,9 @@ struct ComponentMeta<GPUParticleComponent>
                     {
                         ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
                                            u8"発生ゲート: OFF — 継続モードでは1粒も出ません");
-                        if (p->animControlled)
-                            ImGui::TextDisabled(u8"　アニメ制御がONです。Animator を持つ祖先が居ないか、\n"
-                                                u8"　その Particle 区間の外にいます。");
-                        else
-                            ImGui::TextDisabled(u8"　VFX::Stop() で停止された状態です。");
+                        ImGui::TextDisabled(u8"　VFX::Stop() で停止された状態です。");
                     }
                 }
-
-                // アニメ制御はエフェクト全体の設定なので、このタブではなく上の「エフェクト全体」に置く
-                // （ここに置くとエミッタごとの設定と誤解される）。
 
                 if (d.emitMode == 1)
                 {

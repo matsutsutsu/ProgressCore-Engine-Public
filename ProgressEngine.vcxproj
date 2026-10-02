@@ -588,7 +588,6 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
-    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h" />
@@ -780,7 +779,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\CombatRosterComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\HitEffectSystem.h" />
@@ -1122,7 +1121,6 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp" />
