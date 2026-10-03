@@ -87,11 +87,6 @@
             "startPin": 233
         },
         {
-            "endPin": 246,
-            "id": 252,
-            "startPin": 233
-        },
-        {
             "endPin": 254,
             "id": 255,
             "startPin": 29
@@ -639,23 +634,12 @@
             "type": 4
         },
         {
-            "action": "A_BossAdvance",
-            "actionId": 6,
-            "id": 245,
-            "inputPinId": 246,
-            "outputPinId": 0,
-            "param": 1.0,
-            "posX": 6856.0,
-            "posY": 960.0,
-            "type": 4
-        },
-        {
             "action": "A_Wait",
             "actionId": 1,
             "id": 253,
             "inputPinId": 254,
             "outputPinId": 0,
-            "param": 1.5,
+            "param": 1.100000023841858,
             "posX": 3496.0,
             "posY": 894.0,
             "type": 4
@@ -677,7 +661,7 @@
             "id": 259,
             "inputPinId": 260,
             "outputPinId": 0,
-            "param": 2.0,
+            "param": 0.699999988079071,
             "posX": 3968.0,
             "posY": 894.0,
             "type": 4
@@ -710,9 +694,9 @@
             "id": 268,
             "inputPinId": 269,
             "outputPinId": 0,
-            "param": 2.0,
-            "posX": 8256.0,
-            "posY": 960.0,
+            "param": 1.600000023841858,
+            "posX": 8251.0,
+            "posY": 958.0,
             "type": 4
         },
         {
@@ -776,7 +760,7 @@
             "id": 295,
             "inputPinId": 296,
             "outputPinId": 0,
-            "param": 2.0,
+            "param": 1.2000000476837158,
             "posX": 6384.0,
             "posY": 960.0,
             "type": 4
@@ -1217,8 +1201,8 @@
             "id": 469,
             "inputPinId": 470,
             "outputPinId": 0,
-            "param": 1.0,
-            "posX": -1013.0,
+            "param": 0.5,
+            "posX": -1034.0,
             "posY": 1438.0,
             "type": 4
         },
@@ -1609,42 +1593,41 @@
                 43,
                 44,
                 45,
-                46,
-                47
+                46
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                47,
                 48,
                 49,
                 50,
                 51,
-                52,
-                53
+                52
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                53,
                 54,
-                55,
-                56
+                55
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                56,
                 57,
                 58,
                 59,
                 60,
                 61,
-                62,
-                63
+                62
             ],
             "type": "Sequence"
         },
@@ -1665,17 +1648,17 @@
         {
             "actionOrConditionId": 0,
             "children": [
+                63,
                 64,
-                65,
-                66
+                65
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                67,
-                68
+                66,
+                67
             ],
             "type": "Parallel"
         },
@@ -1746,7 +1729,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 1.5,
+            "param": 1.100000023841858,
             "type": "Action"
         },
         {
@@ -1760,7 +1743,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 2.0,
+            "param": 0.699999988079071,
             "type": "Action"
         },
         {
@@ -1823,7 +1806,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 2.0,
+            "param": 1.2000000476837158,
             "type": "Action"
         },
         {
@@ -1831,13 +1814,6 @@
             "actionOrConditionId": 102,
             "children": [],
             "param": 0.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_BossAdvance",
-            "actionOrConditionId": 6,
-            "children": [],
-            "param": 1.0,
             "type": "Action"
         },
         {
@@ -1872,7 +1848,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 2.0,
+            "param": 1.600000023841858,
             "type": "Action"
         },
         {
@@ -1892,8 +1868,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                69,
-                70
+                68,
+                69
             ],
             "type": "Parallel"
         },
@@ -1977,19 +1953,19 @@
         {
             "actionOrConditionId": 0,
             "children": [
+                70,
                 71,
-                72,
-                73
+                72
             ],
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
             "children": [
+                73,
                 74,
                 75,
-                76,
-                77
+                76
             ],
             "type": "Sequence"
         },
@@ -2003,10 +1979,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
+                77,
                 78,
                 79,
-                80,
-                81
+                80
             ],
             "type": "Sequence"
         },
@@ -2021,7 +1997,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 1.0,
+            "param": 0.5,
             "type": "Action"
         },
         {

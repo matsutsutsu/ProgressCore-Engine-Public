@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 小隊1個ぶんの状態（SquadState）: アンカー・フェーズ・各席の前フレームの位置と速度
-//   - 見た目の調整値（SquadTuning）: 間隔・追従の強さ・突入の速さなど
+//   - 見た目の調整値（SquadTuning）: 間隔・追従の強さ・追跡の速さなど
 //   - 全小隊の密配列（SquadRegistry）
 //
 // 備考:
@@ -23,12 +23,12 @@
 // 小隊の高度制限の基準。床の高さを変えたときに小隊だけ取り残されないよう共有する。
 inline constexpr float kSquadGroundY = kDroneGroundY;
 
-// 小隊の行動フェーズ。接近（読ませる）と突入（当てる）を必ず分ける。
+// 小隊の行動フェーズ。展開（読ませる）と追跡（当てる）を必ず分ける。
 enum class SquadPhase : uint8_t
 {
     Regroup,  // ボス頭上の待機点で編隊を組み直す（命令が来ていない間）
-    Approach, // プレイヤーの側面へ回り込む。ここが予備動作＝回避方向を読ませる時間
-    Strike,   // 先頭がプレイヤーを追って突っ込む（旋回上限つきホーミング）
+    Approach, // プレイヤーを囲む扇へ展開する。ここが予備動作＝どこから来るかを読ませる時間
+    Chase,    // 先頭がプレイヤーを追い続ける（旋回上限つきホーミング）。攻撃の合図が落ちるまで続く
 };
 
 // 小隊1個ぶんの状態。書き手はすべて SquadUpdateSystem。
@@ -42,9 +42,6 @@ struct SquadState
 
     // 現在の速度。急に瞬間移動させないためにバネで寄せる対象。
     DirectX::SimpleMath::Vector3 anchorVelocity = DirectX::SimpleMath::Vector3::Zero;
-
-    // フェーズ滞在タイマー（秒）。突入時間の管理に使う。
-    float phaseTimer = 0.0f;
 
     SquadPhase phase = SquadPhase::Regroup;
 
@@ -77,16 +74,29 @@ struct SquadTuning
     float followGain     = 10.0f; // 間隔のずれを直す強さ。小さいほど隊列が伸び縮みする
     float slotLagPerSlot = 0.06f; // 後ろの席ほどバネを弱める割合。大きいほど最後尾が遅れて曲がる
 
-    float strikeSpeed      = 42.0f;  // 突入速度 [m/s]
-    float strikeDuration   = 1.6f;   // 突入の継続時間 [秒]
-    float approachMinTime  = 1.6f;   // 次の突入までに接近へ留まる最低時間 [秒]
-    float maxTurnRateDeg   = 100.0f; // 突入中に曲がれる角度の上限 [度/秒]
-    float terminalLockDist = 8.0f;   // この距離まで詰めたら追尾をやめ直線に固定 [m]
+    // 追跡の速さ。プレイヤーの走行速度に掛ける倍率。
+    // 走り続けても追いつかれ、一瞬だけ速いダッシュなら振り切れる値にする（1 を超え、ダッシュ÷走行 未満）。
+    // 倍率で持つのは、プレイヤーの速度を調整したときに関係が崩れないようにするため。
+    float chaseSpeedOverRun = 1.1f;
+
+    // 追跡中に曲がれる角度の上限 [度/秒]。回避はこの制限だけで成り立たせる（終末ロックは持たない）。
+    // 近づくほどプレイヤーを見る角度は速く変わるので、「横移動の速さ ÷ この値」より内側で鋭く切り返されると曲がりきれずに外れる。
+    // 上げすぎると切り返しても曲がって当たり、ジャスト回避が成立しなくなる。
+    float maxTurnRateDeg = 200.0f;
 
     float approachRadius = 26.0f; // プレイヤーからどれだけ離れて構えるか [m]
-    float approachHeight = 9.0f;  // 接近時の高度（プレイヤー基準）[m]
+    float approachHeight = 9.0f;  // 展開時の高度（プレイヤー基準）[m]
 
-    // 床からの最低高度 [m]。突入は地面の高さへ直進し、通り過ぎても走り続けるので必ず
+    // 小隊を並べる扇の広さ [度]。プレイヤーから見てボスの方向を中心に広げる。
+    // 360 で全周を囲む。全周だとカメラの後ろの小隊が見えないまま突っ込んでくるので、画面に収まる広さを既定にする。
+    float approachArcDeg = 240.0f;
+
+    // 隣り合う小隊の距離と高さを互い違いにずらす幅 [m]。同じ円周上に並ぶと画面上で重なって見えるため、
+    // 手前・低い段と奥・高い段に分けて空間を埋める。
+    float layerRadiusSpread = 6.0f;
+    float layerHeightSpread = 5.0f;
+
+    // 床からの最低高度 [m]。追跡はプレイヤーの足元（地面の高さ）を目指し、外れても飛び続けるので必ず
     // 床を突き抜ける。物理で押し返さず、アンカーの高度を先に止めて隊列ごと床の上を飛ばせる。
     float minAltitude = 2.0f;
 };

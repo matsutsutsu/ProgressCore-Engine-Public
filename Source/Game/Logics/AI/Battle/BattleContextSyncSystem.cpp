@@ -51,6 +51,9 @@ void BattleContextSyncSystem::Update(float dt)
     battle.playerEntity = playerId;
     if (playerId != InvalidEntityID)
     {
+        if (const auto *player = m_world->GetComponent<PlayerComponent>(playerId))
+            battle.playerRunSpeed = player->runSpeed;
+
         if (auto *t = m_world->GetComponent<TransformComponent>(playerId))
         {
             // TransformComponent.position はローカル。プレイヤーのプレハブは親を持つので、

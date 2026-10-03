@@ -304,7 +304,7 @@ namespace
         {
         case SquadPhase::Regroup: return "Regroup";
         case SquadPhase::Approach: return "Approach";
-        default: return "Strike";
+        default: return "Chase";
         }
     }
 
@@ -526,7 +526,7 @@ void DroneManagerSystem::DrawIndividualTest()
 {
     // 確かめる挙動:
     //   - 弾幕（Barrage）: 出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
-    //   - 小隊突撃: 5機編隊が接近 → 先頭がプレイヤーを追って突入
+    //   - 小隊突撃: 5機編隊が扇へ展開 → 先頭がプレイヤーを追い続ける（合図を落とすまで）
     //   - 硬直: 切り払いを当てて確認する（Stunned → 機体ごとの時間差で復帰）。ボタンは無い
     ImGui::Spacing();
     ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
@@ -537,10 +537,10 @@ void DroneManagerSystem::DrawIndividualTest()
     if (ColoredButton("弾幕：発射", ImVec2(150, 26), kAttackButtonColor))
         SetBossCommand(DroneFormationType::Barrage, true);
 
-    if (ImGui::Button("小隊：接近", ImVec2(150, 26)))
+    if (ImGui::Button("小隊：展開", ImVec2(150, 26)))
         SetBossCommand(DroneFormationType::SquadAssault, false);
     ImGui::SameLine();
-    if (ColoredButton("小隊：突入", ImVec2(150, 26), kAttackButtonColor))
+    if (ColoredButton("小隊：追跡", ImVec2(150, 26), kAttackButtonColor))
         SetBossCommand(DroneFormationType::SquadAssault, true);
 }
 
@@ -596,20 +596,23 @@ void DroneManagerSystem::DrawSquadTuning()
     // --- 突入 ---
 
     ImGui::Spacing();
-    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "突入");
-    ImGui::SliderFloat("突入速度", &tuning.strikeSpeed, 10.0f, 90.0f, "%.0f m/s");
-    ImGui::SliderFloat("突入時間", &tuning.strikeDuration, 0.5f, 5.0f, "%.1f s");
-    ImGui::SliderFloat("再突入間隔", &tuning.approachMinTime, 0.0f, 6.0f, "%.1f s");
-    ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 360.0f, "%.0f deg/s");
-    ImGui::SliderFloat("直線化距離", &tuning.terminalLockDist, 0.0f, 30.0f, "%.1f m");
-    HoverTooltip("この距離まで詰めたら追尾をやめて直線になる。0 にすると完全追尾＝ジャスト回避が成立しない");
+    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "追跡");
+    ImGui::SliderFloat("速さ（走行比）", &tuning.chaseSpeedOverRun, 0.5f, 2.0f, "x%.2f");
+    HoverTooltip("プレイヤーの走行速度に掛ける倍率。1 を超えると走って逃げても追いつかれる");
+    ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 720.0f, "%.0f deg/s");
+    HoverTooltip("回避はこの制限だけで成り立つ。上げすぎると切り返しても曲がって当たる");
 
     // --- 接近 ---
 
     ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.7f, 1.0f), "接近");
-    ImGui::SliderFloat("接近半径", &tuning.approachRadius, 5.0f, 60.0f, "%.0f m");
-    ImGui::SliderFloat("接近高度", &tuning.approachHeight, 0.0f, 30.0f, "%.0f m");
+    ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.7f, 1.0f), "展開");
+    ImGui::SliderFloat("展開半径", &tuning.approachRadius, 5.0f, 60.0f, "%.0f m");
+    ImGui::SliderFloat("展開高度", &tuning.approachHeight, 0.0f, 30.0f, "%.0f m");
+    ImGui::SliderFloat("扇の広さ", &tuning.approachArcDeg, 30.0f, 360.0f, "%.0f deg");
+    HoverTooltip("小隊を並べる範囲。プレイヤーから見たボスの方向が中心。360 で全周を囲む");
+    ImGui::SliderFloat("段の距離差", &tuning.layerRadiusSpread, 0.0f, 20.0f, "%.1f m");
+    ImGui::SliderFloat("段の高さ差", &tuning.layerHeightSpread, 0.0f, 15.0f, "%.1f m");
+    HoverTooltip("隣り合う小隊を手前・低い段と奥・高い段へ互い違いに振る幅。0 で全小隊が同じ円周に並ぶ");
 
     // --- 地面 ---
 

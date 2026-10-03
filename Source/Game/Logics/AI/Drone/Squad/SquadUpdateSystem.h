@@ -72,17 +72,20 @@ private:
     void EnsureRegistry();
 
     // 小隊1個ぶんのフェーズ遷移とアンカーの移動。
+    // rank は生きている小隊の中での順番（0〜activeCount-1）。並ぶ角度と段をこれで決める。
     void UpdateSquad(SquadState                         &squad,
-                     uint8_t                             squadId,
+                     uint8_t                             rank,
+                     uint8_t                             activeCount,
                      bool                                ordered,
                      bool                                attacking,
                      const DirectX::SimpleMath::Vector3 &bossPos,
                      const DirectX::SimpleMath::Vector3 &playerPos,
+                     float                               chaseSpeed,
                      const SquadTuning                  &tuning,
                      float                               dt);
 
     // アンカーの向きをプレイヤーへ曲げる（旋回上限つき）。無制限に追尾させると、避けても
-    // 曲がって当たる攻撃になる。一定距離まで詰めたら直線にし、回避できる時間を残す。
+    // 曲がって当たる攻撃になる。上限があれば、至近距離で鋭く切り返されたときに曲がりきれず外れる。
     void SteerTowardPlayer(SquadState                         &squad,
                            const DirectX::SimpleMath::Vector3 &playerPos,
                            const SquadTuning                  &tuning,
@@ -99,16 +102,18 @@ private:
     // 待機時のボス中心からの水平距離 [m]。小隊ごとに角度をずらして並ぶ。
     static constexpr float kRegroupRadius = 18.0f;
 
-    // 接近位置がゆっくり回る速さ [rad/s]。止まって見えないようにする。
+    // 展開位置を左右に揺らす速さ [rad/s] と振れ幅 [rad]。止まって見えないようにする。
+    // 一方向へ回し続けると、扇の中心（ボスの方向）からずれていき、小隊が画面の外へ出ていく。
     static constexpr float kApproachDrift = 0.35f;
+    static constexpr float kApproachSway  = 0.2f;
 
-    // アンカーを目標へ寄せるバネの強さと減衰、最高速度 [m/s]（突入より遅くして緩急を作る）。
+    // アンカーを目標へ寄せるバネの強さと減衰、最高速度 [m/s]（追跡より遅くして緩急を作る）。
     static constexpr float kAnchorGain = 1.8f;
 
     static constexpr float kAnchorDamping = 3.0f;
 
     static constexpr float kCruiseSpeed = 26.0f;
 
-    // 待機・接近位置をゆっくり回すのに使う経過時間 [秒]。
+    // 待機・展開位置をゆっくり回すのに使う経過時間 [秒]。
     float m_elapsed = 0.0f;
 };

@@ -36,6 +36,10 @@ struct BattleContext
     // 共有するのは、各 AI が個別に前フレームの座標から求めると平滑化の強さが別々になるため。
     DirectX::XMFLOAT3 playerVelocity = {0, 0, 0};
 
+    // プレイヤーの走行速度の設定値（m/s）。今の速さではなく、プレハブに設定された性能。
+    // 「走り続けても追いつく」攻撃の速さを、これに倍率を掛けて決める。
+    float playerRunSpeed = 0.0f;
+
     int droneAliveCount = 1000; // ドローンの生存数。書くのは DroneManagerSystem
 
     // TODO(2026-09-29): arenaCenter / arenaRadius をシーンかステージのデータから設定する。

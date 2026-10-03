@@ -44,7 +44,7 @@ namespace CCL::AI::Formation::Squad
         // 先渡しの速度も自分で「1つ前の機体の速度」を入れる。
         bool FollowsBoss() const override { return false; }
 
-        // 突入中は判定を開けたまま何度も往復するので、1回きりだと2周目から当たらない。
+        // 追跡中は判定を開けたまま何度も往復するので、1回きりだと2周目から当たらない。
 
         // 間隔は1回すり抜けるのにかかる時間より長く取る。1回の通過で2度当たらないようにするため。
         FormationCombat GetCombat() const override
@@ -73,7 +73,7 @@ namespace CCL::AI::Formation::Squad
 
             // --- 移動方式 ---
 
-            // 突入中もバネで追従させる。
+            // 追跡中もバネで追従させる。
             // 剛体にすると隊列がまったく歪まず、5機で飛んでも「1枚の板が近づいてくる」ようにしか見えない。
             // 歪むことがこの技の要点。
             drone.chargeMode = ChargeMode::SoftFollow;
@@ -138,7 +138,7 @@ namespace CCL::AI::Formation::Squad
             // --- 向きと他の技の値 ---
 
             // 機首はアンカーの向きを基準にする。
-            // 突入中（SoftFollow）は、移動層が実際の進行方向へ向け直す。
+            // 追跡中（SoftFollow）は、移動層が実際の進行方向へ向け直す。
             drone.targetLookDirection = fwd;
             drone.fireDirection       = fwd;
 

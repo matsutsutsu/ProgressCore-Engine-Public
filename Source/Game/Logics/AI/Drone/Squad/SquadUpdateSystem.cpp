@@ -78,19 +78,24 @@ void SquadUpdateSystem::Update(float rawDt)
 
     // --- プレイヤー ---
 
-    // プレイヤー不在時は、接近も突入も目標が無い。
+    // プレイヤー不在時は、展開も追跡も目標が無い。
     // 原点へ向かわせないよう、座標を取れたかどうかを持ち回る。
-    Vector3 playerPos = Vector3::Zero;
-    bool    hasPlayer = false;
+    Vector3 playerPos      = Vector3::Zero;
+    float   playerRunSpeed = 0.0f;
+    bool    hasPlayer      = false;
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
         if (battle.HasPlayer())
         {
-            playerPos = Vector3(battle.playerPos);
-            hasPlayer = true;
+            playerPos      = Vector3(battle.playerPos);
+            playerRunSpeed = battle.playerRunSpeed;
+            hasPlayer      = true;
         }
     }
+
+    // 追跡の速さはプレイヤーの走行速度から決める（理由は SquadTuning::chaseSpeedOverRun）。
+    const float chaseSpeed = playerRunSpeed * reg.tuning.chaseSpeedOverRun;
 
     // --- 席ごとの位置と速度 ---
 
@@ -123,32 +128,37 @@ void SquadUpdateSystem::Update(float rawDt)
     // プレイヤーが居なければ、小隊行動そのものを解除する（Regroup へ落ちる）。
     const bool ordered = hasPlayer && (formation == DroneFormationType::SquadAssault);
 
-    for (uint8_t i = 0; i < SquadRegistry::kMaxSquads; ++i)
+    // 並ぶ角度は「生きている小隊の数」で割る。
+    // 最大数(kMaxSquads)で割ると、小隊番号は0から詰めて振られるので、数小隊しか居ないとき円の一部に固まる。
+    uint8_t activeCount = 0;
+    for (const auto &s : reg.squads)
+        if (s.aliveCount > 0) ++activeCount;
+
+    uint8_t rank = 0;
+    for (auto &s : reg.squads)
     {
-        SquadState &s = reg.squads[i];
         if (s.aliveCount == 0) continue;
-        UpdateSquad(s, i, ordered, attacking, bossPos, playerPos, reg.tuning, dt);
+        UpdateSquad(s, rank++, activeCount, ordered, attacking, bossPos, playerPos, chaseSpeed, reg.tuning, dt);
     }
 }
 
 void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
-                                    uint8_t            squadId,
+                                    uint8_t            rank,
+                                    uint8_t            activeCount,
                                     bool               ordered,
                                     bool               attacking,
                                     const Vector3     &bossPos,
                                     const Vector3     &playerPos,
+                                    float              chaseSpeed,
                                     const SquadTuning &tuning,
                                     float              dt)
 {
     // 処理フロー:
     // 1. 次の段階を決める
-    // 2. 段階が変わったら、段階の時間を入れ直す
-    // 3. 突入中は、プレイヤーへ曲がりながら直進して終わる
-    // 4. 待機・接近中は、目標点へバネで寄る
-    // 5. アンカーの向きを決める
-    // 6. 床より下へ沈めない（突入中も同じ）
-
-    if (squad.phaseTimer > 0.0f) squad.phaseTimer -= dt;
+    // 2. 追跡中は、プレイヤーへ曲がりながら飛び続ける
+    // 3. 待機・展開中は、目標点へバネで寄る
+    // 4. アンカーの向きを決める
+    // 5. 床より下へ沈めない（追跡中も同じ）
 
     // --- 次の段階 ---
 
@@ -158,82 +168,71 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
     {
         next = SquadPhase::Regroup; // 別の陣形を指示された＝小隊行動は解除
     }
-    else if (squad.phase == SquadPhase::Strike)
+    else if (attacking)
     {
-        // 突入は始まったら時間で必ず終わる。
-
-        // 信号が落ちても止めない。
-        // 落ちた瞬間に急停止すると「突っ込んできたのに止まる」ので、通り抜けるまで走らせる。
-
-        // 信号が上がりっぱなしでも、時間で切り上げる。
-        next = (squad.phaseTimer > 0.0f) ? SquadPhase::Strike : SquadPhase::Approach;
-    }
-    else if (attacking && squad.phaseTimer <= 0.0f)
-    {
-        // 接近の最低時間を過ぎるまで突入しない。予備動作を読ませる窓を必ず作るため。
-        next = SquadPhase::Strike;
+        // 全小隊が合図と同時に追跡を始め、合図が立っている間ずっと続ける。終わりを決めるのは BT（合図を落とす）。
+        // 一斉に襲いかかる物量を見せる技なので、小隊ごとに開始をずらさない。
+        next = SquadPhase::Chase;
     }
     else
     {
         next = SquadPhase::Approach;
     }
 
-    // --- 段階の時間 ---
+    squad.phase = next;
 
-    if (next != squad.phase)
-    {
-        const SquadPhase prev = squad.phase;
-        squad.phase           = next;
-
-        if (next == SquadPhase::Strike)
-        {
-            squad.phaseTimer = tuning.strikeDuration;
-        }
-        else if (prev == SquadPhase::Strike)
-        {
-            // 突入直後だけ間隔を空ける（連続体当たりの防止）。
-            squad.phaseTimer = tuning.approachMinTime;
-        }
-        else
-        {
-            // 隊列を組んだ直後は、即座に突入できる状態にする。
-            // 予備動作の長さは BT の Wait が決めるので、ここでも待たせると待ち時間が二重になり、BT の想定とずれる。
-            squad.phaseTimer = 0.0f;
-        }
-    }
-
-    // --- 突入 ---
+    // --- 追跡 ---
 
     // アンカーがプレイヤーを追い、後続機はそれに付いていく。
-    if (squad.phase == SquadPhase::Strike)
+    // 速さは一定で、曲がる速さだけに上限がある。避けられるかどうかはこの上限だけで決まる。
+    if (squad.phase == SquadPhase::Chase)
     {
         SteerTowardPlayer(squad, playerPos, tuning, dt);
-        squad.anchorVelocity = squad.anchorForward * tuning.strikeSpeed;
+        squad.anchorVelocity = squad.anchorForward * chaseSpeed;
         squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
         ClampAltitude(squad, tuning);
         return;
     }
 
-    // --- 待機・接近 ---
+    // --- 待機・展開 ---
 
     // 目標点をバネで追う。
 
     // 目標点の角度は小隊ごとにずらす。複数小隊が、別方向から包囲する形に自然になる。
-    const float phaseAngle = (kTwoPi * static_cast<float>(squadId)) /
-                             static_cast<float>(SquadRegistry::kMaxSquads);
+
+    // 順番を 0〜1 の割合にする。両端に半区間ぶんの余白を取るので、扇でも全周でも等間隔に並び、
+    // 全周（360度）のときに最初と最後の小隊が重ならない。
+    const float slot01 = (static_cast<float>(rank) + 0.5f) / static_cast<float>(activeCount);
 
     Vector3 desired;
     if (squad.phase == SquadPhase::Approach)
     {
+        // 扇の中心は、プレイヤーから見たボスの方向。
+        // カメラはプレイヤーの後ろからボスを向くので、ここを中心にすれば小隊が画面に収まる。
+        float center = 0.0f;
+        {
+            const float dx = bossPos.x - playerPos.x;
+            const float dz = bossPos.z - playerPos.z;
+            if (dx * dx + dz * dz > 0.001f) center = std::atan2(dz, dx);
+        }
+
+        const float arc = DirectX::XMConvertToRadians(tuning.approachArcDeg);
+        const float a   = center + (slot01 - 0.5f) * arc +
+                        std::sin(m_elapsed * kApproachDrift) * kApproachSway;
+
+        // 隣り合う小隊を、手前・低い段と奥・高い段へ互い違いに振る。
+        // 同じ半径と高さに並べると、カメラから見て小隊同士が重なり、数が少なく見える。
+        const float layer  = (rank % 2 == 0) ? -1.0f : 1.0f;
+        const float radius = tuning.approachRadius + layer * tuning.layerRadiusSpread;
+        const float height = tuning.approachHeight + layer * tuning.layerHeightSpread;
+
         // 斜め横から回り込み、側面から迫られるように見せる。
-        const float a = phaseAngle + m_elapsed * kApproachDrift;
-        desired       = playerPos + Vector3(std::cos(a) * tuning.approachRadius,
-                                            tuning.approachHeight,
-                                            std::sin(a) * tuning.approachRadius);
+        desired = playerPos + Vector3(std::cos(a) * radius, height, std::sin(a) * radius);
     }
     else
     {
-        const float a = phaseAngle + m_elapsed * 0.25f;
+        // 待機はボスの頭上なので、全周に等間隔で並べて回す。
+        const float a = slot01 * kTwoPi + m_elapsed * 0.25f;
         desired       = bossPos + Vector3(std::cos(a) * kRegroupRadius,
                                           kRegroupHeight,
                                           std::sin(a) * kRegroupRadius);
@@ -259,7 +258,7 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
 
     // --- 向き ---
 
-    // 接近中はプレイヤーの方を向く（これから来ると読ませる）。待機中は進行方向を向く。
+    // 展開中はプレイヤーの方を向く（これから来ると読ませる）。待機中は進行方向を向く。
     Vector3 face = squad.anchorVelocity;
     if (squad.phase == SquadPhase::Approach)
     {
@@ -294,7 +293,7 @@ void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuni
     if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
 
     // 向きも水平にする。
-    // 真下を向いたまま突入速度を掛けると、速度の大半が止められた縦方向に消えて床に張り付く。
+    // 真下を向いたまま追跡の速さを掛けると、速度の大半が止められた縦方向に消えて床に張り付く。
     // 水平成分だけ残せば、床の近くを飛んで通り過ぎる。
     if (squad.anchorForward.y < 0.0f)
     {
@@ -313,9 +312,10 @@ void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
     Vector3     toPlayer = playerPos - squad.anchorPos;
     const float dist     = toPlayer.Length();
 
-    // 終末ロック。突入の最後を直線に固定するので、読んで避ける時間が必ず残る。
-    // 完全追尾にすると、避けても曲がって当たり、ジャスト回避が成立しない。
-    if (dist <= tuning.terminalLockDist || dist < 0.001f) return;
+    // 終末ロック（一定距離から直線に固定する処理）は持たない。
+    // 近づくほどプレイヤーを見る角度は速く変わり、下の旋回上限を超えた時点で曲がりきれなくなる。
+    // 至近距離で直線になるのは、この上限から自然に起きる。
+    if (dist < 0.001f) return;
 
     toPlayer /= dist;
 
