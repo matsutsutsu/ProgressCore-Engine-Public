@@ -740,7 +740,7 @@
             "outputPinId": 0,
             "action": "A_BossBackStep",
             "actionId": 4,
-            "param": 0.8
+            "param": 1.5
         },
         {
             "id": 220,
@@ -1350,7 +1350,7 @@
             "action": "A_BossBackStep",
             "actionOrConditionId": 4,
             "children": [],
-            "param": 0.8,
+            "param": 1.5,
             "type": "Action"
         },
         {

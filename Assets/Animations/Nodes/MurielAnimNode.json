@@ -139,6 +139,13 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
+            "hash": 2521061527,
+            "name": "BackStepPhase",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
             "hash": 641192933,
             "name": "StrafeDir",
             "type": 0
@@ -161,7 +168,7 @@
             "stateHash": 1168775091,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 2,
@@ -176,7 +183,7 @@
                     "targetStateHash": 2907519899
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 1,
@@ -229,7 +236,7 @@
             "stateHash": 2133600820,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 2,
@@ -244,7 +251,7 @@
                     "targetStateHash": 2907519899
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 1,
@@ -411,12 +418,59 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 298.0,
             "nodePosY": 540.0,
-            "playbackSpeed": 2.0,
+            "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/BackStep.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashRetreat.json",
             "sequenceName": "BackStep",
             "speedCurveName": "",
             "stateHash": 1451197408,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2521061527,
+                            "paramName": "BackStepPhase",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 918871896
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.5,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashAim.json",
+            "sequenceName": "BackStepStop",
+            "speedCurveName": "",
+            "stateHash": 918871896,
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
@@ -859,7 +913,7 @@
             "stateHash": 2907519899,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 1,
@@ -891,7 +945,7 @@
             "stateHash": 1019367652,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 2,

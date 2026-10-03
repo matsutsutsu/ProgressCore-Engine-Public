@@ -4,6 +4,8 @@
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
 #include "Engine/Core/App/GameFlowState.h"                           // cinematic
+#include "Engine/Animation/Core/AnimStateMachine.h"                  // 止まりのモーションの長さ
+#include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -56,12 +58,33 @@ namespace
         if (character)
             character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
     }
+
+    // アニメグラフのステートが1回流れ切るまでの長さ [秒]（クリップの長さ÷再生速度）。
+    // サブマシンの中も探す。見つからなければ fallback を返す。
+    float StatePlayTime(const AnimStateGraph &graph, uint32_t stateHash, float fallback)
+    {
+        for (const AnimState &s : graph.states)
+        {
+            if (s.stateHash == stateHash && s.sequence && s.playbackSpeed > 0.0f)
+                return s.sequence->duration / s.playbackSpeed;
+            if (s.isSubMachine && s.subGraph)
+            {
+                const float t = StatePlayTime(*s.subGraph, stateHash, -1.0f);
+                if (t >= 0.0f) return t;
+            }
+        }
+        return fallback;
+    }
+
+    // 後方ステップの止まりのモーションを流すステート（MurielAnimNode.json の BackStepStop）。
+    const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 } // namespace
 
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
     types.push_back(CCL::ECS::TypeInfo<BehaviorTreeComponent>::ID());
+    types.push_back(CCL::ECS::TypeInfo<AnimStateMachineComponent>::ID()); // 後方ステップの止まりのモーションの長さ
     return types;
 }
 
@@ -113,7 +136,8 @@ void BossActionSystem::Update(float rawDt)
             ProcessStrafe(bossDef, trans, movement, config, joltHandle, playerPos, battle, dt);
             break;
         case BossActionState::BackStep:
-            ProcessBackStep(bossDef, trans, movement, joltHandle, playerPos, dt);
+            ProcessBackStep(bossDef, trans, movement, joltHandle, m_world->GetComponent<AnimStateMachineComponent>(entity),
+                            playerPos, battle, dt);
             break;
         case BossActionState::Leap:
             ProcessLeap(bossDef, trans, movement, joltHandle, playerPos, battle, dt);
@@ -291,8 +315,13 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, flo
     }
 
     // 後方ステップだけは進行方向が逆（lockedDirection は常に「進む向き」）。
+    // 始点と終点は Jolt の位置で取りたいので、突進と同じく最初のフレームに決める。
     if (next == BossActionState::BackStep)
+    {
         bossDef.lockedDirection = -bossDef.lockedDirection;
+        bossDef.backStepPhase   = BossBackStepPhase::Retreat;
+        bossDef.backStepStarted = false;
+    }
 
     // 横歩きは前回と逆回りにする。毎回同じ向きに回ると、2回目以降は見ただけで先が読める。
     // 壁際なら ProcessStrafe が内側へ向くよう回る向きを取り直す。
@@ -324,64 +353,115 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, flo
         }
         else if (actionId == A_BossAirHover)
         {
-            bossDef.leapDef       = bossDef.hoverLeap;
-            bossDef.leapLanding   = BossLeapLanding::InPlace;
-            // 頂点に留まる長さは、BT の全体時間から他の段を引いた残り。長さの数字を
-            // BT ノードの1か所に置くため（プレハブ側にも持つと、片方だけ直してずれる）。
-            const BossLeapDef &def = bossDef.hoverLeap;
-            bossDef.leapHoverTime =
-                (std::max)(0.0f, actionDuration - def.windup - def.flight - bossDef.hoverLandRecovery);
+            bossDef.leapDef     = bossDef.hoverLeap;
+            bossDef.leapLanding = BossLeapLanding::InPlace;
         }
+
+        // 長さの数字は BT ノードの全体時間の1か所に置き、どこか1つの段を残りから逆算する
+        // （プレハブ側にも持つと、片方だけ直したときに全体時間の途中で技が切れ、空中で落ちる）。
+        //   滞空: 上昇＋下降は固定で、頂点に留まる長さを逆算する
+        //   他:   空中の長さを逆算する。下限は、一瞬で着地点へ飛んで瞬間移動に見えないため
+        const BossLeapDef &def  = bossDef.leapDef;
+        const float        rest = actionDuration - def.windup - def.landRecovery;
+        if (actionId == A_BossAirHover)
+            bossDef.leapHoverTime = (std::max)(0.0f, rest - def.flight);
+        else
+            bossDef.leapDef.flight = (std::max)(0.1f, rest);
     }
 
     // 突進は下がる向き（lockedDirection の逆）だけをここで決める。下がり始めの地点は
     // Jolt の位置で取りたいので最初のフレームに、狙いは構えに入る瞬間に決める。
     if (next == BossActionState::Dash)
     {
-        bossDef.dashPhase   = BossDashPhase::Retreat;
-        bossDef.dashStarted = false;
+        bossDef.dashPhase      = BossDashPhase::Retreat;
+        bossDef.dashStarted    = false;
+        bossDef.dashTotalTime  = actionDuration; // 走り続ける長さは、突っ込む距離が決まる LockDashAim で逆算する
+        bossDef.dashTravelTime = 0.0f;
     }
 }
 
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
-                                       const Vector3 &playerPos, float dt)
+                                       const AnimStateMachineComponent *anim,
+                                       const Vector3 &playerPos, const BattleContext &battle, float dt)
 {
+    JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
+
+    // 今の位置。突進と同じく物理から取る。
+    const Vector3 now = GetCharacterWorldPosition(joltHandle);
+
     const float t = bossDef.actionTimer; // 後方ステップに入ってからの経過 [秒]
 
     // 退く間も相手を向き続ける。向いていないと、間合いを取り直す技ではなく
     // 逃げ出したように見える。
-    FaceToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt, joltHandle.character.GetPtr());
+    FaceToward(trans, -bossDef.lockedDirection, bossDef.turnSpeed, dt, ch);
 
-    // 硬直。長さは技の全体時間(BTノードの param)から backStepTime を引いたぶん。
-    if (t >= bossDef.backStepTime)
+    // 最初のフレーム：下がり始めの地点、下がり切る地点、止まりのモーションの長さを決める。
+    //   壁際で下がると壁の外に出るので、終点はステージの内側へ収める。
+    //   止まりのモーションの長さはアニメグラフから取る（数字を2か所に持たないため。
+    //   取れなければ 0.4 秒で代用する）。
+    if (!bossDef.backStepStarted)
+    {
+        bossDef.backStepStartPos = now;
+        bossDef.backStepEndPos   = ClampInsideArena(now + bossDef.lockedDirection * bossDef.backStepDistance, battle);
+        bossDef.backStepStopTime = anim ? StatePlayTime(anim->internalGraph, kBackStepStopState, 0.4f) : 0.4f;
+        bossDef.backStepStarted  = true;
+    }
+
+    // 段は一方通行。下がり始め（Bwd_Start）→ 止まり（Bwd_Stop）→ 着地硬直。
+    // 止まりのモーションが終わる瞬間に、後ろへの移動も着地も終わる。
+    const float retreatEnd = (std::max)(0.0f, bossDef.backStepRetreatTime);
+    const float moveEnd    = (std::max)(0.05f, retreatEnd + bossDef.backStepStopTime); // 動く長さ全体 [秒]
+
+    if (bossDef.backStepPhase == BossBackStepPhase::Retreat && t >= retreatEnd)
+        bossDef.backStepPhase = BossBackStepPhase::Stop;
+
+    if (bossDef.backStepPhase == BossBackStepPhase::Stop && t >= moveEnd)
+    {
+        // 着地した最初のフレームだけ速度を 0 で上書きする（跳躍の着地と同じ理由で、
+        // 下がる速度が残ると地面を滑る）。2フレーム目以降は書かないので重力が戻る。
+        bossDef.backStepPhase  = BossBackStepPhase::Recovery;
+        movement.use3DVelocity = true;
+        movement.velocity3D    = Vector3::Zero;
+    }
+
+    // 着地硬直。BT の全体時間の残りぶん続く（技が終われば BT が次の行動へ移る）。
+    if (bossDef.backStepPhase == BossBackStepPhase::Recovery)
     {
         bossDef.currentMoveSpeed = 0.0f;
         movement.desiredVelocity = Vector3::Zero;
         return;
     }
 
-    // 後退。弧を描いて素早く下がる。地上を滑らせると、どんなに速くしても
-    // クリップの足の動きと合わず後ろ歩きに見えるが、空中なら足と地面のずれが目立たない。
+    // 下がり始めから止まりまでを1本の動きにする。突進の Retreat と同じ式で、速く下がり始めて
+    // 終点で止まる（1-(1-u)^2 は u=1 で傾き 0）。止まりのモーションの間は減速の後半にあたる。
+    // 高さは弧で、少し浮いて終点で地面へ戻る（4h*u(1-u) は両端で 0）。
     // 溜めを持たないのは被弾への反応だから（予備動作を入れると避けている感じが出ない）。
-    // 垂直の v(u) = 4h/T * (1 - 2u) は積分すると踏み切り高さへちょうど戻るので、
-    // 着地の時刻が backStepTime からずれない。
-    const float T = (std::max)(0.01f, bossDef.backStepTime); // 退く長さ [秒]
-    const float u = t / T;                                   // 退きの進み具合 0〜1
+    const float u     = (std::min)(1.0f, t / moveEnd);
+    const float eased = 1.0f - (1.0f - u) * (1.0f - u);
 
-    // 水平は直線減速のまま。退く距離 = backStepSpeed * backStepTime / 2 という
-    // 読める式を残す（間合いの設計はこの数字でやる）。
-    const float speed = bossDef.backStepSpeed * (1.0f - u);
+    Vector3 want = Vector3::Lerp(bossDef.backStepStartPos, bossDef.backStepEndPos, eased);
+    want.y       = bossDef.backStepStartPos.y + 4.0f * bossDef.backStepHeight * u * (1.0f - u);
 
-    Vector3 v = bossDef.lockedDirection * speed;
-    v.y       = (4.0f * bossDef.backStepHeight / T) * (1.0f - 2.0f * u);
-
+    // 突進と同じく、今あるべき位置へ届く速度を与える（Jolt と同じ dt で割る）。
     // 重力と水平の計算を止めてこの速度をそのまま使う。歩きの上限速度で丸めると、
     // 素早く退く技ではなくただの後ずさりになる。
-    movement.use3DVelocity = true;
+    const float stepDt = (std::max)(0.0001f, (std::min)(dt, 0.0333f));
+    Vector3     v      = (want - now) / stepDt;
+
+    // 引っかかった遅れを1フレームで取り戻して瞬間移動に見えないようにする上限。
+    constexpr float kMaxBackStepSpeed = 150.0f;
+    if (v.LengthSquared() > kMaxBackStepSpeed * kMaxBackStepSpeed)
+    {
+        v.Normalize();
+        v *= kMaxBackStepSpeed;
+    }
+
+    movement.use3DVelocity = true; // 毎フレーム書く。書くのをやめたフレームに重力で落ちる
     movement.velocity3D    = v;
 
-    bossDef.currentMoveSpeed = speed;
+    // アニメの Idle/Move を動かさない（下がるアニメはトリガーと段で切り替える）。
+    bossDef.currentMoveSpeed = 0.0f;
     bossDef.moveDirection    = bossDef.lockedDirection;
 }
 
@@ -542,7 +622,7 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
 
     // 突っ込む長さは LockDashAim が距離から決めるので、ここから先の時刻はその後で出す。
     const float chargeEnd = windupEnd + bossDef.dashChargeTime;
-    const float travelEnd = chargeEnd + (std::max)(0.0f, bossDef.dashTravelTime);
+    const float travelEnd = chargeEnd + bossDef.dashTravelTime; // 全体時間から逆算済み（LockDashAim）
     const float stopEnd   = travelEnd + (std::max)(0.0f, bossDef.dashStopTime);
 
     if (bossDef.dashPhase == BossDashPhase::Charge && t >= chargeEnd)
@@ -672,6 +752,14 @@ void BossActionSystem::LockDashAim(BossActionComponent &bossDef, const Vector3 &
     // 時間は実際に走る距離（高さを含む）から出す。速さを一定に保つため。
     const float length     = Vector3::Distance(bossDef.dashAimPos, bossDef.dashEndPos);
     bossDef.dashChargeTime = length / (std::max)(1.0f, bossDef.dashSpeed);
+
+    // 走り続ける長さは、BT の全体時間から他の段を引いた残り。突っ込む長さが距離（壁際なら
+    // 短くなる）で変わるので、ここで出す。壁際で突っ込みが短くなった分は走る時間が伸び、
+    // 技の全体時間と硬直の長さは変わらない。
+    const float fixed = (std::max)(0.05f, bossDef.dashRetreatTime) + (std::max)(0.0f, bossDef.dashAimTime) +
+                        (std::max)(0.0f, bossDef.dashWindupTime) + bossDef.dashChargeTime +
+                        (std::max)(0.0f, bossDef.dashStopTime) + (std::max)(0.0f, bossDef.dashRecovery);
+    bossDef.dashTravelTime = (std::max)(0.0f, bossDef.dashTotalTime - fixed);
 }
 
 void BossActionSystem::BeginLeapFlight(BossActionComponent &bossDef, const Vector3 &takeoffPos,

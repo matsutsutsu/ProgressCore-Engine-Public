@@ -6,6 +6,7 @@
 //   - Speed / IsMoving を書き、Idle と Move を切り替えさせる
 //   - IsLeaping / LeapAttack を書き、跳躍の空中→着地を切り替えさせる
 //   - DashPhase を書き、突進の段ごとにアニメを切り替えさせる
+//   - BackStepPhase を書き、後方ステップの「下がる→下りる」を切り替えさせる
 //
 // 備考:
 //   技の開始のトリガーは TriggeredMotionAction が引く。

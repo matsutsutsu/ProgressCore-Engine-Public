@@ -33,6 +33,10 @@ static const uint32_t HASH_LEAP_ATTACK = CCL::Utils::HashString("LeapAttack");
 // 長さでは切り替えを決められない（跳躍の IsLeaping と同じ理由）。
 static const uint32_t HASH_DASH_PHASE = CCL::Utils::HashString("DashPhase");
 
+// 後方ステップの段。0 は後方ステップしていない、1〜3 が BossBackStepPhase の Retreat〜Recovery（+1 したもの）。
+// 下がる長さは BT の全体時間から逆算するので、突進と同じくクリップの長さでは切り替えを決められない。
+static const uint32_t HASH_BACKSTEP_PHASE = CCL::Utils::HashString("BackStepPhase");
+
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const BossActionComponent &boss, AnimParametersComponent &anim) {
@@ -53,6 +57,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
 
         const bool dash = (boss.currentState == BossActionState::Dash);
         anim.SetFloat(HASH_DASH_PHASE, dash ? static_cast<float>(boss.dashPhase) + 1.0f : 0.0f);
+
+        const bool backStep = (boss.currentState == BossActionState::BackStep);
+        anim.SetFloat(HASH_BACKSTEP_PHASE, backStep ? static_cast<float>(boss.backStepPhase) + 1.0f : 0.0f);
     });
 }
 

@@ -29,6 +29,7 @@
 #include "Engine/Time/TimeState.h"
 
 struct BattleContext;
+struct AnimStateMachineComponent; // 後方ステップの止まりのモーションの長さを読む
 
 class BossActionSystem : public CCL::ECS::IfSystem<
                              BossActionSystem,
@@ -88,12 +89,15 @@ private:
                        const DirectX::SimpleMath::Vector3 &playerPos,
                        const BattleContext &battle, float dt);
 
-    // 後方ステップ。減速しながら弧を描いて後ろへ下がり、その後は硬直する。
+    // 後方ステップ。突進の「下がる」と同じく、速く下がり始めて終点で止まる。止まりのモーションが
+    // 終わる瞬間に下がり切って着地し、その後は硬直する。
     // 退きながらも相手を向き続ける。背を向けると逃げたように見え、間合いを取り直す技だと読めなくなる。
     void ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
                          CharacterMovementComponent         &movement,
                          const JoltCharacterHandleComponent &joltHandle,
-                         const DirectX::SimpleMath::Vector3 &playerPos, float dt);
+                         const AnimStateMachineComponent    *anim,
+                         const DirectX::SimpleMath::Vector3 &playerPos,
+                         const BattleContext &battle, float dt);
 
     /**
      * @brief 跳躍。溜め → 飛行 → 着地硬直。跳躍系の技はすべてここを通り、違いは着地点だけ。

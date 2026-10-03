@@ -59,14 +59,28 @@ enum class BossDashPhase : uint8_t
     Recovery, // 止まった後の硬直
 };
 
-// 跳躍1種類分の跳び方。跳躍はこの3つの値と「着地点の決め方」だけで区別する。
+// 後方ステップの段。突進と同じくアニメの切り替えに使うので値で持つ。
+// 下がり始め（Travel_Bwd_Start）と止まり（Travel_Bwd_Stop）は1つの動きの前後半で、
+// 止まりのモーションが終わる瞬間に後ろへの移動も終わる。
+enum class BossBackStepPhase : uint8_t
+{
+    Retreat,  // 下がり始め。Travel_Bwd_Start を流す
+    Stop,     // 下がりながら止まる。Travel_Bwd_Stop を流し、それが終わる瞬間に下がり切って着地する
+    Recovery, // 着地硬直
+};
+
+// 跳躍1種類分の跳び方。跳躍はこの値と「着地点の決め方」だけで区別する。
 // 技ごとに別名の float を並べると、跳躍を1つ足すたびに構造体・インスペクタ定義・
 // OnEnterState の3か所へ同じ形を書き写すことになる。
+//
+// 技の長さは BT ノードの全体時間の1か所に置く。ここには「溜め」と「着地硬直」を持ち、
+// 残りを空中の長さにする（滞空だけは上昇＋下降を持ち、残りを頂点に留まる長さにする）。
 struct BossLeapDef
 {
-    float windup = 0.4f;  // 踏み切るまでの溜め [秒]。LeapStart クリップ(0.47秒)より短くする
-    float flight = 2.0f;  // 踏み切り→着地 [秒]。滞空はこの半分で頂点へ着く
-    float height = 30.0f; // 放物線の頂点の高さ [m]
+    float windup       = 0.4f;  // 踏み切るまでの溜め [秒]。LeapStart クリップ(0.47秒)より短くする
+    float flight       = 2.0f;  // 踏み切り→着地 [秒]。滞空だけが使う（他の跳躍は全体時間から逆算して上書きする）
+    float height       = 30.0f; // 放物線の頂点の高さ [m]
+    float landRecovery = 0.5f;  // 着地硬直 [秒]
 };
 
 struct BossActionComponent
@@ -91,27 +105,39 @@ struct BossActionComponent
     float strafeKeepDistance = 12.0f; // 保ちたい間合い [m]。間合い補正を有効にしたときだけ効く
     float strafeDistanceGain = 0.5f;  // 間合いのずれをどれだけ詰めるか。0 で純粋な円
 
-    // --- 後方ステップ（退く距離 = backStepSpeed × backStepTime ÷ 2）---
+    // --- 後方ステップ（突進の「下がる」と同じく速く下がり始めて止まる。少し浮いて着地する）---
+    //
+    // 動く長さ＝下がり始めの長さ＋止まりのモーションの長さ。止まりの長さは数字で持たず、
+    // アニメグラフの BackStepStop（クリップの長さ÷再生速度）から取る。ここにも持つと、
+    // 再生速度を変えたときに「止まった後に止まりのモーションが続く」ずれが出る。
+    // 全体時間（BTノードの param）の残りが着地硬直になる。
+    //   着地硬直＝全体時間−下がり始めの長さ−止まりのモーションの長さ
 
-    float backStepSpeed  = 26.0f; // 踏み切りの速さ [m/s]。backStepTime かけて直線的に0まで落とす
-    float backStepHeight = 1.2f;  // 弧の頂点の高さ [m]。0にすると地上を滑る後ずさりに戻る
-    float backStepTime   = 0.4f;  // 退いている長さ [秒]。変えたら AnimGraph の playbackSpeed も合わせる
+    float backStepDistance    = 5.0f;  // 後ろへ下がる距離 [m]。壁際ではステージの内側で止まる
+    float backStepHeight      = 1.2f;  // 下がりながら浮く高さ [m]。突進（dashRetreatHeight）より低くする
+    float backStepRetreatTime = 0.35f; // 下がり始め（Travel_Bwd_Start）を流す長さ [秒]。この後に止まりのモーションが続く
 
     // --- 跳躍3種（跳び方 BossLeapDef ＋ 着地点を決める値ひとつ、で揃えてある）---
     //
     // 着地点が決まるのは踏み切りの瞬間なので、溜めの長さがそのまま「見てから避ける」ための
-    // 予告になる。技の全体時間（＝後隙）はBTノードの param が持つ。
+    // 予告になる。技の全体時間はBTノードの param が持つ。
+    //   中央へ逃げる・跳躍攻撃: 空中の長さ＝全体時間−溜め−着地硬直
+    //   滞空:                   頂点に留まる長さ＝全体時間−溜め−上昇下降−着地硬直
 
-    BossLeapDef escapeLeap{0.25f, 1.1f, 40.0f}; // 中央へ逃げる(A_BossLeapEscape)。頂点は相手（全高約9m）の頭上を越える高さ
-    float       escapeLandingRatio = 0.3f;      // 着地点の中心からの距離＝ステージ半径×これ。0だと毎回ど真ん中で狩られる
+    BossLeapDef escapeLeap{0.25f, 1.1f, 40.0f, 0.55f}; // 中央へ逃げる(A_BossLeapEscape)。頂点は相手（全高約9m）の頭上を越える高さ
+    float       escapeLandingRatio = 0.3f;             // 着地点の中心からの距離＝ステージ半径×これ。0だと毎回ど真ん中で狩られる
 
-    BossLeapDef attackLeap{0.35f, 2.0f, 30.0f}; // 跳躍攻撃(A_BossLeapAttack)。射程の上限は持たない
-    float       attackStandOff = 3.0f;         // 相手のどれだけ手前に降りるか [m]。0だと真上に降りてカプセルが押し合う
+    BossLeapDef attackLeap{0.35f, 2.0f, 30.0f, 0.5f}; // 跳躍攻撃(A_BossLeapAttack)。射程の上限は持たない
+    float       attackStandOff = 3.0f;                // 相手のどれだけ手前に降りるか [m]。0だと真上に降りてカプセルが押し合う
 
-    BossLeapDef hoverLeap{0.3f, 0.9f, 16.0f}; // その場で滞空(A_BossAirHover)。頂点はプレイヤーの攻撃が届かない高さに
-    float       hoverLandRecovery = 0.63f;    // 着地硬直 [秒]。頂点に留まる長さ＝BTノードの全体時間−溜め−上昇下降−これ
+    BossLeapDef hoverLeap{0.3f, 0.9f, 16.0f, 0.63f}; // その場で滞空(A_BossAirHover)。頂点はプレイヤーの攻撃が届かない高さに
 
-    // --- 突進攻撃(A_BossDashAttack)。硬直＝BTノードの全体時間の残り ---
+    // --- 突進攻撃(A_BossDashAttack)。走り続ける長さ＝BTノードの全体時間の残り ---
+    //
+    // 技の長さは BT ノードの全体時間の1か所に置く。走り続ける長さは
+    // 全体時間−(下がる＋狙う＋構え＋突っ込む＋止まる＋硬直) で、突っ込む長さが距離で
+    // 変わるので、方向を固定する瞬間に計算する。硬直を固定するのは、後隙の長さは
+    // プレイヤーの反撃の機会そのもので、全体時間を変えたときに伸び縮みさせたくないため。
     //
     // 狙うのは「方向」だけ。溜めに入った瞬間に相手への向きを固定し、その方向へ突っ込んだ後も
     // 走り続ける。相手の位置で止まらないので、近距離の攻撃と間合いを離す移動を兼ねる。
@@ -127,8 +153,8 @@ struct BossActionComponent
     float dashSpeed           = 45.0f; // 突っ込む速さ [m/s]
     float dashDistance        = 15.0f; // 空中から地面へ突っ込む距離 [m]。この後の前進は別に数える
     float dashTravelSpeed     = 25.0f; // 着地後に走り続ける速さ [m/s]
-    float dashTravelTime      = 1.0f;  // 走り続ける長さ [秒]。進む距離 ≒ 速さ × これ
     float dashStopTime        = 0.4f;  // 走りを緩めて止まるまで [秒]
+    float dashRecovery        = 0.5f;  // 止まった後の硬直 [秒]
 
     // --- 実行時の状態。書くのはすべて BossActionSystem（保存しない）---
     //
@@ -160,6 +186,15 @@ struct BossActionComponent
     bool                         leapLandAttack  = false;                                // 着地を攻撃のクリップ(LeapLandAttack)で受けるか。アニメの LeapAttack に載る
     bool                         leapTouchedDown = false;                                // 着地の最初のフレームで速度を0にし終えたか。飛行中の速度が残って滑るのを防ぐ
 
+    // 以下は後方ステップの実行時の値。始点と終点は最初のフレームに1回だけ決める
+    // （Jolt の位置で取りたいので OnEnterState ではなく ProcessBackStep で決める）。
+
+    BossBackStepPhase            backStepPhase    = BossBackStepPhase::Retreat;          // 今の後方ステップの段。アニメの切り替えにも使う
+    bool                         backStepStarted  = false;                               // 始点と終点を決め終えたか
+    float                        backStepStopTime = 0.0f;                                // 止まりのモーションの長さ [秒]。アニメグラフから取る
+    DirectX::SimpleMath::Vector3 backStepStartPos = DirectX::SimpleMath::Vector3::Zero;  // 下がり始めた地点。高さはここを地面とみなす
+    DirectX::SimpleMath::Vector3 backStepEndPos   = DirectX::SimpleMath::Vector3::Zero;  // 下がり切る地点（地面・ステージの内側へ収めた後の値）
+
     // 以下は突進の実行時の値。下がり始めの地点は最初のフレームに、突進の終点は予告の
     // 終わりに1回だけ決める。
 
@@ -169,4 +204,6 @@ struct BossActionComponent
     DirectX::SimpleMath::Vector3 dashAimPos      = DirectX::SimpleMath::Vector3::Zero;   // 下がり切って狙う地点（空中）
     DirectX::SimpleMath::Vector3 dashEndPos      = DirectX::SimpleMath::Vector3::Zero;   // 突進の終点（地面・ステージの内側へ収めた後の値）
     float                        dashChargeTime  = 0.0f;                                 // 突進にかける時間 [秒]。距離÷速さ
+    float                        dashTotalTime   = 0.0f;                                 // 技の全体時間 [秒]（BTノードの param）。技に入った瞬間に写す
+    float                        dashTravelTime  = 0.0f;                                 // 走り続ける長さ [秒]。方向を固定する瞬間に全体時間から逆算する
 };
