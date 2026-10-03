@@ -169,8 +169,9 @@ namespace CCL::AI::Formation
     {
         // 処理フロー:
         // 1. 割付の値を直す
-        // 2. 攻撃と予告の長さを直す
-        // 3. 動きの層ごとに時間帯と震えの値を直す
+        // 2. モデルの形の値を直す
+        // 3. 攻撃と予告の長さを直す
+        // 4. 動きの層ごとに時間帯と震えの値を直す
 
         const char *ctx      = context.empty() ? asset.name.c_str() : context.c_str();
         bool        repaired = false;
@@ -199,6 +200,24 @@ namespace CCL::AI::Formation
                           "[Formation] %s: assign.rows=%d が負。自動格子(0)に直した", ctx, asset.assign.rows);
             asset.assign.rows = 0;
             repaired          = true;
+        }
+
+        // --- モデルの形 ---
+
+        // 0 以下だと全点が原点に潰れ、全機が1点に重なる。何が壊れたか見た目から分からないので直す。
+        if (asset.layout.modelScale <= 0.0f)
+        {
+            CCL_LOG_ERROR(LogCategory::AI,
+                          "[Formation] %s: layout.modelScale=%.3f は0以下。全機が1点に重なるため 1 に直した",
+                          ctx, asset.layout.modelScale);
+            asset.layout.modelScale = 1.0f;
+            repaired                = true;
+        }
+        if (asset.layout.shape == AssetShape::Model && asset.layout.modelPath.empty())
+        {
+            // 直しようが無いので知らせるだけ。実行時は格子の形に戻して動かす。
+            CCL_LOG_ERROR(LogCategory::AI,
+                          "[Formation] %s: 形が Model なのに layout.modelPath が空。格子で並べる", ctx);
         }
 
         // --- 攻撃と予告の長さ ---

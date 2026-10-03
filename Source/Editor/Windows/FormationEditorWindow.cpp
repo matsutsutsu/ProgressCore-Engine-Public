@@ -1,5 +1,6 @@
 #include "FormationEditorWindow.h"
 
+#include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <utility>
 
 #ifdef ENABLE_EDITOR
@@ -36,6 +38,48 @@ FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 
 // 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通。
 constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
+
+// ファイルのパスを入れる文字列の項目と、選ぶときに使う FileDialog のプリセット。
+//
+// パスは手で打たせない。綴りを1文字間違えるとモデルが読めず、格子の形に戻るだけで原因に気づきにくい。
+// パスの項目を足すときは、ここへ1行足せば「参照...」ボタン付きで描かれる。
+struct PathField
+{
+    const char *jsonName; // FieldDescriptor::jsonName
+    const char *preset;   // FileDialog::OpenPreset の用途キー
+};
+constexpr PathField kPathFields[] = {
+    {"modelPath", "Model"},
+};
+
+// fd がパスの項目なら、そのプリセットを返す。
+static const char *FindPathPreset(const FieldDescriptor &fd)
+{
+    if (fd.kind != FieldKind::String || fd.jsonName == nullptr) return nullptr;
+    for (const PathField &pf : kPathFields)
+        if (std::strcmp(pf.jsonName, fd.jsonName) == 0) return pf.preset;
+    return nullptr;
+}
+
+// パスの項目を「今のパス（読み取り専用）＋参照...」で描く。選び直したら true。
+static bool DrawPathField(const FieldDescriptor &fd, void *obj, const char *preset)
+{
+    auto &path = *reinterpret_cast<std::string *>(static_cast<char *>(obj) + fd.offset);
+
+    bool changed = false;
+    if (ImGui::Button("参照..."))
+    {
+        if (auto picked = FileDialog::OpenPreset(preset))
+        {
+            path    = FileDialog::ConvertToRelativePath(*picked);
+            changed = true;
+        }
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted(path.empty() ? "(未設定)" : path.c_str());
+    if (!path.empty() && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", path.c_str());
+    return changed;
+}
 
 FormationEditorWindow::FormationEditorWindow()
     : EditorWindow("Formation Editor", false), m_sequence(std::make_unique<FormationLayerSequence>())
@@ -223,8 +267,15 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
             if (fd.tooltip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fd.tooltip);
 
             ImGui::TableSetColumnIndex(1);
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            changed |= ComponentMetaImGui::DrawField(fd, obj);
+            if (const char *preset = FindPathPreset(fd))
+            {
+                changed |= DrawPathField(fd, obj, preset);
+            }
+            else
+            {
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                changed |= ComponentMetaImGui::DrawField(fd, obj);
+            }
 
             ImGui::PopID();
         }

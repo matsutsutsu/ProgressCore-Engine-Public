@@ -34,6 +34,7 @@
 #include "Game/Logics/AI/Drone/Formation/FormationAssetIO.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
+#include "Game/Logics/AI/Drone/Formation/ShapeSampler.h"
 
 namespace CCL::AI::Formation::Data
 {
@@ -54,7 +55,11 @@ namespace CCL::AI::Formation::Data
     class DataDrivenFormation : public IFormation
     {
     public:
-        void                  SetAsset(const FormationAsset &asset) { m_asset = asset; }
+        void SetAsset(const FormationAsset &asset)
+        {
+            m_asset = asset;
+            EnsureShape(); // 重い点の取り出しを、戦闘中ではなく登録時に済ませる
+        }
         const FormationAsset &GetAsset() const { return m_asset; }
 
         // エディタが実行中の陣形を直接編集するための入口。コピーを持たせると
@@ -109,7 +114,16 @@ namespace CCL::AI::Formation::Data
         static Vector3 AxisVector(AssetAxis axis);
 
         Seat    AssignSeat(const DroneComponent &drone) const;
-        Vector3 MakeLocal(const Seat &seat) const;
+        Vector3 MakeLocal(const Seat &seat, const DroneComponent &drone) const;
+
+        // 形が Model のとき、モデルの表面の点を用意する。モデルが変わったときだけ取り直す。
+        //
+        // エディタはアセットを直接書き換える（GetMutableAsset）ので、変更を知らせる入口が無い。
+        // そこで Calculate の頭で毎回パスを見比べる。
+        //
+        // Calculate から呼ぶので、DroneFormationSystem が機体のループを直列（ForEach）で回すことが前提。
+        // 並列にするなら、ループの前に1回だけ呼ぶ形へ移すこと。
+        void EnsureShape();
 
         // この席が「何番目に動くか」を 0〜1 で返す。波も先攻後攻もこの値で表す。
         float SeatPhaseT(const FormationLayer &layer, const Seat &seat) const;
@@ -125,6 +139,13 @@ namespace CCL::AI::Formation::Data
                         Vector3 &local, Vector3 &look) const;
 
         FormationAsset m_asset;
+
+        // 取り出せる点の上限。機数がこれを超えた分は先頭から使い回す（同じ点に重なる）。
+        static constexpr int kMaxShapePoints = 1024;
+
+        std::vector<Vector3> m_shapePoints;    // モデル表面の点（モデル空間・最遠点の順）
+        std::string          m_shapeModelPath; // m_shapePoints を取り出したモデル
+        bool                 m_shapeTried = false; // 読めなかったモデルを毎フレーム読み直さないため
 
         // この席が予告の中のどこにいるか（予告の長さを 1 とした割合）。1 を超えたら予告は終わっている。
         float TelegraphT(const DroneComponent &drone) const;
@@ -231,10 +252,44 @@ namespace CCL::AI::Formation::Data
         return seat;
     }
 
-    // (2) 席 → ローカル座標（動かす前の「待機の形」）
-    inline DataDrivenFormation::Vector3 DataDrivenFormation::MakeLocal(const Seat &seat) const
+    inline void DataDrivenFormation::EnsureShape()
     {
         const FormationLayout &lo = m_asset.layout;
+        if (lo.shape != AssetShape::Model) return;
+        if (m_shapeTried && m_shapeModelPath == lo.modelPath) return;
+
+        m_shapeTried     = true;
+        m_shapeModelPath = lo.modelPath;
+        m_shapePoints    = SampleModelSurface(lo.modelPath, kMaxShapePoints);
+
+        CCL_LOG_INFO(LogCategory::AI, "[Formation] %s: モデルの形 %s から %zu 点",
+                     m_asset.name.c_str(), lo.modelPath.c_str(), m_shapePoints.size());
+    }
+
+    // (2) 席 → ローカル座標（動かす前の「待機の形」）
+    inline DataDrivenFormation::Vector3 DataDrivenFormation::MakeLocal(const Seat &seat, const DroneComponent &drone) const
+    {
+        const FormationLayout &lo = m_asset.layout;
+
+        // --- モデルの形 ---
+
+        // 通し番号の順に、最遠点の順で並んだ点へ置く。
+        // 機数が減っても先頭から使うので、形が欠けずに粗くなるだけで済む。
+        //
+        // 点が取れなかったときは下の格子へ戻す。全機を1点に重ねると、何が壊れたか見た目から分からない。
+        if (lo.shape == AssetShape::Model && !m_shapePoints.empty())
+        {
+            const Vector3 &p = m_shapePoints[drone.localIndex % m_shapePoints.size()];
+
+            const auto q = DirectX::SimpleMath::Quaternion::CreateFromYawPitchRoll(
+                DirectX::XMConvertToRadians(lo.modelYaw),
+                DirectX::XMConvertToRadians(lo.modelPitch),
+                DirectX::XMConvertToRadians(lo.modelRoll));
+
+            return Vector3::Transform(p * lo.modelScale, q);
+        }
+
+        // --- 格子 ---
 
         const float a = lo.centerColumns
                             ? (seat.col - (seat.colCount - 1) * 0.5f) * lo.spacingA
@@ -351,7 +406,7 @@ namespace CCL::AI::Formation::Data
         using namespace DirectX::SimpleMath;
 
         // 処理フロー:
-        // 1. 移動方式をアセットから写す
+        // 1. 移動方式をアセットから写し、モデルの形を用意する
         // 2. 攻撃の進行度を進める
         // 3. 席を決め、待機の形を作る（割付・形）
         // 4. 動きの層を上から順に当てる（動き）
@@ -359,6 +414,9 @@ namespace CCL::AI::Formation::Data
         // 6. 機首と突撃方向を決める
 
         drone.chargeMode = m_asset.output.chargeMode;
+
+        // もしモデルの形を使うなら表面の点を取り出すための関数
+        EnsureShape();
 
         // --- 進行度 ---
 
@@ -377,7 +435,7 @@ namespace CCL::AI::Formation::Data
 
         const Seat seat = AssignSeat(drone);
 
-        Vector3 local = MakeLocal(seat);
+        Vector3 local = MakeLocal(seat, drone);
         Vector3 look  = Vector3::UnitZ; // ローカルの Forward。Rotate が同じだけ回す
 
         // --- 動きの層 ---

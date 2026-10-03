@@ -1881,6 +1881,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
@@ -2889,6 +2892,9 @@
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneFormationSystem.cpp">

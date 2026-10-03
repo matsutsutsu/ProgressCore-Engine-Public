@@ -35,6 +35,13 @@ namespace CCL::AI::Formation
         Interleaved, // 0 1 0 1 0 1 0 1
     };
 
+    // 待機の形の作り方。
+    enum class AssetShape : uint8_t
+    {
+        Grid,  // 格子に並べる（縦割り・挟み込みなど）
+        Model, // モデルの表面に並べる（剣など）。点は ShapeSampler が取り出す
+    };
+
     // 格子を埋めていく向き。行数(rows)とは独立に選ぶ。
     enum class AssetFillOrder : uint8_t
     {
@@ -79,9 +86,30 @@ namespace CCL::AI::Formation
     };
 
     // (2) 形: 席 → ローカル座標（動かす前の待機の形）
-    //   列方向は columnAxis で選び、行方向は常に Up。
+    //   Grid: 列方向は columnAxis で選び、行方向は常に Up。
+    //   Model: 通し番号の順にモデル表面の点へ並べる。格子の項目は使わない。
     struct FormationLayout
     {
+        AssetShape shape = AssetShape::Grid;
+
+        // --- Model 専用 ---
+
+        // 形の元にするモデル。描画と同じ .gltf を指す。
+        std::string modelPath;
+
+        // モデルの大きさの倍率。ドローンは見た目 約3m あるので、モデルの実寸のままだと
+        // 点が詰まりすぎて1つの塊に見える。形が読める大きさ（剣なら 15〜20m）まで拡大する。
+        float modelScale = 1.0f;
+
+        // モデルの向き [度]。拡大の後、ロール(Forward 軸)→ピッチ(Right 軸)→ヨー(Up 軸) の順で回す
+        // （DirectX の CreateFromYawPitchRoll と同じ順）。
+        // 動きの層を当てる前の「構えた形」をここで決める。
+        float modelPitch = 0.0f;
+        float modelYaw   = 0.0f;
+        float modelRoll  = 0.0f;
+
+        // --- Grid 専用 ---
+
         AssetAxis columnAxis    = AssetAxis::Right;
         bool      centerColumns = true; // 列の並びを原点で挟んで左右対称にする
         float     baseA         = 0.0f; // 列方向の起点 [m]

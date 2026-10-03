@@ -34,6 +34,7 @@ namespace CCL::AI::Formation::Meta
     // enum の値の名前。並びは enum の宣言順そのまま（添字がそのまま値になる）。
     // JSON にもこの綴りで書くので、一度公開したら変えない。
     inline constexpr const char *kAxisNames[]       = {"Right", "Up", "Forward"};
+    inline constexpr const char *kShapeNames[]      = {"Grid", "Model"};
     inline constexpr const char *kSplitNames[]      = {"Block", "Interleaved"};
     inline constexpr const char *kFillOrderNames[]  = {"ColumnFirst", "RowFirst"};
     inline constexpr const char *kLayerTypeNames[]  = {"Rotate", "Translate", "Shiver"};
@@ -67,6 +68,12 @@ namespace CCL::AI::Formation::Meta
     {
         using T                                          = FormationLayout;
         static const std::vector<FieldDescriptor> fields = {
+            FD_EnumU8("形の作り方", "shape", offsetof(T, shape), kShapeNames, NameCount(kShapeNames), nullptr, true, "Grid=格子に並べる / Model=モデルの表面に並べる（下の Model 用の項目を使う）"),
+            FD_String("モデル [Model]", "modelPath", offsetof(T, modelPath), nullptr, true, "形の元にするモデル。陣形エディタの「参照...」で選ぶ。変えると次のフレームで点を取り直す"),
+            FD_Float("モデルの倍率 [Model]", "modelScale", offsetof(T, modelScale), 0.1f, 0.01f, 100.0f, nullptr, true, "ドローンは見た目 約3m。剣なら 15〜20m になる倍率にしないと点が詰まって形が読めない"),
+            FD_Float("ピッチ [度] [Model]", "modelPitch", offsetof(T, modelPitch), 1.0f, 0.0f, 0.0f, nullptr, true, "Right 軸まわりの回転。構えた形の向きを決める"),
+            FD_Float("ヨー [度] [Model]", "modelYaw", offsetof(T, modelYaw), 1.0f, 0.0f, 0.0f, nullptr, true, "Up 軸まわりの回転"),
+            FD_Float("ロール [度] [Model]", "modelRoll", offsetof(T, modelRoll), 1.0f, 0.0f, 0.0f, nullptr, true, "Forward 軸まわりの回転"),
             FD_EnumU8("列を並べる向き", "columnAxis", offsetof(T, columnAxis), kAxisNames, NameCount(kAxisNames), nullptr, true, "行方向は常に上"),
             FD_Bool("列を左右対称に置く", "centerColumns", offsetof(T, centerColumns), nullptr, true, "原点を挟んで並べる。切ると片側へ伸びる"),
             FD_Float("列方向の起点 [m]", "baseA", offsetof(T, baseA), 0.1f, 0.0f, 0.0f, nullptr, true, "原点から最初の列までの距離"),
