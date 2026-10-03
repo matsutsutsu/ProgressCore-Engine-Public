@@ -73,23 +73,28 @@ private:
 
     // 小隊1個ぶんのフェーズ遷移とアンカーの移動。
     // rank は生きている小隊の中での順番（0〜activeCount-1）。並ぶ角度と段をこれで決める。
+    // squadId は個体差（速さ・狙いのずれ）を決めるのに使う。撃破で変わらない番号なので、追跡の途中で値が跳ねない。
     void UpdateSquad(SquadState                         &squad,
+                     uint8_t                             squadId,
                      uint8_t                             rank,
                      uint8_t                             activeCount,
                      bool                                ordered,
                      bool                                attacking,
                      const DirectX::SimpleMath::Vector3 &bossPos,
                      const DirectX::SimpleMath::Vector3 &playerPos,
-                     float                               chaseSpeed,
+                     float                               playerRunSpeed,
                      const SquadTuning                  &tuning,
                      float                               dt);
 
     // アンカーの向きをプレイヤーへ曲げる（旋回上限つき）。無制限に追尾させると、避けても
     // 曲がって当たる攻撃になる。上限があれば、至近距離で鋭く切り返されたときに曲がりきれず外れる。
-    void SteerTowardPlayer(SquadState                         &squad,
-                           const DirectX::SimpleMath::Vector3 &playerPos,
-                           const SquadTuning                  &tuning,
-                           float                               dt) const;
+    // aimSide は狙う点をプレイヤーの左右どちらへずらすか（-1 / +1）。
+    // 戻り値は、曲げる前の機首と狙う方向のなす角の cos（1=正面、0=真横）。曲がるときの減速に使う。
+    float SteerTowardPlayer(SquadState                         &squad,
+                            const DirectX::SimpleMath::Vector3 &playerPos,
+                            float                               aimSide,
+                            const SquadTuning                  &tuning,
+                            float                               dt) const;
 
     // アンカーが床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
     // 位置だけでなく速度と向きの下向き成分も抜くこと（追従機は「1つ前の機体の速度」を

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 各ドローンの currentFormation から陣形を引き、持ち場（targetPosition）を
+// 概要: 各ドローンの currentFormation から陣形を引き、目標座標を
 //       計算する System。
 //
 // 責務:
@@ -10,7 +10,8 @@
 //   - ボスに付いていく陣形には、ボスの速度を先渡しの速度（followFeedForward）として配る
 //
 // 備考:
-//   実際に動かすのは DroneMovementSystem。
+//   TargetPositionを計算するだけで
+// 　実際に動かすのは DroneMovementSystem。
 //
 //   陣形の仮想関数は機体ごとに呼ぶ。全機がほぼ同じ陣形なので分岐予測が当たり、コストは小さい。
 //   ドローンのループ自体は DroneComponent の配列を連続アクセスのまま回す。

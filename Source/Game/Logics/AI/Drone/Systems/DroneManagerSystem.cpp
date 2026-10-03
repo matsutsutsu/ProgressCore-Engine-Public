@@ -599,6 +599,16 @@ void DroneManagerSystem::DrawSquadTuning()
     ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "追跡");
     ImGui::SliderFloat("速さ（走行比）", &tuning.chaseSpeedOverRun, 0.5f, 2.0f, "x%.2f");
     HoverTooltip("プレイヤーの走行速度に掛ける倍率。1 を超えると走って逃げても追いつかれる");
+    ImGui::SliderFloat("速さのばらつき", &tuning.chaseSpeedSpread, 0.0f, 0.5f, "±%.2f");
+    HoverTooltip("小隊ごとに上の倍率へ足す幅。一番遅い小隊でも 1 を超えるようにする");
+    ImGui::SliderFloat("狙いの横ずれ", &tuning.aimSideOffset, 0.0f, 30.0f, "%.1f m");
+    ImGui::SliderFloat("ずれを縮め始める距離", &tuning.aimFadeStartDist, 1.0f, 80.0f, "%.0f m");
+    ImGui::SliderFloat("ずれが0になる距離", &tuning.aimFadeEndDist, 0.0f, 40.0f, "%.0f m");
+    HoverTooltip("遠くでは狙いを左右へずらして包むように迫り、この2つの間で縮めて、内側ではプレイヤー本人を狙う");
+    ImGui::SliderFloat("旋回時の最低速度", &tuning.turnSlowMinScale, 0.1f, 1.0f, "x%.2f");
+    HoverTooltip("狙う方向とのずれが大きいときに落とす速さの下限。1 で減速しない（止まった相手の周りを回り続けやすい）");
+    ImGui::SliderFloat("加減速", &tuning.chaseAccel, 5.0f, 300.0f, "%.0f m/s2");
+    HoverTooltip("速さを変えられる上限。大きすぎると至近距離の切り返しにも急ブレーキで追いつき、避けられなくなる");
     ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 720.0f, "%.0f deg/s");
     HoverTooltip("回避はこの制限だけで成り立つ。上げすぎると切り返しても曲がって当たる");
 

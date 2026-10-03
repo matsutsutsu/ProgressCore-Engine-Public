@@ -17,6 +17,16 @@ using namespace DirectX::SimpleMath;
 namespace
 {
     constexpr float kTwoPi = 6.28318530f;
+
+    // 小隊番号から -1〜1 の値を作る。小隊ごとの個体差（速さ・狙いのずれ）に使う。
+    //
+    // 乱数にしないのは、当たった・外れたの原因を同じ条件で再現して調整できるようにするため。
+    // 黄金比の小数部を使うと、番号が連続していても値が偏らずに散らばる。
+    float SquadVariation(uint8_t squadId)
+    {
+        const float x = static_cast<float>(squadId) * 0.6180340f;
+        return (x - std::floor(x)) * 2.0f - 1.0f;
+    }
 }
 
 void SquadUpdateSystem::Initialize()
@@ -94,9 +104,6 @@ void SquadUpdateSystem::Update(float rawDt)
         }
     }
 
-    // 追跡の速さはプレイヤーの走行速度から決める（理由は SquadTuning::chaseSpeedOverRun）。
-    const float chaseSpeed = playerRunSpeed * reg.tuning.chaseSpeedOverRun;
-
     // --- 席ごとの位置と速度 ---
 
     // 生存機数は毎フレーム数え直す。撃破で小隊が痩せるため。
@@ -135,21 +142,24 @@ void SquadUpdateSystem::Update(float rawDt)
         if (s.aliveCount > 0) ++activeCount;
 
     uint8_t rank = 0;
-    for (auto &s : reg.squads)
+    for (uint8_t i = 0; i < SquadRegistry::kMaxSquads; ++i)
     {
+        SquadState &s = reg.squads[i];
         if (s.aliveCount == 0) continue;
-        UpdateSquad(s, rank++, activeCount, ordered, attacking, bossPos, playerPos, chaseSpeed, reg.tuning, dt);
+        UpdateSquad(s, i, rank++, activeCount, ordered, attacking, bossPos, playerPos, playerRunSpeed,
+                    reg.tuning, dt);
     }
 }
 
 void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
+                                    uint8_t            squadId,
                                     uint8_t            rank,
                                     uint8_t            activeCount,
                                     bool               ordered,
                                     bool               attacking,
                                     const Vector3     &bossPos,
                                     const Vector3     &playerPos,
-                                    float              chaseSpeed,
+                                    float              playerRunSpeed,
                                     const SquadTuning &tuning,
                                     float              dt)
 {
@@ -179,16 +189,36 @@ void SquadUpdateSystem::UpdateSquad(SquadState        &squad,
         next = SquadPhase::Approach;
     }
 
-    squad.phase = next;
+    const SquadPhase prevPhase = squad.phase;
+    squad.phase                = next;
 
     // --- 追跡 ---
 
     // アンカーがプレイヤーを追い、後続機はそれに付いていく。
-    // 速さは一定で、曲がる速さだけに上限がある。避けられるかどうかはこの上限だけで決まる。
+    // 曲がる速さに上限があり、避けられるかどうかはこの上限で決まる。速さは曲がるときだけ落とす。
     if (squad.phase == SquadPhase::Chase)
     {
-        SteerTowardPlayer(squad, playerPos, tuning, dt);
-        squad.anchorVelocity = squad.anchorForward * chaseSpeed;
+        // 速さはプレイヤーの走行速度から決め、小隊ごとに少しばらつかせる（理由は SquadTuning::chaseSpeedSpread）。
+        // 個体差は小隊番号から決める。生存小隊の中での順番(rank)は撃破で変わり、追跡の途中で速さが跳ねるため。
+        const float speedRatio = tuning.chaseSpeedOverRun + tuning.chaseSpeedSpread * SquadVariation(squadId);
+        const float topSpeed   = playerRunSpeed * speedRatio;
+
+        // 追跡に入った最初のフレームは、展開中の速さから加速を始める（いきなり最高速にしない）。
+        if (prevPhase != SquadPhase::Chase) squad.chaseSpeed = squad.anchorVelocity.Length();
+
+        // 狙いを左右どちらへずらすか。偶数番は左、奇数番は右にして、左右から挟み込む形にする。
+        const float aimSide = (squadId % 2 == 0) ? -1.0f : 1.0f;
+
+        const float aimCos = SteerTowardPlayer(squad, playerPos, aimSide, tuning, dt);
+
+        // 狙う方向とのずれが大きいほど遅くする（理由は SquadTuning::turnSlowMinScale）。
+        // 正面なら最高速、真横より後ろなら下限の割合。速さの変化は chaseAccel で頭打ちにする。
+        const float facing      = std::clamp(aimCos, 0.0f, 1.0f);
+        const float targetSpeed = topSpeed * (tuning.turnSlowMinScale + (1.0f - tuning.turnSlowMinScale) * facing);
+        const float maxDelta    = tuning.chaseAccel * dt;
+        squad.chaseSpeed += std::clamp(targetSpeed - squad.chaseSpeed, -maxDelta, maxDelta);
+
+        squad.anchorVelocity = squad.anchorForward * squad.chaseSpeed;
         squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * dt;
         ClampAltitude(squad, tuning);
         return;
@@ -304,39 +334,66 @@ void SquadUpdateSystem::ClampAltitude(SquadState &squad, const SquadTuning &tuni
     }
 }
 
-void SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
-                                          const Vector3     &playerPos,
-                                          const SquadTuning &tuning,
-                                          float              dt) const
+float SquadUpdateSystem::SteerTowardPlayer(SquadState        &squad,
+                                           const Vector3     &playerPos,
+                                           float              aimSide,
+                                           const SquadTuning &tuning,
+                                           float              dt) const
 {
-    Vector3     toPlayer = playerPos - squad.anchorPos;
-    const float dist     = toPlayer.Length();
+    // 処理フロー:
+    // 1. 狙う点を決める（プレイヤーの左右へずらし、近いほどずれを縮める）
+    // 2. 狙う点へ、1フレームで曲がれる角度の範囲で向きを寄せる
+
+    const Vector3 toPlayer = playerPos - squad.anchorPos;
+    const float   dist     = toPlayer.Length();
+
+    // --- 狙う点 ---
+
+    // 全小隊が同じ点を追うと1か所に集まるので、小隊から見たプレイヤーの左右へずらした点を狙う。
+    // ずれは距離に比例して縮め、最後はプレイヤー本人へ向かわせる（ずらしたままだと必ず外れる）。
+    Vector3 aimPoint = playerPos;
+    {
+        // 横方向は水平面で決める。真上から見下ろす位置にいると左右が定まらないので、そのときはずらさない。
+        Vector3 side(toPlayer.z, 0.0f, -toPlayer.x);
+        const float fadeRange = tuning.aimFadeStartDist - tuning.aimFadeEndDist;
+        if (side.LengthSquared() > 0.001f && fadeRange > 0.001f)
+        {
+            side.Normalize();
+            const float fade = std::clamp((dist - tuning.aimFadeEndDist) / fadeRange, 0.0f, 1.0f);
+            aimPoint += side * (aimSide * tuning.aimSideOffset * fade);
+        }
+    }
+
+    // --- 向き ---
 
     // 終末ロック（一定距離から直線に固定する処理）は持たない。
     // 近づくほどプレイヤーを見る角度は速く変わり、下の旋回上限を超えた時点で曲がりきれなくなる。
     // 至近距離で直線になるのは、この上限から自然に起きる。
-    if (dist < 0.001f) return;
+    Vector3     toAim   = aimPoint - squad.anchorPos;
+    const float aimDist = toAim.Length();
+    if (aimDist < 0.001f) return 1.0f;
 
-    toPlayer /= dist;
+    toAim /= aimDist;
 
     // 1フレームで曲がれる角度に上限を掛ける。
     const float maxRad = DirectX::XMConvertToRadians(tuning.maxTurnRateDeg) * dt;
-    const float cosA   = std::clamp(squad.anchorForward.Dot(toPlayer), -1.0f, 1.0f);
+    const float cosA   = std::clamp(squad.anchorForward.Dot(toAim), -1.0f, 1.0f);
     const float angle  = std::acos(cosA);
 
     if (angle <= 1.0e-4f)
     {
-        squad.anchorForward = toPlayer;
-        return;
+        squad.anchorForward = toAim;
+        return cosA;
     }
 
     const float t       = (std::min)(maxRad / angle, 1.0f);
-    Vector3     blended = Vector3::Lerp(squad.anchorForward, toPlayer, t);
+    Vector3     blended = Vector3::Lerp(squad.anchorForward, toAim, t);
     if (blended.LengthSquared() > 0.001f)
     {
         blended.Normalize();
         squad.anchorForward = blended;
     }
+    return cosA;
 }
 
 // DroneCommandSystem の後、DroneFormationSystem の前（前後は両者の GetRunAfter で決める）。
