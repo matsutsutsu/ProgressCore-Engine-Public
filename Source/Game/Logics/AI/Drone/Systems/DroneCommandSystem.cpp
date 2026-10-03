@@ -51,9 +51,9 @@ void DroneCommandSystem::Update(float /*dt*/)
 
 
     ForEach([&](DroneComponent &drone) {
-        // Hidden（＝命令なし）のときは現在の陣形を維持する。
+        // None（＝命令なし）のときは現在の陣形を維持する。
         // スポーン直後に Manager が入れた陣形（頭上円陣）を潰さないため。
-        if (formation != DroneFormationType::Hidden)
+        if (formation != DroneFormationType::None)
             drone.currentFormation = formation;
 
         // 自分のタイミングで攻撃を終わらせる（BloadCast）の場合通る

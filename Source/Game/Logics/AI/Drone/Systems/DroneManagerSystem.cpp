@@ -457,7 +457,7 @@ void DroneManagerSystem::DrawArrivalDebug()
 
     ImGui::SameLine();
     ImGui::TextDisabled("(?)");
-    HoverTooltip("突撃させたいときは下の「カミカゼ：発射」を使うこと。\n"
+    HoverTooltip("突撃させたいときは下の「弾幕：発射」を使うこと。\n"
                  "状態を直接指定する操作は無い："
                  "DroneBrainSystem が毎フレーム書き直すので効かない。");
 }
@@ -515,7 +515,7 @@ void DroneManagerSystem::DrawFormationTest()
 
     ImGui::SameLine();
     if (ImGui::Button("3) 周回へ戻す", ImVec2(140, 26)))
-        SetBossCommand(DroneFormationType::OrbitCircle, false);
+        SetBossCommand(DroneFormationType::LowOrbit, false);
 
     // ボスBTが動いていると、次のフレームに requestFormation を上書きされて押しても戻る。
     // 原因が分かりにくいので画面に出しておく。
@@ -525,17 +525,17 @@ void DroneManagerSystem::DrawFormationTest()
 void DroneManagerSystem::DrawIndividualTest()
 {
     // 確かめる挙動:
-    //   - 弾幕（KamikazeSwarm）: 出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
+    //   - 弾幕（Barrage）: 出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
     //   - 小隊突撃: 5機編隊が接近 → 先頭がプレイヤーを追って突入
     //   - 硬直: 切り払いを当てて確認する（Stunned → 機体ごとの時間差で復帰）。ボタンは無い
     ImGui::Spacing();
     ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
 
-    if (ImGui::Button("カミカゼ：構え", ImVec2(150, 26)))
-        SetBossCommand(DroneFormationType::KamikazeSwarm, false);
+    if (ImGui::Button("弾幕：構え", ImVec2(150, 26)))
+        SetBossCommand(DroneFormationType::Barrage, false);
     ImGui::SameLine();
-    if (ColoredButton("カミカゼ：発射", ImVec2(150, 26), kAttackButtonColor))
-        SetBossCommand(DroneFormationType::KamikazeSwarm, true);
+    if (ColoredButton("弾幕：発射", ImVec2(150, 26), kAttackButtonColor))
+        SetBossCommand(DroneFormationType::Barrage, true);
 
     if (ImGui::Button("小隊：接近", ImVec2(150, 26)))
         SetBossCommand(DroneFormationType::SquadAssault, false);

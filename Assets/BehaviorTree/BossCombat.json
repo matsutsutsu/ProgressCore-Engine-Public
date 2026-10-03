@@ -574,7 +574,7 @@
             "type": 3
         },
         {
-            "action": "A_DroneKamikazeSwarm",
+            "action": "A_DroneBarrage",
             "actionId": 103,
             "id": 212,
             "inputPinId": 213,
@@ -610,7 +610,7 @@
             "actionId": 0,
             "id": 231,
             "inputPinId": 232,
-            "name": "横なぎ回転",
+            "name": "横なぎ",
             "outputPinId": 233,
             "posX": 6148.0,
             "posY": 738.0,
@@ -1102,7 +1102,7 @@
             "height": 392.0,
             "id": 428,
             "inputPinId": 0,
-            "name": "横なぎ回転",
+            "name": "横なぎ",
             "outputPinId": 0,
             "posX": 5408.0,
             "posY": 672.0,
@@ -1912,7 +1912,7 @@
             "type": "Condition"
         },
         {
-            "action": "A_DroneKamikazeSwarm",
+            "action": "A_DroneBarrage",
             "actionOrConditionId": 103,
             "children": [],
             "param": 0.0,

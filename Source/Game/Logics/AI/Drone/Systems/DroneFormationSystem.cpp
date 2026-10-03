@@ -218,7 +218,7 @@ void DroneFormationSystem::Update(float rawDt)
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation)
         {
-            // 未登録の陣形（Hidden等）では持ち場を書かない。
+            // 未登録の陣形（None 等）では持ち場を書かない。
             // ただし予告の溜めは戻す。抱えたままだと、次に陣形が出た瞬間から全開で震える。
             drone.windupTimer       = 0.0f;
             drone.telegraphTime     = 0.0f;

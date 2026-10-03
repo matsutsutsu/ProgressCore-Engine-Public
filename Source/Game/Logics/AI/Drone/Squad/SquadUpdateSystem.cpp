@@ -58,7 +58,7 @@ void SquadUpdateSystem::Update(float rawDt)
     // --- ボス ---
 
     // 1対1の戦闘なのでボスは1体。最初の1体の命令と位置を読む。
-    DroneFormationType formation = DroneFormationType::Hidden;
+    DroneFormationType formation = DroneFormationType::None;
     bool               attacking = false;
     Vector3            bossPos   = Vector3::Zero;
     {

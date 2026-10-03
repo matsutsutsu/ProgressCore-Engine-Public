@@ -110,8 +110,8 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
 
         if (auto *drone = m_world->GetComponent<DroneComponent>(id))
         {
-            // 陣形の計算から外す。Hidden には陣形が登録されていないので DroneFormationSystem が何もしない
-            drone->currentFormation = DroneFormationType::Hidden;
+            // 陣形の計算から外す。None には陣形が登録されていないので DroneFormationSystem が何もしない
+            drone->currentFormation = DroneFormationType::None;
 
             // 通し番号がそのまま輪の上の位置になる。タイトルにはボスが居ないので、
             // DroneManagerSystem が番号を振り直すことはない

@@ -10,7 +10,7 @@
 // 備考: 円陣の半径・高さ・回転の速さは Formations_Basic.h の HighRing をそのまま使う。
 //       タイトル用に値を写すと、本編を調整したときに片方だけ古くなり、タイトルと本編で輪が変わる。
 //       陣形（IFormation）は通さない。陣形は DroneFormationSystem がボスの命令から計算するが、
-//       タイトルにはボスの BT も命令も無い。そこで currentFormation = Hidden にして陣形の計算を
+//       タイトルにはボスの BT も命令も無い。そこで currentFormation = None にして陣形の計算を
 //       飛ばし、HighRing の式で targetPosition だけを書く。移動・ホバー・追従の個体差は移動の System が行う。
 //       集まってくる演出はしない。タイトルの主役はボスとプレイヤーの構図なので、最初から輪が
 //       できている方が絵がまとまる。生成した時点で持ち場に置き、到着済み（hasReachedSlot = true）で始める。

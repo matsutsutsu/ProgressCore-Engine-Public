@@ -209,7 +209,7 @@ namespace CCL::AI::BT
         {
             ctx.bt->lastLogActionId = id;
 
-            DroneFormationType formation = DroneFormationType::Hidden;
+            DroneFormationType formation = DroneFormationType::None;
             if (id == A_DroneFormation)
             {
                 // データの技は param の枠番号で指す。名前で指さないのは、エディタで名前を

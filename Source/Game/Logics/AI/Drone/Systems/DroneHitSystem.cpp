@@ -59,7 +59,7 @@ void DroneHitSystem::Update(float /*dt*/)
     auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
 
     bool                                cacheValid = false;
-    DroneFormationType                  cacheType  = DroneFormationType::Hidden;
+    DroneFormationType                  cacheType  = DroneFormationType::None;
     CCL::AI::Formation::FormationCombat cacheCombat{};
 
     auto combatOf = [&](DroneFormationType type) -> const CCL::AI::Formation::FormationCombat & {

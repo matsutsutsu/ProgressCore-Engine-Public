@@ -16,7 +16,7 @@
 struct BossCommandComponent
 {
     // ドローンに組ませたい陣形。陣形指示のノード（DroneAction）が書く。
-    DroneFormationType requestFormation = DroneFormationType::Hidden;
+    DroneFormationType requestFormation = DroneFormationType::None;
 
     // ボス本体に出させたい技。BossActionSystem が BossActionState へ変換する。0 は何もしない。
     ActionID currentActionId = 0;

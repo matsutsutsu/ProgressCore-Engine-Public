@@ -27,34 +27,32 @@
 //
 // 枠を先に確保してあるのは、陣形を1つ作るたびにこの表と ActionRegistry を編集して
 // リビルドするのでは、エディタで組む意味が半分消えるため。枠を使い切ったら 49 以降を足す。
-#define DRONE_FORMATION_LIST(X)                             \
-    X(Hidden, 0, "収納（命令なし）")                        \
-    X(OrbitCircle, 1, "降下円陣")                           \
-    X(HighOrbit, 5, "頭上円陣")                             \
-    X(KamikazeSwarm, 17, "弾幕")                            \
-    X(SideSlapWhip, 22, "横なぎ回転")                       \
-    X(GuillotineSlam, 24, "縦割り")                         \
-    X(ClapSlam, 25, "挟み込み1段")                          \
-    X(TsunamiWave, 26, "波状縦割り・左→右")                 \
-    X(MegaClapSlam_UpperFirst, 27, "挟み込み2段・上段先攻") \
-    X(MegaClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
-    X(TsunamiWave_RL, 31, "波状縦割り・右→左")              \
-    X(SquadAssault, 32, "小隊突撃")                         \
-    X(DataSlot00, 33, "[空き枠] 枠0")                       \
-    X(DataSlot01, 34, "[空き枠] 枠1")                       \
-    X(DataSlot02, 35, "[空き枠] 枠2")                       \
-    X(DataSlot03, 36, "[空き枠] 枠3")                       \
-    X(DataSlot04, 37, "[空き枠] 枠4")                       \
-    X(DataSlot05, 38, "[空き枠] 枠5")                       \
-    X(DataSlot06, 39, "[空き枠] 枠6")                       \
-    X(DataSlot07, 40, "[空き枠] 枠7")                       \
-    X(DataSlot08, 41, "[空き枠] 枠8")                       \
-    X(DataSlot09, 42, "[空き枠] 枠9")                       \
-    X(DataSlot10, 43, "[空き枠] 枠10")                      \
-    X(DataSlot11, 44, "[空き枠] 枠11")                      \
-    X(DataSlot12, 45, "[空き枠] 枠12")                      \
-    X(DataSlot13, 46, "[空き枠] 枠13")                      \
-    X(DataSlot14, 47, "[空き枠] 枠14")                      \
+#define DRONE_FORMATION_LIST(X)                               \
+    X(None, 0, "命令なし（現状維持）")                        \
+    X(LowOrbit, 1, "低空円陣")                                \
+    X(HighOrbit, 5, "頭上円陣")                               \
+    X(Barrage, 17, "弾幕")                                    \
+    X(SideSweep, 22, "横なぎ")                                \
+    X(GuillotineSlam, 24, "縦割り")                           \
+    X(ClapSlam, 25, "挟み込み1段")                            \
+    X(DoubleClapSlam_UpperFirst, 27, "挟み込み2段・上段先攻") \
+    X(DoubleClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
+    X(SquadAssault, 32, "小隊突撃")                           \
+    X(DataSlot00, 33, "[空き枠] 枠0")                         \
+    X(DataSlot01, 34, "[空き枠] 枠1")                         \
+    X(DataSlot02, 35, "[空き枠] 枠2")                         \
+    X(DataSlot03, 36, "[空き枠] 枠3")                         \
+    X(DataSlot04, 37, "[空き枠] 枠4")                         \
+    X(DataSlot05, 38, "[空き枠] 枠5")                         \
+    X(DataSlot06, 39, "[空き枠] 枠6")                         \
+    X(DataSlot07, 40, "[空き枠] 枠7")                         \
+    X(DataSlot08, 41, "[空き枠] 枠8")                         \
+    X(DataSlot09, 42, "[空き枠] 枠9")                         \
+    X(DataSlot10, 43, "[空き枠] 枠10")                        \
+    X(DataSlot11, 44, "[空き枠] 枠11")                        \
+    X(DataSlot12, 45, "[空き枠] 枠12")                        \
+    X(DataSlot13, 46, "[空き枠] 枠13")                        \
+    X(DataSlot14, 47, "[空き枠] 枠14")                        \
     X(DataSlot15, 48, "[空き枠] 枠15")
 
 // ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う。

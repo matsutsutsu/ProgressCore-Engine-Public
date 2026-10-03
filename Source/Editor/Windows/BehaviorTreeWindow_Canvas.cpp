@@ -276,10 +276,12 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     const ImVec2 headerEnd = ImGui::GetItemRectMax();
     drawList->AddRectFilled(headerStart, headerEnd, HeaderColorOf(node.type), 4.0f, ImDrawFlags_RoundCornersTop);
 
-    ImGui::SetCursorScreenPos(ImVec2(headerStart.x + 10, headerStart.y + 8));
-    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + titleWrapW); // ここから titleWrapW の幅で折り返す
-    ImGui::TextUnformatted(title.c_str());
-    ImGui::PopTextWrapPos();
+    // 折り返し幅を直接渡して描く。PushTextWrapPos はウィンドウ左端からの位置で指定するので、
+    // キャンバスを原点より左へ動かすと位置が負になり、ImGui が「折り返さない」とみなす。
+    // そうなると文字がノードの外へはみ出し、見た目と掴める範囲（ノードの枠）がずれる。
+    // 高さを測った CalcTextSize と同じ幅を渡すので、帯の高さと行数も必ず一致する。
+    drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(headerStart.x + 10, headerStart.y + 8),
+                      ImGui::GetColorU32(ImGuiCol_Text), title.c_str(), nullptr, titleWrapW);
     ImGui::EndGroup();
 
     {

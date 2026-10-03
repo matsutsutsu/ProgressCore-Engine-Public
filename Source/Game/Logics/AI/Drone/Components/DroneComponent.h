@@ -45,7 +45,7 @@ enum class DroneState : uint8_t
 // FireCharge 中の移動方式。書き手は攻撃陣形（Formation）。
 enum class ChargeMode : uint8_t
 {
-    Straight,    // fireDirection へ直進。方向は突入時にロックされる（弾幕・カミカゼ）
+    Straight,    // fireDirection へ直進。方向は突入時にロックされる（弾幕）
     RigidFollow, // targetPosition へ毎フレーム一致させる。形が歪まない（縦割り・挟み込み）
     SoftFollow,  // targetPosition へバネで寄る。速いほど後ろへ流れ、曲がると遅れて曲がる（小隊）
 };
@@ -86,7 +86,7 @@ struct DroneComponent
 
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
-    DroneFormationType currentFormation = DroneFormationType::Hidden; // [RT] 今どの形を作るか
+    DroneFormationType currentFormation = DroneFormationType::None; // [RT] 今どの形を作るか
 
     bool wantsAttack = false; // [RT] 「今撃て」命令。true で判断層が FireCharge へ遷移させる
 
@@ -161,7 +161,7 @@ struct DroneComponent
     // ---- 個体パラメータ（インスペクタで調整）----
 
     float moveSpeed   = 30.0f; // 基準速度 [m/s]。各ステートがこれに倍率を掛けて上限にする
-    float orbitRadius = 8.0f;  // 旋回半径 [m]。降下円陣が円の半径として読む
+    float orbitRadius = 8.0f;  // 旋回半径 [m]。低空円陣が円の半径として読む
 };
 
 // 1000機ぶんが連続配置されるので、増やすほど帯域を食う。

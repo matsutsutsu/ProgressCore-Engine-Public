@@ -3,7 +3,7 @@
 // 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く。
 //
 // 責務:
-//   - 弾幕（KamikazeSwarm）: 頭上の輪から1機ずつ中心へ寄り、プレイヤーへ撃ち出す
+//   - 弾幕（Barrage）: 頭上の輪から1機ずつ中心へ寄り、プレイヤーへ撃ち出す
 //
 // 備考:
 //   データで書けないのは、機体が自分の状態を覚えて振る舞いを変える技。弾幕は機体ごとに
@@ -11,7 +11,7 @@
 //   独立して攻撃を終える。データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、
 //   この3つはどれも表せない。
 //
-//   縦割り・挟み込み・横なぎ・波状縦割りは Assets/Formations/*.json にある
+//   縦割り・挟み込み・横なぎは Assets/Formations/*.json にある
 //   （Formations_DataDriven.h が解釈する）。
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 射出速度（kDroneChargeSpeedScale）
@@ -23,14 +23,14 @@
 
 namespace CCL::AI::Formation::Attack
 {
-    // 弾幕（KamikazeSwarm）。求める回避はジャスト回避。
+    // 弾幕（Barrage）。求める回避はジャスト回避。
     // 頭上の輪を回したまま1機ずつ中心へ降り、そこからプレイヤーへ高速で撃ち出す。
     //   輪の上で待つ → 自分の番の kGatherTime 秒前に中心へ寄る（これが予告）
     //   → fireDelay が 0 になったら中心でタメ → 発射（以降は直進）
     //
     // 置き技（縦割り・挟み込み）と違い、発射の瞬間まで1機ずつ今のプレイヤーを狙い続ける。
     // 撃ち出した後は直進するので、そこで避ける余地が残る。
-    struct KamikazeSwarmFormation : public IFormation
+    struct BarrageFormation : public IFormation
     {
         // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投の時刻が機体ごとに異なる）。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
@@ -150,7 +150,7 @@ namespace CCL::AI::Formation::Attack
     inline void RegisterAll()
     {
         auto &reg = FormationRegistry::Instance();
-        reg.Register<KamikazeSwarmFormation>(DroneFormationType::KamikazeSwarm);
+        reg.Register<BarrageFormation>(DroneFormationType::Barrage);
     }
 
 } // namespace CCL::AI::Formation::Attack

@@ -1,9 +1,9 @@
 #pragma once
 // ===========================================================================
-// 概要: 攻撃しない中立の陣形（降下円陣・頭上円陣）と、頭上の待機リング。
+// 概要: 攻撃しない中立の陣形（低空円陣・頭上円陣）と、頭上の待機リング。
 //
 // 責務:
-//   - OrbitCircle: ボスの周りを低い高さで周回する
+//   - LowOrbit: ボスの周りを低い高さで周回する
 //   - HighOrbit: ボスの頭上高くで周回する（攻撃と攻撃のあいだに使う）
 //   - HighRing: 頭上円陣と弾幕が共有する待機リングの位置計算
 //   - 攻撃で使った値（attackProgress・fireDelay・chargeMode）を戻す
@@ -41,8 +41,8 @@ namespace CCL::AI::Formation::Basic
         }
     };
 
-    // 円陣（OrbitCircle）: ボスを中心に円を描いて並ぶ。
-    struct OrbitCircleFormation : public IFormation
+    // 低空円陣（LowOrbit）: ボスを中心に円を描いて並ぶ。
+    struct LowOrbitFormation : public IFormation
     {
         // 隊形（位置取り）であって技ではないので、予告の震えを出さない。
         bool UsesShiverTelegraph() const override { return false; }
@@ -77,7 +77,7 @@ namespace CCL::AI::Formation::Basic
     };
 
     // 頭上円陣（HighOrbit）: ボスの頭上高くで周回する中立陣形。攻撃と攻撃の「あいだ」は
-    // こちらを使う。OrbitCircle はボスの高さで回るため、プレイヤーが接近するとドローンが
+    // こちらを使う。LowOrbit はボスの高さで回るため、プレイヤーが接近するとドローンが
     // 壁になって地上の間合いが塞がれる。
     struct HighOrbitFormation : public IFormation
     {
@@ -104,7 +104,7 @@ namespace CCL::AI::Formation::Basic
                 drone.targetLookDirection = look;
             }
 
-            // OrbitCircle と同じく、攻撃で使った一時的な値を戻す。
+            // LowOrbit と同じく、攻撃で使った一時的な値を戻す。
             drone.attackProgress = 0.0f;
             drone.fireDelay      = 0.0f;
             drone.chargeMode     = ChargeMode::Straight;
@@ -116,7 +116,7 @@ namespace CCL::AI::Formation::Basic
     inline void RegisterAll()
     {
         auto &reg = FormationRegistry::Instance();
-        reg.Register<OrbitCircleFormation>(DroneFormationType::OrbitCircle);
+        reg.Register<LowOrbitFormation>(DroneFormationType::LowOrbit);
         reg.Register<HighOrbitFormation>(DroneFormationType::HighOrbit);
     }
 

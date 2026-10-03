@@ -111,12 +111,12 @@ enum class DroneActionRole : uint8_t
 
 //    Name                       ID   Formation                Role     Display
 // ----------------------------------------------------------------------------
-#define BT_DRONE_ACTION_LIST(X) \
-    /* Standby */                                                                            \
-    X(A_DroneOrbit,         101, OrbitCircle,   Standby, "ドローン：降下円陣 (Orbit Circle)") \
-    X(A_DroneHighOrbit,     102, HighOrbit,     Standby, "ドローン：頭上円陣 (High Orbit)")   \
-                                                                                             \
-    /* Attack */                                                                             \
-    X(A_DroneKamikazeSwarm, 103, KamikazeSwarm, Attack,  "ドローン：弾幕 (Kamikaze Swarm)")   \
-    X(A_DroneSquadAssault,  111, SquadAssault,  Attack,  "ドローン：小隊突撃 (Squad Assault)")
+#define BT_DRONE_ACTION_LIST(X)                                                            \
+    /* Standby */                                                                          \
+    X(A_DroneLowOrbit,      101, LowOrbit,     Standby, "ドローン：低空円陣 (Low Orbit)")  \
+    X(A_DroneHighOrbit,     102, HighOrbit,    Standby, "ドローン：頭上円陣 (High Orbit)") \
+                                                                                           \
+    /* Attack */                                                                           \
+    X(A_DroneBarrage,       103, Barrage,      Attack,  "ドローン：弾幕 (Barrage)")        \
+    X(A_DroneSquadAssault,  111, SquadAssault, Attack,  "ドローン：小隊突撃 (Squad Assault)")
 

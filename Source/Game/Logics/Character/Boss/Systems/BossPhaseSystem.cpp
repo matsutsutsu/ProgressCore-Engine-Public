@@ -71,7 +71,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         // sharedAsset は触らない（書くのは SyncAssets だけで、同じフレームのうちに null にする）。
         bt.assetPath.clear();
 
-        // 攻撃を止めてドローンを頭上へ退避させる。Hidden は DroneCommandSystem が
+        // 攻撃を止めてドローンを頭上へ退避させる。None は DroneCommandSystem が
         // 「命令なし」として無視するので使わない。
         cmd.droneAttackActive = false;
         cmd.currentActionId   = 0; // None → BossActionSystem は Idle
@@ -100,7 +100,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         anim.SetTrigger(CCL::Utils::HashString(kDeathTrigger));
 
         cmd.droneAttackActive = false;
-        cmd.requestFormation  = DroneFormationType::Hidden;
+        cmd.requestFormation  = DroneFormationType::None;
         cmd.currentActionId   = 0;
 
         phase.timer = 0.0f;
@@ -130,7 +130,7 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
     case BossPhase::Dead:
         // 死んでいるのに攻撃が飛ぶのを防ぐ。
         cmd.droneAttackActive = false;
-        cmd.requestFormation  = DroneFormationType::Hidden;
+        cmd.requestFormation  = DroneFormationType::None;
         cmd.currentActionId   = 0;
         break;
 
