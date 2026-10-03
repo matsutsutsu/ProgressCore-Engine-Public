@@ -47,8 +47,14 @@ namespace JoltShapeFactory
     JPH::ShapeRefC CreateChecked(
         const JPH::ShapeSettings &settings, uint64_t ownerId, const char *what);
 
-    // 度数の XYZ オイラー角を Jolt のクォータニオンへ変換する。
-    // コライダーのローカル回転はインスペクタで度数のまま持っているため。
+    /**
+     * @brief 度数の XYZ オイラー角を Jolt のクォータニオンへ変換する。
+     *
+     * コライダーのローカル回転はインスペクタで度数のまま持っているため。
+     *
+     * @param eulerDegree XYZ オイラー角（度）。
+     * @return 変換したクォータニオン。
+     */
     JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree);
 
     /**

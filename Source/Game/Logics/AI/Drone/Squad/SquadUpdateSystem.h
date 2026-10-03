@@ -47,16 +47,26 @@ public:
 
     void Initialize() override;
 
-    // DroneCommandSystem が配った陣形指示を読んでから小隊の行動を決める。BehaviorTreeSystem も直接
-    // 名指しする（間接的に後ろになるだけでは起動時に「順序不定」と報告される）。
-    // DroneManagerSystem は初回配備で squadId / slotInSquad を書くので、その後に走る。
+    /**
+     * @brief 同じステージで先に走らせる System を宣言する。
+     *
+     * DroneCommandSystem が配った陣形指示を読んでから小隊の行動を決める。
+     *
+     * BehaviorTreeSystem も直接名指しする。間接的に後ろになるだけでは、起動時に「順序不定」と報告される。
+     *
+     * DroneManagerSystem は初回配備で squadId / slotInSquad を書くので、その後に走る。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BehaviorTreeSystem", "DroneCommandSystem", "DroneManagerSystem"};
     }
 
-    // Update がボスの BossCommandComponent を View で引く。テンプレート引数には
-    // 足せない（ForEach の絞り込み条件を兼ねているため）。
+    /**
+     * @brief テンプレート引数以外に読む型を申告する。
+     *
+     * Update がボスの BossCommandComponent を View で引く。
+     * テンプレート引数には足せない（ForEach の絞り込み条件を兼ねているため）。
+     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
         auto types = Base::GetReadTypes();
@@ -67,13 +77,30 @@ public:
     void Update(float dt) override;
 
 private:
-    // SquadRegistry が未登録なら作る。World を作り直しても復帰できるよう Update からも
-    // 毎フレーム呼ぶ。データを持つ側が自分で用意し、シーン側に依存させない。
+    /**
+     * @brief SquadRegistry が未登録なら作る。
+     *
+     * データを持つ側が自分で用意し、シーン側に依存させない。
+     *
+     * @note World を作り直しても復帰できるよう、Update からも毎フレーム呼ぶ。
+     */
     void EnsureRegistry();
 
-    // 小隊1個ぶんのフェーズ遷移とアンカーの移動。
-    // rank は生きている小隊の中での順番（0〜activeCount-1）。並ぶ角度と段をこれで決める。
-    // squadId は個体差（速さ・狙いのずれ）を決めるのに使う。撃破で変わらない番号なので、追跡の途中で値が跳ねない。
+    /**
+     * @brief 小隊1個ぶんのフェーズ遷移とアンカーの移動を行う。
+     *
+     * @param squad          更新する小隊。
+     * @param squadId        小隊番号。個体差（速さ・狙いのずれ）を決めるのに使う。撃破で変わらない番号なので、追跡の途中で値が跳ねない。
+     * @param rank           生きている小隊の中での順番（0〜activeCount-1）。並ぶ角度と段をこれで決める。
+     * @param activeCount    生きている小隊の数。
+     * @param ordered        小隊突撃が指示されているか。false なら Regroup へ落とす。
+     * @param attacking      攻撃の合図が立っているか。true の間は全小隊が追跡する。
+     * @param bossPos        ボスの位置（ワールド）。
+     * @param playerPos      プレイヤーの位置（ワールド）。
+     * @param playerRunSpeed プレイヤーの走行速度（m/秒）。追跡の速さの基準にする。
+     * @param tuning         小隊の調整値。
+     * @param dt             経過時間（秒）。
+     */
     void UpdateSquad(SquadState                         &squad,
                      uint8_t                             squadId,
                      uint8_t                             rank,
@@ -86,19 +113,35 @@ private:
                      const SquadTuning                  &tuning,
                      float                               dt);
 
-    // アンカーの向きをプレイヤーへ曲げる（旋回上限つき）。無制限に追尾させると、避けても
-    // 曲がって当たる攻撃になる。上限があれば、至近距離で鋭く切り返されたときに曲がりきれず外れる。
-    // aimSide は狙う点をプレイヤーの左右どちらへずらすか（-1 / +1）。
-    // 戻り値は、曲げる前の機首と狙う方向のなす角の cos（1=正面、0=真横）。曲がるときの減速に使う。
+    /**
+     * @brief アンカーの向きをプレイヤーへ曲げる（旋回上限つき）。
+     *
+     * 無制限に追尾させると、避けても曲がって当たる攻撃になる。
+     * 上限があれば、至近距離で鋭く切り返されたときに曲がりきれず外れる。
+     *
+     * @param squad     向きを曲げる小隊。
+     * @param playerPos プレイヤーの位置（ワールド）。
+     * @param aimSide   狙う点をプレイヤーの左右どちらへずらすか（-1 / +1）。
+     * @param tuning    小隊の調整値（旋回上限など）。
+     * @param dt        経過時間（秒）。
+     * @return 曲げる前の機首と狙う方向のなす角の cos（1=正面、0=真横）。曲がるときの減速に使う。
+     */
     float SteerTowardPlayer(SquadState                         &squad,
                             const DirectX::SimpleMath::Vector3 &playerPos,
                             float                               aimSide,
                             const SquadTuning                  &tuning,
                             float                               dt) const;
 
-    // アンカーが床へ沈まないように高度を止める。全フェーズの移動計算の最後に必ず通す。
-    // 位置だけでなく速度と向きの下向き成分も抜くこと（追従機は「1つ前の機体の速度」を
-    // 先渡しで受け取るので、アンカーが下を向いたままだと後続機が床へ押し込まれ続ける）。
+    /**
+     * @brief アンカーが床へ沈まないように高度を止める。
+     *
+     * 位置だけでなく、速度と向きの下向き成分も抜く。
+     * 追従機は「1つ前の機体の速度」を先渡しで受け取るので、アンカーが下を向いたままだと後続機が床へ押し込まれ続ける。
+     *
+     * @param squad  高度を止める小隊。
+     * @param tuning 小隊の調整値。
+     * @note 全フェーズの移動計算の最後に必ず通す。
+     */
     void ClampAltitude(SquadState &squad, const SquadTuning &tuning) const;
 
     // 待機時にボス頭上のどの高さへ置くか [m]。地上の間合いを塞がない高さにする。

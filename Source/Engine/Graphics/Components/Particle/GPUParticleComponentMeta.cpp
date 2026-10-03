@@ -246,20 +246,36 @@ struct ComponentMeta<GPUParticleComponent>
     //   関数ジャンプで辿れて「どこで何を描いているか」を探しやすい。
     // -----------------------------------------------------------------
 
-    // 「最小〜最大」の対を1行で編集する。
-    //
-    // DragFloat2 と違い、どちらが最小かが画面に出て、最小 > 最大にならないよう ImGui が抑える。
-    // 呼び出し側で if (x > y) y = x; のようなクランプを書かずに済む。
+    /**
+     * @brief 「最小〜最大」の対を1行で編集する。
+     *
+     * DragFloat2 と違い、どちらが最小かが画面に出て、最小 > 最大にならないよう ImGui が抑える。
+     * 呼び出し側で if (x > y) y = x; のようなクランプを書かずに済む。
+     *
+     * @param label 表示名。
+     * @param range 編集する範囲（x=最小, y=最大）。
+     * @param speed ドラッグ1px あたりの変化量。
+     * @param lo    下限。
+     * @param hi    上限。
+     * @param fmt   数値の表示書式。
+     * @return 値を変更したら true。
+     */
     static bool RangeDrag(const char *label, GpuData::float2 &range,
                           float speed, float lo, float hi, const char *fmt)
     {
         return ImGui::DragFloatRange2(label, &range.x, &range.y, speed, lo, hi, fmt, fmt);
     }
 
-    // ラジアン保持の角度範囲を「度」で編集する。
-    //
-    // データはラジアンのまま。UI だけ度にする。
-    // 「0.30 rad」と出ていても何度なのか分からないため。
+    /**
+     * @brief ラジアン保持の角度範囲を「度」で編集する。
+     *
+     * データはラジアンのまま。UI だけ度にする。「0.30 rad」と出ていても何度なのか分からないため。
+     *
+     * @param label   表示名。
+     * @param radians 編集する角度の範囲（ラジアン。x=最小, y=最大）。
+     * @param maxDeg  上限（度）。
+     * @return 値を変更したら true。
+     */
     static bool AngleRangeDrag(const char *label, GpuData::float2 &radians, float maxDeg)
     {
         constexpr float kRadToDeg = 57.2957795f;

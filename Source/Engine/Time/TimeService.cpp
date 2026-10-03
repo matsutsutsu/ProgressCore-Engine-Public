@@ -9,11 +9,19 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // cinematicSlow（全体スローの単一チャネル）に要求を入れる共通処理。
-    //   ・倍率は強い方（scale が小さい）、残り時間は長い方（timer 大）を優先する。
-    //     複数の要求が重なっても、どちらかが打ち消されることはない。
-    //   ・duration = timer に揃えるので、呼ばれた直後は進行度 0（＝最も遅い状態）から
-    //     始まる。呼ぶのをやめると TimeScaleSystem がイーズしながら 1.0 へ戻す。
+    /**
+     * @brief cinematicSlow（全体スローの単一チャネル）に要求を入れる共通処理。
+     *
+     * 倍率は強い方（scale が小さい）、残り時間は長い方（timer 大）を優先する。
+     * 複数の要求が重なっても、どちらかが打ち消されることはない。
+     *
+     * duration = timer に揃えるので、呼ばれた直後は進行度 0（＝最も遅い状態）から始まる。
+     * 呼ぶのをやめると TimeScaleSystem がイーズしながら 1.0 へ戻す。
+     *
+     * @param ctx     要求を入れる時間の状態。
+     * @param scale   スローの倍率。
+     * @param seconds 続ける時間（秒）。
+     */
     void ArmCinematic(TimeContext &ctx, float scale, float seconds)
     {
         auto      &cs  = ctx.cinematicSlow;

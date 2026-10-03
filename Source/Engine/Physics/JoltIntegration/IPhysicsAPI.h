@@ -63,16 +63,29 @@ public:
     // ============================================================
     // 空間クエリ
     // ============================================================
-    // 剛体(JoltHandleComponent)から真下へ distance(m) のレイを飛ばし、地形(NON_MOVING)に当たれば true。
-    // CharacterVirtual を持つキャラの接地判定には使わず、IsCharacterGrounded() を使う。
+    /**
+     * @brief 剛体（JoltHandleComponent）から真下へレイを飛ばし、地形（NON_MOVING）に当たるかを返す。
+     * @param entity   レイを飛ばす剛体のエンティティ。
+     * @param distance レイの長さ（m）。
+     * @return 地形に当たれば true。
+     * @note CharacterVirtual を持つキャラの接地判定には使わず、IsCharacterGrounded() を使う。
+     */
     virtual bool CheckGrounded(CCL::ECS::EntityID entity, float distance) = 0;
 
     // 任意の始点・方向へレイを飛ばす。センサーと ignoreEntity は無視する（弾や視界判定向け）
     virtual PhysicsHitInfo RayCast(const DirectX::XMFLOAT3 &origin, const DirectX::XMFLOAT3 &direction, float maxDistance, CCL::ECS::EntityID ignoreEntity = CCL::ECS::InvalidEntityID) = 0;
 
-    // 静止物(NON_MOVING: 壁/建物/地面)だけに当てるレイキャスト。
-    //   プレイヤー/ボス/ドローン等の動的ボディには反応しない。
-    //   用途: TPSカメラの衝突回避（地形とだけ交差させ、間に何も無ければ素通しにしたい）など。
+    /**
+     * @brief 静止物（NON_MOVING: 壁/建物/地面）だけに当てるレイキャスト。
+     *
+     * プレイヤー/ボス/ドローン等の動的ボディには反応しない。
+     * 用途: TPSカメラの衝突回避（地形とだけ交差させ、間に何も無ければ素通しにしたい）など。
+     *
+     * @param origin      レイの始点（ワールド）。
+     * @param direction   レイの向き。
+     * @param maxDistance レイの長さ（m）。
+     * @return 当たった結果。
+     */
     virtual PhysicsHitInfo RayCastStatic(const DirectX::XMFLOAT3 &origin, const DirectX::XMFLOAT3 &direction, float maxDistance) = 0;
 
     // ============================================================

@@ -15,9 +15,14 @@
 
 namespace
 {
-    // カテゴリ見出し(英語の内部キー)を日本語の表示名に変換する。
-    //   ※ 内部キー(ComponentMeta の category)は英語のまま。ここは「見た目だけ」を訳す。
-    //     未知のカテゴリは nullptr を返し、呼び出し側で元の文字列を使う。
+    /**
+     * @brief カテゴリ見出し（英語の内部キー）を日本語の表示名に変換する。
+     *
+     * 内部キー（ComponentMeta の category）は英語のまま。ここは「見た目だけ」を訳す。
+     *
+     * @param cat 内部キー。
+     * @return 表示名（文字列リテラル）。未知のカテゴリは nullptr を返し、呼び出し側で元の文字列を使う。
+     */
     const char *CategoryDisplayName(const std::string &cat)
     {
         if (cat == "Transform") return "トランスフォーム";

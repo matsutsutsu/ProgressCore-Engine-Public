@@ -25,8 +25,17 @@ namespace
         float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
     };
 
-    // ワールド座標を画面座標へ変換する。カメラの後ろ・奥の切り捨て面より先なら false。
-    // Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる。
+    /**
+     * @brief ワールド座標を画面座標へ変換する。
+     *
+     * Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる。
+     *
+     * @param world    変換する位置（ワールド）。
+     * @param viewProj ビュー × プロジェクション行列。
+     * @param rect     描画先の画面の矩形（px）。
+     * @param out      画面座標（px）を受け取る。
+     * @return 描ける位置なら true。カメラの後ろ・奥の切り捨て面より先なら false。
+     */
     bool WorldToScreen(const Vector3 &world, const Matrix &viewProj, const ScreenRect &rect, ImVec2 &out)
     {
         const Vector3 ndc = Vector3::Transform(world, viewProj);
@@ -47,11 +56,17 @@ namespace
         drawList->AddText(font, size, pos, col, text);
     }
 
-    // 頭上に出す行動名。BT が今 Running にしている行動を優先する。
-    //
-    // lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように
-    // 書かない行動の間は前の技の名前が残り、突進の後の待機中も「突進攻撃」と出続ける。
-    // runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す。
+    /**
+     * @brief 頭上に出す行動名を返す。BT が今 Running にしている行動を優先する。
+     *
+     * lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように書かない行動の間は前の技の名前が残る。
+     * 突進の後の待機中も「突進攻撃」と出続ける。
+     *
+     * runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す。
+     *
+     * @param bt 表示する BT。
+     * @return 行動名（文字列リテラルか ActionRegistry の文字列）。停止中は "(AI 停止中)"、何も無ければ "Idle"。
+     */
     const char *CurrentActionName(const BehaviorTreeComponent &bt)
     {
         if (bt.debugPaused && bt.debugForcedNodeId < 0) return "(AI 停止中)";

@@ -51,12 +51,13 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     PropagateRenderSubtree(trans.firstChildID, world4);
 }
 
-// ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で
-// 先に焼いてしまう。このシステム（R04）で正しい renderWorldMatrix が確定した後に
-// 焼き直し、後から書いた方を採用させることで同じフレームの中で整合を取る。
-//   ※ これをやらないと、武器などの追従物だけ描画が1フレーム遅れる。
 void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4 &world)
 {
+    // ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で
+    // 先に焼いてしまう。このシステム（R04）で正しい renderWorldMatrix が確定した後に
+    // 焼き直し、後から書いた方を採用させることで同じフレームの中で整合を取る。
+    //   ※ これをやらないと、武器などの追従物だけ描画が1フレーム遅れる。
+
     if (auto *mc = m_world->GetComponent<ModelComponent>(id))
     {
         if (Model *m = mc->GetModel())

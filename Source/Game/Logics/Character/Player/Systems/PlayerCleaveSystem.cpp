@@ -28,9 +28,10 @@ void PlayerCleaveSystem::Initialize()
     });
 }
 
-// ストックが上限に達した後は、ゲージを maxGauge で止めて満タンのまま増えないようにする。
 void PlayerCleaveSystem::AddCleaveGauge(CleaveComponent &cleave, float amount)
 {
+    // ストックが上限に達した後は、ゲージを maxGauge で止めて満タンのまま増えないようにする。
+
     if (amount <= 0.0f || cleave.maxGauge <= 0.0f) return;
     cleave.gauge += amount;
     while (cleave.gauge >= cleave.maxGauge && cleave.stock < cleave.maxStock)
@@ -192,8 +193,6 @@ void PlayerCleaveSystem::SetMonochrome(bool on)
         fx->hold = on;
 }
 
-// 攻撃時に敵の方へ向く処理と同じ attackFaceYaw/Timer を使い、PlayerMoveSystem に照準方向へ向けさせる。
-// 準備中は毎フレーム呼び、短いタイマーを書き直し続ける。
 void PlayerCleaveSystem::FaceAim(PlayerComponent &player, const Vector3 &dir)
 {
     player.attackFaceYaw   = std::atan2(dir.x, dir.z); // PlayerMoveSystem と同じ atan2(x,z) の規約
@@ -215,9 +214,10 @@ void PlayerCleaveSystem::StartLunge(CleaveComponent &cleave, const Vector3 &dir)
     SetMonochrome(false);
 }
 
-// TODO(2026-08-13): ドローンの群れを切り開いた先でボスに届くようにする（前進と BREAK）。殻構造の実装と合わせて入れる
 void PlayerCleaveSystem::EndLunge(CleaveComponent &cleave, RootMotionComponent *rm, const Vector3 &aim)
 {
+    // TODO(2026-08-13): ドローンの群れを切り開いた先でボスに届くようにする（前進と BREAK）。殻構造の実装と合わせて入れる
+
     // 3D 速度の上書きは、書くのをやめるだけで解除される（上書きの要求は読まれた時点で戻る）。
     if (rm) rm->externallyDriven = false;
 
@@ -252,8 +252,6 @@ void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, RootMotionComponent
     // 全体スローは要求をやめるだけで、TimeScaleSystem がイーズで等速へ戻す。
 }
 
-// PlayerDashSystem::PushWideFovRequest と同じ形で、このプレイヤーを映す TPS カメラに
-// 寄りの要求だけを書く（カメラは切り払いのことを知らない）。
 void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
 {
     m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
@@ -263,10 +261,10 @@ void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
     });
 }
 
-// 全ドローンを走査して距離で判定している。ViewEach なのでメモリ確保は無く、コストは距離計算だけ。
-// TODO(2026-08-13): ドローンの数が増えたら、物理エンジンのオーバーラップ判定に置き換える
 void PlayerCleaveSystem::ApplyFanKnockback(const Vector3 &origin, CleaveComponent &cleave)
 {
+    // TODO(2026-08-13): ドローンの数が増えたら、物理エンジンのオーバーラップ判定に置き換える
+
     const float   rangeSq = cleave.fanRange * cleave.fanRange;
     const float   cosHalf = std::cos(DirectX::XMConvertToRadians(cleave.fanHalfAngle));
     const Vector3 fwd     = cleave.direction; // 正規化済みの3D進行方向（上下を含む）

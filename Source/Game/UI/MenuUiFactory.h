@@ -46,9 +46,15 @@ namespace CCL::GameUI
         }
     }
 
-    // UI の親子関係に使う TransformComponent を作る。parent が無効ならルート（0）にする。
-    // 配置は UITransformComponent が決めるが、親子関係は 3D と同じ TransformComponent を使う。
-    // エディタの Hierarchy の表示・ドラッグでの親子付け・UILayoutSystem の入れ子の計算がこれ1つで済む
+    /**
+     * @brief UI の親子関係に使う TransformComponent を作る。
+     *
+     * 配置は UITransformComponent が決めるが、親子関係は 3D と同じ TransformComponent を使う。
+     * エディタの Hierarchy の表示・ドラッグでの親子付け・UILayoutSystem の入れ子の計算がこれ1つで済む。
+     *
+     * @param parent 親のエンティティ。無効ならルート（0）にする。
+     * @return 親を設定した TransformComponent。
+     */
     inline TransformComponent MakeUINode(CCL::ECS::EntityID parent)
     {
         TransformComponent tr;

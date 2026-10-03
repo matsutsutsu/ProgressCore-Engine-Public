@@ -47,8 +47,11 @@ namespace
 
     // --- ヘルパー ---
 
-    // Win32 OFN の lpstrFilter 形式に変換する。
-    // 形式: "Label\0Pattern\0Label2\0Pattern2\0\0"
+    /**
+     * @brief ファイルの種類の一覧を Win32 OFN の lpstrFilter 形式に変換する。
+     * @param filters ファイルの種類の一覧。
+     * @return "Label\0Pattern\0Label2\0Pattern2\0\0" の形の文字列。
+     */
     std::wstring BuildFilterStringW(const std::vector<FileFilter> &filters)
     {
         std::wstring result;

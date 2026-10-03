@@ -74,7 +74,10 @@ struct PostEffectOverrides
         return freeSlot;
     }
 
-    // 自分のスロットを手放す。演出が終わったときに呼ぶ
+    /**
+     * @brief 自分のスロットを手放す。演出が終わったときに呼ぶ。
+     * @param source Acquire に渡したのと同じ発生源の識別子。該当するスロットが無ければ何もしない。
+     */
     void Release(uint32_t source)
     {
         for (Slot &s : slots)

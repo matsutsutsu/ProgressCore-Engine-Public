@@ -356,10 +356,15 @@ inline void from_json(const nlohmann::json &j, CurveData &c)
     c.RecalculateTangents(); // Auto/Flat の接線を確定（Aligned/Broken の手動値は尊重）
 }
 
-// 実行時アセット用ローダ。
-//   エディタは複数カーブ文書 {name, curves:[...]} で保存するため、
-//   ランタイムでは「先頭の1本」を採用する（1ファイル = 1カーブ運用）。
-//   キーが1つも無ければ false を返す
+/**
+ * @brief 実行時アセット用ローダ。
+ *
+ * エディタは複数カーブ文書 {name, curves:[...]} で保存するため、ランタイムでは「先頭の1本」を採用する（1ファイル = 1カーブ運用）。
+ *
+ * @param root 読み込んだ JSON。
+ * @param out  読み込んだカーブを受け取る。
+ * @return 読めたら true。キーが1つも無ければ false。
+ */
 inline bool LoadCurveDataFromJson(const nlohmann::json &root, CurveData &out)
 {
     if (!root.contains("curves") || !root["curves"].is_array() || root["curves"].empty())

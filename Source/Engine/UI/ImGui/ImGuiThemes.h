@@ -11,14 +11,14 @@
 namespace ImGuiThemes
 {
     void ApplyDark();
-    void ApplyDarcula();
-    void ApplySkeltonDarcula();
+    void ApplyDarcula();        // Darcula 風（IntelliJ IDEA）
+    void ApplySkeltonDarcula(); // Darcula 風の配色を半透明にしたもの
     void ApplyLight();
     void ApplyClassic();
     void ApplyEditorDark();
 
-    void ApplyUnityDark();
-    void ApplyVisualStudioDark();
+    void ApplyUnityDark();        // Unity Editor 風
+    void ApplyVisualStudioDark(); // Visual Studio Dark 風
 
     void ApplyCatppuccinMocha();
     void ApplyTokyoNight();

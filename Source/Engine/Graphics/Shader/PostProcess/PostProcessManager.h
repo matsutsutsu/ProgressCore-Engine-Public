@@ -59,9 +59,13 @@ public:
     // HDR バッファを写し、写しを t5 にバインドする（SceneColorGrabPass から呼ばれる）
     void GrabSceneColor(ID3D11DeviceContext *dc);
 
-    // GrabSceneColor の写し。作れていなければ nullptr。
-    // 半透明やパーティクルの描画が t5 を上書きしている場合があるので、
-    // 屈折を描くもの（TrailRenderer など）は毎回ここから取って自分でバインドする
+    /**
+     * @brief GrabSceneColor の写しを返す。
+     *
+     * 半透明やパーティクルの描画が t5 を上書きしている場合があるので、屈折を描くもの（TrailRenderer など）は毎回ここから取って自分でバインドする。
+     *
+     * @return 写しの SRV。所有しない。作れていなければ nullptr。
+     */
     ID3D11ShaderResourceView *GetSceneColorSRV() const;
 
     // ============================================================

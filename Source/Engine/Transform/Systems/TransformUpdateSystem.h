@@ -27,15 +27,21 @@ public:
     TransformUpdateSystem();
     virtual ~TransformUpdateSystem() = default;
 
-    // 階層解決キャッシュを World リソースとして公開する。
-    //   TransformInterpolationSystem（Render ステージ）が同じ並び順を読むために使う。
-    //   所有権はこのシステムのまま（m_cache への生ポインタを渡すだけ）。
+    /**
+     * @brief 階層解決キャッシュを World リソースとして公開する。
+     *
+     * TransformInterpolationSystem（Render ステージ）が同じ並び順を読むために使う。
+     *
+     * @note 所有権はこのシステムのまま（m_cache への生ポインタを渡すだけ）。
+     */
     void Initialize() override;
 
-    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    // 本システムは親子関係を解決してワールド行列を確定させる、L02_PostUpdate の
-    // 締めくくり。同ステージでローカル Transform を書き換えるシステムより後に
-    // 走らないと、確定したはずの行列が後から書き換わる。
+    /**
+     * @brief 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
+     *
+     * 本システムは親子関係を解決してワールド行列を確定させる、L02_PostUpdate の締めくくり。
+     * 同ステージでローカル Transform を書き換えるシステムより後に走らないと、確定したはずの行列が後から書き換わる。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BossActionSystem"};
@@ -96,9 +102,13 @@ private:
     // 親は指しているのに兄弟リストに繋がっていない子を、SetParent で繋ぎ直す
     void RepairBrokenLinks();
 
-    // 全 Transform を1回だけ走査し、親子関係の変化を検出する（行列の計算はしない）。
-    // 破棄済みの親を指したままのリンク（ゴーストリンク）もここで外す。
-    // @return キャッシュの作り直しが必要なら true
+    /**
+     * @brief 全 Transform を1回だけ走査し、親子関係の変化を検出する（行列の計算はしない）。
+     *
+     * 破棄済みの親を指したままのリンク（ゴーストリンク）もここで外す。
+     *
+     * @return キャッシュの作り直しが必要なら true。
+     */
     bool ScanDetectTopology();
 
     // ルート（parent == 0）を並列にその場で計算する。親を持たない大多数はここで終わる

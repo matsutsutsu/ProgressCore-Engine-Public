@@ -39,13 +39,16 @@ public:
     void Initialize() override;
     void Update(float dt) override;
 
-    // 判定に使う入力がそろってから走らせる。どれも同じ L05_Collision なので、
-    // 書かないと順番が決まらない（型が重ならなくても、書けば TaskScheduler が順番に走らせる）。
-    //   JoltCollisionEventSystem : これより前だと、そのフレームの接触を全部取りこぼす
-    //   CombatAnimationSyncSystem: これより前だと、isActive が1フレーム古くなる
-    //   JoltPullSystem           : ノックバックの向きに使う Transform を、物理の結果を書き戻した後に読むため。
-    //                              今は剣（Kinematic）もキャラ（CharacterVirtual）も書き戻しの対象外だが、
-    //                              Dynamic な剛体に Hurtbox を付けたときに古い位置で向きを決めないようにする
+    /**
+     * @brief 判定に使う入力がそろってから走らせる。
+     *
+     * どれも同じ L05_Collision なので、書かないと順番が決まらない（型が重ならなくても、書けば TaskScheduler が順番に走らせる）。
+     *   JoltCollisionEventSystem : これより前だと、そのフレームの接触を全部取りこぼす
+     *   CombatAnimationSyncSystem: これより前だと、isActive が1フレーム古くなる
+     *   JoltPullSystem           : ノックバックの向きに使う Transform を、物理の結果を書き戻した後に読むため。
+     *                              今は剣（Kinematic）もキャラ（CharacterVirtual）も書き戻しの対象外だが、
+     *                              Dynamic な剛体に Hurtbox を付けたときに古い位置で向きを決めないようにする
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"JoltCollisionEventSystem", "CombatAnimationSyncSystem", "JoltPullSystem"};

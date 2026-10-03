@@ -204,8 +204,14 @@ private:
     // このフレームで見つけた上書きのマテリアルの組み合わせ（それを最初に使ったコマンドの添字）
     std::vector<uint32_t> m_overrideSets;
 
-    // 上書きのマテリアルの組み合わせに、このフレームだけの番号を振る。組み合わせが同じなら同じ番号、
-    // 上書きが無ければ 0。組み合わせは普通は数種類しかないので、線形に探す
+    /**
+     * @brief 上書きのマテリアルの組み合わせに、このフレームだけの番号を振る。
+     *
+     * 組み合わせは普通は数種類しかないので、線形に探す。
+     *
+     * @param commandIndex 番号を振る描画コマンドの添字。
+     * @return 組み合わせの番号。組み合わせが同じなら同じ番号、上書きが無ければ 0。
+     */
     uint32_t GetOverrideSetID(uint32_t commandIndex)
     {
         const RenderCommand &cmd = m_opaqueCommands[commandIndex];

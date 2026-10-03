@@ -387,8 +387,12 @@ inline void from_json(const json &j, AnimStateGraph &g)
 // 検索・コンポーネント
 // ===========================================================================
 
-// どの階層にあるステートでも再帰的に探す（葉・サブマシンを問わない）。
-//   stateHash は名前のハッシュなので、階層をまたいでも同名のステートを作らないこと
+/**
+ * @brief どの階層にあるステートでも再帰的に探す（葉・サブマシンを問わない）。
+ * @param g    探すグラフ。
+ * @param hash 探すステートの名前のハッシュ。階層をまたいでも同名のステートを作らないこと。
+ * @return 見つかったステート。g が所有する。無ければ nullptr。
+ */
 inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t hash)
 {
     for (const auto &s : g.states)

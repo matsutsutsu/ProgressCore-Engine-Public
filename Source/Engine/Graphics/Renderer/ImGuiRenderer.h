@@ -21,15 +21,24 @@ public:
     static void NewFrame();
     static void Render(ID3D11DeviceContext *context);
 
-    // 切り離した OS ウィンドウを描いて Present するか。
-    // Play 中や F1 で UI を隠したときに false にする。ViewportsEnable 自体は切らない
-    // （切るには DestroyPlatformWindows が要り、それはシャットダウン専用のため）
+    /**
+     * @brief 切り離した OS ウィンドウを描いて Present するかを切り替える。
+     *
+     * ViewportsEnable 自体は切らない。切るには DestroyPlatformWindows が要り、それはシャットダウン専用のため。
+     *
+     * @param enabled 描くなら true。Play 中や F1 で UI を隠したときに false にする。
+     */
     static void SetPlatformWindowsEnabled(bool enabled);
     static bool ArePlatformWindowsEnabled() { return s_platformWindowsEnabled; }
 
-    // 操作していない間、切り離した OS ウィンドウの描画を間引くか。
-    // ImGui は毎フレーム全部を作り直すので、間引かないと触っていないウィンドウも
-    // ゲームと同じ頻度で描いて Present する。別のモニタにウィンドウを出したときの負荷が大きく下がる
+    /**
+     * @brief 操作していない間、切り離した OS ウィンドウの描画を間引くかを切り替える。
+     *
+     * ImGui は毎フレーム全部を作り直すので、間引かないと触っていないウィンドウもゲームと同じ頻度で描いて Present する。
+     * 別のモニタにウィンドウを出したときの負荷が大きく下がる。
+     *
+     * @param enabled 間引くなら true。
+     */
     static void SetPlatformWindowsThrottled(bool enabled);
     static bool ArePlatformWindowsThrottled() { return s_platformWindowsThrottled; }
 

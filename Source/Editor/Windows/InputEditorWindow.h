@@ -58,12 +58,24 @@ private:
     // 拾わないよう、マウスボタンが一度離されるまで待つ
     bool m_captureArmed = false;
 
-    // 割り当て1つぶんを描く（デバイス / キー / キャプチャ / 軸なら感度）
+    /**
+     * @brief 割り当て1つぶんを描く（デバイス / キー / キャプチャ / 軸なら感度）。
+     * @param b      編集する割り当て。
+     * @param isAxis 軸（移動・カメラなど連続値）のタブか。true なら感度の欄も出す。
+     */
     void DrawBindingParams(BindingData &b, bool isAxis);
 
-    // デバイスの種類の選択（ラジオボタン）
+    /**
+     * @brief デバイスの種類を選ぶラジオボタンを描く。切り替えたら b.device / b.key をそのデバイスの既定値に戻す。
+     * @param b      編集する割り当て。
+     * @param isAxis 軸のタブか。true ならゲームパッドの既定を左スティックにする。
+     */
     void DrawDeviceSelector(BindingData &b, bool isAxis);
 
-    // 選択中のデバイスに応じたキーの候補をコンボボックスで出す
+    /**
+     * @brief 選択中のデバイスに応じたキーの候補をコンボボックスで出す（絞り込みの入力欄つき）。
+     * @param b      編集する割り当て。
+     * @param isAxis 軸のタブか。true ならゲームパッドの候補を「スティック / トリガー」と「ボタン」の見出しで分ける。
+     */
     void DrawKeyCombo(BindingData &b, bool isAxis);
 };

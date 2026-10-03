@@ -45,10 +45,14 @@ struct VignetteConfigComponent
     // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる。
-    // 色収差のように最大値をとらないのは、ビネットの色・半径・脈動が組み合わせで
-    // 意味を持つため。項目ごとに最大値をとると、どの演出とも違う色と形になる。
-    // vigTime は演出ではなく PostProcessSystem が進める値なので触らない。
+    /**
+     * @brief 描画に渡すパラメータを返す。普段の設定に、上書きを priority の小さい順に重ねる。
+     *
+     * 色収差のように最大値をとらないのは、ビネットの色・半径・脈動が組み合わせで意味を持つため。
+     * 項目ごとに最大値をとると、どの演出とも違う色と形になる。
+     *
+     * @return 定数バッファへ渡すパラメータ。vigTime は演出ではなく PostProcessSystem が進める値なので触らない。
+     */
     GpuData::CbVignetteData Resolve() const
     {
         GpuData::CbVignetteData out = data;

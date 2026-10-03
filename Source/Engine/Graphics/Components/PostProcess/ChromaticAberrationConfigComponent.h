@@ -32,9 +32,13 @@ struct ChromaticAberrationConfigComponent
 
     PostEffectOverrides<ChromaticOverrideParams> overrides;
 
-    // 描画に渡す強さ。普段の値と、効いている全スロットの最大値をとる。
-    // 足し合わせないのは、演出が重なったときに振り切れて画面が崩れるのを防ぐため
-    // （強い演出が前に出る）。
+    /**
+     * @brief 描画に渡す強さを返す。普段の値と、効いている全スロットの最大値をとる。
+     *
+     * 足し合わせないのは、演出が重なったときに振り切れて画面が崩れるのを防ぐため（強い演出が前に出る）。
+     *
+     * @return 色収差の強さ。
+     */
     float ResolvedStrength() const
     {
         float out = enable ? data.chromaStrength : 0.0f;

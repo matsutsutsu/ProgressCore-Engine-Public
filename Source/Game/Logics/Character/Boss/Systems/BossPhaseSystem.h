@@ -42,8 +42,12 @@ public:
     }
     ~BossPhaseSystem() override = default;
 
-    // BossPerceptionSystem の後に走らせる。どちらも L02_PreUpdate で BehaviorTreeComponent を Write
-    // するので、触るフィールドが重ならなくても、スケジューラには順序が決まっていないと報告される。
+    /**
+     * @brief 同じステージで先に走らせる System を宣言する。
+     *
+     * BossPerceptionSystem の後に走らせる。
+     * どちらも L02_PreUpdate で BehaviorTreeComponent を Write するので、触るフィールドが重ならなくても、スケジューラには順序が決まっていないと報告される。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BossPerceptionSystem"};

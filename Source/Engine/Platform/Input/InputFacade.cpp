@@ -191,13 +191,17 @@ bool InputFacade::EvalActionReleased(const std::vector<InputBinding> &binds) con
 #ifdef ENABLE_EDITOR
 namespace
 {
-    // エディタでウィジェットを操作している間はゲーム入力を止める。
-    //   ・WantCaptureKeyboard : テキスト/数値欄にフォーカスがあり、キー入力を
-    //                           ImGui が受け取っている（名前入力中の WASD 漏れ防止）
-    //   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中（値の調整中）
-    //   GameView 自体が ImGui ウィンドウなので、WantCaptureMouse は
-    //   画面にマウスを乗せただけで true になり、通常のプレイを妨げる。
-    //   そのためマウスのフラグは意図的に見ない。
+    /**
+     * @brief エディタでウィジェットを操作している間かを返す。その間はゲーム入力を止める。
+     *
+     *   ・WantCaptureKeyboard : テキスト/数値欄にフォーカスがあり、キー入力を ImGui が受け取っている（名前入力中の WASD 漏れ防止）
+     *   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中（値の調整中）
+     *
+     * GameView 自体が ImGui ウィンドウなので、WantCaptureMouse は画面にマウスを乗せただけで true になり、通常のプレイを妨げる。
+     * そのためマウスのフラグは意図的に見ない。
+     *
+     * @return 操作中なら true。
+     */
     inline bool EditorIsConsumingInput()
     {
         if (!ImGui::GetCurrentContext()) return false;

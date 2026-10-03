@@ -51,9 +51,10 @@ void DroneManagerSystem::TryAutoSpawnInitial()
     }
 }
 
-// 数えるだけなので確保しない（View だと機数ぶんの vector を作ってから捨てることになる）。
 int DroneManagerSystem::GetAliveCount() const
 {
+    // 数えるだけなので確保しない（View だと機数ぶんの vector を作ってから捨てることになる）。
+
     int count = 0;
     m_world->ViewEach<DroneComponent>([&count](EntityID) { ++count; });
     return count;
@@ -288,8 +289,14 @@ namespace
             ImGui::SetTooltip("%s", text);
     }
 
-    // 構想上の戦術名。表示するだけで、実際の挙動は変わらない。
-    // これを読む BT の条件はまだ無く、ドローンも減らない（初期配備120機なら常に "Aggressive"）。
+    /**
+     * @brief 生存数から構想上の戦術名を返す。表示するだけで、実際の挙動は変わらない。
+     *
+     * これを読む BT の条件はまだ無く、ドローンも減らない（初期配備120機なら常に "Aggressive"）。
+     *
+     * @param droneAliveCount 生存しているドローンの数。
+     * @return 戦術名（文字列リテラル）。
+     */
     const char *PlannedTacticName(int droneAliveCount)
     {
         if (droneAliveCount <= 100) return "Final";

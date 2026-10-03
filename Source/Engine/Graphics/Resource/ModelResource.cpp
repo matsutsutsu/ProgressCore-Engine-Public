@@ -205,9 +205,10 @@ void ModelResource::Animation::serialize(Archive &archive, int version)
         CEREAL_NVP(nodeAnims));
 }
 
-// .cereal のキャッシュがあればそれを読み、無ければ glTF を読んでキャッシュを書く
 void ModelResource::Load(ID3D11Device *device, const char *filename)
 {
+    // .cereal のキャッシュがあればそれを読み、無ければ glTF を読んでキャッシュを書く
+
     // テクスチャを探す起点になるディレクトリ
     char drive[32], dir[256], dirname[256];
     ::_splitpath_s(filename, drive, sizeof(drive), dir, sizeof(dir), nullptr, 0, nullptr, 0);
@@ -448,7 +449,6 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     ComputeModelLocalAABB();
 }
 
-// 別ファイルのアニメーションを読み、animations の末尾に足す
 void ModelResource::AppendAnimations(const char *filename)
 {
     const std::filesystem::path filepath(filename);
@@ -542,7 +542,6 @@ void ModelResource::ComputeMeshBounds(Mesh &mesh)
     mesh.boundsMax = maxV;
 }
 
-// テクスチャ・頂点バッファ・インデックスバッファなど、GPU のリソースを作る
 void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
 {
     for (Material &material : materials)
@@ -724,7 +723,6 @@ void ModelResource::ComputeModelLocalAABB()
     }
 }
 
-// .cereal（バイナリ）に書き出す
 void ModelResource::Serialize(const char *filename)
 {
     std::ofstream ostream(filename, std::ios::binary);
@@ -750,7 +748,6 @@ void ModelResource::Serialize(const char *filename)
     }
 }
 
-// .cereal から読む
 void ModelResource::Deserialize(const char *filename)
 {
     std::ifstream istream(filename, std::ios::binary);

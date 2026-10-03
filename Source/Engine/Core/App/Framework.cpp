@@ -190,9 +190,10 @@ Framework::~Framework()
     }
 }
 
-// 物理・ロジックなど、フレームレートで結果が変わってはいけない処理だけを進める
 void Framework::FixedUpdate(float fixedTime)
 {
+    // 物理・ロジックなど、フレームレートで結果が変わってはいけない処理だけを進める
+
     ZoneScopedN("Framework::FixedUpdate");
 
     // 一時停止/コマ送りの判断は Run() 側で一元管理する。
@@ -204,9 +205,10 @@ void Framework::FixedUpdate(float fixedTime)
     Input::Instance().ClearLogicInput();
 }
 
-// 描画準備・UI など、毎フレーム行いたい処理
 void Framework::Update(float elapsedTime)
 {
+    // 描画準備・UI など、毎フレーム行いたい処理
+
     ZoneScopedN("Framework::Update");
 
 #ifdef ENABLE_EDITOR
@@ -384,7 +386,6 @@ void Framework::Render(float elapsedTime)
     }
 }
 
-// メインループ。固定タイムステップは Accumulator パターン（Fix Your Timestep）で回す
 int Framework::Run()
 {
     MSG msg = {};

@@ -54,7 +54,6 @@ void ImGuiThemes::ApplyEditorDark()
     style.WindowBorderSize = 1.0f;
 }
 
-// Darcula 風（IntelliJ IDEA）
 void ImGuiThemes::ApplyDarcula()
 {
     ImGuiStyle &style  = ImGui::GetStyle();
@@ -71,7 +70,6 @@ void ImGuiThemes::ApplyDarcula()
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.20f, 0.20f, 0.25f, 1.00f);
 }
 
-// Darcula 風の配色を半透明にしたもの
 void ImGuiThemes::ApplySkeltonDarcula()
 {
     ImGuiStyle &style        = ImGui::GetStyle();
@@ -91,7 +89,6 @@ void ImGuiThemes::ApplySkeltonDarcula()
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.20f, 0.20f, 0.25f, 1.00f);
 }
 
-// Unity Editor 風
 void ImGuiThemes::ApplyUnityDark()
 {
     ImGuiStyle &style  = ImGui::GetStyle();
@@ -108,7 +105,6 @@ void ImGuiThemes::ApplyUnityDark()
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
 }
 
-// Visual Studio Dark 風
 void ImGuiThemes::ApplyVisualStudioDark()
 {
     ImGuiStyle &style  = ImGui::GetStyle();

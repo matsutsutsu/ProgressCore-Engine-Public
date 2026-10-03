@@ -11,19 +11,21 @@ namespace CCL::ECS
         return (size + alignment - 1) & ~(alignment - 1);
     }
 
-    // 二重解放の防止は Finalize 側が持つ
     Chunk::~Chunk()
     {
+        // 二重解放の防止は Finalize 側が持つ
+
         Finalize();
     }
 
-    // ここが一番の勘所:
-    //   各コンポーネント列の幅は「今いる数」ではなく【定員】で決まる。
-    //   定員682体なら、8体しか居なくても Position 列は682体分の幅を持つ。
-    //   そのため Velocity 列は 8192 バイトも先から始まる（Tools/ECSPlayground の実験1で見る値）。
-    //   この設計のおかげで、以降 Entity を何体足してもメモリ確保は二度と起きない。
     void Chunk::Create(const Archetype &archetype, size_t initialEntityCapacity)
     {
+        // ここが一番の勘所:
+        //   各コンポーネント列の幅は「今いる数」ではなく【定員】で決まる。
+        //   定員682体なら、8体しか居なくても Position 列は682体分の幅を持つ。
+        //   そのため Velocity 列は 8192 バイトも先から始まる（Tools/ECSPlayground の実験1で見る値）。
+        //   この設計のおかげで、以降 Entity を何体足してもメモリ確保は二度と起きない。
+
         m_archetype    = archetype;
         m_capacity     = initialEntityCapacity;
         m_entityStride = 0;
@@ -104,43 +106,45 @@ namespace CCL::ECS
         return GetComponentPtr(0, writeIndex);
     }
 
-    // 破棄が2段階になっている理由:
-    //   System が ForEach でループしている最中にスロットが前に詰まると、
-    //   ループが握っているポインタやインデックスが壊れる。
-    //   そこで「印を付けるだけ」に留め、実際に詰めるのは
-    //   フレーム境界の CompactAllChunks → CompactHoles でまとめて行う。
     void Chunk::MarkDestroyEntity(size_t entityIndex)
     {
+        // 破棄が2段階になっている理由:
+        //   System が ForEach でループしている最中にスロットが前に詰まると、
+        //   ループが握っているポインタやインデックスが壊れる。
+        //   そこで「印を付けるだけ」に留め、実際に詰めるのは
+        //   フレーム境界の CompactAllChunks → CompactHoles でまとめて行う。
+
         if (entityIndex >= m_entityCount) return;
 
         m_ownerEntities[entityIndex] = InvalidEntityID;
         m_destroyedEntities.push_back(entityIndex);
     }
 
-    // アルゴリズム（2本指の古典パターン）:
-    //   read  = 走査位置（前から順に全部見ていく指）
-    //   write = 詰め先位置（生きている要素を置く指）
-    //
-    //   空きスロット           → read だけ進める（write は据え置き＝穴を飛ばす）
-    //   生きていて前に穴が有る → read の中身を write へ移し、両方進める
-    //   生きていて前に穴が無い → 何もせず両方進める（read == write なので移動不要）
-    //
-    // 例: スロット [A, ×, B, ×, C]（× は削除予約）
-    //   read=0 A  : 穴なし → そのまま            write=1  [A, ×, B, ×, C]
-    //   read=1 ×  : 飛ばす                       write=1
-    //   read=2 B  : 穴あり → B を 1 へ移す       write=2  [A, B, -, ×, C]
-    //   read=3 ×  : 飛ばす                       write=2
-    //   read=4 C  : 穴あり → C を 2 へ移す       write=3  [A, B, C, -, -]
-    //   最後に m_entityCount = write = 3。後ろの2スロットは次の AddEntity で上書きされる。
-    //
-    // 移動のしかた:
-    //   型の mover（ムーブ構築）があればそれを使い、無ければ memmove で生コピー。
-    //   ムーブした後の移動元は「抜け殻」になるので、デストラクタを呼んで始末する
-    //   （std::string や shared_ptr をムーブした後を想像すると分かりやすい）。
-    //
-    // Tools/ECSPlayground の実験3で「最後尾の Entity が空いた穴へ移動する」のがこの関数の結果。
     void Chunk::CompactHoles(const std::function<void(EntityID, Chunk *, size_t)> &onMoveCallback)
     {
+        // アルゴリズム（2本指の古典パターン）:
+        //   read  = 走査位置（前から順に全部見ていく指）
+        //   write = 詰め先位置（生きている要素を置く指）
+        //
+        //   空きスロット           → read だけ進める（write は据え置き＝穴を飛ばす）
+        //   生きていて前に穴が有る → read の中身を write へ移し、両方進める
+        //   生きていて前に穴が無い → 何もせず両方進める（read == write なので移動不要）
+        //
+        // 例: スロット [A, ×, B, ×, C]（× は削除予約）
+        //   read=0 A  : 穴なし → そのまま            write=1  [A, ×, B, ×, C]
+        //   read=1 ×  : 飛ばす                       write=1
+        //   read=2 B  : 穴あり → B を 1 へ移す       write=2  [A, B, -, ×, C]
+        //   read=3 ×  : 飛ばす                       write=2
+        //   read=4 C  : 穴あり → C を 2 へ移す       write=3  [A, B, C, -, -]
+        //   最後に m_entityCount = write = 3。後ろの2スロットは次の AddEntity で上書きされる。
+        //
+        // 移動のしかた:
+        //   型の mover（ムーブ構築）があればそれを使い、無ければ memmove で生コピー。
+        //   ムーブした後の移動元は「抜け殻」になるので、デストラクタを呼んで始末する
+        //   （std::string や shared_ptr をムーブした後を想像すると分かりやすい）。
+        //
+        // Tools/ECSPlayground の実験3で「最後尾の Entity が空いた穴へ移動する」のがこの関数の結果。
+
         if (m_destroyedEntities.empty()) return;
 
         size_t read  = 0;
@@ -201,10 +205,11 @@ namespace CCL::ECS
         m_destroyedEntities.clear();
     }
 
-    // Create() の時点で定員分を確保済みなので、ここは「空いているスロットに名前を書く」
-    // だけで終わる。ECS が大量の Entity 生成に強いのはこの構造のおかげ。
     size_t Chunk::AddEntity(EntityID entity)
     {
+        // Create() の時点で定員分を確保済みなので、ここは「空いているスロットに名前を書く」
+        // だけで終わる。ECS が大量の Entity 生成に強いのはこの構造のおかげ。
+
         // 満員時は assert のみ。Release では assert が消えるので、
         // 呼び出し側が定員を守る前提になっている（既知の弱点）
         if (m_entityCount >= m_capacity)

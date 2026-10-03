@@ -24,8 +24,12 @@ class DroneCommandSystem : public CCL::ECS::IfSystem<DroneCommandSystem,
 public:
     DroneCommandSystem() : IfSystem("DroneCommandSystem") {}
 
-    // BossCommandComponent はテンプレート引数に足せない。Read<>/Write<> は ForEach の
-    // 絞り込み条件も兼ねるので、足すとドローンが1機も回らなくなる。申告だけを足す。
+    /**
+     * @brief テンプレート引数以外に書く型を申告する。
+     *
+     * BossCommandComponent はテンプレート引数に足せない。
+     * Read<>/Write<> は ForEach の絞り込み条件も兼ねるので、足すとドローンが1機も回らなくなる。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
     {
         auto types = Base::GetWriteTypes();

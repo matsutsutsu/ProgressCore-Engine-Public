@@ -137,10 +137,14 @@ inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / si
 // 引く関数
 // ============================================================
 
-// 保存キーの読み替え（名前の変更への対応）。定数名を変えたら、ここに1行足す。
-// Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下の static_assert で検出する。
-//
-// 返してよいのは文字列リテラルか引数の key だけ（string_view は文字列の中身を持たないため）。
+/**
+ * @brief 保存キーの読み替え（名前の変更への対応）。定数名を変えたら、ここに1行足す。
+ *
+ * Unreal の ActiveClassRedirects と同じ役割。綴り間違いは下の static_assert で検出する。
+ *
+ * @param key 保存されているキー。
+ * @return 今のキー。返してよいのは文字列リテラルか引数の key だけ（string_view は文字列の中身を持たないため）。
+ */
 inline constexpr std::string_view RedirectKey(std::string_view key)
 {
     // 例: if (key == "A_BossJumpSlam") return "A_BossLeapAttack";
@@ -161,8 +165,13 @@ inline const ActionEntry *FindConditionEntry(ActionID id)
     return nullptr;
 }
 
-// 保存キーからIDを引く。改名済みのキーも読み替えて解決する。
-// アセット読み込み時に1回だけ走るので線形探索で足りる（実行時の評価はIDのまま）。
+/**
+ * @brief 保存キーから行動のIDを引く。改名済みのキーも読み替えて解決する。
+ * @param key   保存されているキー。
+ * @param outId 見つかった行動のIDを受け取る。
+ * @return 見つかれば true。
+ * @note アセット読み込み時に1回だけ走るので線形探索で足りる（実行時の評価はIDのまま）。
+ */
 inline bool TryFindActionIdByKey(std::string_view key, ActionID &outId)
 {
     key = RedirectKey(key);
@@ -207,8 +216,15 @@ static_assert(IsRegistryUnique(g_ActionRegistry, g_ActionRegistryCount),
 static_assert(IsRegistryUnique(g_ConditionRegistry, g_ConditionRegistryCount),
               "ConditionRegistry の ID かキーが重複している");
 
-// 分類ごとにまとまって並んでいるか。エディタのコンボは「分類が変わった所で見出しを
-// 出す」作りなので、散らばっていると同じ見出しが何度も出る。
+/**
+ * @brief 表が分類ごとにまとまって並んでいるかを返す。
+ *
+ * エディタのコンボは「分類が変わった所で見出しを出す」作りなので、散らばっていると同じ見出しが何度も出る。
+ *
+ * @param table 調べる表。
+ * @param count 表の行数。
+ * @return 同じ分類が離れた位置に再び出てこなければ true。
+ */
 inline constexpr bool IsGroupedByCategory(const ActionEntry *table, int count)
 {
     for (int i = 1; i < count; ++i)
@@ -254,8 +270,12 @@ inline constexpr bool RegistryHasKey(std::string_view key)
     return false;
 }
 
-// 読み替えが健全か（先が無ければ綴り間違い、元がまだ現役なら改名し忘れ）。
-// RedirectKey に1行足したら、ここにも対応する1行を足す。
+/**
+ * @brief 読み替えが健全かを返す。RedirectKey に1行足したら、ここにも対応する1行を足す。
+ * @param oldKey 読み替え元のキー。表に残っていれば改名し忘れ。
+ * @param newKey 読み替え先のキー。表に無ければ綴り間違い。
+ * @return 先が表にあり、元が表に無く、RedirectKey が元を先へ読み替えるなら true。
+ */
 inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view newKey)
 {
     return RegistryHasKey(newKey) && !RegistryHasKey(oldKey) && RedirectKey(oldKey) == newKey;
@@ -291,8 +311,14 @@ inline bool IsDroneAction(ActionID id)
     return TryGetDroneFormation(id, ignored);
 }
 
-// 当たり判定を持つ陣形（技）か。隊形（円陣・頭上円陣）は持たない。
-// 除外リストを書かず表の役割列を引くので、攻撃しない隊形を足してもここは触らない。
+/**
+ * @brief 当たり判定を持つ陣形（技）かを返す。隊形（円陣・頭上円陣）は持たない。
+ *
+ * 除外リストを書かず表の役割列を引くので、攻撃しない隊形を足してもここは触らない。
+ *
+ * @param id 調べる行動。
+ * @return 攻撃の陣形なら true。
+ */
 inline bool IsDroneAttackFormation(ActionID id)
 {
     // データの技は当たり判定を持つ攻撃技として作る前提（攻撃しない隊形は C++ 側にある）。
@@ -312,23 +338,34 @@ inline bool IsDroneAttackFormation(ActionID id)
 
 inline bool IsWaitAction(ActionID id) { return id == A_Wait; }
 
-// この行動は BossCommandComponent::currentActionId を書くか。
-//
-//   これらは毎フレーム評価されることを前提に、2つの後始末をしている。
-//     ・currentActionId を毎フレーム書き直す
-//     ・硬直が終わったフレームに ClearCommandIfMine で要求を下ろす
-//   BossActionSystem は currentActionId を毎フレーム読んで体を動かすので、
-//   評価が止まると技が終わっても体がその技を続ける。
-//   Parallel の「従」に置いてはいけない行動の判定に使う。
+/**
+ * @brief この行動が BossCommandComponent::currentActionId を書くかを返す。
+ *
+ * これらは毎フレーム評価されることを前提に、2つの後始末をしている。
+ *   ・currentActionId を毎フレーム書き直す
+ *   ・硬直が終わったフレームに ClearCommandIfMine で要求を下ろす
+ *
+ * BossActionSystem は currentActionId を毎フレーム読んで体を動かすので、評価が止まると技が終わっても体がその技を続ける。
+ * Parallel の「従」に置いてはいけない行動の判定に使う。
+ *
+ * @param id 調べる行動。
+ * @return currentActionId を書く行動なら true。
+ */
 inline bool IsCommandWritingAction(ActionID id)
 {
     const ActionEntry *e = FindActionEntry(id);
     return e && e->kind == BTActionKind::Driving;
 }
 
-// この行動は Running を返しうるか。陣形指示・攻撃信号・リセットはどれも即 Success で、
-// これらだけで枝を作ると Selector がそこで止まり、下の枝が一度も評価されない
-// （外からは固まって何もしないように見えるので、読み込み時に警告する）。
+/**
+ * @brief この行動が Running を返しうるかを返す。
+ *
+ * 陣形指示・攻撃信号・リセットはどれも即 Success で、これらだけで枝を作ると Selector がそこで止まり、下の枝が一度も評価されない。
+ * 外からは固まって何もしないように見えるので、読み込み時に警告する。
+ *
+ * @param id 調べる行動。
+ * @return Running を返しうるなら true。
+ */
 inline bool IsBlockingAction(ActionID id)
 {
     const ActionEntry *e = FindActionEntry(id);

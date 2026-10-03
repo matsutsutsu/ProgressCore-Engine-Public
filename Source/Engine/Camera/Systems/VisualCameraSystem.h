@@ -52,24 +52,32 @@ public:
     {
     }
 
-    // 揺れ要求(CameraShakeRequestEvent)の購読を開始する。
-    //
-    // 画面を揺らす経路はこの1本だけ。発生源がカメラを直接触ると、
-    // 誰の揺れが誰の揺れを消したのか追えなくなる。
+    /**
+     * @brief 揺れ要求（CameraShakeRequestEvent）の購読を開始する。
+     *
+     * 画面を揺らす経路はこの1本だけ。発生源がカメラを直接触ると、誰の揺れが誰の揺れを消したのか追えなくなる。
+     */
     void Initialize() override;
 
     void Update(float dt) override;
 
-    // 揺れが「届いていない」のか「弱すぎて見えない」のかを切り分けるための表示。
-    //
-    // 揺れは trauma の2乗に比例するので、効いていても目視では無に見えることがある。
-    // 揺らせるカメラが 0 台なら要求は捨てられている（CameraShake の付け忘れ）。
+    /**
+     * @brief 揺れが「届いていない」のか「弱すぎて見えない」のかを切り分けるための表示。
+     *
+     * 揺れは trauma の2乗に比例するので、効いていても目視では無に見えることがある。
+     *
+     * 揺らせるカメラが 0 台なら要求は捨てられている（CameraShake の付け忘れ）。
+     */
     void OnGui() override;
 
-    // シェイクは「Body が確定させた resultPos / resultLookAt への加算」である。
-    // Body より先に走ると加算結果がそのまま上書きされ、揺れが完全に消える。
-    // 同一ステージ(R01_Camera)に並んでいるだけでは順序は保証されないため、
-    // すべての Body システムより後ろに来ることをここで宣言する。
+    /**
+     * @brief すべての Body システムより後ろに走ることを宣言する。
+     *
+     * シェイクは「Body が確定させた resultPos / resultLookAt への加算」である。
+     * Body より先に走ると加算結果がそのまま上書きされ、揺れが完全に消える。
+     *
+     * 同一ステージ（R01_Camera）に並んでいるだけでは順序は保証されないため、ここで宣言する。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"CameraActionTPSSystem", "CameraFollowSystem", "CameraLookAtSystem",
@@ -80,8 +88,12 @@ private:
     // 32bit 整数ハッシュ。ノイズの格子点から擬似乱数を作る。
     static std::uint32_t HashUInt(std::uint32_t x);
 
-    // 時間駆動の1次元勾配ノイズ（Perlin, おおむね -1..1）。
-    // 同じ (seed, t) なら常に同じ値を返すため、fps に依らず波形が一定になる。
+    /**
+     * @brief 時間駆動の1次元勾配ノイズ（Perlin）を返す。
+     * @param seed 波形を選ぶ種。
+     * @param t    時刻（秒）。
+     * @return おおむね -1..1 の値。同じ (seed, t) なら常に同じ値を返すため、fps に依らず波形が一定になる。
+     */
     static float GradientNoise(std::uint32_t seed, float t);
 
     // このフレームに届いた揺れ要求のうち最大のもの。Update で消費する。
@@ -106,7 +118,9 @@ public:
     void Update(float dt) override;
 
 private:
-    // ポーズ中・UI 操作中・エディタの他ウィンドウ操作中なら true（入力を使わない）。
-    // TPS カメラ側と同じ条件に揃えている。
+    /**
+     * @brief 入力を使わない状態かを返す。TPS カメラ側と同じ条件に揃えている。
+     * @return ポーズ中・UI 操作中・エディタの他ウィンドウ操作中なら true。
+     */
     bool IsInputBlocked() const;
 };

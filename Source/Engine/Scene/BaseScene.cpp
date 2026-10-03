@@ -259,12 +259,13 @@ void BaseScene::DrawGUI()
     OnDrawImGui();
 }
 
-// Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
-// D3D パイプライン・シェーダー・PostProcessManager は全て作り直された状態でここに来る。
-// World を作り直して Initialize → Start を呼び直すことで、ResourceManager に
-// ロードし直された新しいリソースを使うようにする（ゲームの進行状態はリセットされる）
 void BaseScene::OnDeviceRecreated()
 {
+    // Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
+    // D3D パイプライン・シェーダー・PostProcessManager は全て作り直された状態でここに来る。
+    // World を作り直して Initialize → Start を呼び直すことで、ResourceManager に
+    // ロードし直された新しいリソースを使うようにする（ゲームの進行状態はリセットされる）
+
     CCL_LOG_INFO(LogCategory::Core, "[BaseScene] OnDeviceRecreated: Device lost recovered. Reinitializing scene...\n");
 
     // 古い World を破棄する。全 Entity・コンポーネント・System と、旧リソースへのハンドルが解放される

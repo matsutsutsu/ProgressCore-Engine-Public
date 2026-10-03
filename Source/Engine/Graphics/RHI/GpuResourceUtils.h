@@ -40,7 +40,7 @@ public:
         const char            *filename,
         ID3D11GeometryShader **geometryShader);
 
-    // HLSL のソースを同梱しない製品（Shipping）ビルドでも動く
+    // コンパイル済みの .cso からコンピュートシェーダーを作る。HLSL を同梱しない Shipping ビルドでも動く
     static HRESULT LoadComputeShader(ID3D11Device         *device,
                                      const char           *filename,
                                      ID3D11ComputeShader **computeShader);
@@ -126,6 +126,7 @@ public:
                                       ID3D11GeometryShader **geometryShader,
                                       ID3DBlob             **outShaderBlob = nullptr);
 
+    // コンピュートシェーダーを .hlsl からコンパイルして作る
     static bool CompileComputeShader(ID3D11Device         *device,
                                      const std::wstring   &hlslPath,
                                      const char           *entryPoint,

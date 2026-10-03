@@ -194,8 +194,11 @@ namespace ShaderReflect
         // data を先頭から書く（バッファより大きいぶんは切り捨てる）
         void SetRawData(const void *data, size_t size);
 
-        // CPU 側の写しを全部 0 にする。Shader::UpdateMaterialProperties がマテリアルごとに呼び、
-        // 前のマテリアルの値が残らないようにする（理由はそちらを参照）
+        /**
+         * @brief CPU 側の写しを全部 0 にする。
+         *
+         * @note Shader::UpdateMaterialProperties がマテリアルごとに呼び、前のマテリアルの値が残らないようにする（理由はそちらを参照）。
+         */
         void ResetToZero()
         {
             std::fill(cpuBuffer.begin(), cpuBuffer.end(), static_cast<BYTE>(0));

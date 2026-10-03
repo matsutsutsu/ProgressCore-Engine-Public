@@ -61,9 +61,12 @@ public:
     // デバッグ用。ボスの位置をインスペクタから直接動かせる。
     void OnGui() override;
 
-    // Update が BehaviorTreeComponent::debugPaused を GetComponent で読むので、申告だけを足す。
-    // テンプレート引数には足さない（ForEach の絞り込みにもなるので、BT を持たない
-    // 検証用のボスでこの System が何も言わずに動かなくなる）。
+    /**
+     * @brief テンプレート引数以外に読む型を申告する。
+     *
+     * Update が BehaviorTreeComponent::debugPaused を GetComponent で読むので、申告だけを足す。
+     * テンプレート引数には足さない。ForEach の絞り込みにもなるので、BT を持たない検証用のボスでこの System が何も言わずに動かなくなる。
+     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
@@ -80,8 +83,20 @@ private:
                      const JoltCharacterHandleComponent &joltHandle,
                      const DirectX::SimpleMath::Vector3 &playerPos, float dt);
 
-    // 横歩き（様子見）。相手への方向の直角へ進み続けるので、相手を中心に円を描く。
-    // 向きは進行方向ではなく相手へ向け続ける。壁際では回る向きを内側へ反転する。
+    /**
+     * @brief 横歩き（様子見）。相手への方向の直角へ進み続けるので、相手を中心に円を描く。
+     *
+     * 向きは進行方向ではなく相手へ向け続ける。壁際では回る向きを内側へ反転する。
+     *
+     * @param bossDef    技の状態を持つボスの行動。
+     * @param trans      ボスの Transform。
+     * @param movement   移動速度を書く先。
+     * @param config     キャラクターの設定（移動の速さなど）。
+     * @param joltHandle 向きを書く Jolt のキャラクター。
+     * @param playerPos  相手の位置（ワールド）。
+     * @param battle     ステージの情報（中心・半径）。
+     * @param dt         経過時間（秒）。
+     */
     void ProcessStrafe(BossActionComponent &bossDef, TransformComponent &trans,
                        CharacterMovementComponent         &movement,
                        const JoltCharacterConfigComponent &config,
@@ -89,9 +104,22 @@ private:
                        const DirectX::SimpleMath::Vector3 &playerPos,
                        const BattleContext &battle, float dt);
 
-    // 後方ステップ。突進の「下がる」と同じく、速く下がり始めて終点で止まる。止まりのモーションが
-    // 終わる瞬間に下がり切って着地し、その後は硬直する。
-    // 退きながらも相手を向き続ける。背を向けると逃げたように見え、間合いを取り直す技だと読めなくなる。
+    /**
+     * @brief 後方ステップ。突進の「下がる」と同じく、速く下がり始めて終点で止まる。
+     *
+     * 止まりのモーションが終わる瞬間に下がり切って着地し、その後は硬直する。
+     *
+     * 退きながらも相手を向き続ける。背を向けると逃げたように見え、間合いを取り直す技だと読めなくなる。
+     *
+     * @param bossDef    技の状態を持つボスの行動。
+     * @param trans      ボスの Transform。
+     * @param movement   移動速度を書く先。
+     * @param joltHandle 向きを書く Jolt のキャラクター。
+     * @param anim       止まりのモーションの長さを引くアニメ。nullptr なら 0.4 秒として扱う。
+     * @param playerPos  相手の位置（ワールド）。
+     * @param battle     ステージの情報（中心・半径）。
+     * @param dt         経過時間（秒）。
+     */
     void ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
                          CharacterMovementComponent         &movement,
                          const JoltCharacterHandleComponent &joltHandle,
@@ -111,8 +139,19 @@ private:
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext &battle, float dt);
 
-    // 突進攻撃。後ろへ浮きながら下がる → 空中で止まって狙う → 下りながら直進 → 硬直。
-    // 跳躍と同じく「今あるべき位置」へ届く速度を毎フレーム与える。
+    /**
+     * @brief 突進攻撃。後ろへ浮きながら下がる → 空中で止まって狙う → 下りながら直進 → 硬直。
+     *
+     * 跳躍と同じく「今あるべき位置」へ届く速度を毎フレーム与える。
+     *
+     * @param bossDef    技の状態を持つボスの行動。
+     * @param trans      ボスの Transform。
+     * @param movement   移動速度を書く先。
+     * @param joltHandle 向きを書く Jolt のキャラクター。
+     * @param playerPos  相手の位置（ワールド）。
+     * @param battle     ステージの情報（中心・半径）。
+     * @param dt         経過時間（秒）。
+     */
     void ProcessDash(BossActionComponent &bossDef, TransformComponent &trans,
                      CharacterMovementComponent         &movement,
                      const JoltCharacterHandleComponent &joltHandle,
@@ -130,8 +169,14 @@ private:
                          const DirectX::SimpleMath::Vector3 &playerPos,
                          const BattleContext                &battle) const;
 
-    // 中央を挟んで相手と反対側の着地点（中心から 半径×escapeLandingRatio）。
-    // 高さは踏み切り地点にそろえる。
+    /**
+     * @brief 中央を挟んで相手と反対側の着地点を返す（中心から 半径×escapeLandingRatio）。
+     * @param bossDef    escapeLandingRatio を持つボスの行動。
+     * @param takeoffPos 踏み切り地点（ワールド）。着地点の高さをこれにそろえる。
+     * @param playerPos  相手の位置（ワールド）。
+     * @param battle     ステージの情報（中心・半径）。
+     * @return 着地点（ワールド）。
+     */
     DirectX::SimpleMath::Vector3 AwayToCenterLandingPoint(const BossActionComponent          &bossDef,
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos,
@@ -142,8 +187,15 @@ private:
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos) const;
 
-    // 点がステージの円（BattleContext::arenaRadius − 壁からの余白）の外なら、
-    // 中心へ向かって円の縁まで引き戻す。跳躍の着地点と、突進の狙う位置・終点に使う。
+    /**
+     * @brief 点がステージの円の外なら、中心へ向かって円の縁まで引き戻す。
+     *
+     * 跳躍の着地点と、突進の狙う位置・終点に使う。
+     *
+     * @param point  引き戻す点（ワールド）。
+     * @param battle ステージの情報。円の半径は BattleContext::arenaRadius − 壁からの余白。
+     * @return ステージの円の内側に収めた点。
+     */
     DirectX::SimpleMath::Vector3 ClampInsideArena(const DirectX::SimpleMath::Vector3 &point,
                                                   const BattleContext                &battle) const;
 

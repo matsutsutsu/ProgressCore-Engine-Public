@@ -39,8 +39,16 @@ public:
     void UpdateManual(CCL::ECS::EntityID entity, float time);
 
 private:
-    // 点イベント（Sound / Effect / SpawnHitbox）を EventBus で発行する。
-    // 時間の進行やループ判定は m_world を使わないので .cpp の無名名前空間に置いている
+    /**
+     * @brief 点イベント（Sound / Effect / SpawnHitbox）を EventBus で発行する。
+     *
+     * 時間の進行やループ判定は m_world を使わないので .cpp の無名名前空間に置いている。
+     *
+     * @param id           イベントを出すエンティティ。
+     * @param animator     イベントの位置（nextEventIndex）を持つ Animator。
+     * @param seq          再生中のシーケンス。
+     * @param movedForward このフレームで順方向に進んだか。false（逆再生・シーク）なら発火せず、イベントの位置だけ現在時刻に合わせる。
+     */
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
                              const AnimSequence *seq, bool movedForward);
 };

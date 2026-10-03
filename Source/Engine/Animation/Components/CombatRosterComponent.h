@@ -27,9 +27,15 @@ struct CombatRosterComponent
     int   count = 0;
     Entry entries[kMaxEntries];
 
-    // タグに対応するエンティティを返す。見つからないとき・割り当てが「なし」のときは InvalidEntityID。
-    // 呼び出し側が InvalidEntityID とだけ比べれば済むよう、「なし」の 0 もここで InvalidEntityID にする
-    // （ID の世代は 1 から始まるので、0 は実在するエンティティを指さない）
+    /**
+     * @brief タグに対応するエンティティを返す。
+     *
+     * 呼び出し側が InvalidEntityID とだけ比べれば済むよう、「なし」の 0 もここで InvalidEntityID にする。
+     * ID の世代は 1 から始まるので、0 は実在するエンティティを指さない。
+     *
+     * @param targetTag 探すタグ。
+     * @return 対応するエンティティ。見つからないとき・割り当てが「なし」のときは InvalidEntityID。
+     */
     CCL::ECS::EntityID Find(const char *targetTag) const
     {
         if (!targetTag) return CCL::ECS::InvalidEntityID;

@@ -88,8 +88,13 @@ private:
     // 断面 i の進行方向（末尾は1つ前の向きを使う）
     DirectX::XMVECTOR RingTangent(const std::vector<Ring> &rings, size_t i) const;
 
-    // 進行方向に垂直な、断面内の正規直交基底を作る。
-    // half が進行方向と平行だと基底がつぶれるので、その場合は適当な直交軸を使う。
+    /**
+     * @brief 進行方向に垂直な、断面内の正規直交基底を作る。
+     * @param tangent 進行方向。
+     * @param half    断面の向きの基準。進行方向と平行だと基底がつぶれるので、その場合は適当な直交軸を使う。
+     * @param outU    基底の1本目を受け取る。
+     * @param outV    基底の2本目を受け取る。
+     */
     void RingBasis(DirectX::FXMVECTOR tangent, const DirectX::XMFLOAT3 &half,
                    DirectX::XMVECTOR &outU, DirectX::XMVECTOR &outV) const;
 
@@ -107,7 +112,14 @@ private:
                           const DirectX::XMFLOAT3 &pos,
                           float age, float intensity, float vCoord) const;
 
-    // 折れ点1つ分のずらすベクトル。断面内の基底 u, v の上で決める
+    /**
+     * @brief 折れ点1つ分のずらすベクトルを返す。断面内の基底 u, v の上で決める。
+     * @param trail 振れ幅（zigZagAmplitude）と乱数の種を持つトレイル。
+     * @param node  折れ点の番号。同じ番号からは毎フレーム同じ向き・長さが出る。
+     * @param u     断面内の基底の1本目。
+     * @param v     断面内の基底の2本目。
+     * @return ずらすベクトル（m）。
+     */
     DirectX::XMVECTOR ZigZagOffset(const TrailComponent &trail, uint32_t node,
                                    DirectX::FXMVECTOR u, DirectX::FXMVECTOR v) const;
 

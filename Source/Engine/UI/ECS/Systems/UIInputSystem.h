@@ -31,9 +31,12 @@ public:
     {
     }
 
-    // UITransform を書く 3 つの System より前に走らせる。
-    //   こちらは computed* を読むだけなので型としては競合するが、実際の依存は無い。
-    //   宣言しないと「順序不定」の警告が出て、どちらが先かが登録順で決まってしまう
+    /**
+     * @brief UITransform を書く 3 つの System より前に走らせる。
+     *
+     * こちらは computed* を読むだけなので型としては競合するが、実際の依存は無い。
+     * 宣言しないと「順序不定」の警告が出て、どちらが先かが登録順で決まってしまう。
+     */
     std::vector<const char *> GetRunBefore() const override
     {
         return {"UIAnimationSystem", "UIAppearSystem", "UILayoutSystem"};

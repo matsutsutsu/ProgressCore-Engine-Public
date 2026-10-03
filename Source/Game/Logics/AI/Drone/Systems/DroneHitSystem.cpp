@@ -13,17 +13,23 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // このドローンが突撃中で危険か。
-    //   - 発射待ち（fireDelay > 0）は危険ではない
-    //   - 陣形追従の突撃（縦割り・小隊など）は、突入中ずっと危険
-    //   - 直進系（弾幕）は、タメ（stateTimer > 0）が終わってからだけ危険
-    //
-    // 硬直（Stunned）と離脱（Returning）は FireCharge ではないので、状態の1行でまとめて除外される。
-    // 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
-    //
-    // 吹き飛ばし中かは knockbackTimer を直接見る。
-    // 切り払い（L02_PostUpdate）は判断層（L02_PreUpdate）より後に書くので、切り払われたフレームは
-    // まだ状態が FireCharge のまま。ここで見れば同じフレームで判定が閉じる。
+    /**
+     * @brief このドローンが突撃中で危険かを返す。
+     *
+     * - 発射待ち（fireDelay > 0）は危険ではない
+     * - 陣形追従の突撃（縦割り・小隊など）は、突入中ずっと危険
+     * - 直進系（弾幕）は、タメ（stateTimer > 0）が終わってからだけ危険
+     *
+     * 硬直（Stunned）と離脱（Returning）は FireCharge ではないので、状態の1行でまとめて除外される。
+     * 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
+     *
+     * 吹き飛ばし中かは knockbackTimer を直接見る。
+     * 切り払い（L02_PostUpdate）は判断層（L02_PreUpdate）より後に書くので、切り払われたフレームはまだ状態が FireCharge のまま。
+     * ここで見れば同じフレームで判定が閉じる。
+     *
+     * @param d 判定する機体。
+     * @return 当たり判定を開くべきなら true。
+     */
     bool IsDangerous(const DroneComponent &d)
     {
         if (d.knockbackTimer > 0.0f) return false;                  // 切り払いで吹き飛ばし中は無害

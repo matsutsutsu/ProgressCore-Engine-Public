@@ -22,19 +22,31 @@ namespace CCL::AI::BT
 {
     namespace
     {
-    // 自分が出した行動要求だけを取り下げる。別の行動が既に書き換えていたら触らない
-    // （同じフレームに次の技が出した要求を消してしまわないため）。
+    /**
+     * @brief 自分が出した行動要求だけを取り下げる。
+     *
+     * 別の行動が既に書き換えていたら触らない。同じフレームに次の技が出した要求を消してしまわないため。
+     *
+     * @param ctx      BT の実行文脈。
+     * @param expected 自分が出した行動の ID。currentActionId がこれと一致するときだけ 0 に戻す。
+     */
     void ClearCommandIfMine(BTContext &ctx, ActionID expected)
     {
         if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
             if (cmd->currentActionId == expected) cmd->currentActionId = 0;
     }
 
-    // 足が地面から離れているか。技の途中で要求を取り下げてよいかの判断に使う。
-    //
-    // 溜め（Windup）の間はまだ地面にいるので、打ち切っても問題ない。
-    // 突進は下がり始めから浮き、突っ込み終わって地面に着くまでが空中。
-    // 着地後の前進（Travel 以降）は地面を走っているだけなので、打ち切っても落ちない。
+    /**
+     * @brief 足が地面から離れているかを返す。技の途中で要求を取り下げてよいかの判断に使う。
+     *
+     * 溜め（Windup）の間はまだ地面にいるので、打ち切っても問題ない。
+     *
+     * 突進は下がり始めから浮き、突っ込み終わって地面に着くまでが空中。
+     * 着地後の前進（Travel 以降）は地面を走っているだけなので、打ち切っても落ちない。
+     *
+     * @param ctx BT の実行文脈。
+     * @return 空中なら true。BossActionComponent が無ければ false。
+     */
     bool IsAirborne(BTContext &ctx)
     {
         const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity);

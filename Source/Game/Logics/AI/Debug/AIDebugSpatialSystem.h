@@ -38,9 +38,12 @@ public:
     void Update(float dt) override;
     void OnGui() override;
 
-    // Update が BehaviorTreeComponent を GetComponent で読むので、申告だけを足す。
-    //   テンプレート引数には足さない（ForEach の絞り込みにもなるので、BT を持たない
-    //   検証用のボスでリングが何も言わずに消える）。
+    /**
+     * @brief テンプレート引数以外に読む型を申告する。
+     *
+     * Update が BehaviorTreeComponent を GetComponent で読むので、申告だけを足す。
+     * テンプレート引数には足さない。ForEach の絞り込みにもなるので、BT を持たない検証用のボスでリングが何も言わずに消える。
+     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
@@ -52,21 +55,42 @@ private:
     // リングの集め方と色は AIDebugOverlaySystem（距離の数字の色）と共有する。
     using RangeRing = AIDebugRanges::RangeRing;
 
-    // 間合いの線を1本描く。footCenter は足元の高さの中心。
-    //   m_ringHeight が 0 に近ければ地面の円、そうでなければ縦に立ち上げた壁として描く。
-    //   地面の円はカメラが低いときや段差の下に相手が居るときに潰れて読めないが、
-    //   壁にするとどの角度からでも境目が分かる。
+    /**
+     * @brief 間合いの線を1本描く。
+     *
+     * 地面の円はカメラが低いときや段差の下に相手が居るときに潰れて読めないが、壁にするとどの角度からでも境目が分かる。
+     *
+     * @param renderer   描画先。所有しない。
+     * @param footCenter 足元の高さの中心（ワールド）。
+     * @param radius     間合いの半径（m）。
+     * @param color      線の色。
+     * @note m_ringHeight が 0 に近ければ地面の円、そうでなければ縦に立ち上げた壁として描く。
+     */
     void DrawRangeRing(ShapeRenderer *renderer, const DirectX::XMFLOAT3 &footCenter,
                        float radius, const DirectX::XMFLOAT4 &color) const;
 
-    // 上の壁を半透明の面で塗る。線だけだと背景に紛れて読めないため。
-    //   上へ行くほど薄くする。均一に塗ると本当の壁のようになり、戦闘が見えにくくなる。
+    /**
+     * @brief DrawRangeRing の壁を半透明の面で塗る。線だけだと背景に紛れて読めないため。
+     *
+     * 上へ行くほど薄くする。均一に塗ると本当の壁のようになり、戦闘が見えにくくなる。
+     *
+     * @param renderer   描画先。所有しない。
+     * @param footCenter 足元の高さの中心（ワールド）。
+     * @param radius     間合いの半径（m）。
+     * @param color      面の色。
+     */
     void DrawRingWall(ShapeRenderer *renderer, const DirectX::XMFLOAT3 &footCenter,
                       float radius, const DirectX::XMFLOAT4 &color) const;
 
-    // しきい値としきい値の間を地面の帯として塗る。
-    //   線も壁も面積が小さいので、背景が明るいと見えにくい。
-    //   面で塗れば今どの帯にいるかが形で分かり、線を数えずに読める。
+    /**
+     * @brief しきい値としきい値の間を地面の帯として塗る。
+     *
+     * 線も壁も面積が小さいので、背景が明るいと見えにくい。
+     * 面で塗れば今どの帯にいるかが形で分かり、線を数えずに読める。
+     *
+     * @param renderer   描画先。所有しない。
+     * @param footCenter 足元の高さの中心（ワールド）。
+     */
     void DrawGroundBands(ShapeRenderer *renderer, const DirectX::XMFLOAT3 &footCenter) const;
 
     // 地面にドーナツ形を1枚描く。rInner が 0 なら円板になる。

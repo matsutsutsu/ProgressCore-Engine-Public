@@ -26,11 +26,14 @@ public:
 
     void Update(float dt) override;
 
-    // BoneAttachmentRenderSystem の後に走る。
-    // このシステムは描画と同じ renderWorldMatrix から AABB を作るので、同じ R04 で
-    // renderWorldMatrix を書く BoneAttachmentRenderSystem より後でないと、剣などボーンに
-    // 付いたモデルの AABB が1フレーム前の位置になる。同じステージ内の順番はステージの値では
-    // 決まらないので、ここで宣言する。
+    /**
+     * @brief BoneAttachmentRenderSystem の後に走ることを宣言する。
+     *
+     * このシステムは描画と同じ renderWorldMatrix から AABB を作る。
+     * 同じ R04 で renderWorldMatrix を書く BoneAttachmentRenderSystem より後でないと、剣などボーンに付いたモデルの AABB が1フレーム前の位置になる。
+     *
+     * 同じステージ内の順番はステージの値では決まらないので、ここで宣言する。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BoneAttachmentRenderSystem"};

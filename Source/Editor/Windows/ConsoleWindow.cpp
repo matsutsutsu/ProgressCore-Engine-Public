@@ -15,8 +15,12 @@ ConsoleWindow::ConsoleWindow() : EditorWindow("Console")
 
 namespace
 {
-    // devenv のコマンドラインで、Visual Studio に該当ファイル・行を開かせる。
-    //   devenv が PATH に無ければ CreateProcess が失敗し、何も起きない
+    /**
+     * @brief devenv のコマンドラインで、Visual Studio に該当ファイル・行を開かせる。
+     * @param file 開くファイル。
+     * @param line 開く行（1始まり）。
+     * @note devenv が PATH に無ければ CreateProcess が失敗し、何も起きない。
+     */
     void OpenInVisualStudio(const std::string &file, int line)
     {
         char cmd[1024];

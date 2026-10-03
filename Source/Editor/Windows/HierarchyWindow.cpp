@@ -245,7 +245,6 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     }
 }
 
-// 1行ぶんの描画。再帰せず、FlatNode の depth だけ字下げしてツリーに見せる
 void HierarchyWindow::DrawFlatNode(
     const FlatNode &node,
     EditorContext  &context)

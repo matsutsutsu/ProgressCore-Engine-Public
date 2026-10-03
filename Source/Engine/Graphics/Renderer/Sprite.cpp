@@ -85,10 +85,11 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
     }
 }
 
-// シェーダーと頂点バッファは Sprite(device) で作り、ダミーのテクスチャを srv に差し替える
 Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, float width, float height)
     : Sprite(device)
 {
+    // シェーダーと頂点バッファは Sprite(device) で作り、ダミーのテクスチャを srv に差し替える
+
     shaderResourceView = srv;
     textureWidth       = width;
     textureHeight      = height;

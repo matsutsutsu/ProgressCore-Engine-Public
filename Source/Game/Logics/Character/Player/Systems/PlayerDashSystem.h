@@ -39,15 +39,38 @@ private:
     // 回避（ダッシュ/接近）中は、被弾処理が見る HealthComponent.invincibilityTimer を invincibleWindow 以上に保つ。
     void MaintainInvincibility(CCL::ECS::EntityID id, const DashComponent &dash);
 
-    // ジャスト回避後の接近を処理する。
-    // 接近中なら true を返し、呼び出し側はこのフレームの残りの処理を飛ばす。
+    /**
+     * @brief ジャスト回避後の接近を処理する。
+     *
+     * 通常のダッシュより優先する。世界はスローのまま、プレイヤーだけ実時間の速さでボスへ近づく。
+     *
+     * @param rawDt    スローの掛からない実時間の経過（秒）。接近の残り時間を進める。
+     * @param battle   ボスの位置を引く戦況。nullptr かボスが居なければ接近を打ち切る。
+     * @param timeCtx  全体スローの倍率。nullptr ならプレイヤーのスロー打ち消しを行わない。
+     * @param dash     接近の状態を持つダッシュ。
+     * @param movement 移動速度を書く先。
+     * @param trans    プレイヤーの Transform。
+     * @param time     プレイヤーの時間の状態。ヒットストップ中は進めない。
+     * @param rm       ルートモーション。nullptr 可。
+     * @return 接近中なら true。呼び出し側はこのフレームの残りの処理を飛ばす。
+     */
     bool UpdateApproach(float rawDt, const BattleContext *battle, const TimeContext *timeCtx,
                         DashComponent &dash, CharacterMovementComponent &movement,
                         const TransformComponent &trans, TimeStateComponent &time,
                         RootMotionComponent *rm);
 
-    // ダッシュの開始・継続・終了を処理する。終了時は歩きに戻さず走行に移す。
-    // このフレームをダッシュとして処理したら true（呼び出し側は歩き/走りの処理を行わない）。
+    /**
+     * @brief ダッシュの開始・継続・終了を処理する。終了時は歩きに戻さず走行に移す。
+     *
+     * @param dash        ダッシュの状態。
+     * @param player      プレイヤーの状態。
+     * @param dashPressed このフレームにダッシュの入力があったか。
+     * @param movement    移動速度を書く先。
+     * @param trans       プレイヤーの Transform。
+     * @param time        プレイヤーの時間の状態（localDt でタイマーを進める）。
+     * @param id          プレイヤーのエンティティ。
+     * @return このフレームをダッシュとして処理したら true（呼び出し側は歩き/走りの処理を行わない）。
+     */
     bool UpdateDash(DashComponent &dash, PlayerComponent &player, bool dashPressed,
                     CharacterMovementComponent &movement, const TransformComponent &trans,
                     const TimeStateComponent &time, CCL::ECS::EntityID id);

@@ -249,8 +249,12 @@ namespace InputKeyTable
         return v;
     }
 
-    // 与えられた (device,key) に一致する統合エントリの表示名を返す。
-    // 見つからなければ "device / key" を組み立てて返す。
+    /**
+     * @brief (device, key) に一致する統合エントリの表示名を返す。
+     * @param device デバイス名。
+     * @param key    キー名。
+     * @return 表示名。見つからなければ "device / key" を組み立てて返す。
+     */
     inline std::string DisplayNameOf(const std::string &device, const std::string &key)
     {
         auto search = [&](const std::vector<UnifiedEntry> &list) -> const UnifiedEntry * {

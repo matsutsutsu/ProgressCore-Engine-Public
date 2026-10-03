@@ -228,8 +228,6 @@ inline void DroneMovementSystem::ProcessIdle(TransformComponent &trans, DroneCom
     }
 }
 
-// 突撃。stateTimer > 0 の間が「タメ」、0 になった瞬間から「リリース」（高速直進）。
-// 内部で2段階を持つので、外からは FireCharge の1状態を見るだけで予兆を表現できる。
 inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // 処理フロー:
@@ -352,8 +350,6 @@ inline void DroneMovementSystem::ProcessFireCharge(TransformComponent &trans, Dr
     }
 }
 
-// 隊列追従の突入。目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
-// 剛体追従にすると隊列がまったく歪まず、「1枚の板が近づいてくる」絵になる。
 inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     const float pGain = m_followGain * SlotLag(drone); // 後方の機ほど弱める＝しなる
@@ -384,7 +380,6 @@ inline void DroneMovementSystem::ProcessChargeSoftFollow(TransformComponent &tra
     }
 }
 
-// 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
 inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     drone.currentVelocity = drone.knockbackVelocity;
@@ -399,7 +394,6 @@ inline void DroneMovementSystem::ProcessStunned(TransformComponent &trans, Drone
     trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
 }
 
-// 離脱。突撃の勢いを残したまま上方へ抜け、減速しながら進行方向を向く。
 inline void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
 {
     // 処理フロー:

@@ -68,7 +68,6 @@ void TextEditorWindow::DrawContents(EditorContext &context)
                               ImGuiInputTextFlags_AllowTabInput);
 }
 
-// 空のファイル・読み込めないファイルなら、バッファは前の内容のまま残す
 void TextEditorWindow::LoadFile(const char *path)
 {
     std::string rawText = FileSystem::ReadAllText(path);
@@ -86,7 +85,6 @@ void TextEditorWindow::LoadFile(const char *path)
     }
 }
 
-// バッファを '\0' までの文字列として保存する
 void TextEditorWindow::SaveFile(const char *path)
 {
     FileSystem::WriteAllText(path, m_textBuffer.data());

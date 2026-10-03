@@ -34,8 +34,12 @@ public:
     {
     }
 
-    // AnimControllerSystem が決めた遷移の結果に対して適用する。
-    // PlayerDashSystem が externallyDriven を書いてから読む必要があるので、その後に走らせる
+    /**
+     * @brief 同じステージで先に走らせる System を宣言する。
+     *
+     * AnimControllerSystem が決めた遷移の結果に対して適用する。
+     * PlayerDashSystem が externallyDriven を書いてから読む必要があるので、その後に走らせる。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"AnimControllerSystem", "PlayerDashSystem"};

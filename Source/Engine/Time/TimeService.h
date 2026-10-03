@@ -35,8 +35,12 @@ namespace Time
     void HitStop(CCL::ECS::World &world, float seconds, float freezeScale = 0.0f);
     // 世界全体を一時スロー（イーズ復帰）。撃破スロー等の一発演出。強い方・長い方が優先
     void SlowWorld(CCL::ECS::World &world, float scale, float seconds);
-    // 「このフレーム、世界全体をスロー」。押し続ける間は毎フレーム呼ぶ（切り払い準備など）。
-    // 呼ぶのをやめると easeOutSeconds 秒でイーズ復帰する
+    /**
+     * @brief このフレーム、世界全体をスローにする。押し続ける間は毎フレーム呼ぶ（切り払い準備など）。
+     * @param world          スローにする World。
+     * @param scale          スローの倍率。
+     * @param easeOutSeconds 呼ぶのをやめてから等速へ戻るまでの時間（秒）。
+     */
     void SustainWorldSlow(CCL::ECS::World &world, float scale, float easeOutSeconds = 0.3f);
     // 世界スローを即解除する（イーズを待たず等速へ戻す）
     void ClearWorldSlow(CCL::ECS::World &world);

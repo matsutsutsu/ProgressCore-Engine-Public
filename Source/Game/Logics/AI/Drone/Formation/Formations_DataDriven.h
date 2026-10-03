@@ -96,12 +96,27 @@ namespace CCL::AI::Formation::Data
             m_progressOverride  = -1.0f;
         }
 
-        // 席の格子の大きさ。エディタが「何列×何行になるか」を出すのに使う。
-        // 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに誤った数字が出る。
+        /**
+         * @brief 1グループ分の席の格子の大きさを求める。エディタが「何列×何行になるか」を出すのに使う。
+         *
+         * 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに誤った数字が出る。
+         *
+         * @param asset       格子の決め方（assign）を持つ陣形アセット。
+         * @param totalDrones 陣形に参加する機数。0以下は1機として扱う。
+         * @param outCols     1グループの列数を受け取る。
+         * @param outRows     1グループの行数を受け取る。
+         */
         static void GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows);
 
-        // 緩急。席ごとの進み t（0〜1）を、始まり→終わりのどこまで進んだか（0〜1）へ変換する。
-        // キーの無いカーブは easeIn（t*t）。エディタの緩急のグラフもこれを描く。
+        /**
+         * @brief 席ごとの進み t を、始まり→終わりのどこまで進んだかへ変換する（緩急）。
+         *
+         * エディタの緩急のグラフもこれを描く。
+         *
+         * @param layer 緩急のカーブを持つレイヤー。キーの無いカーブは easeIn（t*t）として扱う。
+         * @param t     席ごとの進み（0〜1）。
+         * @return 始まり→終わりのどこまで進んだか（0〜1）。
+         */
         static float Ease(const FormationLayer &layer, float t)
         {
             return layer.curve.empty() ? (t * t) : layer.curve.Evaluate(t);
@@ -116,24 +131,54 @@ namespace CCL::AI::Formation::Data
         Seat    AssignSeat(const DroneComponent &drone) const;
         Vector3 MakeLocal(const Seat &seat, const DroneComponent &drone) const;
 
-        // 形が Model のとき、モデルの表面の点を用意する。モデルが変わったときだけ取り直す。
-        //
-        // エディタはアセットを直接書き換える（GetMutableAsset）ので、変更を知らせる入口が無い。
-        // そこで Calculate の頭で毎回パスを見比べる。
-        //
-        // Calculate から呼ぶので、DroneFormationSystem が機体のループを直列（ForEach）で回すことが前提。
-        // 並列にするなら、ループの前に1回だけ呼ぶ形へ移すこと。
+        /**
+         * @brief 形が Model のとき、モデルの表面の点を用意する。モデルが変わったときだけ取り直す。
+         *
+         * エディタはアセットを直接書き換える（GetMutableAsset）ので、変更を知らせる入口が無い。
+         * そこで Calculate の頭で毎回パスを見比べる。
+         *
+         * @note Calculate から呼ぶので、DroneFormationSystem が機体のループを直列（ForEach）で回すことが前提。
+         *       並列にするなら、ループの前に1回だけ呼ぶ形へ移すこと。
+         */
         void EnsureShape();
 
-        // この席が「何番目に動くか」を 0〜1 で返す。波も先攻後攻もこの値で表す。
+        /**
+         * @brief この席が「何番目に動くか」を 0〜1 で返す。波も先攻後攻もこの値で表す。
+         * @param layer 並べ方（phaseSource・phaseReverse）を持つ動きの層。
+         * @param seat  調べる席。
+         * @return 0=最初に動く、1=最後に動く。phaseSource が None なら全席 0（同時）。
+         */
         float SeatPhaseT(const FormationLayer &layer, const Seat &seat) const;
 
-        // 進行度 p におけるこの層の変換量。角度[度]、距離[m]、または振れ幅[m]。
+        /**
+         * @brief 攻撃の進行度 p におけるこの層の変換量を返す。
+         *
+         * 層の窓（windowBegin〜windowEnd）の中で、席の順番（SeatPhaseT）だけ開始をずらし、from → to を緩急つきで進める。
+         *
+         * @param layer 動きの層。
+         * @param seat  変換量を求める席。mirror の層では左右で符号が変わる。
+         * @param p     攻撃の進行度（0〜1）。震えの層では予告の進み（TelegraphT）を渡す。
+         * @return 変換量。Rotate なら角度（度）、Translate なら距離（m）、Shiver なら振れ幅（m）。
+         */
         float LayerValue(const FormationLayer &layer, const Seat &seat, float p) const;
 
-        // mirror が掛ける符号。sideGroups=2 なら side0=-1 / side1=+1。
+        /**
+         * @brief mirror の層が変換量に掛ける符号を返す。
+         * @param seat 調べる席。
+         * @return 左右の端で -1 / +1 になる値（sideGroups=2 なら side0=-1 / side1=+1）。sideGroups が1以下なら常に +1。
+         */
         float SideSign(const Seat &seat) const;
 
+        /**
+         * @brief 動きの層を1枚、席の位置と機首に当てる。
+         * @param layer 当てる動きの層。
+         * @param seat  当てる席。
+         * @param p     攻撃の進行度（0〜1）。震えの層は p が 0 の間（予告中）だけ効く。
+         * @param ctx   陣形の計算に渡された情報（時刻など）。
+         * @param drone 当てる機体。震えの位相と予告の経過に使う。
+         * @param local 席のローカル座標。層の変換を足し込む。
+         * @param look  機首の向き（ローカル）。Rotate の層では同じだけ回す。
+         */
         void ApplyLayer(const FormationLayer &layer, const Seat &seat, float p,
                         const FormationContext &ctx, const DroneComponent &drone,
                         Vector3 &local, Vector3 &look) const;
@@ -147,7 +192,11 @@ namespace CCL::AI::Formation::Data
         std::string          m_shapeModelPath; // m_shapePoints を取り出したモデル
         bool                 m_shapeTried = false; // 読めなかったモデルを毎フレーム読み直さないため
 
-        // この席が予告の中のどこにいるか（予告の長さを 1 とした割合）。1 を超えたら予告は終わっている。
+        /**
+         * @brief この機体が予告の中のどこにいるかを返す。
+         * @param drone 調べる機体。エディタが時間を固定している間は、その値を使う。
+         * @return 予告の長さを 1 とした割合。上限で止めないので、1 を超えたら予告は終わっている。
+         */
         float TelegraphT(const DroneComponent &drone) const;
 
         // エディタが時間を固定している間だけ 0 以上。負なら通常どおりゲームの時間で進む。
@@ -495,10 +544,12 @@ namespace CCL::AI::Formation::Data
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
     // ---------------------------------------------------------------------------
 
-    // Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
-    //
-    // ファイル名ではなく JSON 内の "slot" で枠を決める。ファイル名を枠にすると
-    // 技の名前を変えた瞬間に保存済みの BT が別の技を指す。
+    /**
+     * @brief Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
+     *
+     * ファイル名ではなく JSON 内の "slot" で枠を決める。
+     * ファイル名を枠にすると、技の名前を変えた瞬間に保存済みの BT が別の技を指す。
+     */
     inline void RegisterAll()
     {
         // 処理フロー:

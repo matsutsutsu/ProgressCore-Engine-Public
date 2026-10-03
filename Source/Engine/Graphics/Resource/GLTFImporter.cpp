@@ -23,9 +23,15 @@ bool LoadImageData(tinygltf::Image *, const int, std::string *,
     return true;
 }
 
-// 画像データの先頭のマジックナンバーから拡張子を決める。
-// glb に埋め込まれたテクスチャは mimeType が "image/unknown" などで当てにならないことがあるので、
-// 実データの先頭のバイトで判定する。
+/**
+ * @brief 画像データの先頭のマジックナンバーから拡張子を決める。
+ *
+ * glb に埋め込まれたテクスチャは mimeType が "image/unknown" などで当てにならないことがあるので、実データの先頭のバイトで判定する。
+ *
+ * @param data 画像データの先頭。
+ * @param size data の大きさ（バイト）。
+ * @return 拡張子（"png" などドット無しの文字列リテラル）。判定できなければ "bin"。
+ */
 static const char *DetectImageExtensionFromBytes(const unsigned char *data, size_t size)
 {
     if (data == nullptr) return "bin";
@@ -71,7 +77,6 @@ GLTFImporter::GLTFImporter(const char *filename)
     }
 }
 
-// ノードを glTF の並び順のまま読む（並べ替えはしない。親が先になる計算の順番は Model が作る）
 void GLTFImporter::LoadNodes(NodeList &nodes)
 {
     // glTF にノードが無いときも、ファイル名のノードが1つ残るようにする
@@ -122,7 +127,6 @@ void GLTFImporter::LoadNodes(NodeList &nodes)
     }
 }
 
-// メッシュを読む。primitive 1つを ModelResource::Mesh 1つにする
 void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
 {
     for (int gltfNodeIndex = 0; gltfNodeIndex < gltfModel.nodes.size(); ++gltfNodeIndex)
@@ -406,7 +410,6 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
     }
 }
 
-// マテリアルを読み、埋め込みテクスチャはファイルに書き出す
 void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
 {
     std::filesystem::path dirpath(filepath.parent_path());
@@ -561,7 +564,6 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
     }
 }
 
-// アニメーションを読み、nodes の番号に合わせた NodeAnim を作る
 void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nodes, float sampleRate)
 {
     DirectX::XMVECTOR Epsilon = DirectX::XMVectorReplicate(0.00001f);
@@ -806,7 +808,6 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
     }
 }
 
-// gltfVector3 → XMFLOAT3
 DirectX::XMFLOAT3 GLTFImporter::gltfVector3ToXMFLOAT3(const std::vector<double> &gltfValue)
 {
     return DirectX::XMFLOAT3(
@@ -815,7 +816,6 @@ DirectX::XMFLOAT3 GLTFImporter::gltfVector3ToXMFLOAT3(const std::vector<double> 
         static_cast<float>(gltfValue.at(2)));
 }
 
-// gltfQuaternion → XMFLOAT4
 DirectX::XMFLOAT4 GLTFImporter::gltfQuaternionToXMFLOAT4(const std::vector<double> &gltfValue)
 {
     return DirectX::XMFLOAT4(
@@ -825,7 +825,6 @@ DirectX::XMFLOAT4 GLTFImporter::gltfQuaternionToXMFLOAT4(const std::vector<doubl
         static_cast<float>(gltfValue.at(3)));
 }
 
-// gltfMatrix → XMFLOAT4X4
 DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<double> &gltfValue)
 {
     return DirectX::XMFLOAT4X4(
@@ -847,7 +846,6 @@ DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<doubl
         static_cast<float>(gltfValue.at(15)));
 }
 
-// 右手系（glTF）から左手系（D3D）への変換
 void GLTFImporter::ConvertPositionAxisSystem(DirectX::XMFLOAT3 &v)
 {
     v.x = -v.x;
@@ -927,7 +925,6 @@ void GLTFImporter::ConvertAnimationAxisSystem(ModelResource::Animation &animatio
     }
 }
 
-// 頂点の位置と UV から接線を求める（接線が入っていない glTF 用）
 void GLTFImporter::ComputeTangents(std::vector<ModelResource::Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
     size_t                               vertexCount = vertices.size();

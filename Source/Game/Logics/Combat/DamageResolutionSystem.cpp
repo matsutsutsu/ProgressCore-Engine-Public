@@ -39,9 +39,14 @@ namespace
         CCL::Utils::HashString("HitLeft"),
         CCL::Utils::HashString("HitRight")};
 
-    // 攻撃が来た方向から前後左右ののけぞりを選んで再生する。
-    // AnimParametersComponent を持たない相手（ドローンなど）には何もしない。
-    // 方向は攻撃の基準の位置から求め、無ければノックバックの向きを逆にして使う
+    /**
+     * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する。
+     *
+     * 方向は攻撃の基準の位置から求め、無ければノックバックの向きを逆にして使う。
+     *
+     * @param world 対象を引く World。所有しない。
+     * @param ev    受けたダメージのイベント。AnimParametersComponent を持たない相手（ドローンなど）には何もしない。
+     */
     void FireHitReaction(World *world, const DamageEventComponent &ev)
     {
         // 大量のドローンはここで抜ける

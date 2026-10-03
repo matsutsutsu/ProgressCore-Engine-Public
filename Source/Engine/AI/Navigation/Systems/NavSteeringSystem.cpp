@@ -9,12 +9,13 @@
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
-// 読み書きするデータ:
-//   WRITE : TransformComponent（向き。位置は物理が動かす）
-//   WRITE : NavAgentComponent（currentWaypointIndex の更新）
-//   WRITE : CharacterMovementComponent（物理へ渡す移動速度）
 void NavSteeringSystem::Update(float dt)
 {
+    // 読み書きするデータ:
+    //   WRITE : TransformComponent（向き。位置は物理が動かす）
+    //   WRITE : NavAgentComponent（currentWaypointIndex の更新）
+    //   WRITE : CharacterMovementComponent（物理へ渡す移動速度）
+
     ForEachWithID([&](EntityID                    entity,
                       TransformComponent         &transform,
                       NavAgentComponent          &navAgent,

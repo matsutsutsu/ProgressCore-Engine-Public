@@ -26,8 +26,11 @@ using namespace CCL::AI::BT;
 
 namespace
 {
-    // xorshift32。質は要らないが再現性は要る。状態を BehaviorTreeComponent が
-    // 持つので個体ごとに独立し、ワーカースレッドをまたいでも列が混ざらない。
+    /**
+     * @brief xorshift32 で次の乱数を返す。質は要らないが再現性は要る。
+     * @param state 乱数の状態。BehaviorTreeComponent が持つので個体ごとに独立し、ワーカースレッドをまたいでも列が混ざらない。
+     * @return 次の乱数。state も同じ値へ進む。
+     */
     uint32_t NextRandom(uint32_t &state)
     {
         state ^= state << 13;
@@ -50,15 +53,20 @@ namespace
         if (btComp.rngState == 0) btComp.rngState = 0x6D2B79F5u;
     }
 
-    // サブツリーの実行状態（再開位置と行動の残り時間）をまとめて捨てる。
-    //
-    // ResetChildActionsRecursive との違いは、再開位置(runningNodes)も消すこと。
-    // Parallel が「従」を止めるときに使う。従は次のフレームから評価されなく
-    // なるので、途中の再開位置と残り時間を残すと、次にこの枝へ来たときに
-    // 前回の続きから再開してしまう。
-    //
-    // Cooldown のタイマーは消さない（Action だけ -1 に戻す）。クールダウンは
-    // 枝をまたいで持ち越すべき情報で、ここで消すとクールダウン中の技が出せてしまう。
+    /**
+     * @brief サブツリーの実行状態（再開位置と行動の残り時間）をまとめて捨てる。
+     *
+     * ResetChildActionsRecursive との違いは、再開位置（runningNodes）も消すこと。
+     * Parallel が「従」を止めるときに使う。
+     * 従は次のフレームから評価されなくなるので、途中の再開位置と残り時間を残すと、次にこの枝へ来たときに前回の続きから再開してしまう。
+     *
+     * Cooldown のタイマーは消さない（Action だけ -1 に戻す）。
+     * クールダウンは枝をまたいで持ち越すべき情報で、ここで消すとクールダウン中の技が出せてしまう。
+     *
+     * @param nodeId 捨てる枝の根のノード。
+     * @param btComp 実行状態を持つコンポーネント。
+     * @param asset  木の構造。
+     */
     void ResetSubtreeStateRecursive(BTNodeID nodeId, BehaviorTreeComponent &btComp, const BTAsset &asset)
     {
         const auto &node = asset.nodes[nodeId];
@@ -787,8 +795,15 @@ namespace
         return nullptr;
     }
 
-    // この枝で最初に見つかる Action の表示名。Sequence や Selector は名前を持たないので、
-    // その枝が何をするかを中の先頭のアクションで示す。
+    /**
+     * @brief この枝で最初に見つかる Action の表示名を返す。
+     *
+     * Sequence や Selector は名前を持たないので、その枝が何をするかを中の先頭のアクションで示す。
+     *
+     * @param asset  木の構造。
+     * @param nodeId 調べる枝の根のノード。
+     * @return 行動の表示名（ActionRegistry の文字列）。枝に Action が無ければ nullptr。
+     */
     const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];

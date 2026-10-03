@@ -533,9 +533,10 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
     }
 }
 
-// 編集モードを抜ける経路はすべてここを通る
 void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target)
 {
+    // 編集モードを抜ける経路はすべてここを通る
+
     if (context.world && target != CCL::ECS::InvalidEntityID)
     {
         if (auto *animator = context.world->GetComponent<AnimatorComponent>(target))
@@ -562,9 +563,10 @@ void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS:
     context.isAnimEditMode = false;
 }
 
-// 描画されなかったフレーム（ウィンドウを閉じた・畳んだ・選択を外した）を検出して編集モードを解く
 void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
 {
+    // 描画されなかったフレーム（ウィンドウを閉じた・畳んだ・選択を外した）を検出して編集モードを解く
+
     if (m_editingEntity == CCL::ECS::InvalidEntityID)
         return;
 

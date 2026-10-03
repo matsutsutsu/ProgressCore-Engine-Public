@@ -208,15 +208,23 @@ public:
     bool  GetTranslationRetargeting() const { return translationRetargeting; }
     void  SetTranslationRetargeting(bool enable) { translationRetargeting = enable; }
 
-    // モデル定義ファイル（.model.json）か。本体モデルと追加のアニメーションを1つの JSON で指定する形式。
-    // アセットブラウザの種類の判定でも使う。
+    /**
+     * @brief モデル定義ファイル（.model.json）かを返す。
+     *
+     * 本体モデルと追加のアニメーションを1つの JSON で指定する形式。アセットブラウザの種類の判定でも使う。
+     *
+     * @param filename 調べるファイル名。
+     * @return モデル定義ファイルなら true。
+     */
     static bool IsModelSetFile(const char *filename);
 
     // 頂点から mesh.boundsMin / boundsMax を求める
     void ComputeMeshBounds(Mesh &mesh);
 
-    // 全メッシュの AABB を合わせて、モデル全体の AABB を求める。
-    // スキンメッシュ以外は、ノードの初期姿勢の行列を掛けた位置で合わせる
+    /**
+     * @brief 全メッシュの AABB を合わせて、モデル全体の AABB を求める。
+     * @note スキンメッシュ以外は、ノードの初期姿勢の行列を掛けた位置で合わせる。
+     */
     void ComputeModelLocalAABB();
 
     // モデル全体のローカル AABB

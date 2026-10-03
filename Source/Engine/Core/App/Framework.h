@@ -34,6 +34,7 @@ private:
     void Render(float elapsedTime);
 
 public:
+    // メインループ。固定タイムステップは Accumulator パターン（Fix Your Timestep）で回す
     int              Run();
     LRESULT CALLBACK HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

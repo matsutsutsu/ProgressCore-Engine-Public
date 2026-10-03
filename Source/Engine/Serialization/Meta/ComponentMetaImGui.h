@@ -113,11 +113,25 @@ namespace ComponentMetaImGui
         ImGui::SetNextItemWidth(-FLT_MIN);
     }
 
-    // 1 行 1 フィールドのヘルパー。Prop → ラベルを隠したウィジェット → 変更したかを返す、を 1 関数で行う。
-    //   ID は値のポインタで作るので、同じラベルが並んでも衝突しない。
-    //     namespace mi = ComponentMetaImGui;
-    //     changed |= mi::DragFloat("強度", &v, 0.01f, 0.0f, 1.0f);
-    //     changed |= mi::Checkbox("有効", &b);
+    /**
+     * @brief 1 行 1 フィールドのヘルパー。Prop → ラベルを隠したウィジェット → 変更したかを返す、を 1 関数で行う。
+     *
+     * ID は値のポインタで作るので、同じラベルが並んでも衝突しない。
+     *
+     * @param label 表示名。
+     * @param v     編集する値。
+     * @param speed ドラッグ1px あたりの変化量。
+     * @param lo    下限。lo と hi が両方 0 なら制限しない。
+     * @param hi    上限。
+     * @param tip   ツールチップ。nullptr なら出さない。
+     * @return 値を変更したら true。
+     *
+     * @code
+     * namespace mi = ComponentMetaImGui;
+     * changed |= mi::DragFloat("強度", &v, 0.01f, 0.0f, 1.0f);
+     * changed |= mi::Checkbox("有効", &b);
+     * @endcode
+     */
     inline bool DragFloat(const char *label, float *v, float speed = 0.1f,
                           float lo = 0.0f, float hi = 0.0f, const char *tip = nullptr)
     {
@@ -220,8 +234,14 @@ namespace ComponentMetaImGui
     // 自動描画
     // ===========================================================================
 
-    // フィールドのツールチップ。説明（CFIELD_T）の後に「変数名: <jsonName>」を必ず付け、
-    // 表示名が日本語でもホバーで C++ の変数名が分かるようにする
+    /**
+     * @brief フィールドのツールチップを作る。
+     *
+     * 説明（CFIELD_T）の後に「変数名: <jsonName>」を必ず付け、表示名が日本語でもホバーで C++ の変数名が分かるようにする。
+     *
+     * @param fd ツールチップを作るフィールド。
+     * @return ツールチップの文字列。
+     */
     inline std::string BuildFieldTooltip(const FieldDescriptor &fd)
     {
         std::string t;
@@ -240,8 +260,13 @@ namespace ComponentMetaImGui
         return t;
     }
 
-    // FieldDescriptor 1 つ分のウィジェットだけを描く。変更したら true。
-    //   ラベルと幅は呼び出し側が決める（PushID(offset) 済みなので "##v" でも ID は一意）
+    /**
+     * @brief FieldDescriptor 1 つ分のウィジェットだけを描く。
+     * @param fd  描くフィールド。
+     * @param obj フィールドを持つコンポーネントの先頭。
+     * @return 値を変更したら true。
+     * @note ラベルと幅は呼び出し側が決める（PushID(offset) 済みなので "##v" でも ID は一意）。
+     */
     inline bool DrawField(const FieldDescriptor &fd, void *obj)
     {
         using namespace DirectX;

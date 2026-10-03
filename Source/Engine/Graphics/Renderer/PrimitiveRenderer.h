@@ -120,6 +120,6 @@ private:
     void CreateSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer);
     void CreateHalfSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer);
     void CreateCylinderMesh(ID3D11Device *device, float radius1, float radius2, float start, float height, int slices, int stacks, GeometryBuffer &buffer);
-    // capsuleBuffer に作る
+    // カプセルのメッシュを capsuleBuffer に作る。球を赤道で上下に分け、その間を cylinderHeight だけ離して円柱でつなぐ
     void CreateCapsuleMesh(ID3D11Device *device, float radius, float cylinderHeight, int slices, int rings);
 };

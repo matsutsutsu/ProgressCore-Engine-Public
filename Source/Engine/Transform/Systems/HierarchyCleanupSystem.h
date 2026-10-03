@@ -45,8 +45,10 @@ public:
     static void CollectDoomedEntities(
         CCL::ECS::World &world, std::vector<CCL::ECS::EntityID> &outList);
 
-    // 実行順の宣言。外部リソースの解放を済ませてから ECS の構造を壊す。
-    //   （同一ステージ内の順序は必ず RunAfter で宣言する。ステージ値では決まらない）
+    /**
+     * @brief 実行順の宣言。外部リソースの解放を済ませてから ECS の構造を壊す。
+     * @note 同一ステージ内の順序は必ず RunAfter で宣言する。ステージ値では決まらない。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"JoltCleanupSystem", "AudioCleanupSystem"};

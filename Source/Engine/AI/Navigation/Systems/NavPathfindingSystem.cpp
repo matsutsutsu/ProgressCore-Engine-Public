@@ -5,12 +5,13 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-// 読み書きするデータ:
-//   READ  : TransformComponent（現在地）
-//   READ  : NavigationData（ナビメッシュ。World リソース）
-//   WRITE : NavAgentComponent（waypoints の更新、isPathRequested のリセット）
 void NavPathfindingSystem::Update(float dt)
 {
+    // 読み書きするデータ:
+    //   READ  : TransformComponent（現在地）
+    //   READ  : NavigationData（ナビメッシュ。World リソース）
+    //   WRITE : NavAgentComponent（waypoints の更新、isPathRequested のリセット）
+
     if (!m_world || !m_world->HasResource<NavigationData>()) return;
 
     auto           &navData  = m_world->GetResource<NavigationData>();

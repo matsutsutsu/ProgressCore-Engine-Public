@@ -202,8 +202,11 @@ public:
         return ids;
     }
 
-    // 表示名の参照を返す。未登録なら空文字列。
-    //   GetName と違ってコピーせず、未登録を空文字列で判定できる
+    /**
+     * @brief 表示名の参照を返す。GetName と違ってコピーせず、未登録を空文字列で判定できる。
+     * @param id 調べるコンポーネントの型。
+     * @return 表示名。レジストリが所有する。未登録なら空文字列。
+     */
     const std::string &GetComponentName(TypeID id)
     {
         ResolveBindings();

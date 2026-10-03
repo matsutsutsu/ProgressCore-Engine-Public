@@ -27,9 +27,16 @@ namespace
         Vector3 a, b, c;
     };
 
-    // 各ノードの初期姿勢でのモデル空間の行列。
-    // ModelResource::ComputeModelLocalAABB と同じ式（描画と同じ位置に点を置くため）。
-    // glTF のノードは親が先に並ぶとは限らないので、親を再帰で先に求める。
+    /**
+     * @brief 各ノードの初期姿勢でのモデル空間の行列を求める。
+     *
+     * ModelResource::ComputeModelLocalAABB と同じ式にしている。描画と同じ位置に点を置くため。
+     *
+     * glTF のノードは親が先に並ぶとは限らないので、親を再帰で先に求める。
+     *
+     * @param model 行列を求めるモデル。
+     * @return ノードと同じ添字で並んだ行列の列。
+     */
     std::vector<XMFLOAT4X4> ComputeNodeGlobals(const ModelResource &model)
     {
         const auto &nodes = model.GetNodes();
@@ -86,10 +93,16 @@ namespace
         return tris;
     }
 
-    // 面積に比例して、表面に count 個の点を落とす。
-    //
-    // 頂点をそのまま使わないのは、細かく分割された部分（柄の装飾など）に点が偏るため。
-    // 三角形を面積の割合で選び、その中に一様に点を置けば、表面全体に同じ密度で散らばる。
+    /**
+     * @brief 面積に比例して、表面に count 個の点を落とす。
+     *
+     * 頂点をそのまま使わないのは、細かく分割された部分（柄の装飾など）に点が偏るため。
+     * 三角形を面積の割合で選び、その中に一様に点を置けば、表面全体に同じ密度で散らばる。
+     *
+     * @param tris  点を落とす三角形の列（モデル空間）。
+     * @param count 落とす点の数。
+     * @return 落とした点の列。三角形の面積の合計が 0 のときは空。
+     */
     std::vector<Vector3> SampleCandidates(const std::vector<Triangle> &tris, int count)
     {
         // 面積の累積。乱数をこの範囲で振り、二分探索で三角形を選ぶ。
@@ -125,10 +138,17 @@ namespace
         return points;
     }
 
-    // 最遠点サンプリング。「すでに選んだ点から一番遠い候補」を順に選んで並べる。
-    //
-    // こうすると、先頭から何個取っても形全体に均等に散らばる並びになる。
-    // 最初の1点は重心から一番遠い点（剣なら切っ先か柄頭）にして、毎回同じ並びにする。
+    /**
+     * @brief 最遠点サンプリング。「すでに選んだ点から一番遠い候補」を順に選んで並べる。
+     *
+     * こうすると、先頭から何個取っても形全体に均等に散らばる並びになる。
+     *
+     * 最初の1点は重心から一番遠い点（剣なら切っ先か柄頭）にして、毎回同じ並びにする。
+     *
+     * @param candidates 選ぶ元の候補点。
+     * @param count      選ぶ点の数。候補より多いときは候補の数まで。
+     * @return 選んだ順に並べた点の列。
+     */
     std::vector<Vector3> FarthestPointOrder(const std::vector<Vector3> &candidates, int count)
     {
         std::vector<Vector3> ordered;

@@ -22,7 +22,9 @@ protected:
     void DrawContents(EditorContext &context) override;
 
 private:
+    // path を読み込む。空のファイル・読み込めないファイルなら、バッファは前の内容のまま残す
     void LoadFile(const char *path);
+    // バッファを '\0' までの文字列として path へ保存する
     void SaveFile(const char *path);
 
 private:

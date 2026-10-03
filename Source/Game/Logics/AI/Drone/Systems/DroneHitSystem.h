@@ -24,10 +24,14 @@ class DroneHitSystem : public CCL::ECS::IfSystem<DroneHitSystem,
 public:
     DroneHitSystem() : IfSystem("DroneHitSystem") {}
 
-    // 突撃の状態が確定した後でなければ1フレームずれる。
-    //   DroneBrainSystem は L02_PreUpdate なのでステージの壁で既に手前と決まっている。
-    //   ここに書くと「別ステージを指している」とスケジューラに警告されるだけなので、
-    //   同じ L03_PrePhysics の DroneMovementSystem だけを宣言する。
+    /**
+     * @brief 同じステージで先に走らせる System を宣言する。
+     *
+     * 突撃の状態が確定した後でなければ1フレームずれる。
+     *
+     * DroneBrainSystem は L02_PreUpdate なので、ステージの壁で既に手前と決まっている。
+     * ここに書くと「別ステージを指している」とスケジューラに警告されるだけなので、同じ L03_PrePhysics の DroneMovementSystem だけを宣言する。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"DroneMovementSystem"};
@@ -35,8 +39,11 @@ public:
 
     void Update(float dt) override;
 
-    // 判定が開いている機数を出す。当たらないときに「判定が閉じている」のか
-    // 「形状が届いていない」のかを切り分けるため。
+    /**
+     * @brief 判定が開いている機数を出す。
+     *
+     * 当たらないときに「判定が閉じている」のか「形状が届いていない」のかを切り分けるため。
+     */
     void OnGui() override;
 
 private:

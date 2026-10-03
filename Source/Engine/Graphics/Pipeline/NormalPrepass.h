@@ -26,8 +26,10 @@ public:
     ID3D11ShaderResourceView *GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
-    // 法線バッファの SRV を Graphics に渡す（Graphics::MakeFrameContext が ctx.sceneNormalSRV に入れる）。
-    // SRV を作った・作り直した直後に呼ぶ
+    /**
+     * @brief 法線バッファの SRV を Graphics に渡す（Graphics::MakeFrameContext が ctx.sceneNormalSRV に入れる）。
+     * @note SRV を作った・作り直した直後に呼ぶ。
+     */
     void PublishNormalSRV();
 
     PipelineState             m_pso;

@@ -72,8 +72,14 @@ namespace CCL::AI::BT
         BTActionRegistry(const BTActionRegistry &)            = delete;
         BTActionRegistry &operator=(const BTActionRegistry &) = delete;
 
-        // 申告を和集合として溜める。件数が数個なので線形探索で足りる
-        // （登録は起動時に1回だけで、実行中には呼ばれない）。
+        /**
+         * @brief 申告を和集合として溜める。
+         *
+         * 件数が数個なので線形探索で足りる（登録は起動時に1回だけで、実行中には呼ばれない）。
+         *
+         * @param dst 溜める先。src のうち dst に無い型を足す。
+         * @param src 足す申告。
+         */
         static void Merge(std::vector<TypeID> &dst, const std::vector<TypeID> &src)
         {
             for (TypeID t : src)

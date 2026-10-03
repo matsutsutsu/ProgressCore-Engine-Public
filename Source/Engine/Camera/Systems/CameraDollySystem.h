@@ -61,9 +61,10 @@ public:
     static float WrapDistance(float dist, float totalLength);
 
 private:
-    // pathAsset の JSON を読み込み、LUT まで構築する。失敗時は hasLoadError を立てる。
-    //
-    // TODO(2026-08-21): 同期I/O + JSONパースを Update 内で行うため初回フレームでヒッチする。
-    //   アセットマネージャ側へ移し、パス単位でキャッシュを共有する
+    /**
+     * @brief pathAsset の JSON を読み込み、LUT まで構築する。
+     * @param cart 読み込む台車。未読み込みで、まだ失敗していないときだけ試す。失敗時は hasLoadError を立てる。
+     * @note 同期 I/O と JSON パースを Update 内で行うため、初回フレームでヒッチする。
+     */
     void LoadPathIfNeeded(CameraDollyCartComponent &cart) const;
 };

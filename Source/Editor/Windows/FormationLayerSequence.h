@@ -64,8 +64,11 @@ public:
     const char *GetItemLabel(int index) const override;
     void        Get(int index, int **start, int **end, int *type, unsigned int *color) override;
 
-    // 帯の上に斜線を、行の上に予告と攻撃の境目と、その帯を置けない側の区間の目隠しを描く。
-    // 斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで。扇状に広がっていれば「波」。
+    /**
+     * @brief 帯の上に斜線を、行の上に予告と攻撃の境目と、その帯を置けない側の区間の目隠しを描く。
+     *
+     * 斜線1本 = 1つの席（列・段）が動き始めてから動き切るまで。扇状に広がっていれば「波」。
+     */
     void CustomDrawCompact(int index, ImDrawList *draw, const ImRect &rc, const ImRect &clip) override;
 
 private:

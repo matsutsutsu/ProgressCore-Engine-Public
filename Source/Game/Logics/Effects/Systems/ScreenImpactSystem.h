@@ -28,8 +28,12 @@ public:
         return {CCL::ECS::TypeInfo<ScreenImpactComponent>::ID()};
     }
 
-    // ポストプロセスの設定は書くので Write で申告する。Read のままだと、同じ設定を書く
-    // 他の System と同じバッチに入って並列に走り、書き込みが競合する
+    /**
+     * @brief テンプレート引数以外に書く型を申告する。
+     *
+     * ポストプロセスの設定は書くので Write で申告する。
+     * Read のままだと、同じ設定を書く他の System と同じバッチに入って並列に走り、書き込みが競合する。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
     {
         return {CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),

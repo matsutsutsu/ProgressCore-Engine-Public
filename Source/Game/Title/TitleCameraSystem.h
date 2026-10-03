@@ -44,8 +44,15 @@ private:
     void PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
                       const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam);
 
-    // 注視点を軸に横へ回した視点を返す。平行移動にしないのは、
-    // 平行移動だと注視点が画面の中で横にずれて構図が崩れるため
+    /**
+     * @brief 注視点を軸に横へ回した視点を返す。
+     *
+     * 平行移動にしないのは、平行移動だと注視点が画面の中で横にずれて構図が崩れるため。
+     *
+     * @param base  回す前の視点の位置（ワールド）。
+     * @param pivot 回す軸にする注視点（ワールド）。
+     * @return 回した後の視点の位置（ワールド）。
+     */
     DirectX::SimpleMath::Vector3 DriftedEye(const DirectX::SimpleMath::Vector3 &base,
                                             const DirectX::SimpleMath::Vector3 &pivot) const;
 

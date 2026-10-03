@@ -36,8 +36,12 @@ namespace MeshCull
         return box;
     }
 
-    // メッシュのワールド行列。ノードがあれば node->globalTransform × entityWorld。
-    // 描くときとカリングするときで、この掛ける順をそろえる
+    /**
+     * @brief メッシュのワールド行列を求める。描くときとカリングするときで、この掛ける順をそろえる。
+     * @param mesh        行列を求めるメッシュ。
+     * @param entityWorld エンティティのワールド行列。
+     * @return ノードがあれば node->globalTransform × entityWorld、無ければ entityWorld。
+     */
     inline DirectX::XMFLOAT4X4 ComputeMeshWorld(const Model::Mesh         &mesh,
                                                 const DirectX::XMFLOAT4X4 &entityWorld)
     {

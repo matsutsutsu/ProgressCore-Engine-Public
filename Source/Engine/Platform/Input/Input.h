@@ -42,9 +42,15 @@ public:
     Keyboard &GetKeyboard() { return *keyboard; }
 
     // --- ロジック（固定ステップ）用の「押した瞬間」 ---
-    // 描画フレームと固定ステップの回数は一致しないので、1フレームだけの「押した瞬間」を
-    // そのまま読むと、ステップが走らなかったフレームの入力を取りこぼす。
-    // ClearLogicInput() が呼ばれるまで OR で溜めておく。
+    /**
+     * @brief 固定ステップ用の「押した瞬間」を返す。
+     *
+     * 描画フレームと固定ステップの回数は一致しないので、1フレームだけの「押した瞬間」をそのまま読むと、ステップが走らなかったフレームの入力を取りこぼす。
+     * ClearLogicInput() が呼ばれるまで OR で溜めておく。
+     *
+     * @param keyCode 調べるキー。
+     * @return 前回の ClearLogicInput() 以降に押されていれば true。
+     */
     bool GetLogicKeyTriggered(int keyCode) const
     {
         if (keyCode < 0 || keyCode >= 256) return false;

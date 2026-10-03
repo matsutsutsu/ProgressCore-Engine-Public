@@ -37,7 +37,13 @@ namespace
         return nice * mag;
     }
 
-    // 桁数を範囲に応じて可変にした数値整形
+    /**
+     * @brief 目盛りの数値を文字列にする。小数の桁数は目盛りの間隔に合わせて変える。
+     * @param buf  書き込み先のバッファ。
+     * @param n    buf の大きさ（バイト）。
+     * @param v    書く値。
+     * @param step 目盛りの間隔。1 未満なら小数1桁、0.1 未満なら2桁、0.01 未満なら3桁。
+     */
     void FormatTick(char *buf, size_t n, float v, float step)
     {
         int decimals = 0;

@@ -86,10 +86,11 @@ void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
     m_psoOpaque.Apply(dc, m_services->renderState);
 }
 
-// 同じモデルを多く置くと count が大きくなり、インスタンシングが効く。
-// 1つしか置かないモデルは count == 1 で、1回ずつ描くのと変わらない
 OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor)
 {
+    // 同じモデルを多く置くと count が大きくなり、インスタンシングが効く。
+    // 1つしか置かないモデルは count == 1 で、1回ずつ描くのと変わらない
+
     BatchRange     batch{cursor, 0};
     const uint64_t batchKey = sortKeys[cursor].value;
     while (cursor < sortKeys.size() && sortKeys[cursor].value == batchKey)
@@ -211,14 +212,15 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
     }
 }
 
-// NormalPrepass は同じキーの列を同じ区切りで回し、同じ MeshCull でカリングしているので、
-// (バッチ, メッシュ) ごとの見えるインスタンスの列は一致する。それを使えば行列の計算と
-// カリングを省ける（ドローンのように同じモデルを多く置くほど効く）。
-// NormalPrepass が走らなかったとき（シェーダーが取れない・enabled が false）は列が無いので、自分で作る
 void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh,
                                          const BatchRange &batch, size_t meshIdx,
                                          const DirectX::BoundingBox &localAABB, bool isSkinned)
 {
+    // NormalPrepass は同じキーの列を同じ区切りで回し、同じ MeshCull でカリングしているので、
+    // (バッチ, メッシュ) ごとの見えるインスタンスの列は一致する。それを使えば行列の計算と
+    // カリングを省ける（ドローンのように同じモデルを多く置くほど効く）。
+    // NormalPrepass が走らなかったとき（シェーダーが取れない・enabled が false）は列が無いので、自分で作る
+
     const uint64_t key = RenderQueue::MakeVisibleKey(batch.start, meshIdx);
     if (m_services->renderQueue->FindVisibleInstances(key, m_visibleData, m_visibleCount)) return;
 
@@ -281,11 +283,12 @@ void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh
     }
 }
 
-// スキンメッシュはカリングしていないので m_visibleCount == batch.count で、
-// k 番目の見えるインスタンスはバッチの k 番目のコマンドに対応する
 void OpaquePass::DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                       const BatchRange &batch)
 {
+    // スキンメッシュはカリングしていないので m_visibleCount == batch.count で、
+    // k 番目の見えるインスタンスはバッチの k 番目のコマンドに対応する
+
     ID3D11DeviceContext  *dc             = ctx.dc;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     const auto           &sortKeys       = m_services->renderQueue->GetSortedKeys();

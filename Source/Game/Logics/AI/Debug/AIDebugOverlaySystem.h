@@ -31,8 +31,11 @@ class AIDebugOverlaySystem : public CCL::ECS::IfSystem<
 public:
     AIDebugOverlaySystem() : IfSystem("AIDebugOverlaySystem") {}
 
-    // ImGui 前景リストへ直接描くので、System Manager のヘッダ開閉に関係なく
-    // m_enabled が true の間ずっと表示される。
+    /**
+     * @brief AI の状態を画面上に描く。
+     *
+     * ImGui 前景リストへ直接描くので、System Manager のヘッダ開閉に関係なく m_enabled が true の間ずっと表示される。
+     */
     void Update(float dt) override;
 
     // System Manager 内に表示する操作 UI。別ウィンドウは作らない。

@@ -49,8 +49,14 @@ namespace CCL::AI::Formation
 
         bool Has(DroneFormationType type) const { return Get(type) != nullptr; }
 
-        // データで書かれた技の名前（JSON の name）。C++ 実装の枠と空き枠は nullptr。
-        // BTエディタが「データの技」の一覧と表示名を作るのに引く。
+        /**
+         * @brief データで書かれた技の名前（JSON の name）を返す。
+         *
+         * BTエディタが「データの技」の一覧と表示名を作るのに引く。
+         *
+         * @param type 調べる陣形の枠。
+         * @return 技の名前。陣形が所有する。C++ 実装の枠と空き枠は nullptr。
+         */
         const char *DataFormationName(DroneFormationType type) const
         {
             IFormation *formation = Get(type);

@@ -37,8 +37,18 @@ public:
     void Update(float dt) override;
 
 private:
-    // 前方の円錐内で最も近い生存中の敵を探す。ロックオンしていないときに使う。
-    // 敵 = HealthComponent を持ち、PlayerComponent を持たない、生存中のエンティティ。
+    /**
+     * @brief 前方の円錐内で最も近い生存中の敵を探す。ロックオンしていないときに使う。
+     *
+     * 敵 = HealthComponent を持ち、PlayerComponent を持たない、生存中のエンティティ。
+     *
+     * @param selfID  自分のエンティティ。候補から除く。
+     * @param selfPos 自分の位置（ワールド）。
+     * @param forward 円錐の向き（正規化済み）。
+     * @param range   探す距離の上限（m）。
+     * @param coneCos 円錐の半角の cos。forward との内積がこれ未満の敵は除く。
+     * @return 見つかった敵。居なければ InvalidEntityID。
+     */
     CCL::ECS::EntityID FindBestFrontEnemy(CCL::ECS::EntityID selfID, const DirectX::SimpleMath::Vector3 &selfPos,
                                           const DirectX::SimpleMath::Vector3 &forward, float range, float coneCos);
 

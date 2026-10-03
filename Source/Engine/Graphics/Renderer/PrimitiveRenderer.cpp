@@ -75,9 +75,10 @@ bool PrimitiveRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
     return m_frustum.Intersects(box);
 }
 
-// ロックするのは、そのスレッドが初めて呼んだときだけ
 PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
 {
+    // ロックするのは、そのスレッドが初めて呼んだときだけ
+
     // 仕組みは ShapeRenderer::GetDrawList と同じ
     thread_local PrimitiveDrawList *myLocalList  = nullptr;
     thread_local uint64_t           myRendererId = 0;
@@ -710,7 +711,6 @@ void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, 
     buffer.indexCount = index_count;
 }
 
-// 球を赤道で上下に分け、その間を cylinderHeight だけ離して円柱でつなぐ
 void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, float cylinderHeight, int slices, int rings)
 {
     // 赤道で半分に分けるので、リングの数は偶数にする

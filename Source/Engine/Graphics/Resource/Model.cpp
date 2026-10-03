@@ -15,10 +15,16 @@
 #include <cctype>
 #include <tracy/Tracy.hpp>
 
-// 大文字小文字を無視した部分一致。
-//   ロード時に「ルート・Pelvis・Hips 系のボーンか」を一度だけ判定するのに使う。
-//   毎フレームの処理から呼ばないこと。std::string のヒープ確保が骨の数 × フレーム分積み上がり、
-//   処理落ちの大きな原因になる。
+/**
+ * @brief 大文字小文字を無視した部分一致。
+ *
+ * ロード時に「ルート・Pelvis・Hips 系のボーンか」を一度だけ判定するのに使う。
+ *
+ * @param name   調べる名前。
+ * @param needle 探す文字列。
+ * @return name が needle を含めば true。
+ * @note 毎フレームの処理から呼ばないこと。std::string のヒープ確保が骨の数 × フレーム分積み上がり、処理落ちの大きな原因になる。
+ */
 static bool ContainsCI(const std::string &name, const char *needle)
 {
     std::string lower = name;

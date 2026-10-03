@@ -28,8 +28,15 @@ namespace
     }
 
 #if HITBOX_DIAGNOSTICS
-    // hitTargets を "12,34," の形の文字列にする（調査用ログ）。
-    // 多段ヒットの履歴が前の攻撃から残っていないかを見るため
+    /**
+     * @brief hitTargets を "12,34," の形の文字列にする（調査用ログ）。
+     *
+     * 多段ヒットの履歴が前の攻撃から残っていないかを見るため。
+     *
+     * @param box     履歴を持つ Hitbox。
+     * @param out     書き込み先のバッファ。
+     * @param outSize out の大きさ（バイト）。
+     */
     void FormatHitTargets(const HitboxComponent &box, char *out, size_t outSize)
     {
         size_t used = 0;
@@ -41,7 +48,13 @@ namespace
     }
 #endif
 
-    // target に now で当てたと記録する。履歴にあれば時刻だけ更新し、無ければ足す（いっぱいなら何もしない）
+    /**
+     * @brief target に当てたことを多段ヒットの履歴に記録する。
+     * @param box    履歴を持つ Hitbox。
+     * @param slot   FindHitSlot の結果。0 以上なら時刻だけ更新し、-1 なら末尾に足す（いっぱいなら何もしない）。
+     * @param target 当てた相手。
+     * @param now    当てた時刻（このシステムの時計 m_clock の値）。
+     */
     void RecordHit(HitboxComponent &box, int slot, EntityID target, float now)
     {
         if (slot >= 0)

@@ -112,8 +112,16 @@ public:
     void ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const;
 
 private:
-    // 1ノード分の姿勢を求める本体。取得済みの Animation を受け取るので、全ノード版が
-    // ノードの数だけ ResourceManager を引き直さずに済む（呼び出し側で1回だけ取る）。
+    /**
+     * @brief 1ノード分の姿勢を求める本体。
+     *
+     * 取得済みの Animation を受け取るので、全ノード版がノードの数だけ ResourceManager を引き直さずに済む（呼び出し側で1回だけ取る）。
+     *
+     * @param animation 姿勢を求めるアニメーション。
+     * @param nodeIndex 姿勢を求めるノードの番号。
+     * @param time      再生時刻（秒）。
+     * @param nodePose  求めた姿勢を受け取る。
+     */
     void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
 
 public:
@@ -144,9 +152,15 @@ public:
     // アニメーションの中で実際に水平に動いている、一番親に近いボーンを探す（結果はキャッシュする）
     int FindRealRootMotionNodeIndex(int animIndex) const;
 
-    // 指定クリップの0秒時点での、指定ノードの姿勢を返す（キャッシュ付き）。
-    //   ルートモーションで前進量を打ち消す基準になる姿勢で、毎フレーム同じなので、
-    //   初回だけ ComputeAnimation で求めて以後は使い回す。
+    /**
+     * @brief 指定クリップの0秒時点での、指定ノードの姿勢を返す（キャッシュ付き）。
+     *
+     * ルートモーションで前進量を打ち消す基準になる姿勢で、毎フレーム同じなので、初回だけ ComputeAnimation で求めて以後は使い回す。
+     *
+     * @param animIndex クリップの番号。
+     * @param nodeIndex ノードの番号。
+     * @return 0秒時点の姿勢。Model のキャッシュが所有する。
+     */
     const NodePose &GetPinnedPoseAtZero(int animIndex, int nodeIndex) const;
 
 private:

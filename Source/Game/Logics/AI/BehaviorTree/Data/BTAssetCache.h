@@ -38,8 +38,12 @@ public:
      */
     std::shared_ptr<const BTAsset> GetOrLoad(const std::string &path);
 
-    // ファイルを読み直して差し替える。エディタで木を保存した後に使う。
-    // 各エンティティは次のフレームの BehaviorTreeSystem の先頭で受け取り直す。
+    /**
+     * @brief ファイルを読み直して差し替える。エディタで木を保存した後に使う。
+     * @param path 読み直す BT ファイルのパス。
+     * @return 読み直した木。パスが空・読めなかったときは nullptr。
+     * @note 各エンティティは次のフレームの BehaviorTreeSystem の先頭で受け取り直す。
+     */
     std::shared_ptr<const BTAsset> Reload(const std::string &path);
 
     // 全部捨てる。シーンの切り替えなどで使う想定。
@@ -53,7 +57,12 @@ private:
     BTAssetCache(const BTAssetCache &)            = delete;
     BTAssetCache &operator=(const BTAssetCache &) = delete;
 
-    // 実際に読む。m_mutex をロックした状態で呼ぶこと。
+    /**
+     * @brief ファイルから木を読み、キャッシュに入れる。GetOrLoad と Reload の共通部分。
+     * @param path 読み込む BT ファイルのパス。
+     * @return 読み込んだ木。読めなければ nullptr（失敗の記録を残す）。
+     * @note m_mutex をロックした状態で呼ぶこと。
+     */
     std::shared_ptr<const BTAsset> LoadLocked(const std::string &path);
 
     mutable std::mutex                                              m_mutex;

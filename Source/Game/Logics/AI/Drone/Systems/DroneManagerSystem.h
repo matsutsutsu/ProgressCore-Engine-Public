@@ -28,25 +28,33 @@ class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
 public:
     DroneManagerSystem() : IfSystem("DroneManagerSystem") {}
 
-    // 同じ L02_Update に居る他のドローン系との前後を宣言する。
-    //   スポーン時に ReindexAllDrones() が localIndex / totalDrones / squadId /
-    //   slotInSquad を書き、陣形はそれを読んで持ち場の座標を出す。順序が入れ替わると
-    //   配備した最初のフレームだけ古い通し番号で円が組まれる。
-    //   DroneCommandSystem との間に実データ依存は無いが、生成(構造変更)を挟むので
-    //   毎回同じ順で走るよう固定しておく。
+    /**
+     * @brief 同じ L02_Update に居る他のドローン系との前後を宣言する。
+     *
+     * スポーン時に ReindexAllDrones() が localIndex / totalDrones / squadId / slotInSquad を書き、陣形はそれを読んで持ち場の座標を出す。
+     * 順序が入れ替わると、配備した最初のフレームだけ古い通し番号で円が組まれる。
+     *
+     * DroneCommandSystem との間に実データ依存は無い。
+     * ただし生成（構造変更）を挟むので、毎回同じ順で走るよう固定しておく。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"DroneCommandSystem"};
     }
 
-    // 毎フレーム、生存ドローンを数えて BattleContext.droneAliveCount に書く。
-    // 初期配備が済んでいなければ、先に TryAutoSpawnInitial で配備する。
+    /**
+     * @brief 毎フレーム、生存ドローンを数えて BattleContext.droneAliveCount に書く。
+     * @note 初期配備が済んでいなければ、先に TryAutoSpawnInitial で配備する。
+     */
     void Update(float dt) override;
 
     // ---- 外部（GUI やゲームロジック）から呼ぶ操作 ----
 
-    // ドローンを count 機、ボスの5m上に生成し、実際に生成できた数を返す。
-    // ボスが居なければ生成せず 0 を返す。
+    /**
+     * @brief ドローンをボスの5m上に生成する。
+     * @param count 生成する機数。
+     * @return 実際に生成できた数。ボスが居なければ生成せず 0。
+     */
     int SpawnDrones(int count);
 
     // ドローンを先頭から count 機破壊し、実際に破壊した数を返す。
@@ -79,8 +87,11 @@ public:
     void SetAllDronesArrived(bool treatAsArrived);
 
 private:
-    // ボスが準備でき次第、初期ドローンを1回だけ配備する。シーン開始直後はボス未生成の
-    // フレームがあるため、揃うまで毎フレーム再試行する。
+    /**
+     * @brief ボスが準備でき次第、初期ドローンを1回だけ配備する。
+     *
+     * シーン開始直後はボス未生成のフレームがあるため、揃うまで毎フレーム再試行する。
+     */
     void TryAutoSpawnInitial();
 
     // シーン内の最初のボス（BossCommandComponent と TransformComponent を持つ）を探す。
@@ -94,9 +105,12 @@ private:
     void DrawSpawnButtons();   // 生成・破壊
     void DrawArrivalDebug();   // 到着ラッチの操作
 
-    // 陣形テスト UI。BT を組まずに、選んだ陣形の「形成 → 撃つ → 戻す」を手で送る。
-    //   一覧に出すのは FormationRegistry に実装がある陣形だけ。enum には実装の無い枠
-    //   （データの空き枠・欠番）が含まれていて、それを選ぶと静止するだけになる。
+    /**
+     * @brief 陣形テスト UI。BT を組まずに、選んだ陣形の「形成 → 撃つ → 戻す」を手で送る。
+     *
+     * 一覧に出すのは FormationRegistry に実装がある陣形だけ。
+     * enum には実装の無い枠（データの空き枠・欠番）が含まれていて、それを選ぶと静止するだけになる。
+     */
     void DrawFormationTest();
 
     void DrawIndividualTest(); // 個別に帰投する行動（弾幕・小隊）のテスト
@@ -107,8 +121,15 @@ private:
     // ボスへ直接命令を入れる。BT が上書きするので、確認は BT を止めてから行う。
     void SetBossCommand(DroneFormationType formation, bool attack);
 
-    // インスペクタに出す陣形名。データ陣形は枠番号ではなくアセットが名乗る名前を返す
-    // （"[空き枠] 枠0" のままでは、どの技を選んでいるのか画面から分からない）。
+    /**
+     * @brief インスペクタに出す陣形名を返す。
+     *
+     * データ陣形は枠番号ではなくアセットが名乗る名前を返す。
+     * "[空き枠] 枠0" のままでは、どの技を選んでいるのか画面から分からない。
+     *
+     * @param type 名前を出す陣形の枠。
+     * @return 陣形名。データ陣形ならアセットが所有する文字列。
+     */
     const char *FormationDisplayName(DroneFormationType type) const;
 
     int m_spawnCount = 20; // GUI の「Spawn Drones」で生成する数

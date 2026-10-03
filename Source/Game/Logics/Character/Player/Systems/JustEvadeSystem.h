@@ -36,10 +36,12 @@ public:
     void Initialize() override;
     void Update(float dt) override;
 
-    // 成立時のイベントハンドラが書く型を、テンプレート引数の分に足して申告する。
-    //
-    // テンプレート引数に足すと ForEach の Archetype フィルタまで狭まり、
-    // ループの対象から外れてしまう。フィルタと申告は別なのでここで足す。
+    /**
+     * @brief 成立時のイベントハンドラが書く型を、テンプレート引数の分に足して申告する。
+     *
+     * テンプレート引数に足すと ForEach の Archetype フィルタまで狭まり、ループの対象から外れてしまう。
+     * フィルタと申告は別なのでここで足す。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
     // 接触の配送が終わってから走らせる（同じ L05_Collision のため順序が不定になる）。
@@ -58,7 +60,13 @@ private:
     // スケジューラから見えなくなる。溜めるだけにして、判定は Update で行う。
     std::vector<JoltCollisionEvent> m_pendingContacts;
 
-    // そのドローンが、今ぶつかったらジャスト回避が成立する相手か（突撃中で、吹き飛ばされていない）。
-    // 隊列で待機しているだけのドローンにぶつかっても成立しないようにする。
+    /**
+     * @brief そのドローンが、今ぶつかったらジャスト回避が成立する相手かを返す。
+     *
+     * 隊列で待機しているだけのドローンにぶつかっても成立しないようにする。
+     *
+     * @param drone 調べるドローン。
+     * @return 突撃中で、吹き飛ばされていなければ true。
+     */
     bool IsDroneHostile(const DroneComponent *drone) const;
 };

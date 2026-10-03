@@ -136,6 +136,8 @@ float CameraDollySystem::WrapDistance(float dist, float totalLength)
 // =========================================================================
 void CameraDollySystem::LoadPathIfNeeded(CameraDollyCartComponent &cart) const
 {
+    // TODO(2026-08-21): アセットマネージャ側へ移し、パス単位でキャッシュを共有する（初回フレームのヒッチ対策）
+
     // 未読み込みで、まだ失敗していないときだけ試す
     if (cart.loadedPath || cart.pathAsset.empty() || cart.hasLoadError)
         return;

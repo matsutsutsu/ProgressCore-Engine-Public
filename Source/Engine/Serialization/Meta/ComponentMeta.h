@@ -56,8 +56,11 @@ struct FieldDescriptor
     const char        *filePreset = nullptr; // null 以外なら String をファイルダイアログ付きで描く（FileDialog のプリセット名。例 "Texture"）
 };
 
-// FieldDescriptor を作る関数。引数の順は全種類で共通:
-//   表示名, JSON キー, offset, （種別ごとの追加引数...）, category, serialize, tooltip, readonly
+/**
+ * @brief float のフィールドの FieldDescriptor を作る。
+ *
+ * FD_ 系の関数は、引数の順が全種類で共通（表示名, JSON キー, offset, 種別ごとの追加引数..., category, serialize, tooltip, readonly）。
+ */
 inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset,
                                 float speed = 0.05f, float rmin = 0.0f, float rmax = 0.0f,
                                 const char *category = nullptr, bool serialize = true,

@@ -29,8 +29,17 @@ using CCL::Serialization::SaveContext;
 
 namespace
 {
-    // root とその子孫の EntityID を深さ優先で集める（root が先頭）。
-    //   親子・兄弟のリンクが壊れて循環していても、訪問済みの集合と深さの上限で止まる
+    /**
+     * @brief root とその子孫の EntityID を深さ優先で集める（root が先頭）。
+     *
+     * 親子・兄弟のリンクが壊れて循環していても、訪問済みの集合と深さの上限で止まる。
+     *
+     * @param world   探す World。所有しない。
+     * @param id      起点のエンティティ。
+     * @param out     集めた EntityID を積む先。
+     * @param visited 訪問済みの集合。
+     * @param depth   今の深さ。4096 を超えたら止める。
+     */
     void CollectCloneSubtree(World *world, EntityID id,
                              std::vector<EntityID>        &out,
                              std::unordered_set<EntityID> &visited, int depth)

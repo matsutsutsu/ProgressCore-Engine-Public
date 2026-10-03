@@ -100,11 +100,12 @@ void InputEditorWindow::SaveToJson()
     FileSystem::WriteAllText(m_configPath, doc.dump(4));
 }
 
-// デバイスの選択（ラジオボタン）。
-//   切り替えたら b.device / b.key を、そのデバイスの既定値に戻す。
-//   軸のタブ（isAxis=true）ではゲームパッドの既定を左スティックにする。
 void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
 {
+    // デバイスの選択（ラジオボタン）。
+    //   切り替えたら b.device / b.key を、そのデバイスの既定値に戻す。
+    //   軸のタブ（isAxis=true）ではゲームパッドの既定を左スティックにする。
+
     using DC = InputKeyTable::DeviceClass;
     DC cur   = InputKeyTable::ClassOf(b.device);
 
@@ -130,11 +131,12 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
           "NONE");
 }
 
-// キーの選択（コンボボックス）。
-//   選択中のデバイスに対応した候補だけを出す（絞り込みの入力欄つき）。
-//   軸のタブのゲームパッドは「スティック / トリガー」と「ボタン」を見出しで分ける。
 void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
 {
+    // キーの選択（コンボボックス）。
+    //   選択中のデバイスに対応した候補だけを出す（絞り込みの入力欄つき）。
+    //   軸のタブのゲームパッドは「スティック / トリガー」と「ボタン」を見出しで分ける。
+
     using DC = InputKeyTable::DeviceClass;
     DC cls   = InputKeyTable::ClassOf(b.device);
 
@@ -208,7 +210,6 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
     }
 }
 
-// 割り当て1つぶんの GUI: デバイス → キー → キャプチャ →（軸なら）感度
 void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 {
     DrawDeviceSelector(b, isAxis);

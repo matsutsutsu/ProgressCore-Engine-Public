@@ -45,9 +45,10 @@ void TransformUpdateSystem::Update(float dt)
     SolveHierarchy();
 }
 
-// 毎ステップ全 Transform を回るので、行列計算などの重い処理は入れない
 bool TransformUpdateSystem::ScanDetectTopology()
 {
+    // 毎ステップ全 Transform を回るので、行列計算などの重い処理は入れない
+
     bool   needRebuild     = false;
     size_t matchedNonRoots = 0;
 
@@ -97,9 +98,10 @@ void TransformUpdateSystem::ComputeRootsParallel()
     });
 }
 
-// ローカル行列の合成・親のワールド行列の継承・書き戻しを1つのループで行う
 void TransformUpdateSystem::SolveHierarchy()
 {
+    // ローカル行列の合成・親のワールド行列の継承・書き戻しを1つのループで行う
+
     const size_t n = m_cache.Count();
     for (size_t i = 0; i < n; ++i)
     {
@@ -167,9 +169,10 @@ void TransformUpdateSystem::ProcessPendingParents()
     }
 }
 
-// キャッシュを作り直す直前だけ実行する
 void TransformUpdateSystem::RepairBrokenLinks()
 {
+    // キャッシュを作り直す直前だけ実行する
+
     ForEachWithID([&](EntityID id, TransformComponent &trans) {
         if (trans.parent != 0)
         {
@@ -191,9 +194,10 @@ void TransformUpdateSystem::RepairBrokenLinks()
 // 親子関係の操作
 // ============================================================
 
-// 子は親の子リストの先頭に挿入する
 void TransformUpdateSystem::SetParent(World &world, EntityID childID, EntityID newParentID)
 {
+    // 子は親の子リストの先頭に挿入する
+
     if (childID == newParentID) return;
     if (!world.IsEntityValid(childID)) return;
 

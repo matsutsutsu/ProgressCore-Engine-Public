@@ -52,8 +52,13 @@ namespace
         return nullptr;
     }
 
-    // graph 内の target に入り、サブマシンなら entry へ降りて葉まで path を伸ばす。
-    //   戻り値は葉ステート（実際に再生する対象）。path には target 以降の hash を積む
+    /**
+     * @brief graph 内の target に入り、サブマシンなら entry へ降りて葉まで path を伸ばす。
+     * @param graph      探すグラフ。
+     * @param targetHash 入るステートの名前のハッシュ。
+     * @param path       target 以降の hash を積む先。
+     * @return 葉ステート（実際に再生する対象）。target が無ければ nullptr。
+     */
     const AnimState *EnterResolveLeaf(const AnimStateGraph &graph, uint32_t targetHash,
                                       std::vector<uint32_t> &path)
     {
@@ -70,8 +75,14 @@ namespace
         return st;
     }
 
-    // hash のステートを階層全体から探し、ルートから葉までのパスを out に作る。
-    //   currentStateHash から activePath を作り直すとき（初期化・エディタからのジャンプ）に使う
+    /**
+     * @brief hash のステートを階層全体から探し、ルートから葉までのパスを out に作る。
+     * @param g    探すグラフ。
+     * @param hash 探すステートの名前のハッシュ。
+     * @param out  ルートからのパスを積む先。
+     * @return 見つかったステート。無ければ nullptr。
+     * @note currentStateHash から activePath を作り直すとき（初期化・エディタからのジャンプ）に使う。
+     */
     const AnimState *BuildPathTo(const AnimStateGraph &g, uint32_t hash, std::vector<uint32_t> &out)
     {
         for (const auto &s : g.states)

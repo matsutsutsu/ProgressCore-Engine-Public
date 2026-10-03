@@ -47,8 +47,15 @@ private:
     // InputPromptConfig.json を読む。読めなければ既定の並びを返す
     void LoadConfig(std::vector<ConfigRow> &outRows) const;
 
-    // index 行目のアイコンと行名の矩形を調整値から求める。
-    // 生成時と OnGui での並べ直しで同じ式を使うため、配置の計算はここだけに置く
+    /**
+     * @brief index 行目のアイコンと行名の矩形を調整値から求める。
+     *
+     * 生成時と OnGui での並べ直しで同じ式を使うため、配置の計算はここだけに置く。
+     *
+     * @param index    行の番号（0始まり）。
+     * @param outIcon  アイコンの矩形を受け取る。
+     * @param outLabel 行名の矩形を受け取る。
+     */
     void ComputeRow(size_t index, UITransformComponent &outIcon,
                     UITransformComponent &outLabel) const;
 

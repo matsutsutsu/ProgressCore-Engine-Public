@@ -45,6 +45,7 @@ private:
         CCL::ECS::World       *world,
         std::vector<FlatNode> &outFlatList);
 
+    // 1行ぶんの描画。再帰せず、FlatNode の depth だけ字下げしてツリーに見せる
     void DrawFlatNode(
         const FlatNode &node,
         EditorContext  &context);

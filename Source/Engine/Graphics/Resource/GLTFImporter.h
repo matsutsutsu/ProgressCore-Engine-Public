@@ -25,7 +25,7 @@ private:
 public:
     GLTFImporter(const char *filename);
 
-    // ノードを glTF の並び順のまま読む
+    // ノードを glTF の並び順のまま読む（並べ替えはしない。親が先になる計算の順番は Model が作る）
     void LoadNodes(NodeList &nodes);
 
     // メッシュを読む（primitive 1つ = メッシュ1つ）
@@ -54,7 +54,7 @@ private:
     static void ConvertMeshAxisSystem(ModelResource::Mesh &mesh);
     static void ConvertAnimationAxisSystem(ModelResource::Animation &animation);
 
-    // 頂点の位置と UV から接線を求める
+    // 頂点の位置と UV から接線を求める（接線が入っていない glTF 用）
     static void ComputeTangents(std::vector<ModelResource::Vertex> &vertices, const std::vector<uint32_t> &indices);
 
 private:

@@ -118,7 +118,15 @@ ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void *jNodePtr, BT
 
 namespace
 {
-    // 枝の中に「Running を返しうる行動」が1つでもあるか。
+    /**
+     * @brief 枝の中に「Running を返しうる行動」が1つでもあるかを返す。
+     *
+     * 無ければ、その枝は毎フレームすぐ終わる。読み込み時に、Parallel の主や Selector の枝がこうなっていないかの検査に使う（IsBlockingAction を参照）。
+     *
+     * @param asset  木の構造。
+     * @param nodeId 調べる枝の根のノード。
+     * @return Running を返しうる行動があれば true。
+     */
     bool SubtreeCanBlock(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -129,8 +137,15 @@ namespace
         return false;
     }
 
-    // 枝の中に「currentActionId を書く行動」が1つでもあるか。
-    // Parallel の従に置くと、要求が下りないまま残る（ActionRegistry.h に理由）。
+    /**
+     * @brief 枝の中に「currentActionId を書く行動」が1つでもあるかを返す。
+     *
+     * Parallel の従に置くと、要求が下りないまま残る（理由は ActionRegistry.h の IsCommandWritingAction）。
+     *
+     * @param asset  木の構造。
+     * @param nodeId 調べる枝の根のノード。
+     * @return 書く行動があれば true。
+     */
     bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -141,7 +156,12 @@ namespace
         return false;
     }
 
-    // 枝が条件を持つか（失敗して次の枝へ進む可能性があるか）。
+    /**
+     * @brief 枝が条件を持つか（失敗して次の枝へ進む可能性があるか）を返す。
+     * @param asset  木の構造。
+     * @param nodeId 調べる枝の根のノード。
+     * @return 条件ノードがあれば true。
+     */
     bool SubtreeHasCondition(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];

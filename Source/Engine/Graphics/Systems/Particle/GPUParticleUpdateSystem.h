@@ -48,13 +48,20 @@ private:
         GpuData::float4 prevRot = {0.0f, 0.0f, 0.0f, 1.0f}; // 前フレームのワールド回転
     };
 
-    // エミッタに重ならない乱数の種を出す（0 は「未割り当て」なので返さない）。
-    // 連番をそのまま返す。シェーダー側が wangHash で散らすので偏らず、
-    // 実行ごとに同じ順番になるのでデバッグ時に同じ絵を再現できる。
+    /**
+     * @brief エミッタに重ならない乱数の種を出す。
+     *
+     * 連番をそのまま返す。シェーダー側が wangHash で散らすので偏らず、実行ごとに同じ順番になるのでデバッグ時に同じ絵を再現できる。
+     *
+     * @return 乱数の種。0 は「未割り当て」なので返さない。
+     */
     GpuData::uint NextInstanceSeed();
 
-    // 粒子バッファ一式（StructuredBuffer・UAV・SRV・定数バッファ）を作り直す。
-    // CreateBuffer を呼ぶので重く、フレームの処理時間が跳ねる原因になる。
+    /**
+     * @brief 粒子バッファ一式（StructuredBuffer・UAV・SRV・定数バッファ）を作り直す。
+     * @param emitter バッファを作り直すエミッタ。
+     * @note CreateBuffer を呼ぶので重く、フレームの処理時間が跳ねる原因になる。
+     */
     void RebuildParticleBuffer(ParticleEmitter &emitter);
 
     // ノイズ用の 32^3 の 3D テクスチャを作る

@@ -62,8 +62,14 @@ namespace CCL::AI::Formation
         // 表の1つぶんを j から obj へ読む。キーが無い項目は既定値のまま残す。
         static void ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj);
 
-        // float を「float として元に戻せる最短の10進表記」の double にする。
-        // JSON の数値は double なので、そのまま渡すと 0.8 が 0.800000011920929 と出る。
+        /**
+         * @brief float を「float として元に戻せる最短の10進表記」の double にする。
+         *
+         * JSON の数値は double なので、そのまま渡すと 0.8 が 0.800000011920929 と出る。
+         *
+         * @param v 変換する値。
+         * @return v を最短の10進表記で表した double。
+         */
         static double ShortestDouble(float v);
     };
 

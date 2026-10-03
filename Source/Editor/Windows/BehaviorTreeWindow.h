@@ -143,8 +143,10 @@ private:
     // 空のサブツリーを作る。中に入口（ROOT）を1つ置く。作った SubTree のIDを返す
     uint32_t CreateSubTreeNode(float x, float y);
 
-    // 選択中のノードを1つのサブツリーへまとめる（UE の Blueprint の Collapse Nodes と同じ）。
-    //   選択は「根が1つの枝」でなければならない（途中の親が選択外だと、どこへ繋ぎ直すか決まらない）。
+    /**
+     * @brief 選択中のノードを1つのサブツリーへまとめる（UE の Blueprint の Collapse Nodes と同じ）。
+     * @note 選択は「根が1つの枝」でなければならない（途中の親が選択外だと、どこへ繋ぎ直すか決まらない）。
+     */
     void CollapseSelectionToSubTree();
 
     // サブツリーの中へ入る。実際に切り替えるのは次のフレームの頭（描画中に階層を変えないため）
@@ -217,8 +219,11 @@ private:
     // デコレータ種類の表示名
     static const char *DecoratorNameOf(int decoratorType);
 
-    // 名前を自分で付ける種類か（Selector などのまとまり・コメント枠）。
-    // Action / Condition / Decorator は中身から名前を自動で作るので false
+    /**
+     * @brief 名前を自分で付ける種類か（Selector などのまとまり・コメント枠）を返す。
+     * @param type 調べるノードの種類。
+     * @return 自分で付けるなら true。Action / Condition / Decorator は中身から名前を自動で作るので false。
+     */
     static bool UsesCustomName(EditorBTNodeType type);
 
     // 画面に出す名前。まとまりは付けた名前、それ以外は選んだ内容＋パラメータから作る
@@ -249,7 +254,14 @@ private:
     // 書き出す文章全体（凡例＋木＋未接続のノード）を作る
     std::string BuildOutlineText();
 
-    // 1ノード分の行と、その子の行を再帰で書く。parentId は注記（重み・主従）を決めるのに使う
+    /**
+     * @brief 1ノード分の行と、その子の行を再帰で書く。
+     * @param out      書き足す先の文章。
+     * @param nodeId   書くノード。
+     * @param parentId 親のノード。注記（重み・主従）を決めるのに使う。
+     * @param depth    字下げの段数（1段につき空白2つ）。
+     * @param visited  書いたノードの記録。同じノードを2回書かない（循環していても止まる）。
+     */
     void AppendOutlineLines(std::string &out, uint32_t nodeId, uint32_t parentId, int depth,
                             std::unordered_set<uint32_t> &visited);
 
@@ -271,9 +283,14 @@ private:
     // 保存キーから行動/条件IDを復元する（キーが正、数値IDは保険）
     static void RestoreActionId(EditorBTNode &node, const nlohmann::json &jn);
 
-    // リンクから親子関係・実行順・隠れているノードを作り直す。毎フレーム頭で呼ぶ
-    //   変更経路（リンク編集・Undo・読込・ドラッグでの順序入れ替え）が多いので、汚れフラグで
-    //   追うより毎回作る。数百ノードまでなら無視できるコスト。
+    /**
+     * @brief リンクから親子関係・実行順・隠れているノードを作り直す。
+     *
+     * 変更経路（リンク編集・Undo・読込・ドラッグでの順序入れ替え）が多いので、汚れフラグで追うより毎回作る。
+     * 数百ノードまでなら無視できるコスト。
+     *
+     * @note 毎フレーム頭で呼ぶ。
+     */
     void RebuildHierarchy();
 
     // 子を1つ以上持つか
@@ -342,8 +359,11 @@ private:
     // 背景の右クリック / Space で出るノード追加メニュー
     void HandleContextMenu();
 
-    // Ctrl+V の貼り先（キャンバス座標）。カーソルがキャンバスの上ならその位置、外なら見えている範囲の中央。
-    //   ed::Begin〜End の中で呼ぶ
+    /**
+     * @brief Ctrl+V の貼り先（キャンバス座標）を返す。
+     * @return カーソルがキャンバスの上ならその位置、外なら見えている範囲の中央。
+     * @note ed::Begin〜End の中で呼ぶ。
+     */
     ImVec2 PasteTargetOnCanvas();
 
     // 開いた直後に全体が収まる倍率へ合わせる

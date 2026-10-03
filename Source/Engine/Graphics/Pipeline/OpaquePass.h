@@ -60,7 +60,12 @@ private:
     // cursor から同じバッチキーが続く区間を切り出し、cursor をその次へ進める
     static BatchRange ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor);
 
-    // シェーダーの PSO（無ければパスの既定）を、今の PSO（lastPso）と違うときだけ適用する
+    /**
+     * @brief シェーダーの PSO（無ければパスの既定）を、今の PSO と違うときだけ適用する。
+     * @param dc      適用先のデバイスコンテキスト。
+     * @param shader  PSO を持つシェーダー。
+     * @param lastPso 今適用されている PSO。適用したらその PSO に書き換える。
+     */
     void ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso);
 
     // バッチのモデルの全メッシュを、描くか半透明のキューへ回す
@@ -75,8 +80,18 @@ private:
                                        const BatchRange &batch, uint32_t shaderHash,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned);
 
-    // このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount に入れる。
-    // NormalPrepass が同じ区切りで求めた列があればそれを使い、無ければ自分で作る
+    /**
+     * @brief このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount に入れる。
+     *
+     * NormalPrepass が同じ区切りで求めた列があればそれを使い、無ければ自分で作る。
+     *
+     * @param ctx       今フレームの描画情報。
+     * @param mesh      描くメッシュ。
+     * @param batch     同じモデルが続く描画コマンドの区間。
+     * @param meshIdx   モデル内でのメッシュの番号。
+     * @param localAABB カリングに使うメッシュのローカル AABB。
+     * @param isSkinned スキンメッシュか。スキンメッシュはカリングしない。
+     */
     void ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                  size_t meshIdx, const DirectX::BoundingBox &localAABB, bool isSkinned);
 

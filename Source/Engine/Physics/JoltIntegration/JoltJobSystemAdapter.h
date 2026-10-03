@@ -105,8 +105,11 @@ protected:
     void FreeJob(Job *inJob) override;
 
 private:
-    // ワーカースレッド上でジョブを実行し、キューに積んだときの参照を返す。
-    // Tracy ゾーンはここではなく CreateJob で張る（理由は .cpp）。
+    /**
+     * @brief ワーカースレッド上でジョブを実行し、キューに積んだときに取った参照（AddRef）を Release で返す。
+     * @param inJob 実行するジョブ。Release の後は解放されている可能性があるので触らない。
+     * @note Tracy ゾーンはここではなく CreateJob で張る（理由は .cpp）。
+     */
     void RunJob(Job *inJob);
 
     // Jobの実体を置くフリーリスト。Jolt純正実装と同じ方式。

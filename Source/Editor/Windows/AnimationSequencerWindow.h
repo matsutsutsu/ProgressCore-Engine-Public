@@ -35,12 +35,12 @@ public:
 protected:
     void DrawContents(EditorContext &context) override;
 
-    // ウィンドウが描画されなくなっても編集モードを確実に解除する。
-    //
-    // 編集モードは Animator の isEditorOverride を立て、対象エンティティの
-    // アニメ更新を全システムで止める。DrawContents はウィンドウを閉じる・畳む・
-    // 選択を外すと呼ばれないため、解除をそこに置くと状態が残り続けて
-    // 「そのエンティティのアニメが二度と動かない」になる。
+    /**
+     * @brief ウィンドウが描画されなくなっても編集モードを確実に解除する。
+     *
+     * 編集モードは Animator の isEditorOverride を立て、対象エンティティのアニメ更新を全システムで止める。
+     * DrawContents はウィンドウを閉じる・畳む・選択を外すと呼ばれないため、解除をそこに置くと状態が残り続けて「そのエンティティのアニメが二度と動かない」になる。
+     */
     void OnFrameBegin(EditorContext &context) override;
 
 private:
@@ -65,16 +65,24 @@ private:
     // Effect イベントの VFX を、Assets/Prefabs/Particles のプレハブから選ぶ（手入力も可）。変えたら true
     bool DrawVfxPrefabPicker(AnimNotifyEvent &e);
 
-    // 編集モード中、rootMotionCurve の進捗→累積前進距離を選択エンティティの
-    // Transform に直接反映し、その場で移動量を確認できるようにする。
-    //
-    // ベース位置は「カーブ駆動プレビューが有効になった瞬間の位置」を1回だけ
-    // 記録し、以後は毎フレーム base + forward * (curve(progress) - curve(0))
-    // で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
+    /**
+     * @brief 編集モード中、rootMotionCurve の進捗→累積前進距離を選択エンティティの Transform に直接反映し、その場で移動量を確認できるようにする。
+     *
+     * ベース位置は「カーブ駆動プレビューが有効になった瞬間の位置」を1回だけ記録する。
+     * 以後は毎フレーム base + forward * (curve(progress) - curve(0)) で絶対位置を再計算する（スクラブしても加算ドリフトしない）。
+     *
+     * @param context  エディタの文脈。
+     * @param animator 選択エンティティの Animator。
+     */
     void DrawRootMotionPreview(EditorContext &context, AnimatorComponent *animator);
 
-    // 編集モード中、SpawnHitbox の判定球を GameView に線で描き、大きさと位置を確かめられるようにする。
-    // 選んでいるイベントは常に、それ以外は今の再生時刻が区間に入っているときだけ描く
+    /**
+     * @brief 編集モード中、SpawnHitbox の判定球を GameView に線で描き、大きさと位置を確かめられるようにする。
+     *
+     * 選んでいるイベントは常に、それ以外は今の再生時刻が区間に入っているときだけ描く。
+     *
+     * @param context エディタの文脈。
+     */
     void DrawHitboxPreview(EditorContext &context);
 
 private:

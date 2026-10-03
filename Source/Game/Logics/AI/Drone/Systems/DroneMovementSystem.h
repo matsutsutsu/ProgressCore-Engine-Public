@@ -43,38 +43,65 @@ private:
 
     inline void ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt);
     inline void ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt);
+
+    /**
+     * @brief 突撃。stateTimer > 0 の間が「タメ」、0 になった瞬間から「リリース」（高速直進）。
+     *
+     * 内部で2段階を持つので、外からは FireCharge の1状態を見るだけで予兆を表現できる。
+     */
     inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むことがこの技の見た目の要点。
+    /**
+     * @brief 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むことがこの技の見た目の要点。
+     *
+     * 目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
+     * 剛体追従にすると隊列がまったく歪まず、「1枚の板が近づいてくる」絵になる。
+     */
     inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 進行方向 → 姿勢。yaw の式をここ1箇所に閉じ込める。
-    //
-    //   ドローンのモデルは前方が -Z。CreateFromYawPitchRoll は行ベクトルで
-    //   v·Rx(pitch)·Ry(yaw) の順に掛かるので、
-    //     (0,0,-1)·Rx(p) = (0, +sin p, -cos p)        ← pitch = asin(look.y) と一致する
-    //     ここへ Ry(θ) = (-cos p·sin θ, sin p, -cos p·cos θ)
-    //   となり、look と突き合わせると θ = atan2(-x, -z)。
-    //   +Z 前提の atan2(x, z) や atan2(x, -z) と混ぜると
-    //   Z軸に対する鏡像になり、状態が切り替わるたびに機首が最大180°反転する
-    //   （±Z を向いているときだけ一致するので気づきにくい）。
-    //
-    //   includePitch=false は Idle のように「水平だけ向かせたい」場面用。
-    //   includePitch=true のときだけ look の正規化が要る（asin に渡すため）。
+    /**
+     * @brief 進行方向から姿勢を作る。yaw の式をここ1箇所に閉じ込める。
+     *
+     * ドローンのモデルは前方が -Z。CreateFromYawPitchRoll は行ベクトルで v·Rx(pitch)·Ry(yaw) の順に掛かるので、
+     *   (0,0,-1)·Rx(p) = (0, +sin p, -cos p)        ← pitch = asin(look.y) と一致する
+     *   ここへ Ry(θ) = (-cos p·sin θ, sin p, -cos p·cos θ)
+     * となり、look と突き合わせると θ = atan2(-x, -z)。
+     *
+     * +Z 前提の atan2(x, z) や atan2(x, -z) と混ぜると Z軸に対する鏡像になり、状態が切り替わるたびに機首が最大180°反転する。
+     * ±Z を向いているときだけ一致するので気づきにくい。
+     *
+     * @param look         向かせたい方向。includePitch=true のときだけ正規化が要る（asin に渡すため）。
+     * @param includePitch 上下の傾きも付けるか。false は Idle のように「水平だけ向かせたい」場面用。
+     * @return 機体の姿勢。
+     */
     DirectX::SimpleMath::Quaternion LookToRotation(const DirectX::SimpleMath::Vector3 &look,
                                                    bool                                includePitch) const;
 
-    // 予告の震えの位置オフセット [m]。t は構え始めてからの経過秒。
-    //   t を取るのは前フレームぶんを引いて差分だけ動かすため（足しっぱなしにすると
-    //   座標へ溜まって群れごと流れていく）。
+    /**
+     * @brief 予告の震えの位置オフセットを返す。
+     *
+     * t を取るのは、前フレームぶんを引いて差分だけ動かすため。
+     * 足しっぱなしにすると座標へ溜まって群れごと流れていく。
+     *
+     * @param drone     震わせる機体。位相と震える軸を localIndex から決める。
+     * @param t         構え始めてからの経過時間（秒）。
+     * @param amplitude 震えの振幅（m）。
+     * @return 位置オフセット（m）。
+     */
     DirectX::SimpleMath::Vector3 ShiverOffset(const DroneComponent &drone, float t,
                                               float amplitude) const;
 
-    // 吹き飛ばされて漂う。タイマー管理は DroneBrainSystem 側で、ここは動きだけ。
+    /**
+     * @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
+     * @note タイマー管理は DroneBrainSystem 側で、ここは動きだけ。
+     */
     inline void ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 突き抜けた後、上方へ抜けながら減速する離脱カーブ。その場で急旋回させると
-    // 突撃の勢いが嘘になるので、一度抜けさせてから MoveToTarget に復帰を任せる。
+    /**
+     * @brief 突き抜けた後、上方へ抜けながら減速する離脱カーブ。
+     *
+     * その場で急旋回させると突撃の勢いが嘘になるので、一度抜けさせてから MoveToTarget に復帰を任せる。
+     */
     inline void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 陣形へ戻る（MoveToTarget）。隊列を「直す」局面なので Idle より強い。
@@ -159,8 +186,15 @@ private:
     static constexpr float kSoftFollowDamping       = 10.0f;
     static constexpr float kSoftFollowMaxSpeedScale = 2.4f;
 
-    // slotInSquad から追従の弱さの係数を出す。後方の機ほど遅れて曲がるので、
-    // 隊列が先頭から順に曲がっていく。編隊で飛んでいるように見えるのは主にこの遅れによる。
+    /**
+     * @brief slotInSquad から追従の弱さの係数を出す。
+     *
+     * 後方の機ほど遅れて曲がるので、隊列が先頭から順に曲がっていく。
+     * 編隊で飛んでいるように見えるのは主にこの遅れによる。
+     *
+     * @param drone 係数を出す機体。
+     * @return 追従の弱さの係数。
+     */
     float SlotLag(const DroneComponent &drone) const
     {
         const float lag = 1.0f - static_cast<float>(drone.slotInSquad) * m_slotLagPerSlot;

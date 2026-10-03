@@ -62,8 +62,10 @@ public:
     // 生成済みのシーンに切り替える（所有権を受け取る）。m_currentSceneName は更新しない
     void ChangeScene(Scene *scene);
 
-    // 非同期シーン切り替え：ローディング画面を挟み、対象シーンの重い
-    // Initialize() を裏（ワーカースレッド）で走らせてから遷移する。
+    /**
+     * @brief 非同期シーン切り替え。ローディング画面を挟み、対象シーンの重い Initialize() を裏（ワーカースレッド）で走らせてから遷移する。
+     * @param name 切り替え先のシーン名。
+     */
     void ChangeSceneAsync(const std::string &name);
 
     // ============================================================
@@ -78,13 +80,19 @@ public:
     // 呼び出し側（メニューのボタン等）は「行き先を頼む」だけでよく、
     // フェードもロードも SceneLoading の存在も知らなくてよい。
 
-    // 遷移を要求する。フェードアウト→黒の瞬間に切替→フェードインを自動で行う。
-    // async=true なら SceneLoading を挟んで裏読みする。
-    // 既に遷移中なら false を返して無視する（二重遷移防止）。
+    /**
+     * @brief 遷移を要求する。フェードアウト→黒の瞬間に切替→フェードインを自動で行う。
+     * @param name  遷移先のシーン名。
+     * @param async true なら SceneLoading を挟んで裏読みする。
+     * @return 受け付けたら true。既に遷移中なら false を返して無視する（二重遷移防止）。
+     */
     bool RequestTransition(const std::string &name, bool async = false);
 
-    // 既に生成・ロード済みのシーン実体へフェード遷移する。
-    // SceneLoading が「裏読み完了した本命シーン」へ切り替えるときに使う。
+    /**
+     * @brief 既に生成・ロード済みのシーン実体へフェード遷移する。SceneLoading が「裏読み完了した本命シーン」へ切り替えるときに使う。
+     * @param readyScene 遷移先のシーン。
+     * @return 受け付けたら true。既に遷移中なら false。
+     */
     bool RequestTransition(Scene *readyScene);
 
     // 黒→表示のフェードインのみ（起動直後の初回シーンのポップイン隠し）。
@@ -107,8 +115,11 @@ public:
     // 未適用の構造変更を確定させてから、World の中身をファイルに書き出す
     void SaveScene(CCL::ECS::World *world, const std::string &filepath);
 
-    // World の中身（PersistentTag 付き以外）を全て破棄し、ファイルの内容で作り直す。
-    // ファイルが読めなければ何も壊さずに中止する
+    /**
+     * @brief World の中身（PersistentTag 付き以外）を全て破棄し、ファイルの内容で作り直す。
+     * @param world    作り直す World。所有しない。
+     * @param filepath 読み込むシーンファイル。読めなければ何も壊さずに中止する。
+     */
     void LoadScene(CCL::ECS::World *world, const std::string &filepath);
 
     Scene *GetCurrentScene() const { return currentScene; }

@@ -41,19 +41,19 @@ public:
 
     void OnGui() override;
 
-    // スケジューラへの申告。
-    //   アクションが GetComponent<T>() で行う読み書きはテンプレート引数に現れず、
-    //   そのままだとスケジューラが「BehaviorTreeComponent しか触らない」と判断して、
-    //   同じものを書く別の System と並列に走らせてしまう。
-    //   レジストリが集めた申告をここで足すことで、この System が敵の種類を知らないまま、
-    //   依存の解析を正しくする。
-    //
-    //   ただし効くのは同じステージ（優先度）にいる相手だけで、ステージが違えば型に
-    //   関係なく直列になる。今 L02_Update で AnimParametersComponent を書くのは
-    //   AnimControllerSystem だけなので、その型に限れば下の GetRunBefore と重なる。
-    //   それでも型で申告するのは、順序の宣言が名前で1対1にしか効かないのに対し、型は
-    //   それを触る全員に効くから。後から同じステージへ System を足して前後の宣言を
-    //   忘れても、型が競合していれば直列になり、順序が決まっていないと起動時のログにも出る。
+    /**
+     * @brief アクションが読み書きする型をスケジューラへ申告する（GetWriteTypes も同じ）。
+     *
+     * アクションが GetComponent<T>() で行う読み書きはテンプレート引数に現れない。
+     * そのままだとスケジューラが「BehaviorTreeComponent しか触らない」と判断して、同じものを書く別の System と並列に走らせてしまう。
+     * レジストリが集めた申告をここで足すことで、この System が敵の種類を知らないまま、依存の解析を正しくする。
+     *
+     * ただし効くのは同じステージ（優先度）にいる相手だけで、ステージが違えば型に関係なく直列になる。
+     * 今 L02_Update で AnimParametersComponent を書くのは AnimControllerSystem だけなので、その型に限れば下の GetRunBefore と重なる。
+     *
+     * それでも型で申告するのは、順序の宣言が名前で1対1にしか効かないのに対し、型はそれを触る全員に効くから。
+     * 後から同じステージへ System を足して前後の宣言を忘れても、型が競合していれば直列になり、順序が決まっていないと起動時のログにも出る。
+     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
@@ -62,8 +62,13 @@ public:
     std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
 
 private:
-    // 各エンティティにパスに対応する木を配り直す（直列）。読み込みは BTAssetCache が行い、
-    // ここは配ることと実行状態を作り直すことだけ。並列ループの前に呼ぶ。
+    /**
+     * @brief 各エンティティにパスに対応する木を配り直す（直列）。
+     *
+     * 読み込みは BTAssetCache が行い、ここは配ることと実行状態を作り直すことだけ。
+     *
+     * @note 並列ループの前に呼ぶ。
+     */
     void SyncAssets();
 
     /**
@@ -129,8 +134,14 @@ private:
                       CCL::ECS::EntityID        entity,
                       float                     dt);
 
-    // デバッグ UI。木を一覧にして、この枝を今すぐ実行するかを選べるようにする。
-    // 木のデータは書き換えず、評価を始めるノードを差し替えるだけ。
+    /**
+     * @brief デバッグ UI。木を一覧にして、この枝を今すぐ実行するかを選べるようにする。
+     *
+     * 木のデータは書き換えず、評価を始めるノードを差し替えるだけ。
+     *
+     * @param btComp 表示・操作する BT。
+     * @param entity BT を持つエンティティ。
+     */
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
 
     // DrawForcedNodeGui の再帰部分。1ノードを1行で描き、実行ボタンを付ける。

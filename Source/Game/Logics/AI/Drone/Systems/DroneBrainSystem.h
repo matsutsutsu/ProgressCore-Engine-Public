@@ -36,19 +36,42 @@ public:
     virtual void Update(float dt) override;
 
 private:
-    // 陣形スロットへの初回接近がまだ必要か。距離だけで判定すると Idle の追従で
-    // 閾値をまたいで MoveToTarget が点滅するので、hasReachedSlot にラッチする。
+    /**
+     * @brief 陣形スロットへの初回接近がまだ必要かを返す。
+     *
+     * 距離だけで判定すると、Idle の追従で閾値をまたいで MoveToTarget が点滅する。
+     * そこで初回の到着を hasReachedSlot にラッチする。
+     *
+     * @param trans 機体の Transform。
+     * @param drone 判定する機体。到着したら hasReachedSlot を true にする。
+     * @return まだスロットへ向かう必要があれば true。
+     */
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
     // 吹き飛ばし・立て直しのタイマーを進める。true なら硬直中（通常AIを行わない）。
     bool UpdateStun(DroneComponent &drone, float dt) const;
 
-    // 突撃を切り上げるべきか（個別寿命の攻撃のみ）。主に飛距離で判定し、経過時間は
-    // 壁際・遠距離で飛距離が伸びない場合の保険にする。
+    /**
+     * @brief 突撃を切り上げるべきかを返す（個別寿命の攻撃のみ）。
+     *
+     * 主に飛距離で判定し、経過時間は壁際・遠距離で飛距離が伸びない場合の保険にする。
+     *
+     * @param trans 機体の Transform。
+     * @param drone 判定する機体。飛び出す前は飛距離の起点（chargeStartPos）と経過時間を置き直す。
+     * @param dt    経過時間（秒）。
+     * @return 飛距離か経過時間が上限を超えたら true。
+     */
     bool HasFinishedCharge(const TransformComponent &trans, DroneComponent &drone, float dt) const;
 
-    // FireCharge へ入った瞬間だけ行う初期化。ここで方向を固定するので、移動層の
-    // 「タメ→リリース」は方向を変えない直進になる（ホーミングしない）。
+    /**
+     * @brief FireCharge へ入った瞬間だけ行う初期化。
+     *
+     * ここで方向を固定するので、移動層の「タメ→リリース」は方向を変えない直進になる（ホーミングしない）。
+     *
+     * @param drone     初期化する機体。
+     * @param playerPos プレイヤーの位置（ワールド）。陣形が突撃方向を書かなかったときの狙いに使う。
+     * @param hasPlayer プレイヤーが居るか。false なら突撃方向はモデルの前方（-Z）。
+     */
     void BeginCharge(DroneComponent                     &drone,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      bool                                hasPlayer) const;

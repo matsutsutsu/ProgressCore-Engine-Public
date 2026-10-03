@@ -64,9 +64,14 @@ namespace BTEditor
     //   ID はこちらが uint32_t で発行して預けているだけなので、切り詰めても情報は落ちない。
     inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
 
-    // "Assets/BehaviorTree/Common.json" → "Common.json"。
-    //   std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して
-    //   std::string へそのまま繋げないため（パスは '/' 区切りに揃えてある）。
+    /**
+     * @brief パスからファイル名を取り出す（"Assets/BehaviorTree/Common.json" → "Common.json"）。
+     *
+     * std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して std::string へそのまま繋げないため。
+     *
+     * @param path '/' 区切りに揃えたパス。
+     * @return ファイル名。
+     */
     inline std::string FileNameOf(const std::string &path)
     {
         const size_t slash = path.find_last_of("/\\");

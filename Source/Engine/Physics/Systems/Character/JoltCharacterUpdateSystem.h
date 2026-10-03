@@ -49,16 +49,37 @@ private:
     // isTeleported が立っていれば、CharacterVirtual を Transform のワールド位置・回転へ移す
     void ApplyTeleportIfNeeded(TransformComponent &trans, JPH::CharacterVirtual *ch);
 
-    // 重力積分とジャンプ処理を行い、新たなY軸の速度を返す。
-    //
-    // jumpImpulse をここで消費する（1フレーム限りの命令）。
+    /**
+     * @brief 重力積分とジャンプ処理を行い、新たなY軸の速度を返す。
+     * @param safeDt     経過時間（秒）。0 にならないよう丸めた値。
+     * @param currentVy  今のY軸の速度（m/秒）。
+     * @param config     キャラクターの設定。
+     * @param movement   jumpImpulse を持つ移動の命令。jumpImpulse はここで消費する（1フレーム限りの命令）。
+     * @param isGrounded 接地しているか。
+     * @param gravityY   重力加速度のY成分（m/秒²）。
+     * @return 新たなY軸の速度（m/秒）。
+     */
     float CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY);
 
-    // 現在速度から目標速度へ Lerp で寄せ（加速/減速でレートを分ける）、新たな水平速度を返す。
-    //
-    // overrideSpeed をここで消費する（1フレーム限りの依頼）。
+    /**
+     * @brief 現在速度から目標速度へ Lerp で寄せ（加速/減速でレートを分ける）、新たな水平速度を返す。
+     * @param safeDt   経過時間（秒）。0 にならないよう丸めた値。
+     * @param config   キャラクターの設定（加速・減速のレート）。
+     * @param movement 目標速度と overrideSpeed を持つ移動の命令。overrideSpeed はここで消費する（1フレーム限りの依頼）。
+     * @return 新たな水平速度（m/秒）。
+     */
     DirectX::SimpleMath::Vector3 CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement);
 
-    // ExtendedUpdate で地形との干渉を解き、結果を Transform と presence プロキシへ書き戻す
+    /**
+     * @brief ExtendedUpdate で地形との干渉を解き、結果を Transform と presence プロキシへ書き戻す。
+     * @param safeDt      CharacterVirtual の積分に使う時間（秒）。スローを反映した値。
+     * @param moveDt      presence プロキシの追従（MoveKinematic）に使う実時間（秒）。
+     *                    スロー中に safeDt を渡すと、物理の Step が実時間で積分してプロキシが飛んでいくため分けている。
+     * @param joltManager 物理の管理。所有しない。
+     * @param ch          更新するキャラクター。所有しない。
+     * @param config      キャラクターの設定。
+     * @param trans       結果を書き戻す Transform。
+     * @param id          キャラクターのエンティティ。
+     */
     void UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, CCL::ECS::EntityID id);
 };

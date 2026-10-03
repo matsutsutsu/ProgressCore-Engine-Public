@@ -22,10 +22,13 @@ public:
     void Update(float dt) override;
 
 private:
-    // タイトルの文字とボタンを作る。
-    // Initialize ではなく最初の Update で呼ぶ。System の Initialize は登録時（TitleScene::Initialize の中）に
-    // 走り、その後で背景のレベルを読むと、LoadScene が PersistentTag の無いエンティティを全部消して
-    // メニューも消えるため
+    /**
+     * @brief タイトルの文字とボタンを作る。
+     *
+     * @note Initialize ではなく最初の Update で呼ぶ。
+     *       System の Initialize は登録時（TitleScene::Initialize の中）に走り、その後で背景のレベルを読むと、
+     *       LoadScene が PersistentTag の無いエンティティを全部消してメニューも消えるため。
+     */
     void SpawnMenu();
 
     bool m_menuSpawned   = false; // メニューを作ったか（1回だけ作るため）

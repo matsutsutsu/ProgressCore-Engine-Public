@@ -104,9 +104,14 @@ struct EditorContext
                                  : selectedEntities.back();
     }
 
-    // 一括操作（複製・削除）用。選択セットから「祖先も選択されている」ものを除いた
-    // 集合を返す。親を操作すれば子も一緒に処理されるので、二重に処理しないようにする。
-    //   guard は親子関係が循環していた場合に止めるための上限。
+    /**
+     * @brief 一括操作（複製・削除）用に、選択セットから「祖先も選択されている」ものを除いた集合を返す。
+     *
+     * 親を操作すれば子も一緒に処理されるので、二重に処理しないようにする。
+     *
+     * @return 祖先が選択されていないエンティティの列。
+     * @note 親子関係が循環していた場合に備え、祖先をたどる回数に上限（guard）を置いている。
+     */
     std::vector<CCL::ECS::EntityID> GetTopLevelSelection() const
     {
         std::vector<CCL::ECS::EntityID> result;

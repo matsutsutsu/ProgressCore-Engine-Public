@@ -32,9 +32,17 @@ using namespace DirectX::SimpleMath;
 // JSON への書き出しも CameraPathEditorWindow::SavePathToJson の1か所だけを使う。
 namespace
 {
-    // レイと AABB で、最も手前に当たったエンティティを返す（ピッキング）。
-    //   カリング用に各描画エンティティが持つ worldAABB(DirectX::BoundingBox)を使うので、
-    //   追加のデータは要らない。BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける。
+    /**
+     * @brief レイと AABB で、最も手前に当たったエンティティを返す（ピッキング）。
+     *
+     * カリング用に各描画エンティティが持つ worldAABB（DirectX::BoundingBox）を使うので、追加のデータは要らない。
+     * BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける。
+     *
+     * @param world  探す World。
+     * @param origin レイの始点（ワールド）。
+     * @param dir    レイの向き。
+     * @return 最も手前に当たったエンティティ。当たらなければ InvalidEntityID。
+     */
     CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
                                   const Vector3 &origin, const Vector3 &dir)
     {

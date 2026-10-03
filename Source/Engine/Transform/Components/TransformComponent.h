@@ -115,8 +115,10 @@ struct TransformComponent
         return DirectX::XMFLOAT3(worldMatrix._41, worldMatrix._42, worldMatrix._43);
     }
 
-    // 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
-    // ロジックの判定には GetWorldPosition()（worldMatrix 基準）を使うこと
+    /**
+     * @brief 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
+     * @return 描画補間済みのワールド座標。ロジックの判定には GetWorldPosition()（worldMatrix 基準）を使うこと。
+     */
     DirectX::XMFLOAT3 GetRenderWorldPosition() const
     {
         return {renderWorldMatrix._41, renderWorldMatrix._42, renderWorldMatrix._43};
@@ -167,8 +169,11 @@ struct TransformComponent
         return out;
     }
 
-    // worldMatrix をその場で計算する。親の行列を渡せば親子を反映する。
-    // 通常は TransformUpdateSystem が計算するので、System の外で今すぐ行列が欲しいときだけ使う
+    /**
+     * @brief worldMatrix をその場で計算する。
+     * @param parentMatrix 親のワールド行列。渡せば親子を反映する。
+     * @note 通常は TransformUpdateSystem が計算するので、System の外で今すぐ行列が欲しいときだけ使う。
+     */
     void UpdateMatrix(const DirectX::XMMATRIX &parentMatrix = DirectX::XMMatrixIdentity())
     {
         using namespace DirectX;

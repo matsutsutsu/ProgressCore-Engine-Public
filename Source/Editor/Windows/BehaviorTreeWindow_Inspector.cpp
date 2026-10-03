@@ -9,11 +9,12 @@
 
 using namespace BTEditor;
 
-// 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
-// 記録は関数の最後にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
-// イテレータを使い終わってから行う。
 void BehaviorTreeWindow::DrawInspector()
 {
+    // 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
+    // 記録は関数の最後にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
+    // イテレータを使い終わってから行う。
+
     ZoneScopedN("BTW: Inspector");
 
     ImGui::Text("インスペクタ (Inspector)");

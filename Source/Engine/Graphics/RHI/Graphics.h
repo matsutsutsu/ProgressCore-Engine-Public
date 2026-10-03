@@ -152,9 +152,11 @@ private:
 
     void SetupRenderPipeline();
 
-    // 既定のレンダーパス構成を m_pipeline へ登録する（登録順 = 実行順）。
-    // どのパスをどの順で回すかはこのエンジンの絵作りの仕様なので、汎用の RenderPipeline ではなく
-    // 描画全体をまとめる Graphics が決める。
+    /**
+     * @brief 既定のレンダーパス構成を m_pipeline へ登録する（登録順 = 実行順）。
+     *
+     * どのパスをどの順で回すかはこのエンジンの絵作りの仕様なので、汎用の RenderPipeline ではなく描画全体をまとめる Graphics が決める。
+     */
     void BuildDefaultRenderPasses();
 
     // パイプラインの実行後に、共通の定数バッファ・サンプラー・影の SRV を外す

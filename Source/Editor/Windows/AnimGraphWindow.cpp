@@ -230,10 +230,11 @@ AnimGraphWindow::~AnimGraphWindow()
 // 階層ナビゲーション
 // =====================================================================
 
-// m_editPath に沿って m_rootGraph を辿り、「今編集中の階層グラフ」を返す。
-//   途中でサブマシンが見つからない（削除された等）場合は root へ戻す（安全策）。
 AnimStateGraph &AnimGraphWindow::CurrentView()
 {
+    // m_editPath に沿って m_rootGraph を辿り、「今編集中の階層グラフ」を返す。
+    //   途中でサブマシンが見つからない（削除された等）場合は root へ戻す（安全策）。
+
     AnimStateGraph *g = &m_rootGraph;
     for (uint32_t h : m_editPath)
     {
@@ -254,9 +255,10 @@ AnimStateGraph &AnimGraphWindow::CurrentView()
     return *g;
 }
 
-// 指定サブマシンが現在の階層に実在する時だけ潜る。
 void AnimGraphWindow::EnterSubMachine(uint32_t subMachineHash)
 {
+    // 指定サブマシンが現在の階層に実在する時だけ潜る。
+
     AnimStateGraph &view = CurrentView();
     for (auto &s : view.states)
         if (s.stateHash == subMachineHash && s.isSubMachine && s.subGraph)
@@ -269,10 +271,11 @@ void AnimGraphWindow::EnterSubMachine(uint32_t subMachineHash)
         }
 }
 
-// 階層全体で衝突しない stateHash を採る（同名衝突は評価器の誤爆やパス崩れの元）。
-//   衝突時は name に "_2","_3"... を付与して一意化し、その最終 name の hash を返す。
 uint32_t AnimGraphWindow::MakeUniqueStateHash(std::string &name)
 {
+    // 階層全体で衝突しない stateHash を採る（同名衝突は評価器の誤爆やパス崩れの元）。
+    //   衝突時は name に "_2","_3"... を付与して一意化し、その最終 name の hash を返す。
+
     const std::string base = name;
     for (int i = 1; i < 10000; ++i)
     {
@@ -283,7 +286,6 @@ uint32_t AnimGraphWindow::MakeUniqueStateHash(std::string &name)
     return CCL::Utils::HashString(name.c_str());
 }
 
-// 「Root > Combat > ...」のパンくず。各段クリックでその階層へ戻る。
 void AnimGraphWindow::DrawBreadcrumb()
 {
     if (ImGui::Button("Root"))
@@ -1849,9 +1851,10 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
     }
 }
 
-// パラメータ名変更時、全遷移・AnyState遷移の条件参照を張り替える。
 void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash)
 {
+    // パラメータ名変更時、全遷移・AnyState遷移の条件参照を張り替える。
+
     auto patch = [&](std::vector<AnimTransition> &transitions) {
         for (auto &t : transitions)
             for (auto &c : t.conditions)

@@ -51,8 +51,11 @@ namespace CCL::AI::Formation
         // 全小隊の状態（小隊陣形のみ使用。未登録なら nullptr）。
         const ::SquadRegistry *squads = nullptr;
 
-        // 狙う向き（水平・正規化済み）。攻撃陣形は playerPos を直接見ず必ずこれを使う。
-        // 固定前はボス→プレイヤーの方向、固定後は固定した方向を返す。
+        /**
+         * @brief 狙う向き（水平・正規化済み）を返す。攻撃陣形は playerPos を直接見ず必ずこれを使う。
+         * @return 固定前はボス→プレイヤーの方向、固定後は固定した方向。
+         *         向きが求まらない（ほぼ同じ位置）ときは +Z。
+         */
         DirectX::SimpleMath::Vector3 AimDirection() const
         {
             using namespace DirectX::SimpleMath;

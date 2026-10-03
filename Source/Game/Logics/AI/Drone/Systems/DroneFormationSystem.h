@@ -36,17 +36,26 @@ public:
 
     void Initialize() override;
 
-    // DroneCommand が drone.currentFormation を書き、こちらがそれを読む。
-    //   DroneManagerSystem を足してあるのは、スポーン時の ReindexAllDrones() が
-    //   localIndex / totalDrones を書き直すため（陣形はそれを添字にして座標を出す）。
+    /**
+     * @brief 同じステージで先に走らせる System を宣言する。
+     *
+     * DroneCommand が drone.currentFormation を書き、こちらがそれを読む。
+     *
+     * DroneManagerSystem を足してあるのは、スポーン時の ReindexAllDrones() が localIndex / totalDrones を書き直すため。
+     * 陣形はそれを添字にして座標を出す。
+     */
     std::vector<const char *> GetRunAfter() const override
     {
         return {"BehaviorTreeSystem", "DroneCommandSystem", "SquadUpdateSystem",
                 "DroneManagerSystem"};
     }
 
-    // MakeContext がボスの Transform と BossCommandComponent を View で引くので申告する
-    // （テンプレート引数には足せない。ForEach の絞り込みまで変わってしまう）。
+    /**
+     * @brief テンプレート引数以外に読む型を申告する。
+     *
+     * MakeContext がボスの Transform と BossCommandComponent を View で引くので申告する。
+     * テンプレート引数には足せない。ForEach の絞り込みまで変わってしまう。
+     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
         auto types = Filter::GetReadTypes();
@@ -62,8 +71,14 @@ public:
     void OnGui() override;
 
 private:
-    // ボス位置・プレイヤー位置などの情報を組み立てる。
-    // 狙いの固定（下の m_lockedAimDir）を更新するので const ではない。
+    /**
+     * @brief 陣形の計算に渡す情報（ボス位置・プレイヤー位置など）を組み立てる。
+     *
+     * 狙いの固定（m_lockedAimDir）を更新するので const ではない。
+     *
+     * @param dt 経過時間（秒）。陣形の中心の速度を測るのに使う。
+     * @return 今フレームの陣形計算に渡す情報。
+     */
     CCL::AI::Formation::FormationContext MakeContext(float dt);
 
     float m_elapsed = 0.0f; // 陣形の回転に使う経過時間 [秒]

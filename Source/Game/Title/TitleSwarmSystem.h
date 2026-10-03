@@ -34,13 +34,20 @@ public:
 
     void OnGui() override; // 状態の確認用（ENABLE_EDITOR でないビルドでは何もしない）
 
-    // 生成した直後に Transform の座標を書くので申告する。
-    // テンプレート引数に足すと ForEach の対象まで変わってしまうので、ここで足す
+    /**
+     * @brief テンプレート引数以外に書く型を申告する。
+     *
+     * 生成した直後に Transform の座標を書くので申告する。
+     * テンプレート引数に足すと ForEach の対象まで変わってしまうので、ここで足す。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
 private:
-    // ボス像の位置を返す。輪の中心はここで決まるので、像を動かせば輪も付いてくる。
-    // まだ生成されていなければ false（次のフレームでもう一度探す）
+    /**
+     * @brief ボス像の位置を返す。輪の中心はここで決まるので、像を動かせば輪も付いてくる。
+     * @param out ボス像の位置（ワールド）を受け取る。
+     * @return 見つかれば true。まだ生成されていなければ false（次のフレームでもう一度探す）。
+     */
     bool ResolveBossPos(DirectX::SimpleMath::Vector3 &out);
 
     // 輪の上の持ち場（本編と同じ式）。回り続けるので毎フレーム変わる

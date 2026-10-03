@@ -71,11 +71,17 @@ private:
     void CreateLineMesh(ID3D11Device *device);
     void CreateTriangleFaceMesh(ID3D11Device *device);
 
-    // カリングせずに線を1本積む。
-    //   円やカプセルのように1つの形を線の集まりで表すものは、線ごとに視錐台と比べてはいけない。
-    //   m_frustum は Render でしか更新されず、積むときは必ず1フレーム前の視錐台を見るので、
-    //   カメラを回すと古い視錐台の面に沿って形がまっすぐ切れて見える。
-    //   形の単位でまとめて判定し、中の線はこれで積む
+    /**
+     * @brief カリングせずに線を1本積む。
+     *
+     * 円やカプセルのように1つの形を線の集まりで表すものは、線ごとに視錐台と比べてはいけない。
+     * m_frustum は Render でしか更新されず、積むときは必ず1フレーム前の視錐台を見るので、カメラを回すと古い視錐台の面に沿って形がまっすぐ切れて見える。
+     * 形の単位でまとめて判定し、中の線はこれで積む。
+     *
+     * @param p1    始点（ワールド）。
+     * @param p2    終点（ワールド）。
+     * @param color 線の色。
+     */
     void DrawLineNoCull(const DirectX::XMFLOAT3 &p1, const DirectX::XMFLOAT3 &p2, const DirectX::XMFLOAT4 &color);
 
 private:

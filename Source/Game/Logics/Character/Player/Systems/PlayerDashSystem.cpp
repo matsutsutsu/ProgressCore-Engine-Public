@@ -52,9 +52,10 @@ void PlayerDashSystem::Update(float rawDt)
     });
 }
 
-// ヒットストップ中は localDt=0 なので無敵タイマーは減らず、接近を始める前の停止中も無敵が続く。
 void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &dash)
 {
+    // ヒットストップ中は localDt=0 なので無敵タイマーは減らず、接近を始める前の停止中も無敵が続く。
+
     if (!dash.isInvincible) return;
     if (auto *health = m_world->GetComponent<HealthComponent>(id))
     {
@@ -63,7 +64,6 @@ void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &d
     }
 }
 
-// 通常のダッシュより優先する。世界はスローのまま、プレイヤーだけ実時間の速さでボスへ近づく。
 bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, const TimeContext *timeCtx,
                                       DashComponent &dash, CharacterMovementComponent &movement,
                                       const TransformComponent &trans, TimeStateComponent &time,
@@ -216,9 +216,10 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
     }
 }
 
-// カメラ(Engine)が DashComponent(Game) を読まずに済むよう、状態を持つ側から書き込む。
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {
+    // カメラ(Engine)が DashComponent(Game) を読まずに済むよう、状態を持つ側から書き込む。
+
     m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
         auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
         if (!tps || tps->target.id != playerID) return;

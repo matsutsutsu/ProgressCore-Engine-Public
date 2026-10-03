@@ -88,48 +88,84 @@ private:
     // フレーム単位
     // =======================================================================
 
-    /// 視点入力を読み、入力を無効にする条件を確定する。
+    /**
+     * @brief 視点入力を読み、入力を無効にする条件を確定する。
+     * @param inputAPI 入力を読む API。
+     * @return このフレームの視点入力。
+     */
     FrameInput ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const;
 
-    /// カメラ1台分の姿勢を確定させる。
-    /// @return このカメラがカーソル固定を要求するか
+    /**
+     * @brief カメラ1台分の姿勢を確定させる。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     * @return このカメラがカーソル固定を要求するなら true。
+     */
     bool UpdateCamera(CameraContext &c) const;
 
     // =======================================================================
     // どの向きから見るか（オービット角）
     // =======================================================================
 
-    /// オービット角（currentYaw / currentPitch）を確定させる。
+    /**
+     * @brief オービット角（currentYaw / currentPitch）を確定させる。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     */
     void UpdateOrbitAngles(CameraContext &c) const;
 
-    /// 手動の視点入力をオービット角へ積む。
+    /**
+     * @brief 手動の視点入力をオービット角へ積む。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     */
     void ApplyManualLook(CameraContext &c) const;
 
-    /// 敵が画面中央から外れた分だけヨー（左右）を自動補正する。
+    /**
+     * @brief 敵が画面中央から外れた分だけヨー（左右）を自動補正する。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     */
     void ApplyLockOnYawAssist(CameraContext &c) const;
 
-    /// ピッチ（上下）を lockOnPitch へ寄せ、ロックオン中の見上げ角を保つ。
+    /**
+     * @brief ピッチ（上下）を lockOnPitch へ寄せ、ロックオン中の見上げ角を保つ。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     */
     void ApplyLockOnPitchAssist(CameraContext &c) const;
 
     // =======================================================================
     // どこを中心に、どこへ置くか
     // =======================================================================
 
-    /// 注視点と回り込み中心を決め、そこへ1フレーム分追従する
-    /// （結果は currentLookAt / currentPivot に入る）。
-    /// @return 衝突を考える前の基準距離（m）。実際の距離は ResolveCameraPosition が決める
+    /**
+     * @brief 注視点と回り込み中心を決め、そこへ1フレーム分追従する（結果は currentLookAt / currentPivot に入る）。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     * @return 衝突を考える前の基準距離（m）。実際の距離は ResolveCameraPosition が決める。
+     */
     float UpdateFraming(CameraContext &c) const;
 
-    /// 球面座標から、pivot から見てカメラが立つ方向を求める。
-    /// pitch が正のときカメラは pivot より下に来る（見上げる）。
+    /**
+     * @brief 球面座標から、pivot から見てカメラが立つ方向を求める。
+     * @param yawDeg   ヨー角（度）。
+     * @param pitchDeg ピッチ角（度）。正のときカメラは pivot より下に来る（見上げる）。
+     * @return pivot からカメラへの方向（正規化済み）。
+     */
     static DirectX::SimpleMath::Vector3 ComputeBackwardDir(float yawDeg, float pitchDeg);
 
-    /// 地形を避けたカメラ位置を求める。currentCamDistance を更新する。
+    /**
+     * @brief 地形を避けたカメラ位置を求める。currentCamDistance を更新する。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     * @param backwardDir     pivot からカメラへの方向（ComputeBackwardDir の結果）。
+     * @param desiredDistance 衝突を考える前の基準距離（m）。
+     * @return カメラ位置（ワールド）。
+     */
     DirectX::SimpleMath::Vector3 ResolveCameraPosition(
         CameraContext &c, const DirectX::SimpleMath::Vector3 &backwardDir,
         float desiredDistance) const;
 
-    /// 頭の高さへ持ち上げた後の位置が地形へ入っていないか確認し、入っていれば押し戻す。
+    /**
+     * @brief 頭の高さへ持ち上げた後の位置が地形へ入っていないか確認し、入っていれば押し戻す。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     * @param liftedPos 持ち上げた後のカメラ位置（ワールド）。
+     * @return 地形に入っていなければ liftedPos、入っていれば押し戻した位置。
+     */
     DirectX::SimpleMath::Vector3 ResolveHeadLiftCollision(
         const CameraContext &c, const DirectX::SimpleMath::Vector3 &liftedPos) const;
 
@@ -137,7 +173,12 @@ private:
     // 出力
     // =======================================================================
 
-    /// 画角を進め、確定した姿勢を Transform と VirtualCamera へ書き出す。
+    /**
+     * @brief 画角を進め、確定した姿勢を Transform と VirtualCamera へ書き出す。
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     * @param finalPos    確定したカメラ位置（ワールド）。
+     * @param backwardDir pivot からカメラへの方向。
+     */
     void WriteCameraResult(CameraContext &c, const DirectX::SimpleMath::Vector3 &finalPos,
                            const DirectX::SimpleMath::Vector3 &backwardDir) const;
 };

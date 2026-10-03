@@ -15,8 +15,16 @@
 class MaterialShader : public IMaterialShader
 {
 public:
-    // cso は起動時に読むもの、hlsl はホットリロードで監視してコンパイルし直すもの。
-    // psoDesc が nullptr なら PSO を持たない（各パスの既定を使う）
+    /**
+     * @brief マテリアル用のシェーダーを作る。
+     *
+     * @param device     シェーダーを作るデバイス。
+     * @param vsCsoPath  頂点シェーダーの cso。起動時に読む。
+     * @param vsHlslPath 頂点シェーダーの hlsl。ホットリロードで監視してコンパイルし直す。
+     * @param psCsoPath  ピクセルシェーダーの cso。起動時に読む。
+     * @param psHlslPath ピクセルシェーダーの hlsl。ホットリロードで監視してコンパイルし直す。
+     * @param psoDesc    PSO の設定。nullptr なら PSO を持たない（各パスの既定を使う）。
+     */
     MaterialShader(ID3D11Device      *device,
                    const std::string &vsCsoPath, const std::wstring &vsHlslPath,
                    const std::string &psCsoPath, const std::wstring &psHlslPath,

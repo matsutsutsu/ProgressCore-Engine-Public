@@ -42,7 +42,17 @@ private:
         CCL::ECS::EntityID flash = CCL::ECS::InvalidEntityID; // ストックが増えた瞬間の光（加算合成）
     };
 
-    // ◆1つ分の UI エンティティ（回した正方形）を作る
+    /**
+     * @brief ◆1つ分の UI エンティティ（回した正方形）を作る。
+     * @param canvas    親にするキャンバス。
+     * @param name      エンティティ名。
+     * @param centerX   ◆の中心の横位置（px）。縦位置はゲージの行で固定。
+     * @param size      ◆の一辺（px）。
+     * @param color     ◆の色。
+     * @param sortOrder 描画順。大きいほど手前。
+     * @param additive  加算合成で描くか（光るフラッシュの層だけ true）。
+     * @return 作ったエンティティ。
+     */
     CCL::ECS::EntityID SpawnDiamond(CCL::ECS::EntityID canvas, const char *name, float centerX, float size,
                                     const DirectX::XMFLOAT4 &color, int sortOrder, bool additive);
 

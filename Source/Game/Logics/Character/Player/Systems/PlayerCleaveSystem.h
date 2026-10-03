@@ -51,22 +51,49 @@ private:
     // 準備(Ready)に入る。照準方向を書き、全体スローとモノクロを始める。
     void EnterReady(CleaveComponent &cleave, const DirectX::SimpleMath::Vector3 &dir);
 
-    // チェイン段数（0/1/2 に丸める）に応じたスロー倍率と準備の猶予を返す。
-    // enableStageDecay が false なら常に段1の値を返す。
+    /**
+     * @brief チェイン段数に応じたスロー倍率を返す。
+     * @param cleave 段数と調整値を持つ切り払いの状態。段数は 0/1/2 に丸める。
+     * @return スロー倍率。enableStageDecay が false なら常に段1の値。
+     */
     float CurrentSlowScale(const CleaveComponent &cleave) const;
+
+    /**
+     * @brief チェイン段数に応じた準備の猶予を返す。
+     * @param cleave 段数と調整値を持つ切り払いの状態。段数は 0/1/2 に丸める。
+     * @return 準備の猶予（秒）。enableStageDecay が false なら常に段1の値。
+     */
     float CurrentReadyDuration(const CleaveComponent &cleave) const;
 
-    // このフレームの全体スローを要求する（Time::SustainWorldSlow。プレイヤー自身も遅くなる）。
-    // 呼ぶのをやめると slowDuration 秒で等速へ戻る。
+    /**
+     * @brief このフレームの全体スローを要求する（Time::SustainWorldSlow。プレイヤー自身も遅くなる）。
+     * @param cleave スロー倍率と slowDuration を持つ切り払いの状態。
+     * @note 呼ぶのをやめると slowDuration 秒で等速へ戻る。
+     */
     void HoldGlobalSlow(const CleaveComponent &cleave);
     // 全体スローをすぐに解除する（突進の瞬間に等速へ戻す）。
     void ClearGlobalSlow();
     // 画面のモノクロ演出の ON/OFF（JustEvadeEffectComponent の hold を使う）。
     void SetMonochrome(bool on);
-    // プレイヤーを照準の水平方向へ向ける。
+    /**
+     * @brief プレイヤーを照準の水平方向へ向ける。
+     *
+     * 攻撃時に敵の方へ向く処理と同じ attackFaceYaw/Timer を使い、PlayerMoveSystem に照準方向へ向けさせる。
+     *
+     * @param player 向きを書くプレイヤーの状態。
+     * @param dir    照準の方向（ワールド）。
+     * @note 準備中は毎フレーム呼び、短いタイマーを書き直し続ける。
+     */
     void FaceAim(PlayerComponent &player, const DirectX::SimpleMath::Vector3 &dir);
 
-    // このプレイヤーを映す TPS カメラへ、寄り（クローズアップ）の要求を書く。
+    /**
+     * @brief このプレイヤーを映す TPS カメラへ、寄り（クローズアップ）の要求を書く。
+     *
+     * PlayerDashSystem::PushWideFovRequest と同じ形で、要求だけを書く（カメラは切り払いのことを知らない）。
+     *
+     * @param playerID 映されているプレイヤー。target がこれの TPS カメラだけに書く。
+     * @param close    寄るなら true、戻すなら false。
+     */
     void PushCameraCloseUp(CCL::ECS::EntityID playerID, bool close);
 
     // 突進(Lunging)を始める。ストックを1消費し、スローとモノクロを解除する。
@@ -79,6 +106,11 @@ private:
     // 準備の猶予が切れたときに、待機(Idle)へ戻してクールダウンに入る。
     void ExitToIdle(CleaveComponent &cleave, RootMotionComponent *rm);
 
-    // 前方の扇の中にいるドローンを進行方向へ吹き飛ばす（ドローンだけを走査するので、ボスは対象外）。
+    /**
+     * @brief 前方の扇の中にいるドローンを進行方向へ吹き飛ばす（ドローンだけを走査するので、ボスは対象外）。
+     * @param origin 扇の起点（ワールド）。
+     * @param cleave 扇の範囲と吹き飛ばしの強さを持つ切り払いの状態。
+     * @note 全ドローンを走査して距離で判定している。ViewEach なのでメモリ確保は無く、コストは距離計算だけ。
+     */
     void ApplyFanKnockback(const DirectX::SimpleMath::Vector3 &origin, CleaveComponent &cleave);
 };

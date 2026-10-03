@@ -39,12 +39,12 @@ public:
                                 JPH::Vec3Arg                   inContactNormal,
                                 JPH::CharacterContactSettings &ioSettings) override;
 
-    // 接触継続フレームに呼ばれる。Added と全く同じ扱いにする。
-    //
-    // CharacterVirtual は前フレームの接触を mListenerContacts に持ち越し、
-    // 既知の対を Added ではなく Persisted に回す(CharacterVirtual.cpp)。
-    // ここを実装しないと重なり続けている間の接触が全て消え、攻撃判定の窓より
-    // 先に武器が相手へ入っているケース（突進攻撃など）が丸ごと不発になる。
+    /**
+     * @brief 接触継続フレームに呼ばれる。Added と全く同じ扱いにする。
+     *
+     * CharacterVirtual は前フレームの接触を mListenerContacts に持ち越し、既知の対を Added ではなく Persisted に回す（CharacterVirtual.cpp）。
+     * ここを実装しないと重なり続けている間の接触が全て消え、攻撃判定の窓より先に武器が相手へ入っているケース（突進攻撃など）が丸ごと不発になる。
+     */
     virtual void OnContactPersisted(const JPH::CharacterVirtual   *inCharacter,
                                     const JPH::BodyID             &inBodyID2,
                                     const JPH::SubShapeID         &inSubShapeID2,
@@ -52,9 +52,11 @@ public:
                                     JPH::Vec3Arg                   inContactNormal,
                                     JPH::CharacterContactSettings &ioSettings) override;
 
-    // 接触が解消された時に呼ばれる。
-    //
-    // 計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
+    /**
+     * @brief 接触が解消された時に呼ばれる。
+     *
+     * 計測ログのみ。接触が正しく解放されているかの確認用で、判定には使わない。
+     */
     virtual void OnContactRemoved(const JPH::CharacterVirtual *inCharacter,
                                   const JPH::BodyID           &inBodyID2,
                                   const JPH::SubShapeID       &inSubShapeID2) override;
@@ -70,8 +72,13 @@ private:
                           JPH::Vec3Arg                 inContactNormal,
                           const char                  *inPhase);
 
-    // 攻撃レイヤー(PLAYER_ATTACK / BOSS_ATTACK)との接触かを判定する。
-    //
-    // 地面・壁・相手本体まで出すとログが埋まるため、計測は攻撃判定だけに絞る。
+    /**
+     * @brief 攻撃レイヤー（PLAYER_ATTACK / BOSS_ATTACK）との接触かを判定する。
+     *
+     * 地面・壁・相手本体まで出すとログが埋まるため、計測は攻撃判定だけに絞る。
+     *
+     * @param bodyID 接触相手のボディ。
+     * @return 攻撃レイヤーなら true。
+     */
     bool IsAttackLayer(const JPH::BodyID &bodyID) const;
 };

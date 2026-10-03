@@ -39,9 +39,16 @@ public:
     // フレーム先頭で RT プールのインデックスをリセットする。
     void BeginFrame() noexcept { m_poolIndex = 0; }
 
-    // src を変換して内部の RenderTarget へ描き、その SRV を返す。失敗したら src をそのまま返す。
-    //
-    // 返す SRV は、同じ RenderTarget が次に使い回されるまで有効（そのフレームの ImGui 描画までは使える）。
+    /**
+     * @brief src を変換して内部の RenderTarget へ描き、その SRV を返す。
+     * @param dc  描画に使うデバイスコンテキスト。
+     * @param src 表示したいテクスチャ。
+     * @param w   src の幅（px）。0 なら既定の幅で描く。
+     * @param h   src の高さ（px）。縦横比を保つのに使う。
+     * @param p   表示の仕方（種類・露出・チャンネルなど）。
+     * @return 変換した SRV。失敗したら src をそのまま返す。
+     *         同じ RenderTarget が次に使い回されるまで有効（そのフレームの ImGui 描画までは使える）。
+     */
     ID3D11ShaderResourceView *Visualize(ID3D11DeviceContext      *dc,
                                         ID3D11ShaderResourceView *src, uint32_t w, uint32_t h,
                                         const RTVisualizeParams &p);

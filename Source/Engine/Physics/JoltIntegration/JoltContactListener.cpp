@@ -7,25 +7,33 @@
 
 namespace
 {
-    // 攻撃判定に関わる接触だけを計測対象にする。
-    //
-    // 地面や壁との接触まで出すとログが埋まって読めなくなるため、
-    // センサー(＝Hitbox の剣)が絡む対だけに絞る。
+    /**
+     * @brief 攻撃判定に関わる接触かを返す。計測対象を絞るのに使う。
+     *
+     * 地面や壁との接触まで出すとログが埋まって読めなくなるため、センサー（＝Hitbox の剣）が絡む対だけに絞る。
+     *
+     * @param a 接触の片方。
+     * @param b 接触のもう片方。
+     * @return どちらかがセンサーなら true。
+     */
     bool IsAttackContact(const JPH::Body &a, const JPH::Body &b)
     {
         return a.IsSensor() || b.IsSensor();
     }
 
-    // 背景（壁・床・見えない壁）が絡む接触か。
-    //
-    // OnContactPersisted は接触が続く限り毎フレーム呼ばれるため、地面に載っている
-    // 剛体があるだけでイベントバッファが背景との接触で埋まる。購読側
-    // (HitboxCollisionSystem / JustEvadeSystem) は全イベントを自前の vector へ
-    // コピーしてから絞り込むので、コストは二重に乗る。
-    //
-    // 背景との接触を必要とする購読者はいない（攻撃レイヤーは pair フィルタで
-    // そもそも壁と当たらない）ので、ここで捨ててよい。
-    // キャラ側の JoltCharacterContactListener も同じ条件で捨てている。
+    /**
+     * @brief 背景（壁・床・見えない壁）が絡む接触かを返す。
+     *
+     * OnContactPersisted は接触が続く限り毎フレーム呼ばれるため、地面に載っている剛体があるだけでイベントバッファが背景との接触で埋まる。
+     * 購読側（HitboxCollisionSystem / JustEvadeSystem）は全イベントを自前の vector へコピーしてから絞り込むので、コストは二重に乗る。
+     *
+     * 背景との接触を必要とする購読者はいない（攻撃レイヤーは pair フィルタでそもそも壁と当たらない）ので、ここで捨ててよい。
+     * キャラ側の JoltCharacterContactListener も同じ条件で捨てている。
+     *
+     * @param a 接触の片方。
+     * @param b 接触のもう片方。
+     * @return 背景が絡めば true。
+     */
     bool IsStaticWorldContact(const JPH::Body &a, const JPH::Body &b)
     {
         return PhysicsLayers::IsStaticWorldLayer(a.GetObjectLayer()) || PhysicsLayers::IsStaticWorldLayer(b.GetObjectLayer());

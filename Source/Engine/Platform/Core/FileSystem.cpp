@@ -27,9 +27,14 @@ namespace
     // これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する。
     constexpr double kSlowFileReadMs = 2.0;
 
-    // 遅い読み込みだけメッセージ一覧へ流す。
-    //   ファイルパスの添付(ZoneText)はここでは行えない。ZoneText は同一スコープの
-    //     ゾーン変数(___tracy_scoped_zone)を参照するマクロなので、必ず呼び出し側に置く。
+    /**
+     * @brief 遅い読み込みだけ Tracy のメッセージ一覧へ流す。
+     * @param virtualPath 読み込んだファイルのパス。
+     * @param elapsedMs   読み込みにかかった時間（ミリ秒）。
+     * @param bytes       読み込んだ大きさ（バイト）。
+     * @note ファイルパスの添付（ZoneText）はここでは行えない。
+     *       ZoneText は同一スコープのゾーン変数（___tracy_scoped_zone）を参照するマクロなので、必ず呼び出し側に置く。
+     */
     void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
     {
 #ifdef TRACY_ENABLE

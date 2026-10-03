@@ -15,14 +15,17 @@ using namespace CCL::Utils;
 
 namespace
 {
-    // キャッシュのキーにするために、パスの表記の揺れ（区切り文字・大文字小文字）をそろえる。
-    // Windows のファイルアクセスは大文字小文字を区別せず、区切り文字も混ざってよいが、HashString は
-    // バイト単位で完全に一致しないと同じ値にならない。Sequencer（保存）と AnimGraph（参照）が
-    // 別々のダイアログで得たパスは、同じファイルでも "Assets/Anims/Attack.json" と
-    // "Assets\Anims\Attack.json" のように違うことがあり、キャッシュの更新が素通りして
-    // 「保存しても反映されない」原因になる。
-    // ファイルの読み込み（FileSystem::ReadAllText など）には元の filename をそのまま使い、
-    // ハッシュを取るときだけこの形にする。
+    /**
+     * @brief キャッシュのキーにするために、パスの表記の揺れ（区切り文字・大文字小文字）をそろえる。
+     *
+     * Windows のファイルアクセスは大文字小文字を区別せず、区切り文字も混ざってよいが、HashString はバイト単位で完全に一致しないと同じ値にならない。
+     * Sequencer（保存）と AnimGraph（参照）が別々のダイアログで得たパスは、同じファイルでも "Assets/Anims/Attack.json" と "Assets\Anims\Attack.json" のように違うことがある。
+     * するとキャッシュの更新が素通りして「保存しても反映されない」原因になる。
+     *
+     * @param path そろえるパス。
+     * @return キャッシュのキーにするパス。
+     * @note ファイルの読み込み（FileSystem::ReadAllText など）には元の filename をそのまま使い、ハッシュを取るときだけこの形にする。
+     */
     std::string NormalizeAssetKey(const char *path)
     {
         std::string s = path ? path : "";
@@ -358,7 +361,6 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     return seq;
 }
 
-// キャッシュに無ければ、LoadAnimSequence で新しく読む
 const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 {
     if (!filename || filename[0] == '\0')

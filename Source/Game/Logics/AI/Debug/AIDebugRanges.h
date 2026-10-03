@@ -107,8 +107,12 @@ namespace AIDebugRanges
         std::sort(edgeRings.begin(), edgeRings.end());
     }
 
-    // distance が入っている帯の外側の境界（＝その帯の色を決めるリング）。
-    // どのリングよりも外なら nullptr。rings は CollectRings で内側から並べたものを渡す。
+    /**
+     * @brief distance が入っている帯の外側の境界（＝その帯の色を決めるリング）を返す。
+     * @param rings    CollectRings で内側から並べたリング。
+     * @param distance 調べる距離（m）。
+     * @return 帯の外側のリング。rings が所有する。どのリングよりも外なら nullptr。
+     */
     inline const RangeRing *BandOf(const std::vector<RangeRing> &rings, float distance)
     {
         for (const RangeRing &ring : rings)

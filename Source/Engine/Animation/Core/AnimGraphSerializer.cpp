@@ -2,11 +2,12 @@
 #include "Engine/Platform/Core/Logger.h"
 #include <fstream>
 
-// 「先に全て文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
-//   ofstream は開いた時点で既存ファイルを空にする。先に開いてから to_json が例外を投げると、
-//   catch には入るが元のファイルは既に失われている
 bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::string &filepath)
 {
+    // 「先に全て文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
+    //   ofstream は開いた時点で既存ファイルを空にする。先に開いてから to_json が例外を投げると、
+    //   catch には入るが元のファイルは既に失われている
+
     std::string text;
     try
     {

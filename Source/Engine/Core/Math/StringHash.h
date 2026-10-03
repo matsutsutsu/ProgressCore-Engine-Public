@@ -11,8 +11,14 @@
 
 namespace CCL::Utils
 {
-    // FNV-1a ハッシュ。文字列キーを整数で比較・検索できるようにする。
-    // 2166136261 と 16777619 は FNV-1a（32bit）で決められた初期値と素数
+    /**
+     * @brief FNV-1a ハッシュ。文字列キーを整数で比較・検索できるようにする。
+     *
+     * 2166136261 と 16777619 は FNV-1a（32bit）で決められた初期値と素数。
+     *
+     * @param str ハッシュする文字列。
+     * @return 32bit のハッシュ値。
+     */
     constexpr uint32_t HashString(std::string_view str)
     {
         uint32_t hash = 2166136261u;

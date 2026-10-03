@@ -169,10 +169,11 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
     }
 }
 
-// Unity（Repaint）や Unreal（Slate の Invalidation）のエディタは、変化したウィンドウだけを描き直す。
-// ImGui にはその仕組みが無いので、操作中は毎フレーム、放置中は低い頻度で描く、で近づける
 bool ImGuiRenderer::ShouldRenderPlatformWindows()
 {
+    // Unity（Repaint）や Unreal（Slate の Invalidation）のエディタは、変化したウィンドウだけを描き直す。
+    // ImGui にはその仕組みが無いので、操作中は毎フレーム、放置中は低い頻度で描く、で近づける
+
     if (!s_platformWindowsThrottled) return true;
 
     ImGuiIO &io = ImGui::GetIO();

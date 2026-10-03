@@ -42,19 +42,36 @@ private:
     // 0..1 の進行度へカーブを適用する。
     static float ApplyEase(float t, CameraEaseMode mode);
 
-    // 再生状態を1フレーム進める。戻り値は「このフレームに演出が終わったか」。
-    //
-    // 終了時のイベント発行は呼び出し側が行う（ForEach 内から発行しないため）。
+    /**
+     * @brief 再生状態を1フレーム進める。
+     * @param intro         進める導入演出の状態。
+     * @param dt            経過時間（秒）。
+     * @param skipRequested このフレームにスキップの入力があったか。
+     * @return このフレームに演出が終わったら true。
+     * @note 終了時のイベント発行は呼び出し側が行う（ForEach 内から発行しないため）。
+     */
     bool AdvancePlayback(CameraBodyIntroOrbit &intro, float dt, bool skipRequested) const;
 
-    // 進行度に応じたカメラ位置・注視点・画角を vcam と trans へ書き込む。
+    /**
+     * @brief 進行度に応じたカメラ位置・注視点・画角を vcam と trans へ書き込む。
+     * @param vcam  書き込む先のカメラ。
+     * @param trans カメラの Transform。
+     * @param intro 開始・終了の角度・半径・高さを持つ導入演出の状態。
+     * @param pivot 回り込む中心（ワールド）。対象の位置に targetOffset を足したもの。
+     * @param eased カーブを当てた後の進行度（0〜1）。開始と終了の値をこれで補間する。
+     */
     void ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
                    const CameraBodyIntroOrbit         &intro,
                    const DirectX::SimpleMath::Vector3 &pivot, float eased) const;
 
-    // 演出を打ち切って待機状態にする（対象消失などの保険）。
-    //
-    // ここを通らないと、対象がいないのに cinematic が立ったままになり、
-    // 操作できなくなる。演出が失敗したときは必ずゲームを進行させる側に倒す。
+    /**
+     * @brief 演出を打ち切って待機状態にする（対象消失などの保険）。
+     *
+     * ここを通らないと、対象がいないのに cinematic が立ったままになり、操作できなくなる。
+     * 演出が失敗したときは必ずゲームを進行させる側に倒す。
+     *
+     * @param vcam  cinematic を下ろすカメラ。
+     * @param intro 待機状態へ戻す導入演出の状態。
+     */
     void Abort(VirtualCamera &vcam, CameraBodyIntroOrbit &intro) const;
 };

@@ -38,11 +38,16 @@ struct ComponentMeta<BehaviorTreeComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    // sharedAsset はここで書かない。書くのは BehaviorTreeSystem::SyncAssets だけ。
-    //   SyncAssets は「使いたい木 != 今の sharedAsset」で差し替えを検出し、そのときだけ
-    //   nodeTimers などを新しい木の長さで作り直す。ここで先に sharedAsset を差し替えると
-    //   検出されず、前の木の長さのバッファが残って評価が毎フレーム見送られる。
-    //   ここで行うのは、どの木を使うか（パス）を決めることと、キャッシュを読み直すことだけ。
+    /**
+     * @brief インスペクタで、使う木（パス）の選択とキャッシュの読み直しを行う。
+     *
+     * sharedAsset はここで書かない。書くのは BehaviorTreeSystem::SyncAssets だけ。
+     * SyncAssets は「使いたい木 != 今の sharedAsset」で差し替えを検出し、そのときだけ nodeTimers などを新しい木の長さで作り直す。
+     * ここで先に sharedAsset を差し替えると検出されず、前の木の長さのバッファが残って評価が毎フレーム見送られる。
+     *
+     * @param comp 表示・編集するコンポーネント。
+     * @return 値を変更したら true。
+     */
     static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
         bool changed = false;

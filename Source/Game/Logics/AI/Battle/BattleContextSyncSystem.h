@@ -33,7 +33,9 @@ public:
     void Update(float dt) override;
 
 private:
-    // BattleContext が無ければ追加する。GetResource は未登録だと assert で止まるので、
-    // Update からも呼んで、どの順で呼ばれても必ずある状態にする。
+    /**
+     * @brief BattleContext が無ければ追加する。
+     * @note GetResource は未登録だと assert で止まるので、Update からも呼んで、どの順で呼ばれても必ずある状態にする。
+     */
     void EnsureContext();
 };

@@ -46,8 +46,10 @@ struct ColorGradingConfigComponent
     // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる。
-    // 明るさ（gradeBrightness）はどの演出も触らないので、普段の値のまま渡す。
+    /**
+     * @brief 描画に渡すパラメータを返す。普段の設定に、上書きを priority の小さい順に重ねる。
+     * @return 定数バッファへ渡すパラメータ。明るさ（gradeBrightness）はどの演出も触らないので、普段の値のまま。
+     */
     GpuData::CbColorGradingData Resolve() const
     {
         GpuData::CbColorGradingData out = data;

@@ -8,9 +8,13 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // ルートモーションの出力を無効にする。
-    //   途中で抜ける経路が多いので、消すものをここに集め、どの経路からも同じ状態で抜けるようにする。
-    //   overrideSpeed は書かない（読み手が既定値に戻す）
+    /**
+     * @brief ルートモーションの出力を無効にする。
+     *
+     * 途中で抜ける経路が多いので、消すものをここに集め、どの経路からも同じ状態で抜けるようにする。
+     *
+     * @param movement 出力を消す先。overrideSpeed は書かない（読み手が既定値に戻す）。
+     */
     void ClearRootMotionOutput(CharacterMovementComponent &movement)
     {
         movement.isRootMotionActive = false;

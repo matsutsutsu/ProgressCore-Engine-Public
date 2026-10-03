@@ -44,8 +44,13 @@ public:
                 float r, float g, float b, float a // 色
     ) const;
 
-    // 4隅に別々の色を指定して描く（間は補間されてグラデーションになる）。
-    // 色の並びは頂点と同じ 左上 / 右上 / 左下 / 右下。上の単色版もこれを呼ぶ
+    /**
+     * @brief 4隅に別々の色を指定して描く（間は補間されてグラデーションになる）。上の単色版もこれを呼ぶ。
+     *
+     * 位置・サイズ・切り抜き・回転の引数は単色版と同じ。
+     *
+     * @param cornerColors 4隅の色。並びは頂点と同じ 左上 / 右上 / 左下 / 右下。
+     */
     void Render(ID3D11DeviceContext *dc,
                 float dx, float dy,
                 float dz,

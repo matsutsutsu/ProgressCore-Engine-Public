@@ -8,8 +8,12 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-// ローカルの前ステップ値と現在値を alpha で補間し、ローカル行列を合成する。
-// 静的物体は動かないので補間せず、現在の値をそのまま使う
+/**
+ * @brief ローカルの前ステップ値と現在値を alpha で補間し、ローカル行列を合成する。
+ * @param t     補間する Transform。静的物体は動かないので補間せず、現在の値をそのまま使う。
+ * @param alpha 補間の割合（0=前ステップ, 1=現在）。
+ * @return 補間したローカル行列。
+ */
 static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alpha)
 {
     if (t.isStatic)

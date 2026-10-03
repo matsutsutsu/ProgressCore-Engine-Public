@@ -34,11 +34,20 @@ namespace
         return angle;
     }
 
-    // lookDir（ワールド・水平）の方へ turnSpeed の速さで少しずつ向き直り、Jolt にも同じ向きを書く。
-    // 1フレームで回り切らないので、呼び続けると滑らかに正対する。
-    //
-    // 描画と物理の向きを必ず一緒に動かすため1つの関数にしている。別々の関数だと、
-    // 片方だけ呼んだ場所で物理側の向きが古いまま残る。
+    /**
+     * @brief lookDir の方へ少しずつ向き直り、Jolt にも同じ向きを書く。
+     *
+     * 1フレームで回り切らないので、呼び続けると滑らかに正対する。
+     *
+     * 描画と物理の向きを必ず一緒に動かすため1つの関数にしている。
+     * 別々の関数だと、片方だけ呼んだ場所で物理側の向きが古いまま残る。
+     *
+     * @param trans     向きを書き換える Transform。
+     * @param lookDir   向きたい方向（ワールド・水平）。
+     * @param turnSpeed 向き直る速さ。
+     * @param dt        経過時間（秒）。
+     * @param character 同じ向きを書く Jolt のキャラクター。所有しない。
+     */
     void FaceToward(TransformComponent &trans, const Vector3 &lookDir, float turnSpeed, float dt,
                     JPH::CharacterVirtual *character)
     {
@@ -59,8 +68,13 @@ namespace
             character->SetRotation(JPH::Quat(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w));
     }
 
-    // アニメグラフのステートが1回流れ切るまでの長さ [秒]（クリップの長さ÷再生速度）。
-    // サブマシンの中も探す。見つからなければ fallback を返す。
+    /**
+     * @brief アニメグラフのステートが1回流れ切るまでの長さ（クリップの長さ÷再生速度）を返す。
+     * @param graph     探すアニメグラフ。サブマシンの中も探す。
+     * @param stateHash 探すステートの名前のハッシュ。
+     * @param fallback  見つからなかったときに返す値（秒）。
+     * @return 1回流れ切るまでの長さ（秒）。見つからなければ fallback。
+     */
     float StatePlayTime(const AnimStateGraph &graph, uint32_t stateHash, float fallback)
     {
         for (const AnimState &s : graph.states)

@@ -39,13 +39,28 @@ public:
     void Update(float dt) override;
 
 private:
-    // 自分の正面から見た相手の角度（度）。正=右、負=左、±180=真後ろ。
-    // 真上から見た角度だけを測る（見上げ角は間合いの判断に使わない）。
+    /**
+     * @brief 自分の正面から見た相手の角度を返す。
+     *
+     * 真上から見た角度だけを測る（見上げ角は間合いの判断に使わない）。
+     *
+     * @param trans     自分の Transform。
+     * @param targetPos 相手の位置（ワールド）。
+     * @return 角度（度）。正=右、負=左、±180=真後ろ。
+     */
     float SignedAngleToTargetDeg(const TransformComponent           &trans,
                                  const DirectX::SimpleMath::Vector3 &targetPos) const;
 
-    // 相手が自分へ近づく速さ（m/s）。正=接近、負=後退。
-    // 相手の速度を「相手→自分」の向きへ射影するだけで、自分の速度は含めない。
+    /**
+     * @brief 相手が自分へ近づく速さを返す。
+     *
+     * 相手の速度を「相手→自分」の向きへ射影するだけで、自分の速度は含めない。
+     *
+     * @param myPos          自分の位置（ワールド）。
+     * @param targetPos      相手の位置（ワールド）。
+     * @param targetVelocity 相手の速度（m/秒）。
+     * @return 近づく速さ（m/秒）。正=接近、負=後退。
+     */
     float TargetClosingSpeed(const DirectX::SimpleMath::Vector3 &myPos,
                              const DirectX::SimpleMath::Vector3 &targetPos,
                              const DirectX::SimpleMath::Vector3 &targetVelocity) const;

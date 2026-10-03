@@ -21,10 +21,17 @@
 
 namespace CCL::AI::Formation
 {
-    // modelPath のモデルの表面から maxPoints 個の点を取り出し、最遠点の順に並べて返す。
-    // 座標はモデル空間。読めなかった・三角形が無かったときは空を返す。
-    //
-    // 読み込みと並べ替えに時間がかかる（数千点 × 数千点の距離計算）ので、陣形の登録時に1回だけ呼ぶ。
+    /**
+     * @brief モデルの表面から点を取り出し、最遠点の順に並べて返す。
+     *
+     * モデル陣形でドローンを並べる位置の元にする。
+     * 先頭から何個使っても形全体に散らばる順になっている。
+     *
+     * @param modelPath 読み込むモデルのパス（例: "Assets/Models/Weapon/Sword.gltf"）。
+     * @param maxPoints 取り出す点の最大数。1以上。0以下なら空を返す。
+     * @return モデル空間の点の列（最大 maxPoints 個）。読めなかった・三角形が無かったときは空。
+     * @note 読み込みと並べ替え（数千点 × 数千点の距離計算）で重い。陣形の登録時に1回だけ呼ぶ。
+     */
     std::vector<DirectX::SimpleMath::Vector3> SampleModelSurface(const std::string &modelPath, int maxPoints);
 
 } // namespace CCL::AI::Formation

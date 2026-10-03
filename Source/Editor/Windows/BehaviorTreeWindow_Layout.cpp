@@ -7,11 +7,12 @@
 
 using namespace BTEditor;
 
-// 整列が実行順を変えない理由:
-//   子の実行順は兄弟の X の左右で決まる。整列は各親の子を「今の実行順」のまま左から詰め直す
-//   だけなので、相対順序は必ず保たれる。
 void BehaviorTreeWindow::AutoLayout()
 {
+    // 整列が実行順を変えない理由:
+    //   子の実行順は兄弟の X の左右で決まる。整列は各親の子を「今の実行順」のまま左から詰め直す
+    //   だけなので、相対順序は必ず保たれる。
+
     if (m_nodes.empty()) return;
 
     RecordStateForUndo("Auto Layout");
@@ -298,11 +299,12 @@ void BehaviorTreeWindow::GroupSelectedNodes()
     g.height        = (maxY - minY) + kGroupPad * 2.0f;
 }
 
-// コメント枠の座標の単位:
-//   ライブラリはコメント枠を「ノード全体＝余白＋見出し帯＋枠」で持つ。width/height は枠の寸法、
-//   posX/posY はノード全体の左上なので、囲みたい矩形から逆算するのに GroupFrameOffset/Extra を使う。
 ImVec2 BehaviorTreeWindow::GroupFrameOffset()
 {
+    // コメント枠の座標の単位:
+    //   ライブラリはコメント枠を「ノード全体＝余白＋見出し帯＋枠」で持つ。width/height は枠の寸法、
+    //   posX/posY はノード全体の左上なので、囲みたい矩形から逆算するのに GroupFrameOffset/Extra を使う。
+
     const ImVec4 pad = ed::GetStyle().NodePadding;
     return ImVec2(pad.x, pad.y + kGroupHeaderH + ImGui::GetStyle().ItemSpacing.y);
 }

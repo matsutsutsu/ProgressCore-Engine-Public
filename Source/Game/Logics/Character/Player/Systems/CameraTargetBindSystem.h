@@ -41,12 +41,17 @@ private:
     // PlayerComponent を持つ最初のエンティティ（プレイヤー）を探す。
     CCL::ECS::EntityID FindPlayer();
 
-    // BossPhaseComponent を持つ最初のエンティティ（ボス）を探す。
-    // 導入演出カメラがボスを注視するために使う。ボスが居ないシーンでは
-    // InvalidEntityID を返し、演出の System 側が演出を打ち切る。
+    /**
+     * @brief BossPhaseComponent を持つ最初のエンティティ（ボス）を探す。導入演出カメラがボスを注視するために使う。
+     * @return ボスのエンティティ。ボスが居ないシーンでは InvalidEntityID（演出の System 側が演出を打ち切る）。
+     */
     CCL::ECS::EntityID FindBoss();
 
-    // target が無効（未設定、再読み込みで ID が変わった、リスポーンなど）なら entity へ繋ぎ直す。
-    // 有効な相手を指している場合（手で設定したものなど）は上書きしない。
+    /**
+     * @brief target が無効なら entity へ繋ぎ直す。
+     * @param target 繋ぎ直す参照。未設定・再読み込みで ID が変わった・リスポーンなどで無効なときだけ書き換える。
+     *               有効な相手を指している場合（手で設定したものなど）は上書きしない。
+     * @param entity 繋ぐ先。InvalidEntityID なら何もしない。
+     */
     void BindIfInvalid(CCL::Serialization::EntityLink &target, CCL::ECS::EntityID entity);
 };

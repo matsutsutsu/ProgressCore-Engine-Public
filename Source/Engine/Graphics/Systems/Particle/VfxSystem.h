@@ -60,9 +60,13 @@ public:
      */
     CCL::ECS::EntityID Play(const std::string &path, const DirectX::XMFLOAT3 &worldPos);
 
-    // 再生中の VFX を止める。
-    // 発生だけを止め、出ている粒子は寿命まで残してから破棄する（すぐ消すと粒子が途中で途切れる）。
-    // 破棄待ちの VFX には何もしない（毎フレーム呼ばれても寿命が延びない）。
+    /**
+     * @brief 再生中の VFX を止める。
+     *
+     * 発生だけを止め、出ている粒子は寿命まで残してから破棄する（すぐ消すと粒子が途中で途切れる）。
+     *
+     * @param handle 止める VFX。破棄待ちの VFX には何もしない（毎フレーム呼ばれても寿命が延びない）。
+     */
     void Stop(CCL::ECS::EntityID handle);
 
 private:

@@ -67,7 +67,6 @@ public:
 
 // ==========================================================
 
-// 頂点シェーダー読み込み
 HRESULT GpuResourceUtils::LoadVertexShader(
     ID3D11Device                  *device,
     const char                    *filename,
@@ -105,7 +104,6 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     return hr;
 }
 
-// ピクセルシェーダー読み込み
 HRESULT GpuResourceUtils::LoadPixelShader(
     ID3D11Device       *device,
     const char         *filename,
@@ -133,7 +131,6 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     return hr;
 }
 
-// ジオメトリシェーダー読み込み (.cso)
 HRESULT GpuResourceUtils::LoadGeometryShader(
     ID3D11Device          *device,
     const char            *filename,
@@ -157,7 +154,6 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
     return hr;
 }
 
-// テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
     const char                *filename,
@@ -231,7 +227,6 @@ HRESULT GpuResourceUtils::LoadTexture(
     return hr;
 }
 
-// テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
     const void                *data,
@@ -310,7 +305,6 @@ HRESULT GpuResourceUtils::LoadTexture(
     return hr;
 }
 
-// ダミーテクスチャ作成
 HRESULT GpuResourceUtils::CreateDummyTexture(
     ID3D11Device              *device,
     UINT                       color,
@@ -536,7 +530,6 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
     return true;
 }
 
-// コンピュートシェーダーのコンパイル (.hlsl)
 bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
                                             const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
                                             ID3D11ComputeShader **computeShader, ID3DBlob **outShaderBlob)
@@ -572,7 +565,6 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
     return true;
 }
 
-// コンピュートシェーダー読み込み (.cso)
 HRESULT GpuResourceUtils::LoadComputeShader(
     ID3D11Device         *device,
     const char           *filename,

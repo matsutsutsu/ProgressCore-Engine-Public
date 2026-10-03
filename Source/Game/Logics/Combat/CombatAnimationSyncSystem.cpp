@@ -13,9 +13,15 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // Hitbox から親をたどり、最初に見つかった Animator を持つエンティティを返す。
-    // 剣はキャラ（Animator を持つ）の子孫にある前提。SpawnHitboxSystem が作る球は親を持たないので
-    // 見つからず、InvalidEntityID を返す（その場合は寿命まで常に有効な判定のまま）
+    /**
+     * @brief Hitbox から親をたどり、最初に見つかった Animator を持つエンティティを返す。
+     *
+     * 剣はキャラ（Animator を持つ）の子孫にある前提。
+     *
+     * @param world    探す World。所有しない。
+     * @param hitboxID 起点の Hitbox。
+     * @return Animator を持つエンティティ。SpawnHitboxSystem が作る球は親を持たないので見つからず、InvalidEntityID（その場合は寿命まで常に有効な判定のまま）。
+     */
     EntityID ResolveAnimatorOwner(CCL::ECS::World *world, EntityID hitboxID)
     {
         EntityID cur = InvalidEntityID;

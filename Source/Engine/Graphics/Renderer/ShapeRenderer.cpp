@@ -395,9 +395,10 @@ void ShapeRenderer::DrawTriangle(const DirectX::XMFLOAT3 &v1, const DirectX::XMF
     DrawLine(v3, v1, color);
 }
 
-// 3点を、三角形のメッシュ（(0,0,0) (0,0,1) (1,0,0)）を写す行列に直して積む
 void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3 &v0, const DirectX::XMFLOAT3 &v1, const DirectX::XMFLOAT3 &v2, const DirectX::XMFLOAT4 &color)
 {
+    // 3点を、三角形のメッシュ（(0,0,0) (0,0,1) (1,0,0)）を写す行列に直して積む
+
     using namespace DirectX;
     XMVECTOR p0 = XMLoadFloat3(&v0);
     XMVECTOR p1 = XMLoadFloat3(&v1);
@@ -584,9 +585,10 @@ void ShapeRenderer::CreateBoneMesh(ID3D11Device *device, float length)
     CreateMesh(device, vertices, boneMesh);
 }
 
-// 頂点の形式は他の図形と同じ XMFLOAT3 だけ（同じ入力レイアウトで描くため）
 void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device *device)
 {
+    // 頂点の形式は他の図形と同じ XMFLOAT3 だけ（同じ入力レイアウトで描くため）
+
     std::vector<DirectX::XMFLOAT3> vertices = {
         DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
         DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f),

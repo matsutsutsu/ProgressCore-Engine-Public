@@ -9,11 +9,12 @@
 
 namespace CCL::ECS
 {
-    // index 0 を使わないのは、0 を「無効・未設定」の意味で使いたいため。
-    // 1 から配ることで、ゼロ初期化されただけの EntityID を有効な Entity と誤認しない。
-    // Tools/ECSPlayground の実験2で最初の ID が index:1 になるのはこれが理由。
     World::World()
     {
+        // index 0 を使わないのは、0 を「無効・未設定」の意味で使いたいため。
+        // 1 から配ることで、ゼロ初期化されただけの EntityID を有効な Entity と誤認しない。
+        // Tools/ECSPlayground の実験2で最初の ID が index:1 になるのはこれが理由。
+
         m_entityGenerations.resize(1024, 1);
         m_nextUnusedIndex = 1;
     }
@@ -43,12 +44,6 @@ namespace CCL::ECS
         // 一度だけ登録する設計のため、消すと再登録の手当てが必要になる。
     }
 
-    // なぜこんなに関数ポインタを持ち回るのか:
-    //   Chunk は void* の生メモリを扱うので、型情報が消えている。
-    //   「この番地を正しい型として破棄・移動・代入する」手段を
-    //   データと一緒に運ぶ必要がある（型消去）。
-    //
-    // 先頭の IsEntityValid で弾いているのは、既に死んだ ID への操作を無視するため。
     void World::RequestAddComponent(EntityID                           entity,
                                     TypeID                             tid,
                                     size_t                             size,
@@ -59,6 +54,13 @@ namespace CCL::ECS
                                     TypeData::MoveFunc                 mover,
                                     const char                        *name)
     {
+        // なぜこんなに関数ポインタを持ち回るのか:
+        //   Chunk は void* の生メモリを扱うので、型情報が消えている。
+        //   「この番地を正しい型として破棄・移動・代入する」手段を
+        //   データと一緒に運ぶ必要がある（型消去）。
+        //
+        // 先頭の IsEntityValid で弾いているのは、既に死んだ ID への操作を無視するため。
+
         if (!IsEntityValid(entity)) return;
 
         PendingOp op;
@@ -106,10 +108,11 @@ namespace CCL::ECS
         m_pendingOps.Add(op);
     }
 
-    // 「予約番号」を発行して返すだけで、Chunk には一切触れない。
-    // Tools/ECSPlayground の実験2で「Spawn 直後は GetComponent が nullptr」なのはこのため。
     EntityID World::RequestSpawnEntity(const Archetype &archetype)
     {
+        // 「予約番号」を発行して返すだけで、Chunk には一切触れない。
+        // Tools/ECSPlayground の実験2で「Spawn 直後は GetComponent が nullptr」なのはこのため。
+
         uint32_t index;
         uint32_t generation;
 
@@ -155,15 +158,16 @@ namespace CCL::ECS
         return id;
     }
 
-    // ダングリング ID 対策の本体:
-    //   index を再利用すると、古い EntityID が新しい別の Entity を指してしまう。
-    //   世代を上げておけば、IsEntityValid() の世代照合で古い ID を確実に弾ける。
-    //
-    //   Tools/ECSPlayground の実験3の出力がまさにこれ:
-    //     破棄した古い ID = index:3 / 世代:1  → IsEntityValid = false
-    //     新しい ID       = index:3 / 世代:2  → IsEntityValid = true
     void World::RecycleEntityID(EntityID id)
     {
+        // ダングリング ID 対策の本体:
+        //   index を再利用すると、古い EntityID が新しい別の Entity を指してしまう。
+        //   世代を上げておけば、IsEntityValid() の世代照合で古い ID を確実に弾ける。
+        //
+        //   Tools/ECSPlayground の実験3の出力がまさにこれ:
+        //     破棄した古い ID = index:3 / 世代:1  → IsEntityValid = false
+        //     新しい ID       = index:3 / 世代:2  → IsEntityValid = true
+
         uint32_t index = EntityHandle::GetIndex(id);
 
         // 世代のオーバーフロー対策。UINT32_MAX まで行ったら 1 に戻す（0 は無効値として避ける）
@@ -191,21 +195,22 @@ namespace CCL::ECS
         m_pendingOps.Add(op);
     }
 
-    // フレームの境界線そのもの。この関数の前後で世界が変わる:
-    //   入る前  : Spawn / AddComponent / Destroy は全て「予約」でしかない。
-    //             新しく Spawn した Entity の GetComponent は nullptr。
-    //   抜けた後: 実体が Chunk に載っていて、GetComponent がアドレスを返す。
-    //
-    // System 実行中に構造を変えてはいけない理由:
-    //   System 実行中に entity.AddComponent<Velocity>() で即座に Chunk 移動が起きると、
-    //   今まさにループ中の Chunk 構造が変わり、イテレータが無効になって
-    //   クラッシュ・メモリ破壊になる。そこで System 実行中は予約だけを積み、
-    //   System が1つも動いていないここで、まとめて整合性を保ちながら適用する。
-    //
-    // Tools/ECSPlayground の実験2で追っているのがこの関数。
-    // F11 で ApplyPendingOperations の中へ潜ると本体が見える。
     void World::ScrutinyAndApply()
     {
+        // フレームの境界線そのもの。この関数の前後で世界が変わる:
+        //   入る前  : Spawn / AddComponent / Destroy は全て「予約」でしかない。
+        //             新しく Spawn した Entity の GetComponent は nullptr。
+        //   抜けた後: 実体が Chunk に載っていて、GetComponent がアドレスを返す。
+        //
+        // System 実行中に構造を変えてはいけない理由:
+        //   System 実行中に entity.AddComponent<Velocity>() で即座に Chunk 移動が起きると、
+        //   今まさにループ中の Chunk 構造が変わり、イテレータが無効になって
+        //   クラッシュ・メモリ破壊になる。そこで System 実行中は予約だけを積み、
+        //   System が1つも動いていないここで、まとめて整合性を保ちながら適用する。
+        //
+        // Tools/ECSPlayground の実験2で追っているのがこの関数。
+        // F11 で ApplyPendingOperations の中へ潜ると本体が見える。
+
         ZoneScopedN("World::ScrutinyAndApply");
 
         // 1. 予約を ChunkManager に渡して、実際のメモリ移動・生成・破棄を行う。
@@ -249,13 +254,14 @@ namespace CCL::ECS
         return GetComponentOfEntity(entity, tid) != nullptr;
     }
 
-    // 住所録で場所を O(1) で引き、その Chunk から番地を計算して返す。
-    //
-    // この関数は世代チェックをしない。世代照合は呼び出し元の GetComponent<T>
-    // （World.h のテンプレート版）が IsEntityValid() で先に済ませる役割分担。
-    // ここを直接呼ぶと、古い世代の ID でも中身が返ってきてしまう。
     void *World::GetComponentOfEntity(EntityID entity, TypeID tid)
     {
+        // 住所録で場所を O(1) で引き、その Chunk から番地を計算して返す。
+        //
+        // この関数は世代チェックをしない。世代照合は呼び出し元の GetComponent<T>
+        // （World.h のテンプレート版）が IsEntityValid() で先に済ませる役割分担。
+        // ここを直接呼ぶと、古い世代の ID でも中身が返ってきてしまう。
+
         size_t entityIdx = 0;
         size_t chunkIdx  = m_chunkManager.SearchEntityIn(entity, &entityIdx);
         if (chunkIdx == InvalidIndex) return nullptr;

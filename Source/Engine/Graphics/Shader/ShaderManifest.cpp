@@ -19,8 +19,14 @@
 namespace
 {
 
-    // ASCII だけのワイド文字列への変換（シェーダーのパスは ASCII だけなので足りる）。
-    // パスに日本語を使うなら、UTF-8 → UTF-16 の変換に替える
+    /**
+     * @brief ASCII だけの文字列をワイド文字列へ変換する（シェーダーのパスは ASCII だけなので足りる）。
+     *
+     * パスに日本語を使うなら、UTF-8 → UTF-16 の変換に替える。
+     *
+     * @param s 変換する文字列（ASCII のみ）。
+     * @return 変換したワイド文字列。
+     */
     std::wstring ToWide(const std::string &s)
     {
         return std::wstring(s.begin(), s.end());
@@ -118,10 +124,18 @@ namespace
         return false;
     }
 
-    // blend / cull / depth のどれかがあれば PSO の設定を out に作って true。何も無ければ false。
-    // blend が半透明の系統（Transparency / Additive / Subtraction / Multiply）なら DefaultTransparent
-    // （深度を書かない・両面）、それ以外なら DefaultOpaque（深度を書く・裏面カリング）を土台にし、
-    // cull / depth があればその項目だけ変える。{"blend": "additive"} だけで加算に合う設定になる
+    /**
+     * @brief マニフェストの1項目から PSO の設定を作る。
+     *
+     * blend が半透明の系統（Transparency / Additive / Subtraction / Multiply）なら DefaultTransparent（深度を書かない・両面）を土台にする。
+     * それ以外なら DefaultOpaque（深度を書く・裏面カリング）を土台にし、cull / depth があればその項目だけ変える。
+     * {"blend": "additive"} だけで加算に合う設定になる。
+     *
+     * @param e    マニフェストの1項目。
+     * @param name シェーダー名（ログ用）。
+     * @param out  作った PSO の設定を受け取る。
+     * @return blend / cull / depth のどれかがあれば true。何も無ければ false。
+     */
     bool BuildPsoDesc(const nlohmann::json &e, const std::string &name, PipelineStateDesc &out)
     {
         const bool hasBlend = e.contains("blend") && e["blend"].is_string();

@@ -85,8 +85,10 @@ public:
     // マウスとスクリーン情報の取得
     virtual float GetMouseX() const = 0;
     virtual float GetMouseY() const = 0;
-    // マウスの毎フレーム移動量（デルタ、ピクセル単位）。TPSの視点回転などに使う。
-    // スティックと違い「倒し量」ではなく既に「移動量」なので、利用側で dt を掛けないこと。
+    /**
+     * @brief マウスの毎フレームの水平移動量を返す（GetMouseDeltaY は垂直）。TPSの視点回転などに使う。
+     * @return 移動量（ピクセル/フレーム）。スティックと違い「倒し量」ではなく既に「移動量」なので、利用側で dt を掛けないこと。
+     */
     virtual float GetMouseDeltaX() const  = 0;
     virtual float GetMouseDeltaY() const  = 0;
     virtual float GetScreenWidth() const  = 0;

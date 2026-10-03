@@ -98,9 +98,14 @@ public:
     // アニメーション
     // ============================================================
     const AnimSequence *LoadAnimSequence(const char *filename);
-    // キャッシュ済みのシーケンスをファイルから読み直し、同じインスタンスに上書きする。
-    // 作り直さないので、これを指している currentSequence などのポインタは有効なまま新しい内容になる
-    // （エディタで保存した直後に反映するため）。
+    /**
+     * @brief キャッシュ済みのシーケンスをファイルから読み直し、同じインスタンスに上書きする。
+     *
+     * 作り直さないので、これを指している currentSequence などのポインタは有効なまま新しい内容になる（エディタで保存した直後に反映するため）。
+     *
+     * @param filename 読み直すシーケンスのファイル名。
+     * @return 読み直したシーケンス。ResourceManager が所有する。キャッシュに無ければ新規に読み込み、ファイルが読めなければ今の内容のまま返す。
+     */
     const AnimSequence *ReloadAnimSequence(const char *filename);
     const CurveData    *LoadAnimCurve(const char *filepath);
 
