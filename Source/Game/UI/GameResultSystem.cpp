@@ -6,7 +6,7 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
-#include "Game/UI/MenuUiFactory.h"
+#include "Game/UI/ScreenHeadingUi.h" // 左上の見出し・線・記録の行（ポーズと共通の組み）
 #include "Engine/Core/App/GameFlowState.h"
 #include "Game/Logics/Combat/DeadTag.h"
 #include "Game/Logics/Combat/EnemyTag.h"
@@ -26,31 +26,12 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // --- 配置（画面の左上からの px。ローディング画面と同じく、見出し・線・行の左端を kLeft にそろえる） ---
-    constexpr float kLeft    = 120.0f; // 左の余白
-    constexpr float kHeadY   = 96.0f;  // 見出しの上端
-    constexpr float kHeadPx  = 88.0f;  // 見出しの文字の高さ
-    constexpr float kRuleY   = kHeadY + kHeadPx + 20.0f; // 見出しの下の線
-    constexpr float kRuleW   = 820.0f; // 線の長さ
-    constexpr float kSubY    = kRuleY + 16.0f;           // 行き先の行（線のすぐ下）
-    constexpr float kStatY   = kSubY + 72.0f;            // 記録の1行目
-    constexpr float kStatH   = 46.0f;  // 記録の行の間隔
-    constexpr float kStatPx  = 26.0f;  // 記録の文字の高さ
-    constexpr float kValueX  = kLeft + 300.0f; // 記録の値の列の左端（項目名の後ろをそろえる）
-    constexpr float kMenuGap = 60.0f;  // 記録の最後の行からボタンの上端まで
-
     // --- 演出の時間（リザルトを出してからの秒） ---
-    constexpr float kTypeSpeed = 70.0f; // 1秒に打ち込む文字数
-    constexpr float kSubStart  = 0.35f; // 行き先の行を打ち始める
-    constexpr float kStatStart = 0.6f;  // 記録の1行目を打ち始める
-    constexpr float kStatStep  = 0.16f; // 記録の行ごとの時間差
+    constexpr float kSubStart  = 0.35f; // 線の下の1行を打ち始める
+    constexpr float kRowStart  = 0.6f;  // 記録の1行目を打ち始める
+    constexpr float kRowStep   = 0.16f; // 記録の行ごとの時間差
     constexpr float kMenuDelay = 0.6f;  // 記録の最後の行を打ち始めてから、ボタンが出るまで
-
-    // --- 色（文字は少し温かみのある白、飾りと勝ちは白金、ボスと負けは深紅。ローディング画面にそろえる） ---
-    constexpr DirectX::XMFLOAT4 kGold{0.96f, 0.88f, 0.62f, 1.0f};
-    constexpr DirectX::XMFLOAT4 kRed{0.95f, 0.18f, 0.22f, 1.0f};
-    constexpr DirectX::XMFLOAT4 kLabel{0.93f, 0.91f, 0.86f, 0.55f}; // 記録の項目名（沈める）
-    constexpr DirectX::XMFLOAT4 kValue{0.93f, 0.91f, 0.86f, 1.0f};  // 記録の値
+    constexpr float kMenuGap   = 60.0f; // 記録の最後の行からボタンの入れ物の上端まで（px）
 } // namespace
 
 void GameResultSystem::Initialize()
@@ -97,11 +78,7 @@ void GameResultSystem::Update(float dt)
 {
     if (!m_debugEnabled) return; // ステージを確かめている間などに判定を止める（デバッグ用）
 
-    if (m_resultShown)
-    {
-        AnimateResult(dt);
-        return;
-    }
+    if (m_resultShown) return; // 出てくる演出は UIRevealSystem が進める
 
     // 勝った後の待ち。dt はスローの影響を受けない実時間なので、数え終わればスローも終わっている
     if (m_pendingWin)
@@ -184,53 +161,6 @@ void GameResultSystem::CountBattleStats(float dt)
     }
 }
 
-CCL::ECS::EntityID GameResultSystem::SpawnText(const char *name, const std::string &text, float x, float y, float px,
-                                               DirectX::XMFLOAT4 color, CCL::ECS::EntityID parent, float alpha)
-{
-    using namespace CCL::GameUI;
-    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UITextComponent>();
-    auto e    = EntityFactory::SpawnNamed(*m_world, name, arch);
-
-    UITransformComponent t;
-    t.anchor = {0.0f, 0.0f};
-    t.pivot  = {0.0f, 0.0f};
-    t.offset = {x, y};
-    t.size   = {1200.0f, px};
-    t.alpha  = alpha;
-
-    UITextComponent tx;
-    tx.text      = text;
-    tx.pixelSize = px;
-    tx.color     = color;
-    tx.sortOrder = 220;
-
-    e.Set(MakeUINode(parent)).Set(t).Set(tx);
-    return e.ID();
-}
-
-CCL::ECS::EntityID GameResultSystem::SpawnRect(const char *name, float x, float y, DirectX::XMFLOAT2 size, float rotation,
-                                               DirectX::XMFLOAT4 color, CCL::ECS::EntityID parent, float alpha)
-{
-    using namespace CCL::GameUI;
-    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent>();
-    auto e    = EntityFactory::SpawnNamed(*m_world, name, arch);
-
-    UITransformComponent t;
-    t.anchor   = {0.0f, 0.0f};
-    t.pivot    = {0.5f, 0.5f};
-    t.offset   = {x, y};
-    t.size     = size;
-    t.rotation = rotation;
-    t.alpha    = alpha;
-
-    UIImageComponent img;
-    img.color     = color;
-    img.sortOrder = 220;
-
-    e.Set(MakeUINode(parent)).Set(t).Set(img);
-    return e.ID();
-}
-
 void GameResultSystem::ShowResultUI(bool win)
 {
     using namespace CCL::GameUI;
@@ -248,41 +178,33 @@ void GameResultSystem::ShowResultUI(bool win)
             m_bossHpRatio = std::clamp(hp->currentHealth / std::max(hp->maxHealth, 1.0f), 0.0f, 1.0f);
     }
 
-    // 以降の UI はすべてこの Canvas の子にする
-    const EntityID canvas = SpawnCanvas(w, "ResultCanvas");
+    // 以降の UI はすべてこの Canvas の子にする。リザルトはシーンを切り替えるまで消さないので、ID は持たない
+    const EntityID        canvas = SpawnCanvas(w, "ResultCanvas");
+    std::vector<EntityID> spawned;
 
     // 暗転。下ほど濃くして、左上の文字を読みやすくする（フェードだけ・スライドしない）
     const DirectX::XMFLOAT4 dimBottom{0.0f, 0.0f, 0.0f, 0.85f};
     SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.55f}, 200,
                0.00f, 0.0f, canvas, &dimBottom);
 
-    // --- 見出しと線（AnimateResult が滑り込ませ、伸ばす。最初は見えない） ---
-    m_headingID = SpawnText("ResultHeading", win ? "MISSION COMPLETE" : "MISSION FAILED", kLeft, kHeadY, kHeadPx,
-                            win ? kGold : kRed, canvas, 0.0f);
+    // 見出しと線。勝ちは白金、負けは深紅
+    SpawnScreenHeading(w, canvas, win ? "MISSION COMPLETE" : "MISSION FAILED",
+                       win ? ScreenColor::kGold : ScreenColor::kRed, spawned);
 
-    m_ruleID    = SpawnRect("ResultRule", kLeft, kRuleY, {0.0f, 2.0f}, 0.0f, {kGold.x, kGold.y, kGold.z, 0.7f}, canvas);
-    m_ruleTipID = SpawnRect("ResultRuleTip", kLeft, kRuleY, {9.0f, 9.0f}, 45.0f, kGold, canvas, 0.0f);
-
-    // --- 打ち込む行（最初は空。AnimateResult が start 秒から1文字ずつ足す） ---
-    m_typed.clear();
-    auto typed = [&](const char *name, const std::string &full, float x, float y, float px, DirectX::XMFLOAT4 color,
-                     float start) {
-        m_typed.push_back({SpawnText(name, "", x, y, px, color, canvas), full, start});
-    };
-
-    // 行き先の行: 勝ちなら撃破、負けならボスの残り HP
+    // 線の下の1行: 勝ちなら撃破、負けならボスの残り HP
     char sub[96];
     if (win)
         std::snprintf(sub, sizeof(sub), "TARGET : MURIEL  //  NEUTRALIZED");
     else
         std::snprintf(sub, sizeof(sub), "TARGET : MURIEL  //  HP %d%% REMAINING",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
-    typed("ResultSub", sub, kLeft, kSubY, 20.0f, {kValue.x, kValue.y, kValue.z, 0.8f}, kSubStart);
+    SpawnTypedText(w, "ResultSub", sub, ScreenLayout::kLeft, ScreenLayout::kSubY, 20.0f, ScreenColor::kSub, kSubStart,
+                   canvas);
 
-    // 記録の行: 項目名（沈めた色）と値（明るい色）。値は項目名を打ち終えてから打ち始める
-    const int  minutes = static_cast<int>(m_playTime) / 60;
+    // 記録の行
+    const int   minutes = static_cast<int>(m_playTime) / 60;
     const float seconds = m_playTime - static_cast<float>(minutes * 60);
-    char       buf[6][48];
+    char        buf[6][48];
     std::snprintf(buf[0], sizeof(buf[0]), "%02d:%05.2f", minutes, seconds);
     std::snprintf(buf[1], sizeof(buf[1]), "%d", m_hits.load());
     std::snprintf(buf[2], sizeof(buf[2]), "%d", (m_damageX10.load() + 5) / 10);
@@ -293,84 +215,18 @@ void GameResultSystem::ShowResultUI(bool win)
     const char *labels[6] = {"TIME", "HITS", "DAMAGE TAKEN", "JUST EVADE", "CLEAVE", "SWARM ENGAGED"};
     const char *names[6]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultCleave", "ResultSwarm"};
     for (int i = 0; i < 6; ++i)
-    {
-        const float y     = kStatY + kStatH * static_cast<float>(i);
-        const float start = kStatStart + kStatStep * static_cast<float>(i);
-        typed((std::string(names[i]) + "Label").c_str(), labels[i], kLeft, y, kStatPx, kLabel, start);
-        typed(names[i], buf[i], kValueX, y, kStatPx, kValue,
-              start + static_cast<float>(std::char_traits<char>::length(labels[i])) / kTypeSpeed);
-    }
+        SpawnScreenRow(w, canvas, names[i], i, labels[i], buf[i], kRowStart + kRowStep * static_cast<float>(i), spawned);
 
-    // --- ボタンと操作のヒント ---
-    // 左上を基準にした入れ物を置き、ボタンはその中央からの位置で置く（SpawnButton は中央基準のため）
-    const float menuTop   = kStatY + kStatH * 5.0f + kStatPx + kMenuGap;
-    const float menuDelay = kStatStart + kStatStep * 5.0f + kMenuDelay;
-    EntityID    menu      = InvalidEntityID;
-    {
-        auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent>();
-        auto e    = EntityFactory::SpawnNamed(w, "ResultMenu", arch);
-
-        UITransformComponent t;
-        t.anchor = {0.0f, 0.0f};
-        t.pivot  = {0.0f, 0.0f};
-        t.offset = {kLeft, menuTop};
-        t.size   = {320.0f, 140.0f};
-
-        e.Set(MakeUINode(canvas)).Set(t);
-        menu = e.ID();
-    }
+    // --- ボタンと操作のヒント（記録が出そろってから出す） ---
+    const float    menuTop   = ScreenLayout::kRowY + ScreenLayout::kRowH * 5.0f + ScreenLayout::kRowPx + kMenuGap;
+    const float    menuDelay = kRowStart + kRowStep * 5.0f + kMenuDelay;
+    const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, menuTop}, {320.0f, 140.0f}, canvas);
 
     // 最初は RETRY を選んでおく
     SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
     SpawnButton(w, "BtnResultTitle", "LblResultTitle", "TITLE", {0.0f, 43.0f}, "result_title", false, 230,
                 menuDelay + 0.08f, menu);
-
-    // 操作のヒント（決定・選択）。シーンを切り替えるときに消えるので、個別の ID は持たない
-    std::vector<EntityID> hints;
-    SpawnMenuHints(w, menu, 125.0f, hints, 240, menuDelay + 0.16f);
-
-    m_resultTime = 0.0f;
-}
-
-void GameResultSystem::AnimateResult(float dt)
-{
-    m_resultTime += dt;
-    const float t = m_resultTime;
-
-    // 見出し: 左から減速しながら滑り込み、同時に濃くなる
-    if (auto *tr = m_world->GetComponent<UITransformComponent>(m_headingID))
-    {
-        const float a = std::clamp(t / 0.35f, 0.0f, 1.0f);
-        tr->offset.x  = kLeft - (1.0f - a) * (1.0f - a) * 40.0f;
-        tr->alpha     = a;
-    }
-
-    // 線: 見出しを追って左から伸び、右端の◆が先端についていく
-    {
-        const float d    = std::clamp((t - 0.15f) / 0.35f, 0.0f, 1.0f);
-        const float draw = 1.0f - (1.0f - d) * (1.0f - d);
-        const float w    = kRuleW * draw;
-        if (auto *tr = m_world->GetComponent<UITransformComponent>(m_ruleID))
-        {
-            tr->size.x   = w;
-            tr->offset.x = kLeft + w * 0.5f; // 中心で置くので、左端を kLeft に止める
-        }
-        if (auto *tr = m_world->GetComponent<UITransformComponent>(m_ruleTipID))
-        {
-            tr->offset.x = kLeft + w;
-            tr->alpha    = (d > 0.0f) ? 1.0f : 0.0f;
-        }
-    }
-
-    // 打ち込む行: 打ち始めてからの秒数 × 速さの分だけ、先頭から文字を出す
-    for (const TypedText &line : m_typed)
-    {
-        auto *tx = m_world->GetComponent<UITextComponent>(line.id);
-        if (!tx) continue;
-        const float n     = std::clamp((t - line.start) * kTypeSpeed, 0.0f, static_cast<float>(line.full.size()));
-        const auto  count = static_cast<size_t>(n);
-        if (tx->text.size() != count) tx->text = line.full.substr(0, count);
-    }
+    SpawnMenuHints(w, menu, 125.0f, spawned, 240, menuDelay + 0.16f);
 }
 
 void GameResultSystem::OnGui()

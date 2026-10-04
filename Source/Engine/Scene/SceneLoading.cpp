@@ -333,10 +333,6 @@ void SceneLoading::DrawScreen(float alpha)
         }
     }
 
-    // 完了した瞬間、画面全体を深紅に一瞬だけ光らせる
-    if (lock > 0.0f)
-        DrawQuad(sw * 0.5f, sh * 0.5f, sw, sh, 0.0f, kRedR, kRedG, kRedB, 0.12f * (1.0f - lock) * alpha);
-
     const float left = 96.0f * k; // 左の余白。見出し・ログ・ヒントの左端をここにそろえる
 
     // --- 見出しの下の線: 左から引かれ、右端に◆ ---

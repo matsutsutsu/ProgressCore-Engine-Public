@@ -9,7 +9,7 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
-#include "Game/UI/MenuUiFactory.h"
+#include "Game/UI/ScreenHeadingUi.h" // 左上の見出しと線（リザルトと共通の組み）
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeService.h"
 
@@ -20,6 +20,10 @@ using namespace CCL::ECS;
 namespace
 {
     constexpr int VKEY_ESCAPE = 0x1B; // windows.h を持ち込まないための ESC 仮想キーコード
+
+    // --- ボタン（ポーズを開いてからの秒・px） ---
+    constexpr float kMenuDelay = 0.15f; // ボタンが出るまで。すぐ操作したい画面なので短くする
+    constexpr float kMenuGap   = 130.0f; // 見出しの下の線からボタンの入れ物の上端まで（詰めすぎず、離しすぎない）
 }
 
 void PauseSystem::Initialize()
@@ -92,33 +96,38 @@ void PauseSystem::OpenPause()
     // 描画ステージで動き続ける VFX（GPU パーティクルなど）は、このフラグを見て自分で dt を 0 にする
     Time::Pause(w);
 
-    // メニューを作る（HUD より手前に出すため sortOrder を高くする）。
-    // 暗転 → 見出し → ボタンの順に、出始めを少しずつ遅らせる（暗転はフェードだけ）。
-    // すべて Canvas の子にする
+    // メニューを作る（HUD より手前に出すため sortOrder を高くする）。すべて Canvas の子にし、閉じるときにまとめて消す
     m_overlay.clear();
     const EntityID canvas = SpawnCanvas(w, "PauseCanvas");
     m_overlay.push_back(canvas);
 
     // 暗転は上下で濃さを変える。一色の黒は作りかけの板のように見えやすい。
     // 上の方を薄くすると後ろのゲーム画面が見え、止まっていることが分かる
-    static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.78f};
+    static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.82f};
     m_overlay.push_back(SpawnPanel(w, "PauseDim", {0.0f, 0.0f}, {4000.0f, 4000.0f},
-                                   {0.0f, 0.0f, 0.0f, 0.45f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
-    m_overlay.push_back(SpawnLabel(w, "PauseTitle", "PAUSE", {-90.0f, -140.0f}, 56.0f, 220, 0.08f, canvas));
+                                   {0.0f, 0.0f, 0.0f, 0.5f}, 200, 0.00f, 0.0f, canvas, &kDimBottom));
 
-    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, 0.0f}, "resume", true, 210, 0.16f, canvas);
+    // 見出しと線だけを出す（ポーズ中に読ませる情報は置かず、すぐ戻れることを優先する）
+    SpawnScreenHeading(w, canvas, "PAUSE", ScreenColor::kGold, m_overlay);
+
+    // --- ボタンと操作のヒント（見出しの下の線から少し間をあけた位置） ---
+    const EntityID menu = SpawnBox(w, "PauseMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, ScreenLayout::kRuleY + kMenuGap},
+                                   {320.0f, 140.0f}, canvas);
+    m_overlay.push_back(menu);
+
+    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, -42.0f}, "resume", true, 230, kMenuDelay, menu);
     m_overlay.push_back(resume.button);
     m_overlay.push_back(resume.label);
 
     // ここからはタイトルへ戻れるだけにする。アプリの終了はタイトル画面の QUIT だけ
     // （ゲーム中からすぐ終了できると、押し間違えたときに戻れない）
-    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 90.0f},
-                               "pause_title", false, 210, 0.24f, canvas);
+    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 43.0f}, "pause_title", false, 230,
+                               kMenuDelay + 0.06f, menu);
     m_overlay.push_back(toTitle.button);
     m_overlay.push_back(toTitle.label);
 
     // 操作のヒント（決定・選択）。ボタンより少し遅れて出す
-    SpawnMenuHints(w, canvas, 175.0f, m_overlay, 230, 0.32f);
+    SpawnMenuHints(w, menu, 125.0f, m_overlay, 240, kMenuDelay + 0.12f);
 }
 
 void PauseSystem::ClosePause()
