@@ -12,6 +12,7 @@
 // ===========================================================================
 #include "Game/UI/MenuUiFactory.h"
 #include "Game/UI/UIRevealComponent.h"
+#include "Engine/UI/Text/TextRenderer.h" // UTF-8 の文字数
 
 #include <string>
 #include <vector>
@@ -142,28 +143,29 @@ namespace CCL::GameUI
 
     /**
      * @brief 左上の大きな見出しと、その下の線・右端の◆を作る。見出しは滑り込み、少し遅れて線が伸びる。
-     * @param out 作ったエンティティを足す
+     * @param out       作ったエンティティを足す
+     * @param sortOrder 描画順。別の画面の上に重ねる画面（設定）は大きくする
      */
     inline void SpawnScreenHeading(CCL::ECS::World &world, CCL::ECS::EntityID canvas, const char *title,
-                                   DirectX::XMFLOAT4 color, std::vector<CCL::ECS::EntityID> &out)
+                                   DirectX::XMFLOAT4 color, std::vector<CCL::ECS::EntityID> &out, int sortOrder = 220)
     {
         using namespace ScreenLayout;
 
         UIRevealComponent slide;
         slide.mode = UIRevealMode::SlideIn;
         const CCL::ECS::EntityID heading = SpawnTextTopLeft(world, "ScreenHeading", title, kLeft, kHeadY, kHeadPx, color,
-                                                            canvas, 220, 0.0f, &slide);
+                                                            canvas, sortOrder, 0.0f, &slide);
 
         const DirectX::XMFLOAT4  ruleColor{ScreenColor::kGold.x, ScreenColor::kGold.y, ScreenColor::kGold.z, 0.7f};
         const CCL::ECS::EntityID tip  = SpawnRectTopLeft(world, "ScreenRuleTip", kLeft, kRuleY, {9.0f, 9.0f}, 45.0f,
-                                                         ScreenColor::kGold, canvas, 220, 0.0f);
+                                                         ScreenColor::kGold, canvas, sortOrder, 0.0f);
         UIRevealComponent grow;
         grow.mode   = UIRevealMode::Grow;
         grow.delay  = 0.15f;
         grow.length = kRuleW;
         grow.tip    = tip;
         const CCL::ECS::EntityID rule = SpawnRectTopLeft(world, "ScreenRule", kLeft, kRuleY, {0.0f, 2.0f}, 0.0f,
-                                                         ruleColor, canvas, 220, 1.0f, &grow);
+                                                         ruleColor, canvas, sortOrder, 1.0f, &grow);
 
         out.push_back(heading);
         out.push_back(tip);
@@ -185,6 +187,6 @@ namespace CCL::GameUI
         out.push_back(SpawnTypedText(world, (std::string(name) + "Label").c_str(), label, kLeft, y, kRowPx,
                                      ScreenColor::kLabel, delay, canvas));
         out.push_back(SpawnTypedText(world, name, value, kValueX, y, kRowPx, valueColor,
-                                     delay + static_cast<float>(label.size()) / kTypeSpeed, canvas));
+                                     delay + static_cast<float>(TextRenderer::Utf8Length(label)) / kTypeSpeed, canvas));
     }
 } // namespace CCL::GameUI

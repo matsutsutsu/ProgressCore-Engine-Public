@@ -280,8 +280,8 @@ namespace CCL::GameUI
         };
         // 決定を左、選択を右にする。よく押す方を先に読ませる
         const HintDef defs[] = {
-            {InputIconKind::MenuConfirm, "CONFIRM", "HintConfirm", -150.0f},
-            {InputIconKind::MenuNavigate, "SELECT", "HintNavigate", 30.0f},
+            {InputIconKind::MenuConfirm, "決定", "HintConfirm", -150.0f},
+            {InputIconKind::MenuNavigate, "選択", "HintNavigate", 30.0f},
         };
 
         constexpr float kIcon = 28.0f;

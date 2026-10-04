@@ -38,8 +38,9 @@ namespace
     // ロゴが現れ終わる頃（kLogoStart + kRevealDur ≒ 0.95 秒）から少しずつ重なる間隔にして、
     // ボタンを押せるまでを短くしている
     constexpr float kAppearStart = 1.3f;
-    constexpr float kAppearQuit  = 1.45f;
-    constexpr float kAppearHints = 1.7f;
+    constexpr float kAppearSettings = 1.45f;
+    constexpr float kAppearQuit  = 1.6f;
+    constexpr float kAppearHints = 1.85f;
 
     // ヒントの行を横に動かす量。0 だと画面の中央に残り、左に寄せたメニューから離れてしまう
     constexpr float kHintShiftX = -350.0f;
@@ -107,15 +108,18 @@ void TitleMenuSystem::SpawnMenu()
     SpawnLogo(canvas);
 
     // --- ボタン（最初は START を選んでおく） ---
-    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {kMenuX, 40.0f}, "start_game",
+    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "はじめる", {kMenuX, 40.0f}, "start_game",
                              true, 10, kAppearStart, canvas);
-    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "QUIT", {kMenuX, 125.0f}, "quit", false,
+    // 設定画面は SettingsScreenSystem が "open_settings" のボタンを見て開く
+    CCL::GameUI::SpawnButton(world, "BtnSettings", "LblSettings", "設定", {kMenuX, 125.0f}, "open_settings", false,
+                             10, kAppearSettings, canvas);
+    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "終了", {kMenuX, 210.0f}, "quit", false,
                              10, kAppearQuit, canvas);
 
     // --- 操作のヒント（決定・選択） ---
     // タイトルの UI はシーンごと消えるので、個別の ID は持たない
     std::vector<CCL::ECS::EntityID> hints;
-    CCL::GameUI::SpawnMenuHints(world, canvas, 205.0f, hints, 230, kAppearHints, kHintShiftX);
+    CCL::GameUI::SpawnMenuHints(world, canvas, 290.0f, hints, 230, kAppearHints, kHintShiftX);
 }
 
 void TitleMenuSystem::SpawnLogo(CCL::ECS::EntityID canvas)

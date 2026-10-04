@@ -17,6 +17,13 @@
 #include <DirectXMath.h>
 #include "Engine/Core/Math/StringHash.h" // イベント名をハッシュ化して引くため
 
+// 音量をまとめて変える単位。イベント名が "bgm:" で始まるものが BGM、それ以外は効果音
+enum class AudioCategory
+{
+    BGM,
+    SFX,
+};
+
 class IAudioAPI
 {
 public:
@@ -128,6 +135,9 @@ public:
      *       AudioSystem が TimeContext の時間倍率から毎ステップ渡す。
      */
     virtual void SetGlobalSlow(float /*slow01*/) {}
+
+    // 種類ごとの音量の倍率（0 で無音、1 で等倍）。再生中の音にもすぐ効く。設定画面の音量に使う
+    virtual void SetCategoryVolume(AudioCategory /*category*/, float /*volume01*/) {}
 
     // ロード済みのイベント名一覧（インスペクタのドロップダウン用）。空ならエディタは手入力だけになる
     virtual std::vector<std::string> GetEventNames() const { return {}; }

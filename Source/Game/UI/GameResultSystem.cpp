@@ -194,9 +194,9 @@ void GameResultSystem::ShowResultUI(bool win)
     // 線の下の1行: 勝ちなら撃破、負けならボスの残り HP
     char sub[96];
     if (win)
-        std::snprintf(sub, sizeof(sub), "TARGET : MURIEL  //  NEUTRALIZED");
+        std::snprintf(sub, sizeof(sub), "ボス ミュリエルを撃破した");
     else
-        std::snprintf(sub, sizeof(sub), "TARGET : MURIEL  //  HP %d%% REMAINING",
+        std::snprintf(sub, sizeof(sub), "ボス ミュリエルの残りHP  %d%%",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
     SpawnTypedText(w, "ResultSub", sub, ScreenLayout::kLeft, ScreenLayout::kSubY, 20.0f, ScreenColor::kSub, kSubStart,
                    canvas);
@@ -206,13 +206,13 @@ void GameResultSystem::ShowResultUI(bool win)
     const float seconds = m_playTime - static_cast<float>(minutes * 60);
     char        buf[6][48];
     std::snprintf(buf[0], sizeof(buf[0]), "%02d:%05.2f", minutes, seconds);
-    std::snprintf(buf[1], sizeof(buf[1]), "%d", m_hits.load());
+    std::snprintf(buf[1], sizeof(buf[1]), "%d回", m_hits.load());
     std::snprintf(buf[2], sizeof(buf[2]), "%d", (m_damageX10.load() + 5) / 10);
-    std::snprintf(buf[3], sizeof(buf[3]), "%d", m_justEvades.load());
-    std::snprintf(buf[4], sizeof(buf[4]), "%d   MAX CHAIN %d", m_cleaves, m_maxChain);
-    std::snprintf(buf[5], sizeof(buf[5]), "%d UNITS", m_swarmMax);
+    std::snprintf(buf[3], sizeof(buf[3]), "%d回", m_justEvades.load());
+    std::snprintf(buf[4], sizeof(buf[4]), "%d回   最大%dチェイン", m_cleaves, m_maxChain);
+    std::snprintf(buf[5], sizeof(buf[5]), "%d機", m_swarmMax);
 
-    const char *labels[6] = {"TIME", "HITS", "DAMAGE TAKEN", "JUST EVADE", "CLEAVE", "SWARM ENGAGED"};
+    const char *labels[6] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避", "切り払い", "戦った群れ"};
     const char *names[6]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultCleave", "ResultSwarm"};
     for (int i = 0; i < 6; ++i)
         SpawnScreenRow(w, canvas, names[i], i, labels[i], buf[i], kRowStart + kRowStep * static_cast<float>(i), spawned);
@@ -223,8 +223,8 @@ void GameResultSystem::ShowResultUI(bool win)
     const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, menuTop}, {320.0f, 140.0f}, canvas);
 
     // 最初は RETRY を選んでおく
-    SpawnButton(w, "BtnRetry", "LblRetry", "RETRY", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
-    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "TITLE", {0.0f, 43.0f}, "result_title", false, 230,
+    SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
+    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, 43.0f}, "result_title", false, 230,
                 menuDelay + 0.08f, menu);
     SpawnMenuHints(w, menu, 125.0f, spawned, 240, menuDelay + 0.16f);
 }

@@ -14,6 +14,8 @@
 //       裏読みの間、SceneManager は画面を黒の幕で覆ったまま保持する。表示はその幕の上（RenderOverFade）に描き、
 //       裏読みがすぐ終わるときは出さない（一瞬だけ出ると、かえってちらついて見える）。
 //       裏読みがすぐ終わっても、ログが最後まで流れるよう kMinShowTime 秒は表示する。
+//       アプリを起動して最初の読み込みだけは、ローディングの代わりにエンジンのロゴ（スプラッシュ）を出す。
+//       起動時の読み込みの待ち時間をそのままロゴの表示に使うので、起動が遅くならない。
 // ===========================================================================
 #include "Engine/Scene/BaseScene.h"
 
@@ -80,9 +82,15 @@ private:
     // 最低表示時間（秒）。裏読みがすぐ終わっても、ログが最後まで流れるまでは表示を続ける
     static constexpr float kMinShowTime = 4.0f;
 
+    // スプラッシュ（起動して最初の読み込み）の最低表示時間（秒）。ロゴを読める長さにする
+    static constexpr float kSplashTime = 2.5f;
+
+    bool m_splash = false; // この読み込みでスプラッシュを出すか（アプリを起動して最初の読み込みだけ true）
+
     // 描画。alpha は表示の濃さ（出入りのフェード込み）
     void DrawBackdrop(float alpha); // 背景（色の付いた地・◆の輪・周辺減光・粒子ノイズ）
     void DrawScreen(float alpha);   // 前景（方眼・見出し・行き先・ログ・ヒント・照準リング）
+    void DrawSplash(float alpha);   // スプラッシュ（POWERED BY PROGRESSCORE ENGINE）
 
     // 中心 (cx, cy)・幅 w・高さ h・回転 angle（度）の単色の四角形を描く
     void DrawQuad(float cx, float cy, float w, float h, float angle, float r, float g, float b, float a);

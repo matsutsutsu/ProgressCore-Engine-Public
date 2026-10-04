@@ -53,6 +53,7 @@ struct CameraBodyTPSComponent
     float mouseSensitivityX       = 0.15f; // マウス水平感度（度/ピクセル）
     float mouseSensitivityY       = 0.15f; // マウス垂直感度（度/ピクセル）
     bool  mouseInvertY            = false; // 上下反転（true = マウス下でカメラ上向き）
+    float sensitivityScale        = 1.0f;  // 視点感度の倍率（マウス・スティック共通）。ゲームの設定画面が毎フレーム書く。保存しない
     bool  mouseLookRequiresButton = false; // true = 右クリック押下中のみ視点回転。false = 常時マウス視点
     bool  enableCursorLock        = true;  // マウスルック中、カーソルを画面中央へ固定して非表示にする（画面端で止まるのを防ぐ）
 

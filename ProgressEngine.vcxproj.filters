@@ -783,6 +783,15 @@
     <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\UISoundSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\GameSettings.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\SettingsScreenSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
@@ -2154,6 +2163,15 @@
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\UISoundSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\GameSettings.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\SettingsScreenSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp">

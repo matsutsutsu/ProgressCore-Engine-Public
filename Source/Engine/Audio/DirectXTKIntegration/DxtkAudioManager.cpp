@@ -20,6 +20,7 @@
 #include <cstring>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // Windows SDK 標準のライブラリなので、プロジェクト設定ではなくここでリンクする
@@ -165,7 +166,9 @@ struct DxtkAudioManager::Impl
         std::unique_ptr<SoundEffectInstance> inst;
         AudioEmitter                         emitter;          // 3D 用（is3D=false のときは未使用）
         float                                userPitch = 0.0f; // SetEventParameter("pitch") で設定したピッチ（スロー分は別途加算）
+        float                                userVolume = 1.0f; // SetEventParameter("volume") などで設定した音量（種類の音量は別途掛ける）
         bool                                 is3D      = false;
+        bool                                 isBgm     = false; // BGM か（種類の音量を掛け直すときに使う）
     };
 
     std::unique_ptr<AudioEngine> engine;
@@ -192,6 +195,11 @@ struct DxtkAudioManager::Impl
     float slowTarget = 0.0f; // 目標値
     bool  reverbOn   = false;
 
+    // 種類ごとの音量の倍率と、BGM のイベント（名前が "bgm:" で始まるもの）のハッシュ
+    float                        bgmVolume = 1.0f;
+    float                        sfxVolume = 1.0f;
+    std::unordered_set<uint32_t> bgmHashes;
+
     std::mutex mtx; // sounds/playing/oneShot3D を保護（AudioSystem が並列に呼ぶため）
 
     // スロー分を足した実効ピッチを 1 インスタンスへ適用する
@@ -199,6 +207,9 @@ struct DxtkAudioManager::Impl
     {
         if (p.inst) p.inst->SetPitch(Clamp(p.userPitch + slowOffset, -1.0f, 1.0f));
     }
+
+    // そのイベントの種類の音量の倍率
+    float CategoryVolume(uint32_t hash) const { return bgmHashes.count(hash) ? bgmVolume : sfxVolume; }
 
     // ハッシュから SoundEffect を引く（無ければ nullptr）
     SoundEffect *Find(uint32_t hash)
@@ -380,6 +391,7 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
 
             const uint32_t hash  = CCL::Utils::HashString(event.c_str());
             m_impl->sounds[hash] = std::move(sfx);
+            if (event.rfind("bgm:", 0) == 0) m_impl->bgmHashes.insert(hash);
             m_impl->eventNames.push_back(event);
             ++loaded;
         }
@@ -404,7 +416,7 @@ void DxtkAudioManager::PlayOneShot(uint32_t eventHash)
     if (!m_impl->ready) return;
     std::lock_guard<std::mutex> lk(m_impl->mtx);
     if (SoundEffect *sfx = m_impl->Find(eventHash))
-        sfx->Play(); // 2D ワンショットは DXTK がボイスをプールして自動で回収する
+        sfx->Play(m_impl->CategoryVolume(eventHash), 0.0f, 0.0f); // 2D ワンショットは DXTK がボイスをプールして自動で回収する
 }
 
 void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position, float volume, float pitch)
@@ -423,7 +435,9 @@ void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3
 
     p.emitter.SetPosition(position);
     p.inst->Apply3D(m_impl->listener, p.emitter, /*rhcoords*/ false);
-    p.inst->SetVolume((std::max)(volume, 0.0f));
+    p.userVolume = (std::max)(volume, 0.0f);
+    p.isBgm      = m_impl->bgmHashes.count(eventHash) != 0;
+    p.inst->SetVolume(p.userVolume * m_impl->CategoryVolume(eventHash));
     m_impl->ApplyPitch(p, -kSlowMaxPitch * m_impl->slow);
     p.inst->Play(false); // ループしない。終了後は Update() で回収する
     m_impl->oneShot3D.push_back(std::move(p));
@@ -444,6 +458,8 @@ uint32_t DxtkAudioManager::PlayEvent(uint32_t eventHash)
     p.inst = sfx->CreateInstance();
     if (!p.inst) return 0;
 
+    p.isBgm = m_impl->bgmHashes.count(eventHash) != 0;
+    p.inst->SetVolume(m_impl->CategoryVolume(eventHash));
     m_impl->ApplyPitch(p, -kSlowMaxPitch * m_impl->slow);
     p.inst->Play(true); // BGM・環境音はループさせる
 
@@ -467,6 +483,8 @@ uint32_t DxtkAudioManager::PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOA
 
     p.emitter.SetPosition(position);
     p.inst->Apply3D(m_impl->listener, p.emitter, false);
+    p.isBgm = m_impl->bgmHashes.count(eventHash) != 0;
+    p.inst->SetVolume(m_impl->CategoryVolume(eventHash));
     m_impl->ApplyPitch(p, -kSlowMaxPitch * m_impl->slow);
     p.inst->Play(true);
 
@@ -508,11 +526,31 @@ void DxtkAudioManager::SetEventParameter(uint32_t playingId, const char *paramNa
 
     // DXTK は任意のパラメータを持たないので、volume / pitch / pan の 3 つだけを解釈する
     if (std::strcmp(paramName, "volume") == 0)
-        it->second.inst->SetVolume(value);
+    {
+        it->second.userVolume = value;
+        it->second.inst->SetVolume(value * (it->second.isBgm ? m_impl->bgmVolume : m_impl->sfxVolume));
+    }
     else if (std::strcmp(paramName, "pitch") == 0)
         it->second.userPitch = Clamp(value, -1.0f, 1.0f); // 実際の適用は Update() でスロー分と足してから
     else if (std::strcmp(paramName, "pan") == 0)
         it->second.inst->SetPan(value);
+}
+
+void DxtkAudioManager::SetCategoryVolume(AudioCategory category, float volume01)
+{
+    std::lock_guard<std::mutex> lk(m_impl->mtx);
+    const float v = Clamp(volume01, 0.0f, 1.0f);
+    if (category == AudioCategory::BGM)
+        m_impl->bgmVolume = v;
+    else
+        m_impl->sfxVolume = v;
+
+    // 再生中の音にもすぐ効かせる（設定画面で動かしながら聞き比べられるように）
+    auto apply = [&](Impl::Playing &p) {
+        if (p.inst) p.inst->SetVolume(p.userVolume * (p.isBgm ? m_impl->bgmVolume : m_impl->sfxVolume));
+    };
+    for (auto &kv : m_impl->playing) apply(kv.second);
+    for (auto &p : m_impl->oneShot3D) apply(p);
 }
 
 void DxtkAudioManager::SetEvent3DAttributes(uint32_t playingId, const DirectX::XMFLOAT3 &pos)

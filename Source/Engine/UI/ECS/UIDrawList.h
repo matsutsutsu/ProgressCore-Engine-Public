@@ -15,6 +15,7 @@
 #include "Engine/Graphics/Shader/Shared/UIShared.h" // ゲージの値（シェーダーへそのまま渡す）
 
 #include <DirectXMath.h>
+#include <climits>
 #include <string>
 #include <vector>
 
@@ -63,4 +64,11 @@ struct UIDrawList
 {
     std::vector<UIDrawItem> items;
     void                    Clear() { items.clear(); }
+
+    // 境目の sortOrder より奥と手前で、不透明度を別々に掛ける。Clear では戻さない。
+    //   設定画面のように、下の画面の UI を薄くしながら上の画面を出す（重ねて入れ替える）ときに使う
+    //   （各部品の visible や alpha は HUD などが毎フレーム書き戻すので、外から隠すのに使えない）
+    int   splitSortOrder = INT_MIN; // 境目。これ以上が手前
+    float belowAlpha     = 1.0f;    // 境目より奥に掛ける不透明度（0 なら描かない）
+    float aboveAlpha     = 1.0f;    // 境目から手前に掛ける不透明度（0 なら描かない）
 };

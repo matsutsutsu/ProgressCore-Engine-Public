@@ -10,6 +10,7 @@
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Game/UI/ScreenHeadingUi.h" // 左上の見出しと線（リザルトと共通の組み）
+#include "Game/UI/SettingsScreenSystem.h" // SettingsScreenState（設定画面を開いている間は Esc を受けない）
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeService.h"
 
@@ -70,6 +71,9 @@ void PauseSystem::Update(float /*dt*/)
                         input->GetGamePad().IsTriggered(GamePad::BTN_START);
     if (!toggle) return;
 
+    // 設定画面を開いている間の Esc・START は設定画面を閉じるためのものなので、ポーズは切り替えない
+    if (m_world->HasResource<SettingsScreenState>() && m_world->GetResource<SettingsScreenState>().open) return;
+
     // UI 操作モード（カーソルを自由に動かすモード）の間は、編集中にポーズメニューが出ないよう
     // 一時停止しない（一時停止中の解除はできる）
     if (!m_paused && m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract)
@@ -109,25 +113,33 @@ void PauseSystem::OpenPause()
 
     // 見出しと線だけを出す（ポーズ中に読ませる情報は置かず、すぐ戻れることを優先する）
     SpawnScreenHeading(w, canvas, "PAUSE", ScreenColor::kGold, m_overlay);
+    m_overlay.push_back(SpawnTypedText(w, "PauseSub", "一時停止", ScreenLayout::kLeft, ScreenLayout::kSubY, 20.0f,
+                                       ScreenColor::kSub, 0.2f, canvas)); // 英語の見出しに、日本語を小さく添える
 
     // --- ボタンと操作のヒント（見出しの下の線から少し間をあけた位置） ---
     const EntityID menu = SpawnBox(w, "PauseMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, ScreenLayout::kRuleY + kMenuGap},
-                                   {320.0f, 140.0f}, canvas);
+                                   {320.0f, 225.0f}, canvas);
     m_overlay.push_back(menu);
 
-    auto resume = SpawnButton(w, "BtnResume", "LblResume", "RESUME", {0.0f, -42.0f}, "resume", true, 230, kMenuDelay, menu);
+    auto resume = SpawnButton(w, "BtnResume", "LblResume", "ゲームに戻る", {0.0f, -85.0f}, "resume", true, 230, kMenuDelay, menu);
     m_overlay.push_back(resume.button);
     m_overlay.push_back(resume.label);
 
+    // 設定画面は SettingsScreenSystem が "open_settings" のボタンを見て開く
+    auto settings = SpawnButton(w, "BtnPauseSettings", "LblPauseSettings", "設定", {0.0f, 0.0f}, "open_settings", false,
+                                230, kMenuDelay + 0.03f, menu);
+    m_overlay.push_back(settings.button);
+    m_overlay.push_back(settings.label);
+
     // ここからはタイトルへ戻れるだけにする。アプリの終了はタイトル画面の QUIT だけ
     // （ゲーム中からすぐ終了できると、押し間違えたときに戻れない）
-    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "TITLE", {0.0f, 43.0f}, "pause_title", false, 230,
+    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "タイトルへ", {0.0f, 85.0f}, "pause_title", false, 230,
                                kMenuDelay + 0.06f, menu);
     m_overlay.push_back(toTitle.button);
     m_overlay.push_back(toTitle.label);
 
     // 操作のヒント（決定・選択）。ボタンより少し遅れて出す
-    SpawnMenuHints(w, menu, 125.0f, m_overlay, 240, kMenuDelay + 0.12f);
+    SpawnMenuHints(w, menu, 165.0f, m_overlay, 240, kMenuDelay + 0.12f);
 }
 
 void PauseSystem::ClosePause()

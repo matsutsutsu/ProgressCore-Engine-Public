@@ -43,13 +43,15 @@ namespace
     // ロードのたびに1つ出すヒント。どれも実際の仕様に沿った内容にする
     //   （CleaveComponent: ジャスト回避でゲージ・ストック3＝チェイン3 / BossPhaseComponent: HP50% で第2形態）
     constexpr const char *kTips[] = {
-        "JUST EVADE AN ATTACK TO CHARGE THE CLEAVE GAUGE.",
-        "CLEAVE CUTS THROUGH THE SWARM. CHAIN IT UP TO THREE TIMES.",
-        "THE SWARM'S SHAPE IS THE ATTACK. READ IT BEFORE IT STRIKES.",
-        "BELOW HALF HP, MURIEL CHANGES HER TACTICS.",
+        "ジャスト回避を決めると、切り払いのゲージがたまる。",
+        "切り払いは群れを切り裂く。最大3回までつなげられる。",
+        "群れの形が、そのまま攻撃になる。形を読んでかわせ。",
+        "HPが半分を切ると、ミュリエルは戦い方を変える。",
     };
     constexpr int kTipCount = static_cast<int>(sizeof(kTips) / sizeof(kTips[0]));
     int           g_tipIndex = 0; // ロードのたびに次のヒントへ進める
+
+    bool g_firstLoad = true; // アプリを起動してまだ一度も読み込んでいないか（最初の1回だけスプラッシュを出す）
 
     // 0〜1 の決まった乱数。◆ごとの半径・大きさの散らしや粒子ノイズに使う（同じ入力なら毎フレーム同じ値）
     float Hash(float x)
@@ -79,6 +81,8 @@ void SceneLoading::Initialize()
     // 行き先のシーン名。SceneManager::ChangeSceneAsync がこのシーンを作る前に、行き先の名前を設定している
     m_destName = SceneManager::Instance().GetCurrentSceneName();
     m_tipIndex = g_tipIndex++ % kTipCount;
+    m_splash   = g_firstLoad;
+    g_firstLoad = false;
     m_logStart.fill(-1.0f);
 
     if (m_nextScene)
@@ -130,8 +134,10 @@ void SceneLoading::Update(float elapsedTime)
     // ワーカースレッドの release と対になる acquire で読む
     const bool done = m_isFinished.load(std::memory_order_acquire);
 
-    // 最低表示時間の間か（裏読みが終わっていても、ログが最後まで流れるよう kMinShowTime 秒までは表示する）
-    const bool holding = time < kMinShowTime;
+    // 最低表示時間の間か（裏読みが終わっていても、ログが最後まで流れるよう kMinShowTime 秒までは表示する）。
+    //   スプラッシュはロゴを読める長さだけ出す
+    const float minShow = m_splash ? kSplashTime : kMinShowTime;
+    const bool  holding = time < minShow;
 
     // --- 表示用の進捗 ---
     //   実際のロードは進捗量を取れない（Initialize の中は見えない）ので、見せかけで作る。
@@ -139,7 +145,7 @@ void SceneLoading::Update(float elapsedTime)
     //   最低表示時間の間は、その時間いっぱいを使って 100% へ伸ばす
     float target = done ? 1.0f : 0.9f * (1.0f - std::exp(-time / kProgressTau));
     if (done && holding)
-        target = std::min(1.0f, time / kMinShowTime);
+        target = std::min(1.0f, time / minShow);
     m_progress += (target - m_progress) * CCL::Math::Damp(kProgressDamping, elapsedTime);
     if (m_progress >= 0.98f) m_outroTime += elapsedTime; // 100% に届いた（指数的に近づくので 98% で届いたとみなす）
 
@@ -189,7 +195,8 @@ void SceneLoading::RenderOverFade()
     if (!m_text)
     {
         m_text = std::make_unique<TextRenderer>();
-        m_text->Initialize(device, "Assets/Fonts/RictyDiminished-Regular.ttf");
+        // 半角英数字は等幅の Ricty、日本語（ヒントなど）は M PLUS 1 で描く
+        m_text->Initialize(device, "Assets/Fonts/RictyDiminished-Regular.ttf", 48.0f, "Assets/Fonts/MPLUS1-Medium.ttf");
     }
     if (!m_white)
     {
@@ -204,6 +211,11 @@ void SceneLoading::RenderOverFade()
 
     // 線形のままだと出入りが機械的に見えるので、両端を緩やかにする
     const float alpha = CCL::Math::SmoothStep(m_visibility);
+    if (m_splash)
+    {
+        DrawSplash(alpha);
+        return;
+    }
     DrawBackdrop(alpha);
     DrawScreen(alpha);
 }
@@ -213,6 +225,59 @@ void SceneLoading::DrawQuad(float cx, float cy, float w, float h, float angle, f
     // Sprite は左上で置き、矩形の中心で回すので、中心から左上へ戻して渡す
     m_white->Render(Graphics::Instance().GetDeviceContext(), cx - w * 0.5f, cy - h * 0.5f, 0.0f, w, h, angle,
                     r, g, b, a);
+}
+
+void SceneLoading::DrawSplash(float alpha)
+{
+    auto       &gfx = Graphics::Instance();
+    auto       *dc  = gfx.GetDeviceContext();
+    const float sw  = gfx.GetScreenWidth();
+    const float sh  = gfx.GetScreenHeight();
+    const float k   = sh / 1080.0f;
+    const float cx  = sw * 0.5f;
+    const float cy  = sh * 0.5f;
+
+    // 地: ほぼ黒の1色。ロゴだけを見せる
+    DrawQuad(cx, cy, sw, sh, 0.0f, 0.02f, 0.02f, 0.03f, alpha);
+
+    // 出てからの秒数。要素ごとに少しずつ遅らせて出す
+    const float t      = std::max(0.0f, time - kShowDelay);
+    auto        fadeIn = [&](float start) { return std::clamp((t - start) / 0.4f, 0.0f, 1.0f) * alpha; };
+
+    // 白金の◆（ロゴの上）
+    DrawQuad(cx, cy - 92.0f * k, 10.0f * k, 10.0f * k, 45.0f, kDotR, kDotG, kDotB, fadeIn(0.0f));
+
+    // 線: 中央から左右へ伸びる
+    {
+        const float d    = std::clamp((t - 0.3f) / 0.5f, 0.0f, 1.0f);
+        const float draw = 1.0f - (1.0f - d) * (1.0f - d);
+        const float w    = 560.0f * k * draw;
+        if (w > 0.0f) DrawQuad(cx, cy + 58.0f * k, w, 2.0f * k, 0.0f, kDotR, kDotG, kDotB, 0.8f * alpha);
+    }
+
+    if (!m_text || !m_text->IsReady()) return;
+
+    // 中央にそろえて1行を描く
+    auto centered = [&](const char *s, float y, float px, float r, float g, float b, float a) {
+        const float w = m_text->MeasureWidth(s, px);
+        m_text->DrawText(dc, s, cx - w * 0.5f, y, px, DirectX::XMFLOAT4{r, g, b, a});
+    };
+
+    // 字間を空けて、ロゴらしく見せる（等幅のフォントなので空白で空ける）
+    centered("P O W E R E D   B Y", cy - 64.0f * k, 18.0f * k, 0.93f, 0.91f, 0.86f, 0.6f * fadeIn(0.1f));
+    centered("PROGRESSCORE ENGINE", cy - 30.0f * k, 60.0f * k, 0.93f, 0.91f, 0.86f, fadeIn(0.15f));
+    centered("C++20  /  DIRECTX 11  /  ECS", cy + 76.0f * k, 16.0f * k, 0.93f, 0.91f, 0.86f, 0.5f * fadeIn(0.6f));
+
+    // 表示の時間を過ぎても読み込みが終わっていなければ、右下に小さく待っている印を出す（止まって見えないように）
+    if (time >= kSplashTime && !m_isFinished.load(std::memory_order_acquire))
+    {
+        const int step = static_cast<int>(time * 3.0f) % 4; // 0〜3 個が点く
+        for (int i = 0; i < 3; ++i)
+        {
+            DrawQuad(sw - 120.0f * k + 18.0f * k * static_cast<float>(i), sh - 80.0f * k, 8.0f * k, 8.0f * k, 0.0f, kDotR,
+                     kDotG, kDotB, (i < step ? 1.0f : 0.2f) * alpha);
+        }
+    }
 }
 
 void SceneLoading::DrawBackdrop(float alpha)
@@ -417,7 +482,7 @@ void SceneLoading::DrawScreen(float alpha)
 
     // 文字列の先頭から n 文字だけを返す（1文字ずつ打ち込む表示）
     auto typed = [](const std::string &s, float n) {
-        return s.substr(0, static_cast<size_t>(std::clamp(n, 0.0f, static_cast<float>(s.size()))));
+        return TextRenderer::Utf8Prefix(s, static_cast<size_t>(std::max(n, 0.0f))); // 日本語を文字の途中で切らない
     };
     const DirectX::XMFLOAT4 textCol{kTextR, kTextG, kTextB, alpha};
 
@@ -522,11 +587,11 @@ void SceneLoading::DrawScreen(float alpha)
         DrawQuad(left + tagW * 0.5f, tipY + px * 0.5f, tagW, tagH, 0.0f, kDotR, kDotG, kDotB, alpha);
 
         const float tagPx = 16.0f * k;
-        const float tw    = m_text->MeasureWidth("TIP", tagPx);
-        m_text->DrawText(dc, "TIP", left + (tagW - tw) * 0.5f, tipY + (px - tagPx) * 0.5f, tagPx,
+        const float tw    = m_text->MeasureWidth("ヒント", tagPx);
+        m_text->DrawText(dc, "ヒント", left + (tagW - tw) * 0.5f, tipY + (px - tagPx) * 0.5f, tagPx,
                          DirectX::XMFLOAT4{0.06f, 0.07f, 0.10f, alpha});
 
-        m_text->DrawText(dc, typed(kTips[m_tipIndex], (boot - 0.5f) * 70.0f), left + tagW + 18.0f * k, tipY, px, textCol);
+        m_text->DrawText(dc, typed(kTips[m_tipIndex], (boot - 0.5f) * 30.0f), left + tagW + 18.0f * k, tipY, px, textCol);
     }
 }
 

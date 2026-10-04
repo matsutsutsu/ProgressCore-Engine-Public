@@ -135,6 +135,8 @@ private:
     void AdvanceFade(float dt);
     // 予約された切り替え（名前 or 実体）を今この場で実行する。黒の瞬間に呼ばれる。
     void BeginPendingChange();
+    // 画面切り替え（◆タイルワイプ）の効果音を鳴らす。暗転を始めるときに呼ぶ
+    void PlayTransitionSound();
     // フェードを描画する（◆タイルワイプ。Render の末尾＝最前面で呼ぶ）。
     void DrawFade();
 

@@ -762,6 +762,9 @@
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h" />
     <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\GameSettings.h" />
+    <ClInclude Include="Source\Game\UI\SettingsScreenSystem.h" />
+    <ClInclude Include="Source\Game\UI\UISoundSystem.h" />
     <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h" />
     <ClInclude Include="Source\Game\UI\UIRevealComponent.h" />
     <ClInclude Include="Source\Game\UI\UIRevealSystem.h" />
@@ -1236,6 +1239,9 @@
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\GameSettings.cpp" />
+    <ClCompile Include="Source\Game\UI\SettingsScreenSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\UISoundSystem.cpp" />
     <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\UIRevealSystem.cpp" />
     <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp" />

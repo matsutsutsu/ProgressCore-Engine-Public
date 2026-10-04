@@ -14,6 +14,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 #include "Engine/Graphics/Renderer/Sprite.h"
+#include "Engine/Audio/IAudioAPI.h" // 画面切り替えの効果音
 
 // ロード前検証（破壊前のファイル存在確認）に使用
 #include "Engine/Platform/Core/FileSystem.h"
@@ -286,6 +287,7 @@ bool SceneManager::RequestTransition(const std::string &name, bool async)
     m_pendingAsync = async;
     m_pendingScene = nullptr;
     m_fade         = FadeState::Out; // 現在の m_fadeAlpha（通常0）からアウト
+    PlayTransitionSound();
     return true;
 }
 
@@ -313,7 +315,17 @@ bool SceneManager::RequestTransition(Scene *readyScene)
     m_pendingAsync = false;
     m_pendingScene = readyScene;
     m_fade         = FadeState::Out;
+    PlayTransitionSound();
     return true;
+}
+
+void SceneManager::PlayTransitionSound()
+{
+    // 音声は World のリソースにある。今のシーンの World から引く（無ければ鳴らさない）
+    CCL::ECS::World *world = currentScene ? currentScene->GetWorld() : nullptr;
+    if (!world || !world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (auto &audio = world->GetResource<std::shared_ptr<IAudioAPI>>())
+        audio->PlayOneShot(CCL::Utils::HashString("sfx:/ui_transition"));
 }
 
 void SceneManager::FadeInFromBlack(float dur)

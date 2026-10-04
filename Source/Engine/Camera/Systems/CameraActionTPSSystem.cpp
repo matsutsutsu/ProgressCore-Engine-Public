@@ -228,16 +228,16 @@ void CameraActionTPSSystem::ApplyManualLook(CameraContext &c) const
     const auto &in  = c.in;
 
     // ゲームパッドの右スティックは速度入力なので dt を掛ける。
-    tps.currentYaw -= in.lookX * tps.lookSpeedX * c.dt;
-    tps.currentPitch += in.lookY * tps.lookSpeedY * c.dt;
+    tps.currentYaw -= in.lookX * tps.lookSpeedX * tps.sensitivityScale * c.dt;
+    tps.currentPitch += in.lookY * tps.lookSpeedY * tps.sensitivityScale * c.dt;
 
     // マウスは1フレームの移動量なので dt を掛けない。
     if ((!tps.mouseLookRequiresButton || in.rmbHeld) && !in.cursorFree)
     {
         const float invert = tps.mouseInvertY ? -1.0f : 1.0f;
 
-        tps.currentYaw -= in.mouseDX * tps.mouseSensitivityX;
-        tps.currentPitch += (-in.mouseDY) * tps.mouseSensitivityY * invert;
+        tps.currentYaw -= in.mouseDX * tps.mouseSensitivityX * tps.sensitivityScale;
+        tps.currentPitch += (-in.mouseDY) * tps.mouseSensitivityY * tps.sensitivityScale * invert;
     }
 }
 

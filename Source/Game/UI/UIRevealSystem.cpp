@@ -5,6 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/UI/ECS/Components/UITextComponent.h"
+#include "Engine/UI/Text/TextRenderer.h" // UTF-8 の文字数（日本語を文字の途中で切らない）
 
 #include <algorithm>
 
@@ -30,9 +31,10 @@ void UIRevealSystem::Update(float dt)
         {
             auto *tx = m_world->GetComponent<UITextComponent>(id);
             if (!tx) break;
-            const float n     = std::clamp(local * rv.speed, 0.0f, static_cast<float>(rv.text.size()));
-            const auto  count = static_cast<size_t>(n);
-            if (tx->text.size() != count) tx->text = rv.text.substr(0, count);
+            // 数えるのはバイトではなく文字（日本語は1文字が3バイト）
+            const auto  count = static_cast<size_t>(std::max(local * rv.speed, 0.0f));
+            std::string shown = TextRenderer::Utf8Prefix(rv.text, count);
+            if (tx->text != shown) tx->text = std::move(shown);
             break;
         }
         case UIRevealMode::SlideIn:

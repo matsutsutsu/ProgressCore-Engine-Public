@@ -10,8 +10,9 @@
 #include <algorithm>
 #include <filesystem>
 
-// 既定のフォント。日本語も含むフォントだが、TextRenderer が焼くのは ASCII だけ
-static const char *kDefaultFontPath = "Assets/Fonts/RictyDiminished-Regular.ttf";
+// 既定のフォント。半角英数字は等幅の Ricty、日本語などそれ以外の文字は M PLUS 1 で描く
+static const char *kDefaultFontPath  = "Assets/Fonts/RictyDiminished-Regular.ttf";
+static const char *kFallbackFontPath = "Assets/Fonts/MPLUS1-Medium.ttf";
 
 UIRenderer::UIRenderer()  = default;
 UIRenderer::~UIRenderer() = default;
@@ -66,7 +67,7 @@ TextRenderer *UIRenderer::GetText(ID3D11Device *device)
     {
         m_textTried = true; // 失敗しても毎フレーム再試行しない
         auto tr     = std::make_unique<TextRenderer>();
-        if (tr->Initialize(device, kDefaultFontPath))
+        if (tr->Initialize(device, kDefaultFontPath, 48.0f, kFallbackFontPath))
             m_text = std::move(tr);
     }
     return m_text.get();
@@ -124,8 +125,15 @@ void UIRenderer::Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList
     // sortOrder 昇順に並べる。同じ sortOrder は積まれた順を保つ（安定ソート）
     std::vector<const UIDrawItem *> ordered;
     ordered.reserve(list.items.size());
-    for (const auto &it : list.items)
+    for (auto &it : list.items)
+    {
+        // 境目の奥と手前に、それぞれの不透明度を掛ける（画面を重ねて入れ替える途中）
+        const float a = (it.sortOrder >= list.splitSortOrder) ? list.aboveAlpha : list.belowAlpha;
+        if (a <= 0.0f) continue;
+        it.color.w *= a;
+        it.colorBottom.w *= a;
         ordered.push_back(&it);
+    }
     std::stable_sort(ordered.begin(), ordered.end(),
                      [](const UIDrawItem *a, const UIDrawItem *b) { return a->sortOrder < b->sortOrder; });
 

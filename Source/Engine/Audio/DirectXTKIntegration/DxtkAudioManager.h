@@ -64,6 +64,7 @@ public:
                              const DirectX::XMFLOAT3 &up) override;
 
     void                     SetGlobalSlow(float slow01) override;
+    void                     SetCategoryVolume(AudioCategory category, float volume01) override;
     std::vector<std::string> GetEventNames() const override;
 
 private:
