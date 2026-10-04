@@ -71,7 +71,7 @@ private:
         std::vector<TrailRenderer::Vertex> *additive = nullptr; // 加算レイヤの頂点（所有しない）
         std::vector<TrailRenderer::Vertex> *distort  = nullptr; // 歪みレイヤの頂点（所有しない）
 
-        void PushTriangle(const VertexPair &a, const VertexPair &b, const VertexPair &c) const;
+        void PushTriangle(const VertexPair &a, const VertexPair &b, const VertexPair &c) const; // 加算レイヤへ、distort があれば歪みレイヤへも三角形を1つ積む
     };
 
     // リングの区間を Catmull-Rom で補間し、連続した断面列に広げる（useInterpolation=false なら補間しない）

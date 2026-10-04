@@ -116,6 +116,7 @@ struct AnimParametersComponent
         return false;
     }
 
+    // hash のトリガーを消す（遷移で使ったトリガーを、寿命を待たずに下ろす）
     void ConsumeTrigger(uint32_t hash)
     {
         triggers.erase(

@@ -75,11 +75,13 @@ struct CurveData
     {
         return keys.empty();
     }
+    // キーに振る新しい ID を返す（実行中だけ使う番号。保存しない）
     uint32_t GenId()
     {
         return m_nextId++;
     }
 
+    // ID のキーが keys の何番目かを返す。無ければ -1
     int IndexOfId(uint32_t id) const
     {
         for (int i = 0; i < (int)keys.size(); ++i)
@@ -212,6 +214,7 @@ struct CurveData
     {
         return keys.empty() ? 1.0f : keys.back().time;
     }
+    // 全キーの値の最小・最大を返す。キーが無ければ 0〜1
     void ValueRange(float &outMin, float &outMax) const
     {
         if (keys.empty())
@@ -258,6 +261,7 @@ private:
         }
     }
 
+    // 最初のキーより前の t を preInfinity に従って外挿する。period はキーの時間の幅
     float EvaluatePre(float t, float period) const
     {
         const CurveKeyframe &first = keys.front();
@@ -272,6 +276,7 @@ private:
         }
     }
 
+    // 最後のキーより後の t を postInfinity に従って外挿する。period はキーの時間の幅
     float EvaluatePost(float t, float period) const
     {
         const CurveKeyframe &last = keys.back();

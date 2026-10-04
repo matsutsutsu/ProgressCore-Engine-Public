@@ -53,7 +53,9 @@ private:
     // パラメータ名変更時、参照している全条件の paramHash/paramName を張り替える。
     void RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash);
 
+    // キャンバス上の操作を処理する（ダブルクリックでサブマシンへ潜る予約、リンク・ノードの削除）
     void HandleInteraction();
+    // 右クリックメニュー（ノード上ならそのノードの操作、背景ならステートの追加）を出す
     void HandleContextMenu();
 
     void LoadGraph(const std::string &path);
@@ -86,7 +88,7 @@ private:
         bool     isAnyState;
     };
     std::vector<std::pair<int, LinkRef>> m_linkLut;
-    const LinkRef                       *FindLink(int linkId) const;
+    const LinkRef                       *FindLink(int linkId) const; // ノードエディタのリンクIDから遷移を引く。無ければ nullptr
 
 private:
     AnimStateGraph        m_rootGraph; // ツリー全体（保存/読込の対象）

@@ -31,6 +31,7 @@ void UIImageCollectSystem::Update(float /*dt*/)
         item.rotation    = t.rotation;
         item.sortOrder   = img.sortOrder;
         item.texturePath = img.texturePath;
+        item.uvRect      = img.uvRect;
         drawList.items.push_back(std::move(item));
     });
 }

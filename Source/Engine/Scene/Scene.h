@@ -53,6 +53,10 @@ public:
 
     virtual void Render() = 0;
 
+    // 画面遷移の黒い幕（SceneManager::DrawFade）より手前に描くもの。既定では何も描かない。
+    //   幕は全ての描画の上に被さるので、暗転中にも見せたいもの（ローディングの表示）はここで描く
+    virtual void RenderOverFade() {}
+
     // ImGui の描画
     virtual void DrawGUI() = 0;
 

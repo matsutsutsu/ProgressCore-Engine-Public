@@ -760,6 +760,8 @@
     <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h" />
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
+    <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h" />
+    <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h" />
     <ClInclude Include="Source\Game\Title\TitleComposition.h" />
     <ClInclude Include="Source\Game\Title\TitleCameraSystem.h" />
     <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h" />
@@ -1229,6 +1231,7 @@
     <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp" />
     <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Title\TitleSwarmSystem.cpp" />
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp" />

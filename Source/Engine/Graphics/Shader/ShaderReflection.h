@@ -133,7 +133,7 @@ namespace ShaderReflect
         const UnorderedAccessViewInfo              *FindUAV(const std::string &name) const;
 
     private:
-        void ExtractReflectionInfo(ID3D11ShaderReflection *reflection);
+        void ExtractReflectionInfo(ID3D11ShaderReflection *reflection); // 定数バッファ・テクスチャ・サンプラー・UAV の情報を読み出す
 
         std::vector<ConstantBufferInfo> constantBuffers;
         std::vector<TextureInfo>        textures;

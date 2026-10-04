@@ -59,6 +59,9 @@ enum class BlendState
     // 0 の穴が開き、エディタの GameView（ImGui::Image がアルファ付きで貼る）で暗い背景が透け、
     // 黒い枠に見える。
     UITransparency,
+    // UI 用の加算合成。色は Additive と同じだが、UITransparency と同じ理由で RT のアルファは書き換えない
+    // （透明な部分の多い画像を加算で重ねると、画像の矩形の形に α の穴が開いて黒く見える）
+    UIAdditive,
 
     EnumCount
 };

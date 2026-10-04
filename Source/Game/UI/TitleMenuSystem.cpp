@@ -8,6 +8,7 @@
 #include "Game/UI/MenuUiFactory.h"
 #include "Engine/Core/App/GameFlowState.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -15,18 +16,27 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // 文字とボタンは画面の左に寄せる。右側は 3D の背景（ボスと群れ）が見える所で、
+    // ロゴとボタンは画面の左に寄せる。右側は 3D の背景（ボスと群れ）が見える所で、
     // 文字を置くと重なってどちらも見えにくくなる
-    constexpr float kTextLeft = -476.0f; // 「OVER」の X
-    constexpr float kIndent   = 80.0f;   // 2行目を右へずらす量。右下がりに並べる
-    constexpr float kMenuX    = -408.0f; // ボタンの X（ラベルの左端が文字の左端とほぼそろう）
+    constexpr float kMenuX = -408.0f; // ボタンの X
 
-    // 各 UI が出始めるまでの待ち時間（秒）。数え始めはタイトルの最初の Update（起動して明るくなるのとほぼ同時）で、
+    // --- タイトルロゴ ---
+    constexpr const char *kLogoPath  = "Assets/Textures/UI/Title/TitleLogo_OverCleave.png";
+    constexpr float       kLogoLeft  = -676.0f;               // ロゴの左端の X（以前の文字ロゴの左端に合わせる）
+    constexpr float       kLogoY     = -226.0f;               // ロゴの縦の中心
+    constexpr float       kLogoW     = 640.0f;                // 表示する幅
+    constexpr float       kLogoH     = kLogoW / 3.599f;       // 表示する高さ（画像の縦横比 1983x551 に合わせる）
+    constexpr float       kSlashTilt = 20.0f;                 // 斬撃の光の傾き（度）。ロゴの赤い斬撃の向きに寄せる
+
+    // ロゴの演出の時間（秒）。数え始めはメニューを作った時点
+    constexpr float kLogoStart = 0.5f;  // 斬撃の光が走り始めるまで
+    constexpr float kRevealDur = 0.45f; // 光が左端から右端まで走る時間
+    constexpr float kFlashDur  = 0.5f;  // 走り終えた後、白い光とふくらみが収まるまで
+
+    // ボタンとヒントが出始めるまでの待ち時間（秒）。数え始めはタイトルの最初の Update（起動して明るくなるのとほぼ同時）で、
     // 見え終わるのはこれに UIAppearComponent::duration（0.28 秒）を足した頃。
-    // 群れは最初から輪ができているので待つ必要はない。ロゴ → ボタン → ヒントの順に少しずつ重なる間隔にして、
+    // ロゴが現れ終わる頃（kLogoStart + kRevealDur ≒ 0.95 秒）から少しずつ重なる間隔にして、
     // ボタンを押せるまでを短くしている
-    constexpr float kAppearLogo1 = 0.5f;
-    constexpr float kAppearLogo2 = 0.8f;
     constexpr float kAppearStart = 1.3f;
     constexpr float kAppearQuit  = 1.45f;
     constexpr float kAppearHints = 1.7f;
@@ -93,11 +103,8 @@ void TitleMenuSystem::SpawnMenu()
     CCL::GameUI::SpawnPanel(world, "TitleScrimBottom", {0.0f, kScrimBottomY},
                             {kScrimW, kScrimBottomH}, {0.0f, 0.0f, 0.0f, 0.0f}, 5, -1.0f, 0.0f, canvas, &scrimLowEnd);
 
-    // --- タイトルの文字（「OVER」と「CLEAVE」の2行） ---
-    CCL::GameUI::SpawnLabel(world, "TitleLogoOver", "OVER", {kTextLeft, -276.0f}, 88.0f, 11,
-                            kAppearLogo1, canvas);
-    CCL::GameUI::SpawnLabel(world, "TitleLogoCleave", "CLEAVE", {kTextLeft + kIndent, -176.0f},
-                            88.0f, 11, kAppearLogo2, canvas);
+    // --- タイトルロゴ ---
+    SpawnLogo(canvas);
 
     // --- ボタン（最初は START を選んでおく） ---
     CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "START", {kMenuX, 40.0f}, "start_game",
@@ -111,10 +118,115 @@ void TitleMenuSystem::SpawnMenu()
     CCL::GameUI::SpawnMenuHints(world, canvas, 205.0f, hints, 230, kAppearHints, kHintShiftX);
 }
 
-void TitleMenuSystem::Update(float /*dt*/)
+void TitleMenuSystem::SpawnLogo(CCL::ECS::EntityID canvas)
 {
-    if (m_menuSpawned) return; // 作った後はボタンのイベントで動くので、毎フレームの処理は無い
+    using namespace CCL::ECS;
+    World &world = *m_world;
 
-    SpawnMenu();
-    m_menuSpawned = true;
+    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent>();
+
+    // ロゴ本体と写しは左端を基準に置く。幅を縮めても左端が動かず、右へ向かって現れるように見える
+    UITransformComponent t;
+    t.anchor = {0.5f, 0.5f};
+    t.pivot  = {0.0f, 0.5f};
+    t.offset = {kLogoLeft, kLogoY};
+    t.size   = {0.0f, kLogoH}; // 最初は幅 0（AnimateLogo が広げる）
+
+    // --- ロゴ本体 ---
+    {
+        auto e = EntityFactory::SpawnNamed(world, "TitleLogo", arch);
+
+        UIImageComponent img;
+        img.texturePath = kLogoPath;
+        img.sortOrder   = 11;
+        img.uvRect      = {0.0f, 0.0f, 0.0f, 1.0f};
+
+        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(img);
+        m_logoID = e.ID();
+    }
+
+    // --- 白く光らせる写し（同じ画像を加算合成で重ね、濃さだけを動かす） ---
+    {
+        auto e = EntityFactory::SpawnNamed(world, "TitleLogoFlash", arch);
+
+        UIImageComponent img;
+        img.texturePath = kLogoPath;
+        img.sortOrder   = 12;
+        img.additive    = true;
+        img.visible     = false;
+
+        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(img);
+        m_logoFlashID = e.ID();
+    }
+
+    // --- 斬撃の光（細長い板を傾け、ロゴが現れる先端を走らせる） ---
+    {
+        auto e = EntityFactory::SpawnNamed(world, "TitleLogoSlash", arch);
+
+        UITransformComponent st;
+        st.anchor   = {0.5f, 0.5f};
+        st.pivot    = {0.5f, 0.5f};
+        st.offset   = {kLogoLeft, kLogoY};
+        st.size     = {6.0f, kLogoH * 1.4f}; // ロゴより縦に長くして、上下にはみ出す鋭い線にする
+        st.rotation = kSlashTilt;
+
+        UIImageComponent img;
+        img.color     = {1.0f, 0.55f, 0.50f, 1.0f}; // ロゴの赤い斬撃に寄せた、白っぽい赤
+        img.sortOrder = 13;
+        img.additive  = true;
+        img.visible   = false;
+
+        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(st).Set(img);
+        m_slashID = e.ID();
+    }
+}
+
+void TitleMenuSystem::AnimateLogo(float dt)
+{
+    m_logoTime += dt;
+
+    auto *logoT  = m_world->GetComponent<UITransformComponent>(m_logoID);
+    auto *logoI  = m_world->GetComponent<UIImageComponent>(m_logoID);
+    auto *flashT = m_world->GetComponent<UITransformComponent>(m_logoFlashID);
+    auto *flashI = m_world->GetComponent<UIImageComponent>(m_logoFlashID);
+    auto *slashT = m_world->GetComponent<UITransformComponent>(m_slashID);
+    auto *slashI = m_world->GetComponent<UIImageComponent>(m_slashID);
+    if (!logoT || !logoI || !flashT || !flashI || !slashT || !slashI) return; // 生成の反映待ち
+
+    // --- 現れる: 幅と切り出し範囲を一緒に広げ、画像を引き伸ばさずに左から見せていく ---
+    //   減速しながら走らせる（最初に勢いよく切り込み、右端で収まる）
+    const float r      = std::clamp((m_logoTime - kLogoStart) / kRevealDur, 0.0f, 1.0f);
+    const float reveal = 1.0f - (1.0f - r) * (1.0f - r);
+    logoT->size.x      = kLogoW * reveal;
+    logoI->uvRect.z    = reveal;
+
+    // --- 斬撃の光: 現れる先端を走り、走り終えたら細くなって消える ---
+    const bool running = m_logoTime >= kLogoStart && r < 1.0f;
+    const float after  = std::max(0.0f, m_logoTime - (kLogoStart + kRevealDur)); // 走り終えてからの秒数
+    const float fade   = std::max(0.0f, 1.0f - after / 0.15f);
+    slashI->visible    = running || fade > 0.0f;
+    slashT->offset.x   = kLogoLeft + kLogoW * reveal;
+    slashT->size.x     = 6.0f * (running ? 1.0f : fade);
+    slashI->color.w    = running ? 1.0f : fade;
+
+    // --- 走り終えた瞬間: ロゴ全体を白く光らせ、わずかに膨らませてから戻す ---
+    const float f   = (r >= 1.0f) ? std::max(0.0f, 1.0f - after / kFlashDur) : 0.0f;
+    const float pop = f * f; // 光り始めが一番強く、すぐに引く
+    flashI->visible  = pop > 0.0f;
+    flashI->color    = {1.0f, 1.0f, 1.0f, 0.8f * pop};
+    flashT->size     = logoT->size;
+    logoT->scale     = 1.0f + 0.04f * pop;
+    flashT->scale    = logoT->scale;
+}
+
+void TitleMenuSystem::Update(float dt)
+{
+    if (!m_menuSpawned)
+    {
+        SpawnMenu();
+        m_menuSpawned = true;
+        return; // 作ったエンティティは次のフレームから使える（生成は遅延して反映される）
+    }
+
+    AnimateLogo(dt);
 }

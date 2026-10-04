@@ -774,6 +774,12 @@
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
@@ -2136,6 +2142,9 @@
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">

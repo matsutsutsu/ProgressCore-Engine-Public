@@ -18,10 +18,11 @@
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UIInteractableComponent.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
-#include "Engine/UI/ECS/Components/UIAnimationComponent.h"
+#include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Game/UI/InputIconComponent.h" // 操作のヒントのアイコン
+#include "Game/UI/InputIconComponent.h"        // 操作のヒントのアイコン
+#include "Game/UI/MenuButtonVisualComponent.h" // ボタンの選択の度合い（MenuButtonStyleSystem が動かす）
 
 #include <string>
 #include <vector>
@@ -156,8 +157,12 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief ボタン（背景・当たり判定・見た目・選んだときの拡大）と、その上に重ねるラベルを作る。
-     * @param sortOrder   ボタンの背景の描画順。ラベルは +1 で手前に置く
+     * @brief ボタン（当たり判定・斜めの帯）と、その上に重ねるラベルを作る。
+     *
+     * 見た目は HP ゲージと同じ斜めの帯（UIProgressBar）にそろえる。普段は暗い板だけが見え、
+     * 選ぶと白金の帯が左から伸び、押すと白く飛んでグリッチが走る。動かすのは MenuButtonStyleSystem。
+     *
+     * @param sortOrder   ボタンの帯の描画順。ラベルは +1 で手前に置く
      * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくるアニメーションを再生する（ボタンとラベルの両方）。
      *        負なら再生しない
      * @return 作ったボタンとラベルの EntityID
@@ -169,18 +174,22 @@ namespace CCL::GameUI
     {
         using namespace CCL::ECS;
 
+        constexpr DirectX::XMFLOAT2 kSize{320.0f, 56.0f}; // 帯の大きさ（＝当たり判定）
+        constexpr float             kLabelPad = 40.0f;    // 帯の左端からラベルの左端まで（斜めに切った分をよける）
+
         // --- ボタン ---
         auto btnArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
-                                                 UIImageComponent, UIInteractableComponent, UIButtonComponent, UIAnimationComponent,
-                                                 UIAppearComponent>();
+                                                 UIImageComponent, UIInteractableComponent, UIButtonComponent,
+                                                 UIProgressBarComponent, MenuButtonVisualComponent, UIAppearComponent>();
         auto btn     = EntityFactory::SpawnNamed(world, btnName, btnArch);
 
         UITransformComponent bt;
         bt.anchor = {0.5f, 0.5f};
         bt.pivot  = {0.5f, 0.5f};
         bt.offset = offset;
-        bt.size   = {320.0f, 64.0f};
+        bt.size   = kSize;
 
+        // UIButtonSystem は状態ごとに UIImage の色を差し替えるので画像は残すが、見た目は帯が受け持つので透明にする
         UIImageComponent bimg;
         bimg.sortOrder = sortOrder;
 
@@ -190,25 +199,42 @@ namespace CCL::GameUI
 
         UIButtonComponent bcomp;
         bcomp.onClickAction = action;
+        bcomp.normalColor   = {0.0f, 0.0f, 0.0f, 0.0f};
+        bcomp.hoverColor    = bcomp.normalColor;
+        bcomp.pressedColor  = bcomp.normalColor;
+        bcomp.disabledColor = bcomp.normalColor;
 
-        UIAnimationComponent banim;
+        // 選択の帯。value（伸びた量）は MenuButtonStyleSystem が選択に合わせて動かす
+        UIProgressBarComponent bar;
+        bar.value      = 0.0f;
+        bar.sortOrder  = sortOrder;
+        bar.bgColor    = {0.0f, 0.0f, 0.02f, 0.40f};        // 選んでいないときも見える暗い板
+        bar.fillColor  = {0.96f, 0.88f, 0.62f, 1.0f};       // HP ゲージと同じ白金
+        bar.gradient   = 0.25f;
+        bar.slant      = 18.0f;
+        bar.glowColor  = {1.0f, 1.0f, 1.0f, 1.0f};          // 伸びている途中の先端を光らせる
+        bar.glowWidth  = 10.0f;
+        bar.sheen      = 0.3f;                               // 選んでいる間、光沢を流す
+        bar.glitch     = 1.0f;                               // 押した瞬間のグリッチ
+        bar.hitFlash   = 0.6f;
+        bar.shakeAmplitude = 4.0f;
+
+        MenuButtonVisualComponent vis;
+        vis.focus = focused ? 1.0f : 0.0f; // 最初から選ばれているボタンは、帯が伸びた状態から始める
 
         UIAppearComponent bap;
         ConfigureAppear(bt, bap, appearDelay);
 
-        btn.Set(MakeUINode(parent)).Set(bt).Set(bimg).Set(inter).Set(bcomp).Set(banim).Set(bap);
-        const EntityID btnID = btn.ID();
-
-        // --- ラベル（別のエンティティ。ボタンの左寄りに置き、ボタンと同じ親の子にする） ---
+        // --- ラベル（別のエンティティ。帯の左寄りに置き、ボタンと同じ親の子にする） ---
         auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                    UITextComponent, UIAppearComponent>();
         auto lbl       = EntityFactory::SpawnNamed(world, labelName, labelArch);
 
         UITransformComponent lt;
         lt.anchor = {0.5f, 0.5f};
-        lt.pivot  = {0.5f, 0.5f};
-        lt.offset = {offset.x - 128.0f, offset.y - 14.0f};
-        lt.size   = {280.0f, 32.0f};
+        lt.pivot  = {0.0f, 0.5f}; // 左端で置く（帯の左端からの距離で決められる）
+        lt.offset = {offset.x - kSize.x * 0.5f + kLabelPad, offset.y - 14.0f};
+        lt.size   = {kSize.x - kLabelPad, 32.0f};
 
         UITextComponent lx;
         lx.text      = label;
@@ -221,7 +247,10 @@ namespace CCL::GameUI
         lbl.Set(MakeUINode(parent)).Set(lt).Set(lx).Set(lap);
         const EntityID lblID = lbl.ID();
 
-        return {btnID, lblID};
+        vis.label = lblID;
+        btn.Set(MakeUINode(parent)).Set(bt).Set(bimg).Set(inter).Set(bcomp).Set(bar).Set(vis).Set(bap);
+
+        return {btn.ID(), lblID};
     }
 
     /**

@@ -67,6 +67,13 @@ private:
         int   _pad0;
     };
 
+    /**
+     * @brief このフレームで次に使う変換先の RenderTarget を取り出す。無ければ作り、大きさが違えば作り直す。
+     * @param device 作るときに使うデバイス。
+     * @param w      必要な幅（px）。
+     * @param h      必要な高さ（px）。
+     * @return 変換先。プールが所有する。作れなければ nullptr。
+     */
     RenderTarget *AcquirePoolTarget(ID3D11Device *device, uint32_t w, uint32_t h);
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vs;

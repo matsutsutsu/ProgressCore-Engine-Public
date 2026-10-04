@@ -90,6 +90,7 @@ namespace CCL::AI::Formation::Data
             m_telegraphOverride = telegraphSeconds;
             m_progressOverride  = progress;
         }
+        // エディタが固定した時間を解き、ゲームの時間で進む状態へ戻す
         void ClearPreview()
         {
             m_telegraphOverride = -1.0f;
@@ -128,7 +129,19 @@ namespace CCL::AI::Formation::Data
         // ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する。
         static Vector3 AxisVector(AssetAxis axis);
 
+        /**
+         * @brief 機体の通し番号から席（左右・段・列・行）を決める（割付）。
+         * @param drone 席を決める機体。localIndex と totalDrones を使う。
+         * @return 決めた席。
+         */
         Seat    AssignSeat(const DroneComponent &drone) const;
+
+        /**
+         * @brief 席を、動かす前の「待機の形」のローカル座標にする（形）。
+         * @param seat  座標にする席。
+         * @param drone 座標を求める機体。形が Model のときは localIndex でモデル表面の点を選ぶ。
+         * @return ローカル座標（陣形の中心からの位置）。
+         */
         Vector3 MakeLocal(const Seat &seat, const DroneComponent &drone) const;
 
         /**

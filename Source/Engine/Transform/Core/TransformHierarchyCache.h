@@ -29,8 +29,10 @@ namespace CCL::ECS
 class TransformHierarchyCache
 {
 public:
+    // World の全 Transform から、非ルートを親が先の順に並べ直す
     void Rebuild(CCL::ECS::World &world);
 
+    // id が並びの何番目かを返す。ルート・未登録なら -1
     int OrderOf(CCL::ECS::EntityID id) const
     {
         const uint32_t pure = CCL::ECS::EntityHandle::GetIndex(id);

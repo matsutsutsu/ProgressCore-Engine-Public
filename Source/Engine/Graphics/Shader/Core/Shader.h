@@ -83,7 +83,9 @@ protected:
 
     // csoPath のリフレクションを読み、b0〜b7（SLOT_CB_SCENE 未満）の定数バッファを作る
     bool InitializeReflection(ID3D11Device *device, const std::string &csoPath);
+    // 名前のテクスチャのスロット番号を引き、使うスロットとして覚える。無ければ -1
     int  FetchTextureSlot(const std::string &name);
+    // 名前のサンプラーのスロット番号を引き、使うスロットとして覚える。無ければ -1
     int  FetchSamplerSlot(const std::string &name);
     // シェーダー・入力レイアウト・定数バッファをバインドする
     void ApplyShaderPipeline(ID3D11DeviceContext *dc, ID3D11VertexShader *vs, ID3D11PixelShader *ps, ID3D11InputLayout *layout);

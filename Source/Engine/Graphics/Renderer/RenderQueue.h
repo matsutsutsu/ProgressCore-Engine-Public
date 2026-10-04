@@ -109,6 +109,7 @@ public:
         return (static_cast<uint64_t>(batchStart) << 32) | static_cast<uint32_t>(meshIndex);
     }
 
+    // カリング済みの見えるインスタンスの列を key（MakeVisibleKey）で控える。OpaquePass が FindVisibleInstances で再利用する
     void StoreVisibleInstances(uint64_t key, const InstanceData *data, size_t count)
     {
         if (!data) return;
@@ -135,6 +136,7 @@ public:
         m_opaqueCommands.push_back(cmd);
     }
 
+    // OpaquePass が半透明と判定したメッシュを、TransparentPass 用に積む
     void SubmitDeferredTransparent(const TransparencyCommand &cmd)
     {
         m_deferredTransparentCommands.push_back(cmd);

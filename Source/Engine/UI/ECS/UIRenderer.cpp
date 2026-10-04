@@ -144,7 +144,9 @@ void UIRenderer::Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList
         // sortOrder に関係なく最後にまとめる
         DrawItems(dc, device, ordered, BlendPass::Normal);
 
-        dc->OMSetBlendState(renderState->GetBlendState(BlendState::Additive), nullptr, 0xffffffff);
+        // RT のアルファを書き換えない UI 用の加算にする。Additive のままだと、透明な部分の多い画像
+        // （タイトルロゴを白く光らせる写しなど）で画像の矩形の形に α の穴が開き、黒い四角に見える
+        dc->OMSetBlendState(renderState->GetBlendState(BlendState::UIAdditive), nullptr, 0xffffffff);
         DrawItems(dc, device, ordered, BlendPass::Additive);
 
         // 呼び出し側（BaseScene の 2D パス）が設定していた合成へ戻す。

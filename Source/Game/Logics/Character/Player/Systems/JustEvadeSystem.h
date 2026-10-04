@@ -51,6 +51,14 @@ public:
     }
 
 private:
+    /**
+     * @brief 接触した2体について、ジャスト回避が成立するかを調べ、成立したら記録する。
+     *
+     * 接触イベントはどちらがプレイヤーか決まっていないので、呼び出し側が向きを入れ替えて2回呼ぶ。
+     *
+     * @param playerCandidate プレイヤーかもしれない側。JustEvadeComponent と DashComponent が無ければ何もしない。
+     * @param otherCandidate  ぶつかった相手。突撃中のドローンか、判定が開いているボスの剣のときだけ成立する。
+     */
     void CheckJustEvade(CCL::ECS::EntityID playerCandidate, CCL::ECS::EntityID otherCandidate);
 
     // このフレームに届いた接触。コールバックが溜め、Update が処理して空にする。

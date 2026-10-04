@@ -281,6 +281,25 @@ RenderState::RenderState(ID3D11Device *device)
                                               blendStates[static_cast<int>(BlendState::UITransparency)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
+    // UI用の加算合成（色は加算合成と同じ。ただしRTのアルファは書き換えない）
+    //   UITransparency と同じく、RenderTargetWriteMask から ALPHA を外したことだけが Additive との違い
+    {
+        D3D11_BLEND_DESC desc{};
+        desc.AlphaToCoverageEnable          = false;
+        desc.IndependentBlendEnable         = false;
+        desc.RenderTarget[0].BlendEnable    = true;
+        desc.RenderTarget[0].SrcBlend       = D3D11_BLEND_SRC_ALPHA;
+        desc.RenderTarget[0].DestBlend      = D3D11_BLEND_ONE;
+        desc.RenderTarget[0].BlendOp        = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ONE;
+        desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        desc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].RenderTargetWriteMask =
+            D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
+        HRESULT hr = device->CreateBlendState(&desc,
+                                              blendStates[static_cast<int>(BlendState::UIAdditive)].GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
 
     // ベタ塗り＆カリングなし
     {

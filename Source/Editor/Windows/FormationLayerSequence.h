@@ -62,6 +62,14 @@ public:
     void EndEdit() override;
 
     const char *GetItemLabel(int index) const override;
+    /**
+     * @brief index 番目の層の帯を ImSequencer に渡す。
+     * @param index 層の番号。
+     * @param start 帯の開始フレームへのポインタを受け取る。ImSequencer がドラッグで書き換える。nullptr 可。
+     * @param end   帯の終了フレームへのポインタを受け取る。nullptr 可。
+     * @param type  層の種類（LayerType の整数値）を受け取る。nullptr 可。
+     * @param color 帯の色を受け取る。nullptr 可。
+     */
     void        Get(int index, int **start, int **end, int *type, unsigned int *color) override;
 
     /**
@@ -78,7 +86,7 @@ private:
         int first;
         int length;
     };
-    static Section SectionOf(const Layer &layer);
+    static Section SectionOf(const Layer &layer); // 層を置ける区間（Shiver なら予告、それ以外は攻撃）
 
     // 層の時間帯 → 帯の両端のフレーム。
     static std::pair<int, int> ToFrames(const Layer &layer);

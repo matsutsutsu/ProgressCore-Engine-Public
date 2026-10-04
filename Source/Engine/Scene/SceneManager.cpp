@@ -125,6 +125,12 @@ void SceneManager::Render()
     // フェードの黒矩形は最前面。シーンの描画（UI 含む）の後に全ての上へ被せる。
     // BaseScene 側には書かず、遷移の所有者であるここで一元的に描く
     DrawFade();
+
+    // 幕の上に描くもの（ローディングの表示）。幕が黒のままでも見えるよう、幕の後に描く
+    if (currentScene != nullptr)
+    {
+        currentScene->RenderOverFade();
+    }
 }
 
 void SceneManager::DrawGUI()
