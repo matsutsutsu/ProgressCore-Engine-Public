@@ -96,7 +96,7 @@ public:
     bool RequestTransition(Scene *readyScene);
 
     // 黒→表示のフェードインのみ（起動直後の初回シーンのポップイン隠し）。
-    void FadeInFromBlack(float dur = 0.65f);
+    void FadeInFromBlack(float dur = 1.0f);
 
     // フェード遷移中か
     bool IsTransitioning() const { return m_fade != FadeState::None; }
@@ -135,7 +135,7 @@ private:
     void AdvanceFade(float dt);
     // 予約された切り替え（名前 or 実体）を今この場で実行する。黒の瞬間に呼ばれる。
     void BeginPendingChange();
-    // フェードの黒矩形を描画する（Render の末尾＝最前面で呼ぶ）。
+    // フェードを描画する（◆タイルワイプ。Render の末尾＝最前面で呼ぶ）。
     void DrawFade();
 
     // フェードの状態機械。
@@ -151,8 +151,8 @@ private:
     };
     FadeState m_fade          = FadeState::None;
     float     m_fadeAlpha     = 0.0f;  // 0 = 透明 / 1 = 黒
-    float     m_fadeOutDur    = 0.55f; // 暗転にかける秒数
-    float     m_fadeInDur     = 0.65f; // 明転にかける秒数
+    float     m_fadeOutDur    = 1.0f; // 暗転にかける秒数
+    float     m_fadeInDur     = 1.0f; // 明転にかける秒数
     float     m_fadeHoldDur   = 0.15f; // 完全な黒を保持する秒数
     float     m_fadeHoldTimer = 0.0f;  // Hold に入ってからの経過秒数
 
@@ -168,7 +168,7 @@ private:
     //   チラつきを避ける）。SceneLoading からの RequestTransition(Scene*) で解除。
     bool m_asyncHold = false;
 
-    std::unique_ptr<Sprite> m_fadeQuad; // 黒矩形（遅延生成）
+    std::unique_ptr<Sprite> m_fadeQuad; // フェードの◆・光の筋を描く白スプライト（遅延生成）
 
     Scene *currentScene = nullptr; // 現在のシーン（所有する）
     Scene *nextScene    = nullptr; // 次の Update で切り替えるシーン（所有する）

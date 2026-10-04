@@ -10,7 +10,7 @@
 
 #include "Engine/ECS/Core/CCL_World.h"
 
-// フェード描画用（黒の全画面矩形）。
+// フェード描画用（◆タイルワイプ）。
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 #include "Engine/Graphics/Renderer/Sprite.h"
@@ -27,6 +27,9 @@
 #include "Engine/Audio/Systems/AudioCleanupSystem.h"
 
 #include "tracy/Tracy.hpp"
+
+#include <algorithm> // std::clamp
+#include <cmath>     // std::sin / std::atan
 
 using namespace CCL::ECS;
 
@@ -396,19 +399,98 @@ void SceneManager::DrawFade()
     auto *dc  = gfx.GetDeviceContext();
     if (!dc) return;
 
-    // 半透明合成・深度無効を明示的に設定する（他パスの状態に依存しない）
+    // 半透明合成・深度無効を明示的に設定する（他パスの状態に依存しない）。
+    //   合成は RT の α を書き換えない UITransparency。縁の半透明の◆が α の穴を開けると、
+    //   エディタの GameView でその部分だけ後ろのウィンドウが透ける
     dc->OMSetBlendState(
-        gfx.GetRenderState()->GetBlendState(BlendState::Transparency), nullptr, 0xffffffff);
+        gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
     dc->OMSetDepthStencilState(
         gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
-    // 線形だと明暗が一定速度で変わり、機械的で違和感が出やすい。
-    // SmoothStep（両端が緩やかな S 字）で加減速を付ける
-    const float eased = CCL::Math::SmoothStep(m_fadeAlpha);
+    if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice()); // 白のダミーテクスチャ。色を掛けて単色矩形にする
 
-    // 黒の全画面矩形（白のダミーテクスチャに黒 + alpha を掛ける）。初回に生成する
-    if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
-    m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f,
-                       gfx.GetScreenWidth(), gfx.GetScreenHeight(), 0.0f,
-                       0.0f, 0.0f, 0.0f, eased);
+    const float sw = gfx.GetScreenWidth();
+    const float sh = gfx.GetScreenHeight();
+
+    // 完全な黒の間（暗転しきった・ローディング中）は、1枚の黒で確実に覆う
+    if (m_fadeAlpha >= 0.999f)
+    {
+        m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f, sw, sh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+        return;
+    }
+
+    // --- ◆タイルワイプ ---
+    //   画面を◆の格子に区切り、左から右へ斜めに、◆が育って画面を埋める（暗転）。
+    //   明転は同じ向きのまま◆が縮んで消える（左から先に晴れ、動きが右へ続く）。
+    //   育つ途中の◆は白金の縁で光り、波の先頭には細い光の筋が走る
+    constexpr float kCellPx = 96.0f;  // 1080p での格子の間隔
+    constexpr float kBand   = 0.35f;  // 1つの◆が育ちきるまでに波が進む幅（画面幅に対する割合）
+    constexpr float kSlope  = 0.35f;  // 波の傾き。下ほど遅れて届く（画面の高さ 1 に対する横のずれ）
+    constexpr float kGoldR = 0.96f, kGoldG = 0.88f, kGoldB = 0.62f; // HUD の白金
+
+    const bool  revealing = (m_fade == FadeState::In);
+    const float p         = CCL::Math::SmoothStep(revealing ? 1.0f - m_fadeAlpha : m_fadeAlpha); // 波の進み具合 0〜1
+    const float front     = p * (1.0f + kBand);                                                  // 波の先頭の位置（u 座標）
+    const float k         = sh / 1080.0f;
+    const float cell      = kCellPx * k;
+    const float span      = sw + sh * kSlope; // u 座標 0〜1 に対応する画面上の長さ
+
+    // 各セルの育ち具合 0〜1（暗転では 1 が黒で覆った状態。明転では反転して、先に波が来た所から晴れる）
+    auto coverage = [&](float x, float y) {
+        const float u = (x + y * kSlope) / span;
+        const float t = std::clamp((front - u) / kBand, 0.0f, 1.0f);
+        return revealing ? 1.0f - t : t;
+    };
+    // 中心 (cx, cy)・対角線の半分 half の◆を描く（矩形を 45 度回す。辺の長さは half * √2）
+    auto diamond = [&](float cx, float cy, float half, float r, float g, float b, float a) {
+        const float side = half * 1.41421356f;
+        m_fadeQuad->Render(dc, cx - side * 0.5f, cy - side * 0.5f, 0.0f, side, side, 45.0f, r, g, b, a);
+    };
+
+    // セルの◆が四隅まで覆うには、対角線の半分がセルの幅と同じだけ要る（少し足して隙間を消す）
+    const float fullHalf = cell + 1.5f;
+    const int   cols     = static_cast<int>(sw / cell) + 2;
+    const int   rows     = static_cast<int>(sh / cell) + 2;
+
+    // 1 周目: 育つ途中の◆の白金の縁。2 周目の黒が上から覆うので、隣が黒く埋まった所には残らない
+    for (int row = 0; row < rows; ++row)
+    {
+        for (int col = 0; col < cols; ++col)
+        {
+            const float cx = (static_cast<float>(col) + 0.5f) * cell;
+            const float cy = (static_cast<float>(row) + 0.5f) * cell;
+            const float c  = coverage(cx, cy);
+            if (c <= 0.0f || c >= 1.0f) continue;
+            const float rim = std::sin(c * 3.1415927f); // 育ち始めと育ちきりで消え、途中で最も明るい
+            diamond(cx, cy, fullHalf * c, kGoldR, kGoldG, kGoldB, 0.85f * rim);
+        }
+    }
+
+    // 2 周目: 黒の◆。縁より一回り小さく始め、育ちきると縁を飲み込んでセルを覆う
+    for (int row = 0; row < rows; ++row)
+    {
+        for (int col = 0; col < cols; ++col)
+        {
+            const float cx = (static_cast<float>(col) + 0.5f) * cell;
+            const float cy = (static_cast<float>(row) + 0.5f) * cell;
+            const float c  = coverage(cx, cy);
+            if (c <= 0.0f) continue;
+            const float inner = 0.8f + 0.2f * c; // 縁の幅の分だけ小さく描く（育ちきると縁と同じ大きさ）
+            diamond(cx, cy, fullHalf * c * inner, 0.0f, 0.0f, 0.0f, 1.0f);
+        }
+    }
+
+    // 波の先頭を走る細い光の筋（斬撃の切れ味）。波の出入りの両端では消す
+    const float streakA = std::sin(p * 3.1415927f);
+    if (streakA > 0.01f)
+    {
+        // u = front の線は x + y * kSlope = front * span。画面の縦の中央を通る点から、傾けて縦に伸ばす
+        const float x     = front * span - sh * 0.5f * kSlope;
+        const float angle = std::atan(kSlope) * 57.29578f; // 下ほど左へ寄る向き
+        const float len   = sh * 1.3f;
+        m_fadeQuad->Render(dc, x - 12.0f * k, sh * 0.5f - len * 0.5f, 0.0f, 24.0f * k, len, angle,
+                           kGoldR, kGoldG, kGoldB, 0.18f * streakA); // 淡い光のにじみ
+        m_fadeQuad->Render(dc, x - 1.5f * k, sh * 0.5f - len * 0.5f, 0.0f, 3.0f * k, len, angle,
+                           1.0f, 0.97f, 0.88f, 0.9f * streakA); // 芯
+    }
 }
