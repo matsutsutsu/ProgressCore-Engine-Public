@@ -42,14 +42,6 @@
                                 "blend":  "additive"
                             },
                             {
-                                "name":  "LockOnPBR"
-                            },
-                            {
-                                "name":  "LockOnMarker",
-                                "blend":  "transparency",
-                                "depth":  "none"
-                            },
-                            {
                                 "name":  "Refraction",
                                 "blend":  "transparency",
                                 "depth":  "testOnly"

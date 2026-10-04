@@ -445,12 +445,6 @@
     <Filter Include="Shader\Material\Water">
       <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\LockOnMarker">
-      <UniqueIdentifier>{b5415b40-50d0-43b6-bcbc-d385b385e005}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\LockOnPBR">
-      <UniqueIdentifier>{bb8fbb48-1624-4a04-ae9d-b4133f40e054}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Material\Refraction">
       <UniqueIdentifier>{00601cf2-b82d-479c-b444-dafa34ba8bfc}</UniqueIdentifier>
     </Filter>
@@ -784,6 +778,9 @@
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\ScreenHeadingUi.h">
+      <Filter>Source\Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h">
       <Filter>Source\Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h">
@@ -2156,6 +2153,9 @@
     <ClCompile Include="Source\Game\UI\UIRevealSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp">
+      <Filter>Source\Game\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp">
       <Filter>Source\Game\UI</Filter>
     </ClCompile>
@@ -3084,23 +3084,11 @@
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
       <Filter>Shader\Material\Basic</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerVS.hlsl">
-      <Filter>Shader\Material\LockOnMarker</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerPS.hlsl">
-      <Filter>Shader\Material\LockOnMarker</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
       <Filter>Shader\Material\Refraction</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
       <Filter>Shader\Material\Refraction</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRVS.hlsl">
-      <Filter>Shader\Material\LockOnPBR</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRPS.hlsl">
-      <Filter>Shader\Material\LockOnPBR</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
       <Filter>Shader\Material\Lambert</Filter>

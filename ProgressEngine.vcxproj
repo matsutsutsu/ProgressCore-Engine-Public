@@ -762,6 +762,7 @@
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h" />
     <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h" />
     <ClInclude Include="Source\Game\UI\UIRevealComponent.h" />
     <ClInclude Include="Source\Game\UI\UIRevealSystem.h" />
     <ClInclude Include="Source\Game\UI\ScreenHeadingUi.h" />
@@ -1235,6 +1236,7 @@
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\UIRevealSystem.cpp" />
     <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Title\TitleSwarmSystem.cpp" />
@@ -1433,32 +1435,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnMarker\LockOnMarkerPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
     <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\LockOnPBR\LockOnPBRPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
