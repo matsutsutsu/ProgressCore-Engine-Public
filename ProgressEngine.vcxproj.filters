@@ -33,6 +33,21 @@
     <Filter Include="Source\Game\UI">
       <UniqueIdentifier>{17b35408-b58d-4cd1-af8f-6a2d86f44a1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\UI\HUD">
+      <UniqueIdentifier>{2253c642-99e8-42d2-a25b-df81a582cfa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\UI\Screens">
+      <UniqueIdentifier>{9ce74f80-5765-4f20-a6e8-d7e222dc917b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\UI\Common">
+      <UniqueIdentifier>{8221c8bd-504d-43c7-868a-cb0aaa3aad33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\UI\Input">
+      <UniqueIdentifier>{38185093-4247-4142-8f47-35dab101b96e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\UI\Debug">
+      <UniqueIdentifier>{11132921-e861-472a-8565-86ec4fb5ac0f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Title">
       <UniqueIdentifier>{86b6134c-37dd-4d6c-9820-3a1745384c78}</UniqueIdentifier>
     </Filter>
@@ -760,43 +775,43 @@
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\UIRevealComponent.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\UIRevealSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\ScreenHeadingUi.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\UISoundSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\GameSettings.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\SettingsScreenSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Title\TitleComposition.h">
       <Filter>Source\Game\Title</Filter>
@@ -808,25 +823,25 @@
       <Filter>Source\Game\Title</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\GaugeLabGui.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\MenuUiFactory.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\GameResultSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\PauseSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\InputPromptSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\InputIconComponent.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\InputIconSystem.h">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\App\GameFlowState.h">
       <Filter>Source\Engine\Core\App</Filter>
@@ -2151,34 +2166,34 @@
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\UIRevealSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\UISoundSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\GameSettings.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\SettingsScreenSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp">
       <Filter>Source\Game\Title</Filter>
@@ -2187,16 +2202,16 @@
       <Filter>Source\Game\Title</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\GameResultSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\PauseSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\InputPromptSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\InputIconSystem.cpp">
-      <Filter>Source\Game\UI</Filter>
+      <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
