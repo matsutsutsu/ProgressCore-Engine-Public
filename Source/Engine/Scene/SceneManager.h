@@ -151,8 +151,8 @@ private:
     };
     FadeState m_fade          = FadeState::None;
     float     m_fadeAlpha     = 0.0f;  // 0 = 透明 / 1 = 黒
-    float     m_fadeOutDur    = 1.0f; // 暗転にかける秒数
-    float     m_fadeInDur     = 1.0f; // 明転にかける秒数
+    float     m_fadeOutDur    = 1.5f; // 暗転にかける秒数
+    float     m_fadeInDur     = 1.5f; // 明転にかける秒数
     float     m_fadeHoldDur   = 0.15f; // 完全な黒を保持する秒数
     float     m_fadeHoldTimer = 0.0f;  // Hold に入ってからの経過秒数
 
