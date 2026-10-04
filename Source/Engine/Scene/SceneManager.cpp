@@ -55,8 +55,13 @@ void SceneManager::Initialize()
 #endif
     ChangeSceneAsync(kStartupScene);
 
-    // 起動直後は黒から表示へフェードイン（初回のローディング画面のポップインを隠す）。
-    FadeInFromBlack();
+    // 起動直後は、普段の非同期遷移で「黒を保持して裏読みしている途中」と同じ状態から始める。
+    //   黒の上にスプラッシュ（ローディング画面）が出て、読み終わったら本命へ1回だけ明転する。
+    //   黒からフェードインで始めると、読み終わったときに黒い画面の上でもう一度暗転し直すことになり、
+    //   何も映らない黒い時間が挟まる
+    m_fadeAlpha = 1.0f;
+    m_fade      = FadeState::Hold;
+    m_asyncHold = true;
 }
 
 void SceneManager::FixedUpdate(float fixedTime)

@@ -81,7 +81,12 @@ void SceneLoading::Initialize()
     // 行き先のシーン名。SceneManager::ChangeSceneAsync がこのシーンを作る前に、行き先の名前を設定している
     m_destName = SceneManager::Instance().GetCurrentSceneName();
     m_tipIndex = g_tipIndex++ % kTipCount;
-    m_splash   = g_firstLoad;
+#ifdef SHIPPING_BUILD
+    m_splash = g_firstLoad; // 製品ビルドだけ、起動時にエンジンのロゴを出す
+#else
+    m_splash = false;       // 開発中はすぐ触れるよう出さない
+    m_quick  = g_firstLoad; // 起動時は、読み終わったらすぐ抜ける
+#endif
     g_firstLoad = false;
     m_logStart.fill(-1.0f);
 
@@ -136,7 +141,7 @@ void SceneLoading::Update(float elapsedTime)
 
     // 最低表示時間の間か（裏読みが終わっていても、ログが最後まで流れるよう kMinShowTime 秒までは表示する）。
     //   スプラッシュはロゴを読める長さだけ出す
-    const float minShow = m_splash ? kSplashTime : kMinShowTime;
+    const float minShow = m_splash ? kSplashTime : m_quick ? 0.0f : kMinShowTime;
     const bool  holding = time < minShow;
 
     // --- 表示用の進捗 ---
@@ -170,9 +175,11 @@ void SceneLoading::Update(float elapsedTime)
     m_visibility     = (visTarget > m_visibility) ? std::min(visTarget, m_visibility + step)
                                                   : std::max(visTarget, m_visibility - step);
 
-    // 裏読みが終わり、最低待機時間が過ぎ、表示も消えたら本命シーンへ引き渡す。
-    //   RequestTransition は黒の保持を解いて本命へ差し替え、フェードインを始める
-    if (done && time >= kMinLoadTime && m_visibility <= 0.0f && m_nextScene)
+    // 裏読みが終わり、最低待機時間と最低表示時間が過ぎ、表示も消えたら本命シーンへ引き渡す。
+    //   RequestTransition は黒の保持を解いて本命へ差し替え、フェードインを始める。
+    //   holding を見ないと、表示が出始める前（kShowDelay より前）に読み込みが終わったとき、
+    //   表示がまだ 0 なので「消えた」とみなされ、ローディング画面を一度も出さずに抜けてしまう（Release は読み込みが速く毎回こうなっていた）
+    if (done && !holding && time >= kMinLoadTime && m_visibility <= 0.0f && m_nextScene)
     {
         if (SceneManager::Instance().RequestTransition(m_nextScene))
         {

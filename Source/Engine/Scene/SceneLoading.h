@@ -85,7 +85,8 @@ private:
     // スプラッシュ（起動して最初の読み込み）の最低表示時間（秒）。ロゴを読める長さにする
     static constexpr float kSplashTime = 2.5f;
 
-    bool m_splash = false; // この読み込みでスプラッシュを出すか（アプリを起動して最初の読み込みだけ true）
+    bool m_splash = false; // この読み込みでスプラッシュを出すか（製品ビルドで、アプリを起動して最初の読み込みだけ true）
+    bool m_quick  = false; // 最低表示時間を待たずに抜けるか（開発ビルドの起動時。すぐデバッグに入れるように）
 
     // 描画。alpha は表示の濃さ（出入りのフェード込み）
     void DrawBackdrop(float alpha); // 背景（色の付いた地・◆の輪・周辺減光・粒子ノイズ）
