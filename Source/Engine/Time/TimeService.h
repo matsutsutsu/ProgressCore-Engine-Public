@@ -59,4 +59,21 @@ namespace Time
     void Pause(CCL::ECS::World &world);
     void Resume(CCL::ECS::World &world);
     void StepFrame(CCL::ECS::World &world); // 一時停止中に1フレームだけ進める
+
+    // ============================================================
+    // 描画ステージ用の dt
+    // ============================================================
+
+    /**
+     * @brief 描画ステージで動くゲーム系 System（カメラ追従など）が使う dt。一時停止中は 0 を返す。
+     *
+     * 描画ステージはポーズ中も実時間で走るので、実時間 dt で減衰を進めると
+     * 止まった世界へカメラだけが追いつこうとして動いてしまう。
+     * スロー・ヒットストップは掛けない（カメラは実時間で動かした方が手触りが良い）。
+     *
+     * @param world  時計を持つ World。
+     * @param realDt 描画ステージに渡された実時間 dt（秒）。
+     * @return 一時停止中は 0、それ以外は realDt。
+     */
+    float PresentationDt(CCL::ECS::World &world, float realDt);
 } // namespace Time

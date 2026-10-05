@@ -6,6 +6,7 @@
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Camera/CameraEvents.h"     // CameraShakeRequestEvent（揺れ要求の唯一の入口）
 #include "Engine/Core/Math/Interpolation.h" // Damp() / SmootherStep()
+#include "Engine/Time/TimeService.h"        // Time::PresentationDt（ポーズ中は追従・揺れを止める）
 #include <SimpleMath.h>
 #include <algorithm>
 #include <cmath>
@@ -25,6 +26,8 @@ using namespace DirectX::SimpleMath;
 // =========================================================
 void CameraFollowSystem::Update(float dt)
 {
+    dt = Time::PresentationDt(*m_world, dt); // ポーズ中に止まった対象へ追いつき続けないよう凍結する
+
     // target の役割による自動接続は、ゲーム側の CameraTargetBindSystem(R00b) が済ませている。
     ForEach([&](VirtualCamera &vcam, const CameraBodyFollow &body) {
         auto *targetTrans = m_world->GetComponent<TransformComponent>(body.target);
@@ -72,6 +75,8 @@ void CameraFollowSystem::Update(float dt)
 // =========================================================
 void CameraLookAtSystem::Update(float dt)
 {
+    dt = Time::PresentationDt(*m_world, dt); // Follow と同じくポーズ中は凍結する
+
     ForEach([&](VirtualCamera &vcam, const CameraAimLookAt &aim) {
         auto *targetTrans = m_world->GetComponent<TransformComponent>(aim.target);
         if (!targetTrans) return;
@@ -170,6 +175,9 @@ void CameraShakeSystem::Initialize()
 
 void CameraShakeSystem::Update(float dt)
 {
+    // ポーズ中は揺れの減衰も位相も止め、その瞬間のずれのまま凍結する（ポーズ中に揺れ続けない）
+    dt = Time::PresentationDt(*m_world, dt);
+
     // 要求の反映はここだけ。CameraShake への書き込み口を1箇所に閉じておく。
     const float pending = m_pendingTrauma.exchange(0.0f, std::memory_order_relaxed);
 

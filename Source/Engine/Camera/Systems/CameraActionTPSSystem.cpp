@@ -7,6 +7,7 @@
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h" // カメラ衝突（地形レイキャスト）
 #include "Engine/Core/App/GameFlowState.h"              // ポーズ中はカーソルロックを解除するため
+#include "Engine/Time/TimeService.h"                    // Time::PresentationDt（ポーズ中は追従を止める）
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -54,6 +55,11 @@ void CameraActionTPSSystem::Initialize()
 
 void CameraActionTPSSystem::Update(float dt)
 {
+    // 描画ステージなのでポーズ中も走る。実時間 dt のまま減衰を進めると、止まった世界へ
+    // カメラだけが追いつこうとして動くので、ポーズ中は dt=0 で回して姿勢を凍結する。
+    // return で抜けないのは、末尾のカーソルロック解除（ポーズメニュー用）を走らせるため。
+    dt = Time::PresentationDt(*m_world, dt);
+
     // 1. 今のフレームの視点入力と、入力を無効にする条件を確定する
     //    カメラが何台あっても入力は共通なので、ここで1度だけ読む。
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;

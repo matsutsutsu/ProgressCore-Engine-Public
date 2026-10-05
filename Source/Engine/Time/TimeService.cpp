@@ -87,3 +87,9 @@ void Time::StepFrame(World &world)
 {
     if (world.HasResource<TimeContext>()) world.GetResource<TimeContext>().stepNextFrame = true;
 }
+
+float Time::PresentationDt(World &world, float realDt)
+{
+    if (world.HasResource<TimeContext>() && world.GetResource<TimeContext>().isPaused) return 0.0f;
+    return realDt;
+}
