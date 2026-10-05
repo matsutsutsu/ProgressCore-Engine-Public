@@ -29,6 +29,10 @@ private:
     std::wstring                    m_vsPath, m_gsPath, m_psPath; // 更新を見る HLSL
     std::filesystem::file_time_type m_vsTime, m_gsTime, m_psTime; // 前に見た更新時刻
 
+    // 3つが include する共通部分（GS_OUT など）。ここだけ直しても読み直されるように見る
+    std::wstring                    m_includePath;
+    std::filesystem::file_time_type m_includeTime;
+
     void LoadShaders(ID3D11Device *device);
     // HLSL をコンパイルし直す。失敗したシェーダーは前のまま
     void CompileShaders(ID3D11Device *device);

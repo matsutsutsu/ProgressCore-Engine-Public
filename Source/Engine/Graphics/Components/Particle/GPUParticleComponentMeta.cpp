@@ -45,6 +45,7 @@ namespace
         j["uvScrollSpeed"] = {SafeF(d.uvScrollSpeed.x), SafeF(d.uvScrollSpeed.y)};
         j["scale"]         = {SafeF(d.scale.x), SafeF(d.scale.y)};
         j["color"]         = {SafeF(d.color.x), SafeF(d.color.y), SafeF(d.color.z), SafeF(d.color.w)};
+        j["intensity"]     = SafeF(d.intensity);
         j["spriteGrid"]    = {d.spriteGrid.x, d.spriteGrid.y};
 
         j["localOffsetY"]    = SafeF(d.localOffsetY);
@@ -121,6 +122,8 @@ namespace
         F2("uvScrollSpeed", d.uvScrollSpeed);
         F2("scale", d.scale);
         F4("color", d.color);
+        // intensity が無い JSON は既定の 1 のまま読む（選んだ色そのままで、見た目は変わらない）。
+        F("intensity", d.intensity);
 
         F("localOffsetY", d.localOffsetY);
         F("gravity", d.gravity);
@@ -738,10 +741,21 @@ struct ComponentMeta<GPUParticleComponent>
                 {
                     changed |= ImGui::ColorEdit4(u8"基本色 (Base Color)", &d.color.x);
                 }
+                else if (!rm.GetTexture(emitter.colorRamp))
+                {
+                    // ランプが無いとシェーダーは黒を読み、加算では何も見えなくなる（エラーも出ない）
+                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                       u8"※ カラーランプが未設定です。粒子が黒くなり、加算では見えません");
+                }
                 else
                 {
                     ImGui::TextDisabled(u8"※ 下記の Color Ramp テクスチャが使用されます");
                 }
+
+                changed |= ImGui::DragFloat(u8"発光強度 (Intensity)", &d.intensity, 0.05f, 0.0f, 50.0f, "%.2f");
+                Help(u8"色に掛ける倍率。1 で選んだ色そのまま。\n"
+                     u8"1 を超えると光ってブルームがかかる（目立たせたいなら 2〜5 程度）。\n"
+                     u8"0 で真っ黒（加算では見えなくなる）。");
 
                 ImGui::SeparatorText(u8"特殊効果 (Effects)");
                 changed |= ImGui::DragFloat(u8"速度ストレッチ (Velocity Stretch)", &d.velocityStretch, 0.01f, 0.0f, 10.0f);

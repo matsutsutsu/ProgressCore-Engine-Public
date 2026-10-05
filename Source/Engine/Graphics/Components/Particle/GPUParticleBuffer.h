@@ -15,7 +15,7 @@ struct GPUParticleBufferSet
 {
     Microsoft::WRL::ComPtr<ID3D11Buffer>              particleBuffer; // 粒子配列の StructuredBuffer
     Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> particleUAV;    // コンピュートシェーダーが書き込む
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  particleSRV;    // 頂点シェーダーが読む
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  particleSRV;    // ジオメトリシェーダーが読む
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> staticCB;  // CbParticleStatic。desc が変わったときだけ更新する
     Microsoft::WRL::ComPtr<ID3D11Buffer> dynamicCB; // CbParticleDynamic。毎フレーム更新する

@@ -5,7 +5,7 @@
         "BehaviorTree": "Assets\\BehaviorTree",
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
-        "Prefab": "Assets\\Prefabs\\Enemy",
+        "Prefab": "Assets\\Prefabs\\Particles",
         "Scene": "Assets\\Scene"
     }
 }

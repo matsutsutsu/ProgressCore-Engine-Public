@@ -36,5 +36,10 @@ private:
     std::filesystem::file_time_type m_initCsTime; // 前に見た HLSL の更新時刻
     std::filesystem::file_time_type m_updateCsTime;
 
-    void LoadShaders(ID3D11Device *device);
+    // 2本が include する共通部分（spawn() など）。ここだけ直しても読み直されるように見る
+    std::wstring                    m_includePath;
+    std::filesystem::file_time_type m_includeTime;
+
+    // 2本とも読めたら true。開発中は失敗したほうを前のシェーダーのまま残す
+    bool LoadShaders(ID3D11Device *device);
 };

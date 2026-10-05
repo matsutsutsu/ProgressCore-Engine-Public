@@ -18,6 +18,11 @@
 
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
+// コンピュートシェーダーの1グループのスレッド数。HLSL の numthreads と C++ の Dispatch の
+//   グループ数計算の両方がこれを見る（片方だけ変えると末尾の粒子が更新されなくなる）。
+//   GPU は 32（NVIDIA）か 64（AMD）スレッドを1単位で動かすので、64 にして遊ぶスレッドを無くす。
+#define PARTICLE_CS_THREADS 64
+
 #ifdef __cplusplus
 #include <DirectXMath.h>
 #include <cstdint>
@@ -57,7 +62,7 @@ namespace GpuData
         int   state;         // 0 = 消えている, 1 = 生きている
         float angle;         // 今の回転（rad）
         float angular_speed; // 回転の速さ（rad/s）
-        float mass;          // 重力とノイズの効き具合に掛ける係数
+        float mass;          // 未使用の予約枠（重力は質量に依らない）。spawn() は 1 を入れる
 
         float4 color; // 今の色（RGBA）
 
@@ -139,7 +144,8 @@ namespace GpuData
         //   1枚だけ出して広げる衝撃波のように、毎回同じ大きさで出したい効果のために外から決める。
         //   既定は 1
         float  size_random;  // offset 224
-        float3 _pad_static2; // offset 228: 16 バイトの倍数にする詰め物
+        float  intensity;    // offset 228: 発光の強さ（色に掛ける倍率。1 で選んだ色のまま、1 超で光る）
+        float2 _pad_static2; // offset 232: 16 バイトの倍数にする詰め物
     };
 
     // ==================================================================

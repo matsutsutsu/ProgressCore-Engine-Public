@@ -2,7 +2,7 @@
 
 RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
-[numthreads(NUMTHREADS_X, 1, 1)]
+[numthreads(PARTICLE_CS_THREADS, 1, 1)]
 void main(uint3 dtid : SV_DispatchThreadID)
 {
     uint id = dtid.x;

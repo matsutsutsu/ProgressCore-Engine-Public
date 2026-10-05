@@ -3,7 +3,7 @@
 #include "Engine/Platform/Core/Logger.h"
 
 ParticleShader::ParticleShader(ID3D11Device *device)
-    : m_vsPath(L"Shader/Compute/GPUParticle/particle_vs.hlsl"), m_gsPath(L"Shader/Compute/GPUParticle/particle_gs.hlsl"), m_psPath(L"Shader/Compute/GPUParticle/particle_ps.hlsl")
+    : m_vsPath(L"Shader/Compute/GPUParticle/particle_vs.hlsl"), m_gsPath(L"Shader/Compute/GPUParticle/particle_gs.hlsl"), m_psPath(L"Shader/Compute/GPUParticle/particle_ps.hlsl"), m_includePath(L"Shader/Compute/GPUParticle/particle.hlsli")
 {
     LoadShaders(device);
 }
@@ -17,6 +17,7 @@ void ParticleShader::LoadShaders(ID3D11Device *device)
     m_vsTime = GetLastWriteTime(m_vsPath);
     m_gsTime = GetLastWriteTime(m_gsPath);
     m_psTime = GetLastWriteTime(m_psPath);
+    m_includeTime = GetLastWriteTime(m_includePath);
 }
 
 void ParticleShader::Begin(ID3D11DeviceContext *dc, const RenderServices &s, const RenderFrameContext &ctx)
@@ -38,13 +39,15 @@ void ParticleShader::CheckAndReload(ID3D11Device *device)
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
     auto curVs = GetLastWriteTime(m_vsPath);
     auto curGs = GetLastWriteTime(m_gsPath);
-    auto curPs = GetLastWriteTime(m_psPath);
+    auto curPs  = GetLastWriteTime(m_psPath);
+    auto curInc = GetLastWriteTime(m_includePath);
 
-    if (curVs > m_vsTime || curGs > m_gsTime || curPs > m_psTime)
+    if (curVs > m_vsTime || curGs > m_gsTime || curPs > m_psTime || curInc > m_includeTime)
     {
-        m_vsTime = curVs;
-        m_gsTime = curGs;
-        m_psTime = curPs;
+        m_vsTime      = curVs;
+        m_gsTime      = curGs;
+        m_psTime      = curPs;
+        m_includeTime = curInc;
         CompileShaders(device);
     }
 #endif

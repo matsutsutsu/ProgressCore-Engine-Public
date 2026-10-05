@@ -31,7 +31,6 @@ struct GS_OUT
 // 定数
 //--------------------------------------------
 #define PI           3.14159265358979f
-#define NUMTHREADS_X 16
 #define STATE_DEAD   0
 #define STATE_ALIVE  1
 

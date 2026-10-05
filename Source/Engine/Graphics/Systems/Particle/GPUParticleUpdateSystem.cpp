@@ -7,6 +7,8 @@
 #include "Engine/Graphics/Shader/Material/ParticleComputeShader.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include <algorithm>
+#include <cmath>
 #include <random>
 
 #include "Engine/Graphics/Shader/ShaderReflection.h"
@@ -19,6 +21,17 @@ GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 // BuildStaticCb — desc（エミッタの設定）から CbParticleStatic を組み立てる
 //   desc が変わったとき（ParticleEmitter::staticDirty）と、初期化のときだけ呼ぶ。
 // =========================================================================
+// 画面で見た色（sRGB）を、シェーダーが計算に使うリニアな値へ直す。
+//   ToneMapPS が最後に pow(x, 1/2.2) で画面用に戻すので、ここで 2.2 乗しておくと
+//   インスペクタで選んだ色がそのまま画面に出る。直さないと 0.3 が 0.58 まで持ち上がり、
+//   濃いオレンジが薄いオレンジになる（粒子の色が全体に薄く見えていた原因の1つ）。
+//   アルファは色ではなく割合なので変えない。
+static GpuData::float4 SrgbToLinear(const GpuData::float4 &c)
+{
+    const auto toLin = [](float v) { return std::pow((std::max)(v, 0.0f), 2.2f); };
+    return {toLin(c.x), toLin(c.y), toLin(c.z), c.w};
+}
+
 static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
 {
     GpuData::CbParticleStatic cb = {};
@@ -32,7 +45,8 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     cb.lifespan                  = d.lifespan;
     cb.spawn_delay               = d.spawnDelay;
     cb.fade_duration             = d.fadeDuration;
-    cb.manual_color              = d.color;
+    cb.manual_color              = SrgbToLinear(d.color);
+    cb.intensity                 = d.intensity;
     cb.noise_scale               = d.noiseScale;
     cb.noise_strength            = d.noiseStrength;
     cb.gravity                   = d.gravity;
@@ -255,7 +269,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(
                                                   emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 をまとめてバインド
+    // b6, b7 をまとめてバインド（隣り合うスロットなので1回で済む）
     ID3D11Buffer *cbs[2] = {buf->staticCB.Get(), buf->dynamicCB.Get()};
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
@@ -265,7 +279,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11UnorderedAccessView *uavs[] = {buf->particleUAV.Get()};
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
-    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + 15) / 16;
+    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + PARTICLE_CS_THREADS - 1) / PARTICLE_CS_THREADS;
     dc->Dispatch(groups, 1, 1);
 
     ID3D11UnorderedAccessView *nullUAV[] = {nullptr};
@@ -306,7 +320,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
 
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
 
-    // b13, b14 をまとめてバインド
+    // b6, b7 をまとめてバインド（隣り合うスロットなので1回で済む）
     ID3D11Buffer *cbs[2] = {buf->staticCB.Get(), buf->dynamicCB.Get()};
     dc->CSSetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs);
 
@@ -335,7 +349,7 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11UnorderedAccessView *uavs[] = {buf->particleUAV.Get()};
     dc->CSSetUnorderedAccessViews(SLOT_UAV_PARTICLE_BUF, 1, uavs, nullptr);
 
-    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + 15) / 16;
+    UINT groups = (static_cast<UINT>(emitter.desc.maxCount) + PARTICLE_CS_THREADS - 1) / PARTICLE_CS_THREADS;
     dc->Dispatch(groups, 1, 1);
 
     // 次の描画で SRV として使えるよう外す
