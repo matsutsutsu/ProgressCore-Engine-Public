@@ -3,11 +3,11 @@
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAssetIO.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAssetMeta.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAsset.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAssetIO.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAssetMeta.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h"
+#include "Game/Logics/AI/Drone/Formation/Data/DataDrivenFormation.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 
 #include <algorithm>

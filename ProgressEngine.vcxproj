@@ -712,11 +712,11 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetMeta.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAsset.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetMeta.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAsset.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Basic.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_Attack.h" />
@@ -1203,8 +1203,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneFormationSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.cpp" />

@@ -8,7 +8,7 @@
 //   - ボスAIを止めて陣形を実機に出し、再生・手送りで確かめる
 //
 // 備考:
-//   形の意味は扱わない（計算は Formations_DataDriven、保存は FormationAssetIO）。
+//   形の意味は扱わない（計算は DataDrivenFormation、保存は FormationAssetIO）。
 //   どの項目をどう描くかは FormationAssetMeta.h の表が決め、ここはそれを回すだけ。
 //   画面は3ペイン。「一覧 / 編集 / 見る」を同時に出す。技は0.4秒ほどで終わるので、
 //   数値を触った結果をその場で止めて見られないと、どの数値が何を変えたのか分からない。

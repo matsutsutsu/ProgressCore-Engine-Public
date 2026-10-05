@@ -7,7 +7,7 @@
 //   - 当たり方・機首の向け方・移動方式など、形以外の出力を持つ
 //   - 名乗る枠番号・攻撃と予告の長さを持つ
 //
-// 備考: 解釈は Formations_DataDriven.h、読み書きは FormationAssetIO、項目の表は
+// 備考: 解釈は DataDrivenFormation.h、読み書きは FormationAssetIO、項目の表は
 //       FormationAssetMeta.h が担う。
 // ===========================================================================
 #include <cstdint>

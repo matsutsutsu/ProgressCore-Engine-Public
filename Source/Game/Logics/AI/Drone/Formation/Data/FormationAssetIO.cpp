@@ -3,7 +3,7 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAssetMeta.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAssetMeta.h"
 
 #include <json.hpp>
 

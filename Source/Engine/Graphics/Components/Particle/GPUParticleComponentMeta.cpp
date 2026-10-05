@@ -322,7 +322,7 @@ struct ComponentMeta<GPUParticleComponent>
         }
     }
 
-    static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    static bool CustomGui(GPUParticleComponent &compRef, unsigned long long entityID = 0, void * /*worldPtr*/ = nullptr)
     {
         bool  changed = false;
         auto *p       = &compRef;
@@ -337,29 +337,58 @@ struct ComponentMeta<GPUParticleComponent>
         //   1エンティティ = 1エフェクト。ここに置くのは「エフェクト単位」の
         //   項目だけに限る。エミッタ個別の設定を混ぜると、どのエミッタに
         //   効いているのか画面から読めなくなる。
+        //   「全部〜」系の操作はこの1行に集める（以前は表示系が2か所に分かれていた）。
         // =============================================================
         ImGui::SeparatorText(u8"エフェクト全体 (Effect)");
 
+        // 選択中のエミッタ番号。Entity ごとに覚える（static だと全エフェクトで共有されてしまう）。
+        //   ImGui のウィンドウ単位の保存領域に、Entity の ID を混ぜたキーで置く。
+        ImGuiStorage *storage  = ImGui::GetStateStorage();
+        const ImGuiID selKey   = ImGui::GetID(("ParticleSelectedEmitter" + std::to_string(entityID)).c_str());
+        int           selected = storage->GetInt(selKey, 0);
+
+        const ImGuiStyle &style   = ImGui::GetStyle();
+        const float       toolBtn = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
+
         // 複数エミッタを重ねた見た目は「同時に出したとき」しか確認できない。
         //   1つずつ発火しても本番と違う絵になるので、まとめて撃つ手段を用意する。
-        //   実装は TriggerBurst() 1行（全エミッタの burstTrigger を立てるだけ）。
-        if (ImGui::Button(u8"▶ 全エミッタを同時に発火 (Burst All)", ImVec2(-1, 28)))
+        if (ImGui::Button(u8"▶ 全部発火", ImVec2(toolBtn, 0)))
             p->TriggerBurst();
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"このエフェクトの全エミッタを同じフレームで発火します。\n"
                               u8"VFX::Play() で再生したときと同じ見え方になります。");
+        ImGui::SameLine();
+        if (ImGui::Button(u8"↺ 全部リセット", ImVec2(toolBtn, 0)))
+            for (auto &e : p->emitters)
+                e.needsGpuInit = true;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(u8"いま出ている粒子を全部捨てて、全エミッタを最初の状態から出し直します。");
+        ImGui::SameLine();
+        if (ImGui::Button(u8"全部表示", ImVec2(toolBtn, 0)))
+            for (auto &e : p->emitters)
+                e.previewVisible = true;
+        ImGui::SameLine();
+        if (ImGui::Button(u8"+ 追加", ImVec2(toolBtn, 0)))
+        {
+            // 一覧を描く前なので、ここで vector を増やしても参照は壊れない
+            p->emitters.push_back(ParticleEmitter{});
+            selected = static_cast<int>(p->emitters.size()) - 1; // 追加したものをすぐ編集できるように選ぶ
+            changed  = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエフェクトにエミッタを追加します");
 
         // 構成の要約。エミッタを増やしたとき粒子の総数を見失いやすいので出す。
-        int totalMax = 0, burstCount = 0, continuousCount = 0;
+        int totalMax = 0, burstCount = 0, continuousCount = 0, hiddenCount = 0;
         for (const auto &e : p->emitters)
         {
             totalMax += e.desc.maxCount;
             (e.desc.emitMode == 1) ? ++burstCount : ++continuousCount;
+            if (!e.previewVisible) ++hiddenCount;
         }
         ImGui::TextDisabled(u8"エミッタ %d 個 (Burst %d / 継続 %d)　粒子上限 合計 %d",
                             static_cast<int>(p->emitters.size()), burstCount, continuousCount, totalMax);
 
-        // 継続放出が混ざっていると Burst All の結果が本番と一致しない。
+        // 継続放出が混ざっていると「全部発火」の結果が本番と一致しない。
         //   継続エミッタは発火とは無関係に出続けるので、その旨を明示する。
         if (continuousCount > 0 && burstCount > 0)
         {
@@ -370,22 +399,12 @@ struct ComponentMeta<GPUParticleComponent>
         }
 
         // 非表示の層があるまま調整を続けると「なぜか薄い」の原因になる。
-        //   保存されない設定なので、気付ける形で常に出しておく。
-        int hiddenCount = 0;
-        for (const auto &e : p->emitters)
-            if (!e.previewVisible) ++hiddenCount;
+        //   保存されない設定なので、気付ける形で常に出しておく（戻すのは上の「全部表示」）。
         if (hiddenCount > 0)
         {
             ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
                                u8"※ %d 個のエミッタを非表示中（プレビュー用・保存されません）", hiddenCount);
-            ImGui::SameLine();
-            if (ImGui::SmallButton(u8"全部表示に戻す"))
-                for (auto &e : p->emitters)
-                    e.previewVisible = true;
         }
-
-        static int lastActiveTabId    = -1;
-        int        currentActiveTabId = -1;
 
         auto pickTexture = [&](char *dst, size_t cap, TextureHandle &handle, const char *title) {
             if (auto path = FileDialog::OpenPreset("Texture", title, hWnd))
@@ -397,103 +416,144 @@ struct ComponentMeta<GPUParticleComponent>
         };
 
         // =============================================================
-        // エミッタ選択タブ
-        //   1エンティティ = 1エフェクト。そのエフェクトを構成するエミッタを
-        //   ここで切り替えて、下の設定タブで個別に編集する。
+        // エミッタ一覧（レイヤー一覧）
+        //   1行 = 1エミッタ。表示・Solo・発火/リセットを各行に直接置き、
+        //   どの層でも1クリックで操作できるようにする（以前はタブを選び直してから
+        //   下のボタンを押す2手だった）。名前をクリックすると下で編集する対象になる。
         // =============================================================
-        int selected = 0;
-        if (ImGui::BeginTabBar("EmitterTabs", ImGuiTabBarFlags_AutoSelectNewTabs))
+        const int emitterCount = static_cast<int>(p->emitters.size());
+        if (selected < 0 || selected >= emitterCount) selected = 0; // エミッタが減った後は範囲外になり得る
+
+        if (ImGui::BeginTable("EmitterList", 4, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingFixedFit))
         {
-            for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
+            ImGui::TableSetupColumn(u8"表示", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn(u8"Solo", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn(u8"名前", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn(u8"操作", ImGuiTableColumnFlags_WidthFixed);
+
+            for (int i = 0; i < emitterCount; ++i)
             {
-                const ParticleEmitter     &em = p->emitters[i];
+                ParticleEmitter           &em = p->emitters[i];
                 const ParticleEmitterDesc &ed = em.desc;
+                ImGui::PushID(i);
+                ImGui::TableNextRow();
 
-                // 見出しは「名前」を最優先にする。名前が付いていれば
-                //   火花/残り火/フラッシュ のどれを開こうとしているかが一目で分かる。
-                //   未命名のときだけ、モードと個数の要約で代用する。
-                // ### 以降が ImGui の識別子になる。前半(表示文字)が名前や値の
-                //   変更で変わってもタブの選択状態が飛ばないよう、ここは必ず固定する。
-                std::string caption = (ed.name[0] != '\0')
-                                          ? std::string(ed.name)
-                                          : (ed.emitMode == 1 ? "Burst " + std::to_string(ed.burstCount)
-                                                              : u8"継続 " + std::to_string(ed.maxCount));
+                // ---- 表示 ----
+                //   1層ずつ消して「どれがどれか」を目で確かめるための道具。
+                //   保存されないので、戻し忘れてもアセットは壊れない。
+                ImGui::TableNextColumn();
+                ImGui::Checkbox("##visible", &em.previewVisible);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(u8"このエミッタを描画するか（プレビュー用・保存されません）");
 
-                // 非表示中はひと目で分かるようにする。戻し忘れ防止。
-                if (!em.previewVisible) caption = u8"[非表示] " + caption;
-
-                const std::string label =
-                    std::to_string(i) + ": " + caption + "###emitter" + std::to_string(i);
-
-                if (ImGui::BeginTabItem(label.c_str()))
+                // ---- Solo ----
+                //   この層だけ表示中なら押すと全部表示に戻る（トグル）。今 Solo 中かは色で分かるようにする。
+                ImGui::TableNextColumn();
+                bool isSolo = em.previewVisible && emitterCount > 1;
+                for (int j = 0; j < emitterCount && isSolo; ++j)
+                    if (j != i && p->emitters[j].previewVisible) isSolo = false;
+                if (isSolo) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+                if (ImGui::SmallButton("S"))
                 {
-                    selected = i; // アクティブなタブが編集対象
-                    ImGui::EndTabItem();
+                    for (int j = 0; j < emitterCount; ++j)
+                        p->emitters[j].previewVisible = isSolo ? true : (j == i);
                 }
+                if (isSolo) ImGui::PopStyleColor();
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(isSolo ? u8"Solo を解除して全部表示に戻します" : u8"このエミッタだけを表示します");
+
+                // ---- 名前（クリックで選択） ----
+                //   名前が付いていれば最優先で出す（火花/残り火/フラッシュ のどれかが一目で分かる）。
+                //   未命名のときだけ、モードと個数の要約で代用する。非表示中は灰色にする。
+                ImGui::TableNextColumn();
+                const std::string summary = (ed.emitMode == 1) ? "Burst " + std::to_string(ed.burstCount)
+                                                               : u8"継続 " + std::to_string(ed.maxCount);
+                const std::string caption = std::to_string(i) + ": " +
+                                            ((ed.name[0] != '\0') ? std::string(ed.name) + "  (" + summary + ")" : summary);
+                if (!em.previewVisible) ImGui::PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]);
+                if (ImGui::Selectable(caption.c_str(), selected == i))
+                    selected = i;
+                if (!em.previewVisible) ImGui::PopStyleColor();
+
+                // ---- 発火 / リセット ----
+                //   バーストは「このエミッタだけ発火」、継続は発火が無いので「出し直し」を置く。
+                ImGui::TableNextColumn();
+                if (ed.emitMode == 1)
+                {
+                    if (ImGui::SmallButton(u8"▶")) em.burstTrigger = 1.0f;
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエミッタだけ発火します（他のエミッタは動かしません）");
+                }
+                else
+                {
+                    if (ImGui::SmallButton(u8"↺")) em.needsGpuInit = true;
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip(u8"いま出ている粒子を捨てて、このエミッタを最初の状態から出し直します。\n"
+                                          u8"継続モードは id ごとに位相をずらした状態で作り直されるので、\n"
+                                          u8"出方がおかしくなったときはまずこれを試してください。");
+                }
+
+                ImGui::PopID();
             }
-            if (ImGui::TabItemButton("+"))
-            {
-                p->emitters.push_back(ParticleEmitter{});
-                changed = true;
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"このエフェクトにエミッタを追加します");
-            ImGui::EndTabBar();
+            ImGui::EndTable();
         }
-        if (selected >= static_cast<int>(p->emitters.size())) selected = 0; // エミッタが減った後は範囲外になり得る
 
         auto &emitter = p->emitters[selected];
         auto &d       = emitter.desc;
 
-        // ---- 選択中エミッタの識別と操作 ----
+        // =============================================================
+        // 選択中のエミッタ
         //   「どの層を編集しているか」をここで確定させてから、下の設定タブに入る。
-        ImGui::SetNextItemWidth(-1.0f);
-        if (ImGui::InputTextWithHint("##emitterName", u8"エミッタ名 (例: 火花 / 残り火 / フラッシュ)",
-                                     d.name, IM_ARRAYSIZE(d.name)))
-            changed = true;
-
-        // 表示スイッチ。1層ずつ消して「どれがどれか」を目で確かめるための道具。
-        //   保存されないので、戻し忘れてもアセットは壊れない。
-        if (ImGui::Checkbox(u8"表示", &emitter.previewVisible))
-        {
-        }
-        Help(u8"チェックを外すとこのエミッタだけ描画しません。\n"
-             u8"どの層がどの見た目を担当しているか確かめるのに使います。\n"
-             u8"プレビュー用の設定でプレハブには保存されません。");
-
-        ImGui::SameLine();
-        if (ImGui::SmallButton(u8"このエミッタだけ表示 (Solo)"))
-        {
-            for (int i = 0; i < static_cast<int>(p->emitters.size()); ++i)
-                p->emitters[i].previewVisible = (i == selected);
-        }
-        ImGui::SameLine();
-        if (ImGui::SmallButton(u8"全部表示"))
-        {
-            for (auto &e : p->emitters)
-                e.previewVisible = true;
-        }
+        // =============================================================
+        ImGui::SeparatorText(u8"選択中のエミッタ (Emitter)");
 
         // 追加と削除は「このGUIを描き終えてから」行う。ここで vector を触ると
         //   下で参照している emitter / d が壊れる。
         bool requestErase     = false;
         bool requestDuplicate = false;
 
-        if (ImGui::SmallButton(u8"このエミッタを複製")) requestDuplicate = true;
-        Help(u8"選択中のエミッタを丸ごとコピーして末尾に追加します。\n"
-             u8"似た層をもう1枚重ねたいとき、一から設定し直さずに済みます。");
-        if (p->emitters.size() > 1)
+        const float dupW = ImGui::CalcTextSize(u8"複製").x + style.FramePadding.x * 2.0f;
+        const float delW = ImGui::CalcTextSize(u8"削除…").x + style.FramePadding.x * 2.0f;
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - dupW - delW - style.ItemSpacing.x * 2.0f);
+        if (ImGui::InputTextWithHint("##emitterName", u8"エミッタ名 (例: 火花 / 残り火 / フラッシュ)",
+                                     d.name, IM_ARRAYSIZE(d.name)))
+            changed = true;
+
+        ImGui::SameLine();
+        if (ImGui::Button(u8"複製")) requestDuplicate = true;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(u8"選択中のエミッタを丸ごとコピーして末尾に追加します。\n"
+                              u8"似た層をもう1枚重ねたいとき、一から設定し直さずに済みます。");
+
+        // 削除は取り消せないので確認を挟む（以前は小さいボタンを押した瞬間に消えていた）。
+        //   最後の1個は消せない（System 側が「最低1個ある」前提で書かれている）。
+        ImGui::SameLine();
+        ImGui::BeginDisabled(emitterCount <= 1);
+        if (ImGui::Button(u8"削除…")) ImGui::OpenPopup(u8"エミッタの削除");
+        ImGui::EndDisabled();
+
+        if (ImGui::BeginPopupModal(u8"エミッタの削除", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
+            ImGui::Text(u8"「%d: %s」を削除しますか？", selected, (d.name[0] != '\0') ? d.name : u8"(名前なし)");
+            ImGui::TextDisabled(u8"元に戻せません。");
+            if (ImGui::Button(u8"削除する", ImVec2(120, 0)))
+            {
+                requestErase = true;
+                ImGui::CloseCurrentPopup();
+            }
             ImGui::SameLine();
-            if (ImGui::SmallButton(u8"このエミッタを削除")) requestErase = true;
+            if (ImGui::Button(u8"キャンセル", ImVec2(120, 0))) ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
         }
 
-        ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 380.0f), ImGuiChildFlags_Border, ImGuiWindowFlags_NavFlattened);
+        // 高さは中身に合わせて伸ばす。以前は 380px 固定で、インスペクタ自体のスクロールと
+        //   この欄の中のスクロールが二重になっていた。
+        ImGui::BeginChild("ParticleEditorChild", ImVec2(0, 0), ImGuiChildFlags_Border | ImGuiChildFlags_AutoResizeY,
+                          ImGuiWindowFlags_NavFlattened);
 
         if (ImGui::BeginTabBar("ParticleTabs"))
         {
             if (ImGui::BeginTabItem(u8"基本・発生 (Base & Spawn)"))
             {
-                currentActiveTabId = 0;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"エミッタ設定 (Emitter)");
                 int tempMax = d.maxCount;
@@ -561,10 +621,6 @@ struct ComponentMeta<GPUParticleComponent>
                                            u8"※ 発生数 %d は最大許容量 %d で頭打ちになります",
                                            d.burstCount, d.maxCount);
                     }
-                    // このエミッタだけを試し撃ちする（他のエミッタは動かさない）。
-                    //   全部まとめて撃つボタンは上の「エフェクト全体」にある。
-                    if (ImGui::Button(u8"このエミッタだけ発火 (Trigger)", ImVec2(-1, 0)))
-                        emitter.burstTrigger = 1.0f;
                 }
                 else
                 {
@@ -574,15 +630,6 @@ struct ComponentMeta<GPUParticleComponent>
                          u8"この最小〜最大の間でランダムに決まります。\n"
                          u8"小さいほど密に出ます (0 = 毎フレーム)。");
                 }
-
-                // 継続モードの調整中、いまバッファに残っている粒子を捨てて
-                //   「生まれたて」の状態から見直したいことが多いので手動再初期化を置く。
-                //   InitCS を1回走らせるだけ（バッファ自体は作り直さない）。
-                if (ImGui::Button(u8"粒子を初期化しなおす (Reset)", ImVec2(-1, 0)))
-                    emitter.needsGpuInit = true;
-                Help(u8"いま出ている粒子を捨てて、このエミッタを最初の状態から出し直します。\n"
-                     u8"継続モードでは id ごとに位相をずらした状態で作り直されるので、\n"
-                     u8"出方がおかしくなったときはまずこれを試してください。");
 
                 ImGui::SeparatorText(u8"形状と位置 (Shape & Position)");
 
@@ -629,7 +676,6 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"運動・物理 (Movement)"))
             {
-                currentActiveTabId = 1;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"速度 (Velocity)");
                 if (RangeDrag(u8"初速度", d.emitSpeed, 0.1f, -100.0f, 100.0f, "%.2f")) changed = true;
@@ -696,7 +742,6 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"サイズ・寿命 (Size & Life)"))
             {
-                currentActiveTabId = 2;
                 ImGui::Spacing();
                 ImGui::SeparatorText(u8"寿命 (Lifespan)");
                 if (RangeDrag(u8"生存時間 (秒)", d.lifespan, 0.05f, 0.01f, 60.0f, "%.2f")) changed = true;
@@ -773,8 +818,27 @@ struct ComponentMeta<GPUParticleComponent>
 
             if (ImGui::BeginTabItem(u8"描画・テクスチャ (Graphics)"))
             {
-                currentActiveTabId = 3;
                 ImGui::Spacing();
+                // 並びは「見た目が決まる順」。形（テクスチャ）→ 色 → 向き → 細かい効果。
+                //   一番よく触るテクスチャを最下部に置いていたので、先頭へ移した。
+                ImGui::SeparatorText(u8"テクスチャ (Texture)");
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
+                if (ImGui::InputText("##texPath", d.texturePath, sizeof(d.texturePath))) changed = true;
+                ImGui::SameLine();
+                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), emitter.texture, "Select Texture");
+
+                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.texture))
+                {
+                    ImGui::Image((void *)srv, ImVec2(64, 64), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
+                    ImGui::SameLine();
+                    if (ImGui::Button(u8"クリア##Main"))
+                    {
+                        memset(d.texturePath, 0, sizeof(d.texturePath));
+                        emitter.texture = TextureHandle{};
+                        changed         = true;
+                    }
+                }
+
                 ImGui::SeparatorText(u8"カラー・ブレンド (Color & Blend)");
                 const char *renderModes[] = {"Additive (Fire/Light)", "Alpha Blend (Smoke/Dark)"};
                 if (ImGui::Combo(u8"描画ブレンド (Render Mode)", &d.renderMode, renderModes, IM_ARRAYSIZE(renderModes))) changed = true;
@@ -786,15 +850,32 @@ struct ComponentMeta<GPUParticleComponent>
                 {
                     changed |= ImGui::ColorEdit4(u8"基本色 (Base Color)", &d.color.x);
                 }
-                else if (!rm.GetTexture(emitter.colorRamp))
-                {
-                    // ランプが無いとシェーダーは黒を読み、加算では何も見えなくなる（エラーも出ない）
-                    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
-                                       u8"※ カラーランプが未設定です。粒子が黒くなり、加算では見えません");
-                }
                 else
                 {
-                    ImGui::TextDisabled(u8"※ 下記の Color Ramp テクスチャが使用されます");
+                    // カラーランプはランプモードでしか使わないので、選んだときだけここに出す
+                    //   （以前はタブ最下部に常に出ていて、どのモードで効くのか読めなかった）。
+                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
+                    if (ImGui::InputText("##rampPath", d.colorRampPath, sizeof(d.colorRampPath))) changed = true;
+                    ImGui::SameLine();
+                    if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), emitter.colorRamp, "Select Color Ramp");
+
+                    if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.colorRamp))
+                    {
+                        ImGui::Image((void *)srv, ImVec2(128, 16), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
+                        ImGui::SameLine();
+                        if (ImGui::Button(u8"クリア##Ramp"))
+                        {
+                            memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
+                            emitter.colorRamp = TextureHandle{};
+                            changed           = true;
+                        }
+                    }
+                    else
+                    {
+                        // ランプが無いとシェーダーは黒を読み、加算では何も見えなくなる（エラーも出ない）
+                        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                           u8"※ カラーランプが未設定です。粒子が黒くなり、加算では見えません");
+                    }
                 }
 
                 changed |= ImGui::DragFloat(u8"発光強度 (Intensity)", &d.intensity, 0.05f, 0.0f, 50.0f, "%.2f");
@@ -840,54 +921,10 @@ struct ComponentMeta<GPUParticleComponent>
                 const char *animModes[] = {"Random (Fixed)", "Life Cycle (Animate)"};
                 if (ImGui::Combo(u8"再生モード (Anim Mode)", &d.spriteMode, animModes, IM_ARRAYSIZE(animModes))) changed = true;
 
-                ImGui::SeparatorText(u8"テクスチャ (Textures)");
-                ImGui::TextDisabled(u8"メインテクスチャ (Main Texture)");
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
-                if (ImGui::InputText("##texPath", d.texturePath, sizeof(d.texturePath))) changed = true;
-                ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Main")) pickTexture(d.texturePath, sizeof(d.texturePath), emitter.texture, "Select Texture");
-
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.texture))
-                {
-                    ImGui::Image((void *)srv, ImVec2(64, 64), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
-                    ImGui::SameLine();
-                    if (ImGui::Button(u8"クリア##Main"))
-                    {
-                        memset(d.texturePath, 0, sizeof(d.texturePath));
-                        emitter.texture = TextureHandle{};
-                        changed         = true;
-                    }
-                }
-
-                ImGui::Spacing();
-                ImGui::TextDisabled(u8"カラーランプ (Color Ramp)");
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 65.0f);
-                if (ImGui::InputText("##rampPath", d.colorRampPath, sizeof(d.colorRampPath))) changed = true;
-                ImGui::SameLine();
-                if (ImGui::Button(u8"読込##Ramp")) pickTexture(d.colorRampPath, sizeof(d.colorRampPath), emitter.colorRamp, "Select Color Ramp");
-
-                if (ID3D11ShaderResourceView *srv = rm.GetTexture(emitter.colorRamp))
-                {
-                    ImGui::Image((void *)srv, ImVec2(128, 16), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(1, 1, 1, 0.5f));
-                    ImGui::SameLine();
-                    if (ImGui::Button(u8"クリア##Ramp"))
-                    {
-                        memset(d.colorRampPath, 0, sizeof(d.colorRampPath));
-                        emitter.colorRamp = TextureHandle{};
-                        changed           = true;
-                    }
-                }
-
                 ImGui::EndTabItem();
             }
 
             ImGui::EndTabBar();
-        }
-
-        if (currentActiveTabId != lastActiveTabId && currentActiveTabId != -1)
-        {
-            ImGui::SetScrollY(0.0f);
-            lastActiveTabId = currentActiveTabId;
         }
 
         ImGui::EndChild();
@@ -911,7 +948,8 @@ struct ComponentMeta<GPUParticleComponent>
                 strcat_s(copy.desc.name, sizeof(copy.desc.name), suffix);
 
             p->emitters.push_back(copy);
-            changed = true;
+            selected = static_cast<int>(p->emitters.size()) - 1; // 複製したものをすぐ編集できるように選ぶ
+            changed  = true;
         }
 
         if (requestErase)
@@ -921,8 +959,11 @@ struct ComponentMeta<GPUParticleComponent>
                 rm.UnloadParticleBuffer(p->emitters[selected].computeBuffer);
 
             p->emitters.erase(p->emitters.begin() + selected);
+            if (selected >= static_cast<int>(p->emitters.size())) selected = static_cast<int>(p->emitters.size()) - 1;
             changed = true;
         }
+
+        storage->SetInt(selKey, selected);
 
         if (changed) p->MarkDescChanged();
 

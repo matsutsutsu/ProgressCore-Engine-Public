@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAsset.h"
 
 namespace CCL::AI::Formation::Meta
 {

@@ -1,7 +1,7 @@
 #include "FormationLayerSequence.h"
 
-#include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAssetMeta.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAsset.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAssetMeta.h"
 
 #include <imgui.h>
 #include <imgui_internal.h> // ImRect（ImSequencer の描画コールバックが受け取る）

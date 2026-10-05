@@ -22,7 +22,7 @@
 #include <json_fwd.hpp>
 
 #include "Engine/Serialization/Meta/ComponentMeta.h"
-#include "Game/Logics/AI/Drone/Formation/FormationAsset.h"
+#include "Game/Logics/AI/Drone/Formation/Data/FormationAsset.h"
 
 namespace CCL::AI::Formation
 {

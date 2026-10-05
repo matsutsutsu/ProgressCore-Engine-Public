@@ -523,6 +523,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Formation\Data">
+      <UniqueIdentifier>{2ea2ece7-6a9f-47f7-a1b8-4c5586d425f4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\Drone\Squad">
       <UniqueIdentifier>{3c1e5b92-8a44-4f17-b0d6-5e2c7a91d408}</UniqueIdentifier>
     </Filter>
@@ -1914,20 +1917,20 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\IFormation.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.h">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.h">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Formations_DataDriven.h">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAsset.h">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAsset.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetMeta.h">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetMeta.h">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\FormationRegistry.h">
       <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
@@ -2945,11 +2948,14 @@
     <ClCompile Include="Source\Engine\Transform\Systems\BoneAttachmentRenderSystem.cpp">
       <Filter>Source\Engine\Transform\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\FormationAssetIO.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\ShapeSampler.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Formation</Filter>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Formation\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneFormationSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>

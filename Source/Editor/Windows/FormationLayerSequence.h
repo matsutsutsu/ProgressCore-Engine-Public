@@ -8,7 +8,7 @@
 //   - 帯の上の絵（席ごとの動き出しの斜線、置けない区間の目隠し）
 //
 // 備考:
-//   形の意味は扱わない（計算は Formations_DataDriven、画面の組み立ては FormationEditorWindow）。
+//   形の意味は扱わない（計算は DataDrivenFormation、画面の組み立ては FormationEditorWindow）。
 //   ImSequencer は帯の両端を int のフレームで受け取り、ドラッグ中はそのアドレスへ直接書き込む。
 //   こちらの時間帯は 0〜1 の float なので、int の置き場所(m_frames)を別に持って往復させる。
 //     データ → m_frames : Begin()。掴んでいる間は写し直さない（ドラッグ中の値を毎フレーム巻き戻してしまう）

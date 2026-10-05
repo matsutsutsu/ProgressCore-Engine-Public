@@ -4,7 +4,7 @@
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 予告の震えの調整 UI
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h" // 陣形テストの名前表示
+#include "Game/Logics/AI/Drone/Formation/Data/DataDrivenFormation.h" // 陣形テストの名前表示
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include <vector>

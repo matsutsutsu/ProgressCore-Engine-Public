@@ -5,7 +5,7 @@
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Attack.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
-#include "Game/Logics/AI/Drone/Formation/Formations_DataDriven.h"
+#include "Game/Logics/AI/Drone/Formation/Data/DataDrivenFormation.h"
 #include "Game/Logics/AI/Drone/Formation/Formations_Squad.h"
 
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -26,6 +26,7 @@ namespace
     constexpr float kWindupTimerCap = 10.0f;
 } // namespace
 
+// Droneのアクションを登録する
 void DroneFormationSystem::Initialize()
 {
     // このシステムが評価する陣形クラスを登録する。陣形を追加したときは

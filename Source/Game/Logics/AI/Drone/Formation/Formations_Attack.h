@@ -12,7 +12,7 @@
 //   この3つはどれも表せない。
 //
 //   縦割り・挟み込み・横なぎは Assets/Formations/*.json にある
-//   （Formations_DataDriven.h が解釈する）。
+//   （Data/DataDrivenFormation.h が解釈する）。
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 射出速度（kDroneChargeSpeedScale）
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
