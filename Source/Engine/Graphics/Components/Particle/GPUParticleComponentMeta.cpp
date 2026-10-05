@@ -58,6 +58,7 @@ namespace
         j["colorMode"]    = d.colorMode;
         j["renderMode"]   = d.renderMode;
         j["spriteMode"]   = d.spriteMode;
+        j["orientMode"]   = d.orientMode;
         j["maxCount"]     = d.maxCount;
         j["particleType"] = d.particleType;
         j["emitMode"]     = d.emitMode;
@@ -137,6 +138,8 @@ namespace
         I("colorMode", d.colorMode);
         I("renderMode", d.renderMode);
         I("spriteMode", d.spriteMode);
+        // orientMode が無い JSON は既定の 0（ビルボード）のまま読む。今までと同じ見た目
+        I("orientMode", d.orientMode);
         I("maxCount", d.maxCount);
         I("particleType", d.particleType);
         I("emitMode", d.emitMode);
@@ -757,9 +760,24 @@ struct ComponentMeta<GPUParticleComponent>
                      u8"1 を超えると光ってブルームがかかる（目立たせたいなら 2〜5 程度）。\n"
                      u8"0 で真っ黒（加算では見えなくなる）。");
 
+                ImGui::SeparatorText(u8"向き (Orientation)");
+                const char *orientModes[] = {u8"ビルボード (カメラを向く)", u8"ワールド水平 (地面と平行)", u8"エミッタの向きの平面"};
+                if (ImGui::Combo(u8"向き (Orient Mode)", &d.orientMode, orientModes, IM_ARRAYSIZE(orientModes))) changed = true;
+                Help(u8"ビルボード: 常にカメラを向く（火花・煙など）。\n"
+                     u8"ワールド水平: 地面と平行に寝る（2段ジャンプの衝撃波リングなど）。\n"
+                     u8"エミッタの向きの平面: 水平面をエミッタの回転で傾ける（壁の波紋など）。\n"
+                     u8"平面の2つは大きさがそのままメートル（中心から端まで）になる。");
+
                 ImGui::SeparatorText(u8"特殊効果 (Effects)");
+                // 速度ストレッチは画面上で計算するので、平面モードでは効かない。
+                //   無言で効かないより、触れないようにして理由を出す（UV スクロールと同じ）。
+                const bool isFlat = (d.orientMode != 0);
+                ImGui::BeginDisabled(isFlat);
                 changed |= ImGui::DragFloat(u8"速度ストレッチ (Velocity Stretch)", &d.velocityStretch, 0.01f, 0.0f, 10.0f);
+                ImGui::EndDisabled();
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip(u8"移動方向に引き伸ばします (0.0=無効)");
+                if (isFlat)
+                    ImGui::TextDisabled(u8"※ 平面モードでは速度ストレッチは無効です");
                 // スプライトシート使用中は UV スクロールが使えない（コマの外へ滲むため）。
                 //   無言で壊れるより、触れないようにして理由を出す。
                 const bool usesSpriteSheet = (d.spriteGrid.x * d.spriteGrid.y > 1);

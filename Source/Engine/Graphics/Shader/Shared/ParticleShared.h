@@ -145,7 +145,8 @@ namespace GpuData
         //   既定は 1
         float  size_random;  // offset 224
         float  intensity;    // offset 228: 発光の強さ（色に掛ける倍率。1 で選んだ色のまま、1 超で光る）
-        float2 _pad_static2; // offset 232: 16 バイトの倍数にする詰め物
+        int    orient_mode;  // offset 232: 0 = ビルボード, 1 = ワールド水平, 2 = エミッタの向きの平面
+        float  _pad_static2; // offset 236: 16 バイトの倍数にする詰め物
     };
 
     // ==================================================================

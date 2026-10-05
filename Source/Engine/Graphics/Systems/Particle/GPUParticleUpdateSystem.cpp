@@ -57,6 +57,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     cb.particle_scale            = d.scale;
     cb.sprite_sheet_grid         = d.spriteGrid;
     cb.sprite_anim_mode          = d.spriteMode;
+    cb.orient_mode               = d.orientMode;
     cb.render_mode               = d.renderMode;
     cb.color_mode                = d.colorMode;
     cb.particle_type             = d.particleType;

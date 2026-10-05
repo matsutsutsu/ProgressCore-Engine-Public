@@ -82,6 +82,12 @@ struct ParticleEmitterDesc
     GpuData::uint2  spriteGrid = {1, 1};       // スプライトシートの分割数（列, 行）
     int             spriteMode = 0;            // スプライトの選び方。0: ランダム 1: 寿命に合わせて進める
 
+    // 四角形の向き。0: ビルボード（カメラを向く） 1: ワールド水平（地面と平行に寝る）
+    //   2: エミッタの向きの平面（水平面をエミッタの回転で傾ける）
+    //   1・2 は空間に固定されるので、2段ジャンプの衝撃波リングのような「寝た円」が作れる。
+    //   1・2 では速度方向への引き伸ばし（velocityStretch）は効かない
+    int orientMode = 0;
+
     // ---- 放出設定 ----
     int maxCount     = 1000; // 粒子の最大数。バッファの大きさもこれで決まる
     int particleType = 1;    // 0: Point 1: Quad

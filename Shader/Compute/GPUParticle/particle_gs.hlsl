@@ -33,7 +33,8 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
     float2 stretch_scale  = float2(1.0f, 1.0f);
     float  rotation_angle = p.angle;
 
-    if (velocity_stretch > 0.0f)
+    // 速度方向への引き伸ばしは画面上で計算する仕組みなので、ビルボードのときだけ使う
+    if (orient_mode == 0 && velocity_stretch > 0.0f)
     {
         float3 view_vel = mul(float4(p.velocity, 0.0f), viewProjection).xyz;
 
@@ -51,11 +52,22 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
         }
     }
 
+    // ---- 平面モードの向き（四角形を広げる2本の軸） ----
+    //   1: ワールド水平。X と Z に広げるので、常に地面と平行に寝る
+    //   2: エミッタの向き。水平面をエミッタの回転で傾ける
+    //      （毎フレーム今の回転を使うので、追従させると出た後も一緒に回る）
+    float3 axis_u = float3(1.0f, 0.0f, 0.0f);
+    float3 axis_v = float3(0.0f, 0.0f, 1.0f);
+    if (orient_mode == 2)
+    {
+        axis_u = RotateByQuat(axis_u, emit_rotation);
+        axis_v = RotateByQuat(axis_v, emit_rotation);
+    }
+
     [unroll]
     for (uint i = 0; i < 4; ++i)
     {
         GS_OUT elem;
-        elem.position = mul(float4(p.position, 1.0f), viewProjection);
 
         float2 raw = corners[i] * stretch_scale;
 
@@ -64,7 +76,19 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
         rot.x = raw.x * c - raw.y * s;
         rot.y = raw.x * s + raw.y * c;
 
-        elem.position.xy += rot * float2(size, size * aspect);
+        if (orient_mode == 0)
+        {
+            // ビルボード: 中心を画面へ変換してから、画面上で四隅をずらす（常にカメラを向く）
+            elem.position     = mul(float4(p.position, 1.0f), viewProjection);
+            elem.position.xy += rot * float2(size, size * aspect);
+        }
+        else
+        {
+            // 平面: ワールドで四隅をずらしてから画面へ変換する（空間に固定され、斜めからは楕円に見える）。
+            //   size はそのままメートル（中心から端までの長さ）になる
+            float3 world = p.position + (axis_u * rot.x + axis_v * rot.y) * size;
+            elem.position = mul(float4(world, 1.0f), viewProjection);
+        }
         elem.color        = p.color;
 
         // 種別は全粒子共通なので、粒子構造体ではなく定数バッファから読む
