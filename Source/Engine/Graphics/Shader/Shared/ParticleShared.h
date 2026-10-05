@@ -78,7 +78,7 @@ namespace GpuData
     };
 
     // ==================================================================
-    // CbParticleStatic: エミッターの設定の値（240 バイト。変えたときだけ送る）
+    // CbParticleStatic: エミッターの設定の値（256 バイト。変えたときだけ送る）
     //   ParticleEmitterDesc から作る
     // ==================================================================
     CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
@@ -146,7 +146,11 @@ namespace GpuData
         float  size_random;  // offset 224
         float  intensity;    // offset 228: 発光の強さ（色に掛ける倍率。1 で選んだ色のまま、1 超で光る）
         int    orient_mode;  // offset 232: 0 = ビルボード, 1 = ワールド水平, 2 = エミッタの向きの平面
-        float  _pad_static2; // offset 236: 16 バイトの倍数にする詰め物
+        int    size_ease;    // offset 236: 大きさの変わり方 0 = 線形, 1 = Ease-In, 2 = Ease-Out, 3 = Ease-InOut
+
+        // ---- 大きさのイージング（offset 240〜255） ----
+        float  size_ease_power; // offset 240: 曲線の急さ（1 で線形と同じ）
+        float3 _pad_static3;    // offset 244: 16 バイトの倍数にする詰め物
     };
 
     // ==================================================================
@@ -180,7 +184,7 @@ namespace GpuData
 // ==================================================================
 #ifdef __cplusplus
     static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
-    static_assert(sizeof(CbParticleStatic) == 240, "CbParticleStatic size mismatch");
+    static_assert(sizeof(CbParticleStatic) == 256, "CbParticleStatic size mismatch");
     static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
 
 } // namespace GpuData

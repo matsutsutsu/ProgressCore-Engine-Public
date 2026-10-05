@@ -39,6 +39,8 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     cb.emit_radius               = d.emitRadius;
     cb.emit_size                 = d.emitSize;
     cb.size_random               = d.sizeRandom;
+    cb.size_ease                 = d.sizeEase;
+    cb.size_ease_power           = d.sizeEasePower;
     cb.cone_angle                = d.coneAngle;
     cb.emit_speed                = d.emitSpeed;
     cb.emit_angular_speed        = d.angularSpeed;

@@ -3,7 +3,6 @@
         {
             "components": {
                 "GPUParticle": {
-                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -55,6 +54,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
+                            "intensity": 1.0,
                             "lifespan": [
                                 0.3499999940395355,
                                 0.3499999940395355
@@ -75,12 +75,15 @@
                             "name": "Circle",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 10.0
                             ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -149,6 +152,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 1.0,
+                            "intensity": 1.0,
                             "lifespan": [
                                 0.6499999761581421,
                                 0.949999988079071
@@ -169,12 +173,15 @@
                             "name": "Dust",
                             "noiseScale": 1.0,
                             "noiseStrength": 12.699999809265137,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -208,7 +215,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 0,
                     "position": [
                         0.0,
                         5.0,

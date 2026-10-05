@@ -32,6 +32,8 @@ namespace
         j["emitRadius"]    = {SafeF(d.emitRadius.x), SafeF(d.emitRadius.y)};
         j["emitSize"]      = {SafeF(d.emitSize.x), SafeF(d.emitSize.y)};
         j["sizeRandom"]    = SafeF(d.sizeRandom);
+        j["sizeEase"]      = d.sizeEase;
+        j["sizeEasePower"] = SafeF(d.sizeEasePower);
         j["coneAngle"]     = {SafeF(d.coneAngle.x), SafeF(d.coneAngle.y)};
         j["emitSpeed"]     = {SafeF(d.emitSpeed.x), SafeF(d.emitSpeed.y)};
         j["angularSpeed"]  = {SafeF(d.angularSpeed.x), SafeF(d.angularSpeed.y)};
@@ -112,6 +114,9 @@ namespace
         F2("emitSize", d.emitSize);
         // sizeRandom が無い JSON は、既定の 1（0〜emitSize の一様ランダム）のまま読む。
         F("sizeRandom", d.sizeRandom);
+        // sizeEase が無い JSON は既定の 0（線形）のまま読む。今までと同じ広がり方
+        I("sizeEase", d.sizeEase);
+        F("sizeEasePower", d.sizeEasePower);
         F2("coneAngle", d.coneAngle);
         F2("emitSpeed", d.emitSpeed);
         F2("angularSpeed", d.angularSpeed);
@@ -300,6 +305,22 @@ struct ComponentMeta<GPUParticleComponent>
 
     // 「(?)」ヘルプを出す。ComponentMetaImGui::Help へ渡すだけの短縮名
     static void Help(const char *text) { ComponentMetaImGui::Help(text); }
+
+    // イージング曲線の値（グラフ表示用）。particle.hlsli の ApplyEase と同じ式なので、
+    //   片方を変えたらもう片方も合わせる（ずれるとグラフと実際の広がり方が食い違う）。
+    static float EvalEase(float t, int mode, float power)
+    {
+        t             = (std::min)((std::max)(t, 0.0f), 1.0f);
+        const float k = (std::max)(power, 1e-3f);
+        switch (mode)
+        {
+        case 1: return std::pow(t, k);
+        case 2: return 1.0f - std::pow(1.0f - t, k);
+        case 3: return (t < 0.5f) ? 0.5f * std::pow(2.0f * t, k)
+                                  : 1.0f - 0.5f * std::pow(2.0f * (1.0f - t), k);
+        default: return t;
+        }
+    }
 
     static bool CustomGui(GPUParticleComponent &compRef, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
@@ -690,6 +711,27 @@ struct ComponentMeta<GPUParticleComponent>
                 Help(u8"左=生まれた瞬間のサイズ  右=消える瞬間のサイズ。\n"
                      u8"左>右 で縮みながら消え、左<右 で膨らみながら消えます。\n"
                      u8"衝撃波は 左を小さく・右を大きく してください。");
+
+                const char *easeModes[] = {u8"線形 (Linear)", u8"Ease-In (加速)", u8"Ease-Out (減速)", u8"Ease-InOut"};
+                if (ImGui::Combo(u8"サイズの変化 (Easing)", &d.sizeEase, easeModes, IM_ARRAYSIZE(easeModes))) changed = true;
+                Help(u8"誕生→消滅のサイズをどんな速さで変えるか。\n"
+                     u8"Ease-Out = 最初に一気に広がって最後はゆっくり（衝撃波の定番）。\n"
+                     u8"Ease-In  = ゆっくり始まって最後に加速。");
+
+                // 線形のときは強さが効かないので触れないようにする
+                ImGui::BeginDisabled(d.sizeEase == 0);
+                changed |= ImGui::SliderFloat(u8"変化の強さ (Power)", &d.sizeEasePower, 1.0f, 8.0f, "%.1f");
+                ImGui::EndDisabled();
+                Help(u8"曲線の急さ。1 で線形と同じ、2 で緩やか、3〜5 で衝撃波らしい急な広がり。");
+
+                // 曲線のグラフ。横 = 寿命の経過（左が誕生、右が消滅）、縦 = 誕生→消滅のどこまで進んだか
+                {
+                    float curve[48];
+                    for (int i = 0; i < IM_ARRAYSIZE(curve); ++i)
+                        curve[i] = EvalEase(i / float(IM_ARRAYSIZE(curve) - 1), d.sizeEase, d.sizeEasePower);
+                    ImGui::PlotLines("##sizeEaseCurve", curve, IM_ARRAYSIZE(curve), 0,
+                                     u8"誕生 → 消滅", 0.0f, 1.0f, ImVec2(-1, 60));
+                }
 
                 changed |= ImGui::SliderFloat(u8"サイズのばらつき", &d.sizeRandom, 0.0f, 1.0f, "%.2f");
                 Help(u8"0 = 上のサイズちょうどで固定（毎回まったく同じ大きさ）\n"

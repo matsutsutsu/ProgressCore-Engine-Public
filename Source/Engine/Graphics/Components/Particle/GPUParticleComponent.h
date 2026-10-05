@@ -41,6 +41,11 @@ struct ParticleEmitterDesc
     // 大きさのランダム量。0 で emitSize ちょうど、1 で 0〜emitSize の一様ランダム。
     // 衝撃波のように毎回同じ大きさで出したいものは 0 にする。
     float           sizeRandom   = 1.0f;
+
+    // 誕生→消滅の大きさの変わり方。0: 線形 1: Ease-In（加速） 2: Ease-Out（減速） 3: Ease-InOut
+    //   sizeEasePower は曲線の急さ（1 で線形と同じ、3〜5 で衝撃波らしい急な広がり）
+    int   sizeEase      = 0;
+    float sizeEasePower = 2.0f;
     GpuData::float2 coneAngle    = {0.0f, 0.3f}; // 放出角度の範囲（rad）
     GpuData::float2 emitSpeed    = {1.0f, 3.0f}; // 初速の範囲（m/秒）
     GpuData::float2 angularSpeed = {0.0f, 0.0f}; // 回転速度の範囲（rad/秒）

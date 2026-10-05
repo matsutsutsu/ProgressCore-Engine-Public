@@ -82,6 +82,8 @@
                                 1.0,
                                 10.0
                             ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -178,6 +180,8 @@
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -274,6 +278,8 @@
                                 1.0,
                                 10.0
                             ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,

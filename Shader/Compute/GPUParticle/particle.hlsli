@@ -190,6 +190,31 @@ void spawn(in uint id, inout particle p, in uint salt)
 }
 
 //=====================================================================
+// イージング — 0〜1 の t を曲線に通す
+//   mode: 0 = 線形, 1 = Ease-In（t^k）, 2 = Ease-Out（1-(1-t)^k）, 3 = Ease-InOut
+//   power(k): 曲線の急さ。1 で線形と同じ
+//   インスペクタのグラフ（GPUParticleComponentMeta.cpp の EvalEase）と同じ式。
+//   片方を変えたらもう片方も合わせる。
+//=====================================================================
+float ApplyEase(float t, int mode, float power)
+{
+    t       = saturate(t);
+    float k = max(power, 1e-3f);
+
+    // return は最後の1回だけにする。途中で return すると FXC が「戻り値が未初期化かも」
+    //   (X4000) と判断し、それを使う SV_POSITION にまで警告 X4715 が連鎖する。
+    float result = t;
+    if (mode == 1)
+        result = pow(t, k);
+    else if (mode == 2)
+        result = 1.0f - pow(1.0f - t, k);
+    else if (mode == 3)
+        result = (t < 0.5f) ? 0.5f * pow(2.0f * t, k)
+                            : 1.0f - 0.5f * pow(2.0f * (1.0f - t), k);
+    return result;
+}
+
+//=====================================================================
 // フェード補間
 //=====================================================================
 float fade_in(float duration, float age, float exponent)

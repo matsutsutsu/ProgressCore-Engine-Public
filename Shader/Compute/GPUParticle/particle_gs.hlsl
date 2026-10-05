@@ -28,7 +28,10 @@ void main(point VS_OUT input[1], inout TriangleStream<GS_OUT> output)
     float aspect = gProjection._m11 / gProjection._m00;
 
     float age_ratio = saturate(p.age / p.lifespan);
-    float size      = lerp(p.size.x, p.size.y, age_ratio);
+
+    // 誕生→消滅の大きさを、年齢の割合をイージング曲線に通してから補間する
+    //   （Ease-Out なら最初に一気に広がり、最後はゆっくりになる）
+    float size      = lerp(p.size.x, p.size.y, ApplyEase(age_ratio, size_ease, size_ease_power));
 
     float2 stretch_scale  = float2(1.0f, 1.0f);
     float  rotation_angle = p.angle;
