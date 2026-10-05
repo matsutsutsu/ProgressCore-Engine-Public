@@ -172,9 +172,6 @@ struct EditorContext
     ImGuizmo::MODE      currentGizmoMode      = ImGuizmo::LOCAL;
 #endif
 
-    // カメラパスエディタで選択中の制御点。GameViewWindow が強調表示する。-1 なら未選択
-    int editingPathNodeIndex = -1;
-
     // ゲーム画面のテクスチャ（ID3D11ShaderResourceView*。所有しない）。ImGui に渡して描く
     void *gameSRV = nullptr;
 

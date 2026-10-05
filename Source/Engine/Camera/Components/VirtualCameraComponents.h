@@ -38,7 +38,7 @@ struct VirtualCamera
     bool lookInitialized = false; // resultLookAt が一度でも確定したか
     bool isValid         = false; // 位置・注視点が揃って採用可能か
 
-    // 位置・注視点の両方を自前で確定させる Body（TPS/Free/Dolly）用。
+    // 位置・注視点の両方を自前で確定させる Body（TPS/Free/Timeline など）用。
     void MarkResolved()
     {
         posInitialized  = true;

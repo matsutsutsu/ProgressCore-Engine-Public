@@ -1,0 +1,130 @@
+{
+    "_comment": "ボス戦の導入ムービー。プレイヤーの前を横に流す -> カット -> ボスを見上げながら横に流す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）",
+    "tracks": [
+        {
+            "type": "Camera",
+            "clips": [
+                {
+                    "_comment": "Shot1: プレイヤーを正面やや斜めから映しつつ、左から右へ横移動",
+                    "start": 0.0,
+                    "duration": 2.8,
+                    "subject": "Player",
+                    "space": "SubjectLocal",
+                    "motion": "Truck",
+                    "eyeStart": [
+                        -7.0,
+                        4.0,
+                        9.0
+                    ],
+                    "eyeEnd": [
+                        7.0,
+                        4.0,
+                        9.0
+                    ],
+                    "lookStart": [
+                        -1.5,
+                        3.5,
+                        0.0
+                    ],
+                    "lookEnd": [
+                        1.5,
+                        3.5,
+                        0.0
+                    ],
+                    "fovStart": 40.0,
+                    "fovEnd": 38.0,
+                    "ease": "EaseInOut"
+                },
+                {
+                    "_comment": "Shot2: カットでボスへ。低い位置から見上げ、右から左へ横移動して寄る",
+                    "start": 2.8,
+                    "duration": 3.6,
+                    "subject": "Boss",
+                    "space": "SubjectLocal",
+                    "motion": "Truck",
+                    "eyeStart": [
+                        28.0,
+                        3.0,
+                        50.0
+                    ],
+                    "eyeEnd": [
+                        -18.0,
+                        3.0,
+                        40.0
+                    ],
+                    "lookStart": [
+                        4.0,
+                        14.0,
+                        0.0
+                    ],
+                    "lookEnd": [
+                        -2.0,
+                        13.0,
+                        0.0
+                    ],
+                    "fovStart": 45.0,
+                    "fovEnd": 38.0,
+                    "ease": "EaseOut",
+                    "transitionIn": "Cut"
+                }
+            ]
+        },
+        {
+            "type": "Sound",
+            "clips": [
+                {
+                    "_comment": "カットでボスへ切り替わる瞬間の重い一撃。素材が揃うまでは倒れる音をピッチを下げて代用",
+                    "time": 2.8,
+                    "event": "sfx:/fall",
+                    "volume": 1.0,
+                    "pitch": -0.4
+                }
+            ]
+        },
+        {
+            "type": "Effect",
+            "clips": [
+                {
+                    "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
+                    "time": 2.8,
+                    "effect": "Assets/Prefabs/Particles/VFX_Jump",
+                    "subject": "Boss",
+                    "offset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "scale": 5.0
+                }
+            ]
+        },
+        {
+            "type": "Animation",
+            "clips": [
+                {
+                    "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ 2.8 秒）。カットで隠れるので blendIn は 0",
+                    "start": 2.8,
+                    "subject": "Boss",
+                    "sequence": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
+                    "speed": 0.7,
+                    "blendIn": 0.0,
+                    "blendOut": 0.4
+                }
+            ]
+        },
+        {
+            "type": "Signal",
+            "clips": [
+                {
+                    "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言。テロップは見た目だけなのでスキップ時は出さない",
+                    "time": 3.1,
+                    "name": "Telop",
+                    "param": "MURIEL",
+                    "param2": "TARGET IDENTIFIED",
+                    "value": 2.6,
+                    "fireOnSkip": false
+                }
+            ]
+        }
+    ]
+}

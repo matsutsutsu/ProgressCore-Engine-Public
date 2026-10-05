@@ -28,17 +28,17 @@ void GameScene::Initialize()
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-    // 導入カメラ演出はレベルに入れずここで足す。レベルは EditorScene も読むので、
+    // 導入ムービーはレベルに入れずここで足す。レベルは EditorScene も読むので、
     // レベルに入れるとデバッグで起動するたびに数秒の演出を待つことになる
     {
-        ZoneScopedN("GameScene: SpawnPrefab BossIntroCamera");
+        ZoneScopedN("GameScene: SpawnPrefab BossIntroTimeline");
 
-        const std::string introCameraPrefab = "Assets/Prefabs/Camera/BossIntroCamera.json";
+        const std::string introCameraPrefab = "Assets/Prefabs/Camera/BossIntroTimeline.json";
         if (Prefab::SpawnPrefab(*m_worldPtr, introCameraPrefab) == CCL::ECS::InvalidEntityID)
         {
             // 演出が出ないだけでゲームは成立するので、失敗しても止めない。
             CCL_LOG_ERROR(LogCategory::Core,
-                          "GameScene: 導入カメラ演出の生成に失敗: %s", introCameraPrefab.c_str());
+                          "GameScene: 導入ムービーの生成に失敗: %s", introCameraPrefab.c_str());
         }
     }
 

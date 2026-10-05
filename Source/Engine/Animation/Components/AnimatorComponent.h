@@ -68,6 +68,17 @@ struct AnimatorComponent
 
     bool isEditorOverride = false; // true の間はエディタ（シーケンサー）が再生を制御し、System は触らない
 
+    // true の間は外部（タイムラインのムービー）がクリップを決める。
+    //   isEditorOverride と違い、時間の進行・ポーズ計算・アニメの Sound / Effect イベントは通常どおり動く。
+    //   止めるのはステートマシンの遷移評価・ルートモーション・足滑り補正・攻撃判定（HitBox / SpawnHitbox）だけ。
+    //   （遷移を評価し続けると、ムービー中のクリップを Idle などへ勝手に戻してしまう）
+    bool isExternalOverride = false;
+
+    // 外部が握りを離すときに立てる、ステートマシンへの「今のステートへ戻して」という要求。
+    //   値は戻すときのクロスフェード時間（秒）。負なら要求なし。AnimControllerSystem が消費する。
+    //   握っている間もステートマシンのステートは変わらないので、戻す先は握る前のステートになる
+    float externalReleaseBlend = -1.0f;
+
     // Play() に渡す再生パラメータ。
     //   bool と float が並ぶ引数は暗黙変換で取り違えやすいため、構造体と
     //   C++20 の指示付き初期化子で呼び出し側に名前を書かせる。

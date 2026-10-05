@@ -30,7 +30,7 @@
 #include "Editor/Windows/FormationEditorWindow.h"
 #include "Editor/Windows/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/CurveEditorWindow.h"
-#include "Editor/Windows/CameraPathEditorWindow.h"
+#include "Editor/Windows/TimelineEditorWindow.h"
 #include "Editor/Windows/RenderDebugWindow.h"
 #include "Editor/Windows/BuildingScatterWindow.h"
 
@@ -65,7 +65,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<FormationEditorWindow>();
-    RegisterWindow<CameraPathEditorWindow>();
+    RegisterWindow<TimelineEditorWindow>();
     RegisterWindow<CurveEditorWindow>();
 
     RegisterWindow<TextEditorWindow>();

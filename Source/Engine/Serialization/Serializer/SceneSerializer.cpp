@@ -6,6 +6,7 @@
 
 #include "Engine/Core/Components/DestroyTag.h"
 #include "Engine/Core/Components/PersistentTag.h"
+#include "Engine/Core/Components/EditorTransientTag.h"
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -121,6 +122,7 @@ bool SceneSerializer::Serialize(World *world, const std::string &filepath)
 
             if (chunk->HasComponent<Tag::DestroyTag>()) continue;    // 削除予定
             if (chunk->HasComponent<Tag::PersistentTag>()) continue; // シーンをまたいで残る Entity
+            if (chunk->HasComponent<Tag::EditorTransientTag>()) continue; // エディタがプレビュー用に置いたもの
             // UI（HUD・メニュー）は各シーンの System が起動時に生成する。
             // 保存すると、次の起動で「読込分 + System の生成分」の二重になる
             if (chunk->HasComponent<UITransformComponent>()) continue;

@@ -40,6 +40,7 @@ public:
         ZoneName(zoneName.c_str(), zoneName.size());
 
 #ifdef ENABLE_EDITOR
+        OnBeforeBegin();
 
         if (ImGui::Begin(m_name.c_str(), &m_isVisible))
         {
@@ -60,6 +61,9 @@ protected:
     // 非表示・折りたたみ・DrawContents の早期 return でも必ず呼ばれる。
     // 「描画されている間しか維持できない状態」の解除に使う。
     virtual void OnFrameBegin(EditorContext & /*context*/) {}
+
+    // 表示中だけ、ImGui::Begin の直前に呼ばれる。ImGui::SetNextWindowSize などで初期の大きさを決めるのに使う
+    virtual void OnBeforeBegin() {}
 
     std::string m_name;      // ウィンドウ名（ImGui の ID とレイアウト保存のキーを兼ねる）
     bool        m_isVisible; // 表示中か

@@ -56,9 +56,11 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
 
         // 2. 持ち主の Animator を読む
         const auto *animator = m_world->GetComponent<AnimatorComponent>(hb.ownerEntity);
-        if (!animator || !animator->currentSequence)
+        if (!animator || !animator->currentSequence || animator->isExternalOverride)
         {
-            // 持ち主が消えた・シーケンスが無いときは判定を閉じる
+            // 持ち主が消えた・シーケンスが無いときは判定を閉じる。
+            // ムービー（タイムライン）がクリップを握っている間も閉じる。演出で攻撃モーションを
+            // 見せただけで、近くのプレイヤーにダメージが入ってしまうため
             if (hb.isActive)
             {
                 hb.isActive = false;

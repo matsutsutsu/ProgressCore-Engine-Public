@@ -75,7 +75,9 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         //   走行中の速度で攻撃アニメまで最大 2.5 倍速になる。
         //   書き込み先は playbackSpeed ではなく footSlideMultiplier（理由は AnimatorComponent.h を参照）。
         //   倍率は毎ステップ必ず代入する。書かない経路があると、ロコモーションの倍率が攻撃へ持ち越される
-        if (animator.isLoop && isGrounded && currentSpeed > 0.1f && !externallyDriven)
+        //   ムービーがクリップを握っている間も掛けない（演出のクリップは指定した速度で見せる）
+        if (animator.isLoop && isGrounded && currentSpeed > 0.1f && !externallyDriven &&
+            !animator.isExternalOverride)
         {
             // 再生倍率 = 実際の移動速度 ÷ 基準の歩行速度（例: 速度 12、基準 6 なら 2 倍速）
             float speedRatio = currentSpeed / (std::max)(0.1f, config.walkSpeed);

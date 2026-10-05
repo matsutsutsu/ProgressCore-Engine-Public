@@ -300,7 +300,9 @@ void AnimControllerSystem::Update(float dt)
                                      AnimatorComponent         &animator,
                                      AnimParametersComponent & /*params*/,
                                      const TimeStateComponent & /*time*/) {
-        if (animator.isEditorOverride)
+        // ムービーが握っている間に entry を再生すると、ムービーのクリップを上書きしてしまう。
+        // 読込は握りが離れてからでよい（離した後の最初のステップで entry に入る）
+        if (animator.isEditorOverride || animator.isExternalOverride)
             return;
 
         // 未読込のグラフだけ処理する（読込済みかパス未設定なら何もしない）
@@ -369,6 +371,29 @@ void AnimControllerSystem::Update(float dt)
             }
             if (!fsm.activePath.empty())
                 fsm.currentStateHash = fsm.activePath.back();
+        }
+
+        // ムービー（タイムライン）がクリップを握っている間は遷移を評価しない。
+        // トリガーの寿命は上で進めているので、ムービー中の入力が明けてから暴発することもない
+        if (animator.isExternalOverride) return;
+
+        // 握りが離れた直後: 今のステートのクリップへブレンドして戻す。
+        //   握っている間もステートは変わっていないので、遷移ではなく「今のステートに入り直す」だけでよい
+        if (animator.externalReleaseBlend >= 0.0f)
+        {
+            if (const AnimState *leaf = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash);
+                leaf && leaf->sequence)
+            {
+                animator.Play(leaf->sequence,
+                              {.blendTime              = animator.externalReleaseBlend,
+                               .loop                   = leaf->isLoop,
+                               .speed                  = leaf->playbackSpeed,
+                               .curve                  = leaf->speedCurve,
+                               .rootMotionCurve        = leaf->rootMotionCurve,
+                               .lockVerticalRootMotion = leaf->lockVerticalRootMotion,
+                               .restart                = true});
+            }
+            animator.externalReleaseBlend = -1.0f;
         }
 
         // ルートから葉へ評価する。どこかの階層で遷移したら、このステップはそこで終わる

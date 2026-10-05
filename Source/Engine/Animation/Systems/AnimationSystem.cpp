@@ -193,6 +193,11 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             break;
 
         case AnimEventType::SpawnHitbox: {
+            // ムービー（タイムライン）がクリップを握っている間は攻撃判定を出さない。
+            //   演出で攻撃モーションを見せただけで、近くのプレイヤーにダメージが入ってしまうため。
+            //   音とエフェクトは演出として欲しいので、上の Sound / Effect は止めない
+            if (animator.isExternalOverride) break;
+
             // 空間に独立した球状の判定の生成を依頼する。
             //   生存時間はシーケンサーのブロック長。点（startTime==endTime）なら 0 になり、
             //   購読側が最小の寿命を使う

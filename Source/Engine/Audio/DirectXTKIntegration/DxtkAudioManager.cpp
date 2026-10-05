@@ -419,6 +419,14 @@ void DxtkAudioManager::PlayOneShot(uint32_t eventHash)
         sfx->Play(m_impl->CategoryVolume(eventHash), 0.0f, 0.0f); // 2D ワンショットは DXTK がボイスをプールして自動で回収する
 }
 
+void DxtkAudioManager::PlayOneShot(uint32_t eventHash, float volume, float pitch)
+{
+    if (!m_impl->ready) return;
+    std::lock_guard<std::mutex> lk(m_impl->mtx);
+    if (SoundEffect *sfx = m_impl->Find(eventHash))
+        sfx->Play((std::max)(volume, 0.0f) * m_impl->CategoryVolume(eventHash), Clamp(pitch, -1.0f, 1.0f), 0.0f);
+}
+
 void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3 &position, float volume, float pitch)
 {
     if (!m_impl->ready) return;

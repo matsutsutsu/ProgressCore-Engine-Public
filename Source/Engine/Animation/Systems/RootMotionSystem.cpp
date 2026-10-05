@@ -45,8 +45,10 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        // 外部（ダッシュ等の移動アクション）が移動を制御中なら適用しない
-        if (rm.externallyDriven)
+        // 外部（ダッシュ等の移動アクション）が移動を制御中、またはムービーがクリップを握っている間は適用しない。
+        //   ムービー中はステートマシンのステートが握る前のまま残るので、そのステートの
+        //   applyRootMotion で判定すると、ムービーのクリップの移動量でキャラが歩き出しうる
+        if (rm.externallyDriven || animator.isExternalOverride)
         {
             rm.enabled          = false;
             rm.lastEvaluatedSeq = nullptr;

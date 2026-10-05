@@ -67,6 +67,13 @@ public:
     virtual void PlayOneShot(uint32_t eventHash) = 0;
 
     /**
+     * @brief 距離減衰なしで、音量とピッチを指定して再生する（ムービーの効果音など）。
+     * @param volume 音量の倍率（1 で等倍、0 で無音）
+     * @param pitch  ピッチ（オクターブ単位。0 で等倍、±1 で 1 オクターブ上下）
+     */
+    virtual void PlayOneShot(uint32_t eventHash, float volume, float pitch) = 0;
+
+    /**
      * @brief ワールド座標で再生する。発音位置はその瞬間に固定され、以降は追従しない。
      * @param volume 音量の倍率（1 で等倍、0 で無音）
      * @param pitch  ピッチ（オクターブ単位。0 で等倍、±1 で 1 オクターブ上下）。スロー演出の分はこれに足される

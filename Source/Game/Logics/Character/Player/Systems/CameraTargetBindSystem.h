@@ -3,8 +3,8 @@
 // 概要: カメラの追従・注視の対象を、Component の種類で探したエンティティへ繋ぎ直す System。
 //
 // 責務:
-//   - PlayerComponent を持つ最初のエンティティをプレイヤー、BossPhaseComponent を持つ最初のエンティティをボスとして探す
-//   - 追従・注視・TPS カメラの target が無効ならプレイヤーへ、導入演出カメラの target が無効ならボスへ繋ぐ
+//   - PlayerComponent を持つ最初のエンティティをプレイヤーとして探す
+//   - 追従・注視・TPS カメラの target が無効ならプレイヤーへ繋ぐ
 //   - 有効な target（手で設定したものなど）は上書きしない
 //
 // 備考:
@@ -40,12 +40,6 @@ public:
 private:
     // PlayerComponent を持つ最初のエンティティ（プレイヤー）を探す。
     CCL::ECS::EntityID FindPlayer();
-
-    /**
-     * @brief BossPhaseComponent を持つ最初のエンティティ（ボス）を探す。導入演出カメラがボスを注視するために使う。
-     * @return ボスのエンティティ。ボスが居ないシーンでは InvalidEntityID（演出の System 側が演出を打ち切る）。
-     */
-    CCL::ECS::EntityID FindBoss();
 
     /**
      * @brief target が無効なら entity へ繋ぎ直す。

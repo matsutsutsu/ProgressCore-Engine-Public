@@ -41,6 +41,10 @@
             "visible": false
         },
         {
+            "name": "Timeline Editor",
+            "visible": true
+        },
+        {
             "name": "Curve Editor",
             "visible": false
         },

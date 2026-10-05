@@ -2,27 +2,19 @@
     "entities": [
         {
             "components": {
-                "CameraDollyCart": {
-                    "currentDistance": 0.0,
-                    "lookAheadOffset": 2.0,
-                    "lookForward": true,
-                    "moveSpeed": 5.0,
-                    "pathAsset": ""
-                },
                 "Name": {
-                    "name": "CameraLine"
+                    "name": "BossIntroTimeline"
                 },
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
+                "TimelinePlayer": {
+                    "activePriority": 300,
+                    "allowSkip": true,
+                    "assetPath": "Assets/Timelines/BossIntro.json",
+                    "idlePriority": -1000,
+                    "playOnStart": true,
+                    "startDelay": 0.2
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
                     "position": [
                         0.0,
                         0.0,
@@ -41,17 +33,17 @@
                     ]
                 },
                 "VirtualCamera": {
-                    "blendTime": 1.0,
-                    "farClip": 1000.0,
+                    "blendTime": 0.0,
+                    "farClip": 3000.0,
                     "fov": 45.0,
                     "nearClip": 0.10000000149011612,
-                    "priority": 0
+                    "priority": -1000
                 }
             },
             "lid": 1
         }
     ],
     "magic": 1397506883,
-    "name": "CameraLine",
+    "name": "BossIntroTimeline",
     "version": 1
 }

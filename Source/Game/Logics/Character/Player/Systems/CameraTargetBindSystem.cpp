@@ -1,13 +1,11 @@
 #include "CameraTargetBindSystem.h"
 
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
-#include "Engine/Camera/Components/CameraBodyIntroOrbitComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Core/EntityLink.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 
 using namespace CCL::ECS;
 
@@ -28,23 +26,6 @@ EntityID CameraTargetBindSystem::FindPlayer()
     return InvalidEntityID;
 }
 
-EntityID CameraTargetBindSystem::FindBoss()
-{
-    if (!m_world) return InvalidEntityID;
-    for (auto &chunkPtr : m_world->GetChunkManager().GetChunks())
-    {
-        if (!chunkPtr) continue;
-        Chunk *chunk = chunkPtr.get();
-        if (!chunk->HasComponent<BossPhaseComponent>()) continue;
-        for (size_t i = 0; i < chunk->GetEntityCount(); ++i)
-        {
-            if (chunk->IsEntityDestroyed(i)) continue;
-            return chunk->GetEntityByIndex(i);
-        }
-    }
-    return InvalidEntityID;
-}
-
 void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &target, EntityID entity)
 {
     if (entity == InvalidEntityID) return;
@@ -54,8 +35,7 @@ void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &targe
 void CameraTargetBindSystem::Update(float /*dt*/)
 {
     const EntityID playerId = FindPlayer();
-    const EntityID bossId   = FindBoss(); // ボスが居ないシーンでは Invalid のまま（演出側が打ち切る）
-    if (playerId == InvalidEntityID && bossId == InvalidEntityID) return;
+    if (playerId == InvalidEntityID) return;
 
     // VirtualCamera を持つエンティティを走査し、付いているカメラ Component の種類ごとに target を繋ぎ直す。
     ForEachWithID([&](EntityID camID, const VirtualCamera & /*vcam*/) {
@@ -67,11 +47,6 @@ void CameraTargetBindSystem::Update(float /*dt*/)
 
         if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID))
             BindIfInvalid(tps->target, playerId);
-
-        // 導入演出カメラだけはプレイヤーではなくボスを見る。
-        // プレハブを置くだけで演出が動き、EntityID を手で設定しなくてよい。
-        if (auto *intro = m_world->GetComponent<CameraBodyIntroOrbit>(camID))
-            BindIfInvalid(intro->target, bossId);
     });
 }
 
