@@ -8,7 +8,9 @@
 
 namespace
 {
-    constexpr const char *kSettingsPath = "Build/User/GameSettings.json";
+    // 遊んだ人の設定は、配布する Assets とは分けて Saved に置く（無ければ最初の保存で作られる）。
+    //   Assets に置くと、Assets を丸ごとコピーして配ったときに作業中の設定（BGM 0 など）まで配られてしまう
+    constexpr const char *kSettingsPath = "Saved/GameSettings.json";
 }
 
 GameSettings &GameSettings::Instance()

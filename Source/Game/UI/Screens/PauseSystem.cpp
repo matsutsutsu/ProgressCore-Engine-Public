@@ -63,6 +63,21 @@ void PauseSystem::Update(float /*dt*/)
     Input *input = m_world->GetResource<Input *>();
     if (!input) return;
 
+#ifdef SHIPPING_BUILD
+    // アプリが裏に回ったら自動で一時停止する（戻っても自動では再開しない。戻った瞬間に攻撃を受けないように）。
+    //   開発中は VS などへ頻繁に切り替えて邪魔になるので、製品ビルドだけ。
+    //   決着後（リザルト）・シーンの切り替え中・UI 操作モードの間は開かない
+    if (!m_paused && !input->IsAppActive() && !m_transitioning && !SceneManager::Instance().IsTransitioning())
+    {
+        const GameFlowState *flow = m_world->HasResource<GameFlowState>() ? &m_world->GetResource<GameFlowState>() : nullptr;
+        if (!flow || (!flow->matchOver && !flow->uiInteract))
+        {
+            OpenPause();
+            return;
+        }
+    }
+#endif
+
     // エディタの別のウィンドウを操作している間と、UI 操作モード（F2）の間は Esc を受けない（GameViewportInfo.h）。
     // エディタで押した Esc で一時停止が切り替わらないようにするため。パッドの START は止めない
     const bool keyUsable = !m_world->HasResource<GameViewportInfo>() ||

@@ -65,12 +65,17 @@ public:
     // 直近で操作されたデバイス
     ActiveDeviceType GetActiveDeviceType() const { return m_activeDeviceType; }
 
+    // アプリが前面にあるか。Framework が WM_ACTIVATEAPP を受けて書く
+    void SetAppActive(bool active) { m_appActive = active; }
+    bool IsAppActive() const { return m_appActive; }
+
 private:
     std::unique_ptr<GamePad>  gamePad;
     std::unique_ptr<Mouse>    mouse;
     std::unique_ptr<Keyboard> keyboard;
 
     ActiveDeviceType m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
+    bool             m_appActive        = true; // アプリが前面にあるか
 
     // ClearLogicInput までに溜めた「押した瞬間」
     unsigned int m_logicPadButtonDown     = 0;

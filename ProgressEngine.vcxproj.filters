@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Source\Engine\Core\App\Resources">
+      <UniqueIdentifier>{911b7cdc-96a6-4a15-b7da-ceda83a0db05}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Time\Components">
       <UniqueIdentifier>{4a9439be-1cff-4df5-8fdc-18e58e20e5a9}</UniqueIdentifier>
     </Filter>
@@ -3377,5 +3380,16 @@
     <Natvis Include="Build\ECSDebugView.natvis">
       <Filter>Build</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Source\Engine\Core\App\Resources\ProgressEngine.rc">
+      <Filter>Source\Engine\Core\App\Resources</Filter>
+    </ResourceCompile>
+    <ClInclude Include="Source\Engine\Core\App\Resources\Resource.h">
+      <Filter>Source\Engine\Core\App\Resources</Filter>
+    </ClInclude>
+    <Image Include="Source\Engine\Core\App\Resources\App.ico">
+      <Filter>Source\Engine\Core\App\Resources</Filter>
+    </Image>
   </ItemGroup>
 </Project>

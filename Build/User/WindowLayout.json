@@ -37,10 +37,6 @@
             "visible": false
         },
         {
-            "name": "Camera Path Editor",
-            "visible": false
-        },
-        {
             "name": "Timeline Editor",
             "visible": true
         },

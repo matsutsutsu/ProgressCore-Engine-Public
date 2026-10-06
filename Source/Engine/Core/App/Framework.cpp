@@ -650,6 +650,10 @@ LRESULT CALLBACK Framework::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LP
         // キー入力はここでは扱わない（ESC のポーズも含めて InputSystem 側）。
         // アプリ終了はウィンドウの×ボタン（WM_CLOSE→WM_DESTROY）だけ。
         break;
+    case WM_ACTIVATEAPP:
+        // アプリが前面から外れた・戻った。ゲーム側はこれを見て、キーの押しっぱなしを消し、自動で一時停止する
+        Input::Instance().SetAppActive(wParam != FALSE);
+        break;
     case WM_ENTERSIZEMOVE:
         // ウィンドウの移動・リサイズ操作の開始。操作中はタイマーを止め、
         // 解放後に大きな経過時間がまとめて流れ込むのを防ぐ

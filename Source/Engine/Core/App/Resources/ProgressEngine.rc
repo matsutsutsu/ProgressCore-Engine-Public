@@ -1,0 +1,7 @@
+// exe に埋め込むリソースの定義。ビルド時に rc.exe がコンパイルし、リンカが exe に埋め込む。
+//   アイコンを変えるときは App.ico を差し替えてビルドし直す（複数サイズ入りの .ico にすること）。
+#pragma code_page(65001)
+
+#include "Resource.h"
+
+IDI_APP_ICON ICON "App.ico"

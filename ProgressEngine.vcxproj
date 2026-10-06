@@ -1672,6 +1672,15 @@
   <ItemGroup>
     <Natvis Include="Build\ECSDebugView.natvis" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Source\Engine\Core\App\Resources\ProgressEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Engine\Core\App\Resources\Resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Source\Engine\Core\App\Resources\App.ico" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

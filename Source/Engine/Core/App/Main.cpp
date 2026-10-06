@@ -3,8 +3,10 @@
 #include <assert.h>
 #include <tchar.h>
 #include <time.h>
+#include <filesystem>
 
 #include "Framework.h"
+#include "Resources/Resource.h" // 埋め込んだアイコンの番号
 
 // ハイブリッドGPU(Optimus/PowerXpress)搭載PCで、Windows が内蔵GPU(Intel等)を
 // 自動選択してしまう問題への対策。ドライバはexe側がこのシンボルをexportして
@@ -29,6 +31,23 @@ const BOOL FULLSCREEN = TRUE;
 const BOOL FULLSCREEN = FALSE;
 #endif
 
+// 作業フォルダを exe のあるフォルダへ合わせる。
+//   ファイルはすべて作業フォルダからの相対パス（Assets/...・Saved/...）で開くので、
+//   ショートカットや別の場所から起動しても Assets を見つけられるようにする。
+//   exe の隣に Assets が無いとき（開発中は exe が Build/Bin にあり、VS がリポジトリのルートを
+//   作業フォルダにして起動する）は、元の作業フォルダのままにする
+static void SetWorkingDirectoryToExe()
+{
+    wchar_t path[MAX_PATH] = {};
+    const DWORD len        = GetModuleFileNameW(nullptr, path, MAX_PATH);
+    if (len == 0 || len >= MAX_PATH) return; // 取れない・長すぎるときは何もしない
+
+    const std::filesystem::path exeDir = std::filesystem::path(path).parent_path();
+    std::error_code             ec;
+    if (std::filesystem::is_directory(exeDir / L"Assets", ec))
+        std::filesystem::current_path(exeDir, ec);
+}
+
 // ウィンドウに紐付けた Framework へメッセージを転送する
 LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
@@ -42,6 +61,8 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
     // 終了時にメモリリークをダンプする
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
+    SetWorkingDirectoryToExe(); // ファイルを読む前に合わせる（ログ・設定・Assets のすべてがこれを基準にする）
+
     WNDCLASSEX wcex;
     wcex.cbSize        = sizeof(WNDCLASSEX);
     wcex.style         = CS_HREDRAW | CS_VREDRAW;
@@ -49,12 +70,14 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
     wcex.cbClsExtra    = 0;
     wcex.cbWndExtra    = 0;
     wcex.hInstance     = instance;
-    wcex.hIcon         = 0;
+    wcex.hIcon         = LoadIcon(instance, MAKEINTRESOURCE(IDI_APP_ICON)); // タスクバー・Alt+Tab 用（大）
     wcex.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName  = NULL;
     wcex.lpszClassName = _T("Game");
-    wcex.hIconSm       = 0;
+    wcex.hIconSm       = static_cast<HICON>(LoadImage(instance, MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON,
+                                                      GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+                                                      LR_DEFAULTCOLOR)); // タイトルバー用（小）。.ico から合うサイズを選ばせる
     RegisterClassEx(&wcex);
 
     srand(static_cast<unsigned int>(time(nullptr)));

@@ -94,6 +94,13 @@ public:
     void SetCursorLock(bool lock) { m_lockRequested = lock; }
     bool IsCursorLocked() const { return m_cursorHidden; }
 
+    // すべてのボタンを「押されていない」にする（アプリが裏に回っている間、他のアプリでのクリックを拾わないように）
+    void ClearButtons()
+    {
+        buttonState[0] = buttonState[1] = 0;
+        buttonDown = buttonUp = 0;
+    }
+
 private:
     MouseButton buttonState[2] = {0}; // [0] = 今フレーム、[1] = 前フレーム
     MouseButton buttonDown     = 0;

@@ -8,6 +8,9 @@
 // ===========================================================================
 #include <Windows.h>
 
+#include <algorithm>
+#include <iterator>
+
 class Keyboard
 {
 public:
@@ -24,6 +27,13 @@ public:
 
     // キーが離された瞬間か
     bool IsReleased(int key) const;
+
+    // すべてのキーを「押されていない」にする（アプリが裏に回り、離した通知が届かないときに使う）
+    void Clear()
+    {
+        std::fill(std::begin(currentState), std::end(currentState), BYTE{0});
+        std::fill(std::begin(oldState), std::end(oldState), BYTE{0});
+    }
 
 private:
     BYTE currentState[256] = {0}; // 今フレームのキー状態（1 = 押されている）

@@ -428,3 +428,6 @@ FodyWeavers.xsd
 # 構造ダンプの個人ツール出力（コミット不要）
 _dump_structure.bat
 structure.txt
+
+# 遊んだ人の設定（GameSettings.json など）。ゲームが実行時に作る
+/Saved/
