@@ -5,7 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/Graphics/Systems/Particle/VFXSystem.h"
-#include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Core/GameEvents.h"
 
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"
 

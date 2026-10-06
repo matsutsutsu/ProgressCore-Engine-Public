@@ -4,7 +4,7 @@
 #include "Engine/Graphics/Components/Core/NoRenderTag.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
-#include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Core/Math/StringHash.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

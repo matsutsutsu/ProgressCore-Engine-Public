@@ -5,8 +5,8 @@
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // カメラへ画角の要求(wideFovRequest)を書く
 #include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中はルートモーションの移動を止める
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/Combat/HealthComponent.h" // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
-#include "Game/Logics/GameEvent/GameEvents.h"   // ダッシュ開始のイベント（VFX 用）
+#include "Game/Logics/Combat/Components/HealthComponent.h" // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
+#include "Game/Core/GameEvents.h"   // ダッシュ開始のイベント（VFX 用）
 
 #include <algorithm>
 

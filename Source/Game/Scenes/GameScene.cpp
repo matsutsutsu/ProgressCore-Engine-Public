@@ -7,8 +7,8 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Game/UI/GameResultSystem.h" // ゲームオーバー/クリア検知＋リザルトUI
-#include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
+#include "Game/UI/Screens/GameResultSystem.h" // ゲームオーバー/クリア検知＋リザルトUI
+#include "Game/UI/Screens/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
 #include "tracy/Tracy.hpp"
 

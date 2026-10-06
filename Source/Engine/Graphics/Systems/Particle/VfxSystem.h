@@ -27,7 +27,7 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 #include <DirectXMath.h>
 #include <string>

@@ -9,10 +9,10 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
-#include "Game/Logics/GameEvent/GameEvents.h"
-#include "Game/Logics/Combat/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）
+#include "Game/Core/GameEvents.h"
+#include "Game/Logics/Combat/Components/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）
 #include "Engine/Camera/CameraEvents.h"          // FOVパンチ要求（カメラへの演出指示）
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h"

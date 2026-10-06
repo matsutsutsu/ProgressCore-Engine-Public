@@ -12,7 +12,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"

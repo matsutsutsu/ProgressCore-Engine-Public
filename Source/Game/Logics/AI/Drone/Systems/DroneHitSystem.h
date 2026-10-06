@@ -15,7 +15,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/Combat/CombatComponents.h"
+#include "Game/Logics/Combat/Components/CombatComponents.h"
 
 class DroneHitSystem : public CCL::ECS::IfSystem<DroneHitSystem,
                                                  CCL::ECS::Read<DroneComponent>,

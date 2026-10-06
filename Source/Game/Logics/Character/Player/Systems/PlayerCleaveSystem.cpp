@@ -4,13 +4,13 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // ジャスト回避の画面演出をモノクロに使う
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"   // カメラへ寄りの要求を書く
 #include "Engine/Time/TimeService.h"                                 // 全体スローは Time:: の関数で操作する
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/GameEvent/GameEvents.h" // ジャスト回避成立でゲージを足す
+#include "Game/Core/GameEvents.h" // ジャスト回避成立でゲージを足す
 
 #include <DirectXMath.h>
 #include <memory>

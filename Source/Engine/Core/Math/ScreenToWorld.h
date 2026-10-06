@@ -8,7 +8,7 @@
 // ===========================================================================
 #include <DirectXMath.h>
 #include "SimpleMath.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 
 class ScreenToWorld
 {

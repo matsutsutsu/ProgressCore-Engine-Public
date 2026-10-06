@@ -13,7 +13,7 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/JustEvadeComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 
 #include <vector>

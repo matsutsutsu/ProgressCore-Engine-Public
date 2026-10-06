@@ -1,7 +1,7 @@
 #include "PrimitivePass.h"
 #include "Engine/Graphics/Renderer/PrimitiveRenderer.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 
 void PrimitivePass::Execute(const RenderFrameContext &ctx)
 {

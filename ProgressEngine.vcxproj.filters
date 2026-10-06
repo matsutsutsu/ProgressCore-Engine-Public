@@ -1,6 +1,48 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Source\Engine\Time\Components">
+      <UniqueIdentifier>{4a9439be-1cff-4df5-8fdc-18e58e20e5a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Time\Systems">
+      <UniqueIdentifier>{992ac3ce-243d-4c8a-b128-88c66819a6ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Camera">
+      <UniqueIdentifier>{d39e3227-7230-4e7a-9f3a-f4ae98ac2549}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Combat\Components">
+      <UniqueIdentifier>{fa357293-e4ad-49b9-81b3-f2b42eecb8cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Game\Logics\Combat\Systems">
+      <UniqueIdentifier>{5f6821f5-bd47-41de-ad55-4bff57468208}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs">
+      <UniqueIdentifier>{113331cd-19f3-49ec-a705-5040589a6012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs\Engine">
+      <UniqueIdentifier>{f58dc07e-155a-4f42-ac31-66e88a09f277}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs\Engine\ECS">
+      <UniqueIdentifier>{2f65329f-2ce2-4501-b4cc-f14fa63bfc95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs\Engine\Graphics">
+      <UniqueIdentifier>{beff2355-f5e4-4568-a2ba-d47a598ea40d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs\Engine\Physics">
+      <UniqueIdentifier>{e4ebf04e-6b65-4483-8c10-9577d409edde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs\Game">
+      <UniqueIdentifier>{85818734-37dd-47a9-8ede-44a9416512cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Windows\General">
+      <UniqueIdentifier>{5ef25bc3-e3c2-48a3-bcc8-46b8008520ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\Renderer\Core">
+      <UniqueIdentifier>{bdbd880b-2c44-40f4-a83e-12b1813ffb9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Graphics\SceneView">
+      <UniqueIdentifier>{3fce3676-75b8-4f6d-b163-0a852bc4c710}</UniqueIdentifier>
+    </Filter>
     <Filter Include="External">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
@@ -123,9 +165,6 @@
     <Filter Include="Source\Engine\Core\Math">
       <UniqueIdentifier>{35f72c6f-702f-48ae-9639-8585fb5adeb9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Core\Time">
-      <UniqueIdentifier>{ab497727-165d-4680-b87c-970d32a4b362}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\UI\ECS">
       <UniqueIdentifier>{7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d}</UniqueIdentifier>
     </Filter>
@@ -143,9 +182,6 @@
     </Filter>
     <Filter Include="Source\Engine\Serialization\Meta">
       <UniqueIdentifier>{bb611d4c-bc75-4a8d-8a31-1810ea67ad4d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\Sandbox">
-      <UniqueIdentifier>{7de38b51-de5a-4cbe-a640-02ac89b89766}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{f67d589a-603e-4892-ba9f-e03879675b0e}</UniqueIdentifier>
@@ -182,9 +218,6 @@
     </Filter>
     <Filter Include="Source\Editor\Windows\Animation">
       <UniqueIdentifier>{42b8635d-e5f6-487b-bf24-ddd18ec772ae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Editor\Windows\Editor">
-      <UniqueIdentifier>{ef23cd50-c075-48c5-8bd0-8cad81f2386b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\Windows\Game">
       <UniqueIdentifier>{e0489b58-f4ba-4a59-84fc-7914ee325c8b}</UniqueIdentifier>
@@ -360,9 +393,6 @@
     <Filter Include="Source\Engine\Physics\Components\Rigidbody">
       <UniqueIdentifier>{eaf31ddf-1815-4e44-a90d-88ed06a6ff70}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Physics\Systems\Rigidbody">
-      <UniqueIdentifier>{f98f7eae-f568-4c2c-a7aa-729f198eb9bb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Platform\Core">
       <UniqueIdentifier>{6e397233-7e78-4c9f-a31c-a8b7365adb6d}</UniqueIdentifier>
     </Filter>
@@ -399,9 +429,6 @@
     <Filter Include="Source\Engine\Graphics\Shader\Material\Particle">
       <UniqueIdentifier>{7cb9b737-559a-4d3e-9a13-ed4492caa832}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Graphics\Shader\Particle">
-      <UniqueIdentifier>{7331b261-1c5e-4858-beb7-97a5a94cb0a9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Time">
       <UniqueIdentifier>{7a88023c-be1b-4e90-9f95-822c9f974cc6}</UniqueIdentifier>
     </Filter>
@@ -422,9 +449,6 @@
     </Filter>
     <Filter Include="Source\Game\Logics\Combat">
       <UniqueIdentifier>{f9e98694-67ee-43f9-8feb-4ed9c3cab61a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Game\Logics\GameEvent">
-      <UniqueIdentifier>{23990d84-3342-4689-a3d4-461184605054}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Actions">
       <UniqueIdentifier>{3135afad-6920-43ec-93d8-8f46096aaa44}</UniqueIdentifier>
@@ -642,8 +666,8 @@
     <ClInclude Include="Source\Editor\Inspector\ComponentGuiRegistry.h">
       <Filter>Source\Editor\Inspector</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Time\HighResolutionTimer.h">
-      <Filter>Source\Engine\Core\Time</Filter>
+    <ClInclude Include="Source\Engine\Core\App\HighResolutionTimer.h">
+      <Filter>Source\Engine\Core\App</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\TransformUtils.h">
       <Filter>Source\Engine\Core\Math</Filter>
@@ -651,11 +675,11 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\InstanceBuffer.h">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\InstanceBuffer.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.h">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\ModelConstantBuffers.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -711,8 +735,8 @@
     <ClInclude Include="Source\Engine\Serialization\Factory\Prefab.h">
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\HealthComponent.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Components\HealthComponent.h">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
@@ -789,43 +813,43 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PlayerHealthHudSystem.h">
+    <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\CleaveGaugeHudSystem.h">
+    <ClInclude Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\BossHealthHudSystem.h">
+    <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\MenuButtonVisualComponent.h">
+    <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\UIRevealComponent.h">
+    <ClInclude Include="Source\Game\UI\Common\UIRevealComponent.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\UIRevealSystem.h">
+    <ClInclude Include="Source\Game\UI\Common\UIRevealSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\ScreenHeadingUi.h">
+    <ClInclude Include="Source\Game\UI\Common\ScreenHeadingUi.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\LockOnMarkerHudSystem.h">
+    <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\UISoundSystem.h">
+    <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\GameSettings.h">
+    <ClInclude Include="Source\Game\UI\Screens\GameSettings.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\SettingsScreenSystem.h">
+    <ClInclude Include="Source\Game\UI\Screens\SettingsScreenSystem.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\MenuButtonStyleSystem.h">
+    <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\TitleMenuSystem.h">
+    <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Title\TitleComposition.h">
@@ -837,25 +861,25 @@
     <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h">
       <Filter>Source\Game\Title</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\GaugeLabGui.h">
+    <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h">
       <Filter>Source\Game\UI\Debug</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\MenuUiFactory.h">
+    <ClInclude Include="Source\Game\UI\Common\MenuUiFactory.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\GameResultSystem.h">
+    <ClInclude Include="Source\Game\UI\Screens\GameResultSystem.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\PauseSystem.h">
+    <ClInclude Include="Source\Game\UI\Screens\PauseSystem.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\InputPromptSystem.h">
+    <ClInclude Include="Source\Game\UI\Input\InputPromptSystem.h">
       <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\InputIconComponent.h">
+    <ClInclude Include="Source\Game\UI\Input\InputIconComponent.h">
       <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\UI\InputIconSystem.h">
+    <ClInclude Include="Source\Game\UI\Input\InputIconSystem.h">
       <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\App\GameFlowState.h">
@@ -888,14 +912,14 @@
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourcePool.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\GameEvent\GameEvents.h">
-      <Filter>Source\Game\Logics\GameEvent</Filter>
+    <ClInclude Include="Source\Game\Core\GameEvents.h">
+      <Filter>Source\Game\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\DeadTag.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Components\DeadTag.h">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\HealthSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\HealthSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMeta.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
@@ -906,8 +930,8 @@
     <ClInclude Include="Source\Engine\Serialization\Meta\ComponentMetaImGui.h">
       <Filter>Source\Engine\Serialization\Meta</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\CombatComponents.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Components\CombatComponents.h">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -918,14 +942,14 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h">
       <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderQueue.h">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderQueue.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\MeshCulling.h">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshCulling.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Renderer\RenderDebugRegistry.h">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderDebugRegistry.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
@@ -1026,52 +1050,52 @@
     <ClInclude Include="External\imgui-node-editor\imgui_node_editor_internal.h">
       <Filter>External\imgui-node-editor</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AnimationSequencerWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Animation\AnimationSequencerWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AnimGraphWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Animation\AnimGraphWindow.h">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AssetBrowserWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\AssetBrowserWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\ConsoleWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\ConsoleWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\ECSDebugWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\ECSDebugWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\GameViewWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\GameViewWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\RenderDebugWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\RenderDebugWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\BuildingScatterWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\BuildingScatterWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\RenderTargetVisualizer.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\RenderTargetVisualizer.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\HierarchyWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\HierarchyWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\InspectorWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\InspectorWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\InputEditorWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Game\InputEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\TextEditorWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\NavMeshWindow.h">
+    <ClInclude Include="Source\Editor\Windows\AI\NavMeshWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\BehaviorTreeWindow.h">
+    <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\BehaviorTreeEditorCommon.h">
+    <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeEditorCommon.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.h">
@@ -1089,8 +1113,8 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTConditions_Boss.h">
       <Filter>Source\Game\Logics\Character\Boss\Actions</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\EnemyTag.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Components\EnemyTag.h">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeData.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
@@ -1101,20 +1125,20 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\HitboxCollisionSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\HitboxCollisionSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\SpawnHitboxSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\DamageResolutionSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\DefeatSlowMotionSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\HitEffectSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\HitEffectSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h">
       <Filter>Source\Engine\Animation\Components</Filter>
@@ -1188,8 +1212,8 @@
     <ClInclude Include="Source\Engine\Animation\Systems\AnimControllerSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\CombatAnimationSyncSystem.h">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatAnimationSyncSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.h">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
@@ -1245,8 +1269,8 @@
     <ClInclude Include="Source\Engine\Core\Components\PrefabInstanceComponent.h">
       <Filter>Source\Engine\Core\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\RHI\Camera.h">
-      <Filter>Source\Engine\Graphics\RHI</Filter>
+    <ClInclude Include="Source\Engine\Graphics\SceneView\Camera.h">
+      <Filter>Source\Engine\Graphics\SceneView</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\RHI\GpuResourceUtils.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
@@ -1254,8 +1278,8 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\Graphics.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\RHI\Light.h">
-      <Filter>Source\Engine\Graphics\RHI</Filter>
+    <ClInclude Include="Source\Engine\Graphics\SceneView\Light.h">
+      <Filter>Source\Engine\Graphics\SceneView</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\RHI\PipelineState.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
@@ -1272,8 +1296,8 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalBuffer.h">
-      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    <ClInclude Include="Source\Engine\Graphics\RHI\NormalBuffer.h">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -1605,14 +1629,14 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h">
       <Filter>Source\Engine\Graphics\Components\Particle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Time\TimeScaleSetupSystem.h">
-      <Filter>Source\Engine\Time</Filter>
+    <ClInclude Include="Source\Engine\Time\Systems\TimeScaleSetupSystem.h">
+      <Filter>Source\Engine\Time\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Time\TimeScaleSystem.h">
-      <Filter>Source\Engine\Time</Filter>
+    <ClInclude Include="Source\Engine\Time\Systems\TimeScaleSystem.h">
+      <Filter>Source\Engine\Time\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Time\TimeState.h">
-      <Filter>Source\Engine\Time</Filter>
+    <ClInclude Include="Source\Engine\Time\Components\TimeState.h">
+      <Filter>Source\Engine\Time\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Time\TimeService.h">
       <Filter>Source\Engine\Time</Filter>
@@ -1623,8 +1647,8 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\MemoryAnalyzerWindow.h">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClInclude Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.h">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceTypes.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
@@ -1830,13 +1854,13 @@
     <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.h">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\TimelineEditorWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Game\TimelineEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h">
@@ -1863,7 +1887,7 @@
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\CurveEditorWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Game\CurveEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
@@ -2016,10 +2040,10 @@
     <ClInclude Include="Source\Engine\Graphics\RHI\DebugName.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\FormationEditorWindow.h">
+    <ClInclude Include="Source\Editor\Windows\Game\FormationEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\FormationLayerSequence.h">
+    <ClInclude Include="Source\Editor\Windows\Game\FormationLayerSequence.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2030,8 +2054,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\EnemyTagMeta.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Components\EnemyTagMeta.cpp">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClCompile>
     <ClCompile Include="External\implot-master\implot.cpp">
       <Filter>External\ImPlot</Filter>
@@ -2099,8 +2123,8 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ImGuiRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Renderer\ModelConstantBuffers.cpp">
-      <Filter>Source\Engine\Graphics\Renderer</Filter>
+    <ClCompile Include="Source\Engine\Graphics\Renderer\Core\ModelConstantBuffers.cpp">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\PrimitiveRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -2192,34 +2216,34 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp">
       <Filter>Source\Engine\UI\ECS\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\PlayerHealthHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\CleaveGaugeHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\BossHealthHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\UIRevealSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\LockOnMarkerHudSystem.cpp">
+    <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\UISoundSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\GameSettings.cpp">
+    <ClCompile Include="Source\Game\UI\Screens\GameSettings.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\SettingsScreenSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Screens\SettingsScreenSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\MenuButtonStyleSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\TitleMenuSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp">
@@ -2228,16 +2252,16 @@
     <ClCompile Include="Source\Game\Title\TitleSwarmSystem.cpp">
       <Filter>Source\Game\Title</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\GameResultSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\PauseSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Screens\PauseSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\InputPromptSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\UI\InputIconSystem.cpp">
+    <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">
@@ -2249,8 +2273,8 @@
     <ClCompile Include="Source\Engine\UI\ImGui\ImGuiThemes.cpp">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\HealthSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\HealthSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
@@ -2360,83 +2384,83 @@
     <ClCompile Include="External\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AnimationSequencerWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Animation\AnimationSequencerWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AnimGraphWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Animation\AnimGraphWindow.cpp">
       <Filter>Source\Editor\Windows\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\ConsoleWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\ConsoleWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\ECSDebugWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\ECSDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\HierarchyWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\HierarchyWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\InspectorWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\InspectorWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\InputEditorWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\InputEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\TextEditorWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\NavMeshWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\NavMeshWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Graph.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow_Graph.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Layout.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow_Layout.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Canvas.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow_Canvas.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Inspector.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow_Inspector.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BehaviorTreeWindow_Outliner.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow_Outliner.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeLoader.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\HitboxCollisionSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\HitboxCollisionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\SpawnHitboxSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\DamageResolutionSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\DefeatSlowMotionSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\DefeatSlowMotionSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\HitEffectSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\HitEffectSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\CombatComponentsMeta.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Components\CombatComponentsMeta.cpp">
+      <Filter>Source\Game\Logics\Combat\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\GameViewWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\GameViewWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\RenderDebugWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\RenderDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\BuildingScatterWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\BuildingScatterWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\RenderTargetVisualizer.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\RenderTargetVisualizer.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\ECS\Core\CCL_Chunk.cpp">
       <Filter>Source\Engine\ECS\Core</Filter>
@@ -2477,8 +2501,8 @@
     <ClCompile Include="Source\Engine\Animation\Systems\AnimControllerSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\CombatAnimationSyncSystem.cpp">
-      <Filter>Source\Game\Logics\Combat</Filter>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\CombatAnimationSyncSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\DirectXTKIntegration\DxtkAudioManager.cpp">
       <Filter>Source\Engine\Audio\DirectXTKIntegration</Filter>
@@ -2507,8 +2531,8 @@
     <ClCompile Include="Source\Engine\Core\Components\CoreComponentMeta.cpp">
       <Filter>Source\Engine\Core\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\RHI\Camera.cpp">
-      <Filter>Source\Engine\Graphics\RHI</Filter>
+    <ClCompile Include="Source\Engine\Graphics\SceneView\Camera.cpp">
+      <Filter>Source\Engine\Graphics\SceneView</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\GpuResourceUtils.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
@@ -2516,8 +2540,8 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\Graphics.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\RHI\Light.cpp">
-      <Filter>Source\Engine\Graphics\RHI</Filter>
+    <ClCompile Include="Source\Engine\Graphics\SceneView\Light.cpp">
+      <Filter>Source\Engine\Graphics\SceneView</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\RenderState.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
@@ -2525,8 +2549,8 @@
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalBuffer.cpp">
-      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    <ClCompile Include="Source\Engine\Graphics\RHI\NormalBuffer.cpp">
+      <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2747,14 +2771,14 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material\Particle</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Time\TimeComponentMeta.cpp">
-      <Filter>Source\Engine\Time</Filter>
+    <ClCompile Include="Source\Engine\Time\Components\TimeComponentMeta.cpp">
+      <Filter>Source\Engine\Time\Components</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Time\TimeScaleSetupSystem.cpp">
-      <Filter>Source\Engine\Time</Filter>
+    <ClCompile Include="Source\Engine\Time\Systems\TimeScaleSetupSystem.cpp">
+      <Filter>Source\Engine\Time\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Time\TimeScaleSystem.cpp">
-      <Filter>Source\Engine\Time</Filter>
+    <ClCompile Include="Source\Engine\Time\Systems\TimeScaleSystem.cpp">
+      <Filter>Source\Engine\Time\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Time\TimeService.cpp">
       <Filter>Source\Engine\Time</Filter>
@@ -2762,8 +2786,8 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Culling\AABBDebugDrawSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Culling</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\MemoryAnalyzerWindow.cpp">
-      <Filter>Source\Editor\Windows\Editor</Filter>
+    <ClCompile Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.cpp">
+      <Filter>Source\Editor\Windows\General</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Transform\Core\TransformHierarchyCache.cpp">
       <Filter>Source\Engine\Transform\Core</Filter>
@@ -2876,8 +2900,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\CameraTargetBindSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
@@ -2936,7 +2960,7 @@
     <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\TimelineEditorWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\TimelineEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp">
@@ -2951,7 +2975,7 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\CurveEditorWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\CurveEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
@@ -3056,10 +3080,10 @@
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BehaviorTreeComponentMeta.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\FormationEditorWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\FormationEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\FormationLayerSequence.cpp">
+    <ClCompile Include="Source\Editor\Windows\Game\FormationLayerSequence.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
   </ItemGroup>
@@ -3127,26 +3151,26 @@
     <None Include=".editorconfig">
       <Filter>Build</Filter>
     </None>
-    <None Include="Source\Engine\ECS\Common\ECSCommonArchitecture.md">
-      <Filter>Source\Engine\ECS\Common</Filter>
+    <None Include="Docs\Engine\ECS\ECSCommonArchitecture.md">
+      <Filter>Docs\Engine\ECS</Filter>
     </None>
-    <None Include="Source\Engine\ECS\System\ECSSystemArchitecture.md">
-      <Filter>Source\Engine\ECS\System</Filter>
+    <None Include="Docs\Engine\ECS\ECSSystemArchitecture.md">
+      <Filter>Docs\Engine\ECS</Filter>
     </None>
-    <None Include="Source\Engine\ECS\CCL_ECS_ARCHITECTURE.md">
-      <Filter>Source\Engine\ECS</Filter>
+    <None Include="Docs\Engine\ECS\CCL_ECS_ARCHITECTURE.md">
+      <Filter>Docs\Engine\ECS</Filter>
     </None>
     <None Include="Shader\SHADER_ARCHITECTURE.md">
       <Filter>Shader</Filter>
     </None>
-    <None Include="Source\Engine\Graphics\Pipeline\_RenderPass_Guide.md">
-      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    <None Include="Docs\Engine\Graphics\RenderPass_Guide.md">
+      <Filter>Docs\Engine\Graphics</Filter>
     </None>
-    <None Include="Source\Engine\Physics\Physics-Archtecture.md">
-      <Filter>Source\Engine\Physics</Filter>
+    <None Include="Docs\Engine\Physics\Physics-Architecture.md">
+      <Filter>Docs\Engine\Physics</Filter>
     </None>
-    <None Include="Source\Game\Logics\AI\Drone\Drone_Guide.md">
-      <Filter>Source\Game\Logics\AI\Drone</Filter>
+    <None Include="Docs\Game\Drone_Guide.md">
+      <Filter>Docs\Game</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -1,8 +1,8 @@
 #include "PlayerLockOnSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/Components/EntityLabel.h"
-#include "Game/Logics/Combat/DeadTag.h"
-#include "Game/Logics/Combat/EnemyTag.h"                           // ロックオン候補の絞り込み
+#include "Game/Logics/Combat/Components/DeadTag.h"
+#include "Game/Logics/Combat/Components/EnemyTag.h"                           // ロックオン候補の絞り込み
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // ロックオン状態をカメラへ書く
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

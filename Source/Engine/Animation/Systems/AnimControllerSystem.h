@@ -15,7 +15,7 @@
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
                                                        CCL::ECS::Write<AnimStateMachineComponent>,

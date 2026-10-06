@@ -1,5 +1,5 @@
 #include "FrustumCullingSystem.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

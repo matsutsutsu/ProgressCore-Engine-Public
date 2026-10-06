@@ -23,7 +23,7 @@
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 class JoltPhysicsManager;
 

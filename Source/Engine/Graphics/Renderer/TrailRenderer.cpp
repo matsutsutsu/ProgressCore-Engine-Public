@@ -2,7 +2,7 @@
 
 #include "Engine/Graphics/RHI/RenderContext.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"

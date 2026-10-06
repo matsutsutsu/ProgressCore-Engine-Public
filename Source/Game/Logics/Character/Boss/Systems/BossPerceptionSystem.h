@@ -16,8 +16,8 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Game/Logics/Combat/HealthComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
+#include "Engine/Time/Components/TimeState.h"
 #include <SimpleMath.h>
 
 struct BattleContext;

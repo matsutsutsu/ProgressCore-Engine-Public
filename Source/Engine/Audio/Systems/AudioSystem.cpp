@@ -3,7 +3,7 @@
 #include "Engine/Audio/Components/AudioEvents.h"
 #include "Engine/Animation/Core/AnimEventMessages.h" // アニメーションの Sound イベント
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Time/TimeState.h" // TimeContext（時間倍率 → 音のスロー演出）
+#include "Engine/Time/Components/TimeState.h" // TimeContext（時間倍率 → 音のスロー演出）
 
 #include <algorithm>
 

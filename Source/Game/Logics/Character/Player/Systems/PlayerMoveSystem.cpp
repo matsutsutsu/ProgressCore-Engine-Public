@@ -1,13 +1,13 @@
 #include "PlayerMoveSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Game/Logics/Combat/DeadTag.h"
+#include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
 #include <algorithm>
 #include <DirectXMath.h>
 
-#include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Core/GameEvents.h"
 #include "Engine/Core/Math/StringHash.h"
 
 using namespace CCL::ECS;

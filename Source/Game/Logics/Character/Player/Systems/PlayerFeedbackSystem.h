@@ -16,7 +16,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
-#include "Game/Logics/GameEvent/GameEvents.h"
+#include "Game/Core/GameEvents.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 
 class PlayerFeedbackSystem

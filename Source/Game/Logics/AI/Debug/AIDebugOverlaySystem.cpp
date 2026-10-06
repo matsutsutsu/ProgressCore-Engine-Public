@@ -2,12 +2,12 @@
 
 #include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
 #include "Game/Logics/AI/Battle/BattleContext.h" // ドローン残数
-#include "Game/Logics/Combat/HealthComponent.h"  // ボスHP
+#include "Game/Logics/Combat/Components/HealthComponent.h"  // ボスHP
 #include "Engine/UI/ECS/GameViewportInfo.h"      // エディタでゲーム画面を表示している矩形
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 
 #include <SimpleMath.h>
 #include <algorithm>

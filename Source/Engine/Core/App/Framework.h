@@ -8,7 +8,7 @@
 //   - Win32 メッセージの処理
 // ===========================================================================
 #include <windows.h>
-#include "Engine/Core/Time/HighResolutionTimer.h"
+#include "Engine/Core/App/HighResolutionTimer.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Core/EditorContext.h"

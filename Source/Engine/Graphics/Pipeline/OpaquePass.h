@@ -15,7 +15,7 @@
 // ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
-#include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
 #include "Engine/Graphics/Resource/Model.h" // 引数に Model::Mesh を使う（入れ子の型は前方宣言できない）
 
 #include <DirectXCollision.h>

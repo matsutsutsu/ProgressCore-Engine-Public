@@ -6,8 +6,8 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
-#include "Game/Logics/Combat/HealthComponent.h"             // 敵判定（生存中の敵）
-#include "Game/Logics/Combat/DeadTag.h"                     // 死亡除外
+#include "Game/Logics/Combat/Components/HealthComponent.h"             // 敵判定（生存中の敵）
+#include "Game/Logics/Combat/Components/DeadTag.h"                     // 死亡除外
 
 #include <SimpleMath.h>
 #include <cmath>

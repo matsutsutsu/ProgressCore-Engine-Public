@@ -1,6 +1,6 @@
 // 役割・設計方針は CinematicSignalSystem.h を参照。
 #include "Game/Logics/Cinematic/CinematicSignalSystem.h"
-#include "Game/UI/ScreenHeadingUi.h" // テロップの部品（滑り込む見出し・伸びる線・打ち込まれる1行）
+#include "Game/UI/Common/ScreenHeadingUi.h" // テロップの部品（滑り込む見出し・伸びる線・打ち込まれる1行）
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Time/TimeService.h" // Time::PresentationDt（ポーズ中はテロップも止める）

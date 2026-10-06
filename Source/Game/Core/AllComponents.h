@@ -10,8 +10,8 @@
 // ===========================================================================
 
 // タグ
-#include "Game/Logics/Combat/DeadTag.h"
-#include "Game/Logics/Combat/EnemyTag.h"
+#include "Game/Logics/Combat/Components/DeadTag.h"
+#include "Game/Logics/Combat/Components/EnemyTag.h"
 
 #include "Engine/Transform/Components/TransformComponent.h"
 
@@ -46,6 +46,6 @@
 
 // ゲームロジック
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
-#include "Game/Logics/Combat/HealthComponent.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
 
 #include "Engine/Transform/Components/PendingParentComponent.h"

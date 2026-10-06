@@ -2,7 +2,7 @@
 
 #include "Engine/Graphics/Renderer/TrailRenderer.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 

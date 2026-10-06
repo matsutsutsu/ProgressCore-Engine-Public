@@ -22,9 +22,9 @@
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/Combat/HealthComponent.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 class BossPhaseSystem : public CCL::ECS::IfSystem<
                             BossPhaseSystem,

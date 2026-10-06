@@ -1,7 +1,7 @@
 #include "CameraBrainSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include <algorithm>
 #include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 

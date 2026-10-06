@@ -1,11 +1,11 @@
 #include "NormalPrepass.h"
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Graphics/RHI/Camera.h"
-#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/SceneView/Camera.h"
+#include "Engine/Graphics/Renderer/Core/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
-#include "Engine/Graphics/Renderer/MeshCulling.h"
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/RenderDebugRegistry.h"
+#include "Engine/Graphics/Renderer/Core/MeshCulling.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <DirectXCollision.h>
 #include <wrl/client.h>

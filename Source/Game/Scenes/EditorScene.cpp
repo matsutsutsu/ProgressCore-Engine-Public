@@ -8,8 +8,8 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-#include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
-#include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
+#include "Game/UI/Screens/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
+#include "Game/UI/Screens/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
 void EditorScene::Initialize()
 {

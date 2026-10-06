@@ -1,7 +1,7 @@
 #include "TransparentPass.h"
-#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/Renderer/Core/ModelConstantBuffers.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <algorithm>

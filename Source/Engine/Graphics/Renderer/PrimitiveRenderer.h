@@ -18,7 +18,7 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
-#include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
 

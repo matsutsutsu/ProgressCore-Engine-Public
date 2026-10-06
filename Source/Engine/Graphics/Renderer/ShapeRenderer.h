@@ -19,7 +19,7 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
-#include "Engine/Graphics/Renderer/InstanceBuffer.h"
+#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
 
 class ShapeRenderer
 {

@@ -10,7 +10,7 @@
 //   - ダッシュ中はカメラへ画角を広げる要求を書き、ルートモーションの移動を止める
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"

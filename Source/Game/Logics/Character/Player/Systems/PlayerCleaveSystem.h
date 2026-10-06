@@ -11,7 +11,7 @@
 // 備考: 準備の猶予とクールダウンは実時間で進め、全体スロー中でも同じ秒数で切れるようにする。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Game/Logics/Character/Player/Components/CleaveComponent.h"

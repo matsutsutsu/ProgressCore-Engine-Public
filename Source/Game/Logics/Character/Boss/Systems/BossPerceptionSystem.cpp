@@ -2,7 +2,7 @@
 #include "BossPerceptionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/GameEvent/GameEvents.h" // DamageTakenEvent
+#include "Game/Core/GameEvents.h" // DamageTakenEvent
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"

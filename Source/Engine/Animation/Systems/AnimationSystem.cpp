@@ -14,7 +14,7 @@
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Components/RootMotionComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 // m_world を使わない計算はここに置く
 namespace

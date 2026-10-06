@@ -16,7 +16,7 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 class ParticleComputeShader;
 struct GPUParticleBufferSet;

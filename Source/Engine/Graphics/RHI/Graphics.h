@@ -17,13 +17,13 @@
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
 #include "Engine/Graphics/Pipeline/Core/RenderPipeline.h"
-#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/Renderer/Core/ModelConstantBuffers.h"
 #include "Engine/Graphics/Renderer/PrimitiveRenderer.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
-#include "Engine/Graphics/RHI/Light.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Light.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
 class Graphics

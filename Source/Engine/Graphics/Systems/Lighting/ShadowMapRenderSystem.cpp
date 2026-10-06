@@ -1,14 +1,14 @@
 #include "ShadowMapRenderSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
-#include "Engine/Graphics/RHI/Camera.h"
-#include "Engine/Graphics/RHI/Light.h"
-#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/SceneView/Camera.h"
+#include "Engine/Graphics/SceneView/Light.h"
+#include "Engine/Graphics/Renderer/Core/ModelConstantBuffers.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h"
 #include "Engine/Graphics/Components/Core/NoShadowTag.h"
-#include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/MeshCulling.h" // メッシュの AABB（Opaque/Normal と同じ関数を使う）
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/MeshCulling.h" // メッシュの AABB（Opaque/Normal と同じ関数を使う）
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 

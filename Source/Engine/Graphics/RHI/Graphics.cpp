@@ -3,12 +3,12 @@
 #include <cmath>
 #include "Engine/Graphics/Shader/ShaderManifest.h"
 #include "Engine/Core/Math/Misc.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Shader/Material/ErrorShader.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/Graphics/Renderer/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 

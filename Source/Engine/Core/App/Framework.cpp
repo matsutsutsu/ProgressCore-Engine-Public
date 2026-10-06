@@ -8,7 +8,7 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Scene/SceneManager.h"
-#include "Engine/Time/TimeState.h"         // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
+#include "Engine/Time/Components/TimeState.h"         // TimeContext.isPaused（世界時計の凍結。accumulator/補間を止める）
 #include "Engine/Core/App/GameFlowState.h" // GameFlowState.quitRequested（QUITをメインスレッドで消化する）
 #include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Engine/Scene/BaseScene.h"
@@ -32,9 +32,9 @@
 #include "Editor/Core/EditorWindowManager.h"
 #include "Editor/Core/EditorCommandHistory.h" // シーン切替時の履歴破棄
 #include "Editor/Core/EditorContext.h"
-#include "Editor/Windows/ConsoleWindow.h" // ConsoleWindow は編集時のみ使用（GetWindow<ConsoleWindow>）
+#include "Editor/Windows/General/ConsoleWindow.h" // ConsoleWindow は編集時のみ使用（GetWindow<ConsoleWindow>）
 #include "Engine/Graphics/Renderer/ImGuiRenderer.h"
-#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
+#include "Engine/Graphics/Renderer/Core/RenderDebugRegistry.h"
 #endif
 
 #include "tracy/Tracy.hpp"

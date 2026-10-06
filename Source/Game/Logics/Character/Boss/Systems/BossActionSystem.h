@@ -26,7 +26,7 @@
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 struct BattleContext;
 struct AnimStateMachineComponent; // 後方ステップの止まりのモーションの長さを読む

@@ -14,8 +14,8 @@
 #include "Engine/Platform/Input/InputFacade.h"
 
 #include "Engine/Graphics/Systems/Core/EnvironmentSystem.h"
-#include "Engine/Graphics/Renderer/RenderQueue.h"
-#include "Engine/Graphics/Renderer/RenderDebugRegistry.h"
+#include "Engine/Graphics/Renderer/Core/RenderQueue.h"
+#include "Engine/Graphics/Renderer/Core/RenderDebugRegistry.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Core/Components/RenderInterpState.h"
 
@@ -34,7 +34,7 @@
 
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 
 // ---------------------------------------------------------------------------
 // 初期化と終了

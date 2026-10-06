@@ -6,7 +6,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Factory/Prefab.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 #include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // HighRing

@@ -1,7 +1,7 @@
 #include "EnvironmentSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/Renderer/ModelConstantBuffers.h"
+#include "Engine/Graphics/Renderer/Core/ModelConstantBuffers.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
