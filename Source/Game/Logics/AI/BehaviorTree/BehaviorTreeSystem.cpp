@@ -217,8 +217,9 @@ void BehaviorTreeSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<GameFlowState>()) return;
 
-    // カットシーン中はAIの思考を止める
-    const bool cinematic = m_world->GetResource<GameFlowState>().cinematic;
+    // カットシーン中と決着後（リザルト）はAIの思考を止める
+    const auto &flow      = m_world->GetResource<GameFlowState>();
+    const bool  cinematic = flow.cinematic || flow.matchOver;
 
     // 1. 各個体へ木を配る（直列）
     SyncAssets();

@@ -142,8 +142,9 @@ CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI
     //   PlayerInputSystem は cinematic で入力を落としているが、本システムは
     //   IInputAPI を直接読むので同じ条件がここにも要る。
     //   カーソルロックは維持する（解放するとフルスクリーンでポインタが窓外へ逃げる）。
-    in.blockLook =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+    //   決着後（リザルト）も止める。メニューをマウスで操作する間にカメラが回らないように。
+    in.blockLook = m_world->HasResource<GameFlowState>() &&
+                   (m_world->GetResource<GameFlowState>().cinematic || m_world->GetResource<GameFlowState>().matchOver);
 
     return in;
 }

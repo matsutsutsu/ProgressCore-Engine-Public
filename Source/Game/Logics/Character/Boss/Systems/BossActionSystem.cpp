@@ -115,7 +115,9 @@ void BossActionSystem::Update(float rawDt)
     const Vector3 playerPos(battle.playerPos); // プレイヤーの足元（ワールド）
 
     // 演出中は全個体まとめて止める。World リソースなので個体ループの外で1回だけ読む。
-    const bool cinematic = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+    //   決着後（リザルト）も同じ扱いにして、倒れたプレイヤーへ技を出し続けないようにする。
+    const bool cinematic = m_world->HasResource<GameFlowState>() &&
+                           (m_world->GetResource<GameFlowState>().cinematic || m_world->GetResource<GameFlowState>().matchOver);
 
     ForEachWithID([&](EntityID                            entity,
                       CharacterMovementComponent         &movement,

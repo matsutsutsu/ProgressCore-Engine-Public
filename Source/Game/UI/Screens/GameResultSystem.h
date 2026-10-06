@@ -39,6 +39,7 @@ public:
 
 private:
     void CountBattleStats(float dt); // 戦っている間の記録（時間・切り払い・群れの数）を数える
+    void EndMatch();                 // 決着を GameFlowState に書き、操作とボスを止める
     void ShowResultUI(bool win);     // リザルトの UI（暗転・見出し・記録・ボタン）を作る
 
     bool  m_resultShown   = false; // リザルトを出したか（2回作らないため）

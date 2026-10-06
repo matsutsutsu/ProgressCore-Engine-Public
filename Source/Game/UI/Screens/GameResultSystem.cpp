@@ -130,13 +130,15 @@ void GameResultSystem::Update(float dt)
     // 負けを先に判定する
     if (playerDead)
     {
+        EndMatch();
         m_resultShown = true;
         ShowResultUI(false); // MISSION FAILED
         CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Over. Result UI shown.");
     }
     else if (m_sawEnemy && aliveEnemies == 0)
     {
-        // すぐには出さず、スローが終わってから出す（出すのは上の待ちの処理）
+        // すぐには出さず、スローが終わってから出す（出すのは上の待ちの処理）。操作はこの時点で止める
+        EndMatch();
         m_pendingWin = true;
         m_winDelay   = kResultDelay;
         CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear detected. Waiting for defeat slow-mo before showing result.");
@@ -161,10 +163,19 @@ void GameResultSystem::CountBattleStats(float dt)
     }
 }
 
+void GameResultSystem::EndMatch()
+{
+    // プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める（読み手は GameFlowState::matchOver の説明を参照）
+    if (m_world->HasResource<GameFlowState>())
+        m_world->GetResource<GameFlowState>().matchOver = true;
+}
+
 void GameResultSystem::ShowResultUI(bool win)
 {
     using namespace CCL::GameUI;
     World &w = *m_world;
+
+    EndMatch(); // デバッグの「強制表示」から呼ばれたときも止める
 
     // --- 結果が出た時点の値 ---
     int swarm = 0;

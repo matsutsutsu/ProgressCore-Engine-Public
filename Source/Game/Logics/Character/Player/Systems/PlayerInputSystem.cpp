@@ -34,7 +34,7 @@ void PlayerInputSystem::Update(float dt)
     if (m_world->HasResource<GameFlowState>())
     {
         const auto &flow = m_world->GetResource<GameFlowState>();
-        blockGameInput   = flow.uiInteract || flow.cinematic;
+        blockGameInput   = flow.uiInteract || flow.cinematic || flow.matchOver; // 決着後（リザルト）も止める
     }
 
     // ボタンの実際の押下状態。入力を止めている間も読み続け、prev* に反映することで、
