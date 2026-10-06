@@ -136,7 +136,8 @@ void UIRenderer::Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList
     for (auto &it : list.items)
     {
         // 境目の奥と手前に、それぞれの不透明度を掛ける（画面を重ねて入れ替える途中）
-        const float a = (it.sortOrder >= list.splitSortOrder) ? list.aboveAlpha : list.belowAlpha;
+        float a = (it.sortOrder >= list.splitSortOrder) ? list.aboveAlpha : list.belowAlpha;
+        if (it.sortOrder < list.hudSortEnd) a *= list.hudAlpha; // HUD（ムービー中は薄くして隠す）
         if (a <= 0.0f) continue;
         it.color.w *= a;
         it.colorBottom.w *= a;

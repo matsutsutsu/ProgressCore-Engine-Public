@@ -178,12 +178,6 @@ void BaseScene::Update(float elapsedTime)
         Graphics::Instance().GetParticleRenderer()->BeginFrame();
     }
 
-    {
-        ZoneScopedN("BaseScene: Graphics::Update");
-        // カメラ行列・CbScene の更新と CbLight のバインドを行う
-        Graphics::Instance().Update();
-    }
-
     if (m_ecsContext)
     {
         // ポーズ中は UpdatePaused（構造変更の適用 + 描画のみ）に切り替える。
@@ -193,6 +187,16 @@ void BaseScene::Update(float elapsedTime)
             m_ecsContext->UpdatePaused(elapsedTime);
         else
             m_ecsContext->UpdateRender(elapsedTime);
+    }
+
+    {
+        ZoneScopedN("BaseScene: Graphics::Update");
+        // カメラ行列・CbScene の更新と CbLight のバインドを行う。
+        //   カメラは上の描画ステージ（CameraBrainSystem）で確定するので、必ずその後に呼ぶ。
+        //   前に呼ぶと、描画は1フレーム前のカメラ・カリング（FrustumCullingSystem）は今のカメラになり、
+        //   ムービーのカットのように視点が大きく飛んだフレームで、映るはずの物がほとんど消えて空だけになる。
+        //   描画ステージの System は描画を積むだけで、実際に描くのは Render() なので、ここで更新して間に合う
+        Graphics::Instance().Update();
     }
 }
 

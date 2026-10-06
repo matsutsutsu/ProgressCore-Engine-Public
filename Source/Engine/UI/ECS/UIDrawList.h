@@ -71,4 +71,10 @@ struct UIDrawList
     int   splitSortOrder = INT_MIN; // 境目。これ以上が手前
     float belowAlpha     = 1.0f;    // 境目より奥に掛ける不透明度（0 なら描かない）
     float aboveAlpha     = 1.0f;    // 境目から手前に掛ける不透明度（0 なら描かない）
+
+    // HUD（戦闘中に常に出ている表示）にだけ掛ける不透明度。Clear では戻さない。
+    //   sortOrder が hudSortEnd より小さい要素を HUD とみなす（HP・切り払い・操作の一覧は 90〜121、
+    //   ポーズやリザルトなどのメニューは 200〜）。ムービー中に HUD を隠すのに使う
+    int   hudSortEnd = 150;  // これより奥が HUD
+    float hudAlpha   = 1.0f; // HUD に掛ける不透明度（0 なら描かない）
 };

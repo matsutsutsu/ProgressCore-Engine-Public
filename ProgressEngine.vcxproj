@@ -427,6 +427,7 @@
     <ClInclude Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.h" />
     <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h" />
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h" />
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
@@ -1030,6 +1031,7 @@
     <ClCompile Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />

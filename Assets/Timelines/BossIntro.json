@@ -1,70 +1,131 @@
 {
-    "_comment": "ボス戦の導入ムービー。プレイヤーの前を横に流す -> カット -> ボスを見上げながら横に流す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）",
+    "_comment": "ボス戦の導入ムービー。群れとステージを見せる -> プレイヤーを見上げる -> カットでボスを見上げて寄る -> プレイヤーの肩越しにボスと向き合い、通常のカメラへ渡す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）",
     "tracks": [
         {
             "type": "Camera",
             "clips": [
                 {
-                    "_comment": "Shot1: プレイヤーを正面やや斜めから映しつつ、左から右へ横移動",
+                    "_comment": "Shot1: 引きの絵。高い位置からボスと群れの輪の周りをゆっくり回り込みながら降りる（画面の切り替えのフェードインと重なる）",
                     "start": 0.0,
-                    "duration": 2.8,
+                    "duration": 2.6,
+                    "subject": "Boss",
+                    "space": "SubjectLocal",
+                    "motion": "Orbit",
+                    "lookStart": [
+                        0.0,
+                        18.0,
+                        0.0
+                    ],
+                    "lookEnd": [
+                        0.0,
+                        13.0,
+                        0.0
+                    ],
+                    "angleStart": 40.0,
+                    "angleEnd": 75.0,
+                    "radiusStart": 70.0,
+                    "radiusEnd": 55.0,
+                    "heightStart": 30.0,
+                    "heightEnd": 14.0,
+                    "fovStart": 50.0,
+                    "fovEnd": 46.0,
+                    "ease": "EaseInOut"
+                },
+                {
+                    "_comment": "Shot2: カットでプレイヤーへ。低い位置から見上げ、斜め前から正面へ回り込みつつ寄る（画角を狭めて押し込む）",
+                    "start": 2.6,
+                    "duration": 1.8,
                     "subject": "Player",
                     "space": "SubjectLocal",
                     "motion": "Truck",
                     "eyeStart": [
-                        -7.0,
-                        4.0,
-                        9.0
-                    ],
-                    "eyeEnd": [
-                        7.0,
-                        4.0,
-                        9.0
-                    ],
-                    "lookStart": [
-                        -1.5,
-                        3.5,
-                        0.0
-                    ],
-                    "lookEnd": [
+                        -3.5,
                         1.5,
-                        3.5,
-                        0.0
-                    ],
-                    "fovStart": 40.0,
-                    "fovEnd": 38.0,
-                    "ease": "EaseInOut"
-                },
-                {
-                    "_comment": "Shot2: カットでボスへ。低い位置から見上げ、右から左へ横移動して寄る",
-                    "start": 2.8,
-                    "duration": 3.6,
-                    "subject": "Boss",
-                    "space": "SubjectLocal",
-                    "motion": "Truck",
-                    "eyeStart": [
-                        28.0,
-                        3.0,
-                        50.0
+                        10.5
                     ],
                     "eyeEnd": [
-                        -18.0,
-                        3.0,
-                        40.0
+                        -1.8,
+                        2.0,
+                        9.0
                     ],
                     "lookStart": [
+                        -1.0,
                         4.0,
-                        14.0,
                         0.0
                     ],
                     "lookEnd": [
-                        -2.0,
-                        13.0,
+                        -1.0,
+                        4.3,
                         0.0
                     ],
                     "fovStart": 45.0,
                     "fovEnd": 38.0,
                     "ease": "EaseOut",
+                    "transitionIn": "Cut"
+                },
+                {
+                    "_comment": "Shot3: カットでボスへ。足元近くの低い位置から見上げ、望遠でゆっくり寄る（狭い画角で大きく見せる）",
+                    "start": 4.4,
+                    "duration": 3.0,
+                    "subject": "Boss",
+                    "space": "SubjectLocal",
+                    "motion": "Truck",
+                    "eyeStart": [
+                        6.0,
+                        1.5,
+                        26.0
+                    ],
+                    "eyeEnd": [
+                        2.0,
+                        2.0,
+                        20.0
+                    ],
+                    "lookStart": [
+                        1.0,
+                        7.5,
+                        0.0
+                    ],
+                    "lookEnd": [
+                        0.0,
+                        8.0,
+                        0.0
+                    ],
+                    "fovStart": 34.0,
+                    "fovEnd": 26.0,
+                    "ease": "EaseOut",
+                    "transitionIn": "Cut"
+                },
+                {
+                    "_comment": "Shot4: プレイヤーの肩越しにボスと向き合う。通常のカメラ（背中越し）に近い構図で終えて、切り替えを目立たせない",
+                    "start": 7.4,
+                    "duration": 1.8,
+                    "subject": "Player",
+                    "lookSubject": "Boss",
+                    "space": "SubjectLocal",
+                    "motion": "Truck",
+                    "eyeStart": [
+                        3.0,
+                        6.5,
+                        -9.0
+                    ],
+                    "eyeEnd": [
+                        0.8,
+                        8.5,
+                        -15.0
+                    ],
+                    "lookStart": [
+                        0.0,
+                        7.0,
+                        0.0
+                    ],
+                    "lookEnd": [
+                        0.0,
+                        6.0,
+                        0.0
+                    ],
+                    "fovStart": 40.0,
+                    "fovEnd": 45.0,
+                    "ease": "EaseInOut",
                     "transitionIn": "Cut"
                 }
             ]
@@ -74,7 +135,7 @@
             "clips": [
                 {
                     "_comment": "カットでボスへ切り替わる瞬間の重い一撃。素材が揃うまでは倒れる音をピッチを下げて代用",
-                    "time": 2.8,
+                    "time": 4.4,
                     "event": "sfx:/fall",
                     "volume": 1.0,
                     "pitch": -0.4
@@ -86,7 +147,7 @@
             "clips": [
                 {
                     "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
-                    "time": 2.8,
+                    "time": 4.4,
                     "effect": "Assets/Prefabs/Particles/VFX_Jump",
                     "subject": "Boss",
                     "offset": [
@@ -102,8 +163,8 @@
             "type": "Animation",
             "clips": [
                 {
-                    "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ 2.8 秒）。カットで隠れるので blendIn は 0",
-                    "start": 2.8,
+                    "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ時刻）。カットで隠れるので blendIn は 0",
+                    "start": 4.4,
                     "subject": "Boss",
                     "sequence": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
                     "speed": 0.7,
@@ -117,7 +178,7 @@
             "clips": [
                 {
                     "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言。テロップは見た目だけなのでスキップ時は出さない",
-                    "time": 3.1,
+                    "time": 4.7,
                     "name": "Telop",
                     "param": "MURIEL",
                     "param2": "TARGET IDENTIFIED",

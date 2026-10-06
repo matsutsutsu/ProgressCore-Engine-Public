@@ -1854,6 +1854,9 @@
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
@@ -2958,6 +2961,9 @@
       <Filter>Source\Engine\Timeline\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp">
