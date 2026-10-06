@@ -63,6 +63,10 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
     CreateCapsuleMesh(device, 1.0f, 1.0f, 32, 16);
 }
 
+// ---------------------------------------------------------------------------
+// 可視判定と描画
+// ---------------------------------------------------------------------------
+
 bool PrimitiveRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
 {
     if (!m_cullingEnabled) return true;
@@ -181,6 +185,10 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
     dc->PSSetShader(nullptr, nullptr, 0);
 }
 
+// ---------------------------------------------------------------------------
+// 図形の登録
+// ---------------------------------------------------------------------------
+
 void PrimitiveRenderer::DrawBox(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().opaqueBoxes.push_back({transform, color});
@@ -221,6 +229,10 @@ void PrimitiveRenderer::DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, 
 {
     GetDrawList().wireframeCones.push_back({transform, color});
 }
+
+// ---------------------------------------------------------------------------
+// メッシュの生成
+// ---------------------------------------------------------------------------
 
 void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer)
 {

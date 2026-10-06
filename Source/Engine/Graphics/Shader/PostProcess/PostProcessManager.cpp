@@ -16,6 +16,10 @@
 #include "SSAOEffect.h"
 #include "ContactShadowEffect.h"
 
+// ---------------------------------------------------------------------------
+// 初期化とリサイズ
+// ---------------------------------------------------------------------------
+
 void PostProcessManager::Initialize(ID3D11Device *device, UINT width, UINT height)
 {
     m_device = device;
@@ -76,6 +80,10 @@ void PostProcessManager::Resize(ID3D11Device *device, UINT width, UINT height)
         effect->Resize(device, width, height);
     }
 }
+
+// ---------------------------------------------------------------------------
+// シーンの開始と終了（エフェクトの適用）
+// ---------------------------------------------------------------------------
 
 void PostProcessManager::BeginScene(ID3D11DeviceContext    *dc,
                                     const float             clearColor[4],
@@ -196,6 +204,10 @@ ID3D11ShaderResourceView *PostProcessManager::EndScene(ID3D11DeviceContext      
 
     return outputSDR->GetSRV();
 }
+
+// ---------------------------------------------------------------------------
+// シーン色のコピー
+// ---------------------------------------------------------------------------
 
 void PostProcessManager::GrabSceneColor(ID3D11DeviceContext *dc)
 {

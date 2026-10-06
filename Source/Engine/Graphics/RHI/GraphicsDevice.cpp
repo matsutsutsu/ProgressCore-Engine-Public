@@ -6,6 +6,10 @@
 #include <dxgi1_6.h> // IDXGIFactory6::EnumAdapterByGpuPreference (高性能GPUの明示選択)
 #pragma comment(lib, "dxgi.lib")
 
+// ---------------------------------------------------------------------------
+// 初期化と終了
+// ---------------------------------------------------------------------------
+
 void GraphicsDevice::Initialize(HWND hWnd)
 {
     m_hWnd = hWnd;
@@ -264,6 +268,10 @@ void GraphicsDevice::Shutdown()
     // 4. 最後にデバイスを破棄する
     m_device.Reset();
 }
+
+// ---------------------------------------------------------------------------
+// 毎フレームの操作
+// ---------------------------------------------------------------------------
 
 void GraphicsDevice::UpdateSceneConstantBuffer(const void *data, size_t /*size*/)
 {

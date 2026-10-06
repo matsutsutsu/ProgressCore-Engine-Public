@@ -22,6 +22,10 @@ namespace
     };
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 初期化
+// ---------------------------------------------------------------------------
+
 void TrailRenderer::EnsureInitialized(ID3D11Device *device)
 {
     if (m_initialized || !device)
@@ -75,6 +79,10 @@ void TrailRenderer::EnsureInitialized(ID3D11Device *device)
     m_initialized = true;
 }
 
+// ---------------------------------------------------------------------------
+// 三角形の受け付け
+// ---------------------------------------------------------------------------
+
 size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
 {
     const size_t used = m_vertices.size() + m_distortVertices.size();
@@ -121,6 +129,10 @@ void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertex
 
     m_distortVertices.insert(m_distortVertices.end(), verts, verts + vertexCount);
 }
+
+// ---------------------------------------------------------------------------
+// 描画と終了
+// ---------------------------------------------------------------------------
 
 void TrailRenderer::Render(const RenderServices &services, const RenderFrameContext &ctx)
 {

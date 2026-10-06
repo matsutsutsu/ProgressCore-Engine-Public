@@ -40,6 +40,10 @@ namespace
     }
 } // namespace
 
+// ---------------------------------------------------------------------------
+// イベントの作成
+// ---------------------------------------------------------------------------
+
 void JoltContactListener::EmitContactEvent(const JPH::Body &inBody1, const JPH::Body &inBody2,
                                            const JPH::ContactManifold &inManifold,
                                            const char                 *inPhase)
@@ -79,6 +83,10 @@ void JoltContactListener::EmitContactEvent(const JPH::Body &inBody1, const JPH::
     }
 }
 
+// ---------------------------------------------------------------------------
+// Jolt からの通知
+// ---------------------------------------------------------------------------
+
 void JoltContactListener::OnContactAdded(const JPH::Body &inBody1, const JPH::Body &inBody2,
                                          const JPH::ContactManifold &inManifold,
                                          JPH::ContactSettings & /*ioSettings*/)
@@ -106,6 +114,10 @@ void JoltContactListener::OnContactRemoved(const JPH::SubShapeIDPair &inSubShape
                 inSubShapePair.GetBody1ID().GetIndex(),
                 inSubShapePair.GetBody2ID().GetIndex());
 }
+
+// ---------------------------------------------------------------------------
+// イベントの受け渡し
+// ---------------------------------------------------------------------------
 
 void JoltContactListener::PushEvent(const JoltCollisionEvent &ev)
 {

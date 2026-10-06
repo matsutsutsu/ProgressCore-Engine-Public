@@ -18,6 +18,10 @@ static inline XMMATRIX ComposeLocal(const TransformComponent &t)
         XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
 }
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void TransformUpdateSystem::Initialize()
 {
     // Render ステージの補間システムが同じ並び順を参照できるよう公開する
@@ -44,6 +48,10 @@ void TransformUpdateSystem::Update(float dt)
     // 3. 非ルート（少数）を親が先の順に解決する。親子の無いシーンでは Count() == 0 ですぐ抜ける
     SolveHierarchy();
 }
+
+// ---------------------------------------------------------------------------
+// 階層の解決
+// ---------------------------------------------------------------------------
 
 bool TransformUpdateSystem::ScanDetectTopology()
 {
@@ -190,9 +198,9 @@ void TransformUpdateSystem::RepairBrokenLinks()
     });
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 親子関係の操作
-// ============================================================
+// ---------------------------------------------------------------------------
 
 void TransformUpdateSystem::SetParent(World &world, EntityID childID, EntityID newParentID)
 {
@@ -294,9 +302,9 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID en
     world.RequestDestroyEntity(entity);
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 物理との受け渡し（ワールド値 → ローカル値）
-// ============================================================
+// ---------------------------------------------------------------------------
 void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
                                                 TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
                                                 const DirectX::XMFLOAT4 &worldRot)
@@ -379,6 +387,10 @@ void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
     XMStoreFloat3(&trans.position, localPos);
     trans.isStatic = false;
 }
+
+// ---------------------------------------------------------------------------
+// 破棄の予約
+// ---------------------------------------------------------------------------
 
 void TransformUpdateSystem::MarkForDestruction(World &world, EntityID entity, bool destroyChildren)
 {

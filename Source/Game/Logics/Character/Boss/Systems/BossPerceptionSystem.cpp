@@ -13,6 +13,10 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void BossPerceptionSystem::Initialize()
 {
     // 被弾量を blackboard へ足す。イベントで受けるのは、Combat 側に
@@ -88,6 +92,10 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         btComp.blackboard.targetAngleFromCenter = TargetAngleFromCenterDeg(myWorldPos, targetPos, battle);
     });
 }
+
+// ---------------------------------------------------------------------------
+// 幾何の計算
+// ---------------------------------------------------------------------------
 
 float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &trans,
                                                    const Vector3            &targetPos) const

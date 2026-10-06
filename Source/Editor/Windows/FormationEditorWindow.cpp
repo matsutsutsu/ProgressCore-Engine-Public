@@ -28,6 +28,10 @@
 using namespace CCL::AI::Formation;
 using CCL::AI::Formation::Data::DataDrivenFormation;
 
+// ---------------------------------------------------------------------------
+// 編集中の陣形
+// ---------------------------------------------------------------------------
+
 FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 {
     auto *data = dynamic_cast<DataDrivenFormation *>(FormationRegistry::Instance().Get(m_slot));
@@ -96,9 +100,9 @@ int FormationEditorWindow::CountDrones(EditorContext &context) const
     return count;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 実機の掌握
-// ============================================================
+// ---------------------------------------------------------------------------
 
 void FormationEditorWindow::Stage(EditorContext &context)
 {
@@ -189,9 +193,9 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &context)
     PushStage(context);
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 複製
-// ============================================================
+// ---------------------------------------------------------------------------
 
 bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
 {
@@ -240,9 +244,9 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     return true;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 表を描く
-// ============================================================
+// ---------------------------------------------------------------------------
 
 bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &fields, void *obj)
 {
@@ -286,9 +290,9 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
     return changed;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 緩急の型
-// ============================================================
+// ---------------------------------------------------------------------------
 // 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ。
 // どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）。
 
@@ -460,6 +464,10 @@ bool FormationEditorWindow::DrawEase(Layer &layer)
     return changed;
 }
 
+// ---------------------------------------------------------------------------
+// 動きの層
+// ---------------------------------------------------------------------------
+
 bool FormationEditorWindow::DrawLayers(Asset &asset)
 {
     DrawPlayback(asset);
@@ -588,6 +596,10 @@ bool FormationEditorWindow::DrawLayerDetail(Layer &layer)
     return changed;
 }
 
+// ---------------------------------------------------------------------------
+// 時間軸
+// ---------------------------------------------------------------------------
+
 bool FormationEditorWindow::DrawTimeline(Asset &asset)
 {
     ImGui::TextDisabled("左 : 予告 %.2f 秒（震えだけ）  |  右 : 攻撃 %.2f 秒", asset.telegraphSeconds, asset.attackSeconds);
@@ -638,9 +650,9 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
     return changed;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 3ペイン
-// ============================================================
+// ---------------------------------------------------------------------------
 
 void FormationEditorWindow::DrawContents(EditorContext &context)
 {

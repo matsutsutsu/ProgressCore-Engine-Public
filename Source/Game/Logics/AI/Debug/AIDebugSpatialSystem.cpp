@@ -40,6 +40,10 @@ namespace
     constexpr float kFillDrop = 0.02f;
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 図形の描画
+// ---------------------------------------------------------------------------
+
 void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &center,
                                        float rInner, float rOuter, const XMFLOAT4 &color) const
 {
@@ -137,6 +141,10 @@ void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3
 
     if (m_wallAlpha > 0.001f) DrawRingWall(renderer, footCenter, radius, color);
 }
+
+// ---------------------------------------------------------------------------
+// System の入口
+// ---------------------------------------------------------------------------
 
 std::vector<CCL::ECS::TypeID> AIDebugSpatialSystem::GetReadTypes() const
 {

@@ -51,6 +51,10 @@
 
 namespace fs = std::filesystem;
 
+// ---------------------------------------------------------------------------
+// 初期化（ウィンドウの登録）
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::Initialize()
 {
     ZoneScopedN("EditorWindowManager::Initialize");
@@ -77,9 +81,9 @@ void EditorWindowManager::Initialize()
     RegisterWindow<BuildingScatterWindow>();
 }
 
-// =========================================================
+// ---------------------------------------------------------------------------
 // プレハブのフォルダ階層をメニュー化するためのヘルパー
-// =========================================================
+// ---------------------------------------------------------------------------
 namespace
 {
     struct PrefabNode
@@ -155,6 +159,10 @@ namespace
         }
     }
 } // namespace
+
+// ---------------------------------------------------------------------------
+// 毎フレームの描画
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::Draw(EditorContext &context)
 {
@@ -271,6 +279,10 @@ void EditorWindowManager::Draw(EditorContext &context)
     if (auto &input = EngineServices::Instance().inputFacade)
         input->SetGameInputActive(context.gameViewFocused);
 }
+
+// ---------------------------------------------------------------------------
+// メニューバー
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
 {
@@ -517,6 +529,10 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// 再生操作と統計の帯
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawPlayControlBar");
@@ -617,6 +633,10 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// ツールメニュー
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::DrawToolsMenu(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawToolsMenu");
@@ -665,6 +685,10 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
         ImGui::EndMenu();
     }
 }
+
+// ---------------------------------------------------------------------------
+// レイアウトの保存・読み込み
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::SaveLayout(const std::string &path)
 {

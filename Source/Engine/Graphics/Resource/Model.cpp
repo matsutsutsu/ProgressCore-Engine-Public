@@ -80,6 +80,10 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     }
 }
 
+// ---------------------------------------------------------------------------
+// 生成
+// ---------------------------------------------------------------------------
+
 Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
     : filePath(filename ? filename : "")
 {
@@ -285,6 +289,10 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
     UpdateTransform(worldTransform);
 }
 
+// ---------------------------------------------------------------------------
+// 検索
+// ---------------------------------------------------------------------------
+
 int Model::GetAnimationIndex(const char *name) const
 {
     if (!resource.IsValid())
@@ -321,6 +329,10 @@ int Model::GetNodeIndex(const char *name) const
     }
     return -1;
 }
+
+// ---------------------------------------------------------------------------
+// ポーズの計算
+// ---------------------------------------------------------------------------
 
 void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 {
@@ -517,6 +529,10 @@ void Model::BlendAnimations(
     }
 }
 
+// ---------------------------------------------------------------------------
+// 共有データ
+// ---------------------------------------------------------------------------
+
 const ModelResource *Model::GetResource() const
 {
     return ResourceManager::Instance().GetModel(resource);
@@ -526,6 +542,10 @@ ModelResource *Model::GetResourceMutable()
 {
     return ResourceManager::Instance().GetModel(resource);
 }
+
+// ---------------------------------------------------------------------------
+// ルートモーションの補助
+// ---------------------------------------------------------------------------
 
 int Model::FindRealRootMotionNodeIndex(int animIndex) const
 {

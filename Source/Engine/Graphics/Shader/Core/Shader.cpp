@@ -4,6 +4,10 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>
 
+// ---------------------------------------------------------------------------
+// リフレクション
+// ---------------------------------------------------------------------------
+
 bool Shader::InitializeReflection(ID3D11Device *device, const std::string &csoPath)
 {
     if (!m_reflection.LoadFromCompiledFile(csoPath.c_str())) return false;
@@ -41,6 +45,10 @@ int Shader::FetchSamplerSlot(const std::string &name)
     }
     return slot;
 }
+
+// ---------------------------------------------------------------------------
+// 描画時のバインド
+// ---------------------------------------------------------------------------
 
 void Shader::ApplyShaderPipeline(ID3D11DeviceContext *dc, ID3D11VertexShader *vs, ID3D11PixelShader *ps, ID3D11InputLayout *layout)
 {
@@ -152,6 +160,10 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// ホットリロード
+// ---------------------------------------------------------------------------
 
 std::filesystem::file_time_type Shader::GetLastWriteTime(const std::wstring &filepath)
 {

@@ -23,6 +23,10 @@ using namespace DirectX::SimpleMath;
 
 static constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
+// ---------------------------------------------------------------------------
+// 毎ステップと自動配備
+// ---------------------------------------------------------------------------
+
 void DroneManagerSystem::Update(float /*dt*/)
 {
     // ボスが揃い次第、最初にドローンを1回だけ配備する。
@@ -50,6 +54,10 @@ void DroneManagerSystem::TryAutoSpawnInitial()
         CCL_LOG_INFO(LogCategory::Game, "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
     }
 }
+
+// ---------------------------------------------------------------------------
+// 数え上げと番号の振り直し
+// ---------------------------------------------------------------------------
 
 int DroneManagerSystem::GetAliveCount() const
 {
@@ -126,6 +134,10 @@ EntityID DroneManagerSystem::FindBoss() const
         return b; // 最初の1体
     return InvalidEntityID;
 }
+
+// ---------------------------------------------------------------------------
+// 生成と破棄
+// ---------------------------------------------------------------------------
 
 int DroneManagerSystem::SpawnDrones(int count)
 {
@@ -225,6 +237,10 @@ void DroneManagerSystem::DestroyAll()
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
 
+// ---------------------------------------------------------------------------
+// 命令と到着
+// ---------------------------------------------------------------------------
+
 void DroneManagerSystem::SetBossCommand(DroneFormationType formation, bool attack)
 {
     if (auto *cmd = m_world->GetComponent<BossCommandComponent>(FindBoss()))
@@ -264,9 +280,9 @@ void DroneManagerSystem::SetAllDronesArrived(bool treatAsArrived)
                  count, treatAsArrived ? "到着済み" : "未到着(再接近)");
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // デバッグ UI
-// ============================================================
+// ---------------------------------------------------------------------------
 
 namespace
 {

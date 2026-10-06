@@ -17,6 +17,10 @@ InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
     LoadFromJson();
 }
 
+// ---------------------------------------------------------------------------
+// ファイルの読み書き
+// ---------------------------------------------------------------------------
+
 void InputEditorWindow::LoadFromJson()
 {
     m_actions.clear();
@@ -99,6 +103,10 @@ void InputEditorWindow::SaveToJson()
 
     FileSystem::WriteAllText(m_configPath, doc.dump(4));
 }
+
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
 
 void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
 {

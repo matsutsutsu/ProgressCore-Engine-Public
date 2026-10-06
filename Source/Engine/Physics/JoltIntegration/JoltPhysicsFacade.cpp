@@ -46,9 +46,9 @@ namespace
     };
 } // namespace
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 共通の前処理
-// ============================================================
+// ---------------------------------------------------------------------------
 bool JoltPhysicsFacade::ResolveBody(
     CCL::ECS::EntityID entity, JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface)
 {
@@ -71,9 +71,9 @@ JPH::PhysicsSystem *JoltPhysicsFacade::GetPhysicsSystem() const
     return manager ? manager->GetPhysicsSystem() : nullptr;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 並進
-// ============================================================
+// ---------------------------------------------------------------------------
 void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &force)
 {
     JPH::BodyID         bodyID;
@@ -109,9 +109,9 @@ XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 回転
-// ============================================================
+// ---------------------------------------------------------------------------
 void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &torque)
 {
     JPH::BodyID         bodyID;
@@ -147,9 +147,9 @@ XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 位置・回転の強制設定
-// ============================================================
+// ---------------------------------------------------------------------------
 void JoltPhysicsFacade::SetPosition(CCL::ECS::EntityID entity, const XMFLOAT3 &position)
 {
     JPH::BodyID         bodyID;
@@ -191,9 +191,9 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
     bi->SetRotation(bodyID, targetRotation, JPH::EActivation::Activate);
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 空間クエリ
-// ============================================================
+// ---------------------------------------------------------------------------
 bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
 {
     auto *handle = m_world->GetComponent<JoltHandleComponent>(entity);
@@ -320,9 +320,9 @@ PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XM
     return info;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // キャラクター専用クエリ
-// ============================================================
+// ---------------------------------------------------------------------------
 bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity)
 {
     // CharacterVirtual の内部状態を直接参照する（段差・坂・床速度を考慮した正確な接地判定）。

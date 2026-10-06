@@ -12,6 +12,10 @@
 
 using namespace CCL::AI::Formation;
 
+// ---------------------------------------------------------------------------
+// 時刻とコマの変換
+// ---------------------------------------------------------------------------
+
 int FormationLayerSequence::TimeToFrame(const Asset &asset, float time)
 {
     if (time < asset.telegraphSeconds)
@@ -28,6 +32,10 @@ float FormationLayerSequence::FrameToTime(const Asset &asset, int frame)
 
     return asset.telegraphSeconds + static_cast<float>(frame - kTelegraphFrames) / kAttackFrames * asset.attackSeconds;
 }
+
+// ---------------------------------------------------------------------------
+// 編集の開始と書き戻し
+// ---------------------------------------------------------------------------
 
 void FormationLayerSequence::Begin(Asset &asset, int cursorFrame)
 {
@@ -71,6 +79,10 @@ bool FormationLayerSequence::Flush()
     if (oldWidth > 0.0f) layer.duration = std::min(newWidth, layer.duration * newWidth / oldWidth);
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// ImSequencer へ見せる値
+// ---------------------------------------------------------------------------
 
 int FormationLayerSequence::GetItemCount() const
 {
@@ -162,6 +174,10 @@ void FormationLayerSequence::CustomDrawCompact(int index, ImDrawList *draw, cons
     }
     draw->PopClipRect();
 }
+
+// ---------------------------------------------------------------------------
+// 補助
+// ---------------------------------------------------------------------------
 
 FormationLayerSequence::Section FormationLayerSequence::SectionOf(const Layer &layer)
 {

@@ -103,6 +103,10 @@ BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
 {
 }
 
+// ---------------------------------------------------------------------------
+// 初期化と資産の同期
+// ---------------------------------------------------------------------------
+
 void BehaviorTreeSystem::Initialize()
 {
     // 敵の種類を足したら、その敵の登録関数をここに1行足す。自己登録マクロにも
@@ -205,6 +209,10 @@ void BehaviorTreeSystem::SyncAssets()
     });
 }
 
+// ---------------------------------------------------------------------------
+// 毎ステップの入口
+// ---------------------------------------------------------------------------
+
 void BehaviorTreeSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<GameFlowState>()) return;
@@ -290,6 +298,10 @@ BTContext BehaviorTreeSystem::MakeContext(BTNodeID                  nodeId,
     ctx.param       = param;
     return ctx;
 }
+
+// ---------------------------------------------------------------------------
+// 木の評価
+// ---------------------------------------------------------------------------
 
 bool BehaviorTreeSystem::EvaluateCondition(BTNodeID                  nodeId,
                                            BehaviorTreeComponent    &btComp,
@@ -849,6 +861,10 @@ namespace
         }
     }
 } // namespace
+
+// ---------------------------------------------------------------------------
+// デバッグ UI
+// ---------------------------------------------------------------------------
 
 void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
                                               BTNodeID               nodeId,

@@ -14,6 +14,10 @@ SSAOEffect::~SSAOEffect()
     ReleaseTargets();
 }
 
+// ---------------------------------------------------------------------------
+// 初期化とリソース
+// ---------------------------------------------------------------------------
+
 void SSAOEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
 {
     m_res = std::make_unique<Resources>();
@@ -69,6 +73,10 @@ void SSAOEffect::Resize(ID3D11Device * /*device*/, UINT width, UINT height)
     ReleaseTargets();
     CreateTargets(width, height);
 }
+
+// ---------------------------------------------------------------------------
+// 毎フレームの処理
+// ---------------------------------------------------------------------------
 
 void SSAOEffect::CopyInputToOutput(ID3D11DeviceContext      *dc,
                                    ID3D11ShaderResourceView *inputSRV,

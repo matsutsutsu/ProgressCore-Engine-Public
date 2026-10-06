@@ -8,6 +8,10 @@
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include <algorithm>
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void OpaquePass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
@@ -70,6 +74,10 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
         matShader->End(dc, *m_services);
     }
 }
+
+// ---------------------------------------------------------------------------
+// バッチの描画
+// ---------------------------------------------------------------------------
 
 void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
 {
@@ -169,6 +177,10 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
     }
 }
 
+// ---------------------------------------------------------------------------
+// マテリアルの差し替えと半透明への回送
+// ---------------------------------------------------------------------------
+
 MaterialData *OpaquePass::ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const
 {
     if (meshIdx >= cmd.overrideCount) return nullptr;
@@ -211,6 +223,10 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
         queue->SubmitDeferredTransparent(tInfo);
     }
 }
+
+// ---------------------------------------------------------------------------
+// 見えるインスタンスの収集
+// ---------------------------------------------------------------------------
 
 void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh,
                                          const BatchRange &batch, size_t meshIdx,
@@ -259,6 +275,10 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
         m_instanceScratch.push_back(data);
     }
 }
+
+// ---------------------------------------------------------------------------
+// インスタンス描画
+// ---------------------------------------------------------------------------
 
 void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {

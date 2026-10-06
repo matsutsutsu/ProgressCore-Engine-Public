@@ -6,6 +6,10 @@
 
 using namespace BTEditor;
 
+// ---------------------------------------------------------------------------
+// 作業領域
+// ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI)
 {
     // 1フレームの流れ:
@@ -136,9 +140,9 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     }
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // ノードの描画
-// ====================================================================
+// ---------------------------------------------------------------------------
 void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
 {
     ZoneScopedN("BTW: DrawGroupNode");
@@ -396,9 +400,9 @@ void BehaviorTreeWindow::GetTreeNodeBorder(const EditorBTNode &node, const Behav
     outWidth = 1.0f;
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // リンク
-// ====================================================================
+// ---------------------------------------------------------------------------
 void BehaviorTreeWindow::DrawLinks(const BehaviorTreeComponent *activeAI)
 {
     ZoneScopedN("BTW: DrawLinks");
@@ -483,9 +487,9 @@ void BehaviorTreeWindow::FollowRunningNode(const BehaviorTreeComponent *activeAI
     m_lastTrackedNodeId = target;
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // 入力（リンク作成・削除・メニュー）
-// ====================================================================
+// ---------------------------------------------------------------------------
 void BehaviorTreeWindow::HandleLinkCreation()
 {
     if (ed::BeginCreate())

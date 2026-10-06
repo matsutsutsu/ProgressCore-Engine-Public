@@ -85,9 +85,9 @@ void ResourceManager::ClearAll()
     m_animCurvePool.Clear();
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // テクスチャ
-// ============================================================================
+// ---------------------------------------------------------------------------
 TextureHandle ResourceManager::LoadTexture(const char *filename)
 {
     if (!filename) return TextureHandle{};
@@ -169,9 +169,9 @@ void ResourceManager::UnloadTexture(TextureHandle handle)
     m_texturePool.Destroy(handle);
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // モデルの共有データ
-// ============================================================================
+// ---------------------------------------------------------------------------
 ModelHandle ResourceManager::LoadModelResource(const char *filename)
 {
     if (!filename) return ModelHandle{};
@@ -241,9 +241,9 @@ std::string ResourceManager::GetAssetPath(uint32_t hash)
     return "";
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // モデルのインスタンス
-// ============================================================================
+// ---------------------------------------------------------------------------
 ModelInstanceHandle ResourceManager::CreateModelInstance(const char *filename)
 {
     if (!filename || filename[0] == '\0') return ModelInstanceHandle{};
@@ -291,9 +291,9 @@ void ResourceManager::UnloadModelInstance(ModelInstanceHandle handle)
     m_modelInstancePool.Destroy(handle);
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // マテリアル
-// ============================================================================
+// ---------------------------------------------------------------------------
 MaterialHandle ResourceManager::CreateMaterial()
 {
     return m_materialPool.Create();
@@ -315,9 +315,9 @@ void ResourceManager::UnloadMaterial(MaterialHandle handle)
     m_materialPool.Destroy(handle);
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // アニメーション
-// ============================================================================
+// ---------------------------------------------------------------------------
 const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
 {
     if (!filename || filename[0] == '\0')
@@ -453,9 +453,9 @@ const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
     }
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // レンダーターゲット
-// ============================================================================
+// ---------------------------------------------------------------------------
 RenderTargetHandle ResourceManager::CreateRenderTarget(int width, int height, DXGI_FORMAT format)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -501,9 +501,9 @@ void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle)
     m_renderTargetPool.Destroy(handle);
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // GPU パーティクルのバッファ
-// ============================================================================
+// ---------------------------------------------------------------------------
 ParticleBufferHandle ResourceManager::CreateParticleBuffer(ID3D11Device *device, int maxParticles)
 {
     ParticleBufferHandle  handle  = m_particleBufferPool.Create();

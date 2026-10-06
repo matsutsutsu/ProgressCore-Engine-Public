@@ -17,6 +17,10 @@ namespace
     }
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 出力先の登録
+// ---------------------------------------------------------------------------
+
 Logger &Logger::Instance()
 {
     static Logger instance;
@@ -47,6 +51,10 @@ void Logger::ClearSinks()
     std::lock_guard lock(m_mutex);
     m_sinks.clear();
 }
+
+// ---------------------------------------------------------------------------
+// ログの出力
+// ---------------------------------------------------------------------------
 
 void Logger::Log(LogCategory category, LogLevel level,
                  const std::source_location &loc, const char *fmt, ...)

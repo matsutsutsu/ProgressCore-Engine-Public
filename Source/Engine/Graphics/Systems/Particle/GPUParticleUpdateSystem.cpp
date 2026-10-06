@@ -17,10 +17,10 @@
 
 GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 
-// =========================================================================
-// BuildStaticCb — desc（エミッタの設定）から CbParticleStatic を組み立てる
-//   desc が変わったとき（ParticleEmitter::staticDirty）と、初期化のときだけ呼ぶ。
-// =========================================================================
+// ---------------------------------------------------------------------------
+// 定数バッファの組み立て
+// ---------------------------------------------------------------------------
+
 // 画面で見た色（sRGB）を、シェーダーが計算に使うリニアな値へ直す。
 //   ToneMapPS が最後に pow(x, 1/2.2) で画面用に戻すので、ここで 2.2 乗しておくと
 //   インスペクタで選んだ色がそのまま画面に出る。直さないと 0.3 が 0.58 まで持ち上がり、
@@ -32,6 +32,8 @@ static GpuData::float4 SrgbToLinear(const GpuData::float4 &c)
     return {toLin(c.x), toLin(c.y), toLin(c.z), c.w};
 }
 
+// BuildStaticCb — desc（エミッタの設定）から CbParticleStatic を組み立てる
+//   desc が変わったとき（ParticleEmitter::staticDirty）と、初期化のときだけ呼ぶ。
 static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
 {
     GpuData::CbParticleStatic cb = {};
@@ -84,9 +86,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     return cb;
 }
 
-// =========================================================================
 // BuildDynamicCb — 実行時の値から CbParticleDynamic（80 バイト）を組み立てる。毎フレーム呼ぶ
-// =========================================================================
 static GpuData::CbParticleDynamic BuildDynamicCb(
     const TransformComponent &transform,
     const GpuData::float3 &prevPos, const GpuData::float4 &prevRot,
@@ -112,7 +112,10 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     return cb;
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// 初期化と毎フレーム
+// ---------------------------------------------------------------------------
+
 void GPUParticleUpdateSystem::Initialize()
 {
     ZoneScopedN("GPUParticle: Initialize");
@@ -212,7 +215,10 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->CSSetShader(nullptr, nullptr, 0);
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// バッファの作り直し
+// ---------------------------------------------------------------------------
+
 GpuData::uint GPUParticleUpdateSystem::NextInstanceSeed()
 {
     const GpuData::uint seed = m_nextInstanceSeed++;
@@ -220,7 +226,6 @@ GpuData::uint GPUParticleUpdateSystem::NextInstanceSeed()
     return seed;
 }
 
-// =========================================================================
 void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
 {
     ZoneScopedN("GPUParticle: RebuildParticleBuffer (CreateBuffer)");
@@ -243,9 +248,11 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
     // time はエフェクト全体の値なので、1エミッタを作り直しても戻さない
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// コンピュートシェーダーの実行
+// ---------------------------------------------------------------------------
+
 // InitCS を1エミッタ分 Dispatch する。
-// =========================================================================
 void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11DeviceContext      *dc,
     ParticleComputeShader    *cs,
@@ -291,9 +298,7 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     emitter.needsGpuInit = false;
 }
 
-// =========================================================================
 // UpdateCS を1エミッタ分 Dispatch する。
-// =========================================================================
 void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11DeviceContext      *dc,
     ParticleComputeShader    *cs,
@@ -367,6 +372,10 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     //   立てたままバーストに切り替えると、その瞬間に意図しないバーストが起きる。
     emitter.burstTrigger = 0.0f;
 }
+
+// ---------------------------------------------------------------------------
+// ノイズテクスチャ
+// ---------------------------------------------------------------------------
 
 void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device *device)
 {

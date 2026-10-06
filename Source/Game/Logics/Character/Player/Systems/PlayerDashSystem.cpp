@@ -13,6 +13,10 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void PlayerDashSystem::Update(float rawDt)
 {
     // 接近先のボスと世界スローの倍率を先に取っておく（BattleContext がボスを1体だけ持つので探さなくてよい）。
@@ -63,6 +67,10 @@ void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &d
             health->invincibilityTimer = dash.invincibleWindow;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 段階ごとの更新
+// ---------------------------------------------------------------------------
 
 bool PlayerDashSystem::UpdateApproach(float rawDt, const BattleContext *battle, const TimeContext *timeCtx,
                                       DashComponent &dash, CharacterMovementComponent &movement,
@@ -215,6 +223,10 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
         player.locomotion = PlayerComponent::GroundLocomotion::Walk;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 補助
+// ---------------------------------------------------------------------------
 
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {

@@ -34,9 +34,9 @@ namespace
     }
 } // namespace
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 読み込みと登録
-// ============================================================
+// ---------------------------------------------------------------------------
 bool InputFacade::LoadConfig(const std::string &filePath)
 {
     std::ifstream file(filePath);
@@ -118,9 +118,9 @@ void InputFacade::SetActionTriggerType(const std::string &actionName, TriggerTyp
     m_actionTriggerTypes[hash] = type;
 }
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // 評価
-// ============================================================
+// ---------------------------------------------------------------------------
 bool InputFacade::EvalActionDown(const std::vector<InputBinding> &binds) const
 {
     for (const auto &bind : binds)
@@ -289,6 +289,10 @@ float InputFacade::GetAxis(uint32_t axisHash) const
 
     return std::clamp(finalValue, -1.0f, 1.0f);
 }
+
+// ---------------------------------------------------------------------------
+// 振動
+// ---------------------------------------------------------------------------
 
 void InputFacade::SetVibration(float leftMotor, float rightMotor, float duration)
 {

@@ -94,6 +94,10 @@ namespace
     const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
@@ -198,6 +202,10 @@ void BossActionSystem::OnGui()
     }
 }
 
+// ---------------------------------------------------------------------------
+// 移動系の状態
+// ---------------------------------------------------------------------------
+
 void BossActionSystem::ProcessIdle(BossActionComponent &bossDef, TransformComponent &trans,
                                    CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
                                    const Vector3 &playerPos, float dt)
@@ -299,6 +307,10 @@ void BossActionSystem::ProcessStrafe(BossActionComponent &bossDef, TransformComp
     FaceToward(trans, toPlayer, bossDef.strafeTurnSpeed, dt, joltHandle.character.GetPtr());
 }
 
+// ---------------------------------------------------------------------------
+// 行動の切り替え
+// ---------------------------------------------------------------------------
+
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == A_Move) return BossActionState::Move;
@@ -393,6 +405,10 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, flo
         bossDef.dashTravelTime = 0.0f;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 技の状態
+// ---------------------------------------------------------------------------
 
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossDef, TransformComponent &trans,
                                        CharacterMovementComponent &movement, const JoltCharacterHandleComponent &joltHandle,
@@ -741,6 +757,10 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossDef, TransformCompon
     bossDef.currentMoveSpeed = 0.0f;
     bossDef.moveDirection    = bossDef.lockedDirection;
 }
+
+// ---------------------------------------------------------------------------
+// 技の補助（狙い・着地点）
+// ---------------------------------------------------------------------------
 
 void BossActionSystem::LockDashAim(BossActionComponent &bossDef, const Vector3 &playerPos,
                                    const BattleContext &battle) const

@@ -35,11 +35,10 @@ namespace
     constexpr float kFallbackReleaseBlend = 0.3f;
 } // namespace
 
-// ===========================================================================
-// 初期化・資産の読み込み・役割の解決
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 初期化・資産の読み込み・役割の解決
+// ---------------------------------------------------------------------------
+
 void TimelineSystem::Initialize()
 {
     ListenEvent<TimelinePlayRequestEvent>([this](const TimelinePlayRequestEvent &ev) {
@@ -50,7 +49,6 @@ void TimelineSystem::Initialize()
     });
 }
 
-// ---------------------------------------------------------------------------
 void TimelineSystem::LoadAssetIfNeeded(TimelinePlayerComponent &player) const
 {
     if (player.asset || player.hasLoadError || player.assetPath.empty()) return;
@@ -75,7 +73,6 @@ void TimelineSystem::LoadAssetIfNeeded(TimelinePlayerComponent &player) const
     player.asset = std::move(asset);
 }
 
-// ---------------------------------------------------------------------------
 EntityID TimelineSystem::ResolveRole(const TimelinePlayerComponent &player, const std::string &role) const
 {
     const auto it = player.bindings.find(role);
@@ -85,7 +82,6 @@ EntityID TimelineSystem::ResolveRole(const TimelinePlayerComponent &player, cons
     return it->second;
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineSystem::AreRolesBound(const TimelinePlayerComponent &player) const
 {
     for (const auto &role : player.asset->CollectRoles())
@@ -95,11 +91,10 @@ bool TimelineSystem::AreRolesBound(const TimelinePlayerComponent &player) const
     return true;
 }
 
-// ===========================================================================
-// 点イベント（SE・エフェクト・シグナル）
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 点イベント（SE・エフェクト・シグナル）
+// ---------------------------------------------------------------------------
+
 void TimelineSystem::CollectClipFires(EntityID id, TimelinePlayerComponent &player,
                                       std::vector<std::function<void()>> &out) const
 {
@@ -135,7 +130,6 @@ void TimelineSystem::CollectClipFires(EntityID id, TimelinePlayerComponent &play
     }
 }
 
-// ---------------------------------------------------------------------------
 void TimelineSystem::QueueSound(const TimelinePlayerComponent &player, const SoundClip &clip,
                                 std::vector<std::function<void()>> &out) const
 {
@@ -166,7 +160,6 @@ void TimelineSystem::QueueSound(const TimelinePlayerComponent &player, const Sou
     });
 }
 
-// ---------------------------------------------------------------------------
 void TimelineSystem::QueueEffect(const TimelinePlayerComponent &player, const EffectClip &clip,
                                  std::vector<std::function<void()>> &out) const
 {
@@ -197,11 +190,10 @@ void TimelineSystem::QueueEffect(const TimelinePlayerComponent &player, const Ef
     });
 }
 
-// ===========================================================================
-// 再生の進行（スキップ・中止・開始待ち・終端）
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 再生の進行（スキップ・中止・開始待ち・終端）
+// ---------------------------------------------------------------------------
+
 bool TimelineSystem::ReadSkipInput() const
 {
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return false;
@@ -210,7 +202,6 @@ bool TimelineSystem::ReadSkipInput() const
     return inputAPI->GetAction("Attack") || inputAPI->GetAction("Jump");
 }
 
-// ---------------------------------------------------------------------------
 void TimelineSystem::Abort(TimelinePlayerComponent &player) const
 {
     player.state         = TimelinePlayState::Finished;
@@ -218,7 +209,6 @@ void TimelineSystem::Abort(TimelinePlayerComponent &player) const
     player.previewing    = false;
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineSystem::Advance(EntityID id, TimelinePlayerComponent &player, float dt, bool skipRequested) const
 {
     // 1. 自動再生の起動
@@ -285,7 +275,6 @@ bool TimelineSystem::Advance(EntityID id, TimelinePlayerComponent &player, float
     return false;
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, float dt, bool skipRequested,
                                   std::vector<std::function<void()>> &fires,
                                   std::vector<TimelineFinishedEvent>  &finished) const
@@ -322,11 +311,10 @@ bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, 
     return player.state == TimelinePlayState::Waiting || player.state == TimelinePlayState::Playing;
 }
 
-// ===========================================================================
-// アニメの乗っ取り（Animation トラック）
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// アニメの乗っ取り（Animation トラック）
+// ---------------------------------------------------------------------------
+
 void TimelineSystem::SyncAnimationClips(TimelinePlayerComponent &player) const
 {
     const std::vector<AnimationClip> *clips = player.asset ? &player.asset->animations : nullptr;
@@ -370,7 +358,6 @@ void TimelineSystem::SyncAnimationClips(TimelinePlayerComponent &player) const
     }
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineSystem::StartAnimation(EntityID entity, const AnimationClip &clip) const
 {
     auto *animator = m_world->GetComponent<AnimatorComponent>(entity);
@@ -383,7 +370,6 @@ bool TimelineSystem::StartAnimation(EntityID entity, const AnimationClip &clip) 
     return true;
 }
 
-// ---------------------------------------------------------------------------
 void TimelineSystem::ReleaseAnimation(EntityID entity, float blendOut) const
 {
     if (!m_world->IsEntityValid(entity)) return;
@@ -395,11 +381,10 @@ void TimelineSystem::ReleaseAnimation(EntityID entity, float blendOut) const
     animator->externalReleaseBlend = blendOut;
 }
 
-// ===========================================================================
-// 毎ステップの入口
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 毎ステップの入口
+// ---------------------------------------------------------------------------
+
 void TimelineSystem::Update(float dt)
 {
     const bool skipRequested = ReadSkipInput();

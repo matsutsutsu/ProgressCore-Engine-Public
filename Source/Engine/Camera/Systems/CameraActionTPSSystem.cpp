@@ -49,9 +49,9 @@ void CameraActionTPSSystem::Initialize()
     });
 }
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 // フレーム単位
-// ===========================================================================
+// ---------------------------------------------------------------------------
 
 void CameraActionTPSSystem::Update(float dt)
 {
@@ -176,9 +176,9 @@ bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
     return c.tps.enableCursorLock && (!c.tps.mouseLookRequiresButton || c.in.rmbHeld);
 }
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 // どの向きから見るか（オービット角）
-// ===========================================================================
+// ---------------------------------------------------------------------------
 
 void CameraActionTPSSystem::UpdateOrbitAngles(CameraContext &c) const
 {
@@ -301,9 +301,9 @@ void CameraActionTPSSystem::ApplyLockOnPitchAssist(CameraContext &c) const
     tps.currentPitch = std::lerp(tps.currentPitch, tps.lockOnPitch, pitchBlend);
 }
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 // どこを中心に、どこへ置くか
-// ===========================================================================
+// ---------------------------------------------------------------------------
 
 float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
 {
@@ -469,9 +469,9 @@ Vector3 CameraActionTPSSystem::ResolveHeadLiftCollision(const CameraContext &c,
     return tps.currentPivot + liftDir * safeDist;
 }
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 // 出力
-// ===========================================================================
+// ---------------------------------------------------------------------------
 
 void CameraActionTPSSystem::WriteCameraResult(CameraContext &c, const Vector3 &finalPos,
                                               const Vector3 &backwardDir) const

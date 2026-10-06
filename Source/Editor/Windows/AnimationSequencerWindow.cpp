@@ -41,9 +41,9 @@ inline float FrameToSec(int frame)
 // Effect イベントで選べる VFX プレハブの置き場所（VFX::Play と同じく拡張子なしのパスで保存する）
 constexpr const char *kVfxPrefabDir = "Assets/Prefabs/Particles";
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // ImSequencer へ AnimSequence のイベントを見せる橋渡し（pImpl）
-// ============================================================
+// ---------------------------------------------------------------------------
 class AnimationSequenceImpl : public ImSequencer::SequenceInterface
 {
 public:
@@ -272,9 +272,9 @@ public:
     }
 };
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // AnimationSequencerWindow
-// ============================================================
+// ---------------------------------------------------------------------------
 AnimationSequencerWindow::AnimationSequencerWindow()
     : EditorWindow("Sequencer")
 {
@@ -442,6 +442,10 @@ void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// ファイルの読み書き
+// ---------------------------------------------------------------------------
+
 void AnimationSequencerWindow::DrawFileIO()
 {
     // Duration はアセットから取るので、表示だけにする（編集できない）
@@ -508,6 +512,10 @@ void AnimationSequencerWindow::DrawFileIO()
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// 編集モード
+// ---------------------------------------------------------------------------
 
 void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator)
 {
@@ -581,6 +589,10 @@ void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
     ReleaseEditMode(context, m_editingEntity);
 }
 
+// ---------------------------------------------------------------------------
+// ルートモーションのプレビュー
+// ---------------------------------------------------------------------------
+
 void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, AnimatorComponent * /*animator*/)
 {
     if (!context.isAnimEditMode || !context.world) return;
@@ -629,6 +641,10 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     // ※ 親を持つエンティティでは親行列を考慮していないため位置がずれる（プレビュー専用の簡易実装）。
     trans->UpdateMatrix();
 }
+
+// ---------------------------------------------------------------------------
+// タイムライン
+// ---------------------------------------------------------------------------
 
 void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model)
 {
@@ -883,6 +899,10 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     DrawHitboxPreview(context);
 }
 
+// ---------------------------------------------------------------------------
+// 攻撃判定のプレビュー
+// ---------------------------------------------------------------------------
+
 void AnimationSequencerWindow::DrawHitboxPreview(EditorContext &context)
 {
     if (!context.isAnimEditMode || !context.world) return;
@@ -920,6 +940,10 @@ void AnimationSequencerWindow::DrawHitboxPreview(EditorContext &context)
         shapeRenderer->DrawSphere(center, ev.radius, color);
     }
 }
+
+// ---------------------------------------------------------------------------
+// インスペクタ（イベントの設定）
+// ---------------------------------------------------------------------------
 
 void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 {
@@ -1310,6 +1334,10 @@ bool AnimationSequencerWindow::DrawVfxPrefabPicker(AnimNotifyEvent &e)
     }
     return changed;
 }
+
+// ---------------------------------------------------------------------------
+// カーブ
+// ---------------------------------------------------------------------------
 
 void AnimationSequencerWindow::DrawCurvePane(float animTime)
 {

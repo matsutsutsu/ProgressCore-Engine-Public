@@ -182,6 +182,10 @@ TextRenderer::TextRenderer()
 
 TextRenderer::~TextRenderer() = default;
 
+// ---------------------------------------------------------------------------
+// 初期化
+// ---------------------------------------------------------------------------
+
 bool TextRenderer::IsReady() const
 {
     return m_impl && m_impl->ready;
@@ -279,6 +283,10 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// 描画と計測
+// ---------------------------------------------------------------------------
+
 void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
                             float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color)
 {
@@ -357,6 +365,10 @@ float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
     }
     return (w > maxw) ? w : maxw;
 }
+
+// ---------------------------------------------------------------------------
+// 補助
+// ---------------------------------------------------------------------------
 
 size_t TextRenderer::Utf8Length(const std::string &text)
 {

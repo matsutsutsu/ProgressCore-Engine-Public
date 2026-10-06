@@ -50,6 +50,10 @@ namespace
     float Snap(float v, float step) { return std::round(v / step) * step; }
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 初期化と設定の反映
+// ---------------------------------------------------------------------------
+
 void SettingsScreenSystem::Initialize()
 {
     if (!m_world->HasResource<SettingsScreenState>())
@@ -87,6 +91,10 @@ void SettingsScreenSystem::ApplySettings()
         m_appliedSfx = s.sfxVolume;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 画面の開閉
+// ---------------------------------------------------------------------------
 
 EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, const char *glyph, float x, float y)
 {
@@ -268,6 +276,10 @@ void SettingsScreenSystem::Close()
     w.GetResource<SettingsScreenState>().open = false;
 }
 
+// ---------------------------------------------------------------------------
+// 値の調整と表示
+// ---------------------------------------------------------------------------
+
 void SettingsScreenSystem::Adjust(int row, int dir)
 {
     GameSettings &s = GameSettings::Instance();
@@ -330,6 +342,10 @@ std::string SettingsScreenSystem::ValueText(int row) const
     }
     return buf;
 }
+
+// ---------------------------------------------------------------------------
+// 毎フレーム
+// ---------------------------------------------------------------------------
 
 void SettingsScreenSystem::UpdateFade(float dt)
 {

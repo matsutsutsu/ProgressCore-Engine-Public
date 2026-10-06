@@ -33,6 +33,10 @@ namespace
     }
 } // namespace
 
+// ---------------------------------------------------------------------------
+// ヒットストップとスロー
+// ---------------------------------------------------------------------------
+
 void Time::HitStop(World &world, float seconds, float freezeScale)
 {
     if (seconds <= 0.0f || !world.HasResource<TimeContext>()) return;
@@ -73,6 +77,10 @@ void Time::HitStopEntity(World &world, EntityID id, float seconds, float freezeS
     }
 }
 
+// ---------------------------------------------------------------------------
+// ポーズ
+// ---------------------------------------------------------------------------
+
 void Time::Pause(World &world)
 {
     if (world.HasResource<TimeContext>()) world.GetResource<TimeContext>().isPaused = true;
@@ -87,6 +95,10 @@ void Time::StepFrame(World &world)
 {
     if (world.HasResource<TimeContext>()) world.GetResource<TimeContext>().stepNextFrame = true;
 }
+
+// ---------------------------------------------------------------------------
+// 見た目用の経過時間
+// ---------------------------------------------------------------------------
 
 float Time::PresentationDt(World &world, float realDt)
 {

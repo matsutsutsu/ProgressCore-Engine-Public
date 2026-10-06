@@ -27,9 +27,10 @@
 
 #include "tracy/TracyD3D11.hpp"
 
-// ============================================================
-//  Initialize
-// ============================================================
+// ---------------------------------------------------------------------------
+// 初期化とパイプラインの組み立て
+// ---------------------------------------------------------------------------
+
 void Graphics::Initialize(HWND hWnd)
 {
     // ---- 1. D3D11 のデバイスと RT ----
@@ -100,10 +101,7 @@ void Graphics::SetupRenderPipeline()
     OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
 }
 
-// ============================================================
-//  BuildDefaultRenderPasses
-//  既定の 3D シーン用のパス構成。登録順がそのまま実行順になる。
-// ============================================================
+// 既定の 3D シーン用のパス構成。登録順がそのまま実行順になる。
 void Graphics::BuildDefaultRenderPasses()
 {
     // TODO(2026-09-10): ローディング画面など軽い構成が要るシーン用に、別の Build*RenderPasses を用意して切り替えられるようにする
@@ -121,10 +119,11 @@ void Graphics::BuildDefaultRenderPasses()
     m_pipeline.AddPass<PostProcessPass>();    // 11. ポストプロセス・最終出力
 }
 
-// ============================================================
-//  Update（毎フレーム）
-//  CbScene を書くのはここだけ。EnvironmentSystem はバインドするだけ。
-// ============================================================
+// ---------------------------------------------------------------------------
+// 毎フレーム
+// ---------------------------------------------------------------------------
+
+// CbScene を書くのはここだけ。EnvironmentSystem はバインドするだけ。
 void Graphics::Update()
 {
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
@@ -193,9 +192,6 @@ void Graphics::Update()
     m_gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
 }
 
-// ============================================================
-//  Render（毎フレーム）
-// ============================================================
 void Graphics::Render(const RenderFrameContext &ctx)
 {
     // このスコープの D3D11 の描画コマンドを、Tracy の GPU タイムラインに記録する
@@ -205,9 +201,6 @@ void Graphics::Render(const RenderFrameContext &ctx)
     UnbindAllResources(ctx.dc);
 }
 
-// ============================================================
-//  MakeFrameContext
-// ============================================================
 RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRTV) noexcept
 {
     RenderFrameContext ctx;
@@ -223,9 +216,6 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRT
     return ctx;
 }
 
-// ============================================================
-//  UnbindAllResources
-// ============================================================
 void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 {
     ID3D11Buffer             *nullCB      = nullptr;
@@ -245,9 +235,10 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
     dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 }
 
-// ============================================================
-//  Shutdown
-// ============================================================
+// ---------------------------------------------------------------------------
+// 終了・画面への表示・デバイスロストからの復帰
+// ---------------------------------------------------------------------------
+
 void Graphics::Shutdown()
 {
     // ==============================================================
@@ -282,10 +273,7 @@ void Graphics::Shutdown()
     m_gfxDevice.Shutdown();
 }
 
-// ============================================================
-//  Present
-//  DXGI_ERROR_DEVICE_REMOVED / DEVICE_RESET を受け取ったら false を返す
-// ============================================================
+// DXGI_ERROR_DEVICE_REMOVED / DEVICE_RESET を受け取ったら false を返す
 bool Graphics::Present(UINT syncInterval)
 {
     HRESULT hr = m_gfxDevice.Present(syncInterval);
@@ -311,11 +299,8 @@ bool Graphics::Present(UINT syncInterval)
     return true;
 }
 
-// ============================================================
-//  RecoverFromDeviceLost
-//  HWND を控え、Shutdown()（ShaderRegistry・ResourceManager も空にする）の後に
-//  Initialize() で新しいデバイスから全部作り直す。
-// ============================================================
+// HWND を控え、Shutdown()（ShaderRegistry・ResourceManager も空にする）の後に
+// Initialize() で新しいデバイスから全部作り直す。
 bool Graphics::RecoverFromDeviceLost()
 {
 

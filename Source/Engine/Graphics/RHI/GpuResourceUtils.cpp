@@ -10,9 +10,9 @@
 
 #pragma comment(lib, "d3dcompiler.lib")
 
-// ==========================================================
+// ---------------------------------------------------------------------------
 // HLSL の #include を、プロジェクトのルート・Source/・Assets/ の順に探すハンドラ
-// ==========================================================
+// ---------------------------------------------------------------------------
 class RootInclude : public ID3DInclude
 {
 public:
@@ -65,7 +65,9 @@ public:
     }
 };
 
-// ==========================================================
+// ---------------------------------------------------------------------------
+// シェーダーの読み込み（.cso）
+// ---------------------------------------------------------------------------
 
 HRESULT GpuResourceUtils::LoadVertexShader(
     ID3D11Device                  *device,
@@ -153,6 +155,10 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
 
     return hr;
 }
+
+// ---------------------------------------------------------------------------
+// テクスチャ
+// ---------------------------------------------------------------------------
 
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
@@ -352,6 +358,10 @@ HRESULT GpuResourceUtils::CreateDummyTexture(
     return hr;
 }
 
+// ---------------------------------------------------------------------------
+// バッファ
+// ---------------------------------------------------------------------------
+
 HRESULT GpuResourceUtils::CreateConstantBuffer(ID3D11Device *device, UINT bufferSize, ID3D11Buffer **constantBuffer)
 {
     D3D11_BUFFER_DESC desc{};
@@ -412,6 +422,10 @@ HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device, const UINT *da
 
     return device->CreateBuffer(&desc, &subData, buffer);
 }
+
+// ---------------------------------------------------------------------------
+// シェーダーのコンパイル（.hlsl）
+// ---------------------------------------------------------------------------
 
 bool GpuResourceUtils::CompileVertexShader(ID3D11Device                   *device,
                                            const std::wstring             &hlslPath,

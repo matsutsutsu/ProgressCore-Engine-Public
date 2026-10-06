@@ -77,6 +77,10 @@ GLTFImporter::GLTFImporter(const char *filename)
     }
 }
 
+// ---------------------------------------------------------------------------
+// 読み込み
+// ---------------------------------------------------------------------------
+
 void GLTFImporter::LoadNodes(NodeList &nodes)
 {
     // glTF にノードが無いときも、ファイル名のノードが1つ残るようにする
@@ -808,6 +812,10 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
     }
 }
 
+// ---------------------------------------------------------------------------
+// 型の変換
+// ---------------------------------------------------------------------------
+
 DirectX::XMFLOAT3 GLTFImporter::gltfVector3ToXMFLOAT3(const std::vector<double> &gltfValue)
 {
     return DirectX::XMFLOAT3(
@@ -845,6 +853,10 @@ DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<doubl
         static_cast<float>(gltfValue.at(14)),
         static_cast<float>(gltfValue.at(15)));
 }
+
+// ---------------------------------------------------------------------------
+// 座標系の変換
+// ---------------------------------------------------------------------------
 
 void GLTFImporter::ConvertPositionAxisSystem(DirectX::XMFLOAT3 &v)
 {
@@ -924,6 +936,10 @@ void GLTFImporter::ConvertAnimationAxisSystem(ModelResource::Animation &animatio
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// 接線の計算
+// ---------------------------------------------------------------------------
 
 void GLTFImporter::ComputeTangents(std::vector<ModelResource::Vertex> &vertices, const std::vector<uint32_t> &indices)
 {

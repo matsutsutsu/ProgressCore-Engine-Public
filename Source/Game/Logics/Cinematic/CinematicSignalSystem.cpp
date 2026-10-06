@@ -30,6 +30,10 @@ namespace
     constexpr const char *kBgmPrefix = "bgm:/"; // この名前で始まる音源を BGM とみなす
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 入口とシグナルの振り分け
+// ---------------------------------------------------------------------------
+
 void CinematicSignalSystem::Initialize()
 {
     // シグナルはロジックステージから同期で届く。ここでは溜めるだけにして、UI は自分の Update で作る
@@ -77,6 +81,10 @@ void CinematicSignalSystem::HandleSignal(const TimelineSignalEvent &ev)
     // 黙って捨てると、名前の打ち間違いに気付けない
     CCL_LOG_WARN(LogCategory::Game, "[CinematicSignal] 知らないシグナルです: %s", ev.name.c_str());
 }
+
+// ---------------------------------------------------------------------------
+// テロップ
+// ---------------------------------------------------------------------------
 
 void CinematicSignalSystem::SpawnTelop(const std::string &title, const std::string &subtitle, float seconds)
 {
@@ -163,6 +171,10 @@ void CinematicSignalSystem::ApplyPartAlpha(const TelopPart &part, float k) const
     if (auto *img = m_world->GetComponent<UIImageComponent>(part.id))
         img->color.w = part.baseAlpha * k;
 }
+
+// ---------------------------------------------------------------------------
+// BGM
+// ---------------------------------------------------------------------------
 
 void CinematicSignalSystem::SwitchBgm(const std::string &eventName)
 {

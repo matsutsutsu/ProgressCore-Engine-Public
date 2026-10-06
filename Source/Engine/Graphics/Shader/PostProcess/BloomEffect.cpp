@@ -24,6 +24,10 @@ BloomEffect::~BloomEffect()
     ReleaseChains();
 }
 
+// ---------------------------------------------------------------------------
+// 初期化とリソース
+// ---------------------------------------------------------------------------
+
 void BloomEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
 {
     m_res = std::make_unique<BloomResources>();
@@ -91,6 +95,10 @@ void BloomEffect::ReleaseChains()
     m_downChain.clear();
     m_upChain.clear();
 }
+
+// ---------------------------------------------------------------------------
+// 毎フレームの処理
+// ---------------------------------------------------------------------------
 
 void BloomEffect::UpdateCbBloom(ID3D11DeviceContext *dc, const GpuData::CbBloomData &data)
 {

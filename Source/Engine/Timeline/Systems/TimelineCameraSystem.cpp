@@ -20,11 +20,10 @@ namespace
     constexpr float kMinLengthSq = 1e-8f;
 } // namespace
 
-// ===========================================================================
-// 毎フレームの入口
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 毎フレームの入口
+// ---------------------------------------------------------------------------
+
 void TimelineCameraSystem::Update(float /*dt*/)
 {
     // 再生位置はロジックの固定ステップで進むので、描画フレームへ補間してから評価する。
@@ -62,11 +61,10 @@ void TimelineCameraSystem::Update(float /*dt*/)
     });
 }
 
-// ===========================================================================
-// 姿勢の計算（ショットの選択・固定・補間）
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 姿勢の計算（ショットの選択・固定・補間）
+// ---------------------------------------------------------------------------
+
 bool TimelineCameraSystem::EvaluateCamera(TimelinePlayerComponent &player, float t, TimelineCameraPose &out) const
 {
     const auto &shots = player.asset->cameraShots;
@@ -114,7 +112,6 @@ bool TimelineCameraSystem::EvaluateCamera(TimelinePlayerComponent &player, float
     return true;
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineCameraSystem::EnterShot(TimelinePlayerComponent &player, const CameraShotClip &shot) const
 {
     const std::string &lookRole = shot.lookSubject.empty() ? shot.subject : shot.lookSubject;
@@ -128,7 +125,6 @@ bool TimelineCameraSystem::EnterShot(TimelinePlayerComponent &player, const Came
     return true;
 }
 
-// ---------------------------------------------------------------------------
 bool TimelineCameraSystem::EvaluateShot(const TimelinePlayerComponent &player, const CameraShotClip &shot,
                                         float local, TimelineCameraPose &out) const
 {
@@ -171,11 +167,10 @@ bool TimelineCameraSystem::EvaluateShot(const TimelinePlayerComponent &player, c
     return true;
 }
 
-// ===========================================================================
-// 役割の解決と書き込み
-// ===========================================================================
-
 // ---------------------------------------------------------------------------
+// 役割の解決と書き込み
+// ---------------------------------------------------------------------------
+
 bool TimelineCameraSystem::ResolveRole(const TimelinePlayerComponent &player, const std::string &role,
                                        Vector3 &outPos, float &outYaw) const
 {
@@ -203,7 +198,6 @@ bool TimelineCameraSystem::ResolveRole(const TimelinePlayerComponent &player, co
     return true;
 }
 
-// ---------------------------------------------------------------------------
 void TimelineCameraSystem::WritePose(VirtualCamera &vcam, TransformComponent &trans,
                                      const TimelineCameraPose &pose) const
 {

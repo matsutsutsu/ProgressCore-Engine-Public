@@ -63,6 +63,10 @@ BehaviorTreeWindow::~BehaviorTreeWindow()
     if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
 
+// ---------------------------------------------------------------------------
+// Undo の記録
+// ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
 {
     // グラフ全体を JSON にして比べるので重い。毎フレーム出ていたら、どこかが毎フレーム呼んでいる。
@@ -79,9 +83,9 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
     }
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // ウィンドウ枠
-// ====================================================================
+// ---------------------------------------------------------------------------
 void BehaviorTreeWindow::DrawContents(EditorContext &context)
 {
     ed::SetCurrentEditor(m_nodeContext);
@@ -330,9 +334,9 @@ void BehaviorTreeWindow::DrawBreadcrumb()
     }
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // 編集操作
-// ====================================================================
+// ---------------------------------------------------------------------------
 uint32_t BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string &name, float x, float y)
 {
     EditorBTNode node;
@@ -696,9 +700,9 @@ EditorBTNode *BehaviorTreeWindow::FindNode(uint32_t nodeId)
     return (it == m_nodes.end()) ? nullptr : &*it;
 }
 
-// ====================================================================
+// ---------------------------------------------------------------------------
 // 表示名・色・実行中の状態
-// ====================================================================
+// ---------------------------------------------------------------------------
 const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &context)
 {
     if (context.selectedEntity == CCL::ECS::InvalidEntityID || !context.world) return nullptr;

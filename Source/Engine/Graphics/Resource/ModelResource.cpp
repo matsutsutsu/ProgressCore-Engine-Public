@@ -95,6 +95,10 @@ namespace DirectX
     }
 } // namespace DirectX
 
+// ---------------------------------------------------------------------------
+// シリアライズ（cereal）
+// ---------------------------------------------------------------------------
+
 template <class Archive>
 void ModelResource::Node::serialize(Archive &archive, int version)
 {
@@ -205,6 +209,10 @@ void ModelResource::Animation::serialize(Archive &archive, int version)
         CEREAL_NVP(nodeAnims));
 }
 
+// ---------------------------------------------------------------------------
+// 読み込み
+// ---------------------------------------------------------------------------
+
 void ModelResource::Load(ID3D11Device *device, const char *filename)
 {
     // .cereal のキャッシュがあればそれを読み、無ければ glTF を読んでキャッシュを書く
@@ -254,7 +262,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
     ComputeModelLocalAABB();
 }
 
-// ============================================================================
+// ---------------------------------------------------------------------------
 // モデル定義ファイル（.model.json）
 //   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
 //
@@ -271,7 +279,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 //   走査にしておけば、アニメーションを増やすたびにこのJSONを編集しなくてよい。
 //   アニメーションをモデルに焼き込まず、別ファイルのまま扱うための形式。
 //   .glb を直接指定する使い方もできる。
-// ============================================================================
+// ---------------------------------------------------------------------------
 bool ModelResource::IsModelSetFile(const char *filename)
 {
     if (filename == nullptr) return false;
@@ -449,6 +457,10 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     ComputeModelLocalAABB();
 }
 
+// ---------------------------------------------------------------------------
+// アニメの追加
+// ---------------------------------------------------------------------------
+
 void ModelResource::AppendAnimations(const char *filename)
 {
     const std::filesystem::path filepath(filename);
@@ -519,6 +531,10 @@ void ModelResource::AppendAnimations(const char *filename)
 
     importer.LoadAnimations(animations, nodes);
 }
+
+// ---------------------------------------------------------------------------
+// モデルの組み立て
+// ---------------------------------------------------------------------------
 
 void ModelResource::ComputeMeshBounds(Mesh &mesh)
 {
@@ -722,6 +738,10 @@ void ModelResource::ComputeModelLocalAABB()
         m_boundingBox.Extents = XMFLOAT3(0.0f, 0.0f, 0.0f);
     }
 }
+
+// ---------------------------------------------------------------------------
+// キャッシュの保存・読み込み
+// ---------------------------------------------------------------------------
 
 void ModelResource::Serialize(const char *filename)
 {

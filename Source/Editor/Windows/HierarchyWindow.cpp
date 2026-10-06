@@ -18,6 +18,10 @@
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
 
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
+
 void HierarchyWindow::DrawContents(EditorContext &context)
 {
     ZoneScopedN("HierarchyWindow::DrawContents");
@@ -416,6 +420,10 @@ void HierarchyWindow::DrawFlatNode(
 
     ImGui::Unindent(node.depth * ImGui::GetTreeNodeToLabelSpacing());
 }
+
+// ---------------------------------------------------------------------------
+// 選択と複製
+// ---------------------------------------------------------------------------
 
 void HierarchyWindow::FlattenChildren(
     CCL::ECS::EntityID     firstChildID,

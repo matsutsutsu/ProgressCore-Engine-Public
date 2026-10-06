@@ -16,6 +16,10 @@ using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+// ---------------------------------------------------------------------------
+// 構図の計算
+// ---------------------------------------------------------------------------
+
 DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 {
     // 覚えていた目印が消えていたら忘れる（シーンを切り替えたときなど）
@@ -117,6 +121,10 @@ void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans
         trans.isDirty  = true;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 void TitleCameraSystem::Update(float dt)
 {

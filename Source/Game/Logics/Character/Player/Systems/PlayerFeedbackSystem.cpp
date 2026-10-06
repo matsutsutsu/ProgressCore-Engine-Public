@@ -57,6 +57,10 @@ PlayerFeedbackSystem::PlayerFeedbackSystem()
 {
 }
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void PlayerFeedbackSystem::Initialize()
 {
     ListenEvent<DamageTakenEvent>(
@@ -81,6 +85,10 @@ void PlayerFeedbackSystem::Update(float dt)
 
     UpdateDashRadialBlur();
 }
+
+// ---------------------------------------------------------------------------
+// ダッシュの放射ブラー
+// ---------------------------------------------------------------------------
 
 void PlayerFeedbackSystem::UpdateDashRadialBlur()
 {
@@ -127,6 +135,10 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
         ov->params.strength = peak;
     }
 }
+
+// ---------------------------------------------------------------------------
+// デバッグ UI
+// ---------------------------------------------------------------------------
 
 void PlayerFeedbackSystem::OnGui()
 {
@@ -304,6 +316,10 @@ void PlayerFeedbackSystem::OnGui()
     }
 }
 
+// ---------------------------------------------------------------------------
+// イベントの受け口
+// ---------------------------------------------------------------------------
+
 void PlayerFeedbackSystem::OnPlayerDamaged(
     const DamageTakenEvent &event)
 {
@@ -327,6 +343,10 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
 
     // TODO(2026-08-25): 命中時のカメラの揺れと効果音を足す
 }
+
+// ---------------------------------------------------------------------------
+// 揺れと振動
+// ---------------------------------------------------------------------------
 
 void PlayerFeedbackSystem::StartDamageCameraShake(
     float damageAmount)
@@ -385,6 +405,10 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
         right,
         m_attackHitVibrationDuration);
 }
+
+// ---------------------------------------------------------------------------
+// 画面効果（ビネット・色収差）
+// ---------------------------------------------------------------------------
 
 void PlayerFeedbackSystem::StartDamageVignette()
 {

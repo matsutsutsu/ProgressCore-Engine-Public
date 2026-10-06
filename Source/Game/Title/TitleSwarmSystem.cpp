@@ -45,6 +45,10 @@ std::vector<TypeID> TitleSwarmSystem::GetWriteTypes() const
     return types;
 }
 
+// ---------------------------------------------------------------------------
+// 群れの配置と生成
+// ---------------------------------------------------------------------------
+
 float TitleSwarmSystem::Hash01(uint32_t seed)
 {
     seed ^= seed >> 15;
@@ -159,6 +163,10 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
 
     CCL_LOG_INFO(LogCategory::Game, "[TitleSwarm] タイトル演出用に %d 機を配置", spawned);
 }
+
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 void TitleSwarmSystem::Update(float dt)
 {

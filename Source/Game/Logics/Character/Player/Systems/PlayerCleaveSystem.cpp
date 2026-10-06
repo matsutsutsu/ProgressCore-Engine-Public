@@ -19,6 +19,10 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// ---------------------------------------------------------------------------
+// 入口とゲージ
+// ---------------------------------------------------------------------------
+
 void PlayerCleaveSystem::Initialize()
 {
     // ジャスト回避が成立したらゲージを足す（主な供給源）。満タンになった分はストックに変わる。
@@ -145,6 +149,10 @@ void PlayerCleaveSystem::Update(float rawDt)
     SetMonochrome(anyReady);
 }
 
+// ---------------------------------------------------------------------------
+// 構え（スローと白黒）
+// ---------------------------------------------------------------------------
+
 void PlayerCleaveSystem::EnterReady(CleaveComponent &cleave, const Vector3 &dir)
 {
     cleave.phase      = CleavePhase::Ready;
@@ -192,6 +200,10 @@ void PlayerCleaveSystem::SetMonochrome(bool on)
     if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
         fx->hold = on;
 }
+
+// ---------------------------------------------------------------------------
+// 突進
+// ---------------------------------------------------------------------------
 
 void PlayerCleaveSystem::FaceAim(PlayerComponent &player, const Vector3 &dir)
 {
@@ -251,6 +263,10 @@ void PlayerCleaveSystem::ExitToIdle(CleaveComponent &cleave, RootMotionComponent
     SetMonochrome(false);
     // 全体スローは要求をやめるだけで、TimeScaleSystem がイーズで等速へ戻す。
 }
+
+// ---------------------------------------------------------------------------
+// 演出と吹き飛ばし
+// ---------------------------------------------------------------------------
 
 void PlayerCleaveSystem::PushCameraCloseUp(EntityID playerID, bool close)
 {

@@ -3,6 +3,10 @@
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Engine/Platform/Core/Logger.h"
 
+// ---------------------------------------------------------------------------
+// 読み込み
+// ---------------------------------------------------------------------------
+
 BTAssetCache &BTAssetCache::Instance()
 {
     static BTAssetCache cache;
@@ -61,6 +65,10 @@ std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
     m_assets[path]                        = shared;
     return shared;
 }
+
+// ---------------------------------------------------------------------------
+// キャッシュの管理
+// ---------------------------------------------------------------------------
 
 void BTAssetCache::Clear()
 {

@@ -17,6 +17,10 @@ static const char *kFallbackFontPath = "Assets/Fonts/MPLUS1-Medium.ttf";
 UIRenderer::UIRenderer()  = default;
 UIRenderer::~UIRenderer() = default;
 
+// ---------------------------------------------------------------------------
+// リソースの取得
+// ---------------------------------------------------------------------------
+
 Sprite *UIRenderer::GetWhite(ID3D11Device *device)
 {
     if (!m_white)
@@ -72,6 +76,10 @@ TextRenderer *UIRenderer::GetText(ID3D11Device *device)
     }
     return m_text.get();
 }
+
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
 
 void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                            const std::vector<const UIDrawItem *> &ordered, BlendPass pass)

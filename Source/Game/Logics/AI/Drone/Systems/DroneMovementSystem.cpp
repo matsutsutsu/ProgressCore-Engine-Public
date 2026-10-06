@@ -48,6 +48,10 @@ DroneMovementSystem::LookToRotation(const DirectX::SimpleMath::Vector3 &look, bo
     return Quaternion::CreateFromYawPitchRoll(yaw, pitch, 0.0f);
 }
 
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
+
 void DroneMovementSystem::Update(float rawDt)
 {
     // 処理フロー:
@@ -139,6 +143,10 @@ void DroneMovementSystem::Update(float rawDt)
         trans.isDirty = true;
     });
 }
+
+// ---------------------------------------------------------------------------
+// 状態ごとの移動
+// ---------------------------------------------------------------------------
 
 inline void DroneMovementSystem::ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt)
 {

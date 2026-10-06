@@ -25,6 +25,10 @@ float ImGuiRenderer::s_platformIdleTime         = 0.0f;
 float ImGuiRenderer::s_platformIdleAccum        = 0.0f;
 int   ImGuiRenderer::s_platformViewportCount    = 0;
 
+// ---------------------------------------------------------------------------
+// 初期化と終了
+// ---------------------------------------------------------------------------
+
 void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceContext *dc)
 {
     ZoneScopedN("ImGuiRenderer::Initialize");
@@ -93,6 +97,10 @@ void ImGuiRenderer::Finalize()
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 }
+
+// ---------------------------------------------------------------------------
+// 毎フレーム
+// ---------------------------------------------------------------------------
 
 void ImGuiRenderer::NewFrame()
 {
@@ -169,6 +177,10 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// 別ウィンドウ（マルチビューポート）の描画制御
+// ---------------------------------------------------------------------------
+
 bool ImGuiRenderer::ShouldRenderPlatformWindows()
 {
     // Unity（Repaint）や Unreal（Slate の Invalidation）のエディタは、変化したウィンドウだけを描き直す。
@@ -231,6 +243,10 @@ void ImGuiRenderer::SetPlatformWindowsThrottled(bool enabled)
     s_platformIdleTime  = 0.0f;
     s_platformIdleAccum = 0.0f;
 }
+
+// ---------------------------------------------------------------------------
+// Win32 メッセージ
+// ---------------------------------------------------------------------------
 
 LRESULT ImGuiRenderer::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {

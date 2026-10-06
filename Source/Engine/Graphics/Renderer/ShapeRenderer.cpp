@@ -11,6 +11,10 @@ using namespace DirectX;
 
 std::atomic<uint64_t> ShapeRenderer::s_instanceCounter = 0;
 
+// ---------------------------------------------------------------------------
+// 可視判定と描画リスト
+// ---------------------------------------------------------------------------
+
 bool ShapeRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
 {
     if (!m_cullingEnabled) return true;
@@ -112,6 +116,10 @@ ShapeRenderer::ShapeDrawList &ShapeRenderer::GetDrawList()
     }
     return *myLocalList;
 }
+
+// ---------------------------------------------------------------------------
+// 図形の登録
+// ---------------------------------------------------------------------------
 
 void ShapeRenderer::DrawBox(const DirectX::XMFLOAT3 &position, const DirectX::XMFLOAT3 &angle, const DirectX::XMFLOAT3 &size, const DirectX::XMFLOAT4 &color)
 {
@@ -466,6 +474,10 @@ void ShapeRenderer::DrawAxis(const DirectX::XMFLOAT4X4 &transform, float length)
     DrawLine(p, z, {0.0f, 0.0f, 1.0f, 1.0f});
 }
 
+// ---------------------------------------------------------------------------
+// メッシュの生成
+// ---------------------------------------------------------------------------
+
 void ShapeRenderer::CreateLineMesh(ID3D11Device *device)
 {
     std::vector<DirectX::XMFLOAT3> vertices;
@@ -596,6 +608,10 @@ void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device *device)
 
     CreateMesh(device, vertices, triangleFaceMesh);
 }
+
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
 
 void ShapeRenderer::Render(ID3D11DeviceContext *dc, const DirectX::XMFLOAT4X4 &view, const DirectX::XMFLOAT4X4 &projection)
 {

@@ -267,6 +267,10 @@ namespace
     }
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 役割
+// ---------------------------------------------------------------------------
+
 std::vector<std::string> TimelineAsset::CollectRoles() const
 {
     std::vector<std::string> roles;
@@ -289,6 +293,10 @@ std::vector<std::string> TimelineAsset::CollectRoles() const
         add(c.subject);
     return roles;
 }
+
+// ---------------------------------------------------------------------------
+// 読み込みと保存
+// ---------------------------------------------------------------------------
 
 bool TimelineAssetLoader::Load(const std::string &path, TimelineAsset &out, std::string &errMsg)
 {
@@ -372,6 +380,10 @@ bool TimelineAssetLoader::Save(const std::string &path, const TimelineAsset &ass
     }
     return true;
 }
+
+// ---------------------------------------------------------------------------
+// 後処理と補間
+// ---------------------------------------------------------------------------
 
 void TimelineAssetLoader::Normalize(TimelineAsset &asset)
 {

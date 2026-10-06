@@ -28,6 +28,10 @@ namespace
     constexpr const char *kConfigPath = "Assets/Config/InputPromptConfig.json";
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 設定の読み込み
+// ---------------------------------------------------------------------------
+
 void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
 {
     std::ifstream file(kConfigPath);
@@ -59,6 +63,10 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
         outRows = {{"", "Move", "MOVE"}, {"", "Camera", "CAMERA"}, {"Attack", "", "ATTACK"}, {"Cleave", "", "CLEAVE"}, {"Dash", "", "DODGE"}, {"Jump", "", "JUMP"}, {"LockOn", "", "LOCK ON"}};
     }
 }
+
+// ---------------------------------------------------------------------------
+// 行の組み立てと配置
+// ---------------------------------------------------------------------------
 
 void InputPromptSystem::ComputeRow(size_t index, UITransformComponent &outIcon,
                                    UITransformComponent &outLabel) const
@@ -175,6 +183,10 @@ void InputPromptSystem::BuildRows()
         m_labelIDs.push_back(lbl.ID());
     }
 }
+
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 void InputPromptSystem::Update(float /*dt*/)
 {

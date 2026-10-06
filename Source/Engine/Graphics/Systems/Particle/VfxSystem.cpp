@@ -14,7 +14,10 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// 初期化
+// ---------------------------------------------------------------------------
+
 void VFXSystem::Initialize()
 {
     // VFX::Play から自分を引けるようにする。
@@ -25,7 +28,10 @@ void VFXSystem::Initialize()
     ListenEvent<AnimEventEffectMessage>([this](const AnimEventEffectMessage &msg) { OnAnimEffect(msg); });
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// アニメのイベントから出すエフェクト
+// ---------------------------------------------------------------------------
+
 void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
 {
     if (msg.effectPath.empty()) return;
@@ -86,7 +92,6 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
         m_timedStops.push_back({id, (std::max)(msg.duration, kMinEmitDuration)});
 }
 
-// =========================================================================
 EntityID VFXSystem::ResolveAnchor(const AnimEventEffectMessage &msg) const
 {
     // タグが無ければキャラそのもの
@@ -104,7 +109,6 @@ EntityID VFXSystem::ResolveAnchor(const AnimEventEffectMessage &msg) const
     return weapon;
 }
 
-// =========================================================================
 void VFXSystem::ApplyScale(GPUParticleComponent &particle, float s) const
 {
     if (s <= 0.0f || s == 1.0f) return;
@@ -131,7 +135,6 @@ void VFXSystem::ApplyScale(GPUParticleComponent &particle, float s) const
     particle.MarkDescChanged();
 }
 
-// =========================================================================
 void VFXSystem::UpdateTimedStops(float dt)
 {
     for (size_t i = 0; i < m_timedStops.size();)
@@ -162,7 +165,10 @@ void VFXSystem::UpdateTimedStops(float dt)
     }
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// 直接の再生と停止
+// ---------------------------------------------------------------------------
+
 EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &worldPos)
 {
     // 1. プレハブ（JSON）から1 Entity を作る
@@ -203,7 +209,6 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
     return id;
 }
 
-// =========================================================================
 void VFXSystem::Stop(EntityID handle)
 {
     if (handle == InvalidEntityID || !m_world->IsEntityValid(handle)) return;
@@ -227,7 +232,10 @@ void VFXSystem::Stop(EntityID handle)
     m_active.push_back({handle, CalcParticleLifetime(*particle)});
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// 破棄までの見届け
+// ---------------------------------------------------------------------------
+
 void VFXSystem::Update(float dt)
 {
     // 先に止める。止めたものは m_active に入り、下のループで破棄まで数える
@@ -270,7 +278,6 @@ void VFXSystem::Update(float dt)
     }
 }
 
-// =========================================================================
 bool VFXSystem::HasContinuousEmitter(const GPUParticleComponent &particle) const
 {
     for (const auto &emitter : particle.emitters)
@@ -278,7 +285,6 @@ bool VFXSystem::HasContinuousEmitter(const GPUParticleComponent &particle) const
     return false;
 }
 
-// =========================================================================
 float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) const
 {
     // 一番長く残る粒子が消えるまでの時間を探す
@@ -296,7 +302,6 @@ float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) cons
     return longest + kLifetimeMargin;
 }
 
-// =========================================================================
 bool VFXSystem::IsPendingDestroy(EntityID handle) const
 {
     for (const auto &v : m_active)
@@ -304,7 +309,10 @@ bool VFXSystem::IsPendingDestroy(EntityID handle) const
     return false;
 }
 
-// =========================================================================
+// ---------------------------------------------------------------------------
+// どこからでも呼べる窓口（VFX::Play / Stop）
+// ---------------------------------------------------------------------------
+
 namespace VFX
 {
     EntityID Play(World &world, const std::string &path, const DirectX::XMFLOAT3 &worldPos)
