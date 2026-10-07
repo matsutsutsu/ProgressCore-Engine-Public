@@ -73,10 +73,13 @@ private:
                    BossCommandComponent     &cmd,
                    HealthComponent          &health) const;
 
-    // どちらも Muriel のアニメグラフに対応する遷移が無いので、今はトリガーを引いても何も起きない
-    // （グラフに足せばそのまま繋がる）。アニメが無くても形態の移行はできる。
+    // Death は Muriel のアニメグラフの任意ステートからの遷移で、よろめいて動けなくなるアニメ（Death → DeathLoop）に入る。
+    //   DeathLoop には出る遷移が無いので、撃破ムービーとリザルトの間も倒れた姿のまま残る。
     static constexpr const char *kDeathTrigger = "Death";
-    static constexpr const char *kRoarTrigger  = "Roar";
+
+    // Roar は Muriel のアニメグラフに対応する遷移が無いので、今はトリガーを引いても何も起きない
+    // （グラフに足せばそのまま繋がる）。アニメが無くても形態の移行はできる。
+    static constexpr const char *kRoarTrigger = "Roar";
 
     // 形態移行の演出時間（秒）。この間ボスは無敵で、BT は止まる。
     static constexpr float kTransitionDuration = 2.5f;

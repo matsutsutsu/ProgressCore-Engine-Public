@@ -84,7 +84,18 @@ void GameResultSystem::Update(float dt)
     if (m_pendingWin)
     {
         m_winDelay -= dt;
-        if (m_winDelay <= 0.0f)
+
+        // 撃破ムービーが流れている間は出さない。終わるかスキップされたら出す。
+
+        // ムービーの再生要求から cinematic が立つまでは1ステップ。
+        // kResultDelay を待ち終えた時点では、もう立っている。
+
+        // ムービーを置いていないシーンや、読み込めなかったときは cinematic が立たない。
+        // その場合は kResultDelay だけ待って出る。
+        const bool cinematic =
+            m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+
+        if (m_winDelay <= 0.0f && !cinematic)
         {
             m_resultShown = true;
             ShowResultUI(true); // MISSION COMPLETE

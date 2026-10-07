@@ -33,6 +33,20 @@ namespace
 
     // 資産を読み直してクリップの対応が分からなくなったときに、握っている実体を離すブレンド時間(秒)
     constexpr float kFallbackReleaseBlend = 0.3f;
+
+    /**
+     * @brief TimelinePlayer が再生要求の対象かを返す。
+     * @param ev     受けた再生要求。
+     * @param id     調べる TimelinePlayer の Entity。
+     * @param player 調べる TimelinePlayer。
+     * @return ID → きっかけ名の順に見て一致すれば true。どちらも指定の無い要求なら常に true。
+     */
+    bool IsRequestTarget(const TimelinePlayRequestEvent &ev, EntityID id, const TimelinePlayerComponent &player)
+    {
+        if (ev.playerID != InvalidEntityID) return ev.playerID == id;
+        if (!ev.trigger.empty()) return ev.trigger == player.trigger;
+        return true;
+    }
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -42,10 +56,18 @@ namespace
 void TimelineSystem::Initialize()
 {
     ListenEvent<TimelinePlayRequestEvent>([this](const TimelinePlayRequestEvent &ev) {
+        bool any = false;
         ForEachWithID([&](EntityID id, TimelinePlayerComponent &player) {
-            if (ev.playerID != InvalidEntityID && ev.playerID != id) return;
+            if (!IsRequestTarget(ev, id, player)) return;
             player.RequestPlay();
+            any = true;
         });
+
+        // 名前の打ち間違いに気付けるように残す。
+        // ただしムービーを置いていないシーン（EditorScene など）でも来る要求なので、警告にはしない。
+        if (!any && !ev.trigger.empty())
+            CCL_LOG_INFO(LogCategory::Game, "[Timeline] きっかけ '%s' の TimelinePlayer が無いので再生しません",
+                         ev.trigger.c_str());
     });
 }
 

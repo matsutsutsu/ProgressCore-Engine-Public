@@ -3,6 +3,21 @@
     "anyStatePosY": -16.0,
     "anyStateTransitions": [
         {
+            "blendDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2443131885,
+                    "paramName": "Death",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 2443131885
+        },
+        {
             "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
@@ -149,6 +164,13 @@
             "hash": 641192933,
             "name": "StrafeDir",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2443131885,
+            "name": "Death",
+            "type": 2
         }
     ],
     "states": [
@@ -960,6 +982,54 @@
                     "targetStateHash": 1168775091
                 }
             ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -398.0,
+            "nodePosY": 540.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Death.json",
+            "sequenceName": "Death",
+            "speedCurveName": "",
+            "stateHash": 2443131885,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2240033283
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -198.0,
+            "nodePosY": 540.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DeathLoop.json",
+            "sequenceName": "DeathLoop",
+            "speedCurveName": "",
+            "stateHash": 2240033283,
+            "transitions": []
         }
     ]
 }

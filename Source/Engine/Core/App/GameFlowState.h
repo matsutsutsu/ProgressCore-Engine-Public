@@ -21,6 +21,7 @@ struct GameFlowState
     // 「カットシーン中」。タイムライン（ムービー）が開始待ち・再生中の間 true。
     //    ・PlayerInputSystem: 全ゲーム入力を中立値にして操作を奪う。
     //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする。
+    //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない。
     //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）。
     //    書き手は TimelineSystem だけ（ロジックの L01_Input）。
     //    PlayerInputSystem とは同じ段で順序を縛っていないので、効き始めが1ステップ遅れることがある。

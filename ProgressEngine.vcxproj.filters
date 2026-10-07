@@ -544,9 +544,6 @@
     <Filter Include="Shader\Compute\GPUParticle">
       <UniqueIdentifier>{7a8c859c-165f-42f0-87f0-2729f0b955d0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Compute\Boids">
-      <UniqueIdentifier>{7f01f78f-5e12-4472-9745-513f6f592a59}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\PostProcess">
       <UniqueIdentifier>{2a5582fd-a623-4bc4-abdc-fdc7f0f0650b}</UniqueIdentifier>
     </Filter>
@@ -1857,6 +1854,9 @@
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.h">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
@@ -2964,6 +2964,9 @@
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp">

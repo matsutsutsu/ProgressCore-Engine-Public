@@ -3,7 +3,7 @@
 // 概要: タイムライン（ムービー演出）を再生するコンポーネント。
 //
 // 責務:
-//   - 再生する資産のパスと再生設定（自動再生・開始待ち・スキップ可否）を持つ
+//   - 再生する資産のパスと再生設定（自動再生・再生のきっかけ名・開始待ち・スキップ可否）を持つ
 //   - 再生中／待機中の VirtualCamera 優先度を持つ
 //   - 再生位置・点イベントの発火位置・役割の結び付け・カメラ評価の実行時状態を持つ（シリアライズしない）
 //
@@ -62,6 +62,12 @@ struct TimelinePlayerComponent
     float startDelay  = 0.2f; // 再生要求から再生を始めるまでの待ち(秒)
     bool  playOnStart = true; // シーン開始時に自動再生するか
     bool  allowSkip   = true; // 攻撃/ジャンプ入力でスキップできるか
+
+    // 再生のきっかけ名（例: "BossDefeated"）。TimelinePlayRequestEvent の trigger と一致したら再生する。
+    //   空なら名前では選ばれない（ID 指定か「全部再生」の要求でだけ再生する）。
+    //
+    //   名前の意味は Engine では決めない。要求を出すゲーム側が決める（シグナルの name と同じ考え方）。
+    std::string trigger;
 
     // 再生中の VirtualCamera.priority。プレイヤー追従カメラ（PlayerFollowCamera.json は 200）より高くする。
     int activePriority = 300;

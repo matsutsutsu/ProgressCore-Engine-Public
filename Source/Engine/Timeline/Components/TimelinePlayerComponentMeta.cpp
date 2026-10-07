@@ -70,6 +70,8 @@ struct ComponentMeta<TimelinePlayerComponent>
         ImGui::SeparatorText(u8"再生");
         changed |= mi::DragFloat(u8"開始待ち(秒)", &comp.startDelay, 0.05f, 0.0f, 10.0f);
         changed |= mi::Checkbox(u8"シーン開始で自動再生 (playOnStart)", &comp.playOnStart);
+        changed |= mi::InputText(u8"きっかけ名 (trigger)", comp.trigger,
+                                 u8"ゲーム側の再生要求がこの名前を指したときに再生する（例: BossDefeated）。空なら名前では選ばれない。");
         changed |= mi::Checkbox(u8"スキップ許可 (allowSkip)", &comp.allowSkip);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip(u8"攻撃/ジャンプでスキップ。展示会では ON 推奨。");
@@ -145,6 +147,7 @@ struct ComponentMeta<TimelinePlayerComponent>
 
             CFIELD_FLOAT_RANGED(startDelay, "開始待ち", 0.05f, 0.0f, 10.0f, "Playback")
             CFIELD(playOnStart, "シーン開始で自動再生", "Playback")
+            CFIELD(trigger, "再生のきっかけ名", "Playback")
             CFIELD(allowSkip, "スキップ許可", "Playback")
 
             CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priority")

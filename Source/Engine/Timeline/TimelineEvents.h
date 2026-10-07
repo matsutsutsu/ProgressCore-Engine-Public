@@ -11,12 +11,24 @@
 
 #include <string>
 
-// タイムラインの再生要求。シーン開始時は playOnStart で自動再生されるので、
-// これは「形態移行で別のムービーを流したい」といった任意タイミング用。
+/**
+ * @brief タイムラインの再生要求。ボス撃破でムービーを流す、といった任意タイミング用。
+ *
+ * シーン開始時のムービーは playOnStart で自動再生されるので、この要求は要らない。
+ *
+ * 再生する TimelinePlayer は playerID → trigger の順に見て選ぶ。
+ * どちらも指定しなければ、全ての TimelinePlayer を再生する。
+ */
 struct TimelinePlayRequestEvent
 {
-    // 再生したい TimelinePlayer の Entity。InvalidEntityID なら全ての TimelinePlayer を再生する。
+    // 再生したい TimelinePlayer の Entity。InvalidEntityID なら trigger で選ぶ。
     CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID;
+
+    // 再生したい TimelinePlayer の trigger（TimelinePlayerComponent::trigger と比べる）。
+    //   ゲーム側は、撃破ムービーなどの TimelinePlayer の Entity を知らない（シーンがプレハブから生成する）。
+    //   そのため ID の代わりに名前でも選べるようにしている。
+    //   空なら名前では選ばない。
+    std::string trigger;
 };
 
 // シグナルトラックのクリップが発行する通知。

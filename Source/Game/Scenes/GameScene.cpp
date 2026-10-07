@@ -42,6 +42,23 @@ void GameScene::Initialize()
         }
     }
 
+    // 撃破ムービーも導入とそろえてここで足す。
+    // playOnStart は切ってあり、ボスが倒れたときに CinematicTriggerSystem の要求で流れる。
+
+    // 撃破ムービーはスキップできない（プレハブで allowSkip を切ってある）。
+    // 撃破の瞬間は攻撃を連打していることが多く、受け付けると見る前に勝手に飛んでしまうため。
+    {
+        ZoneScopedN("GameScene: SpawnPrefab BossDefeatTimeline");
+
+        const std::string defeatCameraPrefab = "Assets/Prefabs/Camera/BossDefeatTimeline.json";
+        if (Prefab::SpawnPrefab(*m_worldPtr, defeatCameraPrefab) == CCL::ECS::InvalidEntityID)
+        {
+            // 生成に失敗しても、撃破後にムービー無しでリザルトが出るだけなので止めない。
+            CCL_LOG_ERROR(LogCategory::Core,
+                          "GameScene: 撃破ムービーの生成に失敗: %s", defeatCameraPrefab.c_str());
+        }
+    }
+
     CCL_LOG_INFO(LogCategory::Core, "GameScene Initialize");
 }
 
