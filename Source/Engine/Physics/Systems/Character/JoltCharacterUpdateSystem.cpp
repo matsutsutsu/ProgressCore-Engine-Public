@@ -176,7 +176,14 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 
     if (requestedSpeed >= 0.0f)
     {
+        // ダッシュ等の上書き速度は「全開」で出したいので、アナログ傾き量の影響を受けない。
         targetSpeed = requestedSpeed;
+    }
+    else
+    {
+        // 通常歩行のみ、スティックの傾き量(0〜1)を速度割合として掛ける＝アナログ段階移動。
+        //   キーボードや AI は moveIntensity=1.0 のままなので従来どおり最大速度で歩く。
+        targetSpeed *= std::clamp(movement.moveIntensity, 0.0f, 1.0f);
     }
 
     // アクション層の速度倍率(チェイン段数などによる移動速度上昇)。負値の暴走を防ぐためクランプ。

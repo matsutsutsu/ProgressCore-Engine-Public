@@ -7,6 +7,8 @@
 #include "Engine/Core/App/GameFlowState.h"                          // エディタ操作中(F2=uiInteract)は入力を止める
 #include "Engine/Physics/Components/Character/KnockbackComponent.h" // 被弾の硬直中は入力を止める
 
+#include <algorithm> // std::clamp（スティック傾き量のクランプ）
+
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
@@ -46,7 +48,8 @@ void PlayerInputSystem::Update(float dt)
     const bool rawLockOn = inputAPI->GetAction("LockOn"); // Rキーなど
 
     // 移動方向はカメラの向きを基準に合成する（TPS）。水平にしてから正規化する。
-    Vector3 moveDir = Vector3::Zero;
+    Vector3 moveDir       = Vector3::Zero;
+    float   moveIntensity = 0.0f; // スティックの傾き量(0〜1)。下で desiredVelocity と別に運ぶ。
     if (!blockGameInput)
     {
         const float moveX = inputAPI->GetAxis("MoveX");
@@ -60,6 +63,10 @@ void PlayerInputSystem::Update(float dt)
         camRight.Normalize();
 
         moveDir = (camRight * moveX) + (camForward * moveY);
+        // スティックの傾き量(0〜1)を速度の割合として取り出す。正規化で捨ててしまう前に測る。
+        //   キーボードは moveX/moveY が ±1 固定なので常に 1.0＝最大速度になる。
+        //   デッドゾーンは GamePad 側で処理済みのため、ここでは [0,1] にクランプするだけでよい。
+        moveIntensity = std::clamp(moveDir.Length(), 0.0f, 1.0f);
         if (moveDir.LengthSquared() > 0.001f)
             moveDir.Normalize();
     }
@@ -76,6 +83,7 @@ void PlayerInputSystem::Update(float dt)
         // 移動の要求は、止めるときも中立（0）を書く。書かずに抜けると直前の
         // 移動方向が残り、硬直中も歩き続ける。
         movement.desiredVelocity = blocked ? Vector3::Zero : moveDir;
+        movement.moveIntensity   = blocked ? 0.0f : moveIntensity;
 
         // 前のステップでは押されておらず、今は押されているときだけ true にする。
         //   ロジックは同じ描画フレーム内で複数回走ることがあり、その間は実際の押下状態が
