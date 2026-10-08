@@ -1,24 +1,29 @@
 #pragma once
-// UIProgressBar を「背景＋フィル」の2矩形として UIDrawList へ積む収集システム。
-// 位置付け: RenderStage::R10_UI（UpdateRender中）。描画は2DパスのUIRenderer。
+// ===========================================================================
+// 概要: UIProgressBar を Gauge アイテム1つとして UIDrawList へ積む収集 System（R10b_UICollect）。
+//
+// 責務:
+//   - UILayoutSystem が決めた computed* に被弾の揺れのオフセットを足して、ゲージの矩形にする
+//   - コンポーネントの値と見た目の設定を、シェーダーへ渡す定数バッファの形に詰める
+//
+// 備考: 矩形は計算しない。描画は 2D パスの UIRenderer。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 
 class UIProgressBarCollectSystem : public CCL::ECS::IfSystem<UIProgressBarCollectSystem,
-                                       CCL::ECS::Write<UITransformComponent>,
-                                       CCL::ECS::Read<UIProgressBarComponent>>
+                                                             CCL::ECS::Read<UITransformComponent>,
+                                                             CCL::ECS::Read<UIProgressBarComponent>>
 {
-  public:
+public:
     UIProgressBarCollectSystem()
         : IfSystem("UIProgressBarCollectSystem")
     {
     }
 
-
-    // 実行順序の宣言（TaskScheduler が同一ステージ内の順序決定に使う）。
-    // UILayout が確定した computedPos/computedSize を読んで描画リストへ積む。
-    std::vector<const char *> GetRunAfter() const override { return {"UILayoutSystem"}; }
+    // 同じ UIDrawList へ積む収集 System 同士は直列でなければならない（詳細は UIImageCollectSystem.h）
+    std::vector<const char *> GetRunAfter() const override { return {"UITextCollectSystem"}; }
 
     void Update(float dt) override;
 };

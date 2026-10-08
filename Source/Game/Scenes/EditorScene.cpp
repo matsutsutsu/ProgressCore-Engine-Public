@@ -1,5 +1,5 @@
 #include "EditorScene.h"
-#include "Engine/Scene/SceneFactory.h" // REGISTER_SCENE（ファイル末尾で自己登録）
+#include "Engine/Scene/SceneFactory.h"
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -8,16 +8,15 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 
-#include "Game/UI/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
-#include "Game/UI/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
+#include "Game/UI/Screens/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
+#include "Game/UI/Screens/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
 void EditorScene::Initialize()
 {
     ZoneScopedN("EditorScene::Initialize");
 
-    BaseScene::Initialize(); // 共通初期化
+    BaseScene::Initialize();
 
-    // シーン読み込み
     {
         ZoneScopedN("EditorScene: LoadLevel BossBattleStage");
 
@@ -26,43 +25,35 @@ void EditorScene::Initialize()
             CCL_LOG_ERROR(LogCategory::Core, "EditorScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
 }
 
-void EditorScene::Finalize() 
+void EditorScene::Finalize()
 {
-    BaseScene::Finalize(); // 共通終了化
+    BaseScene::Finalize();
 }
 
 void EditorScene::RegisterSystems()
 {
-    // SystemManagerへのアクセスを m_ecsContext 経由に変更
-    // (SystemGroupsの関数が参照を受け取る仕様であると推測されるため、ポインタをデリファレンスしています)
     auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
-    // ゲーム本編専用：ゲームオーバー検知＋リザルトUIオーバーレイ。
-    // グローバル登録していないので、タイトル等には入らずゲーム世界でだけ動く。
+    // リザルトとポーズはゲーム本編でだけ動かしたいので、全体登録（REGISTER_*）せずここで登録する。
+    // タイトルには入らない
     sysManager.RegisterSystem<GameResultSystem>(Priority::LogicStage::L02_PostUpdate);
 
-    // ゲーム本編専用：ポーズ（ESC/START）＋ポーズメニュー。
-    // 描画ステージに置き、ポーズ中も動いて解除入力を拾えるようにする。
+    // ポーズは描画ステージに置く。ロジックステージはポーズ中に止まり、解除の入力を拾えなくなる
     sysManager.RegisterSystem<PauseSystem>(Priority::RenderStage::R10_UI);
 }
 
-void EditorScene::FixedUpdate(float dt) 
+void EditorScene::FixedUpdate(float dt)
 {
-    // B. 通常プレイ中
-    // 親クラスの処理を呼んで、通常通り世界を動かす
     BaseScene::FixedUpdate(dt);
 }
 
-// Updateのオーバーライド
 void EditorScene::Update(float dt)
 {
     BaseScene::Update(dt);
-    
 }
 
 void EditorScene::Render()
@@ -70,7 +61,4 @@ void EditorScene::Render()
     BaseScene::Render();
 }
 
-
-
-// SceneFactory への自動登録（SceneManager が本クラスを include せずに済むようにする）
 REGISTER_SCENE(EditorScene, "Editor")

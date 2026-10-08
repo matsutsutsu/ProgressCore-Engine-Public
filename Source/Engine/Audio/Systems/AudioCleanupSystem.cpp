@@ -1,53 +1,51 @@
-// --- AudioCleanupSystem.cpp ---
 #include "AudioCleanupSystem.h"
 #include "Engine/Audio/IAudioAPI.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h" // 「誰が消えるか」の判定
 
 #include <memory>
+#include <vector>
 
 using namespace CCL::ECS;
 
-void AudioCleanupSystem::Update(float /*dt*/) {
+void AudioCleanupSystem::Update(float /*dt*/)
+{
     if (!m_world) return;
     ExecuteCleanup(*m_world);
 }
 
-// DestroyTag が付いた AudioEmitter を直接チャンク走査で狙い撃ち、鳴っている音を止める。
-// JoltCleanupSystem::ExecuteCleanup と同じ方式（破棄確定の前に確実に後始末する）。
-void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     if (!world.HasResource<std::shared_ptr<IAudioAPI>>()) return;
-    auto& api = world.GetResource<std::shared_ptr<IAudioAPI>>();
+    auto &api = world.GetResource<std::shared_ptr<IAudioAPI>>();
     if (!api) return;
 
-    auto& chunks = world.GetChunkManager().GetChunks();
-    for (auto& chunkPtr : chunks) {
-        if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
+    // DestroyTag で絞り込んではいけない。DestroyTag は削除の起点にしか付かず、
+    //   子孫は HierarchyCleanupSystem が直接破棄するため、DestroyTag で絞ると
+    //   子 Entity の音を止め損ねる（Entity が消えた後も鳴り続ける）
+    std::vector<EntityID> doomed;
+    doomed.reserve(64);
+    HierarchyCleanupSystem::CollectDoomedEntities(world, doomed);
 
-        // AudioEmitter を持ち、かつ DestroyTag がついているチャンクだけを対象にする。
-        if (!chunk->HasComponent<Tag::DestroyTag>() || !chunk->HasComponent<AudioEmitterComponent>()) continue;
+    for (EntityID id : doomed)
+    {
+        // 破棄済みの ID なら GetComponent が nullptr を返すので、それが有効判定を兼ねる
+        auto *e = world.GetComponent<AudioEmitterComponent>(id);
+        if (!e) continue;
 
-        size_t count = chunk->GetEntityCount();
-        auto* emitters = chunk->GetComponentArray<AudioEmitterComponent>();
-
-        for (size_t i = 0; i < count; ++i) {
-            if (chunk->IsEntityDestroyed(i)) continue;
-
-            AudioEmitterComponent& e = emitters[i];
-            if (e.playingId != 0) {
-                // フェードアウトは待たず即停止（実体がもう消えるため）。
-                api->StopEvent(e.playingId, /*allowFadeOut*/ false);
-            }
-            // 二重処理防止のため実行時状態を無効化しておく。
-            e.playingId  = 0;
-            e.isPlaying  = false;
-            e.activeHash = 0;
+        if (e->playingId != 0)
+        {
+            // Entity がもう消えるので、最後まで鳴らさず即停止する
+            api->StopEvent(e->playingId, /*allowFadeOut*/ false);
         }
+        // 二重に止めないよう実行時の状態を無効化しておく
+        e->playingId  = 0;
+        e->isPlaying  = false;
+        e->activeHash = 0;
     }
 }
 
-// 通常のゲーム内破棄（RequestDestroy → DestroyTag）を毎フレーム回収する。
+// ゲーム中の通常の破棄（RequestDestroy → DestroyTag）は毎ステップここで拾う
 REGISTER_LOGIC_SYSTEM(AudioCleanupSystem, Priority::LogicStage::L07_Cleanup);

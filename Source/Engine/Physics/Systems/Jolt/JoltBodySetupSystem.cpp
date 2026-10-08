@@ -2,16 +2,14 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 
-
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 
-
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
-#include <Jolt/Physics/Collision/Shape/ScaledShape.h> // スケール適用に必須
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h> // メッシュへのスケール適用
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -21,198 +19,172 @@
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
 using namespace DirectX;
 
-namespace {
-    // ヘルパー：Degree(度)から JoltのQuaternion への変換（UpdateSystemと同じもの）
-    inline JPH::Quat EulerDegreeToJoltQuat(const XMFLOAT3& eulerDegree) {
-        float pitch = XMConvertToRadians(eulerDegree.x);
-        float yaw = XMConvertToRadians(eulerDegree.y);
-        float roll = XMConvertToRadians(eulerDegree.z);
-        return JPH::Quat::sEulerAngles(JPH::Vec3(pitch, yaw, roll));
-    }
-}
-
 void JoltBodySetupSystem::Update(float dt)
 {
-    if (!m_world->HasResource<JoltPhysicsManager*>()) return;
-    auto               &joltManager   = m_world->GetResource<JoltPhysicsManager*>();
+    if (!m_world->HasResource<JoltPhysicsManager *>()) return;
+    auto               &joltManager   = m_world->GetResource<JoltPhysicsManager *>();
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
-    // IfSystem の型フィルタにより、Transform と Rigidbody を併せ持つ個体だけが渡ってくる。
-    // そのため、ここでの所持チェックは不要。
+    // Transform と Rigidbody を両方持ち、JoltHandle を持たない Entity だけが渡ってくる
     ForEachWithID([&](CCL::ECS::EntityID            id,
                       const TransformComponent     &trans,
                       const JoltRigidbodyComponent &rigid) {
-        // 【唯一の除外条件】すでに実体ID(Handle)が作られているならスキップ
-        if (m_world->HasComponent<JoltHandleComponent>(id)) {
+        // SetExclude と同じ条件の念のための確認（剛体の二重生成を防ぐ）
+        if (m_world->HasComponent<JoltHandleComponent>(id))
+        {
             return;
         }
 
         JPH::ShapeRefC shape = nullptr;
 
-        // =======================================================
-        // 1. Box Collider の生成
-        // =======================================================
-        if (auto* box = m_world->GetComponent<JoltBoxColliderComponent>(id)) {
+        // 1. Box Collider
+        if (auto *box = m_world->GetComponent<JoltBoxColliderComponent>(id))
+        {
+            // ローカルの位置・回転でずらした形状で包むところまでまとめて行う
             JPH::BoxShapeSettings baseSettings(JPH::Vec3(box->halfExtent.x, box->halfExtent.y, box->halfExtent.z));
-            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
-
-            // オフセットと回転を適用したラッパー(包み紙)でくるむ
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(box->localOffset.x, box->localOffset.y, box->localOffset.z),
-                EulerDegreeToJoltQuat(box->localRotationEuler),
-                baseShape
-            );
-            shape = offsetSettings.Create().Get();
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, box->localOffset, box->localRotationEuler, id, "Box");
         }
-        // =======================================================
-        // 2. Sphere Collider の生成
-        // =======================================================
-        else if (auto* sphere = m_world->GetComponent<JoltSphereColliderComponent>(id)) {
-            JPH::SphereShapeSettings baseSettings(sphere->radius);
-            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
-
+        // 2. Sphere Collider
+        else if (auto *sphere = m_world->GetComponent<JoltSphereColliderComponent>(id))
+        {
             // 球は回転の影響を受けないため、位置ズレのみ適用
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(sphere->localOffset.x, sphere->localOffset.y, sphere->localOffset.z),
-                JPH::Quat::sIdentity(),
-                baseShape
-            );
-            shape = offsetSettings.Create().Get();
+            JPH::SphereShapeSettings baseSettings(sphere->radius);
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, sphere->localOffset, {0.0f, 0.0f, 0.0f}, id, "Sphere");
         }
-        // =======================================================
-        // 3. Capsule Collider の生成
-        // =======================================================
-        else if (auto* capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id)) {
+        // 3. Capsule Collider
+        else if (auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id))
+        {
             JPH::CapsuleShapeSettings baseSettings(capsule->halfHeight, capsule->radius);
-            JPH::ShapeRefC baseShape = baseSettings.Create().Get();
-
-            // オフセットと回転を適用
-            JPH::RotatedTranslatedShapeSettings offsetSettings(
-                JPH::Vec3(capsule->localOffset.x, capsule->localOffset.y, capsule->localOffset.z),
-                EulerDegreeToJoltQuat(capsule->localRotationEuler),
-                baseShape
-            );
-            shape = offsetSettings.Create().Get();
+            shape = JoltShapeFactory::CreateOffsetShape(
+                baseSettings, capsule->localOffset, capsule->localRotationEuler, id, "Capsule");
         }
-        // =======================================================
-        // 4. Mesh Collider (地形) の自動抽出と生成
-        // =======================================================
-        else if (auto* meshCol = m_world->GetComponent<JoltMeshColliderComponent>(id)) {
+        // 4. Mesh Collider（地形）: 描画用モデルの頂点から形状を作る
+        else if (auto *meshCol = m_world->GetComponent<JoltMeshColliderComponent>(id))
+        {
+            // 4-1. 同じ Entity の描画用モデルを取得
+            auto *modelComp = m_world->GetComponent<ModelComponent>(id);
 
-            // 1. 同じEntityから、描画用のモデルコンポーネントを取得
-            auto* modelComp = m_world->GetComponent<ModelComponent>(id);
-
-            // モデルが無い、ロードされていない、またはタグがOFFならスキップ
+            // モデルが無い、ロードされていない、または無効ならスキップ
             if (!modelComp || !modelComp->GetModel() || !meshCol->isEnabled) return;
 
             // リソース（CPU上の頂点データ）にアクセス
-            const ModelResource* res = modelComp->GetModel()->GetResource();
+            const ModelResource *res = modelComp->GetModel()->GetResource();
             if (!res) return;
 
-            JPH::VertexList joltVertices;
+            JPH::VertexList          joltVertices;
             JPH::IndexedTriangleList joltTriangles;
 
-            // 2. ModelResource内の全メッシュから頂点とインデックスを吸い出す
-            for (const auto& mesh : res->GetMeshes()) {
+            // 4-2. ModelResource 内の全メッシュから頂点とインデックスを集める
+            for (const auto &mesh : res->GetMeshes())
+            {
                 uint32_t vertexOffset = static_cast<uint32_t>(joltVertices.size());
 
-                // 頂点の「位置座標(Position)」だけを抽出 (UVや法線は物理には不要！)
-                for (const auto& v : mesh.vertices) {
+                // 物理に要るのは位置だけ（UV や法線は使わない）
+                for (const auto &v : mesh.vertices)
+                {
                     joltVertices.push_back(JPH::Float3(v.position.x, v.position.y, v.position.z));
                 }
 
                 // インデックスを抽出（複数のメッシュを1つに合体させるためオフセットを足す）
-                for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                for (size_t i = 0; i < mesh.indices.size(); i += 3)
+                {
                     joltTriangles.push_back(JPH::IndexedTriangle(
                         mesh.indices[i + 0] + vertexOffset,
                         mesh.indices[i + 1] + vertexOffset,
-                        mesh.indices[i + 2] + vertexOffset
-                    ));
+                        mesh.indices[i + 2] + vertexOffset));
                 }
             }
 
             if (joltTriangles.empty()) return;
 
-            // 3. Joltの「純粋なメッシュ形状」を作成
+            // 4-3. スケールを掛ける前のメッシュ形状を作る
             JPH::MeshShapeSettings meshSettings(joltVertices, joltTriangles);
-            JPH::ShapeRefC rawMeshShape = meshSettings.Create().Get();
+            JPH::ShapeRefC         rawMeshShape = JoltShapeFactory::CreateChecked(meshSettings, id, "Mesh");
+            if (rawMeshShape == nullptr) return;
 
-            // 4. 最重要: Transform のスケールを物理メッシュに適用する！
-            // エディタで家を「3倍」に拡大した場合、物理判定も「3倍」に膨らませる
+            // 4-4. Transform のスケールを形状に掛ける。
+            // Jolt の剛体は Transform のスケールを持たないので、ここで掛けないと
+            // 見た目だけ拡大して当たり判定は元の大きさのままになる。
             JPH::ScaledShapeSettings scaledSettings(
                 rawMeshShape,
-                JPH::Vec3(trans.scale.x, trans.scale.y, trans.scale.z)
-            );
-            shape = scaledSettings.Create().Get();
+                JPH::Vec3(trans.scale.x, trans.scale.y, trans.scale.z));
+            shape = JoltShapeFactory::CreateChecked(scaledSettings, id, "Mesh(scaled)");
         }
 
         // コライダーコンポーネントが一つも無い場合は物理実体を作れないのでスキップ
         if (shape == nullptr) return;
 
-        // 2. Jolt剛体の生成 (Rigidbodyコンポーネントの設定値を流し込む)
-        //  ローカル座標(trans.position)ではなく、絶対座標(WorldPosition)で生成する！
+        // 剛体の生成（JoltRigidbodyComponent の設定値を渡す）。
+        //  ローカルの trans.position ではなくワールド座標で生成する。
         DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
 
         JPH::Quat initRot(worldRot.x, worldRot.y, worldRot.z, worldRot.w);
-        initRot = initRot.Normalized(); // Joltが荒ぶるのを防ぐための必須処理(正規化)
+        initRot = initRot.Normalized(); // 正規化されていない回転を渡すと Jolt のアサートや不安定な挙動になる
 
         JPH::BodyCreationSettings bodySettings(shape,
-            JPH::RVec3(worldPos.x, worldPos.y, worldPos.z),
-            initRot,
-            rigid.motionType,
-            rigid.objectLayer);
+                                               JPH::RVec3(worldPos.x, worldPos.y, worldPos.z),
+                                               initRot,
+                                               rigid.motionType,
+                                               rigid.objectLayer);
         bodySettings.mRestitution = rigid.restitution;
         bodySettings.mFriction    = rigid.friction;
 
-        // =========================================================
-        //  Joltに初速と詳細設定を叩き込む！
-        // =========================================================
+        // 初速と詳細設定
         bodySettings.mLinearVelocity = JPH::Vec3(rigid.initialVelocity.x, rigid.initialVelocity.y, rigid.initialVelocity.z);
         bodySettings.mGravityFactor  = rigid.gravityFactor;
         bodySettings.mIsSensor       = rigid.isSensor;
 
-        // 弾が高速すぎて壁をすり抜ける（トンネリング）現象を防ぐ最高品質の計算
-        if (rigid.useCCD) {
+        // 高速な物体が壁をすり抜ける（トンネリング）のを防ぐ連続衝突判定
+        if (rigid.useCCD)
+        {
             bodySettings.mMotionQuality = JPH::EMotionQuality::LinearCast;
         }
 
-        // センサー（弾）が、Kinematicな敵に当たった時にもコールバックを発生させる設定
-        if (rigid.isSensor && rigid.motionType == JPH::EMotionType::Kinematic) {
+        // Kinematic のセンサー（攻撃判定）が、Kinematic/Static のボディとの接触でもコールバックを出すようにする
+        if (rigid.isSensor && rigid.motionType == JPH::EMotionType::Kinematic)
+        {
             bodySettings.mCollideKinematicVsNonDynamic = true;
         }
 
-        // =========================================================
-        // 　Jolt剛体の記憶に、ECSのEntityIDを刻み込む！
-        // =========================================================
+        // 接触やレイキャストから Entity を引けるよう、UserData に EntityID を入れる
         bodySettings.mUserData = static_cast<JPH::uint64>(id);
 
         JPH::Body *body = bodyInterface.CreateBody(bodySettings);
 
-        // 剛体の生成に失敗した場合（上限到達など）のフェイルセーフ
+        // 剛体の生成に失敗した場合（上限到達など）
         if (body == nullptr)
         {
-            // CCL_LOG_ERROR("Physics", "Failed to create Jolt Body! EntityID: %d. Max bodies reached?", id);
-            return; // このエンティティの生成をスキップして、次のループへ
+            // 何も出さずに return してはいけない。ここを踏むと「一部のオブジェクトだけ
+            //   当たり判定が無い」という原因を追いにくい症状になる。
+            //   特に Debug は cMaxBodies=1024（Release は 65536）なので、
+            //   Debug でだけ上限に触れるケースが実際に起こりうる。
+            CCL_LOG_ERROR(LogCategory::Physics,
+                          "Jolt剛体の生成に失敗しました (Entity %llu)。ボディ数の上限に達した可能性があります",
+                          static_cast<unsigned long long>(id));
+            return; // この Entity はスキップして次へ
         }
 
-        // Static(静的)なものは最初からスリープ状態で空間に追加し、無駄な計算を省く
+        // Static は最初からスリープ状態で追加し、無駄な計算を省く
         JPH::EActivation activation = (rigid.motionType == JPH::EMotionType::Static)
                                           ? JPH::EActivation::DontActivate
                                           : JPH::EActivation::Activate;
         bodyInterface.AddBody(body->GetID(), activation);
 
-        // 3. ECSに「Handle（実体ID）」を登録
-        // これが付与されることで、次フレームからこの生成処理はスキップされ、
-        // Pull / Push / Cleanup システムがこのエンティティを認識し始める。
+        // JoltHandleComponent を付ける。これで次のステップから生成の対象外になり、
+        // Pull / Push / Cleanup の各 System がこの Entity を扱い始める。
         JoltHandleComponent handleComp;
         handleComp.bodyID = body->GetID();
         m_world->AddComponent<JoltHandleComponent>(id, handleComp);
     });
 }
 
-// 登録順序: 物理計算が始まる前の PrePhysics フェーズで剛体を生成しておく必要がある。
+// 物理計算（L04）より前に剛体を生成しておく
 REGISTER_LOGIC_SYSTEM(JoltBodySetupSystem, Priority::LogicStage::L03_PrePhysics);

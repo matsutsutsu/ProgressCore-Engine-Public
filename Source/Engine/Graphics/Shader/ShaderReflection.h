@@ -1,4 +1,15 @@
 #pragma once
+// ===========================================================================
+// 概要: コンパイル済みのシェーダーから、定数バッファ・テクスチャ・サンプラー・UAV の情報を読むクラスと、
+//       その情報から作る定数バッファ（AutoConstantBuffer）。
+//
+// 責務:
+//   - D3DReflect で .cso やバイトコードを調べ、名前・スロット・大きさ・変数の位置を集める
+//   - 定数バッファの変数に名前（またはそのハッシュ）で値を書き、まとめて GPU に送る
+//
+// 備考: Shader がこれを使い、HLSL の cbuffer の中身を C++ 側で定義しなくても
+//       マテリアルの値を名前で送れるようにしている。
+// ===========================================================================
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <wrl/client.h>
@@ -8,7 +19,6 @@
 #include <algorithm>
 #include <DirectXMath.h>
 
-// ハッシュ値を使用するためにインクルード
 #include "Engine/Core/Math/StringHash.h"
 
 #pragma comment(lib, "dxguid.lib")
@@ -16,202 +26,189 @@
 
 namespace ShaderReflect
 {
-// 定数バッファ内の変数情報
-struct VariableInfo
-{
-    std::string name;
-    uint32_t    nameHash = 0; // 名前のハッシュ値
-    UINT        offset   = 0; // バッファ内のオフセット
-    UINT        size     = 0; // 変数のサイズ(バイト)
-    // 規定値として最も一般的な float を指定、または 0 で初期化
-    D3D_SHADER_VARIABLE_TYPE type    = D3D_SVT_VOID;
-    UINT                     rows    = 0; // 行数（行列用）
-    UINT                     columns = 0; // 列数（行列用）
-};
-
-// 定数バッファ情報
-// これでVariableInfoの変数情報をまとめて持つことで
-// 「定数バッファの内容をCPU側で更新するための情報」として使える
-struct ConstantBufferInfo
-{
-    std::string               name;
-    UINT                      bindPoint = 0; // レジスタ番号 (b0, b1, ...)
-    UINT                      size      = 0; // バッファサイズ(バイト)
-    std::vector<VariableInfo> variables;     // 含まれる変数のリスト
-
-    // 名前で変数を検索
-    const VariableInfo *FindVariable(const std::string &varName) const;
-    // ハッシュ値で変数を検索（爆速）
-    const VariableInfo *FindVariable(uint32_t nameHash) const;
-};
-
-// UAV情報（RWStructuredBufferなど）
-struct UnorderedAccessViewInfo
-{
-    std::string name;
-    UINT        bindPoint = 0; // u0, u1...
-    UINT        size      = 0; // 定義されている場合
-};
-
-// テクスチャ情報
-struct TextureInfo
-{
-    std::string name;
-    uint32_t    nameHash  = 0;
-    UINT        bindPoint = 0; // レジスタ番号 (t0, t1, ...)
-    // シェーダーリソースビュー(SRV)をデフォルトとして想定
-    D3D_SHADER_INPUT_TYPE type = D3D_SIT_CBUFFER;
-    // 不明な次元として初期化
-    D3D_SRV_DIMENSION dimension = D3D_SRV_DIMENSION_UNKNOWN;
-};
-
-// サンプラー情報
-struct SamplerInfo
-{
-    std::string name;
-    uint32_t    nameHash  = 0;
-    UINT        bindPoint = 0; // レジスタ番号 (s0, s1, ...)
-};
-
-// リフレクション結果を保持するクラス
-class ReflectionData
-{
-public:
-    ReflectionData() = default;
-
-    // .csoファイルからリフレクション情報を取得
-    // HLSLをコンパイルした,csoファイルを解析してConstantBufferInfoを生成する
-    bool LoadFromCompiledFile(const char *filename);
-
-    // バイトコードからリフレクション情報を取得
-    bool LoadFromBytecode(const void *bytecode, size_t bytecodeSize);
-
-    // 既存の情報を保持したまま、別ステージの bytecode を「合成」する。
-    //
-    // VS と PS を1つの ReflectionData にまとめる用途。
-    // CB/テクスチャ/サンプラ/UAV は「名前」で重複排除する
-    // （同名は同一リソースとみなし、先に入っている方を優先）。
-    void MergeFromBytecode(const void *bytecode, size_t bytecodeSize);
-
-    // 情報取得
-    const std::vector<ConstantBufferInfo> &GetConstantBuffers() const { return constantBuffers; }
-    const std::vector<TextureInfo>        &GetTextures() const { return textures; }
-    const std::vector<SamplerInfo>        &GetSamplers() const { return samplers; }
-
-    // 名前で検索
-    const ConstantBufferInfo *FindConstantBuffer(const std::string &name) const;
-    const ConstantBufferInfo *FindConstantBufferBySlot(UINT slot) const;
-    const TextureInfo        *FindTexture(const std::string &name) const;
-    const SamplerInfo        *FindSampler(const std::string &name) const;
-
-    // テクスチャの名前からスロット番号(BindPoint)を取得
-    int FindTextureSlot(const std::string &name) const
+    // 定数バッファの中の変数1つ
+    struct VariableInfo
     {
-        for (const auto &tex : textures)
+        std::string              name;
+        uint32_t                 nameHash = 0;            // 名前のハッシュ（CCL::Utils::HashString）
+        UINT                     offset   = 0;            // バッファの先頭からの位置（バイト）
+        UINT                     size     = 0;            // 大きさ（バイト）
+        D3D_SHADER_VARIABLE_TYPE type     = D3D_SVT_VOID; // float・int など
+        UINT                     rows     = 0;            // 行の数（ベクトル・行列）
+        UINT                     columns  = 0;            // 列の数（ベクトル・行列）
+    };
+
+    // 定数バッファ1つと、その中の変数の一覧
+    struct ConstantBufferInfo
+    {
+        std::string               name;
+        UINT                      bindPoint = 0; // レジスタの番号（b0 なら 0）
+        UINT                      size      = 0; // 大きさ（バイト）
+        std::vector<VariableInfo> variables;
+
+        const VariableInfo *FindVariable(const std::string &varName) const;
+        // 名前のハッシュで探す（文字列を比べないので速い）
+        const VariableInfo *FindVariable(uint32_t nameHash) const;
+    };
+
+    // UAV（RWStructuredBuffer など）
+    struct UnorderedAccessViewInfo
+    {
+        std::string name;
+        UINT        bindPoint = 0; // レジスタの番号（u0 なら 0）
+        UINT        size      = 0; // 今は読んでいない（常に 0）
+    };
+
+    // テクスチャ
+    struct TextureInfo
+    {
+        std::string           name;
+        uint32_t              nameHash  = 0;
+        UINT                  bindPoint = 0;                         // レジスタの番号（t0 なら 0）
+        D3D_SHADER_INPUT_TYPE type      = D3D_SIT_CBUFFER;           // 読んだ後は D3D_SIT_TEXTURE
+        D3D_SRV_DIMENSION     dimension = D3D_SRV_DIMENSION_UNKNOWN; // Texture2D・Texture2DArray など
+    };
+
+    // サンプラー
+    struct SamplerInfo
+    {
+        std::string name;
+        uint32_t    nameHash  = 0;
+        UINT        bindPoint = 0; // レジスタの番号（s0 なら 0）
+    };
+
+    // 1つのシェーダー（または合成した複数のシェーダー）のリフレクションの結果
+    class ReflectionData
+    {
+    public:
+        ReflectionData() = default;
+
+        // .cso を読んで調べる（前の結果は消える）
+        bool LoadFromCompiledFile(const char *filename);
+
+        // バイトコードを調べる（前の結果は消える）
+        bool LoadFromBytecode(const void *bytecode, size_t bytecodeSize);
+
+        /**
+         * @brief 今の結果を残したまま、別のステージのバイトコードの結果を足す。
+         *
+         * 頂点シェーダーとピクセルシェーダーを1つにまとめるときに使う。
+         * 同じ名前のものは同じリソースとみなし、先に入っている方を残す。
+         */
+        void MergeFromBytecode(const void *bytecode, size_t bytecodeSize);
+
+        const std::vector<ConstantBufferInfo> &GetConstantBuffers() const { return constantBuffers; }
+        const std::vector<TextureInfo>        &GetTextures() const { return textures; }
+        const std::vector<SamplerInfo>        &GetSamplers() const { return samplers; }
+
+        const ConstantBufferInfo *FindConstantBuffer(const std::string &name) const;
+        const ConstantBufferInfo *FindConstantBufferBySlot(UINT slot) const;
+        const TextureInfo        *FindTexture(const std::string &name) const;
+        const SamplerInfo        *FindSampler(const std::string &name) const;
+
+        // テクスチャの名前からスロットの番号を引く。無ければ -1
+        int FindTextureSlot(const std::string &name) const
         {
-            if (tex.name == name) return (int)tex.bindPoint;
+            for (const auto &tex : textures)
+            {
+                if (tex.name == name) return (int)tex.bindPoint;
+            }
+            return -1;
         }
-        return -1; // 見つからない場合
-    }
 
-    // サンプラーの名前からスロット番号(BindPoint)を取得
-    int FindSamplerSlot(const std::string &name) const
-    {
-        for (const auto &samp : samplers)
+        // サンプラーの名前からスロットの番号を引く。無ければ -1
+        int FindSamplerSlot(const std::string &name) const
         {
-            if (samp.name == name) return (int)samp.bindPoint;
+            for (const auto &samp : samplers)
+            {
+                if (samp.name == name) return (int)samp.bindPoint;
+            }
+            return -1;
         }
-        return -1;
-    }
 
-    // デバッグ出力
-    void PrintInfo() const;
+        // 調べた結果をログに出す（デバッグ用）
+        void PrintInfo() const;
 
-    const std::vector<UnorderedAccessViewInfo> &GetUAVs() const { return uavs; }
-    const UnorderedAccessViewInfo              *FindUAV(const std::string &name) const;
+        const std::vector<UnorderedAccessViewInfo> &GetUAVs() const { return uavs; }
+        const UnorderedAccessViewInfo              *FindUAV(const std::string &name) const;
 
-private:
-    void ExtractReflectionInfo(ID3D11ShaderReflection *reflection);
+    private:
+        void ExtractReflectionInfo(ID3D11ShaderReflection *reflection); // 定数バッファ・テクスチャ・サンプラー・UAV の情報を読み出す
 
-    std::vector<ConstantBufferInfo> constantBuffers;
-    std::vector<TextureInfo>        textures;
-    std::vector<SamplerInfo>        samplers;
+        std::vector<ConstantBufferInfo> constantBuffers;
+        std::vector<TextureInfo>        textures;
+        std::vector<SamplerInfo>        samplers;
 
-    std::vector<UnorderedAccessViewInfo> uavs;
-};
+        std::vector<UnorderedAccessViewInfo> uavs;
+    };
 
-// 自動定数バッファ管理クラス
-class AutoConstantBuffer
-{
-public:
-    AutoConstantBuffer() = default;
-
-    // 定数バッファを作成
-    bool Create(ID3D11Device *device, const ConstantBufferInfo &info);
-
-    // 変数に値を設定（名前ベース）
-    template <typename T>
-    bool SetValue(const std::string &varName, const T &value)
+    // リフレクションで分かった形の定数バッファ。CPU 側に写しを持ち、変数を名前で書いてから GPU に送る
+    class AutoConstantBuffer
     {
-        // 1: 変数の名前から、バッファ内の「位置(offset)」を探す
-        const VariableInfo *varInfo = bufferInfo.FindVariable(varName);
-        if (!varInfo) return false;
-        if (sizeof(T) > varInfo->size) return false;
+    public:
+        AutoConstantBuffer() = default;
 
-        // 2: CPU側の作業台(cpuBuffer)の適切な位置に、データをメモリコピーする
-        memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
-        isDirty = true; // 「更新されたよ」というフラグを立てる
-        return true;
-    }
+        // info の大きさで、CPU 側の写しと GPU のバッファ（DEFAULT）を作る
+        bool Create(ID3D11Device *device, const ConstantBufferInfo &info);
 
-    // =======================================================
-    // ハッシュ値 (uint32_t) で直接設定する関数
-    // =======================================================
-    template <typename T>
-    bool SetValue(uint32_t nameHash, const T &value)
-    {
-        // ハッシュ値を使ってバッファ内の位置を探す
-        const VariableInfo *varInfo = bufferInfo.FindVariable(nameHash);
-        if (!varInfo) return false;
-        if (sizeof(T) > varInfo->size) return false;
+        // varName の変数の位置に value を書く（送るのは UpdateBuffer）。
+        // 変数が無い・value が変数より大きいなら false
+        template <typename T>
+        bool SetValue(const std::string &varName, const T &value)
+        {
+            const VariableInfo *varInfo = bufferInfo.FindVariable(varName);
+            if (!varInfo) return false;
+            if (sizeof(T) > varInfo->size) return false;
 
-        memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
-        isDirty = true;
-        return true;
-    }
+            memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
+            isDirty = true;
+            return true;
+        }
 
-    // GPU側のバッファを更新
-    void UpdateBuffer(ID3D11DeviceContext *dc);
+        // 名前のハッシュで変数を探して書く
+        template <typename T>
+        bool SetValue(uint32_t nameHash, const T &value)
+        {
+            const VariableInfo *varInfo = bufferInfo.FindVariable(nameHash);
+            if (!varInfo) return false;
+            if (sizeof(T) > varInfo->size) return false;
 
-    // バッファをバインド
-    void BindVS(ID3D11DeviceContext *dc) const;
-    void BindPS(ID3D11DeviceContext *dc) const;
-    void BindGS(ID3D11DeviceContext *dc) const;
-    void BindCS(ID3D11DeviceContext *dc) const;
+            memcpy(cpuBuffer.data() + varInfo->offset, &value, sizeof(T));
+            isDirty = true;
+            return true;
+        }
 
-    // 情報取得
-    ID3D11Buffer             *GetBuffer() const { return buffer.Get(); }
-    UINT                      GetBindPoint() const { return bufferInfo.bindPoint; }
-    const ConstantBufferInfo &GetInfo() const { return bufferInfo; }
+        // 書き換えていれば、CPU 側の写しを GPU に送る
+        void UpdateBuffer(ID3D11DeviceContext *dc);
 
-    // 構造体などの生データを直接セットする
-    void SetRawData(const void *data, size_t size);
+        // bindPoint のスロットにバインドする
+        void BindVS(ID3D11DeviceContext *dc) const;
+        void BindPS(ID3D11DeviceContext *dc) const;
+        void BindGS(ID3D11DeviceContext *dc) const;
+        void BindCS(ID3D11DeviceContext *dc) const;
 
-    // CPUバッファを全ゼロに戻す（材質ごとに「前の材質の残り値」を排除するため）。
-    //   定数バッファはシェーダー1インスタンスで共有されるので、
-    //   材質を適用する前に必ずこれで初期化してから値を積み直す。
-    //   ※ 呼び出しは Shader::UpdateMaterialProperties から。適用範囲と
-    //     「b0〜b7 に材質以外を置いてはいけない」理由はそちらに書いてある。
-    void ResetToZero()
-    {
-        std::fill(cpuBuffer.begin(), cpuBuffer.end(), static_cast<BYTE>(0));
-        isDirty = true;
-    }
+        ID3D11Buffer             *GetBuffer() const { return buffer.Get(); }
+        UINT                      GetBindPoint() const { return bufferInfo.bindPoint; }
+        const ConstantBufferInfo &GetInfo() const { return bufferInfo; }
 
-private:
-    Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-    ConstantBufferInfo                   bufferInfo;
-    std::vector<BYTE>                    cpuBuffer;       // CPU側のバッファ
-    bool                                 isDirty = false; // 更新が必要かどうか
-};
+        // data を先頭から書く（バッファより大きいぶんは切り捨てる）
+        void SetRawData(const void *data, size_t size);
+
+        /**
+         * @brief CPU 側の写しを全部 0 にする。
+         *
+         * @note Shader::UpdateMaterialProperties がマテリアルごとに呼び、前のマテリアルの値が残らないようにする（理由はそちらを参照）。
+         */
+        void ResetToZero()
+        {
+            std::fill(cpuBuffer.begin(), cpuBuffer.end(), static_cast<BYTE>(0));
+            isDirty = true;
+        }
+
+    private:
+        Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+        ConstantBufferInfo                   bufferInfo;
+        std::vector<BYTE>                    cpuBuffer;       // GPU に送る前の CPU 側の写し
+        bool                                 isDirty = false; // 前に送ってから書き換えたか
+    };
 } // namespace ShaderReflect

@@ -20,7 +20,7 @@
                     "paths": []
                 },
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.glb"
+                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.model.json"
                 },
                 "Name": {
                     "name": "TitleBossStatue"

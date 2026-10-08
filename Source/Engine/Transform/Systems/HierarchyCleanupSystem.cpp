@@ -1,13 +1,3 @@
-// ===========================================================================
-// HierarchyCleanupSystem.cpp
-// --------------------------
-// 役割:
-//   DestroyTag を起点に、死亡Entityとその子階層を安全に回収するL07システム。
-//
-// 実装の意図(Why):
-//   - 反復中の構造変更は危険なため、まず「誰を消すか」を executionList に確定
-//     させてから一括処理する。
-// ===========================================================================
 #include "HierarchyCleanupSystem.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -18,7 +8,6 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
-using namespace CCL::ECS;
 
 HierarchyCleanupSystem::HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSystem") {}
 
@@ -27,56 +16,65 @@ void HierarchyCleanupSystem::Update(float dt)
     ExecuteCleanup(*m_world);
 }
 
-// =========================================================================
-// 実際のクリーンアップ処理 (static)
-// =========================================================================
-void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
+void HierarchyCleanupSystem::CollectDoomedEntities(
+    CCL::ECS::World &world, std::vector<EntityID> &outList)
 {
-    std::vector<EntityID> executionList;
-    executionList.reserve(64);
-
-    // 1. DestroyTag を持つ「削除起点」を見つけ、子も収集する(チャンク手動走査)。
-    auto& chunks = world.GetChunkManager().GetChunks();
-    for (auto& chunkPtr : chunks) {
+    // 1. DestroyTag を持つ「削除の起点」を見つけ、子孫も集める。
+    //    static 関数なので ForEach は使えず、Chunk を直接走査する
+    auto &chunks = world.GetChunkManager().GetChunks();
+    for (auto &chunkPtr : chunks)
+    {
         if (!chunkPtr) continue;
-        auto* chunk = chunkPtr.get();
+        auto *chunk = chunkPtr.get();
         if (!chunk->HasComponent<Tag::DestroyTag>()) continue;
 
-        size_t count = chunk->GetEntityCount();
-        const EntityID* entityIDs = chunk->GetEntityIDs();
+        size_t          count     = chunk->GetEntityCount();
+        const EntityID *entityIDs = chunk->GetEntityIDs();
 
-        for (size_t i = 0; i < count; ++i) {
+        for (size_t i = 0; i < count; ++i)
+        {
             if (chunk->IsEntityDestroyed(i)) continue;
             EntityID id = entityIDs[i];
-            executionList.push_back(id);
-            if (world.HasComponent<TransformComponent>(id)) {
-                CollectChildrenRecursive(world, id, executionList);
+            outList.push_back(id);
+            if (world.HasComponent<TransformComponent>(id))
+            {
+                CollectChildrenRecursive(world, id, outList);
             }
         }
     }
 
-    // 2. 重複排除。
-    std::sort(executionList.begin(), executionList.end());
-    executionList.erase(std::unique(executionList.begin(), executionList.end()), executionList.end());
+    // 2. 起点どうしが親子の場合に同じ ID が2回入るので、重複を除く
+    std::sort(outList.begin(), outList.end());
+    outList.erase(std::unique(outList.begin(), outList.end()), outList.end());
+}
 
-    // 3. 削除の実行。
-    for (EntityID targetID : executionList) {
+void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
+{
+    std::vector<EntityID> executionList;
+    executionList.reserve(64);
 
-        if (world.HasComponent<TransformComponent>(targetID)) {
-            auto* trans = world.GetComponent<TransformComponent>(targetID);
+    CollectDoomedEntities(world, executionList);
 
-            // 死ぬ前に直下の子をルート化(死んだ親IDを子のparentに残さない)。
-            if (trans && trans->firstChildID != 0) {
+    for (EntityID targetID : executionList)
+    {
+        if (world.HasComponent<TransformComponent>(targetID))
+        {
+            auto *trans = world.GetComponent<TransformComponent>(targetID);
+
+            // 破棄する前に直下の子をルートにする（死んだ親の ID を子の parent に残さない）
+            if (trans && trans->firstChildID != 0)
+            {
                 EntityID childID = trans->firstChildID;
-                while (childID != 0) {
-                    auto* childTrans = world.GetComponent<TransformComponent>(childID);
+                while (childID != 0)
+                {
+                    auto *childTrans = world.GetComponent<TransformComponent>(childID);
                     if (!childTrans) break;
-                    EntityID nextChild = childTrans->nextSiblingID;
-                    childTrans->parent = 0;
+                    EntityID nextChild        = childTrans->nextSiblingID;
+                    childTrans->parent        = 0;
                     childTrans->prevSiblingID = 0;
                     childTrans->nextSiblingID = 0;
-                    childTrans->isDirty = true;
-                    childID = nextChild;
+                    childTrans->isDirty       = true;
+                    childID                   = nextChild;
                 }
                 trans->firstChildID = 0;
             }
@@ -88,22 +86,20 @@ void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World& world)
     }
 }
 
-// =========================================================================
-// 子供の再帰的収集 (static)
-// =========================================================================
 void HierarchyCleanupSystem::CollectChildrenRecursive(
-    CCL::ECS::World& world, EntityID currentID, std::vector<EntityID>& outList)
+    CCL::ECS::World &world, EntityID currentID, std::vector<EntityID> &outList)
 {
-    auto* trans = world.GetComponent<TransformComponent>(currentID);
+    auto *trans = world.GetComponent<TransformComponent>(currentID);
     if (!trans) return;
 
     EntityID childID = trans->firstChildID;
-    while (childID != 0) {
-        auto* childTrans = world.GetComponent<TransformComponent>(childID);
+    while (childID != 0)
+    {
+        auto *childTrans = world.GetComponent<TransformComponent>(childID);
         if (!childTrans) break;
 
         outList.push_back(childID);
-        EntityID nextSibling = childTrans->nextSiblingID; // 再帰前に次兄弟を退避
+        EntityID nextSibling = childTrans->nextSiblingID; // 再帰の前に次の兄弟を控えておく
 
         CollectChildrenRecursive(world, childID, outList);
 

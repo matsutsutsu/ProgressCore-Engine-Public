@@ -1,24 +1,33 @@
 #pragma once
+// ===========================================================================
+// 概要: World に1つだけ置くナビゲーション用の共有データ（World リソース）。
+//
+// 責務:
+//   - Detour のナビメッシュと経路探索クエリの所有と解放
+//
+// 備考: 作るのはエディタの NavMeshBuilder。
+// ===========================================================================
 #include <DetourNavMesh.h>
 #include <DetourAlloc.h>
 #include <DetourNavMeshQuery.h>
 
+struct NavigationData
+{
+    dtNavMesh      *navMesh  = nullptr; // 所有する
+    dtNavMeshQuery *navQuery = nullptr; // 経路探索用のクエリ（所有する）
 
-// Worldに1つだけ存在するナビゲーション用の共有データ
-struct NavigationData {
-    dtNavMesh* navMesh = nullptr;
-    // 次のステップで使う「経路探索用エンジン」もここに追加しておきます
-    dtNavMeshQuery* navQuery = nullptr;
+    bool showDebugDraw = true; // NavMeshDebugDrawSystem でナビメッシュを描くか
 
-    bool showDebugDraw = true; // デバッグ描画のON/OFF用
-
-    // デストラクタでメモリを完全に解放する
-    ~NavigationData() {
-        if (navQuery) {
+    // Detour の確保関数で作ったものなので、対応する解放関数で解放する
+    ~NavigationData()
+    {
+        if (navQuery)
+        {
             dtFreeNavMeshQuery(navQuery);
             navQuery = nullptr;
         }
-        if (navMesh) {
+        if (navMesh)
+        {
             dtFreeNavMesh(navMesh);
             navMesh = nullptr;
         }

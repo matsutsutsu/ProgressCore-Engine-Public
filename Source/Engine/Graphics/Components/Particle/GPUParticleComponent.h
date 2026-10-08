@@ -1,192 +1,201 @@
 #pragma once
+// ===========================================================================
+// 概要: GPU パーティクルのエフェクト1つ（複数エミッタ）を表すコンポーネント。
+//
+// 責務:
+//   - ParticleEmitterDesc: エミッタの設定（編集・保存する値）
+//   - ParticleEmitter: 設定と、エミッタごとの実行時状態
+//   - GPUParticleComponent: エミッタの配列と、エフェクト全体で共通の実行時状態
+//
+// 備考: 1 Entity = 1エフェクト = 複数エミッタ（Unreal Niagara の
+//       「1 System = 複数 Emitter」と同じ考え方）。まとめて1アセットとして編集できる。
+//       定数バッファは GPUParticleUpdateSystem が毎フレーム desc から組み立てる。
+// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/ParticleShared.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/ECS/Common/CCL_Types.h" // EntityID (アニメ連動オーナーのキャッシュ用)
+#include "Engine/ECS/Common/CCL_Types.h"
 #include <cstring>
 #include <vector>
 #include <d3d11.h>
-#include <wrl/client.h>   // ComPtr (proceduralRampSRV 用)
+#include <wrl/client.h>
 
-// =========================================================================
-// ParticleEmitterDesc — 権威データ（デザイナーが編集・シリアライズ対象）
-//
-// 設計原則:
-//   - C++ のみ。HLSL レイアウト（CbParticleStatic）に一切依存しない。
-//   - デフォルト値付き → ゼロ初期化で「動くエミッタ」になる。
-//   - シリアライズはこれだけ見ればよい。
-//   - POD ライク維持 (std::string / ComPtr を持たない)。
-//
-// 命名: camelCase。CbParticleStatic の snake_case フィールドと対応関係が
-//       BuildStaticCb() で一目でわかるよう、語幹は揃えている。
-// =========================================================================
+// ===========================================================================
+// ParticleEmitterDesc
+//   エミッタの設定。シリアライズはこの構造体だけを見ればよい。
+//   - HLSL のレイアウト（CbParticleStatic）には依存しない。
+//   - 既定値のままで動くエミッタになる。
+//   - std::string や ComPtr を持たず、そのままコピーできる形にする。
+//   名前は camelCase。CbParticleStatic の snake_case と語幹を揃え、
+//   BuildStaticCb()（GPUParticleUpdateSystem.cpp）で対応が分かるようにしている。
+// ===========================================================================
 struct ParticleEmitterDesc
 {
-    // このエミッタが何を担当しているかの表示名（「火花」「残り火」等）。
-    //
-    // 絵には一切影響しない、編集のためだけの情報。1エフェクトが複数の層で
-    // できていると、モードと個数だけでは開くまで中身が分からないため。
-    // texturePath と同じく固定長配列（desc を素直にコピーできる形を保つ）。
-    char            name[32]          = "";
+    // エミッタの表示名（「火花」「残り火」など）。描画には使わない。
+    // 1エフェクトが複数の層でできていると、モードと個数だけでは中身が分からないため付ける。
+    char name[32] = "";
 
     // ---- 発生形状 ----
-    GpuData::float2 emitRadius        = { 0.0f, 0.5f };    // emit_radius    発生半径 min/max
-    GpuData::float2 emitSize          = { 0.1f, 0.05f };   // emit_size      サイズ 誕生/消滅
+    GpuData::float2 emitRadius = {0.0f, 0.5f};  // 発生半径の最小/最大（m）
+    GpuData::float2 emitSize   = {0.1f, 0.05f}; // 粒子の大きさ（誕生時/消滅時, m）
 
-    // サイズのランダム量。0 = emitSize ちょうどで固定、1 = 0〜emitSize の一様ランダム。
-    //
-    // 既定 1 は従来の挙動（乱数がシェーダに固定で入っていた）と同じ。
-    // 衝撃波のように毎回同じ大きさで出したい効果は 0 にする。
-    float           sizeRandom        = 1.0f;              // size_random
-    GpuData::float2 coneAngle         = { 0.0f, 0.3f };    // cone_angle     放出角度範囲 (rad)
-    GpuData::float2 emitSpeed         = { 1.0f, 3.0f };    // emit_speed     初速度範囲
-    GpuData::float2 angularSpeed      = { 0.0f, 0.0f };    // emit_angular_speed
-    GpuData::float2 lifespan          = { 1.0f, 2.0f };    // lifespan       寿命範囲 (秒)
-    GpuData::float2 spawnDelay        = { 0.0f, 0.0f };    // spawn_delay    出現遅延範囲 (秒)
-    GpuData::float2 fadeDuration      = { 0.2f, 0.3f };    // fade_duration  フェード in/out (秒)
+    // 大きさのランダム量。0 で emitSize ちょうど、1 で 0〜emitSize の一様ランダム。
+    // 衝撃波のように毎回同じ大きさで出したいものは 0 にする。
+    float           sizeRandom   = 1.0f;
+
+    // 誕生→消滅の大きさの変わり方。0: 線形 1: Ease-In（加速） 2: Ease-Out（減速） 3: Ease-InOut
+    //   sizeEasePower は曲線の急さ（1 で線形と同じ、3〜5 で衝撃波らしい急な広がり）
+    int   sizeEase      = 0;
+    float sizeEasePower = 2.0f;
+    GpuData::float2 coneAngle    = {0.0f, 0.3f}; // 放出角度の範囲（rad）
+    GpuData::float2 emitSpeed    = {1.0f, 3.0f}; // 初速の範囲（m/秒）
+    GpuData::float2 angularSpeed = {0.0f, 0.0f}; // 回転速度の範囲（rad/秒）
+    GpuData::float2 lifespan     = {1.0f, 2.0f}; // 寿命の範囲（秒）
+    GpuData::float2 spawnDelay   = {0.0f, 0.0f}; // 出現までの遅れの範囲（秒）
+    GpuData::float2 fadeDuration = {0.2f, 0.3f}; // フェードイン/フェードアウトの時間（秒）
 
     // ---- 発生位置 ----
-    GpuData::float3 localOffset       = { 0, 0, 0 };       // emit_local_offset.xyz (線分モードでは始点=根本)
-    float           localOffsetY      = 0.0f;              // emit_local_offset.w (Y揺らぎ幅・ディスクモード用)
-    GpuData::float2 emitStretch       = { 1.0f, 1.0f };    // emit_stretch   x:X軸 y:Z軸倍率
+    GpuData::float3 localOffset  = {0, 0, 0};    // 発生位置のローカルなずれ（m）。線分モードでは始点（根本）
+    float           localOffsetY = 0.0f;         // Y 方向の揺らぎ幅（m）。ディスクモード用
+    GpuData::float2 emitStretch  = {1.0f, 1.0f}; // 発生範囲の倍率（x: X 軸, y: Z 軸）
 
-    // ---- 発生形状 (剣の刃に沿って撒く線分モード) ----
-    int             emitShape         = 0;                 // emit_shape 0:ディスク(既存) 1:線分(剣)
-    GpuData::float3 lineEnd           = { 0.0f, 1.0f, 0.0f }; // emit_line_end: localOffset を始点とする刃先までのローカルオフセット
+    // ---- 発生形状（剣の刃に沿って撒く線分モード） ----
+    int             emitShape = 0;                  // 0: ディスク 1: 線分（剣）
+    GpuData::float3 lineEnd   = {0.0f, 1.0f, 0.0f}; // 線分の終点（刃先）。localOffset からのローカルなずれ（m）
 
     // ---- 色 ----
-    GpuData::float4 color             = { 1, 1, 1, 1 };    // manual_color
-    int             colorMode         = 0;                  // 0:手動 1:カラーランプ
-    int             renderMode        = 0;                  // 0:加算 1:半透明
+    GpuData::float4 color      = {1, 1, 1, 1}; // 手動モードの色
+
+    // 発光の強さ。色（手動・ランプとも）に掛ける倍率で、1 で選んだ色そのまま。
+    //   描画先は HDR なので 1 を超えた分は明るく光り、ブルームがかかる。
+    //   トーンマップで白(1.0)も約 0.8 に圧縮されるので、目立たせたい粒子は 2〜5 程度に上げる。
+    float intensity = 1.0f;
+    int             colorMode  = 0;            // 0: 手動 1: カラーランプ
+    int             renderMode = 0;            // 0: 加算 1: 半透明
 
     // ---- 物理 ----
-    float           gravity           = 0.0f;
-    // 速度の上限 (units/s)。0以下 = 無制限。
-    //
-    // 既定の 10 は、以前シェーダにハードコードされていた値。既存アセットの
-    // 見た目を変えないためこの値にしてある。速い火花を作るなら上げること。
-    float           maxSpeed          = 10.0f;              // max_speed
-    float           velocityStretch   = 0.0f;
-    float           noiseScale        = 1.0f;
-    float           noiseStrength     = 0.0f;
-    GpuData::float2 uvScrollSpeed     = { 0.0f, 0.0f };
+    float gravity = 0.0f; // Y 方向の加速度（m/秒^2）。負の値で下へ落ちる
+
+    // 速度の上限（m/秒）。0 以下で無制限。速い火花を作るときは上げる。
+    float           maxSpeed        = 10.0f;
+    float           velocityStretch = 0.0f;         // 速度方向に引き伸ばす量（0 で無し）
+    float           noiseScale      = 1.0f;         // ノイズの細かさ
+    float           noiseStrength   = 0.0f;         // ノイズで動きを乱す強さ（0 で無し）
+    GpuData::float2 uvScrollSpeed   = {0.0f, 0.0f}; // テクスチャ UV のスクロール速度（UV/秒）。スプライトシートが1枚のときだけ効く
 
     // ---- 見た目 ----
-    GpuData::float2 scale             = { 1.0f, 1.0f };    // particle_scale (spawn 時にベイク)
-    GpuData::uint2  spriteGrid        = { 1, 1 };           // sprite_sheet_grid
-    int             spriteMode        = 0;                  // sprite_anim_mode 0:ランダム 1:寿命
+    GpuData::float2 scale      = {1.0f, 1.0f}; // emitSize に掛ける倍率（x: 誕生時, y: 消滅時）。生成時に大きさへ焼き込む
+    GpuData::uint2  spriteGrid = {1, 1};       // スプライトシートの分割数（列, 行）
+    int             spriteMode = 0;            // スプライトの選び方。0: ランダム 1: 寿命に合わせて進める
+
+    // 四角形の向き。0: ビルボード（カメラを向く） 1: ワールド水平（地面と平行に寝る）
+    //   2: エミッタの向きの平面（水平面をエミッタの回転で傾ける）
+    //   1・2 は空間に固定されるので、2段ジャンプの衝撃波リングのような「寝た円」が作れる。
+    //   1・2 では速度方向への引き伸ばし（velocityStretch）は効かない
+    int orientMode = 0;
 
     // ---- 放出設定 ----
-    int             maxCount          = 1000;              // max_count 唯一の権威
-    int             particleType      = 1;                  // particle_type 0:Point 1:Quad
-    int             emitMode          = 0;                  // emit_mode 0:継続 1:バースト
-    int             burstCount        = 0;                  // burst_count
+    int maxCount     = 1000; // 粒子の最大数。バッファの大きさもこれで決まる
+    int particleType = 1;    // 0: Point 1: Quad
+    int emitMode     = 0;    // 0: 継続 1: バースト
+    int burstCount   = 0;    // バースト1回で出す数
 
-    // ---- Force Field (引力/斥力/渦/ドラッグ。全て 0/既定 = 無効で従来挙動) ----
-    GpuData::float3 attractorPos      = { 0, 0, 0 };   // 中心 (attractorLocal=true なら emitter 相対)
-    float           attractorStrength = 0.0f;          // 正:引力 負:斥力 (中心での加速度 u/s^2)
-    float           attractorRadius   = 0.0f;          // 影響半径 (0=無限, >0 で滑らかに減衰)
-    float           vortexStrength    = 0.0f;          // 中心軸まわりの渦 (0=無し。引力と併用推奨)
-    float           drag              = 0.0f;          // 速度減衰 1/s (0=無し)
-    bool            attractorLocal    = true;          // true:emitter相対 false:world絶対
+    // ---- Force Field（引力・斥力・渦・抵抗。すべて 0 なら無効） ----
+    GpuData::float3 attractorPos      = {0, 0, 0}; // 引力の中心（m）。attractorLocal が true ならエミッタ相対
+    float           attractorStrength = 0.0f;      // 正で引力、負で斥力。中心での加速度（m/秒^2）
+    float           attractorRadius   = 0.0f;      // 影響半径（m）。0 で無限、正なら端に向かって滑らかに弱まる
+    float           vortexStrength    = 0.0f;      // 中心軸まわりの渦の強さ（0 で無し。引力と一緒に使う）
+    float           drag              = 0.0f;      // 速度の減衰率（1/秒。0 で無し）
+    bool            attractorLocal    = true;      // true: エミッタ相対 false: ワールド座標
 
-    // ---- アセット参照（POD 維持のため固定長配列） ----
-    char            texturePath[128]  = {};
-    char            colorRampPath[128]= {};
+    // ---- アセット参照（コピーできる形を保つため固定長配列） ----
+    char texturePath[128]   = {}; // 粒子のテクスチャ
+    char colorRampPath[128] = {}; // colorMode=1 で使うカラーランプ
 
     ParticleEmitterDesc()
     {
-        std::memset(texturePath,    0, sizeof(texturePath));
-        std::memset(colorRampPath,  0, sizeof(colorRampPath));
+        std::memset(texturePath, 0, sizeof(texturePath));
+        std::memset(colorRampPath, 0, sizeof(colorRampPath));
     }
 };
 
-// =========================================================================
-// ParticleEmitter — エミッタ1個ぶん（設定 + そのエミッタ固有のランタイム状態）
-//
-// 設計原則:
-//   - 権威データは desc に集約。CB は毎フレームシステムが desc から組み立てる。
-//   - staticDirty: desc が変更された時だけ staticCB を再 upload するフラグ。
-//     burstTrigger / isInitialized のような頻繁な変更は dynamicCB 側で処理。
-//   - GPUリソース(粒子バッファ)はエミッタ単位で持つ。将来ここを「効果全体で1本の
-//     バッファをスライスで分ける」形に変えれば Dispatch を1回に畳めるが、
-//     アセット形式(desc の配列)は変えずに済むよう、この境界で切ってある。
-// =========================================================================
+// ===========================================================================
+// ParticleEmitter
+//   エミッタ1つ分。設定（desc）と、そのエミッタだけの実行時状態を持つ。
+//   粒子バッファはエミッタごとに持つ。エフェクト全体で1本のバッファを区切って使えば
+//   Dispatch を1回にまとめられるが、その場合もアセット形式（desc の配列）は変えずに済む。
+// ===========================================================================
 struct ParticleEmitter
 {
-    ParticleEmitterDesc desc;               // 権威データ（編集・保存対象）
+    ParticleEmitterDesc desc; // 設定（編集・保存する値）
 
-    // ---- ランタイム状態（非シリアライズ） ----
-    TextureHandle        texture;
-    TextureHandle        colorRamp;
-    ParticleBufferHandle computeBuffer;
+    // ---- 実行時状態（保存しない） ----
+    TextureHandle        texture;       // desc.texturePath から読み込んだテクスチャ
+    TextureHandle        colorRamp;     // desc.colorRampPath から読み込んだカラーランプ
+    ParticleBufferHandle computeBuffer; // 粒子バッファ（ResourceManager のプールが持つ）
 
-    bool  isInitialized = false;            // false → UpdateSystem がバッファを再構築
-    bool  needsGpuInit  = true;             // true  → InitCS を走らせる
-    bool  staticDirty   = true;             // true  → staticCB を再 upload する
-    float burstTrigger  = 0.0f;             // TriggerBurst() で立て、UpdateSystem が消費
+    bool  isInitialized = false; // false なら UpdateSystem がバッファを作り直す
+    bool  needsGpuInit  = true;  // true なら InitCS を走らせる
+    bool  staticDirty   = true;  // true なら staticCB を送り直す（desc を変えたとき）
+    float burstTrigger  = 0.0f;  // TriggerBurst() で立ち、UpdateSystem が消費する
 
-    // このエミッタ実体の乱数種。GPU へ instance_seed として渡る。
-    //
-    // 0 は「未割り当て」。UpdateSystem が最初の更新で採番し、以降は変えない。
-    // これにより、同じプレハブから出した VFX でも粒子の配置が個体ごとに変わる。
-    // 非シリアライズ（保存すると全インスタンスが同じ種を共有してしまうため）。
+    // このエミッタの乱数の種。GPU へ instance_seed として渡る。
+    // 0 は未割り当てで、UpdateSystem が最初の更新で決めて以後は変えない。
+    // 同じプレハブから出した VFX でも、個体ごとに粒子の配置が変わる。
+    // 保存すると全インスタンスが同じ種になるので保存しない。
     GpuData::uint instanceSeed = 0;
 
-    // ---- アニメ連動の発生ゲート（TrailComponent と同じ区間ゲート方式） ----
-    // emitting=false の間、UpdateSystem は emit_enabled=0 を GPU へ渡し、
-    // 継続モードの粒子の「再生成」だけを止める（既存粒子は寿命まで生きて尾を引いて消える）。
-    bool emitting = true;                   // 発生マスタースイッチ。GPUへ emit_enabled として渡る。
+    // 発生のオン/オフ。GPU へ emit_enabled として渡る。
+    // false の間は継続モードの粒子を新しく出さないだけで、出ている粒子は寿命まで残る。
+    // VFX::Stop() で false になる。
+    bool emitting = true;
 
-    // インスペクタでの表示 ON/OFF。false の間は描画コマンドを積まない。
-    //
-    // 「どの層がどれか」を確かめるためのプレビュー用スイッチ。非シリアライズ。
-    // 保存対象にすると、消したまま出荷して層が欠けたことに気付けなくなる。
-    // シミュレーションは止めないので、戻せば続きから見える。
+    // インスペクタでの表示オン/オフ。false の間は描画コマンドを積まない。
+    // どの層がどれかを確かめるためのプレビュー用なので保存しない
+    // （保存すると、消したまま出荷して層が欠けても気付けない）。
+    // シミュレーションは止めないので、戻すと続きから見える。
     bool previewVisible = true;
 };
 
-// =========================================================================
-// GPUParticleComponent — 1エンティティ = 1エフェクト（エミッタ複数）
-//
-// 設計原則:
-//   - エフェクトを構成するエミッタを配列で持つ。Unreal Niagara の
-//     「1 System = 複数 Emitter」と同じ考え方で、アートが1アセットとして
-//     まとめて編集・調整できるようにする。
-//   - 位置・時間・アニメ連動といった「効果全体で共通」の状態はここに置き、
-//     エミッタ固有の状態は ParticleEmitter 側に置く。
-// =========================================================================
+// ===========================================================================
+// GPUParticleComponent
+//   エフェクトを作るエミッタの配列と、位置・時間など
+//   エフェクト全体で共通の状態を持つ。
+// ===========================================================================
 struct GPUParticleComponent
 {
-    // このエフェクトを構成するエミッタ群。常に1個以上（エディタで増減）。
-    std::vector<ParticleEmitter> emitters{ ParticleEmitter{} };
+    std::vector<ParticleEmitter> emitters{ParticleEmitter{}}; // エミッタの配列。常に1個以上（エディタで増減する）
 
-    // ---- 効果全体で共通のランタイム状態 ----
-    float time = 0.0f;                      // 累積経過時間（エミッタ間で共有）
+    // ---- エフェクト全体で共通の実行時状態 ----
+    float time = 0.0f; // 経過時間の合計（秒）。全エミッタで共有する
 
-    // true: 祖先(Animator)の Particle 区間イベントで emitting を自動駆動する。
-    // false: emitting は手動（常時ON）。既定は手動。※これのみシリアライズ対象。
-    bool animControlled = false;
-
-    // animControlled 時に解決した「Animator を持つ祖先」。Invalid は未解決(非シリアライズ)。
-    // ParticleAnimationSyncSystem が親を辿って一度だけ解決しキャッシュする。
-    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
-
-    // ---- サブフレーム補間用: 前フレームの姿勢(runtime・非シリアライズ) ----
-    // 速い剣の振りでもスポーンが1フレームの「櫛」にならず軌道上に連続配置されるよう、
-    // UpdateSystem が毎フレーム「前フレームのワールド姿勢」を保持し、spawn 時に補間する。
-    // エミッタは同じエンティティに乗っているので、この値は全エミッタで共通。
-    GpuData::float3 prevWorldPos     = { 0.0f, 0.0f, 0.0f };
-    GpuData::float4 prevWorldRot     = { 0.0f, 0.0f, 0.0f, 1.0f };
-    bool            hasPrevTransform = false; // false の初回は現在姿勢で初期化(スメアなし)
+    // ---- サブフレーム補間用の前フレームの姿勢（実行時のみ。保存しない） ----
+    // 剣を速く振っても、生成位置が1フレームごとの飛び飛びにならず軌道上に並ぶよう、
+    // UpdateSystem が前フレームのワールド姿勢を持ち、生成時に補間する。
+    // エミッタはすべて同じ Entity に乗っているので、全エミッタで共通。
+    GpuData::float3 prevWorldPos     = {0.0f, 0.0f, 0.0f};
+    GpuData::float4 prevWorldRot     = {0.0f, 0.0f, 0.0f, 1.0f};
+    bool            hasPrevTransform = false; // false の初回は今の姿勢を入れる（補間で尾を引かせない）
 
     GPUParticleComponent() = default;
 
-    // 全エミッタのバーストを1フレームだけ発動させる。
-    void TriggerBurst() { for (auto& e : emitters) e.burstTrigger = 1.0f; }
+    // 全エミッタのバーストを1フレームだけ起こす
+    void TriggerBurst()
+    {
+        for (auto &e : emitters)
+            e.burstTrigger = 1.0f;
+    }
 
-    // desc を変更した後に呼ぶ。次フレームで staticCB が再 upload される。
-    void MarkDescChanged() { for (auto& e : emitters) e.staticDirty = true; }
+    // desc を変えた後に呼ぶ。次のフレームで staticCB を送り直す
+    void MarkDescChanged()
+    {
+        for (auto &e : emitters)
+            e.staticDirty = true;
+    }
 
-    // 全エミッタの発生ゲートを一括で開閉する（アニメ連動用）。
-    void SetEmitting(bool on) { for (auto& e : emitters) e.emitting = on; }
+    // 全エミッタの発生をまとめてオン/オフする（アニメ連動用）
+    void SetEmitting(bool on)
+    {
+        for (auto &e : emitters)
+            e.emitting = on;
+    }
 };

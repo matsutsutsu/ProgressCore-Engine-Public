@@ -1,4 +1,3 @@
-// 役割・設計方針は TitleCameraSystem.h を参照。
 #include "TitleCameraSystem.h"
 
 #include "Engine/Core/Components/NameComponent.h"
@@ -17,14 +16,18 @@ using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+// ---------------------------------------------------------------------------
+// 構図の計算
+// ---------------------------------------------------------------------------
+
 DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 {
-    // 覚えていた目印が消えていたら忘れる（シーンを跨いだ場合など）。
+    // 覚えていた目印が消えていたら忘れる（シーンを切り替えたときなど）
     if (m_lookTargetID != InvalidEntityID && !m_world->IsEntityValid(m_lookTargetID))
         m_lookTargetID = InvalidEntityID;
 
-    // 見つかるまでは毎フレーム探す。プレハブ生成は遅延なので、初回の数フレームは
-    // まだ居ない可能性がある（走査は Name+Transform の1周だけなので安い）。
+    // 見つかるまでは毎フレーム探す。プレハブの生成は後回しにされるので、最初の数フレームは
+    // まだ無いことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
     if (m_lookTargetID == InvalidEntityID)
     {
         m_world->ViewEach<NameComponent, TransformComponent>([&](EntityID id) {
@@ -46,12 +49,12 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 }
 
 void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
-    const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
+                                     const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
 {
     using CCL::Title::CompositionBoard;
 
-    // ボードは「カメラが実際に構図を決めた」あとで初めて現れる。先に空の板を置くと、
-    // 群れが原点向きの構図で組んでしまう。
+    // ボードはカメラが構図を決めた後で初めて作る。先に空のボードを置くと、
+    // 群れが原点を向いた構図で並んでしまう
     if (!m_world->HasResource<CompositionBoard>())
         m_world->AddResource<CompositionBoard>();
 
@@ -79,7 +82,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
 {
     Vector3 offset = base - pivot;
 
-    // 横流し。注視点を軸にした水平回転なので、揺れても注視点は画面の同じ位置に残る。
+    // 注視点を軸に水平に回すので、揺れても注視点は画面の同じ位置に残る
     if (m_swayPeriod > 0.01f)
     {
         const float phase = m_elapsed * (XM_2PI / m_swayPeriod);
@@ -92,7 +95,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
 
     Vector3 eye = pivot + offset;
 
-    // 上下のうねり。横流しと周期をずらしてあるので、二つが合わさった軌道は長く見ても繰り返さない。
+    // 上下の揺れ。横と周期をずらしてあるので、二つを合わせた動きはなかなか繰り返さない
     if (m_risePeriod > 0.01f)
         eye.y += std::sin(m_elapsed * (XM_2PI / m_risePeriod)) * m_riseAmplitude;
 
@@ -100,14 +103,14 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
 }
 
 void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
-    const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
+                                  const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
 {
     vcam.resultPos    = eye;
     vcam.resultLookAt = pivot;
     vcam.resultUp     = Vector3::Up;
-    vcam.MarkResolved(); // 位置と注視点が揃ったので CameraBrainSystem が採用してよい
+    vcam.MarkResolved(); // 位置と注視点が決まったので、CameraBrainSystem がこの結果を使ってよい
 
-    // 位置は触らない（レベルの値がそのまま構図の入力）。向きだけ注視点から焼く。
+    // 位置は書かない（レベルの値がそのまま構図の入力）。向きだけ注視点から求めて書く
     Vector3 forward = pivot - Vector3(trans.position);
     if (forward.LengthSquared() > 1e-8f)
     {
@@ -118,6 +121,10 @@ void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans
         trans.isDirty  = true;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 void TitleCameraSystem::Update(float dt)
 {
@@ -143,8 +150,8 @@ void TitleCameraSystem::OnGui()
         const auto &board = m_world->GetResource<CCL::Title::CompositionBoard>();
         ImGui::Text("視点   (%.2f, %.2f, %.2f)", board.eye.x, board.eye.y, board.eye.z);
         ImGui::Text("注視点 (%.2f, %.2f, %.2f)%s", board.lookTarget.x, board.lookTarget.y,
-            board.lookTarget.z,
-            (m_lookTargetID != InvalidEntityID) ? "" : "  ※目印なし(既定値)");
+                    board.lookTarget.z,
+                    (m_lookTargetID != InvalidEntityID) ? "" : "  ※目印なし(既定値)");
         ImGui::Text("画角 %.1f度 / 構図の更新回数 %u", board.fov, board.revision);
     }
 

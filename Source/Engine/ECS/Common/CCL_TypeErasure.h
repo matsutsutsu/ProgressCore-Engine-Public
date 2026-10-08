@@ -1,25 +1,24 @@
 #pragma once
 // ===========================================================================
-// CCL_TypeErasure.h
-// -----------------
-// 「型情報が消えた生メモリ (void*) 」に対して、
-// その型本来のコンストラクタ・デストラクタを正しく呼び出すための
-// 「型消去（Type Erasure）」ユーティリティ群です。
+// 概要: 型情報が消えた生メモリ（void*）に対して、その型本来のデストラクタ・
+//       コピーコンストラクタを呼ぶための型消去（Type Erasure）ユーティリティ。
 //
-// Chunk は SoA 形式で複数の型のコンポーネントを生メモリで保持しますが、
-// その時点では型情報が消えています。エンティティ削除時や
-// Chunk → Chunk 移動時に「正しい型」として破棄・コピーするため、
-// 事前に「掃除の仕方」「複製の仕方」を関数ポインタとして登録しておきます。
+// 責務:
+//   - Destructor: 型を消した状態でデストラクタを呼ぶ
+//   - Copier:     型を消した状態でコピー構築する
+//
+// 備考: Chunk は SoA で複数型のコンポーネントを生メモリに持つので、その時点で
+//       型情報は消えている。Entity 削除や Chunk 間移動で「正しい型」として
+//       破棄・コピーできるよう、事前にやり方を関数ポインタで登録しておく。
 // ===========================================================================
 
 #include <new> // placement new
 
-
 namespace CCL::ECS
 {
-    // ------------------------------------------------------------------
+    // ============================================================
     // Destructor
-    // ------------------------------------------------------------------
+    // ============================================================
 
     /**
      * @brief 任意型 T のデストラクタを、型を消した状態で呼び出せるよう包んだ
@@ -45,9 +44,9 @@ namespace CCL::ECS
         /**
          * @brief この Destructor が破棄を担当する型 T を登録する。
          *
-         * 型 T 用のデストラクタ呼び出し関数 (CallDestructorFromPtr<T>) を
-         * 関数ポインタとして保存します。これ以降、型情報を失った void* に
-         * 対しても、Destruct() を呼び出すだけで本来のデストラクタが走ります。
+         * 型 T 用のデストラクタ呼び出し関数（CallDestructorFromPtr<T>）を
+         * 関数ポインタとして保存する。以降は型情報を失った void* に対しても、
+         * Destruct() を呼ぶだけで本来のデストラクタが走る。
          */
         template <class T>
         void Create()
@@ -59,7 +58,7 @@ namespace CCL::ECS
          * @brief 登録済みの破棄関数を実行する。
          * @param dataPtr 破棄したいオブジェクトへの生ポインタ
          */
-        void Destruct(void* dataPtr) const
+        void Destruct(void *dataPtr) const
         {
             if (destructFunc) destructFunc(dataPtr);
         }
@@ -67,15 +66,13 @@ namespace CCL::ECS
         /**
          * @brief void* を T* に復元して T のデストラクタを直接呼ぶ静的ヘルパー。
          *
-         * reinterpret_cast によって型を復元し、明示的にデストラクタを呼び出します。
-         * Chunk のメモリは placement new で構築されているため、
-         * delete ではなく明示的なデストラクタ呼び出しが必要です。
+         * Chunk のメモリは placement new で構築しているので、delete ではなく
+         * 明示的なデストラクタ呼び出しで破棄する必要がある。
          */
         template <class T>
-        static void CallDestructorFromPtr(void* dataPtr)
+        static void CallDestructorFromPtr(void *dataPtr)
         {
-            // void* → T* に復元してデストラクタを呼ぶ
-            if (dataPtr) reinterpret_cast<T*>(dataPtr)->~T();
+            if (dataPtr) reinterpret_cast<T *>(dataPtr)->~T();
         }
 
     private:
@@ -83,13 +80,12 @@ namespace CCL::ECS
         //   void  (*destructFunc)(void*) = nullptr;
         //    └戻値  └ポインタ名         └引数リスト
         // → 「void* を1つ受け取って void を返す関数」を指すポインタ
-        void (*destructFunc)(void*) = nullptr;
+        void (*destructFunc)(void *) = nullptr;
     };
 
-
-    // ------------------------------------------------------------------
+    // ============================================================
     // Copier
-    // ------------------------------------------------------------------
+    // ============================================================
 
     /**
      * @brief 型情報が消えた void* に対して、正しいコピーコンストラクタを
@@ -99,8 +95,7 @@ namespace CCL::ECS
      *   - Entity が別の Archetype に移動するときのデータ複製
      *   - Chunk が満杯になり別 Chunk へ詰め替えるときの複製
      *
-     * いずれも「型情報は失われているが、データは保持したまま移動したい」
-     * というシナリオで必要になります。
+     * いずれも「型情報は失われているが、データは保持したまま移したい」場面で使う。
      */
     class Copier
     {
@@ -117,7 +112,7 @@ namespace CCL::ECS
          * @param dst コピー先の未初期化メモリ
          * @param src コピー元のオブジェクト
          */
-        void Copy(void* dst, const void* src) const
+        void Copy(void *dst, const void *src) const
         {
             if (copyFunc) copyFunc(dst, src);
         }
@@ -131,12 +126,12 @@ namespace CCL::ECS
          *    └─ placement new: 既に確保済みのメモリ位置に直接構築
          */
         template <class T>
-        static void CallCopyFromPtr(void* dst, const void* src)
+        static void CallCopyFromPtr(void *dst, const void *src)
         {
-            new (dst) T(*reinterpret_cast<const T*>(src));
+            new (dst) T(*reinterpret_cast<const T *>(src));
         }
 
-        void (*copyFunc)(void*, const void*) = nullptr;
+        void (*copyFunc)(void *, const void *) = nullptr;
     };
 
 } // namespace CCL::ECS

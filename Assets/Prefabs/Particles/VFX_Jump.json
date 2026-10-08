@@ -3,7 +3,6 @@
         {
             "components": {
                 "GPUParticle": {
-                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -55,6 +54,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
+                            "intensity": 1.0,
                             "lifespan": [
                                 0.5,
                                 0.5
@@ -75,12 +75,15 @@
                             "name": "Spark",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 1,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 10.0
                             ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -149,6 +152,7 @@
                                 0.30000001192092896
                             ],
                             "gravity": 0.0,
+                            "intensity": 1.0,
                             "lifespan": [
                                 0.5,
                                 1.0
@@ -169,12 +173,15 @@
                             "name": "Dust",
                             "noiseScale": 1.0,
                             "noiseStrength": 7.599999904632568,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -243,6 +250,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
+                            "intensity": 1.0,
                             "lifespan": [
                                 0.5,
                                 0.5
@@ -263,12 +271,15 @@
                             "name": "Spark_Dark",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 1,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 10.0
                             ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -302,7 +313,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 0,
                     "position": [
                         0.0,
                         5.0,

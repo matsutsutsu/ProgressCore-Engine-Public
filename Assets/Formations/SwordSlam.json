@@ -1,0 +1,60 @@
+{
+  "assign": {
+    "fillOrder": "ColumnFirst",
+    "rows": 0,
+    "sideGroups": 1,
+    "split": "Block",
+    "tierGroups": 1
+  },
+  "attackSeconds": 0.5,
+  "layers": [
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "from": 0.0,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 100.0,
+      "type": "Rotate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
+  "layout": {
+    "baseA": 0.0,
+    "baseB": 0.0,
+    "centerColumns": true,
+    "columnAxis": "Right",
+    "modelPath": "Assets/Models/Weapon/Sword.gltf",
+    "modelPitch": 0.0,
+    "modelRoll": 0.0,
+    "modelScale": 6.0,
+    "modelYaw": 0.0,
+    "shape": "Model",
+    "spacingA": 3.0,
+    "spacingB": 4.0,
+    "tierStepB": 0.0
+  },
+  "name": "剣の振り下ろし",
+  "origin": {
+    "forward": 5.0,
+    "right": 0.0,
+    "up": 2.0
+  },
+  "output": {
+    "chargeMode": "RigidFollow",
+    "clampToGround": false,
+    "combat": {
+      "damage": 12.0,
+      "hitRadius": 2.5,
+      "hitStopDuration": 0.05,
+      "hitStopScale": 0.0,
+      "knockback": 12.0
+    },
+    "look": "Auto",
+    "useShiverTelegraph": true
+  },
+  "slot": 33,
+  "telegraphSeconds": 1.5
+}

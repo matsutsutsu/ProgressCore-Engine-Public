@@ -1,5 +1,5 @@
 {
-    "duration": 0.8333332538604736,
+    "duration": 0.8333333134651184,
     "events": [],
     "rootMotionCurve": {
         "color": 4286643968,
@@ -18,6 +18,6 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Hit_Combat_R_Seq_0",
+    "targetAnimName": "HitReact_Right_0",
     "targetModelPath": ""
 }

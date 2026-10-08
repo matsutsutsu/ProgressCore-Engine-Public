@@ -1,0 +1,66 @@
+{
+  "assign": {
+    "fillOrder": "RowFirst",
+    "rows": 2,
+    "sideGroups": 2,
+    "split": "Interleaved",
+    "tierGroups": 1
+  },
+  "attackSeconds": 0.3333,
+  "layers": [
+    {
+      "axis": "Up",
+      "duration": 1.0,
+      "from": 85.94367,
+      "mirror": true,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 0.0,
+      "type": "Rotate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    },
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "from": 0.0,
+      "mirror": true,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 0.8,
+      "type": "Translate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
+  "layout": {
+    "baseA": 3.0,
+    "baseB": 0.8,
+    "centerColumns": false,
+    "columnAxis": "Forward",
+    "spacingA": 3.0,
+    "spacingB": 3.0,
+    "tierStepB": 0.0
+  },
+  "name": "挟み込み1段",
+  "origin": {
+    "forward": 0.0,
+    "right": 0.0,
+    "up": 1.0
+  },
+  "output": {
+    "chargeMode": "RigidFollow",
+    "clampToGround": false,
+    "combat": {
+      "damage": 8.0,
+      "hitRadius": 2.5,
+      "hitStopDuration": 0.05,
+      "hitStopScale": 0.0,
+      "knockback": 12.0
+    },
+    "look": "ToPlayer",
+    "useShiverTelegraph": true
+  },
+  "slot": 25,
+  "telegraphSeconds": 1.5
+}

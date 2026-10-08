@@ -1,38 +1,56 @@
 #pragma once
-
+// ===========================================================================
+// 概要: Assets フォルダの中身を、フォルダツリーとアイコンのグリッドで表示するブラウザ。
+//
+// 責務:
+//   - フォルダを走査して木構造を作る（Refresh で作り直す）
+//   - 戻る・進む・上へ・パンくずリストでの移動
+//   - 名前の検索と、種類ごとの表示フィルタ
+//   - モデル・プレハブのファイルをドラッグ＆ドロップの送り元にする
+//
+// 備考: AssetBrowserWindow が所有して描く。アイコンは ShellIconLoader で OS 標準のものを使う。
+// ===========================================================================
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <filesystem>
 #include <d3d11.h>
-#include <DirectXTex.h>
 #include <wrl/client.h>
 
 namespace fs = std::filesystem;
 
 class AssetBrowser
 {
-  public:
+public:
     AssetBrowser(const std::string &rootPath, ID3D11Device *device);
     ~AssetBrowser();
 
     void Draw();
-    void Refresh();
+    void Refresh(); // フォルダを走査し直し、履歴と選択を初期化する
 
-  private:
+private:
     struct AssetNode
     {
         std::string            name;                // ファイル/フォルダ名
         fs::path               path;                // 実際のファイルパス
         bool                   isDirectory = false; // フォルダかどうか
         std::vector<AssetNode> children;            // 子要素
-        AssetNode             *parent = nullptr;    // 親ノードへのポインタ（パンくずリスト用）
+        AssetNode             *parent = nullptr;    // 親ノード（パンくずリスト用）
     };
-
 
     // ディレクトリ走査
     void LoadDirectory(const fs::path &dirPath, AssetNode &node);
-    void SetParents(AssetNode &node, AssetNode *parent); // ポインタの安全な再構築
+
+    /**
+     * @brief node 以下の parent を張り直す。
+     *
+     * children は vector なので、走査中の追加で要素が移動し、その時点で取ったポインタは無効になる。
+     * 木が完成してから一括で設定する。
+     *
+     * @param node   張り直す木の根。
+     * @param parent node の親。根なら nullptr。
+     */
+    void SetParents(AssetNode &node, AssetNode *parent);
 
     // ナビゲーション機能
     void NavigateTo(AssetNode *folder);
@@ -48,14 +66,13 @@ class AssetBrowser
     void DrawSearchBar();
 
     // ユーティリティ
-    AssetNode  *FindNodeByPath(AssetNode &node, const fs::path &path);
-    bool        FilterAsset(const AssetNode &node);
+    AssetNode *FindNodeByPath(AssetNode &node, const fs::path &path);
+    bool       FilterAsset(const AssetNode &node); // 表示するなら true（フォルダは常に true）
 
-  private:
+private:
     AssetNode   rootNode; // ルートノード
     std::string rootPath; // ルートパス
 
-    // 状態管理アーキテクチャの刷新
     AssetNode  *currentFolder = nullptr; // 右ペインで表示中のフォルダ
     std::string selectedAssetPath;       // 選択中のアセットのパス
 
@@ -67,5 +84,5 @@ class AssetBrowser
     std::string                           searchQuery; // 検索クエリ
     std::unordered_map<std::string, bool> typeFilters; // 種別フィルタ
 
-    ID3D11Device *device; // D3D11デバイス（アイコン作成用）
+    ID3D11Device *device; // アイコンのテクスチャを作るデバイス（所有しない）
 };

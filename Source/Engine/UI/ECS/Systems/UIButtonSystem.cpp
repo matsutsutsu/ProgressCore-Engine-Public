@@ -1,4 +1,3 @@
-// 役割・設計方針は UIButtonSystem.h を参照。
 #include "UIButtonSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
@@ -17,8 +16,8 @@ void UIButtonSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID id, const UIInteractableComponent &inter,
                       const UIButtonComponent &btn, UIImageComponent &img) {
-        // 状態に応じた色へ差し替え（Disabled > Pressed > Hover/Focus > Normal の優先）。
-        // マウスhover と パッド/キーfocus は同じハイライト扱い。
+        // 状態に応じた色へ差し替える（優先度は 無効 > 押下 > hover/focus > 通常）。
+        // マウスの hover とパッド/キーの focus は同じハイライトにする
         if (!inter.interactable)
             img.color = btn.disabledColor;
         else if (inter.isPressed)
@@ -28,14 +27,14 @@ void UIButtonSystem::Update(float /*dt*/)
         else
             img.color = btn.normalColor;
 
-        // hover/focus で拡大演出（UIAnimationComponent があれば目標スケールを設定）。
+        // hover/focus で拡大する（UIAnimationComponent がある場合だけ）
         if (auto *anim = m_world->GetComponent<UIAnimationComponent>(id))
         {
-            const bool hot     = inter.interactable && (inter.isHovered || inter.isFocused);
-            anim->targetScale  = hot ? btn.hoverScale : 1.0f;
+            const bool hot    = inter.interactable && (inter.isHovered || inter.isFocused);
+            anim->targetScale = hot ? btn.hoverScale : 1.0f;
         }
 
-        // クリック成立でイベント発火（ゲーム側がハッシュで分岐）
+        // クリックされたらイベントを発行する（ゲーム側がハッシュで処理を分ける）
         if (inter.clicked)
         {
             const uint32_t hash = btn.onClickAction.empty()
@@ -44,7 +43,7 @@ void UIButtonSystem::Update(float /*dt*/)
             m_world->GetEventBus().Publish(UIButtonClickedEvent{id, hash});
 
             CCL_LOG_INFO(LogCategory::Game, "[UIButton] clicked %s action='%s'",
-                CCL::EntityLabel(*m_world, id).c_str(), btn.onClickAction.c_str());
+                         CCL::EntityLabel(*m_world, id).c_str(), btn.onClickAction.c_str());
         }
     });
 }

@@ -1,6 +1,6 @@
 #include "CameraListenerSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Audio/IAudioAPI.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -10,33 +10,30 @@ using namespace DirectX::SimpleMath;
 
 CameraListenerSystem::CameraListenerSystem() : SystemBase("CameraListenerSystem") {}
 
-void CameraListenerSystem::Update(float dt) {
+void CameraListenerSystem::Update(float dt)
+{
     if (!m_world) return;
 
-    // カメラとオーディオの両方が存在するかチェック
-    if (!m_world->HasResource<Camera*>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (!m_world->HasResource<Camera *>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
-    Camera* mainCamera = m_world->GetResource<Camera*>();
-    auto& audioAPI = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
+    Camera *mainCamera = m_world->GetResource<Camera *>();
+    auto   &audioAPI   = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
 
     if (!mainCamera || !audioAPI) return;
 
-    // カメラの情報を取得
-    Vector3 pos = mainCamera->GetEye();
+    Vector3 pos    = mainCamera->GetEye();
     Vector3 lookAt = mainCamera->GetFocus();
-    Vector3 up = mainCamera->GetUp();
+    Vector3 up     = mainCamera->GetUp();
 
-    // 視線ベクトル（Forward）を計算
     Vector3 forward = lookAt - pos;
     forward.Normalize();
 
-    // FMODにリスナー（耳）の情報を送信
+    // DXTK Audio の AudioListener へ渡す
     audioAPI->SetListenerPosition(
-        { pos.x, pos.y, pos.z },
-        { forward.x, forward.y, forward.z },
-        { up.x, up.y, up.z }
-    );
+        {pos.x, pos.y, pos.z},
+        {forward.x, forward.y, forward.z},
+        {up.x, up.y, up.z});
 }
 
-// カメラの位置が確定した後（RenderStageの最初の方）で実行する
+// CameraBrainSystem(R01b) がメインカメラを確定した後に読む
 REGISTER_RENDER_SYSTEM(CameraListenerSystem, Priority::RenderStage::R02_Environment);

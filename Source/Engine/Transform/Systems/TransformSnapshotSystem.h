@@ -1,19 +1,22 @@
-// TransformSnapshotSystem.h
 #pragma once
+// ===========================================================================
+// 概要: 描画補間のため、毎 FixedUpdate の最初に position/rotation を
+//       prevPosition/prevRotation へ退避する System。
+//
+// 責務:
+//   - 各ステップの開始時点の姿勢を控えておく（補間の起点）
+//
+// 備考: Fix Your Timestep パターンの「previousState = currentState」に相当する。
+//       これが無いと、物理が複数ステップ進んだフレームで補間の起点がずれる。
+//       入力・物理より前（L01_Input）に必ず実行すること。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-/**
- * @brief 描画補間のため、毎FixedUpdateの最初に position/rotation を
- *        prevPosition/prevRotation へ退避するシステム。
- * @note Fix Your Timestep パターンの「previousState = currentState」に相当。
- *       これが無いと、物理が複数ステップ進んだフレームで補間の起点がズレる。
- * @warning 入力・物理より前に必ず実行すること（L01_Input と同優先度で並列可）。
- */
 class TransformSnapshotSystem : public CCL::ECS::IfSystem<TransformSnapshotSystem,
-                                    CCL::ECS::Write<TransformComponent>>
+                                                          CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     TransformSnapshotSystem()
         : IfSystem("TransformSnapshotSystem")
     {

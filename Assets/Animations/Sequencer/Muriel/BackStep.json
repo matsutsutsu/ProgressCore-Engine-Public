@@ -1,5 +1,5 @@
 {
-    "duration": 1.3,
+    "duration": 1.2999999523162842,
     "events": [],
     "rootMotionCurve": {
         "color": 4286643968,
@@ -18,6 +18,6 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jog_Bwd_Start",
+    "targetAnimName": "Jog_Bwd_Start_0",
     "targetModelPath": ""
 }

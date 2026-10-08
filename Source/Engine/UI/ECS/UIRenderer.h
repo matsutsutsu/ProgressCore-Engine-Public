@@ -1,10 +1,14 @@
 #pragma once
-// UIDrawList を2Dパスで実際に描画するヘルパー（画像=Sprite / 文字=TextRenderer）。
+// ===========================================================================
+// 概要: UIDrawList を 2D パスで描くクラス UIRenderer（画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer）。
 //
-// 設計方針:
-//   - BaseScene::Render() の2Dパス（blend/depth 設定済み）から Flush を呼ぶ。
-//   - 画像/テキストを sortOrder 昇順で一括描画し、末尾で描画リストをクリアする（消費時クリア）。
-//   - Sprite はパス単位でキャッシュ。texturePath 空は白ダミーでSolid塗り。
+// 責務:
+//   - 描画アイテムを sortOrder 昇順に描き、加算合成のものは最後にまとめて描く
+//   - 描き終えたら描画リストをクリアする
+//   - Sprite をパスごとにキャッシュする（texturePath が空なら白テクスチャで単色塗り）
+//
+// 備考: BaseScene::Render() の 2D パス（ブレンド・深度の設定済み）から Flush を呼ぶ。
+// ===========================================================================
 #include <d3d11.h>
 #include <memory>
 #include <string>
@@ -12,6 +16,7 @@
 #include <vector>
 
 class Sprite;
+class UIGaugeSprite;
 class TextRenderer;
 class RenderState;
 struct UIDrawList;
@@ -19,7 +24,7 @@ struct UIDrawItem;
 
 class UIRenderer
 {
-  public:
+public:
     // Sprite/TextRenderer が前方宣言（unique_ptr）のため特殊メンバは .cpp で定義する。
     UIRenderer();
     ~UIRenderer();
@@ -32,8 +37,8 @@ class UIRenderer
     void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
                RenderState *renderState = nullptr);
 
-  private:
-    // DrawItems がどのアイテムを描くか。
+private:
+    // DrawItems がどのアイテムを描くか
     enum class BlendPass
     {
         All,      // additive を無視して全部（合成を切り替えられない時のフォールバック）
@@ -41,15 +46,21 @@ class UIRenderer
         Additive, // additive == true  のものだけ
     };
 
-    // 並び替え済みのアイテム列から、pass に該当するものだけを描く。
+    // 並び替え済みのアイテム列から、pass に該当するものだけを描く
     void DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                    const std::vector<const UIDrawItem *> &ordered, BlendPass pass);
 
-    Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パス=白ダミー
-    TextRenderer *GetText(ID3D11Device *device);                            // 遅延初期化
+    Sprite       *GetWhite(ID3D11Device *device);                            // 単色塗り用の白テクスチャ（初回に生成）
+    Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パスなら白テクスチャ
+    TextRenderer *GetText(ID3D11Device *device);                            // 初回に初期化
+    UIGaugeSprite *GetGauge(ID3D11Device *device);                          // 初回に生成
 
-    std::unique_ptr<Sprite>                                  m_white; // 単色塗り用
-    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache; // テクスチャ別
-    std::unique_ptr<TextRenderer>                            m_text;  // フォント（遅延初期化）
-    bool                                                     m_textTried = false;
+    std::unique_ptr<Sprite>        m_white; // 単色塗り用
+    std::unique_ptr<UIGaugeSprite> m_gauge; // ゲージ用（全ゲージで1つを使い回す）
+
+    // テクスチャ別のキャッシュ。値が null のエントリは「そのパスは読めなかった」印で、
+    // 毎フレームの再読み込みと警告を止めるために残す（描画には白テクスチャを使う）
+    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache;
+    std::unique_ptr<TextRenderer>                            m_text;              // フォント（初回に初期化）
+    bool                                                     m_textTried = false; // 初期化を試みたか（失敗しても再試行しない）
 };

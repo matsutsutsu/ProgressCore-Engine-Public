@@ -1,0 +1,23 @@
+{
+    "duration": 0.46666666865348816,
+    "events": [],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "LeapStart",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "targetAnimName": "Jump_Start_0",
+    "targetModelPath": ""
+}

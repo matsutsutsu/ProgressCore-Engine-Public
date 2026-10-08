@@ -1,12 +1,14 @@
-// ポーズ中に背景（ゲーム画面）だけをぼかすポストエフェクト。
-//
-// 設計方針:
-//   - チェーンの最後尾に置く。ブルームや色調補正まで済んだ「完成した絵」をぼかすため。
-//   - UI は 2Dパス（ポストプロセスの後）で描かれるので、メニューはぼけない。
-//     この順序が「背景だけ引っ込んでメニューが浮く」画を作っている。
-//   - 半径の駆動は PostProcessSystem が行う（ポーズ状態は Game 側の関心事で、
-//     エフェクト自身が GameFlowState を知る必要はない）。
 #pragma once
+// ===========================================================================
+// 概要: ポーズ中にゲームの画面だけをぼかすエフェクト。
+//
+// 責務:
+//   - PauseBlurPS を1回かける。半径が 0 なら入力をそのまま写す
+//
+// 備考: エフェクトの列の最後に置き、ブルームや色の補正まで済んだ絵をぼかす。
+//       UI はポストプロセスの後に描くので、メニューはぼけずに浮いて見える。
+//       半径は PostProcessSystem が決める（ポーズかどうかはゲーム側の状態なので、このクラスは知らない）。
+// ===========================================================================
 #include "IPostEffect.h"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include <d3d11.h>
@@ -16,22 +18,23 @@
 class PauseBlurEffect : public IPostEffect
 {
 public:
-    PauseBlurEffect() = default;
+    PauseBlurEffect()           = default;
     ~PauseBlurEffect() override = default;
 
-    void Initialize(ID3D11Device* device, UINT width, UINT height) override;
-    void Resize(ID3D11Device* device, UINT width, UINT height) override;
-    void Process(ID3D11DeviceContext* dc,
-                 ID3D11ShaderResourceView* inputSRV,
-                 ID3D11RenderTargetView* outputRTV) override;
+    void Initialize(ID3D11Device *device, UINT width, UINT height) override;
+    void Resize(ID3D11Device *device, UINT width, UINT height) override;
+    void Process(ID3D11DeviceContext      *dc,
+                 ID3D11ShaderResourceView *inputSRV,
+                 ID3D11RenderTargetView   *outputRTV) override;
 
-    const char* GetName() const override { return "PauseBlur"; }
-    void UpdateParams(const GpuData::CbPauseBlurData& data) { m_cbData = data; }
+    const char *GetName() const override { return "PauseBlur"; }
+    void        UpdateParams(const GpuData::CbPauseBlurData &data) { m_cbData = data; }
 
 private:
     GpuData::CbPauseBlurData m_cbData{};
 
-    struct Resources {
+    struct Resources
+    {
         Microsoft::WRL::ComPtr<ID3D11VertexShader> vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader>  ps;
         Microsoft::WRL::ComPtr<ID3D11Buffer>       cb;

@@ -1,23 +1,32 @@
 #pragma once
+// ===========================================================================
+// 概要: エンジン全体で共有するコアサービスを1か所に預かるシングルトン。
+//
+// 責務:
+//   - オーディオ・物理・入力・ジョブプール・カメラ・ライト・ポストプロセスの保持
+//
+// 備考: 生成と初期化は Framework のコンストラクタで行う。ここは預かるだけ。
+// ===========================================================================
 #include <memory>
 
-// 前方宣言
 class IAudioAPI; // オーディオバックエンド抽象（実体は DxtkAudioManager 等）
 class JoltPhysicsManager;
 class InputFacade;
 
-// 描画関連の前方宣言
 class Camera;
 class LightManager;
 class PostProcessManager;
 
-// ECSのジョブプール（前方宣言）
-namespace CCL::ECS { class JobSystem; }
+namespace CCL::ECS
+{
+    class JobSystem;
+}
 
-// ゲームエンジン全体で共有されるコアシステムを保管する「仲介役」
-class EngineServices {
+class EngineServices
+{
 public:
-    static EngineServices& Instance() {
+    static EngineServices &Instance()
+    {
         static EngineServices instance;
         return instance;
     }
@@ -26,14 +35,14 @@ public:
     std::shared_ptr<JoltPhysicsManager> physicsManager;
     std::shared_ptr<InputFacade>        inputFacade;
 
-    // ECSのフレーム並列で全Worldが共有する唯一のジョブプール。
+    // ECS のフレーム並列で全 World が共有する唯一のジョブプール。
     // スレッドプールはハードウェア資源（1コア1ワーカー）なので、World/SystemManager
     // ごとに持たず、上層で1つだけ所有して各 SystemManager へ注入する。
     // ※ シーン非同期ロード用のプールは別（SceneManager が持つ）。長時間ジョブを
     //    フレーム並列の WaitForCounter が work-stealing で拾う事故を防ぐため分離している。
     std::shared_ptr<CCL::ECS::JobSystem> jobSystem;
 
-    // グローバルな描画リソース
+    // 全シーンで共有する描画リソース
     std::shared_ptr<Camera>             camera;
     std::shared_ptr<LightManager>       lightManager;
     std::shared_ptr<PostProcessManager> postProcess;

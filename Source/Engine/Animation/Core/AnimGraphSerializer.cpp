@@ -1,31 +1,45 @@
 #include "AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <fstream>
-#include <iomanip> // std::setw 用
 
 bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::string &filepath)
 {
-    std::ofstream os(filepath);
+    // 「先に全て文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
+    //   ofstream は開いた時点で既存ファイルを空にする。先に開いてから to_json が例外を投げると、
+    //   catch には入るが元のファイルは既に失われている
+
+    std::string text;
+    try
+    {
+        json j = graph; // to_json が呼ばれる
+        text   = j.dump(4);
+    }
+    catch (const std::exception &e)
+    {
+        // ここで抜ければ既存ファイルは無傷のまま
+        CCL_LOG_ERROR(LogCategory::Editor, "JSON Save Error: %s", e.what());
+        return false;
+    }
+
+    std::ofstream os(filepath, std::ios::out | std::ios::trunc | std::ios::binary);
     if (!os.is_open())
     {
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Save: cannot open '%s'", filepath.c_str());
         return false;
     }
 
-    try
+    os.write(text.data(), static_cast<std::streamsize>(text.size()));
+    os.flush();
+    if (!os)
     {
-        json j = graph; // to_json が自動的に呼ばれる
-        os << std::setw(4) << j << std::endl;
-    }
-    catch (const std::exception &e)
-    {
-        CCL_LOG_ERROR(LogCategory::Editor, "JSON Save Error: %s", e.what());
+        // 書き込み中の失敗（ディスク不足など）。この場合はファイルが壊れている
+        CCL_LOG_ERROR(LogCategory::Editor, "JSON Save: write failed '%s'", filepath.c_str());
         return false;
     }
     return true;
 }
 
-bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath, const std::vector<AnimSequence> &availableSequences)
+bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath)
 {
     std::ifstream is(filepath);
     if (!is.is_open())
@@ -35,29 +49,12 @@ bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::stri
     {
         json j;
         is >> j;
-        outGraph = j.get<AnimStateGraph>(); // from_json が自動的に呼ばれる
+        outGraph = j.get<AnimStateGraph>(); // from_json が呼ばれる
     }
     catch (const std::exception &e)
     {
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Load Error: %s", e.what());
         return false;
-    }
-
-    // AnimSequence ポインタの紐付け (Binding)
-    //   注意: availableSequences の要素アドレスを保持するため、
-    //   この vector は呼び出し側でロード後も生存している必要がある。
-    //   呼び出し側が空(ResourceManager経由で後から紐付け)の場合は nullptr のまま。
-    for (auto &state : outGraph.states)
-    {
-        state.sequence = nullptr;
-        for (const auto &seq : availableSequences)
-        {
-            if (seq.sequenceName == state.sequenceName)
-            {
-                state.sequence = &seq;
-                break;
-            }
-        }
     }
 
     return true;

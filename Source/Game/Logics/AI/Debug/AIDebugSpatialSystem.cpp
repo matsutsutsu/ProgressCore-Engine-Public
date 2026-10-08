@@ -1,4 +1,3 @@
-// AIDebugSpatialSystem の実装。ShapeRenderer で間合いリングと照準線を描く。
 #include "AIDebugSpatialSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -24,16 +23,9 @@ namespace
     // 地面(XZ平面)へ寝かせるための回転。円は XY 平面で定義されるので X軸+90°。
     const XMFLOAT4 kGroundQuat(0.70710678f, 0.0f, 0.0f, 0.70710678f);
 
-    const XMFLOAT4 kColInside(1.0f, 0.35f, 0.20f, 1.0f);  // 内側で成立：赤オレンジ
-    const XMFLOAT4 kColOutside(0.20f, 0.70f, 1.0f, 1.0f); // 外側で成立：シアン
-    const XMFLOAT4 kColBoth(0.45f, 1.0f, 0.55f, 1.0f);    // 両方が使う境目：緑
-    const XMFLOAT4 kColEdge(0.80f, 0.55f, 1.0f, 1.0f);    // ステージ端（原点中心）：紫
-    const XMFLOAT4 kColNow(1.0f, 0.35f, 1.0f, 1.0f);      // 今の間合い：マゼンタ
-    const XMFLOAT4 kColLine(1.0f, 0.90f, 0.20f, 1.0f);    // 照準線：黄
-
-    // 同じ半径をまとめるためのキー。JSONから来た値をそのまま float 比較すると、
-    // 見た目が同じ 25.0 でも別リングとして二重に描かれることがある。
-    int RadiusKey(float radius) { return static_cast<int>(std::lroundf(radius * 100.0f)); }
+    // 間合いの色（内側・外側・境目・ステージ端）は AIDebugRanges が持つ。ここはこの System だけが使う色。
+    const XMFLOAT4 kColNow(1.0f, 0.35f, 1.0f, 1.0f);   // 今の間合い：マゼンタ
+    const XMFLOAT4 kColLine(1.0f, 0.90f, 0.20f, 1.0f); // 照準線：黄
 
     // これより低ければ壁にせず地面の円で描く。
     constexpr float kFlatRingThreshold = 0.05f;
@@ -41,13 +33,16 @@ namespace
     // 塗りの分割。円周は DrawWireframeCircle と同じ 24 にして、線と面の輪郭を揃える。
     constexpr int kWallSegments = 24;
 
-    // 縦の段数。色は面ごとにしか変えられないので、段を重ねて薄れさせる。
+    // 縦の段数。色は面ごとにしか変えられないので、段を重ねて上へ行くほど薄くする。
     constexpr int kWallBands = 4;
 
     // 地面の帯は輪郭の線より少しだけ下へ置く。同じ高さだとちらつく。
     constexpr float kFillDrop = 0.02f;
-}
+} // namespace
 
+// ---------------------------------------------------------------------------
+// 図形の描画
+// ---------------------------------------------------------------------------
 
 void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &center,
                                        float rInner, float rOuter, const XMFLOAT4 &color) const
@@ -78,7 +73,6 @@ void AIDebugSpatialSystem::DrawAnnulus(ShapeRenderer *renderer, const XMFLOAT3 &
     }
 }
 
-
 void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOAT3 &footCenter) const
 {
     const XMFLOAT3 ground(footCenter.x, footCenter.y - kFillDrop, footCenter.z);
@@ -89,11 +83,7 @@ void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOA
         const RangeRing &ring = m_rings[i];
 
         // 帯の色は外側の境界線に合わせる。線と塗りで意味が食い違わないようにするため。
-        const bool isInside  = (ring.kinds & kInside)  != 0;
-        const bool isOutside = (ring.kinds & kOutside) != 0;
-        const XMFLOAT4 &base = (isInside && isOutside) ? kColBoth
-                             : isInside                ? kColInside
-                                                       : kColOutside;
+        const XMFLOAT4 &base = AIDebugRanges::ColorOf(ring);
 
         // 外側の帯ほど薄くする。手前ほど濃いので「近いほど危ない」がそのまま形に出る。
         const float t     = static_cast<float>(i) / static_cast<float>(m_rings.size());
@@ -103,7 +93,6 @@ void AIDebugSpatialSystem::DrawGroundBands(ShapeRenderer *renderer, const XMFLOA
         inner = ring.radius;
     }
 }
-
 
 void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 &footCenter,
                                         float radius, const XMFLOAT4 &color) const
@@ -115,7 +104,9 @@ void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 
         const float y0 = footCenter.y + bandHeight * band;
         const float y1 = y0 + bandHeight;
 
-        const XMFLOAT4 c(color.x, color.y, color.z, m_wallAlpha);
+        // 足元の段が m_wallAlpha で、上の段ほど薄くする。
+        const float    fade = 1.0f - static_cast<float>(band) / kWallBands;
+        const XMFLOAT4 c(color.x, color.y, color.z, m_wallAlpha * fade);
 
         for (int seg = 0; seg < kWallSegments; ++seg)
         {
@@ -134,7 +125,6 @@ void AIDebugSpatialSystem::DrawRingWall(ShapeRenderer *renderer, const XMFLOAT3 
     }
 }
 
-
 void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3 &footCenter,
                                          float radius, const XMFLOAT4 &color) const
 {
@@ -152,6 +142,9 @@ void AIDebugSpatialSystem::DrawRangeRing(ShapeRenderer *renderer, const XMFLOAT3
     if (m_wallAlpha > 0.001f) DrawRingWall(renderer, footCenter, radius, color);
 }
 
+// ---------------------------------------------------------------------------
+// System の入口
+// ---------------------------------------------------------------------------
 
 std::vector<CCL::ECS::TypeID> AIDebugSpatialSystem::GetReadTypes() const
 {
@@ -160,89 +153,52 @@ std::vector<CCL::ECS::TypeID> AIDebugSpatialSystem::GetReadTypes() const
     return types;
 }
 
-
-void AIDebugSpatialSystem::CollectRings(const BTAsset &asset)
-{
-    m_rings.clear();
-    m_edgeRings.clear();
-
-    for (const BTNode &node : asset.nodes)
-    {
-        if (node.type != BTNodeType::Condition) continue;
-        if (node.param <= 0.0f) continue;   // 未設定のノードは線にしない
-
-        // ステージ端だけは中心がボスではなくワールド原点。同じ「距離を持つ条件」でも
-        // ボス中心で描くと嘘になるので、集める先から分ける。
-        if (node.actionOrConditionId == ::CCL::AI::C_IsAtStageEdge)
-        {
-            const int key = RadiusKey(node.param);
-            const bool known = std::any_of(m_edgeRings.begin(), m_edgeRings.end(),
-                                           [key](float r) { return RadiusKey(r) == key; });
-            if (!known) m_edgeRings.push_back(node.param);
-            continue;
-        }
-
-        uint8_t kind = 0;
-        if (node.actionOrConditionId == ::CCL::AI::C_DistanceLessThan)         kind = kInside;
-        else if (node.actionOrConditionId == ::CCL::AI::C_DistanceGreaterThan) kind = kOutside;
-        else continue;
-
-        // 同じ半径は1本にまとめ、どちら向きに使われているかだけを足していく。
-        const int key   = RadiusKey(node.param);
-        auto      found = std::find_if(m_rings.begin(), m_rings.end(),
-                                       [key](const RangeRing &r) { return RadiusKey(r.radius) == key; });
-        if (found != m_rings.end()) found->kinds |= kind;
-        else                        m_rings.push_back({node.param, kind});
-    }
-
-    // 内側から順に並べる。GUIの一覧を間合いの順に読めるようにするため。
-    std::sort(m_rings.begin(), m_rings.end(),
-              [](const RangeRing &a, const RangeRing &b) { return a.radius < b.radius; });
-    std::sort(m_edgeRings.begin(), m_edgeRings.end());
-}
-
-
 void AIDebugSpatialSystem::Update(float /*dt*/)
 {
     if (!m_enabled) return;
 
-    // ShapeRenderer が無ければ描けない（NavMesh 等と同じ前提）。
+    // ShapeRenderer が無ければ描けない（NavMeshDebugDrawSystem などと同じ前提）。
     if (!m_world->HasResource<ShapeRenderer *>()) return;
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
-    // プレイヤー座標は BattleContext（世界の事実）から。無ければ照準線だけ省く。
+    // プレイヤーの座標は BattleContext から取る。プレイヤーが居なければ照準線だけ描かない。
     XMFLOAT3 playerPos(0, 0, 0);
     bool     hasPlayer = false;
+
+    // ステージ端のリングの中心と半径。条件と同じ円を描かないと、線と判定がずれる。
+    XMFLOAT3 arenaCenter(0, 0, 0);
+    float    arenaRadius = 0.0f;
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
-        playerPos = XMFLOAT3(battle.playerPos.x, battle.playerPos.y, battle.playerPos.z);
-        hasPlayer = battle.HasPlayer();
+        playerPos          = XMFLOAT3(battle.playerPos.x, battle.playerPos.y, battle.playerPos.z);
+        hasPlayer          = battle.HasPlayer();
+        arenaCenter        = battle.arenaCenter;
+        arenaRadius        = battle.arenaRadius;
     }
+    m_arenaRadius = arenaRadius;
 
-    ForEachWithID([&](EntityID entity,
+    ForEachWithID([&](EntityID                  entity,
                       const TransformComponent &trans,
                       const BossActionComponent & /*boss*/) {
-        // 地面から浮かせて Z ファイティングを避ける。埋もれるときは GUI で上げる。
+        // 地面から浮かせて Z ファイティングを避ける。地面に埋もれるときは GUI で上げる。
         const XMFLOAT3 center(trans.position.x, trans.position.y + m_heightOffset, trans.position.z);
 
         const auto *bt = m_world->GetComponent<BehaviorTreeComponent>(entity);
-        if (bt && bt->sharedAsset) CollectRings(*bt->sharedAsset);
-        else                       { m_rings.clear(); m_edgeRings.clear(); }
+        if (bt && bt->sharedAsset)
+            AIDebugRanges::CollectRings(*bt->sharedAsset, m_rings, m_edgeRings);
+        else
+        {
+            m_rings.clear();
+            m_edgeRings.clear();
+        }
 
         // 塗りを先に置いてから線を重ねる。輪郭が帯に食われないようにするため。
         if (m_groundFill) DrawGroundBands(renderer, center);
 
         for (const RangeRing &ring : m_rings)
-        {
-            const bool inside  = (ring.kinds & kInside)  != 0;
-            const bool outside = (ring.kinds & kOutside) != 0;
-            const XMFLOAT4 &col = (inside && outside) ? kColBoth
-                                : inside              ? kColInside
-                                                      : kColOutside;
-            DrawRangeRing(renderer, center, ring.radius, col);
-        }
+            DrawRangeRing(renderer, center, ring.radius, AIDebugRanges::ColorOf(ring));
 
         // 今の間合い。しきい値のどの帯に居るのかが、線を数えなくても分かる。
         //   しきい値のリングと重なっても潰れないよう、少し高い位置へ描く。
@@ -262,15 +218,17 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
             renderer->DrawArrow(center, pTarget, 0.5f, kColLine);
         }
 
-        // ステージ端は原点中心。ボスの足元の高さに合わせておく。
-        for (float radius : m_edgeRings)
+        // ステージ端はステージの中心から。ボスの足元の高さに合わせておく。
+        for (float margin : m_edgeRings)
         {
-            const XMFLOAT3 origin(0.0f, center.y, 0.0f);
-            DrawRangeRing(renderer, origin, radius, kColEdge);
+            const float radius = arenaRadius - margin;
+            if (radius <= 0.0f) continue; // 幅がステージより広いと常に成立するので、描く輪が無い
+
+            const XMFLOAT3 origin(arenaCenter.x, center.y, arenaCenter.z);
+            DrawRangeRing(renderer, origin, radius, AIDebugRanges::kColEdge);
         }
     });
 }
-
 
 void AIDebugSpatialSystem::OnGui()
 {
@@ -297,30 +255,27 @@ void AIDebugSpatialSystem::OnGui()
     // 何mの線がどの向きの条件なのかを並べる。色だけでは戦闘中に読み切れない。
     for (const RangeRing &ring : m_rings)
     {
-        const bool inside  = (ring.kinds & kInside)  != 0;
-        const bool outside = (ring.kinds & kOutside) != 0;
+        const bool inside  = (ring.kinds & AIDebugRanges::kInside) != 0;
+        const bool outside = (ring.kinds & AIDebugRanges::kOutside) != 0;
 
-        ImVec4 col = (inside && outside) ? ImVec4(0.45f, 1.0f, 0.55f, 1.0f)
-                   : inside              ? ImVec4(1.0f, 0.35f, 0.20f, 1.0f)
-                                         : ImVec4(0.20f, 0.70f, 1.0f, 1.0f);
+        const XMFLOAT4 &c   = AIDebugRanges::ColorOf(ring);
+        const char     *label = (inside && outside) ? "内側 / 外側（間合いの境目）"
+                                : inside            ? "内側で成立 (<)"
+                                                    : "外側で成立 (>)";
 
-        const char *label = (inside && outside) ? "内側 / 外側（間合いの境目）"
-                          : inside              ? "内側で成立 (<)"
-                                                : "外側で成立 (>)";
-
-        ImGui::TextColored(col, "%6.1f m  %s", ring.radius, label);
+        ImGui::TextColored(ImVec4(c.x, c.y, c.z, c.w), "%6.1f m  %s", ring.radius, label);
     }
 
-    for (float radius : m_edgeRings)
-        ImGui::TextColored(ImVec4(0.80f, 0.55f, 1.0f, 1.0f),
-                           "%6.1f m  ステージ端（原点中心）", radius);
+    const XMFLOAT4 &edge = AIDebugRanges::kColEdge;
+    for (float margin : m_edgeRings)
+        ImGui::TextColored(ImVec4(edge.x, edge.y, edge.z, edge.w),
+                           "%6.1f m  ステージ端から（中心から %.1f m）", margin, m_arenaRadius - margin);
 }
-
 
 // NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。
 //
-// 登録ごと切ることで「製品ビルドには存在しない」を1行で言い切る。
-// 中身を #ifdef で刻むと、動かないコードが実行順の解決対象としてだけ残る。
+// 登録ごと #ifdef で外し、製品ビルドにはこの System が存在しないようにする。
+// 中身だけを #ifdef で外すと、何もしない System が実行順の解決の対象としてだけ残る。
 #ifdef ENABLE_EDITOR
 REGISTER_RENDER_SYSTEM(AIDebugSpatialSystem, Priority::RenderStage::R08_Main);
 #endif

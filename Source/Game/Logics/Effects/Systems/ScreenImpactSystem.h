@@ -1,24 +1,16 @@
 ﻿#pragma once
 // ===========================================================================
-// ScreenImpactSystem.h
-// --------------------
-// 役割:
-//   ScreenImpactComponent(singleton) の timer を減衰させ、その強さを
-//   「放射ブラー/色収差のバースト」へ毎フレーム反映する。
+// 概要: ScreenImpactComponent の timer を減らし、その強さを放射ブラーと色収差へ
+//       毎フレーム反映する System。
 //
-// 設計方針:
-//   - エンティティ走査は不要。singleton 設定だけを触るため SystemBase を直接
-//     継承する（PostProcessSystem と同じ流儀）。
-//   - 画面の揺れはここでは扱わない。カメラを直接書くと CameraShake 経由の
-//     他の揺れと合成規則が二重になるため、命中時の揺れは
-//     CameraShakeRequestEvent としてカメラ側の一元経路へ送る。
-//   - 放射ブラー/色収差の設定書き込みは、それを読む PostProcessSystem(R09) より
-//     前であればよい。R02_Environment に登録する。
-//   - PP へは「自分のキーで確保したスロット」だけを書く。設定本体(enable/data)は
-//     シーンの持ち物なので触らない。最終強度の合成と描画ON/OFFの判断は
-//     PostProcessSystem が行う。これにより、同時に走る他の演出
-//     （ジャスト回避スパイク・被弾フラッシュ）と値を奪い合わない。
-//   - timer が 0 の間は何も書かない。立ち下がりで自分のスロットだけ 0 に戻す。
+// 責務:
+//   - 残り時間から強さを求め、自分のキーで取ったスロットへ書く
+//   - 演出が終わったフレームで自分のスロットを手放す
+//
+// 備考: シングルトンだけを触り、エンティティを回さないので SystemBase を直接継承する。
+//       設定本体（enable / data）はシーンのものなので書き換えない。最終的な強さの合成は
+//       PostProcessSystem が行うので、ジャスト回避の演出や被弾フラッシュと値を取り合わない。
+//       画面の揺れは扱わない（DamageResolutionSystem が CameraShakeRequestEvent を出す）。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
@@ -26,7 +18,6 @@
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 
-// 命中演出（カメラ揺れ＋PPバースト）を駆動するシステム。
 class ScreenImpactSystem : public CCL::ECS::SystemBase
 {
 public:
@@ -37,9 +28,12 @@ public:
         return {CCL::ECS::TypeInfo<ScreenImpactComponent>::ID()};
     }
 
-    // PP 設定は読むだけでなく書き換えるので Write として申告する。
-    // Read のままだと、同じ PP を書く他システムと同一バッチに置かれて
-    // 並列実行され、書き込みが競合する。
+    /**
+     * @brief テンプレート引数以外に書く型を申告する。
+     *
+     * ポストプロセスの設定は書くので Write で申告する。
+     * Read のままだと、同じ設定を書く他の System と同じバッチに入って並列に走り、書き込みが競合する。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
     {
         return {CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
@@ -49,5 +43,5 @@ public:
     void Update(float dt) override;
 
 private:
-    bool m_wasActive = false; // 前フレームで演出が出ていたか（立ち下がりでPP OFF）
+    bool m_wasActive = false; // 前のフレームで演出を出していたか（終わったフレームでスロットを手放すため）
 };

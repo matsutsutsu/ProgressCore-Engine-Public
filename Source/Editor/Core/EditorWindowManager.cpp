@@ -15,24 +15,24 @@
 #include "Engine/Platform/Input/InputFacade.h"
 #include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形の毎フレーム無効化
 
-// 各ウィンドウのヘッダをインクルード
-#include "Editor/Windows/AssetBrowserWindow.h"
-#include "Editor/Windows/ECSDebugWindow.h"
-#include "Editor/Windows/GameViewWindow.h"
-#include "Editor/Windows/HierarchyWindow.h"
-#include "Editor/Windows/InspectorWindow.h"
-#include "Editor/Windows/AnimationSequencerWindow.h"
-#include "Editor/Windows/TextEditorWindow.h"
-#include "Editor/Windows/InputEditorWindow.h"
-#include "Editor/Windows/ConsoleWindow.h"
-#include "Editor/Windows/NavMeshWindow.h"
-#include "Editor/Windows/AnimGraphWindow.h"
-#include "Editor/Windows/BehaviorTreeWindow.h"
-#include "Editor/Windows/MemoryAnalyzerWindow.h"
-#include "Editor/Windows/CurveEditorWindow.h"
-#include "Editor/Windows/CameraPathEditorWindow.h"
-#include "Editor/Windows/RenderDebugWindow.h"
-#include "Editor/Windows/BuildingScatterWindow.h"
+#include "Editor/Windows/General/AssetBrowserWindow.h"
+#include "Editor/Windows/General/ECSDebugWindow.h"
+#include "Editor/Windows/General/GameViewWindow.h"
+#include "Editor/Windows/General/HierarchyWindow.h"
+#include "Editor/Windows/General/InspectorWindow.h"
+#include "Editor/Windows/Animation/AnimationSequencerWindow.h"
+#include "Editor/Windows/Game/TextEditorWindow.h"
+#include "Editor/Windows/Game/InputEditorWindow.h"
+#include "Editor/Windows/General/ConsoleWindow.h"
+#include "Editor/Windows/AI/NavMeshWindow.h"
+#include "Editor/Windows/Animation/AnimGraphWindow.h"
+#include "Editor/Windows/AI/BehaviorTreeWindow.h"
+#include "Editor/Windows/Game/FormationEditorWindow.h"
+#include "Editor/Windows/General/MemoryAnalyzerWindow.h"
+#include "Editor/Windows/Game/CurveEditorWindow.h"
+#include "Editor/Windows/Game/TimelineEditorWindow.h"
+#include "Editor/Windows/General/RenderDebugWindow.h"
+#include "Editor/Windows/General/BuildingScatterWindow.h"
 
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/PrefabInstanceComponent.h"
@@ -47,10 +47,13 @@
 #include <sstream>
 #include <algorithm> // std::sort（Sceneメニューの名前順ソート）
 
-// Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
 
 namespace fs = std::filesystem;
+
+// ---------------------------------------------------------------------------
+// 初期化（ウィンドウの登録）
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::Initialize()
 {
@@ -65,7 +68,8 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
-    RegisterWindow<CameraPathEditorWindow>();
+    RegisterWindow<FormationEditorWindow>();
+    RegisterWindow<TimelineEditorWindow>();
     RegisterWindow<CurveEditorWindow>();
 
     RegisterWindow<TextEditorWindow>();
@@ -77,84 +81,88 @@ void EditorWindowManager::Initialize()
     RegisterWindow<BuildingScatterWindow>();
 }
 
-// =========================================================
+// ---------------------------------------------------------------------------
 // プレハブのフォルダ階層をメニュー化するためのヘルパー
-// =========================================================
+// ---------------------------------------------------------------------------
 namespace
 {
-struct PrefabNode
-{
-    bool                                               isFile = false;
-    std::string                                        fullPath;
-    std::map<std::string, std::unique_ptr<PrefabNode>> children;
-};
-
-void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, EditorContext &context)
-{
-    if (node.isFile)
+    struct PrefabNode
     {
-        std::string displayName = std::filesystem::path(nodeName).stem().string();
-        std::string menuText    = "  " + displayName;
+        bool                                               isFile = false;
+        std::string                                        fullPath;
+        std::map<std::string, std::unique_ptr<PrefabNode>> children;
+    };
 
-        if (ImGui::MenuItem(menuText.c_str()))
-        {
-            if (context.world)
-            {
-                DirectX::XMFLOAT3 spawnPos = {0, 5, 0};
-                CCL::ECS::EntityID e = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
-                // プレハブ実体としてマーク。レベル保存で {path, transform} 参照に、
-                //    シーン(ベイク)保存では除外対象になる。
-                if (e != CCL::ECS::InvalidEntityID)
-                    context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{ node.fullPath });
-                CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
-            }
-        }
-    }
-    else
+    void DrawPrefabNodeTree(const std::string &nodeName, const PrefabNode &node, EditorContext &context)
     {
-        std::string menuText = "[+] " + nodeName;
-        if (ImGui::BeginMenu(menuText.c_str()))
+        if (node.isFile)
         {
-            for (const auto &[childName, childNode] : node.children)
+            std::string displayName = std::filesystem::path(nodeName).stem().string();
+            std::string menuText    = "  " + displayName;
+
+            if (ImGui::MenuItem(menuText.c_str()))
             {
-                if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
-            }
-            for (const auto &[childName, childNode] : node.children)
-            {
-                if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
-            }
-            ImGui::EndMenu();
-        }
-    }
-}
-} // namespace
-
-void RefreshPrefabList(EditorContext &context)
-{
-    ZoneScopedN("RefreshPrefabList");
-
-    context.prefabFiles.clear();
-
-    std::string targetPath = "Assets/Prefabs";
-
-    if (fs::exists(targetPath))
-    {
-        try
-        {
-            for (const auto &entry : fs::recursive_directory_iterator(targetPath))
-            {
-                if (entry.is_regular_file() && entry.path().extension() == ".json")
+                if (context.world)
                 {
-                    context.prefabFiles.push_back(entry.path().generic_string());
+                    DirectX::XMFLOAT3  spawnPos = {0, 5, 0};
+                    CCL::ECS::EntityID e        = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
+                    // プレハブの実体として印を付ける。レベル保存では {path, transform} の参照になり、
+                    // シーン（ベイク）保存では除外される。
+                    if (e != CCL::ECS::InvalidEntityID)
+                        context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{node.fullPath});
+                    CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
                 }
             }
         }
-        catch (const fs::filesystem_error &e)
+        else
         {
-            OutputDebugStringA(e.what());
+            std::string menuText = "[+] " + nodeName;
+            if (ImGui::BeginMenu(menuText.c_str()))
+            {
+                for (const auto &[childName, childNode] : node.children)
+                {
+                    if (!childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                for (const auto &[childName, childNode] : node.children)
+                {
+                    if (childNode->isFile) DrawPrefabNodeTree(childName, *childNode, context);
+                }
+                ImGui::EndMenu();
+            }
         }
     }
-}
+    // Assets/Prefabs 以下の .json を集め直す
+    void RefreshPrefabList(EditorContext &context)
+    {
+        ZoneScopedN("RefreshPrefabList");
+
+        context.prefabFiles.clear();
+
+        std::string targetPath = "Assets/Prefabs";
+
+        if (fs::exists(targetPath))
+        {
+            try
+            {
+                for (const auto &entry : fs::recursive_directory_iterator(targetPath))
+                {
+                    if (entry.is_regular_file() && entry.path().extension() == ".json")
+                    {
+                        context.prefabFiles.push_back(entry.path().generic_string());
+                    }
+                }
+            }
+            catch (const fs::filesystem_error &e)
+            {
+                OutputDebugStringA(e.what());
+            }
+        }
+    }
+} // namespace
+
+// ---------------------------------------------------------------------------
+// 毎フレームの描画
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::Draw(EditorContext &context)
 {
@@ -176,8 +184,8 @@ void EditorWindowManager::Draw(EditorContext &context)
             m_isVisible = !m_isVisible;
         }
 
-        // TAB で一時停止/再開をトグル（ツールバーの Pause/Resume ボタンと同じ動作）。
-        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、誤爆させない。
+        // TAB で一時停止・再開を切り替える（ツールバーの Pause/Resume ボタンと同じ動作）。
+        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、切り替えない。
         if (ImGui::IsKeyPressed(ImGuiKey_Tab, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.isPaused = !context.isPaused;
@@ -189,15 +197,15 @@ void EditorWindowManager::Draw(EditorContext &context)
             context.stepOneFrame = true;
         }
 
-        // F2 で「カーソル自由(UI操作)モード」をトグル。ゲームは動いたままカーソルだけ解放し、
-        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。誤爆防止に入力中は無視。
+        // F2 で「カーソル自由(UI操作)モード」を切り替える。ゲームは動いたままカーソルだけ解放し、
+        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。テキスト入力中は無視する。
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.cursorFreeToggle = !context.cursorFreeToggle;
         }
 
         // 「カーソル自由」の最終状態を World リソースへ反映する。
-        //   F2トグル or シーケンサーEditMode 中は true。カメラ(カーソルロック)と
+        //   F2 が ON か、シーケンサーの Edit Mode 中なら true。カメラ(カーソルロック)と
         //   PauseSystem(ESC抑制)がこれを読む。
         if (context.world && context.world->HasResource<GameFlowState>())
         {
@@ -222,12 +230,13 @@ void EditorWindowManager::Draw(EditorContext &context)
     //   「全画面/Shipping なので恒等写像でよい」と
     //   「エディタは出ているが GameView が隠れていてゲーム画面が無い」
     // の2つが混ざっており、後者で恒等写像に落とすと、画面に出ていないボタンを
-    // 他のウィンドウ上のクリックが踏む（GameViewportInfo.h の説明を参照）。
+    // 他のウィンドウ上のクリックが押してしまう（GameViewportInfo.h の説明を参照）。
     if (context.world && context.world->HasResource<GameViewportInfo>())
     {
         auto &vp         = context.world->GetResource<GameViewportInfo>();
         vp.valid         = false;
         vp.editorVisible = m_isVisible;
+        vp.keyboardFocus = false; // GameView がフォーカスを持つフレームだけ書き直す
     }
 
     if (!m_isVisible)
@@ -271,6 +280,10 @@ void EditorWindowManager::Draw(EditorContext &context)
         input->SetGameInputActive(context.gameViewFocused);
 }
 
+// ---------------------------------------------------------------------------
+// メニューバー
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
 {
     if (ImGui::BeginMainMenuBar())
@@ -296,7 +309,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawFileMenu");
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+        if (ImGui::MenuItem("Open Scene..."))
         {
             HWND hWnd = Graphics::Instance().GetWindowHandle();
             if (auto path = FileDialog::OpenPreset("Scene", "Open Scene", hWnd))
@@ -305,7 +318,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
                 context.ClearSelection();
             }
         }
-        if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+        if (ImGui::MenuItem("Save Scene"))
         {
             HWND hWnd = Graphics::Instance().GetWindowHandle();
             if (auto path = FileDialog::SavePreset("Scene", "Save Scene", {}, hWnd))
@@ -352,18 +365,21 @@ void EditorWindowManager::DrawEntityMenu(EditorContext &context)
     ZoneScopedN("EditorWindowManager::DrawEntityMenu");
     if (ImGui::BeginMenu("Entity"))
     {
+        // world が無い（シーン未ロード）間は生成できない。他のメニューは確認している。
+        ImGui::BeginDisabled(context.world == nullptr);
         if (ImGui::MenuItem("Add Empty Entity"))
         {
             Archetype arch = ArchetypeHelper::Generate<TransformComponent>();
             context.world->RequestSpawnEntity(arch);
         }
+        ImGui::EndDisabled();
         ImGui::EndMenu();
     }
 }
 
 void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
 {
-    ZoneScopedN("EditorWindowManager::DrawPrefabMenu"); // ここが重い可能性も高い
+    ZoneScopedN("EditorWindowManager::DrawPrefabMenu");
     if (ImGui::BeginMenu("Prefab"))
     {
         if (ImGui::MenuItem("Refresh List"))
@@ -378,6 +394,7 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
         }
         else
         {
+            // パスを "/" で区切ってフォルダの木を組み、サブメニューとして出す
             PrefabNode  rootNode;
             std::string basePrefix = "Assets/Prefabs";
             std::replace(basePrefix.begin(), basePrefix.end(), '\\', '/');
@@ -445,12 +462,12 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
         auto &sceneMgr = SceneManager::Instance();
 
         // SceneFactory へ REGISTER_SCENE で自己登録された全シーンをそのまま列挙する。
-        //   これでシーンを1つ追加するたびにこのメニューへ手で書き足す必要がなくなる。
-        //   registry は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
+        //   シーンを追加しても、このメニューへ手で書き足す必要はない。
+        //   登録先は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
         std::vector<std::string> sceneNames = SceneFactory::Instance().GetSceneNames();
         std::sort(sceneNames.begin(), sceneNames.end());
 
-        const std::string &currentName  = sceneMgr.GetCurrentSceneName();
+        const std::string &currentName   = sceneMgr.GetCurrentSceneName();
         const bool         transitioning = sceneMgr.IsTransitioning();
 
         if (transitioning)
@@ -465,10 +482,15 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
             ImGui::BeginDisabled(isCurrent || transitioning);
             if (ImGui::MenuItem(name.c_str(), nullptr, /*selected*/ isCurrent))
             {
-                // 全シーン共通で「フェード付き非同期遷移」に統一する。
-                //   RequestTransition(async=true): 暗転 → 黒の裏で対象シーンを裏読み
+                // 全シーン共通でフェード付きの非同期遷移にする。
+                //   RequestTransition(async=true): 暗転 → 暗転中に対象シーンを別スレッドで読み込む
                 //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない。
                 sceneMgr.RequestTransition(name, /*async*/ true);
+
+                // 遷移先では World もエンティティも作り直される。古い EntityID を
+                // 掴んだままだと、暗転中の数フレーム Inspector が無効な対象を描く。
+                //   （Undo 履歴の破棄は切替が実際に起きた瞬間に Framework が行う）
+                context.ClearSelection();
             }
             ImGui::EndDisabled();
         }
@@ -490,6 +512,10 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる。
         ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
 
+        // 触っていない外部ウィンドウの描画を約15fpsまで落とす。別画面の数値を
+        //   滑らかに眺めたいときだけ OFF にする（そのぶんFPSは下がる）。
+        ImGui::MenuItem("外部ウィンドウを間引く", nullptr, &context.throttleExternalWindows);
+
         ImGui::Separator();
         for (auto &window : m_windows)
         {
@@ -503,12 +529,16 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// 再生操作と統計の帯
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawPlayControlBar");
 
-    // 「一時停止 / 再開」トグルのみ。
-    //   セーブやシーンのバックアップ/復元は一切行わない。押した瞬間に
+    // 一時停止・再開の切り替えだけを行う。
+    //   セーブやシーンのバックアップ・復元は行わない。押した瞬間に
     //   context.isPaused を反転するだけで、Framework 側がその間 FixedUpdate を止める。
     float  menuBarWidth = ImGui::GetWindowWidth();
     float  buttonWidth  = 90.0f;
@@ -569,6 +599,7 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
         ImGui::Text("Performance & ECS Status");
         ImGui::Separator();
 
+        // 直近120回ぶんのフレーム時間（ツールチップを出している間だけ記録する）
         static float frameTimes[120] = {0};
         static int   frameTimeIdx    = 0;
 
@@ -602,12 +633,15 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
     }
 }
 
+// ---------------------------------------------------------------------------
+// ツールメニュー
+// ---------------------------------------------------------------------------
+
 void EditorWindowManager::DrawToolsMenu(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawToolsMenu");
     if (ImGui::BeginMenu("Tools"))
     {
-        // Tracy Profiler を起動するメニュー項目
         if (ImGui::MenuItem("Launch Tracy Profiler"))
         {
             HINSTANCE result = ShellExecuteA(
@@ -628,7 +662,6 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
             }
         }
 
-        // ModelEditor を起動するメニュー項目
         if (ImGui::MenuItem("Launch ModelEditor"))
         {
             HINSTANCE result = ShellExecuteA(
@@ -649,12 +682,13 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
             }
         }
 
-
-
         ImGui::EndMenu();
     }
-
 }
+
+// ---------------------------------------------------------------------------
+// レイアウトの保存・読み込み
+// ---------------------------------------------------------------------------
 
 void EditorWindowManager::SaveLayout(const std::string &path)
 {
@@ -665,7 +699,7 @@ void EditorWindowManager::SaveLayout(const std::string &path)
     for (auto &window : m_windows)
     {
         j["windows"].push_back({{"name", window->GetName()},
-            {"visible", window->GetVisible()}});
+                                {"visible", window->GetVisible()}});
     }
 
     FileSystem::WriteAllText(path, j.dump(4));

@@ -16,10 +16,9 @@ void AudioEngineTickSystem::Update(float dt)
     auto &api = m_world->GetResource<std::shared_ptr<IAudioAPI>>();
     if (!api) return;
 
-    // 1描画フレームにつきここだけが呼ぶ。dt は可変フレーム時間（固定ステップではない）。
+    // dt は描画フレームの経過時間（固定ステップの dt ではない）
     api->Update(dt);
 }
 
-// Render の最後段。発音指示(AudioSystem/Logic)とリスナー位置(CameraListenerSystem/R02)が
-// 出揃った後に1回だけエンジンを回す。
+// 発音の指示（AudioSystem / Logic）とリスナー位置（CameraListenerSystem / R02）が揃った後に回す
 REGISTER_RENDER_SYSTEM(AudioEngineTickSystem, Priority::RenderStage::R11_AudioTick);

@@ -1,17 +1,22 @@
 #pragma once
-// タイトル画面シーン。3D背景（軽量ステージ＋立ち姿＋群れ）とメニューUIを持つ。
+// ===========================================================================
+// 概要: タイトル画面のシーン。3D の背景（床・ライト・立ち姿・ドローンの群れ）とメニューを出す。
 //
-// GameScene と違い、戦場レベル(BossBattleStage)は読み込まない。読み込むと
-// タイトルでゲーム本編と同じロード時間を払い、そのあと本編でもう一度払うことになる。
-// タイトル専用の Title.level.json は床とライトと立ち姿だけの軽量構成。
+// 責務:
+//   - タイトル用の Title.level.json を読み込む
+//   - 全 System と、タイトルだけで使う System（カメラ・群れ・メニュー）を登録する
+//
+// 備考: 戦場のレベル（BossBattleStage）は読み込まない。読むとタイトルでも本編と同じロード時間がかかり、
+//       本編に入るときにもう一度かかる。Title.level.json は床とライトと立ち姿だけの軽い構成。
+// ===========================================================================
 #include "Engine/Scene/BaseScene.h"
 
 class TitleScene : public BaseScene
 {
-  public:
-    void Initialize() override; // 共通初期化＋タイトル用レベルの読み込み
+public:
+    void Initialize() override;
 
-  protected:
-    // BaseScene::Initialize から呼ばれる拡張ポイント。ここで登録するシステムを絞る。
+protected:
+    // BaseScene::Initialize から呼ばれる
     void RegisterSystems() override;
 };

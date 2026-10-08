@@ -1,36 +1,39 @@
-// 放射状ブラー(集中線)の設定を保持するコンポーネント。
-// 役割     : ブラーのON/OFFとGPUパラメータ(中心・強さ・立ち上がり)を保持。
-// 責務     : 値の保持のみ(描画はしない)。PostProcessSystem が読み取り、
-//            RadialBlurEffect へ毎フレーム転送する。
-// 位置付け : シーンにsingletonとして置く「ポストプロセス設定」の一つ。
-// 設計方針 : data は GPU定数バッファ構造体そのもの。演出からの一時的な
-//            上乗せは overrides スロットへ書き、data は書き換えない。
 #pragma once
+// ===========================================================================
+// 概要: 放射状ブラー（集中線）の設定と、演出からの一時的な上乗せを持つ
+//       シングルトンコンポーネント。
+//
+// 責務:
+//   - シーンが持つ普段の設定（enable / data: 中心・強さ・立ち上がり）を持つ
+//   - 演出ごとの一時的な上乗せ（overrides）を持つ
+//   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
+//
+// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
+//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
+//       PostProcessSystem が毎フレーム読み、RadialBlurEffect へ渡す。
+//       data は定数バッファの構造体なので、シリアライズは Meta の手書き（パターンC）。
+// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <algorithm>
 
-// 放射状ブラーの一時上書きの中身。演出が出したい強度のピーク。
+// 放射状ブラーの一時上書きの中身
 struct RadialBlurOverrideParams
 {
-    float strength = 0.0f;
+    float strength = 0.0f; // 演出が出したい強さのピーク
 };
 
-// 放射状ブラーのON/OFFとGPUパラメータを保持する設定コンポーネント。
-//
-// data が GPU定数バッファ構造体のため、シリアライズはパターンC(カスタム)。
-//
-// スロットの仕組みと背景は PostEffectOverrides.h を参照。
 struct RadialBlurConfigComponent
 {
     bool enable = false;
 
-    GpuData::CbRadialBlurData data{ { 0.5f, 0.5f }, 0.0f, 2.0f };
+    // 中心（UV）/ 強さ / 中心からの立ち上がりの鋭さ
+    GpuData::CbRadialBlurData data{{0.5f, 0.5f}, 0.0f, 2.0f};
 
     PostEffectOverrides<RadialBlurOverrideParams> overrides;
 
-    // 実際に描画へ渡す強度。素の値と全演出スロットの最大値。
+    // 描画に渡す強さ。普段の値と、効いている全スロットの最大値をとる（色収差と同じ理由）
     float ResolvedStrength() const
     {
         float out = enable ? data.blurStrength : 0.0f;

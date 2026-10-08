@@ -5,88 +5,76 @@
 
 namespace CCL::ECS
 {
-    using namespace CCL::ECS;
-
-    void SystemManager::ResolveTargetChunks(ChunkManager* cm)
+    void SystemManager::ResolveTargetChunks(ChunkManager *cm)
     {
-        // チャンク振り分け負荷を計測
         ZoneScopedN("SystemManager::ResolveTargetChunks");
 
         if (!cm) return;
 
-         // 読み取りロックを取得（Chunk構成を読むため）
+        // 配っている最中に Chunk が増減しないよう、構造変更を止めておく
         std::shared_lock<std::shared_mutex> lock(cm->GetStructureMutex());
 
+        // 1. Chunk の構成が前回から変わったかを判定する。
+        //    変わっていなければ全 System × 全 Chunk の総当たりを丸ごと省ける。
+        auto &chunks           = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
+        bool  isStructureDirty = false;
 
-        // =========================================================
-        // 厳格なキャッシュ判定（ポインタ配列の完全一致チェック）
-        // =========================================================
-        auto& chunks = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
-        bool isStructureDirty = false;
-
-        // 1. まず「数」が違うなら確実に構造が変化している
-        if (chunks.size() != m_cachedChunkPointers.size()) {
+        if (chunks.size() != m_cachedChunkPointers.size())
+        {
             isStructureDirty = true;
         }
-        else {
-            // 2. 数が同じでも、中身のチャンク（メモリアドレス）が入れ替わっていないか確認する
-            for (size_t i = 0; i < chunks.size(); ++i) {
-                if (chunks[i].get() != m_cachedChunkPointers[i]) {
-                    isStructureDirty = true; // 1つでも違えばDirty
+        else
+        {
+            // 数が同じでも、Chunk が解放→再確保されてアドレスが入れ替わっている場合がある
+            for (size_t i = 0; i < chunks.size(); ++i)
+            {
+                if (chunks[i].get() != m_cachedChunkPointers[i])
+                {
+                    isStructureDirty = true;
                     break;
                 }
             }
         }
 
-        // 構造に変化がなければ、総当たりのマッチング計算をスキップして即終了！ (0.0ms)
-        if (!isStructureDirty) {
+        if (!isStructureDirty)
+        {
             return;
         }
 
-        // --- ここから下は「構造が変わった（エンティティ構成が変化した）時」だけ走る ---
-
-        // キャッシュを最新の状態に更新しておく
         m_cachedChunkPointers.clear();
         m_cachedChunkPointers.reserve(chunks.size());
-        for (auto& chunkPtr : chunks) {
+        for (auto &chunkPtr : chunks)
+        {
             m_cachedChunkPointers.push_back(chunkPtr.get());
         }
 
-        // =========================================================
-        // 1. 全Systemのターゲットチャンクをリセット (Logic & Render)
-        // =========================================================
-        
-        // ヘルパーラムダ: システムリストを受け取ってクリアする
-        auto clearTargets = [](auto& systems) {
-            for (auto& sysPtr : systems) {
+        // 2. 全 System の処理対象 Chunk をリセットする
+        auto clearTargets = [](auto &systems) {
+            for (auto &sysPtr : systems)
+            {
                 sysPtr->ClearTargetChunks();
             }
-            };
+        };
 
         clearTargets(m_logicSystems);
         clearTargets(m_renderSystems);
 
-
-        // =========================================================
-        // 2. 全チャンクを走査し、適合するシステムに配る
-        // =========================================================
-        for (auto& upChunk : chunks)
+        // 3. 全 Chunk を走査し、Filter に合う System へ配る
+        for (auto &upChunk : chunks)
         {
             if (!upChunk) continue;
-            Chunk* chunk = upChunk.get();
-            const Archetype& chunkArch = chunk->GetArchetype();
+            Chunk           *chunk     = upChunk.get();
+            const Archetype &chunkArch = chunk->GetArchetype();
 
-            // ヘルパーラムダ: システムリストを受け取って適合判定を行う
-            auto matchSystems = [&](auto& systems) {
-                for (auto& sysPtr : systems)
+            auto matchSystems = [&](auto &systems) {
+                for (auto &sysPtr : systems)
                 {
-                    const Archetype& filter = sysPtr->GetFilter();
-                    const Archetype& exclude = sysPtr->GetExcludeFilter();  
+                    const Archetype &filter  = sysPtr->GetFilter();
+                    const Archetype &exclude = sysPtr->GetExcludeFilter();
 
-                    // フィルタ無し → 無条件で対象にする
+                    // Filter が空の System は、除外条件だけで判定する
                     if (filter.empty())
                     {
-                        //  exclude を持たない場合のみ対象に追加
                         if (ArchetypeHelper::LExcludesR(chunkArch, exclude))
                         {
                             sysPtr->AddTargetChunk(chunk);
@@ -94,90 +82,72 @@ namespace CCL::ECS
                         continue;
                     }
 
-                    // Include（必須）AND Exclude（除外）の両方を満たす場合のみ対象
+                    // 必要 Component を全て持ち、かつ除外 Component を1つも持たない
                     if (ArchetypeHelper::LhasR(chunkArch, filter) &&
                         ArchetypeHelper::LExcludesR(chunkArch, exclude))
                     {
                         sysPtr->AddTargetChunk(chunk);
                     }
                 }
-                };
+            };
 
-            // Logic と Render 両方のシステムに対してマッチングを行う
             matchSystems(m_logicSystems);
             matchSystems(m_renderSystems);
         }
     }
 
-
-   void SystemManager::OnGui()
+    void SystemManager::OnGui()
     {
-        // エディタUI全体の処理負荷を計測
         ZoneScopedN("SystemManager::OnGui");
 
-        if (ImGui::Begin("System Manager")) {
-
-            // ----------------------------------------------------
-            // マスタースイッチ (上部に大きく配置)
-            // ----------------------------------------------------
-            // 全システムの並列実行を一括で切り替える（並列化による不具合の切り分け用）
-            if (ImGui::Checkbox("Global Multi-Thread Enable", &globalMultiThreadEnabled)) {
-                for (auto &sys : m_logicSystems) sys->enableMultiThread = globalMultiThreadEnabled;
-                for (auto &sys : m_renderSystems) sys->enableMultiThread = globalMultiThreadEnabled;
-                
+        if (ImGui::Begin("System Manager"))
+        {
+            // 全 System の並列実行を一括で切り替える（並列起因の不具合の切り分け用）
+            if (ImGui::Checkbox("Global Multi-Thread Enable", &globalMultiThreadEnabled))
+            {
+                for (auto &sys : m_logicSystems)
+                    sys->enableMultiThread = globalMultiThreadEnabled;
+                for (auto &sys : m_renderSystems)
+                    sys->enableMultiThread = globalMultiThreadEnabled;
             }
 
-            // 補足情報をツールチップで出すと親切
-            if (ImGui::IsItemHovered()) {
+            if (ImGui::IsItemHovered())
+            {
                 ImGui::SetTooltip("Force enable/disable multi-threading for ALL systems.");
             }
 
             ImGui::Separator();
 
-            if (ImGui::BeginTabBar("SystemManagerTabs")) {
-
-                // --------------------------------------------------------
-                // Tab 1: Monitor (テーブル化して見やすく整理)
-                // --------------------------------------------------------
-                if (ImGui::BeginTabItem("Monitor")) {
-
-                    // テーブル開始
-                    // フラグ解説:
-                    // - ImGuiTableFlags_Borders: 枠線を表示
-                    // - ImGuiTableFlags_RowBg: 1行ごとに背景色を交互に変える（見やすい）
-                    // - ImGuiTableFlags_Resizable: 列幅を変えられるようにする
-                    // - ImGuiTableFlags_Sortable: (任意) ソート機能をつけたい場合
+            if (ImGui::BeginTabBar("SystemManagerTabs"))
+            {
+                // Monitor タブ: 全 System の処理時間と MT/Debug の切り替えを一覧表示する
+                if (ImGui::BeginTabItem("Monitor"))
+                {
                     static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
                                                    ImGuiTableFlags_Resizable |
                                                    ImGuiTableFlags_ScrollY;
 
-                    // 4カラム: Name, Time, MT, Debug
-                    // 第2引数はカラム数
-                    // 縦スクロールのために外側のウィンドウサイズに合わせる (-FLT_MIN)
-                    if (ImGui::BeginTable("SystemMonitorTable", 4, flags, ImVec2(0, -FLT_MIN))) {
-
-                        // ヘッダー設定 (幅の比率を指定)
+                    // 高さ -FLT_MIN でウィンドウ下端まで伸ばし、表の中だけ縦スクロールさせる
+                    if (ImGui::BeginTable("SystemMonitorTable", 4, flags, ImVec2(0, -FLT_MIN)))
+                    {
                         ImGui::TableSetupColumn(
                             "System Name", ImGuiTableColumnFlags_WidthStretch); // 残りの幅全部
                         ImGui::TableSetupColumn(
                             "Time (ms)", ImGuiTableColumnFlags_WidthFixed, 80.0f);
                         ImGui::TableSetupColumn(
-                            "MT", ImGuiTableColumnFlags_WidthFixed, 40.0f); // Checkbox用
+                            "MT", ImGuiTableColumnFlags_WidthFixed, 40.0f);
                         ImGui::TableSetupColumn(
-                            "Debug", ImGuiTableColumnFlags_WidthFixed, 40.0f); // Checkbox用
+                            "Debug", ImGuiTableColumnFlags_WidthFixed, 40.0f);
 
-                        // ヘッダー行を表示
                         ImGui::TableHeadersRow();
 
-                        // 行描画用ラムダ
                         auto drawSystemRow = [](const std::unique_ptr<SystemBase> &sys) {
                             ImGui::TableNextRow();
 
-                            // --- Column 0: Name ---
                             ImGui::TableSetColumnIndex(0);
                             ImGui::TextUnformatted(sys->GetName().c_str());
 
-                            // --- Column 1: Time ---
+                            // 重い System が一目でわかるよう、2ms 超は赤、0.5ms 超は黄で出す
                             ImGui::TableSetColumnIndex(1);
                             float time = sys->GetDisplayUpdateTime();
                             if (time > 2.0f)
@@ -187,92 +157,61 @@ namespace CCL::ECS
                             else
                                 ImGui::Text("%.3f", time);
 
-                            // --- Column 2: MT Checkbox ---
                             ImGui::TableSetColumnIndex(2);
-                            ImGui::PushID(sys->GetSystemID()); // ID重複防止
-                            // 中央揃えにするテクニック
+                            ImGui::PushID(sys->GetSystemID());
+                            // チェックボックスを列の中央に寄せる
                             float cw = ImGui::GetColumnWidth();
-                            float iw = ImGui::GetFrameHeight(); // Checkboxの幅
+                            float iw = ImGui::GetFrameHeight(); // Checkbox の幅
                             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cw - iw) * 0.5f);
                             ImGui::Checkbox("##mt", &sys->enableMultiThread);
                             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Multi-Threading");
                             ImGui::PopID();
 
-                            // --- Column 3: Debug Checkbox ---
                             ImGui::TableSetColumnIndex(3);
-                            ImGui::PushID(sys->GetSystemID() + 10000); // IDずらし
+                            ImGui::PushID(sys->GetSystemID() + 10000); // MT 列の ID と衝突させない
                             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (cw - iw) * 0.5f);
                             ImGui::Checkbox("##vis", &sys->isDebugVisible);
                             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Show Debug Draw");
                             ImGui::PopID();
                         };
 
-                        // グループ分けして表示
-                        // 行としてタイトルを挟む
+                        // グループの見出しを1行として挟む
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::TextDisabled("-- Logic Systems --");
-                        for (auto &sys : m_logicSystems) drawSystemRow(sys);
+                        for (auto &sys : m_logicSystems)
+                            drawSystemRow(sys);
 
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
                         ImGui::TextDisabled("-- Render Systems --");
-                        for (auto &sys : m_renderSystems) drawSystemRow(sys);
+                        for (auto &sys : m_renderSystems)
+                            drawSystemRow(sys);
 
                         ImGui::EndTable();
                     }
                     ImGui::EndTabItem();
                 }
 
-                // --------------------------------------------------------
-                // Tab 2: Logic Inspectors (各システムのOnGuiを表示)
-                // --------------------------------------------------------
-                if (ImGui::BeginTabItem("Logic Inspectors")) {
-                    for (auto &sys : m_logicSystems) {
-                        // GUIを持っていないシステムはスキップ！
+                // Logic Inspectors タブ: OnGui を持つ Logic System を折りたたみで並べる
+                if (ImGui::BeginTabItem("Logic Inspectors"))
+                {
+                    for (auto &sys : m_logicSystems)
+                    {
                         if (!sys->hasGui) continue;
 
                         ImGui::PushID(sys->GetSystemID());
-                        // 折りたたみヘッダーの中にシステムのGUIを表示
-                        if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
-                            ImGui::Indent(); // 少しインデントして階層構造を見やすく
-
-                            // OnGuiの処理負荷追跡
-                            {
-                                ZoneScoped;
-                                std::string zoneName = sys->GetName() + "::OnGui";
-                                ZoneName(zoneName.c_str(), zoneName.size());
-
-                                sys->OnGui(); // 各システムのGUI描画を実行
-                            }
-
-                            ImGui::Unindent();
-                            ImGui::Spacing();
-                        }
-                        ImGui::PopID();
-                    }
-                    ImGui::EndTabItem();
-                }
-
-                // --------------------------------------------------------
-                // Tab 3: Render Inspectors
-                // --------------------------------------------------------
-                if (ImGui::BeginTabItem("Render Inspectors")) {
-                    for (auto &sys : m_renderSystems) {
-                        // GUIを持っていないシステムはスキップ！
-                        if (!sys->hasGui) continue;
-
-                        ImGui::PushID(sys->GetSystemID());
-                        if (ImGui::CollapsingHeader(sys->GetName().c_str())) {
+                        if (ImGui::CollapsingHeader(sys->GetName().c_str()))
+                        {
                             ImGui::Indent();
 
-                            // OnGuiの処理負荷追跡
+                            // 各 System の OnGui の負荷を Tracy で個別に見られるようにする
                             {
                                 ZoneScoped;
                                 std::string zoneName = sys->GetName() + "::OnGui";
                                 ZoneName(zoneName.c_str(), zoneName.size());
 
-                                sys->OnGui(); // 各システムのGUI描画を実行
+                                sys->OnGui();
                             }
 
                             ImGui::Unindent();
@@ -283,7 +222,33 @@ namespace CCL::ECS
                     ImGui::EndTabItem();
                 }
 
-              
+                // Render Inspectors タブ: 中身は Logic Inspectors と同じ
+                if (ImGui::BeginTabItem("Render Inspectors"))
+                {
+                    for (auto &sys : m_renderSystems)
+                    {
+                        if (!sys->hasGui) continue;
+
+                        ImGui::PushID(sys->GetSystemID());
+                        if (ImGui::CollapsingHeader(sys->GetName().c_str()))
+                        {
+                            ImGui::Indent();
+
+                            {
+                                ZoneScoped;
+                                std::string zoneName = sys->GetName() + "::OnGui";
+                                ZoneName(zoneName.c_str(), zoneName.size());
+
+                                sys->OnGui();
+                            }
+
+                            ImGui::Unindent();
+                            ImGui::Spacing();
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndTabItem();
+                }
 
                 ImGui::EndTabBar();
             }
@@ -291,4 +256,4 @@ namespace CCL::ECS
         ImGui::End();
     }
 
-}
+} // namespace CCL::ECS

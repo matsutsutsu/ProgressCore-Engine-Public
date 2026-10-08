@@ -1,4 +1,3 @@
-// 役割・設計方針は UIAnimationSystem.h を参照。
 #include "UIAnimationSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"

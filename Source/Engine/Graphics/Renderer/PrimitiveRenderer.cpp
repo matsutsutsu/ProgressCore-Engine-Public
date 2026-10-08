@@ -1,6 +1,6 @@
 #include "PrimitiveRenderer.h"
 #include <stdio.h>
-#include <math.h> // std::isnan用
+#include <math.h>
 #include <memory>
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
@@ -12,35 +12,26 @@ using namespace DirectX;
 
 namespace
 {
-// メッシュ作成時に使用する頂点構造体
-struct Vertex
-{
-    DirectX::XMFLOAT3 position;
-    DirectX::XMFLOAT3 normal;
-};
+    struct Vertex
+    {
+        DirectX::XMFLOAT3 position;
+        DirectX::XMFLOAT3 normal;
+    };
 } // namespace
 
-// 静的メンバの実体化
 std::atomic<uint64_t> PrimitiveRenderer::s_instanceCounter = 0;
 
 PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
 {
-
-    // インスタンスごとの固有IDを発行する（シーン再読み込み時のバグ防止）
+    // 作り直したとき（デバイスロストからの復帰など）に、各スレッドの古い配列を使わせないための番号
     m_instanceId = ++s_instanceCounter;
 
-    // ==============================================================
-    // 1. シェーダーと入力レイアウトの作成 (既存コードそのまま)
-    // ==============================================================
-
-    // 入力レイアウト
     D3D11_INPUT_ELEMENT_DESC inputElementDesc[] =
         {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
         };
 
-    // ビルド時に Assets/Shader へ出力された .cso を読み込む
     GpuResourceUtils::LoadVertexShader(
         device,
         "Assets/Shader/PrimitiveRendererVS.cso",
@@ -53,23 +44,17 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
         device,
         "Assets/Shader/PrimitiveRendererPS.cso",
         pixelShader.GetAddressOf());
-    // ==============================================================
-    // 2. PSO（金型）の作成 と インスタンスバッファの初期化
-    // ==============================================================
-    // ① 不透明（塗りつぶし）用
+
     m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
 
-    // ② ワイヤーフレーム用（ベースをもらって、Rasterizerだけ書き換える）
+    // ワイヤーフレームは、不透明の既定からラスタライザだけを変える（線で描き、裏面も描く）
     PipelineStateDesc wireDesc = PipelineStateDesc::DefaultOpaque();
-    wireDesc.rasterizer        = RasterizerState::WireCullNone; // 線画＆裏面も描画
+    wireDesc.rasterizer        = RasterizerState::WireCullNone;
     m_psoWireframe             = PipelineState(wireDesc);
 
-    // インスタンスバッファ生成
     m_instanceBuffer.Create(device);
 
-    // ==============================================================
-    // 3. 基本メッシュの生成 (サイズ1の基準図形)
-    // ==============================================================
+    // 大きさ 1 の図形
     CreateSphereMesh(device, 1.0f, 16, 16, sphereBuffer);
     CreateHalfSphereMesh(device, 1.0f, 16, 16, halfSphereBuffer);
     CreateCylinderMesh(device, 1.0f, 1.0f, -0.5f, 1.0f, 16, 1, cylinderBuffer);
@@ -78,9 +63,10 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
     CreateCapsuleMesh(device, 1.0f, 1.0f, 32, 16);
 }
 
-// =========================================================
-// カリング判定用ヘルパー実装
-// =========================================================
+// ---------------------------------------------------------------------------
+// 可視判定と描画
+// ---------------------------------------------------------------------------
+
 bool PrimitiveRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
 {
     if (!m_cullingEnabled) return true;
@@ -93,48 +79,28 @@ bool PrimitiveRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
     return m_frustum.Intersects(box);
 }
 
-// 1. バッファの取得と登録（ロックは初回1回のみ）
 PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
 {
-    //
-    //    ZoneScopedN("PrimitiveRenderer::GetDrawList"); // シーン描画全体
-    //#endif
+    // ロックするのは、そのスレッドが初めて呼んだときだけ
 
-    // thread_local をつけると、スレッドごとに実体が別々に作られる
-    // staticだと全スレッドで共有されてしまうけど、thread_localならスレッドごとに自分専用のバッファを持てる！
-    // スレッド側には「データの実体」ではなく「ポインタ」と「所属ID」だけをキャッシュさせる
+    // 仕組みは ShapeRenderer::GetDrawList と同じ
     thread_local PrimitiveDrawList *myLocalList  = nullptr;
     thread_local uint64_t           myRendererId = 0;
 
-    // もし「今のレンダラー」に未登録なら、新しい袋を作ってもらう
     if (myRendererId != m_instanceId)
     {
         std::lock_guard<std::mutex> lock(m_listMutex);
 
-        // メモリの確保(袋の作成)はレンダラー側で行い、所有権を渡す
         auto newList = std::make_unique<PrimitiveDrawList>();
 
-        // =========================================================
-        // メモリの事前予約（お引越し・mallocを完全に防ぐ！）
-        // これを書くだけで、push_back が一切ロックなしの爆速になります。
-        // =========================================================
-        //newList->opaqueBoxes.reserve(20000);
-        //newList->wireframeBoxes.reserve(5000);
-        //newList->opaqueSpheres.reserve(20000);
-        // ※よく使う図形はあらかじめ巨大な枠を確保しておく
-
         myLocalList = newList.get();
-        m_drawLists.push_back(std::move(newList)); // レンダラーが寿命を管理する
+        m_drawLists.push_back(std::move(newList));
 
-        myRendererId = m_instanceId; // 登録完了
+        myRendererId = m_instanceId;
     }
-    // ロックなしで爆速で返す
     return *myLocalList;
 }
 
-// ====================================================================
-// 一括描画処理（インスタンシング ＆ PSO）
-// ====================================================================
 void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
                                const RenderServices      &s,
                                const DirectX::XMFLOAT4X4 &view,
@@ -142,22 +108,19 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
 {
     ZoneScopedN("PrimitiveRenderer::Render");
 
-    // 1. 次フレームのカリング用に視錐台を更新
+    // 次のフレームで積むときのカリング用に、視錐台を更新する
     BoundingFrustum frustumLocal;
     BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));
     XMMATRIX V    = XMLoadFloat4x4(&view);
     XMMATRIX invV = XMMatrixInverse(nullptr, V);
     frustumLocal.Transform(m_frustum, invV);
 
-    // 2. 共通シェーダー設定
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
     dc->IASetInputLayout(inputLayout.Get());
 
-    // 3. CbScene (b8) をバインド
-    //    Graphics::Instance() を廃止し s.sceneConstantBuffer を使用する。
-    //    CbScene は Graphics::Update() で内容更新済み、EnvironmentSystem でもバインド済みだが、
-    //    PrimitiveRenderer が pipeline 外から呼ばれる場合に備えて安全のため再バインドする。
+    // CbScene（b8）は EnvironmentSystem がバインド済みだが、前のパスが同じスロットを
+    // 変えていても正しく描けるよう、ここでもバインドする
     if (s.sceneConstantBuffer)
     {
         ID3D11Buffer *sceneCB = s.sceneConstantBuffer;
@@ -165,13 +128,9 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
         dc->PSSetConstantBuffers(SLOT_CB_SCENE, 1, &sceneCB);
     }
 
-    // 4. lightManager->Bind を除去：Graphics::Update() で既に実行済み。
-    //    pipeline 内での呼び出しでは冗長。直接呼び出す場合は呼び出し元で Bind すること。
-
-    // 5. インスタンシング描画ヘルパー（rc.renderState → s.renderState に変更）
     auto DrawInstanced = [&](GeometryBuffer &geo, const PipelineState &pso,
                              std::vector<InstanceData> PrimitiveDrawList::*memberPtr) {
-        pso.Apply(dc, s.renderState); // ← Graphics::Instance() / rc.renderState を除去
+        pso.Apply(dc, s.renderState);
 
         UINT stride = sizeof(Vertex), offset = 0;
         dc->IASetVertexBuffers(0, 1, geo.vertexBuffer.GetAddressOf(), &stride, &offset);
@@ -183,6 +142,7 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
             std::vector<InstanceData> &instances = (*listPtr).*memberPtr;
             if (instances.empty()) continue;
 
+            // 1つの配列に 10 万個を超えて積まれていたら、描かずに全部捨てる
             size_t totalCount = instances.size();
             if (totalCount > 100000)
             {
@@ -193,11 +153,10 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                size_t                    drawCount = (std::min)(totalCount - drawOffset, InstanceBuffer::MAX_INSTANCES);
-                std::vector<InstanceData> chunk(
-                    instances.begin() + drawOffset,
-                    instances.begin() + drawOffset + drawCount);
-                m_instanceBuffer.Write(dc, chunk);
+                // 分ける幅はバッファの実際の容量から取る（容量を表す定数を別に持たない）。
+                // 配列の一部を vector に写さず、ポインタと個数で渡す（写すと分けるたびにメモリを確保する）
+                size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
+                m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
                 m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
                 dc->DrawIndexedInstanced(geo.indexCount, static_cast<UINT>(drawCount), 0, 0, 0);
                 drawOffset += drawCount;
@@ -206,7 +165,6 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
         }
     };
 
-    // 6. 全図形を一気に描画
     DrawInstanced(boxBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueBoxes);
     DrawInstanced(boxBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeBoxes);
     DrawInstanced(sphereBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueSpheres);
@@ -218,7 +176,7 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
     DrawInstanced(capsuleBuffer, m_psoOpaque, &PrimitiveDrawList::opaqueCapsules);
     DrawInstanced(capsuleBuffer, m_psoWireframe, &PrimitiveDrawList::wireframeCapsules);
 
-    // 7. クリーンアップ
+    // 後のパスにステートを残さない
     m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
     dc->RSSetState(nullptr);
     dc->OMSetDepthStencilState(nullptr, 0);
@@ -227,14 +185,12 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
     dc->PSSetShader(nullptr, nullptr, 0);
 }
 
-// ====================================================================
-// 描画登録処理（マルチスレッド安全）
-// ====================================================================
+// ---------------------------------------------------------------------------
+// 図形の登録
+// ---------------------------------------------------------------------------
+
 void PrimitiveRenderer::DrawBox(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
-    // もし ECS 側からゴミデータが流れてきたら、描画せずに無視する（宇宙サイズの箱を防ぐ！）
-    //if (!IsValidMatrix(transform)) return;
-
     GetDrawList().opaqueBoxes.push_back({transform, color});
 }
 void PrimitiveRenderer::DrawWireframeBox(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
@@ -274,11 +230,10 @@ void PrimitiveRenderer::DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, 
     GetDrawList().wireframeCones.push_back({transform, color});
 }
 
-// ====================================================================
-// メッシュ生成処理 (既存コードの移植)
-// ====================================================================
+// ---------------------------------------------------------------------------
+// メッシュの生成
+// ---------------------------------------------------------------------------
 
-// 球メッシュ作成
 void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer)
 {
     int                       vertex_count = slices * (stacks - 1) + 2;
@@ -310,7 +265,7 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
 
     Vertex *vertex = vertices.get();
 
-    // north pole.
+    // 北極
     vertex->position.x = 0;
     vertex->position.y = radius;
     vertex->position.z = 0;
@@ -337,7 +292,7 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
         }
     }
 
-    // south_pole
+    // 南極
     vertex->position.x = 0;
     vertex->position.y = -radius;
     vertex->position.z = 0;
@@ -348,7 +303,7 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
 
     UINT *index = indices.get();
 
-    // north pole cap
+    // 北極のまわりの三角形
     for (int l = 1; l < slices; l++)
     {
         index[0] = l + 1;
@@ -383,7 +338,7 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
         index += 6;
     }
 
-    // south pole cap
+    // 南極のまわりの三角形
     int base_index = slices * (stacks - 2);
     int last_index = vertex_count - 1;
     for (int l = 1; l < slices; l++)
@@ -397,7 +352,6 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
     index[1] = last_index;
     index[2] = base_index + 1;
 
-    // バッファ作成
     D3D11_BUFFER_DESC      desc    = {};
     D3D11_SUBRESOURCE_DATA subData = {};
     desc.ByteWidth                 = static_cast<UINT>(sizeof(Vertex) * vertex_count);
@@ -415,7 +369,6 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
     buffer.indexCount = index_count;
 }
 
-// 半球メッシュ作成
 void PrimitiveRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer)
 {
     int vertex_count = slices * (stacks - 1) + 1;
@@ -523,7 +476,6 @@ void PrimitiveRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius,
     buffer.indexCount = index_count;
 }
 
-// 箱メッシュ作成
 void PrimitiveRenderer::CreateBoxMesh(ID3D11Device *device, float radius, float height, float depth, GeometryBuffer &buffer)
 {
     Vertex vertices[] = {
@@ -615,7 +567,6 @@ void PrimitiveRenderer::CreateBoxMesh(ID3D11Device *device, float radius, float 
     buffer.indexCount = sizeof(indices) / sizeof(indices[0]);
 }
 
-// 円柱メッシュ作成
 void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, float radius2, float start, float height, int slices, int stacks, GeometryBuffer &buffer)
 {
     float stack_height = height / stacks;
@@ -772,16 +723,13 @@ void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, 
     buffer.indexCount = index_count;
 }
 
-// ====================================================================
-// カプセルメッシュの生成（球の赤道分割アルゴリズム）
-// ====================================================================
 void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, float cylinderHeight, int slices, int rings)
 {
-    // 球を綺麗に半分に割るため、リング数は必ず偶数にする
+    // 赤道で半分に分けるので、リングの数は偶数にする
     if (rings % 2 != 0) rings++;
 
     float halfHeight = cylinderHeight * 0.5f;
-    int   numRings   = rings + 2; // 円柱部分を作るため、赤道リングを2つに分裂させる（+2）
+    int   numRings   = rings + 2; // 赤道のリングを2つにする（上の半球の下端と下の半球の上端。その間が円柱）
 
     int vertexCount = numRings * (slices + 1);
     int indexCount  = (numRings - 1) * slices * 6;
@@ -801,14 +749,14 @@ void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, fl
         // 上半球（北半球）の計算
         if (i <= rings / 2)
         {
-            phi     = (DirectX::XM_PI * i) / rings; // 0 から π/2 まで
-            yOffset = halfHeight;                   // 上に持ち上げる
+            phi     = (DirectX::XM_PI * i) / rings; // 0 〜 π/2
+            yOffset = halfHeight;
         }
         // 下半球（南半球）の計算
         else
         {
-            phi     = (DirectX::XM_PI * (i - 1)) / rings; // π/2 から π まで
-            yOffset = -halfHeight;                        // 下に押し下げる
+            phi     = (DirectX::XM_PI * (i - 1)) / rings; // π/2 〜 π
+            yOffset = -halfHeight;
         }
 
         float y = radius * cosf(phi);
@@ -822,7 +770,7 @@ void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, fl
 
             vertices[vIndex].position = {x, y + yOffset, z};
 
-            // 法線は「オフセット移動する前の球体の向き」をそのまま使う
+            // 法線は、上下にずらす前の球の上での向きを使う
             float len = sqrtf(x * x + y * y + z * z);
             if (len > 0.0001f)
             {
@@ -830,7 +778,7 @@ void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, fl
             }
             else
             {
-                vertices[vIndex].normal = {0.0f, 1.0f, 0.0f}; // 頂点の極における安全対策
+                vertices[vIndex].normal = {0.0f, 1.0f, 0.0f}; // 長さ 0 のベクトルを正規化しないように
             }
             vIndex++;
         }

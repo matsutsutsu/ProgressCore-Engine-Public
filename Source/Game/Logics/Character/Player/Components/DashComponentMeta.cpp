@@ -5,10 +5,6 @@
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-// ===========================================================================
-// DashComponent メタデータ定義
-// Movement カテゴリへ
-// ===========================================================================
 COMPONENT_META_BEGIN_FULL(DashComponent, "Dash Component", CCL::Categories::Movement, 155, false)
 CFIELD_FLOAT_RANGED(dashSpeed, "ダッシュ速度", 1.0f, 0.0f, 200.0f, "設定")
 CFIELD_FLOAT_RANGED(dashDuration, "ダッシュ継続時間", 0.01f, 0.0f, 5.0f, "設定")
@@ -28,9 +24,6 @@ CFIELD(currentTimer, "現在タイマー", "状態")
 CFIELD_FLOAT3_FAST(dashDirection, "ダッシュ方向", 0.1f, "状態")
 COMPONENT_META_END(DashComponent)
 
-// ===========================================================================
-// JustEvadeComponent メタデータ定義
-// ===========================================================================
 COMPONENT_META_BEGIN_FULL(JustEvadeComponent, "Just Evade Component", CCL::Categories::Movement, 156, false)
 CFIELD(isJustSuccess, "ジャスト成功", "状態")
 COMPONENT_META_END(JustEvadeComponent)

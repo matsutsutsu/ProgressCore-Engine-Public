@@ -1,16 +1,16 @@
 #pragma once
-//==============================================================================
-// Dialog.h
+// ===========================================================================
+// 概要: Win32 のファイル選択／保存ダイアログを、用途別の履歴とプリセット付きで包むクラス。
 //
-// ファイル選択 / 保存ダイアログ
+// 責務:
+//   - 用途ID（contextId）ごとに最後に開いたフォルダを覚え、次回の初期位置にする
+//   - 用途別のフィルタ・初期フォルダ・既定拡張子をプリセットとして登録する
+//   - 履歴を EditorPrefs.json へ保存／読み込みする
+//   - 絶対パスをカレントディレクトリ基準の相対パスへ変換する
 //
-// 設計方針:
-//   - 用途別ID (contextId) で履歴を独立管理
-//   - 内部は UTF-16 (Win32 W API)、外向きは UTF-8 (std::string / path) で統一
-//   - 構造体パラメータ + std::optional 戻り値のモダンC++設計
-//   - プリセット登録による呼び出しの簡潔化
-//
-//==============================================================================
+// 備考: 内部は UTF-16（Win32 W API）、外向きは UTF-8（std::string / path）で扱う。
+//       エディタ専用で、Framework が ENABLE_EDITOR のときだけ Initialize する。
+// ===========================================================================
 
 #include <Windows.h>
 #include <filesystem>
@@ -19,179 +19,112 @@
 #include <string_view>
 #include <vector>
 
-
-/**
- * @brief ダイアログの結果コード
- */
-enum class DialogResult
-{
-    OK,
-    Cancel,
-    Yes,
-    No,
-};
-
-/**
- * @brief ファイルフィルタ1個分
- * @details 例) label="Model Files", pattern="*.fbx;*.obj;*.gltf"
- */
+// ファイルフィルタ1個分。例: label="Model Files", pattern="*.fbx;*.obj;*.gltf"
 struct FileFilter
 {
-    std::string label;     // 表示名
-    std::string pattern;   // セミコロン区切りのワイルドカード
+    std::string label;   // 表示名
+    std::string pattern; // セミコロン区切りのワイルドカード
 };
 
 /**
- * @brief FileDialog::Open / Save に渡すパラメータ
+ * @brief FileDialog::Open / Save に渡すパラメータ。
  *
- * @details
- *  C++20 の指定初期化子で必要項目だけ書けるように、すべて初期値を持つ。
- *  履歴のキーは contextId が最優先、無ければ title。
+ * C++20 の指定初期化子で必要な項目だけ書けるよう、すべて初期値を持つ。
+ * 履歴のキーは contextId を優先し、空なら title を使う。
  */
 struct FileDialogParams
 {
-    std::string title;                       // ダイアログタイトル (UTF-8)
-    std::string contextId;                   // 履歴キー ("Model","Scene"等). 空ならtitle使用
-    std::vector<FileFilter> filters;         // ファイルフィルタ. 空ならAll Files
-    std::filesystem::path initialPath;       // 明示初期パス. 設定時は履歴より優先
-    std::filesystem::path defaultFileName;   // Save時のデフォルトファイル名
-    std::string defaultExt;                  // Save時のデフォルト拡張子 (例: "scene")
-    HWND ownerHwnd = nullptr;                // オーナーウィンドウ
+    std::string             title;               // ダイアログタイトル（UTF-8）
+    std::string             contextId;           // 履歴キー（"Model", "Scene" 等）。空なら title を使う
+    std::vector<FileFilter> filters;             // ファイルフィルタ。空なら All Files
+    std::filesystem::path   initialPath;         // 明示の初期パス。指定時は履歴より優先する
+    std::filesystem::path   defaultFileName;     // Save 時の既定ファイル名
+    std::string             defaultExt;          // Save 時の既定拡張子（例: "json"）
+    HWND                    ownerHwnd = nullptr; // オーナーウィンドウ。nullptr ならアクティブウィンドウ
 };
 
-/**
- * @brief 用途プリセット - 用途別の典型設定を事前登録するための構造体
- */
+// 用途プリセット。用途ごとの典型設定を事前登録しておく
 struct FileDialogPreset
 {
-    std::vector<FileFilter> filters;
-    std::filesystem::path defaultDir;        // 履歴が無い時のデフォルト初期位置
-    std::string defaultExt;
+    std::vector<FileFilter> filters;    // ファイルフィルタ
+    std::filesystem::path   defaultDir; // 履歴が無いときの初期フォルダ
+    std::string             defaultExt; // Save 時の既定拡張子
 };
 
-/**
- * @brief ファイル選択 / 保存ダイアログ (販売エンジン向け)
- *
- * @details
- *  - 用途別(contextId)に独立した履歴を持ち、用途間で初期位置が混線しない
- *  - 明示 initialPath があれば履歴より優先
- *  - 内部は UTF-16 / std::filesystem::path で扱い、多言語パスに対応
- *  - 履歴は LoadHistory / SaveHistory で JSON 永続化可能
- */
 class FileDialog
 {
 public:
-    //------------------------------------------------------------------
+    // ============================================================
     // 初期化
-    //------------------------------------------------------------------
+    // ============================================================
 
     /**
-     * @brief エンジン全体で使うプリセットを一括登録し、履歴を読み込む
+     * @brief エンジン共通のプリセットを登録し、履歴を読み込む。
      *
-     * @param settingsPath EditorPrefs.json のパス
-     * @details
-     *  Framework のコンストラクタから 1 度だけ呼び出す。
-     *  この関数でプリセット登録 + LoadHistory をまとめて行うため、
-     *  各エディタウィンドウ側でフィルタ文字列を書く必要がなくなる。
+     * 登録するプリセット（contextId）: Assets / Scene / Model / Texture / TextEditor /
+     * AnimSequence / AnimNode / Prefab / Audio / BehaviorTreeNode。
+     * フィルタと初期フォルダは Dialog.cpp の Initialize を参照。
      *
-     *  【登録済みプリセット一覧】
-     *  | contextId     | フィルタ                                | 用途                  |
-     *  |---------------|-----------------------------------------|-----------------------|
-     *  | "Scene"       | *.json                                  | シーン Open / Save    |
-     *  | "Model"       | *.fbx;*.obj;*.gltf                      | モデル選択            |
-     *  | "Texture"     | *.png;*.jpg;*.tga;*.bmp;*.dds           | テクスチャ選択        |
-     *  | "TextEditor"  | *.json;*.lua;*.cpp;*.h;*.hlsl;*.hlsli  | テキストエディタ      |
-     *  | "AnimSequence"| *.json                                  | アニメーションシーケンス |
-     *  | "Prefab"      | *.json                                  | プレハブ Save         |
-     *  | "Audio"       | *.wav;*.ogg;*.mp3;*.flac                | オーディオアセット    |
+     * @param settingsPath 履歴を読む EditorPrefs.json のパス
+     * @note Framework の初期化から1度だけ呼ぶ。
      */
-    static void Initialize(const std::filesystem::path& settingsPath = "Build/EditorPrefs.json");
+    static void Initialize(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
 
-    //------------------------------------------------------------------
-    // 基本API
-    //------------------------------------------------------------------
+    // ============================================================
+    // 基本 API
+    // ============================================================
+
+    // 単一ファイルを開くダイアログを表示する。キャンセル時は std::nullopt
+    static std::optional<std::filesystem::path> Open(const FileDialogParams &params);
+
+    // 複数ファイルを選べる、開くダイアログを表示する。キャンセル時は空
+    static std::vector<std::filesystem::path> OpenMulti(const FileDialogParams &params);
+
+    // 保存ダイアログを表示する。キャンセル時は std::nullopt
+    static std::optional<std::filesystem::path> Save(const FileDialogParams &params);
 
     /**
-     * @brief 単一ファイルを開くダイアログを表示する
-     * @param params ダイアログパラメータ
-     * @return 選択されたパス. キャンセル時は std::nullopt
-     */
-    static std::optional<std::filesystem::path> Open(const FileDialogParams& params);
-
-    /**
-     * @brief 複数ファイルを開くダイアログを表示する
-     * @param params ダイアログパラメータ
-     * @return 選択されたパス群. キャンセル時は空ベクター
-     */
-    static std::vector<std::filesystem::path> OpenMulti(const FileDialogParams& params);
-
-    /**
-     * @brief 保存ダイアログを表示する
-     * @param params ダイアログパラメータ
-     * @return 保存パス. キャンセル時は std::nullopt
-     */
-    static std::optional<std::filesystem::path> Save(const FileDialogParams& params);
-
-    /**
-     * @brief 絶対パスをプロジェクトのルート（または実行ファイル位置）からの相対パスに変換する
+     * @brief 絶対パスをカレントディレクトリ基準の相対パスに変換する。
      * @param absolutePath ダイアログ等で取得した絶対パス
-     * @return 変換後の相対パス（文字列）。変換に失敗した場合（別ドライブ等）はそのまま返す。
+     * @return 区切りを '/' にした相対パス。別ドライブ等で変換できなければ元のパスをそのまま返す。
      */
-    static std::string ConvertToRelativePath(const std::filesystem::path& absolutePath);
+    static std::string ConvertToRelativePath(const std::filesystem::path &absolutePath);
 
-    //------------------------------------------------------------------
-    // プリセット - 呼び出し側を簡潔にする
-    //------------------------------------------------------------------
+    // ============================================================
+    // プリセット
+    // ============================================================
+
+    // 用途プリセットを登録する。以後 OpenPreset / SavePreset で contextId だけ渡せば使える
+    static void RegisterPreset(std::string_view contextId, const FileDialogPreset &preset);
 
     /**
-     * @brief 用途プリセットを登録する
-     * @param contextId 用途キー
-     * @param preset 設定内容
-     * @details 一度登録すれば OpenPreset / SavePreset でワンライナー呼び出し可能
-     */
-    static void RegisterPreset(std::string_view contextId, const FileDialogPreset& preset);
-
-    /**
-     * @brief 登録済みプリセットでファイルを開く
-     * @param contextId 用途キー (RegisterPreset で登録したもの)
-     * @param title 表示タイトル. 空なら contextId が使われる
+     * @brief 登録済みプリセットでファイルを開く。
+     * @param contextId 用途キー（RegisterPreset で登録したもの）
+     * @param title 表示タイトル。空なら contextId を使う
      * @param ownerHwnd オーナーウィンドウ
      */
     static std::optional<std::filesystem::path> OpenPreset(
         std::string_view contextId,
-        std::string_view title = {},
-        HWND ownerHwnd = nullptr);
+        std::string_view title     = {},
+        HWND             ownerHwnd = nullptr);
 
-    /**
-     * @brief 登録済みプリセットで保存ダイアログを表示する
-     */
+    // 登録済みプリセットで保存ダイアログを表示する。引数は OpenPreset と同じ
     static std::optional<std::filesystem::path> SavePreset(
-        std::string_view contextId,
-        std::string_view title = {},
-        const std::filesystem::path& defaultFileName = {},
-        HWND ownerHwnd = nullptr);
+        std::string_view             contextId,
+        std::string_view             title           = {},
+        const std::filesystem::path &defaultFileName = {},
+        HWND                         ownerHwnd       = nullptr);
 
-    //------------------------------------------------------------------
-    // 履歴管理
-    //------------------------------------------------------------------
+    // ============================================================
+    // 履歴
+    // ============================================================
 
-    /**
-     * @brief 履歴をJSONファイルから読み込む
-     * @param settingsPath 設定ファイルのパス
-     */
-    static void LoadHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
+    // 履歴を JSON ファイルから読み込む。保存時の相対パスは絶対パスへ戻す
+    static void LoadHistory(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
 
-    /**
-     * @brief 履歴をJSONファイルに書き込む
-     * @param settingsPath 設定ファイルのパス
-     */
-    static void SaveHistory(const std::filesystem::path& settingsPath = "Build/User/EditorPrefs.json");
+    // 履歴を JSON ファイルに書き込む。同じファイルの他のキーは残す
+    static void SaveHistory(const std::filesystem::path &settingsPath = "Build/User/EditorPrefs.json");
 
-    /**
-     * @brief 履歴をクリアする
-     * @param contextId 対象キー. 空ならすべてクリア
-     */
+    // contextId の履歴を消す。空なら全部消す
     static void ClearHistory(std::string_view contextId = {});
 };
-
-

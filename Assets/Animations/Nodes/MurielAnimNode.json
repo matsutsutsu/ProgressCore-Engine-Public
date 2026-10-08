@@ -7,45 +7,18 @@
             "conditions": [
                 {
                     "op": 3,
-                    "paramHash": 1898928778,
-                    "paramName": "Slash",
+                    "paramHash": 2443131885,
+                    "paramName": "Death",
                     "threshold": 0.0
                 }
             ],
             "logicType": 0,
             "requiredCancelMask": 0,
-            "targetStateHash": 1898928778
+            "sourceGroupId": 0,
+            "targetStateHash": 2443131885
         },
         {
-            "blendDuration": 0.15,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1991396666,
-                    "paramName": "DashSlash",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1991396666
-        },
-        {
-            "blendDuration": 0.15,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1204849781,
-                    "paramName": "JumpAttack",
-                    "threshold": 0.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "targetStateHash": 1204849781
-        },
-        {
-            "blendDuration": 0.1,
+            "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "op": 3,
@@ -56,7 +29,38 @@
             ],
             "logicType": 0,
             "requiredCancelMask": 0,
+            "sourceGroupId": 0,
             "targetStateHash": 1451197408
+        },
+        {
+            "blendDuration": 0.15000000596046448,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2423584467,
+                    "paramName": "Leap",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 1883154177
+        },
+        {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1750693397,
+                    "paramName": "Dash",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 2047048416
         }
     ],
     "entryPosX": -48.0,
@@ -76,13 +80,6 @@
             "hash": 3816806871,
             "name": "IsMoving",
             "type": 1
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
-            "hash": 1898928778,
-            "name": "Slash",
-            "type": 2
         },
         {
             "defaultBool": false,
@@ -115,29 +112,73 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 1991396666,
-            "name": "DashSlash",
-            "type": 2
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
-            "hash": 1204849781,
-            "name": "JumpAttack",
-            "type": 2
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
             "hash": 1451197408,
             "name": "BackStep",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2423584467,
+            "name": "Leap",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 79417333,
+            "name": "IsLeaping",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2693360683,
+            "name": "LeapAttack",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1750693397,
+            "name": "Dash",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2969413448,
+            "name": "DashPhase",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2521061527,
+            "name": "BackStepPhase",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 641192933,
+            "name": "StrafeDir",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2443131885,
+            "name": "Death",
             "type": 2
         }
     ],
     "states": [
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": true,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 170.0,
             "nodePosY": 298.0,
@@ -148,6 +189,36 @@
             "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2907519899
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1019367652
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -166,13 +237,16 @@
                     ],
                     "logicType": 1,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 2133600820
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": true,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 436.0,
             "nodePosY": 298.0,
@@ -188,6 +262,36 @@
                     "conditions": [
                         {
                             "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2907519899
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1019367652
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
                             "paramHash": 174817312,
                             "paramName": "Speed",
                             "threshold": 0.10000000149011612
@@ -195,62 +299,16 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
-                }
-            ]
-        },
-        {
-            "applyRootMotion": true,
-            "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 114.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Slash.json",
-            "sequenceName": "Slash",
-            "speedCurveName": "",
-            "stateHash": 1898928778,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": false,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": -398.0,
             "nodePosY": -231.0,
@@ -273,19 +331,22 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": false,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": -228.0,
             "nodePosY": -233.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Front.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Back.json",
             "sequenceName": "HitBack",
             "speedCurveName": "",
             "stateHash": 4038633241,
@@ -302,19 +363,22 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": false,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": -52.0,
             "nodePosY": -233.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Right.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Hit_Left.json",
             "sequenceName": "HitLeft",
             "speedCurveName": "",
             "stateHash": 2671032551,
@@ -331,13 +395,16 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": false,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 124.0,
             "nodePosY": -233.0,
@@ -360,122 +427,42 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
                 }
             ]
         },
         {
             "applyRootMotion": false,
+            "groupId": 0,
             "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 260.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashSlash.json",
-            "sequenceName": "DashSlash",
-            "speedCurveName": "",
-            "stateHash": 1991396666,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "isLoop": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 400.0,
-            "playbackSpeed": 0.8,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/JumpAttack.json",
-            "sequenceName": "JumpAttack",
-            "speedCurveName": "",
-            "stateHash": 1204849781,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 1168775091
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        },
-                        {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 1.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "targetStateHash": 2133600820
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "isLoop": false,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 298.0,
             "nodePosY": 540.0,
-            "playbackSpeed": 2.0,
+            "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/BackStep.json",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashRetreat.json",
             "sequenceName": "BackStep",
             "speedCurveName": "",
             "stateHash": 1451197408,
             "transitions": [
                 {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2521061527,
+                            "paramName": "BackStepPhase",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 918871896
+                },
+                {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
@@ -487,6 +474,39 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 298.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.5,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashAim.json",
+            "sequenceName": "BackStepStop",
+            "speedCurveName": "",
+            "stateHash": 918871896,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 1168775091
                 },
                 {
@@ -507,9 +527,509 @@
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
                     "targetStateHash": 2133600820
                 }
             ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 560.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapStart.json",
+            "sequenceName": "LeapStart",
+            "speedCurveName": "",
+            "stateHash": 1883154177,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3315573261
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 760.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapAir.json",
+            "sequenceName": "LeapAir",
+            "speedCurveName": "",
+            "stateHash": 3315573261,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 79417333,
+                            "paramName": "IsLeaping",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 2693360683,
+                            "paramName": "LeapAttack",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2893681322
+                },
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 79417333,
+                            "paramName": "IsLeaping",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3620505358
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 960.0,
+            "nodePosY": 680.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
+            "sequenceName": "LeapLand",
+            "speedCurveName": "",
+            "stateHash": 3620505358,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 960.0,
+            "nodePosY": 820.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/LeapLandAttack.json",
+            "sequenceName": "LeapLandAttack",
+            "speedCurveName": "",
+            "stateHash": 2893681322,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 560.0,
+            "nodePosY": 960.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashRetreat.json",
+            "sequenceName": "DashRetreat",
+            "speedCurveName": "",
+            "stateHash": 2047048416,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2969413448,
+                            "paramName": "DashPhase",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1353192454
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 756.0,
+            "nodePosY": 954.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashAim.json",
+            "sequenceName": "DashAim",
+            "speedCurveName": "",
+            "stateHash": 1353192454,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2969413448,
+                            "paramName": "DashPhase",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1001994305
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 960.0,
+            "nodePosY": 960.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashCharge.json",
+            "sequenceName": "DashCharge",
+            "speedCurveName": "",
+            "stateHash": 1001994305,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2969413448,
+                            "paramName": "DashPhase",
+                            "threshold": 4.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 4004919369
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1160.0,
+            "nodePosY": 960.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashTravel.json",
+            "sequenceName": "DashTravel",
+            "speedCurveName": "",
+            "stateHash": 4004919369,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2969413448,
+                            "paramName": "DashPhase",
+                            "threshold": 5.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 579086389
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 2969413448,
+                            "paramName": "DashPhase",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1360.0,
+            "nodePosY": 960.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DashStop.json",
+            "sequenceName": "DashStop",
+            "speedCurveName": "",
+            "stateHash": 579086389,
+            "transitions": [
+                {
+                    "blendDuration": 0.3499999940395355,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 1,
+                            "paramHash": 174817312,
+                            "paramName": "Speed",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/StrafeLeft.json",
+            "sequenceName": "StrafeLeft",
+            "speedCurveName": "",
+            "stateHash": 2907519899,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": -0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/StrafeRight.json",
+            "sequenceName": "StrafeRight",
+            "speedCurveName": "",
+            "stateHash": 1019367652,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 641192933,
+                            "paramName": "StrafeDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -398.0,
+            "nodePosY": 540.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/Death.json",
+            "sequenceName": "Death",
+            "speedCurveName": "",
+            "stateHash": 2443131885,
+            "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2240033283
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -198.0,
+            "nodePosY": 540.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Muriel/DeathLoop.json",
+            "sequenceName": "DeathLoop",
+            "speedCurveName": "",
+            "stateHash": 2240033283,
+            "transitions": []
         }
     ]
 }

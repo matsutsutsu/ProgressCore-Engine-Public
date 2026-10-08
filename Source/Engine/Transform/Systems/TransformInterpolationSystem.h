@@ -1,21 +1,23 @@
-// TransformInterpolationSystem.h
 #pragma once
+// ===========================================================================
+// 概要: 固定ステップの物理と可変フレームの描画の間を補間し、描画用ワールド行列を確定する System。
+//
+// 責務:
+//   - prevPosition/position（回転は prevRotation/rotation）を alpha で補間し、
+//     renderWorldMatrix を作る
+//   - 親子関係も TransformUpdateSystem と同じ順序で解決する
+//
+// 備考: Fix Your Timestep パターンの描画側。alpha は World リソースの RenderInterpState から読む。
+//       ロジック用の worldMatrix には一切触れないので、物理・当たり判定への副作用は無い。
+//       カメラが補間後の位置を追従できるよう、R01_Camera より前（R00）で実行する。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-// 固定ステップ物理と可変フレーム描画の間を補間し、描画専用ワールド行列を確定するシステム。
-// Render Stage 先頭(R00)で実行し、カメラ・カリング・描画がこの補間結果を参照する。
-
-/**
- * @brief prevPosition/position を alpha で線形補間し renderWorldMatrix を生成する。
- * @note Fix Your Timestep パターンの描画側後処理。alpha は RenderInterpStateComponent から取得。
- *       ロジック権威の worldMatrix には一切触れないため、物理・当たり判定への副作用はゼロ。
- * @warning R01_Camera より前に実行すること（カメラが補間後位置を追従できるようにするため）。
- */
 class TransformInterpolationSystem : public CCL::ECS::IfSystem<TransformInterpolationSystem,
-                                         CCL::ECS::Write<TransformComponent>>
+                                                               CCL::ECS::Write<TransformComponent>>
 {
-  public:
+public:
     TransformInterpolationSystem()
         : IfSystem("TransformInterpolationSystem")
     {
@@ -25,9 +27,8 @@ class TransformInterpolationSystem : public CCL::ECS::IfSystem<TransformInterpol
     void Update(float dt) override;
 
 private:
-    // 非ルート解決フェーズで使う、depth順の描画用ワールド行列の一時バッファ。
-    //
-    // TransformUpdateSystemの_cache.WorldAt/StoreWorldとは別領域。
-    // Logic権威データ（cache内部の物理worldMatrix）を汚さないために独立させている。
+    // 非ルートの解決で使う、描画用ワールド行列の作業領域（並びは TransformHierarchyCache と同じ）。
+    //   キャッシュ側の作業領域（WorldAt/StoreWorld）はロジック用の値が入っているので、
+    //   汚さないよう描画用は別に持つ。
     std::vector<DirectX::XMFLOAT4X4> m_renderWorldDense;
 };

@@ -1,122 +1,117 @@
 #pragma once
+// ===========================================================================
+// 概要: マウスのボタン・ホイール・カーソル位置を毎フレーム取得するクラス。
+//
+// 責務:
+//   - ボタン（押下中・押した瞬間・離した瞬間）とホイール量の管理
+//   - カーソル位置と前フレームからの移動量
+//   - マウスルック用のカーソルロック（画面中央へ戻し、OS カーソルを隠す）
+// ===========================================================================
 
 #include <Windows.h>
 #include <DirectXMath.h>
 
-
 using MouseButton = unsigned int;
 
-// マウス
 class Mouse
 {
 public:
-	static const MouseButton BTN_LEFT = (1 << 0);
-	static const MouseButton BTN_MIDDLE = (1 << 1);
-	static const MouseButton BTN_RIGHT = (1 << 2);
+    static const MouseButton BTN_LEFT   = (1 << 0);
+    static const MouseButton BTN_MIDDLE = (1 << 1);
+    static const MouseButton BTN_RIGHT  = (1 << 2);
 
 public:
-	Mouse(HWND hWnd);
-	~Mouse() {}
+    Mouse(HWND hWnd);
+    ~Mouse() {}
 
-	// 更新
-	void Update();
+    void Update();
 
-	// ボタン入力状態の取得
-	MouseButton GetButton() const { return buttonState[0]; }
+    // 押されているボタンのビット集合
+    MouseButton GetButton() const { return buttonState[0]; }
 
-	// ボタン押下状態の取得
-	MouseButton GetButtonDown() const { return buttonDown; }
+    // このフレームに押されたボタンのビット集合
+    MouseButton GetButtonDown() const { return buttonDown; }
 
-	// ボタン押上状態の取得
-	MouseButton GetButtonUp() const { return buttonUp; }
+    // このフレームに離されたボタンのビット集合
+    MouseButton GetButtonUp() const { return buttonUp; }
 
-	// 押しっぱなし判定 (IsDown)
-    bool IsDown(MouseButton button) const { 
-        return (buttonState[0] & button) != 0; 
+    // 押しっぱなし判定
+    bool IsDown(MouseButton button) const
+    {
+        return (buttonState[0] & button) != 0;
     }
 
-    // 押した瞬間判定 (IsTriggered / IsPressed)
-    bool IsTriggered(MouseButton button) const { 
-        return (buttonDown & button) != 0; 
+    // 押した瞬間判定
+    bool IsTriggered(MouseButton button) const
+    {
+        return (buttonDown & button) != 0;
     }
 
-    // 離した瞬間判定 (IsReleased)
-    bool IsReleased(MouseButton button) const { 
-        return (buttonUp & button) != 0; 
+    // 離した瞬間判定
+    bool IsReleased(MouseButton button) const
+    {
+        return (buttonUp & button) != 0;
     }
 
-	// ホイール値の設定
-	void SetWheel(int wheel) { this->wheel[0] += wheel; }
+    // ホイール量を加算する。WM_MOUSEWHEEL を受けた Framework が呼ぶ
+    void SetWheel(int wheel) { this->wheel[0] += wheel; }
 
-	// ホイール値の取得
-	int GetWheel() const { return wheel[1]; }
+    // 前フレームの間に回されたホイール量（正 = 上方向）
+    int GetWheel() const { return wheel[1]; }
+    bool IsWheelUp() const { return wheel[1] > 0; }
+    bool IsWheelDown() const { return wheel[1] < 0; }
 
-	// マウスホイールが上方向に回された瞬間
-	bool IsWheelUp() const { return wheel[1] > 0; }
+    // カーソル座標
+    DirectX::XMFLOAT2 GetPosition() const
+    {
+        return DirectX::XMFLOAT2(static_cast<float>(positionX[0]), static_cast<float>(positionY[0]));
+    }
 
-	// マウスホイールが下方向に回された瞬間
-	bool IsWheelDown() const { return wheel[1] < 0; }
+    int GetPositionX() const { return positionX[0]; }
+    int GetPositionY() const { return positionY[0]; }
 
-	// マウスカーソルの座標取得
-	DirectX::XMFLOAT2 GetPosition() const {
-		return DirectX::XMFLOAT2(static_cast<float>(positionX[0]), static_cast<float>(positionY[0]));
-	}
+    // 前フレームのカーソル座標
+    DirectX::XMFLOAT2 GetOldPosition() const
+    {
+        return DirectX::XMFLOAT2(static_cast<float>(positionX[1]), static_cast<float>(positionY[1]));
+    }
 
-	// 前回のマウスカーソルの座標取得
-	DirectX::XMFLOAT2 GetOldPosition() const {
-		return DirectX::XMFLOAT2(static_cast<float>(positionX[1]), static_cast<float>(positionY[1]));
-	}
+    int GetOldPositionX() const { return positionX[1]; }
+    int GetOldPositionY() const { return positionY[1]; }
 
-	// マウスカーソルX座標取得
-	int GetPositionX() const { return positionX[0]; }
+    // 前フレームからの移動量（ピクセル）
+    int GetVelocityX() const { return positionX[0] - positionX[1]; }
+    int GetVelocityY() const { return positionY[0] - positionY[1]; }
 
-	// マウスカーソルY座標取得
-	int GetPositionY() const { return positionY[0]; }
+    // 起動時のクライアント領域のサイズ
+    int GetScreenWidth() const { return screenWidth; }
+    int GetScreenHeight() const { return screenHeight; }
 
-	// 前回のマウスカーソルX座標取得
-	int GetOldPositionX() const { return positionX[1]; }
+    // カーソルロック（マウスルック用）。
+    //   true にすると Update() が毎フレーム、カーソルを画面中央へ戻して OS カーソルを隠す。
+    //   移動量(GetVelocity)は「中央からのずれ」になる。
+    //   ウィンドウが非フォーカスの間はロックしない（alt-tab でカーソルが閉じ込められない）。
+    void SetCursorLock(bool lock) { m_lockRequested = lock; }
+    bool IsCursorLocked() const { return m_cursorHidden; }
 
-	// 前回のマウスカーソルY座標取得
-	int GetOldPositionY() const { return positionY[1]; }
-
-	// =========================================================
-	// マウスカーソルの移動量（速度）を取得
-	// =========================================================
-	int GetVelocityX() const { return positionX[0] - positionX[1]; }
-	int GetVelocityY() const { return positionY[0] - positionY[1]; }
-
-	// スクリーン幅設定
-	void SetScreenWidth(int width) { screenWidth = width; }
-
-	// スクリーン高さ設定
-	void SetScreenHeight(int height) { screenHeight = height; }
-
-	// スクリーン幅取得
-	int GetScreenWidth() const { return screenWidth; }
-
-	// スクリーン高さ取得
-	int GetScreenHeight() const { return screenHeight; }
-
-	// =========================================================
-	// カーソルロック（マウスルック用）
-	//   true にすると Update() で毎フレーム、カーソルを画面中央へ戻し（＝端で頭打ちしない）、
-	//   OSカーソルを隠す。移動量(GetVelocity)は「中央からのズレ」として供給される。
-	//   ・ウィンドウが非フォーカスなら安全のため自動解除する（alt-tabでカーソルが囚われない）。
-	// =========================================================
-	void SetCursorLock(bool lock) { m_lockRequested = lock; }
-	bool IsCursorLocked() const { return m_cursorHidden; }
+    // すべてのボタンを「押されていない」にする（アプリが裏に回っている間、他のアプリでのクリックを拾わないように）
+    void ClearButtons()
+    {
+        buttonState[0] = buttonState[1] = 0;
+        buttonDown = buttonUp = 0;
+    }
 
 private:
-	MouseButton		buttonState[2] = { 0 };
-	MouseButton		buttonDown = 0;
-	MouseButton		buttonUp = 0;
-	int				positionX[2];
-	int				positionY[2];
-	int				wheel[2];
-	int				screenWidth = 0;
-	int				screenHeight = 0;
-	HWND			hWnd = nullptr;
+    MouseButton buttonState[2] = {0}; // [0] = 今フレーム、[1] = 前フレーム
+    MouseButton buttonDown     = 0;
+    MouseButton buttonUp       = 0;
+    int         positionX[2]   = {0}; // [0] = 今フレーム、[1] = 前フレーム
+    int         positionY[2]   = {0};
+    int         wheel[2]       = {0}; // [0] = 次の Update までに溜める量、[1] = 確定した量
+    int         screenWidth    = 0;
+    int         screenHeight   = 0;
+    HWND        hWnd           = nullptr;
 
-	bool			m_lockRequested = false; // ゲーム側からのロック要求
-	bool			m_cursorHidden  = false; // 実際にロック中か（ShowCursorカウンタ整合＆開始フレーム検出用）
+    bool m_lockRequested = false; // ゲーム側からのロック要求
+    bool m_cursorHidden  = false; // 実際にロック中か（ShowCursor の表示カウンタの整合とロック開始フレームの検出に使う）
 };

@@ -11,23 +11,29 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include <array>
-#include <algorithm> // std::lower_bound用
+#include <algorithm>
 #include <cctype>
 #include <tracy/Tracy.hpp>
 
-// ヘルパー関数：大文字小文字を無視した部分一致。
-//   ロード時に「Root/Pelvis/Hips 系ボーンか」を一度だけ判定するために使う。
-//   ※ 旧実装はこの判定を ComputeAnimation 内で骨ごと・毎フレーム実行しており、
-//     std::string のヒープ確保が積み重なって処理落ちの主要因になっていた。
+/**
+ * @brief 大文字小文字を無視した部分一致。
+ *
+ * ロード時に「ルート・Pelvis・Hips 系のボーンか」を一度だけ判定するのに使う。
+ *
+ * @param name   調べる名前。
+ * @param needle 探す文字列。
+ * @return name が needle を含めば true。
+ * @note 毎フレームの処理から呼ばないこと。std::string のヒープ確保が骨の数 × フレーム分積み上がり、処理落ちの大きな原因になる。
+ */
 static bool ContainsCI(const std::string &name, const char *needle)
 {
     std::string lower = name;
     std::transform(lower.begin(), lower.end(), lower.begin(),
-        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return lower.find(needle) != std::string::npos;
 }
 
-// ヘルパー関数：キーフレームの二分探索と補間率の計算
+// time を挟む2つのキーフレームを二分探索で探し、補間率を求める
 template <typename T>
 void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRate, const T *&outK0, const T *&outK1)
 {
@@ -36,14 +42,14 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
         outK0 = outK1 = nullptr;
         return;
     }
-    // キーフレームが1つ、または時間が最初のキーより前の場合（クランプ）
+    // キーフレームが1つか、最初のキーより前なら最初の値で止める
     if (keyframes.size() == 1 || time <= keyframes.front().seconds)
     {
         outK0 = outK1 = &keyframes.front();
         outRate       = 0.0f;
         return;
     }
-    // 時間が最後のキーより後の場合（クランプ）
+    // 最後のキーより後なら最後の値で止める
     if (time >= keyframes.back().seconds)
     {
         outK0 = outK1 = &keyframes.back();
@@ -51,18 +57,17 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
         return;
     }
 
-    // 二分探索 (O(log N)) で現在の時間を超える最初のキーフレームを探す
+    // time 以上になる最初のキーフレームを二分探索（O(log N)）で探す
     auto it = std::lower_bound(keyframes.begin(), keyframes.end(), time,
-        [](const T &kf, float t) { return kf.seconds < t; });
+                               [](const T &kf, float t) { return kf.seconds < t; });
 
     outK1 = &(*it);
     outK0 = &(*(it - 1));
 
-    // ゼロ除算ガード: UE5等の書き出しでは、IK切り替えや瞬間ポーズ変更を表現するために
-    //   同一時刻(またはごく僅かな差)に2つのキーフレームが置かれることがある。
-    //   分母がほぼ0のまま除算すると outRate が NaN/Inf になり、その姿勢がそのまま
-    //   Slerp/Lerpに渡って該当ボーンの向きが破綻する（"特定の部位だけおかしい"の一因になりうる）。
-    //   実質的にステップ変化とみなし、後側のキーフレームの値をそのまま採用する。
+    // 0 除算を避ける。UE5 などの書き出しでは、IK の切り替えや姿勢の瞬間的な変更を表すために、
+    //   同じ時刻（またはごく僅かな差）に2つのキーフレームが置かれることがある。
+    //   分母がほぼ 0 のまま割ると outRate が NaN / Inf になり、Slerp / Lerp に渡ってそのボーンの
+    //   向きが壊れる。瞬間的な変化とみなし、後ろのキーフレームの値をそのまま使う。
     const float delta = outK1->seconds - outK0->seconds;
     if (delta <= 1e-6f)
     {
@@ -75,19 +80,15 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     }
 }
 
-// コンストラクタ
+// ---------------------------------------------------------------------------
+// 生成
+// ---------------------------------------------------------------------------
+
 Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
-    : filePath(filename)
+    : filePath(filename ? filename : "")
 {
-    // ファイル名が空の場合（動的生成モード）
-    // ファイル読み込みを行わず、空のリソースだけ作って終了する
-    if (filePath.empty())
-    {
-        // LoadModelResourceではなく、AllocateEmptyModelResourceを呼ぶ。
-        // これで、Load()でクラッシュすることも、他の動的モデルとメモリが混ざることも絶対に無くなります。
-        resource = ResourceManager::Instance().AllocateEmptyModelResource();
-        return;
-    }
+    // 空のパスでは作らない（ResourceManager::CreateModelInstance が先に弾いている）
+    if (!filename || filename[0] == '\0') return;
 
     resource = ResourceManager::Instance().LoadModelResource(filename);
     if (!resource.IsValid())
@@ -96,8 +97,9 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         return;
     }
 
-    // ModelResourceに格納された階層情報（Nodes）を
-    // Modelのインスタンスにコピーして親子関係を再構築する
+    m_translationRetargeting = ResourceManager::Instance().GetModel(resource)->GetTranslationRetargeting();
+
+    // 1. ModelResource のノード階層をこのインスタンスに写す
     const std::vector<ModelResource::Node> &resNodes = ResourceManager::Instance().GetModel(resource)->GetNodes();
     nodes.resize(resNodes.size());
     for (size_t i = 0; i < nodes.size(); ++i)
@@ -115,8 +117,8 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.rotation = src.rotate;
         dst.scale    = src.scale;
 
-        // 位置リターゲット対象フラグをここで一度だけ確定（毎フレームの文字列判定を廃止）。
-        //   index 0（ルート）と Pelvis/Hips/Root 系ボーンだけがアニメの位置移動をそのまま使う。
+        // 位置をリターゲットしないボーンかを、ここで一度だけ決める（毎フレーム文字列で判定しない）。
+        //   0 番（ルート）と Pelvis・Hips・Root 系のボーンだけが、アニメーションの位置の移動をそのまま使う。
         dst.isRootOrPelvis = (i == 0) ||
                              ContainsCI(src.name, "pelvis") ||
                              ContainsCI(src.name, "hips") ||
@@ -124,12 +126,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
 
         dst.children.clear();
 
-        // 行列初期化（単位行列）
         XMStoreFloat4x4(&dst.localTransform, DirectX::XMMatrixIdentity());
         XMStoreFloat4x4(&dst.globalTransform, DirectX::XMMatrixIdentity());
         XMStoreFloat4x4(&dst.worldTransform, DirectX::XMMatrixIdentity());
     }
-    // ② 親子関係の再構築
+    // 2. 親子のポインタを張る
     for (size_t i = 0; i < nodes.size(); ++i)
     {
         const auto &src = resNodes[i];
@@ -140,9 +141,28 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         }
     }
 
-    // リソース側のマテリアルを参照
+    // 親が子より先に来る計算の順番を作る。glTF のノードは親が先に並ぶとは限らず、
+    // nodes を並べ替えるとメッシュやアニメーションが持つノード番号がずれるので、順番だけ別に持つ
+    m_nodeUpdateOrder.clear();
+    m_nodeUpdateOrder.reserve(nodes.size());
+    std::vector<int> pending;
+    for (size_t i = 0; i < nodes.size(); ++i)
+    {
+        if (nodes[i].parent == nullptr) pending.push_back(static_cast<int>(i));
+    }
+    while (!pending.empty())
+    {
+        const int index = pending.back();
+        pending.pop_back();
+        m_nodeUpdateOrder.push_back(index);
+        for (const Node *child : nodes[index].children)
+        {
+            pending.push_back(static_cast<int>(child - nodes.data()));
+        }
+    }
+
+    // 3. ModelResource のマテリアルから、このインスタンスの MaterialData を作る
     const std::vector<ModelResource::Material> &resMaterials = ResourceManager::Instance().GetModel(resource)->GetMaterials();
-    // モデル側マテリアルを用意
     materials.resize(resMaterials.size());
 
     for (size_t i = 0; i < resMaterials.size(); ++i)
@@ -150,62 +170,50 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         const auto &src = resMaterials[i];
         auto       &dst = materials[i];
 
-        // ---- 参照を保存 ----
         dst.name = src.name;
-
-        // 純粋なデータの実体を作成する
         dst.data = std::make_shared<MaterialData>();
 
-        // --- データを辞書へマッピング ---
-        // デフォルトシェーダーID（必要に応じて変更）
-        // アルファモードに応じてシェーダーを切り替える例
-        /*
-        if (dst.data->alphaMode == AlphaMode::Opaque)
-            dst.data->shaderId = ShaderId::Phong; // または Toon
-        else
-            dst.data->shaderId = ShaderId::Toon; // 半透明対応など
-        */
-        dst.data->shaderHash = "PBR"_hash; // デフォルト
+        // シェーダーは PBR を既定にする（MaterialComponent で差し替えられる）
+        dst.data->shaderHash = "PBR"_hash;
 
-        // アルファモードのコピー（型変換）
         dst.data->alphaMode   = static_cast<AlphaMode>(src.alphaMode);
         dst.data->alphaCutoff = src.alphaCutoff;
 
-        // 1. カラー情報
-        dst.data->SetColor("materialColor"_hash, src.baseColor); // 従来のPhong/Basicシェーダー用
-        dst.data->SetColor("baseColor"_hash, src.baseColor);     // 新しいPBRシェーダー用
+        // 色
+        dst.data->SetColor("materialColor"_hash, src.baseColor); // Phong / Basic 用
+        dst.data->SetColor("baseColor"_hash, src.baseColor);     // PBR 用
         // emissiveColor (float3) を float4 に変換して格納
         dst.data->SetColor("emissiveColor"_hash, {src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f});
 
-        // 2. スカラー情報
+        // スカラー
         dst.data->SetScalar("metalness"_hash, src.metalness);
         dst.data->SetScalar("roughness"_hash, src.roughness);
         dst.data->SetScalar("occlusionStrength"_hash, src.occlusionStrength);
         dst.data->SetScalar("alphaCutoff"_hash, src.alphaCutoff);
 
-        // 3. ToonShader用のデフォルト値（これがないと黒くなる）
+        // Toon シェーダー用の既定値（無いと黒くなる）
         dst.data->SetColor("rimColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
         dst.data->SetScalar("rimPower"_hash, 5.0f);
         dst.data->SetScalar("rimIntensity"_hash, 1.0f);
 
-        // トゥーン用デフォルトランプを登録
+        // Toon 用の既定のランプテクスチャ
         dst.data->SetTexture("RampTexture"_hash, ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/ramp.png"));
 
-        // OutlineShader用のデフォルト値
-        dst.data->SetColor("color"_hash, {0.0f, 0.0f, 0.0f, 1.0f}); // 黒い線
-        dst.data->SetScalar("size"_hash, 0.02f);                    // 太さ
+        // Outline シェーダー用の既定値
+        dst.data->SetColor("color"_hash, {0.0f, 0.0f, 0.0f, 1.0f}); // 線の色
+        dst.data->SetScalar("size"_hash, 0.02f);                    // 線の太さ
 
-        // 4. テクスチャ情報
+        // テクスチャ。シェーダーごとにスロット名が違うので、同じテクスチャを複数の名前で登録する
         if (src.baseMap)
         {
             auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
             dst.data->SetTexture("DiffuseMap"_hash, handle);
             dst.data->SetTexture("AlbedoMap"_hash, handle);
-            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f); // フラグON
+            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f);
         }
         else
         {
-            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f); // フラグOFF
+            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f);
         }
 
         if (src.normalMap)
@@ -221,11 +229,11 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         if (src.emissiveMap)
         {
             dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
-            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f); // フラグON
+            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f);
         }
         else
         {
-            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f); // フラグOFF
+            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f);
         }
 
         if (src.occlusionMap)
@@ -238,14 +246,15 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
             auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
             dst.data->SetTexture("MetalnessRoughnessMap"_hash, handle);
             dst.data->SetTexture("MetalRoughMap"_hash, handle);
-            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f); // フラグON
+            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f);
         }
         else
         {
-            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f); // フラグOFF
+            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f);
         }
     }
 
+    // 4. メッシュ・マテリアル・ノード・ボーンをポインタでつなぐ
     const std::vector<ModelResource::Mesh> &resMeshes = ResourceManager::Instance().GetModel(resource)->GetMeshes();
     meshes.resize(resMeshes.size());
     for (size_t i = 0; i < resMeshes.size(); ++i)
@@ -253,11 +262,9 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         const auto &src = resMeshes[i];
         auto       &dst = meshes[i];
 
-        // ---- 参照を保存 ----
         dst.data     = &src;
-        dst.material = &materials.at(src.materialIndex); // ここでComponentを持つMaterialへの参照が入る
+        dst.material = &materials.at(src.materialIndex);
 
-        // ModelResource::Mesh はそのメッシュが属する nodeIndex を持っている [cite: 15]
         if (src.nodeIndex >= 0 && src.nodeIndex < (int)nodes.size())
         {
             dst.node = &nodes.at(src.nodeIndex);
@@ -276,21 +283,24 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         }
     }
 
-    // 行列初期化
+    // 5. 単位行列を基準に、ノードの行列を一度求めておく
     DirectX::XMFLOAT4X4 worldTransform;
     DirectX::XMStoreFloat4x4(&worldTransform, DirectX::XMMatrixIdentity());
     UpdateTransform(worldTransform);
 }
 
-// アニメーションインデックス取得（名前→indexをハッシュ表でO(1)取得）
+// ---------------------------------------------------------------------------
+// 検索
+// ---------------------------------------------------------------------------
+
 int Model::GetAnimationIndex(const char *name) const
 {
     if (!resource.IsValid())
     {
         return -1;
-    } // IsValidに変更
+    }
 
-    // 初回だけ名前→indexの表を構築する（ロード後は不変なので以降は再利用）。
+    // 最初の呼び出しで名前 → 番号の表を作る（ロード後は変わらないので使い回す）
     if (!m_animIndexBuilt)
     {
         const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
@@ -298,7 +308,7 @@ int Model::GetAnimationIndex(const char *name) const
         m_animIndexCache.reserve(animations.size());
         for (size_t i = 0; i < animations.size(); ++i)
         {
-            // 名前衝突時は先勝ち（従来の線形探索と同じ「最初に一致したもの」を維持）。
+            // 同じ名前があれば、先に見つかった方を使う
             m_animIndexCache.emplace(CCL::Utils::HashString(animations[i].name), static_cast<int>(i));
         }
         m_animIndexBuilt = true;
@@ -308,7 +318,6 @@ int Model::GetAnimationIndex(const char *name) const
     return (it != m_animIndexCache.end()) ? it->second : -1;
 }
 
-// ノードインデックス取得
 int Model::GetNodeIndex(const char *name) const
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
@@ -321,20 +330,25 @@ int Model::GetNodeIndex(const char *name) const
     return -1;
 }
 
-// トランスフォーム更新処理
+// ---------------------------------------------------------------------------
+// ポーズの計算
+// ---------------------------------------------------------------------------
+
 void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
 {
     DirectX::XMMATRIX ParentWorldTransform = DirectX::XMLoadFloat4x4(&worldTransform);
 
-    for (Node &node : nodes)
+    for (int nodeIndex : m_nodeUpdateOrder)
     {
-        // ローカル行列算出
+        Node &node = nodes[nodeIndex];
+
+        // 親ノードに対する行列
         DirectX::XMMATRIX S              = DirectX::XMMatrixScaling(node.scale.x, node.scale.y, node.scale.z);
         DirectX::XMMATRIX R              = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&node.rotation));
         DirectX::XMMATRIX T              = DirectX::XMMatrixTranslation(node.position.x, node.position.y, node.position.z);
         DirectX::XMMATRIX LocalTransform = S * R * T;
 
-        // グローバル行列算出
+        // モデルの原点に対する行列。m_nodeUpdateOrder の順に回すので、親の globalTransform は求め終わっている
         DirectX::XMMATRIX ParentGlobalTransform;
         if (node.parent != nullptr)
         {
@@ -346,28 +360,24 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
         }
         DirectX::XMMATRIX GlobalTransform = LocalTransform * ParentGlobalTransform;
 
-        // ワールド行列算出
+        // ワールド行列
         DirectX::XMMATRIX WorldTransform = GlobalTransform * ParentWorldTransform;
 
-        // 計算結果を格納
         DirectX::XMStoreFloat4x4(&node.localTransform, LocalTransform);
         DirectX::XMStoreFloat4x4(&node.globalTransform, GlobalTransform);
         DirectX::XMStoreFloat4x4(&node.worldTransform, WorldTransform);
     }
 }
 
-// 単一ノードのポーズ評価の実体（取得済みの Animation を受け取る内部ヘルパー）。
-//   ResourceManager 取得を含めないことで、vector 版がノード数ぶん引き直す無駄を無くす。
 void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const
 {
-    // ここに Tracy ゾーンは置かない。本関数はノード数ぶん(キャラ1体で77〜118回)
-    // 毎フレーム呼ばれるため、ゾーン発行のコストが計測対象そのものを膨らませる。
-    // 計測は呼び出し元の Model::ComputeAnimation 側の1ゾーンで足りる。
+    // ここに Tracy のゾーンは置かない。ノードの数だけ（キャラ1体で 77〜118 回）毎フレーム呼ばれるので、
+    // ゾーンを出すコストで測りたい時間そのものが膨らむ。呼び出し元の ComputeAnimation の1ゾーンで足りる。
 
     const ModelResource::NodeAnim &nodeAnim = animation.nodeAnims.at(nodeIndex);
 
-    // デフォルト値として、モデルの本来のバインドポーズ（初期姿勢）を設定しておく
-    // これによりアニメーションデータが存在しないチャンネルが0リセットされるのを防ぐ
+    // 先にバインドポーズ（モデルの元の姿勢）を入れておく。
+    // キーフレームが無いチャンネルが 0 になるのを防ぐ
     const Node &bindNode = nodes.at(nodeIndex);
     nodePose.position    = bindNode.position;
     nodePose.rotation    = bindNode.rotation;
@@ -375,18 +385,22 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
 
     float rate;
 
-    // --- 位置 (Translation) の評価 ---
+    // --- 位置 ---
     //
-    // Translation Retargeting（プロポーション崩壊対策）。
-    //   Root/Pelvis/Hips 系以外は、アニメの位置移動を無視してモデル本来の骨の長さ
-    //   (bindNode.position)を使う。対象かどうかはロード時に確定した isRootOrPelvis を
-    //   見るだけ（旧実装はここで骨名を毎フレーム小文字化＋部分一致しており処理落ちの主因だった）。
+    // 位置のリターゲット（体型の崩れを防ぐ）。
+    //   ルート・Pelvis・Hips 系以外は、アニメーションの位置の移動を使わず、モデルの骨の長さ
+    //   （bindNode.position）を使う。対象かどうかはロード時に決めた isRootOrPelvis を見るだけにする。
+    //   ここで骨の名前から判定し直してはいけない（小文字化と部分一致が毎フレーム × 骨の数だけ走る）。
     //
-    //   非対象ノードでは結果を捨てるので、評価そのものを丸ごと飛ばす。
-    //   isRootOrPelvis が true なのはリグ全体で1〜3本だけなので、位置チャンネルの
-    //   キーフレーム探索と Lerp はほぼ全ノードで消える（旧実装は計算してから上書きしていた）。
-    //   nodePose.position は上でバインドポーズ済みなので、else 側の代入は不要。
-    if (bindNode.isRootOrPelvis)
+    //   対象外のノードでは結果を捨てるので、計算自体を飛ばす。isRootOrPelvis が true なのは
+    //   リグ全体で1〜3本だけなので、位置のキーフレーム探索と Lerp はほとんどのノードで省ける。
+    //   nodePose.position は上でバインドポーズを入れてあるので、else は要らない。
+    //
+    // リターゲットを切っているモデルでは、全ボーンの移動をそのまま使う。
+    //   モデルとアニメーションの骨格が同じであることが前提。スライドするボーン
+    //   （Muriel の wing_blade_track など）は移動そのものが演出なので、
+    //   バインドポーズで上書きすると、その下のボーンごと位置が崩れる。
+    if (bindNode.isRootOrPelvis || !m_translationRetargeting)
     {
         const ModelResource::VectorKeyframe *posK0, *posK1;
         EvaluateKeyframes(nodeAnim.positionKeyframes, time, rate, posK0, posK1);
@@ -399,7 +413,7 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
         }
     }
 
-    // --- 回転 (Rotation) の評価 ---
+    // --- 回転 ---
     const ModelResource::QuaternionKeyframe *rotK0, *rotK1;
     EvaluateKeyframes(nodeAnim.rotationKeyframes, time, rate, rotK0, rotK1);
     if (rotK0 && rotK1)
@@ -410,7 +424,7 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
         DirectX::XMStoreFloat4(&nodePose.rotation, Q);
     }
 
-    // --- スケール (Scale) の評価 ---
+    // --- スケール ---
     const ModelResource::VectorKeyframe *sclK0, *sclK1;
     EvaluateKeyframes(nodeAnim.scaleKeyframes, time, rate, sclK0, sclK1);
     if (sclK0 && sclK1)
@@ -432,7 +446,6 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
     ComputeNodePose(animations.at(animationIndex), nodeIndex, time, nodePose);
 }
 
-// アニメーション計算（全ノード）
 void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const
 {
     ZoneScopedN("Model::ComputeAnimation");
@@ -444,7 +457,7 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
         nodePoses.resize(nodes.size());
     }
 
-    // ResourceManager 取得と Animation 参照はループ外で1回だけ（旧実装はノード数ぶん引き直していた）。
+    // ResourceManager と Animation はループの外で1回だけ引く。ループ内で引き直さないこと
     const auto                     &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
     const ModelResource::Animation &animation  = animations.at(animationIndex);
 
@@ -454,7 +467,6 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
     }
 }
 
-// ノードポーズ設定
 void Model::SetNodePoses(const std::vector<NodePose> &nodePoses)
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
@@ -468,17 +480,13 @@ void Model::SetNodePoses(const std::vector<NodePose> &nodePoses)
     }
 }
 
-// ノードポーズ取得
 void Model::GetNodePoses(std::vector<NodePose> &nodePoses) const
 {
-    if (nodePoses.size() != nodes.size())
-    {
-        nodePoses.resize(nodes.size());
-    }
+    nodePoses.resize(nodes.size());
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
     {
-        const Node &node = nodes.at(nodeIndex);
-        NodePose   &pose = nodePoses.at(nodeIndex);
+        const Node &node = nodes[nodeIndex];
+        NodePose   &pose = nodePoses[nodeIndex];
 
         pose.position = node.position;
         pose.rotation = node.rotation;
@@ -486,7 +494,6 @@ void Model::GetNodePoses(std::vector<NodePose> &nodePoses) const
     }
 }
 
-// アニメーション補間処理
 void Model::BlendAnimations(
     const std::vector<NodePose> &animation0,
     const std::vector<NodePose> &animation1,
@@ -508,7 +515,7 @@ void Model::BlendAnimations(
         DirectX::XMVECTOR blendedPos = DirectX::XMVectorLerp(pos0, pos1, blendRate);
         DirectX::XMStoreFloat3(&blendedPose.position, blendedPos);
 
-        // 回転のスフィア線形補間
+        // 回転の球面線形補間
         DirectX::XMVECTOR rot0       = DirectX::XMLoadFloat4(&pose0.rotation);
         DirectX::XMVECTOR rot1       = DirectX::XMLoadFloat4(&pose1.rotation);
         DirectX::XMVECTOR blendedRot = DirectX::XMQuaternionSlerp(rot0, rot1, blendRate);
@@ -522,6 +529,10 @@ void Model::BlendAnimations(
     }
 }
 
+// ---------------------------------------------------------------------------
+// 共有データ
+// ---------------------------------------------------------------------------
+
 const ModelResource *Model::GetResource() const
 {
     return ResourceManager::Instance().GetModel(resource);
@@ -532,234 +543,9 @@ ModelResource *Model::GetResourceMutable()
     return ResourceManager::Instance().GetModel(resource);
 }
 
-std::shared_ptr<Model> Model::CreateFromData(ID3D11Device *device,
-    const std::vector<ModelResource::Vertex>              &vertices,
-    const std::vector<uint32_t>                           &indices,
-    std::shared_ptr<MaterialData>                          baseMaterial)
-{
-    // 1. 空のモデルインスタンスを作成
-    // ダミーパスを渡すが、ロード失敗前提で進める
-    auto model = std::make_shared<Model>(device, "");
-
-    // リソースを新規作成して上書き
-    auto *res = ResourceManager::Instance().GetModel(model->resource);
-
-    // =================================================
-    // 2. リソースデータの構築 (ModelResource)
-    // =================================================
-
-    // --- Meshの構築 ---
-    ModelResource::Mesh mesh;
-    mesh.vertices = vertices;
-    mesh.indices  = indices;
-
-    // GPUバッファ作成
-    // (GpuResourceUtils に追加した関数を使用)
-    if (!mesh.vertices.empty())
-    {
-        GpuResourceUtils::CreateVertexBuffer(device,
-            mesh.vertices.data(),
-            static_cast<UINT>(mesh.vertices.size() * sizeof(ModelResource::Vertex)),
-            mesh.vertexBuffer.GetAddressOf());
-    }
-    if (!mesh.indices.empty())
-    {
-        GpuResourceUtils::CreateIndexBuffer(device,
-            mesh.indices.data(),
-            static_cast<UINT>(mesh.indices.size() * sizeof(uint32_t)),
-            mesh.indexBuffer.GetAddressOf());
-    }
-
-    // メンバ変数の設定
-    mesh.nodeIndex     = 0; // ルートノードに紐付け
-    mesh.materialIndex = 0; // 0番目のマテリアルを使用
-
-    // Subsetの設定 (ここが重要：構造体定義に合わせる)
-    ModelResource::Subset subset;
-    subset.startIndex    = 0; // indexStart ではなく startIndex
-    subset.indexCount    = static_cast<UINT>(mesh.indices.size());
-    subset.materialIndex = 0;
-    subset.material      = nullptr; // リソース内ではポインタ解決前なのでnull
-    mesh.subsets.push_back(subset);
-
-    // バウンディングボックス計算
-    mesh.boundsMin = {FLT_MAX, FLT_MAX, FLT_MAX};
-    mesh.boundsMax = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-
-    if (mesh.vertices.empty())
-    {
-        mesh.boundsMin = {0, 0, 0};
-        mesh.boundsMax = {0, 0, 0};
-    }
-    else
-    {
-        for (const auto &v : mesh.vertices)
-        {
-            mesh.boundsMin.x = (std::min)(mesh.boundsMin.x, v.position.x);
-            mesh.boundsMin.y = (std::min)(mesh.boundsMin.y, v.position.y);
-            mesh.boundsMin.z = (std::min)(mesh.boundsMin.z, v.position.z);
-            mesh.boundsMax.x = (std::max)(mesh.boundsMax.x, v.position.x);
-            mesh.boundsMax.y = (std::max)(mesh.boundsMax.y, v.position.y);
-            mesh.boundsMax.z = (std::max)(mesh.boundsMax.z, v.position.z);
-        }
-    }
-
-    // メッシュをリソースに登録
-    std::vector<ModelResource::Mesh> resMeshes = {mesh};
-    res->SetMeshes(resMeshes);
-
-    // --- Materialの構築 ---
-    ModelResource::Material resMat;
-    resMat.name = "BatchMaterial";
-    // 必要に応じてデフォルト値を設定
-    resMat.baseColor                                  = {1.0f, 1.0f, 1.0f, 1.0f};
-    resMat.roughness                                  = 0.8f;
-    std::vector<ModelResource::Material> resMaterials = {resMat};
-    res->SetMaterials(resMaterials);
-
-    // --- Nodeの構築 ---
-    ModelResource::Node resNode;
-    resNode.name                              = "Root";
-    resNode.parentIndex                       = -1;
-    resNode.scale                             = {1, 1, 1};
-    resNode.rotate                            = {0, 0, 0, 1};
-    resNode.translate                         = {0, 0, 0};
-    std::vector<ModelResource::Node> resNodes = {resNode};
-    res->SetNodes(resNodes);
-
-    // 全体AABB計算
-    res->ComputeModelLocalAABB();
-
-    // =================================================
-    // 3. モデルインスタンスの構築 (Model)
-    // コンストラクタで行われるはずの処理を手動で行う
-    // =================================================
-
-    // --- Nodeの同期 ---
-    model->nodes.resize(1);
-    model->nodes[0].name = "Root";
-    DirectX::XMStoreFloat4x4(&model->nodes[0].localTransform, DirectX::XMMatrixIdentity());
-    DirectX::XMStoreFloat4x4(&model->nodes[0].globalTransform, DirectX::XMMatrixIdentity());
-    DirectX::XMStoreFloat4x4(&model->nodes[0].worldTransform, DirectX::XMMatrixIdentity());
-    model->nodes[0].position = {0, 0, 0};
-    model->nodes[0].scale    = {1, 1, 1};
-    model->nodes[0].rotation = {0, 0, 0, 1};
-    model->nodes[0].isRootOrPelvis = true; // index0=ルート。通常ロードのフラグ計算と整合させる
-
-    // --- Materialの同期 ---
-    model->materials.resize(1);
-    model->materials[0].name = "BatchMaterial";
-
-    // 引数で渡されたマテリアルデータを共有する！
-    if (baseMaterial)
-    {
-        model->materials[0].data = baseMaterial;
-    }
-    else
-    {
-        // マテリアルが無い場合（フォールバック）のみ、光りすぎないPBR初期値を設定する
-        auto matData = std::make_shared<MaterialData>();
-
-        matData->shaderHash = "PBR"_hash;
-        matData->SetColor("materialColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
-        matData->SetColor("baseColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
-        matData->SetColor("emissiveColor"_hash, {0.0f, 0.0f, 0.0f, 1.0f});
-
-        // PBRの「ちょうどいい」デフォルト値
-        matData->SetScalar("metalness"_hash, 0.0f); // 非金属
-        matData->SetScalar("roughness"_hash, 0.8f); // 光りすぎないよう、少しざらつかせる
-        matData->SetScalar("occlusionStrength"_hash, 1.0f);
-        matData->SetScalar("rimPower"_hash, 5.0f);
-        matData->SetScalar("rimIntensity"_hash, 0.0f);
-
-        // テクスチャは無いので全てオフ
-        matData->SetScalar("useAlbedoMap"_hash, 0.0f);
-        matData->SetScalar("useNormalMap"_hash, 0.0f);
-        matData->SetScalar("useMetalRoughMap"_hash, 0.0f);
-        matData->SetScalar("useOcclusionMap"_hash, 0.0f);
-        matData->SetScalar("useEmissiveMap"_hash, 0.0f);
-
-        model->materials[0].data = matData;
-    }
-
-    // =================================================================
-    // Model 側メッシュ（描画ループが参照する vector）を構築する
-    //    OpaquePass 等は model->GetMeshes()（= Model::meshes）を走査するため、
-    //    ここを埋めないとドローコールが呼ばれない。
-    //    通常コンストラクタの「参照を保存」処理と同じことを行う。
-    // =================================================================
-    {
-        // この時点で res(ModelResource) には Mesh/Material が登録済み、
-        // model->nodes / model->materials も上で構築済み。
-        const std::vector<ModelResource::Mesh> &resMeshes = res->GetMeshes();
-        model->meshes.resize(resMeshes.size());
-        for (size_t i = 0; i < resMeshes.size(); ++i)
-        {
-            const ModelResource::Mesh &src = resMeshes[i];
-            Model::Mesh               &dst = model->meshes[i];
-
-            // ---- 参照を保存（描画ループが mesh.data->vertexBuffer を使う）----
-            dst.data = &src;
-
-            // マテリアル参照（materialIndex 範囲チェック）
-            if (src.materialIndex >= 0 &&
-                src.materialIndex < (int)model->materials.size())
-            {
-                dst.material = &model->materials.at(src.materialIndex);
-            }
-            else if (!model->materials.empty())
-            {
-                dst.material = &model->materials.at(0);
-            }
-            else
-            {
-                dst.material = nullptr;
-            }
-
-            // ノード参照（CreateFromData はルート1ノードのみ）
-            if (src.nodeIndex >= 0 && src.nodeIndex < (int)model->nodes.size())
-            {
-                dst.node = &model->nodes.at(src.nodeIndex);
-            }
-            else if (!model->nodes.empty())
-            {
-                dst.node = &model->nodes.at(0);
-            }
-            else
-            {
-                dst.node = nullptr;
-            }
-
-            // ボーンは無し（静的バッチメッシュ）。dst.bones は空のまま。
-        }
-    }
-
-    return model;
-}
-
-int Model::GetRootMotionNodeIndex() const
-{
-    // ノードの中から「ルート」や「腰」にあたるボーンの名前を検索する
-    for (size_t i = 0; i < nodes.size(); ++i)
-    {
-        std::string name = nodes[i].name;
-
-        // 比較しやすいように小文字に変換
-        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::tolower(c); });
-
-        // Mixamo, Unreal, Unity などの一般的なルートボーン名を網羅
-        if (name.find("root") != std::string::npos ||
-            name.find("hips") != std::string::npos ||
-            name.find("pelvis") != std::string::npos ||
-            name.find("bip01") != std::string::npos) // 3ds Max Biped用
-        {
-            return static_cast<int>(i);
-        }
-    }
-
-    // 万が一見つからなければ安全のために 0 を返す
-    return 0;
-}
+// ---------------------------------------------------------------------------
+// ルートモーションの補助
+// ---------------------------------------------------------------------------
 
 int Model::FindRealRootMotionNodeIndex(int animIndex) const
 {
@@ -767,41 +553,37 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
 
     if (animIndex < 0) return 0;
 
-    // キャッシュヒット: 過去に一度でも計算済みならO(1)で返す。
-    //   結果はこのクリップのアニメーションデータだけで決まる静的な値なので、
-    //   毎フレーム ComputeAnimation を全ノード×2回走らせる必要はない。
+    // 一度求めていれば、キャッシュから返す
     if ((size_t)animIndex < m_rootMotionNodeCache.size() && m_rootMotionNodeCache[(size_t)animIndex] >= 0)
         return m_rootMotionNodeCache[(size_t)animIndex];
 
-    int result = 0; // 誰も動いていなければ安全に0を返す（従来仕様を維持）
+    int result = 0; // どのボーンも動いていなければ 0（ルート）
 
     std::vector<NodePose> startPoses, endPoses;
 
-    // 0秒時点のポーズを取得
+    // 0秒と 0.5秒の姿勢を比べる
     ComputeAnimation(animIndex, 0.0f, startPoses);
-
-    // 少し時間が進んだ時点（0.5秒）のポーズを取得
     ComputeAnimation(animIndex, 0.5f, endPoses);
 
     if (!startPoses.empty() && !endPoses.empty())
     {
-        // ノードは通常、親から子へ順に並んでいる (0:Root, 1:Hips, 2:Spine ...)
+        // ノードは親から子の順に並んでいる前提（0: Root, 1: Hips, 2: Spine ...）
         for (size_t i = 0; i < std::min(startPoses.size(), endPoses.size()); ++i)
         {
             float dx     = endPoses[i].position.x - startPoses[i].position.x;
             float dz     = endPoses[i].position.z - startPoses[i].position.z;
             float distSq = dx * dx + dz * dz;
 
-            // XZ平面で 1cm (0.01m) 以上動いている最初の親ボーンを「真のルート」と見なす！
+            // XZ 平面で 1cm（0.01m）より大きく動いた、最も親に近いボーンをルートとみなす
             if (distSq > 0.0001f)
             {
-                result = static_cast<int>(i); // Hipsなどの本当に動いているインデックスが確定
+                result = static_cast<int>(i);
                 break;
             }
         }
     }
 
-    // キャッシュへ格納。以降この animIndex での呼び出しは全て初回計算を再利用する。
+    // キャッシュに入れる
     if ((size_t)animIndex >= m_rootMotionNodeCache.size())
         m_rootMotionNodeCache.resize((size_t)animIndex + 1, -1);
     m_rootMotionNodeCache[(size_t)animIndex] = result;
@@ -813,15 +595,15 @@ const Model::NodePose &Model::GetPinnedPoseAtZero(int animIndex, int nodeIndex) 
 {
     ZoneScopedN("Model::GetPinnedPoseAtZero");
 
-    // (animIndex, nodeIndex) を 1キーに畳み込む（どちらも非負の前提）。
+    // (animIndex, nodeIndex) を1つのキーにまとめる（どちらも 0 以上の前提）
     const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(animIndex)) << 32) |
                          static_cast<uint32_t>(nodeIndex);
 
     auto it = m_pinnedPoseAtZeroCache.find(key);
     if (it != m_pinnedPoseAtZeroCache.end())
-        return it->second; // キャッシュヒット：0秒ポーズを再計算せず返す
+        return it->second;
 
-    // 初回のみ 0秒時点のポーズを計算して格納（以降は不変なので再利用）。
+    // 初回だけ0秒の姿勢を求めて入れる
     NodePose pose;
     ComputeAnimation(animIndex, nodeIndex, 0.0f, pose);
     return m_pinnedPoseAtZeroCache.emplace(key, pose).first->second;

@@ -1,13 +1,19 @@
 #pragma once
+// ===========================================================================
+// 概要: レンダーパスへ渡す2種類のコンテキスト。
+//
+// 責務:
+//   - RenderServices: エンジンの起動から終了まで変わらないサービスへのポインタ
+//   - RenderFrameContext: そのフレームだけ有効な出力先・カメラ・サイズ
+//
+// 備考: 各パスはここから必要なものを受け取り、シングルトンを直接参照しない。
+// ===========================================================================
 #include <d3d11.h>
 #include <cstdint>
 
-// TracyD3D11Ctx（TRACY_ENABLE 無効構成では void* になる移植用エイリアス）
+// TracyD3D11Ctx（TRACY_ENABLE が無い構成では void* になる別名）
 #include "tracy/TracyD3D11.hpp"
 
-// ============================================================================
-//  前方宣言
-// ============================================================================
 class ResourceManager;
 class ShaderRegistry;
 class RenderState;
@@ -21,75 +27,67 @@ class ShapeRenderer;
 class PostProcessManager;
 class RenderQueue;
 
-// ============================================================================
-//  RenderServices : エンジン起動から終了まで存続する永続サービス群
-// ============================================================================
 /**
- * @brief 永続サービス。各 RenderPass が Initialize 時に受け取る。
- * @details
- *  ポインタは Initialize 後にエンジン終了まで有効。
- *  「ポインタが変わらないもの」をここに集約する（中身は変化してよい）。
- *  Singleton への直接アクセスを排除し、テスト時のモック注入を可能にする。
+ * @brief 永続サービス。各 RenderPass が Initialize のときに受け取る。
+ *
+ * ポインタは Initialize の後、エンジンの終了まで変わらない（指す先の中身は変わってよい）。
+ * パスがシングルトンを直接参照しないように、必要なものをここにまとめて渡す。
+ * どのポインタも所有しない。
  */
 struct RenderServices
 {
     // ---- RHI / アセット ----
-    ID3D11Device* device = nullptr;
-    // CbScene 定数バッファ (b8)。Graphics が所有し lifetime を管理する。
-    ID3D11Buffer* sceneConstantBuffer = nullptr;
+    ID3D11Device *device              = nullptr;
+    ID3D11Buffer *sceneConstantBuffer = nullptr; // CbScene（b8）。GraphicsDevice が持つ
 
-    ResourceManager* resources = nullptr;
-    ShaderRegistry* shaders = nullptr;
-    const RenderState* renderState = nullptr;
+    ResourceManager   *resources   = nullptr;
+    ShaderRegistry    *shaders     = nullptr;
+    const RenderState *renderState = nullptr;
 
-    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が所有）。
-    // これを Services に載せることで、RenderPipeline が Graphics シングルトンを
-    // 直接叩かずに済む＝コア層が上位のコーディネータを知らない状態を保てる。
+    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が持つ）。
+    // ここに載せておけば、RenderPipeline が Graphics シングルトンを参照せずに済み、
+    // 下の層が上の層を知らない状態を保てる。
     TracyD3D11Ctx tracyContext = nullptr;
 
-    // ---- 描画サブシステム（常駐レンダラ） ----
-    ModelConstantBuffers* modelConstants = nullptr;
-    ParticleRenderer* particleRenderer = nullptr;
-    PrimitiveRenderer* primitiveRenderer = nullptr;
-    ShapeRenderer* shapeRenderer = nullptr;
-    PostProcessManager* postProcess = nullptr;
+    // ---- 描画サブシステム ----
+    ModelConstantBuffers *modelConstants    = nullptr;
+    ParticleRenderer     *particleRenderer  = nullptr;
+    PrimitiveRenderer    *primitiveRenderer = nullptr;
+    ShapeRenderer        *shapeRenderer     = nullptr;
+    PostProcessManager   *postProcess       = nullptr;
 
-    // ---- シーン情報（オブジェクト自体は永続。中身はフレーム毎に更新される） ----
-    LightManager* lightManager = nullptr;
-    ShadowMap* shadowMap = nullptr;
-    RenderQueue* renderQueue = nullptr;
+    // ---- シーン情報（オブジェクトは変わらず、中身が毎フレーム変わる） ----
+    LightManager *lightManager = nullptr;
+    ShadowMap    *shadowMap    = nullptr;
+    RenderQueue  *renderQueue  = nullptr;
 
-    UINT screenWidth  = 0;
-    UINT screenHeight = 0;
+    UINT screenWidth  = 0; // 画面の幅（px）
+    UINT screenHeight = 0; // 画面の高さ（px）
 };
 
-// ============================================================================
-//  RenderFrameContext : 1 フレームのみ有効な揮発データ
-// ============================================================================
 /**
- * @brief フレーム単位で再構築される揮発コンテキスト。
- * @details
- *  毎フレーム差し替わる「ポインタ」と「値」を集約。
- *  パイプライン Execute 時のみ有効。次フレームで内容は無効化される前提。
+ * @brief 毎フレーム作り直すコンテキスト。
+ *
+ * そのフレームで変わるポインタと値をまとめる。パイプラインの Execute の間だけ有効。
+ * どのポインタも所有しない。
  */
 struct RenderFrameContext
 {
-    // ---- アクティブな描画コンテキスト ----
-    ID3D11DeviceContext* dc = nullptr;
-    const Camera* camera = nullptr;
+    ID3D11DeviceContext *dc     = nullptr;
+    const Camera        *camera = nullptr;
 
-    // ---- 出力先（パイプライン最終出力。途中パスで切り替わる場合あり） ----
-    ID3D11RenderTargetView* targetRTV = nullptr;
-    ID3D11DepthStencilView* targetDSV = nullptr;
-    ID3D11ShaderResourceView* sceneDepthSRV = nullptr;
-    ID3D11ShaderResourceView* sceneNormalSRV = nullptr;
+    // ---- 出力先（パイプラインの最終出力。途中のパスで切り替えることがある） ----
+    ID3D11RenderTargetView   *targetRTV      = nullptr;
+    ID3D11DepthStencilView   *targetDSV      = nullptr;
+    ID3D11ShaderResourceView *sceneDepthSRV  = nullptr;
+    ID3D11ShaderResourceView *sceneNormalSRV = nullptr;
 
-    // 現在のスカイボックス背景 SRV（SkyboxComponent 由来 or 既定）。
-    // EnvironmentSystem が解決して Graphics に預け、MakeFrameContext がここへ渡す。
-    // SkyboxPass はこれを使って描画する（null なら SkyboxPass 側の既定にフォールバック）。
-    ID3D11ShaderResourceView* skyboxSRV = nullptr;
+    // 今のスカイボックス背景（SkyboxComponent のもの、または既定）。
+    // EnvironmentSystem が決めて Graphics に渡し、MakeFrameContext がここへ入れる。
+    // null なら SkyboxPass 側の既定を使う。
+    ID3D11ShaderResourceView *skyboxSRV = nullptr;
 
-    // ---- 描画先のサイズ（targetRTV の実寸） ----
+    // ---- 描画先のサイズ（targetRTV の実寸, px） ----
     uint32_t viewportW = 0;
     uint32_t viewportH = 0;
 };

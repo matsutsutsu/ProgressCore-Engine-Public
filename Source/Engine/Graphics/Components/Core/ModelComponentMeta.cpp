@@ -1,5 +1,4 @@
 // ModelComponent のシリアライズ/インスペクタ定義。
-// assetHash は保存せず、解決済みの assetPath を保存する (カスタムシリアライズ)。
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
@@ -17,38 +16,46 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 
 // ============================================================================
-// カスタムシリアライズ:
+// シリアライズ
+//   assetHash はパスに戻せないので、ResourceManager で引いたパスを保存する。
 // ============================================================================
-namespace ComponentMetaJson {
+namespace ComponentMetaJson
+{
     template <>
-    struct ComponentSerializer<ModelComponent> {
-        static void Save(json& j, const ModelComponent& comp, SaveContext* /*ctx*/) {
+    struct ComponentSerializer<ModelComponent>
+    {
+        static void Save(json &j, const ModelComponent &comp, SaveContext * /*ctx*/)
+        {
             j["assetPath"] = ResourceManager::Instance().GetAssetPath(comp.assetHash);
         }
-        static void Load(const json& j, ModelComponent& comp, LoadContext* /*ctx*/) {
-            if (j.contains("assetPath") && j["assetPath"].is_string()) {
+        static void Load(const json &j, ModelComponent &comp, LoadContext * /*ctx*/)
+        {
+            if (j.contains("assetPath") && j["assetPath"].is_string())
+            {
                 comp.SetModel(j["assetPath"].get<std::string>().c_str());
             }
         }
     };
-} 
+} // namespace ComponentMetaJson
 
 // ============================================================================
 // ComponentMeta<ModelComponent>
 // ============================================================================
-template <> struct ComponentMeta<ModelComponent> {
-    static constexpr const char* displayName    = "Model";
-    static constexpr const char* category       = CCL::Categories::Rendering;
-    static constexpr int         sortPriority   = 10; // Transformの直後に配置されるべき重要コンポーネント
+template <>
+struct ComponentMeta<ModelComponent>
+{
+    static constexpr const char *displayName       = "Model";
+    static constexpr const char *category          = CCL::Categories::Rendering;
+    static constexpr int         sortPriority      = 10; // Transform の直後に並べる
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(ModelComponent& comp,
-        unsigned long long /*entityID*/ = 0, void* /*worldPtr*/ = nullptr)
+    static bool CustomGui(ModelComponent &comp,
+                          unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
-        bool changed = false;
+        bool        changed     = false;
         std::string currentPath = ResourceManager::Instance().GetAssetPath(comp.assetHash);
 
         ImGui::TextDisabled("現在のモデル:");
@@ -59,28 +66,30 @@ template <> struct ComponentMeta<ModelComponent> {
 
         ImGui::Separator();
 
-        if (ImGui::Button("モデルを読み込む...", ImVec2(-1, 0))) {
-            // std::filesystem の依存を排除し、厳格に FileDialog::ConvertToRelativePath を使用
+        if (ImGui::Button("モデルを読み込む...", ImVec2(-1, 0)))
+        {
             if (auto path = FileDialog::OpenPreset("Model", "モデルを選択",
-                Graphics::Instance().GetWindowHandle()))
+                                                   Graphics::Instance().GetWindowHandle()))
             {
                 std::string relPath = FileDialog::ConvertToRelativePath(*path);
                 comp.SetModel(relPath.c_str());
                 changed = true;
             }
         }
-        if (!currentPath.empty() && ImGui::Button("モデルをクリア", ImVec2(-1, 0))) {
+        if (!currentPath.empty() && ImGui::Button("モデルをクリア", ImVec2(-1, 0)))
+        {
             comp.SetModel("");
             changed = true;
         }
         return changed;
     }
 #else
-    static bool CustomGui(ModelComponent&, unsigned long long, void*) { return false; }
+    static bool CustomGui(ModelComponent &, unsigned long long, void *) { return false; }
 #endif
 
-    static const std::vector<FieldDescriptor>& Fields() {
-        static const std::vector<FieldDescriptor> empty; 
+    static const std::vector<FieldDescriptor> &Fields()
+    {
+        static const std::vector<FieldDescriptor> empty;
         return empty;
     }
 };

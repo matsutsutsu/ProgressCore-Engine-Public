@@ -1,25 +1,39 @@
-// ParticleShader.h
 #pragma once
+// ===========================================================================
+// 概要: GPU パーティクルを描く頂点・ジオメトリ・ピクセルシェーダーの組。
+//
+// 責務:
+//   - 起動時に3つの .cso を読み、Begin / End でバインドする・外す
+//   - HLSL の更新時刻を見て、変わっていたら HLSL をその場でコンパイルし直す
+//
+// 備考: 粒子のバッファ・定数バッファ・テクスチャは ParticleRenderer がバインドする。
+// ===========================================================================
 #include "Engine/Graphics/Shader/Core/Shader.h"
 
-// パーティクル描画専用のシェーダーラッパー（ホットリロード対応）
-class ParticleShader : public Shader {
+class ParticleShader : public Shader
+{
 public:
-    ParticleShader(ID3D11Device* device);
+    ParticleShader(ID3D11Device *device);
     ~ParticleShader() override = default;
 
-    void Begin(ID3D11DeviceContext* dc, const RenderServices& s, const RenderFrameContext& ctx) override;
-    void End(ID3D11DeviceContext* dc, const RenderServices& s) override;
+    void Begin(ID3D11DeviceContext *dc, const RenderServices &s, const RenderFrameContext &ctx) override;
+    void End(ID3D11DeviceContext *dc, const RenderServices &s) override;
 
-    void CheckAndReload(ID3D11Device* device) override;
+    void CheckAndReload(ID3D11Device *device) override;
 
 private:
     Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_vs;
     Microsoft::WRL::ComPtr<ID3D11GeometryShader> m_gs;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>    m_ps;
 
-    std::wstring m_vsPath, m_gsPath, m_psPath;
-    std::filesystem::file_time_type m_vsTime, m_gsTime, m_psTime;
+    std::wstring                    m_vsPath, m_gsPath, m_psPath; // 更新を見る HLSL
+    std::filesystem::file_time_type m_vsTime, m_gsTime, m_psTime; // 前に見た更新時刻
 
-    void LoadShaders(ID3D11Device* device);
+    // 3つが include する共通部分（GS_OUT など）。ここだけ直しても読み直されるように見る
+    std::wstring                    m_includePath;
+    std::filesystem::file_time_type m_includeTime;
+
+    void LoadShaders(ID3D11Device *device);
+    // HLSL をコンパイルし直す。失敗したシェーダーは前のまま
+    void CompileShaders(ID3D11Device *device);
 };

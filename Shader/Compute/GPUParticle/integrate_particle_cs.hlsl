@@ -8,7 +8,7 @@ SamplerState   sampler_linear     : register(REG_SMP(SLOT_SMP_LINEAR));
 Texture2D      color_ramp         : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 Texture3D<float4> noise_3d        : register(REG_SRV(SLOT_SRV_MAT_TEX2));
 
-[numthreads(NUMTHREADS_X, 1, 1)]
+[numthreads(PARTICLE_CS_THREADS, 1, 1)]
 void main(uint3 dtid : SV_DispatchThreadID)
 {
     uint id = dtid.x;
@@ -157,9 +157,13 @@ void UpdateParticle(inout particle p)
 
     // ---- 色更新 ----
     // 種別は定数バッファ側の particle_type を参照する
+    //   base_alpha は手動の色のアルファ。インスペクタはアルファも編集できるので、
+    //   下のフェードに掛けないと「下げても何も変わらない」設定になる。
+    float base_alpha = 1.0f;
     if (particle_type == 0)
     {
         p.color.rgb = manual_color.rgb;
+        base_alpha  = manual_color.a;
     }
     else
     {
@@ -167,17 +171,24 @@ void UpdateParticle(inout particle p)
         {
             p.color     = color_ramp.SampleLevel(sampler_linear,
                                 float2(0.5f, p.age / p.lifespan), 0);
-            // ガンマ補正。負値が来ると pow が NaN を返すので saturate で挟む
-            // （テクスチャ由来なので通常 0〜1 だが、警告 X3571 を消す意味も兼ねる）。
-            p.color     = pow(saturate(p.color), 2.3f);
+            // sRGB → リニア。手動の色（C++ の SrgbToLinear）と同じ 2.2 にそろえる
+            //   （ToneMapPS が最後に 1/2.2 乗で戻す）。アルファは下でフェードに上書きされる。
+            //   負値が来ると pow が NaN を返すので saturate で挟む（警告 X3571 対策も兼ねる）。
+            p.color.rgb = pow(saturate(p.color.rgb), 2.2f);
         }
         else
         {
             p.color.rgb = manual_color.rgb;
+            base_alpha  = manual_color.a;
         }
     }
 
-    float alpha  = fade_in(fade_duration.x, p.age, 1.0f)
+    // 発光の強さ。描画先は HDR なので 1 を超えた分が光り、ブルームがかかる。
+    //   アルファには掛けない（不透明度は 1 を超えられないため）。
+    p.color.rgb *= intensity;
+
+    float alpha  = base_alpha
+                 * fade_in(fade_duration.x, p.age, 1.0f)
                  * fade_out(fade_duration.y, p.age, p.lifespan, 1.0f);
     p.color.a = alpha;
 

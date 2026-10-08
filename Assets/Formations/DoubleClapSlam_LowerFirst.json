@@ -1,0 +1,68 @@
+{
+  "assign": {
+    "fillOrder": "RowFirst",
+    "rows": 2,
+    "sideGroups": 2,
+    "split": "Block",
+    "tierGroups": 2
+  },
+  "attackSeconds": 0.8333,
+  "layers": [
+    {
+      "axis": "Right",
+      "duration": 0.5,
+      "from": 12.0,
+      "mirror": true,
+      "phaseReverse": false,
+      "phaseSource": "Group",
+      "to": 1.2,
+      "type": "Translate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    },
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "frequency": 10.0,
+      "from": 0.6,
+      "leadThreshold": 0.18,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "Group",
+      "to": 0.6,
+      "type": "Shiver",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
+  "layout": {
+    "baseA": 0.0,
+    "baseB": 0.4,
+    "centerColumns": true,
+    "columnAxis": "Forward",
+    "spacingA": 2.5,
+    "spacingB": 1.2,
+    "tierStepB": 2.4
+  },
+  "name": "挟み込み2段・下段先攻",
+  "origin": {
+    "forward": 6.0,
+    "right": 0.0,
+    "up": 0.0
+  },
+  "output": {
+    "chargeMode": "RigidFollow",
+    "clampToGround": false,
+    "combat": {
+      "damage": 8.0,
+      "hitRadius": 2.5,
+      "hitStopDuration": 0.05,
+      "hitStopScale": 0.0,
+      "knockback": 12.0
+    },
+    "look": "Inward",
+    "useShiverTelegraph": true
+  },
+  "slot": 28,
+  "telegraphSeconds": 1.5
+}

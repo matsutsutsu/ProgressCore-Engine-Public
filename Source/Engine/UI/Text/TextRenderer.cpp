@@ -1,7 +1,5 @@
-// 役割・設計方針は TextRenderer.h を参照。
-//
-// stb_truetype はこの翻訳単位でのみ実装展開する。STBTT_STATIC で関数を static 化し、
-// ImGui が内部に持つ同名 stb 実装とリンク衝突しないようにする。
+// stb_truetype の実装はこの翻訳単位でだけ展開する。STBTT_STATIC で関数を static にし、
+// ImGui が内部に持つ同名の stb 実装とリンク時に衝突しないようにする。
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include "stb_truetype.h"
@@ -10,13 +8,68 @@
 #include "Engine/Graphics/Renderer/Sprite.h"
 
 #include <wrl.h>
-#include <fstream>
-#include <vector>
 #include <cstdint>
+#include <fstream>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
 
 using Microsoft::WRL::ComPtr;
 
-// stb 依存の状態はここ（.cpp）に隠す。
+namespace
+{
+    // ファイルを丸ごと読む（失敗なら空）
+    std::vector<unsigned char> ReadFile(const char *path)
+    {
+        std::ifstream ifs(path, std::ios::binary);
+        if (!ifs) return {};
+        return std::vector<unsigned char>((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    }
+
+    /**
+     * @brief UTF-8 の文字列から1文字（コードポイント）を取り出し、i を次の文字へ進める。
+     * @return コードポイント。壊れたバイト列なら 0xFFFD（置き換え文字）を返して1バイト進める
+     */
+    uint32_t NextCodepoint(const std::string &s, size_t &i)
+    {
+        const auto c0 = static_cast<unsigned char>(s[i]);
+        if (c0 < 0x80)
+        {
+            ++i;
+            return c0;
+        }
+        // 先頭バイトから、続くバイトの数を決める
+        int      extra = 0;
+        uint32_t cp    = 0;
+        if ((c0 & 0xE0) == 0xC0) { extra = 1; cp = c0 & 0x1F; }
+        else if ((c0 & 0xF0) == 0xE0) { extra = 2; cp = c0 & 0x0F; }
+        else if ((c0 & 0xF8) == 0xF0) { extra = 3; cp = c0 & 0x07; }
+        else
+        {
+            ++i;
+            return 0xFFFD;
+        }
+        if (i + extra >= s.size()) // 文字列の途中で切れている
+        {
+            ++i;
+            return 0xFFFD;
+        }
+        for (int k = 1; k <= extra; ++k)
+        {
+            const auto c = static_cast<unsigned char>(s[i + k]);
+            if ((c & 0xC0) != 0x80)
+            {
+                ++i;
+                return 0xFFFD;
+            }
+            cp = (cp << 6) | (c & 0x3F);
+        }
+        i += 1 + extra;
+        return cp;
+    }
+} // namespace
+
+// stb に依存する状態はここに隠す
 struct TextRenderer::Impl
 {
     static constexpr int kFirst = 32; // ' '
@@ -24,16 +77,102 @@ struct TextRenderer::Impl
 
     bool  ready     = false;
     float bakePixel = 48.0f;
-    int   atlasW    = 512;
-    int   atlasH    = 512;
 
+    // --- 主のフォント（半角英数字。起動時にまとめて焼く） ---
+    int                     atlasW        = 512;
+    int                     atlasH        = 512;
     stbtt_bakedchar         chars[kCount] = {};
     std::unique_ptr<Sprite> atlas;
 
-    // バインド高(bakePixel)での縦メトリクス(px)。descent は負。
+    // 焼いたときの高さ（bakePixel）での縦方向のメトリクス（px）。descent は負
     float ascent  = 0.0f;
     float descent = 0.0f;
     float lineGap = 0.0f;
+
+    // --- 副のフォント（それ以外の文字。出てきたときに1文字ずつ焼く） ---
+    std::vector<unsigned char> fallbackTtf;      // stbtt_fontinfo が中を指すので、読み込んだまま持っておく
+    stbtt_fontinfo             fallbackInfo{};
+    bool                       hasFallback   = false;
+    float                      fallbackScale = 0.0f; // bakePixel の高さにするための倍率
+
+    // 1文字の情報。メトリクスは測るとき、アトラス上の位置は初めて描くときに決める
+    struct Glyph
+    {
+        float xadvance = 0.0f; // 次の文字までの幅（bakePixel 基準の px）
+        float xoff = 0.0f, yoff = 0.0f; // ベースラインからの左上のずれ（bakePixel 基準の px）
+        int   w = 0, h = 0;    // ビットマップの大きさ（px）
+        int   ax = 0, ay = 0;  // アトラス上の左上（px）
+        bool  baked = false;   // アトラスへ焼いたか
+        bool  fits  = true;    // アトラスに入ったか（入らなければ描かない）
+    };
+    std::unordered_map<uint32_t, Glyph> glyphs;
+    std::mutex                          glyphMutex; // 幅を測る処理は別のスレッドから呼ばれることがあるので守る
+
+    static constexpr int    kDynSize = 1024; // 副のアトラスの一辺（px）。48px なら約 400 文字入る
+    ComPtr<ID3D11Texture2D> dynTex;
+    std::unique_ptr<Sprite> dynAtlas;
+    int                     shelfX = 1, shelfY = 1, shelfH = 0; // 棚詰めの書き込み位置（1px の余白を空けて詰める）
+
+    // 副のフォントのメトリクスを引く（無ければ測って登録する）。呼ぶ側で glyphMutex を取る
+    Glyph &FindGlyph(uint32_t cp)
+    {
+        auto it = glyphs.find(cp);
+        if (it != glyphs.end()) return it->second;
+
+        Glyph g;
+        int   advance = 0, lsb = 0;
+        stbtt_GetCodepointHMetrics(&fallbackInfo, static_cast<int>(cp), &advance, &lsb);
+        g.xadvance = advance * fallbackScale;
+
+        int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+        stbtt_GetCodepointBitmapBox(&fallbackInfo, static_cast<int>(cp), fallbackScale, fallbackScale, &x0, &y0, &x1, &y1);
+        g.xoff = static_cast<float>(x0);
+        g.yoff = static_cast<float>(y0);
+        g.w    = x1 - x0;
+        g.h    = y1 - y0;
+        return glyphs.emplace(cp, g).first->second;
+    }
+
+    // 文字をアトラスへ焼く（まだなら）。棚が一杯なら fits を false にして諦める。呼ぶ側で glyphMutex を取る
+    void BakeGlyph(ID3D11DeviceContext *dc, uint32_t cp, Glyph &g)
+    {
+        if (g.baked) return;
+        g.baked = true;
+        if (g.w <= 0 || g.h <= 0) return; // 空白など、絵の無い文字
+
+        // 棚詰め: 今の行に入らなければ次の行へ
+        if (shelfX + g.w + 1 > kDynSize)
+        {
+            shelfX = 1;
+            shelfY += shelfH + 1;
+            shelfH = 0;
+        }
+        if (shelfY + g.h + 1 > kDynSize)
+        {
+            g.fits = false;
+            return;
+        }
+        g.ax = shelfX;
+        g.ay = shelfY;
+        shelfX += g.w + 1;
+        shelfH = (g.h > shelfH) ? g.h : shelfH;
+
+        // 1 チャンネルで焼き、白 + カバレッジの RGBA にしてアトラスの該当部分だけを書き換える
+        std::vector<unsigned char> cov(static_cast<size_t>(g.w) * g.h);
+        stbtt_MakeCodepointBitmap(&fallbackInfo, cov.data(), g.w, g.h, g.w, fallbackScale, fallbackScale,
+                                  static_cast<int>(cp));
+        std::vector<uint32_t> rgba(cov.size());
+        for (size_t i = 0; i < cov.size(); ++i)
+            rgba[i] = 0x00FFFFFFu | (static_cast<uint32_t>(cov[i]) << 24);
+
+        D3D11_BOX box = {};
+        box.left      = static_cast<UINT>(g.ax);
+        box.top       = static_cast<UINT>(g.ay);
+        box.right     = static_cast<UINT>(g.ax + g.w);
+        box.bottom    = static_cast<UINT>(g.ay + g.h);
+        box.back      = 1;
+        dc->UpdateSubresource(dynTex.Get(), 0, &box, rgba.data(), static_cast<UINT>(g.w * 4), 0);
+    }
 };
 
 TextRenderer::TextRenderer()
@@ -43,31 +182,32 @@ TextRenderer::TextRenderer()
 
 TextRenderer::~TextRenderer() = default;
 
+// ---------------------------------------------------------------------------
+// 初期化
+// ---------------------------------------------------------------------------
+
 bool TextRenderer::IsReady() const
 {
     return m_impl && m_impl->ready;
 }
 
-bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float bakePixelHeight)
+bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float bakePixelHeight, const char *fallbackTtfPath)
 {
     if (!device || !ttfPath) return false;
 
-    // --- TTF をメモリへ ---
-    std::ifstream ifs(ttfPath, std::ios::binary);
-    if (!ifs) return false;
-    std::vector<unsigned char> ttf((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+    const std::vector<unsigned char> ttf = ReadFile(ttfPath);
     if (ttf.empty()) return false;
 
     m_impl->bakePixel = bakePixelHeight;
 
-    // --- ASCII をアトラス(1ch)へ焼く ---
+    // --- 主のフォント: 半角英数字を 1 チャンネルのアトラスへ焼く ---
     std::vector<unsigned char> bitmap(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     stbtt_BakeFontBitmap(ttf.data(), 0, bakePixelHeight,
-        bitmap.data(), m_impl->atlasW, m_impl->atlasH,
-        Impl::kFirst, Impl::kCount, m_impl->chars);
-    // ※ 戻り値が負でも一部は焼けている。ASCIIなら 512x512/48px で収まる想定。
+                         bitmap.data(), m_impl->atlasW, m_impl->atlasH,
+                         Impl::kFirst, Impl::kCount, m_impl->chars);
+    // 戻り値が負なら入りきらなかったが、入った分は焼けている。ASCII なら 512x512 / 48px で収まる
 
-    // --- 縦メトリクス取得 ---
+    // 縦方向のメトリクスを取得する
     stbtt_fontinfo info;
     if (stbtt_InitFont(&info, ttf.data(), stbtt_GetFontOffsetForIndex(ttf.data(), 0)))
     {
@@ -79,16 +219,15 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
         m_impl->lineGap = g * sc;
     }
 
-    // --- 1ch カバレッジ → RGBA(白 + カバレッジα)。Spriteは texColor*頂点色なので
-    //     rgb=白にして頂点色で着色、α=カバレッジで縁を出す。---
+    // 1 チャンネルのカバレッジを RGBA（白 + カバレッジを α）へ変換する。
+    //   Sprite はテクスチャ色 × 頂点色で描くので、RGB を白にして頂点色で着色する
     std::vector<uint32_t> rgba(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     for (size_t i = 0; i < rgba.size(); ++i)
     {
         const uint32_t cov = bitmap[i];
-        rgba[i]            = 0x00FFFFFFu | (cov << 24); // R8G8B8A8: R,G,B=255, A=cov
+        rgba[i]            = 0x00FFFFFFu | (cov << 24); // R8G8B8A8: R,G,B=255, A=カバレッジ
     }
 
-    // --- テクスチャ + SRV 生成 ---
     D3D11_TEXTURE2D_DESC td = {};
     td.Width                = m_impl->atlasW;
     td.Height               = m_impl->atlasH;
@@ -110,48 +249,93 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     if (FAILED(device->CreateShaderResourceView(tex.Get(), nullptr, srv.GetAddressOf()))) return false;
 
     m_impl->atlas = std::make_unique<Sprite>(device, srv,
-        static_cast<float>(m_impl->atlasW), static_cast<float>(m_impl->atlasH));
+                                             static_cast<float>(m_impl->atlasW), static_cast<float>(m_impl->atlasH));
+
+    // --- 副のフォント: 読み込みと、空のアトラスの用意だけ。文字は描くときに焼く ---
+    m_impl->fallbackTtf = fallbackTtfPath ? ReadFile(fallbackTtfPath) : ttf;
+    if (m_impl->fallbackTtf.empty()) m_impl->fallbackTtf = ttf; // 副が読めなければ主で代用する
+    if (stbtt_InitFont(&m_impl->fallbackInfo, m_impl->fallbackTtf.data(),
+                       stbtt_GetFontOffsetForIndex(m_impl->fallbackTtf.data(), 0)))
+    {
+        m_impl->fallbackScale = stbtt_ScaleForPixelHeight(&m_impl->fallbackInfo, bakePixelHeight);
+
+        D3D11_TEXTURE2D_DESC dd = td;
+        dd.Width                = Impl::kDynSize;
+        dd.Height               = Impl::kDynSize;
+        dd.Usage                = D3D11_USAGE_DEFAULT; // UpdateSubresource で部分的に書き換える
+
+        std::vector<uint32_t>  clear(static_cast<size_t>(Impl::kDynSize) * Impl::kDynSize, 0x00FFFFFFu); // 白・透明
+        D3D11_SUBRESOURCE_DATA dsd = {};
+        dsd.pSysMem                = clear.data();
+        dsd.SysMemPitch            = Impl::kDynSize * 4;
+
+        ComPtr<ID3D11ShaderResourceView> dynSrv;
+        if (SUCCEEDED(device->CreateTexture2D(&dd, &dsd, m_impl->dynTex.GetAddressOf())) &&
+            SUCCEEDED(device->CreateShaderResourceView(m_impl->dynTex.Get(), nullptr, dynSrv.GetAddressOf())))
+        {
+            m_impl->dynAtlas    = std::make_unique<Sprite>(device, dynSrv, static_cast<float>(Impl::kDynSize),
+                                                           static_cast<float>(Impl::kDynSize));
+            m_impl->hasFallback = true;
+        }
+    }
+
     m_impl->ready = true;
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// 描画と計測
+// ---------------------------------------------------------------------------
+
 void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
-    float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color)
+                            float x, float y, float pixelSize, const DirectX::XMFLOAT4 &color)
 {
     if (!IsReady() || !dc) return;
 
     const float scale = pixelSize / m_impl->bakePixel;
     float       penX  = x;
-    float       baseY = y + m_impl->ascent * scale; // yは上端。ベースラインへ下ろす。
+    float       baseY = y + m_impl->ascent * scale; // y は上端なので、ベースラインまで下げる
 
-    for (unsigned char ch : text)
+    for (size_t i = 0; i < text.size();)
     {
-        if (ch == '\n')
+        const uint32_t cp = NextCodepoint(text, i);
+        if (cp == '\n')
         {
             penX = x;
             baseY += LineHeight(pixelSize);
             continue;
         }
-        if (ch < Impl::kFirst || ch >= Impl::kFirst + Impl::kCount) continue;
 
-        const stbtt_bakedchar &b = m_impl->chars[ch - Impl::kFirst];
+        // 半角英数字: 主のフォントのアトラスから
+        if (cp >= static_cast<uint32_t>(Impl::kFirst) && cp < static_cast<uint32_t>(Impl::kFirst + Impl::kCount))
+        {
+            const stbtt_bakedchar &b = m_impl->chars[cp - Impl::kFirst];
 
-        // アトラス上のピクセル矩形（Spriteの切り抜きはピクセル指定）
-        const float sx = static_cast<float>(b.x0);
-        const float sy = static_cast<float>(b.y0);
-        const float sw = static_cast<float>(b.x1 - b.x0);
-        const float sh = static_cast<float>(b.y1 - b.y0);
+            // アトラス上の矩形（Sprite の切り抜きはピクセル指定）
+            const float sx = static_cast<float>(b.x0);
+            const float sy = static_cast<float>(b.y0);
+            const float sw = static_cast<float>(b.x1 - b.x0);
+            const float sh = static_cast<float>(b.y1 - b.y0);
 
-        // 画面配置（bake空間のoffsetをscale倍）
-        const float gx = penX + b.xoff * scale;
-        const float gy = baseY + b.yoff * scale;
-        const float gw = sw * scale;
-        const float gh = sh * scale;
+            // 画面上の配置（焼いたときの高さ基準のオフセットを scale 倍する）
+            m_impl->atlas->Render(dc, penX + b.xoff * scale, baseY + b.yoff * scale, 0.0f, sw * scale, sh * scale,
+                                  sx, sy, sw, sh, 0.0f, color.x, color.y, color.z, color.w);
+            penX += b.xadvance * scale;
+            continue;
+        }
 
-        m_impl->atlas->Render(dc, gx, gy, 0.0f, gw, gh, sx, sy, sw, sh, 0.0f,
-            color.x, color.y, color.z, color.w);
-
-        penX += b.xadvance * scale;
+        // それ以外（日本語など）: 副のフォントのアトラスから。初めての文字はここで焼く
+        if (!m_impl->hasFallback || cp < 0x20) continue;
+        std::lock_guard<std::mutex> lk(m_impl->glyphMutex);
+        Impl::Glyph                &g = m_impl->FindGlyph(cp);
+        m_impl->BakeGlyph(dc, cp, g);
+        if (g.fits && g.w > 0 && g.h > 0)
+        {
+            m_impl->dynAtlas->Render(dc, penX + g.xoff * scale, baseY + g.yoff * scale, 0.0f, g.w * scale, g.h * scale,
+                                     static_cast<float>(g.ax), static_cast<float>(g.ay), static_cast<float>(g.w),
+                                     static_cast<float>(g.h), 0.0f, color.x, color.y, color.z, color.w);
+        }
+        penX += g.xadvance * scale;
     }
 }
 
@@ -160,18 +344,51 @@ float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
     if (!m_impl->ready) return 0.0f;
     const float scale = pixelSize / m_impl->bakePixel;
     float       w = 0.0f, maxw = 0.0f;
-    for (unsigned char ch : text)
+    for (size_t i = 0; i < text.size();)
     {
-        if (ch == '\n') { maxw = (w > maxw) ? w : maxw; w = 0.0f; continue; }
-        if (ch < Impl::kFirst || ch >= Impl::kFirst + Impl::kCount) continue;
-        w += m_impl->chars[ch - Impl::kFirst].xadvance * scale;
+        const uint32_t cp = NextCodepoint(text, i);
+        if (cp == '\n')
+        {
+            maxw = (w > maxw) ? w : maxw;
+            w    = 0.0f;
+            continue;
+        }
+        if (cp >= static_cast<uint32_t>(Impl::kFirst) && cp < static_cast<uint32_t>(Impl::kFirst + Impl::kCount))
+        {
+            w += m_impl->chars[cp - Impl::kFirst].xadvance * scale;
+        }
+        else if (m_impl->hasFallback && cp >= 0x20)
+        {
+            std::lock_guard<std::mutex> lk(m_impl->glyphMutex);
+            w += m_impl->FindGlyph(cp).xadvance * scale; // 幅を測るだけなので、ここでは焼かない
+        }
     }
     return (w > maxw) ? w : maxw;
+}
+
+// ---------------------------------------------------------------------------
+// 補助
+// ---------------------------------------------------------------------------
+
+size_t TextRenderer::Utf8Length(const std::string &text)
+{
+    size_t n = 0;
+    for (size_t i = 0; i < text.size(); ++n)
+        NextCodepoint(text, i);
+    return n;
+}
+
+std::string TextRenderer::Utf8Prefix(const std::string &text, size_t count)
+{
+    size_t i = 0;
+    for (size_t n = 0; n < count && i < text.size(); ++n)
+        NextCodepoint(text, i);
+    return text.substr(0, i);
 }
 
 float TextRenderer::LineHeight(float pixelSize) const
 {
     const float scale = pixelSize / m_impl->bakePixel;
-    // descent は負なので (ascent - descent) が高さ。lineGap を加える。
+    // descent は負なので (ascent - descent) が文字の高さ。これに行間を足す
     return (m_impl->ascent - m_impl->descent + m_impl->lineGap) * scale;
 }

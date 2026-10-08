@@ -1,12 +1,11 @@
-// BTアセットキャッシュの実装。
-//
-// 注意点:
-//   設計の理由と使い方は BTAssetCache.h に書いてある。ここには書かない
-//   （同じ説明が2箇所にあると、片方だけ古くなって嘘になる）。
 #include "BTAssetCache.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeLoader.h"
 #include "Engine/Platform/Core/Logger.h"
+
+// ---------------------------------------------------------------------------
+// 読み込み
+// ---------------------------------------------------------------------------
 
 BTAssetCache &BTAssetCache::Instance()
 {
@@ -23,7 +22,7 @@ std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
     auto it = m_assets.find(path);
     if (it != m_assets.end()) return it->second;
 
-    // 失敗済みは黙って諦める（ログは初回の1回だけ出してある）
+    // 失敗したことのあるパスは読みに行かない（ログは初回の1回だけ出してある）
     if (m_failed.count(path)) return nullptr;
 
     return LoadLocked(path);
@@ -35,8 +34,14 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 失敗の記録も消す。「直したから読み直してほしい」という指示なので、
-    // ここで消さないと直した後も永久に読まれない。
+    // 失敗の記録も消して、m_assets と m_failed に同じパスが入らない状態を保つ。
+    //
+    //   消し忘れても読み直し自体は成功する。Reload は GetOrLoad を経由せず
+    //   LoadLocked を直接呼ぶので、m_failed の判定（毎フレーム再試行しないための
+    //   確認）を通らないため。
+    //   ただし両方にパスが残り、GetOrLoad が m_assets を先に見る順番に
+    //   頼って動いているだけの状態になる。順番を入れ替えると
+    //   「直したのに読まれない」が起きる。
     m_assets.erase(path);
     m_failed.erase(path);
 
@@ -46,18 +51,24 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
 {
     auto asset = std::make_shared<BTAsset>();
-    if (!BehaviorTreeLoader::LoadFromJson(path, *asset)) {
+    if (!BehaviorTreeLoader::LoadFromJson(path, *asset))
+    {
         m_failed.insert(path);
         CCL_LOG_WARN(LogCategory::AI,
-            "[BTAssetCache] 読み込みに失敗したので、このパスは以降スキップする: %s "
-            "(直したらインスペクタの「AI再読込」を押す)", path.c_str());
+                     "[BTAssetCache] 読み込みに失敗したので、このパスは以降スキップする: %s "
+                     "(直したらインスペクタの「AI再読込」を押す)",
+                     path.c_str());
         return nullptr;
     }
 
     std::shared_ptr<const BTAsset> shared = asset;
-    m_assets[path] = shared;
+    m_assets[path]                        = shared;
     return shared;
 }
+
+// ---------------------------------------------------------------------------
+// キャッシュの管理
+// ---------------------------------------------------------------------------
 
 void BTAssetCache::Clear()
 {

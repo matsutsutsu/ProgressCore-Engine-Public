@@ -4,30 +4,36 @@
             "components": {
                 "Camera Shake": {
                     "amplitude": 3.0,
-                    "decayRate": 1.2,
+                    "decayRate": 1.2000000476837158,
                     "frequency": 22.0,
-                    "rotationRatio": 0.35
+                    "rotationRatio": 0.3499999940395355
                 },
                 "CameraBodyTPS": {
                     "baseFov": 70.0,
+                    "closeUpDistance": 3.5,
                     "collisionEnabled": true,
                     "collisionHeadBias": 1.0,
                     "collisionInDamping": 30.0,
                     "collisionMinDistance": 0.800000011920929,
                     "collisionOutDamping": 6.0,
                     "collisionRadius": 0.30000001192092896,
-                    "currentPitch": -21.259084701538086,
-                    "currentYaw": 90.0,
+                    "currentPitch": -7.999999523162842,
+                    "currentYaw": -66.13084411621094,
                     "dashFov": 90.0,
                     "distance": 17.5,
                     "enableCursorLock": true,
                     "fovDamping": 8.5,
+                    "lockOnAllowManualCamera": true,
+                    "lockOnAssistStrength": 3.0,
                     "lockOnDistanceGain": 0.3499999940395355,
+                    "lockOnManualOverrideTime": 0.25,
+                    "lockOnMaxCorrectionSpeed": 180.0,
                     "lockOnMaxExtraDistance": 8.0,
                     "lockOnMaxLookShift": 3.0,
-                    "lockOnPitch": -30.0,
-                    "lockOnRotationDamping": 6.0,
+                    "lockOnPitch": -8.0,
+                    "lockOnPitchDamping": 8.0,
                     "lockOnSubjugationRatio": 0.3499999940395355,
+                    "lockOnYawDeadZone": 20.0,
                     "lookSpeedX": 120.0,
                     "lookSpeedY": 120.0,
                     "lookaheadDamping": 1.600000023841858,
@@ -39,7 +45,7 @@
                     "mouseSensitivityX": 0.15000000596046448,
                     "mouseSensitivityY": 0.15000000596046448,
                     "positionDamping": 4.5,
-                    "target": 3,
+                    "target": 2,
                     "targetOffset": [
                         0.0,
                         5.0,
@@ -59,17 +65,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 0,
                     "position": [
-                        44.208290100097656,
-                        11.380970001220703,
-                        -52.00984191894531
+                        -64.57842254638672,
+                        8.474474906921387,
+                        97.39399719238281
                     ],
                     "rotation": [
-                        0.1822224110364914,
-                        -0.15256035327911377,
-                        0.02863231487572193,
-                        0.9709277153015137
+                        0.014425267465412617,
+                        0.9760010242462158,
+                        -0.06824862957000732,
+                        0.20629096031188965
                     ],
                     "scale": [
                         1.0,

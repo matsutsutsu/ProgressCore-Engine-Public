@@ -19,81 +19,80 @@
 #endif
 
 // =====================================================================
-// シリアライズ（A案＝アセット参照方式）
-//   実行時専用ハンドル(overrideMaterials)は保存できないため、
-//   代わりにスロットごとの .mat.json パス(overridePaths)を保存する。
-//   ロード時はパスから LoadMaterialAsset で復元し、ハンドルを埋め直す。
-//   ※ ComponentSerializer<T> は REGISTER_COMPONENT より前に見えている必要がある
-//      (ComponentRegistry の Register<T> が実体化するため)。
+// シリアライズ
+//   ハンドル（overrideMaterials）は実行時だけ有効なので保存できない。
+//   代わりにスロットごとの .mat.json パス（overridePaths）を保存し、
+//   ロード時にパスから LoadMaterialAsset で復元する。
+//   ComponentSerializer<T> は REGISTER_COMPONENT より前に定義する
+//   （ComponentRegistry の Register<T> を実体化するときに見えている必要がある）。
 // =====================================================================
 namespace ComponentMetaJson
 {
-template <>
-struct ComponentSerializer<MaterialComponent>
-{
-    static void Save(json &j, const MaterialComponent &c, CCL::Serialization::SaveContext *)
+    template <>
+    struct ComponentSerializer<MaterialComponent>
     {
-        // スロット数は overrideMaterials 基準。パスは並走列から取る（無ければ空）。
-        json paths = json::array();
-        for (size_t i = 0; i < c.overrideMaterials.size(); ++i)
+        static void Save(json &j, const MaterialComponent &c, CCL::Serialization::SaveContext *)
         {
-            const char *p = (i < c.overridePaths.size()) ? c.overridePaths[i].c_str() : "";
-            paths.push_back(p ? p : "");
-        }
-        j["paths"] = paths;
-        j["customParams"] =
-            json::array({c.customParams.x, c.customParams.y, c.customParams.z, c.customParams.w});
-    }
-
-    static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
-    {
-        // 同じコンポーネントへ再ロードされた場合に備え、古いハンドルを先に返す。
-        // （「既定に戻す」ボタンと同じ後始末。ここだけ抜けているとプール枠が漏れる）
-        for (auto handle : c.overrideMaterials)
-            ResourceManager::Instance().UnloadMaterial(handle);
-
-        c.overrideMaterials.clear();
-        c.overridePaths.clear();
-
-        if (j.contains("paths") && j["paths"].is_array())
-        {
-            const auto &paths = j["paths"];
-            c.ResizeSlots(paths.size());
-            for (size_t i = 0; i < paths.size(); ++i)
+            // スロット数は overrideMaterials 基準。パスは並走列から取る（無ければ空）。
+            json paths = json::array();
+            for (size_t i = 0; i < c.overrideMaterials.size(); ++i)
             {
-                std::string path = paths[i].is_string() ? paths[i].get<std::string>() : std::string();
-                c.overridePaths[i] = path;
-                if (!path.empty())
+                const char *p = (i < c.overridePaths.size()) ? c.overridePaths[i].c_str() : "";
+                paths.push_back(p ? p : "");
+            }
+            j["paths"] = paths;
+            j["customParams"] =
+                json::array({c.customParams.x, c.customParams.y, c.customParams.z, c.customParams.w});
+        }
+
+        static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
+        {
+            // 同じコンポーネントへ読み直すことがあるので、古いハンドルを先に解放する。
+            // 解放しないとマテリアルプールの枠が漏れる（「既定に戻す」ボタンと同じ後始末）。
+            for (auto handle : c.overrideMaterials)
+                ResourceManager::Instance().UnloadMaterial(handle);
+
+            c.overrideMaterials.clear();
+            c.overridePaths.clear();
+
+            if (j.contains("paths") && j["paths"].is_array())
+            {
+                const auto &paths = j["paths"];
+                c.ResizeSlots(paths.size());
+                for (size_t i = 0; i < paths.size(); ++i)
                 {
-                    // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）。
-                    MaterialHandle h = ResourceManager::Instance().LoadMaterialAsset(path);
-                    c.overrideMaterials[i] = h; // 失敗時は無効ハンドル＝共有マテリアルへフォールバック
+                    std::string path   = paths[i].is_string() ? paths[i].get<std::string>() : std::string();
+                    c.overridePaths[i] = path;
+                    if (!path.empty())
+                    {
+                        // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）。
+                        MaterialHandle h       = ResourceManager::Instance().LoadMaterialAsset(path);
+                        c.overrideMaterials[i] = h; // 失敗時は無効ハンドル＝共有マテリアルへフォールバック
+                    }
                 }
             }
-        }
 
-        if (j.contains("customParams") && j["customParams"].is_array() && j["customParams"].size() >= 4)
-        {
-            const auto &a  = j["customParams"];
-            c.customParams = {a[0].get<float>(), a[1].get<float>(), a[2].get<float>(), a[3].get<float>()};
+            if (j.contains("customParams") && j["customParams"].is_array() && j["customParams"].size() >= 4)
+            {
+                const auto &a  = j["customParams"];
+                c.customParams = {a[0].get<float>(), a[1].get<float>(), a[2].get<float>(), a[3].get<float>()};
+            }
         }
-    }
-};
+    };
 } // namespace ComponentMetaJson
 
 template <>
 struct ComponentMeta<MaterialComponent>
 {
-    static constexpr const char *displayName    = "Material";
-    static constexpr const char *category       = CCL::Categories::Rendering;
-    static constexpr int         sortPriority   = 20; // Modelの直後に配置
+    static constexpr const char *displayName       = "Material";
+    static constexpr const char *category          = CCL::Categories::Rendering;
+    static constexpr int         sortPriority      = 20; // Model の直後に並べる
     static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui   = true;
-    static constexpr bool        isSerializable = true;
+    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    // シェーダー名リストと、現在の shaderHash に対応する index を集める共通処理。
-    //   （旧コードは同じ収集を3箇所にコピペしていたため 1 箇所に集約）
+    // 登録済みシェーダー名の一覧と、currentHash に当たる添字を集める
     struct ShaderList
     {
         std::vector<const char *> names;
@@ -101,7 +100,7 @@ struct ComponentMeta<MaterialComponent>
     };
     static ShaderList GatherShaders(uint32_t currentHash)
     {
-        ShaderList out;
+        ShaderList  out;
         const auto &registered = ShaderRegistry::Instance().GetRegisteredNames();
         out.names.reserve(registered.size());
         for (size_t s = 0; s < registered.size(); ++s)
@@ -185,8 +184,8 @@ struct ComponentMeta<MaterialComponent>
             ShaderList sl = GatherShaders(0);
             if (!sl.names.empty())
             {
-                // static を廃止し ImGui のper-IDストレージへ。
-                //   （複数エンティティ間で選択が混線するバグを回避）
+                // 選択中の添字は static に置かない。インスペクタは Entity 間で使い回すので、
+                // static だと別の Entity の選択と混ざる。ImGui の ID ごとのストレージに置く。
                 ImGuiStorage *store = ImGui::GetStateStorage();
                 ImGuiID       key   = ImGui::GetID("batchShaderIdx");
                 int           idx   = store->GetInt(key, 0);
@@ -199,8 +198,8 @@ struct ComponentMeta<MaterialComponent>
 
                 if (ImGui::Button("全スロットにシェーダー適用"))
                 {
-                    const auto &registered  = ShaderRegistry::Instance().GetRegisteredNames();
-                    uint32_t    targetHash  = registered[idx].second;
+                    const auto &registered = ShaderRegistry::Instance().GetRegisteredNames();
+                    uint32_t    targetHash = registered[idx].second;
                     for (auto handle : comp->overrideMaterials)
                     {
                         if (!handle.IsValid()) continue;
@@ -244,10 +243,9 @@ struct ComponentMeta<MaterialComponent>
                 {
                     if (auto path = FileDialog::SavePreset("Material", "Assets/Materials", "mat.json", Graphics::Instance().GetWindowHandle()))
                     {
-                        // ダイアログが返すのは絶対パス。ここで記録した文字列はそのまま
-                        // シーン/プレハブJSONへ永続化されるので、必ず相対へ直してから持つ。
-                        // 絶対のまま焼くと別PCで解決に失敗し、無効ハンドル＝共有マテリアルへ
-                        // 黙って落ちるだけなので、見た目が変わるまで誰も気付けない。
+                        // ダイアログが返すのは絶対パス。この文字列はそのままシーン/プレハブの
+                        // JSON に保存されるので、相対パスに直してから持つ。絶対パスのままだと
+                        // 別の PC で読み込みに失敗し、エラーも出ずに共有マテリアルで描かれる。
                         const std::string rel = FileDialog::ConvertToRelativePath(*path);
                         if (rm.SaveMaterialAsset(matHandle, rel))
                         {
@@ -261,8 +259,8 @@ struct ComponentMeta<MaterialComponent>
                 {
                     if (auto path = FileDialog::OpenPreset("Material", "マテリアルを選択", Graphics::Instance().GetWindowHandle()))
                     {
-                        // 記録用と読み込み用で同じ文字列を使う。片方を絶対にすると
-                        // 同じ .mat.json が絶対/相対の2キーでキャッシュに載る。
+                        // 保存用と読み込み用で同じ文字列を使う。片方だけ絶対パスにすると、
+                        // 同じ .mat.json が絶対・相対の2つのキーでキャッシュに載る。
                         const std::string rel       = FileDialog::ConvertToRelativePath(*path);
                         MaterialHandle    newHandle = rm.LoadMaterialAsset(rel);
                         if (newHandle.IsValid())
@@ -275,7 +273,7 @@ struct ComponentMeta<MaterialComponent>
                 ImGui::Separator();
 
                 // --- シェーダー選択 ---
-                ShaderList sl = GatherShaders(matPtr->shaderHash);
+                ShaderList sl  = GatherShaders(matPtr->shaderHash);
                 int        cur = sl.current < 0 ? 0 : sl.current;
                 if (!sl.names.empty() &&
                     ImGui::Combo("シェーダー", &cur, sl.names.data(), (int)sl.names.size()))
@@ -303,8 +301,8 @@ struct ComponentMeta<MaterialComponent>
                         {
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
-                                // この文字列は .mat.json の assetPath として保存され、
-                                // 次回ロードで LoadTexture へ渡される。相対で持つ理由は保存側と同じ。
+                                // この文字列は .mat.json の assetPath として保存され、次の読み込みで
+                                // LoadTexture に渡る。相対パスにする理由は .mat.json の保存と同じ。
                                 const std::string s = FileDialog::ConvertToRelativePath(*path);
                                 matPtr->SetTexture(slotHash, rm.LoadTexture(s.c_str()), s);
                                 changed = true;
@@ -326,7 +324,7 @@ struct ComponentMeta<MaterialComponent>
                     ImGui::TreePop();
                 }
 
-                // --- 詳細パラメータ（シェーダーreflection由来）---
+                // --- 詳細パラメータ（シェーダーのリフレクションから一覧を作る）---
                 if (ImGui::TreeNode("詳細パラメータ"))
                 {
                     Shader *shader = ShaderRegistry::Instance().GetShader(matPtr->shaderHash, Graphics::Instance().GetDevice());

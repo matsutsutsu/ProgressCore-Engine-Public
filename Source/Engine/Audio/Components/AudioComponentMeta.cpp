@@ -1,5 +1,4 @@
 // AudioEmitterComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -8,8 +7,8 @@
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/ECS/Core/CCL_World.h"              // World からオーディオ資源を引く
-#include "Engine/Audio/IAudioAPI.h" // イベント名一覧（カタログ）
+#include "Engine/ECS/Core/CCL_World.h" // World からオーディオ資源を引く
+#include "Engine/Audio/IAudioAPI.h"    // イベント名一覧（カタログ）
 #include <memory>
 #include <vector>
 #include <cstdio>
@@ -28,7 +27,7 @@ struct ComponentMeta<AudioEmitterComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    // イベント名を確定させる小ヘルパー：名前を保存し、ハッシュを再計算する。
+    // 名前を保存し、ハッシュも同時に計算し直す（AudioSystem は eventHash==0 のときしか導出しないため）
     static void ApplyEventName(AudioEmitterComponent &comp, const std::string &name)
     {
         comp.eventName = name;
@@ -40,7 +39,7 @@ struct ComponentMeta<AudioEmitterComponent>
         bool changed = false;
         ImGui::PushID("AudioEmitterComponent_UI");
 
-        // --- カタログ（AudioConfig にロード済みのイベント名一覧）を取得 ---
+        // AudioConfig からロード済みのイベント名一覧を取得する
         std::vector<std::string> names;
         if (world)
         {
@@ -50,7 +49,7 @@ struct ComponentMeta<AudioEmitterComponent>
                     names = api->GetEventNames();
         }
 
-        // --- ① ドロップダウン（カタログから選ぶ。手打ち不要） ---
+        // ロード済みの名前から選ぶドロップダウン
         ImGui::Text("サウンド");
         const std::string current = comp.eventName.empty() ? std::string("<未設定>") : comp.eventName;
         if (ImGui::BeginCombo("##SoundCombo", current.c_str()))
@@ -72,7 +71,7 @@ struct ComponentMeta<AudioEmitterComponent>
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます。");
 
-        // --- ② 手入力フォールバック（カタログに無い名前を直接指定したいとき） ---
+        // 一覧に無い名前を直接指定するための手入力欄
         char buf[256] = {};
         std::snprintf(buf, sizeof(buf), "%s", comp.eventName.c_str());
         ImGui::TextDisabled("または名前を直接指定");
@@ -87,10 +86,10 @@ struct ComponentMeta<AudioEmitterComponent>
         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Hash: 0x%08X", comp.eventHash);
         ImGui::Spacing();
 
-        // 音量（0=無音, 1=原音）。実行中に動かすとその場で反映される。
+        // 音量（0=無音, 1=原音）。実行中に動かすと AudioSystem が次のステップで反映する
         if (ImGui::SliderFloat("音量", &comp.volume, 0.0f, 10.0f, "%.2f")) changed = true;
 
-        // 2D / 3D 切替。BGMは 2D（距離減衰なしで一様に鳴る）、効果音や環境音は 3D（距離で減衰・定位）。
+        // BGM は 2D（距離減衰なし）、効果音や環境音は 3D（距離で減衰・定位）
         int mode = comp.is3D ? 1 : 0;
         if (ImGui::Combo("再生モード", &mode, "2D（BGM/減衰なし）\0003D（距離で減衰）\0"))
         {
@@ -118,7 +117,7 @@ struct ComponentMeta<AudioEmitterComponent>
 
     static const std::vector<FieldDescriptor> &Fields()
     {
-        // 保存の正は eventName（人間可読）。eventHash は実行時に名前から導出するので保存しない。
+        // 保存するのは人が読める eventName。eventHash は実行時に名前から導出するので保存しない
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(eventName, "サウンド名", "オーディオ")
             CFIELD(volume, "音量", "オーディオ")

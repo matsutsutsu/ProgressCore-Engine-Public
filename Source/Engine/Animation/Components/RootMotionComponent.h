@@ -1,22 +1,27 @@
 #pragma once
+// ===========================================================================
+// 概要: ルートモーションの実行状態を持つコンポーネント RootMotionComponent。
+//
+// 責務:
+//   - 今のステートでルートモーションを使うか、外部が移動を制御中かを保持する
+//   - 前回評価したクリップと時刻を保持する（差分を求めるため）
+//
+// 備考: 中身は実行時の状態だけなので保存しない（Meta では空の枠だけを保存する）。
+// ===========================================================================
 
-// 前方宣言
 struct AnimSequence;
 
-// ルートモーションの実行状態。
 struct RootMotionComponent
 {
-    bool enabled = false; // 現ステートが applyRootMotion なら true
+    bool enabled = false; // 今のステートが applyRootMotion なら true（RootMotionSystem が書く）
 
-    // 外部システムがこのフレームの移動を制御中か（＝root motion抽出を止めたい）。
-    // true の間、RootMotionSystem は root motion による移動を一切適用しない。
-    // 「いつ true にするか」はゲーム側の移動アクション（例: ダッシュ）が毎フレーム設定する。
-    // これにより RootMotionSystem はダッシュ等の特定機構を知らない汎用システムに保てる。
+    // 外部の System がこのステップの移動を制御中か。true の間、RootMotionSystem は移動を一切適用しない。
+    //   ゲーム側の移動アクション（PlayerDashSystem・PlayerCleaveSystem）が書く。
+    //   こうすることで RootMotionSystem はダッシュ等の個別の仕組みを知らずに済む
     bool externallyDriven = false;
 
-    // 遷移検知用。前回評価したシーケンス
-    const AnimSequence *lastEvaluatedSeq = nullptr;
+    const AnimSequence *lastEvaluatedSeq = nullptr; // 前回評価したクリップ（切り替わり検知用）。所有しない
 
-    float prevTimer         = 0.0f; // 現在のモーションの前回評価時刻
-    float prevPreviousTimer = 0.0f; // 過去のモーション（ブレンド元）の前回評価時刻
+    float prevTimer         = 0.0f; // 現在のクリップの前回評価時刻（秒）
+    float prevPreviousTimer = 0.0f; // ブレンド元のクリップの前回評価時刻（秒）
 };

@@ -1,20 +1,17 @@
 #pragma once
-// ===================================================================================
-// ファイル: AnimSetupSystem.h
-// 概要: アニメーション関連の必須コンポーネントを自動付与するセットアップシステム
+// ===========================================================================
+// 概要: AnimatorComponent を持つ Entity に、足りないアニメーション用コンポーネントを付ける System（L02_Update）。
 //
-// [ 役割 ]
-// AnimatorComponent を持つが、AnimParametersComponent / AnimStateMachineComponent /
-// RootMotionComponent を持たないエンティティを検知し、不足分を自動で補完する。
-// これにより、ユーザーは AnimatorComponent をアタッチするだけでアニメーション機能一式を
-// 安全に使い始めることができ、コンポーネントの付け忘れバグを防止する（プレイヤー/ボス問わず）。
+// 責務:
+//   - AnimParametersComponent / AnimStateMachineComponent / RootMotionComponent が無ければ付ける
 //
-// SetExclude は使わない：SetExclude<A, B, C>() は「A/B/Cのどれか1つでも持っていたら
-//   除外」というOR判定のため、例えば AnimStateMachine だけを先にプレハブへ手動で
-//   書いた（Muriel.jsonのようなケース）エンティティが AnimParameters/RootMotion を
-//   永久に受け取れなくなる。毎フレーム HasComponent で個別に判定する方が
-//   エンティティ数（キャラのみ、数体～数十体規模）に対して安全かつ十分安い。
-// ===================================================================================
+// 備考:
+//   - AnimatorComponent を付けるだけでアニメーション一式が動くようにし、付け忘れを防ぐ。
+//   - SetExclude は使わない。SetExclude<A, B, C>() は「どれか 1 つでも持っていたら除外」なので、
+//     例えば AnimStateMachine だけをプレハブに書いた Entity（Muriel.json など）が
+//     AnimParameters / RootMotion を受け取れなくなる。対象はキャラだけで数も少ないので、
+//     毎ステップ HasComponent で個別に調べても十分軽い。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
@@ -22,9 +19,9 @@
 #include "Engine/Animation/Core/AnimStateMachine.h"
 
 class AnimSetupSystem : public CCL::ECS::IfSystem<AnimSetupSystem,
-                            CCL::ECS::Read<AnimatorComponent>>
+                                                  CCL::ECS::Read<AnimatorComponent>>
 {
-  public:
+public:
     AnimSetupSystem()
         : IfSystem("AnimSetupSystem")
     {

@@ -1,12 +1,15 @@
 #pragma once
-// UIの滑らかな追従アニメ（Damping）。旧 UIElement の smoothSpeed/target を ECS へ移植。
+// ===========================================================================
+// 概要: UI のスケールを目標値へ滑らかに追従させるためのコンポーネント UIAnimationComponent。
 //
-// 設計方針:
-//   - 目標値と速度だけを持つデータ。UIAnimationSystem が UITransform.scale を毎フレーム
-//     目標へ指数減衰で近づける（フレームレート非依存）。
-//   - 目標値の供給は用途側が行う（例: UIButtonSystem が hover/focus 時に targetScale を設定）。
+// 責務:
+//   - 追従の目標スケールと速さを保持する
+//
+// 備考: 追従は UIAnimationSystem が指数減衰で行う（フレームレートに依存しない）。
+//       目標値は使う側が書く（例: UIButtonSystem が hover/focus 時に targetScale を設定する）。
+// ===========================================================================
 struct UIAnimationComponent
 {
-    float smoothSpeed = 12.0f; // 追従速度（大きいほど速く目標へ寄る）
+    float smoothSpeed = 12.0f; // 追従の速さ（1 秒あたり。大きいほど速く目標へ寄る）
     float targetScale = 1.0f;  // UITransform.scale の目標値
 };

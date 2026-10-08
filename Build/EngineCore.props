@@ -35,6 +35,39 @@
 			</PreprocessorDefinitions>
 
 			<!-- ========================================================= -->
+			<!-- JPH_ENABLE_ASSERTS は「定義してはいけない」 -->
+			<!--
+			     ここには以前 Debug 構成向けに JPH_ENABLE_ASSERTS を足していたが、
+			     それをすると起動時に Jolt が abort する（RegisterTypes の中）。
+			     理由は Jolt が同じマクロを「2箇所・別タイミング」で見ているため。
+
+			     ① Core.h の先頭（8〜71行目）
+			        #ifdef JPH_ENABLE_ASSERTS -> JPH_VERSION_FEATURE_BIT_10 = 1
+			        ヘッダの一番最初なので、コマンドラインの /D しか見えない。
+			        このビットが JPH_VERSION_ID に入り、RegisterTypes() が実行時に
+			        lib 側の ID と照合する。1ビットでも食い違えば std::abort()。
+
+			     ② Core.h:515 で JPH_DEBUG が !defined(NDEBUG) から作られ、その後
+			        IssueReporting.h:13-16 が「Always turn on asserts in Debug mode」
+			        として JPH_ENABLE_ASSERTS を自動で定義する。
+			        アサートの有効/無効と構造体レイアウトを実際に決めるのはこちら。
+
+			     lib/Debug/Jolt.lib は /D なしでビルドされている。つまり
+			       ・②の自動ONでアサートは有効（AssertFailed シンボルを持つ）
+			       ・しかし①のビットは 0
+			     この状態で本体側だけ /D JPH_ENABLE_ASSERTS を付けると、機能は同じ
+			     なのに ID だけ 1 と 0 で食い違い、起動時に
+			       [Jolt] Mismatching define JPH_ENABLE_ASSERTS.
+			     で落ちる。lib は事前ビルド済みなのでクリーンビルドでも直らない。
+
+			     定義しなければ本体も②の経路でアサートが有効になり、レイアウトも
+			     バージョンIDも lib と一致する。だから「書かない」が正解。
+
+			     Release / Development は NDEBUG を定義するので JPH_DEBUG が立たず、
+			     ②も走らない。アサート無効の lib/Release・lib/Distribution と一致する。
+			-->
+
+			<!-- ========================================================= -->
 			<!-- 2. Development 構成 (アサートなし / Release DLL / JoltデバッグON) -->
 			<!-- ========================================================= -->
 			<PreprocessorDefinitions Condition="!$(Configuration.Contains('Debug')) and '$(Configuration)'!='Shipping'">

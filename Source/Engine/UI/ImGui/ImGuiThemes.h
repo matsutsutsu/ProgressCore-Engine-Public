@@ -1,31 +1,27 @@
 #pragma once
-
 // ===========================================================================
-// File: ImGuiThemes.h / .cpp
+// 概要: エディタ・デバッグ用 ImGui の配色プリセット集。
 //
-// 【役割】デバッグ用UIツール「ImGui」のカラーテーマ設定
+// 責務:
+//   - ImGui のスタイル（色・角丸・余白）をプリセットごとに設定する
 //
-// 【解説】
-// 開発者用デバッグウィンドウ（ImGui）の見た目（色使い）を変更する関数群です。
-// Unity風、Visual Studio風などのプリセットを用意しており、
-// 開発中の気分転換や視認性向上のために使われます。
-// ※ゲーム本編のUIには影響しません。
+// 備考: 使うプリセットは ImGuiRenderer::Initialize で 1 つ選んで呼ぶ。ゲームの UI には影響しない。
 // ===========================================================================
 
 namespace ImGuiThemes
 {
     void ApplyDark();
-    void ApplyDarcula();
-    void ApplySkeltonDarcula();
+    void ApplyDarcula();        // Darcula 風（IntelliJ IDEA）
+    void ApplySkeltonDarcula(); // Darcula 風の配色を半透明にしたもの
     void ApplyLight();
     void ApplyClassic();
     void ApplyEditorDark();
 
-    void ApplyUnityDark();
-    void ApplyVisualStudioDark();
+    void ApplyUnityDark();        // Unity Editor 風
+    void ApplyVisualStudioDark(); // Visual Studio Dark 風
 
     void ApplyCatppuccinMocha();
     void ApplyTokyoNight();
     void ApplyDracula();
     void ApplyNord();
-}
+} // namespace ImGuiThemes

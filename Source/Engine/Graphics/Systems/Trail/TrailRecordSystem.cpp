@@ -1,7 +1,3 @@
-// ===========================================================================
-// TrailRecordSystem.cpp
-// 役割・責務・位置付けは TrailRecordSystem.h を参照。
-// ===========================================================================
 #include "TrailRecordSystem.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -12,12 +8,11 @@ using namespace CCL::ECS;
 void TrailRecordSystem::Update(float dt)
 {
     ForEach([dt](TrailComponent &trail) {
-
-        // 一時表示タイマー。切れると emitting が落ちるので、印の発行より前に更新する。
+        // 一時トレイルのタイマー。切れると emitting が落ちるので、印を立てる前に進める
         trail.UpdateBurstTimer(dt);
 
-        // 既存区間を老化させ、寿命切れを最古側から破棄する。
-        //   ここが描画相にあると、尾の長さが環境のリフレッシュレートで変わってしまう。
+        // 断面の age を進め、寿命を超えたものを古い順に捨てる。
+        //   これを描画側で行うと、尾の長さがリフレッシュレートで変わってしまう。
         const int MAX = TrailComponent::MAX_SEGMENTS;
 
         for (int i = 0; i < trail.count; ++i)
@@ -32,12 +27,12 @@ void TrailRecordSystem::Update(float dt)
             trail.count--;
         }
 
-        // 描画相へ「このステップぶんを1区間刻んでよい」と伝える。
-        //   立てるだけで、実際に刻むかどうかは移動量ゲート(minDistance)が決める。
+        // 描画側へ「このステップの分を1区間刻んでよい」と伝える。
+        //   実際に刻むかどうかは、TrailSystem が先端の移動量（minDistance）で決める。
         if (trail.emitting)
             trail.sampleRequested = true;
     });
 }
 
-// ロジック相で尾の時間を進める。emitting を決める TrailAnimationSyncSystem(L05)より後。
+// emitting を決める TrailAnimationSyncSystem（L05）の後
 REGISTER_LOGIC_SYSTEM(TrailRecordSystem, Priority::LogicStage::L06_Resolution);

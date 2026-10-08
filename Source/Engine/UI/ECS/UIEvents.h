@@ -1,9 +1,14 @@
 #pragma once
-// UI発のイベント定義（EventBus で発火し、ゲーム側システムが購読する）。
+// ===========================================================================
+// 概要: UI が EventBus で発行するイベントの定義。
+//
+// 責務:
+//   - UI の操作結果をゲーム側の System へ伝える
+// ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <cstdint>
 
-// ボタンがクリックされた時に発火。ゲーム側は actionHash で処理を分岐する。
+// ボタンがクリックされたときに UIButtonSystem が発行する。ゲーム側は actionHash で処理を分ける
 struct UIButtonClickedEvent
 {
     CCL::ECS::EntityID entity     = CCL::ECS::InvalidEntityID; // クリックされたボタンのエンティティ

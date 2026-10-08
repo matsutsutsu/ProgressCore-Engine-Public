@@ -1,10 +1,16 @@
 #pragma once
+// ===========================================================================
+// 概要: ParticleRenderer でパーティクルを描くパス。
+//
+// 責務:
+//   - RenderServices の particleRenderer に描画を任せる
+//
+// 備考: 半透明（TransparentPass）の後に置く。
+// ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 
-// パーティクルシステムを描画するパス（半透明パスの後）。
 class ParticlePass : public IRenderPass
 {
 public:
-    void Execute(const RenderFrameContext& ctx) override;
-    const char* GetName() const override { return "ParticlePass"; }
+    void Execute(const RenderFrameContext &ctx) override;
 };

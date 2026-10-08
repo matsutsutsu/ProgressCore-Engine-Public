@@ -1,8 +1,22 @@
 #pragma once
+// ===========================================================================
+// 概要: 不透明のメッシュを、同じシェーダー・モデル・マテリアルごとにまとめて
+//       インスタンシングで描くパス。
+//
+// 責務:
+//   - RenderQueue の不透明のコマンドを並べ、同じキーが続く区間を1つのバッチにする
+//   - スキンでないメッシュは、インスタンスごとに視錐台カリングする（NormalPrepass の結果があれば使う）
+//   - シェーダーの PSO がブレンドありのバッチは描かず、TransparentPass 用のキューへ回す
+//
+// 備考: Execute はフレームの流れだけを書き、各工程は private の関数に分けている。
+//       読む順は Execute → DrawBatch → その中で呼ぶ関数。
+//       スキンメッシュはアニメーションで形が変わり、元の姿勢の AABB からはみ出すことが
+//       あるので、カリングしない。
+// ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
-#include "Engine/Graphics/Renderer/InstanceBuffer.h"
-#include "Engine/Graphics/Resource/Model.h" // ヘルパの引数に Model::Mesh を使う（入れ子型のため前方宣言不可）
+#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
+#include "Engine/Graphics/Resource/Model.h" // 引数に Model::Mesh を使う（入れ子の型は前方宣言できない）
 
 #include <DirectXCollision.h>
 #include <cstdint>
@@ -14,109 +28,101 @@ struct MaterialData;
 class Shader;
 class IMaterialShader;
 
-/**
- * @brief 不透明ジオメトリを描画するレンダーパス。
- * @details
- *  RenderQueue から不透明コマンドを取り出し、シェーダー/バッチ単位で
- *  まとめてインスタンシング描画する。半透明と判定されたメッシュは
- *  TransparentPass 用の遅延キューへ転送する。
- *
- *  メッシュ単位フラスタムカリングを内蔵：非スキンドメッシュはインスタンス毎に
- *  ワールド空間 AABB を視錐台判定し、視界外インスタンスを描画から除外する。
- *  可視インスタンスが 0 のメッシュはドローコールごとスキップする。
- *
- *  Execute は「1 フレームの手順書」に徹し、各工程は private ヘルパへ委譲する。
- *  読む順番は Execute → DrawBatch → 各ヘルパ、の順。
- */
 class OpaquePass : public IRenderPass
 {
-  public:
-    /**
-     * @brief PSO とインスタンスバッファを生成する。
-     * @param services 永続サービス群（device / shaders / resources 等が
-     *        呼び出し側で全て埋まっている必要がある）。
-     */
+public:
     void Initialize(const RenderServices &services) override;
-
-    /**
-     * @brief 不透明バッチを描画し、半透明メッシュを TransparentPass へ転送する。
-     * @param ctx このフレームのみ有効な揮発コンテキスト。
-     */
     void Execute(const RenderFrameContext &ctx) override;
 
-    // GPU マーカー（Pix/RenderDoc）用の表示名。
-    const char *GetName() const override
-    {
-        return "OpaquePass";
-    }
-
-    // 直近フレームで実際に描画した（可視インスタンスを持つ）メッシュ数。
+    // 直近の Execute で描いた（見えるインスタンスが1つ以上あった）メッシュの数
     uint32_t GetDrawnMeshCount() const
     {
         return m_stat_drawnMeshes;
     }
-    // 直近フレームでフラスタムカリングにより丸ごとスキップしたメッシュ数。
+    // 直近の Execute で、全インスタンスがカリングされて描かなかったメッシュの数
     uint32_t GetCulledMeshCount() const
     {
         return m_stat_culledMeshes;
     }
 
-  private:
-    // ソート済みキー列のうち、同一バッチキーが連続している区間。
-    // count がそのままバッチ内のインスタンス数（＝同じモデルの配置数）になる。
+private:
+    // 並べたキーの列のうち、同じバッチキーが続く区間。
+    // count がバッチのインスタンスの数（同じモデルを置いた数）になる
     struct BatchRange
     {
         size_t start = 0;
         size_t count = 0;
     };
 
-    // --- Execute から順に呼ばれるヘルパ群 -------------------------------
-
-    // シャドウマップ・サンプラー・既定 PSO など、全バッチ共通のバインドを行う。
+    // シャドウマップ・サンプラー・既定の PSO など、全バッチで共通のものをバインドする
     void BindCommonResources(ID3D11DeviceContext *dc);
 
-    // cursor 位置から同一バッチキーが続く区間を切り出し、cursor をその先へ進める。
+    // cursor から同じバッチキーが続く区間を切り出し、cursor をその次へ進める
     static BatchRange ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor);
 
-    // シェーダー固有 PSO があれば適用する。lastPso は実際に適用中のものを指す。
+    /**
+     * @brief シェーダーの PSO（無ければパスの既定）を、今の PSO と違うときだけ適用する。
+     * @param dc      適用先のデバイスコンテキスト。
+     * @param shader  PSO を持つシェーダー。
+     * @param lastPso 今適用されている PSO。適用したらその PSO に書き換える。
+     */
     void ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso);
 
-    // 1 バッチが指すモデルの全メッシュを処理する（描画 or 半透明キューへの転送）。
+    // バッチのモデルの全メッシュを、描くか半透明のキューへ回す
     void DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, const Shader &shader,
                    IMaterialShader &matShader);
 
-    // meshIdx 番目のメッシュに適用する override マテリアル。無ければ nullptr。
+    // meshIdx 番目のメッシュに使う上書きのマテリアル。無ければ nullptr
     MaterialData *ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const;
 
-    // 半透明メッシュを、距離ソートが必要な TransparentPass の遅延キューへ送る。
+    // 半透明のメッシュを、見えるインスタンスだけ TransparentPass 用のキューへ回す（距離も求める）
     void ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                        const BatchRange &batch, uint32_t shaderHash,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned);
 
-    // バッチ内のインスタンスから可視ぶんだけを m_instanceScratch に集める。
+    /**
+     * @brief このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount に入れる。
+     *
+     * NormalPrepass が同じ区切りで求めた列があればそれを使い、無ければ自分で作る。
+     *
+     * @param ctx       今フレームの描画情報。
+     * @param mesh      描くメッシュ。
+     * @param batch     同じモデルが続く描画コマンドの区間。
+     * @param meshIdx   モデル内でのメッシュの番号。
+     * @param localAABB カリングに使うメッシュのローカル AABB。
+     * @param isSkinned スキンメッシュか。スキンメッシュはカリングしない。
+     */
+    void ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
+                                 size_t meshIdx, const DirectX::BoundingBox &localAABB, bool isSkinned);
+
+    // バッチのインスタンスのうち、見えるものだけを m_instanceScratch に集める
     void BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                const DirectX::BoundingBox &localAABB, bool isSkinned);
 
-    // 頂点／インデックスバッファとトポロジをセットする。
+    // 頂点・インデックスバッファとトポロジを設定する
     static void BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
-    // m_instanceScratch をバッファ容量ぶんずつ分割してインスタンシング描画する。
+    // 見えるインスタンスを、インスタンスバッファに入る数ずつに分けて描く
     void DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
-    // スキンドメッシュを 1 体ずつ描画する（ボーン定数がインスタンス間で共有できないため）。
+    // スキンメッシュを1体ずつ描く（ボーン行列が1体ごとに違い、インスタンシングでまとめられない）
     void DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                               const BatchRange &batch);
 
-    // --- 状態 -----------------------------------------------------------
-
-    PipelineState  m_psoOpaque;
+    PipelineState  m_psoOpaque; // シェーダーが PSO を持たないときに使う既定
     InstanceBuffer m_instanceBuffer;
 
-    // インスタンスデータ構築用のスクラッチ領域。メッシュ単位で再利用する。
-    // 関数 static を避け、可読性と将来のマルチスレッド化に配慮してメンバ化。
+    // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）。
+    // NormalPrepass の結果を使えたメッシュでは使わない
     std::vector<InstanceData> m_instanceScratch;
 
-    // フラスタムカリングの統計（デバッグ確認用。ImGui やウォッチで参照）。
+    // 実際に描くインスタンスの列。RenderQueue の中の配列か m_instanceScratch を指す（所有しない）。
+    // RenderQueue のその配列に書き足すのは NormalPrepass だけなので、このパスが読んでいる間に
+    // 配列が確保し直されて、このポインタが無効になることは無い
+    const InstanceData *m_visibleData  = nullptr;
+    size_t              m_visibleCount = 0;
+
+    // カリングの集計（毎フレーム 0 に戻す。デバッガで見る用で、今は表示している UI は無い）
     uint32_t m_stat_drawnMeshes  = 0;
     uint32_t m_stat_culledMeshes = 0;
 };

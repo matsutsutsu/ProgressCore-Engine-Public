@@ -1,14 +1,20 @@
 #pragma once
+// ===========================================================================
+// 概要: カーブ（キーフレーム列）のデータモデル CurveData と、その評価・JSON 変換。
+//
+// 責務:
+//   - キーの追加・並べ替え・接線（Auto/Flat）の再計算
+//   - 任意時刻の評価（区間はエルミート補間、範囲外は外挿モードに従う）
+//   - JSON との相互変換（エディタの保存形式と一致）
+//
+// 備考: エディタ非依存なので、ランタイムからも直接使える。
+// ===========================================================================
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <json.hpp>
-
-// ===========================================================================
-// カーブのコアデータモデル（エディタ非依存 / ランタイムからも直接使える）
-// ===========================================================================
 
 // キー区間の補間方式（あるキーの「右側の区間」の形状を決める）
 enum class CurveInterp : uint8_t
@@ -59,20 +65,23 @@ struct CurveData
     ExtrapMode                 postInfinity = ExtrapMode::Constant;
     std::vector<CurveKeyframe> keys;
 
-    uint32_t m_nextId = 1; // ID採番カウンタ
+    uint32_t m_nextId = 1; // キー ID の採番カウンタ
 
-    // -----------------------------------------------------------------------
+    // ============================================================
     // 基本操作
-    // -----------------------------------------------------------------------
+    // ============================================================
+
     bool empty() const
     {
         return keys.empty();
     }
+    // キーに振る新しい ID を返す（実行中だけ使う番号。保存しない）
     uint32_t GenId()
     {
         return m_nextId++;
     }
 
+    // ID のキーが keys の何番目かを返す。無ければ -1
     int IndexOfId(uint32_t id) const
     {
         for (int i = 0; i < (int)keys.size(); ++i)
@@ -83,10 +92,10 @@ struct CurveData
     void SortByTime()
     {
         std::stable_sort(keys.begin(), keys.end(),
-            [](const CurveKeyframe &a, const CurveKeyframe &b) { return a.time < b.time; });
+                         [](const CurveKeyframe &a, const CurveKeyframe &b) { return a.time < b.time; });
     }
 
-    // キー追加。追加後のインデックスを返す
+    // キーを追加し、並べ替え後のインデックスを返す
     int AddKey(float t, float v)
     {
         CurveKeyframe k;
@@ -99,16 +108,18 @@ struct CurveData
         return IndexOfId(k.id);
     }
 
-    // ロード後などに、ID未採番のキーへ一括でIDを割り当てる
+    // ロード後などに、ID 未採番のキーへ一括で ID を割り当てる
     void AssignMissingIds()
     {
         for (auto &k : keys)
             if (k.id == 0) k.id = GenId();
     }
 
-    // -----------------------------------------------------------------------
-    // 接線の再計算（Auto / Flat のキーだけ更新。Aligned / Broken は手動値を尊重）
-    // -----------------------------------------------------------------------
+    // ============================================================
+    // 接線の再計算
+    // ============================================================
+
+    // Auto / Flat のキーだけ更新する。Aligned / Broken は手動値を尊重する
     void RecalculateTangents()
     {
         const size_t n = keys.size();
@@ -116,7 +127,7 @@ struct CurveData
         {
             auto &k = keys[i];
 
-            // 前後キーから滑らかな傾きを推定（Catmull-Rom 相当）
+            // 前後キーから滑らかな傾きを推定する（Catmull-Rom 相当）。端のキーは片側だけで求める
             float autoSlope = 0.0f;
             if (n >= 2)
             {
@@ -149,9 +160,11 @@ struct CurveData
         }
     }
 
-    // -----------------------------------------------------------------------
+    // ============================================================
     // 評価
-    // -----------------------------------------------------------------------
+    // ============================================================
+
+    // 時刻 t の値を返す。範囲外は preInfinity / postInfinity に従って外挿する
     float Evaluate(float t) const
     {
         if (keys.empty()) return 0.0f;
@@ -164,9 +177,9 @@ struct CurveData
         if (t < first.time) return EvaluatePre(t, period);
         if (t > last.time) return EvaluatePost(t, period);
 
-        // 内部区間: t を挟むキー k0,k1 を二分探索
+        // 範囲内: t を挟むキー k0, k1 を二分探索する
         auto it = std::upper_bound(keys.begin(), keys.end(), t,
-            [](float val, const CurveKeyframe &k) { return val < k.time; });
+                                   [](float val, const CurveKeyframe &k) { return val < k.time; });
         if (it == keys.begin()) return first.value;
         if (it == keys.end()) return last.value;
         const CurveKeyframe &k1 = *it;
@@ -174,7 +187,7 @@ struct CurveData
         return EvaluateSegment(k0, k1, t);
     }
 
-    // 微分（傾き）。ハンドルの向き計算やLinear外挿に使う
+    // 最初/最後の区間の傾き。ハンドルの向き計算や Linear 外挿に使う
     float FirstSlope() const
     {
         if (keys.size() < 2) return 0.0f;
@@ -189,9 +202,10 @@ struct CurveData
         return (dt > 0.0f) ? (keys[n - 1].value - keys[n - 2].value) / dt : 0.0f;
     }
 
-    // -----------------------------------------------------------------------
-    // 範囲（フレーミング用）
-    // -----------------------------------------------------------------------
+    // ============================================================
+    // 範囲（エディタのフレーミング用）
+    // ============================================================
+
     float MinTime() const
     {
         return keys.empty() ? 0.0f : keys.front().time;
@@ -200,6 +214,7 @@ struct CurveData
     {
         return keys.empty() ? 1.0f : keys.back().time;
     }
+    // 全キーの値の最小・最大を返す。キーが無ければ 0〜1
     void ValueRange(float &outMin, float &outMax) const
     {
         if (keys.empty())
@@ -216,8 +231,8 @@ struct CurveData
         }
     }
 
-  private:
-    // 1区間のエルミート評価
+private:
+    // 1区間の評価。補間方式は区間の左側のキー（k0）の interp で決まる
     static float EvaluateSegment(const CurveKeyframe &k0, const CurveKeyframe &k1, float t)
     {
         const float dt = k1.time - k0.time;
@@ -232,6 +247,7 @@ struct CurveData
             return k0.value + (k1.value - k0.value) * u;
         case CurveInterp::Cubic:
         default: {
+            // 3次エルミート基底関数。接線 m は傾き（dy/dx）に区間長を掛けて u 空間へ直す
             const float u2  = u * u;
             const float u3  = u2 * u;
             const float h00 = 2.0f * u3 - 3.0f * u2 + 1.0f;
@@ -245,6 +261,7 @@ struct CurveData
         }
     }
 
+    // 最初のキーより前の t を preInfinity に従って外挿する。period はキーの時間の幅
     float EvaluatePre(float t, float period) const
     {
         const CurveKeyframe &first = keys.front();
@@ -259,6 +276,7 @@ struct CurveData
         }
     }
 
+    // 最後のキーより後の t を postInfinity に従って外挿する。period はキーの時間の幅
     float EvaluatePost(float t, float period) const
     {
         const CurveKeyframe &last = keys.back();
@@ -273,7 +291,7 @@ struct CurveData
         }
     }
 
-    // Cycle / PingPong / CycleOffset の共通処理
+    // Cycle / PingPong / CycleOffset の共通処理。t を範囲内へ折り返してから評価する
     float EvaluateWrapped(float t, float period, ExtrapMode mode) const
     {
         const CurveKeyframe &first = keys.front();
@@ -287,7 +305,7 @@ struct CurveData
 
         if (mode == ExtrapMode::PingPong)
         {
-            // 奇数周期は折り返す
+            // 奇数周期は逆向きに読む。負の周期でも 0/1 になるよう剰余を正に直す
             const int parity = ((cycles % 2) + 2) % 2;
             if (parity == 1) ct = last.time - local;
             ct = std::min(std::max(ct, first.time), last.time);
@@ -302,18 +320,15 @@ struct CurveData
     }
 };
 
-// ===========================================================================
+// ============================================================
 // JSON シリアライズ（エディタの保存形式と一致。ランタイムからも読める）
+// ============================================================
 //   - CurveKeyframe.id はランタイム専用なので保存しない
-//   - interp 未指定のキーは旧 AnimationCurve 形式（線形）とみなす → 後方互換
-// ===========================================================================
+//   - interp が無いキーは Cubic として読む
 inline void to_json(nlohmann::json &j, const CurveKeyframe &k)
 {
     j = nlohmann::json{
-        {"time", k.time}, {"value", k.value},
-        {"inTangent", k.inTangent}, {"outTangent", k.outTangent},
-        {"interp", (int)k.interp},
-        {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
+        {"time", k.time}, {"value", k.value}, {"inTangent", k.inTangent}, {"outTangent", k.outTangent}, {"interp", (int)k.interp}, {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
 }
 inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
 {
@@ -330,9 +345,7 @@ inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
 inline void to_json(nlohmann::json &j, const CurveData &c)
 {
     j = nlohmann::json{
-        {"name", c.name}, {"color", c.color}, {"visible", c.visible},
-        {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity},
-        {"keys", c.keys}};
+        {"name", c.name}, {"color", c.color}, {"visible", c.visible}, {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity}, {"keys", c.keys}};
 }
 inline void from_json(const nlohmann::json &j, CurveData &c)
 {
@@ -348,11 +361,15 @@ inline void from_json(const nlohmann::json &j, CurveData &c)
     c.RecalculateTangents(); // Auto/Flat の接線を確定（Aligned/Broken の手動値は尊重）
 }
 
-// ---------------------------------------------------------------------------
-// 実行時アセット用ローダ。
-//   エディタは複数カーブ文書 {name, curves:[...]} で保存するため、
-//   ランタイムでは「先頭の1本」を採用する（1ファイル=1カーブ運用）。
-// ---------------------------------------------------------------------------
+/**
+ * @brief 実行時アセット用ローダ。
+ *
+ * エディタは複数カーブ文書 {name, curves:[...]} で保存するため、ランタイムでは「先頭の1本」を採用する（1ファイル = 1カーブ運用）。
+ *
+ * @param root 読み込んだ JSON。
+ * @param out  読み込んだカーブを受け取る。
+ * @return 読めたら true。キーが1つも無ければ false。
+ */
 inline bool LoadCurveDataFromJson(const nlohmann::json &root, CurveData &out)
 {
     if (!root.contains("curves") || !root["curves"].is_array() || root["curves"].empty())

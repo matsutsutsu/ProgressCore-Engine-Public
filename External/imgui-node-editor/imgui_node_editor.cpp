@@ -1504,8 +1504,8 @@ void ed::EditorContext::End()
 
         ImVec2 offset    = m_Canvas.ViewOrigin() * (1.0f / m_Canvas.ViewScale());
         ImU32 GRID_COLOR = GetColor(StyleColor_Grid, ImClamp(m_Canvas.ViewScale() * m_Canvas.ViewScale(), 0.0f, 1.0f));
-        float GRID_SX    = 32.0f;// * m_Canvas.ViewScale();
-        float GRID_SY    = 32.0f;// * m_Canvas.ViewScale();
+        float GRID_SX    = m_Style.GridSize; // ProgressCore 変更: 元は 32.0f 固定
+        float GRID_SY    = m_Style.GridSize;
         ImVec2 VIEW_POS  = m_Canvas.ViewRect().Min;
         ImVec2 VIEW_SIZE = m_Canvas.ViewRect().GetSize();
 

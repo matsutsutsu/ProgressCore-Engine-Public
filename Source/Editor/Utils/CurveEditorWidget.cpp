@@ -6,60 +6,60 @@
 #include <cmath>
 #include <cstdio>
 
-// ===========================================================================
+// ---------------------------------------------------------------------------
 // 内部ヘルパー
-// ===========================================================================
+// ---------------------------------------------------------------------------
 namespace
 {
-const char *kInterpNames[]  = {"定数", "線形", "3次"};
-const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
-const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
+    const char *kInterpNames[]  = {"定数", "線形", "3次"};
+    const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
+    const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
 
-inline float Dist2(const ImVec2 &a, const ImVec2 &b)
-{
-    float dx = a.x - b.x, dy = a.y - b.y;
-    return dx * dx + dy * dy;
-}
-
-// 見やすい目盛り間隔（1,2,5 * 10^n）
-float NiceStep(float span, float targetDivs)
-{
-    if (span <= 0.0f || targetDivs <= 0.0f) return 1.0f;
-    float raw  = span / targetDivs;
-    float mag  = std::pow(10.0f, std::floor(std::log10(raw)));
-    float norm = raw / mag;
-    float nice = (norm < 1.5f) ? 1.0f : (norm < 3.0f) ? 2.0f
-                                    : (norm < 7.0f)   ? 5.0f
-                                                      : 10.0f;
-    return nice * mag;
-}
-
-void FormatTick(char *buf, size_t n, float v, float step)
-{
-    int decimals = 0;
-    if (step < 1.0f) decimals = (int)std::ceil(-std::log10(step));
-    decimals = std::clamp(decimals, 0, 4);
-    std::snprintf(buf, n, "%.*f", decimals, v);
-}
-
-void AddDashedLine(ImDrawList *dl, const ImVec2 &a, const ImVec2 &b, ImU32 col, float thick)
-{
-    float dx = b.x - a.x, dy = b.y - a.y;
-    float len = std::sqrt(dx * dx + dy * dy);
-    if (len < 1e-3f) return;
-    const float dash = 5.0f, gap = 4.0f;
-    float       nx = dx / len, ny = dy / len;
-    for (float d = 0.0f; d < len; d += dash + gap)
+    inline float Dist2(const ImVec2 &a, const ImVec2 &b)
     {
-        float d2 = std::min(d + dash, len);
-        dl->AddLine(ImVec2(a.x + nx * d, a.y + ny * d), ImVec2(a.x + nx * d2, a.y + ny * d2), col, thick);
+        float dx = a.x - b.x, dy = a.y - b.y;
+        return dx * dx + dy * dy;
     }
-}
+
+    // 目盛りの間隔を 1, 2, 5 × 10^n から選ぶ
+    float NiceStep(float span, float targetDivs)
+    {
+        if (span <= 0.0f || targetDivs <= 0.0f) return 1.0f;
+        float raw  = span / targetDivs;
+        float mag  = std::pow(10.0f, std::floor(std::log10(raw)));
+        float norm = raw / mag;
+        float nice = (norm < 1.5f) ? 1.0f : (norm < 3.0f) ? 2.0f
+                                        : (norm < 7.0f)   ? 5.0f
+                                                          : 10.0f;
+        return nice * mag;
+    }
+
+    void FormatTick(char *buf, size_t n, float v, float step)
+    {
+        int decimals = 0;
+        if (step < 1.0f) decimals = (int)std::ceil(-std::log10(step));
+        decimals = std::clamp(decimals, 0, 4);
+        std::snprintf(buf, n, "%.*f", decimals, v);
+    }
+
+    void AddDashedLine(ImDrawList *dl, const ImVec2 &a, const ImVec2 &b, ImU32 col, float thick)
+    {
+        float dx = b.x - a.x, dy = b.y - a.y;
+        float len = std::sqrt(dx * dx + dy * dy);
+        if (len < 1e-3f) return;
+        const float dash = 5.0f, gap = 4.0f;
+        float       nx = dx / len, ny = dy / len;
+        for (float d = 0.0f; d < len; d += dash + gap)
+        {
+            float d2 = std::min(d + dash, len);
+            dl->AddLine(ImVec2(a.x + nx * d, a.y + ny * d), ImVec2(a.x + nx * d2, a.y + ny * d2), col, thick);
+        }
+    }
 } // namespace
 
-// ===========================================================================
-// 公開API
-// ===========================================================================
+// ---------------------------------------------------------------------------
+// 公開 API
+// ---------------------------------------------------------------------------
 void CurveEditorWidget::SetActiveCurve(int idx)
 {
     m_activeCurve = idx;
@@ -91,10 +91,10 @@ void CurveEditorWidget::FrameAll(const std::vector<CurveData *> &curves)
     }
     float padX = std::max(0.05f, (maxT - minT) * 0.08f);
     float padY = std::max(0.05f, (maxV - minV) * 0.15f);
-    m_viewMinX  = minT - padX;
-    m_viewMaxX  = maxT + padX;
-    m_viewMinY  = minV - padY;
-    m_viewMaxY  = maxV + padY;
+    m_viewMinX = minT - padX;
+    m_viewMaxX = maxT + padX;
+    m_viewMinY = minV - padY;
+    m_viewMaxY = maxV + padY;
 }
 
 void CurveEditorWidget::DeleteSelected(CurveData *curve, bool &modified)
@@ -102,7 +102,7 @@ void CurveEditorWidget::DeleteSelected(CurveData *curve, bool &modified)
     if (!curve || m_sel.empty()) return;
     curve->keys.erase(
         std::remove_if(curve->keys.begin(), curve->keys.end(),
-            [this](const CurveKeyframe &k) { return m_sel.count(k.id) > 0; }),
+                       [this](const CurveKeyframe &k) { return m_sel.count(k.id) > 0; }),
         curve->keys.end());
     m_sel.clear();
     curve->RecalculateTangents();
@@ -127,15 +127,15 @@ bool CurveEditorWidget::Draw(const char *strId, const std::vector<CurveData *> &
     return modified;
 }
 
-// ===========================================================================
-// キャンバス（描画＋操作の中枢）
-// ===========================================================================
+// ---------------------------------------------------------------------------
+// キャンバス（描画と操作）
+// ---------------------------------------------------------------------------
 bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveData *> &curves, Options &opts)
 {
     bool     modified = false;
     ImGuiIO &io       = ImGui::GetIO();
 
-    // float メンバ → ローカル ImVec2（末尾で書き戻す）
+    // 表示範囲をローカルの ImVec2 に写して使い、最後に書き戻す
     ImVec2 viewMin(m_viewMinX, m_viewMinY);
     ImVec2 viewMax(m_viewMaxX, m_viewMaxY);
     auto  &m_selectedKeys = m_sel;
@@ -174,9 +174,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
 
     CurveData *curve = (m_activeCurve >= 0 && m_activeCurve < (int)curves.size()) ? curves[m_activeCurve] : nullptr;
 
-    // --- パン（右 or 中ドラッグ） ---
+    // --- パン（右または中ボタンのドラッグ） ---
     const bool panning = hovered && (ImGui::IsMouseDragging(ImGuiMouseButton_Right, 2.0f) ||
-                                        ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 2.0f));
+                                     ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 2.0f));
     if (panning)
     {
         ImVec2 d   = io.MouseDelta;
@@ -190,7 +190,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         spanY = viewMax.y - viewMin.y;
     }
 
-    // --- ズーム（ホイール、カーソル中心。Ctrl:横のみ Shift:縦のみ） ---
+    // --- ズーム（ホイール、カーソル中心。Ctrl: 横のみ / Shift: 縦のみ） ---
     if (hovered && io.MouseWheel != 0.0f)
     {
         const float  zoom  = std::pow(1.1f, -io.MouseWheel);
@@ -221,7 +221,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             ImVec2 p    = ToScreen(gx, viewMin.y);
             bool   axis = std::fabs(gx) < stepX * 0.001f;
             dl->AddLine(ImVec2(p.x, canvasPos.y), ImVec2(p.x, canvasEnd.y),
-                axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
+                        axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
             char buf[32];
             FormatTick(buf, sizeof(buf), gx, stepX);
             dl->AddText(ImVec2(p.x + 3, canvasEnd.y - 16), IM_COL32(170, 170, 175, 255), buf);
@@ -232,15 +232,15 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             ImVec2 p    = ToScreen(viewMin.x, gy);
             bool   axis = std::fabs(gy) < stepY * 0.001f;
             dl->AddLine(ImVec2(canvasPos.x, p.y), ImVec2(canvasEnd.x, p.y),
-                axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
+                        axis ? IM_COL32(120, 120, 120, 160) : IM_COL32(255, 255, 255, 18), axis ? 1.5f : 1.0f);
             char buf[32];
             FormatTick(buf, sizeof(buf), gy, stepY);
             dl->AddText(ImVec2(canvasPos.x + 3, p.y - 14), IM_COL32(170, 170, 175, 255), buf);
         }
     }
 
-    // --- 全カーブの曲線描画（非アクティブは減光） ---
-    const float px = 2.0f;
+    // --- 全カーブの描画（編集中でないカーブは薄く、キーの範囲外（外挿）は破線） ---
+    const float px = 2.0f; // 何ピクセルごとに評価するか
     for (int ci = 0; ci < (int)curves.size(); ++ci)
     {
         const CurveData *c = curves[ci];
@@ -267,7 +267,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         }
     }
 
-    // --- アクティブカーブのキー/ハンドル操作 ---
+    // --- 編集中のカーブのキーと接線ハンドルの操作 ---
     const float keyR      = 4.5f;
     const float handleLen = 42.0f;
 
@@ -297,7 +297,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         return curve->keys[idx - 1].interp == CurveInterp::Cubic;
     };
 
-    // ヒットテスト
+    // マウスの下にあるハンドル・キーを探す（ハンドルを優先する）
     int      hoverKeyIdx      = -1;
     int      hoverHandle      = 0;
     uint32_t hoverHandleKeyId = 0;
@@ -337,7 +337,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         }
     }
 
-    // 左ドラッグ開始
+    // 左ドラッグの開始（ダブルクリックでキー追加、ハンドル、キー、空き場所なら範囲選択）
     if (curve && activated)
     {
         if (ImGui::IsMouseDoubleClicked(0) && hoverKeyIdx < 0 && hoverHandle == 0)
@@ -387,7 +387,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         }
     }
 
-    // 左ドラッグ中
+    // 左ドラッグ中（Ctrl でグリッドの半分の刻みに吸着、Alt で接線を片側だけ動かす）
     if (curve && active && m_drag != Drag::None)
     {
         ImVec2 cur = ToCurve(io.MousePos);
@@ -452,13 +452,13 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         {
             ImVec2 a(m_boxStartX, m_boxStartY), b = io.MousePos;
             dl->AddRectFilled(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
-                ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 40));
+                              ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 40));
             dl->AddRect(ImVec2(std::min(a.x, b.x), std::min(a.y, b.y)),
-                ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 200));
+                        ImVec2(std::max(a.x, b.x), std::max(a.y, b.y)), IM_COL32(120, 170, 255, 200));
         }
     }
 
-    // 左ドラッグ終了
+    // 左ドラッグの終了
     if (curve && deactivated && m_drag != Drag::None)
     {
         if (m_drag == Drag::BoxSelect)
@@ -487,21 +487,21 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
             DeleteSelected(curve, modified);
     }
 
-    // 右クリック → コンテキストメニュー
+    // 右クリック（ドラッグしていなければ）でメニューを開く
     if (hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
     {
         ImVec2 dd = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
         if (std::fabs(dd.x) < 3.0f && std::fabs(dd.y) < 3.0f)
         {
             ImVec2 cp = ToCurve(io.MousePos);
-            m_ctxX     = cp.x;
-            m_ctxY     = cp.y;
-            m_ctxKey   = (hoverKeyIdx >= 0 && curve) ? curve->keys[hoverKeyIdx].id : 0;
+            m_ctxX    = cp.x;
+            m_ctxY    = cp.y;
+            m_ctxKey  = (hoverKeyIdx >= 0 && curve) ? curve->keys[hoverKeyIdx].id : 0;
             ImGui::OpenPopup("CurveCanvasCtx");
         }
     }
 
-    // 選択キー & ハンドルの描画
+    // キーと、選択中のキーの接線ハンドルを描く
     if (curve)
     {
         ImVec4 cbase = ImGui::ColorConvertU32ToFloat4(curve->color);
@@ -553,7 +553,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
 
     dl->PopClipRect();
 
-    // コンテキストメニュー本体
+    // 右クリックメニュー
     if (ImGui::BeginPopup("CurveCanvasCtx"))
     {
         if (ImGui::MenuItem("ここにキーを追加") && curve)
@@ -608,7 +608,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         ImGui::EndPopup();
     }
 
-    // ビュー範囲を書き戻す
+    // 表示範囲を書き戻す
     m_viewMinX = viewMin.x;
     m_viewMinY = viewMin.y;
     m_viewMaxX = viewMax.x;
@@ -616,9 +616,9 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     return modified;
 }
 
-// ===========================================================================
-// インスペクタ（選択キー & アクティブカーブ設定）
-// ===========================================================================
+// ---------------------------------------------------------------------------
+// 設定欄（選択中のキーと、編集中のカーブの設定）
+// ---------------------------------------------------------------------------
 void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bool &modified)
 {
     CurveData *curve = (m_activeCurve >= 0 && m_activeCurve < (int)curves.size()) ? curves[m_activeCurve] : nullptr;
@@ -626,7 +626,7 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
 
     ImGui::Spacing();
 
-    // アクティブカーブの外挿設定
+    // 編集中のカーブの外挿
     int pre = (int)curve->preInfinity;
     ImGui::SetNextItemWidth(150);
     if (ImGui::Combo("開始側の外挿", &pre, kExtrapNames, 5))
@@ -652,7 +652,7 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
     if (m_sel.size() > 1)
     {
         ImGui::Text("%d 個のキーを選択中", (int)m_sel.size());
-        static int interpSel = 2;
+        static int interpSel = 2; // 複数選択時のコンボの表示値（既定は3次）
         ImGui::SetNextItemWidth(150);
         if (ImGui::Combo("補間(全選択)", &interpSel, kInterpNames, 3))
         {

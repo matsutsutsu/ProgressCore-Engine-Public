@@ -1,17 +1,19 @@
 #include "Keyboard.h"
+#include <cstring>
 #include <tracy/Tracy.hpp>
 
 void Keyboard::Update()
 {
-    ZoneScopedN("Keyboard::Update"); // 追跡ポイント
+    ZoneScopedN("Keyboard::Update");
 
-    // 現在の状態を過去の状態として保存
     memcpy(oldState, currentState, sizeof(currentState));
 
-    // 修正点：OSから全キーの状態を「1回の呼び出し」で配列として取得
+    // 全キーの状態を1回の呼び出しでまとめて取得する
     BYTE tempState[256];
-    if (GetKeyboardState(tempState)) {
-        for (int i = 0; i < 256; i++) {
+    if (GetKeyboardState(tempState))
+    {
+        for (int i = 0; i < 256; i++)
+        {
             // GetKeyboardStateは最上位ビット(0x80)が立っていれば押下状態
             currentState[i] = (tempState[i] & 0x80) ? 1 : 0;
         }
@@ -20,7 +22,6 @@ void Keyboard::Update()
 
 bool Keyboard::IsDown(int key) const
 {
-    // 範囲チェック推奨ですが、速度優先で省略する場合もあります
     if (key < 0 || key >= 256) return false;
     return currentState[key] != 0;
 }

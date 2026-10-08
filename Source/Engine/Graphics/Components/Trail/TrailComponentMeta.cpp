@@ -1,6 +1,4 @@
-// 武器トレイル(TrailComponent)のシリアライズ/インスペクタ定義。
-// ランタイムのリングバッファ(segments/head/count)は Fields() に載せない
-// ＝保存対象外。config フィールドのみ保存・編集する。
+// TrailComponent のシリアライズ/インスペクタ定義。
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"
@@ -18,7 +16,8 @@
 using json = nlohmann::json;
 
 // ===========================================================================
-// TrailComponent（Effect カテゴリ。Model/Material の少し後ろに並べる）
+// TrailComponent
+//   リングバッファ（segments/head/count）は Fields() に載せないので、保存も編集もしない。
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
 CFIELD_ENUM_U8(shape, "断面の形", TrailShapeNames, TrailShapeCount, "形状")
@@ -32,8 +31,8 @@ CFIELD_FLOAT_RANGED(rimPower, "筒の輪郭強調", 0.05f, 0.0f, 1.0f, "見た�
 
 CFIELD_COLOR(color, "色(加算)", "見た目")
 CFIELD_ASSET(texturePath, "テクスチャ", "テクスチャ", "Texture",
-         "トレイルに貼る画像([...]で選択)。"
-         "空なら単色。U=長さ方向/V=幅方向。αで輪郭、RGBで模様、U方向グラデで寿命色変化。")
+             "トレイルに貼る画像([...]で選択)。"
+             "空なら単色。U=長さ方向/V=幅方向。αで輪郭、RGBで模様、U方向グラデで寿命色変化。")
 CFIELD_T(uvTiling, "UVタイリング(長さ,幅)", "テクスチャ", "テクスチャの繰り返し回数。x=長さ方向, y=幅方向。")
 CFIELD_T(uvScroll, "UVスクロール速度(長さ,幅)", "テクスチャ", "毎秒のUV移動量。流れる/揺らぐ表現に。0で静止。")
 CFIELD_FLOAT_RANGED(lifeTime, "寿命(秒)", 0.005f, 0.0f, 2.0f, "見た目")
@@ -49,10 +48,10 @@ CFIELD_INT_RANGED(zigZagFrequency, "1区間の折れ点数", 1, 8, "ジグザグ
 CFIELD_T(zigZagSeed, "折れ方のパターン", "ジグザグ", "値を変えると別の折れ方になる。同じ値なら毎回同じ形。")
 
 CFIELD_FLOAT_RANGED(burstDuration, "ダッシュ時のTrail出現時間", 0.1f, 0.0f, 10.0f, "時間")
-CFIELD_RO(burstTimer, "一時Trail表示の残り時間", "時間",nullptr)
+CFIELD_RO(burstTimer, "一時Trail表示の残り時間", "時間", nullptr)
 
-    CFIELD(emitting, "発生中", "状態")
-    CFIELD_T(animControlled, "アニメ制御", "状態",
-             "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")
-    CFIELD(useInterpolation, "CatMull-Rom補間切り替えフラグ", "状態")
-    COMPONENT_META_END(TrailComponent)
+CFIELD(emitting, "発生中", "状態")
+CFIELD_T(animControlled, "アニメ制御", "状態",
+         "ONで Trail アニメイベントの区間中だけ発生。OFFは手動(Emitting)運用。")
+CFIELD(useInterpolation, "Catmull-Rom補間", "状態")
+COMPONENT_META_END(TrailComponent)

@@ -3,13 +3,12 @@
 
 namespace
 {
-// 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
-//   8 と 16 の見た目の差は小さく、8 でも斜め面のボケはほぼ解消する。
-//   数値はサンプリング回数の上限なので、上げるほど帯域を食う。
-constexpr UINT kMaxAnisotropy = 8;
+    // 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
+    //   8 と 16 の見た目の差は小さく、8 でも斜めの面のぼけはほぼ消える。
+    //   値はサンプリング回数の上限なので、上げるほどメモリ帯域を使う。
+    constexpr UINT kMaxAnisotropy = 8;
 } // namespace
 
-// コンストラクタ
 RenderState::RenderState(ID3D11Device *device)
 {
     // ポイントサンプリング＆テクスチャ繰り返しあり
@@ -143,7 +142,8 @@ RenderState::RenderState(ID3D11Device *device)
                                                               depthStencilStates[static_cast<int>(DepthState::TestAndWrite)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
-    // 深度テストあり＆深度書き込みなし
+    // 深度テストあり（LESS_EQUAL）＆深度書き込みなし
+    //   スカイボックスを Z=1.0 の一番奥へ描くのもこれで足りる（1.0 <= 1.0 が通る）。
     {
         D3D11_DEPTH_STENCIL_DESC desc{};
         desc.DepthEnable    = true;
@@ -171,18 +171,6 @@ RenderState::RenderState(ID3D11Device *device)
         desc.DepthFunc      = D3D11_COMPARISON_ALWAYS;
         HRESULT hr          = device->CreateDepthStencilState(&desc,
                                                               depthStencilStates[static_cast<int>(DepthState::NoTestNoWrite)].GetAddressOf());
-        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
-    }
-
-    // テストあり（LessEqual）＆ 書き込みなし（Skybox用）
-    {
-        D3D11_DEPTH_STENCIL_DESC desc{};
-        desc.DepthEnable    = true;
-        desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // 深度は書き込まない
-        desc.DepthFunc      = D3D11_COMPARISON_LESS_EQUAL; // 1.0 <= 1.0 を許容する
-        desc.StencilEnable  = false;
-        HRESULT hr          = device->CreateDepthStencilState(&desc,
-                                                              depthStencilStates[static_cast<int>(DepthState::TestLessEqual)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -272,9 +260,9 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // UI用の通常合成（色はストレートα合成。ただしRTのアルファは書き換えない）
-    //   Transparency との違いは RenderTargetWriteMask から ALPHA を外した点だけ。
-    //   これで不透明シーンが埋めた α=1 が保たれ、テキストの透明部分にαの穴が開かない
-    //   → エディタ GameView(ImGui::Image) で「黒い枠」が出なくなる。
+    //   Transparency との違いは、RenderTargetWriteMask から ALPHA を外したことだけ。
+    //   不透明なシーンが書いた α=1 が残り、文字の透明部分に α の穴が開かないので、
+    //   エディタの GameView（ImGui::Image）で黒い枠が出ない。
     {
         D3D11_BLEND_DESC desc{};
         desc.AlphaToCoverageEnable          = false;
@@ -291,6 +279,25 @@ RenderState::RenderState(ID3D11Device *device)
             D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
         HRESULT hr = device->CreateBlendState(&desc,
                                               blendStates[static_cast<int>(BlendState::UITransparency)].GetAddressOf());
+        _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    }
+    // UI用の加算合成（色は加算合成と同じ。ただしRTのアルファは書き換えない）
+    //   UITransparency と同じく、RenderTargetWriteMask から ALPHA を外したことだけが Additive との違い
+    {
+        D3D11_BLEND_DESC desc{};
+        desc.AlphaToCoverageEnable          = false;
+        desc.IndependentBlendEnable         = false;
+        desc.RenderTarget[0].BlendEnable    = true;
+        desc.RenderTarget[0].SrcBlend       = D3D11_BLEND_SRC_ALPHA;
+        desc.RenderTarget[0].DestBlend      = D3D11_BLEND_ONE;
+        desc.RenderTarget[0].BlendOp        = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ONE;
+        desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        desc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
+        desc.RenderTarget[0].RenderTargetWriteMask =
+            D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
+        HRESULT hr = device->CreateBlendState(&desc,
+                                              blendStates[static_cast<int>(BlendState::UIAdditive)].GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -363,23 +370,22 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
-    // ⑤ 影生成用：ソリッド、裏面カリング、デプスバイアス有効
+    // シャドウマップ用: 塗りつぶし・裏面カリング・深度バイアスあり
     {
         D3D11_RASTERIZER_DESC desc{};
         desc.FillMode = D3D11_FILL_SOLID;
 
-        // バックカリング（裏面カリング）
         desc.CullMode              = D3D11_CULL_BACK;
         desc.FrontCounterClockwise = false;
 
-        // --- 最終チューニング値 ---
-        // 押し込みのベース値（少し下げる）
+        // 見た目で合わせた値。影のにじみ（シャドウアクネ）と影の浮きの兼ね合いで決める
+        // 深度に一律で足す量
         desc.DepthBias = 2000;
 
-        // スロープバイアス（少し下げる）
+        // 面の傾きに比例して足す量
         desc.SlopeScaledDepthBias = 1.5f;
 
-        // 垂直な壁でのバイアス暴走を止める上限値 (環境のスケールに合わせて微調整)
+        // バイアスの上限。光に対して垂直に近い壁で、傾き分が大きくなりすぎるのを抑える
         desc.DepthBiasClamp = 0.005f;
 
         desc.DepthClipEnable       = true;

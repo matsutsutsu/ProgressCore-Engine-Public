@@ -1,20 +1,35 @@
-// ボスAI（BT）の出力を受け取る、脳と筋肉の間の伝票。毎フレーム上書きされる。
-// BTのデータ層と分離してあるのは、同居させると敵を増やすたびに汎用の1ファイルへ
-// 敵ごとの出力フィールドが積み上がるため。
 #pragma once
+// ===========================================================================
+// 概要: ボスの BT が出した指示（本体の技・ドローンの陣形・攻撃信号）を持つ Component。
+//
+// 責務:
+//   - ボス本体に出させたい技(currentActionId)とその全体時間を持つ
+//   - ドローンに組ませたい陣形と、「今撃て」の信号を持つ
+//
+// 備考: BT のアクションが書き、BossActionSystem と DroneCommandSystem が読む。
+//       BehaviorTreeComponent と分けているのは、同じ所に置くと敵を増やすたびに
+//       汎用のデータへ敵ごとの出力フィールドが増えていくため。
+// ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
-#include "Game/Logics/AI/Drone/DroneComponent.h"               // DroneFormationType
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"               // DroneFormationType
 
-struct BossCommandComponent {
-    DroneFormationType requestFormation = DroneFormationType::Hidden;
+struct BossCommandComponent
+{
+    // ドローンに組ませたい陣形。陣形指示のノード（DroneAction）が書く。
+    DroneFormationType requestFormation = DroneFormationType::None;
 
-    // 「筋肉にやってほしい」行動。BossActionSystem が BossActionState へ翻訳する。
+    // ボス本体に出させたい技。BossActionSystem が BossActionState へ変換する。0 は何もしない。
     ActionID currentActionId = 0;
 
-    // ドローンへの「今撃て」信号。DroneStrikeAction が立て、陣形指示が下ろす。
+    // currentActionId の技の全体時間（秒）。BT ノードの param（未設定なら技の既定値）。
+    // 体の動きの長さを BT 側の数字に合わせたい技（滞空で頂点に留まる長さ）が読む。
+    float currentActionDuration = 0.0f;
+
+    // ドローンへの「今撃て」信号。DroneStrikeAction が立て、次の陣形指示が下ろす。
     bool droneAttackActive = false;
 
-    // 上の前フレーム値。立ち上がりを取って個別寿命の突撃を1回だけ発火させる
-    // （無いと信号が立っている間ずっと全機が攻撃へ引き戻され、個別帰投が成立しない）。
+    // droneAttackActive の前フレームの値（DroneCommandSystem が書く）。立ち上がりを取り、
+    // 個別に帰投する陣形の突撃を1回だけ始めるために使う
+    // （無いと信号が立っている間ずっと全機が攻撃へ戻され、個別の帰投ができない）。
     bool prevDroneAttackActive = false;
 };

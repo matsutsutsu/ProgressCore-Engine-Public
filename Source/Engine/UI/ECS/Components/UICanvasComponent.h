@@ -1,15 +1,18 @@
 #pragma once
-// UI階層のルート「キャンバス」を表すマーカー。矩形は常に画面全体になる。
+// ===========================================================================
+// 概要: UI 階層のルート（キャンバス）を示すマーカーコンポーネント UICanvasComponent。
 //
-// 設計方針:
-//   - UI の親子は既存の TransformComponent(parent/firstChildID) を再利用する。これにより
-//     エディタの HierarchyWindow でそのまま入れ子表示され、ドラッグ&ドロップの親子付けも効く。
-//   - Canvas を持つエンティティの UI 矩形は「画面全体」を基準にしつつ、自身の UITransform の
-//     offset で平行移動・scale で拡縮する“可動ルート”（UILayoutUtil::ResolveUINode が特別扱い）。
-//     Canvas を動かす/拡縮すると配下UIがまとめて追従する。size/anchor/pivot は無視される。
-//   - スクリーンスペース固定。ワールドスペースCanvas等は将来の拡張余地として持たない（YAGNI）。
+// 責務:
+//   - この Entity を UI 階層のルートとして扱わせる
+//
+// 備考:
+//   - UI の親子は TransformComponent の親子をそのまま使う。
+//     そのためエディタの HierarchyWindow で入れ子表示され、ドラッグ&ドロップで親子付けもできる。
+//   - Canvas の矩形は画面全体を基準に、自身の UITransform の offset で平行移動、scale で拡縮する
+//     （UILayoutUtil::ResolveUINode が特別扱いする）。Canvas を動かすと配下の UI がまとめて動く。
+//     size / anchor / pivot は無視される。
+//   - スクリーンスペースのみ。ワールドスペースの Canvas は持たない。
+// ===========================================================================
 struct UICanvasComponent
 {
-    // 現状はマーカーのみ。将来: 参照解像度・描画順オフセット等をここへ。
-    int sortBase = 0; // 配下UIの描画順の基準（未使用・拡張余地）
 };

@@ -8,10 +8,7 @@
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-// ===========================================================================
-// PlayerInputComponent メタデータ定義
-//   Player Component(130) の直前に並べる（入力 → 状態 の読み順にするため）
-// ===========================================================================
+// 表示順は Player Component(130) の直前にする（入力 → 状態 の順に読めるようにするため）
 COMPONENT_META_BEGIN_FULL(PlayerInputComponent, "Player Input", CCL::Categories::Gameplay, 125, false)
 
 CFIELD_RO(attackPressed, "攻撃(押した瞬間)", "入力", nullptr)

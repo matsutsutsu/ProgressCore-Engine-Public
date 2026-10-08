@@ -1,7 +1,6 @@
-// ボス大状態の実装。遷移判定 → 入場処理（1回だけ）→ 滞在処理、の3段構成。
 #include "BossPhaseSystem.h"
 
-#include "Game/Logics/AI/Drone/DroneComponent.h" // DroneFormationType（群れへの指示）
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h" // DroneFormationType（ドローンへの指示）
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -12,15 +11,15 @@ using namespace CCL::ECS;
 
 void BossPhaseSystem::Update(float /*rawDt*/)
 {
-    ForEach([&](BossPhaseComponent      &phase,
-                BehaviorTreeComponent   &bt,
-                BossCommandComponent    &cmd,
-                AnimParametersComponent &anim,
-                HealthComponent         &health,
+    ForEach([&](BossPhaseComponent       &phase,
+                BehaviorTreeComponent    &bt,
+                BossCommandComponent     &cmd,
+                AnimParametersComponent  &anim,
+                HealthComponent          &health,
                 const TimeStateComponent &time) {
         const BossPhase next = DecideNextPhase(phase, health);
 
-        // 入場処理は状態が変わったフレームだけ走る。
+        // 形態が変わったフレームだけ、入ったときの処理を行う。
         if (next != phase.phase)
         {
             OnEnterPhase(next, phase, bt, cmd, anim, health);
@@ -29,7 +28,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 
         TickPhase(phase, cmd, health);
 
-        // 時間で終わる状態（移行演出）のためのタイマー。
+        // 時間で終わる形態（移行演出）のためのタイマー。
         if (phase.timer > 0.0f) phase.timer -= time.localDt;
     });
 }
@@ -67,18 +66,18 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
     switch (next)
     {
     case BossPhase::Transition:
-        // BTを完全に止める。assetPath を空にすると BehaviorTreeSystem が早期 return し、
-        // BossCommandComponent が上書きされないので下の指示がそのまま効く。
+        // BT を完全に止める。assetPath を空にすると BehaviorTreeSystem が何もせずに戻り、
+        // BossCommandComponent が上書きされないので、下の指示がそのまま効く。
+        // sharedAsset は触らない（書くのは SyncAssets だけで、同じフレームのうちに null にする）。
         bt.assetPath.clear();
-        bt.sharedAsset.reset();
 
-        // 攻撃を止めて群れを頭上へ退避させる。Hidden は DroneCommandSystem が
+        // 攻撃を止めてドローンを頭上へ退避させる。None は DroneCommandSystem が
         // 「命令なし」として無視するので使わない。
         cmd.droneAttackActive = false;
         cmd.currentActionId   = 0; // None → BossActionSystem は Idle
         cmd.requestFormation  = DroneFormationType::HighOrbit;
 
-        // 演出中は無敵（滞在処理でも毎フレーム維持する）。
+        // 演出中は無敵にする（TickPhase でも毎フレーム保つ）。
         health.invincibilityTimer = kTransitionDuration;
 
         anim.SetTrigger(CCL::Utils::HashString(kRoarTrigger));
@@ -88,20 +87,20 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
     case BossPhase::Combat2:
         // assetPath が変わると BehaviorTreeSystem が自動ロードする。
-        bt.assetPath = phase.phase2AssetPath;
+        bt.assetPath              = phase.phase2AssetPath;
         health.invincibilityTimer = 0.0f; // 無敵解除
         phase.timer               = 0.0f;
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態 開始 → %s", bt.assetPath.c_str());
         break;
 
     case BossPhase::Dead:
-        // 死亡アニメはここで1回だけ発火する。毎フレーム評価される BT では
-        // この「1回だけ」が素直に書けない（＝このシステムが存在する理由）。
-        // 入場でも命令を切るのは、死んだ瞬間に攻撃指示が1フレーム残るのを防ぐため。
+        // 死亡アニメはここで1回だけトリガーを引く。毎フレーム評価される BT では
+        // 「1回だけ」を書きにくい（この System がある理由）。
+        // 入ったときにも指示を消すのは、死んだ瞬間に攻撃の指示が1フレーム残らないようにするため。
         anim.SetTrigger(CCL::Utils::HashString(kDeathTrigger));
 
         cmd.droneAttackActive = false;
-        cmd.requestFormation  = DroneFormationType::Hidden;
+        cmd.requestFormation  = DroneFormationType::None;
         cmd.currentActionId   = 0;
 
         phase.timer = 0.0f;
@@ -109,7 +108,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         break;
 
     case BossPhase::Combat:
-        // 初期状態。ここへ入場してくる経路は今のところ無い。
+        // 初期状態。ほかの形態からここへ戻る経路は無い。
         break;
     }
 }
@@ -118,11 +117,10 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
                                 BossCommandComponent     &cmd,
                                 HealthComponent          &health) const
 {
-
     switch (phase.phase)
     {
     case BossPhase::Transition:
-        // 演出中はボス本体も群れも止めたまま、無敵を維持する。
+        // 演出中はボス本体もドローンも止めたまま、無敵を保つ。
         cmd.droneAttackActive = false;
         cmd.currentActionId   = 0;
         if (health.invincibilityTimer < phase.timer)
@@ -132,16 +130,16 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
     case BossPhase::Dead:
         // 死んでいるのに攻撃が飛ぶのを防ぐ。
         cmd.droneAttackActive = false;
-        cmd.requestFormation  = DroneFormationType::Hidden;
+        cmd.requestFormation  = DroneFormationType::None;
         cmd.currentActionId   = 0;
         break;
 
     case BossPhase::Combat:
     case BossPhase::Combat2:
-        // 技の選択は BT の仕事。
+        // 技は BT が選ぶ。
         break;
     }
 }
 
-// BehaviorTreeSystem(L02_Update) が assetPath を読む前に大状態を確定させる。
+// BehaviorTreeSystem(L02_Update) が assetPath を読む前に形態を決める。
 REGISTER_LOGIC_SYSTEM(BossPhaseSystem, Priority::LogicStage::L02_PreUpdate)

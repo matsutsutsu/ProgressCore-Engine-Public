@@ -12,7 +12,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float metalness;
     float roughness;
     float occlusionStrength;
-    
+
     // C++側から送られてくる「テクスチャの有無」フラグ
     float useAlbedoMap;
     float useNormalMap;
@@ -24,7 +24,7 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 Texture2D NormalMap : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 Texture2D MetalRoughMap : register(REG_SRV(SLOT_SRV_MAT_TEX2));
-Texture2D EmissiveMap : register(REG_SRV(SLOT_SRV_MAT_TEX3)); 
+Texture2D EmissiveMap : register(REG_SRV(SLOT_SRV_MAT_TEX3));
 
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
@@ -42,7 +42,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     // ------------------------------------------------------------
     // 1. テクスチャのサンプリングとフォールバック処理
     // ------------------------------------------------------------
-    
+
     // ノーマルマップ（無い場合は頂点法線をそのまま使用）
     if (useNormalMap > 0.5f)
     {
@@ -61,7 +61,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     // メタル・ラフネス・オクルージョンマップ（無い場合は白として扱う）
     // R: AO, G: Roughness, B: Metalness
     float4 mrSample = useMetalRoughMap > 0.5f ? MetalRoughMap.Sample(LinearSampler, pin.texcoord) : float4(1.0f, 1.0f, 1.0f, 1.0f);
-    
+
     surf.metalness = metalness * mrSample.b;
     surf.roughness = roughness * mrSample.g;
     float rawAO = useOcclusionMap > 0.5f ? mrSample.r : 1.0f;
@@ -94,10 +94,10 @@ float4 main(VS_OUT pin) : SV_TARGET
     // 3. 最終合成とエフェクト
     // ------------------------------------------------------------
     float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor : float3(0.0f, 0.0f, 0.0f);
-    
+
     // 直接光 ＋ 環境光 ＋ 発光
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
-    
+
     // リムライト
     if (gFogRimParams.y > 0.0f)
     {
@@ -106,12 +106,12 @@ float4 main(VS_OUT pin) : SV_TARGET
         float curvature = length(fwidth(surf.normal));
         float flatMask = saturate(curvature * 100.0f);
         float floorMask = 1.0f - step(0.9f, surf.normal.y);
-        
+
         finalColor += rimFactor * gFogRimColor.rgb * gFogRimParams.y * flatMask * floorMask;
     }
-    
+
     // フォグ
-    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor, LinearSampler, surf.normal);
+    finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);
 
 
     return float4(finalColor, alpha);

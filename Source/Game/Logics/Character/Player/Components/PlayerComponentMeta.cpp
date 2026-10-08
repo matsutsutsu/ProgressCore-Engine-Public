@@ -4,10 +4,6 @@
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-// ===========================================================================
-// PlayerComponent メタデータ定義
-// BEGIN_FULL を使用
-// ===========================================================================
 COMPONENT_META_BEGIN_FULL(PlayerComponent, "Player Component", CCL::Categories::Gameplay, 130, false)
 
 // --- 調整パラメータ（人が決める値。保存する）-----------------------------
@@ -25,10 +21,9 @@ CFIELD_FLOAT_RANGED(maxBankingAngle, "最大バンキング角", 1.0f, 0.0f, 90.
 CFIELD_FLOAT_RANGED(attackFaceMaxDistance, "攻撃時オートフェイス距離", 0.5f, 0.0f, 30.0f, "攻撃")
 
 // --- 実行時状態（書き手はシステム。表示はするが保存しない）-----------------
-//   保存すると「たまたま保存した瞬間の値」がプレハブへ焼き付き、そこから生成した
-//   個体が古い値を持って生まれる。実際 Player.json には currentYaw=-48.23(rad)、
-//   つまり約116度ズレた向きが焼き付いていて、開始直後にプレイヤーが横を向いていた。
-//   向きは BattleStartFacingSystem がボスとの位置関係から毎回決め直す。
+//   保存すると、保存した瞬間の値がプレハブに残り、そこから生成した個体が
+//   その値から始まる（例: 保存時の向きのまま開始する）。
+//   開始時の向きは BattleStartFacingSystem がボスとの位置関係から決める。
 CFIELD_RT(isRunning, "走行中", "状態")
 CFIELD_RT(currentJumpCount, "現在のジャンプ回数", "状態")
 CFIELD_RT(currentYaw, "現在のYaw角(rad)", "状態")

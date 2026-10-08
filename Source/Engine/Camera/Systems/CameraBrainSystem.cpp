@@ -1,12 +1,10 @@
 #include "CameraBrainSystem.h"
 
-// 実装で必要なヘッダ群
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Graphics/RHI/Camera.h"
+#include "Engine/Graphics/SceneView/Camera.h"
 #include <algorithm>
 #include "Engine/Core/Math/Interpolation.h" // SmoothStep()
 
-// システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -25,7 +23,8 @@ const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &ou
         // 最高優先度になった瞬間、メインカメラが原点にスナップする。
         if (!vCam.isValid) return;
 
-        if (highestVCam == nullptr) {
+        if (highestVCam == nullptr)
+        {
             maxPriority  = vCam.priority;
             highestCamID = id;
             highestVCam  = &vCam;
@@ -38,7 +37,8 @@ const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &ou
         //   再現しない不具合になる。EntityID で決定的に決める（後勝ち）。
         const bool wins = (vCam.priority > maxPriority) ||
                           (vCam.priority == maxPriority && id > highestCamID);
-        if (wins) {
+        if (wins)
+        {
             maxPriority  = vCam.priority;
             highestCamID = id;
             highestVCam  = &vCam;
@@ -51,42 +51,39 @@ const VirtualCamera *CameraBrainSystem::SelectHighestPriorityCamera(EntityID &ou
 
 void CameraBrainSystem::Update(float dt)
 {
-    // Worldからカメラリソースを取得
     if (!m_world->HasResource<Camera *>()) return;
     Camera *mainCamera = m_world->GetResource<Camera *>();
     if (!mainCamera) return;
 
-    // -------------------------------------------------------
     // 1. 最も優先度が高い vCam を探す
-    // -------------------------------------------------------
     EntityID             highestCamID = InvalidEntityID;
     const VirtualCamera *highestVCam  = SelectHighestPriorityCamera(highestCamID);
 
     if (highestCamID == InvalidEntityID || highestVCam == nullptr) return;
 
-    // -------------------------------------------------------
-    // 2. カメラ切り替え検知 & ブレンド開始
-    // -------------------------------------------------------
-    if (highestCamID != m_currentCamID) {
-        // 初回起動時なら即切り替え
-        if (m_currentCamID == InvalidEntityID) {
-            m_currentCamID = highestCamID;
-            m_blendTimer   = highestVCam->blendTime + 1.0f; // スキップ
+    // 2. カメラ切り替えの検知とブレンド開始
+    if (highestCamID != m_currentCamID)
+    {
+        // 最初の1台はブレンドせず即座に切り替える。
+        // 経過時間をブレンド時間と同じにしておけば、下の isBlending が false になる。
+        if (m_currentCamID == InvalidEntityID)
+        {
+            m_currentCamID  = highestCamID;
+            m_blendDuration = highestVCam->blendTime;
+            m_blendTimer    = m_blendDuration;
         }
-        else {
-            // 遷移開始
+        else
+        {
             m_prevCamID    = m_currentCamID;
             m_currentCamID = highestCamID;
             m_blendTimer   = 0.0f;
 
-            // 固定値ではなく、新しいカメラの設定値を使う
+            // ブレンド時間は切り替え先の vCam の設定を使う
             m_blendDuration = highestVCam->blendTime;
         }
     }
 
-    // -------------------------------------------------------
     // 3. ブレンド計算
-    // -------------------------------------------------------
     XMVECTOR finalPos;
     XMVECTOR finalLook;
     XMVECTOR finalUp;
@@ -106,7 +103,8 @@ void CameraBrainSystem::Update(float dt)
     // ここで「ブレンド中か」を判定してから割り算する。
     bool isBlending = (m_blendDuration > 0.0f) && (m_blendTimer < m_blendDuration);
 
-    if (isBlending) {
+    if (isBlending)
+    {
         m_blendTimer += dt;
         // SmoothStep が 0..1 に丸めるので、ここでの上限クランプは不要。
         const float t = CCL::Math::SmoothStep(m_blendTimer / m_blendDuration);
@@ -118,7 +116,8 @@ void CameraBrainSystem::Update(float dt)
 
         // 遷移元がまだ生きていても、無効化されていれば値は信用できない。
         // その場合は前フレームのバックアップから繋ぐ。
-        if (prevVCam && prevVCam->isValid) {
+        if (prevVCam && prevVCam->isValid)
+        {
             srcPos  = XMLoadFloat3(&prevVCam->resultPos);
             srcLook = XMLoadFloat3(&prevVCam->resultLookAt);
             srcUp   = XMLoadFloat3(&prevVCam->resultUp);
@@ -126,8 +125,8 @@ void CameraBrainSystem::Update(float dt)
             srcNear = prevVCam->nearClip;
             srcFar  = prevVCam->farClip;
         }
-        else {
-            // バックアップを使用
+        else
+        {
             srcPos  = XMLoadFloat3(&m_lastPos);
             srcLook = XMLoadFloat3(&m_lastLook);
             srcUp   = XMLoadFloat3(&m_lastUp);
@@ -143,11 +142,13 @@ void CameraBrainSystem::Update(float dt)
         finalNear = srcNear + (targetNear - srcNear) * t;
         finalFar  = srcFar + (targetFar - srcFar) * t;
 
-        if (t >= 1.0f) {
+        if (t >= 1.0f)
+        {
             m_prevCamID = InvalidEntityID;
         }
     }
-    else {
+    else
+    {
         // ブレンドなし
         finalPos  = targetPos;
         finalLook = targetLook;
@@ -157,25 +158,23 @@ void CameraBrainSystem::Update(float dt)
         finalFar  = targetFar;
     }
 
-    // -------------------------------------------------------
     // 4. メインカメラへ反映
-    // -------------------------------------------------------
     XMFLOAT3 fPos, fLook, fUp;
     XMStoreFloat3(&fPos, finalPos);
     XMStoreFloat3(&fLook, finalLook);
 
     // Up は各 vCam が申告した値を使う（ダッチアングル等の傾け演出に対応するため）。
-    // 以前は {0,1,0} を直書きしていたので resultUp が完全な死にフィールドだった。
     // 補間の結果ゼロベクトルに縮退した場合だけワールド上向きへフォールバックする。
     finalUp = XMVector3Normalize(finalUp);
-    if (XMVector3Equal(finalUp, XMVectorZero()) || XMVector3IsNaN(finalUp)) {
+    if (XMVector3Equal(finalUp, XMVectorZero()) || XMVector3IsNaN(finalUp))
+    {
         finalUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     }
     XMStoreFloat3(&fUp, finalUp);
 
     mainCamera->SetLookAt(fPos, fLook, fUp);
 
-    // 安全対策 (Safety Clamp)
+    // near が 0 以下や far <= near だと射影行列が壊れるので下限を設ける
     float safeNear = (std::max)(finalNear, 0.01f);
     float safeFar  = (std::max)(finalFar, safeNear + 0.1f);
 
@@ -183,10 +182,9 @@ void CameraBrainSystem::Update(float dt)
     // Graphics 側が更新する）をそのまま引き継ぐ。ここでは FOV とクリップ面だけ触る。
     float aspect = mainCamera->GetAspect();
 
-    // セット
     mainCamera->SetPerspectiveFov(DirectX::XMConvertToRadians(finalFov), aspect, safeNear, safeFar);
 
-    // 次フレームのためにバックアップ
+    // 次に遷移元が消えたときの補間元として保存する
     m_lastPos  = fPos;
     m_lastLook = fLook;
     m_lastUp   = fUp;
@@ -195,7 +193,4 @@ void CameraBrainSystem::Update(float dt)
     m_lastFar  = safeFar;
 }
 
-// ==========================================
-// マクロは必ず .cpp の末尾に1回だけ書く
-// ==========================================
 REGISTER_RENDER_SYSTEM(CameraBrainSystem, Priority::RenderStage::R01b_CameraBrain);

@@ -1,37 +1,41 @@
-// Engine/Graphics/Shader/Particle/ParticleShared.h
+// ===========================================================================
+// 概要: GPU パーティクルで C++ と HLSL が共有する構造体（粒子1個・エミッターの定数バッファ）。
 //
-// ==================================================================
-// 【パーティクル専用 C++/HLSL 共有ヘッダー】
+// 責務:
+//   - GpuParticle（StructuredBuffer の1要素）を定義する
+//   - CbParticleStatic（設定の値）と CbParticleDynamic（毎フレームの値）を定義する
+//   - C++ 側で大きさを static_assert する
 //
-// ShaderShared.h と同じ仕組みでパーティクル固有の構造体を定義する。
-// ShaderShared.h にはエンジン全体で使う構造体のみを置き、
-// パーティクル固有のものはここに集約することで、将来の肥大化を防ぐ。
-//
-// 使い方:
-//   C++  : #include "...Particle/ParticleShared.h"  → GpuData::GpuParticle etc.
-//   HLSL : particle.hlsli が include する             → GpuParticle, CbParticleStatic etc.
-//
-// CbParticleStatic と CbParticleDynamic は連続スロット (b13, b14) を使う。
-// SetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs) で一括バインド可能。
-// ==================================================================
+// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::GpuParticle など、
+//       HLSL（particle.hlsli が include する）では cbuffer になる。
+//       2つの定数バッファは隣り合うスロット（b6, b7）なので、
+//       SetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs) で1回でバインドできる。
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// ===========================================================================
 
 #ifndef PARTICLE_SHARED_H
 #define PARTICLE_SHARED_H
 
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
+// コンピュートシェーダーの1グループのスレッド数。HLSL の numthreads と C++ の Dispatch の
+//   グループ数計算の両方がこれを見る（片方だけ変えると末尾の粒子が更新されなくなる）。
+//   GPU は 32（NVIDIA）か 64（AMD）スレッドを1単位で動かすので、64 にして遊ぶスレッドを無くす。
+#define PARTICLE_CS_THREADS 64
+
 #ifdef __cplusplus
 #include <DirectXMath.h>
 #include <cstdint>
 
-namespace GpuData {
+namespace GpuData
+{
 
-    using float2 = DirectX::XMFLOAT2;
-    using float3 = DirectX::XMFLOAT3;
-    using float4 = DirectX::XMFLOAT4;
+    using float2   = DirectX::XMFLOAT2;
+    using float3   = DirectX::XMFLOAT3;
+    using float4   = DirectX::XMFLOAT4;
     using float4x4 = DirectX::XMFLOAT4X4;
-    using uint = uint32_t;
-    using uint2 = DirectX::XMUINT2;
+    using uint     = uint32_t;
+    using uint2    = DirectX::XMUINT2;
 
 #define CB_PARTICLE_STRUCT(name, slot) struct name
 
@@ -39,157 +43,149 @@ namespace GpuData {
 #define CB_PARTICLE_STRUCT(name, slot) cbuffer name : register(REG_CB(slot))
 #endif
 
-// ==================================================================
-// GpuParticle — StructuredBuffer の1要素（粒子1個の状態）
-//
-// 【設計方針】
-//   - type, scale を削除 (type は全粒子共通 → CbParticleStatic.particle_type で読む)
-//   - seed を追加 (per-particle 安定乱数シード → ノイズ差別化に使用)
-//   - angular_speed / mass を row 1 に集約 (物理パラメータをまとめる)
-//   - サイズ計算: particle_scale はスポーン時に size へベイクするため
-//     per-particle の scale フィールドは不要
-//
-// 【レイアウト (80 bytes, 5 rows × 16B)】
-//   row 1 (offset  0): state, angle, angular_speed, mass
-//   row 2 (offset 16): color (RGBA)
-//   row 3 (offset 32): position.xyz, lifespan
-//   row 4 (offset 48): velocity.xyz, age
-//   row 5 (offset 64): size.xy, chip, seed
-// ==================================================================
-struct GpuParticle
-{
-    int    state;           // 0:dead 1:alive
-    float  angle;           // 現在の回転角度 (rad)
-    float  angular_speed;   // 回転速度 (rad/s)
-    float  mass;            // 質量 (重力・ノイズの影響係数)
+    // ==================================================================
+    // GpuParticle: 粒子1個の状態（StructuredBuffer の1要素）
+    //
+    //   種類（Point / Quad）はエミッターの全粒子で同じなので、粒子ごとには持たず
+    //   CbParticleStatic::particle_type を読む。大きさの倍率（particle_scale）は
+    //   発生したときに size へ掛けてしまうので、粒子ごとの倍率も持たない。
+    //
+    //   並び（80 バイト = 16 バイト × 5）
+    //     offset  0: state, angle, angular_speed, mass
+    //     offset 16: color (RGBA)
+    //     offset 32: position.xyz, lifespan
+    //     offset 48: velocity.xyz, age
+    //     offset 64: size.xy, chip, seed
+    // ==================================================================
+    struct GpuParticle
+    {
+        int   state;         // 0 = 消えている, 1 = 生きている
+        float angle;         // 今の回転（rad）
+        float angular_speed; // 回転の速さ（rad/s）
+        float mass;          // 未使用の予約枠（重力は質量に依らない）。spawn() は 1 を入れる
 
-    float4 color;           // 現在のカラー (RGBA)
+        float4 color; // 今の色（RGBA）
 
-    float3 position;        // ワールド座標
-    float  lifespan;        // 最大寿命 (秒)
+        float3 position; // ワールド座標（m）
+        float  lifespan; // 寿命（秒）
 
-    float3 velocity;        // 移動速度ベクトル
-    float  age;             // 経過時間 (秒、負=発生前待機中)
+        float3 velocity; // 速度（m/s）
+        float  age;      // 発生してからの時間（秒。負なら発生を待っている）
 
-    float2 size;            // x:誕生時サイズ y:消滅時サイズ (particle_scale ベイク済み)
-    uint   chip;            // スプライトシートのコマ番号
-    uint   seed;            // per-particle 乱数シード (ノイズ差別化・将来拡張用)
-};
+        float2 size; // x = 発生したときの大きさ, y = 消えるときの大きさ（particle_scale を掛け済み）
+        uint   chip; // スプライトシートのコマの番号
+        uint   seed; // 粒子ごとの乱数の種（ノイズの動きを粒子ごとに変える）
+    };
 
-// ==================================================================
-// CbParticleStatic — エミッタ設定値 (変更時のみ upload, 176 bytes)
-//
-// ParticleEmitterDesc から組み立てる。
-// デザイナーが設定した値を保持し、フレームをまたいで変わらない。
-// ==================================================================
-CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
-{
-    // ---- 発生形状 ---- (offset 0-95)
-    float4 emit_local_offset;       // offset   0: xyz=ローカルオフセット, w=Y方向揺らぎ幅
+    // ==================================================================
+    // CbParticleStatic: エミッターの設定の値（256 バイト。変えたときだけ送る）
+    //   ParticleEmitterDesc から作る
+    // ==================================================================
+    CB_PARTICLE_STRUCT(CbParticleStatic, SLOT_CB_PARTICLE_STATIC)
+    {
+        // ---- 発生する形（offset 0〜95） ----
+        float4 emit_local_offset; // offset   0: xyz = エミッターからのずれ（m）, w = Y 方向の揺らぎの幅（m）
 
-    float2 emit_radius;             // offset  16: 発生半径 min/max
-    float2 emit_size;               // offset  24: サイズ x:誕生 y:消滅
+        float2 emit_radius; // offset  16: 発生する半径の最小・最大（m）
+        float2 emit_size;   // offset  24: x = 発生したときの大きさ, y = 消えるときの大きさ
 
-    float2 cone_angle;              // offset  32: 放出角度範囲 (rad)
-    float2 emit_speed;              // offset  40: 初速度範囲
+        float2 cone_angle; // offset  32: 放出する角度の範囲（rad）
+        float2 emit_speed; // offset  40: 初速の範囲（m/s）
 
-    float2 emit_angular_speed;      // offset  48: 角速度範囲 (rad/s)
-    float2 lifespan;                // offset  56: 寿命範囲 (秒)
+        float2 emit_angular_speed; // offset  48: 回転の速さの範囲（rad/s）
+        float2 lifespan;           // offset  56: 寿命の範囲（秒）
 
-    float2 spawn_delay;             // offset  64: 出現遅延範囲 (秒)
-    float2 fade_duration;           // offset  72: フェード x:in y:out (秒)
+        float2 spawn_delay;   // offset  64: 発生を待つ時間の範囲（秒）
+        float2 fade_duration; // offset  72: x = フェードインの時間, y = フェードアウトの時間（秒）
 
-    float4 manual_color;            // offset  80: 手動カラー (RGBA 乗算)
+        float4 manual_color; // offset  80: 掛ける色（RGBA。color_mode が 0 のとき）
 
-    // ---- 物理 / ノイズ ---- (offset 96-127)
-    float  noise_scale;             // offset  96
-    float  noise_strength;          // offset 100
-    float  gravity;                 // offset 104: 重力 (マイナス=下方向)
-    float  velocity_stretch;        // offset 108: 速度ストレッチ係数
+        // ---- 物理・ノイズ（offset 96〜127） ----
+        float noise_scale;      // offset  96
+        float noise_strength;   // offset 100
+        float gravity;          // offset 104: 重力（負なら下向き）
+        float velocity_stretch; // offset 108: 速さに応じて進む向きに伸ばす量
 
-    float2 uv_scroll_speed;         // offset 112: UV スクロール速度
-    float2 emit_stretch;            // offset 120: 発生形状 x:X軸倍率 y:Z軸倍率
+        float2 uv_scroll_speed; // offset 112: UV をスクロールする速さ
+        float2 emit_stretch;    // offset 120: 発生する形の倍率 x = X 軸, y = Z 軸
 
-    // ---- 見た目 ---- (offset 128-143)
-    float2 particle_scale;          // offset 128: 誕生/消滅サイズ倍率 (spawn 時にベイク)
-    uint2  sprite_sheet_grid;       // offset 136: スプライトシート分割数 (列, 行)
+        // ---- 見た目（offset 128〜143） ----
+        float2 particle_scale;    // offset 128: 発生・消えるときの大きさの倍率（発生したときに size に掛ける）
+        uint2  sprite_sheet_grid; // offset 136: スプライトシートの分割数（列, 行）
 
-    // ---- モード / 設定 ---- (offset 144-175)
-    int    sprite_anim_mode;        // offset 144: 0:ランダム 1:寿命連動
-    int    render_mode;             // offset 148: 0:加算 1:半透明
-    int    color_mode;              // offset 152: 0:手動 1:カラーランプ
-    int    particle_type;           // offset 156: 0:Point 1:Quad
+        // ---- モード（offset 144〜175） ----
+        int sprite_anim_mode; // offset 144: 0 = ランダムなコマ, 1 = 寿命に合わせてコマを進める
+        int render_mode;      // offset 148: 0 = 加算, 1 = 半透明
+        int color_mode;       // offset 152: 0 = manual_color, 1 = カラーランプ
+        int particle_type;    // offset 156: 0 = Point, 1 = Quad
 
-    int    max_count;               // offset 160: 粒子の最大数
-    int    emit_mode;               // offset 164: 0:継続 1:バースト
-    int    burst_count;             // offset 168: バースト時の発生数
+        int max_count;   // offset 160: 粒子の最大数
+        int emit_mode;   // offset 164: 0 = 出し続ける, 1 = バースト
+        int burst_count; // offset 168: バーストで出す数
 
-    // offset 172: 速度の上限 (units/s)。0以下 = 無制限。
-    //   以前はシェーダに 10.0 がハードコードされており、初速を 10 より大きく設定しても
-    //   無言で 10 に潰されていた（設定が効かない罠）。desc から渡して見えるようにする。
-    //   ※元は _pad_static だった空き。CB のサイズ・オフセットは変わらない。
-    float  max_speed;               // offset 172
+        // offset 172: 速さの上限（m/s）。0 以下なら上限なし。
+        //   上限をシェーダーに定数で書いてはいけない。設定から渡さないと、初速を上限より
+        //   大きくしても黙って上限に抑えられ、設定が効かないように見える
+        float max_speed; // offset 172
 
-    // ---- Force Field ---- (offset 176-207)
-    float4 attractor_pos;           // offset 176: xyz=中心, w=強さ(正:引力 負:斥力)
-    float  attractor_radius;        // offset 192: 影響半径 (0=無限)
-    float  vortex_strength;         // offset 196: 中心軸(Y)まわりの渦
-    float  drag;                    // offset 200: 速度減衰 (1/s)
-    uint   force_flags;             // offset 204: bit0=引力/渦 有効, bit1=local空間
+        // ---- 力場（offset 176〜207） ----
+        float4 attractor_pos;    // offset 176: xyz = 中心, w = 強さ（正 = 引き寄せる, 負 = 押し出す）
+        float  attractor_radius; // offset 192: 効く半径（0 なら無限）
+        float  vortex_strength;  // offset 196: 中心の Y 軸まわりの渦の強さ
+        float  drag;             // offset 200: 速度の減衰（1/s）
+        uint   force_flags;      // offset 204: bit0 = 引力・渦を使う, bit1 = ローカル空間で計算する
 
-    // ---- 発生形状: 線分(剣の刃に沿って撒く) ---- (offset 208-223)
-    float3 emit_line_end;           // offset 208: 線分の終点。emit_local_offset を始点とするローカルオフセット(刃先)
-    float  emit_shape;              // offset 220: 0:既存の楕円ディスク 1:線分(base→tip をemit_rotationで刃に沿わせる)
+        // ---- 発生する形: 線分（剣の刃に沿って出す）（offset 208〜223） ----
+        float3 emit_line_end; // offset 208: 線分の終点（刃先）。emit_local_offset を始点とするずれ
+        float  emit_shape;    // offset 220: 0 = 楕円の円盤, 1 = 線分（emit_rotation で刃の向きに合わせる）
 
-    // ---- サイズのばらつき ---- (offset 224-239)
-    // offset 224: サイズのランダム量。0 = 指定値ちょうどで固定、1 = 0〜指定値の一様ランダム。
-    //   従来はこのランダムがシェーダに固定で入っており、粒子サイズは常に
-    //   「0〜emit_size の一様乱数」だった。1枚だけ出して広げる衝撃波のような
-    //   効果は毎回サイズが変わってしまい作れなかったため、量を外から決められるようにした。
-    //   既定は 1（＝従来と同じ挙動）。既存アセットの見た目を変えないため。
-    float  size_random;             // offset 224
-    float3 _pad_static2;            // offset 228: 16バイト境界合わせ
-};
-// 合計: 240 bytes
+        // ---- 大きさのばらつき（offset 224〜239） ----
+        // offset 224: 0 なら emit_size ちょうど、1 なら 0〜emit_size の一様な乱数。
+        //   1枚だけ出して広げる衝撃波のように、毎回同じ大きさで出したい効果のために外から決める。
+        //   既定は 1
+        float  size_random;  // offset 224
+        float  intensity;    // offset 228: 発光の強さ（色に掛ける倍率。1 で選んだ色のまま、1 超で光る）
+        int    orient_mode;  // offset 232: 0 = ビルボード, 1 = ワールド水平, 2 = エミッタの向きの平面
+        int    size_ease;    // offset 236: 大きさの変わり方 0 = 線形, 1 = Ease-In, 2 = Ease-Out, 3 = Ease-InOut
 
-// ==================================================================
-// CbParticleDynamic — ランタイム値 (毎フレーム upload, 48 bytes)
-//
-// Transform + 時間 + バーストトリガーのみを保持する。
-// 将来的に多数のエミッタを扱う場合、この CB だけを更新すれば済む。
-// ==================================================================
-CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
-{
-    float4 emit_rotation;           // offset  0: エミッタ回転 (クォータニオン)
+        // ---- 大きさのイージング（offset 240〜255） ----
+        float  size_ease_power; // offset 240: 曲線の急さ（1 で線形と同じ）
+        float3 _pad_static3;    // offset 244: 16 バイトの倍数にする詰め物
+    };
 
-    float3 world_position;          // offset 16: エミッタのワールド座標 (Transform 由来)
-    float  time;                    // offset 28: 累積経過時間 (秒)
+    // ==================================================================
+    // CbParticleDynamic: 毎フレーム変わる値（80 バイト。毎フレーム送る）
+    //   エミッターの位置・回転、時間、バーストの合図だけを持つ
+    // ==================================================================
+    CB_PARTICLE_STRUCT(CbParticleDynamic, SLOT_CB_PARTICLE_DYNAMIC)
+    {
+        float4 emit_rotation; // offset  0: エミッターの回転（クォータニオン）
 
-    float  delta_time;              // offset 32: 1フレームの秒数
-    float  burst_trigger;           // offset 36: >0 でバースト発動、システムが消費して 0 に戻す
-    float  emit_enabled;            // offset 40: 継続放出モードの発生ゲート (0:停止 それ以外:発生)。アニメ連動用。
+        float3 world_position; // offset 16: エミッターのワールド座標（m）
+        float  time;           // offset 28: 経過時間（秒）
 
-    // offset 44: エミッタ実体ごとの乱数種。
-    //   粒子の乱数は従来 spawn 時の粒子番号(id)だけを種にしていたため、同じプレハブから
-    //   出した VFX は何個出しても寸分違わない同じ粒子配置になっていた。この値を混ぜて
-    //   インスタンスごとに独立した乱数ストリームにする。0 は「未割り当て」を意味する。
-    //   ※元は _pad_dynamic だった空き。CB のサイズ・オフセットは変わらない。
-    uint   instance_seed;           // offset 44
+        float delta_time;    // offset 32: 前のフレームからの時間（秒）
+        float burst_trigger; // offset 36: 0 より大きいとバーストする（GPUParticleUpdateSystem が使ったら 0 に戻す）
+        float emit_enabled;  // offset 40: 出し続けるモードで、0 なら出さない（アニメーションに合わせて止める）
 
-    // ---- 前フレームのエミッタ姿勢（サブフレーム補間でスポーンを軌道上に連続配置する） ----
-    float4 prev_emit_rotation;      // offset 48: 前フレームのワールド回転
-    float3 prev_world_position;     // offset 64: 前フレームのワールド座標
-    float  _pad_dynamic2;           // offset 76
-};
-// 合計: 80 bytes
+        // offset 44: エミッターごとの乱数の種（0 はまだ割り当てていない）。
+        //   粒子の番号だけを種にすると、同じプレハブから出したエフェクトはどれも全く同じ粒子の
+        //   配置になるので、この値を混ぜてエミッターごとに違う乱数にする
+        uint instance_seed; // offset 44
+
+        // 前のフレームのエミッターの姿勢。この間を補間して、動いている間も軌道に沿って途切れずに出す
+        float4 prev_emit_rotation;  // offset 48
+        float3 prev_world_position; // offset 64
+        float  _pad_dynamic2;       // offset 76
+    };
 
 // ==================================================================
-// C++ 側のみ: レイアウト検証
+// C++ だけ: 大きさの確認（理由は ShaderShared.h を参照）
 // ==================================================================
 #ifdef __cplusplus
-static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
-static_assert(sizeof(CbParticleStatic) == 240, "CbParticleStatic size mismatch");
-static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
+    static_assert(sizeof(GpuParticle) == 80, "GpuParticle size mismatch");
+    static_assert(sizeof(CbParticleStatic) == 256, "CbParticleStatic size mismatch");
+    static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
 
 } // namespace GpuData
 

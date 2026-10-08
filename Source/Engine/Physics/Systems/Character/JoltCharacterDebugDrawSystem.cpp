@@ -14,21 +14,18 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
 
-    ForEach([&](const TransformComponent              &trans,
-                const CharacterMovementComponent &movement,
-                const JoltCharacterHandleComponent    &handle) {
+    ForEach([&](const TransformComponent           &trans,
+                const CharacterMovementComponent   &movement,
+                const JoltCharacterHandleComponent &handle) {
         if (!handle.character) return;
 
         XMFLOAT3 pos = trans.GetWorldPosition();
-        pos.y += 1.0f; // キャラクターの頭上に矢印を描画
+        pos.y += 1.0f; // 足元から 1m 上に描く
 
-        // ==========================================================
-        // 描画用のスケール係数（実際の速度の20%の長さにする）
-        // ==========================================================
-        const float DRAW_SCALE = 0.2f;
-        const float HEAD_SIZE  = 0.05f; // 矢印の頭のサイズも小さく
+        const float DRAW_SCALE = 0.2f;  // 矢印の長さ = 速度(m/秒) × 0.2
+        const float HEAD_SIZE  = 0.05f; // 矢印の頭の大きさ
 
-        // 1. 理想の速度（青色の矢印）
+        // 1. ロジックが求めた水平速度（青）
         XMFLOAT3 desiredVel = {
             movement.currentVelocity.x * DRAW_SCALE,
             movement.currentVelocity.y * DRAW_SCALE,
@@ -36,7 +33,7 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
         XMFLOAT3 desiredEnd = {pos.x + desiredVel.x, pos.y + desiredVel.y, pos.z + desiredVel.z};
         renderer->DrawArrow(pos, desiredEnd, HEAD_SIZE, {0.2f, 0.2f, 1.0f, 1.0f});
 
-        // 2. 現実の速度（赤色の矢印）
+        // 2. CharacterVirtual の実際の速度（赤）。見分けやすいよう少し上にずらす
         JPH::Vec3 actualJoltVel = handle.character->GetLinearVelocity();
         XMFLOAT3  actualVel     = {
             actualJoltVel.GetX() * DRAW_SCALE,
@@ -49,5 +46,4 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
     });
 }
 
-// 描画系のフェーズに登録
 REGISTER_RENDER_SYSTEM(JoltCharacterDebugDrawSystem, Priority::RenderStage::R08_Main);

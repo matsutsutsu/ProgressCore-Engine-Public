@@ -1,6 +1,15 @@
 #pragma once
-// CCL_PendingOps.h
-// Component Add/Remove の遅延処理リスト
+// ===========================================================================
+// 概要: System 実行中に出た構造変更要求（生成・削除・コンポーネント追加/削除/修正）の
+//       遅延処理リスト。
+//
+// 責務:
+//   - 構造変更要求を PendingOp として記録する
+//   - 未適用のまま破棄するとき、AddComponent 用に確保した初期データを解放する
+//
+// 備考: System の更新中に Chunk の構造を変えると、走査中の配列が壊れる。
+//       そのため要求だけ溜めておき、World::ScrutinyAndApply で安全なタイミングに一括適用する。
+// ===========================================================================
 
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <vector>
@@ -15,69 +24,64 @@ namespace CCL::ECS
         Destroy,
         AddComponent,
         RemoveComponent,
-        PatchComponent, // コンポーネントの一部修正予約
+        PatchComponent, // 既存コンポーネントの一部書き換え
 
         None
     };
 
-    // 構造的変更要求をカプセル化
+    // 構造変更要求1件ぶん。kind によって使うフィールドが変わる
     struct PendingOp
     {
-        PendingOpKind kind = PendingOpKind::None;     // 実行する操作の種類
-        EntityID entity = 0;        // 操作対象のエンティティID
+        PendingOpKind kind   = PendingOpKind::None; // 実行する操作の種類
+        EntityID      entity = 0;                   // 操作対象の Entity
 
-        TypeID type = 0;            // 操作対象のコンポーネントのTypeID  
-        size_t typeSize = 0;        // 操作対象のコンポーネントのサイズ
+        TypeID type     = 0; // 操作対象のコンポーネントの TypeID
+        size_t typeSize = 0; // 操作対象のコンポーネントのサイズ（byte）
 
-        // data=nullptr の場合もある
-        void* data = nullptr;   // AddComponentの場合追加されるコンポーネント初期データが格納されているヒープメモリへのポインタ
-        Destructor destructor;  // dataに格納されたコンポーネントデータを破棄するためのオブジェクト
+        // AddComponent の初期データ（ヒープ上。所有する。PendingOps::Clear で解放）。
+        // factory を使う場合など、nullptr のこともある
+        void      *data = nullptr;
+        Destructor destructor; // data を破棄するための型消去デストラクタ
 
-        // 生成用ファクトリ関数 (Emplace用)
-        // AddComponentで渡されたラムダ式をここに保存し、ChunkManagerまで運びます
+        // Emplace 用の生成関数。AddComponent で渡されたラムダを ChunkManager まで運ぶ
         std::function<void(void *)> factory = nullptr;
 
-        // 修正用の関数（Patch処理）
-        // 既に存在するコンポーネントのポインタを受け取り、内部を書き換えるラムダ式
+        // Patch 用。既存コンポーネントのポインタを受け取り、中身を書き換えるラムダ
         std::function<void(void *)> patcher = nullptr;
 
-        // 【追加】コピー・移動・代入用の関数ポインタ
-        // これらを ChunkManager まで伝達しないと、memcpy が発動してクラッシュします
-        TypeData::ConstructFunc constructor = nullptr; // コピー構築 (Placement New)
-        TypeData::AssignFunc    assigner    = nullptr; // 代入 (Operator=)
-        TypeData::MoveFunc      mover       = nullptr; // 移動 (Move)
+        // コピー・移動・代入用の関数ポインタ。
+        // これらを ChunkManager まで運ばないと memcpy で代用されてしまい、
+        // std::vector などを持つ型でクラッシュする
+        TypeData::ConstructFunc constructor = nullptr; // コピー構築（placement new）
+        TypeData::AssignFunc    assigner    = nullptr; // 代入（operator=）
+        TypeData::MoveFunc      mover       = nullptr; // ムーブ構築
 
-        // デバッグ用の型名（XMTLで読み取り用）
-        const char *name = nullptr;
+        const char *name = nullptr; // デバッグ用の型名
 
-        // Spawn時のアーキタイプを値で保持する
-        //   旧実装: data = FrameAllocator上のArchetype* → Reset()後にダングリング→クラッシュ
-        //   新実装: spawnArchetype に直接コピー → FrameAllocatorに依存しないので安全
+        // Spawn 時の Archetype を値で保持する。
+        //   ポインタで持ってはいけない。FrameAllocator 上の Archetype を指すと
+        //   Reset() 後にダングリングする。
         Archetype spawnArchetype;
     };
 
-    // ECSの実行フェーズ（Systemの更新中など）で発生したエンティティへの
-    // 構造的変更要求（コンポーネント追加・削除）を一時的に記録し、
-    // フレームの終了時など安全なタイミングで一括処理することを可能にする
+    // 構造変更要求を溜めておくリスト
     class PendingOps
     {
     public:
         PendingOps() = default;
         ~PendingOps() { Clear(); }
 
-        // 新しいPendingOpをリスト_opsに追加します
-        void Add(const PendingOp& op)
+        void Add(const PendingOp &op)
         {
             m_ops.push_back(op);
         }
 
-        std::vector<PendingOp>& Ops() { return m_ops; }
+        std::vector<PendingOp> &Ops() { return m_ops; }
 
-        // リストをクリアする際に、AddComponentの操作で一時的に確保された
-        // ヒープメモリ（op.data）を安全に解放します
+        // 全要求を破棄する。AddComponent 用に確保した初期データ（op.data）もここで解放する
         void Clear()
         {
-            for (auto& op : m_ops)
+            for (auto &op : m_ops)
             {
                 if (op.data == nullptr) continue;
 
@@ -96,4 +100,4 @@ namespace CCL::ECS
     private:
         std::vector<PendingOp> m_ops;
     };
-}
+} // namespace CCL::ECS

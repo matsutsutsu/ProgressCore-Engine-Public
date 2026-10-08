@@ -1,14 +1,21 @@
 #pragma once
-// 2Dパスで描画するUI要素のフラットなリスト（Worldリソース）。
+// ===========================================================================
+// 概要: 2D パスで描く UI 要素を並べた描画リスト（World リソース）。
 //
-// 設計方針:
-//   - UI描画は BaseScene::Render() の2Dパスで行う（renderステージSystemは UpdateRender で
-//     動くため、そこで直接描画すると後続の3D描画に上書きされる）。
-//   - 収集System群(UILayoutSystem=画像 / UITextCollectSystem=テキスト)が UpdateRender 中に
-//     アイテムを積み、UIRenderer が2Dパスで sortOrder 順に消費する（既存 RenderQueue 流儀）。
-//   - 画像/テキストを1つの配列で持ち sortOrder で層を統一する。クリアは消費側(Flush末尾)が行う
-//     ため、収集System間の実行順に依存しない。
+// 責務:
+//   - 収集 System（UIImageCollectSystem / UITextCollectSystem / UIProgressBarCollectSystem）が
+//     積んだ描画アイテムを、UIRenderer が消費するまで保持する
+//
+// 備考:
+//   - UI は BaseScene::Render() の 2D パスで描く。Render ステージの System は UpdateRender 中に
+//     走るので、そこで直接描くと後の 3D 描画に上書きされる。
+//   - 画像と文字を 1 つの配列で持ち、sortOrder で前後を統一する。
+//   - クリアは消費側（UIRenderer::Flush の末尾）が行う。
+// ===========================================================================
+#include "Engine/Graphics/Shader/Shared/UIShared.h" // ゲージの値（シェーダーへそのまま渡す）
+
 #include <DirectXMath.h>
+#include <climits>
 #include <string>
 #include <vector>
 
@@ -16,44 +23,58 @@ enum class UIDrawKind
 {
     Image, // 画像 or 単色矩形
     Text,  // 文字列
+    Gauge, // ゲージ（UIGaugePS で1枚に描く）
 };
 
 struct UIDrawItem
 {
     UIDrawKind        kind      = UIDrawKind::Image;
-    DirectX::XMFLOAT2 pos       = {0.0f, 0.0f};       // 画面左上(px)
-    DirectX::XMFLOAT2 size      = {0.0f, 0.0f};       // 矩形サイズ(px)。Textでは未使用。
+    DirectX::XMFLOAT2 pos       = {0.0f, 0.0f}; // 画面上の左上（px）
+    DirectX::XMFLOAT2 size      = {0.0f, 0.0f}; // 矩形のサイズ（px）。Text では使わない
     DirectX::XMFLOAT4 color     = {1.0f, 1.0f, 1.0f, 1.0f};
-    float             rotation  = 0.0f;               // 度（Imageのみ）
-    int               sortOrder = 0;                  // 大きいほど手前
+    float             rotation  = 0.0f; // 回転（度。Image のみ）
+    int               sortOrder = 0;    // 大きいほど手前
 
-    // --- Image 用 ---
-    std::string texturePath;                          // 空なら単色塗り
+    // 以下は Image 用
+    std::string texturePath; // 空なら単色塗り
 
     // 下端の色。useGradient=true のときだけ使う（上端は color）。
-    // なぜ2色だけか: UIの矩形は縦方向のグラデがあれば大半の質感が出る。
-    // 4隅を個別に持たせるとデータが倍になる割に、使う場面がほぼ無い。
+    //   縦方向だけにしているのは、UI の矩形はそれで足り、4 隅を別々に持つ場面がほぼ無いため
     bool              useGradient = false;
     DirectX::XMFLOAT4 colorBottom = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    // 加算合成で描くか（発光）。ゲージ先端の光やヒットフラッシュに使う。
-    //
-    // 加算は「下に積まれた絵の上」で足されて初めて光って見えるため、
-    // UIRenderer は通常合成を全部描いた後にまとめて描く。
-    // つまり additive を付けた時点で sortOrder より後ろには回らない。
+    // 加算合成で描くか（発光表現）。ゲージ先端の光やヒットフラッシュに使う。
+    //   加算は下にある絵に足して初めて光って見えるため、UIRenderer は通常合成を全て描いた後に
+    //   まとめて描く。つまり additive を付けると sortOrder に関係なく最前面側になる
     bool additive = false;
 
-    // テクスチャの切り出し範囲（正規化 0..1。xy=左上 / zw=幅,高さ）。既定は全体。
-    // アトラスの1コマを指す用途と、「引き伸ばさずに切って減らすゲージ」に使う。
+    // テクスチャの切り出し範囲（正規化 [0,1]。xy=左上 / zw=幅と高さ）。既定は全体。
+    //   アトラスの 1 コマを指す用途や、画像を引き伸ばさずに切って減らすゲージに使う
     DirectX::XMFLOAT4 uvRect = {0.0f, 0.0f, 1.0f, 1.0f};
 
-    // Text 用
-    std::string text;                                 // 描画文字列
-    float       pixelSize = 24.0f;                    // 文字の高さ(px)
+    // 以下は Gauge 用。pos / size はゲージの矩形（縁は含まない）、color.w は全体の不透明度
+    GpuData::CbUIGaugeData gauge{};
+
+    // 以下は Text 用
+    std::string text;              // 描く文字列
+    float       pixelSize = 24.0f; // 文字の高さ（px）
 };
 
 struct UIDrawList
 {
     std::vector<UIDrawItem> items;
-    void Clear() { items.clear(); }
+    void                    Clear() { items.clear(); }
+
+    // 境目の sortOrder より奥と手前で、不透明度を別々に掛ける。Clear では戻さない。
+    //   設定画面のように、下の画面の UI を薄くしながら上の画面を出す（重ねて入れ替える）ときに使う
+    //   （各部品の visible や alpha は HUD などが毎フレーム書き戻すので、外から隠すのに使えない）
+    int   splitSortOrder = INT_MIN; // 境目。これ以上が手前
+    float belowAlpha     = 1.0f;    // 境目より奥に掛ける不透明度（0 なら描かない）
+    float aboveAlpha     = 1.0f;    // 境目から手前に掛ける不透明度（0 なら描かない）
+
+    // HUD（戦闘中に常に出ている表示）にだけ掛ける不透明度。Clear では戻さない。
+    //   sortOrder が hudSortEnd より小さい要素を HUD とみなす（HP・切り払い・操作の一覧は 90〜121、
+    //   ポーズやリザルトなどのメニューは 200〜）。ムービー中に HUD を隠すのに使う
+    int   hudSortEnd = 150;  // これより奥が HUD
+    float hudAlpha   = 1.0f; // HUD に掛ける不透明度（0 なら描かない）
 };

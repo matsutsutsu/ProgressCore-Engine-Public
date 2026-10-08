@@ -1,12 +1,13 @@
 #pragma once
-//==============================================================================
-// LogSinks.h
+// ===========================================================================
+// 概要: Logger に登録する標準のログ出力先（シンク）3種。
 //
-// 標準シンク3種:
-//   - DebugStreamSink : Visual Studio の「出力」ウィンドウ向け
-//   - FileSink        : ログファイル (起動ごとに2世代でローテーション)
-//   - ImGuiBufferSink : ConsoleWindow から読み出す用のリングバッファ
-//==============================================================================
+// 責務:
+//   - DebugStreamSink: Visual Studio の「出力」ウィンドウへ書く
+//   - FileSink: ログファイルへ書く（起動ごとに2世代でローテーション）
+//   - ImGuiBufferSink: ConsoleWindow が読む件数上限付きのバッファに貯める
+//   - ファイル／出力ウィンドウ向けの1行の書式をそろえる
+// ===========================================================================
 
 #include "Logger.h"
 
@@ -21,28 +22,32 @@
 #include <sstream>
 #include <vector>
 
-//==============================================================================
-// 共通フォーマット - ファイル/Debug出力の共通整形
-//==============================================================================
+// ============================================================
+// 共通フォーマット（ファイル／出力ウィンドウ用の1行）
+// ============================================================
 namespace LogFormat
 {
-    inline const char* LevelLabel(LogLevel level) noexcept
+    inline const char *LevelLabel(LogLevel level) noexcept
     {
         switch (level)
         {
-        case LogLevel::Error:   return "ERROR";
-        case LogLevel::Warning: return "WARN";
-        case LogLevel::Success: return "SUCCESS";
+        case LogLevel::Error:
+            return "ERROR";
+        case LogLevel::Warning:
+            return "WARN";
+        case LogLevel::Success:
+            return "SUCCESS";
         case LogLevel::Info:
-        default:                return "INFO";
+        default:
+            return "INFO";
         }
     }
 
-    // 整形済みの1行ログを生成 (タイムスタンプ含む)
-    inline std::string Format(const LogMessage& msg)
+    // "時:分:秒.ミリ秒 [レベル] [カテゴリ] [ファイル:行] 本文" の1行を作る
+    inline std::string Format(const LogMessage &msg)
     {
         using namespace std::chrono;
-        const auto t = system_clock::to_time_t(msg.time);
+        const auto t   = system_clock::to_time_t(msg.time);
         const auto sub = duration_cast<milliseconds>(msg.time.time_since_epoch()).count() % 1000;
 
         std::tm local{};
@@ -54,48 +59,44 @@ namespace LogFormat
 
         std::ostringstream os;
         os << std::put_time(&local, "%H:%M:%S")
-            << '.' << std::setfill('0') << std::setw(3) << sub << ' '
-            << '[' << LevelLabel(msg.level) << "] "
-            << '[' << GetLogCategoryName(msg.category) << "] "
-            << '[' << msg.file << ':' << msg.line << "] "
-            << msg.text;
+           << '.' << std::setfill('0') << std::setw(3) << sub << ' '
+           << '[' << LevelLabel(msg.level) << "] "
+           << '[' << GetLogCategoryName(msg.category) << "] "
+           << '[' << msg.file << ':' << msg.line << "] "
+           << msg.text;
         return os.str();
     }
-}
+} // namespace LogFormat
 
-//==============================================================================
-// DebugStreamSink
-//   Visual Studio の「出力」ウィンドウ (OutputDebugString)
-//==============================================================================
+// ============================================================
+// DebugStreamSink: Visual Studio の「出力」ウィンドウ（OutputDebugString）
+// ============================================================
 class DebugStreamSink : public ILogSink
 {
 public:
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         const std::string line = LogFormat::Format(msg) + '\n';
 
-        // UTF-8 → UTF-16 変換
+        // 日本語を文字化けさせないため、UTF-16 にして W 版で出す
         int len = MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, nullptr, 0);
         if (len <= 0) return;
 
         std::wstring wline(len, L'\0');
         MultiByteToWideChar(CP_UTF8, 0, line.c_str(), -1, wline.data(), len);
 
-        // Wide 文字でデバッグ出力
         ::OutputDebugStringW(wline.c_str());
     }
 };
 
-
-//==============================================================================
-// FileSink
-//   ファイル出力（起動ごとに2世代でローテーション）
+// ============================================================
+// FileSink: ファイル出力（起動ごとに2世代でローテーション）
 //
 //   使い方: std::make_shared<FileSink>("Build/Logs/Engine.log");
-//     -> 起動して最初のログを書く瞬間に、前回起動時の Engine.log が残っていれば
-//        Engine.prev.log へ退避（2回前は破棄）してから新規に Engine.log を開く。
-//        つまり常に「今回(Engine.log)＋前回(Engine.prev.log)」の2つが残る。
-//==============================================================================
+//     起動して最初のログを書くときに、前回起動時の Engine.log が残っていれば
+//     Engine.prev.log へ退避（2回前は破棄）してから新規に Engine.log を開く。
+//     常に「今回(Engine.log)＋前回(Engine.prev.log)」の2つが残る。
+// ============================================================
 class FileSink : public ILogSink
 {
 public:
@@ -108,7 +109,7 @@ public:
         // ここではファイルを開かない（遅延生成）。
         //   最初のログが実際に書き込まれるまでフォルダ/ファイルを作らないため、
         //   Shipping のようにログが ERROR のみの構成だと「1件も出なければ何も残らない」。
-        //   これで正常終了時にログフォルダで散らからず、問題が起きた時だけ痕跡が残る。
+        //   正常時はログフォルダが増えず、問題が起きたときだけ記録が残る。
         //   世代退避も「最初の書き込み時」に行うので、この遅延生成の性質は保たれる。
     }
 
@@ -121,7 +122,7 @@ public:
         }
     }
 
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         std::lock_guard lock(m_mutex);
 
@@ -181,18 +182,17 @@ private:
     bool                  m_opened = false; // 遅延生成済みか（最初の Write で true）
 };
 
-//==============================================================================
-// ImGuiBufferSink
-//   ConsoleWindow が参照する履歴バッファ。
-//   - std::deque でリングバッファ化 (O(1) 上限管理)
-//   - Snapshot() でコピーを返すのでロック競合を最小化
-//==============================================================================
+// ============================================================
+// ImGuiBufferSink: ConsoleWindow が読む履歴バッファ
+//   - 上限を超えたら古いものから捨てる（std::deque の先頭削除は O(1)）
+//   - Snapshot() はコピーを返すので、UI 側がロックを長く持たない
+// ============================================================
 class ImGuiBufferSink : public ILogSink
 {
 public:
-    explicit ImGuiBufferSink(size_t capacity = 1000) : m_capacity(capacity) {}
+    explicit ImGuiBufferSink(size_t capacity = 1000) : m_capacity(capacity) {} // capacity: 保持する最大件数
 
-    void Write(const LogMessage& msg) override
+    void Write(const LogMessage &msg) override
     {
         std::lock_guard lock(m_mutex);
         if (m_buffer.size() >= m_capacity)
@@ -208,17 +208,11 @@ public:
         m_buffer.clear();
     }
 
-    // ConsoleWindow 用: ロック内でコピーして返す (UI側はロックを長く持たない)
+    // ConsoleWindow 用: ロック内でコピーして返す
     std::vector<LogMessage> Snapshot() const
     {
         std::lock_guard lock(m_mutex);
         return std::vector<LogMessage>(m_buffer.begin(), m_buffer.end());
-    }
-
-    size_t Size() const
-    {
-        std::lock_guard lock(m_mutex);
-        return m_buffer.size();
     }
 
 private:

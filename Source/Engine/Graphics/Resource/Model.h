@@ -1,4 +1,19 @@
 #pragma once
+// ===========================================================================
+// 概要: 1体分のモデルのインスタンス。共有の ModelResource を参照し、
+//       ノードの姿勢とマテリアルを個体ごとに持つ。
+//
+// 責務:
+//   - ModelResource のノード階層を複製し、親子のポインタを張り直す
+//   - ModelResource のマテリアルから MaterialData を作る
+//   - アニメーションのキーフレームから各ノードの姿勢を求める・ブレンドする
+//   - ノードの姿勢から、ローカル・グローバル・ワールド行列を求める
+//   - ルートモーション用のルートボーンの特定と、0秒の姿勢をキャッシュする
+//
+// 備考: 頂点やアニメーションなどの重いデータは ModelResource（ResourceManager が共有）が持つ。
+//       Mesh・Bone・Node はそのデータと、このインスタンスの nodes を指すポインタでつなぐ
+//       （どれも所有しない）。nodes の要素を指すので、nodes の大きさを後から変えてはいけない。
+// ===========================================================================
 #include "ModelResource.h"
 #include <DirectXMath.h>
 #include <d3d11.h>
@@ -15,67 +30,53 @@
 class Model
 {
 public:
+    // filename の ModelResource を ResourceManager から取り（未読込なら読み込み）、インスタンスを作る
     Model(ID3D11Device *device, const char *filename, float sampleRate = 60);
 
     struct Node
     {
-        // Nodeを識別するための名前
         std::string name;
-        // Nodeの実際のposition?
+
+        // 親ノードに対する姿勢
         DirectX::XMFLOAT3 position = {0, 0, 0};
         DirectX::XMFLOAT4 rotation = {0, 0, 0, 1}; // クォータニオン
         DirectX::XMFLOAT3 scale    = {1, 1, 1};
 
-        // 親ノードに対する相対的な座標
-        DirectX::XMFLOAT4X4 localTransform = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-        // モデル全体でのノードの相対座標（原点を基準にどれぐらい座標が離れているか）
-        DirectX::XMFLOAT4X4 globalTransform = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
-        // シーン空間での最終位置
-        DirectX::XMFLOAT4X4 worldTransform = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        DirectX::XMFLOAT4X4 localTransform  = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}; // 親ノードに対する行列
+        DirectX::XMFLOAT4X4 globalTransform = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}; // モデルの原点に対する行列
+        DirectX::XMFLOAT4X4 worldTransform  = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}; // ワールド空間の行列
 
-        // 親ノードへの参照（子ノードに必要）
-        Node *parent = nullptr;
-        // 子ノード
-        std::vector<Node *> children;
+        Node               *parent = nullptr; // 親ノード（所有しない。ルートは nullptr）
+        std::vector<Node *> children;         // 子ノード（所有しない）
 
-        // 位置リターゲット対象フラグ（ロード時に一度だけ確定する静的な性質）。
-        //   true  = Root / Pelvis / Hips 系。アニメーションの位置移動をそのまま使う。
-        //   false = それ以外。位置はバインドポーズ(骨の長さ)で上書きしプロポーション崩壊を防ぐ。
-        //   骨名で決まり実行中に変化しないため、毎フレーム文字列判定するのは無駄。
-        //   ここへ焼き込み、ComputeAnimation ではこのフラグを見るだけにする。
+        // アニメーションの位置の移動をそのまま使うボーンか（ルート・Pelvis・Hips 系）。
+        //   false のボーンは位置をバインドポーズ（骨の長さ）で上書きし、体型の崩れを防ぐ。
+        //   骨の名前で決まり実行中は変わらないので、ロード時に一度だけ判定してここに持つ
+        //   （毎フレーム文字列で判定すると重い）。
         bool isRootOrPelvis = false;
     };
 
     struct Material
     {
-        std::string name;
-        // 純粋なデータの所有権を持つ
-        std::shared_ptr<MaterialData> data;
+        std::string                   name;
+        std::shared_ptr<MaterialData> data; // このインスタンスが持つマテリアルの値
     };
 
     struct Bone
     {
-        // Resouceのボーン構造を参照しつつ自身のNodeを割り当てるため
-        const ModelResource::Bone *data = nullptr; // 静的情報（offsetTransformなど）
-        Node                      *node = nullptr; // 実際のノード（現在の姿勢を参照）
+        const ModelResource::Bone *data = nullptr; // オフセット行列などの共有データ（所有しない）
+        Node                      *node = nullptr; // このボーンが指すノード（今の姿勢を読む。所有しない）
     };
 
     struct Mesh
     {
-        const ModelResource::Mesh *data; // 元データへの参照
-
-        //メッシュにも個別に別のマテリアルを適応することができるため持つ
-        //例：キャラAでは赤色、キャラBでは青色にするなど
-        Material *material;
-        //メッシュが付く場所はNodeを参照して決めるから必要
-        Node *node;
-        //メッシュがどのボーンに影響されるかを知るために必要
-        //ボーンなどで形を変えた時Meshもそれに合わせて変形するから
-        std::vector<Bone> bones;
+        const ModelResource::Mesh *data;     // 頂点などの共有データ（所有しない）
+        Material                  *material; // このメッシュに使うマテリアル（所有しない）
+        Node                      *node;     // メッシュが付いているノード（所有しない）
+        std::vector<Bone>          bones;    // スキニングに使うボーン。空ならスキンメッシュではない
     };
 
-    // モデルの「現在の姿勢（ポーズ）」を保持するためのデータ
-    // ノード一つ分の現在の姿勢（位置・回転・スケール）
+    // ノード1つ分の姿勢（位置・回転・スケール）
     struct NodePose
     {
         DirectX::XMFLOAT3 position = {0, 0, 0};
@@ -83,19 +84,14 @@ public:
         DirectX::XMFLOAT3 scale    = {1, 1, 1};
     };
 
-    // マテリアルデータ取得
-    //const std::vector<Material>& GetMaterials() const { return materials; }
-
-    // メッシュデータ取得
     const std::vector<Mesh> &GetMeshes() const
     {
         return meshes;
     }
 
-    // アニメーションインデックス取得
+    // 名前からアニメーションの番号を引く。無ければ -1
     int GetAnimationIndex(const char *name) const;
 
-    // ノードデータ取得
     const std::vector<Node> &GetNodes() const
     {
         return nodes;
@@ -105,117 +101,101 @@ public:
         return nodes;
     }
 
-    // ルートノード取得
-    Node *GetRootNode()
-    {
-        return nodes.data();
-    }
-
-    // ノードインデックス取得
+    // 名前からノードの番号を引く。無ければ -1
     int GetNodeIndex(const char *name) const;
 
-    // トランスフォーム更新処理
+    // 各ノードの姿勢から、ローカル・グローバル・ワールド行列を求める
     void UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform);
 
-    // アニメーション計算
+    // time 秒の姿勢を求める（1ノード版と全ノード版）
     void ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const;
     void ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const;
 
 private:
-    // 単一ノードのポーズ評価の実体。既に取得済みの Animation を受け取ることで、
-    // vector 版がノード数ぶん ResourceManager を引き直す無駄を無くす（呼び出し側で1回だけ取得する）。
+    /**
+     * @brief 1ノード分の姿勢を求める本体。
+     *
+     * 取得済みの Animation を受け取るので、全ノード版がノードの数だけ ResourceManager を引き直さずに済む（呼び出し側で1回だけ取る）。
+     *
+     * @param animation 姿勢を求めるアニメーション。
+     * @param nodeIndex 姿勢を求めるノードの番号。
+     * @param time      再生時刻（秒）。
+     * @param nodePose  求めた姿勢を受け取る。
+     */
     void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
 
 public:
-    // ノードポーズ設定
+    // 全ノードの姿勢を上書きする（行列は UpdateTransform で求める）
     void SetNodePoses(const std::vector<NodePose> &nodePoses);
 
-    // ノードポーズ取得
+    // 全ノードの今の姿勢を nodePoses に写す（ノード数に合わせて大きさを変える）
     void GetNodePoses(std::vector<NodePose> &nodePoses) const;
 
-    // ファイルパス取得
-    const std::string &GetPath() const
-    {
-        return filePath;
-    }
+    // 読み込み元のファイルパス
+    const std::string &GetPath() const { return filePath; }
 
     const ModelResource *GetResource() const;
     ModelResource       *GetResourceMutable();
 
-    // アニメーション補間処理
+    // 2つの姿勢の列を blendRate（0〜1）で補間する。位置・スケールは線形、回転は球面線形
     static void BlendAnimations(
         const std::vector<NodePose> &animation0,
         const std::vector<NodePose> &animation1,
         float                        blendRate,
         std::vector<NodePose>       &result);
 
-    // ゲッターもComponentではなくDataを返すようにする（const推奨）
     const std::vector<Material> &GetMaterials() const
     {
         return materials;
     }
 
-    // 頂点・インデックス配列からモデルを生成する静的関数
-    static std::shared_ptr<Model> CreateFromData(ID3D11Device                             *device,
-                                                 const std::vector<ModelResource::Vertex> &vertices,
-                                                 const std::vector<uint32_t>              &indices,
-                                                 std::shared_ptr<MaterialData>             baseMaterial);
-
-    // ルートモーションの抽出と固定の対象となる、真のルートボーンを探して返す
-    int GetRootMotionNodeIndex() const;
-
-    // アニメーションデータの中で、実際に大きく移動している真のルートボーンを自動特定する
+    // アニメーションの中で実際に水平に動いている、一番親に近いボーンを探す（結果はキャッシュする）
     int FindRealRootMotionNodeIndex(int animIndex) const;
 
-    // 指定クリップの「0秒時点」における指定ノードのポーズを返す（キャッシュ付き）。
-    //   ルートモーションのピン留め基準（前進量を殺すための0秒姿勢）は毎フレーム不変なので、
-    //   初回だけ ComputeAnimation で計算し、以降は再利用してホットパスの再計算を消す。
+    /**
+     * @brief 指定クリップの0秒時点での、指定ノードの姿勢を返す（キャッシュ付き）。
+     *
+     * ルートモーションで前進量を打ち消す基準になる姿勢で、毎フレーム同じなので、初回だけ ComputeAnimation で求めて以後は使い回す。
+     *
+     * @param animIndex クリップの番号。
+     * @param nodeIndex ノードの番号。
+     * @return 0秒時点の姿勢。Model のキャッシュが所有する。
+     */
     const NodePose &GetPinnedPoseAtZero(int animIndex, int nodeIndex) const;
 
 private:
-    // shared_ptrで持つことで、外部に配ってもデータは消えない
-    std::vector<Material> materials;
+    std::string filePath; // 読み込み元のファイルパス
 
-    const ModelResource::Animation *currentAnimation = nullptr;
-    float                           animationTime    = 0.0f;
-    bool                            loop             = true;
+    std::vector<Material> materials; // マテリアル（Mesh::material がこの要素を指す）
 
-private:
-    std::string filePath; // 読み込み元ファイルを保存
+    CCL::Handle<ModelResource> resource; // 共有データ（ResourceManager が持つ）
 
-    // ModelHandle ではなく元の型を直接指定する
-    CCL::Handle<ModelResource> resource;
-
-    //std::vector<Material>	materials;
     std::vector<Mesh> meshes;
-    std::vector<Node> nodes;
+    std::vector<Node> nodes; // Mesh・Bone・Node::parent がこの要素を指す
 
-    // ---------------------------------------------------------------
-    // FindRealRootMotionNodeIndex の結果キャッシュ。
-    //   「このクリップの真のルートボーンはどれか」はアニメーションデータ由来の
-    //   静的な性質で、時間や再生状態に関係なく一度特定すれば二度と変わらない。
-    //   しかし毎フレーム呼ばれる箇所（AnimationSystem/RootMotionSystem）から
-    //   使われるため、キャッシュ無しだと ComputeAnimation を全ノード×2回、
-    //   フレームごとに再実行することになり大きな無駄になる。
-    //   要素 -1 は「まだ計算していない」を表す番兵（有効なノード番号は常に0以上）。
-    //   const 関数から書き込むため mutable。
-    // ---------------------------------------------------------------
+    // UpdateTransform でノードを計算する順番（nodes の番号。親が必ず子より先）
+    std::vector<int> m_nodeUpdateOrder;
+
+    // FindRealRootMotionNodeIndex の結果のキャッシュ（添字はアニメーションの番号）。
+    //   どのボーンがルートかはアニメーションのデータだけで決まり、後から変わらない。
+    //   一方で毎フレーム呼ばれる（AnimationSystem・RootMotionSystem）ので、キャッシュが無いと
+    //   全ノードの ComputeAnimation を毎フレーム2回ずつ走らせることになる。
+    //   -1 は「まだ求めていない」（有効なノード番号は 0 以上）。const 関数から書くので mutable。
     mutable std::vector<int> m_rootMotionNodeCache;
 
-    // ---------------------------------------------------------------
-    // アニメ名 → インデックスのキャッシュ。
-    //   GetAnimationIndex は毎フレーム（ブレンド時は2回）呼ばれるが、旧実装は
-    //   全アニメを std::string 比較で線形走査していた。名前とインデックスの対応は
-    //   ロード後は不変なので、FNV-1a ハッシュ(HashString)をキーに一度だけ表を作り O(1) 化する。
-    //   初回 GetAnimationIndex 呼び出しで遅延構築する（m_animIndexBuilt が番兵）。
-    // ---------------------------------------------------------------
+    // 位置のリターゲットをするか（ModelResource から写した値）。
+    //   false なら isRootOrPelvis に関係なく、アニメーションの移動をそのまま使う。
+    //   詳しくは ModelResource::GetTranslationRetargeting() を参照。
+    bool m_translationRetargeting = true;
+
+    // アニメーション名のハッシュ → 番号の表。
+    //   GetAnimationIndex は毎フレーム（ブレンド中は2回）呼ばれる。名前と番号の対応は
+    //   ロード後に変わらないので、HashString をキーに一度だけ表を作って O(1) で引く
+    //   （std::string を比べる線形探索にしないこと）。
+    //   最初の GetAnimationIndex で作る（m_animIndexBuilt が作ったかどうか）。
     mutable std::unordered_map<uint32_t, int> m_animIndexCache;
     mutable bool                              m_animIndexBuilt = false;
 
-    // ---------------------------------------------------------------
-    // ルートモーションのピン留め用「0秒ポーズ」キャッシュ。
-    //   キーは (animIndex, nodeIndex) を 1つの 64bit に詰めたもの。
-    //   0秒時点の姿勢はクリップ不変なので、初回計算後は再利用する。
-    // ---------------------------------------------------------------
+    // GetPinnedPoseAtZero のキャッシュ。キーは (animIndex, nodeIndex) を 64bit に詰めたもの
     mutable std::unordered_map<uint64_t, NodePose> m_pinnedPoseAtZeroCache;
 };

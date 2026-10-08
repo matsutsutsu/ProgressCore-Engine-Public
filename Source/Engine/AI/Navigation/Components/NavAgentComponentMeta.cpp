@@ -1,6 +1,5 @@
 // NavAgentComponent のシリアライズ/インスペクタ定義。
-// 目標位置の設定や、エディタ上での経路計算テスト機能を提供する。
-
+// 目標位置の設定と、エディタ上で経路計算を試すボタンを持つ。
 #include "Engine/AI/Navigation/Components/NavAgentComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h" // カテゴリ定数
@@ -16,7 +15,7 @@ struct ComponentMeta<NavAgentComponent>
     CCL_META_USING_THIS(NavAgentComponent)
 
     static constexpr const char *displayName       = "Nav Agent";
-    static constexpr const char *category          = CCL::Categories::AI; // 定数を使用
+    static constexpr const char *category          = CCL::Categories::AI;
     static constexpr int         sortPriority      = 150;
     static constexpr bool        hiddenInInspector = false;
     static constexpr bool        hasCustomGui      = true;
@@ -71,7 +70,7 @@ struct ComponentMeta<NavAgentComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            CFIELD(targetPosition, "目標座標", "AI") // フィールドの小カテゴリは生文字列のままで運用
+            CFIELD(targetPosition, "目標座標", "AI") // 保存するのは目的地だけ（経路は実行時に計算する）
         };
         return fields;
     }

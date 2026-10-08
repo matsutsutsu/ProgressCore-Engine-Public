@@ -1,4 +1,12 @@
 #pragma once
+// ===========================================================================
+// 概要: System 間の依存関係を解析し、並列実行できるバッチ列を組んで実行するクラス。
+//
+// 責務:
+//   - ステージ・明示的な順序宣言・Read/Write 型競合から実行バッチを構築する
+//   - 型は競合するのに順序が宣言されていないペア（順序不定）の検出と報告
+//   - バッチを順に、バッチ内は JobSystem で並列に実行する
+// ===========================================================================
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -9,39 +17,39 @@
 #include "Engine/ECS/Jobs/CCL_JobSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 
-namespace CCL::ECS {
-    // システムの依存関係を解析し、並列実行可能なバッチを構築するクラス
-    class TaskScheduler {
-      public:
-         //  外部（ImGui）からバッチ構成を読み取るためのAPI
-         const std::vector<std::vector<SystemBase*>>& GetBatches() const {
-             return m_executionBatches;
-         }
+namespace CCL::ECS
+{
+    class TaskScheduler
+    {
+    public:
+        // エディタ（ImGui）がバッチ構成を表示するために読む
+        const std::vector<std::vector<SystemBase *>> &GetBatches() const
+        {
+            return m_executionBatches;
+        }
 
-        // ------------------------------------------------------------
-        // BuildGraph
-        // ------------------------------------------------------------
-        // 目的:
-        //   全 System の依存関係を解析し、実行バッチ（フェーズ）を構築する。
-        //
-        // 順序の決まり方（強い順に3段）:
-        //   1. Priority（ステージ）が違えば必ず直列。ステージが順序の骨格。
-        //   2. 同一ステージ内は GetRunAfter / GetRunBefore の宣言をトポロジカル
-        //      ソートして確定する。ここが「どちらが先か」を決める唯一の場所。
-        //   3. 宣言も型競合も無ければ、並列実行してよいものとして同じバッチに入れる。
-        //
-        // なぜ3段目だけでは足りなかったか:
-        //   Read/Write 型の競合解析は「同時に走らせてよいか」しか判定できない。
-        //   競合を見つければ直列化はするが、どちらを先にするかは配列の並び順
-        //   まかせになる。その並び順が静的初期化順序に依存していたため、
-        //   BoneAttachment と JoltPush の順序が環境によって逆転していた。
-        //   2段目の明示宣言はその穴を塞ぐためにある。
-        //
-        // 出力:
-        //   m_executionBatches :
-        //      外側 vector = 実行順序（Batch 0 -> Batch 1 -> ...）
-        //      内側 vector = 同時に並列実行してよい System の集合
-        // ------------------------------------------------------------
+        /**
+         * @brief 全 System の依存関係を解析し、実行バッチ（フェーズ）を構築する。
+         *
+         * 順序の決まり方（強い順に3段）:
+         *   1. Priority（ステージ）が違えば必ず直列。ステージが順序の骨格。
+         *   2. 同一ステージ内は GetRunAfter / GetRunBefore の宣言をトポロジカル
+         *      ソートして確定する。ここが「どちらが先か」を決める唯一の場所。
+         *   3. 宣言も型競合も無ければ、並列実行してよいものとして同じバッチに入れる。
+         *
+         * なぜ3段目だけでは足りなかったか:
+         *   Read/Write 型の競合解析は「同時に走らせてよいか」しか判定できない。
+         *   競合を見つければ直列化はするが、どちらを先にするかは配列の並び順
+         *   まかせになる。その並び順が静的初期化順序に依存していたため、
+         *   BoneAttachment と JoltPush の順序が環境によって逆転していた。
+         *   2段目の明示宣言はその穴を塞ぐためにある。
+         *
+         * 結果は m_executionBatches に入る。
+         *   外側 vector = 実行順序（Batch 0 -> Batch 1 -> ...）
+         *   内側 vector = 同時に並列実行してよい System の集合
+         *
+         * @param systems Priority 昇順（同値は System 名順）に並んだ System 群
+         */
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
             m_executionBatches.clear();
@@ -50,95 +58,101 @@ namespace CCL::ECS {
 
             const size_t n = systems.size();
 
-            // ------------------------------------------------------------
-            // Phase 0: 明示的な順序宣言を解決し、実行順の添字列を作る
-            // ------------------------------------------------------------
-            // systems は既に Priority 昇順（同値は System 名順）に並んでいる。
-            // その並びを土台に、同一ステージ内だけを宣言に従って組み替える。
+            // Phase 0: 明示的な順序宣言を解決し、実行順の添字列を作る。
+            // systems の並びを土台に、同一ステージ内だけを宣言に従って組み替える。
             std::vector<size_t> order = ResolveExplicitOrder(systems);
 
-            // ------------------------------------------------------------
-            // Phase 1: 依存関係解析
-            // ------------------------------------------------------------
+            // Phase 1: 前に置かれた System との競合を調べ、入るバッチを決める
             std::vector<int> batchIndexOf(n, 0);
 
-            for (size_t oi = 0; oi < order.size(); ++oi) {
+            for (size_t oi = 0; oi < order.size(); ++oi)
+            {
                 const size_t i = order[oi];
 
-                int  maxDependencyBatch = -1; // 自分がどこのバッチに入るべきか
+                int  maxDependencyBatch = -1; // 待つ必要がある相手のうち、最も後ろのバッチ番号
                 auto readsI             = systems[i]->GetReadTypes();
                 auto writesI            = systems[i]->GetWriteTypes();
 
-                // 自分より前に置かれたシステム j と競合しないかを全部見る
-                for (size_t oj = 0; oj < oi; ++oj) {
+                for (size_t oj = 0; oj < oi; ++oj)
+                {
                     const size_t j        = order[oj];
                     bool         conflict = false;
 
-                    // ステージ（優先度）の境界線は絶対の壁。
-                    // 優先度が違うシステム同士はデータに関係なく必ず順番を待つ。
-                    if (systems[i]->GetPriority() != systems[j]->GetPriority()) {
+                    // ステージ（優先度）の境界は絶対の壁。
+                    // 優先度が違う System 同士はデータに関係なく必ず順番を待つ。
+                    if (systems[i]->GetPriority() != systems[j]->GetPriority())
+                    {
                         conflict = true;
                     }
-                    else if (HasExplicitOrder(*systems[i], *systems[j])) {
+                    else if (HasExplicitOrder(*systems[i], *systems[j]))
+                    {
                         // 明示的な順序宣言があれば、型が無関係でも直列化する。
                         // Phase 0 で j が先に来るよう並べ替え済みなので、
                         // ここで直列化すれば宣言通りの順序になる。
                         conflict = true;
                     }
-                    else {
-                        // --- 型競合のチェック（並列化してよいかの判定） ---
+                    else
+                    {
+                        // 型競合のチェック（並列化してよいかの判定）
                         auto readsJ  = systems[j]->GetReadTypes();
                         auto writesJ = systems[j]->GetWriteTypes();
 
                         bool typeConflict = false;
-                        for (auto w : writesI) {
-                            if (Contains(readsJ, w) || Contains(writesJ, w)) {
+                        for (auto w : writesI)
+                        {
+                            if (Contains(readsJ, w) || Contains(writesJ, w))
+                            {
                                 typeConflict = true;
                                 break;
                             }
                         }
-                        if (!typeConflict) {
-                            for (auto r : readsI) {
-                                if (Contains(writesJ, r)) {
+                        if (!typeConflict)
+                        {
+                            for (auto r : readsI)
+                            {
+                                if (Contains(writesJ, r))
+                                {
                                     typeConflict = true;
                                     break;
                                 }
                             }
                         }
 
-                        // Chunk単位の競合チェックは初期化時点の情報しか持てず、
+                        // Chunk 単位の競合チェックは初期化時点の情報しか持てず、
                         // 実行中に Chunk が変わると誤判定するため無効のまま。
 
-                        if (typeConflict) {
+                        if (typeConflict)
+                        {
                             conflict = true;
 
                             // 型は競合するのに順序が宣言されていない ＝ 順序不定。
                             // 直列化はされるが、どちらが先かは並び順まかせになる。
                             // 潜在バグとして記録し、起動時にまとめて報告する。
                             m_ambiguities.push_back({systems[j]->GetName(),
-                                systems[i]->GetName(),
-                                systems[i]->GetPriority()});
+                                                     systems[i]->GetName(),
+                                                     systems[i]->GetPriority()});
                         }
                     }
 
-                    if (conflict) {
+                    if (conflict)
+                    {
                         maxDependencyBatch = (std::max)(maxDependencyBatch, batchIndexOf[j]);
                     }
                 }
 
                 batchIndexOf[i] = maxDependencyBatch + 1;
 
-                if (static_cast<size_t>(batchIndexOf[i]) >= m_executionBatches.size()) {
+                if (static_cast<size_t>(batchIndexOf[i]) >= m_executionBatches.size())
+                {
                     m_executionBatches.resize(batchIndexOf[i] + 1);
                 }
                 m_executionBatches[batchIndexOf[i]].push_back(systems[i].get());
             }
         }
 
-        // ------------------------------------------------------------
         // 順序が不定なペア（同一ステージ・型競合あり・順序宣言なし）
-        // ------------------------------------------------------------
-        struct Ambiguity {
+        struct Ambiguity
+        {
             std::string first;    // 今の並びで先に走る方
             std::string second;   // 今の並びで後に走る方
             int         priority; // 両者が属するステージ値
@@ -146,70 +160,73 @@ namespace CCL::ECS {
 
         const std::vector<Ambiguity> &GetAmbiguities() const { return m_ambiguities; }
 
-        // ------------------------------------------------------------
-        // 検出した順序不定ペアを Logger へ出力する
-        // ------------------------------------------------------------
-        // 「直列化はされているが、どちらが先かはソートの並び順で決まっている」組を
-        // 全部出す。ここに出たペアに実際の依存関係があるなら、GetRunAfter で順序を
-        // 宣言するか、ステージを分けること。逆に本当に順不同でよいなら放置してよい。
+        /**
+         * @brief 検出した順序不定ペアを Logger へ出力する。
+         *
+         * 「直列化はされているが、どちらが先かはソートの並び順で決まっている」組を
+         * 全部出す。ここに出たペアに実際の依存関係があるなら、GetRunAfter で順序を
+         * 宣言するか、ステージを分けること。本当に順不同でよいなら放置してよい。
+         *
+         * @param groupLabel ログに付けるグループ名（"Logic" / "Render"）
+         */
         void LogAmbiguities(const char *groupLabel) const
         {
-            if (m_ambiguities.empty()) {
+            if (m_ambiguities.empty())
+            {
                 CCL_LOG_SUCCESS(LogCategory::ECS,
-                    "[Scheduler/%s] 順序が不定なシステムペアはありません", groupLabel);
+                                "[Scheduler/%s] 順序が不定なシステムペアはありません", groupLabel);
                 return;
             }
 
             CCL_LOG_WARN(LogCategory::ECS,
-                "[Scheduler/%s] 順序が不定なシステムペア: %zu 組"
-                "（型は競合するのに前後が宣言されていない。実依存があれば GetRunAfter を書くこと）",
-                groupLabel, m_ambiguities.size());
+                         "[Scheduler/%s] 順序が不定なシステムペア: %zu 組"
+                         "（型は競合するのに前後が宣言されていない。実依存があれば GetRunAfter を書くこと）",
+                         groupLabel, m_ambiguities.size());
 
-            for (const Ambiguity &a : m_ambiguities) {
+            for (const Ambiguity &a : m_ambiguities)
+            {
                 CCL_LOG_WARN(LogCategory::ECS,
-                    "    [stage %4d] %s -> %s  (今はこの順。保証はされていない)",
-                    a.priority, a.first.c_str(), a.second.c_str());
+                             "    [stage %4d] %s -> %s  (今はこの順。保証はされていない)",
+                             a.priority, a.first.c_str(), a.second.c_str());
             }
         }
 
-        // 構築されたバッチ順に実行する
+        // 構築したバッチを順に実行する。バッチ内の System は並列に走らせる
         void Execute(float dt, JobSystem *jobSystem)
         {
-            // バッチ（シフト表のまとまり）ごとに順番に見ていく
-            for (auto &batch : m_executionBatches) {
+            for (auto &batch : m_executionBatches)
+            {
                 if (batch.empty()) continue;
 
-                 // ① バッチが1個 or プール未注入なら直列実行
-                //    （jobSystem==nullptr の安全弁：プール無しでも必ず動く）
-                if (batch.size() == 1 || jobSystem == nullptr) {
-                    for (SystemBase* sys : batch) {
+                // バッチ内が1個なら並列化の意味が無い。
+                // プール未注入（nullptr）でも必ず動くよう、ここで直列に逃がす。
+                if (batch.size() == 1 || jobSystem == nullptr)
+                {
+                    for (SystemBase *sys : batch)
+                    {
                         sys->UpdateImpl(dt);
                     }
                 }
-                // ② バッチの中にシステムが複数（並列可能）ある場合
-                else {
-                    // バッチ内に複数システムがある = 完全にデータが独立している = 超並列実行可能！
+                else
+                {
+                    // 同じバッチの System 同士はデータが競合しないことが保証済み
                     JobCounter counter;
 
-                    // システムの数だけ、JobSystem（厨房）に仕事を投げる
-                    for (SystemBase *sys : batch) {
-                        // 【バトンの作成】
-                        // [sys, dt] をキャプチャ（メモリ上にコピー）し、
-                        // 「sys->UpdateImpl(dt) を実行する」という関数ポインタ（ラムダ式）を作る。
+                    for (SystemBase *sys : batch)
+                    {
+                        // ジョブはループを抜けた後に別スレッドで走るので、
+                        // sys と dt は参照ではなく値でキャプチャしておく
                         auto jobTask = [sys, dt]() { sys->UpdateImpl(dt); };
 
-                        // 【バトンの投下】
-                        // そのラムダ式と、カウンターのポインタを JobSystem に渡す。
                         jobSystem->Execute(jobTask, &counter);
                     }
-                    // このバッチの全システムが終わるまで待つ
+                    // 次のバッチはこのバッチの結果に依存するので、全員の完了を待つ
                     jobSystem->WaitForCounter(&counter);
                 }
             }
         }
 
-      private:
-        // あるTypeIDのリストに、特定のTypeIDが含まれているか
+    private:
         bool Contains(const std::vector<TypeID> &list, TypeID val) const
         {
             return std::find(list.begin(), list.end(), val) != list.end();
@@ -218,22 +235,27 @@ namespace CCL::ECS {
         // a と b の間に明示的な順序宣言があるか（どちら向きでも true）
         static bool HasExplicitOrder(const SystemBase &a, const SystemBase &b)
         {
-            for (const char *nm : a.GetRunAfter())  if (nm && b.GetName() == nm) return true;
-            for (const char *nm : a.GetRunBefore()) if (nm && b.GetName() == nm) return true;
-            for (const char *nm : b.GetRunAfter())  if (nm && a.GetName() == nm) return true;
-            for (const char *nm : b.GetRunBefore()) if (nm && a.GetName() == nm) return true;
+            for (const char *nm : a.GetRunAfter())
+                if (nm && b.GetName() == nm) return true;
+            for (const char *nm : a.GetRunBefore())
+                if (nm && b.GetName() == nm) return true;
+            for (const char *nm : b.GetRunAfter())
+                if (nm && a.GetName() == nm) return true;
+            for (const char *nm : b.GetRunBefore())
+                if (nm && a.GetName() == nm) return true;
             return false;
         }
 
-        // ------------------------------------------------------------
-        // ResolveExplicitOrder
-        // ------------------------------------------------------------
-        // systems は Priority 昇順（同値は System 名順）に並んでいる前提。
-        // 同一 Priority の区間ごとに GetRunAfter / GetRunBefore を辺とみなして
-        // トポロジカルソート（Kahn法）し、実行順の添字列を返す。
-        //
-        // 決定性のため、同時に実行可能になった候補は常に元の並び（＝名前順）で
-        // 取り出す。宣言が1つも無ければ結果は入力と完全に同じ並びになる。
+        /**
+         * @brief 同一 Priority の区間ごとに順序宣言をトポロジカルソートし、実行順の添字列を返す。
+         *
+         * GetRunAfter / GetRunBefore を辺とみなして Kahn 法で並べる。
+         * 決定性のため、同時に実行可能になった候補は常に元の並び（＝名前順）で
+         * 取り出す。宣言が1つも無ければ結果は入力と完全に同じ並びになる。
+         *
+         * @param systems Priority 昇順（同値は System 名順）に並んでいる前提
+         * @return systems への添字を実行順に並べたもの
+         */
         std::vector<size_t> ResolveExplicitOrder(
             const std::vector<std::unique_ptr<SystemBase>> &systems) const
         {
@@ -241,25 +263,29 @@ namespace CCL::ECS {
             std::vector<size_t> result;
             result.reserve(n);
 
-            // 名前 -> 添字。宣言の検証に使うので全システムを対象にする。
+            // 名前 -> 添字。別ステージを指す宣言も検出したいので全 System を対象にする
             std::unordered_map<std::string, size_t> indexByName;
-            for (size_t i = 0; i < n; ++i) indexByName[systems[i]->GetName()] = i;
+            for (size_t i = 0; i < n; ++i)
+                indexByName[systems[i]->GetName()] = i;
 
             size_t bandStart = 0;
-            while (bandStart < n) {
+            while (bandStart < n)
+            {
                 // 同一 Priority の区間 [bandStart, bandEnd) を切り出す
                 size_t    bandEnd = bandStart;
                 const int prio    = systems[bandStart]->GetPriority();
-                while (bandEnd < n && systems[bandEnd]->GetPriority() == prio) ++bandEnd;
+                while (bandEnd < n && systems[bandEnd]->GetPriority() == prio)
+                    ++bandEnd;
 
                 const size_t count = bandEnd - bandStart;
-                if (count == 1) {
+                if (count == 1)
+                {
                     result.push_back(bandStart);
                     bandStart = bandEnd;
                     continue;
                 }
 
-                // 区間内の局所添字で隣接リストを組む
+                // 区間内の局所添字で隣接リストと入次数を組む
                 std::vector<std::vector<size_t>> next(count);
                 std::vector<int>                 indeg(count, 0);
 
@@ -276,20 +302,22 @@ namespace CCL::ECS {
                     if (name == nullptr) return false;
 
                     auto it = indexByName.find(name);
-                    if (it == indexByName.end()) {
+                    if (it == indexByName.end())
+                    {
                         CCL_LOG_ERROR(LogCategory::ECS,
-                            "[Scheduler] %s の順序宣言 \"%s\" に該当するシステムがありません"
-                            "（綴り間違い、または未登録）",
-                            owner.GetName().c_str(), name);
+                                      "[Scheduler] %s の順序宣言 \"%s\" に該当するシステムがありません"
+                                      "（綴り間違い、または未登録）",
+                                      owner.GetName().c_str(), name);
                         return false;
                     }
 
                     const size_t g = it->second;
-                    if (systems[g]->GetPriority() != prio) {
+                    if (systems[g]->GetPriority() != prio)
+                    {
                         CCL_LOG_WARN(LogCategory::ECS,
-                            "[Scheduler] %s (stage %d) の順序宣言 \"%s\" は別ステージ (stage %d) を"
-                            "指しています。ステージが違えば順序は元から保証されるため不要です",
-                            owner.GetName().c_str(), prio, name, systems[g]->GetPriority());
+                                     "[Scheduler] %s (stage %d) の順序宣言 \"%s\" は別ステージ (stage %d) を"
+                                     "指しています。ステージが違えば順序は元から保証されるため不要です",
+                                     owner.GetName().c_str(), prio, name, systems[g]->GetPriority());
                         return false;
                     }
 
@@ -298,7 +326,8 @@ namespace CCL::ECS {
                     return true;
                 };
 
-                for (size_t k = 0; k < count; ++k) {
+                for (size_t k = 0; k < count; ++k)
+                {
                     const SystemBase &sys   = *systems[bandStart + k];
                     size_t            other = 0;
 
@@ -311,48 +340,59 @@ namespace CCL::ECS {
                         if (resolveLocal(sys, nm, other)) addEdge(k, other);
                 }
 
-                // Kahn法。候補は常に局所添字の小さい順（＝名前順）で取るので結果は決定的。
+                // Kahn 法。候補は常に局所添字の小さい順（＝名前順）で取るので結果は決定的
                 std::vector<size_t> sorted;
                 sorted.reserve(count);
                 std::vector<bool> done(count, false);
 
-                for (size_t step = 0; step < count; ++step) {
+                for (size_t step = 0; step < count; ++step)
+                {
                     size_t pick = count;
-                    for (size_t k = 0; k < count; ++k) {
-                        if (!done[k] && indeg[k] == 0) { pick = k; break; }
+                    for (size_t k = 0; k < count; ++k)
+                    {
+                        if (!done[k] && indeg[k] == 0)
+                        {
+                            pick = k;
+                            break;
+                        }
                     }
 
-                    if (pick == count) {
+                    if (pick == count)
+                    {
                         // 入次数0が無い ＝ 宣言が循環している。
                         // 順序を決められないので、残りは名前順のまま流して続行する。
                         CCL_LOG_ERROR(LogCategory::ECS,
-                            "[Scheduler] stage %d の順序宣言に循環があります。"
-                            "残り %zu システムは名前順で実行します",
-                            prio, count - step);
-                        for (size_t k = 0; k < count; ++k) {
-                            if (!done[k]) { sorted.push_back(k); done[k] = true; }
+                                      "[Scheduler] stage %d の順序宣言に循環があります。"
+                                      "残り %zu システムは名前順で実行します",
+                                      prio, count - step);
+                        for (size_t k = 0; k < count; ++k)
+                        {
+                            if (!done[k])
+                            {
+                                sorted.push_back(k);
+                                done[k] = true;
+                            }
                         }
                         break;
                     }
 
                     done[pick] = true;
                     sorted.push_back(pick);
-                    for (size_t to : next[pick]) --indeg[to];
+                    for (size_t to : next[pick])
+                        --indeg[to];
                 }
 
-                for (size_t local : sorted) result.push_back(bandStart + local);
+                for (size_t local : sorted)
+                    result.push_back(bandStart + local);
                 bandStart = bandEnd;
             }
 
             return result;
         }
 
-
-        // 外側のvector: 順番に実行されるフェーズ（バッチ）
-        // 内側のvector: そのフェーズ内で「同時に並列実行してよい」システムのリスト
+        // 外側: 順番に実行するバッチ／内側: そのバッチ内で同時に並列実行してよい System
         std::vector<std::vector<SystemBase *>> m_executionBatches;
 
-        // BuildGraph 中に検出した「順序が不定なペア」
-        std::vector<Ambiguity> m_ambiguities;
+        std::vector<Ambiguity> m_ambiguities; // BuildGraph 中に検出した順序不定ペア
     };
 } // namespace CCL::ECS

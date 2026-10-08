@@ -1,8 +1,19 @@
-﻿#pragma once
+#pragma once
+// ===========================================================================
+// 概要: 回避ダッシュ中の接触からジャスト回避の成立を判定し、成立時の処理を行う System。
+//
+// 責務:
+//   - JoltCollisionEvent を溜め、Update でジャスト回避の成立を判定する
+//   - 成立したら JustEvadeSuccessEvent と、カメラの画角を広げる要求を発行する
+//   - 成立時にヒットストップと世界スロー、接近の開始、専用モーション、画面演出を始める
+//   - 成立フラグと、同じ相手に続けて成立させないための記録を片付ける
+//
+// 備考: 成立するのは、突撃中のドローンか、判定が開いている Hitbox に受付時間内に触れたときだけ。
+// ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/JustEvadeComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Engine/Time/TimeState.h"
+#include "Engine/Time/Components/TimeState.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 
 #include <vector>
@@ -12,11 +23,11 @@ struct DroneComponent; // ポインタ参照のみのため前方宣言で足り
 // TimeStateComponent が Write なのは、成立時に Time::HitStopEntity が
 // hitStopTimer / freezeScale を書き換えるため（読み取りだけではない）。
 class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
-                            CCL::ECS::Write<JustEvadeComponent>,
-                            CCL::ECS::Write<DashComponent>,
-                            CCL::ECS::Write<TimeStateComponent>>
+                                                  CCL::ECS::Write<JustEvadeComponent>,
+                                                  CCL::ECS::Write<DashComponent>,
+                                                  CCL::ECS::Write<TimeStateComponent>>
 {
-  public:
+public:
     JustEvadeSystem()
         : IfSystem("JustEvadeSystem")
     {
@@ -25,10 +36,12 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
     void Initialize() override;
     void Update(float dt) override;
 
-    // 成立時のイベントハンドラが書く分をテンプレート宣言へ足す。
-    //
-    // テンプレート引数に足すと ForEach の Archetype フィルタまで狭まり、
-    // ループ対象から外れてしまう。フィルタと申告は別物なのでここで足す。
+    /**
+     * @brief 成立時のイベントハンドラが書く型を、テンプレート引数の分に足して申告する。
+     *
+     * テンプレート引数に足すと ForEach の Archetype フィルタまで狭まり、ループの対象から外れてしまう。
+     * フィルタと申告は別なのでここで足す。
+     */
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
     // 接触の配送が終わってから走らせる（同じ L05_Collision のため順序が不定になる）。
@@ -37,17 +50,31 @@ class JustEvadeSystem : public CCL::ECS::IfSystem<JustEvadeSystem,
         return {"JoltCollisionEventSystem"};
     }
 
-  private:
+private:
+    /**
+     * @brief 接触した2体について、ジャスト回避が成立するかを調べ、成立したら記録する。
+     *
+     * 接触イベントはどちらがプレイヤーか決まっていないので、呼び出し側が向きを入れ替えて2回呼ぶ。
+     *
+     * @param playerCandidate プレイヤーかもしれない側。JustEvadeComponent と DashComponent が無ければ何もしない。
+     * @param otherCandidate  ぶつかった相手。突撃中のドローンか、判定が開いているボスの剣のときだけ成立する。
+     */
     void CheckJustEvade(CCL::ECS::EntityID playerCandidate, CCL::ECS::EntityID otherCandidate);
 
-    // このフレームに届いた接触。コールバックが積み、Update が消費して空にする。
+    // このフレームに届いた接触。コールバックが溜め、Update が処理して空にする。
     //
     // EventBus は同期配送なので、コールバック内で判定すると処理が発行元
-    // (JoltCollisionEventSystem)のタスク上で走り、本システムの申告が
-    // スケジューラから見えなくなる。積むだけに留めて判定は Update で行う。
+    // (JoltCollisionEventSystem)のタスク上で走り、この System の申告が
+    // スケジューラから見えなくなる。溜めるだけにして、判定は Update で行う。
     std::vector<JoltCollisionEvent> m_pendingContacts;
 
-    // そのドローンが「今ぶつかったらジャスト回避が成立する相手」かを判定する門番。
-    // 陣形を組んでいるだけのドローンに突っ込んでも回避が暴発しないようにする。
+    /**
+     * @brief そのドローンが、今ぶつかったらジャスト回避が成立する相手かを返す。
+     *
+     * 隊列で待機しているだけのドローンにぶつかっても成立しないようにする。
+     *
+     * @param drone 調べるドローン。
+     * @return 突撃中で、吹き飛ばされていなければ true。
+     */
     bool IsDroneHostile(const DroneComponent *drone) const;
 };

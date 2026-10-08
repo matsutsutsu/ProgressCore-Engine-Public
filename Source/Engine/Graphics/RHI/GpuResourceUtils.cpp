@@ -8,12 +8,11 @@
 #include "Engine/Graphics/RHI/DebugName.h"
 #include <windows.h>
 
-// D3DCompiler ライブラリのリンク
 #pragma comment(lib, "d3dcompiler.lib")
 
-// ==========================================================
-// 常にプロジェクトルートから #include を解決するハンドラ
-// ==========================================================
+// ---------------------------------------------------------------------------
+// HLSL の #include を、プロジェクトのルート・Source/・Assets/ の順に探すハンドラ
+// ---------------------------------------------------------------------------
 class RootInclude : public ID3DInclude
 {
 public:
@@ -42,7 +41,6 @@ public:
                 pathsInfo += "  - " + path + "\n";
             }
 
-            // CCL_LOG_ERRORマクロを使用
             CCL_LOG_ERROR(LogCategory::Render, "HLSL Include Failed!\nRequested File: %s\nCurrent Dir: %s\nChecked Paths:\n%s",
                           pFileName, currentDir, pathsInfo.c_str());
 
@@ -67,9 +65,10 @@ public:
     }
 };
 
-// ==========================================================
+// ---------------------------------------------------------------------------
+// シェーダーの読み込み（.cso）
+// ---------------------------------------------------------------------------
 
-// 頂点シェーダー読み込み
 HRESULT GpuResourceUtils::LoadVertexShader(
     ID3D11Device                  *device,
     const char                    *filename,
@@ -88,7 +87,7 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     long size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    // メモリ上に頂点シェーダーデータを格納する領域を用意する
+    // .cso の中身を読む
     std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
     fread(data.get(), size, 1, fp);
     fclose(fp);
@@ -107,7 +106,6 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     return hr;
 }
 
-// ピクセルシェーダー読み込み
 HRESULT GpuResourceUtils::LoadPixelShader(
     ID3D11Device       *device,
     const char         *filename,
@@ -123,7 +121,7 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     long size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    // メモリ上に頂点シェーダーデータを格納する領域を用意する
+    // .cso の中身を読む
     std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
     fread(data.get(), size, 1, fp);
     fclose(fp);
@@ -135,7 +133,6 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     return hr;
 }
 
-// ジオメトリシェーダー読み込み (.cso)
 HRESULT GpuResourceUtils::LoadGeometryShader(
     ID3D11Device          *device,
     const char            *filename,
@@ -159,7 +156,10 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
     return hr;
 }
 
-// テクスチャ読み込み
+// ---------------------------------------------------------------------------
+// テクスチャ
+// ---------------------------------------------------------------------------
+
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
     const char                *filename,
@@ -233,7 +233,6 @@ HRESULT GpuResourceUtils::LoadTexture(
     return hr;
 }
 
-// テクスチャ読み込み
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
     const void                *data,
@@ -312,7 +311,6 @@ HRESULT GpuResourceUtils::LoadTexture(
     return hr;
 }
 
-// ダミーテクスチャ作成
 HRESULT GpuResourceUtils::CreateDummyTexture(
     ID3D11Device              *device,
     UINT                       color,
@@ -360,11 +358,11 @@ HRESULT GpuResourceUtils::CreateDummyTexture(
     return hr;
 }
 
-// 定数バッファ作成
-HRESULT GpuResourceUtils::CreateConstantBuffer(
-    ID3D11Device  *device,
-    UINT           bufferSize,
-    ID3D11Buffer **constantBuffer)
+// ---------------------------------------------------------------------------
+// バッファ
+// ---------------------------------------------------------------------------
+
+HRESULT GpuResourceUtils::CreateConstantBuffer(ID3D11Device *device, UINT bufferSize, ID3D11Buffer **constantBuffer)
 {
     D3D11_BUFFER_DESC desc{};
     desc.Usage               = D3D11_USAGE_DEFAULT;
@@ -385,7 +383,7 @@ HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT
     D3D11_BUFFER_DESC desc{};
     desc.Usage     = D3D11_USAGE_DYNAMIC;
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    // DYNAMIC の場合は必ず D3D11_CPU_ACCESS_WRITE を指定しなければなりません
+    // DYNAMIC では D3D11_CPU_ACCESS_WRITE が必須
     desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
     desc.MiscFlags           = 0;
     desc.ByteWidth           = bufferSize;
@@ -397,12 +395,10 @@ HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT
     return hr;
 }
 
-// 頂点バッファ作成
-HRESULT GpuResourceUtils::CreateVertexBuffer(
-    ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer)
+HRESULT GpuResourceUtils::CreateVertexBuffer(ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer)
 {
     D3D11_BUFFER_DESC desc{};
-    desc.Usage          = D3D11_USAGE_DEFAULT; // CPUからの書き換えなし
+    desc.Usage          = D3D11_USAGE_DEFAULT;
     desc.ByteWidth      = size;
     desc.BindFlags      = D3D11_BIND_VERTEX_BUFFER;
     desc.CPUAccessFlags = 0;
@@ -413,13 +409,8 @@ HRESULT GpuResourceUtils::CreateVertexBuffer(
     return device->CreateBuffer(&desc, &subData, buffer);
 }
 
-// インデックスバッファ作成
-HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device  *device,
-                                            const UINT    *data, // ここも合わせる
-                                            UINT           size,
-                                            ID3D11Buffer **buffer)
+HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device, const UINT *data, UINT size, ID3D11Buffer **buffer)
 {
-    // 中身はそのまま
     D3D11_BUFFER_DESC desc{};
     desc.Usage          = D3D11_USAGE_DEFAULT;
     desc.ByteWidth      = size;
@@ -432,69 +423,19 @@ HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device  *device,
     return device->CreateBuffer(&desc, &subData, buffer);
 }
 
-bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
-                                          const std::wstring &hlslPath,
-                                          const char         *entryPoint,
-                                          const char         *shaderModel,
-                                          ID3D11PixelShader **pixelShader,
-                                          ID3DBlob          **outShaderBlob)
-{
-    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
-    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
+// ---------------------------------------------------------------------------
+// シェーダーのコンパイル（.hlsl）
+// ---------------------------------------------------------------------------
 
-    // 上で定義したインクルードハンドラをインスタンス化
-    RootInclude rootInclude;
-
-    // 絶対パスに変換する必要はありません！相対パスのまま渡します。
-    // そして D3D_COMPILE_STANDARD_FILE_INCLUDE の代わりに &rootInclude を渡します！
-    HRESULT hr = D3DCompileFromFile(hlslPath.c_str(),
-                                    nullptr,
-                                    &rootInclude, // ココが最大のポイント！
-                                    entryPoint,
-                                    shaderModel,
-                                    D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
-                                    0,
-                                    &shaderBlob,
-                                    &errorBlob);
-
-    // コンパイルエラー時の処理
-    if (FAILED(hr))
-    {
-        if (errorBlob)
-        {
-            OutputDebugStringA("\n[Shader Compile Error]\n");
-            OutputDebugStringA((char *)errorBlob->GetBufferPointer());
-        }
-        else
-        {
-            // ファイルが開けなかった場合
-            OutputDebugStringA("\n[Shader Compile Error] File not found or cannot be opened: ");
-            OutputDebugStringW(hlslPath.c_str());
-            OutputDebugStringA("\n");
-        }
-        return false;
-    }
-
-    // シェーダーオブジェクトの作成
-    hr = device->CreatePixelShader(
-        shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, pixelShader);
-    if (FAILED(hr)) return false;
-
-    // 必要ならBlobを返す
-    if (outShaderBlob)
-    {
-        *outShaderBlob = shaderBlob.Detach();
-    }
-
-    return true;
-}
-
-// 頂点シェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileVertexShader(ID3D11Device       *device,
-                                           const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
-                                           ID3D11VertexShader **vertexShader, ID3D11InputLayout **inputLayout,
-                                           const D3D11_INPUT_ELEMENT_DESC *inputElementDescs, UINT inputElementCount,
-                                           ID3DBlob **outShaderBlob)
+bool GpuResourceUtils::CompileVertexShader(ID3D11Device                   *device,
+                                           const std::wstring             &hlslPath,
+                                           const char                     *entryPoint,
+                                           const char                     *shaderModel,
+                                           ID3D11VertexShader            **vertexShader,
+                                           ID3D11InputLayout             **inputLayout,
+                                           const D3D11_INPUT_ELEMENT_DESC *inputElementDescs,
+                                           UINT                            inputElementCount,
+                                           ID3DBlob                      **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
@@ -512,7 +453,6 @@ bool GpuResourceUtils::CompileVertexShader(ID3D11Device       *device,
     hr = device->CreateVertexShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, vertexShader);
     if (FAILED(hr)) return false;
 
-    // 入力レイアウトが要求されていれば作成
     if (inputLayout && inputElementDescs && inputElementCount > 0)
     {
         hr = device->CreateInputLayout(inputElementDescs, inputElementCount,
@@ -524,10 +464,12 @@ bool GpuResourceUtils::CompileVertexShader(ID3D11Device       *device,
     return true;
 }
 
-// ジオメトリシェーダーの動的コンパイル (.hlsl)
-bool GpuResourceUtils::CompileGeometryShader(ID3D11Device       *device,
-                                             const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
-                                             ID3D11GeometryShader **geometryShader, ID3DBlob **outShaderBlob)
+bool GpuResourceUtils::CompileGeometryShader(ID3D11Device          *device,
+                                             const std::wstring    &hlslPath,
+                                             const char            *entryPoint,
+                                             const char            *shaderModel,
+                                             ID3D11GeometryShader **geometryShader,
+                                             ID3DBlob             **outShaderBlob)
 {
     Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
@@ -549,7 +491,59 @@ bool GpuResourceUtils::CompileGeometryShader(ID3D11Device       *device,
     return true;
 }
 
-// コンピュートシェーダーの動的コンパイル (.hlsl)
+bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
+                                          const std::wstring &hlslPath,
+                                          const char         *entryPoint,
+                                          const char         *shaderModel,
+                                          ID3D11PixelShader **pixelShader,
+                                          ID3DBlob          **outShaderBlob)
+{
+    Microsoft::WRL::ComPtr<ID3DBlob> shaderBlob = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
+
+    // D3D_COMPILE_STANDARD_FILE_INCLUDE はファイルの場所から相対で探すので、
+    // プロジェクトのルートから探す RootInclude を渡す（hlslPath は相対パスのままでよい）
+    RootInclude rootInclude;
+
+    HRESULT hr = D3DCompileFromFile(hlslPath.c_str(),
+                                    nullptr,
+                                    &rootInclude,
+                                    entryPoint,
+                                    shaderModel,
+                                    D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
+                                    0,
+                                    &shaderBlob,
+                                    &errorBlob);
+
+    if (FAILED(hr))
+    {
+        if (errorBlob)
+        {
+            OutputDebugStringA("\n[Shader Compile Error]\n");
+            OutputDebugStringA((char *)errorBlob->GetBufferPointer());
+        }
+        else
+        {
+            // エラーの内容が無いのは、ファイルを開けなかったとき
+            OutputDebugStringA("\n[Shader Compile Error] File not found or cannot be opened: ");
+            OutputDebugStringW(hlslPath.c_str());
+            OutputDebugStringA("\n");
+        }
+        return false;
+    }
+
+    hr = device->CreatePixelShader(
+        shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, pixelShader);
+    if (FAILED(hr)) return false;
+
+    if (outShaderBlob)
+    {
+        *outShaderBlob = shaderBlob.Detach();
+    }
+
+    return true;
+}
+
 bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
                                             const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
                                             ID3D11ComputeShader **computeShader, ID3DBlob **outShaderBlob)
@@ -558,40 +552,33 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
     Microsoft::WRL::ComPtr<ID3DBlob> errorBlob  = nullptr;
     RootInclude                      rootInclude;
 
-    // HLSLファイルのコンパイル
     HRESULT hr = D3DCompileFromFile(hlslPath.c_str(), nullptr, &rootInclude,
                                     entryPoint, shaderModel, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, &shaderBlob, &errorBlob);
 
-    // エラーハンドリング
     if (FAILED(hr))
     {
         if (errorBlob)
         {
-            // エラー内容をログに出力 (%ls は std::wstring 用のフォーマット指定子)
+            // %ls はワイド文字列の書式指定
             CCL_LOG_ERROR(LogCategory::Render, "Compute Shader Compile Error [%ls]\n%s",
                           hlslPath.c_str(), (char *)errorBlob->GetBufferPointer());
         }
         else
         {
-            // ファイルが見つからない場合
+            // エラーの内容が無いのは、ファイルを開けなかったとき
             CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
         }
         return false;
     }
 
-    // デバイス上にコンピュートシェーダーを作成
     hr = device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr, computeShader);
     if (FAILED(hr)) return false;
 
-    // 必要に応じてコンパイル済みバイナリ（Blob）を返す
     if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
 
     return true;
 }
 
-// コンピュートシェーダー読み込み (.cso)
-//   VS/PS/GS の Load* と同じく、事前コンパイル済み .cso を読んでそのまま生成する。
-//   HLSL ソースを同梱しない製品(Shipping)ビルド向け。
 HRESULT GpuResourceUtils::LoadComputeShader(
     ID3D11Device         *device,
     const char           *filename,

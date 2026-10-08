@@ -1,34 +1,28 @@
 #pragma once
+// ===========================================================================
+// 概要: ナビメッシュで移動するキャラクターの目的地・経路・希望速度を持つコンポーネント。
+//
+// 責務:
+//   - AI が決めた目的地と速度を、経路探索（NavPathfindingSystem）と
+//     操舵（NavSteeringSystem）へ受け渡す
+//
+// 備考: AI の状態や物理の計算は持たず、移動に必要な値だけを持つ。
+// ===========================================================================
 #include <DirectXMath.h>
 #include <vector>
 
-// ===================================================================================
-// 【 ナビゲーションデータ : NavAgentComponent 】
-//
-// [ 役割 ]
-// キャラクターの「目的地」「経路」「希望速度」を保持する。
-// 脳（AI）と神経（Navigation）と肉体（Physics）を繋ぐための共通インターフェース。
-//
-// [ 設計思想 ]
-// 連続したメモリに配置されるPOD（Plain Old Data）として設計。
-// 物理計算やAIの具体的なステートは持たず、移動に必要な「純粋な数値」のみを管理する。
-// ===================================================================================
+struct NavAgentComponent
+{
+    DirectX::XMFLOAT3 targetPosition = {0.0f, 0.0f, 0.0f}; // 目的地（ワールド座標）
 
-struct NavAgentComponent {
-    // 目的地
-    DirectX::XMFLOAT3 targetPosition = { 0.0f, 0.0f, 0.0f };
-
-    // String Pulling で計算された最短経路の頂点リスト（最大16〜32個程度で十分）
+    // String Pulling で求めた最短経路の頂点（ワールド座標）
     std::vector<DirectX::XMFLOAT3> waypoints;
 
-    // 現在向かっているウェイポイントのインデックス
-    int currentWaypointIndex = 0;
+    int currentWaypointIndex = 0; // 今向かっている waypoints の番号
 
-    // 経路探索を要求したかどうかのフラグ
-    bool isPathRequested = false;
+    bool isPathRequested = false; // true にすると次の経路探索で計算し直される
 
-    // 外部の脳（AIやスクリプト）が指定する「現在の目標移動速度」
-    float currentDesiredSpeed = 0.0f;
+    float currentDesiredSpeed = 0.0f; // AI が指定する移動速度（m/秒）
 
-    float stopDistance = 0.5f;
+    float stopDistance = 0.5f; // この距離（m）まで近づいたら次の waypoint へ進む
 };

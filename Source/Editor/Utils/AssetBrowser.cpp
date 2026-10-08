@@ -1,40 +1,74 @@
 #include "AssetBrowser.h"
 #include <imgui.h>
-#include <DirectXTex.h>
-#include <wrl/client.h>
-#include <iostream>
 #include <algorithm>
-#include <imgui_internal.h>
 #include "ShellIconLoader.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/Resource/ModelResource.h" // .model.json の判定を共有する
 
-// Tracy プロファイラをインクルード
 #include <tracy/Tracy.hpp>
 
-using namespace DirectX;
-using Microsoft::WRL::ComPtr;
-
-//----------------------------------------------
-// Splitter (左右ペインリサイズバー)
-//----------------------------------------------
-static void Splitter(bool split_vertically, float thickness, float *size0, float *size1, float min_size0, float min_size1)
+namespace
 {
-    ImVec2 backup_pos = ImGui::GetCursorPos();
-    ImGui::Button("##splitter", split_vertically ? ImVec2(thickness, *size0 + *size1) : ImVec2(*size0 + *size1, thickness));
-    if (ImGui::IsItemActive())
+    /**
+     * @brief 2つのペインの境目のつまみを描く。ドラッグした分だけ size0 と size1 をやり取りする。
+     * @param split_vertically true なら左右に分ける縦のつまみ、false なら上下に分ける横のつまみ。
+     * @param thickness        つまみの太さ（px）。
+     * @param size0            1つ目（左・上）のペインの大きさ（px）。ドラッグで書き換える。
+     * @param size1            2つ目（右・下）のペインの大きさ（px）。ドラッグで書き換える。
+     * @param min_size0        1つ目のペインの最小の大きさ（px）。
+     * @param min_size1        2つ目のペインの最小の大きさ（px）。
+     */
+    void Splitter(bool split_vertically, float thickness, float *size0, float *size1, float min_size0, float min_size1)
     {
-        float delta = split_vertically ? ImGui::GetIO().MouseDelta.x : ImGui::GetIO().MouseDelta.y;
-        if (delta < min_size0 - *size0) delta = min_size0 - *size0;
-        if (delta > *size1 - min_size1) delta = *size1 - min_size1;
-        *size0 += delta;
-        *size1 -= delta;
+        ImVec2 backup_pos = ImGui::GetCursorPos();
+        ImGui::Button("##splitter", split_vertically ? ImVec2(thickness, *size0 + *size1) : ImVec2(*size0 + *size1, thickness));
+        if (ImGui::IsItemActive())
+        {
+            float delta = split_vertically ? ImGui::GetIO().MouseDelta.x : ImGui::GetIO().MouseDelta.y;
+            if (delta < min_size0 - *size0) delta = min_size0 - *size0;
+            if (delta > *size1 - min_size1) delta = *size1 - min_size1;
+            *size0 += delta;
+            *size1 -= delta;
+        }
+        ImGui::SetCursorPos(backup_pos);
     }
-    ImGui::SetCursorPos(backup_pos);
-}
 
-//----------------------------------------------
+    /**
+     * @brief ファイルをドラッグ＆ドロップの送り元にする。受け取るのは HierarchyWindow。
+     *
+     * ツリーとグリッドの両方から呼ぶ（別々に書くと、受け付ける拡張子が食い違う）。
+     *
+     * @param filePath 送るファイルのパス。
+     * @param name     ドラッグ中に表示する名前。
+     */
+    void DragSourceForFile(const std::string &filePath, const std::string &name)
+    {
+        if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) return;
+
+        // .model.json も拡張子は .json なので、プレハブより先に判定する
+        if (ModelResource::IsModelSetFile(filePath.c_str()))
+        {
+            ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
+            ImGui::Text("Load Model: %s", name.c_str());
+        }
+        else if (filePath.find(".json") != std::string::npos)
+        {
+            ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
+            ImGui::Text("Spawn Prefab: %s", name.c_str());
+        }
+        else if (filePath.find(".glb") != std::string::npos || filePath.find(".gltf") != std::string::npos ||
+                 filePath.find(".fbx") != std::string::npos || filePath.find(".obj") != std::string::npos)
+        {
+            ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
+            ImGui::Text("Load Model: %s", name.c_str());
+        }
+        ImGui::EndDragDropSource();
+    }
+} // namespace
+
+// ---------------------------------------------------------------------------
 // コンストラクタ / デストラクタ
-//----------------------------------------------
+// ---------------------------------------------------------------------------
 AssetBrowser::AssetBrowser(const std::string &rootPath, ID3D11Device *device)
     : rootPath(rootPath), device(device)
 {
@@ -44,6 +78,7 @@ AssetBrowser::AssetBrowser(const std::string &rootPath, ID3D11Device *device)
         {".fbx", "model"},
         {".obj", "model"},
         {".glb", "model"},
+        {".gltf", "model"},
         {".png", "texture"},
         {".jpg", "texture"},
         {".jpeg", "texture"},
@@ -65,9 +100,9 @@ AssetBrowser::~AssetBrowser()
     ShellIconLoader::ClearCache();
 }
 
-//----------------------------------------------
+// ---------------------------------------------------------------------------
 // ツリー構築・初期化
-//----------------------------------------------
+// ---------------------------------------------------------------------------
 void AssetBrowser::Refresh()
 {
     ZoneScopedN("AssetBrowser::Refresh");
@@ -120,6 +155,7 @@ void AssetBrowser::LoadDirectory(const fs::path &dirPath, AssetNode &node)
         }
         else
         {
+            // 空のファイル（サイズ 0）と、サイズを取れないファイルは表示しない
             std::error_code ec;
             if (fs::file_size(entry.path(), ec) && !ec)
             {
@@ -136,7 +172,6 @@ void AssetBrowser::LoadDirectory(const fs::path &dirPath, AssetNode &node)
     });
 }
 
-
 AssetBrowser::AssetNode *AssetBrowser::FindNodeByPath(AssetNode &node, const fs::path &path)
 {
     if (node.path == path) return &node;
@@ -147,9 +182,9 @@ AssetBrowser::AssetNode *AssetBrowser::FindNodeByPath(AssetNode &node, const fs:
     return nullptr;
 }
 
-//----------------------------------------------
-// ナビゲーション (履歴管理)
-//----------------------------------------------
+// ---------------------------------------------------------------------------
+// ナビゲーション（履歴）
+// ---------------------------------------------------------------------------
 void AssetBrowser::NavigateTo(AssetNode *folder)
 {
     if (currentFolder && currentFolder != folder)
@@ -191,9 +226,9 @@ void AssetBrowser::NavigateUp()
     }
 }
 
-//----------------------------------------------
-// メイン描画
-//----------------------------------------------
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
 void AssetBrowser::Draw()
 {
     ZoneScopedN("AssetBrowser::Draw");
@@ -203,6 +238,7 @@ void AssetBrowser::Draw()
     DrawToolbar();
     ImGui::Separator();
 
+    // 左右ペインの幅。全インスタンスで共有する（ブラウザは1つしか作らない）
     static float leftWidth  = 200.0f;
     static float rightWidth = 400.0f;
     float        totalWidth = ImGui::GetContentRegionAvail().x;
@@ -227,9 +263,9 @@ void AssetBrowser::Draw()
     ImGui::End();
 }
 
-//----------------------------------------------
-// UI: ツールバー & パンくずリスト
-//----------------------------------------------
+// ---------------------------------------------------------------------------
+// ツールバーとパンくずリスト
+// ---------------------------------------------------------------------------
 void AssetBrowser::DrawToolbar()
 {
     ZoneScopedN("AssetBrowser::DrawToolbar");
@@ -314,7 +350,7 @@ void AssetBrowser::DrawSearchBar()
         ImGui::BeginTooltip();
         ImGui::Text("Filter by type:");
         ImGui::Separator();
-        ImGui::Checkbox(".fbx/.obj/.glb", &typeFilters["model"]);
+        ImGui::Checkbox(".fbx/.obj/.glb/.gltf", &typeFilters["model"]);
         ImGui::Checkbox(".png/.jpg", &typeFilters["texture"]);
         ImGui::Checkbox(".cpp/.h", &typeFilters["script"]);
         ImGui::Checkbox(".json", &typeFilters["prefab"]);
@@ -322,9 +358,9 @@ void AssetBrowser::DrawSearchBar()
     }
 }
 
-//----------------------------------------------
-// UI: 左ペイン (ツリー構造描画・シングルクリック展開＆ファイル表示版)
-//----------------------------------------------
+// ---------------------------------------------------------------------------
+// 左ペイン（フォルダツリー。1回のクリックで展開し、ファイルも表示する）
+// ---------------------------------------------------------------------------
 void AssetBrowser::DrawFolderTree(AssetNode &node)
 {
     ZoneScopedN("AssetBrowser::DrawFolderTree");
@@ -335,21 +371,20 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     std::string id = node.path.string();
     ImGui::PushID(id.c_str());
 
-    // 改善1: 行全体を当たり判定にする
+    // 行全体をクリックの対象にする
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth;
 
     if (node.isDirectory)
     {
         if (currentFolder == &node) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // 改善2: OpenOnArrow / OpenOnDoubleClick を意図的に「外す」
-        // これにより、1回のクリック（シングルクリック）だけでフォルダが展開・収縮するようになります。
+        // OpenOnArrow / OpenOnDoubleClick は付けない。1回のクリックで展開・収縮させるため
     }
     else
     {
         if (selectedAssetPath == node.path.string()) flags |= ImGuiTreeNodeFlags_Selected;
 
-        // 改善3: ファイルの場合は「矢印なし（Leaf）」かつ「階層を掘らない」フラグを付与
+        // ファイルは矢印なし（Leaf）にし、TreePush もしない
         flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
     }
 
@@ -361,32 +396,28 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     // OSネイティブアイコンの取得（ファイル/フォルダ共通）
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> iconSrv = ShellIconLoader::GetIconSRV(node.path.wstring(), device);
 
-    // ツリーノードの描画（ラベルは空文字にしておき、後で画像を自前で置く）
+    // ツリーノードの描画（ラベルは空にし、後からアイコンと名前を並べる）
     bool nodeOpen = ImGui::TreeNodeEx("##TreeItem", flags, "");
 
-    // -------------------------------------------------------------
-    // クリック判定 (右ペインへの連動)
-    // -------------------------------------------------------------
+    // クリックで右ペインの表示を切り替える
     if (ImGui::IsItemClicked())
     {
         if (node.isDirectory)
         {
-            NavigateTo(&node); // 右ペインをこのフォルダに切り替え
+            NavigateTo(&node);
         }
         else
         {
-            // ファイルをクリックした場合
+            // ファイルなら、右ペインに親フォルダを出してそのファイルを選択する
             if (node.parent)
             {
-                NavigateTo(node.parent); // 右ペインは親フォルダを表示
+                NavigateTo(node.parent);
             }
-            selectedAssetPath = node.path.string(); // ファイルを選択状態にする
+            selectedAssetPath = node.path.string();
         }
     }
 
-    // -------------------------------------------------------------
-    // アイコンとテキストの描画
-    // -------------------------------------------------------------
+    // アイコンと名前
     ImGui::SameLine();
     if (iconSrv)
     {
@@ -400,32 +431,13 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     ImGui::SameLine();
     ImGui::Text("%s", node.name.c_str());
 
-    // -------------------------------------------------------------
-    // 左ツリーからのドラッグ＆ドロップ対応（UXの大幅向上）
-    // -------------------------------------------------------------
+    // ツリーからもドラッグできるようにする
     if (!node.isDirectory)
     {
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-        {
-            std::string filePath = node.path.string();
-            if (filePath.find(".json") != std::string::npos)
-            {
-                ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
-                ImGui::Text("Spawn Prefab: %s", node.name.c_str());
-            }
-            else if (filePath.find(".glb") != std::string::npos || filePath.find(".gltf") != std::string::npos ||
-                     filePath.find(".fbx") != std::string::npos || filePath.find(".obj") != std::string::npos)
-            {
-                ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
-                ImGui::Text("Load Model: %s", node.name.c_str());
-            }
-            ImGui::EndDragDropSource();
-        }
+        DragSourceForFile(node.path.string(), node.name);
     }
 
-    // -------------------------------------------------------------
-    // 子階層の再帰描画（フォルダが開いている場合のみ）
-    // -------------------------------------------------------------
+    // 開いているフォルダだけ子を描く
     if (node.isDirectory)
     {
         if (nodeOpen)
@@ -441,12 +453,13 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     ImGui::PopID();
 }
 
-//----------------------------------------------
-// UI: 右ペイン (コンテンツグリッド)
-//----------------------------------------------
+// ---------------------------------------------------------------------------
+// 右ペイン（アイコンのグリッド）
+// ---------------------------------------------------------------------------
 void AssetBrowser::DrawGridView()
 {
-    ZoneScopedN("AssetBrowser::DrawGridView"); // グリッドの描画負荷を確認（ここで重い場合はImGuiListClipperの導入を検討）
+    // 重い場合は ImGuiListClipper で見えている行だけを描く
+    ZoneScopedN("AssetBrowser::DrawGridView");
 
     AssetNode   *folder   = currentFolder ? currentFolder : &rootNode;
     static float iconSize = 72.0f;
@@ -507,21 +520,7 @@ void AssetBrowser::DrawGridView()
 
             if (!child.isDirectory)
             {
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-                {
-                    std::string filePath = child.path.string();
-                    if (filePath.find(".json") != std::string::npos)
-                    {
-                        ImGui::SetDragDropPayload("ASSET_PREFAB", filePath.c_str(), filePath.size() + 1);
-                        ImGui::Text("Spawn Prefab: %s", child.name.c_str());
-                    }
-                    else if (filePath.find(".glb") != std::string::npos || filePath.find(".gltf") != std::string::npos)
-                    {
-                        ImGui::SetDragDropPayload("ASSET_MODEL", filePath.c_str(), filePath.size() + 1);
-                        ImGui::Text("Load Model: %s", child.name.c_str());
-                    }
-                    ImGui::EndDragDropSource();
-                }
+                DragSourceForFile(child.path.string(), child.name);
             }
 
             ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + iconSize);
@@ -534,12 +533,14 @@ void AssetBrowser::DrawGridView()
     }
 }
 
-//----------------------------------------------
+// ---------------------------------------------------------------------------
 // フィルタ判定
-// ※ループ内で数千回呼ばれるため、ZoneScopedN を入れると計測オーバヘッドでフリーズします。入れないでください。
-//----------------------------------------------
+// ---------------------------------------------------------------------------
 bool AssetBrowser::FilterAsset(const AssetNode &node)
 {
+    // ループ内で数千回呼ばれるので ZoneScopedN を入れない（計測の負荷で操作できないほど重くなる）。
+    // 拡張子が extensionMap に無いファイルは表示しない。
+
     if (node.isDirectory) return true;
 
     if (!searchQuery.empty())
@@ -553,6 +554,12 @@ bool AssetBrowser::FilterAsset(const AssetNode &node)
         {
             return false;
         }
+    }
+
+    // .model.json は拡張子が .json だが中身はモデルなので、モデル側に分類する
+    if (ModelResource::IsModelSetFile(node.path.string().c_str()))
+    {
+        return typeFilters.count("model") == 0 || typeFilters["model"];
     }
 
     auto ext = node.path.extension().string();

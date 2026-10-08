@@ -1,0 +1,45 @@
+{
+    "duration": 1.2666666507720947,
+    "events": [
+        {
+            "attackLayer": 4,
+            "cancelMask": 0,
+            "damage": 10.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 1.25,
+            "hitStopDuration": 0.10000000149011612,
+            "hitStopScale": 1.0,
+            "hitboxFollow": true,
+            "knockback": 5.0,
+            "offset": {
+                "x": 0.0,
+                "y": 3.0,
+                "z": 0.0
+            },
+            "radius": 7.0,
+            "startTime": 0.6666666865348816,
+            "stringParam": "",
+            "type": 4
+        }
+    ],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "DashCharge",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "targetAnimName": "Travel_Fwd_Start_0",
+    "targetModelPath": ""
+}

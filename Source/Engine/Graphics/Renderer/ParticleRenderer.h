@@ -1,4 +1,15 @@
 #pragma once
+// ===========================================================================
+// 概要: GPU パーティクルの描画を受け付け、ParticlePass でまとめて描くクラス。
+//
+// 責務:
+//   - GPUParticleRenderSystem が積んだ描画コマンドを1フレーム分ためる
+//   - ブレンドの種類とテクスチャの順に並べ、ステートの切り替えを減らして描く
+//
+// 備考: 粒子の位置などはコンピュートシェーダーが GPU 上のバッファに書いている。
+//       頂点バッファは使わず粒子の数だけ点を描き、ジオメトリシェーダーがそのバッファを読んで
+//       各点を四角形に広げる。
+// ===========================================================================
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/RHI/RenderContext.h"
@@ -7,43 +18,41 @@
 #include <wrl/client.h>
 #include "Engine/Graphics/RHI/PipelineState.h"
 
-// 描画に必要な情報の「引換券（コマンド）」
-struct ParticleDrawCommand {
-    ParticleBufferHandle computeBuffer;
-    TextureHandle        texture;
-    int                  maxCount;    
-    int                  renderMode;  // 0:加算 1:半透明
+// パーティクル1エミッター分の描画コマンド
+struct ParticleDrawCommand
+{
+    ParticleBufferHandle computeBuffer; // 粒子のバッファと定数バッファ
+    TextureHandle        texture;       // 無効なら白
+    int                  maxCount;      // 描く点の数（エミッターの最大粒子数）
+    int                  renderMode;    // 0 = 加算、1 = 半透明
 };
 
-
-// パーティクルの描画を専任で行うクラス
-class ParticleRenderer {
-  public:
+class ParticleRenderer
+{
+public:
     ParticleRenderer()  = default;
     ~ParticleRenderer() = default;
 
+    // サンプラー・白テクスチャ・PSO を作る
     void Initialize(ID3D11Device *device);
 
-    // 毎フレームの頭でバケツを空にする
+    // ためたコマンドを空にする（BaseScene がフレームの最初に呼ぶ）
     void BeginFrame();
 
-    // システムから呼ばれ、バケツにコマンドを積むだけ（ここではDrawしない！）
+    // コマンドをためる。描くのは Render
     void Draw(const ParticleDrawCommand &cmd);
 
-    // =========================================================
-    // 最新のコンテキスト分離（Services / FrameCtx）に対応
-    // =========================================================
-    void Render(const RenderServices& services, const RenderFrameContext& frameCtx);
+    // ためたコマンドを描く（ParticlePass から呼ばれる）
+    void Render(const RenderServices &services, const RenderFrameContext &frameCtx);
 
-  private:
+private:
     std::vector<ParticleDrawCommand> m_drawCommands;
 
-    // --- 描画用リソース ---
     Microsoft::WRL::ComPtr<ID3D11SamplerState>       sampler;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture; // テクスチャが無いときの 1x1 の白
 
-    bool m_isLoaded = false;
+    bool m_isLoaded = false; // Initialize が済んだか
 
-    PipelineState m_psoAdditive;    // 加算パーティクル用
-    PipelineState m_psoTransparent; // 半透明パーティクル用
+    PipelineState m_psoAdditive;    // 加算
+    PipelineState m_psoTransparent; // 半透明
 };
