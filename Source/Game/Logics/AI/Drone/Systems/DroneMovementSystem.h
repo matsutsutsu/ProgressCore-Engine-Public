@@ -15,6 +15,8 @@
 //
 //   補間係数は必ず (std::min)(k * dt, 1.0f) で止める。1 を超えると外挿になって
 //   目標を通り越す（globalScale を 1 より大きくできるので dt 側では保証されない）。
+//
+//   状態ごとの調整値（バネの強さ・速さ・機首を向け直す速さ）は、.cpp の先頭に状態ごとにまとめてある。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
@@ -33,23 +35,26 @@ public:
         : IfSystem("DroneMovementSystem")
     {
     }
-    virtual ~DroneMovementSystem() override = default;
 
-    virtual void Update(float dt) override;
+    void Update(float dt) override;
 
 private:
+    // ---- 状態ごとの移動 ----
     // 各関数は drone.currentVelocity と rotation だけを計算する。
     // trans.position への積分は Update 側の共通処理が担う。
 
-    inline void ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt);
-    inline void ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt);
+    // 陣形へ戻る。隊列を「直す」局面なので、Idle より強いバネで寄せる。
+    void ProcessMoveToTarget(TransformComponent &trans, DroneComponent &drone, float dt);
+
+    // 陣形を保つ。弱いバネで寄せ、ホバーの揺れと予告の震えを足す。
+    void ProcessIdle(TransformComponent &trans, DroneComponent &drone, float dt);
 
     /**
      * @brief 突撃。stateTimer > 0 の間が「タメ」、0 になった瞬間から「リリース」（高速直進）。
      *
      * 内部で2段階を持つので、外からは FireCharge の1状態を見るだけで予兆を表現できる。
      */
-    inline void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
+    void ProcessFireCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 
     /**
      * @brief 隊列を組んだままの突入。剛体追従と違って形が歪む。歪むことがこの技の見た目の要点。
@@ -57,25 +62,22 @@ private:
      * 目標へバネで寄るので、速いほど後ろへ流れ、曲がると遅れて曲がる。
      * 剛体追従にすると隊列がまったく歪まず、「1枚の板が近づいてくる」絵になる。
      */
-    inline void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
+    void ProcessChargeSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt);
 
     /**
-     * @brief 進行方向から姿勢を作る。yaw の式をここ1箇所に閉じ込める。
-     *
-     * ドローンのモデルは前方が -Z。CreateFromYawPitchRoll は行ベクトルで v·Rx(pitch)·Ry(yaw) の順に掛かるので、
-     *   (0,0,-1)·Rx(p) = (0, +sin p, -cos p)        ← pitch = asin(look.y) と一致する
-     *   ここへ Ry(θ) = (-cos p·sin θ, sin p, -cos p·cos θ)
-     * となり、look と突き合わせると θ = atan2(-x, -z)。
-     *
-     * +Z 前提の atan2(x, z) や atan2(x, -z) と混ぜると Z軸に対する鏡像になり、状態が切り替わるたびに機首が最大180°反転する。
-     * ±Z を向いているときだけ一致するので気づきにくい。
-     *
-     * @param look         向かせたい方向。includePitch=true のときだけ正規化が要る（asin に渡すため）。
-     * @param includePitch 上下の傾きも付けるか。false は Idle のように「水平だけ向かせたい」場面用。
-     * @return 機体の姿勢。
+     * @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
+     * @note タイマー管理は DroneBrainSystem 側で、ここは動きだけ。
      */
-    DirectX::SimpleMath::Quaternion LookToRotation(const DirectX::SimpleMath::Vector3 &look,
-                                                   bool                                includePitch) const;
+    void ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt);
+
+    /**
+     * @brief 突き抜けた後、上方へ抜けながら減速する離脱カーブ。
+     *
+     * その場で急旋回させると突撃の勢いが嘘になるので、一度抜けさせてから MoveToTarget に復帰を任せる。
+     */
+    void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
+
+    // ---- 補助 ----
 
     /**
      * @brief 予告の震えの位置オフセットを返す。
@@ -92,44 +94,19 @@ private:
                                               float amplitude) const;
 
     /**
-     * @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
-     * @note タイマー管理は DroneBrainSystem 側で、ここは動きだけ。
-     */
-    inline void ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    /**
-     * @brief 突き抜けた後、上方へ抜けながら減速する離脱カーブ。
+     * @brief slotInSquad から追従の弱さの係数を出す。
      *
-     * その場で急旋回させると突撃の勢いが嘘になるので、一度抜けさせてから MoveToTarget に復帰を任せる。
+     * 後方の機ほど遅れて曲がるので、隊列が先頭から順に曲がっていく。
+     * 編隊で飛んでいるように見えるのは主にこの遅れによる。
+     *
+     * @param drone 係数を出す機体。
+     * @return 追従の弱さの係数（0.15〜1）。
      */
-    inline void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
+    float SlotLag(const DroneComponent &drone) const;
 
-    // 陣形へ戻る（MoveToTarget）。隊列を「直す」局面なので Idle より強い。
-    static constexpr float kMoveToTargetGain       = 20.0f;
-    static constexpr float kMoveToTargetDamping    = 15.0f;
-    static constexpr float kMoveToTargetSpeedScale = 2.5f;
+    // ---- Update の先頭で World リソースから写し取る値（並列ループの中で resource を引かないため） ----
 
-    // 陣形を保つ（Idle）。強くすると目標に貼り付いてホバーのゆらぎが消える。
-    static constexpr float kIdleGain       = 10.0f;
-    static constexpr float kIdleDamping    = 8.0f;
-    static constexpr float kIdleSpeedScale = 1.5f;
-
-    static constexpr float kHoverFrequency = 1.0f; // kHoverPhasePeriod の巻き戻しが成立するよう整数にする
-    static constexpr float kHoverAmplitude = 3.0f; // 上下揺れの加速度の振幅 [m/s²]
-
-    // 突撃のタメ。「静止 → 加速」の2段でジャスト回避を読ませる。
-    //
-    //     |<------ DroneBrainSystem::kChargeWindup (0.4秒) ------>|
-    //     |<-- 静止 (0.2秒) -->|<-- kWindupLungeTime (0.2秒) -->| 射出
-    //
-    //   静止の長さは、タメ全体から加速の長さを引いた残りで決まる。
-    //
-    //   中央で一度止まることで「集まった」と「撃った」が別々の出来事として読める。
-    //   定速にすると速度の段差が2回でき、動きが途切れて見える。
-    static constexpr float kWindupLungeTime  = 0.2f;  // 加速にかける長さ [秒]
-    static constexpr float kWindupLungeSpeed = 20.0f; // 加速の終速 [m/s]
-
-    // 陣形攻撃の予告（震え）の調整値。Update の先頭で World リソースから写し取る。
+    // 陣形攻撃の予告（震え）の調整値。
     //
     // 縦割りのように予備動作でほとんど動かない技は、動きで予告できないので合図の前に震えを出す。
     //
@@ -140,68 +117,7 @@ private:
     // 震え方は目で見ないと決まらないので、定数にせず World リソースが持つ。
     DroneShiverTuning m_shiver{};
 
-    // 位相を機体ごとにずらす幅 [rad]。黄金角なので何機いても一様にばらける。
-    static constexpr float kShiverPhaseStep = 2.39996323f;
-
-    // 突撃の速度倍率。
-    // 実体が DroneTuning.h にあるのは、弾幕の陣形も同じ値で「飛翔時間 = 距離 ÷ 射出速度」を出すため。
-    //
-    // 上げすぎると擦り抜ける。1フレームの移動距離が当たり半径の2倍を超えると、
-    // 跨いで通り過ぎる（半径2.5m・60fps なら 300 m/s が上限の目安）。
-    static constexpr float kChargeSpeedScale = kDroneChargeSpeedScale;
-
-    // 剛体追従（縦割り・挟み込み等）の終わり際に残す惰性。
-    // 形が動いている間の速度をこの割合だけ currentVelocity へ残し、動き切ったあとは Idle のバネへ渡す。
-    //
-    // ここが 0 だと、刃や腕が閉じ切った瞬間に全機が空中で同時に静止し、不自然に見える。
-    //
-    // 倍率をいくつにしても剛体そのものは壊れない。
-    // 残した速度ぶんを座標から引いてから積分へ渡すので、着地点は targetPosition ちょうどになる。
-    static constexpr float kRigidFollowInertia = 0.35f;
-
-    // 上で残す速度の上限（moveSpeed 倍）。腕の外側の機は回転半径ぶん速度が跳ね上がる
-    // ので、そのまま残すと収まらずに飛んでいく。
-    static constexpr float kRigidFollowInertiaMaxScale = 0.6f;
-
-    // 姿勢の追従速度（1/秒）。離脱だけ鈍いのは「制御を取り戻しつつある」表現。
-    static constexpr float kTurnMoveToTarget = 25.0f;
-    static constexpr float kTurnIdle         = 15.0f;
-    static constexpr float kTurnFireDelay    = 15.0f;
-    static constexpr float kTurnWindup       = 20.0f;
-    static constexpr float kTurnCharge       = 25.0f;
-    static constexpr float kTurnSoftFollow   = 12.0f;
-    static constexpr float kTurnReturning    = 8.0f;
-
-    static constexpr float kStunTumbleRate = 4.0f;  // 吹き飛ばし中の回転 [rad/s]
-    static constexpr float kKnockbackDecay = 6.0f;  // 吹き飛ばし速度の減衰率 [1/s]
-    static constexpr float kBreakawayLift  = 18.0f; // 離脱時に上方向へ加える加速度 [m/s²]
-
-    // 浮き上がりを効かせ始める速さ [m/s]。全速のまま上向きの力を加えると、
-    // 突き抜けた瞬間に軌道が跳ね上がる。
-    static constexpr float kBreakawayFastSpeed = 40.0f;
-
-    static constexpr float kBreakawayDrag = 2.5f; // 離脱中の減速率 [1/s]
-
-    // 隊列追従の滑らかさと最高速度倍率（小隊のアンカーの突入速度を上回る必要がある）。
-    static constexpr float kSoftFollowDamping       = 10.0f;
-    static constexpr float kSoftFollowMaxSpeedScale = 2.4f;
-
-    /**
-     * @brief slotInSquad から追従の弱さの係数を出す。
-     *
-     * 後方の機ほど遅れて曲がるので、隊列が先頭から順に曲がっていく。
-     * 編隊で飛んでいるように見えるのは主にこの遅れによる。
-     *
-     * @param drone 係数を出す機体。
-     * @return 追従の弱さの係数。
-     */
-    float SlotLag(const DroneComponent &drone) const
-    {
-        const float lag = 1.0f - static_cast<float>(drone.slotInSquad) * m_slotLagPerSlot;
-        return (lag < 0.15f) ? 0.15f : lag; // 遅れすぎて隊列から離れないよう下限を置く
-    }
-
-    // SquadTuning から Update の先頭で写し取る（並列ループから resource を引かない）。
+    // 小隊の追従（SquadTuning から写し取る）。
     float m_followGain     = 10.0f;
     float m_slotLagPerSlot = 0.06f;
 };
