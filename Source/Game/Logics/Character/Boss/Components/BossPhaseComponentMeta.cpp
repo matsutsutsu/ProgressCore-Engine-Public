@@ -27,11 +27,14 @@ struct ComponentMeta<BossPhaseComponent>
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(phase2AssetPath, "第2形態AIパス", "Phase")
             CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "Phase")
+            CFIELD(introAssetPath, "序盤(チュートリアル)AIパス", "Intro")
+            CFIELD_FLOAT_RANGED(introMaxDuration, "序盤の上限時間(秒)", 1.0f, 0.0f, 600.0f, "Intro")
             // 形態とタイマーは実行時の値。保存しない。
             //   Dead や Transition のまま保存すると、次の個体が
             //   「死んだ状態」「形態移行の演出中」で生まれてくる。
             CFIELD_ENUM_U8_RT(phase, "現在の形態", kBossPhaseNames, kBossPhaseCount, "State")
-            CFIELD_RT(timer, "状態滞在タイマー", "State")};
+            CFIELD_RT(timer, "状態滞在タイマー", "State")
+            CFIELD_RT(introDone, "序盤を終えた", "State")};
         return fields;
     }
 };

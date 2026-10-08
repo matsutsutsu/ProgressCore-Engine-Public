@@ -291,6 +291,9 @@
     <Filter Include="Source\Engine\Timeline\Systems">
       <UniqueIdentifier>{5ce0ab99-f433-4897-aae7-e46284c3fa88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Tutorial">
+      <UniqueIdentifier>{848207fd-b731-407f-b63a-7a6c32fd122b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Cinematic">
       <UniqueIdentifier>{7e55d52c-76a1-41ac-bc25-ac0821a62db0}</UniqueIdentifier>
     </Filter>
@@ -815,6 +818,15 @@
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSystem.h">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
@@ -2224,6 +2236,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>

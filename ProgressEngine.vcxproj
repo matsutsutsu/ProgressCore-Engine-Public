@@ -763,6 +763,9 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h" />
@@ -1246,6 +1249,8 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp" />

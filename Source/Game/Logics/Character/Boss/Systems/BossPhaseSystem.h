@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ボスの形態（第1形態 / 移行演出 / 第2形態 / 死亡）を決める System。
+// 概要: ボスの形態（序盤 / 第1形態 / 移行演出 / 第2形態 / 死亡）を決める System。
 //
 // 責務:
 //   - HP と経過時間から、次の形態を決める
@@ -56,9 +56,16 @@ public:
     void Update(float dt) override;
 
 private:
-    // このフレームの遷移先を決める。優先度順に調べ、最初に成立したものを返す。
+    /**
+     * @brief このフレームの遷移先を決める。優先度順に調べ、最初に成立したものを返す。
+     * @param phase           今の形態と設定値。
+     * @param health          ボスの HP。
+     * @param tutorialRunning チュートリアルを教えている途中か。true の間だけ序盤（Intro）に入る・留まる。
+     * @return 遷移先の形態。変わらなければ今の形態。
+     */
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
-                              const HealthComponent    &health) const;
+                              const HealthComponent    &health,
+                              bool                      tutorialRunning) const;
 
     // 形態に入った瞬間だけ走る処理（BT では書きにくい部分）。
     void OnEnterPhase(BossPhase                next,
