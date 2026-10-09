@@ -559,6 +559,9 @@
     <Filter Include="Source\Game\Logics\AI\Drone\Systems">
       <UniqueIdentifier>{2b6eeb49-e136-43e4-ba45-7eb93f93ada6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AI\Drone\Motion">
+      <UniqueIdentifier>{d9180626-c400-4155-bf53-77b4b318d3cb}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\Drone\Formation">
       <UniqueIdentifier>{7fb876f4-9c60-4a35-9ec9-43da0f2894c5}</UniqueIdentifier>
     </Filter>
@@ -1956,6 +1959,24 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotionRegistry.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\StraightChargeMotion.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\RigidFollowMotion.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\SoftFollowMotion.h">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
@@ -3046,6 +3067,21 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotionRegistry.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\StraightChargeMotion.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\RigidFollowMotion.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\SoftFollowMotion.cpp">
+      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>

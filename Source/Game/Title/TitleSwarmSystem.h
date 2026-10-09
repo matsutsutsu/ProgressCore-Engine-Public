@@ -62,8 +62,10 @@ private:
 
     static constexpr uint16_t kDroneCount = 50; // 群れの機数
 
-    // 小隊の人数。SlotLag（小隊の後ろの機ほど追従が遅れる）を効かせて、追従の速さに個体差を出す
-    static constexpr uint16_t kSquadSize = 7;
+    // 追従の個体差の組の大きさと、組の中で1つ後ろの番号ごとにバネを弱める割合。
+    // 後ろの機ほど遅れて付いてくる（本編の小隊 Formations_Squad.h の kSpringLagPerSlot と同じ式・同じ値）
+    static constexpr uint16_t kLagGroupSize = 7;
+    static constexpr float    kLagPerSeat   = 0.06f;
 
     float m_elapsed = 0.0f;  // 輪の回転に使う経過時間（秒）
     bool  m_spawned = false; // ドローンを生成したか

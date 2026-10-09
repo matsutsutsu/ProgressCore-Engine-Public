@@ -5,6 +5,7 @@
 // 責務:
 //   - 1機分の持ち場を計算する Calculate を定める
 //   - 攻撃の寿命（ChargeLifecycle）・当たり方（FormationCombat）・予告の有無を陣形ごとに返す
+//   - 突撃の始め方（OnChargeBegin）と切り上げ方（IsChargeOver）を陣形ごとに決める
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
 // 備考:
@@ -18,9 +19,9 @@
 // ===========================================================================
 #include "SimpleMath.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Motion/StraightChargeMotion.h" // 突撃の始め方の既定
 
-// 小隊陣形だけが使う。前方宣言で足りるので、既存の陣形は小隊の実装に引きずられない。
-struct SquadRegistry;
+namespace CCL::ECS { class World; }
 
 namespace CCL::AI::Formation
 {
@@ -47,9 +48,6 @@ namespace CCL::AI::Formation
         // 固定するのは DroneFormationSystem。信号の立ち上がりに1回だけ書き、信号が下りたら解除する。
         DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ;
         bool                         aimLocked = false;
-
-        // 全小隊の状態（小隊陣形のみ使用。未登録なら nullptr）。
-        const ::SquadRegistry *squads = nullptr;
 
         /**
          * @brief 狙う向き（水平・正規化済み）を返す。攻撃陣形は playerPos を直接見ず必ずこれを使う。
@@ -100,12 +98,53 @@ namespace CCL::AI::Formation
     {
         virtual ~IFormation() = default;
 
+        /**
+         * @brief フレームの最初に1回、全機の Calculate より前に呼ぶ。DroneFormationSystem が呼ぶ。
+         *
+         * 陣形が自分だけで使うデータ（小隊の状態など）を、World から自分で取りに行く口。
+         * 全陣形に共通の情報は FormationContext で渡すので、ほとんどの陣形は何もしない。
+         *
+         * @param world ドローンが居る World。
+         */
+        virtual void BeginFrame(CCL::ECS::World &world) {}
+
         // 1機分の目標座標・視線を計算して drone に書き込む。
         virtual void Calculate(DroneComponent         &drone,
                                const FormationContext &ctx) = 0;
 
         // 攻撃を誰が終わらせるか。DroneCommandSystem がフレームに1回だけ引く。
         virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
+
+        /**
+         * @brief 突撃（FireCharge）へ入った瞬間に1回だけ行う準備。DroneBrainSystem が呼ぶ。
+         *
+         * タメの長さや撃つ方向の決め方は技ごとに違うので、技の側に持たせる。
+         *
+         * 既定は直進の突撃の始め方（Motion::BeginStraightCharge）。
+         * 陣形追従の技（縦割り・小隊など）も既定のままでよい。同じフレームの Calculate が
+         * 移動方式と向きを書き直し、追従の動き方はタメを使わないため。
+         *
+         * 並列ループ（ForEachParallel）から呼ぶので、陣形の側の状態は書き換えない（const）。
+         *
+         * @param drone 突撃を始める機体。
+         * @param info  プレイヤーの位置など、始めるときに要る情報。
+         */
+        virtual void OnChargeBegin(DroneComponent &drone, const Motion::ChargeBeginInfo &info) const
+        {
+            Motion::BeginStraightCharge(drone, info);
+        }
+
+        /**
+         * @brief 個別寿命（Individual）の突撃を、この機が切り上げるかを返す。DroneBrainSystem が聞く。
+         *
+         * 終わり方の数値は技ごとに違う（届かせたい距離は発射位置と間合いで決まる）ので、技の側に持たせる。
+         * Broadcast の技では呼ばれない。
+         *
+         * @param flownDistance 飛び出してから飛んだ距離 [m]。発射待ちとタメの間は数えない。
+         * @param flownTime     飛び出してからの経過時間 [秒]。
+         * @return 切り上げて離脱へ移るなら true。
+         */
+        virtual bool IsChargeOver(float flownDistance, float flownTime) const { return false; }
 
         // 当たり方と痛さ。DroneHitSystem が引く。
         virtual FormationCombat GetCombat() const { return {}; }

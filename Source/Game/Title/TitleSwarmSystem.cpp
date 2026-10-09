@@ -122,9 +122,10 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
             drone->localIndex  = i;
             drone->totalDrones = kDroneCount;
 
-            // 小隊を振る。SlotLag（小隊の後ろの機ほど追従が遅れる）が効いて、追従に個体差が出る
-            drone->squadId     = static_cast<uint8_t>(i / kSquadSize);
-            drone->slotInSquad = static_cast<uint8_t>(i % kSquadSize);
+            // 追従の速さに個体差を出す。kLagGroupSize 機ごとの組で、後ろの番号ほど持ち場へ寄るバネを弱める。
+            // 陣形の外で動かすので、DroneFormationSystem はこの値を書き換えない
+            const uint16_t seat = static_cast<uint16_t>(i % kLagGroupSize);
+            drone->springScale  = 1.0f - static_cast<float>(seat) * kLagPerSeat;
 
             drone->moveSpeed *= kSpeedSpreadMin +
                                 (kSpeedSpreadMax - kSpeedSpreadMin) * Hash01(i * 37u + 41u);

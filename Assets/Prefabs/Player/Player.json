@@ -103,7 +103,7 @@
                     "gravityScale": 6.300000190734863,
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
-                    "maxStepHeight": 0.5,
+                    "maxStepHeight": 1.5,
                     "objectLayer": 1,
                     "walkSpeed": 43.599998474121094
                 },

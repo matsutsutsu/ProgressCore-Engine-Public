@@ -49,6 +49,13 @@ namespace CCL::AI::Formation
 
         bool Has(DroneFormationType type) const { return Get(type) != nullptr; }
 
+        // 登録済みの全陣形に、フレームの始まりを伝える（IFormation::BeginFrame）。
+        void BeginFrame(CCL::ECS::World &world)
+        {
+            for (auto &formation : m_formations)
+                if (formation) formation->BeginFrame(world);
+        }
+
         /**
          * @brief データで書かれた技の名前（JSON の name）を返す。
          *

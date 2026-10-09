@@ -1,12 +1,39 @@
 #include "DroneBrainSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 突撃の始め方・切り上げを技に聞く
+#include "Game/Logics/AI/Drone/Motion/StraightChargeMotion.h"   // 技が見つからないときの始め方
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
+
+namespace
+{
+    // ============================================================
+    // 調整値（判断の優先度の順）
+    // ============================================================
+
+    // --- 硬直 ---
+
+    constexpr float kRecoverBase    = 0.30f; // 吹き飛ばし後に通常AIへ戻るまで [秒]
+    constexpr float kRecoverStagger = 0.08f; // 立て直しの機体差。一斉だと群れが機械的に見える
+
+    // --- 突撃 ---
+
+    // 突撃の始め方（タメ・撃つ方向）と切り上げ方は技ごとに違うので、ここには持たない
+    // （IFormation::OnChargeBegin / IsChargeOver）。
+
+    // --- 離脱 ---
+
+    constexpr float kBreakawayTime = 1.6f; // 突き抜けた後に減速する時間 [秒]
+
+    // --- 接近 ---
+
+    constexpr float kArriveThreshold = 2.5f; // 陣形スロットへ到着とみなす距離 [m]
+} // namespace
 
 void DroneBrainSystem::Update(float /*dt*/)
 {
@@ -17,8 +44,7 @@ void DroneBrainSystem::Update(float /*dt*/)
     // --- プレイヤーの位置 ---
 
     // 突撃方向のフォールバックに使うプレイヤー座標は、毎フレーム1回だけ読む。
-    Vector3 playerPos = Vector3::Zero;
-    bool    hasPlayer = false;
+    CCL::AI::Motion::ChargeBeginInfo chargeInfo{};
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
@@ -29,8 +55,8 @@ void DroneBrainSystem::Update(float /*dt*/)
         // 初期値=原点へ向かって突撃方向が決まる。
         if (battle.HasPlayer())
         {
-            playerPos = Vector3(battle.playerPos);
-            hasPlayer = true;
+            chargeInfo.playerPos = Vector3(battle.playerPos);
+            chargeInfo.hasPlayer = true;
         }
     }
 
@@ -46,7 +72,7 @@ void DroneBrainSystem::Update(float /*dt*/)
 
         // --- 硬直 ---
 
-        // 最優先。押しのけられている間は隊列にも攻撃にも戻らない。
+        // 最初にドローンが硬直かどうかを判断する
         if (UpdateStun(drone, dt))
         {
             drone.currentState = DroneState::Stunned;
@@ -55,18 +81,26 @@ void DroneBrainSystem::Update(float /*dt*/)
 
         // --- 突撃 ---
 
-        // 攻撃命令は ボスBT → BossCommandComponent → DroneCommandSystem と降りてくる。
+        // 攻撃命令の流れ ボスBT → BossCommandComponent → DroneCommandSystem 
         if (drone.wantsAttack)
         {
-            // currentState がまだ FireCharge でない＝今フレームが突入フレーム。
+            // 攻撃に入った瞬間に通る
+            //  currentState がまだ FireCharge でない＝今フレームが突入フレーム。
             if (drone.currentState != DroneState::FireCharge)
             {
-                BeginCharge(drone, playerPos, hasPlayer);
+                // タメや撃つ方向などの準備は技が決める（IFormation::OnChargeBegin）。
+                // 技が見つからなければ、既定と同じ直進の始め方にする。
+                if (const auto *formation = CCL::AI::Formation::FormationRegistry::Instance().Get(drone.currentFormation))
+                    formation->OnChargeBegin(drone, chargeInfo);
+                else
+                    CCL::AI::Motion::BeginStraightCharge(drone, chargeInfo);
+
                 drone.chargeStartPos = Vector3(trans.position);
                 drone.chargeTimer    = 0.0f;
             }
 
-            // 個別寿命の攻撃だけが自分で終了を決める（Broadcast はここを素通りする）。
+            // 小隊攻撃などの自分で終了を決めない攻撃が通る
+            //  個別寿命の攻撃だけが自分で終了を決める（Broadcast はここを素通りする）。
             if (drone.attackPhase == DroneAttackPhase::Charging &&
                 HasFinishedCharge(trans, drone, dt))
             {
@@ -151,7 +185,7 @@ bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
                                          float                     dt) const
 {
     // まだ飛び出していない間（発射待ち・タメ）は、飛距離の起点を今の位置に置き直し続ける。
-    // こうすると kChargeRange も kChargeTimeout も「飛び出してから」の量になる。
+    // こうすると技に渡す飛距離も経過時間も「飛び出してから」の量になる。
 
     // 起点を FireCharge へ入った瞬間のまま固定してはいけない。
     // 弾幕はそこから 順番待ち → 輪から中央へ移動（約21m）→ タメ と続いてから飛び出すので、
@@ -166,10 +200,13 @@ bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,
 
     drone.chargeTimer += dt;
 
-    const float flownSq = (Vector3(trans.position) - drone.chargeStartPos).LengthSquared();
-    if (flownSq > kChargeRange * kChargeRange) return true;
+    // 切り上げるかは技に聞く。数値（届かせたい距離など）は技ごとに違うため。
+    // 個別寿命の突撃は技が登録されているときしか始まらない（DroneCommandSystem）ので、見つからなければ続ける。
+    const auto *formation = CCL::AI::Formation::FormationRegistry::Instance().Get(drone.currentFormation);
+    if (!formation) return false;
 
-    return drone.chargeTimer > kChargeTimeout;
+    const float flown = (Vector3(trans.position) - drone.chargeStartPos).Length();
+    return formation->IsChargeOver(flown, drone.chargeTimer);
 }
 
 bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const
@@ -187,42 +224,6 @@ bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneCompo
     }
 
     return true; // まだスロットへ向かう必要あり
-}
-
-void DroneBrainSystem::BeginCharge(DroneComponent &drone,
-                                   const Vector3  &playerPos,
-                                   bool            hasPlayer) const
-{
-    // 処理フロー:
-    // 1. 移動方式を直進に戻す
-    // 2. タメの時間を入れる
-    // 3. 突撃方向が無ければ決める
-
-    // 直進モードから始める。陣形自体が動く攻撃は Formation 側が毎フレーム上書きするので、
-    // 前回の攻撃の追従モードが直進系の攻撃へ漏れない。
-    drone.chargeMode = ChargeMode::Straight;
-
-    // タメ時間。追従モードでは ProcessFireCharge がこれを無視する。
-    drone.stateTimer = kChargeWindup;
-
-    // 陣形が予備動作中に方向を設定済みなら、それを使う。
-    if (drone.fireDirection.LengthSquared() >= 0.001f) return;
-
-    // 陣形が方向を書かなかったときは、持ち場からプレイヤーへの向きにする。
-    // プレイヤーが居なければモデルの前方（-Z）へ飛ばす。
-    Vector3 dir = -Vector3::UnitZ;
-    if (hasPlayer)
-    {
-        Vector3 toPlayer = playerPos - drone.targetPosition;
-        if (toPlayer.LengthSquared() > 0.001f)
-        {
-            toPlayer.Normalize();
-            dir = toPlayer;
-        }
-    }
-
-    drone.fireDirection       = dir;
-    drone.targetLookDirection = dir;
 }
 
 // 陣形（L02_Update）が今フレームの currentState を読めるよう手前に置く。
