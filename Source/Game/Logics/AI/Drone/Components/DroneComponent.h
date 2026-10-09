@@ -82,7 +82,7 @@ struct DroneComponent
     // 同じ部隊で組んでいるように見えない。
     uint8_t squadId = 0xFF;
 
-    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。後ろほど追従を弱める（SlotLag）
+    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。小隊の陣形は後ろほど追従を弱める（springScale）
 
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
@@ -125,6 +125,12 @@ struct DroneComponent
     //   小隊                  … 陣形が「1つ前の機体の速度」で上書きする。小隊全体の速度を渡すと
     //                           全機が同じ方向へ同じ速さで飛び、「先頭に追従」ではなく「各自が突っ込む」絵になる
     DirectX::SimpleMath::Vector3 followFeedForward = DirectX::SimpleMath::Vector3::Zero;
+
+    // 持ち場へ寄るバネの強さの倍率。移動層の接近・待機・バネ追従が、バネの強さに掛ける。
+    // DroneFormationSystem が Calculate の前に 1 を入れ、小隊の陣形だけが「後ろの席ほど弱く」で上書きする
+    // （後ろの機ほど遅れて曲がり、隊列が先頭から順にしなる）。
+    // 陣形の外で動かす機（タイトルの群れ）は、動かす側（TitleSwarmSystem）が書く。
+    float springScale = 1.0f;
 
     // ---- 個体の判断 ── 書き手=DroneBrainSystem ----
 

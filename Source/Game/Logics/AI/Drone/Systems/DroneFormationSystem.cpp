@@ -49,8 +49,7 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     // 1. ボスの位置と「今撃て」信号を読む
     // 2. 陣形の中心の速度を測る
     // 3. プレイヤーの情報を入れる
-    // 4. 小隊の状態を渡す
-    // 5. 狙いの向きを固定・解除する
+    // 4. 狙いの向きを固定・解除する
 
     FormationContext ctx;
     ctx.time = m_elapsed;
@@ -135,12 +134,6 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         }
     }
 
-    // --- 小隊 ---
-
-    // 小隊のアンカーは SquadUpdateSystem が今フレーム更新済み。ここでは読むだけ。
-    if (m_world->HasResource<SquadRegistry>())
-        ctx.squads = &m_world->GetResource<SquadRegistry>();
-
     // --- 狙いの固定 ---
 
     // 狙う向きは「撃つと決めた瞬間」（信号の立ち上がり）に1回だけ固定し、信号が下りたら解除する。
@@ -178,7 +171,7 @@ void DroneFormationSystem::Update(float rawDt)
 
     // 処理フロー:
     // 1. 陣形の時間を進める
-    // 2. 陣形へ渡す情報を2通り作る
+    // 2. 陣形へ渡す情報を2通り作り、各陣形にフレームの始まりを伝える
     // 3. 機体ごとに持ち場を計算し、予告の時間を進める
 
     // --- 時間 ---
@@ -210,6 +203,9 @@ void DroneFormationSystem::Update(float rawDt)
     bodyCtx.bossPos                  = m_bossBodyPos;
     bodyCtx.bossVelocity             = m_bossBodyVelocity;
 
+    // 陣形が自分だけで使うデータ（小隊の状態など）は、陣形が自分で取りに行く（IFormation::BeginFrame）。
+    registry.BeginFrame(*m_world);
+
     // --- 機体ごとの計算 ---
 
     // 仮想関数（陣形の取得・Calculate など）は機体ごとに呼ぶ。
@@ -224,6 +220,9 @@ void DroneFormationSystem::Update(float rawDt)
             drone.windupTimer       = 0.0f;
             drone.telegraphTime     = 0.0f;
             drone.followFeedForward = DirectX::SimpleMath::Vector3::Zero;
+
+            // バネの強さの倍率（springScale）も持ち場と同じく書かない。
+            // 陣形の外で動かす機（タイトルの群れ）は、動かす側が自分で決めるため。
             return;
         }
 
@@ -235,6 +234,9 @@ void DroneFormationSystem::Update(float rawDt)
         // 先渡しの速度は、陣形の中心と同じ情報（ctx）から取る。
         // 頭上円陣なら、跳躍で上下する速度も乗る。
         drone.followFeedForward = formation->FollowsBoss() ? ctx.bossVelocity * m_bossCarry : DirectX::SimpleMath::Vector3::Zero;
+
+        // バネの強さの倍率も Calculate の前に既定へ戻す。弱めたい陣形（小隊）だけが Calculate で上書きする。
+        drone.springScale = 1.0f;
 
         formation->Calculate(drone, ctx); // targetPosition を書き込む
 

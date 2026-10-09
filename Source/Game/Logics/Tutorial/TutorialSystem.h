@@ -1,0 +1,141 @@
+#pragma once
+// ===========================================================================
+// 概要: 戦闘の序盤に、操作を1つずつ教えるチュートリアルを進める System。
+//
+// 責務:
+//   - プレイヤーの行動（ジャスト回避・命中・切り払い）を見て、教える項目（TutorialStep）を進める
+//   - いまヒントを画面に出すべき場面かを決める（陣形が組まれ始めてから回避を促す、など）
+//   - 回避を教えている間、突撃が当たる直前に一度だけ世界を強くスローにして、押す瞬間を教える
+//   - 教え終えたら TutorialSession に記録し、リトライでは繰り返さない
+//
+// 備考: ヒントの見た目は TutorialHintHudSystem、ボスの手加減（序盤の BT）は BossPhaseSystem が受け持つ。
+//       ここは TutorialState を書くだけで、UI もボスも直接は触らない。
+//       チュートリアルを行うのは、タイトルを通った挑戦で、まだ教え終えていないときだけ（TutorialSession を参照）。
+//       エディタシーンでは出ないので、確かめるときは OnGui の「最初から開始」で手動で始める。
+// ===========================================================================
+#include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Game/Logics/Tutorial/TutorialState.h"
+
+#include <SimpleMath.h>
+#include <atomic>
+#include <unordered_map>
+#include <vector>
+
+struct CleaveComponent;
+
+class TutorialSystem : public CCL::ECS::IfSystem<TutorialSystem>
+{
+public:
+    TutorialSystem()
+        : IfSystem("TutorialSystem")
+    {
+    }
+
+    void Initialize() override;
+    void Update(float dt) override;
+
+    // デバッグ用の表示と操作（今の項目・補助の回数・最初から開始・次の項目へ・完了扱いで終了）
+    void OnGui() override;
+
+    // プレイヤーの切り払い・ダッシュ、ドローン、ボスの指示を ForEach を使わずに引くので、ここで申告する
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
+
+private:
+    /**
+     * @brief 回避を教えている間の補助スローを進める。
+     *
+     * 2段階で掛ける。
+     *   予告: 当たるまで kAssistWarnTime 秒になったら、世界を kAssistWarnScale まで遅くする（迫ってくるのを見せる）
+     *   今だ: 当たるまで kAssistNowTime 秒になったら、ほぼ止める（kAssistNowScale）。ここで「今だ！」を出す
+     * 「今だ」の区間はジャスト回避の受付（0.08秒）より短いので、この間にいつ押しても成立する。
+     * 押すべき瞬間を体で覚えてもらうためで、回数は kMaxAssists までに限る（ずっと助けると覚えないため）。
+     *
+     * @param state  ヒントの文言を切り替えるため assistActive を書く。
+     * @param realDt 実時間の経過（秒）。スロー中も同じ秒数で切れるよう、スローの掛かっていない値を渡す。
+     */
+    void TickEvadeAssist(TutorialState &state, float realDt);
+
+    /**
+     * @brief 突撃中のドローンの位置を記録し、前のフレームとの差から実際の速度を求める。
+     *
+     * DroneComponent.currentVelocity は使えない。縦割り・横なぎ（RigidFollow）では位置を持ち場へ
+     * 直接合わせていて、currentVelocity は実際の速さの 35%（上限あり）しか入っていないため。
+     * 突撃をやめた機体の記録はここで消す。
+     */
+    void SampleDroneMotion();
+
+    /**
+     * @brief 突撃中のドローンのうち、最も早くプレイヤーに当たるものまでの残り時間を求める。
+     *
+     * SampleDroneMotion で求めた速度のまま進んだときに最も近づく時刻と距離を求め、
+     * 距離が kAssistMissRadius 以内の機体だけを「当たる」とみなす。
+     *
+     * @return 当たるまでの残り時間（秒・ゲーム時間）。当たる機体が無ければ負の値。
+     */
+    float TimeToStrike() const;
+
+    // 補助スローを終える。要求をやめるだけだと、スローがイーズで長く尾を引くのですぐ等速に戻す
+    void EndAssist();
+
+    /**
+     * @brief 切り払いの2項目（構え・突進）を進める。
+     * @param state  進める項目を書く。
+     * @param cleave プレイヤーの切り払いの状態。
+     */
+    void TickCleaveSteps(TutorialState &state, const CleaveComponent &cleave);
+
+    // 次の項目へ進め、項目内のタイマーと記録を消す
+    void Advance(TutorialState &state, TutorialStep next);
+
+    /**
+     * @brief チュートリアルを最初から始める（デバッグ用。OnGui から呼ぶ）。
+     *
+     * generation を進めるので、BossPhaseSystem がボスを序盤（Intro）に入れ直す。
+     * 補助スローの回数も戻す。
+     *
+     * @param state 書き換える進み具合。
+     */
+    void Restart(TutorialState &state);
+
+    // ボスがいま攻撃の陣形を組んでいるか（組み始め〜撃ち終わり）。回避のヒントを出す場面
+    bool IsBossAttackFormationActive() const;
+
+    // --- イベントで立てる印（イベントは別スレッドで届くことがあるので atomic） ---
+    std::atomic<bool>               m_justEvaded{false}; // ジャスト回避が成立した
+    std::atomic<bool>               m_playerHit{false};  // プレイヤーの攻撃が当たった
+    std::atomic<CCL::ECS::EntityID> m_playerID{CCL::ECS::InvalidEntityID};
+
+    // --- 項目の中の状態 ---
+    float m_stepTimer      = 0.0f;  // 今の項目に入ってからの実時間（秒）
+    bool  m_sawAttackShape = false; // 回避の項目で、攻撃の陣形を1度でも見たか（見るまでヒントを出さない）
+    bool  m_sawLunge       = false; // 突進の項目で、突進を1度でも始めたか
+
+    // --- 回避の補助スロー ---
+    int   m_assistCount  = 0;     // 補助した回数
+    bool  m_assistRunning = false; // 補助スローを掛けているか
+    bool  m_assistNow     = false; // 「今だ」の段階に入ったか（ほぼ止める）
+    float m_assistTimer  = 0.0f;  // 補助スローの残り（秒・実時間）
+    bool  m_assistDashed = false; // 補助中にダッシュを始めたか（ダッシュが終わったら補助を終える）
+
+    // 突撃中のドローン1機ぶんの動き（SampleDroneMotion が書く）
+    struct DroneMotion
+    {
+        DirectX::SimpleMath::Vector3 position; // 前のフレームの位置（ワールド）
+        DirectX::SimpleMath::Vector3 velocity; // 実際の速度（m/秒・ゲーム時間）
+        bool                         hasVelocity = false; // 2フレーム以上見て、速度が求まったか
+    };
+    std::unordered_map<CCL::ECS::EntityID, DroneMotion> m_droneMotion;
+
+    // --- 調整値 ---
+    static constexpr float kStepGap          = 1.0f;  // 項目を終えてから、次のヒントを出すまでの間（秒）。続けて出すと前の成功が目に入らない
+    static constexpr float kStrikeTimeout    = 5.0f;  // 攻撃を当てなくても、この秒数で切り払いの説明へ進める
+    static constexpr float kGaugeInfoTime    = 4.5f;  // ゲージの説明を出しておく時間（秒）
+    static constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
+    static constexpr float kAssistWarnTime   = 0.5f;  // 当たるまでの残りがこの秒数（ゲーム時間）以下になったら予告のスローを始める
+    static constexpr float kAssistNowTime    = 0.07f; // 当たるまでの残りがこの秒数以下で「今だ」。ジャスト回避の受付（0.08秒）より短くし、この間にいつ押しても成立するようにする
+    static constexpr float kAssistMissRadius = 2.5f;  // 最も近づいたときの距離がこれ以下なら「当たる」とみなす（m）
+    static constexpr float kAssistWarnScale  = 0.3f;  // 予告中の世界のタイムスケール。0.5秒ぶんの接近が実時間で約1.5秒になる
+    static constexpr float kAssistNowScale   = 0.02f; // 「今だ」の間の世界のタイムスケール。0.07秒ぶんが実時間で数秒になり、落ち着いて押せる
+    static constexpr float kAssistEaseTime   = 1.0f;  // SustainWorldSlow に渡すイーズ時間（秒）。毎フレーム要求し直すと1フレームぶん戻った値で効くので、長くするほど指定の倍率に近づく（1秒で 0.02→約0.05）
+    static constexpr float kAssistMaxTime    = 3.5f;  // 補助スローを掛け続ける上限（秒・実時間）
+};

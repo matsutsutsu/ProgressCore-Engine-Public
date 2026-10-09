@@ -5,11 +5,12 @@
 // 責務:
 //   - シーン開始時に、ボスが揃い次第初期ドローンを1回だけ配備する
 //   - 生存数を数えて BattleContext.droneAliveCount に書く
-//   - 通し番号と小隊の割り当て（ReindexAllDrones）
+//   - 通し番号の割り当て（ReindexAllDrones）
 //   - 生成・破壊・陣形テスト・調整値のデバッグ UI
 //
 // 備考:
 //   陣形計算は DroneFormationSystem、個体の判断は DroneBrainSystem が担う。
+//   小隊の席の割り当てと小隊の調整 UI は SquadUpdateSystem が持つ（生成の後に AssignNewMembers を呼ぶだけ）。
 //
 //   droneAliveCount は「ドローン数 = ボスHP」という構想のための値だが、現時点で
 //   読むのはデバッグ表示だけで、BT の条件にも他の System にも繋がっていない。
@@ -21,7 +22,8 @@
 namespace CCL::ECS { class World;}
 
 // DroneComponent が Write なのは、Update の初回配備（TryAutoSpawnInitial → SpawnDrones）が
-// 生成した機の DroneComponent と、ReindexAllDrones で全機の通し番号・小隊を書き換えるため。
+// 生成した機の DroneComponent と、ReindexAllDrones で全機の通し番号・小隊を書き換えるため
+// （小隊の席は SquadUpdateSystem::AssignNewMembers が、この System の中で書く）。
 class DroneManagerSystem : public CCL::ECS::IfSystem<DroneManagerSystem,
                                                      CCL::ECS::Write<DroneComponent>>
 {
@@ -66,7 +68,7 @@ public:
     int GetAliveCount() const;
 
     /**
-     * @brief 全ドローンの localIndex / totalDrones を振り直し、無所属の機を小隊へ入れる。
+     * @brief 全ドローンの localIndex / totalDrones を振り直し、無所属の機を小隊へ入れる（SquadUpdateSystem::AssignNewMembers）。
      *
      * 撃破の後には呼ばない。番号を振り直すと生き残った全機の持ち場が同時に変わり、
      * 1機落ちるたびに残りの全機が円周上を移動して並び直すため、削ったことが見えなくなる。
@@ -114,9 +116,7 @@ private:
     void DrawFormationTest();
 
     void DrawIndividualTest(); // 個別に帰投する行動（弾幕・小隊）のテスト
-    void DrawShiverTuning();   // 予告の震えの調整
-    void DrawSquadTuning();    // 小隊の調整
-    void DrawSquadList();      // 生きている小隊の一覧
+    void DrawShiverTuning();   // 予告の震えの調整（小隊の調整は SquadUpdateSystem の欄）
 
     // ボスへ直接命令を入れる。BT が上書きするので、確認は BT を止めてから行う。
     void SetBossCommand(DroneFormationType formation, bool attack);

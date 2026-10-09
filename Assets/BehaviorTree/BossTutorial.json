@@ -1,0 +1,545 @@
+{
+    "assetId": 1,
+    "editor_links": [
+        {
+            "endPin": 4,
+            "id": 6,
+            "startPin": 2
+        },
+        {
+            "endPin": 8,
+            "id": 10,
+            "startPin": 5
+        },
+        {
+            "endPin": 12,
+            "id": 13,
+            "startPin": 9
+        },
+        {
+            "endPin": 15,
+            "id": 16,
+            "startPin": 9
+        },
+        {
+            "endPin": 18,
+            "id": 20,
+            "startPin": 5
+        },
+        {
+            "endPin": 22,
+            "id": 24,
+            "startPin": 19
+        },
+        {
+            "endPin": 26,
+            "id": 27,
+            "startPin": 23
+        },
+        {
+            "endPin": 29,
+            "id": 30,
+            "startPin": 23
+        },
+        {
+            "endPin": 32,
+            "id": 33,
+            "startPin": 23
+        },
+        {
+            "endPin": 35,
+            "id": 36,
+            "startPin": 23
+        },
+        {
+            "endPin": 38,
+            "id": 39,
+            "startPin": 23
+        },
+        {
+            "endPin": 41,
+            "id": 42,
+            "startPin": 23
+        },
+        {
+            "endPin": 44,
+            "id": 45,
+            "startPin": 23
+        },
+        {
+            "endPin": 47,
+            "id": 49,
+            "startPin": 5
+        },
+        {
+            "endPin": 51,
+            "id": 52,
+            "startPin": 48
+        },
+        {
+            "endPin": 54,
+            "id": 55,
+            "startPin": 48
+        },
+        {
+            "endPin": 57,
+            "id": 58,
+            "startPin": 48
+        },
+        {
+            "endPin": 60,
+            "id": 61,
+            "startPin": 48
+        },
+        {
+            "endPin": 63,
+            "id": 64,
+            "startPin": 48
+        },
+        {
+            "endPin": 66,
+            "id": 67,
+            "startPin": 48
+        },
+        {
+            "endPin": 69,
+            "id": 70,
+            "startPin": 48
+        },
+        {
+            "endPin": 72,
+            "id": 74,
+            "startPin": 5
+        },
+        {
+            "endPin": 76,
+            "id": 77,
+            "startPin": 73
+        }
+    ],
+    "editor_nodes": [
+        {
+            "actionId": 0,
+            "id": 1,
+            "inputPinId": 0,
+            "name": "ROOT",
+            "outputPinId": 2,
+            "posX": 2512.5,
+            "posY": 0.0,
+            "type": 0
+        },
+        {
+            "actionId": 0,
+            "id": 3,
+            "inputPinId": 4,
+            "name": "Root Selector",
+            "outputPinId": 5,
+            "posX": 2512.5,
+            "posY": 220.0,
+            "type": 1
+        },
+        {
+            "actionId": 0,
+            "id": 7,
+            "inputPinId": 8,
+            "name": "遠ければ詰める",
+            "outputPinId": 9,
+            "posX": 150.0,
+            "posY": 440.0,
+            "type": 2
+        },
+        {
+            "actionId": 2,
+            "condition": "C_DistanceGreaterThan",
+            "id": 11,
+            "inputPinId": 12,
+            "outputPinId": 0,
+            "param": 60.0,
+            "posX": 0.0,
+            "posY": 660.0,
+            "type": 3
+        },
+        {
+            "action": "A_BossStrafe",
+            "actionId": 11,
+            "id": 14,
+            "inputPinId": 15,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 300.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "decoratorType": 1,
+            "id": 17,
+            "inputPinId": 18,
+            "outputPinId": 19,
+            "param": 7.0,
+            "posX": 1500.0,
+            "posY": 440.0,
+            "type": 6
+        },
+        {
+            "actionId": 0,
+            "id": 21,
+            "inputPinId": 22,
+            "name": "縦割り（予兆を長く）",
+            "outputPinId": 23,
+            "posX": 1500.0,
+            "posY": 660.0,
+            "type": 2
+        },
+        {
+            "actionId": 1,
+            "condition": "C_DistanceLessThan",
+            "id": 25,
+            "inputPinId": 26,
+            "outputPinId": 0,
+            "param": 50.0,
+            "posX": 600.0,
+            "posY": 880.0,
+            "type": 3
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionId": 128,
+            "id": 28,
+            "inputPinId": 29,
+            "outputPinId": 0,
+            "param": 24.0,
+            "posX": 900.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 31,
+            "inputPinId": 32,
+            "outputPinId": 0,
+            "param": 2.0,
+            "posX": 1200.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionId": 100,
+            "id": 34,
+            "inputPinId": 35,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 1500.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 37,
+            "inputPinId": 38,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 1800.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionId": 102,
+            "id": 40,
+            "inputPinId": 41,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 2100.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 43,
+            "inputPinId": 44,
+            "outputPinId": 0,
+            "param": 3.5,
+            "posX": 2400.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 46,
+            "inputPinId": 47,
+            "name": "横なぎ（予兆を長く）",
+            "outputPinId": 48,
+            "posX": 3600.0,
+            "posY": 440.0,
+            "type": 2
+        },
+        {
+            "actionId": 1,
+            "condition": "C_DistanceLessThan",
+            "id": 50,
+            "inputPinId": 51,
+            "outputPinId": 0,
+            "param": 60.0,
+            "posX": 2700.0,
+            "posY": 660.0,
+            "type": 3
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionId": 128,
+            "id": 53,
+            "inputPinId": 54,
+            "outputPinId": 0,
+            "param": 22.0,
+            "posX": 3000.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 56,
+            "inputPinId": 57,
+            "outputPinId": 0,
+            "param": 2.0,
+            "posX": 3300.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionId": 100,
+            "id": 59,
+            "inputPinId": 60,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 3600.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 62,
+            "inputPinId": 63,
+            "outputPinId": 0,
+            "param": 2.0,
+            "posX": 3900.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionId": 102,
+            "id": 65,
+            "inputPinId": 66,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 4200.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 68,
+            "inputPinId": 69,
+            "outputPinId": 0,
+            "param": 3.5,
+            "posX": 4500.0,
+            "posY": 660.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 71,
+            "inputPinId": 72,
+            "name": "間合いを保つ",
+            "outputPinId": 73,
+            "posX": 4800.0,
+            "posY": 440.0,
+            "type": 2
+        },
+        {
+            "action": "A_BossStrafe",
+            "actionId": 11,
+            "id": 75,
+            "inputPinId": 76,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 4800.0,
+            "posY": 660.0,
+            "type": 4
+        }
+    ],
+    "last_id_counter": 78,
+    "nodes": [
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                1,
+                4,
+                13,
+                21
+            ],
+            "type": "Selector"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                2,
+                3
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 2,
+            "condition": "C_DistanceGreaterThan",
+            "param": 60.0,
+            "type": "Condition"
+        },
+        {
+            "action": "A_BossStrafe",
+            "actionOrConditionId": 11,
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                5
+            ],
+            "decoratorType": 1,
+            "param": 7.0,
+            "type": "Decorator"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 1,
+            "condition": "C_DistanceLessThan",
+            "param": 50.0,
+            "type": "Condition"
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
+            "param": 24.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 2.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionOrConditionId": 100,
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 3.5,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20
+            ],
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 1,
+            "condition": "C_DistanceLessThan",
+            "param": 60.0,
+            "type": "Condition"
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
+            "param": 22.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 2.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionOrConditionId": 100,
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 2.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "param": 3.5,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                22
+            ],
+            "type": "Sequence"
+        },
+        {
+            "action": "A_BossStrafe",
+            "actionOrConditionId": 11,
+            "param": 1.5,
+            "type": "Action"
+        }
+    ]
+}

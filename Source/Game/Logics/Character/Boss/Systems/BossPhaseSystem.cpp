@@ -6,18 +6,35 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Core/App/GameFlowState.h"         // 開幕ムービー中は序盤の上限時間を進めない
+#include "Game/Logics/Tutorial/TutorialState.h" // 序盤（手加減）を続けるか
 
 using namespace CCL::ECS;
 
 void BossPhaseSystem::Update(float /*rawDt*/)
 {
+    // 序盤を続けるかはチュートリアルの進み具合で決める。TutorialState が無ければ序盤を設けない
+    const TutorialState *tutorial = m_world->HasResource<TutorialState>() ? &m_world->GetResource<TutorialState>() : nullptr;
+    const bool           tutorialRunning = tutorial && !tutorial->IsFinished();
+    const bool cinematic =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+
     ForEach([&](BossPhaseComponent       &phase,
                 BehaviorTreeComponent    &bt,
                 BossCommandComponent     &cmd,
                 AnimParametersComponent  &anim,
                 HealthComponent          &health,
                 const TimeStateComponent &time) {
-        const BossPhase next = DecideNextPhase(phase, health);
+        // チュートリアルがやり直された（エディタの「最初から開始」）。序盤に入り直せるようにする。
+        // すでに序盤の途中なら、上限時間だけ数え直す
+        if (tutorialRunning && phase.introGeneration != tutorial->generation)
+        {
+            phase.introGeneration = tutorial->generation;
+            phase.introDone       = false;
+            if (phase.phase == BossPhase::Intro) phase.timer = phase.introMaxDuration;
+        }
+
+        const BossPhase next = DecideNextPhase(phase, health, tutorialRunning);
 
         // 形態が変わったフレームだけ、入ったときの処理を行う。
         if (next != phase.phase)
@@ -28,13 +45,16 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 
         TickPhase(phase, cmd, health);
 
-        // 時間で終わる形態（移行演出）のためのタイマー。
-        if (phase.timer > 0.0f) phase.timer -= time.localDt;
+        // 時間で終わる形態（移行演出・序盤）のためのタイマー。
+        // 序盤の上限は、開幕ムービーの間は進めない。ムービーが長いと、操作する前に序盤が終わってしまう
+        const bool holdTimer = (phase.phase == BossPhase::Intro) && cinematic;
+        if (phase.timer > 0.0f && !holdTimer) phase.timer -= time.localDt;
     });
 }
 
 BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
-                                           const HealthComponent    &health) const
+                                           const HealthComponent    &health,
+                                           bool                      tutorialRunning) const
 {
     // 死は終端。一度入ったら戻さない。
     if (phase.phase == BossPhase::Dead) return BossPhase::Dead;
@@ -45,13 +65,22 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
     if (phase.phase == BossPhase::Transition)
         return (phase.timer > 0.0f) ? BossPhase::Transition : BossPhase::Combat2;
 
-    // 第1形態で HP が閾値を割ったら移行演出へ。第2形態のBTが未設定なら移行しない
-    // （設定漏れでボスが止まるのを防ぐ）。
-    if (phase.phase == BossPhase::Combat && !phase.phase2AssetPath.empty() && health.maxHealth > 0.0f)
+    // 第1形態（序盤を含む）で HP が閾値を割ったら移行演出へ。第2形態のBTが未設定なら移行しない
+    // （設定漏れでボスが止まるのを防ぐ）。序盤のうちに削り切られた場合も、序盤を飛ばしてそのまま移る。
+    const bool firstForm = (phase.phase == BossPhase::Combat || phase.phase == BossPhase::Intro);
+    if (firstForm && !phase.phase2AssetPath.empty() && health.maxHealth > 0.0f)
     {
         const float hpPercent = (health.currentHealth / health.maxHealth) * 100.0f;
         if (hpPercent <= phase.phase2HealthThreshold) return BossPhase::Transition;
     }
+
+    // 序盤は、教え終えたか上限時間が来たら本来の戦いへ戻る
+    if (phase.phase == BossPhase::Intro)
+        return (!tutorialRunning || phase.timer <= 0.0f) ? BossPhase::Combat : BossPhase::Intro;
+
+    // チュートリアルを行う挑戦なら、戦いの最初に序盤へ入る。一度終えたら入り直さない
+    if (phase.phase == BossPhase::Combat && tutorialRunning && !phase.introDone && !phase.introAssetPath.empty())
+        return BossPhase::Intro;
 
     return phase.phase;
 }
@@ -107,8 +136,26 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] ボス死亡 → Dead へ");
         break;
 
+    case BossPhase::Intro:
+        // 本来の BT を覚えておき、序盤の BT へ差し替える。assetPath が変わると BehaviorTreeSystem が読み直す。
+        phase.combatAssetPath = bt.assetPath;
+        bt.assetPath          = phase.introAssetPath;
+        phase.timer           = phase.introMaxDuration;
+        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 序盤（チュートリアル）開始 → %s", bt.assetPath.c_str());
+        break;
+
     case BossPhase::Combat:
-        // 初期状態。ほかの形態からここへ戻る経路は無い。
+        // 初期状態のときはここを通らない（phase の初期値なので「入る」ことがない）。通るのは序盤から戻るときだけ。
+        phase.introDone = true;
+        phase.timer     = 0.0f;
+        if (!phase.combatAssetPath.empty()) bt.assetPath = phase.combatAssetPath;
+
+        // 序盤の技の途中で切り替わることがあるので、撃ちかけの指示を消して頭上へ戻す。
+        // 残すと、本来の BT が最初の陣形を指示するまで、序盤の攻撃の続きが飛ぶ
+        cmd.droneAttackActive = false;
+        cmd.currentActionId   = 0;
+        cmd.requestFormation  = DroneFormationType::HighOrbit;
+        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 序盤を終了 → %s", bt.assetPath.c_str());
         break;
     }
 }
@@ -136,6 +183,7 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
 
     case BossPhase::Combat:
     case BossPhase::Combat2:
+    case BossPhase::Intro:
         // 技は BT が選ぶ。
         break;
     }

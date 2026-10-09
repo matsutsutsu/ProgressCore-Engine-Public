@@ -2,7 +2,7 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 予告の震えの調整 UI
-#include "Game/Logics/AI/Drone/Squad/SquadState.h"
+#include "Game/Logics/AI/Drone/Squad/SquadUpdateSystem.h" // 生成した機を小隊へ入れる
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Formation/Data/DataDrivenFormation.h" // 陣形テストの名前表示
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
@@ -73,28 +73,7 @@ void DroneManagerSystem::ReindexAllDrones()
     int total = GetAliveCount();
     if (total <= 0) return;
 
-    // 1小隊は8機以下である前提でビットマスクを使う（空きスロット探索用）。
-    static_assert(SquadRegistry::kSquadSize <= 8, "小隊の人数が uint8_t のビット数を超えている");
-
-    // 使用中のスロットを小隊ごとに集める。
-
-    // 所属は一度決めたら維持する。
-    // 振り直すと生き残った機の所属まで入れ替わり、同じ部隊で組んでいるように見えない。
-    uint8_t usedSlots[SquadRegistry::kMaxSquads] = {};
-    {
-        auto scan = m_world->View<DroneComponent>();
-        for (auto e : scan)
-        {
-            const auto *d = m_world->GetComponent<DroneComponent>(e);
-            if (!d) continue;
-            if (d->squadId >= SquadRegistry::kMaxSquads) continue;
-            if (d->slotInSquad >= SquadRegistry::kSquadSize) continue;
-            usedSlots[d->squadId] =
-                static_cast<uint8_t>(usedSlots[d->squadId] | (1u << d->slotInSquad));
-        }
-    }
-
-    // 全機に連番を振り、未所属の機だけを小隊へ入れる。
+    // 全機に連番を振る。
     uint16_t idx  = 0;
     auto     view = m_world->View<DroneComponent>();
     for (auto e : view)
@@ -104,27 +83,10 @@ void DroneManagerSystem::ReindexAllDrones()
 
         d->localIndex  = idx++;
         d->totalDrones = static_cast<uint16_t>(total);
-
-        if (d->squadId < SquadRegistry::kMaxSquads) continue;
-
-        // 未所属の機を、空きスロットのある小隊へ入れる。
-        // 空いている席から先に埋めるので、同じスロットに2機が重なることはない。
-        bool placed = false;
-        for (uint8_t s = 0; s < SquadRegistry::kMaxSquads && !placed; ++s)
-        {
-            for (uint8_t slot = 0; slot < SquadRegistry::kSquadSize; ++slot)
-            {
-                if (usedSlots[s] & (1u << slot)) continue;
-
-                d->squadId     = s;
-                d->slotInSquad = slot;
-                usedSlots[s]   = static_cast<uint8_t>(usedSlots[s] | (1u << slot));
-                placed         = true;
-                break;
-            }
-        }
-        // 満杯（32小隊×5機＝160機を超えた分）なら無所属のまま。その機は大技だけで使われる。
     }
+
+    // 小隊の席は小隊の係が決める。
+    SquadUpdateSystem::AssignNewMembers(*m_world);
 }
 
 EntityID DroneManagerSystem::FindBoss() const
@@ -321,16 +283,6 @@ namespace
         return "Control";
     }
 
-    const char *SquadPhaseName(SquadPhase phase)
-    {
-        switch (phase)
-        {
-        case SquadPhase::Regroup: return "Regroup";
-        case SquadPhase::Approach: return "Approach";
-        default: return "Chase";
-        }
-    }
-
     // 攻撃パイプライン表示のための、全ドローンの集計。
     struct DronePipelineStats
     {
@@ -385,8 +337,6 @@ void DroneManagerSystem::OnGui()
     DrawFormationTest();
     DrawIndividualTest();
     DrawShiverTuning();
-    DrawSquadTuning();
-    DrawSquadList();
 
     ImGui::Unindent();
 }
@@ -549,7 +499,7 @@ void DroneManagerSystem::DrawIndividualTest()
 {
     // 確かめる挙動:
     //   - 弾幕（Barrage）: 出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
-    //   - 小隊突撃: 5機編隊が扇へ展開 → 先頭がプレイヤーを追い続ける（合図を落とすまで）
+    //   - 小隊突撃: 5機編隊がボスの周りへ集まって降りてくる → 先頭がプレイヤーを追い続ける（合図を落とすまで）
     //   - 硬直: 切り払いを当てて確認する（Stunned → 機体ごとの時間差で復帰）。ボタンは無い
     ImGui::Spacing();
     ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
@@ -560,7 +510,7 @@ void DroneManagerSystem::DrawIndividualTest()
     if (ColoredButton("弾幕：発射", ImVec2(150, 26), kAttackButtonColor))
         SetBossCommand(DroneFormationType::Barrage, true);
 
-    if (ImGui::Button("小隊：展開", ImVec2(150, 26)))
+    if (ImGui::Button("小隊：集合", ImVec2(150, 26)))
         SetBossCommand(DroneFormationType::SquadAssault, false);
     ImGui::SameLine();
     if (ColoredButton("小隊：追跡", ImVec2(150, 26), kAttackButtonColor))
@@ -591,92 +541,6 @@ void DroneManagerSystem::DrawShiverTuning()
         shiver = DroneShiverTuning{};
 
     ImGui::TreePop();
-}
-
-void DroneManagerSystem::DrawSquadTuning()
-{
-    // しなり具合は目で見ないと決まらないので、実行中に変えられるようにする。
-    if (!m_world->HasResource<SquadRegistry>()) return;
-    auto &tuning = m_world->GetResource<SquadRegistry>().tuning;
-
-    if (!ImGui::TreeNodeEx("小隊の調整", ImGuiTreeNodeFlags_DefaultOpen)) return;
-
-    // --- 隊列のしなり ---
-
-    ImGui::TextColored(ImVec4(1.0f, 0.9f, 0.4f, 1.0f), "隊列のしなり");
-    ImGui::SliderFloat("追従バネ", &tuning.followGain, 1.0f, 30.0f, "%.1f");
-    HoverTooltip("間隔のずれを直す強さ。小さいほど隊列が伸び縮みして柔らかく見える");
-    ImGui::SliderFloat("後席の鈍さ", &tuning.slotLagPerSlot, 0.0f, 0.25f, "%.2f");
-    HoverTooltip("1つ後ろの席ごとにバネを弱める割合。大きいほど最後尾が遅れて曲がる");
-
-    // --- 隊列の形 ---
-
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.6f, 0.9f, 1.0f, 1.0f), "隊列の形");
-    ImGui::SliderFloat("機体の間隔", &tuning.chainGap, 1.0f, 10.0f, "%.1f m");
-    HoverTooltip("前の機体との距離。小さいほど隊列が詰まって1本に見える");
-
-    // --- 突入 ---
-
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "追跡");
-    ImGui::SliderFloat("速さ（走行比）", &tuning.chaseSpeedOverRun, 0.5f, 2.0f, "x%.2f");
-    HoverTooltip("プレイヤーの走行速度に掛ける倍率。1 を超えると走って逃げても追いつかれる");
-    ImGui::SliderFloat("速さのばらつき", &tuning.chaseSpeedSpread, 0.0f, 0.5f, "±%.2f");
-    HoverTooltip("小隊ごとに上の倍率へ足す幅。一番遅い小隊でも 1 を超えるようにする");
-    ImGui::SliderFloat("狙いの横ずれ", &tuning.aimSideOffset, 0.0f, 30.0f, "%.1f m");
-    ImGui::SliderFloat("ずれを縮め始める距離", &tuning.aimFadeStartDist, 1.0f, 80.0f, "%.0f m");
-    ImGui::SliderFloat("ずれが0になる距離", &tuning.aimFadeEndDist, 0.0f, 40.0f, "%.0f m");
-    HoverTooltip("遠くでは狙いを左右へずらして包むように迫り、この2つの間で縮めて、内側ではプレイヤー本人を狙う");
-    ImGui::SliderFloat("旋回時の最低速度", &tuning.turnSlowMinScale, 0.1f, 1.0f, "x%.2f");
-    HoverTooltip("狙う方向とのずれが大きいときに落とす速さの下限。1 で減速しない（止まった相手の周りを回り続けやすい）");
-    ImGui::SliderFloat("加減速", &tuning.chaseAccel, 5.0f, 300.0f, "%.0f m/s2");
-    HoverTooltip("速さを変えられる上限。大きすぎると至近距離の切り返しにも急ブレーキで追いつき、避けられなくなる");
-    ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 720.0f, "%.0f deg/s");
-    HoverTooltip("回避はこの制限だけで成り立つ。上げすぎると切り返しても曲がって当たる");
-
-    // --- 接近 ---
-
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.7f, 1.0f), "展開");
-    ImGui::SliderFloat("展開半径", &tuning.approachRadius, 5.0f, 60.0f, "%.0f m");
-    ImGui::SliderFloat("展開高度", &tuning.approachHeight, 0.0f, 30.0f, "%.0f m");
-    ImGui::SliderFloat("扇の広さ", &tuning.approachArcDeg, 30.0f, 360.0f, "%.0f deg");
-    HoverTooltip("小隊を並べる範囲。プレイヤーから見たボスの方向が中心。360 で全周を囲む");
-    ImGui::SliderFloat("段の距離差", &tuning.layerRadiusSpread, 0.0f, 20.0f, "%.1f m");
-    ImGui::SliderFloat("段の高さ差", &tuning.layerHeightSpread, 0.0f, 15.0f, "%.1f m");
-    HoverTooltip("隣り合う小隊を手前・低い段と奥・高い段へ互い違いに振る幅。0 で全小隊が同じ円周に並ぶ");
-
-    // --- 地面 ---
-
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.9f, 0.8f, 0.6f, 1.0f), "地面");
-    ImGui::SliderFloat("最低高度", &tuning.minAltitude, 0.0f, 10.0f, "%.1f m");
-    HoverTooltip("床からこれ以下へは沈まない。突入はプレイヤー（ほぼ床の高さ）を目指すので、ここを 0 にすると地面に埋まる");
-
-    if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))
-        tuning = SquadTuning{};
-
-    ImGui::TreePop();
-}
-
-void DroneManagerSystem::DrawSquadList()
-{
-    // 生きている小隊のアンカーの位置とフェーズを、先頭から6個まで出す。
-    if (!m_world->HasResource<SquadRegistry>()) return;
-    const auto &reg = m_world->GetResource<SquadRegistry>();
-
-    int shown = 0;
-    for (uint8_t i = 0; i < SquadRegistry::kMaxSquads && shown < 6; ++i)
-    {
-        const auto &s = reg.squads[i];
-        if (s.aliveCount == 0) continue;
-
-        ImGui::Text("小隊%2d: %d機  %-8s  (%.0f, %.0f, %.0f)",
-                    i, s.aliveCount, SquadPhaseName(s.phase),
-                    s.anchorPos.x, s.anchorPos.y, s.anchorPos.z);
-        ++shown;
-    }
 }
 
 // 陣形（DroneFormationSystem）と同じ L02_Update。前後は GetRunAfter で決める。

@@ -5,6 +5,7 @@
 // 責務:
 //   - 各機の持ち場を「1つ前の機体」の位置と速度から出す
 //   - 移動方式を SoftFollow にし、1つ前の機体の速度を先渡しする
+//   - 後ろの席ほど持ち場へ寄るバネを弱める（springScale）
 //   - 持ち場を床より下に置かない
 //
 // 備考:
@@ -12,12 +13,15 @@
 //   SquadState.anchorPos（小隊のアンカー）に置くだけで、同じ IFormation のまま
 //   小隊をいくつでも作れる。
 //
-//   ここは持ち場を幾何的に出すだけで遅れは作らない。隊列がしなる表現は移動層が
-//   slotInSquad に応じてバネを弱めて出す（形の定義と追従の質を別々に調整できる）。
+//   ここは持ち場を幾何的に出すだけで、遅れそのものは作らない。隊列がしなる表現は、
+//   ここが書いた springScale を移動層がバネの強さに掛けて出す（形の定義と追従の質を別々に調整できる）。
+//
+//   小隊の状態（SquadRegistry）は BeginFrame で自分で取りに行く。共通の FormationContext には載せない。
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm>
 
 namespace CCL::AI::Formation::Squad
@@ -36,7 +40,7 @@ namespace CCL::AI::Formation::Squad
     // アンカーの描いた曲線が後続機へ順に伝わる。
     struct SquadAssaultFormation : public IFormation
     {
-        // 予備動作は「編隊を組んだまま側面へ回り込む」動きそのものなので、震えは出さない。
+        // 予備動作は「編隊を組んだままボスの周りへ集まり、降りてくる」動きそのものなので、震えは出さない。
         // 読むべき手掛かりが2つになるうえ、震えのずれが後ろの席へ伝わって隊列が乱れる。
         bool UsesShiverTelegraph() const override { return false; }
 
@@ -54,22 +58,28 @@ namespace CCL::AI::Formation::Squad
             return c;
         }
 
+        // 小隊の状態を取りに行く。小隊の係（SquadUpdateSystem）がこのフレームの分を更新済み。
+        void BeginFrame(CCL::ECS::World &world) override
+        {
+            m_squads = world.HasResource<SquadRegistry>() ? &world.GetResource<SquadRegistry>() : nullptr;
+        }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;
 
             // 処理フロー:
-            // 1. 移動方式をバネ追従にする
+            // 1. 移動方式をバネ追従にし、後ろの席ほどバネを弱める
             // 2. 「1つ前の機体」を決める
             // 3. 持ち場と先渡しの速度を決める
             // 4. 持ち場を床より下に置かない
             // 5. 向きを決め、他の技の値を戻す
 
-            if (ctx.squads == nullptr) return;
+            if (m_squads == nullptr) return;
             if (drone.squadId >= SquadRegistry::kMaxSquads) return; // 無所属機は動かさない
 
-            const SquadState  &squad  = ctx.squads->squads[drone.squadId];
-            const SquadTuning &tuning = ctx.squads->tuning;
+            const SquadState  &squad  = m_squads->squads[drone.squadId];
+            const SquadTuning &tuning = m_squads->tuning;
 
             // --- 移動方式 ---
 
@@ -77,6 +87,10 @@ namespace CCL::AI::Formation::Squad
             // 剛体にすると隊列がまったく歪まず、5機で飛んでも「1枚の板が近づいてくる」ようにしか見えない。
             // 歪むことがこの技の要点。
             drone.chargeMode = ChargeMode::SoftFollow;
+
+            // 後ろの席ほどバネを弱める。後方の機ほど遅れて曲がるので、隊列が先頭から順に曲がっていく。
+            // 編隊で飛んでいるように見えるのは主にこの遅れによる。
+            drone.springScale = 1.0f - static_cast<float>(drone.slotInSquad) * kSpringLagPerSlot;
 
             const uint8_t maxSlot = static_cast<uint8_t>(SquadRegistry::kSquadSize - 1);
             const uint8_t slot    = (std::min)(drone.slotInSquad, maxSlot);
@@ -132,8 +146,7 @@ namespace CCL::AI::Formation::Squad
             // 床下を指す持ち場は作らない。
             // アンカーの高度は SquadUpdateSystem が止めているが、前の機が上向きに抜けた瞬間だけ、
             // その真後ろが床下になる。
-            const float floorY = kSquadGroundY + tuning.minAltitude;
-            if (drone.targetPosition.y < floorY) drone.targetPosition.y = floorY;
+            if (drone.targetPosition.y < kSquadFloorY) drone.targetPosition.y = kSquadFloorY;
 
             // --- 向きと他の技の値 ---
 
@@ -145,6 +158,12 @@ namespace CCL::AI::Formation::Squad
             drone.fireDelay      = 0.0f; // 小隊技は順次発射を使わない
             drone.attackProgress = 0.0f;
         }
+
+    private:
+        // 1つ後ろの席ごとにバネを弱める割合。最後尾（席4）で 0.76 倍になる。
+        static constexpr float kSpringLagPerSlot = 0.06f;
+
+        const SquadRegistry *m_squads = nullptr; // BeginFrame で取った小隊の状態。無ければ nullptr
     };
 
     inline void RegisterAll()

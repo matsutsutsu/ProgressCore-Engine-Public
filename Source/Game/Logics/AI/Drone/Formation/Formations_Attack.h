@@ -35,6 +35,12 @@ namespace CCL::AI::Formation::Attack
         // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投の時刻が機体ごとに異なる）。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
 
+        // 主に飛距離で切り上げ、経過時間は壁際・遠距離で飛距離が伸びない場合の保険にする。
+        bool IsChargeOver(float flownDistance, float flownTime) const override
+        {
+            return flownDistance > kChargeRange || flownTime > kChargeTimeout;
+        }
+
         // 中心へ集まる移動そのものが予告。震えを足すと予告が二重になり、どちらを読むか分かりにくくなる。
         bool UsesShiverTelegraph() const override { return false; }
 
@@ -144,6 +150,13 @@ namespace CCL::AI::Formation::Attack
         // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に固定されるので、
         // 歩くだけでは避けられず、回避すれば避けられる値にする。
         static constexpr float kLeadFactor = 0.5f;
+
+        // この距離 [m] を飛んだら突撃を終える。短いと届く前にやめるので、間合いから逆算する。
+        //   発射地点はボスの 14m 上、BTの発動条件は 距離>30m なので、水平 50m なら
+        //   √(50²+14²) ≒ 52m の飛距離が要る。56m あれば水平 54m まで貫ける。
+        static constexpr float kChargeRange = 56.0f;
+
+        static constexpr float kChargeTimeout = 2.0f; // 突撃の最長時間 [秒]（壁際用の保険）
     };
 
     // 登録（DroneFormationSystem::Initialize から呼ぶ）。

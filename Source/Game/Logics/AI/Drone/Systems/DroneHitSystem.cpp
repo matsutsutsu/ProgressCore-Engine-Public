@@ -2,6 +2,7 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 陣形ごとの当たり方
+#include "Game/Logics/AI/Drone/Motion/ChargeMotionRegistry.h" // 動き方ごとの「当たらない区間」
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -17,8 +18,8 @@ namespace
      * @brief このドローンが突撃中で危険かを返す。
      *
      * - 発射待ち（fireDelay > 0）は危険ではない
-     * - 陣形追従の突撃（縦割り・小隊など）は、突入中ずっと危険
-     * - 直進系（弾幕）は、タメ（stateTimer > 0）が終わってからだけ危険
+     * - それ以外の「当たらない区間」は、突撃中の動き方（IChargeMotion::IsDangerous）に聞く。
+     *   陣形追従（縦割り・小隊など）は突入中ずっと危険、直進（弾幕）はタメが終わってからだけ危険
      *
      * 硬直（Stunned）と離脱（Returning）は FireCharge ではないので、状態の1行でまとめて除外される。
      * 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
@@ -35,9 +36,9 @@ namespace
         if (d.knockbackTimer > 0.0f) return false;                  // 切り払いで吹き飛ばし中は無害
         if (d.currentState != DroneState::FireCharge) return false; // Stunned / Returning もここで落ちる
         if (d.fireDelay > 0.0f) return false;                       // 発射待ち中
-        // 追従系（剛体・バネ）はタメを持たないので突入中ずっと危険。
-        // 直進系だけがタメ（stateTimer>0）の間は無害。
-        return d.chargeMode != ChargeMode::Straight || d.stateTimer <= 0.0f;
+
+        // 動き方に固有の「当たらない区間」（直進のタメなど）は、動き方が知っている。
+        return CCL::AI::Motion::GetChargeMotion(d.chargeMode).IsDangerous(d);
     }
 } // namespace
 
