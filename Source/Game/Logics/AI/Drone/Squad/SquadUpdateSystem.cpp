@@ -41,331 +41,13 @@ namespace
 
     // --- 追跡 ---
 
-    // 曲がるときに落とす速さの下限（追跡の速さに対する割合）。狙う方向とのずれが 90 度以上でこの割合になる。
-    //
-    // 一定の速さのままだと、一度通り過ぎた相手が旋回の円（半径＝速さ÷旋回上限）の内側に入り、
-    // どれだけ曲がっても機首を向けられずに周りを回り続ける。止まっている相手に当たらなくなる。
-    // 減速すれば旋回半径が縮み、小さく U ターンして向き直れる。
-    constexpr float kTurnSlowMinScale = 0.4f;
+    // 狙う方向とのずれがこの角度までは減速しない [度]。
+    // 正面付近の小さな修正舵でまで速さが揺れると、「決まった速さで追ってくる」ように見えない。
+    constexpr float kTurnSlowStartDeg = 25.0f;
 
-    // 速さを変えられる上限 [m/s²]（加速・減速とも）。
-    // 無制限だと、至近距離で切り返された瞬間にも急ブレーキして小回りで追ってくるので、
-    // 旋回上限で避けるという前提が崩れる。ブレーキが間に合うのは、通り過ぎた後の U ターンだけにする。
-    constexpr float kChaseAccel = 60.0f;
-
-    // ============================================================
-    // このフレームの入力
-    // ============================================================
-
-    // 全小隊に共通の、このフレームの入力。Update の先頭で1回だけ集める。
-    struct SquadFrame
-    {
-        bool    ordered        = false; // 小隊突撃が指示されていて、プレイヤーも居る
-        bool    attacking      = false; // 攻撃の合図が立っている
-        Vector3 bossPos        = Vector3::Zero;
-        Vector3 playerPos      = Vector3::Zero;
-        float   playerRunSpeed = 0.0f; // 追跡の速さの基準 [m/s]
-        float   dt             = 0.0f; // 敵の時間で進めた経過時間 [秒]
-    };
-
-    SquadFrame ReadFrame(World &world, float rawDt)
-    {
-        SquadFrame frame;
-
-        // --- 時間 ---
-
-        // 後続機と同じ時計で進める（DroneFormationSystem と同じ理由）。
-        // rawDt のままだと、世界スロー中にアンカーだけ等速で進み、スローで追う後続機との間で隊列がちぎれる。
-        frame.dt = rawDt;
-        if (world.HasResource<TimeContext>())
-        {
-            const auto &time = world.GetResource<TimeContext>();
-            frame.dt *= time.globalScale * time.groupScales[static_cast<size_t>(TimeGroup::Enemy)];
-        }
-
-        // --- ボス ---
-
-        // 1対1の戦闘なのでボスは1体。最初の1体の命令と位置を読む。
-        DroneFormationType formation = DroneFormationType::None;
-        auto               bossView  = world.View<BossCommandComponent, TransformComponent>();
-        for (auto b : bossView)
-        {
-            if (const auto *cmd = world.GetComponent<BossCommandComponent>(b))
-            {
-                formation       = cmd->requestFormation;
-                frame.attacking = cmd->droneAttackActive;
-            }
-            if (const auto *t = world.GetComponent<TransformComponent>(b))
-                frame.bossPos = Vector3(t->GetWorldPosition()); // position はローカル
-            break;
-        }
-
-        // --- プレイヤー ---
-
-        // プレイヤーが居なければ、追跡の目標が無い。小隊行動そのものを解除する（Regroup へ落ちる）。
-        bool hasPlayer = false;
-        if (world.HasResource<BattleContext>())
-        {
-            const auto &battle = world.GetResource<BattleContext>();
-            if (battle.HasPlayer())
-            {
-                frame.playerPos      = Vector3(battle.playerPos);
-                frame.playerRunSpeed = battle.playerRunSpeed;
-                hasPlayer            = true;
-            }
-        }
-
-        frame.ordered = hasPlayer && (formation == DroneFormationType::SquadAssault);
-        return frame;
-    }
-
-    // ============================================================
-    // 段階ごとの動き
-    // ============================================================
-
-    // 次の段階を決める。優先度順に上から判定し、最初に成立したものを採る。
-    SquadPhase ChoosePhase(const SquadFrame &frame)
-    {
-        // 別の陣形を指示された＝小隊行動は解除。
-        if (!frame.ordered) return SquadPhase::Regroup;
-
-        // 全小隊が合図と同時に追跡を始め、合図が立っている間ずっと続ける。終わりを決めるのは BT（合図を落とす）。
-        // 一斉に襲いかかる物量を見せる技なので、小隊ごとに開始をずらさない。
-        if (frame.attacking) return SquadPhase::Chase;
-
-        // 指示はあるが合図はまだ＝予備動作。
-        return SquadPhase::Gather;
-    }
-
-    /**
-     * @brief 待機（Regroup）: アンカーを先頭の機に重ねておく。
-     *
-     * この間、機体は別の陣形で動いていて、アンカーは誰も追っていない。
-     * 先頭の機に重ねておけば、小隊突撃が始まった瞬間にアンカーが今いる場所から滑らかに動き出す。
-     *
-     * @param squad アンカーを置く小隊。生きている一番前の席の機に重ねる。
-     */
-    void FollowLeadMember(SquadState &squad)
-    {
-        for (size_t slot = 0; slot < squad.memberValid.size(); ++slot)
-        {
-            if (!squad.memberValid[slot]) continue;
-
-            squad.anchorPos      = squad.memberPos[slot];
-            squad.anchorVelocity = squad.memberVel[slot];
-
-            Vector3 dir = squad.memberVel[slot];
-            if (dir.LengthSquared() > 0.001f)
-            {
-                dir.Normalize();
-                squad.anchorForward = dir;
-            }
-            return;
-        }
-    }
-
-    /**
-     * @brief 集合（Gather）: ボスの頭上の輪の自分の場所へ集まり、着いたら下へ降りてくる。
-     *
-     * 小隊ごとに輪の上の角度をずらすので、ボスを囲むように並ぶ。
-     * 集まって降りてくる動きそのものが予告で、降り切った場所から追跡が始まる。
-     *
-     * @param squad       動かす小隊。
-     * @param prevPhase   前フレームの段階。集合に入った最初のフレームを見分ける。
-     * @param rank        生きている小隊の中での順番（0〜activeCount-1）。輪の上の位置を決める。
-     * @param activeCount 生きている小隊の数。
-     * @param frame       このフレームの入力。
-     * @param tuning      小隊の調整値。
-     */
-    void UpdateGather(SquadState &squad, SquadPhase prevPhase, uint8_t rank, uint8_t activeCount,
-                      const SquadFrame &frame, const SquadTuning &tuning)
-    {
-        // --- 目標点 ---
-
-        // 集合に入った最初のフレームは、上から始める。
-        if (prevPhase != SquadPhase::Gather) squad.descend = 0.0f;
-
-        // 順番を 0〜1 の割合にして、輪を等分する。
-        // 最大数（kMaxSquads）ではなく生きている小隊の数で割る。数小隊しか居ないとき、輪の一部に固まらないように。
-        const float slot01 = (static_cast<float>(rank) + 0.5f) / static_cast<float>(activeCount);
-        const float angle  = slot01 * DirectX::XM_2PI;
-
-        const Vector3 ring(std::cos(angle) * tuning.gatherRadius, 0.0f, std::sin(angle) * tuning.gatherRadius);
-        const Vector3 high = frame.bossPos + ring + Vector3::UnitY * kGatherHighHeight;
-        const Vector3 low  = frame.bossPos + ring + Vector3::UnitY * tuning.gatherLowHeight;
-
-        // 上の集合点に着いた小隊から降り始める。一度降り始めたら、止めずに最後まで降りる。
-        if (squad.descend > 0.0f || Vector3::Distance(squad.anchorPos, high) < kGatherArriveDist)
-            squad.descend = (std::min)(1.0f, squad.descend + frame.dt / kDescendSeconds);
-
-        const Vector3 desired = Vector3::Lerp(high, low, squad.descend);
-
-        // --- 移動 ---
-
-        // 目標点へバネで寄せる。瞬間移動させず、上限の速さで飛んでいく。
-        Vector3 targetVel = (desired - squad.anchorPos) * kAnchorSpring.gain;
-        if (targetVel.LengthSquared() > kAnchorSpring.maxSpeed * kAnchorSpring.maxSpeed)
-        {
-            targetVel.Normalize();
-            targetVel *= kAnchorSpring.maxSpeed;
-        }
-        squad.anchorVelocity = Vector3::Lerp(squad.anchorVelocity, targetVel,
-                                             (std::min)(kAnchorSpring.damping * frame.dt, 1.0f));
-        squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * frame.dt;
-
-        // --- 向き ---
-
-        // プレイヤーの方を向く（これから来ると読ませる）。
-        Vector3 face(frame.playerPos.x - squad.anchorPos.x, 0.0f, frame.playerPos.z - squad.anchorPos.z);
-        if (face.LengthSquared() > 0.001f)
-        {
-            face.Normalize();
-            Vector3 blended = Vector3::Lerp(squad.anchorForward, face, (std::min)(kGatherTurnRate * frame.dt, 1.0f));
-            if (blended.LengthSquared() > 0.001f)
-            {
-                blended.Normalize();
-                squad.anchorForward = blended;
-            }
-        }
-    }
-
-    /**
-     * @brief アンカーの向きを target の方へ、旋回上限の範囲で曲げる。
-     *
-     * 終末ロック（一定距離から直線に固定する処理）は持たない。
-     * 近づくほどプレイヤーを見る角度は速く変わり、旋回上限を超えた時点で曲がりきれなくなる。
-     * 至近距離で直線になるのは、この上限から自然に起きる。
-     *
-     * @param squad          向きを曲げる小隊。
-     * @param target         向かう先（ワールド）。
-     * @param maxTurnRateDeg 曲がれる速さの上限 [度/秒]。
-     * @param dt             経過時間 [秒]。
-     * @return 曲げる前の向きと target の方向のなす角の cos（1=正面、0=真横）。曲がるときの減速に使う。
-     */
-    float SteerToward(SquadState &squad, const Vector3 &target, float maxTurnRateDeg, float dt)
-    {
-        Vector3     toTarget = target - squad.anchorPos;
-        const float dist     = toTarget.Length();
-        if (dist < 0.001f) return 1.0f;
-        toTarget /= dist;
-
-        const float cosA  = std::clamp(squad.anchorForward.Dot(toTarget), -1.0f, 1.0f);
-        const float angle = std::acos(cosA);
-        if (angle <= 1.0e-4f)
-        {
-            squad.anchorForward = toTarget;
-            return cosA;
-        }
-
-        // 1フレームで曲がれる角度までしか寄せない。
-        const float maxRad  = DirectX::XMConvertToRadians(maxTurnRateDeg) * dt;
-        const float t       = (std::min)(maxRad / angle, 1.0f);
-        Vector3     blended = Vector3::Lerp(squad.anchorForward, toTarget, t);
-        if (blended.LengthSquared() > 0.001f)
-        {
-            blended.Normalize();
-            squad.anchorForward = blended;
-        }
-        return cosA;
-    }
-
-    /**
-     * @brief 追跡（Chase）: アンカーがプレイヤーを追い続ける。後続機はそれに付いていく。
-     *
-     * 曲がる速さに上限があり、避けられるかどうかはこの上限で決まる。速さは曲がるときだけ落とす。
-     *
-     * @param squad     動かす小隊。
-     * @param prevPhase 前フレームの段階。追跡に入った最初のフレームを見分ける。
-     * @param frame     このフレームの入力。
-     * @param tuning    小隊の調整値。
-     */
-    void UpdateChase(SquadState &squad, SquadPhase prevPhase, const SquadFrame &frame, const SquadTuning &tuning)
-    {
-        // --- 向き ---
-
-        const float aimCos = SteerToward(squad, frame.playerPos, tuning.maxTurnRateDeg, frame.dt);
-
-        // --- 速さ ---
-
-        // 追跡に入った最初のフレームは、今の速さから加速を始める（いきなり最高速にしない）。
-        if (prevPhase != SquadPhase::Chase) squad.chaseSpeed = squad.anchorVelocity.Length();
-
-        // 狙う方向とのずれが大きいほど遅くする（理由は kTurnSlowMinScale）。
-        // 正面なら最高速、真横より後ろなら下限の割合。速さの変化は kChaseAccel で頭打ちにする。
-        const float topSpeed    = frame.playerRunSpeed * tuning.chaseSpeedOverRun;
-        const float facing      = std::clamp(aimCos, 0.0f, 1.0f);
-        const float targetSpeed = topSpeed * (kTurnSlowMinScale + (1.0f - kTurnSlowMinScale) * facing);
-        const float maxDelta    = kChaseAccel * frame.dt;
-        squad.chaseSpeed += std::clamp(targetSpeed - squad.chaseSpeed, -maxDelta, maxDelta);
-
-        // --- 移動 ---
-
-        squad.anchorVelocity = squad.anchorForward * squad.chaseSpeed;
-        squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * frame.dt;
-    }
-
-    /**
-     * @brief アンカーが床へ沈まないように高度を止める。全段階の最後に必ず通す。
-     *
-     * 位置だけでなく、速度と向きの下向き成分も抜く。
-     * 追従機は「1つ前の機体の速度」を先渡しで受け取るので、アンカーが下を向いたままだと後続機が床へ押し込まれ続ける。
-     *
-     * @param squad 高度を止める小隊。
-     */
-    void ClampAltitude(SquadState &squad)
-    {
-        if (squad.anchorPos.y >= kSquadFloorY) return;
-
-        squad.anchorPos.y = kSquadFloorY;
-
-        // 速度が下を向いたままだと、追従機がそれを followFeedForward として受け取って床へ押し込まれ続ける。
-        if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
-
-        // 向きも水平にする。
-        // 真下を向いたまま追跡の速さを掛けると、速度の大半が止められた縦方向に消えて床に張り付く。
-        // 水平成分だけ残せば、床の近くを飛んで通り過ぎる。
-        if (squad.anchorForward.y < 0.0f)
-        {
-            squad.anchorForward.y = 0.0f;
-            if (squad.anchorForward.LengthSquared() < 0.001f)
-                squad.anchorForward = Vector3::UnitZ; // 真下を向いていた場合の退避
-            squad.anchorForward.Normalize();
-        }
-    }
-
-    /**
-     * @brief 小隊1個ぶんの段階を決め、アンカーを動かす。
-     * @param squad       更新する小隊。
-     * @param rank        生きている小隊の中での順番（0〜activeCount-1）。
-     * @param activeCount 生きている小隊の数。
-     * @param frame       このフレームの入力。
-     * @param tuning      小隊の調整値。
-     */
-    void UpdateSquad(SquadState &squad, uint8_t rank, uint8_t activeCount,
-                     const SquadFrame &frame, const SquadTuning &tuning)
-    {
-        const SquadPhase prevPhase = squad.phase;
-        squad.phase                = ChoosePhase(frame);
-
-        // 待機中と、待機から出た最初のフレームは、アンカーを先頭の機に重ねる。
-        // 待機を経ずに始まった場合（配備した直後に小隊突撃を指示された）も、原点から飛んでこない。
-        if (squad.phase == SquadPhase::Regroup || prevPhase == SquadPhase::Regroup)
-            FollowLeadMember(squad);
-
-        switch (squad.phase)
-        {
-        case SquadPhase::Gather:
-            UpdateGather(squad, prevPhase, rank, activeCount, frame, tuning);
-            break;
-        case SquadPhase::Chase:
-            UpdateChase(squad, prevPhase, frame, tuning);
-            break;
-        default:
-            break; // Regroup は上で済んでいる
-        }
-
-        ClampAltitude(squad);
-    }
+    // 向きが合ってきたときに旋回を緩める強さ [1/s]。旋回の速さを「残りの角度 × この値」までに抑える。
+    // 例えば 3 なら、残り 30 度で 90 度/秒、残り 10 度で 30 度/秒。向きが揃う直前に行き過ぎて左右に振れない。
+    constexpr float kTurnEaseGain = 3.0f;
 
     // ============================================================
     // デバッグ UI の部品
@@ -376,16 +58,6 @@ namespace
     {
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", text);
-    }
-
-    const char *SquadPhaseName(SquadPhase phase)
-    {
-        switch (phase)
-        {
-        case SquadPhase::Regroup: return "Regroup";
-        case SquadPhase::Gather: return "Gather";
-        default: return "Chase";
-        }
     }
 } // namespace
 
@@ -404,13 +76,14 @@ void SquadUpdateSystem::Update(float rawDt)
     // 処理フロー:
     // 1. このフレームの入力（時間・ボスの命令・プレイヤー）を集める
     // 2. 各小隊の生存数と、席ごとの位置・速度を集め直す
-    // 3. 生きている小隊ごとに、段階を決めてアンカーを動かす
+    // 3. 小隊同士の反発を、全小隊を動かす前にまとめて求める
+    // 4. 生きている小隊ごとに、段階を決めてアンカーを動かす
 
     if (!m_world->HasResource<SquadRegistry>()) m_world->AddResource<SquadRegistry>();
     auto &reg = m_world->GetResource<SquadRegistry>();
 
     // SquadFrame は全小隊に共通なので、Update の先頭で1回だけ集める。
-    const SquadFrame frame = ReadFrame(*m_world, rawDt);
+    const SquadFrame frame = ReadFrame(rawDt);
 
     // --- 席ごとの位置と速度 ---
 
@@ -443,11 +116,330 @@ void SquadUpdateSystem::Update(float rawDt)
     for (const auto &s : reg.squads)
         if (s.aliveCount > 0) ++activeCount;
 
+    ComputeSeparation(reg);
+
     uint8_t rank = 0;
     for (auto &s : reg.squads)
     {
         if (s.aliveCount == 0) continue;
         UpdateSquad(s, rank++, activeCount, frame, reg.tuning);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// このフレームの入力
+// ---------------------------------------------------------------------------
+
+SquadUpdateSystem::SquadFrame SquadUpdateSystem::ReadFrame(float rawDt) const
+{
+    SquadFrame frame;
+
+    // --- 時間 ---
+
+    // 後続機と同じ時計で進める（DroneFormationSystem と同じ理由）。
+    // rawDt のままだと、世界スロー中にアンカーだけ等速で進み、スローで追う後続機との間で隊列がちぎれる。
+    frame.dt = rawDt;
+    if (m_world->HasResource<TimeContext>())
+    {
+        const auto &time = m_world->GetResource<TimeContext>();
+        frame.dt *= time.globalScale * time.groupScales[static_cast<size_t>(TimeGroup::Enemy)];
+    }
+
+    // --- ボス ---
+
+    // 1対1の戦闘なのでボスは1体。最初の1体の命令と位置を読む。
+    DroneFormationType formation = DroneFormationType::None;
+    auto               bossView  = m_world->View<BossCommandComponent, TransformComponent>();
+    for (auto b : bossView)
+    {
+        if (const auto *cmd = m_world->GetComponent<BossCommandComponent>(b))
+        {
+            formation       = cmd->requestFormation;
+            frame.attacking = cmd->droneAttackActive;
+        }
+        if (const auto *t = m_world->GetComponent<TransformComponent>(b))
+            frame.bossPos = Vector3(t->GetWorldPosition()); // position はローカル
+        break;
+    }
+
+    // --- プレイヤー ---
+
+    // プレイヤーが居なければ、追跡の目標が無い。小隊行動そのものを解除する（Regroup へ落ちる）。
+    bool hasPlayer = false;
+    if (m_world->HasResource<BattleContext>())
+    {
+        const auto &battle = m_world->GetResource<BattleContext>();
+        if (battle.HasPlayer())
+        {
+            frame.playerPos      = Vector3(battle.playerPos);
+            frame.playerRunSpeed = battle.playerRunSpeed;
+            hasPlayer            = true;
+        }
+    }
+
+    frame.ordered = hasPlayer && (formation == DroneFormationType::SquadAssault);
+    return frame;
+}
+
+// ---------------------------------------------------------------------------
+// 小隊同士の反発
+// ---------------------------------------------------------------------------
+
+void SquadUpdateSystem::ComputeSeparation(SquadRegistry &reg) const
+{
+    const float radius = reg.tuning.separationRadius;
+
+    for (auto &self : reg.squads)
+    {
+        self.separation = Vector3::Zero;
+        if (self.aliveCount == 0) continue;
+
+        // 最大32個なので総当たりでよい。
+        for (const auto &other : reg.squads)
+        {
+            if (&other == &self || other.aliveCount == 0) continue;
+
+            Vector3     away = self.anchorPos - other.anchorPos;
+            const float dist = away.Length();
+
+            // ぴったり重なっていると離れる向きが決まらないので飛ばす（集合の輪で離してあるので起きにくい）。
+            if (dist < 0.001f || dist >= radius) continue;
+
+            // 近いほど強く押す。重なっていれば1、半径ちょうどで0。
+            away /= dist;
+            self.separation += away * (1.0f - dist / radius);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 段階ごとの動き
+// ---------------------------------------------------------------------------
+
+void SquadUpdateSystem::UpdateSquad(SquadState &squad, uint8_t rank, uint8_t activeCount,
+                                    const SquadFrame &frame, const SquadTuning &tuning) const
+{
+    const SquadPhase prevPhase = squad.phase;
+    squad.phase                = ChoosePhase(frame);
+
+    // 待機中と、待機から出た最初のフレームは、アンカーを先頭の機に重ねる。
+    // 待機を経ずに始まった場合（配備した直後に小隊突撃を指示された）も、原点から飛んでこない。
+    if (squad.phase == SquadPhase::Regroup || prevPhase == SquadPhase::Regroup)
+        FollowLeadMember(squad);
+
+    switch (squad.phase)
+    {
+    case SquadPhase::Gather:
+        UpdateGather(squad, prevPhase, rank, activeCount, frame, tuning);
+        break;
+    case SquadPhase::Chase:
+        UpdateChase(squad, prevPhase, frame, tuning);
+        break;
+    default:
+        break; // Regroup は上で済んでいる
+    }
+
+    ClampAltitude(squad);
+}
+
+SquadPhase SquadUpdateSystem::ChoosePhase(const SquadFrame &frame) const
+{
+    // 別の陣形を指示された＝小隊行動は解除。
+    if (!frame.ordered) return SquadPhase::Regroup;
+
+    // 全小隊が合図と同時に追跡を始め、合図が立っている間ずっと続ける。終わりを決めるのは BT（合図を落とす）。
+    // 一斉に襲いかかる物量を見せる技なので、小隊ごとに開始をずらさない。
+    if (frame.attacking) return SquadPhase::Chase;
+
+    // 指示はあるが合図はまだ＝予備動作。
+    return SquadPhase::Gather;
+}
+
+void SquadUpdateSystem::FollowLeadMember(SquadState &squad) const
+{
+    for (size_t slot = 0; slot < squad.memberValid.size(); ++slot)
+    {
+        if (!squad.memberValid[slot]) continue;
+
+        squad.anchorPos      = squad.memberPos[slot];
+        squad.anchorVelocity = squad.memberVel[slot];
+
+        Vector3 dir = squad.memberVel[slot];
+        if (dir.LengthSquared() > 0.001f)
+        {
+            dir.Normalize();
+            squad.anchorForward = dir;
+        }
+        return;
+    }
+}
+
+void SquadUpdateSystem::UpdateGather(SquadState &squad, SquadPhase prevPhase, uint8_t rank, uint8_t activeCount,
+                                     const SquadFrame &frame, const SquadTuning &tuning) const
+{
+    // --- 目標点 ---
+
+    // 集合に入った最初のフレームは、上から始める。
+    if (prevPhase != SquadPhase::Gather) squad.descend = 0.0f;
+
+    // 順番を 0〜1 の割合にして、輪を等分する。
+    // 最大数（kMaxSquads）ではなく生きている小隊の数で割る。数小隊しか居ないとき、輪の一部に固まらないように。
+    const float slot01 = (static_cast<float>(rank) + 0.5f) / static_cast<float>(activeCount);
+    const float angle  = slot01 * DirectX::XM_2PI;
+
+    const Vector3 ring(std::cos(angle) * tuning.gatherRadius, 0.0f, std::sin(angle) * tuning.gatherRadius);
+    const Vector3 high = frame.bossPos + ring + Vector3::UnitY * kGatherHighHeight;
+    const Vector3 low  = frame.bossPos + ring + Vector3::UnitY * tuning.gatherLowHeight;
+
+    // 上の集合点に着いた小隊から降り始める。一度降り始めたら、止めずに最後まで降りる。
+    if (squad.descend > 0.0f || Vector3::Distance(squad.anchorPos, high) < kGatherArriveDist)
+        squad.descend = (std::min)(1.0f, squad.descend + frame.dt / kDescendSeconds);
+
+    const Vector3 desired = Vector3::Lerp(high, low, squad.descend);
+
+    // --- 移動 ---
+
+    // 目標点へバネで寄せる。瞬間移動させず、上限の速さで飛んでいく。
+    Vector3 targetVel = (desired - squad.anchorPos) * kAnchorSpring.gain;
+    if (targetVel.LengthSquared() > kAnchorSpring.maxSpeed * kAnchorSpring.maxSpeed)
+    {
+        targetVel.Normalize();
+        targetVel *= kAnchorSpring.maxSpeed;
+    }
+    squad.anchorVelocity = Vector3::Lerp(squad.anchorVelocity, targetVel,
+                                         (std::min)(kAnchorSpring.damping * frame.dt, 1.0f));
+    squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * frame.dt;
+
+    // --- 向き ---
+
+    // プレイヤーの方を向く（これから来ると読ませる）。
+    Vector3 face(frame.playerPos.x - squad.anchorPos.x, 0.0f, frame.playerPos.z - squad.anchorPos.z);
+    if (face.LengthSquared() > 0.001f)
+    {
+        face.Normalize();
+        Vector3 blended = Vector3::Lerp(squad.anchorForward, face, (std::min)(kGatherTurnRate * frame.dt, 1.0f));
+        if (blended.LengthSquared() > 0.001f)
+        {
+            blended.Normalize();
+            squad.anchorForward = blended;
+        }
+    }
+}
+
+float SquadUpdateSystem::SteerToward(SquadState &squad, const Vector3 &target, const SquadTuning &tuning,
+                                     float dt) const
+{
+    Vector3     toTarget = target - squad.anchorPos;
+    const float dist     = toTarget.Length();
+    if (dist < 0.001f) return 1.0f;
+    toTarget /= dist;
+
+    const float cosA  = std::clamp(squad.anchorForward.Dot(toTarget), -1.0f, 1.0f);
+    const float angle = std::acos(cosA);
+
+    // --- 旋回の速さ ---
+
+    // 欲しい速さは、上限と「残りの角度 × kTurnEaseGain」の小さい方。
+    // 上げるときは turnAccelDeg で少しずつ（曲がり始めがゆっくり）、下げるときはすぐ（行き過ぎて振れないように）。
+    const float wantRate = (std::min)(tuning.maxTurnRateDeg, DirectX::XMConvertToDegrees(angle) * kTurnEaseGain);
+    if (wantRate > squad.turnRateDeg)
+        squad.turnRateDeg = (std::min)(wantRate, squad.turnRateDeg + tuning.turnAccelDeg * dt);
+    else
+        squad.turnRateDeg = wantRate;
+
+    if (angle <= 1.0e-4f)
+    {
+        squad.anchorForward = toTarget;
+        return cosA;
+    }
+
+    // --- 向き ---
+
+    // 今の向きと狙う方向を含む面の中で、1フレームぶんの角度だけ回す。
+    // Lerp で寄せると角度が正確に出ず、真後ろを狙ったときは横へ回らずに向きが一瞬で反転する。
+    Vector3 axis = squad.anchorForward.Cross(toTarget);
+    if (axis.LengthSquared() < 1.0e-6f) axis = Vector3::UnitY; // 真後ろ：水平に回って向き直る
+    axis.Normalize();
+
+    const float step    = (std::min)(DirectX::XMConvertToRadians(squad.turnRateDeg) * dt, angle);
+    Vector3     rotated = Vector3::Transform(squad.anchorForward, Quaternion::CreateFromAxisAngle(axis, step));
+    if (rotated.LengthSquared() > 0.001f)
+    {
+        rotated.Normalize();
+        squad.anchorForward = rotated;
+    }
+    return cosA;
+}
+
+void SquadUpdateSystem::UpdateChase(SquadState &squad, SquadPhase prevPhase, const SquadFrame &frame,
+                                    const SquadTuning &tuning) const
+{
+    // --- 狙い ---
+
+    // プレイヤーへの向きに、他の小隊から離れる向きを混ぜる。
+    // プレイヤーに近いほど反発を弱め、最後は必ずプレイヤーを狙う（止まっている相手に当てるため）。
+    Vector3     aim          = frame.playerPos;
+    Vector3     toPlayer     = frame.playerPos - squad.anchorPos;
+    const float distToPlayer = toPlayer.Length();
+    if (distToPlayer > 0.001f && tuning.separationFadeDist > 0.001f)
+    {
+        toPlayer /= distToPlayer;
+        const float fade = std::clamp(distToPlayer / tuning.separationFadeDist, 0.0f, 1.0f);
+        const Vector3 aimDir = toPlayer + squad.separation * (tuning.separationWeight * fade);
+
+        // SteerToward は位置を受け取るので、混ぜた向きの先に点を置く（向きだけが効く）。
+        aim = squad.anchorPos + aimDir * distToPlayer;
+    }
+
+    // --- 向き ---
+
+    // 追跡に入った最初のフレームは、今の速さから加速を始め（いきなり最高速にしない）、旋回も止まった状態から始める。
+    if (prevPhase != SquadPhase::Chase)
+    {
+        squad.chaseSpeed  = squad.anchorVelocity.Length();
+        squad.turnRateDeg = 0.0f;
+    }
+
+    const float aimCos = SteerToward(squad, aim, tuning, frame.dt);
+
+    // --- 速さ ---
+
+    // 狙う方向とのずれが kTurnSlowStartDeg までは最高速のまま。そこから 90 度にかけて下限の割合まで落とす
+    // （減速する理由は turnSlowMinScale の説明）。
+    const float topSpeed    = frame.playerRunSpeed * tuning.chaseSpeedOverRun;
+    const float slowStart   = std::cos(DirectX::XMConvertToRadians(kTurnSlowStartDeg));
+    const float facing      = std::clamp(aimCos / slowStart, 0.0f, 1.0f);
+    const float targetSpeed = topSpeed * (tuning.turnSlowMinScale + (1.0f - tuning.turnSlowMinScale) * facing);
+
+    // 減速と再加速で変化の速さを分ける。どちらも緩やかにして、速さが瞬時に切り替わらないようにする。
+    const float rate     = (targetSpeed < squad.chaseSpeed) ? tuning.chaseBrake : tuning.chaseAccel;
+    const float maxDelta = rate * frame.dt;
+    squad.chaseSpeed += std::clamp(targetSpeed - squad.chaseSpeed, -maxDelta, maxDelta);
+
+    // --- 移動 ---
+
+    squad.anchorVelocity = squad.anchorForward * squad.chaseSpeed;
+    squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * frame.dt;
+}
+
+void SquadUpdateSystem::ClampAltitude(SquadState &squad) const
+{
+    if (squad.anchorPos.y >= kSquadFloorY) return;
+
+    squad.anchorPos.y = kSquadFloorY;
+
+    // 速度が下を向いたままだと、追従機がそれを followFeedForward として受け取って床へ押し込まれ続ける。
+    if (squad.anchorVelocity.y < 0.0f) squad.anchorVelocity.y = 0.0f;
+
+    // 向きも水平にする。
+    // 真下を向いたまま追跡の速さを掛けると、速度の大半が止められた縦方向に消えて床に張り付く。
+    // 水平成分だけ残せば、床の近くを飛んで通り過ぎる。
+    if (squad.anchorForward.y < 0.0f)
+    {
+        squad.anchorForward.y = 0.0f;
+        if (squad.anchorForward.LengthSquared() < 0.001f)
+            squad.anchorForward = Vector3::UnitZ; // 真下を向いていた場合の退避
+        squad.anchorForward.Normalize();
     }
 }
 
@@ -528,8 +520,25 @@ void SquadUpdateSystem::OnGui()
         ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.5f, 1.0f), "追跡");
         ImGui::SliderFloat("速さ（走行比）", &tuning.chaseSpeedOverRun, 0.5f, 2.0f, "x%.2f");
         HoverTooltip("プレイヤーの走行速度に掛ける倍率。1 を超えると走って逃げても追いつかれる");
-        ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 720.0f, "%.0f deg/s");
+        ImGui::SliderFloat("旋回上限", &tuning.maxTurnRateDeg, 10.0f, 360.0f, "%.0f deg/s");
         HoverTooltip("回避はこの制限だけで成り立つ。上げすぎると切り返しても曲がって当たる");
+        ImGui::SliderFloat("旋回の立ち上がり", &tuning.turnAccelDeg, 10.0f, 1000.0f, "%.0f deg/s2");
+        HoverTooltip("曲がり始めに旋回を速めていく速さ。小さいほど切り返しへの反応が遅れ、ゆっくり曲がり始める");
+        ImGui::SliderFloat("曲がるときの速さ", &tuning.turnSlowMinScale, 0.1f, 1.0f, "x%.2f");
+        HoverTooltip("大きく曲がるとき（90度以上）に落とす速さの下限。1 で減速しない");
+        ImGui::SliderFloat("減速", &tuning.chaseBrake, 1.0f, 60.0f, "%.1f m/s2");
+        HoverTooltip("曲がるときに速さを落とす速さ。小さいほど勢いで流れてから曲がる");
+        ImGui::SliderFloat("再加速", &tuning.chaseAccel, 1.0f, 60.0f, "%.1f m/s2");
+        HoverTooltip("向き直った後に速さを戻す速さ。追跡を始めたときの加速も兼ねる");
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "小隊同士の反発");
+        ImGui::SliderFloat("反発の半径", &tuning.separationRadius, 2.0f, 30.0f, "%.1f m");
+        HoverTooltip("他の小隊のアンカーがこの距離より近いと離れようとする。小隊1本の長さ（間隔×4）より長くする");
+        ImGui::SliderFloat("反発の強さ", &tuning.separationWeight, 0.0f, 3.0f, "%.2f");
+        HoverTooltip("狙う方向に混ぜる割合。0 で反発なし（全小隊が1本に重なる元の動き）");
+        ImGui::SliderFloat("反発を弱める距離", &tuning.separationFadeDist, 1.0f, 40.0f, "%.0f m");
+        HoverTooltip("プレイヤーからこの距離より内側では反発を弱め、プレイヤーの位置で0にする。小さいほど直前まで広がるが当たりにくい");
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.7f, 1.0f, 0.7f, 1.0f), "集合");
@@ -546,17 +555,27 @@ void SquadUpdateSystem::OnGui()
 
     // --- 一覧 ---
 
-    // 生きている小隊のアンカーの位置と段階を、先頭から6個まで出す。
+    // 生きている小隊のアンカーの位置・段階・反発の大きさを、先頭から6個まで出す。
     int shown = 0;
     for (uint8_t i = 0; i < SquadRegistry::kMaxSquads && shown < 6; ++i)
     {
         const auto &s = reg.squads[i];
         if (s.aliveCount == 0) continue;
 
-        ImGui::Text("小隊%2d: %d機  %-8s  (%.0f, %.0f, %.0f)",
+        ImGui::Text("小隊%2d: %d機  %-8s  (%.0f, %.0f, %.0f)  反発 %.2f",
                     i, s.aliveCount, SquadPhaseName(s.phase),
-                    s.anchorPos.x, s.anchorPos.y, s.anchorPos.z);
+                    s.anchorPos.x, s.anchorPos.y, s.anchorPos.z, s.separation.Length());
         ++shown;
+    }
+}
+
+const char *SquadUpdateSystem::SquadPhaseName(SquadPhase phase) const
+{
+    switch (phase)
+    {
+    case SquadPhase::Regroup: return "Regroup";
+    case SquadPhase::Gather: return "Gather";
+    default: return "Chase";
     }
 }
 
