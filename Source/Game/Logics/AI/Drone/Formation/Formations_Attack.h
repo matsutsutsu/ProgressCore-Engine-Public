@@ -151,10 +151,12 @@ namespace CCL::AI::Formation::Attack
         // 歩くだけでは避けられず、回避すれば避けられる値にする。
         static constexpr float kLeadFactor = 0.5f;
 
-        // この距離 [m] を飛んだら突撃を終える。短いと届く前にやめるので、間合いから逆算する。
-        //   発射地点はボスの 14m 上、BTの発動条件は 距離>30m なので、水平 50m なら
-        //   √(50²+14²) ≒ 52m の飛距離が要る。56m あれば水平 54m まで貫ける。
-        static constexpr float kChargeRange = 56.0f;
+        // この距離 [m] を飛んだら突撃を終える。短いと届く前にやめるので、BT の発動距離から逆算する。
+        //   届かないと判定が閉じた後の離脱の惰性（440 m/s から減速）でプレイヤーを素通りし、
+        //   重なっているのに当たらない（BT を 距離>80m にした時、56m のままで全弾外れになった）。
+        //   発射地点はボスの 14m 上なので、水平 120m なら √(120²+14²) ≒ 121m。余裕を見て 140m。
+        //   BT の発動距離を 120m より遠くするならここも伸ばすこと。
+        static constexpr float kChargeRange = 140.0f;
 
         static constexpr float kChargeTimeout = 2.0f; // 突撃の最長時間 [秒]（壁際用の保険）
     };
