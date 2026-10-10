@@ -110,9 +110,10 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
                 peak = m_dashBlurPeak;
             }
         }
-        else if (dash.isApproaching)
+        else if (dash.isFlurryLunging)
         {
-            const float e = CalculateEnvelope(dash.approachTimer, dash.approachDuration);
+            // ラッシュの踏み込み(フェーズA)に集中線を乗せる（集中スローのフェーズBでは出さない）。
+            const float e = CalculateEnvelope(dash.flurryTimer, dash.flurryLungeDuration);
             if (e > env)
             {
                 env  = e;

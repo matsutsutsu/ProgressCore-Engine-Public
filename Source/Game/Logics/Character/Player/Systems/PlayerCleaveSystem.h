@@ -73,7 +73,7 @@ private:
     void HoldGlobalSlow(const CleaveComponent &cleave);
     // 全体スローをすぐに解除する（突進の瞬間に等速へ戻す）。
     void ClearGlobalSlow();
-    // 画面のモノクロ演出の ON/OFF（JustEvadeEffectComponent の hold を使う）。
+    // 画面のビネット演出の ON/OFF（JustEvadeEffectComponent の active を使う）。
     void SetMonochrome(bool on);
     /**
      * @brief プレイヤーを照準の水平方向へ向ける。

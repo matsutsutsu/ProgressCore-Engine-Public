@@ -42,19 +42,21 @@ void JustEvadeSystem::Initialize()
 
     // ジャスト回避が成立した瞬間の処理
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        // 1. プレイヤーを一瞬止め、世界全体を 0.5 秒だけ 10% の速度にする。
-        Time::HitStopEntity(*m_world, ev.playerID, 0.15f); // プレイヤーだけ 0.15 秒完全に止める
-        Time::HitStop(*m_world, 0.5f, 0.1f);               // 世界全体を 0.5 秒だけ 10% の速度にする
-
-        // 2. 今のダッシュを終え、攻撃が届く位置までボスへ近づく「接近」を始める。
-        //    実際の移動とスローの打ち消しは PlayerDashSystem が毎フレーム行う。
+        // 1. ラッシュ(踏み込み)を開始する。全停止は入れず、即“ぎゅいん”と踏み込ませたいので
+        //    プレイヤーの完全停止(HitStopEntity)は使わない。世界スローは PlayerDashSystem が
+        //    毎フレーム SustainWorldSlow で駆動するが、成立フレームの1フレームだけ空かないよう
+        //    ここでも一度スローを点火しておく（受け取りは次フレームの PlayerDashSystem）。
         if (auto *dash = m_world->GetComponent<DashComponent>(ev.playerID))
         {
-            dash->isDashing               = false; // 回避ダッシュを終えて接近へ移る
+            dash->isDashing               = false; // 回避ダッシュを終えてラッシュへ移る
             dash->isJustEvadeWindowActive = false;
-            dash->isInvincible            = true; // 接近中もスロー中のドローンに当たらないよう無敵にする
-            dash->isApproaching           = true;
-            dash->approachTimer           = dash->approachDuration;
+            dash->isInvincible            = true; // ラッシュ中はスロー中のドローンに当たらないよう無敵
+            dash->isFlurryLunging         = true;  // フェーズA：踏み込み
+            dash->isFlurryPlanting        = false;
+            dash->isFlurryFocusing        = false;
+            dash->flurryTimer             = dash->flurryLungeDuration;
+
+            Time::SustainWorldSlow(*m_world, dash->flurryWorldScale, dash->flurrySlowRecover);
         }
 
         // 3. ジャスト回避専用のモーションへ遷移させる。
@@ -63,12 +65,11 @@ void JustEvadeSystem::Initialize()
             animParams->SetTrigger(HASH_TRIG_JUST_EVADE);
         }
 
-        // 4. 画面演出を始める。
-        // シーンに置いた JustEvadeEffectComponent(singleton) のタイマーを立てるだけ。
-        // 色調・放射ブラー・色収差・ビネットは JustEvadeEffectSystem が毎フレーム動かす。
+        // 4. 画面演出（ビネット）を立てる。実際のフェードイン／アウトは JustEvadeEffectSystem が
+        //    weight を実時間で動かして行う。降ろす（active=false）のはラッシュ終了時に PlayerDashSystem。
         if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
         {
-            fx->Trigger();
+            fx->flurryActive = true;
         }
 
         // TODO(2026-07-16): ジャスト回避の効果音と残像を足す

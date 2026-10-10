@@ -197,8 +197,10 @@ void PlayerCleaveSystem::ClearGlobalSlow()
 
 void PlayerCleaveSystem::SetMonochrome(bool on)
 {
+    // 切り払い準備中もラッシュと同じビネット演出を出す（演出をビネット1本に集約したため）。
+    //   ラッシュとは別フラグにして、どちらかが要求していれば点灯する（互いに消し合わない）。
     if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
-        fx->hold = on;
+        fx->cleaveActive = on;
 }
 
 // ---------------------------------------------------------------------------

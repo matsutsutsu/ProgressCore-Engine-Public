@@ -15,16 +15,10 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
-// 実行時の状態（timer / hold）は保存しないので並べない
+// 実行時の状態（active / weight）は保存しないので並べない
 COMPONENT_META_BEGIN_FULL(JustEvadeEffectComponent, "Just Evade Effect", CCL::Categories::Effect, 186, false)
-CFIELD_ENUM_U8(style, "カラースタイル", JustEvadeStyleNames, JustEvadeStyleCount, "スタイル")
-CFIELD_FLOAT_RANGED(duration, "継続時間(秒)", 0.005f, 0.0f, 2.0f, "エンベロープ")
-CFIELD_FLOAT_RANGED(attackTime, "立ち上がり(秒)", 0.005f, 0.0f, 0.5f, "エンベロープ")
-CFIELD_FLOAT_RANGED(releaseTime, "減衰(秒)", 0.005f, 0.0f, 1.0f, "エンベロープ")
-CFIELD_FLOAT_RANGED(spikeDecay, "スパイク減衰(秒)", 0.005f, 0.0f, 1.0f, "エンベロープ")
-CFIELD_FLOAT_RANGED(radialPeak, "放射ブラー強度", 0.01f, 0.0f, 2.0f, "ポストプロセス")
-CFIELD_FLOAT_RANGED(chromaPeak, "色収差強度", 0.001f, 0.0f, 0.2f, "ポストプロセス")
-CFIELD_FLOAT_RANGED(gradeMixPeak, "カラーグレード量", 0.01f, 0.0f, 1.0f, "ポストプロセス")
-CFIELD_FLOAT_RANGED(vignettePeak, "ビネット強度", 0.01f, 0.0f, 1.0f, "ポストプロセス")
-CFIELD_FLOAT_RANGED(vignettePulse, "ビネット脈動", 0.1f, 0.0f, 20.0f, "ポストプロセス")
+CFIELD_FLOAT_RANGED(vignetteIntensity, "ビネット強度", 0.01f, 0.0f, 1.0f, "ビネット")
+CFIELD_FLOAT_RANGED(vignetteRadius, "ビネット半径", 0.01f, 0.0f, 1.0f, "ビネット")
+CFIELD_FLOAT_RANGED(fadeInTime, "フェードイン(秒)", 0.005f, 0.0f, 1.0f, "エンベロープ")
+CFIELD_FLOAT_RANGED(fadeOutTime, "フェードアウト(秒)", 0.005f, 0.0f, 2.0f, "エンベロープ")
 COMPONENT_META_END(JustEvadeEffectComponent)

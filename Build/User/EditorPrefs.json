@@ -6,7 +6,7 @@
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
         "Model": "Assets\\Models",
-        "Prefab": "Assets\\Prefabs\\Particles",
+        "Prefab": "Assets\\Prefabs\\Player",
         "Scene": "Assets\\Scene",
         "Timeline": "Assets\\Timelines"
     }
