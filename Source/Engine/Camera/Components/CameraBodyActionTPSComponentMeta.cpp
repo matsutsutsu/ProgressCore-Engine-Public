@@ -142,9 +142,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
              u8"小さいほどキャラクターへ近づきます。");
 
         changed |= mi::DragFloat(u8"寄り距離", &comp.closeUpDistance, 0.1f, 0.5f, 100.0f, u8"変数名: closeUpDistance");
-        Help(u8"寄り要求中（切り払い準備など）のカメラ距離(m)。\n"
+        Help(u8"寄り要求中のカメラ距離(m)。\n"
              u8"カメラ距離より小さくすると寄りになります。\n"
-             u8"要求のON/OFFはゲーム側(PlayerCleaveSystem)が行います。");
+             u8"要求のON/OFFはゲーム側が行います。");
 
         ImGui::SeparatorText(u8"視野角・レンズ");
 

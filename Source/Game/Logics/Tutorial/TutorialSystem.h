@@ -3,7 +3,7 @@
 // 概要: 戦闘の序盤に、操作を1つずつ教えるチュートリアルを進める System。
 //
 // 責務:
-//   - プレイヤーの行動（ジャスト回避・命中・切り払い）を見て、教える項目（TutorialStep）を進める
+//   - プレイヤーの行動（ジャスト回避・命中）を見て、教える項目（TutorialStep）を進める
 //   - いまヒントを画面に出すべき場面かを決める（陣形が組まれ始めてから回避を促す、など）
 //   - 回避を教えている間、突撃が当たる直前に一度だけ世界を強くスローにして、押す瞬間を教える
 //   - 教え終えたら TutorialSession に記録し、リトライでは繰り返さない
@@ -21,8 +21,6 @@
 #include <unordered_map>
 #include <vector>
 
-struct CleaveComponent;
-
 class TutorialSystem : public CCL::ECS::IfSystem<TutorialSystem>
 {
 public:
@@ -37,7 +35,7 @@ public:
     // デバッグ用の表示と操作（今の項目・補助の回数・最初から開始・次の項目へ・完了扱いで終了）
     void OnGui() override;
 
-    // プレイヤーの切り払い・ダッシュ、ドローン、ボスの指示を ForEach を使わずに引くので、ここで申告する
+    // プレイヤーのダッシュ、ドローン、ボスの指示を ForEach を使わずに引くので、ここで申告する
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
 private:
@@ -76,13 +74,6 @@ private:
 
     // 補助スローを終える。要求をやめるだけだと、スローがイーズで長く尾を引くのですぐ等速に戻す
     void EndAssist();
-
-    /**
-     * @brief 切り払いの2項目（構え・突進）を進める。
-     * @param state  進める項目を書く。
-     * @param cleave プレイヤーの切り払いの状態。
-     */
-    void TickCleaveSteps(TutorialState &state, const CleaveComponent &cleave);
 
     // 次の項目へ進め、項目内のタイマーと記録を消す
     void Advance(TutorialState &state, TutorialStep next);
@@ -128,8 +119,7 @@ private:
 
     // --- 調整値 ---
     static constexpr float kStepGap          = 1.0f;  // 項目を終えてから、次のヒントを出すまでの間（秒）。続けて出すと前の成功が目に入らない
-    static constexpr float kStrikeTimeout    = 5.0f;  // 攻撃を当てなくても、この秒数で切り払いの説明へ進める
-    static constexpr float kGaugeInfoTime    = 4.5f;  // ゲージの説明を出しておく時間（秒）
+    static constexpr float kStrikeTimeout    = 5.0f;  // 攻撃を当てなくても、この秒数で教え終える
     static constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
     static constexpr float kAssistWarnTime   = 0.5f;  // 当たるまでの残りがこの秒数（ゲーム時間）以下になったら予告のスローを始める
     static constexpr float kAssistNowTime    = 0.07f; // 当たるまでの残りがこの秒数以下で「今だ」。ジャスト回避の受付（0.08秒）より短くし、この間にいつ押しても成立するようにする

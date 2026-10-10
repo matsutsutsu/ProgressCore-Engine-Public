@@ -14,15 +14,13 @@
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中は通常攻撃を出さない
 #include <SimpleMath.h>
 
 class PlayerAttackSystem : public CCL::ECS::IfSystem<PlayerAttackSystem,
                                                      CCL::ECS::Read<PlayerInputComponent>,
                                                      CCL::ECS::Write<DashComponent>,
                                                      CCL::ECS::Write<AnimParametersComponent>,
-                                                     CCL::ECS::Write<PlayerComponent>,
-                                                     CCL::ECS::Read<CleaveComponent>>
+                                                     CCL::ECS::Write<PlayerComponent>>
 {
 public:
     PlayerAttackSystem()

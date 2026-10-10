@@ -31,7 +31,7 @@ namespace
     const DirectX::XMFLOAT4 kBg         = {0.00f, 0.00f, 0.00f, 0.55f};
     const DirectX::XMFLOAT4 kValueText  = {0.86f, 0.86f, 0.88f, 0.85f}; // 数値は読まれなくてよいので、ゲージより控えめにする
 
-    // --- 配置（画面左下。CleaveGaugeHudSystem のストック表示がこのゲージの上に乗る） ---
+    // --- 配置（画面左下） ---
     constexpr float kMarginLeft   = 48.0f;  // 画面の左端から
     constexpr float kMarginBottom = 56.0f;  // 画面の下端からゲージの下辺まで
     constexpr float kBarW         = 440.0f; // ゲージの幅

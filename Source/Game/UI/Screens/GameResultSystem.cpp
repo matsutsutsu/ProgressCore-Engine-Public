@@ -164,14 +164,6 @@ void GameResultSystem::CountBattleStats(float dt)
     if (!m_world->HasResource<BattleContext>()) return;
     const auto &battle = m_world->GetResource<BattleContext>();
     m_playerID.store(battle.playerEntity);
-
-    // 切り払い: 突進に入った瞬間を1回と数え、チェインの最大段数を控える
-    if (const auto *cleave = battle.HasPlayer() ? m_world->GetComponent<CleaveComponent>(battle.playerEntity) : nullptr)
-    {
-        if (cleave->phase == CleavePhase::Lunging && m_prevCleave != CleavePhase::Lunging) ++m_cleaves;
-        m_maxChain   = std::max(m_maxChain, cleave->chainCount);
-        m_prevCleave = cleave->phase;
-    }
 }
 
 void GameResultSystem::EndMatch()
@@ -226,22 +218,21 @@ void GameResultSystem::ShowResultUI(bool win)
     // 記録の行
     const int   minutes = static_cast<int>(m_playTime) / 60;
     const float seconds = m_playTime - static_cast<float>(minutes * 60);
-    char        buf[6][48];
+    char        buf[5][48];
     std::snprintf(buf[0], sizeof(buf[0]), "%02d:%05.2f", minutes, seconds);
     std::snprintf(buf[1], sizeof(buf[1]), "%d回", m_hits.load());
     std::snprintf(buf[2], sizeof(buf[2]), "%d", (m_damageX10.load() + 5) / 10);
     std::snprintf(buf[3], sizeof(buf[3]), "%d回", m_justEvades.load());
-    std::snprintf(buf[4], sizeof(buf[4]), "%d回   最大%dチェイン", m_cleaves, m_maxChain);
-    std::snprintf(buf[5], sizeof(buf[5]), "%d機", m_swarmMax);
+    std::snprintf(buf[4], sizeof(buf[4]), "%d機", m_swarmMax);
 
-    const char *labels[6] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避", "切り払い", "戦った群れ"};
-    const char *names[6]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultCleave", "ResultSwarm"};
-    for (int i = 0; i < 6; ++i)
+    const char *labels[5] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避", "戦った群れ"};
+    const char *names[5]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultSwarm"};
+    for (int i = 0; i < 5; ++i)
         SpawnScreenRow(w, canvas, names[i], i, labels[i], buf[i], kRowStart + kRowStep * static_cast<float>(i), spawned);
 
     // --- ボタンと操作のヒント（記録が出そろってから出す） ---
-    const float    menuTop   = ScreenLayout::kRowY + ScreenLayout::kRowH * 5.0f + ScreenLayout::kRowPx + kMenuGap;
-    const float    menuDelay = kRowStart + kRowStep * 5.0f + kMenuDelay;
+    const float    menuTop   = ScreenLayout::kRowY + ScreenLayout::kRowH * 4.0f + ScreenLayout::kRowPx + kMenuGap;
+    const float    menuDelay = kRowStart + kRowStep * 4.0f + kMenuDelay;
     const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, menuTop}, {320.0f, 140.0f}, canvas);
 
     // 最初は RETRY を選んでおく
@@ -267,8 +258,8 @@ void GameResultSystem::OnGui()
     ImGui::Text("勝利待機中 : %s (残り %.2fs)", m_pendingWin ? "yes" : "no", m_winDelay);
 
     ImGui::SeparatorText("戦いの記録");
-    ImGui::Text("時間 %.2fs / 命中 %d / 被ダメージ %.1f / ジャスト回避 %d / 切り払い %d (最大チェイン %d)",
-                m_playTime, m_hits.load(), m_damageX10.load() / 10.0f, m_justEvades.load(), m_cleaves, m_maxChain);
+    ImGui::Text("時間 %.2fs / 命中 %d / 被ダメージ %.1f / ジャスト回避 %d",
+                m_playTime, m_hits.load(), m_damageX10.load() / 10.0f, m_justEvades.load());
 
     ImGui::Separator();
     if (ImGui::Button("検知状態をリセット"))

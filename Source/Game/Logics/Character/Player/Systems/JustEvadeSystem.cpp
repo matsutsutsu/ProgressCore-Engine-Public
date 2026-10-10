@@ -15,7 +15,6 @@
 #include "Engine/Time/Components/TimeState.h"
 #include "Engine/Time/TimeService.h" // 時間操作は意図ファサード経由
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
 using namespace CCL::ECS;
@@ -81,11 +80,9 @@ std::vector<CCL::ECS::TypeID> JustEvadeSystem::GetWriteTypes() const
     // テンプレート引数から作られる分（JustEvade/Dash/TimeState）に、
     // JustEvadeSuccessEvent のハンドラが書く分を足す。ハンドラは CheckJustEvade から
     // 同期で Publish されるので、この System の Update の中で走る。
-    // CleaveComponent は PlayerCleaveSystem のハンドラ（切り払いゲージの加算）が書く。
     std::vector<CCL::ECS::TypeID> types = IfSystem::GetWriteTypes();
     types.push_back(TypeInfo<AnimParametersComponent>::ID());
     types.push_back(TypeInfo<JustEvadeEffectComponent>::ID());
-    types.push_back(TypeInfo<CleaveComponent>::ID());
     return types;
 }
 

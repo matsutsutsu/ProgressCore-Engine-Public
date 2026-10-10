@@ -50,7 +50,7 @@ void JustEvadeEffectSystem::Update(float dt)
     // active に応じて weight を実時間でフェードする。
     //   立てている間（active）は fadeInTime でピーク(1)へ、降ろすと fadeOutTime で 0 へ。
     //   dt は実時間なので、世界スロー中でも演出のフェード速度は一定。
-    const bool  active   = (fx->flurryActive || fx->cleaveActive);
+    const bool  active   = fx->flurryActive;
     const float target   = active ? 1.0f : 0.0f;
     const float fadeTime = active ? fx->fadeInTime : fx->fadeOutTime;
     const float rate     = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;

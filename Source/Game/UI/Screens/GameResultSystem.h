@@ -5,7 +5,7 @@
 // 責務:
 //   - プレイヤーが倒れたら MISSION FAILED を出す
 //   - 敵を一度でも見た後、生きている敵が 0 になったら、少し待って MISSION COMPLETE を出す
-//   - 戦いの記録（時間・命中・被ダメージ・ジャスト回避・切り払い・群れの数）を数え、リザルトに1行ずつ打ち込む
+//   - 戦いの記録（時間・命中・被ダメージ・ジャスト回避・群れの数）を数え、リザルトに1行ずつ打ち込む
 //   - RETRY（ゲームを読み直す）と TITLE（タイトルへ戻る）のボタンを受けてシーンを切り替える
 //
 // 備考: 敵を一度見たかを持つのは、始まった直後のまだ敵が出ていない状態で勝ちにしないため。
@@ -22,7 +22,6 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // CleavePhase（切り払いの回数を数える）
 
 #include <atomic>
 
@@ -39,7 +38,7 @@ public:
     void OnGui() override;          // 判定の状態を表示し、判定を止められるようにする（デバッグ用）
 
 private:
-    void CountBattleStats(float dt); // 戦っている間の記録（時間・切り払い・群れの数）を数える
+    void CountBattleStats(float dt); // 戦っている間の記録（時間・群れの数）を数える
     void EndMatch();                 // 決着を GameFlowState に書き、操作とボスを止める
     void ShowResultUI(bool win);     // リザルトの UI（暗転・見出し・記録・ボタン）を作る
 
@@ -55,11 +54,8 @@ private:
     std::atomic<int>                m_damageX10{0};      // プレイヤーが受けたダメージの合計の 10 倍（atomic<float> を避けて整数で足す）
     std::atomic<int>                m_justEvades{0};     // ジャスト回避の成功回数
     std::atomic<CCL::ECS::EntityID> m_playerID{CCL::ECS::InvalidEntityID}; // 命中を数えるときに攻撃した側と比べる
-    int                             m_cleaves      = 0; // 切り払いの突進の回数
-    int                             m_maxChain     = 0; // 切り払いの最大チェイン段数
     int                             m_swarmMax     = 0; // 戦った群れの最大機数
     float                           m_bossHpRatio  = 1.0f; // 結果が出た時点のボスの HP の割合（負けのときに出す）
-    CleavePhase                     m_prevCleave   = CleavePhase::Idle; // 前フレームの切り払いのフェーズ（突進に入った瞬間を数える）
 
     // --- デバッグ用 ---
     bool m_debugEnabled     = true;  // false なら勝敗の判定もリザルトの表示もしない

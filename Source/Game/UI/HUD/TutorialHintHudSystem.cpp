@@ -86,12 +86,6 @@ TutorialHintHudSystem::Hint TutorialHintHudSystem::SelectHint(const TutorialStat
         return {"Dash", "陣形の形を読み、突っ込んでくる瞬間に回避"};
     case TutorialStep::Strike:
         return {"Attack", "ジャスト回避でボスの懐へ。そのまま攻撃"};
-    case TutorialStep::CleaveReady:
-        return {"Cleave", "切り払いの構え。群れを切り裂いて道を開く"};
-    case TutorialStep::CleaveLunge:
-        return {"Attack", "向いた方向へ突進。当てるたびに続けて出せる"};
-    case TutorialStep::GaugeInfo:
-        return {"Dash", "左下の CLEAVE は回避で溜まる。ジャスト回避なら大きく"};
     default:
         return {"Dash", ""};
     }

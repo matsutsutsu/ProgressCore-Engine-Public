@@ -14,7 +14,6 @@ COMPONENT_META_BEGIN_FULL(PlayerInputComponent, "Player Input", CCL::Categories:
 CFIELD_RO(attackPressed, "攻撃(押した瞬間)", "入力", nullptr)
 CFIELD_RO(jumpPressed, "ジャンプ(押した瞬間)", "入力", nullptr)
 CFIELD_RO(dashPressed, "回避(押した瞬間)", "入力", nullptr)
-CFIELD_RO(cleavePressed, "切り払い準備(押した瞬間)", "入力", nullptr)
 CFIELD_RO(lockOnPressed, "ロックオン(押した瞬間)", "入力", nullptr)
 
 COMPONENT_META_END(PlayerInputComponent)

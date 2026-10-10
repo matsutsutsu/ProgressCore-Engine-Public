@@ -7,7 +7,7 @@
 //   - ビネットの強度・半径と、フェードイン/アウトの時間を持つ
 //   - active の間はピークへフェードイン、false でフェードアウトする現在値 weight を持つ
 //
-// 備考: active を立てるのは PlayerDashSystem（ラッシュ中）と PlayerCleaveSystem（切り払い準備中）。
+// 備考: flurryActive を立てるのは PlayerDashSystem（ラッシュ中）。
 //       weight を実時間でイーズしてビネットへ反映するのは JustEvadeEffectSystem(R02)。
 //       以前は色調補正・放射ブラー・色収差・モノクロ等も持っていたが、演出をビネット1本へ集約した。
 // ===========================================================================
@@ -21,10 +21,6 @@ struct JustEvadeEffectComponent
     float fadeOutTime       = 0.4f; // ピーク→0へ戻る時間（秒）。ラッシュの世界スロー復帰に合わせると自然
 
     // --- 実行時の状態（保存しない） ---
-    // 演出元ごとに独立した要求フラグ。単一の bool を共有すると、片方（切り払いは毎フレーム
-    //   false を書く）がもう片方（ラッシュ）を踏み潰してしまう。別々に持ち、どちらかが true なら
-    //   点灯する（OR）ことで、同時でも互いに消し合わない。
-    bool  flurryActive = false; // ラッシュ(PlayerDashSystem)が要求中
-    bool  cleaveActive = false; // 切り払い準備(PlayerCleaveSystem)が要求中
-    float weight       = 0.0f;  // 現在のフェード重み(0→1)。どちらかが true ならピークへ、両方 false で 0 へ
+    bool  flurryActive = false; // ラッシュ(PlayerDashSystem)が要求中。true の間ピークへ、false で 0 へ
+    float weight       = 0.0f;  // 現在のフェード重み(0→1)。JustEvadeEffectSystem が実時間で動かす
 };

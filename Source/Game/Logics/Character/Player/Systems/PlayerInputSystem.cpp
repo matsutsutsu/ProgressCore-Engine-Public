@@ -44,7 +44,6 @@ void PlayerInputSystem::Update(float dt)
     const bool rawAttack = inputAPI->GetAction("Attack");
     const bool rawJump   = inputAPI->GetAction("Jump");
     const bool rawDash   = inputAPI->GetAction("Dash");
-    const bool rawCleave = inputAPI->GetAction("Cleave"); // 切り払い(右クリック)
     const bool rawLockOn = inputAPI->GetAction("LockOn"); // Rキーなど
 
     // 移動方向はカメラの向きを基準に合成する（TPS）。水平にしてから正規化する。
@@ -98,7 +97,6 @@ void PlayerInputSystem::Update(float dt)
         pin.attackPressed = edge(rawAttack, pin.prevAttack);
         pin.jumpPressed   = edge(rawJump, pin.prevJump);
         pin.dashPressed   = edge(rawDash, pin.prevDash);
-        pin.cleavePressed = edge(rawCleave, pin.prevCleave);
         pin.lockOnPressed = edge(rawLockOn, pin.prevLockOn);
     });
 }

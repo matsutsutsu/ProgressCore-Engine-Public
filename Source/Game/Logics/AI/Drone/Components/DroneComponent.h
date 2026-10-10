@@ -38,7 +38,7 @@ enum class DroneState : uint8_t
     Idle,         // 追従: ホバーの揺れを伴うバネ制御で目標へ寄る。待機・陣形維持
     MoveToTarget, // 移動: 持ち場へ直線的に素早く整列する
     FireCharge,   // 突撃: 目標へ突撃する。当たり判定とジャスト回避の対象になりうるのはこの状態だけ
-    Stunned,      // 硬直: 切り払いで吹き飛ばされ、制御を失って漂う。無害で通常AIは止まる
+    Stunned,      // 硬直: 吹き飛ばされ、制御を失って漂う。無害で通常AIは止まる（現状セットする処理は無し）
     Returning,    // 離脱: 突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ戻る
 };
 
@@ -147,10 +147,9 @@ struct DroneComponent
 
     DirectX::SimpleMath::Vector3 chargeStartPos = DirectX::SimpleMath::Vector3::Zero; // [RT] 突撃開始地点。飛距離判定の基準
 
-    // ---- 切り払い（CLEAVE）── 書き手=PlayerCleaveSystem ----
+    // ---- 吹き飛ばし（ノックバック）用。現状の書き手は無し（切り払い削除で未使用。将来の吹き飛ばし技用に残置） ----
 
     // 吹き飛ばされている残り時間 [秒]。>0 の間は Stunned で、攻撃判定とジャスト回避の対象から外れる。
-    // 押した先のドローンに自分が当たる理不尽を防ぎ、「切り開いた道は通れる」を保証するため。
     float knockbackTimer = 0.0f;
 
     DirectX::SimpleMath::Vector3 knockbackVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 吹き飛ばし速度

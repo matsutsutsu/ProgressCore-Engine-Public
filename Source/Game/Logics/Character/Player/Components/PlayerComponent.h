@@ -69,7 +69,7 @@ struct PlayerComponent
 
     // --- 攻撃時に敵の方へ向く処理 ---
     //   攻撃を押した瞬間に PlayerAttackSystem が対象（ロックオン先、なければ前方の最も近い敵）の yaw を求め、
-    //   attackFaceTimer を立てる。切り払いの準備中は PlayerCleaveSystem が照準方向を書く。
+    //   attackFaceTimer を立てる。
     //   attackFaceTimer が 0 より大きい間、PlayerMoveSystem は移動方向より優先してこの yaw へ向ける。
     float attackFaceYaw         = 0.0f; // 向く先の yaw（rad）
     float attackFaceTimer       = 0.0f; // 向く処理の残り時間（秒）

@@ -23,9 +23,6 @@ enum class TutorialStep : uint8_t
     WaitBattle,   // 戦闘の開始（開幕ムービーの終わり）を待つ
     ReadAndEvade, // 陣形の形を読み、突撃に合わせてジャスト回避する
     Strike,       // ジャスト回避の接近から、ボスへ攻撃を当てる
-    CleaveReady,  // 切り払いの構えに入る
-    CleaveLunge,  // 構えから突進し、ドローンを吹き飛ばす
-    GaugeInfo,    // 切り払いのストックが回避で溜まることを伝える（操作は求めない）
     Done,         // 教え終えた
 };
 
@@ -34,9 +31,6 @@ inline constexpr const char *kTutorialStepNames[] = {
     "WaitBattle",
     "ReadAndEvade",
     "Strike",
-    "CleaveReady",
-    "CleaveLunge",
-    "GaugeInfo",
     "Done",
 };
 

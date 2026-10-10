@@ -28,7 +28,6 @@ void PlayerDashSystem::Update(float rawDt)
                       DashComponent              &dash,
                       PlayerComponent            &player,
                       const PlayerInputComponent &pin,
-                      const CleaveComponent      &cleave,
                       const TransformComponent   &trans,
                       TimeStateComponent         &time) {
         // ルートモーションを持つキャラなら、後でダッシュ中かを externallyDriven に書く。
@@ -41,10 +40,7 @@ void PlayerDashSystem::Update(float rawDt)
         if (UpdateFlurry(rawDt, timeCtx, dash, movement, time, rm))
             return;
 
-        // 切り払いの準備・突進中はダッシュを始めさせない。切り払いは L02_PostUpdate で
-        // 速度を上書きするため、ここでダッシュを始めると、見た目は切り払いのまま
-        // ダッシュのクールダウンと無敵だけを使ってしまう。
-        const bool dashPressed = pin.dashPressed && (cleave.phase == CleavePhase::Idle);
+        const bool dashPressed = pin.dashPressed;
 
         if (!UpdateDash(dash, player, dashPressed, movement, trans, time, id))
             UpdateGroundLocomotion(player, movement, time.localDt);
@@ -308,5 +304,5 @@ std::vector<CCL::ECS::TypeID> PlayerDashSystem::GetWriteTypes() const
     return types;
 }
 
-// PlayerInputSystem(L01_Input) が書いた移動の要求を読み、PlayerCleaveSystem(L02_PostUpdate) より前に速度を書く。
+// PlayerInputSystem(L01_Input) が書いた移動の要求を読み、物理(L03以降)より前に速度を書く。
 REGISTER_LOGIC_SYSTEM(PlayerDashSystem, Priority::LogicStage::L02_Update);

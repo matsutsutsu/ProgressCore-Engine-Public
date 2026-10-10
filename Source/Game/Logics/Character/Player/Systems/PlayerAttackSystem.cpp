@@ -101,13 +101,7 @@ void PlayerAttackSystem::Update(float dt)
                       const PlayerInputComponent &pin,
                       DashComponent              &dash,
                       AnimParametersComponent    &animParams,
-                      PlayerComponent            &player,
-                      const CleaveComponent      &cleave) {
-        // 攻撃ボタンが攻撃を意味するのは切り払いが Idle のときだけ。Ready/Lunging 中は
-        // PlayerCleaveSystem が扱う（対応表は CleavePhase の宣言を参照）。
-        if (cleave.phase != CleavePhase::Idle)
-            return;
-
+                      PlayerComponent            &player) {
         if (pin.attackPressed)
         {
             // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）。

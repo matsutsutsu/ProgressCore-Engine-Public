@@ -12,7 +12,6 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"                          // プレイヤーとボスの EntityID
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"               // 突撃中のドローンを探す
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"   // ボスが攻撃の陣形を組んでいるか
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 
 #include <SimpleMath.h>
@@ -56,7 +55,6 @@ void TutorialSystem::Initialize()
 std::vector<TypeID> TutorialSystem::GetReadTypes() const
 {
     return {
-        TypeInfo<CleaveComponent>::ID(),
         TypeInfo<DashComponent>::ID(),
         TypeInfo<DroneComponent>::ID(),
         TypeInfo<TransformComponent>::ID(),
@@ -119,24 +117,11 @@ void TutorialSystem::Update(float dt)
         break;
 
     // 攻撃: ジャスト回避の接近でボスの近くへ運ばれている間に促す。当てなくても時間で次へ進める
-    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）
+    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）。
+    // これが最後の項目。当てるか時間切れで教え終える。
     case TutorialStep::Strike:
         state.showHint = true;
-        if (playerHit || m_stepTimer >= kStrikeTimeout) Advance(state, TutorialStep::CleaveReady);
-        break;
-
-    case TutorialStep::CleaveReady:
-    case TutorialStep::CleaveLunge:
-        if (const auto *cleave = m_world->GetComponent<CleaveComponent>(battle.playerEntity))
-            TickCleaveSteps(state, *cleave);
-        else
-            Advance(state, TutorialStep::GaugeInfo); // 切り払いを持たないプレイヤーなら飛ばす
-        break;
-
-    // ゲージ: 操作は求めず、読める時間だけ出して終える
-    case TutorialStep::GaugeInfo:
-        state.showHint = true;
-        if (m_stepTimer >= kGaugeInfoTime)
+        if (playerHit || m_stepTimer >= kStrikeTimeout)
         {
             Advance(state, TutorialStep::Done);
             TutorialSession::Instance().completed = true;
@@ -171,35 +156,6 @@ void TutorialSystem::Restart(TutorialState &state)
     m_assistCount = 0;
 }
 
-void TutorialSystem::TickCleaveSteps(TutorialState &state, const CleaveComponent &cleave)
-{
-    // --- 構え: 右クリック（パッドは B）で準備に入るのを待つ ---
-    if (state.step == TutorialStep::CleaveReady)
-    {
-        if (m_stepTimer < kStepGap) return;
-        state.showHint = true;
-        if (cleave.phase == CleavePhase::Ready) Advance(state, TutorialStep::CleaveLunge);
-        return;
-    }
-
-    // --- 突進: 構えている間だけ出す。突進中に文字が残ると、吹き飛ぶドローンが見えにくい ---
-    state.showHint = (cleave.phase == CleavePhase::Ready);
-    if (cleave.phase == CleavePhase::Lunging) m_sawLunge = true;
-
-    // hitCount は突進を始めると 0 に戻り、次の突進まで残る。突進を見る前の値は前回の突進のものなので見ない
-    if (m_sawLunge && cleave.hitCount > 0)
-    {
-        Advance(state, TutorialStep::GaugeInfo);
-        return;
-    }
-
-    // 空振りか、構えたまま猶予が切れた。構えからやり直させる（さっき見た説明なので間は空けない）
-    if (cleave.phase == CleavePhase::Idle)
-    {
-        Advance(state, TutorialStep::CleaveReady);
-        m_stepTimer = kStepGap;
-    }
-}
 
 bool TutorialSystem::IsBossAttackFormationActive() const
 {

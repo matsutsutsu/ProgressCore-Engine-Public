@@ -16,7 +16,6 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
-#include "Game/Logics/Character/Player/Components/CleaveComponent.h" // 切り払い中はダッシュを始めさせない
 
 // ポインタでしか使わないので前方宣言にする（.cpp で include する）。
 struct RootMotionComponent;
@@ -26,7 +25,6 @@ class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
                                                    CCL::ECS::Write<DashComponent>,
                                                    CCL::ECS::Write<PlayerComponent>,
                                                    CCL::ECS::Read<PlayerInputComponent>,
-                                                   CCL::ECS::Read<CleaveComponent>,
                                                    CCL::ECS::Read<TransformComponent>,
                                                    CCL::ECS::Write<TimeStateComponent>>
 {

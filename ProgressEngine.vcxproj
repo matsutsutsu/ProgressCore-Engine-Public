@@ -744,7 +744,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\CleaveComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
@@ -772,7 +771,6 @@
     <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h" />
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h" />
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSystem.h" />
-    <ClInclude Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h" />
@@ -802,7 +800,6 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
@@ -1245,7 +1242,6 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
@@ -1262,7 +1258,6 @@
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp" />
-    <ClCompile Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp" />
@@ -1284,7 +1279,6 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />

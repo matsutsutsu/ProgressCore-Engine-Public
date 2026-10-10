@@ -14,7 +14,7 @@
 //
 // 誰が書くか（層）:
 //   ・移動の意思      … 入力(PlayerInputSystem) / AI(BossActionSystem 等)
-//   ・上書き要求      … アクション(PlayerDashSystem / PlayerCleaveSystem / RootMotionSystem 等)
+//   ・上書き要求      … アクション(PlayerDashSystem / RootMotionSystem 等)
 //   ・成立した命令    … キャラ制御(PlayerMoveSystem)
 //   ・結果            … JoltCharacterUpdateSystem（読むのはカメラ/アニメ/演出）
 //
