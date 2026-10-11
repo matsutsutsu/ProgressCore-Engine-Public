@@ -100,7 +100,7 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
     float env  = 0.0f;
     float peak = 0.0f;
 
-    ForEach([&](const DashComponent &dash) {
+    ForEach([&](const DashComponent &dash, const RushComponent &rush) {
         if (dash.isDashing)
         {
             const float e = CalculateEnvelope(dash.currentTimer, dash.dashDuration);
@@ -110,10 +110,10 @@ void PlayerFeedbackSystem::UpdateDashRadialBlur()
                 peak = m_dashBlurPeak;
             }
         }
-        else if (dash.isFlurryLunging)
+        else if (rush.phase == RushComponent::Phase::Lunge)
         {
-            // ラッシュの踏み込み(フェーズA)に集中線を乗せる（集中スローのフェーズBでは出さない）。
-            const float e = CalculateEnvelope(dash.flurryTimer, dash.flurryLungeDuration);
+            // ラッシュの踏み込み(Lunge)に集中線を乗せる（固定・集中スローでは出さない）。
+            const float e = CalculateEnvelope(rush.timer, rush.lungeDuration);
             if (e > env)
             {
                 env  = e;

@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: ジャスト回避ラッシュ／切り払い準備中の画面演出（周囲が暗くなるビネット）の
+// 概要: ジャスト回避ラッシュ中の画面演出（周囲が暗くなるビネット）の
 //       設定と状態を持つシングルトンコンポーネント。シーンに1つ置く。
 //
 // 責務:
 //   - ビネットの強度・半径と、フェードイン/アウトの時間を持つ
 //   - active の間はピークへフェードイン、false でフェードアウトする現在値 weight を持つ
 //
-// 備考: flurryActive を立てるのは PlayerDashSystem（ラッシュ中）。
+// 備考: rushActive を立てるのは PlayerRushSystem（ラッシュ中）。
 //       weight を実時間でイーズしてビネットへ反映するのは JustEvadeEffectSystem(R02)。
 //       以前は色調補正・放射ブラー・色収差・モノクロ等も持っていたが、演出をビネット1本へ集約した。
 // ===========================================================================
@@ -21,6 +21,6 @@ struct JustEvadeEffectComponent
     float fadeOutTime       = 0.4f; // ピーク→0へ戻る時間（秒）。ラッシュの世界スロー復帰に合わせると自然
 
     // --- 実行時の状態（保存しない） ---
-    bool  flurryActive = false; // ラッシュ(PlayerDashSystem)が要求中。true の間ピークへ、false で 0 へ
-    float weight       = 0.0f;  // 現在のフェード重み(0→1)。JustEvadeEffectSystem が実時間で動かす
+    bool  rushActive = false; // ラッシュ(PlayerRushSystem)が要求中。true の間ピークへ、false で 0 へ
+    float weight     = 0.0f;  // 現在のフェード重み(0→1)。JustEvadeEffectSystem が実時間で動かす
 };

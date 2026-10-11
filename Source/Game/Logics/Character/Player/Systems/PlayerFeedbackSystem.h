@@ -18,10 +18,12 @@
 #include <DirectXMath.h>
 #include "Game/Core/GameEvents.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
+#include "Game/Logics/Character/Player/Components/RushComponent.h"
 
 class PlayerFeedbackSystem
     : public CCL::ECS::IfSystem<PlayerFeedbackSystem,
-                                CCL::ECS::Read<DashComponent>>
+                                CCL::ECS::Read<DashComponent>,
+                                CCL::ECS::Read<RushComponent>>
 {
 public:
     PlayerFeedbackSystem();

@@ -49,7 +49,7 @@ struct CharacterMovementComponent
 
     // true の間は重力も水平計算も無視して velocity3D をそのまま速度に使う。
     //
-    // 切り払いのように「向いた方向へ上下含めて突進」する技で使う。
+    // 「向いた方向へ上下を含めて突進」する技で使う汎用の窓口（現状の利用者なし。将来の突進技向けに残す）。
     bool                         use3DVelocity = false;
     DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度（m/秒）
 

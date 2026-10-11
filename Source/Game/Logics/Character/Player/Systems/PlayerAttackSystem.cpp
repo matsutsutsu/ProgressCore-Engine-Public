@@ -95,11 +95,49 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
     player.attackFaceTimer = kFaceDuration;
 }
 
+void PlayerAttackSystem::TryStartCloseIn(EntityID playerID, RushComponent &rush, PlayerComponent &player)
+{
+    const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
+    if (!ptrans) return;
+    const Vector3 playerPos(ptrans->position);
+
+    // 対象はロックオン中の敵を優先し、無ければ前方で最も近い敵。向き直りと同じ選び方。
+    EntityID target = InvalidEntityID;
+    if (player.lockOnTargetID != InvalidEntityID &&
+        m_world->IsEntityValid(player.lockOnTargetID) &&
+        !m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
+    {
+        target = player.lockOnTargetID;
+    }
+    else
+    {
+        // 寄せ先は前方半球(コーン±90°=cos0)で最寄りを拾う。向き直り(±70°)より広く取り、
+        //   回避直後で敵が正面から多少ずれていても寄れるようにする。
+        const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
+        target = FindBestFrontEnemy(playerID, playerPos, forward, rush.closeInMaxRange, 0.0f);
+    }
+    if (target == InvalidEntityID) return; // 寄る相手が居なければ通常の攻撃のまま
+
+    // 遠すぎる相手には寄らない（間合い詰めは closeInMaxRange まで）。
+    if (const auto *etrans = m_world->GetComponent<TransformComponent>(target))
+    {
+        Vector3 to = Vector3(etrans->position) - playerPos;
+        to.y       = 0.0f;
+        if (to.LengthSquared() > rush.closeInMaxRange * rush.closeInMaxRange) return;
+    }
+
+    // 集中スローは維持したまま、対象へ寄せる指示だけ出す（寄せと停止は PlayerRushSystem）。
+    //   スローは時間で終わるので、スロー中に何度も攻撃を重ねられる。
+    rush.closeInTargetID = target;
+    rush.closeInTimer    = rush.closeInDuration;
+}
+
 void PlayerAttackSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID                    playerID,
                       const PlayerInputComponent &pin,
                       DashComponent              &dash,
+                      RushComponent              &rush,
                       AnimParametersComponent    &animParams,
                       PlayerComponent            &player) {
         if (pin.attackPressed)
@@ -111,6 +149,10 @@ void PlayerAttackSystem::Update(float dt)
             //   通常 / ダッシュ攻撃 / 空中攻撃 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない。
             //   そのため Attack を出し続けるだけで、DashAttack → Attack_1 → Attack_2 がグラフの遷移で繋がる。
             animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+
+            // ラッシュの集中スロー中の攻撃は、対象へ間合いを詰める寄せにする。
+            if (rush.phase == RushComponent::Phase::Focus)
+                TryStartCloseIn(playerID, rush, player);
 
             // ダッシュ中に攻撃したら、ダッシュの無敵とジャスト回避の受付を打ち切り、
             // すぐに再ダッシュが出ないようクールダウンを入れる。

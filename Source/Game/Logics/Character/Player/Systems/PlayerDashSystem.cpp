@@ -4,69 +4,47 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // カメラへ画角の要求(wideFovRequest)を書く
 #include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中はルートモーションの移動を止める
-#include "Engine/Time/TimeService.h"                               // ラッシュ中の世界スロー(SustainWorldSlow)・固定フリーズ(HitStop)
-#include "Game/Logics/Combat/Components/HealthComponent.h" // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
-#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // ラッシュのビネット(active)を切り替える
-#include "Game/Core/GameEvents.h"   // ダッシュ開始のイベント（VFX 用）
-
-#include <algorithm>
+#include "Game/Logics/Combat/Components/HealthComponent.h"         // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
+#include "Game/Core/GameEvents.h"                                  // ダッシュ開始のイベント（VFX 用）
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// ---------------------------------------------------------------------------
-// 入口
-// ---------------------------------------------------------------------------
-
 void PlayerDashSystem::Update(float rawDt)
 {
-    // 世界スローの倍率を先に取っておく（ラッシュ中にプレイヤーだけ実時間へ戻すのに使う）。
-    const TimeContext *timeCtx = m_world->HasResource<TimeContext>() ? &m_world->GetResource<TimeContext>() : nullptr;
-
     ForEachWithID([&](EntityID                    id,
                       CharacterMovementComponent &movement,
                       DashComponent              &dash,
                       PlayerComponent            &player,
-                      const PlayerInputComponent &pin,
+                      const PlayerInputComponent &playerInput,
                       const TransformComponent   &trans,
-                      TimeStateComponent         &time) {
+                      const TimeStateComponent   &time,
+                      const RushComponent        &rush) {
         // ルートモーションを持つキャラなら、後でダッシュ中かを externallyDriven に書く。
-        RootMotionComponent *rm = m_world->GetComponent<RootMotionComponent>(id);
+        RootMotionComponent *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
 
         MaintainInvincibility(id, dash);
 
-        // ラッシュ踏み込み(フェーズA)中のフレームは操作ロック＝以降のダッシュ・移動処理を飛ばす。
-        //   集中スロー(フェーズB)は false が返るので、通常のダッシュ/歩行/攻撃がそのまま動く。
-        if (UpdateFlurry(rawDt, timeCtx, dash, movement, time, rm))
+        // ラッシュが移動を上書きするフレーム（踏込/固定/寄せ中）は PlayerRushSystem に任せてスキップ。
+        //   集中スローの自由行動フレームは LocksMovement()=false なので、通常のダッシュ/歩走がそのまま動く。
+        if (rush.LocksMovement())
             return;
 
-        const bool dashPressed = pin.dashPressed;
-
+        const bool dashPressed = playerInput.dashPressed;
         if (!UpdateDash(dash, player, dashPressed, movement, trans, time, id))
             UpdateGroundLocomotion(player, movement, time.localDt);
 
         // ダッシュ中は、ルートモーションによる移動を止めさせる。
-        if (rm) rm->externallyDriven = dash.isDashing;
+        if (rootMotion) rootMotion->externallyDriven = dash.isDashing;
 
         // ダッシュ中だけ画角を広げるよう、カメラへ書く。
         PushWideFovRequest(id, dash.isDashing);
-
-        // ラッシュを抜けた最初のフレームで、ビネットを一度だけ降ろす（＝フェードアウト開始）。
-        //   フェードアウトは fadeOutTime 秒。これを世界スロー復帰(flurrySlowRecover)と揃えると、
-        //   暗がりの消え方とスローの戻りがちょうど一致する。毎フレーム false を書かないのは、
-        //   切り払い側が立てたビネットを横から消さないため（持ち主のときだけ降ろす）。
-        const bool inFlurry = dash.isFlurryLunging || dash.isFlurryPlanting || dash.isFlurryFocusing;
-        if (!inFlurry && m_flurryVignetteOwned)
-        {
-            SetFlurryVignette(false);
-            m_flurryVignetteOwned = false;
-        }
     });
 }
 
 void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &dash)
 {
-    // ヒットストップ中は localDt=0 なので無敵タイマーは減らず、接近を始める前の停止中も無敵が続く。
+    // ヒットストップ中は localDt=0 なので無敵タイマーは減らず、停止中も無敵が続く。
 
     if (!dash.isInvincible) return;
     if (auto *health = m_world->GetComponent<HealthComponent>(id))
@@ -74,91 +52,6 @@ void PlayerDashSystem::MaintainInvincibility(EntityID id, const DashComponent &d
         if (health->invincibilityTimer < dash.invincibleWindow)
             health->invincibilityTimer = dash.invincibleWindow;
     }
-}
-
-// ---------------------------------------------------------------------------
-// 段階ごとの更新
-// ---------------------------------------------------------------------------
-
-bool PlayerDashSystem::UpdateFlurry(float rawDt, const TimeContext *timeCtx,
-                                    DashComponent &dash, CharacterMovementComponent &movement,
-                                    TimeStateComponent &time, RootMotionComponent *rm)
-{
-    if (!dash.isFlurryLunging && !dash.isFlurryPlanting && !dash.isFlurryFocusing) return false;
-
-    // 全フェーズ共通：世界をスローにしたまま、プレイヤーだけ実時間へ戻す（約分：global×group×cinematic＝playerScale）。
-    //   worldScale は前フレームの SustainWorldSlow 要求が TimeScaleSystem(L01) で反映された結果。
-    const float worldScale = timeCtx
-        ? (timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)])
-        : 1.0f;
-    // 除数の下限は flurryWorldScale（＝狙った世界スロー）にする。プラントの全体フリーズで
-    //   worldScale が 0 近くまで落ちても cinematicScale が playerScale/flurryWorldScale に頭打ちになり、
-    //   フリーズ解除フレームで localDt が巨大化してプレイヤーが高速回転・暴走するのを防ぐ。
-    //   （フリーズ中は globalScale=0 なので localDt=0＝プレイヤーは正しく固定されたまま）
-    const float safeWorld      = (worldScale > dash.flurryWorldScale) ? worldScale : dash.flurryWorldScale;
-    const float playerClockMul = dash.flurryPlayerScale / safeWorld;
-
-    Time::SustainWorldSlow(*m_world, dash.flurryWorldScale, dash.flurrySlowRecover);
-    time.cinematicScale = playerClockMul;
-    dash.isInvincible   = true; // ラッシュ中は被弾させない（反撃のご褒美窓）
-
-    // ラッシュ中はビネット演出を立て続ける（フェードイン→ピーク維持は JustEvadeEffectSystem が担う）。
-    SetFlurryVignette(true);
-    m_flurryVignetteOwned = true;
-
-    // ── フェーズA：踏み込み（操作ロック・ease-outで前進） ──
-    if (dash.isFlurryLunging)
-    {
-        if (rm) rm->externallyDriven = true; // ルートモーションの移動を止める（踏み込みで駆動する）
-
-        dash.flurryTimer -= rawDt; // スローの掛からない実時間で進める＝踏み込みはスローに引きずられない
-        const float dur     = (dash.flurryLungeDuration > 0.0001f) ? dash.flurryLungeDuration : 0.0001f;
-        const float t       = std::clamp((dur - dash.flurryTimer) / dur, 0.0f, 1.0f);
-
-        // ease-out の“移動”＝速度は高→低の減少カーブ。(1-t)^2 で出だし速く・終わりかけ急減速。
-        const float speedFactor  = (1.0f - t) * (1.0f - t);
-        movement.desiredVelocity = dash.dashDirection; // 回避方向（ダッシュ開始時に確定済み）
-        movement.overrideSpeed   = dash.flurryLungeSpeed * speedFactor;
-
-        if (dash.flurryTimer <= 0.0f)
-        {
-            // 踏み込み終了 → “ピタッ”と固定して止まりを見せるプラント(B)へ。
-            dash.isFlurryLunging  = false;
-            dash.isFlurryPlanting = true;
-            dash.flurryTimer      = dash.flurryPlantDuration;
-            // プラントの間だけ、別レイヤーの全体フリーズで止まりを強く見せる（世界スロー合成とは独立）。
-            Time::HitStop(*m_world, dash.flurryPlantDuration, dash.flurryPlantFreeze);
-        }
-        return true; // 操作ロック
-    }
-
-    // ── フェーズB：プラント（固定して止まりを見せる・操作ロック） ──
-    if (dash.isFlurryPlanting)
-    {
-        if (rm) rm->externallyDriven = true;
-        movement.desiredVelocity = Vector3::Zero; // 入力方向を無効化して固定
-        movement.overrideSpeed   = 0.0f;          // 完全停止（フリーズ中はそもそも積分されない）
-
-        dash.flurryTimer -= rawDt; // フリーズ中も rawDt は進む＝実時間で一定の“溜め”を見せる
-        if (dash.flurryTimer <= 0.0f)
-        {
-            // プラント終了 → モノクロの自由行動窓(C)へ“切り替え”。
-            dash.isFlurryPlanting = false;
-            dash.isFlurryFocusing = true;
-            dash.flurryTimer      = dash.flurryFocusDuration;
-        }
-        return true; // 操作ロック
-    }
-
-    // ── フェーズC：集中スロー（操作自由・速度上書きしない。ビネットは共通ブロックで継続中） ──
-    if (rm) rm->externallyDriven = false; // 通常移動に戻す
-
-    dash.flurryTimer -= rawDt;
-    if (dash.flurryTimer <= 0.0f)
-        EndFlurry(dash, time); // モノクロはここでは消さない。世界スローが戻り切るまで Update の追従オフが保つ。
-
-    // false を返すことで、このフレームは通常のダッシュ/歩行/攻撃をそのまま動かす（自由行動）。
-    return false;
 }
 
 bool PlayerDashSystem::UpdateDash(DashComponent &dash, PlayerComponent &player, bool dashPressed,
@@ -262,10 +155,6 @@ void PlayerDashSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
     }
 }
 
-// ---------------------------------------------------------------------------
-// 補助
-// ---------------------------------------------------------------------------
-
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {
     // カメラ(Engine)が DashComponent(Game) を読まずに済むよう、状態を持つ側から書き込む。
@@ -275,33 +164,6 @@ void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
         if (!tps || tps->target.id != playerID) return;
         tps->wideFovRequest = wide;
     });
-}
-
-void PlayerDashSystem::EndFlurry(DashComponent &dash, TimeStateComponent &time)
-{
-    dash.isFlurryLunging  = false;
-    dash.isFlurryPlanting = false;
-    dash.isFlurryFocusing = false;
-    dash.isInvincible     = false;
-    dash.flurryTimer      = 0.0f;
-    dash.currentTimer     = dash.dashCooldown; // ラッシュの後はダッシュのクールダウンに入る
-    time.cinematicScale   = 1.0f;              // プレイヤーのスロー打ち消しをやめる（世界スローは呼ぶのをやめれば自然に等速へ戻る）
-}
-
-void PlayerDashSystem::SetFlurryVignette(bool on)
-{
-    // ラッシュ中、画面にビネット（周囲の暗がり）を出す。active が true の間、
-    // JustEvadeEffectSystem(R02) が weight を実時間でフェードしてビネットへ反映する。
-    if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
-        fx->flurryActive = on;
-}
-
-std::vector<CCL::ECS::TypeID> PlayerDashSystem::GetWriteTypes() const
-{
-    // テンプレート引数ぶん＋ラッシュのビネット切り替えで書く JustEvadeEffectComponent(singleton)。
-    std::vector<CCL::ECS::TypeID> types = IfSystem::GetWriteTypes();
-    types.push_back(CCL::ECS::TypeInfo<JustEvadeEffectComponent>::ID());
-    return types;
 }
 
 // PlayerInputSystem(L01_Input) が書いた移動の要求を読み、物理(L03以降)より前に速度を書く。

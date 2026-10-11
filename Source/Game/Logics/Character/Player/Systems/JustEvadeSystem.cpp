@@ -7,7 +7,12 @@
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Core/Math/StringHash.h"
+#include "Engine/Transform/Components/TransformComponent.h"            // 位置から対象方向を求める
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"   // 向き/ロックオン先（Dodge方向の基準）
+#include "Game/Logics/Character/Player/Components/RushComponent.h"     // 成立時にラッシュを開始する
+
+#include <cmath>
 
 #include "Game/Core/GameEvents.h"
 #include "Game/Logics/Combat/Components/CombatComponents.h" // HitboxComponent（攻撃判定がアクティブな時だけ成立させるため）
@@ -18,17 +23,25 @@
 #include "Engine/Physics/Components/RigidBody/JoltRigidBodyComponent.h" // 壁/地形との接触を除外するため
 
 using namespace CCL::ECS;
+using namespace DirectX::SimpleMath;
+
+// DodgeDir パラメータに入れる向きの値（アニメグラフの遷移条件と合わせる）。
+static constexpr float kDodgeFront = 0.0f;
+static constexpr float kDodgeBack  = 1.0f;
+static constexpr float kDodgeLeft  = 2.0f;
+static constexpr float kDodgeRight = 3.0f;
 
 bool JustEvadeSystem::IsDroneHostile(const DroneComponent *drone) const
 {
     if (!drone) return false;
-    if (drone->knockbackTimer > 0.0f) return false; // 切り払いで吹き飛ばされている間は攻撃とみなさない
+    if (drone->knockbackTimer > 0.0f) return false; // 吹き飛ばされている間は攻撃とみなさない（現状この値を立てる技は未実装）
     // 突撃中の状態だけを攻撃とみなす
     return drone->currentState == DroneState::FireCharge;
 }
 
-// AnimParameters へ書くトリガーのハッシュ
+// AnimParameters へ書くトリガー／パラメータのハッシュ
 static const uint32_t HASH_TRIG_JUST_EVADE = CCL::Utils::HashString("OnJustEvade");
+static const uint32_t HASH_PARAM_DODGE_DIR = CCL::Utils::HashString("DodgeDir");
 
 void JustEvadeSystem::Initialize()
 {
@@ -41,34 +54,41 @@ void JustEvadeSystem::Initialize()
 
     // ジャスト回避が成立した瞬間の処理
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        // 1. ラッシュ(踏み込み)を開始する。全停止は入れず、即“ぎゅいん”と踏み込ませたいので
-        //    プレイヤーの完全停止(HitStopEntity)は使わない。世界スローは PlayerDashSystem が
-        //    毎フレーム SustainWorldSlow で駆動するが、成立フレームの1フレームだけ空かないよう
-        //    ここでも一度スローを点火しておく（受け取りは次フレームの PlayerDashSystem）。
+        // 1. 回避ダッシュを終える。実際のラッシュ（踏込→固定→集中）の駆動は PlayerRushSystem が行う。
+        Vector3 evadeDir = Vector3::UnitZ; // 回避方向（踏込と Dodge アニメの向きに使う）。既定は前
         if (auto *dash = m_world->GetComponent<DashComponent>(ev.playerID))
         {
+            evadeDir                      = dash->dashDirection;
             dash->isDashing               = false; // 回避ダッシュを終えてラッシュへ移る
             dash->isJustEvadeWindowActive = false;
             dash->isInvincible            = true; // ラッシュ中はスロー中のドローンに当たらないよう無敵
-            dash->isFlurryLunging         = true;  // フェーズA：踏み込み
-            dash->isFlurryPlanting        = false;
-            dash->isFlurryFocusing        = false;
-            dash->flurryTimer             = dash->flurryLungeDuration;
-
-            Time::SustainWorldSlow(*m_world, dash->flurryWorldScale, dash->flurrySlowRecover);
         }
 
-        // 3. ジャスト回避専用のモーションへ遷移させる。
+        // 2. ラッシュを踏込(Lunge)から始める。成立フレームの1フレームだけスローが空かないよう、
+        //    ここでも一度世界スローを点火しておく（次フレーム以降は PlayerRushSystem が維持する）。
+        if (auto *rush = m_world->GetComponent<RushComponent>(ev.playerID))
+        {
+            rush->phase           = RushComponent::Phase::Lunge;
+            rush->timer           = rush->lungeDuration;
+            rush->lungeDir        = evadeDir;
+            rush->closeInTimer    = 0.0f;
+            rush->closeInTargetID = InvalidEntityID;
+
+            Time::SustainWorldSlow(*m_world, rush->worldScale, rush->slowRecover);
+        }
+
+        // 3. 回避方向に合わせた Dodge モーションへ遷移させる。
+        //    DodgeDir（前/後/左/右）を渡し、どのクリップを再生するかはアニメグラフが分岐する。
         if (auto *animParams = m_world->GetComponent<AnimParametersComponent>(ev.playerID))
         {
+            animParams->SetFloat(HASH_PARAM_DODGE_DIR, ComputeDodgeDir(ev.playerID, evadeDir));
             animParams->SetTrigger(HASH_TRIG_JUST_EVADE);
         }
 
-        // 4. 画面演出（ビネット）を立てる。実際のフェードイン／アウトは JustEvadeEffectSystem が
-        //    weight を実時間で動かして行う。降ろす（active=false）のはラッシュ終了時に PlayerDashSystem。
+        // 4. 画面演出（ビネット）を立てる。フェードと降ろしは JustEvadeEffectSystem／PlayerRushSystem が担う。
         if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
         {
-            fx->flurryActive = true;
+            fx->rushActive = true;
         }
 
         // TODO(2026-07-16): ジャスト回避の効果音と残像を足す
@@ -83,7 +103,56 @@ std::vector<CCL::ECS::TypeID> JustEvadeSystem::GetWriteTypes() const
     std::vector<CCL::ECS::TypeID> types = IfSystem::GetWriteTypes();
     types.push_back(TypeInfo<AnimParametersComponent>::ID());
     types.push_back(TypeInfo<JustEvadeEffectComponent>::ID());
+    types.push_back(TypeInfo<RushComponent>::ID());
     return types;
+}
+
+std::vector<CCL::ECS::TypeID> JustEvadeSystem::GetReadTypes() const
+{
+    // テンプレート引数ぶん＋ Dodge 方向の算出で読む PlayerComponent / TransformComponent。
+    std::vector<CCL::ECS::TypeID> types = IfSystem::GetReadTypes();
+    types.push_back(TypeInfo<PlayerComponent>::ID());
+    types.push_back(TypeInfo<TransformComponent>::ID());
+    return types;
+}
+
+float JustEvadeSystem::ComputeDodgeDir(EntityID playerID, const Vector3 &evadeDir) const
+{
+    const auto *player = m_world->GetComponent<PlayerComponent>(playerID);
+    const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
+
+    // 基準の前方（ハイブリッド）。ロックオン中は対象への向き、無ければキャラの向き。
+    Vector3 forward(0.0f, 0.0f, 1.0f);
+    bool    haveForward = false;
+    if (player && ptrans && player->lockOnTargetID != InvalidEntityID &&
+        m_world->IsEntityValid(player->lockOnTargetID))
+    {
+        if (const auto *ttrans = m_world->GetComponent<TransformComponent>(player->lockOnTargetID))
+        {
+            Vector3 toTarget = Vector3(ttrans->position) - Vector3(ptrans->position);
+            toTarget.y       = 0.0f;
+            if (toTarget.LengthSquared() > 1e-4f)
+            {
+                toTarget.Normalize();
+                forward     = toTarget;
+                haveForward = true;
+            }
+        }
+    }
+    if (!haveForward && player)
+        forward = Vector3(std::sin(player->currentYaw), 0.0f, std::cos(player->currentYaw));
+
+    Vector3 dir = evadeDir;
+    dir.y       = 0.0f;
+    if (dir.LengthSquared() < 1e-4f) return kDodgeFront; // 方向不明なら前
+    dir.Normalize();
+
+    // 前方との内積で前後、2D外積(forward×dir)で左右を見る。大きい方の軸で向きを決める。
+    const float forwardness = dir.Dot(forward);
+    const float rightness   = forward.x * dir.z - forward.z * dir.x; // 右(+)/左(-)（左右が逆ならアニメ側か符号で調整）
+    if (std::abs(forwardness) >= std::abs(rightness))
+        return (forwardness >= 0.0f) ? kDodgeFront : kDodgeBack;
+    return (rightness >= 0.0f) ? kDodgeRight : kDodgeLeft;
 }
 
 void JustEvadeSystem::Update(float rawDt)
