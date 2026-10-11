@@ -5,7 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"
-#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/PostFx.h"
 
 #include "Engine/Core/Math/StringHash.h"
 
@@ -20,11 +20,26 @@ namespace
     const uint32_t kSource   = CCL::Utils::HashString("JustEvade");
     constexpr int  kPriority = 20;
 
-    // current を target へ rate(=dt/所要時間) の歩幅で線形に近づける（オーバーシュートしない）。
+    /**
+     * @brief current を target へ、1フレームぶんの歩幅 rate で線形に近づける。
+     *
+     * 目標を飛び越さない（オーバーシュートしない）ので、フェードの行き過ぎが起きない。
+     *
+     * @param current 今の値。
+     * @param target  目標値。
+     * @param rate    1フレームで詰める量（dt / 所要時間）。0以下なら即 target を返す。
+     * @return 近づけた後の値。
+     */
     inline float MoveToward(float current, float target, float rate)
     {
-        if (rate <= 0.0f) return target;
-        if (current < target) return (std::min)(current + rate, target);
+        if (rate <= 0.0f)
+        {
+            return target;
+        }
+        if (current < target)
+        {
+            return (std::min)(current + rate, target);
+        }
         return (std::max)(current - rate, target);
     }
 } // namespace
@@ -36,51 +51,68 @@ std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetReadTypes() const
 
 std::vector<CCL::ECS::TypeID> JustEvadeEffectSystem::GetWriteTypes() const
 {
-    // 触るポストプロセスはビネットだけ（演出をビネット1本へ集約した）。
-    return {TypeInfo<VignetteConfigComponent>::ID()};
+    // 値を書くのはビネットだけだが、後始末の PostFx::ReleaseAll は
+    // 上書きを受け付ける全コンポーネントへ書くので、全部を申告する。
+    return CCL::PostFx::AllWriteTypes();
 }
 
 void JustEvadeEffectSystem::Update(float dt)
 {
-    auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
-    if (!fx) return;
+    // 処理フロー:
+    // 1. フェード重み weight を実時間で目標へ寄せる
+    // 2. 完全に消えている間は、自分のスロットを手放して終える
+    // 3. 見えている間は、weight をビネットの設定へ書き込む
 
-    auto *vig = m_world->GetSingletonComponent<VignetteConfigComponent>();
+    auto *justEvadeEffectComp = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
+    if (!justEvadeEffectComp) return;
 
-    // active に応じて weight を実時間でフェードする。
-    //   立てている間（active）は fadeInTime でピーク(1)へ、降ろすと fadeOutTime で 0 へ。
-    //   dt は実時間なので、世界スロー中でも演出のフェード速度は一定。
-    const bool  active   = fx->rushActive;
-    const float target   = active ? 1.0f : 0.0f;
-    const float fadeTime = active ? fx->fadeInTime : fx->fadeOutTime;
-    const float rate     = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;
-    fx->weight           = MoveToward(fx->weight, target, rate);
+    // ---------------------------------------------------------
+    // 1. フェード重みの更新
+    // ---------------------------------------------------------
+    // rushActive の間は fadeInTime でピーク(1)へ、降ろすと fadeOutTime で 0 へ。
+    // dt は実時間なので、世界スロー中でもフェード速度は変わらない。
 
-    // 完全に消えたフレームで、自分のスロットだけを手放す（他の演出・設定本体には触れない）。
-    const bool visible = (fx->weight > 0.001f);
+    // ジャスト回避中かどうか
+    const bool active = justEvadeEffectComp->rushActive;
+    // 回避中なら1.0f ちがうなら 0.0f
+    const float target = active ? 1.0f : 0.0f;
+    // フェードにかかる時間を取得
+    const float fadeTime = active ? justEvadeEffectComp->fadeInTime : justEvadeEffectComp->fadeOutTime;
+    // 1フレームで詰める量を計算（0.0f 以下なら即 target へ）
+    const float rate = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;
+
+    // フェードの遷移をweight(0→1)に反映する
+    justEvadeEffectComp->weight = MoveToward(justEvadeEffectComp->weight, target, rate);
+
+    // ---------------------------------------------------------
+    // 2. 消えている間の後始末
+    // ---------------------------------------------------------
+    // 他の演出や設定本体には触れず、自分のスロットだけを手放す。
+    //
+    // 確保していないスロットへの Release は何もしないので、毎フレーム呼んでよい。
+    // 「前のフレームで出していたか」を覚えておく必要がない。
+    const bool visible = (justEvadeEffectComp->weight > 0.001f);
     if (!visible)
     {
-        if (m_wasActive && vig) vig->overrides.Release(kSource);
-        m_wasActive = false;
+        CCL::PostFx::ReleaseAll(*m_world, kSource);
         return;
     }
 
-    // ビネット（周囲が暗くなる）。weight を 0→1 で上げることで徐々に暗くする。
-    //   最終的な合成と描画の有無は PostProcessSystem(R09) が決める。
-    if (vig)
+    // ---------------------------------------------------------
+    // 3. ビネットへ反映
+    // ---------------------------------------------------------
+    // weight を 0→1 で上げることで徐々に暗くする。
+    // 最終的な合成と描画の有無は PostProcessSystem(R09) が決める。
+    // 縁のぼかし（softness）は書かない。スロットを取った時点のシーン設定が土台に
+    // 入っているので、書かなかった項目はそのままシーンの見た目になる。
+    if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
     {
-        if (auto *ov = vig->overrides.Acquire(kSource, kPriority))
-        {
-            ov->weight            = fx->weight;            // 0→1 で徐々に暗く
-            ov->params.intensity  = fx->vignetteIntensity; // ピークの暗さ
-            ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
-            ov->params.pulseSpeed = 0.0f;                  // 明滅なし
-            ov->params.radius     = fx->vignetteRadius;    // 半径
-            ov->params.softness   = vig->data.vigSoftness; // 縁のぼかしはシーン設定を踏襲
-        }
+        ov->weight            = justEvadeEffectComp->weight;            // 0→1 で徐々に暗く
+        ov->params.intensity  = justEvadeEffectComp->vignetteIntensity; // ピークの暗さ
+        ov->params.radius     = justEvadeEffectComp->vignetteRadius;    // 半径
+        ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
+        ov->params.pulseSpeed = 0.0f; // 明滅なし
     }
-
-    m_wasActive = true;
 }
 
 // カメラが決まった後、PostProcessSystem（R09）の前に走らせる

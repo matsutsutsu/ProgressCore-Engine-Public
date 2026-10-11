@@ -1725,6 +1725,9 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h">
+      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
@@ -1785,6 +1788,15 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushComponent.h">
+      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
     </ClInclude>
@@ -1800,28 +1812,19 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushComponent.h">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h">
-      <Filter>Source\Game\Logics\Character\Player\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\Input\InputKeyTable.h">
@@ -2951,13 +2954,10 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp">
-      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp">
@@ -2965,6 +2965,9 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\RushComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Player\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp">
       <Filter>Source\Engine\Camera\Components</Filter>

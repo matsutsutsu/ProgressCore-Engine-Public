@@ -7,6 +7,7 @@
 //   - シーンが持つ普段の設定（enable / data: 中心・強さ・立ち上がり）を持つ
 //   - 演出ごとの一時的な上乗せ（overrides）を持つ
 //   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
+//   - 上書きの土台になる、今効いている強さを返す（BaseParams）
 //
 // 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
 //       スロットの仕組みと理由は PostEffectOverrides.h を参照。
@@ -41,5 +42,13 @@ struct RadialBlurConfigComponent
             out = (std::max)(out, p.strength * t);
         });
         return out;
+    }
+
+    // 上書きの土台になる、今効いている強さ。enable=false なら 0（理由は色収差と同じ）
+    RadialBlurOverrideParams BaseParams() const
+    {
+        RadialBlurOverrideParams p;
+        p.strength = enable ? data.blurStrength : 0.0f;
+        return p;
     }
 };

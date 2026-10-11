@@ -12,7 +12,6 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"                          // プレイヤーとボスの EntityID
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"               // 突撃中のドローンを探す
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"   // ボスが攻撃の陣形を組んでいるか
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
 
 #include <SimpleMath.h>
 #include <iterator> // std::size
@@ -55,7 +54,6 @@ void TutorialSystem::Initialize()
 std::vector<TypeID> TutorialSystem::GetReadTypes() const
 {
     return {
-        TypeInfo<DashComponent>::ID(),
         TypeInfo<DroneComponent>::ID(),
         TypeInfo<TransformComponent>::ID(),
         TypeInfo<BossCommandComponent>::ID(),
@@ -185,8 +183,9 @@ bool TutorialSystem::IsBossAttackFormationActive() const
 void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
 {
     const BattleContext &battle = m_world->GetResource<BattleContext>();
-    const auto          *dash   = m_world->GetComponent<DashComponent>(battle.playerEntity);
-    const bool           dashing = dash && dash->isDashing;
+    // 回避ダッシュは作り直し中。復活したら DashComponent から「自分で避けようとしているか」を戻す。
+    const bool dashing = false;
+    (void)battle;
 
     // 速度は前のフレームとの差で求めるので、補助中かどうかに関係なく毎フレーム記録する
     SampleDroneMotion();

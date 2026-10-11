@@ -17,19 +17,22 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
 #include "Game/Core/GameEvents.h"
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Game/Logics/Character/Player/Components/RushComponent.h"
+#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 
 class PlayerFeedbackSystem
     : public CCL::ECS::IfSystem<PlayerFeedbackSystem,
-                                CCL::ECS::Read<DashComponent>,
-                                CCL::ECS::Read<RushComponent>>
+                                CCL::ECS::Read<PlayerComponent>>
 {
 public:
     PlayerFeedbackSystem();
     ~PlayerFeedbackSystem() override = default;
 
     void Initialize() override;
+
+    // テンプレート引数以外に書く型を申告する。
+    //   ポストプロセスの設定は上書きスロットを通して書くので、申告しないと同じ設定を書く
+    //   他の System と同じバッチに入って並列に走り、Acquire が同じ空きスロットを奪い合う。
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
     void Update(float dt) override;
 
@@ -122,22 +125,4 @@ private:
     float m_chromaticTimer    = 0.0f;  // 残り時間（秒）
     float m_chromaticDuration = 0.20f; // 継続時間（秒）
     float m_chromaticPeak     = 0.2f;  // 被弾直後の強さ
-
-    // ============================================================
-    // ダッシュの集中線（放射ブラー）
-    // ============================================================
-
-    /**
-     * @brief ダッシュ中と接近中の集中線を毎フレーム更新する。
-     *
-     * 専用タイマーを持たず、DashComponent の残り時間から求める。
-     * ヒットストップなどで dash 側のタイマーが止まれば、集中線もそのまま止まる。
-     */
-    void UpdateDashRadialBlur();
-
-    // 回避ダッシュ中の集中線の強さ（開始直後が最大で、終わりに向けて弱まる）。
-    float m_dashBlurPeak = 0.35f;
-
-    // ジャスト回避後の接近中の集中線の強さ。通常のダッシュより速いので強めにする。
-    float m_approachBlurPeak = 0.55f;
 };

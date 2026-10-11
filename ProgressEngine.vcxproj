@@ -24,6 +24,11 @@
          そのたびに作り直しになる（＝323本すべての再コンパイル）。
          32bit ホストの 4GB 制限も外れる。 -->
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <!-- v143 の中の MSVC サブバージョンを固定する。固定しないと IDE は最新
+         (14.44 / 14.51 など) を、CLI ビルドは別の版を選び、PCH はコンパイラの
+         バイナリに紐づくため作り直し＝全再コンパイルになる。VS2022/2026 の
+         どちらにも存在する 14.38.33130 に揃える。 -->
+    <VCToolsVersion>14.38.33130</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -492,6 +497,7 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
@@ -743,12 +749,11 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h" />
@@ -801,6 +806,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
@@ -1243,11 +1249,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\RushComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIGaugeSprite.cpp" />
@@ -1282,7 +1285,10 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\RushComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />

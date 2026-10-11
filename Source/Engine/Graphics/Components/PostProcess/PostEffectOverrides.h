@@ -4,6 +4,7 @@
 //
 // 責務:
 //   - 発生源（キー）ごとにスロットを確保・解放する
+//   - 発生源からスロットを引く（Find）
 //   - 効いているスロットを priority の小さい順に列挙する
 //
 // 備考:
@@ -42,6 +43,19 @@ struct PostEffectOverrides
     static constexpr int CAPACITY = N;
 
     Slot slots[N];
+
+    // 発生源 source のスロットを返す（まだ確保していなければ nullptr）
+    const Slot *Find(uint32_t source) const
+    {
+        if (source == 0)
+            return nullptr;
+
+        for (const Slot &s : slots)
+            if (s.source == source)
+                return &s;
+
+        return nullptr;
+    }
 
     /**
      * @brief 自分のスロットを返す。まだ無ければ空きを1つ確保する。

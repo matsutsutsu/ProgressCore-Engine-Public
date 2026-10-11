@@ -9,14 +9,13 @@
 //   - ダッシュ中はカメラへ画角を広げる要求を書き、ルートモーションの移動を止める
 //
 // 備考: ジャスト回避成立後の「ラッシュ」は PlayerRushSystem が駆動する（別System）。
-//       ラッシュが移動をロックするフレームは RushComponent::LocksMovement() を見てスキップする。
+//       PlayerRushSystem はこの System の後に走り、ラッシュ中のフレームは移動を上書きする。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Game/Logics/Character/Player/Components/RushComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
 
@@ -29,15 +28,11 @@ class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
                                                    CCL::ECS::Write<PlayerComponent>,
                                                    CCL::ECS::Read<PlayerInputComponent>,
                                                    CCL::ECS::Read<TransformComponent>,
-                                                   CCL::ECS::Read<TimeStateComponent>,
-                                                   CCL::ECS::Read<RushComponent>>
+                                                   CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}
     void Update(float dt) override;
-
-    // ラッシュの駆動(PlayerRushSystem)の後に走り、ロック中のフレームはスキップする。
-    std::vector<const char *> GetRunAfter() const override { return {"PlayerRushSystem"}; }
 
 private:
     // 回避中は、被弾処理が見る HealthComponent.invincibilityTimer を invincibleWindow 以上に保つ。

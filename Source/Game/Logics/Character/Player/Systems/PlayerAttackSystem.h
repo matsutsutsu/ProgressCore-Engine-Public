@@ -3,24 +3,20 @@
 // 概要: 攻撃ボタンの入力から、アニメーションの Attack トリガーを出す System。
 //
 // 責務:
-//   - 切り払いが Idle のときだけ攻撃入力を受け、Attack トリガーを先行入力付きで出す
+//   - 攻撃入力を受け、Attack トリガーを先行入力付きで出す
 //   - 攻撃の瞬間に、ロックオン先か前方の最も近い敵の方へ向く yaw を書く
-//   - ダッシュ中に攻撃したら、ダッシュを打ち切ってクールダウンに入れる
 //
 // 備考: 通常/ダッシュ/空中/コンボのどの攻撃になるかはアニメグラフが決める。
+//       （回避ダッシュ中の打ち切りや、ラッシュ中の間合い詰めは、作り直し時に付け直す。）
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
-#include "Game/Logics/Character/Player/Components/DashComponent.h"
-#include "Game/Logics/Character/Player/Components/RushComponent.h"
 #include <SimpleMath.h>
 
 class PlayerAttackSystem : public CCL::ECS::IfSystem<PlayerAttackSystem,
                                                      CCL::ECS::Read<PlayerInputComponent>,
-                                                     CCL::ECS::Write<DashComponent>,
-                                                     CCL::ECS::Write<RushComponent>,
                                                      CCL::ECS::Write<AnimParametersComponent>,
                                                      CCL::ECS::Write<PlayerComponent>>
 {
@@ -54,17 +50,4 @@ private:
 
     // 攻撃対象へ向く yaw を求め、attackFaceTimer を立てる（対象が無ければ何もしない）。
     void SetAttackFacing(CCL::ECS::EntityID playerID, PlayerComponent &player);
-
-    /**
-     * @brief 集中スロー中の攻撃で、対象へ寄る「間合い詰め(closeIn)」を始める。
-     *
-     * 対象（ロックオン先か前方最寄り）が closeInMaxRange 以内に居れば、その相手へ寄せる要求を
-     * RushComponent に書く（実際に寄せて止めるのは PlayerRushSystem）。対象が無ければ通常の攻撃のまま。
-     * Attack トリガー自体は呼び出し側が別に出すので、ここは寄せの開始だけを担う。
-     *
-     * @param playerID プレイヤー。
-     * @param rush     寄せの状態を書く先（closeIn 設定も持つ）。
-     * @param player   ロックオン先・向きを読む。
-     */
-    void TryStartCloseIn(CCL::ECS::EntityID playerID, RushComponent &rush, PlayerComponent &player);
 };

@@ -7,32 +7,24 @@
 //   - 回避中の無敵時間を持つ
 //
 // 備考: 状態を書くのは PlayerDashSystem。
-//       ジャスト回避成立後の「ラッシュ」（踏込/固定/集中スロー/間合い詰め）は RushComponent（別物）。
+//       ジャスト回避成立後の「ラッシュ」は RushComponent（別物）。
 // ===========================================================================
 #include <SimpleMath.h>
 
 struct DashComponent
 {
     // --- 設定値 ---
-    float dashSpeed    = 40.0f; // ダッシュ速度（m/秒）
-    float dashDuration = 0.15f; // ダッシュ時間（秒）
-    float dashCooldown = 0.5f;  // ダッシュ終了から次のダッシュまでの待ち時間（秒）
-
-    // ダッシュ開始からジャスト回避を受け付ける時間（秒）。短いほど難しい
-    float justEvadeWindow = 0.08f;
-
-    // 回避の無敵時間
-    // isInvincible が立っている間、被弾処理が見る
-    // 回避が終わっても、この秒数だけ無敵が残る。
-    float invincibleWindow = 0.06f;
+    float dashSpeed        = 40.0f; // ダッシュ速度（m/秒）
+    float dashDuration     = 0.15f; // ダッシュ時間（秒）
+    float dashCooldown     = 0.5f;  // 次に出せるまでの待ち時間（秒）
+    float justEvadeWindow  = 0.08f; // 開始からジャスト回避を受け付ける長さ（秒。短いほど難しい）
+    float invincibleWindow = 0.06f; // 回避終了後も無敵が残る長さ（秒）
 
     // --- 実行時の状態 ---
-    bool isDashing    = false;
-    bool isInvincible = false;
+    bool isDashing               = false; // 今ダッシュ中か
+    bool isInvincible            = false; // 無敵中か（被弾処理が見る）
+    bool isJustEvadeWindowActive = false; // ジャスト回避の受付窓が開いているか
 
-    // ジャスト回避を受け付けている間 true
-    bool isJustEvadeWindowActive = false;
-
-    float                        currentTimer  = 0.0f;      // ダッシュ中は残り時間、ダッシュ外はクールダウンの残り（秒）
+    float                        currentTimer  = 0.0f;      // ダッシュ中=残り時間 / ダッシュ外=クールダウン残り（秒）
     DirectX::SimpleMath::Vector3 dashDirection = {0, 0, 0}; // ダッシュの移動方向（正規化済み）
 };

@@ -6,7 +6,7 @@
 
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
-#include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/PostFx.h"
 
 #include "Engine/Platform/Input/IInputAPI.h"
 
@@ -25,11 +25,6 @@ namespace
 
     const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
     constexpr int  kPriority = 5;
-
-    // ダッシュの集中線はダッシュのたびに出るので、優先度を最も低くする。
-    // （放射ブラーの強さは各スロットの最大値を取るので、実際には優先度で結果は変わらない）
-    const uint32_t kDashSource   = CCL::Utils::HashString("PlayerDash");
-    constexpr int  kDashPriority = 1;
 
     float TickTimer(float &timer, float dt)
     {
@@ -82,59 +77,6 @@ void PlayerFeedbackSystem::Update(float dt)
     UpdateDamageVignette(dt);
 
     UpdateDamageChromaticAberration(dt);
-
-    UpdateDashRadialBlur();
-}
-
-// ---------------------------------------------------------------------------
-// ダッシュの放射ブラー
-// ---------------------------------------------------------------------------
-
-void PlayerFeedbackSystem::UpdateDashRadialBlur()
-{
-    auto *blur = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
-    if (!blur) return;
-
-    // ダッシュの状態から毎フレーム求める。被弾の演出のような専用タイマーは持たない。
-    // currentTimer はダッシュ終了後にクールダウンにも使うので、必ず isDashing を先に見る。
-    float env  = 0.0f;
-    float peak = 0.0f;
-
-    ForEach([&](const DashComponent &dash, const RushComponent &rush) {
-        if (dash.isDashing)
-        {
-            const float e = CalculateEnvelope(dash.currentTimer, dash.dashDuration);
-            if (e > env)
-            {
-                env  = e;
-                peak = m_dashBlurPeak;
-            }
-        }
-        else if (rush.phase == RushComponent::Phase::Lunge)
-        {
-            // ラッシュの踏み込み(Lunge)に集中線を乗せる（固定・集中スローでは出さない）。
-            const float e = CalculateEnvelope(rush.timer, rush.lungeDuration);
-            if (e > env)
-            {
-                env  = e;
-                peak = m_approachBlurPeak;
-            }
-        }
-    });
-
-    // 誰もダッシュしていなければスロットを手放す。ForEach で1体も回らなくても必ずここを通るので、
-    // プレイヤーが消えても集中線が残らない。
-    if (env <= 0.0f || peak <= 0.0f)
-    {
-        blur->overrides.Release(kDashSource);
-        return;
-    }
-
-    if (auto *ov = blur->overrides.Acquire(kDashSource, kDashPriority))
-    {
-        ov->weight          = env;
-        ov->params.strength = peak;
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -294,27 +236,6 @@ void PlayerFeedbackSystem::OnGui()
 
         ImGui::TreePop();
     }
-
-    if (ImGui::TreeNode("Dash Radial Blur"))
-    {
-        ImGui::SliderFloat(
-            "Dash Peak",
-            &m_dashBlurPeak,
-            0.0f,
-            1.0f,
-            "%.3f");
-
-        ImGui::SliderFloat(
-            "Approach Peak",
-            &m_approachBlurPeak,
-            0.0f,
-            1.0f,
-            "%.3f");
-
-        ImGui::TextDisabled("継続時間は DashComponent 側の設定に従う");
-
-        ImGui::TreePop();
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -418,13 +339,12 @@ void PlayerFeedbackSystem::StartDamageVignette()
 
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
-    auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
-    if (!vignette) return;
-
     // 演出が終わったら、自分のスロットを手放すだけでよい（元の設定にも他の演出にも触らない）。
+    //
+    // 色収差とは別のタイマーで終わるので、ReleaseAll ではなくビネットだけを手放す。
     if (m_vignetteTimer <= 0.0f)
     {
-        vignette->overrides.Release(kSource);
+        CCL::PostFx::Release<VignetteConfigComponent>(*m_world, kSource);
         return;
     }
 
@@ -434,7 +354,7 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 
     // 目標値と、そこへ寄せる割合(weight)だけを書く。
     // 元の設定からの補間と、他の演出との重ね合わせは Resolve() が行う。
-    if (auto *ov = vignette->overrides.Acquire(kSource, kPriority))
+    if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
     {
         ov->weight            = env;
         ov->params.intensity  = m_vignettePeak;
@@ -452,18 +372,13 @@ void PlayerFeedbackSystem::StartDamageChromaticAberration()
 
 void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
 {
-    auto *chromatic =
-        m_world->GetSingletonComponent<
-            ChromaticAberrationConfigComponent>();
-
-    if (!chromatic)
-        return;
-
     // 触るのは自分のスロットだけ。設定本体(enable/data)や他の演出のスロットには書かないので、
     // 命中やジャスト回避の演出の最中に被弾しても、互いを消し合わない。最終的な強さは PostProcessSystem が合成する。
+    //
+    // ビネットとは別のタイマーで終わるので、ReleaseAll ではなく色収差だけを手放す。
     if (m_chromaticTimer <= 0.0f)
     {
-        chromatic->overrides.Release(kSource);
+        CCL::PostFx::Release<ChromaticAberrationConfigComponent>(*m_world, kSource);
         return;
     }
 
@@ -474,11 +389,17 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
             m_chromaticTimer,
             m_chromaticDuration);
 
-    if (auto *ov = chromatic->overrides.Acquire(kSource, kPriority))
+    if (auto *ov = CCL::PostFx::ChromaticAberration(*m_world, kSource, kPriority))
     {
         ov->weight          = env;
         ov->params.strength = m_chromaticPeak;
     }
+}
+
+std::vector<CCL::ECS::TypeID> PlayerFeedbackSystem::GetWriteTypes() const
+{
+    return {CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),
+            CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID()};
 }
 
 REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::L06_Resolution);

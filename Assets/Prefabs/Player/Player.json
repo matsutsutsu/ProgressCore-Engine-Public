@@ -29,29 +29,21 @@
                     "use3DVelocity": false
                 },
                 "Dash Component": {
-                    "currentTimer": 0.08009248971939087,
                     "dashCooldown": 0.47999998927116394,
-                    "dashDirection": [
-                        0.474119633436203,
-                        0.0,
-                        0.8804604411125183
-                    ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
-                    "invincibleWindow": 0.05999999865889549,
-                    "isDashing": false,
-                    "isInvincible": false,
-                    "justEvadeWindow": 0.07999999821186066
+                    "justEvadeWindow": 0.08,
+                    "invincibleWindow": 0.06
                 },
+                "Just Evade Component": {},
                 "Rush Component": {
-                    "lungeSpeed": 136.0,
-                    "lungeDuration": 0.46000000834465027,
-                    "plantDuration": 0.18000000715255737,
-                    "plantFreeze": 0.0,
-                    "focusDuration": 1.2000000476837158,
                     "worldScale": 0.1,
-                    "playerScale": 1.0,
-                    "slowRecover": 0.4000000059604645
+                    "lockedDuration": 0.15,
+                    "readyDuration": 0.45,
+                    "freeDuration": 0.6,
+                    "closeInSpeed": 90.0,
+                    "closeInStopDistance": 3.0,
+                    "closeInMaxTime": 0.25
                 },
                 "HealthComponent": {
                     "currentHealth": 300.0,

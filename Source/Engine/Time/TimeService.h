@@ -36,7 +36,7 @@ namespace Time
     // 世界全体を一時スロー（イーズ復帰）。撃破スロー等の一発演出。強い方・長い方が優先
     void SlowWorld(CCL::ECS::World &world, float scale, float seconds);
     /**
-     * @brief このフレーム、世界全体をスローにする。押し続ける間は毎フレーム呼ぶ（切り払い準備など）。
+     * @brief このフレーム、世界全体をスローにする。押し続ける間は毎フレーム呼ぶ
      * @param world          スローにする World。
      * @param scale          スローの倍率。
      * @param easeOutSeconds 呼ぶのをやめてから等速へ戻るまでの時間（秒）。

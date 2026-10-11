@@ -2,172 +2,271 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Animation/Components/RootMotionComponent.h"          // 踏込/寄せ中はルートモーションの移動を止める
-#include "Engine/Time/TimeService.h"                                  // 世界スロー(SustainWorldSlow)・固定フリーズ(HitStop)
-#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h"  // ラッシュのビネット(rushActive)
-#include "Game/Logics/Combat/Components/DeadTag.h"                    // 寄せる相手の生存確認
+#include "Engine/Time/TimeService.h"      // 世界スロー(SustainWorldSlow)
+#include "Game/Core/GameEvents.h"         // JustEvadeSuccessEvent
+#include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // ビネット演出の要求フラグ
+#include "Game/Logics/Combat/Components/DeadTag.h" // 詰め先が死んでいないか判定
 
 #include <algorithm>
+#include <cmath>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-void PlayerRushSystem::Update(float rawDt)
-{
-    // 世界スローの倍率を先に取っておく（プレイヤーだけ実時間へ戻すのに使う）。
-    const TimeContext *timeCtx = m_world->HasResource<TimeContext>() ? &m_world->GetResource<TimeContext>() : nullptr;
-
-    ForEachWithID([&](EntityID                    id,
-                      CharacterMovementComponent &movement,
-                      DashComponent              &dash,
-                      RushComponent              &rush,
-                      TimeStateComponent         &time,
-                      const TransformComponent   &trans) {
-        if (!rush.IsActive()) return;
-
-        RootMotionComponent *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
-
-        // 全フェーズ共通：世界スローのままプレイヤーだけ実時間へ戻し、被弾させず、ビネットを立て続ける。
-        SustainSlow(rush, time, timeCtx);
-        dash.isInvincible = true; // ラッシュ中は被弾させない（反撃のご褒美窓）
-        SetVignette(true);        // フェードイン→ピーク維持は JustEvadeEffectSystem が担う
-
-        // ── 踏込(Lunge)：操作ロック・ease-out で回避方向へ前進 ──
-        if (rush.phase == RushComponent::Phase::Lunge)
-        {
-            if (rootMotion) rootMotion->externallyDriven = true; // 踏込で駆動する
-            rush.timer -= rawDt;
-            const float duration = (rush.lungeDuration > 0.0001f) ? rush.lungeDuration : 0.0001f;
-            const float t        = std::clamp((duration - rush.timer) / duration, 0.0f, 1.0f);
-            const float factor   = (1.0f - t) * (1.0f - t); // (1-t)^2：出だし速く・終わりで急減速
-            movement.desiredVelocity = rush.lungeDir;
-            movement.overrideSpeed   = rush.lungeSpeed * factor;
-            if (rush.timer <= 0.0f)
-            {
-                rush.phase = RushComponent::Phase::Plant;
-                rush.timer = rush.plantDuration;
-                Time::HitStop(*m_world, rush.plantDuration, rush.plantFreeze); // 止まりを別レイヤーで強調
-            }
-            return;
-        }
-
-        // ── 固定(Plant)：操作ロック・全体フリーズで“ピタッ”と見せる ──
-        if (rush.phase == RushComponent::Phase::Plant)
-        {
-            if (rootMotion) rootMotion->externallyDriven = true;
-            movement.desiredVelocity = Vector3::Zero; // 入力方向を無効化して固定
-            movement.overrideSpeed   = 0.0f;          // 完全停止（フリーズ中はそもそも積分されない）
-            rush.timer -= rawDt;                       // フリーズ中も rawDt は進む＝実時間で一定の“溜め”
-            if (rush.timer <= 0.0f)
-            {
-                rush.phase = RushComponent::Phase::Focus;
-                rush.timer = rush.focusDuration;
-            }
-            return;
-        }
-
-        // ── 集中(Focus)：操作自由。攻撃で対象へ寄れる。スローは時間で終わる＝連撃できる窓 ──
-        rush.timer -= rawDt;
-        if (rush.timer <= 0.0f)
-        {
-            End(dash, rush, time); // 時間経過で終了。ビネットもここで降ろす
-            if (rootMotion) rootMotion->externallyDriven = false;
-            return;
-        }
-
-        // 寄せ中のフレームだけ移動を上書き（PlayerDashSystem は LocksMovement() を見てスキップする）。
-        if (DriveCloseIn(id, Vector3(trans.position), rush, movement, rootMotion, rawDt))
-            return;
-
-        // 寄せていないフレームは自由。移動/ダッシュ/攻撃は PlayerDashSystem と攻撃Systemが担う。
-        if (rootMotion) rootMotion->externallyDriven = false;
-    });
-}
-
-void PlayerRushSystem::SustainSlow(RushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx)
-{
-    // cinematicScale = playerScale / worldScale とすると localDt の中で世界スローが約分され、
-    //   プレイヤーの時計だけが playerScale（既定 1.0＝実時間）で進む。
-    Time::SustainWorldSlow(*m_world, rush.worldScale, rush.slowRecover);
-
-    // 除数の下限を worldScale で止めるのは、固定(Plant)の全体フリーズで world が 0 近くへ落ちても
-    //   cinematicScale が頭打ちになり、フリーズ解除フレームで localDt が巨大化してプレイヤーが
-    //   暴走するのを防ぐため（フリーズ中は globalScale=0 なので localDt=0＝プレイヤーは固定のまま）。
-    const float world      = timeCtx ? (timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)]) : 1.0f;
-    const float worldFloor = (std::max)(world, rush.worldScale);
-    time.cinematicScale    = rush.playerScale / worldFloor;
-}
-
-bool PlayerRushSystem::DriveCloseIn(EntityID id, const Vector3 &playerPos, RushComponent &rush,
-                                    CharacterMovementComponent &movement, RootMotionComponent *rootMotion, float rawDt)
-{
-    if (rush.closeInTimer <= 0.0f) return false; // 寄せ要求なし
-
-    rush.closeInTimer -= rawDt; // 実時間で計る（スローに引きずられない）
-
-    // 対象が消えていたら寄せをやめる。
-    if (!m_world->IsEntityValid(rush.closeInTargetID) || m_world->HasComponent<Tag::DeadTag>(rush.closeInTargetID))
-    {
-        rush.closeInTimer = 0.0f;
-        return false;
-    }
-
-    // 対象へ毎フレーム方向を取り直して寄せる（軽いホーミング）。
-    Vector3 toTarget = Vector3::Zero;
-    if (const auto *etrans = m_world->GetComponent<TransformComponent>(rush.closeInTargetID))
-    {
-        toTarget   = Vector3(etrans->position) - playerPos;
-        toTarget.y = 0.0f;
-    }
-
-    const float distance = toTarget.Length();
-    if (distance <= rush.closeInStopRange)
-    {
-        rush.closeInTimer = 0.0f; // 間合いに入った＝寄せ完了。以降は自由（攻撃はそのまま出る）
-        return false;
-    }
-
-    toTarget /= distance; // 正規化（distance>0 が保証されている）
-    rush.lungeDir            = toTarget; // 向きの基準として残す
-    movement.desiredVelocity = toTarget;
-    movement.overrideSpeed   = rush.closeInSpeed;
-    if (rootMotion) rootMotion->externallyDriven = true; // 寄せはこちらで駆動する
-    return true;                                         // 寄せ中はこのフレーム移動を上書き
-}
-
-void PlayerRushSystem::End(DashComponent &dash, RushComponent &rush, TimeStateComponent &time)
-{
-    rush.phase           = RushComponent::Phase::None;
-    rush.timer           = 0.0f;
-    rush.closeInTimer    = 0.0f;
-    rush.closeInTargetID = InvalidEntityID;
-    time.cinematicScale  = 1.0f; // プレイヤーのスロー打ち消しをやめる（世界スローはイーズで自然に戻る）
-    SetVignette(false);          // フェードアウト開始
-
-    // 集中スロー中に再ダッシュしていたら、そのダッシュの残り時間・無敵を壊さない。
-    //   ダッシュせずに終えた通常時だけ、ラッシュ後のクールダウンへ入れ、無敵を解く。
-    if (!dash.isDashing)
-    {
-        dash.isInvincible = false;
-        dash.currentTimer = dash.dashCooldown;
-    }
-}
-
-void PlayerRushSystem::SetVignette(bool on)
-{
-    // ラッシュ中、画面にビネット（周囲の暗がり）を出す。rushActive の間、
-    // JustEvadeEffectSystem(R02) が weight を実時間でフェードしてビネットへ反映する。
-    if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
-        fx->rushActive = on;
-}
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 std::vector<CCL::ECS::TypeID> PlayerRushSystem::GetWriteTypes() const
 {
-    // テンプレート引数ぶん＋ビネット切り替えで書く JustEvadeEffectComponent(singleton)。
-    std::vector<CCL::ECS::TypeID> types = IfSystem::GetWriteTypes();
-    types.push_back(CCL::ECS::TypeInfo<JustEvadeEffectComponent>::ID());
+    // 画面演出のコンポーネントも書くので申告
+    auto types = Base::GetWriteTypes();
+    types.push_back(TypeInfo<JustEvadeEffectComponent>::ID());
     return types;
 }
 
-// ラッシュの駆動は PlayerDashSystem より前に走らせる（ロックするフレームは Dash 側がスキップする）。
+void PlayerRushSystem::Initialize()
+{
+    // ジャスト回避の成功を購読する。
+    // 成功は別システム(JustEvadeSystem)のタスク上で届くので、ここでは溜めるだけにして、
+    // 実際の開始は Updateで行う。
+    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
+        m_pendingStarts.push_back(ev.playerID);
+    });
+}
+
+void PlayerRushSystem::Update(float dt)
+{
+    // 処理フロー:
+    // 1. 届いたジャスト回避成功を受けて、対象のラッシュを開始する（操作不能フェーズから）
+    // 2. ラッシュ中はスローを維持し、フェーズごとに操作を切り替え、自由が終わったら終える
+    // 3. ラッシュ中かどうかを画面演出（ビネット）へ伝える
+
+    // ---------------------------------------------------------
+    // 1. ラッシュの開始
+    // ---------------------------------------------------------
+    for (EntityID id : m_pendingStarts)
+    {
+        if (auto *rush = m_world->GetComponent<RushComponent>(id))
+        {
+            StartRush(*rush);
+        }
+    }
+    m_pendingStarts.clear();
+
+    // ---------------------------------------------------------
+    // 2. 時間制御・踏み込み・フェーズ遷移
+    // ---------------------------------------------------------
+    const TimeContext *timeCtx = m_world->HasResource<TimeContext>()
+                                     ? &m_world->GetResource<TimeContext>()
+                                     : nullptr;
+
+    bool anyActive = false;
+
+    ForEach([&](RushComponent              &rush,
+                TimeStateComponent         &time,
+                CharacterMovementComponent &movement,
+                const PlayerComponent      &player,
+                const PlayerInputComponent &input,
+                const TransformComponent   &transform) {
+        // ラッシュ中でなければ何もしない
+        if (!rush.isActive)
+        {
+            return;
+        }
+
+        // スローはフェーズに依らず一律。毎フレーム維持する。
+        DriveTimeScale(rush, time, timeCtx);
+
+        // フェーズごとに「操作」だけを切り替える。
+        //   操作不能: その場で止める。 準備: 攻撃で敵へ踏み込む。 自由: 通常操作（ここでは何もしない）。
+        switch (rush.phase)
+        {
+        case RushPhase::Locked:
+            StopPlayer(movement);
+            break;
+        case RushPhase::Ready:
+            DriveCloseIn(rush, movement, input, player, Vector3(transform.position), dt);
+            break;
+        case RushPhase::Free:
+            break;
+        }
+
+        // 今のフェーズの持ち時間が尽きたら、次のフェーズへ進める（自由の後は終了）。
+        rush.timer -= dt;
+        if (rush.timer <= 0.0f)
+        {
+            AdvancePhase(rush, time);
+        }
+
+        // 終了したフレームは isActive が false になるので、そのフレームから演出も降り始める。
+        anyActive = anyActive || rush.isActive;
+    });
+
+    // ---------------------------------------------------------
+    // 3. 画面演出へ伝える
+    // ---------------------------------------------------------
+    // rushActive を立てている間だけ、JustEvadeEffectSystem がビネットをピークへ寄せる。
+    if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
+    {
+        fx->rushActive = anyActive;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// フェーズ
+// ---------------------------------------------------------------------------
+
+void PlayerRushSystem::StartRush(RushComponent &rush)
+{
+    // 操作不能フェーズから始める
+
+    rush.isActive = true;
+    rush.phase    = RushPhase::Locked;
+    rush.timer    = rush.lockedDuration;
+}
+
+void PlayerRushSystem::AdvancePhase(RushComponent &rush, TimeStateComponent &time)
+{
+    switch (rush.phase)
+    {
+    case RushPhase::Locked:
+        rush.phase = RushPhase::Ready;
+        rush.timer = rush.readyDuration;
+        break;
+
+    case RushPhase::Ready:
+        rush.phase = RushPhase::Free;
+        rush.timer = rush.freeDuration;
+        break;
+
+    case RushPhase::Free:
+        EndRush(rush, time);
+        break;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 時間制御
+// ---------------------------------------------------------------------------
+
+void PlayerRushSystem::DriveTimeScale(RushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx)
+{
+    // 世界を worldScale まで遅くする。毎フレーム要求し続けることで、その遅さを維持する。
+    Time::SustainWorldSlow(*m_world, rush.worldScale, rush.slowRecover);
+
+    // プレイヤーだけ実時間へ戻す。
+    // localDt = rawDt × worldScale × cinematicScale なので、cinematicScale = playerScale / worldScale と
+    // すると worldScale が約分され、プレイヤーの時計だけが playerScale（既定 1.0＝実時間）で進む。
+    const float currentWorld = timeCtx
+                                   ? (timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)])
+                                   : 1.0f;
+
+    // 除数の下限を worldScale で止める。
+    // 他のスロー要因で世界が worldScale より深く落ちても、cinematicScale が過大にならないようにする。
+    const float worldFloor = (std::max)(currentWorld, rush.worldScale);
+
+    time.cinematicScale = rush.playerScale / worldFloor;
+}
+
+void PlayerRushSystem::EndRush(RushComponent &rush, TimeStateComponent &time)
+{
+    rush.isActive     = false;
+    rush.timer        = 0.0f;
+    rush.closeInTimer = 0.0f;
+
+    // 世界スローはもう要求しない（呼ぶのをやめれば slowRecover のイーズで等速へ戻る）。
+    // プレイヤーのスロー打ち消しもやめる。
+    time.cinematicScale = 1.0f;
+}
+
+void PlayerRushSystem::StopPlayer(CharacterMovementComponent &movement)
+{
+    // 操作不能フェーズは成立の「キメ」。移動の意思を打ち消し、その場で止める。
+    // overrideSpeed=0 で速度を 0 に上書きする（consume-on-read なので毎フレーム書く）。
+    movement.desiredVelocity = Vector3::Zero;
+    movement.overrideSpeed   = 0.0f;
+}
+
+// ---------------------------------------------------------------------------
+// 間合い詰め
+// ---------------------------------------------------------------------------
+
+void PlayerRushSystem::DriveCloseIn(RushComponent &rush, CharacterMovementComponent &movement,
+                                    const PlayerInputComponent &input, const PlayerComponent &player,
+                                    const Vector3 &playerPos, float dt)
+{
+    // --- 開始 ---
+    // 攻撃を押した瞬間に、詰め先と初期の向きを決めて踏み込みを仕込む。
+    //   詰め先: ロックオン中で生存している敵。無ければ Invalid（＝向いている方向へ踏み込む）。
+    //   向き  : 今キャラが向いている方向（0 が +Z の規約）。ロックオン時は継続中に上書きする。
+    // 踏み込み中にもう一度押しても、今の踏み込みが終わるまでは仕込み直さない。
+    if (input.attackPressed && rush.closeInTimer <= 0.0f)
+    {
+        // ターゲットを探す
+        rush.closeInTarget = PickCloseInTarget(player);
+
+        const float yaw   = player.currentYaw;
+        // 
+        rush.closeInDir   = Vector3(std::sin(yaw), 0.0f, std::cos(yaw));
+        rush.closeInTimer = rush.closeInMaxTime;
+    }
+
+    if (rush.closeInTimer <= 0.0f)
+    {
+        return;
+    }
+
+    // --- 向きの決定 ---
+    // ロックオン先が居る間は、毎フレームその位置へ向け直す（敵が動いても追う）。
+    // 間合い（closeInStopDistance）に入ったら、その場で踏み込みを終える＝止まる。
+    // ロックオンが無い／敵を見失ったときは、仕込んだ向き（closeInDir）のまま進む。
+    Vector3 dir = rush.closeInDir;
+    if (IsCloseInTargetAlive(rush.closeInTarget))
+    {
+        // ターゲットが生存している場合、その位置へ向け直す
+        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
+        {
+            Vector3 to = Vector3(enemyTrans->position) - playerPos;
+            to.y       = 0.0f;
+            const float dist = to.Length();
+
+            // 間合いに入ったら間合いを詰め終える
+            if (dist <= rush.closeInStopDistance)
+            {
+                rush.closeInTimer = 0.0f;
+                return;
+            }
+            // 方向ベクトルを正規化して覚えておく
+            if (dist > 1e-3f)
+            {
+                dir             = to / dist;
+                rush.closeInDir = dir; // 敵を見失っても最後の向きで進めるよう覚えておく
+            }
+        }
+    }
+
+    // --- 前進 ---
+    // 動かす側へ「この向きへ closeInSpeed で進め」と毎フレーム要求する。
+    // overrideSpeed は consume-on-read なので、終われば書かなくなるだけで自然に止まる。
+    movement.desiredVelocity = dir;
+    movement.overrideSpeed   = rush.closeInSpeed;
+    rush.closeInTimer -= dt;
+}
+
+CCL::ECS::EntityID PlayerRushSystem::PickCloseInTarget(const PlayerComponent &player) const
+{
+    // lockOnTargetID は EntityLink。EntityID へ暗黙変換して渡す。
+    const EntityID id = player.lockOnTargetID;
+    // 正直生存チェックしなくてそのまま入れるのでもいいけど
+    // 今後チュートリアルで別の雑魚敵とか実装するときのための保険
+    return IsCloseInTargetAlive(id) ? id : InvalidEntityID;
+}
+
+bool PlayerRushSystem::IsCloseInTargetAlive(CCL::ECS::EntityID id) const
+{
+    return id != InvalidEntityID && m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
+}
+
+// 入力・ダッシュと同じ L02_Update。物理(L03以降)より前に時間倍率を確定させる。
 REGISTER_LOGIC_SYSTEM(PlayerRushSystem, Priority::LogicStage::L02_Update);

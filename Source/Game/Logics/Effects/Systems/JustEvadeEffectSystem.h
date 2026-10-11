@@ -6,7 +6,7 @@
 // 責務:
 //   - active に応じて weight を fadeIn/fadeOut 時間でイーズする
 //   - ビネットの設定に、自分のキーで取ったスロットを通して値を書く
-//   - 演出が消えたフレームで自分のスロットを手放す
+//   - 演出が消えている間は自分のスロットを手放す
 //
 // 備考: シングルトンだけを触り、エンティティを回さないので SystemBase を直接継承する。
 //       ポストプロセスの設定本体は書き換えない。最終的な強さの合成と描画の有無は
@@ -31,7 +31,4 @@ public:
     std::vector<const char *> GetRunAfter() const override { return {"ScreenImpactSystem"}; }
 
     void Update(float dt) override;
-
-private:
-    bool m_wasActive = false; // 前のフレームで演出を出していたか（終わったフレームでスロットを手放すため）
 };
