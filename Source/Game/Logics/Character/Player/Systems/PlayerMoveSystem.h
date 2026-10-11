@@ -16,6 +16,7 @@
 #include "Engine/Time/Components/TimeState.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
+#include "Game/Logics/Character/Player/Components/RushComponent.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterConfigComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
@@ -29,6 +30,7 @@ class PlayerMoveSystem : public CCL::ECS::IfSystem<PlayerMoveSystem,
                                                    CCL::ECS::Read<JoltCharacterHandleComponent>,
                                                    CCL::ECS::Write<PlayerComponent>,
                                                    CCL::ECS::Write<AnimParametersComponent>,
+                                                   CCL::ECS::Read<RushComponent>,
                                                    CCL::ECS::Read<TimeStateComponent>>
 {
 public:

@@ -3,7 +3,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // カメラへ画角の要求(wideFovRequest)を書く
-#include "Engine/Animation/Components/RootMotionComponent.h"       // ダッシュ中はルートモーションの移動を止める
 #include "Game/Logics/Combat/Components/HealthComponent.h"         // 回避の無敵を、被弾処理が見る無敵タイマーへ書く
 #include "Game/Core/GameEvents.h"                                  // ダッシュ開始のイベント（VFX 用）
 
@@ -22,7 +21,7 @@ void PlayerDashSystem::Update(float rawDt)
         // 処理フロー:
         // 1. 回避中の無敵を維持する
         // 2. ダッシュを処理し、ダッシュでなければ歩き/走りを処理する
-        // 3. ルートモーションの移動を止めるかを伝え、カメラ画角の要求を書く
+        // 3. カメラ画角の要求を書く
 
         // --- 無敵の維持 ---
         MaintainInvincibility(id, dash);
@@ -34,13 +33,7 @@ void PlayerDashSystem::Update(float rawDt)
             UpdateGroundLocomotion(player, movement, time.localDt);
         }
 
-        // --- 外部への通知 ---
-        // ダッシュ中は、ルートモーションによる移動を止めさせる。
-        if (RootMotionComponent *rootMotion = m_world->GetComponent<RootMotionComponent>(id))
-        {
-            rootMotion->externallyDriven = dash.isDashing;
-        }
-
+        // --- カメラ画角 ---
         // ダッシュ中だけ画角を広げるよう、カメラへ書く。
         PushWideFovRequest(id, dash.isDashing);
     });

@@ -28,11 +28,19 @@ void PlayerMoveSystem::Update(float rawDt)
                       const JoltCharacterHandleComponent &joltHandle,
                       PlayerComponent                    &player,
                       AnimParametersComponent            &animParams,
+                      const RushComponent                &rush,
                       const TimeStateComponent           &time) {
         if (m_world->HasComponent<Tag::DeadTag>(id))
             return;
         if (!joltHandle.character)
             return;
+
+        // ラッシュの回避離脱(Locked)・待機(Ready)は操作不能。旋回もジャンプも受け付けない。
+        //   間合い詰め(Attack)・自由(Free)は向き直り（attackFaceYaw）とジャンプを許す。
+        if (rush.isActive && (rush.phase == RushPhase::Locked || rush.phase == RushPhase::Ready))
+        {
+            return;
+        }
 
         float dt         = time.localDt;
         bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);

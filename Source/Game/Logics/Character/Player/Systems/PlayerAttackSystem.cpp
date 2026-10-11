@@ -27,6 +27,10 @@ namespace
     const float     kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積のしきい値（cos70°）
 } // namespace
 
+// ---------------------------------------------------------------------------
+// 対象の探索
+// ---------------------------------------------------------------------------
+
 EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &selfPos,
                                                 const Vector3 &forward, float range, float coneCos)
 {
@@ -35,23 +39,44 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
 
     // 候補を一覧に溜めず、走査しながら最も近いものを残す。
     m_world->ViewEach<HealthComponent, TransformComponent>([&](EntityID id) {
-        if (id == selfID) return;
-        if (m_world->HasComponent<PlayerComponent>(id)) return; // プレイヤーは除く
-        if (m_world->HasComponent<Tag::DeadTag>(id)) return;
+        if (id == selfID)
+        {
+            return;
+        }
+        if (m_world->HasComponent<PlayerComponent>(id)) // プレイヤーは除く
+        {
+            return;
+        }
+        if (m_world->HasComponent<Tag::DeadTag>(id))
+        {
+            return;
+        }
 
         const auto *hp = m_world->GetComponent<HealthComponent>(id);
-        if (hp && hp->currentHealth <= 0.0f) return;
+        if (hp && hp->currentHealth <= 0.0f)
+        {
+            return;
+        }
         const auto *tr = m_world->GetComponent<TransformComponent>(id);
-        if (!tr) return;
+        if (!tr)
+        {
+            return;
+        }
 
         Vector3 to         = Vector3(tr->position) - selfPos;
         to.y               = 0.0f;
         const float distSq = to.LengthSquared();
-        if (distSq < 1e-4f || distSq > bestDistSq) return;
+        if (distSq < 1e-4f || distSq > bestDistSq)
+        {
+            return;
+        }
 
         Vector3 dir = to;
         dir.Normalize();
-        if (dir.Dot(forward) < coneCos) return; // 前方コーンの外は無視
+        if (dir.Dot(forward) < coneCos) // 前方コーンの外は無視
+        {
+            return;
+        }
 
         bestDistSq = distSq;
         best       = id;
@@ -59,13 +84,27 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
     return best;
 }
 
+// ---------------------------------------------------------------------------
+// 向き直り
+// ---------------------------------------------------------------------------
+
 void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &player)
 {
+    // 処理フロー:
+    // 1. 向く対象を決める（ロックオン優先、無ければ前方で最も近い敵）
+    // 2. 対象が無い／遠いなら向かない（今の向きのまま攻撃する）
+    // 3. 対象方向の yaw を書き、向き直りの時間を立てる
+
     const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
-    if (!ptrans) return;
+    if (!ptrans)
+    {
+        return;
+    }
     const Vector3 playerPos(ptrans->position);
 
-    // 対象はロックオン中の敵を優先し、無ければ前方で最も近い敵にする。
+    // ---------------------------------------------------------
+    // 1. 対象を決める
+    // ---------------------------------------------------------
     EntityID target = InvalidEntityID;
     if (player.lockOnTargetID != InvalidEntityID &&
         m_world->IsEntityValid(player.lockOnTargetID) &&
@@ -78,29 +117,59 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
         const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
         target = FindBestFrontEnemy(playerID, playerPos, forward, player.attackFaceMaxDistance, kFaceConeCos);
     }
-    if (target == InvalidEntityID) return; // 敵が居なければ今の向きのまま攻撃する
 
-    // 対象方向の yaw を書いておく（実際に向きを変えるのは PlayerMoveSystem）。
+    // ---------------------------------------------------------
+    // 2. 向かない条件
+    // ---------------------------------------------------------
+    if (target == InvalidEntityID) // 敵が居なければ今の向きのまま攻撃する
+    {
+        return;
+    }
+
     const auto *etrans = m_world->GetComponent<TransformComponent>(target);
-    if (!etrans) return;
+    if (!etrans)
+    {
+        return;
+    }
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
-    if (to.LengthSquared() < 1e-4f) return;
+    if (to.LengthSquared() < 1e-4f)
+    {
+        return;
+    }
 
-    // 対象が attackFaceMaxDistance より遠ければ向かない。
-    //   ロックオン中でも遠い敵には向かず、入力方向のまま攻撃できるようにする。
-    if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance) return;
+    // ロックオン中でも attackFaceMaxDistance より遠い敵には向かず、入力方向のまま攻撃できるようにする。
+    if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance)
+    {
+        return;
+    }
 
+    // ---------------------------------------------------------
+    // 3. yaw を書く（実際に向きを変えるのは PlayerMoveSystem）
+    // ---------------------------------------------------------
     player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerMoveSystem と同じ atan2(x,z) 規約
     player.attackFaceTimer = kFaceDuration;
 }
+
+// ---------------------------------------------------------------------------
+// 入口
+// ---------------------------------------------------------------------------
 
 void PlayerAttackSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID                    playerID,
                       const PlayerInputComponent &pin,
                       AnimParametersComponent    &animParams,
-                      PlayerComponent            &player) {
+                      PlayerComponent            &player,
+                      const RushComponent        &rush) {
+        // ラッシュ中は、自由フェーズ以外では通常攻撃を出さない。
+        //   回避離脱(Locked)・待機(Ready)・間合い詰め(Attack)の攻撃入力は PlayerRushSystem が受け取り、
+        //   「間合いを詰めて斬る」一連として扱う。ここで通常攻撃まで出ると、その場斬りが二重に起きる。
+        if (rush.isActive && rush.phase != RushPhase::Free)
+        {
+            return;
+        }
+
         if (pin.attackPressed)
         {
             // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）。

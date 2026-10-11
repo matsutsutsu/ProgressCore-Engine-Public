@@ -5,7 +5,12 @@
 #include "Engine/Time/TimeService.h"      // 世界スロー(SustainWorldSlow)
 #include "Game/Core/GameEvents.h"         // JustEvadeSuccessEvent
 #include "Game/Logics/Effects/Components/JustEvadeEffectComponent.h" // ビネット演出の要求フラグ
-#include "Game/Logics/Combat/Components/DeadTag.h" // 詰め先が死んでいないか判定
+#include "Game/Logics/Character/Player/Components/DashComponent.h"   // 開始時にダッシュを中断する
+#include "Game/Logics/Combat/Components/HealthComponent.h"          // 無敵タイマーを維持する
+#include "Game/Logics/Combat/Components/DeadTag.h"                  // 詰め先が死んでいないか判定
+#include "Engine/Core/Math/StringHash.h"                           // 斬りトリガーのハッシュ
+
+#include <imgui.h> // デバッグ UI(OnGui)
 
 #include <algorithm>
 #include <cmath>
@@ -13,15 +18,19 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// 斬りのアニメトリガー。通常攻撃(PlayerAttackSystem)と同じ名前で、どの斬りになるかはアニメグラフが決める。
+static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
 
 std::vector<CCL::ECS::TypeID> PlayerRushSystem::GetWriteTypes() const
 {
-    // 画面演出のコンポーネントも書くので申告
+    // 画面演出のシングルトンと、開始時に中断する DashComponent も書くので申告する。
     auto types = Base::GetWriteTypes();
     types.push_back(TypeInfo<JustEvadeEffectComponent>::ID());
+    types.push_back(TypeInfo<DashComponent>::ID());
     return types;
 }
 
@@ -29,7 +38,7 @@ void PlayerRushSystem::Initialize()
 {
     // ジャスト回避の成功を購読する。
     // 成功は別システム(JustEvadeSystem)のタスク上で届くので、ここでは溜めるだけにして、
-    // 実際の開始は Updateで行う。
+    // 実際の開始は Update で行う。
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         m_pendingStarts.push_back(ev.playerID);
     });
@@ -38,8 +47,8 @@ void PlayerRushSystem::Initialize()
 void PlayerRushSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 届いたジャスト回避成功を受けて、対象のラッシュを開始する（操作不能フェーズから）
-    // 2. ラッシュ中はスローを維持し、フェーズごとに操作を切り替え、自由が終わったら終える
+    // 1. 届いたジャスト回避成功を受けて、ダッシュを中断しラッシュを開始する
+    // 2. ラッシュ中はスロー維持・無敵維持・フェーズごとの操作を行い、時間でフェーズを進める
     // 3. ラッシュ中かどうかを画面演出（ビネット）へ伝える
 
     // ---------------------------------------------------------
@@ -47,15 +56,17 @@ void PlayerRushSystem::Update(float dt)
     // ---------------------------------------------------------
     for (EntityID id : m_pendingStarts)
     {
-        if (auto *rush = m_world->GetComponent<RushComponent>(id))
+        auto *rush = m_world->GetComponent<RushComponent>(id);
+        auto *dash = m_world->GetComponent<DashComponent>(id);
+        if (rush && dash)
         {
-            StartRush(*rush);
+            StartRush(*rush, *dash);
         }
     }
     m_pendingStarts.clear();
 
     // ---------------------------------------------------------
-    // 2. 時間制御・踏み込み・フェーズ遷移
+    // 2. スロー・無敵・フェーズ
     // ---------------------------------------------------------
     const TimeContext *timeCtx = m_world->HasResource<TimeContext>()
                                      ? &m_world->GetResource<TimeContext>()
@@ -63,36 +74,56 @@ void PlayerRushSystem::Update(float dt)
 
     bool anyActive = false;
 
-    ForEach([&](RushComponent              &rush,
-                TimeStateComponent         &time,
-                CharacterMovementComponent &movement,
-                const PlayerComponent      &player,
-                const PlayerInputComponent &input,
-                const TransformComponent   &transform) {
-        // ラッシュ中でなければ何もしない
+    ForEachWithID([&](EntityID                    id,
+                      RushComponent              &rush,
+                      TimeStateComponent         &time,
+                      CharacterMovementComponent &movement,
+                      PlayerComponent            &player,
+                      AnimParametersComponent    &animParams,
+                      const PlayerInputComponent &input,
+                      const TransformComponent   &transform) {
         if (!rush.isActive)
         {
             return;
         }
 
-        // スローはフェーズに依らず一律。毎フレーム維持する。
+        // 世界のタイムスケールをスローにして、
+        // プレイヤーは実時間で動くようにする
         DriveTimeScale(rush, time, timeCtx);
 
-        // フェーズごとに「操作」だけを切り替える。
-        //   操作不能: その場で止める。 準備: 攻撃で敵へ踏み込む。 自由: 通常操作（ここでは何もしない）。
+        // ジャスト回避状態は無敵状態を維持する
+        MaintainInvincibility(id, rush);
+
+        // --- フェーズごとの操作 ---
         switch (rush.phase)
         {
         case RushPhase::Locked:
-            StopPlayer(movement);
+            // 回避離脱。操作不能。ダッシュ方向へ前進する。
+            DriveLeap(rush, movement);
             break;
+
         case RushPhase::Ready:
-            DriveCloseIn(rush, movement, input, player, Vector3(transform.position), dt);
+            // 操作不能。攻撃入力があれば攻撃状態へ移る。
+            StopPlayer(movement);
+            if (input.attackPressed)
+            {
+                EnterAttack(rush, player);
+            }
             break;
+
+        case RushPhase::Attack:
+            // 詰め → 斬りまでをここで完結させる（通常攻撃は PlayerAttackSystem 側で抑止している）。
+            DriveCloseIn(rush, movement, player, animParams, Vector3(transform.position));
+            break;
+
         case RushPhase::Free:
+            // 自由操作。移動は上書きしない（ダッシュ/歩走・攻撃がそのまま効く）。
             break;
         }
 
-        // 今のフェーズの持ち時間が尽きたら、次のフェーズへ進める（自由の後は終了）。
+        // --- フェーズの時間を進める ---
+        // 待機中に攻撃へ移った場合は phase が Attack に変わり timer も入れ替わっているので、
+        // そのまま攻撃の持ち時間として減る。
         rush.timer -= dt;
         if (rush.timer <= 0.0f)
         {
@@ -106,7 +137,6 @@ void PlayerRushSystem::Update(float dt)
     // ---------------------------------------------------------
     // 3. 画面演出へ伝える
     // ---------------------------------------------------------
-    // rushActive を立てている間だけ、JustEvadeEffectSystem がビネットをピークへ寄せる。
     if (auto *fx = m_world->GetSingletonComponent<JustEvadeEffectComponent>())
     {
         fx->rushActive = anyActive;
@@ -117,13 +147,18 @@ void PlayerRushSystem::Update(float dt)
 // フェーズ
 // ---------------------------------------------------------------------------
 
-void PlayerRushSystem::StartRush(RushComponent &rush)
+void PlayerRushSystem::StartRush(RushComponent &rush, DashComponent &dash)
 {
-    // 操作不能フェーズから始める
-
     rush.isActive = true;
     rush.phase    = RushPhase::Locked;
     rush.timer    = rush.lockedDuration;
+    rush.evadeDir = dash.dashDirection; // ダッシュした方向へ離脱する
+
+    // ダッシュのままにせず中断する。以降は回避離脱（Locked）が移動を駆動する。
+    dash.isDashing               = false;
+    dash.isInvincible            = false; // 無敵はラッシュ側で維持する
+    dash.isJustEvadeWindowActive = false;
+    dash.currentTimer            = dash.dashCooldown;
 }
 
 void PlayerRushSystem::AdvancePhase(RushComponent &rush, TimeStateComponent &time)
@@ -136,6 +171,12 @@ void PlayerRushSystem::AdvancePhase(RushComponent &rush, TimeStateComponent &tim
         break;
 
     case RushPhase::Ready:
+        // 待機のまま時間切れ＝攻撃しなかった。自由へ移る。
+        rush.phase = RushPhase::Free;
+        rush.timer = rush.freeDuration;
+        break;
+
+    case RushPhase::Attack:
         rush.phase = RushPhase::Free;
         rush.timer = rush.freeDuration;
         break;
@@ -144,6 +185,19 @@ void PlayerRushSystem::AdvancePhase(RushComponent &rush, TimeStateComponent &tim
         EndRush(rush, time);
         break;
     }
+}
+
+void PlayerRushSystem::EnterAttack(RushComponent &rush, const PlayerComponent &player)
+{
+    rush.phase       = RushPhase::Attack;
+    rush.timer       = rush.attackDuration;
+    rush.attackFired = false; // 詰め切ってから1回だけ斬る
+
+    // 詰め先：ロックオン中の敵。無ければ今キャラが向いている方向へ詰める。
+    rush.closeInTarget = PickCloseInTarget(player);
+
+    const float yaw  = player.currentYaw;
+    rush.closeInDir  = Vector3(std::sin(yaw), 0.0f, std::cos(yaw)); // 0 が +Z の規約
 }
 
 // ---------------------------------------------------------------------------
@@ -171,101 +225,262 @@ void PlayerRushSystem::DriveTimeScale(RushComponent &rush, TimeStateComponent &t
 
 void PlayerRushSystem::EndRush(RushComponent &rush, TimeStateComponent &time)
 {
-    rush.isActive     = false;
-    rush.timer        = 0.0f;
-    rush.closeInTimer = 0.0f;
+    rush.isActive = false;
+    rush.timer    = 0.0f;
 
     // 世界スローはもう要求しない（呼ぶのをやめれば slowRecover のイーズで等速へ戻る）。
     // プレイヤーのスロー打ち消しもやめる。
     time.cinematicScale = 1.0f;
 }
 
-void PlayerRushSystem::StopPlayer(CharacterMovementComponent &movement)
+// ---------------------------------------------------------------------------
+// 移動・無敵
+// ---------------------------------------------------------------------------
+
+void PlayerRushSystem::DriveLeap(RushComponent &rush, CharacterMovementComponent &movement)
 {
-    // 操作不能フェーズは成立の「キメ」。移動の意思を打ち消し、その場で止める。
-    // overrideSpeed=0 で速度を 0 に上書きする（consume-on-read なので毎フレーム書く）。
-    movement.desiredVelocity = Vector3::Zero;
-    movement.overrideSpeed   = 0.0f;
+    // 残り時間から進行度 t(0→1) を出す（timer は lockedDuration→0 と減る）。
+    const float dur = (rush.lockedDuration > 0.0001f) ? rush.lockedDuration : 0.0001f;
+    const float t   = 1.0f - (rush.timer / dur);
+
+    // EaseOut：初速 leapSpeed で出て、末尾で 0 へ減速する（(1-t)^2）。
+    const float ease  = 1.0f - t;
+    const float speed = rush.leapSpeed * ease * ease;
+
+    movement.desiredVelocity = rush.evadeDir;
+    movement.overrideSpeed   = speed;
 }
 
-// ---------------------------------------------------------------------------
-// 間合い詰め
-// ---------------------------------------------------------------------------
-
 void PlayerRushSystem::DriveCloseIn(RushComponent &rush, CharacterMovementComponent &movement,
-                                    const PlayerInputComponent &input, const PlayerComponent &player,
-                                    const Vector3 &playerPos, float dt)
+                                    PlayerComponent &player, AnimParametersComponent &animParams,
+                                    const Vector3 &playerPos)
 {
-    // --- 開始 ---
-    // 攻撃を押した瞬間に、詰め先と初期の向きを決めて踏み込みを仕込む。
-    //   詰め先: ロックオン中で生存している敵。無ければ Invalid（＝向いている方向へ踏み込む）。
-    //   向き  : 今キャラが向いている方向（0 が +Z の規約）。ロックオン時は継続中に上書きする。
-    // 踏み込み中にもう一度押しても、今の踏み込みが終わるまでは仕込み直さない。
-    if (input.attackPressed && rush.closeInTimer <= 0.0f)
-    {
-        // ターゲットを探す
-        rush.closeInTarget = PickCloseInTarget(player);
-
-        const float yaw   = player.currentYaw;
-        // 
-        rush.closeInDir   = Vector3(std::sin(yaw), 0.0f, std::cos(yaw));
-        rush.closeInTimer = rush.closeInMaxTime;
-    }
-
-    if (rush.closeInTimer <= 0.0f)
+    // すでに斬りを出していれば、移動は攻撃アニメ（ルートモーションの踏み込み）に任せ、何も上書きしない。
+    if (rush.attackFired)
     {
         return;
     }
 
-    // --- 向きの決定 ---
-    // ロックオン先が居る間は、毎フレームその位置へ向け直す（敵が動いても追う）。
-    // 間合い（closeInStopDistance）に入ったら、その場で踏み込みを終える＝止まる。
-    // ロックオンが無い／敵を見失ったときは、仕込んだ向き（closeInDir）のまま進む。
-    Vector3 dir = rush.closeInDir;
+    // 詰め方向と、斬りに移るかの判定。
+    //   ロックオン先が居る間は、毎フレームその位置へ向け直す（敵が動いても追う）。
+    //   間合い（closeInStopDistance）に入ったら斬る。詰め先が無ければ、その場で斬る（前方ダッシュ斬り）。
+    Vector3 dir          = rush.closeInDir;
+    bool    reachedRange = true; // 詰め先が無ければ即・間合い内とみなす
+
     if (IsCloseInTargetAlive(rush.closeInTarget))
     {
-        // ターゲットが生存している場合、その位置へ向け直す
         if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
         {
             Vector3 to = Vector3(enemyTrans->position) - playerPos;
             to.y       = 0.0f;
             const float dist = to.Length();
 
-            // 間合いに入ったら間合いを詰め終える
-            if (dist <= rush.closeInStopDistance)
-            {
-                rush.closeInTimer = 0.0f;
-                return;
-            }
-            // 方向ベクトルを正規化して覚えておく
+            reachedRange = (dist <= rush.closeInStopDistance);
             if (dist > 1e-3f)
             {
                 dir             = to / dist;
-                rush.closeInDir = dir; // 敵を見失っても最後の向きで進めるよう覚えておく
+                rush.closeInDir = dir;
             }
         }
     }
 
-    // --- 前進 ---
-    // 動かす側へ「この向きへ closeInSpeed で進め」と毎フレーム要求する。
-    // overrideSpeed は consume-on-read なので、終われば書かなくなるだけで自然に止まる。
+    // 詰め先の方へ向き直らせる（実際に回すのは PlayerMoveSystem）。
+    player.attackFaceYaw   = std::atan2(dir.x, dir.z);
+    player.attackFaceTimer = 0.1f;
+
+    if (reachedRange)
+    {
+        // 間合いに入った／詰め先が無い → 斬る。
+        FireStrike(rush, player, animParams);
+        return;
+    }
+
+    // まだ遠い → 詰める。詰め中は攻撃アニメが流れないので root motion は非アクティブ、overrideSpeed がそのまま効く。
     movement.desiredVelocity = dir;
     movement.overrideSpeed   = rush.closeInSpeed;
-    rush.closeInTimer -= dt;
 }
+
+void PlayerRushSystem::FireStrike(RushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams)
+{
+    rush.attackFired = true;
+
+    // その場で止めてから斬る。踏み込みは攻撃アニメのルートモーションに任せる。
+    player.attackFaceYaw   = std::atan2(rush.closeInDir.x, rush.closeInDir.z);
+    player.attackFaceTimer = 0.22f;
+
+    animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+}
+
+void PlayerRushSystem::StopPlayer(CharacterMovementComponent &movement)
+{
+    // 移動の意思を打ち消し、その場で止める（overrideSpeed=0 で速度を 0 に上書き）。
+    movement.desiredVelocity = Vector3::Zero;
+    movement.overrideSpeed   = 0.0f;
+}
+
+void PlayerRushSystem::MaintainInvincibility(EntityID id, const RushComponent &rush)
+{
+    // ラッシュ中は被弾しない。被弾処理が見る無敵タイマーを、毎フレーム一定以上に保つ。
+    // ヒットストップ中は localDt=0 で減らないので、停止中も無敵が続く。
+    if (auto *health = m_world->GetComponent<HealthComponent>(id))
+    {
+        if (health->invincibilityTimer < rush.invincibleRefresh)
+        {
+            health->invincibilityTimer = rush.invincibleRefresh;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 詰め先の選択
+// ---------------------------------------------------------------------------
 
 CCL::ECS::EntityID PlayerRushSystem::PickCloseInTarget(const PlayerComponent &player) const
 {
     // lockOnTargetID は EntityLink。EntityID へ暗黙変換して渡す。
     const EntityID id = player.lockOnTargetID;
-    // 正直生存チェックしなくてそのまま入れるのでもいいけど
-    // 今後チュートリアルで別の雑魚敵とか実装するときのための保険
     return IsCloseInTargetAlive(id) ? id : InvalidEntityID;
 }
 
 bool PlayerRushSystem::IsCloseInTargetAlive(CCL::ECS::EntityID id) const
 {
     return id != InvalidEntityID && m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
+}
+
+// ---------------------------------------------------------------------------
+// デバッグ UI
+// ---------------------------------------------------------------------------
+
+const char *PlayerRushSystem::PhaseLabel(RushPhase phase) const
+{
+    switch (phase)
+    {
+    case RushPhase::Locked:
+        return "Locked (回避離脱)";
+    case RushPhase::Ready:
+        return "Ready (攻撃待機)";
+    case RushPhase::Attack:
+        return "Attack (間合い詰め)";
+    case RushPhase::Free:
+        return "Free (自由行動)";
+    }
+    return "?";
+}
+
+void PlayerRushSystem::OnGui()
+{
+    // 処理フロー:
+    // 1. フェーズと残り時間・離脱方向・詰め先を出す
+    // 2. 「移動の指令(desiredVelocity/overrideSpeed)」と「結果(currentVelocity)」を並べて切り分ける
+    // 3. 無敵・時間倍率を出し、ジャスト回避を待たずに始められるテストボタンを置く
+
+    m_world->ViewEach<RushComponent>([&](EntityID id) {
+        auto *rush = m_world->GetComponent<RushComponent>(id);
+        if (!rush)
+        {
+            return;
+        }
+
+        ImGui::PushID(static_cast<int>(id));
+        ImGui::Text("Entity #%u", EntityHandle::GetIndex(id));
+
+        // ---------------------------------------------------------
+        // 1. フェーズ・離脱方向・詰め先
+        // ---------------------------------------------------------
+        if (rush->isActive)
+        {
+            ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "ACTIVE   %s", PhaseLabel(rush->phase));
+        }
+        else
+        {
+            ImGui::TextDisabled("inactive");
+        }
+        ImGui::Text("phase timer : %.3f s", rush->timer);
+
+        const Vector3 ev = rush->evadeDir;
+        ImGui::Text("evadeDir    : (%.2f, %.2f, %.2f)  len %.2f", ev.x, ev.y, ev.z, ev.Length());
+
+        if (rush->closeInTarget != InvalidEntityID)
+        {
+            const bool alive = IsCloseInTargetAlive(rush->closeInTarget);
+
+            float dist = -1.0f;
+            const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush->closeInTarget);
+            const auto *selfTrans  = m_world->GetComponent<TransformComponent>(id);
+            if (enemyTrans && selfTrans)
+            {
+                Vector3 to = Vector3(enemyTrans->position) - Vector3(selfTrans->position);
+                to.y       = 0.0f;
+                dist       = to.Length();
+            }
+            ImGui::Text("closeInTarget : #%u  %s  dist %.2f m",
+                        EntityHandle::GetIndex(rush->closeInTarget), alive ? "alive" : "DEAD", dist);
+        }
+        else
+        {
+            ImGui::TextDisabled("closeInTarget : none (向き固定で詰める)");
+        }
+
+        ImGui::Separator();
+
+        // ---------------------------------------------------------
+        // 2. 移動の指令と結果（効いていない時はここで切り分ける）
+        // ---------------------------------------------------------
+        if (const auto *mv = m_world->GetComponent<CharacterMovementComponent>(id))
+        {
+            const Vector3 dv = mv->desiredVelocity;
+            ImGui::Text("desiredVelocity : (%.2f, %.2f, %.2f)", dv.x, dv.y, dv.z);
+            ImGui::Text("overrideSpeed   : %.2f  (-1=上書きなし)", mv->overrideSpeed);
+            ImGui::Text("currentVelocity : len %.2f m/s", Vector3(mv->currentVelocity).Length());
+
+            // ルートモーションが動きを握っていると overrideSpeed は無視される。
+            // 離脱・詰めの移動が出ないときの主因になりやすいので目立たせる。
+            if (mv->isRootMotionActive)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f),
+                                   "isRootMotionActive : YES  (rootMotion len %.2f)",
+                                   Vector3(mv->rootMotionVelocity).Length());
+            }
+            else
+            {
+                ImGui::Text("isRootMotionActive : no");
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 3. 無敵・時間倍率・テスト起動
+        // ---------------------------------------------------------
+        if (const auto *health = m_world->GetComponent<HealthComponent>(id))
+        {
+            ImGui::Text("invincibilityTimer : %.3f s", health->invincibilityTimer);
+        }
+        if (const auto *time = m_world->GetComponent<TimeStateComponent>(id))
+        {
+            ImGui::Text("cinematicScale : %.2f   localDt : %.4f s", time->cinematicScale, time->localDt);
+        }
+
+        ImGui::Separator();
+
+        if (ImGui::Button("Force Start Rush (test)"))
+        {
+            // ジャスト回避の成功を待たずに開始して、離脱・詰めの挙動だけを確かめる。
+            if (auto *dash = m_world->GetComponent<DashComponent>(id))
+            {
+                // ダッシュ方向が無ければ、今向いている方向を離脱方向にする。
+                if (Vector3(dash->dashDirection).LengthSquared() < 1e-4f)
+                {
+                    if (const auto *player = m_world->GetComponent<PlayerComponent>(id))
+                    {
+                        dash->dashDirection =
+                            Vector3(std::sin(player->currentYaw), 0.0f, std::cos(player->currentYaw));
+                    }
+                }
+                StartRush(*rush, *dash);
+            }
+        }
+
+        ImGui::PopID();
+    });
 }
 
 // 入力・ダッシュと同じ L02_Update。物理(L03以降)より前に時間倍率を確定させる。

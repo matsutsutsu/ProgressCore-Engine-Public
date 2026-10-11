@@ -7,18 +7,21 @@
 //   - 攻撃の瞬間に、ロックオン先か前方の最も近い敵の方へ向く yaw を書く
 //
 // 備考: 通常/ダッシュ/空中/コンボのどの攻撃になるかはアニメグラフが決める。
-//       （回避ダッシュ中の打ち切りや、ラッシュ中の間合い詰めは、作り直し時に付け直す。）
+//       ラッシュ中（自由フェーズ以外）は通常攻撃を出さない。攻撃入力は PlayerRushSystem が
+//       受け取り、間合いを詰めて斬る一連として扱う。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
+#include "Game/Logics/Character/Player/Components/RushComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include <SimpleMath.h>
 
 class PlayerAttackSystem : public CCL::ECS::IfSystem<PlayerAttackSystem,
                                                      CCL::ECS::Read<PlayerInputComponent>,
                                                      CCL::ECS::Write<AnimParametersComponent>,
-                                                     CCL::ECS::Write<PlayerComponent>>
+                                                     CCL::ECS::Write<PlayerComponent>,
+                                                     CCL::ECS::Read<RushComponent>>
 {
 public:
     PlayerAttackSystem()

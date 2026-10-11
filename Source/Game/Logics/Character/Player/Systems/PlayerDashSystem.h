@@ -6,7 +6,7 @@
 //   - ダッシュの開始・継続・終了と、ジャスト回避の受付時間を管理する
 //   - 回避中は HealthComponent の無敵タイマーを保つ
 //   - ダッシュの後は走行に移り、無入力が続いたら歩きに戻す
-//   - ダッシュ中はカメラへ画角を広げる要求を書き、ルートモーションの移動を止める
+//   - ダッシュ中はカメラへ画角を広げる要求を書く
 //
 // 備考: ジャスト回避成立後の「ラッシュ」は PlayerRushSystem が駆動する（別System）。
 //       PlayerRushSystem はこの System の後に走り、ラッシュ中のフレームは移動を上書きする。
@@ -18,9 +18,6 @@
 #include "Game/Logics/Character/Player/Components/DashComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Components/PlayerInputComponent.h"
-
-// ポインタでしか使わないので前方宣言にする（.cpp で include する）。
-struct RootMotionComponent;
 
 class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
                                                    CCL::ECS::Write<CharacterMovementComponent>,
