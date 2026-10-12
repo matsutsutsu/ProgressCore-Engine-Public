@@ -40,9 +40,9 @@ inline constexpr std::size_t kTimelinePlayStateCount =
 // カメラが出す姿勢（位置・注視点・画角）
 struct TimelineCameraPose
 {
-    DirectX::SimpleMath::Vector3 eye;
-    DirectX::SimpleMath::Vector3 look;
-    float                        fov = 45.0f;
+    DirectX::SimpleMath::Vector3 eye;         // カメラ位置（ワールド）
+    DirectX::SimpleMath::Vector3 look;        // 注視点（ワールド）
+    float                        fov = 45.0f; // 画角（度）
 };
 
 // ショット開始時に固定した、基準の位置と向き
@@ -59,19 +59,19 @@ struct TimelinePlayerComponent
     std::string assetPath; // タイムライン JSON のパス
 
     // --- 再生 ---
-    float startDelay  = 0.2f; // 再生要求から再生を始めるまでの待ち(秒)
+    float startDelay  = 0.2f; // 再生要求から再生を始めるまでの待ち（秒）
     bool  playOnStart = true; // シーン開始時に自動再生するか
     bool  allowSkip   = true; // 攻撃/ジャンプ入力でスキップできるか
 
     // 再生のきっかけ名（例: "BossDefeated"）。TimelinePlayRequestEvent の trigger と一致したら再生する。
-    //   空なら名前では選ばれない（ID 指定か「全部再生」の要求でだけ再生する）。
+    // 空なら名前では選ばれない（ID 指定か「全部再生」の要求でだけ再生する）。
     //
-    //   名前の意味は Engine では決めない。要求を出すゲーム側が決める（シグナルの name と同じ考え方）。
+    // 名前の意味は Engine では決めない。要求を出すゲーム側が決める（シグナルの name と同じ考え方）。
     std::string trigger;
 
-    // 再生中の VirtualCamera.priority。プレイヤー追従カメラ（PlayerFollowCamera.json は 200）より高くする。
+    // 再生中の VirtualCamera.priority。プレイヤー追従カメラ（PlayerFollowCamera.json は 200）より高くする
     int activePriority = 300;
-    // 非再生中の priority。他のどのカメラよりも低くして、確実に譲る。
+    // 非再生中の priority。他のどのカメラよりも低くして、確実に譲る
     int idlePriority = -1000;
 
     // --- 実行時状態（シリアライズしない） ---
@@ -81,31 +81,38 @@ struct TimelinePlayerComponent
     TimelinePlayState state         = TimelinePlayState::Idle;
     bool              autoPlayArmed = true;  // playOnStart の自動再生をまだ始めていないか
     bool              skipped       = false; // スキップで終わったか
+
     // インスペクタのスクラブで絵作り中か（エディタ専用の一時状態）。
     // 立っている間は再生位置を自動で進めず、time の絵をそのまま出す。
     bool previewing = false;
 
-    // 再生位置(秒)。ロジックの固定ステップで進める。
-    //   描画側は prevTime と time を RenderInterpState.alpha で補間して評価する。
-    //   固定ステップの位置をそのまま使うと、描画フレームとずれてカメラがカクつく。
+    // 再生位置（秒）。ロジックの固定ステップで進める。
+    //
+    // 描画側は prevTime と time を RenderInterpState.alpha で補間して評価する。
+    // 固定ステップの位置をそのまま使うと、描画フレームとずれてカメラがカクつく。
     float time     = 0.0f;
     float prevTime = 0.0f;
 
-    // 点イベントの発火カーソル。次に発火するクリップの番号（asset の sounds / effects の添字）。
-    //   「prevTime〜time の間にあるもの」で判定すると、0 秒のクリップや終端ちょうどのクリップを
-    //   取りこぼしやすい。先頭から順に進めるカーソルなら、どの時刻のものも必ず1回だけ発火する。
+    // 点イベントの発火カーソル。次に発火するクリップの番号（asset の sounds / effects / signals の添字）。
+    //
+    // 「prevTime〜time の間にあるもの」で判定すると、0 秒のクリップや終端ちょうどのクリップを取りこぼしやすい。
+    // 先頭から順に進めるカーソルなら、どの時刻のものも必ず1回だけ発火する。
     std::size_t nextSound  = 0;
     std::size_t nextEffect = 0;
     std::size_t nextSignal = 0;
 
     // Animation クリップごとに、いま握っている実体（asset の animations と同じ添字）。
-    //   握っていなければ InvalidEntityID。離すときは役割を引き直さず、握った相手をそのまま離す
-    //   （再生中に役割の結び付けが替わっても、握りっぱなしの実体を残さないため）。
-    //   RequestPlay では消さない。最初から再生し直したときに、握ったままの実体を離せなくなる
+    // 握っていなければ InvalidEntityID。
+    //
+    // 離すときは役割を引き直さず、握った相手をそのまま離す。
+    // 再生中に役割の結び付けが替わっても、握りっぱなしの実体を残さないため。
+    //
+    // RequestPlay では消さない。
+    // 消すと、最初から再生し直したときに握ったままの実体を離せなくなる。
     std::vector<CCL::ECS::EntityID> animHeld;
 
-    float delayTimer   = 0.0f; // startDelay の消化時間(秒)
-    float resolveTimer = 0.0f; // 役割の結び付けを待っている時間(秒)
+    float delayTimer   = 0.0f; // startDelay の消化時間（秒）
+    float resolveTimer = 0.0f; // 役割の結び付けを待っている時間（秒）
 
     // 役割名 → 実体。ゲーム側の TimelineRoleBindSystem が書く
     std::unordered_map<std::string, CCL::ECS::EntityID> bindings;

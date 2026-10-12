@@ -25,16 +25,19 @@ struct TimelinePlayRequestEvent
     CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID;
 
     // 再生したい TimelinePlayer の trigger（TimelinePlayerComponent::trigger と比べる）。
-    //   ゲーム側は、撃破ムービーなどの TimelinePlayer の Entity を知らない（シーンがプレハブから生成する）。
-    //   そのため ID の代わりに名前でも選べるようにしている。
-    //   空なら名前では選ばない。
+    // 空なら名前では選ばない。
+    //
+    // ゲーム側は、撃破ムービーなどの TimelinePlayer の Entity を知らない（シーンがプレハブから生成する）。
+    // そのため ID の代わりに名前でも選べるようにしている。
     std::string trigger;
 };
 
-// シグナルトラックのクリップが発行する通知。
-// 意味はゲーム側の受け手が name で決める。
-//   例: name="Telop" → テロップを出す /
-//       name="BGM" → BGM を切り替える（CinematicSignalSystem）
+/**
+ * @brief シグナルトラックのクリップが発行する通知。
+ *
+ * 意味はゲーム側の受け手が name で決める。
+ * 例: name="Telop" → テロップを出す / name="BGM" → BGM を切り替える（CinematicSignalSystem）
+ */
 struct TimelineSignalEvent
 {
     CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID; // 発行した TimelinePlayer
@@ -45,11 +48,15 @@ struct TimelineSignalEvent
     bool               skipped = false; // スキップで飛ばされた区間から発行されたか（fireOnSkip のクリップだけが来る）
 };
 
-// タイムラインの再生が終わった通知（スキップ・中止による終了も含む）。
-// カメラの返却とプレイヤー操作の返却は TimelineSystem 側が行うので、受け手は気にしなくてよい。
+/**
+ * @brief タイムラインの再生が終わった通知（スキップ・中止による終了も含む）。
+ *
+ * カメラの返却とプレイヤー操作の返却は Timeline 側（TimelineCameraSystem / TimelineSystem）が行うので、
+ * 受け手は気にしなくてよい。
+ */
 struct TimelineFinishedEvent
 {
-    CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID;
+    CCL::ECS::EntityID playerID = CCL::ECS::InvalidEntityID; // 終わった TimelinePlayer
     bool               skipped  = false; // プレイヤーがスキップしたか
     bool               aborted  = false; // 資産の読み込み失敗・役割の未解決で打ち切ったか
 };

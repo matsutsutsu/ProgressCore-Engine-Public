@@ -1,4 +1,3 @@
-// 役割・設計方針は TimelineRoleBindSystem.h を参照。
 #include "Game/Logics/Cinematic/TimelineRoleBindSystem.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Engine/ECS/Core/CCL_World.h"

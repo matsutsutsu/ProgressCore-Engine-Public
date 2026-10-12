@@ -1,4 +1,3 @@
-// 役割・設計方針は TimelineAsset.h を参照。
 #include "Engine/Timeline/TimelineAsset.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -138,8 +137,10 @@ namespace
 
     // ========================================================================
     // 書き出し
-    //   既定値と同じでも全部書く。省略すると、既定値を変えたときに保存済みの資産の意味が黙って変わる。
     // ========================================================================
+
+    // 既定値と同じ値でも全部書く。
+    // 省略すると、コード側の既定値を変えたときに保存済みの資産の意味が黙って変わる。
 
     json Vec3Json(const Vector3 &v) { return json::array({v.x, v.y, v.z}); }
 
@@ -236,9 +237,14 @@ namespace
         return j;
     }
 
-    // 小数を4桁に丸める（中身を再帰的にたどる）。
-    //   float を double で書くと 2.8 が 2.799999952316284 になり、手で読む・差分を見るときに邪魔になる。
-    //   1/10000 秒・1/10000 m は演出の調整に十分細かい
+    /**
+     * @brief JSON の中の小数を、再帰的にたどって小数点以下4桁に丸める。
+     *
+     * float を double で書くと 2.8 が 2.799999952316284 になり、手で読む・差分を見るときに邪魔になる。
+     * 1/10000 秒・1/10000 m は演出の調整に十分細かい。
+     *
+     * @param j 丸める JSON。その場で書き換える。
+     */
     void RoundFloats(json &j)
     {
         if (j.is_number_float())
@@ -253,7 +259,15 @@ namespace
         }
     }
 
-    // 1種類のトラックを書く。クリップが無ければトラックごと書かない
+    /**
+     * @brief 1種類のトラックを書き足す。クリップが無ければトラックごと書かない。
+     * @tparam Clip   クリップの型（CameraShotClip など）。
+     * @tparam ToJson `json(const Clip &)` で呼べる関数。
+     * @param tracks 書き足す先の "tracks" 配列。
+     * @param type   トラックの種類名（"Camera" など）。Load の判定と同じ名前にする。
+     * @param clips  書くクリップの列。
+     * @param toJson クリップ1つを JSON にする関数。
+     */
     template <class Clip, class ToJson>
     void WriteTrack(json &tracks, const char *type, const std::vector<Clip> &clips, ToJson toJson)
     {
@@ -300,6 +314,15 @@ std::vector<std::string> TimelineAsset::CollectRoles() const
 
 bool TimelineAssetLoader::Load(const std::string &path, TimelineAsset &out, std::string &errMsg)
 {
+    // 処理フロー:
+    // 1. ファイルを読む
+    // 2. トラックごとにクリップを読み、種類別の列へ入れる
+    // 3. 全体の長さを決め、時刻の昇順に並べる
+    // 4. 長さが 0 なら失敗にする
+
+    // ---------------------------------------------------------
+    // 1. ファイル
+    // ---------------------------------------------------------
     const std::string text = FileSystem::ReadAllText(path);
     if (text.empty())
     {
@@ -315,6 +338,9 @@ bool TimelineAssetLoader::Load(const std::string &path, TimelineAsset &out, std:
         out.path    = path;
         out.comment = j.value("_comment", std::string{});
 
+        // ---------------------------------------------------------
+        // 2. トラック
+        // ---------------------------------------------------------
         if (j.contains("tracks") && j["tracks"].is_array())
         {
             for (const auto &track : j["tracks"])
@@ -336,11 +362,19 @@ bool TimelineAssetLoader::Load(const std::string &path, TimelineAsset &out, std:
             }
         }
 
+        // ---------------------------------------------------------
+        // 3. 長さと並び順
+        // ---------------------------------------------------------
         out.durationExplicit = j.contains("duration");
         if (out.durationExplicit) out.duration = j["duration"].get<float>();
         Normalize(out);
 
-        // アニメだけのタイムラインは、長さがクリップの長さの解決後に決まるので 0 でも通す
+        // ---------------------------------------------------------
+        // 4. 長さの検証
+        // ---------------------------------------------------------
+
+        // アニメだけのタイムラインは 0 でも通す。
+        // 長さはクリップの長さを解決した後（ResolveAnimations）に決まるため。
         if (out.duration <= 0.0f && out.animations.empty())
         {
             errMsg = "duration is 0 (no clips?)";
@@ -357,12 +391,24 @@ bool TimelineAssetLoader::Load(const std::string &path, TimelineAsset &out, std:
 
 bool TimelineAssetLoader::Save(const std::string &path, const TimelineAsset &asset, std::string &errMsg)
 {
+    // 処理フロー:
+    // 1. 資産全体のコメントと長さを書く
+    // 2. トラックを種類ごとに書く
+    // 3. 小数を丸めてファイルへ書き出す
+
+    // ---------------------------------------------------------
+    // 1. コメントと長さ
+    // ---------------------------------------------------------
     json j = json::object();
     WriteComment(j, asset.comment);
-    // 明示していないなら書かない。書くと、次に読んだとき「明示した」扱いになり、
-    // クリップを伸ばしても全体の長さが付いてこなくなる
+
+    // 長さは明示していないなら書かない。
+    // 書くと、次に読んだとき「明示した」扱いになり、クリップを伸ばしても全体の長さが付いてこなくなる。
     if (asset.durationExplicit) j["duration"] = asset.duration;
 
+    // ---------------------------------------------------------
+    // 2. トラック
+    // ---------------------------------------------------------
     json tracks = json::array();
     WriteTrack(tracks, "Camera", asset.cameraShots, CameraShotJson);
     WriteTrack(tracks, "Sound", asset.sounds, SoundJson);
@@ -370,9 +416,14 @@ bool TimelineAssetLoader::Save(const std::string &path, const TimelineAsset &ass
     WriteTrack(tracks, "Animation", asset.animations, AnimationJson);
     WriteTrack(tracks, "Signal", asset.signals, SignalJson);
     j["tracks"] = std::move(tracks);
+
+    // ---------------------------------------------------------
+    // 3. 書き出し
+    // ---------------------------------------------------------
     RoundFloats(j);
 
-    // 手で読む・差分を見ることがあるので字下げして書く。日本語のコメントはそのまま残す
+    // 手で読む・差分を見ることがあるので字下げして書く。
+    // ensure_ascii=false で、日本語のコメントを \uXXXX にせずそのまま残す。
     if (!FileSystem::WriteAllText(path, j.dump(4, ' ', false) + "\n"))
     {
         errMsg = "write failed";
@@ -387,8 +438,8 @@ bool TimelineAssetLoader::Save(const std::string &path, const TimelineAsset &ass
 
 void TimelineAssetLoader::Normalize(TimelineAsset &asset)
 {
-    // ショットの検索は「start が t 以下の最後のもの」、点イベントの発火は「先頭から順に」
-    // なので、どれも時刻の昇順に揃えておく
+    // どのクリップも時刻の昇順に揃えておく。
+    // ショットの検索は「start が t 以下の最後のもの」、点イベントの発火は「先頭から順に」で行うため。
     std::stable_sort(asset.cameraShots.begin(), asset.cameraShots.end(),
                      [](const CameraShotClip &a, const CameraShotClip &b) { return a.start < b.start; });
     std::stable_sort(asset.sounds.begin(), asset.sounds.end(),
@@ -411,7 +462,8 @@ void TimelineAssetLoader::Normalize(TimelineAsset &asset)
         lastEnd = (std::max)(lastEnd, c.time);
     for (const auto &c : asset.signals)
         lastEnd = (std::max)(lastEnd, c.time);
-    // 長さ 0（=クリップの長さ）のアニメはまだ start しか分からない。ResolveAnimations の後で呼び直すと伸びる
+    // 長さ 0（=クリップの長さ）のアニメは、まだ start しか分からない。
+    // ResolveAnimations の後で呼び直すと伸びる。
     for (const auto &c : asset.animations)
         lastEnd = (std::max)(lastEnd, c.End());
     asset.duration = lastEnd;
@@ -433,7 +485,8 @@ void TimelineAssetLoader::ResolveAnimations(TimelineAsset &asset)
             continue;
         }
 
-        // 長さの省略は「クリップを1回最後まで」。ループは終わりが無いので本来は明示が要る
+        // 長さの省略は「クリップを1回最後まで」とみなす。
+        // ループは終わりが無いので本来は明示が要る。省略されていたら警告して1周分にする。
         if (clip.duration <= 0.0f)
         {
             if (clip.loop)

@@ -53,13 +53,16 @@ enum class CameraShotTransition : std::uint8_t
     Blend, // 前のショットの最後の姿勢から blendTime 秒かけて補間する
 };
 
-// カメラトラックの1ショット。
-//
-// 位置はすべて「対象からのオフセット」で書く。ワールド座標で書くと、スポーン位置や
-// ボスの配置が変わるたびに構図が崩れる。
+/**
+ * @brief カメラトラックの1ショット。
+ *
+ * 位置はすべて「対象からのオフセット」で書く。
+ * ワールド座標で書くと、スポーン位置やボスの配置が変わるたびに構図が崩れる。
+ */
 struct CameraShotClip
 {
-    std::string comment; // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    std::string comment;
 
     float start    = 0.0f; // 開始時刻（秒、タイムラインの先頭から）
     float duration = 2.0f; // 長さ（秒）
@@ -75,17 +78,19 @@ struct CameraShotClip
 
     CameraShotMotion motion = CameraShotMotion::Truck;
 
-    // 注視点（Truck / Orbit 共通）。基準からのオフセット(m)
+    // 注視点（Truck / Orbit 共通）。基準からのオフセット（m）
     DirectX::SimpleMath::Vector3 lookStart = {0.0f, 1.5f, 0.0f};
     DirectX::SimpleMath::Vector3 lookEnd   = {0.0f, 1.5f, 0.0f};
 
-    // Truck 用: カメラ位置。基準からのオフセット(m)
+    // Truck 用: カメラ位置。基準からのオフセット（m）
     DirectX::SimpleMath::Vector3 eyeStart = {-3.0f, 1.5f, 4.0f};
     DirectX::SimpleMath::Vector3 eyeEnd   = {3.0f, 1.5f, 4.0f};
 
-    // Orbit 用: 注視点を中心にした水平角(度)・水平距離(m)・高さ(m)。
-    //   角度は TPS カメラと同じ規約（X軸=cos, Z軸=sin）。最短回転にはせず指定値をそのまま
-    //   補間するので、90→-90 と書けば「180度回り込む」という意図がそのまま出る。
+    // Orbit 用: 注視点を中心にした水平角（度）・水平距離（m）・高さ（m）。
+    // 角度は TPS カメラと同じ規約（X軸=cos, Z軸=sin）。
+    //
+    // 最短回転にはせず指定値をそのまま補間する。
+    // 90→-90 と書けば「180度回り込む」という意図がそのまま出る。
     float angleStart  = 0.0f;
     float angleEnd    = 90.0f;
     float radiusStart = 10.0f;
@@ -93,13 +98,13 @@ struct CameraShotClip
     float heightStart = 2.0f;
     float heightEnd   = 2.0f;
 
-    float fovStart = 45.0f; // 開始の画角(度)
-    float fovEnd   = 45.0f; // 終了の画角(度)
+    float fovStart = 45.0f; // 開始の画角（度）
+    float fovEnd   = 45.0f; // 終了の画角（度）
 
     TimelineEase ease = TimelineEase::EaseInOut; // 進行度に掛ける補間カーブ
 
     CameraShotTransition transitionIn = CameraShotTransition::Cut; // 前のショットからのつなぎ方
-    float                blendTime    = 0.5f;                      // Blend のときの補間時間(秒)
+    float                blendTime    = 0.5f;                      // Blend のときの補間時間（秒）
 
     float End() const { return start + duration; }
 };
@@ -107,7 +112,8 @@ struct CameraShotClip
 // サウンドトラックの1クリップ（点）。再生位置が time を越えた瞬間に1回鳴らす。
 struct SoundClip
 {
-    std::string comment; // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    std::string comment;
 
     float       time = 0.0f; // 鳴らす時刻（秒）
     std::string event;       // AudioConfigDXTK.json に登録したイベント名
@@ -124,12 +130,16 @@ struct SoundClip
     bool fireOnSkip = false;
 };
 
-// エフェクトトラックの1クリップ。再生位置が time を越えた瞬間に VFX を出す。
-//   VFX の生成はアニメの Effect イベントと同じ経路（AnimEventEffectMessage → VFXSystem）を通すので、
-//   offset・scale・follow・attachTag の意味もアニメのシーケンサーと同じ。
+/**
+ * @brief エフェクトトラックの1クリップ。再生位置が time を越えた瞬間に VFX を出す。
+ *
+ * VFX の生成はアニメの Effect イベントと同じ経路（AnimEventEffectMessage → VFXSystem）を通す。
+ * そのため offset・scale・follow・attachTag の意味もアニメのシーケンサーと同じ。
+ */
 struct EffectClip
 {
-    std::string comment; // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    std::string comment;
 
     float time     = 0.0f; // 出す時刻（秒）
     float duration = 0.0f; // 継続放出を出し続ける時間（秒）。バーストだけの VFX では使わない
@@ -140,7 +150,7 @@ struct EffectClip
     std::string subject;
     std::string attachTag; // 基準にする武器のタグ（subject の CombatRoster で引く）。空なら subject が基準
 
-    DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3::Zero; // 基準のローカル座標でのずれ(m)
+    DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3::Zero; // 基準のローカル座標でのずれ（m）
     float                        scale  = 1.0f;                               // 大きさの倍率
     bool                         follow = false;                              // 基準に追従するか
 
@@ -148,12 +158,17 @@ struct EffectClip
     bool fireOnSkip = false;
 };
 
-// アニメーショントラックの1クリップ（区間）。
-//   区間の間だけ subject の AnimatorComponent を握り（isExternalOverride）、指定のクリップを再生する。
-//   区間が終わったら握りを離し、ステートマシンが元のステートのクリップへブレンドして戻す。
+/**
+ * @brief アニメーショントラックの1クリップ（区間）。
+ *
+ * 区間の間だけ subject の AnimatorComponent を握り（isExternalOverride）、指定のクリップを再生する。
+ *
+ * 区間が終わったら握りを離し、ステートマシンが元のステートのクリップへブレンドして戻す。
+ */
 struct AnimationClip
 {
-    std::string comment; // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    std::string comment;
 
     float start = 0.0f; // 再生を始める時刻（秒）
     // 握っている長さ（秒）。0 ならクリップの長さ÷速度（読み込み時に埋める。loop のときは要指定）
@@ -173,12 +188,18 @@ struct AnimationClip
     float End() const { return start + duration; }
 };
 
-// シグナルトラックの1クリップ（点）。再生位置が time を越えた瞬間に TimelineSignalEvent を発行する。
-//   タイムラインはシグナルの意味を知らない。名前と引数をそのまま渡し、ゲーム側の受け手が解釈する
-//   （テロップ・BGM の切り替え・戦闘開始など）。受け手ごとの引数の使い方は受け手の側に書く。
+/**
+ * @brief シグナルトラックの1クリップ（点）。再生位置が time を越えた瞬間に TimelineSignalEvent を発行する。
+ *
+ * タイムラインはシグナルの意味を知らない。名前と引数をそのまま渡し、ゲーム側の受け手が解釈する
+ * （テロップ・BGM の切り替え・戦闘開始など）。
+ *
+ * 受け手ごとの引数の使い方は受け手の側に書く。
+ */
 struct SignalClip
 {
-    std::string comment; // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    // JSON の "_comment"。読み込みでは使わず、エディタで保存し直しても消えないように持つ
+    std::string comment;
 
     float       time = 0.0f; // 発行する時刻（秒）
     std::string name;        // シグナル名（例: "Telop" / "BGM"）
@@ -186,17 +207,21 @@ struct SignalClip
     std::string param2;      // 引数2（文字列）
     float       value = 0.0f; // 引数3（数値）
 
-    // スキップで飛ばされたときも発行するか。シグナルはゲームの状態を変えるもの（BGM・戦闘開始）に
-    // 使うことが多く、飛ばすと本編が壊れるので既定は発行する。テロップのような見た目だけのものは false にする
+    // スキップで飛ばされたときも発行するか。
+    // シグナルはゲームの状態を変えるもの（BGM・戦闘開始）に使うことが多く、飛ばすと本編が壊れるので既定は発行する。
+    // テロップのような見た目だけのものは false にする。
     bool fireOnSkip = true;
 };
 
 // タイムライン資産の本体。
 struct TimelineAsset
 {
-    std::string path;            // 読み込み元（ログ表示用）
-    std::string comment;         // JSON の "_comment"（保存し直しても消えないように持つ）
-    float       duration = 0.0f; // 全体の長さ(秒)。JSON で省略するとクリップの終端の最大値になる
+    std::string path;    // 読み込み元（ログ表示用）
+    std::string comment; // JSON の "_comment"（保存し直しても消えないように持つ）
+
+    // 全体の長さ（秒）。JSON で省略するとクリップの終端の最大値になる
+    float duration = 0.0f;
+
     // duration を JSON で明示したか。明示していなければ、アニメの長さが決まった後に延ばしてよい
     bool durationExplicit = false;
 

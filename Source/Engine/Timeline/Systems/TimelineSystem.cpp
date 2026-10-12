@@ -1,4 +1,3 @@
-// 役割・設計方針は TimelineSystem.h を参照。
 #include "Engine/Timeline/Systems/TimelineSystem.h"
 #include "Engine/Timeline/TimelineEvents.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -22,16 +21,17 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // スキップ入力を受け付けるまでの猶予(秒)。
+    // スキップ入力を受け付けるまでの猶予（秒）。
     // シーン開始直後にボタンを押しっぱなしだと事故で飛んでしまうため。
     constexpr float kSkipGraceSeconds = 0.5f;
 
-    // 役割の結び付けを待つ上限(秒)。超えたら演出を諦めてゲームを進行させる。
-    //   レベルロード完了からボスの解決まで、Debug で約1.1秒かかった実測がある（導入カメラ演出）。
-    //   待ちが長引いて困るのは役割が本当に存在しない時だけなので、余裕を持たせる。
+    // 役割の結び付けを待つ上限（秒）。超えたら演出を諦めてゲームを進行させる。
+    //
+    // レベルロード完了からボスの解決まで、Debug で約1.1秒かかった実測がある（導入カメラ演出）。
+    // 待ちが長引いて困るのは役割が本当に存在しない時だけなので、余裕を持たせる。
     constexpr float kRoleResolveTimeout = 5.0f;
 
-    // 資産を読み直してクリップの対応が分からなくなったときに、握っている実体を離すブレンド時間(秒)
+    // 資産を読み直してクリップの対応が分からなくなったときに、握っている実体を離すブレンド時間（秒）
     constexpr float kFallbackReleaseBlend = 0.3f;
 
     /**
@@ -63,8 +63,10 @@ void TimelineSystem::Initialize()
             any = true;
         });
 
-        // 名前の打ち間違いに気付けるように残す。
-        // ただしムービーを置いていないシーン（EditorScene など）でも来る要求なので、警告にはしない。
+        // きっかけ名の打ち間違いに気付けるようにログを残す。
+
+        // ただし警告にはしない。
+        // ムービーを置いていないシーン（EditorScene など）でも来る要求で、その場合は異常ではないため。
         if (!any && !ev.trigger.empty())
             CCL_LOG_INFO(LogCategory::Game, "[Timeline] きっかけ '%s' の TimelinePlayer が無いので再生しません",
                          ev.trigger.c_str());
@@ -85,7 +87,8 @@ void TimelineSystem::LoadAssetIfNeeded(TimelinePlayerComponent &player) const
         return;
     }
 
-    // アニメの長さが決まってから全体の長さを計算し直す（長さを省略したアニメの終わりまで再生を続けるため）
+    // アニメの長さが決まってから全体の長さを計算し直す。
+    // 長さを省略したアニメの終わりまで再生を続けるため。
     TimelineAssetLoader::ResolveAnimations(*asset);
     TimelineAssetLoader::Normalize(*asset);
 
@@ -120,9 +123,15 @@ bool TimelineSystem::AreRolesBound(const TimelinePlayerComponent &player) const
 void TimelineSystem::CollectClipFires(EntityID id, TimelinePlayerComponent &player,
                                       std::vector<std::function<void()>> &out) const
 {
+    // 処理フロー:
+    // 1. 再生位置までに来た SE を予約する
+    // 2. 再生位置までに来たエフェクトを予約する
+    // 3. 再生位置までに来たシグナルを予約する
+
     const TimelineAsset &asset = *player.asset;
 
-    // スキップはそのステップのうちに終端まで飛んで終わるので、立っていれば「このステップで飛んだ」
+    // スキップはそのステップのうちに終端まで飛んで終わる。
+    // そのため skipped が立っていれば「このステップで飛んだ」とみなせる。
     const bool skipping = player.skipped;
 
     while (player.nextSound < asset.sounds.size() && asset.sounds[player.nextSound].time <= player.time)
@@ -139,7 +148,7 @@ void TimelineSystem::CollectClipFires(EntityID id, TimelinePlayerComponent &play
         QueueEffect(player, clip, out);
     }
 
-    // シグナルは意味を知らないので、名前と引数をそのまま渡すだけ（受け手はゲーム側）
+    // シグナルの意味は Engine では決めない。名前と引数をそのまま渡し、受け手（ゲーム側）が解釈する。
     while (player.nextSignal < asset.signals.size() && asset.signals[player.nextSignal].time <= player.time)
     {
         const SignalClip &clip = asset.signals[player.nextSignal++];
@@ -159,7 +168,8 @@ void TimelineSystem::QueueSound(const TimelinePlayerComponent &player, const Sou
 
     if (clip.spatial)
     {
-        // 3D はアニメの Sound イベントと同じ経路（AudioSystem）で鳴らす。発音位置はその瞬間の役割の位置
+        // 3D はアニメの Sound イベントと同じ経路（AudioSystem）で鳴らす。
+        // 発音位置は、発火した瞬間の役割の位置になる。
         const EntityID entity = ResolveRole(player, clip.subject);
         if (entity == InvalidEntityID)
         {
@@ -190,7 +200,9 @@ void TimelineSystem::QueueEffect(const TimelinePlayerComponent &player, const Ef
     if (clip.subject.empty())
     {
         // 基準が無ければ offset をワールド座標として出す。
-        //   この経路は止める手段を持たないので、継続放出の VFX を指定すると出続ける。バースト専用。
+
+        // この経路はバースト専用。
+        // 止める手段を持たないので、継続放出の VFX を指定すると出続ける。
         out.push_back([this, path = clip.effect, pos = clip.offset]() {
             VFX::Play(*m_world, path, pos);
         });
@@ -198,7 +210,7 @@ void TimelineSystem::QueueEffect(const TimelinePlayerComponent &player, const Ef
     }
 
     // 基準があればアニメの Effect イベントと同じ経路（VFXSystem）で出す。
-    // 向き・大きさ・追従・武器基準・継続放出の停止まで、アニメのシーケンサーと同じ扱いになる
+    // 向き・大きさ・追従・武器基準・継続放出の停止まで、アニメのシーケンサーと同じ扱いになる。
     const EntityID entity = ResolveRole(player, clip.subject);
     if (entity == InvalidEntityID)
     {
@@ -233,11 +245,24 @@ void TimelineSystem::Abort(TimelinePlayerComponent &player) const
 
 bool TimelineSystem::Advance(EntityID id, TimelinePlayerComponent &player, float dt, bool skipRequested) const
 {
-    // 1. 自動再生の起動
+    // 処理フロー:
+    // 1. 自動再生なら開始待ちへ入れる
+    // 2. 開始待ち（startDelay と役割の結び付け）を消化する
+    // 3. 再生位置を進める
+    // 4. スキップ入力があれば終端へ飛ばす
+    // 5. 終端に着いたら終了状態にする
+
+    // ---------------------------------------------------------
+    // 1. 自動再生
+    // ---------------------------------------------------------
     if (player.state == TimelinePlayState::Idle && player.autoPlayArmed && player.playOnStart)
         player.RequestPlay();
 
-    // 2. 開始待ち：startDelay の消化と、役割の結び付けの両方を待つ
+    // ---------------------------------------------------------
+    // 2. 開始待ち
+    // ---------------------------------------------------------
+
+    // startDelay の消化と役割の結び付けは、両方そろうまで待つ。
     if (player.state == TimelinePlayState::Waiting)
     {
         player.delayTimer += dt;
@@ -270,13 +295,18 @@ bool TimelineSystem::Advance(EntityID id, TimelinePlayerComponent &player, float
 
     if (player.state != TimelinePlayState::Playing) return false;
 
-    // 3. 再生位置を進める
+    // ---------------------------------------------------------
+    // 3. 再生位置
+    // ---------------------------------------------------------
     player.prevTime = player.time;
     player.time += dt;
 
+    // ---------------------------------------------------------
     // 4. スキップ
-    //    その場で止めず再生位置を終端へ飛ばすだけにする。すぐ下の終端判定で通常どおり終わり、
-    //    カメラは CameraBrainSystem のブレンドでプレイヤーカメラへ戻る。
+    // ---------------------------------------------------------
+
+    // スキップはその場で止めず、再生位置を終端へ飛ばすだけにする。
+    // すぐ下の終端判定で通常どおり終わり、カメラは CameraBrainSystem のブレンドでプレイヤーカメラへ戻る。
     if (skipRequested && player.allowSkip && player.time > kSkipGraceSeconds &&
         player.time < player.asset->duration)
     {
@@ -285,7 +315,9 @@ bool TimelineSystem::Advance(EntityID id, TimelinePlayerComponent &player, float
         player.prevTime = player.time; // 補間で途中のショットを1フレーム挟まないように
     }
 
+    // ---------------------------------------------------------
     // 5. 終端
+    // ---------------------------------------------------------
     if (player.time >= player.asset->duration)
     {
         player.time  = player.asset->duration;
@@ -301,7 +333,14 @@ bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, 
                                   std::vector<std::function<void()>> &fires,
                                   std::vector<TimelineFinishedEvent>  &finished) const
 {
-    // 再生待ちのものは資産を読まない（使わないかもしれないので）
+    // 処理フロー:
+    // 1. 再生に関わる状態でなければ何もしない
+    // 2. 資産を読み込む（読めなければ打ち切る）
+    // 3. 再生状態を1ステップ進める
+    // 4. 再生位置までに来た点イベントを予約する
+    // 5. 終わったら終了通知を予約する
+
+    // 再生要求がまだ来ておらず自動再生もしないものは、資産を読まない。最後まで使わないかもしれないため。
     const bool wantsPlay = player.state == TimelinePlayState::Waiting ||
                            player.state == TimelinePlayState::Playing ||
                            (player.state == TimelinePlayState::Idle && player.autoPlayArmed && player.playOnStart);
@@ -310,7 +349,8 @@ bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, 
     LoadAssetIfNeeded(player);
     if (!player.asset)
     {
-        // 読めないものは再生できない。待たせ続けると操作できなくなるので、即座に打ち切る
+        // 読めないものは再生できないので、即座に打ち切る。
+        // 開始待ちのまま残すと cinematic が立ち続け、操作できなくなる。
         Abort(player);
         finished.push_back({id, false, true});
         return false;
@@ -319,7 +359,8 @@ bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, 
     const bool wasWaiting   = (player.state == TimelinePlayState::Waiting);
     const bool justFinished = Advance(id, player, dt, skipRequested);
 
-    // Waiting から直接 Finished になるのは中止だけ。中止のときは何も鳴らさない
+    // Waiting から直接 Finished になるのは中止だけ。
+    // 中止のときは何も鳴らさない。
     const bool aborted = justFinished && wasWaiting;
     if (!aborted && (player.state == TimelinePlayState::Playing || justFinished))
         CollectClipFires(id, player, fires);
@@ -339,11 +380,20 @@ bool TimelineSystem::StepPlayback(EntityID id, TimelinePlayerComponent &player, 
 
 void TimelineSystem::SyncAnimationClips(TimelinePlayerComponent &player) const
 {
+    // 処理フロー:
+    // 1. 資産が読み直されてクリップの本数が変わったら、握っている実体を全部離す
+    // 2. 区間を出たクリップの実体を離す
+    // 3. 区間に入ったクリップの実体を握る
+
     const std::vector<AnimationClip> *clips = player.asset ? &player.asset->animations : nullptr;
     const std::size_t                 count = clips ? clips->size() : 0;
 
-    // 資産が読み直されて本数が変わった（インスペクタの「読み直す」など）。
-    // 添字の対応が崩れたので、握っている実体を全部離してから数え直す
+    // ---------------------------------------------------------
+    // 1. 資産の読み直し
+    // ---------------------------------------------------------
+
+    // インスペクタの「読み直す」などで本数が変わると、animHeld との添字の対応が崩れる。
+    // どのクリップがどの実体を握っていたか分からなくなるので、全部離してから数え直す。
     if (player.animHeld.size() != count)
     {
         for (EntityID held : player.animHeld)
@@ -359,9 +409,12 @@ void TimelineSystem::SyncAnimationClips(TimelinePlayerComponent &player) const
         return playing && c.resolved && player.time >= c.start && player.time < c.End();
     };
 
-    // 1. 区間を出たものを離す。
-    //    握るより先に離す。同じ相手へ続けて別のクリップを渡すとき、後から離すと
-    //    いま握ったばかりのクリップまで手放してしまう
+    // ---------------------------------------------------------
+    // 2. 区間を出たものを離す
+    // ---------------------------------------------------------
+
+    // 握るより先に離す。
+    // 同じ相手へ続けて別のクリップを渡すとき、後から離すと、いま握ったばかりのクリップまで手放してしまう。
     for (std::size_t i = 0; i < count; ++i)
     {
         if (player.animHeld[i] == InvalidEntityID || inRange((*clips)[i])) continue;
@@ -369,7 +422,9 @@ void TimelineSystem::SyncAnimationClips(TimelinePlayerComponent &player) const
         player.animHeld[i] = InvalidEntityID;
     }
 
-    // 2. 区間に入ったものを握る
+    // ---------------------------------------------------------
+    // 3. 区間に入ったものを握る
+    // ---------------------------------------------------------
     for (std::size_t i = 0; i < count; ++i)
     {
         if (player.animHeld[i] != InvalidEntityID || !inRange((*clips)[i])) continue;
@@ -385,7 +440,7 @@ bool TimelineSystem::StartAnimation(EntityID entity, const AnimationClip &clip) 
     auto *animator = m_world->GetComponent<AnimatorComponent>(entity);
     if (!animator) return false;
 
-    // ステートに入るときと同じく、同じクリップでも頭から再生し直す（理由は PlayParams::restart）
+    // ステートに入るときと同じく、同じクリップでも頭から再生し直す（理由は PlayParams::restart）。
     animator->Play(clip.resolved, {.blendTime = clip.blendIn, .loop = clip.loop, .speed = clip.speed, .restart = true});
     animator->isExternalOverride   = true;
     animator->externalReleaseBlend = -1.0f; // 直前に離した要求が残っていれば取り消す（続けて握り直すため）
@@ -409,12 +464,27 @@ void TimelineSystem::ReleaseAnimation(EntityID entity, float blendOut) const
 
 void TimelineSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. スキップ入力を読む
+    // 2. 全 TimelinePlayer を1ステップ進め、点イベントと終了通知を予約する
+    // 3. カットシーン中フラグ（GameFlowState::cinematic）を確定する
+    // 4. 予約した点イベントを発火し、終了通知を発行する
+
+    // ---------------------------------------------------------
+    // 1. スキップ入力
+    // ---------------------------------------------------------
     const bool skipRequested = ReadSkipInput();
+
+    // ---------------------------------------------------------
+    // 2. 再生を進める
+    // ---------------------------------------------------------
 
     // 終了通知は ForEach を抜けてから発行する。
     // イベントハンドラが同じチャンクを触りうるので、走査中に発行しない。
     std::vector<TimelineFinishedEvent> finished;
-    // 点イベントの発火も同じ理由で後回しにする（VFX の生成が Entity を作るため）
+
+    // 点イベントの発火も同じ理由で後回しにする。
+    // VFX の生成が Entity を作るため。
     std::vector<std::function<void()>> fires;
 
     bool anyPlayer          = false;
@@ -423,7 +493,8 @@ void TimelineSystem::Update(float dt)
     ForEachWithID([&](EntityID id, TimelinePlayerComponent &player) {
         anyPlayer = true;
 
-        // スクラブ中は再生位置をインスペクタが決める。進めない（握っているアニメもそのまま）
+        // スクラブ中は再生位置をインスペクタが決めるので、進めない。
+        // 握っているアニメもそのまま残す。
         if (player.previewing)
         {
             LoadAssetIfNeeded(player); // 再生前にいきなりスクラブしても絵が出るように
@@ -436,16 +507,26 @@ void TimelineSystem::Update(float dt)
             anyCinematicActive = true;
 
         // アニメの握り/離しは、再生状態がどうであれ毎ステップ合わせる。
-        // 終了・スキップ・中止・最初から再生し直し、のどれでも握ったままの実体を確実に離すため
+        // 終了・スキップ・中止・最初から再生し直し、のどれでも握ったままの実体を確実に離すため。
         SyncAnimationClips(player);
     });
 
-    // カットシーン中フラグ。PlayerInputSystem・BehaviorTreeSystem・BossActionSystem がこれを見て止まる。
-    //   TimelinePlayer が1つも無いシーンでは触らない。
+    // ---------------------------------------------------------
+    // 3. カットシーン中フラグ
+    // ---------------------------------------------------------
+
+    // PlayerInputSystem・BehaviorTreeSystem・BossActionSystem がこれを見て止まる。
+
+    // TimelinePlayer が1つも無いシーンでは触らない。
     if (anyPlayer && m_world->HasResource<GameFlowState>())
         m_world->GetResource<GameFlowState>().cinematic = anyCinematicActive;
 
-    // 発火を終了通知より先にする。終わりちょうどのクリップを、終了を受けて始まる処理より前に出すため
+    // ---------------------------------------------------------
+    // 4. 発火と終了通知
+    // ---------------------------------------------------------
+
+    // 発火を終了通知より先にする。
+    // 終わりちょうどのクリップを、終了を受けて始まる処理より前に出すため。
     for (const auto &fire : fires)
         fire();
 
