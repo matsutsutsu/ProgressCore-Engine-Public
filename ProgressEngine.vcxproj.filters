@@ -282,15 +282,6 @@
     <Filter Include="Source\Engine\Audio\Systems">
       <UniqueIdentifier>{756f2b1e-cae1-40a4-8a7b-ccd0615a1809}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Timeline">
-      <UniqueIdentifier>{b586e5ab-a1e2-44df-922f-def7fb967779}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Timeline\Components">
-      <UniqueIdentifier>{71b9400b-455b-45cf-865f-00c26b1e7522}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\Timeline\Systems">
-      <UniqueIdentifier>{5ce0ab99-f433-4897-aae7-e46284c3fa88}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\Tutorial">
       <UniqueIdentifier>{848207fd-b731-407f-b63a-7a6c32fd122b}</UniqueIdentifier>
     </Filter>
@@ -1848,31 +1839,7 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Timeline\TimelineAsset.h">
-      <Filter>Source\Engine\Timeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Timeline\TimelineEvents.h">
-      <Filter>Source\Engine\Timeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Timeline\Components\TimelinePlayerComponent.h">
-      <Filter>Source\Engine\Timeline\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Timeline\Systems\TimelineSystem.h">
-      <Filter>Source\Engine\Timeline\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.h">
-      <Filter>Source\Engine\Timeline\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.h">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h">
@@ -1880,9 +1847,6 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\Game\TimelineEditorWindow.h">
-      <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.h">
       <Filter>Source\Engine\Animation\Systems</Filter>
@@ -2984,32 +2948,8 @@
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Timeline\TimelineAsset.cpp">
-      <Filter>Source\Engine\Timeline</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Timeline\Components\TimelinePlayerComponentMeta.cpp">
-      <Filter>Source\Engine\Timeline\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Timeline\Systems\TimelineSystem.cpp">
-      <Filter>Source\Engine\Timeline\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.cpp">
-      <Filter>Source\Engine\Timeline\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.cpp">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp">
-      <Filter>Source\Game\Logics\Cinematic</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\Game\TimelineEditorWindow.cpp">
-      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp">
       <Filter>Source\Engine\Animation\Systems</Filter>

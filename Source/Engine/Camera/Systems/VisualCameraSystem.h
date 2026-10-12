@@ -81,7 +81,7 @@ public:
     std::vector<const char *> GetRunAfter() const override
     {
         return {"CameraActionTPSSystem", "CameraFollowSystem", "CameraLookAtSystem",
-                "CameraFreeControlSystem", "TimelineCameraSystem"};
+                "CameraFreeControlSystem"};
     }
 
 private:

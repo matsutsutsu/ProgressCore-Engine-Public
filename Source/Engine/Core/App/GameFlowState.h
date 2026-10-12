@@ -23,8 +23,7 @@ struct GameFlowState
     //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする。
     //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない。
     //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）。
-    //    書き手は TimelineSystem だけ（ロジックの L01_Input）。
-    //    PlayerInputSystem とは同じ段で順序を縛っていないので、効き始めが1ステップ遅れることがある。
+    //    TODO(2026-10-12): 書き手のタイムラインを作り直し中で、今は誰も立てない（常に false）。
     bool cinematic = false;
 
     // 「決着した」。勝ち負けが決まった瞬間から、シーンを切り替えるまで true。
