@@ -12,11 +12,6 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-PlayerInputSystem::PlayerInputSystem()
-    : IfSystem("PlayerInputSystem")
-{
-}
-
 void PlayerInputSystem::Update(float dt)
 {
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;

@@ -37,10 +37,7 @@ class CameraActionTPSSystem : public CCL::ECS::IfSystem<
                                   CCL::ECS::Write<TransformComponent>>     // カメラ自身のTransformを確定させるためWrite
 {
 public:
-    CameraActionTPSSystem()
-        : IfSystem("CameraActionTPSSystem")
-    {
-    }
+    CameraActionTPSSystem() : IfSystem("CameraActionTPSSystem") {}
     virtual ~CameraActionTPSSystem() = default;
 
     // FOV パンチ要求（CameraFovPunchRequestEvent）の購読を登録する

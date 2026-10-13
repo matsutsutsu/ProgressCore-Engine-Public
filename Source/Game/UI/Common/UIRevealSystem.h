@@ -19,10 +19,7 @@ class UIRevealSystem : public CCL::ECS::IfSystem<UIRevealSystem,
                                                  CCL::ECS::Write<UITransformComponent>>
 {
 public:
-    UIRevealSystem()
-        : IfSystem("UIRevealSystem")
-    {
-    }
+    UIRevealSystem() : IfSystem("UIRevealSystem") {}
 
     // 配置を確定させる System と同じ帯なので、順番を決めておく
     std::vector<const char *> GetRunAfter() const override

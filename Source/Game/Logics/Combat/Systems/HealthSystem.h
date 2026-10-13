@@ -20,9 +20,7 @@ class HealthSystem : public CCL::ECS::IfSystem<HealthSystem,
                                                CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    HealthSystem() : IfSystem("HealthSystem")
-    {
-    }
+    HealthSystem() : IfSystem("HealthSystem") {}
 
     void Update(float dt) override;
 

@@ -18,7 +18,7 @@ class HierarchyCleanupSystem : public CCL::ECS::IfSystem<
                                    CCL::ECS::Read<Tag::DestroyTag>>
 {
 public:
-    HierarchyCleanupSystem();
+    HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSystem") {}
     virtual ~HierarchyCleanupSystem() = default;
 
     // ロジックの最後（L07）に実行され、DestroyTag の付いた Entity と子孫を回収する

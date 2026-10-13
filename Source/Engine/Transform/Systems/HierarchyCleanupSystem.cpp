@@ -9,8 +9,6 @@
 
 using namespace CCL::ECS;
 
-HierarchyCleanupSystem::HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSystem") {}
-
 void HierarchyCleanupSystem::Update(float dt)
 {
     ExecuteCleanup(*m_world);

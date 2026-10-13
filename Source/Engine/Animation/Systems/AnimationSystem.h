@@ -30,7 +30,7 @@ class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
                                                   CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    AnimationSystem();
+    AnimationSystem(); // 型引数が前方宣言なので、基底の構築は完全な型が見える .cpp で行う
     virtual ~AnimationSystem() = default;
 
     void Update(float dt) override;

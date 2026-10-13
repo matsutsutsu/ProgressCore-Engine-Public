@@ -14,10 +14,7 @@ class UIAppearSystem : public CCL::ECS::IfSystem<UIAppearSystem,
                                                  CCL::ECS::Write<UIAppearComponent>>
 {
 public:
-    UIAppearSystem()
-        : IfSystem("UIAppearSystem")
-    {
-    }
+    UIAppearSystem() : IfSystem("UIAppearSystem") {}
 
     // UIAnimationSystem と同じ UITransform を書くので直列に走る。触るのは scale と
     // alpha/offset.y で重ならず、順序はどちらでも結果は同じだが、

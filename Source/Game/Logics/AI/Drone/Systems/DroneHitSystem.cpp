@@ -133,8 +133,6 @@ void DroneHitSystem::Update(float /*dt*/)
 
 void DroneHitSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Drone Hit (判定の開け閉め)")) return;
-
     ImGui::Text("ドローン %d 機", m_droneCount);
     ImGui::TextColored(m_activeCount > 0 ? ImVec4(1.0f, 0.7f, 0.5f, 1.0f)
                                          : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),

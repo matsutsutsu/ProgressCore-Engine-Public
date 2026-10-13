@@ -29,10 +29,7 @@ class PostProcessManager;
 class PostProcessSystem : public CCL::ECS::SystemBase
 {
 public:
-    PostProcessSystem()
-        : SystemBase("PostProcessSystem")
-    {
-    }
+    PostProcessSystem() : SystemBase("PostProcessSystem") {}
 
     // 読むコンポーネントをスケジューラに申告する
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override

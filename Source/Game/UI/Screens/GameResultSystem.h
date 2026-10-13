@@ -29,9 +29,7 @@ class GameResultSystem
     : public CCL::ECS::IfSystem<GameResultSystem, CCL::ECS::Read<HealthComponent>>
 {
 public:
-    GameResultSystem() : IfSystem("GameResultSystem")
-    {
-    }
+    GameResultSystem() : IfSystem("GameResultSystem") {}
 
     void Initialize() override;     // ボタンと戦いの記録のイベントを購読する
     void Update(float dt) override; // 勝敗を判定し、記録を数える

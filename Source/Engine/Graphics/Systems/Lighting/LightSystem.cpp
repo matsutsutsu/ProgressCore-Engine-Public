@@ -9,8 +9,6 @@
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-LightSystem::LightSystem() : SystemBase("LightSystem") {}
-
 std::vector<CCL::ECS::TypeID> LightSystem::GetReadTypes() const
 {
     return {CCL::ECS::TypeInfo<DirectionalLightComponent>::ID(),

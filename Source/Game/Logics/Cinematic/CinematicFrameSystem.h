@@ -21,10 +21,7 @@ class CinematicFrameSystem : public CCL::ECS::IfSystem<CinematicFrameSystem,
                                                        CCL::ECS::Read<UITransformComponent>>
 {
 public:
-    CinematicFrameSystem()
-        : IfSystem("CinematicFrameSystem")
-    {
-    }
+    CinematicFrameSystem() : IfSystem("CinematicFrameSystem") {}
     virtual ~CinematicFrameSystem() = default;
 
     // 描画リストは収集 System で共有する（スケジューラは共有リソースを見ないので、収集の鎖の後ろに並べる）

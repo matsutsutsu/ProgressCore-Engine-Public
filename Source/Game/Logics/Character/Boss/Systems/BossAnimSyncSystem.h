@@ -25,10 +25,7 @@ class BossAnimSyncSystem : public CCL::ECS::IfSystem<
                                CCL::ECS::Write<AnimParametersComponent>>
 {
 public:
-    BossAnimSyncSystem()
-        : IfSystem("BossAnimSyncSystem")
-    {
-    }
+    BossAnimSyncSystem() : IfSystem("BossAnimSyncSystem") {}
 
     // CharacterAnimSyncSystem も同じ L02_PreUpdate でボスの Speed を（Jolt の実速度から）書く。
     // その後に走り、BossActionSystem が決めた速度で必ず上書きする。

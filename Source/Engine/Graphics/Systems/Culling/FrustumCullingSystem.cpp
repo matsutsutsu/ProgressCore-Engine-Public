@@ -6,8 +6,6 @@
 
 using namespace CCL::ECS;
 
-FrustumCullingSystem::FrustumCullingSystem() : IfSystem("FrustumCullingSystem") {}
-
 void FrustumCullingSystem::Update(float dt)
 {
     if (!m_world->HasResource<Camera *>()) return;

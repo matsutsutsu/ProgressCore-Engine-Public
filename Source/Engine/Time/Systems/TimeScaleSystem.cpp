@@ -5,10 +5,6 @@
 #include <algorithm>
 #include <imgui.h>
 
-TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
-{
-}
-
 void TimeScaleSystem::Update(float rawDt)
 {
     if (!m_world || !m_world->HasResource<TimeContext>()) return;

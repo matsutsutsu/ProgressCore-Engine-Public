@@ -33,10 +33,7 @@ class SettingsScreenSystem : public CCL::ECS::IfSystem<SettingsScreenSystem,
                                                        CCL::ECS::Read<UIButtonComponent>>
 {
 public:
-    SettingsScreenSystem()
-        : IfSystem("SettingsScreenSystem")
-    {
-    }
+    SettingsScreenSystem() : IfSystem("SettingsScreenSystem") {}
 
     // UIInputSystem が決めた focus / clicked を同じフレームで読むため、その後に走らせる
     std::vector<const char *> GetRunAfter() const override

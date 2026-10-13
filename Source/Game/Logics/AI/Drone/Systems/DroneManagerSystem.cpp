@@ -323,12 +323,6 @@ namespace
 
 void DroneManagerSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Drone Manager (Spawn / Count / Destroy)",
-                                 ImGuiTreeNodeFlags_DefaultOpen))
-        return;
-
-    ImGui::Indent();
-
     DrawAutoSpawn();
     DrawSpawnSettings();
     DrawAttackPipeline();
@@ -337,8 +331,6 @@ void DroneManagerSystem::OnGui()
     DrawFormationTest();
     DrawIndividualTest();
     DrawShiverTuning();
-
-    ImGui::Unindent();
 }
 
 void DroneManagerSystem::DrawAutoSpawn()

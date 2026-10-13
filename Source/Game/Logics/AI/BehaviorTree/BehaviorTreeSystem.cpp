@@ -99,10 +99,6 @@ namespace
     }
 }
 
-BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
-{
-}
-
 // ---------------------------------------------------------------------------
 // 初期化と資産の同期
 // ---------------------------------------------------------------------------
@@ -1048,8 +1044,6 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
 
 void BehaviorTreeSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
-
     auto view = m_world->View<BehaviorTreeComponent>();
     for (auto e : view)
     {

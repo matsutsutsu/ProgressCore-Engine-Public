@@ -21,10 +21,7 @@ class UILayoutSystem : public CCL::ECS::IfSystem<UILayoutSystem,
                                                  CCL::ECS::Write<UITransformComponent>>
 {
 public:
-    UILayoutSystem()
-        : IfSystem("UILayoutSystem")
-    {
-    }
+    UILayoutSystem() : IfSystem("UILayoutSystem") {}
 
     void Initialize() override;
 

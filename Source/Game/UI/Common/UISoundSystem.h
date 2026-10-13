@@ -22,10 +22,7 @@ class UISoundSystem : public CCL::ECS::IfSystem<UISoundSystem,
                                                 CCL::ECS::Read<UIButtonComponent>>
 {
 public:
-    UISoundSystem()
-        : IfSystem("UISoundSystem")
-    {
-    }
+    UISoundSystem() : IfSystem("UISoundSystem") {}
 
     // UIInputSystem が決めた hover / focus / clicked を同じフレームで読むため、その後に走らせる
     std::vector<const char *> GetRunAfter() const override

@@ -19,10 +19,7 @@ class PlayerLockOnSystem : public CCL::ECS::IfSystem<PlayerLockOnSystem,
                                                      CCL::ECS::Read<TransformComponent>>
 {
 public:
-    PlayerLockOnSystem()
-        : IfSystem("PlayerLockOnSystem")
-    {
-    }
+    PlayerLockOnSystem() : IfSystem("PlayerLockOnSystem") {}
     virtual ~PlayerLockOnSystem() = default;
 
     void Update(float dt) override;

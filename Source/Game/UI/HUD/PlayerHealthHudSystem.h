@@ -21,10 +21,7 @@ class PlayerHealthHudSystem : public CCL::ECS::IfSystem<PlayerHealthHudSystem,
                                                         CCL::ECS::Read<PlayerComponent>>
 {
 public:
-    PlayerHealthHudSystem()
-        : IfSystem("PlayerHealthHudSystem")
-    {
-    }
+    PlayerHealthHudSystem() : IfSystem("PlayerHealthHudSystem") {}
 
     void Initialize() override;
     void Update(float dt) override;

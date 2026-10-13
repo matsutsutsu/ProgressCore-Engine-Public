@@ -25,10 +25,7 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Read<TransformComponent>>
 {
 public:
-    BattleContextSyncSystem()
-        : IfSystem("BattleContextSyncSystem")
-    {
-    }
+    BattleContextSyncSystem() : IfSystem("BattleContextSyncSystem") {}
     void Initialize() override;
     void Update(float dt) override;
 

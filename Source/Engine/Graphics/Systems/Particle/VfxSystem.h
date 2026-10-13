@@ -41,10 +41,7 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
                                             CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    VFXSystem()
-        : IfSystem("VFXSystem")
-    {
-    }
+    VFXSystem() : IfSystem("VFXSystem") {}
 
     // 自分を World のリソースに登録し（VFX::Play から引くため）、アニメの Effect イベントを購読する
     void Initialize() override;

@@ -22,10 +22,7 @@ class AnimSetupSystem : public CCL::ECS::IfSystem<AnimSetupSystem,
                                                   CCL::ECS::Read<AnimatorComponent>>
 {
 public:
-    AnimSetupSystem()
-        : IfSystem("AnimSetupSystem")
-    {
-    }
+    AnimSetupSystem() : IfSystem("AnimSetupSystem") {}
 
     virtual ~AnimSetupSystem() = default;
 

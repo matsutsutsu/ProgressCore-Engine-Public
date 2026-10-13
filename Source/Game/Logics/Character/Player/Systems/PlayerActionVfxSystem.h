@@ -19,10 +19,7 @@
 class PlayerActionVfxSystem : public CCL::ECS::IfSystem<PlayerActionVfxSystem>
 {
 public:
-    PlayerActionVfxSystem()
-        : IfSystem("PlayerActionVfxSystem")
-    {
-    }
+    PlayerActionVfxSystem() : IfSystem("PlayerActionVfxSystem") {}
 
     void Initialize() override;     // PlayerJumpedEvent / PlayerDashedEvent を購読する
     void Update(float dt) override; // 毎フレームの処理は無い（再生と寿命は VFXSystem が持つ）

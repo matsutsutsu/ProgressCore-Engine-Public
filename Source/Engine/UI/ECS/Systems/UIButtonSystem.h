@@ -19,10 +19,7 @@ class UIButtonSystem : public CCL::ECS::IfSystem<UIButtonSystem,
                                                  CCL::ECS::Write<UIImageComponent>>
 {
 public:
-    UIButtonSystem()
-        : IfSystem("UIButtonSystem")
-    {
-    }
+    UIButtonSystem() : IfSystem("UIButtonSystem") {}
 
     // UIInputSystem が書いた UIInteractableComponent の状態を、同じフレームのうちに読む
     std::vector<const char *> GetRunAfter() const override { return {"UIInputSystem"}; }

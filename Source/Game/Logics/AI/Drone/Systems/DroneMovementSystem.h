@@ -31,10 +31,7 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
                                 CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    DroneMovementSystem()
-        : IfSystem("DroneMovementSystem")
-    {
-    }
+    DroneMovementSystem() : IfSystem("DroneMovementSystem") {}
 
     void Update(float dt) override;
 

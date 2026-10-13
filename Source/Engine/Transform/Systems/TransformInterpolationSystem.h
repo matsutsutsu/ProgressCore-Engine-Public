@@ -18,10 +18,7 @@ class TransformInterpolationSystem : public CCL::ECS::IfSystem<TransformInterpol
                                                                CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TransformInterpolationSystem()
-        : IfSystem("TransformInterpolationSystem")
-    {
-    }
+    TransformInterpolationSystem() : IfSystem("TransformInterpolationSystem") {}
     virtual ~TransformInterpolationSystem() = default;
 
     void Update(float dt) override;

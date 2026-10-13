@@ -124,10 +124,7 @@ namespace
 
 using CCL::Anim::PinRootMotionNode;
 
-AnimationSystem::AnimationSystem()
-    : IfSystem("AnimationSystem")
-{
-}
+AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
 void AnimationSystem::Update(float dt)
 {

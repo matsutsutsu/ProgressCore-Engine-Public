@@ -23,10 +23,7 @@ class CharacterAnimSyncSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Write<AnimatorComponent>>
 {
 public:
-    CharacterAnimSyncSystem()
-        : IfSystem("CharacterAnimSyncSystem")
-    {
-    }
+    CharacterAnimSyncSystem() : IfSystem("CharacterAnimSyncSystem") {}
     virtual ~CharacterAnimSyncSystem() = default;
 
     void Update(float dt) override;

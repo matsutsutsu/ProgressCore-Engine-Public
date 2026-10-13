@@ -26,7 +26,7 @@ class AnimationPoseSystem : public CCL::ECS::IfSystem<AnimationPoseSystem,
                                                       CCL::ECS::Write<ModelComponent>>
 {
 public:
-    AnimationPoseSystem();
+    AnimationPoseSystem(); // 型引数が前方宣言なので、基底の構築は完全な型が見える .cpp で行う
     virtual ~AnimationPoseSystem() = default;
 
     void Update(float dt) override;

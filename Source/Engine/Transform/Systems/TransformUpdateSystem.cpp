@@ -8,8 +8,6 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-TransformUpdateSystem::TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
-
 // ローカルの TRS から行列を作る（S * R * T）
 static inline XMMATRIX ComposeLocal(const TransformComponent &t)
 {

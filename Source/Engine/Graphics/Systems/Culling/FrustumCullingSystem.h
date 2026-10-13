@@ -13,7 +13,7 @@ class FrustumCullingSystem : public CCL::ECS::IfSystem<FrustumCullingSystem,
                                                        CCL::ECS::Write<VisibilityComponent>>
 {
 public:
-    FrustumCullingSystem();
+    FrustumCullingSystem() : IfSystem("FrustumCullingSystem") {}
     virtual ~FrustumCullingSystem() = default;
 
     void Update(float dt) override;

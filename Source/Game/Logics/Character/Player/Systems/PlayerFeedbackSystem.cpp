@@ -47,11 +47,6 @@ namespace
     }
 } // namespace
 
-PlayerFeedbackSystem::PlayerFeedbackSystem()
-    : IfSystem("PlayerFeedbackSystem")
-{
-}
-
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------

@@ -24,10 +24,7 @@ class PlayerAttackSystem : public CCL::ECS::IfSystem<PlayerAttackSystem,
                                                      CCL::ECS::Read<RushComponent>>
 {
 public:
-    PlayerAttackSystem()
-        : IfSystem("PlayerAttackSystem")
-    {
-    }
+    PlayerAttackSystem() : IfSystem("PlayerAttackSystem") {}
     virtual ~PlayerAttackSystem() = default;
 
     // PlayerInputSystem が書いた PlayerInputComponent を読むので、同じ L01_Input の中でその後に走る。

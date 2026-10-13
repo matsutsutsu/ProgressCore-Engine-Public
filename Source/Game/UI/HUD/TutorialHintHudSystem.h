@@ -19,10 +19,7 @@
 class TutorialHintHudSystem : public CCL::ECS::IfSystem<TutorialHintHudSystem>
 {
 public:
-    TutorialHintHudSystem()
-        : IfSystem("TutorialHintHudSystem")
-    {
-    }
+    TutorialHintHudSystem() : IfSystem("TutorialHintHudSystem") {}
 
     // TutorialSystem が同じステージで書いた TutorialState を、同じフレームのうちに映す
     std::vector<const char *> GetRunAfter() const override { return {"TutorialSystem"}; }

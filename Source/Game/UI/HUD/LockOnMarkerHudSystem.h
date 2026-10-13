@@ -27,10 +27,7 @@ class LockOnMarkerHudSystem : public CCL::ECS::IfSystem<LockOnMarkerHudSystem,
                                                         CCL::ECS::Read<TransformComponent>>
 {
 public:
-    LockOnMarkerHudSystem()
-        : IfSystem("LockOnMarkerHudSystem")
-    {
-    }
+    LockOnMarkerHudSystem() : IfSystem("LockOnMarkerHudSystem") {}
 
     // 描画リストは System をまたいで共有する1本の配列で、スケジューラはリソースの共有を見ない。
     // 同じ帯の収集 System（画像 → 文字 → ゲージの順につないである）の最後に並べ、同時に積まないようにする

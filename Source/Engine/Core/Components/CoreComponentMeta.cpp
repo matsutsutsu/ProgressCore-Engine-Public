@@ -38,24 +38,11 @@ struct ComponentMeta<NameComponent>
     static constexpr const char *displayName       = "Name";
     static constexpr const char *category          = CCL::Categories::Meta; // 最も重要なメタ情報
     static constexpr int         sortPriority      = 0;                     // Transformと同様に最上段に固定
-    static constexpr bool        hiddenInInspector = false;
-    static constexpr bool        hasCustomGui      = true;
+    static constexpr bool        hiddenInInspector = true;                  // 名前はインスペクタ最上段の名前欄で編集するので一覧には出さない
+    static constexpr bool        hasCustomGui      = false;
     static constexpr bool        isSerializable    = true;
 
-#ifdef ENABLE_EDITOR
-    static bool CustomGui(NameComponent &comp, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
-    {
-        bool changed = false;
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "Entity Name");
-        if (ImGui::InputText("##NameInput", comp.name, sizeof(comp.name)))
-        {
-            changed = true;
-        }
-        return changed;
-    }
-#else
-    static bool CustomGui(NameComponent &, unsigned long long, void *) { return false; }
-#endif
+    static bool CustomGui(NameComponent &, unsigned long long = 0, void * = nullptr) { return false; }
 
     static const std::vector<FieldDescriptor> &Fields()
     {

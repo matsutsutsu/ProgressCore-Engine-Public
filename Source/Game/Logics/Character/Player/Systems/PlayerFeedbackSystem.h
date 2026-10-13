@@ -24,7 +24,7 @@ class PlayerFeedbackSystem
                                 CCL::ECS::Read<PlayerComponent>>
 {
 public:
-    PlayerFeedbackSystem();
+    PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}
     ~PlayerFeedbackSystem() override = default;
 
     void Initialize() override;

@@ -8,8 +8,6 @@
 #include <SimpleMath.h>
 using namespace DirectX::SimpleMath;
 
-CameraListenerSystem::CameraListenerSystem() : SystemBase("CameraListenerSystem") {}
-
 void CameraListenerSystem::Update(float dt)
 {
     if (!m_world) return;

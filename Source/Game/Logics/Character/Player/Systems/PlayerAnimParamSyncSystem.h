@@ -30,10 +30,7 @@ class PlayerAnimParamSyncSystem
                                 CCL::ECS::Write<AnimParametersComponent>>
 {
 public:
-    PlayerAnimParamSyncSystem()
-        : IfSystem("PlayerAnimParamSyncSystem")
-    {
-    }
+    PlayerAnimParamSyncSystem() : IfSystem("PlayerAnimParamSyncSystem") {}
     virtual ~PlayerAnimParamSyncSystem() = default;
 
     void Update(float dt) override;

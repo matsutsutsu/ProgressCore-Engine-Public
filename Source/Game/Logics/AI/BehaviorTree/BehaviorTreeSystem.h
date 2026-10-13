@@ -33,7 +33,7 @@ public:
                                     CCL::ECS::Read<TransformComponent>,
                                     CCL::ECS::Read<TimeStateComponent>>;
 
-    BehaviorTreeSystem();
+    BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem") {}
     virtual ~BehaviorTreeSystem() override = default;
 
     void Initialize() override; // 行動・条件の登録と、辞書との突き合わせ

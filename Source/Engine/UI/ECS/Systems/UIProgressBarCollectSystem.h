@@ -17,10 +17,7 @@ class UIProgressBarCollectSystem : public CCL::ECS::IfSystem<UIProgressBarCollec
                                                              CCL::ECS::Read<UIProgressBarComponent>>
 {
 public:
-    UIProgressBarCollectSystem()
-        : IfSystem("UIProgressBarCollectSystem")
-    {
-    }
+    UIProgressBarCollectSystem() : IfSystem("UIProgressBarCollectSystem") {}
 
     // 同じ UIDrawList へ積む収集 System 同士は直列でなければならない（詳細は UIImageCollectSystem.h）
     std::vector<const char *> GetRunAfter() const override { return {"UITextCollectSystem"}; }

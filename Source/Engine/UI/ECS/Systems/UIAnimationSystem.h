@@ -14,10 +14,7 @@ class UIAnimationSystem : public CCL::ECS::IfSystem<UIAnimationSystem,
                                                     CCL::ECS::Read<UIAnimationComponent>>
 {
 public:
-    UIAnimationSystem()
-        : IfSystem("UIAnimationSystem")
-    {
-    }
+    UIAnimationSystem() : IfSystem("UIAnimationSystem") {}
 
     // UIButtonSystem が hover/focus を見て targetScale を書いた後に追従させる。
     //   逆順だと、押した瞬間の拡大が次フレームまで反映されない。

@@ -15,7 +15,7 @@ class AABBDebugDrawSystem : public CCL::ECS::IfSystem<AABBDebugDrawSystem,
                                                       CCL::ECS::Read<VisibilityComponent>>
 {
 public:
-    AABBDebugDrawSystem();
+    AABBDebugDrawSystem() : IfSystem("AABBDebugDrawSystem") {}
     virtual ~AABBDebugDrawSystem() = default;
 
     void Update(float dt) override;

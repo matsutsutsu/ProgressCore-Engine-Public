@@ -24,10 +24,7 @@
 class TutorialSystem : public CCL::ECS::IfSystem<TutorialSystem>
 {
 public:
-    TutorialSystem()
-        : IfSystem("TutorialSystem")
-    {
-    }
+    TutorialSystem() : IfSystem("TutorialSystem") {}
 
     void Initialize() override;
     void Update(float dt) override;

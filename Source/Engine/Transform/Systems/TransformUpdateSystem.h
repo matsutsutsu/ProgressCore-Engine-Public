@@ -24,7 +24,7 @@ namespace CCL::ECS
 class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem, CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TransformUpdateSystem();
+    TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
     virtual ~TransformUpdateSystem() = default;
 
     /**

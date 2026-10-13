@@ -21,7 +21,7 @@ class ModelBoundsUpdateSystem : public CCL::ECS::IfSystem<ModelBoundsUpdateSyste
                                                           CCL::ECS::Write<BoundingBoxComponent>>
 {
 public:
-    ModelBoundsUpdateSystem();
+    ModelBoundsUpdateSystem() : IfSystem("ModelBoundsUpdateSystem") {}
     virtual ~ModelBoundsUpdateSystem() = default;
 
     void Update(float dt) override;
@@ -46,7 +46,7 @@ class PrimitiveBoundsUpdateSystem : public CCL::ECS::IfSystem<PrimitiveBoundsUpd
                                                               CCL::ECS::Write<BoundingBoxComponent>>
 {
 public:
-    PrimitiveBoundsUpdateSystem();
+    PrimitiveBoundsUpdateSystem() : IfSystem("PrimitiveBoundsUpdateSystem") {}
     virtual ~PrimitiveBoundsUpdateSystem() = default;
 
     void Update(float dt) override;

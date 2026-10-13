@@ -36,10 +36,7 @@ class BossPhaseSystem : public CCL::ECS::IfSystem<
                             CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    BossPhaseSystem()
-        : IfSystem("BossPhaseSystem")
-    {
-    }
+    BossPhaseSystem() : IfSystem("BossPhaseSystem") {}
     ~BossPhaseSystem() override = default;
 
     /**

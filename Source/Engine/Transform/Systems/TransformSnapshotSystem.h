@@ -17,10 +17,7 @@ class TransformSnapshotSystem : public CCL::ECS::IfSystem<TransformSnapshotSyste
                                                           CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TransformSnapshotSystem()
-        : IfSystem("TransformSnapshotSystem")
-    {
-    }
+    TransformSnapshotSystem() : IfSystem("TransformSnapshotSystem") {}
     virtual ~TransformSnapshotSystem() = default;
 
     void Update(float dt) override;

@@ -35,10 +35,7 @@ class BattleStartFacingSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Write<CameraBodyTPSComponent>>
 {
 public:
-    BattleStartFacingSystem()
-        : IfSystem("BattleStartFacingSystem")
-    {
-    }
+    BattleStartFacingSystem() : IfSystem("BattleStartFacingSystem") {}
     virtual ~BattleStartFacingSystem() = default;
 
     void Update(float dt) override;

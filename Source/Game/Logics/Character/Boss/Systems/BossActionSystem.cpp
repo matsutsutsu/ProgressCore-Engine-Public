@@ -174,9 +174,6 @@ void BossActionSystem::Update(float rawDt)
 
 void BossActionSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
-        return;
-
     auto view = m_world->View<TransformComponent, BossActionComponent>();
     if (view.begin() == view.end())
     {

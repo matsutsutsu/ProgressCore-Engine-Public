@@ -23,7 +23,7 @@ struct RenderServices;
 class EnvironmentSystem : public CCL::ECS::SystemBase
 {
 public:
-    EnvironmentSystem();
+    EnvironmentSystem() : SystemBase("EnvironmentSystem") {}
     virtual ~EnvironmentSystem() = default;
 
     // テクスチャと定数バッファを用意する（登録直後に SystemManager が呼ぶ）

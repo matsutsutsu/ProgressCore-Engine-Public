@@ -23,7 +23,7 @@ class PlayerInputSystem : public CCL::ECS::IfSystem<PlayerInputSystem,
                                                     CCL::ECS::Write<PlayerInputComponent>>
 {
 public:
-    PlayerInputSystem();
+    PlayerInputSystem() : IfSystem("PlayerInputSystem") {}
     virtual ~PlayerInputSystem() = default;
 
     void Update(float dt) override;

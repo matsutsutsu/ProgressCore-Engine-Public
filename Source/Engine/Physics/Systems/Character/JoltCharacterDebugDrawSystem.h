@@ -19,9 +19,6 @@ class JoltCharacterDebugDrawSystem : public CCL::ECS::IfSystem<JoltCharacterDebu
                                                                CCL::ECS::Read<JoltCharacterHandleComponent>>
 {
 public:
-    JoltCharacterDebugDrawSystem()
-        : IfSystem("JoltCharacterDebugDrawSystem")
-    {
-    }
+    JoltCharacterDebugDrawSystem() : IfSystem("JoltCharacterDebugDrawSystem") {}
     void Update(float dt) override;
 };

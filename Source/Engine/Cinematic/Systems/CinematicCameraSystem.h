@@ -31,10 +31,7 @@ class CinematicCameraSystem : public CCL::ECS::IfSystem<CinematicCameraSystem,
                                                         CCL::ECS::Write<CinematicCameraComponent>>
 {
 public:
-    CinematicCameraSystem()
-        : IfSystem("CinematicCameraSystem")
-    {
-    }
+    CinematicCameraSystem() : IfSystem("CinematicCameraSystem") {}
 
     // 台本をすべて読み、再生要求の購読を登録する
     void Initialize() override;

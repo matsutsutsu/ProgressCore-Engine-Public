@@ -467,7 +467,6 @@ void SquadUpdateSystem::AssignNewMembers(World &world)
 
 void SquadUpdateSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Squad (小隊の調整と一覧)")) return;
     if (!m_world->HasResource<SquadRegistry>()) return;
     auto &reg = m_world->GetResource<SquadRegistry>();
 

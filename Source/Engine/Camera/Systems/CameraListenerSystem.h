@@ -11,7 +11,7 @@
 class CameraListenerSystem : public CCL::ECS::SystemBase
 {
 public:
-    CameraListenerSystem();
+    CameraListenerSystem() : SystemBase("CameraListenerSystem") {}
     virtual ~CameraListenerSystem() = default;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override { return {}; }
