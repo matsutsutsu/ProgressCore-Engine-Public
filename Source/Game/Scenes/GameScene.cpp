@@ -1,5 +1,7 @@
 #include "GameScene.h"
 #include "Engine/Scene/SceneFactory.h"
+#include "Engine/Scene/SceneManager.h"          // 暗転が明けたかを見る
+#include "Engine/Cinematic/CinematicEvents.h"   // 導入ムービーの再生要求
 
 #include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
 #include "Engine/Serialization/Factory/Prefab.h"             // 導入カメラ演出の生成
@@ -11,6 +13,11 @@
 #include "Game/UI/Screens/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
 #include "tracy/Tracy.hpp"
+
+namespace
+{
+    constexpr const char *kIntroCinematic = "Assets/Cinematics/BossIntro.json"; // 導入ムービーの台本
+}
 
 void GameScene::Initialize()
 {
@@ -28,34 +35,17 @@ void GameScene::Initialize()
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-    // 導入ムービーはレベルに入れずここで足す。レベルは EditorScene も読むので、
-    // レベルに入れるとデバッグで起動するたびに数秒の演出を待つことになる
+    // ムービー用カメラはレベルに入れずここで足す。レベルは EditorScene も読むので、
+    // レベルに入れるとデバッグで起動するたびにムービーの仕組みまで動くことになる
     {
-        ZoneScopedN("GameScene: SpawnPrefab BossIntroTimeline");
+        ZoneScopedN("GameScene: SpawnPrefab CinematicCamera");
 
-        const std::string introCameraPrefab = "Assets/Prefabs/Camera/BossIntroTimeline.json";
-        if (Prefab::SpawnPrefab(*m_worldPtr, introCameraPrefab) == CCL::ECS::InvalidEntityID)
+        const std::string cinematicCameraPrefab = "Assets/Prefabs/Camera/CinematicCamera.json";
+        if (Prefab::SpawnPrefab(*m_worldPtr, cinematicCameraPrefab) == CCL::ECS::InvalidEntityID)
         {
-            // 演出が出ないだけでゲームは成立するので、失敗しても止めない。
+            // ムービーが出ないだけでゲームは成立するので、失敗しても止めない。
             CCL_LOG_ERROR(LogCategory::Core,
-                          "GameScene: 導入ムービーの生成に失敗: %s", introCameraPrefab.c_str());
-        }
-    }
-
-    // 撃破ムービーも導入とそろえてここで足す。
-    // playOnStart は切ってあり、ボスが倒れたときに CinematicTriggerSystem の要求で流れる。
-
-    // 撃破ムービーはスキップできない（プレハブで allowSkip を切ってある）。
-    // 撃破の瞬間は攻撃を連打していることが多く、受け付けると見る前に勝手に飛んでしまうため。
-    {
-        ZoneScopedN("GameScene: SpawnPrefab BossDefeatTimeline");
-
-        const std::string defeatCameraPrefab = "Assets/Prefabs/Camera/BossDefeatTimeline.json";
-        if (Prefab::SpawnPrefab(*m_worldPtr, defeatCameraPrefab) == CCL::ECS::InvalidEntityID)
-        {
-            // 生成に失敗しても、撃破後にムービー無しでリザルトが出るだけなので止めない。
-            CCL_LOG_ERROR(LogCategory::Core,
-                          "GameScene: 撃破ムービーの生成に失敗: %s", defeatCameraPrefab.c_str());
+                          "GameScene: ムービー用カメラの生成に失敗: %s", cinematicCameraPrefab.c_str());
         }
     }
 
@@ -86,6 +76,15 @@ void GameScene::FixedUpdate(float dt)
 
 void GameScene::Update(float dt)
 {
+    // 導入ムービーは、シーン遷移の暗転が明けきってから頼む。
+    // シーンは画面が黒い間に切り替わり、明けきるまで IsTransitioning() が true のままなので、
+    // false になった最初のフレームなら、ムービーを頭から見せられる。
+    if (!m_introRequested && !SceneManager::Instance().IsTransitioning())
+    {
+        m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
+        m_introRequested = true;
+    }
+
     BaseScene::Update(dt);
 }
 

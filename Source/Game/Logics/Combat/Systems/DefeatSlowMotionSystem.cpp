@@ -5,10 +5,16 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Time/TimeService.h"
+#include "Engine/Cinematic/CinematicEvents.h" // 撃破ムービーの再生要求
 
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
 using namespace CCL::ECS;
+
+namespace
+{
+    constexpr const char *kDefeatCinematic = "Assets/Cinematics/BossDefeat.json"; // 撃破ムービーの台本
+}
 
 void DefeatSlowMotionSystem::Update(float dt)
 {
@@ -18,6 +24,7 @@ void DefeatSlowMotionSystem::Update(float dt)
 
     bool normalKill    = false; // このフレームで敵を1体以上倒したか
     bool climax        = false; // ボスか最後の敵を倒したか（大きいスロー）
+    bool bossDefeated  = false; // このフレームでボスを倒したか（撃破ムービー）
     bool sawEnemyDeath = false; // このフレームで敵が倒れたか（最後の1体かを見るため）
     int  aliveEnemies  = 0;     // 生きている敵の数
 
@@ -36,7 +43,11 @@ void DefeatSlowMotionSystem::Update(float dt)
             {
                 sawEnemyDeath = true;
                 normalKill    = true;
-                if (m_world->HasComponent<BossActionComponent>(id)) climax = true;
+                if (m_world->HasComponent<BossActionComponent>(id))
+                {
+                    climax       = true;
+                    bossDefeated = true;
+                }
             }
         }
     });
@@ -53,6 +64,23 @@ void DefeatSlowMotionSystem::Update(float dt)
     {
         Time::SlowWorld(*m_world, kNormalScale, kNormalDur);
         m_cooldown = kCooldown;
+    }
+
+    // --- 撃破ムービー ---
+
+    // ボスを倒したスローは通常のカメラで見せ、スローが終わってから撃破ムービーを頼む。
+    // ムービーの開始待ちはカメラを奪って最初の絵で止めるので、スローを見せる間には使えない。
+    if (bossDefeated && !m_defeatMovieArmed)
+    {
+        m_defeatMovieArmed = true;
+        m_defeatMovieTimer = kClimaxDur;
+    }
+
+    if (m_defeatMovieArmed && m_defeatMovieTimer > 0.0f)
+    {
+        m_defeatMovieTimer -= dt;
+        if (m_defeatMovieTimer <= 0.0f)
+            m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kDefeatCinematic});
     }
 }
 

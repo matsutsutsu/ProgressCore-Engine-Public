@@ -212,11 +212,6 @@ void FileDialog::Initialize(const std::filesystem::path &settingsPath)
                                 .filters    = {{"Audio Files", "*.wav;*.ogg;*.mp3;*.flac"}, {"All Files", "*.*"}},
                                 .defaultDir = "Assets/Audio",
                             });
-    RegisterPreset("Timeline", {
-                                   .filters    = {{"Timeline", "*.json"}, {"All Files", "*.*"}},
-                                   .defaultDir = "Assets/Timelines",
-                                   .defaultExt = "json",
-                               });
     RegisterPreset("BehaviorTreeNode", {
                                            .filters    = {{"Behavior Tree", "*.json"}},
                                            .defaultDir = "Assets/BehaviorTree",

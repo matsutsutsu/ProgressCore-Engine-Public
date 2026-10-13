@@ -87,8 +87,9 @@ void GameResultSystem::Update(float dt)
 
         // 撃破ムービーが流れている間は出さない。終わるかスキップされたら出す。
 
-        // ムービーの再生要求から cinematic が立つまでは1ステップ。
-        // kResultDelay を待ち終えた時点では、もう立っている。
+        // 撃破ムービーの再生要求は、撃破のスローが終わってから出る（DefeatSlowMotionSystem の kClimaxDur 後）。
+        // cinematic はその次の描画フレームで立つので、kResultDelay を待ち終えた時点では、もう立っている。
+        // kClimaxDur を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る。
 
         // ムービーを置いていないシーンや、読み込めなかったときは cinematic が立たない。
         // その場合は kResultDelay だけ待って出る。

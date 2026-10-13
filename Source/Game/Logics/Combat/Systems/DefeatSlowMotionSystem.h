@@ -6,6 +6,7 @@
 //   - HP が 0 以下になった敵を1体につき1回だけ見つける（HealthComponent::deathFxFired）
 //   - ボスを倒したとき・最後の敵を倒したときは、大きく長いスローにする
 //   - 普通に倒したときは短いスローにし、続けて倒してもスローが続かないよう間を空ける
+//   - ボスを倒したスローが終わったら、撃破ムービーの再生を頼む
 //
 // 備考: 倒れたエンティティは消えずに残るので、フラグが無いと毎フレーム見つけてしまう。
 //       スローは Time::SlowWorld で TimeContext.cinematicSlow に書くだけ。TimeScaleSystem（L01）が
@@ -24,7 +25,9 @@ public:
     void Update(float dt) override;
 
 private:
-    float m_cooldown = 0.0f; // 次の普通のスローを出せるまでの残り時間（実時間の秒）
+    float m_cooldown         = 0.0f;  // 次の普通のスローを出せるまでの残り時間（実時間の秒）
+    float m_defeatMovieTimer = 0.0f;  // 撃破ムービーを頼むまでの残り時間（実時間の秒）
+    bool  m_defeatMovieArmed = false; // ボスを倒して、撃破ムービーを頼む待ちに入っているか
 
     // --- 調整値 ---
     static constexpr float kCooldown    = 0.6f;  // 普通のスローを出してから次に出せるまでの時間（秒）

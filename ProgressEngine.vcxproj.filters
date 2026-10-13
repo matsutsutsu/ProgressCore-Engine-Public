@@ -282,6 +282,15 @@
     <Filter Include="Source\Engine\Audio\Systems">
       <UniqueIdentifier>{756f2b1e-cae1-40a4-8a7b-ccd0615a1809}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Cinematic">
+      <UniqueIdentifier>{3f1c8a52-6d0e-4b7a-9c21-8e5f4a7d2b10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Cinematic\Components">
+      <UniqueIdentifier>{a74e2d19-0b3c-4f6e-8d52-1c9b7e4a6f23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Cinematic\Systems">
+      <UniqueIdentifier>{c2b9f7e4-5a18-4d3c-b6e0-7f2a9d1c8e45}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Tutorial">
       <UniqueIdentifier>{848207fd-b731-407f-b63a-7a6c32fd122b}</UniqueIdentifier>
     </Filter>
@@ -1839,6 +1848,21 @@
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\CameraShot.h">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\CinematicEvents.h">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\CinematicScript.h">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\Components\CinematicCameraComponent.h">
+      <Filter>Source\Engine\Cinematic\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.h">
+      <Filter>Source\Engine\Cinematic\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
@@ -2947,6 +2971,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Cinematic\Components\CinematicCameraComponentMeta.cpp">
+      <Filter>Source\Engine\Cinematic\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.cpp">
+      <Filter>Source\Engine\Cinematic\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>

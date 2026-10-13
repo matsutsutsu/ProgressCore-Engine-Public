@@ -18,12 +18,12 @@ struct GameFlowState
     //    エディタ側（F2 トグル / シーケンサーの EditMode）が毎フレーム設定する。
     bool uiInteract = false;
 
-    // 「カットシーン中」。タイムライン（ムービー）が開始待ち・再生中の間 true。
+    // 「カットシーン中」。ムービーが開始待ち・再生中の間 true。
     //    ・PlayerInputSystem: 全ゲーム入力を中立値にして操作を奪う。
     //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする。
     //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない。
     //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）。
-    //    TODO(2026-10-12): 書き手のタイムラインを作り直し中で、今は誰も立てない（常に false）。
+    //    書き手は CinematicCameraSystem だけ。描画の段で書くので、ロジックの段には次の固定ステップから効く。
     bool cinematic = false;
 
     // 「決着した」。勝ち負けが決まった瞬間から、シーンを切り替えるまで true。
