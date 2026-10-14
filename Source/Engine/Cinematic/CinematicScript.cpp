@@ -1,6 +1,8 @@
 #include "Engine/Cinematic/CinematicScript.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Graphics/Resource/ResourceManager.h" // アニメのトラックのクリップを読む
+#include "Engine/Animation/Core/AnimSequence.h"
 
 #include <json.hpp>
 #include <algorithm>
@@ -194,6 +196,163 @@ namespace
         return true;
     }
 
+    // --- カメラ以外のトラック ---
+
+    // 点の時刻は、0 以上で全体の長さ以下にする。
+    // 長さを超えた点は、再生位置が届かないので一度も出ない。長さか時刻の書き間違いとして扱う。
+    bool CheckPointTime(float time, float duration, std::string &err)
+    {
+        if (time < 0.0f || time > duration)
+        {
+            err = "\"time\" は 0 以上、全体の長さ " + std::to_string(duration) + " 秒以下";
+            return false;
+        }
+        return true;
+    }
+
+    // 必ず書く文字列が空でないかを確かめる
+    bool RequireString(const std::string &value, const char *key, std::string &err)
+    {
+        if (!value.empty()) return true;
+        err = std::string("\"") + key + "\" を書く";
+        return false;
+    }
+
+    bool ParseSound(const json &j, float duration, CinematicSound &out, std::string &err)
+    {
+        if (!CheckKeys(j, {"_comment", "time", "event", "subject", "volume", "pitch"}, err)) return false;
+
+        if (!ReadFloat(j, "time", out.time, err) || !ReadString(j, "event", out.event, err) ||
+            !ReadString(j, "subject", out.subject, err) || !ReadFloat(j, "volume", out.volume, err) ||
+            !ReadFloat(j, "pitch", out.pitch, err))
+            return false;
+
+        return CheckPointTime(out.time, duration, err) && RequireString(out.event, "event", err);
+    }
+
+    bool ParseEffect(const json &j, float duration, CinematicEffect &out, std::string &err)
+    {
+        if (!CheckKeys(j, {"_comment", "time", "effect", "subject", "offset", "scale", "follow", "duration"}, err))
+            return false;
+
+        if (!ReadFloat(j, "time", out.time, err) || !ReadString(j, "effect", out.effect, err) ||
+            !ReadString(j, "subject", out.subject, err) || !ReadVec3(j, "offset", out.offset, err) ||
+            !ReadFloat(j, "scale", out.scale, err) || !ReadBool(j, "follow", out.follow, err) ||
+            !ReadFloat(j, "duration", out.duration, err))
+            return false;
+
+        // エフェクトはアニメの Effect イベントと同じ経路で出すので、基準の Entity が要る。
+        return CheckPointTime(out.time, duration, err) && RequireString(out.effect, "effect", err) &&
+               RequireString(out.subject, "subject", err);
+    }
+
+    bool ParseSignal(const json &j, float duration, CinematicSignal &out, std::string &err)
+    {
+        if (!CheckKeys(j, {"_comment", "time", "name", "param", "param2", "value"}, err)) return false;
+
+        if (!ReadFloat(j, "time", out.time, err) || !ReadString(j, "name", out.name, err) ||
+            !ReadString(j, "param", out.param, err) || !ReadString(j, "param2", out.param2, err) ||
+            !ReadFloat(j, "value", out.value, err))
+            return false;
+
+        return CheckPointTime(out.time, duration, err) && RequireString(out.name, "name", err);
+    }
+
+    bool ParseAnimation(const json &j, float duration, CinematicAnimation &out, std::string &err)
+    {
+        if (!CheckKeys(j,
+                       {"_comment", "start", "duration", "subject", "sequence", "loop", "speed", "blendIn", "blendOut"},
+                       err))
+            return false;
+
+        if (!ReadFloat(j, "start", out.start, err) || !ReadFloat(j, "duration", out.duration, err) ||
+            !ReadString(j, "subject", out.subject, err) || !ReadString(j, "sequence", out.sequence, err) ||
+            !ReadBool(j, "loop", out.loop, err) || !ReadFloat(j, "speed", out.speed, err) ||
+            !ReadFloat(j, "blendIn", out.blendIn, err) || !ReadFloat(j, "blendOut", out.blendOut, err))
+            return false;
+
+        if (!RequireString(out.subject, "subject", err) || !RequireString(out.sequence, "sequence", err)) return false;
+
+        if (out.start < 0.0f || out.start >= duration)
+        {
+            err = "\"start\" は 0 以上、全体の長さ " + std::to_string(duration) + " 秒より前";
+            return false;
+        }
+        if (out.speed <= 0.0f || out.blendIn < 0.0f || out.blendOut < 0.0f || out.duration < 0.0f)
+        {
+            err = "\"speed\" は 0 より大きく、\"blendIn\" / \"blendOut\" / \"duration\" は 0 以上";
+            return false;
+        }
+
+        // ループは終わりが無いので、長さを省略できない。
+        if (out.loop && out.duration <= 0.0f)
+        {
+            err = "\"loop\" が true のときは \"duration\" を書く";
+            return false;
+        }
+
+        // 再生のたびにファイルを読まないよう、台本を読むときにアニメも読んでおく。
+        out.resolved = ResourceManager::Instance().LoadAnimSequence(out.sequence.c_str());
+        if (!out.resolved)
+        {
+            err = "アニメ \"" + out.sequence + "\" を読み込めない";
+            return false;
+        }
+
+        // 長さの省略は、クリップを1回最後まで再生する長さとみなす。
+        if (out.duration <= 0.0f) out.duration = out.resolved->duration / out.speed;
+        return true;
+    }
+
+    /**
+     * @brief 台本のトラック1種類（配列）を読み、時刻の順に並べる。
+     * @tparam T     トラックの1要素の型。
+     * @tparam Parse 1要素を読む関数。bool(const json &, float, T &, std::string &)。
+     * @tparam Time  要素の時刻を返す関数。float(const T &)。
+     * @param root     ファイル全体のオブジェクト。
+     * @param key      配列の項目名。
+     * @param duration 全体の長さ（秒）。
+     * @param parse    1要素を読む関数。
+     * @param timeOf   要素の時刻を返す関数。
+     * @param out      読んだ要素を入れる先。
+     * @param err      書き間違いの理由。
+     * @return 項目が無いか、すべて読めたら true。
+     */
+    template <class T, class Parse, class Time>
+    bool ParseTrack(const json &root, const char *key, float duration, Parse parse, Time timeOf, std::vector<T> &out,
+                    std::string &err)
+    {
+        // トラックは使わない台本もあるので、省略してよい。
+        if (!root.contains(key)) return true;
+
+        if (!root[key].is_array())
+        {
+            err = std::string("\"") + key + "\" は配列で書く";
+            return false;
+        }
+
+        const json &items = root[key];
+        for (std::size_t i = 0; i < items.size(); ++i)
+        {
+            T item;
+            if (!items[i].is_object())
+            {
+                err = std::string(key) + "[" + std::to_string(i) + "]: { } で書く";
+                return false;
+            }
+            if (!parse(items[i], duration, item, err))
+            {
+                err = std::string(key) + "[" + std::to_string(i) + "]: " + err;
+                return false;
+            }
+            out.push_back(std::move(item));
+        }
+
+        // 再生側は先頭から順に「時刻を過ぎたか」を見るので、読んだときに並べておく。
+        std::stable_sort(out.begin(), out.end(), [&](const T &a, const T &b) { return timeOf(a) < timeOf(b); });
+        return true;
+    }
+
     /**
      * @brief 台本全体を読む。
      * @param root   ファイル全体のオブジェクト。
@@ -207,6 +366,7 @@ namespace
         // 1. 全体の設定を読む
         // 2. ショットを1つずつ読む
         // 3. 開始時刻の順に並べ、映らないショットが無いか確かめる
+        // 4. カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を読む
 
         // ---------------------------------------------------------
         // 1. 全体の設定
@@ -217,7 +377,11 @@ namespace
             return false;
         }
 
-        if (!CheckKeys(root, {"_comment", "duration", "startDelay", "allowSkip", "shots"}, err)) return false;
+        if (!CheckKeys(root,
+                       {"_comment", "duration", "startDelay", "allowSkip", "shots", "sounds", "effects", "signals",
+                        "animations"},
+                       err))
+            return false;
 
         if (!ReadFloat(root, "duration", script.duration, err) ||
             !ReadFloat(root, "startDelay", script.startDelay, err) ||
@@ -274,7 +438,18 @@ namespace
                   std::to_string(script.duration) + " 秒以降に始まるので映らない";
             return false;
         }
-        return true;
+
+        // ---------------------------------------------------------
+        // 4. カメラ以外のトラック
+        // ---------------------------------------------------------
+        return ParseTrack(root, "sounds", script.duration, ParseSound,
+                          [](const CinematicSound &s) { return s.time; }, script.sounds, err) &&
+               ParseTrack(root, "effects", script.duration, ParseEffect,
+                          [](const CinematicEffect &e) { return e.time; }, script.effects, err) &&
+               ParseTrack(root, "signals", script.duration, ParseSignal,
+                          [](const CinematicSignal &s) { return s.time; }, script.signals, err) &&
+               ParseTrack(root, "animations", script.duration, ParseAnimation,
+                          [](const CinematicAnimation &a) { return a.start; }, script.animations, err);
     }
 } // namespace
 

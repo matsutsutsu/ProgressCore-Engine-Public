@@ -1,5 +1,6 @@
 #include "Engine/Cinematic/Systems/CinematicCameraSystem.h"
 #include "Engine/Cinematic/CinematicEvents.h"
+#include "Engine/Cinematic/CinematicSubject.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Time/TimeService.h" // PresentationDt（ポーズ中は 0）
 #include "Engine/Platform/Core/Logger.h"
@@ -299,6 +300,7 @@ void CinematicCameraSystem::Update(float dt)
                 CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生中のため、再生要求を捨てました: %s",
                              requestPath.c_str());
             }
+            // 再生中でなく、台本が見つからなければ
             else if (found == m_scripts.end())
             {
                 // 読み込んでいない台本は流さない。
@@ -306,10 +308,15 @@ void CinematicCameraSystem::Update(float dt)
                 CCL_LOG_ERROR(LogCategory::Game, "[Cinematic] 台本 %s は読み込まれていないので、再生要求を捨てました",
                               requestPath.c_str());
             }
+            // 再生中でなく、台本が見つかれば
             else
             {
                 // 台本は写して持つ。再生中に台本を読み直しても、流しているムービーは変わらない。
                 cine.script = found->second;
+
+                // トラックは、この番号が変わったことで新しい再生に入ったと気付き、前の再生の続きを片付ける。
+                // 同じ台本を続けて流すと状態や台本の中身では見分けられないので、通し番号で知らせる。
+                ++cine.playCount;
 
                 cine.state        = (cine.script.startDelay > 0.0f) ? CinematicState::Waiting : CinematicState::Playing;
                 cine.time         = 0.0f;
@@ -540,7 +547,7 @@ void CinematicCameraSystem::EnterShot(CinematicCameraComponent &cine, const Came
 
     // 名前で探すのは、ショットに入った瞬間の1回だけ。
     // 毎フレームは見つけた Entity から直接引く（名前の比較を全 Entity に対して繰り返さない）。
-    cine.shotSubject = FindEntityByName(shot.subject);
+    cine.shotSubject = Cinematic::FindEntityByName(*m_world, shot.subject);
 
     // 見つからなければ、ショットの基準は無いものとして扱う
     if (cine.shotSubject == InvalidEntityID)
@@ -561,21 +568,6 @@ void CinematicCameraSystem::EnterShot(CinematicCameraComponent &cine, const Came
     const float fx = m._31;
     const float fz = m._33;
     if (fx * fx + fz * fz > 1e-8f) cine.shotYaw = std::atan2(fx, fz);
-}
-
-EntityID CinematicCameraSystem::FindEntityByName(const std::string &name) const
-{
-    EntityID found = InvalidEntityID;
-
-    m_world->ViewEach<NameComponent>([&](EntityID id) {
-        // すでに見つかっていたら、残りの Entity は無視する
-        if (found != InvalidEntityID) return;
-
-        // 名前が一致する Entity を探す
-        const auto *nameComp = m_world->GetComponent<NameComponent>(id);
-        if (nameComp && name == nameComp->name) found = id;
-    });
-    return found;
 }
 
 bool CinematicCameraSystem::ResolveSubjectPosition(const CinematicCameraComponent &cine, const CameraShot &shot,

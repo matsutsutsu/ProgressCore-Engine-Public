@@ -427,9 +427,13 @@
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h" />
     <ClInclude Include="Source\Engine\Cinematic\CinematicEvents.h" />
     <ClInclude Include="Source\Engine\Cinematic\CinematicScript.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicSubject.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicTracks.h" />
     <ClInclude Include="Source\Engine\Cinematic\Components\CinematicCameraComponent.h" />
     <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.h" />
+    <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h" />
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
@@ -1036,7 +1040,9 @@
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\Components\CinematicCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.cpp" />
+    <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />

@@ -76,13 +76,6 @@ private:
     void EnterShot(CinematicCameraComponent &cine, const CameraShot &shot) const;
 
     /**
-     * @brief 名前（NameComponent）から Entity を探す。
-     * @param name 探す名前。
-     * @return 最初に見つかった Entity。見つからなければ InvalidEntityID。
-     */
-    CCL::ECS::EntityID FindEntityByName(const std::string &name) const;
-
-    /**
      * @brief 今のショットの基準の位置（ワールド、m）を求める。
      * @param cine    今のショットの基準（shotSubject）を持つ再生状態。
      * @param shot    今のショット。

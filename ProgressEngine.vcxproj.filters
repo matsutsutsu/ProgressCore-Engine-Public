@@ -1857,13 +1857,25 @@
     <ClInclude Include="Source\Engine\Cinematic\CinematicScript.h">
       <Filter>Source\Engine\Cinematic</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\CinematicSubject.h">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\CinematicTracks.h">
+      <Filter>Source\Engine\Cinematic</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Cinematic\Components\CinematicCameraComponent.h">
       <Filter>Source\Engine\Cinematic\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.h">
       <Filter>Source\Engine\Cinematic\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.h">
+      <Filter>Source\Engine\Cinematic\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h">
@@ -2981,7 +2993,13 @@
     <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.cpp">
       <Filter>Source\Engine\Cinematic\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.cpp">
+      <Filter>Source\Engine\Cinematic\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp">
+      <Filter>Source\Game\Logics\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp">
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Systems\CharacterAnimSyncSystem.cpp">

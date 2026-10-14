@@ -5,6 +5,7 @@
 // 責務:
 //   - 再生中／停止中の VirtualCamera の優先度を持つ
 //   - 再生中の台本と、再生の状態・再生位置・スキップの長押しの状態を持つ
+//   - トラック（SE・エフェクト・シグナル・アニメ）をどこまで出したかを持つ
 //
 // 備考:
 //   同じ Entity に VirtualCamera を付ける。ムービーが何本あってもこの1台で映し、
@@ -15,6 +16,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 // 再生の状態
 enum class CinematicState : std::uint8_t
@@ -36,7 +38,8 @@ struct CinematicCameraComponent
     int idlePriority   = -1000; // 停止中のカメラの優先度。他のカメラより低くして譲る
 
     // --- 実行時状態（保存しない） ---
-    CinematicScript script; // 再生中の台本。再生要求を受け付けたときに写す
+    CinematicScript script;        // 再生中の台本。再生要求を受け付けたときに写す
+    std::uint32_t   playCount = 0; // 受け付けた再生の通し番号
 
     CinematicState state      = CinematicState::Idle; // 再生の状態
     float          time       = 0.0f;                 // 再生位置（秒）
@@ -57,4 +60,12 @@ struct CinematicCameraComponent
     DirectX::XMFLOAT3 blendFromPos  = {0.0f, 0.0f, 0.0f}; // 補間元のカメラ位置
     DirectX::XMFLOAT3 blendFromLook = {0.0f, 0.0f, 1.0f}; // 補間元の注視点
     float             blendFromFov  = 45.0f;              // 補間元の画角（度）
+
+    // トラックの進み具合。CinematicTrackSystem だけが書く
+    std::uint32_t                   trackPlayCount = 0; // トラックが追っている再生の通し番号
+    std::size_t                     nextSound      = 0; // 次に出す SE の番号（script.sounds の添字）
+    std::size_t                     nextEffect     = 0; // 次に出すエフェクトの番号（script.effects の添字）
+    std::size_t                     nextSignal     = 0; // 次に出すシグナルの番号（script.signals の添字）
+    std::vector<CCL::ECS::EntityID> animHeld;           // アニメごとに握っている Entity（script.animations の添字）。握っていなければ Invalid
+    std::vector<std::uint8_t>       animEntered;        // アニメごとに、区間に入る処理を済ませたか（script.animations の添字）
 };

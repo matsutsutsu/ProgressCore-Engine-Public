@@ -4,6 +4,7 @@
 //
 // 責務:
 //   - 再生の長さ・開始待ち・スキップ可否と、ショットの列を持つ
+//   - カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を持つ
 //   - Assets/Cinematics の JSON を読み、書き間違いがあれば読み込まずにログへ出す
 //
 // 備考:
@@ -12,6 +13,7 @@
 //   項目の省略は書き間違いではないので、既定値を使う。
 // ===========================================================================
 #include "Engine/Cinematic/CameraShot.h"
+#include "Engine/Cinematic/CinematicTracks.h"
 
 #include <string>
 #include <vector>
@@ -28,6 +30,12 @@ struct CinematicScript
     bool  allowSkip  = true; // 長押しでスキップできるか
 
     std::vector<CameraShot> shots; // 映すショットの列。開始時刻の昇順
+
+    // --- カメラ以外のトラック。点は時刻の昇順、アニメは開始時刻の昇順 ---
+    std::vector<CinematicSound>     sounds;     // SE
+    std::vector<CinematicEffect>    effects;    // エフェクト
+    std::vector<CinematicSignal>    signals;    // シグナル
+    std::vector<CinematicAnimation> animations; // アニメ
 };
 
 namespace CinematicScriptIO

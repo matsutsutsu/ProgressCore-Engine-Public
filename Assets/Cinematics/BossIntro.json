@@ -61,5 +61,44 @@
             "fovStart": 40.0,
             "fovEnd": 45.0
         }
+    ],
+    "sounds": [
+        {
+            "_comment": "カットでボスへ切り替わる瞬間の重い一撃。素材が揃うまでは倒れる音をピッチを下げて代用",
+            "time": 4.4,
+            "event": "sfx:/fall",
+            "volume": 1.0,
+            "pitch": -0.4
+        }
+    ],
+    "effects": [
+        {
+            "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
+            "time": 4.4,
+            "effect": "Assets/Prefabs/Particles/VFX_Jump",
+            "subject": "Muriel",
+            "scale": 5.0
+        }
+    ],
+    "signals": [
+        {
+            "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言",
+            "time": 4.7,
+            "name": "Telop",
+            "param": "MURIEL",
+            "param2": "TARGET IDENTIFIED",
+            "value": 2.6
+        }
+    ],
+    "animations": [
+        {
+            "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ時刻）。カットで隠れるので blendIn は 0",
+            "start": 4.4,
+            "subject": "Muriel",
+            "sequence": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
+            "speed": 0.7,
+            "blendIn": 0.0,
+            "blendOut": 0.4
+        }
     ]
 }
