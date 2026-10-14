@@ -261,8 +261,9 @@ void CinematicCameraSystem::Initialize()
                          ev.scriptPath.c_str());
             return;
         }
-        m_pendingPath = ev.scriptPath;
-        m_hasRequest  = true;
+        m_pendingPath      = ev.scriptPath;
+        m_pendingStartTime = ev.startTime;
+        m_hasRequest       = true;
     });
 
     // エディタが台本を保存したら、次の Update で読み直す。
@@ -289,16 +290,19 @@ void CinematicCameraSystem::Update(float dt)
     // ---------------------------------------------------------
 
     // 取り出すと同時に空にする。
-    bool        requested = false;
-    bool        reload    = false;
+    bool        requested        = false;
+    bool        reload           = false;
     std::string requestPath;
+    float       requestStartTime = 0.0f;
     {
         std::lock_guard<std::mutex> lock(m_requestMutex);
-        requested         = m_hasRequest;
-        reload            = m_reloadRequested;
-        requestPath       = std::move(m_pendingPath);
-        m_hasRequest      = false;
-        m_reloadRequested = false;
+        requested          = m_hasRequest;
+        reload             = m_reloadRequested;
+        requestPath        = std::move(m_pendingPath);
+        requestStartTime   = m_pendingStartTime;
+        m_hasRequest       = false;
+        m_reloadRequested  = false;
+        m_pendingStartTime = 0.0f;
         m_pendingPath.clear();
     }
 
@@ -351,15 +355,22 @@ void CinematicCameraSystem::Update(float dt)
                 // 同じ台本を続けて流すと状態や台本の中身では見分けられないので、通し番号で知らせる。
                 ++cine.playCount;
 
-                cine.state        = (cine.script.startDelay > 0.0f) ? CinematicState::Waiting : CinematicState::Playing;
-                cine.time         = 0.0f;
-                cine.waitTime     = 0.0f;
+                // 途中から流すとき（エディタの「ここから再生」）は、開始待ちを飛ばしてその位置から進める。
+                // 最初の絵で止めて待つのは、頭から流すときだけの演出のため。
+                // 長さちょうどから始めると何も映らずに終わるので、長さの手前までにする。
+                const float startTime = std::clamp(requestStartTime, 0.0f, std::max(0.0f, cine.script.duration - 0.001f));
+                const bool  waits     = (startTime <= 0.0f) && (cine.script.startDelay > 0.0f);
+
+                cine.state         = waits ? CinematicState::Waiting : CinematicState::Playing;
+                cine.time          = startTime;
+                cine.playStartTime = startTime;
+                cine.waitTime      = 0.0f;
                 cine.activeShot   = -1;
                 cine.skipHoldTime = 0.0f;
                 cine.skipArmed    = false;
                 cine.skipped      = false;
 
-                CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生開始: %s", requestPath.c_str());
+                CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生開始: %s（%.2f 秒から）", requestPath.c_str(), startTime);
             }
         }
 

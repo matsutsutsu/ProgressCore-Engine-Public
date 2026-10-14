@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 台本フォルダの JSON を起動時にすべて読んでおく
-//   - 再生要求（CinematicPlayRequestEvent）で指された台本を流す。開始待ち・再生中に届いたものは捨てる
+//   - 再生要求（CinematicPlayRequestEvent）で指された台本を、指された位置（既定は頭）から流す。開始待ち・再生中に届いたものは捨てる
 //   - 開始待ちと再生位置を実時間で進め、長さに達したか長押しでスキップされたら終えて知らせる
 //   - 開始待ち・再生中は姿勢と画角を書き、優先度を上げてカメラを掌握する。それ以外は優先度を下げて譲る
 //   - ショットの基準にする対象を名前で探し、その位置と向きからカメラの位置を決める
@@ -101,10 +101,11 @@ private:
     std::map<std::string, CinematicScript> m_scripts; // 読み込んだ台本（キーはパス）
 
     // 届いた再生要求。購読で入れ、Update で取り出して空にする
-    std::mutex  m_requestMutex;           // m_pendingPath・m_hasRequest・m_reloadRequested を守る
-    std::string m_pendingPath;            // 流す台本のパス
-    bool        m_hasRequest      = false; // 取り出していない再生要求があるか
-    bool        m_reloadRequested = false; // 台本のファイルが書き換わったので、読み直すか
+    std::mutex  m_requestMutex;           // m_pendingPath・m_pendingStartTime・m_hasRequest・m_reloadRequested を守る
+    std::string m_pendingPath;              // 流す台本のパス
+    float       m_pendingStartTime = 0.0f;  // 再生を始める位置（秒）
+    bool        m_hasRequest       = false; // 取り出していない再生要求があるか
+    bool        m_reloadRequested  = false; // 台本のファイルが書き換わったので、読み直すか
 
     std::string m_guiScriptPath; // デバッグ UI で選んでいる台本のパス
 };

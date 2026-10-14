@@ -6,6 +6,7 @@
 //   - 再生位置が時刻を過ぎた点（SE・エフェクト・シグナル）を1回ずつ出す。スキップで飛ばした分は出さない
 //   - アニメの区間に入ったら対象のアニメを握り、区間を出たら・ムービーが終わったら離す
 //   - 新しい再生に入ったら、前の再生の続き（握ったままのアニメ）を片付けて頭から追う
+//   - 途中から流す再生では、開始位置より前の点を出さず、区間の途中のアニメはその分進めた位置から握る
 //
 // 備考:
 //   再生位置を進めるのは CinematicCameraSystem（描画の段）。この System はロジックの段で、それを読むだけ。
@@ -73,8 +74,14 @@ private:
      */
     void SyncAnimations(CinematicCameraComponent &cine) const;
 
-    // 対象の AnimatorComponent を握り、クリップを頭から再生させる。握れたら true
-    bool HoldAnimation(CCL::ECS::EntityID entity, const CinematicAnimation &clip) const;
+    /**
+     * @brief 対象の AnimatorComponent を握り、クリップを再生させる。
+     * @param entity     握る Entity。
+     * @param clip       再生させるアニメの区間。
+     * @param clipOffset クリップの再生位置（秒、クリップ内の時刻）。途中から握るときだけ 0 より大きい。
+     * @return 握れたら true。
+     */
+    bool HoldAnimation(CCL::ECS::EntityID entity, const CinematicAnimation &clip, float clipOffset) const;
 
     // 対象の AnimatorComponent を離し、元のステートへ blendOut 秒で戻させる
     void ReleaseAnimation(CCL::ECS::EntityID entity, float blendOut) const;

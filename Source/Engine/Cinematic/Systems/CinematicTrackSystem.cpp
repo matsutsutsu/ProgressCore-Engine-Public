@@ -28,7 +28,7 @@ namespace
 void CinematicTrackSystem::Update(float /*dt*/)
 {
     // 処理フロー:
-    // 1. 新しい再生に入ったら、前の再生の続きを片付けて頭から追う
+    // 1. 新しい再生に入ったら、前の再生の続きを片付けて頭から追う（途中から流すなら、開始位置まで飛ばす）
     // 2. 再生位置を過ぎた点（SE・エフェクト・シグナル）を集める
     // 3. アニメの区間を出たものを離し、入ったものを握る
     // 4. 集めた点を出す
@@ -53,6 +53,18 @@ void CinematicTrackSystem::Update(float /*dt*/)
             cine.animHeld.assign(cine.script.animations.size(), InvalidEntityID);
             cine.animEntered.assign(cine.script.animations.size(), 0);
             cine.trackPlayCount = cine.playCount;
+
+            // 途中から流すとき（エディタの「ここから再生」）は、開始位置より前の点を出さずに飛ばす。
+            // 開始位置ちょうどの点は出す。区間が開始位置までに終わっているアニメは握らない。
+            const CinematicScript &s    = cine.script;
+            const float            from = cine.playStartTime;
+            while (cine.nextSound < s.sounds.size() && s.sounds[cine.nextSound].time < from) ++cine.nextSound;
+            while (cine.nextEffect < s.effects.size() && s.effects[cine.nextEffect].time < from) ++cine.nextEffect;
+            while (cine.nextSignal < s.signals.size() && s.signals[cine.nextSignal].time < from) ++cine.nextSignal;
+            for (std::size_t i = 0; i < s.animations.size(); ++i)
+            {
+                if (s.animations[i].End() <= from) cine.animEntered[i] = 1;
+            }
         }
 
         // ---------------------------------------------------------
@@ -230,11 +242,16 @@ void CinematicTrackSystem::SyncAnimations(CinematicCameraComponent &cine) const
                          clips[i].subject.c_str(), clips[i].sequence.c_str());
             continue;
         }
-        if (HoldAnimation(entity, clips[i])) cine.animHeld[i] = entity;
+        // 開始位置より前から始まっているアニメ（「ここから再生」で区間の途中から入った）は、
+        // 区間の頭から今までの分だけ進めた位置から握る。頭から流すときは区間の頭で入るので 0。
+        const float clipOffset =
+            (clips[i].start < cine.playStartTime) ? (cine.time - clips[i].start) * clips[i].speed : 0.0f;
+
+        if (HoldAnimation(entity, clips[i], clipOffset)) cine.animHeld[i] = entity;
     }
 }
 
-bool CinematicTrackSystem::HoldAnimation(EntityID entity, const CinematicAnimation &clip) const
+bool CinematicTrackSystem::HoldAnimation(EntityID entity, const CinematicAnimation &clip, float clipOffset) const
 {
     auto *animator = m_world->GetComponent<AnimatorComponent>(entity);
     if (!animator) return false;
@@ -242,6 +259,15 @@ bool CinematicTrackSystem::HoldAnimation(EntityID entity, const CinematicAnimati
     // ステートに入るときと同じく、同じクリップでも頭から再生し直す（理由は PlayParams::restart）。
     animator->Play(clip.resolved, {.blendTime = clip.blendIn, .loop = clip.loop, .speed = clip.speed, .restart = true});
     animator->isExternalOverride = true;
+
+    // 途中から握るときは、再生位置を進めておく。
+    // 飛ばした分のアニメのイベント（音・エフェクト）は出さないよう、イベントの番号も合わせる。
+    // 速度カーブのあるクリップは、等速とみなした近い位置になる。
+    if (clipOffset > 0.0f)
+    {
+        animator->currentTimer = clipOffset;
+        animator->SyncEventCursor();
+    }
 
     // 直前に離した要求が残っていれば取り消す。続けて握り直したときに、ステートへ戻されないため。
     animator->externalReleaseBlend = -1.0f;

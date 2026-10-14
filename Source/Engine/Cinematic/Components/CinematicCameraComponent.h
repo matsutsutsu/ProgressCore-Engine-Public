@@ -39,8 +39,9 @@ struct CinematicCameraComponent
     int idlePriority   = -1000; // 停止中のカメラの優先度。他のカメラより低くして譲る
 
     // --- 実行時状態（保存しない） ---
-    CinematicScript script;        // 再生中の台本。再生要求を受け付けたときに写す
-    std::uint32_t   playCount = 0; // 受け付けた再生の通し番号
+    CinematicScript script;            // 再生中の台本。再生要求を受け付けたときに写す
+    std::uint32_t   playCount     = 0; // 受け付けた再生の通し番号
+    float           playStartTime = 0.0f; // 今回の再生を始めた位置（秒）。トラックはこれより前の点を出さない
 
     CinematicState state      = CinematicState::Idle; // 再生の状態
     float          time       = 0.0f;                 // 再生位置（秒）

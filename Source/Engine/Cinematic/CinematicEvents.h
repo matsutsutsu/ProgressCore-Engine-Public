@@ -17,7 +17,8 @@
 // ムービーの再生要求。再生中に届いた要求と、同じフレームに2つ目以降に届いた要求は捨てる
 struct CinematicPlayRequestEvent
 {
-    std::string scriptPath; // 流す台本のパス
+    std::string scriptPath;         // 流す台本のパス
+    float       startTime = 0.0f;  // 再生を始める位置（秒）。0 より後なら開始待ちを飛ばし、それより前のトラックの点は出さない（エディタの「ここから再生」）
 };
 
 // ムービーの終了の知らせ。最後まで再生したときも、スキップしたときも1回出す

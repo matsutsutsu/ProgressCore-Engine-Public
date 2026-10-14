@@ -248,10 +248,20 @@ void CinematicEditorWindow::DrawFileBar(EditorContext &context)
     ImGui::BeginDisabled(m_dirty || !hasFile);
     if (ImGui::Button("ゲームで再生") && context.world)
         context.world->GetEventBus().Publish(CinematicPlayRequestEvent{m_script.path});
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("保存した台本を、ゲームと同じ再生要求で頭から流します（SE・エフェクト・アニメも出ます）\n"
+                          "一時停止を解いてから押してください（一時停止中はトラックが進みません）");
+
+    // 途中から流す。イベントの少し手前に再生位置を置いて押せば、そこだけを何度でも見直せる。
+    ImGui::SameLine();
+    if (ImGui::Button("ここから再生") && context.world)
+        context.world->GetEventBus().Publish(CinematicPlayRequestEvent{m_script.path, m_time});
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-        ImGui::SetTooltip("保存した台本を、ゲームと同じ再生要求で流します（SE・エフェクト・アニメも出ます）\n"
-                          "一時停止を解いてから押してください（一時停止中はトラックが進みません）");
+        ImGui::SetTooltip("保存した台本を、タイムラインの再生位置（%.2f 秒）から流します\n"
+                          "それより前の SE・エフェクト・シグナルは出さず、途中のアニメはその位置から始めます\n"
+                          "開始待ちは飛ばします。一時停止を解いてから押してください",
+                          m_time);
 
     ImGui::SameLine();
     ImGui::Text("%s", hasFile ? m_script.path.c_str() : "（新しい台本）");
