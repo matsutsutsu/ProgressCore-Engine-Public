@@ -23,7 +23,7 @@ struct DroneShiverTuning
 };
 
 // 全ドローンの硬い床。ステージ床のワールドY と、そこから浮かせておく最低高度 [m]。
-//   吹き飛ばし・帰投・バネ追従の行き過ぎは targetPosition を経由しないので、
+//   帰投・バネ追従の行き過ぎは targetPosition を経由しないので、
 //   陣形側のクランプでは止まらない。起伏を作るならレイキャストへ差し替える。
 inline constexpr float kDroneGroundY         = 0.0f;
 inline constexpr float kDroneGroundClearance = 0.5f;

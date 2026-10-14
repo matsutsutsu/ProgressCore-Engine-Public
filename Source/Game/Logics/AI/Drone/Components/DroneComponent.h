@@ -30,15 +30,14 @@
 #include "Game/Logics/AI/Drone/Components/DroneFormationType.h" // 陣形の種類（BT側と共有するので別ヘッダ）
 
 // ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
-//   Stunned と Returning が FireCharge と別値であること自体が仕様。判定側は
-//   「FireCharge か」だけを見るので、「吹き飛ばし中と帰り道は当たらない」に
+//   Returning が FireCharge と別値であること自体が仕様。判定側は
+//   「FireCharge か」だけを見るので、「帰り道は当たらない」に
 //   専用コードが1行も要らない。
 enum class DroneState : uint8_t
 {
     Idle,         // 追従: ホバーの揺れを伴うバネ制御で目標へ寄る。待機・陣形維持
     MoveToTarget, // 移動: 持ち場へ直線的に素早く整列する
     FireCharge,   // 突撃: 目標へ突撃する。当たり判定とジャスト回避の対象になりうるのはこの状態だけ
-    Stunned,      // 硬直: 吹き飛ばされ、制御を失って漂う。無害で通常AIは止まる（現状セットする処理は無し）
     Returning,    // 離脱: 突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ戻る
 };
 
@@ -143,16 +142,8 @@ struct DroneComponent
 
     float stateTimer   = 0.0f; // [RT] 汎用の状態タイマー [秒]。タメ時間と離脱カーブに使い回す
     float chargeTimer  = 0.0f; // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時の保険
-    float recoverTimer = 0.0f; // [RT] 吹き飛ばし後の立て直し [秒]。localIndex でばらつかせる
 
     DirectX::SimpleMath::Vector3 chargeStartPos = DirectX::SimpleMath::Vector3::Zero; // [RT] 突撃開始地点。飛距離判定の基準
-
-    // ---- 吹き飛ばし（ノックバック）用。現状の書き手は無し（切り払い削除で未使用。将来の吹き飛ばし技用に残置） ----
-
-    // 吹き飛ばされている残り時間 [秒]。>0 の間は Stunned で、攻撃判定とジャスト回避の対象から外れる。
-    float knockbackTimer = 0.0f;
-
-    DirectX::SimpleMath::Vector3 knockbackVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 吹き飛ばし速度
 
     // ---- 移動の実体 ── 書き手=DroneMovementSystem ----
 

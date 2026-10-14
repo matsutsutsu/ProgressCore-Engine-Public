@@ -59,7 +59,7 @@ public:
 
 protected:
     // 既定は無効。PostProcessSystem は、シーンに設定のコンポーネントがあるエフェクトだけを
-    // 有効にする。既定を true にすると、設定の無いエフェクト（SSAO・ContactShadow・DoF など）も
+    // 有効にする。既定を true にすると、設定の無いエフェクト（SSAO・DoF など）も
     // 毎フレーム全部走り、GPU の時間を大きく使う
     bool m_enabled = false;
 };

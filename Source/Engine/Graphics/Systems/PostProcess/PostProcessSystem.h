@@ -22,7 +22,6 @@
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
-#include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 
 class PostProcessManager;
 
@@ -42,8 +41,7 @@ public:
                 CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<ColorGradingConfigComponent>::ID(),
-                CCL::ECS::TypeInfo<SSAOConfigComponent>::ID(),
-                CCL::ECS::TypeInfo<ContactShadowConfigComponent>::ID()};
+                CCL::ECS::TypeInfo<SSAOConfigComponent>::ID()};
     }
 
     void Update(float dt) override;

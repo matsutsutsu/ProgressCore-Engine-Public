@@ -3,9 +3,8 @@
 // 概要: ドローン個体の判断層。DroneComponent.currentState を毎フレーム決める System。
 //
 // 責務:
-//   - 硬直・突撃・離脱・接近・待機のうち、優先度順に最初に成立したものを選ぶ
+//   - 突撃・離脱・接近・待機のうち、優先度順に最初に成立したものを選ぶ
 //   - 突撃の開始を技へ伝え、個別寿命の突撃の終了判断を行う
-//   - 吹き飛ばし・立て直しのタイマーを進める
 //
 // 備考:
 //   補間や速度計算は行わない（DroneMovementSystem が担う）。
@@ -49,9 +48,6 @@ private:
      * @return まだスロットへ向かう必要があれば true。
      */
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
-
-    // 吹き飛ばし・立て直しのタイマーを進める。true なら硬直中（通常AIを行わない）。
-    bool UpdateStun(DroneComponent &drone, float dt) const;
 
     /**
      * @brief 突撃を切り上げるべきかを返す（個別寿命の攻撃のみ）。

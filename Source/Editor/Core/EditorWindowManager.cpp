@@ -24,7 +24,6 @@
 #include "Editor/Windows/Game/TextEditorWindow.h"
 #include "Editor/Windows/Game/InputEditorWindow.h"
 #include "Editor/Windows/General/ConsoleWindow.h"
-#include "Editor/Windows/AI/NavMeshWindow.h"
 #include "Editor/Windows/Animation/AnimGraphWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
 #include "Editor/Windows/Game/FormationEditorWindow.h"
@@ -74,7 +73,6 @@ void EditorWindowManager::Initialize()
 
     RegisterWindow<TextEditorWindow>();
     RegisterWindow<InputEditorWindow>();
-    RegisterWindow<NavMeshWindow>();
     RegisterWindow<MemoryAnalyzerWindow>();
     RegisterWindow<GameViewWindow>();
     RegisterWindow<RenderDebugWindow>();

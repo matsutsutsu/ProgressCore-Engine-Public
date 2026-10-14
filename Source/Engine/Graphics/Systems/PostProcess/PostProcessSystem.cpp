@@ -14,8 +14,6 @@
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
-#include "Engine/Graphics/Shader/PostProcess/ContactShadowEffect.h"
-#include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/PauseBlurEffect.h"
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中だけ背景をぼかすため
 
@@ -68,13 +66,6 @@ void PostProcessSystem::Update(float dt)
         auto *comp = m_world->GetSingletonComponent<SSAOConfigComponent>();
         ssao->SetEnabled(comp && comp->enable);
         if (comp) ssao->UpdateParams(comp->data);
-    }
-
-    if (auto *contact = postProcess->GetEffect<ContactShadowEffect>())
-    {
-        auto *comp = m_world->GetSingletonComponent<ContactShadowConfigComponent>();
-        contact->SetEnabled(comp && comp->enable);
-        if (comp) contact->UpdateParams(comp->data);
     }
 
     if (auto *distortion = postProcess->GetEffect<DistortionEffect>())

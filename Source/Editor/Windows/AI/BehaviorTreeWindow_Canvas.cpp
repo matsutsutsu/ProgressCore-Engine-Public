@@ -685,7 +685,7 @@ void BehaviorTreeWindow::HandleContextMenu()
 
             ImGui::Separator();
             // 複数ノードの複製
-            if (ImGui::MenuItem("選択ノードを複製 (Duplicate)", "Ctrl+D"))
+            if (ImGui::MenuItem("複製", "Ctrl+D"))
             {
                 DuplicateSelectedNodes();
             }

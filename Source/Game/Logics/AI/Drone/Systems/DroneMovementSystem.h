@@ -8,13 +8,13 @@
 //
 // 備考:
 //   状態はボスの指示で動く3つ（Idle / MoveToTarget / FireCharge）と、個体が自分で
-//   入る2つ（Stunned / Returning）。
+//   入る1つ（Returning）。
 //
 //   突撃中（FireCharge）の動きは、技が選んだ動き方（drone.chargeMode → IChargeMotion）に任せる。
 //   技に固有の動きをここへ書かないため（動き方を足しても、この System は変わらない）。
 //
 //   Idle と MoveToTarget の動きは、動き方クラスも使うので DroneMotionCommon に置いてある。
-//   ここに残すのは、どの技にも共通の Stunned / Returning と、積分・床・姿勢の確定。
+//   ここに残すのは、どの技にも共通の Returning と、積分・床・姿勢の確定。
 //
 //   ホバーの揺れや予告の震えなどの演出は上乗せで表現し、ステートにはしない。
 // ===========================================================================
@@ -36,12 +36,6 @@ public:
     void Update(float dt) override;
 
 private:
-    /**
-     * @brief 硬直。吹き飛ばし速度で漂いながら減衰し、制御を失った姿勢を見せる。
-     * @note タイマー管理は DroneBrainSystem 側で、ここは動きだけ。
-     */
-    void ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt);
-
     /**
      * @brief 突き抜けた後、上方へ抜けながら減速する離脱カーブ。
      *

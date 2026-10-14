@@ -288,7 +288,7 @@ namespace
         int   telegraphing = 0;
         float sumProgress  = 0.0f;
         float sumWindup    = 0.0f;
-        int   states[5]    = {}; // DroneState ごとの機数（Idle / MoveToTarget / FireCharge / Stunned / Returning）
+        int   states[4]    = {}; // DroneState ごとの機数（Idle / MoveToTarget / FireCharge / Returning）
     };
 
     DronePipelineStats CountPipelineStats(World &world)
@@ -310,7 +310,7 @@ namespace
             stats.sumWindup += d->windupTimer;
 
             const int s = static_cast<int>(d->currentState);
-            if (s >= 0 && s < 5) ++stats.states[s];
+            if (s >= 0 && s < 4) ++stats.states[s];
         }
         return stats;
     }
@@ -381,8 +381,8 @@ void DroneManagerSystem::DrawAttackPipeline()
     // 0 のまま突撃信号が立つなら、予告の Wait が短すぎて溜まる前に撃っている。
     ImGui::Text("予告で震えている機 %d      溜め 平均 %.2f 秒",
                 st.telegraphing, st.sumWindup / st.total);
-    ImGui::Text("状態  Idle %d   Move %d   Fire %d   Stun %d   Return %d",
-                st.states[0], st.states[1], st.states[2], st.states[3], st.states[4]);
+    ImGui::Text("状態  Idle %d   Move %d   Fire %d   Return %d",
+                st.states[0], st.states[1], st.states[2], st.states[3]);
 }
 
 void DroneManagerSystem::DrawSpawnButtons()
@@ -487,7 +487,6 @@ void DroneManagerSystem::DrawIndividualTest()
     // 確かめる挙動:
     //   - 弾幕（Barrage）: 出撃は一斉だが、飛び切った機から順に離脱して隊列へ戻る
     //   - 小隊突撃: 5機編隊がボスの周りへ集まって降りてくる → 先頭がプレイヤーを追い続ける（合図を落とすまで）
-    //   - 硬直: 切り払いを当てて確認する（Stunned → 機体ごとの時間差で復帰）。ボタンは無い
     ImGui::Spacing();
     ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.8f, 1.0f), "個別行動テスト");
 

@@ -26,14 +26,6 @@
                     "tintG": 1.0,
                     "tintR": 1.0
                 },
-                "ContactShadow": {
-                    "bias": 0.019999999552965164,
-                    "enable": true,
-                    "intensity": 0.699999988079071,
-                    "maxDistance": 30.0,
-                    "rayLength": 0.30000001192092896,
-                    "thickness": 0.10000000149011612
-                },
                 "DepthOfField": {
                     "enable": false,
                     "falloff": 8.0,

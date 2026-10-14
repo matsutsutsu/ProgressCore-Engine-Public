@@ -192,24 +192,6 @@
     <Filter Include="Source\Engine\Platform\Input\API">
       <UniqueIdentifier>{4b4af58f-7e4b-4bac-82db-825a9ccb9b8f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="External\RecastNavigation">
-      <UniqueIdentifier>{e47eca0d-388f-4201-87ec-8474e3cae9db}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\RecastNavigation\Recast">
-      <UniqueIdentifier>{d4958802-fe9f-4403-805a-badd7098007f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\RecastNavigation\Detour">
-      <UniqueIdentifier>{f64b255c-e4d3-4da8-8010-7b973e00d587}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\RecastNavigation\DetourTileCashe">
-      <UniqueIdentifier>{50af5c61-b7e5-478f-b53e-b3f4489db692}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\RecastNavigation\DetourCrowd">
-      <UniqueIdentifier>{a7b0814d-c330-472c-afc9-656482930ba7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\RecastNavigation\DebugUtils">
-      <UniqueIdentifier>{9660ad6a-8b49-44c6-aeb5-836fe3459bf8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Game\Logics\AI">
       <UniqueIdentifier>{f451e48b-7ce2-454b-924e-a4f13673ac42}</UniqueIdentifier>
     </Filter>
@@ -248,21 +230,6 @@
     </Filter>
     <Filter Include="Source\Engine\ECS\Core">
       <UniqueIdentifier>{464f43f8-87c4-4139-b326-4dc51d677e5e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\AI">
-      <UniqueIdentifier>{8a680626-3b39-405e-8dc6-2617f4bc5a83}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\AI\Navigation">
-      <UniqueIdentifier>{d480cb82-c8cd-4a84-a8c1-8a53cbaf9238}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\AI\Navigation\Core">
-      <UniqueIdentifier>{6b0f6241-308c-464d-82e6-d56500686889}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\AI\Navigation\Components">
-      <UniqueIdentifier>{6319174b-6ddd-4dc9-916f-7761680e4b2c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Engine\AI\Navigation\Systems">
-      <UniqueIdentifier>{de7683e6-ffdd-42bb-8f39-08895e335825}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Animation">
       <UniqueIdentifier>{9fc43256-d1fa-4981-8caf-6ace4b41944c}</UniqueIdentifier>
@@ -969,81 +936,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h">
       <Filter>Source\Engine\Graphics\Shader\Pass</Filter>
     </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAlloc.h">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAssert.h">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DebugDraw.h">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DetourDebugDraw.h">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDebugDraw.h">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDump.h">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourCrowd.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourLocalBoundary.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourObstacleAvoidance.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathCorridor.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathQueue.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourProximityGrid.h">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCache.h">
-      <Filter>External\RecastNavigation\DetourTileCashe</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCacheBuilder.h">
-      <Filter>External\RecastNavigation\DetourTileCashe</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAlloc.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAssert.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourCommon.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourMath.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMesh.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshBuilder.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshQuery.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNode.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourStatus.h">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
-      <Filter>Source\Editor\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <Filter>Source\Editor\Core</Filter>
     </ClInclude>
@@ -1103,9 +995,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AI\NavMeshWindow.h">
-      <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
@@ -1181,21 +1070,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\ECS\System\CCL_TaskScheduler.h">
       <Filter>Source\Engine\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Core\NavigationData.h">
-      <Filter>Source\Engine\AI\Navigation\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Components\NavAgentComponent.h">
-      <Filter>Source\Engine\AI\Navigation\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.h">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.h">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h">
       <Filter>Source\Engine\Animation\Core</Filter>
@@ -1746,9 +1620,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponent.h">
-      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
@@ -1771,9 +1642,6 @@
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.h">
-      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h">
@@ -2330,99 +2198,6 @@
     <ClCompile Include="Source\Engine\Graphics\Renderer\ParticleRenderer.cpp">
       <Filter>Source\Engine\Graphics\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAlloc.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastArea.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAssert.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastContour.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastFilter.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastLayers.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMesh.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMeshDetail.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRasterization.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRegion.cpp">
-      <Filter>External\RecastNavigation\Recast</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DebugDraw.cpp">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DetourDebugDraw.cpp">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDebugDraw.cpp">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDump.cpp">
-      <Filter>External\RecastNavigation\DebugUtils</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourCrowd.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourLocalBoundary.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathCorridor.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathQueue.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourProximityGrid.cpp">
-      <Filter>External\RecastNavigation\DetourCrowd</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCache.cpp">
-      <Filter>External\RecastNavigation\DetourTileCashe</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp">
-      <Filter>External\RecastNavigation\DetourTileCashe</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAlloc.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAssert.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourCommon.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMesh.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshBuilder.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshQuery.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNode.cpp">
-      <Filter>External\RecastNavigation\Detour</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
-      <Filter>Source\Editor\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="External\imgui-node-editor\crude_json.cpp">
       <Filter>External\imgui-node-editor</Filter>
     </ClCompile>
@@ -2458,9 +2233,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AI\NavMeshWindow.cpp">
-      <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
@@ -2524,18 +2296,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\ECS\System\CCL_SystemManager.cpp">
       <Filter>Source\Engine\ECS\System</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Components\NavAgentComponentMeta.cpp">
-      <Filter>Source\Engine\AI\Navigation\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.cpp">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp">
-      <Filter>Source\Engine\AI\Navigation\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp">
       <Filter>Source\Engine\Animation\Core</Filter>
@@ -2897,9 +2657,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.cpp">
-      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
@@ -2916,9 +2673,6 @@
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponentMeta.cpp">
-      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp">
@@ -3394,9 +3148,6 @@
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\SSAOCompositePS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorPS.hlsl">

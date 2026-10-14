@@ -113,7 +113,7 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
         ed::NavigateToSelection(false, 0.3f);
     }
     if (otherGraph && ImGui::IsItemHovered())
-        ImGui::SetTooltip("別の階層にあります。押すとその階層へ移ります。");
+        ImGui::SetTooltip("別の階層にある。クリックで移動");
 
     // ----------------------------------------------------------------
     // 部品2：種類の色の四角（キャンバスの見出しと同じ色）

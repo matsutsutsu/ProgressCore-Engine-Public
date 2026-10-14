@@ -191,7 +191,7 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
 void BehaviorTreeWindow::DrawToolbar()
 {
-    if (ImGui::Button("保存 ( Save )"))
+    if (ImGui::Button("保存"))
     {
         // 開いているファイル名を初期値にする。潜ったサブツリーを直して保存するとき、
         //   毎回ファイル名を打ち直さずに済む。
@@ -204,7 +204,7 @@ void BehaviorTreeWindow::DrawToolbar()
         }
     }
     ImGui::SameLine();
-    if (ImGui::Button("開く (Open...)"))
+    if (ImGui::Button("開く"))
     {
         auto picked = FileDialog::OpenPreset("BehaviorTreeNode", "Open Behavior Tree");
         if (picked)
@@ -234,8 +234,7 @@ void BehaviorTreeWindow::DrawToolbar()
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("木の構造を字下げ付きの文章にして書き出します。\n"
-                          "ノードの意味の説明も先頭に付くので、そのまま AI に渡して組み方を相談できます。");
+        ImGui::SetTooltip("木の構造をインデント付きのテキストで書き出す（先頭に凡例付き）");
     }
 
     // 未保存の表示。ウィンドウ名に "*" を足す手もあるが、ImGui はウィンドウ名を
@@ -244,14 +243,14 @@ void BehaviorTreeWindow::DrawToolbar()
     if (m_dirty)
     {
         ImGui::SameLine();
-        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "● 未保存");
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "未保存");
     }
 
     // 未保存のまま「開く」を押したときの確認。
     if (!m_pendingOpenPath.empty()) ImGui::OpenPopup("BTOpenConfirm");
     if (ImGui::BeginPopupModal("BTOpenConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::Text("保存していない変更があります。");
+        ImGui::Text("未保存の変更がある");
         ImGui::TextDisabled("%s", m_pendingOpenPath.c_str());
         ImGui::Separator();
         if (ImGui::Button("破棄して開く", ImVec2(140, 0)))
@@ -272,13 +271,12 @@ void BehaviorTreeWindow::DrawToolbar()
 
     ImGui::Separator();
 
-    if (ImGui::Button("整列 (Auto Layout)"))
+    if (ImGui::Button("整列"))
         m_layoutRequested = true; // 実行はキャンバス描画の頭まで持ち越す
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("木の形に合わせて全ノードを並べ直します。\n"
-                          "子の左右の並び順は保たれるので、実行順は変わりません。\n"
-                          "コメント枠も、囲んでいたノードに合わせて追従します。");
+        ImGui::SetTooltip("全ノードを木の形に並べ直す。\n"
+                          "子の左右の順（実行順）は変えない。コメント枠も追従する。");
     }
 
     ImGui::SameLine();
@@ -286,16 +284,16 @@ void BehaviorTreeWindow::DrawToolbar()
         GroupSelectedNodes();
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("選択中のノードをちょうど囲むコメント枠を作ります。");
+        ImGui::SetTooltip("選択中のノードを囲むコメント枠を作る");
     }
 
     ImGui::SameLine();
     ImGui::Spacing();
     ImGui::SameLine();
-    ImGui::Checkbox("自動追従 (Auto Follow)", &m_autoFollow);
+    ImGui::Checkbox("自動追従", &m_autoFollow);
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("チェックを入れると、ゲーム実行中に現在アクティブなノードへカメラが自動で移動します。");
+        ImGui::SetTooltip("実行中のノードへ表示を自動で寄せる");
     }
 
     DrawBreadcrumb();
@@ -647,7 +645,7 @@ void BehaviorTreeWindow::CollapseSelectionToSubTree()
     if (topCount != 1)
     {
         CCL_LOG_WARN(LogCategory::Editor,
-                     "[BT] サブツリーにまとめるには、根が1つの枝を選んでください（今の選択の根は %d 個）", topCount);
+                     "[BT] サブツリーにできるのは根が1つの選択だけ（今は %d 個）", topCount);
         return;
     }
 
@@ -691,7 +689,7 @@ void BehaviorTreeWindow::CollapseSelectionToSubTree()
 
     ed::ClearSelection();
     RecordStateForUndo("Collapse To SubTree");
-    CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードをサブツリー「%s」にまとめました", members.size(), name.c_str());
+    CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードをサブツリー「%s」にまとめた", members.size(), name.c_str());
 }
 
 EditorBTNode *BehaviorTreeWindow::FindNode(uint32_t nodeId)

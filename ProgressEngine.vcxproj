@@ -290,30 +290,6 @@
     <ClInclude Include="External\implot-master\implot_internal.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DetourDebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDump.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourCrowd.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourLocalBoundary.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourObstacleAvoidance.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathCorridor.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathQueue.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourProximityGrid.h" />
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCache.h" />
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCacheBuilder.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAlloc.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAssert.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourCommon.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourMath.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMesh.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshBuilder.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshQuery.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNode.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourStatus.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAlloc.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAssert.h" />
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -331,9 +307,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h" />
-    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -389,17 +362,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\AI\NavMeshWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Components\NavAgentComponent.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Core\NavigationData.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
@@ -505,7 +470,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
@@ -578,7 +542,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
@@ -887,36 +850,6 @@
     <ClCompile Include="External\implot-master\implot_items.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDump.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourCrowd.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourLocalBoundary.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathCorridor.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathQueue.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourProximityGrid.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCache.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAlloc.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAssert.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourCommon.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMesh.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshQuery.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNode.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAlloc.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastArea.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAssert.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastContour.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastFilter.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastLayers.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMesh.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMeshDetail.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRasterization.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRegion.cpp" />
     <ClCompile Include="External\Tracy\TracyClient.cpp" />
     <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -926,9 +859,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -1017,16 +947,9 @@
     <ClCompile Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AI\NavMeshWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Components\NavAgentComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
@@ -1077,7 +1000,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
@@ -1144,7 +1066,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
@@ -1626,11 +1547,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ColorGradingPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

@@ -247,7 +247,7 @@ void TutorialSystem::SampleDroneMotion()
     m_world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) {
         // ジャスト回避の対象になる状態だけを見る（JustEvadeSystem::IsDroneHostile と同じ条件）
         const auto *drone = m_world->GetComponent<DroneComponent>(id);
-        if (drone->currentState != DroneState::FireCharge || drone->knockbackTimer > 0.0f) return;
+        if (drone->currentState != DroneState::FireCharge) return;
 
         const Vector3 pos(m_world->GetComponent<TransformComponent>(id)->GetWorldPosition());
         DroneMotion   motion;

@@ -14,7 +14,6 @@
 #include "ColorGradingEffect.h"
 #include "PauseBlurEffect.h"
 #include "SSAOEffect.h"
-#include "ContactShadowEffect.h"
 
 // ---------------------------------------------------------------------------
 // 初期化とリサイズ
@@ -34,7 +33,6 @@ void PostProcessManager::Initialize(ID3D11Device *device, UINT width, UINT heigh
 
     // かける順
     AddEffect<SSAOEffect>();
-    AddEffect<ContactShadowEffect>();
     AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<DepthOfFieldEffect>();

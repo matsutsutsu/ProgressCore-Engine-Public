@@ -21,20 +21,15 @@ namespace
      * - それ以外の「当たらない区間」は、突撃中の動き方（IChargeMotion::IsDangerous）に聞く。
      *   陣形追従（縦割り・小隊など）は突入中ずっと危険、直進（弾幕）はタメが終わってからだけ危険
      *
-     * 硬直（Stunned）と離脱（Returning）は FireCharge ではないので、状態の1行でまとめて除外される。
+     * 離脱（Returning）は FireCharge ではないので、状態の1行で除外される。
      * 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
-     *
-     * 吹き飛ばし中かは knockbackTimer を直接見る。
-     * 切り払い（L02_PostUpdate）は判断層（L02_PreUpdate）より後に書くので、切り払われたフレームはまだ状態が FireCharge のまま。
-     * ここで見れば同じフレームで判定が閉じる。
      *
      * @param d 判定する機体。
      * @return 当たり判定を開くべきなら true。
      */
     bool IsDangerous(const DroneComponent &d)
     {
-        if (d.knockbackTimer > 0.0f) return false;                  // 切り払いで吹き飛ばし中は無害
-        if (d.currentState != DroneState::FireCharge) return false; // Stunned / Returning もここで落ちる
+        if (d.currentState != DroneState::FireCharge) return false; // Returning もここで落ちる
         if (d.fireDelay > 0.0f) return false;                       // 発射待ち中
 
         // 動き方に固有の「当たらない区間」（直進のタメなど）は、動き方が知っている。
@@ -84,13 +79,13 @@ void DroneHitSystem::Update(float /*dt*/)
 
     int droneCount    = 0;
     int activeCount   = 0;
-    int stateCount[5] = {0, 0, 0, 0, 0};
+    int stateCount[4] = {0, 0, 0, 0};
 
     ForEach([&](const DroneComponent &drone, HitboxComponent &box) {
         ++droneCount;
         {
             const int s = static_cast<int>(drone.currentState);
-            if (s >= 0 && s < 5) ++stateCount[s];
+            if (s >= 0 && s < 4) ++stateCount[s];
         }
 
         const bool dangerous = IsDangerous(drone);
@@ -127,7 +122,7 @@ void DroneHitSystem::Update(float /*dt*/)
 
     m_droneCount  = droneCount;
     m_activeCount = activeCount;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 4; ++i)
         m_stateCount[i] = stateCount[i];
 }
 
@@ -138,9 +133,8 @@ void DroneHitSystem::OnGui()
                                          : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
                        "判定が開いている機 %d", m_activeCount);
 
-    ImGui::Text("状態  Idle %d  Move %d  Fire %d  Stun %d  Return %d",
-                m_stateCount[0], m_stateCount[1], m_stateCount[2],
-                m_stateCount[3], m_stateCount[4]);
+    ImGui::Text("状態  Idle %d  Move %d  Fire %d  Return %d",
+                m_stateCount[0], m_stateCount[1], m_stateCount[2], m_stateCount[3]);
 
     ImGui::Separator();
     ImGui::TextWrapped(

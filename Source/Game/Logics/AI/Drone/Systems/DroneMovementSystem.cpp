@@ -17,14 +17,6 @@ namespace
     // 調整値（この System に残る状態）
     // ============================================================
 
-    // 硬直（Stunned）。
-    struct StunTuning
-    {
-        float tumbleRate;     // 吹き飛ばし中の回転 [rad/s]
-        float knockbackDecay; // 吹き飛ばし速度の減衰率 [1/s]
-    };
-    constexpr StunTuning kStun{.tumbleRate = 4.0f, .knockbackDecay = 6.0f};
-
     // 離脱（Returning）。
     struct BreakawayTuning
     {
@@ -90,9 +82,6 @@ void DroneMovementSystem::Update(float rawDt)
             // 突撃中の動きは、技が選んだ動き方に任せる。
             GetChargeMotion(drone.chargeMode).Move(trans, drone, dt, m_motion);
             break;
-        case DroneState::Stunned:
-            ProcessStunned(trans, drone, dt);
-            break;
         case DroneState::Returning:
             ProcessReturning(trans, drone, dt);
             break;
@@ -105,7 +94,7 @@ void DroneMovementSystem::Update(float rawDt)
         // --- 床 ---
 
         // 地面へ潜らない保証はここ1か所だけが持つ。
-        // 技ごとに目標を丸めても、吹き飛ばしは持ち場を経由せず速度で動き、
+        // 技ごとに目標を丸めても、離脱は持ち場を経由せず速度で動き、
         // 剛体追従は trans.position へ直接書くので、陣形側のクランプでは止まらない。
 
         // 小隊の kSquadFloorY は「地上2mを飛ぶ」という飛び方の規則で、この床とは別物。
@@ -133,20 +122,6 @@ void DroneMovementSystem::Update(float rawDt)
 // ---------------------------------------------------------------------------
 // 状態ごとの移動（どの技にも共通のもの）
 // ---------------------------------------------------------------------------
-
-void DroneMovementSystem::ProcessStunned(TransformComponent &trans, DroneComponent &drone, float dt)
-{
-    drone.currentVelocity = drone.knockbackVelocity;
-
-    float decay = 1.0f - kStun.knockbackDecay * dt;
-    if (decay < 0.0f) decay = 0.0f;
-    drone.knockbackVelocity = drone.knockbackVelocity * decay;
-
-    // 目標方向へ向き直そうとしない（Slerp を掛けない）のが要点。「命令を実行している
-    // 機体」との違いがここで出る。
-    Quaternion tumble = Quaternion::CreateFromAxisAngle(Vector3::UnitY, kStun.tumbleRate * dt);
-    trans.rotation    = Quaternion::Concatenate(trans.rotation, tumble);
-}
 
 void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt)
 {

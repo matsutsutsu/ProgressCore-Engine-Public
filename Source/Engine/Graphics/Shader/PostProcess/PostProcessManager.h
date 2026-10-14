@@ -47,7 +47,7 @@ public:
     /**
      * @brief 有効なエフェクトを順にかけ、トーンマップして書き出す。
      * @param targetRTV nullptr なら中で持つ SDR のバッファに書く（エディタの GameView に表示する用）
-     * @param sceneDepthSRV t4 にバインドする深度（SSAO・ContactShadow・DoF が読む）
+     * @param sceneDepthSRV t4 にバインドする深度（SSAO・DoF が読む）
      * @param sceneNormalSRV t6 にバインドする法線（SSAO が読む）
      * @return SDR のバッファの SRV
      */

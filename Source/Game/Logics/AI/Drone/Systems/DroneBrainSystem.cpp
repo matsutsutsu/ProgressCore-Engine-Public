@@ -16,11 +16,6 @@ namespace
     // 調整値（判断の優先度の順）
     // ============================================================
 
-    // --- 硬直 ---
-
-    constexpr float kRecoverBase    = 0.30f; // 吹き飛ばし後に通常AIへ戻るまで [秒]
-    constexpr float kRecoverStagger = 0.08f; // 立て直しの機体差。一斉だと群れが機械的に見える
-
     // --- 突撃 ---
 
     // 突撃の始め方（タメ・撃つ方向）と切り上げ方は技ごとに違うので、ここには持たない
@@ -39,7 +34,7 @@ void DroneBrainSystem::Update(float /*dt*/)
 {
     // 処理フロー:
     // 1. プレイヤーの位置を読む
-    // 2. 機体ごとに、優先度の高い順に状態を決める（硬直 → 突撃 → 離脱 → 接近 → 待機）
+    // 2. 機体ごとに、優先度の高い順に状態を決める（突撃 → 離脱 → 接近 → 待機）
 
     // --- プレイヤーの位置 ---
 
@@ -69,15 +64,6 @@ void DroneBrainSystem::Update(float /*dt*/)
     ForEachParallel([&](const TransformComponent &trans, DroneComponent &drone,
                         const TimeStateComponent &time) {
         const float dt = time.localDt;
-
-        // --- 硬直 ---
-
-        // 最初にドローンが硬直かどうかを判断する
-        if (UpdateStun(drone, dt))
-        {
-            drone.currentState = DroneState::Stunned;
-            return;
-        }
 
         // --- 突撃 ---
 
@@ -145,39 +131,6 @@ void DroneBrainSystem::Update(float /*dt*/)
         // 到着済み。Idle の「ゆらぎを伴う追従」がそのまま陣形を保つ挙動になる。
         drone.currentState = DroneState::Idle;
     });
-}
-
-bool DroneBrainSystem::UpdateStun(DroneComponent &drone, float dt) const
-{
-    // 吹き飛ばし中。
-    if (drone.knockbackTimer > 0.0f)
-    {
-        drone.knockbackTimer -= dt;
-        if (drone.knockbackTimer > 0.0f) return true;
-
-        // 収まった瞬間に「立て直し」へ引き継ぐ。
-        drone.knockbackTimer = 0.0f;
-        drone.recoverTimer   = kRecoverBase + (drone.localIndex % 5) * kRecoverStagger;
-
-        // 押しのけられた時点で突撃は成立しない。
-        drone.attackPhase   = DroneAttackPhase::None;
-        drone.fireDirection = Vector3::Zero;
-
-        // Idle のゆるいバネではなく MoveToTarget で機敏に戻す。
-        // 「自分で判断して持ち場に帰った」ように見せるための1行。
-        drone.hasReachedSlot = false;
-        return true;
-    }
-
-    // 立て直し中（その場で姿勢を戻すだけ）。
-    if (drone.recoverTimer > 0.0f)
-    {
-        drone.recoverTimer -= dt;
-        if (drone.recoverTimer < 0.0f) drone.recoverTimer = 0.0f;
-        return true;
-    }
-
-    return false;
 }
 
 bool DroneBrainSystem::HasFinishedCharge(const TransformComponent &trans,

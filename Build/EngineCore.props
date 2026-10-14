@@ -100,11 +100,6 @@
 				$(SolutionDir)External\nlohmann;
 				$(SolutionDir)External\DirectXTK-main\Inc;
 				$(SolutionDir)External\JoltPhysics\include;
-				$(SolutionDir)External\RecastNavigation\Recast\Include;
-				$(SolutionDir)External\RecastNavigation\Detour\Include;
-				$(SolutionDir)External\RecastNavigation\DetourTileCache\Include;
-				$(SolutionDir)External\RecastNavigation\DetourCrowd\Include;
-				$(SolutionDir)External\RecastNavigation\DebugUtils\Include;
 				$(SolutionDir)External\stb;
 
 				<!-- Tracy のヘッダは全構成で #include される（コード側は無条件 include）。

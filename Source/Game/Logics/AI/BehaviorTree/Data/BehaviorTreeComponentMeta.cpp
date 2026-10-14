@@ -20,7 +20,7 @@
 
 // DroneState と1対1で並べる（順番がずれると別の状態名が表示される）。
 static const char *DroneStateNames[] = {
-    "Idle", "MoveToTarget", "FireCharge", "Stunned", "Returning"};
+    "Idle", "MoveToTarget", "FireCharge", "Returning"};
 
 // ============================================================
 // BehaviorTreeComponent

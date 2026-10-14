@@ -440,7 +440,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
 
     if (rootChildren.size() > 1)
     {
-        CCL_LOG_ERROR(LogCategory::Editor, "【BTエラー】ROOTノードには複数の線はつなげません！必ず1つの「Selector」等につないでから分岐させてください。");
+        CCL_LOG_ERROR(LogCategory::Editor, "[BT] ROOT から出せる線は1本だけ。Selector などを1つ挟んで分岐させる");
     }
 
     auto runtimeTypeOf = [](EditorBTNodeType type) {
@@ -484,13 +484,13 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
             const std::vector<uint32_t> kids  = entry ? childrenOf(entry->id) : std::vector<uint32_t>{};
             if (kids.empty())
             {
-                CCL_LOG_WARN(LogCategory::Editor, "[BT] サブツリー「%s」の入口に何も繋がっていません（常に失敗として扱います）",
+                CCL_LOG_WARN(LogCategory::Editor, "[BT] サブツリー「%s」の入口が未接続（常に失敗扱い）",
                              n->name.c_str());
                 return nullptr;
             }
             if (kids.size() > 1)
             {
-                CCL_LOG_ERROR(LogCategory::Editor, "[BT] サブツリー「%s」の入口に複数の線が繋がっています。1本目だけを使います",
+                CCL_LOG_ERROR(LogCategory::Editor, "[BT] サブツリー「%s」の入口に線が複数ある。1本目だけ使う",
                               n->name.c_str());
             }
             n = FindNode(kids[0]);
