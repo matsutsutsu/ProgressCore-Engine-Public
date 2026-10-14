@@ -6,6 +6,7 @@
 //   - 再生中／停止中の VirtualCamera の優先度を持つ
 //   - 再生中の台本と、再生の状態・再生位置・スキップの長押しの状態を持つ
 //   - トラック（SE・エフェクト・シグナル・アニメ）をどこまで出したかを持つ
+//   - エディタが見せたい台本と時刻（プレビュー）を持つ
 //
 // 備考:
 //   同じ Entity に VirtualCamera を付ける。ムービーが何本あってもこの1台で映し、
@@ -68,4 +69,10 @@ struct CinematicCameraComponent
     std::size_t                     nextSignal     = 0; // 次に出すシグナルの番号（script.signals の添字）
     std::vector<CCL::ECS::EntityID> animHeld;           // アニメごとに握っている Entity（script.animations の添字）。握っていなければ Invalid
     std::vector<std::uint8_t>       animEntered;        // アニメごとに、区間に入る処理を済ませたか（script.animations の添字）
+
+    // エディタのプレビュー。Cinematic Editor だけが書く。
+    // 再生の状態（state・time・script）とは別に持つ。トラックは state を見て出すので、プレビューでは何も出ない。
+    bool            previewActive = false; // エディタが、ある時刻の絵を見せているか（開始待ち・再生中は無視する）
+    CinematicScript previewScript;         // 見せる台本（エディタが編集中の写し）
+    float           previewTime   = 0.0f;  // 見せる時刻（秒）
 };

@@ -100,31 +100,16 @@ namespace CCL::ECS
         // Logic グループを実行する（FixedUpdate から呼ばれる）
         void UpdateLogic(float dt)
         {
-            // 依存グラフの再構築は起動時と System 追加時だけ走る。
-            // Render 側も System 追加で古くなるので、ここでまとめて作り直す。
-            if (m_isGraphDirty)
-            {
-                m_logicScheduler.BuildGraph(m_logicSystems);
-                m_renderScheduler.BuildGraph(m_renderSystems);
-                m_isGraphDirty = false;
-
-                // 「同一ステージで型は競合するのに前後が宣言されていない」組を報告する。
-                // 直列化はされるので同時実行事故は起きないが、どちらが先かは
-                // ソートの並び順まかせ＝潜在的な順序バグ。ここに出たペアに実依存が
-                // あるなら GetRunAfter を書くか、ステージを分けること。
-                if (logSchedulerAmbiguities)
-                {
-                    m_logicScheduler.LogAmbiguities("Logic");
-                    m_renderScheduler.LogAmbiguities("Render");
-                }
-            }
-
+            BuildGraphsIfDirty();
             m_logicScheduler.Execute(dt, m_jobSystem);
         }
 
         // Render グループを実行する（Render から呼ばれる）
         void UpdateRender(float dt)
         {
+            // シーンを切り替えたフレームは、ロジックの更新より先にここへ来る。
+            // ここで作らないと、そのフレームは描画の System が1つも走らない。
+            BuildGraphsIfDirty();
             m_renderScheduler.Execute(dt, m_jobSystem);
         }
 
@@ -228,13 +213,34 @@ namespace CCL::ECS
                 m_renderSystems.push_back(std::move(sys));
             }
 
-            // System が増えたので、次の UpdateLogic で依存グラフを作り直させる
+            // System が増えたので、次の更新で依存グラフを作り直させる
             m_isGraphDirty = true;
 
             // 並び替えは登録したグループのリストだけでよい
             SortSystems(group);
 
             return ptr;
+        }
+
+        // 依存グラフを、System の追加で古くなっていれば作り直す（起動時と System 追加時だけ走る）
+        void BuildGraphsIfDirty()
+        {
+            if (!m_isGraphDirty) return;
+
+            // Logic と Render は同じ System の追加で古くなるので、まとめて作り直す。
+            m_logicScheduler.BuildGraph(m_logicSystems);
+            m_renderScheduler.BuildGraph(m_renderSystems);
+            m_isGraphDirty = false;
+
+            // 「同一ステージで型は競合するのに前後が宣言されていない」組を報告する。
+            // 直列化はされるので同時実行事故は起きないが、どちらが先かは
+            // ソートの並び順まかせ＝潜在的な順序バグ。ここに出たペアに実依存が
+            // あるなら GetRunAfter を書くか、ステージを分けること。
+            if (logSchedulerAmbiguities)
+            {
+                m_logicScheduler.LogAmbiguities("Logic");
+                m_renderScheduler.LogAmbiguities("Render");
+            }
         }
 
         // 優先度（昇順）で System を並び替える
@@ -274,7 +280,7 @@ namespace CCL::ECS
 
         TaskScheduler m_logicScheduler;
         TaskScheduler m_renderScheduler;
-        bool          m_isGraphDirty = true; // true なら次の UpdateLogic で依存グラフを作り直す
+        bool          m_isGraphDirty = true; // true なら次の更新（Logic / Render の先に来た方）で依存グラフを作り直す
 
         // 前回 ResolveTargetChunks で配った Chunk のポインタ列。変化が無ければ再分配を省く
         std::vector<void *> m_cachedChunkPointers;

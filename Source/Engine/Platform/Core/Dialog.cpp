@@ -217,6 +217,11 @@ void FileDialog::Initialize(const std::filesystem::path &settingsPath)
                                            .defaultDir = "Assets/BehaviorTree",
                                            .defaultExt = "json",
                                        });
+    RegisterPreset("Cinematic", {
+                                    .filters    = {{"JSON Files", "*.json"}, {"All Files", "*.*"}},
+                                    .defaultDir = "Assets/Cinematics",
+                                    .defaultExt = "json",
+                                });
 
     LoadHistory(settingsPath);
 }

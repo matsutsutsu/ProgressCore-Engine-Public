@@ -9,6 +9,8 @@
 //   - 開始待ち・再生中は姿勢と画角を書き、優先度を上げてカメラを掌握する。それ以外は優先度を下げて譲る
 //   - ショットの基準にする対象を名前で探し、その位置と向きからカメラの位置を決める
 //   - ムービーの開始待ち・再生中の間、GameFlowState::cinematic を立てる
+//   - 再生していない間、エディタが指した台本と時刻の絵を見せる（プレビュー）
+//   - エディタが台本を保存したら、台本を読み直す
 //
 // 備考:
 //   どのカメラを映すかを決め、切り替えをブレンドするのは CameraBrainSystem（R01b）。
@@ -85,15 +87,24 @@ private:
     bool ResolveSubjectPosition(const CinematicCameraComponent &cine, const CameraShot &shot,
                                 DirectX::SimpleMath::Vector3 &outPos) const;
 
+    /**
+     * @brief エディタが指した台本と時刻の絵を、カメラへ書く（プレビュー）。
+     * @param vcam 書き込む先のカメラ。
+     * @param cine 見せる台本と時刻（previewScript / previewTime）を持つ再生状態。再生の状態は書き換えない。
+     * @return 書けたら true。ショットが無い・基準が見つからないときは false で、カメラは書き換えない。
+     */
+    bool WritePreviewPose(VirtualCamera &vcam, const CinematicCameraComponent &cine) const;
+
     // 台本フォルダの JSON をすべて読み直す。読めなかった台本はログを出して外す
     void LoadAllScripts();
 
     std::map<std::string, CinematicScript> m_scripts; // 読み込んだ台本（キーはパス）
 
     // 届いた再生要求。購読で入れ、Update で取り出して空にする
-    std::mutex  m_requestMutex;       // m_pendingPath と m_hasRequest を守る
-    std::string m_pendingPath;        // 流す台本のパス
-    bool        m_hasRequest = false; // 取り出していない再生要求があるか
+    std::mutex  m_requestMutex;           // m_pendingPath・m_hasRequest・m_reloadRequested を守る
+    std::string m_pendingPath;            // 流す台本のパス
+    bool        m_hasRequest      = false; // 取り出していない再生要求があるか
+    bool        m_reloadRequested = false; // 台本のファイルが書き換わったので、読み直すか
 
     std::string m_guiScriptPath; // デバッグ UI で選んでいる台本のパス
 };

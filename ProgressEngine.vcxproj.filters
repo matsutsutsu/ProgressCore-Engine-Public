@@ -228,6 +228,9 @@
     <Filter Include="Source\Editor\Windows\AI">
       <UniqueIdentifier>{1ff0cdf0-5abd-45cf-ae35-e46ba9c7b987}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Windows\Cinematic">
+      <UniqueIdentifier>{7c3e9a41-2b6d-4f58-9e1a-5d8c0f4b7a29}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\BehaviorTree\Data">
       <UniqueIdentifier>{562c3a01-244e-46ab-b064-571c92727868}</UniqueIdentifier>
     </Filter>
@@ -2085,6 +2088,12 @@
     <ClInclude Include="Source\Editor\Windows\Game\FormationLayerSequence.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.cpp">
@@ -3139,6 +3148,12 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\FormationLayerSequence.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -51,7 +51,7 @@ struct CinematicSignal
 struct CinematicAnimation
 {
     float       start    = 0.0f; // 握り始める時刻（秒、ムービーの先頭から）
-    float       duration = 0.0f; // 握る長さ（秒）。読み込みで 0 ならクリップ1回分（長さ ÷ 速さ）
+    float       duration = 0.0f; // 握る長さ（秒）。0 ならクリップ1回分（長さ ÷ 速さ）
     std::string subject;         // 再生させる Entity の名前
     std::string sequence;        // アニメのファイルのパス
     bool        loop     = false; // ループ再生するか
@@ -59,7 +59,12 @@ struct CinematicAnimation
     float       blendIn  = 0.2f;  // 握るときのクロスフェード時間（秒）
     float       blendOut = 0.3f;  // 離して元のステートへ戻すときのクロスフェード時間（秒）
 
-    const AnimSequence *resolved = nullptr; // 読み込んだアニメ（所有しない）
+    const AnimSequence *resolved     = nullptr; // 読み込んだアニメ（所有しない）
+    float               clipDuration = 0.0f;    // 読み込んだアニメの長さ（秒、速さを掛ける前）
 
-    float End() const { return start + duration; }
+    // 実際に握る長さ（秒）。duration を 0 のまま持つのは、保存したときに「クリップ1回分」の意味を残すため。
+    // 読み込みで数字に置き換えると、後でクリップの長さが変わっても追従しなくなる。
+    float Length() const { return (duration > 0.0f) ? duration : clipDuration / speed; }
+
+    float End() const { return start + Length(); }
 };

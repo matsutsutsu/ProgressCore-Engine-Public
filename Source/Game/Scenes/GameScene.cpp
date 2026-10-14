@@ -1,6 +1,5 @@
 #include "GameScene.h"
 #include "Engine/Scene/SceneFactory.h"
-#include "Engine/Scene/SceneManager.h"          // 暗転が明けたかを見る
 #include "Engine/Cinematic/CinematicEvents.h"   // 導入ムービーの再生要求
 
 #include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
@@ -35,8 +34,8 @@ void GameScene::Initialize()
             CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-    // ムービー用カメラはレベルに入れずここで足す。レベルは EditorScene も読むので、
-    // レベルに入れるとデバッグで起動するたびにムービーの仕組みまで動くことになる
+    // ムービー用カメラはレベルに入れずここで足す（EditorScene も同じく自分で足す）。
+    // ムービーを使うかどうかを、レベルのデータではなくシーンのコードで決めるため
     {
         ZoneScopedN("GameScene: SpawnPrefab CinematicCamera");
 
@@ -48,6 +47,13 @@ void GameScene::Initialize()
                           "GameScene: ムービー用カメラの生成に失敗: %s", cinematicCameraPrefab.c_str());
         }
     }
+
+    // 導入ムービーは、シーンの準備として頼んでおく（シーン遷移の明転を待たない）。
+    // 明転の間もロジックは進むので、待つとその間にボスが動き出し、ムービーの構図が崩れる。
+    // 受け手は要求を控えるだけで、取り出すのは最初のフレームの描画の更新なので、ロジックの1歩目から操作と AI が止まる。
+    // ムービーの頭は明転と重なるので、台本の最初のショットは明転の長さを見込んで書く。
+    // 非同期読み込みではこの関数は裏のスレッドで走るが、受け手は mutex で守って控えるだけなので問題ない。
+    m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
 
     CCL_LOG_INFO(LogCategory::Core, "GameScene Initialize");
 }
@@ -76,15 +82,6 @@ void GameScene::FixedUpdate(float dt)
 
 void GameScene::Update(float dt)
 {
-    // 導入ムービーは、シーン遷移の暗転が明けきってから頼む。
-    // シーンは画面が黒い間に切り替わり、明けきるまで IsTransitioning() が true のままなので、
-    // false になった最初のフレームなら、ムービーを頭から見せられる。
-    if (!m_introRequested && !SceneManager::Instance().IsTransitioning())
-    {
-        m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
-        m_introRequested = true;
-    }
-
     BaseScene::Update(dt);
 }
 

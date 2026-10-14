@@ -106,8 +106,7 @@ int DroneManagerSystem::SpawnDrones(int count)
     // 処理フロー:
     // 1. ボスの位置を取る
     // 2. プレハブから生成し、初期値を入れる
-    // 3. 生成を World へ反映する
-    // 4. 既存の機と合わせて番号を振り直す
+    // 3. 既存の機と合わせて番号を振り直す
 
     // --- ボス ---
 
@@ -162,14 +161,10 @@ int DroneManagerSystem::SpawnDrones(int count)
         ++spawned;
     }
 
-    // --- 反映 ---
-
-    // Prefab の生成は遅延反映される。この後の View で新規ドローンを拾えるよう、ここで反映する。
-    m_world->ScrutinyAndApply();
-
     // --- 番号の振り直し ---
 
     // 既存＋新規をまとめて連番にしないと円が歪む。
+    // SpawnPrefab は生成をその場で確定させるので、ここで反映し直さなくても View が新しい機を拾える。
     ReindexAllDrones();
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機スポーン（合計 %d）",

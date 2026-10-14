@@ -352,6 +352,8 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\FormationEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\Game\FormationLayerSequence.h" />
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h" />
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -944,6 +946,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\FormationLayerSequence.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">

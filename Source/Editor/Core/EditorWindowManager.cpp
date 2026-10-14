@@ -28,6 +28,7 @@
 #include "Editor/Windows/Animation/AnimGraphWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
 #include "Editor/Windows/Game/FormationEditorWindow.h"
+#include "Editor/Windows/Cinematic/CinematicEditorWindow.h"
 #include "Editor/Windows/General/MemoryAnalyzerWindow.h"
 #include "Editor/Windows/Game/CurveEditorWindow.h"
 #include "Editor/Windows/General/RenderDebugWindow.h"
@@ -68,6 +69,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
     RegisterWindow<FormationEditorWindow>();
+    RegisterWindow<CinematicEditorWindow>();
     RegisterWindow<CurveEditorWindow>();
 
     RegisterWindow<TextEditorWindow>();

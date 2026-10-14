@@ -37,6 +37,10 @@
             "visible": false
         },
         {
+            "name": "Cinematic Editor",
+            "visible": true
+        },
+        {
             "name": "Curve Editor",
             "visible": false
         },

@@ -6,6 +6,7 @@
 
 #include <json.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 
@@ -299,8 +300,8 @@ namespace
             return false;
         }
 
-        // 長さの省略は、クリップを1回最後まで再生する長さとみなす。
-        if (out.duration <= 0.0f) out.duration = out.resolved->duration / out.speed;
+        // 長さの省略（0）は、クリップを1回最後まで再生する長さとみなす（CinematicAnimation::Length）。
+        out.clipDuration = out.resolved->duration;
         return true;
     }
 
@@ -451,6 +452,122 @@ namespace
                ParseTrack(root, "animations", script.duration, ParseAnimation,
                           [](const CinematicAnimation &a) { return a.start; }, script.animations, err);
     }
+
+    // --- 書き出し ---
+    // 項目の並びを書いた順に保つため ordered_json を使う（json はキーの名前順に並べ替える）。
+
+    using ordered_json = nlohmann::ordered_json;
+
+    // float をそのまま double にすると 4.4 が 4.400000095367432 と書かれるので、小数4桁に丸める。
+    double Num(float v)
+    {
+        return std::round(static_cast<double>(v) * 10000.0) / 10000.0;
+    }
+
+    ordered_json Vec3(const DirectX::XMFLOAT3 &v)
+    {
+        return ordered_json::array({Num(v.x), Num(v.y), Num(v.z)});
+    }
+
+    ordered_json ShotToJson(const CameraShot &s)
+    {
+        ordered_json j;
+        j["start"]       = Num(s.start);
+        j["duration"]    = Num(s.duration);
+        j["subject"]     = s.subject;
+        j["motion"]      = kCameraMotionNames[static_cast<int>(s.motion)];
+        j["ease"]        = kCameraEaseNames[static_cast<int>(s.ease)];
+        j["blendIn"]     = Num(s.blendIn);
+        j["lookStart"]   = Vec3(s.lookStart);
+        j["lookEnd"]     = Vec3(s.lookEnd);
+        j["eyeStart"]    = Vec3(s.eyeStart);
+        j["eyeEnd"]      = Vec3(s.eyeEnd);
+        j["angleStart"]  = Num(s.angleStart);
+        j["angleEnd"]    = Num(s.angleEnd);
+        j["radiusStart"] = Num(s.radiusStart);
+        j["radiusEnd"]   = Num(s.radiusEnd);
+        j["heightStart"] = Num(s.heightStart);
+        j["heightEnd"]   = Num(s.heightEnd);
+        j["fovStart"]    = Num(s.fovStart);
+        j["fovEnd"]      = Num(s.fovEnd);
+        return j;
+    }
+
+    ordered_json SoundToJson(const CinematicSound &s)
+    {
+        ordered_json j;
+        j["time"]    = Num(s.time);
+        j["event"]   = s.event;
+        j["subject"] = s.subject;
+        j["volume"]  = Num(s.volume);
+        j["pitch"]   = Num(s.pitch);
+        return j;
+    }
+
+    ordered_json EffectToJson(const CinematicEffect &e)
+    {
+        ordered_json j;
+        j["time"]     = Num(e.time);
+        j["effect"]   = e.effect;
+        j["subject"]  = e.subject;
+        j["offset"]   = Vec3(e.offset);
+        j["scale"]    = Num(e.scale);
+        j["follow"]   = e.follow;
+        j["duration"] = Num(e.duration);
+        return j;
+    }
+
+    ordered_json SignalToJson(const CinematicSignal &s)
+    {
+        ordered_json j;
+        j["time"]   = Num(s.time);
+        j["name"]   = s.name;
+        j["param"]  = s.param;
+        j["param2"] = s.param2;
+        j["value"]  = Num(s.value);
+        return j;
+    }
+
+    ordered_json AnimationToJson(const CinematicAnimation &a)
+    {
+        ordered_json j;
+        j["start"]    = Num(a.start);
+        j["duration"] = Num(a.duration); // 0 は「クリップ1回分」のまま書く
+        j["subject"]  = a.subject;
+        j["sequence"] = a.sequence;
+        j["loop"]     = a.loop;
+        j["speed"]    = Num(a.speed);
+        j["blendIn"]  = Num(a.blendIn);
+        j["blendOut"] = Num(a.blendOut);
+        return j;
+    }
+
+    /**
+     * @brief 要素の列を JSON の配列にする。
+     * @param items  書く要素の列。
+     * @param toJson 1要素を JSON にする関数。
+     */
+    template <class T, class ToJson>
+    ordered_json ArrayToJson(const std::vector<T> &items, ToJson toJson)
+    {
+        ordered_json a = ordered_json::array();
+        for (const T &item : items) a.push_back(toJson(item));
+        return a;
+    }
+
+    ordered_json ScriptToJson(const CinematicScript &script)
+    {
+        ordered_json root;
+        root["duration"]   = Num(script.duration);
+        root["startDelay"] = Num(script.startDelay);
+        root["allowSkip"]  = script.allowSkip;
+        root["shots"]      = ArrayToJson(script.shots, ShotToJson);
+        root["sounds"]     = ArrayToJson(script.sounds, SoundToJson);
+        root["effects"]    = ArrayToJson(script.effects, EffectToJson);
+        root["signals"]    = ArrayToJson(script.signals, SignalToJson);
+        root["animations"] = ArrayToJson(script.animations, AnimationToJson);
+        return root;
+    }
 } // namespace
 
 bool CinematicScriptIO::Load(const std::string &path, CinematicScript &out)
@@ -483,5 +600,42 @@ bool CinematicScriptIO::Load(const std::string &path, CinematicScript &out)
     }
 
     out = std::move(script);
+    return true;
+}
+
+bool CinematicScriptIO::Save(const std::string &path, const CinematicScript &script, std::string &err)
+{
+    // 処理フロー:
+    // 1. JSON の文字列にする
+    // 2. 読み込みと同じ決まりで確かめる
+    // 3. ファイルへ書く
+
+    // ---------------------------------------------------------
+    // 1. JSON の文字列
+    // ---------------------------------------------------------
+    const std::string text = ScriptToJson(script).dump(2);
+
+    // ---------------------------------------------------------
+    // 2. 読み込みと同じ決まりで確かめる
+    // ---------------------------------------------------------
+
+    // 書いた文字列をそのまま読み直して確かめる。
+    // 決まりを書き出し側にもう一度書くと、読み込み側だけ直したときに食い違う。
+    CinematicScript check;
+    if (!ParseScript(json::parse(text, nullptr, false), check, err))
+    {
+        CCL_LOG_ERROR(LogCategory::Game, "[Cinematic] 台本 %s を保存しません: %s", path.c_str(), err.c_str());
+        return false;
+    }
+
+    // ---------------------------------------------------------
+    // 3. ファイルへ書く
+    // ---------------------------------------------------------
+    if (!FileSystem::WriteAllText(path, text))
+    {
+        err = "ファイルに書けない";
+        CCL_LOG_ERROR(LogCategory::Game, "[Cinematic] 台本 %s を保存できません: %s", path.c_str(), err.c_str());
+        return false;
+    }
     return true;
 }

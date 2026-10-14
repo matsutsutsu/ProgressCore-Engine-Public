@@ -6,6 +6,7 @@
 //   - ムービーの再生要求を定義する
 //   - ムービーの終了の知らせを定義する
 //   - 台本のシグナル（ゲーム側へ渡す汎用の知らせ）を定義する
+//   - 台本のファイルが書き換わった知らせを定義する
 //
 // 備考:
 //   再生したい側（ボス撃破の検知など）はムービー用カメラの Entity を知らなくてよい。
@@ -33,4 +34,9 @@ struct CinematicSignalEvent
     std::string param;        // 引数1（文字列）
     std::string param2;       // 引数2（文字列）
     float       value = 0.0f; // 引数3（数値）
+};
+
+// 台本のファイルが書き換わった知らせ（エディタの保存）。CinematicCameraSystem が台本を読み直す
+struct CinematicScriptsChangedEvent
+{
 };

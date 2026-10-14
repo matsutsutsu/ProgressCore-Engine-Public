@@ -112,7 +112,14 @@ void BaseScene::Initialize()
     }
 }
 
-void BaseScene::Start() {}
+void BaseScene::Start()
+{
+    // Initialize で作った Entity を確定させ、各 System の処理対象へ入れてから最初のフレームに入る。
+    // シーン切り替えのフレームはロジックの更新より先に描画の更新が走り、ここで済ませないと、
+    // 最初の描画の更新では System から Entity が1つも見えない（そのフレームに届いたイベントを取りこぼす）。
+    // また、レベルの後に足した Entity（ムービー用カメラなど）は、ここまで生成の予約のまま残っている。
+    if (m_ecsContext) m_ecsContext->ApplyStructureChanges();
+}
 
 void BaseScene::Finalize()
 {

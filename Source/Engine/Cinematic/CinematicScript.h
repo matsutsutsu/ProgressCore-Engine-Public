@@ -6,6 +6,7 @@
 //   - 再生の長さ・開始待ち・スキップ可否と、ショットの列を持つ
 //   - カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を持つ
 //   - Assets/Cinematics の JSON を読み、書き間違いがあれば読み込まずにログへ出す
+//   - 台本を JSON へ書き出す（エディタの保存）
 //
 // 備考:
 //   書き間違い（知らない項目・型の違い・知らない名前・範囲外の値）は、台本ごと読み込まない。
@@ -47,4 +48,14 @@ namespace CinematicScriptIO
      * @return 読めたら true。ファイルが無い・書き間違いがあるときは、理由をログへ出して false。
      */
     bool Load(const std::string &path, CinematicScript &out);
+
+    /**
+     * @brief 台本を JSON へ書き出す。
+     * @param path   書くファイルの仮想パス。
+     * @param script 書く台本。並び順は問わない（読み込むときに時刻の順へ並ぶ）。
+     * @param err    書けなかったときの理由。
+     * @return 書けたら true。読み込みと同じ決まりで確かめ、次に読めない台本になるなら書かずに false。
+     * @note 項目はすべて書く（既定値と同じでも省かない）。_comment は書かない。
+     */
+    bool Save(const std::string &path, const CinematicScript &script, std::string &err);
 } // namespace CinematicScriptIO

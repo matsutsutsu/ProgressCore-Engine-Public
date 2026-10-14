@@ -191,6 +191,25 @@ namespace
         pose.fov      = std::lerp(cine.blendFromFov, pose.fov, w);
     }
 
+    /**
+     * @brief 求めた絵をカメラへ書き、Brain が採用してよい状態にする。
+     * @param vcam 書き込む先のカメラ。
+     * @param pose 書く絵。
+     */
+    void ApplyPose(VirtualCamera &vcam, const ShotPose &pose)
+    {
+        vcam.resultPos    = pose.eye;
+        vcam.resultLookAt = pose.look;
+        vcam.resultUp     = {0.0f, 1.0f, 0.0f};
+
+        // 停止中は書かない。TPS カメラへ戻すブレンドの補間元に、最後の画角を残すため。
+        vcam.fov = pose.fov;
+
+        // 位置と注視点の両方をここで確定させたので、Brain が採用してよい状態にする。
+        // これを呼ばないと isValid が false のままで、優先度を上げても選ばれない。
+        vcam.MarkResolved();
+    }
+
     // --- スキップ ---
 
     /**
@@ -245,33 +264,47 @@ void CinematicCameraSystem::Initialize()
         m_pendingPath = ev.scriptPath;
         m_hasRequest  = true;
     });
+
+    // エディタが台本を保存したら、次の Update で読み直す。
+    // 受け取ったその場で読み直すと、Update が台本の一覧を使っている最中に入れ替わりうる。
+    ListenEvent<CinematicScriptsChangedEvent>([this](const CinematicScriptsChangedEvent &) {
+        std::lock_guard<std::mutex> lock(m_requestMutex);
+        m_reloadRequested = true;
+    });
 }
 
 void CinematicCameraSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 届いた再生要求と、スキップボタンの状態を読む
+    // 1. 届いた再生要求と台本の書き換えの知らせ、スキップボタンの状態を読む
     // 2. 再生要求を受け付け、台本を写す（開始待ち・再生中・読み込んでいない台本なら捨てる）
     // 3. 開始待ちと再生位置を進める。長押しされたら終わりへ飛ぶ
-    // 4. 開始待ち・再生中でなければ、優先度を下げて譲る
+    // 4. 開始待ち・再生中でなければ、エディタのプレビューを見せるか、優先度を下げて譲る
     // 5. 今の再生位置の絵をカメラへ書く
     // 6. 終わりに達したら終え、優先度を決める
     // 7. ゲームの操作を止めるかを書き、終了を知らせる
 
     // ---------------------------------------------------------
-    // 1. 再生要求とスキップボタン
+    // 1. 再生要求・台本の書き換え・スキップボタン
     // ---------------------------------------------------------
 
     // 取り出すと同時に空にする。
     bool        requested = false;
+    bool        reload    = false;
     std::string requestPath;
     {
         std::lock_guard<std::mutex> lock(m_requestMutex);
-        requested    = m_hasRequest;
-        requestPath  = std::move(m_pendingPath);
-        m_hasRequest = false;
+        requested         = m_hasRequest;
+        reload            = m_reloadRequested;
+        requestPath       = std::move(m_pendingPath);
+        m_hasRequest      = false;
+        m_reloadRequested = false;
         m_pendingPath.clear();
     }
+
+    // 再生要求より先に読み直す。保存してすぐ再生要求を出したときに、新しい台本で流すため。
+    // 流しているムービーは写した台本で続くので、読み直しの影響は次の再生から。
+    if (reload) LoadAllScripts();
 
     // 時間は描画フレームごとに実時間で進める。
     // ポーズ中は PresentationDt が 0 を返すので、ムービーも止まる。
@@ -325,6 +358,8 @@ void CinematicCameraSystem::Update(float dt)
                 cine.skipHoldTime = 0.0f;
                 cine.skipArmed    = false;
                 cine.skipped      = false;
+
+                CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生開始: %s", requestPath.c_str());
             }
         }
 
@@ -361,6 +396,14 @@ void CinematicCameraSystem::Update(float dt)
         // ---------------------------------------------------------
         if (cine.state != CinematicState::Waiting && cine.state != CinematicState::Playing)
         {
+            // エディタが見せたい時刻があれば、その絵を書いてカメラを掌握する。
+            // 再生中はムービーを優先するので、ここ（停止中）でだけ見る。
+            if (cine.previewActive && WritePreviewPose(vcam, cine))
+            {
+                vcam.priority = cine.activePriority;
+                return;
+            }
+
             // 停止中は優先度を下げるだけで、姿勢は最後に書いた値のまま残す。
             // Brain は TPS カメラへ戻すブレンドの補間元に、この最後の姿勢を使う。
             vcam.priority = cine.idlePriority;
@@ -399,6 +442,13 @@ void CinematicCameraSystem::Update(float dt)
     // ---------------------------------------------------------
     // 7. 操作停止と終了の知らせ
     // ---------------------------------------------------------
+
+    // ムービー用カメラが見えないまま要求を取り出したら、その要求は消える。黙って消すと原因を追えないので知らせる。
+    if (requested && !anyCamera)
+    {
+        CCL_LOG_WARN(LogCategory::Game, "[Cinematic] ムービー用カメラが見つからないので、再生要求を捨てました: %s",
+                     requestPath.c_str());
+    }
 
     // ムービー用カメラが無いシーンでは触らない。
     // 描画の段で書くので、ロジックの段（プレイヤーの入力・敵の思考）には次の固定ステップから効く。
@@ -521,16 +571,79 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
     // ---------------------------------------------------------
     // 4. カメラへの書き込み
     // ---------------------------------------------------------
-    vcam.resultPos    = pose.eye;
-    vcam.resultLookAt = pose.look;
-    vcam.resultUp     = {0.0f, 1.0f, 0.0f};
+    ApplyPose(vcam, pose);
+    return true;
+}
 
-    // 停止中は書かない。TPS カメラへ戻すブレンドの補間元に、最後の画角を残すため。
-    vcam.fov = pose.fov;
+bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, const CinematicCameraComponent &cine) const
+{
+    // 処理フロー:
+    // 1. 見せる時刻のショットを選ぶ
+    // 2. ショットの絵を求める
+    // 3. 入りのブレンド中なら、前のショットの終わりの絵から混ぜる
+    // 4. カメラへ書く
 
-    // 位置と注視点の両方をここで確定させたので、Brain が採用してよい状態にする。
-    // これを呼ばないと isValid が false のままで、優先度を上げても選ばれない。
-    vcam.MarkResolved();
+    // 【備考】
+    // 再生と違い、時刻は前後に飛ぶ（つまみを戻す・飛ばす）。
+    // 「替わる直前に書いた絵を止めて持つ」再生のやり方は前のフレームに頼るので使えない。
+    // そこで、毎フレーム時刻だけから絵を求め直す。
+
+    // ---------------------------------------------------------
+    // 1. ショットの選択
+    // ---------------------------------------------------------
+    const std::vector<CameraShot> &shots = cine.previewScript.shots;
+    const float                    t     = cine.previewTime;
+
+    const int index = FindShotIndex(shots, t);
+    if (index < 0) return false;
+
+    const CameraShot &shot     = shots[index];
+    const float       shotTime = t - shot.start;
+
+    // 最初のショットは混ぜない（再生と同じ）
+    const bool blending = (index > 0) && (shot.blendIn > 0.0f);
+
+    // ---------------------------------------------------------
+    // 2. ショットの絵
+    // ---------------------------------------------------------
+
+    // 時刻が前後に飛ぶので、ショットに入った瞬間の基準を持てない。毎回名前で探し、今の位置と向きを使う。
+    // 見つからなくても警告は出さない（毎フレーム出続ける）。エディタの画面で知らせる。
+    Vector3 subjectPos;
+    float   yaw = 0.0f;
+    if (!Cinematic::FindSubjectPose(*m_world, shot.subject, subjectPos, yaw)) return false;
+
+    ShotPose pose = EvaluateShot(shot, shotTime, blending ? shot.blendIn : 0.0f, subjectPos, yaw);
+
+    // ---------------------------------------------------------
+    // 3. 入りのブレンド
+    // ---------------------------------------------------------
+
+    // 補間元は、前のショットを「替わった時刻」で求めた絵にする。
+    // 前のショット自身もまだ入りのブレンド中だった（ショットが短い）場合は、その混ぜ方までは再現しない。
+    if (blending && shotTime < shot.blendIn)
+    {
+        const CameraShot &prev         = shots[index - 1];
+        const bool        prevBlending = (index - 1 > 0) && (prev.blendIn > 0.0f);
+
+        Vector3 prevPos;
+        float   prevYaw = 0.0f;
+        if (Cinematic::FindSubjectPose(*m_world, prev.subject, prevPos, prevYaw))
+        {
+            const ShotPose from =
+                EvaluateShot(prev, shot.start - prev.start, prevBlending ? prev.blendIn : 0.0f, prevPos, prevYaw);
+
+            const float w = CCL::Math::SmoothStep(shotTime / shot.blendIn);
+            pose.eye      = Vector3::Lerp(from.eye, pose.eye, w);
+            pose.look     = Vector3::Lerp(from.look, pose.look, w);
+            pose.fov      = std::lerp(from.fov, pose.fov, w);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. カメラへの書き込み
+    // ---------------------------------------------------------
+    ApplyPose(vcam, pose);
     return true;
 }
 
@@ -561,13 +674,7 @@ void CinematicCameraSystem::EnterShot(CinematicCameraComponent &cine, const Came
 
     // 向きは、ショットに入った瞬間の値でショットの間ずっと固定する。
     // 毎フレーム追うと、待機モーションの揺れや振り向きで、カメラまで振り回される。
-
-    // 描画行列の Z 軸（3行目）が前方。
-    // 水平成分だけで向きを決める（傾きや見上げ角は構図に入れない）。
-    const auto &m  = trans->renderWorldMatrix;
-    const float fx = m._31;
-    const float fz = m._33;
-    if (fx * fx + fz * fz > 1e-8f) cine.shotYaw = std::atan2(fx, fz);
+    cine.shotYaw = Cinematic::YawOf(*trans);
 }
 
 bool CinematicCameraSystem::ResolveSubjectPosition(const CinematicCameraComponent &cine, const CameraShot &shot,

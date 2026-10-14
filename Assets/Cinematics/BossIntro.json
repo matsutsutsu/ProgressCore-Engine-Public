@@ -1,13 +1,13 @@
 {
-    "_comment": "ボス戦の導入ムービー。群れとステージを見せる -> プレイヤーを見上げる -> カットでボスを見上げて寄る -> プレイヤーの後ろからボスと向き合い、通常のカメラへ渡す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）。シーン遷移の暗転が明けてから流す",
-    "duration": 9.2,
+    "_comment": "ボス戦の導入ムービー。群れとステージを見せる -> プレイヤーを見上げる -> カットでボスを見上げて寄る -> プレイヤーの後ろからボスと向き合い、通常のカメラへ渡す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）。シーンの最初のフレームから流すので、頭の約1.5秒はシーン遷移の明転と重なる",
+    "duration": 10.7,
     "startDelay": 0.0,
     "allowSkip": true,
     "shots": [
         {
-            "_comment": "Shot1: 引きの絵。高い位置からボスと群れの輪の周りをゆっくり回り込みながら降りる",
+            "_comment": "Shot1: 引きの絵。高い位置からボスと群れの輪の周りをゆっくり回り込みながら降りる。最初の1.5秒は明転で黒から見えてくるので、その分だけ長くしてある",
             "start": 0.0,
-            "duration": 2.6,
+            "duration": 4.1,
             "subject": "Muriel",
             "motion": "Orbit",
             "ease": "EaseInOut",
@@ -24,7 +24,7 @@
         },
         {
             "_comment": "Shot2: カットでプレイヤーへ。低い位置から見上げ、斜め前から正面へ回り込みつつ寄る（画角を狭めて押し込む）",
-            "start": 2.6,
+            "start": 4.1,
             "duration": 1.8,
             "subject": "Player",
             "ease": "EaseOut",
@@ -37,7 +37,7 @@
         },
         {
             "_comment": "Shot3: カットでボスへ。足元近くの低い位置から見上げ、望遠でゆっくり寄る（狭い画角で大きく見せる）",
-            "start": 4.4,
+            "start": 5.9,
             "duration": 3.0,
             "subject": "Muriel",
             "ease": "EaseOut",
@@ -50,7 +50,7 @@
         },
         {
             "_comment": "Shot4: プレイヤーの後ろ上からボスと向き合う。通常のカメラ（背中越し）に近い構図で終えて、切り替えを目立たせない。カメラ位置は、レベルの初期配置でのプレイヤーの後ろ上をボス基準に直した値",
-            "start": 7.4,
+            "start": 8.9,
             "duration": 1.8,
             "subject": "Muriel",
             "ease": "EaseInOut",
@@ -65,7 +65,7 @@
     "sounds": [
         {
             "_comment": "カットでボスへ切り替わる瞬間の重い一撃。素材が揃うまでは倒れる音をピッチを下げて代用",
-            "time": 4.4,
+            "time": 5.9,
             "event": "sfx:/fall",
             "volume": 1.0,
             "pitch": -0.4
@@ -74,7 +74,7 @@
     "effects": [
         {
             "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
-            "time": 4.4,
+            "time": 5.9,
             "effect": "Assets/Prefabs/Particles/VFX_Jump",
             "subject": "Muriel",
             "scale": 5.0
@@ -83,7 +83,7 @@
     "signals": [
         {
             "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言",
-            "time": 4.7,
+            "time": 6.2,
             "name": "Telop",
             "param": "MURIEL",
             "param2": "TARGET IDENTIFIED",
@@ -93,7 +93,7 @@
     "animations": [
         {
             "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ時刻）。カットで隠れるので blendIn は 0",
-            "start": 4.4,
+            "start": 5.9,
             "subject": "Muriel",
             "sequence": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
             "speed": 0.7,
