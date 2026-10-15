@@ -34,7 +34,7 @@
         },
         {
             "name": "Formation Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Cinematic Editor",

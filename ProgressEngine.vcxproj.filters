@@ -1944,6 +1944,12 @@
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\DemoSwarmSystem.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\Lighting\SkyboxComponent.h">
       <Filter>Source\Engine\Graphics\Components\Lighting</Filter>
     </ClInclude>
@@ -2886,6 +2892,12 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\DemoSwarmSystem.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp">

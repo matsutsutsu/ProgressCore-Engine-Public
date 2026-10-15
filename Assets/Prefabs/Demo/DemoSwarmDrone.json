@@ -1,0 +1,40 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.cereal"
+                },
+                "Name": {
+                    "name": "DemoSwarmDrone"
+                },
+                "No Shadow": null,
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.2,
+                        1.2,
+                        1.2
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "DemoSwarmDrone",
+    "version": 1
+}
