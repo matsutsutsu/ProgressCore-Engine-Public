@@ -149,10 +149,11 @@ void PlayerRushSystem::Update(float dt)
 
 void PlayerRushSystem::StartRush(RushComponent &rush, DashComponent &dash)
 {
-    rush.isActive = true;
-    rush.phase    = RushPhase::Locked;
-    rush.timer    = rush.lockedDuration;
-    rush.evadeDir = dash.dashDirection; // ダッシュした方向へ離脱する
+    rush.isActive    = true;
+    rush.phase       = RushPhase::Locked;
+    rush.timer       = rush.lockedDuration;
+    rush.attackFired = false;               // 前のラッシュの斬り済みを持ち越さない
+    rush.evadeDir    = dash.dashDirection;  // ダッシュした方向へ離脱する
 
     // ダッシュのままにせず中断する。以降は回避離脱（Locked）が移動を駆動する。
     dash.isDashing               = false;

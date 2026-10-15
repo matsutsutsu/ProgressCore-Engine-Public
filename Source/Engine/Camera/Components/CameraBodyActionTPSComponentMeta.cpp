@@ -221,6 +221,17 @@ struct ComponentMeta<CameraBodyTPSComponent>
              u8"大きいほど素早く変化します。\n"
              u8"小さいほどゆっくり滑らかに変化します。");
 
+        ImGui::SeparatorText(u8"演出の上書き");
+
+        changed |= mi::DragFloat(u8"上書き中の引く速さ", &comp.framingFollowDamping, 0.5f, 1.0f, 100.0f, u8"変数名: framingFollowDamping");
+        Help(u8"演出（ラッシュなど）がカメラを引くときの追従の速さ。\n"
+             u8"地形に当たっていないときだけ使います。\n"
+             u8"小さいと引きが演出に間に合いません。");
+
+        changed |= mi::DragFloat(u8"上書きの注視ずれ上限", &comp.framingMaxLookShift, 0.1f, 0.0f, 15.0f, u8"変数名: framingMaxLookShift");
+        Help(u8"演出が注視点を敵へ寄せるときの、ずらす量の上限(m)。\n"
+             u8"大きいほど敵が画面中央に来ますが、プレイヤーが画面外へ出やすくなります。");
+
         ImGui::SeparatorText(u8"カメラ衝突");
 
         changed |= mi::Checkbox(u8"衝突回避", &comp.collisionEnabled, u8"変数名: collisionEnabled");
@@ -295,6 +306,9 @@ struct ComponentMeta<CameraBodyTPSComponent>
 
             CFIELD_FLOAT_RANGED(positionDamping, "位置追従遅延", 0.1f, 0.0f, 50.0f, "Smoothing")
             CFIELD_FLOAT_RANGED(fovDamping, "視野角補間速度", 0.1f, 0.0f, 50.0f, "Smoothing")
+
+            CFIELD_FLOAT_RANGED(framingFollowDamping, "上書き中の引く速さ", 0.5f, 1.0f, 100.0f, "Framing Override")
+            CFIELD_FLOAT_RANGED(framingMaxLookShift, "上書きの注視ずれ上限", 0.1f, 0.0f, 15.0f, "Framing Override")
 
             CFIELD(collisionEnabled, "衝突回避", "Collision")
             CFIELD_FLOAT_RANGED(collisionRadius, "衝突半径", 0.01f, 0.0f, 2.0f, "Collision")

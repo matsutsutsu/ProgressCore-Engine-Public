@@ -718,6 +718,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Components\RushCameraComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
@@ -772,7 +773,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeDebugSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\RushCameraSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
@@ -1212,9 +1215,12 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeDebugSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerRushSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\RushCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Components\RushComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Components\RushCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />

@@ -6,6 +6,7 @@
 //   - 追従対象・距離・画角・回転制限・操作感度の調整値を持つ
 //   - カメラ衝突（地形へのめり込み回避）とルックアヘッドの調整値を持つ
 //   - ロックオン中のフレーミングと自動補正の調整値を持つ
+//   - 演出からの構図の上書き（framingOverrides）を発生源ごとに受け取る
 //   - 補間用の実行時状態を持つ（シリアライズしない）
 //
 // 備考: 挙動は CameraActionTPSSystem が計算する。ロックオン状態
@@ -13,7 +14,25 @@
 // ===========================================================================
 
 #include "Engine/Serialization/Core/EntityLink.h"
+#include "Engine/ECS/Common/CCL_Types.h"
+#include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h" // 発生源ごとの上書きスロット（汎用テンプレート）
 #include <SimpleMath.h>
+
+// 演出がカメラへ出す構図の上書き。普段の構図への「足し込み量」で表す。
+//   値は足し込みなので、複数の演出が重なっても weight を掛けて足すだけで合成できる。
+//   カメラは要求の理由（ラッシュなのか必殺技なのか）を知らない。
+struct CameraFramingParams
+{
+    float distanceOffset = 0.0f; // 距離の足し込み（m）。負で寄る、正で引く
+    float fovOffset      = 0.0f; // 画角の足し込み（度）
+    float pitchOffset    = 0.0f; // ピッチの足し込み（度）。正でカメラが低くなり見上げる
+    float yawOffset      = 0.0f; // ヨーの足し込み（度）。斜めから映す
+    float roll           = 0.0f; // 画面の傾き（度）。視線の軸まわりに上方向を回す（ダッチアングル）。符号で傾く向きが変わる
+    float followBoost    = 0.0f; // 追従の速さの足し込み（1/秒）。突進するキャラに遅れず付いていく
+
+    float              focus       = 0.0f;                      // 注視点を focusTarget へ寄せる割合（0〜1）
+    CCL::ECS::EntityID focusTarget = CCL::ECS::InvalidEntityID; // 注視点を寄せる先。Invalid なら寄せない
+};
 
 struct CameraBodyTPSComponent
 {
@@ -33,6 +52,15 @@ struct CameraBodyTPSComponent
     // true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する。
     bool  closeUpRequest  = false;
     float closeUpDistance = 3.5f; // 寄り要求中の基準距離（m）。distance より近くする
+
+    // --- 構図の上書き（演出からの要求） ---
+    // 演出側が自分の発生源キーでスロットを取り、毎フレーム値と weight を書く。終わったら Release。
+    // 1本の bool を共有すると、後から走る書き手が毎フレーム false を書いて他の演出を潰すため、
+    // 発生源ごとに分けて CameraActionTPSSystem が1か所で合成する。保存しない。
+    PostEffectOverrides<CameraFramingParams, 4> framingOverrides;
+
+    float framingFollowDamping = 30.0f; // 上書き中、距離を外へ広げる速さ（地形で寄った後の戻しより速くする）
+    float framingMaxLookShift  = 4.0f;  // 上書きで注視点を寄せる量の上限（m）。プレイヤーを画面内に残す
 
     // --- オービット（回転） ---
     // ピッチの符号: CameraActionTPSSystem は

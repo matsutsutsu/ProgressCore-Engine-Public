@@ -6,6 +6,7 @@
 //   - 右スティック／マウス入力でオービット角を更新する
 //   - ロックオン中のフレーミングとヨーの自動補正
 //   - 地形へのめり込み回避（レイキャスト）とルックアヘッド
+//   - 演出からの構図の上書き（framingOverrides）を合成して、距離・画角・角度・注視点へ足す
 //   - FOV パンチ要求（CameraFovPunchRequestEvent）の受信と、マウスルック中のカーソルロック
 //
 // 呼び出し順序（守らないと壊れる）:
@@ -79,6 +80,9 @@ private:
         const FrameInput         &in;      // このフレームの視点入力
         IPhysicsAPI              *physics; // 地形判定用。nullptr なら衝突回避をしない（所有しない）
         float                     dt;      // このフレームの経過時間（秒）
+
+        CameraFramingParams framing{};             // 演出の上書きを合成した足し込み量（UpdateCamera の先頭で決める）
+        bool                framingActive = false; // 効いている上書きが1つでもあるか
     };
 
     // =======================================================================
@@ -98,6 +102,15 @@ private:
      * @return このカメラがカーソル固定を要求するなら true。
      */
     bool UpdateCamera(CameraContext &c) const;
+
+    /**
+     * @brief 演出の上書きスロットを priority の小さい順に合成し、c.framing / c.framingActive へ入れる。
+     *
+     * 足し込み量は weight を掛けて足す。注視点の寄せ先は、後に重なる（priority の大きい）方を採る。
+     *
+     * @param c このカメラの1フレーム分の作業データ（調整値・状態・追従対象）。
+     */
+    void ResolveFraming(CameraContext &c) const;
 
     // =======================================================================
     // どの向きから見るか（オービット角）
