@@ -3,12 +3,16 @@
 // 概要: タイトル画面のメニューを作り、ボタンでシーンを切り替える System。
 //
 // 責務:
-//   - タイトルロゴ・START / QUIT ボタン・操作のヒントを作る
+//   - タイトルロゴ・ボタン（はじめる / 設定 / 終了）・操作のヒントを作る
 //   - ロゴを、斬撃の光が走った跡に現れるように出す
-//   - START ならゲームへの切り替えを頼み、QUIT なら終了の要求を立てる
+//   - 「はじめる」ならゲームへの切り替えを頼み、「終了」ならアプリの終了の要求を立てる
 //
-// 備考: 文字は画面の左に寄せ、右と上は 3D の背景（ボスと群れ）のために空ける。
-//       全体登録（REGISTER_*）はせず、TitleScene が登録する（ゲーム本編でメニューが出ないように）。
+// 備考:
+//   文字は画面の左に寄せ、右と上は 3D の背景（ボスと群れ）のために空ける。
+//
+//   「設定」のボタンは SettingsScreenSystem が受けて、設定画面を開く。
+//
+//   全体登録（REGISTER_*）はせず、TitleScene が登録する。ゲーム本編でメニューが出ないようにする。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
@@ -19,7 +23,7 @@ class TitleMenuSystem
 public:
     TitleMenuSystem() : IfSystem("TitleMenuSystem") {}
 
-    void Initialize() override; // ボタンのイベントを購読するだけ
+    void Initialize() override; // GameFlowState を用意し、ボタンのイベントを購読する
     void Update(float dt) override;
 
 private:
@@ -38,8 +42,8 @@ private:
     // ロゴの登場演出を進める。斬撃の光が左から右へ走り、その跡にロゴが現れ、走り終えたら全体が白く光る
     void AnimateLogo(float dt);
 
-    bool m_menuSpawned   = false; // メニューを作ったか（1回だけ作るため）
-    bool m_transitioning = false; // 切り替えを頼んだ後か（連打や何度も呼ばれるのを無視するため）
+    bool m_menuSpawned   = false; // メニューを作ったか
+    bool m_transitioning = false; // シーンの切り替えか終了を頼んだ後か
 
     CCL::ECS::EntityID m_logoID      = CCL::ECS::InvalidEntityID; // ロゴ本体（UIImage）
     CCL::ECS::EntityID m_logoFlashID = CCL::ECS::InvalidEntityID; // ロゴを白く光らせる写し（UIImage・加算合成）

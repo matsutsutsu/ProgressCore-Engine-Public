@@ -50,8 +50,8 @@ void SceneManager::Initialize()
     // 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
     // ここでは名前で参照するだけなので、具体的なシーンのヘッダは要らない。
 
-    // 最初に表示するシーン。製品ビルドはタイトルから始める
-    // （「起動して最初に何が出るか」も作品の一部なので、ゲームへ直行させない）
+    // 最初に表示するシーン。製品ビルドはタイトルから始める。
+    // 「起動して最初に何が出るか」も作品の一部なので、ゲームへ直行させない。
 #ifdef SHIPPING_BUILD
     constexpr const char *kStartupScene = "Title";
 #else
@@ -59,10 +59,11 @@ void SceneManager::Initialize()
 #endif
     ChangeSceneAsync(kStartupScene);
 
-    // 起動直後は、普段の非同期遷移で「黒を保持して裏読みしている途中」と同じ状態から始める。
-    //   黒の上にスプラッシュ（ローディング画面）が出て、読み終わったら本命へ1回だけ明転する。
-    //   黒からフェードインで始めると、読み終わったときに黒い画面の上でもう一度暗転し直すことになり、
-    //   何も映らない黒い時間が挟まる
+    // 起動直後は、ふだんの非同期遷移で「黒を保持して裏読みしている途中」と同じ状態から始める。
+    // 黒の上にスプラッシュ（ローディング画面）が出て、読み終わったら次のシーンへ1回だけ明転する。
+
+    // 黒からのフェードインで始めると、読み終わったときに黒い画面の上でもう一度暗転し直すことになる。
+    // その間、何も映らない黒い時間が挟まる。
     m_fadeAlpha = 1.0f;
     m_fade      = FadeState::Hold;
     m_asyncHold = true;
@@ -330,11 +331,16 @@ bool SceneManager::RequestTransition(Scene *readyScene)
 
 void SceneManager::PlayTransitionSound()
 {
-    // 音声は World のリソースにある。今のシーンの World から引く（無ければ鳴らさない）
+    // 音声は World のリソースにある。今のシーンの World から引く（無ければ鳴らさない）。
     CCL::ECS::World *world = currentScene ? currentScene->GetWorld() : nullptr;
-    if (!world || !world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (!world || !world->HasResource<std::shared_ptr<IAudioAPI>>())
+    {
+        return;
+    }
     if (auto &audio = world->GetResource<std::shared_ptr<IAudioAPI>>())
+    {
         audio->PlayOneShot(CCL::Utils::HashString("sfx:/ui_transition"));
+    }
 }
 
 void SceneManager::FadeInFromBlack(float dur)
@@ -414,36 +420,67 @@ void SceneManager::BeginPendingChange()
 
 void SceneManager::DrawFade()
 {
-    if (m_fadeAlpha <= 0.001f) return; // 透明なら描かない
+    // 処理フロー:
+    // 1. 合成と深度を設定し、描画の道具を用意する
+    // 2. 完全な黒の間は、1枚の黒で覆って終わる
+    // 3. 波の進み具合と、格子の大きさを決める
+    // 4. 育つ途中の◆の白金の縁を描く
+    // 5. 黒の◆を描く
+    // 6. 波の先頭に光の筋を描く
+
+    // 【備考】
+    //   ◆タイルワイプ: 画面を◆の格子に区切り、左から右へ斜めに、◆が育って画面を埋める（暗転）。
+    //   明転は同じ向きのまま◆が縮んで消える。左から先に晴れ、動きが右へ続く。
+
+    // 透明なら描かない。
+    if (m_fadeAlpha <= 0.001f)
+    {
+        return;
+    }
 
     auto &gfx = Graphics::Instance();
     auto *dc  = gfx.GetDeviceContext();
-    if (!dc) return;
+    if (!dc)
+    {
+        return;
+    }
 
-    // 半透明合成・深度無効を明示的に設定する（他パスの状態に依存しない）。
-    //   合成は RT の α を書き換えない UITransparency。縁の半透明の◆が α の穴を開けると、
-    //   エディタの GameView でその部分だけ後ろのウィンドウが透ける
+    // ---------------------------------------------------------
+    // 1. 合成・深度と道具
+    // ---------------------------------------------------------
+
+    // 半透明合成・深度無効を明示的に設定し、他のパスの状態に依存しないようにする。
+
+    // 合成は RT の α を書き換えない UITransparency にする。
+    // 縁の半透明の◆が α に穴を開けると、エディタの GameView でその部分だけ後ろのウィンドウが透ける。
     dc->OMSetBlendState(
         gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
     dc->OMSetDepthStencilState(
         gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
-    if (!m_fadeQuad) m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice()); // 白のダミーテクスチャ。色を掛けて単色矩形にする
+    // 白のテクスチャの Sprite。色を掛けて単色の四角形を描く。
+    if (!m_fadeQuad)
+    {
+        m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
+    }
 
     const float sw = gfx.GetScreenWidth();
     const float sh = gfx.GetScreenHeight();
 
-    // 完全な黒の間（暗転しきった・ローディング中）は、1枚の黒で確実に覆う
+    // ---------------------------------------------------------
+    // 2. 完全な黒
+    // ---------------------------------------------------------
+
+    // 暗転しきった間・ローディング中は、1枚の黒で確実に覆う。
     if (m_fadeAlpha >= 0.999f)
     {
         m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f, sw, sh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
         return;
     }
 
-    // --- ◆タイルワイプ ---
-    //   画面を◆の格子に区切り、左から右へ斜めに、◆が育って画面を埋める（暗転）。
-    //   明転は同じ向きのまま◆が縮んで消える（左から先に晴れ、動きが右へ続く）。
-    //   育つ途中の◆は白金の縁で光り、波の先頭には細い光の筋が走る
+    // ---------------------------------------------------------
+    // 3. 波と格子
+    // ---------------------------------------------------------
     constexpr float kCellPx = 96.0f;  // 1080p での格子の間隔
     constexpr float kBand   = 0.35f;  // 1つの◆が育ちきるまでに波が進む幅（画面幅に対する割合）
     constexpr float kSlope  = 0.35f;  // 波の傾き。下ほど遅れて届く（画面の高さ 1 に対する横のずれ）
@@ -456,24 +493,29 @@ void SceneManager::DrawFade()
     const float cell      = kCellPx * k;
     const float span      = sw + sh * kSlope; // u 座標 0〜1 に対応する画面上の長さ
 
-    // 各セルの育ち具合 0〜1（暗転では 1 が黒で覆った状態。明転では反転して、先に波が来た所から晴れる）
+    // 各セルの育ち具合（0〜1）。暗転では 1 が黒で覆った状態。明転では反転して、先に波が来た所から晴れる。
     auto coverage = [&](float x, float y) {
         const float u = (x + y * kSlope) / span;
         const float t = std::clamp((front - u) / kBand, 0.0f, 1.0f);
         return revealing ? 1.0f - t : t;
     };
-    // 中心 (cx, cy)・対角線の半分 half の◆を描く（矩形を 45 度回す。辺の長さは half * √2）
+    // 中心 (cx, cy)・対角線の半分 half の◆を描く。四角形を 45 度回すので、辺の長さは half * √2 になる。
     auto diamond = [&](float cx, float cy, float half, float r, float g, float b, float a) {
         const float side = half * 1.41421356f;
         m_fadeQuad->Render(dc, cx - side * 0.5f, cy - side * 0.5f, 0.0f, side, side, 45.0f, r, g, b, a);
     };
 
-    // セルの◆が四隅まで覆うには、対角線の半分がセルの幅と同じだけ要る（少し足して隙間を消す）
+    // セルの◆が四隅まで覆うには、対角線の半分がセルの幅と同じだけ要る。少し足して隙間を消す。
     const float fullHalf = cell + 1.5f;
     const int   cols     = static_cast<int>(sw / cell) + 2;
     const int   rows     = static_cast<int>(sh / cell) + 2;
 
-    // 1 周目: 育つ途中の◆の白金の縁。2 周目の黒が上から覆うので、隣が黒く埋まった所には残らない
+    // ---------------------------------------------------------
+    // 4. 白金の縁
+    // ---------------------------------------------------------
+
+    // 育つ途中の◆だけに描く。
+    // 次の黒の◆が上から覆うので、隣が黒く埋まった所には残らない。
     for (int row = 0; row < rows; ++row)
     {
         for (int col = 0; col < cols; ++col)
@@ -481,13 +523,20 @@ void SceneManager::DrawFade()
             const float cx = (static_cast<float>(col) + 0.5f) * cell;
             const float cy = (static_cast<float>(row) + 0.5f) * cell;
             const float c  = coverage(cx, cy);
-            if (c <= 0.0f || c >= 1.0f) continue;
-            const float rim = std::sin(c * 3.1415927f); // 育ち始めと育ちきりで消え、途中で最も明るい
+            if (c <= 0.0f || c >= 1.0f)
+            {
+                continue;
+            }
+            const float rim = std::sin(c * 3.1415927f); // 縁の明るさ。育ち始めと育ちきりで消え、途中で最も明るい
             diamond(cx, cy, fullHalf * c, kGoldR, kGoldG, kGoldB, 0.85f * rim);
         }
     }
 
-    // 2 周目: 黒の◆。縁より一回り小さく始め、育ちきると縁を飲み込んでセルを覆う
+    // ---------------------------------------------------------
+    // 5. 黒の◆
+    // ---------------------------------------------------------
+
+    // 縁より一回り小さく始め、育ちきると縁を飲み込んでセルを覆う。
     for (int row = 0; row < rows; ++row)
     {
         for (int col = 0; col < cols; ++col)
@@ -495,17 +544,24 @@ void SceneManager::DrawFade()
             const float cx = (static_cast<float>(col) + 0.5f) * cell;
             const float cy = (static_cast<float>(row) + 0.5f) * cell;
             const float c  = coverage(cx, cy);
-            if (c <= 0.0f) continue;
-            const float inner = 0.8f + 0.2f * c; // 縁の幅の分だけ小さく描く（育ちきると縁と同じ大きさ）
+            if (c <= 0.0f)
+            {
+                continue;
+            }
+            const float inner = 0.8f + 0.2f * c; // 縁の幅の分だけ小さく描く倍率（育ちきると縁と同じ大きさ）
             diamond(cx, cy, fullHalf * c * inner, 0.0f, 0.0f, 0.0f, 1.0f);
         }
     }
 
-    // 波の先頭を走る細い光の筋（斬撃の切れ味）。波の出入りの両端では消す
+    // ---------------------------------------------------------
+    // 6. 光の筋
+    // ---------------------------------------------------------
+
+    // 波の先頭に細い光の筋を走らせる。波の出入りの両端では消す。
     const float streakA = std::sin(p * 3.1415927f);
     if (streakA > 0.01f)
     {
-        // u = front の線は x + y * kSlope = front * span。画面の縦の中央を通る点から、傾けて縦に伸ばす
+        // u = front の線は x + y * kSlope = front * span。画面の縦の中央を通る点から、傾けて縦に伸ばす。
         const float x     = front * span - sh * 0.5f * kSlope;
         const float angle = std::atan(kSlope) * 57.29578f; // 下ほど左へ寄る向き
         const float len   = sh * 1.3f;

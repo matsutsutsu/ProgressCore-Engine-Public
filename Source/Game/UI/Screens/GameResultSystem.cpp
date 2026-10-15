@@ -26,61 +26,99 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // --- 演出の時間（リザルトを出してからの秒） ---
-    constexpr float kSubStart  = 0.35f; // 線の下の1行を打ち始める
-    constexpr float kRowStart  = 0.6f;  // 記録の1行目を打ち始める
+    // --- 演出の時間（秒。リザルトを出してから数える） ---
+    constexpr float kSubStart  = 0.35f; // 線の下の1行を打ち始めるまで
+    constexpr float kRowStart  = 0.6f;  // 記録の1行目を打ち始めるまで
     constexpr float kRowStep   = 0.16f; // 記録の行ごとの時間差
     constexpr float kMenuDelay = 0.6f;  // 記録の最後の行を打ち始めてから、ボタンが出るまで
-    constexpr float kMenuGap   = 60.0f; // 記録の最後の行からボタンの入れ物の上端まで（px）
+
+    constexpr float kMenuGap = 60.0f; // 記録の最後の行から、ボタンの入れ物の上端までの間隔（px）
 } // namespace
 
 void GameResultSystem::Initialize()
 {
-    // ポーズなどと共有するゲーム進行の状態。無ければ作る
+    // ポーズなどと共有するゲーム進行の状態。無ければ作る。
     if (!m_world->HasResource<GameFlowState>())
+    {
         m_world->AddResource<GameFlowState>();
+    }
 
-    // ボタンのクリックを購読する。ポーズのボタンも同じイベントを出すので、actionHash で見分ける
+    // --- ボタン ---
+
+    // ポーズのボタンも同じイベントを出すので、actionHash で見分ける。
     const uint32_t kRetry = CCL::Utils::HashString("retry");
     const uint32_t kTitle = CCL::Utils::HashString("result_title");
 
     ListenEvent<UIButtonClickedEvent>(
         [this, kRetry, kTitle](const UIButtonClickedEvent &e) {
-            if (m_transitioning) return;
+            if (m_transitioning)
+            {
+                return;
+            }
 
             if (e.actionHash == kRetry)
             {
-                // ゲームを読み直す。フェードと裏での読み込みは SceneManager が行う
+                // ゲームを読み直す。フェードと裏での読み込みは SceneManager が行う。
                 m_transitioning = SceneManager::Instance().RequestTransition("Game", true);
             }
             else if (e.actionHash == kTitle)
             {
-                // タイトルへ戻る。アプリの終了はタイトル画面の QUIT だけにしてある。
-                // この購読はワーカースレッドで走ることがあるので、World を片付けるのは
-                // ここではなく SceneManager に任せる
+                // タイトルへ戻る。アプリの終了は、タイトル画面の「終了」だけにしている。
+                // この購読はワーカースレッドで走ることがあるので、World の片付けはここで行わず SceneManager に任せる。
                 m_transitioning = SceneManager::Instance().RequestTransition("Title", true);
             }
         });
 
-    // --- 戦いの記録。結果が出た後の分は数えない ---
+    // --- 戦いの記録 ---
+
+    // 結果が出た後の分は数えない。
     ListenEvent<AttackHitConfirmedEvent>([this](const AttackHitConfirmedEvent &e) {
-        if (!m_resultShown && e.attackerID == m_playerID.load()) ++m_hits;
+        if (!m_resultShown && e.attackerID == m_playerID.load())
+        {
+            ++m_hits;
+        }
     });
     ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &e) {
-        if (!m_resultShown && e.isPlayer) m_damageX10 += static_cast<int>(std::lround(e.damageAmount * 10.0f));
+        // atomic<float> は足し算が使えないので、10 倍して整数で足す。
+        if (!m_resultShown && e.isPlayer)
+        {
+            m_damageX10 += static_cast<int>(std::lround(e.damageAmount * 10.0f));
+        }
     });
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &) {
-        if (!m_resultShown) ++m_justEvades;
+        if (!m_resultShown)
+        {
+            ++m_justEvades;
+        }
     });
 }
 
 void GameResultSystem::Update(float dt)
 {
-    if (!m_debugEnabled) return; // ステージを確かめている間などに判定を止める（デバッグ用）
+    // 処理フロー:
+    // 1. 勝ちを判定した後なら、リザルトを出す時機を待つ
+    // 2. プレイヤーと敵を数える
+    // 3. 戦いの記録を数える
+    // 4. 勝敗を判定する
 
-    if (m_resultShown) return; // 出てくる演出は UIRevealSystem が進める
+    // ステージを確かめている間などに、判定を止められるようにする（デバッグ用）。
+    if (!m_debugEnabled)
+    {
+        return;
+    }
 
-    // 勝った後の待ち。dt はスローの影響を受けない実時間なので、数え終わればスローも終わっている
+    // リザルトを出した後の演出は、UIRevealSystem が進める。
+    if (m_resultShown)
+    {
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 1. 勝った後の待ち
+    // ---------------------------------------------------------
+
+    // 勝ちはすぐには出さない。最後の敵を倒したフレームから、DefeatSlowMotionSystem のスローが始まるため。
+    // dt はスローの影響を受けない実時間なので、kResultDelay を数え終えれば、スローも終わっている。
     if (m_pendingWin)
     {
         m_winDelay -= dt;
@@ -102,9 +140,14 @@ void GameResultSystem::Update(float dt)
             ShowResultUI(true); // MISSION COMPLETE
             CCL_LOG_INFO(LogCategory::Game, "[GameResult] Game Clear. Result UI shown (after defeat slow-mo).");
         }
-        return; // 待っている間は判定し直さない
+
+        // 待っている間は、勝敗を判定し直さない。
+        return;
     }
 
+    // ---------------------------------------------------------
+    // 2. プレイヤーと敵
+    // ---------------------------------------------------------
     bool playerPresent = false;
     bool playerDead    = false;
     bool anyEnemy      = false;
@@ -118,28 +161,48 @@ void GameResultSystem::Update(float dt)
         if (m_world->HasComponent<PlayerComponent>(id))
         {
             playerPresent = true;
-            if (dead) playerDead = true;
+            if (dead)
+            {
+                playerDead = true;
+            }
         }
         else if (m_world->HasComponent<Tag::EnemyTag>(id))
         {
             anyEnemy = true;
-            if (!dead) ++aliveEnemies;
+            if (!dead)
+            {
+                ++aliveEnemies;
+            }
         }
     });
 
-    if (anyEnemy) m_sawEnemy = true;
+    // 敵を一度見たかを覚える。始まった直後の、まだ敵が出ていない状態（敵 0 体）を勝ちにしないため。
+    if (anyEnemy)
+    {
+        m_sawEnemy = true;
+    }
 
-    // OnGui で表示するために控えておく
+    // OnGui で表示するために控えておく。
     m_dbgPlayerPresent = playerPresent;
     m_dbgAliveEnemies  = aliveEnemies;
 
-    // プレイヤーが居ないシーンでは判定しない。ステージを確かめるためのシーン（プレイヤーを置かない）で、
-    // 敵として数えた HealthComponent が 0 になった瞬間に GAME CLEAR が出てしまうため
-    if (!playerPresent) return;
+    // プレイヤーが居ないシーンでは判定しない。
+    // ステージを確かめるためのシーン（プレイヤーを置かない）で、敵として数えた HealthComponent が 0 になった瞬間に勝ちが出てしまう。
+    if (!playerPresent)
+    {
+        return;
+    }
 
+    // ---------------------------------------------------------
+    // 3. 戦いの記録
+    // ---------------------------------------------------------
     CountBattleStats(dt);
 
-    // 負けを先に判定する
+    // ---------------------------------------------------------
+    // 4. 勝敗
+    // ---------------------------------------------------------
+
+    // 負けを先に判定する。
     if (playerDead)
     {
         EndMatch();
@@ -149,7 +212,7 @@ void GameResultSystem::Update(float dt)
     }
     else if (m_sawEnemy && aliveEnemies == 0)
     {
-        // すぐには出さず、スローが終わってから出す（出すのは上の待ちの処理）。操作はこの時点で止める
+        // リザルトはすぐには出さず、上の「勝った後の待ち」で出す。操作はこの時点で止める。
         EndMatch();
         m_pendingWin = true;
         m_winDelay   = kResultDelay;
@@ -159,29 +222,45 @@ void GameResultSystem::Update(float dt)
 
 void GameResultSystem::CountBattleStats(float dt)
 {
-    // Update はロジックの帯で走るので、ポーズ中は呼ばれない（時間も数えない）
+    // Update はロジックの帯で走るので、ポーズ中は呼ばれない（時間も数えない）。
     m_playTime += dt;
 
-    if (!m_world->HasResource<BattleContext>()) return;
+    if (!m_world->HasResource<BattleContext>())
+    {
+        return;
+    }
     const auto &battle = m_world->GetResource<BattleContext>();
     m_playerID.store(battle.playerEntity);
 }
 
 void GameResultSystem::EndMatch()
 {
-    // プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める（読み手は GameFlowState::matchOver の説明を参照）
+    // プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める（読み手は GameFlowState::matchOver の説明を参照）。
     if (m_world->HasResource<GameFlowState>())
+    {
         m_world->GetResource<GameFlowState>().matchOver = true;
+    }
 }
 
 void GameResultSystem::ShowResultUI(bool win)
 {
+    // 処理フロー:
+    // 1. 操作とボスを止め、結果が出た時点の値を取る
+    // 2. Canvas と暗転を作る
+    // 3. 見出しと、線の下の1行を作る
+    // 4. 記録の行を作る
+    // 5. ボタンと操作のヒントを作る
+
     using namespace CCL::GameUI;
     World &w = *m_world;
 
-    EndMatch(); // デバッグの「強制表示」から呼ばれたときも止める
+    // ---------------------------------------------------------
+    // 1. 結果が出た時点の値
+    // ---------------------------------------------------------
 
-    // --- 結果が出た時点の値 ---
+    // デバッグの「リザルトを出す」から呼ばれたときも、操作とボスを止める。
+    EndMatch();
+
     int swarm = 0;
     w.ViewEach<DroneComponent>([&swarm](EntityID) { ++swarm; });
     m_swarmMax = std::max(m_swarmMax, swarm);
@@ -190,33 +269,50 @@ void GameResultSystem::ShowResultUI(bool win)
     {
         const auto &battle = w.GetResource<BattleContext>();
         if (const auto *hp = battle.HasBoss() ? w.GetComponent<HealthComponent>(battle.bossEntity) : nullptr)
+        {
             m_bossHpRatio = std::clamp(hp->currentHealth / std::max(hp->maxHealth, 1.0f), 0.0f, 1.0f);
+        }
     }
 
-    // 以降の UI はすべてこの Canvas の子にする。リザルトはシーンを切り替えるまで消さないので、ID は持たない
+    // ---------------------------------------------------------
+    // 2. Canvas と暗転
+    // ---------------------------------------------------------
+
+    // 以降の UI はすべてこの Canvas の子にする。
+    // リザルトはシーンを切り替えるまで消さないので、作った ID は持っておかない。
     const EntityID        canvas = SpawnCanvas(w, "ResultCanvas");
     std::vector<EntityID> spawned;
 
-    // 暗転。下ほど濃くして、左上の文字を読みやすくする（フェードだけ・スライドしない）
+    // 暗転は下ほど濃くして、左上の文字を読みやすくする。フェードだけで、スライドはしない。
     const DirectX::XMFLOAT4 dimBottom{0.0f, 0.0f, 0.0f, 0.85f};
     SpawnPanel(w, "ResultDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.55f}, 200,
                0.00f, 0.0f, canvas, &dimBottom);
 
-    // 見出しと線。勝ちは白金、負けは深紅
+    // ---------------------------------------------------------
+    // 3. 見出しと、線の下の1行
+    // ---------------------------------------------------------
+
+    // 見出しの色は、勝ちは白金、負けは深紅。
     SpawnScreenHeading(w, canvas, win ? "MISSION COMPLETE" : "MISSION FAILED",
                        win ? ScreenColor::kGold : ScreenColor::kRed, spawned);
 
-    // 線の下の1行: 勝ちなら撃破、負けならボスの残り HP
+    // 線の下の1行は、勝ちなら撃破、負けならボスの残り HP。
     char sub[96];
     if (win)
+    {
         std::snprintf(sub, sizeof(sub), "ボス ミュリエルを撃破した");
+    }
     else
+    {
         std::snprintf(sub, sizeof(sub), "ボス ミュリエルの残りHP  %d%%",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
+    }
     SpawnTypedText(w, "ResultSub", sub, ScreenLayout::kLeft, ScreenLayout::kSubY, 20.0f, ScreenColor::kSub, kSubStart,
                    canvas);
 
-    // 記録の行
+    // ---------------------------------------------------------
+    // 4. 記録の行
+    // ---------------------------------------------------------
     const int   minutes = static_cast<int>(m_playTime) / 60;
     const float seconds = m_playTime - static_cast<float>(minutes * 60);
     char        buf[5][48];
@@ -229,14 +325,20 @@ void GameResultSystem::ShowResultUI(bool win)
     const char *labels[5] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避", "戦った群れ"};
     const char *names[5]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultSwarm"};
     for (int i = 0; i < 5; ++i)
+    {
         SpawnScreenRow(w, canvas, names[i], i, labels[i], buf[i], kRowStart + kRowStep * static_cast<float>(i), spawned);
+    }
 
-    // --- ボタンと操作のヒント（記録が出そろってから出す） ---
+    // ---------------------------------------------------------
+    // 5. ボタンと操作のヒント
+    // ---------------------------------------------------------
+
+    // 記録が出そろってから出す。
     const float    menuTop   = ScreenLayout::kRowY + ScreenLayout::kRowH * 4.0f + ScreenLayout::kRowPx + kMenuGap;
     const float    menuDelay = kRowStart + kRowStep * 4.0f + kMenuDelay;
     const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {ScreenLayout::kLeft, menuTop}, {320.0f, 140.0f}, canvas);
 
-    // 最初は RETRY を選んでおく
+    // 最初は「もう一度」を選んでおく。
     SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
     SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, 43.0f}, "result_title", false, 230,
                 menuDelay + 0.08f, menu);
@@ -249,7 +351,9 @@ void GameResultSystem::OnGui()
 
     ImGui::Checkbox("システム有効", &m_debugEnabled);
     if (!m_debugEnabled)
+    {
         ImGui::TextDisabled("→ 勝敗判定・リザルト表示を停止中");
+    }
 
     ImGui::Separator();
     ImGui::Text("プレイヤー存在 : %s", m_dbgPlayerPresent ? "yes" : "NO (テストScene扱い→抑止)");
@@ -272,7 +376,7 @@ void GameResultSystem::OnGui()
         m_transitioning = false;
     }
     ImGui::SameLine();
-    // 戦わずにリザルトの見た目を確かめる（今の記録のまま出す）
+    // 戦わずにリザルトの見た目を確かめる（今の記録のまま出す）。
     if (!m_resultShown && ImGui::Button("勝ちのリザルトを出す"))
     {
         m_resultShown = true;

@@ -8,7 +8,6 @@
                     "ownerBossId": 3
                 },
                 "Material": null,
-                "No Shadow": {},
                 "Model": {
                     "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.glb"
                 },

@@ -30,11 +30,17 @@ void UIRevealSystem::Update(float dt)
         case UIRevealMode::Type:
         {
             auto *tx = m_world->GetComponent<UITextComponent>(id);
-            if (!tx) break;
+            if (!tx)
+            {
+                break;
+            }
             // 数えるのはバイトではなく文字（日本語は1文字が3バイト）
             const auto  count = static_cast<size_t>(std::max(local * rv.speed, 0.0f));
             std::string shown = TextRenderer::Utf8Prefix(rv.text, count);
-            if (tx->text != shown) tx->text = std::move(shown);
+            if (tx->text != shown)
+            {
+                tx->text = std::move(shown);
+            }
             break;
         }
         case UIRevealMode::SlideIn:

@@ -1,13 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: UIDrawList を 2D パスで描くクラス UIRenderer（画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer）。
+// 概要: UIDrawList を 2D パスで描くクラス UIRenderer。
+//       画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer で描く。
 //
 // 責務:
-//   - 描画アイテムを sortOrder 昇順に描き、加算合成のものは最後にまとめて描く
-//   - 描き終えたら描画リストをクリアする
-//   - Sprite をパスごとにキャッシュする（texturePath が空なら白テクスチャで単色塗り）
+//   - 描画アイテムに画面全体の不透明度を掛け、sortOrder の昇順に描く
+//   - 加算合成のアイテムは、通常合成のアイテムをすべて描いた後にまとめて描く
+//   - 描き終えたら描画リストを空にする
+//   - Sprite をテクスチャのパスごとにキャッシュする（パスが空なら白テクスチャで単色の四角形）
 //
-// 備考: BaseScene::Render() の 2D パス（ブレンド・深度の設定済み）から Flush を呼ぶ。
+// 備考: BaseScene::Render() の 2D パス（合成・深度の設定済み）から Flush を呼ぶ。
 // ===========================================================================
 #include <d3d11.h>
 #include <memory>
@@ -25,42 +27,49 @@ struct UIDrawItem;
 class UIRenderer
 {
 public:
-    // Sprite/TextRenderer が前方宣言（unique_ptr）のため特殊メンバは .cpp で定義する。
+    // Sprite / TextRenderer を前方宣言のまま unique_ptr で持つので、コンストラクタとデストラクタは .cpp で定義する
     UIRenderer();
     ~UIRenderer();
 
     /**
-     * @brief 描画リストを sortOrder 昇順で描画し、末尾でリストをクリアする（2Dパス内から呼ぶ）。
-     * @param renderState 加算合成へ切り替えるために使う。nullptr なら additive 指定を無視して
-     *        呼び出し側が設定済みの合成のまま1巡で描く（発光しないが消えはしない）。
+     * @brief 描画リストを sortOrder の昇順に描き、最後にリストの items を空にする。
+     * @param dc          描画に使うデバイスコンテキスト。
+     * @param device      Sprite・フォントを初めて作るときに使うデバイス。
+     * @param list        描く描画リスト。アイテムの色に不透明度を掛けて書き換える。
+     * @param renderState 加算合成へ切り替えるのに使う。nullptr なら additive を無視し、
+     *                    呼び出し側が設定済みの合成のまま全部を描く（発光しないが、消えはしない）。
+     * @note BaseScene::Render() の 2D パスの中から呼ぶ。
      */
     void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
                RenderState *renderState = nullptr);
 
 private:
-    // DrawItems がどのアイテムを描くか
+    // DrawItems が描くアイテムの種類
     enum class BlendPass
     {
-        All,      // additive を無視して全部（合成を切り替えられない時のフォールバック）
-        Normal,   // additive == false のものだけ
-        Additive, // additive == true  のものだけ
+        All,      // additive に関係なく全部（合成を切り替えられないとき）
+        Normal,   // additive が false のものだけ
+        Additive, // additive が true のものだけ
     };
 
-    // 並び替え済みのアイテム列から、pass に該当するものだけを描く
+    /**
+     * @brief 並べ替え済みのアイテム列から、pass に当てはまるものだけを描く。
+     * @param dc      描画に使うデバイスコンテキスト。
+     * @param device  Sprite・フォントを初めて作るときに使うデバイス。
+     * @param ordered sortOrder の昇順に並べたアイテム。所有しない。
+     * @param pass    描くアイテムの種類。
+     */
     void DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                    const std::vector<const UIDrawItem *> &ordered, BlendPass pass);
 
-    Sprite       *GetWhite(ID3D11Device *device);                            // 単色塗り用の白テクスチャ（初回に生成）
-    Sprite       *GetSprite(ID3D11Device *device, const std::string &path); // 空パスなら白テクスチャ
-    TextRenderer *GetText(ID3D11Device *device);                            // 初回に初期化
-    UIGaugeSprite *GetGauge(ID3D11Device *device);                          // 初回に生成
+    Sprite        *GetWhite(ID3D11Device *device);                            // 単色の四角形用の白テクスチャ（最初の呼び出しで作る）
+    Sprite        *GetSprite(ID3D11Device *device, const std::string &path); // パスのテクスチャ。空・読めないパスなら白テクスチャ
+    TextRenderer  *GetText(ID3D11Device *device);                            // フォント（最初の呼び出しで初期化）。失敗なら nullptr
+    UIGaugeSprite *GetGauge(ID3D11Device *device);                          // ゲージの描画（最初の呼び出しで作る）
 
-    std::unique_ptr<Sprite>        m_white; // 単色塗り用
-    std::unique_ptr<UIGaugeSprite> m_gauge; // ゲージ用（全ゲージで1つを使い回す）
-
-    // テクスチャ別のキャッシュ。値が null のエントリは「そのパスは読めなかった」印で、
-    // 毎フレームの再読み込みと警告を止めるために残す（描画には白テクスチャを使う）
-    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache;
-    std::unique_ptr<TextRenderer>                            m_text;              // フォント（初回に初期化）
-    bool                                                     m_textTried = false; // 初期化を試みたか（失敗しても再試行しない）
+    std::unique_ptr<Sprite>                                  m_white;             // 単色の四角形用
+    std::unique_ptr<UIGaugeSprite>                           m_gauge;             // ゲージ用。全ゲージで1つを使い回す
+    std::unordered_map<std::string, std::unique_ptr<Sprite>> m_cache;             // テクスチャのパスごとの Sprite。null は読めなかったパス
+    std::unique_ptr<TextRenderer>                            m_text;              // フォント
+    bool                                                     m_textTried = false; // フォントの初期化を試みたか
 };

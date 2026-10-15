@@ -10,9 +10,8 @@
 #include <algorithm>
 #include <filesystem>
 
-// 既定のフォント。半角英数字は等幅の Ricty、日本語などそれ以外の文字は M PLUS 1 で描く
-static const char *kDefaultFontPath  = "Assets/Fonts/RictyDiminished-Regular.ttf";
-static const char *kFallbackFontPath = "Assets/Fonts/MPLUS1-Medium.ttf";
+static const char *kDefaultFontPath  = "Assets/Fonts/RictyDiminished-Regular.ttf"; // 半角英数字のフォント（等幅）
+static const char *kFallbackFontPath = "Assets/Fonts/MPLUS1-Medium.ttf";           // 日本語など、それ以外の文字のフォント
 
 UIRenderer::UIRenderer()  = default;
 UIRenderer::~UIRenderer() = default;
@@ -24,31 +23,42 @@ UIRenderer::~UIRenderer() = default;
 Sprite *UIRenderer::GetWhite(ID3D11Device *device)
 {
     if (!m_white)
+    {
         m_white = std::make_unique<Sprite>(device);
+    }
     return m_white.get();
 }
 
 Sprite *UIRenderer::GetSprite(ID3D11Device *device, const std::string &path)
 {
     if (path.empty())
-        return GetWhite(device); // 単色塗り
+    {
+        return GetWhite(device);
+    }
 
     auto it = m_cache.find(path);
     if (it != m_cache.end())
-        return it->second ? it->second.get() : GetWhite(device); // null は読めなかったパス
+    {
+        return it->second ? it->second.get() : GetWhite(device);
+    }
 
     // 読み込む前にファイルの有無を確かめる。
-    //   texturePath はインスペクタから手入力できるので、打ち間違いが起きる。
-    //   Sprite のコンストラクタは失敗を返さず、Debug では _ASSERT_EXPR で止まり、
-    //   Release では未初期化の D3D11_TEXTURE2D_DESC から幅・高さを読んでしまう
-    //   （その壊れた Sprite がキャッシュに残り続ける）。
-    //   ここで弾いて白テクスチャで代用し、UI が消えるのではなく白い矩形が出ることで気付けるようにする
+    // texturePath はインスペクタから手入力できるので、打ち間違いが起きる。
+
+    // Sprite のコンストラクタは失敗を返さない。
+    // Debug では _ASSERT_EXPR で止まり、Release では未初期化の D3D11_TEXTURE2D_DESC から幅・高さを読んでしまう。
+    // その壊れた Sprite はキャッシュに残り続ける。
+
+    // そこでここで弾き、白テクスチャで代用する。
+    // UI が消えるのではなく白い四角形が出るので、打ち間違いに気付ける。
     std::error_code ec;
     if (!std::filesystem::exists(path, ec))
     {
         CCL_LOG_WARN(LogCategory::Render,
                      "[UIRenderer] テクスチャが見つかりません: '%s'（白ダミーで代替）", path.c_str());
-        m_cache.emplace(path, nullptr); // 失敗も記録し、毎フレーム同じ警告を出さない
+
+        // 読めなかったことも null で記録し、毎フレーム同じ警告を出さない。
+        m_cache.emplace(path, nullptr);
         return GetWhite(device);
     }
 
@@ -61,18 +71,23 @@ Sprite *UIRenderer::GetSprite(ID3D11Device *device, const std::string &path)
 UIGaugeSprite *UIRenderer::GetGauge(ID3D11Device *device)
 {
     if (!m_gauge)
+    {
         m_gauge = std::make_unique<UIGaugeSprite>(device);
+    }
     return m_gauge.get();
 }
 
 TextRenderer *UIRenderer::GetText(ID3D11Device *device)
 {
+    // 初期化は1回だけ試す。フォントが無いときに、毎フレーム読み込みを試し直さない。
     if (!m_textTried)
     {
-        m_textTried = true; // 失敗しても毎フレーム再試行しない
+        m_textTried = true;
         auto tr     = std::make_unique<TextRenderer>();
         if (tr->Initialize(device, kDefaultFontPath, 48.0f, kFallbackFontPath))
+        {
             m_text = std::move(tr);
+        }
     }
     return m_text.get();
 }
@@ -86,19 +101,29 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
 {
     for (const UIDrawItem *item : ordered)
     {
-        if (pass == BlendPass::Normal && item->additive) continue;
-        if (pass == BlendPass::Additive && !item->additive) continue;
+        if (pass == BlendPass::Normal && item->additive)
+        {
+            continue;
+        }
+        if (pass == BlendPass::Additive && !item->additive)
+        {
+            continue;
+        }
 
         if (item->kind == UIDrawKind::Image)
         {
             Sprite *sprite = GetSprite(device, item->texturePath);
-            if (!sprite) continue;
+            if (!sprite)
+            {
+                continue;
+            }
 
-            // uvRect は正規化 [0,1]。Sprite の切り抜きはピクセル指定なので、ここでテクスチャの実サイズを掛ける
+            // uvRect は 0〜1 の割合で持つ。Sprite の切り抜きはピクセルで指定するので、テクスチャの実寸を掛ける。
             const float texW = sprite->GetWidth();
             const float texH = sprite->GetHeight();
 
-            // 上端は color、下端は colorBottom。グラデーションなしなら 4 隅とも同じ色
+            // 上端は color、下端は colorBottom の縦グラデーションにする。
+            // 4隅を別々の色にはしない。UI の四角形は縦方向のグラデーションで足りる。
             const DirectX::XMFLOAT4 top        = item->color;
             const DirectX::XMFLOAT4 bot        = item->useGradient ? item->colorBottom : item->color;
             const DirectX::XMFLOAT4 corners[4] = {top, top, bot, bot}; // 左上/右上/左下/右下
@@ -119,7 +144,10 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
         else // Text
         {
             TextRenderer *tr = GetText(device);
-            if (!tr || !tr->IsReady()) continue;
+            if (!tr || !tr->IsReady())
+            {
+                continue;
+            }
             tr->DrawText(dc, item->text, item->pos.x, item->pos.y, item->pixelSize, item->color);
         }
     }
@@ -128,49 +156,88 @@ void UIRenderer::DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
 void UIRenderer::Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
                        RenderState *renderState)
 {
-    if (list.items.empty()) return;
+    // 処理フロー:
+    // 1. 画面全体の不透明度を掛け、描くアイテムを集める
+    // 2. 描画順に並べる
+    // 3. 通常合成・加算合成の順に描く
+    // 4. 描画リストを空にする
 
-    // sortOrder 昇順に並べる。同じ sortOrder は積まれた順を保つ（安定ソート）
+    if (list.items.empty())
+    {
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 1. 不透明度
+    // ---------------------------------------------------------
+
+    // 画面を重ねて入れ替える途中は、境目より奥と手前に、それぞれの不透明度を掛ける。
+    // 設定画面が、下の画面の UI を薄くしながら自分を出すのに使う。
+
+    // HUD（描画順が hudSortEnd より小さい要素）には、さらに HUD の不透明度を掛ける。
+    // ムービーの間、HUD を薄くして隠すのに使う。
+
+    // 部品ごとの visible や alpha では隠さない。
+    // HUD などの System がそれらを毎フレーム書き戻すので、外から書いてもすぐ元に戻る。
     std::vector<const UIDrawItem *> ordered;
     ordered.reserve(list.items.size());
     for (auto &it : list.items)
     {
-        // 境目の奥と手前に、それぞれの不透明度を掛ける（画面を重ねて入れ替える途中）
         float a = (it.sortOrder >= list.splitSortOrder) ? list.aboveAlpha : list.belowAlpha;
-        if (it.sortOrder < list.hudSortEnd) a *= list.hudAlpha; // HUD（ムービー中は薄くして隠す）
-        if (a <= 0.0f) continue;
+        if (it.sortOrder < list.hudSortEnd)
+        {
+            a *= list.hudAlpha;
+        }
+        if (a <= 0.0f)
+        {
+            continue;
+        }
         it.color.w *= a;
         it.colorBottom.w *= a;
         ordered.push_back(&it);
     }
+
+    // ---------------------------------------------------------
+    // 2. 並べ替え
+    // ---------------------------------------------------------
+
+    // 同じ描画順のアイテムは、積まれた順を保つ（安定ソート）。
     std::stable_sort(ordered.begin(), ordered.end(),
                      [](const UIDrawItem *a, const UIDrawItem *b) { return a->sortOrder < b->sortOrder; });
 
+    // ---------------------------------------------------------
+    // 3. 描く
+    // ---------------------------------------------------------
     const bool hasAdditive = renderState && std::any_of(ordered.begin(), ordered.end(),
                                                         [](const UIDrawItem *i) { return i->additive; });
 
     if (!hasAdditive)
     {
-        // 加算が無い（または合成を切り替える手段が無い）なら 1 回で全て描く。
-        // renderState が無いときに additive のアイテムも描くのは、発光しないより消える方が問題だから
+        // 加算が無い、または合成を切り替える手段が無いときは、1回で全部を描く。
+        // renderState が無いときも additive のアイテムを描くのは、発光しないより消える方が困るため。
         DrawItems(dc, device, ordered, BlendPass::All);
     }
     else
     {
-        // 通常合成 → 加算合成の順に描く。加算は下にある絵に足して初めて光って見えるため、
-        // sortOrder に関係なく最後にまとめる
+        // 加算は、下にある絵に足して初めて光って見える。
+        // そこで通常合成のアイテムをすべて描いた後に、描画順に関係なくまとめて描く。
         DrawItems(dc, device, ordered, BlendPass::Normal);
 
-        // RT のアルファを書き換えない UI 用の加算にする。Additive のままだと、透明な部分の多い画像
-        // （タイトルロゴを白く光らせる写しなど）で画像の矩形の形に α の穴が開き、黒い四角に見える
+        // 加算は、RT の α を書き換えない UI 用の加算（UIAdditive）にする。
+        // Additive のままだと、透明な部分の多い画像（タイトルロゴを白く光らせる写しなど）で、
+        // 画像の四角形の形に α の穴が開き、黒い四角に見える。
         dc->OMSetBlendState(renderState->GetBlendState(BlendState::UIAdditive), nullptr, 0xffffffff);
         DrawItems(dc, device, ordered, BlendPass::Additive);
 
         // 呼び出し側（BaseScene の 2D パス）が設定していた合成へ戻す。
-        // 戻さないと、この後の OnRenderUI が加算のまま描かれる
+        // 戻さないと、この後の OnRenderUI が加算のまま描かれる。
         dc->OMSetBlendState(renderState->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
     }
 
-    // 次のフレームは収集 System が空のリストから積み直す
+    // ---------------------------------------------------------
+    // 4. 片付け
+    // ---------------------------------------------------------
+
+    // 次のフレームは、収集 System が空のリストから積み直す。
     list.Clear();
 }

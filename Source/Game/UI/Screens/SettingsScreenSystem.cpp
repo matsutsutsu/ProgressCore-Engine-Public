@@ -29,24 +29,30 @@ namespace
     constexpr int VKEY_RIGHT  = 0x27;
 
     // --- 配置（画面の左上からの px。左端と見出しはリザルト・ポーズとそろえる） ---
-    constexpr float kRowsGap   = 130.0f;                           // 見出しの下の線から行の入れ物の上端まで
-    constexpr float kRowH      = 80.0f;                            // 行の間隔
-    constexpr float kDecX      = ScreenLayout::kLeft + 370.0f;     // < ボタンの中心
-    constexpr float kGaugeX    = ScreenLayout::kLeft + 400.0f;     // ゲージの左端
-    constexpr float kGaugeW    = 260.0f;                           // ゲージの長さ
-    constexpr float kIncX      = kGaugeX + kGaugeW + 30.0f;        // > ボタンの中心
-    constexpr float kValueX    = kIncX + 34.0f;                    // 値の文字の左端
-    constexpr float kArrowSize = 36.0f;                            // < > ボタンの大きさ
+    constexpr float kRowsGap   = 130.0f;                       // 見出しの下の線から、行の入れ物の上端までの間隔
+    constexpr float kRowH      = 80.0f;                        // 行の間隔
+    constexpr float kDecX      = ScreenLayout::kLeft + 370.0f; // < ボタンの中心
+    constexpr float kGaugeX    = ScreenLayout::kLeft + 400.0f; // ゲージの左端
+    constexpr float kGaugeW    = 260.0f;                       // ゲージの長さ
+    constexpr float kIncX      = kGaugeX + kGaugeW + 30.0f;    // > ボタンの中心
+    constexpr float kValueX    = kIncX + 34.0f;                // 値の文字の左端
+    constexpr float kArrowSize = 36.0f;                        // < > ボタンの大きさ
 
     // --- 描画順（ポーズ・リザルトの UI より手前） ---
-    constexpr int kSortDim    = 300;
-    constexpr int kSortHead   = 320;
-    constexpr int kSortRow    = 330;
-    constexpr int kSortValue  = 335;
+    constexpr int kSortDim   = 300; // 暗転。下の画面との境目にもなる
+    constexpr int kSortHead  = 320; // 見出し
+    constexpr int kSortRow   = 330; // 行のボタン・< > ボタン
+    constexpr int kSortValue = 335; // ゲージ・値の文字・< > の記号
 
-    constexpr float kFadeTime = 0.2f; // 下の画面と設定画面を入れ替える秒数
+    constexpr float kFadeTime = 0.2f; // 下の画面と設定画面を入れ替える時間（秒）
 
-    // 刻みに丸める（足し引きを繰り返して 0.30000001 のような半端な値にならないように）
+    /**
+     * @brief 値を刻みの倍数に丸める。
+     * @param v    丸める値。
+     * @param step 刻み。0 より大きいこと。
+     * @return step の倍数のうち、v に最も近い値。
+     * @note 足し引きを繰り返して、0.30000001 のような半端な値にならないようにする。
+     */
     float Snap(float v, float step) { return std::round(v / step) * step; }
 } // namespace
 
@@ -57,21 +63,31 @@ namespace
 void SettingsScreenSystem::Initialize()
 {
     if (!m_world->HasResource<SettingsScreenState>())
+    {
         m_world->AddResource<SettingsScreenState>();
+    }
 }
 
 void SettingsScreenSystem::PlaySound(const char *eventName) const
 {
-    if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>())
+    {
+        return;
+    }
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
+    {
         audio->PlayOneShot(CCL::Utils::HashString(eventName));
+    }
 }
 
 void SettingsScreenSystem::ApplySettings()
 {
     const GameSettings &s = GameSettings::Instance();
 
-    // カメラ: 感度の倍率と上下反転。カメラは毎回作り直されることがあるので、毎フレーム書く
+    // --- カメラ ---
+
+    // 感度の倍率と上下反転を書く。
+    // カメラは作り直されることがあるので、毎フレーム書く。
     m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID id) {
         if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(id))
         {
@@ -80,9 +96,18 @@ void SettingsScreenSystem::ApplySettings()
         }
     });
 
-    // 音声: 変わったときだけ反映する（再生中の全部の音へ掛け直すので、毎フレームはしない）
-    if (s.bgmVolume == m_appliedBgm && s.sfxVolume == m_appliedSfx) return;
-    if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
+    // --- 音声 ---
+
+    // 音量は変わったときだけ反映する。
+    // 反映すると再生中のすべての音へ掛け直すので、毎フレームはしない。
+    if (s.bgmVolume == m_appliedBgm && s.sfxVolume == m_appliedSfx)
+    {
+        return;
+    }
+    if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>())
+    {
+        return;
+    }
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
     {
         audio->SetCategoryVolume(AudioCategory::BGM, s.bgmVolume);
@@ -111,8 +136,9 @@ EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, con
     UIImageComponent img;
     img.sortOrder = kSortRow;
 
+    // 上下の行の移動に混ざらないよう、フォーカスは受けず、マウスで押すだけにする。
     UIInteractableComponent inter;
-    inter.focusable = false; // 上下の行の移動に混ざらないよう、マウスで押すだけにする
+    inter.focusable = false;
 
     UIButtonComponent btn;
     btn.normalColor   = {0.0f, 0.0f, 0.02f, 0.4f};
@@ -123,7 +149,7 @@ EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, con
     e.Set(MakeUINode(canvas)).Set(t).Set(img).Set(inter).Set(btn);
     m_overlay.push_back(e.ID());
 
-    // 記号（等幅のフォントなので、文字の幅の半分だけ左へずらして中央に置く）
+    // 記号は等幅のフォントなので、文字の幅（高さのおよそ半分）の半分だけ左へずらして中央に置く。
     constexpr float kGlyphPx = 24.0f;
     m_overlay.push_back(SpawnTextTopLeft(*m_world, (std::string(name) + "Glyph").c_str(), glyph, x - kGlyphPx * 0.25f,
                                          y - kGlyphPx * 0.5f, kGlyphPx, ScreenColor::kValue, canvas, kSortValue));
@@ -132,12 +158,28 @@ EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, con
 
 void SettingsScreenSystem::Open(EntityID opener)
 {
+    // 処理フロー:
+    // 1. 開いた状態にする
+    // 2. 下の画面のボタンを操作できなくする
+    // 3. Canvas と暗転を作る
+    // 4. 見出しを作る
+    // 5. 行（ボタン・< ゲージ > ・値）を作る
+    // 6. 操作のヒントを作る
+
+    // ---------------------------------------------------------
+    // 1. 開いた状態
+    // ---------------------------------------------------------
     World &w = *m_world;
     m_open   = true;
     m_opener = opener;
     w.GetResource<SettingsScreenState>().open = true;
 
-    // 下の画面のボタンを操作できなくする（開いている間に、裏のボタンへ選択が移ったり押せたりしないように）
+    // ---------------------------------------------------------
+    // 2. 下の画面のボタン
+    // ---------------------------------------------------------
+
+    // 開いている間に、裏のボタンへ選択が移ったり、押せたりしないようにする。
+    // 操作できなくしたものだけを控え、閉じるときに戻す。
     m_disabled.clear();
     w.ViewEach<UIInteractableComponent>([&](EntityID id) {
         auto *inter = w.GetComponent<UIInteractableComponent>(id);
@@ -148,25 +190,33 @@ void SettingsScreenSystem::Open(EntityID opener)
         }
     });
 
-    // --- 画面を作る（すべて Canvas の子） ---
+    // ---------------------------------------------------------
+    // 3. Canvas と暗転
+    // ---------------------------------------------------------
+
+    // 作る部品はすべて Canvas の子にする。
     m_overlay.clear();
     const EntityID canvas = SpawnCanvas(w, "SettingsCanvas");
     m_overlay.push_back(canvas);
 
-    // 下の画面（ポーズ・タイトル・HUD）の UI を薄くしながら設定画面を出す（設定画面が出そろう次のフレームから）
+    // 下の画面（ポーズ・タイトル・HUD）の UI を薄くしながら設定画面を出す。
+    // 入れ替えは、設定画面が出そろう次のフレームから UpdateFade が始める。
     m_fadeStarted         = false;
     m_closing             = false;
     m_restoreBelowPending = false;
     m_fade                = 0.0f;
 
-    // 暗転。下の画面の暗転も隠れるので、ポーズ画面と同じ薄さにする
+    // 暗転は、ポーズ画面と同じ薄さにする。入れ替えると下の画面の暗転は隠れるので、こちらで同じ暗さを作る。
     static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.82f};
     m_overlay.push_back(SpawnPanel(w, "SettingsDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.5f},
                                    kSortDim, -1.0f, 0.0f, canvas, &kDimBottom));
 
+    // ---------------------------------------------------------
+    // 4. 見出し
+    // ---------------------------------------------------------
     SpawnScreenHeading(w, canvas, "SETTINGS", ScreenColor::kGold, m_overlay, kSortHead);
     {
-        // 英語の見出しに、日本語を小さく添える（打ち込みの演出は他の画面と同じ）
+        // 英語の見出しに、日本語を小さく添える。打ち込みの演出は他の画面と同じ。
         UIRevealComponent rv;
         rv.mode  = UIRevealMode::Type;
         rv.delay = 0.2f;
@@ -176,7 +226,11 @@ void SettingsScreenSystem::Open(EntityID opener)
                                              ScreenColor::kSub, canvas, kSortHead, 1.0f, &rv));
     }
 
-    // 行の入れ物（ボタンは入れ物の中央からの位置で置く）
+    // ---------------------------------------------------------
+    // 5. 行
+    // ---------------------------------------------------------
+
+    // 行のボタンは入れ物の中央からの位置で置く（SpawnButton の決まり）。
     const float    rowsTop = ScreenLayout::kRuleY + kRowsGap;
     const float    boxH    = kRowH * static_cast<float>(RowCount);
     const EntityID box     = SpawnBox(w, "SettingsRows", {0.0f, 0.0f}, {ScreenLayout::kLeft, rowsTop}, {320.0f, boxH}, canvas);
@@ -185,6 +239,7 @@ void SettingsScreenSystem::Open(EntityID opener)
     const char *labels[RowCount] = {"視点の感度", "上下反転", "BGMの音量", "効果音の音量", "戻る"};
     for (int i = 0; i < RowCount; ++i)
     {
+        // --- 行のボタン ---
         char btnName[32], lblName[32];
         std::snprintf(btnName, sizeof(btnName), "SettingsRow%d", i);
         std::snprintf(lblName, sizeof(lblName), "SettingsRowLabel%d", i);
@@ -195,9 +250,16 @@ void SettingsScreenSystem::Open(EntityID opener)
         m_rows[i] = ids.button;
         m_overlay.push_back(ids.button);
         m_overlay.push_back(ids.label);
-        if (i == RowBack) break;
 
-        // 値の部品（< ゲージ > 値）。画面の左上を基準に、行の中心の高さへ置く
+        // 「戻る」は値を持たないので、ボタンだけで終わる。
+        if (i == RowBack)
+        {
+            break;
+        }
+
+        // --- 値の部品（< ゲージ > 値） ---
+
+        // 画面の左上を基準に、行の中心の高さへ置く。
         const float y = rowsTop + kRowH * (static_cast<float>(i) + 0.5f);
         char        name[32];
         std::snprintf(name, sizeof(name), "SettingsDec%d", i);
@@ -218,56 +280,94 @@ void SettingsScreenSystem::Open(EntityID opener)
             t.offset = {kGaugeX, y};
             t.size   = {kGaugeW, 12.0f};
 
-            UIProgressBarComponent bar; // HP ゲージと同じ斜めの細いゲージ
-            bar.sortOrder = kSortValue;
-            bar.bgColor   = {0.0f, 0.0f, 0.02f, 0.6f};
-            bar.fillColor = ScreenColor::kGold;
-            bar.gradient  = 0.25f;
-            bar.slant     = 8.0f;
-            bar.frame     = 1.5f;
+            // HP ゲージと同じ、斜めの細いゲージにする。
+            UIProgressBarComponent bar;
+            bar.sortOrder  = kSortValue;
+            bar.bgColor    = {0.0f, 0.0f, 0.02f, 0.6f};
+            bar.fillColor  = ScreenColor::kGold;
+            bar.gradient   = 0.25f;
+            bar.slant      = 8.0f;
+            bar.frame      = 1.5f;
             bar.frameColor = {0.96f, 0.88f, 0.62f, 0.35f};
-            bar.value      = ValueRatio(i); // 生成直後は GetComponent で引けないので、初めの値はここで入れる
+
+            // 生成は遅れて反映され、生成直後は GetComponent で引けない。初めの値はここで入れる。
+            bar.value = ValueRatio(i);
 
             e.Set(MakeUINode(canvas)).Set(t).Set(bar);
             m_gauge[i] = e.ID();
             m_overlay.push_back(e.ID());
         }
 
-        // 値の文字。上下反転の行はゲージの代わりに、< > の間に ON / OFF を出す
+        // 値の文字。上下反転の行はゲージの代わりに、< > の間にオン / オフを出す。
+        // 初めの値は、ゲージと同じ理由で生成時に入れる。
         std::snprintf(name, sizeof(name), "SettingsValue%d", i);
         const float textX = (i == RowInvertY) ? kGaugeX + kGaugeW * 0.5f - 24.0f : kValueX;
         m_valueText[i]    = SpawnTextTopLeft(w, name, ValueText(i).c_str(), textX, y - 12.0f, 24.0f, ScreenColor::kValue, canvas, kSortValue);
         m_overlay.push_back(m_valueText[i]);
     }
 
-    // 操作のヒント（決定・選択）
+    // ---------------------------------------------------------
+    // 6. 操作のヒント
+    // ---------------------------------------------------------
     SpawnMenuHints(w, box, boxH * 0.5f + 40.0f, m_overlay, 340, -1.0f);
 }
 
 void SettingsScreenSystem::Close()
 {
+    // 処理フロー:
+    // 1. 作った部品を消す
+    // 2. 下の画面の不透明度を、次のフレームで戻すよう予約する
+    // 3. 下の画面のボタンを操作できるように戻す
+    // 4. 設定を保存し、閉じた状態にする
+
     World &w = *m_world;
 
+    // ---------------------------------------------------------
+    // 1. 部品を消す
+    // ---------------------------------------------------------
+
     // Destroy は印を付けるだけで、実際に消すのはロジックの最後の HierarchyCleanupSystem。
-    //   ポーズ中はロジックが止まっていて消えないので、ここでは破棄を直接予約する。
-    //   作った部品は m_overlay に全部入っているので、親子をたどらなくても取りこぼさない
+    // ポーズ中はロジックが止まっていて消えないので、ここでは破棄を直接予約する。
+    // 作った部品は m_overlay にすべて入っているので、親子をたどらなくても取りこぼさない。
     for (EntityID id : m_overlay)
-        if (w.IsEntityValid(id)) w.RequestDestroyEntity(id);
+    {
+        if (w.IsEntityValid(id))
+        {
+            w.RequestDestroyEntity(id);
+        }
+    }
     m_overlay.clear();
 
-    // 境目を外す（設定画面が消える次のフレームで。それまでは設定画面を描かないまま）
+    // ---------------------------------------------------------
+    // 2. 不透明度を戻す予約
+    // ---------------------------------------------------------
+
+    // 設定画面が実際に消えるのは次のフレーム。それまでは設定画面を描かない（不透明度 0）まま置いておく。
     m_restoreBelowPending = true;
     m_fadeStarted         = false;
     m_closing             = false;
 
-    // 下の画面のボタンを元に戻し、開いたボタンへ選択を戻す
+    // ---------------------------------------------------------
+    // 3. 下の画面のボタン
+    // ---------------------------------------------------------
+
+    // 操作できるように戻し、開いたボタンへ選択を戻す。
     for (EntityID id : m_disabled)
+    {
         if (auto *inter = w.IsEntityValid(id) ? w.GetComponent<UIInteractableComponent>(id) : nullptr)
+        {
             inter->interactable = true;
+        }
+    }
     m_disabled.clear();
     if (auto *inter = w.IsEntityValid(m_opener) ? w.GetComponent<UIInteractableComponent>(m_opener) : nullptr)
+    {
         inter->isFocused = true;
+    }
 
+    // ---------------------------------------------------------
+    // 4. 保存して閉じる
+    // ---------------------------------------------------------
     GameSettings::Instance().Save();
 
     m_open          = false;
@@ -301,7 +401,9 @@ void SettingsScreenSystem::Adjust(int row, int dir)
     default:
         return;
     }
-    ApplySettings(); // 効果音の音量を変えたときに、次の音が新しい音量で鳴るよう先に反映する
+
+    // 効果音の音量を変えたときに、下の「移動」の音が新しい音量で鳴るよう、先に反映する。
+    ApplySettings();
     PlaySound("sfx:/ui_move");
     RefreshValues();
 }
@@ -310,8 +412,14 @@ void SettingsScreenSystem::RefreshValues()
 {
     for (int i = 0; i < kValueRows; ++i)
     {
-        if (auto *bar = m_world->GetComponent<UIProgressBarComponent>(m_gauge[i])) bar->value = ValueRatio(i);
-        if (auto *tx = m_world->GetComponent<UITextComponent>(m_valueText[i])) tx->text = ValueText(i);
+        if (auto *bar = m_world->GetComponent<UIProgressBarComponent>(m_gauge[i]))
+        {
+            bar->value = ValueRatio(i);
+        }
+        if (auto *tx = m_world->GetComponent<UITextComponent>(m_valueText[i]))
+        {
+            tx->text = ValueText(i);
+        }
     }
 }
 
@@ -349,10 +457,27 @@ std::string SettingsScreenSystem::ValueText(int row) const
 
 void SettingsScreenSystem::UpdateFade(float dt)
 {
-    if (!m_world->HasResource<UIDrawList>()) return;
+    // 処理フロー:
+    // 1. 閉じた次のフレームなら、下の画面の不透明度を元に戻す
+    // 2. 入れ替えの進み具合を進める
+    // 3. 描画リストへ不透明度を書く
+
+    // 【備考】
+    //   生成と破棄は次のフレームに反映される。
+    //   そこで、開いたときは設定画面が出そろう次のフレームから入れ替えを始め、閉じたときは部品を消した次のフレームで不透明度を戻す。
+    //   開閉と同じフレームで切り替えると、暗転の無いフレームや、暗転が2枚重なるフレームが1回挟まり、画面がちらつく。
+
+    if (!m_world->HasResource<UIDrawList>())
+    {
+        return;
+    }
     UIDrawList &list = m_world->GetResource<UIDrawList>();
 
-    // 閉じた次のフレーム: 設定画面は消えたので、下の画面を元どおり描く
+    // ---------------------------------------------------------
+    // 1. 閉じた次のフレーム
+    // ---------------------------------------------------------
+
+    // 設定画面は消えたので、下の画面を元どおり描く。
     if (m_restoreBelowPending)
     {
         list.splitSortOrder   = INT_MIN;
@@ -360,9 +485,16 @@ void SettingsScreenSystem::UpdateFade(float dt)
         list.aboveAlpha       = 1.0f;
         m_restoreBelowPending = false;
     }
-    if (!m_open) return;
+    if (!m_open)
+    {
+        return;
+    }
 
-    // 開いた次のフレーム: 設定画面が出そろったので、入れ替えを始める
+    // ---------------------------------------------------------
+    // 2. 進み具合
+    // ---------------------------------------------------------
+
+    // 開いた次のフレームは、設定画面が出そろったところなので、0 から始める。
     if (!m_fadeStarted)
     {
         m_fadeStarted = true;
@@ -374,7 +506,13 @@ void SettingsScreenSystem::UpdateFade(float dt)
         m_fade           = m_closing ? std::max(m_fade - step, 0.0f) : std::min(m_fade + step, 1.0f);
     }
 
-    const float s       = m_fade * m_fade * (3.0f - 2.0f * m_fade); // 動き始めと終わりをゆるやかに
+    // ---------------------------------------------------------
+    // 3. 不透明度
+    // ---------------------------------------------------------
+
+    // 暗転（kSortDim）を境目にして、手前の設定画面を濃く、奥の下の画面を薄くする。
+    // 2枚の暗転がどちらも半分の濃さで重なる途中は、背景がわずかに明るくなる。
+    const float s       = m_fade * m_fade * (3.0f - 2.0f * m_fade); // 動き始めと終わりをゆるやかにした進み具合
     list.splitSortOrder = kSortDim;
     list.aboveAlpha     = s;
     list.belowAlpha     = 1.0f - s;
@@ -382,40 +520,79 @@ void SettingsScreenSystem::UpdateFade(float dt)
 
 void SettingsScreenSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. 設定の値を反映し、入れ替えを進める
+    // 2. 閉じていれば、「設定」のボタンが押されたかを見て開く
+    // 3. 閉じる要求を受けていれば、入れ替えてから閉じる
+    // 4. 左右の入力と Esc・B を読む
+    // 5. 行のボタンと左右の入力で値を変える
+    // 6. < > ボタンで値を変える
+
+    // ---------------------------------------------------------
+    // 1. 反映と入れ替え
+    // ---------------------------------------------------------
     ApplySettings();
 
     World &w = *m_world;
 
     UpdateFade(dt);
 
-    // --- 閉じている: SETTINGS のボタンが押されたら開く ---
+    // ---------------------------------------------------------
+    // 2. 開く
+    // ---------------------------------------------------------
     if (!m_open)
     {
         EntityID opener = InvalidEntityID;
         ForEachWithID([&](EntityID id, const UIInteractableComponent &inter, const UIButtonComponent &btn) {
-            if (inter.clicked && btn.onClickAction == "open_settings") opener = id;
+            if (inter.clicked && btn.onClickAction == "open_settings")
+            {
+                opener = id;
+            }
         });
-        if (opener != InvalidEntityID) Open(opener);
+        if (opener != InvalidEntityID)
+        {
+            Open(opener);
+        }
         return;
     }
 
-    // 閉じる要求を受けたら、下の画面へ入れ替えてから閉じる。
-    //   次のフレームから始めるのは、同じフレームの Esc でポーズまで閉じないように
+    // ---------------------------------------------------------
+    // 3. 閉じる
+    // ---------------------------------------------------------
+
+    // 閉じる要求は、次のフレームのここで受ける。
+    // 要求を受けたフレームに閉じると、同じフレームの Esc で PauseSystem がポーズまで閉じてしまう。
     if (m_closePending && !m_closing)
     {
         m_closing = true;
-        // 押して閉じたときは UISoundSystem が「決定」を鳴らすので、Esc・B で閉じたときだけ「閉じる」を鳴らす
-        if (m_closeByCancel) PlaySound("sfx:/ui_close");
-    }
-    if (m_closing)
-    {
-        if (m_fade <= 0.0f) Close();
-        return; // 入れ替えの途中は操作を受けない
+
+        // 押して閉じたときは UISoundSystem が「決定」を鳴らす。Esc・B で閉じたときだけ「閉じる」を鳴らす。
+        if (m_closeByCancel)
+        {
+            PlaySound("sfx:/ui_close");
+        }
     }
 
-    // --- 入力 ---
+    // 入れ替えの途中は、操作を受けない。入れ替えが終わったら閉じる。
+    if (m_closing)
+    {
+        if (m_fade <= 0.0f)
+        {
+            Close();
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 4. 入力
+    // ---------------------------------------------------------
     Input *input = w.HasResource<Input *>() ? w.GetResource<Input *>() : nullptr;
-    if (!input) return;
+    if (!input)
+    {
+        return;
+    }
+
+    // エディタの別のウィンドウを操作している間は、キーボードを受けない（GameViewportInfo.h）。
     const bool keyUsable = !w.HasResource<GameViewportInfo>() || w.GetResource<GameViewportInfo>().KeyboardToGame();
     auto       key       = [&](int vk) { return keyUsable && input->GetKeyboard().IsTriggered(vk); };
     GamePad   &gp        = input->GetGamePad();
@@ -430,27 +607,49 @@ void SettingsScreenSystem::Update(float dt)
         return;
     }
 
-    // 選んでいる行（マウスが乗っている行を優先）と、押された行
+    // ---------------------------------------------------------
+    // 5. 行のボタン
+    // ---------------------------------------------------------
+
+    // 左右の入力は、選んでいる行（UIInputSystem がマウスの乗っている行を優先して決める）に効かせる。
     for (int i = 0; i < RowCount; ++i)
     {
         const auto *inter = w.GetComponent<UIInteractableComponent>(m_rows[i]);
-        if (!inter) continue;
+        if (!inter)
+        {
+            continue;
+        }
 
         if (inter->clicked)
         {
             if (i == RowBack)
+            {
                 m_closePending = true;
+            }
             else if (i == RowInvertY)
-                Adjust(i, 1); // 決定で ON / OFF を切り替える
+            {
+                Adjust(i, 1); // 決定でもオン / オフを切り替える
+            }
         }
-        if (dir != 0 && inter->isFocused && i != RowBack) Adjust(i, dir);
+        if (dir != 0 && inter->isFocused && i != RowBack)
+        {
+            Adjust(i, dir);
+        }
     }
 
-    // < > ボタン（マウス）
+    // ---------------------------------------------------------
+    // 6. < > ボタン
+    // ---------------------------------------------------------
     for (int i = 0; i < kValueRows; ++i)
     {
-        if (const auto *dec = w.GetComponent<UIInteractableComponent>(m_dec[i]); dec && dec->clicked) Adjust(i, -1);
-        if (const auto *inc = w.GetComponent<UIInteractableComponent>(m_inc[i]); inc && inc->clicked) Adjust(i, 1);
+        if (const auto *dec = w.GetComponent<UIInteractableComponent>(m_dec[i]); dec && dec->clicked)
+        {
+            Adjust(i, -1);
+        }
+        if (const auto *inc = w.GetComponent<UIInteractableComponent>(m_inc[i]); inc && inc->clicked)
+        {
+            Adjust(i, 1);
+        }
     }
 }
 
