@@ -111,7 +111,7 @@
                     "objectLayer": 2,
                     "walkSpeed": 30.0
                 },
-                "Just Evade Component": {
+                "Player Just Evade Component": {
                     "isJustSuccess": false
                 },
                 "Knockback": {

@@ -45,7 +45,7 @@ struct CameraBodyTPSComponent
     float baseFov  = 45.0f; // 通常時の画角（度）
     float dashFov  = 70.0f; // wideFovRequest 中の画角（度）
     // 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する。
-    // カメラがゲーム固有の DashComponent を読みに行かずに済むようにするためのフィールド。
+    // カメラがゲーム固有の PlayerDashComponent を読みに行かずに済むようにするためのフィールド。
     bool wideFovRequest = false;
 
     // --- 寄り（クローズアップ）要求：切り払い準備などで一時的にカメラを近づける ---

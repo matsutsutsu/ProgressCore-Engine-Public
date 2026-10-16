@@ -54,7 +54,7 @@ namespace CCL::ECS
     // EventBus::Publish は同期呼び出しで、購読者のコールバックを発行元の
     // コールスタック上でそのまま実行する。つまり購読者がやった重い仕事は
     // Tracy 上では「発行した System」の中身として計上される
-    //  （例: PlayerMoveSystem の中に SceneSerializer::Deserialize が現れる）。
+    //  （例: PlayerJumpFacingSystem の中に SceneSerializer::Deserialize が現れる）。
     // どのイベントが何を連れてきたのかを追えるように、Publish 自体へゾーンを置く。
     //
     // イベント種別ごとにマクロを書かなくて済むように、

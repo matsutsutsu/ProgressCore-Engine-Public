@@ -1,7 +1,7 @@
 #include "AIDebugSpatialSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"

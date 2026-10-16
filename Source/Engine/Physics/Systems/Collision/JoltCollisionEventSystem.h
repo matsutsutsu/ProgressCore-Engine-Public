@@ -6,7 +6,7 @@
 //   - 物理更新（L04）の後、L05_Collision で接触イベントをまとめて取り出す
 //   - 取り出したイベントを JoltCollisionEvent として EventBus へ流す
 //
-// 備考: 購読側（HitboxCollisionSystem / JustEvadeSystem）はハンドラ内でイベントを
+// 備考: 購読側（HitboxCollisionSystem / PlayerJustEvadeSystem）はハンドラ内でイベントを
 //       自前の配列に積むだけにし、判定は自分の Update で行う。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"

@@ -12,14 +12,14 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        26.228605270385742,
                         0.0,
-                        11.339994430541992
+                        0.0,
+                        13.881682395935059
                     ],
                     "desiredVelocity": [
-                        0.9178838729858398,
                         0.0,
-                        0.3968490660190582
+                        0.0,
+                        1.0
                     ],
                     "isRootMotionActive": true,
                     "jumpImpulse": false,
@@ -27,21 +27,6 @@
                     "overrideSpeed": -1.0,
                     "speedMultiplier": 1.0,
                     "use3DVelocity": false
-                },
-                "Dash Component": {
-                    "currentTimer": -0.003333514556288719,
-                    "dashCooldown": 0.47999998927116394,
-                    "dashDirection": [
-                        -0.8973548412322998,
-                        0.0,
-                        0.4413098096847534
-                    ],
-                    "dashDuration": 0.1599999964237213,
-                    "dashSpeed": 114.0,
-                    "invincibleWindow": 0.05999999865889549,
-                    "isDashing": false,
-                    "isInvincible": false,
-                    "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
                     "currentHealth": 300.0,
@@ -79,9 +64,6 @@
                     "objectLayer": 1,
                     "walkSpeed": 43.599998474121094
                 },
-                "Just Evade Component": {
-                    "isJustSuccess": false
-                },
                 "Knockback": {
                     "duration": 0.18000000715255737,
                     "stunDuration": 0.3499999940395355,
@@ -112,14 +94,31 @@
                     "runSpeed": 65.5,
                     "turnSpeed": 10.0
                 },
+                "Player Dash Component": {
+                    "currentTimer": -0.003333514556288719,
+                    "dashCooldown": 0.47999998927116394,
+                    "dashDirection": [
+                        -0.8973548412322998,
+                        0.0,
+                        0.4413098096847534
+                    ],
+                    "dashDuration": 0.1599999964237213,
+                    "dashSpeed": 114.0,
+                    "invincibleWindow": 0.05999999865889549,
+                    "isDashing": false,
+                    "isInvincible": false,
+                    "justEvadeWindow": 0.07999999821186066
+                },
                 "Player Input": {
                     "attackPressed": false,
                     "dashPressed": false,
                     "jumpPressed": false,
                     "lockOnPressed": false
                 },
-                "RootMotion": null,
-                "Rush Camera Component": {
+                "Player Just Evade Component": {
+                    "isJustSuccess": false
+                },
+                "Player Rush Camera Component": {
                     "attack.blendTime": 0.07000000029802322,
                     "attack.bounce": 0.4000000059604645,
                     "attack.distance": -10.199999809265137,
@@ -162,25 +161,26 @@
                     "strikeShake": 0.5,
                     "yawFollowsEvade": true
                 },
-                "Rush Component": {
+                "Player Rush Component": {
                     "attackDuration": 0.46000000834465027,
                     "attackFired": true,
                     "closeInSpeed": 150.0,
                     "closeInStopDistance": 20.0,
                     "freeDuration": 2.5,
                     "invincibleRefresh": 0.10000000149011612,
-                    "isActive": true,
+                    "isActive": false,
                     "leapSpeed": 168.0,
                     "lockedDuration": 0.3199999928474426,
                     "playerScale": 1.0,
                     "readyDuration": 1.2300000190734863,
                     "slowRecover": 0.4000000059604645,
-                    "timer": 0.13333503901958466,
+                    "timer": 0.0,
                     "worldScale": 0.05000000074505806
                 },
+                "RootMotion": null,
                 "TimeState": {
                     "buffScale": 1.0,
-                    "cinematicScale": 7.842066764831543,
+                    "cinematicScale": 1.0,
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
@@ -190,15 +190,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -7.4858012199401855,
-                        -1.0437941551208496,
-                        10.467023849487305
+                        4.017551422119141,
+                        0.6496320366859436,
+                        -49.41619873046875
                     ],
                     "rotation": [
-                        -2.0064501207966816e-14,
-                        0.5491588711738586,
-                        -3.053445015821325e-14,
-                        0.8357179760932922
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
                     ],
                     "scale": [
                         3.5,
@@ -223,7 +223,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.002125290222465992
+                    "localDt": 0.01666666753590107
                 },
                 "Transform": {
                     "isStatic": false,
@@ -309,7 +309,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.002125290222465992
+                    "localDt": 0.01666666753590107
                 },
                 "Transform": {
                     "isStatic": false,
@@ -388,10 +388,10 @@
                 },
                 "Hitbox": {
                     "damageAmount": 5.0,
-                    "hitStopDuration": 0.10000000149011612,
+                    "hitStopDuration": 0.05000000074505806,
                     "hitStopScale": 0.0,
-                    "isActive": false,
-                    "knockback": 15.0,
+                    "isActive": true,
+                    "knockback": 25.0,
                     "rehitInterval": -1.0
                 },
                 "Jolt Capsule Collider": {
@@ -445,7 +445,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.002125290222465992
+                    "localDt": 0.01666666753590107
                 },
                 "Transform": {
                     "isStatic": false,
@@ -485,7 +485,7 @@
                     "distortion": 5.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
-                    "emitting": false,
+                    "emitting": true,
                     "lifeTime": 0.18000000715255737,
                     "minDistance": 0.019999999552965164,
                     "rimPower": 0.699999988079071,

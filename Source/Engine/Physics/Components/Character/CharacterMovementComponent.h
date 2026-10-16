@@ -15,7 +15,7 @@
 // 誰が書くか（層）:
 //   ・移動の意思      … 入力(PlayerInputSystem) / AI(BossActionSystem 等)
 //   ・上書き要求      … アクション(PlayerDashSystem / RootMotionSystem 等)
-//   ・成立した命令    … キャラ制御(PlayerMoveSystem)
+//   ・成立した命令    … キャラ制御(PlayerJumpFacingSystem)
 //   ・結果            … JoltCharacterUpdateSystem（読むのはカメラ/アニメ/演出）
 //
 // 上書き要求は「1フレーム限りの依頼」:
@@ -56,7 +56,7 @@ struct CharacterMovementComponent
     // このフレームにジャンプが成立した。押下ではなく「跳ぶと決まった」の意味。
     //
     // 入力の押下は PlayerInputComponent.jumpPressed。2段ジャンプの可否など
-    // 成立条件はキャラ制御側(PlayerMoveSystem)が判断し、結果だけをここへ載せる。
+    // 成立条件はキャラ制御側(PlayerJumpFacingSystem)が判断し、結果だけをここへ載せる。
     bool jumpImpulse = false;
 
     // =======================================================================

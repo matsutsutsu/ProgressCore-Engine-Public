@@ -5,7 +5,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Serialization/Core/EntityLink.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
 using namespace CCL::ECS;
 

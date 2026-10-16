@@ -10,7 +10,7 @@
 #include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 
-#include "Game/UI/Screens/GameSettings.h"
+#include "Game/Core/GameSettings.h"
 #include "Game/UI/Common/ScreenHeadingUi.h" // 左上の見出しと線（リザルト・ポーズと共通の組み）
 
 #include <algorithm>

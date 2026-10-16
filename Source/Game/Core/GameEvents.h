@@ -11,7 +11,7 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
-// ジャスト回避に成功した瞬間に出す。JustEvadeSystem が出し、JustEvadeSystem（スロー・ラッシュ）が受ける
+// ジャスト回避に成功した瞬間に出す。PlayerJustEvadeSystem が出し、PlayerJustEvadeSystem（スロー・ラッシュ）が受ける
 struct JustEvadeSuccessEvent
 {
     CCL::ECS::EntityID playerID;   // 回避したプレイヤー

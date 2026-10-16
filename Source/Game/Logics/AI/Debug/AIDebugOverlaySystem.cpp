@@ -1,6 +1,6 @@
 #include "AIDebugOverlaySystem.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/Battle/BattleContext.h" // ドローン残数
 #include "Game/Logics/Combat/Components/HealthComponent.h"  // ボスHP
 #include "Engine/UI/ECS/GameViewportInfo.h"      // エディタでゲーム画面を表示している矩形

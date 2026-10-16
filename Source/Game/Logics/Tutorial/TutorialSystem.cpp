@@ -183,7 +183,7 @@ bool TutorialSystem::IsBossAttackFormationActive() const
 void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
 {
     const BattleContext &battle = m_world->GetResource<BattleContext>();
-    // 回避ダッシュは作り直し中。復活したら DashComponent から「自分で避けようとしているか」を戻す。
+    // 回避ダッシュは作り直し中。復活したら PlayerDashComponent から「自分で避けようとしているか」を戻す。
     const bool dashing = false;
     (void)battle;
 
@@ -245,7 +245,7 @@ void TutorialSystem::SampleDroneMotion()
     std::unordered_map<EntityID, DroneMotion> next;
 
     m_world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) {
-        // ジャスト回避の対象になる状態だけを見る（JustEvadeSystem::IsDroneHostile と同じ条件）
+        // ジャスト回避の対象になる状態だけを見る（PlayerJustEvadeSystem::IsDroneHostile と同じ条件）
         const auto *drone = m_world->GetComponent<DroneComponent>(id);
         if (drone->currentState != DroneState::FireCharge) return;
 

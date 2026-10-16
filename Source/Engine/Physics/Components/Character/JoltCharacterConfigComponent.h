@@ -9,7 +9,7 @@
 //
 // 備考: プレイヤーやボスに付けると、JoltCharacterSetupSystem がこれを見て
 //       CharacterVirtual と presence 用の Kinematic プロキシ剛体を生成する。
-//       生成後も walkSpeed などを PlayerMoveSystem / BossActionSystem が参照する。
+//       生成後も walkSpeed などを PlayerJumpFacingSystem / BossActionSystem が参照する。
 // ===========================================================================
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 

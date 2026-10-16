@@ -10,7 +10,7 @@
 #include "Engine/Core/App/GameFlowState.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"           // プレイヤーとボスの EntityID
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h" // 群れの機数を数える
 #include "Game/Core/GameEvents.h"              // 命中・被弾・ジャスト回避のイベント

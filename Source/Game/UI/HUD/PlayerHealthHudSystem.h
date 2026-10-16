@@ -14,7 +14,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
 class PlayerHealthHudSystem : public CCL::ECS::IfSystem<PlayerHealthHudSystem,
                                                         CCL::ECS::Read<HealthComponent>,

@@ -1,7 +1,7 @@
 #include "BossActionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
 #include "Engine/Core/App/GameFlowState.h"                           // cinematic
 #include "Engine/Animation/Core/AnimStateMachine.h"                  // 止まりのモーションの長さ

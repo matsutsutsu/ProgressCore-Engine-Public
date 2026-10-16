@@ -75,7 +75,7 @@
                     "skyFogSoftness": 0.0,
                     "start": 40.0
                 },
-                "Just Evade Effect": {
+                "Player Rush Effect": {
                     "fadeInTime": 0.20000000298023224,
                     "fadeOutTime": 0.4000000059604645,
                     "vignetteIntensity": 0.5,

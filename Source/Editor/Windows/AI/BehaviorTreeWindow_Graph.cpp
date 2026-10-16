@@ -1,6 +1,6 @@
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
