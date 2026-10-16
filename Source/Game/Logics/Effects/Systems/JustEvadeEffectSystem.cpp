@@ -62,6 +62,7 @@ void JustEvadeEffectSystem::Update(float dt)
     // 1. フェード重み weight を実時間で目標へ寄せる
     // 2. 完全に消えている間は、自分のスロットを手放して終える
     // 3. 見えている間は、weight をビネットの設定へ書き込む
+    // 4. 同じ weight を放射ブラーの設定へ書き込む
 
     auto *justEvadeEffectComp = m_world->GetSingletonComponent<JustEvadeEffectComponent>();
     if (!justEvadeEffectComp) return;
@@ -112,6 +113,17 @@ void JustEvadeEffectSystem::Update(float dt)
         ov->params.radius     = justEvadeEffectComp->vignetteRadius;    // 半径
         ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
         ov->params.pulseSpeed = 0.0f; // 明滅なし
+    }
+
+    // ---------------------------------------------------------
+    // 4. 放射ブラーへ反映
+    // ---------------------------------------------------------
+    // フェードはビネットと共有する。中心はシーンの設定のまま（書かない）。
+    if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
+    {
+        ov->weight          = justEvadeEffectComp->weight;
+        ov->params.strength = justEvadeEffectComp->radialStrength;
+        ov->params.falloff  = justEvadeEffectComp->radialFalloff;
     }
 }
 

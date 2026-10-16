@@ -157,6 +157,11 @@ struct EditorContext
     //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用。
     bool stepOneFrame = false;
 
+    // デバッグ速度（スロー再生）。1.0 で等速。
+    //   Framework が実時間に掛けてからゲームへ渡すので、ゲーム側からは見えない。
+    //   ゲームとしてのスロー（TimeContext の倍率）とは別物で、ゲームのコードは読まないこと。
+    float debugSpeed = 1.0f;
+
     // 「カーソル自由(UI操作)モード」の手動切り替えの状態（F2）。
     //   これ または isAnimEditMode が true のとき、GameFlowState.uiInteract が立ち、
     //   ゲームを止めずにカーソルが解放される（実行中に ImGui を操作できる）。

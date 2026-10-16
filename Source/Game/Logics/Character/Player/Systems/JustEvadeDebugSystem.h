@@ -6,6 +6,7 @@
 //   - OnGui の方向ボタンで、カメラ基準の前後左右へ本物のダッシュを入力として差し込む
 //   - 差し込んだダッシュ（または「常に成立」中の全ダッシュ）の直後に、ジャスト回避を成立させる
 //   - 待機（Ready）中に、指定の遅れで攻撃入力を差し込む（詰め→斬りまで手を離して確かめる）
+//   - ラッシュを途中で終わらせる（スロー再生で寄りだけ見て、すぐ次を試す用）
 //
 // 備考: 省くのは「攻撃への接触」だけ。ダッシュの開始は PlayerDashSystem、成立後のラッシュは
 //       PlayerRushSystem が普段どおり処理するので、方向の受け渡し・ダッシュの中断・イベントの購読まで
@@ -31,7 +32,7 @@ class JustEvadeDebugSystem : public CCL::ECS::IfSystem<JustEvadeDebugSystem,
                                                        CCL::ECS::Write<JustEvadeComponent>,
                                                        CCL::ECS::Write<DashComponent>,
                                                        CCL::ECS::Read<PlayerComponent>,
-                                                       CCL::ECS::Read<RushComponent>>
+                                                       CCL::ECS::Write<RushComponent>>
 {
 public:
     JustEvadeDebugSystem() : IfSystem("JustEvadeDebugSystem") {}
@@ -83,6 +84,16 @@ private:
     // 待機（Ready）に入ってから m_autoAttackDelay 秒後に、攻撃入力を1回だけ差し込む。
     void InjectAutoAttack(PlayerInputComponent &pin, const RushComponent &rush, float dt);
 
+    /**
+     * @brief 要求があれば、ラッシュを終わらせる。
+     *
+     * 自由（Free）の時間切れにするだけで、終了そのものは PlayerRushSystem の EndRush に任せる
+     * （時間倍率の戻しなど、本番の終わり方と揃えるため）。
+     *
+     * @param rush フェーズと残り時間を書く先。
+     */
+    void ForceEndRush(RushComponent &rush);
+
     // 要求された向きを、カメラ基準の水平な向きにする。カメラが無ければゼロ。
     DirectX::SimpleMath::Vector3 ToWorldDir(EvadeDir dir) const;
 
@@ -101,5 +112,6 @@ private:
     int         m_forceFramesLeft  = 0;              // 差し込んだダッシュの成立を待つ残りステップ数
     float       m_readyElapsed     = 0.0f;           // 待機に入ってからの経過（秒）
     bool        m_autoAttackIssued = false;          // この待機で攻撃を入れたか
+    bool        m_endRushRequested = false;          // ラッシュを終わらせる要求（OnGui のボタン）
     std::string m_lastResult       = "-";            // 直近の結果（OnGui に出す）
 };

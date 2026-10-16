@@ -564,6 +564,37 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
             context.isPaused = true;
         }
     }
+
+    // デバッグ速度（スロー再生）の切り替え。
+    //   等速以外のときは戻し忘れないよう、選択中の表示を色付きにする。
+    struct SpeedChoice
+    {
+        const char *label;
+        float       speed;
+    };
+    static constexpr SpeedChoice kSpeeds[] = {
+        {"等速", 1.0f},
+        {"1/2", 0.5f},
+        {"1/4", 0.25f},
+        {"1/10", 0.1f},
+    };
+
+    const char *current = kSpeeds[0].label;
+    for (const auto &choice : kSpeeds)
+        if (context.debugSpeed == choice.speed) current = choice.label;
+
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(70.0f);
+    const bool slowed = (context.debugSpeed != 1.0f);
+    if (slowed) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.6f, 0.35f, 0.1f, 1.0f));
+    if (ImGui::BeginCombo("##DebugSpeed", current))
+    {
+        for (const auto &choice : kSpeeds)
+            if (ImGui::Selectable(choice.label, context.debugSpeed == choice.speed))
+                context.debugSpeed = choice.speed;
+        ImGui::EndCombo();
+    }
+    if (slowed) ImGui::PopStyleColor();
 }
 
 void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)

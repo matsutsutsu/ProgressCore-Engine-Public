@@ -84,14 +84,16 @@ void PostProcessSystem::Update(float dt)
     // enable（普段の設定）が false でも演出は出すので、パスのオン/オフは合成後の強さが 0 かどうかで決める。
     if (auto *radial = postProcess->GetEffect<RadialBlurEffect>())
     {
-        auto       *comp     = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
-        const float strength = comp ? comp->ResolvedStrength() : 0.0f;
-        radial->SetEnabled(strength > 0.0f);
+        auto *comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
         if (comp)
         {
-            auto data         = comp->data;
-            data.blurStrength = strength;
+            const auto data = comp->Resolve();
+            radial->SetEnabled(data.blurStrength > 0.0f);
             radial->UpdateParams(data);
+        }
+        else
+        {
+            radial->SetEnabled(false);
         }
     }
 

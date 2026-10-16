@@ -26,6 +26,7 @@ void JustEvadeDebugSystem::Update(float dt)
     // 1. 前のステップで始まったダッシュを、受付窓が開いているうちに成立させる
     // 2. 方向ボタンの要求があれば、その向きのダッシュを入力として差し込む
     // 3. 待機中なら、指定の遅れで攻撃入力を差し込む
+    // 4. 終了の要求があれば、ラッシュを終わらせる
 
     ForEachWithID([&](EntityID                    id,
                       PlayerInputComponent       &pin,
@@ -33,7 +34,7 @@ void JustEvadeDebugSystem::Update(float dt)
                       JustEvadeComponent         &evade,
                       DashComponent              &dash,
                       const PlayerComponent      &player,
-                      const RushComponent        &rush) {
+                      RushComponent              &rush) {
         // ---------------------------------------------------------
         // 1. 成立させる
         // ---------------------------------------------------------
@@ -60,6 +61,11 @@ void JustEvadeDebugSystem::Update(float dt)
         // 3. 待機中の自動攻撃
         // ---------------------------------------------------------
         InjectAutoAttack(pin, rush, dt);
+
+        // ---------------------------------------------------------
+        // 4. ラッシュを終わらせる
+        // ---------------------------------------------------------
+        ForceEndRush(rush);
     });
 }
 
@@ -166,6 +172,26 @@ void JustEvadeDebugSystem::InjectAutoAttack(PlayerInputComponent &pin, const Rus
     }
 }
 
+void JustEvadeDebugSystem::ForceEndRush(RushComponent &rush)
+{
+    if (!m_endRushRequested)
+    {
+        return;
+    }
+    m_endRushRequested = false;
+
+    if (!rush.isActive)
+    {
+        m_lastResult = "ラッシュ中ではないため取り消し";
+        return;
+    }
+
+    // 自由の時間切れにする。この後に走る PlayerRushSystem（L02）が同じステップで EndRush を呼ぶ。
+    rush.phase   = RushPhase::Free;
+    rush.timer   = 0.0f;
+    m_lastResult = "ラッシュを終了";
+}
+
 // ---------------------------------------------------------------------------
 // 向き
 // ---------------------------------------------------------------------------
@@ -229,7 +255,7 @@ void JustEvadeDebugSystem::OnGui()
     ImGui::TextWrapped("攻撃に触れずに、狙った向き（カメラ基準）でジャスト回避を成立させる。"
                        "ダッシュとラッシュは本番と同じ処理を通る。");
 
-    // --- 方向ボタン（十字に並べる） ---
+    // --- 方向ボタン（横に並べる） ---
     auto request = [this](EvadeDir dir) {
         m_pendingDir     = dir;
         m_pendingTimeout = kPendingTimeout;
@@ -237,30 +263,30 @@ void JustEvadeDebugSystem::OnGui()
 
     const ImVec2 size(64.0f, 0.0f);
 
-    ImGui::Dummy(size);
-    ImGui::SameLine();
     if (ImGui::Button("前##JustEvadeFwd", size))
     {
         request(EvadeDir::Forward);
     }
-
+    ImGui::SameLine();
+    if (ImGui::Button("後##JustEvadeBack", size))
+    {
+        request(EvadeDir::Back);
+    }
+    ImGui::SameLine();
     if (ImGui::Button("左##JustEvadeLeft", size))
     {
         request(EvadeDir::Left);
     }
-    ImGui::SameLine();
-    ImGui::Dummy(size);
     ImGui::SameLine();
     if (ImGui::Button("右##JustEvadeRight", size))
     {
         request(EvadeDir::Right);
     }
 
-    ImGui::Dummy(size);
-    ImGui::SameLine();
-    if (ImGui::Button("後##JustEvadeBack", size))
+    // --- ラッシュの終了 ---
+    if (ImGui::Button("ラッシュを終わらせる"))
     {
-        request(EvadeDir::Back);
+        m_endRushRequested = true;
     }
 
     ImGui::Separator();

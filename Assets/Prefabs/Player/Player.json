@@ -7,21 +7,21 @@
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.699999988079071
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        0.04730311781167984,
+                        26.228605270385742,
                         0.0,
-                        0.05527319386601448
+                        11.339994430541992
                     ],
                     "desiredVelocity": [
-                        -0.0,
+                        0.9178838729858398,
                         0.0,
-                        0.0
+                        0.3968490660190582
                     ],
-                    "isRootMotionActive": false,
+                    "isRootMotionActive": true,
                     "jumpImpulse": false,
                     "moveIntensity": 0.0,
                     "overrideSpeed": -1.0,
@@ -32,9 +32,9 @@
                     "currentTimer": -0.003333514556288719,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        0.6348946690559387,
+                        -0.8973548412322998,
                         0.0,
-                        0.7725987434387207
+                        0.4413098096847534
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -120,44 +120,44 @@
                 },
                 "RootMotion": null,
                 "Rush Camera Component": {
-                    "attack.blendTime": 0.07,
-                    "attack.bounce": 0.4,
-                    "attack.distance": -2.2,
-                    "attack.focus": 0.75,
+                    "attack.blendTime": 0.07000000029802322,
+                    "attack.bounce": 0.4000000059604645,
+                    "attack.distance": -10.199999809265137,
+                    "attack.focus": 1.0,
                     "attack.followBoost": 20.0,
                     "attack.fov": 4.0,
-                    "attack.pitch": 2.0,
+                    "attack.pitch": -10.5,
                     "attack.roll": 0.0,
-                    "attack.yaw": 8.0,
-                    "free.blendTime": 0.45,
+                    "attack.yaw": 11.0,
+                    "free.blendTime": 0.44999998807907104,
                     "free.bounce": 0.0,
-                    "free.distance": 0.8,
-                    "free.focus": 0.2,
+                    "free.distance": -4.699999809265137,
+                    "free.focus": 0.20000000298023224,
                     "free.followBoost": 0.0,
-                    "free.fov": 0.0,
-                    "free.pitch": 0.0,
+                    "free.fov": 4.0,
+                    "free.pitch": -10.0,
                     "free.roll": 0.0,
-                    "free.yaw": 0.0,
-                    "locked.blendTime": 0.12,
+                    "free.yaw": 11.0,
+                    "locked.blendTime": 0.1899999976158142,
                     "locked.bounce": 0.5,
-                    "locked.distance": 3.0,
-                    "locked.focus": 0.3,
-                    "locked.followBoost": 0.0,
+                    "locked.distance": -15.0,
+                    "locked.focus": 0.1899999976158142,
+                    "locked.followBoost": 60.0,
                     "locked.fov": 12.0,
-                    "locked.pitch": -6.0,
+                    "locked.pitch": 6.0,
                     "locked.roll": 6.0,
                     "locked.yaw": 18.0,
-                    "ready.blendTime": 0.18,
-                    "ready.bounce": 0.2,
-                    "ready.distance": -1.8,
-                    "ready.focus": 0.55,
+                    "ready.blendTime": 0.18000000715255737,
+                    "ready.bounce": 0.20000000298023224,
+                    "ready.distance": -15.0,
+                    "ready.focus": 0.550000011920929,
                     "ready.followBoost": 0.0,
                     "ready.fov": -6.0,
                     "ready.pitch": 6.0,
                     "ready.roll": -3.0,
                     "ready.yaw": 28.0,
-                    "releaseTime": 0.6,
-                    "startShake": 0.35,
+                    "releaseTime": 0.6000000238418579,
+                    "startShake": 0.3499999940395355,
                     "strikeFovPunch": 10.0,
                     "strikeShake": 0.5,
                     "yawFollowsEvade": true
@@ -166,21 +166,21 @@
                     "attackDuration": 0.46000000834465027,
                     "attackFired": true,
                     "closeInSpeed": 150.0,
-                    "closeInStopDistance": 3.0,
+                    "closeInStopDistance": 20.0,
                     "freeDuration": 2.5,
                     "invincibleRefresh": 0.10000000149011612,
-                    "isActive": false,
+                    "isActive": true,
                     "leapSpeed": 168.0,
                     "lockedDuration": 0.3199999928474426,
                     "playerScale": 1.0,
                     "readyDuration": 1.2300000190734863,
                     "slowRecover": 0.4000000059604645,
-                    "timer": 0.0,
+                    "timer": 0.13333503901958466,
                     "worldScale": 0.05000000074505806
                 },
                 "TimeState": {
                     "buffScale": 1.0,
-                    "cinematicScale": 1.0,
+                    "cinematicScale": 7.842066764831543,
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
@@ -190,15 +190,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        48.11500930786133,
-                        0.24955131113529205,
-                        -42.70410919189453
+                        -7.4858012199401855,
+                        -1.0437941551208496,
+                        10.467023849487305
                     ],
                     "rotation": [
-                        7.004260282883479e-08,
-                        -0.3490075170993805,
-                        1.8807135404586006e-07,
-                        -0.9371199011802673
+                        -2.0064501207966816e-14,
+                        0.5491588711738586,
+                        -3.053445015821325e-14,
+                        0.8357179760932922
                     ],
                     "scale": [
                         3.5,
@@ -223,7 +223,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
+                    "localDt": 0.002125290222465992
                 },
                 "Transform": {
                     "isStatic": false,
@@ -253,7 +253,7 @@
                         0.0
                     ],
                     "burstDuration": 2.0,
-                    "burstTimer": 0.266667902469635,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.291930615901947,
@@ -263,7 +263,7 @@
                     "distortion": 0.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
-                    "emitting": true,
+                    "emitting": false,
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,
@@ -309,7 +309,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
+                    "localDt": 0.002125290222465992
                 },
                 "Transform": {
                     "isStatic": false,
@@ -339,7 +339,7 @@
                         0.0
                     ],
                     "burstDuration": 2.0,
-                    "burstTimer": 0.266667902469635,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.291930615901947,
@@ -349,7 +349,7 @@
                     "distortion": 0.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
-                    "emitting": true,
+                    "emitting": false,
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,
@@ -387,11 +387,11 @@
                     "boneName": "hand_r"
                 },
                 "Hitbox": {
-                    "damageAmount": 15.0,
-                    "hitStopDuration": 0.20999999344348907,
+                    "damageAmount": 5.0,
+                    "hitStopDuration": 0.10000000149011612,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 35.0,
+                    "knockback": 15.0,
                     "rehitInterval": -1.0
                 },
                 "Jolt Capsule Collider": {
@@ -445,7 +445,7 @@
                     "freezeScale": 0.0,
                     "group": 0,
                     "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
+                    "localDt": 0.002125290222465992
                 },
                 "Transform": {
                     "isStatic": false,

@@ -19,6 +19,8 @@ using json = nlohmann::json;
 COMPONENT_META_BEGIN_FULL(JustEvadeEffectComponent, "Just Evade Effect", CCL::Categories::Effect, 186, false)
 CFIELD_FLOAT_RANGED(vignetteIntensity, "ビネット強度", 0.01f, 0.0f, 1.0f, "ビネット")
 CFIELD_FLOAT_RANGED(vignetteRadius, "ビネット半径", 0.01f, 0.0f, 1.0f, "ビネット")
+CFIELD_FLOAT_RANGED(radialStrength, "放射ブラー強度", 0.005f, 0.0f, 1.0f, "放射ブラー")
+CFIELD_FLOAT_RANGED(radialFalloff, "放射ブラー減衰", 0.05f, 0.0f, 8.0f, "放射ブラー")
 CFIELD_FLOAT_RANGED(fadeInTime, "フェードイン(秒)", 0.005f, 0.0f, 1.0f, "エンベロープ")
 CFIELD_FLOAT_RANGED(fadeOutTime, "フェードアウト(秒)", 0.005f, 0.0f, 2.0f, "エンベロープ")
 COMPONENT_META_END(JustEvadeEffectComponent)

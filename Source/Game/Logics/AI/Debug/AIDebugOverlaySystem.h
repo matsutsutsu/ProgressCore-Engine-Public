@@ -42,7 +42,8 @@ public:
     void OnGui() override;
 
 private:
-    bool  m_enabled     = true;
+    //bool  m_enabled     = true;
+    bool  m_enabled     = false;
     float m_fontSize    = 25.0f; // 文字の大きさ（ピクセル）
     float m_headOffsetY = 15.0f; // キャラの原点から頭上までのワールド Y オフセット（m）。体に重ならない高さにする
 
@@ -52,6 +53,7 @@ private:
 
     // ボスとプレイヤーの距離。AIDebugSpatialSystem の照準線の中ほどに出るので、線と合わせて読める。
     bool  m_showDistance     = true;
+    //bool  m_showDistance     = false;
     float m_distanceFontSize = 30.0f; // 戦闘中に一目で読めるよう、頭上の文字より少し大きくする
     float m_distanceOffsetY  = 1.0f;  // 中点から持ち上げる高さ（m）。照準線と重ならないようにする
 

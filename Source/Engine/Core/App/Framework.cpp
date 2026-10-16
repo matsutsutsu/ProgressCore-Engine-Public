@@ -428,6 +428,15 @@ int Framework::Run()
             //    これがないと、処理落ち→消化すべきステップが増える→さらに処理落ち… で止まる
             if (frameTime > 0.1f) frameTime = 0.1f;
 
+            // ゲームに渡す経過時間。エディタのデバッグ速度を掛けて、世界全体をスロー再生する。
+            //   時間の出どころで掛けるので、ロジック・カメラ・ムービーなど全ての時計が同じ比率で遅くなる。
+            //   FIXED_DT は変えずにステップの回数だけが減るため、移動距離やフェーズの長さは等速と同じ。
+            //   入力（振動の残り時間）と FPS 表示は実時間のまま進める。
+            float gameTime = frameTime;
+#ifdef ENABLE_EDITOR
+            gameTime *= m_editorContext.debugSpeed;
+#endif
+
             // 一時停止中はゲーム内時間(accumulator)を進めない。
             //   進めてしまうと FixedUpdate(ロジック)が止まって prevPosition/position が
             //   固定されているのに alpha だけ実時間で 0↔1 に揺れ続け、
@@ -469,7 +478,7 @@ int Framework::Run()
             // 3. 時間を貯める（停止中は貯めない）
             if (!logicFrozen)
             {
-                accumulator += frameTime;
+                accumulator += gameTime;
             }
 
             // 1秒ごとに、ウィンドウタイトルへ FPS と FixedUpdate 回数を出す
@@ -602,11 +611,11 @@ int Framework::Run()
             //   Simulation と描画工程を色分け・絞り込みできるようにする。
             {
                 TRACY_SECTION("Update");
-                Update(frameTime);
+                Update(gameTime);
             }
             {
                 TRACY_SECTION("Render");
-                Render(frameTime);
+                Render(gameTime);
             }
 
             // 1フレームの終わりを Tracy に通知する

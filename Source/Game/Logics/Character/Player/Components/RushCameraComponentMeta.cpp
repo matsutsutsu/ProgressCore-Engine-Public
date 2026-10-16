@@ -7,7 +7,7 @@
 // 1フェーズ分の構図（RushCameraShot）の項目を、指定のカテゴリでまとめて並べる。
 //   4フェーズで項目と範囲を揃えるため。プレハブのキーは "locked.distance" のような入れ子の名前になる。
 #define RUSH_CAMERA_SHOT_FIELDS(Shot, Category)                                        \
-    CFIELD_FLOAT_RANGED(Shot.distance, "距離", 0.1f, -10.0f, 15.0f, Category)          \
+    CFIELD_FLOAT_RANGED(Shot.distance, "距離", 0.1f, -30.0f, 15.0f, Category)          \
     CFIELD_FLOAT_RANGED(Shot.fov, "画角", 0.5f, -40.0f, 40.0f, Category)               \
     CFIELD_FLOAT_RANGED(Shot.pitch, "ピッチ", 0.5f, -45.0f, 45.0f, Category)           \
     CFIELD_FLOAT_RANGED(Shot.yaw, "ヨー", 0.5f, -90.0f, 90.0f, Category)               \
