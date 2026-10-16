@@ -38,14 +38,16 @@ public:
         const uint32_t pure = CCL::ECS::EntityHandle::GetIndex(id);
         return (pure < m_idToOrder.size()) ? m_idToOrder[pure] : -1;
     }
-    size_t             Count() const { return m_order.size(); }
-    CCL::ECS::EntityID EntityAt(int i) const { return m_order[i]; }
-    int                ParentInOrderOf(int i) const { return m_parentInOrder[i]; } // -1 = 親はルート
-    CCL::ECS::EntityID ParentIdOf(int i) const { return m_parentId[i]; }           // 親の EntityID（常に有効）
 
-    // 解決中の中間結果（i 番目のワールド行列）。子が親の値を読むために使う
-    void              StoreWorld(int i, DirectX::FXMMATRIX m) { DirectX::XMStoreFloat4x4(&m_worldScratch[i], m); }
-    DirectX::XMMATRIX WorldAt(int i) const { return DirectX::XMLoadFloat4x4(&m_worldScratch[i]); }
+    size_t             Count() const { return m_order.size(); }                    // 非ルートの数（親子の無いシーンでは 0）
+    CCL::ECS::EntityID EntityAt(int i) const { return m_order[i]; }                // i 番目の Entity
+    int                ParentInOrderOf(int i) const { return m_parentInOrder[i]; } // i 番目の親の並び順の位置（-1 = 親はルート）
+    CCL::ECS::EntityID ParentIdOf(int i) const { return m_parentId[i]; }           // i 番目の親の EntityID（常に有効）
+
+    // --- 解決中の中間結果（子が親の値を読むための作業領域。中身はロジック用の worldMatrix） ---
+
+    void              StoreWorld(int i, DirectX::FXMMATRIX m) { DirectX::XMStoreFloat4x4(&m_worldScratch[i], m); } // i 番目のワールド行列を書く
+    DirectX::XMMATRIX WorldAt(int i) const { return DirectX::XMLoadFloat4x4(&m_worldScratch[i]); }                  // i 番目のワールド行列を読む
 
 private:
     std::vector<CCL::ECS::EntityID>  m_order;         // 非ルートのみ（親が必ず前に来る）

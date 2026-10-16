@@ -14,6 +14,6 @@
 
 struct BoneAttachmentComponent
 {
-    std::string boneName        = ""; // "mixamorig:RightHand" 等
-    int         cachedBoneIndex = -1; // 初回解決後にキャッシュする。-1 = 未解決
+    std::string boneName        = ""; // 追従先のボーン名（親モデルのノード名）
+    int         cachedBoneIndex = -1; // boneName から解決したノード番号（-1 = 未解決）
 };

@@ -31,21 +31,16 @@ public:
         return instance;
     }
 
-    std::shared_ptr<IAudioAPI>          audioManager; // 実体は起動時に選ぶ（現在は DxtkAudioManager）
-    std::shared_ptr<JoltPhysicsManager> physicsManager;
-    std::shared_ptr<InputFacade>        inputFacade;
+    std::shared_ptr<IAudioAPI>           audioManager;   // オーディオ（実体は起動時に選ぶ。現在は DxtkAudioManager）
+    std::shared_ptr<JoltPhysicsManager>  physicsManager; // 物理（Jolt）
+    std::shared_ptr<InputFacade>         inputFacade;    // ゲーム用の入力（InputConfig.json の割り当てでアクション・軸として読む）
+    std::shared_ptr<CCL::ECS::JobSystem> jobSystem;      // ECS のフレーム並列で全 World が共有する唯一のジョブプール（シーンのロード用は別）
 
-    // ECS のフレーム並列で全 World が共有する唯一のジョブプール。
-    // スレッドプールはハードウェア資源（1コア1ワーカー）なので、World/SystemManager
-    // ごとに持たず、上層で1つだけ所有して各 SystemManager へ注入する。
-    // ※ シーン非同期ロード用のプールは別（SceneManager が持つ）。長時間ジョブを
-    //    フレーム並列の WaitForCounter が work-stealing で拾う事故を防ぐため分離している。
-    std::shared_ptr<CCL::ECS::JobSystem> jobSystem;
+    // --- 全シーンで共有する描画リソース ---
 
-    // 全シーンで共有する描画リソース
-    std::shared_ptr<Camera>             camera;
-    std::shared_ptr<LightManager>       lightManager;
-    std::shared_ptr<PostProcessManager> postProcess;
+    std::shared_ptr<Camera>             camera;       // 描画に使うカメラ
+    std::shared_ptr<LightManager>       lightManager; // ライト
+    std::shared_ptr<PostProcessManager> postProcess;  // ポストプロセス
 
 private:
     EngineServices() = default;

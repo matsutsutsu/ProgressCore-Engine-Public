@@ -30,17 +30,16 @@ public:
     /**
      * @brief このフレームで消えるエンティティを全て集める（DestroyTag の起点＋その子孫）。
      *
-     * @details
-     *  DestroyTag は「削除の起点」にしか付かない（World::Destroy は引数の1体にしか
-     *  付けない）。一方このシステムは子孫まで RequestDestroyEntity するため、
-     *  「DestroyTag が付いている」と「消える」は一致しない。
+     * DestroyTag は「削除の起点」にしか付かない（World::Destroy は引数の1体にしか付けない）。
+     * 一方このシステムは子孫まで RequestDestroyEntity するため、「DestroyTag が付いている」と「消える」は一致しない。
      *
-     *  外部リソース（Jolt剛体・再生中サウンド）を解放するクリーンアップが
-     *  DestroyTag だけを見ると、子エンティティの分を取りこぼして永久にリークする。
-     *  そのため「誰が消えるか」の判定はこの関数に一本化し、
-     *  JoltCleanupSystem / AudioCleanupSystem もこれを使う。
+     * 外部リソース（Jolt 剛体・再生中のサウンド）を解放するクリーンアップが DestroyTag だけを見ると、
+     * 子エンティティの分を取りこぼして永久にリークする。
+     * そのため「誰が消えるか」の判定はこの関数に一本化し、JoltCleanupSystem / AudioCleanupSystem もこれを使う。
      *
-     * @note 結果はソート済み・重複排除済み。
+     * @param world   調べる World。
+     * @param outList 消える Entity を追加する先。中身は消さずに末尾へ足す。
+     * @note 戻った時点の outList はソート済み・重複排除済み。
      */
     static void CollectDoomedEntities(
         CCL::ECS::World &world, std::vector<CCL::ECS::EntityID> &outList);

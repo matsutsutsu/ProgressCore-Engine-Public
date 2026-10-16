@@ -19,6 +19,12 @@ void BoneAttachmentRenderSystem::Update(float dt)
 
 void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformComponent &trans, const BoneAttachmentComponent &attach)
 {
+    // 処理フロー:
+    // 1. 親の Transform とモデルを取る
+    // 2. 解決済みのボーン番号を確かめる
+    // 3. 「自分のローカル × ボーン行列 × 親の renderWorldMatrix」で renderWorldMatrix を確定する
+    // 4. 自分のモデルを焼き直し、子孫へ伝える
+
     const EntityID parentId = trans.parent;
     if (parentId == 0) return;
 
@@ -53,10 +59,10 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
 
 void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4 &world)
 {
-    // ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で
-    // 先に焼いてしまう。このシステム（R04）で正しい renderWorldMatrix が確定した後に
-    // 焼き直し、後から書いた方を採用させることで同じフレームの中で整合を取る。
-    //   ※ これをやらないと、武器などの追従物だけ描画が1フレーム遅れる。
+    // ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で先に焼いてしまう。
+    // このシステム（R04）で正しい renderWorldMatrix が確定した後に焼き直し、後から書いた方を採用させる。
+
+    // 焼き直さないと、武器などの追従物だけ描画が1フレーム遅れる。
 
     if (auto *mc = m_world->GetComponent<ModelComponent>(id))
     {

@@ -10,14 +10,24 @@ namespace
     // 深さ優先探索のスタックに積む1件
     struct StackEntry
     {
-        EntityID id;
+        EntityID id;          // 並びに加える Entity
         int      parentOrder; // 親の並び順の位置（親がルートなら -1）
-        EntityID parentId;
+        EntityID parentId;    // 親の EntityID
     };
 } // namespace
 
 void TransformHierarchyCache::Rebuild(World &world)
 {
+    // 処理フロー:
+    // 1. EntityID → 並び順の表を空にする
+    // 2. 各ルートの子孫を深さ優先でたどり、親が先の順に並べる
+    // 3. たどれなかった非ルートを末尾に加える
+    // 4. 作業領域を並びの数だけ確保する
+
+    // ---------------------------------------------------------
+    // 1. 表の初期化
+    // ---------------------------------------------------------
+
     std::vector<EntityID> all = world.View<TransformComponent>();
 
     uint32_t maxIndex = 0;
@@ -31,6 +41,10 @@ void TransformHierarchyCache::Rebuild(World &world)
 
     std::vector<StackEntry> stack;
     stack.reserve(64);
+
+    // ---------------------------------------------------------
+    // 2. ルートから深さ優先で並べる
+    // ---------------------------------------------------------
 
     // 各ルートの子から深さ優先で下る。親を記録してから子を積むので、
     // m_order では必ず親が子より前に来る（ルート自身は記録しない）
@@ -79,8 +93,15 @@ void TransformHierarchyCache::Rebuild(World &world)
         }
     }
 
+    // ---------------------------------------------------------
+    // 3. たどれなかった非ルート
+    // ---------------------------------------------------------
+
     // 親はあるのに探索で拾えなかった非ルート（兄弟リストが壊れている等）も末尾に加える。
-    // 親のワールド行列はコンポーネントから直接読む（親より前に解決されている保証は無い）
+    // 計算から漏れて、行列が更新されないまま残るのを防ぐため。
+
+    // 親の並び順の位置は -1 にし、親のワールド行列はコンポーネントから直接読ませる。
+    // 親より前に解決されている保証が無いので、作業領域は参照させない。
     for (EntityID id : all)
     {
         auto *t = world.GetComponent<TransformComponent>(id);
@@ -94,6 +115,10 @@ void TransformHierarchyCache::Rebuild(World &world)
         m_parentId.push_back(static_cast<EntityID>(t->parent));
         m_idToOrder[pure] = myOrder;
     }
+
+    // ---------------------------------------------------------
+    // 4. 作業領域の確保
+    // ---------------------------------------------------------
 
     m_worldScratch.assign(m_order.size(), DirectX::XMFLOAT4X4{});
 }

@@ -1,4 +1,3 @@
-// TransformComponent のシリアライズ/インスペクタ定義。
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -12,7 +11,7 @@
 
 namespace
 {
-    // インスペクタで回転を度数のオイラー角で編集するための相互変換
+    // クォータニオンを度数のオイラー角（x = pitch, y = yaw, z = roll）にする。インスペクタで回転を表示するため
     DirectX::XMFLOAT3 QuatToEulerDegrees(const DirectX::XMFLOAT4 &q)
     {
         float pitch = std::asin(std::clamp(2.0f * (q.w * q.x - q.y * q.z), -1.0f, 1.0f));
@@ -20,6 +19,8 @@ namespace
         float roll  = std::atan2(2.0f * (q.w * q.z + q.x * q.y), 1.0f - 2.0f * (q.x * q.x + q.z * q.z));
         return {DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw), DirectX::XMConvertToDegrees(roll)};
     }
+
+    // QuatToEulerDegrees の逆変換。インスペクタで編集した角度を回転へ戻すため
     DirectX::XMFLOAT4 EulerDegreesToQuat(const DirectX::XMFLOAT3 &euler)
     {
         DirectX::XMVECTOR q = DirectX::XMQuaternionRotationRollPitchYaw(

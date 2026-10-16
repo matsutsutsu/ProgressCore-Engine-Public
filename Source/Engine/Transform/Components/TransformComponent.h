@@ -20,81 +20,51 @@
 // ローカル（保存対象）とワールド行列（計算キャッシュ）を分けて持つ
 struct TransformComponent
 {
-    // ============================================================
-    // ローカル値（保存・編集する値）
-    // ============================================================
+    // --- ローカル値（保存・編集する値） ---
 
     DirectX::XMFLOAT3 position = {0, 0, 0};    // 親からの相対位置
     DirectX::XMFLOAT4 rotation = {0, 0, 0, 1}; // 親からの相対回転（クォータニオン）
     DirectX::XMFLOAT3 scale    = {1, 1, 1};    // 親からの相対スケール
 
-    // ============================================================
-    // 描画補間用（Fix Your Timestep パターン）
-    // ============================================================
+    // --- 描画補間用（TransformSnapshotSystem が書き、TransformInterpolationSystem だけが読む。ロジックから参照しない） ---
 
-    /**
-     * @brief 直前の FixedUpdate 確定時点でのローカル位置。
-     * @note TransformSnapshotSystem が毎 FixedUpdate の先頭で position をここへ退避する。
-     *       描画側の補間専用データなので、ゲームロジックから参照してはならない。
-     */
-    DirectX::XMFLOAT3 prevPosition = {0, 0, 0};
+    DirectX::XMFLOAT3 prevPosition = {0, 0, 0};    // 1つ前の固定ステップで確定したローカル位置
+    DirectX::XMFLOAT4 prevRotation = {0, 0, 0, 1}; // 1つ前の固定ステップで確定したローカル回転
 
-    // 直前の FixedUpdate 確定時点でのローカル回転。役割は prevPosition と同じ
-    DirectX::XMFLOAT4 prevRotation = {0, 0, 0, 1};
+    // --- 状態フラグ ---
 
-    // ============================================================
-    // 状態フラグ
-    // ============================================================
-
-    bool isStatic = false; // true なら動かない物として行列の再計算と補間を省く
-
+    bool isStatic     = false; // 動かない物の印。行列の再計算と補間を省く
     bool isTeleported = false; // ワープした印。JoltPushSystem が物理側の位置を上書きする
+    bool isDirty      = true;  // 行列を次の更新で必ず計算させる印。実行時の値なので保存しない
 
-    /**
-     * @brief 行列の再計算を強制するフラグ。
-     * @note 初期値を true にしているので、ロード直後や生成直後は isStatic = true でも
-     *       必ず1回は worldMatrix が計算される。
-     * @warning 実行時の一時データなので、シリアライズの対象に含めないこと。
-     */
-    bool isDirty = true;
+    // --- 計算済みの値（System が書く。手で書き換えない） ---
 
-    // ============================================================
-    // 計算済みの値（System が書く。手で書き換えない）
-    // ============================================================
-
-    // ロジック用のワールド行列。TransformUpdateSystem が計算する
+    // ロジック用のワールド行列（TransformUpdateSystem が書く）
     DirectX::XMFLOAT4X4 worldMatrix = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 
-    /**
-     * @brief 描画専用の補間済みワールド行列。
-     * @note TransformInterpolationSystem（Render ステージ R00）が毎描画フレーム、
-     *       prevPosition/position を alpha で補間して書き込む。
-     *       ゲームロジックは参照しないこと（worldMatrix を使う）。
-     */
+    // 描画用の補間済みワールド行列（TransformInterpolationSystem が書く）。ロジックは worldMatrix を使う
     DirectX::XMFLOAT4X4 renderWorldMatrix;
 
-    // ============================================================
-    // 親子関係
-    // ============================================================
-    //
-    // 親だけは EntityLink で持つ。シーン保存時に、シリアライザが EntityID を
-    // ファイル内のローカル番号へ自動で変換できるようにするため。
-    //
-    // firstChildID / prevSiblingID / nextSiblingID は、TransformUpdateSystem の
-    // SetParent / DetachChild が張り替える実行時の値。親から復元できるので保存しない
-    // （ComponentMeta の Fields() に含めていない）。
+    // --- 親子関係 ---
 
-    CCL::Serialization::EntityLink parent; // 親 Entity（保存対象）。0 ならルート
+    // 親だけは EntityLink で持つ。
+    // シーン保存時に、シリアライザが EntityID をファイル内のローカル番号へ自動で変換できるようにするため。
+    CCL::Serialization::EntityLink parent; // 親 Entity（保存対象。0 ならルート）
 
+    // 子と兄弟は、TransformUpdateSystem の SetParent / DetachChild が張り替える実行時の値。
+    // parent から復元できるので保存しない（ComponentMeta の Fields() に含めていない）。
     CCL::ECS::EntityID firstChildID  = 0; // 最初の子（子の連結リストの先頭）
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
     CCL::ECS::EntityID nextSiblingID = 0; // 次の兄弟
 
-    // ============================================================
-    // 操作・取得ヘルパー
-    // ============================================================
+    // --- 操作・取得ヘルパー ---
 
-    // 位置をワープさせる。物理側へ反映させる印（isTeleported）も一緒に立てる
+    /**
+     * @brief 位置をワープさせる。物理側へ反映させる印（isTeleported）も一緒に立てる。
+     * @param newPos 新しいローカル位置。
+     * @note prevPosition は変えない。ワープしたステップの描画では、旧位置と新位置の間が補間されて見える。
+     *       1フレームでも途中の位置を見せたくないときは、呼び出し側で prevPosition も同じ値にする。
+     */
     void SetPosition(const DirectX::XMFLOAT3 &newPos)
     {
         position     = newPos;
@@ -102,6 +72,7 @@ struct TransformComponent
         isStatic     = false; // 静的扱いを解除し、行列を再計算させる
     }
 
+    // SetPosition の成分指定版
     void SetPosition(float x, float y, float z)
     {
         position     = {x, y, z};

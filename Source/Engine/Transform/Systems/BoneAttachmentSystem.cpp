@@ -22,6 +22,12 @@ void BoneAttachmentSystem::Update(float dt)
 
 void BoneAttachmentSystem::ResolveAttachment(EntityID id, TransformComponent &trans, BoneAttachmentComponent &attach)
 {
+    // 処理フロー:
+    // 1. 親の Transform とモデルを取る
+    // 2. ボーン番号を解決する（初回だけ）
+    // 3. 「自分のローカル × ボーン行列 × 親のワールド」で worldMatrix を確定する
+    // 4. 子孫へ伝える
+
     const EntityID parentId = trans.parent;
     if (parentId == 0) return;
 

@@ -34,13 +34,9 @@ struct GameFlowState
     //    書き手は GameResultSystem だけ。
     bool matchOver = false;
 
-    // アプリ終了要求。タイトル画面の QUIT から立てる（ゲーム中のポーズ／リザルトは
-    //    タイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている）。
-    //    System の Update はジョブスケジューラによりワーカースレッドで走るため、
-    //    ワーカースレッドから PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
-    //    メインループ（PeekMessage = メインスレッド）が永久に拾えず終了しない。
-    //    そこで「フラグを立てるだけ」にして、メインスレッドの Run() ループが毎フレーム
-    //    これを見て PostQuitMessage(0) を呼ぶ。（ジョブの WaitForCounter が同期点になるので
-    //    書き込みは main へ確実に可視化される）
+    // アプリ終了要求。タイトル画面の QUIT から立てる。
+    //    ゲーム中のポーズ／リザルトはタイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている。
+    //    System からは PostQuitMessage を呼ばず、このフラグを立てるだけにする（理由は Framework::Run の 3）。
+    //    書き込みはジョブの WaitForCounter が同期点になるので、メインスレッドから確実に見える。
     bool quitRequested = false;
 };
