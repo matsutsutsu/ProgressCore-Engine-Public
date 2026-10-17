@@ -21,6 +21,7 @@
 #include "Engine/Graphics/Renderer/PrimitiveRenderer.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/Graphics/Renderer/ParticleRenderer.h"
+#include "Engine/Graphics/Renderer/TrailRenderer.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/SceneView/Light.h"
 #include "Engine/Graphics/SceneView/Camera.h"
@@ -95,6 +96,7 @@ public:
     PrimitiveRenderer    *GetPrimitiveRenderer() const { return m_primitiveRenderer.get(); }
     ShapeRenderer        *GetShapeRenderer() const { return m_shapeRenderer.get(); }
     ParticleRenderer     *GetParticleRenderer() const { return m_particleRenderer.get(); }
+    TrailRenderer        *GetTrailRenderer() const { return m_trailRenderer.get(); }
     ShadowMap            *GetShadowMap() const { return m_shadowMap.get(); }
     LightManager         *GetLightManager() const { return m_lightManager.get(); }
     PostProcessManager   *GetPostProcessManager() const { return m_postProcess.get(); }
@@ -146,6 +148,7 @@ private:
     std::unique_ptr<ShapeRenderer>        m_shapeRenderer;
     std::unique_ptr<ModelConstantBuffers> m_modelConstants;
     std::unique_ptr<ParticleRenderer>     m_particleRenderer;
+    std::unique_ptr<TrailRenderer>        m_trailRenderer;
     std::unique_ptr<ShadowMap>            m_shadowMap;
     std::unique_ptr<LightManager>         m_lightManager;
     std::unique_ptr<PostProcessManager>   m_postProcess;

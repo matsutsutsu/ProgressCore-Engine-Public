@@ -277,7 +277,6 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -287,10 +286,7 @@
                         1.0
                     ],
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 2
@@ -363,7 +359,6 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -373,10 +368,7 @@
                         1.0
                     ],
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 3
@@ -499,7 +491,6 @@
                     ],
                     "tubeSides": 6,
                     "useInterpolation": true,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -509,10 +500,7 @@
                         1.0
                     ],
                     "width": 1.0,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 4

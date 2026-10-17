@@ -49,6 +49,8 @@ void Graphics::Initialize(HWND hWnd)
     m_shadowMap         = std::make_unique<ShadowMap>(device, 2048, 2048);
     m_particleRenderer  = std::make_unique<ParticleRenderer>();
     m_particleRenderer->Initialize(device);
+    m_trailRenderer = std::make_unique<TrailRenderer>();
+    m_trailRenderer->Initialize(device);
     m_lightManager = std::make_unique<LightManager>();
     m_lightManager->Initialize(device);
     m_postProcess = std::make_unique<PostProcessManager>();
@@ -81,6 +83,7 @@ void Graphics::SetupRenderPipeline()
     m_renderServices.primitiveRenderer   = m_primitiveRenderer.get();
     m_renderServices.shapeRenderer       = m_shapeRenderer.get();
     m_renderServices.particleRenderer    = m_particleRenderer.get();
+    m_renderServices.trailRenderer       = m_trailRenderer.get();
     m_renderServices.shadowMap           = m_shadowMap.get();
     m_renderServices.renderQueue         = &RenderQueue::Instance();
     m_renderServices.lightManager        = m_lightManager.get();
@@ -262,6 +265,7 @@ void Graphics::Shutdown()
     // 描画サブシステムを作ったのと逆の順に解放する
     m_postProcess.reset();
     m_lightManager.reset();
+    m_trailRenderer.reset();
     m_particleRenderer.reset();
     m_shadowMap.reset();
     m_shapeRenderer.reset();

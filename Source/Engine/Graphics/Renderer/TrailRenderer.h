@@ -7,8 +7,9 @@
 //   - TrailPass から呼ばれ、歪み → 加算 の順に描いて列を空にする
 //
 // 備考:
-//   - RenderQueue と同じくシングルトンにしている（RenderServices に項目を足さずに済む）。
-//     GPU リソースは最初の Render で作る。
+//   - ParticleRenderer と同じく Graphics が所有し、パスへは RenderServices、ECS へは
+//     World リソース（TrailRenderer*）で渡す。GPU リソースの寿命がデバイスと揃うので、
+//     デバイスロストからの復帰でも作り直される。
 //   - 加算の層: ブレンドは Additive、深度はテストだけ（書かない）、両面を描く。
 //   - 歪みの層: 同じ形で、SceneColorGrabPass が写したシーンの色をずらして読み、アルファブレンドで重ねる。
 //     加算の明るい芯が上に来るよう、歪みを先に描く。
@@ -42,17 +43,21 @@ public:
         DirectX::XMFLOAT2 uv; // x = 尾の長さの方向, y = 幅の方向
     };
 
-    static TrailRenderer &Instance()
-    {
-        static TrailRenderer instance;
-        return instance;
-    }
+    TrailRenderer()  = default;
+    ~TrailRenderer() = default;
+
+    TrailRenderer(const TrailRenderer &)            = delete;
+    TrailRenderer &operator=(const TrailRenderer &) = delete;
+
+    // シェーダー・入力レイアウト・バッファ・PSO を作る（Graphics::Initialize から1回だけ呼ぶ）
+    void Initialize(ID3D11Device *device);
 
     /**
      * @brief 加算の層に三角形の頂点を積む（別スレッドから呼んでよい）。
+     * @param verts       積む頂点の先頭。nullptr なら何もしない。
      * @param vertexCount 3 の倍数。容量を超えたぶんは三角形の区切りで切り捨てる
-     * @param texture このトレイルのテクスチャ。null なら白（頂点の色だけになる）。
-     *                全トレイルを1つのバッファに詰め、テクスチャが変わる所でドローコールを分ける
+     * @param texture     このトレイルのテクスチャ。null なら白（頂点の色だけになる）。
+     *                    全トレイルを1つのバッファに詰め、テクスチャが変わる所でドローコールを分ける
      */
     void SubmitTriangleList(const Vertex *verts, size_t vertexCount,
                             ID3D11ShaderResourceView *texture = nullptr);
@@ -63,26 +68,22 @@ public:
     // ためた頂点を描いて空にする（TrailPass から毎フレーム呼ばれる）
     void Render(const RenderServices &services, const RenderFrameContext &ctx);
 
-    // GPU リソースを解放する（エンジンの終了時）
-    void Shutdown();
-
 private:
-    TrailRenderer()                                 = default;
-    ~TrailRenderer()                                = default;
-    TrailRenderer(const TrailRenderer &)            = delete;
-    TrailRenderer &operator=(const TrailRenderer &) = delete;
-
-    // 最初の1回だけ、シェーダー・入力レイアウト・バッファ・PSO を作る
-    void EnsureInitialized(ID3D11Device *device);
-
     // あと何頂点積めるか（三角形の区切りに丸める）。m_mutex を持った状態で呼ぶ
     size_t ClampToCapacity(size_t vertexCount) const;
 
-    // 1フレームに積める頂点の数（2つの層の合計）。筒の形（Tube）は1本で約 3,300 頂点を使い、
-    // 歪みを付けるとその2倍を積む。49152 頂点でも頂点バッファは約 1.3MB
+    // ためた頂点を捨てる。m_mutex を持った状態で呼ぶ
+    void ClearPending();
+
+    // 1フレームに積める頂点の数（2つの層の合計）。49152 頂点で頂点バッファは約 1.7MB。
+    // 頂点数は 6 ×（断面列の数 − 1）× 面の数。断面列は補間ありで（区間数 × 4）、なしで区間数。
+    // 面の数は Ribbon=1 / Cross=2 / Tube=分割数。歪みを付けるとその2倍を積む。
+    // リング（MAX_SEGMENTS=256）が満杯のときの目安: 補間なしの4分割の筒で約 6,100、
+    // 補間ありの板で約 6,100（歪み付きで約 12,200）。補間ありの6分割の筒は約 36,700 なので、
+    // それが満杯まで伸びると、後から積んだトレイルは入りきらずに切り捨てられる。
     static constexpr size_t MAX_VERTICES = 49152;
 
-    bool m_initialized = false;
+    bool m_initialized = false; // Initialize が済んだか
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;

@@ -258,6 +258,8 @@ namespace CCL::ECS
             {
                 m_resourcesArray.resize(id + 1);
             }
+            // std::forward で Args（引数）を完全転送し、
+            // ResourceWrapper<T> のコンストラクタに渡す
             m_resourcesArray[id] =
                 std::make_unique<ResourceWrapper<T>>(std::forward<Args>(args)...);
         }

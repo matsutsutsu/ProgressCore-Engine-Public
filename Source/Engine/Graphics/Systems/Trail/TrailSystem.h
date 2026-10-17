@@ -8,7 +8,6 @@
 //   - sampleRequested が立っていて、先端が minDistance 以上動いたときだけ新しい断面を刻む
 //   - 断面を補間して断面列にし、shape に応じた形（板・十字・筒）の三角形を作る
 //   - distortion > 0 なら同じ形を歪みレイヤにも積む（形は1回だけ作る）
-//   - useZigZag なら断面の中心を折れ線状にずらす
 //
 // 備考: 描画は同じフレームの TrailPass が行う。ロジックには影響しない見た目だけの System。
 //       刻む頻度と断面の老化・破棄は TrailRecordSystem（ロジック, 60Hz 固定）が受け持つ。
@@ -17,9 +16,10 @@
 //       速く振ったときだけ尾が出るよう、先端が minDistance 以上動いたときだけ刻む。
 //       止まっているときは刻まず、残っている断面が lifeTime で消える。
 //       リングは固定長で、満杯なら一番古い断面を上書きする（ヒープを使わない）。
+//       間引いて空きを作る方式は、補間の制御点が入れ替わって尾の形が毎回跳ねるので使わない。
 //       断面の補間（BuildRings）と形の生成（Emit*）を分けているのは、板1枚だと面が視線と
 //       平行になると線につぶれるので、同じ断面列から十字や筒も作れるようにするため。
-//       ジグザグは形を作る前に断面列の中心だけをずらすので、どの形でも同じ稲妻の芯線になる。
+//       TrailRenderer は World リソース（TrailRenderer*）から引く。所有者は Graphics。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
@@ -49,12 +49,6 @@ private:
         DirectX::XMFLOAT3 half   = {};   // 中心→先端のベクトル（幅カーブを掛けた後, m）
         float             age    = 0.0f; // フェードに使う経過時間（秒）
         float             taper  = 1.0f; // 尾ほど細くする係数（thickness を指定したときに使う）
-
-        // この断面の元（元の区間の通し番号と、区間の中の位置 0〜1）。
-        // ジグザグの「どの折れ点の上にいるか」を、フレームごとに変わる配列の添字ではなく
-        // 区間そのものから決めるために持つ。
-        uint32_t segStamp = 0;
-        float    segT     = 0.0f;
     };
 
     // 同じ位置に置く、加算レイヤ用と歪みレイヤ用の頂点の組。
@@ -74,8 +68,60 @@ private:
         void PushTriangle(const VertexPair &a, const VertexPair &b, const VertexPair &c) const; // 加算レイヤへ、distort があれば歪みレイヤへも三角形を1つ積む
     };
 
+    // Tube の断面ごとの正規直交フレーム
+    struct TubeFrame
+    {
+        DirectX::XMVECTOR u;      // 断面内の基底の1本目（板の向き＝根本→先端が基準）
+        DirectX::XMVECTOR v;      // 断面内の基底の2本目
+        float             radius; // 筒の半径（m）
+    };
+
+    // ============================================================
+    // 断面の記録
+    // ============================================================
+
+    /**
+     * @brief 新しい断面を1つリングの末尾に刻む。満杯なら一番古い断面を上書きする。
+     * @param trail 刻む先のトレイル。
+     * @param base  根本のワールド座標（m）。
+     * @param tip   先端のワールド座標（m）。
+     */
+    void RecordSegment(TrailComponent &trail, const DirectX::XMFLOAT3 &base, const DirectX::XMFLOAT3 &tip) const;
+
+    // ============================================================
+    // 断面列の生成
+    // ============================================================
+
     // リングの区間を Catmull-Rom で補間し、連続した断面列に広げる（useInterpolation=false なら補間しない）
     void BuildRings(const TrailComponent &trail, std::vector<Ring> &outRings) const;
+
+    /**
+     * @brief 根本と先端の2点から、幅カーブを掛けた断面を1つ作る。
+     * @param trail   幅（width / widthCurvePower）を持つトレイル。
+     * @param base    根本のワールド座標（m）。
+     * @param tip     先端のワールド座標（m）。
+     * @param age     この断面の経過時間（秒）。
+     * @param invLife 1 / lifeTime。lifeTime が 0 なら 0。
+     * @return 作った断面。
+     */
+    Ring MakeRing(const TrailComponent &trail, const DirectX::XMFLOAT3 &base, const DirectX::XMFLOAT3 &tip,
+                  float age, float invLife) const;
+
+    /**
+     * @brief Catmull-Rom 曲線上の点を返す。
+     * @param p0 p1 の1つ前の制御点。
+     * @param p1 区間の始点。
+     * @param p2 区間の終点。
+     * @param p3 p2 の1つ後の制御点。
+     * @param t  区間の中の位置（0 で p1、1 で p2）。
+     * @return 補間した点。
+     */
+    DirectX::XMFLOAT3 CatmullRom(const DirectX::XMFLOAT3 &p0, const DirectX::XMFLOAT3 &p1,
+                                 const DirectX::XMFLOAT3 &p2, const DirectX::XMFLOAT3 &p3, float t) const;
+
+    // ============================================================
+    // 形状ごとの三角形生成
+    // ============================================================
 
     // 断面列から、shape に応じた三角形リストを積む
     void EmitRibbon(const TrailComponent &trail, const std::vector<Ring> &rings,
@@ -83,7 +129,7 @@ private:
     void EmitCross(const TrailComponent &trail, const std::vector<Ring> &rings,
                    const EmitSink &sink) const;
     void EmitTube(const TrailComponent &trail, const std::vector<Ring> &rings,
-                  const DirectX::XMFLOAT3 &cameraEye, const EmitSink &sink) const;
+                  const DirectX::XMFLOAT3 &cameraEye, const EmitSink &sink);
 
     // 断面 i の進行方向（末尾は1つ前の向きを使う）
     DirectX::XMVECTOR RingTangent(const std::vector<Ring> &rings, size_t i) const;
@@ -106,23 +152,25 @@ private:
      *
      * U（長さ方向）は age から求め、tiling と scroll を掛けて UV にする。
      *
-     * @param vCoord テクスチャの V 座標（幅方向。Ribbon/Cross は根本 0・先端 1、Tube は円周上の位置）
+     * @param trail     色・歪み・UV の設定を持つトレイル。
+     * @param pos       頂点のワールド座標（m）。
+     * @param age       この頂点の断面の経過時間（秒）。
+     * @param intensity 明るさの倍率（0〜1）。Tube の輪郭強調に使う。それ以外は 1。
+     * @param vCoord    テクスチャの V 座標（幅方向。Ribbon/Cross は根本 0・先端 1、Tube は円周上の位置）
+     * @return 加算レイヤと歪みレイヤの頂点の組。
      */
     VertexPair MakeVertex(const TrailComponent    &trail,
                           const DirectX::XMFLOAT3 &pos,
                           float age, float intensity, float vCoord) const;
 
-    /**
-     * @brief 折れ点1つ分のずらすベクトルを返す。断面内の基底 u, v の上で決める。
-     * @param trail 振れ幅（zigZagAmplitude）と乱数の種を持つトレイル。
-     * @param node  折れ点の番号。同じ番号からは毎フレーム同じ向き・長さが出る。
-     * @param u     断面内の基底の1本目。
-     * @param v     断面内の基底の2本目。
-     * @return ずらすベクトル（m）。
-     */
-    DirectX::XMVECTOR ZigZagOffset(const TrailComponent &trail, uint32_t node,
-                                   DirectX::FXMVECTOR u, DirectX::FXMVECTOR v) const;
+    // ============================================================
+    // 作業バッファ
+    // ============================================================
 
-    // 滑らかな断面列を、稲妻のような折れ線にずらす（中心だけを動かす）
-    void ApplyZigZag(const TrailComponent &trail, std::vector<Ring> &rings) const;
+    // トレイル間・フレーム間で使い回して、毎フレームのアロケーションを無くす。
+    // ForEach はシングルスレッド版なので、メンバに持っても競合しない。
+    std::vector<TrailRenderer::Vertex> m_vertices;        // 加算レイヤの頂点
+    std::vector<TrailRenderer::Vertex> m_distortVertices; // 歪みレイヤの頂点
+    std::vector<Ring>                  m_rings;           // 補間後の断面列
+    std::vector<TubeFrame>             m_tubeFrames;      // Tube の断面ごとのフレーム
 };

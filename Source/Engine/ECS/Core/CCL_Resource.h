@@ -10,6 +10,7 @@
 //       「ゲーム中に一意で、Component とは別レイヤで持ちたいもの」に使う。
 // ===========================================================================
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <utility> // std::forward
@@ -35,17 +36,21 @@ namespace CCL::ECS
      */
     class ResourceIDGenerator
     {
-        static inline uint32_t counter = 0;
+        static inline std::atomic<uint32_t> counter = 0; // 次に振る ID
 
     public:
         /**
          * @brief 型 T に対する一意な ID を返す。
          * @note  最初に呼ばれた時に採番され、以降は同じ値が返る。
+         * @note  ワーカースレッドから呼んでもよい。
          */
         template <typename T>
         static uint32_t GetID()
         {
-            static uint32_t id = counter++;
+            // 関数内 static の初期化がスレッド安全なのは、同じ型どうしの話だけ。
+            // 別の型の初回呼び出しが別スレッドで重なると、どちらも counter を読んで同じ ID を振りうる。
+            // 読んで足して書く操作を fetch_add で分けられない1回にし、重複を防ぐ。
+            static uint32_t id = counter.fetch_add(1);
             return id;
         }
     };
@@ -63,6 +68,9 @@ namespace CCL::ECS
      */
     struct ResourceBase
     {
+        // 仮想デストラクタを持たないと、
+        // 型消去したResourceBaseのポインタをdeleteする際に派生先の
+        // ResourceWrapperのデストラクタが呼ばれず、解放されずにメモリリークになる
         virtual ~ResourceBase() = default;
     };
 

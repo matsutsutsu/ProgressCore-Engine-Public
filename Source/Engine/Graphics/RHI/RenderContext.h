@@ -22,6 +22,7 @@ class LightManager;
 class ShadowMap;
 class ModelConstantBuffers;
 class ParticleRenderer;
+class TrailRenderer;
 class PrimitiveRenderer;
 class ShapeRenderer;
 class PostProcessManager;
@@ -52,6 +53,7 @@ struct RenderServices
     // ---- 描画サブシステム ----
     ModelConstantBuffers *modelConstants    = nullptr;
     ParticleRenderer     *particleRenderer  = nullptr;
+    TrailRenderer        *trailRenderer     = nullptr;
     PrimitiveRenderer    *primitiveRenderer = nullptr;
     ShapeRenderer        *shapeRenderer     = nullptr;
     PostProcessManager   *postProcess       = nullptr;

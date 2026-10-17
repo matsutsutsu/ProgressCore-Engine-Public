@@ -16,6 +16,10 @@
 //       新しい断面を刻む（速く振ったときだけ尾が出る）。
 //       emitting は既定では手動。animControlled=true なら TrailAnimationSyncSystem が
 //       祖先の Animator の Trail 区間イベントを見て毎フレーム書き換える。
+//
+//       時間は2つの時計で進める。断面の老化（尾が消える速さ）はこの Entity 自身の
+//       TimeStateComponent（animControlled なら持ち主の時計）、一時トレイルの残り時間は
+//       Animator を持つ祖先（ownerEntity）の TimeStateComponent。詳しくは TrailRecordSystem.h。
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Graphics/Resource/ResourceTypes.h"
@@ -99,19 +103,6 @@ struct TrailComponent
     // 剣の軌跡のように面を見せる使い方で歪ませたいときはここを上げる。
     float distortionNoise = 0.0f;
 
-    // --- ジグザグ（稲妻のような折れ）レイヤ ---
-    // 芯線を折れ線にする。尾の通り道そのものをずらすので、shape に関係なく使える。
-    bool useZigZag = false;
-
-    float zigZagAmplitude = 0.5f; // 折れ点1つあたりの最大のずらし量（m）
-
-    // 1区間あたりの折れ点の数。増やすほど細かく尖る。
-    // 補間を使うと1区間が4断面に分かれるので、上げすぎると折れ点が断面より細かくなり、
-    // 角がつぶれてただのノイズに見える。
-    int zigZagFrequency = 2;
-
-    uint32_t zigZagSeed = 1337; // 折れ方のパターン。値を変えると別の稲妻になる
-
     float burstDuration = 0.25f; // ActivateFor で一時的にトレイルを出す時間（秒）。ダッシュなどで使う
 
     // ============================================================
@@ -120,9 +111,15 @@ struct TrailComponent
     TextureHandle     textureHandle;                   // texturePath から引いたテクスチャ。TrailSystem が毎フレーム引き直す（ResourceManager がパスでキャッシュする）
     DirectX::XMFLOAT2 uvScrollOffset = {0.0f, 0.0f};  // uvScroll を積み上げた今のずれ。TrailSystem が毎フレーム進める
 
-    // animControlled のときに見つけた、Animator を持つ祖先。InvalidEntityID は未解決。
-    // TrailAnimationSyncSystem が親をたどって一度だけ探し、ここに持つ。
+    // Animator を持つ祖先。InvalidEntityID は未解決。
+    // TrailAnimationSyncSystem が親をたどって探し、ここに持つ。animControlled でなくても探す
+    // （一時トレイルの時計に、その持ち主の TimeStateComponent を使うため）。
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
+
+    // 断面の老化に使っている時間の倍率（自分の時計の localDt ÷ ロジックの dt）。
+    // TrailRecordSystem がロジックの1ステップごとに書き、描画側の TrailSystem が
+    // UV スクロールを同じ速さで遅くするために読む。
+    float timeScale = 1.0f;
 
     // 1フレーム分の刃の断面（根本と先端の線分）と経過時間
     struct Segment
@@ -130,20 +127,18 @@ struct TrailComponent
         DirectX::XMFLOAT3 base = {};   // 記録したときの根本のワールド座標（m）
         DirectX::XMFLOAT3 tip  = {};   // 記録したときの先端のワールド座標（m）
         float             age  = 0.0f; // 記録してからの経過時間（秒）。lifeTime を超えたら捨てる
-
-        // 刻んだ順の通し番号。ジグザグの折れ方を決める乱数の種に使う。
-        // リング内の添字は一番古い断面が消えるたびにずれるので、添字を種にすると
-        // 模様が尾へ流れてしまう。断面自身に番号を持たせ、一度決まった折れ方を最後まで保つ。
-        uint32_t stamp = 0;
     };
 
-    static constexpr int MAX_SEGMENTS = 24; // リングの容量（尾の最大の区間数）
+    // リングの容量（尾の最大の区間数）。
+    // スロー中は断面が長く残るので、等速時（剣で約 11 個）よりずっと多く要る。
+    // ラッシュ中の足の尾（世界 0.05 倍・寿命 0.26 秒）は実時間で約 5 秒残り、高速移動中は毎ステップ刻む。
+    // 満杯になったら一番古い断面から上書きする（尾の末端が切れる）。
+    // 1区間 28 バイトなので 256 で約 7KB。Entity が 16KB のチャンクに2体ずつ入る大きさに収まる。
+    static constexpr int MAX_SEGMENTS = 256;
 
     Segment segments[MAX_SEGMENTS] = {}; // 断面のリングバッファ
     int     head                   = 0;  // 一番古い断面の添字
     int     count                  = 0;  // 有効な断面の数
-
-    uint32_t nextStamp = 0; // 次に刻む断面の通し番号
 
     // TrailRecordSystem（ロジック, 60Hz 固定）が毎ステップ立てる「1区間刻んでよい」印。
     // 描画側の TrailSystem は、印が立っているフレームだけ断面を刻み、必ず降ろす。
@@ -168,7 +163,9 @@ struct TrailComponent
     void UpdateBurstTimer(float dt)
     {
         if (burstTimer <= 0.0f)
+        {
             return;
+        }
 
         burstTimer -= dt;
 
