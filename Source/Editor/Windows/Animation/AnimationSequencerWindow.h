@@ -6,6 +6,7 @@
 //   - ImSequencer によるイベント区間（攻撃判定・軌跡・音など）の編集
 //   - CurveEditorWidget による速度・ルートモーションのカーブの編集
 //   - 選択中のエンティティでのプレビュー（姿勢・移動量・判定球）
+//   - プレビュー中のポーズの固定（複数体を止めたまま、カメラを動かして構図を作る）
 //   - JSON の読み書き
 //
 // 備考:
@@ -20,6 +21,7 @@
 #include <DirectXMath.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 class AnimationSequenceImpl;
 struct AnimatorComponent; // 実体は struct
@@ -53,6 +55,9 @@ private:
      *               （選択中のものへ復元すると、別モデルの台本を差し込んでしまう）。
      */
     void ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target);
+
+    // ウィンドウ側の編集モードの状態だけを片付ける（エンティティには触らない）。解除と固定の両方が通る
+    void ResetEditModeState(EditorContext &context);
     void DrawFileIO();
     void DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator);
     void DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model);
@@ -85,7 +90,51 @@ private:
      */
     void DrawHitboxPreview(EditorContext &context);
 
+    // --- ポーズの固定 ---
+
+    /**
+     * @brief 編集モードで見ている今のポーズのまま、選択中のエンティティを止めておく。
+     *
+     * isEditorOverride を立てたまま編集モードだけを抜ける。編集モードを抜けると uiInteract が下りるので、フリーカメラが動かせる。
+     * 台本は写しを固定側が持つ（m_editingSequence は選択を変えると作り直されるため、指したままにはできない）。
+     */
+    void PinCurrentPose(EditorContext &context, AnimatorComponent *animator);
+
+    /**
+     * @brief 固定を解き、そのエンティティを固定前（編集モードに入る前）の状態へ戻す。
+     * @param index m_pinnedPoses の添字。
+     */
+    void UnpinPose(EditorContext &context, size_t index);
+
+    // 固定を全部解く
+    void UnpinAllPoses(EditorContext &context);
+
+    // 指定エンティティの固定の添字を返す。固定していなければ -1
+    int FindPinnedPose(CCL::ECS::EntityID entity) const;
+
+    /**
+     * @brief 消えたエンティティ・別物に置き換わったエンティティの固定を捨てる。
+     *
+     * シーンの読み直しで同じ ID が別のエンティティに使われると、そのエンティティを戻してしまう。
+     * Animator が固定側の台本の写しを指していなければ、もう固定したものではないとみなす。
+     */
+    void PrunePinnedPoses(EditorContext &context);
+
+    // 固定中のエンティティの一覧と、解除のボタンを描く
+    void DrawPinnedPoseList(EditorContext &context);
+
 private:
+    // 固定中の1体分
+    struct PinnedPose
+    {
+        CCL::ECS::EntityID            entity = CCL::ECS::InvalidEntityID; // 固定しているエンティティ
+        std::unique_ptr<AnimSequence> sequence;                           // 固定中に Animator が指す台本の写し
+        const AnimSequence           *savedSequence = nullptr;            // 解除時に戻す、編集モードに入る前の台本
+        float                         time          = 0.0f;               // 固定した再生位置（秒）
+        DirectX::XMFLOAT3             originPos     = {0.0f, 0.0f, 0.0f}; // 解除時に戻す位置
+        bool                          restorePos    = false;              // ルートモーションのプレビューで動かしていたか（解除時に originPos へ戻す）
+    };
+
     // ImSequencer への橋渡し。ImSequencer への依存を .cpp に閉じ込めるため pImpl にする
     std::unique_ptr<AnimationSequenceImpl> m_sequencerImpl;
     CurveEditorWidget                      m_curveWidget; // 速度・ルートモーションのカーブの編集
@@ -128,4 +177,7 @@ private:
     // このフレームに DrawContents が編集モードを維持したか。
     // 維持されないフレームが来たら OnFrameBegin が解除する。
     bool m_editModeRefreshed = false;
+
+    // 固定中のポーズ。ウィンドウを閉じても、選択を変えても解かない（解くのは解除のボタンだけ）
+    std::vector<PinnedPose> m_pinnedPoses;
 };

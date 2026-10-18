@@ -6,6 +6,7 @@
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Core/Components/NameComponent.h" // 固定中のポーズの一覧に名前を出す
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/CombatRosterComponent.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
@@ -291,6 +292,12 @@ AnimationSequencerWindow::~AnimationSequencerWindow() = default;
 
 void AnimationSequencerWindow::DrawContents(EditorContext &context)
 {
+    // 固定中のポーズは、何も選んでいなくても解除できるように先頭に出す
+    if (context.world)
+    {
+        DrawPinnedPoseList(context);
+    }
+
     if (context.selectedEntity == CCL::ECS::InvalidEntityID || context.selectedEntity == 0)
     {
         ImGui::TextDisabled("Select an entity to edit animation.");
@@ -523,6 +530,14 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
     {
         if (!m_wasEditMode)
         {
+            // 固定中のエンティティを編集し直すときは、先に固定を解いて固定前へ戻す。
+            //   戻さないと、固定側の台本の写しを「編集前の台本」として退避してしまい、解除しても元へ戻らない
+            const int pinIndex = FindPinnedPose(context.selectedEntity);
+            if (pinIndex >= 0)
+            {
+                UnpinPose(context, static_cast<size_t>(pinIndex));
+            }
+
             m_savedSequence      = animator->currentSequence;
             m_wasEditMode        = true;
             context.animEditTime = animator->currentTimer;
@@ -562,6 +577,11 @@ void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS:
         }
     }
 
+    ResetEditModeState(context);
+}
+
+void AnimationSequencerWindow::ResetEditModeState(EditorContext &context)
+{
     m_rootMotionActive     = false;
     m_savedSequence        = nullptr;
     m_wasEditMode          = false;
@@ -573,8 +593,18 @@ void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS:
 
 void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
 {
-    // 描画されなかったフレーム（ウィンドウを閉じた・畳んだ・選択を外した）を検出して編集モードを解く
+    // 処理の流れ:
+    //   1. 固定のうち、もう無効になったものを捨てる
+    //   2. 描画されなかったフレーム（ウィンドウを閉じた・畳んだ・選択を外した）を検出して編集モードを解く
 
+    // ---------------------------------------------------------
+    // 1. 固定の掃除（ウィンドウを閉じていても毎フレーム行う）
+    // ---------------------------------------------------------
+    PrunePinnedPoses(context);
+
+    // ---------------------------------------------------------
+    // 2. 編集モードの解除
+    // ---------------------------------------------------------
     if (m_editingEntity == CCL::ECS::InvalidEntityID)
         return;
 
@@ -587,6 +617,154 @@ void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
     // 維持されなかった＝もう画面に出ていない。ここで解除しないと isEditorOverride が
     // 残り、対象エンティティのアニメ・アニメ遷移・ルートモーションが全部止まったままになる。
     ReleaseEditMode(context, m_editingEntity);
+}
+
+// ---------------------------------------------------------------------------
+// ポーズの固定
+// ---------------------------------------------------------------------------
+
+void AnimationSequencerWindow::PinCurrentPose(EditorContext &context, AnimatorComponent *animator)
+{
+    // 処理の流れ:
+    //   1. 台本の写しと、解除時の戻し先を固定側へ移す
+    //   2. Animator は止めたまま、指す台本だけ写しへ差し替える
+    //   3. 編集モードだけを抜ける（エンティティは戻さない）
+
+    // ---------------------------------------------------------
+    // 1. 固定側へ移す
+    // ---------------------------------------------------------
+    PinnedPose pin;
+    pin.entity        = context.selectedEntity;
+    pin.sequence      = std::make_unique<AnimSequence>(m_editingSequence);
+    pin.savedSequence = m_savedSequence;
+    pin.time          = context.animEditTime;
+    pin.originPos     = m_rootMotionOriginPos;
+    pin.restorePos    = m_rootMotionActive;
+
+    // ---------------------------------------------------------
+    // 2. Animator を止めたままにする
+    // ---------------------------------------------------------
+    // ポーズは今フレームの UpdateManual で Model へ当て済み。isEditorOverride の間は AnimationPoseSystem が
+    // 上書きしないので、そのまま残る（Model はエンティティごとの実体なので、他のキャラにも上書きされない）
+    animator->currentSequence  = pin.sequence.get();
+    animator->currentTimer     = pin.time;
+    animator->isEditorOverride = true;
+
+    m_pinnedPoses.push_back(std::move(pin));
+
+    // ---------------------------------------------------------
+    // 3. 編集モードを抜ける
+    // ---------------------------------------------------------
+    // ReleaseEditMode は通さない。通すと台本と位置を戻してしまう
+    ResetEditModeState(context);
+}
+
+void AnimationSequencerWindow::UnpinPose(EditorContext &context, size_t index)
+{
+    if (index >= m_pinnedPoses.size()) return;
+
+    PinnedPose &pin = m_pinnedPoses[index];
+
+    if (context.world)
+    {
+        if (auto *animator = context.world->GetComponent<AnimatorComponent>(pin.entity))
+        {
+            if (pin.savedSequence)
+            {
+                animator->currentSequence = pin.savedSequence;
+            }
+            animator->isEditorOverride = false;
+        }
+
+        // ルートモーションのプレビューで動かした位置を元に戻す
+        if (pin.restorePos)
+        {
+            if (auto *trans = context.world->GetComponent<TransformComponent>(pin.entity))
+            {
+                trans->SetPosition(pin.originPos);
+            }
+        }
+    }
+
+    m_pinnedPoses.erase(m_pinnedPoses.begin() + static_cast<std::ptrdiff_t>(index));
+}
+
+void AnimationSequencerWindow::UnpinAllPoses(EditorContext &context)
+{
+    // 後ろから解く（erase で前の添字がずれないように）
+    while (!m_pinnedPoses.empty())
+    {
+        UnpinPose(context, m_pinnedPoses.size() - 1);
+    }
+}
+
+int AnimationSequencerWindow::FindPinnedPose(CCL::ECS::EntityID entity) const
+{
+    for (size_t i = 0; i < m_pinnedPoses.size(); ++i)
+    {
+        if (m_pinnedPoses[i].entity == entity)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+void AnimationSequencerWindow::PrunePinnedPoses(EditorContext &context)
+{
+    if (m_pinnedPoses.empty()) return;
+
+    // World が無い（シーンの切り替え中など）なら、固定していたエンティティはもう無い
+    if (!context.world)
+    {
+        m_pinnedPoses.clear();
+        return;
+    }
+
+    // 無効になった固定は、エンティティに触らずに捨てる（別物に戻し処理を掛けないため）
+    std::erase_if(m_pinnedPoses, [&](const PinnedPose &pin) {
+        const auto *animator = context.world->GetComponent<AnimatorComponent>(pin.entity);
+        return !animator || animator->currentSequence != pin.sequence.get();
+    });
+}
+
+void AnimationSequencerWindow::DrawPinnedPoseList(EditorContext &context)
+{
+    if (m_pinnedPoses.empty()) return;
+
+    ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "固定中のポーズ (%d)", static_cast<int>(m_pinnedPoses.size()));
+    ImGui::SameLine();
+    if (ImGui::SmallButton("すべて解除"))
+    {
+        UnpinAllPoses(context);
+        return;
+    }
+
+    // 解除は1フレームに1つだけ（ループ中に erase すると添字がずれる）
+    int unpinIndex = -1;
+    for (size_t i = 0; i < m_pinnedPoses.size(); ++i)
+    {
+        const PinnedPose &pin = m_pinnedPoses[i];
+
+        const auto *nameComp = context.world->GetComponent<NameComponent>(pin.entity);
+        const char *name     = nameComp ? nameComp->name : "(no name)";
+
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::BulletText("%s  [%s @ %.2f s]", name, pin.sequence->targetAnimName.c_str(), pin.time);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("解除"))
+        {
+            unpinIndex = static_cast<int>(i);
+        }
+        ImGui::PopID();
+    }
+
+    if (unpinIndex >= 0)
+    {
+        UnpinPose(context, static_cast<size_t>(unpinIndex));
+    }
+
+    ImGui::Separator();
 }
 
 // ---------------------------------------------------------------------------
@@ -962,6 +1140,23 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         // アセットロック済みなので閲覧のみ
         ImGui::Text("Duration: %.2f s", m_editingSequence.duration);
         ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
+
+        // 編集モード中だけ、今のポーズで止めておける
+        if (context.isAnimEditMode && context.world)
+        {
+            if (auto *animator = context.world->GetComponent<AnimatorComponent>(context.selectedEntity))
+            {
+                if (ImGui::Button("このポーズで固定"))
+                {
+                    PinCurrentPose(context, animator);
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("今の再生位置のまま止めて、編集モードを抜けます。\n"
+                                      "選択を変えても止まったままなので、複数体を止めてからカメラを動かせます。");
+                }
+            }
+        }
     }
     else if (m_selectedEntry > 0 && m_selectedEntry <= (int)m_editingSequence.events.size())
     {
