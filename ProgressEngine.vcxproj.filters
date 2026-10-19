@@ -723,6 +723,9 @@
     <ClInclude Include="Source\Game\Scenes\EditorScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\PlayerTestScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\GameScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -2109,6 +2112,9 @@
       <Filter>Source\Engine\Serialization\Factory</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\PlayerTestScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp">

@@ -794,6 +794,7 @@
     <ClInclude Include="Source\Game\Core\GameEvents.h" />
     <ClInclude Include="Source\Engine\Scene\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
+    <ClInclude Include="Source\Game\Scenes\PlayerTestScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
     <ClInclude Include="Source\Game\Scenes\TitleScene.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1237,6 +1238,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\PlayerTestScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />

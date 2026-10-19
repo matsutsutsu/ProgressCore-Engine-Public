@@ -6,9 +6,10 @@
 //   - ボスの頭上の位置を画面座標に変換し、ImGui の前景描画リストへテキストを描く
 //   - 1行目 [Combat]              … BossPhaseSystem が決めた形態
 //     2行目 ボス：移動             … BT が今 Running にしている行動
-//     3行目 HP 895/1000 Drone 100 … ボスの HP とドローンの残数
-//   - ボスとプレイヤーの中点に、今の距離を表示する（BT の距離条件が比べている値そのもの）。
-//     数字は今いる帯（AIDebugSpatialSystem が地面に塗る帯）と同じ色で塗る
+//     3行目 12.3 m                … プレイヤーとの距離（BT の距離条件が比べている値そのもの）。
+//                                   今いる帯（AIDebugSpatialSystem が地面に塗る帯）と同じ色で塗る
+//     4行目 HP 895/1000 Drone 100 … ボスの HP とドローンの残数
+//   - 見る場所を1か所にするため、距離も頭上の箱にまとめる
 //   - OnGui で表示の ON/OFF・文字の大きさ・高さを変えられるようにする
 //
 // 備考: BossPhaseComponent と BehaviorTreeComponent の両方を読むので、どちらの System にも
@@ -51,11 +52,8 @@ private:
     // 遠いとボスは小さく映り、同じ高さだと文字の枠がボスに被る。離れるほど持ち上げてかわす。
     float m_headOffsetPerMeter = 0.12f;
 
-    // ボスとプレイヤーの距離。AIDebugSpatialSystem の照準線の中ほどに出るので、線と合わせて読める。
-    bool  m_showDistance     = true;
-    //bool  m_showDistance     = false;
-    float m_distanceFontSize = 30.0f; // 戦闘中に一目で読めるよう、頭上の文字より少し大きくする
-    float m_distanceOffsetY  = 1.0f;  // 中点から持ち上げる高さ（m）。照準線と重ならないようにする
+    // 頭上の箱に、ボスとプレイヤーの距離の行を出すか。
+    bool m_showDistance = true;
 
     // 距離の数字の色を決めるための間合いのリング。毎フレーム木から拾い直す（配列の確保は使い回す）。
     std::vector<AIDebugRanges::RangeRing> m_rings;
