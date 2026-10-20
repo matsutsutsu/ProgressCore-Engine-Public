@@ -7,7 +7,7 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Game/Logics/Tutorial/TutorialSystem.h"            // 教える項目の進行
-#include "Game/Logics/Tutorial/TutorialPlayerGuardSystem.h" // プレイヤーを倒れさせない
+#include "Game/Logics/Tutorial/TutorialHealthGuardSystem.h" // プレイヤーを倒れさせず、ボスの形態を移らせない
 #include "Game/UI/HUD/TutorialHintHudSystem.h"              // ヒントの表示
 #include "Game/UI/Screens/TutorialCompleteSystem.h"         // 教え終えた後の画面
 #include "Game/UI/Screens/PauseSystem.h"                    // ESC/STARTでポーズ＋ポーズメニュー
@@ -54,7 +54,7 @@ void TutorialScene::RegisterSystems()
     sysManager.RegisterSystem<TutorialHintHudSystem>(Priority::LogicStage::L06_HudSync);
 
     // ダメージで HP を引いた（L06_DamageApply）後、0 以下で倒れたことにする（L06_HealthManagement）前に HP を戻す
-    sysManager.RegisterSystem<TutorialPlayerGuardSystem>(Priority::LogicStage::L06_StatusEffect);
+    sysManager.RegisterSystem<TutorialHealthGuardSystem>(Priority::LogicStage::L06_StatusEffect);
 
     // 完了の画面。本番のリザルト（GameResultSystem）と同じステージに置く
     sysManager.RegisterSystem<TutorialCompleteSystem>(Priority::LogicStage::L02_PostUpdate);

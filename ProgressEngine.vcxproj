@@ -798,7 +798,7 @@
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
     <ClInclude Include="Source\Game\Scenes\TitleScene.h" />
     <ClInclude Include="Source\Game\Scenes\TutorialScene.h" />
-    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialPlayerGuardSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.h" />
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSteps.h" />
     <ClInclude Include="Source\Game\UI\Screens\TutorialCompleteSystem.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
@@ -1246,7 +1246,7 @@
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\TutorialScene.cpp" />
-    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialPlayerGuardSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TutorialCompleteSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp" />

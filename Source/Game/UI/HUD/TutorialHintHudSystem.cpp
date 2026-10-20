@@ -78,11 +78,11 @@ TutorialHintHudSystem::Hint TutorialHintHudSystem::SelectHint(const TutorialStat
 {
     // 文言とアイコンは TutorialSteps.h の表から引く。ヒントの無い項目と教え終えた後は空にする
     const TutorialStepDef *def = state.Current();
-    if (!def || !def->action) return {};
+    if (!def || def->text[0] == '\0') return {};
 
     // 補助スロー中は、押す瞬間だと分かる文言に差し替えて強調する
-    if (state.assistActive && def->assistText) return {def->action, def->assistText, true};
-    return {def->action, def->text};
+    if (state.assistActive && def->assistText) return {def->icon, def->action, def->assistText, true};
+    return {def->icon, def->action, def->text};
 }
 
 void TutorialHintHudSystem::ApplyHint(const Hint &hint)
@@ -109,10 +109,12 @@ void TutorialHintHudSystem::ApplyHint(const Hint &hint)
         t->size   = {textW, textSize};
     }
 
-    // 空のヒント（action が nullptr）は消し切った後に書くだけなので、アイコンは前のままでよい
-    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID); ic && hint.action)
+    // 画像は InputIconSystem が種類とアクション名から決める。
+    // 空のヒント（文言が空）は消し切った後に書くだけなので、アイコンは前のままでよい
+    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID); ic && hint.text[0] != '\0')
     {
-        ic->actionHash = CCL::Utils::HashString(hint.action);
+        ic->kind = hint.icon;
+        if (hint.action) ic->actionHash = CCL::Utils::HashString(hint.action);
     }
     if (auto *tx = m_world->GetComponent<UITextComponent>(m_textID))
     {

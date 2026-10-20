@@ -3,7 +3,8 @@
 // 概要: チュートリアルシーンで、操作を1つずつ教える System。
 //
 // 責務:
-//   - プレイヤーの行動（ジャスト回避・命中）を見て、項目の達成の条件（TutorialGoal）を判定し、次の項目へ進める
+//   - プレイヤーの行動（移動・視点・ダッシュ・ジャンプ・ロックオン・命中・出た攻撃・ジャスト回避）を見て、
+//     項目の達成の条件（TutorialGoal）を判定し、次の項目へ進める
 //   - いまヒントを画面に出すべき場面かを決める（陣形が組まれ始めてから回避を促す、など）
 //   - 回避を教えている間、突撃が当たる直前に一度だけ世界を強くスローにして、押す瞬間を教える
 //
@@ -14,6 +15,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
+#include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの位置と EntityID
 
 #include <SimpleMath.h>
 #include <atomic>
@@ -87,14 +89,53 @@ private:
     // ボスがいま攻撃の陣形を組んでいるか（組み始め〜撃ち終わり）。回避のヒントを出す場面
     bool IsBossAttackFormationActive() const;
 
+    /**
+     * @brief 移動の項目で、プレイヤーがこの項目に入ってから水平に動いた距離を足していく。
+     * @param battle プレイヤーの足元の位置を引く。
+     * @return この項目に入ってから動いた距離（m）。
+     */
+    float AccumulateMove(const BattleContext &battle);
+
+    /**
+     * @brief 視点の項目で、プレイヤーを映すカメラをこの項目に入ってから左右に回した角度を足していく。
+     * @param playerID このプレイヤーを映している TPS カメラを探す。
+     * @return この項目に入ってから回した角度（度）。往復した分も足す。
+     */
+    float AccumulateLook(CCL::ECS::EntityID playerID);
+
+    /**
+     * @brief プレイヤーのアニメが、このフレームに指定のステートへ入ったかを調べる（コンボ・ダッシュ攻撃の項目）。
+     *
+     * どの攻撃が出るかはアニメグラフが決めるので（PlayerAttackSystem はトリガーを1つ出すだけ）、
+     * 「コンボの2段目が出た」「ダッシュ攻撃が出た」はグラフのステートで見る。
+     *
+     * @param playerID  アニメのステートを見るプレイヤー。
+     * @param stateName 入れば達成になるステートの名前（アニメグラフ上の名前）。
+     * @return このフレームに stateName のステートへ切り替わったら true。
+     */
+    bool EnteredAnimState(CCL::ECS::EntityID playerID, const char *stateName);
+
     // --- イベントで立てる印（イベントは別スレッドで届くことがあるので atomic） ---
     std::atomic<bool>               m_justEvaded{false}; // ジャスト回避が成立した
-    std::atomic<bool>               m_playerHit{false};  // プレイヤーの攻撃が当たった
+    std::atomic<int>                m_playerHits{0};     // プレイヤーの攻撃が当たった回数（Update で取り出して 0 に戻す）
+    std::atomic<int>                m_dashed{0};         // 回避ダッシュを出した回数（Update で取り出して 0 に戻す）
+    std::atomic<int>                m_jumpedStage{0};    // 跳んだジャンプの段（1 = 1段目、2 = 2段目。跳んでいなければ 0）
     std::atomic<CCL::ECS::EntityID> m_playerID{CCL::ECS::InvalidEntityID};
 
-    // --- 項目の中の状態 ---
+    // --- 項目の中の状態（Advance で消す） ---
     float m_stepTimer      = 0.0f;  // 今の項目に入ってからの実時間（秒）
     bool  m_sawAttackShape = false; // 回避の項目で、攻撃の陣形を1度でも見たか（見るまでヒントを出さない）
+    float m_moveDistance   = 0.0f;  // 移動の項目で、動いた距離（m）
+    float m_lookAngle      = 0.0f;  // 視点の項目で、カメラを回した角度（度）
+    int   m_dashCount      = 0;     // ダッシュの項目で、出した回数
+    int   m_hitCount       = 0;     // 攻撃の項目で、当てた回数
+
+    // 前のフレームの位置・角度・アニメのステート。差（切り替わり）を見るために持つ。
+    // m_hasLastSample が false の間は差を求めない（項目に入った直後に、前の項目の頃の値との差を見ないため）
+    DirectX::SimpleMath::Vector3 m_lastPlayerPos;
+    float                        m_lastCameraYaw = 0.0f;
+    uint32_t                     m_lastAnimState = 0;
+    bool                         m_hasLastSample = false;
 
     // --- 回避の補助スロー ---
     int   m_assistCount  = 0;     // 補助した回数

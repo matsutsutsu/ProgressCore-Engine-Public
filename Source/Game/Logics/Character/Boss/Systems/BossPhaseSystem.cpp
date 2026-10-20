@@ -15,6 +15,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
     // 序盤を続けるかはチュートリアルの進み具合で決める。TutorialState が無ければ（チュートリアルシーン以外）序盤を設けない
     const TutorialState *tutorial = m_world->HasResource<TutorialState>() ? &m_world->GetResource<TutorialState>() : nullptr;
     const bool           tutorialRunning = tutorial && !tutorial->IsFinished();
+    const bool           bossWaiting     = tutorial && tutorial->IsBossWaiting(); // 章1・2 は攻撃を出さずに待つ
 
     ForEach([&](BossPhaseComponent       &phase,
                 BehaviorTreeComponent    &bt,
@@ -22,7 +23,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
                 AnimParametersComponent  &anim,
                 HealthComponent          &health,
                 const TimeStateComponent &time) {
-        const BossPhase next = DecideNextPhase(phase, health, tutorialRunning);
+        const BossPhase next = DecideNextPhase(phase, health, tutorialRunning, bossWaiting);
 
         // 形態が変わったフレームだけ、入ったときの処理を行う。
         if (next != phase.phase)
@@ -40,7 +41,8 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 
 BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
                                            const HealthComponent    &health,
-                                           bool                      tutorialRunning) const
+                                           bool                      tutorialRunning,
+                                           bool                      bossWaiting) const
 {
     // 死は終端。一度入ったら戻さない。
     if (phase.phase == BossPhase::Dead) return BossPhase::Dead;
@@ -53,22 +55,24 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
 
     // 第1形態（序盤を含む）で HP が閾値を割ったら移行演出へ。第2形態のBTが未設定なら移行しない
     // （設定漏れでボスが止まるのを防ぐ）。序盤のうちに削り切られた場合も、序盤を飛ばしてそのまま移る。
-    const bool firstForm = (phase.phase == BossPhase::Combat || phase.phase == BossPhase::Intro);
+    const bool tutorialPhase = (phase.phase == BossPhase::Standby || phase.phase == BossPhase::Intro);
+    const bool firstForm     = (phase.phase == BossPhase::Combat || tutorialPhase);
     if (firstForm && !phase.phase2AssetPath.empty() && health.maxHealth > 0.0f)
     {
         const float hpPercent = (health.currentHealth / health.maxHealth) * 100.0f;
         if (hpPercent <= phase.phase2HealthThreshold) return BossPhase::Transition;
     }
 
-    // 序盤は、教え終えるまで続ける。上限時間は設けない。
-    // チュートリアルは遊び手が自分で選んで入るので、覚えるまで手加減したまま付き合う
-    if (phase.phase == BossPhase::Intro)
-        return tutorialRunning ? BossPhase::Intro : BossPhase::Combat;
+    // 序盤（チュートリアル）は、教え終えるまで続ける。上限時間は設けない。
+    // チュートリアルは遊び手が自分で選んで入るので、覚えるまで付き合う。
+    // 教えている章に合わせて、待機（Standby）と手加減（Intro）を行き来する。
+    // 戦いの最初と、デバッグ窓の「最初から開始」でやり直したときは、本来の戦い（Combat）から入る。
+    // 序盤の BT が未設定なら序盤を設けない（章3で手加減の BT が空になり、ボスが止まったままになるのを防ぐ）
+    if (tutorialRunning && !phase.introAssetPath.empty() && (tutorialPhase || phase.phase == BossPhase::Combat))
+        return bossWaiting ? BossPhase::Standby : BossPhase::Intro;
 
-    // 教えている途中なら序盤へ入る（戦いの最初と、デバッグ窓の「最初から開始」でやり直したとき）。
-    // 教え終えた後は tutorialRunning が false のままなので、入り直さない
-    if (phase.phase == BossPhase::Combat && tutorialRunning && !phase.introAssetPath.empty())
-        return BossPhase::Intro;
+    // 教え終えたら本来の戦いへ戻る。その後は tutorialRunning が false のままなので、入り直さない
+    if (tutorialPhase) return BossPhase::Combat;
 
     return phase.phase;
 }
@@ -124,11 +128,25 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] ボス死亡 → Dead へ");
         break;
 
+    case BossPhase::Standby:
+        // 本来の BT を覚えておく。手加減（Intro）から来たときの BT は序盤のものなので、覚え直さない
+        if (phase.phase == BossPhase::Combat) phase.combatAssetPath = bt.assetPath;
+
+        // BT を止め、攻撃を止めてドローンを頭上で回す（Transition と同じ止め方）。
+        // 手加減から来たときは撃ちかけの指示が残っているので、それもここで消す
+        bt.assetPath.clear();
+        cmd.droneAttackActive = false;
+        cmd.currentActionId   = 0;
+        cmd.requestFormation  = DroneFormationType::HighOrbit;
+        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 序盤（チュートリアル）待機");
+        break;
+
     case BossPhase::Intro:
         // 本来の BT を覚えておき、序盤の BT へ差し替える。assetPath が変わると BehaviorTreeSystem が読み直す。
-        phase.combatAssetPath = bt.assetPath;
-        bt.assetPath          = phase.introAssetPath;
-        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 序盤（チュートリアル）開始 → %s", bt.assetPath.c_str());
+        // 待機（Standby）から来たときは、待機に入るときに覚えてある
+        if (phase.phase == BossPhase::Combat) phase.combatAssetPath = bt.assetPath;
+        bt.assetPath = phase.introAssetPath;
+        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 序盤（チュートリアル）手加減 → %s", bt.assetPath.c_str());
         break;
 
     case BossPhase::Combat:
@@ -164,6 +182,12 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
         // 死んでいるのに攻撃が飛ぶのを防ぐ。
         cmd.droneAttackActive = false;
         cmd.requestFormation  = DroneFormationType::None;
+        cmd.currentActionId   = 0;
+        break;
+
+    case BossPhase::Standby:
+        // 待っている間は攻撃を出さない。BT は止めてあるので上書きされないが、念のため毎フレーム消す
+        cmd.droneAttackActive = false;
         cmd.currentActionId   = 0;
         break;
 

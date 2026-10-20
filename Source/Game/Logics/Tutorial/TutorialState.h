@@ -26,4 +26,7 @@ struct TutorialState
 
     // いま教えている項目。教え終えたら nullptr
     const TutorialStepDef *Current() const { return IsFinished() ? nullptr : &kTutorialSteps[step]; }
+
+    // ボスを待たせるか（攻撃を出させない）。いま教えている章で決まる。BossPhaseSystem が見る
+    bool IsBossWaiting() const { return !IsFinished() && !IsBossFighting(kTutorialSteps[step].chapter); }
 };

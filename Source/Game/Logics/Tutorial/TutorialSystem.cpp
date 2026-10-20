@@ -5,6 +5,10 @@
 #include "Engine/Time/TimeService.h"       // 回避の補助スロー
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/Components/TimeState.h" // ドローンが実際に進んだ時間（速度を求めるため）
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 視点の項目で、カメラの水平角を見る
+#include "Engine/Animation/Core/AnimStateMachine.h"                 // コンボ・ダッシュ攻撃の項目で、今のステートを見る
+
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h" // ロックオンの項目で、ロックオン先を見る
 
 #include "Game/Core/GameEvents.h"                                         // ジャスト回避・命中のイベント
 #include "Game/Logics/AI/Battle/BattleContext.h"                          // プレイヤーとボスの EntityID
@@ -12,6 +16,8 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"   // ボスが攻撃の陣形を組んでいるか
 
 #include <SimpleMath.h>
+#include <algorithm> // std::max
+#include <cmath>     // std::abs
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -36,7 +42,14 @@ void TutorialSystem::Initialize()
         m_justEvaded.store(true);
     });
     ListenEvent<AttackHitConfirmedEvent>([this](const AttackHitConfirmedEvent &e) {
-        if (e.attackerID == m_playerID.load()) m_playerHit.store(true);
+        if (e.attackerID == m_playerID.load()) m_playerHits.fetch_add(1);
+    });
+    ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
+        if (e.playerID == m_playerID.load()) m_dashed.fetch_add(1);
+    });
+    // 跳ぶのはプレイヤーだけなので、誰が跳んだかは見ない
+    ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
+        m_jumpedStage.store(e.jumpCount);
     });
 }
 
@@ -47,6 +60,9 @@ std::vector<TypeID> TutorialSystem::GetReadTypes() const
         TypeInfo<TransformComponent>::ID(),
         TypeInfo<BossCommandComponent>::ID(),
         TypeInfo<TimeStateComponent>::ID(),
+        TypeInfo<CameraBodyTPSComponent>::ID(),
+        TypeInfo<PlayerComponent>::ID(),
+        TypeInfo<AnimStateMachineComponent>::ID(),
     };
 }
 
@@ -66,8 +82,10 @@ void TutorialSystem::Update(float dt)
     m_playerID.store(battle.playerEntity);
 
     // 印は毎フレーム取り出して消す。関係のない項目の間に立った印を、後の項目へ持ち越さないため
-    const bool justEvaded = m_justEvaded.exchange(false);
-    const bool playerHit  = m_playerHit.exchange(false);
+    const bool justEvaded  = m_justEvaded.exchange(false);
+    const int  playerHits  = m_playerHits.exchange(0);
+    const int  dashed      = m_dashed.exchange(0);
+    const int  jumpedStage = m_jumpedStage.exchange(0); // このフレームに跳んだ段（跳んでいなければ 0）
 
     // --- ムービー中と決着後は教えない ---
     // ムービー中はプレイヤーが操作できず、決着後はもう戦わない。どちらもヒントを出しても押せない
@@ -78,6 +96,7 @@ void TutorialSystem::Update(float dt)
         {
             EndAssist();
             m_droneMotion.clear(); // ムービーの間は記録しないので、明けた直後に古い位置との差を速度にしない
+            m_hasLastSample = false; // 移動・視点も同じく、明けた直後に古い位置・角度との差を足さない
             return;
         }
     }
@@ -88,10 +107,47 @@ void TutorialSystem::Update(float dt)
     // 何を教えるか（文言・順番・時間切れ）は TutorialSteps.h の表が持ち、ここは判定だけを持つ
     const TutorialStepDef &def     = kTutorialSteps[state.step];
     bool                   cleared = false;
+
+    // ヒントは文言のある項目で出す。出す場面を選ぶ項目（ジャスト回避）は下で決め直す
+    state.showHint = def.text[0] != '\0';
+
     switch (def.goal)
     {
     // 時間切れだけで進む
     case TutorialGoal::Wait:
+        break;
+
+    case TutorialGoal::Move:
+        cleared = AccumulateMove(battle) >= def.amount;
+        break;
+
+    case TutorialGoal::Look:
+        cleared = AccumulateLook(battle.playerEntity) >= def.amount;
+        break;
+
+    case TutorialGoal::Dash:
+        m_dashCount += dashed;
+        cleared = static_cast<float>(m_dashCount) >= def.amount;
+        break;
+
+    // 1段目の項目で2段ジャンプしても達成にする（1段目は跳んだ後なので、段の数で比べる）
+    case TutorialGoal::Jump:
+        cleared = static_cast<float>(jumpedStage) >= def.amount;
+        break;
+
+    case TutorialGoal::LockOn:
+        if (const auto *player = m_world->GetComponent<PlayerComponent>(battle.playerEntity))
+            cleared = player->lockOnTargetID != InvalidEntityID;
+        break;
+
+    // amount が 0 の項目（章3の攻撃）は、1回当てれば達成にする
+    case TutorialGoal::AttackHit:
+        m_hitCount += playerHits;
+        cleared = static_cast<float>(m_hitCount) >= std::max(def.amount, 1.0f);
+        break;
+
+    case TutorialGoal::AnimState:
+        cleared = EnteredAnimState(battle.playerEntity, def.animState);
         break;
 
     // 陣形が組まれ始めてからヒントを出し、突撃が当たる直前に補助スローを掛ける
@@ -101,11 +157,6 @@ void TutorialSystem::Update(float dt)
         if (IsBossAttackFormationActive()) m_sawAttackShape = true;
         state.showHint = m_sawAttackShape;
         TickEvadeAssist(state, dt);
-        break;
-
-    case TutorialGoal::AttackHit:
-        state.showHint = true;
-        cleared        = playerHit;
         break;
     }
 
@@ -123,6 +174,13 @@ void TutorialSystem::Advance(TutorialState &state, uint8_t next)
     state.step       = next;
     m_stepTimer      = 0.0f;
     m_sawAttackShape = false;
+
+    // 動いた量・回した量・回数は項目ごとに 0 から数える
+    m_moveDistance  = 0.0f;
+    m_lookAngle     = 0.0f;
+    m_dashCount     = 0;
+    m_hitCount      = 0;
+    m_hasLastSample = false;
 
     EndAssist();
     m_droneMotion.clear(); // 速度は連続したフレームの差で求める。間が空いた古い位置は使わない
@@ -155,6 +213,69 @@ bool TutorialSystem::IsBossAttackFormationActive() const
     default:
         return true;
     }
+}
+
+// ---------------------------------------------------------------------------
+// 動いた量・回した量
+// ---------------------------------------------------------------------------
+
+float TutorialSystem::AccumulateMove(const BattleContext &battle)
+{
+    // 足元の位置の、前のフレームからの水平の差を足していく。
+    // 高さは数えない（ジャンプで上下しただけで移動したことにしない）
+    const Vector3 pos(battle.playerPos);
+    if (m_hasLastSample)
+    {
+        Vector3 delta = pos - m_lastPlayerPos;
+        delta.y       = 0.0f;
+        m_moveDistance += delta.Length();
+    }
+    m_lastPlayerPos = pos;
+    m_hasLastSample = true;
+    return m_moveDistance;
+}
+
+float TutorialSystem::AccumulateLook(EntityID playerID)
+{
+    // このプレイヤーを映している TPS カメラを探す（PlayerLockOnSystem と同じ探し方）
+    const CameraBodyTPSComponent *camera = nullptr;
+    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
+        const auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
+        if (tps && tps->target.id == playerID) camera = tps;
+    });
+    if (!camera) return m_lookAngle;
+
+    // 前のフレームからの水平角の差を、向きに関係なく足していく。
+    // 差は -180〜180 度に直す。角度が 360 度を越えて回り込んだ瞬間に、大きく回したと数えないため
+    if (m_hasLastSample)
+    {
+        float delta = camera->currentYaw - m_lastCameraYaw;
+        while (delta > 180.0f) delta -= 360.0f;
+        while (delta < -180.0f) delta += 360.0f;
+        m_lookAngle += std::abs(delta);
+    }
+    m_lastCameraYaw = camera->currentYaw;
+    m_hasLastSample = true;
+    return m_lookAngle;
+}
+
+bool TutorialSystem::EnteredAnimState(EntityID playerID, const char *stateName)
+{
+    const auto *fsm = m_world->GetComponent<AnimStateMachineComponent>(playerID);
+    if (!fsm || !stateName) return false;
+
+    // ステートが切り替わった瞬間だけを見る。今そのステートにいるかで見ると、
+    // 前の項目の間に入ったステートのまま次の項目へ移ったとき（攻撃の3回目がコンボの2段目だった、など）、
+    // 何もしていないのに達成してしまう
+    const uint32_t current = fsm->currentStateHash;
+    const bool     changed = m_hasLastSample && current != m_lastAnimState;
+    m_lastAnimState        = current;
+    m_hasLastSample        = true;
+    if (!changed) return false;
+
+    // ステートは名前で比べる。表に書くのはアニメグラフ上の名前なので、ハッシュの作り方に頼らない
+    const AnimState *state = FindStateRecursive(fsm->internalGraph, current);
+    return state && state->sequenceName == stateName;
 }
 
 // ---------------------------------------------------------------------------
@@ -304,8 +425,12 @@ void TutorialSystem::OnGui()
 
     // --- 今の状態 ---
     const TutorialStepDef *def = state.Current();
+    ImGui::Text("章       : %s", def ? kTutorialChapterNames[static_cast<size_t>(def->chapter)] : "-");
     ImGui::Text("項目     : %d / %d  %s", state.step + 1, kTutorialStepCount, def ? def->name : "Done");
     ImGui::Text("経過     : %.1f 秒", m_stepTimer);
+    if (def && def->amount > 0.0f)
+        ImGui::Text("進み具合 : 移動 %.1f m / 視点 %.0f 度 / ダッシュ %d 回 / 命中 %d 回（必要な量 %.1f）",
+                    m_moveDistance, m_lookAngle, m_dashCount, m_hitCount, def->amount);
     ImGui::Text("補助     : %d / %d 回%s", m_assistCount, kMaxAssists,
                 m_assistRunning ? (m_assistNow ? "（今だ）" : "（予告）") : "");
 

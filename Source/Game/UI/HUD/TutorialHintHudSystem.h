@@ -31,9 +31,10 @@ private:
     // 1つのヒントの中身
     struct Hint
     {
-        const char *action    = nullptr; // アイコンにするアクション名（InputConfig.json の Name）
-        const char *text      = "";      // 説明の1行（UTF-8）
-        bool        emphasize = false;   // 強調するか（補助スローの「今！」）
+        InputIconKind icon      = InputIconKind::Action; // アイコンの種類。移動と視点は固定のアイコン
+        const char   *action    = nullptr;               // icon が Action のときにアイコンにするアクション名（InputConfig.json の Name）
+        const char   *text      = "";                    // 説明の1行（UTF-8）
+        bool          emphasize = false;                 // 強調するか（補助スローの「今！」）
     };
 
     // UI エンティティを作る。プレイヤーが現れた最初のフレームに1回だけ呼ぶ

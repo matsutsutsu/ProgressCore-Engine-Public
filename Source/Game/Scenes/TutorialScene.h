@@ -11,7 +11,8 @@
 //       ムービーは本番（GameScene）の始まりにだけ見せ、本番の戦いを最初から味わってもらうため。
 //       そのためムービー用カメラ（CinematicCamera）のプレハブも足さない。
 //       リザルト（GameResultSystem）は登録しない。チュートリアルは勝ち負けを決める場ではないため。
-//       代わりに TutorialPlayerGuardSystem でプレイヤーを倒れさせず、TutorialCompleteSystem で次へ進ませる。
+//       代わりに TutorialHealthGuardSystem でプレイヤーを倒れさせず（ボスの形態も移らせず）、
+//       TutorialCompleteSystem で次へ進ませる。
 // ===========================================================================
 #include "Engine/Scene/BaseScene.h"
 
