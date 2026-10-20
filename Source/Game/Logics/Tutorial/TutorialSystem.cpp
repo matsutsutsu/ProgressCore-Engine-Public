@@ -1,8 +1,6 @@
 #include "Game/Logics/Tutorial/TutorialSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/App/GameFlowState.h" // ムービー中・決着後は教えない
 #include "Engine/Time/TimeService.h"       // 回避の補助スロー
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -14,7 +12,6 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"   // ボスが攻撃の陣形を組んでいるか
 
 #include <SimpleMath.h>
-#include <iterator> // std::size
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -30,17 +27,9 @@ using DirectX::SimpleMath::Vector3;
 
 void TutorialSystem::Initialize()
 {
-    // タイトル画面も全 System を登録するので、ここでも作られる。プレイヤーが居なければ Update が何もしない
+    // この System を登録するのは TutorialScene だけ。リソースがあることが「チュートリアル中」の印になる
     if (!m_world->HasResource<TutorialState>())
         m_world->AddResource<TutorialState>();
-
-    // タイトルを通った挑戦で、まだ教え終えていないときだけ行う。
-    // エディタシーンから直接遊ぶとき（armed が立たない）と、教え終えた後のリトライでは出さない
-    const TutorialSession &session = TutorialSession::Instance();
-    TutorialState         &state   = m_world->GetResource<TutorialState>();
-    state                          = TutorialState{};
-    state.enabled                  = session.armed && !session.completed;
-    if (state.enabled) state.generation = 1;
 
     // イベントは発行元の System の中で届くので、印を立てるだけにして Update で読む
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &) {
@@ -95,52 +84,45 @@ void TutorialSystem::Update(float dt)
 
     m_stepTimer += dt;
 
-    switch (state.step)
+    // --- 達成したかを、項目の条件の種類ごとに判定する ---
+    // 何を教えるか（文言・順番・時間切れ）は TutorialSteps.h の表が持ち、ここは判定だけを持つ
+    const TutorialStepDef &def     = kTutorialSteps[state.step];
+    bool                   cleared = false;
+    switch (def.goal)
     {
-    // 開幕ムービーが明けてすぐはカメラが落ち着いていないので、少し待ってから始める
-    case TutorialStep::WaitBattle:
-        if (m_stepTimer >= kStepGap) Advance(state, TutorialStep::ReadAndEvade);
+    // 時間切れだけで進む
+    case TutorialGoal::Wait:
         break;
 
-    // 回避: 陣形が組まれ始めてからヒントを出す。形を見る前に「回避」と言っても、何を避けるのか分からない
-    case TutorialStep::ReadAndEvade:
-        if (justEvaded)
-        {
-            Advance(state, TutorialStep::Strike);
-            break;
-        }
+    // 陣形が組まれ始めてからヒントを出し、突撃が当たる直前に補助スローを掛ける
+    case TutorialGoal::JustEvade:
+        cleared = justEvaded;
+        if (cleared) break;
         if (IsBossAttackFormationActive()) m_sawAttackShape = true;
         state.showHint = m_sawAttackShape;
         TickEvadeAssist(state, dt);
         break;
 
-    // 攻撃: ジャスト回避の接近でボスの近くへ運ばれている間に促す。当てなくても時間で次へ進める
-    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）。
-    // これが最後の項目。当てるか時間切れで教え終える。
-    case TutorialStep::Strike:
+    case TutorialGoal::AttackHit:
         state.showHint = true;
-        if (playerHit || m_stepTimer >= kStrikeTimeout)
-        {
-            Advance(state, TutorialStep::Done);
-            TutorialSession::Instance().completed = true;
-        }
-        break;
-
-    case TutorialStep::Done:
+        cleared        = playerHit;
         break;
     }
+
+    // 達成したか時間切れなら次へ。最後の項目を終えると step が kTutorialStepCount になり、教え終える
+    const bool timedOut = def.timeout > 0.0f && m_stepTimer >= def.timeout;
+    if (cleared || timedOut) Advance(state, static_cast<uint8_t>(state.step + 1));
 }
 
 // ---------------------------------------------------------------------------
 // 項目の進行
 // ---------------------------------------------------------------------------
 
-void TutorialSystem::Advance(TutorialState &state, TutorialStep next)
+void TutorialSystem::Advance(TutorialState &state, uint8_t next)
 {
     state.step       = next;
     m_stepTimer      = 0.0f;
     m_sawAttackShape = false;
-    m_sawLunge       = false;
 
     EndAssist();
     m_droneMotion.clear(); // 速度は連続したフレームの差で求める。間が空いた古い位置は使わない
@@ -148,9 +130,8 @@ void TutorialSystem::Advance(TutorialState &state, TutorialStep next)
 
 void TutorialSystem::Restart(TutorialState &state)
 {
-    state.enabled = true;
-    ++state.generation; // BossPhaseSystem がこの変化を見て、ボスを序盤に入れ直す
-    Advance(state, TutorialStep::WaitBattle);
+    // 項目を Done から戻すだけで、BossPhaseSystem がボスを序盤に入れ直す（教えている途中なら序盤へ入るため）
+    Advance(state, 0);
     m_assistCount = 0;
 }
 
@@ -322,9 +303,8 @@ void TutorialSystem::OnGui()
     TutorialState &state = m_world->GetResource<TutorialState>();
 
     // --- 今の状態 ---
-    const size_t stepIndex = static_cast<size_t>(state.step);
-    ImGui::Text("有効     : %s", state.enabled ? "はい" : "いいえ（タイトルを通っていない／教え終えた）");
-    ImGui::Text("項目     : %s", stepIndex < std::size(kTutorialStepNames) ? kTutorialStepNames[stepIndex] : "?");
+    const TutorialStepDef *def = state.Current();
+    ImGui::Text("項目     : %d / %d  %s", state.step + 1, kTutorialStepCount, def ? def->name : "Done");
     ImGui::Text("経過     : %.1f 秒", m_stepTimer);
     ImGui::Text("補助     : %d / %d 回%s", m_assistCount, kMaxAssists,
                 m_assistRunning ? (m_assistNow ? "（今だ）" : "（予告）") : "");
@@ -335,7 +315,7 @@ void TutorialSystem::OnGui()
         if (battle.HasBoss())
         {
             if (const auto *phase = m_world->GetComponent<BossPhaseComponent>(battle.bossEntity))
-                ImGui::Text("ボス形態 : %s（序盤の残り %.1f 秒）", ToString(phase->phase), phase->timer);
+                ImGui::Text("ボス形態 : %s", ToString(phase->phase));
         }
     }
 
@@ -345,17 +325,13 @@ void TutorialSystem::OnGui()
     if (ImGui::Button("最初から開始")) Restart(state);
     ImGui::SameLine();
     ImGui::BeginDisabled(state.IsFinished());
-    if (ImGui::Button("次の項目へ"))
-        Advance(state, static_cast<TutorialStep>(static_cast<uint8_t>(state.step) + 1));
+    if (ImGui::Button("次の項目へ")) Advance(state, static_cast<uint8_t>(state.step + 1));
     ImGui::SameLine();
-    if (ImGui::Button("完了扱いで終了")) Advance(state, TutorialStep::Done); // ボスは本来の BT へ戻る
+    if (ImGui::Button("完了扱いで終了")) Advance(state, kTutorialStepCount); // 完了の画面が出る
     ImGui::EndDisabled();
-
-    ImGui::TextDisabled("エディタシーンでは自動で始まりません。確かめるときは「最初から開始」");
 }
 #else
 void TutorialSystem::OnGui() {}
 #endif
 
-// HP と切り払いの状態が確定した後に見る。ヒントを出す TutorialHintHudSystem も同じステージで、この後に走る
-REGISTER_LOGIC_SYSTEM(TutorialSystem, Priority::LogicStage::L06_HudSync);
+// 全体登録（REGISTER_*）はせず、TutorialScene が登録する。ゲーム本編ではチュートリアルを行わないため

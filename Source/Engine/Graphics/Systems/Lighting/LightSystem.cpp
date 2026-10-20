@@ -58,7 +58,9 @@ void LightSystem::Update(float dt)
 
         if (!lightComp || !transComp) continue;
 
-        PointLights gfxLight;
+        // GpuData の構造体は HLSL と共有なので既定値を持てない。{} でゼロにしてから全項目を入れる
+        PointLights gfxLight{};
+        gfxLight.active               = 1.0f; // シェーダーは 0.5 未満を無効として飛ばす
         gfxLight.color                = lightComp->color;
         gfxLight.intensity            = lightComp->intensity;
         gfxLight.range                = lightComp->range;
@@ -80,12 +82,16 @@ void LightSystem::Update(float dt)
 
         if (!lightComp || !transComp) continue;
 
-        SpotLights gfxLight;
-        gfxLight.color     = lightComp->color;
-        gfxLight.intensity = lightComp->intensity;
-        gfxLight.range     = lightComp->range;
-        gfxLight.innerCos  = lightComp->innerCos;
-        gfxLight.outerCos  = lightComp->outerCos;
+        SpotLights gfxLight{};
+        gfxLight.active               = 1.0f;
+        gfxLight.color                = lightComp->color;
+        gfxLight.intensity            = lightComp->intensity;
+        gfxLight.range                = lightComp->range;
+        gfxLight.innerCos             = lightComp->innerCos;
+        gfxLight.outerCos             = lightComp->outerCos;
+        gfxLight.constantAttenuation  = lightComp->constant;
+        gfxLight.linearAttenuation    = lightComp->linear;
+        gfxLight.quadraticAttenuation = lightComp->quadratic;
 
         gfxLight.position  = transComp->GetWorldPosition();
         gfxLight.direction = CalculateDirection(transComp->rotation);

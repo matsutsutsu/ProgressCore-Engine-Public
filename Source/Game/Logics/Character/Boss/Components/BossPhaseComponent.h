@@ -11,10 +11,10 @@
 //   第2形態の BT のパスとしきい値は BehaviorTreeComponent ではなくここに持つ。
 //   BehaviorTreeComponent は汎用のデータなので、ボスにしか無いものを置くと敵を増やすたびにフィールドが増える。
 //
-//   形態の移行: (Intro --教え終えた/上限時間--> ) Combat --HP<=しきい値--> Transition --演出時間の経過--> Combat2
+//   形態の移行: (Intro --教え終えた--> ) Combat --HP<=しきい値--> Transition --演出時間の経過--> Combat2
 //   Transition の間は BT を止め、無敵にし、ドローンを頭上へ退避させる。攻撃が途切れて
 //   仕切り直す時間ができ、形態が変わったことが画面で分かる。
-//   Intro はチュートリアルを行う挑戦の序盤だけ。予兆の長い攻撃だけを出す BT（introAssetPath）に
+//   Intro はチュートリアルシーンの序盤だけ。予兆の長い攻撃だけを出す BT（introAssetPath）に
 //   差し替え、操作を覚える間だけ手加減する。
 // ===========================================================================
 #include <cstdint>
@@ -59,16 +59,11 @@ struct BossPhaseComponent
     // チュートリアルの序盤で使う BT のパス。空なら序盤を設けず、最初から本来の BT で戦う。
     std::string introAssetPath;
 
-    // 序盤を続ける上限（秒）。教え終えなくてもこの時間で本来の BT へ戻す（操作を試さない人を待たせ続けないため）。
-    float introMaxDuration = 90.0f;
-
     // 現在の形態。書くのは BossPhaseSystem だけ。
     BossPhase phase = BossPhase::Combat;
 
-    float timer = 0.0f; // 形態の残り時間（秒）。形態に入ったときに設定し、毎フレーム減らす（移行演出・序盤の上限で使う）
+    float timer = 0.0f; // 形態の残り時間（秒）。形態に入ったときに設定し、毎フレーム減らす（移行演出で使う）
 
     // --- 序盤の実行時の状態（保存しない） ---
     std::string combatAssetPath; // 序盤に入る前の BT のパス。序盤を終えるときに戻す
-    bool        introDone = false; // 序盤を終えたか。上限時間で終えた後に、もう一度序盤へ入らないため
-    uint32_t    introGeneration = 0; // 最後に見た TutorialState.generation。変わったらチュートリアルがやり直されたので、序盤に入り直す
 };

@@ -37,9 +37,10 @@ namespace
     // 見え終わるのは、これに UIAppearComponent::duration を足した頃。
     // ロゴが現れ終わる頃から少しずつ重なる間隔にして、ボタンを押せるまでを短くしている。
     constexpr float kAppearStart    = 1.3f;  // はじめる
-    constexpr float kAppearSettings = 1.45f; // 設定
-    constexpr float kAppearQuit     = 1.6f;  // 終了
-    constexpr float kAppearHints    = 1.85f; // 操作のヒント
+    constexpr float kAppearTutorial = 1.45f; // チュートリアル
+    constexpr float kAppearSettings = 1.6f;  // 設定
+    constexpr float kAppearQuit     = 1.75f; // 終了
+    constexpr float kAppearHints    = 2.0f;  // 操作のヒント
 
     // ヒントの行を横に動かす量（px）。0 だと画面の中央に残り、左に寄せたメニューから離れてしまう。
     constexpr float kHintShiftX = -350.0f;
@@ -69,11 +70,12 @@ void TitleMenuSystem::Initialize()
     }
 
     // ボタンのクリックを購読し、actionHash で分ける
-    const uint32_t kStart = CCL::Utils::HashString("start_game");
-    const uint32_t kQuit  = CCL::Utils::HashString("quit");
+    const uint32_t kStart    = CCL::Utils::HashString("start_game");
+    const uint32_t kTutorial = CCL::Utils::HashString("start_tutorial");
+    const uint32_t kQuit     = CCL::Utils::HashString("quit");
 
     ListenEvent<UIButtonClickedEvent>(
-        [this, kStart, kQuit](const UIButtonClickedEvent &e) {
+        [this, kStart, kTutorial, kQuit](const UIButtonClickedEvent &e) {
             // 切り替えか終了を頼んだ後の連打は無視する。
             if (m_transitioning)
             {
@@ -84,6 +86,11 @@ void TitleMenuSystem::Initialize()
             {
                 // ゲームへの切り替えを頼むだけにする。フェード・裏での読み込み・World の片付けの時機は SceneManager が決める。
                 m_transitioning = SceneManager::Instance().RequestTransition("Game", true);
+            }
+            else if (e.actionHash == kTutorial)
+            {
+                // 「はじめる」と同じく、切り替えを頼むだけにする。
+                m_transitioning = SceneManager::Instance().RequestTransition("Tutorial", true);
             }
             else if (e.actionHash == kQuit)
             {
@@ -137,9 +144,12 @@ void TitleMenuSystem::SpawnMenu()
     // 4. ボタン
     // ---------------------------------------------------------
 
-    // 最初は「はじめる」を選んでおく。
-    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "はじめる", {kMenuX, 40.0f}, "start_game",
+    // 最初は「はじめる」を選んでおく。すぐ遊びたい人は、そのまま決定すれば本番に入れる。
+    // 4つ並べると下の操作のヒントが画面からはみ出すので、「はじめる」をロゴの下へ1段上げて並べる。
+    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "はじめる", {kMenuX, -45.0f}, "start_game",
                              true, 10, kAppearStart, canvas);
+    CCL::GameUI::SpawnButton(world, "BtnTutorial", "LblTutorial", "チュートリアル", {kMenuX, 40.0f}, "start_tutorial",
+                             false, 10, kAppearTutorial, canvas);
     // 「設定」は SettingsScreenSystem が "open_settings" のボタンを見て開く。
     CCL::GameUI::SpawnButton(world, "BtnSettings", "LblSettings", "設定", {kMenuX, 125.0f}, "open_settings", false,
                              10, kAppearSettings, canvas);

@@ -2,6 +2,21 @@
     "duration": 1.2666666507720947,
     "events": [
         {
+            "cancelMask": 0,
+            "effectAttachTag": "",
+            "effectFollow": true,
+            "effectScale": 1.0,
+            "endTime": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 4.5,
+                "z": 0.0
+            },
+            "startTime": 0.0,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossDashTelegraph",
+            "type": 2
+        },
+        {
             "attackLayer": 4,
             "cancelMask": 0,
             "damage": 10.0,

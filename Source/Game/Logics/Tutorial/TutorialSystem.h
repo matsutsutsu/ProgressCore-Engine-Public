@@ -1,17 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: 戦闘の序盤に、操作を1つずつ教えるチュートリアルを進める System。
+// 概要: チュートリアルシーンで、操作を1つずつ教える System。
 //
 // 責務:
-//   - プレイヤーの行動（ジャスト回避・命中）を見て、教える項目（TutorialStep）を進める
+//   - プレイヤーの行動（ジャスト回避・命中）を見て、項目の達成の条件（TutorialGoal）を判定し、次の項目へ進める
 //   - いまヒントを画面に出すべき場面かを決める（陣形が組まれ始めてから回避を促す、など）
 //   - 回避を教えている間、突撃が当たる直前に一度だけ世界を強くスローにして、押す瞬間を教える
-//   - 教え終えたら TutorialSession に記録し、リトライでは繰り返さない
 //
-// 備考: ヒントの見た目は TutorialHintHudSystem、ボスの手加減（序盤の BT）は BossPhaseSystem が受け持つ。
+// 備考: 何を教えるか（文言・順番・時間切れ）は TutorialSteps.h の表が持つ。ここは条件の判定だけを持つ。
+//       ヒントの見た目は TutorialHintHudSystem、ボスの手加減（序盤の BT）は BossPhaseSystem が受け持つ。
 //       ここは TutorialState を書くだけで、UI もボスも直接は触らない。
-//       チュートリアルを行うのは、タイトルを通った挑戦で、まだ教え終えていないときだけ（TutorialSession を参照）。
-//       エディタシーンでは出ないので、確かめるときは OnGui の「最初から開始」で手動で始める。
+//       全体登録はせず、TutorialScene だけが登録する。ゲーム本編（GameScene）では動かない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
@@ -72,13 +71,13 @@ private:
     // 補助スローを終える。要求をやめるだけだと、スローがイーズで長く尾を引くのですぐ等速に戻す
     void EndAssist();
 
-    // 次の項目へ進め、項目内のタイマーと記録を消す
-    void Advance(TutorialState &state, TutorialStep next);
+    // 次の項目（kTutorialSteps の添字）へ進め、項目内のタイマーと記録を消す。kTutorialStepCount なら教え終える
+    void Advance(TutorialState &state, uint8_t next);
 
     /**
      * @brief チュートリアルを最初から始める（デバッグ用。OnGui から呼ぶ）。
      *
-     * generation を進めるので、BossPhaseSystem がボスを序盤（Intro）に入れ直す。
+     * 教え終えた状態でなくなるので、BossPhaseSystem がボスを序盤（Intro）に入れ直す。
      * 補助スローの回数も戻す。
      *
      * @param state 書き換える進み具合。
@@ -96,7 +95,6 @@ private:
     // --- 項目の中の状態 ---
     float m_stepTimer      = 0.0f;  // 今の項目に入ってからの実時間（秒）
     bool  m_sawAttackShape = false; // 回避の項目で、攻撃の陣形を1度でも見たか（見るまでヒントを出さない）
-    bool  m_sawLunge       = false; // 突進の項目で、突進を1度でも始めたか
 
     // --- 回避の補助スロー ---
     int   m_assistCount  = 0;     // 補助した回数
@@ -115,9 +113,7 @@ private:
     std::unordered_map<CCL::ECS::EntityID, DroneMotion> m_droneMotion;
 
     // --- 調整値 ---
-    static constexpr float kStepGap          = 1.0f;  // 項目を終えてから、次のヒントを出すまでの間（秒）。続けて出すと前の成功が目に入らない
-    static constexpr float kStrikeTimeout    = 5.0f;  // 攻撃を当てなくても、この秒数で教え終える
-    static constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
+    static constexpr int   kMaxAssists      = 3;     // 補助スローを掛ける回数の上限
     static constexpr float kAssistWarnTime   = 0.5f;  // 当たるまでの残りがこの秒数（ゲーム時間）以下になったら予告のスローを始める
     static constexpr float kAssistNowTime    = 0.07f; // 当たるまでの残りがこの秒数以下で「今だ」。ジャスト回避の受付（0.08秒）より短くし、この間にいつ押しても成立するようにする
     static constexpr float kAssistMissRadius = 2.5f;  // 最も近づいたときの距離がこれ以下なら「当たる」とみなす（m）

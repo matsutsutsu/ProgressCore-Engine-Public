@@ -732,6 +732,18 @@
     <ClInclude Include="Source\Game\Scenes\TitleScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\TutorialScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialPlayerGuardSystem.h">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSteps.h">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Screens\TutorialCompleteSystem.h">
+      <Filter>Source\Game\UI\Screens</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Scene\SceneLoading.h">
       <Filter>Source\Engine\Scene</Filter>
     </ClInclude>
@@ -2122,6 +2134,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\TutorialScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialPlayerGuardSystem.cpp">
+      <Filter>Source\Game\Logics\Tutorial</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Screens\TutorialCompleteSystem.cpp">
+      <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp">
       <Filter>Source\Engine\Scene</Filter>

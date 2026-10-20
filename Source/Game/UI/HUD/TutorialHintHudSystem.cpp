@@ -2,8 +2,6 @@
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"
-#include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
@@ -30,10 +28,9 @@ void TutorialHintHudSystem::Update(float dt)
     if (!m_world->HasResource<TutorialState>()) return;
     const TutorialState &state = m_world->GetResource<TutorialState>();
 
-    // --- 作る: チュートリアルを行う挑戦で、プレイヤーが現れてから ---
+    // --- 作る: プレイヤーが現れてから ---
     if (!m_built)
     {
-        if (!state.enabled) return; // リトライなど、教えない挑戦では UI ごと作らない
         if (!m_world->HasResource<BattleContext>()) return;
         if (!m_world->GetResource<BattleContext>().HasPlayer()) return;
 
@@ -79,16 +76,13 @@ void TutorialHintHudSystem::Update(float dt)
 
 TutorialHintHudSystem::Hint TutorialHintHudSystem::SelectHint(const TutorialState &state) const
 {
-    switch (state.step)
-    {
-    case TutorialStep::ReadAndEvade:
-        if (state.assistActive) return {"Dash", "今だ！ 回避", true};
-        return {"Dash", "陣形の形を読み、突っ込んでくる瞬間に回避"};
-    case TutorialStep::Strike:
-        return {"Attack", "ジャスト回避でボスの懐へ。そのまま攻撃"};
-    default:
-        return {"Dash", ""};
-    }
+    // 文言とアイコンは TutorialSteps.h の表から引く。ヒントの無い項目と教え終えた後は空にする
+    const TutorialStepDef *def = state.Current();
+    if (!def || !def->action) return {};
+
+    // 補助スロー中は、押す瞬間だと分かる文言に差し替えて強調する
+    if (state.assistActive && def->assistText) return {def->action, def->assistText, true};
+    return {def->action, def->text};
 }
 
 void TutorialHintHudSystem::ApplyHint(const Hint &hint)
@@ -115,7 +109,8 @@ void TutorialHintHudSystem::ApplyHint(const Hint &hint)
         t->size   = {textW, textSize};
     }
 
-    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID))
+    // 空のヒント（action が nullptr）は消し切った後に書くだけなので、アイコンは前のままでよい
+    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID); ic && hint.action)
     {
         ic->actionHash = CCL::Utils::HashString(hint.action);
     }
@@ -210,5 +205,4 @@ void TutorialHintHudSystem::Build()
     }
 }
 
-// 他の HUD と同じステージ。TutorialSystem の後に走る（GetRunAfter）
-REGISTER_LOGIC_SYSTEM(TutorialHintHudSystem, Priority::LogicStage::L06_HudSync);
+// 全体登録（REGISTER_*）はせず、TutorialScene が登録する。ゲーム本編ではヒントを出さないため

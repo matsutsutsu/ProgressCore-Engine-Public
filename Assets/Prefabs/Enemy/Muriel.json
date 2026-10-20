@@ -53,7 +53,6 @@
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
                     "introAssetPath": "Assets/BehaviorTree/BossTutorial.json",
-                    "introMaxDuration": 90.0,
                     "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
                     "phase2HealthThreshold": 50.0
                 },

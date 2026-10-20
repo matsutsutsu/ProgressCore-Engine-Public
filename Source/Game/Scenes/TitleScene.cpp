@@ -10,17 +10,10 @@
 #include "Game/Logics/Title/TitleCameraSystem.h"
 #include "Game/Logics/Title/TitleSwarmSystem.h"
 #include "Game/UI/Screens/TitleMenuSystem.h"
-#include "Game/Logics/Tutorial/TutorialState.h" // タイトルに入るたびに「教えた」記録を消す
 
 void TitleScene::Initialize()
 {
     BaseScene::Initialize(); // リソースの登録と RegisterSystems
-
-    // タイトルを通った挑戦だけチュートリアルを出す（エディタシーンから直接遊ぶときは出さない）。
-    // タイトルへ戻ったら、次に遊ぶ人へまた最初から教える（展示会では遊び手がここで入れ替わる）。
-    // リトライはタイトルを通らないので、教え終えた人には繰り返さない
-    TutorialSession::Instance().armed     = true;
-    TutorialSession::Instance().completed = false;
 
     // メニューはレベルに入れられない。LoadLevel は PersistentTag の付いていないエンティティを
     // 全部消すので、メニューは読み込みの後で TitleMenuSystem が作る

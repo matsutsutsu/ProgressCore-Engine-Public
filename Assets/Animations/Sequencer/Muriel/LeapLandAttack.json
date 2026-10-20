@@ -20,6 +20,21 @@
             "startTime": 0.10000000149011612,
             "stringParam": "",
             "type": 4
+        },
+        {
+            "cancelMask": 0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.10000000149011612,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "startTime": 0.10000000149011612,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossLeapImpact",
+            "type": 2
         }
     ],
     "rootMotionCurve": {

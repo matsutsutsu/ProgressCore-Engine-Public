@@ -31,7 +31,7 @@ struct GameFlowState
     //    ・BehaviorTreeSystem / BossActionSystem: ボスの思考と技を止める（倒れたプレイヤーへ攻撃し続けないように）。
     //    ・CameraActionTPSSystem: 視点入力を止める（リザルトをマウスで操作している間にカメラが回らないように）。
     //    cinematic と同じく、ゲーム自体は止めない（倒れるアニメや物理は動き続ける）。
-    //    書き手は GameResultSystem だけ。
+    //    書き手は GameResultSystem と、チュートリアルを教え終えたときの TutorialCompleteSystem。
     bool matchOver = false;
 
     // アプリ終了要求。タイトル画面の QUIT から立てる。

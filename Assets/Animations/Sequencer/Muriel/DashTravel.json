@@ -21,6 +21,36 @@
             "startTime": 0.0,
             "stringParam": "",
             "type": 4
+        },
+        {
+            "cancelMask": 0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 0.5,
+            "endTime": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "startTime": 0.0,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossLeapImpact",
+            "type": 2
+        },
+        {
+            "cancelMask": 0,
+            "effectAttachTag": "",
+            "effectFollow": true,
+            "effectScale": 1.0,
+            "endTime": 1.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "startTime": 0.0,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossDashTrail",
+            "type": 2
         }
     ],
     "rootMotionCurve": {

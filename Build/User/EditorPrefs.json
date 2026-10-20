@@ -1,7 +1,7 @@
 {
     "DialogHistory": {
         "AnimNode": "Assets\\Animations\\Nodes",
-        "AnimSequence": "Assets\\Animations\\Sequencer\\Player",
+        "AnimSequence": "Assets\\Animations\\Sequencer\\Muriel",
         "BehaviorTree": "Assets\\BehaviorTree",
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
@@ -9,6 +9,7 @@
         "Model": "Assets\\Models\\Test",
         "Prefab": "Assets\\Prefabs\\Player",
         "Scene": "Assets\\Scene\\TestScene",
+        "Texture": "Assets\\Textures\\VFX\\Particle",
         "Timeline": "Assets\\Timelines"
     }
 }

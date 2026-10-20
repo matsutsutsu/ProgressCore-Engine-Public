@@ -42,4 +42,9 @@ struct SpotLightComponent
 
     float innerCos = 0.9f; // 内側コーンの半角の cos。これより内側は最大の明るさ
     float outerCos = 0.8f; // 外側コーンの半角の cos。これより外側は光らない（innerCos 以下にする）
+
+    // 距離減衰 1 / (constant + linear * d + quadratic * d^2) の係数
+    float constant  = 1.0f;
+    float linear    = 0.1f;
+    float quadratic = 0.01f;
 };
