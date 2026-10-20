@@ -100,7 +100,7 @@ void CameraActionTPSSystem::Update(float dt)
     });
 
     // 3. 全カメラの要求を1つの結論に集約して、カーソルロックを決める
-    //    マウスルック中でも cursorFree（ポーズ中・UI 操作中・エディタで他ウィンドウ操作中）
+    //    マウスルック中でも cursorFree（ポーズ中・UI 操作中・決着後・エディタで他ウィンドウ操作中）
     //    なら固定しない。さらに Mouse 側がウィンドウ非フォーカス時にロックを無効にするので、
     //    alt-tab でカーソルが閉じ込められることもない。
     if (in.cursorFree)
@@ -128,13 +128,16 @@ CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI
     // カーソルを固定しない（マウスルックも止める）条件。
     //   ・ポーズ中（メニュー操作にカーソルが要る）
     //   ・カーソル自由(UI操作)モード中（実行中に ImGui エディタを操作したい）
+    //   ・決着後（リザルトのボタンをマウスで押すのにカーソルが要る）
     //   ・エディタで他ウィンドウ操作中（IsGameInputActive=false）
     const bool flowPaused =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
     const bool flowUiInteract =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
+    const bool flowMatchOver =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().matchOver;
 
-    in.cursorFree = flowPaused || flowUiInteract || !inputAPI->IsGameInputActive();
+    in.cursorFree = flowPaused || flowUiInteract || flowMatchOver || !inputAPI->IsGameInputActive();
 
     // 導入カメラ演出などのカットシーン中は視点入力を一切受けない。
     //   ここを塞がないと、演出を見ている5秒の間にスティック/マウスを動かした分だけ

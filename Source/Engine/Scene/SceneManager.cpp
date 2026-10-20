@@ -255,6 +255,7 @@ void SceneManager::ChangeScene(const std::string &name)
     if (newScene)
     {
         nextScene = newScene;
+        CCL_LOG_INFO(LogCategory::Core, "========== シーン切り替え: %s ==========", name.c_str());
     }
 }
 
@@ -266,6 +267,7 @@ void SceneManager::ChangeSceneAsync(const std::string &name)
 
     // シーン名は「最終的に遷移する先」にしておく
     m_currentSceneName = name;
+    CCL_LOG_INFO(LogCategory::Core, "========== シーン切り替え: %s ==========", name.c_str());
 
     // ローディング画面で包む。target の重い Initialize() は
     // SceneLoading がワーカースレッドで裏読みし、完了後に本線へ切り替える。
