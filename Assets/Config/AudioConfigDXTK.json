@@ -9,6 +9,16 @@
     { "event": "sfx:/ui_confirm",    "file": "Assets/Audio/UI/ui_confirm.wav" },
     { "event": "sfx:/ui_open",       "file": "Assets/Audio/UI/ui_open.wav" },
     { "event": "sfx:/ui_close",      "file": "Assets/Audio/UI/ui_close.wav" },
-    { "event": "sfx:/ui_transition", "file": "Assets/Audio/UI/ui_transition.wav" }
+    { "event": "sfx:/ui_transition", "file": "Assets/Audio/UI/ui_transition.wav" },
+    { "event": "sfx:/slash_1",          "file": "Assets/Audio/Combat/slash_1.wav" },
+    { "event": "sfx:/slash_2",          "file": "Assets/Audio/Combat/slash_2.wav" },
+    { "event": "sfx:/slash_dash",       "file": "Assets/Audio/Combat/slash_dash.wav" },
+    { "event": "sfx:/hit_slash",        "file": "Assets/Audio/Combat/hit_slash.wav" },
+    { "event": "sfx:/player_hurt",      "file": "Assets/Audio/Combat/player_hurt.wav" },
+    { "event": "sfx:/dash",             "file": "Assets/Audio/Combat/dash.wav" },
+    { "event": "sfx:/just_evade",       "file": "Assets/Audio/Combat/just_evade.wav" },
+    { "event": "sfx:/boss_land_impact", "file": "Assets/Audio/Combat/boss_land_impact.wav" },
+    { "event": "sfx:/boss_dash_charge", "file": "Assets/Audio/Combat/boss_dash_charge.wav" },
+    { "event": "sfx:/boss_dash_travel", "file": "Assets/Audio/Combat/boss_dash_travel.wav" }
   ]
 }

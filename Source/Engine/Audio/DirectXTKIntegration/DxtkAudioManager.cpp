@@ -45,6 +45,10 @@ namespace
     // スロー中にリバーブを掛け始めるしきい値
     constexpr float kReverbSlowThreshold = 0.15f;
 
+    // 3D ワンショットが等倍で聞こえる距離 [m]。これより遠いと距離に反比例して小さくなる。
+    //   DXTK の既定は 1m で、カメラから 20m 先のボスの音が 1/20 になってしまう
+    constexpr float kOneShotFullVolumeDistance = 10.0f;
+
     // UTF-8 → ワイド文字列（SoundEffect が wchar_t* を要求するため）
     std::wstring ToWide(const std::string &s)
     {
@@ -442,6 +446,7 @@ void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3
     if (!p.inst) return;
 
     p.emitter.SetPosition(position);
+    p.emitter.CurveDistanceScaler = kOneShotFullVolumeDistance;
     p.inst->Apply3D(m_impl->listener, p.emitter, /*rhcoords*/ false);
     p.userVolume = (std::max)(volume, 0.0f);
     p.isBgm      = m_impl->bgmHashes.count(eventHash) != 0;

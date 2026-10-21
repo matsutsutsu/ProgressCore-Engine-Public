@@ -782,6 +782,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.h" />
@@ -1234,6 +1235,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Components\CombatComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.cpp" />

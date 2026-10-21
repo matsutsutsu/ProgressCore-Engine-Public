@@ -1315,6 +1315,11 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("オクターブ単位。0 で等倍、+1 で 1 オクターブ上、-1 で 1 オクターブ下\n"
                                   "スロー演出中は、これにさらにスロー分の低下が足されます");
+            if (ImGui::SliderFloat("ピッチの揺らぎ", &e.soundPitchRandom, 0.0f, 0.5f, "±%.2f oct"))
+                ch = true;
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("鳴らすたびに、ピッチをこの幅でランダムにずらします。0 でずらしません\n"
+                                  "0.07 oct ≒ ±5%%。連続で振る攻撃の音が機械的に聞こえるのを防ぎます");
             ImGui::Spacing();
             ImGui::TextDisabled("開始時刻に、キャラの位置で 3D のワンショットとして鳴らします。");
             ImGui::TextDisabled("区間の長さは使いません。");

@@ -1053,6 +1053,9 @@
     <ClInclude Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.h">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.h">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
@@ -2307,6 +2310,9 @@
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.cpp">
+      <Filter>Source\Game\Logics\Combat\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.cpp">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp">
