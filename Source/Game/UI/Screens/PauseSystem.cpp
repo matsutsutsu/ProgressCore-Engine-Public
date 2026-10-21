@@ -13,6 +13,7 @@
 #include "Game/UI/Screens/SettingsScreenSystem.h" // SettingsScreenState（設定画面を開いている間は Esc を受けない）
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeService.h"
+#include "Engine/Transform/Systems/TransformUpdateSystem.h" // SetParent（親の子のリストに繋ぐ）
 
 #include <cstdint>
 
@@ -62,13 +63,29 @@ void PauseSystem::Initialize()
         });
 }
 
+std::vector<TypeID> PauseSystem::GetWriteTypes() const
+{
+    return {TypeInfo<TransformComponent>::ID()};
+}
+
 void PauseSystem::Update(float /*dt*/)
 {
     // 処理フロー:
-    // 1. アプリが裏に回っていたら、自動で一時停止する（製品ビルドだけ）
-    // 2. 一時停止の切り替えの入力を読む
-    // 3. 切り替えてよい状況かを確かめる
-    // 4. 一時停止を切り替える
+    // 1. 作ったメニューを、親の子のリストに繋ぐ
+    // 2. アプリが裏に回っていたら、自動で一時停止する（製品ビルドだけ）
+    // 3. 一時停止の切り替えの入力を読む
+    // 4. 切り替えてよい状況かを確かめる
+    // 5. 一時停止を切り替える
+
+    // ---------------------------------------------------------
+    // 1. 親子のリスト
+    // ---------------------------------------------------------
+
+    // 生成はメニューを作った次のフレームに反映されるので、それを待って繋ぐ
+    if (m_linkPending && LinkOverlay())
+    {
+        m_linkPending = false;
+    }
 
     if (!m_world->HasResource<Input *>())
     {
@@ -81,7 +98,7 @@ void PauseSystem::Update(float /*dt*/)
     }
 
     // ---------------------------------------------------------
-    // 1. 自動の一時停止
+    // 2. 自動の一時停止
     // ---------------------------------------------------------
 #ifdef SHIPPING_BUILD
     // 前面に戻っても自動では再開しない。戻った瞬間に攻撃を受けないようにする。
@@ -101,7 +118,7 @@ void PauseSystem::Update(float /*dt*/)
 #endif
 
     // ---------------------------------------------------------
-    // 2. 入力
+    // 3. 入力
     // ---------------------------------------------------------
 
     // エディタの別のウィンドウを操作している間と、UI 操作モード（F2）の間は Esc を受けない（GameViewportInfo.h）。
@@ -116,7 +133,7 @@ void PauseSystem::Update(float /*dt*/)
     }
 
     // ---------------------------------------------------------
-    // 3. 切り替えてよいか
+    // 4. 切り替えてよいか
     // ---------------------------------------------------------
 
     // 設定画面を開いている間の Esc・START は、設定画面を閉じるためのもの。ポーズは切り替えない。
@@ -133,7 +150,7 @@ void PauseSystem::Update(float /*dt*/)
     }
 
     // ---------------------------------------------------------
-    // 4. 切り替え
+    // 5. 切り替え
     // ---------------------------------------------------------
     if (!m_paused)
     {
@@ -224,6 +241,35 @@ void PauseSystem::OpenPause()
 
     // 操作のヒント（決定・選択）は、ボタンより少し遅れて出す。
     SpawnMenuHints(w, menu, 165.0f, m_overlay, 240, kMenuDelay + 0.12f);
+
+    // 親の子のリストへは、生成が反映される次のフレームに繋ぐ（Update）
+    m_linkPending = true;
+}
+
+bool PauseSystem::LinkOverlay()
+{
+    World &w = *m_world;
+
+    // 1つでもまだ引けなければ、生成が反映されていない。全部そろってから繋ぐ
+    for (EntityID id : m_overlay)
+    {
+        if (!w.GetComponent<TransformComponent>(id))
+        {
+            return false;
+        }
+    }
+
+    // 作ったときに子から親を指す parent だけは入っているので、それを使って親の側からも繋ぐ。
+    // 再開した後に TransformUpdateSystem が同じ繋ぎ直しを見ても、繋がっているので何もしない
+    for (EntityID id : m_overlay)
+    {
+        const EntityID parent = w.GetComponent<TransformComponent>(id)->parent;
+        if (parent != 0)
+        {
+            TransformUpdateSystem::SetParent(w, id, parent);
+        }
+    }
+    return true;
 }
 
 void PauseSystem::ClosePause()
@@ -247,4 +293,5 @@ void PauseSystem::ClosePause()
         w.Destroy(id);
     }
     m_overlay.clear();
+    m_linkPending = false;
 }

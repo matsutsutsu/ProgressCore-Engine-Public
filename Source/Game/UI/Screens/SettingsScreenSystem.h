@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: 設定画面（視点の感度・上下反転・BGM と効果音の音量）を開いて操作させ、設定をカメラと音声へ反映する System。
+// 概要: 設定画面（視点の感度・BGM と効果音の音量）を開いて操作させ、設定をカメラと音声へ反映する System。
 //
 // 責務:
 //   - "open_settings" のボタン（タイトル・ポーズの「設定」）が押されたら、設定画面を上に重ねて開く
 //   - 選んでいる行を左右の入力（矢印キー・十字キー・画面の < > ボタン）で変え、「戻る」・Esc・B で閉じる
 //   - 開いている間は下の画面のボタンを操作できないようにし、閉じたら元に戻して設定をファイルへ保存する
 //   - 下の画面と設定画面を、時間をかけて重ねて入れ替える
-//   - 毎フレーム、設定の値をカメラ（感度・上下反転）と音声（BGM・効果音の音量）へ反映する
+//   - 毎フレーム、設定の値をカメラ（感度）と音声（BGM・効果音の音量）へ反映する
 //
 // 備考:
 //   全シーンで動かす。タイトルでもゲームでも、同じ設定画面を開ける。
@@ -53,7 +53,6 @@ private:
     enum Row
     {
         RowSensitivity,
-        RowInvertY,
         RowBgm,
         RowSfx,
         RowBack,
@@ -101,7 +100,7 @@ private:
     std::array<CCL::ECS::EntityID, RowCount>   m_rows{};      // 行のボタン
     std::array<CCL::ECS::EntityID, kValueRows> m_dec{};       // 行の < ボタン
     std::array<CCL::ECS::EntityID, kValueRows> m_inc{};       // 行の > ボタン
-    std::array<CCL::ECS::EntityID, kValueRows> m_gauge{};     // 行のゲージ（上下反転の行は無い）
+    std::array<CCL::ECS::EntityID, kValueRows> m_gauge{};     // 行のゲージ
     std::array<CCL::ECS::EntityID, kValueRows> m_valueText{}; // 行の値の文字
 
     // --- 最後に音声へ反映した音量（負ならまだ反映していない） ---

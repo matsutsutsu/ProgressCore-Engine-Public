@@ -161,9 +161,10 @@ namespace CCL::ECS
         // 全 System のマルチスレッドを一括で OFF にする（並列起因のバグ切り分け用）
         bool globalMultiThreadEnabled = true;
 
-        // 依存グラフ構築時に「順序が不定なペア」をログへ出すか。
-        // 一覧が長くて邪魔なときだけ false にする。
-        bool logSchedulerAmbiguities = true;
+        // 依存グラフ構築時に「順序が不定なペア」をログへ出すか（System Manager ウィンドウで切り替える）。
+        // 一覧が長くログを埋めるので、ふだんは出さない。
+        // SystemManager はシーンごとに作り直されるので、切り替えがシーンをまたいで残るよう static にする。
+        static inline bool logSchedulerAmbiguities = false;
 
     private:
         /**

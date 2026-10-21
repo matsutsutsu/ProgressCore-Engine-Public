@@ -45,12 +45,6 @@
                                 "name":  "Refraction",
                                 "blend":  "transparency",
                                 "depth":  "testOnly"
-                            },
-                            {
-                                "cull":  "none",
-                                "name":  "FogVolume",
-                                "depth":  "testOnly",
-                                "blend":  "transparency"
                             }
                         ],
     "customShaders":  [

@@ -86,13 +86,12 @@ void SettingsScreenSystem::ApplySettings()
 
     // --- カメラ ---
 
-    // 感度の倍率と上下反転を書く。
+    // 感度の倍率を書く。
     // カメラは作り直されることがあるので、毎フレーム書く。
     m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID id) {
         if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(id))
         {
             tps->sensitivityScale = s.lookSensitivity;
-            tps->mouseInvertY     = s.invertY;
         }
     });
 
@@ -236,7 +235,7 @@ void SettingsScreenSystem::Open(EntityID opener)
     const EntityID box     = SpawnBox(w, "SettingsRows", {0.0f, 0.0f}, {ScreenLayout::kLeft, rowsTop}, {320.0f, boxH}, canvas);
     m_overlay.push_back(box);
 
-    const char *labels[RowCount] = {"視点の感度", "上下反転", "BGMの音量", "効果音の音量", "戻る"};
+    const char *labels[RowCount] = {"視点の感度", "BGMの音量", "効果音の音量", "戻る"};
     for (int i = 0; i < RowCount; ++i)
     {
         // --- 行のボタン ---
@@ -267,8 +266,7 @@ void SettingsScreenSystem::Open(EntityID opener)
         std::snprintf(name, sizeof(name), "SettingsInc%d", i);
         m_inc[i] = SpawnArrow(canvas, name, ">", kIncX, y);
 
-        m_gauge[i] = InvalidEntityID;
-        if (i != RowInvertY)
+        // ゲージ
         {
             auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIProgressBarComponent>();
             std::snprintf(name, sizeof(name), "SettingsGauge%d", i);
@@ -298,11 +296,9 @@ void SettingsScreenSystem::Open(EntityID opener)
             m_overlay.push_back(e.ID());
         }
 
-        // 値の文字。上下反転の行はゲージの代わりに、< > の間にオン / オフを出す。
-        // 初めの値は、ゲージと同じ理由で生成時に入れる。
+        // 値の文字。初めの値は、ゲージと同じ理由で生成時に入れる。
         std::snprintf(name, sizeof(name), "SettingsValue%d", i);
-        const float textX = (i == RowInvertY) ? kGaugeX + kGaugeW * 0.5f - 24.0f : kValueX;
-        m_valueText[i]    = SpawnTextTopLeft(w, name, ValueText(i).c_str(), textX, y - 12.0f, 24.0f, ScreenColor::kValue, canvas, kSortValue);
+        m_valueText[i] = SpawnTextTopLeft(w, name, ValueText(i).c_str(), kValueX, y - 12.0f, 24.0f, ScreenColor::kValue, canvas, kSortValue);
         m_overlay.push_back(m_valueText[i]);
     }
 
@@ -389,9 +385,6 @@ void SettingsScreenSystem::Adjust(int row, int dir)
         s.lookSensitivity = std::clamp(Snap(s.lookSensitivity + GameSettings::kSensitivityStep * dir, GameSettings::kSensitivityStep),
                                        GameSettings::kSensitivityMin, GameSettings::kSensitivityMax);
         break;
-    case RowInvertY:
-        s.invertY = !s.invertY; // 2択なので、左右どちらでも切り替える
-        break;
     case RowBgm:
         s.bgmVolume = std::clamp(Snap(s.bgmVolume + GameSettings::kVolumeStep * dir, GameSettings::kVolumeStep), 0.0f, 1.0f);
         break;
@@ -432,7 +425,7 @@ float SettingsScreenSystem::ValueRatio(int row) const
         return (s.lookSensitivity - GameSettings::kSensitivityMin) / (GameSettings::kSensitivityMax - GameSettings::kSensitivityMin);
     case RowBgm: return s.bgmVolume;
     case RowSfx: return s.sfxVolume;
-    default: return 0.0f; // 上下反転はゲージを持たない
+    default: return 0.0f;
     }
 }
 
@@ -443,7 +436,6 @@ std::string SettingsScreenSystem::ValueText(int row) const
     switch (row)
     {
     case RowSensitivity: std::snprintf(buf, sizeof(buf), "%.2fx", s.lookSensitivity); break;
-    case RowInvertY: return s.invertY ? "オン" : "オフ";
     case RowBgm: std::snprintf(buf, sizeof(buf), "%d", static_cast<int>(std::lround(s.bgmVolume * 100.0f))); break;
     case RowSfx: std::snprintf(buf, sizeof(buf), "%d", static_cast<int>(std::lround(s.sfxVolume * 100.0f))); break;
     default: break;
@@ -620,16 +612,9 @@ void SettingsScreenSystem::Update(float dt)
             continue;
         }
 
-        if (inter->clicked)
+        if (inter->clicked && i == RowBack)
         {
-            if (i == RowBack)
-            {
-                m_closePending = true;
-            }
-            else if (i == RowInvertY)
-            {
-                Adjust(i, 1); // 決定でもオン / オフを切り替える
-            }
+            m_closePending = true;
         }
         if (dir != 0 && inter->isFocused && i != RowBack)
         {

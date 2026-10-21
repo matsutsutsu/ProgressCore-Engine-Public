@@ -30,11 +30,26 @@ public:
     void Initialize() override;     // GameFlowState を用意し、ボタンのイベントを購読する
     void Update(float dt) override; // 一時停止の切り替えの入力を見る
 
+    // メニューの親子のリスト（TransformComponent）を繋ぐので申告する
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+
 private:
     void OpenPause();  // 一時停止してメニューを作る
     void ClosePause(); // 再開してメニューを消す
 
+    /**
+     * @brief 作ったメニューを、親の子のリストに繋ぐ（エディタの Hierarchy で木の形に見せるため）。
+     *
+     * 親子のリストは TransformUpdateSystem（ロジック）が繋ぐが、一時停止中はロジックが止まっていて繋がらない。
+     * 繋がないと、Hierarchy に Canvas だけが子の無いルートとして出て、中身を確かめられない。
+     * 画面の配置は子から親をたどって決まるので、繋がなくても見た目は変わらない。
+     *
+     * @return 繋ぎ終えたら true。生成がまだ反映されていなければ false（次のフレームでもう一度呼ぶ）。
+     */
+    bool LinkOverlay();
+
     bool                            m_paused        = false; // 一時停止中か
     bool                            m_transitioning = false; // タイトルへの切り替えを頼んだ後か
+    bool                            m_linkPending   = false; // 作ったメニューをまだ親の子のリストに繋いでいないか
     std::vector<CCL::ECS::EntityID> m_overlay;               // 作ったメニューのエンティティ（解除するときに消す）
 };

@@ -116,6 +116,14 @@ namespace CCL::ECS
                 ImGui::SetTooltip("Force enable/disable multi-threading for ALL systems.");
             }
 
+            // 順序が不定なペアのログ。グラフはもう作ってあるので、入れた時点の一覧をすぐ出す
+            // （次に出るのはシーンを切り替えて作り直したとき）
+            if (ImGui::Checkbox("順序不定ペアをログに出す", &logSchedulerAmbiguities) && logSchedulerAmbiguities)
+            {
+                m_logicScheduler.LogAmbiguities("Logic");
+                m_renderScheduler.LogAmbiguities("Render");
+            }
+
             ImGui::Separator();
 
             if (ImGui::BeginTabBar("SystemManagerTabs"))

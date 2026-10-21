@@ -38,7 +38,6 @@ void GameSettings::Load()
     {
         const nlohmann::json doc = nlohmann::json::parse(text);
         lookSensitivity = std::clamp(doc.value("LookSensitivity", lookSensitivity), kSensitivityMin, kSensitivityMax);
-        invertY         = doc.value("InvertY", invertY);
         bgmVolume       = std::clamp(doc.value("BgmVolume", bgmVolume), 0.0f, 1.0f);
         sfxVolume       = std::clamp(doc.value("SfxVolume", sfxVolume), 0.0f, 1.0f);
     }
@@ -54,7 +53,6 @@ void GameSettings::Save() const
 {
     nlohmann::json doc;
     doc["LookSensitivity"] = lookSensitivity;
-    doc["InvertY"]         = invertY;
     doc["BgmVolume"]       = bgmVolume;
     doc["SfxVolume"]       = sfxVolume;
 

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 遊ぶ人が設定画面で変える値（視点の感度・上下反転・BGM と効果音の音量）を持ち、ファイルへ保存する。
+// 概要: 遊ぶ人が設定画面で変える値（視点の感度・BGM と効果音の音量）を持ち、ファイルへ保存する。
 //
 // 責務:
 //   - 設定の値をアプリ全体で1つだけ持つ（World ではないので、シーンを切り替えても残る）
@@ -16,10 +16,9 @@
 
 struct GameSettings
 {
-    float lookSensitivity = 1.0f;  // 視点の感度の倍率（マウス・スティック共通）
-    bool  invertY         = false; // 視点の上下反転
-    float bgmVolume       = 0.8f;  // BGM の音量（0〜1）
-    float sfxVolume       = 1.0f;  // 効果音の音量（0〜1）
+    float lookSensitivity = 1.0f; // 視点の感度の倍率（マウス・スティック共通）
+    float bgmVolume       = 0.5f; // BGM の音量（0〜1）
+    float sfxVolume       = 0.5f; // 効果音の音量（0〜1）
 
     // --- 範囲と、設定画面の左右の入力で変える1段の刻み ---
     static constexpr float kSensitivityMin  = 0.25f; // 感度の最小
