@@ -16,8 +16,9 @@
 //       エディタのギズモとデバッグ表示が実際の向きと合う。
 //       止めずに揺らすのは、完全に止まった画面はフリーズしたように見えるため。注視点を軸に
 //       少し回すと、手前のプレイヤーと奥の群れに視差が出て奥行きが分かる。
-//       TitleScene だけが登録する（REGISTER_* はしない）。カメラは1台の前提で、
-//       VirtualCamera を持つエンティティすべてを対象にする。
+//       TitleScene だけが登録する（REGISTER_* はしない）。タイトルカメラは1台の前提で、
+//       VirtualCamera を持つエンティティを対象にする。ただしフリーカメラ（CameraBodyFree）は除く。
+//       除かないと、編集用に置いたフリーカメラまでタイトルの構図で毎フレーム上書きされ、動かせなくなる。
 // ===========================================================================
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -30,7 +31,11 @@ class TitleCameraSystem
                                 CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TitleCameraSystem() : IfSystem("TitleCameraSystem") {}
+    TitleCameraSystem() : IfSystem("TitleCameraSystem")
+    {
+        // フリーカメラは CameraFreeControlSystem が動かすので触らない
+        SetExclude<CameraBodyFree>();
+    }
 
     void Update(float dt) override;
 

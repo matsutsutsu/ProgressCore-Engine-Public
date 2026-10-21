@@ -21,49 +21,11 @@
         },
         {
             "position": [
-                -3.9000000953674316,
-                3.200000047683716,
-                -55.0
-            ],
-            "prefab": "Assets/Prefabs/Title/TitleCamera.json",
-            "rotation": [
-                -0.06189868599176407,
-                0.07968533784151077,
-                0.0049577816389501095,
-                0.9948840737342834
-            ],
-            "scale": [
-                1.0,
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "position": [
                 0.0,
-                5.0,
+                0.0,
                 0.0
             ],
-            "prefab": "Assets/Prefabs/Light/TitleLighting.json",
-            "rotation": [
-                0.2165140062570572,
-                0.08248099684715271,
-                0.0,
-                0.9727889895439148
-            ],
-            "scale": [
-                1.0,
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "position": [
-                4.0,
-                9.399999618530273,
-                -6.0
-            ],
-            "prefab": "Assets/Prefabs/Title/TitleLookTarget.json",
+            "prefab": "./Assets\\Prefabs\\Audio\\BGM_Title.json",
             "rotation": [
                 0.0,
                 0.0,
@@ -112,25 +74,6 @@
                 3.5,
                 3.5,
                 3.5
-            ]
-        },
-         {
-            "position": [
-                0.0,
-                0.0,
-                0.0
-            ],
-            "prefab": "./Assets\\Prefabs\\Audio\\BGM_Title.json",
-            "rotation": [
-                0.0,
-                0.0,
-                0.0,
-                1.0
-            ],
-            "scale": [
-                1.0,
-                1.0,
-                1.0
             ]
         }
     ],
