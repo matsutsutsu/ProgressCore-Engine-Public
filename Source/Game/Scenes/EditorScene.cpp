@@ -20,7 +20,7 @@ namespace
 void EditorScene::Initialize()
 {
     ZoneScopedN("EditorScene::Initialize");
-
+    
     BaseScene::Initialize();
 
     {

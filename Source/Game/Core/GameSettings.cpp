@@ -26,6 +26,12 @@ GameSettings &GameSettings::Instance()
 void GameSettings::Load()
 {
     // まだ一度も保存していなければ、ファイルは無い。既定値のまま使う。
+    // 有無を先に確かめる。ReadAllText はファイルが無いと ERROR を出すので、初回起動のたびにエラーログが残ってしまう。
+    if (!FileSystem::Exists(kSettingsPath))
+    {
+        return;
+    }
+
     const std::string text = FileSystem::ReadAllText(kSettingsPath);
     if (text.empty())
     {

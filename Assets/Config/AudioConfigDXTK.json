@@ -3,13 +3,16 @@
   "sounds": [
     { "event": "bgm:/game",         "file": "Assets/Audio/BGM/GameBGM.mp3" },
     { "event": "bgm:/title",         "file": "Assets/Audio/BGM/TitleBGM.mp3" },
-    { "event": "sfx:/can",          "file": "Assets/Audio/sei_ge_kan_koro01.mp3" },
-    { "event": "sfx:/fall",         "file": "Assets/Audio/sen_ge_taoreru05.mp3" },
     { "event": "sfx:/ui_move",       "file": "Assets/Audio/UI/ui_move.wav" },
     { "event": "sfx:/ui_confirm",    "file": "Assets/Audio/UI/ui_confirm.wav" },
     { "event": "sfx:/ui_open",       "file": "Assets/Audio/UI/ui_open.wav" },
     { "event": "sfx:/ui_close",      "file": "Assets/Audio/UI/ui_close.wav" },
-    { "event": "sfx:/ui_transition", "file": "Assets/Audio/UI/ui_transition.wav" },
+    { "event": "sfx:/ui_transition", "file": "Assets/Audio/UI/ui_transition.wav" }
+  ],
+  "_comment_disabled": "仮の音のため外している効果音。読み込まれないので、コードやアニメーションから鳴らしても無音になる。使うときは sounds へ戻す。",
+  "sounds_disabled": [
+    { "event": "sfx:/can",          "file": "Assets/Audio/sei_ge_kan_koro01.mp3" },
+    { "event": "sfx:/fall",         "file": "Assets/Audio/sen_ge_taoreru05.mp3" },
     { "event": "sfx:/slash_1",          "file": "Assets/Audio/Combat/slash_1.wav" },
     { "event": "sfx:/slash_2",          "file": "Assets/Audio/Combat/slash_2.wav" },
     { "event": "sfx:/slash_dash",       "file": "Assets/Audio/Combat/slash_dash.wav" },

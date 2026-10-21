@@ -233,13 +233,19 @@ DxtkAudioManager::DxtkAudioManager()
 
 DxtkAudioManager::~DxtkAudioManager()
 {
-    // 再生インスタンスは AudioEngine に依存するので、先に破棄する
+    // 破棄の順番は「再生中のインスタンス → AudioEngine → 音源」で固定する。
+    //   2D のワンショット（PlayOneShot）は、鳴り終わると XAudio2 の音声スレッドが音源（SoundEffect）へ通知する。
+    //   音源を先に消すと、鳴っている途中の音の通知が消えた音源へ届き、終了時にまれに落ちる。
+    //   AudioEngine を先に破棄すると、音声スレッドが止まり、ボイスがすべて破棄され、
+    //   各音源にエンジンが無くなったことが伝わるので、その後なら音源を安全に消せる。
     if (m_impl)
     {
         {
             std::lock_guard<std::mutex> lk(m_impl->mtx);
             m_impl->playing.clear();
             m_impl->oneShot3D.clear();
+            m_impl->ready = false;
+            m_impl->engine.reset();
             m_impl->sounds.clear();
         }
         if (m_impl->mfStarted)

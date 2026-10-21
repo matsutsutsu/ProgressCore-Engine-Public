@@ -17,34 +17,40 @@ namespace
 {
     constexpr float kProgressDamping = 8.0f; // 表示の進捗が目標値へ追いつく速さ（Damp の speed）
 
+    // 表示の進捗がここに届いたら完了とみなし、完了の演出（READY・リングの深紅）を始める。
+    //   進捗は指数的に 100% へ近づき、ちょうど 1.0 には届かないため、少し手前で区切る。
+    //   ログの最後の行もこの値で出し、完了の演出と同じ瞬間にそろえる。
+    constexpr float kDoneProgress = 0.98f;
+
     constexpr float kDotR = 0.96f, kDotG = 0.88f, kDotB = 0.62f; // 飾り（線・◆・目盛り）の白金。HUD の色にそろえる
 
     // ログの1行
     struct LogLine
     {
         float       at;   // 見せかけの進捗がこの値に届いたら出す（0〜1）
-        const char *text; // 時刻の後ろに出す本文。nullptr なら描くときに作る
+        const char *text; // 時刻の後ろに出す本文
     };
 
     // ログの台本。読み込みの段階に見立てた行を並べ、待っている間に作品の中身（AI・陣形・群れ）を伝える。
     // 実際の読み込みの段階とは連動しない（裏読みの途中経過は外から取れないため）。
     constexpr LogLine kLogLines[kLogLineCount] = {
-        {0.00f, "SYS   BOOT SEQUENCE INITIATED"},
-        {0.08f, "SYS   MEMORY CHECK ... OK"},
-        {0.18f, "NET   LINK TO SWARM CONTROLLER ... OK"},
-        {0.30f, "AI    LOADING BEHAVIOR TREE : MURIEL"},
-        {0.42f, "AI    FORMATION TABLE ... 32 PATTERNS"},
-        {0.55f, nullptr}, // UNIT  DEPLOYING DRONES  xxxx / 1000（数字が進捗で動く）
-        {0.68f, "GFX   SHADER CACHE ... OK"},
-        {0.80f, "SYS   SYNCHRONIZING ..."},
-        {0.98f, "SYS   ALL SYSTEMS GREEN"},
+        {0.00f, "SYS   INIT WORLD"},
+        {0.12f, "SYS   MEMORY CHECK ... OK"},
+        {0.24f, "GFX   SHADER CACHE ... OK"},
+        {0.36f, "GFX   LOADING STAGE"},
+        {0.48f, "UNIT  LOADING PLAYER"},
+        {0.60f, "UNIT  LOADING ENEMY : MURIEL"},
+        {0.72f, "AI    LOADING DRONES"},
+        {kDoneProgress, "SYS   ALL READY"},
     };
 
     // 読み込みのたびに1つ出すヒント。実際の仕様に沿った内容だけを書く（HP50% で第2形態: BossPhaseComponent）
     constexpr const char *kTips[] = {
-        "ジャスト回避を決めると、時が止まり反撃の間が生まれる。",
-        "群れの形が、そのまま攻撃になる。形を読んでかわせ。",
-        "HPが半分を切ると、ミュリエルは戦い方を変える。",
+        "震えたドローンは、まもなく突撃してくる。",
+        "ドローンの突撃をぎりぎりでかわすと、ジャスト回避が始まる。",
+        "ジャスト回避の後は、そのまま反撃のラッシュへつながる。",
+        "攻撃が来たらダッシュで緊急回避する。",
+        "敵の攻撃の後隙を見極め、一撃を叩き込め。",
     };
     constexpr int kTipCount = static_cast<int>(sizeof(kTips) / sizeof(kTips[0]));
 
@@ -200,8 +206,8 @@ void SceneLoading::Update(float elapsedTime)
     }
     m_progress += (target - m_progress) * CCL::Math::Damp(kProgressDamping, elapsedTime);
 
-    // 指数的に近づくので、98% に届いたら 100% とみなして完了の演出を始める。
-    if (m_progress >= 0.98f)
+    // 指数的に近づくので、kDoneProgress に届いたら 100% とみなして完了の演出を始める。
+    if (m_progress >= kDoneProgress)
     {
         m_outroTime += elapsedTime;
     }
@@ -523,7 +529,7 @@ void SceneLoading::DrawScreen(float alpha)
     const float headY  = 72.0f * k;               // 見出しの上端
     const float ruleY  = headY + headPx + 18.0f * k; // 見出しの下の線の高さ
     const float ruleW  = 760.0f * k;              // 見出しの下の線の長さ
-    const float tipY   = sh - 150.0f * k;         // ヒントの行の上端
+    const float tipY   = sh - 160.0f * k;         // ヒントの行の上端
 
     // ---------------------------------------------------------
     // 2. 方眼
@@ -696,22 +702,8 @@ void SceneLoading::DrawScreen(float alpha)
             char stamp[16];
             std::snprintf(stamp, sizeof(stamp), "%05.2f", std::max(0.0f, m_logStart[i] - kShowDelay));
 
-            // 配備数の行だけは本文を持たず、進捗から数字を作る（数字が増えていく）。
-            std::string body;
-            if (kLogLines[i].text)
-            {
-                body = kLogLines[i].text;
-            }
-            else
-            {
-                char buf[64];
-                std::snprintf(buf, sizeof(buf), "UNIT  DEPLOYING DRONES  %04d / 1000",
-                              std::min(1000, static_cast<int>(m_progress * 1000.0f)));
-                body = buf;
-            }
-
             const bool        isNewest = (i == newest);
-            const std::string shown    = typed(body, n);
+            const std::string shown    = typed(kLogLines[i].text, n);
             m_text->DrawText(dc, stamp, left, y, px, DirectX::XMFLOAT4{kTextR, kTextG, kTextB, 0.35f * alpha});
             m_text->DrawText(dc, shown, bodyX, y, px,
                              isNewest ? DirectX::XMFLOAT4{kDotR, kDotG, kDotB, alpha}
@@ -733,17 +725,17 @@ void SceneLoading::DrawScreen(float alpha)
     // 左下に白金の札「ヒント」を置き、その右に1行を打ち込む。
     if (boot > 0.5f)
     {
-        const float px   = 20.0f * k;
-        const float tagW = 52.0f * k;
-        const float tagH = 26.0f * k;
+        const float px   = 30.0f * k;
+        const float tagW = 78.0f * k;
+        const float tagH = 39.0f * k;
         DrawQuad(left + tagW * 0.5f, tipY + px * 0.5f, tagW, tagH, 0.0f, kDotR, kDotG, kDotB, alpha);
 
-        const float tagPx = 16.0f * k;
+        const float tagPx = 24.0f * k;
         const float tw    = m_text->MeasureWidth("ヒント", tagPx);
         m_text->DrawText(dc, "ヒント", left + (tagW - tw) * 0.5f, tipY + (px - tagPx) * 0.5f, tagPx,
                          DirectX::XMFLOAT4{0.06f, 0.07f, 0.10f, alpha});
 
-        m_text->DrawText(dc, typed(kTips[m_tipIndex], (boot - 0.5f) * 30.0f), left + tagW + 18.0f * k, tipY, px, textCol);
+        m_text->DrawText(dc, typed(kTips[m_tipIndex], (boot - 0.5f) * 30.0f), left + tagW + 27.0f * k, tipY, px, textCol);
     }
 }
 

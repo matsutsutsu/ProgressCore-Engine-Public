@@ -30,7 +30,7 @@ class TextRenderer; // 見出し・ログなどの文字表示（unique_ptr で�
 class Sprite;       // 線・◆・目盛りなどの単色の四角形
 
 // ログの行数（SceneLoading.cpp の kLogLines と数を合わせる）
-inline constexpr int kLogLineCount = 9;
+inline constexpr int kLogLineCount = 8;
 
 class SceneLoading : public BaseScene
 {
