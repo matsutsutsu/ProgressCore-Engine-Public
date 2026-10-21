@@ -3,12 +3,14 @@
 // 概要: チュートリアルを教え終えたら、完了の画面を出して次へ進ませる System。
 //
 // 責務:
-//   - TutorialState が Done になったら、GameFlowState::matchOver を立てて操作とボスを止める
+//   - 教え終えたら（TutorialState::IsFinished）、GameFlowState::matchOver を立てて操作とボスを止める
 //   - 少し待ってから、完了の画面（見出し・ボタン）をゲーム画面の上に重ねて出す
 //   - 「本番へ」「もう一度」「タイトルへ」のボタンを受けてシーンを切り替える
 //
 // 備考: 画面の組みはリザルト・ポーズと共通（ScreenHeadingUi.h）。出てくる演出は UIRevealSystem が動かす。
-//       デバッグ窓の「最初から開始」で項目が Done から戻ったら、画面を消して操作を戻す。
+//
+//       デバッグ窓の「最初から開始」で教え終えた状態から戻ったら、画面を消して操作を戻す。
+//
 //       全体登録（REGISTER_*）はせず、TutorialScene が登録する。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -35,8 +37,5 @@ private:
     float m_showDelay     = 0.0f;  // 画面を出すまでの残り時間（実時間の秒）
     bool  m_transitioning = false; // シーンの切り替えを頼んだ後か
 
-    std::vector<CCL::ECS::EntityID> m_overlay; // 作った UI。やり直したときにまとめて消す
-
-    // 教え終えてから画面を出すまでの待ち（秒）。最後に当てた攻撃の手応えを見せてから出す
-    static constexpr float kShowDelay = 1.2f;
+    std::vector<CCL::ECS::EntityID> m_overlay; // 作った UI（CloseUI でまとめて消す）
 };

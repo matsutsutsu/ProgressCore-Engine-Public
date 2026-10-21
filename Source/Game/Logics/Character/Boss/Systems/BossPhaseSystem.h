@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ボスの形態（序盤の待機・手加減 / 第1形態 / 移行演出 / 第2形態 / 死亡）を決める System。
+// 概要: ボスの形態（チュートリアルの待機・手加減 / 第1形態 / 移行演出 / 第2形態 / 死亡）を決める System。
 //
 // 責務:
 //   - HP と経過時間から、次の形態を決める
@@ -57,13 +57,13 @@ private:
      * @brief このフレームの遷移先を決める。優先度順に調べ、最初に成立したものを返す。
      * @param phase           今の形態と設定値。
      * @param health          ボスの HP。
-     * @param tutorialRunning チュートリアルを教えている途中か。true の間だけ序盤（Standby / Intro）に入る・留まる。
-     * @param bossWaiting     教えている章が、ボスを待たせる章か。true なら Standby、false なら Intro にする。
+     * @param inTutorial      チュートリアルシーンか。true なら最初から最後まで TutorialWait / TutorialAttack で戦う。
+     * @param bossWaiting     ボスを待たせるか（攻撃を覚える前の項目と、教え終えた後）。true なら TutorialWait、false なら TutorialAttack にする。
      * @return 遷移先の形態。変わらなければ今の形態。
      */
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
                               const HealthComponent    &health,
-                              bool                      tutorialRunning,
+                              bool                      inTutorial,
                               bool                      bossWaiting) const;
 
     // 形態に入った瞬間だけ走る処理（BT では書きにくい部分）。

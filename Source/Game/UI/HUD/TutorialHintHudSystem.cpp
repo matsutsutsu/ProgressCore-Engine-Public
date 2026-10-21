@@ -19,16 +19,38 @@
 
 using namespace CCL::ECS;
 
+namespace
+{
+    constexpr float kBottom    = 190.0f; // 画面の下端から帯の中心まで（px）
+    constexpr float kBandH     = 64.0f;  // 帯の高さ（px）
+    constexpr float kPadX      = 28.0f;  // 帯の左右の余白（px）
+    constexpr float kIconSize  = 46.0f;  // アイコンの一辺（px）
+    constexpr float kIconGap   = 16.0f;  // アイコンと文の間（px）
+    constexpr float kTextSize  = 26.0f;  // 文字の高さ（px）
+    constexpr float kEmphSize  = 34.0f;  // 強調のときの文字の高さ（px）
+    constexpr float kFadeSpeed = 10.0f;  // フェードの速さ（Damp の speed）
+} // namespace
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
 
 void TutorialHintHudSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. UI を作る（プレイヤーが現れた最初のフレームだけ）
+    // 2. 出す文言を決め、フェードを進める
+    // 3. 「今だ」の段階なら文字を明滅させる
+    // 4. 不透明度を UI へ書く
+
     if (!m_world->HasResource<TutorialState>()) return;
     const TutorialState &state = m_world->GetResource<TutorialState>();
 
-    // --- 作る: プレイヤーが現れてから ---
+    // ---------------------------------------------------------
+    // 1. UI を作る
+    // ---------------------------------------------------------
+
+    // Initialize で作らないのは、その後のレベルの読み込みで消されるため
     if (!m_built)
     {
         if (!m_world->HasResource<BattleContext>()) return;
@@ -38,7 +60,10 @@ void TutorialHintHudSystem::Update(float dt)
         m_built = true;
     }
 
-    // --- 出す文言を決める ---
+    // ---------------------------------------------------------
+    // 2. 文言とフェード
+    // ---------------------------------------------------------
+
     // 文言が変わったら、いったん消し切ってから差し替える。出したまま書き換えると、
     // 新しい指示に変わったことに気付かず、前の説明を読み終えたつもりで見落とす
     const Hint hint    = SelectHint(state);
@@ -49,7 +74,11 @@ void TutorialHintHudSystem::Update(float dt)
     const float target = (want && m_currentText == hint.text) ? 1.0f : 0.0f;
     m_alpha += (target - m_alpha) * CCL::Math::Damp(kFadeSpeed, dt);
 
-    // --- 強調: 補助スロー中は文字を明滅させ、押す瞬間だと分かるようにする ---
+    // ---------------------------------------------------------
+    // 3. 強調
+    // ---------------------------------------------------------
+
+    // 押す瞬間だと分かるよう、文字を明滅させる
     m_pulse += dt;
     if (auto *tx = m_world->GetComponent<UITextComponent>(m_textID))
     {
@@ -64,6 +93,9 @@ void TutorialHintHudSystem::Update(float dt)
         }
     }
 
+    // ---------------------------------------------------------
+    // 4. 不透明度
+    // ---------------------------------------------------------
     for (EntityID id : {m_bandID, m_iconID, m_textID})
     {
         if (auto *t = m_world->GetComponent<UITransformComponent>(id)) t->alpha = m_alpha;
@@ -80,7 +112,7 @@ TutorialHintHudSystem::Hint TutorialHintHudSystem::SelectHint(const TutorialStat
     const TutorialStepDef *def = state.Current();
     if (!def || def->text[0] == '\0') return {};
 
-    // 補助スロー中は、押す瞬間だと分かる文言に差し替えて強調する
+    // 補助スローの「今だ」の段階では、押す瞬間だと分かる文言に差し替えて強調する
     if (state.assistActive && def->assistText) return {def->icon, def->action, def->assistText, true};
     return {def->icon, def->action, def->text};
 }
@@ -136,9 +168,22 @@ float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelS
 
 void TutorialHintHudSystem::Build()
 {
+    // 処理フロー:
+    // 1. 下地の帯を作る
+    // 2. アイコンを作る
+    // 3. 説明の1行を作る
+
+    // 【備考】
+    //   3つとも画面の下辺の中央を基準に、下端から kBottom の高さへ置く。
+    //   左下のゲージと字幕の位置を避けるため。
+
     const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "TutorialHintCanvas");
 
-    // --- 下地の帯: 明るい床や空の上でも白い文字が読めるよう、暗く敷く ---
+    // ---------------------------------------------------------
+    // 1. 下地の帯
+    // ---------------------------------------------------------
+
+    // 明るい床や空の上でも白い文字が読めるよう、暗く敷く
     {
         auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent>();
         auto e    = EntityFactory::SpawnNamed(*m_world, "TutorialHintBand", arch);
@@ -160,7 +205,11 @@ void TutorialHintHudSystem::Build()
         m_bandID = e.ID();
     }
 
-    // --- アイコン: 画像は InputIconSystem が割り当てから決める ---
+    // ---------------------------------------------------------
+    // 2. アイコン
+    // ---------------------------------------------------------
+
+    // 画像は InputIconSystem が割り当てから決める
     {
         auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent,
                                               InputIconComponent>();
@@ -184,7 +233,9 @@ void TutorialHintHudSystem::Build()
         m_iconID = e.ID();
     }
 
-    // --- 説明の1行 ---
+    // ---------------------------------------------------------
+    // 3. 説明の1行
+    // ---------------------------------------------------------
     {
         auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UITextComponent>();
         auto e    = EntityFactory::SpawnNamed(*m_world, "TutorialHintText", arch);

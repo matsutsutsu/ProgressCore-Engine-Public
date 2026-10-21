@@ -45,7 +45,7 @@ namespace CCL::AI::BT
         {
             const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
             if (!phase) return false;
-            if (phase->phase != BossPhase::Combat && phase->phase != BossPhase::Intro) return false; // 序盤も第1形態のうち
+            if (phase->phase != BossPhase::Combat) return false;
 
             return ctx.bt->blackboard.healthPercentage <= phase->phase2HealthThreshold;
         }

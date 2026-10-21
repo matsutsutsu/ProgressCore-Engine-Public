@@ -4,20 +4,18 @@
 #include "Engine/Core/App/GameFlowState.h" // ムービー中・決着後は教えない
 #include "Engine/Time/TimeService.h"       // 回避の補助スロー
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Time/Components/TimeState.h" // ドローンが実際に進んだ時間（速度を求めるため）
+#include "Engine/Time/Components/TimeState.h"                       // ドローンが実際に進んだ時間（速度を求めるため）
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // 視点の項目で、カメラの水平角を見る
 #include "Engine/Animation/Core/AnimStateMachine.h"                 // コンボ・ダッシュ攻撃の項目で、今のステートを見る
 
-#include "Game/Logics/Character/Player/Core/PlayerComponent.h" // ロックオンの項目で、ロックオン先を見る
-
-#include "Game/Core/GameEvents.h"                                         // ジャスト回避・命中のイベント
-#include "Game/Logics/AI/Battle/BattleContext.h"                          // プレイヤーとボスの EntityID
-#include "Game/Logics/AI/Drone/Components/DroneComponent.h"               // 突撃中のドローンを探す
-#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"   // ボスが攻撃の陣形を組んでいるか
+#include "Game/Core/GameEvents.h"                                       // ジャスト回避・命中・ダッシュ・ジャンプのイベント
+#include "Game/Logics/AI/Battle/BattleContext.h"                        // プレイヤーとボスの EntityID
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"             // 突撃中のドローンを探す
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h" // ボスが攻撃の陣形を組んでいるか
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"          // ロックオンの項目で、ロックオン先を見る
 
 #include <SimpleMath.h>
-#include <algorithm> // std::max
-#include <cmath>     // std::abs
+#include <cmath> // std::abs
 
 #ifdef ENABLE_EDITOR
 #include <imgui.h>
@@ -26,6 +24,27 @@
 
 using namespace CCL::ECS;
 using DirectX::SimpleMath::Vector3;
+
+namespace
+{
+    // --- 項目の達成に必要な量 ---
+    constexpr float kWaitBattleTime = 1.0f;  // 明転を待つ時間（秒・実時間）
+    constexpr float kMoveMeters     = 10.0f; // 移動: 水平に動く距離（m）
+    constexpr float kLookDegrees    = 90.0f; // 視点: カメラを回す角度（度）
+    constexpr int   kDashCount      = 2;     // ダッシュ: 出す回数
+    constexpr float kStrikeTimeout  = 5.0f;  // 斬り込み: 当てなくても次へ進む時間（秒・実時間）
+    constexpr float kRushReadTime   = 3.0f;  // ラッシュ: 説明を読ませる時間。当ててもこれがたつまで進まない（秒・実時間）
+
+    // --- 回避の補助スロー ---
+    constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
+    constexpr float kAssistWarnTime   = 0.5f;  // 予告のスローを始める、当たるまでの残り（秒・ゲーム時間）
+    constexpr float kAssistNowTime    = 0.07f; // 「今だ」に入る、当たるまでの残り（秒・ゲーム時間）
+    constexpr float kAssistMissRadius = 2.5f;  // 最も近づいたときにこの距離以下なら「当たる」とみなす（m）
+    constexpr float kAssistWarnScale  = 0.3f;  // 予告中の世界のタイムスケール
+    constexpr float kAssistNowScale   = 0.02f; // 「今だ」の間の世界のタイムスケール
+    constexpr float kAssistEaseTime   = 1.0f;  // SustainWorldSlow に渡すイーズ時間（秒）
+    constexpr float kAssistMaxTime    = 3.5f;  // 補助スローを掛け続ける上限（秒・実時間）
+} // namespace
 
 // ---------------------------------------------------------------------------
 // 入口
@@ -39,17 +58,18 @@ void TutorialSystem::Initialize()
 
     // イベントは発行元の System の中で届くので、印を立てるだけにして Update で読む
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &) {
-        m_justEvaded.store(true);
+        m_justEvaded = true;
     });
     ListenEvent<AttackHitConfirmedEvent>([this](const AttackHitConfirmedEvent &e) {
-        if (e.attackerID == m_playerID.load()) m_playerHits.fetch_add(1);
+        if (e.attackerID == m_playerID) ++m_playerHits;
     });
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
-        if (e.playerID == m_playerID.load()) m_dashed.fetch_add(1);
+        if (e.playerID == m_playerID) ++m_dashed;
     });
+
     // 跳ぶのはプレイヤーだけなので、誰が跳んだかは見ない
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
-        m_jumpedStage.store(e.jumpCount);
+        m_jumpedStage = e.jumpCount;
     });
 }
 
@@ -68,6 +88,20 @@ std::vector<TypeID> TutorialSystem::GetReadTypes() const
 
 void TutorialSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. 教えている途中かを確かめる
+    // 2. イベントの印を取り出す
+    // 3. ムービー中と決着後は教えない
+    // 4. 今の項目を達成したかを判定する
+    // 5. 達成したら次の項目へ進める
+
+    // 【備考】
+    //   何を見せるか（文言・順番）は TutorialSteps.h の表が持ち、
+    //   何をどれだけしたら達成か（量・時間切れ）は、このファイルの先頭の定数と下の switch が持つ。
+
+    // ---------------------------------------------------------
+    // 1. 教えている途中か
+    // ---------------------------------------------------------
     if (!m_world->HasResource<TutorialState>()) return;
     TutorialState &state = m_world->GetResource<TutorialState>();
 
@@ -79,15 +113,26 @@ void TutorialSystem::Update(float dt)
     if (!m_world->HasResource<BattleContext>()) return;
     const BattleContext &battle = m_world->GetResource<BattleContext>();
     if (!battle.HasPlayer()) return;
-    m_playerID.store(battle.playerEntity);
+    m_playerID = battle.playerEntity;
+
+    // ---------------------------------------------------------
+    // 2. イベントの印
+    // ---------------------------------------------------------
 
     // 印は毎フレーム取り出して消す。関係のない項目の間に立った印を、後の項目へ持ち越さないため
-    const bool justEvaded  = m_justEvaded.exchange(false);
-    const int  playerHits  = m_playerHits.exchange(0);
-    const int  dashed      = m_dashed.exchange(0);
-    const int  jumpedStage = m_jumpedStage.exchange(0); // このフレームに跳んだ段（跳んでいなければ 0）
+    const bool justEvaded  = m_justEvaded;
+    const int  playerHits  = m_playerHits;
+    const int  dashed      = m_dashed;
+    const int  jumpedStage = m_jumpedStage; // このフレームに跳んだ段（跳んでいなければ 0）
+    m_justEvaded  = false;
+    m_playerHits  = 0;
+    m_dashed      = 0;
+    m_jumpedStage = 0;
 
-    // --- ムービー中と決着後は教えない ---
+    // ---------------------------------------------------------
+    // 3. ムービー中と決着後
+    // ---------------------------------------------------------
+
     // ムービー中はプレイヤーが操作できず、決着後はもう戦わない。どちらもヒントを出しても押せない
     if (m_world->HasResource<GameFlowState>())
     {
@@ -95,16 +140,19 @@ void TutorialSystem::Update(float dt)
         if (flow.cinematic || flow.matchOver)
         {
             EndAssist();
-            m_droneMotion.clear(); // ムービーの間は記録しないので、明けた直後に古い位置との差を速度にしない
-            m_hasLastSample = false; // 移動・視点も同じく、明けた直後に古い位置・角度との差を足さない
+
+            // 止まっている間は記録しないので、明けた直後に古い位置・角度との差を足さないよう消しておく
+            m_droneMotion.clear();
+            m_hasLastSample = false;
             return;
         }
     }
 
+    // ---------------------------------------------------------
+    // 4. 達成の判定
+    // ---------------------------------------------------------
     m_stepTimer += dt;
 
-    // --- 達成したかを、項目の条件の種類ごとに判定する ---
-    // 何を教えるか（文言・順番・時間切れ）は TutorialSteps.h の表が持ち、ここは判定だけを持つ
     const TutorialStepDef &def     = kTutorialSteps[state.step];
     bool                   cleared = false;
 
@@ -113,26 +161,32 @@ void TutorialSystem::Update(float dt)
 
     switch (def.goal)
     {
-    // 時間切れだけで進む
+    // シーンに入ってすぐは明転の途中なので、時間だけで進める
     case TutorialGoal::Wait:
+        cleared = m_stepTimer >= kWaitBattleTime;
         break;
 
     case TutorialGoal::Move:
-        cleared = AccumulateMove(battle) >= def.amount;
+        cleared = AccumulateMove(battle) >= kMoveMeters;
         break;
 
     case TutorialGoal::Look:
-        cleared = AccumulateLook(battle.playerEntity) >= def.amount;
+        cleared = AccumulateLook(battle.playerEntity) >= kLookDegrees;
         break;
 
+    // 2回出させて、一瞬で大きく動けることと、出した後も走り続けることを体で覚えてもらう
     case TutorialGoal::Dash:
         m_dashCount += dashed;
-        cleared = static_cast<float>(m_dashCount) >= def.amount;
+        cleared = m_dashCount >= kDashCount;
         break;
 
     // 1段目の項目で2段ジャンプしても達成にする（1段目は跳んだ後なので、段の数で比べる）
     case TutorialGoal::Jump:
-        cleared = static_cast<float>(jumpedStage) >= def.amount;
+        cleared = jumpedStage >= 1;
+        break;
+
+    case TutorialGoal::DoubleJump:
+        cleared = jumpedStage >= 2;
         break;
 
     case TutorialGoal::LockOn:
@@ -140,17 +194,29 @@ void TutorialSystem::Update(float dt)
             cleared = player->lockOnTargetID != InvalidEntityID;
         break;
 
-    // amount が 0 の項目（章3の攻撃）は、1回当てれば達成にする
-    case TutorialGoal::AttackHit:
+    case TutorialGoal::Attack:
         m_hitCount += playerHits;
-        cleared = static_cast<float>(m_hitCount) >= std::max(def.amount, 1.0f);
+        cleared = m_hitCount >= 1;
         break;
 
-    case TutorialGoal::AnimState:
-        cleared = EnteredAnimState(battle.playerEntity, def.animState);
+    // コンボは Attack_1 → Attack_2 の2段（アニメグラフの AttackCombo）。2段目に入れば続けて押せている。
+    // この項目に入ってから1段目を出したコンボだけを数える。攻撃の項目から押し続けていると、
+    // 入った直後に2段目へ移って達成になり、ヒントが一瞬で消えてしまうため
+    case TutorialGoal::Combo:
+    {
+        const std::string entered = EnteredAnimState(battle.playerEntity);
+        if (entered == "Attack_1") m_comboStarted = true;
+        cleared = m_comboStarted && entered == "Attack_2";
+        break;
+    }
+
+    // ダッシュ攻撃は、ダッシュ中か走っている間に攻撃すると出る（PlayerAnimParamSyncSystem の DashAttackReady）
+    case TutorialGoal::DashAttack:
+        cleared = EnteredAnimState(battle.playerEntity) == "DashAttack";
         break;
 
-    // 陣形が組まれ始めてからヒントを出し、突撃が当たる直前に補助スローを掛ける
+    // 形を見る前に「回避」と言っても何を避けるのか分からないので、陣形が組まれ始めてからヒントを出す。
+    // ヒントを出した後は、突撃が当たる直前に補助スローを掛ける
     case TutorialGoal::JustEvade:
         cleared = justEvaded;
         if (cleared) break;
@@ -158,11 +224,28 @@ void TutorialSystem::Update(float dt)
         state.showHint = m_sawAttackShape;
         TickEvadeAssist(state, dt);
         break;
+
+    // 1回当てれば達成。当てなくても時間で進める
+    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）
+    case TutorialGoal::Strike:
+        m_hitCount += playerHits;
+        cleared = m_hitCount >= 1 || m_stepTimer >= kStrikeTimeout;
+        break;
+
+    // 1回当てて、かつ説明を読む時間がたったら達成（最後の項目なので、教え終える）。
+    // Strike の当たりはラッシュの途中で出るので、当てただけで進めると説明が一瞬で消えてしまう
+    case TutorialGoal::Rush:
+        m_hitCount += playerHits;
+        cleared = m_hitCount >= 1 && m_stepTimer >= kRushReadTime;
+        break;
     }
 
-    // 達成したか時間切れなら次へ。最後の項目を終えると step が kTutorialStepCount になり、教え終える
-    const bool timedOut = def.timeout > 0.0f && m_stepTimer >= def.timeout;
-    if (cleared || timedOut) Advance(state, static_cast<uint8_t>(state.step + 1));
+    // ---------------------------------------------------------
+    // 5. 次の項目へ
+    // ---------------------------------------------------------
+
+    // 最後の項目を終えると step が kTutorialStepCount になり、教え終える
+    if (cleared) Advance(state, static_cast<uint8_t>(state.step + 1));
 }
 
 // ---------------------------------------------------------------------------
@@ -176,53 +259,35 @@ void TutorialSystem::Advance(TutorialState &state, uint8_t next)
     m_sawAttackShape = false;
 
     // 動いた量・回した量・回数は項目ごとに 0 から数える
-    m_moveDistance  = 0.0f;
-    m_lookAngle     = 0.0f;
-    m_dashCount     = 0;
-    m_hitCount      = 0;
+    m_moveDistance = 0.0f;
+    m_lookAngle    = 0.0f;
+    m_dashCount    = 0;
+    m_hitCount     = 0;
+    m_comboStarted = false;
+
+    // 前のフレームの値も捨てる。項目に入った直後に、前の項目の頃の値との差を見て達成にしないため
     m_hasLastSample = false;
 
     EndAssist();
-    m_droneMotion.clear(); // 速度は連続したフレームの差で求める。間が空いた古い位置は使わない
+
+    // 速度は連続したフレームの差で求める。間が空いた古い位置は使わない
+    m_droneMotion.clear();
 }
 
 void TutorialSystem::Restart(TutorialState &state)
 {
-    // 項目を Done から戻すだけで、BossPhaseSystem がボスを序盤に入れ直す（教えている途中なら序盤へ入るため）
+    // 項目を最初に戻すだけで、BossPhaseSystem がボスを TutorialWait にする（最初の項目はボスを待たせるため）
     Advance(state, 0);
     m_assistCount = 0;
 }
 
-
-bool TutorialSystem::IsBossAttackFormationActive() const
-{
-    const BattleContext &battle = m_world->GetResource<BattleContext>();
-    if (!battle.HasBoss()) return false;
-
-    const auto *cmd = m_world->GetComponent<BossCommandComponent>(battle.bossEntity);
-    if (!cmd) return false;
-    if (cmd->droneAttackActive) return true;
-
-    // 待機の陣形（円陣）と「命令なし」以外は、どれも撃つために組む形
-    switch (cmd->requestFormation)
-    {
-    case DroneFormationType::None:
-    case DroneFormationType::LowOrbit:
-    case DroneFormationType::HighOrbit:
-        return false;
-    default:
-        return true;
-    }
-}
-
 // ---------------------------------------------------------------------------
-// 動いた量・回した量
+// 動いた量・回した量・出た攻撃
 // ---------------------------------------------------------------------------
 
 float TutorialSystem::AccumulateMove(const BattleContext &battle)
 {
-    // 足元の位置の、前のフレームからの水平の差を足していく。
-    // 高さは数えない（ジャンプで上下しただけで移動したことにしない）
+    // 高さは数えない。ジャンプで上下しただけで、移動したことにしないため
     const Vector3 pos(battle.playerPos);
     if (m_hasLastSample)
     {
@@ -245,11 +310,12 @@ float TutorialSystem::AccumulateLook(EntityID playerID)
     });
     if (!camera) return m_lookAngle;
 
-    // 前のフレームからの水平角の差を、向きに関係なく足していく。
-    // 差は -180〜180 度に直す。角度が 360 度を越えて回り込んだ瞬間に、大きく回したと数えないため
+    // 前のフレームからの差を、左右どちらに回したかに関係なく足していく
     if (m_hasLastSample)
     {
         float delta = camera->currentYaw - m_lastCameraYaw;
+
+        // 差は -180〜180 度に直す。角度が 360 度を越えて回り込んだ瞬間に、大きく回したと数えないため
         while (delta > 180.0f) delta -= 360.0f;
         while (delta < -180.0f) delta += 360.0f;
         m_lookAngle += std::abs(delta);
@@ -259,43 +325,80 @@ float TutorialSystem::AccumulateLook(EntityID playerID)
     return m_lookAngle;
 }
 
-bool TutorialSystem::EnteredAnimState(EntityID playerID, const char *stateName)
+std::string TutorialSystem::EnteredAnimState(EntityID playerID)
 {
     const auto *fsm = m_world->GetComponent<AnimStateMachineComponent>(playerID);
-    if (!fsm || !stateName) return false;
+    if (!fsm) return {};
 
     // ステートが切り替わった瞬間だけを見る。今そのステートにいるかで見ると、
-    // 前の項目の間に入ったステートのまま次の項目へ移ったとき（攻撃の3回目がコンボの2段目だった、など）、
+    // 前の項目の間に入ったステートのまま次の項目へ移ったとき（攻撃を当てたのがダッシュ攻撃だった、など）、
     // 何もしていないのに達成してしまう
     const uint32_t current = fsm->currentStateHash;
     const bool     changed = m_hasLastSample && current != m_lastAnimState;
     m_lastAnimState        = current;
     m_hasLastSample        = true;
-    if (!changed) return false;
+    if (!changed) return {};
 
-    // ステートは名前で比べる。表に書くのはアニメグラフ上の名前なので、ハッシュの作り方に頼らない
+    // 名前で返す。呼ぶ側はアニメグラフ上の名前で比べるので、ハッシュの作り方に頼らない
     const AnimState *state = FindStateRecursive(fsm->internalGraph, current);
-    return state && state->sequenceName == stateName;
+    return state ? state->sequenceName : std::string{};
 }
 
 // ---------------------------------------------------------------------------
-// 回避の補助スロー
+// ジャスト回避の項目（ヒントの場面と補助スロー）
 // ---------------------------------------------------------------------------
+
+bool TutorialSystem::IsBossAttackFormationActive() const
+{
+    const BattleContext &battle = m_world->GetResource<BattleContext>();
+    if (!battle.HasBoss()) return false;
+
+    const auto *cmd = m_world->GetComponent<BossCommandComponent>(battle.bossEntity);
+    if (!cmd) return false;
+    if (cmd->droneAttackActive) return true;
+
+    // 待機の陣形（円陣）と「命令なし」以外は、どれも撃つために組む形
+    switch (cmd->requestFormation)
+    {
+    case DroneFormationType::None:
+    case DroneFormationType::LowOrbit:
+    case DroneFormationType::HighOrbit:
+        return false;
+    default:
+        return true;
+    }
+}
 
 void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
 {
+    // 処理フロー:
+    // 1. 突撃中のドローンの動きを記録し、当たるまでの残りを求める
+    // 2. 補助を始めるかを決める
+    // 3. 補助を終えるかを決める
+    // 4. スローの強さと「今だ！」の表示を決める
+
     const BattleContext &battle = m_world->GetResource<BattleContext>();
-    // 回避ダッシュは作り直し中。復活したら PlayerDashComponent から「自分で避けようとしているか」を戻す。
+
+    // TODO(2026-10-11): PlayerDashComponent.isDashing から「自分で避けようとしているか」を読む。
+    //   今は常に false なので、補助中にダッシュを押しても押したと分からず、
+    //   失敗したときは「今だ！」とほぼ止めたスローが、突撃が通り過ぎるか時間切れまで続く
     const bool dashing = false;
     (void)battle;
+
+    // ---------------------------------------------------------
+    // 1. ドローンの動き
+    // ---------------------------------------------------------
 
     // 速度は前のフレームとの差で求めるので、補助中かどうかに関係なく毎フレーム記録する
     SampleDroneMotion();
     const float timeToStrike = TimeToStrike(); // 負なら当たる機体が無い
 
-    // --- 補助を始めるか ---
+    // ---------------------------------------------------------
+    // 2. 補助を始めるか
+    // ---------------------------------------------------------
+
     // 当たるまでの残りが kAssistWarnTime 以下になったら始める。
-    // 直前（ジャスト回避の受付と同じ 0.07 秒）で始めると、スローが効く前に当たってしまう。
+    // 直前（「今だ」と同じ 0.07 秒）で始めると、スローが効く前に当たってしまう。
     // スローは次のフレームから効き、しかも 0.07 秒は等速なら4フレームしかないため
     if (!m_assistRunning)
     {
@@ -309,31 +412,52 @@ void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
         m_assistDashed  = false;
     }
 
-    // --- 補助中: 押すまで、または押したダッシュが終わるまでスローを保つ ---
+    // ---------------------------------------------------------
+    // 3. 補助を終えるか
+    // ---------------------------------------------------------
     m_assistTimer -= realDt;
     if (dashing) m_assistDashed = true;
 
-    // ダッシュを始めたら、そのダッシュが終わるまでは続ける。途中で等速に戻すと、
-    // 受付時間の間にドローンが届かずジャスト回避が成立しない
-    const bool dashOver   = m_assistDashed && !dashing;
-    const bool threatGone = !m_assistDashed && timeToStrike < 0.0f; // 押さずに当たった・外れた
+    // ダッシュを始めたら、そのダッシュが終わるまでは続ける。
+    // 途中で等速に戻すと、受付時間の間にドローンが届かずジャスト回避が成立しない
+    const bool dashOver = m_assistDashed && !dashing;
+
+    // 押さずに当たった・外れたら、もう助ける相手がいない
+    const bool threatGone = !m_assistDashed && timeToStrike < 0.0f;
+
     if (m_assistTimer <= 0.0f || dashOver || threatGone)
     {
         EndAssist();
         return;
     }
 
-    // 「今だ」はジャスト回避の受付より短い残りになってから。一度入ったら、押したダッシュが終わるまで保つ。
-    // 予告の間に早く押した場合は予告の速さのままにする（ほぼ止めると、早押しのダッシュが数秒かかる）
+    // ---------------------------------------------------------
+    // 4. スローの強さと表示
+    // ---------------------------------------------------------
+
+    // 「今だ」は、当たるまでの残りがジャスト回避の受付（0.08 秒）より短い kAssistNowTime になってから入る。
+    // 受付より短い区間なので、この間にいつ押しても成立する。一度入ったら、押したダッシュが終わるまで保つ
     if (!m_assistDashed && timeToStrike >= 0.0f && timeToStrike <= kAssistNowTime) m_assistNow = true;
-    Time::SustainWorldSlow(*m_world, m_assistNow ? kAssistNowScale : kAssistWarnScale, kAssistEaseTime);
-    state.assistActive = m_assistNow && !m_assistDashed; // 押したら「今だ！」は消す
+
+    // 予告（kAssistWarnScale）は 0.5 秒ぶんの接近を実時間で約 1.5 秒に延ばし、迫ってくるのを見せる。
+    // 「今だ」（kAssistNowScale）は 0.07 秒ぶんを実時間で数秒に延ばし、落ち着いて押せるようにする。
+    // 予告の間に早く押した場合は予告の速さのままにする（ほぼ止めると、早押しのダッシュが数秒かかる）
+    const float scale = m_assistNow ? kAssistNowScale : kAssistWarnScale;
+
+    // 毎フレーム要求し直すと、1フレームぶんイーズで戻った値で効く。
+    // イーズ時間を長くするほど指定の倍率に近づく（kAssistEaseTime = 1 秒で、0.02 が約 0.05 になる）
+    Time::SustainWorldSlow(*m_world, scale, kAssistEaseTime);
+
+    // 押したら「今だ！」は消す
+    state.assistActive = m_assistNow && !m_assistDashed;
 }
 
 void TutorialSystem::EndAssist()
 {
     // 補助を掛けていないときは触らない。ここは項目の切り替えやムービー中にも呼ばれ、
     // そのときに全体スローを消すと、撃破スローなど他の演出のスローまで止めてしまう
+    //
+    // 掛けていたときは、要求をやめるだけでなくすぐに消す。要求をやめるだけだと、スローがイーズで長く尾を引く
     if (m_assistRunning) Time::ClearWorldSlow(*m_world);
     m_assistRunning = false;
     m_assistNow     = false;
@@ -343,19 +467,21 @@ void TutorialSystem::EndAssist()
 
 void TutorialSystem::SampleDroneMotion()
 {
-    // 突撃をやめた機体（と消えた機体）の記録を消すため、このフレームに見た機体へ印を付ける
+    // 突撃をやめた機体（と消えた機体）の記録を消すため、このフレームに見た機体だけで作り直す
     std::unordered_map<EntityID, DroneMotion> next;
 
     m_world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) {
-        // ジャスト回避の対象になる状態だけを見る（PlayerJustEvadeSystem::IsDroneHostile と同じ条件）
+        // ジャスト回避の対象になる攻撃状態だけを見る
         const auto *drone = m_world->GetComponent<DroneComponent>(id);
         if (drone->currentState != DroneState::FireCharge) return;
 
+        // 速度は前のフレームとの差で求めるので、毎フレーム記録する
         const Vector3 pos(m_world->GetComponent<TransformComponent>(id)->GetWorldPosition());
         DroneMotion   motion;
         motion.position = pos;
 
         // --- 前のフレームとの差から速度を求める ---
+
         // 割るのは、このフレームにその機体が実際に進んだ時間（スロー・ヒットストップ込み）。
         // 実時間で割ると、補助スローの最中は速度がほぼ 0 に見え、「当たる直前」と判定できなくなる
         auto it = m_droneMotion.find(id);
@@ -425,12 +551,10 @@ void TutorialSystem::OnGui()
 
     // --- 今の状態 ---
     const TutorialStepDef *def = state.Current();
-    ImGui::Text("章       : %s", def ? kTutorialChapterNames[static_cast<size_t>(def->chapter)] : "-");
     ImGui::Text("項目     : %d / %d  %s", state.step + 1, kTutorialStepCount, def ? def->name : "Done");
     ImGui::Text("経過     : %.1f 秒", m_stepTimer);
-    if (def && def->amount > 0.0f)
-        ImGui::Text("進み具合 : 移動 %.1f m / 視点 %.0f 度 / ダッシュ %d 回 / 命中 %d 回（必要な量 %.1f）",
-                    m_moveDistance, m_lookAngle, m_dashCount, m_hitCount, def->amount);
+    ImGui::Text("進み具合 : 移動 %.1f m / 視点 %.0f 度 / ダッシュ %d 回 / 命中 %d 回",
+                m_moveDistance, m_lookAngle, m_dashCount, m_hitCount);
     ImGui::Text("補助     : %d / %d 回%s", m_assistCount, kMaxAssists,
                 m_assistRunning ? (m_assistNow ? "（今だ）" : "（予告）") : "");
 
@@ -445,7 +569,8 @@ void TutorialSystem::OnGui()
     }
 
     // --- 操作 ---
-    // ボタンはロジックの Update と同じフレームに混ざらないよう、状態を書き換えるだけにする
+
+    // ボタンは状態を書き換えるだけにする。項目の判定と UI の更新は、次の Update と各 System に任せる
     ImGui::Separator();
     if (ImGui::Button("最初から開始")) Restart(state);
     ImGui::SameLine();

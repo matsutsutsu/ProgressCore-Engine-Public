@@ -52,9 +52,9 @@
                 },
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
-                    "introAssetPath": "Assets/BehaviorTree/BossTutorial.json",
                     "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
-                    "phase2HealthThreshold": 50.0
+                    "phase2HealthThreshold": 50.0,
+                    "tutorialAssetPath": "Assets/BehaviorTree/BossTutorial.json"
                 },
                 "Character Movement": {
                     "currentVelocity": [

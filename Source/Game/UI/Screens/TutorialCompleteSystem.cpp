@@ -16,6 +16,7 @@ using namespace CCL::ECS;
 
 namespace
 {
+    constexpr float kShowDelay = 1.2f;  // 教え終えてから画面を出すまでの待ち（秒・実時間）
     constexpr float kSubStart  = 0.35f; // 線の下の1行を打ち始めるまで（秒。画面を出してから）
     constexpr float kMenuDelay = 0.6f;  // ボタンが出るまで（秒。画面を出してから）
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
@@ -77,7 +78,7 @@ void TutorialCompleteSystem::Update(float dt)
     // 1. やり直し
     // ---------------------------------------------------------
 
-    // デバッグ窓の「最初から開始」で、項目が Done から戻った。
+    // デバッグ窓の「最初から開始」で、教え終えた状態から戻った。
     if (!state.IsFinished())
     {
         if (m_done)
@@ -91,7 +92,8 @@ void TutorialCompleteSystem::Update(float dt)
     // 2. 教え終えた瞬間
     // ---------------------------------------------------------
 
-    // 画面を出す前に止める。待っている間に動けると、ボスが本来の BT へ戻って本気で攻めてくる
+    // 画面を出す前に止める。待っている間も操作できると、完了の画面の裏で遊べてしまう
+    // （ボスは教え終えた時点で BossPhaseSystem が待機させる）
     if (!m_done)
     {
         m_done      = true;
@@ -107,6 +109,8 @@ void TutorialCompleteSystem::Update(float dt)
     {
         return;
     }
+
+    // すぐには出さず、最後に当てた攻撃の手応えを見せてから出す
 
     // dt はスローの影響を受けない実時間。補助スローが残っていても、同じ秒数で出る
     m_showDelay -= dt;

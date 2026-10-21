@@ -47,7 +47,8 @@ void TutorialScene::RegisterSystems()
 
     // --- チュートリアルだけで使う System（全体登録していないのでここで登録する） ---
 
-    // HP と切り払いの状態が確定した後に見る。TutorialState のリソースはこの System の Initialize が作る
+    // ヒントを出す TutorialHintHudSystem と同じステージに置き、同じフレームのうちに映させる。
+    // TutorialState のリソースはこの System の Initialize が作る
     sysManager.RegisterSystem<TutorialSystem>(Priority::LogicStage::L06_HudSync);
 
     // 他の HUD と同じステージ。TutorialSystem の後に走る（GetRunAfter）

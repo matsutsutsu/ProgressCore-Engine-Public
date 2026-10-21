@@ -250,7 +250,7 @@
                                 0.800000011920929
                             ],
                             "gravity": 1.0,
-                            "intensity": 1.0,
+                            "intensity": 3.0,
                             "lifespan": [
                                 0.8999999761581421,
                                 0.8999999761581421
@@ -273,7 +273,7 @@
                             "noiseStrength": 2.0,
                             "orientMode": 0,
                             "particleType": 1,
-                            "renderMode": 0,
+                            "renderMode": 1,
                             "scale": [
                                 1.0,
                                 1.0
