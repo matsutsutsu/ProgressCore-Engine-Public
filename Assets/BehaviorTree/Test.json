@@ -1,0 +1,159 @@
+{
+    "assetId": 1,
+    "editor_links": [
+        {
+            "endPin": 5,
+            "id": 7,
+            "startPin": 3
+        },
+        {
+            "endPin": 9,
+            "id": 11,
+            "startPin": 6
+        },
+        {
+            "endPin": 15,
+            "id": 16,
+            "startPin": 10
+        },
+        {
+            "endPin": 18,
+            "id": 21,
+            "startPin": 10
+        },
+        {
+            "endPin": 20,
+            "id": 22,
+            "startPin": 10
+        },
+        {
+            "endPin": 24,
+            "id": 25,
+            "startPin": 10
+        }
+    ],
+    "editor_nodes": [
+        {
+            "actionId": 0,
+            "id": 2,
+            "inputPinId": 0,
+            "name": "ROOT",
+            "outputPinId": 3,
+            "posX": 0.0,
+            "posY": 0.0,
+            "type": 0
+        },
+        {
+            "actionId": 0,
+            "id": 4,
+            "inputPinId": 5,
+            "name": "セレクター (Selector)",
+            "outputPinId": 6,
+            "posX": -19.0,
+            "posY": 126.0,
+            "type": 1
+        },
+        {
+            "actionId": 0,
+            "id": 8,
+            "inputPinId": 9,
+            "name": "シーケンス (Sequence)",
+            "outputPinId": 10,
+            "posX": -41.0,
+            "posY": 302.0,
+            "type": 2
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionId": 128,
+            "id": 14,
+            "inputPinId": 15,
+            "outputPinId": 0,
+            "param": 24.0,
+            "posX": -303.0,
+            "posY": 510.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 17,
+            "inputPinId": 18,
+            "outputPinId": 0,
+            "param": 2.0,
+            "posX": -90.0,
+            "posY": 510.0,
+            "type": 4
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionId": 100,
+            "id": 19,
+            "inputPinId": 20,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 97.0,
+            "posY": 510.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 23,
+            "inputPinId": 24,
+            "outputPinId": 0,
+            "param": 3.0,
+            "posX": 283.0,
+            "posY": 510.0,
+            "type": 4
+        }
+    ],
+    "last_id_counter": 25,
+    "nodes": [
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                1
+            ],
+            "type": "Selector"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                2,
+                3,
+                4,
+                5
+            ],
+            "type": "Sequence"
+        },
+        {
+            "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
+            "children": [],
+            "param": 24.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 2.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneStrike",
+            "actionOrConditionId": 100,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 3.0,
+            "type": "Action"
+        }
+    ]
+}

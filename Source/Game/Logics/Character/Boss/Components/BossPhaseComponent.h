@@ -14,6 +14,10 @@
 //   形態の移行: Combat --HP<=しきい値--> Transition --演出時間の経過--> Combat2
 //   Transition の間は BT を止め、無敵にし、ドローンを頭上へ退避させる。攻撃が途切れて
 //   仕切り直す時間ができ、形態が変わったことが画面で分かる。
+//   TutorialWait と TutorialAttack はチュートリアルシーンだけ。最初のフレームで Combat から入り、本来の戦いへは戻らない。
+//   教えている項目の bossAttacks（TutorialSteps.h）に合わせて行き来し、教え終えたら TutorialWait で止まる。
+//     TutorialWait  : bossAttacks が false の項目。BT を止め、攻撃を出さずにドローンを頭上で回す（移動や攻撃を覚える間は撃たない）
+//     TutorialAttack: bossAttacks が true の項目。予兆の長い攻撃だけを出す BT（tutorialAssetPath）に差し替え、手加減して攻める
 // ===========================================================================
 #include <cstdint>
 #include <cstddef>
@@ -27,6 +31,8 @@ enum class BossPhase : uint8_t
     Dead,       // 死亡。終端状態。ここからは抜けない
     Transition, // 形態移行の演出中。BT を止め、無敵になり、ドローンを頭上へ退避させる
     Combat2,    // 第2形態。BT を phase2AssetPath のものへ差し替えて戦う
+    TutorialAttack, // チュートリアルでボスに攻撃させる項目。BT を tutorialAssetPath のものへ差し替え、手加減して戦う
+    TutorialWait,   // チュートリアルでボスを待たせる項目と、教え終えた後。BT を止め、攻撃を出さずに待つ
 };
 
 // 表示名。名前の二重管理を避けるため enum の隣に置く。
@@ -35,6 +41,8 @@ inline constexpr const char *kBossPhaseNames[] = {
     "Dead",
     "Transition",
     "Combat2",
+    "TutorialAttack",
+    "TutorialWait",
 };
 inline constexpr size_t kBossPhaseCount = sizeof(kBossPhaseNames) / sizeof(kBossPhaseNames[0]);
 
@@ -51,6 +59,10 @@ struct BossPhaseComponent
 
     // 第2形態へ移行する HP の割合（0〜100）。
     float phase2HealthThreshold = 50.0f;
+
+    // チュートリアルでボスに攻撃させる項目（TutorialAttack）で使う BT のパス。
+    // 空ならチュートリアルシーンでも TutorialWait / TutorialAttack に入らず、最初から本来の BT で戦う。
+    std::string tutorialAssetPath;
 
     // 現在の形態。書くのは BossPhaseSystem だけ。
     BossPhase phase = BossPhase::Combat;

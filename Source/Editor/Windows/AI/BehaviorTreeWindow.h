@@ -43,6 +43,8 @@ namespace ax
 
 struct BehaviorTreeComponent;
 
+namespace CCL::AI::Formation { class FormationRegistry; }
+
 // エディタ上のノードの種類。
 //   editor_nodes は "type" を数値で保存するので、列挙子の位置を動かすと保存済みのノードが
 //   別の種類になる。追加は必ず末尾へ。
@@ -210,8 +212,8 @@ private:
     // 条件IDの表示名
     static const char *GetConditionDisplayName(ActionID id);
 
-    // 「ドローン：データの技」の表示名。枠番号(param)から技の名前を引く
-    static const char *GetDroneFormationLabel(float slotParam);
+    // 「ドローン：データの技」の表示名。枠番号(param)から技の名前を引く（m_formations を見る）
+    const char *GetDroneFormationLabel(float slotParam) const;
 
     // 種類ごとの見出し色。キャンバスとアウトラインで揃える
     static ImColor HeaderColorOf(EditorBTNodeType type);
@@ -227,7 +229,7 @@ private:
     static bool UsesCustomName(EditorBTNodeType type);
 
     // 画面に出す名前。まとまりは付けた名前、それ以外は選んだ内容＋パラメータから作る
-    static std::string GetDisplayName(const EditorBTNode &node);
+    std::string GetDisplayName(const EditorBTNode &node) const;
 
     // param を「長さ 1.5秒」の形にする。label は登録表の「長さ [秒]」形式（[単位] は省略可）
     static std::string FormatParam(const char *label, float value);
@@ -414,6 +416,9 @@ private:
 
     // 貼り付けたノード。まだ一度も描かれていないノードは選択できないので、描いた後のフレームで選ぶ
     std::vector<uint32_t> m_pendingSelectIds;
+
+    // 今の World の陣形レジストリ。データの技の名前を引くのに使う。DrawContents の頭で毎フレーム引き直す。
+    const CCL::AI::Formation::FormationRegistry *m_formations = nullptr;
 
     // 保存していない変更があるか。RecordStateForUndo で立て、保存・読込で下ろす。
     //   ノードを「動かしただけ」は RecordStateForUndo を通らないので検出しない。誤検出で毎回

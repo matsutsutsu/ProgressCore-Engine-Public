@@ -22,10 +22,7 @@ class UIImageCollectSystem : public CCL::ECS::IfSystem<UIImageCollectSystem,
                                                        CCL::ECS::Read<UIImageComponent>>
 {
 public:
-    UIImageCollectSystem()
-        : IfSystem("UIImageCollectSystem")
-    {
-    }
+    UIImageCollectSystem() : IfSystem("UIImageCollectSystem") {}
 
     void Update(float dt) override;
 };

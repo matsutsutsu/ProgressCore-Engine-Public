@@ -18,17 +18,11 @@ class TransformInterpolationSystem : public CCL::ECS::IfSystem<TransformInterpol
                                                                CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TransformInterpolationSystem()
-        : IfSystem("TransformInterpolationSystem")
-    {
-    }
+    TransformInterpolationSystem() : IfSystem("TransformInterpolationSystem") {}
     virtual ~TransformInterpolationSystem() = default;
 
     void Update(float dt) override;
 
 private:
-    // 非ルートの解決で使う、描画用ワールド行列の作業領域（並びは TransformHierarchyCache と同じ）。
-    //   キャッシュ側の作業領域（WorldAt/StoreWorld）はロジック用の値が入っているので、
-    //   汚さないよう描画用は別に持つ。
-    std::vector<DirectX::XMFLOAT4X4> m_renderWorldDense;
+    std::vector<DirectX::XMFLOAT4X4> m_renderWorldDense; // 非ルートの描画用ワールド行列の作業領域（添字は TransformHierarchyCache の並び順）
 };

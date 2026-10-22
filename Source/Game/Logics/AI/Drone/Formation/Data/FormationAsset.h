@@ -43,10 +43,11 @@ namespace CCL::AI::Formation
     };
 
     // 格子を埋めていく向き。行数(rows)とは独立に選ぶ。
+    // 名前は「先に進む番号」を指す（ColumnFirst＝列の番号が先に進む＝横へ並ぶ）。
     enum class AssetFillOrder : uint8_t
     {
-        ColumnFirst, // 1列を縦に埋めてから次の列へ
-        RowFirst,    // 1行を横に埋めてから次の行へ
+        ColumnFirst, // 横へ1行を埋めてから上の行へ
+        RowFirst,    // 縦へ1列を埋めてから隣の列へ
     };
 
     // 形にかける動き1枚の種類。
@@ -150,7 +151,7 @@ namespace CCL::AI::Formation
 
         // Shiver 専用
         // frequency は sin の角速度としてそのまま使う（2π を掛けない）ので、単位は [rad/s]。
-        // エディタの表示は「[Hz]」のままなので、10 は約 1.6 回/秒になる。
+        // 10 なら約 1.6 往復/秒。
         float frequency     = 10.0f; // 震えの速さ [rad/s]
         float leadThreshold = 0.18f; // ずらし順がこれ以下の席（先に動く側）だけを震わせる。1 なら全席
     };

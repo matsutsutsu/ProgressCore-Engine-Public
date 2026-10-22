@@ -5,10 +5,6 @@
 #include <algorithm>
 #include <imgui.h>
 
-TimeScaleSystem::TimeScaleSystem() : IfSystem("TimeScaleSystem")
-{
-}
-
 void TimeScaleSystem::Update(float rawDt)
 {
     if (!m_world || !m_world->HasResource<TimeContext>()) return;
@@ -80,7 +76,8 @@ void TimeScaleSystem::Update(float rawDt)
             else
             {
                 // 停止中はバフ等の倍率を無視して上書きし、ここで終える
-                time.localDt = rawDt * time.freezeScale;
+                time.scale   = time.freezeScale;
+                time.localDt = rawDt * time.scale;
                 return;
             }
         }
@@ -90,6 +87,7 @@ void TimeScaleSystem::Update(float rawDt)
 
         // 全倍率を掛けて実効 dt を確定する
         float finalScale = ctx.globalScale * groupScale * time.buffScale * time.cinematicScale;
+        time.scale       = finalScale; // Render 側の System が「描画フレームの dt × scale」で使う
         time.localDt     = rawDt * finalScale;
     });
 }

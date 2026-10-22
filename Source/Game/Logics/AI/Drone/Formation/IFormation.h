@@ -5,6 +5,7 @@
 // 責務:
 //   - 1機分の持ち場を計算する Calculate を定める
 //   - 攻撃の寿命（ChargeLifecycle）・当たり方（FormationCombat）・予告の有無を陣形ごとに返す
+//   - 突撃の始め方（OnChargeBegin）と切り上げ方（IsChargeOver）を陣形ごとに決める
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
 // 備考:
@@ -18,9 +19,9 @@
 // ===========================================================================
 #include "SimpleMath.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Motion/ChargeMotions.h" // 突撃の始め方の既定（BeginStraightCharge）
 
-// 小隊陣形だけが使う。前方宣言で足りるので、既存の陣形は小隊の実装に引きずられない。
-struct SquadRegistry;
+namespace CCL::ECS { class World; }
 
 namespace CCL::AI::Formation
 {
@@ -47,9 +48,6 @@ namespace CCL::AI::Formation
         // 固定するのは DroneFormationSystem。信号の立ち上がりに1回だけ書き、信号が下りたら解除する。
         DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ;
         bool                         aimLocked = false;
-
-        // 全小隊の状態（小隊陣形のみ使用。未登録なら nullptr）。
-        const ::SquadRegistry *squads = nullptr;
 
         /**
          * @brief 狙う向き（水平・正規化済み）を返す。攻撃陣形は playerPos を直接見ず必ずこれを使う。
@@ -78,13 +76,11 @@ namespace CCL::AI::Formation
     // 技1つぶんの「当たり方」。形とは別に、陣形ごとに変えられるように持つ。
     // 全陣形で共通の定数にすると「大技は痛いが避けやすい／牽制は軽いが避けにくい」
     // という対比が作れない。
+    //
+    // 接触半径はここに持たない。実際の大きさはプレハブの Jolt Sphere Collider（Drone.json の radius）が決める。
+    // 技ごとに変えたくなったら、ここに足して DroneHitSystem から JoltSphereColliderComponent へ書く配線を作る。
     struct FormationCombat
     {
-        // 現在このフィールドは誰も読んでいない。
-        // 実際の接触半径はプレハブの Jolt Sphere Collider が持つ（Drone.json の radius）。
-        //
-        // 技ごとに変えたいなら、DroneHitSystem から JoltSphereColliderComponent へ書く配線が要る。
-        float hitRadius       = 2.5f;  // ドローンとプレイヤーの接触半径 [m]
         float damage          = 8.0f;  // 1ヒットの基礎ダメージ
         float knockback       = 12.0f; // ノックバック強さ（0で無効）
         float hitStopDuration = 0.05f; // 命中時のヒットストップ [秒]
@@ -100,12 +96,63 @@ namespace CCL::AI::Formation
     {
         virtual ~IFormation() = default;
 
+        /**
+         * @brief フレームの最初に1回、全機の Calculate より前に呼ぶ。DroneFormationSystem が呼ぶ。
+         *
+         * 陣形が自分だけで使うデータ（小隊の状態など）を、World から自分で取りに行く口。
+         * 全陣形に共通の情報は FormationContext で渡すので、ほとんどの陣形は何もしない。
+         *
+         * @param world ドローンが居る World。
+         */
+        virtual void BeginFrame(CCL::ECS::World &world) {}
+
         // 1機分の目標座標・視線を計算して drone に書き込む。
         virtual void Calculate(DroneComponent         &drone,
                                const FormationContext &ctx) = 0;
 
         // 攻撃を誰が終わらせるか。DroneCommandSystem がフレームに1回だけ引く。
         virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
+
+        /**
+         * @brief 突撃（FireCharge）へ入った瞬間に1回だけ行う準備。DroneBrainSystem が呼ぶ。
+         *
+         * タメの長さや撃つ方向の決め方は技ごとに違うので、技の側に持たせる。
+         *
+         * 既定は直進の突撃の始め方（Motion::BeginStraightCharge）。
+         * 陣形追従の技（縦割り・小隊など）も既定のままでよい。同じフレームの Calculate が
+         * 移動方式と向きを書き直し、追従の動き方はタメを使わないため。
+         *
+         * 並列ループ（ForEachParallel）から呼ぶので、陣形の側の状態は書き換えない（const）。
+         *
+         * @param drone 突撃を始める機体。
+         * @param info  プレイヤーの位置など、始めるときに要る情報。
+         */
+        virtual void OnChargeBegin(DroneComponent &drone, const Motion::ChargeBeginInfo &info) const
+        {
+            Motion::BeginStraightCharge(drone, info);
+        }
+
+        /**
+         * @brief 個別寿命（Individual）の突撃を、この機が切り上げるかを返す。DroneBrainSystem が聞く。
+         *
+         * 終わり方の数値は技ごとに違う（届かせたい距離は発射位置と間合いで決まる）ので、技の側に持たせる。
+         * Broadcast の技では呼ばれない。
+         *
+         * @param flownDistance 飛び出してから飛んだ距離 [m]。発射待ちとタメの間は数えない。
+         * @param flownTime     飛び出してからの経過時間 [秒]。
+         * @return 切り上げて離脱へ移るなら true。
+         */
+        virtual bool IsChargeOver(float flownDistance, float flownTime) const { return false; }
+
+        /**
+         * @brief この陣形から別の陣形へ切り替わる機の後始末。DroneCommandSystem が切り替えの瞬間に1回呼ぶ。
+         *
+         * 技が自分だけで使う値（弾幕の発射待ち fireDelay など）を、技が自分で片付ける口。
+         * 他の陣形に「前の技の値を戻す」処理を書かせないため。
+         *
+         * @param drone 切り替わる機体。
+         */
+        virtual void OnExit(DroneComponent &drone) const {}
 
         // 当たり方と痛さ。DroneHitSystem が引く。
         virtual FormationCombat GetCombat() const { return {}; }

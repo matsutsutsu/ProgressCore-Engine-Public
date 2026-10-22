@@ -29,10 +29,7 @@ class CameraTargetBindSystem
                                 CCL::ECS::Read<VirtualCamera>>
 {
 public:
-    CameraTargetBindSystem()
-        : IfSystem("CameraTargetBindSystem")
-    {
-    }
+    CameraTargetBindSystem() : IfSystem("CameraTargetBindSystem") {}
     virtual ~CameraTargetBindSystem() = default;
 
     void Update(float dt) override;

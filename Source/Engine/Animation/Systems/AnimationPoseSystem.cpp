@@ -15,10 +15,7 @@
 
 using CCL::Anim::PinRootMotionNode;
 
-AnimationPoseSystem::AnimationPoseSystem()
-    : IfSystem("AnimationPoseSystem")
-{
-}
+AnimationPoseSystem::AnimationPoseSystem() : IfSystem("AnimationPoseSystem") {}
 
 void AnimationPoseSystem::Update(float dt)
 {

@@ -21,7 +21,7 @@
 class AudioEngineTickSystem : public CCL::ECS::SystemBase
 {
 public:
-    AudioEngineTickSystem();
+    AudioEngineTickSystem() : SystemBase("AudioEngineTickSystem") {}
     virtual ~AudioEngineTickSystem() = default;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override { return {}; }

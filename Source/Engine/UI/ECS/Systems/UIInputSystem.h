@@ -26,10 +26,7 @@ class UIInputSystem : public CCL::ECS::IfSystem<UIInputSystem,
                                                 CCL::ECS::Write<UIInteractableComponent>>
 {
 public:
-    UIInputSystem()
-        : IfSystem("UIInputSystem")
-    {
-    }
+    UIInputSystem() : IfSystem("UIInputSystem") {}
 
     /**
      * @brief UITransform を書く 3 つの System より前に走らせる。

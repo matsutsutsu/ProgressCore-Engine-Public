@@ -99,10 +99,6 @@ namespace
     }
 }
 
-BehaviorTreeSystem::BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem")
-{
-}
-
 // ---------------------------------------------------------------------------
 // 初期化と資産の同期
 // ---------------------------------------------------------------------------
@@ -122,7 +118,7 @@ void BehaviorTreeSystem::Initialize()
 
 void BehaviorTreeSystem::VerifyRegistrations()
 {
-    // 辞書（ActionRegistry.h）と実装のレジストリを突き合わせる。辞書に載っていれば
+    // 辞書（BTActionIds.h）と実装のレジストリを突き合わせる。辞書に載っていれば
     // エディタの候補には出るが、登録関数に書き忘れると評価側が何も言わずに Failure を
     // 返す。「選べるのに置いても何も起きない技」になり、原因を見つけにくい。
     const auto &reg = BTActionRegistry::Instance();
@@ -798,7 +794,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 
 namespace
 {
-    // ActionRegistry.h の辞書から表示名を逆引きする。見つからなければ nullptr。
+    // BTActionIds.h の辞書から表示名を逆引きする。見つからなければ nullptr。
     const char *LookupEntryName(const ActionEntry *table, int count, ActionID id)
     {
         for (int i = 0; i < count; ++i)
@@ -1048,8 +1044,6 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
 
 void BehaviorTreeSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Behavior Tree (Brain Debugger)")) return;
-
     auto view = m_world->View<BehaviorTreeComponent>();
     for (auto e : view)
     {

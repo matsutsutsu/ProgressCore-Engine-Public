@@ -6,8 +6,6 @@
 
 using namespace CCL::ECS;
 
-PrimitiveRenderSystem::PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem") {}
-
 void PrimitiveRenderSystem::Update(float dt)
 {
     if (!m_world->HasResource<PrimitiveRenderer *>()) return;

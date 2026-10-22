@@ -20,7 +20,7 @@ class PrimitiveRenderSystem : public CCL::ECS::IfSystem<PrimitiveRenderSystem,
                                                         CCL::ECS::Read<VisibilityComponent>>
 {
 public:
-    PrimitiveRenderSystem();
+    PrimitiveRenderSystem() : IfSystem("PrimitiveRenderSystem") {}
     virtual ~PrimitiveRenderSystem() = default;
 
     void Update(float dt) override;

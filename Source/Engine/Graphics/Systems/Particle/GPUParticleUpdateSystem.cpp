@@ -161,21 +161,33 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->CSSetShaderResources(0, 16, nullSRVs);
 
     // 世界の時計が止まっている間は、シミュレーションを止める。
-    //   この System は描画ステージなのでポーズ中（UpdatePaused）も走るが、localDt を作る
-    //   TimeScaleSystem はロジックなので止まっていて、localDt は古い値のまま残る。
+    //   この System は描画ステージなのでポーズ中（UpdatePaused）も走るが、倍率（scale）を作る
+    //   TimeScaleSystem はロジックなので止まっていて、scale は古い値のまま残る。
     //   TimeContext.isPaused を見て dt=0 にすれば、time も発生も進まず完全に止まる。
     bool worldPaused = false;
     if (m_world->HasResource<TimeContext>())
         worldPaused = m_world->GetResource<TimeContext>().isPaused;
 
+    // 1フレームで進める時間の上限。ロジックは1フレームに最大4ステップ（Framework::Run の
+    //   MAX_STEPS × FIXED_DT = 4/60 秒）しか進まないので、粒子も同じだけで止める。
+    //   上限が無いと、ウィンドウのドラッグなどで1フレームが長引いたときに粒子だけ一気に進み、
+    //   ロジック側で数えている VFX の破棄タイマー（VFXSystem）と時間がずれる。
+    constexpr float kMaxFrameDt = 4.0f / 60.0f;
+    const float     frameDt     = (std::min)(dt, kMaxFrameDt);
+
     ZoneNamedN(dispatchZone, "GPUParticle: Emitter dispatch loop", true);
     ForEach([&](GPUParticleComponent     &particle,
                 const TransformComponent &transform,
-                const TimeStateComponent &rawDt) {
+                const TimeStateComponent &clock) {
         // ---- エフェクト全体で共通の値を、エミッタのループの前に1回だけ決める ----
         //   time は Entity の時間なので、ループ内で進めるとエミッタの数だけ重ねて足される。
+        //
+        //   進める時間は「この描画フレームの dt × Entity の時間倍率」。
+        //   localDt はロジック1ステップ（1/60 秒）分の値なので、毎フレーム動くこの System が
+        //   そのまま足すと FPS に比例して速くなっていた（144 FPS で寿命が 2.4 倍の速さで減る）。
+        //   倍率（scale）を掛けるのは、ヒットストップ（0）やスローを今まで通り効かせるため。
         EffectFrame frame;
-        frame.dt = worldPaused ? 0.0f : rawDt.localDt;
+        frame.dt = worldPaused ? 0.0f : frameDt * clock.scale;
         particle.time += frame.dt;
         frame.time = particle.time;
 

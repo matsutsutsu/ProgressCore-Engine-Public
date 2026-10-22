@@ -18,13 +18,12 @@ struct GameFlowState
     //    エディタ側（F2 トグル / シーケンサーの EditMode）が毎フレーム設定する。
     bool uiInteract = false;
 
-    // 「カットシーン中」。タイムライン（ムービー）が開始待ち・再生中の間 true。
+    // 「カットシーン中」。ムービーが開始待ち・再生中の間 true。
     //    ・PlayerInputSystem: 全ゲーム入力を中立値にして操作を奪う。
     //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする。
     //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない。
     //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）。
-    //    書き手は TimelineSystem だけ（ロジックの L01_Input）。
-    //    PlayerInputSystem とは同じ段で順序を縛っていないので、効き始めが1ステップ遅れることがある。
+    //    書き手は CinematicCameraSystem だけ。描画の段で書くので、ロジックの段には次の固定ステップから効く。
     bool cinematic = false;
 
     // 「決着した」。勝ち負けが決まった瞬間から、シーンを切り替えるまで true。
@@ -32,16 +31,12 @@ struct GameFlowState
     //    ・BehaviorTreeSystem / BossActionSystem: ボスの思考と技を止める（倒れたプレイヤーへ攻撃し続けないように）。
     //    ・CameraActionTPSSystem: 視点入力を止める（リザルトをマウスで操作している間にカメラが回らないように）。
     //    cinematic と同じく、ゲーム自体は止めない（倒れるアニメや物理は動き続ける）。
-    //    書き手は GameResultSystem だけ。
+    //    書き手は GameResultSystem と、チュートリアルを教え終えたときの TutorialCompleteSystem。
     bool matchOver = false;
 
-    // アプリ終了要求。タイトル画面の QUIT から立てる（ゲーム中のポーズ／リザルトは
-    //    タイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている）。
-    //    System の Update はジョブスケジューラによりワーカースレッドで走るため、
-    //    ワーカースレッドから PostQuitMessage を呼ぶと WM_QUIT が別スレッドのキューに積まれ、
-    //    メインループ（PeekMessage = メインスレッド）が永久に拾えず終了しない。
-    //    そこで「フラグを立てるだけ」にして、メインスレッドの Run() ループが毎フレーム
-    //    これを見て PostQuitMessage(0) を呼ぶ。（ジョブの WaitForCounter が同期点になるので
-    //    書き込みは main へ確実に可視化される）
+    // アプリ終了要求。タイトル画面の QUIT から立てる。
+    //    ゲーム中のポーズ／リザルトはタイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている。
+    //    System からは PostQuitMessage を呼ばず、このフラグを立てるだけにする（理由は Framework::Run の 3）。
+    //    書き込みはジョブの WaitForCounter が同期点になるので、メインスレッドから確実に見える。
     bool quitRequested = false;
 };

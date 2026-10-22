@@ -37,8 +37,6 @@ static DirectX::BoundingBox CalculateAccurateWorldAABB(const DirectX::BoundingBo
 // ====================================================================
 // ModelBoundsUpdateSystem の実装
 // ====================================================================
-ModelBoundsUpdateSystem::ModelBoundsUpdateSystem() : IfSystem("ModelBoundsUpdateSystem") {}
-
 void ModelBoundsUpdateSystem::Update(float dt)
 {
     // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列。
@@ -57,8 +55,6 @@ void ModelBoundsUpdateSystem::Update(float dt)
 // ====================================================================
 // PrimitiveBoundsUpdateSystem の実装
 // ====================================================================
-PrimitiveBoundsUpdateSystem::PrimitiveBoundsUpdateSystem() : IfSystem("PrimitiveBoundsUpdateSystem") {}
-
 void PrimitiveBoundsUpdateSystem::Update(float dt)
 {
     ForEachParallel([&](const TransformComponent &trans, const PrimitiveComponent &prim, BoundingBoxComponent &bounds) {

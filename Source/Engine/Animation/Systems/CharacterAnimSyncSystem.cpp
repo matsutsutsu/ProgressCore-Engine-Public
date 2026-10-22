@@ -42,7 +42,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         bool wasGrounded = animParams.GetBool(HASH_IS_GROUNDED);
 
         // ゲーム側の移動アクション（ダッシュ等）が速度を制御中なら、足滑り補正を掛けない。
-        //   ゲーム固有の DashComponent を読まず、Engine 側の externallyDriven を見る
+        //   ゲーム固有の PlayerDashComponent を読まず、Engine 側の externallyDriven を見る
         bool externallyDriven = false;
         if (auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id))
         {

@@ -26,10 +26,7 @@ class InputIconSystem : public CCL::ECS::IfSystem<InputIconSystem,
                                                   CCL::ECS::Read<InputIconComponent>>
 {
 public:
-    InputIconSystem()
-        : IfSystem("InputIconSystem")
-    {
-    }
+    InputIconSystem() : IfSystem("InputIconSystem") {}
 
     // 同じ UIImageComponent を書く UIButtonSystem との順番を決める。
     // 決めないと、どちらが先かが登録順で変わり、TaskScheduler が順序不定の警告を出す。

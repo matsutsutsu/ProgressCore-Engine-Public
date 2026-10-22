@@ -3,7 +3,7 @@
 // 概要: BehaviorTreeComponent を持つエンティティの BT を毎フレーム評価する System。
 //
 // 責務:
-//   - 起動時に行動・条件を登録し、辞書（ActionRegistry.h）との突き合わせを行う
+//   - 起動時に行動・条件を登録し、辞書（BTActionIds.h）との突き合わせを行う
 //   - 各個体へ木を配り、パスが変わったら実行状態を作り直す（直列）
 //   - 木を評価する（並列）。割り込み・自己中断・打ち切りの後始末を含む
 //   - アクションが申告した Read/Write の型をスケジューラへ渡す
@@ -33,7 +33,7 @@ public:
                                     CCL::ECS::Read<TransformComponent>,
                                     CCL::ECS::Read<TimeStateComponent>>;
 
-    BehaviorTreeSystem();
+    BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem") {}
     virtual ~BehaviorTreeSystem() override = default;
 
     void Initialize() override; // 行動・条件の登録と、辞書との突き合わせ
@@ -72,7 +72,7 @@ private:
     void SyncAssets();
 
     /**
-     * @brief 辞書（ActionRegistry.h）に載っている行動・条件が、すべて実装として登録されているか調べる。
+     * @brief 辞書（BTActionIds.h）に載っている行動・条件が、すべて実装として登録されているか調べる。
      * @note 辞書と実行時の登録がずれると「エディタで選べるのに何も起きない技」になる。
      *       ずれても動いてしまうので、起動時に一度だけエラーログを出す。
      */

@@ -126,17 +126,6 @@ namespace GpuData
         float  blurMaxDistance;
     };
 
-    // ContactShadow（32 バイト）
-    PP_STRUCT(CbContactShadowData, SLOT_CB_CONTACTSHADOW)
-    {
-        float  csRayLength;
-        float  csThickness;
-        float  csBias;
-        float  csIntensity;
-        float  csMaxDistance;
-        float3 csPad;
-    };
-
 #ifdef __cplusplus
 } // namespace GpuData
 static_assert(sizeof(GpuData::CbBloomData) == 32, "CbBloomData size mismatch");
@@ -160,8 +149,6 @@ static_assert(
     sizeof(GpuData::CbSSAOData) == 16, "CbSSAOData size mismatch");
 static_assert(
     sizeof(GpuData::CbSSAOBlurData) == 16, "CbSSAOBlurData size mismatch");
-static_assert(
-    sizeof(GpuData::CbContactShadowData) == 32, "CbContactShadowData size mismatch");
 #endif
 
 #endif // POST_PROCESS_SHARED_H

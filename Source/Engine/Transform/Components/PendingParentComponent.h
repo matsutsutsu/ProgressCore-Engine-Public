@@ -12,5 +12,5 @@
 
 struct PendingParentComponent
 {
-    CCL::ECS::EntityID parentID = CCL::ECS::InvalidEntityID;
+    CCL::ECS::EntityID parentID = CCL::ECS::InvalidEntityID; // 付けたい親（0 / InvalidEntityID なら切り離す）
 };

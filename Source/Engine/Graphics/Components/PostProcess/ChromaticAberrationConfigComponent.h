@@ -6,6 +6,7 @@
 //   - シーンが持つ普段の設定（enable / data）を持つ
 //   - 演出ごとの一時的な上乗せ（overrides）を持つ
 //   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
+//   - 上書きの土台になる、今効いている強さを返す（BaseParams）
 //
 // 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
 //       スロットの仕組みと理由は PostEffectOverrides.h を参照。
@@ -46,5 +47,21 @@ struct ChromaticAberrationConfigComponent
             out = (std::max)(out, p.strength * t);
         });
         return out;
+    }
+
+    /**
+     * @brief 上書きの土台になる、今効いている強さを返す（新しく取ったスロットへ PostFx::Acquire が入れる）。
+     *
+     * enable=false のときは data の値ではなく 0 を返す。
+     * ResolvedStrength は最大値をとるので、切ってある強さを土台に入れると、
+     * 演出が weight を上げただけで作者が切ったはずの色収差が出てしまう。
+     *
+     * @return 土台にする強さ。
+     */
+    ChromaticOverrideParams BaseParams() const
+    {
+        ChromaticOverrideParams p;
+        p.strength = enable ? data.chromaStrength : 0.0f;
+        return p;
     }
 };

@@ -1,0 +1,15 @@
+#pragma once
+// ===========================================================================
+// 概要: ジャスト回避の成立状態を持つ Component。
+//
+// 責務:
+//   - 今のダッシュでジャスト回避が成立したかを持つ
+//
+// 備考: 書くのは PlayerJustEvadeSystem と、デバッグ用の PlayerJustEvadeDebugSystem。受付窓(isJustEvadeWindowActive)は PlayerDashComponent 側。
+//       同じ相手への連続成立の抑制などは、必要になったステップで足す。
+// ===========================================================================
+
+struct PlayerJustEvadeComponent
+{
+    bool isJustSuccess = false; // 今のダッシュで成立済みか
+};

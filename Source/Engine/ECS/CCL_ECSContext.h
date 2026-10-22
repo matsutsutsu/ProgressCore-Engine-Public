@@ -4,7 +4,17 @@
 //
 // 責務:
 //   - World と SystemManager の生成と結び付け
-//   - 1フレームの更新手順（構造変更の適用 → 処理対象の再解決 → System 実行）を固定する
+//   - 1フレームの更新手順（構造変更の確定 → 処理対象の一覧の作り直し → System 実行）を固定する
+//
+// 備考:
+//   予約の確定と、System の処理対象 Chunk の一覧の作り直しを、それぞれ次のタイミングで行う。
+//     ロジックの更新の頭 : 予約を確定し、一覧を作り直す（ApplyStructureChanges）
+//     ロジックの途中     : Prefab::SpawnPrefab がその場で確定する。一覧は作り直さない
+//                          （同じバッチで並列に走る System が、その一覧を回っている最中かもしれない）
+//     描画の更新の頭     : 確定済みの変化があれば、一覧だけ作り直す（確定はしない）
+//     シーンの開始       : ApplyStructureChanges を1回呼ぶ（BaseScene::Start）
+//   一覧の作り直しは、System が1つも動いていない境目でだけ行う、が決まり。
+//   ロジックの途中で生成した Entity は、同じステップの後ろの System には見えず、同じフレームの描画から見える。
 // ===========================================================================
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemManager.h"
@@ -41,22 +51,34 @@ namespace CCL::ECS
         // 更新（呼ぶ順番をここに固定し、利用側で手順を間違えないようにする）
         // ============================================================
 
-        // 物理・ロジックの更新（FixedUpdate 等で呼ぶ）
-        void UpdateLogic(float dt)
+        /**
+         * @brief 溜まっていた構造変更（Entity 生成/削除）を適用し、各 System の処理対象 Chunk を解決し直す。
+         *
+         * これを通るまで、生成した Entity は System の ForEach に入らない。
+         * 毎ステップの UpdateLogic の頭と、シーンの開始（BaseScene::Start）で呼ぶ。
+         */
+        void ApplyStructureChanges()
         {
-            ZoneScopedN("World::FixedUpdate");
-
             // 1. 溜まっていた構造変更（Entity 生成/削除）を適用し、データを確定させる
             m_world->ScrutinyAndApply();
 
-            // 2. 構造変更があったフレームだけ、各 System の処理対象 Chunk を再解決する
+            // 2. 構造変更があったときだけ、各 System の処理対象 Chunk を再解決する
             if (m_world->IsStructureDirty())
             {
                 m_systemManager->ResolveTargetChunks(&m_world->GetChunkManager());
                 m_world->ResetStructureDirty();
             }
+        }
 
-            // 3. Logic グループの System を実行する
+        // 物理・ロジックの更新（FixedUpdate 等で呼ぶ）
+        void UpdateLogic(float dt)
+        {
+            ZoneScopedN("World::FixedUpdate");
+
+            // 1. 構造変更を適用し、処理対象を解決し直す
+            ApplyStructureChanges();
+
+            // 2. Logic グループの System を実行する
             m_systemManager->UpdateLogic(dt);
         }
 
@@ -64,6 +86,15 @@ namespace CCL::ECS
         void UpdateRender(float dt)
         {
             ZoneScopedN("World::RenderUpdate");
+
+            // ロジックの途中でプレハブを生成すると、その場で確定するが一覧は古いまま残る（ファイル冒頭の備考）。
+            // そのまま描画の System を走らせると、新しい Entity や Chunk を移った Entity が見えない。
+            // 確定済みの変化だけを一覧へ反映する（予約の確定はしない。確定はロジックの更新の頭で行う）。
+            if (m_world->IsStructureDirty())
+            {
+                m_systemManager->ResolveTargetChunks(&m_world->GetChunkManager());
+                m_world->ResetStructureDirty();
+            }
 
             m_systemManager->UpdateRender(dt);
         }

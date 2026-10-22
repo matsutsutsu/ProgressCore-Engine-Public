@@ -53,7 +53,8 @@
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
                     "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
-                    "phase2HealthThreshold": 50.0
+                    "phase2HealthThreshold": 50.0,
+                    "tutorialAssetPath": "Assets/BehaviorTree/BossTutorial.json"
                 },
                 "Character Movement": {
                     "currentVelocity": [
@@ -75,7 +76,7 @@
                 "EnemyTag": null,
                 "HealthComponent": {
                     "currentHealth": 500.0,
-                    "invincibilityDuration": 0.20000000298023224,
+                    "invincibilityDuration": 0.0,
                     "maxHealth": 500.0
                 },
                 "Hurtbox": {
@@ -109,7 +110,7 @@
                     "objectLayer": 2,
                     "walkSpeed": 30.0
                 },
-                "Just Evade Component": {
+                "Player Just Evade Component": {
                     "isJustSuccess": false
                 },
                 "Knockback": {

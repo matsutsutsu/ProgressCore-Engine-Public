@@ -62,7 +62,7 @@ public:
      * @brief エンジン共通のプリセットを登録し、履歴を読み込む。
      *
      * 登録するプリセット（contextId）: Assets / Scene / Model / Texture / TextEditor /
-     * AnimSequence / AnimNode / Prefab / Audio / BehaviorTreeNode。
+     * AnimSequence / AnimNode / Prefab / Audio / BehaviorTreeNode / Cinematic。
      * フィルタと初期フォルダは Dialog.cpp の Initialize を参照。
      *
      * @param settingsPath 履歴を読む EditorPrefs.json のパス

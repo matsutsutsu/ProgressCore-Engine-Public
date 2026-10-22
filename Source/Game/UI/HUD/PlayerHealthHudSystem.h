@@ -10,22 +10,18 @@
 //   - OnGui で演出を切り替え、HP をボタンで増減できる（見比べ用）
 //
 // 備考: 対象は HealthComponent と PlayerComponent を持つエンティティ。居ないシーンでは隠す。
-//       左下には CleaveGaugeHudSystem のストック表示も置く（自分の情報は左下、敵の情報は上辺に分ける）。
-//       2つの位置は互いの定数で決めているので、片方を動かすときはもう片方も合わせる。
+//       自分の情報は左下、敵の情報は上辺に分ける。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
 class PlayerHealthHudSystem : public CCL::ECS::IfSystem<PlayerHealthHudSystem,
                                                         CCL::ECS::Read<HealthComponent>,
                                                         CCL::ECS::Read<PlayerComponent>>
 {
 public:
-    PlayerHealthHudSystem()
-        : IfSystem("PlayerHealthHudSystem")
-    {
-    }
+    PlayerHealthHudSystem() : IfSystem("PlayerHealthHudSystem") {}
 
     void Initialize() override;
     void Update(float dt) override;

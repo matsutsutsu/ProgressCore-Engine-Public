@@ -22,23 +22,28 @@ using namespace CCL::AI::Formation;
 
 namespace
 {
-    // 予告の溜めの上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
-    constexpr float kWindupTimerCap = 10.0f;
+    // 予告の時間（shiverTime / telegraphTime）の上限 [秒]。振幅は移動層で頭打ちになるので、値が際限なく育たないための蓋。
+    constexpr float kTelegraphTimeCap = 10.0f;
 } // namespace
 
 // Droneのアクションを登録する
 void DroneFormationSystem::Initialize()
 {
+    // 陣形のレジストリは World の Resource として持つ（理由は FormationRegistry.h）。
+    // 評価するこの System が作る。シーン側に用意させないので、どのシーンでも同じ陣形が揃う。
+    if (!m_world->HasResource<FormationRegistry>()) m_world->AddResource<FormationRegistry>();
+    auto &registry = m_world->GetResource<FormationRegistry>();
+
     // このシステムが評価する陣形クラスを登録する。陣形を追加したときは
     // 各 Formations_*.h の RegisterAll() に1行足せば全シーンへ自動反映される。
-    CCL::AI::Formation::Basic::RegisterAll();
-    CCL::AI::Formation::Attack::RegisterAll(); // データで書けない攻撃陣形（弾幕）
-    CCL::AI::Formation::Squad::RegisterAll();  // 小隊陣形（5機編隊）
+    CCL::AI::Formation::Basic::RegisterAll(registry);
+    CCL::AI::Formation::Attack::RegisterAll(registry); // データで書けない攻撃陣形（弾幕）
+    CCL::AI::Formation::Squad::RegisterAll(registry);  // 小隊陣形（5機編隊）
 
     // データ陣形は最後に登録する。
     // 登録側は Has() で埋まっている枠を弾くので、C++ 実装の枠を JSON が名乗ったことを
     // 検出できるのは、C++ 実装が先に登録されているときだけ。
-    CCL::AI::Formation::Data::RegisterAll();
+    CCL::AI::Formation::Data::RegisterAll(registry);
 
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }
@@ -49,8 +54,7 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     // 1. ボスの位置と「今撃て」信号を読む
     // 2. 陣形の中心の速度を測る
     // 3. プレイヤーの情報を入れる
-    // 4. 小隊の状態を渡す
-    // 5. 狙いの向きを固定・解除する
+    // 4. 狙いの向きを固定・解除する
 
     FormationContext ctx;
     ctx.time = m_elapsed;
@@ -135,12 +139,6 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
         }
     }
 
-    // --- 小隊 ---
-
-    // 小隊のアンカーは SquadUpdateSystem が今フレーム更新済み。ここでは読むだけ。
-    if (m_world->HasResource<SquadRegistry>())
-        ctx.squads = &m_world->GetResource<SquadRegistry>();
-
     // --- 狙いの固定 ---
 
     // 狙う向きは「撃つと決めた瞬間」（信号の立ち上がり）に1回だけ固定し、信号が下りたら解除する。
@@ -178,7 +176,7 @@ void DroneFormationSystem::Update(float rawDt)
 
     // 処理フロー:
     // 1. 陣形の時間を進める
-    // 2. 陣形へ渡す情報を2通り作る
+    // 2. 陣形へ渡す情報を2通り作り、各陣形にフレームの始まりを伝える
     // 3. 機体ごとに持ち場を計算し、予告の時間を進める
 
     // --- 時間 ---
@@ -198,7 +196,9 @@ void DroneFormationSystem::Update(float rawDt)
 
     m_elapsed += dt;
 
-    auto &registry = FormationRegistry::Instance();
+    auto *registryPtr = FormationRegistry::Find(*m_world);
+    if (!registryPtr) return; // Initialize で作るので通常は必ずある
+    auto &registry = *registryPtr;
 
     // --- 陣形へ渡す情報 ---
 
@@ -210,20 +210,35 @@ void DroneFormationSystem::Update(float rawDt)
     bodyCtx.bossPos                  = m_bossBodyPos;
     bodyCtx.bossVelocity             = m_bossBodyVelocity;
 
+    // 陣形が自分だけで使うデータ（小隊の状態など）は、陣形が自分で取りに行く（IFormation::BeginFrame）。
+    registry.BeginFrame(*m_world);
+
     // --- 機体ごとの計算 ---
 
     // 仮想関数（陣形の取得・Calculate など）は機体ごとに呼ぶ。
     // 全機がほぼ同じ陣形なので分岐予測が当たり、呼び出しのコストは小さい。
     // ループ自体は DroneComponent の配列を先頭から順に読む。
     ForEach([&](DroneComponent &drone) {
+        // 陣形が切り替わった機は、予告の時計を 0 から数え直す。
+        // Calculate の前に行うのは、データ陣形が Calculate の中で予告の時計を読むため（震えの帯）。
+        if (drone.telegraphFormation != drone.currentFormation)
+        {
+            drone.telegraphFormation = drone.currentFormation;
+            drone.shiverTime         = 0.0f;
+            drone.telegraphTime      = 0.0f;
+        }
+
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation)
         {
             // 未登録の陣形（None 等）では持ち場を書かない。
             // ただし予告の溜めは戻す。抱えたままだと、次に陣形が出た瞬間から全開で震える。
-            drone.windupTimer       = 0.0f;
+            drone.shiverTime        = 0.0f;
             drone.telegraphTime     = 0.0f;
             drone.followFeedForward = DirectX::SimpleMath::Vector3::Zero;
+
+            // バネの強さの倍率（springScale）も持ち場と同じく書かない。
+            // 陣形の外で動かす機（タイトルの群れ）は、動かす側が自分で決めるため。
             return;
         }
 
@@ -236,6 +251,9 @@ void DroneFormationSystem::Update(float rawDt)
         // 頭上円陣なら、跳躍で上下する速度も乗る。
         drone.followFeedForward = formation->FollowsBoss() ? ctx.bossVelocity * m_bossCarry : DirectX::SimpleMath::Vector3::Zero;
 
+        // バネの強さの倍率も Calculate の前に既定へ戻す。弱めたい陣形（小隊）だけが Calculate で上書きする。
+        drone.springScale = 1.0f;
+
         formation->Calculate(drone, ctx); // targetPosition を書き込む
 
         // 予告（震え）の溜めは、次の3つが揃う間だけ進める。この時間帯が予備動作にあたる。
@@ -245,21 +263,21 @@ void DroneFormationSystem::Update(float rawDt)
 
         // 陣形を切り替えた直後も溜めは始まる。
         // hasReachedSlot は「一度でも着いたか」のラッチで、切り替えでは false に戻らない。
-        // そのため溜めは BT が陣形を指示した時点から始まり、BT の Wait(予告) の長さと一致する。
+        // 時計はループの頭で 0 に戻しているので、溜めは BT が陣形を指示した時点から始まり、BT の Wait(予告) の長さと一致する。
 
         // 突撃から帰る途中は震えない。
         // 帰る途中だけ hasReachedSlot が false に落ちるため。
         const bool telegraphing =
             formation->UsesShiverTelegraph() && drone.hasReachedSlot && !drone.wantsAttack;
 
-        drone.windupTimer = telegraphing
-                                ? (std::min)(kWindupTimerCap, drone.windupTimer + dt)
-                                : 0.0f;
+        drone.shiverTime = telegraphing
+                               ? (std::min)(kTelegraphTimeCap, drone.shiverTime + dt)
+                               : 0.0f;
 
         // 予告の時計は、震わせる設定かどうかに関係なく、同じ時間帯（着いてから撃つまで）で進める。
         // データ陣形の Shiver の帯は、震えの有無と別にこの時計を読む。
         drone.telegraphTime = (drone.hasReachedSlot && !drone.wantsAttack)
-                                  ? (std::min)(kWindupTimerCap, drone.telegraphTime + dt)
+                                  ? (std::min)(kTelegraphTimeCap, drone.telegraphTime + dt)
                                   : 0.0f;
     });
 }

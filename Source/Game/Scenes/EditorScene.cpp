@@ -1,5 +1,6 @@
 #include "EditorScene.h"
 #include "Engine/Scene/SceneFactory.h"
+#include "Engine/Cinematic/CinematicEvents.h" // 導入ムービーの再生要求
 #include "tracy/Tracy.hpp"
 
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -11,10 +12,15 @@
 #include "Game/UI/Screens/GameResultSystem.h" // ゲームオーバー検知＋リザルトUI
 #include "Game/UI/Screens/PauseSystem.h"      // ESC/STARTでポーズ＋ポーズメニュー
 
+namespace
+{
+    constexpr const char *kIntroCinematic = "Assets/Cinematics/BossIntro.json"; // 導入ムービーの台本
+}
+
 void EditorScene::Initialize()
 {
     ZoneScopedN("EditorScene::Initialize");
-
+    
     BaseScene::Initialize();
 
     {
@@ -24,6 +30,24 @@ void EditorScene::Initialize()
         if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
             CCL_LOG_ERROR(LogCategory::Core, "EditorScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
+
+    // ムービー用カメラは GameScene と同じくここで足す。
+    // エディタでもムービーを流し、Cinematic Editor のプレビューを出すため。
+    {
+        ZoneScopedN("EditorScene: SpawnPrefab CinematicCamera");
+
+        const std::string cinematicCameraPrefab = "Assets/Prefabs/Camera/CinematicCamera.json";
+        if (Prefab::SpawnPrefab(*m_worldPtr, cinematicCameraPrefab) == CCL::ECS::InvalidEntityID)
+        {
+            // ムービーが出ないだけで開発は続けられるので、失敗しても止めない。
+            CCL_LOG_ERROR(LogCategory::Core,
+                          "EditorScene: ムービー用カメラの生成に失敗: %s", cinematicCameraPrefab.c_str());
+        }
+    }
+
+    // 導入ムービーは GameScene と同じく、シーンの準備として頼んでおく（理由は GameScene::Initialize）。
+    // 開発中に待ちたくなければ、長押しでスキップできる。
+    m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");
 }

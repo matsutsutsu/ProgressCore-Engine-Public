@@ -6,6 +6,7 @@
 //   - シーンが持つ普段の設定（enable / data）を持つ
 //   - 演出ごとの一時的な上書き（overrides）を持つ
 //   - 両方を重ねた最終的なパラメータを求める（Resolve）
+//   - 上書きの土台になる、今の設定そのままの値を返す（BaseParams）
 //
 // 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
 //       最終的な値は PostProcessSystem が Resolve() で求める。
@@ -44,6 +45,18 @@ struct VignetteConfigComponent
 
     // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
+
+    // 上書きの土台になる、今の設定そのままの値（新しく取ったスロットへ PostFx::Acquire が入れる）
+    VignetteOverrideParams BaseParams() const
+    {
+        VignetteOverrideParams p;
+        p.color      = data.vigColor;
+        p.intensity  = data.vigIntensity;
+        p.radius     = data.vigRadius;
+        p.softness   = data.vigSoftness;
+        p.pulseSpeed = data.vigPulseSpeed;
+        return p;
+    }
 
     /**
      * @brief 描画に渡すパラメータを返す。普段の設定に、上書きを priority の小さい順に重ねる。

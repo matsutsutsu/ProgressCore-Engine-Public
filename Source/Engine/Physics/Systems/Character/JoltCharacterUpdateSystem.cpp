@@ -125,7 +125,7 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     if (isGrounded && vy <= 0.0f) vy = 0.0f;
 
     // ジャンプ成立は1フレーム限りの命令。読んだ側で消費することで、命令を出した側
-    //（PlayerMoveSystem 等）が不成立フレームに false を書き戻す責任を持たなくてよい。
+    //（PlayerJumpFacingSystem 等）が不成立フレームに false を書き戻す責任を持たなくてよい。
     if (movement.jumpImpulse)
     {
         movement.jumpImpulse = false;

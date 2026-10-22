@@ -24,10 +24,7 @@ class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
                                                       CCL::ECS::Read<BossActionComponent>>
 {
 public:
-    BossHealthHudSystem()
-        : IfSystem("BossHealthHudSystem")
-    {
-    }
+    BossHealthHudSystem() : IfSystem("BossHealthHudSystem") {}
 
     void Initialize() override;
     void Update(float dt) override;

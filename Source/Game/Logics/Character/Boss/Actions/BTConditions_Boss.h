@@ -12,7 +12,7 @@
 // ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
@@ -44,7 +44,8 @@ namespace CCL::AI::BT
         bool Evaluate(BTContext &ctx) override
         {
             const auto *phase = ctx.world->GetComponent<BossPhaseComponent>(ctx.entity);
-            if (!phase || phase->phase != BossPhase::Combat) return false;
+            if (!phase) return false;
+            if (phase->phase != BossPhase::Combat) return false;
 
             return ctx.bt->blackboard.healthPercentage <= phase->phase2HealthThreshold;
         }

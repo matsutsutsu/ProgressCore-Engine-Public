@@ -26,14 +26,6 @@
                     "tintG": 0.9700000286102295,
                     "tintR": 0.9399999976158142
                 },
-                "ContactShadow": {
-                    "bias": 0.019999999552965164,
-                    "enable": false,
-                    "intensity": 0.699999988079071,
-                    "maxDistance": 30.0,
-                    "rayLength": 0.30000001192092896,
-                    "thickness": 0.10000000149011612
-                },
                 "DirectionalLight": {
                     "color": [
                         1.0,
@@ -82,7 +74,7 @@
                     "skyFogSoftness": 0.20999999344348907,
                     "start": 120.0
                 },
-                "Just Evade Effect": {
+                "Player Rush Effect": {
                     "attackTime": 0.029999999329447746,
                     "chromaPeak": 0.019999999552965164,
                     "duration": 0.5,

@@ -131,6 +131,11 @@ struct ComponentMeta<SpotLightComponent>
             comp.innerCos = comp.outerCos;
             changed       = true;
         }
+        ImGui::Separator();
+        ImGui::Text("Attenuation (減衰パラメータ)");
+        changed |= mi::DragFloat("定数減衰", &comp.constant, 0.01f, 0.0f, 10.0f);
+        changed |= mi::DragFloat("線形減衰", &comp.linear, 0.01f, 0.0f, 10.0f);
+        changed |= mi::DragFloat("二次減衰", &comp.quadratic, 0.001f, 0.0f, 1.0f);
         return changed;
     }
 #else
@@ -144,7 +149,10 @@ struct ComponentMeta<SpotLightComponent>
             CFIELD(intensity, "強度", "Lighting")
             CFIELD(range, "範囲", "Lighting")
             CFIELD(innerCos, "内側コーン(Cos)", "Cone")
-            CFIELD(outerCos, "外側コーン(Cos)", "Cone")};
+            CFIELD(outerCos, "外側コーン(Cos)", "Cone")
+            CFIELD(constant, "定数減衰", "Attenuation")
+            CFIELD(linear, "線形減衰", "Attenuation")
+            CFIELD(quadratic, "二次減衰", "Attenuation")};
         return fields;
     }
 };

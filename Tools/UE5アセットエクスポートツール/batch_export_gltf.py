@@ -6,9 +6,9 @@
 
  機能概要:
    Content Browser で選択した StaticMesh / SkeletalMesh / AnimSequence を
-   glTF(.gltf) または GLB(.glb) へ一括エクスポートする。
+   glTF(.gltf) または GLB(.glb) へ、SoundWave を .wav へ一括エクスポートする。
    出力先は実行するたびにダイアログで選ぶ。
-   エクスポート後、出力ファイルの中身を検査して Output Log に報告する。
+   エクスポート後、出力ファイルの中身を検査して Output Log に報告する（glTF のみ）。
 
  前提:
    - Python Editor Script Plugin 有効
@@ -25,6 +25,7 @@
    - unreal.EditorUtilityLibrary.get_selected_assets()
    - unreal.GLTFExporter.export_to_gltf()
    - unreal.GLTFExportOptions
+   - unreal.AssetExportTask / unreal.SoundExporterWAV / unreal.Exporter.run_asset_export_task()（音声）
    - unreal.ScopedSlowTask
    - unreal.EditorDialog（結果表示。失敗しても処理は継続）
 ================================================================================
@@ -80,6 +81,7 @@ SUPPORTED_TYPES = (
     unreal.StaticMesh,
     unreal.SkeletalMesh,
     unreal.AnimSequence,
+    unreal.SoundWave,   # glTF ではなく .wav で出す（export_sound_wave）
 )
 
 # ログの先頭に付けるプレフィックス（Output Log で grep しやすくするため）
@@ -346,6 +348,16 @@ def is_supported_asset(asset):
     return isinstance(asset, SUPPORTED_TYPES)
 
 
+def is_sound(asset):
+    """音声（.wav で出す）かどうかを返す。"""
+    return isinstance(asset, unreal.SoundWave)
+
+
+def output_extension(asset, gltf_extension):
+    """アセットごとの拡張子を返す。音声は .wav、それ以外は glTF の拡張子。"""
+    return ".wav" if is_sound(asset) else gltf_extension
+
+
 def build_output_path(asset, output_dir, extension):
     """
     出力ファイルパスを構築する。
@@ -393,7 +405,7 @@ def find_output_collisions(targets, output_dir, extension):
     """
     by_path = {}
     for asset in targets:
-        path = build_output_path(asset, output_dir, extension)
+        path = build_output_path(asset, output_dir, output_extension(asset, extension))
         by_path.setdefault(path.lower(), []).append(asset.get_path_name())
 
     return {path: names for path, names in by_path.items() if len(names) > 1}
@@ -480,6 +492,39 @@ def export_single_asset(asset, output_path, options):
         messages = None
 
     return success, _extract_messages(messages)
+
+
+def export_sound_wave(asset, output_path):
+    """
+    SoundWave を .wav で書き出す。
+    戻り値: (成功フラグ bool, メッセージ str)
+
+    glTF は 3D モデルとアニメーションの形式で音声を持てないため、
+    UE 標準の WAV エクスポーター（SoundExporterWAV）を使う。
+    書き出されるのはインポートした元の PCM データ。
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    task = unreal.AssetExportTask()
+    task.object = asset
+    task.filename = output_path
+    task.exporter = unreal.SoundExporterWAV()
+    task.automated = True          # 上書き確認などのダイアログを出さない
+    task.prompt = False
+    task.replace_identical = True  # 同名ファイルは上書きする（glTF 側と同じ扱い）
+
+    success = bool(unreal.Exporter.run_asset_export_task(task))
+
+    # 失敗理由はタスクの errors に入る（プロパティが無い版でも止めない）
+    message = ""
+    try:
+        errors = task.get_editor_property("errors")
+        if errors:
+            message = " | ".join(str(e) for e in errors)
+    except Exception:
+        pass
+
+    return success, message
 
 
 # ==============================================================================
@@ -658,8 +703,15 @@ def run():
     if skipped_count > 0:
         log_warn("対応外のため {} 件スキップしました。".format(skipped_count))
 
+    # SoundCue は複数の音を組み合わせるグラフで、音声ファイルそのものではないので出せない。
+    # 音を選んだつもりで黙ってスキップされると分からないので、名前を出して知らせる。
+    sound_cues = [a.get_name() for a in selected if isinstance(a, unreal.SoundCue)]
+    if sound_cues:
+        log_warn("SoundCue は .wav にできないためスキップしました（中の SoundWave を選んでください）: {}".format(
+            ", ".join(sound_cues)))
+
     if not targets:
-        log_warn("エクスポート対象（StaticMesh/SkeletalMesh/AnimSequence）がありません。")
+        log_warn("エクスポート対象（StaticMesh/SkeletalMesh/AnimSequence/SoundWave）がありません。")
         show_result_dialog(0, 0, skipped_count, cancelled=False)
         return
 
@@ -674,7 +726,7 @@ def run():
     options = make_export_options()
 
     log_info("出力先    : {}".format(output_dir))
-    log_info("出力形式  : {} {}".format(
+    log_info("出力形式  : {}（音声は .wav） {}".format(
         extension, "（平置き）" if FLATTEN_OUTPUT else "（UEの構造を再現）"))
     log_info("対象件数  : {}".format(len(targets)))
 
@@ -716,15 +768,19 @@ def run():
             # 進捗を1つ進め、現在処理中のアセット名をダイアログへ表示
             task.enter_progress_frame(1, asset_name)
 
-            output_path = build_output_path(asset, output_dir, extension)
+            output_path = build_output_path(asset, output_dir, output_extension(asset, extension))
 
             # --- エラー処理: 1件失敗しても止めず最後まで続行する ---
             try:
-                ok, messages = export_single_asset(asset, output_path, options)
+                if is_sound(asset):
+                    ok, messages = export_sound_wave(asset, output_path)
+                else:
+                    ok, messages = export_single_asset(asset, output_path, options)
                 if ok:
                     success_count += 1
                     log_info("Export {}  ->  {}".format(asset_name, output_path))
-                    if INSPECT_AFTER_EXPORT:
+                    # 検査は glTF の中身（ボーン・アニメ）を見るものなので、音声では行わない
+                    if INSPECT_AFTER_EXPORT and not is_sound(asset):
                         inspect_exported_file(output_path, reference_bone_names)
                 else:
                     failed_count += 1

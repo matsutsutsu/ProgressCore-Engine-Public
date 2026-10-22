@@ -16,10 +16,7 @@ class UITextCollectSystem : public CCL::ECS::IfSystem<UITextCollectSystem,
                                                       CCL::ECS::Read<UITextComponent>>
 {
 public:
-    UITextCollectSystem()
-        : IfSystem("UITextCollectSystem")
-    {
-    }
+    UITextCollectSystem() : IfSystem("UITextCollectSystem") {}
 
     // 同じ UIDrawList へ積む収集 System 同士は直列でなければならない（詳細は UIImageCollectSystem.h）
     std::vector<const char *> GetRunAfter() const override { return {"UIImageCollectSystem"}; }

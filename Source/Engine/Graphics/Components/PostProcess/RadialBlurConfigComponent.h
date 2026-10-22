@@ -7,6 +7,8 @@
 //   - シーンが持つ普段の設定（enable / data: 中心・強さ・立ち上がり）を持つ
 //   - 演出ごとの一時的な上乗せ（overrides）を持つ
 //   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
+//   - 両方を合わせた、描画に渡す値（強さ・減衰）を求める（Resolve）
+//   - 上書きの土台になる、今効いている強さと減衰を返す（BaseParams）
 //
 // 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
 //       スロットの仕組みと理由は PostEffectOverrides.h を参照。
@@ -22,6 +24,7 @@
 struct RadialBlurOverrideParams
 {
     float strength = 0.0f; // 演出が出したい強さのピーク
+    float falloff  = 2.0f; // 中心からの立ち上がりの鋭さ。土台にシーンの値が入るので、書かなければシーンのまま
 };
 
 struct RadialBlurConfigComponent
@@ -41,5 +44,32 @@ struct RadialBlurConfigComponent
             out = (std::max)(out, p.strength * t);
         });
         return out;
+    }
+
+    // 描画に渡す値。強さは ResolvedStrength と同じく最大値をとり、減衰はその最大を出したスロットのものを使う。
+    // 減衰はスロットの効き（t）でシーンの値から寄せる。フェードの途中で別のスロットへ勝ちが移っても跳ばないようにするため。
+    GpuData::CbRadialBlurData Resolve() const
+    {
+        GpuData::CbRadialBlurData out = data;
+        out.blurStrength              = enable ? data.blurStrength : 0.0f;
+
+        overrides.ForEachActive([&](const RadialBlurOverrideParams &p, float t) {
+            const float strength = p.strength * t;
+            if (strength > out.blurStrength)
+            {
+                out.blurStrength = strength;
+                out.blurFalloff  = data.blurFalloff + (p.falloff - data.blurFalloff) * t;
+            }
+        });
+        return out;
+    }
+
+    // 上書きの土台になる、今効いている強さと減衰。enable=false なら強さは 0（理由は色収差と同じ）
+    RadialBlurOverrideParams BaseParams() const
+    {
+        RadialBlurOverrideParams p;
+        p.strength = enable ? data.blurStrength : 0.0f;
+        p.falloff  = data.blurFalloff;
+        return p;
     }
 };

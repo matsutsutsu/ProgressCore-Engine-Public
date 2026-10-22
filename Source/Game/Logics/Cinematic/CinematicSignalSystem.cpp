@@ -1,4 +1,3 @@
-// 役割・設計方針は CinematicSignalSystem.h を参照。
 #include "Game/Logics/Cinematic/CinematicSignalSystem.h"
 #include "Game/UI/Common/ScreenHeadingUi.h" // テロップの部品（滑り込む見出し・伸びる線・打ち込まれる1行）
 #include "Engine/ECS/Core/CCL_World.h"
@@ -16,18 +15,16 @@ using namespace CCL::GameUI;
 
 namespace
 {
-    constexpr float kDefaultTelopSeconds = 3.0f;   // value を省略したときの表示時間(秒)
-    constexpr float kTelopFadeSeconds    = 0.5f;   // 消えるのにかける時間(秒)
-    constexpr float kSubtitlePx          = 30.0f;  // 下の1行の文字の高さ(px)
-    constexpr float kSubtitleDelay       = 0.35f;  // 名前が滑り込んでから下の1行を打ち始めるまで(秒)
-    constexpr int   kTelopSortOrder      = 230;    // HUD（220 前後）より手前に出す
+    constexpr float kDefaultTelopSeconds = 3.0f;  // value を省略したときの表示時間（秒）
+    constexpr float kTelopFadeSeconds    = 0.5f;  // 消えるのにかける時間（秒）
+    constexpr float kSubtitlePx          = 30.0f; // 下の1行の文字の高さ（px）
+    constexpr float kSubtitleDelay       = 0.35f; // 名前が滑り込んでから下の1行を打ち始めるまで（秒）
+    constexpr int   kTelopSortOrder      = 230;   // HUD（220 前後）より手前に出す
 
     // テロップの入れ物。画面の左下にそろえる。見出しの部品は入れ物の左上からの位置で並ぶので、
     // 入れ物ごと左下へ置けば、解像度が変わっても画面の下端からの距離が保たれる
     constexpr DirectX::XMFLOAT2 kTelopBoxSize   = {1400.0f, 360.0f};
     constexpr DirectX::XMFLOAT2 kTelopBoxOffset = {0.0f, -40.0f}; // 下端から少し浮かせる
-
-    constexpr const char *kBgmPrefix = "bgm:/"; // この名前で始まる音源を BGM とみなす
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -36,11 +33,11 @@ namespace
 
 void CinematicSignalSystem::Initialize()
 {
-    // シグナルはロジックステージから同期で届く。ここでは溜めるだけにして、UI は自分の Update で作る
-    ListenEvent<TimelineSignalEvent>([this](const TimelineSignalEvent &ev) { m_pending.push_back(ev); });
+    // シグナルはロジックの段から同期で届く。ここでは溜めるだけにして、UI は自分の Update で作る
+    ListenEvent<CinematicSignalEvent>([this](const CinematicSignalEvent &ev) { m_pending.push_back(ev); });
 
     // スキップで終わったら、出ているテロップを残さない（本編が始まっているのに名前が居座らないように）
-    ListenEvent<TimelineFinishedEvent>([this](const TimelineFinishedEvent &ev) {
+    ListenEvent<CinematicFinishedEvent>([this](const CinematicFinishedEvent &ev) {
         if (ev.skipped) m_dismissTelops = true;
     });
 }
@@ -49,7 +46,7 @@ void CinematicSignalSystem::Update(float dt)
 {
     dt = Time::PresentationDt(*m_world, dt);
 
-    std::vector<TimelineSignalEvent> pending;
+    std::vector<CinematicSignalEvent> pending;
     pending.swap(m_pending);
     for (const auto &ev : pending)
         HandleSignal(ev);
@@ -64,7 +61,7 @@ void CinematicSignalSystem::Update(float dt)
     UpdateTelops(dt);
 }
 
-void CinematicSignalSystem::HandleSignal(const TimelineSignalEvent &ev)
+void CinematicSignalSystem::HandleSignal(const CinematicSignalEvent &ev)
 {
     if (ev.name == "Telop")
     {
@@ -72,13 +69,8 @@ void CinematicSignalSystem::HandleSignal(const TimelineSignalEvent &ev)
         return;
     }
 
-    if (ev.name == "BGM")
-    {
-        SwitchBgm(ev.param);
-        return;
-    }
-
-    // 黙って捨てると、名前の打ち間違いに気付けない
+    // エンジンは名前の意味を知らないので、台本の読み込みでは打ち間違いに気付けない。
+    // 黙って捨てると気付く場所が無くなるので、受け手のここで知らせる。
     CCL_LOG_WARN(LogCategory::Game, "[CinematicSignal] 知らないシグナルです: %s", ev.name.c_str());
 }
 
@@ -172,30 +164,4 @@ void CinematicSignalSystem::ApplyPartAlpha(const TelopPart &part, float k) const
         img->color.w = part.baseAlpha * k;
 }
 
-// ---------------------------------------------------------------------------
-// BGM
-// ---------------------------------------------------------------------------
-
-void CinematicSignalSystem::SwitchBgm(const std::string &eventName)
-{
-    int switched = 0;
-    ForEachWithID([&](EntityID id, AudioEmitterComponent &emitter) {
-        const bool isBgm = m_bgmEmitters.count(id) != 0 || emitter.eventName.rfind(kBgmPrefix, 0) == 0;
-        if (!isBgm) return;
-        m_bgmEmitters.insert(id);
-
-        // 名前とハッシュを書き換えるだけ。AudioSystem がハッシュの食い違いを見て、止めて鳴らし直す。
-        // 空にすると、ハッシュが 0 のまま食い違うので止まり、autoPlay を倒すので鳴り直さない
-        emitter.eventName = eventName;
-        emitter.eventHash = 0;
-        emitter.autoPlay  = !eventName.empty();
-        ++switched;
-    });
-
-    if (switched == 0)
-        CCL_LOG_WARN(LogCategory::Game, "[CinematicSignal] BGM の音源（%s で始まる AudioEmitter）が見つかりません",
-                     kBgmPrefix);
-}
-
-// UI の状態を決める帯。テロップを作るのも消すのもここで行う
 REGISTER_RENDER_SYSTEM(CinematicSignalSystem, Priority::RenderStage::R10_UI);

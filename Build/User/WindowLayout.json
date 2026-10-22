@@ -37,7 +37,7 @@
             "visible": false
         },
         {
-            "name": "Timeline Editor",
+            "name": "Cinematic Editor",
             "visible": false
         },
         {
@@ -50,10 +50,6 @@
         },
         {
             "name": "InputMappingEditor",
-            "visible": false
-        },
-        {
-            "name": "NavMesh Builder",
             "visible": false
         },
         {

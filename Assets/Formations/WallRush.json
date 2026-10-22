@@ -1,0 +1,76 @@
+{
+  "assign": {
+    "fillOrder": "ColumnFirst",
+    "rows": 6,
+    "sideGroups": 1,
+    "split": "Block",
+    "tierGroups": 1
+  },
+  "attackSeconds": 0.4,
+  "layers": [
+    {
+      "axis": "Forward",
+      "duration": 1.0,
+      "frequency": 30.0,
+      "from": 0.0,
+      "leadThreshold": 1.0,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 0.5,
+      "type": "Shiver",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    },
+    {
+      "axis": "Forward",
+      "curve": {
+        "keys": [
+          { "time": 0.0, "value": 0.0, "inTangent": 1.0, "outTangent": 1.0, "interp": 1 },
+          { "time": 1.0, "value": 1.0, "inTangent": 1.0, "outTangent": 1.0, "interp": 1 }
+        ]
+      },
+      "duration": 1.0,
+      "from": 0.0,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 80.0,
+      "type": "Translate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    }
+  ],
+  "layout": {
+    "baseA": 0.0,
+    "baseB": 1.5,
+    "centerColumns": true,
+    "columnAxis": "Right",
+    "shape": "Grid",
+    "spacingA": 3.5,
+    "spacingB": 3.5,
+    "tierStepB": 0.0
+  },
+  "name": "長方形の壁突進",
+  "origin": {
+    "forward": 8.0,
+    "right": 0.0,
+    "up": 0.0
+  },
+  "output": {
+    "chargeMode": "RigidFollow",
+    "clampToGround": true,
+    "combat": {
+      "damage": 12.0,
+      "hitRadius": 2.5,
+      "hitStopDuration": 0.08,
+      "hitStopScale": 0.0,
+      "knockback": 18.0,
+      "rehitInterval": -1.0
+    },
+    "look": "Auto",
+    "useShiverTelegraph": true
+  },
+  "slot": 34,
+  "telegraphSeconds": 1.5
+}

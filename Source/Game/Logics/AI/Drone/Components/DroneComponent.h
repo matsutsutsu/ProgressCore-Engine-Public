@@ -14,7 +14,7 @@
 //   規則があるからで、破るとデータ競合になる。
 //
 //   各区分の「書き手=…」は主な書き手を示す。ステージが違えば直列化されるので、
-//   別ステージから書いているフィールドもある（stateTimer と fireDelay は判断層・陣形が
+//   別ステージから書いているフィールドもある（chargeWindup と fireDelay は判断層・陣形が
 //   設定して移動層が減らす、など）。同じステージで2つの System が同じフィールドを
 //   書かないこと。
 //
@@ -30,15 +30,14 @@
 #include "Game/Logics/AI/Drone/Components/DroneFormationType.h" // 陣形の種類（BT側と共有するので別ヘッダ）
 
 // ドローン個体の物理ステート。書き手は DroneBrainSystem のみ。
-//   Stunned と Returning が FireCharge と別値であること自体が仕様。判定側は
-//   「FireCharge か」だけを見るので、「吹き飛ばし中と帰り道は当たらない」に
+//   Returning が FireCharge と別値であること自体が仕様。判定側は
+//   「FireCharge か」だけを見るので、「帰り道は当たらない」に
 //   専用コードが1行も要らない。
 enum class DroneState : uint8_t
 {
     Idle,         // 追従: ホバーの揺れを伴うバネ制御で目標へ寄る。待機・陣形維持
     MoveToTarget, // 移動: 持ち場へ直線的に素早く整列する
     FireCharge,   // 突撃: 目標へ突撃する。当たり判定とジャスト回避の対象になりうるのはこの状態だけ
-    Stunned,      // 硬直: 切り払いで吹き飛ばされ、制御を失って漂う。無害で通常AIは止まる
     Returning,    // 離脱: 突撃を終えて上方へ抜ける。無害。この後 MoveToTarget で隊列へ戻る
 };
 
@@ -82,7 +81,7 @@ struct DroneComponent
     // 同じ部隊で組んでいるように見えない。
     uint8_t squadId = 0xFF;
 
-    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。後ろほど追従を弱める（SlotLag）
+    uint8_t slotInSquad = 0; // 小隊内の位置。0=先頭機。小隊の陣形は後ろほど追従を弱める（springScale）
 
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
@@ -102,12 +101,18 @@ struct DroneComponent
 
     float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1。「形が動く」技の時間軸
 
-    // 予告の溜め時間 [秒]。持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
+    // 予告の震えの経過時間 [秒]。震えを使う技で、持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
+    // 移動層はこれが 0 より大きい間だけ震わせる。
     // 振幅ではなく秒数なので、BTの Wait(予告) を伸ばせば自動で長く震える。
-    float windupTimer = 0.0f;
+    float shiverTime = 0.0f;
+
+    // shiverTime / telegraphTime をどの陣形で数えているか。[RT]
+    // currentFormation と違ったら（陣形が切り替わったら）、DroneFormationSystem が2つの時計を 0 から数え直す。
+    // 数え直さないと、頭上円陣で待っていた時間がそのまま次の技の予告に持ち越され、予告が始まる前に終わる。
+    DroneFormationType telegraphFormation = DroneFormationType::None;
 
     // 予告の経過時間 [秒]。持ち場に着いていて、まだ撃つ合図が来ていない間だけ進む。
-    // windupTimer と違って「撃つ前に震わせる」の設定に関係なく進む。
+    // shiverTime と違って「撃つ前に震わせる」の設定に関係なく進む。
     // データ陣形の Shiver の帯はこれを時計にして、予告の中のどこで震えるかを決める。
     float telegraphTime = 0.0f;
 
@@ -115,6 +120,7 @@ struct DroneComponent
 
     // 発射待ち時間 [秒]。>0 の間は撃たずに持ち場を追い続ける（移動層の発射待ち）。
     // 弾幕が localIndex から各機へ割り振り、「順番に飛ばす」を作る。
+    // 使うのは弾幕だけ。弾幕から別の陣形へ切り替わる機は、弾幕が 0 に戻す（IFormation::OnExit）。
     float fireDelay = 0.0f;
 
     // 先渡しする速度（持ち場そのものが動いている速度）。移動層はこれにバネの補正を足して動く。
@@ -126,6 +132,12 @@ struct DroneComponent
     //                           全機が同じ方向へ同じ速さで飛び、「先頭に追従」ではなく「各自が突っ込む」絵になる
     DirectX::SimpleMath::Vector3 followFeedForward = DirectX::SimpleMath::Vector3::Zero;
 
+    // 持ち場へ寄るバネの強さの倍率。移動層の接近・待機・バネ追従が、バネの強さに掛ける。
+    // DroneFormationSystem が Calculate の前に 1 を入れ、小隊の陣形だけが「後ろの席ほど弱く」で上書きする
+    // （後ろの機ほど遅れて曲がり、隊列が先頭から順にしなる）。
+    // 陣形の外で動かす機（タイトルの群れ）は、動かす側（TitleSwarmSystem）が書く。
+    float springScale = 1.0f;
+
     // ---- 個体の判断 ── 書き手=DroneBrainSystem ----
 
     DroneState currentState = DroneState::Idle; // [RT] 今の物理ステート。移動層はこれだけを見る
@@ -135,19 +147,14 @@ struct DroneComponent
     // 距離で戻すと、閾値をまたぐたびに MoveToTarget と Idle が点滅する。
     bool hasReachedSlot = false;
 
-    float stateTimer   = 0.0f; // [RT] 汎用の状態タイマー [秒]。タメ時間と離脱カーブに使い回す
-    float chargeTimer  = 0.0f; // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時の保険
-    float recoverTimer = 0.0f; // [RT] 吹き飛ばし後の立て直し [秒]。localIndex でばらつかせる
+    // [RT] 突撃前のタメの残り [秒]。直進の突撃（弾幕）だけが使う。
+    // 入れるのは突撃の始め方（BeginStraightCharge）、減らすのは移動層。0 以下になったら撃ち出す。
+    float chargeWindup = 0.0f;
+
+    float breakawayTimer = 0.0f; // [RT] 突撃後の離脱の残り [秒]。0 以下になったら隊列へ戻る
+    float chargeTimer    = 0.0f; // [RT] 突撃開始からの経過 [秒]。飛距離判定が成立しない時の保険
 
     DirectX::SimpleMath::Vector3 chargeStartPos = DirectX::SimpleMath::Vector3::Zero; // [RT] 突撃開始地点。飛距離判定の基準
-
-    // ---- 切り払い（CLEAVE）── 書き手=PlayerCleaveSystem ----
-
-    // 吹き飛ばされている残り時間 [秒]。>0 の間は Stunned で、攻撃判定とジャスト回避の対象から外れる。
-    // 押した先のドローンに自分が当たる理不尽を防ぎ、「切り開いた道は通れる」を保証するため。
-    float knockbackTimer = 0.0f;
-
-    DirectX::SimpleMath::Vector3 knockbackVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 吹き飛ばし速度
 
     // ---- 移動の実体 ── 書き手=DroneMovementSystem ----
 

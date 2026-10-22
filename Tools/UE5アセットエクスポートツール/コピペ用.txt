@@ -1,0 +1,32 @@
+================================================================================
+  コピペ用（UE5 アセットエクスポートツール）
+================================================================================
+
+UE の Output Log の入力欄に貼って Enter するだけで動きます。
+先に Content Browser で出したいアセットを選んでおくこと。
+
+
+■ 実行コマンド（これを Output Log に貼る）
+
+py "C:\Users\2240209\Desktop\ProgressCore-Engine\Tools\UE5アセットエクスポートツール\batch_export_gltf.py"
+
+
+■ スクリプトのファイルパス（Tools → Execute Python Script... で選ぶとき用）
+
+C:\Users\2240209\Desktop\ProgressCore-Engine\Tools\UE5アセットエクスポートツール\batch_export_gltf.py
+
+
+■ よく使う出力先（フォルダ選択ダイアログの上のアドレス欄に貼る）
+
+Muriel のアニメーション
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Models\Enemy\Muriel\Animations
+
+戦闘の効果音
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\Combat
+
+UI の効果音
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\UI
+
+
+※ リポジトリの場所を移したら、ここのパスも書き換えること。
+※ 「py」で Command not recognized と出たら、Python Editor Script Plugin が無効。

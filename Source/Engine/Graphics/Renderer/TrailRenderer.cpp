@@ -26,10 +26,12 @@ namespace
 // 初期化
 // ---------------------------------------------------------------------------
 
-void TrailRenderer::EnsureInitialized(ID3D11Device *device)
+void TrailRenderer::Initialize(ID3D11Device *device)
 {
     if (m_initialized || !device)
+    {
         return;
+    }
 
     const D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -131,7 +133,7 @@ void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertex
 }
 
 // ---------------------------------------------------------------------------
-// 描画と終了
+// 描画
 // ---------------------------------------------------------------------------
 
 void TrailRenderer::Render(const RenderServices &services, const RenderFrameContext &ctx)
@@ -142,20 +144,9 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         return;
 
     // 描けないときも、次のフレームに持ち越さないよう捨てる
-    if (!ctx.dc || !ctx.camera || !services.device || !services.renderState)
+    if (!m_initialized || !ctx.dc || !ctx.camera || !services.renderState)
     {
-        m_vertices.clear();
-        m_addBatches.clear();
-        m_distortVertices.clear();
-        return;
-    }
-
-    EnsureInitialized(services.device);
-    if (!m_initialized)
-    {
-        m_vertices.clear();
-        m_addBatches.clear();
-        m_distortVertices.clear();
+        ClearPending();
         return;
     }
 
@@ -262,23 +253,12 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     dc->OMSetDepthStencilState(nullptr, 0);
     dc->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 
-    m_vertices.clear();
-    m_addBatches.clear();
-    m_distortVertices.clear();
+    ClearPending();
 }
 
-void TrailRenderer::Shutdown()
+void TrailRenderer::ClearPending()
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
     m_vertices.clear();
     m_addBatches.clear();
     m_distortVertices.clear();
-    m_whiteTex.Reset();
-    m_vertexBuffer.Reset();
-    m_constantBuffer.Reset();
-    m_inputLayout.Reset();
-    m_vertexShader.Reset();
-    m_pixelShader.Reset();
-    m_distortPixelShader.Reset();
-    m_initialized = false;
 }

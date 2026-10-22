@@ -60,6 +60,12 @@ struct TimeStateComponent
 {
     float localDt = 0.016f; // この Entity の実効 dt（秒）。TimeScaleSystem が毎ステップ書く
 
+    // localDt を作った倍率（全体 × グループ × バフ × 演出、ヒットストップ中は停止倍率）。
+    //   localDt はロジック1ステップ（1/60 秒）分の値なので、毎フレーム動く Render 側の System が
+    //   そのまま足すと FPS に比例して速くなる（144 FPS で 2.4 倍）。Render 側は
+    //   「その描画フレームの dt × scale」で進める。TimeScaleSystem が localDt と一緒に書く
+    float scale = 1.0f;
+
     // 【レイヤー1】: 瞬間的な完全停止（ヒットストップ）。他の倍率より優先して上書きする
     float hitStopTimer = 0.0f; // 残り時間（秒）
     float freezeScale  = 0.0f; // 停止中の倍率（0 で完全停止）

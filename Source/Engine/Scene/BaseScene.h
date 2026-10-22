@@ -34,6 +34,8 @@ public:
     virtual ~BaseScene() override = default;
 
     virtual void Initialize() override;
+
+    // Initialize で作った Entity を確定させ、各 System の処理対象へ入れる。派生で上書きするなら先に呼ぶこと
     virtual void Start() override;
     virtual void Finalize() override;
     virtual void Update(float elapsedTime) override;

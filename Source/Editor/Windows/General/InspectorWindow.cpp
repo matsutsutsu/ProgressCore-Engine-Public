@@ -1,6 +1,7 @@
 #include "Editor/Windows/General/InspectorWindow.h"
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -11,7 +12,6 @@
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Serialization/Serializer/PrefabSerializer.h"
-#include "Engine/Serialization/Serializer/SceneSerializer.h"
 
 namespace
 {
@@ -70,15 +70,20 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
 
     // ============================================================
-    // 名前と ID
+    // 名前と ID（名前欄を横幅いっぱいに、ID は右端に寄せる）
     // ============================================================
     auto *nameComp = world->GetComponent<NameComponent>(selected);
 
     char filenameBuf[256] = "NewPrefab"; // プレハブ保存時のファイル名の初期値
 
+    char        idText[32];
+    std::snprintf(idText, sizeof(idText), "ID: %llu", selected);
+    const float idWidth = ImGui::CalcTextSize(idText).x + ImGui::GetStyle().ItemSpacing.x;
+
     if (nameComp)
     {
-        ImGui::InputText("エンティティ名", nameComp->name, sizeof(nameComp->name));
+        ImGui::SetNextItemWidth(-idWidth);
+        ImGui::InputTextWithHint("##EntityName", "エンティティ名", nameComp->name, sizeof(nameComp->name));
         if (strlen(nameComp->name) > 0)
         {
             strcpy_s(filenameBuf, sizeof(filenameBuf), nameComp->name);
@@ -86,11 +91,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
     else
     {
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "（名前コンポーネントなし）");
-
-        ImGui::SameLine();
-        if (ImGui::Button("＋ 名前を追加"))
+        // 名前が無いエンティティは、名前欄の代わりに追加ボタンを同じ幅で置く
+        if (ImGui::Button("＋ 名前を追加", ImVec2(-idWidth, 0)))
         {
             std::string defaultName = "Entity_" + std::to_string(selected);
             world->AddComponent<NameComponent>(selected, NameComponent(defaultName.c_str()));
@@ -98,58 +100,28 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
 
     ImGui::SameLine();
-    ImGui::TextDisabled("(ID: %llu)", selected);
-    ImGui::Separator();
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextDisabled("%s", idText);
 
-    // 複数選択中はその旨を表示し、複製・削除は選択全体に適用されることを示す。
+    // 複数選択中はその旨を表示し、削除は選択全体に適用されることを示す。
     //   コンポーネントの編集は主選択の1体に対してだけ行う。
     const size_t selCount = context.selectedEntities.size();
     if (selCount > 1)
     {
         ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f),
-                           "%zu 個を選択中 (編集はアクティブの1体のみ / 複製・削除は全体)", selCount);
-    }
-
-    // 複製ボタン（選択中のエンティティを階層ごと複製し、複製先を選択する）
-    ImGui::SameLine(ImGui::GetWindowWidth() - 200);
-    if (ImGui::Button("複製", ImVec2(75, 0)))
-    {
-        std::vector<CCL::ECS::EntityID> roots = context.GetTopLevelSelection();
-        if (roots.empty()) roots.push_back(selected); // selectedEntities が空でも主選択は複製する
-        std::vector<CCL::ECS::EntityID> newRoots;
-        for (CCL::ECS::EntityID src : roots)
-        {
-            auto created = SceneSerializer::DuplicateHierarchy(world, src);
-            if (!created.empty()) newRoots.push_back(created[0]);
-        }
-        if (!newRoots.empty())
-        {
-            context.ClearSelection();
-            for (CCL::ECS::EntityID r : newRoots)
-                context.AddSelection(r);
-        }
-        return; // 選択が切り替わったので、このフレームの描画はここで終える
-    }
-
-    // 削除ボタン（選択中すべてを削除）
-    ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-    if (ImGui::Button("エンティティを削除", ImVec2(110, 0)))
-    {
-        std::vector<CCL::ECS::EntityID> toDelete = context.selectedEntities;
-        if (toDelete.empty()) toDelete.push_back(selected); // selectedEntities が空でも主選択は削除する
-        for (CCL::ECS::EntityID id : toDelete)
-        {
-            world->Destroy(id);
-        }
-        context.ClearSelection();
-        return; // 破棄したので、これ以上は描画しない
+                           "%zu 個を選択中 (編集はアクティブの1体のみ / 削除は全体)", selCount);
     }
 
     // ============================================================
-    // プレハブとして保存
+    // 操作ボタン（プレハブ保存 / 削除 を1行に等幅で並べる）
     // ============================================================
     ImGui::Spacing();
-    if (ImGui::Button("プレハブJSONとして保存", ImVec2(-1, 0)))
+
+    const float spacing     = ImGui::GetStyle().ItemSpacing.x;
+    const float buttonWidth = (ImGui::GetContentRegionAvail().x - spacing) / 2.0f;
+
+    // ---- プレハブとして保存 ----
+    if (ImGui::Button("プレハブ保存", ImVec2(buttonWidth, 0)))
     {
         // 保存ダイアログのファイル名の初期値（エンティティ名.json）
         char filename[256] = {0};
@@ -168,7 +140,26 @@ void InspectorWindow::DrawContents(EditorContext &context)
             PrefabSerializer::Save(path->string().c_str(), world, selected, std::string(filenameBuf));
         }
     }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("主選択のエンティティをプレハブJSONとして保存");
+    }
 
+    // ---- 削除（選択中すべてを削除）----
+    ImGui::SameLine();
+    if (ImGui::Button("削除", ImVec2(buttonWidth, 0)))
+    {
+        std::vector<CCL::ECS::EntityID> toDelete = context.selectedEntities;
+        if (toDelete.empty()) toDelete.push_back(selected); // selectedEntities が空でも主選択は削除する
+        for (CCL::ECS::EntityID id : toDelete)
+        {
+            world->Destroy(id);
+        }
+        context.ClearSelection();
+        return; // 破棄したので、これ以上は描画しない
+    }
+
+    ImGui::Spacing();
     ImGui::Separator();
 
     // ============================================================

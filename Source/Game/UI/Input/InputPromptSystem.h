@@ -24,10 +24,7 @@ struct UITransformComponent;
 class InputPromptSystem : public CCL::ECS::IfSystem<InputPromptSystem>
 {
 public:
-    InputPromptSystem()
-        : IfSystem("InputPromptSystem")
-    {
-    }
+    InputPromptSystem() : IfSystem("InputPromptSystem") {}
 
     void Update(float dt) override;
     void OnGui() override;

@@ -25,7 +25,7 @@ namespace
      * @brief 背景（壁・床・見えない壁）が絡む接触かを返す。
      *
      * OnContactPersisted は接触が続く限り毎フレーム呼ばれるため、地面に載っている剛体があるだけでイベントバッファが背景との接触で埋まる。
-     * 購読側（HitboxCollisionSystem / JustEvadeSystem）は全イベントを自前の vector へコピーしてから絞り込むので、コストは二重に乗る。
+     * 購読側（HitboxCollisionSystem / PlayerJustEvadeSystem）は全イベントを自前の vector へコピーしてから絞り込むので、コストは二重に乗る。
      *
      * 背景との接触を必要とする購読者はいない（攻撃レイヤーは pair フィルタでそもそも壁と当たらない）ので、ここで捨ててよい。
      * キャラ側の JoltCharacterContactListener も同じ条件で捨てている。

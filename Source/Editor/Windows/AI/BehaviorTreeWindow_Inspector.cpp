@@ -1,6 +1,6 @@
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include <algorithm>
 #include <cmath>
@@ -17,7 +17,7 @@ void BehaviorTreeWindow::DrawInspector()
 
     ZoneScopedN("BTW: Inspector");
 
-    ImGui::Text("インスペクタ (Inspector)");
+    ImGui::Text("インスペクタ");
     ImGui::Separator();
 
     std::vector<ed::NodeId> selectedNodes;
@@ -43,7 +43,7 @@ void BehaviorTreeWindow::DrawInspector()
             {
                 char nameBuf[256];
                 strcpy_s(nameBuf, it->name.c_str());
-                if (ImGui::InputText("名前 (Name)", nameBuf, sizeof(nameBuf)))
+                if (ImGui::InputText("名前", nameBuf, sizeof(nameBuf)))
                 {
                     it->name = nameBuf;
                 }
@@ -58,79 +58,62 @@ void BehaviorTreeWindow::DrawInspector()
             else
             {
                 ImGui::Text("名前: %s", GetDisplayName(*it).c_str());
-                ImGui::TextDisabled("（下の設定から自動で決まります）");
+                ImGui::TextDisabled("（設定から自動で決まる）");
             }
 
             // =========================================================
             // ノード種類ごとの説明
             // =========================================================
             ImGui::Spacing();
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f)); // 黄色テキスト
-            ImGui::Text("[ノードの役割と使い方]");
-            ImGui::PopStyleColor();
 
-            // 自動折り返しを有効にして、ウィンドウ幅に合わせてテキストを改行させる
+            // ウィンドウ幅で折り返す
             ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 
             switch (it->type)
             {
             case EditorBTNodeType::Selector:
-                ImGui::Text("【Selector (セレクター / OR条件)】\n"
-                            "子ノードを左から順に実行し、どれか1つでも「Success(成功)」すれば親にSuccessを返して終了します。\n"
-                            "💡 使い方：優先度の高い行動（左）から順番に試す「行動の分岐点」として使います。");
+                ImGui::TextUnformatted("子を左から順に実行し、成功した時点で成功を返す。\n"
+                                       "優先したい行動ほど左に置く。");
                 break;
             case EditorBTNodeType::Sequence:
-                ImGui::Text("【Sequence (シーケンス / AND条件)】\n"
-                            "子ノードを左から順に実行し、1つでも「Failure(失敗)」したら親にFailureを返して終了します。\n"
-                            "💡 使い方：「条件チェック」→「近づく」→「攻撃する」といった、一連のアクションを順番にこなすセットを作るのに使います。");
+                ImGui::TextUnformatted("子を左から順に実行し、失敗した時点で失敗を返す。\n"
+                                       "条件 → 移動 → 攻撃 のような一連の流れに使う。");
                 break;
             case EditorBTNodeType::Condition:
-                ImGui::Text("【Condition (条件)】\n"
-                            "状況（距離やHPなど）を判定し、SuccessかFailureを即座に返します。\n"
-                            "💡 使い方：Sequenceの先頭（一番左）に置いて、その行動セットを実行してよいかの「門番」として使います。");
+                ImGui::TextUnformatted("距離やHPを判定して成功/失敗を返す。\n"
+                                       "Sequence の先頭に置く。");
                 break;
             case EditorBTNodeType::Action:
-                ImGui::Text("【Action (アクション / 行動)】\n"
-                            "実際にAIを動かす末端の命令です。ゲームのロジックに命令を送ります。\n"
-                            "💡 使い方：移動や攻撃など。実行に時間がかかる行動は「Running(実行中)」を返し続け、次フレームも呼ばれます。\n"
-                            "📌 現状のBoss実行層が対応するのは「移動(Move)」のみ。ドローン系は陣形指示、Waitはタイマー待機です。");
+                ImGui::TextUnformatted("移動や攻撃などの実処理。\n"
+                                       "終わるまで時間がかかるものは Running を返し続ける。");
                 break;
             case EditorBTNodeType::Decorator:
-                ImGui::Text("【Decorator (デコレーター / 修飾)】\n"
-                            "下に1つだけ子ノードを持ち、その子の結果や実行タイミングを操作します。\n"
-                            "💡 使い方：強力な攻撃に「10秒のクールダウン」をつけたり、失敗時に「2回リトライ」させたりする制限をかけるのに使います。");
+                ImGui::TextUnformatted("子を1つだけ持ち、その結果や実行タイミングを変える。\n"
+                                       "反転 / クールダウン / リトライ");
                 break;
             case EditorBTNodeType::Group:
-                ImGui::Text("【Group (グループ / コメント)】\n"
-                            "複数のノードを視覚的に囲んで整理するための枠です。\n"
-                            "💡 使い方：AIの実行ロジックには一切影響を与えません。メモや整理に使ってください。");
+                ImGui::TextUnformatted("ノードを囲んで整理するための枠。実行には影響しない。");
                 break;
             case EditorBTNodeType::Parallel:
-                ImGui::Text("【Parallel (並行ノード)】\n"
-                            "一番上につないだ子が「主」で、その結果がこのノードの結果になります。\n"
-                            "2つ目以降は「従」で、主が実行中の間だけ毎フレーム動き、結果は無視されます。\n"
-                            "💡 使い方：技を出しながら、その間ドローンにも指示を出す、といった同時進行に使います。\n"
-                            "⚠ 従にはボス本体の技（跳躍・後方ステップ・移動）を置かないでください。"
-                            "主が終わると従は止まりますが、体への要求が下りず技が続いてしまいます。");
+                ImGui::TextUnformatted("一番上の子が主。このノードの結果は主の結果になる。\n"
+                                       "2つ目以降は従。主が Running の間だけ毎フレーム動き、結果は捨てる。\n"
+                                       "従にボス本体の技（跳躍・後方ステップ・移動）は置かない。主が終わっても技が止まらなくなる。");
                 break;
             case EditorBTNodeType::WeightedSelector:
-                ImGui::Text("【Weighted Selector (重み付きセレクター)】\n"
-                            "子ノードの「重み」に比例して1つ抽選し、その枝を実行します。\n"
-                            "失敗したらその枝を候補から外して、残りから引き直します。\n"
-                            "重みを全部同じにすれば、ただの均等ランダムになります（既定は 1.0）。\n"
-                            "💡 使い方：敵の近接攻撃の3択など、プレイヤーに次の行動を予測させない「揺さぶり（Mix-up）」に最適です。\n"
-                            "💡 重みは子ノードを選んで設定します。実際の確率もそこに出ます。");
+                ImGui::TextUnformatted("子の重みに比例して1つ抽選し、その枝を実行する。\n"
+                                       "失敗した枝は候補から外して引き直す。\n"
+                                       "重みは子ノード側で設定（既定 1.0）。");
                 break;
             case EditorBTNodeType::SubTree:
-                ImGui::Text("【SubTree (サブツリー)】\n"
-                            "中に木を1本しまっておく箱です。実行すると、中の「入口」に繋いだ木がこの場所で動きます。\n"
-                            "保存時に中身へ置き換わるので、ゲームの動きは中身を直接置いた場合と同じです。\n"
-                            "💡 使い方：ひとまとまりの行動（近接の3択など）を箱に入れて、外側の木を短く保ちます。"
-                            "既存のノードは、選んで右クリック →「選択をサブツリーにまとめる」で箱に入れられます。\n"
-                            "💡 ダブルクリックで中へ入り、ツールバーの下のパンくずで外へ戻れます。");
+                ImGui::TextUnformatted("木を1本まとめた箱。中の入口に繋いだ木がこの位置で動く。\n"
+                                       "保存時は中身に展開されるので、動作は直接置いた場合と同じ。\n"
+                                       "ダブルクリックで中へ、パンくずで外へ。\n"
+                                       "右クリック →「選択をサブツリーにまとめる」で作れる。");
                 break;
             }
-            ImGui::PopTextWrapPos(); // 自動折り返し終了
+            ImGui::PopStyleColor();
+            ImGui::PopTextWrapPos();
             ImGui::Separator();
 
             // ---------------------------------------------------------
@@ -138,7 +121,7 @@ void BehaviorTreeWindow::DrawInspector()
             // ---------------------------------------------------------
             if (it->type == EditorBTNodeType::Group)
             {
-                ImGui::Text("枠の色:");
+                ImGui::Text("枠の色");
                 // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい。
                 for (int i = 0; i < kGroupPaletteCount; ++i)
                 {
@@ -156,15 +139,15 @@ void BehaviorTreeWindow::DrawInspector()
                     }
                     ImGui::PopID();
                 }
-                ImGui::TextDisabled("上の「名前 (Name)」がそのまま枠の見出しになります");
+                ImGui::TextDisabled("名前が枠の見出しになる");
                 ImGui::Separator();
             }
 
             if (it->type == EditorBTNodeType::Condition)
             {
                 ImGui::Separator();
-                ImGui::Text("条件設定 (Condition):");
-                if (DrawConditionCombo("条件を選ぶ", it->actionOrConditionId))
+                ImGui::Text("条件");
+                if (DrawConditionCombo("種類", it->actionOrConditionId))
                 {
                     needsUndo             = true;
                     undoMessage           = "Change Condition";
@@ -188,8 +171,8 @@ void BehaviorTreeWindow::DrawInspector()
             else if (it->type == EditorBTNodeType::Action)
             {
                 ImGui::Separator();
-                ImGui::Text("行動設定 (Action):");
-                if (DrawActionCombo("行動を選ぶ", it->actionOrConditionId))
+                ImGui::Text("行動");
+                if (DrawActionCombo("種類", it->actionOrConditionId))
                 {
                     needsUndo             = true;
                     undoMessage           = "Change Action";
@@ -205,7 +188,7 @@ void BehaviorTreeWindow::DrawInspector()
                 // データの技は数値ではなく技の名前で選ぶ。
                 if (it->actionOrConditionId == A_DroneFormation)
                 {
-                    if (DrawDroneFormationCombo("技を選ぶ", it->param))
+                    if (DrawDroneFormationCombo("技", it->param))
                     {
                         needsUndo   = true;
                         undoMessage = "Change Drone Formation";
@@ -225,34 +208,34 @@ void BehaviorTreeWindow::DrawInspector()
                 if (IsCommandWritingAction(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f),
-                                       "→ BossActionSystem が体を動かす（Parallel では主に置く）");
+                                       "BossActionSystem で実行（Parallel では主に置く）");
                 }
                 else if (IsDroneAction(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f),
-                                       "→ BossCommand.requestFormation に陣形を指示");
+                                       "BossCommand.requestFormation へ陣形を渡す");
                 }
                 else if (IsWaitAction(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f),
-                                       "→ nodeTimers で待機（BossAction 非依存）");
+                                       "nodeTimers で待つ（BossAction は使わない）");
                 }
                 else if (it->actionOrConditionId == A_ResetDamage)
                 {
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f),
-                                       "→ ブラックボードの蓄積ダメージをリセット");
+                                       "Blackboard の蓄積ダメージを 0 に戻す");
                 }
                 else if (!FindActionEntry(it->actionOrConditionId))
                 {
                     ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
-                                       "⚠ 未登録ID（辞書に載っていない番号）");
+                                       "未登録の ID");
                 }
             }
 
             if (it->type == EditorBTNodeType::SubTree)
             {
                 ImGui::Separator();
-                ImGui::Text("サブツリー (SubTree):");
+                ImGui::Text("サブツリー");
                 ImGui::TextDisabled("中のノード数: %d", static_cast<int>(CollectSubTreeContents(it->id).size()));
                 if (ImGui::Button("中へ入る")) RequestEnterSubTree(it->id);
             }
@@ -260,11 +243,11 @@ void BehaviorTreeWindow::DrawInspector()
             if (it->type == EditorBTNodeType::Decorator)
             {
                 ImGui::Separator();
-                ImGui::Text("デコレーター設定 (Decorator):");
+                ImGui::Text("デコレーター");
 
                 // 子を待たずに並行して動かしたいときは Parallel ノードで書く。
-                const char *decNames[] = {"0: 結果反転 (Inverter)", "1: クールダウン (Cooldown)", "2: リトライ (Retry)"};
-                if (ImGui::Combo("タイプ", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
+                const char *decNames[] = {"反転 (Inverter)", "クールダウン (Cooldown)", "リトライ (Retry)"};
+                if (ImGui::Combo("種類", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
                     // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
                     // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる。
@@ -283,7 +266,7 @@ void BehaviorTreeWindow::DrawInspector()
                 if (it->decoratorType == 1)
                 { // Cooldown
                     // ドラッグ中は数値を変えるだけ
-                    ImGui::DragFloat("待機時間 (秒)", &it->param, 0.1f, 0.0f, 60.0f);
+                    ImGui::DragFloat("時間 [秒]", &it->param, 0.1f, 0.0f, 60.0f);
 
                     // マウスを離した時だけUndo記録
                     if (ImGui::IsItemDeactivatedAfterEdit())
@@ -295,7 +278,7 @@ void BehaviorTreeWindow::DrawInspector()
                 else if (it->decoratorType == 2)
                 { // Retry
                     int retryCount = static_cast<int>(it->param);
-                    if (ImGui::DragInt("リトライ回数", &retryCount, 1, 1, 10))
+                    if (ImGui::DragInt("回数", &retryCount, 1, 1, 10))
                     {
                         it->param = static_cast<float>(retryCount);
                     }
@@ -330,36 +313,34 @@ void BehaviorTreeWindow::DrawInspector()
                 if (parent && parent->type == EditorBTNodeType::Selector)
                 {
                     ImGui::Separator();
-                    ImGui::Text("割り込み (Interrupt):");
+                    ImGui::Text("割り込み");
 
-                    if (ImGui::Checkbox("下の枝の技の途中でも割り込む", &it->interrupt))
+                    if (ImGui::Checkbox("下の枝の実行中も割り込む", &it->interrupt))
                     {
                         needsUndo   = true;
                         undoMessage = "Change Interrupt";
                     }
-                    ImGui::TextDisabled("この枝より下の技が動いている最中も、この枝の");
-                    ImGui::TextDisabled("条件を毎フレーム確認します。条件を満たしたら");
-                    ImGui::TextDisabled("その技を途中で中断し、上から選び直します。");
-                    ImGui::TextDisabled("※枝の先頭に条件ノードが必要です");
+                    ImGui::TextDisabled("下の枝の実行中もこの枝の条件を毎フレーム見て、");
+                    ImGui::TextDisabled("成立したら中断して選び直す。");
+                    ImGui::TextDisabled("枝の先頭に条件ノードが要る。");
 
                     ImGui::Separator();
-                    ImGui::Text("自己中断 (Abort Self):");
+                    ImGui::Text("自己中断");
 
-                    if (ImGui::Checkbox("条件が合わなくなったら技を中断する", &it->abortSelf))
+                    if (ImGui::Checkbox("条件が外れたら中断する", &it->abortSelf))
                     {
                         needsUndo   = true;
                         undoMessage = "Change Abort Self";
                     }
-                    ImGui::TextDisabled("この枝の技が動いている最中も、この枝の条件を");
-                    ImGui::TextDisabled("毎フレーム確認します。条件に合わなくなったら");
-                    ImGui::TextDisabled("技の途中でも中断し、上から選び直します。");
-                    ImGui::TextDisabled("※枝の先頭に条件ノードが必要です");
+                    ImGui::TextDisabled("この枝の実行中も条件を毎フレーム見て、");
+                    ImGui::TextDisabled("外れたら中断して選び直す。");
+                    ImGui::TextDisabled("枝の先頭に条件ノードが要る。");
                 }
 
                 if (parent && parent->type == EditorBTNodeType::WeightedSelector)
                 {
                     ImGui::Separator();
-                    ImGui::Text("抽選の重み (Weight):");
+                    ImGui::Text("抽選");
 
                     ImGui::DragFloat("重み", &it->weight, 0.1f, 0.0f, 100.0f, "%.2f");
                     if (ImGui::IsItemDeactivatedAfterEdit())
@@ -382,13 +363,13 @@ void BehaviorTreeWindow::DrawInspector()
                     if (it->weight <= 0.0f)
                     {
                         ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f),
-                                           "重みが0以下なので、この枝は一度も選ばれません");
+                                           "重みが 0 以下なので選ばれない");
                     }
                     else if (total > 0.0f)
                     {
-                        ImGui::Text("選ばれる確率  %.1f %%   (兄弟の重みの合計 %.2f)",
+                        ImGui::Text("確率 %.1f %%（合計 %.2f）",
                                     it->weight / total * 100.0f, total);
-                        ImGui::TextDisabled("条件で弾かれた枝は候補から外れるので、実際はこれより上がります");
+                        ImGui::TextDisabled("条件で外れる枝があれば、実際はこれより高い");
                     }
                 }
             }
@@ -403,7 +384,7 @@ void BehaviorTreeWindow::DrawInspector()
     }
     else
     {
-        ImGui::TextDisabled("編集するノードを選択してください。");
+        ImGui::TextDisabled("ノードが選択されていない");
     }
 }
 
@@ -474,10 +455,9 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
 
     if (ImGui::BeginCombo(label, GetDroneFormationLabel(slotParam)))
     {
-        auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
-        for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
+        for (size_t slot = 0; m_formations && slot < kDroneFormationSlotCount; ++slot)
         {
-            const char *name = registry.DataFormationName(static_cast<DroneFormationType>(slot));
+            const char *name = m_formations->DataFormationName(static_cast<DroneFormationType>(slot));
             if (!name) continue; // C++ 実装の枠と空き枠は出さない（ここで選べるのはデータの技だけ）
 
             char item[96];
@@ -494,7 +474,7 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
         ImGui::EndCombo();
     }
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("陣形エディタで作った技が並ぶ。BTが覚えるのは枠番号なので、技の名前は後から変えてよい。");
+        ImGui::SetTooltip("陣形エディタで作った技。BT には枠番号で保存されるので、名前は後から変えてよい");
 
     return changed;
 }

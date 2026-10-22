@@ -7,8 +7,8 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Serializer/LevelSerializer.h"
 
-#include "Game/Title/TitleCameraSystem.h"
-#include "Game/Title/TitleSwarmSystem.h"
+#include "Game/Logics/Title/TitleCameraSystem.h"
+#include "Game/Logics/Title/TitleSwarmSystem.h"
 #include "Game/UI/Screens/TitleMenuSystem.h"
 
 void TitleScene::Initialize()

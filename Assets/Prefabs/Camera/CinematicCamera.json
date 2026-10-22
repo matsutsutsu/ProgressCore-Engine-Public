@@ -1,0 +1,45 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "CinematicCamera"
+                },
+                "CinematicCamera": {
+                    "activePriority": 300,
+                    "idlePriority": -1000
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 0.5,
+                    "farClip": 3000.0,
+                    "fov": 45.0,
+                    "nearClip": 0.1,
+                    "priority": -1000
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "CinematicCamera",
+    "version": 1
+}

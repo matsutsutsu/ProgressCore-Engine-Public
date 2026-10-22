@@ -14,8 +14,6 @@
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
-#include "Engine/Graphics/Shader/PostProcess/ContactShadowEffect.h"
-#include "Engine/Graphics/Components/PostProcess/ContactShadowConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/PauseBlurEffect.h"
 #include "Engine/Core/App/GameFlowState.h" // ポーズ中だけ背景をぼかすため
 
@@ -70,13 +68,6 @@ void PostProcessSystem::Update(float dt)
         if (comp) ssao->UpdateParams(comp->data);
     }
 
-    if (auto *contact = postProcess->GetEffect<ContactShadowEffect>())
-    {
-        auto *comp = m_world->GetSingletonComponent<ContactShadowConfigComponent>();
-        contact->SetEnabled(comp && comp->enable);
-        if (comp) contact->UpdateParams(comp->data);
-    }
-
     if (auto *distortion = postProcess->GetEffect<DistortionEffect>())
     {
         auto *comp = m_world->GetSingletonComponent<DistortionConfigComponent>();
@@ -93,14 +84,16 @@ void PostProcessSystem::Update(float dt)
     // enable（普段の設定）が false でも演出は出すので、パスのオン/オフは合成後の強さが 0 かどうかで決める。
     if (auto *radial = postProcess->GetEffect<RadialBlurEffect>())
     {
-        auto       *comp     = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
-        const float strength = comp ? comp->ResolvedStrength() : 0.0f;
-        radial->SetEnabled(strength > 0.0f);
+        auto *comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
         if (comp)
         {
-            auto data         = comp->data;
-            data.blurStrength = strength;
+            const auto data = comp->Resolve();
+            radial->SetEnabled(data.blurStrength > 0.0f);
             radial->UpdateParams(data);
+        }
+        else
+        {
+            radial->SetEnabled(false);
         }
     }
 

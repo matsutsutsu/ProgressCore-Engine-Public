@@ -132,6 +132,7 @@ struct AnimNotifyEvent
     // 効果音のパラメータ（Sound 用）
     float soundVolume = 1.0f; // 音量の倍率（1 で等倍、0 で無音）
     float soundPitch  = 0.0f; // ピッチ（オクターブ単位。0 で等倍、±1 で 1 オクターブ上下）
+    float soundPitchRandom = 0.0f; // 鳴らすたびにピッチを ±この幅でずらす（オクターブ単位。0 でずらさない）。同じ音の連続を目立たせない
 
     // stringParam のハッシュ（HitBox のみ。JSON には保存しない）。
     //   毎フレームのハッシュ計算を避けるため ResourceManager::LoadAnimSequence が計算する。
@@ -166,7 +167,7 @@ using json = nlohmann::json;
 inline void to_json(json &j, const AnimNotifyEvent &e)
 {
     j = json{
-        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"hitboxFollow", e.hitboxFollow}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}, {"effectAttachTag", e.effectAttachTag}, {"soundVolume", e.soundVolume}, {"soundPitch", e.soundPitch}};
+        {"startTime", e.startTime}, {"endTime", e.endTime}, {"type", (int)e.type}, {"stringParam", e.stringParam}, {"cancelMask", e.cancelMask}, {"damage", e.damage}, {"knockback", e.knockback}, {"hitStopDuration", e.hitStopDuration}, {"hitStopScale", e.hitStopScale}, {"radius", e.radius}, {"attackLayer", e.attackLayer}, {"hitboxFollow", e.hitboxFollow}, {"effectScale", e.effectScale}, {"effectFollow", e.effectFollow}, {"effectAttachTag", e.effectAttachTag}, {"soundVolume", e.soundVolume}, {"soundPitch", e.soundPitch}, {"soundPitchRandom", e.soundPitchRandom}};
 
     // Vector3 は初期化子リストの中では変換できない（ADL で解決されない）ので、後から代入する
     j["offset"] = e.offset;
@@ -191,6 +192,7 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
     e.effectAttachTag = j.value("effectAttachTag", std::string{});
     e.soundVolume  = j.value("soundVolume", 1.0f);
     e.soundPitch   = j.value("soundPitch", 0.0f);
+    e.soundPitchRandom = j.value("soundPitchRandom", 0.0f);
 }
 
 // AnimSequence ⇔ json

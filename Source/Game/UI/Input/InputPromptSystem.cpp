@@ -60,7 +60,7 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
     // 説明が出ないと、その操作が無いように見えるため
     if (outRows.empty())
     {
-        outRows = {{"", "Move", "MOVE"}, {"", "Camera", "CAMERA"}, {"Attack", "", "ATTACK"}, {"Cleave", "", "CLEAVE"}, {"Dash", "", "DODGE"}, {"Jump", "", "JUMP"}, {"LockOn", "", "LOCK ON"}};
+        outRows = {{"", "Move", "MOVE"}, {"", "Camera", "CAMERA"}, {"Attack", "", "ATTACK"}, {"Dash", "", "DODGE"}, {"Jump", "", "JUMP"}, {"LockOn", "", "LOCK ON"}};
     }
 }
 

@@ -34,7 +34,10 @@ namespace CCL::AI::Formation
 {
     struct FormationAsset;
     struct FormationLayer;
+    class FormationRegistry;
 } // namespace CCL::AI::Formation
+
+namespace CCL::AI::Formation::Data { class DataDrivenFormation; }
 
 class FormationEditorWindow : public EditorWindow
 {
@@ -143,6 +146,9 @@ private:
      */
     bool DuplicateCurrent(const char *fileName);
 
+    // その枠のデータ陣形。C++ 実装の枠・空き枠・シーンが無いときは nullptr。
+    CCL::AI::Formation::Data::DataDrivenFormation *DataAt(DroneFormationType slot) const;
+
     // 今選んでいる枠の陣形。データ陣形でなければ nullptr。
     Asset *CurrentAsset() const;
 
@@ -150,6 +156,9 @@ private:
     int CountDrones(EditorContext &context) const;
 
     // ---- 状態 ----
+
+    // 今の World の陣形レジストリ。OnFrameBegin が毎フレーム引き直す。シーンが無ければ nullptr。
+    CCL::AI::Formation::FormationRegistry *m_registry = nullptr;
 
     DroneFormationType m_slot = DroneFormationType::GuillotineSlam; // 開いたときに選んでいる技
 

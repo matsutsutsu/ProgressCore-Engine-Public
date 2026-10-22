@@ -16,7 +16,7 @@
 class TimeScaleSystem : public CCL::ECS::IfSystem<TimeScaleSystem, CCL::ECS::Write<TimeStateComponent>>
 {
 public:
-    TimeScaleSystem();
+    TimeScaleSystem() : IfSystem("TimeScaleSystem") {}
 
     // rawDt はスケール前の固定ステップ時間
     void Update(float rawDt) override;

@@ -24,7 +24,7 @@ namespace CCL::ECS
 class TransformUpdateSystem : public CCL::ECS::IfSystem<TransformUpdateSystem, CCL::ECS::Write<TransformComponent>>
 {
 public:
-    TransformUpdateSystem();
+    TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
     virtual ~TransformUpdateSystem() = default;
 
     /**
@@ -60,40 +60,56 @@ public:
     // 親から子を切り離す
     static void DetachChild(CCL::ECS::World &world, CCL::ECS::EntityID child);
 
-    // 親子リンクを外しながら破棄を予約する。
-    // destroyChildren が true なら子孫も破棄し、false なら子はルートにして残す
-    static void DestroyEntityWithHierarchy(
-        CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
-
-    // entity（と、destroyChildren が true なら子孫）に DestroyTag を付ける
-    static void MarkForDestruction(
-        CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
-
     // ============================================================
     // 物理との受け渡し
     // ============================================================
 
     /**
-     * @brief 物理から返ってきた「ワールド座標・回転」を position/rotation へ正しく書き戻す。
+     * @brief 物理から返ってきたワールド座標・回転を、position / rotation（ローカル値）へ書き戻す。
      *
-     * @details
-     *  position / rotation は **親からの相対値(Local)**。Jolt が返すのはワールド値なので、
-     *  親を持つ Entity にそのまま代入すると親の変換が二重に掛かって飛ぶ。
-     *  親がいるときだけ親の worldMatrix の逆変換を通してローカルへ落とす。
+     * position / rotation は親からの相対値で、Jolt が返すのはワールド値である。
+     * 親を持つ Entity にそのまま代入すると親の変換が二重に掛かって飛ぶので、
+     * 親がいるときだけ親の worldMatrix の逆変換を通してローカルへ落とす。
      *
-     *  物理へ渡す側（JoltBodySetupSystem / JoltPushSystem）は GetWorldPosition() /
-     *  GetWorldRotation() でワールド値を渡しているので、戻す側もワールド値として扱う。
-     *
-     * @note 親の worldMatrix を読む。L05（Pull）の時点で worldMatrix を書くシステムは
+     * @param world    entity が属する World。親の TransformComponent を引くのに使う。
+     * @param entity   書き戻す Entity。
+     * @param trans    entity の TransformComponent。position / rotation / isStatic を書き換える。
+     * @param worldPos 物理から返ったワールド座標（m）。
+     * @param worldRot 物理から返ったワールド回転（クォータニオン）。
+     * @note 物理へ渡す側（JoltBodySetupSystem / JoltPushSystem）は GetWorldPosition() /
+     *       GetWorldRotation() でワールド値を渡しているので、戻す側もワールド値として扱う。
+     * @note 親の worldMatrix を読む。L05（JoltPullSystem）の時点で worldMatrix を書く System は
      *       無いため、並列ループから呼んでも安全。
      */
     static void WriteWorldTransform(CCL::ECS::World &world, CCL::ECS::EntityID entity,
                                     TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
                                     const DirectX::XMFLOAT4 &worldRot);
 
-    // 回転は変えず、ワールド座標だけ書き戻す版（CharacterVirtual 用）
+    // WriteWorldTransform の、回転を変えずワールド座標だけ書き戻す版（CharacterVirtual 用）
     static void WriteWorldPosition(CCL::ECS::World &world, CCL::ECS::EntityID entity,
                                    TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos);
+
+    // ============================================================
+    // 破棄の予約
+    // ============================================================
+
+    /**
+     * @brief 親子リンクを外しながら、entity の破棄を予約する。
+     * @param world           entity が属する World。
+     * @param entity          破棄する Entity。
+     * @param destroyChildren true なら子孫も破棄する。false なら子はルートにして残す。
+     */
+    static void DestroyEntityWithHierarchy(
+        CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
+
+    /**
+     * @brief entity に DestroyTag を付ける。実際の破棄は HierarchyCleanupSystem（L07）が行う。
+     * @param world           entity が属する World。
+     * @param entity          破棄する Entity。既に DestroyTag があれば何もしない。
+     * @param destroyChildren true なら子孫にも DestroyTag を付ける。
+     */
+    static void MarkForDestruction(
+        CCL::ECS::World &world, CCL::ECS::EntityID entity, bool destroyChildren = true);
 
 private:
     // PendingParentComponent で予約された親子付けを適用する

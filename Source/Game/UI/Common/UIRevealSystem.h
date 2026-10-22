@@ -7,8 +7,10 @@
 //   - SlideIn: 左から減速しながら滑り込ませ、同時に濃くする
 //   - Grow: 左端を止めたまま幅を伸ばし、先端の部品をついていかせる
 //
-// 備考: 描画ステージで走るのは、ポーズ中もメニューの演出を進める必要があるため。
-//       UILayoutSystem の後に走るので、書いた位置と幅は次のフレームの配置から効く（1フレームの遅れは見えない）。
+// 備考:
+//   描画ステージで走らせる。ポーズ中もメニューの演出を進める必要がある。
+//
+//   UILayoutSystem の後に走るので、書いた位置と幅は次のフレームの配置から効く。1フレームの遅れは見て分からない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
@@ -19,12 +21,9 @@ class UIRevealSystem : public CCL::ECS::IfSystem<UIRevealSystem,
                                                  CCL::ECS::Write<UITransformComponent>>
 {
 public:
-    UIRevealSystem()
-        : IfSystem("UIRevealSystem")
-    {
-    }
+    UIRevealSystem() : IfSystem("UIRevealSystem") {}
 
-    // 配置を確定させる System と同じ帯なので、順番を決めておく
+    // 配置を確定させる UILayoutSystem と同じ帯なので、順番を宣言しておく
     std::vector<const char *> GetRunAfter() const override
     {
         return {"UILayoutSystem"};

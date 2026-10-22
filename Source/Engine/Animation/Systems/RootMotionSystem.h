@@ -29,10 +29,7 @@ class RootMotionSystem : public CCL::ECS::IfSystem<RootMotionSystem,
                                                    CCL::ECS::Read<ModelComponent>>
 {
 public:
-    RootMotionSystem()
-        : IfSystem("RootMotionSystem")
-    {
-    }
+    RootMotionSystem() : IfSystem("RootMotionSystem") {}
 
     /**
      * @brief 同じステージで先に走らせる System を宣言する。

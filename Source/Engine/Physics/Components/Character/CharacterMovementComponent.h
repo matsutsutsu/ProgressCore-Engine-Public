@@ -14,8 +14,8 @@
 //
 // 誰が書くか（層）:
 //   ・移動の意思      … 入力(PlayerInputSystem) / AI(BossActionSystem 等)
-//   ・上書き要求      … アクション(PlayerDashSystem / PlayerCleaveSystem / RootMotionSystem 等)
-//   ・成立した命令    … キャラ制御(PlayerMoveSystem)
+//   ・上書き要求      … アクション(PlayerDashSystem / RootMotionSystem 等)
+//   ・成立した命令    … キャラ制御(PlayerJumpFacingSystem)
 //   ・結果            … JoltCharacterUpdateSystem（読むのはカメラ/アニメ/演出）
 //
 // 上書き要求は「1フレーム限りの依頼」:
@@ -49,14 +49,14 @@ struct CharacterMovementComponent
 
     // true の間は重力も水平計算も無視して velocity3D をそのまま速度に使う。
     //
-    // 切り払いのように「向いた方向へ上下含めて突進」する技で使う。
+    // 「向いた方向へ上下を含めて突進」する技で使う汎用の窓口（現状の利用者なし。将来の突進技向けに残す）。
     bool                         use3DVelocity = false;
     DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度（m/秒）
 
     // このフレームにジャンプが成立した。押下ではなく「跳ぶと決まった」の意味。
     //
     // 入力の押下は PlayerInputComponent.jumpPressed。2段ジャンプの可否など
-    // 成立条件はキャラ制御側(PlayerMoveSystem)が判断し、結果だけをここへ載せる。
+    // 成立条件はキャラ制御側(PlayerJumpFacingSystem)が判断し、結果だけをここへ載せる。
     bool jumpImpulse = false;
 
     // =======================================================================

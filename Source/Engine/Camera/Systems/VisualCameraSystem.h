@@ -48,9 +48,7 @@ class CameraShakeSystem : public CCL::ECS::IfSystem<CameraShakeSystem,
                                                     CCL::ECS::Write<CameraShake>>
 {
 public:
-    CameraShakeSystem() : IfSystem("CameraShakeSystem")
-    {
-    }
+    CameraShakeSystem() : IfSystem("CameraShakeSystem") {}
 
     /**
      * @brief 揺れ要求（CameraShakeRequestEvent）の購読を開始する。
@@ -81,7 +79,7 @@ public:
     std::vector<const char *> GetRunAfter() const override
     {
         return {"CameraActionTPSSystem", "CameraFollowSystem", "CameraLookAtSystem",
-                "CameraFreeControlSystem", "TimelineCameraSystem"};
+                "CameraFreeControlSystem"};
     }
 
 private:

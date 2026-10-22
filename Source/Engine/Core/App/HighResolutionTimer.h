@@ -132,5 +132,5 @@ private:
     LONGLONG last_time;   // 前回 Tick の時刻
     LONGLONG this_time;   // 今回 Tick の時刻
 
-    bool stopped;
+    bool stopped; // Stop されていて、時間を進めていないか
 };

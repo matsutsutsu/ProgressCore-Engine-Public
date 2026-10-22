@@ -100,7 +100,7 @@ void CameraActionTPSSystem::Update(float dt)
     });
 
     // 3. 全カメラの要求を1つの結論に集約して、カーソルロックを決める
-    //    マウスルック中でも cursorFree（ポーズ中・UI 操作中・エディタで他ウィンドウ操作中）
+    //    マウスルック中でも cursorFree（ポーズ中・UI 操作中・決着後・エディタで他ウィンドウ操作中）
     //    なら固定しない。さらに Mouse 側がウィンドウ非フォーカス時にロックを無効にするので、
     //    alt-tab でカーソルが閉じ込められることもない。
     if (in.cursorFree)
@@ -128,13 +128,16 @@ CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI
     // カーソルを固定しない（マウスルックも止める）条件。
     //   ・ポーズ中（メニュー操作にカーソルが要る）
     //   ・カーソル自由(UI操作)モード中（実行中に ImGui エディタを操作したい）
+    //   ・決着後（リザルトのボタンをマウスで押すのにカーソルが要る）
     //   ・エディタで他ウィンドウ操作中（IsGameInputActive=false）
     const bool flowPaused =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
     const bool flowUiInteract =
         m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
+    const bool flowMatchOver =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().matchOver;
 
-    in.cursorFree = flowPaused || flowUiInteract || !inputAPI->IsGameInputActive();
+    in.cursorFree = flowPaused || flowUiInteract || flowMatchOver || !inputAPI->IsGameInputActive();
 
     // 導入カメラ演出などのカットシーン中は視点入力を一切受けない。
     //   ここを塞がないと、演出を見ている5秒の間にスティック/マウスを動かした分だけ
@@ -154,6 +157,11 @@ bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
     // 【備考】
     //   ロックオンの処理は1箇所にまとまっていない。カメラの向きは 1、画面の構図は 2 が持つ。
     //   狙う相手の決定と解除は本システムの外（ゲーム側の PlayerLockOnSystem）の役割。
+    //   演出の上書き（framing）は 2〜4 の各段で足し込む。currentYaw / currentPitch などの
+    //   状態そのものは書き換えないので、上書きが外れれば普段の構図へそのまま戻る。
+
+    // 0. 演出の上書きを1つの足し込み量へまとめる
+    ResolveFraming(c);
 
     // 1. どの向きから見るかを決める
     //    手動入力 → 補正の一時停止判定 → ロックオン補正 → 制限、の順に
@@ -165,8 +173,11 @@ bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
     //    通常時は進行方向へのルックアヘッドを足す。
     const float baseDistance = UpdateFraming(c);
 
-    // 3. 1 の角度を方向ベクトルに直し、2 の距離から地形を避けた位置を出す
-    const Vector3 backwardDir = ComputeBackwardDir(c.tps.currentYaw, c.tps.currentPitch);
+    // 3. 1 の角度に上書きの足し込みを加えて方向ベクトルに直し、2 の距離から地形を避けた位置を出す
+    //    足し込んだ後のピッチも制限の内側に収める（演出で地面へ潜らないように）。
+    const float   viewYaw     = c.tps.currentYaw + c.framing.yawOffset;
+    const float   viewPitch   = std::clamp(c.tps.currentPitch + c.framing.pitchOffset, c.tps.minPitch, c.tps.maxPitch);
+    const Vector3 backwardDir = ComputeBackwardDir(viewYaw, viewPitch);
     const Vector3 finalPos    = ResolveCameraPosition(c, backwardDir, baseDistance);
 
     // 4. 画角を進め、Transform と VirtualCamera へ書き出す
@@ -175,6 +186,34 @@ bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
     // 5. マウスルック中ならカーソル固定を要求する（最終判断は呼び出し側）
     //    常時マウス視点なら常に、右クリック視点なら押下中のみ。
     return c.tps.enableCursorLock && (!c.tps.mouseLookRequiresButton || c.in.rmbHeld);
+}
+
+void CameraActionTPSSystem::ResolveFraming(CameraContext &c) const
+{
+    // 足し込み量は weight を掛けて足すだけでよい（順番に依らない）。
+    // 注視点の寄せ先は1つしか持てないので、後に重なる方（priority が大きい方）で上書きする。
+    CameraFramingParams sum{};
+    bool                active = false;
+
+    c.tps.framingOverrides.ForEachActive([&](const CameraFramingParams &p, float w) {
+        active = true;
+
+        sum.distanceOffset += p.distanceOffset * w;
+        sum.fovOffset += p.fovOffset * w;
+        sum.pitchOffset += p.pitchOffset * w;
+        sum.yawOffset += p.yawOffset * w;
+        sum.roll += p.roll * w;
+        sum.followBoost += p.followBoost * w;
+
+        if (p.focusTarget != InvalidEntityID && p.focus > 0.0f)
+        {
+            sum.focusTarget = p.focusTarget;
+            sum.focus       = std::clamp(p.focus * w, 0.0f, 1.0f);
+        }
+    });
+
+    c.framing       = sum;
+    c.framingActive = active;
 }
 
 // ---------------------------------------------------------------------------
@@ -357,6 +396,28 @@ float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
         goalPivot = goalLookAt; // 通常時は注視点を中心に回り込む
     }
 
+    // 2c. 演出の上書き
+    //     距離は足し込み、下限は衝突時と同じ最小距離で止める（寄りすぎてキャラへ潜らない）。
+    //     注視点だけを寄せ先へずらし、回り込み中心は動かさない。カメラの立ち位置は保ったまま、
+    //     視線だけが敵の方を向く。ずれ量には上限を設けてプレイヤーを画面内に残す。
+    goalDistance = (std::max)(goalDistance + c.framing.distanceOffset, tps.collisionMinDistance);
+
+    if (c.framing.focus > 0.0f)
+    {
+        if (const auto *focusTrans = m_world->GetComponent<TransformComponent>(c.framing.focusTarget))
+        {
+            const Vector3 focusCore = Vector3(focusTrans->GetRenderWorldPosition()) + tps.targetOffset;
+
+            Vector3     shift    = (focusCore - goalLookAt) * c.framing.focus;
+            const float shiftLen = shift.Length();
+            if (shiftLen > tps.framingMaxLookShift && shiftLen > kMinLength)
+            {
+                shift *= (tps.framingMaxLookShift / shiftLen);
+            }
+            goalLookAt += shift;
+        }
+    }
+
     // 3. 初回フレームは補間せず目標へ置く
     if (tps.isFirstFrame)
     {
@@ -368,7 +429,8 @@ float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
     }
 
     // 4. 目標へ指数減衰で追従する
-    const float posBlend = CCL::Math::Damp(tps.positionDamping, c.dt);
+    //    演出の上書き中は追従を速める（突進中のキャラが画面の中で遅れて小さくならないように）。
+    const float posBlend = CCL::Math::Damp(tps.positionDamping + (std::max)(c.framing.followBoost, 0.0f), c.dt);
 
     tps.currentLookAt = Vector3::Lerp(tps.currentLookAt, goalLookAt, posBlend);
     tps.currentPivot  = Vector3::Lerp(tps.currentPivot, goalPivot, posBlend);
@@ -402,6 +464,7 @@ Vector3 CameraActionTPSSystem::ResolveCameraPosition(CameraContext &c, const Vec
 
     // 1. 回り込み中心からカメラ本体へ向けて地形をレイキャストし、壁があれば手前へ寄せる
     float resolvedDist = desiredDistance;
+    bool  blocked      = false; // 地形に当たって手前へ寄せたか
     if (tps.collisionEnabled && c.physics)
     {
         const Vector3  castDir = -backwardDir; // pivot からカメラ本体へ向かう向き
@@ -414,13 +477,21 @@ Vector3 CameraActionTPSSystem::ResolveCameraPosition(CameraContext &c, const Vec
             // 壁も床も、当たったら collisionRadius ぶん手前に置いてめり込みを防ぐ。
             resolvedDist = hit.distance - tps.collisionRadius;
             resolvedDist = std::clamp(resolvedDist, tps.collisionMinDistance, desiredDistance);
+            blocked      = true;
         }
     }
 
     // 2. 寄せ量を補間して、カメラ位置を出す
     //    fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する。
-    const float colDamping =
-        (resolvedDist < tps.currentCamDistance) ? tps.collisionInDamping : tps.collisionOutDamping;
+    //    ただし演出の上書き中で地形に当たっていないときは、外へも速く広げる。
+    //    引きの速さは演出側が自分でイーズしているので、ここでさらに遅らせると引きが間に合わない。
+    float colDamping = tps.collisionInDamping;
+    if (resolvedDist >= tps.currentCamDistance)
+    {
+        colDamping = (c.framingActive && !blocked)
+                         ? (std::max)(tps.collisionOutDamping, tps.framingFollowDamping)
+                         : tps.collisionOutDamping;
+    }
     const float colBlend = CCL::Math::Damp(colDamping, c.dt);
 
     tps.currentCamDistance = std::lerp(tps.currentCamDistance, resolvedDist, colBlend);
@@ -480,24 +551,40 @@ void CameraActionTPSSystem::WriteCameraResult(CameraContext &c, const Vector3 &f
     // 1. 画角を要求値へ寄せる
     //    「広げたい」という要求はゲーム側(PlayerDashSystem 等)が wideFovRequest へ
     //    書き込む。カメラは理由を知らずに要求だけを見る。
-    const float targetFov = c.tps.wideFovRequest ? c.tps.dashFov : c.tps.baseFov;
+    //    演出の上書きの画角は、その上に足し込む。
+    const float targetFov = (c.tps.wideFovRequest ? c.tps.dashFov : c.tps.baseFov) + c.framing.fovOffset;
     const float fovBlend  = CCL::Math::Damp(c.tps.fovDamping, c.dt);
 
     c.vcam.fov = std::lerp(c.vcam.fov, targetFov, fovBlend);
 
-    // 2. カメラ自身の Transform（ギズモやデバッグ表示が読む）
+    // 2. 上方向を決める
+    //    演出の傾き（roll）があれば、視線の軸まわりに上方向を回す。Brain は resultUp を補間して使い、
+    //    後段の揺れ（CameraShakeSystem）も resultUp を書き換えないので、ここで傾ければ最後まで残る。
+    Vector3 up = Vector3::Up;
+    if (std::abs(c.framing.roll) > 0.001f)
+    {
+        Vector3 viewDir = c.tps.currentLookAt - finalPos;
+        if (viewDir.LengthSquared() > kMinLength * kMinLength)
+        {
+            viewDir.Normalize();
+            const Quaternion rollRot = Quaternion::CreateFromAxisAngle(viewDir, XMConvertToRadians(c.framing.roll));
+            up                       = Vector3::Transform(Vector3::Up, rollRot);
+        }
+    }
+
+    // 3. カメラ自身の Transform（ギズモやデバッグ表示が読む）
     c.trans.position = finalPos;
 
-    const XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), backwardDir, Vector3::Up);
+    const XMMATRIX lookMat = XMMatrixLookToLH(XMVectorZero(), backwardDir, up);
     XMVECTOR       det;
     const XMMATRIX worldRot = XMMatrixInverse(&det, lookMat);
 
     c.trans.rotation = Quaternion::CreateFromRotationMatrix(worldRot);
 
-    // 3. CameraBrainSystem(R01b) が読む「このカメラの答え」
+    // 4. CameraBrainSystem(R01b) が読む「このカメラの答え」
     c.vcam.resultPos    = finalPos;
     c.vcam.resultLookAt = c.tps.currentLookAt;
-    c.vcam.resultUp     = Vector3::Up;
+    c.vcam.resultUp     = up;
 
     // 位置・注視点とも自前で確定させたので Brain が採用してよい
     c.vcam.MarkResolved();

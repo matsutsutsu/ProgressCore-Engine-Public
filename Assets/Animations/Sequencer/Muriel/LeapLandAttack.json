@@ -20,6 +20,45 @@
             "startTime": 0.10000000149011612,
             "stringParam": "",
             "type": 4
+        },
+        {
+            "cancelMask": 0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.10000000149011612,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "startTime": 0.10000000149011612,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossLeapImpact",
+            "type": 2
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.1,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.1,
+            "stringParam": "sfx:/boss_land_impact",
+            "type": 1
         }
     ],
     "rootMotionCurve": {

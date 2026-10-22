@@ -5,8 +5,6 @@
 
 using namespace CCL::ECS;
 
-AABBDebugDrawSystem::AABBDebugDrawSystem() : IfSystem("AABBDebugDrawSystem") {}
-
 void AABBDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;

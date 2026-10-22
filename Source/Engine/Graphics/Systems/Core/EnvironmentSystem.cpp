@@ -16,10 +16,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-EnvironmentSystem::EnvironmentSystem() : SystemBase("EnvironmentSystem")
-{
-}
-
 void EnvironmentSystem::Initialize()
 {
     // グローバルノイズテクスチャ

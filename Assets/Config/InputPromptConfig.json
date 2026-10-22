@@ -22,10 +22,6 @@
             "Label": "ATTACK"
         },
         {
-            "Action": "Cleave",
-            "Label": "CLEAVE"
-        },
-        {
             "Action": "Dash",
             "Label": "DODGE"
         },

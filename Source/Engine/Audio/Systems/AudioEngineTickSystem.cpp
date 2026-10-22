@@ -6,8 +6,6 @@
 
 #include <memory>
 
-AudioEngineTickSystem::AudioEngineTickSystem() : SystemBase("AudioEngineTickSystem") {}
-
 void AudioEngineTickSystem::Update(float dt)
 {
     if (!m_world) return;

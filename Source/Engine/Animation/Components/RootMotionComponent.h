@@ -16,7 +16,7 @@ struct RootMotionComponent
     bool enabled = false; // 今のステートが applyRootMotion なら true（RootMotionSystem が書く）
 
     // 外部の System がこのステップの移動を制御中か。true の間、RootMotionSystem は移動を一切適用しない。
-    //   ゲーム側の移動アクション（PlayerDashSystem・PlayerCleaveSystem）が書く。
+    //   ゲーム側の移動アクション（PlayerDashSystem など）が書く。
     //   こうすることで RootMotionSystem はダッシュ等の個別の仕組みを知らずに済む
     bool externallyDriven = false;
 

@@ -20,9 +20,6 @@ class CombatAnimationSyncSystem
                                 CCL::ECS::Write<HitboxComponent>>
 {
 public:
-    CombatAnimationSyncSystem()
-        : IfSystem("CombatAnimationSyncSystem")
-    {
-    }
+    CombatAnimationSyncSystem() : IfSystem("CombatAnimationSyncSystem") {}
     void Update(float dt) override;
 };

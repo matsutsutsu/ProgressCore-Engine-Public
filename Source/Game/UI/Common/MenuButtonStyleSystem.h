@@ -22,10 +22,7 @@ class MenuButtonStyleSystem : public CCL::ECS::IfSystem<MenuButtonStyleSystem,
                                                         CCL::ECS::Write<UIProgressBarComponent>>
 {
 public:
-    MenuButtonStyleSystem()
-        : IfSystem("MenuButtonStyleSystem")
-    {
-    }
+    MenuButtonStyleSystem() : IfSystem("MenuButtonStyleSystem") {}
 
     // UIInputSystem が決めた focus / hover / clicked を同じフレームで読むため、その後に走らせる
     std::vector<const char *> GetRunAfter() const override

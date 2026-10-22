@@ -14,7 +14,7 @@ void DroneCommandSystem::Update(float /*dt*/)
     // 1. ボスの命令を読む
     // 2. 指示された陣形の攻撃の寿命を引く
     // 3. 「今撃て」信号の立ち上がりを出す
-    // 4. 全ドローンへ配る
+    // 4. 全ドローンへ配る（陣形が変わる機は、前の陣形に後始末させてから）
     // 5. 次フレームのために信号を覚えておく
 
     // --- ボスの命令 ---
@@ -37,7 +37,8 @@ void DroneCommandSystem::Update(float /*dt*/)
 
     // この陣形の攻撃を誰が終わらせるか（Broadcast / Individual）を、フレームに1回だけ引く。
     // 機体ごとに引かないので、仮想呼び出しはフレームあたり1回で済む。
-    const auto *formationImpl = CCL::AI::Formation::FormationRegistry::Instance().Get(formation);
+    const auto *formations    = CCL::AI::Formation::FormationRegistry::Find(*m_world);
+    const auto *formationImpl = formations ? formations->Get(formation) : nullptr;
     const bool  individual =
         formationImpl &&
         formationImpl->GetLifecycle() == CCL::AI::Formation::ChargeLifecycle::Individual;
@@ -53,8 +54,15 @@ void DroneCommandSystem::Update(float /*dt*/)
     ForEach([&](DroneComponent &drone) {
         // None（＝命令なし）のときは現在の陣形を維持する。
         // スポーン直後に Manager が入れた陣形（頭上円陣）を潰さないため。
-        if (formation != DroneFormationType::None)
+        if (formation != DroneFormationType::None && drone.currentFormation != formation)
+        {
+            // 抜ける陣形に、その技だけが使う値を片付けさせる（IFormation::OnExit）。
+            // 陣形が変わる機だけなので、仮想呼び出しは切り替えのフレームにしか起きない。
+            if (const auto *prev = formations ? formations->Get(drone.currentFormation) : nullptr)
+                prev->OnExit(drone);
+
             drone.currentFormation = formation;
+        }
 
         // 自分のタイミングで攻撃を終わらせる（BloadCast）の場合通る
         if (!individual)

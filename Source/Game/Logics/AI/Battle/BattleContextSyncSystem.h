@@ -14,7 +14,7 @@
 //   スケジューラが依存を検出できないので、読む側と同じステージに置くと順序が決まらない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Character/Player/Components/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 // テンプレート引数は申告のためだけに置いている。実際の処理は Update 内の World::ViewEach で
@@ -25,10 +25,7 @@ class BattleContextSyncSystem : public CCL::ECS::IfSystem<
                                     CCL::ECS::Read<TransformComponent>>
 {
 public:
-    BattleContextSyncSystem()
-        : IfSystem("BattleContextSyncSystem")
-    {
-    }
+    BattleContextSyncSystem() : IfSystem("BattleContextSyncSystem") {}
     void Initialize() override;
     void Update(float dt) override;
 

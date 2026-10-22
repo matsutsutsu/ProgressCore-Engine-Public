@@ -24,9 +24,7 @@ class AnimControllerSystem : public CCL::ECS::IfSystem<AnimControllerSystem,
                                                        CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    AnimControllerSystem() : IfSystem("AnimControllerSystem")
-    {
-    }
+    AnimControllerSystem() : IfSystem("AnimControllerSystem") {}
     virtual ~AnimControllerSystem() = default;
 
     // AnimSetupSystem が足りないコンポーネントを付けてから評価する

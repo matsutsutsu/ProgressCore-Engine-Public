@@ -1,7 +1,7 @@
 #include "AIDebugSpatialSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
@@ -157,7 +157,7 @@ void AIDebugSpatialSystem::Update(float /*dt*/)
 {
     if (!m_enabled) return;
 
-    // ShapeRenderer が無ければ描けない（NavMeshDebugDrawSystem などと同じ前提）。
+    // ShapeRenderer が無ければ描けない。
     if (!m_world->HasResource<ShapeRenderer *>()) return;
     auto *renderer = m_world->GetResource<ShapeRenderer *>();
     if (!renderer) return;
@@ -272,7 +272,7 @@ void AIDebugSpatialSystem::OnGui()
                            "%6.1f m  ステージ端から（中心から %.1f m）", margin, m_arenaRadius - margin);
 }
 
-// NavMeshDebugDrawSystem と同じ R08_Main で ShapeRenderer に積む。
+// R08_Main で ShapeRenderer に積む。
 //
 // 登録ごと #ifdef で外し、製品ビルドにはこの System が存在しないようにする。
 // 中身だけを #ifdef で外すと、何もしない System が実行順の解決の対象としてだけ残る。

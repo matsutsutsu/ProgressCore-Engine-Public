@@ -1,6 +1,6 @@
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include <algorithm>
 #include <cmath>
 
@@ -685,7 +685,7 @@ void BehaviorTreeWindow::HandleContextMenu()
 
             ImGui::Separator();
             // 複数ノードの複製
-            if (ImGui::MenuItem("選択ノードを複製 (Duplicate)", "Ctrl+D"))
+            if (ImGui::MenuItem("複製", "Ctrl+D"))
             {
                 DuplicateSelectedNodes();
             }

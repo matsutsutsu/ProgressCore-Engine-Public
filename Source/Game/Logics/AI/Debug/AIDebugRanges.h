@@ -19,7 +19,7 @@
 
 #include <DirectXMath.h>
 
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 
 namespace AIDebugRanges

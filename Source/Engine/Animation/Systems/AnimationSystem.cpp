@@ -4,6 +4,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <cmath>
 #include <algorithm>
+#include <random>
 #include <tracy/Tracy.hpp>
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
@@ -19,6 +20,18 @@
 // m_world を使わない計算はここに置く
 namespace
 {
+    /**
+     * @brief 効果音のピッチに、±range の揺らぎを足して返す。
+     * @note 乱数はスレッドごとに持つ（イベントの処理は並列に走ることがあるため）。
+     */
+    float RandomizePitch(float pitch, float range)
+    {
+        if (range <= 0.0f) return pitch;
+        thread_local std::minstd_rand rng{std::random_device{}()};
+        std::uniform_real_distribution<float> dist(-range, range);
+        return pitch + dist(rng);
+    }
+
     /**
      * @brief 実効の再生速度（ステートの速度 × 足滑り補正 × 速度カーブ）を返す。
      * @note ここに Tracy のゾーンを置かないこと。処理は数十ナノ秒（CurveData::Evaluate は
@@ -124,10 +137,7 @@ namespace
 
 using CCL::Anim::PinRootMotionNode;
 
-AnimationSystem::AnimationSystem()
-    : IfSystem("AnimationSystem")
-{
-}
+AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
 void AnimationSystem::Update(float dt)
 {
@@ -182,7 +192,8 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         {
         case AnimEventType::Sound:
             // 効果音の再生を依頼する（AudioSystem が受ける）
-            m_world->GetEventBus().Publish(AnimEventSoundMessage{id, evt.stringParam, evt.soundVolume, evt.soundPitch});
+            m_world->GetEventBus().Publish(AnimEventSoundMessage{id, evt.stringParam, evt.soundVolume,
+                                                                 RandomizePitch(evt.soundPitch, evt.soundPitchRandom)});
             break;
 
         case AnimEventType::Effect:

@@ -49,5 +49,5 @@ public:
 private:
     int m_droneCount    = 0;
     int m_activeCount   = 0;
-    int m_stateCount[5] = {0, 0, 0, 0, 0};
+    int m_stateCount[4] = {0, 0, 0, 0};
 };

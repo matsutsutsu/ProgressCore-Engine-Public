@@ -9,8 +9,6 @@
 
 using namespace CCL::ECS;
 
-HierarchyCleanupSystem::HierarchyCleanupSystem() : IfSystem("HierarchyCleanupSystem") {}
-
 void HierarchyCleanupSystem::Update(float dt)
 {
     ExecuteCleanup(*m_world);
@@ -19,8 +17,8 @@ void HierarchyCleanupSystem::Update(float dt)
 void HierarchyCleanupSystem::CollectDoomedEntities(
     CCL::ECS::World &world, std::vector<EntityID> &outList)
 {
-    // 1. DestroyTag を持つ「削除の起点」を見つけ、子孫も集める。
-    //    static 関数なので ForEach は使えず、Chunk を直接走査する
+    // DestroyTag を持つ「削除の起点」を見つけ、子孫も集める。
+    // static 関数なので ForEach は使えず、Chunk を直接走査する
     auto &chunks = world.GetChunkManager().GetChunks();
     for (auto &chunkPtr : chunks)
     {
@@ -43,13 +41,22 @@ void HierarchyCleanupSystem::CollectDoomedEntities(
         }
     }
 
-    // 2. 起点どうしが親子の場合に同じ ID が2回入るので、重複を除く
+    // 起点どうしが親子の場合に同じ ID が2回入るので、重複を除く
     std::sort(outList.begin(), outList.end());
     outList.erase(std::unique(outList.begin(), outList.end()), outList.end());
 }
 
 void HierarchyCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
+    // 処理フロー:
+    // 1. このフレームで消える Entity を全て集める
+    // 2. 1件ずつ、直下の子をルートにしてから自分を親から切り離す
+    // 3. 破棄を予約する
+
+    // 【備考】
+    //   1 で先に対象を全て確定させてから 2 以降で構造を変える。
+    //   走査しながら親子リンクを外すと、たどる途中の兄弟リストが変わって取りこぼすため。
+
     std::vector<EntityID> executionList;
     executionList.reserve(64);
 

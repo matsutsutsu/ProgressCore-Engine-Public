@@ -12,9 +12,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        3.8889851566636935e-05,
                         0.0,
-                        -2.1358520825742744e-05
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -23,53 +23,10 @@
                     ],
                     "isRootMotionActive": false,
                     "jumpImpulse": false,
+                    "moveIntensity": 0.0,
                     "overrideSpeed": -1.0,
                     "speedMultiplier": 1.0,
                     "use3DVelocity": false
-                },
-                "Cleave Component": {
-                    "chainCount": 0,
-                    "cleaveCooldown": 0.4000000059604645,
-                    "cleaveDuration": 0.18000000715255737,
-                    "cleaveSpeed": 100.0,
-                    "enableStageDecay": true,
-                    "fanHalfAngle": 45.0,
-                    "fanRange": 6.0,
-                    "gaugeOnDash": 8.0,
-                    "gaugeOnJustEvade": 50.0,
-                    "hitCount": 0,
-                    "knockbackSpeed": 200.0,
-                    "knockbackTime": 2.0,
-                    "maxGauge": 100.0,
-                    "maxStock": 3,
-                    "readyDuration1": 1.5,
-                    "readyDuration2": 0.949999988079071,
-                    "readyDuration3": 0.6000000238418579,
-                    "slowDuration": 0.3499999940395355,
-                    "slowScale1": 0.10000000149011612,
-                    "slowScale2": 0.25,
-                    "slowScale3": 0.4000000059604645,
-                    "stock": 3
-                },
-                "Dash Component": {
-                    "approachDuration": 0.3499999940395355,
-                    "approachPlayerScale": 1.0,
-                    "approachSpeed": 60.0,
-                    "approachStopRange": 4.0,
-                    "currentTimer": -0.003333514556288719,
-                    "dashCooldown": 0.47999998927116394,
-                    "dashDirection": [
-                        0.8933714032173157,
-                        0.0,
-                        -0.4493190348148346
-                    ],
-                    "dashDuration": 0.1599999964237213,
-                    "dashSpeed": 114.0,
-                    "invincibleWindow": 0.05999999865889549,
-                    "isApproaching": false,
-                    "isDashing": false,
-                    "isInvincible": false,
-                    "justEvadeWindow": 0.07999999821186066
                 },
                 "HealthComponent": {
                     "currentHealth": 300.0,
@@ -103,12 +60,9 @@
                     "gravityScale": 6.300000190734863,
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
-                    "maxStepHeight": 0.5,
+                    "maxStepHeight": 1.5,
                     "objectLayer": 1,
                     "walkSpeed": 43.599998474121094
-                },
-                "Just Evade Component": {
-                    "isJustSuccess": false
                 },
                 "Knockback": {
                     "duration": 0.18000000715255737,
@@ -140,12 +94,88 @@
                     "runSpeed": 65.5,
                     "turnSpeed": 10.0
                 },
+                "Player Dash Component": {
+                    "currentTimer": -0.003333514556288719,
+                    "dashCooldown": 0.47999998927116394,
+                    "dashDirection": [
+                        -0.05234133452177048,
+                        0.0,
+                        0.9986292719841003
+                    ],
+                    "dashDuration": 0.1599999964237213,
+                    "dashSpeed": 114.0,
+                    "invincibleWindow": 0.05999999865889549,
+                    "isDashing": false,
+                    "isInvincible": false,
+                    "justEvadeWindow": 0.07999999821186066
+                },
                 "Player Input": {
                     "attackPressed": false,
-                    "cleavePressed": false,
                     "dashPressed": false,
                     "jumpPressed": false,
                     "lockOnPressed": false
+                },
+                "Player Just Evade Component": {
+                    "isJustSuccess": false
+                },
+                "Player Rush Camera Component": {
+                    "attack.blendTime": 0.07000000029802322,
+                    "attack.bounce": 0.4000000059604645,
+                    "attack.distance": -10.199999809265137,
+                    "attack.focus": 1.0,
+                    "attack.followBoost": 20.0,
+                    "attack.fov": 4.0,
+                    "attack.pitch": -10.5,
+                    "attack.roll": 0.0,
+                    "attack.yaw": 11.0,
+                    "free.blendTime": 0.44999998807907104,
+                    "free.bounce": 0.0,
+                    "free.distance": -4.699999809265137,
+                    "free.focus": 0.20000000298023224,
+                    "free.followBoost": 0.0,
+                    "free.fov": 4.0,
+                    "free.pitch": -10.0,
+                    "free.roll": 0.0,
+                    "free.yaw": 11.0,
+                    "locked.blendTime": 0.1899999976158142,
+                    "locked.bounce": 0.5,
+                    "locked.distance": -15.0,
+                    "locked.focus": 0.1899999976158142,
+                    "locked.followBoost": 60.0,
+                    "locked.fov": 12.0,
+                    "locked.pitch": 6.0,
+                    "locked.roll": 6.0,
+                    "locked.yaw": 18.0,
+                    "ready.blendTime": 0.18000000715255737,
+                    "ready.bounce": 0.20000000298023224,
+                    "ready.distance": -15.0,
+                    "ready.focus": 0.550000011920929,
+                    "ready.followBoost": 0.0,
+                    "ready.fov": -6.0,
+                    "ready.pitch": 6.0,
+                    "ready.roll": -3.0,
+                    "ready.yaw": 28.0,
+                    "releaseTime": 0.6000000238418579,
+                    "startShake": 0.3499999940395355,
+                    "strikeFovPunch": 10.0,
+                    "strikeShake": 0.5,
+                    "yawFollowsEvade": true
+                },
+                "Player Rush Component": {
+                    "attackDuration": 0.46000000834465027,
+                    "attackFired": true,
+                    "closeInSpeed": 150.0,
+                    "closeInStopDistance": 20.0,
+                    "freeDuration": 2.5,
+                    "invincibleRefresh": 0.10000000149011612,
+                    "isActive": false,
+                    "leapSpeed": 168.0,
+                    "lockedDuration": 0.3199999928474426,
+                    "playerScale": 1.0,
+                    "readyDuration": 1.2300000190734863,
+                    "slowRecover": 0.4000000059604645,
+                    "timer": 0.0,
+                    "worldScale": 0.05000000074505806
                 },
                 "RootMotion": null,
                 "TimeState": {
@@ -160,15 +190,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        55.64505386352539,
-                        -0.03374272584915161,
-                        -22.16911506652832
+                        -0.5708377361297607,
+                        -0.09995961934328079,
+                        29.299015045166016
                     ],
                     "rotation": [
-                        -1.368516736564851e-12,
-                        0.8501117825508118,
-                        -8.477285171580584e-13,
-                        0.5266022682189941
+                        1.401298464324817e-45,
+                        -0.9103596806526184,
+                        0.0,
+                        -0.4138178825378418
                     ],
                     "scale": [
                         3.5,
@@ -240,6 +270,7 @@
                     "shape": 2,
                     "texturePath": "",
                     "thickness": 0.8999999761581421,
+                    "timeScale": 1.0,
                     "tipOffset": [
                         0.0,
                         0.0,
@@ -247,7 +278,6 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -257,10 +287,7 @@
                         1.0
                     ],
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 2
@@ -326,6 +353,7 @@
                     "shape": 2,
                     "texturePath": "",
                     "thickness": 0.8999999761581421,
+                    "timeScale": 1.0,
                     "tipOffset": [
                         0.0,
                         0.0,
@@ -333,7 +361,6 @@
                     ],
                     "tubeSides": 4,
                     "useInterpolation": false,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -343,10 +370,7 @@
                         1.0
                     ],
                     "width": 0.3400000035762787,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 3
@@ -357,11 +381,12 @@
                     "boneName": "hand_r"
                 },
                 "Hitbox": {
-                    "damageAmount": 5.0,
-                    "hitStopDuration": 0.09000000357627869,
+                    "damageAmount": 15.0,
+                    "hitStopDuration": 0.20999999344348907,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 20.0
+                    "knockback": 35.0,
+                    "rehitInterval": -1.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,
@@ -461,6 +486,7 @@
                     "shape": 0,
                     "texturePath": "Assets/Textures/VFX/Trail/T_Trail_Sword_02.png",
                     "thickness": 0.0,
+                    "timeScale": 1.0,
                     "tipOffset": [
                         0.0,
                         2.7200000286102295,
@@ -468,7 +494,6 @@
                     ],
                     "tubeSides": 6,
                     "useInterpolation": true,
-                    "useZigZag": false,
                     "uvScroll": [
                         0.0,
                         0.0
@@ -478,13 +503,58 @@
                         1.0
                     ],
                     "width": 1.0,
-                    "widthCurvePower": 0.10000000149011612,
-                    "zigZagAmplitude": 0.5,
-                    "zigZagFrequency": 2,
-                    "zigZagSeed": 1337
+                    "widthCurvePower": 0.10000000149011612
                 }
             },
             "lid": 4
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "PointLight"
+                },
+                "PointLight": {
+                    "color": [
+                        1.0,
+                        0.6254825592041016,
+                        0.0
+                    ],
+                    "constant": 1.0,
+                    "intensity": 5.300000190734863,
+                    "linear": 0.10000000149011612,
+                    "quadratic": 0.009999999776482582,
+                    "range": 10.0
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 4,
+                    "position": [
+                        -1.5,
+                        0.0,
+                        -3.5
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 5
         }
     ],
     "magic": 1397506883,

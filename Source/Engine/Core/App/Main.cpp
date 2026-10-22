@@ -31,11 +31,15 @@ const BOOL FULLSCREEN = TRUE;
 const BOOL FULLSCREEN = FALSE;
 #endif
 
-// 作業フォルダを exe のあるフォルダへ合わせる。
-//   ファイルはすべて作業フォルダからの相対パス（Assets/...・Saved/...）で開くので、
-//   ショートカットや別の場所から起動しても Assets を見つけられるようにする。
-//   exe の隣に Assets が無いとき（開発中は exe が Build/Bin にあり、VS がリポジトリのルートを
-//   作業フォルダにして起動する）は、元の作業フォルダのままにする
+/**
+ * @brief 作業フォルダを exe のあるフォルダへ合わせる。
+ *
+ * ファイルはすべて作業フォルダからの相対パス（Assets/...・Saved/...）で開くので、
+ * ショートカットや別の場所から起動しても Assets を見つけられるようにする。
+ *
+ * @note exe の隣に Assets が無いときは、元の作業フォルダのままにする。
+ *       開発中は exe が Build/Bin にあり、VS がリポジトリのルートを作業フォルダにして起動するため。
+ */
 static void SetWorkingDirectoryToExe()
 {
     wchar_t path[MAX_PATH] = {};
@@ -57,6 +61,12 @@ LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, INT cmd_show)
 {
+    // 処理フロー:
+    // 1. リーク検出と作業フォルダを設定する
+    // 2. ウィンドウクラスを登録する
+    // 3. ウィンドウを作る（フルスクリーン、またはボーダーレス）
+    // 4. Framework を作り、メインループを回す
+
 #if defined(DEBUG) || defined(_DEBUG)
     // 終了時にメモリリークをダンプする
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -103,15 +113,13 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
     }
     else
     {
-        // ボーダーレスウィンドウ（モニタ全体を覆う枠なしウィンドウ）
-        // 1. 画面サイズをシステムから取得
+        // ボーダーレスウィンドウ（モニタ全体を覆う、タイトルバーも枠も無いウィンドウ）
         int screenW = GetSystemMetrics(SM_CXSCREEN);
         int screenH = GetSystemMetrics(SM_CYSCREEN);
 
-        // 2. ボーダーレス用のスタイル (タイトルバーなし、枠なし)
         DWORD style = WS_POPUP | WS_VISIBLE;
 
-        // 3. ウィンドウ作成 (枠がないため AdjustedWindowRect は不要)
+        // 枠が無いので、クライアント領域を合わせる AdjustWindowRect は要らない
         hWnd = CreateWindowEx(
             0,
             _T("Game"),
@@ -123,6 +131,7 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
             NULL, NULL, instance, NULL);
     }
 
+    // fnWndProc が Framework へ転送できるよう、ウィンドウに Framework のアドレスを持たせる
     Framework f(hWnd);
     SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&f));
     return f.Run();

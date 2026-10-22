@@ -1,6 +1,6 @@
 #include "AIDebugOverlaySystem.h"
 
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/Battle/BattleContext.h" // ドローン残数
 #include "Game/Logics/Combat/Components/HealthComponent.h"  // ボスHP
 #include "Engine/UI/ECS/GameViewportInfo.h"      // エディタでゲーム画面を表示している矩形
@@ -118,7 +118,7 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     ImDrawList *drawList = ImGui::GetForegroundDrawList();
     ImFont     *font     = ImGui::GetFont();
 
-    // プレイヤーの足元。距離の表示位置（ボスとの中点）に使う。
+    // プレイヤーが居るか（距離の行を出すか・頭上をどれだけ持ち上げるか）を見るのに使う。
     const BattleContext *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
 
     auto view = m_world->View<BossPhaseComponent, BehaviorTreeComponent, TransformComponent>();
@@ -129,90 +129,72 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         auto *trans = m_world->GetComponent<TransformComponent>(e);
         if (!ph || !bt || !trans) continue;
 
-        // --- 距離：ボスとプレイヤーの中点 ---
-        //   値は自分で測り直さず、BT の距離条件が比べている blackboard の値をそのまま出す。
-        //   測り直すと、測る点（足元か中心か）や更新のタイミングが違ったときに、表示と判定が食い違う。
-        if (m_showDistance && battle && battle->HasPlayer())
-        {
-            Vector3 mid = (Vector3(trans->position) + Vector3(battle->playerPos)) * 0.5f;
-            mid.y += m_distanceOffsetY;
+        const bool hasPlayer = battle && battle->HasPlayer();
 
-            ImVec2 screen;
-            if (WorldToScreen(mid, viewProj, rect, screen))
-            {
-                const float distance = bt->blackboard.distanceToTarget;
+        // 距離は自分で測り直さず、BT の距離条件が比べている blackboard の値をそのまま使う。
+        // 測り直すと、測る点（足元か中心か）や更新のタイミングが違ったときに、表示と判定が食い違う。
+        const float distance = hasPlayer ? bt->blackboard.distanceToTarget : 0.0f;
 
-                char text[32];
-                snprintf(text, sizeof(text), "%.1f m", distance);
-
-                const ImVec2 size = font->CalcTextSizeA(m_distanceFontSize, FLT_MAX, 0.0f, text);
-                const ImVec2 pos(screen.x - size.x * 0.5f, screen.y - size.y * 0.5f);
-                const float  pad = m_distanceFontSize * 0.2f;
-                drawList->AddRectFilled(ImVec2(pos.x - pad, pos.y - pad * 0.5f),
-                                        ImVec2(pos.x + size.x + pad, pos.y + size.y + pad * 0.5f),
-                                        IM_COL32(0, 0, 0, 160), 6.0f);
-
-                // 色は今いる帯（地面に塗られている帯）の色。赤なら「〜m 未満」、青なら「〜m 超」の
-                // 条件が通っている帯なので、数字の色だけで「今どちら側の枝が選ばれうるか」が読める。
-                // どのリングよりも外なら白。
-                ImU32 color = IM_COL32(255, 255, 255, 255);
-                if (bt->sharedAsset)
-                {
-                    AIDebugRanges::CollectRings(*bt->sharedAsset, m_rings, m_edgeRings);
-                    if (const AIDebugRanges::RangeRing *band = AIDebugRanges::BandOf(m_rings, distance))
-                        color = ToImColor(AIDebugRanges::ColorOf(*band));
-                }
-                DrawOutlinedText(drawList, font, m_distanceFontSize, pos, color, text);
-            }
-        }
-
-        // --- 頭上の文字 ---
-        //   離れるほど高く出す。距離は上の数字と同じ blackboard の値を使う（プレイヤーが居なければ足さない）。
-        const float headDistance = (battle && battle->HasPlayer()) ? bt->blackboard.distanceToTarget : 0.0f;
-
+        // --- 頭上の位置 ---
+        //   離れるほど高く出す（プレイヤーが居なければ足さない）。
         Vector3 worldPos = trans->position;
-        worldPos.y += m_headOffsetY + headDistance * m_headOffsetPerMeter;
+        worldPos.y += m_headOffsetY + distance * m_headOffsetPerMeter;
 
         ImVec2 head;
         if (!WorldToScreen(worldPos, viewProj, rect, head)) continue; // 画面外・カメラ後方
         const float pixelX = head.x;
         const float pixelY = head.y;
 
-        // 1) 形態（BossPhaseSystem が決めたもの）
-        char line1[80];
-        snprintf(line1, sizeof(line1), "[%s]", ToString(ph->phase));
-
-        // 2) 行動（BT）：今 Running にしている行動
-        const char *actionName = CurrentActionName(*bt);
-
-        // 3) ステータス：ボスの HP とドローンの残数
-        char line3[96] = "";
-        {
-            const auto *hp     = m_world->GetComponent<HealthComponent>(e);
-            const int   drones = m_world->HasResource<BattleContext>()
-                                     ? m_world->GetResource<BattleContext>().droneAliveCount
-                                     : -1;
-            if (hp && drones >= 0)
-                snprintf(line3, sizeof(line3), "HP %.0f/%.0f  Drone %d",
-                         hp->currentHealth, hp->maxHealth, drones);
-            else if (hp)
-                snprintf(line3, sizeof(line3), "HP %.0f/%.0f", hp->currentHealth, hp->maxHealth);
-        }
-
         struct DbgLine
         {
             const char *text;
             ImU32       col;
         };
-        const DbgLine lines[3] = {
-            {line1, IM_COL32(255, 200, 80, 255)},               // 形態：オレンジ
-            {actionName, IM_COL32(255, 255, 255, 255)},         // 行動：白
-            {line3, IM_COL32(150, 235, 150, 255)},              // ステータス：緑
-        };
-        const int lineCount = (line3[0] != '\0') ? 3 : 2;
+        DbgLine lines[4];
+        int     lineCount = 0;
+
+        // 1) 形態（BossPhaseSystem が決めたもの）：オレンジ
+        char phaseText[80];
+        snprintf(phaseText, sizeof(phaseText), "[%s]", ToString(ph->phase));
+        lines[lineCount++] = {phaseText, IM_COL32(255, 200, 80, 255)};
+
+        // 2) 行動（BT）：今 Running にしている行動：白
+        lines[lineCount++] = {CurrentActionName(*bt), IM_COL32(255, 255, 255, 255)};
+
+        // 3) 距離：行動のすぐ下に置き、「この距離だからこの行動を選んだ」を続けて読めるようにする。
+        //    色は今いる帯（地面に塗られている帯）の色。赤なら「〜m 未満」、青なら「〜m 超」の
+        //    条件が通っている帯なので、数字の色だけで「今どちら側の枝が選ばれうるか」が読める。
+        //    どのリングよりも外なら白。
+        char distanceText[32];
+        if (m_showDistance && hasPlayer)
+        {
+            snprintf(distanceText, sizeof(distanceText), "%.1f m", distance);
+
+            ImU32 color = IM_COL32(255, 255, 255, 255);
+            if (bt->sharedAsset)
+            {
+                AIDebugRanges::CollectRings(*bt->sharedAsset, m_rings, m_edgeRings);
+                if (const AIDebugRanges::RangeRing *band = AIDebugRanges::BandOf(m_rings, distance))
+                    color = ToImColor(AIDebugRanges::ColorOf(*band));
+            }
+            lines[lineCount++] = {distanceText, color};
+        }
+
+        // 4) ステータス：ボスの HP とドローンの残数：緑
+        char statusText[96] = "";
+        {
+            const auto *hp     = m_world->GetComponent<HealthComponent>(e);
+            const int   drones = battle ? battle->droneAliveCount : -1;
+            if (hp && drones >= 0)
+                snprintf(statusText, sizeof(statusText), "HP %.0f/%.0f  Drone %d",
+                         hp->currentHealth, hp->maxHealth, drones);
+            else if (hp)
+                snprintf(statusText, sizeof(statusText), "HP %.0f/%.0f", hp->currentHealth, hp->maxHealth);
+        }
+        if (statusText[0] != '\0') lines[lineCount++] = {statusText, IM_COL32(150, 235, 150, 255)};
 
         // --- 描画（アウトライン付き・中央揃え・N行対応）---
-        ImVec2 sizes[3];
+        ImVec2 sizes[4];
         float  totalH = 0.0f, maxW = 0.0f;
         for (int i = 0; i < lineCount; ++i)
         {
@@ -246,13 +228,11 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
     ImGui::SliderFloat("距離1mあたりの追加の高さ", &m_headOffsetPerMeter, 0.0f, 0.5f);
     ImGui::TextDisabled("プレイヤーから離れるほど頭上の表示を持ち上げ、遠くでボスに被らないようにする");
-    ImGui::TextDisabled("ボス頭上に 形態/行動/HP・ドローン数 を常時表示");
+    ImGui::TextDisabled("ボス頭上に 形態/行動/距離/HP・ドローン数 を常時表示");
 
     ImGui::Separator();
     ImGui::Checkbox("Show Distance", &m_showDistance);
-    ImGui::SliderFloat("Distance Font Size", &m_distanceFontSize, 10.0f, 100.0f);
-    ImGui::SliderFloat("Distance Offset Y", &m_distanceOffsetY, 0.0f, 10.0f);
-    ImGui::TextDisabled("ボスとプレイヤーの中点に距離を表示（BT の距離条件と同じ値）");
+    ImGui::TextDisabled("行動の下の行に、プレイヤーとの距離を表示（BT の距離条件と同じ値）");
     ImGui::TextDisabled("数字の色は今いる帯の色（赤=〜m未満 / 青=〜m超 / 緑=境目 / 白=どの輪よりも外）");
 }
 

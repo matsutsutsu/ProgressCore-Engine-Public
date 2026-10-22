@@ -24,6 +24,11 @@
          そのたびに作り直しになる（＝323本すべての再コンパイル）。
          32bit ホストの 4GB 制限も外れる。 -->
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <!-- v143 の中の MSVC サブバージョンを固定する。固定しないと IDE は最新
+         (14.44 / 14.51 など) を、CLI ビルドは別の版を選び、PCH はコンパイラの
+         バイナリに紐づくため作り直し＝全再コンパイルになる。VS2022/2026 の
+         どちらにも存在する 14.38.33130 に揃える。 -->
+    <VCToolsVersion>14.38.33130</VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -285,30 +290,6 @@
     <ClInclude Include="External\implot-master\implot_internal.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\DetourDebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDebugDraw.h" />
-    <ClInclude Include="External\RecastNavigation\DebugUtils\Include\RecastDump.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourCrowd.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourLocalBoundary.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourObstacleAvoidance.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathCorridor.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourPathQueue.h" />
-    <ClInclude Include="External\RecastNavigation\DetourCrowd\Include\DetourProximityGrid.h" />
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCache.h" />
-    <ClInclude Include="External\RecastNavigation\DetourTileCache\Include\DetourTileCacheBuilder.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAlloc.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourAssert.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourCommon.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourMath.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMesh.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshBuilder.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNavMeshQuery.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourNode.h" />
-    <ClInclude Include="External\RecastNavigation\Detour\Include\DetourStatus.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\Recast.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAlloc.h" />
-    <ClInclude Include="External\RecastNavigation\Recast\Include\RecastAssert.h" />
     <ClInclude Include="Source\Editor\Core\EditorCommandHistory.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -326,9 +307,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h" />
-    <ClInclude Include="Source\Editor\Utils\NavMeshBuilder.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Utils\ShellIconLoader.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -347,13 +325,14 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\FormationEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\Game\FormationLayerSequence.h" />
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h" />
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeEditorCommon.h" />
-    <ClInclude Include="Source\Editor\Windows\Game\TimelineEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\General\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -383,17 +362,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.h" />
-    <ClInclude Include="Source\Editor\Windows\AI\NavMeshWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Engine\AI\Navigation\Components\NavAgentComponent.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Core\NavigationData.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.h" />
-    <ClInclude Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
@@ -420,17 +391,18 @@
     <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
-    <ClInclude Include="Source\Engine\Timeline\TimelineAsset.h" />
-    <ClInclude Include="Source\Engine\Timeline\TimelineEvents.h" />
-    <ClInclude Include="Source\Engine\Timeline\Components\TimelinePlayerComponent.h" />
-    <ClInclude Include="Source\Engine\Timeline\Systems\TimelineSystem.h" />
-    <ClInclude Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CameraShot.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicEvents.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicScript.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicSubject.h" />
+    <ClInclude Include="Source\Engine\Cinematic\CinematicTracks.h" />
+    <ClInclude Include="Source\Engine\Cinematic\Components\CinematicCameraComponent.h" />
+    <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.h" />
+    <ClInclude Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.h" />
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraBrainSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h" />
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h" />
@@ -492,12 +464,12 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h" />
+    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ToneMapConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\IRenderPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
@@ -511,10 +483,10 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Effects\Components\ScreenImpactComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\ScreenImpactComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\ScreenImpactSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushEffectComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushEffectSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PostProcessPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\PrimitivePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\SetupPass.h" />
@@ -570,7 +542,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
@@ -674,7 +645,6 @@
     <ClInclude Include="Source\Engine\Transform\Systems\TransformSnapshotSystem.h" />
     <ClInclude Include="Source\Engine\Transform\Systems\TransformUpdateSystem.h" />
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h" />
-    <ClInclude Include="Source\Game\Core\AllComponents.h" />
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContext.h" />
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTAction.h" />
@@ -686,7 +656,7 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h" />
-    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\ActionRegistry.h">
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionIds.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -716,6 +686,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.h" />
@@ -737,12 +710,12 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\DashComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\CleaveComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\JustEvadeComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponent.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Dash\PlayerDashComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushCameraComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerInputComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UITransformComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIImageComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\GameViewportInfo.h" />
@@ -763,21 +736,23 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h" />
-    <ClInclude Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h" />
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h" />
-    <ClInclude Include="Source\Game\UI\Screens\GameSettings.h" />
+    <ClInclude Include="Source\Game\Core\GameSettings.h" />
     <ClInclude Include="Source\Game\UI\Screens\SettingsScreenSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\ScreenHeadingUi.h" />
-    <ClInclude Include="Source\Game\Title\TitleComposition.h" />
-    <ClInclude Include="Source\Game\Title\TitleCameraSystem.h" />
-    <ClInclude Include="Source\Game\Title\TitleSwarmSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Title\TitleComposition.h" />
+    <ClInclude Include="Source\Game\Logics\Title\TitleCameraSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Title\TitleSwarmSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h" />
     <ClInclude Include="Source\Game\UI\Screens\GameResultSystem.h" />
@@ -790,19 +765,24 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UICanvasComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Dash\PlayerDashSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeDebugSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Rush\PlayerRushCameraSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Feedback\PlayerActionVfxSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\Systems\DefeatSlowMotionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\Systems\HitEffectSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Components\DeadTag.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Components\CombatComponents.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Components\HealthComponent.h" />
@@ -812,9 +792,16 @@
     <ClInclude Include="Source\Game\Core\GameEvents.h" />
     <ClInclude Include="Source\Engine\Scene\BaseScene.h" />
     <ClInclude Include="Source\Game\Scenes\EditorScene.h" />
+    <ClInclude Include="Source\Game\Scenes\PlayerTestScene.h" />
     <ClInclude Include="Source\Game\Scenes\GameScene.h" />
     <ClInclude Include="Source\Game\Scenes\TitleScene.h" />
+    <ClInclude Include="Source\Game\Scenes\TutorialScene.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSteps.h" />
+    <ClInclude Include="Source\Game\UI\Screens\TutorialCompleteSystem.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
+    <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h" />
+    <ClInclude Include="Source\Game\Logics\Demo\DemoSwarmSystem.h" />
     <ClInclude Include="Source\Engine\Scene\SceneLoading.h" />
   </ItemGroup>
   <ItemGroup>
@@ -871,36 +858,6 @@
     <ClCompile Include="External\implot-master\implot_items.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\DetourDebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDebugDraw.cpp" />
-    <ClCompile Include="External\RecastNavigation\DebugUtils\Source\RecastDump.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourCrowd.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourLocalBoundary.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathCorridor.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourPathQueue.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourCrowd\Source\DetourProximityGrid.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCache.cpp" />
-    <ClCompile Include="External\RecastNavigation\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAlloc.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourAssert.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourCommon.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMesh.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNavMeshQuery.cpp" />
-    <ClCompile Include="External\RecastNavigation\Detour\Source\DetourNode.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\Recast.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAlloc.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastArea.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastAssert.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastContour.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastFilter.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastLayers.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMesh.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastMeshDetail.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRasterization.cpp" />
-    <ClCompile Include="External\RecastNavigation\Recast\Source\RecastRegion.cpp" />
     <ClCompile Include="External\Tracy\TracyClient.cpp" />
     <ClCompile Include="Source\Editor\Core\EditorWindowManager.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -910,9 +867,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\Utils\NavMeshBuilder.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Utils\ShellIconLoader.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -930,6 +884,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\FormationLayerSequence.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
@@ -961,9 +921,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\Game\TimelineEditorWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\General\ConsoleWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -998,16 +955,9 @@
     <ClCompile Include="Source\Editor\Windows\General\MemoryAnalyzerWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AI\NavMeshWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Engine\AI\Navigation\Components\NavAgentComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavMeshDebugDrawSystem.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavPathfindingSystem.cpp" />
-    <ClCompile Include="Source\Engine\AI\Navigation\Systems\NavSteeringSystem.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\AnimatorComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Components\RootMotionComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Animation\Core\AnimGraphSerializer.cpp" />
@@ -1026,14 +976,12 @@
     <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
-    <ClCompile Include="Source\Engine\Timeline\TimelineAsset.cpp" />
-    <ClCompile Include="Source\Engine\Timeline\Components\TimelinePlayerComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Timeline\Systems\TimelineSystem.cpp" />
-    <ClCompile Include="Source\Engine\Timeline\Systems\TimelineCameraSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Cinematic\TimelineRoleBindSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp" />
+    <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp" />
+    <ClCompile Include="Source\Engine\Cinematic\Components\CinematicCameraComponentMeta.cpp" />
+    <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.cpp" />
+    <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicTrackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Cinematic\CinematicFrameSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicTriggerSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Cinematic\CinematicSignalSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraBrainSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp" />
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp" />
@@ -1060,7 +1008,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\DepthOfFieldConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Components\PostProcess\ContactShadowConfigComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\MaterialComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\ModelComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp" />
@@ -1078,10 +1025,10 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailRecordSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Trail\TrailAnimationSyncSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Effects\Components\ScreenImpactComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Effects\Systems\ScreenImpactSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Effects\Components\JustEvadeEffectComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Effects\Systems\JustEvadeEffectSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\ScreenImpactComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\ScreenImpactSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushEffectComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushEffectSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PostProcessPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\PrimitivePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\SetupPass.cpp" />
@@ -1127,7 +1074,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ColorGradingEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DepthOfFieldEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ContactShadowEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
@@ -1220,6 +1166,8 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.cpp" />
@@ -1230,11 +1178,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\DashComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\CleaveComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Components\PlayerInputComponentMeta.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\JustEvadeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIRenderer.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\UIGaugeSprite.cpp" />
@@ -1246,46 +1191,62 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp" />
-    <ClCompile Include="Source\Game\UI\HUD\CleaveGaugeHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp" />
-    <ClCompile Include="Source\Game\UI\Screens\GameSettings.cpp" />
+    <ClCompile Include="Source\Game\Core\GameSettings.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\SettingsScreenSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp" />
-    <ClCompile Include="Source\Game\Title\TitleCameraSystem.cpp" />
-    <ClCompile Include="Source\Game\Title\TitleSwarmSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Title\TitleCameraSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\PauseSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\BattleStartFacingSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerAnimParamSyncSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerDashSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerCleaveSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerActionVfxSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerFeedbackSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerInputSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerLockOnSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Systems\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Dash\PlayerDashSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeDebugSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushCameraSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Dash\PlayerDashComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Rush\PlayerRushCameraComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerActionVfxSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Components\CombatComponentsMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\Systems\DefeatSlowMotionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\Systems\HitEffectSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\HitboxCollisionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\SpawnHitboxSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\BaseScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\EditorScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\PlayerTestScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\GameScene.cpp" />
     <ClCompile Include="Source\Game\Scenes\TitleScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\TutorialScene.cpp" />
+    <ClCompile Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Screens\TutorialCompleteSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp" />
+    <ClCompile Include="Source\Game\Logics\Demo\DemoSwarmSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -1603,11 +1564,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\ColorGradingPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\PostProcess\ContactShadowPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

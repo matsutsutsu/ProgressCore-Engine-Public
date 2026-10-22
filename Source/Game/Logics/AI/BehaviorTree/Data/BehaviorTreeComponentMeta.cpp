@@ -20,7 +20,7 @@
 
 // DroneState と1対1で並べる（順番がずれると別の状態名が表示される）。
 static const char *DroneStateNames[] = {
-    "Idle", "MoveToTarget", "FireCharge", "Stunned", "Returning"};
+    "Idle", "MoveToTarget", "FireCharge", "Returning"};
 
 // ============================================================
 // BehaviorTreeComponent
@@ -133,7 +133,8 @@ struct ComponentMeta<DroneComponent>
             CFIELD_ENUM_U8_RT(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
             CFIELD_ENUM_U8_RT(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
             CFIELD_RT(hasReachedSlot, "スロット到着済み", "State")
-            CFIELD_RT(stateTimer, "状態タイマー", "State")
+            CFIELD_RT(chargeWindup, "タメの残り", "State")
+            CFIELD_RT(breakawayTimer, "離脱の残り", "State")
             CFIELD_FLOAT3_RT(targetPosition, "目標座標", 0.1f, "State")};
         return fields;
     }

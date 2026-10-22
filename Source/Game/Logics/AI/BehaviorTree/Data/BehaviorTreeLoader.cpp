@@ -5,7 +5,7 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include <json.hpp>
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 
 #include <cstdint>
 #include <utility>
@@ -140,7 +140,7 @@ namespace
     /**
      * @brief 枝の中に「currentActionId を書く行動」が1つでもあるかを返す。
      *
-     * Parallel の従に置くと、要求が下りないまま残る（理由は ActionRegistry.h の IsCommandWritingAction）。
+     * Parallel の従に置くと、要求が下りないまま残る（理由は BTActionIds.h の IsCommandWritingAction）。
      *
      * @param asset  木の構造。
      * @param nodeId 調べる枝の根のノード。

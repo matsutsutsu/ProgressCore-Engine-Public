@@ -8,8 +8,6 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-TransformUpdateSystem::TransformUpdateSystem() : IfSystem("TransformUpdateSystem") {}
-
 // ローカルの TRS から行列を作る（S * R * T）
 static inline XMMATRIX ComposeLocal(const TransformComponent &t)
 {
@@ -33,19 +31,28 @@ void TransformUpdateSystem::Initialize()
 
 void TransformUpdateSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. 予約された親子付けを適用する
+    // 2. 親子関係の変化を検出し、変わっていればキャッシュを作り直す
+    // 3. ルートを並列に計算する
+    // 4. 非ルートを親が先の順に解決する
+
+    // 【備考】
+    //   3 と 4 は入れ替えられない。4 はルートの親の worldMatrix を、3 で確定した値として読むため。
+
     ProcessPendingParents();
 
-    // 1. 親子関係の変化検出とゴーストリンクの修復（行列は計算しないので、直列でも軽い）
+    // 親子関係の変化検出とゴーストリンクの修復は、行列を計算しないので直列でも軽い
     if (ScanDetectTopology())
     {
         RepairBrokenLinks();
         m_cache.Rebuild(*m_world);
     }
 
-    // 2. ルートを並列にその場で計算する。Entity 数が多いのはここなので、並列化の効果が大きい
+    // Entity 数が多いのはルートなので、ここを並列にすると効果が大きい
     ComputeRootsParallel();
 
-    // 3. 非ルート（少数）を親が先の順に解決する。親子の無いシーンでは Count() == 0 ですぐ抜ける
+    // 親子の無いシーンでは Count() == 0 ですぐ抜ける
     SolveHierarchy();
 }
 
@@ -98,6 +105,8 @@ bool TransformUpdateSystem::ScanDetectTopology()
 
 void TransformUpdateSystem::ComputeRootsParallel()
 {
+    // 静的物体でも isDirty が立っていれば計算する。
+    // isDirty は生成・ロード直後に true なので、静的物体も最初の1回は必ず worldMatrix が作られる。
     ForEachParallel([](TransformComponent &t) {
         if (t.parent != 0) return;                               // 子は SolveHierarchy で計算する
         if (t.isStatic && !t.isDirty && !t.isTeleported) return; // 動いていない静的物体だけ省く
@@ -264,47 +273,10 @@ void TransformUpdateSystem::DetachChild(World &world, EntityID childID)
     childTrans->nextSiblingID = 0;
 }
 
-void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID entity, bool destroyChildren)
-{
-    if (!world.IsEntityValid(entity)) return;
-    auto *trans = world.GetComponent<TransformComponent>(entity);
-    if (!trans)
-    {
-        world.RequestDestroyEntity(entity);
-        return;
-    }
-
-    if (destroyChildren)
-    {
-        EntityID childID = trans->firstChildID;
-        while (childID != 0)
-        {
-            auto *childTrans = world.GetComponent<TransformComponent>(childID);
-            if (!childTrans) break;
-            EntityID nextChild = childTrans->nextSiblingID;
-            DestroyEntityWithHierarchy(world, childID, true);
-            childID = nextChild;
-        }
-    }
-    else
-    {
-        EntityID childID = trans->firstChildID;
-        while (childID != 0)
-        {
-            auto *childTrans = world.GetComponent<TransformComponent>(childID);
-            if (!childTrans) break;
-            EntityID nextChild = childTrans->nextSiblingID;
-            DetachChild(world, childID);
-            childID = nextChild;
-        }
-    }
-    DetachChild(world, entity);
-    world.RequestDestroyEntity(entity);
-}
-
 // ---------------------------------------------------------------------------
-// 物理との受け渡し（ワールド値 → ローカル値）
+// 物理との受け渡し
 // ---------------------------------------------------------------------------
+
 void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
                                                 TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos,
                                                 const DirectX::XMFLOAT4 &worldRot)
@@ -391,6 +363,44 @@ void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
 // ---------------------------------------------------------------------------
 // 破棄の予約
 // ---------------------------------------------------------------------------
+
+void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID entity, bool destroyChildren)
+{
+    if (!world.IsEntityValid(entity)) return;
+    auto *trans = world.GetComponent<TransformComponent>(entity);
+    if (!trans)
+    {
+        world.RequestDestroyEntity(entity);
+        return;
+    }
+
+    if (destroyChildren)
+    {
+        EntityID childID = trans->firstChildID;
+        while (childID != 0)
+        {
+            auto *childTrans = world.GetComponent<TransformComponent>(childID);
+            if (!childTrans) break;
+            EntityID nextChild = childTrans->nextSiblingID;
+            DestroyEntityWithHierarchy(world, childID, true);
+            childID = nextChild;
+        }
+    }
+    else
+    {
+        EntityID childID = trans->firstChildID;
+        while (childID != 0)
+        {
+            auto *childTrans = world.GetComponent<TransformComponent>(childID);
+            if (!childTrans) break;
+            EntityID nextChild = childTrans->nextSiblingID;
+            DetachChild(world, childID);
+            childID = nextChild;
+        }
+    }
+    DetachChild(world, entity);
+    world.RequestDestroyEntity(entity);
+}
 
 void TransformUpdateSystem::MarkForDestruction(World &world, EntityID entity, bool destroyChildren)
 {

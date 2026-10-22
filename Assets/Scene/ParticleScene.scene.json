@@ -26,14 +26,6 @@
                     "tintG": 1.0,
                     "tintR": 1.0
                 },
-                "ContactShadow": {
-                    "bias": 0.019999999552965164,
-                    "enable": true,
-                    "intensity": 0.699999988079071,
-                    "maxDistance": 30.0,
-                    "rayLength": 0.30000001192092896,
-                    "thickness": 0.10000000149011612
-                },
                 "DepthOfField": {
                     "enable": false,
                     "falloff": 8.0,
@@ -68,16 +60,10 @@
                         0.0,
                         1.0
                     ],
-                    "enabled": true,
+                    "enabled": false,
                     "end": 500.0,
                     "heightDensity": 0.5,
                     "heightStart": 0.0,
-                    "noiseScale": 0.10000000149011612,
-                    "noiseSpeed": [
-                        0.10000000149011612,
-                        0.05000000074505806
-                    ],
-                    "noiseStrength": 0.0,
                     "rimColor": [
                         1.0,
                         1.0,
@@ -85,21 +71,15 @@
                     ],
                     "rimPower": 3.0,
                     "rimStrength": 0.0,
-                    "skyFogHeight": -0.7900000214576721,
-                    "skyFogSoftness": 0.3499999940395355,
+                    "skyFogHeight": -1.0,
+                    "skyFogSoftness": 0.0,
                     "start": 40.0
                 },
-                "Just Evade Effect": {
-                    "attackTime": 0.029999999329447746,
-                    "chromaPeak": 0.019999999552965164,
-                    "duration": 0.5,
-                    "gradeMixPeak": 0.8999999761581421,
-                    "radialPeak": 0.3499999940395355,
-                    "releaseTime": 0.18000000715255737,
-                    "spikeDecay": 0.18000000715255737,
-                    "style": 2,
-                    "vignettePeak": 0.6000000238418579,
-                    "vignettePulse": 5.0
+                "Player Rush Effect": {
+                    "fadeInTime": 0.20000000298023224,
+                    "fadeOutTime": 0.4000000059604645,
+                    "vignetteIntensity": 0.5,
+                    "vignetteRadius": 0.20000000298023224
                 },
                 "Name": {
                     "name": "LightingSetup"
@@ -122,7 +102,7 @@
                     "chromaticStrength": 0.012000000104308128,
                     "duration": 0.2199999988079071,
                     "radialStrength": 0.3499999940395355,
-                    "shakeTrauma": 0.18
+                    "shakeTrauma": 0.18000000715255737
                 },
                 "ShadowMapConfig": {
                     "cascadeSplits": [
@@ -158,7 +138,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 5,
+                    "parent": 0,
                     "position": [
                         0.0,
                         5.0,
@@ -192,8 +172,8 @@
         {
             "components": {
                 "CameraBodyFree": {
-                    "currentPitch": -22.39999771118164,
-                    "currentYaw": 0.9999675154685974,
+                    "currentPitch": -11.500093460083008,
+                    "currentYaw": -7.668137550354004e-05,
                     "lookSpeed": 0.20000000298023224,
                     "moveSpeed": 8.0
                 },
@@ -210,17 +190,17 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 5,
+                    "parent": 0,
                     "position": [
-                        0.01761108636856079,
-                        7.898261070251465,
-                        -11.3286714553833
+                        -0.9482517242431641,
+                        8.504507064819336,
+                        -16.221866607666016
                     ],
                     "rotation": [
-                        0.1942269653081894,
-                        0.008560062386095524,
-                        -0.0016949378186836839,
-                        0.9809178709983826
+                        0.10018887370824814,
+                        -6.65804236632539e-07,
+                        6.704350852260177e-08,
+                        0.9949684143066406
                     ],
                     "scale": [
                         1.0,
@@ -240,6 +220,63 @@
         },
         {
             "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
+                "Model": {
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
+                },
+                "Name": {
+                    "name": "Player"
+                },
+                "RootMotion": null,
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        -5.599999904632568,
+                        0.0,
+                        5.099999904632568
+                    ],
+                    "rotation": [
+                        1.2611686178923354e-44,
+                        0.9576292037963867,
+                        1.5414283107572988e-44,
+                        0.288004070520401
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 3
+        },
+        {
+            "components": {
                 "BoneAttachmentComponent": {
                     "boneName": "hand_r"
                 },
@@ -248,7 +285,8 @@
                     "hitStopDuration": 0.20999999344348907,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 20.0
+                    "knockback": 20.0,
+                    "rehitInterval": -1.0
                 },
                 "Jolt Capsule Collider": {
                     "halfHeight": 2.5999999046325684,
@@ -278,7 +316,15 @@
                     "restitution": 0.0,
                     "useCCD": false
                 },
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Weapon/Sword.gltf"
                 },
@@ -295,7 +341,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 4,
+                    "parent": 3,
                     "position": [
                         0.10000000149011612,
                         0.019999999552965164,
@@ -320,6 +366,8 @@
                         0.0,
                         0.0
                     ],
+                    "burstDuration": 0.25,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.3706563711166382,
@@ -334,6 +382,7 @@
                     "minDistance": 0.019999999552965164,
                     "rimPower": 0.699999988079071,
                     "shape": 0,
+                    "texturePath": "",
                     "thickness": 0.0,
                     "tipOffset": [
                         0.0,
@@ -341,63 +390,23 @@
                         0.0
                     ],
                     "tubeSides": 6,
+                    "useInterpolation": true,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
                     "width": 1.0,
                     "widthCurvePower": 0.10000000149011612
-                }
-            },
-            "lid": 3
-        },
-        {
-            "components": {
-                "AnimParameters": null,
-                "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
-                },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
-                "Material": null,
-                "Model": {
-                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
-                },
-                "Name": {
-                    "name": "Player"
-                },
-                "RootMotion": null,
-                "TimeState": {
-                    "buffScale": 1.0,
-                    "cinematicScale": 1.0,
-                    "freezeScale": 0.0,
-                    "group": 0,
-                    "hitStopTimer": 0.0,
-                    "localDt": 0.01666666753590107
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 5,
-                    "position": [
-                        -5.599999904632568,
-                        0.0,
-                        5.099999904632568
-                    ],
-                    "rotation": [
-                        1.2611686178923354e-44,
-                        0.9576292037963867,
-                        1.5414283107572988e-44,
-                        0.288004070520401
-                    ],
-                    "scale": [
-                        3.5,
-                        3.5,
-                        3.5
-                    ]
                 }
             },
             "lid": 4
         }
     ],
     "magic": 1397506883,
-    "timestamp": 1787791199,
+    "timestamp": 1792049000,
     "version": 1
 }

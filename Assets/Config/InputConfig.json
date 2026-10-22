@@ -73,20 +73,6 @@
             ],
             "Name": "FreeLook",
             "Trigger": "Down"
-        },
-        {
-            "Bindings": [
-                {
-                    "Device": "Mouse_Button",
-                    "Key": "BTN_RIGHT"
-                },
-                {
-                    "Device": "GamePad_Button",
-                    "Key": "BTN_B"
-                }
-            ],
-            "Name": "Cleave",
-            "Trigger": "Triggered"
         }
     ],
     "Axes": [

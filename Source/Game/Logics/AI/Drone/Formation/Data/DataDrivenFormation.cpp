@@ -408,14 +408,15 @@ namespace CCL::AI::Formation::Data
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
     // ============================================================
 
-    void RegisterAll()
+    void RegisterAll(FormationRegistry &registry)
     {
         // 処理フロー:
         // 1. Assets/Formations のファイルを一覧する
-        // 2. 1つずつ読み、名乗った枠が使えるか確かめて登録する
-        // 3. 空き枠をログへ出す
+        // 2. 1つずつ読む
+        // 3. 名乗った枠が使えるか確かめて登録する
+        // 4. 空き枠をログへ出す
 
-        auto &registry = FormationRegistry::Instance();
+        // レジストリは World ごとに作り直されるので、シーンに入るたびに全ファイルを読み直す。
 
         const std::vector<std::string> files = FileSystem::ListFiles("Assets/Formations", ".json");
 

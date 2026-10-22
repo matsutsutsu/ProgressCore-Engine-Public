@@ -3,7 +3,11 @@
 
 void TrailPass::Execute(const RenderFrameContext &ctx)
 {
-    if (!m_services) return;
+    if (!m_services || !m_services->trailRenderer)
+    {
+        return;
+    }
+
     // TrailSystem（R08）がこのフレームに積んだ頂点を、歪み・加算の順に描いて空にする
-    TrailRenderer::Instance().Render(*m_services, ctx);
+    m_services->trailRenderer->Render(*m_services, ctx);
 }

@@ -1,7 +1,7 @@
 #include "BossActionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/BehaviorTree/Data/ActionRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // debugPaused
 #include "Engine/Core/App/GameFlowState.h"                           // cinematic
 #include "Engine/Animation/Core/AnimStateMachine.h"                  // 止まりのモーションの長さ
@@ -174,9 +174,6 @@ void BossActionSystem::Update(float rawDt)
 
 void BossActionSystem::OnGui()
 {
-    if (!ImGui::CollapsingHeader("Boss Action (Position Debugger)"))
-        return;
-
     auto view = m_world->View<TransformComponent, BossActionComponent>();
     if (view.begin() == view.end())
     {

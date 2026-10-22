@@ -42,7 +42,6 @@
 #define SLOT_CB_DOF 2
 #define SLOT_CB_SSAO 2
 #define SLOT_CB_SSAO_BLUR 2
-#define SLOT_CB_CONTACTSHADOW 2
 #define SLOT_CB_PAUSEBLUR 2
 
 // --- UI の 2D パス（UIRenderer がドローごとにバインド） ---

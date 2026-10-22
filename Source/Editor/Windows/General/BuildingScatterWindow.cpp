@@ -1,6 +1,8 @@
 #include "Editor/Windows/General/BuildingScatterWindow.h"
 
-#include "Game/Core/AllComponents.h" // Model/Material/Name
+#include "Engine/Core/Components/NameComponent.h"
+#include "Engine/Graphics/Components/Core/ModelComponent.h"
+#include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Common/CCL_Archetype.h" // ArchetypeHelper
 #include "Engine/Serialization/Factory/EntityFactory.h"

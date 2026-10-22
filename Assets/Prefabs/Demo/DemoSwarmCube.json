@@ -1,0 +1,52 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "DemoSwarmCube"
+                },
+                "Primitive": {
+                    "type": 0,
+                    "size": [
+                        0.05,
+                        0.05,
+                        0.05
+                    ],
+                    "radius": 0.5,
+                    "height": 1.0,
+                    "color": [
+                        1.0,
+                        0.55,
+                        0.15,
+                        1.0
+                    ],
+                    "isWireframe": false
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "DemoSwarmCube",
+    "version": 1
+}
