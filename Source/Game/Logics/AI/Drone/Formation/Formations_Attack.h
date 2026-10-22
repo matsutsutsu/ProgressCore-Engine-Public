@@ -44,6 +44,10 @@ namespace CCL::AI::Formation::Attack
         // 中心へ集まる移動そのものが予告。震えを足すと予告が二重になり、どちらを読むか分かりにくくなる。
         bool UsesShiverTelegraph() const override { return false; }
 
+        // 発射待ちは弾幕だけが使う値なので、弾幕から抜ける機の分は弾幕が捨てる。
+        // 残すと、まだ撃っていなかった機が次の技で「発射待ち」のまま当たり判定を開かない。
+        void OnExit(DroneComponent &drone) const override { drone.fireDelay = 0.0f; }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;
@@ -59,10 +63,10 @@ namespace CCL::AI::Formation::Attack
             // 陣形が持ち場を書かなくなるのは「飛び出した後」だけ。
             // 順番待ちも中央でのタメもまだ撃っていないので、狙いを更新し続ける。
 
-            // 判定に stateTimer（タメ）を含めること。
+            // 判定に chargeWindup（タメ）を含めること。
             // 見落とすと着弾の 0.5 秒以上前の座標を撃つことになり、歩いているだけで当たらなくなる。
             const bool launched = (drone.currentState == DroneState::FireCharge) &&
-                                  (drone.fireDelay <= 0.0f) && (drone.stateTimer <= 0.0f);
+                                  (drone.fireDelay <= 0.0f) && (drone.chargeWindup <= 0.0f);
             if (launched) return;
 
             drone.chargeMode = ChargeMode::Straight;
@@ -106,7 +110,7 @@ namespace CCL::AI::Formation::Attack
 
             // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる。
             const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
-            const float windupLeft  = (drone.stateTimer > 0.0f) ? drone.stateTimer : 0.0f;
+            const float windupLeft  = (drone.chargeWindup > 0.0f) ? drone.chargeWindup : 0.0f;
 
             // 足元(playerPos)ではなく体の中心を狙う（足元は地面なので身長ぶん下に刺さる）。
             Vector3 aimPoint = ctx.playerCenter;
@@ -162,9 +166,8 @@ namespace CCL::AI::Formation::Attack
     };
 
     // 登録（DroneFormationSystem::Initialize から呼ぶ）。
-    inline void RegisterAll()
+    inline void RegisterAll(FormationRegistry &reg)
     {
-        auto &reg = FormationRegistry::Instance();
         reg.Register<BarrageFormation>(DroneFormationType::Barrage);
     }
 

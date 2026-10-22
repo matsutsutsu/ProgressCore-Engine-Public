@@ -58,7 +58,7 @@ namespace CCL::AI::Formation::Meta
             FD_Int("上下のグループ数", "tierGroups", offsetof(T, tierGroups), 1, 8, nullptr, true, "2 にすると上段・下段に分かれ、先攻後攻を付けられる"),
             FD_EnumU8("グループへの配り方", "split", offsetof(T, split), kSplitNames, NameCount(kSplitNames), nullptr, true, "Block=前半と後半で分ける / Interleaved=1機ずつ交互に分ける"),
             FD_Int("行数", "rows", offsetof(T, rows), 0, 32, nullptr, true, "0 なら機数から正方に近い格子を自動で組む"),
-            FD_EnumU8("格子の埋め順", "fillOrder", offsetof(T, fillOrder), kFillOrderNames, NameCount(kFillOrderNames), nullptr, true, "ColumnFirst=1列を縦に埋めてから次の列へ / RowFirst=1行を横に埋めてから次の行へ"),
+            FD_EnumU8("格子の埋め順", "fillOrder", offsetof(T, fillOrder), kFillOrderNames, NameCount(kFillOrderNames), nullptr, true, "ColumnFirst=横へ1行を埋めてから上の行へ / RowFirst=縦へ1列を埋めてから隣の列へ"),
         };
         return fields;
     }
@@ -100,7 +100,7 @@ namespace CCL::AI::Formation::Meta
             FD_EnumU8("ずらす単位", "phaseSource", offsetof(T, phaseSource), kPhaseNames, NameCount(kPhaseNames), nullptr, true, "None=全機いっせい / Column=列ごと / Row=段ごと / Group=割付グループごと（先攻後攻）"),
             FD_Bool("ずらす向きを逆に", "phaseReverse", offsetof(T, phaseReverse), nullptr, true, "端から始めるか、反対の端から始めるか"),
             FD_Bool("左右で反転", "mirror", offsetof(T, mirror), nullptr, true, "左右グループごとに始まり／終わりの符号を入れ替える"),
-            FD_Float("震えの速さ [Hz]", "frequency", offsetof(T, frequency), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver 専用"),
+            FD_Float("震えの速さ [rad/s]", "frequency", offsetof(T, frequency), 0.5f, 0.0f, 0.0f, nullptr, true, "Shiver 専用。6.28 で1秒に1往復（10 で約1.6往復）"),
             FD_Float("先に動く側の範囲", "leadThreshold", offsetof(T, leadThreshold), 0.01f, 0.0f, 1.0f, nullptr, true, "Shiver 専用。ずらし順がこれ以下の席だけ震える。1 なら全席、小さいほど先頭だけ"),
         };
         return fields;
@@ -123,7 +123,6 @@ namespace CCL::AI::Formation::Meta
     {
         using T                                          = FormationCombat;
         static const std::vector<FieldDescriptor> fields = {
-            FD_Float("接触半径 [m]", "hitRadius", offsetof(T, hitRadius), 0.1f, 0.0f, 0.0f, nullptr, true, "現在は未使用。実際の半径は Drone.json の Jolt Sphere が持つ"),
             FD_Float("ダメージ", "damage", offsetof(T, damage), 0.5f),
             FD_Float("ノックバック", "knockback", offsetof(T, knockback), 0.5f),
             FD_Float("ヒットストップ [秒]", "hitStopDuration", offsetof(T, hitStopDuration), 0.01f, 0.0f, 1.0f, nullptr, true, "0 で無効"),

@@ -26,6 +26,8 @@
 #include "Engine/Time/Components/TimeState.h"
 #include <SimpleMath.h>
 
+namespace CCL::AI::Formation { class FormationRegistry; }
+
 class DroneBrainSystem : public CCL::ECS::IfSystem<DroneBrainSystem,
                                                    CCL::ECS::Read<TransformComponent>,
                                                    CCL::ECS::Write<DroneComponent>,
@@ -54,10 +56,12 @@ private:
      *
      * ここでは飛び出してからの飛距離と経過時間を測るだけで、切り上げるかは技（IFormation::IsChargeOver）に聞く。
      *
-     * @param trans 機体の Transform。
-     * @param drone 判定する機体。飛び出す前は飛距離の起点（chargeStartPos）と経過時間を置き直す。
-     * @param dt    経過時間（秒）。
+     * @param formations 技の一覧（World の Resource）。無ければ切り上げない。
+     * @param trans      機体の Transform。
+     * @param drone      判定する機体。飛び出す前は飛距離の起点（chargeStartPos）と経過時間を置き直す。
+     * @param dt         経過時間（秒）。
      * @return 技が「切り上げる」と答えたら true。
      */
-    bool HasFinishedCharge(const TransformComponent &trans, DroneComponent &drone, float dt) const;
+    bool HasFinishedCharge(const CCL::AI::Formation::FormationRegistry *formations,
+                           const TransformComponent &trans, DroneComponent &drone, float dt) const;
 };

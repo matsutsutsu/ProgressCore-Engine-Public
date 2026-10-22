@@ -408,34 +408,23 @@ namespace CCL::AI::Formation::Data
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
     // ============================================================
 
-    void RegisterAll()
+    void RegisterAll(FormationRegistry &registry)
     {
         // 処理フロー:
         // 1. Assets/Formations のファイルを一覧する
-        // 2. 1つずつ読み、前のシーンで登録済みなら飛ばす
+        // 2. 1つずつ読む
         // 3. 名乗った枠が使えるか確かめて登録する
         // 4. 空き枠をログへ出す
 
-        auto &registry = FormationRegistry::Instance();
+        // レジストリは World ごとに作り直されるので、シーンに入るたびに全ファイルを読み直す。
 
         const std::vector<std::string> files = FileSystem::ListFiles("Assets/Formations", ".json");
 
         int loaded = 0;
-        int kept   = 0;
         for (const std::string &path : files)
         {
             FormationAsset asset;
             if (!FormationAssetIO::Load(path, asset)) continue;
-
-            // レジストリはシングルトンでシーンをまたいで残るので、2つ目のシーンからは
-            // 同じファイルが同じ枠に入っている。これは衝突ではないので、そのまま使う。
-            // 置き直さないのは、エディタで直したまま保存していない中身を消さないため。
-            const auto *registered = dynamic_cast<const DataDrivenFormation *>(registry.Get(static_cast<DroneFormationType>(asset.slot)));
-            if (registered && registered->GetAsset().sourcePath == path)
-            {
-                ++kept;
-                continue;
-            }
 
             // 欠番は BT から指す手段が無いので、登録しても誰にも呼ばれない。
             if (asset.slot >= kDroneFormationSlotCount ||
@@ -472,8 +461,8 @@ namespace CCL::AI::Formation::Data
                 empties += (empties.empty() ? "" : ",") + std::to_string(s);
         }
 
-        CCL_LOG_INFO(LogCategory::AI, "[Formation] データ陣形 %d件を登録（%d件は登録済み）。空き枠: %s",
-                     loaded, kept, empties.empty() ? "なし" : empties.c_str());
+        CCL_LOG_INFO(LogCategory::AI, "[Formation] データ陣形 %d件を登録。空き枠: %s",
+                     loaded, empties.empty() ? "なし" : empties.c_str());
     }
 
 } // namespace CCL::AI::Formation::Data

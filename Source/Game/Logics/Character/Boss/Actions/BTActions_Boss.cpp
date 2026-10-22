@@ -11,7 +11,6 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 詰めるのを止める距離
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"    // 陣形が持つ時間割
 #include "Engine/ECS/Core/CCL_World.h"                           // world->GetComponent
 #include "Engine/Animation/Components/AnimParametersComponent.h" // SetTrigger（近接アニメ）
 #include "Engine/Core/Math/StringHash.h"                         // HashString

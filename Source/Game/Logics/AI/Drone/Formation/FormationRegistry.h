@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: DroneFormationType から IFormation の実装を引くレジストリ（シングルトン）。
+// 概要: DroneFormationType から IFormation の実装を引くレジストリ（World の Resource）。
 //
 // 責務:
 //   - 陣形の種類ごとに実装のインスタンスを1つ持つ
@@ -10,11 +10,18 @@
 // 備考: BTActionRegistry と同じ設計で、陣形の分岐に switch を使わずに済ませる。
 //       C++ の陣形を追加するときは Formations_*.h にクラスを書き、そのファイルの
 //       RegisterAll() へ1行足す。データ陣形は JSON を置けば起動時に登録される。
+//
+//       BTActionRegistry と違ってシングルトンにせず、World ごとに持つ。
+//       中の陣形が World に依存する状態を持つため（JSON から読んだデータ、BeginFrame で取る
+//       その World の小隊、エディタのプレビュー）。作るのは DroneFormationSystem::Initialize。
+//
+//       シーンを切り替えると作り直されるので、Formation Editor で直して保存していない中身は消える。
 // ===========================================================================
 #include <array>
 #include <memory>
 
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Engine/ECS/Core/CCL_World.h"
 #include "IFormation.h"
 
 namespace CCL::AI::Formation
@@ -22,10 +29,18 @@ namespace CCL::AI::Formation
     class FormationRegistry
     {
     public:
-        static FormationRegistry &Instance()
+        FormationRegistry()                                     = default;
+        FormationRegistry(const FormationRegistry &)            = delete;
+        FormationRegistry &operator=(const FormationRegistry &) = delete;
+
+        /**
+         * @brief World に登録されているレジストリを返す。
+         * @param world 探す World。
+         * @return レジストリ。DroneFormationSystem::Initialize が作る前なら nullptr。
+         */
+        static FormationRegistry *Find(CCL::ECS::World &world)
         {
-            static FormationRegistry reg;
-            return reg;
+            return world.HasResource<FormationRegistry>() ? &world.GetResource<FormationRegistry>() : nullptr;
         }
 
         // 陣形タイプに実装を登録する。
@@ -71,10 +86,6 @@ namespace CCL::AI::Formation
         }
 
     private:
-        FormationRegistry()                                     = default;
-        FormationRegistry(const FormationRegistry &)            = delete;
-        FormationRegistry &operator=(const FormationRegistry &) = delete;
-
         // DroneFormationType は uint8_t なので最大256個。密配列にして添字で引く。
         std::array<std::unique_ptr<IFormation>, 256> m_formations;
     };

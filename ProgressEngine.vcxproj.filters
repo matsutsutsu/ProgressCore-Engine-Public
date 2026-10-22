@@ -1866,19 +1866,10 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotionRegistry.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\StraightChargeMotion.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\RigidFollowMotion.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\SoftFollowMotion.h">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h">
@@ -2888,19 +2879,10 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotionRegistry.cpp">
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\StraightChargeMotion.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\RigidFollowMotion.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\SoftFollowMotion.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp">

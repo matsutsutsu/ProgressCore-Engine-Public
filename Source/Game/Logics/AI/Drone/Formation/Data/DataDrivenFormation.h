@@ -29,6 +29,8 @@
 #include "Game/Logics/AI/Drone/Formation/Data/FormationAsset.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 
+namespace CCL::AI::Formation { class FormationRegistry; }
+
 namespace CCL::AI::Formation::Data
 {
 
@@ -269,9 +271,10 @@ namespace CCL::AI::Formation::Data
      * ファイル名ではなく JSON 内の "slot" で枠を決める。
      * ファイル名を枠にすると、技の名前を変えた瞬間に保存済みの BT が別の技を指す。
      *
+     * @param registry 登録先（World の Resource）。
      * @note DroneFormationSystem::Initialize から、C++ 陣形を登録した後に呼ぶ。
      *       先に呼ぶと、C++ 実装のある枠を名乗った JSON を弾けない。
      */
-    void RegisterAll();
+    void RegisterAll(FormationRegistry &registry);
 
 } // namespace CCL::AI::Formation::Data

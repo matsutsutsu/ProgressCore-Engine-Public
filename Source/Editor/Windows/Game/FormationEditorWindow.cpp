@@ -16,14 +16,12 @@
 #include <cstring>
 #include <utility>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
 
 #include "ImSequencer.h"
 
 #include "Editor/Windows/Game/FormationLayerSequence.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#endif
 
 using namespace CCL::AI::Formation;
 using CCL::AI::Formation::Data::DataDrivenFormation;
@@ -32,13 +30,16 @@ using CCL::AI::Formation::Data::DataDrivenFormation;
 // 編集中の陣形
 // ---------------------------------------------------------------------------
 
-FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
+DataDrivenFormation *FormationEditorWindow::DataAt(DroneFormationType slot) const
 {
-    auto *data = dynamic_cast<DataDrivenFormation *>(FormationRegistry::Instance().Get(m_slot));
-    return data ? &data->GetMutableAsset() : nullptr;
+    return m_registry ? dynamic_cast<DataDrivenFormation *>(m_registry->Get(slot)) : nullptr;
 }
 
-#ifdef ENABLE_EDITOR
+FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
+{
+    auto *data = DataAt(m_slot);
+    return data ? &data->GetMutableAsset() : nullptr;
+}
 
 // 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通。
 constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
@@ -143,7 +144,7 @@ void FormationEditorWindow::PushStage(EditorContext &context)
     }
 
     // 時間を固定する。陣形が毎フレーム書くフィールドなので、外から固定するにはここを通す。
-    if (auto *data = dynamic_cast<DataDrivenFormation *>(FormationRegistry::Instance().Get(m_slot)))
+    if (auto *data = DataAt(m_slot))
         data->SetPreview(telegraph ? m_time : asset->telegraphSeconds, progress);
 }
 
@@ -157,9 +158,7 @@ void FormationEditorWindow::Unstage(EditorContext &context)
     // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る。
     for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
-        auto *data = dynamic_cast<DataDrivenFormation *>(
-            FormationRegistry::Instance().Get(static_cast<DroneFormationType>(slot)));
-        if (data) data->ClearPreview();
+        if (auto *data = DataAt(static_cast<DroneFormationType>(slot))) data->ClearPreview();
     }
 
     const BossHandles boss = FindBoss(context);
@@ -183,6 +182,15 @@ FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext
 
 void FormationEditorWindow::OnFrameBegin(EditorContext &context)
 {
+    // 陣形の実体は World ごとにある（FormationRegistry.h）ので、毎フレーム今の World から引き直す。
+    // シーンが変わったら、前のシーンで付けた未保存の印は捨てる。その変更は作り直しで消えている。
+    FormationRegistry *registry = context.world ? FormationRegistry::Find(*context.world) : nullptr;
+    if (registry != m_registry)
+    {
+        m_registry = registry;
+        m_dirtySlots.clear();
+    }
+
     // 閉じられた・畳まれたフレームでもここは走る。掌握したままウィンドウを閉じると
     // ボスBTが止まったままになるので、見えなくなった時点で必ず解く。
     if (!GetVisible())
@@ -210,7 +218,7 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
         return false;
     }
 
-    auto   &registry = FormationRegistry::Instance();
+    auto   &registry = *m_registry; // CurrentAsset が見つかった時点で必ずある
     uint8_t freeSlot = 0;
     for (uint8_t slot = kDataFormationSlotFirst; slot <= kDataFormationSlotLast; ++slot)
     {
@@ -679,11 +687,10 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
     ImGui::SeparatorText("陣形");
 
     // 名前のある枠（縦割り等）も空き枠も、データ陣形なら全部並べる。
-    auto &registry = FormationRegistry::Instance();
     for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
         const auto type = static_cast<DroneFormationType>(slot);
-        auto      *data = dynamic_cast<DataDrivenFormation *>(registry.Get(type));
+        auto      *data = DataAt(type);
         if (!data) continue;
 
         // 未保存の技には * を付ける。### 以降が ID なので、* が付いても選択は外れない。
@@ -844,41 +851,3 @@ void FormationEditorWindow::DrawViewPane(EditorContext &context)
         ImGui::TextWrapped("%s", m_status.c_str());
     }
 }
-
-#else // ENABLE_EDITOR
-
-// Release ではつなぎの実体（FormationLayerSequence.cpp）をビルドしないので、
-// unique_ptr が要求する「完全な型」だけをここで用意する。
-class FormationLayerSequence
-{
-};
-
-FormationEditorWindow::FormationEditorWindow()
-    : EditorWindow("Formation Editor", false)
-{
-}
-
-FormationEditorWindow::~FormationEditorWindow() = default;
-
-void FormationEditorWindow::DrawContents(EditorContext &) {}
-void FormationEditorWindow::OnFrameBegin(EditorContext &) {}
-void FormationEditorWindow::DrawListPane(EditorContext &) {}
-void FormationEditorWindow::DrawEditPane(EditorContext &) {}
-bool FormationEditorWindow::DrawTimeline(Asset &) { return false; }
-bool FormationEditorWindow::DrawEase(Layer &) { return false; }
-void FormationEditorWindow::DrawViewPane(EditorContext &) {}
-bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &, void *) { return false; }
-bool FormationEditorWindow::DrawLayers(Asset &) { return false; }
-void FormationEditorWindow::DrawPlayback(const Asset &) {}
-bool FormationEditorWindow::DrawLayerButtons(Asset &) { return false; }
-bool FormationEditorWindow::DrawLayerDetail(Layer &) { return false; }
-void FormationEditorWindow::DrawEaseGraph(const Layer &) {}
-CurveData FormationEditorWindow::MakeEaseCurve(const char *, const CurveKeyframe *, int) { return {}; }
-void FormationEditorWindow::Stage(EditorContext &) {}
-void FormationEditorWindow::Unstage(EditorContext &) {}
-void FormationEditorWindow::PushStage(EditorContext &) {}
-bool FormationEditorWindow::DuplicateCurrent(const char *) { return false; }
-int  FormationEditorWindow::CountDrones(EditorContext &) const { return 0; }
-FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext &) const { return {}; }
-
-#endif // ENABLE_EDITOR

@@ -81,8 +81,10 @@ namespace CCL::AI::Motion
         /**
          * @brief 突撃中のこの機に、当たり判定を開けてよいかを返す。DroneHitSystem が聞く。
          *
-         * 発射待ち・FireCharge 以外の状態は、DroneHitSystem が先に除外する。
-         * ここで答えるのは、動き方に固有の「当たらない区間」だけ。
+         * FireCharge 以外の状態は、DroneHitSystem が先に除外する。
+         * ここで答えるのは、動き方に固有の「当たらない区間」だけ（直進なら発射待ちとタメ）。
+         *
+         * DroneBrainSystem も「もう飛び出したか」をこれで見る（当たらない間＝まだ飛び出していない）。
          *
          * @param drone 調べる機体。
          * @return 当たり判定を開けてよいなら true。既定は「突撃中はずっと当たる」。

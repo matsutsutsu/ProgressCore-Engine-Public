@@ -1,6 +1,6 @@
 #include "DroneMovementSystem.h"
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h"
-#include "Game/Logics/AI/Drone/Motion/ChargeMotionRegistry.h"
+#include "Game/Logics/AI/Drone/Motion/ChargeMotions.h"
 #include "Game/Logics/AI/Drone/Motion/DroneMotionCommon.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"

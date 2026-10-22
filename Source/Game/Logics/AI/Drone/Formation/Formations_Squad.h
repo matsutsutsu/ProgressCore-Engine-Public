@@ -155,7 +155,6 @@ namespace CCL::AI::Formation::Squad
             drone.targetLookDirection = fwd;
             drone.fireDirection       = fwd;
 
-            drone.fireDelay      = 0.0f; // 小隊技は順次発射を使わない
             drone.attackProgress = 0.0f;
         }
 
@@ -166,9 +165,8 @@ namespace CCL::AI::Formation::Squad
         const SquadRegistry *m_squads = nullptr; // BeginFrame で取った小隊の状態。無ければ nullptr
     };
 
-    inline void RegisterAll()
+    inline void RegisterAll(FormationRegistry &reg)
     {
-        auto &reg = FormationRegistry::Instance();
         reg.Register<SquadAssaultFormation>(DroneFormationType::SquadAssault);
     }
 

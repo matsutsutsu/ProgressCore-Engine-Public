@@ -455,10 +455,9 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
 
     if (ImGui::BeginCombo(label, GetDroneFormationLabel(slotParam)))
     {
-        auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
-        for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
+        for (size_t slot = 0; m_formations && slot < kDroneFormationSlotCount; ++slot)
         {
-            const char *name = registry.DataFormationName(static_cast<DroneFormationType>(slot));
+            const char *name = m_formations->DataFormationName(static_cast<DroneFormationType>(slot));
             if (!name) continue; // C++ 実装の枠と空き枠は出さない（ここで選べるのはデータの技だけ）
 
             char item[96];

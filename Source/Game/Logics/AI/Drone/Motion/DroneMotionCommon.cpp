@@ -168,19 +168,19 @@ namespace CCL::AI::Motion
 
         // --- 予告の震え ---
 
-        // windupTimer は合図が立った瞬間 0 に落ちるので、震えは撃つのと同時に止む。
+        // shiverTime は合図が立った瞬間 0 に落ちるので、震えは撃つのと同時に止む。
 
         // 振れ幅は二乗で立ち上げる。
         // 後半で急に大きくなる形にするため。線形だと発生の直前が読めない。
-        if (drone.windupTimer > 0.0f)
+        if (drone.shiverTime > 0.0f)
         {
-            const float t   = (std::min)(1.0f, drone.windupTimer / ctx.shiver.rampTime);
+            const float t   = (std::min)(1.0f, drone.shiverTime / ctx.shiver.rampTime);
             const float amp = ctx.shiver.amplitude * t * t;
 
             // 速度ではなく座標を、差分（今フレーム − 前フレーム）で動かす。
             // 速度に足すと、振れ幅が「振幅 ÷ 角速度」まで縮んで指定値と見た目が一致しない。
             // 座標に足しっぱなしにすると、座標へ溜まって群れごと流れていく。
-            trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.windupTimer, amp, ctx.shiver) - ShiverOffset(drone, drone.windupTimer - dt, amp, ctx.shiver);
+            trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.shiverTime, amp, ctx.shiver) - ShiverOffset(drone, drone.shiverTime - dt, amp, ctx.shiver);
         }
 
         // --- 機首 ---

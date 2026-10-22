@@ -6,7 +6,7 @@
 // 責務:
 //   - 起動時に全陣形（C++ 実装とデータ陣形）を FormationRegistry へ登録する
 //   - ボス位置・プレイヤー位置・狙う向きなどを FormationContext にまとめる
-//   - 陣形の Calculate を呼び、予告の溜め（windupTimer / telegraphTime）を進める
+//   - 陣形の Calculate を呼び、予告の溜め（shiverTime / telegraphTime）を進める
 //   - ボスに付いていく陣形には、ボスの速度を先渡しの速度（followFeedForward）として配る
 //
 // 備考:

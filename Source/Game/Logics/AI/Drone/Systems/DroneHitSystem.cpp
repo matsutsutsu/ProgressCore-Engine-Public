@@ -2,7 +2,7 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 陣形ごとの当たり方
-#include "Game/Logics/AI/Drone/Motion/ChargeMotionRegistry.h" // 動き方ごとの「当たらない区間」
+#include "Game/Logics/AI/Drone/Motion/ChargeMotions.h" // 動き方ごとの「当たらない区間」
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -17,9 +17,8 @@ namespace
     /**
      * @brief このドローンが突撃中で危険かを返す。
      *
-     * - 発射待ち（fireDelay > 0）は危険ではない
-     * - それ以外の「当たらない区間」は、突撃中の動き方（IChargeMotion::IsDangerous）に聞く。
-     *   陣形追従（縦割り・小隊など）は突入中ずっと危険、直進（弾幕）はタメが終わってからだけ危険
+     * 突撃中の「当たらない区間」は、突撃中の動き方（IChargeMotion::IsDangerous）に聞く。
+     * 陣形追従（縦割り・小隊など）は突入中ずっと危険、直進（弾幕）は発射待ちとタメが終わってからだけ危険。
      *
      * 離脱（Returning）は FireCharge ではないので、状態の1行で除外される。
      * 「突き抜けた後の帰り道は当たらない」は状態の分離から自動的に出てくるもので、専用の判定は要らない。
@@ -30,9 +29,8 @@ namespace
     bool IsDangerous(const DroneComponent &d)
     {
         if (d.currentState != DroneState::FireCharge) return false; // Returning もここで落ちる
-        if (d.fireDelay > 0.0f) return false;                       // 発射待ち中
 
-        // 動き方に固有の「当たらない区間」（直進のタメなど）は、動き方が知っている。
+        // 動き方に固有の「当たらない区間」（直進の発射待ちとタメ）は、動き方が知っている。
         return CCL::AI::Motion::GetChargeMotion(d.chargeMode).IsDangerous(d);
     }
 } // namespace
@@ -58,7 +56,7 @@ void DroneHitSystem::Update(float /*dt*/)
 
     // 陣形ごとの当たり方を引く仮想呼び出しは、陣形の種類が変わったときだけにする。
     // 通常は全機が同じ陣形なので、1フレームあたり1回で済む。
-    auto &registry = CCL::AI::Formation::FormationRegistry::Instance();
+    const auto *registry = CCL::AI::Formation::FormationRegistry::Find(*m_world);
 
     bool                                cacheValid = false;
     DroneFormationType                  cacheType  = DroneFormationType::None;
@@ -67,7 +65,7 @@ void DroneHitSystem::Update(float /*dt*/)
     auto combatOf = [&](DroneFormationType type) -> const CCL::AI::Formation::FormationCombat & {
         if (!cacheValid || cacheType != type)
         {
-            const auto *impl = registry.Get(type);
+            const auto *impl = registry ? registry->Get(type) : nullptr;
             cacheCombat      = impl ? impl->GetCombat() : CCL::AI::Formation::FormationCombat{};
             cacheType        = type;
             cacheValid       = true;

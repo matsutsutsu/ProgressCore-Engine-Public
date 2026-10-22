@@ -19,7 +19,7 @@
 // ===========================================================================
 #include "SimpleMath.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/AI/Drone/Motion/StraightChargeMotion.h" // 突撃の始め方の既定
+#include "Game/Logics/AI/Drone/Motion/ChargeMotions.h" // 突撃の始め方の既定（BeginStraightCharge）
 
 namespace CCL::ECS { class World; }
 
@@ -76,13 +76,11 @@ namespace CCL::AI::Formation
     // 技1つぶんの「当たり方」。形とは別に、陣形ごとに変えられるように持つ。
     // 全陣形で共通の定数にすると「大技は痛いが避けやすい／牽制は軽いが避けにくい」
     // という対比が作れない。
+    //
+    // 接触半径はここに持たない。実際の大きさはプレハブの Jolt Sphere Collider（Drone.json の radius）が決める。
+    // 技ごとに変えたくなったら、ここに足して DroneHitSystem から JoltSphereColliderComponent へ書く配線を作る。
     struct FormationCombat
     {
-        // 現在このフィールドは誰も読んでいない。
-        // 実際の接触半径はプレハブの Jolt Sphere Collider が持つ（Drone.json の radius）。
-        //
-        // 技ごとに変えたいなら、DroneHitSystem から JoltSphereColliderComponent へ書く配線が要る。
-        float hitRadius       = 2.5f;  // ドローンとプレイヤーの接触半径 [m]
         float damage          = 8.0f;  // 1ヒットの基礎ダメージ
         float knockback       = 12.0f; // ノックバック強さ（0で無効）
         float hitStopDuration = 0.05f; // 命中時のヒットストップ [秒]
@@ -145,6 +143,16 @@ namespace CCL::AI::Formation
          * @return 切り上げて離脱へ移るなら true。
          */
         virtual bool IsChargeOver(float flownDistance, float flownTime) const { return false; }
+
+        /**
+         * @brief この陣形から別の陣形へ切り替わる機の後始末。DroneCommandSystem が切り替えの瞬間に1回呼ぶ。
+         *
+         * 技が自分だけで使う値（弾幕の発射待ち fireDelay など）を、技が自分で片付ける口。
+         * 他の陣形に「前の技の値を戻す」処理を書かせないため。
+         *
+         * @param drone 切り替わる機体。
+         */
+        virtual void OnExit(DroneComponent &drone) const {}
 
         // 当たり方と痛さ。DroneHitSystem が引く。
         virtual FormationCombat GetCombat() const { return {}; }

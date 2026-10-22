@@ -6,7 +6,7 @@
 //   - LowOrbit: ボスの周りを低い高さで周回する
 //   - HighOrbit: ボスの頭上高くで周回する（攻撃と攻撃のあいだに使う）
 //   - HighRing: 頭上円陣と弾幕が共有する待機リングの位置計算
-//   - 攻撃で使った値（attackProgress・fireDelay・chargeMode）を戻す
+//   - 攻撃で使った値（attackProgress・chargeMode）を戻す
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -14,6 +14,20 @@
 
 namespace CCL::AI::Formation::Basic
 {
+    /**
+     * @brief 通し番号を円周上の角度にする。全機で円を等分し、時間とともに回す。低空円陣と頭上リングが使う。
+     * @param localIndex  群れの中の通し番号。
+     * @param totalDrones 群れの総数。0 は 1 として扱う。
+     * @param time        陣形の経過時間 [秒]。
+     * @param spin        回る速さ [rad/s]。
+     * @return 角度 [rad]。
+     */
+    inline float RingAngle(uint16_t localIndex, uint16_t totalDrones, float time, float spin)
+    {
+        const int total = (totalDrones > 0) ? totalDrones : 1;
+        return DirectX::XM_2PI * (static_cast<float>(localIndex) / static_cast<float>(total)) + time * spin;
+    }
+
     // 頭上の待機リング。頭上円陣と弾幕が共有する。
     //
     // 半径と高さを技側へコピーしない。
@@ -32,11 +46,7 @@ namespace CCL::AI::Formation::Basic
                                                        uint16_t totalDrones,
                                                        float    time)
         {
-            const int   total     = (totalDrones > 0) ? totalDrones : 1;
-            const float baseAngle = (2.0f * 3.14159265f) *
-                                    (static_cast<float>(localIndex) / static_cast<float>(total));
-            const float angle     = baseAngle + time * kSpin;
-
+            const float angle = RingAngle(localIndex, totalDrones, time, kSpin);
             return {std::cos(angle) * kRadius, kHeight, std::sin(angle) * kRadius};
         }
     };
@@ -52,15 +62,10 @@ namespace CCL::AI::Formation::Basic
             using namespace DirectX::SimpleMath;
 
             // 全体の何番目か → 角度に変換。
-            const int   total     = (drone.totalDrones > 0) ? drone.totalDrones : 1;
-            const float baseAngle = (2.0f * 3.14159265f) *
-                                    (static_cast<float>(drone.localIndex) / static_cast<float>(total));
-
-            const float angle = baseAngle + ctx.time * 0.5f;
+            const float angle = RingAngle(drone.localIndex, drone.totalDrones, ctx.time, kSpin);
 
             const float r = drone.orbitRadius;
-            Vector3     offset(std::cos(angle) * r, 0.0f, std::sin(angle) * r);
-            offset.y = 2.0f; // ボスより少し上に浮かせる
+            Vector3     offset(std::cos(angle) * r, kHeight, std::sin(angle) * r);
 
             drone.targetPosition = ctx.bossPos + offset;
 
@@ -71,9 +76,11 @@ namespace CCL::AI::Formation::Basic
             // 周回は中立状態。攻撃で使った一時的な値をここで戻す
             // （BT が攻撃の合間に必ず挟むので、次の攻撃へ前回の値が漏れない）。
             drone.attackProgress = 0.0f;
-            drone.fireDelay      = 0.0f;
             drone.chargeMode     = ChargeMode::Straight;
         }
+
+        static constexpr float kSpin   = 0.5f; // 回転速度 [rad/s]
+        static constexpr float kHeight = 2.0f; // ボスより少し上に浮かせる高さ [m]
     };
 
     // 頭上円陣（HighOrbit）: ボスの頭上高くで周回する中立陣形。攻撃と攻撃の「あいだ」は
@@ -106,16 +113,14 @@ namespace CCL::AI::Formation::Basic
 
             // LowOrbit と同じく、攻撃で使った一時的な値を戻す。
             drone.attackProgress = 0.0f;
-            drone.fireDelay      = 0.0f;
             drone.chargeMode     = ChargeMode::Straight;
         }
 
         // 調整値は HighRing が持つ（弾幕と共有しているため、ここには置かない）。
     };
 
-    inline void RegisterAll()
+    inline void RegisterAll(FormationRegistry &reg)
     {
-        auto &reg = FormationRegistry::Instance();
         reg.Register<LowOrbitFormation>(DroneFormationType::LowOrbit);
         reg.Register<HighOrbitFormation>(DroneFormationType::HighOrbit);
     }

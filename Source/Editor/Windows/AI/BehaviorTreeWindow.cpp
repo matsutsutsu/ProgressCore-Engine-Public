@@ -88,6 +88,9 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
 // ---------------------------------------------------------------------------
 void BehaviorTreeWindow::DrawContents(EditorContext &context)
 {
+    // データの技の名前を引く先。陣形の実体は World ごとにあるので毎フレーム引き直す（FormationRegistry.h）。
+    m_formations = context.world ? CCL::AI::Formation::FormationRegistry::Find(*context.world) : nullptr;
+
     ed::SetCurrentEditor(m_nodeContext);
 
     // 描画領域が極小のフレームは中身を描かない（ドッキング操作中にサイズが 0 付近まで潰れる）
@@ -767,7 +770,7 @@ std::string BehaviorTreeWindow::FormatParam(const char *label, float value)
     return name + " " + number + unit;
 }
 
-std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node)
+std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
 {
     // ----------------------------------------------------------------
     // まとまり（Selector など）とコメント枠：自分で付けた名前
@@ -865,7 +868,7 @@ const char *BehaviorTreeWindow::GetConditionDisplayName(ActionID id)
     return buf;
 }
 
-const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam)
+const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam) const
 {
     static thread_local char buf[96];
 
@@ -877,9 +880,9 @@ const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam)
     }
 
     const auto  type = static_cast<DroneFormationType>(slot);
-    const char *name = CCL::AI::Formation::FormationRegistry::Instance().DataFormationName(type);
+    const char *name = m_formations ? m_formations->DataFormationName(type) : nullptr;
 
-    // 名前が無い＝その枠に陣形が入っていない。指しても静止するので、そう見えるように出す。
+    // 名前が無い＝その枠に陣形が入っていない（またはシーンが無い）。指しても静止するので、そう見えるように出す。
     if (!name)
         snprintf(buf, sizeof(buf), "ドローン：枠%d に陣形がありません", slot);
     else
