@@ -7,18 +7,10 @@
 //   - 突撃の開始を技へ伝え、個別寿命の突撃の終了判断を行う
 //
 // 備考:
-//   補間や速度計算は行わない（DroneMovementSystem が担う）。
+//   BT を使わないのは、状態が固定で木にする利点が無く、ノード評価ごとの GetComponent<> で
+//   1000機ぶんの連続アクセスが崩れるため。
 //
-//   BT を使わないのは、状態が固定で木構造にする利点が無く、ノード評価ごとの
-//   GetComponent<> で 1000機×毎フレームの連続アクセスが崩れるため。ボス1体のように
-//   判断が複雑で調整したい場合とは、コストの傾向が逆になる。
-//
-//   実行は L02_PreUpdate。陣形側(L02_Update)が今フレームの currentState を見て
-//   形を作れるようにする。ステージを動かすと予備動作→突撃が1フレームずれる。
-//
-//   調整値（到着の距離・立て直しや離脱の時間）は、.cpp の先頭にまとめてある。
-//   突撃の始め方（タメ・撃つ方向）といつ切り上げるかは技ごとに違うので、技の側
-//   （IFormation::OnChargeBegin / IsChargeOver）が持つ。
+//   突撃の始め方と切り上げ方は技ごとに違うので、技の側（IFormation::OnChargeBegin / IsChargeOver）が持つ。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
@@ -54,7 +46,7 @@ private:
     /**
      * @brief 突撃を切り上げるべきかを返す（個別寿命の攻撃のみ）。
      *
-     * ここでは飛び出してからの飛距離と経過時間を測るだけで、切り上げるかは技（IFormation::IsChargeOver）に聞く。
+     * 飛び出してからの飛距離と経過時間を測り、切り上げるかは技（IFormation::IsChargeOver）に聞く。
      *
      * @param formations 技の一覧（World の Resource）。無ければ切り上げない。
      * @param trans      機体の Transform。

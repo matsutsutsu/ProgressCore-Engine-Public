@@ -686,9 +686,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.h" />
@@ -1166,8 +1164,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.cpp" />

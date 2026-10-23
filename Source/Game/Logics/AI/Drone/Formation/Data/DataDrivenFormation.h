@@ -8,20 +8,11 @@
 //   - エディタの手送り（予告の経過・進行度の固定）を受ける
 //
 // 備考:
-//   技ごとの違いはすべて FormationAsset の数値に入っているので、技が増えてもこの
-//   ファイルは増えない。
+//   技ごとの違いはすべて FormationAsset の数値に入っているので、技が増えてもこのファイルは増えない。
 //
-//   計算はすべて陣形ローカル座標で行い、最後に一度だけワールドへ移す。
-//   ローカルの x = Right / y = Up / z = Forward。この3軸は正規直交で、
-//   Right = Up × Forward が X = Y × Z と同じ関係なので、ワールドの単位軸まわりの
-//   回転がそのまま陣形ローカルの回転になる。そのためレイヤーごとに基底を
-//   掛け直さずに済み、最後の1回だけ Right/Up/Forward を展開すればよい。
+//   計算はすべて陣形ローカル座標（x = Right / y = Up / z = Forward）で行い、最後に一度だけワールドへ移す。
 //
-//   C++ で書いた陣形（Formations_*.h）と同じ技を両方に持たせない。C++ の登録が先に
-//   走り、C++ 実装のある枠を名乗った JSON は登録時に弾く。同じ技の定義が2箇所に
-//   並ぶと、片方だけ更新されたときに気づけないため。
-//
-//   実装（DataDrivenFormation.cpp）は Calculate を先頭に置き、その後ろに4段を順に並べてある。
+//   C++ 実装のある枠を名乗った JSON は登録時に弾く。同じ技の定義が2か所にあると、片方だけ更新されても気づけない。
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -34,17 +25,15 @@ namespace CCL::AI::Formation { class FormationRegistry; }
 namespace CCL::AI::Formation::Data
 {
 
-    // (1) 割付の出力。1機が入る「席」。
-    //   colCount / rowCount を持ち回るのは、中央揃えと波の位相がどちらも
-    //   「全体の中で自分が何番目か」を必要とするため。
+    // (1) 割付の出力。1機が入る「席」
     struct Seat
     {
         int side     = 0; // 左右対称の何番目か。mirror が符号を取る
         int tier     = 0; // 段の何番目か。PhaseSource::Group がずらす単位
-        int col      = 0;
-        int row      = 0;
-        int colCount = 1;
-        int rowCount = 1;
+        int col      = 0; // グループ内の列
+        int row      = 0; // グループ内の行
+        int colCount = 1; // グループの列数（中央揃えと波の位相に使う）
+        int rowCount = 1; // グループの行数
     };
 
     class DataDrivenFormation : public IFormation
@@ -57,18 +46,14 @@ namespace CCL::AI::Formation::Data
         }
         const FormationAsset &GetAsset() const { return m_asset; }
 
-        // エディタが実行中の陣形を直接編集するための入口。コピーを持たせると
-        // 「エディタでは変わったのに画面は変わらない」が起きる。
+        // エディタが実行中の陣形を直接編集するための入口（コピーだと画面に反映されない）
         FormationAsset &GetMutableAsset() { return m_asset; }
 
-        // 1機分の持ち場を出す。(1)割付 → (2)形 → (3)動き → (4)配置 の順に、下の private 関数を呼ぶ。
+        // 1機分の持ち場を出す。(1)割付 → (2)形 → (3)動き → (4)配置 の順に、下の private 関数を呼ぶ
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override;
 
-        // データ陣形は必ず Broadcast。個体が自分で攻撃を終わらせる技（弾幕）は
-        // 機体ごとに状態を保持するので、この形式では書けない。
         ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Broadcast; }
 
-        // 技の名前はアセットが持つ。エディタで名前を変えれば BTエディタの表示も変わる。
         const char *DisplayName() const override { return m_asset.name.c_str(); }
 
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
@@ -77,9 +62,8 @@ namespace CCL::AI::Formation::Data
         /**
          * @brief 予告の経過秒数と攻撃の進行度を外から固定する（エディタの手送り）。
          *
-         * ゲーム中には使わない状態をここへ置いているのは、「陣形が attackProgress を
-         * 毎フレーム書く」という規約を破らずに止める方法が他に無いため。外から
-         * DroneComponent へ書いても、次のフレームに陣形が上書きしてしまう。
+         * 陣形が attackProgress を毎フレーム書くので、外から DroneComponent へ書いても上書きされる。
+         * そこで陣形の側に固定値を持たせる。
          */
         void SetPreview(float telegraphSeconds, float progress)
         {
@@ -94,10 +78,7 @@ namespace CCL::AI::Formation::Data
         }
 
         /**
-         * @brief 1グループ分の席の格子の大きさを求める。エディタが「何列×何行になるか」を出すのに使う。
-         *
-         * 割付と同じ式をエディタ側で書き直すと、片方だけ直したときに誤った数字が出る。
-         *
+         * @brief 1グループ分の席の格子の大きさを求める。割付とエディタの表示が同じ式を使う。
          * @param asset       格子の決め方（assign）を持つ陣形アセット。
          * @param totalDrones 陣形に参加する機数。0以下は1機として扱う。
          * @param outCols     1グループの列数を受け取る。
@@ -106,10 +87,7 @@ namespace CCL::AI::Formation::Data
         static void GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows);
 
         /**
-         * @brief 席ごとの進み t を、始まり→終わりのどこまで進んだかへ変換する（緩急）。
-         *
-         * エディタの緩急のグラフもこれを描く。
-         *
+         * @brief 席ごとの進み t を、始まり→終わりのどこまで進んだかへ変換する（緩急）。エディタのグラフも使う。
          * @param layer 緩急のカーブを持つレイヤー。キーの無いカーブは easeIn（t*t）として扱う。
          * @param t     席ごとの進み（0〜1）。
          * @return 始まり→終わりのどこまで進んだか（0〜1）。
@@ -122,11 +100,11 @@ namespace CCL::AI::Formation::Data
     private:
         using Vector3 = DirectX::SimpleMath::Vector3;
 
-        // (4) 配置で使う、陣形ローカルの軸をワールドで表したもの。Up は常にワールドの真上。
+        // (4) 配置で使う、陣形ローカルの軸をワールドで表したもの。Up は常にワールドの真上
         struct Basis
         {
-            Vector3 right;
-            Vector3 forward;
+            Vector3 right;   // ローカルの x
+            Vector3 forward; // ローカルの z
         };
 
         // ---- 進行度 ----
@@ -151,13 +129,11 @@ namespace CCL::AI::Formation::Data
         // ---- (2) 形 ----
 
         /**
-         * @brief 形が Model のとき、モデルの表面の点を用意する。モデルが変わったときだけ取り直す。
+         * @brief 形が Model のとき、モデルの表面の点を用意する。モデルのパスが変わったときだけ取り直す。
          *
-         * エディタはアセットを直接書き換える（GetMutableAsset）ので、変更を知らせる入口が無い。
-         * そこで Calculate の頭で毎回パスを見比べる。
+         * エディタはアセットを直接書き換えるので、変更を知らせる入口が無い。そこで Calculate の頭で毎回パスを見比べる。
          *
-         * @note Calculate から呼ぶので、DroneFormationSystem が機体のループを直列（ForEach）で回すことが前提。
-         *       並列にするなら、ループの前に1回だけ呼ぶ形へ移すこと。
+         * @note Calculate から呼ぶので、機体のループが直列（ForEach）であることが前提。
          */
         void EnsureShape();
 
@@ -251,29 +227,26 @@ namespace CCL::AI::Formation::Data
 
         // ---- 状態 ----
 
-        FormationAsset m_asset;
+        FormationAsset m_asset; // この陣形の定義
 
-        // 取り出せる点の上限。機数がこれを超えた分は先頭から使い回す（同じ点に重なる）。
-        static constexpr int kMaxShapePoints = 1024;
+        static constexpr int kMaxShapePoints = 1024; // 取り出す点の上限。超えた機は先頭の点から使い回す
 
         std::vector<Vector3> m_shapePoints;        // モデル表面の点（モデル空間・最遠点の順）
         std::string          m_shapeModelPath;     // m_shapePoints を取り出したモデル
-        bool                 m_shapeTried = false; // 読めなかったモデルを毎フレーム読み直さないため
+        bool                 m_shapeTried = false; // 取り出しを試したか。読めなかったモデルを毎フレーム読み直さない
 
-        // エディタが時間を固定している間だけ 0 以上。負なら通常どおりゲームの時間で進む。
+        // --- エディタの手送り（負なら固定しない）---
         float m_telegraphOverride = -1.0f; // 予告の経過 [秒]
         float m_progressOverride  = -1.0f; // 攻撃の進行度 0〜1
     };
 
     /**
-     * @brief Assets/Formations/*.json を読み、各アセットが名乗る枠へ登録する。
+     * @brief Assets/Formations/*.json を読み、各アセットが名乗る枠（JSON の "slot"）へ登録する。
      *
-     * ファイル名ではなく JSON 内の "slot" で枠を決める。
-     * ファイル名を枠にすると、技の名前を変えた瞬間に保存済みの BT が別の技を指す。
+     * ファイル名を枠にしないのは、技の名前を変えた瞬間に保存済みの BT が別の技を指すため。
      *
      * @param registry 登録先（World の Resource）。
-     * @note DroneFormationSystem::Initialize から、C++ 陣形を登録した後に呼ぶ。
-     *       先に呼ぶと、C++ 実装のある枠を名乗った JSON を弾けない。
+     * @note C++ 陣形を登録した後に呼ぶ。先に呼ぶと、C++ 実装のある枠を名乗った JSON を弾けない。
      */
     void RegisterAll(FormationRegistry &registry);
 

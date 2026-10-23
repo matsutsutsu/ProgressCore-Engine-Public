@@ -35,8 +35,7 @@ void DroneCommandSystem::Update(float /*dt*/)
 
     // --- 攻撃の寿命 ---
 
-    // この陣形の攻撃を誰が終わらせるか（Broadcast / Individual）を、フレームに1回だけ引く。
-    // 機体ごとに引かないので、仮想呼び出しはフレームあたり1回で済む。
+    // 攻撃を誰が終わらせるか（Broadcast / Individual）。全機同じなのでフレームに1回だけ引く
     const auto *formations    = CCL::AI::Formation::FormationRegistry::Find(*m_world);
     const auto *formationImpl = formations ? formations->Get(formation) : nullptr;
     const bool  individual =
@@ -52,12 +51,10 @@ void DroneCommandSystem::Update(float /*dt*/)
 
 
     ForEach([&](DroneComponent &drone) {
-        // None（＝命令なし）のときは現在の陣形を維持する。
-        // スポーン直後に Manager が入れた陣形（頭上円陣）を潰さないため。
+        // None（命令なし）のときは今の陣形を保つ。生成時に入れた頭上円陣を潰さないため
         if (formation != DroneFormationType::None && drone.currentFormation != formation)
         {
-            // 抜ける陣形に、その技だけが使う値を片付けさせる（IFormation::OnExit）。
-            // 陣形が変わる機だけなので、仮想呼び出しは切り替えのフレームにしか起きない。
+            // 抜ける陣形に、その技だけが使う値を片付けさせる
             if (const auto *prev = formations ? formations->Get(drone.currentFormation) : nullptr)
                 prev->OnExit(drone);
 
@@ -67,15 +64,13 @@ void DroneCommandSystem::Update(float /*dt*/)
         // 自分のタイミングで攻撃を終わらせる（BloadCast）の場合通る
         if (!individual)
         {
-            // Broadcast: 信号が立っている間ずっと攻撃。
-            // 陣形自体が動く技（縦割り・挟み込み）は全機が同時に動き切る必要があるため、
-            // 個体に終了判断を持たせない。
+            // Broadcast: 信号が立っている間ずっと攻撃
             drone.wantsAttack = attack;
             drone.attackPhase = DroneAttackPhase::None;
             return;
         }
 
-        // Individual: 出撃は一斉、終了は各機が自分で決める。
+        // Individual: 出撃は一斉、終了は各機が自分で決める
         if (rising)
         {
             drone.attackPhase = DroneAttackPhase::Charging;
@@ -83,25 +78,19 @@ void DroneCommandSystem::Update(float /*dt*/)
         }
         else if (!attack && drone.attackPhase == DroneAttackPhase::Charging)
         {
-            // ボスが信号を下ろした＝突撃の中断。
+            // 信号が下りた＝突撃の中断。離脱（Returning）へ移った機は巻き戻さず、帰り道を最後まで走らせる
             drone.attackPhase = DroneAttackPhase::None;
         }
 
-        // 既に離脱（Returning）へ移った機は、信号が下りても巻き戻さない。
-        // 帰り道は最後まで走らせる。
-
-        // wantsAttack は個体が持つフェーズから決める。
-        // 信号をそのまま写さないので、飛び切った機が攻撃へ引き戻されない。
+        // 信号をそのまま写さず、個体のフェーズから決める。飛び切った機が攻撃へ引き戻されないように
         drone.wantsAttack = (drone.attackPhase == DroneAttackPhase::Charging);
     });
 
     // --- 信号の記録 ---
 
-    // 次フレームの立ち上がり検出に使う。
-    // 今フレームの rising を求めた後で書く（先に書くと今フレームの立ち上がりが消える）。
+    // rising を求めた後で書く（先に書くと今フレームの立ち上がりが消える）
     bossCmd->prevDroneAttackActive = attack;
 }
 
-// ボスBT(L02_Update)が書いた命令を読み、DroneFormationSystem より前に配る。
-// 同じステージ内の前後は GetRunAfter と、相手側の GetRunAfter で決まる。
+// ボスBT(L02_Update)が書いた命令を読み、DroneFormationSystem より前に配る
 REGISTER_LOGIC_SYSTEM(DroneCommandSystem, Priority::LogicStage::L02_Update)

@@ -27,10 +27,8 @@ public:
     /**
      * @brief 同じステージで先に走らせる System を宣言する。
      *
-     * 突撃の状態が確定した後でなければ1フレームずれる。
-     *
-     * DroneBrainSystem は L02_PreUpdate なので、ステージの壁で既に手前と決まっている。
-     * ここに書くと「別ステージを指している」とスケジューラに警告されるだけなので、同じ L03_PrePhysics の DroneMovementSystem だけを宣言する。
+     * 突撃の状態が確定した後でないと1フレームずれる。
+     * DroneBrainSystem は別ステージ（L02）で既に手前なので書かない（書くとスケジューラが警告する）。
      */
     std::vector<const char *> GetRunAfter() const override
     {
@@ -39,11 +37,7 @@ public:
 
     void Update(float dt) override;
 
-    /**
-     * @brief 判定が開いている機数を出す。
-     *
-     * 当たらないときに「判定が閉じている」のか「形状が届いていない」のかを切り分けるため。
-     */
+    // 判定が開いている機数を出す。当たらないとき、判定が閉じているのか届いていないのかを切り分ける
     void OnGui() override;
 
 private:

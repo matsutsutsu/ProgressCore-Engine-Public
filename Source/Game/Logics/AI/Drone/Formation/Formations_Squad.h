@@ -9,14 +9,8 @@
 //   - 持ち場を床より下に置かない
 //
 // 備考:
-//   全機で1つの形を作る他の技と違い、小隊ごとに独立して動く。基準を
-//   SquadState.anchorPos（小隊のアンカー）に置くだけで、同じ IFormation のまま
-//   小隊をいくつでも作れる。
-//
-//   ここは持ち場を幾何的に出すだけで、遅れそのものは作らない。隊列がしなる表現は、
-//   ここが書いた springScale を移動層がバネの強さに掛けて出す（形の定義と追従の質を別々に調整できる）。
-//
-//   小隊の状態（SquadRegistry）は BeginFrame で自分で取りに行く。共通の FormationContext には載せない。
+//   基準をボスではなく小隊のアンカー（SquadState.anchorPos）に置くので、小隊ごとに独立して動く。
+//   アンカーの動きは SquadUpdateSystem が決め、ここは「前の機体からどう繋がるか」だけを持つ。
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -26,31 +20,22 @@
 
 namespace CCL::AI::Formation::Squad
 {
-    // 小隊突撃（SquadAssault）。一列縦隊。アンカーの動きは SquadUpdateSystem が決め、
-    // ここは「前の機体からどう繋がるか」だけを担当する。
-    //
-    //   slot0 ─ slot1 ─ slot2 ─ slot3 ─ slot4
-    //
-    // 位置も速度も、基準は必ず「1つ前の機体」であって小隊全体ではない。
-    //
-    // アンカーの向きや速度を全機へ配ると、アンカーが曲がった瞬間に全機が同時に振られ、
-    // 一本の棒が回転するようにしか見えない。
-    //
-    // 前の機体を基準にすると、その基準自体が1機ごとに遅れて回るので、
-    // アンカーの描いた曲線が後続機へ順に伝わる。
+    /**
+     * @brief 小隊突撃（SquadAssault）。一列縦隊（slot0 ─ slot1 ─ … ─ slot4）。
+     *
+     * 位置も速度も、基準は「1つ前の機体」で小隊全体ではない。
+     * アンカーの向きを全機へ配ると、曲がった瞬間に一本の棒が回るようにしか見えない。
+     * 前の機体を基準にすれば、アンカーの描いた曲線が後続機へ順に伝わる。
+     */
     struct SquadAssaultFormation : public IFormation
     {
-        // 予備動作は「編隊を組んだままボスの周りへ集まり、降りてくる」動きそのものなので、震えは出さない。
-        // 読むべき手掛かりが2つになるうえ、震えのずれが後ろの席へ伝わって隊列が乱れる。
+        // 集まって降りてくる動きが予告。震えを足すと、そのずれが後ろの席へ伝わって隊列が乱れる
         bool UsesShiverTelegraph() const override { return false; }
 
-        // 基準は先頭機（SquadUpdateSystem が動かすアンカー）で、ボスではない。
-        // 先渡しの速度も自分で「1つ前の機体の速度」を入れる。
-        bool FollowsBoss() const override { return false; }
+        bool FollowsBoss() const override { return false; } // 基準はアンカー
 
-        // 追跡中は判定を開けたまま何度も往復するので、1回きりだと2周目から当たらない。
-
-        // 間隔は1回すり抜けるのにかかる時間より長く取る。1回の通過で2度当たらないようにするため。
+        // 追跡中は判定を開けたまま往復するので、何度も当てる。
+        // 間隔は1回すり抜ける時間より長くし、1回の通過で2度当てない
         FormationCombat GetCombat() const override
         {
             FormationCombat c;
@@ -58,7 +43,7 @@ namespace CCL::AI::Formation::Squad
             return c;
         }
 
-        // 小隊の状態を取りに行く。小隊の係（SquadUpdateSystem）がこのフレームの分を更新済み。
+        // SquadUpdateSystem がこのフレームの分を更新済み
         void BeginFrame(CCL::ECS::World &world) override
         {
             m_squads = world.HasResource<SquadRegistry>() ? &world.GetResource<SquadRegistry>() : nullptr;
@@ -83,13 +68,10 @@ namespace CCL::AI::Formation::Squad
 
             // --- 移動方式 ---
 
-            // 追跡中もバネで追従させる。
-            // 剛体にすると隊列がまったく歪まず、5機で飛んでも「1枚の板が近づいてくる」ようにしか見えない。
-            // 歪むことがこの技の要点。
+            // 剛体にすると隊列が歪まず、1枚の板が近づいてくるようにしか見えない
             drone.chargeMode = ChargeMode::SoftFollow;
 
-            // 後ろの席ほどバネを弱める。後方の機ほど遅れて曲がるので、隊列が先頭から順に曲がっていく。
-            // 編隊で飛んでいるように見えるのは主にこの遅れによる。
+            // 後ろの席ほど遅れて曲がり、隊列が先頭から順にしなる
             drone.springScale = 1.0f - static_cast<float>(drone.slotInSquad) * kSpringLagPerSlot;
 
             const uint8_t maxSlot = static_cast<uint8_t>(SquadRegistry::kSquadSize - 1);
@@ -101,9 +83,7 @@ namespace CCL::AI::Formation::Squad
 
             // --- 1つ前の機体 ---
 
-            // 撃破された席は飛ばして繰り上がる。欠員が出ても隊列は途切れずに詰まる。
-
-            // 先頭機の「前」は、実体を持たないアンカー。
+            // 撃破された席は飛ばす（欠員が出ても隊列が詰まる）。先頭機の「前」はアンカー
             Vector3 prevPos, prevVel;
             {
                 int prev = static_cast<int>(slot) - 1;
@@ -124,16 +104,15 @@ namespace CCL::AI::Formation::Squad
 
             // --- 持ち場と先渡しの速度 ---
 
-            // 先渡しの速度も「1つ前の機体」の速度にする（小隊全体の速度ではない。理由はこの構造体の上の説明）。
             drone.followFeedForward = prevVel;
 
             if (slot == 0)
             {
-                drone.targetPosition = squad.anchorPos; // 先頭機はアンカーの位置に置く
+                drone.targetPosition = squad.anchorPos;
             }
             else
             {
-                // 追従機の目標 = 前の機体の位置 −（前の機体の進行方向）× 間隔。
+                // 前の機体の位置から、その進行方向の後ろへ間隔ぶん下げる
                 Vector3 prevDir = prevVel;
                 if (prevDir.LengthSquared() < 0.25f) prevDir = fwd; // ほぼ静止中はアンカーの向きで代用
                 prevDir.Normalize();
@@ -143,15 +122,12 @@ namespace CCL::AI::Formation::Squad
 
             // --- 床 ---
 
-            // 床下を指す持ち場は作らない。
-            // アンカーの高度は SquadUpdateSystem が止めているが、前の機が上向きに抜けた瞬間だけ、
-            // その真後ろが床下になる。
+            // アンカーの高度は止めてあるが、前の機が上向きに抜けた瞬間だけ、その真後ろが床下になる
             if (drone.targetPosition.y < kSquadFloorY) drone.targetPosition.y = kSquadFloorY;
 
             // --- 向きと他の技の値 ---
 
-            // 機首はアンカーの向きを基準にする。
-            // 追跡中（SoftFollow）は、移動層が実際の進行方向へ向け直す。
+            // 追跡中（SoftFollow）は、移動層が実際の進行方向へ向け直す
             drone.targetLookDirection = fwd;
             drone.fireDirection       = fwd;
 
@@ -159,8 +135,7 @@ namespace CCL::AI::Formation::Squad
         }
 
     private:
-        // 1つ後ろの席ごとにバネを弱める割合。最後尾（席4）で 0.76 倍になる。
-        static constexpr float kSpringLagPerSlot = 0.06f;
+        static constexpr float kSpringLagPerSlot = 0.06f; // 1つ後ろの席ごとにバネを弱める割合
 
         const SquadRegistry *m_squads = nullptr; // BeginFrame で取った小隊の状態。無ければ nullptr
     };

@@ -12,9 +12,6 @@
 // 備考:
 //   TargetPositionを計算するだけで
 // 　実際に動かすのは DroneMovementSystem。
-//
-//   陣形の仮想関数は機体ごとに呼ぶ。全機がほぼ同じ陣形なので分岐予測が当たり、コストは小さい。
-//   ドローンのループ自体は DroneComponent の配列を連続アクセスのまま回す。
 // ===========================================================================
 #include <vector>
 
@@ -39,10 +36,8 @@ public:
     /**
      * @brief 同じステージで先に走らせる System を宣言する。
      *
-     * DroneCommand が drone.currentFormation を書き、こちらがそれを読む。
-     *
-     * DroneManagerSystem を足してあるのは、スポーン時の ReindexAllDrones() が localIndex / totalDrones を書き直すため。
-     * 陣形はそれを添字にして座標を出す。
+     * 陣形は、命令（currentFormation）・小隊の状態・通し番号（生成時に振り直す）を読んで持ち場を出す。
+     * 後に走らないと、生成した最初のフレームだけ古い番号で円が組まれる。
      */
     std::vector<const char *> GetRunAfter() const override
     {
@@ -51,10 +46,9 @@ public:
     }
 
     /**
-     * @brief テンプレート引数以外に読む型を申告する。
+     * @brief テンプレート引数以外に読む型（ボスの Transform と命令）を申告する。
      *
-     * MakeContext がボスの Transform と BossCommandComponent を View で引くので申告する。
-     * テンプレート引数には足せない。ForEach の絞り込みまで変わってしまう。
+     * テンプレート引数に足すと ForEach の絞り込み条件まで変わってしまう。
      */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
@@ -67,41 +61,31 @@ public:
 
     void Update(float dt) override;
 
-    // System Manager 内に出す調整 UI（ボスの速度を乗せる割合）。
-    void OnGui() override;
+    void OnGui() override; // ボスの速度を乗せる割合の調整
 
 private:
     /**
      * @brief 陣形の計算に渡す情報（ボス位置・プレイヤー位置など）を組み立てる。
-     *
-     * 狙いの固定（m_lockedAimDir）を更新するので const ではない。
-     *
-     * @param dt 経過時間（秒）。陣形の中心の速度を測るのに使う。
+     * @param dt 経過時間 [秒]。陣形の中心の速度を測るのに使う。
      * @return 今フレームの陣形計算に渡す情報。
+     * @note 狙いの固定（m_lockedAimDir）も更新する。
      */
     CCL::AI::Formation::FormationContext MakeContext(float dt);
 
     float m_elapsed = 0.0f; // 陣形の回転に使う経過時間 [秒]
 
-    // 狙う向きの固定。信号の立ち上がり検出は DroneCommandSystem も持っているが、そちらの
-    // 結果を使うと実行順によって固定される向きが1フレームずれる。陣形へ配るのはこの
-    // System なので、ここで検出して固定する。MakeContext と同じく単一のボスを前提にしている。
-    DirectX::SimpleMath::Vector3 m_lockedAimDir     = DirectX::SimpleMath::Vector3::UnitZ;
-    bool                         m_aimLocked        = false;
-    bool                         m_prevAttackActive = false;
+    // --- 狙う向きの固定（撃つ合図の立ち上がりで固定）---
+    DirectX::SimpleMath::Vector3 m_lockedAimDir     = DirectX::SimpleMath::Vector3::UnitZ; // 固定した向き
+    bool                         m_aimLocked        = false;                               // 固定中か
+    bool                         m_prevAttackActive = false;                               // 前フレームの撃つ合図
 
-    // ボスの速度を測るための前フレームの陣形の中心。ボスが居ないフレームを挟んだら測り直す。
-    //   地面の高さに揃えた中心と、ボスの実際の位置の2つを別々に測る（IFormation::FollowsBossHeight）。
-    DirectX::SimpleMath::Vector3 m_prevBossPos    = DirectX::SimpleMath::Vector3::Zero;
-    DirectX::SimpleMath::Vector3 m_prevBodyPos    = DirectX::SimpleMath::Vector3::Zero;
-    bool                         m_hasPrevBossPos = false;
+    // --- ボスの速度の測定（前フレームとの差から出す）---
+    DirectX::SimpleMath::Vector3 m_prevBossPos    = DirectX::SimpleMath::Vector3::Zero; // 前フレームの陣形の中心（地面の高さに揃えたもの）
+    DirectX::SimpleMath::Vector3 m_prevBodyPos    = DirectX::SimpleMath::Vector3::Zero; // 前フレームのボスの実際の位置
+    bool                         m_hasPrevBossPos = false;                              // 前フレームにボスが居たか
 
-    // ボスの実際の位置と速度（跳躍中も持ち上げたまま）。MakeContext が書き、Update が
-    // FollowsBossHeight の陣形へ渡す情報を組むのに使う。
-    DirectX::SimpleMath::Vector3 m_bossBodyPos      = DirectX::SimpleMath::Vector3::Zero;
-    DirectX::SimpleMath::Vector3 m_bossBodyVelocity = DirectX::SimpleMath::Vector3::Zero;
+    DirectX::SimpleMath::Vector3 m_bossBodyPos      = DirectX::SimpleMath::Vector3::Zero; // ボスの実際の位置（跳躍中も持ち上げたまま）
+    DirectX::SimpleMath::Vector3 m_bossBodyVelocity = DirectX::SimpleMath::Vector3::Zero; // その速度
 
-    // ボスの速度をドローンへ乗せる割合。1 でボスと一緒に動き、下げるほど少し遅れて引きずられる。
-    //   完全に一緒に動くと、ボスとドローンが1つの塊に見えて「群れ」らしさが消えるので、少しだけ下げる。
-    float m_bossCarry = 0.85f;
+    float m_bossCarry = 0.85f; // ボスの速度を乗せる割合。1 未満にして、ボスと1つの塊に見えないようにする
 };

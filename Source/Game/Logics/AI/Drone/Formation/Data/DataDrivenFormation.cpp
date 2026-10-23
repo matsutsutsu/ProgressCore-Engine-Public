@@ -20,6 +20,7 @@ namespace CCL::AI::Formation::Data
     namespace
     {
         // 陣形ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する。
+        // Right = Up × Forward は X = Y × Z と同じ関係なので、単位軸まわりの回転がそのまま陣形ローカルの回転になる
         Vector3 AxisVector(AssetAxis axis)
         {
             switch (axis)
@@ -50,7 +51,6 @@ namespace CCL::AI::Formation::Data
 
         drone.chargeMode = m_asset.output.chargeMode;
 
-        // 形が Model のときだけ、表面の点を取り出しておく。
         EnsureShape();
 
         const float p = AdvanceProgress(drone, ctx);
@@ -77,8 +77,7 @@ namespace CCL::AI::Formation::Data
 
     float DataDrivenFormation::AdvanceProgress(DroneComponent &drone, const FormationContext &ctx) const
     {
-        // 撃つ合図が来るまで進行度を 0 に保ち、予備動作の「形」で待つ。
-        // プレイヤーはこの静止した形から回避方向を読む。
+        // 撃つ合図が来るまで 0 に保ち、予備動作の形で待つ（プレイヤーはこの形から回避方向を読む）
         if (m_progressOverride >= 0.0f)
             drone.attackProgress = (std::min)(1.0f, m_progressOverride); // エディタの手送り
         else if (drone.wantsAttack)
@@ -95,7 +94,7 @@ namespace CCL::AI::Formation::Data
 
     namespace
     {
-        // 割付グループの数え方。GridSize と AssignSeat が同じ数え方になるよう、1か所にまとめる。
+        // 割付グループの数え方。GridSize と AssignSeat で共有する
         struct GroupCounts
         {
             int sideCount  = 1; // 左右グループの数
@@ -124,7 +123,7 @@ namespace CCL::AI::Formation::Data
         int cols = 1;
         if (rows <= 0)
         {
-            // rows 未指定なら、機数の平方根から正方に近い格子を組む。
+            // rows 未指定なら、正方に近い格子を組む
             cols = (std::max)(1, static_cast<int>(std::floor(std::sqrt(static_cast<float>(perGroup)))));
             rows = (std::max)(1, (perGroup + cols - 1) / cols);
         }
@@ -148,9 +147,8 @@ namespace CCL::AI::Formation::Data
         const GroupCounts      g     = CountGroups(as, drone.totalDrones);
         const int              index = static_cast<int>(drone.localIndex);
 
-        // グループ番号と、グループ内の通し番号。
-        int group = 0;
-        int k     = index;
+        int group = 0;     // グループ番号
+        int k     = index; // グループ内の通し番号
         if (as.split == AssetSplit::Interleaved)
         {
             group = index % g.groupCount;
@@ -158,8 +156,7 @@ namespace CCL::AI::Formation::Data
         }
         else
         {
-            // 割り切れない余りは最後のグループへ寄せる。ここで clamp しないと
-            // 存在しないグループ番号が出て、左右の符号や段の高さが飛ぶ。
+            // 割り切れない余りは最後のグループへ寄せる（存在しないグループ番号を出さない）
             group = (std::min)(index / g.perGroup, g.groupCount - 1);
             k     = index - group * g.perGroup;
         }
@@ -211,10 +208,8 @@ namespace CCL::AI::Formation::Data
 
         // --- モデルの形 ---
 
-        // 通し番号の順に、最遠点の順で並んだ点へ置く。
-        // 機数が減っても先頭から使うので、形が欠けずに粗くなるだけで済む。
-        //
-        // 点が取れなかったときは下の格子へ戻す。全機を1点に重ねると、何が壊れたか見た目から分からない。
+        // 最遠点の順に並んだ点へ通し番号の順に置く。機数が減っても形が欠けず、粗くなるだけで済む。
+        // 点が取れなかったときは下の格子へ戻す（全機が1点に重なると、何が壊れたか見た目で分からない）
         if (lo.shape == AssetShape::Model && !m_shapePoints.empty())
         {
             const Vector3 &p = m_shapePoints[drone.localIndex % m_shapePoints.size()];
@@ -247,22 +242,16 @@ namespace CCL::AI::Formation::Data
     {
         if (layer.type == LayerType::Shiver)
         {
-            // 震えだけは攻撃ではなく「予告」の時間の上に置く。撃つ合図で進行度が動き出したら消える。
-
-            // 予告の間は向きが固定されず、触っても当たらない。
-            // 震えを攻撃の中に置くと、その両方が変わってしまう。
+            // 震えだけは攻撃ではなく予告の時間の上に置く。撃つ合図で進行度が動き出したら消える
             if (p > 0.0f) return;
 
             const float u = TelegraphT(drone);
             if (u < layer.windowBegin || u > layer.windowEnd) return;
 
-            // leadThreshold で「先に動く側」だけを震わせると、どちらが先に来るかの手がかりになる。
+            // 先に動く側だけを震わせ、どちらが先に来るかの手がかりにする
             if (SeatPhaseT(layer, seat) > layer.leadThreshold) return;
 
-            // 振れ幅は他の動きと同じく「始まり → 終わり」を緩急つきで進める。
-            // 既定の p*p なら、撃つ直前ほど強く震える。
-
-            // 位相は localIndex でずらす。揃えると群れが1枚の板として揺れ、予告に見えない。
+            // 位相は localIndex でずらす。揃えると群れが1枚の板として揺れ、予告に見えない
             const float amplitude = LayerValue(layer, seat, u);
             const float offset    = std::sin(ctx.time * layer.frequency + static_cast<float>(drone.localIndex)) * amplitude;
             local += AxisVector(layer.axis) * offset;
@@ -279,7 +268,7 @@ namespace CCL::AI::Formation::Data
 
             local = Vector3::Transform(local, q);
 
-            // 機首も同じだけ回す。倒れる刃が倒れる方向を向き、薙ぐ腕が薙ぐ方向を向く。
+            // 機首も同じだけ回す（倒れる刃が倒れる方向を向く）
             look = Vector3::Transform(look, q);
         }
         else
@@ -291,9 +280,7 @@ namespace CCL::AI::Formation::Data
     float DataDrivenFormation::LayerValue(const FormationLayer &layer, const Seat &seat, float p) const
     {
         // 0除算になる値（窓幅0・duration 0以下）は FormationAssetIO::Validate が読み込み時に直す。
-
-        // duration を窓幅までに抑えるのは、エディタで窓を縮めている最中の値でも、
-        // 保存後（Validate が同じように詰める）と同じ動きをプレビューで見せるため。
+        // duration を窓幅までに抑えるのは、エディタで編集中の値でも保存後と同じ動きを見せるため
         const float width    = layer.windowEnd - layer.windowBegin;
         const float duration = (std::min)(layer.duration, width);
         const float start    = layer.windowBegin + SeatPhaseT(layer, seat) * (width - duration);
@@ -347,8 +334,6 @@ namespace CCL::AI::Formation::Data
 
     DataDrivenFormation::Basis DataDrivenFormation::MakeBasis(const FormationContext &ctx)
     {
-        // AimDirection() は「撃つと決めた瞬間」に固定した向きを返す。
-        // 倒れている最中にプレイヤーが横へ動いても形は追わないので、避ければ当たらない。
         Basis basis;
         basis.forward = ctx.AimDirection();
         basis.right   = Vector3::UnitY.Cross(basis.forward);
@@ -361,8 +346,7 @@ namespace CCL::AI::Formation::Data
     {
         const FormationOrigin &origin = m_asset.origin;
 
-        // origin は回転を受けない。origin は「軸の位置」であって形の一部ではない。
-        // そのため、ヒンジの高さ（origin.up）を変えても倒れ方は変わらない。
+        // origin は回転の軸の位置で、形の一部ではないので回転を受けない（ヒンジの高さを変えても倒れ方は変わらない）
         Vector3 world = bossPos + basis.right * (local.x + origin.right) + Vector3::UnitY * (local.y + origin.up) + basis.forward * (local.z + origin.forward);
 
         if (m_asset.output.clampToGround)
@@ -386,10 +370,8 @@ namespace CCL::AI::Formation::Data
             lookWorld.y = 0.0f;
             break;
 
-        // 左右対称の内側。mirror が使う符号の逆を向くので、2本の壁が必ず互いを向く。
-        //
-        // 座標から中心線を引く方式にはしない。
-        // 奥行きのある壁だと先端ほど内を向いて、壁が弧を描いて見えるため（挟み込み2段は前後に長い）。
+        // 左右対称の内側。mirror の符号の逆を向くので、2本の壁が必ず互いを向く。
+        // 座標から中心線を引く方式だと、奥行きのある壁の先端ほど内を向き、壁が弧を描いて見える
         case LookMode::Inward:
             lookWorld = basis.right * -SideSign(seat);
             break;
@@ -416,8 +398,7 @@ namespace CCL::AI::Formation::Data
         // 3. 名乗った枠が使えるか確かめて登録する
         // 4. 空き枠をログへ出す
 
-        // レジストリは World ごとに作り直されるので、シーンに入るたびに全ファイルを読み直す。
-
+        // レジストリは World ごとに作り直されるので、シーンに入るたびに全ファイルを読み直す
         const std::vector<std::string> files = FileSystem::ListFiles("Assets/Formations", ".json");
 
         int loaded = 0;
@@ -426,7 +407,7 @@ namespace CCL::AI::Formation::Data
             FormationAsset asset;
             if (!FormationAssetIO::Load(path, asset)) continue;
 
-            // 欠番は BT から指す手段が無いので、登録しても誰にも呼ばれない。
+            // 欠番は BT から指す手段が無い
             if (asset.slot >= kDroneFormationSlotCount ||
                 std::string_view(kDroneFormationNames[asset.slot]) == "(欠番)")
             {
@@ -435,7 +416,7 @@ namespace CCL::AI::Formation::Data
                 continue;
             }
 
-            // 先に登録した C++ 陣形か、同じ枠を名乗る別の JSON が居る。
+            // 名前のある枠（縦割り等）も名乗れるが、先に登録した C++ 陣形か別の JSON が居れば弾く
             const auto type = static_cast<DroneFormationType>(asset.slot);
             if (registry.Has(type))
             {
@@ -452,8 +433,7 @@ namespace CCL::AI::Formation::Data
                          asset.slot, asset.name.c_str(), path.c_str(), asset.layers.size());
         }
 
-        // 空き枠は BT の候補には出るが、実行すると静止する。
-        // どこが空いているかを起動時に必ずログへ出しておかないと、選んだ人が原因に辿り着けない。
+        // 空き枠は BT の候補に出るが、実行すると静止する。選んだ人が原因に辿り着けるよう、起動時にログへ出す
         std::string empties;
         for (uint8_t s = kDataFormationSlotFirst; s <= kDataFormationSlotLast; ++s)
         {

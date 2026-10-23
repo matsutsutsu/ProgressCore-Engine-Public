@@ -1863,13 +1863,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.h">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h">
@@ -2879,10 +2873,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp">
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp">

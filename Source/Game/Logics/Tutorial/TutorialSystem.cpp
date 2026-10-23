@@ -512,9 +512,11 @@ float TutorialSystem::TimeToStrike() const
     const BattleContext &battle = m_world->GetResource<BattleContext>();
     const Vector3        center(battle.playerCenter); // 足元ではなく体の中心。突撃は胸の高さに来る
 
+    // ドローンがこの距離以下に一番近づいたものがあれば当たるとみなす
     const float missSq  = kAssistMissRadius * kAssistMissRadius;
     float       nearest = -1.0f;
 
+    // ドローンの位置と速度から、プレイヤーに最も近づく時を求める
     for (const auto &entry : m_droneMotion)
     {
         const DroneMotion &motion = entry.second;

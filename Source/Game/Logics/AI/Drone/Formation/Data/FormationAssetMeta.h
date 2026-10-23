@@ -7,20 +7,13 @@
 //   - enum の値の名前テーブル（JSON にもこの綴りで書く）
 //
 // 備考:
-//   FieldDescriptor は Engine の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
-//   インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれを読む。項目を増やす
-//   ときはここへ1行足せば、保存と UI の両方に反映される。
+//   JSON の読み書きとインスペクタの両方がこの表を読むので、項目を増やすときはここへ1行足せばよい。
+//   記述子が offsetof で位置を持つので、入れ子の構造体は別の表にする（JSON もその単位で入れ子になる）。
 //
-//   構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。入れ子の
-//   構造体は別の表として持ち、JSON もその単位で入れ子になる。
+//   CFIELD 系マクロを使わず FD_* を直に並べるのは、CFIELD が末尾のカンマを中に持ち、
+//   clang-format が2つめ以降を右へ階段状にずらしてしまうため。
 //
-//   CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
-//   マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
-//   2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
-//
-//   表に載らないもの:
-//     FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
-//     FormationAsset::sourcePath … 保存も表示もしない
+//   表に載らないもの: FormationLayer::curve（カーブ専用の編集で扱う）、FormationAsset::sourcePath（保存も表示もしない）
 // ===========================================================================
 #include <iterator>
 #include <vector>
@@ -31,8 +24,7 @@
 namespace CCL::AI::Formation::Meta
 {
 
-    // enum の値の名前。並びは enum の宣言順そのまま（添字がそのまま値になる）。
-    // JSON にもこの綴りで書くので、一度公開したら変えない。
+    // enum の値の名前。並びは enum の宣言順（添字がそのまま値）。JSON にもこの綴りで書くので、一度公開したら変えない
     inline constexpr const char *kAxisNames[]       = {"Right", "Up", "Forward"};
     inline constexpr const char *kShapeNames[]      = {"Grid", "Model"};
     inline constexpr const char *kSplitNames[]      = {"Block", "Interleaved"};

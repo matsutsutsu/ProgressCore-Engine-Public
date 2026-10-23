@@ -42,19 +42,17 @@ namespace CCL::AI::Formation
         Model, // モデルの表面に並べる（剣など）。点は ShapeSampler が取り出す
     };
 
-    // 格子を埋めていく向き。行数(rows)とは独立に選ぶ。
-    // 名前は「先に進む番号」を指す（ColumnFirst＝列の番号が先に進む＝横へ並ぶ）。
+    // 格子を埋めていく向き。名前は先に進む番号を指す（ColumnFirst＝列の番号が先に進む＝横へ並ぶ）
     enum class AssetFillOrder : uint8_t
     {
         ColumnFirst, // 横へ1行を埋めてから上の行へ
         RowFirst,    // 縦へ1列を埋めてから隣の列へ
     };
 
-    // 形にかける動き1枚の種類。
-    //   Rotate は軸を選べるので、「倒す」も「振る」もこれ1種で表せる。
+    // 形にかける動き1枚の種類
     enum class LayerType : uint8_t
     {
-        Rotate,    // ローカル原点まわりに回す
+        Rotate,    // ローカル原点まわりに回す（軸を選べるので「倒す」も「振る」もこれで表す）
         Translate, // 軸方向へ平行移動する
         Shiver,    // 撃つ前の予告として小刻みに震わせる（時間帯は予告の中で数える）
     };
@@ -68,7 +66,7 @@ namespace CCL::AI::Formation
         Group,  // 割付グループごとにずらす（先攻・後攻）
     };
 
-    // 機首の向け方。多くの技は Auto で足りる（向きが形と動きからほぼ一意に決まるため）。
+    // 機首の向け方。多くの技は Auto で足りる
     enum class LookMode : uint8_t
     {
         Auto,     // 回転レイヤーが回した Forward を向く
@@ -79,11 +77,11 @@ namespace CCL::AI::Formation
     // (1) 割付: 通し番号 → 席
     struct FormationAssign
     {
-        int            sideGroups = 1;
-        int            tierGroups = 1;
-        AssetSplit     split      = AssetSplit::Block;
+        int            sideGroups = 1;                 // 左右に分けるグループ数
+        int            tierGroups = 1;                 // 段に分けるグループ数
+        AssetSplit     split      = AssetSplit::Block; // 通し番号をグループへ配る順序
         int            rows       = 0; // 0 なら機数から正方に近い格子を組む
-        AssetFillOrder fillOrder  = AssetFillOrder::RowFirst;
+        AssetFillOrder fillOrder  = AssetFillOrder::RowFirst; // 格子を埋めていく向き
     };
 
     // (2) 形: 席 → ローカル座標（動かす前の待機の形）
@@ -91,27 +89,21 @@ namespace CCL::AI::Formation
     //   Model: 通し番号の順にモデル表面の点へ並べる。格子の項目は使わない。
     struct FormationLayout
     {
-        AssetShape shape = AssetShape::Grid;
+        AssetShape shape = AssetShape::Grid; // 待機の形の作り方
 
         // --- Model 専用 ---
 
-        // 形の元にするモデル。描画と同じ .gltf を指す。
-        std::string modelPath;
+        std::string modelPath;          // 形の元にするモデル（描画と同じ .gltf）
+        float       modelScale = 1.0f;  // モデルの大きさの倍率。実寸だと点が詰まって塊に見えるので拡大する
 
-        // モデルの大きさの倍率。ドローンは見た目 約3m あるので、モデルの実寸のままだと
-        // 点が詰まりすぎて1つの塊に見える。形が読める大きさ（剣なら 15〜20m）まで拡大する。
-        float modelScale = 1.0f;
-
-        // モデルの向き [度]。拡大の後、ロール(Forward 軸)→ピッチ(Right 軸)→ヨー(Up 軸) の順で回す
-        // （DirectX の CreateFromYawPitchRoll と同じ順）。
-        // 動きの層を当てる前の「構えた形」をここで決める。
+        // モデルの向き [度]。拡大の後、ロール→ピッチ→ヨーの順で回す（CreateFromYawPitchRoll と同じ順）
         float modelPitch = 0.0f;
         float modelYaw   = 0.0f;
         float modelRoll  = 0.0f;
 
         // --- Grid 専用 ---
 
-        AssetAxis columnAxis    = AssetAxis::Right;
+        AssetAxis columnAxis    = AssetAxis::Right; // 列を並べる軸
         bool      centerColumns = true; // 列の並びを原点で挟んで左右対称にする
         float     baseA         = 0.0f; // 列方向の起点 [m]
         float     spacingA      = 2.5f; // 列と列の間隔 [m]
@@ -120,47 +112,36 @@ namespace CCL::AI::Formation
         float     tierStepB     = 0.0f; // 段グループ1つぶんの行方向オフセット [m]
     };
 
-    // (3) 動き: 形を加工する1枚
-    //   種類ごとに型を分けず1構造体にしてあるのは、分けると JSON もエディタも
-    //   分岐だらけになり、並べ替えの操作が書きにくくなるため。
-    //   使わないフィールドが出るのは承知のうえで、配列として扱いやすい形を採っている。
+    // (3) 動き: 形を加工する1枚。
+    // 種類ごとに型を分けず1構造体にして、JSON とエディタで配列として並べ替えやすくする（使わない項目は出る）
     struct FormationLayer
     {
-        LayerType type = LayerType::Rotate;
-        AssetAxis axis = AssetAxis::Right;
+        LayerType type = LayerType::Rotate; // 動きの種類
+        AssetAxis axis = AssetAxis::Right;  // 回す・動かす・震わせる軸
 
-        float from = 0.0f; // Rotate は角度[度]、Translate は距離[m]、Shiver は振れ幅[m]
-        float to   = 0.0f;
+        float from = 0.0f; // 始まりの量。Rotate は角度[度]、Translate は距離[m]、Shiver は振れ幅[m]
+        float to   = 0.0f; // 終わりの量
 
-        float windowBegin = 0.0f; // この層が動く時間帯。攻撃の長さを 0〜1 とした割合（Shiver だけは予告の長さに対して）
-        float windowEnd   = 1.0f;
+        float windowBegin = 0.0f; // この層が動き始める時刻。攻撃の長さを 0〜1 とした割合（Shiver は予告の長さに対して）
+        float windowEnd   = 1.0f; // この層が動き終わる時刻
 
-        // 1席（1列・1段）が動き切るのに使う量。
-        //   start = windowBegin + 席の位置 × ((windowEnd - windowBegin) - duration)
-        // 最後の席がちょうど windowEnd で動き終わるように開始を配る、という式。
+        // 1席が動き切るのに使う量（窓に対する割合）。
+        // start = windowBegin + 席の位置 × ((windowEnd - windowBegin) - duration) で、最後の席がちょうど windowEnd で終わる
         float duration = 1.0f;
 
-        PhaseSource phaseSource  = PhaseSource::None;
-        bool        phaseReverse = false; // ずらす向きを逆にする（反対の端から始める）
+        PhaseSource phaseSource  = PhaseSource::None; // 動き出しを何の単位でずらすか
+        bool        phaseReverse = false;             // ずらす向きを逆にする（反対の端から始める）
 
-        // 進行度 → 変換量の効き方。キーが無ければ p*p（easeIn）。
-        // 「溜めてから一気に」のような緩急はここで作る。
-        CurveData curve;
+        CurveData curve; // 進み → 変換量の緩急。キーが無ければ p*p（easeIn）
 
         bool mirror = false; // 側グループごとに from/to の符号を反転する
 
-        // Shiver 専用
-        // frequency は sin の角速度としてそのまま使う（2π を掛けない）ので、単位は [rad/s]。
-        // 10 なら約 1.6 往復/秒。
-        float frequency     = 10.0f; // 震えの速さ [rad/s]
+        // --- Shiver 専用 ---
+        float frequency     = 10.0f; // 震えの速さ [rad/s]（sin の角速度。2π を掛けない）
         float leadThreshold = 0.18f; // ずらし順がこれ以下の席（先に動く側）だけを震わせる。1 なら全席
     };
 
-    // (4) 配置: ボスからのオフセット [m]
-    //
-    // レイヤーの回転はローカル原点まわりなので、ここが「回転軸の位置」になる。
-    //
-    // 回す量（layer）と軸の位置（origin）が別々なので、片方だけ調整できる。
+    // (4) 配置: ボスからのオフセット [m]。動きの層の回転軸の位置になる
     struct FormationOrigin
     {
         float forward = 0.0f;
@@ -171,44 +152,38 @@ namespace CCL::AI::Formation
     // 当たり方と見せ方（形そのものではない）
     struct FormationOutput
     {
-        LookMode   look       = LookMode::Auto;
-        ChargeMode chargeMode = ChargeMode::RigidFollow;
+        LookMode   look       = LookMode::Auto;          // 機首の向け方
+        ChargeMode chargeMode = ChargeMode::RigidFollow; // 突撃中の移動方式
 
         bool clampToGround      = false; // 席が地面へ潜らないよう y を持ち上げる
         bool useShiverTelegraph = true;  // 撃つ前の震え（予告）を出すか
 
-        FormationCombat combat;
+        FormationCombat combat; // 当たり方と痛さ
     };
 
     // 陣形1つぶん
     struct FormationAsset
     {
-        std::string name = "Formation";
+        std::string name = "Formation"; // 技の名前（エディタと BT に出る）
 
-        // 名乗る DroneFormationType の枠。名前のある枠（縦割り等）も空き枠も名乗れる。
-        // BT もプレハブもこの数値で技を指すので、一度公開したら変えない
-        // （変えると保存済みの木が別の技を指す。BTAsset の assetId と同じ扱い）。
+        // 名乗る DroneFormationType の枠。BT もプレハブもこの数値で技を指すので、一度公開したら変えない
         uint8_t slot = 0;
 
-        // 読み込み元のファイル。エディタの保存先になる。JSON には書かない
-        // （ファイル自身に自分のパスを持たせると、コピーしたとき互いを上書きし合う）。
+        // 読み込み元のファイル（エディタの保存先）。JSON には書かない（コピーしたとき互いを上書きし合うため）
         std::string sourcePath;
 
-        FormationAssign             assign;
-        FormationLayout             layout;
-        std::vector<FormationLayer> layers; // 並び順が適用順
-        FormationOrigin             origin;
+        FormationAssign             assign; // (1) 割付
+        FormationLayout             layout; // (2) 形
+        std::vector<FormationLayer> layers; // (3) 動き。並び順が適用順
+        FormationOrigin             origin; // (4) 配置
 
-        // 撃つ合図から形が動き切るまで [秒]。
-        // 画面でも JSON でもそのまま読める単位にしてある。
-        float attackSeconds = 0.4f;
+        float attackSeconds = 0.4f; // 撃つ合図から形が動き切るまで [秒]
 
-        // 撃つ前に震える予告の長さ [秒]。Shiver の時間帯はこの長さに対する割合で置く。
-        // ゲーム中に予告を何秒続けるかはボスBTの Wait が決めるので、同じ値にしておく
-        // （BT はこの値を読まない。ずれると、震えが途中で切れるか、震え終わっても撃たない）。
+        // 撃つ前の予告の長さ [秒]。ボスBTの Wait（予告）と同じ値にする
+        // （BT はこの値を読まない。ずれると、震えが途中で切れるか、震え終わっても撃たない）
         float telegraphSeconds = 1.0f;
 
-        FormationOutput output;
+        FormationOutput output; // 当たり方と見せ方
     };
 
 } // namespace CCL::AI::Formation

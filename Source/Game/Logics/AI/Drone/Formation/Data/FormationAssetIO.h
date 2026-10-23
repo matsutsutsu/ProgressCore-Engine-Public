@@ -7,14 +7,11 @@
 //   - 範囲外の値を安全な既定値へ直す（Validate）
 //
 // 備考:
-//   どの項目をどのキーで書くかは FormationAssetMeta.h の表が決め、ここはそれを回すだけ。
+//   どの項目をどのキーで書くかは FormationAssetMeta.h の表が決める。
 //   表に載らない2つ（layers の配列と、各層の curve）だけを手で扱う。
 //
-//   enum は数値ではなく名前で保存する。数値だと "columnAxis": 2 と出て、意味を知るのに
-//   毎回ヘッダを引くことになり、手で読み書きできるアセットという前提が崩れる。
-//
-//   入口を Load / Save の2つに絞っているのは、検証を必ず通すため。JSON を直接組み立てる
-//   経路を外へ出すと、Validate を通らないアセットが作れてしまう。
+//   enum は数値ではなく名前で保存する（手で読み書きできるアセットにするため）。
+//   入口を Load / Save に絞り、Validate を通らないアセットを作れないようにする。
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -31,22 +28,22 @@ namespace CCL::AI::Formation
     {
     public:
         /**
-         * @brief JSON を読んで asset を組み立てる。ファイルが無い・壊れている場合のみ false。
+         * @brief JSON を読んで asset を組み立てる。
          *
-         * 値の範囲が不正なだけなら既定値へ直して true を返す（その技だけ静止するより、
-         * 直った形が出て ERROR ログでどのファイルの何が悪いか分かる方が復帰が早い）。
+         * 値の範囲が不正なだけなら既定値へ直して true を返す（ERROR ログでどこが悪いか分かる）。
+         *
+         * @param virtualPath 読むファイル。
+         * @param outAsset    組み立てたアセットを受け取る。
+         * @return ファイルが無い・壊れているときだけ false。
          */
         static bool Load(const std::string &virtualPath, FormationAsset &outAsset);
 
-        // エディタからの保存。書き出す前に Validate を通すので、保存したものは必ず読める。
+        // エディタからの保存。書き出す前に Validate を通すので、保存したものは必ず読める
         static bool Save(const std::string &virtualPath, const FormationAsset &asset);
 
         /**
-         * @brief 範囲外の値を安全な既定値へ直す。直した箇所は ERROR で出す。
-         *
-         * WARN ではなく ERROR なのは、Debug 以外の構成では WARN と INFO が
-         * ((void)0) になり見えなくなるため。作者が直すべき間違いは常に見える必要がある。
-         *
+         * @brief 範囲外の値を安全な既定値へ直す。直した箇所は ERROR で出す（WARN は Debug 以外で消えるため）。
+         * @param asset   直すアセット。
          * @param context ログに出す文脈（ファイルパス等）。空でもよい
          * @return 1箇所でも直したら true
          */
@@ -56,20 +53,13 @@ namespace CCL::AI::Formation
         static nlohmann::json ToJson(const FormationAsset &asset);
         static void           FromJson(const nlohmann::json &j, FormationAsset &asset);
 
-        // 表の1つぶんを obj から j へ書く。enum は数値でなく名前で書く。
+        // 表の1つぶんを obj から j へ書く
         static void WriteFields(nlohmann::json &j, const std::vector<FieldDescriptor> &fields, const void *obj);
 
-        // 表の1つぶんを j から obj へ読む。キーが無い項目は既定値のまま残す。
+        // 表の1つぶんを j から obj へ読む。キーが無い項目は既定値のまま残す
         static void ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj);
 
-        /**
-         * @brief float を「float として元に戻せる最短の10進表記」の double にする。
-         *
-         * JSON の数値は double なので、そのまま渡すと 0.8 が 0.800000011920929 と出る。
-         *
-         * @param v 変換する値。
-         * @return v を最短の10進表記で表した double。
-         */
+        // float を最短の10進表記の double にする（そのままだと 0.8 が 0.800000011920929 と出る）
         static double ShortestDouble(float v);
     };
 
