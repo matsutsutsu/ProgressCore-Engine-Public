@@ -28,8 +28,8 @@ namespace CCL::AI::Motion
             float turnRate;   // 機首を向け直す速さ [1/s]
         };
 
-        // 戻るときは隊列を直す局面なので、保つときより強い
-        constexpr SpringTuning kMoveToTarget{.gain = 20.0f, .damping = 15.0f, .speedScale = 2.5f, .turnRate = 25.0f};
+        // 戻るときは隊列を直す局面なので、保つときより強い。速さの上限は MotionTuning::moveSpeedScale を使う
+        constexpr SpringTuning kMoveToTarget{.gain = 20.0f, .damping = 15.0f, .turnRate = 25.0f};
 
         // 強くすると持ち場に貼り付いて、ホバーの揺れが消える
         constexpr SpringTuning kIdle{.gain = 10.0f, .damping = 8.0f, .speedScale = 1.5f, .turnRate = 15.0f};
@@ -105,9 +105,20 @@ namespace CCL::AI::Motion
         // バネ追従の強さ。BeginMotionFrame だけが書き、並列ループの間は読むだけ
         float gSoftFollowGain = 10.0f;
 
+        // 調整 UI の値。同じく BeginMotionFrame だけが書く
+        MotionTuning gTuning{};
+
         // ============================================================
         // 内部の部品
         // ============================================================
+
+        // kMoveToTarget に、調整 UI の速さの上限を入れたもの
+        SpringTuning MoveToTargetSpring()
+        {
+            SpringTuning spring = kMoveToTarget;
+            spring.speedScale   = gTuning.moveSpeedScale;
+            return spring;
+        }
 
         /**
          * @brief 持ち場とのずれに比例した速度へ、今の速度を少しずつ寄せる（Idle と MoveToTarget）。
@@ -215,9 +226,14 @@ namespace CCL::AI::Motion
             }
         }
 
-        // 剛体追従の突撃（データ陣形）。形が動く間は持ち場に一致させ、動き切ったら Idle のバネへ渡す
+        // 剛体追従の突撃（データ陣形）。追いつくまではバネで寄せ、形が動く間は持ち場に一致させ、動き切ったら Idle のバネへ渡す
         void MoveRigidFollow(TransformComponent &trans, DroneComponent &drone, float dt)
         {
+            // 処理フロー:
+            // 1. 形が動き切っていたら Idle のバネへ渡す
+            // 2. まだ持ち場に追いついていなければ、強いバネで寄せる
+            // 3. 持ち場に一致させる（剛体）
+
             // --- 動き切った後 ---
 
             // 閉じ切った座標に固定し続けると、全機が同時に静止して不自然に見える。
@@ -226,6 +242,20 @@ namespace CCL::AI::Motion
             {
                 HoldSlot(trans, drone, dt);
                 return;
+            }
+
+            // --- 追いつくまで ---
+
+            // 持ち場に着く前に撃つ合図が来た機を、いきなり剛体にすると持ち場へ瞬間移動する。
+            // 一度追いついたら突撃の終わりまで剛体のままにする（速く動く腕の先で、1フレームの移動が閾値を超えても外れない）
+            if (!drone.rigidLocked)
+            {
+                if (Vector3::Distance(trans.position, drone.targetPosition) > gTuning.rigidCatchUp)
+                {
+                    MoveToSlot(trans, drone, dt);
+                    return;
+                }
+                drone.rigidLocked = true;
             }
 
             // --- 剛体 ---
@@ -317,7 +347,7 @@ namespace CCL::AI::Motion
 
     void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt)
     {
-        ApplySpring(trans, drone, dt, kMoveToTarget);
+        ApplySpring(trans, drone, dt, MoveToTargetSpring());
 
         if (drone.targetLookDirection.LengthSquared() > 0.001f)
         {
@@ -337,7 +367,10 @@ namespace CCL::AI::Motion
 
         // --- バネ追従 ---
 
-        ApplySpring(trans, drone, dt, kIdle);
+        // 陣形を切り替えた直後は hasReachedSlot が立ったままなので、Idle のまま新しい持ち場へ向かう。
+        // 弱いバネでは間に合わないので、遠い間は MoveToTarget の強いバネで寄せる
+        const float distance = Vector3::Distance(trans.position, drone.targetPosition);
+        ApplySpring(trans, drone, dt, (distance > gTuning.farFromSlot) ? MoveToTargetSpring() : kIdle);
 
         // --- ホバーの揺れ ---
 
@@ -371,6 +404,8 @@ namespace CCL::AI::Motion
     void BeginMotionFrame(CCL::ECS::World &world)
     {
         // 無ければ前の値（既定値）のまま
+        if (world.HasResource<MotionTuning>())
+            gTuning = world.GetResource<MotionTuning>();
         if (world.HasResource<SquadRegistry>())
             gSoftFollowGain = world.GetResource<SquadRegistry>().tuning.followGain;
     }

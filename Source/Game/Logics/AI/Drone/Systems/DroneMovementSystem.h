@@ -5,6 +5,7 @@
 // 責務:
 //   - currentState ごとに速度（currentVelocity）と姿勢を決める
 //   - 速度を位置へ積分し、床より下へ潜らせない
+//   - 動き方の調整値（MotionTuning）を World に置き、調整 UI を出す
 //
 // 備考:
 //   Idle・MoveToTarget・FireCharge の動きは DroneMotion にある。
@@ -25,7 +26,9 @@ class DroneMovementSystem : public CCL::ECS::IfSystem<
 public:
     DroneMovementSystem() : IfSystem("DroneMovementSystem") {}
 
+    void Initialize() override;
     void Update(float dt) override;
+    void OnGui() override; // 持ち場へ寄る速さと、剛体に切り替える距離の調整
 
 private:
     // 突き抜けた後、上へ抜けながら減速する（離脱）。その後の復帰は MoveToTarget に任せる

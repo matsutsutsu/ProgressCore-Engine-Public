@@ -679,6 +679,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugRanges.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneFormationType.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneTuning.h" />
@@ -1157,6 +1158,7 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.cpp" />

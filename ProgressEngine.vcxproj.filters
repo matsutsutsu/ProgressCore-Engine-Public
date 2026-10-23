@@ -1959,6 +1959,9 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -2925,6 +2928,9 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">

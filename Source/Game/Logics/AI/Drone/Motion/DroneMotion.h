@@ -37,6 +37,14 @@ namespace CCL::AI::Motion
         bool                         hasPlayer = false; // プレイヤーが居るか
     };
 
+    // 実行中に DroneMovementSystem の調整 UI から変える値（World リソース）。きびきび具合は動かして目で見ないと決まらないため
+    struct MotionTuning
+    {
+        float moveSpeedScale = 2.4f; // 持ち場へ戻る強いバネで出せる速さの上限（moveSpeed 倍）
+        float farFromSlot    = 4.0f; // Idle でも持ち場からこれより遠い間は、強いバネで寄せる [m]
+        float rigidCatchUp   = 4.0f; // 剛体追従で、持ち場にこれより近づいたら剛体に切り替える [m]
+    };
+
     // ============================================================
     // 姿勢
     // ============================================================
@@ -70,7 +78,7 @@ namespace CCL::AI::Motion
     // 持ち場へ戻る（MoveToTarget）。Idle より強いバネで寄せる
     void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt);
 
-    // 持ち場を保つ（Idle）。弱いバネに、ホバーの揺れと予告の震えを足す
+    // 持ち場を保つ（Idle）。弱いバネ（持ち場から遠い間は強いバネ）に、ホバーの揺れと予告の震えを足す
     void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // ============================================================
@@ -78,7 +86,7 @@ namespace CCL::AI::Motion
     // ============================================================
 
     /**
-     * @brief 動き方が使う World の値（小隊のバネの強さ）を写し取る。
+     * @brief 動き方が使う World の値（MotionTuning と小隊のバネの強さ）を写し取る。
      * @param world ドローンが居る World。
      * @note 並列ループの前に1回だけ呼ぶ。ループの中で World を引かないため。
      */

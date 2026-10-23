@@ -39,7 +39,6 @@ void DroneCommandSystem::Update(float /*dt*/)
     // 最初の１フレーム立ったかどうかだけを見て動く必要がある
     const bool rising = attack && !bossCmd->prevDroneAttackActive;
 
-    // --- 配布 ---
 
     const auto *formations = CCL::AI::Formation::FormationRegistry::Find(*m_world);
 
@@ -54,7 +53,8 @@ void DroneCommandSystem::Update(float /*dt*/)
             drone.currentFormation = formation;
         }
 
-        // 出撃は一斉。終わりは、技が IsChargeOver を書いていれば各機が自分で（Brain が下ろす）、書いていなければ信号が下りたとき。
+        // 出撃は一斉。終わりは、技が IsChargeOver を書いていれば各機が自分で（Brain が下ろす）、
+        // 書いていなければ信号が下りたとき。
         // 信号をそのまま写さないのは、自分で終えた機が次のフレームに攻撃へ引き戻されないため
         if (rising)
             drone.wantsAttack = true;

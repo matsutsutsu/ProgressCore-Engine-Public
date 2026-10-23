@@ -63,7 +63,7 @@
                 -50.0,
                 0.0
             ],
-            "prefab": "Assets/Prefabs/Particles/StageParticle.json",
+            "prefab": "Assets/Prefabs/Particles/VFX_StageParticle.json",
             "rotation": [
                 0.0,
                 0.0,

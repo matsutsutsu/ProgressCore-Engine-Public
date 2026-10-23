@@ -6,9 +6,12 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include <cmath>
 
+#include <imgui.h>
+
 using namespace CCL::ECS;
-using namespace CCL::AI::Motion;
 using namespace DirectX::SimpleMath;
+
+namespace Motion = CCL::AI::Motion;
 
 namespace
 {
@@ -25,11 +28,28 @@ namespace
         float turnRate;  // 機首を向け直す速さ [1/s]。制御を取り戻しつつある表現として、他の状態より鈍い
     };
     constexpr BreakawayTuning kBreakaway{.drag = 2.5f, .lift = 18.0f, .fastSpeed = 40.0f, .turnRate = 8.0f};
+
+    // ============================================================
+    // デバッグ UI の部品
+    // ============================================================
+
+    // 直前の項目にマウスを乗せている間だけ説明を出す。
+    void HoverTooltip(const char *text)
+    {
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", text);
+    }
 } // namespace
 
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
+
+void DroneMovementSystem::Initialize()
+{
+    if (m_world->HasResource<Motion::MotionTuning>()) return;
+    m_world->AddResource<Motion::MotionTuning>();
+}
 
 void DroneMovementSystem::Update(float rawDt)
 {
@@ -44,7 +64,7 @@ void DroneMovementSystem::Update(float rawDt)
     // --- World の値 ---
 
     // 並列ループの中で World を引かないよう、ループの前に写し取る
-    BeginMotionFrame(*m_world);
+    Motion::BeginMotionFrame(*m_world);
 
     ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
                            const TimeStateComponent &time) {
@@ -59,17 +79,21 @@ void DroneMovementSystem::Update(float rawDt)
 
         // --- 状態ごとの速度と姿勢 ---
 
+        // 剛体追従の「追いついたか」は突撃1回ごとに数え直す
+        if (drone.currentState != DroneState::FireCharge) drone.rigidLocked = false;
+
         // 各ステートは速度と姿勢を決めるだけ。積分と床はこの後で共通に行う
+        // （離脱だけはこの System の ProcessReturning、他は DroneMotion）
         switch (drone.currentState)
         {
         case DroneState::MoveToTarget:
-            MoveToSlot(trans, drone, dt);
+            Motion::MoveToSlot(trans, drone, dt);
             break;
         case DroneState::Idle:
-            HoldSlot(trans, drone, dt);
+            Motion::HoldSlot(trans, drone, dt);
             break;
         case DroneState::FireCharge:
-            MoveCharge(trans, drone, dt);
+            Motion::MoveCharge(trans, drone, dt);
             break;
         case DroneState::Returning:
             ProcessReturning(trans, drone, dt);
@@ -138,8 +162,28 @@ void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneCompo
     if (look.LengthSquared() > 0.001f)
     {
         look.Normalize();
-        TurnToward(trans, look, /*includePitch*/ true, kBreakaway.turnRate, dt);
+        Motion::TurnToward(trans, look, /*includePitch*/ true, kBreakaway.turnRate, dt);
     }
+}
+
+// ---------------------------------------------------------------------------
+// デバッグ UI
+// ---------------------------------------------------------------------------
+
+void DroneMovementSystem::OnGui()
+{
+    if (!m_world->HasResource<Motion::MotionTuning>()) return;
+    auto &tuning = m_world->GetResource<Motion::MotionTuning>();
+
+    ImGui::SliderFloat("持ち場へ寄る速さの上限", &tuning.moveSpeedScale, 1.0f, 6.0f, "x%.1f");
+    HoverTooltip("強いバネで出せる速さ（moveSpeed 倍）。生成直後の整列・陣形の切り替え・突撃後の帰還が速くなる");
+    ImGui::SliderFloat("強いバネに切り替える距離", &tuning.farFromSlot, 0.0f, 20.0f, "%.1f m");
+    HoverTooltip("待機中でも持ち場からこれより遠いと強いバネで寄る。0 にすると常に強いバネになり、ホバーの揺れが消える");
+    ImGui::SliderFloat("剛体に切り替える距離", &tuning.rigidCatchUp, 0.1f, 5.0f, "%.1f m");
+    HoverTooltip("データ陣形の突撃で、持ち場にこれより近づいたら形に固定する。大きいほど早く固定されるが、固定の瞬間に跳んで見える");
+
+    if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))
+        tuning = Motion::MotionTuning{};
 }
 
 // JoltPushSystem（L03_PushToPhysics）が物理へ渡す前に位置を確定する

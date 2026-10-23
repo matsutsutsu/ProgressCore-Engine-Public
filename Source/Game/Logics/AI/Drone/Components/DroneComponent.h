@@ -94,6 +94,7 @@ struct DroneComponent
 
     DirectX::SimpleMath::Vector3 currentVelocity = DirectX::SimpleMath::Vector3::Zero; // [RT] 現在速度
     float                        hoverTimeOffset = 0.0f;                               // ホバー揺れの位相 [秒]。生成時に機体ごとにばらす
+    bool                         rigidLocked     = false;                              // [RT] 剛体追従で持ち場に追いついたか。突撃以外では下ろす
 
     // ---- 個体パラメータ（インスペクタで調整）----
 

@@ -1,0 +1,47 @@
+{
+  "duration": 5.0,
+  "startDelay": 0.0,
+  "allowSkip": true,
+  "shots": [
+    {
+      "start": 0.0,
+      "duration": 1.0,
+      "subject": "Player",
+      "motion": "Orbit",
+      "ease": "Linear",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        10.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 90.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 45.0,
+      "fovEnd": 45.0
+    }
+  ],
+  "sounds": [],
+  "effects": [],
+  "signals": [],
+  "animations": []
+}
