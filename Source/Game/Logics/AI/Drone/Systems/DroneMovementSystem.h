@@ -30,6 +30,4 @@ public:
 private:
     // 突き抜けた後、上へ抜けながら減速する（離脱）。その後の復帰は MoveToTarget に任せる
     void ProcessReturning(TransformComponent &trans, DroneComponent &drone, float dt);
-
-    CCL::AI::Motion::MotionContext m_motion{}; // 動き方へ渡す調整値。Update の先頭で写し取る
 };

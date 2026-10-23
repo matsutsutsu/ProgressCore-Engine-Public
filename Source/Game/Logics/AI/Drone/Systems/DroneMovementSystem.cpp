@@ -34,19 +34,16 @@ namespace
 void DroneMovementSystem::Update(float rawDt)
 {
     // 処理フロー:
-    // 1. 調整値を写し取り、動き方にフレームの始まりを伝える
+    // 1. 動き方が使う World の値を写し取る
     // 2. ホバーの位相を進める
     // 3. 状態ごとに速度と姿勢を決める
     // 4. 速度を位置へ積分する
     // 5. 床より下へ潜らせない
     // 6. 姿勢を正規化して確定する
 
-    // --- 調整値 ---
+    // --- World の値 ---
 
     // 並列ループの中で World を引かないよう、ループの前に写し取る
-    if (!m_world->HasResource<DroneShiverTuning>()) m_world->AddResource<DroneShiverTuning>();
-    m_motion.shiver = m_world->GetResource<DroneShiverTuning>();
-
     BeginMotionFrame(*m_world);
 
     ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
@@ -66,13 +63,13 @@ void DroneMovementSystem::Update(float rawDt)
         switch (drone.currentState)
         {
         case DroneState::MoveToTarget:
-            MoveToSlot(trans, drone, dt, m_motion);
+            MoveToSlot(trans, drone, dt);
             break;
         case DroneState::Idle:
-            HoldSlot(trans, drone, dt, m_motion);
+            HoldSlot(trans, drone, dt);
             break;
         case DroneState::FireCharge:
-            MoveCharge(trans, drone, dt, m_motion);
+            MoveCharge(trans, drone, dt);
             break;
         case DroneState::Returning:
             ProcessReturning(trans, drone, dt);

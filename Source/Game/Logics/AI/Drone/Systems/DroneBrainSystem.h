@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 突撃・離脱・接近・待機のうち、優先度順に最初に成立したものを選ぶ
-//   - 突撃の開始を技へ伝え、個別寿命の突撃の終了判断を行う
+//   - 突撃の開始を技へ伝え、技が自分で終える突撃の終了判断を行う
 //
 // 備考:
 //   BT を使わないのは、状態が固定で木にする利点が無く、ノード評価ごとの GetComponent<> で
@@ -44,7 +44,7 @@ private:
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
     /**
-     * @brief 突撃を切り上げるべきかを返す（個別寿命の攻撃のみ）。
+     * @brief 突撃を切り上げるべきかを返す。
      *
      * 飛び出してからの飛距離と経過時間を測り、切り上げるかは技（IFormation::IsChargeOver）に聞く。
      *

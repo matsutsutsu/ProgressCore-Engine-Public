@@ -26,9 +26,7 @@ namespace CCL::AI::Formation::Attack
      */
     struct BarrageFormation : public IFormation
     {
-        ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
-
-        // 経過時間は、壁際などで飛距離が伸びないときの保険
+        // 撃った機から順に帰す。経過時間は、壁際などで飛距離が伸びないときの保険
         bool IsChargeOver(float flownDistance, float flownTime) const override
         {
             return flownDistance > kChargeRange || flownTime > kChargeTimeout;

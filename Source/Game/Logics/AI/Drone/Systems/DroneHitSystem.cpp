@@ -28,9 +28,8 @@ void DroneHitSystem::Update(float /*dt*/)
 {
     // 処理フロー:
     // 1. ダメージの帰属先（ボス）を決める
-    // 2. 陣形ごとの当たり方を引く準備をする
-    // 3. 機体ごとに判定を開け閉めし、当たり方を写す
-    // 4. デバッグ表示用の機数を残す
+    // 2. 機体ごとに判定を開け閉めし、陣形の当たり方を写す
+    // 3. デバッグ表示用の機数を残す
 
     // --- 帰属先 ---
 
@@ -39,27 +38,9 @@ void DroneHitSystem::Update(float /*dt*/)
     if (m_world->HasResource<BattleContext>())
         owner = m_world->GetResource<BattleContext>().bossEntity;
 
-    // --- 当たり方のキャッシュ ---
-
-    // 当たり方は陣形が変わったときだけ引き直す。通常は全機が同じ陣形なので、フレームに1回で済む
-    const auto *registry = CCL::AI::Formation::FormationRegistry::Find(*m_world);
-
-    bool                                cacheValid = false;
-    DroneFormationType                  cacheType  = DroneFormationType::None;
-    CCL::AI::Formation::FormationCombat cacheCombat{};
-
-    auto combatOf = [&](DroneFormationType type) -> const CCL::AI::Formation::FormationCombat & {
-        if (!cacheValid || cacheType != type)
-        {
-            const auto *impl = registry ? registry->Get(type) : nullptr;
-            cacheCombat      = impl ? impl->GetCombat() : CCL::AI::Formation::FormationCombat{};
-            cacheType        = type;
-            cacheValid       = true;
-        }
-        return cacheCombat;
-    };
-
     // --- 判定の開け閉め ---
+
+    const auto *registry = CCL::AI::Formation::FormationRegistry::Find(*m_world);
 
     int droneCount    = 0;
     int activeCount   = 0;
@@ -85,7 +66,8 @@ void DroneHitSystem::Update(float /*dt*/)
 
         if (!dangerous) return;
 
-        const auto &combat  = combatOf(drone.currentFormation);
+        const auto *formation = registry ? registry->Get(drone.currentFormation) : nullptr;
+        const auto  combat    = formation ? formation->GetCombat() : CCL::AI::Formation::FormationCombat{};
         box.damageAmount    = combat.damage;
         box.knockback       = combat.knockback;
         box.hitStopDuration = combat.hitStopDuration;

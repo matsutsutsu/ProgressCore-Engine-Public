@@ -25,18 +25,11 @@
 
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 
 namespace CCL::ECS { class World; }
 
 namespace CCL::AI::Motion
 {
-    // 動き方へ毎フレーム渡す調整値。並列ループの前に DroneMovementSystem が作る
-    struct MotionContext
-    {
-        DroneShiverTuning shiver{}; // 予告の震えの調整値
-    };
-
     // 突撃を始めるときに技へ渡す情報（IFormation::OnChargeBegin）
     struct ChargeBeginInfo
     {
@@ -75,10 +68,10 @@ namespace CCL::AI::Motion
     // ============================================================
 
     // 持ち場へ戻る（MoveToTarget）。Idle より強いバネで寄せる
-    void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx);
+    void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // 持ち場を保つ（Idle）。弱いバネに、ホバーの揺れと予告の震えを足す
-    void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx);
+    void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt);
 
     // ============================================================
     // 突撃（FireCharge）
@@ -92,7 +85,7 @@ namespace CCL::AI::Motion
     void BeginMotionFrame(CCL::ECS::World &world);
 
     // 突撃中の速度と姿勢を決める。drone.chargeMode で動き方を選ぶ
-    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx);
+    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt);
 
     /**
      * @brief 突撃中のこの機に、当たり判定を開けてよいかを返す。

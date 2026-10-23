@@ -69,14 +69,14 @@ void DroneBrainSystem::Update(float /*dt*/)
 
                 drone.chargeStartPos = Vector3(trans.position);
                 drone.chargeTimer    = 0.0f;
+                drone.breakawayTimer = 0.0f; // 離脱中に次の合図が来たら、離脱の残りを捨てる
             }
 
-            // 小隊攻撃などの自分で終了を決めない攻撃が通る
-            //  個別寿命の攻撃だけが自分で終了を決める（Broadcast はここを素通りする）。
-            if (drone.attackPhase == DroneAttackPhase::Charging &&
-                HasFinishedCharge(formations, trans, drone, dt))
+            // 自分で終了を決める技（弾幕）だけがここで離脱へ移る。
+            //  小隊攻撃などは HasFinishedCharge が false を返し続け、合図が下りるまで突撃を続ける。
+            if (HasFinishedCharge(formations, trans, drone, dt))
             {
-                drone.attackPhase    = DroneAttackPhase::Returning;
+                drone.wantsAttack    = false;
                 drone.breakawayTimer = kBreakawayTime;
                 drone.fireDirection  = Vector3::Zero;  // 次の突撃で方向を取り直させる
                 drone.hasReachedSlot = false;          // 帰投後は並び直す
@@ -90,7 +90,8 @@ void DroneBrainSystem::Update(float /*dt*/)
 
         // --- 離脱 ---
 
-        if (drone.attackPhase == DroneAttackPhase::Returning)
+        // 離脱を終えたら、下の接近が隊列へ連れ戻す
+        if (drone.breakawayTimer > 0.0f)
         {
             drone.breakawayTimer -= dt;
             if (drone.breakawayTimer > 0.0f)
@@ -98,8 +99,6 @@ void DroneBrainSystem::Update(float /*dt*/)
                 drone.currentState = DroneState::Returning;
                 return;
             }
-            // 離脱を終えたら、下の接近が隊列へ連れ戻す
-            drone.attackPhase = DroneAttackPhase::None;
         }
 
         // --- 接近 ---
@@ -134,7 +133,7 @@ bool DroneBrainSystem::HasFinishedCharge(const CCL::AI::Formation::FormationRegi
 
     drone.chargeTimer += dt;
 
-    // 個別寿命の突撃は技が登録されているときしか始まらないので、見つからなければ続ける
+    // 技が見つからなければ自分では終えない（合図が下りるまで続ける）
     const auto *formation = formations ? formations->Get(drone.currentFormation) : nullptr;
     if (!formation) return false;
 

@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 1機分の持ち場を計算する Calculate を定める
-//   - 攻撃の寿命（ChargeLifecycle）・当たり方（FormationCombat）・予告の有無を陣形ごとに返す
+//   - 当たり方（FormationCombat）・予告の有無を陣形ごとに返す
 //   - 突撃の始め方（OnChargeBegin）と切り上げ方（IsChargeOver）を陣形ごとに決める
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
@@ -27,11 +27,11 @@ namespace CCL::AI::Formation
         DirectX::SimpleMath::Vector3 bossVelocity   = {};   // 陣形の中心が動いている速度 [m/s]
         DirectX::SimpleMath::Vector3 playerPos      = {};   // プレイヤーの足元。間合いの計算に使う
         DirectX::SimpleMath::Vector3 playerCenter   = {};   // プレイヤーの体の中心。狙うのはこちら
-        DirectX::SimpleMath::Vector3 playerVelocity = {};   // プレイヤーの速度 [m/s]。飛翔時間のある技の偏差射撃に使う
+        DirectX::SimpleMath::Vector3 playerVelocity = {};   // プレイヤーの速度 [m/s]。偏差射撃の計算に使う
         float                        time           = 0.0f; // 経過時間 [秒]。陣形の回転などに使う
         float                        dt             = 0.0f; // このフレームの経過時間 [秒]
 
-        DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ; // 撃つ合図で固定した狙いの向き（水平・正規化済み）
+        DirectX::SimpleMath::Vector3 aimDir    = DirectX::SimpleMath::Vector3::UnitZ; // 攻撃時の固定した狙いの向き（水平・正規化済み）
         bool                         aimLocked = false;                               // aimDir が有効か
 
         /**
@@ -45,19 +45,13 @@ namespace CCL::AI::Formation
         DirectX::SimpleMath::Vector3 AimDirection() const
         {
             using namespace DirectX::SimpleMath;
+
             Vector3 dir = aimLocked ? aimDir : (playerPos - bossPos);
             dir.y       = 0.0f;
             if (dir.LengthSquared() < 0.001f) dir = Vector3::UnitZ;
             dir.Normalize();
             return dir;
         }
-    };
-
-    // 攻撃1回ぶんを誰が終わらせるか
-    enum class ChargeLifecycle : uint8_t
-    {
-        Broadcast,  // 合図が立っている間ずっと攻撃。全機が同時に動き切る技（縦割り・小隊など）
-        Individual, // 各機が飛距離／経過時間で自分から切り上げる（弾幕）
     };
 
     // 技1つぶんの当たり方。大技は痛く牽制は軽い、という差を技ごとに付ける。
@@ -87,9 +81,6 @@ namespace CCL::AI::Formation
         virtual void Calculate(DroneComponent         &drone,
                                const FormationContext &ctx) = 0;
 
-        // 攻撃を誰が終わらせるか
-        virtual ChargeLifecycle GetLifecycle() const { return ChargeLifecycle::Broadcast; }
-
         /**
          * @brief 突撃（FireCharge）へ入った瞬間の準備（タメ・撃つ方向）。
          *
@@ -105,7 +96,11 @@ namespace CCL::AI::Formation
         }
 
         /**
-         * @brief 個別寿命（Individual）の突撃を、この機が切り上げるかを返す。Broadcast の技では呼ばれない。
+         * @brief 突撃中のこの機が、自分で突撃を切り上げるかを返す。
+         *
+         * 既定は false で、合図が下りるまで全機が攻撃し続ける（縦割り・小隊など）。
+         * 撃った機から順に帰す技（弾幕）だけが、飛距離や時間で true を返す。
+         *
          * @param flownDistance 飛び出してから飛んだ距離 [m]。発射待ちとタメの間は数えない。
          * @param flownTime     飛び出してからの経過時間 [秒]。
          * @return 切り上げて離脱へ移るなら true。

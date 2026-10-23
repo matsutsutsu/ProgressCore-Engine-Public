@@ -52,8 +52,6 @@ namespace CCL::AI::Formation::Data
         // 1機分の持ち場を出す。(1)割付 → (2)形 → (3)動き → (4)配置 の順に、下の private 関数を呼ぶ
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override;
 
-        ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Broadcast; }
-
         const char *DisplayName() const override { return m_asset.name.c_str(); }
 
         FormationCombat GetCombat() const override { return m_asset.output.combat; }

@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Game/Logics/AI/Drone/Squad/SquadState.h" // バネ追従の強さ（SquadTuning::followGain）
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 突撃の速度倍率（kDroneChargeSpeedScale）
+#include "Game/Logics/AI/Drone/Squad/SquadState.h"       // バネ追従の強さ（SquadTuning::followGain）
 #include "Engine/ECS/Core/CCL_World.h"
 
 using namespace DirectX::SimpleMath;
@@ -40,6 +41,16 @@ namespace CCL::AI::Motion
             float amplitude; // 上下揺れの加速度の振幅 [m/s²]
         };
         constexpr HoverTuning kHover{.frequency = 1.0f, .amplitude = 3.0f};
+
+        // 予告の震え（Idle）
+        struct ShiverTuning
+        {
+            float amplitude; // 溜め切ったときの振れ幅 [m]
+            float frequency; // 震えの速さ [Hz]。上げすぎるとノイズに見えて予告にならない
+            float rampTime;  // 最大まで溜まる時間 [秒]
+            float scatter;   // 機体ごとの位相のずれ具合。0=全機同時 / 1=最大限ずらす
+        };
+        constexpr ShiverTuning kShiver{.amplitude = 0.25f, .frequency = 7.0f, .rampTime = 1.2f, .scatter = 1.0f};
 
         // 予告の震えの位相を、機体ごとにずらす幅 [rad]。黄金角なので何機いても一様にばらける
         constexpr float kShiverPhaseStep = 2.39996323f;
@@ -133,13 +144,12 @@ namespace CCL::AI::Motion
          * @param drone     震わせる機体。位相と軸を localIndex から決める。
          * @param t         構え始めてからの経過時間 [秒]。
          * @param amplitude 振れ幅 [m]。
-         * @param shiver    震えの調整値。
          * @return 位置オフセット [m]。
          */
-        Vector3 ShiverOffset(const DroneComponent &drone, float t, float amplitude, const DroneShiverTuning &shiver)
+        Vector3 ShiverOffset(const DroneComponent &drone, float t, float amplitude)
         {
             // 位相を機体ごとにずらす。揃っていると全機が同時に膨らんで「呼吸」に見える
-            const float phase = t * shiver.frequency * DirectX::XM_2PI + drone.localIndex * kShiverPhaseStep * shiver.scatter;
+            const float phase = t * kShiver.frequency * DirectX::XM_2PI + drone.localIndex * kShiverPhaseStep * kShiver.scatter;
 
             const float v = std::sin(phase) * amplitude;
 
@@ -155,7 +165,7 @@ namespace CCL::AI::Motion
         }
 
         // 直進の突撃（弾幕）。発射待ち → タメ → リリースの順に進む
-        void MoveStraight(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx)
+        void MoveStraight(TransformComponent &trans, DroneComponent &drone, float dt)
         {
             // 処理フロー:
             // 1. 発射待ちの間は持ち場を追う
@@ -168,7 +178,7 @@ namespace CCL::AI::Motion
             if (drone.fireDelay > 0.0f)
             {
                 drone.fireDelay -= dt;
-                MoveToSlot(trans, drone, dt, ctx);
+                MoveToSlot(trans, drone, dt);
                 return;
             }
 
@@ -206,7 +216,7 @@ namespace CCL::AI::Motion
         }
 
         // 剛体追従の突撃（データ陣形）。形が動く間は持ち場に一致させ、動き切ったら Idle のバネへ渡す
-        void MoveRigidFollow(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx)
+        void MoveRigidFollow(TransformComponent &trans, DroneComponent &drone, float dt)
         {
             // --- 動き切った後 ---
 
@@ -214,7 +224,7 @@ namespace CCL::AI::Motion
             // 手を離すのは動きだけで、当たり判定は FireCharge の間は開いたまま
             if (drone.attackProgress >= 1.0f)
             {
-                HoldSlot(trans, drone, dt, ctx);
+                HoldSlot(trans, drone, dt);
                 return;
             }
 
@@ -305,7 +315,7 @@ namespace CCL::AI::Motion
     // 持ち場へ戻る・持ち場を保つ
     // ============================================================
 
-    void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx)
+    void MoveToSlot(TransformComponent &trans, DroneComponent &drone, float dt)
     {
         ApplySpring(trans, drone, dt, kMoveToTarget);
 
@@ -317,7 +327,7 @@ namespace CCL::AI::Motion
         }
     }
 
-    void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx)
+    void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt)
     {
         // 処理フロー:
         // 1. 弱いバネで持ち場へ寄る速度を決める
@@ -338,14 +348,14 @@ namespace CCL::AI::Motion
         // --- 予告の震え ---
 
         // 振れ幅は二乗で立ち上げ、撃つ直前に急に大きくする（線形だと直前が読めない）
-        if (drone.shiverTime > 0.0f)
+        if (drone.shivers && drone.telegraphTime > 0.0f)
         {
-            const float t   = (std::min)(1.0f, drone.shiverTime / ctx.shiver.rampTime);
-            const float amp = ctx.shiver.amplitude * t * t;
+            const float t   = (std::min)(1.0f, drone.telegraphTime / kShiver.rampTime);
+            const float amp = kShiver.amplitude * t * t;
 
             // 速度ではなく座標を、今フレームと前フレームの差分だけ動かす。
             // 速度で揺らすと振れ幅が「振幅 ÷ 角速度」に縮み、座標に足しっぱなしにすると群れごと流れていく。
-            trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.shiverTime, amp, ctx.shiver) - ShiverOffset(drone, drone.shiverTime - dt, amp, ctx.shiver);
+            trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.telegraphTime, amp) - ShiverOffset(drone, drone.telegraphTime - dt, amp);
         }
 
         // --- 機首 ---
@@ -365,18 +375,18 @@ namespace CCL::AI::Motion
             gSoftFollowGain = world.GetResource<SquadRegistry>().tuning.followGain;
     }
 
-    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt, const MotionContext &ctx)
+    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt)
     {
         switch (drone.chargeMode)
         {
         case ChargeMode::RigidFollow:
-            MoveRigidFollow(trans, drone, dt, ctx);
+            MoveRigidFollow(trans, drone, dt);
             break;
         case ChargeMode::SoftFollow:
             MoveSoftFollow(trans, drone, dt);
             break;
         default: // Straight と、知らない値
-            MoveStraight(trans, drone, dt, ctx);
+            MoveStraight(trans, drone, dt);
             break;
         }
     }

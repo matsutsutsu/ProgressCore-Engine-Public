@@ -22,7 +22,7 @@ using namespace CCL::AI::Formation;
 
 namespace
 {
-    // 予告の時間（shiverTime / telegraphTime）の上限 [秒]。際限なく育たないための蓋
+    // 予告の時計（telegraphTime）の上限 [秒]。際限なく育たないための蓋
     constexpr float kTelegraphTimeCap = 10.0f;
 } // namespace
 
@@ -194,7 +194,6 @@ void DroneFormationSystem::Update(float rawDt)
         if (drone.telegraphFormation != drone.currentFormation)
         {
             drone.telegraphFormation = drone.currentFormation;
-            drone.shiverTime         = 0.0f;
             drone.telegraphTime      = 0.0f;
         }
 
@@ -203,7 +202,6 @@ void DroneFormationSystem::Update(float rawDt)
         {
             // 未登録の陣形（None 等）では持ち場も springScale も書かない（陣形の外で動かす機は、動かす側が書く）。
             // 予告の溜めだけは戻す。抱えたままだと、次に陣形が出た瞬間から全開で震える
-            drone.shiverTime        = 0.0f;
             drone.telegraphTime     = 0.0f;
             drone.followFeedForward = DirectX::SimpleMath::Vector3::Zero;
             return;
@@ -217,19 +215,14 @@ void DroneFormationSystem::Update(float rawDt)
 
         formation->Calculate(drone, ctx);
 
-        // 予告の溜めは「震えを使う技で、持ち場に着いていて、まだ撃つ合図が来ていない」間だけ進める。
-        // hasReachedSlot は帰投中だけ false に落ちるので、帰る途中は震えない
-        const bool telegraphing =
-            formation->UsesShiverTelegraph() && drone.hasReachedSlot && !drone.wantsAttack;
-
-        drone.shiverTime = telegraphing
-                               ? (std::min)(kTelegraphTimeCap, drone.shiverTime + dt)
-                               : 0.0f;
-
-        // 予告の時計は、震えを使うかどうかに関係なく進める（データ陣形の震えの帯が読む）
+        // 予告の時計は「持ち場に着いていて、まだ撃つ合図が来ていない」間だけ進める。
+        // hasReachedSlot は帰投中だけ false に落ちるので、帰る途中は予告にならない
         drone.telegraphTime = (drone.hasReachedSlot && !drone.wantsAttack)
                                   ? (std::min)(kTelegraphTimeCap, drone.telegraphTime + dt)
                                   : 0.0f;
+
+        // 時計は震えを使わない技でも進める（データ陣形の震えの帯が読む）。震えるかどうかは移動層がこれを見る
+        drone.shivers = formation->UsesShiverTelegraph();
     });
 }
 

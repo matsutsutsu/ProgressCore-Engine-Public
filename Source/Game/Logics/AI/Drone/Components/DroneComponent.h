@@ -4,10 +4,10 @@
 //
 // 責務:
 //   - 判断層・陣形・移動層など、ドローン系 System 間で受け渡す状態を持つ
-//   - 物理ステート（DroneState）・突撃の移動方式（ChargeMode）・攻撃フェーズを定義する
+//   - 物理ステート（DroneState）・突撃の移動方式（ChargeMode）を定義する
 //
 // 備考:
-//   群れ全体で1つだけ持つ値（床の高さ・突撃速度倍率・予告の震え）は DroneTuning.h にある。
+//   群れ全体で1つだけ持つ値（床の高さ・突撃速度倍率）は DroneTuning.h にある。
 //
 //   1つのフィールドを同じステージで書く System は1つだけにする。
 //   1000機を ForEachParallel で回せるのはこの規則があるからで、破るとデータ競合になる。
@@ -41,19 +41,6 @@ enum class ChargeMode : uint8_t
     SoftFollow,  // targetPosition へバネで寄る（小隊）
 };
 
-/**
- * @brief 突撃1回ぶんの進み具合を、機体ごとに持つためのフェーズ。
- *
- * 合図の立ち上がりで Charging にし、以降は各機が自分で進める。帰投の時刻が機体ごとに異なる技（弾幕）が使う。
- * 陣形自体が動く技は使わない（IFormation::GetLifecycle）。
- */
-enum class DroneAttackPhase : uint8_t
-{
-    None,      // 攻撃していない
-    Charging,  // 突撃中
-    Returning, // 突撃後の離脱中
-};
-
 // ホバー揺れの位相の周期 [秒]。この位相に掛ける係数は整数にする（2π で折り返しても波形が途切れないように）
 inline constexpr float kHoverPhasePeriod = 6.28318530718f;
 
@@ -72,8 +59,7 @@ struct DroneComponent
     // ---- ボスからの命令 ── 書き手=DroneCommandSystem ----
 
     DroneFormationType currentFormation = DroneFormationType::None; // [RT] 今どの形を作るか
-    bool               wantsAttack      = false;                    // [RT] 撃つ合図
-    DroneAttackPhase   attackPhase      = DroneAttackPhase::None;   // 突撃のフェーズ。Charging→Returning だけは DroneBrainSystem が書く
+    bool               wantsAttack      = false;                    // [RT] 突撃中か。自分で終える技では DroneBrainSystem が下ろす
 
     // ---- 陣形が書く目標 ── 書き手=陣形（IFormation 派生）----
 
@@ -83,9 +69,9 @@ struct DroneComponent
 
     float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1
 
-    float              shiverTime         = 0.0f;                     // 予告の震えの経過時間 [秒]。0 より大きい間だけ震える
-    DroneFormationType telegraphFormation = DroneFormationType::None; // [RT] shiverTime と telegraphTime をどの陣形で数えているか
-    float              telegraphTime      = 0.0f;                     // 予告の経過時間 [秒]。データ陣形の震えの帯が時計にする
+    bool               shivers            = false;                    // [RT] 予告の間に震えるか（震えを使う技か）
+    DroneFormationType telegraphFormation = DroneFormationType::None; // [RT] telegraphTime をどの陣形で数えているか
+    float              telegraphTime      = 0.0f;                     // 予告の経過時間 [秒]。0 より大きい間が予告中
 
     ChargeMode chargeMode = ChargeMode::Straight; // [RT] FireCharge 中の移動方式
     float      fireDelay  = 0.0f;                 // 発射待ちの残り [秒]。弾幕だけが使う

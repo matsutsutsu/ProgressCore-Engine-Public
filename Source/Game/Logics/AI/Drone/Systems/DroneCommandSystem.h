@@ -4,8 +4,7 @@
 //
 // 責務:
 //   - requestFormation を各 DroneComponent.currentFormation へ写す
-//   - droneAttackActive を各 DroneComponent.wantsAttack へ写す
-//   - 個別寿命の陣形では、信号の立ち上がりで attackPhase を Charging にする
+//   - droneAttackActive の立ち上がりで各機の wantsAttack を立て、下りたら下ろす
 //
 // 備考: ボスBT は自分の BossCommandComponent にだけ書き、ドローンを直接触らない。
 // ===========================================================================
