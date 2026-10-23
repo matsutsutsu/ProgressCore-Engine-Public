@@ -16,7 +16,6 @@
 #                        Inverter     : 成功と失敗を入れ替える
 #   [Condition]        条件を評価して成功/失敗を返す（その場で終わる）
 #   [Action]           行動を実行する。時間のかかる行動は、終わるまで実行中(Running)を返す
-#   [SubTree]          別に組んだ木をここに差し込んだもの（中身を字下げして展開してある）
 
 ROOT
   [Selector] Root Selector

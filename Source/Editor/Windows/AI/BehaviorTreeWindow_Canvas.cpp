@@ -13,8 +13,8 @@ using namespace BTEditor;
 void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI)
 {
     // 1フレームの流れ:
-    //   整列の予約を実行 → ノードを描く（今の階層に無いものは飛ばす）→ リンクを描く
-    //   → 自動追従・サブツリーへ入る → リンク作成・削除・メニュー の順。
+    //   整列の予約を実行 → ノードを描く → リンクを描く
+    //   → 自動追従 → リンク作成・削除・メニュー の順。
     //   整列は ed::Begin の中でしかノードのサイズが取れないので、ここで処理する。
 
     ZoneScopedN("BTW: NodeWorkspace");
@@ -63,11 +63,6 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
                 node.positionInitialized = true;
             }
 
-            // 今の階層に無いノードは描かない。描かなかったノードとピンはライブラリ側で
-            // 「生きていない」扱いになり、選択・接続・当たり判定から外れる。座標は上で預けてあるので
-            // 保存時の GetNodePosition も正しく返る。
-            if (m_hiddenNodes.count(node.id)) continue;
-
             ++drawnNodes;
             if (node.type == EditorBTNodeType::Group)
                 DrawGroupNode(node);
@@ -100,13 +95,6 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     }
     else
         m_lastTrackedNodeId = 0;
-
-    // SubTree のダブルクリックは、その中へ入る（切り替えは次フレームの頭）
-    {
-        const uint32_t      dbl = ToEditorId(ed::GetDoubleClickedNode().Get());
-        const EditorBTNode *n   = (dbl != 0) ? FindNode(dbl) : nullptr;
-        if (n && n->type == EditorBTNodeType::SubTree) RequestEnterSubTree(dbl);
-    }
 
     {
         ZoneScopedN("BTW: HandleLinkCreation");
@@ -320,7 +308,6 @@ float BehaviorTreeWindow::TreeNodeWidthOf(const EditorBTNode &node, const std::s
     //   出たときに広げると、ゲーム中にノードの幅が伸び縮みして、並びや線がガタつく。
     auto fit = [&](const char *sample) { textW = (std::max)(textW, ImGui::CalcTextSize(sample).x); };
     if (node.executionOrder != -1) fit("Priority: 00");
-    if (node.type == EditorBTNodeType::SubTree) fit("ダブルクリックで中へ");
     if (node.type == EditorBTNodeType::Action && IsWaitAction(node.actionOrConditionId)) fit("Wait: 00.0s");
     if (node.type == EditorBTNodeType::Decorator && node.decoratorType == 1) fit("Cooling: 00.0s");
 
@@ -337,9 +324,6 @@ void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const Beha
 
     if (node.executionOrder != -1)
         ImGui::TextColored(ImVec4(1, 1, 0, 0.8f), "Priority: %d", node.executionOrder);
-
-    if (node.type == EditorBTNodeType::SubTree)
-        ImGui::TextDisabled("ダブルクリックで中へ");
 
     const std::optional<float> timer = DebugTimerOf(node, activeAI);
 
@@ -411,12 +395,6 @@ void BehaviorTreeWindow::DrawLinks(const BehaviorTreeComponent *activeAI)
     for (const auto &link : m_links)
     {
         auto parent = m_pinOwner.find(link.startPinId);
-        auto child  = m_pinOwner.find(link.endPinId);
-
-        // 別の階層のノードへの線は描かない（そのノードは描かれていないので、繋ぎ先が無い）
-        if ((parent != m_pinOwner.end() && m_hiddenNodes.count(parent->second)) ||
-            (child != m_pinOwner.end() && m_hiddenNodes.count(child->second)))
-            continue;
 
         // 親ノードの実行状態で色を変える：実行中=橙の点滅 / 成功=緑 / 失敗=赤
         ImVec4 color     = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -456,7 +434,7 @@ void BehaviorTreeWindow::FollowRunningNode(const BehaviorTreeComponent *activeAI
     bool     foundAction = false;
     for (const auto &node : m_nodes)
     {
-        if (node.type == EditorBTNodeType::Group || m_hiddenNodes.count(node.id)) continue;
+        if (node.type == EditorBTNodeType::Group) continue;
         if (DebugStateOf(node, activeAI) != BTDebugState::Running) continue;
         if (foundAction && node.type != EditorBTNodeType::Action) continue;
 
@@ -538,13 +516,6 @@ void BehaviorTreeWindow::HandleDeletion()
         ed::NodeId nodeId = 0;
         while (ed::QueryDeletedNode(&nodeId))
         {
-            // サブツリーの入口は消させない。消すと、SubTree が中身を持っていても何も実行されなくなる
-            const EditorBTNode *n = FindNode(ToEditorId(nodeId.Get()));
-            if (n && n->type == EditorBTNodeType::Root && n->graphId != 0)
-            {
-                ed::RejectDeletedItem();
-                continue;
-            }
             if (ed::AcceptDeletedItem())
             {
                 DeleteNodeAndLinks(ToEditorId(nodeId.Get()));
@@ -587,8 +558,7 @@ namespace
     // 子を繋げる出力ピンを持つ種類か（CreateNode のピンの発行と同じ規則）
     bool HasOutputPin(EditorBTNodeType type)
     {
-        return type != EditorBTNodeType::Condition && type != EditorBTNodeType::Action &&
-               type != EditorBTNodeType::SubTree && type != EditorBTNodeType::Group;
+        return type != EditorBTNodeType::Condition && type != EditorBTNodeType::Action && type != EditorBTNodeType::Group;
     }
 } // namespace
 
@@ -659,8 +629,7 @@ void BehaviorTreeWindow::HandleContextMenu()
         auto     item    = [&](const char *label, EditorBTNodeType type) {
             const bool enabled = !fromInput || HasOutputPin(type);
             if (!ImGui::MenuItem(label, nullptr, false, enabled)) return;
-            created = (type == EditorBTNodeType::SubTree) ? CreateSubTreeNode(canvasPos.x, canvasPos.y)
-                                                          : CreateNode(type, label, canvasPos.x, canvasPos.y);
+            created = CreateNode(type, label, canvasPos.x, canvasPos.y);
         };
 
         item("セレクター (Selector)", EditorBTNodeType::Selector);
@@ -672,13 +641,11 @@ void BehaviorTreeWindow::HandleContextMenu()
         item("デコレーター (Decorator)", EditorBTNodeType::Decorator);
         item("コンディション (Condition)", EditorBTNodeType::Condition);
         item("アクション (Action)", EditorBTNodeType::Action);
-        item("サブツリー (SubTree)", EditorBTNodeType::SubTree);
 
         // 選択やクリップボードを扱う項目は、線から開いたときには出さない（繋ぐ相手が決まらない）
         if (!fromLink)
         {
             ImGui::Separator();
-            if (ImGui::MenuItem("選択をサブツリーにまとめる")) CollapseSelectionToSubTree();
             // 選択ノードを囲むのが本命。空の枠を置いてから手で広げるのは最後の手段。
             if (ImGui::MenuItem("選択ノードをコメントで囲む", "Ctrl+G")) GroupSelectedNodes();
             if (ImGui::MenuItem("空のコメント枠を置く")) CreateNode(EditorBTNodeType::Group, "コメント", canvasPos.x, canvasPos.y);

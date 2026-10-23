@@ -21,12 +21,10 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
     // 一覧だけをスクロールさせる（見出しは固定したまま）
     ImGui::BeginChild("##BTOutline");
 
-    // 潜っていても一番外から全体を出す。サブツリーの中身は SubTree の行の下に並ぶ
     std::unordered_set<uint32_t> visited;
     for (uint32_t root : m_roots)
     {
-        const EditorBTNode *n = FindNode(root);
-        if (n && n->graphId == 0) DrawOutlinerRow(root, activeAI, visited);
+        DrawOutlinerRow(root, activeAI, visited);
     }
     ZoneValue(visited.size()); // 描いた行数
 
@@ -55,17 +53,8 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     const EditorBTNode *node = FindNode(nodeId);
     if (!node) return;
 
-    // SubTree の子は、中の入口に繋がった木。入口の行は出さずに飛ばす（一覧では階層の境目を見せない）
-    uint32_t childSource = nodeId;
-    if (node->type == EditorBTNodeType::SubTree)
-    {
-        const EditorBTNode *entry = FindSubTreeEntry(nodeId);
-        childSource               = entry ? entry->id : 0;
-    }
-    auto       children    = m_childrenOf.find(childSource);
+    auto       children    = m_childrenOf.find(nodeId);
     const bool hasChildren = (children != m_childrenOf.end() && !children->second.empty());
-
-    const bool otherGraph = node->graphId != CurrentGraphId(); // 今見ている階層の外にいる
 
     // ----------------------------------------------------------------
     // 部品1：矢印と押せる範囲（TreeNodeEx）
@@ -78,7 +67,7 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // Selected      : キャンバスで選択中のノードの行を塗る
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
-    if (!otherGraph && ed::IsNodeSelected(nodeId)) flags |= ImGuiTreeNodeFlags_Selected;
+    if (ed::IsNodeSelected(nodeId)) flags |= ImGuiTreeNodeFlags_Selected;
 
     // 行の ID にはノードIDを渡す（第1引数）。ImGui はこの ID で開閉状態を覚える。
     // 名前は「セレクター」が何個もあるように重複しうるので、ID には使えない。
@@ -90,30 +79,13 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // ----------------------------------------------------------------
 
     // IsItemToggledOpen を除くのは、矢印を押した（開閉した）ときまで移動しないため。
-    // 隠れているノードはキャンバスに無く寄せる先が無いので、何もしない。
     // 倍率は変えない（false）。0.3 秒かけて滑らかに動かす。
-    // 別の階層にいるノードは、その階層へ切り替える（一番外なら潜りをやめる）。
-    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen() && otherGraph)
-    {
-        if (node->graphId == 0)
-        {
-            m_viewPath.clear();
-            m_needInitialZoom = true;
-            m_framesSinceOpen = 0;
-        }
-        else
-        {
-            RequestEnterSubTree(node->graphId);
-        }
-    }
-    else if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
     {
         ed::ClearSelection();
         ed::SelectNode(nodeId);
         ed::NavigateToSelection(false, 0.3f);
     }
-    if (otherGraph && ImGui::IsItemHovered())
-        ImGui::SetTooltip("別の階層にある。クリックで移動");
 
     // ----------------------------------------------------------------
     // 部品2：種類の色の四角（キャンバスの見出しと同じ色）
@@ -136,13 +108,10 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // 部品3：名前
     // ----------------------------------------------------------------
 
-    // 実行中は黄色（キャンバスの枠の点滅と同じ情報）。今の階層に無ければ薄く。
-    // 実行中を優先するのは、別の階層（サブツリーの中）で動いているノードも一覧で追えるようにするため。
+    // 実行中は黄色（キャンバスの枠の点滅と同じ情報）
     ImVec4 nameColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
     if (DebugStateOf(*node, activeAI) == BTDebugState::Running)
         nameColor = ImVec4(1.0f, 0.85f, 0.2f, 1.0f);
-    else if (otherGraph)
-        nameColor = ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 
     ImGui::SameLine();
     // まとまりは付けた名前、Action / Condition / Decorator は中身から作った名前（キャンバスの見出しと同じ）

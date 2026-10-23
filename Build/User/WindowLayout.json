@@ -38,7 +38,7 @@
         },
         {
             "name": "Cinematic Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Curve Editor",

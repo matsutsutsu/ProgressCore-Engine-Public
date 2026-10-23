@@ -103,59 +103,9 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
     ZoneScopedN("BTW: DrawContents");
 
-    // サブツリーへ入る予約を消化する（前フレームのダブルクリックなど）。
-    //   描画の途中で階層を変えると、同じフレームの残りの処理が別の階層を触るので、フレームの頭でやる。
-    //   外側への道のりは graphId を辿って作るので、アウトラインから深い階層へ直接飛ぶこともできる。
-    if (m_pendingEnterId != 0)
-    {
-        std::vector<uint32_t> path;
-        for (uint32_t g = m_pendingEnterId; g != 0 && path.size() <= m_nodes.size();)
-        {
-            const EditorBTNode *n = FindNode(g);
-            if (!n || n->type != EditorBTNodeType::SubTree)
-            {
-                path.clear();
-                break;
-            }
-            path.insert(path.begin(), g);
-            g = n->graphId;
-        }
-        if (!path.empty())
-        {
-            m_viewPath = std::move(path);
-            ed::ClearSelection();
-            m_needInitialZoom = true; // 入った先の全体へ視点を合わせる
-            m_framesSinceOpen = 0;
-        }
-        m_pendingEnterId = 0;
-    }
-
-    // Undo などで、潜っている SubTree が消えたら（または別の場所へ移ったら）残っている深さまで戻る
-    for (size_t i = 0; i < m_viewPath.size(); ++i)
-    {
-        const EditorBTNode *n      = FindNode(m_viewPath[i]);
-        const uint32_t      parent = (i == 0) ? 0 : m_viewPath[i - 1];
-        if (!n || n->type != EditorBTNodeType::SubTree || n->graphId != parent)
-        {
-            m_viewPath.resize(i);
-            break;
-        }
-    }
-
-    // 親子関係と「隠れているノード（別の階層）」を、どのペインより先に確定させる。
-    //   アウトライン・キャンバス・インスペクタが同じフレームで同じ見え方を前提にできる。
+    // 親子関係を、どのペインより先に確定させる。
+    //   アウトライン・キャンバス・インスペクタが同じフレームで同じ並びを前提にできる。
     RebuildHierarchy();
-
-    // 隠れたノードの選択は外す。見えないものがインスペクタに出続けたり、
-    // Delete キーで見えないまま消えたりするのを防ぐ。
-    {
-        ZoneScopedN("BTW: DeselectHidden");
-        ZoneValue(m_hiddenNodes.size());
-        for (uint32_t id : m_hiddenNodes)
-        {
-            if (ed::IsNodeSelected(id)) ed::DeselectNode(id);
-        }
-    }
 
     const BehaviorTreeComponent *activeAI = FindActiveAI(context);
 
@@ -196,8 +146,7 @@ void BehaviorTreeWindow::DrawToolbar()
 {
     if (ImGui::Button("保存"))
     {
-        // 開いているファイル名を初期値にする。潜ったサブツリーを直して保存するとき、
-        //   毎回ファイル名を打ち直さずに済む。
+        // 開いているファイル名を初期値にする。上書き保存のとき、毎回ファイル名を打ち直さずに済む。
         const std::string defaultName = m_currentPath.empty() ? "BossAI.json" : FileNameOf(m_currentPath);
         auto picked = FileDialog::SavePreset("BehaviorTreeNode", "Save Behavior Tree", defaultName);
         if (picked)
@@ -298,41 +247,6 @@ void BehaviorTreeWindow::DrawToolbar()
     {
         ImGui::SetTooltip("実行中のノードへ表示を自動で寄せる");
     }
-
-    DrawBreadcrumb();
-}
-
-void BehaviorTreeWindow::DrawBreadcrumb()
-{
-    // 一番外にいるときは出さない（押す先が無い）
-    if (m_viewPath.empty()) return;
-
-    auto jumpTo = [&](size_t depth) {
-        m_viewPath.resize(depth);
-        m_needInitialZoom = true; // 戻った先の全体へ視点を合わせる
-        m_framesSinceOpen = 0;
-    };
-
-    if (ImGui::Button("一番外")) jumpTo(0);
-    for (size_t i = 0; i < m_viewPath.size(); ++i)
-    {
-        const EditorBTNode *sub = FindNode(m_viewPath[i]);
-        ImGui::SameLine();
-        ImGui::TextDisabled(">");
-        ImGui::SameLine();
-        ImGui::PushID(static_cast<int>(i));
-        // 今いる段（末尾）は押しても何も起きないので、押せない見た目にする
-        const bool isLast = (i + 1 == m_viewPath.size());
-        if (isLast) ImGui::BeginDisabled();
-        const bool clicked = ImGui::Button(sub ? GetDisplayName(*sub).c_str() : "?");
-        if (isLast) ImGui::EndDisabled();
-        ImGui::PopID();
-        if (clicked)
-        {
-            jumpTo(i + 1);
-            break;
-        }
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -355,9 +269,8 @@ uint32_t BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string
         node.inputPin.id = 0;
     }
 
-    // 葉（アクション/条件/サブツリー）とグループ以外は出力ピンを持つ
-    if (type != EditorBTNodeType::Condition && type != EditorBTNodeType::Action &&
-        type != EditorBTNodeType::SubTree && type != EditorBTNodeType::Group)
+    // 葉（アクション/条件）とグループ以外は出力ピンを持つ
+    if (type != EditorBTNodeType::Condition && type != EditorBTNodeType::Action && type != EditorBTNodeType::Group)
     {
         node.outputPin = {GetNextId(), node.id, false};
     }
@@ -369,69 +282,24 @@ uint32_t BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string
     node.posX                = x;
     node.posY                = y;
     node.positionInitialized = false;
-    node.graphId             = CurrentGraphId();
     m_nodes.push_back(node);
     return node.id;
 }
 
-uint32_t BehaviorTreeWindow::CreateSubTreeNode(float x, float y)
-{
-    CreateNode(EditorBTNodeType::SubTree, "サブツリー", x, y);
-    const uint32_t subId = m_nodes.back().id;
-
-    // 中の入口。Bake はここから繋がった木を SubTree の位置へ差し込む
-    CreateNode(EditorBTNodeType::Root, "入口", 0.0f, 0.0f);
-    m_nodes.back().graphId = subId;
-    return subId;
-}
-
-std::vector<uint32_t> BehaviorTreeWindow::CollectSubTreeContents(uint32_t subTreeId) const
-{
-    // 入れ子のサブツリーの中身も含める。外側から1段ずつ広げる
-    std::vector<uint32_t>        result;
-    std::unordered_set<uint32_t> owners = {subTreeId};
-    for (bool grew = true; grew;)
-    {
-        grew = false;
-        for (const auto &n : m_nodes)
-        {
-            if (!owners.count(n.graphId) || owners.count(n.id)) continue;
-            result.push_back(n.id);
-            owners.insert(n.id); // SubTree でなければ中身を持たないので、入れても害は無い
-            grew = true;
-        }
-    }
-    return result;
-}
-
-EditorBTNode *BehaviorTreeWindow::FindSubTreeEntry(uint32_t subTreeId)
-{
-    for (auto &n : m_nodes)
-        if (n.graphId == subTreeId && n.type == EditorBTNodeType::Root) return &n;
-    return nullptr;
-}
-
 void BehaviorTreeWindow::DeleteNodeAndLinks(uint32_t nodeId)
 {
-    // SubTree を消すときは中身も消す。残すと、どの階層からも見えないノードがファイルに溜まり続ける。
-    std::vector<uint32_t> targets = CollectSubTreeContents(nodeId);
-    targets.push_back(nodeId);
+    auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const EditorBTNode &n) { return n.id == nodeId; });
+    if (it == m_nodes.end()) return;
 
-    for (uint32_t id : targets)
-    {
-        auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [id](const EditorBTNode &n) { return n.id == id; });
-        if (it == m_nodes.end()) continue;
-
-        // このノードのピンに繋がっているリンクを消してから、本体を消す
-        const uint32_t inPinId  = it->inputPin.id;
-        const uint32_t outPinId = it->outputPin.id;
-        m_links.erase(std::remove_if(m_links.begin(), m_links.end(),
-                                     [inPinId, outPinId](const BTLink &link) {
-                                         return link.startPinId == outPinId || link.endPinId == inPinId;
-                                     }),
-                      m_links.end());
-        m_nodes.erase(it);
-    }
+    // このノードのピンに繋がっているリンクを消してから、本体を消す
+    const uint32_t inPinId  = it->inputPin.id;
+    const uint32_t outPinId = it->outputPin.id;
+    m_links.erase(std::remove_if(m_links.begin(), m_links.end(),
+                                 [inPinId, outPinId](const BTLink &link) {
+                                     return link.startPinId == outPinId || link.endPinId == inPinId;
+                                 }),
+                  m_links.end());
+    m_nodes.erase(it);
 
     CCL_LOG_INFO(LogCategory::Editor, "Node(ID:%u) and its connected links were deleted.", nodeId);
 }
@@ -467,14 +335,8 @@ void BehaviorTreeWindow::CutSelection()
     if (clip.is_null()) return;
     ImGui::SetClipboardText(clip.dump().c_str());
 
-    // 消すのは選んだノードだけ（SubTree の中身は DeleteNodeAndLinks が一緒に消す）。
-    //   外側のノードは、JSON の中で所属先がコピーに含まれていないもの
-    std::unordered_set<uint32_t> copied;
-    for (const auto &jn : clip["nodes"])
-        copied.insert(jn["id"].get<uint32_t>());
     for (const auto &jn : clip["nodes"])
     {
-        if (copied.count(jn.value("graphId", 0u))) continue;
         DeleteNodeAndLinks(jn["id"].get<uint32_t>());
     }
 
@@ -500,7 +362,7 @@ nlohmann::json BehaviorTreeWindow::CopySelectionToJson()
     std::vector<ed::NodeId> selected(static_cast<size_t>(ed::GetSelectedObjectCount()));
     selected.resize(static_cast<size_t>(ed::GetSelectedNodes(selected.data(), static_cast<int>(selected.size()))));
 
-    // 選んだノード。ROOT（一番外の始点・サブツリーの入口）は1つの階層に1つだけなので運ばない
+    // 選んだノード。ROOT は1つのグラフに1つだけなので運ばない
     std::vector<uint32_t>        sources;
     std::unordered_set<uint32_t> picked;
     for (auto sid : selected)
@@ -511,13 +373,6 @@ nlohmann::json BehaviorTreeWindow::CopySelectionToJson()
         if (picked.insert(id).second) sources.push_back(id);
     }
     if (sources.empty()) return nullptr;
-
-    // SubTree の中身も入れる
-    for (uint32_t id : std::vector<uint32_t>(sources))
-    {
-        for (uint32_t inner : CollectSubTreeContents(id))
-            if (picked.insert(inner).second) sources.push_back(inner);
-    }
 
     nlohmann::json clip;
     clip["format"] = kClipboardFormat;
@@ -535,12 +390,9 @@ nlohmann::json BehaviorTreeWindow::CopySelectionToJson()
         if (n->inputPin.id != 0) pins.insert(n->inputPin.id);
         if (n->outputPin.id != 0) pins.insert(n->outputPin.id);
 
-        // 貼る位置の基準は、今の階層にいる（選んだ）ノードの左上
-        if (n->graphId == CurrentGraphId())
-        {
-            minX = (std::min)(minX, jn["posX"].get<float>());
-            minY = (std::min)(minY, jn["posY"].get<float>());
-        }
+        // 貼る位置の基準は、選んだノード全体の左上
+        minX = (std::min)(minX, jn["posX"].get<float>());
+        minY = (std::min)(minY, jn["posY"].get<float>());
     }
     clip["originX"] = (minX == FLT_MAX) ? 0.0f : minX;
     clip["originY"] = (minY == FLT_MAX) ? 0.0f : minY;
@@ -559,18 +411,14 @@ void BehaviorTreeWindow::PasteFromJson(const nlohmann::json &clip, ImVec2 anchor
     const float originX = clip.value("originX", 0.0f);
     const float originY = clip.value("originY", 0.0f);
 
-    // 古いIDから新しいIDへの対応（リンクの繋ぎ直しと、中身の所属の付け替えに使う）
-    std::map<uint32_t, uint32_t> oldToNewNodeId;
+    // 古いピンIDから新しいピンIDへの対応（リンクの繋ぎ直しに使う）
     std::map<uint32_t, uint32_t> oldToNewPinId;
 
     std::vector<EditorBTNode> newNodes;
     for (const auto &jn : clip["nodes"])
     {
         EditorBTNode node = NodeFromJson(jn); // 行動・条件は保存キーで引き直すので、別ファイルからでも正しく戻る
-
-        const uint32_t oldId  = node.id;
-        node.id               = GetNextId();
-        oldToNewNodeId[oldId] = node.id;
+        node.id           = GetNextId();
 
         if (node.inputPin.id != 0)
         {
@@ -590,18 +438,9 @@ void BehaviorTreeWindow::PasteFromJson(const nlohmann::json &clip, ImVec2 anchor
     m_pendingSelectIds.clear();
     for (auto &n : newNodes)
     {
-        // 所属先がコピーに含まれていれば、SubTree の中身。新しい SubTree の中へ付け替え、位置はそのまま
-        auto g = oldToNewNodeId.find(n.graphId);
-        if (g != oldToNewNodeId.end())
-        {
-            n.graphId = g->second;
-            continue;
-        }
-
-        // 選んでいたノード。今見ている階層へ置き、選択範囲の左上が anchor に来るようにずらす
-        n.graphId = CurrentGraphId();
-        n.posX    = anchor.x + (n.posX - originX);
-        n.posY    = anchor.y + (n.posY - originY);
+        // 選択範囲の左上が anchor に来るようにずらす
+        n.posX = anchor.x + (n.posX - originX);
+        n.posY = anchor.y + (n.posY - originY);
         m_pendingSelectIds.push_back(n.id);
     }
 
@@ -621,80 +460,6 @@ void BehaviorTreeWindow::PasteFromJson(const nlohmann::json &clip, ImVec2 anchor
     CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードを貼り付けました", newNodes.size());
 }
 
-void BehaviorTreeWindow::CollapseSelectionToSubTree()
-{
-    std::vector<ed::NodeId> selected(static_cast<size_t>(ed::GetSelectedObjectCount()));
-    selected.resize(static_cast<size_t>(ed::GetSelectedNodes(selected.data(), static_cast<int>(selected.size()))));
-
-    std::unordered_set<uint32_t> picked;
-    for (auto sid : selected)
-    {
-        const uint32_t      id = ToEditorId(sid.Get());
-        const EditorBTNode *n  = FindNode(id);
-        if (!n || n->type == EditorBTNodeType::Group || n->type == EditorBTNodeType::Root) continue;
-        picked.insert(id);
-    }
-
-    // 選択の中で一番上のノード（親が選択に入っていないもの）。これが1つでなければまとめられない
-    uint32_t top      = 0;
-    int      topCount = 0;
-    for (uint32_t id : picked)
-    {
-        auto p = m_parentOf.find(id);
-        if (p != m_parentOf.end() && picked.count(p->second)) continue;
-        top = id;
-        ++topCount;
-    }
-    if (topCount != 1)
-    {
-        CCL_LOG_WARN(LogCategory::Editor,
-                     "[BT] サブツリーにできるのは根が1つの選択だけ（今は %d 個）", topCount);
-        return;
-    }
-
-    // まとめるのは根とその子孫すべて。子孫を残すと、中と外をまたぐ線ができてしまう
-    std::vector<uint32_t> members = {top};
-    for (size_t i = 0; i < members.size(); ++i)
-    {
-        auto c = m_childrenOf.find(members[i]);
-        if (c == m_childrenOf.end()) continue;
-        for (uint32_t child : c->second)
-            if (std::find(members.begin(), members.end(), child) == members.end()) members.push_back(child);
-    }
-
-    const EditorBTNode *topNode = FindNode(top);
-    const float         topX    = topNode->posX;
-    const float         topY    = topNode->posY;
-    const uint32_t      topIn   = topNode->inputPin.id;
-    const float         weight  = topNode->weight;
-    const std::string   name    = GetDisplayName(*topNode);
-
-    // 根の位置に SubTree を置く。同じ X に置くので、兄弟の中での実行順は変わらない
-    const uint32_t subId = CreateSubTreeNode(topX, topY); // m_nodes が伸びるので、ここ以降 topNode は使わない
-    FindNode(subId)->name = name;
-    // 重み付きセレクターの下なら、抽選の重みは外から見える SubTree が引き継ぐ（Bake も SubTree の重みを使う）
-    FindNode(subId)->weight = weight;
-    FindNode(top)->weight   = 1.0f;
-
-    EditorBTNode *entry = FindSubTreeEntry(subId);
-    entry->posX         = topX;
-    entry->posY         = topY - 150.0f; // 入口は根の真上
-    const uint32_t entryOut = entry->outputPin.id;
-    const uint32_t subIn    = FindNode(subId)->inputPin.id;
-
-    for (uint32_t id : members)
-        FindNode(id)->graphId = subId;
-
-    // 外の親からの線は SubTree へ付け替え、中では入口から根へ繋ぐ
-    for (auto &link : m_links)
-        if (link.endPinId == topIn) link.endPinId = subIn;
-    m_links.push_back({GetNextId(), entryOut, topIn});
-
-    ed::ClearSelection();
-    RecordStateForUndo("Collapse To SubTree");
-    CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードをサブツリー「%s」にまとめた", members.size(), name.c_str());
-}
-
 EditorBTNode *BehaviorTreeWindow::FindNode(uint32_t nodeId)
 {
     auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const EditorBTNode &n) { return n.id == nodeId; });
@@ -712,7 +477,7 @@ const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &con
 
 ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
 {
-    // 9種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある。
+    // 8種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある。
     // 明るさは、暗い背景の上で色の差が出て、かつ白い文字が読める程度にそろえている。
     switch (type)
     {
@@ -724,7 +489,6 @@ ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
     case EditorBTNodeType::Parallel: return ImColor(20, 145, 150);        // 青緑（180°）
     case EditorBTNodeType::Condition: return ImColor(50, 150, 70);        // 緑（130°）
     case EditorBTNodeType::Decorator: return ImColor(180, 140, 30);       // 金（45°）
-    case EditorBTNodeType::SubTree: return ImColor(115, 150, 35);         // 黄緑（85°）：金と緑の間の空き
     default: return ImColor(100, 100, 100);
     }
 }

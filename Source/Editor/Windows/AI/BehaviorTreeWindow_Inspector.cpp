@@ -105,12 +105,6 @@ void BehaviorTreeWindow::DrawInspector()
                                        "失敗した枝は候補から外して引き直す。\n"
                                        "重みは子ノード側で設定（既定 1.0）。");
                 break;
-            case EditorBTNodeType::SubTree:
-                ImGui::TextUnformatted("木を1本まとめた箱。中の入口に繋いだ木がこの位置で動く。\n"
-                                       "保存時は中身に展開されるので、動作は直接置いた場合と同じ。\n"
-                                       "ダブルクリックで中へ、パンくずで外へ。\n"
-                                       "右クリック →「選択をサブツリーにまとめる」で作れる。");
-                break;
             }
             ImGui::PopStyleColor();
             ImGui::PopTextWrapPos();
@@ -230,14 +224,6 @@ void BehaviorTreeWindow::DrawInspector()
                     ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
                                        "未登録の ID");
                 }
-            }
-
-            if (it->type == EditorBTNodeType::SubTree)
-            {
-                ImGui::Separator();
-                ImGui::Text("サブツリー");
-                ImGui::TextDisabled("中のノード数: %d", static_cast<int>(CollectSubTreeContents(it->id).size()));
-                if (ImGui::Button("中へ入る")) RequestEnterSubTree(it->id);
             }
 
             if (it->type == EditorBTNodeType::Decorator)

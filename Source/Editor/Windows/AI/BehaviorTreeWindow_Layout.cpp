@@ -48,7 +48,7 @@ void BehaviorTreeWindow::AutoLayout()
     };
     std::vector<GroupSnapshot> groups;
     for (const auto &n : m_nodes)
-        if (n.type == EditorBTNodeType::Group && n.graphId == CurrentGraphId())
+        if (n.type == EditorBTNodeType::Group)
             groups.push_back({n.id, CollectNodesInGroup(n.id)});
 
     // ---------------------------------------------------------------
@@ -94,22 +94,15 @@ void BehaviorTreeWindow::AutoLayout()
     };
 
     // 根＝親を持たないノード。Root 型が先頭（RebuildHierarchy で並べ済み）。
-    //   並べるのは今見ている階層だけ（サブツリーの中身や外側は、その階層に入ったときに並べる）。
-    std::vector<uint32_t> roots;
-    for (uint32_t r : m_roots)
-    {
-        if (!m_hiddenNodes.count(r)) roots.push_back(r);
-    }
+    std::vector<uint32_t> roots = m_roots;
 
     for (uint32_t r : roots)
         measure(r, 0);
 
     // どの根からも辿れなかったノード（リンクが循環している塊など）も置き去りにしない。
-    //   別の階層のノードはその階層に入ったときに並べるので、ここでは拾わない。
     for (const auto &n : m_nodes)
     {
         if (n.type == EditorBTNodeType::Group) continue;
-        if (m_hiddenNodes.count(n.id)) continue;
         if (visited.count(n.id)) continue;
         roots.push_back(n.id);
         measure(n.id, 0);
@@ -233,9 +226,6 @@ std::vector<uint32_t> BehaviorTreeWindow::CollectNodesInGroup(uint32_t groupId) 
     {
         if (n.id == groupId) continue;
         if (n.type == EditorBTNodeType::Group) continue; // 入れ子は今は扱わない
-
-        // 別の階層のノードは、同じキャンバス座標にあっても別の画面にいるので判定しない
-        if (m_hiddenNodes.count(n.id)) continue;
 
         const ImVec2 p  = ed::GetNodePosition(n.id);
         const ImVec2 s  = ed::GetNodeSize(n.id);

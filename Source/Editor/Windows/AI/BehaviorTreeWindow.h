@@ -17,7 +17,7 @@
 //
 // 実装は役割ごとに分けてある（同じクラスのメンバ関数を別 .cpp で定義）:
 //   BehaviorTreeWindow.cpp            ウィンドウ枠・ツールバー・編集操作・Undo・表示名
-//   BehaviorTreeWindow_Graph.cpp      保存・読込・Bake・親子関係と表示する階層（描画なし）
+//   BehaviorTreeWindow_Graph.cpp      保存・読込・Bake・親子関係（描画なし）
 //   BehaviorTreeWindow_Layout.cpp     自動整列・コメント枠の配置
 //   BehaviorTreeWindow_Canvas.cpp     キャンバスの描画と入力
 //   BehaviorTreeWindow_Inspector.cpp  右ペイン：選択ノードの編集
@@ -58,8 +58,7 @@ enum class EditorBTNodeType
     Group,            // コメント枠。実行には関わらない
     Decorator,        // 子1つの結果を修飾する（Inverter / Cooldown / Retry）
     WeightedSelector, // 子を重みで抽選する
-    Parallel,         // 0番目の子が主、残りは従で同時に動かす
-    SubTree           // 中に木を1本持つ箱。ダブルクリックで中へ入る。Bake で中身に置き換わる
+    Parallel          // 0番目の子が主、残りは従で同時に動かす
 };
 
 // ノードの接続口
@@ -103,11 +102,6 @@ struct EditorBTNode
     bool  interrupt = false; // Selector の子として、上の枝が動いていても割り込んで入るか
     bool  abortSelf = false; // Selector の子として、走っている間も自分の条件を見直し、崩れたら降りるか
 
-    // どの階層に置かれているか。0 は一番外、それ以外はそのノードを中に持つ SubTree のID。
-    //   サブツリーの中身も同じ m_nodes に入れておき、キャンバスには今の階層のものだけ描く。
-    //   入れ子の構造体にしないのは、保存・Undo・複製などの既存処理を平らな配列のまま使えるため。
-    uint32_t graphId = 0;
-
     int runtimeFlatIndex = -1; // Bake 後の配列での添字。実行中の状態表示の対応付けに使う
 };
 
@@ -136,32 +130,8 @@ private:
     // 保存・開く・整列などのボタン列
     void DrawToolbar();
 
-    // 「一番外 > 近接 > ...」のパンくず。押した段の階層へ戻る
-    void DrawBreadcrumb();
-
-    // 指定位置にノードを作る（ピンは種類に応じて発行する）。置く階層は今見ている階層。作ったノードのIDを返す
+    // 指定位置にノードを作る（ピンは種類に応じて発行する）。作ったノードのIDを返す
     uint32_t CreateNode(EditorBTNodeType type, const std::string &name, float x, float y);
-
-    // 空のサブツリーを作る。中に入口（ROOT）を1つ置く。作った SubTree のIDを返す
-    uint32_t CreateSubTreeNode(float x, float y);
-
-    /**
-     * @brief 選択中のノードを1つのサブツリーへまとめる（UE の Blueprint の Collapse Nodes と同じ）。
-     * @note 選択は「根が1つの枝」でなければならない（途中の親が選択外だと、どこへ繋ぎ直すか決まらない）。
-     */
-    void CollapseSelectionToSubTree();
-
-    // サブツリーの中へ入る。実際に切り替えるのは次のフレームの頭（描画中に階層を変えないため）
-    void RequestEnterSubTree(uint32_t subTreeId) { m_pendingEnterId = subTreeId; }
-
-    // 今見ている階層（0 は一番外）
-    uint32_t CurrentGraphId() const { return m_viewPath.empty() ? 0 : m_viewPath.back(); }
-
-    // subTreeId の中に（入れ子も含めて）置かれているノードのID
-    std::vector<uint32_t> CollectSubTreeContents(uint32_t subTreeId) const;
-
-    // サブツリーの入口（中の ROOT）。無ければ nullptr
-    EditorBTNode *FindSubTreeEntry(uint32_t subTreeId);
 
     // ノードと、それに繋がるリンクを消す
     void DeleteNodeAndLinks(uint32_t nodeId);
@@ -181,16 +151,14 @@ private:
     /**
      * @brief 選択中のノードを、貼り付けに使える JSON にする。選択が空なら null。
      *
-     * 選んだ SubTree は中身ごと入れる（中身が無いと入口も無く動かない）。
      * リンクは、両端がコピーに含まれるものだけを入れる。
      */
     nlohmann::json CopySelectionToJson();
 
     /**
-     * @brief CopySelectionToJson の内容を、新しいIDで今の階層へ貼る。
+     * @brief CopySelectionToJson の内容を、新しいIDで貼る。
      *
-     * 選んだノード（外側）は、選択範囲の左上が anchor に来るようにずらす。
-     * SubTree の中身は別の階層にいるので、元の位置のまま新しい SubTree の中へ入れる。
+     * 選択範囲の左上が anchor に来るようにずらす。
      */
     void PasteFromJson(const nlohmann::json &clip, ImVec2 anchor);
 
@@ -298,7 +266,7 @@ private:
     // 子を1つ以上持つか
     bool HasChildren(uint32_t nodeId) const;
 
-    // 子孫の数（リンクで辿れる範囲。サブツリーの中身は含まない）
+    // 子孫の数（リンクで辿れる範囲）
     int CountDescendants(uint32_t nodeId) const;
 
     // ---------------------------------------------------------------
@@ -410,10 +378,6 @@ private:
     std::string    m_currentPath;     // 開いているファイル（未保存の新規なら空）
     std::string    m_pendingOpenPath; // 未保存確認中に「開く」予定のパス
 
-    // --- サブツリーの階層 ---
-    std::vector<uint32_t> m_viewPath;           // 潜っている SubTree のID（外側から順。空なら一番外）
-    uint32_t              m_pendingEnterId = 0; // 次のフレームで入る SubTree（0 なら無し）
-
     // 貼り付けたノード。まだ一度も描かれていないノードは選択できないので、描いた後のフレームで選ぶ
     std::vector<uint32_t> m_pendingSelectIds;
 
@@ -443,6 +407,5 @@ private:
     std::unordered_map<uint32_t, std::vector<uint32_t>> m_childrenOf;   // 親ID → 子ID（実行順）
     std::unordered_map<uint32_t, uint32_t>              m_parentOf;     // 子ID → 親ID
     std::unordered_map<uint32_t, uint32_t>              m_pinOwner;     // ピンID → ノードID
-    std::unordered_set<uint32_t>                        m_hiddenNodes;  // 描かないノード（今見ている階層に無いもの）
     std::vector<uint32_t>                               m_roots;        // 親を持たないノード（ROOT が先頭）
 };
