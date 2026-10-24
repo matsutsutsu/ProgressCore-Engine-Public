@@ -116,7 +116,5 @@ void DroneDebugDrawSystem::OnGui()
     ImGui::Text("最大のずれ（離脱中は除く）: %.1f m", m_stats.maxDistance);
 }
 
-// R08_Main で ShapeRenderer に積む。製品ビルドには System ごと入れない（AIDebugSpatialSystem と同じ）
-#ifdef ENABLE_EDITOR
-REGISTER_RENDER_SYSTEM(DroneDebugDrawSystem, Priority::RenderStage::R08_Main);
-#endif
+// R08_Main で ShapeRenderer に積む
+REGISTER_DEBUG_RENDER_SYSTEM(DroneDebugDrawSystem, Priority::RenderStage::R08_Main);

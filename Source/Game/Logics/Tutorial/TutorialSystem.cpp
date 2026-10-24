@@ -17,10 +17,8 @@
 #include <SimpleMath.h>
 #include <cmath> // std::abs
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h" // デバッグ表示でボスの形態を出す
-#endif
 
 using namespace CCL::ECS;
 using DirectX::SimpleMath::Vector3;
@@ -541,7 +539,6 @@ float TutorialSystem::TimeToStrike() const
 // デバッグ表示
 // ---------------------------------------------------------------------------
 
-#ifdef ENABLE_EDITOR
 void TutorialSystem::OnGui()
 {
     if (!m_world->HasResource<TutorialState>())
@@ -582,8 +579,5 @@ void TutorialSystem::OnGui()
     if (ImGui::Button("完了扱いで終了")) Advance(state, kTutorialStepCount); // 完了の画面が出る
     ImGui::EndDisabled();
 }
-#else
-void TutorialSystem::OnGui() {}
-#endif
 
 // 全体登録（REGISTER_*）はせず、TutorialScene が登録する。ゲーム本編ではチュートリアルを行わないため

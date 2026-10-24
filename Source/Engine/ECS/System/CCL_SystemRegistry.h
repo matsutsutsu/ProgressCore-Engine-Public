@@ -82,3 +82,11 @@ namespace CCL::ECS
                 m.RegisterSystem<SystemClass>(Stage, __VA_ARGS__);     \
             });                                                        \
     }
+
+// デバッグ表示専用の System はこちらで登録する。製品ビルド（ENABLE_EDITOR なし）では登録ごと消える。
+// 中身だけを空にすると、何もしない System が実行順の解決の対象としてだけ残るため、登録側で外す。
+#ifdef ENABLE_EDITOR
+#define REGISTER_DEBUG_RENDER_SYSTEM REGISTER_RENDER_SYSTEM
+#else
+#define REGISTER_DEBUG_RENDER_SYSTEM(SystemClass, Stage, ...)
+#endif

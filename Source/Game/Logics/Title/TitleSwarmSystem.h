@@ -32,7 +32,7 @@ public:
 
     void Update(float dt) override;
 
-    void OnGui() override; // 状態の確認用（ENABLE_EDITOR でないビルドでは何もしない）
+    void OnGui() override; // 状態の確認用
 
     /**
      * @brief テンプレート引数以外に書く型を申告する。

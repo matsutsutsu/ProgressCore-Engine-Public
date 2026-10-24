@@ -8,9 +8,7 @@
 #include <cmath>
 #include <cstring>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX;
@@ -142,7 +140,6 @@ void TitleCameraSystem::Update(float dt)
 
 void TitleCameraSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     ImGui::TextUnformatted("タイトルカメラ（構図の調整）");
 
     if (m_world->HasResource<CCL::Title::CompositionBoard>())
@@ -164,5 +161,4 @@ void TitleCameraSystem::OnGui()
     ImGui::SliderFloat("横流れ周期[秒]", &m_swayPeriod, 4.0f, 60.0f, "%.1f");
     ImGui::SliderFloat("上下うねり[m]", &m_riseAmplitude, 0.0f, 3.0f, "%.2f");
     ImGui::SliderFloat("上下周期[秒]", &m_risePeriod, 4.0f, 60.0f, "%.1f");
-#endif
 }

@@ -39,7 +39,7 @@ public:
 
     void Update(float dt) override;
 
-    void OnGui() override; // 構図の調整用（ENABLE_EDITOR でないビルドでは何もしない）
+    void OnGui() override; // 構図の調整用
 
 private:
     // 注視点を返す。目印のエンティティ（kLookTargetName）があればその位置、無ければ既定値

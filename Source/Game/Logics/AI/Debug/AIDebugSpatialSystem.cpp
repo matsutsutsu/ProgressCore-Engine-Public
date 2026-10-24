@@ -272,10 +272,5 @@ void AIDebugSpatialSystem::OnGui()
                            "%6.1f m  ステージ端から（中心から %.1f m）", margin, m_arenaRadius - margin);
 }
 
-// R08_Main で ShapeRenderer に積む。
-//
-// 登録ごと #ifdef で外し、製品ビルドにはこの System が存在しないようにする。
-// 中身だけを #ifdef で外すと、何もしない System が実行順の解決の対象としてだけ残る。
-#ifdef ENABLE_EDITOR
-REGISTER_RENDER_SYSTEM(AIDebugSpatialSystem, Priority::RenderStage::R08_Main);
-#endif
+// R08_Main で ShapeRenderer に積む
+REGISTER_DEBUG_RENDER_SYSTEM(AIDebugSpatialSystem, Priority::RenderStage::R08_Main);

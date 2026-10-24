@@ -618,9 +618,4 @@ float AIDebugOverlaySystem::BasePriority(const BTAsset &asset, BTNodeID nodeId)
 
 // ImGui::NewFrame の後（SceneManager::Render の中）に走らせる必要があるので、Render ステージに置く。
 // R10_UI は最後の段なので、頭上のテキストが他の描画に隠れない。
-//
-// 登録ごと #ifdef で外し、製品ビルドにはこの System が存在しないようにする。
-// 中身だけを #ifdef で外すと、何もしない System が実行順の解決の対象としてだけ残る。
-#ifdef ENABLE_EDITOR
-REGISTER_RENDER_SYSTEM(AIDebugOverlaySystem, Priority::RenderStage::R10_UI);
-#endif
+REGISTER_DEBUG_RENDER_SYSTEM(AIDebugOverlaySystem, Priority::RenderStage::R10_UI);

@@ -14,9 +14,7 @@
 #include <cmath>
 #include <cstring>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -203,7 +201,6 @@ void TitleSwarmSystem::Update(float dt)
 
 void TitleSwarmSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     ImGui::TextUnformatted("タイトルの群れ（ボス頭上の円陣）");
     ImGui::Text("機数 %d / 生成 %s / ボス像 %s", kDroneCount, m_spawned ? "済" : "未",
                 (m_bossID != InvalidEntityID) ? "検出" : "未検出");
@@ -217,5 +214,4 @@ void TitleSwarmSystem::OnGui()
     const float gap = DirectX::XM_2PI * HighRing::kRadius / static_cast<float>(kDroneCount);
     ImGui::Text("機体間隔 %.2fm（機体の見た目は約3m）%s", gap,
                 (gap < 3.0f) ? "  ← 隣と重なる" : "");
-#endif
 }
