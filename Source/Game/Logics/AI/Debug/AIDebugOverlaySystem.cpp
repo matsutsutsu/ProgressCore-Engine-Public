@@ -90,6 +90,9 @@ namespace
     }
 } // namespace
 
+
+
+
 void AIDebugOverlaySystem::Update(float /*dt*/)
 {
     if (!m_enabled && !m_showScores) return;
@@ -260,8 +263,9 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::SliderFloat("パネルの文字の大きさ", &m_panelFontSize, 10.0f, 40.0f);
     ImGui::SliderInt("パネルの履歴の数", &m_historyLines, 0, kPickLogSize - 1);
     ImGui::TextDisabled("ゲーム画面の左上に、技を選んだ瞬間の上位3つの点数と、それまでに選んだ技を出す");
-    ImGui::TextDisabled("点数 = 優先度 × 距離 × 状況 × 減点。選ばれる確率は、上位3つの点数の割合");
+    ImGui::TextDisabled("点数 = 優先度 × 距離 × 状況 × 減点。抽選確率は、上位3つの点数の割合");
     ImGui::TextDisabled("黄色の行 = 選ばれた技　倍率の色：赤 = 点数を下げた　緑 = 上げた　灰 = 効いていない");
+    ImGui::TextDisabled("灰色の行 = 候補外。抽選確率の欄に理由（CD 残り秒 / 条件 / 距離外 / 0点）");
 }
 
 // ---------------------------------------------------------------------------
@@ -320,6 +324,21 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
         return std::string(buf);
     };
 
+    // 候補外の子の理由を、抽選確率の列に入れる短い文字にする。
+    // 列を足すと候補外が出るたびに表の幅が変わるので、見出し「抽選確率」の幅（全角4文字）に収める
+    auto excludedText = [&](const BTScoreDebug &row) {
+        switch (row.state)
+        {
+        case BTCandidateState::Cooldown:
+            snprintf(buf, sizeof(buf), "CD %.1f", row.cooldownLeft); // 残り秒数（いつ出られるようになるか）
+            return std::string(buf);
+        case BTCandidateState::Condition: return std::string("条件");
+        case BTCandidateState::OutOfRange: return std::string("距離外");
+        case BTCandidateState::ZeroScore: return std::string("0点");
+        default: return std::string("-");
+        }
+    };
+
     // 倍率のセル。1 より小さければ赤（下げた）、大きければ緑（上げた）、1 なら灰色（効いていない）
     auto factorCell = [&](float factor) {
         snprintf(buf, sizeof(buf), "×%.2f", factor);
@@ -339,25 +358,11 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
     snprintf(buf, sizeof(buf), "%s の結果（%.1f 秒前・相手まで %.1f m）", selectorName,
              bt.debugClock - latest.time, latest.distance);
     result.title      = buf;
-    result.headers    = {"技", "選ばれる確率", "点数", "優先度", "距離", "状況", "減点"};
+    result.headers    = {"技", "抽選確率", "点数", "優先度", "距離", "状況", "減点"};
     result.rightAlign = {false, true, true, true, true, true, true};
 
     // 候補が3つに足りないと、空いた枠に候補外の子が入っている（RecordUtilityPick）。
-    // そのときだけ「候補外の理由」の列を足す
-    bool hasExcluded = false;
-    for (int i = 0; i < latest.rowCount; ++i)
-    {
-        if (latest.rows[i].state != BTCandidateState::Candidate)
-        {
-            hasExcluded = true;
-        }
-    }
-    if (hasExcluded)
-    {
-        result.headers.push_back("候補外の理由");
-        result.rightAlign.push_back(false);
-    }
-
+    // 候補外の子には抽選確率が無いので、その欄に理由を書く
     for (int i = 0; i < latest.rowCount; ++i)
     {
         const BTScoreDebug &row       = latest.rows[i];
@@ -368,7 +373,7 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
         PanelRow line;
         line.highlight = row.picked;
         line.cells.push_back({TechniqueName(asset, childId), mainColor});
-        line.cells.push_back(excluded ? PanelCell{"-", gray} : PanelCell{chanceText(row), mainColor});
+        line.cells.push_back(excluded ? PanelCell{excludedText(row), white} : PanelCell{chanceText(row), mainColor});
         snprintf(buf, sizeof(buf), "%.1f", row.total);
         line.cells.push_back({buf, mainColor});
         snprintf(buf, sizeof(buf), "%g", BasePriority(asset, childId));
@@ -378,24 +383,6 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
         line.cells.push_back(row.distance < 0.0f ? PanelCell{"使わない", gray} : factorCell(row.distance));
         line.cells.push_back(factorCell(row.bonus));
         line.cells.push_back(factorCell(row.repeat));
-
-        // 候補外の理由。クールダウンは残りの秒数も出す（いつ出られるようになるか）
-        if (hasExcluded)
-        {
-            if (!excluded)
-            {
-                line.cells.push_back({"", gray});
-            }
-            else if (row.state == BTCandidateState::Cooldown)
-            {
-                snprintf(buf, sizeof(buf), "%s（残り %.1f 秒）", ToString(row.state), row.cooldownLeft);
-                line.cells.push_back({buf, white});
-            }
-            else
-            {
-                line.cells.push_back({ToString(row.state), white});
-            }
-        }
         result.rows.push_back(line);
     }
 
@@ -404,7 +391,7 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
     // ---------------------------------------------------------
     PanelTable history;
     history.title      = "それまでの選択（新しい順）";
-    history.headers    = {"技", "選ばれる確率", "相手との距離"};
+    history.headers    = {"技", "抽選確率", "相手との距離"};
     history.rightAlign = {false, true, true};
 
     const int historyCount = (std::min)((std::min)(bt.debugPickCount, kPickLogSize) - 1, m_historyLines);

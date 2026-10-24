@@ -48,6 +48,10 @@ namespace BTEditor
     inline constexpr float kNodeMinWidth = 100.0f; // 下限。「Priority: 3」が収まる程度
     inline constexpr float kNodeMaxWidth = 180.0f; // 上限。これを超える名前は折り返す
 
+    // まとまりのノード（Selector / Sequence など）の幅。行動・条件と見分けやすいよう、通常ノードより広く取る
+    inline constexpr float kCompositeMinWidth = 200.0f; // 下限
+    inline constexpr float kCompositeMaxWidth = 260.0f; // 上限。これを超える名前は折り返す
+
     // 自動整列の間隔
     inline constexpr float kLayoutHGap     = 40.0f;  // 兄弟どうしの間隔
     inline constexpr float kLayoutVGap     = 90.0f;  // 段と段の間隔

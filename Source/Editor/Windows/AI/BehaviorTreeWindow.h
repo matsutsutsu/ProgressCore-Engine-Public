@@ -121,7 +121,7 @@ public:
     void RestoreGraphState(const nlohmann::json &state);
 
 protected:
-    // 3列（アウトライン｜キャンバス｜インスペクタ）を描く
+    // 3列（ヒエラルキー｜キャンバス｜インスペクタ）を描く
     virtual void DrawContents(EditorContext &context) override;
 
 private:
@@ -177,8 +177,11 @@ private:
     // 「ドローン：データの技」の表示名。枠番号(param)から技の名前を引く（m_formations を見る）
     const char *GetDroneFormationLabel(float slotParam) const;
 
-    // 種類ごとの見出し色。キャンバスとアウトラインで揃える
+    // 種類ごとの見出し色。キャンバスとヒエラルキーで揃える
     static ImColor HeaderColorOf(EditorBTNodeType type);
+
+    // 種類の表示名（"Selector" など）。ヒエラルキーの種類の列と、まとまりのノードの見出しに出す
+    static const char *TypeNameOf(EditorBTNodeType type);
 
     // デコレータ種類の表示名
     static const char *DecoratorNameOf(int decoratorType);
@@ -281,7 +284,15 @@ private:
     void DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, float nodeWidth);
 
     // 通常ノードの幅。名前と本文の一番長い行に合わせ、kNodeMinWidth〜kNodeMaxWidth に収める
+    // （まとまりのノードは kCompositeMinWidth〜kCompositeMaxWidth）
     float TreeNodeWidthOf(const EditorBTNode &node, const std::string &title) const;
+
+    // まとまりのノード（子を並べて実行順を決める Selector / Sequence など）か。
+    // 見出しを「種類」と「名前」の2行にし、幅と枠も変えて、行動・条件と見分けられるようにする
+    static bool IsCompositeType(EditorBTNodeType type);
+
+    // まとまりのノードの見出しに出す、種類のアイコン。center を中心に size 四方へ描く
+    static void DrawCompositeIcon(ImDrawList *drawList, EditorBTNodeType type, const ImVec2 &center, float size, ImU32 color);
 
     // 通常ノードの枠線の色と太さを outColor / outWidth へ返す（実行中・成功・失敗で変える）
     void GetTreeNodeBorder(const EditorBTNode &node, const BehaviorTreeComponent *activeAI,

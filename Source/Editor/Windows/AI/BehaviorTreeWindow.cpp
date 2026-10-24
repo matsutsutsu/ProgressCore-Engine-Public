@@ -112,7 +112,7 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
     ZoneScopedN("BTW: DrawContents");
 
     // 親子関係を、どのペインより先に確定させる。
-    //   アウトライン・キャンバス・インスペクタが同じフレームで同じ並びを前提にできる。
+    //   ヒエラルキー・キャンバス・インスペクタが同じフレームで同じ並びを前提にできる。
     RebuildHierarchy();
 
     const BehaviorTreeComponent *activeAI = FindActiveAI(context);
@@ -123,13 +123,13 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
     if (ImGui::BeginTable("BTEditorTable", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, availableSize))
     {
-        // 初期幅の比率（アウトライン18% / ワークスペース60% / インスペクタ22%）
+        // 初期幅の比率（ヒエラルキー18% / ワークスペース60% / インスペクタ22%）
         ImGui::TableSetupColumn("Outline", ImGuiTableColumnFlags_WidthStretch, 0.18f);
         ImGui::TableSetupColumn("Workspace", ImGuiTableColumnFlags_WidthStretch, 0.60f);
         ImGui::TableSetupColumn("Inspector", ImGuiTableColumnFlags_WidthStretch, 0.22f);
         ImGui::TableNextRow();
 
-        // --- 左ペイン (アウトライン) ---
+        // --- 左ペイン (ヒエラルキー) ---
         ImGui::TableSetColumnIndex(0);
         DrawOutliner(activeAI);
 
@@ -515,6 +515,25 @@ ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
     case EditorBTNodeType::Decorator: return ImColor(180, 140, 30);       // 金（45°）
     case EditorBTNodeType::UtilitySelector: return ImColor(115, 150, 35); // 黄緑（85°）：金と緑の間の空き
     default: return ImColor(100, 100, 100);
+    }
+}
+
+const char *BehaviorTreeWindow::TypeNameOf(EditorBTNodeType type)
+{
+    // UE5 と同じく英語の種類名にする（Selector / Sequence は BT の用語として通じるため）
+    switch (type)
+    {
+    case EditorBTNodeType::Root: return "Root";
+    case EditorBTNodeType::Selector: return "Selector";
+    case EditorBTNodeType::Sequence: return "Sequence";
+    case EditorBTNodeType::Condition: return "Condition";
+    case EditorBTNodeType::Action: return "Action";
+    case EditorBTNodeType::Group: return "Comment";
+    case EditorBTNodeType::Decorator: return "Decorator";
+    case EditorBTNodeType::WeightedSelector: return "WeightedSelector";
+    case EditorBTNodeType::Parallel: return "Parallel";
+    case EditorBTNodeType::UtilitySelector: return "UtilitySelector";
+    default: return "Unknown";
     }
 }
 

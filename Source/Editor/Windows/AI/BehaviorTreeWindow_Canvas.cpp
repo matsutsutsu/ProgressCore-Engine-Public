@@ -2,6 +2,7 @@
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 using namespace BTEditor;
@@ -40,6 +41,10 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
         ZoneScopedN("BTW: ed::Begin");
         ed::Begin("My Node Editor");
     }
+
+    // 親子の線は直線にする（UE5 の BT エディタと同じ）。曲線だと、親が離れた子へ伸びるときに
+    // 大きく膨らんで、どの線がどの子へ行くのか追いにくい。AnimGraph のエディタと同じ設定
+    ed::PushStyleVar(ed::StyleVar_LinkStrength, 0.0f);
 
     // ---------------------------------------------------------
     // 1. 整列
@@ -138,6 +143,8 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
         HandleContextMenu();
     }
     FitInitialView();
+
+    ed::PopStyleVar(); // 線の直線
 
     // ライブラリ本体。ノードとリンクの実際の描画・当たり判定・選択はここでまとめて行われる。
     {
@@ -253,7 +260,7 @@ ImVec2 BehaviorTreeWindow::PasteTargetOnCanvas()
     const ImVec2 max    = ImVec2(min.x + m_canvasScreenSize.x, min.y + m_canvasScreenSize.y);
     const bool   inside = mouse.x >= min.x && mouse.x < max.x && mouse.y >= min.y && mouse.y < max.y;
 
-    // カーソルがキャンバスの外（アウトラインの上など）なら、今見ている範囲の中央へ
+    // カーソルがキャンバスの外（ヒエラルキーの上など）なら、今見ている範囲の中央へ
     const ImVec2 target = inside ? mouse : ImVec2((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
     const ImVec2 canvas = ed::ScreenToCanvas(target);
     ed::Resume();
@@ -280,9 +287,25 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     float   borderWidth = 1.0f;
     GetTreeNodeBorder(node, activeAI, borderColor, borderWidth);
 
-    ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(25, 25, 25, 240));
+    // まとまりのノードは、行動・条件と遠目でも見分けられるよう、本文を種類の色で薄く染め、
+    // 待機中の枠も種類の色で太くする（実行中・成功・失敗の枠の色はそちらを優先する）
+    const bool    composite = IsCompositeType(node.type);
+    const ImColor typeColor = HeaderColorOf(node.type);
+    ImColor       bodyColor(25, 25, 25, 240);
+    if (composite)
+    {
+        const ImVec4 t = typeColor.Value;
+        bodyColor      = ImColor(0.10f + t.x * 0.10f, 0.10f + t.y * 0.10f, 0.10f + t.z * 0.10f, 0.95f);
+        if (borderWidth <= 1.0f)
+        {
+            borderColor = ImColor(t.x, t.y, t.z, 0.9f);
+            borderWidth = 2.0f;
+        }
+    }
+
+    ed::PushStyleColor(ed::StyleColor_NodeBg, bodyColor);
     ed::PushStyleColor(ed::StyleColor_NodeBorder, borderColor);
-    ed::PushStyleVar(ed::StyleVar_NodeRounding, 6.0f);
+    ed::PushStyleVar(ed::StyleVar_NodeRounding, composite ? 8.0f : 6.0f);
     ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, borderWidth);
 
     ed::BeginNode(node.id);
@@ -315,21 +338,42 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
 
     // 上限幅を超える名前は折り返し、帯の高さを行数に合わせて伸ばす。
     // 先に折り返した文字の高さを測り（CalcTextSize）、その高さで帯を塗ってから文字を書く。
-    const float       titleWrapW = nodeW - 20.0f; // 左右の余白を除いた幅
-    const float       titleH     = ImGui::CalcTextSize(title.c_str(), nullptr, false, titleWrapW).y;
-    const float       headerH    = (std::max)(32.0f, titleH + 16.0f); // 1行なら 32px
+    //
+    // まとまりのノードは、名前の上に「アイコン＋種類」の小さな行を足す（UE5 の Composite と同じ形）。
+    //   ▶ SEQUENCE   ← 種類（小さめの文字）
+    //   縦割り        ← 名前
+    const float typeSize   = ImGui::GetFontSize() * 0.85f;             // 種類の行の文字の大きさ
+    const float typeLineH  = composite ? typeSize + 4.0f : 0.0f;       // 種類の行の高さ（行の間の余白込み）
+    const float titleWrapW = nodeW - 20.0f;                            // 左右の余白を除いた幅
+    const float titleH     = ImGui::CalcTextSize(title.c_str(), nullptr, false, titleWrapW).y;
+    const float headerH    = (std::max)(32.0f, typeLineH + titleH + 16.0f); // 1行なら 32px
 
     ImGui::BeginGroup();
     const ImVec2 headerStart = ImGui::GetCursorScreenPos();
     ImGui::Dummy(ImVec2(nodeW, headerH));
     const ImVec2 headerEnd = ImGui::GetItemRectMax();
-    drawList->AddRectFilled(headerStart, headerEnd, HeaderColorOf(node.type), 4.0f, ImDrawFlags_RoundCornersTop);
+    drawList->AddRectFilled(headerStart, headerEnd, typeColor, 4.0f, ImDrawFlags_RoundCornersTop);
+
+    if (composite)
+    {
+        // 種類は大文字にして、名前と取り違えないようにする
+        std::string typeName = TypeNameOf(node.type);
+        for (char &c : typeName)
+        {
+            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        }
+
+        const ImVec2 iconCenter(headerStart.x + 10.0f + typeSize * 0.5f, headerStart.y + 8.0f + typeSize * 0.5f);
+        DrawCompositeIcon(drawList, node.type, iconCenter, typeSize, IM_COL32(255, 255, 255, 220));
+        drawList->AddText(ImGui::GetFont(), typeSize, ImVec2(headerStart.x + 16.0f + typeSize, headerStart.y + 8.0f),
+                          IM_COL32(255, 255, 255, 190), typeName.c_str());
+    }
 
     // 折り返し幅を直接渡して描く。PushTextWrapPos はウィンドウ左端からの位置で指定するので、
     // キャンバスを原点より左へ動かすと位置が負になり、ImGui が「折り返さない」とみなす。
     // そうなると文字がノードの外へはみ出し、見た目と掴める範囲（ノードの枠）がずれる。
     // 高さを測った CalcTextSize と同じ幅を渡すので、帯の高さと行数も必ず一致する。
-    drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(headerStart.x + 10, headerStart.y + 8),
+    drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(headerStart.x + 10, headerStart.y + 8 + typeLineH),
                       ImGui::GetColorU32(ImGuiCol_Text), title.c_str(), nullptr, titleWrapW);
     ImGui::EndGroup();
 
@@ -372,8 +416,68 @@ float BehaviorTreeWindow::TreeNodeWidthOf(const EditorBTNode &node, const std::s
     if (node.type == EditorBTNodeType::Action && IsWaitAction(node.actionOrConditionId)) fit("Wait: 00.0s");
     if (node.type == EditorBTNodeType::Decorator && node.decoratorType == 1) fit("Cooling: 00.0s");
 
-    // 左右の余白 10px ずつ
+    // 左右の余白 10px ずつ。まとまりのノードは行動・条件と見分けやすいよう広めの範囲に収める
+    if (IsCompositeType(node.type))
+    {
+        return (std::clamp)(textW + 20.0f, kCompositeMinWidth, kCompositeMaxWidth);
+    }
     return (std::clamp)(textW + 20.0f, kNodeMinWidth, kNodeMaxWidth);
+}
+
+bool BehaviorTreeWindow::IsCompositeType(EditorBTNodeType type)
+{
+    switch (type)
+    {
+    case EditorBTNodeType::Selector:
+    case EditorBTNodeType::Sequence:
+    case EditorBTNodeType::WeightedSelector:
+    case EditorBTNodeType::Parallel:
+    case EditorBTNodeType::UtilitySelector:
+        return true;
+    default:
+        return false;
+    }
+}
+
+void BehaviorTreeWindow::DrawCompositeIcon(ImDrawList *drawList, EditorBTNodeType type, const ImVec2 &center,
+                                           float size, ImU32 color)
+{
+    // 日本語フォントには矢印などの記号が無いので、線と図形で描く。形は子の扱い方を表す
+    const float h = size * 0.5f; // 中心から端まで
+    const float c = center.x;
+    const float m = center.y;
+    switch (type)
+    {
+    case EditorBTNodeType::Sequence: // 右向きの矢印：左から順に実行する
+        drawList->AddLine(ImVec2(c - h, m), ImVec2(c + h * 0.2f, m), color, 2.0f);
+        drawList->AddTriangleFilled(ImVec2(c, m - h * 0.7f), ImVec2(c + h, m), ImVec2(c, m + h * 0.7f), color);
+        break;
+    case EditorBTNodeType::Selector: // 分かれ道：どれか1つを選ぶ
+        drawList->AddLine(ImVec2(c - h, m), ImVec2(c, m), color, 2.0f);
+        drawList->AddLine(ImVec2(c, m), ImVec2(c + h, m - h * 0.8f), color, 2.0f);
+        drawList->AddLine(ImVec2(c, m), ImVec2(c + h, m + h * 0.8f), color, 2.0f);
+        break;
+    case EditorBTNodeType::WeightedSelector: // サイコロ：重みで抽選する
+        drawList->AddRect(ImVec2(c - h, m - h), ImVec2(c + h, m + h), color, 2.0f, 0, 1.5f);
+        drawList->AddCircleFilled(ImVec2(c - h * 0.45f, m - h * 0.45f), h * 0.2f, color);
+        drawList->AddCircleFilled(ImVec2(c, m), h * 0.2f, color);
+        drawList->AddCircleFilled(ImVec2(c + h * 0.45f, m + h * 0.45f), h * 0.2f, color);
+        break;
+    case EditorBTNodeType::UtilitySelector: // 棒グラフ：点数で比べる
+        for (int i = 0; i < 3; ++i)
+        {
+            const float left   = c - h + static_cast<float>(i) * h * 0.7f;
+            const float height = size * (0.4f + 0.3f * static_cast<float>(i));
+            drawList->AddRectFilled(ImVec2(left, m + h - height), ImVec2(left + h * 0.5f, m + h), color);
+        }
+        break;
+    case EditorBTNodeType::Parallel: // 平行な2本の線：同時に動かす
+        drawList->AddLine(ImVec2(c - h * 0.4f, m - h), ImVec2(c - h * 0.4f, m + h), color, 2.5f);
+        drawList->AddLine(ImVec2(c + h * 0.4f, m - h), ImVec2(c + h * 0.4f, m + h), color, 2.5f);
+        break;
+    default:
+        break;
+    }
 }
 
 void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, float nodeWidth)
