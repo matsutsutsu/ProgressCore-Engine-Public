@@ -22,7 +22,7 @@ std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
     auto it = m_assets.find(path);
     if (it != m_assets.end()) return it->second;
 
-    // 失敗したことのあるパスは読みに行かない（ログは初回の1回だけ出してある）
+    // 失敗したことのあるパスは読みに行かない。毎フレーム再試行するとログが埋まって他の警告が見えなくなる
     if (m_failed.count(path)) return nullptr;
 
     return LoadLocked(path);

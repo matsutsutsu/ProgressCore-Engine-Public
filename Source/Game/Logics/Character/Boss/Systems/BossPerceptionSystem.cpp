@@ -45,6 +45,7 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
                 const TransformComponent &trans,
                 const HealthComponent    &health,
                 const TimeStateComponent &time) {
+        // 残り時間ではなく経過時間で持つ。どれだけ待つかは木（条件の param）が決めるため。
         btComp.blackboard.timeSinceLastHit += time.localDt;
 
         if (health.maxHealth > 0.0f)
@@ -54,6 +55,8 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 
             // 蓄積した被弾を最大 HP に対する割合に直す。足す側はダメージ量しか知らないので、
             // HealthComponent を読めるここで直せば、条件側は割合だけを見ればよい。
+
+            // 割合で比べるのは、ダメージ量のまま比べると最大 HP を変えたときに木のしきい値も直す必要があるため。
             btComp.blackboard.accumulatedDamageRatio =
                 (btComp.blackboard.accumulatedDamage / health.maxHealth) * 100.0f;
         }
@@ -75,7 +78,9 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 
         btComp.blackboard.targetPosition   = targetPos;
         btComp.blackboard.distanceToTarget = Vector3::Distance(Vector3(trans.position), targetPos);
-        btComp.blackboard.angleToTarget    = SignedAngleToTargetDeg(trans, targetPos);
+
+        // 距離だけだと「正面8m」と「背後8m」が同じ値になり、回り込まれたことが分からない。
+        btComp.blackboard.angleToTarget = SignedAngleToTargetDeg(trans, targetPos);
 
         // 速度は BattleContext が持つ平滑化済みのプレイヤー速度だけを使う。各 AI が前フレームの
         // 座標から速度を求めると、平滑化の強さが個体ごとにずれ、同じ状況で判断が分かれる。
@@ -123,6 +128,8 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
                                                const Vector3 &targetPos,
                                                const Vector3 &targetVelocity) const
 {
+    // 自分の速度は含めない。含めると、逃げる相手を追いかけている自分の速度が加わって
+    // 相手が近づいてきていると誤判定する。知りたいのは相手の動きなので、相手の速度だけを使う。
     Vector3 targetToMe = myPos - targetPos;
     targetToMe.y       = 0.0f;
     if (targetToMe.LengthSquared() <= 0.0001f) return 0.0f;
@@ -137,6 +144,8 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
 float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,
                                                 const BattleContext &battle) const
 {
+    // 中心からの距離ではなく端までの距離を返す。ステージの大きさを変えても
+    // 「端から 8m 以内」という木の書き方がそのまま使えるようにするため。
     Vector3 fromCenter = myWorldPos - Vector3(battle.arenaCenter);
     fromCenter.y       = 0.0f; // 高さの違いで端までの距離が変わらないようにする
 

@@ -13,8 +13,9 @@
 using namespace BTEditor;
 
 // ---------------------------------------------------------------------------
-// グラフ ⇔ JSON（保存・読込・Undo の全経路がここを通る）
+// グラフ ⇔ JSON
 // ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::WriteKeyAndParam(nlohmann::json &j, const EditorBTNode &node)
 {
     // 行動/条件は数値IDでなく名前（保存キー）で書く。IDは追加のたびに増えるだけの内部都合で、
@@ -40,6 +41,27 @@ void BehaviorTreeWindow::WriteKeyAndParam(nlohmann::json &j, const EditorBTNode 
         j["interrupt"] = true;
     if (node.abortSelf)
         j["abortSelf"] = true;
+
+    // 採点ルールも、使うときだけ書く。読み手は BehaviorTreeLoader::ReadScoreRule と NodeFromJson（キーを揃えること）
+    if (node.useScoreRule)
+    {
+        const BTScoreRule &r = node.scoreRule;
+        j["score"] = {
+            {"base", r.base},
+            {"distance", {{"bestMin", r.bestMin}, {"bestMax", r.bestMax}, {"falloff", r.falloff}}},
+        };
+
+        // 状況による倍率の条件は保存キー（名前）で書く。行動・条件ノードと同じ理由（数値IDは辞書の並びで変わる）
+        nlohmann::json bonus = nlohmann::json::array();
+        for (int i = 0; i < r.bonusCount; ++i)
+        {
+            const BTScoreBonus &b = r.bonuses[i];
+            const ActionEntry  *e = FindConditionEntry(b.conditionId);
+            bonus.push_back({{"condition", e ? e->key : "None"}, {"param", b.param}, {"mult", b.mult}});
+        }
+        if (!bonus.empty())
+            j["score"]["bonus"] = bonus;
+    }
 }
 
 void BehaviorTreeWindow::RestoreActionId(EditorBTNode &node, const nlohmann::json &jn)
@@ -102,6 +124,39 @@ EditorBTNode BehaviorTreeWindow::NodeFromJson(const nlohmann::json &jn)
     node.weight    = jn.value("weight", 1.0f);
     node.interrupt = jn.value("interrupt", false);
     node.abortSelf = jn.value("abortSelf", false);
+
+    // 採点ルール。キーが無ければ使わない（weight が点数）
+    node.useScoreRule = jn.contains("score") && jn["score"].is_object();
+    if (node.useScoreRule)
+    {
+        const nlohmann::json &js = jn["score"];
+        BTScoreRule          &r  = node.scoreRule;
+        r.base = js.value("base", r.base);
+        if (js.contains("distance") && js["distance"].is_object())
+        {
+            const nlohmann::json &jd = js["distance"];
+            r.bestMin = jd.value("bestMin", r.bestMin);
+            r.bestMax = jd.value("bestMax", r.bestMax);
+            r.falloff = jd.value("falloff", r.falloff);
+        }
+
+        // 状況による倍率。未知の条件も ID 0（None）のまま残す。エディタで消さずに見せて、選び直せるようにするため
+        if (js.contains("bonus") && js["bonus"].is_array())
+        {
+            for (const auto &jb : js["bonus"])
+            {
+                if (r.bonusCount >= kMaxScoreBonuses) break;
+
+                BTScoreBonus &b = r.bonuses[r.bonusCount++];
+                ActionID      id = 0;
+                TryFindConditionIdByKey(jb.value("condition", std::string()), id);
+                b.conditionId = id;
+                b.param       = jb.value("param", 0.0f);
+                b.mult        = jb.value("mult", 1.0f);
+            }
+        }
+    }
+
     node.posX    = jn.value("posX", 0.0f);
     node.posY    = jn.value("posY", 0.0f);
 
@@ -184,6 +239,7 @@ void BehaviorTreeWindow::RestoreGraphState(const nlohmann::json &state)
 // ---------------------------------------------------------------------------
 // ファイル
 // ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::SaveGraph(const std::string &path)
 {
     ed::SetCurrentEditor(m_nodeContext);
@@ -207,6 +263,14 @@ void BehaviorTreeWindow::SaveGraph(const std::string &path)
 
 bool BehaviorTreeWindow::LoadGraph(const std::string &path)
 {
+    // 処理フロー:
+    // 1. ファイルを読んで JSON にする
+    // 2. グラフを置き換える
+    // 3. Undo の基準と未保存の印を引き直す
+
+    // ---------------------------------------------------------
+    // 1. ファイルと JSON
+    // ---------------------------------------------------------
     const std::string jsonStr = FileSystem::ReadAllText(path);
     if (jsonStr.empty())
     {
@@ -226,11 +290,18 @@ bool BehaviorTreeWindow::LoadGraph(const std::string &path)
     }
     if (!j.contains("editor_nodes")) return false;
 
+    // ---------------------------------------------------------
+    // 2. グラフの置き換え
+    // ---------------------------------------------------------
     ed::SetCurrentEditor(m_nodeContext);
     ed::ClearSelection(); // 前のグラフのノードIDが選択に残らないように
     ApplyGraphJson(j);
 
     m_needInitialZoom = true;
+
+    // ---------------------------------------------------------
+    // 3. Undo の基準
+    // ---------------------------------------------------------
 
     // Undo の基準をこのグラフに引き直す。
     //   忘れると m_lastSavedState は「前に開いていたBT」のままで、読込後の最初の編集の
@@ -244,17 +315,9 @@ bool BehaviorTreeWindow::LoadGraph(const std::string &path)
 }
 
 // ---------------------------------------------------------------------------
-// テキスト書き出し（AI に木を渡して、組み方を相談するため）
-//   出力の形:
-//     ROOT
-//       [Selector] Root Selector
-//         [Sequence] 縦割り
-//           [Decorator] Cooldown 7秒
-//             [Sequence] ...
-//   辿り方はアウトラインと同じ（根から m_childrenOf を再帰で辿る）。
-//   冒頭の凡例は BehaviorTreeSystem.cpp の実際の評価の仕方に合わせてある。ランタイムの挙動を
-//   変えたら凡例も直すこと（AI はこの説明を前提に助言するので、ずれると誤った助言になる）。
+// テキスト書き出し
 // ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::ExportOutlineText(const std::filesystem::path &path)
 {
     // path をそのまま ofstream に渡す。Windows では wchar_t のパスとして開くので、日本語のフォルダでも開ける
@@ -272,14 +335,31 @@ void BehaviorTreeWindow::ExportOutlineText(const std::filesystem::path &path)
 
 std::string BehaviorTreeWindow::BuildOutlineText()
 {
+    // 処理フロー:
+    // 1. 凡例（AI が木を読むための前提）
+    // 2. ROOT から辿った木
+    // 3. ROOT に繋がっていないノード
+
+    // 【備考】
+    //   出力の形:
+    //     ROOT
+    //       [Selector] Root Selector
+    //         [Sequence] 縦割り
+    //           [Decorator] Cooldown 7秒
+    //             [Sequence] ...
+    //   辿り方はアウトラインと同じ（根から m_childrenOf を再帰で辿る）。
+
     // ボタンはキャンバスより先に処理されるので、念のためこの時点の親子関係を作り直してから辿る
     RebuildHierarchy();
 
     std::string out;
 
-    // ----------------------------------------------------------------
-    // 凡例：AI が木を読むための前提（ノードの意味と評価の仕方）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 1. 凡例
+    // ---------------------------------------------------------
+
+    // BehaviorTreeSystem.cpp の実際の評価の仕方に合わせてある。ランタイムの挙動を変えたら凡例も直すこと。
+    // AI はこの説明を前提に助言するので、ずれると誤った助言になる。
     out += "# ビヘイビアツリー: " + (m_currentPath.empty() ? std::string("(未保存)") : FileNameOf(m_currentPath)) + "\n";
     out += R"(#
 # 読み方
@@ -291,6 +371,13 @@ std::string BehaviorTreeWindow::BuildOutlineText()
 #   [Selector]         子を上から試し、成功か実行中の子が出たらそこで止まる（OR）。全部失敗なら失敗
 #   [Sequence]         子を上から順に実行し、1つ失敗したらそこで失敗（AND）。全部成功なら成功
 #   [WeightedSelector] 子を weight に比例した確率で1つ引いて実行する。失敗したら候補から外して引き直す
+#   [UtilitySelector]  先頭の条件が通らない子・クールダウン中の子を外し、残りを点数の高い順に並べ、
+#                      上位3つから点数に比例して1つ引く。失敗したら外して詰め、次点を繰り上げて引き直す
+#                        点数 : score が付いた子は 優先度 × 距離の倍率。得意な距離 a〜b m では満点で、
+#                               範囲の外へ出るほど下がり、ぼかし幅 c m 離れると0点（候補外）。
+#                               続く「条件(値) xN」は、その条件が通ると点数を N 倍する（状況による倍率）。
+#                               score が無い子は weight が点数。
+#                               どの子も、選ばれてから10秒は点数が下がる（直後は0.3倍、10秒で元に戻る）
 #   [Parallel]         1番目の子（主）の結果を返す。主が実行中の間だけ、2番目以降（従）も毎フレーム動かす
 #   [Decorator]        1つだけの子の結果を修飾する
 #                        Cooldown N秒 : 子が成功したら、N 秒間この枝ごと失敗を返す
@@ -301,9 +388,11 @@ std::string BehaviorTreeWindow::BuildOutlineText()
 
 )";
 
-    // ----------------------------------------------------------------
-    // 木：ROOT から辿る。ROOT に繋がっていない塊は後ろへ回す
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 2. 木
+    // ---------------------------------------------------------
+
+    // ROOT に繋がっていない塊は 3 へ回す
     std::unordered_set<uint32_t> visited;
     std::vector<uint32_t>        unconnected;
     for (uint32_t root : m_roots)
@@ -317,9 +406,11 @@ std::string BehaviorTreeWindow::BuildOutlineText()
             unconnected.push_back(root);
     }
 
-    // ----------------------------------------------------------------
-    // 未接続：作りかけのノードも見せておく（「これはなぜ動かないのか」を相談できるように）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 3. 未接続
+    // ---------------------------------------------------------
+
+    // 作りかけのノードも見せておく（「これはなぜ動かないのか」を相談できるように）
     if (!unconnected.empty())
     {
         out += "\n# 以下は ROOT に繋がっていないので、実行されない\n";
@@ -335,12 +426,16 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
     // 同じノードを2回書かない（リンクが輪になっていても止まる）。アウトラインと同じ理由
     if (!visited.insert(nodeId).second) return;
 
+    // 処理フロー:
+    // 1. この行：「字下げ [種類] 表示名  (注記)」
+    // 2. 子の行（再帰）
+
     const EditorBTNode *node = FindNode(nodeId);
     if (!node) return;
 
-    // ----------------------------------------------------------------
-    // この行：「字下げ [種類] 表示名  (注記)」
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 1. この行
+    // ---------------------------------------------------------
     std::string line(static_cast<size_t>(depth) * 2, ' '); // 1段につき空白2つ
 
     const char *typeName = "";
@@ -350,6 +445,7 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
     case EditorBTNodeType::Sequence: typeName = "Sequence"; break;
     case EditorBTNodeType::WeightedSelector: typeName = "WeightedSelector"; break;
     case EditorBTNodeType::Parallel: typeName = "Parallel"; break;
+    case EditorBTNodeType::UtilitySelector: typeName = "UtilitySelector"; break;
     case EditorBTNodeType::Decorator: typeName = "Decorator"; break;
     case EditorBTNodeType::Condition: typeName = "Condition"; break;
     case EditorBTNodeType::Action: typeName = "Action"; break;
@@ -364,7 +460,25 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
     // 親から見た注記。重みと主従は、その子自身ではなく「親の種類」で意味が決まる値なので、親を見て付ける
     if (const EditorBTNode *parent = FindNode(parentId))
     {
-        if (parent->type == EditorBTNodeType::WeightedSelector)
+        if (parent->type == EditorBTNodeType::UtilitySelector && node->useScoreRule)
+        {
+            const BTScoreRule &r = node->scoreRule;
+            char               score[96];
+            snprintf(score, sizeof(score), "  (score 優先度 %g, 得意な距離 %g〜%g m, ぼかし %g m",
+                     r.base, r.bestMin, r.bestMax, r.falloff);
+            line += score;
+
+            // 状況による倍率は「条件(値) x倍率」を並べる
+            for (int i = 0; i < r.bonusCount; ++i)
+            {
+                const BTScoreBonus &b = r.bonuses[i];
+                const ActionEntry  *e = FindConditionEntry(b.conditionId);
+                snprintf(score, sizeof(score), ", %s(%g) x%g", e ? e->key : "None", b.param, b.mult);
+                line += score;
+            }
+            line += ")";
+        }
+        else if (parent->type == EditorBTNodeType::WeightedSelector || parent->type == EditorBTNodeType::UtilitySelector)
         {
             char weight[32];
             snprintf(weight, sizeof(weight), "%g", node->weight);
@@ -379,9 +493,9 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
 
     out += line + "\n";
 
-    // ----------------------------------------------------------------
-    // 子の行（再帰）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 2. 子の行
+    // ---------------------------------------------------------
     auto children = m_childrenOf.find(nodeId);
     if (children == m_childrenOf.end()) return;
     for (uint32_t child : children->second)
@@ -389,13 +503,24 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
 }
 
 // ---------------------------------------------------------------------------
-// Bake（ランタイム用のフラット配列）
-//   幅優先の順でフラット配列にし、各ノードの "children" に子の添字を入れる。ランタイムは
-//   この配列だけを読むので、エディタ側の構造（ピン・リンク・コメント枠）は自由に変えてよい。
+// Bake
 // ---------------------------------------------------------------------------
+
 nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
 {
+    // 処理フロー:
+    // 1. 親子関係を作り直し、前回の添字を消す
+    // 2. ROOT の直下を探す
+    // 3. 幅優先でフラット配列に並べる
+
+    // 【備考】
+    //   ランタイムはこの配列だけを読むので、エディタ側の構造（ピン・リンク・コメント枠）は自由に変えてよい。
+
     nlohmann::json jsonNodes = nlohmann::json::array();
+
+    // ---------------------------------------------------------
+    // 1. 準備
+    // ---------------------------------------------------------
 
     // 子の並び（＝実行順）は RebuildHierarchy が決める。読み込み直後など、
     // まだ今フレームの再構築を通っていない時にも呼ばれるので、ここで作り直す。
@@ -405,7 +530,9 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
     for (auto &n : m_nodes)
         n.runtimeFlatIndex = -1;
 
-    // ROOT から始める
+    // ---------------------------------------------------------
+    // 2. ROOT の直下
+    // ---------------------------------------------------------
     auto rootIt = std::find_if(m_nodes.begin(), m_nodes.end(),
                                [](const EditorBTNode &n) { return n.type == EditorBTNodeType::Root; });
     if (rootIt == m_nodes.end()) return jsonNodes;
@@ -433,6 +560,7 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
         case EditorBTNodeType::Decorator: return "Decorator";
         case EditorBTNodeType::WeightedSelector: return "WeightedSelector";
         case EditorBTNodeType::Parallel: return "Parallel";
+        case EditorBTNodeType::UtilitySelector: return "UtilitySelector";
         default: return "Unknown";
         }
     };
@@ -446,6 +574,8 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
         j["actionOrConditionId"] = static_cast<int>(node.actionOrConditionId);
         WriteKeyAndParam(j, node);
         if (node.type == EditorBTNodeType::Decorator) j["decoratorType"] = node.decoratorType;
+        // 名前はゲーム中のデバッグ表示（技選択のパネル）に出す。評価には使わない
+        if (UsesCustomName(node.type) && !node.name.empty()) j["name"] = node.name;
         j["children"] = nlohmann::json::array();
 
         node.runtimeFlatIndex = static_cast<int>(jsonNodes.size()); // デバッグ表示の対応付け
@@ -453,7 +583,11 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
         return node.runtimeFlatIndex;
     };
 
-    // 幅優先（BFS）でフラット配列に並べる。親の children には子の添字を入れる。
+    // ---------------------------------------------------------
+    // 3. 幅優先で並べる
+    // ---------------------------------------------------------
+
+    // 親の children には子の添字を入れる
     struct BakeTask
     {
         uint32_t nodeId;
@@ -487,8 +621,17 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
 // ---------------------------------------------------------------------------
 // 親子関係
 // ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::RebuildHierarchy()
 {
+    // 処理フロー:
+    // 1. ピンの持ち主の表を作る
+    // 2. リンクから親子をつなぐ
+    // 3. 子を実行順に並べる
+    // 4. 根の一覧を作る
+
+    // 変更経路（リンク編集・Undo・読込・ドラッグでの順序入れ替え）が多いので、汚れフラグで追うより毎回作る。
+    // 数百ノードまでなら無視できるコスト。
     ZoneScopedN("BTW: RebuildHierarchy");
     ZoneValue(m_nodes.size());
 
@@ -497,6 +640,9 @@ void BehaviorTreeWindow::RebuildHierarchy()
     m_pinOwner.clear();
     m_roots.clear();
 
+    // ---------------------------------------------------------
+    // 1. ピンの持ち主
+    // ---------------------------------------------------------
     std::unordered_map<uint32_t, EditorBTNode *> byId;
     std::unordered_map<uint32_t, uint32_t>       outOwner; // 出力ピン → ノード
     std::unordered_map<uint32_t, uint32_t>       inOwner;  // 入力ピン → ノード
@@ -515,6 +661,9 @@ void BehaviorTreeWindow::RebuildHierarchy()
         }
     }
 
+    // ---------------------------------------------------------
+    // 2. 親子
+    // ---------------------------------------------------------
     for (const auto &link : m_links)
     {
         auto p = outOwner.find(link.startPinId);
@@ -525,10 +674,15 @@ void BehaviorTreeWindow::RebuildHierarchy()
         m_parentOf.emplace(c->second, p->second); // 親が複数あれば最初の1本を採る
     }
 
-    // 子を実行順に並べる。規則は「左が先。X が同じなら上が先」で、Bake・Priority 表示・
+    // ---------------------------------------------------------
+    // 3. 実行順
+    // ---------------------------------------------------------
+
+    // 規則は「左が先。X が同じなら上が先」で、Bake・Priority 表示・
     // 自動整列はすべてこの並びを使う（規則をここ1か所に閉じ込めるため）。
-    //   Y を第2キーにしているのは、縦に並べて X が揃ったときに順序が不定になるのを避けるため。
-    //   Parallel は 0番目が主なので、不定だと「技」と「おまけ」が入れ替わる。
+
+    // Y を第2キーにしているのは、縦に並べて X が揃ったときに順序が不定になるのを避けるため。
+    // Parallel は 0番目が主なので、不定だと「技」と「おまけ」が入れ替わる。
     for (auto &n : m_nodes)
         n.executionOrder = -1;
     for (auto &kv : m_childrenOf)
@@ -542,6 +696,10 @@ void BehaviorTreeWindow::RebuildHierarchy()
         for (size_t i = 0; i < kv.second.size(); ++i)
             byId[kv.second[i]]->executionOrder = static_cast<int>(i) + 1;
     }
+
+    // ---------------------------------------------------------
+    // 4. 根
+    // ---------------------------------------------------------
 
     // 根＝親を持たないノード。ROOT 型を先頭に置く（整列でも一番左に来る）。
     for (const auto &n : m_nodes)

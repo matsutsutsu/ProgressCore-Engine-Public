@@ -3,16 +3,12 @@
 
 using namespace BTEditor;
 
-// ====================================================================
-// 一覧全体
-//   見出し → スクロール領域 → 根から1行ずつ（子は DrawOutlinerRow が再帰で描く）
-//
-// キャンバスは木が横へ伸びるほど全体が読めなくなるので、文字の階層で全体を見せる場所を持つ。
-// 一覧は自分ではデータを持たず、RebuildHierarchy が毎フレーム作る親子関係
-// （m_roots / m_childrenOf）をなぞって描くだけ。だからリンクを繋ぎ替えれば次のフレームで一覧も変わる。
-// ====================================================================
 void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
 {
+    // キャンバスは木が横へ伸びるほど全体が読めなくなるので、文字の階層で全体を見せる場所を持つ。
+
+    // 一覧は自分ではデータを持たず、RebuildHierarchy が毎フレーム作る親子関係
+    // （m_roots / m_childrenOf）をなぞって描くだけ。だからリンクを繋ぎ替えれば次のフレームで一覧も変わる。
     ZoneScopedN("BTW: Outliner");
 
     ImGui::TextUnformatted("アウトライン (Outline)");
@@ -21,6 +17,7 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
     // 一覧だけをスクロールさせる（見出しは固定したまま）
     ImGui::BeginChild("##BTOutline");
 
+    // 根から1行ずつ描く。子は DrawOutlinerRow が再帰で描く
     std::unordered_set<uint32_t> visited;
     for (uint32_t root : m_roots)
     {
@@ -31,21 +28,28 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
     ImGui::EndChild();
 }
 
-// ====================================================================
-// 1行分
-//   1行は左から3つの部品でできている:
-//
-//     [▼ 矢印と押せる範囲]  [■ 種類の色]  [名前]
-//      TreeNodeEx(文字は空)   Dummy＋塗り    TextColored
-//
-//   TreeNodeEx は文字を矢印のすぐ右に描くので、名前まで任せると間に色の四角を挟めない。
-//   だから文字は空にして、四角と名前は SameLine（改行せず右隣へ）で後から並べる。
-// ====================================================================
 void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComponent *activeAI, std::unordered_set<uint32_t> &visited)
 {
-    // ----------------------------------------------------------------
-    // 準備：このノードの情報を集める
-    // ----------------------------------------------------------------
+    // 処理フロー:
+    // 1. このノードの情報を集める
+    // 2. 部品1：矢印と押せる範囲（TreeNodeEx）
+    // 3. クリックでキャンバスをそのノードへ寄せる
+    // 4. 部品2：種類の色の四角
+    // 5. 部品3：名前
+    // 6. 子の行（再帰）
+
+    // 【備考】
+    //   1行は左から3つの部品でできている:
+    //
+    //     [▼ 矢印と押せる範囲]  [■ 種類の色]  [名前]
+    //      TreeNodeEx(文字は空)   Dummy＋塗り    TextColored
+    //
+    //   TreeNodeEx は文字を矢印のすぐ右に描くので、名前まで任せると間に色の四角を挟めない。
+    //   だから文字は空にして、四角と名前は SameLine（改行せず右隣へ）で後から並べる。
+
+    // ---------------------------------------------------------
+    // 1. 準備
+    // ---------------------------------------------------------
 
     // 同じノードを2回描かない。リンクの付け間違いで輪になっていても、無限に潜り続けないため。
     if (!visited.insert(nodeId).second) return;
@@ -56,9 +60,9 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     auto       children    = m_childrenOf.find(nodeId);
     const bool hasChildren = (children != m_childrenOf.end() && !children->second.empty());
 
-    // ----------------------------------------------------------------
-    // 部品1：矢印と押せる範囲（TreeNodeEx）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 2. 矢印と押せる範囲
+    // ---------------------------------------------------------
 
     // OpenOnArrow   : 矢印を押したときだけ開閉する（行を押すのは「移動」に使うため）
     // DefaultOpen   : 最初は全部開いた状態で出す
@@ -73,10 +77,11 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // 名前は「セレクター」が何個もあるように重複しうるので、ID には使えない。
     const bool open = ImGui::TreeNodeEx(reinterpret_cast<void *>(static_cast<uintptr_t>(nodeId)), flags, "");
 
-    // ----------------------------------------------------------------
-    // クリック：キャンバスをそのノードへ寄せる
-    //   ※ IsItemClicked は「直前に作った部品」を見るので、TreeNodeEx の直後に置く
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 3. クリック
+    // ---------------------------------------------------------
+
+    // IsItemClicked は「直前に作った部品」を見るので、TreeNodeEx の直後に置く
 
     // IsItemToggledOpen を除くのは、矢印を押した（開閉した）ときまで移動しないため。
     // 倍率は変えない（false）。0.3 秒かけて滑らかに動かす。
@@ -87,9 +92,11 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
         ed::NavigateToSelection(false, 0.3f);
     }
 
-    // ----------------------------------------------------------------
-    // 部品2：種類の色の四角（キャンバスの見出しと同じ色）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4. 種類の色
+    // ---------------------------------------------------------
+
+    // キャンバスの見出しと同じ色
 
     // Dummy は「何も描かない箱」。先に場所を取っておかないと、次の名前が四角に重なる。
     ImGui::SameLine();
@@ -104,9 +111,9 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     drawList->AddRectFilled(boxMin, boxMax, HeaderColorOf(node->type), 2.0f);
     drawList->AddRect(boxMin, boxMax, ImColor(150, 150, 150, 180), 2.0f); // ROOT の暗い灰色が背景に溶けないよう縁を付ける
 
-    // ----------------------------------------------------------------
-    // 部品3：名前
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 5. 名前
+    // ---------------------------------------------------------
 
     // 実行中は黄色（キャンバスの枠の点滅と同じ情報）
     ImVec4 nameColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
@@ -117,10 +124,11 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // まとまりは付けた名前、Action / Condition / Decorator は中身から作った名前（キャンバスの見出しと同じ）
     ImGui::TextColored(nameColor, "%s", GetDisplayName(*node).c_str());
 
-    // ----------------------------------------------------------------
-    // 子の行（再帰）
-    //   TreeNodeEx が true（開いている）なら子を描き、最後に TreePop で字下げを1段戻す
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 6. 子の行
+    // ---------------------------------------------------------
+
+    // TreeNodeEx が true（開いている）なら子を描き、最後に TreePop で字下げを1段戻す
     if (open)
     {
         if (hasChildren)

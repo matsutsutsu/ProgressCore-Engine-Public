@@ -12,6 +12,11 @@
 // 備考: Action/Condition は BTActionRegistry から ID で引く（switch は使わない）。
 //       評価の処理はボス固有の Component を読まない。ボスを知っているのは、
 //       Initialize の登録関数の呼び出しと、デバッグ UI での要求の後始末だけ。
+//
+//       実装は役割ごとに分けてある（同じクラスのメンバ関数を別 .cpp で定義）:
+//         BehaviorTreeSystem.cpp           初期化・木の配布・Update（毎フレームの入口）
+//         BehaviorTreeSystem_Evaluate.cpp  木の評価（並列）
+//         BehaviorTreeSystem_Debug.cpp     OnGui・強制実行のデバッグ UI
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
@@ -41,44 +46,25 @@ public:
 
     void OnGui() override;
 
-    /**
-     * @brief アクションが読み書きする型をスケジューラへ申告する（GetWriteTypes も同じ）。
-     *
-     * アクションが GetComponent<T>() で行う読み書きはテンプレート引数に現れない。
-     * そのままだとスケジューラが「BehaviorTreeComponent しか触らない」と判断して、同じものを書く別の System と並列に走らせてしまう。
-     * レジストリが集めた申告をここで足すことで、この System が敵の種類を知らないまま、依存の解析を正しくする。
-     *
-     * ただし効くのは同じステージ（優先度）にいる相手だけで、ステージが違えば型に関係なく直列になる。
-     * 今 L02_Update で AnimParametersComponent を書くのは AnimControllerSystem だけなので、その型に限れば下の GetRunBefore と重なる。
-     *
-     * それでも型で申告するのは、順序の宣言が名前で1対1にしか効かないのに対し、型はそれを触る全員に効くから。
-     * 後から同じステージへ System を足して前後の宣言を忘れても、型が競合していれば直列になり、順序が決まっていないと起動時のログにも出る。
-     */
+    // 型の申告に、アクションが GetComponent<T>() で触る型（レジストリが集めたもの）を足す
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
-    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override; // GetReadTypes の Write 版
 
-    // アニメのトリガーを引くのは BT なので、それを読む AnimControllerSystem より前に走る。
-    //   逆向き（あちらに GetRunAfter）には書かない（あちらは Engine、こちらは Game なので）。
+    // アニメのトリガーを引くのは BT なので、それを読む AnimControllerSystem より前に走る（あちらは Engine なので、こちらに書く）
     std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
 
 private:
-    /**
-     * @brief 各エンティティにパスに対応する木を配り直す（直列）。
-     *
-     * 読み込みは BTAssetCache が行い、ここは配ることと実行状態を作り直すことだけ。
-     *
-     * @note 並列ループの前に呼ぶ。
-     */
+    // 各エンティティへ、パスに対応する木を配り直す。並列ループの前に呼ぶ
     void SyncAssets();
 
-    /**
-     * @brief 辞書（BTActionIds.h）に載っている行動・条件が、すべて実装として登録されているか調べる。
-     * @note 辞書と実行時の登録がずれると「エディタで選べるのに何も起きない技」になる。
-     *       ずれても動いてしまうので、起動時に一度だけエラーログを出す。
-     */
+    // 辞書に載っている行動・条件が、すべて実装として登録されているか調べる（起動時に1回）
     static void VerifyRegistrations();
 
-    // 木を再帰的に評価する。Action/Condition はレジストリから引いて実行する。
+    // --- 以下の評価系の関数は、木の評価からワーカースレッドで並列に呼ばれる ---
+    //     引数は共通：nodeId=対象のノード、btComp=その個体の実行状態、myTrans=その個体の姿勢、
+    //     asset=木、entity=その個体、dt=個体の経過時間（秒）
+
+    // 木を再帰的に評価し、そのノードの結果を返す。ノードの種類ごとに下の Evaluate〜 へ振り分ける
     BTNodeState EvaluateTreeRecursive(
         BTNodeID                  nodeId,
         BehaviorTreeComponent    &btComp,
@@ -87,7 +73,64 @@ private:
         CCL::ECS::EntityID        entity,
         float                     dt);
 
-    // アクション・条件へ渡す BTContext を作る。
+    // 先頭から順に試し、最初に失敗しなかった子の結果を返す。割り込み・自己中断もここで扱う
+    BTNodeState EvaluateSelector(BTNodeID                  nodeId,
+                                 BehaviorTreeComponent    &btComp,
+                                 const TransformComponent &myTrans,
+                                 const BTAsset            &asset,
+                                 CCL::ECS::EntityID        entity,
+                                 float                     dt);
+
+    // 子を順に実行し、1つでも失敗したら Failure
+    BTNodeState EvaluateSequence(BTNodeID                  nodeId,
+                                 BehaviorTreeComponent    &btComp,
+                                 const TransformComponent &myTrans,
+                                 const BTAsset            &asset,
+                                 CCL::ECS::EntityID        entity,
+                                 float                     dt);
+
+    // 子1つの結果を修飾する（反転・クールダウン・再試行）
+    BTNodeState EvaluateDecorator(BTNodeID                  nodeId,
+                                  BehaviorTreeComponent    &btComp,
+                                  const TransformComponent &myTrans,
+                                  const BTAsset            &asset,
+                                  CCL::ECS::EntityID        entity,
+                                  float                     dt);
+
+    // 0番目の子（主）が走っている間だけ、残りの子（従）も動かす。結果は主のもの
+    BTNodeState EvaluateParallel(BTNodeID                  nodeId,
+                                 BehaviorTreeComponent    &btComp,
+                                 const TransformComponent &myTrans,
+                                 const BTAsset            &asset,
+                                 CCL::ECS::EntityID        entity,
+                                 float                     dt);
+
+    // 子を weight に比例して1つ引く。失敗したら外して引き直す
+    BTNodeState EvaluateWeightedSelector(BTNodeID                  nodeId,
+                                         BehaviorTreeComponent    &btComp,
+                                         const TransformComponent &myTrans,
+                                         const BTAsset            &asset,
+                                         CCL::ECS::EntityID        entity,
+                                         float                     dt);
+
+    // 今出せる子だけに絞り、点数の高い上位3つから点数に比例して1つ引く。自己中断の印も扱う
+    BTNodeState EvaluateUtilitySelector(BTNodeID                  nodeId,
+                                        BehaviorTreeComponent    &btComp,
+                                        const TransformComponent &myTrans,
+                                        const BTAsset            &asset,
+                                        CCL::ECS::EntityID        entity,
+                                        float                     dt);
+
+    // UtilitySelector の子1つの点数（優先度 × 距離 × 状況による倍率 × 繰り返しの減点）。内訳を outDebug に書く
+    float ScoreUtilityChild(BTNodeID                  childId,
+                            BehaviorTreeComponent    &btComp,
+                            const TransformComponent &myTrans,
+                            const BTAsset            &asset,
+                            CCL::ECS::EntityID        entity,
+                            float                     dt,
+                            BTScoreDebug             &outDebug);
+
+    // アクション・条件へ渡す BTContext を作る。param はそのノードの数値パラメータ
     CCL::AI::BT::BTContext MakeContext(BTNodeID                  nodeId,
                                        BehaviorTreeComponent    &btComp,
                                        const TransformComponent &myTrans,
@@ -95,7 +138,7 @@ private:
                                        float                     dt,
                                        float                     param);
 
-    // 条件ノードを1つ評価する。木の評価と、割り込み・自己中断の判定の両方から呼ぶ。
+    // 条件ノードを1つ評価する。未登録の条件は false
     bool EvaluateCondition(BTNodeID                  nodeId,
                            BehaviorTreeComponent    &btComp,
                            const TransformComponent &myTrans,
@@ -103,11 +146,7 @@ private:
                            CCL::ECS::EntityID        entity,
                            float                     dt);
 
-    /**
-     * @brief 枝の先頭に並ぶ条件だけを評価する。行動は実行しない。
-     * @note 行動を評価すると、アニメのトリガーを引いて要求を書く（技を出してしまう）。
-     *       今なら通るかを副作用なしに知るために、条件だけをたどる専用の経路がいる。
-     */
+    // 枝の先頭に並ぶ条件だけを評価する（行動は実行しない）。先頭に条件が無い枝は false
     bool GuardsPass(BTNodeID                  nodeId,
                     BehaviorTreeComponent    &btComp,
                     const TransformComponent &myTrans,
@@ -115,10 +154,18 @@ private:
                     CCL::ECS::EntityID        entity,
                     float                     dt);
 
-    /**
-     * @brief 走っている枝を打ち切ってよいか。配下の行動が1つでも拒否したら false。
-     * @note 打ち切りは途中でやめられないので、打ち切る前に全員に確認する2段階にしている。
-     */
+    // UtilitySelector の候補に入れてよいか。条件の無い枝は、クールダウン中でなければ通す
+    bool CandidatePasses(BTNodeID                  nodeId,
+                         BehaviorTreeComponent    &btComp,
+                         const TransformComponent &myTrans,
+                         const BTAsset            &asset,
+                         CCL::ECS::EntityID        entity,
+                         float                     dt);
+
+    // 枝の上に重なった Decorator のどれかがクールダウン中か
+    bool TopCooldownActive(BTNodeID nodeId, const BehaviorTreeComponent &btComp, const BTAsset &asset) const;
+
+    // 走っている枝を打ち切ってよいか。配下の行動が1つでも拒否したら false。AbortSubtree の前に呼ぶ
     bool CanAbortSubtree(BTNodeID                  nodeId,
                          BehaviorTreeComponent    &btComp,
                          const TransformComponent &myTrans,
@@ -126,7 +173,7 @@ private:
                          CCL::ECS::EntityID        entity,
                          float                     dt);
 
-    // 枝を打ち切る。配下の行動に後始末をさせ、実行状態を捨てる。
+    // 枝を打ち切る。配下の行動に後始末をさせ、実行状態を捨てる
     void AbortSubtree(BTNodeID                  nodeId,
                       BehaviorTreeComponent    &btComp,
                       const TransformComponent &myTrans,
@@ -134,19 +181,32 @@ private:
                       CCL::ECS::EntityID        entity,
                       float                     dt);
 
-    /**
-     * @brief デバッグ UI。木を一覧にして、この枝を今すぐ実行するかを選べるようにする。
-     *
-     * 木のデータは書き換えず、評価を始めるノードを差し替えるだけ。
-     *
-     * @param btComp 表示・操作する BT。
-     * @param entity BT を持つエンティティ。
-     */
+    // 強制実行中か。true の間、評価は条件・クールダウン・割り込み・自己中断の関門を素通しにする
+    static bool IgnoreGatesForDebug(const BehaviorTreeComponent &btComp);
+
+    // 評価を始めるノードを返す（強制実行中はその枝、無ければルート）。評価の並列ループから呼ぶ
+    BTNodeID ApplyDebugForcing(BehaviorTreeComponent &btComp, size_t nodeCount);
+
+    // UtilitySelector が技を選んだ瞬間の内訳を btComp.debugPickLog に写す。topIds は最初の抽選の上位（点数の高い順）。
+    // 上位が3つに足りなければ、空いた枠に候補外の子（点数の高い順）を入れる
+    static void RecordUtilityPick(const BTAsset         &asset,
+                                  BTNodeID               selectorId,
+                                  BTNodeID               pickedId,
+                                  const BTNodeID        *topIds,
+                                  int                    topCount,
+                                  BehaviorTreeComponent &btComp);
+
+    // 枝の上に重なった Cooldown の残り時間 [秒]。クールダウン中でなければ 0（デバッグ表示用）
+    static float CooldownLeft(BTNodeID nodeId, const BehaviorTreeComponent &btComp, const BTAsset &asset);
+
+    // デバッグ UI。木を一覧にし、選んだ枝だけを評価させる（木のデータは書き換えない）
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
 
     // DrawForcedNodeGui の再帰部分。1ノードを1行で描き、実行ボタンを付ける。
+    // parentIsUtility が true なら、スコア選択の子として点数も出す
     void DrawNodeRowRecursive(const BTAsset         &asset,
                               BTNodeID               nodeId,
                               BehaviorTreeComponent &btComp,
-                              CCL::ECS::EntityID     entity);
+                              CCL::ECS::EntityID     entity,
+                              bool                   parentIsUtility = false);
 };

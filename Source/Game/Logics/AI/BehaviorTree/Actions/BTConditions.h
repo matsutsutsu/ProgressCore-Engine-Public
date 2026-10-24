@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近の速さ・被弾量・ステージの端）。
+// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近の速さ・被弾・ステージの端）。
 //
 // 責務:
 //   - blackboard の値とノードの param を比べる条件を定義する
@@ -35,9 +35,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が正面 ±param 度の内側にいる（正面に捉えている）。param=90 で前方の半分。
-    // 角度も距離と同じく param で持つ。「正面」「側面」「背後」を ID にすると、
-    // 技ごとに欲しい角度が違うたびに ID が増え、中間の値も作れない。
+    // 相手が正面 ±param 度の内側にいる（正面に捉えている）。param=90 で前方の半分
     struct TargetAngleLessThan : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -64,8 +62,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が param m/s 以上の速さで離れている。距離を取り続ける相手への技の条件に使う。
-    // 符号を反転して比べるのは、しきい値を負の数で書かせると木の上で読みにくいため。
+    // 相手が param m/s 以上の速さで離れている。param は正の数で書く（負の数は木の上で読みにくい）
     struct TargetRetreating : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -74,8 +71,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 前回リセットしてからの被弾が、最大 HP の param % に達した（未設定なら 20%）。
-    // しきい値をノードに置くので、形態ごと・敵ごとに退く頻度を変えても ID が増えない。
+    // 前回リセットしてからの被弾が、最大 HP の param % に達した（未設定なら 20%）
     struct DamageThresholdExceeded : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -85,8 +81,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // ステージの端から param m 以内に居る。param=0 で壁際まで来たとき。
-    // 円の中心と半径は BattleContext が持つので、ステージを変えても木は直さなくてよい。
+    // ステージの端から param m 以内に居る。param=0 で壁際まで来たとき
     struct IsAtStageEdge : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
@@ -95,13 +90,33 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が「自分から見た中央の方向」±param 度の内側に立っている（逃げ道を塞がれている）。
-    // C_IsAtStageEdge と Sequence で並べて「追い込まれた」を作る。param=60 で中央側の扇。
+    // 相手が「自分から見た中央の方向」±param 度の内側にいる（逃げ道を塞がれている）。C_IsAtStageEdge と並べて「追い込まれた」を作る
     struct TargetOnCenterSide : public IBTCondition
     {
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.targetAngleFromCenter <= ctx.param;
+        }
+    };
+
+    // 追い込まれている：ステージの端から param m 以内に居て、相手が中央側 ±70 度にいる（逃げ道を塞がれている）。
+    // C_IsAtStageEdge と C_TargetOnCenterSide の AND。スコアの状況による倍率は条件を1つしか持てないので、まとめた条件を用意する
+    struct Cornered : public IBTCondition
+    {
+        bool Evaluate(BTContext &ctx) override
+        {
+            constexpr float kCenterSideAngle = 70.0f; // 「中央側」とみなす角度 [度]
+            return ctx.bt->blackboard.distanceToArenaEdge <= ctx.param &&
+                   ctx.bt->blackboard.targetAngleFromCenter <= kCenterSideAngle;
+        }
+    };
+
+    // 直近の被弾から param 秒以内。殴られている最中に反撃・離脱を選びやすくするのに使う
+    struct RecentlyHit : public IBTCondition
+    {
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.timeSinceLastHit < ctx.param;
         }
     };
 
@@ -119,6 +134,8 @@ namespace CCL::AI::BT
         reg.RegisterCondition<DamageThresholdExceeded>(C_DamageThresholdExceeded);
         reg.RegisterCondition<IsAtStageEdge>(C_IsAtStageEdge);
         reg.RegisterCondition<TargetOnCenterSide>(C_TargetOnCenterSide);
+        reg.RegisterCondition<Cornered>(C_Cornered);
+        reg.RegisterCondition<RecentlyHit>(C_RecentlyHit);
     }
 
 } // namespace CCL::AI::BT

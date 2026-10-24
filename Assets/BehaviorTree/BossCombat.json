@@ -17,11 +17,6 @@
             "startPin": 29
         },
         {
-            "endPin": 43,
-            "id": 89,
-            "startPin": 26
-        },
-        {
             "endPin": 46,
             "id": 90,
             "startPin": 44
@@ -70,11 +65,6 @@
             "endPin": 223,
             "id": 230,
             "startPin": 207
-        },
-        {
-            "endPin": 232,
-            "id": 234,
-            "startPin": 26
         },
         {
             "endPin": 236,
@@ -147,19 +137,9 @@
             "startPin": 233
         },
         {
-            "endPin": 324,
-            "id": 325,
-            "startPin": 321
-        },
-        {
             "endPin": 327,
             "id": 328,
             "startPin": 321
-        },
-        {
-            "endPin": 25,
-            "id": 340,
-            "startPin": 5
         },
         {
             "endPin": 345,
@@ -445,6 +425,26 @@
             "endPin": 604,
             "id": 605,
             "startPin": 584
+        },
+        {
+            "endPin": 607,
+            "id": 609,
+            "startPin": 5
+        },
+        {
+            "endPin": 232,
+            "id": 610,
+            "startPin": 608
+        },
+        {
+            "endPin": 612,
+            "id": 614,
+            "startPin": 5
+        },
+        {
+            "endPin": 43,
+            "id": 615,
+            "startPin": 613
         }
     ],
     "editor_nodes": [
@@ -462,21 +462,11 @@
             "actionId": 0,
             "id": 3,
             "inputPinId": 4,
-            "name": "Root Selector",
+            "name": "技選択",
             "outputPinId": 5,
             "posX": 6608.0,
             "posY": 210.0,
-            "type": 1
-        },
-        {
-            "actionId": 0,
-            "id": 24,
-            "inputPinId": 25,
-            "name": "ドローン戦(中距離2択)",
-            "outputPinId": 26,
-            "posX": 6962.0,
-            "posY": 432.0,
-            "type": 7
+            "type": 9
         },
         {
             "actionId": 0,
@@ -546,11 +536,25 @@
             "actionId": 0,
             "id": 149,
             "inputPinId": 150,
-            "interrupt": true,
             "name": "被弾がかさんだら退く",
             "outputPinId": 151,
             "posX": -2726.0,
             "posY": 478.0,
+            "score": {
+                "base": 5.0,
+                "bonus": [
+                    {
+                        "condition": "C_DamageThresholdExceeded",
+                        "mult": 3.0,
+                        "param": 6.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 20.0,
+                    "bestMin": 0.0,
+                    "falloff": 15.0
+                }
+            },
             "type": 2
         },
         {
@@ -559,7 +563,7 @@
             "id": 152,
             "inputPinId": 153,
             "outputPinId": 0,
-            "param": 6.0,
+            "param": 3.0,
             "posX": -2994.0,
             "posY": 670.0,
             "type": 3
@@ -573,6 +577,21 @@
             "param": 7.0,
             "posX": 3732.0,
             "posY": 450.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 45.0,
+                    "bestMin": 15.0,
+                    "falloff": 10.0
+                }
+            },
             "type": 6
         },
         {
@@ -585,6 +604,14 @@
             "param": 8.0,
             "posX": 12036.0,
             "posY": 432.0,
+            "score": {
+                "base": 7.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 20.0
+                }
+            },
             "type": 6
         },
         {
@@ -806,7 +833,6 @@
             "type": 4
         },
         {
-            "abortSelf": true,
             "actionId": 0,
             "id": 319,
             "inputPinId": 320,
@@ -814,18 +840,22 @@
             "outputPinId": 321,
             "posX": 13206.0,
             "posY": 434.0,
+            "score": {
+                "base": 3.0,
+                "bonus": [
+                    {
+                        "condition": "C_DistanceGreaterThan",
+                        "mult": 2.0,
+                        "param": 80.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 0.0,
+                    "falloff": 0.0
+                }
+            },
             "type": 2
-        },
-        {
-            "actionId": 2,
-            "condition": "C_DistanceGreaterThan",
-            "id": 323,
-            "inputPinId": 324,
-            "outputPinId": 0,
-            "param": 80.0,
-            "posX": 13088.0,
-            "posY": 656.0,
-            "type": 3
         },
         {
             "action": "A_BossStrafe",
@@ -958,6 +988,21 @@
             "param": 30.0,
             "posX": -340.0,
             "posY": 434.0,
+            "score": {
+                "base": 5.0,
+                "bonus": [
+                    {
+                        "condition": "C_DamageThresholdExceeded",
+                        "mult": 2.0,
+                        "param": 6.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 20.0,
+                    "bestMin": 0.0,
+                    "falloff": 10.0
+                }
+            },
             "type": 6
         },
         {
@@ -1168,6 +1213,21 @@
             "param": 10.0,
             "posX": 4928.0,
             "posY": 510.0,
+            "score": {
+                "base": 7.0,
+                "bonus": [
+                    {
+                        "condition": "C_TargetRetreating",
+                        "mult": 2.0,
+                        "param": 5.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 75.0,
+                    "bestMin": 30.0,
+                    "falloff": 10.0
+                }
+            },
             "type": 6
         },
         {
@@ -1352,6 +1412,14 @@
             "param": 40.0,
             "posX": 10080.0,
             "posY": 430.0,
+            "score": {
+                "base": 6.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 10.0
+                }
+            },
             "type": 6
         },
         {
@@ -1408,6 +1476,21 @@
             "param": 10.0,
             "posX": 2224.0,
             "posY": 462.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.5,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 25.0,
+                    "bestMin": 10.0,
+                    "falloff": 15.0
+                }
+            },
             "type": 6
         },
         {
@@ -1416,7 +1499,7 @@
             "id": 557,
             "inputPinId": 558,
             "outputPinId": 0,
-            "param": 25.0,
+            "param": 40.0,
             "posX": 2073.0,
             "posY": 894.0,
             "type": 3
@@ -1472,6 +1555,26 @@
             "param": 15.0,
             "posX": 1200.0,
             "posY": 478.0,
+            "score": {
+                "base": 7.0,
+                "bonus": [
+                    {
+                        "condition": "C_TargetApproaching",
+                        "mult": 1.5,
+                        "param": 10.0
+                    },
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 25.0,
+                    "bestMin": 8.0,
+                    "falloff": 10.0
+                }
+            },
             "type": 6
         },
         {
@@ -1562,9 +1665,61 @@
             "posX": 966.0,
             "posY": 894.0,
             "type": 4
+        },
+        {
+            "actionId": 0,
+            "decoratorType": 1,
+            "id": 606,
+            "inputPinId": 607,
+            "outputPinId": 608,
+            "param": 5.0,
+            "posX": 6148.0,
+            "posY": 432.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 55.0,
+                    "bestMin": 20.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": 6
+        },
+        {
+            "actionId": 0,
+            "decoratorType": 1,
+            "id": 611,
+            "inputPinId": 612,
+            "outputPinId": 613,
+            "param": 5.0,
+            "posX": 8020.0,
+            "posY": 432.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 45.0,
+                    "bestMin": 15.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": 6
         }
     ],
-    "last_id_counter": 605,
+    "last_id_counter": 615,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1578,28 +1733,36 @@
                 7,
                 8,
                 9,
-                10
+                10,
+                11
             ],
-            "type": "Selector"
+            "name": "技選択",
+            "type": "UtilitySelector"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                11,
                 12,
-                13
-            ],
-            "interrupt": true,
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                13,
                 14
             ],
-            "decoratorType": 1,
-            "param": 30.0,
-            "type": "Decorator"
+            "name": "被弾がかさんだら退く",
+            "score": {
+                "base": 5.0,
+                "bonus": [
+                    {
+                        "condition": "C_DamageThresholdExceeded",
+                        "mult": 3.0,
+                        "param": 6.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 20.0,
+                    "bestMin": 0.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
         },
         {
             "actionOrConditionId": 0,
@@ -1607,7 +1770,22 @@
                 15
             ],
             "decoratorType": 1,
-            "param": 15.0,
+            "param": 30.0,
+            "score": {
+                "base": 5.0,
+                "bonus": [
+                    {
+                        "condition": "C_DamageThresholdExceeded",
+                        "mult": 2.0,
+                        "param": 6.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 20.0,
+                    "bestMin": 0.0,
+                    "falloff": 10.0
+                }
+            },
             "type": "Decorator"
         },
         {
@@ -1616,7 +1794,27 @@
                 16
             ],
             "decoratorType": 1,
-            "param": 10.0,
+            "param": 15.0,
+            "score": {
+                "base": 7.0,
+                "bonus": [
+                    {
+                        "condition": "C_TargetApproaching",
+                        "mult": 1.5,
+                        "param": 10.0
+                    },
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 25.0,
+                    "bestMin": 8.0,
+                    "falloff": 10.0
+                }
+            },
             "type": "Decorator"
         },
         {
@@ -1625,7 +1823,22 @@
                 17
             ],
             "decoratorType": 1,
-            "param": 7.0,
+            "param": 10.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.5,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 25.0,
+                    "bestMin": 10.0,
+                    "falloff": 15.0
+                }
+            },
             "type": "Decorator"
         },
         {
@@ -1634,16 +1847,71 @@
                 18
             ],
             "decoratorType": 1,
-            "param": 10.0,
+            "param": 7.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 45.0,
+                    "bestMin": 15.0,
+                    "falloff": 10.0
+                }
+            },
             "type": "Decorator"
         },
         {
             "actionOrConditionId": 0,
             "children": [
-                19,
+                19
+            ],
+            "decoratorType": 1,
+            "param": 10.0,
+            "score": {
+                "base": 7.0,
+                "bonus": [
+                    {
+                        "condition": "C_TargetRetreating",
+                        "mult": 2.0,
+                        "param": 5.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 75.0,
+                    "bestMin": 30.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": "Decorator"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
                 20
             ],
-            "type": "WeightedSelector"
+            "decoratorType": 1,
+            "param": 5.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 55.0,
+                    "bestMin": 20.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": "Decorator"
         },
         {
             "actionOrConditionId": 0,
@@ -1651,33 +1919,87 @@
                 21
             ],
             "decoratorType": 1,
-            "param": 40.0,
+            "param": 5.0,
+            "score": {
+                "base": 8.0,
+                "bonus": [
+                    {
+                        "condition": "C_RecentlyHit",
+                        "mult": 0.30000001192092896,
+                        "param": 0.6000000238418579
+                    }
+                ],
+                "distance": {
+                    "bestMax": 45.0,
+                    "bestMin": 15.0,
+                    "falloff": 10.0
+                }
+            },
             "type": "Decorator"
         },
         {
-            "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
                 22
             ],
             "decoratorType": 1,
-            "param": 8.0,
+            "param": 40.0,
+            "score": {
+                "base": 6.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 10.0
+                }
+            },
             "type": "Decorator"
         },
         {
             "abortSelf": true,
             "actionOrConditionId": 0,
             "children": [
-                23,
+                23
+            ],
+            "decoratorType": 1,
+            "param": 8.0,
+            "score": {
+                "base": 7.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 20.0
+                }
+            },
+            "type": "Decorator"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
                 24
             ],
+            "name": "遠ければ詰める",
+            "score": {
+                "base": 3.0,
+                "bonus": [
+                    {
+                        "condition": "C_DistanceGreaterThan",
+                        "mult": 2.0,
+                        "param": 80.0
+                    }
+                ],
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 0.0,
+                    "falloff": 0.0
+                }
+            },
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 11,
             "children": [],
             "condition": "C_DamageThresholdExceeded",
-            "param": 6.0,
+            "param": 3.0,
             "type": "Condition"
         },
         {
@@ -1693,6 +2015,7 @@
                 25,
                 26
             ],
+            "name": "重み付きセレクター（Weighted Selector）",
             "type": "WeightedSelector"
         },
         {
@@ -1704,6 +2027,7 @@
                 30,
                 31
             ],
+            "name": "中央へ跳んで逃げる",
             "type": "Sequence"
         },
         {
@@ -1716,6 +2040,7 @@
                 36,
                 37
             ],
+            "name": "シーケンス (Sequence)",
             "type": "Sequence"
         },
         {
@@ -1724,6 +2049,7 @@
                 38,
                 39
             ],
+            "name": "シーケンス (Sequence)",
             "type": "Sequence"
         },
         {
@@ -1736,6 +2062,7 @@
                 44,
                 45
             ],
+            "name": "縦割り",
             "type": "Sequence"
         },
         {
@@ -1745,6 +2072,7 @@
                 47,
                 48
             ],
+            "name": "跳躍攻撃",
             "type": "Sequence"
         },
         {
@@ -1757,6 +2085,7 @@
                 53,
                 54
             ],
+            "name": "横なぎ",
             "type": "Sequence"
         },
         {
@@ -1769,6 +2098,7 @@
                 59,
                 60
             ],
+            "name": "挟み込み",
             "type": "Sequence"
         },
         {
@@ -1778,6 +2108,7 @@
                 62,
                 63
             ],
+            "name": "滞空して陣形攻撃",
             "type": "Sequence"
         },
         {
@@ -1791,14 +2122,8 @@
                 69,
                 70
             ],
+            "name": "弾幕(遠距離)",
             "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 2,
-            "children": [],
-            "condition": "C_DistanceGreaterThan",
-            "param": 80.0,
-            "type": "Condition"
         },
         {
             "action": "A_BossStrafe",
@@ -1814,6 +2139,7 @@
                 72,
                 73
             ],
+            "name": "ステージ中央に退避する（失敗しても再抽選で後退が選ばれる）",
             "type": "Sequence"
         },
         {
@@ -1822,6 +2148,7 @@
                 74,
                 75
             ],
+            "name": "並行ノード（Parallel）",
             "type": "Parallel"
         },
         {
@@ -1905,7 +2232,7 @@
             "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 25.0,
+            "param": 40.0,
             "type": "Condition"
         },
         {
@@ -2075,6 +2402,7 @@
                 76,
                 77
             ],
+            "name": "滞空(主)＋陣形(従)",
             "type": "Parallel"
         },
         {
@@ -2161,6 +2489,7 @@
                 79,
                 80
             ],
+            "name": "後退アクション",
             "type": "Sequence"
         },
         {
@@ -2171,6 +2500,7 @@
                 83,
                 84
             ],
+            "name": "ドローン操作",
             "type": "Sequence"
         },
         {
@@ -2188,6 +2518,7 @@
                 87,
                 88
             ],
+            "name": "陣形→撃つ",
             "type": "Sequence"
         },
         {

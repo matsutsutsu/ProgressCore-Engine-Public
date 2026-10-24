@@ -79,11 +79,13 @@
     X(C_TargetRetreating,        6,  Spatial, "速さ [m/s]",             "相手が N m/s 以上で離れている")          \
     X(C_IsAtStageEdge,           7,  Spatial, "端からの距離 [m]",       "ステージの端から N m 以内")              \
     X(C_TargetOnCenterSide,      8,  Spatial, "角度 [度]",              "相手が中央側 ±N 度にいる（追い込まれ）") \
+    X(C_Cornered,                13, Spatial, "端からの距離 [m]",       "追い込まれ（端から N m 以内・相手が中央側）") \
                                                                                                                   \
     /* State */                                                                                                   \
     X(C_IsPhase2,                9,  State,   "",                       "フェーズ >= 2")                          \
     X(C_ShouldTransitionPhase2,  10, State,   "",                       "第2形態移行条件 (HP半分以下 & 第1形態)") \
-    X(C_DamageThresholdExceeded, 11, State,   "最大HPに対する割合 [%]", "被弾の蓄積 >= 最大HPの N %")
+    X(C_DamageThresholdExceeded, 11, State,   "最大HPに対する割合 [%]", "被弾の蓄積 >= 最大HPの N %")         \
+    X(C_RecentlyHit,             12, State,   "経過時間 [秒]",          "直近の被弾から N 秒以内")
 
 // ============================================================
 // ドローンの陣形

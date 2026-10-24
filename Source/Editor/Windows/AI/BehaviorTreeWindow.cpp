@@ -14,6 +14,10 @@
 
 using namespace BTEditor;
 
+// ---------------------------------------------------------------------------
+// 生成と破棄
+// ---------------------------------------------------------------------------
+
 // グラフの変更1回分。前後の状態を丸ごと持ち、Undo/Redo で差し替える
 class BTGraphChangeCommand : public IEditorCommand
 {
@@ -76,7 +80,10 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
     // 状態が変わっていればコマンドをスタックに積む
     if (m_lastSavedState != newState)
     {
-        m_dirty = true; // グラフ変更はすべてここを通る
+        // グラフ変更はすべてここを通るので、未保存の印もここで立てる。
+        // ノードを「動かしただけ」はここを通らないので検出しない。誤検出で毎回警告が出ると
+        // 警告を読まなくなるので、取りこぼす側に倒してある。
+        m_dirty = true;
         EditorCommandHistory::Instance().ExecuteCommand(
             std::make_unique<BTGraphChangeCommand>(this, commandName, m_lastSavedState, newState));
         m_lastSavedState = newState;
@@ -86,6 +93,7 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
 // ---------------------------------------------------------------------------
 // ウィンドウ枠
 // ---------------------------------------------------------------------------
+
 void BehaviorTreeWindow::DrawContents(EditorContext &context)
 {
     // データの技の名前を引く先。陣形の実体は World ごとにあるので毎フレーム引き直す（FormationRegistry.h）。
@@ -144,6 +152,14 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
 void BehaviorTreeWindow::DrawToolbar()
 {
+    // 処理フロー:
+    // 1. ファイル操作（保存・開く・テキスト書き出し）
+    // 2. 未保存の表示と、開く前の確認
+    // 3. 編集の補助（整列・囲む・自動追従）
+
+    // ---------------------------------------------------------
+    // 1. ファイル操作
+    // ---------------------------------------------------------
     if (ImGui::Button("保存"))
     {
         // 開いているファイル名を初期値にする。上書き保存のとき、毎回ファイル名を打ち直さずに済む。
@@ -189,9 +205,12 @@ void BehaviorTreeWindow::DrawToolbar()
         ImGui::SetTooltip("木の構造をインデント付きのテキストで書き出す（先頭に凡例付き）");
     }
 
-    // 未保存の表示。ウィンドウ名に "*" を足す手もあるが、ImGui はウィンドウ名を
-    //   ID に使っているため、名前を変えるとドッキング配置が別物として扱われる。
-    //   だからツールバー側に出す。
+    // ---------------------------------------------------------
+    // 2. 未保存
+    // ---------------------------------------------------------
+
+    // ウィンドウ名に "*" を足さずツールバー側に出す。ImGui はウィンドウ名を ID に使っているため、
+    // 名前を変えるとドッキング配置が別物として扱われる。
     if (m_dirty)
     {
         ImGui::SameLine();
@@ -221,6 +240,9 @@ void BehaviorTreeWindow::DrawToolbar()
         ImGui::EndPopup();
     }
 
+    // ---------------------------------------------------------
+    // 3. 編集の補助
+    // ---------------------------------------------------------
     ImGui::Separator();
 
     if (ImGui::Button("整列"))
@@ -252,6 +274,7 @@ void BehaviorTreeWindow::DrawToolbar()
 // ---------------------------------------------------------------------------
 // 編集操作
 // ---------------------------------------------------------------------------
+
 uint32_t BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string &name, float x, float y)
 {
     EditorBTNode node;
@@ -469,6 +492,7 @@ EditorBTNode *BehaviorTreeWindow::FindNode(uint32_t nodeId)
 // ---------------------------------------------------------------------------
 // 表示名・色・実行中の状態
 // ---------------------------------------------------------------------------
+
 const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &context)
 {
     if (context.selectedEntity == CCL::ECS::InvalidEntityID || !context.world) return nullptr;
@@ -477,7 +501,7 @@ const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &con
 
 ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
 {
-    // 8種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある。
+    // 9種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある。
     // 明るさは、暗い背景の上で色の差が出て、かつ白い文字が読める程度にそろえている。
     switch (type)
     {
@@ -489,6 +513,7 @@ ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
     case EditorBTNodeType::Parallel: return ImColor(20, 145, 150);        // 青緑（180°）
     case EditorBTNodeType::Condition: return ImColor(50, 150, 70);        // 緑（130°）
     case EditorBTNodeType::Decorator: return ImColor(180, 140, 30);       // 金（45°）
+    case EditorBTNodeType::UtilitySelector: return ImColor(115, 150, 35); // 黄緑（85°）：金と緑の間の空き
     default: return ImColor(100, 100, 100);
     }
 }
@@ -536,18 +561,25 @@ std::string BehaviorTreeWindow::FormatParam(const char *label, float value)
 
 std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
 {
-    // ----------------------------------------------------------------
-    // まとまり（Selector など）とコメント枠：自分で付けた名前
-    // ----------------------------------------------------------------
+    // 処理フロー:
+    // 1. まとまり（Selector など）とコメント枠：自分で付けた名前
+    // 2. Condition：表示名の "N" を param の値に置き換える
+    // 3. Action：行動名＋param（データの技は技の名前）
+    // 4. Decorator：種類＋param
+
+    // ---------------------------------------------------------
+    // 1. まとまり・コメント枠
+    // ---------------------------------------------------------
     if (UsesCustomName(node.type)) return node.name;
 
     char number[32];
     snprintf(number, sizeof(number), "%g", node.param);
 
-    // ----------------------------------------------------------------
-    // Condition：表示名の "N" を param の値に置き換える
-    //   登録表の表示名は「距離が N m 未満」の形なので、値を入れるとそのまま読める文になる
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 2. Condition
+    // ---------------------------------------------------------
+
+    // 登録表の表示名は「距離が N m 未満」の形なので、値を入れるとそのまま読める文になる
     if (node.type == EditorBTNodeType::Condition)
     {
         std::string name = GetConditionDisplayName(node.actionOrConditionId);
@@ -568,9 +600,9 @@ std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
         return name;
     }
 
-    // ----------------------------------------------------------------
-    // Action：行動名＋param（データの技は技の名前）
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 3. Action
+    // ---------------------------------------------------------
     if (node.type == EditorBTNodeType::Action)
     {
         if (node.actionOrConditionId == A_DroneFormation)
@@ -587,9 +619,9 @@ std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
         return name;
     }
 
-    // ----------------------------------------------------------------
-    // Decorator：種類＋param
-    // ----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4. Decorator
+    // ---------------------------------------------------------
     switch (node.decoratorType)
     {
     case 1: return std::string("Cooldown ") + number + "秒";

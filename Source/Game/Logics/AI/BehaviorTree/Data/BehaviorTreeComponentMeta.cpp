@@ -1,4 +1,3 @@
-// 汎用 AI の Component（BehaviorTree / Drone）のエディタ・シリアライズ用のメタ定義。
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTAssetCache.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
@@ -15,16 +14,14 @@
 #include <imgui.h>
 #endif
 
-// 陣形名の表（kDroneFormationNames）は DroneComponent.h にある。
-// 列挙の定義と同じ場所に置き、名前と値の対応を手で合わせなくて済むようにしている。
-
 // DroneState と1対1で並べる（順番がずれると別の状態名が表示される）。
 static const char *DroneStateNames[] = {
     "Idle", "MoveToTarget", "FireCharge", "Returning"};
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // BehaviorTreeComponent
-// ============================================================
+// ---------------------------------------------------------------------------
+
 template <>
 struct ComponentMeta<BehaviorTreeComponent>
 {
@@ -50,8 +47,16 @@ struct ComponentMeta<BehaviorTreeComponent>
      */
     static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
+        // 処理フロー:
+        // 1. 使う木のパスを選ぶ
+        // 2. キャッシュを読み直す
+        // 3. 読み込んだ木の情報を出す
+
         bool changed = false;
 
+        // ---------------------------------------------------------
+        // 1. 木のパス
+        // ---------------------------------------------------------
         ImGui::TextDisabled("BTファイル: %s", comp.assetPath.empty() ? "None" : comp.assetPath.c_str());
 
         if (ImGui::Button("ビヘイビアツリーを読込... (JSON)", ImVec2(-1, 0)))
@@ -63,7 +68,11 @@ struct ComponentMeta<BehaviorTreeComponent>
             }
         }
 
+        // ---------------------------------------------------------
+        // 2. 読み直し
+        // ---------------------------------------------------------
         ImGui::Separator();
+
         // キャッシュを捨てて読み直す。キャッシュの中身が新しい木に替わるので、この個体も
         // 同じ木を使っている他の個体も、次のフレームの SyncAssets で受け取り直す。
         if (ImGui::Button("AI再読込"))
@@ -74,7 +83,11 @@ struct ComponentMeta<BehaviorTreeComponent>
         ImGui::SameLine();
         ImGui::TextDisabled("(読込済みの木: %zu 本)", BTAssetCache::Instance().Count());
 
+        // ---------------------------------------------------------
+        // 3. 木の情報
+        // ---------------------------------------------------------
         ImGui::Separator();
+
         // ノード数はキャッシュから取る。ゲームを止めて編集している間は SyncAssets が
         // 走らないので、sharedAsset を見ると選び直した木のノード数が出ない。
         // GetOrLoad は2回目以降は検索だけで、失敗したパスも読みに行かない。
@@ -101,9 +114,10 @@ struct ComponentMeta<BehaviorTreeComponent>
 REGISTER_COMPONENT(BehaviorTreeComponent, "BehaviorTreeComponent")
 REGISTER_COMPONENT_EDITOR_GUI(BehaviorTreeComponent)
 
-// ============================================================
+// ---------------------------------------------------------------------------
 // DroneComponent
-// ============================================================
+// ---------------------------------------------------------------------------
+
 template <>
 struct ComponentMeta<DroneComponent>
 {
@@ -130,6 +144,7 @@ struct ComponentMeta<DroneComponent>
 
             CFIELD_RT(localIndex, "ローカルインデックス", "Formation")
             CFIELD_RT(totalDrones, "総ドローン数", "Formation")
+            // 陣形名の表（kDroneFormationNames）は列挙と同じ DroneComponent.h に置き、名前と値の対応を手で合わせずに済むようにしている
             CFIELD_ENUM_U8_RT(currentFormation, "現在の指示", kDroneFormationNames.data(), kDroneFormationNames.size(), "State")
             CFIELD_ENUM_U8_RT(currentState, "現在ステート", DroneStateNames, std::size(DroneStateNames), "State")
             CFIELD_RT(hasReachedSlot, "スロット到着済み", "State")

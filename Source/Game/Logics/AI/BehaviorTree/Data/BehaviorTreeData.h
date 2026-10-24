@@ -5,169 +5,160 @@
 // 責務:
 //   - ノードの種類（BTNodeType）、修飾の種類（BTDecoratorType）、評価結果（BTNodeState）を定義する
 //   - 1ノードの定義（BTNode）と、全個体で共有する木（BTAsset）を定義する
+//   - UtilitySelector の子の採点ルール（BTScoreRule）を定義する
 //   - 枝の先頭の条件を先に調べられる形かを判定する（HasReadableGuard）
 //
-// 備考: 下の「子を添字で持つ理由」を参照。
-// ===========================================================================
-
-// 子をポインタではなく配列の添字(BTNodeID)で持つ。理由は3つ。
-//   ・JSONにそのまま書ける。ポインタは保存できないので、ポインタ木にすると
-//     保存と読み込みのたびに「ポインタ⇔添字」の変換が要る
-//   ・ノードIDがそのまま添字になるので、個体ごとの実行状態を木と同じ長さの
-//     配列（BehaviorTreeComponent の nodeTimers / runningNodes）で持てる
-//   ・ノード本体の確保が「ノードの数だけ」から1回にまとまり、添字の近い
-//     ノードが同じキャッシュラインに載る
+// 備考:
+//   子をポインタではなく配列の添字(BTNodeID)で持つ。理由は3つ。
+//     ・JSONにそのまま書ける。ポインタは保存できないので、ポインタ木にすると
+//       保存と読み込みのたびに「ポインタ⇔添字」の変換が要る
+//     ・ノードIDがそのまま添字になるので、個体ごとの実行状態を木と同じ長さの
+//       配列（BehaviorTreeComponent の nodeTimers / runningNodes）で持てる
+//     ・ノード本体の確保が「ノードの数だけ」から1回にまとまり、添字の近い
+//       ノードが同じキャッシュラインに載る
 //
-// 但し書き。children は std::vector なので、子をたどるときの
-// ヒープ参照はノードごとに1回残る（確保回数は N → 1+N であって 1 ではない）。
-// また木の走査は深さ優先で添字が飛ぶため、連続アクセスを前提とする
-// ハードウェアプリフェッチが効く形ではない。効いているのは空間的局所性の方。
+//   ただし children は std::vector なので、子をたどるときのヒープ参照はノードごとに1回残る
+//   （確保回数は N → 1+N であって 1 ではない）。
+//
+//   また木の走査は深さ優先で添字が飛ぶため、連続アクセスを前提とする
+//   ハードウェアプリフェッチが効く形ではない。効いているのは空間的局所性の方。
+// ===========================================================================
 #include <cstdint>
+#include <string>
 #include <vector>
 
 using BTNodeID = uint16_t; // ノードのインデックス（配列の添字）
 using ActionID = uint16_t; // 行動・条件の種類を判別するID
 using AssetID  = uint32_t; // BTAsset の種類を判別するID
 
-// デバッグ用のノード状態（実行時の可視化専用）。
+// デバッグ用のノード状態（実行時の可視化専用）
 enum class BTDebugState : uint8_t
 {
-    None = 0,
-    Success,
-    Failure,
-    Running
+    None = 0, // 今フレームは評価されていない
+    Success,  // 成功を返した
+    Failure,  // 失敗を返した
+    Running   // 実行中を返した
 };
 
-// 修飾の種類。アセットが実際に使っているのは Cooldown だけで、
-// 残り2つは実装だけがある状態。
-//
-// 「子を開始させて手を離す」修飾（Async）は置かない。currentActionId を毎フレーム書き直し、
-// 硬直が終わったときに下ろす行動の作りと合わず、技が終わっても体が動き続けるため。
-// 同じ用途は BTNodeType::Parallel（主は評価され続ける）で書くこと。
+/**
+ * @brief 修飾の種類。アセットが実際に使っているのは Cooldown だけで、残り2つは実装だけがある状態。
+ *
+ * 「子を開始させて手を離す」修飾（Async）は置かない。currentActionId を毎フレーム書き直し、
+ * 硬直が終わったときに下ろす行動の作りと合わず、技が終わっても体が動き続けるため。
+ * 同じ用途は BTNodeType::Parallel（主は評価され続ける）で書くこと。
+ */
 enum class BTDecoratorType : uint8_t
 {
     Inverter = 0, // 結果を反転 (Success <-> Failure)。Running は反転しない
-    Cooldown = 1, // クールダウン (指定秒数経過するまでFailure)
-    Retry    = 2  // 失敗しても指定回数リトライする。
-                  //   ただし繰り返すのは「同じフレームの中で」。条件のように
-                  //   同一フレームでは結果が変わらない子に付けても意味がない
+    Cooldown = 1, // 子が成功してから param 秒が経つまで Failure
+    Retry    = 2  // 失敗したら同じフレームの中で param 回まで試し直す。条件の子に付けても結果は変わらない
 };
 
+/**
+ * @brief ノードの種類。各種類の評価の詳細は BehaviorTreeSystem::EvaluateTreeRecursive の case に書いてある。
+ * @note アセットには文字列で保存する（BehaviorTreeLoader::StringToNodeType）ので、並びを変えても保存済みの木は壊れない。
+ */
 enum class BTNodeType : uint8_t
 {
-    Selector,  // 順に評価し、最初に成功した子の結果を返す
-    Sequence,  // 順に評価し、最初に失敗した子の結果を返す
-    Condition, // 条件を評価して成功/失敗を返す
-    Action,    // 行動を実行して成功/失敗/実行中を返す
-    Decorator, // 子の結果を修飾する
-    // 子の weight に比例して1つ引き、成功するまで引き直す。
-    //   失敗した枝は候補から外して残りから引き直すので、条件で弾かれる枝が
-    //   あっても「出せる技のどれか」が必ず出る。全部の重みを同じにすれば
-    //   単純な均等ランダムになる（既定の weight は 1.0）。
-    //
-    //   このプロジェクトの「ランダムに技を選ぶ」はすべてこのノードに寄せてある。
-    //   今後の袋方式（引いた技を一巡するまで出さない）も、条件付きの重み変更も、
-    //   このノードの重みの決め方を差し替えるだけで足せる。
-    //
-    WeightedSelector,
-
-    // 子を並行して動かす。0番目の子が「主」で、その結果がこのノードの結果になる。
-    // 1番目以降は「従」で、主が Running の間だけ毎フレーム評価され、結果は捨てられる。
-    //
-    //   「技を出しながら、その間ドローンにも指示を出す」を書くためのノード。
-    //   主は毎フレーム評価され続けるので、毎フレームの後始末を持つ行動
-    //   （currentActionId を書く技）をそのまま置ける。
-    //
-    //   従には「毎フレーム評価されても安いもの」だけを置くこと。主が終わると従は
-    //   評価されなくなるので、従に currentActionId を書く行動を置くと、要求が
-    //   下りないまま残る（読み込み時に ValidateNodes が警告する）。
-    Parallel
+    Selector,         // 順に評価し、最初に成功した子の結果を返す
+    Sequence,         // 順に評価し、最初に失敗した子の結果を返す
+    Condition,        // 条件を評価して成功/失敗を返す
+    Action,           // 行動を実行して成功/失敗/実行中を返す
+    Decorator,        // 子の結果を修飾する
+    WeightedSelector, // 子の weight に比例して1つ引き、成功するまで引き直す
+    Parallel,         // 0番目の子（主）の結果を返し、主が Running の間だけ残りの子（従）も動かす
+    UtilitySelector   // 今出せる子だけに絞り、点数の高い上位3つから点数に比例して1つ引く。点数は ScoreUtilityChild が出す
 };
 
-// ノードの評価結果。Running を最初に返すのは Action だけ（複合ノードは子の Running をそのまま返す）。
-// Running を返したノードは、次のフレームも同じ所から評価される。
+/**
+ * @brief ノードの評価結果。
+ *
+ * Running を最初に返すのは Action だけ（複合ノードは子の Running をそのまま返す）。
+ * Running を返したノードは、次のフレームも同じ所から評価される。
+ */
 enum class BTNodeState : uint8_t
 {
-    Success,
-    Failure,
-    Running
+    Success, // 成功
+    Failure, // 失敗
+    Running  // 実行中。次のフレームも続ける
 };
 
-// WeightedSelector が抽選できる子の上限。候補バッファをスタックの固定長で取るため
+// WeightedSelector / UtilitySelector が抽選できる子の上限。候補バッファをスタックの固定長で取るため
 // （評価はワーカースレッドで走るので、ヒープ確保を持ち込みたくない）。
 // 超えた木は読み込み時に警告する。
 inline constexpr int kMaxWeightedSelectorChildren = 16;
 
-// 1つのノード定義。既定値は、読み込み側が代入を1つ忘れても不定値を読まないために書く。
+// 採点ルール1つが持てる状況による倍率の上限。共有の木にヒープを持ち込まないよう固定長で持つため
+inline constexpr int kMaxScoreBonuses = 4;
+
+// 状況による倍率1つ。条件（BT の条件ノードと同じもの）が通れば点数に mult を掛ける
+struct BTScoreBonus
+{
+    ActionID conditionId = 0;    // 条件の ID（BT_CONDITION_LIST）
+    float    param       = 0.0f; // 条件に渡す値（条件ノードの param と同じ意味）
+    float    mult        = 1.0f; // 条件が通ったときに掛ける倍率
+};
+
+/**
+ * @brief UtilitySelector の子の採点ルール。点数 = 優先度 × 距離の台形（0〜1）× 状況による倍率。
+ * @note ルールの無い子は weight を点数にする。ルールは BTAsset::scoreRules に置き、ノードは添字だけを持つ。
+ */
+struct BTScoreRule
+{
+    float base = 1.0f; // 優先度（ほかの技と比べた出やすさ）。満点の距離にいるときの点数
+
+    // 距離の台形 [m]。bestMin〜bestMax で満点（×1）、範囲の外へ falloff かけて直線で 0 まで下がる。
+    // 既定値は「どの距離でも満点」
+    float bestMin = 0.0f;    // 得意な距離の最小
+    float bestMax = 9999.0f; // 得意な距離の最大
+    float falloff = 0.0f;    // ぼかし幅。範囲の外へこれだけ離れると 0 点。0 なら範囲の外はすぐ 0 点
+
+    BTScoreBonus bonuses[kMaxScoreBonuses]; // 当てはまるものを全部掛ける
+    uint8_t      bonusCount = 0;            // bonuses のうち使っている数
+};
+
+/**
+ * @brief 1つのノード定義。
+ * @note weight は param と別に、子が自分で持つ。param は技の長さなどで埋まっており、親に配列で持つと children と長さがずれうるため。
+ */
 struct BTNode
 {
-    BTNodeType type = BTNodeType::Action;
+    BTNodeType      type                = BTNodeType::Action;        // ノードの種類
+    ActionID        actionOrConditionId = 0;                         // Action / Condition が指す行動・条件の ID
+    BTDecoratorType decoratorType       = BTDecoratorType::Inverter; // 修飾の種類。Decorator のときだけ意味を持つ
 
-    ActionID actionOrConditionId = 0;
-
-    // Decorator のときだけ意味を持つ修飾の種類。
-    BTDecoratorType decoratorType = BTDecoratorType::Inverter;
-
-    // 数値パラメータ。意味はノードの種類が決める。
+    // 数値パラメータ。意味はノードの種類が決める
     //   Action    … その行動の引数（待機の秒数、近接の硬直など）
     //   Decorator … クールダウン秒数 / リトライ回数
     float param = 0.0f;
 
-    // 親が WeightedSelector のときの「選ばれやすさ」。既定 1.0 で均等。
-    //
-    //   param と分けてあるのは、param が「そのノード自身の設定」だから。
-    //   技の param は技の全体時間で既に埋まっており、そこへ重みを
-    //   入れると技の長さが消える。weight は「親から見たときの比」で持ち主が違う。
-    //
-    //   重みを親に配列で持たせない理由：children と長さがずれうるため。
-    //   子が自分で持てば、子を足しても消してもずれようがない。
-    //
-    //   0 以下にすると抽選の候補から外れる（読み込み時に警告する）。
-    float weight = 1.0f;
+    float weight    = 1.0f;  // 親が WeightedSelector / UtilitySelector のときの選ばれやすさ。0 以下で候補外
+    bool  interrupt = false; // 親が Selector / UtilitySelector のとき、ほかの枝が Running でも先頭の条件を毎フレーム見て割り込むか
+    bool  abortSelf = false; // 親が Selector / UtilitySelector のとき、自分が Running の間も先頭の条件を見直し、崩れたら降りるか
 
-    // 親（Selector）の下で、上の枝が Running でも割り込んで入ってよいか。
-    //
-    //   既定の false は、上の枝が終わるまで待つ。true を付けた枝だけが、
-    //   先頭に並ぶ条件を毎フレーム評価してもらえる。
-    //
-    //   全部の枝を毎フレーム見直さないのは、再開位置（runningNodes）が技を続けるための
-    //   仕組みだから。Selector が Running の子を先に再開するので、出している最中の技が
-    //   次のフレームに別の技へ変わらない。割り込みはその例外を枝ごとに許す仕組みで、既定は許さない。
-    bool interrupt = false;
+    int16_t scoreRuleIndex = -1; // 親が UtilitySelector のときの採点ルール（BTAsset::scoreRules の添字）。-1 は無し
 
-    // 親（Selector）の下で自分が Running の間、自分の先頭の条件を毎フレーム見直すか。
-    //
-    //   interrupt が「上の枝が下の枝を打ち切る」のに対し、こちらは「自分の条件が通らなくなったら
-    //   自分から抜ける」。予備動作の最中に間合いを外れたら技を取りやめる、といった用途。
-    //   抜けた後は Selector が先頭から選び直すので、その場に合った枝が選ばれる。
-    bool abortSelf = false;
-
-    std::vector<BTNodeID> children;
-};
-
-// 全Entityで共有される不変データ（アセット）。
-//
-// 実行状態（残り時間・どの子まで進んだか）をここへ置いてはいけない。同じ木を使う
-// 個体が1つの変数を共有し、片方が始めた待機がもう片方の分まで減る。評価は
-// 並列で走るので、同じ float への同時書き込みにもなる。
-// 状態は個体側（BehaviorTreeComponent）が、ノードIDをそのまま添字にした配列で持つ。
-// BTAssetCache が const で配ることで、「書けない」ことを型で守っている。
-struct BTAsset
-{
-    AssetID             id;
-    std::vector<BTNode> nodes;
+    std::vector<BTNodeID> children; // 子のノードID（実行順）
 };
 
 /**
- * @brief 割り込み・自己中断を判定できる形か（枝の先頭に条件が並んでいるか）。
- *
- * 割り込みたい枝が今なら通るかを見るには、行動を実行せずに調べられるものが
- * 先頭に無いといけない。行動は実行すると副作用（アニメのトリガー・要求の書き込み）が
- * あるので、試しに評価することができない。
- *
- * 形の規則をここに1つだけ置き、読み込み時の検査（BehaviorTreeLoader）と実行時の
- * 評価（BehaviorTreeSystem::GuardsPass）の両方から使う。別々に書くと、片方だけ直したとき
- * 「エディタでは警告が出ないのに実行時は割り込まない」という見つけにくい食い違いになる。
+ * @brief 全Entityで共有される木（アセット）。BTAssetCache が const で配る。
+ * @note 実行状態（残り時間・再開位置）を置いてはいけない。全個体が共有し、並列に評価するため。状態は BehaviorTreeComponent が持つ。
+ */
+struct BTAsset
+{
+    AssetID                  id;         // アセットの ID（JSON の assetId）
+    std::vector<BTNode>      nodes;      // 全ノード。nodes[0] が根
+    std::vector<BTScoreRule> scoreRules; // 採点ルール。BTNode::scoreRuleIndex から引く
+
+    // ノードの名前（エディタで付けたもの）。nodes と同じ長さで、名前の無いノードは空。
+    // デバッグ表示だけが使う。BTNode に持たせないのは scoreRules と同じ理由（キャッシュライン）
+    std::vector<std::string> nodeNames;
+};
+
+/**
+ * @brief 枝の先頭に条件があるか（行動を実行せずに「今なら通るか」を調べられる形か）。
+ * @note 形の規則はここ1か所。読み込み時の検査と BehaviorTreeSystem::GuardsPass の両方が使うので、別に書かないこと。
  */
 inline bool HasReadableGuard(const BTAsset &asset, BTNodeID nodeId)
 {

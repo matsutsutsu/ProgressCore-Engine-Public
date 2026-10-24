@@ -655,6 +655,7 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionIds.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -1148,6 +1149,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Debug.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Evaluate.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Components\EnemyTagMeta.cpp" />

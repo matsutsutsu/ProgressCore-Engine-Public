@@ -18,9 +18,7 @@ namespace ed = ax::NodeEditor;
 
 namespace BTEditor
 {
-    // コメント枠の配色1組
-    //   見出し帯を一番濃くするのは、内側の塗りがノード背景と重なるうえ面積が広く、
-    //   濃くすると中のノードが読めなくなるため。色の違いは帯で見せる。
+    // コメント枠の配色1組。色の違いは見出し帯で見せる（内側を濃くすると中のノードが読めなくなる）
     struct GroupPalette
     {
         const char *name;   // インスペクタに出す色名
@@ -60,20 +58,13 @@ namespace BTEditor
     inline constexpr float kGroupPad     = 24.0f; // コメント枠がノードを囲むときの余白
     inline constexpr float kGroupHeaderH = 30.0f; // コメント枠の見出し帯の高さ（＝掴める範囲）
 
-    // ライブラリが返すID(uintptr_t)をこちらのID型へ戻す。
-    //   ID はこちらが uint32_t で発行して預けているだけなので、切り詰めても情報は落ちない。
+    // ライブラリが返すID(uintptr_t)をこちらのID型へ戻す（こちらが uint32_t で発行したものなので切り詰めてよい）
     inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
 
-    /**
-     * @brief パスからファイル名を取り出す（"Assets/BehaviorTree/Common.json" → "Common.json"）。
-     *
-     * std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して std::string へそのまま繋げないため。
-     *
-     * @param path '/' 区切りに揃えたパス。
-     * @return ファイル名。
-     */
+    // パスからファイル名を取り出す（"Assets/BehaviorTree/Common.json" → "Common.json"）
     inline std::string FileNameOf(const std::string &path)
     {
+        // std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して std::string へそのまま繋げないため
         const size_t slash = path.find_last_of("/\\");
         return (slash == std::string::npos) ? path : path.substr(slash + 1);
     }

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: BT アセット（木の実体）をパスごとに1つだけ持つキャッシュ（シングルトン）。
+// 概要: BT アセット（木の実体）をパスごとに1つだけ持つキャッシュ（シングルトン）
 //
 // 責務:
 //   - パスに対応する木を初回だけ読み込み、以降は同じものを返す
@@ -31,25 +31,18 @@ public:
     static BTAssetCache &Instance();
 
     /**
-     * @brief パスに対応する木を返す。初回だけ読み込み、以降は同じものを返す（失敗なら nullptr）。
-     *
-     * 失敗したパスは記録して、二度と読みに行かない。毎フレーム再試行するとログが埋まって
-     * 他の警告が見えなくなるため。直したら Reload を呼ぶ。
+     * @brief パスに対応する木を返す。初回だけ読み込み、以降は同じものを返す。読めなければ nullptr。
+     * @note 一度失敗したパスは読みに行かない。ファイルを直したら Reload を呼ぶ。
      */
     std::shared_ptr<const BTAsset> GetOrLoad(const std::string &path);
 
-    /**
-     * @brief ファイルを読み直して差し替える。エディタで木を保存した後に使う。
-     * @param path 読み直す BT ファイルのパス。
-     * @return 読み直した木。パスが空・読めなかったときは nullptr。
-     * @note 各エンティティは次のフレームの BehaviorTreeSystem の先頭で受け取り直す。
-     */
+    // ファイルを読み直して差し替える（エディタで保存した後に使う）。各個体は次のフレームに受け取り直す
     std::shared_ptr<const BTAsset> Reload(const std::string &path);
 
-    // 全部捨てる。シーンの切り替えなどで使う想定。
+    // 読み込んだ木と失敗の記録を全部捨てる（今は呼び出し元が無い）
     void Clear();
 
-    // 現在キャッシュしている木の数（デバッグ表示用）。
+    // 現在キャッシュしている木の数（デバッグ表示用）
     size_t Count() const;
 
 private:
@@ -57,15 +50,10 @@ private:
     BTAssetCache(const BTAssetCache &)            = delete;
     BTAssetCache &operator=(const BTAssetCache &) = delete;
 
-    /**
-     * @brief ファイルから木を読み、キャッシュに入れる。GetOrLoad と Reload の共通部分。
-     * @param path 読み込む BT ファイルのパス。
-     * @return 読み込んだ木。読めなければ nullptr（失敗の記録を残す）。
-     * @note m_mutex をロックした状態で呼ぶこと。
-     */
+    // ファイルから木を読み、キャッシュに入れる（GetOrLoad と Reload の共通部分）。m_mutex をロックして呼ぶ
     std::shared_ptr<const BTAsset> LoadLocked(const std::string &path);
 
-    mutable std::mutex                                              m_mutex;
-    std::unordered_map<std::string, std::shared_ptr<const BTAsset>> m_assets;
+    mutable std::mutex                                              m_mutex;  // m_assets と m_failed を守る
+    std::unordered_map<std::string, std::shared_ptr<const BTAsset>> m_assets; // パス → 読み込んだ木
     std::unordered_set<std::string>                                 m_failed; // 読み込みに失敗したパス
 };
