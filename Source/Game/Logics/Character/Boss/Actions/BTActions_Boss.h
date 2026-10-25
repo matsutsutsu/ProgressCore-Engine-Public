@@ -14,4 +14,4 @@ namespace CCL::AI::BT
 {
     // ボス用の行動をすべて BTActionRegistry へ登録する。起動時に1回だけ呼ぶ。
     void RegisterBossActions();
-} // namespace CCL::AI::BT
+} 

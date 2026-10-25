@@ -18,10 +18,7 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h" // アクセス申告（TypeInfo<T>::ID）
 
-namespace CCL::ECS
-{
-    class World;
-}
+namespace CCL::ECS{ class World;}
 struct TransformComponent;
 
 namespace CCL::AI::BT
@@ -72,13 +69,9 @@ namespace CCL::AI::BT
          */
         virtual void OnAbort(BTContext &ctx) {}
 
-        /**
-         * @brief world から GetComponent<T>() で書き換える Component を申告する（TypeIDsOf で作る）。
-         * @note 書き忘れてもエラーは出ず、スケジューラが並列に走らせてデータ競合になる。GetComponent<T>() を足したら必ずここも足す。
-         */
-        virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
 
-        // world から GetComponent<T>() で読む Component を申告する
+        // BTAction派生経由で読み書きするComponentを登録する
+        virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
         virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }
     };
 
