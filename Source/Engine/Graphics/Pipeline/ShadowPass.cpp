@@ -9,7 +9,29 @@
 #include "Engine/Graphics/Renderer/Core/RenderDebugRegistry.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
+#include "Engine/Graphics/Renderer/Core/MeshLod.h"
+#include "tracy/Tracy.hpp"
+#include "tracy/TracyD3D11.hpp"
 #include <algorithm>
+
+#if defined(TRACY_ENABLE)
+namespace
+{
+    // Tracy は名前のポインタを持ち続けるので、どれも寿命がプログラム全体にわたる定数で渡す。
+    // SourceLocationData を constexpr にすると MSVC 14.38 で C2131 になるので static const にする
+
+    // カスケードごとの GPU ゾーン
+    const tracy::SourceLocationData kCascadeGpuZones[3] = {
+        {"GPU: Shadow Cascade 0", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
+        {"GPU: Shadow Cascade 1", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
+        {"GPU: Shadow Cascade 2", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
+    };
+
+    // カスケードごとのグラフ
+    const char *const kPlotInstances[3] = {"Shadow C0 Instances", "Shadow C1 Instances", "Shadow C2 Instances"};
+    const char *const kPlotTriangles[3] = {"Shadow C0 Triangles", "Shadow C1 Triangles", "Shadow C2 Triangles"};
+} // namespace
+#endif
 
 void ShadowPass::Initialize(const RenderServices &services)
 {
@@ -54,33 +76,54 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         shadowMap->params.cascadeSplits,
         lightVPs);
 
-    // 影を落とすメッシュを集め、同じメッシュが並ぶように並べる。
+    // 影を落とすメッシュを集め、同じメッシュデータが並ぶように並べる。
+    // Model はエンティティごとに作られるので、Model::Mesh のアドレスは同じモデルでも1体ずつ違う。
+    // アドレスで並べると1000機のドローンが1機ずつのバッチに分かれるので、共有の mesh->data で並べる。
     // cascadeMask での絞り込みは、カスケードごとにバッチを作るときに行う
-    m_itemsScratch.clear();
-    m_itemsScratch.reserve(shadowCommands.size());
-    for (const auto &cmd : shadowCommands)
     {
-        if (!cmd.mesh) continue;
-        SortItem item;
-        item.mesh        = cmd.mesh;
-        item.cascadeMask = cmd.cascadeMask;
-        if (!cmd.mesh->bones.empty() || !cmd.mesh->node)
+        ZoneScopedN("Shadow: Collect & Sort");
+
+        m_itemsScratch.clear();
+        m_itemsScratch.reserve(shadowCommands.size());
+        for (const auto &cmd : shadowCommands)
         {
-            item.worldMatrix = cmd.worldMatrix;
+            if (!cmd.mesh) continue;
+            SortItem item;
+            item.mesh        = cmd.mesh;
+            item.cascadeMask = cmd.cascadeMask;
+            if (!cmd.mesh->bones.empty() || !cmd.mesh->node)
+            {
+                item.worldMatrix = cmd.worldMatrix;
+            }
+            else
+            {
+                const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&cmd.mesh->node->globalTransform);
+                const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
+                DirectX::XMStoreFloat4x4(&item.worldMatrix, ml * ew);
+            }
+            m_itemsScratch.push_back(item);
         }
-        else
-        {
-            const DirectX::XMMATRIX ml = DirectX::XMLoadFloat4x4(&cmd.mesh->node->globalTransform);
-            const DirectX::XMMATRIX ew = DirectX::XMLoadFloat4x4(&cmd.worldMatrix);
-            DirectX::XMStoreFloat4x4(&item.worldMatrix, ml * ew);
-        }
-        m_itemsScratch.push_back(item);
+        std::sort(m_itemsScratch.begin(), m_itemsScratch.end(),
+                  [](const SortItem &a, const SortItem &b) { return a.mesh->data < b.mesh->data; });
     }
-    std::sort(m_itemsScratch.begin(), m_itemsScratch.end(),
-              [](const SortItem &a, const SortItem &b) { return a.mesh < b.mesh; });
+
+#if defined(TRACY_ENABLE)
+    TracyD3D11Ctx tracyCtx = m_services->tracyContext; // GPU 計測のコンテキスト（無ければ GPU ゾーンを作らない）
+#endif
 
     for (int cascadeIndex = 0; cascadeIndex < 3; ++cascadeIndex)
     {
+        ZoneScopedN("Shadow: Cascade");
+        ZoneValue(cascadeIndex);
+
+#if defined(TRACY_ENABLE)
+        // クリアも含めた、このカスケード全体の GPU 時間
+        tracy::D3D11ZoneScope cascadeGpuZone(tracyCtx, &kCascadeGpuZones[cascadeIndex], tracyCtx != nullptr);
+#endif
+
+        int64_t instanceCount = 0; // このカスケードで描いたインスタンスの数（スキンメッシュは1体1つ）
+        int64_t triangleCount = 0; // このカスケードで描いた三角形の数
+
         shadowMap->Activate(dc, cascadeIndex);
         m_psoShadow.Apply(dc, m_services->renderState);
 
@@ -109,42 +152,50 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         auto acquireBatch = [&]() -> Batch & {
             if (m_batchCount >= m_batchesScratch.size())
                 m_batchesScratch.emplace_back();
-            Batch &b = m_batchesScratch[m_batchCount++];
-            b.mesh   = nullptr;
+            Batch &b   = m_batchesScratch[m_batchCount++];
+            b.meshData = nullptr;
             b.data.clear();
             return b;
         };
 
-        for (const auto &info : m_itemsScratch)
+        // スキンメッシュはここで1体ずつ描き、それ以外はメッシュごとのバッチに積む
         {
-            if (!info.mesh || !info.mesh->data) continue;
-            if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
+            ZoneScopedN("Shadow: Build Batches + Skinned");
 
-            const bool isSkinned = !info.mesh->bones.empty();
-            if (isSkinned)
+            for (const auto &info : m_itemsScratch)
             {
-                modelConstants->UpdateSkeletonConstants(dc, *info.mesh);
-                if (lastBound != info.mesh)
-                {
-                    UINT stride = sizeof(ModelResource::Vertex), offset = 0;
-                    dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
-                    dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+                if (!info.mesh || !info.mesh->data) continue;
+                if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
 
-                    lastBound = info.mesh;
-                }
-                dc->DrawIndexed(static_cast<UINT>(info.mesh->data->indices.size()), 0, 0);
-            }
-            else
-            {
-                if (m_batchCount > 0 && m_batchesScratch[m_batchCount - 1].mesh == info.mesh)
+                const bool isSkinned = !info.mesh->bones.empty();
+                if (isSkinned)
                 {
-                    m_batchesScratch[m_batchCount - 1].data.push_back({info.worldMatrix});
+                    modelConstants->UpdateSkeletonConstants(dc, *info.mesh);
+                    if (lastBound != info.mesh)
+                    {
+                        UINT stride = sizeof(ModelResource::Vertex), offset = 0;
+                        dc->IASetVertexBuffers(0, 1, info.mesh->data->vertexBuffer.GetAddressOf(), &stride, &offset);
+                        dc->IASetIndexBuffer(info.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+                        lastBound = info.mesh;
+                    }
+                    dc->DrawIndexed(static_cast<UINT>(info.mesh->data->indices.size()), 0, 0);
+
+                    instanceCount += 1;
+                    triangleCount += static_cast<int64_t>(info.mesh->data->indices.size() / 3);
                 }
                 else
                 {
-                    Batch &b = acquireBatch();
-                    b.mesh   = info.mesh;
-                    b.data.push_back({info.worldMatrix});
+                    if (m_batchCount > 0 && m_batchesScratch[m_batchCount - 1].meshData == info.mesh->data)
+                    {
+                        m_batchesScratch[m_batchCount - 1].data.push_back({info.worldMatrix});
+                    }
+                    else
+                    {
+                        Batch &b   = acquireBatch();
+                        b.meshData = info.mesh->data;
+                        b.data.push_back({info.worldMatrix});
+                    }
                 }
             }
         }
@@ -156,23 +207,33 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         {
             const Batch &batch = m_batchesScratch[bi];
 
+            // 影は形の細部がほとんど出ないので、LOD のあるメッシュは一番粗い段で描く（LOD が無ければ元の形）。
+            // 距離で段を選ばないので、カスケードやインスタンスごとに分ける必要もない
+            const MeshLod::DrawRange range = MeshLod::GetCoarsestDrawRange(*batch.meshData);
+
             UINT stride = sizeof(ModelResource::Vertex), zero = 0;
-            dc->IASetVertexBuffers(0, 1, batch.mesh->data->vertexBuffer.GetAddressOf(), &stride, &zero);
-            dc->IASetIndexBuffer(batch.mesh->data->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+            dc->IASetVertexBuffers(0, 1, batch.meshData->vertexBuffer.GetAddressOf(), &stride, &zero);
+            dc->IASetIndexBuffer(range.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
             size_t total = batch.data.size(), offset = 0;
             while (offset < total)
             {
                 const size_t n = (std::min)(total - offset, m_instanceBuffer.GetMaxInstances());
                 m_instanceBuffer.Write(dc, batch.data.data() + offset, n);
-                dc->DrawIndexedInstanced(
-                    static_cast<UINT>(batch.mesh->data->indices.size()),
-                    static_cast<UINT>(n), 0, 0, 0);
+                dc->DrawIndexedInstanced(range.indexCount, static_cast<UINT>(n), range.startIndex, 0, 0);
+
+                instanceCount += static_cast<int64_t>(n);
+                triangleCount += static_cast<int64_t>(range.indexCount / 3) * static_cast<int64_t>(n);
                 offset += n;
             }
         }
 
         shader->End(dc, *m_services);
         m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
+
+#if defined(TRACY_ENABLE)
+        TracyPlot(kPlotInstances[cascadeIndex], instanceCount);
+        TracyPlot(kPlotTriangles[cascadeIndex], triangleCount);
+#endif
     }
 
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());

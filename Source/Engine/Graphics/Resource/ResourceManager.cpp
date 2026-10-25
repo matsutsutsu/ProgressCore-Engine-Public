@@ -200,7 +200,21 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
 
     // 3) 読み込む（重く、中で LoadTexture を呼ぶのでロックの外）
     if (ModelResource *model = m_modelPool.Get(handle))
+    {
         model->Load(Graphics::Instance().GetDevice(), filename);
+
+        // LOD を予約されたモデルなら、ここで作る。
+        // レジストリに登録する前なので、ほかのスレッドや描画からはまだ見えておらず、書き換えても安全
+        bool wantsLod = false;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            wantsLod = (m_lodRequests.count(hash) != 0);
+        }
+        if (wantsLod)
+        {
+            model->GenerateLods(Graphics::Instance().GetDevice());
+        }
+    }
 
     // 4) レジストリに登録する（ロック中）。同時に同じモデルを読んでいたら、先に登録した方を使う
     {
@@ -220,6 +234,14 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
 ModelResource *ResourceManager::GetModel(ModelHandle handle)
 {
     return m_modelPool.Get(handle);
+}
+
+void ResourceManager::RequestModelLod(const char *filename)
+{
+    if (!filename || filename[0] == '\0') return;
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_lodRequests.insert(HashString(filename));
 }
 
 void ResourceManager::UnloadModel(ModelHandle handle)

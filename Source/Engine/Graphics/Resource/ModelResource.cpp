@@ -19,6 +19,10 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Resource/ResourceManager.h" // テクスチャをパス単位でキャッシュして読むため
 #include <winsock.h>
+#include <chrono>
+#include <cfloat>
+#include <meshoptimizer.h>
+#include "tracy/Tracy.hpp"
 
 #include "ModelResource.h"
 
@@ -737,6 +741,136 @@ void ModelResource::ComputeModelLocalAABB()
         m_boundingBox.Center  = XMFLOAT3(0.0f, 0.0f, 0.0f);
         m_boundingBox.Extents = XMFLOAT3(0.0f, 0.0f, 0.0f);
     }
+}
+
+// ---------------------------------------------------------------------------
+// LOD
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // LOD1 以降の作り方。gltfpack で見た目を確かめた設定と同じにしてある
+    //   LOD1 = -si 0.25 -sp -se 0.02（形を保って 25% まで）
+    //   LOD2 = -si 0.05 -sa          （形の繋がりを無視して 5% まで。遠景と影用）
+    struct LodSetting
+    {
+        float targetRatio; // 元の三角形数に対する目標の割合
+        float maxError;    // 許す形のずれ（モデルの大きさに対する割合）。超えるとそこで簡略化をやめる
+        bool  sloppy;      // true なら meshopt_simplifySloppy（目標の数まで強制的に減らす）
+    };
+
+    constexpr LodSetting kLodSettings[] = {
+        {0.25f, 0.02f, false},  // LOD1：中距離
+        {0.05f, FLT_MAX, true}, // LOD2：遠景・影
+    };
+} // namespace
+
+void ModelResource::GenerateLods(ID3D11Device *device)
+{
+    ZoneScopedN("ModelResource::GenerateLods");
+
+    // 読み込み時に毎回作るか、インポート時に作って保存するかを、この時間を見て決める
+    const auto start = std::chrono::steady_clock::now();
+
+    for (Mesh &mesh : meshes)
+    {
+        BuildMeshLods(device, mesh);
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    m_lodBuildMs   = std::chrono::duration<float, std::milli>(end - start).count();
+}
+
+void ModelResource::BuildMeshLods(ID3D11Device *device, Mesh &mesh)
+{
+    // 処理フロー
+    //   1. 対象外のメッシュを除く
+    //   2. LOD0（元の形）の後ろに、LOD1 以降のインデックスを作って詰める
+    //   3. 全段を入れたインデックスバッファを作る
+
+    // ---------------------------------------------------------
+    // 1. 対象外のメッシュを除く
+    // ---------------------------------------------------------
+
+    // スキンメッシュはボーンで形が変わるので、レストポーズで簡略化しても形が合わない。
+    // subsets が2つ以上あると、マテリアルの範囲ごとに簡略化しないと境目が崩れる（今はドローンの1つで足りる）
+    if (!mesh.bones.empty() || mesh.subsets.size() > 1)
+    {
+        return;
+    }
+    if (mesh.indices.empty() || mesh.vertices.empty())
+    {
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 2. LOD0 の後ろに LOD1 以降を詰める
+    // ---------------------------------------------------------
+
+    const float *positions   = &mesh.vertices[0].position.x;
+    const size_t vertexCount = mesh.vertices.size();
+    const size_t sourceCount = mesh.indices.size();
+
+    // 頂点はどの段も元の頂点バッファを指すので、インデックスだけを段ごとに作る
+    std::vector<UINT>     allIndices(mesh.indices);
+    std::vector<LodLevel> levels;
+    levels.push_back({0, static_cast<UINT>(sourceCount)});
+
+    std::vector<UINT> lodIndices(sourceCount); // 1段分の結果（元より多くはならない）
+    for (const LodSetting &setting : kLodSettings)
+    {
+        // 目標の数は三角形の区切り（3の倍数）にそろえる
+        const size_t target = static_cast<size_t>(static_cast<float>(sourceCount) * setting.targetRatio) / 3 * 3;
+
+        size_t count = 0;
+        if (setting.sloppy)
+        {
+            // Sloppy：目標の数まで強制的に減らす。超えても止めない
+            count = meshopt_simplifySloppy(lodIndices.data(), mesh.indices.data(), sourceCount,
+                                           positions, vertexCount, sizeof(Vertex),
+                                           nullptr, target, setting.maxError, nullptr);
+        }
+        else
+        {
+            // Permissive：UV や法線の継ぎ目をまたいでも減らす。付けないと継ぎ目の多いモデルは途中で止まる
+            count = meshopt_simplify(lodIndices.data(), mesh.indices.data(), sourceCount,
+                                     positions, vertexCount, sizeof(Vertex),
+                                     target, setting.maxError, meshopt_SimplifyPermissive, nullptr);
+        }
+
+        // 目標の数まで減らせなかった場合は、そこで止める
+        if (count == 0)
+        {
+            break;
+        }
+
+        levels.push_back({static_cast<UINT>(allIndices.size()), static_cast<UINT>(count)});
+        allIndices.insert(allIndices.end(), lodIndices.begin(), lodIndices.begin() + count);
+    }
+
+    // ---------------------------------------------------------
+    // 3. 全段のインデックスバッファを作る
+    // ---------------------------------------------------------
+
+    D3D11_BUFFER_DESC bufferDesc = {};
+    bufferDesc.ByteWidth         = static_cast<UINT>(sizeof(UINT) * allIndices.size());
+    bufferDesc.Usage             = D3D11_USAGE_IMMUTABLE;
+    bufferDesc.BindFlags         = D3D11_BIND_INDEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA subresourceData = {};
+    subresourceData.pSysMem                = allIndices.data();
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+    if (FAILED(device->CreateBuffer(&bufferDesc, &subresourceData, buffer.GetAddressOf())))
+    {
+        // 作れなければ LOD 無しのまま（indexBuffer で元の形を描く）
+        CCL_LOG_ERROR(LogCategory::Render, "[ModelResource] LOD のインデックスバッファを作れませんでした (indices=%zu)",
+                      allIndices.size());
+        return;
+    }
+
+    mesh.lods           = std::move(levels);
+    mesh.lodIndexBuffer = buffer;
 }
 
 // ---------------------------------------------------------------------------

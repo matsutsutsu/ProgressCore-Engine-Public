@@ -6,6 +6,7 @@
 // 責務:
 //   - RenderQueue の不透明のコマンドを並べ、同じキーが続く区間を1つのバッチにする
 //   - スキンでないメッシュは、インスタンスごとに視錐台カリングする（NormalPrepass の結果があれば使う）
+//   - LOD のあるメッシュは、NormalPrepass が選んだ段で、段ごとに描く
 //   - シェーダーの PSO がブレンドありのバッチは描かず、TransparentPass 用のキューへ回す
 //
 // 備考: Execute はフレームの流れだけを書き、各工程は private の関数に分けている。
@@ -16,7 +17,8 @@
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
-#include "Engine/Graphics/Resource/Model.h" // 引数に Model::Mesh を使う（入れ子の型は前方宣言できない）
+#include "Engine/Graphics/Renderer/Core/MeshLod.h" // MeshLod::LevelCounts
+#include "Engine/Graphics/Resource/Model.h"        // 引数に Model::Mesh を使う（入れ子の型は前方宣言できない）
 
 #include <DirectXCollision.h>
 #include <cstdint>
@@ -81,9 +83,9 @@ private:
                                        const DirectX::BoundingBox &localAABB, bool isSkinned);
 
     /**
-     * @brief このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount に入れる。
+     * @brief このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount / m_visibleLevelCounts に入れる。
      *
-     * NormalPrepass が同じ区切りで求めた列があればそれを使い、無ければ自分で作る。
+     * NormalPrepass が同じ区切りで求めた列（段の順に並べたもの）があればそれを使い、無ければ自分で作る。
      *
      * @param ctx       今フレームの描画情報。
      * @param mesh      描くメッシュ。
@@ -95,14 +97,14 @@ private:
     void ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                  size_t meshIdx, const DirectX::BoundingBox &localAABB, bool isSkinned);
 
-    // バッチのインスタンスのうち、見えるものだけを m_instanceScratch に集める
+    // バッチのインスタンスのうち、見えるものだけを m_instanceScratch に集め、LOD の段の順に並べる
     void BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                const DirectX::BoundingBox &localAABB, bool isSkinned);
 
     // 頂点・インデックスバッファとトポロジを設定する
     static void BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
-    // 見えるインスタンスを、インスタンスバッファに入る数ずつに分けて描く
+    // 見えるインスタンスを LOD の段ごとに、インスタンスバッファに入る数ずつに分けて描く
     void DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
     // スキンメッシュを1体ずつ描く（ボーン行列が1体ごとに違い、インスタンシングでまとめられない）
@@ -115,12 +117,14 @@ private:
     // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）。
     // NormalPrepass の結果を使えたメッシュでは使わない
     std::vector<InstanceData> m_instanceScratch;
+    std::vector<InstanceData> m_lodSortTemp; // m_instanceScratch を LOD の段の順に並べ替えるときの作業用
 
     // 実際に描くインスタンスの列。RenderQueue の中の配列か m_instanceScratch を指す（所有しない）。
     // RenderQueue のその配列に書き足すのは NormalPrepass だけなので、このパスが読んでいる間に
     // 配列が確保し直されて、このポインタが無効になることは無い
-    const InstanceData *m_visibleData  = nullptr;
-    size_t              m_visibleCount = 0;
+    const InstanceData  *m_visibleData  = nullptr;
+    size_t               m_visibleCount = 0;
+    MeshLod::LevelCounts m_visibleLevelCounts{}; // m_visibleData の段ごとの数（列は段の順に並んでいる）
 
     // カリングの集計（毎フレーム 0 に戻す。デバッガで見る用で、今は表示している UI は無い）
     uint32_t m_stat_drawnMeshes  = 0;

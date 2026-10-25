@@ -6,19 +6,22 @@
 #include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Graphics/Renderer/Core/RenderDebugRegistry.h"
 #include "Engine/Graphics/Renderer/Core/MeshCulling.h"
+#include "Engine/Graphics/Renderer/Core/MeshLod.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "tracy/Tracy.hpp"
 #include <DirectXCollision.h>
 #include <wrl/client.h>
 #include <algorithm>
 
-// 切り抜き（clip でピクセルを捨てる）マテリアルについて:
-//   このパスのピクセルシェーダーは clip() をしないので、切り抜くマテリアルを通すと、
-//   捨てるはずの部分にも深度が書かれる。その奥にあるものは深度テストで弾かれるので、
-//   後ろが見えるはずの所に何も描かれない（OpaquePass の絵自体は正しいので原因が見えにくい）。
-//
-//   今のシェーダーには切り抜くものが無いので、除外する判定は置いていない。
-//   切り抜くマテリアルを使うときは、このパスから外して OpaquePass に深度も書かせること
-//   （early-Z は効かなくなるが、切り抜くピクセルではもともとほとんど効かない）。
+#if defined(TRACY_ENABLE)
+namespace
+{
+    // LOD の段ごとの、このフレームに描いたインスタンスの数のグラフ（Tracy は名前のポインタを持ち続けるので定数で渡す）
+    const char *const kPlotLodInstances[MeshLod::kMaxLevels] = {
+        "LOD0 Instances", "LOD1 Instances", "LOD2 Instances", "LOD3 Instances"};
+} // namespace
+#endif
+
 
 void NormalPrepass::Initialize(const RenderServices &services)
 {
@@ -90,6 +93,8 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
 
+    MeshLod::LevelCounts lodTotals{}; // LOD のあるメッシュについて、このフレームの段ごとのインスタンスの数（グラフ用）
+
     size_t i = 0;
     while (i < sortKeys.size())
     {
@@ -146,12 +151,27 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 }
             }
 
-            // 見えるインスタンスの列を OpaquePass に残す。同じバッチの区切りと同じ MeshCull を
-            // 使っているので結果は一致し、OpaquePass は行列の計算とカリングを省ける。
+            // LOD のあるメッシュは、インスタンスごとに段を選び、段の順（LOD0 → LOD1 → …）に並べる。
+            // スキンメッシュは LOD を持たないので、全部 LOD0 のまま
+            const MeshLod::LevelCounts levelCounts =
+                isSkinned ? MeshLod::AllInLevel0(m_instanceScratch.size())
+                          : MeshLod::SortInstancesByLevel(m_instanceScratch, m_lodSortTemp, mesh, localAABB,
+                                                          ctx.camera->GetEye(), ctx.camera->GetFovY());
+
+            if (!mesh.data->lods.empty())
+            {
+                for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
+                {
+                    lodTotals[level] += levelCounts[level];
+                }
+            }
+
+            // 見えるインスタンスの列と段ごとの数を OpaquePass に残す。同じバッチの区切りと同じ MeshCull を
+            // 使っているので結果は一致し、OpaquePass は行列の計算・カリング・段の選択を省ける。
             // 空の列（全部カリングされた）も「見えるものが無い」という結果として残す
             queue->StoreVisibleInstances(
                 RenderQueue::MakeVisibleKey(batchStart, meshIdx),
-                m_instanceScratch.data(), m_instanceScratch.size());
+                m_instanceScratch.data(), m_instanceScratch.size(), levelCounts);
 
             if (m_instanceScratch.empty()) continue;
 
@@ -173,21 +193,38 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             }
             else
             {
-                const size_t visibleCount = m_instanceScratch.size();
-                size_t       curOffset    = 0;
-                while (curOffset < visibleCount)
+                // 段ごとに、その段の範囲のインデックスで描く（LOD が無いメッシュは段0に全部入っている）
+                size_t levelStart = 0; // この段のインスタンスが m_instanceScratch の何番目から始まるか
+                for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
                 {
-                    const size_t drawCount = (std::min)(visibleCount - curOffset, m_instanceBuffer.GetMaxInstances());
-                    m_instanceBuffer.Write(dc, m_instanceScratch.data() + curOffset, drawCount);
-                    m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-                    dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()),
-                                             static_cast<UINT>(drawCount), 0, 0, 0);
-                    curOffset += drawCount;
+                    const size_t levelCount = levelCounts[level];
+                    if (levelCount == 0) continue;
+
+                    const MeshLod::DrawRange range = MeshLod::GetDrawRange(*mesh.data, level);
+                    dc->IASetIndexBuffer(range.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+                    size_t curOffset = 0;
+                    while (curOffset < levelCount)
+                    {
+                        const size_t drawCount = (std::min)(levelCount - curOffset, m_instanceBuffer.GetMaxInstances());
+                        m_instanceBuffer.Write(dc, m_instanceScratch.data() + levelStart + curOffset, drawCount);
+                        m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+                        dc->DrawIndexedInstanced(range.indexCount, static_cast<UINT>(drawCount), range.startIndex, 0, 0);
+                        curOffset += drawCount;
+                    }
+                    levelStart += levelCount;
                 }
             }
             m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
     }
+
+#if defined(TRACY_ENABLE)
+    for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
+    {
+        TracyPlot(kPlotLodInstances[level], static_cast<int64_t>(lodTotals[level]));
+    }
+#endif
 
     shader->End(dc, *m_services);
 

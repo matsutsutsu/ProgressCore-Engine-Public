@@ -17,6 +17,7 @@
 #include <string>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Engine/Core/Math/StringHash.h"
 #include "ResourcePool.h"
@@ -72,6 +73,17 @@ public:
 
     // パスのハッシュからパスを引く（ModelComponent のシリアライズ・インスペクタ用）。無ければ空文字
     std::string GetAssetPath(uint32_t hash);
+
+    /**
+     * @brief filename のモデルを読み込むとき、LOD も作るよう予約する。
+     *
+     * 予約は読み込みより前に済ませる（ModelComponent::SetModel が、インスタンスを作る前に呼ぶ）。
+     * 読み込み済みのモデルには効かず、次に読み込んだときから有効になる。
+     * 描画に使われているバッファを、あとから書き換えないため。
+     *
+     * @param filename LOD を作るモデルのパス。
+     */
+    void RequestModelLod(const char *filename);
 
     // ============================================================
     // モデルのインスタンス（Model）
@@ -141,6 +153,7 @@ private:
     std::unordered_map<uint32_t, ModelHandle>            m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle>     m_animSequenceRegistry;
     std::unordered_map<uint32_t, std::string>            m_assetPathRegistry; // パスのハッシュ → パス
+    std::unordered_set<uint32_t>                         m_lodRequests;       // LOD を作るモデルのパスのハッシュ
     std::unordered_map<uint32_t, CCL::Handle<CurveData>> m_animCurveRegistry;
 
     std::mutex m_mutex; // レジストリとプールを守る

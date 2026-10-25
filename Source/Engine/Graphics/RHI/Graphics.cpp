@@ -17,6 +17,7 @@
 #include "Engine/Graphics/Pipeline/ShadowPass.h"
 #include "Engine/Graphics/Pipeline/NormalPrepass.h"
 #include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/LodDebugPass.h"
 #include "Engine/Graphics/Pipeline/SkyboxPass.h"
 #include "Engine/Graphics/Pipeline/SceneColorGrabPass.h"
 #include "Engine/Graphics/Pipeline/TransparentPass.h"
@@ -109,17 +110,18 @@ void Graphics::BuildDefaultRenderPasses()
 {
     // TODO(2026-09-10): ローディング画面など軽い構成が要るシーン用に、別の Build*RenderPasses を用意して切り替えられるようにする
 
-    m_pipeline.AddPass<SetupPass>();          //  1. HDR バッファのクリアとバインド
-    m_pipeline.AddPass<ShadowPass>();         //  2. シャドウマップ
-    m_pipeline.AddPass<NormalPrepass>();      //  3. 深度と法線のプリパス。不透明の深度を先に決める
-    m_pipeline.AddPass<OpaquePass>();         //  4. 不透明（深度が決まっているので early-Z が効く）
-    m_pipeline.AddPass<SkyboxPass>();         //  5. スカイボックス
-    m_pipeline.AddPass<SceneColorGrabPass>(); //  6. 屈折用にシーンカラーを写し取る
-    m_pipeline.AddPass<TransparentPass>();    //  7. 半透明（距離でソート）
-    m_pipeline.AddPass<ParticlePass>();       //  8. パーティクル
-    m_pipeline.AddPass<TrailPass>();          //  9. 武器トレイル。ブルームに拾わせるためポストプロセスより前
-    m_pipeline.AddPass<PrimitivePass>();      // 10. デバッグプリミティブ
-    m_pipeline.AddPass<PostProcessPass>();    // 11. ポストプロセス・最終出力
+    m_pipeline.AddPass<SetupPass>();                         //  1. HDR バッファのクリアとバインド
+    m_pipeline.AddPass<ShadowPass>();                        //  2. シャドウマップ
+    m_pipeline.AddPass<NormalPrepass>();                     //  3. 深度と法線のプリパス。不透明の深度を先に決める
+    m_pipeline.AddPass<OpaquePass>();                        //  4. 不透明（深度が決まっているので early-Z が効く）
+    m_lodDebugPass = m_pipeline.AddPass<LodDebugPass>();     //  5. LOD の段の色分け（既定はオフ。エディタで切り替える）
+    m_pipeline.AddPass<SkyboxPass>();                        //  6. スカイボックス
+    m_pipeline.AddPass<SceneColorGrabPass>();                //  7. 屈折用にシーンカラーを写し取る
+    m_pipeline.AddPass<TransparentPass>();                   //  8. 半透明（距離でソート）
+    m_pipeline.AddPass<ParticlePass>();                      //  9. パーティクル
+    m_pipeline.AddPass<TrailPass>();                         // 10. 武器トレイル。ブルームに拾わせるためポストプロセスより前
+    m_pipeline.AddPass<PrimitivePass>();                     // 11. デバッグプリミティブ
+    m_pipeline.AddPass<PostProcessPass>();                   // 12. ポストプロセス・最終出力
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +263,7 @@ void Graphics::Shutdown()
 
     // 各パスの Shutdown が走る
     m_pipeline.Shutdown();
+    m_lodDebugPass = nullptr; // パスは破棄されたので指さない（デバイスロストからの復帰で作り直される）
 
     // 描画サブシステムを作ったのと逆の順に解放する
     m_postProcess.reset();

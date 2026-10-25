@@ -5,6 +5,7 @@
 // 責務:
 //   - カメラとライトの向きから、カスケードごとのビュー・プロジェクション行列を求める
 //   - 影を落とすメッシュを集めてメッシュ順に並べ、カスケードごとにインスタンシングで描く
+//   - LOD のあるメッシュは、一番粗い段で描く
 //   - シャドウマップの定数バッファ（行列・分割距離・バイアスなど）を更新する
 //
 // 備考: スキンメッシュはボーン行列が1体ごとに違うので、まとめずに1体ずつ描く。
@@ -30,11 +31,11 @@ private:
         uint8_t             cascadeMask; // 描くカスケードのビット（bit i = カスケード i）
     };
 
-    // 同じメッシュのインスタンスをまとめたもの
+    // 同じメッシュデータ（頂点・インデックスバッファ）のインスタンスをまとめたもの
     struct Batch
     {
-        const Model::Mesh        *mesh = nullptr; // 所有しない
-        std::vector<InstanceData> data;
+        const ModelResource::Mesh *meshData = nullptr; // 所有しない
+        std::vector<InstanceData>  data;
     };
 
     PipelineState  m_psoShadow;

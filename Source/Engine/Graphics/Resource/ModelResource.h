@@ -102,6 +102,13 @@ public:
         void serialize(Archive &archive, int version);
     };
 
+    // LOD の1段分。Mesh::lodIndexBuffer の中で、この段のインデックスが入っている範囲
+    struct LodLevel
+    {
+        UINT startIndex = 0; // lodIndexBuffer の中の開始位置
+        UINT indexCount = 0; // インデックスの数
+    };
+
     struct Vertex
     {
         DirectX::XMFLOAT3 position = {0, 0, 0};
@@ -138,6 +145,11 @@ public:
         // GPU のバッファ（BuildModel が作る。保存しない）
         Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
         Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+
+        // LOD（GenerateLods が作る。保存しない）。lods が空なら LOD 無しで、indexBuffer をそのまま描く。
+        // lodIndexBuffer には LOD0（indices の写し）から順に全段を詰めてあり、頂点バッファは全段で共有する
+        std::vector<LodLevel>                lods;           // [0] が LOD0（元の形）。後ろほど粗い
+        Microsoft::WRL::ComPtr<ID3D11Buffer> lodIndexBuffer; // 全段のインデックス
 
         template <class Archive>
         void serialize(Archive &archive, int version);
@@ -230,6 +242,20 @@ public:
     // モデル全体のローカル AABB
     const DirectX::BoundingBox &GetBoundingBox() const { return m_boundingBox; }
 
+    /**
+     * @brief 全メッシュの LOD を作る（meshoptimizer で元の形を簡略化する）。
+     *
+     * ResourceManager が、読み込んだ直後・ほかのスレッドや描画から見えるようになる前に呼ぶ。
+     * 描画に使われ始めてから呼ぶと、描画中の lods と lodIndexBuffer を書き換えることになるので呼ばない。
+     *
+     * @param device インデックスバッファを作るデバイス。
+     * @note スキンメッシュと、マテリアルの範囲（subsets）が2つ以上あるメッシュには作らない。
+     */
+    void GenerateLods(ID3D11Device *device);
+
+    // GenerateLods にかかった時間（ms）。作っていなければ 0
+    float GetLodBuildMilliseconds() const { return m_lodBuildMs; }
+
 protected:
     // .model.json を読む。Load() から呼ばれ、キャッシュの判定・GPU リソースの作成・AABB まで行う
     void LoadModelSet(ID3D11Device *device, const char *filename);
@@ -241,6 +267,9 @@ protected:
     void Serialize(const char *filename);
     void Deserialize(const char *filename);
 
+    // 1つのメッシュの LOD を作り、mesh.lods と mesh.lodIndexBuffer に入れる（GenerateLods から呼ぶ）
+    void BuildMeshLods(ID3D11Device *device, Mesh &mesh);
+
 protected:
     std::vector<Node>      nodes;
     std::vector<Material>  materials;
@@ -250,4 +279,6 @@ protected:
     bool translationRetargeting = true;
 
     DirectX::BoundingBox m_boundingBox; // モデル全体のローカルAABB
+
+    float m_lodBuildMs = 0.0f; // GenerateLods にかかった時間（ms）
 };

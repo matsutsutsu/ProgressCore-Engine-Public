@@ -27,6 +27,8 @@
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
+class LodDebugPass;
+
 class Graphics
 {
 private:
@@ -102,6 +104,9 @@ public:
     PostProcessManager   *GetPostProcessManager() const { return m_postProcess.get(); }
     Camera               *GetMainCamera() noexcept { return &m_mainCamera; }
 
+    // LOD の色分け表示のパス（エディタが enabled を切り替える。所有するのは m_pipeline）
+    LodDebugPass *GetLodDebugPass() const noexcept { return m_lodDebugPass; }
+
     // ============================================================
     // デバイスロスト
     // ============================================================
@@ -167,4 +172,6 @@ private:
 
     ID3D11ShaderResourceView *m_sceneNormalSRV   = nullptr; // 法線バッファ（NormalPrepass が持つ。所有しない）
     ID3D11ShaderResourceView *m_pendingSkyboxSRV = nullptr; // 今フレームのスカイボックス（所有しない）
+
+    LodDebugPass *m_lodDebugPass = nullptr; // LOD の色分け表示のパス（BuildDefaultRenderPasses が入れる。所有しない）
 };

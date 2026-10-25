@@ -233,6 +233,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="External\meshoptimizer\src\meshoptimizer.h" />
     <ClInclude Include="External\imgui-docking\imconfig.h" />
     <ClInclude Include="External\imgui-docking\imgui.h" />
     <ClInclude Include="External\imgui-docking\imgui_impl_dx11.h">
@@ -475,6 +476,7 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\NormalBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\LodDebugPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\TrailPass.h" />
@@ -498,6 +500,7 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\InstanceBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\ModelConstantBuffers.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshLod.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshCulling.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderDebugRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
@@ -805,6 +808,27 @@
     <ClInclude Include="Source\Engine\Scene\SceneLoading.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="External\meshoptimizer\src\allocator.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\clusterizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexanalyzer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexgenerator.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\meshletcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\meshletutils.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\opacitymap.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\overdrawoptimizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\partition.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\quantization.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\rasterizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\remesher.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\simplifier.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\spatialorder.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\stripifier.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\tangentspace.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vcacheoptimizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vertexcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vertexfilter.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vfetchoptimizer.cpp" />
     <ClCompile Include="External\imgui-docking\imgui.cpp" />
     <ClCompile Include="External\imgui-docking\imgui_demo.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1017,6 +1041,7 @@
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\NormalBuffer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\LodDebugPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\TrailPass.cpp" />
@@ -1480,6 +1505,11 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\LodDebug\LodDebugPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

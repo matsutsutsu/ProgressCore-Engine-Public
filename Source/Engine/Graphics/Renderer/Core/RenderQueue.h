@@ -20,6 +20,7 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Renderer/Core/InstanceBuffer.h" // InstanceData
+#include "Engine/Graphics/Renderer/Core/MeshLod.h"        // MeshLod::LevelCounts
 
 // 不透明のモデル1体分の描画コマンド
 struct RenderCommand
@@ -102,6 +103,9 @@ public:
     //   見つからなければ OpaquePass が自分で計算する。NormalPrepass はブレンドありのバッチを
     //   飛ばし、パス自体が走らないこともある（シェーダーが取れない・enabled が false）ので、
     //   見つからないのは異常ではない。
+    //
+    //   列は LOD の段の順（LOD0 → LOD1 → …）に並べてあり、段ごとの数も一緒に置く。
+    //   両方のパスが同じ段で描かないと、プリパスの深度と本描画の形が合わなくなるため。
 
     // (バッチの先頭の添字, メッシュの番号) からキーを作る
     static uint64_t MakeVisibleKey(size_t batchStart, size_t meshIndex)
@@ -109,22 +113,26 @@ public:
         return (static_cast<uint64_t>(batchStart) << 32) | static_cast<uint32_t>(meshIndex);
     }
 
-    // カリング済みの見えるインスタンスの列を key（MakeVisibleKey）で控える。OpaquePass が FindVisibleInstances で再利用する
-    void StoreVisibleInstances(uint64_t key, const InstanceData *data, size_t count)
+    // カリング済みの見えるインスタンスの列（段の順に並べたもの）と段ごとの数を key（MakeVisibleKey）で控える。
+    // OpaquePass が FindVisibleInstances で再利用する
+    void StoreVisibleInstances(uint64_t key, const InstanceData *data, size_t count,
+                               const MeshLod::LevelCounts &levelCounts)
     {
         if (!data) return;
         const uint32_t offset = static_cast<uint32_t>(m_visibleArena.size());
         m_visibleArena.insert(m_visibleArena.end(), data, data + count);
-        m_visibleIndex[key] = {offset, static_cast<uint32_t>(count)};
+        m_visibleIndex[key] = {offset, static_cast<uint32_t>(count), levelCounts};
     }
 
-    // 見つかれば outData / outCount に入れて true。count == 0（全部カリングされた）も見つかった扱い
-    bool FindVisibleInstances(uint64_t key, const InstanceData *&outData, size_t &outCount) const
+    // 見つかれば outData / outCount / outLevelCounts に入れて true。count == 0（全部カリングされた）も見つかった扱い
+    bool FindVisibleInstances(uint64_t key, const InstanceData *&outData, size_t &outCount,
+                              MeshLod::LevelCounts &outLevelCounts) const
     {
         const auto it = m_visibleIndex.find(key);
         if (it == m_visibleIndex.end()) return false;
-        outData  = m_visibleArena.data() + it->second.offset;
-        outCount = it->second.count;
+        outData        = m_visibleArena.data() + it->second.offset;
+        outCount       = it->second.count;
+        outLevelCounts = it->second.levelCounts;
         return true;
     }
 
@@ -193,8 +201,9 @@ private:
     // 見えるインスタンスの列を詰めた配列と、キー → 配列の区間 の表
     struct VisibleSpan
     {
-        uint32_t offset;
-        uint32_t count;
+        uint32_t             offset;
+        uint32_t             count;
+        MeshLod::LevelCounts levelCounts; // 段ごとの数（合計が count）
     };
     std::vector<InstanceData>                 m_visibleArena;
     std::unordered_map<uint64_t, VisibleSpan> m_visibleIndex;

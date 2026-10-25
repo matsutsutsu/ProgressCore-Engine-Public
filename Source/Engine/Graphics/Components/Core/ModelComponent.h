@@ -18,8 +18,9 @@
 
 struct ModelComponent
 {
-    ModelInstanceHandle modelHandle;   // モデルインスタンスのハンドル（このコンポーネントが解放する）
-    uint32_t            assetHash = 0; // 読み込み元パスのハッシュ。0 はモデル無し
+    ModelInstanceHandle modelHandle;           // モデルインスタンスのハンドル（このコンポーネントが解放する）
+    uint32_t            assetHash   = 0;       // 読み込み元パスのハッシュ。0 はモデル無し
+    bool                generateLod = false;   // モデルを読み込むときに LOD も作るか（SetModel より前に決める）
 
     ModelComponent() = default;
 
@@ -43,7 +44,7 @@ struct ModelComponent
 
     // assetHash から新しいインスタンスを作る
     ModelComponent(const ModelComponent &other)
-        : assetHash(other.assetHash)
+        : assetHash(other.assetHash), generateLod(other.generateLod)
     {
         if (assetHash != 0)
         {
@@ -59,7 +60,8 @@ struct ModelComponent
             {
                 ResourceManager::Instance().UnloadModelInstance(modelHandle);
             }
-            assetHash = other.assetHash;
+            assetHash   = other.assetHash;
+            generateLod = other.generateLod;
             if (assetHash != 0)
             {
                 modelHandle = ResourceManager::Instance().CreateModelInstanceFromHash(assetHash);
@@ -74,7 +76,7 @@ struct ModelComponent
 
     // noexcept が無いと vector の再配置でコピーが選ばれ、インスタンスが作り直される
     ModelComponent(ModelComponent &&other) noexcept
-        : modelHandle(other.modelHandle), assetHash(other.assetHash)
+        : modelHandle(other.modelHandle), assetHash(other.assetHash), generateLod(other.generateLod)
     {
         other.modelHandle = ModelInstanceHandle{};
         other.assetHash   = 0;
@@ -90,6 +92,7 @@ struct ModelComponent
             }
             modelHandle = other.modelHandle;
             assetHash   = other.assetHash;
+            generateLod = other.generateLod;
 
             other.modelHandle = ModelInstanceHandle{};
             other.assetHash   = 0;
@@ -117,6 +120,12 @@ struct ModelComponent
 
         if (path && path[0] != '\0')
         {
+            // LOD の予約は、インスタンスを作る（＝共有データを読み込む）より前に済ませる
+            if (generateLod)
+            {
+                ResourceManager::Instance().RequestModelLod(path);
+            }
+
             assetHash   = CCL::Utils::HashString(path);
             modelHandle = ResourceManager::Instance().CreateModelInstance(path);
         }

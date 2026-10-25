@@ -56,6 +56,9 @@
     <Filter Include="External\ImPlot">
       <UniqueIdentifier>{87c7b048-48fb-4e29-ac3d-b44260b537b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\meshoptimizer">
+      <UniqueIdentifier>{281c208d-64d5-498f-975b-1847db9682fb}</UniqueIdentifier>
+    </Filter>
     <Filter Include="External\imgui-docking">
       <UniqueIdentifier>{c85446c9-90d2-4441-add5-5aac511d95ce}</UniqueIdentifier>
     </Filter>
@@ -493,6 +496,9 @@
     <Filter Include="Shader\Pass\ShadowMap">
       <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Pass\LodDebug">
+      <UniqueIdentifier>{4aae03a1-e33a-4cb7-b95f-46eb1c3c6786}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shader\Pass\NormalPrepass">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
     </Filter>
@@ -587,6 +593,9 @@
     </ClInclude>
     <ClInclude Include="External\imgui-docking\imconfig.h">
       <Filter>External\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="External\meshoptimizer\src\meshoptimizer.h">
+      <Filter>External\meshoptimizer</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-docking\imgui.h">
       <Filter>External\imgui-docking</Filter>
@@ -945,6 +954,9 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderQueue.h">
       <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshLod.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshCulling.h">
       <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
@@ -1208,6 +1220,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\RHI\NormalBuffer.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\LodDebugPass.h">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -2027,6 +2042,69 @@
     <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp">
       <Filter>External\imgui-docking</Filter>
     </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\allocator.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\clusterizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexanalyzer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexgenerator.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\meshletcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\meshletutils.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\opacitymap.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\overdrawoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\partition.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\quantization.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\rasterizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\remesher.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\simplifier.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\spatialorder.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\stripifier.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\tangentspace.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vcacheoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vertexcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vertexfilter.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vfetchoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
     <ClCompile Include="External\imgui-docking\imgui_tables.cpp">
       <Filter>External\imgui-docking</Filter>
     </ClCompile>
@@ -2407,6 +2485,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\RHI\NormalBuffer.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\LodDebugPass.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -3107,6 +3188,9 @@
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassVS.hlsl">
       <Filter>Shader\Pass\NormalPrepass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\LodDebug\LodDebugPS.hlsl">
+      <Filter>Shader\Pass\LodDebug</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
       <Filter>Shader\Pass\NormalPrepass</Filter>

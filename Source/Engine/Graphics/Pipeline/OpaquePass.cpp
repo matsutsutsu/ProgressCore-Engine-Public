@@ -238,7 +238,7 @@ void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Mo
     // NormalPrepass が走らなかったとき（シェーダーが取れない・enabled が false）は列が無いので、自分で作る
 
     const uint64_t key = RenderQueue::MakeVisibleKey(batch.start, meshIdx);
-    if (m_services->renderQueue->FindVisibleInstances(key, m_visibleData, m_visibleCount)) return;
+    if (m_services->renderQueue->FindVisibleInstances(key, m_visibleData, m_visibleCount, m_visibleLevelCounts)) return;
 
     BuildVisibleInstances(ctx, mesh, batch, localAABB, isSkinned);
     m_visibleData  = m_instanceScratch.data();
@@ -274,6 +274,11 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
         if (!MeshCull::IsMeshVisible(localAABB, data.world, frustum)) continue;
         m_instanceScratch.push_back(data);
     }
+
+    // NormalPrepass の結果が無いときだけここに来るので、LOD の段もここで選ぶ（NormalPrepass と同じ関数で選ぶ）
+    m_visibleLevelCounts = isSkinned ? MeshLod::AllInLevel0(m_instanceScratch.size())
+                                     : MeshLod::SortInstancesByLevel(m_instanceScratch, m_lodSortTemp, mesh, localAABB,
+                                                                     ctx.camera->GetEye(), ctx.camera->GetFovY());
 }
 
 // ---------------------------------------------------------------------------
@@ -291,15 +296,27 @@ void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 
 void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {
-    const size_t visibleCount = m_visibleCount;
-    size_t       curOffset    = 0;
-    while (curOffset < visibleCount)
+    // m_visibleData は段の順（LOD0 → LOD1 → …）に並んでいるので、段ごとに区切って、
+    // その段の範囲のインデックスで描く（LOD が無いメッシュは段0に全部入っている）
+    size_t levelStart = 0; // この段のインスタンスが m_visibleData の何番目から始まるか
+    for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
     {
-        const size_t drawCount = (std::min)(visibleCount - curOffset, m_instanceBuffer.GetMaxInstances());
-        m_instanceBuffer.Write(dc, m_visibleData + curOffset, drawCount);
-        m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
-        dc->DrawIndexedInstanced(static_cast<UINT>(mesh.data->indices.size()), static_cast<UINT>(drawCount), 0, 0, 0);
-        curOffset += drawCount;
+        const size_t levelCount = m_visibleLevelCounts[level];
+        if (levelCount == 0) continue;
+
+        const MeshLod::DrawRange range = MeshLod::GetDrawRange(*mesh.data, level);
+        dc->IASetIndexBuffer(range.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+        size_t curOffset = 0;
+        while (curOffset < levelCount)
+        {
+            const size_t drawCount = (std::min)(levelCount - curOffset, m_instanceBuffer.GetMaxInstances());
+            m_instanceBuffer.Write(dc, m_visibleData + levelStart + curOffset, drawCount);
+            m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
+            dc->DrawIndexedInstanced(range.indexCount, static_cast<UINT>(drawCount), range.startIndex, 0, 0);
+            curOffset += drawCount;
+        }
+        levelStart += levelCount;
     }
 }
 

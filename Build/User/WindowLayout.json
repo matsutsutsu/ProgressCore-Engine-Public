@@ -30,11 +30,11 @@
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Formation Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Cinematic Editor",
@@ -62,7 +62,7 @@
         },
         {
             "name": "Render Debug",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Building Scatter",

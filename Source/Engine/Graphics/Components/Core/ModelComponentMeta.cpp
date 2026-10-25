@@ -18,6 +18,7 @@
 // ============================================================================
 // シリアライズ
 //   assetHash はパスに戻せないので、ResourceManager で引いたパスを保存する。
+//   generateLod は true のときだけ書く（既存のプレハブやシーンを保存し直しても差分を出さない）。
 // ============================================================================
 namespace ComponentMetaJson
 {
@@ -27,9 +28,19 @@ namespace ComponentMetaJson
         static void Save(json &j, const ModelComponent &comp, SaveContext * /*ctx*/)
         {
             j["assetPath"] = ResourceManager::Instance().GetAssetPath(comp.assetHash);
+            if (comp.generateLod)
+            {
+                j["generateLod"] = true;
+            }
         }
         static void Load(const json &j, ModelComponent &comp, LoadContext * /*ctx*/)
         {
+            // SetModel が LOD の予約に使うので、モデルより先に読む
+            if (j.contains("generateLod") && j["generateLod"].is_boolean())
+            {
+                comp.generateLod = j["generateLod"].get<bool>();
+            }
+
             if (j.contains("assetPath") && j["assetPath"].is_string())
             {
                 comp.SetModel(j["assetPath"].get<std::string>().c_str());
@@ -80,6 +91,47 @@ struct ComponentMeta<ModelComponent>
         {
             comp.SetModel("");
             changed = true;
+        }
+
+        // --- LOD ---
+        ImGui::Separator();
+        if (ImGui::Checkbox("LOD を生成", &comp.generateLod))
+        {
+            changed = true;
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("ドローンのように大量に並べるモデルで使う。\n"
+                              "遠くの個体を粗い形で描いて軽くする。\n"
+                              "切り替えは、次にモデルを読み込んだときから効く。");
+        }
+
+        // 今の共有データに LOD があれば、段ごとの三角形数と作るのにかかった時間を出す
+        if (const Model *model = comp.GetModel())
+        {
+            if (const ModelResource *resource = model->GetResource())
+            {
+                const auto &meshes = resource->GetMeshes();
+                for (size_t i = 0; i < meshes.size(); ++i)
+                {
+                    if (meshes[i].lods.empty())
+                    {
+                        continue;
+                    }
+
+                    std::string line = "メッシュ" + std::to_string(i) + ":";
+                    for (const ModelResource::LodLevel &level : meshes[i].lods)
+                    {
+                        line += " " + std::to_string(level.indexCount / 3);
+                    }
+                    line += " 三角形";
+                    ImGui::TextDisabled("%s", line.c_str());
+                }
+                if (resource->GetLodBuildMilliseconds() > 0.0f)
+                {
+                    ImGui::TextDisabled("LOD の生成: %.2f ms", resource->GetLodBuildMilliseconds());
+                }
+            }
         }
         return changed;
     }
