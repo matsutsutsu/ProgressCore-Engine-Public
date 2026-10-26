@@ -41,7 +41,7 @@
                 },
                 "VirtualCamera": {
                     "blendTime": 2.0,
-                    "farClip": 1000.0,
+                    "farClip": 10000.0,
                     "fov": 60.29999923706055,
                     "nearClip": 0.10000000149011612,
                     "priority": 100

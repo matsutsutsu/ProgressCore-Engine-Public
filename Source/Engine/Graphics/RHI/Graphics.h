@@ -173,5 +173,6 @@ private:
     ID3D11ShaderResourceView *m_sceneNormalSRV   = nullptr; // 法線バッファ（NormalPrepass が持つ。所有しない）
     ID3D11ShaderResourceView *m_pendingSkyboxSRV = nullptr; // 今フレームのスカイボックス（所有しない）
 
+    // エディタが外から触るため変数を分けている
     LodDebugPass *m_lodDebugPass = nullptr; // LOD の色分け表示のパス（BuildDefaultRenderPasses が入れる。所有しない）
 };

@@ -100,7 +100,7 @@ private:
     bool m_showDistance = true;
 
     // ゲーム画面の左上に技選択のパネルを出すか
-    bool  m_showScores    = true;
+    bool  m_showScores    = false;
     float m_panelFontSize = 18.0f; // パネルの文字の大きさ（ピクセル）
     int   m_historyLines  = 5;     // パネルに出す「それまで」の選択の数。最大 kPickLogSize - 1
 

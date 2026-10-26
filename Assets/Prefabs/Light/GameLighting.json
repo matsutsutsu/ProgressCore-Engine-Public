@@ -64,37 +64,20 @@
                     "end": 500.0,
                     "heightDensity": 0.11999999731779099,
                     "heightStart": -70.0,
-                    "noiseScale": 0.10000000149011612,
-                    "noiseSpeed": [
-                        0.10000000149011612,
-                        0.05000000074505806
-                    ],
-                    "noiseStrength": 0.0,
-                    "rimColor": [
-                        1.0,
-                        1.0,
-                        1.0
-                    ],
-                    "rimPower": 3.0,
-                    "rimStrength": 0.0,
                     "skyFogHeight": -0.10999999940395355,
                     "skyFogSoftness": 0.20999999344348907,
                     "start": 40.0
                 },
-                "Player Rush Effect": {
-                    "attackTime": 0.029999999329447746,
-                    "chromaPeak": 0.019999999552965164,
-                    "duration": 0.5,
-                    "gradeMixPeak": 0.8999999761581421,
-                    "radialPeak": 0.3499999940395355,
-                    "releaseTime": 0.18000000715255737,
-                    "spikeDecay": 0.18000000715255737,
-                    "style": 2,
-                    "vignettePeak": 0.6000000238418579,
-                    "vignettePulse": 5.0
-                },
                 "Name": {
                     "name": "GameLighting"
+                },
+                "Player Rush Effect": {
+                    "fadeInTime": 0.20000000298023224,
+                    "fadeOutTime": 0.4000000059604645,
+                    "radialFalloff": 3.4000000953674316,
+                    "radialStrength": 0.6000000238418579,
+                    "vignetteIntensity": 0.5,
+                    "vignetteRadius": 0.20000000298023224
                 },
                 "RadialBlur": {
                     "centerX": 0.5,
@@ -120,7 +103,7 @@
                     "cascadeSplits": [
                         7.0,
                         50.0,
-                        100.0
+                        70.0
                     ],
                     "shadowBias": 0.00019999999494757503,
                     "shadowColor": [
@@ -150,7 +133,7 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 0,
                     "position": [
                         0.0,
                         5.0,

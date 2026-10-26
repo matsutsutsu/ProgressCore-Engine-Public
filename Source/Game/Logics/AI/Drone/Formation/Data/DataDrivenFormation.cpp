@@ -51,21 +51,30 @@ namespace CCL::AI::Formation::Data
 
         drone.chargeMode = m_asset.output.chargeMode;
 
+        // 形がモデル参照の場合にドローンの配置位置を計算する
         EnsureShape();
 
+        // 攻撃の進行度を進める
         const float p = AdvanceProgress(drone, ctx);
 
+        // ドローンの番号をもとに配置する席を決める
         const Seat seat  = AssignSeat(drone);
+
+        // 席をもとに、陣形ローカルの座標と向きを決める
         Vector3    local = MakeLocal(seat, drone);
         Vector3    look  = Vector3::UnitZ; // ローカルの Forward。Rotate が同じだけ回す
 
+        // 動きの層を上から順に当てる
         for (const FormationLayer &layer : m_asset.layers)
             ApplyLayer(layer, seat, p, ctx, drone, local, look);
 
         const Basis   basis = MakeBasis(ctx);
+
+        // 陣形ローカルの座標をワールドへ変換する
         const Vector3 world = ToWorld(local, basis, ctx.bossPos);
         drone.targetPosition = world;
 
+        // 陣形ローカルの向きをワールドへ変換する
         const Vector3 lookWorld   = ResolveLook(look, seat, basis, world, ctx);
         drone.fireDirection       = lookWorld;
         drone.targetLookDirection = lookWorld;
@@ -102,6 +111,7 @@ namespace CCL::AI::Formation::Data
             int perGroup   = 1; // 1グループあたりの機数（端数は切り捨て）
         };
 
+        // FormationAssign と機数から、左右グループ数・総グループ数・1グループあたりの機数を返す
         GroupCounts CountGroups(const FormationAssign &as, int totalDrones)
         {
             const int total = (totalDrones > 0) ? totalDrones : 1;

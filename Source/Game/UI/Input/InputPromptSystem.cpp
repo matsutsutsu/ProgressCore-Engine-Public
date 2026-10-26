@@ -26,7 +26,7 @@ using json = nlohmann::json;
 namespace
 {
     constexpr const char *kConfigPath = "Assets/Config/InputPromptConfig.json";
-} // namespace
+} 
 
 // ---------------------------------------------------------------------------
 // 設定の読み込み

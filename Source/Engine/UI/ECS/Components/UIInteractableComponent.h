@@ -15,7 +15,7 @@ struct UIInteractableComponent
     bool focusable    = true; // パッド/キーのフォーカス移動対象にするか
     int  priority     = 0;    // ヒットテストの手前優先度（大きいほど上を拾う）
 
-    // 以下は UIInputSystem が書く状態（保存しない）
+    // UIInputSystem が書く状態
     bool isHovered = false; // マウスカーソルが乗っている（最前面のみ true）
     bool isFocused = false; // パッド/キーで選択中（同時に1つ）
     bool isPressed = false; // この要素上で押下中

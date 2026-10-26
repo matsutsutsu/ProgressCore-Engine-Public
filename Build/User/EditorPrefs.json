@@ -8,9 +8,9 @@
         "Cinematic": "Assets\\Cinematics",
         "Material": "Assets\\Materials",
         "Model": "Assets\\Models\\Test",
-        "Prefab": "Assets\\Prefabs\\Particles",
+        "Prefab": "Assets\\Prefabs\\Light",
         "Scene": "Assets\\Scene",
-        "Texture": "Assets\\Textures\\VFX\\Particle",
+        "Texture": "Assets\\Textures\\VFX\\Ramp",
         "Timeline": "Assets\\Timelines"
     }
 }

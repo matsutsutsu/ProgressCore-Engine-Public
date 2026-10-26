@@ -20,7 +20,7 @@ struct UIAppearComponent
     float duration = 0.28f; // フェードとスライドにかける時間（秒）
     float slideY   = 28.0f; // 開始時の下方向オフセット（px）。0 ならフェードだけ
 
-    // 以下は UIAppearSystem が書く進行状態
+    // UIAppearSystem が書く進行状態
     float elapsed     = 0.0f;  // 経過時間（秒）
     bool  captured    = false; // 基準の offset.y を取得済みか
     bool  done        = false; // 完了済みか（完了後は何もしない）

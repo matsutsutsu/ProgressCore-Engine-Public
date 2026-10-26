@@ -20,7 +20,7 @@ namespace
     constexpr float kSubStart  = 0.35f; // 線の下の1行を打ち始めるまで（秒。画面を出してから）
     constexpr float kMenuDelay = 0.6f;  // ボタンが出るまで（秒。画面を出してから）
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
-} // namespace
+} 
 
 void TutorialCompleteSystem::Initialize()
 {
@@ -151,7 +151,7 @@ void TutorialCompleteSystem::ShowUI()
 
     // リザルトの勝ちと同じ白金。英語の見出しに、日本語を小さく添える
     SpawnScreenHeading(w, canvas, "TUTORIAL COMPLETE", ScreenColor::kGold, m_overlay);
-    m_overlay.push_back(SpawnTypedText(w, "TutorialCompleteSub", "操作の基本を覚えた。次は本番のミュリエル戦",
+    m_overlay.push_back(SpawnTypedText(w, "TutorialCompleteSub", "操作の基本を覚えた",
                                        ScreenLayout::kLeft, ScreenLayout::kSubY, 20.0f, ScreenColor::kSub, kSubStart,
                                        canvas));
 
@@ -204,4 +204,4 @@ void TutorialCompleteSystem::SetMatchOver(bool over)
     }
 }
 
-// 全体登録（REGISTER_*）はせず、TutorialScene が登録する。
+// システム登録マクロはせず、TutorialScene が登録する。
