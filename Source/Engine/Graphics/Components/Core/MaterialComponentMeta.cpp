@@ -11,6 +11,7 @@
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
+#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT_CB_SCENE
 #include <vector>
 
 #ifdef ENABLE_EDITOR
@@ -111,6 +112,15 @@ struct ComponentMeta<MaterialComponent>
         return out;
     }
 
+    // 描画時に Shader が自動で書く変数か。マテリアルの値は上書きされるので、編集欄に出さない
+    //   useAlbedoMap など: テクスチャの有無から決まる
+    //   alphaCutoff      : alphaMode が Mask のときだけ送る（スロットの「アルファ」欄で編集する）
+    static bool IsAutoParam(const std::string &name)
+    {
+        if (name == "alphaCutoff") return true;
+        return name.size() > 6 && name.compare(0, 3, "use") == 0 && name.compare(name.size() - 3, 3, "Map") == 0;
+    }
+
     static bool CustomGui(MaterialComponent &compRef, unsigned long long entityID = 0, void *worldPtr = nullptr)
     {
         bool               changed = false;
@@ -177,46 +187,43 @@ struct ComponentMeta<MaterialComponent>
             return true;
         }
 
-        // ----- 一括操作 -----
+        // ----- シェーダー（モデル全体で1つ）-----
+        //   ModelRenderSystem は先頭のスロットのシェーダーでモデル全体を描くので、選ぶ欄は1つだけにし、
+        //   選んだら全スロットに書く（スロットごとに違うシェーダーにはできない）
         ImGui::Separator();
-        if (ImGui::CollapsingHeader("一括操作(全スロットに適用)", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ShaderList sl = GatherShaders(0);
-            if (!sl.names.empty())
+            const MaterialData *firstMat = (comp->overrideMaterials[0].IsValid())
+                                               ? rm.GetMaterial(comp->overrideMaterials[0])
+                                               : nullptr;
+            ShaderList sl  = GatherShaders(firstMat ? firstMat->shaderHash : 0);
+            int        cur = sl.current < 0 ? 0 : sl.current;
+            if (sl.names.empty())
             {
-                // 選択中の添字は static に置かない。インスペクタは Entity 間で使い回すので、
-                // static だと別の Entity の選択と混ざる。ImGui の ID ごとのストレージに置く。
-                ImGuiStorage *store = ImGui::GetStateStorage();
-                ImGuiID       key   = ImGui::GetID("batchShaderIdx");
-                int           idx   = store->GetInt(key, 0);
-                if (idx >= (int)sl.names.size()) idx = 0;
-
-                ImGui::SetNextItemWidth(150.0f);
-                if (ImGui::Combo("##BatchShader", &idx, sl.names.data(), (int)sl.names.size()))
-                    store->SetInt(key, idx);
-                ImGui::SameLine();
-
-                if (ImGui::Button("全スロットにシェーダー適用"))
-                {
-                    const auto &registered = ShaderRegistry::Instance().GetRegisteredNames();
-                    uint32_t    targetHash = registered[idx].second;
-                    for (auto handle : comp->overrideMaterials)
-                    {
-                        if (!handle.IsValid()) continue;
-                        if (MaterialData *m = rm.GetMaterial(handle)) m->shaderHash = targetHash;
-                    }
-                    changed = true;
-                }
+                ImGui::TextDisabled("シェーダー未登録");
             }
-            else
+            else if (ImGui::Combo("シェーダー", &cur, sl.names.data(), (int)sl.names.size()))
             {
-                ImGui::TextDisabled("シェーダー未登録(ShaderManifest未読込?)");
+                const uint32_t targetHash = ShaderRegistry::Instance().GetRegisteredNames()[cur].second;
+                for (auto handle : comp->overrideMaterials)
+                {
+                    if (!handle.IsValid()) continue;
+                    if (MaterialData *m = rm.GetMaterial(handle)) m->shaderHash = targetHash;
+                }
+                changed = true;
             }
         }
 
         // ----- スロット一覧 -----
+        //   スロットの番号はメッシュの番号。見出しには、そのメッシュが本来使うマテリアルの名前を出す
         ImGui::Separator();
         ImGui::Text("マテリアルスロット:");
+
+        const std::vector<Model::Mesh> *meshes = nullptr;
+        if (world)
+        {
+            auto *modelComp = world->GetComponent<ModelComponent>(static_cast<CCL::ECS::EntityID>(entityID));
+            if (modelComp && modelComp->GetModel()) meshes = &modelComp->GetModel()->GetMeshes();
+        }
 
         for (size_t i = 0; i < comp->overrideMaterials.size(); ++i)
         {
@@ -227,8 +234,11 @@ struct ComponentMeta<MaterialComponent>
 
             ImGui::PushID((int)i);
 
-            char nodeName[64];
-            sprintf_s(nodeName, "Material [%zu]", i);
+            const Model::Material *srcMat  = (meshes && i < meshes->size()) ? (*meshes)[i].material : nullptr;
+            const char            *matName = (srcMat && !srcMat->name.empty()) ? srcMat->name.c_str() : "(名前なし)";
+
+            char nodeName[160];
+            sprintf_s(nodeName, "%s [%zu]", matName, i);
 
             if (ImGui::TreeNode(nodeName))
             {
@@ -272,20 +282,26 @@ struct ComponentMeta<MaterialComponent>
                 }
                 ImGui::Separator();
 
-                // --- シェーダー選択 ---
-                ShaderList sl  = GatherShaders(matPtr->shaderHash);
-                int        cur = sl.current < 0 ? 0 : sl.current;
-                if (!sl.names.empty() &&
-                    ImGui::Combo("シェーダー", &cur, sl.names.data(), (int)sl.names.size()))
+                // --- アルファの扱い（不透明 / くり抜き / 半透明。描くパスと discard が決まる）---
                 {
-                    matPtr->shaderHash = ShaderRegistry::Instance().GetRegisteredNames()[cur].second;
-                    changed            = true;
+                    const char *modeNames[] = {"不透明", "くり抜き(Mask)", "半透明(Blend)"};
+                    int         mode        = static_cast<int>(matPtr->alphaMode);
+                    if (ImGui::Combo("アルファ", &mode, modeNames, IM_ARRAYSIZE(modeNames)))
+                    {
+                        matPtr->alphaMode = static_cast<AlphaMode>(mode);
+                        changed           = true;
+                    }
+                    if (matPtr->alphaMode == AlphaMode::Mask &&
+                        ImGui::SliderFloat("しきい値", &matPtr->alphaCutoff, 0.0f, 1.0f))
+                    {
+                        changed = true;
+                    }
                 }
 
                 // --- テクスチャ ---
                 if (ImGui::TreeNode("テクスチャ"))
                 {
-                    const char *slotNames[] = {"DiffuseMap", "NormalMap", "EmissiveMap", "RampTexture"};
+                    const char *slotNames[] = {"AlbedoMap", "NormalMap", "EmissiveMap"};
 
                     for (const char *slotName : slotNames)
                     {
@@ -308,7 +324,7 @@ struct ComponentMeta<MaterialComponent>
                                 changed = true;
                             }
                         }
-                        if (!hasTexture && std::string(slotName) == "DiffuseMap")
+                        if (!hasTexture && std::string(slotName) == "AlbedoMap")
                         {
                             ImGui::SameLine();
                             if (ImGui::Button("白を設定"))
@@ -325,105 +341,45 @@ struct ComponentMeta<MaterialComponent>
                 }
 
                 // --- 詳細パラメータ（シェーダーのリフレクションから一覧を作る）---
+                //   出すのはマテリアルの定数バッファ（b0〜b7）の色（float4）と数値（float）だけ。
+                //   b8 以降はカメラ・ライト・影・フォグなどフレームで共通の値で、マテリアルでは変えられない。
+                //   マテリアルに値が無い変数は GPU に 0 が送られるので、0 と表示し、触ったらマテリアルに書く
                 if (ImGui::TreeNode("詳細パラメータ"))
                 {
                     Shader *shader = ShaderRegistry::Instance().GetShader(matPtr->shaderHash, Graphics::Instance().GetDevice());
                     if (shader)
                     {
-                        const auto &cbs = shader->GetReflection().GetConstantBuffers();
+                        for (const auto &cbInfo : shader->GetReflection().GetConstantBuffers())
+                        {
+                            if (cbInfo.bindPoint >= SLOT_CB_SCENE) continue;
 
-                        if (ImGui::Button("未設定を既定値で埋める"))
-                        {
-                            for (const auto &cbInfo : cbs)
-                                for (const auto &varInfo : cbInfo.variables)
-                                {
-                                    if (varInfo.type != D3D_SVT_FLOAT) continue;
-                                    const bool isColor  = (varInfo.rows == 1 && varInfo.columns == 4);
-                                    const bool isScalar = (varInfo.rows == 1 && varInfo.columns == 1);
-                                    if (isColor)
-                                    {
-                                        DirectX::XMFLOAT4 tmp;
-                                        if (!matPtr->GetColor(varInfo.nameHash, tmp))
-                                            matPtr->SetColor(varInfo.nameHash, {1.0f, 1.0f, 1.0f, 1.0f});
-                                    }
-                                    else if (isScalar)
-                                    {
-                                        float tmp;
-                                        if (!matPtr->GetScalar(varInfo.nameHash, tmp))
-                                            matPtr->SetScalar(varInfo.nameHash, 1.0f);
-                                    }
-                                }
-                            changed = true;
-                        }
-                        ImGui::SameLine();
-                        ImGui::TextDisabled("(?)");
-                        if (ImGui::IsItemHovered())
-                        {
-                            ImGui::SetTooltip(
-                                "未設定のスカラー/カラーに既定値(1.0 / 白)を入れます。\n"
-                                "追加後は下のスライダーで実際の値に調整してください。\n"
-                                "テクスチャ有無フラグ(useXXXMap等)も1になるため、\n"
-                                "対応するテクスチャが未設定だと黒くなる点に注意。");
-                        }
-                        ImGui::Separator();
-
-                        for (const auto &cbInfo : cbs)
-                        {
                             for (const auto &varInfo : cbInfo.variables)
                             {
                                 if (varInfo.type != D3D_SVT_FLOAT) continue;
-                                const bool isColor  = (varInfo.rows == 1 && varInfo.columns == 4);
-                                const bool isScalar = (varInfo.rows == 1 && varInfo.columns == 1);
-                                if (!isColor && !isScalar) continue;
+                                if (IsAutoParam(varInfo.name)) continue;
 
-                                ImGui::PushID(varInfo.name.c_str());
-
-                                if (isScalar)
+                                if (varInfo.rows == 1 && varInfo.columns == 4)
+                                {
+                                    DirectX::XMFLOAT4 val = {0.0f, 0.0f, 0.0f, 0.0f};
+                                    matPtr->GetColor(varInfo.nameHash, val);
+                                    // HDR: 1.0 を超える値（発光を強めるなど）を入れられる。Float: 0〜255 でなく小数で見せる
+                                    if (ImGui::ColorEdit4(varInfo.name.c_str(), &val.x,
+                                                          ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float))
+                                    {
+                                        matPtr->SetColor(varInfo.nameHash, val);
+                                        changed = true;
+                                    }
+                                }
+                                else if (varInfo.rows == 1 && varInfo.columns == 1)
                                 {
                                     float val = 0.0f;
-                                    if (matPtr->GetScalar(varInfo.nameHash, val))
+                                    matPtr->GetScalar(varInfo.nameHash, val);
+                                    if (ImGui::DragFloat(varInfo.name.c_str(), &val, 0.01f))
                                     {
-                                        if (ImGui::DragFloat(varInfo.name.c_str(), &val, 0.01f))
-                                        {
-                                            matPtr->SetScalar(varInfo.nameHash, val);
-                                            changed = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ImGui::TextDisabled("%s (unset)", varInfo.name.c_str());
-                                        ImGui::SameLine();
-                                        if (ImGui::Button("追加"))
-                                        {
-                                            matPtr->SetScalar(varInfo.nameHash, 1.0f);
-                                            changed = true;
-                                        }
+                                        matPtr->SetScalar(varInfo.nameHash, val);
+                                        changed = true;
                                     }
                                 }
-                                else // isColor
-                                {
-                                    DirectX::XMFLOAT4 val = {1, 1, 1, 1};
-                                    if (matPtr->GetColor(varInfo.nameHash, val))
-                                    {
-                                        if (ImGui::ColorEdit4(varInfo.name.c_str(), &val.x))
-                                        {
-                                            matPtr->SetColor(varInfo.nameHash, val);
-                                            changed = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ImGui::TextDisabled("%s (unset)", varInfo.name.c_str());
-                                        ImGui::SameLine();
-                                        if (ImGui::Button("追加"))
-                                        {
-                                            matPtr->SetColor(varInfo.nameHash, {1.0f, 1.0f, 1.0f, 1.0f});
-                                            changed = true;
-                                        }
-                                    }
-                                }
-
-                                ImGui::PopID();
                             }
                         }
                     }

@@ -74,15 +74,13 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     //   既定はフォグ無し。gFogColor.a=0 で、ジオメトリ（ApplyHeightFog）と
     //   スカイボックス（地平線フォグ）の両方のフォグが消える。
     //   FogComponent が無いか enabled=false なら、この既定のまま送る。
-    GpuData::CbFog fogData = {{0.5f, 0.5f, 0.5f, 0.0f}, {0.0f, 1000.0f, 10.0f, 0.0f}, {}, {}, {}, {}};
+    GpuData::CbFog fogData = {{0.5f, 0.5f, 0.5f, 0.0f}, {0.0f, 1000.0f, 10.0f, 0.0f}, {}, {}};
 
     if (auto *fog = m_world->GetSingletonComponent<FogComponent>(); fog && fog->enabled)
     {
         fogData.gFogColor       = fog->color;
         fogData.gFogParams      = {fog->start, fog->end, fog->heightStart, fog->heightDensity};
         fogData.gFogCenter    = fog->center;
-        fogData.gFogRimColor  = {fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f};
-        fogData.gFogRimParams = {fog->rimPower, fog->rimStrength, 0.0f, 0.0f};
         fogData.gSkyFogParams = {fog->skyFogHeight, fog->skyFogSoftness, 0.0f, 0.0f};
     }
 

@@ -8,13 +8,13 @@
 //
 // 備考: 大きさ 1 の図形を用意しておき、大きさ・向き・位置は呼び出し側が行列に入れて渡す。
 //       スレッドごとの配列に積む仕組みは ShapeRenderer と同じ。
-//       IsVisible と m_frustum は用意してあるが、今の Draw* はカリングしていない。
+//       カリングはしない。PrimitiveComponent のカリングは ECS の System（FrustumCullingSystem）が行い、
+//       見えているものだけが PrimitiveRenderSystem から積まれる。
 // ===========================================================================
 #include <vector>
 #include <wrl.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <DirectXCollision.h>
 #include <mutex>
 #include <memory>
 #include <atomic>
@@ -54,16 +54,8 @@ public:
     /**
      * @brief 積んだ図形を描いて空にする。
      * @param s renderState と sceneConstantBuffer を使う
-     * @param view 視錐台の更新にも使う
-     * @param projection 視錐台の更新にも使う
      */
-    void Render(ID3D11DeviceContext       *dc,
-                const RenderServices      &s,
-                const DirectX::XMFLOAT4X4 &view,
-                const DirectX::XMFLOAT4X4 &projection);
-
-    // false にすると IsVisible が常に true を返す
-    void SetCullingEnabled(bool enable) { m_cullingEnabled = enable; }
+    void Render(ID3D11DeviceContext *dc, const RenderServices &s);
 
     // transform は大きさ 1 の図形に掛けるワールド行列（大きさ・向き・位置を入れる）
     void DrawSphere(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
@@ -82,12 +74,6 @@ public:
     void DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color);
 
 private:
-    bool IsVisible(const DirectX::BoundingSphere &sphere);
-    bool IsVisible(const DirectX::BoundingOrientedBox &box);
-
-    DirectX::BoundingFrustum m_frustum; // 前の Render で求めたワールド空間の視錐台
-    bool                     m_cullingEnabled = true;
-
     Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
     Microsoft::WRL::ComPtr<ID3D11PixelShader>  pixelShader;
     Microsoft::WRL::ComPtr<ID3D11InputLayout>  inputLayout;

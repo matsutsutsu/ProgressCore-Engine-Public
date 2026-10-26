@@ -180,77 +180,36 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.data->alphaCutoff = src.alphaCutoff;
 
         // 色
-        dst.data->SetColor("materialColor"_hash, src.baseColor); // Phong / Basic 用
-        dst.data->SetColor("baseColor"_hash, src.baseColor);     // PBR 用
-        // emissiveColor (float3) を float4 に変換して格納
+        dst.data->SetColor("baseColor"_hash, src.baseColor);
+        // 発光色は float3 だが、色はすべて float4 で持つ（PBRPS 側も float4 で受けて rgb だけ使う）
         dst.data->SetColor("emissiveColor"_hash, {src.emissiveColor.x, src.emissiveColor.y, src.emissiveColor.z, 1.0f});
 
         // スカラー
         dst.data->SetScalar("metalness"_hash, src.metalness);
         dst.data->SetScalar("roughness"_hash, src.roughness);
         dst.data->SetScalar("occlusionStrength"_hash, src.occlusionStrength);
-        dst.data->SetScalar("alphaCutoff"_hash, src.alphaCutoff);
+        // alphaCutoff は上の dst.data->alphaCutoff に持つ。シェーダーへは Mask のときだけ Shader が送る
 
-        // Toon シェーダー用の既定値（無いと黒くなる）
-        dst.data->SetColor("rimColor"_hash, {1.0f, 1.0f, 1.0f, 1.0f});
-        dst.data->SetScalar("rimPower"_hash, 5.0f);
-        dst.data->SetScalar("rimIntensity"_hash, 1.0f);
-
-        // Toon 用の既定のランプテクスチャ
-        dst.data->SetTexture("RampTexture"_hash, ResourceManager::Instance().LoadTexture("Assets/Textures/Shader/ramp.png"));
-
-        // Outline シェーダー用の既定値
-        dst.data->SetColor("color"_hash, {0.0f, 0.0f, 0.0f, 1.0f}); // 線の色
-        dst.data->SetScalar("size"_hash, 0.02f);                    // 線の太さ
-
-        // テクスチャ。シェーダーごとにスロット名が違うので、同じテクスチャを複数の名前で登録する
+        // テクスチャ。useAlbedoMap などの有無のフラグは、描画時に Shader がテクスチャの有無から決める
         if (src.baseMap)
         {
-            auto handle = ResourceManager::Instance().RegisterTexture(src.baseMap);
-            dst.data->SetTexture("DiffuseMap"_hash, handle);
-            dst.data->SetTexture("AlbedoMap"_hash, handle);
-            dst.data->SetScalar("useAlbedoMap"_hash, 1.0f);
+            dst.data->SetTexture("AlbedoMap"_hash, ResourceManager::Instance().RegisterTexture(src.baseMap));
         }
-        else
-        {
-            dst.data->SetScalar("useAlbedoMap"_hash, 0.0f);
-        }
-
         if (src.normalMap)
         {
             dst.data->SetTexture("NormalMap"_hash, ResourceManager::Instance().RegisterTexture(src.normalMap));
-            dst.data->SetScalar("useNormalMap"_hash, 1.0f);
         }
-        else
-        {
-            dst.data->SetScalar("useNormalMap"_hash, 0.0f);
-        }
-
         if (src.emissiveMap)
         {
             dst.data->SetTexture("EmissiveMap"_hash, ResourceManager::Instance().RegisterTexture(src.emissiveMap));
-            dst.data->SetScalar("useEmissiveMap"_hash, 1.0f);
         }
-        else
-        {
-            dst.data->SetScalar("useEmissiveMap"_hash, 0.0f);
-        }
-
         if (src.occlusionMap)
         {
             dst.data->SetTexture("OcclusionMap"_hash, ResourceManager::Instance().RegisterTexture(src.occlusionMap));
         }
-
         if (src.metalnessRoughnessMap)
         {
-            auto handle = ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap);
-            dst.data->SetTexture("MetalnessRoughnessMap"_hash, handle);
-            dst.data->SetTexture("MetalRoughMap"_hash, handle);
-            dst.data->SetScalar("useMetalRoughMap"_hash, 1.0f);
-        }
-        else
-        {
-            dst.data->SetScalar("useMetalRoughMap"_hash, 0.0f);
+            dst.data->SetTexture("MetalRoughMap"_hash, ResourceManager::Instance().RegisterTexture(src.metalnessRoughnessMap));
         }
     }
 

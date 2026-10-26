@@ -1,10 +1,9 @@
-// ToneMap・Bloom・Distortion・Fog・ShadowMap 設定のシリアライズ/インスペクタ定義。
+// ToneMap・Bloom・Fog・ShadowMap 設定のシリアライズ/インスペクタ定義。
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Graphics/Components/Lighting/ShadowMapConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
-#include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -55,7 +54,7 @@ REGISTER_COMPONENT(ToneMapConfigComponent, "ToneMapConfig")
 REGISTER_COMPONENT_EDITOR_GUI(ToneMapConfigComponent)
 
 // ============================================================================
-// Bloom / Distortion
+// Bloom
 // カテゴリを Effect にするため BEGIN_FULL を使う
 // ============================================================================
 COMPONENT_META_BEGIN_FULL(BloomConfigComponent, "BloomConfig", CCL::Categories::Effect, 510, false)
@@ -65,12 +64,6 @@ CFIELD(data.softKnee, "ソフトニー", "Filter")
 CFIELD(data.intensity, "強度", "Glow")
 CFIELD(data.radius, "半径", "Glow")
 COMPONENT_META_END(BloomConfigComponent)
-
-COMPONENT_META_BEGIN_FULL(DistortionConfigComponent, "DistortionConfig", CCL::Categories::Effect, 520, false)
-CFIELD(enable, "有効", "Setup")
-CFIELD(data.time, "時間倍率", "Animation")
-CFIELD(data.strength, "歪み強度", "Parameters")
-COMPONENT_META_END(DistortionConfigComponent)
 
 // ============================================================================
 // Fog Component
@@ -109,13 +102,6 @@ struct ComponentMeta<FogComponent>
             changed |= mi::DragFloat("フェード幅", &comp.skyFogSoftness, 0.01f, 0.0f, 2.0f);
         }
 
-        if (ImGui::CollapsingHeader("リムライト", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            changed |= mi::Color3("リム色", &comp.rimColor.x);
-            changed |= mi::DragFloat("強さ", &comp.rimStrength, 0.1f, 0.0f, 10.0f);
-            changed |= mi::DragFloat("鋭さ(Power)", &comp.rimPower, 0.1f, 0.1f, 20.0f);
-        }
-
         return changed;
     }
 #else
@@ -132,10 +118,7 @@ struct ComponentMeta<FogComponent>
             CFIELD(heightStart, "高さ開始", "Height")
             CFIELD_FLOAT_RANGED(heightDensity, "高さ密度", 0.01f, 0.0f, 1.0f, "Height")
             CFIELD_FLOAT_RANGED(skyFogHeight, "地平線高さ", 0.01f, -1.0f, 1.0f, "SkyFog")
-            CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")
-            CFIELD(rimColor, "リム色", "Rim")
-            CFIELD_FLOAT_RANGED(rimStrength, "リム強度", 0.1f, 0.0f, 10.0f, "Rim")
-            CFIELD_FLOAT_RANGED(rimPower, "リムの鋭さ(Power)", 0.1f, 0.0f, 20.0f, "Rim")};
+            CFIELD_FLOAT_RANGED(skyFogSoftness, "フェード幅", 0.01f, 0.0f, 2.0f, "SkyFog")};
         return fields;
     }
 };

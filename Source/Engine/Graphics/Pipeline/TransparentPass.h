@@ -20,6 +20,6 @@ public:
     void Execute(const RenderFrameContext &ctx) override;
 
 private:
-    PipelineState  m_psoTransparent; // シェーダーが PSO を持たないときに使う既定
+    PipelineState  m_psoTransparent; // ブレンドあり・深度はテストだけ・両面
     InstanceBuffer m_instanceBuffer;
 };

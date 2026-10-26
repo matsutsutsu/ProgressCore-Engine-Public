@@ -112,18 +112,24 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
 
         if (!current.model) continue;
 
-        Shader *matShader = m_services->shaders->GetShader(current.shaderHash, m_services->device);
-        if (matShader)
-        {
-            const PipelineState *matPso = matShader->GetPSO();
-            if (matPso && matPso->IsBlendEnabled()) continue;
-        }
-
         const auto &meshes = current.model->GetMeshes();
         for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx)
         {
             const Model::Mesh &mesh = meshes[meshIdx];
             if (!mesh.data) continue;
+
+            // 不透明のメッシュだけ深度を書く。
+            //   半透明（Blend）: 書くと、その奥にあるものが OpaquePass で消える
+            //   くり抜き（Mask）: このパスはテクスチャを読まず捨てられないので、書くと穴の部分まで深度が残る。
+            //                    深度は OpaquePass が discard した後の形で書く
+            // マテリアルの選び方（上書きがあればそちら）は OpaquePass と同じ
+            const MaterialHandle overrideHandle =
+                (meshIdx < current.overrideCount) ? current.overrideMaterials[meshIdx] : MaterialHandle{};
+            const MaterialData *overrideMat =
+                overrideHandle.IsValid() ? m_services->resources->GetMaterial(overrideHandle) : nullptr;
+            const MaterialData *activeMat =
+                overrideMat ? overrideMat : (mesh.material && mesh.material->data ? mesh.material->data.get() : nullptr);
+            if (activeMat && activeMat->alphaMode != AlphaMode::Opaque) continue;
 
             const bool isSkinned = !mesh.bones.empty();
 

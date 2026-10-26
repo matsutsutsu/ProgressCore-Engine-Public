@@ -5,10 +5,10 @@
 
 cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 {
-    float4 materialColor;
+    float4 baseColor;
 };
 
-Texture2D DiffuseMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
+Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 Texture2D NormalMap : register(REG_SRV(SLOT_SRV_MAT_TEX1));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
@@ -18,7 +18,7 @@ float4 main(VS_OUT pin) : SV_TARGET
     float flashIntensity = pin.customParams.z;
 
     SurfaceInfo surf;
-    float4 sampledColor = DiffuseMap.Sample(LinearSampler, pin.texcoord) * materialColor;
+    float4 sampledColor = AlbedoMap.Sample(LinearSampler, pin.texcoord) * baseColor;
     surf.color = sampledColor.rgb;
     surf.alpha = sampledColor.a;
     surf.pos = pin.position.xyz;
@@ -35,7 +35,6 @@ float4 main(VS_OUT pin) : SV_TARGET
     float3 finalColor = surf.color * (light.diffuse + ambient) + light.specular;
 
     // ③ 飾り付け (エフェクトの適用)
-    finalColor = ApplyRimLight(finalColor, surf.normal, surf.viewDir);
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);
     finalColor = ApplyHitFlash(finalColor, flashIntensity);
 

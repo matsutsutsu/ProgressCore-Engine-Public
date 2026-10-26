@@ -63,10 +63,11 @@ namespace ShaderReflect
     struct TextureInfo
     {
         std::string           name;
-        uint32_t              nameHash  = 0;
-        UINT                  bindPoint = 0;                         // レジスタの番号（t0 なら 0）
-        D3D_SHADER_INPUT_TYPE type      = D3D_SIT_CBUFFER;           // 読んだ後は D3D_SIT_TEXTURE
-        D3D_SRV_DIMENSION     dimension = D3D_SRV_DIMENSION_UNKNOWN; // Texture2D・Texture2DArray など
+        uint32_t              nameHash    = 0;
+        uint32_t              useFlagHash = 0;                         // "use" + name のハッシュ（AlbedoMap なら useAlbedoMap）
+        UINT                  bindPoint   = 0;                         // レジスタの番号（t0 なら 0）
+        D3D_SHADER_INPUT_TYPE type        = D3D_SIT_CBUFFER;           // 読んだ後は D3D_SIT_TEXTURE
+        D3D_SRV_DIMENSION     dimension   = D3D_SRV_DIMENSION_UNKNOWN; // Texture2D・Texture2DArray など
     };
 
     // サンプラー

@@ -1,7 +1,6 @@
 #include "PostProcessSystem.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 #include "Engine/Graphics/Shader/PostProcess/BloomEffect.h"
-#include "Engine/Graphics/Shader/PostProcess/DistortionEffect.h"
 #include "Engine/Graphics/Shader/PostProcess/RadialBlurEffect.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/DepthOfFieldEffect.h"
@@ -66,17 +65,6 @@ void PostProcessSystem::Update(float dt)
         auto *comp = m_world->GetSingletonComponent<SSAOConfigComponent>();
         ssao->SetEnabled(comp && comp->enable);
         if (comp) ssao->UpdateParams(comp->data);
-    }
-
-    if (auto *distortion = postProcess->GetEffect<DistortionEffect>())
-    {
-        auto *comp = m_world->GetSingletonComponent<DistortionConfigComponent>();
-        distortion->SetEnabled(comp && comp->enable);
-        if (comp)
-        {
-            comp->data.time += dt; // 歪みのアニメーション時間はここで進める
-            distortion->UpdateParams(comp->data);
-        }
     }
 
     // 放射状ブラーと色収差は、複数の演出が同時に求めることがある。

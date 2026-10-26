@@ -10,8 +10,7 @@
 //   - HLSL が更新されたら作り直す（CheckAndReload。対応している派生クラスだけ）
 //
 // 備考: 派生クラス
-//         MaterialShader          マテリアル（shaders.json の materialShaders）。IMaterialShader
-//         OutlineShader           輪郭線。IMaterialShader
+//         MaterialShader          マテリアル（PBR / Phong / Lambert / Basic）。IMaterialShader
 //         ErrorShader             未登録のシェーダーの代わりに出すマゼンタ。IMaterialShader
 //         ShadowMapShader         シャドウマップ（頂点シェーダーだけ）
 //         NormalPrepassShader     NormalPrepass の法線
@@ -30,7 +29,6 @@
 #include <filesystem>
 
 class IMaterialShader;
-class PipelineState;
 
 class Shader
 {
@@ -53,10 +51,6 @@ public:
 
     // HLSL が更新されていたら作り直す（ShaderRegistry::UpdateHotReload から毎フレーム呼ばれる）
     virtual void CheckAndReload(ID3D11Device *device) {}
-
-    // このシェーダーの PSO（ブレンド・深度・カリング）。nullptr なら各パスの既定の PSO を使う。
-    // shaders.json で blend / cull / depth を指定した MaterialShader だけが返す
-    virtual const PipelineState *GetPSO() const { return nullptr; }
 
     // IMaterialShader なら自身を、そうでなければ nullptr を返す（dynamic_cast を使わずに型を調べる）
     virtual IMaterialShader *AsMaterial() { return nullptr; }

@@ -6,6 +6,7 @@
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
         "Cinematic": "Assets\\Cinematics",
+        "Material": "Assets\\Materials",
         "Model": "Assets\\Models\\Test",
         "Prefab": "Assets\\Prefabs\\Particles",
         "Scene": "Assets\\Scene",

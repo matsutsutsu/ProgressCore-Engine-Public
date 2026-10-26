@@ -174,8 +174,6 @@ namespace GpuData
         float4 gFogColor;
         float4 gFogParams;      // x = 始まる距離（m）, y = 終わる距離（m）, z = 高さフォグの基準の高さ（m）, w = 高さで薄くなる割合（1/m）
         float4 gFogCenter;    // 距離を測る中心（ワールド座標）
-        float4 gFogRimColor;
-        float4 gFogRimParams; // x = リムの鋭さ, y = 強さ
         float4 gSkyFogParams; // x = 空にフォグがかかり始める視線の高さ（向きの y）, y = ぼかす幅
     };
 
@@ -199,7 +197,7 @@ namespace GpuData
     static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
     static_assert(sizeof(CbScene) == 272, "CbScene size mismatch vs HLSL");
     static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
-    static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
+    static_assert(sizeof(CbFog) == 64, "CbFog size mismatch vs HLSL");
 
 } // namespace GpuData
 

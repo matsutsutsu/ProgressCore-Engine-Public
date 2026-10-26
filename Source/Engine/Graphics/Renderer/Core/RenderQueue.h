@@ -25,13 +25,16 @@
 // 不透明のモデル1体分の描画コマンド
 struct RenderCommand
 {
-    uint32_t                      shaderHash;        // 1つ目のマテリアルのシェーダー
-    uint32_t                      assetHash;         // モデルのパスのハッシュ（同じモデルをまとめるのに使う）
-    const Model                  *model;             // 所有しない
-    DirectX::XMFLOAT4X4           worldMatrix;       // エンティティのワールド行列
-    std::array<MaterialHandle, 4> overrideMaterials; // メッシュごとの上書きのマテリアル（先頭の4つまで）
-    uint8_t                       overrideCount = 0; // overrideMaterials のうち使っている数
-    DirectX::XMFLOAT4             customParams;      // InstanceData::customParams に入れる値
+    // 上書きのマテリアルを持てるメッシュの数。これより後ろのメッシュは、モデル本来のマテリアルで描く
+    static constexpr size_t kMaxOverrideMaterials = 16;
+
+    uint32_t                                          shaderHash;        // 1つ目のマテリアルのシェーダー
+    uint32_t                                          assetHash;         // モデルのパスのハッシュ（同じモデルをまとめるのに使う）
+    const Model                                      *model;             // 所有しない
+    DirectX::XMFLOAT4X4                               worldMatrix;       // エンティティのワールド行列
+    std::array<MaterialHandle, kMaxOverrideMaterials> overrideMaterials; // メッシュごとの上書きのマテリアル（先頭から）
+    uint8_t                                           overrideCount = 0; // overrideMaterials のうち使っている数
+    DirectX::XMFLOAT4                                 customParams;      // InstanceData::customParams に入れる値
 };
 
 // 半透明のメッシュ1つ分の描画コマンド（OpaquePass が積む。カメラからの距離で並べる）

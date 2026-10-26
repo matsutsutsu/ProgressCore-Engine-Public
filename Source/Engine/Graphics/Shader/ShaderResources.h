@@ -24,7 +24,7 @@
 
 // --- マテリアルごと（Shader::UpdateMaterialProperties がバインド） ---
 #define SLOT_CB_MATERIAL 0 // マテリアルの値（baseColor, roughness, useXXXMap など）
-#define SLOT_CB_MESH 1     // マテリアルの値の続き（OutlineShader の CbOutline、Basic の CbMesh）
+#define SLOT_CB_MESH 1     // マテリアルの値の続き（Basic の CbMesh）
                            //   名前は Mesh だが、メッシュごとの値ではない。b0〜b7 は
                            //   Shader::UpdateMaterialProperties がマテリアルごとに
                            //   0 に戻すので、マテリアル以外の値は置けない
@@ -34,8 +34,7 @@
 //     b0〜b2 はマテリアルと同じ番号を使う（同時には使わない）
 #define SLOT_CB_BLOOM 0
 #define SLOT_CB_TONEMAP 1
-#define SLOT_CB_DISTORTION 2    // 以下の b2 はどれも1つのエフェクトの中でだけ使う
-#define SLOT_CB_RADIALBLUR 2
+#define SLOT_CB_RADIALBLUR 2 // 以下の b2 はどれも1つのエフェクトの中でだけ使う
 #define SLOT_CB_VIGNETTE 2
 #define SLOT_CB_CHROMATIC 2
 #define SLOT_CB_COLORGRADING 2
@@ -51,7 +50,7 @@
 #define SLOT_CB_SCENE 8   // viewProjection・カメラ・平行光源など。書くのは Graphics::Update だけ
 #define SLOT_CB_LIGHT 9   // 点光源・スポットライトの配列
 #define SLOT_CB_SHADOW 10 // カスケードの行列・バイアス
-#define SLOT_CB_FOG 11    // 高さフォグ・ノイズ・リム
+#define SLOT_CB_FOG 11    // 距離フォグ・高さフォグ・空の地平線フォグ
 
 // --- ドローごと（ModelConstantBuffers がバインド） ---
 #define SLOT_CB_SKELETON 12 // boneTransforms[MAX_BONES]
@@ -83,7 +82,6 @@
 //     t0〜t2 はマテリアルと同じ番号を使う（同時には使わない）
 #define SLOT_SRV_BLOOM_IN 0
 #define SLOT_SRV_BLOOM_HIGHRES 1
-#define SLOT_SRV_PP_DISTORTION_MAP 2 // DistortionEffect が読む、前のエフェクトまでの結果
 
 // --- フレームごと（Graphics / EnvironmentSystem） ---
 #define SLOT_SRV_SHADOW 10 // Texture2DArray（カスケード）

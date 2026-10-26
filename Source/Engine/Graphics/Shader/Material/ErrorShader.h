@@ -8,9 +8,9 @@
 // 備考: ShaderRegistry::GetShader が未登録のハッシュに対して返す。画面がマゼンタになるので、
 //       登録漏れやハッシュの打ち間違いにすぐ気付ける（製品で見えたら登録漏れのバグ）。
 //       OpaquePass / TransparentPass で描けるよう IMaterialShader を継承する。
-//       マテリアルやシーンはシェーダーを名前ではなくハッシュの数値で保存するので、shaders.json で
+//       マテリアルやシーンはシェーダーを名前ではなくハッシュの数値で保存するので、登録する
 //       名前を変えたり消したりすると、それを使っていたメッシュが未登録のハッシュを要求する。
-//       登録は Graphics::Initialize で、shaders.json を読む前に C++ から行う。
+//       登録は Graphics::Initialize で、ほかのシェーダーより先に行う。
 // ===========================================================================
 #include "Engine/Graphics/Shader/Core/Shader.h"
 

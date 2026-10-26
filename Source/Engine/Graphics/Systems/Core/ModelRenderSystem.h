@@ -27,4 +27,7 @@ public:
     virtual ~ModelRenderSystem() = default;
 
     void Update(float dt) override;
+
+private:
+    bool m_warnedOverrideLimit = false; // 上書きのマテリアルが多すぎる警告を出したか（毎フレーム出さないため）
 };

@@ -180,11 +180,12 @@ namespace ShaderReflect
             if (bindDesc.Type == D3D_SIT_TEXTURE)
             {
                 TextureInfo texInfo;
-                texInfo.name      = bindDesc.Name;
-                texInfo.nameHash  = CCL::Utils::HashString(bindDesc.Name);
-                texInfo.bindPoint = bindDesc.BindPoint;
-                texInfo.type      = bindDesc.Type;
-                texInfo.dimension = bindDesc.Dimension;
+                texInfo.name        = bindDesc.Name;
+                texInfo.nameHash    = CCL::Utils::HashString(bindDesc.Name);
+                texInfo.useFlagHash = CCL::Utils::HashString(std::string("use") + bindDesc.Name);
+                texInfo.bindPoint   = bindDesc.BindPoint;
+                texInfo.type        = bindDesc.Type;
+                texInfo.dimension   = bindDesc.Dimension;
 
                 textures.push_back(texInfo);
             }

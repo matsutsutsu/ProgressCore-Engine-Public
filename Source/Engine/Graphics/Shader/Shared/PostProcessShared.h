@@ -47,14 +47,6 @@ namespace GpuData
         float4 colorTint; // rgb = 掛ける色, w = 1
     };
 
-    // Distortion（16 バイト）
-    PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION)
-    {
-        float time;
-        float strength;
-        float pad3[2];
-    };
-
     // RadialBlur（16 バイト）
     PP_STRUCT(CbRadialBlurData, SLOT_CB_RADIALBLUR)
     {
@@ -131,8 +123,6 @@ namespace GpuData
 static_assert(sizeof(GpuData::CbBloomData) == 32, "CbBloomData size mismatch");
 static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");
-static_assert(
-    sizeof(GpuData::CbDistortionData) == 16, "CbDistortionData size mismatch");
 static_assert(
     sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
 static_assert(

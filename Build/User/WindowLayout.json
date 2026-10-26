@@ -34,7 +34,7 @@
         },
         {
             "name": "Formation Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Cinematic Editor",
@@ -62,7 +62,7 @@
         },
         {
             "name": "Render Debug",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Building Scatter",

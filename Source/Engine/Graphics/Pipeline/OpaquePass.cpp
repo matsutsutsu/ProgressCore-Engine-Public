@@ -33,8 +33,6 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
 
     BindCommonResources(dc);
 
-    const PipelineState *lastPso = &m_psoOpaque;
-
     queue->SortAndBuildBatches();
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
@@ -53,23 +51,10 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             continue;
         }
 
-        // 半透明かどうかはシェーダーで決まる（バッチの中では同じ）。半透明のバッチは
-        // TransparentPass へ回すだけで描かないので、Begin・PSO の適用・End を呼ばない
-        const PipelineState *batchPso           = shader->GetPSO();
-        const bool           batchIsTransparent = batchPso && batchPso->IsBlendEnabled();
-
         const BatchRange batch = ConsumeBatch(sortKeys, cursor);
 
-        if (batchIsTransparent)
-        {
-            DrawBatch(ctx, batch, *shader, *matShader);
-            continue;
-        }
-
         matShader->Begin(dc, *m_services, ctx);
-        ApplyShaderPso(dc, *shader, lastPso);
-
-        DrawBatch(ctx, batch, *shader, *matShader);
+        DrawBatch(ctx, batch, *matShader);
 
         matShader->End(dc, *m_services);
     }
@@ -109,18 +94,7 @@ OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &so
     return batch;
 }
 
-void OpaquePass::ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso)
-{
-    const PipelineState *want = shader.GetPSO() ? shader.GetPSO() : &m_psoOpaque;
-    if (want != lastPso)
-    {
-        want->Apply(dc, m_services->renderState);
-        lastPso = want;
-    }
-}
-
-void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, const Shader &shader,
-                           IMaterialShader &matShader)
+void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, IMaterialShader &matShader)
 {
     ID3D11DeviceContext *dc       = ctx.dc;
     const auto          &sortKeys = m_services->renderQueue->GetSortedKeys();
@@ -128,10 +102,6 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
     const RenderCommand &first    = commands[sortKeys[batch.start].originalIndex];
 
     if (!first.model) return;
-
-    // 半透明かどうかは、シェーダーの PSO でブレンドが有効かで決める
-    const PipelineState *matPso             = shader.GetPSO();
-    const bool           batchIsTransparent = matPso && matPso->IsBlendEnabled();
 
     const auto &meshes = first.model->GetMeshes();
     for (size_t meshIdx = 0; meshIdx < meshes.size(); ++meshIdx)
@@ -149,7 +119,8 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
 
         const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
-        if (batchIsTransparent)
+        // 半透明かどうかはマテリアルで決まる。同じモデルでも、窓だけ半透明のようにメッシュごとに違う
+        if (activeMat->alphaMode == AlphaMode::Blend)
         {
             ForwardMeshToTransparentQueue(ctx, mesh, meshIdx, batch, first.shaderHash, localAABB, isSkinned);
             continue;

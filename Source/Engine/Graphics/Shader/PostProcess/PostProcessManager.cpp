@@ -6,7 +6,6 @@
 #include <d3d11_1.h> // ID3DUserDefinedAnnotation
 
 #include "BloomEffect.h"
-#include "DistortionEffect.h"
 #include "RadialBlurEffect.h"
 #include "DepthOfFieldEffect.h"
 #include "VignetteEffect.h"
@@ -33,7 +32,6 @@ void PostProcessManager::Initialize(ID3D11Device *device, UINT width, UINT heigh
 
     // かける順
     AddEffect<SSAOEffect>();
-    AddEffect<DistortionEffect>();
     AddEffect<RadialBlurEffect>();
     AddEffect<DepthOfFieldEffect>();
     AddEffect<BloomEffect>();

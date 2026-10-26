@@ -7,7 +7,7 @@
 //   - RenderQueue の不透明のコマンドを並べ、同じキーが続く区間を1つのバッチにする
 //   - スキンでないメッシュは、インスタンスごとに視錐台カリングする（NormalPrepass の結果があれば使う）
 //   - LOD のあるメッシュは、NormalPrepass が選んだ段で、段ごとに描く
-//   - シェーダーの PSO がブレンドありのバッチは描かず、TransparentPass 用のキューへ回す
+//   - マテリアルの alphaMode が Blend のメッシュは描かず、TransparentPass 用のキューへ回す
 //
 // 備考: Execute はフレームの流れだけを書き、各工程は private の関数に分けている。
 //       読む順は Execute → DrawBatch → その中で呼ぶ関数。
@@ -27,7 +27,6 @@
 struct RenderKey;
 struct RenderCommand;
 struct MaterialData;
-class Shader;
 class IMaterialShader;
 
 class OpaquePass : public IRenderPass
@@ -56,23 +55,14 @@ private:
         size_t count = 0;
     };
 
-    // シャドウマップ・サンプラー・既定の PSO など、全バッチで共通のものをバインドする
+    // シャドウマップ・サンプラー・PSO など、全バッチで共通のものをバインドする
     void BindCommonResources(ID3D11DeviceContext *dc);
 
     // cursor から同じバッチキーが続く区間を切り出し、cursor をその次へ進める
     static BatchRange ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor);
 
-    /**
-     * @brief シェーダーの PSO（無ければパスの既定）を、今の PSO と違うときだけ適用する。
-     * @param dc      適用先のデバイスコンテキスト。
-     * @param shader  PSO を持つシェーダー。
-     * @param lastPso 今適用されている PSO。適用したらその PSO に書き換える。
-     */
-    void ApplyShaderPso(ID3D11DeviceContext *dc, const Shader &shader, const PipelineState *&lastPso);
-
     // バッチのモデルの全メッシュを、描くか半透明のキューへ回す
-    void DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, const Shader &shader,
-                   IMaterialShader &matShader);
+    void DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, IMaterialShader &matShader);
 
     // meshIdx 番目のメッシュに使う上書きのマテリアル。無ければ nullptr
     MaterialData *ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const;
@@ -111,7 +101,7 @@ private:
     void DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                               const BatchRange &batch);
 
-    PipelineState  m_psoOpaque; // シェーダーが PSO を持たないときに使う既定
+    PipelineState  m_psoOpaque; // 深度を書く・裏面カリング
     InstanceBuffer m_instanceBuffer;
 
     // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）。

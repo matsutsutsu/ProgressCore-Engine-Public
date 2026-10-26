@@ -6,16 +6,9 @@
 
 MaterialShader::MaterialShader(ID3D11Device      *device,
                                const std::string &vsCsoPath, const std::wstring &vsHlslPath,
-                               const std::string &psCsoPath, const std::wstring &psHlslPath,
-                               const PipelineStateDesc *psoDesc)
+                               const std::string &psCsoPath, const std::wstring &psHlslPath)
     : m_vsHlslPath(vsHlslPath), m_psHlslPath(psHlslPath)
 {
-    if (psoDesc)
-    {
-        m_pso    = PipelineState(*psoDesc);
-        m_hasPso = true;
-    }
-
     GpuResourceUtils::LoadVertexShader(device,
                                        vsCsoPath.c_str(),
                                        ModelResource::InputElementDescs.data(),

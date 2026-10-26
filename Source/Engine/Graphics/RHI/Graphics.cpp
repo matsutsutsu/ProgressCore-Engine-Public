@@ -1,12 +1,14 @@
 #include "Graphics.h"
 #include <chrono>
 #include <cmath>
-#include "Engine/Graphics/Shader/ShaderManifest.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/SceneView/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Shader/Material/ErrorShader.h"
+#include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
+#include "Engine/Graphics/Shader/Material/ParticleShader.h"
+#include "Engine/Graphics/Shader/Material/NormalPrepassShader.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -61,12 +63,21 @@ void Graphics::Initialize(HWND hWnd)
     m_modelConstants->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
 
     // ---- 3. シェーダー登録 ----
-    // 未登録のシェーダーの代わりに描く ErrorShader は、shaders.json に頼らず先に登録する
-    ShaderRegistry::Instance().RegisterShader<ErrorShader>("Error"_hash);
+    ShaderRegistry &shaders = ShaderRegistry::Instance();
 
-    // マテリアルのシェーダーは Assets/Shader/shaders.json に1行足せば増やせる（再ビルド不要）
-    ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
-                                    ShaderRegistry::Instance());
+    // 未登録のシェーダーの代わりに描く ErrorShader を最初に登録する（並べ替えの番号が 0 になる）
+    shaders.RegisterShader<ErrorShader>("Error"_hash);
+
+    // マテリアルのシェーダー。エディタのシェーダー選択にこの順で出る
+    shaders.RegisterMaterialShader("PBR");
+    shaders.RegisterMaterialShader("Phong");
+    shaders.RegisterMaterialShader("Lambert");
+    shaders.RegisterMaterialShader("Basic");
+
+    // 専用の C++ クラスを持つシェーダー（各パスがハッシュで取り出す）
+    shaders.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
+    shaders.RegisterShader<ParticleShader>("Particle"_hash);
+    shaders.RegisterShader<NormalPrepassShader>("NormalPrepass"_hash);
 
     // ---- 4. レンダーパイプライン ----
     SetupRenderPipeline();
@@ -332,7 +343,7 @@ bool Graphics::RecoverFromDeviceLost()
     // ---- 3. 新しいデバイスで作り直す ----
     // Initialize() が行う:
     //   - 新しい D3D11 デバイスとスワップチェーンを作る
-    //   - ShaderManifest からシェーダーのファクトリを登録し直す
+    //   - シェーダーのファクトリを登録し直す
     //   - SetupRenderPipeline() でパイプラインとパスを組み直す
     // シェーダー本体は、GetShader() が最初に呼ばれたときに .cso から読み直される
     Initialize(hWnd);

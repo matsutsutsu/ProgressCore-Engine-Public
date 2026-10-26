@@ -64,20 +64,8 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
 }
 
 // ---------------------------------------------------------------------------
-// 可視判定と描画
+// 描画
 // ---------------------------------------------------------------------------
-
-bool PrimitiveRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
-{
-    if (!m_cullingEnabled) return true;
-    return m_frustum.Intersects(sphere);
-}
-
-bool PrimitiveRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
-{
-    if (!m_cullingEnabled) return true;
-    return m_frustum.Intersects(box);
-}
 
 PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
 {
@@ -101,19 +89,9 @@ PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
     return *myLocalList;
 }
 
-void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
-                               const RenderServices      &s,
-                               const DirectX::XMFLOAT4X4 &view,
-                               const DirectX::XMFLOAT4X4 &projection)
+void PrimitiveRenderer::Render(ID3D11DeviceContext *dc, const RenderServices &s)
 {
     ZoneScopedN("PrimitiveRenderer::Render");
-
-    // 次のフレームで積むときのカリング用に、視錐台を更新する
-    BoundingFrustum frustumLocal;
-    BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));
-    XMMATRIX V    = XMLoadFloat4x4(&view);
-    XMMATRIX invV = XMMatrixInverse(nullptr, V);
-    frustumLocal.Transform(m_frustum, invV);
 
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
