@@ -68,6 +68,11 @@ namespace
     // path は . と .. を解決し、区切りを / にしたもの（大文字小文字は元のまま）。
     // 引くときは小文字にした鍵で探し、一覧を返すときは元の名前を使う
     // （ファイル名から登録名を作るアセットがあるため、名前の大文字小文字は残す）。
+    //
+    // 暗号化（flags に kArchiveFlagXor が立っているとき）:
+    //   ヘッダより後ろ（目次と中身）の全バイトに、乱数列を XOR してある。ヘッダは平文のまま。
+    //   乱数列は「アーカイブ先頭からの位置」だけで決まるので、どこから読んでもその場で戻せる。
+    //   素材を手軽に取り出せなくするためのもので、鍵は exe に入っているため解析されれば破られる。
     // -----------------------------------------------------------------------
 
     // Shipping で開くアーカイブ。作業ディレクトリ（普通は exe の隣）に置く
@@ -75,6 +80,44 @@ namespace
 
     constexpr char     kArchiveMagic[4] = {'P', 'C', 'P', 'K'};
     constexpr uint32_t kArchiveVersion  = 1;
+    constexpr uint32_t kArchiveFlagXor  = 1u << 0; // 目次と中身を XOR してある
+
+    // 乱数列の種。make_pak.py の KEY と同じ値にすること
+    constexpr uint64_t kArchiveKey = 0x5A3C9E71D24B8F06ull;
+
+    /**
+     * @brief 64bit の値をよく混ぜる（splitmix64）。入力が 1 違うだけでも全く違う値になる。
+     * @note make_pak.py の splitmix と同じ計算。
+     */
+    uint64_t SplitMix64(uint64_t x)
+    {
+        uint64_t z = x + 0x9E3779B97F4A7C15ull;
+        z          = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+        z          = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+        return z ^ (z >> 31);
+    }
+
+    /**
+     * @brief アーカイブの一部を XOR で戻す（同じ処理をもう一度掛けると元に戻る）。
+     * @param data     戻すバイト列。その場で書き換える。
+     * @param size     data のバイト数。
+     * @param position data の先頭が、アーカイブ先頭から何バイト目か。
+     * @note 位置 p のバイトには「SplitMix64(鍵 ^ (p / 8)) の p % 8 番目のバイト」を XOR する。
+     *       8 バイトごとに違う値を使うので、同じ鍵を繰り返し掛けたときのような模様は出ない。
+     */
+    void XorArchiveBytes(uint8_t *data, size_t size, uint64_t position)
+    {
+        size_t i = 0;
+        while (i < size)
+        {
+            const uint64_t p      = position + i;
+            const uint64_t stream = SplitMix64(kArchiveKey ^ (p >> 3));
+            for (uint64_t byteIndex = p & 7; byteIndex < 8 && i < size; ++byteIndex, ++i)
+            {
+                data[i] ^= static_cast<uint8_t>(stream >> (byteIndex * 8));
+            }
+        }
+    }
 
     struct ArchiveEntry
     {
@@ -85,7 +128,8 @@ namespace
 
     // 目次は Mount で1度だけ作り、以降は読むだけなので、複数スレッドから引いてよい
     std::string                                   g_archivePath;
-    std::unordered_map<std::string, ArchiveEntry> g_archiveEntries; // 鍵は小文字にしたパス
+    std::unordered_map<std::string, ArchiveEntry> g_archiveEntries;          // 鍵は小文字にしたパス
+    bool                                          g_archiveEncrypted = false; // 中身を XOR で戻す必要があるか
 
     /**
      * @brief パスの表記を揃える（\ を / に、. と .. を解決）。
@@ -155,13 +199,30 @@ namespace
 
         out.resize(static_cast<size_t>(entry.size));
         file.seekg(static_cast<std::streamoff>(entry.offset), std::ios::beg);
-        return static_cast<bool>(file.read(reinterpret_cast<char *>(out.data()), static_cast<std::streamsize>(entry.size)));
+        if (!file.read(reinterpret_cast<char *>(out.data()), static_cast<std::streamsize>(entry.size)))
+            return false;
+
+        if (g_archiveEncrypted) XorArchiveBytes(out.data(), out.size(), entry.offset);
+        return true;
+    }
+
+    /**
+     * @brief 今の位置から size バイト読む。encrypted なら、読んだ位置の乱数列で戻す。
+     * @note 位置は読む前に tellg で取る（乱数列は位置で決まるため）。
+     */
+    bool ReadArchiveBytes(std::ifstream &file, void *out, size_t size, bool encrypted)
+    {
+        const uint64_t position = static_cast<uint64_t>(file.tellg());
+        if (!file.read(static_cast<char *>(out), static_cast<std::streamsize>(size))) return false;
+
+        if (encrypted) XorArchiveBytes(static_cast<uint8_t *>(out), size, position);
+        return true;
     }
 
     template <class T>
-    bool ReadValue(std::ifstream &file, T &out)
+    bool ReadValue(std::ifstream &file, T &out, bool encrypted = false)
     {
-        return static_cast<bool>(file.read(reinterpret_cast<char *>(&out), sizeof(T)));
+        return ReadArchiveBytes(file, &out, sizeof(T), encrypted);
     }
 } // namespace
 
@@ -181,8 +242,8 @@ void FileSystem::Initialize()
 bool FileSystem::Mount(const std::string &archivePath)
 {
     // 処理フロー:
-    // 1. ヘッダを確かめる（識別子・版・フラグ）
-    // 2. 目次を読む
+    // 1. ヘッダを確かめる（識別子・版・フラグ）。ヘッダは暗号化されていない
+    // 2. 目次を読む（暗号化されていれば、読みながら戻す）
     // 3. 目次の位置と大きさがファイルに収まっているか確かめてから、使い始める
 
     std::ifstream file(archivePath, std::ios::in | std::ios::binary | std::ios::ate);
@@ -205,12 +266,14 @@ bool FileSystem::Mount(const std::string &archivePath)
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] アーカイブではないファイルです: %s", archivePath.c_str());
         return false;
     }
-    if (version != kArchiveVersion || flags != 0)
+    // 知らないフラグが立っていたら読まない（新しい形式を古いエンジンで誤って読まないように）
+    if (version != kArchiveVersion || (flags & ~kArchiveFlagXor) != 0)
     {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] 対応していないアーカイブです (version=%u, flags=%u): %s",
                       version, flags, archivePath.c_str());
         return false;
     }
+    const bool encrypted = (flags & kArchiveFlagXor) != 0;
 
     // ---- 2. 目次 ----
     std::unordered_map<std::string, ArchiveEntry> entries;
@@ -219,9 +282,10 @@ bool FileSystem::Mount(const std::string &archivePath)
     {
         uint16_t     pathLength = 0;
         ArchiveEntry entry;
-        if (!ReadValue(file, pathLength)) break;
+        if (!ReadValue(file, pathLength, encrypted)) break;
         entry.path.resize(pathLength);
-        if (!file.read(entry.path.data(), pathLength) || !ReadValue(file, entry.offset) || !ReadValue(file, entry.size))
+        if (!ReadArchiveBytes(file, entry.path.data(), pathLength, encrypted) ||
+            !ReadValue(file, entry.offset, encrypted) || !ReadValue(file, entry.size, encrypted))
             break;
 
         // ---- 3. 範囲の確認 ----
@@ -242,9 +306,11 @@ bool FileSystem::Mount(const std::string &archivePath)
         return false;
     }
 
-    g_archivePath    = archivePath;
-    g_archiveEntries = std::move(entries);
-    CCL_LOG_INFO(LogCategory::Core, "[FileSystem] アーカイブを開きました: %s (%u ファイル)", archivePath.c_str(), entryCount);
+    g_archivePath      = archivePath;
+    g_archiveEntries   = std::move(entries);
+    g_archiveEncrypted = encrypted;
+    CCL_LOG_INFO(LogCategory::Core, "[FileSystem] アーカイブを開きました: %s (%u ファイル%s)",
+                 archivePath.c_str(), entryCount, encrypted ? "・暗号化あり" : "");
     return true;
 }
 
