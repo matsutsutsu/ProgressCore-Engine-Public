@@ -1,5 +1,6 @@
 #include "AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include <fstream>
 
 bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::string &filepath)
@@ -41,14 +42,13 @@ bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::str
 
 bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath)
 {
-    std::ifstream is(filepath);
-    if (!is.is_open())
+    const std::string text = FileSystem::ReadAllText(filepath);
+    if (text.empty())
         return false;
 
     try
     {
-        json j;
-        is >> j;
+        json j   = json::parse(text);
         outGraph = j.get<AnimStateGraph>(); // from_json が呼ばれる
     }
     catch (const std::exception &e)

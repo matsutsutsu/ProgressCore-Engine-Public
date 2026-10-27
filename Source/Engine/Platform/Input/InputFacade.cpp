@@ -1,7 +1,7 @@
 #include "InputFacade.h"
 #include "InputKeyTable.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include <algorithm>
-#include <fstream>
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -39,8 +39,8 @@ namespace
 // ---------------------------------------------------------------------------
 bool InputFacade::LoadConfig(const std::string &filePath)
 {
-    std::ifstream file(filePath);
-    if (!file.is_open())
+    const std::string text = FileSystem::ReadAllText(filePath);
+    if (text.empty())
     {
         return false;
     }
@@ -48,7 +48,7 @@ bool InputFacade::LoadConfig(const std::string &filePath)
     json doc;
     try
     {
-        file >> doc;
+        doc = json::parse(text);
     }
     catch (...)
     {

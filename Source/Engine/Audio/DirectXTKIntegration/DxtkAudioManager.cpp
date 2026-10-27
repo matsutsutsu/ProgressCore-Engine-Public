@@ -1,6 +1,9 @@
 #include "DxtkAudioManager.h"
 
 #include <Audio.h> // DirectXTK for Audio（DirectXTK.lib に実装が入っている / xaudio2.lib はリンク済み）
+// WAV をメモリ上から解析する関数（DirectXTK の内部ヘッダ。実装は DirectXTK.lib に入っている）。
+// 公開ヘッダには「ファイルパスから読む」版しか無いため、FileSystem で読んだバイト列を渡すのに使う
+#include <../Audio/WAVFileReader.h>
 
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
@@ -13,6 +16,7 @@
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
+#include <shlwapi.h> // SHCreateMemStream: メモリ上のバイト列を IStream として MF に渡す
 #include <wrl/client.h>
 
 #include <algorithm>
@@ -27,6 +31,7 @@
 #pragma comment(lib, "mfplat.lib")
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
+#pragma comment(lib, "shlwapi.lib")
 
 using namespace DirectX;
 
@@ -75,19 +80,35 @@ namespace
     /**
      * @brief Media Foundation で圧縮音声（mp3/wma/aac 等）を PCM へデコードし、
      *        DXTK の SoundEffect にそのまま渡せる [WAVEFORMATEX][PCM...] の単一バッファに詰める。
+     * @param fileBytes 音声ファイルの中身（FileSystem で読んだもの）
+     * @param nameHint  元のファイル名。MF がデコーダを選ぶ手掛かり（拡張子）として渡す
      * @param outBuffer デコード結果（先頭に WAVEFORMATEX、続けて PCM 本体）。後で SoundEffect が所有する
      * @param outWfx    outBuffer の先頭を指すフォーマット
      * @param outStart  PCM 本体の開始位置
      * @param outBytes  PCM 本体の長さ
      */
-    bool DecodeAudioFileToPcm(const std::wstring         &path,
-                              std::unique_ptr<uint8_t[]> &outBuffer, WAVEFORMATEX **outWfx,
-                              const uint8_t **outStart, size_t *outBytes)
+    bool DecodeAudioBytesToPcm(const std::vector<uint8_t> &fileBytes, const std::wstring &nameHint,
+                               std::unique_ptr<uint8_t[]> &outBuffer, WAVEFORMATEX **outWfx,
+                               const uint8_t **outStart, size_t *outBytes)
     {
         using Microsoft::WRL::ComPtr;
 
+        // バイト列を IStream → IMFByteStream に包む（SHCreateMemStream は中身を複製する）
+        ComPtr<IStream> stream;
+        stream.Attach(SHCreateMemStream(fileBytes.data(), static_cast<UINT>(fileBytes.size())));
+        if (!stream) return false;
+
+        ComPtr<IMFByteStream> byteStream;
+        if (FAILED(MFCreateMFByteStreamOnStream(stream.Get(), byteStream.GetAddressOf())))
+            return false;
+
+        // メモリから読むとファイル名が無く、MF がどのデコーダを使うか決められない。元の名前を付けておく
+        ComPtr<IMFAttributes> byteStreamAttrs;
+        if (SUCCEEDED(byteStream.As(&byteStreamAttrs)))
+            byteStreamAttrs->SetString(MF_BYTESTREAM_ORIGIN_NAME, nameHint.c_str());
+
         ComPtr<IMFSourceReader> reader;
-        if (FAILED(MFCreateSourceReaderFromURL(path.c_str(), nullptr, reader.GetAddressOf())))
+        if (FAILED(MFCreateSourceReaderFromByteStream(byteStream.Get(), nullptr, reader.GetAddressOf())))
             return false;
 
         // 最初の音声ストリームだけを選択する
@@ -377,10 +398,22 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
             std::unique_ptr<SoundEffect> sfx;
             const std::string            ext = LowerExt(file);
 
+            const std::vector<uint8_t> fileBytes = FileSystem::ReadAllBytes(file);
+            if (fileBytes.empty())
+                throw std::runtime_error("ファイルが無いか空");
+
             if (ext == ".wav")
             {
-                // WAV は DXTK が直接読める
-                sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), ToWide(file).c_str());
+                // WAV は DXTK の解析関数で読む（SoundEffect のファイル版コンストラクタと同じ処理）。
+                // 解析結果の wfx / startAudio は buf の中を指すので、buf ごと SoundEffect に渡す
+                auto buf = std::make_unique<uint8_t[]>(fileBytes.size());
+                std::memcpy(buf.get(), fileBytes.data(), fileBytes.size());
+
+                WAVData info{};
+                if (FAILED(LoadWAVAudioInMemoryEx(buf.get(), fileBytes.size(), info)))
+                    throw std::runtime_error("WAV の解析失敗");
+                sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), buf, info.wfx, info.startAudio,
+                                                    info.audioBytes, info.loopStart, info.loopLength);
             }
             else if (m_impl->mfStarted)
             {
@@ -389,7 +422,7 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
                 WAVEFORMATEX              *wfx   = nullptr;
                 const uint8_t             *start = nullptr;
                 size_t                     bytes = 0;
-                if (!DecodeAudioFileToPcm(ToWide(file), buf, &wfx, &start, &bytes))
+                if (!DecodeAudioBytesToPcm(fileBytes, ToWide(file), buf, &wfx, &start, &bytes))
                     throw std::runtime_error("Media Foundation デコード失敗");
                 // buf（[WAVEFORMATEX][PCM]）の所有権は SoundEffect へ移る
                 sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), buf, wfx, start, bytes);

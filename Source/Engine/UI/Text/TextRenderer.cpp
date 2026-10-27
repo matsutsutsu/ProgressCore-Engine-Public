@@ -6,10 +6,10 @@
 
 #include "TextRenderer.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include <wrl.h>
 #include <cstdint>
-#include <fstream>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -25,12 +25,7 @@ namespace
      */
     std::vector<unsigned char> ReadFile(const char *path)
     {
-        std::ifstream ifs(path, std::ios::binary);
-        if (!ifs)
-        {
-            return {};
-        }
-        return std::vector<unsigned char>((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
+        return FileSystem::ReadAllBytes(path);
     }
 
     /**

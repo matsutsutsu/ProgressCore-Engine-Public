@@ -1,6 +1,6 @@
 #include "ShaderReflection.h"
 #include "Engine/Platform/Core/Logger.h"
-#include <fstream>
+#include "Engine/Platform/Core/FileSystem.h"
 
 namespace ShaderReflect
 {
@@ -30,19 +30,12 @@ namespace ShaderReflect
 
     bool ReflectionData::LoadFromCompiledFile(const char *filename)
     {
-        std::ifstream file(filename, std::ios::binary | std::ios::ate);
-        if (!file.is_open())
+        const std::vector<uint8_t> bytecode = FileSystem::ReadAllBytes(filename);
+        if (bytecode.empty())
         {
             CCL_LOG_ERROR(LogCategory::Render, "Failed to open compiled shader file: %s", filename);
             return false;
         }
-
-        size_t fileSize = static_cast<size_t>(file.tellg());
-        file.seekg(0, std::ios::beg);
-
-        std::vector<char> bytecode(fileSize);
-        file.read(bytecode.data(), fileSize);
-        file.close();
 
         return LoadFromBytecode(bytecode.data(), bytecode.size());
     }

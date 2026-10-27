@@ -240,7 +240,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 
     // キャッシュ（.cereal）があればそれを読む
     filepath.replace_extension(".cereal");
-    if (std::filesystem::exists(filepath))
+    if (FileSystem::Exists(filepath.string()))
     {
         Deserialize(filepath.string().c_str());
     }
@@ -351,24 +351,18 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     if (!animationDirRelative.empty())
     {
         animationDir = baseDir / animationDirRelative;
-        if (std::filesystem::is_directory(animationDir))
+        for (const char *extension : {".gltf", ".glb"})
         {
-            for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(animationDir))
+            for (const std::string &path : FileSystem::ListFiles(animationDir.string(), extension))
             {
-                if (!entry.is_regular_file()) continue;
-
-                std::string extension = entry.path().extension().string();
-                std::transform(extension.begin(), extension.end(), extension.begin(), tolower);
-                if (extension != ".gltf" && extension != ".glb") continue;
-
-                animationPaths.emplace_back(entry.path());
+                animationPaths.emplace_back(path);
             }
-
-            // directory_iterator の順序はファイルシステム依存なので並べ直す。
-            // 照合は名前で行うため順序は動作に影響しないが、
-            // .cereal の中身が実行のたびに入れ替わるのを防ぐ。
-            std::sort(animationPaths.begin(), animationPaths.end());
         }
+
+        // 2つの拡張子の一覧を足したので並べ直す。
+        // 照合は名前で行うため順序は動作に影響しないが、
+        // .cereal の中身が実行のたびに入れ替わるのを防ぐ。
+        std::sort(animationPaths.begin(), animationPaths.end());
     }
     else
     {
@@ -379,7 +373,7 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         }
     }
 
-    if (!std::filesystem::exists(modelPath))
+    if (!FileSystem::Exists(modelPath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Render, "本体モデルが見つかりません: %s", modelPath.string().c_str());
         return;
@@ -475,7 +469,7 @@ void ModelResource::AppendAnimations(const char *filename)
         CCL_LOG_ERROR(LogCategory::Render, "アニメーションの形式が未対応です: %s", filename);
         return;
     }
-    if (!std::filesystem::exists(filepath))
+    if (!FileSystem::Exists(filepath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Render, "アニメーションファイルが見つかりません: %s", filename);
         return;
@@ -588,7 +582,7 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
                 ::_splitpath_s(fullpath, drive, dir, fname, ext);
                 char ddspath[256];
                 ::_makepath_s(ddspath, 256, drive, dir, fname, ".dds");
-                if (::GetFileAttributesA(ddspath) != INVALID_FILE_ATTRIBUTES)
+                if (FileSystem::Exists(ddspath))
                     ::strcpy_s(fullpath, ddspath);
             }
 
@@ -902,10 +896,25 @@ void ModelResource::Serialize(const char *filename)
     }
 }
 
+namespace
+{
+    // FileSystem で読んだバイト列を、コピーせずに std::istream として見せる（cereal が istream から読むため）
+    struct MemoryStreamBuf : std::streambuf
+    {
+        explicit MemoryStreamBuf(std::vector<uint8_t> &bytes)
+        {
+            char *begin = reinterpret_cast<char *>(bytes.data());
+            setg(begin, begin, begin + bytes.size());
+        }
+    };
+} // namespace
+
 void ModelResource::Deserialize(const char *filename)
 {
-    std::ifstream istream(filename, std::ios::binary);
-    if (istream.is_open())
+    std::vector<uint8_t> bytes = FileSystem::ReadAllBytes(filename);
+    MemoryStreamBuf      streamBuf(bytes);
+    std::istream         istream(&streamBuf);
+    if (!bytes.empty())
     {
         cereal::BinaryInputArchive archive(istream);
 

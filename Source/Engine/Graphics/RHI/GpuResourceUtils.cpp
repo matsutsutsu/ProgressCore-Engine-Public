@@ -5,6 +5,7 @@
 #include "Engine/Core/Math/Misc.h"
 #include "GpuResourceUtils.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Graphics/RHI/DebugName.h"
 #include <windows.h>
 
@@ -77,29 +78,19 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     ID3D11InputLayout            **inputLayout,
     ID3D11VertexShader           **vertexShader)
 {
-    // ファイルを開く
-    FILE *fp = nullptr;
-    fopen_s(&fp, filename, "rb");
-    _ASSERT_EXPR_A(fp, "Vertex Shader File not found");
-
-    // ファイルのサイズを求める
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
     // .cso の中身を読む
-    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-    fread(data.get(), size, 1, fp);
-    fclose(fp);
+    const std::vector<uint8_t> data = FileSystem::ReadAllBytes(filename);
+    _ASSERT_EXPR_A(!data.empty(), "Vertex Shader File not found");
+    if (data.empty()) return E_FAIL;
 
     // 頂点シェーダー生成
-    HRESULT hr = device->CreateVertexShader(data.get(), size, nullptr, vertexShader);
+    HRESULT hr = device->CreateVertexShader(data.data(), data.size(), nullptr, vertexShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
     // 入力レイアウト
     if (inputLayout != nullptr)
     {
-        hr = device->CreateInputLayout(inputElementDescs, inputElementCount, data.get(), size, inputLayout);
+        hr = device->CreateInputLayout(inputElementDescs, inputElementCount, data.data(), data.size(), inputLayout);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -111,23 +102,13 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     const char         *filename,
     ID3D11PixelShader **pixelShader)
 {
-    // ファイルを開く
-    FILE *fp = nullptr;
-    fopen_s(&fp, filename, "rb");
-    _ASSERT_EXPR_A(fp, "Pixel Shader File not found");
-
-    // ファイルのサイズを求める
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
     // .cso の中身を読む
-    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-    fread(data.get(), size, 1, fp);
-    fclose(fp);
+    const std::vector<uint8_t> data = FileSystem::ReadAllBytes(filename);
+    _ASSERT_EXPR_A(!data.empty(), "Pixel Shader File not found");
+    if (data.empty()) return E_FAIL;
 
     // ピクセルシェーダー生成
-    HRESULT hr = device->CreatePixelShader(data.get(), size, nullptr, pixelShader);
+    HRESULT hr = device->CreatePixelShader(data.data(), data.size(), nullptr, pixelShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
     return hr;
@@ -138,19 +119,11 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
     const char            *filename,
     ID3D11GeometryShader **geometryShader)
 {
-    FILE *fp = nullptr;
-    fopen_s(&fp, filename, "rb");
-    _ASSERT_EXPR_A(fp, "Geometry Shader File not found");
+    const std::vector<uint8_t> data = FileSystem::ReadAllBytes(filename);
+    _ASSERT_EXPR_A(!data.empty(), "Geometry Shader File not found");
+    if (data.empty()) return E_FAIL;
 
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-    fread(data.get(), size, 1, fp);
-    fclose(fp);
-
-    HRESULT hr = device->CreateGeometryShader(data.get(), size, nullptr, geometryShader);
+    HRESULT hr = device->CreateGeometryShader(data.data(), data.size(), nullptr, geometryShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
     return hr;
@@ -171,8 +144,8 @@ HRESULT GpuResourceUtils::LoadTexture(
     std::string           extension = filepath.extension().string();
     std::transform(extension.begin(), extension.end(), extension.begin(), tolower); // 小文字化
 
-    // ワイド文字に変換
-    std::wstring wfilename = filepath.wstring();
+    // ファイルの中身を読む（形式の判定は拡張子で行う。TGA は先頭に識別子が無く、中身からは判定できない）
+    const std::vector<uint8_t> bytes = FileSystem::ReadAllBytes(filename);
 
     // フォーマット毎に画像読み込み処理
     HRESULT               hr;
@@ -180,34 +153,34 @@ HRESULT GpuResourceUtils::LoadTexture(
     DirectX::ScratchImage scratch_image;
     if (extension == ".tga")
     {
-        hr = DirectX::GetMetadataFromTGAFile(wfilename.c_str(), metadata);
+        hr = DirectX::GetMetadataFromTGAMemory(bytes.data(), bytes.size(), metadata);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-        hr = DirectX::LoadFromTGAFile(wfilename.c_str(), &metadata, scratch_image);
+        hr = DirectX::LoadFromTGAMemory(bytes.data(), bytes.size(), &metadata, scratch_image);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     else if (extension == ".dds")
     {
-        hr = DirectX::GetMetadataFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, metadata);
+        hr = DirectX::GetMetadataFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, metadata);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-        hr = DirectX::LoadFromDDSFile(wfilename.c_str(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
+        hr = DirectX::LoadFromDDSMemory(bytes.data(), bytes.size(), DirectX::DDS_FLAGS_NONE, &metadata, scratch_image);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     else if (extension == ".hdr")
     {
-        hr = DirectX::GetMetadataFromHDRFile(wfilename.c_str(), metadata);
+        hr = DirectX::GetMetadataFromHDRMemory(bytes.data(), bytes.size(), metadata);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-        hr = DirectX::LoadFromHDRFile(wfilename.c_str(), &metadata, scratch_image);
+        hr = DirectX::LoadFromHDRMemory(bytes.data(), bytes.size(), &metadata, scratch_image);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     else
     {
-        hr = DirectX::GetMetadataFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, metadata);
+        hr = DirectX::GetMetadataFromWICMemory(bytes.data(), bytes.size(), DirectX::WIC_FLAGS_NONE, metadata);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-        hr = DirectX::LoadFromWICFile(wfilename.c_str(), DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
+        hr = DirectX::LoadFromWICMemory(bytes.data(), bytes.size(), DirectX::WIC_FLAGS_NONE, &metadata, scratch_image);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
 
@@ -584,27 +557,16 @@ HRESULT GpuResourceUtils::LoadComputeShader(
     const char           *filename,
     ID3D11ComputeShader **computeShader)
 {
-    // ファイルを開く
-    FILE *fp = nullptr;
-    fopen_s(&fp, filename, "rb");
-    if (!fp)
+    // .cso の中身を読む
+    const std::vector<uint8_t> data = FileSystem::ReadAllBytes(filename);
+    if (data.empty())
     {
         CCL_LOG_ERROR(LogCategory::Render, "Compute Shader (.cso) not found: %s", filename);
         return E_FAIL;
     }
 
-    // ファイルのサイズを求める
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    // メモリ上にバイナリを格納
-    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(size);
-    fread(data.get(), size, 1, fp);
-    fclose(fp);
-
     // コンピュートシェーダー生成
-    HRESULT hr = device->CreateComputeShader(data.get(), size, nullptr, computeShader);
+    HRESULT hr = device->CreateComputeShader(data.data(), data.size(), nullptr, computeShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
     return hr;

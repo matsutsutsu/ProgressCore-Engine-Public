@@ -6,6 +6,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
@@ -16,7 +17,6 @@
 #include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
 
 #include <cstdio>
-#include <fstream>
 #include <imgui.h>
 #include <json.hpp>
 
@@ -34,13 +34,12 @@ namespace
 
 void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
 {
-    std::ifstream file(kConfigPath);
-    if (file.is_open())
+    const std::string text = FileSystem::ReadAllText(kConfigPath);
+    if (!text.empty())
     {
         try
         {
-            json doc;
-            file >> doc;
+            json doc = json::parse(text);
             for (const auto &p : doc.at("Prompts"))
             {
                 ConfigRow row;

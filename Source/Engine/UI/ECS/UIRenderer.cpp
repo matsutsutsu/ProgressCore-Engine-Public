@@ -3,12 +3,12 @@
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Engine/UI/ECS/UIGaugeSprite.h"
 #include "Engine/UI/Text/TextRenderer.h"
 
 #include <algorithm>
-#include <filesystem>
 
 static const char *kDefaultFontPath  = "Assets/Fonts/RictyDiminished-Regular.ttf"; // 半角英数字のフォント（等幅）
 static const char *kFallbackFontPath = "Assets/Fonts/MPLUS1-Medium.ttf";           // 日本語など、それ以外の文字のフォント
@@ -51,8 +51,7 @@ Sprite *UIRenderer::GetSprite(ID3D11Device *device, const std::string &path)
 
     // そこでここで弾き、白テクスチャで代用する。
     // UI が消えるのではなく白い四角形が出るので、打ち間違いに気付ける。
-    std::error_code ec;
-    if (!std::filesystem::exists(path, ec))
+    if (!FileSystem::Exists(path))
     {
         CCL_LOG_WARN(LogCategory::Render,
                      "[UIRenderer] テクスチャが見つかりません: '%s'（白ダミーで代替）", path.c_str());

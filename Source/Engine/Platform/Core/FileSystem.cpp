@@ -72,7 +72,9 @@ std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtual
 
 bool FileSystem::Exists(const std::string &virtualPath)
 {
-    return std::filesystem::exists(ResolvePhysicalPath(virtualPath));
+    // 手入力のパスも渡ってくるので、例外を投げない版を使う（壊れたパスは「無い」扱い）
+    std::error_code ec;
+    return std::filesystem::exists(ResolvePhysicalPath(virtualPath), ec);
 }
 
 std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,

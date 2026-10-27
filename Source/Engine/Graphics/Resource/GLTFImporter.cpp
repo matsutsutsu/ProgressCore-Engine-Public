@@ -14,12 +14,30 @@
 #include "GLTFImporter.h"
 #include "Engine/Graphics/Resource/GraphicsTypes.h"
 #include "Engine/Platform/Core/Logger.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 bool LoadImageData(tinygltf::Image *, const int, std::string *,
                    std::string *, int, int,
                    const unsigned char *, int,
                    void *user_pointer)
 {
+    return true;
+}
+
+// tinygltf のファイル読み込みを FileSystem 経由にする（.glb / .gltf 本体と、.gltf が参照する .bin の両方）
+static bool GltfFileExists(const std::string &path, void *)
+{
+    return FileSystem::Exists(path);
+}
+
+static bool GltfReadWholeFile(std::vector<unsigned char> *out, std::string *err, const std::string &path, void *)
+{
+    *out = FileSystem::ReadAllBytes(path);
+    if (out->empty())
+    {
+        if (err) *err += "File read failed : " + path + "\n";
+        return false;
+    }
     return true;
 }
 
@@ -53,6 +71,14 @@ GLTFImporter::GLTFImporter(const char *filename)
 
     // tinygltf に画像をデコードさせない（テクスチャは LoadMaterials で書き出し、BuildModel で読む）
     gltf.SetImageLoader(LoadImageData, this);
+
+    // 読み込みだけ FileSystem に差し替える。パスの展開と書き込みは tinygltf の既定のまま
+    tinygltf::FsCallbacks fs = {};
+    fs.FileExists            = GltfFileExists;
+    fs.ExpandFilePath        = tinygltf::ExpandFilePath;
+    fs.ReadWholeFile         = GltfReadWholeFile;
+    fs.WriteWholeFile        = tinygltf::WriteWholeFile;
+    gltf.SetFsCallbacks(fs);
 
     std::string error, warning;
     bool        result = false;
