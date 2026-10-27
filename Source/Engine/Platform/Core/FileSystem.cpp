@@ -3,11 +3,14 @@
 #include <fstream>
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <system_error>
 #include <sstream>
 
 #include <chrono>
 #include <cstdio>
+#include <unordered_map>
+#include <unordered_set>
 #include <tracy/Tracy.hpp>
 
 // ---------------------------------------------------------------------------
@@ -53,6 +56,113 @@ namespace
         (void)bytes;
 #endif
     }
+
+    // -----------------------------------------------------------------------
+    // アーカイブ（.pak）
+    //
+    // 書式（Tools/Pak作成ツール/make_pak.py と揃えること。数値はリトルエンディアン）:
+    //   [ヘッダ]  "PCPK"(4バイト) / version(u32) / entryCount(u32) / flags(u32)
+    //   [目次]    entryCount 回: pathLength(u16) / path(UTF-8) / offset(u64) / size(u64)
+    //   [中身]    各ファイルのバイト列。offset はアーカイブの先頭からの位置
+    //
+    // path は . と .. を解決し、区切りを / にしたもの（大文字小文字は元のまま）。
+    // 引くときは小文字にした鍵で探し、一覧を返すときは元の名前を使う
+    // （ファイル名から登録名を作るアセットがあるため、名前の大文字小文字は残す）。
+    // -----------------------------------------------------------------------
+
+    // Shipping で開くアーカイブ。作業ディレクトリ（普通は exe の隣）に置く
+    constexpr const char *kArchivePath = "Data.pak";
+
+    constexpr char     kArchiveMagic[4] = {'P', 'C', 'P', 'K'};
+    constexpr uint32_t kArchiveVersion  = 1;
+
+    struct ArchiveEntry
+    {
+        std::string path;   // 元の名前（正規化済み・大文字小文字はそのまま）
+        uint64_t    offset; // アーカイブ先頭からの位置
+        uint64_t    size;   // バイト数
+    };
+
+    // 目次は Mount で1度だけ作り、以降は読むだけなので、複数スレッドから引いてよい
+    std::string                                   g_archivePath;
+    std::unordered_map<std::string, ArchiveEntry> g_archiveEntries; // 鍵は小文字にしたパス
+
+    /**
+     * @brief パスの表記を揃える（\ を / に、. と .. を解決）。
+     * @param path 揃えるパス。
+     * @param toLower true なら英字を小文字にする（目次を引く鍵に使う）。
+     * @note 小文字にするのは ASCII だけ。日本語のファイル名（UTF-8）のバイトは触らない。
+     *       std::filesystem::path を通さないのは、UTF-8 の文字列を ANSI として解釈して化けるため。
+     */
+    std::string NormalizePath(const std::string &path, bool toLower)
+    {
+        std::vector<std::string> parts;
+        std::string              current;
+
+        auto flush = [&]() {
+            if (current.empty() || current == ".")
+            {
+                // 空（// の重なり）と . は読み飛ばす
+            }
+            else if (current == "..")
+            {
+                if (!parts.empty() && parts.back() != "..")
+                    parts.pop_back();
+                else
+                    parts.push_back(".."); // 先頭より上を指す .. は残す（アーカイブには当たらない）
+            }
+            else
+            {
+                parts.push_back(current);
+            }
+            current.clear();
+        };
+
+        for (char c : path)
+        {
+            if (c == '/' || c == '\\')
+            {
+                flush();
+                continue;
+            }
+            if (toLower && c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+            current += c;
+        }
+        flush();
+
+        std::string result;
+        for (const std::string &part : parts)
+        {
+            if (!result.empty()) result += '/';
+            result += part;
+        }
+        return result;
+    }
+
+    const ArchiveEntry *FindArchiveEntry(const std::string &virtualPath)
+    {
+        if (g_archiveEntries.empty()) return nullptr;
+
+        const auto it = g_archiveEntries.find(NormalizePath(virtualPath, true));
+        return (it != g_archiveEntries.end()) ? &it->second : nullptr;
+    }
+
+    // アーカイブから1ファイルを読む。毎回開き直すので、複数スレッドから同時に呼んでよい
+    bool ReadFromArchive(const ArchiveEntry &entry, std::vector<uint8_t> &out)
+    {
+        std::ifstream file(g_archivePath, std::ios::in | std::ios::binary);
+        if (!file.is_open()) return false;
+
+        out.resize(static_cast<size_t>(entry.size));
+        file.seekg(static_cast<std::streamoff>(entry.offset), std::ios::beg);
+        return static_cast<bool>(file.read(reinterpret_cast<char *>(out.data()), static_cast<std::streamsize>(entry.size)));
+    }
+
+    template <class T>
+    bool ReadValue(std::ifstream &file, T &out)
+    {
+        return static_cast<bool>(file.read(reinterpret_cast<char *>(&out), sizeof(T)));
+    }
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -61,7 +171,86 @@ namespace
 
 void FileSystem::Initialize()
 {
+#ifdef SHIPPING_BUILD
+    // 開けなくても止めない。ディスクにアセットがあればそのまま動く（開発フォルダから起動したときなど）
+    Mount(kArchivePath);
+#endif
     CCL_LOG_INFO(LogCategory::Core, "[FileSystem] Initialized.");
+}
+
+bool FileSystem::Mount(const std::string &archivePath)
+{
+    // 処理フロー:
+    // 1. ヘッダを確かめる（識別子・版・フラグ）
+    // 2. 目次を読む
+    // 3. 目次の位置と大きさがファイルに収まっているか確かめてから、使い始める
+
+    std::ifstream file(archivePath, std::ios::in | std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        CCL_LOG_WARN(LogCategory::Core, "[FileSystem] アーカイブがありません（ディスクから読みます）: %s", archivePath.c_str());
+        return false;
+    }
+    const uint64_t archiveSize = static_cast<uint64_t>(file.tellg());
+    file.seekg(0, std::ios::beg);
+
+    // ---- 1. ヘッダ ----
+    char     magic[4]   = {};
+    uint32_t version    = 0;
+    uint32_t entryCount = 0;
+    uint32_t flags      = 0;
+    if (!file.read(magic, sizeof(magic)) || std::memcmp(magic, kArchiveMagic, sizeof(magic)) != 0 ||
+        !ReadValue(file, version) || !ReadValue(file, entryCount) || !ReadValue(file, flags))
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] アーカイブではないファイルです: %s", archivePath.c_str());
+        return false;
+    }
+    if (version != kArchiveVersion || flags != 0)
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] 対応していないアーカイブです (version=%u, flags=%u): %s",
+                      version, flags, archivePath.c_str());
+        return false;
+    }
+
+    // ---- 2. 目次 ----
+    std::unordered_map<std::string, ArchiveEntry> entries;
+    entries.reserve(entryCount);
+    for (uint32_t i = 0; i < entryCount; ++i)
+    {
+        uint16_t     pathLength = 0;
+        ArchiveEntry entry;
+        if (!ReadValue(file, pathLength)) break;
+        entry.path.resize(pathLength);
+        if (!file.read(entry.path.data(), pathLength) || !ReadValue(file, entry.offset) || !ReadValue(file, entry.size))
+            break;
+
+        // ---- 3. 範囲の確認 ----
+        // 壊れたアーカイブで、範囲外を読んで巨大な確保をしないように
+        if (entry.offset > archiveSize || entry.size > archiveSize - entry.offset)
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] アーカイブの目次が壊れています: %s (%s)",
+                          archivePath.c_str(), entry.path.c_str());
+            return false;
+        }
+        std::string key = NormalizePath(entry.path, true);
+        entries.emplace(std::move(key), std::move(entry));
+    }
+    if (entries.size() != entryCount)
+    {
+        CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] アーカイブの目次を読み切れませんでした (%zu / %u): %s",
+                      entries.size(), entryCount, archivePath.c_str());
+        return false;
+    }
+
+    g_archivePath    = archivePath;
+    g_archiveEntries = std::move(entries);
+    CCL_LOG_INFO(LogCategory::Core, "[FileSystem] アーカイブを開きました: %s (%u ファイル)", archivePath.c_str(), entryCount);
+    return true;
+}
+
+bool FileSystem::IsInArchive(const std::string &virtualPath)
+{
+    return FindArchiveEntry(virtualPath) != nullptr;
 }
 
 std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtualPath)
@@ -72,6 +261,8 @@ std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtual
 
 bool FileSystem::Exists(const std::string &virtualPath)
 {
+    if (FindArchiveEntry(virtualPath)) return true;
+
     // 手入力のパスも渡ってくるので、例外を投げない版を使う（壊れたパスは「無い」扱い）
     std::error_code ec;
     return std::filesystem::exists(ResolvePhysicalPath(virtualPath), ec);
@@ -80,29 +271,52 @@ bool FileSystem::Exists(const std::string &virtualPath)
 std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
                                                const std::string &extension)
 {
-    std::vector<std::string> result;
+    std::vector<std::string>        result;
+    std::unordered_set<std::string> seen; // アーカイブとディスクの両方にある名前を1つにまとめる（小文字の名前）
 
+    // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む。
+    auto matchesExtension = [&extension](const std::string &fileName) {
+        if (extension.empty()) return true;
+        if (fileName.size() < extension.size()) return false;
+        std::string tail = fileName.substr(fileName.size() - extension.size());
+        for (char &c : tail)
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return tail == extension;
+    };
+
+    // ---- アーカイブ ----
+    // 目次から「このフォルダの直下」にあるものを拾う
+    const std::string dirKey = NormalizePath(virtualDir, true) + "/";
+    for (const auto &[key, entry] : g_archiveEntries)
+    {
+        if (key.compare(0, dirKey.size(), dirKey) != 0) continue;
+        if (key.find('/', dirKey.size()) != std::string::npos) continue; // さらに下のフォルダの中
+
+        const std::string fileName = entry.path.substr(entry.path.find_last_of('/') + 1); // 元の大文字小文字のまま
+        if (!matchesExtension(fileName)) continue;
+        if (!seen.insert(key.substr(dirKey.size())).second) continue;
+
+        result.push_back(virtualDir + "/" + fileName);
+    }
+
+    // ---- ディスク ----
     const auto dir = ResolvePhysicalPath(virtualDir);
 
     // ディレクトリが無いのは異常ではない（その種類のアセットをまだ作っていないだけ）。
     std::error_code ec;
-    if (!std::filesystem::is_directory(dir, ec)) return result;
-
-    for (const auto &entry : std::filesystem::directory_iterator(dir, ec))
+    if (std::filesystem::is_directory(dir, ec))
     {
-        if (!entry.is_regular_file()) continue;
-
-        if (!extension.empty())
+        for (const auto &entry : std::filesystem::directory_iterator(dir, ec))
         {
-            // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む。
-            std::string ext = entry.path().extension().string();
-            for (char &c : ext)
-                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-            if (ext != extension) continue;
-        }
+            if (!entry.is_regular_file()) continue;
 
-        // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる。
-        result.push_back(virtualDir + "/" + entry.path().filename().string());
+            const std::string fileName = entry.path().filename().string();
+            if (!matchesExtension(fileName)) continue;
+            if (!seen.insert(NormalizePath(fileName, true)).second) continue;
+
+            // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる。
+            result.push_back(virtualDir + "/" + fileName);
+        }
     }
 
     // ファイルシステムの列挙順は保証がない。並びが実行のたびに変わると、
@@ -121,6 +335,23 @@ std::string FileSystem::ReadAllText(const std::string &virtualPath)
     ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
 
     const auto t0 = std::chrono::steady_clock::now();
+
+    // アーカイブにあればそちらを読む
+    if (const ArchiveEntry *entry = FindArchiveEntry(virtualPath))
+    {
+        std::vector<uint8_t> bytes;
+        if (!ReadFromArchive(*entry, bytes))
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Failed to read from archive: %s", virtualPath.c_str());
+            return "";
+        }
+        std::string result(bytes.begin(), bytes.end());
+
+        const std::chrono::duration<double, std::milli> elapsed =
+            std::chrono::steady_clock::now() - t0;
+        ReportSlowFileRead(virtualPath, elapsed.count(), result.size());
+        return result;
+    }
 
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 
@@ -184,6 +415,22 @@ std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string &virtualPath)
     ZoneText(virtualPath.c_str(), virtualPath.size()); // どのファイルかをゾーンに貼る
 
     const auto t0 = std::chrono::steady_clock::now();
+
+    // アーカイブにあればそちらを読む
+    if (const ArchiveEntry *entry = FindArchiveEntry(virtualPath))
+    {
+        std::vector<uint8_t> bytes;
+        if (!ReadFromArchive(*entry, bytes))
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Failed to read from archive: %s", virtualPath.c_str());
+            return {};
+        }
+
+        const std::chrono::duration<double, std::milli> elapsed =
+            std::chrono::steady_clock::now() - t0;
+        ReportSlowFileRead(virtualPath, elapsed.count(), bytes.size());
+        return bytes;
+    }
 
     auto physicalPath = ResolvePhysicalPath(virtualPath);
 

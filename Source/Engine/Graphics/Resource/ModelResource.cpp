@@ -373,7 +373,14 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         }
     }
 
-    if (!FileSystem::Exists(modelPath.string()))
+    std::filesystem::path cachePath = jsonPath;
+    cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
+
+    // アーカイブ（Shipping）の中のキャッシュは、作成時点の最新として比べずに使う。
+    // アーカイブの中には更新時刻が無く、元のモデルも入れないことがあるため
+    const bool cacheInArchive = FileSystem::IsInArchive(cachePath.string());
+
+    if (!cacheInArchive && !FileSystem::Exists(modelPath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Render, "本体モデルが見つかりません: %s", modelPath.string().c_str());
         return;
@@ -383,11 +390,8 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     // .glb を直接指定したときは「.cereal があればそのまま使う」が、この形式はアニメーションを
     // 何度も差し替えながら使う前提なので、元のファイルの方が新しければ作り直す。
     // 作り直さないと、書き出したのに反映されないという、原因の分かりにくい状態になる。
-    std::filesystem::path cachePath = jsonPath;
-    cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
-
-    bool cacheUsable = std::filesystem::exists(cachePath);
-    if (cacheUsable)
+    bool cacheUsable = cacheInArchive || std::filesystem::exists(cachePath);
+    if (cacheUsable && !cacheInArchive)
     {
         const std::filesystem::file_time_type cacheTime = std::filesystem::last_write_time(cachePath);
 

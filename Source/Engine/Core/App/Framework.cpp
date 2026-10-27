@@ -22,6 +22,7 @@
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Platform/Core/LogSinks.h"
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include "EngineServices.h"
 #include "Engine/ECS/Jobs/CCL_JobSystem.h" // 共有ジョブプールの実体生成に必要
@@ -48,7 +49,7 @@ Framework::Framework(HWND hWnd)
     : hWnd(hWnd)
 {
     // 処理フロー:
-    // 1. ログ
+    // 1. ログ、ファイルシステム（Shipping ではアーカイブを開く）
     // 2. 描画（と、エディタ構成では ImGui・ファイルダイアログ）
     // 3. 入力
     // 4. 共有サービス（ジョブプール・入力設定・オーディオ・物理）
@@ -77,6 +78,12 @@ Framework::Framework(HWND hWnd)
         Logger::Instance().AddSink(std::make_shared<FileSink>(kLogPath));
         m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
         Logger::Instance().AddSink(m_consoleLogSink);
+    }
+
+    {
+        // 2 以降はアセットを読むので、その前にアーカイブを開いておく（Shipping のみ。ログを使うので 1 の後）
+        ZoneScopedN("Init: FileSystem");
+        FileSystem::Initialize();
     }
 
     {
