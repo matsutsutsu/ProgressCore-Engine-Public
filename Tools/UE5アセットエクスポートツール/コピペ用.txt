@@ -22,10 +22,10 @@ Muriel のアニメーション
 C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Models\Enemy\Muriel\Animations
 
 戦闘の効果音
-C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\Combat
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\SE\Combat
 
 UI の効果音
-C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\UI
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\SE\UI
 
 
 ※ リポジトリの場所を移したら、ここのパスも書き換えること。

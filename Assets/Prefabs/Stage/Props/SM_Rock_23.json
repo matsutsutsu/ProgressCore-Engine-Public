@@ -2,12 +2,21 @@
     "entities": [
         {
             "components": {
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
                 "Model": {
-                    "assetPath": "Assets/Models/Shape/Plane.glb"
+                    "assetPath": "./Assets\\Models\\Props\\SM_Rock_23.glb",
+                    "generateLod": true
                 },
                 "Name": {
-                    "name": "CloudPlane"
+                    "name": "SM_Rock_23"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -19,10 +28,10 @@
                 },
                 "Transform": {
                     "isStatic": false,
-                    "parent": 2,
+                    "parent": 0,
                     "position": [
                         0.0,
-                        -30.0,
+                        0.0,
                         0.0
                     ],
                     "rotation": [
@@ -32,9 +41,9 @@
                         1.0
                     ],
                     "scale": [
-                        1000.0,
-                        1000.0,
-                        1000.0
+                        3.0,
+                        3.0,
+                        3.0
                     ]
                 }
             },
@@ -42,6 +51,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "CloudPlane",
+    "name": "SM_Rock_23",
     "version": 1
 }

@@ -20,7 +20,7 @@ using namespace CCL::ECS;
 
 namespace
 {
-    constexpr const char *kLevelPath   = "Assets/Scene/DemoSwarm.level.json";
+    constexpr const char *kLevelPath   = "Assets/Scene/TestScene/DemoSwarm.level.json";
     // 隊長機だけドローンのモデルにし、一般機はキューブにする。
     // ドローンは1機で約2万頂点（ファイルサイズからの概算）あり、千機を超えると描画の重さで
     // 更新処理の速さが見えなくなるため

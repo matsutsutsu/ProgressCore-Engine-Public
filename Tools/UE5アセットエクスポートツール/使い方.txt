@@ -232,12 +232,12 @@ Output Log に報告します（ボーン数・アニメーション名・キー
 
 1. Content Browser で SoundWave を選択して実行
 
-2. 出力先に  Assets/Audio/（置きたいフォルダ）  を選ぶ
+2. 出力先に  Assets/Audio/SE/（置きたいフォルダ）  を選ぶ
 
 3. Assets/Config/AudioConfigDXTK.json に1行ずつ登録する
    ※ 置いただけでは鳴りません。ここに書いた名前で鳴らします。
 
-     { "event": "sfx:/slash_1", "file": "Assets/Audio/Combat/slash_1.wav" },
+     { "event": "sfx:/slash_1", "file": "Assets/Audio/SE/Combat/slash_1.wav" },
 
 4. 鳴らしたい場所で、そのイベント名を指定する
    （アニメのシーケンサーなら「+ Sound」で置いて、音の欄から選ぶ）

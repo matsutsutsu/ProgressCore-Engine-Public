@@ -26,11 +26,11 @@
         },
         {
             "name": "Anim Graph Editor",
-            "visible": true
+            "visible": false
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Formation Editor",

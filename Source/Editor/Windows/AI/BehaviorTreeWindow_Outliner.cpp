@@ -10,8 +10,9 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
     // 一覧は自分ではデータを持たず、RebuildHierarchy が毎フレーム作る親子関係
     // （m_roots / m_childrenOf）をなぞって描くだけ。だからリンクを繋ぎ替えれば次のフレームで一覧も変わる。
 
-    // 表（Table）の中に木を入れる。種類を名前と別の列に出すため。
-    // 名前の頭に付けると、字下げの深さで種類の位置がずれて縦に読めない。
+    // 表（Table）の中に木を入れる。見出しを固定したまま一覧だけをスクロールさせ、
+    // 行全体を押せる範囲にする（SpanAllColumns）ため。
+    // 種類は左の色の四角で分かるので、列には出さない。
     // 1行おきの背景の塗り（RowBg）は、見にくいと本人が判断したので使わない
     ZoneScopedN("BTW: Outliner");
 
@@ -19,16 +20,14 @@ void BehaviorTreeWindow::DrawOutliner(const BehaviorTreeComponent *activeAI)
     ImGui::Separator();
 
     // ScrollY：一覧だけをスクロールさせる（見出しは固定したまま）
-    // BordersInnerV：名前と種類の列の境目に縦線を引く
-    const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY;
+    const ImGuiTableFlags flags = ImGuiTableFlags_ScrollY;
 
     // 行の上下に少し余白を足して、行と行の境目を分かりやすくする
     ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 3.0f));
-    if (ImGui::BeginTable("##BTHierarchy", 2, flags))
+    if (ImGui::BeginTable("##BTHierarchy", 1, flags))
     {
         ImGui::TableSetupScrollFreeze(0, 1); // 列の見出しはスクロールしても残す
         ImGui::TableSetupColumn("名前", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("種類", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
 
         // 根から1行ずつ描く。子は DrawOutlinerRow が再帰で描く
@@ -52,8 +51,7 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     // 3. クリックでキャンバスをそのノードへ寄せる
     // 4. 名前の列の部品2：種類の色の四角
     // 5. 名前の列の部品3：名前
-    // 6. 種類の列
-    // 7. 子の行（再帰）
+    // 6. 子の行（再帰）
 
     // 【備考】
     //   名前の列は左から3つの部品でできている:
@@ -86,7 +84,7 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
 
     // OpenOnArrow     : 矢印を押したときだけ開閉する（行を押すのは「移動」に使うため）
     // DefaultOpen     : 最初は全部開いた状態で出す
-    // SpanAllColumns  : 種類の列まで含めた行全体を押せる範囲にする
+    // SpanAllColumns  : 行全体を押せる範囲にする（文字が空なので、無いと矢印だけしか押せない）
     // DrawLinesToNodes: 親から子へ線を引く（どの行がどの親の子かを、字下げより確かに見せる）
     // Leaf            : 子が無い行は矢印を出さない
     // Selected        : キャンバスで選択中のノードの行を塗る
@@ -147,17 +145,7 @@ void BehaviorTreeWindow::DrawOutlinerRow(uint32_t nodeId, const BehaviorTreeComp
     ImGui::TextColored(nameColor, "%s", GetDisplayName(*node).c_str());
 
     // ---------------------------------------------------------
-    // 6. 種類
-    // ---------------------------------------------------------
-
-    // 種類の色で書く（左の四角と同じ色。名前より目立たないよう、少し明るくして読みやすくする）
-    ImGui::TableNextColumn();
-    const ImVec4 typeColor = HeaderColorOf(node->type).Value;
-    ImGui::TextColored(ImVec4(typeColor.x * 0.5f + 0.5f, typeColor.y * 0.5f + 0.5f, typeColor.z * 0.5f + 0.5f, 1.0f),
-                       "%s", TypeNameOf(node->type));
-
-    // ---------------------------------------------------------
-    // 7. 子の行
+    // 6. 子の行
     // ---------------------------------------------------------
 
     // TreeNodeEx が true（開いている）なら子を描き、最後に TreePop で字下げを1段戻す

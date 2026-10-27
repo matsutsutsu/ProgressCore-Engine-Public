@@ -21,7 +21,7 @@ void PlayerTestScene::Initialize()
         ZoneScopedN("PlayerTestScene: LoadLevel PlayerTestStage");
 
         // BossBattleStage からボスだけを外したレベル。ドローンはボスが出すので、これで敵は 0 体になる。
-        const std::string playerTestLevel = "Assets/Scene/PlayerTestStage.level.json";
+        const std::string playerTestLevel = "Assets/Scene/TestScene/PlayerTestStage.level.json";
         if (!LevelSerializer::LoadLevel(m_worldPtr, playerTestLevel))
             CCL_LOG_ERROR(LogCategory::Core, "PlayerTestScene: レベルの読み込みに失敗: %s", playerTestLevel.c_str());
     }

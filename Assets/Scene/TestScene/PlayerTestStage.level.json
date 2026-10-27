@@ -134,7 +134,7 @@
             ]
         }
     ],
-    "scene": "BossBattleStage.scene.json",
+    "scene": "../BossBattleStage.scene.json",
     "type": "level",
     "version": 1
 }

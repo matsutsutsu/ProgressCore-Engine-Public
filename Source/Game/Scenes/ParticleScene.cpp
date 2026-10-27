@@ -13,7 +13,7 @@ void ParticleScene::Initialize()
     // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む。
     // BaseScene::Initialize はエンティティを作らないので、消されて困るものは無い
     {
-        std::string particleLevel = "Assets/Scene/ParticleScene.level.json";
+        std::string particleLevel = "Assets/Scene/TestScene/ParticleScene.level.json";
 
         ZoneScopedN("ParticleScene: LoadLevel ParticleScene");
         if (!LevelSerializer::LoadLevel(m_worldPtr, particleLevel))

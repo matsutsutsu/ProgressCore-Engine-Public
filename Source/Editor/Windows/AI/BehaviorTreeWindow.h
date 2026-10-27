@@ -180,7 +180,7 @@ private:
     // 種類ごとの見出し色。キャンバスとヒエラルキーで揃える
     static ImColor HeaderColorOf(EditorBTNodeType type);
 
-    // 種類の表示名（"Selector" など）。ヒエラルキーの種類の列と、まとまりのノードの見出しに出す
+    // 種類の表示名（"Selector" など）。まとまりのノードの見出しに出す
     static const char *TypeNameOf(EditorBTNodeType type);
 
     // デコレータ種類の表示名
