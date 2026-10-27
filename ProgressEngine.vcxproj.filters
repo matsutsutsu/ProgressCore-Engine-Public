@@ -420,6 +420,9 @@
     <Filter Include="Source\Game\Logics\Title">
       <UniqueIdentifier>{1f57441e-e4e2-40e1-8c8a-1f744e32ada0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Stage">
+      <UniqueIdentifier>{6b0d3c2e-8f41-4a7d-9c55-2e8a1d4f7b90}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Combat\Feedback">
       <UniqueIdentifier>{cee96189-a3fe-466e-96f2-c7116bfbc804}</UniqueIdentifier>
     </Filter>
@@ -839,6 +842,12 @@
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Title\TitleSwarmSystem.h">
       <Filter>Source\Game\Logics\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldComponent.h">
+      <Filter>Source\Game\Logics\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldSystem.h">
+      <Filter>Source\Game\Logics\Stage</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h">
       <Filter>Source\Game\UI\Debug</Filter>
@@ -2248,6 +2257,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp">
       <Filter>Source\Game\Logics\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldSystem.cpp">
+      <Filter>Source\Game\Logics\Stage</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>

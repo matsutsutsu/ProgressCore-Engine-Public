@@ -752,6 +752,8 @@
     <ClInclude Include="Source\Game\Logics\Title\TitleComposition.h" />
     <ClInclude Include="Source\Game\Logics\Title\TitleCameraSystem.h" />
     <ClInclude Include="Source\Game\Logics\Title\TitleSwarmSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h" />
     <ClInclude Include="Source\Game\UI\Screens\GameResultSystem.h" />
@@ -1224,6 +1226,8 @@
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\PauseSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp" />
