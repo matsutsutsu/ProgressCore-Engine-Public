@@ -8,11 +8,20 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Animation/Core/AnimEventMessages.h"         // アニメーションの Effect イベント
 #include "Engine/Animation/Components/CombatRosterComponent.h" // Effect の武器タグ → 武器の Entity
+#include "Engine/Platform/Core/FileSystem.h"
 
 #include <algorithm>
 
+#include <tracy/Tracy.hpp>
+
 using namespace CCL::ECS;
 using namespace DirectX;
+
+namespace
+{
+    // 先読みする VFX のプレハブの置き場
+    constexpr const char *kVfxPrefabFolder = "Assets/Prefabs/Particles";
+} // namespace
 
 // ---------------------------------------------------------------------------
 // 初期化
@@ -26,6 +35,20 @@ void VFXSystem::Initialize()
 
     // アニメーションの Effect イベント（AnimationSystem が L02 で Publish する）
     ListenEvent<AnimEventEffectMessage>([this](const AnimEventEffectMessage &msg) { OnAnimEffect(msg); });
+
+    PreloadPrefabs();
+}
+
+void VFXSystem::PreloadPrefabs()
+{
+    ZoneScopedN("VFXSystem::PreloadPrefabs");
+
+    // VFXフォルダの中を全部読む。
+    // 初回起動時の処理負荷を軽減させるために最初に読み込む
+    for (const std::string &path : FileSystem::ListFiles(kVfxPrefabFolder, ".json"))
+    {
+        Prefab::Preload(path);
+    }
 }
 
 // ---------------------------------------------------------------------------

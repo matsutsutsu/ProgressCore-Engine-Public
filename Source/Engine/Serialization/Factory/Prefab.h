@@ -6,6 +6,7 @@
 //   - プレハブファイルから Entity の階層を生成し、ルートの EntityID を返す
 //   - 位置・回転を指定して生成する
 //   - 読み込んだ JSON をパスごとにキャッシュする
+//   - 生成せずに JSON と中のテクスチャだけを先読みする（Preload）
 //
 // 備考:
 //   - 生成だけを行い、破棄には関わらない（DestroyTag を起点に HierarchyCleanupSystem が階層ごと消す）。
@@ -44,6 +45,19 @@ namespace Prefab
                          const std::string       &path,
                          const DirectX::XMFLOAT3 &position,
                          float                    rotationY);
+
+    /**
+     * @brief プレハブを生成せずに、JSON と中で使うテクスチャだけを先に読んでおく。
+     *
+     * 初めて SpawnPrefab したフレームに、JSON のパースと PNG のデコードがまとめて来て
+     * カクつくのを防ぐ。シーンの切り替えなど、止まっても目立たないときに呼ぶ。
+     *
+     * @param path SpawnPrefab と同じプレハブのパス（.json は省略可）。
+     * @return 読めたら true。プレハブが無い・壊れているときは false（エラーログも出る）。
+     * @note テクスチャはパスの拡張子（.png/.dds/.tga/.jpg/.hdr）で拾う。モデルやマテリアルは読まない。
+     * @note 2回目以降はキャッシュに当たるので、ほとんど時間はかからない。
+     */
+    bool Preload(const std::string &path);
 
     // 読み込んだプレハブの JSON のキャッシュを捨てる（次の SpawnPrefab で読み直す）
     void ClearPrefabCache();

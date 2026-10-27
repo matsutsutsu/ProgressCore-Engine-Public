@@ -5,6 +5,7 @@
 // 責務:
 //   - プレハブから VFX の Entity を作り、指定位置に置いてバーストを起こす
 //   - 粒子が消えたころに Entity を破棄する
+//   - 初期化のときに VFX のプレハブを先読みする（初回の再生でカクつかないように）
 //
 // 備考: VFX のプレハブは Transform・GPUParticle・TimeState を持つ1 Entity であること。
 //       親子を持つプレハブは扱わない。複数の層を持つエフェクトはエミッタを増やして作る。
@@ -43,7 +44,8 @@ class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
 public:
     VFXSystem() : IfSystem("VFXSystem") {}
 
-    // 自分を World のリソースに登録し（VFX::Play から引くため）、アニメの Effect イベントを購読する
+    // 自分を World のリソースに登録し（VFX::Play から引くため）、アニメの Effect イベントを購読する。
+    // VFX のプレハブも先読みする
     void Initialize() override;
 
     // 停止待ち・破棄待ちの VFX の残り時間を減らし、尽きたものを止める・破棄する
@@ -96,6 +98,10 @@ private:
 
     // 停止待ちの VFX の残り時間を減らし、尽きたものを Stop() する
     void UpdateTimedStops(float dt);
+
+    // VFX のプレハブ（JSON と中のテクスチャ）を全部先読みする。
+    // 初めて出したフレームに PNG のデコードが来てカクつくのを、シーンの切り替え中に済ませておく
+    void PreloadPrefabs();
 
     // 継続放出（emitMode==0）のエミッタを含むか。含むなら自動では破棄しない
     bool HasContinuousEmitter(const GPUParticleComponent &particle) const;
