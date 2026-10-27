@@ -5,6 +5,14 @@
 TextureCube SkyboxMap : register(REG_SRV(SLOT_SRV_SKYBOX_BG));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
+// SkyboxPass.h の CbSkybox・SkyboxVS.hlsl と同じ並び
+cbuffer CbSkybox : register(REG_CB(SLOT_CB_SKYBOX))
+{
+    row_major float4x4 invViewProj; // VS で使う
+    float skyIntensity;             // 空の明るさの倍率（SkyboxComponent の値。無ければ 1.0）
+    float3 skyPadding;
+};
+
 struct VS_OUT
 {
     float4 pos : SV_POSITION;
@@ -19,6 +27,10 @@ float4 main(VS_OUT pin) : SV_TARGET
     // これによりカメラの解像度に合わせた最適なミップマップが自動選択され、
     // ジャギー（ピクセルのチラつき）のない最高品質の空が描画されます。
     float3 envColor = SkyboxMap.Sample(LinearSampler, dir).rgb;
+
+    // 空の背景だけを暗くする。IBL（物の陰影）は別のテクスチャから引くので変わらない。
+    // 地平線フォグより前に掛け、霧の色は FogComponent の色のまま保つ
+    envColor *= skyIntensity;
 
     // ------------------------------------------------------------------
     // 距離フォグと背景を繋ぐ「地平線フォグ」。

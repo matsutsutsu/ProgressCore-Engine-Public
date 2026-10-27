@@ -227,6 +227,7 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRT
     ctx.sceneDepthSRV  = m_gfxDevice.GetDepthSRV();
     ctx.sceneNormalSRV = m_sceneNormalSRV;
     ctx.skyboxSRV      = m_pendingSkyboxSRV; // EnvironmentSystem が決めた今の空
+    ctx.skyIntensity   = m_pendingSkyIntensity;
     ctx.viewportW      = m_gfxDevice.GetWidthU();
     ctx.viewportH      = m_gfxDevice.GetHeightU();
     return ctx;

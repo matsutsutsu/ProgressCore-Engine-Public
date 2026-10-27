@@ -6,11 +6,13 @@
 // 責務:
 //   - フォグ定数バッファ（CbFog）を作り、FogComponent から毎フレーム書き込んでバインドする
 //   - IBL テクスチャ（IEM・PMREM・BRDF LUT）とグローバルノイズをバインドする
-//   - SkyboxComponent のパスからスカイボックスと IBL を読み込む（無ければ既定を使う）
+//   - SkyboxComponent のパスからスカイボックスと IBL を読み込む（無ければ初期設定を使う）
 //   - CbScene / CbSkeleton をパイプラインにバインドする
 //
 // 備考: CbScene の中身を書くのは Graphics::Update() だけ。ここで UpdateSubresource すると、
 //       Graphics::Update が書いた行列を古い値で上書きしてしまうので、バインドだけ行う。
+//       空と IBL の初期設定は EnvironmentSystem.cpp の定数の1か所に置く。
+//       シーンごとに変えたいときは、そのシーンに SkyboxComponent（Sky / IBL）を置いて上書きする。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <d3d11.h>

@@ -1,9 +1,11 @@
 #include "Shader/Common/Scene.hlsli" // cameraPosition など
 
-// C++から受け取る逆行列用の定数バッファ
+// C++から受け取る逆行列用の定数バッファ（SkyboxPass.h の CbSkybox・SkyboxPS.hlsl と同じ並び）
 cbuffer CbSkybox : register(REG_CB(SLOT_CB_SKYBOX))
 {
     row_major float4x4 invViewProj;
+    float skyIntensity; // PS で使う
+    float3 skyPadding;
 };
 
 struct VS_OUT

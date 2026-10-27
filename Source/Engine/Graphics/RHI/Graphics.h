@@ -132,10 +132,14 @@ public:
     // NormalPrepass が作った法線バッファを受け取る（所有しない）
     void SetSceneNormalSRV(ID3D11ShaderResourceView *srv) noexcept { m_sceneNormalSRV = srv; }
 
-    // 今フレームのスカイボックス背景を受け取る（EnvironmentSystem が毎フレーム設定する）。
-    // MakeFrameContext が RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
-    // 所有しない（実体は ResourceManager か EnvironmentSystem が持つ）。
-    void SetSkyboxSRV(ID3D11ShaderResourceView *srv) noexcept { m_pendingSkyboxSRV = srv; }
+    // 今フレームのスカイボックス背景と、その明るさの倍率を受け取る（EnvironmentSystem が毎フレーム設定する）。
+    // MakeFrameContext が RenderFrameContext へ渡し、SkyboxPass が使う。
+    // srv は所有しない（実体は ResourceManager が持つ）。
+    void SetSkybox(ID3D11ShaderResourceView *srv, float intensity) noexcept
+    {
+        m_pendingSkyboxSRV    = srv;
+        m_pendingSkyIntensity = intensity;
+    }
 
 private:
     // メインカメラ。unique_ptr にしないのは、ECS の System が毎フレーム書き換えるので、
@@ -171,7 +175,8 @@ private:
     void UnbindAllResources(ID3D11DeviceContext *dc);
 
     ID3D11ShaderResourceView *m_sceneNormalSRV   = nullptr; // 法線バッファ（NormalPrepass が持つ。所有しない）
-    ID3D11ShaderResourceView *m_pendingSkyboxSRV = nullptr; // 今フレームのスカイボックス（所有しない）
+    ID3D11ShaderResourceView *m_pendingSkyboxSRV    = nullptr; // 今フレームのスカイボックス（所有しない）
+    float                     m_pendingSkyIntensity = 1.0f;    // 今フレームの空の明るさの倍率
 
     // エディタが外から触るため変数を分けている
     LodDebugPass *m_lodDebugPass = nullptr; // LOD の色分け表示のパス（BuildDefaultRenderPasses が入れる。所有しない）

@@ -113,6 +113,12 @@
                         0.5
                     ]
                 },
+                "Sky / IBL": {
+                    "irradiance": "",
+                    "prefilter": "",
+                    "skyIntensity": 0.5,
+                    "skybox": ""
+                },
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,

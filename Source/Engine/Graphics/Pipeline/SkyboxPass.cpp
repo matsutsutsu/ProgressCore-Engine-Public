@@ -26,17 +26,12 @@ void SkyboxPass::Initialize(const RenderServices &services)
 
     hr = GpuResourceUtils::CreateDynamicConstantBuffer(device, sizeof(CbSkybox), &m_cbSkybox);
     _ASSERT_EXPR(SUCCEEDED(hr), L"Skybox 用定数バッファの作成に失敗");
-
-    hr = GpuResourceUtils::LoadTexture(
-        device,
-        "Assets/Textures/IBL/skybox_highres.dds",
-        &m_skyboxTex);
-    _ASSERT_EXPR(SUCCEEDED(hr), L"Skybox 背景テクスチャのロードに失敗");
 }
 
 void SkyboxPass::Execute(const RenderFrameContext &ctx)
 {
-    if (!ctx.camera) return;
+    // 空が無いのは EnvironmentSystem が一度も走っていないフレームだけ（シーンの最初のフレームなど）
+    if (!ctx.camera || !ctx.skyboxSRV) return;
     ID3D11DeviceContext *dc = ctx.dc;
 
     const DirectX::XMMATRIX V     = DirectX::XMLoadFloat4x4(&ctx.camera->GetView());
@@ -48,16 +43,17 @@ void SkyboxPass::Execute(const RenderFrameContext &ctx)
     {
         CbSkybox *cb = static_cast<CbSkybox *>(mapped.pData);
         DirectX::XMStoreFloat4x4(&cb->invViewProj, invVP);
+        cb->skyIntensity = ctx.skyIntensity;
         dc->Unmap(m_cbSkybox.Get(), 0);
     }
 
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf());
+    dc->PSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf()); // 明るさの倍率は PS で掛ける
 
-    // テクスチャは EnvironmentSystem が SkyboxComponent から決め、ctx で渡してくる。
-    // EnvironmentSystem が走っていないと null なので、このパスが持つ既定のテクスチャを使う
-    ID3D11ShaderResourceView *skyTex = ctx.skyboxSRV ? ctx.skyboxSRV : m_skyboxTex.Get();
+    // テクスチャは EnvironmentSystem が SkyboxComponent（無ければ既定）から決め、ctx で渡してくる
+    ID3D11ShaderResourceView *skyTex = ctx.skyboxSRV;
     dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, &skyTex);
 
     dc->IASetInputLayout(nullptr);

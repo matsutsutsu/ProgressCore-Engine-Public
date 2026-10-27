@@ -26,9 +26,10 @@ namespace ComponentMetaJson
     {
         static void Save(json &j, const SkyboxComponent &c, SaveContext * /*ctx*/)
         {
-            j["skybox"]     = c.skyboxTexturePath;
-            j["irradiance"] = c.irradiancePath;
-            j["prefilter"]  = c.prefilterPath;
+            j["skybox"]       = c.skyboxTexturePath;
+            j["irradiance"]   = c.irradiancePath;
+            j["prefilter"]    = c.prefilterPath;
+            j["skyIntensity"] = c.skyIntensity;
         }
         static void Load(const json &j, SkyboxComponent &c, LoadContext * /*ctx*/)
         {
@@ -42,6 +43,12 @@ namespace ComponentMetaJson
             copyStr(c.skyboxTexturePath, j, "skybox");
             copyStr(c.irradiancePath, j, "irradiance");
             copyStr(c.prefilterPath, j, "prefilter");
+
+            // 明るさを足す前に保存したシーンには無いので、そのときは既定（1.0）のまま
+            if (j.contains("skyIntensity"))
+            {
+                c.skyIntensity = j["skyIntensity"].get<float>();
+            }
         }
     };
 } // namespace ComponentMetaJson
@@ -63,7 +70,11 @@ struct ComponentMeta<SkyboxComponent>
         bool changed = false;
 
         ImGui::TextDisabled(u8"空(背景)と IBL(陰影)は同じ空から焼いた3点セットで指定します。\n"
-                            u8"空欄なら既定の空にフォールバックします。");
+                            u8"空欄なら既定の空を使います。");
+        ImGui::Separator();
+
+        changed |= ComponentMetaImGui::DragFloat(u8"空の明るさ", &c.skyIntensity, 0.01f, 0.0f, 4.0f,
+                                                 u8"空を見るとまぶしいときに下げる。キャラや地形の陰影は変わらない");
         ImGui::Separator();
 
         // パス1行分: ラベル → 現在のパス → [読込...] [クリア]。

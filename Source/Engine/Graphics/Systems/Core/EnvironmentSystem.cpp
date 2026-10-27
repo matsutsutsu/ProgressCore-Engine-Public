@@ -16,6 +16,16 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+namespace
+{
+    // 空と IBL の初期設定。シーンごとに変えたいときは SkyboxComponent（Sky / IBL）で上書きする
+    constexpr const char *kDefaultSkyboxPath     = "Assets/Textures/IBL/skybox_highres.dds";
+    constexpr const char *kDefaultIrradiancePath = "Assets/Textures/IBL/ibl_sky_iem.dds";
+    constexpr const char *kDefaultPrefilterPath  = "Assets/Textures/IBL/ibl_sky_pmrem.dds";
+    constexpr const char *kBrdfLutPath           = "Assets/Textures/IBL/ibl_brdf_lut.png"; // 空に依存しないので上書きしない
+    constexpr float       kDefaultSkyIntensity   = 1.0f;
+} // namespace
+
 void EnvironmentSystem::Initialize()
 {
     // グローバルノイズテクスチャ
@@ -24,10 +34,10 @@ void EnvironmentSystem::Initialize()
         m_globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
     // 既定の IBL とスカイボックス（SkyboxComponent が無いか、パスが空のときに使う）
-    auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
-    auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
-    auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
-    auto skyHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/skybox_highres.dds");
+    auto irrHandle = ResourceManager::Instance().LoadTexture(kDefaultIrradiancePath);
+    auto preHandle = ResourceManager::Instance().LoadTexture(kDefaultPrefilterPath);
+    auto lutHandle = ResourceManager::Instance().LoadTexture(kBrdfLutPath);
+    auto skyHandle = ResourceManager::Instance().LoadTexture(kDefaultSkyboxPath);
     if (irrHandle.IsValid()) m_irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
     if (preHandle.IsValid()) m_prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
     if (lutHandle.IsValid()) m_brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
@@ -104,9 +114,12 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     ID3D11ShaderResourceView *skyboxSRV     = m_defaultSkyboxSRV.Get();
     ID3D11ShaderResourceView *irradianceSRV = m_irradianceMapSRV.Get();
     ID3D11ShaderResourceView *prefilterSRV  = m_prefilterMapSRV.Get();
+    float                     skyIntensity  = kDefaultSkyIntensity;
 
     if (auto *sky = m_world->GetSingletonComponent<SkyboxComponent>())
     {
+        skyIntensity = sky->skyIntensity;
+
         auto &rm = ResourceManager::Instance();
 
         // パスがあってハンドルが無効なら読み込む（パスを変えるとインスペクタがハンドルを無効にする）
@@ -129,7 +142,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
 
     // 4b. スカイボックスの背景は SkyboxPass が描くときに t17 へバインドする。ここでは Graphics に渡すだけ
     //     （SkyboxPass は World を参照できないので、MakeFrameContext 経由で渡す）。
-    Graphics::Instance().SetSkyboxSRV(skyboxSRV);
+    Graphics::Instance().SetSkybox(skyboxSRV, skyIntensity);
 
     // 5. IBL 用サンプラ (s3)
     if (s.renderState)

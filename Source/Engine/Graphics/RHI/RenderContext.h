@@ -84,10 +84,11 @@ struct RenderFrameContext
     ID3D11ShaderResourceView *sceneDepthSRV  = nullptr;
     ID3D11ShaderResourceView *sceneNormalSRV = nullptr;
 
-    // 今のスカイボックス背景（SkyboxComponent のもの、または既定）。
+    // 今のスカイボックス背景（SkyboxComponent のもの、または既定）と、その明るさの倍率。
     // EnvironmentSystem が決めて Graphics に渡し、MakeFrameContext がここへ入れる。
-    // null なら SkyboxPass 側の既定を使う。
-    ID3D11ShaderResourceView *skyboxSRV = nullptr;
+    // null なら SkyboxPass は空を描かない。
+    ID3D11ShaderResourceView *skyboxSRV    = nullptr;
+    float                     skyIntensity = 1.0f;
 
     // ---- 描画先のサイズ（targetRTV の実寸, px） ----
     uint32_t viewportW = 0;
