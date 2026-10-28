@@ -14,13 +14,14 @@
                     "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
                 "BossActionComponent": {
-                    "acceleration": 10.0,
+                    "attackLeap.flight": 1.0,
                     "attackLeap.height": 20.0,
                     "attackLeap.landRecovery": 1.25,
                     "attackLeap.windup": 0.3499999940395355,
                     "attackStandOff": 3.0,
                     "backStepDistance": 40.0,
                     "backStepHeight": 2.0,
+                    "backStepRecovery": 0.26,
                     "backStepRetreatTime": 0.3499999940395355,
                     "dashAimTime": 0.30000001192092896,
                     "dashDistance": 50.0,
@@ -31,14 +32,16 @@
                     "dashSpeed": 150.0,
                     "dashStopTime": 0.6000000238418579,
                     "dashTravelSpeed": 130.0,
+                    "dashTravelTime": 0.2,
                     "dashWindupTime": 0.4000000059604645,
-                    "deceleration": 15.0,
                     "escapeLandingRatio": 0.30000001192092896,
+                    "escapeLeap.flight": 1.1,
                     "escapeLeap.height": 30.0,
                     "escapeLeap.landRecovery": 0.550000011920929,
                     "escapeLeap.windup": 0.25,
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
+                    "hoverLeap.hover": 8.17,
                     "hoverLeap.landRecovery": 0.6299999952316284,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
@@ -46,8 +49,7 @@
                     "strafeKeepDistance": 40.5,
                     "strafeSpeed": 8.0,
                     "strafeTurnSpeed": 6.0,
-                    "turnSpeed": 10.0,
-                    "walkSpeed": 3.0
+                    "turnSpeed": 10.0
                 },
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
@@ -107,7 +109,7 @@
                     "maxSlopeAngle": 45.0,
                     "maxStepHeight": 0.5,
                     "objectLayer": 2,
-                    "walkSpeed": 30.0
+                    "walkSpeed": 3.0
                 },
                 "Player Just Evade Component": {
                     "isJustSuccess": false

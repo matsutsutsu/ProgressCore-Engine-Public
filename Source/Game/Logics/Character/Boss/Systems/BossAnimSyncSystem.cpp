@@ -8,9 +8,7 @@
 using namespace CCL::ECS;
 
 // パラメータ名のハッシュは先に求めておく。
-// グラフは Idle↔Move の遷移条件に
-// "Speed"（移動の速さ）と "IsMoving"（移動中か）を使う。
-static const uint32_t HASH_SPEED     = CCL::Utils::HashString("Speed");
+// グラフは Idle↔Move の遷移条件に "IsMoving"（歩いて近づいているか）を使う。
 static const uint32_t HASH_IS_MOVING = CCL::Utils::HashString("IsMoving");
 
 // 横歩きの向き。-1=左回り / 0=横歩きしていない / +1=右回り。
@@ -44,7 +42,7 @@ static const uint32_t HASH_DASH_PHASE = CCL::Utils::HashString("DashPhase");
 
 // 後方ステップの段。0 は後方ステップしていない、
 // 1〜3 が BossBackStepPhase の Retreat〜Recovery（+1 したもの）。
-// 下がる長さは BT の全体時間から逆算するので、
+// 着地硬直の長さは技の調整値で変わるので、
 // 突進と同じくクリップの長さでは切り替えを決められない。
 static const uint32_t HASH_BACKSTEP_PHASE = CCL::Utils::HashString("BackStepPhase");
 
@@ -55,10 +53,8 @@ void BossAnimSyncSystem::Update(float /*dt*/)
 
         // Move 中だけ移動とみなす。
         // 技は BossActionSystem が引くトリガーで再生するので、
-        // ここで Speed=0（Idle のまま）でも問題ない。
+        // ここで IsMoving=false（Idle のまま）でも問題ない。
         const bool isMoving = (boss.currentState == BossActionState::Move);
-
-        anim.SetFloat(HASH_SPEED, boss.currentMoveSpeed);
         anim.SetBool(HASH_IS_MOVING, isMoving);
 
         // --- 横歩き ---

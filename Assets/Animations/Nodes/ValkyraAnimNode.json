@@ -223,19 +223,13 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 0.10000000149011612
-                        },
-                        {
                             "op": 0,
                             "paramHash": 3816806871,
                             "paramName": "IsMoving",
                             "threshold": 1.0
                         }
                     ],
-                    "logicType": 1,
+                    "logicType": 0,
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
                     "targetStateHash": 2133600820
@@ -291,10 +285,10 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 2,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 0.10000000149011612
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
+                            "threshold": 0.0
                         }
                     ],
                     "logicType": 0,
@@ -519,9 +513,9 @@
                             "threshold": 0.0
                         },
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
                             "threshold": 1.0
                         }
                     ],
@@ -657,9 +651,9 @@
                             "threshold": 0.0
                         },
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
                             "threshold": 1.0
                         }
                     ],
@@ -710,9 +704,9 @@
                             "threshold": 0.0
                         },
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
                             "threshold": 1.0
                         }
                     ],
@@ -906,9 +900,9 @@
                             "threshold": 0.0
                         },
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
                             "threshold": 1.0
                         }
                     ],

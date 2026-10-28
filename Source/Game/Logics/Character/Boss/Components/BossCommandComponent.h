@@ -14,8 +14,11 @@ struct BossCommandComponent
 
     // 本体に出させたい技。0 は何もしない。
     // BossPhaseSystem が毎フレーム 0 に戻す
-    ActionID currentActionId       = 0;
-    float    currentActionDuration = 0.0f; // 技の全体時間 [秒]
+    ActionID currentActionId = 0;
+
+    // 技の依頼番号。BT が技を出し始めるたびに1増やす（0 に戻さない）
+    // 同じ技を続けて出しても、本体は新しい技として始め直す
+    uint32_t actionSerial = 0;
 
     bool droneAttackActive     = false; // ドローンへの「今撃て」信号
     bool prevDroneAttackActive = false; // 前フレームの信号（立ち上がり検出）

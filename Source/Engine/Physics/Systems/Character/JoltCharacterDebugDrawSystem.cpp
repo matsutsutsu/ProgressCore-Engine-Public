@@ -7,6 +7,9 @@
 using namespace DirectX;
 using namespace CCL::ECS;
 
+
+
+// 全キャラクターの速度を、青（渡した速度）と赤（実際の速度）の矢印で描く
 void JoltCharacterDebugDrawSystem::Update(float dt)
 {
     if (!isDebugVisible) return;
@@ -25,7 +28,7 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
         const float DRAW_SCALE = 0.2f;  // 矢印の長さ = 速度(m/秒) × 0.2
         const float HEAD_SIZE  = 0.05f; // 矢印の頭の大きさ
 
-        // 1. ロジックが求めた水平速度（青）
+        // 物理へ渡した速度（青）
         XMFLOAT3 desiredVel = {
             movement.currentVelocity.x * DRAW_SCALE,
             movement.currentVelocity.y * DRAW_SCALE,
@@ -33,7 +36,8 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
         XMFLOAT3 desiredEnd = {pos.x + desiredVel.x, pos.y + desiredVel.y, pos.z + desiredVel.z};
         renderer->DrawArrow(pos, desiredEnd, HEAD_SIZE, {0.2f, 0.2f, 1.0f, 1.0f});
 
-        // 2. CharacterVirtual の実際の速度（赤）。見分けやすいよう少し上にずらす
+        // CharacterVirtual の実際の速度（赤）
+        // 青と重ならないよう、少し上にずらす
         JPH::Vec3 actualJoltVel = handle.character->GetLinearVelocity();
         XMFLOAT3  actualVel     = {
             actualJoltVel.GetX() * DRAW_SCALE,
@@ -45,5 +49,7 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
         renderer->DrawArrow(actualStart, actualEnd, HEAD_SIZE, {1.0f, 0.2f, 0.2f, 1.0f});
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(JoltCharacterDebugDrawSystem, Priority::RenderStage::R08_Main);

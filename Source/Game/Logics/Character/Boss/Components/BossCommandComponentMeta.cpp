@@ -27,7 +27,7 @@ struct ComponentMeta<BossCommandComponent>
         static const std::vector<FieldDescriptor> fields = {
             // どれも実行時の値。保存しない。
             CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
-            CFIELD_RT(currentActionDuration, "現在の技の全体時間 [秒]", "Current Command")
+            CFIELD_RT(actionSerial, "技の依頼番号", "Current Command")
             CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};
         return fields;
     }

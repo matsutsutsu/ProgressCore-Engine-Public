@@ -1,9 +1,7 @@
 // KnockbackComponent のシリアライズ/インスペクタ定義。
-// 実行時の値（velocity/timer）は Fields() に載せない（保存しない）。stunTimer は読み取り専用で表示だけする。
 //
-// 表示名は JSON の保存キーそのもの（REGISTER_COMPONENT に displayName が渡る）。
-// 他の全コンポーネントと同じ英語表記にしておかないと、プレハブ側のキーと
-// 一致せず読み込み時に黙って捨てられる。
+// 実行時の値（velocity・timer）は載せない。stunTimer は読み取り専用で表示だけする
+// 表示名は JSON の保存キーになるので、英語のまま変えない（変えるとプレハブの値が捨てられる）
 
 #include "KnockbackComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"

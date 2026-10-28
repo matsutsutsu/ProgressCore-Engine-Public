@@ -148,13 +148,16 @@ namespace CCL::AI::BT
         // 体を動かす技（後方ステップ・跳躍・突進・横歩き）
         // ---------------------------------------------------------------------------
 
-        // 技の全体時間（ノードの param）のあいだ BT をこのノードに留め、
-        // その間ボス本体へ技を要求する。
-        // 体の動きとアニメの開始は BossActionSystem が、
+        // ボス本体へ技を要求し、技が硬直まで終わったら完了する。
+        // 技の長さは BossActionComponent の段ごとの時間が決め、BT は持たない。
         // 攻撃判定の時間はアニメクリップの HitBox イベントが決める。
         class MotionAction : public IBTAction
         {
         public:
+            // 技が終わらないときの上限 [秒]。過ぎたら完了にする
+            // 本体が技を進めない間（演出中など）に、BT がここで止まり続けないため
+            static constexpr float kTimeLimit = 30.0f;
+
             ActionID id; // この技の ActionID
 
             explicit MotionAction(ActionID actionId) : id(actionId) {}
@@ -175,25 +178,26 @@ namespace CCL::AI::BT
 
                 ctx.bt->lastLogActionId = id; // BT デバッガに出す行動名
 
-                // 全体時間が未設定（0以下）のノードは、技を出さずに失敗する。
-                // 負の値のまま始めると、時間切れにならず終わらない
-                if (ctx.param <= 0.0f) return BTNodeState::Failure;
+                auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
+                if (!cmd) return BTNodeState::Failure;
 
-                // 入った最初のフレームに技の全体時間を入れ、
-                // 使い切ったら（硬直まで終わったら）完了する
-                if (timer == kTimerNotStarted) timer = ctx.param;
+                // 入った最初のフレームに、技の依頼番号を1つ進める
+                // 本体はこの番号の変化で、同じ技の続けての依頼も新しい技として始める
+                if (timer == kTimerNotStarted)
+                {
+                    timer = kTimeLimit;
+                    ++cmd->actionSerial;
+                }
                 if (timer == kTimerFinished) return BTNodeState::Success;
 
-                // 技が続いている間は、毎フレーム
-                // ボス本体へ技と全体時間を要求する。
-                // BossActionSystem は技に入った瞬間に全体時間を受け取り、
-                // どれか1つの段の長さを残りから逆算する
-                if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
-                {
-                    cmd->currentActionId       = id;
-                    cmd->currentActionDuration = ctx.param;
-                }
+                // 本体がこの依頼の技を硬直まで終えたら完了する
+                // 番号を比べるのは、前の技の「終わった」を見て即完了しないため
+                const auto *act = ctx.world->GetComponent<BossActionComponent>(ctx.entity);
+                if (act && act->actionSerial == cmd->actionSerial && act->actionFinished)
+                    return BTNodeState::Success;
 
+                // 技が続いている間は、毎フレーム本体へ技を要求する
+                cmd->currentActionId = id;
                 return BTNodeState::Running;
             }
 
@@ -203,6 +207,39 @@ namespace CCL::AI::BT
             // 要求が書かれなくなると BossActionSystem が待機へ倒れ、
             // 放物線の途中から落ちる
             bool CanAbort(BTContext &ctx) const override { return !IsAirborne(ctx); }
+        };
+
+        // 横歩き。param 秒のあいだ、ボス本体へ横歩きを要求する
+        // 横歩きには終わりの形が無いので、長さは BT が決める
+        class StrafeAction : public IBTAction
+        {
+        public:
+            std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+            {
+                return TypeIDsOf<BossCommandComponent>();
+            }
+
+            BTNodeState Execute(BTContext &ctx) override
+            {
+                float &timer = NodeTimer(ctx);
+
+                ctx.bt->lastLogActionId = A_BossStrafe; // BT デバッガに出す行動名
+
+                // 歩く時間が未設定（0以下）のノードは、歩かずに失敗する
+                // 負の値のまま始めると、時間切れにならず終わらない
+                if (ctx.param <= 0.0f) return BTNodeState::Failure;
+
+                // 入った最初のフレームに歩く時間を入れ、使い切ったら完了する
+                if (timer == kTimerNotStarted) timer = ctx.param;
+                if (timer == kTimerFinished) return BTNodeState::Success;
+
+                // 歩いている間は、毎フレームボス本体へ横歩きを要求する
+                if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
+                {
+                    cmd->currentActionId = A_BossStrafe;
+                }
+                return BTNodeState::Running;
+            }
         };
 
         // ---------------------------------------------------------------------------
@@ -324,7 +361,7 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossLeapAttack, std::make_unique<MotionAction>(A_BossLeapAttack));
         reg.RegisterActionInstance(A_BossAirHover, std::make_unique<MotionAction>(A_BossAirHover));
         reg.RegisterActionInstance(A_BossDashAttack, std::make_unique<MotionAction>(A_BossDashAttack));
-        reg.RegisterActionInstance(A_BossStrafe, std::make_unique<MotionAction>(A_BossStrafe));
+        reg.RegisterAction<StrafeAction>(A_BossStrafe);
 
         // --- ドローンへの指示 ---
 

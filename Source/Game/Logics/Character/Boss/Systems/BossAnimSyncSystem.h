@@ -4,7 +4,7 @@
 //       アニメーションのパラメータ(AnimParameters)へ書く System。
 //
 // 責務:
-//   - Speed / IsMoving を書き、Idle と Move を切り替えさせる
+//   - IsMoving を書き、Idle と Move を切り替えさせる
 //   - StrafeDir を書き、横歩きの左右を切り替えさせる
 //   - IsLeaping / LeapAttack を書き、跳躍の空中→着地を切り替えさせる
 //   - DashPhase を書き、突進の段ごとにアニメを切り替えさせる
@@ -14,9 +14,9 @@
 //   技の開始のトリガーは BossActionSystem が、技に入った瞬間に引く
 //   （ここでは入った瞬間が分からない）。
 //
-//   Speed には Jolt の実速度ではなく、
-//   BossActionSystem が決めた currentMoveSpeed を書く
-//   （跳躍・突進中は 0 にして Idle/Move を動かさないため）。
+//   Speed（Jolt の実速度）は CharacterAnimSyncSystem が書く。
+//   グラフは歩くかどうかを Speed ではなく IsMoving で決める
+//   （実速度だと、横歩きや技で動いている間も Move に入ってしまう）。
 //
 //   実行ステージは L02_PreUpdate。
 //   AnimParameters を読む AnimControllerSystem が L02_Update なので、
@@ -34,9 +34,8 @@ class BossAnimSyncSystem : public CCL::ECS::IfSystem<
 public:
     BossAnimSyncSystem() : IfSystem("BossAnimSyncSystem") {}
 
-    // CharacterAnimSyncSystem も同じ L02_PreUpdate で、
-    // ボスの Speed を（Jolt の実速度から）書く。
-    // その後に走り、BossActionSystem が決めた速度で必ず上書きする。
+    // CharacterAnimSyncSystem も同じ L02_PreUpdate で AnimParameters を書く。
+    // 書く値は重ならないが、前後を決めておく（順序が不定という警告を出さない）
     std::vector<const char *> GetRunAfter() const override { return {"CharacterAnimSyncSystem"}; }
 
     // 全ボスのアニメのパラメータを、今の動きに合わせて書き直す。

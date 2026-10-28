@@ -26,10 +26,10 @@ ROOT
         [Sequence] ステージ中央に退避する（失敗しても再抽選で後退が選ばれる）  (weight 1)
           [Condition] ステージの端から 25 m 以内
           [Action] ドローン：頭上円陣
-          [Action] ボス：中央へ跳んで逃げる（全体時間 2秒）
+          [Action] ボス：中央へ跳んで逃げる
         [Sequence] シーケンス (Sequence)  (weight 1)
           [Action] ドローン：縦割り  (枠24)
-          [Action] ボス：後方ステップ（全体時間 0.9秒）
+          [Action] ボス：後方ステップ
           [Action] 待機（待ち時間 0.6秒）
           [Action] ドローン：攻撃実行
           [Action] 待機（待ち時間 1秒）
@@ -39,11 +39,11 @@ ROOT
         [Condition] ステージの端から 25 m 以内
         [Condition] 相手が中央側 ±70 度にいる（追い込まれ）
         [Action] ドローン：頭上円陣
-        [Action] ボス：中央へ跳んで逃げる（全体時間 1.9秒）
+        [Action] ボス：中央へ跳んで逃げる
     [Decorator] Cooldown 10秒
       [Sequence] シーケンス (Sequence)
         [Condition] 距離が 25 m 未満
-        [Action] ボス：突進攻撃（全体時間 3秒）
+        [Action] ボス：突進攻撃
         [Action] 待機（待ち時間 3秒）
     [Decorator] Cooldown 7秒
       [Sequence] 縦割り
@@ -57,7 +57,7 @@ ROOT
       [Sequence] 跳躍攻撃
         [Condition] 距離が 80 m 未満
         [Action] ドローン：頭上円陣
-        [Action] ボス：跳躍攻撃（全体時間 2.6秒）
+        [Action] ボス：跳躍攻撃
     [WeightedSelector] ドローン戦(中距離2択)
       [Sequence] 横なぎ回転  (weight 1)
         [Condition] 距離が 60 m 未満
@@ -79,7 +79,7 @@ ROOT
       [Sequence] 滞空して陣形攻撃
         [Condition] 距離が 80 m 超
         [Parallel] 滞空(主)＋陣形(従)
-          [Action] ボス：その場で滞空（全体時間 10秒）  (主)
+          [Action] ボス：その場で滞空  (主)
           [Sequence] 陣形→撃つ  (従)
             [Action] ドローン：小隊突撃
             [Action] 待機（待ち時間 1.2秒）

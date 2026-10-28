@@ -39,8 +39,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
         // 本体への要求は、BT の技が続いている間だけ毎フレーム書き直す。
         // 先に空にしておき、このフレームに書かれなければ取り下げたとみなす
         // （ドローンの陣形と攻撃信号は次の指示まで保つので触らない）
-        cmd.currentActionId       = 0;
-        cmd.currentActionDuration = 0.0f;
+        cmd.currentActionId = 0;
 
         // ---------------------------------------------------------
         // 2〜4. 形態
