@@ -5,25 +5,28 @@
 
 using namespace CCL::ECS;
 
+// ダッシュ中でないプレイヤーの、歩きと走りを進める
 void PlayerMoveSystem::Update(float /*dt*/)
 {
     ForEach([&](CharacterMovementComponent &movement,
                 PlayerComponent            &player,
                 const PlayerDashComponent  &dash,
                 const TimeStateComponent   &time) {
-        // ダッシュ中はダッシュ側が方向と速さを書いている
-        if (dash.isDashing)
-        {
-            return;
-        }
+        // ダッシュ中は、ダッシュ側が向きと速さを書いている
+        if (dash.isDashing) return;
 
         UpdateGroundLocomotion(player, movement, time.localDt);
     });
 }
 
+
+
+// 走りを解くかを決め、歩きか走りかに合わせて速さを書く
 void PlayerMoveSystem::UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementComponent &movement, float dt)
 {
-    // 走行中、無入力が runIdleReleaseTime 続いたら歩きに戻す。
+    // --- 走りの解除 ---
+
+    // 走り中に無入力が runIdleReleaseTime 続いたら、歩きに戻す
     if (player.isRunning)
     {
         const bool hasMoveInput = movement.desiredVelocity.LengthSquared() > 0.001f;
@@ -41,6 +44,8 @@ void PlayerMoveSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
         }
     }
 
+    // --- 速さ ---
+
     if (player.isRunning)
     {
         movement.overrideSpeed = player.runSpeed;
@@ -48,10 +53,13 @@ void PlayerMoveSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
     }
     else
     {
-        // 歩きのときは overrideSpeed を書かない。読まれた時点で既定へ戻るので、書かなければ config.walkSpeed で歩く。
+        // 歩きは overrideSpeed を書かない
+        // 書かなければ、物理が Jolt の walkSpeed で歩かせる
         player.locomotion = PlayerComponent::GroundLocomotion::Walk;
     }
 }
 
-// PlayerDashSystem の後（GetRunAfter）、PlayerRushSystem の前に、物理(L03以降)より先に速さを書く。
+
+
+// PlayerDashSystem の後、PlayerRushSystem の前（どちらも RunAfter で宣言）
 REGISTER_LOGIC_SYSTEM(PlayerMoveSystem, Priority::LogicStage::L02_Update);

@@ -1,19 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: プレイヤーのゲーム側の状態を、アニメーションのパラメータ(AnimParameters)へ書く System。
+// 概要: プレイヤーのゲーム側の状態を、アニメのパラメータへ書く System。
 //
 // 責務:
 //   - IsDashing / IsAirborne / MoveInput を書く
-//   - ダッシュ攻撃にするかを判定し、DashAttackReady を書く
+//   - 次の攻撃をダッシュ攻撃にするかを判定し、DashAttackReady を書く
 //
 // 備考:
-//   物理(Jolt)から求める Speed / YVelocity / IsGrounded は、Engine 側の
-//   CharacterAnimSyncSystem が書く。こちらは「ダッシュ中か」のようなゲームのルールに属する状態だけを書く。
-//   Engine の System が PlayerDashComponent(Game) を読むと Engine→Game の依存になるため、ゲーム側から書き込む。
+//   物理から求める Speed / YVelocity / IsGrounded は、Engine の CharacterAnimSyncSystem が書く。
+//   こちらはゲームのルールに属する状態だけを書く（Engine から Game の Component を読まないため）。
 //
-//   実行ステージは L02_PreUpdate。AnimParameters を読む AnimControllerSystem(L02_Update) より
-//   前に走らせる（同じステージだと順序が登録順で決まってしまうため）。
-//   読む PlayerDashComponent は、PlayerDashSystem(L02_Update) が前のフレームで書いた値になる。
+//   実行ステージは L02_PreUpdate。パラメータを読む AnimControllerSystem(L02_Update) より前。
+//   PlayerDashComponent は、PlayerDashSystem(L02_Update) が前のステップで書いた値を読む。
 // ===========================================================================
 
 #include "Engine/ECS/System/CCL_IfSystem.h"

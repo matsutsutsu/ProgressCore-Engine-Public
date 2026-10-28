@@ -108,7 +108,7 @@ public:
     //   見つからないのは異常ではない。
     //
     //   列は LOD の段の順（LOD0 → LOD1 → …）に並べてあり、段ごとの数も一緒に置く。
-    //   両方のパスが同じ段で描かないと、プリパスの深度と本描画の形が合わなくなるため。
+    //   OpaquePass はこれを使い、NormalPrepass と同じ段で描く。
 
     // (バッチの先頭の添字, メッシュの番号) からキーを作る
     static uint64_t MakeVisibleKey(size_t batchStart, size_t meshIndex)

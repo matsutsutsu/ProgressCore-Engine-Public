@@ -15,7 +15,8 @@ namespace
         DirectX::XMFLOAT4 color; // rgb = 段の色、a = 重ねる濃さ
     };
 
-    // 段ごとの色。a はシーンに重ねる濃さで、下の陰影が透けて形も見えるよう半分にしている
+    // 段ごとの色。a は重ねる濃さ。
+    // 半分にして、下の陰影が透けて形も見えるようにしている
     constexpr DirectX::XMFLOAT4 kLevelColors[MeshLod::kMaxLevels] = {
         {0.1f, 1.0f, 0.1f, 0.5f},  // LOD0：緑
         {1.0f, 0.9f, 0.1f, 0.5f},  // LOD1：黄
@@ -23,6 +24,8 @@ namespace
         {0.2f, 0.4f, 1.0f, 0.5f},  // LOD3：青（今は使っていない）
     };
 } // namespace
+
+
 
 void LodDebugPass::Initialize(const RenderServices &services)
 {
@@ -32,13 +35,14 @@ void LodDebugPass::Initialize(const RenderServices &services)
     enabled = false;
 
     // 色は半透明で重ねる。UITransparency は RT のアルファを書き換えないので、
-    // エディタの GameView（アルファ付きで貼る）に穴が開かない。
-    // 深度は LESS_EQUAL のテストだけ。NormalPrepass と同じ頂点シェーダーで同じ形を描くので、
-    // 同じ深度になり、表に見えている面にだけ色が乗る
+    // エディタの GameView（アルファ付きで貼る）に穴が開かない
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
     desc.blend             = BlendState::UITransparency;
-    desc.depth             = DepthState::TestOnly;
-    m_pso                  = PipelineState(desc);
+
+    // 深度は LESS_EQUAL のテストだけ。
+    // NormalPrepass と同じ形を描くので同じ深度になり、表に見えている面にだけ色が乗る
+    desc.depth = DepthState::TestOnly;
+    m_pso      = PipelineState(desc);
 
     m_instanceBuffer.Create(services.device, 8192);
 
@@ -46,17 +50,22 @@ void LodDebugPass::Initialize(const RenderServices &services)
     GpuResourceUtils::CreateDynamicConstantBuffer(services.device, sizeof(CbLodDebug), m_colorBuffer.GetAddressOf());
 }
 
+
+
+// 段 level の色を返す（範囲外は一番粗い段の色）
 DirectX::XMFLOAT4 LodDebugPass::GetLevelColor(size_t level)
 {
     return kLevelColors[(std::min)(level, MeshLod::kMaxLevels - 1)];
 }
 
+
+
 void LodDebugPass::Execute(const RenderFrameContext &ctx)
 {
-    // 処理フロー
-    //   1. 描く準備（NormalPrepass の頂点シェーダーに、このパスのピクセルシェーダーを組み合わせる）
-    //   2. NormalPrepass と同じ順でバッチとメッシュを回し、残された見えるインスタンスの列を読む
-    //   3. 段ごとに色を入れ替えて描く
+    // 処理フロー:
+    // 1. 描く準備（NormalPrepass の頂点シェーダーに、このパスのピクセルシェーダーを組み合わせる）
+    // 2. NormalPrepass と同じ順でバッチとメッシュを回し、残された見えるインスタンスの列を読む
+    // 3. 段ごとに色を入れ替えて描く
 
     ID3D11DeviceContext *dc = ctx.dc;
     if (!dc || !m_pixelShader || !m_colorBuffer) return;
@@ -88,7 +97,8 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
     // 2. バッチとメッシュを回す
     // ---------------------------------------------------------
 
-    // バッチの区切り方は NormalPrepass と同じにする（見えるインスタンスの列のキーが (バッチの先頭, メッシュ) のため）
+    // バッチの区切り方は NormalPrepass と同じにする。
+    // 見えるインスタンスの列のキーが (バッチの先頭, メッシュ) のため
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
 
@@ -131,7 +141,7 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
             // 3. 段ごとに色を入れ替えて描く
             // ---------------------------------------------------------
 
-            size_t levelStart = 0; // この段のインスタンスが visibleData の何番目から始まるか
+            size_t levelStart = 0; // この段の先頭が visibleData の何番目か
             for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
             {
                 const size_t levelCount = levelCounts[level];
@@ -162,6 +172,9 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
     shader->End(dc, *m_services);
 }
 
+
+
+// 段の色を定数バッファへ書く
 void LodDebugPass::UpdateColor(ID3D11DeviceContext *dc, size_t level)
 {
     CbLodDebug cb;

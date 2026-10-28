@@ -138,11 +138,11 @@ private:
 // ============================================================
 // マクロ
 //
-// _DEBUG 定義時（Debug 構成）: INFO / SUCCESS / WARN を記録する
-// それ以外（Development / Release）: INFO / SUCCESS / WARN は ((void)0) になり、引数も評価されない
+// Debug / Development: INFO / SUCCESS / WARN を記録する
+// Shipping（SHIPPING_BUILD 定義時）: INFO / SUCCESS / WARN は ((void)0) になり、引数も評価されない
 // ERROR は全構成で記録する（配布後の不具合を追えるように）
 // ============================================================
-#ifdef _DEBUG
+#ifndef SHIPPING_BUILD
 #define CCL_LOG_INFO(category, ...) \
     Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)
 #define CCL_LOG_SUCCESS(category, ...) \

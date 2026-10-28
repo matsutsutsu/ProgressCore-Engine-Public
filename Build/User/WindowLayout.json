@@ -33,6 +33,10 @@
             "visible": false
         },
         {
+            "name": "Boss BT Debugger",
+            "visible": true
+        },
+        {
             "name": "Formation Editor",
             "visible": false
         },

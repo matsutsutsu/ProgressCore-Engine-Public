@@ -43,14 +43,24 @@ inline DirectX::SimpleMath::Vector3 GetCharacterWorldPosition(const JoltCharacte
     return {static_cast<float>(p.GetX()), static_cast<float>(p.GetY()), static_cast<float>(p.GetZ())};
 }
 
+// キャラクターの向きを、描画と物理で分けて書く
+// 旋回時の傾き（roll）のように、見た目だけに付けたい回転があるときに使う
+// 物理には physicsRotation（ふつうは yaw だけ）を渡し、カプセルを傾けない
+inline void SetCharacterRotation(TransformComponent &trans, const JoltCharacterHandleComponent &handle,
+                                 const DirectX::SimpleMath::Quaternion &visualRotation,
+                                 const DirectX::SimpleMath::Quaternion &physicsRotation)
+{
+    trans.rotation = visualRotation;
+    trans.isDirty  = true;
+
+    if (handle.character)
+        handle.character->SetRotation(JPH::Quat(physicsRotation.x, physicsRotation.y, physicsRotation.z, physicsRotation.w));
+}
+
 // キャラクターの向きを、Transform（描画）と CharacterVirtual（物理）の両方に書く
 // 片方だけ書くと描画と物理の向きがずれるので、向きを変えるときはこれを使う
 inline void SetCharacterRotation(TransformComponent &trans, const JoltCharacterHandleComponent &handle,
                                  const DirectX::SimpleMath::Quaternion &rotation)
 {
-    trans.rotation = rotation;
-    trans.isDirty  = true;
-
-    if (handle.character)
-        handle.character->SetRotation(JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w));
+    SetCharacterRotation(trans, handle, rotation, rotation);
 }

@@ -5,12 +5,10 @@
 // 責務:
 //   - メッシュが画面に映る大きさから、LOD の段を選ぶ
 //   - インスタンスの列を LOD0 → LOD1 → … の順に並べ替え、段ごとの数を返す
-//   - 段ごとに、描くインデックスバッファと範囲を返す（影用に、一番粗い段の範囲も返す）
+//   - 段ごとに、描くインデックスバッファと範囲を返す
 //
-// 備考: NormalPrepass と OpaquePass が同じ段で描くよう、選び方を1か所にまとめている。
+// 備考: NormalPrepass と OpaquePass が同じ段で描くよう、選び方をここ1か所にまとめている。
 //       段がずれると、プリパスが書いた深度と本描画の形が合わず、ちらつきや穴になる。
-//       段を選ぶのは NormalPrepass だけで、OpaquePass は並べ替えた列と段ごとの数を
-//       RenderQueue から受け取る（NormalPrepass が走らなかったときだけ自分で選ぶ）。
 // ===========================================================================
 #include <algorithm>
 #include <array>
@@ -31,14 +29,14 @@ namespace MeshLod
 
     using LevelCounts = std::array<uint32_t, kMaxLevels>; // 段ごとのインスタンスの数（[0] が LOD0）
 
-    // 段を切り替える境目。値は「メッシュを包む球の直径 ÷ 画面の高さ」。
-    // [i] 以上なら LOD i 以下の細かい段を使い、どれにも届かなければ一番粗い段にする
+    // 段を切り替える境目（包む球の直径 ÷ 画面の高さ）
+    // [i] 以上なら LOD i。どれにも届かなければ一番粗い段
     constexpr float kLevelScreenRatios[] = {
         0.08f, // 画面の高さの 8% 以上 → LOD0
         0.02f, // 2% 以上 → LOD1、それ未満 → LOD2
     };
 
-    // 段 level を描くときのインデックスバッファと、その中の範囲
+    // 段を描くときのインデックスバッファと、その中の範囲
     struct DrawRange
     {
         ID3D11Buffer *indexBuffer = nullptr; // 所有しない
@@ -47,22 +45,21 @@ namespace MeshLod
     };
 
     /**
-     * @brief 1つのインスタンスの段を選ぶ。
-     *
-     * メッシュを包む球が、画面の高さの何割に映るかで決める。距離だけで決めると、
-     * カメラの画角を変えたとき（ズームなど）に、見た目の粗さが変わってしまう。
-     *
+     * @brief 1つのインスタンスの段を、画面に映る大きさから選ぶ。
      * @param localAABB   メッシュのローカル AABB。
      * @param world       メッシュのワールド行列（MeshCull::ComputeMeshWorld の結果）。
      * @param eye         カメラの位置。
      * @param tanHalfFovY 縦の画角の半分の tan。
-     * @param levelCount  メッシュが持つ段の数。
+     * @param levelCount  メッシュが持つ段の数。1以上。
      * @return 選んだ段（0 〜 levelCount - 1）。
      */
     inline uint32_t SelectLevel(const DirectX::BoundingBox &localAABB, const DirectX::XMFLOAT4X4 &world,
                                 const DirectX::XMFLOAT3 &eye, float tanHalfFovY, uint32_t levelCount)
     {
         using namespace DirectX;
+
+        // 距離ではなく、画面の高さに対する大きさで選ぶ。
+        // 距離だけだと、ズームで画角を変えたときに見た目の粗さが変わる
 
         const XMMATRIX m = XMLoadFloat4x4(&world);
 
@@ -76,10 +73,7 @@ namespace MeshLod
         const float    distance = XMVectorGetX(XMVector3Length(XMVectorSubtract(center, XMLoadFloat3(&eye))));
 
         // カメラが球の中に入っているときは、一番細かい段にする
-        if (distance <= radius)
-        {
-            return 0;
-        }
+        if (distance <= radius) return 0;
 
         // 直径 ÷ 画面の高さ = (2 × 半径) ÷ (2 × 距離 × tan(画角 / 2))
         const float ratio = radius / (distance * tanHalfFovY);
@@ -94,12 +88,8 @@ namespace MeshLod
 
     /**
      * @brief インスタンスの列を段の順（LOD0 → LOD1 → …）に並べ替え、段ごとの数を返す。
-     *
-     * 段の数え上げと置き場所の計算で並べる（比べて並べ替えないので、数に比例した時間で済む）。
-     * 段を2回求めるが、段の配列を別に持たずに済み、1000 個程度なら十分に軽い。
-     *
      * @param instances 見えるインスタンスの列。並べ替えた結果で置き換える。
-     * @param temp      作業用の配列。中身は捨ててよい（instances と中身を入れ替えるので、容量は使い回せる）。
+     * @param temp      作業用の配列。中身は捨ててよい（instances と入れ替えるので容量を使い回せる）。
      * @param mesh      インスタンスのメッシュ。
      * @param localAABB メッシュのローカル AABB。
      * @param eye       カメラの位置。
@@ -111,6 +101,14 @@ namespace MeshLod
                                            const Model::Mesh &mesh, const DirectX::BoundingBox &localAABB,
                                            const DirectX::XMFLOAT3 &eye, float fovY)
     {
+        // 処理フロー:
+        // 1. 段ごとの数を数える
+        // 2. 段ごとの置き場所の先頭を決め、そこへ詰める
+
+        // 【備考】
+        //   比べて並べ替えず、数えて置き場所を決めるので、数に比例した時間で済む。
+        //   段は 1 と 2 で2回求める。段の配列を別に持たずに済み、1000 個程度なら十分に軽い。
+
         LevelCounts counts{};
 
         const uint32_t levelCount = static_cast<uint32_t>((std::min)(mesh.data->lods.size(), kMaxLevels));
@@ -122,14 +120,18 @@ namespace MeshLod
 
         const float tanHalfFovY = std::tan(fovY * 0.5f);
 
-        // --- 段ごとの数を数える ---
+        // ---------------------------------------------------------
+        // 1. 段ごとの数
+        // ---------------------------------------------------------
         for (const InstanceData &instance : instances)
         {
             ++counts[SelectLevel(localAABB, instance.world, eye, tanHalfFovY, levelCount)];
         }
 
-        // --- 段ごとの置き場所の先頭を決め、そこへ詰める ---
-        std::array<uint32_t, kMaxLevels> writePos{};
+        // ---------------------------------------------------------
+        // 2. 置き場所へ詰める
+        // ---------------------------------------------------------
+        std::array<uint32_t, kMaxLevels> writePos{}; // 段ごとの、次に書く temp の添字
         for (size_t level = 1; level < kMaxLevels; ++level)
         {
             writePos[level] = writePos[level - 1] + counts[level - 1];
@@ -178,7 +180,8 @@ namespace MeshLod
      */
     inline DrawRange GetCoarsestDrawRange(const ModelResource::Mesh &data)
     {
-        return GetDrawRange(data, data.lods.empty() ? 0 : data.lods.size() - 1);
+        if (data.lods.empty()) return GetDrawRange(data, 0);
+        return GetDrawRange(data, data.lods.size() - 1);
     }
 
 } // namespace MeshLod

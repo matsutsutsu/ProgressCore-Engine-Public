@@ -16,48 +16,65 @@
 #if defined(TRACY_ENABLE)
 namespace
 {
-    // LOD の段ごとの、このフレームに描いたインスタンスの数のグラフ（Tracy は名前のポインタを持ち続けるので定数で渡す）
+    // LOD の段ごとの、このフレームに描いたインスタンスの数のグラフ。
+    // Tracy は名前のポインタを持ち続けるので、定数で渡す
     const char *const kPlotLodInstances[MeshLod::kMaxLevels] = {
         "LOD0 Instances", "LOD1 Instances", "LOD2 Instances", "LOD3 Instances"};
 } // namespace
 #endif
 
 
+
 void NormalPrepass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
 
-    // 深度も書く（DefaultOpaque は TestAndWrite）。ここで不透明の深度を先に決めておくと、
-    // OpaquePass では early-Z で隠れたピクセルの PBR のピクセルシェーダーを飛ばせる
+    // 深度も書く（DefaultOpaque は TestAndWrite）。
+    // OpaquePass で、隠れたピクセルの PBR を early-Z で飛ばせる
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
     m_pso                  = PipelineState(desc);
 
     m_instanceBuffer.Create(services.device, 8192);
     m_normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
 
-    // SRV は作った時点で Graphics に渡す。Graphics::MakeFrameContext はパイプラインを
-    // 実行する前に ctx を作るので、Execute の中で渡すと ctx.sceneNormalSRV が1フレーム遅れる
-    // （最初のフレームは null になる）。SRV は作り直すとき以外は変わらない
+    // SRV は作った時点で Graphics に渡す。
+    // MakeFrameContext はパイプラインの実行前に ctx を作るので、
+    // Execute の中で渡すと ctx.sceneNormalSRV が1フレーム遅れる
     PublishNormalSRV();
 }
+
+
 
 void NormalPrepass::OnResize(uint32_t width, uint32_t height)
 {
     if (m_services && m_services->device)
     {
         m_normalBuffer.Resize(m_services->device, width, height);
-        // Resize で SRV が作り直されるので、渡し直さないと Graphics に解放済みの SRV が残る
+
+        // Resize で SRV が作り直される。
+        // 渡し直さないと、Graphics に解放済みの SRV が残る
         PublishNormalSRV();
     }
 }
 
+
+
+// 法線バッファの SRV を Graphics に渡す
 void NormalPrepass::PublishNormalSRV()
 {
     Graphics::Instance().SetSceneNormalSRV(m_normalBuffer.GetSRV());
 }
 
+
+
 void NormalPrepass::Execute(const RenderFrameContext &ctx)
 {
+    // 処理フロー:
+    // 1. 描く準備（コマンドの並べ替え・描画先の切り替え）
+    // 2. バッチのメッシュごとに、見えるインスタンスを集めて LOD の段を選ぶ
+    // 3. 見えるインスタンスの列を OpaquePass に残し、段ごとに描く
+    // 4. 後片付け（描画先を戻し、法線バッファを後のパスへ渡す）
+
     ID3D11DeviceContext *dc = ctx.dc;
     if (!dc) return;
 
@@ -65,8 +82,12 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
 
-    // OpaquePass より先に走るので、ここで並べる。OpaquePass も呼ぶが、
-    // RenderQueue がそのフレームで並べ済みなら何もしない
+    // ---------------------------------------------------------
+    // 1. 描く準備
+    // ---------------------------------------------------------
+
+    // OpaquePass より先に走るので、ここで並べる。
+    // OpaquePass も呼ぶが、並べ済みなら何もしない
     queue->SortAndBuildBatches();
 
     Shader *shader = m_services->shaders->GetShader("NormalPrepass"_hash, m_services->device);
@@ -93,7 +114,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
 
-    MeshLod::LevelCounts lodTotals{}; // LOD のあるメッシュについて、このフレームの段ごとのインスタンスの数（グラフ用）
+    MeshLod::LevelCounts lodTotals{}; // LOD のあるメッシュの、段ごとのインスタンスの数（グラフ用）
 
     size_t i = 0;
     while (i < sortKeys.size())
@@ -118,11 +139,14 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             const Model::Mesh &mesh = meshes[meshIdx];
             if (!mesh.data) continue;
 
-            // 不透明のメッシュだけ深度を書く。
+            // ---------------------------------------------------------
+            // 2. 見えるインスタンスと LOD の段
+            // ---------------------------------------------------------
+
+            // 不透明のメッシュだけ深度を書く（マテリアルの選び方は OpaquePass と同じ）。
             //   半透明（Blend）: 書くと、その奥にあるものが OpaquePass で消える
-            //   くり抜き（Mask）: このパスはテクスチャを読まず捨てられないので、書くと穴の部分まで深度が残る。
+            //   くり抜き（Mask）: テクスチャを読まず捨てられないので、穴の部分まで深度が残る。
             //                    深度は OpaquePass が discard した後の形で書く
-            // マテリアルの選び方（上書きがあればそちら）は OpaquePass と同じ
             const MaterialHandle overrideHandle =
                 (meshIdx < current.overrideCount) ? current.overrideMaterials[meshIdx] : MaterialHandle{};
             const MaterialData *overrideMat =
@@ -145,7 +169,8 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 data.customParams = cmd.customParams;
                 if (isSkinned)
                 {
-                    // スキンメッシュはカリングせず全部積む。ワールド行列はボーン行列に入っているので単位行列
+                    // スキンメッシュはカリングせず全部積む。
+                    // ワールド行列はボーン行列に入っているので単位行列
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
                     m_instanceScratch.push_back(data);
                 }
@@ -157,12 +182,18 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 }
             }
 
-            // LOD のあるメッシュは、インスタンスごとに段を選び、段の順（LOD0 → LOD1 → …）に並べる。
+            // インスタンスごとに段を選び、段の順（LOD0 → LOD1 → …）に並べる。
             // スキンメッシュは LOD を持たないので、全部 LOD0 のまま
-            const MeshLod::LevelCounts levelCounts =
-                isSkinned ? MeshLod::AllInLevel0(m_instanceScratch.size())
-                          : MeshLod::SortInstancesByLevel(m_instanceScratch, m_lodSortTemp, mesh, localAABB,
-                                                          ctx.camera->GetEye(), ctx.camera->GetFovY());
+            MeshLod::LevelCounts levelCounts{};
+            if (isSkinned)
+            {
+                levelCounts = MeshLod::AllInLevel0(m_instanceScratch.size());
+            }
+            else
+            {
+                levelCounts = MeshLod::SortInstancesByLevel(m_instanceScratch, m_lodSortTemp, mesh, localAABB,
+                                                            ctx.camera->GetEye(), ctx.camera->GetFovY());
+            }
 
             if (!mesh.data->lods.empty())
             {
@@ -172,9 +203,12 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 }
             }
 
-            // 見えるインスタンスの列と段ごとの数を OpaquePass に残す。同じバッチの区切りと同じ MeshCull を
-            // 使っているので結果は一致し、OpaquePass は行列の計算・カリング・段の選択を省ける。
-            // 空の列（全部カリングされた）も「見えるものが無い」という結果として残す
+            // ---------------------------------------------------------
+            // 3. OpaquePass へ残して描く
+            // ---------------------------------------------------------
+
+            // 見えるインスタンスの列と段ごとの数を残す。
+            // OpaquePass はこれを使い、カリングと段の選択を省く
             queue->StoreVisibleInstances(
                 RenderQueue::MakeVisibleKey(batchStart, meshIdx),
                 m_instanceScratch.data(), m_instanceScratch.size(), levelCounts);
@@ -187,7 +221,8 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
 
             if (isSkinned)
             {
-                // スキンメッシュはカリングしていないので m_instanceScratch.size() == batchCount
+                // スキンメッシュはカリングしていないので、
+                // m_instanceScratch の k 番目はバッチの k 番目のコマンド
                 for (size_t k = 0; k < m_instanceScratch.size(); ++k)
                 {
                     const auto &cmd = opaqueCommands[sortKeys[batchStart + k].originalIndex];
@@ -199,8 +234,9 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             }
             else
             {
-                // 段ごとに、その段の範囲のインデックスで描く（LOD が無いメッシュは段0に全部入っている）
-                size_t levelStart = 0; // この段のインスタンスが m_instanceScratch の何番目から始まるか
+                // 段ごとに、その段の範囲のインデックスで描く。
+                // LOD が無いメッシュは、段0に全部入っている
+                size_t levelStart = 0; // この段の先頭が m_instanceScratch の何番目か
                 for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
                 {
                     const size_t levelCount = levelCounts[level];
@@ -224,6 +260,10 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             m_instanceBuffer.Unbind(dc, SLOT_SRV_INSTANCE);
         }
     }
+
+    // ---------------------------------------------------------
+    // 4. 後片付け
+    // ---------------------------------------------------------
 
 #if defined(TRACY_ENABLE)
     for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)

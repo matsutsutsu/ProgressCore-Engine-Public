@@ -63,7 +63,7 @@ void BehaviorTreeSystem::VerifyRegistrations()
     // 2 を書き忘れると、エディタでは選べるのに木に置いても何も起きない
     // （行動は Failure、条件は常に false）。エラーも出ないので原因を探しにくい。
     // そこで起動時に辞書を1件ずつ見て、2 に無いものをエラーログで知らせる。
-    // ERROR なので Development でも出る（WARN/INFO は Debug でしか出ない）。
+    // ERROR なので Shipping でも出る（WARN/INFO は Shipping では消える）。
     const auto &reg = BTActionRegistry::Instance();
 
     // 辞書の先頭（ID 0）は「なし」の印で、実装を持たないので調べない

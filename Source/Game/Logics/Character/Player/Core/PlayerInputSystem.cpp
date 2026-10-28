@@ -4,46 +4,57 @@
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/App/GameFlowState.h"                          // エディタ操作中(F2=uiInteract)は入力を止める
+#include "Engine/Core/App/GameFlowState.h"                          // エディタ操作中・演出中は入力を止める
 #include "Engine/Physics/Components/Character/KnockbackComponent.h" // 被弾の硬直中は入力を止める
 
-#include <algorithm> // std::clamp（スティック傾き量のクランプ）
+#include <algorithm>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
+// プレイヤーの入力を読み、移動の向きと、ボタンを押した瞬間を書く
 void PlayerInputSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. ゲームの入力を止めるかを決める
+    // 2. ボタンの押下状態と、移動の向きを読む
+    // 3. プレイヤーごとに、移動の向きと押した瞬間を書く
+
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
     if (!m_world->HasResource<Camera *>()) return;
 
     auto    inputAPI   = m_world->GetResource<std::shared_ptr<IInputAPI>>();
     Camera *mainCamera = m_world->GetResource<Camera *>();
 
-    // エディタ操作中（F2 でカーソルを解放した uiInteract / シーケンサの EditMode）は、ゲームを止めずに
-    // ImGui を操作できる。この間はゲームの入力をすべて無視する（右クリックで技が出ないように）。
-    //   早期 return ではなく中立の値を書くこと。return するだけだと直前の移動方向が
-    //   Component に残り、動き続ける。
-    //   プレイヤーの入力を読むのはこの System だけなので、ここで止めれば全操作がまとめて止まる。
-    //   カットシーン中(cinematic)も同じ方法で止める。導入演出の最中にプレイヤーが動くと、
-    //   演出が終わった瞬間に想定外の位置にいることになる。
+    // ---------------------------------------------------------
+    // 1. 入力を止めるか
+    // ---------------------------------------------------------
+
+    // エディタ操作中（F2 の uiInteract・シーケンサの編集中）は止める
+    // ゲームを止めずに ImGui を触るので、クリックで技が出ないようにする
+
+    // 演出中・決着後も止める
+    // 導入演出の最中に動くと、演出の後に想定外の位置から始まる
     bool blockGameInput = false;
     if (m_world->HasResource<GameFlowState>())
     {
         const auto &flow = m_world->GetResource<GameFlowState>();
-        blockGameInput   = flow.uiInteract || flow.cinematic || flow.matchOver; // 決着後（リザルト）も止める
+        blockGameInput   = flow.uiInteract || flow.cinematic || flow.matchOver;
     }
 
-    // ボタンの実際の押下状態。入力を止めている間も読み続け、prev* に反映することで、
-    // 入力が戻った瞬間に押しっぱなしのボタンを「押した瞬間」と判定して技が出るのを防ぐ。
+    // ---------------------------------------------------------
+    // 2. ボタンと移動の向き
+    // ---------------------------------------------------------
+
+    // ボタンの押下状態は、入力を止めている間も読む（3. で prev* を合わせるため）
     const bool rawAttack = inputAPI->GetAction("Attack");
     const bool rawJump   = inputAPI->GetAction("Jump");
     const bool rawDash   = inputAPI->GetAction("Dash");
-    const bool rawLockOn = inputAPI->GetAction("LockOn"); // Rキーなど
+    const bool rawLockOn = inputAPI->GetAction("LockOn");
 
-    // 移動方向はカメラの向きを基準に合成する（TPS）。水平にしてから正規化する。
+    // 移動の向きは、カメラの向きを基準に合成する（TPS）
     Vector3 moveDir       = Vector3::Zero;
-    float   moveIntensity = 0.0f; // スティックの傾き量(0〜1)。下で desiredVelocity と別に運ぶ。
+    float   moveIntensity = 0.0f; // スティックの傾き（0〜1）
     if (!blockGameInput)
     {
         const float moveX = inputAPI->GetAxis("MoveX");
@@ -57,32 +68,48 @@ void PlayerInputSystem::Update(float dt)
         camRight.Normalize();
 
         moveDir = (camRight * moveX) + (camForward * moveY);
-        // スティックの傾き量(0〜1)を速度の割合として取り出す。正規化で捨ててしまう前に測る。
-        //   キーボードは moveX/moveY が ±1 固定なので常に 1.0＝最大速度になる。
-        //   デッドゾーンは GamePad 側で処理済みのため、ここでは [0,1] にクランプするだけでよい。
+
+        // 傾きは、正規化で長さを捨てる前に測る
+        // キーボードは常に 1。デッドゾーンは GamePad 側で処理済み
         moveIntensity = std::clamp(moveDir.Length(), 0.0f, 1.0f);
-        if (moveDir.LengthSquared() > 0.001f)
-            moveDir.Normalize();
+        if (moveDir.LengthSquared() > 0.001f) moveDir.Normalize();
     }
 
+    // ---------------------------------------------------------
+    // 3. プレイヤーごとに書く
+    // ---------------------------------------------------------
+
     ForEachWithID([&](EntityID id, CharacterMovementComponent &movement, PlayerInputComponent &pin) {
-        // 被弾の硬直中は操作を受け付けない。KnockbackComponent は被弾するキャラには常に付いているが、
-        // 付いていない場合は「硬直しない」で済ませたいので、Archetype の条件にせず GetComponent で引く。
+        // 被弾の硬直中も入力を止める
+        // KnockbackComponent が無いキャラは硬直しない扱いにするので、
+        // ForEach の条件にせず GetComponent で引く
         bool stunned = false;
         if (const auto *kb = m_world->GetComponent<KnockbackComponent>(id))
+        {
             stunned = kb->IsStunned();
+        }
 
         const bool blocked = blockGameInput || stunned;
 
-        // 移動の要求は、止めるときも中立（0）を書く。書かずに抜けると直前の
-        // 移動方向が残り、硬直中も歩き続ける。
-        movement.desiredVelocity = blocked ? Vector3::Zero : moveDir;
-        movement.moveIntensity   = blocked ? 0.0f : moveIntensity;
+        // 止めるときも、移動の向きは 0 を書く
+        // 書かずに抜けると直前の向きが残り、硬直中も歩き続ける
+        if (blocked)
+        {
+            movement.desiredVelocity = Vector3::Zero;
+            movement.moveIntensity   = 0.0f;
+        }
+        else
+        {
+            movement.desiredVelocity = moveDir;
+            movement.moveIntensity   = moveIntensity;
+        }
 
-        // 前のステップでは押されておらず、今は押されているときだけ true にする。
-        //   ロジックは同じ描画フレーム内で複数回走ることがあり、その間は実際の押下状態が
-        //   変わらない。ここで1回にまとめないと、1回の押下が複数回のアクションになる。
-        //   入力を止めている間も prev は raw に合わせる。
+        // 前のステップで離していて、今押しているときだけ true にする
+        // ロジックは1描画フレームに最大4回走り、その間は押下状態が変わらない。
+        // ここで1回にまとめないと、1回の押下が複数回の技になる
+
+        // 入力を止めている間も、prev は実際の押下状態に合わせる
+        // 合わせないと、入力が戻った瞬間に押しっぱなしのボタンで技が出る
         auto edge = [blocked](bool raw, bool &prev) {
             const bool pressed = !blocked && raw && !prev;
             prev               = raw;
@@ -96,5 +123,7 @@ void PlayerInputSystem::Update(float dt)
     });
 }
 
-// L01_Input: 移動や物理の処理より前に入力を確定させる
+
+
+// 移動や物理より前に、入力を確定させる
 REGISTER_LOGIC_SYSTEM(PlayerInputSystem, Priority::LogicStage::L01_Input);

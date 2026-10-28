@@ -1005,6 +1005,9 @@
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AI\BossBTDebugWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
@@ -2326,6 +2329,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AI\BossBTDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>

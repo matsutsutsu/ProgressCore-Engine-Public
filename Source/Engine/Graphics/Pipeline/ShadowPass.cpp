@@ -17,10 +17,10 @@
 #if defined(TRACY_ENABLE)
 namespace
 {
-    // Tracy は名前のポインタを持ち続けるので、どれも寿命がプログラム全体にわたる定数で渡す。
-    // SourceLocationData を constexpr にすると MSVC 14.38 で C2131 になるので static const にする
+    // Tracy は名前のポインタを持ち続けるので、どれもプログラム全体の寿命を持つ定数で渡す
 
-    // カスケードごとの GPU ゾーン
+    // カスケードごとの GPU ゾーン。
+    // constexpr にすると MSVC 14.38 で C2131 になるので static const にする
     const tracy::SourceLocationData kCascadeGpuZones[3] = {
         {"GPU: Shadow Cascade 0", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
         {"GPU: Shadow Cascade 1", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
@@ -33,6 +33,8 @@ namespace
 } // namespace
 #endif
 
+
+
 void ShadowPass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
@@ -40,8 +42,19 @@ void ShadowPass::Initialize(const RenderServices &services)
     m_instanceBuffer.Create(services.device, 8192);
 }
 
+
+
 void ShadowPass::Execute(const RenderFrameContext &ctx)
 {
+    // 処理フロー:
+    // 1. 描く準備（シェーダーとカスケードの行列）
+    // 2. 影を落とすメッシュを集め、メッシュデータの順に並べる
+    // 3. カスケードごとに、スキンメッシュを1体ずつ描き、それ以外をバッチで描く
+    // 4. 描画先を戻し、デバッグ表示に登録する
+
+    // 【備考】
+    //   1 と 2 はどのカスケードでも同じなので、カスケードのループの外で1回だけ行う。
+
     RenderQueue          *queue          = m_services->renderQueue;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
@@ -52,6 +65,10 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     ID3D11DeviceContext *dc        = ctx.dc;
     auto                &shadowMap = m_services->shadowMap;
 
+    // ---------------------------------------------------------
+    // 1. 描く準備
+    // ---------------------------------------------------------
+
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> oldRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> oldDSV;
     dc->OMGetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.GetAddressOf());
@@ -59,8 +76,6 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     D3D11_VIEWPORT oldVP;
     dc->RSGetViewports(&numVP, &oldVP);
 
-    // シェーダーの取得・カスケードの行列・メッシュの一覧と並べ替えは、どのカスケードでも
-    // 同じなので、カスケードのループの外で1回だけ行う
     Shader *shader = m_services->shaders->GetShader("ShadowMap"_hash, m_services->device);
     if (!shader) return;
 
@@ -76,10 +91,13 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         shadowMap->params.cascadeSplits,
         lightVPs);
 
-    // 影を落とすメッシュを集め、同じメッシュデータが並ぶように並べる。
-    // Model はエンティティごとに作られるので、Model::Mesh のアドレスは同じモデルでも1体ずつ違う。
-    // アドレスで並べると1000機のドローンが1機ずつのバッチに分かれるので、共有の mesh->data で並べる。
-    // cascadeMask での絞り込みは、カスケードごとにバッチを作るときに行う
+    // ---------------------------------------------------------
+    // 2. メッシュを集めて並べる
+    // ---------------------------------------------------------
+
+    // 共有の mesh->data（頂点・インデックスバッファ）の順に並べる。
+    // Model はエンティティごとに作られるので、Model::Mesh のアドレスで並べると
+    // 同じモデルのドローンが1機ずつのバッチに分かれる
     {
         ZoneScopedN("Shadow: Collect & Sort");
 
@@ -107,6 +125,10 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
                   [](const SortItem &a, const SortItem &b) { return a.mesh->data < b.mesh->data; });
     }
 
+    // ---------------------------------------------------------
+    // 3. カスケードごとに描く
+    // ---------------------------------------------------------
+
 #if defined(TRACY_ENABLE)
     TracyD3D11Ctx tracyCtx = m_services->tracyContext; // GPU 計測のコンテキスト（無ければ GPU ゾーンを作らない）
 #endif
@@ -124,6 +146,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         int64_t instanceCount = 0; // このカスケードで描いたインスタンスの数（スキンメッシュは1体1つ）
         int64_t triangleCount = 0; // このカスケードで描いた三角形の数
 
+        // --- 定数バッファ ---
         shadowMap->Activate(dc, cascadeIndex);
         m_psoShadow.Apply(dc, m_services->renderState);
 
@@ -145,20 +168,22 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         shader->Begin(dc, *m_services, ctx);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+        // --- スキンメッシュの描画とバッチ作り ---
         const Model::Mesh *lastBound = nullptr; // 今 IA に設定しているメッシュ（スキンメッシュ用）
 
         // Batch は m_batchesScratch から使い回す（Batch::data の確保済みの容量も残る）
         m_batchCount      = 0;
         auto acquireBatch = [&]() -> Batch & {
             if (m_batchCount >= m_batchesScratch.size())
+            {
                 m_batchesScratch.emplace_back();
+            }
             Batch &b   = m_batchesScratch[m_batchCount++];
             b.meshData = nullptr;
             b.data.clear();
             return b;
         };
 
-        // スキンメッシュはここで1体ずつ描き、それ以外はメッシュごとのバッチに積む
         {
             ZoneScopedN("Shadow: Build Batches + Skinned");
 
@@ -167,6 +192,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
                 if (!info.mesh || !info.mesh->data) continue;
                 if ((info.cascadeMask & (1 << cascadeIndex)) == 0) continue;
 
+                // スキンメッシュはボーン行列が1体ごとに違うので、ここで1体ずつ描く
                 const bool isSkinned = !info.mesh->bones.empty();
                 if (isSkinned)
                 {
@@ -183,22 +209,24 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
 
                     instanceCount += 1;
                     triangleCount += static_cast<int64_t>(info.mesh->data->indices.size() / 3);
+                    continue;
+                }
+
+                // それ以外は、同じメッシュデータが続く間は同じバッチに積む（2 で並べてあるため）
+                if (m_batchCount > 0 && m_batchesScratch[m_batchCount - 1].meshData == info.mesh->data)
+                {
+                    m_batchesScratch[m_batchCount - 1].data.push_back({info.worldMatrix});
                 }
                 else
                 {
-                    if (m_batchCount > 0 && m_batchesScratch[m_batchCount - 1].meshData == info.mesh->data)
-                    {
-                        m_batchesScratch[m_batchCount - 1].data.push_back({info.worldMatrix});
-                    }
-                    else
-                    {
-                        Batch &b   = acquireBatch();
-                        b.meshData = info.mesh->data;
-                        b.data.push_back({info.worldMatrix});
-                    }
+                    Batch &b   = acquireBatch();
+                    b.meshData = info.mesh->data;
+                    b.data.push_back({info.worldMatrix});
                 }
             }
         }
+
+        // --- バッチの描画 ---
 
         // インスタンスの SRV はどのバッチでも同じなので、バインドはループの外で1回だけ
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
@@ -207,8 +235,8 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         {
             const Batch &batch = m_batchesScratch[bi];
 
-            // 影は形の細部がほとんど出ないので、LOD のあるメッシュは一番粗い段で描く（LOD が無ければ元の形）。
-            // 距離で段を選ばないので、カスケードやインスタンスごとに分ける必要もない
+            // LOD のあるメッシュは一番粗い段で描く。影には形の細部がほとんど出ない。
+            // 距離で段を選ばないので、カスケードやインスタンスごとに分けなくてよい
             const MeshLod::DrawRange range = MeshLod::GetCoarsestDrawRange(*batch.meshData);
 
             UINT stride = sizeof(ModelResource::Vertex), zero = 0;
@@ -236,10 +264,15 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
 #endif
     }
 
+    // ---------------------------------------------------------
+    // 4. 後片付け
+    // ---------------------------------------------------------
+
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
-    // デバッグ表示に登録する（Texture2DArray なので、表示するスライスは RenderDebugWindow で選ぶ）
+    // デバッグ表示に登録する。
+    // Texture2DArray なので、表示するスライスは RenderDebugWindow で選ぶ
     RenderDebugRegistry::Instance().Register({"ShadowMap (Cascades)", shadowMap->GetShaderResourceView(),
                                               shadowMap->GetWidth(), shadowMap->GetHeight(), DebugTexKind::Array});
 }
