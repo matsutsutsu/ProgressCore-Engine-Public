@@ -50,9 +50,6 @@ public:
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override; // GetReadTypes の Write 版
 
-    // アニメのトリガーを引くのは BT なので、それを読む AnimControllerSystem より前に走る（あちらは Engine なので、こちらに書く）
-    std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
-
 private:
     // 各エンティティへ、パスに対応する木を配り直す。並列ループの前に呼ぶ
     void SyncAssets();

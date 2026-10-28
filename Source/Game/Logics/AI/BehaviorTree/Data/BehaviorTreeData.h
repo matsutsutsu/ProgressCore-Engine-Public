@@ -43,8 +43,8 @@ enum class BTDebugState : uint8_t
 /**
  * @brief 修飾の種類。アセットが実際に使っているのは Cooldown だけで、残り2つは実装だけがある状態。
  *
- * 「子を開始させて手を離す」修飾（Async）は置かない。currentActionId を毎フレーム書き直し、
- * 硬直が終わったときに下ろす行動の作りと合わず、技が終わっても体が動き続けるため。
+ * 「子を開始させて手を離す」修飾（Async）は置かない。技は評価されている間だけ currentActionId を
+ * 書き直す作りなので、手を離した次のフレームに要求が消え、体が技を出し切れないため。
  * 同じ用途は BTNodeType::Parallel（主は評価され続ける）で書くこと。
  */
 enum class BTDecoratorType : uint8_t

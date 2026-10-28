@@ -15,7 +15,6 @@
                 },
                 "BossActionComponent": {
                     "acceleration": 10.0,
-                    "advanceStopDistance": 7.0,
                     "attackLeap.height": 20.0,
                     "attackLeap.landRecovery": 1.25,
                     "attackLeap.windup": 0.3499999940395355,

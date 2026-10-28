@@ -1,11 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: ボスの形態（チュートリアルの待機・手加減 / 第1形態 / 移行演出 / 第2形態 / 死亡）を決める System。
+// 概要: ボスの形態を決める System。
+//       （チュートリアルの待機・手加減 / 第1形態 / 移行演出 / 第2形態 / 死亡）
 //
 // 責務:
+//   - 毎フレームの最初に、ボス本体への要求(currentActionId)を空にする
 //   - HP と経過時間から、次の形態を決める
 //   - 形態に入った瞬間だけの処理（BT の差し替え・無敵・アニメのトリガー）を行う
-//   - 移行演出中と死亡中は、ボス本体とドローンへの指示を止め続ける
+//   - 移行演出中と死亡中は、ドローンへの指示を止め続ける
 //
 // 備考:
 //   ボスの System の並び:
@@ -14,8 +16,10 @@
 //     BehaviorTreeSystem   … 技を選ぶ                      L02_Update
 //     BossActionSystem     … 体の動きに変える              L02_PostUpdate
 //
-//   汎用のステートマシンを使わないのは、BT の root Selector が既に優先度順の状態選択に
-//   なっているから。BT で書けない「入った瞬間に1回だけ」の処理のためだけに、この小さな FSM を置いている。
+//   汎用のステートマシンを使わないのは、
+//   BT の root が既に優先度順の状態選択になっているから。
+//   BT で書けない「入った瞬間に1回だけ」の処理のためだけに、
+//   この小さな FSM を置いている。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <vector>
@@ -43,7 +47,9 @@ public:
      * @brief 同じステージで先に走らせる System を宣言する。
      *
      * BossPerceptionSystem の後に走らせる。
-     * どちらも L02_PreUpdate で BehaviorTreeComponent を Write するので、触るフィールドが重ならなくても、スケジューラには順序が決まっていないと報告される。
+     * どちらも L02_PreUpdate で BehaviorTreeComponent を Write するので、
+     * 触るフィールドが重ならなくても、
+     * スケジューラには順序が決まっていないと報告される。
      */
     std::vector<const char *> GetRunAfter() const override
     {
@@ -54,11 +60,16 @@ public:
 
 private:
     /**
-     * @brief このフレームの遷移先を決める。優先度順に調べ、最初に成立したものを返す。
-     * @param phase           今の形態と設定値。
-     * @param health          ボスの HP。
-     * @param inTutorial      チュートリアルシーンか。true なら最初から最後まで TutorialWait / TutorialAttack で戦う。
-     * @param bossWaiting     ボスを待たせるか（攻撃を覚える前の項目と、教え終えた後）。true なら TutorialWait、false なら TutorialAttack にする。
+     * @brief このフレームの遷移先を決める。
+     *
+     * 優先度順に調べ、最初に成立したものを返す。
+     *
+     * @param phase       今の形態と設定値。
+     * @param health      ボスの HP。
+     * @param inTutorial  チュートリアルシーンか。
+     *                    true なら最初から最後まで TutorialWait / TutorialAttack で戦う。
+     * @param bossWaiting ボスを待たせるか（攻撃を覚える前の項目と、教え終えた後）。
+     *                    true なら TutorialWait、false なら TutorialAttack にする。
      * @return 遷移先の形態。変わらなければ今の形態。
      */
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
@@ -67,6 +78,7 @@ private:
                               bool                      bossWaiting) const;
 
     // 形態に入った瞬間だけ走る処理（BT では書きにくい部分）。
+    // BT の差し替え・無敵・アニメのトリガー・ドローンへの指示を行う。
     void OnEnterPhase(BossPhase                next,
                       BossPhaseComponent      &phase,
                       BehaviorTreeComponent   &bt,
@@ -75,16 +87,20 @@ private:
                       HealthComponent         &health) const;
 
     // 形態に留まっている間、毎フレーム走る処理。
+    // 移行演出中・死亡中・チュートリアルの待機中に、ドローンの攻撃を止め続ける。
     void TickPhase(const BossPhaseComponent &phase,
                    BossCommandComponent     &cmd,
                    HealthComponent          &health) const;
 
-    // Death は Muriel のアニメグラフの任意ステートからの遷移で、よろめいて動けなくなるアニメ（Death → DeathLoop）に入る。
-    //   DeathLoop には出る遷移が無いので、撃破ムービーとリザルトの間も倒れた姿のまま残る。
+    // Death は Muriel のアニメグラフの任意ステートからの遷移で、
+    // よろめいて動けなくなるアニメ（Death → DeathLoop）に入る。
+    // DeathLoop には出る遷移が無いので、
+    // 撃破ムービーとリザルトの間も倒れた姿のまま残る。
     static constexpr const char *kDeathTrigger = "Death";
 
-    // Roar は Muriel のアニメグラフに対応する遷移が無いので、今はトリガーを引いても何も起きない
-    // （グラフに足せばそのまま繋がる）。アニメが無くても形態の移行はできる。
+    // Roar は Muriel のアニメグラフに対応する遷移が無いので、
+    // 今はトリガーを引いても何も起きない（グラフに足せばそのまま繋がる）。
+    // アニメが無くても形態の移行はできる。
     static constexpr const char *kRoarTrigger = "Roar";
 
     // 形態移行の演出時間（秒）。この間ボスは無敵で、BT は止まる。

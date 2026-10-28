@@ -89,9 +89,7 @@ std::vector<CCL::ECS::TypeID> BehaviorTreeSystem::GetReadTypes() const
 {
     // アクションが GetComponent<T>() で行う読み書きはテンプレート引数に現れない。足さないとスケジューラが
     // 「BehaviorTreeComponent しか触らない」と判断して、同じものを書く別の System と並列に走らせてしまう。
-
-    // 効くのは同じステージにいる相手だけで、AnimControllerSystem との順序は GetRunBefore と重なる。
-    // それでも型で申告するのは、順序の宣言が名前で1対1にしか効かないのに対し、型はそれを触る全員に効くから。
+    // 順序を名前で宣言（GetRunBefore など）せず型で申告するのは、名前は1対1にしか効かないのに対し、型はそれを触る全員に効くから。
     auto        types = Base::GetReadTypes();
     const auto &extra = BTActionRegistry::Instance().ExtraReadTypes();
     types.insert(types.end(), extra.begin(), extra.end());

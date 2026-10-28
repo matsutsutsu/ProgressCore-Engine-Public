@@ -27,8 +27,9 @@ namespace CCL::AI::Formation::Squad
      * アンカーの向きを全機へ配ると、曲がった瞬間に一本の棒が回るようにしか見えない。
      * 前の機体を基準にすれば、アンカーの描いた曲線が後続機へ順に伝わる。
      */
-    struct SquadAssaultFormation : public IFormation
+    class SquadAssaultFormation : public IFormation
     {
+    public:
         // 集まって降りてくる動きが予告。震えを足すと、そのずれが後ろの席へ伝わって隊列が乱れる
         bool UsesShiverTelegraph() const override { return false; }
 

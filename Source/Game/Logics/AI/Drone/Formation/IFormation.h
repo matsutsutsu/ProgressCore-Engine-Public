@@ -66,8 +66,9 @@ namespace CCL::AI::Formation
     };
 
     // 陣形の基底。派生が localIndex / totalDrones から「1機分の目標座標」を計算する。
-    struct IFormation
+    class IFormation
     {
+    public:
         virtual ~IFormation() = default;
 
         /**

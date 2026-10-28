@@ -279,6 +279,9 @@ inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view 
 // C++ で書いた陣形技の ID から陣形を引く。それ以外（データの技を含む）は false で outFormation はそのまま
 inline bool TryGetDroneFormation(ActionID id, DroneFormationType &outFormation)
 {
+    // BT_DRONE_ACTION_LIST の1行ごとに
+    // 「case ID: outFormation = 陣形; return true;」が並ぶ。
+    //   例: case 102: outFormation = DroneFormationType::HighOrbit; return true;
     switch (id)
     {
 #define CCL_BT_DRONE_CASE(Name, Id, Formation, Role, Display) \
@@ -306,6 +309,8 @@ inline bool IsDroneAttackFormation(ActionID id)
     // データの技は当たり判定を持つ攻撃技として作る前提（攻撃しない隊形は C++ 側にある）。
     if (id == A_DroneFormation) return true;
 
+    // BT_DRONE_ACTION_LIST の1行ごとに
+    // 「case ID: return その行の Role が Attack か;」が並ぶ
     switch (id)
     {
 #define CCL_BT_DRONE_ROLE(Name, Id, Formation, Role, Display) \

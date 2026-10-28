@@ -1,4 +1,5 @@
-// プレイヤーの探索は BattleContextSyncSystem が1回だけ行い、ここは BattleContext を読むだけ。
+// プレイヤーの探索は BattleContextSyncSystem が1回だけ行い、
+// ここは BattleContext を読むだけ。
 #include "BossPerceptionSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -19,8 +20,8 @@ using namespace DirectX::SimpleMath;
 
 void BossPerceptionSystem::Initialize()
 {
-    // 被弾量を blackboard へ足す。イベントで受けるのは、Combat 側に
-    // AI の Component を知らせないため。
+    // 被弾量を blackboard へ足す。
+    // イベントで受けるのは、Combat 側に AI の Component を知らせないため。
     ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &ev) {
         if (ev.isPlayer) return; // プレイヤーの被弾は敵 AI の判断に使わない
 
@@ -29,7 +30,8 @@ void BossPerceptionSystem::Initialize()
             bt->blackboard.accumulatedDamage += ev.damageAmount;
 
             // 被弾でモーションは止めない。影響するのは次の技を選ぶ判断だけ。
-            // 個体ごとの時間(localDt)で数えるので、ヒットストップ中に様子見が終わることはない。
+            // 個体ごとの時間(localDt)で数えるので、
+            // ヒットストップ中に「直近の被弾」が古くなることはない。
             bt->blackboard.timeSinceLastHit = 0.0f;
         }
     });
@@ -45,7 +47,10 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
                 const TransformComponent &trans,
                 const HealthComponent    &health,
                 const TimeStateComponent &time) {
-        // 残り時間ではなく経過時間で持つ。どれだけ待つかは木（条件の param）が決めるため。
+        // --- 被弾と HP ---
+
+        // 残り時間ではなく経過時間で持つ。
+        // どれだけ待つかは木（条件の param）が決めるため。
         btComp.blackboard.timeSinceLastHit += time.localDt;
 
         if (health.maxHealth > 0.0f)
@@ -53,20 +58,25 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
             btComp.blackboard.healthPercentage =
                 (health.currentHealth / health.maxHealth) * 100.0f;
 
-            // 蓄積した被弾を最大 HP に対する割合に直す。足す側はダメージ量しか知らないので、
+            // 蓄積した被弾を、最大 HP に対する割合に直す。
+            // 足す側はダメージ量しか知らないので、
             // HealthComponent を読めるここで直せば、条件側は割合だけを見ればよい。
 
-            // 割合で比べるのは、ダメージ量のまま比べると最大 HP を変えたときに木のしきい値も直す必要があるため。
+            // 割合で比べるのは、ダメージ量のまま比べると、
+            // 最大 HP を変えたときに木のしきい値も直す必要があるため。
             btComp.blackboard.accumulatedDamageRatio =
                 (btComp.blackboard.accumulatedDamage / health.maxHealth) * 100.0f;
         }
 
-        // 狙う相手はここだけで決める。複数の敵を出すときは、この1行を
-        // 「最も近い相手を選ぶ」などに差し替えればよい。
+        // --- 狙う相手 ---
+
+        // 狙う相手はここだけで決める。複数の敵を出すときは、
+        // この1行を「最も近い相手を選ぶ」などに差し替えればよい。
         btComp.blackboard.targetEntity = battle.playerEntity;
 
-        // 座標は BattleContext が集計済みなのでそこから取る（全 AI が同じ Transform を
-        // 読み直さないため）。プレイヤー以外を狙うときだけ Transform を読む。
+        // 座標は BattleContext が集計済みなのでそこから取る
+        // （全 AI が同じ Transform を読み直さないため）。
+        // プレイヤー以外を狙うときだけ Transform を読む。
         Vector3 targetPos(battle.playerPos);
         if (btComp.blackboard.targetEntity != battle.playerEntity)
         {
@@ -76,14 +86,18 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
             targetPos = Vector3(targetTrans->position);
         }
 
+        // --- 相手との位置関係 ---
+
         btComp.blackboard.targetPosition   = targetPos;
         btComp.blackboard.distanceToTarget = Vector3::Distance(Vector3(trans.position), targetPos);
 
-        // 距離だけだと「正面8m」と「背後8m」が同じ値になり、回り込まれたことが分からない。
+        // 距離だけだと「正面8m」と「背後8m」が同じ値になり、
+        // 回り込まれたことが分からない。
         btComp.blackboard.angleToTarget = SignedAngleToTargetDeg(trans, targetPos);
 
-        // 速度は BattleContext が持つ平滑化済みのプレイヤー速度だけを使う。各 AI が前フレームの
-        // 座標から速度を求めると、平滑化の強さが個体ごとにずれ、同じ状況で判断が分かれる。
+        // 速度は BattleContext が持つ、平滑化済みのプレイヤー速度だけを使う。
+        // 各 AI が前フレームの座標から速度を求めると、
+        // 平滑化の強さが個体ごとにずれ、同じ状況で判断が分かれる。
         // プレイヤー以外を狙っているときは 0（近づいてきていない）にする。
         const Vector3 targetVelocity = (btComp.blackboard.targetEntity == battle.playerEntity)
                                            ? Vector3(battle.playerVelocity)
@@ -91,6 +105,8 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 
         btComp.blackboard.targetClosingSpeed =
             TargetClosingSpeed(Vector3(trans.position), targetPos, targetVelocity);
+
+        // --- ステージ ---
 
         const Vector3 myWorldPos(trans.GetWorldPosition());
         btComp.blackboard.distanceToArenaEdge   = DistanceToArenaEdge(myWorldPos, battle);
@@ -105,16 +121,21 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
 float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &trans,
                                                    const Vector3            &targetPos) const
 {
+    // 見上げ角は使わない。間合いの判断は真上から見た角度で足りる
     Vector3 toTarget = targetPos - Vector3(trans.position);
-    toTarget.y       = 0.0f;                              // 見上げ角は使わない。間合いの判断は真上から見た角度で足りる
-    if (toTarget.LengthSquared() <= 0.0001f) return 0.0f; // 完全に重なっていて角度が決まらない
+    toTarget.y       = 0.0f;
+
+    // 完全に重なっていて角度が決まらない
+    if (toTarget.LengthSquared() <= 0.0001f) return 0.0f;
 
     const Vector3 forward = Vector3::Transform(Vector3::UnitZ, trans.rotation);
 
-    // yaw の差で測る。内積だと 0〜180 しか出ず、左右のどちらに回り込まれたかが消える。
+    // yaw の差で測る。
+    // 内積だと 0〜180 しか出ず、左右のどちらに回り込まれたかが消える。
     const float myYaw     = atan2f(forward.x, forward.z);
     const float targetYaw = atan2f(toTarget.x, toTarget.z);
 
+    // -π〜π に収める
     float diff = targetYaw - myYaw;
     while (diff > DirectX::XM_PI)
         diff -= DirectX::XM_2PI;
@@ -128,15 +149,16 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
                                                const Vector3 &targetPos,
                                                const Vector3 &targetVelocity) const
 {
-    // 自分の速度は含めない。含めると、逃げる相手を追いかけている自分の速度が加わって
-    // 相手が近づいてきていると誤判定する。知りたいのは相手の動きなので、相手の速度だけを使う。
+    // 自分の速度は含めない。含めると、逃げる相手を追いかけている
+    // 自分の速度が加わって、相手が近づいてきていると誤判定する。
+    // 知りたいのは相手の動きなので、相手の速度だけを使う。
     Vector3 targetToMe = myPos - targetPos;
     targetToMe.y       = 0.0f;
     if (targetToMe.LengthSquared() <= 0.0001f) return 0.0f;
     targetToMe.Normalize();
 
     Vector3 velocity = targetVelocity;
-    velocity.y       = 0.0f; // ジャンプの上下の動きを、近づいてきたと誤判定しないため
+    velocity.y       = 0.0f; // ジャンプの上下を、近づいてきたと誤判定しないため
 
     return velocity.Dot(targetToMe);
 }
@@ -144,7 +166,8 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
 float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,
                                                 const BattleContext &battle) const
 {
-    // 中心からの距離ではなく端までの距離を返す。ステージの大きさを変えても
+    // 中心からの距離ではなく端までの距離を返す。
+    // ステージの大きさを変えても、
     // 「端から 8m 以内」という木の書き方がそのまま使えるようにするため。
     Vector3 fromCenter = myWorldPos - Vector3(battle.arenaCenter);
     fromCenter.y       = 0.0f; // 高さの違いで端までの距離が変わらないようにする
@@ -161,14 +184,15 @@ float BossPerceptionSystem::TargetAngleFromCenterDeg(const Vector3       &myWorl
     toCenter.y       = 0.0f;
     toTarget.y       = 0.0f;
 
-    // 中央に立っているか相手と重なっているときは「塞がれていない」(180) を返す。
+    // 中央に立っているか、相手と重なっているときは「塞がれていない」(180) を返す。
     // 0 を返すと、中央に居るのに追い込まれたと判定して逃げ出す。
     if (toCenter.LengthSquared() <= 0.0001f || toTarget.LengthSquared() <= 0.0001f) return 180.0f;
 
     toCenter.Normalize();
     toTarget.Normalize();
 
-    // 左右は問わないので内積で足りる（SignedAngleToTargetDeg と違い符号が要らない）。
+    // 左右は問わないので内積で足りる
+    // （SignedAngleToTargetDeg と違い符号が要らない）。
     const float cosAngle = (std::max)(-1.0f, (std::min)(1.0f, toCenter.Dot(toTarget)));
     return DirectX::XMConvertToDegrees(std::acos(cosAngle));
 }

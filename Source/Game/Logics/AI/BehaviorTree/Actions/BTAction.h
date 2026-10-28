@@ -50,8 +50,9 @@ namespace CCL::AI::BT
      * @brief BT の葉になる行動の基底。ActionID ごとに1つだけ作られ、全エンティティで共有される。
      * @note 共有されるので、メンバに個体の状態を持たせない。状態は BTContext::bt の nodeTimers などに置く。
      */
-    struct IBTAction
+    class IBTAction
     {
+    public:
         virtual ~IBTAction() = default;
 
         // 1フレーム分の行動を進める。続くなら Running を返す。ワーカースレッドから並列に呼ばれる
@@ -59,13 +60,14 @@ namespace CCL::AI::BT
 
         /**
          * @brief 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる。
-         * @note 拒否するのは、要求を取り下げた瞬間に動きが崩れる技だけ（空中の跳躍など）。
+         * @note 拒否するのは、要求が書かれなくなった瞬間に動きが崩れる技だけ（空中の跳躍など）。
          */
         virtual bool CanAbort(BTContext &ctx) const { return true; }
 
         /**
-         * @brief 打ち切られたときの後始末。出したままの要求を取り下げる。
-         * @note 打ち切りでは Execute が最後まで走らない。完了時の取り下げを Execute に書いた技は、ここにも書く。
+         * @brief 打ち切られたときの後始末。
+         * @note 打ち切りでは Execute が最後まで走らない。完了時の後始末を Execute に書いた技は、ここにも書く。
+         *       ボス本体への要求（currentActionId）は毎フレーム空にされるので、ここで取り下げなくてよい。
          */
         virtual void OnAbort(BTContext &ctx) {}
 
@@ -79,8 +81,9 @@ namespace CCL::AI::BT
      * @brief BT の条件ノードの基底。ActionID ごとに1つだけ作られ、全エンティティで共有される。
      * @note 割り込みの判定でも呼ばれるので、評価しただけで状態が変わる書き方をしない。
      */
-    struct IBTCondition
+    class IBTCondition
     {
+    public:
         virtual ~IBTCondition() = default;
 
         // 条件を評価する。閾値は ctx.param。ワーカースレッドから並列に呼ばれる

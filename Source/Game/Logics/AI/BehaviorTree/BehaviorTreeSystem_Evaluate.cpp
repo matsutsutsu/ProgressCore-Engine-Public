@@ -296,8 +296,8 @@ void BehaviorTreeSystem::AbortSubtree(BTNodeID                  nodeId,
 
     if (node.type == BTNodeType::Action)
     {
-        // 走っていなかった行動にも OnAbort を呼ぶ。後始末はどれも「自分が出した要求なら取り下げる」
-        // 形なので、出していない行動が呼ばれても何も起きない（ClearCommandIfMine）。
+        // 走っていなかった行動にも OnAbort を呼ぶ。後始末は、走っていなかった行動が呼ばれても
+        // 何も起きない形で書くこと。
         // どれが走っていたかを正確に持つより、何度呼んでも同じ結果になる後始末の方が壊れにくい。
         if (IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId))
         {
@@ -652,9 +652,9 @@ BTNodeState BehaviorTreeSystem::EvaluateParallel(
     // 1番目以降の「従」は主が走っている間だけ動かし、結果は捨てる。
     // 「技を出しながら、その間ドローンにも指示を出す」を書くためのノード。
     //
-    // 主は毎フレーム評価され続けるので、毎フレームの後始末を持つ行動（currentActionId を書く技）をそのまま置ける。
-    // 従には「毎フレーム評価されても安いもの」だけを置くこと。主が終わると従は評価されなくなるので、
-    // 従に currentActionId を書く行動を置くと、要求が下りないまま残る（読み込み時に ValidateNodes が警告する）。
+    // 従には「毎フレーム評価されても安いもの」だけを置くこと。
+    // 従に currentActionId を書く行動を置くと、主より後に評価されるので主の技の要求を上書きする
+    // （読み込み時に ValidateNodes が警告する）。
     //
     // 再開位置を持たないのが Selector / Sequence との違い。毎フレーム全部の子を
     // 評価し直すので、途中から再開する必要がない（各子のサブツリーは自分の再開位置で正しく再開する）。

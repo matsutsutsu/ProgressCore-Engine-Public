@@ -277,18 +277,11 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
         return;
     }
 
-    // 木の評価を止める。移動中に止めるとボスが歩き続けるので、行動の要求も合わせて消す。
+    // 木の評価を止める。行動の要求は毎フレーム空にされるので、止めれば体も待機になる。
     bool paused = btComp.debugPaused;
     if (ImGui::Checkbox("AIを止める（調整に集中）", &paused))
     {
         btComp.debugPaused = paused;
-        if (paused)
-        {
-            if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity))
-            {
-                cmd->currentActionId = 0; // None → BossActionSystem は Idle
-            }
-        }
     }
     if (btComp.debugPaused)
     {

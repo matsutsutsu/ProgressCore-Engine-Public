@@ -8,8 +8,6 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// 表示名は BossPhaseComponent.h の kBossPhaseNames と共有する（二重管理を避ける）
-
 template <>
 struct ComponentMeta<BossPhaseComponent>
 {
@@ -29,8 +27,6 @@ struct ComponentMeta<BossPhaseComponent>
             CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "Phase")
             CFIELD(tutorialAssetPath, "チュートリアルAIパス", "Tutorial")
             // 形態とタイマーは実行時の値。保存しない。
-            //   Dead や Transition のまま保存すると、次の個体が
-            //   「死んだ状態」「形態移行の演出中」で生まれてくる。
             CFIELD_ENUM_U8_RT(phase, "現在の形態", kBossPhaseNames, kBossPhaseCount, "State")
             CFIELD_RT(timer, "状態滞在タイマー", "State")};
         return fields;

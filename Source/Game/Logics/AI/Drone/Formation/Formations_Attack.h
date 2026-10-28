@@ -24,8 +24,9 @@ namespace CCL::AI::Formation::Attack
      * 輪の上で待つ → 自分の番の少し前に中心へ寄る（これが予告）→ 中心でタメ → 発射（以降は直進）。
      * 発射の瞬間まで1機ずつ今のプレイヤーを狙い続け、撃った後は直進するので避ける余地が残る。
      */
-    struct BarrageFormation : public IFormation
+    class BarrageFormation : public IFormation
     {
+    public:
         // 撃った機から順に帰す。経過時間は、壁際などで飛距離が伸びないときの保険
         bool IsChargeOver(float flownDistance, float flownTime) const override
         {

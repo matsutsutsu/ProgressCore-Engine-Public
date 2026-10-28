@@ -8,7 +8,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// BossActionState と1対1で並べる（順番がずれると別の状態名が表示される）。
+// BossActionState と1対1で並べる。
 static const char *BossStateNames[] = {
     "None",
     "Move",
@@ -62,7 +62,6 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(walkSpeed, "歩行速度（行動用）", 0.1f, 0.0f, 100.0f, "Action Speed")
             CFIELD_FLOAT_RANGED(turnSpeed, "旋回速度(移動中)", 0.1f, 0.0f, 100.0f, "Stats")
             CFIELD_FLOAT_RANGED(idleTurnSpeed, "旋回速度(待機中)", 0.1f, 0.0f, 100.0f, "Stats")
-            CFIELD_FLOAT_RANGED(advanceStopDistance, "詰めるのを止める距離 [m]", 0.5f, 0.0f, 60.0f, "Stats")
             CFIELD_FLOAT_RANGED(acceleration, "加速度", 0.1f, 0.0f, 100.0f, "Inertia")
             CFIELD_FLOAT_RANGED(deceleration, "減速度", 0.1f, 0.0f, 100.0f, "Inertia")
             CFIELD_FLOAT_RANGED(strafeSpeed, "横歩き：速さ [m/s]", 0.1f, 0.0f, 30.0f, "Strafe")
@@ -94,9 +93,7 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(dashTravelSpeed, "突進：着地後に走る速さ [m/s]", 0.5f, 0.0f, 150.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashStopTime, "突進：止まるまでの時間 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRecovery, "突進：止まった後の硬直 [秒]（走り続ける長さはBTノードの全体時間から逆算）", 0.01f, 0.0f, 3.0f, "Dash Attack")
-            // ここから下は BossActionSystem が書く実行時の値。保存しない。
-            //   保存すると、保存した瞬間の技の状態がプレハブに残り、
-            //   次に生成された個体がその状態から始まる。
+            // ここから下は実行時の値。保存しない。
             CFIELD_RT(currentMoveSpeed, "現在の移動速度", "State")
             CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
             CFIELD_ENUM_U8_RT(leapPhase, "跳躍の段", BossLeapPhaseNames, std::size(BossLeapPhaseNames), "State")

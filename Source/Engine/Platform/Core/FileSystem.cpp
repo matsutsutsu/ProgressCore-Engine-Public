@@ -1,4 +1,4 @@
-﻿#include "FileSystem.h"
+#include "FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <fstream>
 #include <algorithm>
@@ -233,7 +233,7 @@ namespace
 void FileSystem::Initialize()
 {
 #ifdef SHIPPING_BUILD
-    // 開けなくても止めない。ディスクにアセットがあればそのまま動く（開発フォルダから起動したときなど）
+    // Shippingビルド時にPakファイルからデータを読み込む
     Mount(kArchivePath);
 #endif
     CCL_LOG_INFO(LogCategory::Core, "[FileSystem] Initialized.");

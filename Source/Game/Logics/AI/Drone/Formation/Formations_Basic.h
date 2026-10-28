@@ -46,8 +46,9 @@ namespace CCL::AI::Formation::Basic
     };
 
     // 低空円陣（LowOrbit）: ボスを中心に円を描いて並ぶ
-    struct LowOrbitFormation : public IFormation
+    class LowOrbitFormation : public IFormation
     {
+    public:
         bool UsesShiverTelegraph() const override { return false; } // 技ではなく隊形
 
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
@@ -76,8 +77,9 @@ namespace CCL::AI::Formation::Basic
 
     // 頭上円陣（HighOrbit）: 攻撃と攻撃のあいだに使う中立陣形。
     // 低空円陣だとドローンが壁になり、プレイヤーが近づく地上の間合いを塞ぐ
-    struct HighOrbitFormation : public IFormation
+    class HighOrbitFormation : public IFormation
     {
+    public:
         bool UsesShiverTelegraph() const override { return false; } // 技ではなく隊形
         bool FollowsBossHeight() const override { return true; }    // 跳躍中もボスと一緒に上下する
 

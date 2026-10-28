@@ -1,6 +1,7 @@
 #pragma once
 // ===========================================================================
-// 概要: BattleContext と各ボスの状態から、BT の判断に使う値を blackboard へ書く System。
+// 概要: BattleContext と各ボスの状態から、
+//       BT の判断に使う値を blackboard へ書く System。
 //
 // 責務:
 //   - 狙う相手と、相手までの距離・角度・近づく速さを書く
@@ -8,9 +9,10 @@
 //   - ステージの端までの距離と、中央の方向に対する相手の角度を書く
 //   - DamageTakenEvent を受けて被弾量を足し、被弾からの経過時間を 0 に戻す
 //
-// 備考: この System が HP・距離・被弾を blackboard に書くので、BT 側は HealthComponent も
-//       プレイヤーの探し方も知らずに済む。
-//       被弾の蓄積は、足す=ここ／読む=C_DamageThresholdExceeded／0 に戻す=A_ResetDamage。
+// 備考: この System が HP・距離・被弾を blackboard に書くので、
+//       BT 側は HealthComponent もプレイヤーの探し方も知らずに済む。
+//       被弾の蓄積は、足す=ここ／読む=C_DamageThresholdExceeded／
+//       0 に戻す=A_ResetDamage。
 //       イベントで受けるので、Combat 側は BT を知らない。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -32,10 +34,12 @@ class BossPerceptionSystem : public CCL::ECS::IfSystem<
 public:
     BossPerceptionSystem() : IfSystem("BossPerceptionSystem") {}
 
-    // DamageTakenEvent を購読する。被弾のたびに被弾量を足し、被弾からの経過時間を 0 に戻す。
+    // DamageTakenEvent を購読する。
+    // 被弾のたびに被弾量を足し、被弾からの経過時間を 0 に戻す。
     void Initialize() override;
 
-    // 距離・角度・HP の割合・ステージの端までの距離などを blackboard へ書き直す。
+    // 距離・角度・HP の割合・ステージの端までの距離などを
+    // blackboard へ書き直す。
     void Update(float dt) override;
 
 private:
@@ -54,7 +58,8 @@ private:
     /**
      * @brief 相手が自分へ近づく速さを返す。
      *
-     * 相手の速度を「相手→自分」の向きへ射影するだけで、自分の速度は含めない。
+     * 相手の速度を「相手→自分」の向きへ射影するだけで、
+     * 自分の速度は含めない。
      *
      * @param myPos          自分の位置（ワールド）。
      * @param targetPos      相手の位置（ワールド）。
@@ -65,11 +70,13 @@ private:
                              const DirectX::SimpleMath::Vector3 &targetPos,
                              const DirectX::SimpleMath::Vector3 &targetVelocity) const;
 
-    // ステージの端までの距離（m）。正=内側。真上から見た距離だけを測る。
+    // ステージの端までの距離（m）。正=内側。
+    // 真上から見た距離だけを測る。
     float DistanceToArenaEdge(const DirectX::SimpleMath::Vector3 &myWorldPos,
                               const BattleContext                &battle) const;
 
-    // 自分から見た「中央の方向」と「相手の方向」のなす角（度）。0=相手が中央側を塞いでいる。
+    // 自分から見た「中央の方向」と「相手の方向」のなす角（度）。
+    // 0=相手が中央側を塞いでいる。
     float TargetAngleFromCenterDeg(const DirectX::SimpleMath::Vector3 &myWorldPos,
                                    const DirectX::SimpleMath::Vector3 &targetPos,
                                    const BattleContext                &battle) const;

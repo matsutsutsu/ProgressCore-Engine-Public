@@ -18,8 +18,9 @@
 namespace CCL::AI::BT
 {
     // ターゲットとの距離が param 未満。
-    struct DistanceLessThan : public IBTCondition
+    class DistanceLessThan : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.distanceToTarget < ctx.param;
@@ -27,8 +28,9 @@ namespace CCL::AI::BT
     };
 
     // ターゲットとの距離が param より大きい。
-    struct DistanceGreaterThan : public IBTCondition
+    class DistanceGreaterThan : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.distanceToTarget > ctx.param;
@@ -36,8 +38,9 @@ namespace CCL::AI::BT
     };
 
     // 相手が正面 ±param 度の内側にいる（正面に捉えている）。param=90 で前方の半分
-    struct TargetAngleLessThan : public IBTCondition
+    class TargetAngleLessThan : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return std::fabs(ctx.bt->blackboard.angleToTarget) < ctx.param;
@@ -45,8 +48,9 @@ namespace CCL::AI::BT
     };
 
     // 相手が正面 ±param 度の外側にいる（回り込まれている）。param=120 で背後側。
-    struct TargetAngleGreaterThan : public IBTCondition
+    class TargetAngleGreaterThan : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return std::fabs(ctx.bt->blackboard.angleToTarget) > ctx.param;
@@ -54,8 +58,9 @@ namespace CCL::AI::BT
     };
 
     // 相手が param m/s 以上の速さで近づいてきている。踏み込んでくる相手に合わせて出す技の条件に使う。
-    struct TargetApproaching : public IBTCondition
+    class TargetApproaching : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.targetClosingSpeed >= ctx.param;
@@ -63,8 +68,9 @@ namespace CCL::AI::BT
     };
 
     // 相手が param m/s 以上の速さで離れている。param は正の数で書く（負の数は木の上で読みにくい）
-    struct TargetRetreating : public IBTCondition
+    class TargetRetreating : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return -ctx.bt->blackboard.targetClosingSpeed >= ctx.param;
@@ -72,8 +78,9 @@ namespace CCL::AI::BT
     };
 
     // 前回リセットしてからの被弾が、最大 HP の param % に達した（未設定なら 20%）
-    struct DamageThresholdExceeded : public IBTCondition
+    class DamageThresholdExceeded : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             const float thresholdPercent = (ctx.param > 0.0f) ? ctx.param : 20.0f;
@@ -82,8 +89,9 @@ namespace CCL::AI::BT
     };
 
     // ステージの端から param m 以内に居る。param=0 で壁際まで来たとき
-    struct IsAtStageEdge : public IBTCondition
+    class IsAtStageEdge : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.distanceToArenaEdge <= ctx.param;
@@ -91,8 +99,9 @@ namespace CCL::AI::BT
     };
 
     // 相手が「自分から見た中央の方向」±param 度の内側にいる（逃げ道を塞がれている）。C_IsAtStageEdge と並べて「追い込まれた」を作る
-    struct TargetOnCenterSide : public IBTCondition
+    class TargetOnCenterSide : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.targetAngleFromCenter <= ctx.param;
@@ -101,8 +110,9 @@ namespace CCL::AI::BT
 
     // 追い込まれている：ステージの端から param m 以内に居て、相手が中央側 ±70 度にいる（逃げ道を塞がれている）。
     // C_IsAtStageEdge と C_TargetOnCenterSide の AND。スコアの状況による倍率は条件を1つしか持てないので、まとめた条件を用意する
-    struct Cornered : public IBTCondition
+    class Cornered : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             constexpr float kCenterSideAngle = 70.0f; // 「中央側」とみなす角度 [度]
@@ -112,8 +122,9 @@ namespace CCL::AI::BT
     };
 
     // 直近の被弾から param 秒以内。殴られている最中に反撃・離脱を選びやすくするのに使う
-    struct RecentlyHit : public IBTCondition
+    class RecentlyHit : public IBTCondition
     {
+    public:
         bool Evaluate(BTContext &ctx) override
         {
             return ctx.bt->blackboard.timeSinceLastHit < ctx.param;

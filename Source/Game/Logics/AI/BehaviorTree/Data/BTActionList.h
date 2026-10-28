@@ -47,8 +47,6 @@
     X(A_Move,           2,   Boss,    Driving,  "",              "ボス：移動 (Move To Player)")            \
     X(A_ResetDamage,    3,   Boss,    Instant,  "",              "ボス：蓄積ダメージリセット")             \
     X(A_BossBackStep,   4,   Boss,    Driving,  "全体時間 [秒]", "ボス：後方ステップ (Back Step)")         \
-    X(A_BossHitWait,    5,   Boss,    Blocking, "待つ長さ [秒]", "ボス：被弾後の様子見")                   \
-    X(A_BossAdvance,    6,   Boss,    Driving,  "長さ [秒]",     "ボス：詰めながら待つ")                   \
     X(A_BossLeapEscape, 7,   Boss,    Driving,  "全体時間 [秒]", "ボス：中央へ跳んで逃げる (Leap Escape)") \
     X(A_BossLeapAttack, 8,   Boss,    Driving,  "全体時間 [秒]", "ボス：跳躍攻撃 (Leap Attack)")           \
     X(A_BossAirHover,   9,   Boss,    Driving,  "全体時間 [秒]", "ボス：その場で滞空 (Air Hover)")         \

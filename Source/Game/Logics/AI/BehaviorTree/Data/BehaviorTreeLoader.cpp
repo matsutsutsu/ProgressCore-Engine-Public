@@ -449,16 +449,16 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                                   i, static_cast<unsigned>(node.children[0]), path.c_str());
                 }
 
-                // 従に「currentActionId を書く行動」があると、主が終わった後
-                // その要求が下りないまま残り、BossActionSystem が技を続けてしまう。
+                // 従に「currentActionId を書く行動」があると、主より後に評価されるので
+                // 主の技の要求を上書きし、体が主の技を出せない。
                 for (size_t k = 1; k < node.children.size(); ++k)
                 {
                     if (!SubtreeWritesCommand(asset, node.children[k])) continue;
 
                     CCL_LOG_ERROR(LogCategory::AI,
                                   "[BT] nodes[%zu] の並行ノードの従(nodes[%u])に、ボスの行動要求を"
-                                  "書く技がある。主が終わると従は評価されなくなるので要求が下りず、"
-                                  "技が終わっても体がその技を続ける。主へ移すこと: %s",
+                                  "書く技がある。従は主より後に評価されるので主の技の要求を上書きし、"
+                                  "体が主の技を出せない。主へ移すこと: %s",
                                   i, static_cast<unsigned>(node.children[k]), path.c_str());
                 }
 
