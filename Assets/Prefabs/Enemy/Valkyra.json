@@ -4,7 +4,7 @@
             "components": {
                 "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
+                    "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
                     "isLoop": false,
@@ -127,10 +127,10 @@
                     "paths": []
                 },
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.model.json"
+                    "assetPath": "Assets/Models/Enemy/Valkyra/Valkyra.model.json"
                 },
                 "Name": {
-                    "name": "Muriel"
+                    "name": "Valkyra"
                 },
                 "RootMotion": null,
                 "TimeState": {
@@ -166,6 +166,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "Muriel",
+    "name": "Valkyra",
     "version": 1
 }

@@ -25,7 +25,7 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
     //   DestroyTag は「削除の起点」にしか付かないのに、HierarchyCleanupSystem は
     //   その子孫まで破棄する。チャンクを DestroyTag で絞ると子の剛体を取りこぼし、
     //   ECS から消えた後もブロードフェーズに居座り続ける（＝見えないコライダー）。
-    //   実例: Player.json / Muriel.json の武器は親を持つ子Entityで、剛体を持つ。
+    //   実例: Player.json / Valkyra.json の武器は親を持つ子Entityで、剛体を持つ。
     //   そのため判定は HierarchyCleanupSystem と同じ収集関数に一本化する。
     std::vector<CCL::ECS::EntityID> doomed;
     doomed.reserve(64);

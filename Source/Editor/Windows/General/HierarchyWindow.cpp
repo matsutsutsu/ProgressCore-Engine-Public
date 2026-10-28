@@ -186,7 +186,7 @@ void HierarchyWindow::DrawContents(EditorContext &context)
                 }
             }
 
-            // "Muriel.model.json" は stem が "Muriel.model" になるので、もう一段落とす
+            // "Valkyra.model.json" は stem が "Valkyra.model" になるので、もう一段落とす
             std::string entityName = std::filesystem::path(modelPath).stem().string();
             if (ModelResource::IsModelSetFile(modelPath))
             {

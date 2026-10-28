@@ -39,7 +39,7 @@ namespace
         {0.24f, "GFX   SHADER CACHE ... OK"},
         {0.36f, "GFX   LOADING STAGE"},
         {0.48f, "UNIT  LOADING PLAYER"},
-        {0.60f, "UNIT  LOADING ENEMY : MURIEL"},
+        {0.60f, "UNIT  LOADING ENEMY : VALKYRA"},
         {0.72f, "AI    LOADING DRONES"},
         {kDoneProgress, "SYS   ALL READY"},
     };

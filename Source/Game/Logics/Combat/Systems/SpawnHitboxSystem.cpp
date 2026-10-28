@@ -101,7 +101,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
         // 以降は TransformUpdateSystem が親の動きを反映し、JoltPushSystem が Kinematic の剛体を合わせる。
         // 親の子リストへの登録は、TransformUpdateSystem が新しい子を見つけたときに行う。
         //
-        // 子の position には親の scale も掛かる（Muriel は 5 倍）。一方、球の半径には scale が掛からず、
+        // 子の position には親の scale も掛かる（Valkyra は 5 倍）。一方、球の半径には scale が掛からず、
         // 追従しない判定の offset もメートルのまま使う。そろえるため、offset を持ち主のワールドの scale で割り、
         // どちらのモードでも offset が「ワールドのメートル」になるようにする
         const XMMATRIX ownerWorld = XMLoadFloat4x4(&ownerT->worldMatrix);

@@ -30,9 +30,9 @@ namespace
     const DirectX::XMFLOAT4 kBossBg    = {0.00f, 0.00f, 0.00f, 0.55f};
     const DirectX::XMFLOAT4 kSubText   = {0.86f, 0.86f, 0.88f, 0.80f}; // ドローン数（名前より控えめにする）
 
-    // 名前はプレハブ（Muriel.json）の名前に合わせる。シーンに置いたエンティティ名は
-    // 「Muriel (1)」のように変わり得るので、NameComponent からは取らない
-    constexpr const char *kBossName = "MURIEL";
+    // 名前はプレハブ（Valkyra.json）の名前に合わせる。シーンに置いたエンティティ名は
+    // 「Valkyra (1)」のように変わり得るので、NameComponent からは取らない
+    constexpr const char *kBossName = "VALKYRA";
 
     // --- 配置（画面上辺の中央） ---
     constexpr float kBarTop  = 56.0f;  // 画面の上端からゲージの上辺まで

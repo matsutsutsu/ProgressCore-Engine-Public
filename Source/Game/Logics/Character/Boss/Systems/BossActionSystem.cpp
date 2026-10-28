@@ -96,10 +96,10 @@ namespace
     }
 
     // 後方ステップの止まりのモーションを流すステート
-    // （MurielAnimNode.json の BackStepStop）。
+    // （ValkyraAnimNode.json の BackStepStop）。
     const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 
-    // 技の開始で引くアニメのトリガー（MurielAnimNode.json）。
+    // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）。
     // 跳躍3種は同じ "Leap" を引き、着地のクリップは
     // BossAnimSyncSystem の IsLeaping / LeapAttack で切り替える
     const uint32_t kBackStepTrigger = CCL::Utils::HashString("BackStep");

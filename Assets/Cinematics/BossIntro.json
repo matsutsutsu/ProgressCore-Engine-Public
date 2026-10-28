@@ -8,7 +8,7 @@
             "_comment": "Shot1: 引きの絵。高い位置からボスと群れの輪の周りをゆっくり回り込みながら降りる。最初の1.5秒は明転で黒から見えてくるので、その分だけ長くしてある",
             "start": 0.0,
             "duration": 4.1,
-            "subject": "Muriel",
+            "subject": "Valkyra",
             "motion": "Orbit",
             "ease": "EaseInOut",
             "lookStart": [0.0, 18.0, 0.0],
@@ -39,7 +39,7 @@
             "_comment": "Shot3: カットでボスへ。足元近くの低い位置から見上げ、望遠でゆっくり寄る（狭い画角で大きく見せる）",
             "start": 5.9,
             "duration": 3.0,
-            "subject": "Muriel",
+            "subject": "Valkyra",
             "ease": "EaseOut",
             "eyeStart": [6.0, 1.5, 26.0],
             "eyeEnd": [2.0, 2.0, 20.0],
@@ -52,7 +52,7 @@
             "_comment": "Shot4: プレイヤーの後ろ上からボスと向き合う。通常のカメラ（背中越し）に近い構図で終えて、切り替えを目立たせない。カメラ位置は、レベルの初期配置でのプレイヤーの後ろ上をボス基準に直した値",
             "start": 8.9,
             "duration": 1.8,
-            "subject": "Muriel",
+            "subject": "Valkyra",
             "ease": "EaseInOut",
             "eyeStart": [57.46, 6.67, 39.81],
             "eyeEnd": [61.24, 8.67, 44.96],
@@ -76,7 +76,7 @@
             "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
             "time": 5.9,
             "effect": "Assets/Prefabs/Particles/VFX_Jump",
-            "subject": "Muriel",
+            "subject": "Valkyra",
             "scale": 5.0
         }
     ],
@@ -85,7 +85,7 @@
             "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言",
             "time": 6.2,
             "name": "Telop",
-            "param": "MURIEL",
+            "param": "VALKYRA",
             "param2": "TARGET IDENTIFIED",
             "value": 2.6
         }
@@ -94,8 +94,8 @@
         {
             "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ時刻）。カットで隠れるので blendIn は 0",
             "start": 5.9,
-            "subject": "Muriel",
-            "sequence": "Assets/Animations/Sequencer/Muriel/LeapLand.json",
+            "subject": "Valkyra",
+            "sequence": "Assets/Animations/Sequencer/Valkyra/LeapLand.json",
             "speed": 0.7,
             "blendIn": 0.0,
             "blendOut": 0.4

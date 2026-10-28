@@ -271,7 +271,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 //   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
 //
 //     {
-//         "model": "Muriel.glb"
+//         "model": "Valkyra.glb"
 //     }
 //
 //   パスはこのJSONが置かれたディレクトリからの相対で書く。
@@ -374,7 +374,7 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     }
 
     std::filesystem::path cachePath = jsonPath;
-    cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
+    cachePath.replace_extension(".cereal"); // Valkyra.model.json → Valkyra.model.cereal
 
     // アーカイブ（Shipping）の中のキャッシュは、作成時点の最新として比べずに使う。
     // アーカイブの中には更新時刻が無く、元のモデルも入れないことがあるため

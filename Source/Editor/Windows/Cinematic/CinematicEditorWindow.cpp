@@ -621,7 +621,7 @@ bool CinematicEditorWindow::DrawAnimationFields(EditorContext &context, Cinemati
 bool CinematicEditorWindow::DrawSubjectField(EditorContext &context, std::string &subject, const char *emptyMeans)
 {
     const bool changed = InputString("基準の名前", subject);
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("シーンの Entity の名前（NameComponent）。例: Player / Muriel");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("シーンの Entity の名前（NameComponent）。例: Player / Valkyra");
 
     if (subject.empty())
     {

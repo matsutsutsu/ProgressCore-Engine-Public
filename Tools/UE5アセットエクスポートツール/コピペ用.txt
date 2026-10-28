@@ -18,8 +18,8 @@ C:\Users\2240209\Desktop\ProgressCore-Engine\Tools\UE5アセットエクスポ�
 
 ■ よく使う出力先（フォルダ選択ダイアログの上のアドレス欄に貼る）
 
-Muriel のアニメーション
-C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Models\Enemy\Muriel\Animations
+Valkyra のアニメーション
+C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Models\Enemy\Valkyra\Animations
 
 戦闘の効果音
 C:\Users\2240209\Desktop\ProgressCore-Engine\Assets\Audio\SE\Combat

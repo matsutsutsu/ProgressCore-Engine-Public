@@ -86,7 +86,7 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
     // 5. 向きと追従
     if (msg.follow)
     {
-        // 基準の子にする。子の position には基準の scale が掛かる（Muriel は 5 倍）ので、
+        // 基準の子にする。子の position には基準の scale が掛かる（Valkyra は 5 倍）ので、
         //   offset を基準の scale で割り、追従しないときと同じく「ワールドのメートル」にそろえる
         const XMMATRIX anchorWorld = XMLoadFloat4x4(&anchorT->worldMatrix);
         XMVECTOR       anchorScale, anchorRotQ, anchorTrans;

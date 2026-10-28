@@ -92,13 +92,13 @@ private:
                    BossCommandComponent     &cmd,
                    HealthComponent          &health) const;
 
-    // Death は Muriel のアニメグラフの任意ステートからの遷移で、
+    // Death は Valkyra のアニメグラフの任意ステートからの遷移で、
     // よろめいて動けなくなるアニメ（Death → DeathLoop）に入る。
     // DeathLoop には出る遷移が無いので、
     // 撃破ムービーとリザルトの間も倒れた姿のまま残る。
     static constexpr const char *kDeathTrigger = "Death";
 
-    // Roar は Muriel のアニメグラフに対応する遷移が無いので、
+    // Roar は Valkyra のアニメグラフに対応する遷移が無いので、
     // 今はトリガーを引いても何も起きない（グラフに足せばそのまま繋がる）。
     // アニメが無くても形態の移行はできる。
     static constexpr const char *kRoarTrigger = "Roar";

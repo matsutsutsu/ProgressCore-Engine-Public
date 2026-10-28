@@ -8,7 +8,7 @@
 // 備考:
 //   - AnimatorComponent を付けるだけでアニメーション一式が動くようにし、付け忘れを防ぐ。
 //   - SetExclude は使わない。SetExclude<A, B, C>() は「どれか 1 つでも持っていたら除外」なので、
-//     例えば AnimStateMachine だけをプレハブに書いた Entity（Muriel.json など）が
+//     例えば AnimStateMachine だけをプレハブに書いた Entity（Valkyra.json など）が
 //     AnimParameters / RootMotion を受け取れなくなる。対象はキャラだけで数も少ないので、
 //     毎ステップ HasComponent で個別に調べても十分軽い。
 // ===========================================================================

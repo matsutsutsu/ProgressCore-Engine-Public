@@ -96,7 +96,7 @@ struct AnimatorComponent
         //   Play が比べるのはステートではなくクリップのポインタなので、これが無いと
         //   「別ステートだが同じクリップ」で Play が何もせず、再生位置・isFinished・
         //   イベント位置・ブレンドが前のステートから引き継がれる。
-        //   例: Muriel の HitFront と HitBack は同じ Hit_Front.json を指しており、
+        //   例: Valkyra の HitFront と HitBack は同じ Hit_Front.json を指しており、
         //       連続被弾で HitFront → HitBack に入ると isFinished が true のままなので
         //       次のステップで Finished 条件が成立し、リアクションが飛ぶ
         bool restart = false;

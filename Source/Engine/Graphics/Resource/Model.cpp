@@ -357,7 +357,7 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     //
     // リターゲットを切っているモデルでは、全ボーンの移動をそのまま使う。
     //   モデルとアニメーションの骨格が同じであることが前提。スライドするボーン
-    //   （Muriel の wing_blade_track など）は移動そのものが演出なので、
+    //   （Valkyra の wing_blade_track など）は移動そのものが演出なので、
     //   バインドポーズで上書きすると、その下のボーンごと位置が崩れる。
     if (bindNode.isRootOrPelvis || !m_translationRetargeting)
     {

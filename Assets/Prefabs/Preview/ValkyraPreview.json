@@ -4,7 +4,7 @@
             "components": {
                 "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
+                    "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
                     "isLoop": true,
@@ -12,10 +12,10 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.model.json"
+                    "assetPath": "Assets/Models/Enemy/Valkyra/Valkyra.model.json"
                 },
                 "Name": {
-                    "name": "MurielPreview"
+                    "name": "ValkyraPreview"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -55,10 +55,10 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Weapon/MurielSword/MurielSword.gltf"
+                    "assetPath": "Assets/Models/Weapon/ValkyraSword/ValkyraSword.gltf"
                 },
                 "Name": {
-                    "name": "MurielSword"
+                    "name": "ValkyraSword"
                 },
                 "TimeState": {
                     "buffScale": 1.0,
@@ -115,6 +115,6 @@
         }
     ],
     "magic": 1397506883,
-    "name": "MurielPreview",
+    "name": "ValkyraPreview",
     "version": 1
 }
