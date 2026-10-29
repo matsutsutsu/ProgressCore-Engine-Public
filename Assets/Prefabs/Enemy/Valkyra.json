@@ -15,13 +15,15 @@
                 },
                 "BossActionComponent": {
                     "attackLeap.flight": 1.0,
-                    "attackLeap.height": 20.0,
+                    "attackLeap.height": 30.0,
+                    "attackLeap.landAttack": true,
                     "attackLeap.landRecovery": 1.25,
+                    "attackLeap.landing": 1,
                     "attackLeap.windup": 0.3499999940395355,
                     "attackStandOff": 3.0,
                     "backStepDistance": 40.0,
                     "backStepHeight": 2.0,
-                    "backStepRecovery": 0.26,
+                    "backStepRecovery": 0.25999999046325684,
                     "backStepRetreatTime": 0.3499999940395355,
                     "dashAimTime": 0.30000001192092896,
                     "dashDistance": 50.0,
@@ -32,17 +34,21 @@
                     "dashSpeed": 150.0,
                     "dashStopTime": 0.6000000238418579,
                     "dashTravelSpeed": 130.0,
-                    "dashTravelTime": 0.2,
+                    "dashTravelTime": 0.20000000298023224,
                     "dashWindupTime": 0.4000000059604645,
                     "escapeLandingRatio": 0.30000001192092896,
-                    "escapeLeap.flight": 1.1,
+                    "escapeLeap.flight": 1.100000023841858,
                     "escapeLeap.height": 30.0,
+                    "escapeLeap.landAttack": false,
                     "escapeLeap.landRecovery": 0.550000011920929,
+                    "escapeLeap.landing": 0,
                     "escapeLeap.windup": 0.25,
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
-                    "hoverLeap.hover": 8.17,
+                    "hoverLeap.hover": 8.170000076293945,
+                    "hoverLeap.landAttack": false,
                     "hoverLeap.landRecovery": 0.6299999952316284,
+                    "hoverLeap.landing": 2,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
                     "strafeDistanceGain": 3.0,
@@ -70,6 +76,7 @@
                     ],
                     "isRootMotionActive": false,
                     "jumpImpulse": false,
+                    "moveIntensity": 1.0,
                     "overrideSpeed": -1.0,
                     "speedMultiplier": 1.0,
                     "use3DVelocity": false
@@ -111,9 +118,6 @@
                     "objectLayer": 2,
                     "walkSpeed": 3.0
                 },
-                "Player Just Evade Component": {
-                    "isJustSuccess": false
-                },
                 "Knockback": {
                     "duration": 0.18000000715255737,
                     "stunDuration": 0.3499999940395355,
@@ -147,15 +151,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        41.53913879394531,
-                        0.628829300403595,
-                        -30.691482543945313
+                        -29.71772575378418,
+                        0.6644865274429321,
+                        -38.089561462402344
                     ],
                     "rotation": [
                         -0.0,
-                        -0.33738040924072266,
+                        -0.41092991828918457,
                         -0.0,
-                        0.9413684010505676
+                        0.9116669297218323
                     ],
                     "scale": [
                         5.0,

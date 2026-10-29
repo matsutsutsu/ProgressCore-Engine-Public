@@ -114,9 +114,26 @@ private:
     // 下がる移動は、OnEnterState で予約した MoveTo が運ぶ
     void ProcessBackStep(BossActionComponent &bossAction, const Frame &f);
 
-    // 跳躍。溜め → 飛行 → 着地硬直。跳躍3種はすべてここを通り、違いは着地点だけ
-    // 踏み切りの瞬間に飛ぶ移動を予約し、滞空は 上がる → 留まる → 降りる をつなぐ
+    // 跳躍。溜め → 飛行 → 着地硬直。跳躍3種はすべてここを通り、違いは leapDef（跳び方）だけ
+    // 段を見て、下の ProcessLeapWindup〜ProcessLeapLanding を呼び分ける
     void ProcessLeap(BossActionComponent &bossAction, const Frame &f);
+
+    // 跳躍の溜め。足を止めて相手を向き、溜めの時間が来たら踏み切る
+    void ProcessLeapWindup(BossActionComponent &bossAction, const Frame &f);
+
+    // 跳躍の踏み切り。着地点と飛ぶ向きを決め、最初の移動を予約する
+    // 滞空は頂点へ上がるところまで。踏み切りの瞬間に1回だけ呼ぶ
+    void TakeOffLeap(BossActionComponent &bossAction, const Frame &f) const;
+
+    // 予約した移動が終わったときに、跳躍の次の段へ進む
+    // 滞空だけは 上がる → 頂点に留まる → 降りる の3段。ほかは着地する
+    void AdvanceLeapPhase(BossActionComponent &bossAction, const Frame &f) const;
+
+    // 跳躍の空中。跳んでいる向きへ体を向ける（滞空は相手を向く）
+    void ProcessLeapAir(BossActionComponent &bossAction, const Frame &f);
+
+    // 跳躍の着地硬直。硬直を数え、跳躍攻撃でなければ相手へゆっくり向き直る
+    void ProcessLeapLanding(BossActionComponent &bossAction, const Frame &f);
 
     // 突進攻撃。下がる → 空中で狙う → 構える → 突っ込む → 走り続ける → 止まる → 硬直
     // 段の移動が終わるたびに、次の段の移動を予約する
@@ -131,13 +148,6 @@ private:
     void LockDashAim(BossActionComponent                &bossAction,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext                &battle) const;
-
-    // 踏み切りの瞬間に1回だけ呼ぶ。
-    // 着地点（ステージ内に収めた値）と飛ぶ向きを決め、着地点を返す。
-    DirectX::SimpleMath::Vector3 BeginLeapFlight(BossActionComponent                &bossAction,
-                                                 const DirectX::SimpleMath::Vector3 &takeoffPos,
-                                                 const DirectX::SimpleMath::Vector3 &playerPos,
-                                                 const BattleContext                &battle) const;
 
     /**
      * @brief 中央を挟んで相手と反対側の着地点を返す。
@@ -182,6 +192,9 @@ private:
     // BT が出した技(ActionID) を、体の動き(BossActionState) へ変換する。
     // 知らない技は None。
     BossActionState TranslateAction(ActionID actionId) const;
+
+    // 跳躍の技(ActionID)に対応する跳び方を返す。跳躍の技でなければ nullptr
+    const BossLeapDef *LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const;
 
     // 技に入った瞬間だけ走る処理
     // 前の技の移動の予約を取り消し、進む向きと技ごとの準備（後方ステップは移動の予約）をする

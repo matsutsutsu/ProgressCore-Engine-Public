@@ -25,6 +25,7 @@ namespace
      *
      * カリング用に各描画エンティティが持つ worldAABB（DirectX::BoundingBox）を使うので、追加のデータは要らない。
      * BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける。
+     * カメラを包んでいる箱（ステージ全体など）は拾わない。それらはヒエラルキーから選ぶ。
      *
      * @param world  探す World。
      * @param origin レイの始点（ワールド）。
@@ -60,8 +61,10 @@ namespace
                 if (chunk->IsEntityDestroyed(i)) continue;
                 if (vis && !vis[i].isVisible) continue; // 非表示は拾わない
 
+                // カメラを包む箱は無視する
+                //   始点が箱の中だと Intersects は負の dist を返し、何をクリックしてもその箱が最も手前になるため
                 float dist = 0.0f;
-                if (boxes[i].worldAABB.Intersects(o, d, dist) && dist < bestDist)
+                if (boxes[i].worldAABB.Intersects(o, d, dist) && dist > 0.0f && dist < bestDist)
                 {
                     bestDist = dist;
                     best     = chunk->GetEntityByIndex(i);

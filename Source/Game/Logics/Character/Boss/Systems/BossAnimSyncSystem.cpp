@@ -33,7 +33,7 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         const bool leap      = (boss.currentState == BossActionState::Leap);
         const bool isLeaping = leap && (boss.leapPhase != BossLeapPhase::Recovery);
         anim.SetBool(HASH_IS_LEAPING, isLeaping);
-        anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapLandAttack);
+        anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapDef.landAttack);
 
         // --- 突進・後方ステップ ---
 

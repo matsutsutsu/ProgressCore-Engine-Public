@@ -405,6 +405,18 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 
 
 
+// 跳躍の技(ActionID)に対応する跳び方を返す。跳躍の技でなければ nullptr
+// 跳躍を増やすときは、ここに1行と BossActionComponent に BossLeapDef を1つ足す
+const BossLeapDef *BossActionSystem::LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const
+{
+    if (actionId == A_BossLeapEscape) return &bossAction.escapeLeap;
+    if (actionId == A_BossLeapAttack) return &bossAction.attackLeap;
+    if (actionId == A_BossAirHover) return &bossAction.hoverLeap;
+    return nullptr;
+}
+
+
+
 // 状態遷移に入った瞬間呼ばれる処理
 void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossAction,
                                     const Frame &f) const
@@ -456,30 +468,15 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
         bossAction.strafeFlipped = false;
         break;
 
-    case BossActionState::Leap: {
-        // 跳躍の準備。どの技かで、跳び方と着地点の決め方を選ぶ
-        // 着地点そのものは、踏み切りの瞬間に BeginLeapFlight が決める
-        bossAction.leapPhase      = BossLeapPhase::Windup;
-        bossAction.leapLandAttack = false; // 着地に判定を出すのは跳躍攻撃だけ
-
-        if (actionId == A_BossLeapEscape)
+    case BossActionState::Leap:
+        // 跳躍の準備。どの技かで跳び方（着地点の決め方・着地で攻撃するかを含む）を写す
+        // 着地点そのものは、踏み切りの瞬間に TakeOffLeap が決める
+        bossAction.leapPhase = BossLeapPhase::Windup;
+        if (const BossLeapDef *def = LeapDefOf(actionId, bossAction))
         {
-            bossAction.leapDef     = bossAction.escapeLeap;
-            bossAction.leapLanding = BossLeapLanding::AwayToCenter;
-        }
-        else if (actionId == A_BossLeapAttack)
-        {
-            bossAction.leapDef        = bossAction.attackLeap;
-            bossAction.leapLanding    = BossLeapLanding::TowardTarget;
-            bossAction.leapLandAttack = true;
-        }
-        else if (actionId == A_BossAirHover)
-        {
-            bossAction.leapDef     = bossAction.hoverLeap;
-            bossAction.leapLanding = BossLeapLanding::InPlace;
+            bossAction.leapDef = *def;
         }
         break;
-    }
 
     case BossActionState::Dash: {
         // 突進の準備。段を最初に戻す
@@ -541,90 +538,155 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossAction, const Fr
 
 
 // ボスの跳躍。溜め → 放物線で飛ぶ → 着地硬直
-// 跳躍3種はすべてここを通り、違いは着地点だけ。飛ぶ移動は予約が運ぶ
+// 跳躍3種はすべてここを通り、違いは leapDef（跳び方）だけ。飛ぶ移動は予約が運ぶ
 void BossActionSystem::ProcessLeap(BossActionComponent &bossAction, const Frame &f)
 {
-    // --- 溜め ---
+    // 処理フロー:
+    // 1. 溜め（時間が来たら踏み切る）
+    // 2. 予約した移動が終わったら、次の段へ進む
+    // 3. 空中なら向きを、着地した後なら硬直を進める
 
-    // 足を止めて相手の方を向く
-    // 着地点はまだ決めない（溜めを見てから動いた相手に付いていかない）
     if (bossAction.leapPhase == BossLeapPhase::Windup)
     {
-        // 溜め中は、相手の方を向き続ける
-        f.movement.desiredVelocity = Vector3::Zero;
-        FaceToward(f.trans, FlatToward(f.trans.position, f.playerPos), bossAction.turnSpeed, f.dt, f.joltHandle);
+        ProcessLeapWindup(bossAction, f);
 
-        // 溜めの時間が来るまで、飛ぶ移動の予約をしない
-        if (bossAction.actionTimer < bossAction.leapDef.windup) return;
-
-        // 踏み切りの瞬間に1回だけ、着地点を決めて飛ぶ移動を予約する
-        // 滞空は「頂点へ上がる」だけを予約し、留まる・降りるは後で続けて予約する
-        const Vector3 takeoff    = GetCharacterWorldPosition(f.joltHandle);
-        const Vector3 landing    = BeginLeapFlight(bossAction, takeoff, f.playerPos, f.battle);
-        const float   flightTime = (std::max)(0.05f, bossAction.leapDef.flight);
-
-        if (bossAction.leapDef.hover > 0.0f)
-        {
-            Vector3 apex = Vector3::Lerp(takeoff, landing, 0.5f);
-            apex.y += bossAction.leapDef.height;
-            f.movement.MoveTo(apex, flightTime * 0.5f, {.ease = MoveEase::EaseOut});
-        }
-        else
-        {
-            f.movement.MoveTo(landing, flightTime, {.height = bossAction.leapDef.height});
-        }
-        bossAction.leapPhase = BossLeapPhase::Flight;
+        // まだ溜めている。踏み切ったフレームは、そのまま空中の処理へ進む
+        if (bossAction.leapPhase == BossLeapPhase::Windup) return;
     }
 
-    // --- 飛行の段の切り替え ---
+    if (!f.movement.IsMoving()) AdvanceLeapPhase(bossAction, f);
 
-    // 予約した移動が終わったら、次の段へ進む
-    // 滞空だけは 上がる → 頂点に留まる → 降りる の3段
-    if (!f.movement.IsMoving())
+    if (bossAction.leapPhase == BossLeapPhase::Recovery)
     {
-        const float halfFlight = (std::max)(0.05f, bossAction.leapDef.flight) * 0.5f;
-
-        if (bossAction.leapPhase == BossLeapPhase::Flight && bossAction.leapDef.hover > 0.0f)
-        {
-            f.movement.Hold(bossAction.leapDef.hover);
-            bossAction.leapPhase = BossLeapPhase::Hover;
-        }
-        else if (bossAction.leapPhase == BossLeapPhase::Hover)
-        {
-            f.movement.MoveTo(bossAction.leapLandingPos, halfFlight, {.ease = MoveEase::EaseIn});
-            bossAction.leapPhase = BossLeapPhase::Descent;
-        }
-        else
-        {
-            // 着地した。速度は予約が 0 にして止める
-            bossAction.leapPhase = BossLeapPhase::Recovery;
-        }
+        ProcessLeapLanding(bossAction, f);
     }
-
-    // --- 飛行 ---
-
-    if (bossAction.leapPhase != BossLeapPhase::Recovery)
+    else
     {
-        // 跳んでいる向きへ体を向ける
-        // 滞空だけは進まないので、浮いたまま相手を向き続ける
-        Vector3 lookDir = bossAction.lockedDirection;
-        if (bossAction.leapLanding == BossLeapLanding::InPlace)
-        {
-            lookDir = FlatToward(f.trans.position, f.playerPos);
-        }
-        FaceToward(f.trans, lookDir, bossAction.turnSpeed, f.dt, f.joltHandle);
+        ProcessLeapAir(bossAction, f);
+    }
+}
 
-        bossAction.moveDirection = bossAction.lockedDirection;
-        return;
+
+
+// 跳躍の溜め。足を止めて相手を向き、溜めの時間が来たら踏み切る
+// 着地点はまだ決めない（溜めを見てから動いた相手に付いていかない）
+void BossActionSystem::ProcessLeapWindup(BossActionComponent &bossAction, const Frame &f)
+{
+    // 溜め中は、相手の方を向き続ける
+    f.movement.desiredVelocity = Vector3::Zero;
+    FaceToward(f.trans, FlatToward(f.trans.position, f.playerPos), bossAction.turnSpeed, f.dt, f.joltHandle);
+
+    // 溜めの時間が来るまで、飛ぶ移動の予約をしない
+    if (bossAction.actionTimer < bossAction.leapDef.windup) return;
+
+    TakeOffLeap(bossAction, f);
+}
+
+
+
+// 跳躍の踏み切り。着地点と飛ぶ向きを決め、最初の移動を予約する
+// 滞空は「頂点へ上がる」だけを予約し、留まる・降りるは AdvanceLeapPhase が続ける
+void BossActionSystem::TakeOffLeap(BossActionComponent &bossAction, const Frame &f) const
+{
+    // 踏み切った地点を覚える（跳躍中のドローンの陣形の高さに使う）
+    const Vector3 takeoff     = GetCharacterWorldPosition(f.joltHandle);
+    bossAction.leapTakeoffPos = takeoff;
+
+    // 跳び方の決め方で着地点を出す
+    switch (bossAction.leapDef.landing)
+    {
+    case BossLeapLanding::AwayToCenter:
+        bossAction.leapLandingPos = AwayToCenterLandingPoint(bossAction, takeoff, f.playerPos, f.battle);
+        break;
+    case BossLeapLanding::TowardTarget:
+        bossAction.leapLandingPos = TowardTargetLandingPoint(bossAction, takeoff, f.playerPos);
+        break;
+    case BossLeapLanding::InPlace:
+        bossAction.leapLandingPos = takeoff; // 上がって同じ所へ降りる（滞空）
+        break;
     }
 
-    // --- 着地硬直 ---
+    // 着地点をステージの内側へ収める
+    // 壁の外だと空中で壁を押し続け、着地の時刻と攻撃判定がずれる
+    bossAction.leapLandingPos = ClampInsideArena(bossAction.leapLandingPos, f.battle);
 
+    // 飛ぶ向き（体を向ける向き）を、踏み切り→着地点で固定する
+    Vector3 travel = FlatToward(takeoff, bossAction.leapLandingPos);
+    if (travel.LengthSquared() > 0.0001f)
+    {
+        travel.Normalize();
+        bossAction.lockedDirection = travel;
+    }
+
+    // 飛ぶ移動を予約する
+    // 滞空は頂点まで速く上がって止まり、ほかは着地点まで放物線で飛ぶ
+    const float flightTime = (std::max)(0.05f, bossAction.leapDef.flight);
+    if (bossAction.leapDef.hover > 0.0f)
+    {
+        Vector3 apex = Vector3::Lerp(takeoff, bossAction.leapLandingPos, 0.5f);
+        apex.y += bossAction.leapDef.height;
+        f.movement.MoveTo(apex, flightTime * 0.5f, {.ease = MoveEase::EaseOut});
+    }
+    else
+    {
+        f.movement.MoveTo(bossAction.leapLandingPos, flightTime, {.height = bossAction.leapDef.height});
+    }
+    bossAction.leapPhase = BossLeapPhase::Flight;
+}
+
+
+
+// 予約した移動が終わったときに、跳躍の次の段へ進む
+// 滞空だけは 上がる → 頂点に留まる → 降りる の3段。ほかは着地する
+void BossActionSystem::AdvanceLeapPhase(BossActionComponent &bossAction, const Frame &f) const
+{
+    const float halfFlight = (std::max)(0.05f, bossAction.leapDef.flight) * 0.5f;
+
+    if (bossAction.leapPhase == BossLeapPhase::Flight && bossAction.leapDef.hover > 0.0f)
+    {
+        // 頂点に着いた。その場に留まる
+        f.movement.Hold(bossAction.leapDef.hover);
+        bossAction.leapPhase = BossLeapPhase::Hover;
+    }
+    else if (bossAction.leapPhase == BossLeapPhase::Hover)
+    {
+        // 留まり終えた。ゆっくり降り始めて、着地点で一番速くなる
+        f.movement.MoveTo(bossAction.leapLandingPos, halfFlight, {.ease = MoveEase::EaseIn});
+        bossAction.leapPhase = BossLeapPhase::Descent;
+    }
+    else
+    {
+        // 着地した。速度は予約が 0 にして止める
+        bossAction.leapPhase = BossLeapPhase::Recovery;
+    }
+}
+
+
+
+// 跳躍の空中。跳んでいる向きへ体を向ける
+// 滞空だけは進まないので、浮いたまま相手を向き続ける
+void BossActionSystem::ProcessLeapAir(BossActionComponent &bossAction, const Frame &f)
+{
+    Vector3 lookDir = bossAction.lockedDirection;
+    if (bossAction.leapDef.landing == BossLeapLanding::InPlace)
+    {
+        lookDir = FlatToward(f.trans.position, f.playerPos);
+    }
+    FaceToward(f.trans, lookDir, bossAction.turnSpeed, f.dt, f.joltHandle);
+
+    bossAction.moveDirection = bossAction.lockedDirection;
+}
+
+
+
+// 跳躍の着地硬直。硬直を数え、跳躍攻撃でなければ相手へゆっくり向き直る
+void BossActionSystem::ProcessLeapLanding(BossActionComponent &bossAction, const Frame &f)
+{
     ProcessRecovery(bossAction, bossAction.leapDef.landRecovery, f);
 
     // 跳躍攻撃の硬直中は向きを固定する
     // 相手を追うと、横へ避けても判定が付いてきて後隙を攻撃できない
-    if (bossAction.leapLandAttack) return;
+    if (bossAction.leapDef.landAttack) return;
 
     FaceToward(f.trans, FlatToward(f.trans.position, f.playerPos), bossAction.idleTurnSpeed, f.dt, f.joltHandle);
 }
@@ -761,44 +823,6 @@ void BossActionSystem::LockDashAim(BossActionComponent &bossAction, const Vector
     // 突っ込む長さは、実際に走る距離（高さを含む）÷速さ
     const float length        = Vector3::Distance(bossAction.dashAimPos, bossAction.dashEndPos);
     bossAction.dashChargeTime = length / (std::max)(1.0f, bossAction.dashSpeed);
-}
-
-
-
-// 跳躍の着地点と飛ぶ向きを決め、着地点を返す
-// 踏み切りの瞬間に1回だけ呼ぶ
-Vector3 BossActionSystem::BeginLeapFlight(BossActionComponent &bossAction, const Vector3 &takeoffPos,
-                                          const Vector3 &playerPos, const BattleContext &battle) const
-{
-    // 踏み切った地点を覚える（跳躍中のドローンの陣形の高さに使う）
-    bossAction.leapTakeoffPos = takeoffPos;
-
-    // 技ごとの決め方で着地点を出す
-    switch (bossAction.leapLanding)
-    {
-    case BossLeapLanding::AwayToCenter:
-        bossAction.leapLandingPos = AwayToCenterLandingPoint(bossAction, takeoffPos, playerPos, battle);
-        break;
-    case BossLeapLanding::TowardTarget:
-        bossAction.leapLandingPos = TowardTargetLandingPoint(bossAction, takeoffPos, playerPos);
-        break;
-    case BossLeapLanding::InPlace:
-        bossAction.leapLandingPos = takeoffPos; // 上がって同じ所へ降りる（滞空）
-        break;
-    }
-
-    // 着地点をステージの内側へ収める
-    // 壁の外だと空中で壁を押し続け、着地の時刻と攻撃判定がずれる
-    bossAction.leapLandingPos = ClampInsideArena(bossAction.leapLandingPos, battle);
-
-    // 飛ぶ向き（体を向ける向き）を、踏み切り→着地点で固定する
-    Vector3 travel = FlatToward(takeoffPos, bossAction.leapLandingPos);
-    if (travel.LengthSquared() > 0.0001f)
-    {
-        travel.Normalize();
-        bossAction.lockedDirection = travel;
-    }
-    return bossAction.leapLandingPos;
 }
 
 
