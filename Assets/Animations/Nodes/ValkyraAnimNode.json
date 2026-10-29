@@ -967,6 +967,21 @@
                             "op": 1,
                             "paramHash": 2571090873,
                             "paramName": "SideTravelPhase",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 94174023
+                },
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
                             "threshold": 1.5
                         }
                     ],
@@ -1107,6 +1122,21 @@
             "speedCurveName": "",
             "stateHash": 2269152588,
             "transitions": [
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 198015144
+                },
                 {
                     "blendDuration": 0.15000000596046448,
                     "conditions": [

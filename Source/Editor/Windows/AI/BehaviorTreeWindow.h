@@ -356,6 +356,12 @@ private:
     // スコア選択の子の、一覧表に出す名前（Cooldown などを下へたどり、最初に名前の付いたまとまりの名前）
     std::string GetUtilityChildName(const EditorBTNode &child);
 
+    // スコア選択の子を、得意な距離の近い順に左から並べ直し、整列を予約する。並びが変わったら true
+    bool SortUtilityChildrenByDistance(const EditorBTNode &selector);
+
+    // 一覧表の1マスに、距離のものさしと、その子が点数を取れる距離の帯を描く
+    void DrawDistanceBand(const EditorBTNode &child, float width) const;
+
     // ============================================================
     // BehaviorTreeWindow_Outliner.cpp : 左ペイン
     // ============================================================

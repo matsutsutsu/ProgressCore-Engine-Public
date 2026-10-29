@@ -105,12 +105,6 @@ namespace
     // （ValkyraAnimNode.json の BackStepStop）
     const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 
-    // 横移動の動き出し・止まりのモーションを流すステート（ValkyraAnimNode.json）
-    const uint32_t kSideTravelLeftStartState  = CCL::Utils::HashString("SideTravelLeftStart");
-    const uint32_t kSideTravelLeftStopState   = CCL::Utils::HashString("SideTravelLeftStop");
-    const uint32_t kSideTravelRightStartState = CCL::Utils::HashString("SideTravelRightStart");
-    const uint32_t kSideTravelRightStopState  = CCL::Utils::HashString("SideTravelRightStop");
-
     // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）
     // 跳躍3種は同じ "Leap"。着地のクリップは BossAnimSyncSystem が切り替える
     const uint32_t kSideTravelLeftTrigger  = CCL::Utils::HashString("SideTravelLeft");
@@ -511,27 +505,32 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossAction, const Fr
 
 
 // ボスの横移動。相手を向いたまま、入った瞬間に決めた真横へ進む
-// 動き出し → 一定の速さ → 止まり。各段の移動は予約が運び、ここでは段の切り替えと向きだけを決める
+// 加速 → 最高速 → 減速。各段の移動は予約が運び、ここでは段の切り替えと向きだけを決める
 void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const Frame &f)
 {
     // --- 段の切り替え ---
 
     // 予約した移動が終わったら、次の段の移動を予約する
-    // 動き出しの移動は、入った瞬間に BeginSideTravel が予約済み
+    // 加速の移動は、入った瞬間に BeginSideTravel が予約済み
     if (!f.movement.IsMoving())
     {
         switch (bossAction.sideTravelPhase)
         {
         case BossSideTravelPhase::Start:
             // 最高速のまま、残りの距離を進む
-            f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelTopSpeed,
-                                       bossAction.sideTravelCruiseTime, bossAction.sideTravelTopSpeed);
-            bossAction.sideTravelPhase = BossSideTravelPhase::Travel;
-            break;
+            // 残りが無ければ減速へ直接進む（最高速の1フレームを挟むと、その分だけ進みすぎる）
+            if (bossAction.sideTravelCruiseTime > 0.0f)
+            {
+                f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelSpeed,
+                                           bossAction.sideTravelCruiseTime, bossAction.sideTravelSpeed);
+                bossAction.sideTravelPhase = BossSideTravelPhase::Travel;
+                break;
+            }
+            [[fallthrough]];
 
         case BossSideTravelPhase::Travel:
-            // 最高速から 0 へ、止まりのモーションの長さで落として止まる
-            f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelTopSpeed,
+            // 最高速から 0 へ減速して止まる
+            f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelSpeed,
                                        bossAction.sideTravelStopTime, 0.0f);
             bossAction.sideTravelPhase = BossSideTravelPhase::Stop;
             break;
@@ -873,29 +872,30 @@ void BossActionSystem::BeginSideTravel(ActionID actionId, float distance, BossAc
     const Vector3 end   = StraightPointInArena(now, bossAction.lockedDirection, distance, f.battle);
     const float   reach = FlatToward(now, end).Length();
 
-    // --- 段の長さと速さ ---
+    // --- 段の長さ ---
 
-    // 動き出し・止まりの長さは、アニメのクリップの長さに合わせる
-    const uint32_t startState = bossAction.sideTravelLeft ? kSideTravelLeftStartState : kSideTravelRightStartState;
-    const uint32_t stopState  = bossAction.sideTravelLeft ? kSideTravelLeftStopState : kSideTravelRightStopState;
-    const float    startTime  = f.anim ? StatePlayTime(f.anim->internalGraph, startState, 0.5f) : 0.5f;
-    bossAction.sideTravelStopTime = f.anim ? StatePlayTime(f.anim->internalGraph, stopState, 0.5f) : 0.5f;
-
-    // 速さは直線で上げ下げするので、動き出しと止まりの間に進むのは 最高速×時間÷2
-    // 残りを一定の速さで進む。距離が足りなければ最高速を下げ、一定の速さの区間を 0 にする
-    const float rampTime = (startTime + bossAction.sideTravelStopTime) * 0.5f;
-    float       topSpeed = (std::max)(1.0f, bossAction.sideTravelSpeed);
-    float       cruise   = reach / topSpeed - rampTime;
-    if (cruise < 0.0f)
+    // 速さは直線で上げ下げするので、加速と減速の間に進むのは 最高速×時間÷2。残りを最高速で進む
+    // 距離が足りなければ最高速は落とさず、加速と減速を同じ割合で縮める（遅く動くより、早く止まる）
+    const float speed     = (std::max)(1.0f, bossAction.sideTravelSpeed);
+    float       accelTime = (std::max)(0.0f, bossAction.sideTravelAccelTime);
+    float       decelTime = (std::max)(0.0f, bossAction.sideTravelDecelTime);
+    const float rampReach = speed * (accelTime + decelTime) * 0.5f;
+    float       cruise    = 0.0f;
+    if (reach >= rampReach)
     {
-        topSpeed = (rampTime > 0.0f) ? reach / rampTime : 0.0f;
-        cruise   = 0.0f;
+        cruise = (reach - rampReach) / speed;
     }
-    bossAction.sideTravelTopSpeed   = topSpeed;
+    else
+    {
+        const float scale = reach / rampReach;
+        accelTime *= scale;
+        decelTime *= scale;
+    }
     bossAction.sideTravelCruiseTime = cruise;
+    bossAction.sideTravelStopTime   = decelTime;
 
-    // 0 から最高速へ、動き出しのモーションの長さで速くする
-    f.movement.MoveInDirection(bossAction.lockedDirection, 0.0f, startTime, topSpeed);
+    // 0 から最高速へ加速する
+    f.movement.MoveInDirection(bossAction.lockedDirection, 0.0f, accelTime, speed);
 }
 
 

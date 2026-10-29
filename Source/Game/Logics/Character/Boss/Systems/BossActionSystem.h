@@ -109,7 +109,7 @@ private:
     // 動き出し → 一定の速さ → 止まり。段の移動が終わるたびに、次の段の移動を予約する
     void ProcessSideTravel(BossActionComponent &bossAction, const Frame &f);
 
-    // 横移動の準備。左右と進む向きを決め、距離から最高速と一定の速さで進む長さを出して、動き出しを予約する
+    // 横移動の準備。左右と進む向きを決め、距離から各段の長さを出して、加速を予約する
     // 距離は壁の手前までに縮める
     void BeginSideTravel(ActionID actionId, float distance, BossActionComponent &bossAction, const Frame &f) const;
 

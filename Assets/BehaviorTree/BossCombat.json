@@ -237,34 +237,34 @@
             "startPin": 5
         },
         {
+            "endPin": 722,
             "id": 723,
-            "startPin": 5,
-            "endPin": 722
+            "startPin": 5
         },
         {
+            "endPin": 725,
             "id": 726,
-            "startPin": 5,
-            "endPin": 725
+            "startPin": 5
         },
         {
+            "endPin": 728,
             "id": 729,
-            "startPin": 5,
-            "endPin": 728
+            "startPin": 5
         },
         {
+            "endPin": 731,
             "id": 732,
-            "startPin": 233,
-            "endPin": 731
+            "startPin": 233
         },
         {
+            "endPin": 734,
             "id": 735,
-            "startPin": 400,
-            "endPin": 734
+            "startPin": 400
         },
         {
+            "endPin": 737,
             "id": 738,
-            "startPin": 5,
-            "endPin": 737
+            "startPin": 5
         }
     ],
     "editor_nodes": [
@@ -274,7 +274,7 @@
             "inputPinId": 0,
             "name": "ROOT",
             "outputPinId": 2,
-            "posX": 6608.0,
+            "posX": 3815.0,
             "posY": 0.0,
             "type": 0
         },
@@ -284,8 +284,8 @@
             "inputPinId": 4,
             "name": "技選択",
             "outputPinId": 5,
-            "posX": 6548.0,
-            "posY": 158.0,
+            "posX": 3765.0,
+            "posY": 210.0,
             "type": 9
         },
         {
@@ -294,8 +294,8 @@
             "inputPinId": 150,
             "name": "ボス：被弾がかさんだら退く",
             "outputPinId": 151,
-            "posX": -2726.0,
-            "posY": 478.0,
+            "posX": 1622.0,
+            "posY": 451.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -320,8 +320,8 @@
             "inputPinId": 153,
             "outputPinId": 0,
             "param": 3.0,
-            "posX": -2994.0,
-            "posY": 670.0,
+            "posX": 447.0,
+            "posY": 692.0,
             "type": 3
         },
         {
@@ -331,8 +331,8 @@
             "interrupt": true,
             "name": "ドローン：横払い",
             "outputPinId": 233,
-            "posX": 6195.0,
-            "posY": 558.0,
+            "posX": 95.0,
+            "posY": 451.0,
             "score": {
                 "base": 10.0,
                 "cooldown": 6.0,
@@ -347,67 +347,67 @@
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 1230.0,
+            "height": 1134.0,
             "id": 329,
             "inputPinId": 0,
             "name": "被弾時の後退処理",
             "outputPinId": 0,
-            "posX": -3392.0,
-            "posY": 384.0,
+            "posX": 415.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 2384.0
+            "width": 2614.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 734.0,
+            "height": 411.0,
             "id": 330,
             "inputPinId": 0,
             "name": "ステージ中央に退避",
             "outputPinId": 0,
-            "posX": -848.0,
-            "posY": 368.0,
+            "posX": 3021.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1200.0
+            "width": 913.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 614.0,
+            "height": 152.0,
             "id": 333,
             "inputPinId": 0,
             "name": "【ドローン】縦割り",
             "outputPinId": 0,
-            "posX": 2992.0,
-            "posY": 384.0,
+            "posX": 4542.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1660.0
+            "width": 219.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 614.0,
+            "height": 152.0,
             "id": 334,
             "inputPinId": 0,
             "name": "【ドローン】弾幕",
             "outputPinId": 0,
-            "posX": 11296.0,
-            "posY": 366.0,
+            "posX": 7557.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1660.0
+            "width": 205.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 584.0,
+            "height": 170.0,
             "id": 337,
             "inputPinId": 0,
             "name": "【ドローン】挟み込み",
             "outputPinId": 0,
-            "posX": 7280.0,
-            "posY": 480.0,
+            "posX": 4753.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1660.0
+            "width": 244.0
         },
         {
             "actionId": 0,
@@ -415,8 +415,8 @@
             "inputPinId": 364,
             "name": "ボス：中央へ跳んで逃げる",
             "outputPinId": 365,
-            "posX": -340.0,
-            "posY": 434.0,
+            "posX": 3377.0,
+            "posY": 451.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -442,8 +442,8 @@
             "inputPinId": 367,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": -576.0,
-            "posY": 878.0,
+            "posX": 3053.0,
+            "posY": 692.0,
             "type": 3
         },
         {
@@ -453,8 +453,8 @@
             "inputPinId": 370,
             "outputPinId": 0,
             "param": 70.0,
-            "posX": -370.0,
-            "posY": 878.0,
+            "posX": 3289.0,
+            "posY": 692.0,
             "type": 3
         },
         {
@@ -464,8 +464,8 @@
             "inputPinId": 373,
             "outputPinId": 0,
             "param": 1.899999976158142,
-            "posX": 30.0,
-            "posY": 878.0,
+            "posX": 3722.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -474,8 +474,8 @@
             "inputPinId": 381,
             "name": "ボス：跳躍攻撃",
             "outputPinId": 382,
-            "posX": 4944.0,
-            "posY": 494.0,
+            "posX": 6125.0,
+            "posY": 451.0,
             "score": {
                 "base": 7.0,
                 "bonus": [
@@ -501,8 +501,8 @@
             "inputPinId": 387,
             "outputPinId": 0,
             "param": 2.5999999046325684,
-            "posX": 4975.0,
-            "posY": 910.0,
+            "posX": 6162.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -511,8 +511,8 @@
             "inputPinId": 393,
             "name": "ドローン：滞空して追従攻撃",
             "outputPinId": 394,
-            "posX": 10080.0,
-            "posY": 430.0,
+            "posX": 6937.0,
+            "posY": 451.0,
             "score": {
                 "base": 6.0,
                 "cooldown": 40.0,
@@ -530,8 +530,8 @@
             "inputPinId": 399,
             "name": "滞空(主)＋陣形(従)",
             "outputPinId": 400,
-            "posX": 10078.0,
-            "posY": 816.0,
+            "posX": 6729.0,
+            "posY": 692.0,
             "type": 8
         },
         {
@@ -541,8 +541,8 @@
             "inputPinId": 402,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 9598.0,
-            "posY": 1054.0,
+            "posX": 6542.0,
+            "posY": 951.0,
             "type": 4
         },
         {
@@ -552,48 +552,48 @@
             "inputPinId": 417,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 10426.0,
-            "posY": 846.0,
+            "posX": 7172.0,
+            "posY": 692.0,
             "type": 4
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 584.0,
+            "height": 411.0,
             "id": 428,
             "inputPinId": 0,
             "name": "横なぎ",
             "outputPinId": 0,
-            "posX": 5408.0,
-            "posY": 480.0,
+            "posX": -32.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1660.0
+            "width": 455.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 648.0,
+            "height": 393.0,
             "id": 429,
             "inputPinId": 0,
             "name": "【近接】跳躍攻撃",
             "outputPinId": 0,
-            "posX": 4704.0,
-            "posY": 384.0,
+            "posX": 5933.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 640.0
+            "width": 585.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 970.0,
+            "height": 652.0,
             "id": 430,
             "inputPinId": 0,
             "name": "【ドローン】　滞空ドローン攻撃",
             "outputPinId": 0,
-            "posX": 9456.0,
-            "posY": 384.0,
+            "posX": 6510.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1424.0
+            "width": 1055.0
         },
         {
             "actionId": 0,
@@ -601,8 +601,8 @@
             "inputPinId": 437,
             "name": "重み付きセレクター（Weighted Selector）",
             "outputPinId": 438,
-            "posX": -2434.0,
-            "posY": 670.0,
+            "posX": 1828.0,
+            "posY": 692.0,
             "type": 7
         },
         {
@@ -612,8 +612,8 @@
             "inputPinId": 452,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": -2738.0,
-            "posY": 670.0,
+            "posX": 683.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -623,8 +623,8 @@
             "inputPinId": 459,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": -2562.0,
-            "posY": 1438.0,
+            "posX": 1588.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -634,8 +634,8 @@
             "inputPinId": 464,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": -1376.0,
-            "posY": 1451.0,
+            "posX": 2640.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -645,8 +645,8 @@
             "inputPinId": 466,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": -1579.0,
-            "posY": 1451.0,
+            "posX": 2431.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -656,8 +656,8 @@
             "inputPinId": 468,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": -2095.0,
-            "posY": 1454.0,
+            "posX": 2005.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -667,8 +667,8 @@
             "inputPinId": 470,
             "outputPinId": 0,
             "param": 0.5,
-            "posX": -2298.0,
-            "posY": 1454.0,
+            "posX": 1785.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -678,8 +678,8 @@
             "inputPinId": 472,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": -1792.0,
-            "posY": 1451.0,
+            "posX": 2202.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
@@ -688,8 +688,8 @@
             "inputPinId": 483,
             "name": "ドローン操作",
             "outputPinId": 484,
-            "posX": -1468.0,
-            "posY": 1195.0,
+            "posX": 2499.0,
+            "posY": 1192.0,
             "type": 2
         },
         {
@@ -698,8 +698,8 @@
             "inputPinId": 499,
             "name": "ステージ中央に退避する",
             "outputPinId": 500,
-            "posX": -3106.0,
-            "posY": 1022.0,
+            "posX": 1125.0,
+            "posY": 951.0,
             "type": 2
         },
         {
@@ -709,8 +709,8 @@
             "inputPinId": 503,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": -3346.0,
-            "posY": 1246.0,
+            "posX": 919.0,
+            "posY": 1192.0,
             "type": 3
         },
         {
@@ -720,8 +720,8 @@
             "inputPinId": 509,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": -2930.0,
-            "posY": 1246.0,
+            "posX": 1352.0,
+            "posY": 1192.0,
             "type": 4
         },
         {
@@ -731,8 +731,8 @@
             "inputPinId": 517,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": -3119.0,
-            "posY": 1262.0,
+            "posX": 1155.0,
+            "posY": 1192.0,
             "type": 4
         },
         {
@@ -742,8 +742,8 @@
             "inputPinId": 520,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": -143.0,
-            "posY": 878.0,
+            "posX": 3525.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -753,8 +753,8 @@
             "inputPinId": 523,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 4786.0,
-            "posY": 910.0,
+            "posX": 5965.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -763,8 +763,8 @@
             "inputPinId": 537,
             "name": "ボス：突進攻撃",
             "outputPinId": 538,
-            "posX": 2224.0,
-            "posY": 462.0,
+            "posX": 4256.0,
+            "posY": 451.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
@@ -790,22 +790,22 @@
             "inputPinId": 540,
             "outputPinId": 0,
             "param": 3.0,
-            "posX": 2110.0,
-            "posY": 718.0,
+            "posX": 4194.0,
+            "posY": 692.0,
             "type": 4
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 702.0,
+            "height": 393.0,
             "id": 551,
             "inputPinId": 0,
             "name": "突進攻撃",
             "outputPinId": 0,
-            "posX": 1808.0,
-            "posY": 384.0,
+            "posX": 4162.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1056.0
+            "width": 388.0
         },
         {
             "actionId": 0,
@@ -813,8 +813,8 @@
             "inputPinId": 564,
             "name": "後退しながらドローン攻撃",
             "outputPinId": 565,
-            "posX": -1912.0,
-            "posY": 990.0,
+            "posX": 2192.0,
+            "posY": 951.0,
             "type": 8
         },
         {
@@ -823,8 +823,8 @@
             "inputPinId": 569,
             "name": "後退アクション",
             "outputPinId": 570,
-            "posX": -2290.0,
-            "posY": 1182.0,
+            "posX": 1767.0,
+            "posY": 1192.0,
             "type": 2
         },
         {
@@ -834,22 +834,22 @@
             "inputPinId": 577,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": -1193.0,
-            "posY": 1467.0,
+            "posX": 2837.0,
+            "posY": 1433.0,
             "type": 4
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 614.0,
+            "height": 170.0,
             "id": 592,
             "inputPinId": 0,
             "name": "コメント",
             "outputPinId": 0,
-            "posX": 464.0,
-            "posY": 384.0,
+            "posX": 3926.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1280.0
+            "width": 244.0
         },
         {
             "action": "A_Wait",
@@ -858,8 +858,8 @@
             "inputPinId": 617,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 2379.0,
-            "posY": 734.0,
+            "posX": 4365.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -869,8 +869,8 @@
             "inputPinId": 620,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 9867.0,
-            "posY": 1054.0,
+            "posX": 6739.0,
+            "posY": 951.0,
             "type": 4
         },
         {
@@ -880,8 +880,8 @@
             "inputPinId": 626,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 10662.0,
-            "posY": 846.0,
+            "posX": 7369.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -891,8 +891,8 @@
             "inputPinId": 638,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 5147.0,
-            "posY": 910.0,
+            "posX": 6333.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -902,22 +902,22 @@
             "inputPinId": 673,
             "outputPinId": 0,
             "param": 0.5,
-            "posX": 5454.0,
-            "posY": 958.0,
+            "posX": 0.0,
+            "posY": 692.0,
             "type": 3
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 1150.0,
+            "height": 911.0,
             "id": 675,
             "inputPinId": 0,
             "name": "【移動】横移動",
             "outputPinId": 0,
-            "posX": 13136.0,
-            "posY": 352.0,
+            "posX": 4989.0,
+            "posY": 385.0,
             "type": 5,
-            "width": 1600.0
+            "width": 952.0
         },
         {
             "actionId": 0,
@@ -925,8 +925,8 @@
             "inputPinId": 680,
             "name": "ボス：横移動で位置を変える",
             "outputPinId": 681,
-            "posX": 13939.0,
-            "posY": 462.0,
+            "posX": 5365.0,
+            "posY": 451.0,
             "score": {
                 "base": 9.0,
                 "bonus": [
@@ -956,8 +956,8 @@
             "inputPinId": 685,
             "name": "横移動：左右を選ぶ",
             "outputPinId": 686,
-            "posX": 13924.0,
-            "posY": 830.0,
+            "posX": 5365.0,
+            "posY": 692.0,
             "type": 9
         },
         {
@@ -966,8 +966,8 @@
             "inputPinId": 692,
             "name": "右へ横移動",
             "outputPinId": 693,
-            "posX": 13736.0,
-            "posY": 1084.0,
+            "posX": 5129.0,
+            "posY": 951.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -992,8 +992,8 @@
             "inputPinId": 695,
             "outputPinId": 0,
             "param": 5.0,
-            "posX": 13586.0,
-            "posY": 1304.0,
+            "posX": 5021.0,
+            "posY": 1192.0,
             "type": 3
         },
         {
@@ -1003,8 +1003,8 @@
             "inputPinId": 697,
             "outputPinId": 0,
             "param": 20.0,
-            "posX": 13836.0,
-            "posY": 1304.0,
+            "posX": 5257.0,
+            "posY": 1192.0,
             "type": 4
         },
         {
@@ -1013,8 +1013,8 @@
             "inputPinId": 702,
             "name": "左へ横移動",
             "outputPinId": 703,
-            "posX": 14336.0,
-            "posY": 1084.0,
+            "posX": 5601.0,
+            "posY": 951.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -1039,8 +1039,8 @@
             "inputPinId": 705,
             "outputPinId": 0,
             "param": 5.0,
-            "posX": 14186.0,
-            "posY": 1304.0,
+            "posX": 5493.0,
+            "posY": 1192.0,
             "type": 3
         },
         {
@@ -1050,8 +1050,8 @@
             "inputPinId": 707,
             "outputPinId": 0,
             "param": 20.0,
-            "posX": 14436.0,
-            "posY": 1304.0,
+            "posX": 5729.0,
+            "posY": 1192.0,
             "type": 4
         },
         {
@@ -1061,9 +1061,8 @@
             "inputPinId": 722,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": 3651.0,
-            "posY": 462.0,
-            "type": 4,
+            "posX": 4574.0,
+            "posY": 451.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
@@ -1089,7 +1088,8 @@
                     "bestMin": 15.0,
                     "falloff": 10.0
                 }
-            }
+            },
+            "type": 4
         },
         {
             "action": "A_DroneTechnique",
@@ -1098,9 +1098,8 @@
             "inputPinId": 725,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": 8067.0,
-            "posY": 558.0,
-            "type": 4,
+            "posX": 4785.0,
+            "posY": 451.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
@@ -1121,18 +1120,19 @@
                     "bestMin": 15.0,
                     "falloff": 10.0
                 }
-            }
+            },
+            "type": 4
         },
         {
+            "abortSelf": true,
             "action": "A_DroneTechnique",
             "actionId": 129,
             "id": 727,
             "inputPinId": 728,
             "outputPinId": 0,
             "param": 17.0,
-            "posX": 12083.0,
-            "posY": 478.0,
-            "type": 4,
+            "posX": 7589.0,
+            "posY": 451.0,
             "score": {
                 "base": 7.0,
                 "cooldown": 8.0,
@@ -1142,7 +1142,7 @@
                     "falloff": 20.0
                 }
             },
-            "abortSelf": true
+            "type": 4
         },
         {
             "action": "A_DroneTechnique",
@@ -1151,8 +1151,8 @@
             "inputPinId": 731,
             "outputPinId": 0,
             "param": 22.0,
-            "posX": 5676.0,
-            "posY": 960.0,
+            "posX": 236.0,
+            "posY": 692.0,
             "type": 4
         },
         {
@@ -1162,8 +1162,8 @@
             "inputPinId": 734,
             "outputPinId": 0,
             "param": 32.0,
-            "posX": 10196.0,
-            "posY": 1046.0,
+            "posX": 6948.0,
+            "posY": 951.0,
             "type": 4
         },
         {
@@ -1173,9 +1173,8 @@
             "inputPinId": 737,
             "outputPinId": 0,
             "param": 34.0,
-            "posX": 1056.0,
-            "posY": 462.0,
-            "type": 4,
+            "posX": 3958.0,
+            "posY": 451.0,
             "score": {
                 "base": 7.0,
                 "bonus": [
@@ -1196,15 +1195,14 @@
                     "bestMin": 8.0,
                     "falloff": 10.0
                 }
-            }
+            },
+            "type": 4
         }
     ],
     "last_id_counter": 738,
     "nodes": [
         {
-            "type": "UtilitySelector",
             "actionOrConditionId": 0,
-            "name": "技選択",
             "children": [
                 1,
                 2,
@@ -1217,11 +1215,37 @@
                 9,
                 10,
                 11
-            ]
+            ],
+            "name": "技選択",
+            "type": "UtilitySelector"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
+            "children": [
+                12,
+                13
+            ],
+            "interrupt": true,
+            "name": "ドローン：横払い",
+            "score": {
+                "base": 10.0,
+                "cooldown": 6.0,
+                "distance": {
+                    "bestMax": 8.0,
+                    "bestMin": 0.0,
+                    "falloff": 4.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                14,
+                15,
+                16
+            ],
+            "name": "ボス：被弾がかさんだら退く",
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -1237,16 +1261,17 @@
                     "falloff": 15.0
                 }
             },
-            "name": "ボス：被弾がかさんだら退く",
-            "children": [
-                12,
-                13,
-                14
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
+            "children": [
+                17,
+                18,
+                19,
+                20
+            ],
+            "name": "ボス：中央へ跳んで逃げる",
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -1263,18 +1288,13 @@
                     "falloff": 10.0
                 }
             },
-            "name": "ボス：中央へ跳んで逃げる",
-            "children": [
-                15,
-                16,
-                17,
-                18
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 129,
             "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：長方形の壁突進",
             "param": 34.0,
             "score": {
                 "base": 7.0,
@@ -1297,12 +1317,15 @@
                     "falloff": 10.0
                 }
             },
-            "name": "ドローンの技：長方形の壁突進",
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
+            "children": [
+                21,
+                22
+            ],
+            "name": "ボス：突進攻撃",
             "score": {
                 "base": 8.0,
                 "bonus": [
@@ -1319,16 +1342,13 @@
                     "falloff": 15.0
                 }
             },
-            "name": "ボス：突進攻撃",
-            "children": [
-                19,
-                20
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 129,
             "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：縦割り",
             "param": 24.0,
             "score": {
                 "base": 8.0,
@@ -1356,58 +1376,13 @@
                     "falloff": 10.0
                 }
             },
-            "name": "ドローンの技：縦割り",
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "score": {
-                "base": 7.0,
-                "bonus": [
-                    {
-                        "condition": "C_TargetRetreating",
-                        "mult": 2.0,
-                        "param": 5.0
-                    }
-                ],
-                "cooldown": 10.0,
-                "distance": {
-                    "bestMax": 75.0,
-                    "bestMin": 30.0,
-                    "falloff": 10.0
-                }
-            },
-            "name": "ボス：跳躍攻撃",
-            "children": [
-                21,
-                22,
-                23
-            ]
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
-            "interrupt": true,
-            "score": {
-                "base": 10.0,
-                "cooldown": 6.0,
-                "distance": {
-                    "bestMax": 8.0,
-                    "bestMin": 0.0,
-                    "falloff": 4.0
-                }
-            },
-            "name": "ドローン：横払い",
-            "children": [
-                24,
-                25
-            ]
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 129,
             "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：挟み込み1段",
             "param": 25.0,
             "score": {
                 "base": 8.0,
@@ -1430,49 +1405,14 @@
                     "falloff": 10.0
                 }
             },
-            "name": "ドローンの技：挟み込み1段",
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
-            "score": {
-                "base": 6.0,
-                "cooldown": 40.0,
-                "distance": {
-                    "bestMax": 9999.0,
-                    "bestMin": 80.0,
-                    "falloff": 10.0
-                }
-            },
-            "name": "ドローン：滞空して追従攻撃",
             "children": [
-                26,
-                27,
-                28
-            ]
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 129,
-            "action": "A_DroneTechnique",
-            "param": 17.0,
-            "abortSelf": true,
-            "score": {
-                "base": 7.0,
-                "cooldown": 8.0,
-                "distance": {
-                    "bestMax": 9999.0,
-                    "bestMin": 80.0,
-                    "falloff": 20.0
-                }
-            },
-            "name": "ドローンの技：弾幕",
-            "children": []
-        },
-        {
-            "type": "Sequence",
-            "actionOrConditionId": 0,
+                23
+            ],
+            "name": "ボス：横移動で位置を変える",
             "score": {
                 "base": 9.0,
                 "bonus": [
@@ -1494,189 +1434,231 @@
                     "falloff": 10.0
                 }
             },
-            "name": "ボス：横移動で位置を変える",
-            "children": [
-                29
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Condition",
+            "actionOrConditionId": 0,
+            "children": [
+                24,
+                25,
+                26
+            ],
+            "name": "ボス：跳躍攻撃",
+            "score": {
+                "base": 7.0,
+                "bonus": [
+                    {
+                        "condition": "C_TargetRetreating",
+                        "mult": 2.0,
+                        "param": 5.0
+                    }
+                ],
+                "cooldown": 10.0,
+                "distance": {
+                    "bestMax": 75.0,
+                    "bestMin": 30.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                27,
+                28,
+                29
+            ],
+            "name": "ドローン：滞空して追従攻撃",
+            "score": {
+                "base": 6.0,
+                "cooldown": 40.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "abortSelf": true,
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：弾幕",
+            "param": 17.0,
+            "score": {
+                "base": 7.0,
+                "cooldown": 8.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 20.0
+                }
+            },
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 12,
+            "children": [],
+            "condition": "C_RecentlyHit",
+            "param": 0.5,
+            "type": "Condition"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：横なぎ",
+            "param": 22.0,
+            "type": "Action"
+        },
+        {
             "actionOrConditionId": 11,
+            "children": [],
             "condition": "C_DamageThresholdExceeded",
             "param": 3.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 3,
             "action": "A_ResetDamage",
+            "actionOrConditionId": 3,
+            "children": [],
             "param": 0.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "WeightedSelector",
             "actionOrConditionId": 0,
-            "name": "重み付きセレクター（Weighted Selector）",
             "children": [
                 30,
                 31
-            ]
+            ],
+            "name": "重み付きセレクター（Weighted Selector）",
+            "type": "WeightedSelector"
         },
         {
-            "type": "Condition",
             "actionOrConditionId": 7,
+            "children": [],
             "condition": "C_IsAtStageEdge",
             "param": 25.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Condition",
             "actionOrConditionId": 8,
+            "children": [],
             "condition": "C_TargetOnCenterSide",
             "param": 70.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 102,
             "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
             "param": 0.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 7,
             "action": "A_BossLeapEscape",
+            "actionOrConditionId": 7,
+            "children": [],
             "param": 1.899999976158142,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 10,
             "action": "A_BossDashAttack",
+            "actionOrConditionId": 10,
+            "children": [],
             "param": 3.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 1,
             "action": "A_Wait",
-            "param": 1.0,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 102,
-            "action": "A_DroneHighOrbit",
-            "param": 0.0,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 8,
-            "action": "A_BossLeapAttack",
-            "param": 2.5999999046325684,
-            "children": []
-        },
-        {
-            "type": "Action",
             "actionOrConditionId": 1,
-            "action": "A_Wait",
+            "children": [],
             "param": 1.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Condition",
-            "actionOrConditionId": 12,
-            "condition": "C_RecentlyHit",
-            "param": 0.5,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 129,
-            "action": "A_DroneTechnique",
-            "param": 22.0,
-            "name": "ドローンの技：横なぎ",
-            "children": []
-        },
-        {
-            "type": "Parallel",
             "actionOrConditionId": 0,
-            "name": "滞空(主)＋陣形(従)",
             "children": [
                 32,
-                33,
-                34
-            ]
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 102,
-            "action": "A_DroneHighOrbit",
-            "param": 0.0,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 1,
-            "action": "A_Wait",
-            "param": 1.5,
-            "children": []
-        },
-        {
-            "type": "UtilitySelector",
-            "actionOrConditionId": 0,
+                33
+            ],
             "name": "横移動：左右を選ぶ",
+            "type": "UtilitySelector"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_BossLeapAttack",
+            "actionOrConditionId": 8,
+            "children": [],
+            "param": 2.5999999046325684,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
             "children": [
+                34,
                 35,
                 36
-            ]
+            ],
+            "name": "滞空(主)＋陣形(従)",
+            "type": "Parallel"
         },
         {
-            "type": "Sequence",
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
             "actionOrConditionId": 0,
-            "name": "ステージ中央に退避する",
             "children": [
                 37,
                 38,
                 39
-            ]
+            ],
+            "name": "ステージ中央に退避する",
+            "type": "Sequence"
         },
         {
-            "type": "Parallel",
             "actionOrConditionId": 0,
-            "name": "後退しながらドローン攻撃",
             "children": [
                 40,
                 41
-            ]
+            ],
+            "name": "後退しながらドローン攻撃",
+            "type": "Parallel"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 9,
-            "action": "A_BossAirHover",
-            "param": 10.0,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 1,
-            "action": "A_Wait",
-            "param": 2.0,
-            "children": []
-        },
-        {
-            "type": "Action",
-            "actionOrConditionId": 129,
-            "action": "A_DroneTechnique",
-            "param": 32.0,
-            "name": "ドローンの技：小隊突撃",
-            "children": []
-        },
-        {
-            "type": "Sequence",
             "actionOrConditionId": 0,
+            "children": [
+                42,
+                43
+            ],
+            "name": "右へ横移動",
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -1692,15 +1674,15 @@
                     "falloff": 0.0
                 }
             },
-            "name": "右へ横移動",
-            "children": [
-                42,
-                43
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
+            "children": [
+                44,
+                45
+            ],
+            "name": "左へ横移動",
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -1716,130 +1698,148 @@
                     "falloff": 0.0
                 }
             },
-            "name": "左へ横移動",
-            "children": [
-                44,
-                45
-            ]
+            "type": "Sequence"
         },
         {
-            "type": "Condition",
+            "action": "A_BossAirHover",
+            "actionOrConditionId": 9,
+            "children": [],
+            "param": 10.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 2.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：小隊突撃",
+            "param": 32.0,
+            "type": "Action"
+        },
+        {
             "actionOrConditionId": 7,
+            "children": [],
             "condition": "C_IsAtStageEdge",
             "param": 25.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 102,
             "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
             "param": 0.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 7,
             "action": "A_BossLeapEscape",
+            "actionOrConditionId": 7,
+            "children": [],
             "param": 2.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
-            "name": "後退アクション",
             "children": [
                 46,
                 47,
                 48
-            ]
+            ],
+            "name": "後退アクション",
+            "type": "Sequence"
         },
         {
-            "type": "Sequence",
             "actionOrConditionId": 0,
-            "name": "ドローン操作",
             "children": [
                 49,
                 50,
                 51,
                 52
-            ]
+            ],
+            "name": "ドローン操作",
+            "type": "Sequence"
         },
         {
-            "type": "Condition",
             "actionOrConditionId": 17,
+            "children": [],
             "condition": "C_SpaceOnRight",
             "param": 5.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 13,
             "action": "A_BossSideTravelRight",
+            "actionOrConditionId": 13,
+            "children": [],
             "param": 20.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Condition",
             "actionOrConditionId": 16,
+            "children": [],
             "condition": "C_SpaceOnLeft",
             "param": 5.0,
-            "children": []
+            "type": "Condition"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 12,
             "action": "A_BossSideTravelLeft",
+            "actionOrConditionId": 12,
+            "children": [],
             "param": 20.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 4,
             "action": "A_BossBackStep",
+            "actionOrConditionId": 4,
+            "children": [],
             "param": 1.5,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 1,
             "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
             "param": 0.5,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 102,
             "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
             "param": 0.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 128,
             "action": "A_DroneFormation",
+            "actionOrConditionId": 128,
+            "children": [],
             "param": 24.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 1,
             "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
             "param": 1.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 100,
             "action": "A_DroneStrike",
+            "actionOrConditionId": 100,
+            "children": [],
             "param": 0.0,
-            "children": []
+            "type": "Action"
         },
         {
-            "type": "Action",
-            "actionOrConditionId": 1,
             "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
             "param": 10.0,
-            "children": []
+            "type": "Action"
         }
     ]
 }

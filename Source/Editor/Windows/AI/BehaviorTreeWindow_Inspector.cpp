@@ -4,6 +4,7 @@
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h" // プレビューの点数をゲームと同じ式で出す
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -807,30 +808,94 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
     ImGui::SliderFloat("プレビューの距離", &m_utilityPreviewDistance, 0.0f, kPreviewMaxDistance, "%.0f m");
     ImGui::TextDisabled("距離と優先度だけで計算（条件・クールダウン・状況による倍率・減点は含めない）");
 
+    if (ImGui::Button("キャンバスを距離順に並べる"))
+    {
+        if (SortUtilityChildrenByDistance(selector))
+        {
+            needsUndo   = true;
+            undoMessage = "Sort Utility Children By Distance";
+        }
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("子を、得意な距離が近い技から左へ並べ直す。\nボスの動きは変わらない（並びが効くのは点数が同じときだけ）");
+    }
+
     // ---------------------------------------------------------
     // 3. 一覧表
     // ---------------------------------------------------------
 
     // 一番見たいのは「どれが選ばれやすいか」なので、技の名前のすぐ右に確率と点数を置く。
     // 横にはみ出したら横スクロール。縦は行の数ぶんの高さを取る（スクロールさせると一覧の意味が薄れる）
+    enum Column : ImGuiID
+    {
+        kColName,
+        kColChance,
+        kColScore,
+        kColPriority,
+        kColRange,
+        kColFalloff,
+        kColBand,
+        kColBonus,
+        kColCooldown,
+        kColCount,
+    };
+    constexpr float kBandWidth = 160.0f; // 距離の帯の幅 [px]
+
     const float           tableHeight = ImGui::GetFrameHeightWithSpacing() * static_cast<float>(rows.size() + 1) +
                                         ImGui::GetStyle().ScrollbarSize + 4.0f;
     const ImGuiTableFlags flags       = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-                                        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX;
-    if (!ImGui::BeginTable("##utilityTable", 8, flags, ImVec2(0.0f, tableHeight)))
+                                        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
+                                        ImGuiTableFlags_Sortable | ImGuiTableFlags_SortTristate;
+    if (!ImGui::BeginTable("##utilityTable", kColCount, flags, ImVec2(0.0f, tableHeight)))
     {
         return;
     }
 
-    ImGui::TableSetupColumn("技");
-    ImGui::TableSetupColumn("確率");
-    ImGui::TableSetupColumn("点数");
-    ImGui::TableSetupColumn("優先度");
-    ImGui::TableSetupColumn("得意な距離");
-    ImGui::TableSetupColumn("ぼかし");
-    ImGui::TableSetupColumn("状況");
-    ImGui::TableSetupColumn("CD");
+    // 最初は得意な距離の近い順。見出しを押すたびに 昇順 → 降順 → キャンバスの並び を回る
+    ImGui::TableSetupColumn("技", 0, 0.0f, kColName);
+    ImGui::TableSetupColumn("確率", 0, 0.0f, kColChance);
+    ImGui::TableSetupColumn("点数", 0, 0.0f, kColScore);
+    ImGui::TableSetupColumn("優先度", 0, 0.0f, kColPriority);
+    ImGui::TableSetupColumn("得意な距離", ImGuiTableColumnFlags_DefaultSort, 0.0f, kColRange);
+    ImGui::TableSetupColumn("ぼかし", 0, 0.0f, kColFalloff);
+    char bandHeader[48];
+    snprintf(bandHeader, sizeof(bandHeader), "距離の帯 (0〜%.0fm)", kPreviewMaxDistance);
+    ImGui::TableSetupColumn(bandHeader, ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, kBandWidth, kColBand);
+    ImGui::TableSetupColumn("状況", ImGuiTableColumnFlags_NoSort, 0.0f, kColBonus);
+    ImGui::TableSetupColumn("CD", 0, 0.0f, kColCooldown);
     ImGui::TableHeadersRow();
+
+    // 並べ替え。行は毎フレーム作り直すので、毎フレーム並べる（多くても16行）
+    const ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs();
+    if (sortSpecs && sortSpecs->SpecsCount > 0)
+    {
+        const ImGuiTableColumnSortSpecs &spec      = sortSpecs->Specs[0];
+        const bool                       ascending = (spec.SortDirection == ImGuiSortDirection_Ascending);
+
+        // 距離で点数を変えない子は、距離の設定が無いので距離の列では最後に回す
+        auto rangeKey = [](const EditorBTNode &n) {
+            return n.useScoreRule ? std::make_pair(n.scoreRule.bestMin, n.scoreRule.bestMax) : std::make_pair(FLT_MAX, FLT_MAX);
+        };
+        auto less = [&](const Row &a, const Row &b) {
+            const EditorBTNode &na = *a.node;
+            const EditorBTNode &nb = *b.node;
+            switch (spec.ColumnUserID)
+            {
+            case kColName: return a.name < b.name;
+            case kColChance: return a.chance < b.chance;
+            case kColScore: return a.score < b.score;
+            case kColPriority: return (na.useScoreRule ? na.scoreRule.base : na.weight) < (nb.useScoreRule ? nb.scoreRule.base : nb.weight);
+            case kColRange: return rangeKey(na) < rangeKey(nb);
+            case kColFalloff: return (na.useScoreRule ? na.scoreRule.falloff : -1.0f) < (nb.useScoreRule ? nb.scoreRule.falloff : -1.0f);
+            case kColCooldown: return (na.useScoreRule ? na.scoreRule.cooldown : -1.0f) < (nb.useScoreRule ? nb.scoreRule.cooldown : -1.0f);
+            default: return false;
+            }
+        };
+        std::stable_sort(rows.begin(), rows.end(), [&](const Row &a, const Row &b) {
+            return ascending ? less(a, b) : less(b, a);
+        });
+    }
 
     for (Row &row : rows)
     {
@@ -917,6 +982,10 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
             ImGui::TextDisabled("-");
         }
 
+        // 距離の帯：縦に並べて見ると、どの距離に技が集まり、どこが空いているかが分かる
+        ImGui::TableNextColumn();
+        DrawDistanceBand(child, kBandWidth);
+
         // 状況：件数だけ出し、中身はマウスを乗せたときに出す（表の幅を取らないため）
         ImGui::TableNextColumn();
         if (child.useScoreRule && child.scoreRule.bonusCount > 0)
@@ -959,4 +1028,170 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
         ImGui::PopID();
     }
     ImGui::EndTable();
+
+    ImGui::TextDisabled("距離の帯：濃い＝満点／薄れていく＝点数が下がる／黄色の線＝プレビューの距離");
+}
+
+bool BehaviorTreeWindow::SortUtilityChildrenByDistance(const EditorBTNode &selector)
+{
+    // 処理フロー:
+    // 1. 今の並び（左から）と、各子の席（座標）を控える
+    // 2. 得意な距離の近い順に並べ替える
+    // 3. 近い技から左の席へ入れ、整列を予約する
+
+    // 【備考】
+    //   座標は新しく作らず、今の席を入れ替えるだけにする。並びは席の左右だけで決まるので、
+    //   席の数と位置が変わらなければ、ほかのノードとの位置関係も崩れない。
+
+    auto found = m_childrenOf.find(selector.id);
+    if (found == m_childrenOf.end() || found->second.size() < 2)
+    {
+        return false;
+    }
+
+    // ---------------------------------------------------------
+    // 1. 今の並びと席
+    // ---------------------------------------------------------
+
+    // m_childrenOf は RebuildHierarchy が左から（X が同じなら上から）並べてある
+    std::vector<EditorBTNode *> current;
+    std::vector<ImVec2>         seats;
+    for (uint32_t id : found->second)
+    {
+        if (EditorBTNode *child = FindNode(id))
+        {
+            current.push_back(child);
+            seats.push_back(ImVec2(child->posX, child->posY));
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 2. 得意な距離の近い順
+    // ---------------------------------------------------------
+
+    // 距離で点数を変えない子は、どの距離でも出るので右端へ
+    auto rangeKey = [](const EditorBTNode *n) {
+        return n->useScoreRule ? std::make_pair(n->scoreRule.bestMin, n->scoreRule.bestMax) : std::make_pair(FLT_MAX, FLT_MAX);
+    };
+    std::vector<EditorBTNode *> sorted = current;
+    std::stable_sort(sorted.begin(), sorted.end(),
+                     [&](const EditorBTNode *a, const EditorBTNode *b) { return rangeKey(a) < rangeKey(b); });
+    if (sorted == current)
+    {
+        return false;
+    }
+
+    // ---------------------------------------------------------
+    // 3. 席へ入れる
+    // ---------------------------------------------------------
+    for (size_t i = 0; i < sorted.size(); ++i)
+    {
+        sorted[i]->posX                = seats[i].x;
+        sorted[i]->posY                = seats[i].y;
+        sorted[i]->positionInitialized = false; // 次の描画で座標をライブラリへ流し込む
+    }
+
+    // 子の下の枝は元の位置に残っているので、整列で子の下へ連れて行く
+    m_layoutRequested = true;
+    return true;
+}
+
+void BehaviorTreeWindow::DrawDistanceBand(const EditorBTNode &child, float width) const
+{
+    // 処理フロー:
+    // 1. マスを取る
+    // 2. ものさし（20m ごとの目盛り）
+    // 3. 帯（満点の範囲は濃く、ぼかしの範囲は点数に合わせて薄れていく）
+    // 4. プレビューの距離の縦線
+    // 5. マウスを乗せたら数字で出す
+
+    // ---------------------------------------------------------
+    // 1. マス
+    // ---------------------------------------------------------
+    const float  height = ImGui::GetTextLineHeight();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImGui::Dummy(ImVec2(width, height));
+
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    const float top      = origin.y + height * 0.2f;
+    const float bottom   = origin.y + height * 0.8f;
+
+    // 距離 [m] → マスの中の x。右端より遠い距離は右端に寄せる
+    auto xOf = [&](float meters) {
+        return origin.x + width * std::clamp(meters / kPreviewMaxDistance, 0.0f, 1.0f);
+    };
+
+    // ---------------------------------------------------------
+    // 2. ものさし
+    // ---------------------------------------------------------
+    drawList->AddRectFilled(ImVec2(origin.x, top), ImVec2(origin.x + width, bottom), IM_COL32(255, 255, 255, 20));
+    for (float m = 20.0f; m < kPreviewMaxDistance; m += 20.0f)
+    {
+        drawList->AddLine(ImVec2(xOf(m), top), ImVec2(xOf(m), bottom), IM_COL32(255, 255, 255, 50));
+    }
+
+    // ---------------------------------------------------------
+    // 3. 帯
+    // ---------------------------------------------------------
+
+    // 濃さ＝その距離での距離の倍率（ゲームと同じ式）。0〜1 を透明〜濃いに写す
+    const BTScoreRule &rule    = child.scoreRule;
+    auto               colorAt = [&](float meters) {
+        const float factor = CCL::AI::BT::DistanceFactor(rule, meters);
+        return IM_COL32(90, 170, 255, static_cast<int>(220.0f * factor));
+    };
+
+    if (!child.useScoreRule)
+    {
+        // どの距離でも同じ点数。色を変えて、距離の設定が無いことが分かるようにする
+        drawList->AddRectFilled(ImVec2(origin.x, top), ImVec2(origin.x + width, bottom), IM_COL32(160, 160, 160, 120));
+    }
+    else
+    {
+        // 0 点になる境目。マスの外へはみ出す分は端で切る
+        const float zeroMin = (std::max)(0.0f, rule.bestMin - rule.falloff);
+        const float zeroMax = (std::min)(kPreviewMaxDistance, rule.bestMax + rule.falloff);
+        const float bestMin = (std::min)(rule.bestMin, kPreviewMaxDistance);
+        const float bestMax = (std::min)(rule.bestMax, kPreviewMaxDistance);
+
+        // 近い側のぼかし → 満点 → 遠い側のぼかし
+        if (bestMin > zeroMin)
+        {
+            drawList->AddRectFilledMultiColor(ImVec2(xOf(zeroMin), top), ImVec2(xOf(bestMin), bottom),
+                                              colorAt(zeroMin), colorAt(bestMin), colorAt(bestMin), colorAt(zeroMin));
+        }
+        if (bestMax > bestMin)
+        {
+            drawList->AddRectFilled(ImVec2(xOf(bestMin), top), ImVec2(xOf(bestMax), bottom), colorAt(bestMin));
+        }
+        if (zeroMax > bestMax)
+        {
+            drawList->AddRectFilledMultiColor(ImVec2(xOf(bestMax), top), ImVec2(xOf(zeroMax), bottom),
+                                              colorAt(bestMax), colorAt(zeroMax), colorAt(zeroMax), colorAt(bestMax));
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. プレビューの距離
+    // ---------------------------------------------------------
+    const float previewX = xOf(m_utilityPreviewDistance);
+    drawList->AddLine(ImVec2(previewX, origin.y), ImVec2(previewX, origin.y + height), IM_COL32(255, 220, 80, 255), 2.0f);
+
+    // ---------------------------------------------------------
+    // 5. 数字
+    // ---------------------------------------------------------
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        if (!child.useScoreRule)
+        {
+            ImGui::Text("距離で点数を変えない（どの距離でも同じ点数）");
+        }
+        else
+        {
+            ImGui::Text("満点：%.0f〜%.0f m", rule.bestMin, rule.bestMax);
+            ImGui::Text("点数が付く：%.0f〜%.0f m", (std::max)(0.0f, rule.bestMin - rule.falloff), rule.bestMax + rule.falloff);
+        }
+        ImGui::EndTooltip();
+    }
 }

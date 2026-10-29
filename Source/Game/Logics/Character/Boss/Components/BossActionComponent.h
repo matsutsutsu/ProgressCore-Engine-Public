@@ -91,9 +91,11 @@ struct BossActionComponent
 
     // --- 横移動 ---
 
-    // 動く距離は BT のノードの param が決める
-    // 技の長さ ＝ 動き出し＋止まり（どちらもアニメから）＋残りの距離を一定の速さで進む時間
-    float sideTravelSpeed = 90.0f; // 一定の速さで進むときの速さ [m/s]
+    // 動く距離は BT のノードの param が決める。技の長さは 距離÷速さ から決まる
+    // 加速・減速の時間はアニメのクリップの長さと別。クリップは段の切り替えでブレンドして移る
+    float sideTravelSpeed     = 90.0f; // 最高速 [m/s]
+    float sideTravelAccelTime = 0.25f; // 0 から最高速までの時間 [秒]
+    float sideTravelDecelTime = 0.35f; // 最高速から止まるまでの時間 [秒]
 
     // --- 後方ステップ ---
 
@@ -170,9 +172,8 @@ struct BossActionComponent
     // 横移動
     BossSideTravelPhase sideTravelPhase      = BossSideTravelPhase::Start;
     bool                sideTravelLeft       = false; // 左へ動くか（アニメの左右を選ぶ）
-    float               sideTravelTopSpeed   = 0.0f;  // 今回の最高速 [m/s]。距離が短いと下げる
-    float               sideTravelCruiseTime = 0.0f;  // 一定の速さで進む長さ [秒]
-    float               sideTravelStopTime   = 0.0f;  // 止まりのモーションの長さ [秒]
+    float               sideTravelCruiseTime = 0.0f;  // 最高速で進む長さ [秒]
+    float               sideTravelStopTime   = 0.0f;  // 今回の減速の時間 [秒]。距離が短いと縮む
 
     // 後方ステップ
     BossBackStepPhase backStepPhase    = BossBackStepPhase::Retreat;
