@@ -347,6 +347,7 @@ void BehaviorTreeSystem::OnGui()
         ImGui::Text("Target Speed     : %.2f m/s", btComp->blackboard.targetSpeed);
         ImGui::Text("To Arena Edge    : %+.1f m", btComp->blackboard.distanceToArenaEdge);
         ImGui::Text("Target vs Center : %.1f deg  [0=中央側を塞がれている]", btComp->blackboard.targetAngleFromCenter);
+        ImGui::Text("Space L / R      : %.1f m / %.1f m", btComp->blackboard.spaceOnLeft, btComp->blackboard.spaceOnRight);
 
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
 
@@ -507,8 +508,9 @@ void BehaviorTreeSystem::RecordUtilityPick(const BTAsset         &asset,
 
 float BehaviorTreeSystem::CooldownLeft(BTNodeID nodeId, const BehaviorTreeComponent &btComp, const BTAsset &asset)
 {
-    // TopCooldownActive と同じたどり方（重なった修飾を先頭の子へ降りる）で、一番長い残りを返す
-    float left = 0.0f;
+    // 採点ルールのクールダウン（スコア選択の子そのものに付く）と、
+    // TopCooldownActive と同じたどり方（重なった修飾を先頭の子へ降りる）で見つけた Cooldown のうち、一番長い残りを返す
+    float left = (nodeId < btComp.cooldownTimers.size()) ? btComp.cooldownTimers[nodeId] : 0.0f;
     for (BTNodeID id = nodeId; id < asset.nodes.size();)
     {
         const BTNode &node = asset.nodes[id];

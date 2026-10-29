@@ -6,8 +6,8 @@
 // 責務:
 //   - currentActionId を BossActionState に変換し、
 //     技に入った瞬間に進行方向などを決める
-//   - 技に入った瞬間に、アニメの開始のトリガー（BackStep / Leap / Dash）を引く
-//   - 待機・移動・後方ステップ・跳躍・突進を1フレーム分進め、
+//   - 技に入った瞬間に、アニメの開始のトリガー（SideTravelLeft/Right / BackStep / Leap / Dash）を引く
+//   - 待機・移動・横移動・後方ステップ・跳躍・突進を1フレーム分進め、
 //     CharacterMovementComponent に書く
 //   - 技が硬直まで終わったら actionFinished を立て、BT に知らせる
 //   - 向きを Transform と Jolt の両方に書く
@@ -80,8 +80,8 @@ public:
      */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
-    // Update が技の開始のトリガーを AnimParametersComponent へ
-    // GetComponent で書くので、申告だけを足す（理由は GetReadTypes と同じ）
+    // Update が GetComponent で書く型の申告だけを足す（理由は GetReadTypes と同じ）
+    // AnimParametersComponent に技の開始のトリガー、RootMotionComponent に横移動中の足滑り補正の停止
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
 private:
@@ -105,10 +105,13 @@ private:
     // 相手へ歩いて近づく。速さは Jolt の walkSpeed。
     void ProcessMove(BossActionComponent &bossAction, const Frame &f);
 
-    // 横歩き（様子見）。相手への方向の直角へ進み、相手を中心に円を描く。
-    // 向きは進行方向ではなく相手へ向け続ける。
-    // 壁際では回る向きを内側へ反転する。
-    void ProcessStrafe(BossActionComponent &bossAction, const Frame &f);
+    // 横移動。相手を向いたまま、入った瞬間に決めた真横へ進む
+    // 動き出し → 一定の速さ → 止まり。段の移動が終わるたびに、次の段の移動を予約する
+    void ProcessSideTravel(BossActionComponent &bossAction, const Frame &f);
+
+    // 横移動の準備。左右と進む向きを決め、距離から最高速と一定の速さで進む長さを出して、動き出しを予約する
+    // 距離は壁の手前までに縮める
+    void BeginSideTravel(ActionID actionId, float distance, BossActionComponent &bossAction, const Frame &f) const;
 
     // 後方ステップ。入った瞬間の相手の方向を向いたまま下がり、着地して硬直する
     // 下がる移動は、OnEnterState で予約した MoveTo が運ぶ
@@ -140,7 +143,7 @@ private:
     void ProcessDash(BossActionComponent &bossAction, const Frame &f);
 
     // 技の硬直。足を止めて recoveryTime 秒数え、終わったら actionFinished を立てる
-    // 後方ステップ・跳躍・突進の最後の段で呼ぶ
+    // 横移動・後方ステップ・跳躍・突進の最後の段で呼ぶ
     void ProcessRecovery(BossActionComponent &bossAction, float recoveryTime, const Frame &f);
 
     // 構え（Windup）に入る瞬間に1回だけ呼ぶ。
@@ -170,7 +173,7 @@ private:
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos) const;
 
-    // dir の向きへまっすぐ distance 進んだ地点を返す（後方ステップ・突進の下がる・突っ込む）
+    // dir の向きへまっすぐ distance 進んだ地点を返す（横移動・後方ステップ・突進の下がる・突っ込む）
     // 壁際でも向きは変えず、距離だけ縮めて壁の手前で止める。dir は水平で長さ 1
     DirectX::SimpleMath::Vector3 StraightPointInArena(const DirectX::SimpleMath::Vector3 &from,
                                                       const DirectX::SimpleMath::Vector3 &dir, float distance,
@@ -179,7 +182,7 @@ private:
     /**
      * @brief 点がステージの円の外なら、中心へ向かって円の縁まで引き戻す。
      *
-     * 跳躍の着地点と、横歩きの先読みに使う。
+     * 跳躍の着地点に使う。
      *
      * @param point  引き戻す点（ワールド）。
      * @param battle ステージの情報。
@@ -198,5 +201,7 @@ private:
 
     // 技に入った瞬間だけ走る処理
     // 前の技の移動の予約を取り消し、進む向きと技ごとの準備（後方ステップは移動の予約）をする
-    void OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossAction, const Frame &f) const;
+    // actionParam は技のノードの param（横移動の距離）
+    void OnEnterState(BossActionState next, ActionID actionId, float actionParam, BossActionComponent &bossAction,
+                      const Frame &f) const;
 };

@@ -160,8 +160,8 @@
             "type": 3
         },
         {
-            "action": "A_BossStrafe",
-            "actionId": 11,
+            "action": "A_Wait",
+            "actionId": 1,
             "id": 14,
             "inputPinId": 15,
             "outputPinId": 0,
@@ -366,8 +366,8 @@
             "type": 2
         },
         {
-            "action": "A_BossStrafe",
-            "actionId": 11,
+            "action": "A_Wait",
+            "actionId": 1,
             "id": 75,
             "inputPinId": 76,
             "outputPinId": 0,
@@ -404,8 +404,8 @@
             "type": "Condition"
         },
         {
-            "action": "A_BossStrafe",
-            "actionOrConditionId": 11,
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
             "param": 1.5,
             "type": "Action"
         },
@@ -536,8 +536,8 @@
             "type": "Sequence"
         },
         {
-            "action": "A_BossStrafe",
-            "actionOrConditionId": 11,
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
             "param": 1.5,
             "type": "Action"
         }

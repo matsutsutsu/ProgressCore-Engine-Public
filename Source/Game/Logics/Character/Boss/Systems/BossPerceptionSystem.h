@@ -7,6 +7,7 @@
 //   - 狙う相手と、相手までの距離・角度・近づく速さ・横へ回る速さ・速さを書く
 //   - HP の割合と、蓄積した被弾の割合を書く
 //   - ステージの端までの距離と、中央の方向に対する相手の角度を書く
+//   - 相手を向いて左右へ、ステージの端まで進める距離を書く（横移動の向きを選ぶ材料）
 //   - DamageTakenEvent を受けて被弾量を足し、被弾からの経過時間を 0 に戻す
 //
 // 備考: この System が HP・距離・被弾を blackboard に書くので、
@@ -89,6 +90,11 @@ private:
     // 真上から見た距離だけを測る。
     float DistanceToArenaEdge(const DirectX::SimpleMath::Vector3 &myWorldPos,
                               const BattleContext                &battle) const;
+
+    // dir（水平・長さ1）へまっすぐ進んで、ステージの端に着くまでの距離（m）。
+    float SpaceToArenaEdge(const DirectX::SimpleMath::Vector3 &myWorldPos,
+                           const DirectX::SimpleMath::Vector3 &dir,
+                           const BattleContext                &battle) const;
 
     // 自分から見た「中央の方向」と「相手の方向」のなす角（度）。
     // 0=相手が中央側を塞いでいる。

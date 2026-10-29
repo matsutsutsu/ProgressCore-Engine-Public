@@ -177,6 +177,12 @@ private:
     // 「ドローン：データの技」の表示名。枠番号(param)から技の名前を引く（m_formations を見る）
     const char *GetDroneFormationLabel(float slotParam) const;
 
+    // 「ドローンの技」の表示名（例: "ドローンの技：縦割り"）
+    const char *GetDroneTechniqueLabel(float slotParam) const;
+
+    // 「ドローンの技」で出せる技の名前。技でない隊形・空き枠は nullptr
+    const char *DroneTechniqueName(int slot) const;
+
     // 種類ごとの見出し色。キャンバスとヒエラルキーで揃える
     static ImColor HeaderColorOf(EditorBTNodeType type);
 
@@ -337,6 +343,12 @@ private:
 
     // データの技（陣形）を名前で選ぶプルダウン。選び直したら枠番号を slotParam へ書いて true
     bool DrawDroneFormationCombo(const char *label, float &slotParam);
+
+    // 「ドローンの技」で出す技を名前で選ぶプルダウン。C++ で書いた技（弾幕など）も出す
+    bool DrawDroneTechniqueCombo(const char *label, float &slotParam);
+
+    // 選んだ技の時間割（予告・撃ってから戻すまで・間）を表示する。直す場所も添える
+    void DrawDroneTechniqueTiming(float slotParam) const;
 
     // スコア選択ノードの子の一覧表と、距離ごとの点数のプレビュー。表で編集したら needsUndo を立てる
     void DrawUtilityOverview(const EditorBTNode &selector, bool &needsUndo, std::string &undoMessage);

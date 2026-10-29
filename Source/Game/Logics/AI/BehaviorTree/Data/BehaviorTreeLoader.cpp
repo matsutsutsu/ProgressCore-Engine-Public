@@ -4,6 +4,7 @@
 #include <json.hpp>
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -160,7 +161,8 @@ BTScoreRule BehaviorTreeLoader::ReadScoreRule(const void *jScorePtr, const std::
 {
     // 形: "score": { "base": 10,
     //                "distance": { "bestMin": 3, "bestMax": 8, "falloff": 2 },
-    //                "bonus": [ { "condition": "C_RecentlyHit", "param": 0.6, "mult": 3.0 } ] }
+    //                "bonus": [ { "condition": "C_RecentlyHit", "param": 0.6, "mult": 3.0 } ],
+    //                "cooldown": 7 }
     // 書き手はエディタ（BehaviorTreeWindow::WriteKeyAndParam）。キーの名前を変えるときは両方を直すこと。
     const json &jScore = *static_cast<const json *>(jScorePtr);
 
@@ -205,6 +207,9 @@ BTScoreRule BehaviorTreeLoader::ReadScoreRule(const void *jScorePtr, const std::
             bonus.mult          = jBonus.value("mult", 1.0f);
         }
     }
+
+    // クールダウン [秒]。負の値は 0（無し）にそろえる
+    rule.cooldown = (std::max)(0.0f, jScore.value("cooldown", rule.cooldown));
     return rule;
 }
 
@@ -546,7 +551,9 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "印は無視される（見直すのはこの2つだけ）: %s",
                              static_cast<unsigned>(child), i, path.c_str());
             }
-            else if (!HasReadableGuard(asset, child))
+            // スコア選択の子は、採点ルールの点数（距離の外で 0 点）でも降りられるので、条件が無くてもよい
+            else if (!HasReadableGuard(asset, child) &&
+                     !(node.type == BTNodeType::UtilitySelector && asset.nodes[child].scoreRuleIndex >= 0))
             {
                 CCL_LOG_WARN(LogCategory::AI,
                              "[BT] nodes[%u] に自己中断の印が付いているが、枝の先頭に条件が無いので"

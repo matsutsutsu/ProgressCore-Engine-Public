@@ -188,8 +188,9 @@ void BehaviorTreeWindow::DrawInspector()
 
                     // 引数を使う行動へ切り替えたのに 0 のままだと「置いたのに何も起きない」
                     // ように見えるので、最初の1回だけ既定値を入れておく。
-                    // データの技は枠番号なので既定値を入れない（1 は別の技の枠になる）。
+                    // 技を指す行動は枠番号なので既定値を入れない（1 は別の技の枠になる）。
                     if (it->actionOrConditionId != A_DroneFormation &&
+                        it->actionOrConditionId != A_DroneTechnique &&
                         GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 1.0f;
                 }
@@ -202,6 +203,15 @@ void BehaviorTreeWindow::DrawInspector()
                         needsUndo   = true;
                         undoMessage = "Change Drone Formation";
                     }
+                }
+                else if (it->actionOrConditionId == A_DroneTechnique)
+                {
+                    if (DrawDroneTechniqueCombo("技", it->param))
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Drone Technique";
+                    }
+                    DrawDroneTechniqueTiming(it->param);
                 }
                 // 引数を持つ行動（待機の秒数、近接の硬直など）だけ入力欄を出す
                 else if (const char *paramLabel = GetActionParamLabel(it->actionOrConditionId))
@@ -461,6 +471,16 @@ void BehaviorTreeWindow::DrawInspector()
                         }
                         ImGui::TextDisabled("範囲外はぼかし幅で 0 点まで下がる");
 
+                        // クールダウン：選んだ瞬間から数える（技の最中も減る）
+                        ImGui::Spacing();
+                        ImGui::DragFloat("クールダウン", &r.cooldown, 0.1f, 0.0f, 120.0f, "%.1f 秒");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score Cooldown";
+                        }
+                        ImGui::TextDisabled("連発させたくない技に使う。例：突進は10秒に1回まで");
+
                         // 状況による倍率：条件が通れば点数に倍率を掛ける。消すと後ろを前へ詰める
                         ImGui::Spacing();
                         ImGui::Text("状況による倍率");
@@ -625,6 +645,53 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
     return changed;
 }
 
+bool BehaviorTreeWindow::DrawDroneTechniqueCombo(const char *label, float &slotParam)
+{
+    bool      changed = false;
+    const int current = static_cast<int>(std::lround(slotParam));
+
+    if (ImGui::BeginCombo(label, GetDroneTechniqueLabel(slotParam)))
+    {
+        for (int slot = 0; slot < static_cast<int>(kDroneFormationSlotCount); ++slot)
+        {
+            const char *name = DroneTechniqueName(slot);
+            if (!name) continue; // 円陣などの隊形と空き枠は出さない
+
+            char item[96];
+            snprintf(item, sizeof(item), "%s  (枠%d)", name, slot);
+
+            const bool selected = (slot == current);
+            if (ImGui::Selectable(item, selected))
+            {
+                slotParam = static_cast<float>(slot);
+                changed   = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+void BehaviorTreeWindow::DrawDroneTechniqueTiming(float slotParam) const
+{
+    const int slot = static_cast<int>(std::lround(slotParam));
+    if (!DroneTechniqueName(slot)) return;
+
+    const CCL::AI::Formation::IFormation *formation = m_formations->Get(static_cast<DroneFormationType>(slot));
+    CCL::AI::Formation::TechniqueTiming   timing;
+    formation->TryGetTiming(timing);
+
+    ImGui::Text("予告 %.2f 秒 → 撃って %.2f 秒で戻す → 間 %.2f 秒",
+                timing.telegraph, timing.recovery, timing.rest);
+
+    // 時間は BT ではなく陣形が持つ
+    if (formation->DisplayName())
+        ImGui::TextDisabled("時間は陣形エディタで変える");
+    else
+        ImGui::TextDisabled("時間は C++ の陣形クラスで決めている");
+}
+
 // ---------------------------------------------------------------------------
 // スコア選択の一覧
 // ---------------------------------------------------------------------------
@@ -750,7 +817,7 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
                                         ImGui::GetStyle().ScrollbarSize + 4.0f;
     const ImGuiTableFlags flags       = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
                                         ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX;
-    if (!ImGui::BeginTable("##utilityTable", 7, flags, ImVec2(0.0f, tableHeight)))
+    if (!ImGui::BeginTable("##utilityTable", 8, flags, ImVec2(0.0f, tableHeight)))
     {
         return;
     }
@@ -762,6 +829,7 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
     ImGui::TableSetupColumn("得意な距離");
     ImGui::TableSetupColumn("ぼかし");
     ImGui::TableSetupColumn("状況");
+    ImGui::TableSetupColumn("CD");
     ImGui::TableHeadersRow();
 
     for (Row &row : rows)
@@ -864,6 +932,23 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
                     ImGui::Text("%s（%g） x%.2f", name ? name : "未設定", bonus.param, bonus.mult);
                 }
                 ImGui::EndTooltip();
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("-");
+        }
+
+        // クールダウン（採点ルールの cooldown）。距離で変えない子はルールが無いので持てない
+        ImGui::TableNextColumn();
+        if (child.useScoreRule)
+        {
+            ImGui::SetNextItemWidth(60.0f);
+            ImGui::DragFloat("##cooldown", &child.scoreRule.cooldown, 0.1f, 0.0f, 120.0f, "%.0f 秒");
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                needsUndo   = true;
+                undoMessage = "Change Score Cooldown";
             }
         }
         else

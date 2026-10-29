@@ -61,6 +61,10 @@ void BehaviorTreeWindow::WriteKeyAndParam(nlohmann::json &j, const EditorBTNode 
         }
         if (!bonus.empty())
             j["score"]["bonus"] = bonus;
+
+        // クールダウンも付けたときだけ書く
+        if (r.cooldown > 0.0f)
+            j["score"]["cooldown"] = r.cooldown;
     }
 }
 
@@ -155,6 +159,8 @@ EditorBTNode BehaviorTreeWindow::NodeFromJson(const nlohmann::json &jn)
                 b.mult        = jb.value("mult", 1.0f);
             }
         }
+
+        r.cooldown = js.value("cooldown", 0.0f);
     }
 
     node.posX    = jn.value("posX", 0.0f);
@@ -476,6 +482,11 @@ void BehaviorTreeWindow::AppendOutlineLines(std::string &out, uint32_t nodeId, u
                 snprintf(score, sizeof(score), ", %s(%g) x%g", e ? e->key : "None", b.param, b.mult);
                 line += score;
             }
+            if (r.cooldown > 0.0f)
+            {
+                snprintf(score, sizeof(score), ", CD %g 秒（選んだ瞬間から）", r.cooldown);
+                line += score;
+            }
             line += ")";
         }
         else if (parent->type == EditorBTNodeType::WeightedSelector || parent->type == EditorBTNodeType::UtilitySelector)
@@ -576,6 +587,8 @@ nlohmann::json BehaviorTreeWindow::BuildBakedNodes()
         if (node.type == EditorBTNodeType::Decorator) j["decoratorType"] = node.decoratorType;
         // 名前はゲーム中のデバッグ表示（技選択のパネル）に出す。評価には使わない
         if (UsesCustomName(node.type) && !node.name.empty()) j["name"] = node.name;
+        if (node.type == EditorBTNodeType::Action && node.actionOrConditionId == A_DroneTechnique)
+            j["name"] = GetDisplayName(node); // 技選択の直下に1つで置くので、パネルに技の名前を出す
         j["children"] = nlohmann::json::array();
 
         node.runtimeFlatIndex = static_cast<int>(jsonNodes.size()); // デバッグ表示の対応付け

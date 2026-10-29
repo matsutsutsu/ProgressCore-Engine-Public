@@ -113,6 +113,6 @@ ROOT
         [Action] ドローン：攻撃実行
         [Action] 待機（待ち時間 4.2秒）
         [Action] ドローン：頭上円陣
-        [Action] ボス：横歩きで様子見（歩く時間 3秒）
+        [Action] 待機（待ち時間 3秒）
     [Sequence] ボス：遠ければ詰める  (score 優先度 3, 得意な距離 0〜9999 m, ぼかし 0 m, C_DistanceGreaterThan(80) x2)
-      [Action] ボス：横歩きで様子見（歩く時間 1.5秒）
+      [Action] 待機（待ち時間 1.5秒）

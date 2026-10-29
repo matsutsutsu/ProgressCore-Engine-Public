@@ -1,5 +1,5 @@
 {
-    "duration": 1.3666666746139526,
+    "duration": 1.3333333730697632,
     "events": [],
     "rootMotionCurve": {
         "color": 4286643968,
@@ -9,7 +9,7 @@
         "preInfinity": 0,
         "visible": true
     },
-    "sequenceName": "StrafeLeft",
+    "sequenceName": "SideTravelLeftStop",
     "speedCurve": {
         "color": 4286643968,
         "keys": [],
@@ -18,6 +18,6 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jog_Left_0",
+    "targetAnimName": "Travel_Lft_Stop_0",
     "targetModelPath": ""
 }

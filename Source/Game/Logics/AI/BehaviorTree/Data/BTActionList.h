@@ -37,25 +37,27 @@
 //       Driving  時間を消費し、currentActionId を毎フレーム書く（Parallel では主に置く）
 // Param 空文字ならエディタに入力欄を出さない
 //
-//    Name              ID   Category Kind      Param            Display
-// ---------------------------------------------------------------------
+//    Name                   ID   Category Kind      Param            Display
+// --------------------------------------------------------------------------
 #define BT_ACTION_LIST(X) \
-    /* Common */                                                                                           \
-    X(A_Wait,           1,   Common,  Blocking, "待ち時間 [秒]", "待機")                                   \
-                                                                                                           \
-    /* Boss */                                                                                             \
-    X(A_Move,           2,   Boss,    Driving,  "",              "ボス：移動 (Move To Player)")            \
-    X(A_ResetDamage,    3,   Boss,    Instant,  "",              "ボス：蓄積ダメージリセット")             \
-    X(A_BossBackStep,   4,   Boss,    Driving,  "",              "ボス：後方ステップ (Back Step)")         \
-    X(A_BossLeapEscape, 7,   Boss,    Driving,  "",              "ボス：中央へ跳んで逃げる (Leap Escape)") \
-    X(A_BossLeapAttack, 8,   Boss,    Driving,  "",              "ボス：跳躍攻撃 (Leap Attack)")           \
-    X(A_BossAirHover,   9,   Boss,    Driving,  "",              "ボス：その場で滞空 (Air Hover)")         \
-    X(A_BossDashAttack, 10,  Boss,    Driving,  "",              "ボス：突進攻撃 (Dash Attack)")           \
-    X(A_BossStrafe,     11,  Boss,    Driving,  "歩く時間 [秒]", "ボス：横歩きで様子見 (Strafe)")          \
-                                                                                                           \
-    /* Drone */                                                                                            \
-    X(A_DroneFormation, 128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                    \
-    X(A_DroneStrike,    100, Drone,   Instant,  "",              "ドローン：攻撃実行 (Strike)")
+    /* Common */                                                                                                \
+    X(A_Wait,                1,   Common,  Blocking, "待ち時間 [秒]", "待機")                                   \
+                                                                                                                \
+    /* Boss */                                                                                                  \
+    X(A_Move,                2,   Boss,    Driving,  "",              "ボス：移動 (Move To Player)")            \
+    X(A_ResetDamage,         3,   Boss,    Instant,  "",              "ボス：蓄積ダメージリセット")             \
+    X(A_BossBackStep,        4,   Boss,    Driving,  "",              "ボス：後方ステップ (Back Step)")         \
+    X(A_BossLeapEscape,      7,   Boss,    Driving,  "",              "ボス：中央へ跳んで逃げる (Leap Escape)") \
+    X(A_BossLeapAttack,      8,   Boss,    Driving,  "",              "ボス：跳躍攻撃 (Leap Attack)")           \
+    X(A_BossAirHover,        9,   Boss,    Driving,  "",              "ボス：その場で滞空 (Air Hover)")         \
+    X(A_BossDashAttack,      10,  Boss,    Driving,  "",              "ボス：突進攻撃 (Dash Attack)")           \
+    X(A_BossSideTravelLeft,  12,  Boss,    Driving,  "動く距離 [m]",  "ボス：左へ横移動 (Side Travel Left)")    \
+    X(A_BossSideTravelRight, 13,  Boss,    Driving,  "動く距離 [m]",  "ボス：右へ横移動 (Side Travel Right)")   \
+                                                                                                                \
+    /* Drone */                                                                                                 \
+    X(A_DroneFormation,      128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                   \
+    X(A_DroneStrike,         100, Drone,   Instant,  "",              "ドローン：攻撃実行 (Strike)")            \
+    X(A_DroneTechnique,      129, Drone,   Blocking, "技の枠番号",    "ドローンの技 (Technique)")
 
 // ============================================================
 // 条件
@@ -80,6 +82,8 @@
     X(C_Cornered,                13, Spatial, "端からの距離 [m]",       "追い込まれ（端から N m 以内・相手が中央側）") \
     X(C_TargetStrafing,          14, Spatial, "速さ [m/s]",             "相手が N m/s 以上で横へ回っている")      \
     X(C_TargetSlow,              15, Spatial, "速さ [m/s]",             "相手の速さが N m/s 未満（止まりぎみ）")  \
+    X(C_SpaceOnLeft,             16, Spatial, "空き [m]",               "相手を向いて左に N m 以上の空き")        \
+    X(C_SpaceOnRight,            17, Spatial, "空き [m]",               "相手を向いて右に N m 以上の空き")        \
                                                                                                                   \
     /* State */                                                                                                   \
     X(C_IsPhase2,                9,  State,   "",                       "フェーズ >= 2")                          \

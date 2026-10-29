@@ -39,6 +39,13 @@ namespace CCL::AI::Formation::Attack
         // 残すと、まだ撃っていなかった機が次の技で発射待ちのまま当たり判定を開かない
         void OnExit(DroneComponent &drone) const override { drone.fireDelay = 0.0f; }
 
+        // 1機ずつ順に撃つので、撃ってから戻すまでを長く取る
+        bool TryGetTiming(TechniqueTiming &out) const override
+        {
+            out = {1.2f, 4.2f, 3.0f};
+            return true;
+        }
+
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
             using namespace DirectX::SimpleMath;

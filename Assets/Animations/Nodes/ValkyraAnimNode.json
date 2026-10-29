@@ -61,6 +61,36 @@
             "requiredCancelMask": 0,
             "sourceGroupId": 0,
             "targetStateHash": 2047048416
+        },
+        {
+            "blendDuration": 0.15000000596046448,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2206702047,
+                    "paramName": "SideTravelLeft",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 343692853
+        },
+        {
+            "blendDuration": 0.15000000596046448,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2680688912,
+                    "paramName": "SideTravelRight",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 2269152588
         }
     ],
     "entryPosX": -48.0,
@@ -161,16 +191,30 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 641192933,
-            "name": "StrafeDir",
-            "type": 0
+            "hash": 2443131885,
+            "name": "Death",
+            "type": 2
         },
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 2443131885,
-            "name": "Death",
+            "hash": 2206702047,
+            "name": "SideTravelLeft",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2680688912,
+            "name": "SideTravelRight",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2571090873,
+            "name": "SideTravelPhase",
+            "type": 0
         }
     ],
     "states": [
@@ -189,36 +233,6 @@
             "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": -0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 2907519899
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 1019367652
-                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -251,36 +265,6 @@
             "speedCurveName": "",
             "stateHash": 2133600820,
             "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": -0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 2907519899
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 1019367652
-                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -916,70 +900,6 @@
         {
             "applyRootMotion": false,
             "groupId": 0,
-            "isLoop": true,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 700.0,
-            "nodePosY": 150.0,
-            "playbackSpeed": 0.4,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/StrafeLeft.json",
-            "sequenceName": "StrafeLeft",
-            "speedCurveName": "",
-            "stateHash": 2907519899,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": -0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 1168775091
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": true,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 700.0,
-            "nodePosY": 440.0,
-            "playbackSpeed": 0.4,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/StrafeRight.json",
-            "sequenceName": "StrafeRight",
-            "speedCurveName": "",
-            "stateHash": 1019367652,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 641192933,
-                            "paramName": "StrafeDir",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 1168775091
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
@@ -1024,6 +944,300 @@
             "speedCurveName": "",
             "stateHash": 2240033283,
             "transitions": []
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelLeftStart.json",
+            "sequenceName": "SideTravelLeftStart",
+            "speedCurveName": "",
+            "stateHash": 343692853,
+            "transitions": [
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2919673973
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 900.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelLeftLoop.json",
+            "sequenceName": "SideTravelLeftLoop",
+            "speedCurveName": "",
+            "stateHash": 2919673973,
+            "transitions": [
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 94174023
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1100.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelLeftStop.json",
+            "sequenceName": "SideTravelLeftStop",
+            "speedCurveName": "",
+            "stateHash": 94174023,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 700.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelRightStart.json",
+            "sequenceName": "SideTravelRightStart",
+            "speedCurveName": "",
+            "stateHash": 2269152588,
+            "transitions": [
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2366261518
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 900.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelRightLoop.json",
+            "sequenceName": "SideTravelRightLoop",
+            "speedCurveName": "",
+            "stateHash": 2366261518,
+            "transitions": [
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 198015144
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 2571090873,
+                            "paramName": "SideTravelPhase",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1100.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/SideTravelRightStop.json",
+            "sequenceName": "SideTravelRightStop",
+            "speedCurveName": "",
+            "stateHash": 198015144,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 3816806871,
+                            "paramName": "IsMoving",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2133600820
+                }
+            ]
         }
     ]
 }

@@ -38,6 +38,8 @@ struct AIBlackboard
     float targetSpeed           = 0.0f;    // 相手の水平の速さ（m/s）。止まりぎみかを見る
     float distanceToArenaEdge   = 9999.0f; // ステージの端までの距離（m）。正=内側、負=外へはみ出している
     float targetAngleFromCenter = 180.0f;  // 「ステージ中央の方向」と「相手の方向」のなす角（度、0〜180）。0 に近いほど逃げ道を塞がれている
+    float spaceOnLeft           = 9999.0f; // 相手を向いて真左へ、ステージの端まで進める距離（m）
+    float spaceOnRight          = 9999.0f; // 相手を向いて真右へ、ステージの端まで進める距離（m）
 
     float healthPercentage       = 100.0f;  // 残り HP の割合（%、0〜100）
     float accumulatedDamage      = 0.0f;    // 前回 A_ResetDamage してからの被弾量（ダメージの値そのもの）
@@ -126,6 +128,7 @@ struct BehaviorTreeComponent
     std::vector<float> nodeTimers;       // ノードごとの残り時間 [秒]。-1 は未開始、0 は時間切れ
     std::vector<int>   runningNodes;     // 複合ノードの再開位置。次にどの子から再開するか。-1 は先頭から
     std::vector<float> repeatTimers;     // UtilitySelector の子を最後に選んでからの減点の残り [秒]。0 で減点無し
+    std::vector<float> cooldownTimers;   // UtilitySelector の子のクールダウンの残り [秒]（採点ルールの cooldown）。0 で候補に戻る
     BTNodeID           runningNodeId = 0; // 今フレーム Running を返した最初のノード。0xFFFF は無し
     uint32_t           rngState      = 0; // 抽選（WeightedSelector / UtilitySelector）の乱数の状態。0 はまだ種を決めていない
 

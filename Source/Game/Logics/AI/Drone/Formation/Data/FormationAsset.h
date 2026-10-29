@@ -179,9 +179,13 @@ namespace CCL::AI::Formation
 
         float attackSeconds = 0.4f; // 撃つ合図から形が動き切るまで [秒]
 
-        // 撃つ前の予告の長さ [秒]。ボスBTの Wait（予告）と同じ値にする
-        // （BT はこの値を読まない。ずれると、震えが途中で切れるか、震え終わっても撃たない）
+        // 撃つ前の予告の長さ [秒]。BT の「ドローンの技」はこの時間で撃つ。
+        // 陣形と Wait を並べて書いた枝は、Wait をこの値にそろえる
+        // （ずれると、震えが途中で切れるか、震え終わっても撃たない）
         float telegraphSeconds = 1.0f;
+
+        float recoverySeconds = 1.0f; // 撃ってから頭上円陣へ戻すまで [秒]（BT の「ドローンの技」が使う）
+        float restSeconds     = 0.0f; // 戻してから次の技へ移るまで [秒]（同上）
 
         FormationOutput output; // 当たり方と見せ方
     };

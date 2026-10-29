@@ -57,6 +57,12 @@ namespace CCL::AI::Formation::Data
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 
+        bool TryGetTiming(TechniqueTiming &out) const override
+        {
+            out = {m_asset.telegraphSeconds, m_asset.recoverySeconds, m_asset.restSeconds};
+            return true;
+        }
+
         /**
          * @brief 予告の経過秒数と攻撃の進行度を外から固定する（エディタの手送り）。
          *

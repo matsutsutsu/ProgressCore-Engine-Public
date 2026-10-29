@@ -835,6 +835,12 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
                 {
                     continue;
                 }
+
+                // クールダウン中の子は割り込まない（採点ルールの cooldown。Decorator の Cooldown は CandidatePasses が見る）
+                if (btComp.cooldownTimers[childId] > 0.0f)
+                {
+                    continue;
+                }
                 if (!CandidatePasses(childId, btComp, myTrans, asset, entity, dt))
                 {
                     continue;
@@ -874,23 +880,38 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // ---------------------------------------------------------
     // Running の子がいれば、まずその子を再評価する。抽選はしない。
 
-    // 自己中断：走っている子に abortSelf が付いていて、その子の先頭の条件が通らなくなったら降りる。
+    // 自己中断：走っている子に abortSelf が付いていて、候補に入れる状態でなくなったら降りる。
     // 遠距離の弾幕を出している間に近づかれたら、弾幕をやめて近距離の技を選び直す、といった用途。
-    // Selector の自己中断と同じ判定（打ち切れない技が走っている間は見送る）。降りたら下の 3 へ進み、
-    // このフレームのうちに選び直す。降りた子は条件が通らないので、ふるいで外れて選ばれ直さない。
+    //
+    // 「候補に入れる状態」は、先頭の条件が通り（条件があれば）、点数が 0 より大きいこと。
+    // Selector の自己中断は先頭の条件だけを見るが、スコア選択は距離を採点ルールで決めるので、
+    // 距離の外で 0 点になったときも降りられるよう点数も見る。条件が無い子は条件の確認を飛ばす
+    // （GuardsPass は条件が無い枝を false にするので、そのままだと毎フレーム降りてしまう）。
+    // クールダウンは見ない。選んだ瞬間から数えるので、走っている子は必ずクールダウン中になる。
+    //
+    // 打ち切れない技が走っている間は見送る（Selector と同じ）。降りたら下の 3 へ進み、
+    // このフレームのうちに選び直す。降りた子は候補に入れない状態なので、ふるいで外れて選ばれ直さない。
     if (runningIndex >= 0 && runningIndex < (int)node.children.size() && !IgnoreGatesForDebug(btComp))
     {
         const BTNodeID runningChild = node.children[runningIndex];
-        if (asset.nodes[runningChild].abortSelf &&
-            !GuardsPass(runningChild, btComp, myTrans, asset, entity, dt) &&
-            CanAbortSubtree(runningChild, btComp, myTrans, asset, entity, dt))
+        if (asset.nodes[runningChild].abortSelf)
         {
-            CCL_LOG_INFO(LogCategory::AI, "[BT] 自己中断: スコア選択 nodes[%u] の nodes[%u] が条件を外れて降りた",
-                         static_cast<unsigned>(nodeId), static_cast<unsigned>(runningChild));
+            const bool guardOk = !HasReadableGuard(asset, runningChild) ||
+                                 GuardsPass(runningChild, btComp, myTrans, asset, entity, dt);
 
-            AbortSubtree(runningChild, btComp, myTrans, asset, entity, dt);
-            btComp.runningNodes[nodeId] = -1;
-            runningIndex                = -1;
+            BTScoreDebug unused; // 点数の内訳はここでは要らない
+            const bool   stillCandidate =
+                guardOk && ScoreUtilityChild(runningChild, btComp, myTrans, asset, entity, dt, unused) > 0.0f;
+
+            if (!stillCandidate && CanAbortSubtree(runningChild, btComp, myTrans, asset, entity, dt))
+            {
+                CCL_LOG_INFO(LogCategory::AI, "[BT] 自己中断: スコア選択 nodes[%u] の nodes[%u] が候補から外れて降りた",
+                             static_cast<unsigned>(nodeId), static_cast<unsigned>(runningChild));
+
+                AbortSubtree(runningChild, btComp, myTrans, asset, entity, dt);
+                btComp.runningNodes[nodeId] = -1;
+                runningIndex                = -1;
+            }
         }
     }
 
@@ -936,6 +957,13 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
         if (s <= 0.0f)
         {
             dbg.state = (dbg.distance == 0.0f) ? BTCandidateState::OutOfRange : BTCandidateState::ZeroScore;
+            continue;
+        }
+
+        // クールダウン中の子も候補に入れない（採点ルールの cooldown）。強制実行中は見ない（関門の素通し）
+        if (btComp.cooldownTimers[childId] > 0.0f && !IgnoreGatesForDebug(btComp))
+        {
+            dbg.state = BTCandidateState::Cooldown;
             continue;
         }
 
@@ -1043,6 +1071,12 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
             // 選んだ技はしばらく点数を下げる。同じ状況が続いても同じ技ばかり出さないため。
             // Failure の子は「出した」に数えない（出していない技まで出にくくなるため）
             btComp.repeatTimers[childId] = kRepeatPenaltySeconds;
+
+            // クールダウンも選んだ瞬間から数える（技の最中も減る）。数え方は減点と同じ
+            if (const int16_t rule = asset.nodes[childId].scoreRuleIndex; rule >= 0)
+            {
+                btComp.cooldownTimers[childId] = asset.scoreRules[rule].cooldown;
+            }
 
             // どれを選んだかは画面の動きだけでは分かりにくいので、ログにも残す（Debug ビルドだけ出る）
             btComp.debugScores[childId].picked      = true;

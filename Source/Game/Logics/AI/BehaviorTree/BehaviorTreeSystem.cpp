@@ -132,6 +132,7 @@ void BehaviorTreeSystem::SyncAssets()
         btComp.nodeTimers.assign(nodeCount, -1.0f);
         btComp.runningNodes.assign(nodeCount, -1);
         btComp.repeatTimers.assign(nodeCount, 0.0f);
+        btComp.cooldownTimers.assign(nodeCount, 0.0f);
         btComp.debugPickCount = 0; // 記録のノードIDは前の木のもの
         btComp.runningNodeId  = 0xFFFF;
     });
@@ -198,6 +199,12 @@ void BehaviorTreeSystem::Update(float rawDt)
 
         // スコア選択の繰り返しの減点を減らす（0 で減点が消える）
         for (float &t : btComp.repeatTimers)
+        {
+            t = (std::max)(0.0f, t - dt);
+        }
+
+        // スコア選択の子のクールダウンを減らす（0 で候補に戻る）
+        for (float &t : btComp.cooldownTimers)
         {
             t = (std::max)(0.0f, t - dt);
         }

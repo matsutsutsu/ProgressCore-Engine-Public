@@ -10,6 +10,7 @@
         "Model": "Assets\\Models\\Test",
         "Prefab": "Assets\\Prefabs\\Player",
         "Scene": "Assets\\Scene",
+        "TextEditor": "Assets\\Prefabs\\Enemy",
         "Texture": "Assets\\Textures\\VFX\\Particle",
         "Timeline": "Assets\\Timelines"
     }

@@ -51,10 +51,6 @@
                     "hoverLeap.landing": 2,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
-                    "strafeDistanceGain": 3.0,
-                    "strafeKeepDistance": 40.5,
-                    "strafeSpeed": 8.0,
-                    "strafeTurnSpeed": 6.0,
                     "turnSpeed": 10.0
                 },
                 "BossCommandComponent": null,

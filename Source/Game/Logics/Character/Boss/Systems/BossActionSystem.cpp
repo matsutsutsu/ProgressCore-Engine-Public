@@ -5,6 +5,7 @@
 #include "Engine/Core/App/GameFlowState.h"                           // cinematic
 #include "Engine/Animation/Core/AnimStateMachine.h"                  // 止まりのモーションの長さ
 #include "Engine/Animation/Components/AnimParametersComponent.h"     // 技の開始のトリガー
+#include "Engine/Animation/Components/RootMotionComponent.h"         // 横移動中は足滑り補正を止める
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 
@@ -104,22 +105,31 @@ namespace
     // （ValkyraAnimNode.json の BackStepStop）
     const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 
+    // 横移動の動き出し・止まりのモーションを流すステート（ValkyraAnimNode.json）
+    const uint32_t kSideTravelLeftStartState  = CCL::Utils::HashString("SideTravelLeftStart");
+    const uint32_t kSideTravelLeftStopState   = CCL::Utils::HashString("SideTravelLeftStop");
+    const uint32_t kSideTravelRightStartState = CCL::Utils::HashString("SideTravelRightStart");
+    const uint32_t kSideTravelRightStopState  = CCL::Utils::HashString("SideTravelRightStop");
+
     // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）
     // 跳躍3種は同じ "Leap"。着地のクリップは BossAnimSyncSystem が切り替える
-    const uint32_t kBackStepTrigger = CCL::Utils::HashString("BackStep");
-    const uint32_t kLeapTrigger     = CCL::Utils::HashString("Leap");
-    const uint32_t kDashTrigger     = CCL::Utils::HashString("Dash");
+    const uint32_t kSideTravelLeftTrigger  = CCL::Utils::HashString("SideTravelLeft");
+    const uint32_t kSideTravelRightTrigger = CCL::Utils::HashString("SideTravelRight");
+    const uint32_t kBackStepTrigger        = CCL::Utils::HashString("BackStep");
+    const uint32_t kLeapTrigger            = CCL::Utils::HashString("Leap");
+    const uint32_t kDashTrigger            = CCL::Utils::HashString("Dash");
 
     // 体の状態に入った瞬間に引くトリガーを返す。0 は引かない
-    // 待機・移動・横歩きは、グラフが状態の値でクリップを選ぶ
-    uint32_t StartTriggerOf(BossActionState state)
+    // 待機・移動は、グラフが状態の値でクリップを選ぶ
+    uint32_t StartTriggerOf(BossActionState state, bool sideTravelLeft)
     {
         switch (state)
         {
-        case BossActionState::BackStep: return kBackStepTrigger;
-        case BossActionState::Leap:     return kLeapTrigger;
-        case BossActionState::Dash:     return kDashTrigger;
-        default:                        return 0;
+        case BossActionState::SideTravel: return sideTravelLeft ? kSideTravelLeftTrigger : kSideTravelRightTrigger;
+        case BossActionState::BackStep:   return kBackStepTrigger;
+        case BossActionState::Leap:       return kLeapTrigger;
+        case BossActionState::Dash:       return kDashTrigger;
+        default:                          return 0;
         }
     }
 } // namespace
@@ -145,6 +155,7 @@ std::vector<CCL::ECS::TypeID> BossActionSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
     types.push_back(CCL::ECS::TypeInfo<AnimParametersComponent>::ID()); // 技の開始のトリガー
+    types.push_back(CCL::ECS::TypeInfo<RootMotionComponent>::ID());     // 横移動中は足滑り補正を止める
     return types;
 }
 
@@ -157,6 +168,7 @@ void BossActionSystem::Update(float rawDt)
     // 1. このフレームにやるべき動きを決める（演出中なら待機）
     // 2. 動きが変わったフレームだけ、入ったときの処理とアニメの開始をする
     // 3. 今の動きを1フレーム分進める
+    // 4. 横移動の間は、足滑り補正を止める
 
     if (!m_world->HasResource<BattleContext>()) return;
     const auto &battle = m_world->GetResource<BattleContext>();
@@ -214,10 +226,11 @@ void BossActionSystem::Update(float rawDt)
         {
             // 状態遷移時に１回だけ呼ばれる
             bossAction.actionSerial = cmd.actionSerial;
-            OnEnterState(next, cmd.currentActionId, bossAction, f);
+            OnEnterState(next, cmd.currentActionId, cmd.currentActionParam, bossAction, f);
 
             // アクション状態に合わせたアニメのトリガーを引く
-            const uint32_t trigger = StartTriggerOf(next);
+            // 横移動の左右は OnEnterState が決めた後に読む
+            const uint32_t trigger = StartTriggerOf(next, bossAction.sideTravelLeft);
 
             auto          *anim    = m_world->GetComponent<AnimParametersComponent>(entity);
 
@@ -238,8 +251,8 @@ void BossActionSystem::Update(float rawDt)
         case BossActionState::Move:
             ProcessMove(bossAction, f);
             break;
-        case BossActionState::Strafe:
-            ProcessStrafe(bossAction, f);
+        case BossActionState::SideTravel:
+            ProcessSideTravel(bossAction, f);
             break;
         case BossActionState::BackStep:
             ProcessBackStep(bossAction, f);
@@ -253,6 +266,17 @@ void BossActionSystem::Update(float rawDt)
         default:
             ProcessIdle(bossAction, f);
             break;
+        }
+
+        // ---------------------------------------------------------
+        // 4. 足滑り補正
+        // ---------------------------------------------------------
+
+        // 横移動のループのクリップは飛んで進む動きで、足が地面に着かない
+        // 足滑り補正（移動の速さに合わせて再生を速める）を掛けると、ただ速く回るだけになる
+        if (auto *rootMotion = m_world->GetComponent<RootMotionComponent>(entity))
+        {
+            rootMotion->externallyDriven = (bossAction.currentState == BossActionState::SideTravel);
         }
     });
 }
@@ -335,56 +359,6 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossAction, const Frame 
 
 
 
-// ボスの横歩き。相手を見たまま、相手を中心に回り込む
-void BossActionSystem::ProcessStrafe(BossActionComponent &bossAction, const Frame &f)
-{
-    Vector3 toPlayer = FlatToward(f.trans.position, f.playerPos);
-
-    // 相手と重なっていて向きが決まらないときは止まる
-    const float distance = toPlayer.Length();
-    if (distance <= 0.001f)
-    {
-        f.movement.desiredVelocity = Vector3::Zero;
-        return;
-    }
-    toPlayer /= distance;
-
-    // 相手への方向の直角へ進む
-    // 前 (fx,0,fz) の右は (fz,0,-fx)。strafeSign が +1 で右回り、-1 で左回り
-    Vector3 moveDir(toPlayer.z * bossAction.strafeSign, 0.0f, -toPlayer.x * bossAction.strafeSign);
-
-    // 狙いの間合いからのずれを、半径方向に足す
-    // 相手が詰めてきても、回りながら間合いを戻せる
-    const float error  = (distance - bossAction.strafeKeepDistance) / (std::max)(1.0f, bossAction.strafeKeepDistance);
-    const float radial = std::clamp(error * bossAction.strafeDistanceGain, -1.0f, 1.0f);
-    moveDir += toPlayer * radial; // 正=遠いので近づく / 負=近いので離れる
-
-    moveDir.Normalize();
-
-    // 0.5秒先がステージの外なら、回る向きを1回だけ反転する
-    // 毎フレーム反転すると、境界の上で足踏みになる
-    if (!bossAction.strafeFlipped)
-    {
-        const Vector3 ahead = Vector3(f.trans.position) + moveDir * (bossAction.strafeSpeed * 0.5f);
-        if ((ClampInsideArena(ahead, f.battle) - ahead).LengthSquared() > 0.01f)
-        {
-            bossAction.strafeSign    = -bossAction.strafeSign;
-            bossAction.strafeFlipped = true;
-            moveDir                  = Vector3(toPlayer.z * bossAction.strafeSign, 0.0f, -toPlayer.x * bossAction.strafeSign);
-        }
-    }
-
-    bossAction.moveDirection   = moveDir;
-    f.movement.desiredVelocity = moveDir;
-    f.movement.overrideSpeed   = bossAction.strafeSpeed;
-
-    // 進む向きではなく、相手を向き続ける
-    // 横歩きのクリップ(Jog_Left/Right)が正しく見える前提
-    FaceToward(f.trans, toPlayer, bossAction.strafeTurnSpeed, f.dt, f.joltHandle);
-}
-
-
-
 // ---------------------------------------------------------------------------
 // 行動の切り替え
 // ---------------------------------------------------------------------------
@@ -394,7 +368,8 @@ void BossActionSystem::ProcessStrafe(BossActionComponent &bossAction, const Fram
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == A_Move) return BossActionState::Move;
-    if (actionId == A_BossStrafe) return BossActionState::Strafe;
+    if (actionId == A_BossSideTravelLeft) return BossActionState::SideTravel;
+    if (actionId == A_BossSideTravelRight) return BossActionState::SideTravel;
     if (actionId == A_BossBackStep) return BossActionState::BackStep;
     if (actionId == A_BossLeapEscape) return BossActionState::Leap;
     if (actionId == A_BossLeapAttack) return BossActionState::Leap;
@@ -418,8 +393,8 @@ const BossLeapDef *BossActionSystem::LeapDefOf(ActionID actionId, const BossActi
 
 
 // 状態遷移に入った瞬間呼ばれる処理
-void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, BossActionComponent &bossAction,
-                                    const Frame &f) const
+void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, float actionParam,
+                                    BossActionComponent &bossAction, const Frame &f) const
 {
     bossAction.actionTimer    = 0.0f;
     bossAction.recoveryTimer  = 0.0f;
@@ -461,11 +436,9 @@ void BossActionSystem::OnEnterState(BossActionState next, ActionID actionId, Bos
         break;
     }
 
-    case BossActionState::Strafe:
-        // 横歩きの準備。前回と逆回りにする
-        // 毎回同じ向きだと先が読める（壁際なら ProcessStrafe が取り直す）
-        bossAction.strafeSign    = -bossAction.strafeSign;
-        bossAction.strafeFlipped = false;
+    case BossActionState::SideTravel:
+        // 横移動の準備。左右を決め、動き出しの移動を予約する
+        BeginSideTravel(actionId, actionParam, bossAction, f);
         break;
 
     case BossActionState::Leap:
@@ -531,6 +504,58 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossAction, const Fr
         ProcessRecovery(bossAction, bossAction.backStepRecovery, f);
         return;
     }
+
+    bossAction.moveDirection = bossAction.lockedDirection;
+}
+
+
+
+// ボスの横移動。相手を向いたまま、入った瞬間に決めた真横へ進む
+// 動き出し → 一定の速さ → 止まり。各段の移動は予約が運び、ここでは段の切り替えと向きだけを決める
+void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const Frame &f)
+{
+    // --- 段の切り替え ---
+
+    // 予約した移動が終わったら、次の段の移動を予約する
+    // 動き出しの移動は、入った瞬間に BeginSideTravel が予約済み
+    if (!f.movement.IsMoving())
+    {
+        switch (bossAction.sideTravelPhase)
+        {
+        case BossSideTravelPhase::Start:
+            // 最高速のまま、残りの距離を進む
+            f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelTopSpeed,
+                                       bossAction.sideTravelCruiseTime, bossAction.sideTravelTopSpeed);
+            bossAction.sideTravelPhase = BossSideTravelPhase::Travel;
+            break;
+
+        case BossSideTravelPhase::Travel:
+            // 最高速から 0 へ、止まりのモーションの長さで落として止まる
+            f.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelTopSpeed,
+                                       bossAction.sideTravelStopTime, 0.0f);
+            bossAction.sideTravelPhase = BossSideTravelPhase::Stop;
+            break;
+
+        default:
+            // 止まった。速度は予約が 0 にして止める
+            bossAction.sideTravelPhase = BossSideTravelPhase::End;
+            break;
+        }
+    }
+
+    // --- 終わり ---
+
+    // 硬直は持たない。止まりのモーションがそのまま後隙になる
+    if (bossAction.sideTravelPhase == BossSideTravelPhase::End)
+    {
+        ProcessRecovery(bossAction, 0.0f, f);
+        return;
+    }
+
+    // --- 向き ---
+
+    // 体は相手を向き続ける。進む向きは入った瞬間のまま変えない
+    FaceToward(f.trans, FlatToward(f.trans.position, f.playerPos), bossAction.turnSpeed, f.dt, f.joltHandle);
 
     bossAction.moveDirection = bossAction.lockedDirection;
 }
@@ -796,7 +821,7 @@ void BossActionSystem::ProcessRecovery(BossActionComponent &bossAction, float re
 
 
 // ---------------------------------------------------------------------------
-// 技の補助（狙い・着地点）
+// 技の補助（狙い・着地点・横移動の計画）
 // ---------------------------------------------------------------------------
 
 // 突進の方向を固定し、突っ込む終点と長さを決める
@@ -823,6 +848,54 @@ void BossActionSystem::LockDashAim(BossActionComponent &bossAction, const Vector
     // 突っ込む長さは、実際に走る距離（高さを含む）÷速さ
     const float length        = Vector3::Distance(bossAction.dashAimPos, bossAction.dashEndPos);
     bossAction.dashChargeTime = length / (std::max)(1.0f, bossAction.dashSpeed);
+}
+
+
+
+// 横移動の左右と進む向きを決め、動き出しの移動を予約する
+// 技に入る瞬間に1回だけ呼ぶ
+void BossActionSystem::BeginSideTravel(ActionID actionId, float distance, BossActionComponent &bossAction,
+                                       const Frame &f) const
+{
+    bossAction.sideTravelLeft  = (actionId == A_BossSideTravelLeft);
+    bossAction.sideTravelPhase = BossSideTravelPhase::Start;
+
+    // --- 進む向きと距離 ---
+
+    // lockedDirection は相手への向き。その真横へ進む
+    // 前 (fx,0,fz) の右は (fz,0,-fx)
+    const Vector3 forward = bossAction.lockedDirection;
+    const Vector3 right(forward.z, 0.0f, -forward.x);
+    bossAction.lockedDirection = bossAction.sideTravelLeft ? -right : right;
+
+    // 壁の手前で止まるよう、進める距離に縮める
+    const Vector3 now   = GetCharacterWorldPosition(f.joltHandle);
+    const Vector3 end   = StraightPointInArena(now, bossAction.lockedDirection, distance, f.battle);
+    const float   reach = FlatToward(now, end).Length();
+
+    // --- 段の長さと速さ ---
+
+    // 動き出し・止まりの長さは、アニメのクリップの長さに合わせる
+    const uint32_t startState = bossAction.sideTravelLeft ? kSideTravelLeftStartState : kSideTravelRightStartState;
+    const uint32_t stopState  = bossAction.sideTravelLeft ? kSideTravelLeftStopState : kSideTravelRightStopState;
+    const float    startTime  = f.anim ? StatePlayTime(f.anim->internalGraph, startState, 0.5f) : 0.5f;
+    bossAction.sideTravelStopTime = f.anim ? StatePlayTime(f.anim->internalGraph, stopState, 0.5f) : 0.5f;
+
+    // 速さは直線で上げ下げするので、動き出しと止まりの間に進むのは 最高速×時間÷2
+    // 残りを一定の速さで進む。距離が足りなければ最高速を下げ、一定の速さの区間を 0 にする
+    const float rampTime = (startTime + bossAction.sideTravelStopTime) * 0.5f;
+    float       topSpeed = (std::max)(1.0f, bossAction.sideTravelSpeed);
+    float       cruise   = reach / topSpeed - rampTime;
+    if (cruise < 0.0f)
+    {
+        topSpeed = (rampTime > 0.0f) ? reach / rampTime : 0.0f;
+        cruise   = 0.0f;
+    }
+    bossAction.sideTravelTopSpeed   = topSpeed;
+    bossAction.sideTravelCruiseTime = cruise;
+
+    // 0 から最高速へ、動き出しのモーションの長さで速くする
+    f.movement.MoveInDirection(bossAction.lockedDirection, 0.0f, startTime, topSpeed);
 }
 
 
@@ -889,7 +962,7 @@ Vector3 BossActionSystem::ClampInsideArena(const Vector3 &point, const BattleCon
 
 
 
-// dir の向きへまっすぐ distance 進んだ地点を返す（後方ステップ・突進の下がる・突っ込む）
+// dir の向きへまっすぐ distance 進んだ地点を返す（横移動・後方ステップ・突進の下がる・突っ込む）
 // 壁際でも向きは変えず、距離だけ縮めて壁の手前で止める
 Vector3 BossActionSystem::StraightPointInArena(const Vector3 &from, const Vector3 &dir, float distance,
                                                const BattleContext &battle) const

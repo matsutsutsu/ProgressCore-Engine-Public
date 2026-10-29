@@ -44,6 +44,13 @@ namespace CCL::AI::Formation::Squad
             return c;
         }
 
+        // 追跡は戻すまで続く。普段は BT の Parallel の主（滞空）が先に終わり、技ごと打ち切られる
+        bool TryGetTiming(TechniqueTiming &out) const override
+        {
+            out = {2.4f, 20.0f, 0.0f};
+            return true;
+        }
+
         // SquadUpdateSystem がこのフレームの分を更新済み
         void BeginFrame(CCL::ECS::World &world) override
         {

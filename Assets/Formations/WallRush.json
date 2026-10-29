@@ -71,6 +71,8 @@
     "look": "Auto",
     "useShiverTelegraph": true
   },
+  "recoverySeconds": 2.3,
+  "restSeconds": 1.5,
   "slot": 34,
-  "telegraphSeconds": 1.5
+  "telegraphSeconds": 1.6
 }

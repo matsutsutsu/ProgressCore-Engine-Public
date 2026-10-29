@@ -145,7 +145,9 @@ namespace CCL::AI::Formation::Meta
             FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
             FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, 0.0f, static_cast<float>(kDroneFormationSlotCount - 1), nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
             FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
-            FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。ボスBTの予告の Wait と同じ値にする（今は BT がこの値を読まない）"),
+            FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。BT の「ドローンの技」はこの時間が過ぎたら撃つ"),
+            FD_Float("撃ってから戻すまで [秒]", "recoverySeconds", offsetof(T, recoverySeconds), 0.01f, 0.0f, 30.0f, nullptr, true, "攻撃と硬直の長さ。過ぎたらドローンを頭上円陣へ戻す"),
+            FD_Float("戻してからの間 [秒]", "restSeconds", offsetof(T, restSeconds), 0.01f, 0.0f, 30.0f, nullptr, true, "ボスが次の技を選ぶまで待つ時間。0 ならすぐ選ぶ"),
         };
         return fields;
     }

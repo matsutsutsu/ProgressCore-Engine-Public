@@ -626,6 +626,8 @@ std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
     {
         if (node.actionOrConditionId == A_DroneFormation)
             return GetDroneFormationLabel(node.param);
+        if (node.actionOrConditionId == A_DroneTechnique)
+            return GetDroneTechniqueLabel(node.param);
 
         // 末尾の英語の併記「(Move To Player)」は外す。一覧が横に長くなりすぎるため
         std::string  name  = GetActionDisplayName(node.actionOrConditionId);
@@ -703,5 +705,32 @@ const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam) const
     else
         snprintf(buf, sizeof(buf), "ドローン：%s  (枠%d)", name, slot);
     return buf;
+}
+
+const char *BehaviorTreeWindow::GetDroneTechniqueLabel(float slotParam) const
+{
+    static thread_local char buf[96];
+
+    const int slot = static_cast<int>(std::lround(slotParam));
+    if (const char *name = DroneTechniqueName(slot))
+        snprintf(buf, sizeof(buf), "ドローンの技：%s", name);
+    else if (slot <= 0)
+        snprintf(buf, sizeof(buf), "ドローンの技（技が選ばれていません）");
+    else
+        snprintf(buf, sizeof(buf), "ドローンの技：枠%d に技がありません", slot); // 指しても失敗するだけ
+    return buf;
+}
+
+const char *BehaviorTreeWindow::DroneTechniqueName(int slot) const
+{
+    if (!m_formations || slot <= 0 || slot >= static_cast<int>(kDroneFormationSlotCount)) return nullptr;
+
+    const CCL::AI::Formation::IFormation *formation = m_formations->Get(static_cast<DroneFormationType>(slot));
+    CCL::AI::Formation::TechniqueTiming   timing;
+    if (!formation || !formation->TryGetTiming(timing)) return nullptr;
+
+    // データの技は陣形エディタで付けた名前、C++ の技は陣形の一覧の表示名
+    if (const char *name = formation->DisplayName()) return name;
+    return kDroneFormationNames[static_cast<size_t>(slot)];
 }
 

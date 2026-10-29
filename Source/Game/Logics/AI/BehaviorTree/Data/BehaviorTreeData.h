@@ -115,6 +115,10 @@ struct BTScoreRule
 
     BTScoreBonus bonuses[kMaxScoreBonuses]; // 当てはまるものを全部掛ける
     uint8_t      bonusCount = 0;            // bonuses のうち使っている数
+
+    // 選んでから次に候補へ戻るまで [秒]。0 は無し。数え始めは「選んだ瞬間」（技の最中も減る）。
+    // Cooldown の Decorator を挟まずに、技の判断の設定をこのルール1か所に集めるためのもの
+    float cooldown = 0.0f;
 };
 
 /**

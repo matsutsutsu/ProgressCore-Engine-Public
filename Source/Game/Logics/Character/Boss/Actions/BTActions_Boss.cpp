@@ -6,6 +6,7 @@
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 跳躍と突進の段
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // ドローンの技の時間割
 #include "Engine/ECS/Core/CCL_World.h" // world->GetComponent
 
 #include <algorithm> // 待機の秒数を 0 以上にそろえる
@@ -145,7 +146,7 @@ namespace CCL::AI::BT
         };
 
         // ---------------------------------------------------------------------------
-        // 体を動かす技（後方ステップ・跳躍・突進・横歩き）
+        // 体を動かす技（後方ステップ・跳躍・突進・横移動）
         // ---------------------------------------------------------------------------
 
         // ボス本体へ技を要求し、技が硬直まで終わったら完了する。
@@ -197,7 +198,8 @@ namespace CCL::AI::BT
                     return BTNodeState::Success;
 
                 // 技が続いている間は、毎フレーム本体へ技を要求する
-                cmd->currentActionId = id;
+                cmd->currentActionId    = id;
+                cmd->currentActionParam = ctx.param;
                 return BTNodeState::Running;
             }
 
@@ -207,39 +209,6 @@ namespace CCL::AI::BT
             // 要求が書かれなくなると BossActionSystem が待機へ倒れ、
             // 放物線の途中から落ちる
             bool CanAbort(BTContext &ctx) const override { return !IsAirborne(ctx); }
-        };
-
-        // 横歩き。param 秒のあいだ、ボス本体へ横歩きを要求する
-        // 横歩きには終わりの形が無いので、長さは BT が決める
-        class StrafeAction : public IBTAction
-        {
-        public:
-            std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
-            {
-                return TypeIDsOf<BossCommandComponent>();
-            }
-
-            BTNodeState Execute(BTContext &ctx) override
-            {
-                float &timer = NodeTimer(ctx);
-
-                ctx.bt->lastLogActionId = A_BossStrafe; // BT デバッガに出す行動名
-
-                // 歩く時間が未設定（0以下）のノードは、歩かずに失敗する
-                // 負の値のまま始めると、時間切れにならず終わらない
-                if (ctx.param <= 0.0f) return BTNodeState::Failure;
-
-                // 入った最初のフレームに歩く時間を入れ、使い切ったら完了する
-                if (timer == kTimerNotStarted) timer = ctx.param;
-                if (timer == kTimerFinished) return BTNodeState::Success;
-
-                // 歩いている間は、毎フレームボス本体へ横歩きを要求する
-                if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
-                {
-                    cmd->currentActionId = A_BossStrafe;
-                }
-                return BTNodeState::Running;
-            }
         };
 
         // ---------------------------------------------------------------------------
@@ -335,6 +304,102 @@ namespace CCL::AI::BT
                 return BTNodeState::Success;
             }
         };
+
+        // ドローンの技を、予告から帰投まで1つのノードで出す。
+        // 時間割は陣形が持つ（データの技は陣形エディタで決める）:
+        //     [陣形] ─ 予告 ─ [撃つ] ─ 撃ってから戻すまで ─ [頭上円陣] ─ 間 ─ 完了
+        // 時計は nodeTimers の1本だけ。最初のフレームに合計を入れ、残り時間から今の段を出す
+        class DroneTechniqueAction : public IBTAction
+        {
+        public:
+            std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+            {
+                return TypeIDsOf<BossCommandComponent>();
+            }
+
+            BTNodeState Execute(BTContext &ctx) override
+            {
+                // 処理フロー:
+                // 1. 技と時間割を引く
+                // 2. 入った最初のフレームに陣形を指示する
+                // 3. 段の境目をまたいだフレームに、撃つ・戻すを指示する
+                // 4. 時間を使い切ったら完了する
+
+                float &timer = NodeTimer(ctx);
+
+                ctx.bt->lastLogActionId = A_DroneTechnique; // BT デバッガに出す行動名
+
+                // ---------------------------------------------------------
+                // 1. 技と時間割
+                // ---------------------------------------------------------
+
+                // param は枠番号。0 は None、1～48 が陣形の枠番号
+                const int slot = static_cast<int>(std::lround(ctx.param));
+                if (slot <= 0 || slot >= static_cast<int>(kDroneFormationSlotCount))
+                {
+                    return BTNodeState::Failure;
+                }
+                const auto formation = static_cast<DroneFormationType>(slot);
+
+                // 陣形が無い枠や、技でない隊形（円陣）を指していたら失敗する
+                const auto *registry = Formation::FormationRegistry::Find(*ctx.world);
+                const auto *technique = registry ? registry->Get(formation) : nullptr;
+
+                Formation::TechniqueTiming timing;
+                if (!technique || !technique->TryGetTiming(timing))
+                {
+                    return BTNodeState::Failure;
+                }
+
+                auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
+                if (!cmd) return BTNodeState::Failure;
+
+                // 負の秒数は 0 にそろえる（待機と同じ理由）
+                const float strikeAt = (std::max)(0.0f, timing.telegraph);
+                const float returnAt = strikeAt + (std::max)(0.0f, timing.recovery);
+                const float total    = returnAt + (std::max)(0.0f, timing.rest);
+
+                // ---------------------------------------------------------
+                // 2. 入った最初のフレーム
+                // ---------------------------------------------------------
+                const bool first = (timer == kTimerNotStarted);
+                if (first)
+                {
+                    timer = total;
+
+                    // 攻撃信号もここで下ろす。
+                    // 前の技の「今撃て」が残ると、組み上がる途中の陣形が突っ込む
+                    cmd->requestFormation  = formation;
+                    cmd->droneAttackActive = false;
+                }
+
+                // ---------------------------------------------------------
+                // 3. 段の境目
+                // ---------------------------------------------------------
+
+                // このフレームで進んだ区間（prev, now] に境目が入っていたら、その指示を出す。
+                // 毎フレーム書かずに境目でだけ書くのは、陣形・攻撃実行・頭上円陣のノードを並べていたときと同じにするため
+                const float now  = total - timer;
+                const float prev = first ? -1.0f : now - ctx.dt;
+
+                if (prev < strikeAt && strikeAt <= now)
+                {
+                    cmd->droneAttackActive = true;
+                }
+                if (prev < returnAt && returnAt <= now)
+                {
+                    cmd->requestFormation  = DroneFormationType::HighOrbit;
+                    cmd->droneAttackActive = false;
+                }
+
+                // ---------------------------------------------------------
+                // 4. 完了
+                // ---------------------------------------------------------
+                if (timer == kTimerFinished) return BTNodeState::Success;
+
+                return BTNodeState::Running;
+            }
+        };
     } // namespace
 
     // ---------------------------------------------------------------------------
@@ -361,11 +426,13 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossLeapAttack, std::make_unique<MotionAction>(A_BossLeapAttack));
         reg.RegisterActionInstance(A_BossAirHover, std::make_unique<MotionAction>(A_BossAirHover));
         reg.RegisterActionInstance(A_BossDashAttack, std::make_unique<MotionAction>(A_BossDashAttack));
-        reg.RegisterAction<StrafeAction>(A_BossStrafe);
+        reg.RegisterActionInstance(A_BossSideTravelLeft, std::make_unique<MotionAction>(A_BossSideTravelLeft));
+        reg.RegisterActionInstance(A_BossSideTravelRight, std::make_unique<MotionAction>(A_BossSideTravelRight));
 
         // --- ドローンへの指示 ---
 
         reg.RegisterAction<DroneStrikeAction>(A_DroneStrike);
+        reg.RegisterAction<DroneTechniqueAction>(A_DroneTechnique);
 
         // データの技はこの1つ。どの技かは枠番号（param）が決める
         reg.RegisterActionInstance(A_DroneFormation, std::make_unique<DroneAction>(A_DroneFormation));

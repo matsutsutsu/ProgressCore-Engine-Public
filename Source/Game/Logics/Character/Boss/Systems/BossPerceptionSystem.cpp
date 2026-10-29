@@ -117,6 +117,18 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         const Vector3 myWorldPos(trans.GetWorldPosition());
         btComp.blackboard.distanceToArenaEdge   = DistanceToArenaEdge(myWorldPos, battle);
         btComp.blackboard.targetAngleFromCenter = TargetAngleFromCenterDeg(myWorldPos, targetPos, battle);
+
+        // 横移動の向きを選ぶための左右の空き。向きは体の正面でなく相手への向きで測る
+        // （横移動が進む向きと同じ基準にする）
+        Vector3 toTarget = targetPos - myWorldPos;
+        toTarget.y       = 0.0f;
+        if (toTarget.LengthSquared() > 0.0001f)
+        {
+            toTarget.Normalize();
+            const Vector3 right(toTarget.z, 0.0f, -toTarget.x); // 前 (fx,0,fz) の右は (fz,0,-fx)
+            btComp.blackboard.spaceOnLeft  = SpaceToArenaEdge(myWorldPos, -right, battle);
+            btComp.blackboard.spaceOnRight = SpaceToArenaEdge(myWorldPos, right, battle);
+        }
     });
 }
 
@@ -197,6 +209,20 @@ float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,
     fromCenter.y       = 0.0f; // 高さの違いで端までの距離が変わらないようにする
 
     return battle.arenaRadius - fromCenter.Length();
+}
+
+float BossPerceptionSystem::SpaceToArenaEdge(const Vector3 &myWorldPos, const Vector3 &dir,
+                                             const BattleContext &battle) const
+{
+    // |offset + dir × t| = 半径 を t について解く（直線と円の交点）
+    Vector3 offset = myWorldPos - Vector3(battle.arenaCenter);
+    offset.y       = 0.0f;
+
+    const float along = offset.Dot(dir);
+    const float disc  = along * along - (offset.LengthSquared() - battle.arenaRadius * battle.arenaRadius);
+    if (disc <= 0.0f) return 0.0f; // ステージの外に居て、その向きには円に入らない
+
+    return (std::max)(0.0f, -along + std::sqrt(disc));
 }
 
 float BossPerceptionSystem::TargetAngleFromCenterDeg(const Vector3       &myWorldPos,

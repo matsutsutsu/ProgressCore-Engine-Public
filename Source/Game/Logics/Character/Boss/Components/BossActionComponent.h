@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ボス本体の動き（移動・後方ステップ・跳躍・突進）の
+// 概要: ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進）の
 //       設定値と実行時の状態を持つ Component。
 //       実行時の状態を書くのは BossActionSystem だけ。
 // ===========================================================================
@@ -11,12 +11,22 @@
 // BossStateNames も同じ並びに直す。
 enum class BossActionState : uint8_t
 {
-    None,     // 待機
-    Move,     // 歩いて近づく
-    Strafe,   // 横歩き
-    BackStep, // 後方ステップ
-    Leap,     // 跳躍
-    Dash,     // 突進攻撃
+    None,       // 待機
+    Move,       // 歩いて近づく
+    SideTravel, // 横移動
+    BackStep,   // 後方ステップ
+    Leap,       // 跳躍
+    Dash,       // 突進攻撃
+};
+
+// 横移動の段
+// 並びを変えたら BossActionComponentMeta.cpp の BossSideTravelPhaseNames も直す
+enum class BossSideTravelPhase : uint8_t
+{
+    Start,  // 動き出し（速くなる）
+    Travel, // 一定の速さで進む
+    Stop,   // 止まる（遅くなる）
+    End,    // 止まり終えた
 };
 
 // 跳躍の着地点の決め方
@@ -79,12 +89,11 @@ struct BossActionComponent
     float turnSpeed     = 8.0f; // 移動中・溜め中の向き直り
     float idleTurnSpeed = 4.0f; // 待機中の向き直り
 
-    // --- 横歩き ---
+    // --- 横移動 ---
 
-    float strafeSpeed        = 3.0f;  // [m/s]
-    float strafeTurnSpeed    = 6.0f;  // 回りながらの向き直り
-    float strafeKeepDistance = 12.0f; // 保ちたい間合い [m]
-    float strafeDistanceGain = 0.5f;  // 間合いを詰める強さ。0 で円
+    // 動く距離は BT のノードの param が決める
+    // 技の長さ ＝ 動き出し＋止まり（どちらもアニメから）＋残りの距離を一定の速さで進む時間
+    float sideTravelSpeed = 90.0f; // 一定の速さで進むときの速さ [m/s]
 
     // --- 後方ステップ ---
 
@@ -148,9 +157,6 @@ struct BossActionComponent
     float    recoveryTimer  = 0.0f;  // 硬直の経過 [秒]
     float    lastActionTime = 0.0f;  // 前の技が終わるまでの長さ [秒]（調整の確認用）
 
-    float strafeSign    = 1.0f;  // +1=右回り / -1=左回り
-    bool  strafeFlipped = false; // 壁で反転済みか
-
     DirectX::SimpleMath::Vector3 lockedDirection = DirectX::SimpleMath::Vector3::UnitZ; // 技に入った瞬間に固定した進行方向
 
     // 以下、技の移動そのものは CharacterMovementComponent の予約が持つ
@@ -160,6 +166,13 @@ struct BossActionComponent
     BossLeapPhase                leapPhase      = BossLeapPhase::Windup;
     DirectX::SimpleMath::Vector3 leapTakeoffPos = DirectX::SimpleMath::Vector3::Zero; // ドローンの陣形の高さに使う
     DirectX::SimpleMath::Vector3 leapLandingPos = DirectX::SimpleMath::Vector3::Zero;
+
+    // 横移動
+    BossSideTravelPhase sideTravelPhase      = BossSideTravelPhase::Start;
+    bool                sideTravelLeft       = false; // 左へ動くか（アニメの左右を選ぶ）
+    float               sideTravelTopSpeed   = 0.0f;  // 今回の最高速 [m/s]。距離が短いと下げる
+    float               sideTravelCruiseTime = 0.0f;  // 一定の速さで進む長さ [秒]
+    float               sideTravelStopTime   = 0.0f;  // 止まりのモーションの長さ [秒]
 
     // 後方ステップ
     BossBackStepPhase backStepPhase    = BossBackStepPhase::Retreat;

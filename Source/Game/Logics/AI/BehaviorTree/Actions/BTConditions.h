@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近や横の速さ・被弾・ステージの端）。
+// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近や横の速さ・被弾・ステージの端・左右の空き）。
 //
 // 責務:
 //   - blackboard の値とノードの param を比べる条件を定義する
@@ -141,6 +141,26 @@ namespace CCL::AI::BT
         }
     };
 
+    // 相手を向いて左に param m 以上の空きがある。横移動で壁へ突っ込まないための条件に使う
+    class SpaceOnLeft : public IBTCondition
+    {
+    public:
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.spaceOnLeft >= ctx.param;
+        }
+    };
+
+    // 相手を向いて右に param m 以上の空きがある。
+    class SpaceOnRight : public IBTCondition
+    {
+    public:
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.spaceOnRight >= ctx.param;
+        }
+    };
+
     // 直近の被弾から param 秒以内。殴られている最中に反撃・離脱を選びやすくするのに使う
     class RecentlyHit : public IBTCondition
     {
@@ -168,6 +188,8 @@ namespace CCL::AI::BT
         reg.RegisterCondition<IsAtStageEdge>(C_IsAtStageEdge);
         reg.RegisterCondition<TargetOnCenterSide>(C_TargetOnCenterSide);
         reg.RegisterCondition<Cornered>(C_Cornered);
+        reg.RegisterCondition<SpaceOnLeft>(C_SpaceOnLeft);
+        reg.RegisterCondition<SpaceOnRight>(C_SpaceOnRight);
         reg.RegisterCondition<RecentlyHit>(C_RecentlyHit);
     }
 

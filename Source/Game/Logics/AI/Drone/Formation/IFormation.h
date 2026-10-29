@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 1機分の持ち場を計算する Calculate を定める
-//   - 当たり方（FormationCombat）・予告の有無を陣形ごとに返す
+//   - 当たり方（FormationCombat）・技の時間割（TechniqueTiming）・予告の有無を陣形ごとに返す
 //   - 突撃の始め方（OnChargeBegin）と切り上げ方（IsChargeOver）を陣形ごとに決める
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
@@ -65,6 +65,14 @@ namespace CCL::AI::Formation
         float rehitInterval   = -1.0f; // 同じ相手に再び当たるまでの間隔 [秒]。負なら突撃1回につき1ヒット
     };
 
+    // 技1つぶんの時間割。BT の「ドローンの技」がこの順に進める
+    struct TechniqueTiming
+    {
+        float telegraph = 1.0f; // 陣形を指示してから撃つまで [秒]
+        float recovery  = 1.0f; // 撃ってから頭上円陣へ戻すまで [秒]
+        float rest      = 0.0f; // 戻してから技を終えるまで [秒]
+    };
+
     // 陣形の基底。派生が localIndex / totalDrones から「1機分の目標座標」を計算する。
     class IFormation
     {
@@ -119,6 +127,9 @@ namespace CCL::AI::Formation
 
         // 当たり方と痛さ
         virtual FormationCombat GetCombat() const { return {}; }
+
+        // 技の時間割を out に書いて true を返す。技でない隊形（円陣）は false
+        virtual bool TryGetTiming(TechniqueTiming &out) const { return false; }
 
         // 発生前の予告を震えで出すか。動きで予告できない技（縦割りなど）のため。
         // 既定を true にするのは、false 既定だと新しい技で予告が出ないことに気づきにくいため
