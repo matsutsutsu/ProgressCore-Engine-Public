@@ -8,7 +8,7 @@
         "Cinematic": "Assets\\Cinematics",
         "Material": "Assets\\Materials",
         "Model": "Assets\\Models\\Test",
-        "Prefab": "Assets\\Prefabs\\Enemy",
+        "Prefab": "Assets\\Prefabs\\Player",
         "Scene": "Assets\\Scene",
         "Texture": "Assets\\Textures\\VFX\\Particle",
         "Timeline": "Assets\\Timelines"

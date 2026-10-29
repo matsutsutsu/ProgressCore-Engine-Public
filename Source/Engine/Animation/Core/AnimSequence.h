@@ -85,7 +85,7 @@ enum class AnimEventType : uint8_t
     Trail,        // 武器の軌跡エフェクトの ON/OFF（区間）
     ComboWindow,  // コンボの先行入力の受付区間。stringParam=受付名
     CancelWindow, // 行動キャンセルの受付区間。stringParam=受付名
-    // 8 は Particle（武器に置いたエミッタの ON/OFF）だった。Effect の「基準＝武器」で代わりができるので削除した
+    Particle,     // GPU パーティクルの発生の ON/OFF（区間。剣にまとう演出等）。stringParam=タグ
 
     Count
 };

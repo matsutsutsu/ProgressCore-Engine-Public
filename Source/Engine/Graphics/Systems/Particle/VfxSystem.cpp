@@ -109,6 +109,10 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
         transform->UpdateMatrix();
     }
 
+    // 向きと位置を変えたので、描画補間の前ステップの値もそろえる（Play の説明と同じ理由）
+    transform->prevPosition = transform->position;
+    transform->prevRotation = transform->rotation;
+
     // 6. 継続放出を含むなら、ブロック長だけ出してから止める。
     //    アニメのイベントから出した VFX には、Stop() を呼ぶ呼び出し側がいないため
     if (HasContinuousEmitter(*particle))
@@ -213,6 +217,11 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
     TransformUpdateSystem::DetachChild(*m_world, id);
     transform->position = worldPos;
     transform->isDirty  = true;
+
+    //    描画補間の前ステップの値もそろえる。そのままだと原点から今の位置へ補間されて見え、
+    //    パーティクルは描画の位置（renderWorldMatrix）から出るので、生成位置が大きくずれる
+    transform->prevPosition = worldPos;
+    transform->prevRotation = transform->rotation;
 
     // 3. ワールド行列をここで計算する
     //    パーティクルの発生位置はワールド行列から読むが、TransformUpdateSystem が計算するのは

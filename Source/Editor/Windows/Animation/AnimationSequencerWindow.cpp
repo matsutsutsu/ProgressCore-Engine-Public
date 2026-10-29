@@ -137,7 +137,7 @@ public:
     {
         static const char *names[] = {
             "HitBox", "Sound", "Effect", "Blackboard",
-            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow"};
+            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow", "Particle"};
         if (typeIndex < 0 || typeIndex >= (int)AnimEventType::Count)
             return "Unknown";
         return names[typeIndex];
@@ -175,6 +175,9 @@ public:
             break;
         case AnimEventType::Trail:
             snprintf(buf, sizeof(buf), "Trail: %s", ev.stringParam.c_str());
+            break;
+        case AnimEventType::Particle:
+            snprintf(buf, sizeof(buf), "Particle: %s", ev.stringParam.c_str());
             break;
         case AnimEventType::ComboWindow:
             snprintf(buf, sizeof(buf), "Combo: %s", ev.stringParam.c_str());
@@ -222,8 +225,9 @@ public:
             {
                 static const unsigned int colors[] = {
                     0xFF323296, 0xFF329632, 0xFF969632, 0xFF963296,
-                    0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050};
-                *color = colors[(int)m_seq->events[evIdx].type % 8];
+                    0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050,
+                    0xFFC86432}; // Particle: 橙(まとい)
+                *color = colors[(int)m_seq->events[evIdx].type % 9];
             }
         }
     }
@@ -242,6 +246,8 @@ public:
         if (type == (int)AnimEventType::HitBox)
             ev.stringParam = "Weapon_R";
         if (type == (int)AnimEventType::Trail)
+            ev.stringParam = "Weapon_R";
+        if (type == (int)AnimEventType::Particle)
             ev.stringParam = "Weapon_R";
 
         m_seq->events.push_back(ev);
@@ -965,6 +971,9 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     if (ImGui::Button("+ Trail"))
         AddEvt(AnimEventType::Trail);
     ImGui::SameLine();
+    if (ImGui::Button("+ Particle"))
+        AddEvt(AnimEventType::Particle);
+    ImGui::SameLine();
     if (ImGui::Button("+ Sound"))
         AddEvt(AnimEventType::Sound);
     ImGui::SameLine();
@@ -1299,6 +1308,16 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextDisabled("この区間中、対象武器の Weapon Trail が emitting=ON になります");
             ImGui::TextDisabled("(武器側で Anim Controlled を ON にしておくこと)。");
             ImGui::TextDisabled("軌跡の色・尾の長さは武器の Weapon Trail コンポーネントで調整します。");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
+            break;
+        case AnimEventType::Particle:
+            ImGui::TextColored(ImVec4(0.85f, 0.5f, 0.25f, 1), "GPU Particle (まとい)");
+            drawWeaponTagPicker(e, ch);
+            ImGui::Spacing();
+            ImGui::TextDisabled("この区間中、対象エミッタの GPU Particle が emitting=ON になります。");
+            ImGui::TextDisabled("(エミッタ側で Anim Controlled を ON にし、剣ボーンに子付けしておくこと)。");
+            ImGui::TextDisabled("粒子の見た目・力場は GPU Particle Emitter コンポーネントで調整します。");
             ImGui::Spacing();
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;

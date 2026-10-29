@@ -566,6 +566,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h" />
@@ -1115,6 +1116,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp" />

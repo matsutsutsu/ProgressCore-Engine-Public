@@ -221,10 +221,12 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
 
         case AnimEventType::HitBox:
         case AnimEventType::Trail:
+        case AnimEventType::Particle:
         case AnimEventType::Blackboard:
             // 区間のイベントは発火しない。各 System が再生時刻を見て区間内かを判定する。
             //   HitBox     → CombatAnimationSyncSystem
             //   Trail      → TrailAnimationSyncSystem
+            //   Particle   → ParticleAnimationSyncSystem
             //   Blackboard → 読む System は未実装
             break;
 

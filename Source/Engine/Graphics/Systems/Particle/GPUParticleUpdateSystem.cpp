@@ -97,8 +97,12 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     // ローカルではなくワールドの回転を使う。ボーン追従（BoneAttachmentSystem）は
     //   ワールド行列にボーンの向きを入れるが、ローカルの rotation は更新しないので、
     //   transform.rotation だと剣の向きに付いていかず、線分や速度の向きがずれる。
-    cb.emit_rotation  = transform.GetWorldRotation();
-    cb.world_position = transform.GetWorldPosition();
+    //
+    //   姿勢は描画補間済み（renderWorldMatrix）を使う。この System は描画フレームごとに走るが、
+    //   ロジックの worldMatrix は固定ステップ（1/60 秒）でしか動かない。描画 FPS が高いと
+    //   「前フレーム＝今のフレーム」になって粒子が同じ剣の姿勢に固まり、密集した帯が交互に出る。
+    cb.emit_rotation  = transform.GetRenderWorldRotation();
+    cb.world_position = transform.GetRenderWorldPosition();
     cb.time           = time;
     cb.delta_time     = dt;
     cb.burst_trigger  = burstTrigger;
@@ -191,8 +195,8 @@ void GPUParticleUpdateSystem::Update(float dt)
         particle.time += frame.dt;
         frame.time = particle.time;
 
-        const GpuData::float3 curPos = transform.GetWorldPosition();
-        const GpuData::float4 curRot = transform.GetWorldRotation();
+        const GpuData::float3 curPos = transform.GetRenderWorldPosition();
+        const GpuData::float4 curRot = transform.GetRenderWorldRotation();
         frame.prevPos                = particle.hasPrevTransform ? particle.prevWorldPos : curPos;
         frame.prevRot                = particle.hasPrevTransform ? particle.prevWorldRot : curRot;
 
@@ -285,8 +289,8 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     // 動的 CB（InitCS では dt に 1/60 秒相当の 0.016 を使う）。
     //   発生のオン/オフも渡す。オフなら継続モードの先行生成をせず、粒子ゼロから始める。
     //   初期化時は前フレームの姿勢が無いので、今の姿勢を入れる（補間で尾を引かせない）。
-    const GpuData::float3 curPos = transform.GetWorldPosition();
-    const GpuData::float4 curRot = transform.GetWorldRotation();
+    const GpuData::float3 curPos = transform.GetRenderWorldPosition();
+    const GpuData::float4 curRot = transform.GetRenderWorldRotation();
     auto                  dynCb  = BuildDynamicCb(transform, curPos, curRot, frame.time, 0.016f, emitter.burstTrigger,
                                                   emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);

@@ -146,7 +146,7 @@ struct ParticleEmitter
 
     // 発生のオン/オフ。GPU へ emit_enabled として渡る。
     // false の間は継続モードの粒子を新しく出さないだけで、出ている粒子は寿命まで残る。
-    // VFX::Stop() で false になる。
+    // アニメ連動（GPUParticleComponent::animControlled）のときは ParticleAnimationSyncSystem が書き換える。
     bool emitting = true;
 
     // インスペクタでの表示オン/オフ。false の間は描画コマンドを積まない。
@@ -158,7 +158,7 @@ struct ParticleEmitter
 
 // ===========================================================================
 // GPUParticleComponent
-//   エフェクトを作るエミッタの配列と、位置・時間など
+//   エフェクトを作るエミッタの配列と、位置・時間・アニメ連動など
 //   エフェクト全体で共通の状態を持つ。
 // ===========================================================================
 struct GPUParticleComponent
@@ -167,6 +167,14 @@ struct GPUParticleComponent
 
     // ---- エフェクト全体で共通の実行時状態 ----
     float time = 0.0f; // 経過時間の合計（秒）。全エミッタで共有する
+
+    // true なら、祖先の Animator の Particle 区間イベントで emitting を切り替える。
+    // false なら emitting は手動（既定。常にオン）。このフラグだけは保存する。
+    bool animControlled = false;
+
+    // animControlled のときに見つけた、Animator を持つ祖先（保存しない）。
+    // ParticleAnimationSyncSystem が親をたどって一度だけ探し、ここに持つ。InvalidEntityID は未解決。
+    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
 
     // ---- サブフレーム補間用の前フレームの姿勢（実行時のみ。保存しない） ----
     // 剣を速く振っても、生成位置が1フレームごとの飛び飛びにならず軌道上に並ぶよう、

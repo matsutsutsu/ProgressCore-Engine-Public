@@ -95,6 +95,17 @@ struct TransformComponent
         return {renderWorldMatrix._41, renderWorldMatrix._42, renderWorldMatrix._43};
     }
 
+    // 描画補間済みのワールド回転（クォータニオン）。GetRenderWorldPosition と対。行列を分解するので毎回少し重い
+    DirectX::XMFLOAT4 GetRenderWorldRotation() const
+    {
+        DirectX::XMVECTOR scale, rotQuat, trans;
+        DirectX::XMMatrixDecompose(&scale, &rotQuat, &trans, DirectX::XMLoadFloat4x4(&renderWorldMatrix));
+
+        DirectX::XMFLOAT4 outRot;
+        DirectX::XMStoreFloat4(&outRot, rotQuat);
+        return outRot;
+    }
+
     // ワールド回転（クォータニオン）を取得する。行列を分解するので毎回少し重い
     DirectX::XMFLOAT4 GetWorldRotation() const
     {
