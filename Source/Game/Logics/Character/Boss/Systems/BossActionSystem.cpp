@@ -550,9 +550,11 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossAction, const Frame 
     // 着地点はまだ決めない（溜めを見てから動いた相手に付いていかない）
     if (bossAction.leapPhase == BossLeapPhase::Windup)
     {
+        // 溜め中は、相手の方を向き続ける
         f.movement.desiredVelocity = Vector3::Zero;
         FaceToward(f.trans, FlatToward(f.trans.position, f.playerPos), bossAction.turnSpeed, f.dt, f.joltHandle);
 
+        // 溜めの時間が来るまで、飛ぶ移動の予約をしない
         if (bossAction.actionTimer < bossAction.leapDef.windup) return;
 
         // 踏み切りの瞬間に1回だけ、着地点を決めて飛ぶ移動を予約する

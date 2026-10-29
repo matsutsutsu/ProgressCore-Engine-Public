@@ -7,53 +7,19 @@
 
 using namespace CCL::ECS;
 
-// パラメータ名のハッシュは先に求めておく。
-// グラフは Idle↔Move の遷移条件に "IsMoving"（歩いて近づいているか）を使う。
-static const uint32_t HASH_IS_MOVING = CCL::Utils::HashString("IsMoving");
-
-// 横歩きの向き。-1=左回り / 0=横歩きしていない / +1=右回り。
-// グラフは Idle・Move から StrafeLeft / StrafeRight への遷移条件にこれを使う。
-// 真偽2つでなく1つの float なのは、
-// 「左でも右でもある」という有り得ない状態を書けなくするため。
-static const uint32_t HASH_STRAFE_DIR = CCL::Utils::HashString("StrafeDir");
-
-// 跳躍の「踏み切り前の溜め〜着地の瞬間」。
-// グラフは LeapAir→LeapLand を、これが false になったときに遷移する。
-// 滞空の長さは技ごとに違うので、クリップの長さでは着地を決められない。
-static const uint32_t HASH_IS_LEAPING = CCL::Utils::HashString("IsLeaping");
-
-// この跳躍は着地で攻撃するか（跳躍攻撃の間ずっと true）。
-// グラフは着地のときにこれを見て、攻撃判定を持つ LeapLandAttack と
-// 持たない LeapLand を選び分ける。
-static const uint32_t HASH_LEAP_ATTACK = CCL::Utils::HashString("LeapAttack");
-
-// 突進の段。0 は突進していない、
-// 1〜7 が BossDashPhase の Retreat〜Recovery（+1 したもの）。
-//
-// 突進開始のクリップ（DashCharge 状態）は構え（3）から流し始め、
-// 突っ込む（4）の間も続ける。
-// 猛スピードが出る前に構えを見せ、それを予告として読ませるため。
-//
-// グラフは「しきい値より大きくなったら次の状態へ」で繋いでいるので、
-// 長さ 0 の段が飛ばされても途中で詰まらない。
-// 段の長さは技ごとの調整値で変わるので、
-// クリップの長さでは切り替えを決められない（跳躍の IsLeaping と同じ理由）。
-static const uint32_t HASH_DASH_PHASE = CCL::Utils::HashString("DashPhase");
-
-// 後方ステップの段。0 は後方ステップしていない、
-// 1〜3 が BossBackStepPhase の Retreat〜Recovery（+1 したもの）。
-// 着地硬直の長さは技の調整値で変わるので、
-// 突進と同じくクリップの長さでは切り替えを決められない。
-static const uint32_t HASH_BACKSTEP_PHASE = CCL::Utils::HashString("BackStepPhase");
+// アニメグラフの遷移条件に使うパラメータ
+static const uint32_t HASH_IS_MOVING      = CCL::Utils::HashString("IsMoving");      // 歩いて近づいているか
+static const uint32_t HASH_STRAFE_DIR     = CCL::Utils::HashString("StrafeDir");     // 横歩き。-1=左 / 0=なし / +1=右
+static const uint32_t HASH_IS_LEAPING     = CCL::Utils::HashString("IsLeaping");     // 踏み切り前〜着地の瞬間
+static const uint32_t HASH_LEAP_ATTACK    = CCL::Utils::HashString("LeapAttack");    // 着地で攻撃する跳躍か
+static const uint32_t HASH_DASH_PHASE     = CCL::Utils::HashString("DashPhase");     // 突進の段 +1。0=突進していない
+static const uint32_t HASH_BACKSTEP_PHASE = CCL::Utils::HashString("BackStepPhase"); // 後方ステップの段 +1。0=していない
 
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const BossActionComponent &boss, AnimParametersComponent &anim) {
         // --- 移動 ---
 
-        // Move 中だけ移動とみなす。
-        // 技は BossActionSystem が引くトリガーで再生するので、
-        // ここで IsMoving=false（Idle のまま）でも問題ない。
         const bool isMoving = (boss.currentState == BossActionState::Move);
         anim.SetBool(HASH_IS_MOVING, isMoving);
 
@@ -69,8 +35,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         anim.SetBool(HASH_IS_LEAPING, isLeaping);
         anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapLandAttack);
 
-        // --- 突進・後方ステップ（段の番号を +1 して書く。0 はその技でない）---
+        // --- 突進・後方ステップ ---
 
+        // 段の長さは調整値で変わるので、クリップの長さでなく段の番号で切り替えさせる
         const bool dash = (boss.currentState == BossActionState::Dash);
         anim.SetFloat(HASH_DASH_PHASE, dash ? static_cast<float>(boss.dashPhase) + 1.0f : 0.0f);
 
@@ -79,6 +46,5 @@ void BossAnimSyncSystem::Update(float /*dt*/)
     });
 }
 
-// AnimParameters を読む AnimControllerSystem(L02_Update) より前に書き終える。
-// PlayerAnimParamSyncSystem と同じ L02_PreUpdate に置く。
+// AnimParameters を読む AnimControllerSystem(L02_Update) より前に書く
 REGISTER_LOGIC_SYSTEM(BossAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);
