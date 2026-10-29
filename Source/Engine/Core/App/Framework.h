@@ -48,6 +48,14 @@ private:
      */
     void Render(float elapsedTime);
 
+    /**
+     * @brief OS・CPU・メモリ・起動したフォルダを、Shipping でもログに残す。
+     *
+     * 配布先で「動かない」と言われたときに、ログだけで実行環境の違いを確かめるため。
+     * GPU と画面は GraphicsDevice が報告する（デバイスを作った後でないと分からないため）。
+     */
+    void LogPlatformInfo() const;
+
 public:
     // メインループ。固定タイムステップは Accumulator パターン（Fix Your Timestep）で回す
     int Run();

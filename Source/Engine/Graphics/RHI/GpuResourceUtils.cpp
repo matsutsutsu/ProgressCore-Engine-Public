@@ -86,12 +86,14 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     // 頂点シェーダー生成
     HRESULT hr = device->CreateVertexShader(data.data(), data.size(), nullptr, vertexShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "頂点シェーダーを作れません: %s hr=0x%08X", filename, hr);
 
     // 入力レイアウト
     if (inputLayout != nullptr)
     {
         hr = device->CreateInputLayout(inputElementDescs, inputElementCount, data.data(), data.size(), inputLayout);
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "入力レイアウトを作れません: %s hr=0x%08X", filename, hr);
     }
 
     return hr;
@@ -110,6 +112,7 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     // ピクセルシェーダー生成
     HRESULT hr = device->CreatePixelShader(data.data(), data.size(), nullptr, pixelShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "ピクセルシェーダーを作れません: %s hr=0x%08X", filename, hr);
 
     return hr;
 }
@@ -125,6 +128,7 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
 
     HRESULT hr = device->CreateGeometryShader(data.data(), data.size(), nullptr, geometryShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "ジオメトリシェーダーを作れません: %s hr=0x%08X", filename, hr);
 
     return hr;
 }
@@ -188,6 +192,12 @@ HRESULT GpuResourceUtils::LoadTexture(
     hr = DirectX::CreateShaderResourceView(device, scratch_image.GetImages(), scratch_image.GetImageCount(),
                                            metadata, shaderResourceView);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    if (FAILED(hr))
+    {
+        // 読めなかった画像か、この GPU で作れない形式（DXGI_FORMAT の番号を出す）
+        CCL_LOG_ERROR(LogCategory::Render, "テクスチャを作れません: %s hr=0x%08X format=%d %zux%zu",
+                      filename, hr, static_cast<int>(metadata.format), metadata.width, metadata.height);
+    }
 
     // デバッグ名設定
     SetDebugName(*shaderResourceView, "Texture_SRV");
@@ -568,6 +578,7 @@ HRESULT GpuResourceUtils::LoadComputeShader(
     // コンピュートシェーダー生成
     HRESULT hr = device->CreateComputeShader(data.data(), data.size(), nullptr, computeShader);
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+    if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "コンピュートシェーダーを作れません: %s hr=0x%08X", filename, hr);
 
     return hr;
 }

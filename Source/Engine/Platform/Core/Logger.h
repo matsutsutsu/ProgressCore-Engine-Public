@@ -140,7 +140,7 @@ private:
 //
 // Debug / Development: INFO / SUCCESS / WARN を記録する
 // Shipping（SHIPPING_BUILD 定義時）: INFO / SUCCESS / WARN は ((void)0) になり、引数も評価されない
-// ERROR は全構成で記録する（配布後の不具合を追えるように）
+// ERROR と ALWAYS は全構成で記録する（配布後の不具合を追えるように）
 // ============================================================
 #ifndef SHIPPING_BUILD
 #define CCL_LOG_INFO(category, ...) \
@@ -157,3 +157,9 @@ private:
 
 #define CCL_LOG_ERROR(category, ...) \
     Logger::Instance().Log((category), LogLevel::Error, std::source_location::current(), __VA_ARGS__)
+
+// エラーではないが、Shipping でも必ず残す情報（実行環境の報告など）。
+// 配布先で「動かない」と言われたときに、ログを送ってもらうだけで原因を絞れるようにする。
+// 起動時に数行だけ使う。毎フレームの処理では使わないこと（Shipping のログが膨らむ）。
+#define CCL_LOG_ALWAYS(category, ...) \
+    Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)

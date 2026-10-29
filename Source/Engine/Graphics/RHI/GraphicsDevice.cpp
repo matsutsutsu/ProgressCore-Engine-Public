@@ -84,6 +84,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
             D3D11_SDK_VERSION,
             m_device.GetAddressOf(), &featureLevel, m_context.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] D3D11 デバイスを作れません: hr=0x%08X", hr);
 
         // ---- このデバイスを作った DXGI ファクトリ（IDXGIFactory2）を取る ----
         Microsoft::WRL::ComPtr<IDXGIFactory2> factory2;
@@ -96,6 +97,9 @@ void GraphicsDevice::Initialize(HWND hWnd)
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
             hr = adapter->GetParent(IID_PPV_ARGS(factory2.GetAddressOf()));
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+            // 選ぼうとした GPU ではなく、デバイスが実際に使っている GPU を報告する
+            LogAdapterInfo(adapter.Get(), featureLevel);
         }
 
         // ---- Waitable スワップチェーン ----
@@ -118,6 +122,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
             m_device.Get(), hWnd, &scd, nullptr /*fullscreen desc=windowed*/, nullptr,
             swapChain1.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] スワップチェーンを作れません: hr=0x%08X (%ux%u)", hr, m_width, m_height);
         hr = swapChain1.As(&m_swapChain); // IDXGISwapChain1 は IDXGISwapChain の派生
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
@@ -158,6 +163,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
         d.BindFlags  = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         hr           = m_device->CreateTexture2D(&d, nullptr, tex.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] 深度バッファを作れません: hr=0x%08X (%ux%u)", hr, m_width, m_height);
 
         D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
         dsvDesc.Format        = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -319,4 +325,50 @@ void GraphicsDevice::WaitForFrameLatency() const noexcept
     // 前のフレームの提示が終わり、次を作ってよくなるまで待つ。
     //   1秒のタイムアウトはハングしたときのため（普段は vsync の間隔でシグナルされる）。
     WaitForSingleObjectEx(m_frameLatencyWaitable, 1000, TRUE);
+}
+
+// ---------------------------------------------------------------------------
+// 実行環境の報告
+// ---------------------------------------------------------------------------
+
+// 使う GPU・ドライバ・機能レベル・画面の大きさを、Shipping でもログに書く
+void GraphicsDevice::LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL featureLevel) const
+{
+    // --- GPU とドライバ ---
+    DXGI_ADAPTER_DESC desc{};
+    if (adapter && SUCCEEDED(adapter->GetDesc(&desc)))
+    {
+        // ドライバの版は 64bit の値に 16bit ずつ4つ入っている（例: 31.0.15.5222）
+        LARGE_INTEGER driver{};
+        const bool    hasDriver = SUCCEEDED(adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &driver));
+
+        CCL_LOG_ALWAYS(LogCategory::Render, "[環境] GPU: %ls (vendor=0x%04X) / VRAM %zu MB / 共有メモリ %zu MB",
+                       desc.Description, desc.VendorId,
+                       desc.DedicatedVideoMemory / (1024 * 1024), desc.SharedSystemMemory / (1024 * 1024));
+        if (hasDriver)
+        {
+            CCL_LOG_ALWAYS(LogCategory::Render, "[環境] ドライバ: %u.%u.%u.%u",
+                           HIWORD(driver.HighPart), LOWORD(driver.HighPart), HIWORD(driver.LowPart), LOWORD(driver.LowPart));
+        }
+    }
+
+    // --- 機能レベル ---
+    // シェーダーはすべて SM5.0 で作ってあるので、11_0 より下のデバイスでは1つも作れない
+    const unsigned major = (static_cast<unsigned>(featureLevel) >> 12) & 0xF;
+    const unsigned minor = (static_cast<unsigned>(featureLevel) >> 8) & 0xF;
+    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 機能レベル: %u_%u", major, minor);
+    if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] 機能レベル %u_%u では SM5.0 のシェーダーを作れません（11_0 以上が必要）", major, minor);
+    }
+
+    // --- 画面 ---
+    // 描画の大きさと、モニタの表示モードを並べて出す。食い違っていれば Windows の拡大縮小で引き伸ばされている
+    DEVMODEW mode{};
+    mode.dmSize = sizeof(mode);
+    EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &mode);
+    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 描画 %ux%u / 画面 %dx%d / モニタ %lux%lu %luHz / リモートデスクトップ: %s",
+                   m_width, m_height, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+                   mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency,
+                   GetSystemMetrics(SM_REMOTESESSION) ? "はい" : "いいえ");
 }

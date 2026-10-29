@@ -249,7 +249,8 @@ bool FileSystem::Mount(const std::string &archivePath)
     std::ifstream file(archivePath, std::ios::in | std::ios::binary | std::ios::ate);
     if (!file.is_open())
     {
-        CCL_LOG_WARN(LogCategory::Core, "[FileSystem] アーカイブがありません（ディスクから読みます）: %s", archivePath.c_str());
+        // 配布先でどちらから読んだかを確かめられるよう、Shipping でも残す
+        CCL_LOG_ALWAYS(LogCategory::Core, "[FileSystem] アーカイブがありません（ディスクから読みます）: %s", archivePath.c_str());
         return false;
     }
     const uint64_t archiveSize = static_cast<uint64_t>(file.tellg());
@@ -309,8 +310,8 @@ bool FileSystem::Mount(const std::string &archivePath)
     g_archivePath      = archivePath;
     g_archiveEntries   = std::move(entries);
     g_archiveEncrypted = encrypted;
-    CCL_LOG_INFO(LogCategory::Core, "[FileSystem] アーカイブを開きました: %s (%u ファイル%s)",
-                 archivePath.c_str(), entryCount, encrypted ? "・暗号化あり" : "");
+    CCL_LOG_ALWAYS(LogCategory::Core, "[FileSystem] アーカイブを開きました: %s (%u ファイル%s)",
+                   archivePath.c_str(), entryCount, encrypted ? "・暗号化あり" : "");
     return true;
 }
 

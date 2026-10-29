@@ -2,6 +2,10 @@
 #include <sstream>
 #include <algorithm> // min/max用
 #include <string>    // std::string, std::to_string用
+#include <cstring>     // std::memcpy（CPU 名の取り出し）
+#include <filesystem>  // 起動したフォルダの報告
+#include <intrin.h>    // __cpuid（CPU 名の取り出し）
+#include <thread>      // std::thread::hardware_concurrency
 #include <windowsx.h>
 
 #include "Framework.h"
@@ -68,7 +72,8 @@ Framework::Framework(HWND hWnd)
 
         // ログファイルの出力先。開発時は Build/ 配下に集約し、製品（Shipping）は exe の隣の Logs/ に置く。
 
-        // FileSink は遅延生成なので、Shipping では ERROR が実際に出たときだけファイルが作られる（正常終了なら何も残らない）。
+        // Shipping でも起動時に実行環境（LogPlatformInfo・GraphicsDevice）を書くので、毎回ファイルが作られる。
+        // それ以降に書かれるのは ERROR だけ。
         // 起動ごとに前回分を Engine.prev.log へ退避する2世代式。
 #ifdef ENABLE_EDITOR
         const char *kLogPath = "Build/Logs/Engine.log";
@@ -78,6 +83,8 @@ Framework::Framework(HWND hWnd)
         Logger::Instance().AddSink(std::make_shared<FileSink>(kLogPath));
         m_consoleLogSink = std::make_shared<ImGuiBufferSink>(2000);
         Logger::Instance().AddSink(m_consoleLogSink);
+
+        LogPlatformInfo();
     }
 
     {
@@ -89,6 +96,10 @@ Framework::Framework(HWND hWnd)
     {
         ZoneScopedN("Init: Graphics");
         Graphics::Instance().Initialize(hWnd);
+
+        // 実行環境の報告（LogPlatformInfo と GraphicsDevice の GPU）はここで出そろう。
+        // ERROR 以外はファイルへすぐ書かれないので、固まって強制終了されても残るよう、ここで書き出す
+        Logger::Instance().Flush();
     }
 #ifdef ENABLE_EDITOR
     {
@@ -423,6 +434,56 @@ void Framework::Render(float elapsedTime)
                 scene->OnDeviceRecreated();
         }
     }
+}
+
+// 実行環境（ビルド・OS・CPU・メモリ・起動したフォルダ）を、Shipping でもログに書く
+void Framework::LogPlatformInfo() const
+{
+    // --- どの exe か ---
+    // 配布した版と、相手が動かした版が同じかを確かめるため
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] ビルド: %s %s", __DATE__, __TIME__);
+
+    // --- OS ---
+    // GetVersionEx は互換モードで古い版を返すことがあるので、ntdll の RtlGetVersion で本当の版を取る
+    using RtlGetVersionFn = LONG(WINAPI *)(OSVERSIONINFOW *);
+    OSVERSIONINFOW os{};
+    os.dwOSVersionInfoSize = sizeof(os);
+    if (auto fn = reinterpret_cast<RtlGetVersionFn>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion")))
+        fn(&os);
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] Windows %lu.%lu (build %lu)", os.dwMajorVersion, os.dwMinorVersion, os.dwBuildNumber);
+
+    // --- CPU ---
+    // exe は AVX2 を使う設定でビルドしているので、AVX2 の無い CPU では動かない
+    int  regs[4]    = {};
+    char brand[49]  = {};
+    __cpuid(regs, 0x80000000);
+    if (static_cast<unsigned>(regs[0]) >= 0x80000004)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            __cpuid(regs, 0x80000002 + i);
+            std::memcpy(brand + i * 16, regs, sizeof(regs));
+        }
+    }
+    constexpr DWORD kAvx2Feature = 40; // PF_AVX2_INSTRUCTIONS_AVAILABLE（古い SDK には定義が無い）
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] CPU: %s / 論理コア %u / AVX2: %s",
+                   brand, std::thread::hardware_concurrency(), IsProcessorFeaturePresent(kAvx2Feature) ? "あり" : "なし");
+
+    // --- メモリ ---
+    MEMORYSTATUSEX memory{};
+    memory.dwLength = sizeof(memory);
+    GlobalMemoryStatusEx(&memory);
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] メモリ: %llu MB（空き %llu MB）",
+                   memory.ullTotalPhys / (1024 * 1024), memory.ullAvailPhys / (1024 * 1024));
+
+    // --- 起動したフォルダ ---
+    // ファイルはすべてここからの相対パスで読む。Assets と Data.pak のどちらが隣にあるかも出す
+    std::error_code ec;
+    const auto      cwd = std::filesystem::current_path(ec);
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] フォルダ: %s / Assets: %s / Data.pak: %s",
+                   cwd.u8string().c_str(),
+                   std::filesystem::is_directory(cwd / "Assets", ec) ? "あり" : "なし",
+                   std::filesystem::is_regular_file(cwd / "Data.pak", ec) ? "あり" : "なし");
 }
 
 int Framework::Run()

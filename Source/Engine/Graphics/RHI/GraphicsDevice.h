@@ -92,6 +92,14 @@ public:
     HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
+    /**
+     * @brief 実際に使う GPU・機能レベル・画面の大きさを、Shipping でもログに残す。
+     *
+     * 配布先で「3D が出ない」などと言われたときに、ログだけで GPU の違いを確かめるため。
+     * 機能レベルが 11_0 未満なら、シェーダー（SM5.0）を作れないので ERROR も出す。
+     */
+    void LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL featureLevel) const;
+
     HWND m_hWnd   = nullptr; // 出力先ウィンドウ（所有しない）
     UINT m_width  = 0;       // クライアント領域の幅（px）
     UINT m_height = 0;       // クライアント領域の高さ（px）
