@@ -4,7 +4,7 @@
 //       BT の判断に使う値を blackboard へ書く System。
 //
 // 責務:
-//   - 狙う相手と、相手までの距離・角度・近づく速さを書く
+//   - 狙う相手と、相手までの距離・角度・近づく速さ・横へ回る速さ・速さを書く
 //   - HP の割合と、蓄積した被弾の割合を書く
 //   - ステージの端までの距離と、中央の方向に対する相手の角度を書く
 //   - DamageTakenEvent を受けて被弾量を足し、被弾からの経過時間を 0 に戻す
@@ -67,6 +67,21 @@ private:
      * @return 近づく速さ（m/秒）。正=接近、負=後退。
      */
     float TargetClosingSpeed(const DirectX::SimpleMath::Vector3 &myPos,
+                             const DirectX::SimpleMath::Vector3 &targetPos,
+                             const DirectX::SimpleMath::Vector3 &targetVelocity) const;
+
+    /**
+     * @brief 相手が自分の周りを横へ回る速さを返す。
+     *
+     * 相手の速度から、「相手→自分」の向きの成分を除いた残りの大きさ。
+     * 左右は問わない。自分の速度は含めない。
+     *
+     * @param myPos          自分の位置（ワールド）。
+     * @param targetPos      相手の位置（ワールド）。
+     * @param targetVelocity 相手の速度（m/秒）。
+     * @return 横へ回る速さ（m/秒、0以上）。
+     */
+    float TargetLateralSpeed(const DirectX::SimpleMath::Vector3 &myPos,
                              const DirectX::SimpleMath::Vector3 &targetPos,
                              const DirectX::SimpleMath::Vector3 &targetVelocity) const;
 

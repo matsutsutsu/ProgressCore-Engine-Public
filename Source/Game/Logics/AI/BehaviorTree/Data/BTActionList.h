@@ -78,6 +78,8 @@
     X(C_IsAtStageEdge,           7,  Spatial, "端からの距離 [m]",       "ステージの端から N m 以内")              \
     X(C_TargetOnCenterSide,      8,  Spatial, "角度 [度]",              "相手が中央側 ±N 度にいる（追い込まれ）") \
     X(C_Cornered,                13, Spatial, "端からの距離 [m]",       "追い込まれ（端から N m 以内・相手が中央側）") \
+    X(C_TargetStrafing,          14, Spatial, "速さ [m/s]",             "相手が N m/s 以上で横へ回っている")      \
+    X(C_TargetSlow,              15, Spatial, "速さ [m/s]",             "相手の速さが N m/s 未満（止まりぎみ）")  \
                                                                                                                   \
     /* State */                                                                                                   \
     X(C_IsPhase2,                9,  State,   "",                       "フェーズ >= 2")                          \

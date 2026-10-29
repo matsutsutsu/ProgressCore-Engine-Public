@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近の速さ・被弾・ステージの端）。
+// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近や横の速さ・被弾・ステージの端）。
 //
 // 責務:
 //   - blackboard の値とノードの param を比べる条件を定義する
@@ -77,6 +77,26 @@ namespace CCL::AI::BT
         }
     };
 
+    // 相手が param m/s 以上の速さで、自分の周りを横へ回っている。横に動き回る相手に合わせて出す技の条件に使う。
+    class TargetStrafing : public IBTCondition
+    {
+    public:
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.targetLateralSpeed >= ctx.param;
+        }
+    };
+
+    // 相手の速さが param m/s 未満（止まりぎみ）。その場に留まる相手に合わせて出す技の条件に使う。
+    class TargetSlow : public IBTCondition
+    {
+    public:
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.targetSpeed < ctx.param;
+        }
+    };
+
     // 前回リセットしてからの被弾が、最大 HP の param % に達した（未設定なら 20%）
     class DamageThresholdExceeded : public IBTCondition
     {
@@ -142,6 +162,8 @@ namespace CCL::AI::BT
         reg.RegisterCondition<TargetAngleGreaterThan>(C_TargetAngleGreaterThan);
         reg.RegisterCondition<TargetApproaching>(C_TargetApproaching);
         reg.RegisterCondition<TargetRetreating>(C_TargetRetreating);
+        reg.RegisterCondition<TargetStrafing>(C_TargetStrafing);
+        reg.RegisterCondition<TargetSlow>(C_TargetSlow);
         reg.RegisterCondition<DamageThresholdExceeded>(C_DamageThresholdExceeded);
         reg.RegisterCondition<IsAtStageEdge>(C_IsAtStageEdge);
         reg.RegisterCondition<TargetOnCenterSide>(C_TargetOnCenterSide);

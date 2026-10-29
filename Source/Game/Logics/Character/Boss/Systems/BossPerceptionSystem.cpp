@@ -106,6 +106,12 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         btComp.blackboard.targetClosingSpeed =
             TargetClosingSpeed(Vector3(trans.position), targetPos, targetVelocity);
 
+        // 近づく・離れるだけでは、横へ回り込む動きと止まっている状態の区別がつかない。
+        // 技を相手の動き方で選び分けるために、横へ回る速さと全体の速さも持つ。
+        btComp.blackboard.targetLateralSpeed =
+            TargetLateralSpeed(Vector3(trans.position), targetPos, targetVelocity);
+        btComp.blackboard.targetSpeed = Vector3(targetVelocity.x, 0.0f, targetVelocity.z).Length();
+
         // --- ステージ ---
 
         const Vector3 myWorldPos(trans.GetWorldPosition());
@@ -161,6 +167,24 @@ float BossPerceptionSystem::TargetClosingSpeed(const Vector3 &myPos,
     velocity.y       = 0.0f; // ジャンプの上下を、近づいてきたと誤判定しないため
 
     return velocity.Dot(targetToMe);
+}
+
+float BossPerceptionSystem::TargetLateralSpeed(const Vector3 &myPos,
+                                               const Vector3 &targetPos,
+                                               const Vector3 &targetVelocity) const
+{
+    // 相手の速度から「自分へ近づく・離れる成分」を引いた残りが、横へ回る成分。
+    // 自分の速度を含めない理由は TargetClosingSpeed と同じ
+    Vector3 targetToMe = myPos - targetPos;
+    targetToMe.y       = 0.0f;
+    if (targetToMe.LengthSquared() <= 0.0001f) return 0.0f;
+    targetToMe.Normalize();
+
+    Vector3 velocity = targetVelocity;
+    velocity.y       = 0.0f; // ジャンプの上下を横の動きに数えないため
+
+    const Vector3 lateral = velocity - targetToMe * velocity.Dot(targetToMe);
+    return lateral.Length();
 }
 
 float BossPerceptionSystem::DistanceToArenaEdge(const Vector3       &myWorldPos,

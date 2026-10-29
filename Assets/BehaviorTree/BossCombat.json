@@ -455,6 +455,41 @@
             "endPin": 620,
             "id": 621,
             "startPin": 400
+        },
+        {
+            "endPin": 623,
+            "id": 624,
+            "startPin": 584
+        },
+        {
+            "endPin": 626,
+            "id": 627,
+            "startPin": 394
+        },
+        {
+            "endPin": 629,
+            "id": 630,
+            "startPin": 233
+        },
+        {
+            "endPin": 632,
+            "id": 633,
+            "startPin": 44
+        },
+        {
+            "endPin": 635,
+            "id": 636,
+            "startPin": 29
+        },
+        {
+            "endPin": 638,
+            "id": 639,
+            "startPin": 382
+        },
+        {
+            "endPin": 673,
+            "id": 674,
+            "startPin": 233
         }
     ],
     "editor_nodes": [
@@ -594,6 +629,16 @@
                         "condition": "C_RecentlyHit",
                         "mult": 0.30000001192092896,
                         "param": 0.6000000238418579
+                    },
+                    {
+                        "condition": "C_TargetApproaching",
+                        "mult": 3.0,
+                        "param": 30.0
+                    },
+                    {
+                        "condition": "C_TargetSlow",
+                        "mult": 3.0,
+                        "param": 10.0
                     }
                 ],
                 "distance": {
@@ -815,7 +860,7 @@
             "id": 289,
             "inputPinId": 290,
             "outputPinId": 0,
-            "param": 1.5,
+            "param": 1.4,
             "posX": 5912.0,
             "posY": 960.0,
             "type": 4
@@ -973,7 +1018,7 @@
             "id": 348,
             "inputPinId": 349,
             "outputPinId": 0,
-            "param": 60.0,
+            "param": 10.0,
             "posX": 5433.0,
             "posY": 958.0,
             "type": 3
@@ -1681,23 +1726,17 @@
             "decoratorType": 1,
             "id": 606,
             "inputPinId": 607,
+            "interrupt": true,
             "outputPinId": 608,
-            "param": 5.0,
+            "param": 6.0,
             "posX": 6195.0,
             "posY": 558.0,
             "score": {
-                "base": 8.0,
-                "bonus": [
-                    {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    }
-                ],
+                "base": 10.0,
                 "distance": {
-                    "bestMax": 55.0,
-                    "bestMin": 20.0,
-                    "falloff": 10.0
+                    "bestMax": 8.0,
+                    "bestMin": 0.0,
+                    "falloff": 4.0
                 }
             },
             "type": 6
@@ -1718,6 +1757,11 @@
                         "condition": "C_RecentlyHit",
                         "mult": 0.30000001192092896,
                         "param": 0.6000000238418579
+                    },
+                    {
+                        "condition": "C_TargetStrafing",
+                        "mult": 3.0,
+                        "param": 30.0
                     }
                 ],
                 "distance": {
@@ -1749,9 +1793,86 @@
             "posX": 9867.0,
             "posY": 1054.0,
             "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 622,
+            "inputPinId": 623,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 1805.0,
+            "posY": 894.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 625,
+            "inputPinId": 626,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 10904.0,
+            "posY": 816.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 628,
+            "inputPinId": 629,
+            "outputPinId": 0,
+            "param": 0.8,
+            "posX": 6856.0,
+            "posY": 960.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 631,
+            "inputPinId": 632,
+            "outputPinId": 0,
+            "param": 0.8,
+            "posX": 8728.0,
+            "posY": 960.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 634,
+            "inputPinId": 635,
+            "outputPinId": 0,
+            "param": 0.6,
+            "posX": 4440.0,
+            "posY": 894.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 637,
+            "inputPinId": 638,
+            "outputPinId": 0,
+            "param": 1.0,
+            "posX": 5322.0,
+            "posY": 926.0,
+            "type": 4
+        },
+        {
+            "actionId": 12,
+            "condition": "C_RecentlyHit",
+            "id": 672,
+            "inputPinId": 673,
+            "outputPinId": 0,
+            "param": 0.5,
+            "posX": 5554.5,
+            "posY": 1078.0,
+            "type": 3
         }
     ],
-    "last_id_counter": 621,
+    "last_id_counter": 674,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1887,6 +2008,16 @@
                         "condition": "C_RecentlyHit",
                         "mult": 0.30000001192092896,
                         "param": 0.6000000238418579
+                    },
+                    {
+                        "condition": "C_TargetApproaching",
+                        "mult": 3.0,
+                        "param": 30.0
+                    },
+                    {
+                        "condition": "C_TargetSlow",
+                        "mult": 3.0,
+                        "param": 10.0
                     }
                 ],
                 "distance": {
@@ -1927,20 +2058,14 @@
                 20
             ],
             "decoratorType": 1,
-            "param": 5.0,
+            "interrupt": true,
+            "param": 6.0,
             "score": {
-                "base": 8.0,
-                "bonus": [
-                    {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    }
-                ],
+                "base": 10.0,
                 "distance": {
-                    "bestMax": 55.0,
-                    "bestMin": 20.0,
-                    "falloff": 10.0
+                    "bestMax": 8.0,
+                    "bestMin": 0.0,
+                    "falloff": 4.0
                 }
             },
             "type": "Decorator"
@@ -1959,6 +2084,11 @@
                         "condition": "C_RecentlyHit",
                         "mult": 0.30000001192092896,
                         "param": 0.6000000238418579
+                    },
+                    {
+                        "condition": "C_TargetStrafing",
+                        "mult": 3.0,
+                        "param": 30.0
                     }
                 ],
                 "distance": {
@@ -2070,7 +2200,8 @@
                 34,
                 35,
                 36,
-                37
+                37,
+                91
             ],
             "name": "ドローン：前方突進",
             "type": "Sequence"
@@ -2093,7 +2224,8 @@
                 43,
                 44,
                 45,
-                46
+                46,
+                95
             ],
             "name": "ドローン：縦割り",
             "type": "Sequence"
@@ -2103,7 +2235,8 @@
             "children": [
                 47,
                 48,
-                49
+                49,
+                96
             ],
             "name": "ボス：跳躍攻撃",
             "type": "Sequence"
@@ -2112,11 +2245,13 @@
             "actionOrConditionId": 0,
             "children": [
                 50,
+                97,
                 51,
                 52,
                 53,
                 54,
-                55
+                55,
+                93
             ],
             "name": "ドローン：横払い",
             "type": "Sequence"
@@ -2129,7 +2264,8 @@
                 58,
                 59,
                 60,
-                61
+                61,
+                94
             ],
             "name": "ドローン：挟み込み１段",
             "type": "Sequence"
@@ -2139,7 +2275,8 @@
             "children": [
                 62,
                 63,
-                64
+                64,
+                92
             ],
             "name": "ドローン：滞空して追従攻撃",
             "type": "Sequence"
@@ -2349,7 +2486,7 @@
             "actionOrConditionId": 1,
             "children": [],
             "condition": "C_DistanceLessThan",
-            "param": 60.0,
+            "param": 10.0,
             "type": "Condition"
         },
         {
@@ -2363,7 +2500,7 @@
             "action": "A_Wait",
             "actionOrConditionId": 1,
             "children": [],
-            "param": 1.5,
+            "param": 1.4,
             "type": "Action"
         },
         {
@@ -2645,6 +2782,55 @@
             "children": [],
             "param": 20.0,
             "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 0.8,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 0.8,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 0.6,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 12,
+            "children": [],
+            "condition": "C_RecentlyHit",
+            "param": 0.5,
+            "type": "Condition"
         }
     ]
 }

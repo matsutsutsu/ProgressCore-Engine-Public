@@ -5,6 +5,7 @@
 // 責務:
 //   - BattleContext が World に無ければ追加する
 //   - プレイヤーの EntityID・足元の位置・体の中心・平滑化した速度を書く
+//   - プレイヤーが回避中か、回避が終わってからの経過を書く
 //   - ボスの EntityID と足元の位置を書く
 //
 // 備考:
@@ -15,6 +16,7 @@
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Dash/PlayerDashComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 // テンプレート引数は申告のためだけに置いている。実際の処理は Update 内の World::ViewEach で
@@ -22,12 +24,16 @@
 class BattleContextSyncSystem : public CCL::ECS::IfSystem<
                                     BattleContextSyncSystem,
                                     CCL::ECS::Read<PlayerComponent>,
+                                    CCL::ECS::Read<PlayerDashComponent>,
                                     CCL::ECS::Read<TransformComponent>>
 {
 public:
     BattleContextSyncSystem() : IfSystem("BattleContextSyncSystem") {}
     void Initialize() override;
     void Update(float dt) override;
+
+    // デバッグ用。回避の読み取りを確かめる
+    void OnGui() override;
 
 private:
     /**

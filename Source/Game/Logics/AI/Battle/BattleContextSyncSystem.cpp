@@ -9,6 +9,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include <algorithm>
+#include <imgui.h>
 
 using namespace CCL::ECS;
 
@@ -53,6 +54,14 @@ void BattleContextSyncSystem::Update(float dt)
     {
         if (const auto *player = m_world->GetComponent<PlayerComponent>(playerId))
             battle.playerRunSpeed = player->runSpeed;
+
+        // 回避中か、終わってから何秒か。回避中は経過を 0 に留め、終わった瞬間から数え始める
+        const auto *dash     = m_world->GetComponent<PlayerDashComponent>(playerId);
+        battle.playerDashing = dash && dash->isDashing;
+        if (battle.playerDashing)
+            battle.playerSinceDashEnd = 0.0f;
+        else
+            battle.playerSinceDashEnd += dt;
 
         if (auto *t = m_world->GetComponent<TransformComponent>(playerId))
         {
@@ -110,6 +119,20 @@ void BattleContextSyncSystem::Update(float dt)
         }
     }
 }
+
+
+
+// 回避の読み取りを数値で出す（System Manager のこの System の欄）
+void BattleContextSyncSystem::OnGui()
+{
+    if (!m_world->HasResource<BattleContext>()) return;
+    const auto &battle = m_world->GetResource<BattleContext>();
+
+    ImGui::Text("プレイヤーの回避: %s", battle.playerDashing ? "回避中" : "-");
+    ImGui::Text("回避が終わってから: %.2f 秒", battle.playerSinceDashEnd);
+}
+
+
 
 // AI の System(L02〜) が読むより前に書き終える。入力(L01_Input)と別のステージにしているのは、
 // 1フレームの処理の順番を一列に読めるようにするため。

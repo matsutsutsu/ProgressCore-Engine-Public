@@ -6,17 +6,58 @@
     "split": "Block",
     "tierGroups": 1
   },
-  "attackSeconds": 0.625,
+  "attackSeconds": 1.0,
   "layers": [
     {
       "axis": "Up",
+      "curve": {
+        "color": 4286643968,
+        "keys": [
+          {
+            "inTangent": 0.0,
+            "interp": 1,
+            "outTangent": 0.0,
+            "tangentIn": 3,
+            "tangentOut": 3,
+            "time": 0.0,
+            "value": 0.0
+          },
+          {
+            "inTangent": 0.0,
+            "interp": 1,
+            "outTangent": 0.0,
+            "tangentIn": 3,
+            "tangentOut": 3,
+            "time": 1.0,
+            "value": 1.0
+          }
+        ],
+        "name": "Linear",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+      },
       "duration": 1.0,
       "from": 100.26762,
       "mirror": false,
       "phaseReverse": false,
       "phaseSource": "None",
-      "to": -100.26762,
+      "to": -270.768,
       "type": "Rotate",
+      "windowBegin": 0.0,
+      "windowEnd": 1.0
+    },
+    {
+      "axis": "Right",
+      "duration": 1.0,
+      "frequency": 10.0,
+      "from": 0.0,
+      "leadThreshold": 1.0,
+      "mirror": false,
+      "phaseReverse": false,
+      "phaseSource": "None",
+      "to": 0.6,
+      "type": "Shiver",
       "windowBegin": 0.0,
       "windowEnd": 1.0
     }
@@ -26,6 +67,12 @@
     "baseB": 2.0,
     "centerColumns": false,
     "columnAxis": "Forward",
+    "modelPath": "",
+    "modelPitch": 0.0,
+    "modelRoll": 0.0,
+    "modelScale": 1.0,
+    "modelYaw": 0.0,
+    "shape": "Grid",
     "spacingA": 3.5,
     "spacingB": 3.0,
     "tierStepB": 0.0
@@ -41,7 +88,6 @@
     "clampToGround": false,
     "combat": {
       "damage": 8.0,
-      "hitRadius": 2.5,
       "hitStopDuration": 0.05,
       "hitStopScale": 0.0,
       "knockback": 12.0,
@@ -51,5 +97,5 @@
     "useShiverTelegraph": true
   },
   "slot": 22,
-  "telegraphSeconds": 1.5
+  "telegraphSeconds": 1.4
 }

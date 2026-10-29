@@ -34,6 +34,8 @@ struct AIBlackboard
 
     float angleToTarget         = 0.0f;    // 自分の正面から見た相手の角度（度）。正=右、負=左、±180=真後ろ
     float targetClosingSpeed    = 0.0f;    // 相手が自分へ近づく速さ（m/s）。正=接近、負=後退。自分の移動は含めない
+    float targetLateralSpeed    = 0.0f;    // 相手が自分の周りを横へ回る速さ（m/s、0以上）。左右は問わない
+    float targetSpeed           = 0.0f;    // 相手の水平の速さ（m/s）。止まりぎみかを見る
     float distanceToArenaEdge   = 9999.0f; // ステージの端までの距離（m）。正=内側、負=外へはみ出している
     float targetAngleFromCenter = 180.0f;  // 「ステージ中央の方向」と「相手の方向」のなす角（度、0〜180）。0 に近いほど逃げ道を塞がれている
 
