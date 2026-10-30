@@ -14,6 +14,7 @@ static const uint32_t HASH_IS_LEAPING        = CCL::Utils::HashString("IsLeaping
 static const uint32_t HASH_LEAP_ATTACK       = CCL::Utils::HashString("LeapAttack");      // 着地で攻撃する跳躍か
 static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase");       // 突進の段 +1。0=突進していない
 static const uint32_t HASH_BACKSTEP_PHASE    = CCL::Utils::HashString("BackStepPhase");   // 後方ステップの段 +1。0=していない
+static const uint32_t HASH_FOOTWORK_DIR      = CCL::Utils::HashString("FootworkDir");     // 様子見の向き。0=していない 1=前 2=後ろ 3=左 4=右
 
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
@@ -41,6 +42,13 @@ void BossAnimSyncSystem::Update(float /*dt*/)
 
         const bool backStep = (boss.currentState == BossActionState::BackStep);
         anim.SetFloat(HASH_BACKSTEP_PHASE, backStep ? static_cast<float>(boss.backStepPhase) + 1.0f : 0.0f);
+
+        // --- 様子見 ---
+
+        // 前後左右のどのループを流すか。BossFootworkDir の並び（None=0）をそのまま番号にする
+        // 様子見から抜けたら、向きが残っていても 0 にする
+        const bool footwork = (boss.currentState == BossActionState::Footwork);
+        anim.SetFloat(HASH_FOOTWORK_DIR, footwork ? static_cast<float>(boss.footworkAnimDir) : 0.0f);
     });
 }
 

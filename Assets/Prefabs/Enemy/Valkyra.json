@@ -7,7 +7,7 @@
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": true,
+                    "isLoop": false,
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
@@ -25,12 +25,12 @@
                     "backStepHeight": 2.0,
                     "backStepRecovery": 0.25999999046325684,
                     "backStepRetreatTime": 0.3499999940395355,
-                    "dashAimTime": 0.30000001192092896,
+                    "dashAimTime": 0.20000000298023224,
                     "dashDistance": 50.0,
                     "dashRecovery": 0.550000011920929,
-                    "dashRetreatDistance": 30.0,
+                    "dashRetreatDistance": 40.0,
                     "dashRetreatHeight": 5.0,
-                    "dashRetreatTime": 0.6000000238418579,
+                    "dashRetreatTime": 0.4000000059604645,
                     "dashSpeed": 150.0,
                     "dashStopTime": 0.6000000238418579,
                     "dashTravelSpeed": 130.0,
@@ -40,9 +40,12 @@
                     "escapeLeap.flight": 1.100000023841858,
                     "escapeLeap.height": 30.0,
                     "escapeLeap.landAttack": false,
-                    "escapeLeap.landRecovery": 0.550000011920929,
+                    "escapeLeap.landRecovery": 0.2199999988079071,
                     "escapeLeap.landing": 0,
                     "escapeLeap.windup": 0.25,
+                    "footworkMaxTime": 3.0,
+                    "footworkMinTime": 1.5,
+                    "footworkSpeed": 70.0,
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.hover": 8.170000076293945,
@@ -51,6 +54,9 @@
                     "hoverLeap.landing": 2,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
+                    "repositionFarDistance": 110.5,
+                    "repositionNearDistance": 40.0,
+                    "repositionWallDistance": 20.0,
                     "sideTravelAccelTime": 0.25,
                     "sideTravelDecelTime": 0.3499999940395355,
                     "sideTravelSpeed": 90.0,
@@ -113,7 +119,7 @@
                     "gravityScale": 6.300000190734863,
                     "jumpSpeed": 30.0,
                     "maxSlopeAngle": 45.0,
-                    "maxStepHeight": 0.5,
+                    "maxStepHeight": 2.0,
                     "objectLayer": 2,
                     "walkSpeed": 3.0
                 },
@@ -150,15 +156,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -26.9837703704834,
-                        0.6660770177841187,
-                        39.58550262451172
+                        26.079153060913086,
+                        -0.09503472596406937,
+                        6.992441654205322
                     ],
                     "rotation": [
                         0.0,
-                        0.13480202853679657,
+                        0.9493007063865662,
                         0.0,
-                        0.9908725619316101
+                        0.3143695592880249
                     ],
                     "scale": [
                         5.0,

@@ -16,6 +16,16 @@ static const char *BossStateNames[] = {
     "BackStep",
     "Leap",
     "Dash",
+    "Footwork",
+};
+
+// BossFootworkDir と1対1で並べる。
+static const char *BossFootworkDirNames[] = {
+    "None",    // 様子見していない
+    "Forward", // 前
+    "Back",    // 後ろ
+    "Left",    // 左
+    "Right",   // 右
 };
 
 // BossSideTravelPhase と1対1で並べる。
@@ -80,6 +90,12 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(sideTravelSpeed, "横移動：最高速 [m/s]（距離は BT のノードで指定）", 0.5f, 1.0f, 180.0f, "Side Travel")
             CFIELD_FLOAT_RANGED(sideTravelAccelTime, "横移動：加速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Side Travel")
             CFIELD_FLOAT_RANGED(sideTravelDecelTime, "横移動：減速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Side Travel")
+            CFIELD_FLOAT_RANGED(repositionNearDistance, "間合い：これより近いと離れる [m]", 0.5f, 0.0f, 180.0f, "Reposition")
+            CFIELD_FLOAT_RANGED(repositionFarDistance, "間合い：これより遠いと詰める [m]", 0.5f, 0.0f, 180.0f, "Reposition")
+            CFIELD_FLOAT_RANGED(repositionWallDistance, "間合い：壁がこれより近いと内側へ寄る [m]", 0.5f, 0.0f, 90.0f, "Reposition")
+            CFIELD_FLOAT_RANGED(footworkSpeed, "様子見：動き回る速さ [m/s]", 0.5f, 0.0f, 120.0f, "Footwork")
+            CFIELD_FLOAT_RANGED(footworkMinTime, "様子見：1回の長さの下限 [秒]", 0.05f, 0.0f, 10.0f, "Footwork")
+            CFIELD_FLOAT_RANGED(footworkMaxTime, "様子見：1回の長さの上限 [秒]", 0.05f, 0.0f, 10.0f, "Footwork")
             CFIELD_FLOAT_RANGED(backStepDistance, "後退：下がる距離 [m]", 0.1f, 0.0f, 60.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepRetreatTime, "後退：下がり始めの時間 [秒]（この後に止まりのモーション）", 0.01f, 0.0f, 3.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepRecovery, "後退：着地硬直 [秒]", 0.01f, 0.0f, 3.0f, "Back Step")
@@ -122,6 +138,8 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_RT(actionFinished, "今の技が終わったか", "State")
             CFIELD_ENUM_U8_RT(sideTravelPhase, "横移動の段", BossSideTravelPhaseNames, std::size(BossSideTravelPhaseNames), "State")
             CFIELD_RT(sideTravelCruiseTime, "横移動：最高速で進む長さ [秒]", "State")
+            CFIELD_RT(footworkTime, "様子見：今回の長さ [秒]", "State")
+            CFIELD_ENUM_U8_RT(footworkAnimDir, "様子見：アニメの向き", BossFootworkDirNames, std::size(BossFootworkDirNames), "State")
             CFIELD_ENUM_U8_RT(leapPhase, "跳躍の段", BossLeapPhaseNames, std::size(BossLeapPhaseNames), "State")
             CFIELD_ENUM_U8_RT(backStepPhase, "後退の段", BossBackStepPhaseNames, std::size(BossBackStepPhaseNames), "State")
             CFIELD_RT(backStepStopTime, "後退：止まりのモーションの長さ [秒]（アニメグラフから）", "State")

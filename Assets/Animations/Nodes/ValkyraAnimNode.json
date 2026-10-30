@@ -215,6 +215,13 @@
             "hash": 2571090873,
             "name": "SideTravelPhase",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3385605323,
+            "name": "FootworkDir",
+            "type": 0
         }
     ],
     "states": [
@@ -247,6 +254,90 @@
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
                     "targetStateHash": 2133600820
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3556037689
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1219114335
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1048503925
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 4.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1617418126
                 }
             ]
         },
@@ -1266,6 +1357,386 @@
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
                     "targetStateHash": 2133600820
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1450.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/FootworkForward.json",
+            "sequenceName": "FootworkForward",
+            "speedCurveName": "",
+            "stateHash": 3556037689,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1219114335
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1048503925
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 4.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1617418126
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1450.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/FootworkBack.json",
+            "sequenceName": "FootworkBack",
+            "speedCurveName": "",
+            "stateHash": 1219114335,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3556037689
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1048503925
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 4.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1617418126
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1700.0,
+            "nodePosY": 150.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/FootworkLeft.json",
+            "sequenceName": "FootworkLeft",
+            "speedCurveName": "",
+            "stateHash": 1048503925,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3556037689
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1219114335
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 4.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1617418126
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1700.0,
+            "nodePosY": 440.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/FootworkRight.json",
+            "sequenceName": "FootworkRight",
+            "speedCurveName": "",
+            "stateHash": 1617418126,
+            "transitions": [
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3556037689
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 1.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1219114335
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 1,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 2.5
+                        },
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 3.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1048503925
+                },
+                {
+                    "blendDuration": 0.25,
+                    "conditions": [
+                        {
+                            "op": 2,
+                            "paramHash": 3385605323,
+                            "paramName": "FootworkDir",
+                            "threshold": 0.5
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
                 }
             ]
         }

@@ -42,7 +42,7 @@
       "mirror": false,
       "phaseReverse": false,
       "phaseSource": "None",
-      "to": -280.0,
+      "to": -260.5,
       "type": "Rotate",
       "windowBegin": 0.0,
       "windowEnd": 1.0

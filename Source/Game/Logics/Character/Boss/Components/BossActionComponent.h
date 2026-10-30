@@ -17,6 +17,18 @@ enum class BossActionState : uint8_t
     BackStep,   // 後方ステップ
     Leap,       // 跳躍
     Dash,       // 突進攻撃
+    Footwork,   // 様子見（間合いを保ちながら動き回る）
+};
+
+// 様子見で動く向き。体の正面から見た前後左右（アニメの4方向）
+// 並びを変えたら BossActionComponentMeta.cpp の BossFootworkDirNames も直す
+enum class BossFootworkDir : uint8_t
+{
+    None,    // 様子見していない
+    Forward, // 前
+    Back,    // 後ろ
+    Left,    // 左
+    Right,   // 右
 };
 
 // 横移動の段
@@ -97,6 +109,20 @@ struct BossActionComponent
     float sideTravelAccelTime = 0.25f; // 0 から最高速までの時間 [秒]
     float sideTravelDecelTime = 0.35f; // 最高速から止まるまでの時間 [秒]
 
+    // --- 間合いを取る ---
+
+    // 動き方（速さ・加速・減速）は横移動の値を使う。動く距離は BT のノードの param
+    float repositionNearDistance = 20.0f; // 相手がこれより近いと、離れながら回る [m]
+    float repositionFarDistance  = 45.0f; // 相手がこれより遠いと、詰めながら回る [m]
+    float repositionWallDistance = 20.0f; // 壁がこれより近いと、内側へ寄りながら回る [m]
+
+    // --- 様子見 ---
+
+    // 保ちたい距離・壁から寄る距離は「間合いを取る」の値を使う。1回の長さは下限〜上限からランダム
+    float footworkSpeed   = 25.0f; // 動き回る速さ [m/s]
+    float footworkMinTime = 1.5f;  // 1回の長さの下限 [秒]
+    float footworkMaxTime = 3.0f;  // 1回の長さの上限 [秒]
+
     // --- 後方ステップ ---
 
     // 技の長さ ＝ 下がり始め＋止まりのモーション（アニメから）＋着地硬直
@@ -174,6 +200,11 @@ struct BossActionComponent
     bool                sideTravelLeft       = false; // 左へ動くか（アニメの左右を選ぶ）
     float               sideTravelCruiseTime = 0.0f;  // 最高速で進む長さ [秒]
     float               sideTravelStopTime   = 0.0f;  // 今回の減速の時間 [秒]。距離が短いと縮む
+
+    // 様子見
+    float           footworkTime    = 0.0f;                  // 今回の長さ [秒]（下限〜上限から引いた値）
+    bool            footworkLeft    = false;                 // 相手の周りを左へ回っているか
+    BossFootworkDir footworkAnimDir = BossFootworkDir::None; // アニメに渡す前後左右
 
     // 後方ステップ
     BossBackStepPhase backStepPhase    = BossBackStepPhase::Retreat;

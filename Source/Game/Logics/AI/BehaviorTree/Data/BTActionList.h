@@ -53,6 +53,8 @@
     X(A_BossDashAttack,      10,  Boss,    Driving,  "",              "ボス：突進攻撃 (Dash Attack)")           \
     X(A_BossSideTravelLeft,  12,  Boss,    Driving,  "動く距離 [m]",  "ボス：左へ横移動 (Side Travel Left)")    \
     X(A_BossSideTravelRight, 13,  Boss,    Driving,  "動く距離 [m]",  "ボス：右へ横移動 (Side Travel Right)")   \
+    X(A_BossReposition,      14,  Boss,    Driving,  "動く距離 [m]",  "ボス：間合いを取る (Reposition)")        \
+    X(A_BossFootwork,        15,  Boss,    Driving,  "",              "ボス：様子見 (Footwork)")                \
                                                                                                                 \
     /* Drone */                                                                                                 \
     X(A_DroneFormation,      128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                   \
