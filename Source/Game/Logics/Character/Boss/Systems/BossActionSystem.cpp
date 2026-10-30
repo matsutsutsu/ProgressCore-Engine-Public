@@ -82,6 +82,15 @@ namespace
 
 
 
+    // 跳躍の頂点の高さを、相手との距離で上下させる範囲
+    // 基準は BossLeapDef::height。近い相手へは低く、遠い相手へは高く跳ぶ
+    constexpr float kLeapHeightNearDistance = 10.0f;  // この距離以下で一番低くなる [m]
+    constexpr float kLeapHeightFarDistance  = 80.0f;  // この距離以上で一番高くなる [m]
+    constexpr float kLeapHeightOffsetMin    = -10.0f; // 一番近いときに基準へ足す高さ [m]
+    constexpr float kLeapHeightOffsetMax    = 10.0f;  // 一番遠いときに基準へ足す高さ [m]
+
+
+
     // アニメのステートが1回流れ切る長さ（クリップの長さ÷再生速度）を返す
     // サブマシンの中も探す。見つからなければ fallback
     float StatePlayTime(const AnimStateGraph &graph, uint32_t stateHash, float fallback)
@@ -526,6 +535,8 @@ void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const 
                 bossAction.sideTravelPhase = BossSideTravelPhase::Travel;
                 break;
             }
+
+            // 意図的にreturn書いてない、すぐにTravelに進みたいため
             [[fallthrough]];
 
         case BossSideTravelPhase::Travel:
@@ -642,20 +653,40 @@ void BossActionSystem::TakeOffLeap(BossActionComponent &bossAction, const Frame 
         bossAction.lockedDirection = travel;
     }
 
+    // 頂点の高さを決める
+    // 踏み切った瞬間の相手との距離で、近いほど低く、遠いほど高くする
+    const float distance = FlatToward(takeoff, f.playerPos).Length();
+    const float height   = LeapApexHeight(bossAction.leapDef.height, distance);
+
     // 飛ぶ移動を予約する
     // 滞空は頂点まで速く上がって止まり、ほかは着地点まで放物線で飛ぶ
     const float flightTime = (std::max)(0.05f, bossAction.leapDef.flight);
     if (bossAction.leapDef.hover > 0.0f)
     {
         Vector3 apex = Vector3::Lerp(takeoff, bossAction.leapLandingPos, 0.5f);
-        apex.y += bossAction.leapDef.height;
+        apex.y += height;
         f.movement.MoveTo(apex, flightTime * 0.5f, {.ease = MoveEase::EaseOut});
     }
     else
     {
-        f.movement.MoveTo(bossAction.leapLandingPos, flightTime, {.height = bossAction.leapDef.height});
+        f.movement.MoveTo(bossAction.leapLandingPos, flightTime, {.height = height});
     }
     bossAction.leapPhase = BossLeapPhase::Flight;
+}
+
+
+
+// 跳躍の頂点の高さを返す
+// 基準の高さに、相手が近いほど低く・遠いほど高くなる分を足す
+float BossActionSystem::LeapApexHeight(float baseHeight, float distance) const
+{
+    // 近い〜遠いの間のどこにいるかを 0〜1 で出し、足す高さを直線で決める
+    const float range  = kLeapHeightFarDistance - kLeapHeightNearDistance;
+    const float t      = std::clamp((distance - kLeapHeightNearDistance) / range, 0.0f, 1.0f);
+    const float offset = kLeapHeightOffsetMin + (kLeapHeightOffsetMax - kLeapHeightOffsetMin) * t;
+
+    // 基準が低い跳躍でも、地面より下を通らないようにする
+    return (std::max)(0.0f, baseHeight + offset);
 }
 
 

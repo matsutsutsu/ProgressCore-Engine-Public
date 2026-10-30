@@ -25,10 +25,31 @@
     {
       "axis": "Forward",
       "curve": {
+        "color": 4286643968,
         "keys": [
-          { "time": 0.0, "value": 0.0, "inTangent": 1.0, "outTangent": 1.0, "interp": 1 },
-          { "time": 1.0, "value": 1.0, "inTangent": 1.0, "outTangent": 1.0, "interp": 1 }
-        ]
+          {
+            "inTangent": 1.0,
+            "interp": 1,
+            "outTangent": 1.0,
+            "tangentIn": 0,
+            "tangentOut": 0,
+            "time": 0.0,
+            "value": 0.0
+          },
+          {
+            "inTangent": 1.0,
+            "interp": 1,
+            "outTangent": 1.0,
+            "tangentIn": 0,
+            "tangentOut": 0,
+            "time": 1.0,
+            "value": 1.0
+          }
+        ],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
       },
       "duration": 1.0,
       "from": 0.0,
@@ -46,6 +67,11 @@
     "baseB": 1.5,
     "centerColumns": true,
     "columnAxis": "Right",
+    "modelPath": "",
+    "modelPitch": 0.0,
+    "modelRoll": 0.0,
+    "modelScale": 1.0,
+    "modelYaw": 0.0,
     "shape": "Grid",
     "spacingA": 3.5,
     "spacingB": 3.5,
@@ -62,7 +88,6 @@
     "clampToGround": true,
     "combat": {
       "damage": 12.0,
-      "hitRadius": 2.5,
       "hitStopDuration": 0.08,
       "hitStopScale": 0.0,
       "knockback": 18.0,
@@ -71,7 +96,7 @@
     "look": "Auto",
     "useShiverTelegraph": true
   },
-  "recoverySeconds": 2.3,
+  "recoverySeconds": 1.37,
   "restSeconds": 1.5,
   "slot": 34,
   "telegraphSeconds": 1.6

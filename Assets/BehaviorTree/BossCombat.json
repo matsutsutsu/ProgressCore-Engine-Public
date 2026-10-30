@@ -294,8 +294,8 @@
             "inputPinId": 150,
             "name": "ボス：被弾がかさんだら退く",
             "outputPinId": 151,
-            "posX": 1622.0,
-            "posY": 451.0,
+            "posX": 1140.0,
+            "posY": 427.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -306,7 +306,7 @@
                     }
                 ],
                 "distance": {
-                    "bestMax": 20.0,
+                    "bestMax": 40.0,
                     "bestMin": 0.0,
                     "falloff": 15.0
                 }
@@ -320,8 +320,8 @@
             "inputPinId": 153,
             "outputPinId": 0,
             "param": 3.0,
-            "posX": 447.0,
-            "posY": 692.0,
+            "posX": 706.0,
+            "posY": 670.0,
             "type": 3
         },
         {
@@ -331,15 +331,15 @@
             "interrupt": true,
             "name": "ドローン：横払い",
             "outputPinId": 233,
-            "posX": 95.0,
-            "posY": 451.0,
+            "posX": -273.0,
+            "posY": 434.0,
             "score": {
                 "base": 10.0,
-                "cooldown": 6.0,
+                "cooldown": 8.0,
                 "distance": {
-                    "bestMax": 8.0,
+                    "bestMax": 30.0,
                     "bestMin": 0.0,
-                    "falloff": 4.0
+                    "falloff": 5.0
                 }
             },
             "type": 2
@@ -352,10 +352,10 @@
             "inputPinId": 0,
             "name": "被弾時の後退処理",
             "outputPinId": 0,
-            "posX": 415.0,
-            "posY": 385.0,
+            "posX": 288.0,
+            "posY": 368.0,
             "type": 5,
-            "width": 2614.0
+            "width": 2261.0
         },
         {
             "actionId": 0,
@@ -365,8 +365,8 @@
             "inputPinId": 0,
             "name": "ステージ中央に退避",
             "outputPinId": 0,
-            "posX": 3021.0,
-            "posY": 385.0,
+            "posX": 2672.0,
+            "posY": 400.0,
             "type": 5,
             "width": 913.0
         },
@@ -378,23 +378,23 @@
             "inputPinId": 0,
             "name": "【ドローン】縦割り",
             "outputPinId": 0,
-            "posX": 4542.0,
-            "posY": 385.0,
+            "posX": 4432.0,
+            "posY": 384.0,
             "type": 5,
             "width": 219.0
         },
         {
             "actionId": 0,
             "groupColorIndex": 0,
-            "height": 152.0,
+            "height": 190.0,
             "id": 334,
             "inputPinId": 0,
             "name": "【ドローン】弾幕",
             "outputPinId": 0,
-            "posX": 7557.0,
-            "posY": 385.0,
+            "posX": 7728.0,
+            "posY": 384.0,
             "type": 5,
-            "width": 205.0
+            "width": 240.0
         },
         {
             "actionId": 0,
@@ -404,8 +404,8 @@
             "inputPinId": 0,
             "name": "【ドローン】挟み込み",
             "outputPinId": 0,
-            "posX": 4753.0,
-            "posY": 385.0,
+            "posX": 4704.0,
+            "posY": 384.0,
             "type": 5,
             "width": 244.0
         },
@@ -415,8 +415,8 @@
             "inputPinId": 364,
             "name": "ボス：中央へ跳んで逃げる",
             "outputPinId": 365,
-            "posX": 3377.0,
-            "posY": 451.0,
+            "posX": 3028.0,
+            "posY": 466.0,
             "score": {
                 "base": 5.0,
                 "bonus": [
@@ -426,7 +426,7 @@
                         "param": 6.0
                     }
                 ],
-                "cooldown": 30.0,
+                "cooldown": 25.0,
                 "distance": {
                     "bestMax": 20.0,
                     "bestMin": 0.0,
@@ -442,8 +442,8 @@
             "inputPinId": 367,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": 3053.0,
-            "posY": 692.0,
+            "posX": 2704.0,
+            "posY": 707.0,
             "type": 3
         },
         {
@@ -453,8 +453,8 @@
             "inputPinId": 370,
             "outputPinId": 0,
             "param": 70.0,
-            "posX": 3289.0,
-            "posY": 692.0,
+            "posX": 2940.0,
+            "posY": 707.0,
             "type": 3
         },
         {
@@ -464,8 +464,8 @@
             "inputPinId": 373,
             "outputPinId": 0,
             "param": 1.899999976158142,
-            "posX": 3722.0,
-            "posY": 692.0,
+            "posX": 3373.0,
+            "posY": 707.0,
             "type": 4
         },
         {
@@ -474,8 +474,8 @@
             "inputPinId": 381,
             "name": "ボス：跳躍攻撃",
             "outputPinId": 382,
-            "posX": 6125.0,
-            "posY": 451.0,
+            "posX": 6212.0,
+            "posY": 459.0,
             "score": {
                 "base": 7.0,
                 "bonus": [
@@ -485,10 +485,10 @@
                         "param": 5.0
                     }
                 ],
-                "cooldown": 10.0,
+                "cooldown": 6.0,
                 "distance": {
-                    "bestMax": 75.0,
-                    "bestMin": 30.0,
+                    "bestMax": 180.0,
+                    "bestMin": 70.0,
                     "falloff": 10.0
                 }
             },
@@ -501,8 +501,8 @@
             "inputPinId": 387,
             "outputPinId": 0,
             "param": 2.5999999046325684,
-            "posX": 6162.0,
-            "posY": 692.0,
+            "posX": 6229.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -511,8 +511,8 @@
             "inputPinId": 393,
             "name": "ドローン：滞空して追従攻撃",
             "outputPinId": 394,
-            "posX": 6937.0,
-            "posY": 451.0,
+            "posX": 7051.0,
+            "posY": 450.0,
             "score": {
                 "base": 6.0,
                 "cooldown": 40.0,
@@ -530,8 +530,8 @@
             "inputPinId": 399,
             "name": "滞空(主)＋陣形(従)",
             "outputPinId": 400,
-            "posX": 6729.0,
-            "posY": 692.0,
+            "posX": 6843.0,
+            "posY": 691.0,
             "type": 8
         },
         {
@@ -541,8 +541,8 @@
             "inputPinId": 402,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 6542.0,
-            "posY": 951.0,
+            "posX": 6656.0,
+            "posY": 950.0,
             "type": 4
         },
         {
@@ -552,8 +552,8 @@
             "inputPinId": 417,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 7172.0,
-            "posY": 692.0,
+            "posX": 7286.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -564,8 +564,8 @@
             "inputPinId": 0,
             "name": "横なぎ",
             "outputPinId": 0,
-            "posX": -32.0,
-            "posY": 385.0,
+            "posX": -400.0,
+            "posY": 368.0,
             "type": 5,
             "width": 455.0
         },
@@ -577,8 +577,8 @@
             "inputPinId": 0,
             "name": "【近接】跳躍攻撃",
             "outputPinId": 0,
-            "posX": 5933.0,
-            "posY": 385.0,
+            "posX": 6000.0,
+            "posY": 384.0,
             "type": 5,
             "width": 585.0
         },
@@ -590,8 +590,8 @@
             "inputPinId": 0,
             "name": "【ドローン】　滞空ドローン攻撃",
             "outputPinId": 0,
-            "posX": 6510.0,
-            "posY": 385.0,
+            "posX": 6624.0,
+            "posY": 384.0,
             "type": 5,
             "width": 1055.0
         },
@@ -601,8 +601,8 @@
             "inputPinId": 437,
             "name": "重み付きセレクター（Weighted Selector）",
             "outputPinId": 438,
-            "posX": 1828.0,
-            "posY": 692.0,
+            "posX": 1348.0,
+            "posY": 675.0,
             "type": 7
         },
         {
@@ -612,8 +612,8 @@
             "inputPinId": 452,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 683.0,
-            "posY": 692.0,
+            "posX": 942.0,
+            "posY": 670.0,
             "type": 4
         },
         {
@@ -623,8 +623,8 @@
             "inputPinId": 459,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 1588.0,
-            "posY": 1433.0,
+            "posX": 1108.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -634,8 +634,8 @@
             "inputPinId": 464,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 2640.0,
-            "posY": 1433.0,
+            "posX": 2160.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -645,8 +645,8 @@
             "inputPinId": 466,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 2431.0,
-            "posY": 1433.0,
+            "posX": 1951.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -656,8 +656,8 @@
             "inputPinId": 468,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 2005.0,
-            "posY": 1433.0,
+            "posX": 1525.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -667,8 +667,8 @@
             "inputPinId": 470,
             "outputPinId": 0,
             "param": 0.5,
-            "posX": 1785.0,
-            "posY": 1433.0,
+            "posX": 1305.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -678,8 +678,8 @@
             "inputPinId": 472,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": 2202.0,
-            "posY": 1433.0,
+            "posX": 1722.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -688,8 +688,8 @@
             "inputPinId": 483,
             "name": "ドローン操作",
             "outputPinId": 484,
-            "posX": 2499.0,
-            "posY": 1192.0,
+            "posX": 2019.0,
+            "posY": 1175.0,
             "type": 2
         },
         {
@@ -698,8 +698,8 @@
             "inputPinId": 499,
             "name": "ステージ中央に退避する",
             "outputPinId": 500,
-            "posX": 1125.0,
-            "posY": 951.0,
+            "posX": 645.0,
+            "posY": 934.0,
             "type": 2
         },
         {
@@ -709,8 +709,8 @@
             "inputPinId": 503,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": 919.0,
-            "posY": 1192.0,
+            "posX": 439.0,
+            "posY": 1175.0,
             "type": 3
         },
         {
@@ -720,8 +720,8 @@
             "inputPinId": 509,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 1352.0,
-            "posY": 1192.0,
+            "posX": 872.0,
+            "posY": 1175.0,
             "type": 4
         },
         {
@@ -731,8 +731,8 @@
             "inputPinId": 517,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 1155.0,
-            "posY": 1192.0,
+            "posX": 675.0,
+            "posY": 1175.0,
             "type": 4
         },
         {
@@ -742,8 +742,8 @@
             "inputPinId": 520,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 3525.0,
-            "posY": 692.0,
+            "posX": 3176.0,
+            "posY": 707.0,
             "type": 4
         },
         {
@@ -753,8 +753,8 @@
             "inputPinId": 523,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 5965.0,
-            "posY": 692.0,
+            "posX": 6032.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -763,8 +763,8 @@
             "inputPinId": 537,
             "name": "ボス：突進攻撃",
             "outputPinId": 538,
-            "posX": 4256.0,
-            "posY": 451.0,
+            "posX": 4078.0,
+            "posY": 450.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
@@ -790,8 +790,8 @@
             "inputPinId": 540,
             "outputPinId": 0,
             "param": 3.0,
-            "posX": 4194.0,
-            "posY": 692.0,
+            "posX": 4016.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -802,8 +802,8 @@
             "inputPinId": 0,
             "name": "突進攻撃",
             "outputPinId": 0,
-            "posX": 4162.0,
-            "posY": 385.0,
+            "posX": 3984.0,
+            "posY": 384.0,
             "type": 5,
             "width": 388.0
         },
@@ -813,8 +813,8 @@
             "inputPinId": 564,
             "name": "後退しながらドローン攻撃",
             "outputPinId": 565,
-            "posX": 2192.0,
-            "posY": 951.0,
+            "posX": 1712.0,
+            "posY": 934.0,
             "type": 8
         },
         {
@@ -823,8 +823,8 @@
             "inputPinId": 569,
             "name": "後退アクション",
             "outputPinId": 570,
-            "posX": 1767.0,
-            "posY": 1192.0,
+            "posX": 1287.0,
+            "posY": 1175.0,
             "type": 2
         },
         {
@@ -834,8 +834,8 @@
             "inputPinId": 577,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 2837.0,
-            "posY": 1433.0,
+            "posX": 2357.0,
+            "posY": 1416.0,
             "type": 4
         },
         {
@@ -846,8 +846,8 @@
             "inputPinId": 0,
             "name": "コメント",
             "outputPinId": 0,
-            "posX": 3926.0,
-            "posY": 385.0,
+            "posX": 3664.0,
+            "posY": 400.0,
             "type": 5,
             "width": 244.0
         },
@@ -858,8 +858,8 @@
             "inputPinId": 617,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 4365.0,
-            "posY": 692.0,
+            "posX": 4187.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -869,8 +869,8 @@
             "inputPinId": 620,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 6739.0,
-            "posY": 951.0,
+            "posX": 6853.0,
+            "posY": 950.0,
             "type": 4
         },
         {
@@ -880,8 +880,8 @@
             "inputPinId": 626,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 7369.0,
-            "posY": 692.0,
+            "posX": 7483.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -891,8 +891,8 @@
             "inputPinId": 638,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 6333.0,
-            "posY": 692.0,
+            "posX": 6400.0,
+            "posY": 691.0,
             "type": 4
         },
         {
@@ -902,8 +902,8 @@
             "inputPinId": 673,
             "outputPinId": 0,
             "param": 0.5,
-            "posX": 0.0,
-            "posY": 692.0,
+            "posX": -368.0,
+            "posY": 675.0,
             "type": 3
         },
         {
@@ -1002,7 +1002,7 @@
             "id": 696,
             "inputPinId": 697,
             "outputPinId": 0,
-            "param": 20.0,
+            "param": 40.0,
             "posX": 5257.0,
             "posY": 1192.0,
             "type": 4
@@ -1049,9 +1049,9 @@
             "id": 706,
             "inputPinId": 707,
             "outputPinId": 0,
-            "param": 20.0,
-            "posX": 5729.0,
-            "posY": 1192.0,
+            "param": 40.0,
+            "posX": 5726.0,
+            "posY": 1198.0,
             "type": 4
         },
         {
@@ -1061,16 +1061,11 @@
             "inputPinId": 722,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": 4574.0,
-            "posY": 451.0,
+            "posX": 4458.0,
+            "posY": 446.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
-                    {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    },
                     {
                         "condition": "C_TargetApproaching",
                         "mult": 3.0,
@@ -1084,8 +1079,8 @@
                 ],
                 "cooldown": 7.0,
                 "distance": {
-                    "bestMax": 45.0,
-                    "bestMin": 15.0,
+                    "bestMax": 90.0,
+                    "bestMin": 30.0,
                     "falloff": 10.0
                 }
             },
@@ -1098,16 +1093,11 @@
             "inputPinId": 725,
             "outputPinId": 0,
             "param": 25.0,
-            "posX": 4785.0,
-            "posY": 451.0,
+            "posX": 4736.0,
+            "posY": 450.0,
             "score": {
                 "base": 8.0,
                 "bonus": [
-                    {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    },
                     {
                         "condition": "C_TargetStrafing",
                         "mult": 3.0,
@@ -1116,8 +1106,8 @@
                 ],
                 "cooldown": 5.0,
                 "distance": {
-                    "bestMax": 45.0,
-                    "bestMin": 15.0,
+                    "bestMax": 70.0,
+                    "bestMin": 20.0,
                     "falloff": 10.0
                 }
             },
@@ -1131,11 +1121,11 @@
             "inputPinId": 728,
             "outputPinId": 0,
             "param": 17.0,
-            "posX": 7589.0,
-            "posY": 451.0,
+            "posX": 7777.0,
+            "posY": 446.0,
             "score": {
                 "base": 7.0,
-                "cooldown": 8.0,
+                "cooldown": 18.0,
                 "distance": {
                     "bestMax": 9999.0,
                     "bestMin": 80.0,
@@ -1151,8 +1141,8 @@
             "inputPinId": 731,
             "outputPinId": 0,
             "param": 22.0,
-            "posX": 236.0,
-            "posY": 692.0,
+            "posX": -132.0,
+            "posY": 675.0,
             "type": 4
         },
         {
@@ -1162,8 +1152,8 @@
             "inputPinId": 734,
             "outputPinId": 0,
             "param": 32.0,
-            "posX": 6948.0,
-            "posY": 951.0,
+            "posX": 7062.0,
+            "posY": 950.0,
             "type": 4
         },
         {
@@ -1173,8 +1163,8 @@
             "inputPinId": 737,
             "outputPinId": 0,
             "param": 34.0,
-            "posX": 3958.0,
-            "posY": 451.0,
+            "posX": 3696.0,
+            "posY": 466.0,
             "score": {
                 "base": 7.0,
                 "bonus": [
@@ -1191,8 +1181,8 @@
                 ],
                 "cooldown": 15.0,
                 "distance": {
-                    "bestMax": 25.0,
-                    "bestMin": 8.0,
+                    "bestMax": 90.0,
+                    "bestMin": 50.0,
                     "falloff": 10.0
                 }
             },
@@ -1229,11 +1219,11 @@
             "name": "ドローン：横払い",
             "score": {
                 "base": 10.0,
-                "cooldown": 6.0,
+                "cooldown": 8.0,
                 "distance": {
-                    "bestMax": 8.0,
+                    "bestMax": 30.0,
                     "bestMin": 0.0,
-                    "falloff": 4.0
+                    "falloff": 5.0
                 }
             },
             "type": "Sequence"
@@ -1256,7 +1246,7 @@
                     }
                 ],
                 "distance": {
-                    "bestMax": 20.0,
+                    "bestMax": 40.0,
                     "bestMin": 0.0,
                     "falloff": 15.0
                 }
@@ -1281,7 +1271,7 @@
                         "param": 6.0
                     }
                 ],
-                "cooldown": 30.0,
+                "cooldown": 25.0,
                 "distance": {
                     "bestMax": 20.0,
                     "bestMin": 0.0,
@@ -1312,8 +1302,8 @@
                 ],
                 "cooldown": 15.0,
                 "distance": {
-                    "bestMax": 25.0,
-                    "bestMin": 8.0,
+                    "bestMax": 90.0,
+                    "bestMin": 50.0,
                     "falloff": 10.0
                 }
             },
@@ -1354,11 +1344,6 @@
                 "base": 8.0,
                 "bonus": [
                     {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    },
-                    {
                         "condition": "C_TargetApproaching",
                         "mult": 3.0,
                         "param": 30.0
@@ -1371,8 +1356,8 @@
                 ],
                 "cooldown": 7.0,
                 "distance": {
-                    "bestMax": 45.0,
-                    "bestMin": 15.0,
+                    "bestMax": 90.0,
+                    "bestMin": 30.0,
                     "falloff": 10.0
                 }
             },
@@ -1388,11 +1373,6 @@
                 "base": 8.0,
                 "bonus": [
                     {
-                        "condition": "C_RecentlyHit",
-                        "mult": 0.30000001192092896,
-                        "param": 0.6000000238418579
-                    },
-                    {
                         "condition": "C_TargetStrafing",
                         "mult": 3.0,
                         "param": 30.0
@@ -1400,8 +1380,8 @@
                 ],
                 "cooldown": 5.0,
                 "distance": {
-                    "bestMax": 45.0,
-                    "bestMin": 15.0,
+                    "bestMax": 70.0,
+                    "bestMin": 20.0,
                     "falloff": 10.0
                 }
             },
@@ -1453,10 +1433,10 @@
                         "param": 5.0
                     }
                 ],
-                "cooldown": 10.0,
+                "cooldown": 6.0,
                 "distance": {
-                    "bestMax": 75.0,
-                    "bestMin": 30.0,
+                    "bestMax": 180.0,
+                    "bestMin": 70.0,
                     "falloff": 10.0
                 }
             },
@@ -1490,7 +1470,7 @@
             "param": 17.0,
             "score": {
                 "base": 7.0,
-                "cooldown": 8.0,
+                "cooldown": 18.0,
                 "distance": {
                     "bestMax": 9999.0,
                     "bestMin": 80.0,
@@ -1775,7 +1755,7 @@
             "action": "A_BossSideTravelRight",
             "actionOrConditionId": 13,
             "children": [],
-            "param": 20.0,
+            "param": 40.0,
             "type": "Action"
         },
         {
@@ -1789,7 +1769,7 @@
             "action": "A_BossSideTravelLeft",
             "actionOrConditionId": 12,
             "children": [],
-            "param": 20.0,
+            "param": 40.0,
             "type": "Action"
         },
         {

@@ -128,6 +128,10 @@ private:
     // 滞空は頂点へ上がるところまで。踏み切りの瞬間に1回だけ呼ぶ
     void TakeOffLeap(BossActionComponent &bossAction, const Frame &f) const;
 
+    // 跳躍の頂点の高さ。基準の高さ（BossLeapDef::height）に、
+    // 相手との距離が近いほど低く・遠いほど高くなる分を足す。0 より下にはしない
+    float LeapApexHeight(float baseHeight, float distance) const;
+
     // 予約した移動が終わったときに、跳躍の次の段へ進む
     // 滞空だけは 上がる → 頂点に留まる → 降りる の3段。ほかは着地する
     void AdvanceLeapPhase(BossActionComponent &bossAction, const Frame &f) const;

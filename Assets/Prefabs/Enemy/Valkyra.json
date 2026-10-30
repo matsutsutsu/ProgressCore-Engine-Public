@@ -7,7 +7,7 @@
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": false,
+                    "isLoop": true,
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
@@ -15,7 +15,7 @@
                 },
                 "BossActionComponent": {
                     "attackLeap.flight": 1.0,
-                    "attackLeap.height": 30.0,
+                    "attackLeap.height": 20.0,
                     "attackLeap.landAttack": true,
                     "attackLeap.landRecovery": 1.25,
                     "attackLeap.landing": 1,
@@ -51,6 +51,9 @@
                     "hoverLeap.landing": 2,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
+                    "sideTravelAccelTime": 0.25,
+                    "sideTravelDecelTime": 0.3499999940395355,
+                    "sideTravelSpeed": 90.0,
                     "turnSpeed": 10.0
                 },
                 "BossCommandComponent": null,
@@ -147,15 +150,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -29.71772575378418,
-                        0.6644865274429321,
-                        -38.089561462402344
+                        -26.9837703704834,
+                        0.6660770177841187,
+                        39.58550262451172
                     ],
                     "rotation": [
-                        -0.0,
-                        -0.41092991828918457,
-                        -0.0,
-                        0.9116669297218323
+                        0.0,
+                        0.13480202853679657,
+                        0.0,
+                        0.9908725619316101
                     ],
                     "scale": [
                         5.0,

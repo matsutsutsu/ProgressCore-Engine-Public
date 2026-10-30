@@ -6,7 +6,7 @@
     "split": "Block",
     "tierGroups": 1
   },
-  "attackSeconds": 1.0,
+  "attackSeconds": 0.82,
   "layers": [
     {
       "axis": "Up",
@@ -42,7 +42,7 @@
       "mirror": false,
       "phaseReverse": false,
       "phaseSource": "None",
-      "to": -270.768,
+      "to": -280.0,
       "type": "Rotate",
       "windowBegin": 0.0,
       "windowEnd": 1.0
@@ -73,7 +73,7 @@
     "modelScale": 1.0,
     "modelYaw": 0.0,
     "shape": "Grid",
-    "spacingA": 3.5,
+    "spacingA": 2.0,
     "spacingB": 3.0,
     "tierStepB": 0.0
   },
@@ -99,5 +99,5 @@
   "recoverySeconds": 1.2,
   "restSeconds": 0.8,
   "slot": 22,
-  "telegraphSeconds": 1.4
+  "telegraphSeconds": 1.0
 }
