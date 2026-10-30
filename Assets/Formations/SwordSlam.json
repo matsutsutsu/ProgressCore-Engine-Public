@@ -26,35 +26,38 @@
     "baseB": 0.0,
     "centerColumns": true,
     "columnAxis": "Right",
-    "modelPath": "Assets/Models/Weapon/Sword.gltf",
+    "modelEdgeRatio": 0.0,
+    "modelPath": "Assets/Models/Weapon/Hammer/Rubber_play_Hummer.glb",
     "modelPitch": 0.0,
     "modelRoll": 0.0,
-    "modelScale": 6.0,
+    "modelScale": 100.0,
     "modelYaw": 0.0,
     "shape": "Model",
     "spacingA": 3.0,
     "spacingB": 4.0,
     "tierStepB": 0.0
   },
-  "name": "剣の振り下ろし",
+  "name": "モデルの振り下ろし",
   "origin": {
     "forward": 5.0,
     "right": 0.0,
-    "up": 2.0
+    "up": 43.0
   },
   "output": {
     "chargeMode": "RigidFollow",
     "clampToGround": false,
     "combat": {
       "damage": 12.0,
-      "hitRadius": 2.5,
       "hitStopDuration": 0.05,
       "hitStopScale": 0.0,
-      "knockback": 12.0
+      "knockback": 12.0,
+      "rehitInterval": -1.0
     },
     "look": "Auto",
     "useShiverTelegraph": true
   },
+  "recoverySeconds": 1.0,
+  "restSeconds": 0.0,
   "slot": 33,
   "telegraphSeconds": 1.5
 }

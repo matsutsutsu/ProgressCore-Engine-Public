@@ -7,7 +7,7 @@
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
         "Cinematic": "Assets\\Cinematics",
         "Material": "Assets\\Materials",
-        "Model": "Assets\\Models\\Test",
+        "Model": "Assets\\Models\\Weapon\\Hammer",
         "Prefab": "Assets\\Prefabs\\Enemy",
         "Scene": "Assets\\Scene",
         "TextEditor": "Assets\\Prefabs\\Enemy",
