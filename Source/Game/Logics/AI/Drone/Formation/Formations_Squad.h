@@ -30,7 +30,7 @@ namespace CCL::AI::Formation::Squad
     class SquadAssaultFormation : public IFormation
     {
     public:
-        // 集まって降りてくる動きが予告。震えを足すと、そのずれが後ろの席へ伝わって隊列が乱れる
+        // 頭上から降りてくる動きが予告。震えを足すと、そのずれが後ろの席へ伝わって隊列が乱れる
         bool UsesShiverTelegraph() const override { return false; }
 
         bool FollowsBoss() const override { return false; } // 基準はアンカー

@@ -7,7 +7,7 @@
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": false,
+                    "isLoop": true,
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
@@ -45,7 +45,7 @@
                     "escapeLeap.windup": 0.25,
                     "footworkMaxTime": 3.0,
                     "footworkMinTime": 1.5,
-                    "footworkSpeed": 70.0,
+                    "footworkSpeed": 40.0,
                     "hoverLeap.flight": 0.8999999761581421,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.hover": 8.170000076293945,
@@ -70,9 +70,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
+                        3.783505853677006e-44,
                         0.0,
-                        0.0,
-                        0.0
+                        -3.5032461608120427e-44
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -88,9 +88,9 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 500.0,
+                    "currentHealth": 1000.0,
                     "invincibilityDuration": 0.0,
-                    "maxHealth": 500.0
+                    "maxHealth": 1000.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -156,15 +156,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        26.079153060913086,
-                        -0.09503472596406937,
-                        6.992441654205322
+                        4.510964393615723,
+                        -1.0468471050262451,
+                        0.8808068633079529
                     ],
                     "rotation": [
                         0.0,
-                        0.9493007063865662,
+                        0.9999948740005493,
                         0.0,
-                        0.3143695592880249
+                        0.0031845378689467907
                     ],
                     "scale": [
                         5.0,

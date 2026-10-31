@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 各小隊の生存数と、各席の前フレームの位置・速度を集める
-//   - 段階（Regroup / Gather / Chase）を決め、アンカーを動かす
+//   - 段階（Idle / Descend / Chase）を決め、アンカーを動かす（待機は BT が他の陣形で作る）
 //   - 生成された機を小隊の空き席へ入れる（AssignNewMembers。DroneManagerSystem が生成の後に呼ぶ）
 //   - 小隊の調整値と一覧のデバッグ UI
 //
@@ -82,8 +82,7 @@ private:
     {
         bool                         ordered        = false; // 小隊突撃が指示されていて、プレイヤーも居る
         bool                         attacking      = false; // 攻撃の合図が立っている
-        DirectX::SimpleMath::Vector3 bossPos        = DirectX::SimpleMath::Vector3::Zero; // ボスの位置（ワールド）
-        DirectX::SimpleMath::Vector3 playerPos      = DirectX::SimpleMath::Vector3::Zero; // プレイヤーの位置（ワールド）
+        DirectX::SimpleMath::Vector3 playerPos     = DirectX::SimpleMath::Vector3::Zero; // プレイヤーの位置（ワールド）
         float                        playerRunSpeed = 0.0f; // 追跡の速さの基準 [m/s]
         float                        dt             = 0.0f; // 敵の時間で進めた経過時間 [秒]
     };
@@ -107,20 +106,17 @@ private:
     void GatherMembers(SquadRegistry &reg);
 
     // ============================================================
-    // 段階ごとの動き
+    // アンカーの動き
     // ============================================================
 
     /**
      * @brief 小隊1個ぶんの段階を決め、アンカーを動かす。
-     * @param squad       更新する小隊。
-     * @param squadId     小隊番号。追跡の個体差（速さ・狙いのずれ）を決める。
-     * @param rank        生きている小隊の中での順番（0〜activeCount-1）。待機・集合の輪の上の位置を決める。
-     * @param activeCount 生きている小隊の数。
-     * @param frame       このフレームの入力。
-     * @param tuning      小隊の調整値。
+     * @param squad   更新する小隊。
+     * @param squadId 小隊番号。追跡の個体差（速さ・狙いのずれ）を決める。
+     * @param frame   このフレームの入力。
+     * @param tuning  小隊の調整値。
      */
-    void UpdateSquad(SquadState &squad, uint8_t squadId, uint8_t rank, uint8_t activeCount,
-                     const SquadFrame &frame, const SquadTuning &tuning) const;
+    void UpdateSquad(SquadState &squad, uint8_t squadId, const SquadFrame &frame, const SquadTuning &tuning) const;
 
     /**
      * @brief 次の段階を決める。優先度順に上から判定し、最初に成立したものを採る。
@@ -130,34 +126,35 @@ private:
     SquadPhase ChoosePhase(const SquadFrame &frame) const;
 
     /**
-     * @brief 待機（Regroup）: ボスの頭上の輪を、小隊ごとに角度をずらしてゆっくり回る。
-     * @param squad       動かす小隊。
-     * @param rank        生きている小隊の中での順番（0〜activeCount-1）。輪の上の位置を決める。
-     * @param activeCount 生きている小隊の数。
-     * @param frame       このフレームの入力。
+     * @brief 指示が無い間（Idle）、アンカーを先頭の機（生きている一番前の席）に重ねておく。
+     *
+     * 降下や追跡が始まった瞬間に、アンカーが機体の今いる場所から動き出すようにするため（原点から飛んでこない）。
+     * 速度は0にする。先頭の機の速度を渡すと、席0の機が自分の速度を先渡しで受け取り、止まらずに流れ続ける。
+     *
+     * @param squad アンカーを置く小隊。
+     * @return 先頭の機の速度。生きている機が居なければ0。
      */
-    void UpdateRegroup(SquadState &squad, uint8_t rank, uint8_t activeCount, const SquadFrame &frame) const;
+    DirectX::SimpleMath::Vector3 FollowLeadMember(SquadState &squad) const;
 
     /**
-     * @brief 集合（Gather）: ボスの頭上の輪の自分の場所へ集まり、着いたら下へ降りてくる。
+     * @brief 降下（Descend）: 降下に入った瞬間の位置から、真下の地面近くまで descendTime 秒かけて降りる。
      *
      * この動きそのものが予告で、降り切った場所から追跡が始まる。
+     * 頭上円陣の輪の上から始まるので、小隊はボスの周りから降りてくる。
      *
-     * @param squad       動かす小隊。
-     * @param prevPhase   前フレームの段階。集合に入った最初のフレームを見分ける。
-     * @param rank        生きている小隊の中での順番（0〜activeCount-1）。輪の上の位置を決める。
-     * @param activeCount 生きている小隊の数。
-     * @param frame       このフレームの入力。
-     * @param tuning      小隊の調整値。
+     * @param squad     動かす小隊。
+     * @param prevPhase 前フレームの段階。降下に入った最初のフレームを見分ける。
+     * @param frame     このフレームの入力。
+     * @param tuning    小隊の調整値（降り切る高さと時間）。
      */
-    void UpdateGather(SquadState &squad, SquadPhase prevPhase, uint8_t rank, uint8_t activeCount,
-                      const SquadFrame &frame, const SquadTuning &tuning) const;
+    void UpdateDescend(SquadState &squad, SquadPhase prevPhase, const SquadFrame &frame,
+                       const SquadTuning &tuning) const;
 
     /**
      * @brief 追跡（Chase）: アンカーがプレイヤーを追い続ける。速さは曲がるときだけ落とす。
      * @param squad     動かす小隊。
      * @param squadId   小隊番号。速さのばらつきと、狙いを左右どちらへずらすかを決める。
-     * @param prevPhase 前フレームの段階。追跡に入った最初のフレームを見分ける。
+     * @param prevPhase 前フレームの段階。追跡に入った最初のフレームの速さを決める。
      * @param frame     このフレームの入力。
      * @param tuning    小隊の調整値。
      */
@@ -181,15 +178,7 @@ private:
                             const SquadTuning &tuning, float dt) const;
 
     /**
-     * @brief アンカーを目標点へバネで寄せる。待機と集合が使う。初回だけは目標へ瞬間移動させる。
-     * @param squad   動かす小隊。
-     * @param desired 目標点（ワールド）。
-     * @param dt      経過時間 [秒]。
-     */
-    void SpringAnchorTo(SquadState &squad, const DirectX::SimpleMath::Vector3 &desired, float dt) const;
-
-    /**
-     * @brief アンカーの向きを face の方へ少しずつ寄せる。待機と集合が使う。
+     * @brief アンカーの向きを face の方へ少しずつ寄せる。降下が使う。
      * @param squad 向きを変える小隊。
      * @param face  向けたい方向。長さはどうでもよい（ほぼ0なら向きを変えない）。
      * @param dt    経過時間 [秒]。
@@ -197,7 +186,7 @@ private:
     void TurnAnchorToward(SquadState &squad, DirectX::SimpleMath::Vector3 face, float dt) const;
 
     /**
-     * @brief アンカーが床へ沈まないように、位置と速度・向きの下向き成分を止める。全段階の最後に必ず通す。
+     * @brief アンカーが床へ沈まないように、位置と速度・向きの下向き成分を止める。降下と追跡の最後に必ず通す。
      * @param squad 高度を止める小隊。
      */
     void ClampAltitude(SquadState &squad) const;
@@ -224,6 +213,4 @@ private:
     void DrawSquadList(const SquadRegistry &reg) const;
 
     const char *SquadPhaseName(SquadPhase phase) const;
-
-    float m_elapsed = 0.0f; // 待機の輪を回すのに使う経過時間 [秒]（敵の時間）
 };

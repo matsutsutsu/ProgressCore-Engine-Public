@@ -155,7 +155,7 @@ void BehaviorTreeSystem::Update(float rawDt)
     const bool  cinematic = flow.cinematic || flow.matchOver;
 
     // ---------------------------------------------------------
-    // 1. 木を配る
+    // 1. ビヘイビアツリーのアセットデータを配る
     // ---------------------------------------------------------
     SyncAssets();
 

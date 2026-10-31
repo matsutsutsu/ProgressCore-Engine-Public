@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 小隊1個ぶんの状態（SquadState）: アンカー・段階・各席の前フレームの位置と速度
-//   - 実行中に触る調整値（SquadTuning）: 隊列・追跡・集合
+//   - 実行中に触る調整値（SquadTuning）: 隊列・追跡・降下
 //   - 全小隊の密配列（SquadRegistry）
 //
 // 備考:
@@ -21,11 +21,11 @@
 // 小隊が飛べる一番低い高さ。追跡は外れても飛び続けるので、止めないと床を突き抜ける
 inline constexpr float kSquadFloorY = kDroneGroundY + 2.0f;
 
-// 小隊の段階
+// 小隊の段階。待機は BT が他の陣形（頭上円陣など）で作るので、ここには持たない
 enum class SquadPhase : uint8_t
 {
-    Regroup, // 小隊突撃の指示が無い。ボス頭上の待機点を回る
-    Gather,  // ボスの頭上の輪へ集まり、着いたら降りてくる（予備動作）
+    Idle,    // 小隊突撃の指示が無い。アンカーは先頭の機に重ねておくだけ
+    Descend, // 今いる場所（頭上円陣など）から真下へ降りてくる（予備動作）
     Chase,   // プレイヤーを追い続ける。攻撃の合図が落ちるまで続く
 };
 
@@ -38,10 +38,11 @@ struct SquadState
     DirectX::SimpleMath::Vector3 anchorForward  = DirectX::SimpleMath::Vector3::UnitZ; // 向き（正規化済み）
     DirectX::SimpleMath::Vector3 anchorVelocity = DirectX::SimpleMath::Vector3::Zero;  // 速度。席0の機へ先渡しする
 
-    bool       initialized = false;               // アンカーの位置を一度でも決めたか
-    SquadPhase phase       = SquadPhase::Regroup; // 今の段階
-    float      descend     = 0.0f;                // 集合中の下降の進み具合（0=上、1=降り切った）
-    float      chaseSpeed  = 0.0f;                // 追跡中の今の速さ [m/s]
+    SquadPhase phase      = SquadPhase::Idle; // 今の段階
+    float      chaseSpeed = 0.0f;             // 追跡中の今の速さ [m/s]
+
+    DirectX::SimpleMath::Vector3 descendFrom = DirectX::SimpleMath::Vector3::Zero; // 降り始めた位置（降下に入った瞬間のアンカー）
+    float                        descend     = 0.0f; // 降下の進み具合（0=降り始め、1=降り切った）
 
     // --- 各席の機体（前フレームの値。添字は席の番号） ---
 
@@ -71,10 +72,10 @@ struct SquadTuning
     float chaseAccel        = 60.0f;  // 速さを変えられる上限 [m/s²]
     float maxTurnRateDeg    = 200.0f; // 曲がれる角度の上限 [度/秒]
 
-    // --- 集合 ---
+    // --- 降下（予備動作） ---
 
-    float gatherRadius    = 18.0f; // ボスの周りの輪の半径 [m]
-    float gatherLowHeight = 5.0f;  // 降り切った後の高さ（ボス基準）[m]。追跡はここから始まる
+    float descendHeight = 5.0f; // 降り切った後の高さ（地面基準）[m]。追跡はここから始まる
+    float descendTime   = 2.0f; // 降り始めてから降り切るまでの秒数。BT の予備動作の Wait をこれ以上にする
 };
 
 // 全小隊の状態をまとめた World リソース。小隊番号を添字にした密配列
