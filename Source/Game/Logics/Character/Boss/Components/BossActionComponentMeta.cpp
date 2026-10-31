@@ -132,6 +132,7 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(dashTravelTime, "突進：着地後に走り続ける時間 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashStopTime, "突進：止まるまでの時間 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRecovery, "突進：止まった後の硬直 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
+            CFIELD_FLOAT_RANGED(flinchCooldown, "ひるみ：明けてから次にひるめるまで [秒]", 0.05f, 0.0f, 30.0f, "Flinch")
             // ここから下は実行時の値。保存しない。
             CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
             CFIELD_RT(lastActionTime, "前の技の長さ [秒]（溜めから硬直まで）", "State")
@@ -144,7 +145,9 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_ENUM_U8_RT(backStepPhase, "後退の段", BossBackStepPhaseNames, std::size(BossBackStepPhaseNames), "State")
             CFIELD_RT(backStepStopTime, "後退：止まりのモーションの長さ [秒]（アニメグラフから）", "State")
             CFIELD_ENUM_U8_RT(dashPhase, "突進の段", BossDashPhaseNames, std::size(BossDashPhaseNames), "State")
-            CFIELD_RT(dashChargeTime, "突進：今回の突っ込む長さ [秒]（距離÷速さ）", "State")};
+            CFIELD_RT(dashChargeTime, "突進：今回の突っ込む長さ [秒]（距離÷速さ）", "State")
+            CFIELD_RT(isFlinching, "ひるんでいるか", "State")
+            CFIELD_RT(flinchCooldownTimer, "ひるみ：次にひるめるまで [秒]", "State")};
         return fields;
     }
 };

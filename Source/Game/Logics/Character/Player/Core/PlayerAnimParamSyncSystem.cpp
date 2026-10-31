@@ -10,6 +10,7 @@ static const uint32_t HASH_IS_DASHING        = CCL::Utils::HashString("IsDashing
 static const uint32_t HASH_IS_AIRBORNE       = CCL::Utils::HashString("IsAirborne");
 static const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("MoveInput");
 static const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("DashAttackReady");
+static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("OnDash");
 
 
 
@@ -18,6 +19,13 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const PlayerDashComponent &dash, const PlayerComponent &player,
                 const CharacterMovementComponent &movement, AnimParametersComponent &animParams) {
+        // ダッシュに入るのは、始めた瞬間の OnDash トリガーで行う
+        // IsDashing で入ると、ダッシュ中に移った先（DashAttack）を毎ステップ Dash へ引き戻す
+        const bool wasDashing = animParams.GetBool(HASH_IS_DASHING);
+        if (dash.isDashing && !wasDashing)
+        {
+            animParams.SetTrigger(HASH_TRIG_DASH);
+        }
         animParams.SetBool(HASH_IS_DASHING, dash.isDashing);
 
         // 空中かは、猶予付きの isAirborne を書く

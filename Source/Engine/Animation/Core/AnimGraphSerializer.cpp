@@ -3,12 +3,12 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include <fstream>
 
+// グラフを JSON ファイルとして保存する
 bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::string &filepath)
 {
-    // 「先に全て文字列化し、成功したときだけファイルを開く」順序を必ず守ること。
-    //   ofstream は開いた時点で既存ファイルを空にする。先に開いてから to_json が例外を投げると、
-    //   catch には入るが元のファイルは既に失われている
-
+    // 先に全て文字列化し、成功したときだけファイルを開く。
+    //   ofstream は開いた時点で既存ファイルを空にするので、
+    //   先に開くと、to_json が例外を投げたときに元のファイルが失われる
     std::string text;
     try
     {
@@ -17,7 +17,6 @@ bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::str
     }
     catch (const std::exception &e)
     {
-        // ここで抜ければ既存ファイルは無傷のまま
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Save Error: %s", e.what());
         return false;
     }
@@ -33,13 +32,17 @@ bool AnimGraphSerializer::SaveToJSON(const AnimStateGraph &graph, const std::str
     os.flush();
     if (!os)
     {
-        // 書き込み中の失敗（ディスク不足など）。この場合はファイルが壊れている
+        // 書き込みの途中で失敗した（ディスク不足など）。
+        //   ここまで来るとファイルは壊れている
         CCL_LOG_ERROR(LogCategory::Editor, "JSON Save: write failed '%s'", filepath.c_str());
         return false;
     }
     return true;
 }
 
+
+
+// JSON ファイルからグラフを読み込む。失敗したら outGraph は変えない
 bool AnimGraphSerializer::LoadFromJSON(AnimStateGraph &outGraph, const std::string &filepath)
 {
     const std::string text = FileSystem::ReadAllText(filepath);

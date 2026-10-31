@@ -15,6 +15,7 @@ static const uint32_t HASH_LEAP_ATTACK       = CCL::Utils::HashString("LeapAttac
 static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase");       // 突進の段 +1。0=突進していない
 static const uint32_t HASH_BACKSTEP_PHASE    = CCL::Utils::HashString("BackStepPhase");   // 後方ステップの段 +1。0=していない
 static const uint32_t HASH_FOOTWORK_DIR      = CCL::Utils::HashString("FootworkDir");     // 様子見の向き。0=していない 1=前 2=後ろ 3=左 4=右
+static const uint32_t HASH_CAN_FLINCH        = CCL::Utils::HashString("CanFlinch");       // ひるみの冷却が明けているか
 
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
@@ -49,8 +50,15 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         // 様子見から抜けたら、向きが残っていても 0 にする
         const bool footwork = (boss.currentState == BossActionState::Footwork);
         anim.SetFloat(HASH_FOOTWORK_DIR, footwork ? static_cast<float>(boss.footworkAnimDir) : 0.0f);
+
+        // --- ひるみ ---
+
+        // 冷却中はひるませない。技の最中にひるまないのは、グラフの AnyState が group 1 に絞っているため
+        anim.SetBool(HASH_CAN_FLINCH, boss.flinchCooldownTimer <= 0.0f);
     });
 }
+
+
 
 // AnimParameters を読む AnimControllerSystem(L02_Update) より前に書く
 REGISTER_LOGIC_SYSTEM(BossAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);

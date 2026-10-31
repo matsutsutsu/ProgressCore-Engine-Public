@@ -128,6 +128,10 @@ namespace
     // （ValkyraAnimNode.json の BackStepStop）
     const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
 
+    // ひるみのステート（ValkyraAnimNode.json）。どれかを再生している間は、技を始めずにその場で止まる
+    const uint32_t kFlinchStates[] = {CCL::Utils::HashString("HitFront"), CCL::Utils::HashString("HitBack"),
+                                      CCL::Utils::HashString("HitLeft"), CCL::Utils::HashString("HitRight")};
+
     // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）
     // 跳躍3種は同じ "Leap"。着地のクリップは BossAnimSyncSystem が切り替える
     const uint32_t kSideTravelLeftTrigger  = CCL::Utils::HashString("SideTravelLeft");
@@ -161,7 +165,7 @@ namespace
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
-    types.push_back(CCL::ECS::TypeInfo<AnimStateMachineComponent>::ID()); // 止まりのモーションの長さ
+    types.push_back(CCL::ECS::TypeInfo<AnimStateMachineComponent>::ID()); // 止まりのモーションの長さと、ひるみ中か
     return types;
 }
 
@@ -182,7 +186,7 @@ std::vector<CCL::ECS::TypeID> BossActionSystem::GetWriteTypes() const
 void BossActionSystem::Update(float rawDt)
 {
     // 処理フロー:
-    // 1. このフレームにやるべき動きを決める（演出中なら待機）
+    // 1. このフレームにやるべき動きを決める（演出中・ひるみ中なら待機）
     // 2. 動きが変わったフレームだけ、入ったときの処理とアニメの開始をする
     // 3. 今の動きを1フレーム分進める
     // 4. 横移動の間は、足滑り補正を止める
@@ -215,10 +219,15 @@ void BossActionSystem::Update(float rawDt)
         // 1. このフレームの動き
         // ---------------------------------------------------------
 
+        // ひるむかはアニメグラフが決める（待機・移動・様子見の間だけ入れる）。ここは結果を読むだけ
+        const auto *animStateMachine = m_world->GetComponent<AnimStateMachineComponent>(entity);
+        UpdateFlinch(bossAction, animStateMachine, dt);
+
         // BT の要求を体の動きに変える
-        // 演出中・決着後は、要求を読まずに待機にする
+        // 演出中・決着後・ひるみ中は、要求を読まずに待機にする
+        // ひるみ中は依頼番号を進めないので、明けたときに BT が要求している技へ入り直す
         BossActionState nextState;
-        if (isCinematicOrMatchOver)
+        if (isCinematicOrMatchOver || bossAction.isFlinching)
         {
             nextState = BossActionState::None;
         }
@@ -229,8 +238,7 @@ void BossActionSystem::Update(float rawDt)
         }
 
         // このフレームのアクションに必要な情報をまとめる
-        const Frame frame{transform, movement, joltConfig, joltHandle, battle, playerPos, dt,
-                      m_world->GetComponent<AnimStateMachineComponent>(entity)};
+        const Frame frame{transform, movement, joltConfig, joltHandle, battle, playerPos, dt, animStateMachine};
 
         // ---------------------------------------------------------
         // 2. 動きに入った瞬間
@@ -349,6 +357,9 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossAction, const Frame 
     // 止まり方の慣性は、物理側（Jolt の deceleration）が付ける
     frame.movement.desiredVelocity = Vector3::Zero;
 
+    // ひるみ中は向き直らない（ひるみの前後左右と、体の向きがずれる）
+    if (bossAction.isFlinching) return;
+
     // 相手の方へ、移動中より遅く向き直る
     // すぐ正対すると、背後を取る意味が無くなる
     FaceToward(frame.transform, FlatToward(frame.transform.position, frame.playerPos), bossAction.idleTurnSpeed, frame.dt,
@@ -412,6 +423,37 @@ const BossLeapDef *BossActionSystem::LeapDefOf(ActionID actionId, const BossActi
     if (actionId == A_BossLeapAttack) return &bossAction.attackLeap;
     if (actionId == A_BossAirHover) return &bossAction.hoverLeap;
     return nullptr;
+}
+
+
+
+// ひるみのアニメを再生しているかを読み、明けてからの冷却を進める
+void BossActionSystem::UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine,
+                                    float dt) const
+{
+    bossAction.isFlinching = false;
+    if (animStateMachine)
+    {
+        for (uint32_t flinchState : kFlinchStates)
+        {
+            if (animStateMachine->currentStateHash == flinchState)
+            {
+                bossAction.isFlinching = true;
+                break;
+            }
+        }
+    }
+
+    // 冷却は明けてから数えるので、ひるんでいる間は満タンに保つ
+    // dt はこの個体の時計なので、ヒットストップ中は冷却も止まる
+    if (bossAction.isFlinching)
+    {
+        bossAction.flinchCooldownTimer = bossAction.flinchCooldown;
+    }
+    else if (bossAction.flinchCooldownTimer > 0.0f)
+    {
+        bossAction.flinchCooldownTimer -= dt;
+    }
 }
 
 

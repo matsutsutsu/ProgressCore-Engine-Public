@@ -8,13 +8,8 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    /**
-     * @brief ルートモーションの出力を無効にする。
-     *
-     * 途中で抜ける経路が多いので、消すものをここに集め、どの経路からも同じ状態で抜けるようにする。
-     *
-     * @param movement 出力を消す先。overrideSpeed は書かない（読み手が既定値に戻す）。
-     */
+    // ルートモーションの出力を無効にする。overrideSpeed は書かない（読み手が既定値に戻す）。
+    //   途中で抜ける経路が多いので、消すものをここに集め、どの経路からも同じ状態で抜ける
     void ClearRootMotionOutput(CharacterMovementComponent &movement)
     {
         movement.isRootMotionActive = false;
@@ -22,8 +17,21 @@ namespace
     }
 } // namespace
 
+
+
 void RootMotionSystem::Update(float /*rawDt*/)
 {
+    // 処理フロー:
+    // 1. 適用しない場合を除く（編集中・外部が制御中・ステートが使わない）
+    // 2. クリップの切り替わりと、時間が止まっているステップを除く
+    // 3. ルートモーションカーブがあれば、カーブの差分で前進させる
+    // 4. 無ければ、ルートボーンの移動量から前進量を求める（ブレンド中は前後を補間）
+    // 5. ワールド空間の速度にして書く
+
+    // 【備考】
+    //   出力は CharacterMovementComponent.rootMotionVelocity。動かすのは JoltCharacterUpdateSystem。
+    //   適用しない経路では、必ず出力を消してから抜ける（前のステートの値が残ると移動を上書きし続ける）
+
     ForEach([&](RootMotionComponent             &rm,
                 CharacterMovementComponent      &movement,
                 const AnimatorComponent         &animator,
@@ -31,8 +39,12 @@ void RootMotionSystem::Update(float /*rawDt*/)
                 const TransformComponent        &trans,
                 const TimeStateComponent        &time,
                 const ModelComponent            &modelComp) {
+        // ---------------------------------------------------------
+        // 1. 適用しない場合
+        // ---------------------------------------------------------
+
         // エディタ（シーケンサー）が Animator を操作している間は適用しない。
-        //   編集中はタイムラインの操作で currentTimer が自由に飛ぶので、その差分を前進量として読むと
+        //   編集中は currentTimer が自由に飛ぶので、その差分を前進量として読むと、
         //   ルートモーションの無いアニメを見ているだけでキャラが歩き出す
         if (animator.isEditorOverride)
         {
@@ -45,9 +57,9 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        // 外部（ダッシュ等の移動アクション）が移動を制御中、またはムービーがクリップを握っている間は適用しない。
-        //   ムービー中はステートマシンのステートが握る前のまま残るので、そのステートの
-        //   applyRootMotion で判定すると、ムービーのクリップの移動量でキャラが歩き出しうる
+        // 外部（ダッシュ等）が移動を制御中、またはムービーがクリップを握っている間は適用しない。
+        //   ムービー中はステートが握る前のまま残るので、そのステートの applyRootMotion で判定すると、
+        //   ムービーのクリップの移動量でキャラが歩き出しうる
         if (rm.externallyDriven || animator.isExternalOverride)
         {
             rm.enabled          = false;
@@ -67,8 +79,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         if (!rm.enabled || !animator.currentSequence || !model)
         {
             // ルートモーションを使わないステート。
-            //   ここで出力を消さないと、前に使ったステート（例: Slash）の値が
-            //   JoltCharacterUpdateSystem 側に残り、通常の移動を上書きし続ける
+            //   出力を消さないと、前のステート（例: Attack_1）の値が残り、通常の移動を上書きし続ける
             rm.lastEvaluatedSeq = nullptr;
             ClearRootMotionOutput(movement);
             return;
@@ -86,12 +97,20 @@ void RootMotionSystem::Update(float /*rawDt*/)
         // 名前で決め打ちせず、実際に移動量を持つノードから抽出する
         const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
 
-        // クリップが切り替わった
-        if (rm.lastEvaluatedSeq != seq)
+        // ---------------------------------------------------------
+        // 2. 切り替わりと停止中
+        // ---------------------------------------------------------
+
+        // クリップが切り替わった、または同じクリップを頭から再生し直した。
+        //   ポインタだけで見ると、再生し直しを「ループで先頭へ戻った」と取り違え、
+        //   前の再生の残り（末尾 - 前回の時刻）まで 1 ステップで前進してしまう
+        if (rm.lastEvaluatedSeq != seq || rm.lastPlayCount != animator.playCount)
         {
             rm.lastEvaluatedSeq  = seq;
+            rm.lastPlayCount     = animator.playCount;
             rm.prevTimer         = animator.currentTimer;
             rm.prevPreviousTimer = animator.previousTimer;
+
             // 切り替わった直後のステップは基準の時刻を合わせるだけで、移動しない
             ClearRootMotionOutput(movement);
             return;
@@ -108,8 +127,11 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        // ルートモーションカーブ（進捗 → 累積前進距離 m）があれば、ボーンではなく
-        // カーブの差分だけキャラの正面へ前進させる
+        // ---------------------------------------------------------
+        // 3. ルートモーションカーブ
+        // ---------------------------------------------------------
+
+        // カーブ（進捗 → 累積前進距離 m）があれば、ボーンではなくカーブの差分だけ正面へ前進させる
         if (animator.activeRootMotionCurve && !animator.activeRootMotionCurve->empty() && seq->duration > 0.0f)
         {
             const CurveData *rmc = animator.activeRootMotionCurve;
@@ -131,9 +153,8 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
             const float speed = dist / ldt; // 前進速度（m/s）。負なら後退
 
-            // overrideSpeed は書かない。isRootMotionActive を立てると、読み手の
-            //   JoltCharacterUpdateSystem::CalculateHorizontalVelocity は rootMotionVelocity を使って
-            //   先に return するので、overrideSpeed は使われない。
+            // overrideSpeed は書かない。
+            //   isRootMotionActive を立てると、読み手は rootMotionVelocity を使って先に return するので使われない。
             //   desiredVelocity は PlayerAnimParamSyncSystem が読むので書く
             movement.desiredVelocity    = forward;
             movement.isRootMotionActive = true;
@@ -141,7 +162,11 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        // ルートボーンの移動量を t0 → t1 で求める。ループで時刻が戻った場合は「末尾まで + 先頭から」でつなぐ
+        // ---------------------------------------------------------
+        // 4. ルートボーンの移動量
+        // ---------------------------------------------------------
+
+        // t0 → t1 の移動量を求める。ループで時刻が戻った場合は「末尾まで + 先頭から」でつなぐ
         auto ExtractDelta = [&](int aIndex, float t0, float t1, float duration) -> Vector3 {
             if (t1 < t0)
             {
@@ -162,12 +187,13 @@ void RootMotionSystem::Update(float /*rawDt*/)
             }
         };
 
-        // 1. ローカル空間での移動量を求める（ブレンド中は前後のクリップを補間する）
-        Vector3 finalLocalDelta = Vector3::Zero;
+        Vector3 finalLocalDelta = Vector3::Zero; // ローカル空間での移動量
 
         if (animator.isBlending && animator.previousSequence)
         {
-            // 前のクリップ
+            // ブレンド中は前後のクリップの移動量を、ポーズと同じブレンド率で補間する
+
+            // --- 前のクリップ ---
             int     prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
             Vector3 deltaPrev     = Vector3::Zero;
             if (prevAnimIndex != -1)
@@ -178,7 +204,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
                 deltaPrev            = ExtractDelta(prevAnimIndex, t0_prev, t1_prev, animator.previousSequence->duration);
             }
 
-            // 現在のクリップ
+            // --- 現在のクリップ ---
             float t0_curr     = rm.prevTimer;
             float t1_curr     = animator.currentTimer;
             rm.prevTimer      = t1_curr;
@@ -198,13 +224,16 @@ void RootMotionSystem::Update(float /*rawDt*/)
             finalLocalDelta = ExtractDelta(animIndex, t0, t1, seq->duration);
         }
 
-        // 2. ワールド空間へ変換して速度にする
+        // ---------------------------------------------------------
+        // 5. ワールド空間の速度にする
+        // ---------------------------------------------------------
         Vector3 worldDelta = Vector3::Transform(finalLocalDelta, trans.rotation);
         worldDelta.y       = 0.0f; // 縦方向（重力・ジャンプ）は物理に任せる
 
         float   speed   = worldDelta.Length() / ldt;
         Vector3 forward = worldDelta;
 
+        // ほとんど動いていないなら、向きはキャラの正面にする（ゼロベクトルは正規化できない）
         if (speed > 0.001f)
         {
             forward.Normalize();

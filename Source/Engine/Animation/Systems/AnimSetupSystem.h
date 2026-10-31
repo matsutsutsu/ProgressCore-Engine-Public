@@ -5,12 +5,8 @@
 // 責務:
 //   - AnimParametersComponent / AnimStateMachineComponent / RootMotionComponent が無ければ付ける
 //
-// 備考:
-//   - AnimatorComponent を付けるだけでアニメーション一式が動くようにし、付け忘れを防ぐ。
-//   - SetExclude は使わない。SetExclude<A, B, C>() は「どれか 1 つでも持っていたら除外」なので、
-//     例えば AnimStateMachine だけをプレハブに書いた Entity（Valkyra.json など）が
-//     AnimParameters / RootMotion を受け取れなくなる。対象はキャラだけで数も少ないので、
-//     毎ステップ HasComponent で個別に調べても十分軽い。
+// 備考: AnimatorComponent を付けるだけでアニメーション一式が動くようにし、付け忘れを防ぐ。
+//       RootMotionComponent も全員に付くので、Root Lock は Animator を持つ全キャラに掛かる。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"

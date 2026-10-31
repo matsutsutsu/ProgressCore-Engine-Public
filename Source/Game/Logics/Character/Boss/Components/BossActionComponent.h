@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進）の
+// 概要: ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ）の
 //       設定値と実行時の状態を持つ Component。
 //       実行時の状態を書くのは BossActionSystem だけ。
 // ===========================================================================
@@ -173,6 +173,11 @@ struct BossActionComponent
     float dashStopTime        = 0.4f;  // 止まるまで [秒]
     float dashRecovery        = 0.5f;  // 硬直 [秒]
 
+    // --- ひるみ ---
+
+    // ひるむのは待機・移動・様子見の間だけ（アニメグラフの AnyState が group 1 に絞る）。技の最中はひるまない
+    float flinchCooldown = 3.0f; // ひるみが明けてから、次にひるめるまで [秒]。当て続けてはめられないようにする
+
     // --- 実行時の状態（保存しない）---
 
     DirectX::SimpleMath::Vector3 moveDirection = DirectX::SimpleMath::Vector3::Zero; // 動いている向き（水平）
@@ -216,4 +221,8 @@ struct BossActionComponent
     DirectX::SimpleMath::Vector3 dashAimPos     = DirectX::SimpleMath::Vector3::Zero;
     DirectX::SimpleMath::Vector3 dashEndPos     = DirectX::SimpleMath::Vector3::Zero;
     float                        dashChargeTime = 0.0f; // 突っ込む長さ [秒]
+
+    // ひるみ
+    bool  isFlinching         = false; // ひるみのアニメを再生しているか（アニメグラフの今のステートから読む）
+    float flinchCooldownTimer = 0.0f;  // 次にひるめるまでの残り [秒]
 };

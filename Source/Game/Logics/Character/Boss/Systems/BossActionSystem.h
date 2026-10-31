@@ -12,6 +12,7 @@
 //   - 技が硬直まで終わったら actionFinished を立て、BT に知らせる
 //   - 向きを Transform と Jolt の両方に書く
 //   - 演出中と決着後は待機にする
+//   - ひるみのアニメの間は技を始めずに止め、明けてからの冷却を数える
 //
 // 備考:
 //   流れは BossCommand → BossActionSystem → CharacterMovementComponent
@@ -39,7 +40,7 @@
 #include "Engine/Time/Components/TimeState.h"
 
 struct BattleContext;
-struct AnimStateMachineComponent; // 後方ステップの止まりのモーションの長さを読む
+struct AnimStateMachineComponent; // 後方ステップの止まりのモーションの長さと、ひるみ中かを読む
 
 class BossActionSystem : public CCL::ECS::IfSystem<
                              BossActionSystem,
@@ -75,7 +76,7 @@ public:
      * @brief テンプレート引数以外に読む型を申告する。
      *
      * Update が AnimStateMachineComponent（後方ステップの
-     * 止まりのモーションの長さ）を GetComponent で読むので、申告だけを足す。
+     * 止まりのモーションの長さと、ひるみ中か）を GetComponent で読むので、申告だけを足す。
      * テンプレート引数には足さない。ForEach の絞り込みにもなるので、
      * アニメを持たないボスで、この System が何も言わずに動かなくなる。
      */
@@ -100,7 +101,7 @@ private:
         const AnimStateMachineComponent    *animStateMachine; // アニメのステートの長さを引く。無ければ nullptr
     };
 
-    // 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る。
+    // 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る（ひるみ中は向き直らない）。
     void ProcessIdle(BossActionComponent &bossAction, const Frame &frame);
 
     // 相手へ歩いて近づく。速さは Jolt の walkSpeed。
@@ -230,6 +231,10 @@ private:
 
     // 跳躍の技(ActionID)に対応する跳び方を返す。跳躍の技でなければ nullptr
     const BossLeapDef *LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const;
+
+    // ひるみのアニメ（HitFront など）を再生しているかを isFlinching に書き、明けてからの冷却を進める
+    // ひるんでいる間、Update は BT の要求を読まずに待機にする
+    void UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine, float dt) const;
 
     // 技に入った瞬間だけ走る処理
     // 前の技の移動の予約を取り消し、進む向きと技ごとの準備（後方ステップは移動の予約）をする

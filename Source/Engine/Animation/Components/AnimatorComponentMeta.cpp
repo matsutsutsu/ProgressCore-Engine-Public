@@ -1,4 +1,3 @@
-// アニメーション関連コンポーネントのシリアライズ/インスペクタ定義。
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
@@ -7,8 +6,9 @@
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-#include "Engine/Animation/Core/AnimGraphSerializer.h"
+#include "Engine/Animation/Systems/AnimControllerSystem.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
+#include <algorithm>
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
@@ -106,34 +106,35 @@ struct ComponentMeta<AnimStateMachineComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(AnimStateMachineComponent &fsm, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
+    static bool CustomGui(AnimStateMachineComponent &fsm, unsigned long long entityID = 0, void *worldPtr = nullptr)
     {
         bool changed = false;
 
+        // 再生とパラメータの初期値は、同じ Entity の別のコンポーネントへ入れる
+        auto                    *world    = static_cast<CCL::ECS::World *>(worldPtr);
+        const auto               id       = static_cast<CCL::ECS::EntityID>(entityID);
+        AnimatorComponent       *animator = world ? world->GetComponent<AnimatorComponent>(id) : nullptr;
+        AnimParametersComponent *params   = world ? world->GetComponent<AnimParametersComponent>(id) : nullptr;
+
         ImGui::TextDisabled("グラフファイル: %s", fsm.graphPath.empty() ? "なし" : fsm.graphPath.c_str());
 
-        auto reloadGraph = [&]() {
-            if (AnimGraphSerializer::LoadFromJSON(fsm.internalGraph, fsm.graphPath))
-            {
-                for (auto &state : fsm.internalGraph.states)
-                {
-                    if (!state.sequenceFilePath.empty())
-                    {
-                        state.sequence = ResourceManager::Instance().LoadAnimSequence(state.sequenceFilePath.c_str());
-                    }
-                }
-                fsm.currentStateHash = fsm.internalGraph.entryStateHash;
-                changed              = true;
-            }
-        };
-
+        // 読込は AnimControllerSystem の初回読込と同じ関数を通す（束縛の漏れを作らないため）。
+        //   エディタの一時停止中は Logic が回らないので、要求を積まずにその場で読む
         if (ImGui::Button("アニメグラフを読込... (JSON)"))
         {
             if (auto pathOpt = FileDialog::OpenPreset("AnimNodes"))
             {
-                fsm.graphPath = FileDialog::ConvertToRelativePath(*pathOpt);
-                reloadGraph();
-                changed = true;
+                const std::string oldPath = fsm.graphPath;
+                fsm.graphPath             = FileDialog::ConvertToRelativePath(*pathOpt);
+                if (AnimControllerSystem::LoadGraph(fsm, animator, params))
+                {
+                    changed = true;
+                }
+                else
+                {
+                    // 読めなければ、グラフもパスも元のまま
+                    fsm.graphPath = oldPath;
+                }
             }
         }
 
@@ -142,7 +143,7 @@ struct ComponentMeta<AnimStateMachineComponent>
             ImGui::SameLine();
             if (ImGui::Button("グラフ再読込"))
             {
-                reloadGraph();
+                if (AnimControllerSystem::LoadGraph(fsm, animator, params)) changed = true;
             }
         }
         ImGui::Separator();
@@ -153,15 +154,9 @@ struct ComponentMeta<AnimStateMachineComponent>
             return changed;
         }
 
-        std::string currentStateName = "Unknown";
-        for (const auto &state : fsm.internalGraph.states)
-        {
-            if (state.stateHash == fsm.currentStateHash)
-            {
-                currentStateName = state.sequenceName;
-                break;
-            }
-        }
+        // 再生中の葉ステートはサブマシンの中にもありうるので、再帰的に探す
+        const AnimState  *current          = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash);
+        const std::string currentStateName = current ? current->sequenceName : "Unknown";
 
         ImGui::Text("現在の状態:");
         ImGui::SameLine();
@@ -169,28 +164,47 @@ struct ComponentMeta<AnimStateMachineComponent>
         ImGui::TextDisabled("Hash ID: 0x%X", fsm.currentStateHash);
 
         ImGui::Separator();
-        ImGui::Text("利用可能な状態:");
+        ImGui::Text("利用可能な状態（クリックでジャンプ）:");
 
         ImGui::Indent();
-        for (const auto &state : fsm.internalGraph.states)
-        {
-            bool isCurrent = (state.stateHash == fsm.currentStateHash);
-
-            if (isCurrent)
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
-
-            if (ImGui::Selectable(state.sequenceName.c_str(), isCurrent))
-            {
-                fsm.currentStateHash = state.stateHash;
-                changed              = true;
-            }
-
-            if (isCurrent)
-                ImGui::PopStyleColor();
-        }
+        if (DrawStateList(fsm, animator, fsm.internalGraph)) changed = true;
         ImGui::Unindent();
 
         return changed;
+    }
+
+    // ステートの一覧を階層ごとに字下げして並べ、クリックしたステートへジャンプする。ジャンプしたら true
+    static bool DrawStateList(AnimStateMachineComponent &fsm, AnimatorComponent *animator, const AnimStateGraph &graph)
+    {
+        bool jumped = false;
+
+        for (const auto &state : graph.states)
+        {
+            // 葉だけでなく、葉を含むサブマシンも現在地として色を付ける
+            const bool isActive =
+                std::find(fsm.activePath.begin(), fsm.activePath.end(), state.stateHash) != fsm.activePath.end();
+            const std::string label = state.isSubMachine ? ("[Sub] " + state.sequenceName) : state.sequenceName;
+
+            if (isActive) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
+            ImGui::PushID(static_cast<int>(state.stateHash));
+
+            // Animator が無いとクリップを流せないので、ジャンプさせない
+            if (ImGui::Selectable(label.c_str(), isActive) && animator)
+            {
+                if (AnimControllerSystem::JumpToState(fsm, *animator, state.stateHash)) jumped = true;
+            }
+
+            ImGui::PopID();
+            if (isActive) ImGui::PopStyleColor();
+
+            if (state.isSubMachine && state.subGraph)
+            {
+                ImGui::Indent();
+                if (DrawStateList(fsm, animator, *state.subGraph)) jumped = true;
+                ImGui::Unindent();
+            }
+        }
+        return jumped;
     }
 #else
     static bool CustomGui(AnimStateMachineComponent &, unsigned long long, void *)

@@ -8,10 +8,10 @@
 //
 // 備考:
 //   - 時間の進行とイベントの発火は AnimationSystem（Logic）、ポーズ計算はここ（Render）に分けている。
-//     FixedUpdate は 1 描画フレームに最大 4 回（Framework の MAX_STEPS）走るが、ポーズを行列にするのは
-//     Render の ModelPoseUpdateSystem（R03_Animation）1 回だけなので、FixedUpdate で計算すると
-//     最後のステップ以外は捨てられる。さらに「重い → ステップが増える → さらに重い」と悪化する。
-//   - Render 側なので、一時停止中（World::UpdatePaused は UpdateRender だけ呼ぶ）もポーズが更新される。
+//     FixedUpdate は 1 描画フレームに最大 4 回走るが、ポーズを行列にするのは
+//     ModelPoseUpdateSystem（R03_Animation）の 1 回だけなので、Logic で計算すると最後以外は捨てられる。
+//     さらに「重い → ステップが増える → さらに重い」と悪化する。
+//   - Render 側なので、一時停止中（ECSContext::UpdatePaused は UpdateRender だけ呼ぶ）もポーズが更新される。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 

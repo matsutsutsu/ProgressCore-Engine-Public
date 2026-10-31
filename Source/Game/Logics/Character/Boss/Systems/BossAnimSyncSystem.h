@@ -5,6 +5,8 @@
 // 責務:
 //   - IsMoving で、待機と歩きを切り替えさせる
 //   - SideTravelPhase / IsLeaping / LeapAttack / DashPhase / BackStepPhase で、技の段ごとにアニメを切り替えさせる
+//   - FootworkDir で、様子見の前後左右のループを切り替えさせる
+//   - CanFlinch で、ひるみの冷却中はひるませない
 //
 // 備考: 技を始めるトリガーは BossActionSystem が引く。
 //       グラフは歩きを Speed でなく IsMoving で決める（実速度だと横移動や技でも Move に入る）。

@@ -9,10 +9,10 @@
 //   - エディタ（シーケンサー）のプレビュー用に、指定時刻のポーズを直接適用する（UpdateManual）
 //
 // 備考:
-//   - 区間のイベント（HitBox / Trail / Particle / Blackboard）は発行せず、各 System が
-//     再生時刻を見て区間内かを判定する。
-//   - ポーズの計算は AnimationPoseSystem（Render）が行う。時間とイベントは固定ステップの精度が
-//     要るのでここ（Logic）に残している。
+//   - 区間のイベント（HitBox / Trail / Particle など）は発行しない。
+//     各 System が再生時刻を見て区間内かを判定する。
+//   - ポーズの計算は AnimationPoseSystem（Render）が行う。
+//     時間とイベントは固定ステップの精度が要るので、ここ（Logic）に残している。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <vector>
@@ -40,14 +40,9 @@ public:
 
 private:
     /**
-     * @brief 点イベント（Sound / Effect / SpawnHitbox）を EventBus で発行する。
-     *
-     * 時間の進行やループ判定は m_world を使わないので .cpp の無名名前空間に置いている。
-     *
-     * @param id           イベントを出すエンティティ。
-     * @param animator     イベントの位置（nextEventIndex）を持つ Animator。
-     * @param seq          再生中のシーケンス。
-     * @param movedForward このフレームで順方向に進んだか。false（逆再生・シーク）なら発火せず、イベントの位置だけ現在時刻に合わせる。
+     * @brief 点イベント（Sound / Effect / SpawnHitbox）のうち、今の時刻までに達したものを EventBus で発行する。
+     * @param movedForward このステップで順方向に進んだか。
+     *                     false（逆再生・シーク）なら発火せず、イベントの位置だけ現在時刻に合わせる。
      */
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
                              const AnimSequence *seq, bool movedForward);

@@ -8,14 +8,13 @@
 //   - 持ち主が消えたら ownerEntity を解き、次のフレームで探し直す
 //   - animControlled なトレイルは、持ち主の今の再生時刻が Trail 区間に入っているかで emitting を決める
 //
-// 備考: 走査するのは Animator 側ではなくトレイル側（CombatAnimationSyncSystem と同じ形）。
-//       書き込むのは自分の TrailComponent だけで、祖先の Animator は GetComponent で読むだけ。
-//       武器は BoneAttachment などでキャラの子孫に付いているので、親をたどって最初に
-//       見つかった Animator の持ち主を owner にする（インスペクタで owner を指定しなくてよい）。
-//       animControlled でないトレイルも owner を探すのは、TrailRecordSystem が一時トレイルの
-//       時計に owner の TimeStateComponent を使うため。
-//       AnimationSystem（L02_PostUpdate）が再生時刻を進めた後、TrailRecordSystem（L06）と
-//       描画側の TrailSystem（R08）が読む前に走るので、同じフレームで揃う。
+// 備考:
+//   - 走査するのはトレイル側（CombatAnimationSyncSystem と同じ形）。祖先の Animator は読むだけ。
+//   - 武器はキャラの子孫に付いているので、親をたどって最初に見つかった Animator の持ち主を
+//     owner にする（インスペクタで owner を指定しなくてよい）。
+//   - animControlled でないトレイルも owner を探す。
+//     TrailRecordSystem が一時トレイルの時計に owner の TimeStateComponent を使うため。
+//   - AnimationSystem（L02_PostUpdate）の後、TrailRecordSystem（L06）と TrailSystem（R08）の前に走る。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 

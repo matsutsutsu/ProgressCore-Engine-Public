@@ -31,7 +31,8 @@ namespace
 
     // 向きごとのトリガー（HitDir と同じ並び）。
     // プレイヤーのアニメーショングラフは Hit と HitDir で HitReaction のサブステートマシンに入るが、
-    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る。ボスは Hit / HitDir を持たないので、
+    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）。
+    // ボスは Hit / HitDir を持たないので、
     // 両方の形のトリガーを立てる
     const uint32_t HASH_HIT_DIRECTIONAL[4] = {
         CCL::Utils::HashString("HitFront"),

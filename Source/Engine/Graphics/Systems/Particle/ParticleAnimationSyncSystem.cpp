@@ -10,14 +10,22 @@ using namespace CCL::ECS;
 
 void ParticleAnimationSyncSystem::Update(float /*dt*/)
 {
+    // 処理フロー:
+    // 1. owner（Animator を持つ祖先）を探して持つ
+    // 2. owner の Animator を読む
+    // 3. 今の再生時刻が Particle 区間に入っているかで emitting を決める
+
     ForEachWithID([this](EntityID /*id*/, const TransformComponent &transform, GPUParticleComponent &particle) {
         // 手動のエミッタには触れない（emitting はインスペクタの値のまま）
         if (!particle.animControlled)
             return;
 
-        // ── 1. owner（Animator を持つ祖先）を探して持つ ──
-        //   見つかったら以後は親をたどらない。見つからない間は毎フレーム探し直す
-        //   （階層が後から組まれる場合に追従する）。親の循環に備えて 32 段で打ち切る。
+        // ---------------------------------------------------------
+        // 1. owner を探す
+        // ---------------------------------------------------------
+
+        // 見つかったら以後は親をたどらない。見つからない間は毎フレーム探し直す（階層が後から組まれる場合）。
+        //   親の循環に備えて 32 段で打ち切る
         if (particle.ownerEntity == InvalidEntityID)
         {
             EntityID cur   = transform.parent; // EntityLink → EntityID 暗黙変換
@@ -32,7 +40,9 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             particle.ownerEntity = (cur != 0) ? cur : InvalidEntityID;
         }
 
-        // ── 2. owner の Animator を読む（別の Entity なので読むだけ） ──
+        // ---------------------------------------------------------
+        // 2. owner の Animator（別の Entity なので読むだけ）
+        // ---------------------------------------------------------
         const AnimatorComponent *animator =
             (particle.ownerEntity != InvalidEntityID)
                 ? m_world->GetComponent<AnimatorComponent>(particle.ownerEntity)
@@ -44,9 +54,12 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             return;
         }
 
-        // ── 3. 今の再生時刻が Particle 区間に入っているかで emitting を決める ──
-        //   タグは見ず、どれか1つの Particle 区間に入っていればオンにする。
-        //   止めても出ている粒子は寿命まで残るので、区間の終わりで尾を引いて消える。
+        // ---------------------------------------------------------
+        // 3. Particle 区間の判定
+        // ---------------------------------------------------------
+
+        // タグは見ず、どれか 1 つの Particle 区間に入っていればオンにする。
+        //   止めても出ている粒子は寿命まで残るので、区間の終わりで尾を引いて消える
         const AnimSequence *seq    = animator->currentSequence;
         bool                inside = false;
         for (const auto &ev : seq->events)
@@ -60,10 +73,15 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
                 break;
             }
         }
-        // 全エミッタへまとめて反映する。タグで出し分けるなら、ev.tagHash とエミッタを対応づける
+
+        // 全エミッタへまとめて反映する。
+        //   タグで出し分けるなら、tagHash は HitBox にしか求めていないので、
+        //   ResourceManager::LoadAnimSequence で Particle にも求めるところから広げる
         particle.SetEmitting(inside);
     });
 }
 
-// AnimationSystem(L02_PostUpdate) の後、描画の GPUParticleUpdateSystem(R07) の前に走る。
+
+
+// AnimationSystem（L02_PostUpdate）の後、描画の GPUParticleUpdateSystem（R07）の前に走る
 REGISTER_LOGIC_SYSTEM(ParticleAnimationSyncSystem, Priority::LogicStage::L05_Collision);

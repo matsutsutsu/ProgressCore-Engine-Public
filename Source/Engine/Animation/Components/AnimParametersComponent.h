@@ -30,7 +30,7 @@ struct AnimParametersComponent
     struct TriggerParam
     {
         uint32_t hash;
-        float    lifetime;
+        float    lifetime; // 残りの寿命（秒）
     };
 
     std::vector<FloatParam>   floats;
@@ -84,13 +84,10 @@ struct AnimParametersComponent
     }
 
     /**
-     * @brief トリガーを立てる（先行入力として登録する）。
-     * @param hash       トリガーのハッシュ
-     * @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約 9 フレーム）
-     * @note 押した瞬間を bufferTime だけ残しておくのが役割で、遷移してよいタイミングは決めない。
-     *       遷移が通るのは、寿命が残っていて、かつシーケンサの ComboWindow / CancelWindow の
-     *       区間内にいるときだけ（AnimControllerSystem の ConditionsMet が両方を見る）。
-     *       早すぎる入力を待たせるのがここ、弾くのが窓の側。
+     * @brief トリガーを立てる（先行入力として登録する）。既にあれば寿命を上書きする。
+     * @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約 9 フレーム）。
+     * @note 押した瞬間を bufferTime だけ残すのが役割で、遷移してよいタイミングは決めない。
+     *       タイミングは遷移側の受付区間（requiredCancelMask）が決める。
      */
     void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
     {
@@ -98,7 +95,6 @@ struct AnimParametersComponent
         {
             if (t.hash == hash)
             {
-                // 既にあれば寿命を上書きする
                 t.lifetime = bufferTime;
                 return;
             }
@@ -136,7 +132,6 @@ struct AnimParametersComponent
             t.lifetime -= dt;
         }
 
-        // 寿命が 0 以下のトリガーをまとめて削除する（erase-remove）
         triggers.erase(
             std::remove_if(triggers.begin(), triggers.end(),
                            [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),

@@ -10,17 +10,24 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）
+// --- パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）---
 static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
 static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("YVelocity");
 static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
-// 接地状態の変化で立てるトリガー
+// --- 接地状態の変化で立てるトリガー ---
 static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("OnJump");
 static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("OnLand");
 
+
+
 void CharacterAnimSyncSystem::Update(float /*dt*/)
 {
+    // 処理フロー:
+    // 1. 物理の状態を取り出す
+    // 2. パラメータとトリガーを書く
+    // 3. 足滑り防止の再生速度倍率を書く
+
     ForEachWithID([&](EntityID                            id,
                       const JoltCharacterHandleComponent &joltHandle,
                       const JoltCharacterConfigComponent &config,
@@ -30,7 +37,9 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
             return;
         JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
-        // 1. 物理の状態を取り出す
+        // ---------------------------------------------------------
+        // 1. 物理の状態
+        // ---------------------------------------------------------
         JPH::Vec3 linearVel = ch->GetLinearVelocity();
         Vector3   horizontalVel(linearVel.GetX(), 0.0f, linearVel.GetZ());
 
@@ -49,7 +58,9 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
             externallyDriven = rootMotion->externallyDriven;
         }
 
-        // 2. パラメータに書き込む
+        // ---------------------------------------------------------
+        // 2. パラメータとトリガー
+        // ---------------------------------------------------------
         animParams.SetFloat(HASH_SPEED, currentSpeed);
         animParams.SetFloat(HASH_Y_VELOCITY, currentYVel);
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
@@ -61,21 +72,25 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else if (!isGrounded && wasGrounded)
         {
-            // 上向きの速度があるときだけジャンプとみなす。歩いて落ちた場合はトリガーを立てず、
-            // グラフ側の [IsGrounded == false] の条件で Fall へ遷移させる
+            // 上向きの速度があるときだけジャンプとみなす。
+            //   歩いて落ちた場合はトリガーを立てず、グラフ側の条件（落下速度と空中の bool）で落下へ遷移させる
             if (currentYVel > 0.1f)
             {
                 animParams.SetTrigger(HASH_TRIG_JUMP);
             }
         }
 
-        // 3. 足滑りの防止。
-        //   移動速度と基準速度（walkSpeed）の比で再生速度を伸縮させ、足の接地を床に合わせる。
-        //   ループするクリップ（ロコモーション）にだけ掛ける。攻撃などの非ループのクリップに掛けると、
-        //   走行中の速度で攻撃アニメまで最大 2.5 倍速になる。
-        //   書き込み先は playbackSpeed ではなく footSlideMultiplier（理由は AnimatorComponent.h を参照）。
-        //   倍率は毎ステップ必ず代入する。書かない経路があると、ロコモーションの倍率が攻撃へ持ち越される
-        //   ムービーがクリップを握っている間も掛けない（演出のクリップは指定した速度で見せる）
+        // ---------------------------------------------------------
+        // 3. 足滑りの防止
+        // ---------------------------------------------------------
+
+        // 移動速度と基準速度（walkSpeed）の比で再生速度を伸縮させ、足の接地を床に合わせる。
+        //   書き込み先は playbackSpeed ではなく footSlideMultiplier（理由は AnimatorComponent.h）
+
+        // ループするクリップ（ロコモーション）にだけ掛ける。
+        //   非ループ（攻撃など）に掛けると、走行中の速度で攻撃アニメまで最大 2.5 倍速になる
+
+        // ムービーがクリップを握っている間も掛けない（演出のクリップは指定した速度で見せる）
         if (animator.isLoop && isGrounded && currentSpeed > 0.1f && !externallyDriven &&
             !animator.isExternalOverride)
         {
@@ -87,12 +102,15 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else
         {
-            // 停止中・空中・ダッシュ中・非ループ（攻撃等）は等倍にし、ステートの再生速度をそのまま使う
+            // 倍率は毎ステップ必ず代入する。
+            //   書かない経路があると、ロコモーションの倍率が攻撃へ持ち越される
             animator.footSlideMultiplier = 1.0f;
         }
     });
 }
 
+
+
 // アニメーションの遷移評価（L02_Update の AnimControllerSystem）より前に置く。
-// 読むのは前のステップの物理（L04_Physics）の結果
+//   読むのは前のステップの物理（L04_Physics）の結果
 REGISTER_LOGIC_SYSTEM(CharacterAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);

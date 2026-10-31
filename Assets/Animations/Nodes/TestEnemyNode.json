@@ -1,7 +1,7 @@
 {
     "entryPosX": 77.0,
     "entryPosY": -149.0,
-    "entryStateHash": 1168775091,
+    "entryStateHash": 2133600820,
     "states": [
         {
             "isLoop": true,
@@ -11,7 +11,7 @@
             "sequenceFilePath": "Assets/Animations/Sequencer/Move.json",
             "sequenceName": "Move",
             "speedCurveName": "",
-            "stateHash": 1168775091,
+            "stateHash": 2133600820,
             "transitions": [
                 {
                     "conditions": [
@@ -22,7 +22,7 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 2371348074
+                    "targetStateHash": 2343121693
                 },
                 {
                     "conditions": [
@@ -45,7 +45,7 @@
             "sequenceFilePath": "Assets/Animations/Sequencer/Attack.json",
             "sequenceName": "Attack",
             "speedCurveName": "",
-            "stateHash": 2371348074,
+            "stateHash": 2343121693,
             "transitions": [
                 {
                     "conditions": [
@@ -56,7 +56,7 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 1168775091
+                    "targetStateHash": 2133600820
                 },
                 {
                     "conditions": [
@@ -90,7 +90,7 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 1168775091
+                    "targetStateHash": 2133600820
                 },
                 {
                     "conditions": [
@@ -101,7 +101,7 @@
                             "threshold": 0.0
                         }
                     ],
-                    "targetStateHash": 2371348074
+                    "targetStateHash": 2343121693
                 }
             ]
         }
