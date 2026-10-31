@@ -76,6 +76,9 @@ private:
     // 次の項目（kTutorialSteps の添字）へ進め、項目内のタイマーと記録を消す。kTutorialStepCount なら教え終える
     void Advance(TutorialState &state, uint8_t next);
 
+    // ヒントの帯に出す進み具合（done / goal、0〜1 に収める）を書く
+    void WriteProgress(TutorialState &state, float done, float goal) const;
+
     /**
      * @brief チュートリアルを最初から始める（デバッグ用。OnGui から呼ぶ）。
      *
@@ -125,6 +128,7 @@ private:
 
     // --- 項目の中の状態（Advance で消す） ---
     float m_stepTimer      = 0.0f;  // 今の項目に入ってからの実時間（秒）
+    float m_clearTimer     = 0.0f;  // 達成した後の余韻の残り（秒・実時間）。0 より大きい間は判定せず、終わったら次の項目へ
     bool  m_sawAttackShape = false; // 回避の項目で、攻撃の陣形を1度でも見たか
     float m_moveDistance   = 0.0f;  // 移動の項目で、動いた距離（m）
     float m_lookAngle      = 0.0f;  // 視点の項目で、カメラを回した角度（度）

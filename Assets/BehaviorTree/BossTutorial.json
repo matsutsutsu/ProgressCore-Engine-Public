@@ -115,6 +115,16 @@
             "endPin": 76,
             "id": 77,
             "startPin": 73
+        },
+        {
+            "endPin": 79,
+            "id": 80,
+            "startPin": 23
+        },
+        {
+            "endPin": 82,
+            "id": 83,
+            "startPin": 48
         }
     ],
     "editor_nodes": [
@@ -375,9 +385,31 @@
             "posX": 4800.0,
             "posY": 660.0,
             "type": 4
+        },
+        {
+            "action": "A_BossBackStep",
+            "actionId": 4,
+            "id": 78,
+            "inputPinId": 79,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 750.0,
+            "posY": 880.0,
+            "type": 4
+        },
+        {
+            "action": "A_BossBackStep",
+            "actionId": 4,
+            "id": 81,
+            "inputPinId": 82,
+            "outputPinId": 0,
+            "param": 1.5,
+            "posX": 2850.0,
+            "posY": 660.0,
+            "type": 4
         }
     ],
-    "last_id_counter": 78,
+    "last_id_counter": 84,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -422,6 +454,7 @@
             "actionOrConditionId": 0,
             "children": [
                 6,
+                23,
                 7,
                 8,
                 9,
@@ -477,6 +510,7 @@
             "actionOrConditionId": 0,
             "children": [
                 14,
+                24,
                 15,
                 16,
                 17,
@@ -538,6 +572,18 @@
         {
             "action": "A_Wait",
             "actionOrConditionId": 1,
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "action": "A_BossBackStep",
+            "actionOrConditionId": 4,
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
+            "action": "A_BossBackStep",
+            "actionOrConditionId": 4,
             "param": 1.5,
             "type": "Action"
         }

@@ -21,6 +21,10 @@ struct TutorialState
     bool    showHint     = false; // ヒントを画面に出すか
     bool    assistActive = false; // 回避の補助スローで「今だ」を出す段階か（ヒントを assistText に差し替える）
 
+    // --- 進み具合（ヒントの帯をゲージにして出す） ---
+    float progress = 0.0f;  // 今の項目の達成までの割合（0〜1）
+    bool  cleared  = false; // 達成して、次の項目へ進むまでの余韻の最中か（帯を満たしたまま待つ）
+
     // 教え終えたか
     bool IsFinished() const { return step >= kTutorialStepCount; }
 

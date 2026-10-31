@@ -41,6 +41,10 @@
                 {
                     "Device": "GamePad_Button",
                     "Key": "BTN_LEFT_SHOULDER"
+                },
+                {
+                    "Device": "GamePad_Button",
+                    "Key": "BTN_LEFT_TRIGGER"
                 }
             ],
             "Name": "Dash",
@@ -63,16 +67,6 @@
             ],
             "Name": "LockOn",
             "Trigger": "Triggered"
-        },
-        {
-            "Bindings": [
-                {
-                    "Device": "Mouse_Button",
-                    "Key": "BTN_RIGHT"
-                }
-            ],
-            "Name": "FreeLook",
-            "Trigger": "Down"
         }
     ],
     "Axes": [

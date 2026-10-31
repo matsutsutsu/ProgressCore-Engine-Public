@@ -13,9 +13,11 @@
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"             // 突撃中のドローンを探す
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h" // ボスが攻撃の陣形を組んでいるか
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"          // ロックオンの項目で、ロックオン先を見る
+#include "Game/Logics/Character/Player/Dash/PlayerDashComponent.h"      // 補助スロー中に、ダッシュを押したかを見る
 
 #include <SimpleMath.h>
-#include <cmath> // std::abs
+#include <algorithm> // std::min
+#include <cmath>     // std::abs
 
 #include <imgui.h>
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h" // デバッグ表示でボスの形態を出す
@@ -27,21 +29,24 @@ namespace
 {
     // --- 項目の達成に必要な量 ---
     constexpr float kWaitBattleTime = 1.0f;  // 明転を待つ時間（秒・実時間）
-    constexpr float kMoveMeters     = 10.0f; // 移動: 水平に動く距離（m）
-    constexpr float kLookDegrees    = 90.0f; // 視点: カメラを回す角度（度）
+    constexpr float kMoveMeters     = 80.0f; // 移動: 水平に動く距離（m）
+    constexpr float kLookDegrees    = 270.0f; // 視点: カメラを回す角度（度）
     constexpr int   kDashCount      = 2;     // ダッシュ: 出す回数
     constexpr float kStrikeTimeout  = 5.0f;  // 斬り込み: 当てなくても次へ進む時間（秒・実時間）
-    constexpr float kRushReadTime   = 3.0f;  // ラッシュ: 説明を読ませる時間。当ててもこれがたつまで進まない（秒・実時間）
+    constexpr float kRushReadTime   = 3.0f;  // ラッシュ: 説明を読ませる時間。これがたったら終える（秒・実時間）
 
     // --- 回避の補助スロー ---
     constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
     constexpr float kAssistWarnTime   = 0.5f;  // 予告のスローを始める、当たるまでの残り（秒・ゲーム時間）
     constexpr float kAssistNowTime    = 0.07f; // 「今だ」に入る、当たるまでの残り（秒・ゲーム時間）
     constexpr float kAssistMissRadius = 2.5f;  // 最も近づいたときにこの距離以下なら「当たる」とみなす（m）
-    constexpr float kAssistWarnScale  = 0.3f;  // 予告中の世界のタイムスケール
-    constexpr float kAssistNowScale   = 0.02f; // 「今だ」の間の世界のタイムスケール
-    constexpr float kAssistEaseTime   = 1.0f;  // SustainWorldSlow に渡すイーズ時間（秒）
-    constexpr float kAssistMaxTime    = 3.5f;  // 補助スローを掛け続ける上限（秒・実時間）
+    // 世界の速さ（1.0 = 等速）。小さいほどゆっくり。ゆっくりにしたいときはこの2つだけを変える
+    constexpr float kAssistWarnScale = 0.3f;  // 予告: 迫ってくるのを見せる間（約 1.4 秒）
+    constexpr float kAssistNowScale  = 0.03f; // 今だ: 「今だ！」を出して押させる間（約 2.3 秒）
+
+    // 補助を掛け続ける上限（秒・実時間）。上の2つから決まる長さに、1秒の余裕を足す
+    constexpr float kAssistMaxTime = (kAssistWarnTime - kAssistNowTime) / kAssistWarnScale +
+                                     kAssistNowTime / kAssistNowScale + 1.0f;
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -81,6 +86,7 @@ std::vector<TypeID> TutorialSystem::GetReadTypes() const
         TypeInfo<CameraBodyTPSComponent>::ID(),
         TypeInfo<PlayerComponent>::ID(),
         TypeInfo<AnimStateMachineComponent>::ID(),
+        TypeInfo<PlayerDashComponent>::ID(),
     };
 }
 
@@ -90,8 +96,9 @@ void TutorialSystem::Update(float dt)
     // 1. 教えている途中かを確かめる
     // 2. イベントの印を取り出す
     // 3. ムービー中と決着後は教えない
-    // 4. 今の項目を達成したかを判定する
-    // 5. 達成したら次の項目へ進める
+    // 4. 達成した後の余韻の間は、待ってから次の項目へ進める
+    // 5. 今の項目を達成したかを判定し、進み具合を書く
+    // 6. 達成したら余韻に入る（余韻の無い項目はすぐ次へ）
 
     // 【備考】
     //   何を見せるか（文言・順番）は TutorialSteps.h の表が持ち、
@@ -106,6 +113,7 @@ void TutorialSystem::Update(float dt)
     // ヒントと補助の表示は、出す場面かどうかを毎フレーム決め直す
     state.showHint     = false;
     state.assistActive = false;
+    state.cleared      = false;
     if (state.IsFinished()) return;
 
     if (!m_world->HasResource<BattleContext>()) return;
@@ -146,13 +154,38 @@ void TutorialSystem::Update(float dt)
         }
     }
 
+    const TutorialStepDef &def = kTutorialSteps[state.step];
+
     // ---------------------------------------------------------
-    // 4. 達成の判定
+    // 4. 余韻
+    // ---------------------------------------------------------
+
+    // 達成してすぐ次の説明へ切り替えると、できたことが目に入らない。
+    // 帯を満たしたまま、項目ごとの holdTime だけ待つ
+    if (m_clearTimer > 0.0f)
+    {
+        m_clearTimer -= dt;
+
+        state.showHint = def.text[0] != '\0';
+        state.cleared  = true;
+        state.progress = 1.0f;
+
+        if (m_clearTimer <= 0.0f)
+        {
+            Advance(state, static_cast<uint8_t>(state.step + 1));
+        }
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 5. 達成の判定と進み具合
     // ---------------------------------------------------------
     m_stepTimer += dt;
 
-    const TutorialStepDef &def     = kTutorialSteps[state.step];
-    bool                   cleared = false;
+    bool cleared = false;
+
+    // 量を数えない項目は空のまま。達成した瞬間に余韻で満たされる
+    WriteProgress(state, 0.0f, 1.0f);
 
     // ヒントは文言のある項目で出す。出す場面を選ぶ項目（ジャスト回避）は下で決め直す
     state.showHint = def.text[0] != '\0';
@@ -165,16 +198,25 @@ void TutorialSystem::Update(float dt)
         break;
 
     case TutorialGoal::Move:
-        cleared = AccumulateMove(battle) >= kMoveMeters;
+    {
+        const float meters = AccumulateMove(battle);
+        WriteProgress(state, meters, kMoveMeters);
+        cleared = meters >= kMoveMeters;
         break;
+    }
 
     case TutorialGoal::Look:
-        cleared = AccumulateLook(battle.playerEntity) >= kLookDegrees;
+    {
+        const float degrees = AccumulateLook(battle.playerEntity);
+        WriteProgress(state, degrees, kLookDegrees);
+        cleared = degrees >= kLookDegrees;
         break;
+    }
 
     // 2回出させて、一瞬で大きく動けることと、出した後も走り続けることを体で覚えてもらう
     case TutorialGoal::Dash:
         m_dashCount += dashed;
+        WriteProgress(state, static_cast<float>(m_dashCount), static_cast<float>(kDashCount));
         cleared = m_dashCount >= kDashCount;
         break;
 
@@ -194,6 +236,7 @@ void TutorialSystem::Update(float dt)
 
     case TutorialGoal::Attack:
         m_hitCount += playerHits;
+        WriteProgress(state, static_cast<float>(m_hitCount), 1.0f);
         cleared = m_hitCount >= 1;
         break;
 
@@ -205,6 +248,9 @@ void TutorialSystem::Update(float dt)
         const std::string entered = EnteredAnimState(battle.playerEntity);
         if (entered == "Attack_1") m_comboStarted = true;
         cleared = m_comboStarted && entered == "Attack_2";
+
+        // 1段目を出したら半分にする。続けて押せばよいと分かるように
+        WriteProgress(state, m_comboStarted ? 1.0f : 0.0f, 2.0f);
         break;
     }
 
@@ -227,23 +273,46 @@ void TutorialSystem::Update(float dt)
     // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）
     case TutorialGoal::Strike:
         m_hitCount += playerHits;
+        WriteProgress(state, static_cast<float>(m_hitCount), 1.0f);
         cleared = m_hitCount >= 1 || m_stepTimer >= kStrikeTimeout;
         break;
 
-    // 1回当てて、かつ説明を読む時間がたったら達成（最後の項目なので、教え終える）。
-    // Strike の当たりはラッシュの途中で出るので、当てただけで進めると説明が一瞬で消えてしまう
+    // 説明を読む時間がたったら達成（最後の項目なので、教え終える）。攻撃は求めない。
+    // この項目に入るのは Strike の余韻の後で、ラッシュはもう終わっている。
+    // 当てることを条件にすると、ボスへ近づき直して攻撃するまで終わらなくなる
     case TutorialGoal::Rush:
-        m_hitCount += playerHits;
-        cleared = m_hitCount >= 1 && m_stepTimer >= kRushReadTime;
+        WriteProgress(state, m_stepTimer, kRushReadTime); // 読む時間の分だけ帯が満ちていく
+        cleared = m_stepTimer >= kRushReadTime;
         break;
     }
 
     // ---------------------------------------------------------
-    // 5. 次の項目へ
+    // 6. 余韻に入る・次の項目へ
     // ---------------------------------------------------------
+    if (!cleared)
+    {
+        return;
+    }
 
+    // 補助スローは達成した時点で解く。余韻の間ほぼ止まったままにならないように
+    EndAssist();
+
+    // 余韻の無い項目（明転待ち・ジャスト回避）はすぐ進める。
     // 最後の項目を終えると step が kTutorialStepCount になり、教え終える
-    if (cleared) Advance(state, static_cast<uint8_t>(state.step + 1));
+    if (def.holdTime <= 0.0f)
+    {
+        Advance(state, static_cast<uint8_t>(state.step + 1));
+        return;
+    }
+
+    m_clearTimer   = def.holdTime;
+    state.cleared  = true;
+    state.progress = 1.0f;
+}
+
+void TutorialSystem::WriteProgress(TutorialState &state, float done, float goal) const
+{
+    state.progress = (goal > 0.0f) ? (std::min)(done / goal, 1.0f) : 1.0f;
 }
 
 // ---------------------------------------------------------------------------
@@ -254,6 +323,7 @@ void TutorialSystem::Advance(TutorialState &state, uint8_t next)
 {
     state.step       = next;
     m_stepTimer      = 0.0f;
+    m_clearTimer     = 0.0f;
     m_sawAttackShape = false;
 
     // 動いた量・回した量・回数は項目ごとに 0 から数える
@@ -377,11 +447,9 @@ void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
 
     const BattleContext &battle = m_world->GetResource<BattleContext>();
 
-    // TODO(2026-10-11): PlayerDashComponent.isDashing から「自分で避けようとしているか」を読む。
-    //   今は常に false なので、補助中にダッシュを押しても押したと分からず、
-    //   失敗したときは「今だ！」とほぼ止めたスローが、突撃が通り過ぎるか時間切れまで続く
-    const bool dashing = false;
-    (void)battle;
+    // 自分で避けようとしているか。押した後はダッシュが終わるまでスローを保ち、終わったら解く
+    const auto *dash    = m_world->GetComponent<PlayerDashComponent>(battle.playerEntity);
+    const bool  dashing = dash && dash->isDashing;
 
     // ---------------------------------------------------------
     // 1. ドローンの動き
@@ -437,14 +505,13 @@ void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
     // 受付より短い区間なので、この間にいつ押しても成立する。一度入ったら、押したダッシュが終わるまで保つ
     if (!m_assistDashed && timeToStrike >= 0.0f && timeToStrike <= kAssistNowTime) m_assistNow = true;
 
-    // 予告（kAssistWarnScale）は 0.5 秒ぶんの接近を実時間で約 1.5 秒に延ばし、迫ってくるのを見せる。
-    // 「今だ」（kAssistNowScale）は 0.07 秒ぶんを実時間で数秒に延ばし、落ち着いて押せるようにする。
     // 予告の間に早く押した場合は予告の速さのままにする（ほぼ止めると、早押しのダッシュが数秒かかる）
     const float scale = m_assistNow ? kAssistNowScale : kAssistWarnScale;
 
-    // 毎フレーム要求し直すと、1フレームぶんイーズで戻った値で効く。
-    // イーズ時間を長くするほど指定の倍率に近づく（kAssistEaseTime = 1 秒で、0.02 が約 0.05 になる）
-    Time::SustainWorldSlow(*m_world, scale, kAssistEaseTime);
+    // イーズ時間は十分長く渡す。SustainWorldSlow は毎フレーム要求し直すと、
+    // 1フレームぶんイーズで等速側へ戻った値で効くため、短いと指定より速くなる。
+    // 長く渡しても尾を引かない（補助を終えるときは EndAssist ですぐ等速に戻す）
+    Time::SustainWorldSlow(*m_world, scale, 1000.0f);
 
     // 押したら「今だ！」は消す
     state.assistActive = m_assistNow && !m_assistDashed;
