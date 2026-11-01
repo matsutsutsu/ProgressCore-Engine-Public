@@ -3,7 +3,7 @@
 // 概要: アニメーションのステートマシン（AnimStateGraph）をノードグラフで編集するウィンドウ。
 //
 // 責務:
-//   - ステート・遷移・サブステートマシンの追加・削除と、遷移条件の編集
+//   - ステート・遷移・サブステートマシン・ブレンドスペースの追加・削除と、遷移条件の編集
 //   - パラメータ（Float / Bool / Trigger）の一覧編集と、実行中の値の表示
 //   - 選択中のエンティティで実行中のステートと、直前の遷移を強調表示する
 //   - JSON の読み書きと、構造のテキスト書き出し
@@ -14,8 +14,10 @@
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
+#include "Engine/Animation/Core/AnimBlendSpaceMath.h"
 #include <string>
 #include <vector>
+#include <array>
 #include <utility>
 #include <cstdint>
 
@@ -58,6 +60,15 @@ private:
 
     // base を元に、既存のパラメータと重ならない名前を返す（"NewFloat" → "NewFloat_2" など）
     std::string MakeUniqueParamName(const std::string &base) const;
+
+    // Float のパラメータを選ぶコンボ。選んだら hash と name を書き換えて true を返す
+    bool DrawFloatParamCombo(const char *label, uint32_t &hash, std::string &name);
+
+    // =====================================================================
+    // ブレンドスペース
+    // =====================================================================
+    void DrawBlendSpaceSettings(AnimState &state);   // 種類・軸のパラメータ・追従の時間・点の一覧と、図
+    void DrawBlendSpacePlot(const AnimState &state); // 点の配置と、入力・重みの図（実行中ならその入力、そうでなければドラッグで試す）
 
     // =====================================================================
     // 編集の操作
@@ -142,6 +153,14 @@ private:
     ImVec2   m_newNodeSpawnPos      = {0.0f, 0.0f}; // 右クリックした位置（スクリーン座標）
 
     uint32_t m_runtimeActiveStateHash = 0; // 選択中のエンティティで実行中のステート（強調表示に使う。0 なら無し）
+
+    // --- ブレンドスペースの図 ---
+    bool                                           m_runtimeBlendActive  = false; // 選択中のエンティティがブレンドスペースを再生中か
+    float                                          m_runtimeBlendX       = 0.0f;  // その入力（目標へ寄せた後）
+    float                                          m_runtimeBlendY       = 0.0f;
+    std::array<float, CCL::Anim::kMaxBlendSamples> m_runtimeBlendWeights = {};    // その重み
+    float                                          m_blendPreviewX       = 0.0f;  // 実行中でないときに、図をドラッグして試す入力
+    float                                          m_blendPreviewY       = 1.0f;
 
     // --- パラメータの改名 ---
     int  m_paramRenameIndex = -1; // 改名中のパラメータの添字（-1 なら無し）

@@ -43,7 +43,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
 {
     // 処理フロー:
     // 1. クリップの番号とルートボーンを引く
-    // 2. ポーズを計算する（ブレンド中は前後のクリップを計算して混ぜる）
+    // 2. ポーズを計算する（今側・前側それぞれ、単体のクリップかブレンドスペース。ブレンド中は前後を混ぜる）
     // 3. Force Root Lock を掛ける
     // 4. Model に書く
 
@@ -52,6 +52,8 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     // ---------------------------------------------------------
     // 1. クリップとルートボーン
     // ---------------------------------------------------------
+
+    // ブレンドスペースのときは、時間の基準（点 [0]）のクリップ
     int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
     if (animIndex == -1) return;
 
@@ -61,42 +63,29 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     // ---------------------------------------------------------
     // 2. ポーズの計算
     // ---------------------------------------------------------
-    if (animator.isBlending && animator.previousSequence)
+
+    // 前側を作れたときだけクロスフェードする（前のクリップがモデルに無ければ、今側だけを出す）
+    const bool crossFading = animator.isBlending && animator.previousSequence;
+    if (crossFading && ComputeSourcePose(model, animator, true, true))
     {
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Blend");
 
-        int prevAnimIndex = model->GetAnimationIndex(animator.previousSequence->targetAnimName.c_str());
-        if (prevAnimIndex != -1)
-        {
-            size_t nodeCount = animator.poseBufferA.size();
-            if (animator.poseBufferB.size() != nodeCount)
-                animator.poseBufferB.resize(nodeCount);
+        // ブレンド中は前と現在の両方を、混ぜる前に固定する。
+        //   前のクリップはルートボーンの番号が違うことがあるので、ComputeSourcePose が個別に特定する。
+        //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
+        ComputeSourcePose(model, animator, false, true);
 
-            model->ComputeAnimation(prevAnimIndex, animator.previousTimer, animator.poseBufferB);
-            model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+        float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
+        blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
 
-            // ブレンド中は前と現在の両方を、混ぜる前に固定する。
-            //   前のクリップはルートボーンの番号が違うことがあるので、個別に特定する。
-            //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
-            const int prevRootNodeIndex = model->FindRealRootMotionNodeIndex(prevAnimIndex);
-            PinRootMotionNode(model, prevAnimIndex, prevRootNodeIndex, animator.poseBufferB, animator.lockVerticalRootMotion);
-            PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
-
-            float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
-            blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
-
-            Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
-        }
-        else
-        {
-            model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
-        }
+        Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
     }
     else
     {
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Model->ComputeAnimation");
 
-        model->ComputeAnimation(animIndex, animator.currentTimer, animator.poseBufferA);
+        // 単体のクリップは 3. でまとめて固定する
+        ComputeSourcePose(model, animator, false, false);
     }
 
     // ---------------------------------------------------------
@@ -117,6 +106,87 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
         ZoneScopedN("AnimationPoseSystem::SetNodePoses");
         model->SetNodePoses(animator.poseBufferA);
     }
+}
+
+
+
+// 今側か前側の再生元（単体のクリップか、ブレンドスペース）のポーズを作る
+bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip)
+{
+    // 処理フロー:
+    // 1. 今側か前側かで、読む値と書く先を選ぶ
+    // 2. 単体のクリップなら、そのまま計算する
+    // 3. ブレンドスペースなら、重みのある点を計算して混ぜる
+
+    // ---------------------------------------------------------
+    // 1. 今側か前側か
+    // ---------------------------------------------------------
+    const AnimSequence           *timeBase = previous ? animator.previousSequence : animator.currentSequence;
+    const float                   time     = previous ? animator.previousTimer : animator.currentTimer;
+    const AnimBlendPlayback      &blend    = previous ? animator.previousBlend : animator.currentBlend;
+    std::vector<Model::NodePose> &out      = previous ? animator.poseBufferB : animator.poseBufferA;
+
+    const int baseIndex = model->GetAnimationIndex(timeBase->targetAnimName.c_str());
+    if (baseIndex == -1) return false;
+
+    // ---------------------------------------------------------
+    // 2. 単体のクリップ
+    // ---------------------------------------------------------
+    if (!blend.IsActive())
+    {
+        model->ComputeAnimation(baseIndex, time, out);
+        if (pinClip)
+        {
+            PinRootMotionNode(model, baseIndex, model->FindRealRootMotionNodeIndex(baseIndex), out,
+                              animator.lockVerticalRootMotion);
+        }
+        return true;
+    }
+
+    // ---------------------------------------------------------
+    // 3. ブレンドスペース
+    // ---------------------------------------------------------
+    ZoneScopedN("AnimationPoseSystem::ComputeSourcePose::BlendSpace");
+
+    // 時間の基準の進み具合（0〜1）を、各点のクリップの長さに掛けて時刻にする。
+    //   長さの違うクリップでも、同じ進み具合の姿勢を混ぜるので、足の運びがそろう
+    const float progress = (timeBase->duration > 0.0f) ? std::clamp(time / timeBase->duration, 0.0f, 1.0f) : 0.0f;
+
+    // 累計の重みで割りながら足し込むと、何番目に混ぜても重み付きの平均になる。
+    //   回転は球面補間なので厳密な平均ではないが、隣り合う 2〜3 点では差は見えない
+    constexpr float kMinSampleWeight = 0.001f; // これより軽い点は見た目に効かないので計算しない
+    float           accumulated      = 0.0f;
+    for (int i = 0; i < blend.sampleCount; ++i)
+    {
+        const float         weight = blend.weights[i];
+        const AnimSequence *sample = blend.sequences[i];
+        if (weight < kMinSampleWeight || !sample) continue;
+
+        const int sampleIndex = model->GetAnimationIndex(sample->targetAnimName.c_str());
+        if (sampleIndex == -1) continue;
+
+        // 1 本目は out へ直接、2 本目からは作業用のバッファへ計算して混ぜる
+        const bool                    first  = (accumulated == 0.0f);
+        std::vector<Model::NodePose> &target = first ? out : animator.poseBufferC;
+        model->ComputeAnimation(sampleIndex, progress * sample->duration, target);
+
+        // 混ぜる前に、点ごとにルートを固定する（点ごとにルートボーンの番号と前進量が違う）
+        PinRootMotionNode(model, sampleIndex, model->FindRealRootMotionNodeIndex(sampleIndex), target,
+                          animator.lockVerticalRootMotion);
+
+        accumulated += weight;
+        if (!first)
+        {
+            Model::BlendAnimations(out, target, weight / accumulated, out);
+        }
+    }
+
+    // 混ぜられる点が 1 つも無い（クリップがモデルに無いなど）ときは、時間の基準のクリップだけを出す
+    if (accumulated == 0.0f)
+    {
+        model->ComputeAnimation(baseIndex, time, out);
+    }
+    return true;
 }
 
 

@@ -114,7 +114,7 @@ private:
     // 横移動の準備。技（左へ・右へ）から真横の向きを決め、BeginTravel で動き出す
     void BeginSideTravel(ActionID actionId, float travelDistance, BossActionComponent &bossAction, const Frame &frame) const;
 
-    // 横移動の動き方で、好きな向きへ動き出す。アニメの左右を向きから選び、
+    // 横移動の動き方で、好きな向きへ動き出す。開始のトリガーの左右を向きから選び、
     // 距離から各段の長さを出して、加速を予約する。距離は壁の手前までに縮める
     void BeginTravel(const DirectX::SimpleMath::Vector3 &moveDir, float travelDistance, BossActionComponent &bossAction,
                      const Frame &frame) const;
@@ -137,10 +137,13 @@ private:
     // 様子見の準備。1回の長さを下限〜上限から引き、相手の周りを回る側（空きが広い側。同じならランダム）を決める
     void BeginFootwork(BossActionComponent &bossAction, const Frame &frame);
 
-    // 様子見のアニメの向き（前後左右）。体の正面から見た moveDir に一番近い向きを、
+    // 動く向きを、体から見た向き（x = 右、y = 前）に直す。moveDir が水平で長さ 1 なら、結果も長さ 1
+    DirectX::SimpleMath::Vector2 BodyLocalDirection(const DirectX::SimpleMath::Vector3 &moveDir,
+                                                    const TransformComponent           &transform) const;
+
+    // 様子見のアニメの向き（前後左右）。体から見た動く向き（localMove）に一番近い向きを、
     // 今の向き（currentDir）より十分に近いときだけ返す。そうでなければ currentDir のまま
-    BossFootworkDir FootworkAnimDir(const DirectX::SimpleMath::Vector3 &moveDir, const TransformComponent &transform,
-                                    BossFootworkDir currentDir) const;
+    BossFootworkDir FootworkAnimDir(const DirectX::SimpleMath::Vector2 &localMove, BossFootworkDir currentDir) const;
 
     // 後方ステップ。入った瞬間の相手の方向を向いたまま下がり、着地して硬直する
     // 下がる移動は、OnEnterState で予約した MoveTo が運ぶ

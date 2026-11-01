@@ -166,17 +166,61 @@ namespace
     // 遷移の実行と階層の評価
     // ---------------------------------------------------------------------------
 
+    // ステートが再生するクリップ。ブレンドスペースは時間の基準（点 [0]）を返す。無ければ nullptr
+    const AnimSequence *StateSequence(const AnimState &state)
+    {
+        if (state.isBlendSpace)
+        {
+            return state.blendSpace.samples.empty() ? nullptr : state.blendSpace.samples[0].sequence;
+        }
+        return state.sequence;
+    }
+
+
+
     // 葉ステートのクリップを、そのステートの再生設定（ループ・速度・カーブ）で再生する
     void PlayState(AnimatorComponent &animator, const AnimState &leaf, float blendTime, bool restart)
     {
-        animator.Play(leaf.sequence,
+        animator.Play(StateSequence(leaf),
                       {.blendTime              = blendTime,
                        .loop                   = leaf.isLoop,
                        .speed                  = leaf.playbackSpeed,
                        .curve                  = leaf.speedCurve,
                        .rootMotionCurve        = leaf.rootMotionCurve,
                        .lockVerticalRootMotion = leaf.lockVerticalRootMotion,
-                       .restart                = restart});
+                       .restart                = restart,
+                       .blendSpace             = leaf.isBlendSpace ? &leaf.blendSpace : nullptr});
+    }
+
+
+
+    // ブレンドスペースの入力を目標へ寄せ、点ごとの重みを求める。単体のクリップなら何もしない
+    void UpdateBlendWeights(AnimatorComponent &animator, const AnimParametersComponent &params, float dt)
+    {
+        AnimBlendPlayback &blend = animator.currentBlend;
+        if (!blend.IsActive()) return;
+
+        float targetX = 0.0f;
+        float targetY = 0.0f;
+        params.TryGetNumeric(blend.paramXHash, targetX);
+        params.TryGetNumeric(blend.paramYHash, targetY);
+
+        // 入った直後は寄せずに目標から始める。
+        //   0 から寄せると、入った瞬間だけ別の向きの姿勢が混ざる
+        if (!blend.hasInput)
+        {
+            blend.inputX   = targetX;
+            blend.inputY   = targetY;
+            blend.hasInput = true;
+        }
+        else
+        {
+            blend.inputX = CCL::Anim::SmoothToward(blend.inputX, targetX, blend.smoothingTime, dt);
+            blend.inputY = CCL::Anim::SmoothToward(blend.inputY, targetY, blend.smoothingTime, dt);
+        }
+
+        CCL::Anim::ComputeBlendWeights(blend.type, blend.xs.data(), blend.ys.data(), blend.sampleCount,
+                                       blend.inputX, blend.inputY, blend.weights.data());
     }
 
 
@@ -230,7 +274,7 @@ namespace
         const AnimState *leaf = EnterResolveLeaf(graph, t.targetStateHash, fsm.activePath);
         fsm.currentStateHash  = fsm.activePath.back();
 
-        if (leaf->sequence)
+        if (StateSequence(*leaf))
         {
             // ステートに入るので必ず頭から再生する（理由は AnimatorComponent::Play を参照）
             PlayState(animator, *leaf, t.blendDuration, true);
@@ -319,7 +363,7 @@ namespace
     // リソースの束縛
     // ---------------------------------------------------------------------------
 
-    // グラフ内の全ステートの sequence / curve を束縛する（サブマシンの子も再帰的に）
+    // グラフ内の全ステートの sequence / curve / ブレンドスペースの点を束縛する（サブマシンの子も再帰的に）
     void BindGraphResources(AnimStateGraph &g, ResourceManager &rm)
     {
         for (auto &state : g.states)
@@ -330,6 +374,19 @@ namespace
                 state.speedCurve = rm.LoadAnimCurve(state.speedCurveName.c_str());
             if (!state.rootMotionCurveName.empty())
                 state.rootMotionCurve = rm.LoadAnimCurve(state.rootMotionCurveName.c_str());
+
+            // ブレンドスペースは、点ごとに自分のクリップを持つ
+            if (state.isBlendSpace)
+            {
+                for (auto &sample : state.blendSpace.samples)
+                {
+                    if (!sample.sequenceFilePath.empty())
+                    {
+                        sample.sequence = rm.LoadAnimSequence(sample.sequenceFilePath.c_str());
+                    }
+                }
+            }
+
             if (state.isSubMachine && state.subGraph)
                 BindGraphResources(*state.subGraph, rm);
         }
@@ -427,7 +484,7 @@ void AnimControllerSystem::Update(float dt)
         if (animator.externalReleaseBlend >= 0.0f)
         {
             if (const AnimState *leaf = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash);
-                leaf && leaf->sequence)
+                leaf && StateSequence(*leaf))
             {
                 PlayState(animator, *leaf, animator.externalReleaseBlend, true);
             }
@@ -438,6 +495,11 @@ void AnimControllerSystem::Update(float dt)
 
         // ルートから葉へ評価する。どこかの階層で遷移したら、このステップはそこで終わる
         EvaluateLevel(fsm.internalGraph, 0, fsm, animator, params, enableLog);
+
+        // --- ブレンドスペースの重み ---
+
+        // 遷移の後に求める。このステップでブレンドスペースに入っても、入ったステップから重みが揃う
+        UpdateBlendWeights(animator, params, time.localDt);
     });
 }
 
@@ -504,7 +566,7 @@ bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorCom
     if (!animator || animator->isEditorOverride || animator->isExternalOverride) return true;
 
     // 最初の再生なのでブレンドしない。再読込のときも entry の頭から流し直す
-    if (leaf && leaf->sequence) PlayState(*animator, *leaf, 0.0f, true);
+    if (leaf && StateSequence(*leaf)) PlayState(*animator, *leaf, 0.0f, true);
     return true;
 }
 
@@ -524,7 +586,7 @@ bool AnimControllerSystem::JumpToState(AnimStateMachineComponent &fsm, AnimatorC
     // currentStateHash だけを書き換えると、ステートは変わってもクリップが前のまま流れる。
     //   握られている間は再生しない（理由は LoadGraph と同じ）
     if (animator.isEditorOverride || animator.isExternalOverride) return true;
-    if (leaf->sequence) PlayState(animator, *leaf, 0.0f, true);
+    if (StateSequence(*leaf)) PlayState(animator, *leaf, 0.0f, true);
     return true;
 }
 

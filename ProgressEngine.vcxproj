@@ -370,6 +370,7 @@
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimBlendSpaceMath.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h" />

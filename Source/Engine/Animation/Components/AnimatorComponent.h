@@ -5,16 +5,67 @@
 // 責務:
 //   - 再生中の AnimSequence・再生時刻・次に発火するイベントの位置を保持する
 //   - クロスフェード中の前のクリップの状態を保持する
+//   - 再生中のブレンドスペースの点と重みを保持する
 //   - ポーズ計算用のバッファを保持する（毎フレームの確保を避けるため）
 //
 // 備考: 再生の開始は AnimControllerSystem が Play() で行い、時刻は AnimationSystem が進める。
 // ===========================================================================
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Animation/Core/AnimSequence.h"
+#include "Engine/Animation/Core/AnimBlendSpaceMath.h"
 #include <vector>
+#include <array>
 #include <cstdint>
 
 struct CurveData;
+
+
+// 再生中のブレンドスペース。グラフの AnimBlendSpace から、実行時に要る値だけをコピーして持つ。
+//   ポインタで持つと、グラフの再読込（internalGraph の差し替え）やエンティティの複製で指す先が無くなる
+struct AnimBlendPlayback
+{
+    int                sampleCount   = 0; // 0 ならブレンドスペースではない（単体のクリップ）
+    AnimBlendSpaceType type          = AnimBlendSpaceType::Directional2D;
+    uint32_t           paramXHash    = 0;
+    uint32_t           paramYHash    = 0;
+    float              smoothingTime = 0.1f; // 入力を目標へ寄せる時間 [秒]
+
+    // --- 点（sampleCount 個だけ有効。[0] が時間の基準）---
+    std::array<const AnimSequence *, CCL::Anim::kMaxBlendSamples> sequences = {}; // 所有しない（ResourceManager が持つ）
+    std::array<float, CCL::Anim::kMaxBlendSamples>                xs        = {};
+    std::array<float, CCL::Anim::kMaxBlendSamples>                ys        = {};
+
+    // --- 毎ステップの値（AnimControllerSystem が書く）---
+    std::array<float, CCL::Anim::kMaxBlendSamples> weights  = {};    // 点ごとの重み。合計 1
+    float                                          inputX   = 0.0f;  // 目標へ寄せた後の入力
+    float                                          inputY   = 0.0f;
+    bool                                           hasInput = false; // 入力を一度でも書いたか（入った直後は寄せずに目標から始める）
+
+    bool IsActive() const { return sampleCount > 0; }
+
+    // ブレンドスペースの定義から点をコピーし、入力と重みを初期状態に戻す。nullptr なら止める
+    void Assign(const AnimBlendSpace *blendSpace)
+    {
+        *this = {};
+        if (!blendSpace) return;
+
+        // 上限を超えた点は使わない（エディタは上限までしか足させない）
+        sampleCount   = (std::min)(static_cast<int>(blendSpace->samples.size()), CCL::Anim::kMaxBlendSamples);
+        type          = blendSpace->type;
+        paramXHash    = blendSpace->paramXHash;
+        paramYHash    = blendSpace->paramYHash;
+        smoothingTime = blendSpace->smoothingTime;
+        for (int i = 0; i < sampleCount; ++i)
+        {
+            sequences[i] = blendSpace->samples[i].sequence;
+            xs[i]        = blendSpace->samples[i].x;
+            ys[i]        = blendSpace->samples[i].y;
+        }
+
+        // 最初の重みが求まるまでは、時間の基準の点だけを見せる
+        if (sampleCount > 0) weights[0] = 1.0f;
+    }
+};
 
 struct AnimatorComponent
 {
@@ -56,9 +107,16 @@ struct AnimatorComponent
     bool  previousLoop          = false;
     float previousPlaybackSpeed = 1.0f;
 
+    // --- ブレンドスペース ---
+    //   単体のクリップを再生している間は、どちらも sampleCount == 0。
+    //   currentSequence は、ブレンドスペースの間も時間の基準（点 [0]）のクリップを指す
+    AnimBlendPlayback currentBlend;  // 今のステートのブレンドスペース
+    AnimBlendPlayback previousBlend; // クロスフェード中の前のステートのブレンドスペース（切り替えた瞬間の重みのまま）
+
     // --- ポーズ計算用のバッファ（毎フレームの確保を避けるため保持する）---
     std::vector<Model::NodePose> poseBufferA; // 現在のクリップ（ブレンド後の結果もここ）
     std::vector<Model::NodePose> poseBufferB; // 前のクリップ
+    std::vector<Model::NodePose> poseBufferC; // ブレンドスペースで、点 1 本分を計算する作業用
 
     // --- 外部からの握り ---
     bool isEditorOverride = false; // true の間はエディタ（シーケンサー）が再生を制御し、System は触らない
@@ -76,13 +134,14 @@ struct AnimatorComponent
     //   bool と float が並ぶ引数は取り違えやすいので、指示付き初期化子で名前を書かせる（宣言順に書くこと）
     struct PlayParams
     {
-        float            blendTime              = 0.2f;    // クロスフェード時間（秒）。0 なら即座に切り替える
-        bool             loop                   = true;    // ループ再生するか
-        float            speed                  = 1.0f;    // 再生速度倍率
-        const CurveData *curve                  = nullptr; // 速度カーブ（null ならシーケンス内蔵、それも無ければ等速）
-        const CurveData *rootMotionCurve        = nullptr; // ルートモーションカーブ（null ならシーケンス内蔵、それも無ければボーンから抽出）
-        bool             lockVerticalRootMotion = false;   // Force Root Lock で Y も固定するか
-        bool             restart                = false;   // 同じクリップでも頭から再生し直すか（ステートに入るときは true）
+        float                 blendTime              = 0.2f;    // クロスフェード時間（秒）。0 なら即座に切り替える
+        bool                  loop                   = true;    // ループ再生するか
+        float                 speed                  = 1.0f;    // 再生速度倍率
+        const CurveData      *curve                  = nullptr; // 速度カーブ（null ならシーケンス内蔵、それも無ければ等速）
+        const CurveData      *rootMotionCurve        = nullptr; // ルートモーションカーブ（null ならシーケンス内蔵、それも無ければボーンから抽出）
+        bool                  lockVerticalRootMotion = false;   // Force Root Lock で Y も固定するか
+        bool                  restart                = false;   // 同じクリップでも頭から再生し直すか（ステートに入るときは true）
+        const AnimBlendSpace *blendSpace             = nullptr; // ブレンドスペースのステートなら、その定義（値でコピーする）。sequence には点 [0] を渡す
     };
 
     // 新しいシーケンスの再生を始める（blendTime があればクロスフェードする）
@@ -126,6 +185,9 @@ struct AnimatorComponent
                 previousLoop          = isLoop;
                 previousPlaybackSpeed = playbackSpeed;
 
+                // 前のステートがブレンドスペースなら、切り替えた瞬間の重みのまま前側へ移す
+                previousBlend = currentBlend;
+
                 isBlending       = true;
                 blendDuration    = params.blendTime;
                 currentBlendTime = 0.0f;
@@ -134,13 +196,21 @@ struct AnimatorComponent
             {
                 isBlending       = false;
                 previousSequence = nullptr;
+                previousBlend.Assign(nullptr);
             }
 
+            currentBlend.Assign(params.blendSpace);
             currentSequence = sequence;
             currentTimer    = 0.0f;
             nextEventIndex  = 0;
             isFinished      = false;
             ++playCount;
+        }
+        else if (!params.blendSpace)
+        {
+            // 同じクリップを頭から流し直さずに、単体のクリップとして再生し直す要求（ムービーなど）。
+            //   ブレンドスペースの点 [0] と同じクリップでも、混ぜるのをやめる
+            currentBlend.Assign(nullptr);
         }
 
         // --- 再生設定 ---

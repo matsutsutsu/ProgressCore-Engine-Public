@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
 
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -57,6 +58,18 @@ namespace
             if (s.isSubMachine && s.subGraph) ForEachTransitionList(*s.subGraph, fn);
         }
         fn(g.anyStateTransitions);
+    }
+
+    // ツリー全体（root ＋ 全サブグラフ）のブレンドスペースへ fn を適用する。
+    //   パラメータの削除・改名で、軸に使っている参照も張り替えるために使う
+    template <class F>
+    void ForEachBlendSpace(AnimStateGraph &g, F fn)
+    {
+        for (auto &s : g.states)
+        {
+            if (s.isBlendSpace) fn(s.blendSpace);
+            if (s.isSubMachine && s.subGraph) ForEachBlendSpace(*s.subGraph, fn);
+        }
     }
 
     // hash のステートを直下に持つ階層を、ツリー全体から探す。無ければ nullptr
@@ -194,6 +207,22 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
         if (state.isSubMachine)
         {
             ss << "[ SUB MACHINE ] " << state.sequenceName << "  (中身は後ろに続く)\n";
+        }
+        else if (state.isBlendSpace)
+        {
+            const AnimBlendSpace &bs = state.blendSpace;
+            const bool            is1D = (bs.type == AnimBlendSpaceType::Blend1D);
+            ss << "[ BLEND SPACE ] " << state.sequenceName << "  (" << (is1D ? "1D" : "2D Directional") << ")\n";
+            ss << "  Param:  X=" << (bs.paramXName.empty() ? "None" : bs.paramXName);
+            if (!is1D) ss << "  Y=" << (bs.paramYName.empty() ? "None" : bs.paramYName);
+            ss << "  Smoothing=" << std::fixed << std::setprecision(2) << bs.smoothingTime << "s\n";
+            ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
+            for (size_t i = 0; i < bs.samples.size(); ++i)
+            {
+                const AnimBlendSample &sample = bs.samples[i];
+                ss << "  [" << i << "] (" << std::setprecision(2) << sample.x << ", " << sample.y << ") "
+                   << (sample.sequenceFilePath.empty() ? "None" : sample.sequenceFilePath) << (i == 0 ? "  <- 時間の基準" : "") << "\n";
+            }
         }
         else
         {
@@ -548,13 +577,24 @@ void AnimGraphWindow::DrawContents(EditorContext &context)
     // ---------------------------------------------------------
 
     // ノードの強調表示に使う。読むのは葉のステートだけ
+    //   ブレンドスペースを再生中なら、図に描く入力と重みも写す
     m_runtimeActiveStateHash = 0;
+    m_runtimeBlendActive     = false;
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world)
     {
         auto *fsm = context.world->GetComponent<AnimStateMachineComponent>(context.selectedEntity);
         if (fsm)
         {
             m_runtimeActiveStateHash = fsm->currentStateHash;
+        }
+
+        auto *animator = context.world->GetComponent<AnimatorComponent>(context.selectedEntity);
+        if (animator && animator->currentBlend.IsActive())
+        {
+            m_runtimeBlendActive  = true;
+            m_runtimeBlendX       = animator->currentBlend.inputX;
+            m_runtimeBlendY       = animator->currentBlend.inputY;
+            m_runtimeBlendWeights = animator->currentBlend.weights;
         }
     }
 
@@ -805,15 +845,19 @@ void AnimGraphWindow::DrawNodeWorkspace()
         const bool isActive = (m_runtimeActiveStateHash == state.stateHash);
 
         // サブマシンは紫系で色分けし、名前に [Sub] を付けて潜れることを示す
-        ImVec4 nodeBgColor;
+        //   ブレンドスペースは緑系にして [BS] を付ける（Entry・実行中の色はそちらを優先する）
+        const ImVec4 idleColor = state.isBlendSpace ? ImVec4(0.18f, 0.42f, 0.30f, 1.0f) : ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
+        ImVec4       nodeBgColor;
         if (state.isSubMachine)
             nodeBgColor = ImVec4(0.32f, 0.24f, 0.48f, 1.0f);
         else
             nodeBgColor = isEntry ? ImVec4(0.9f, 0.5f, 0.1f, 1.0f)
                                   : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f)
-                                              : ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+                                              : idleColor);
 
-        std::string title = state.isSubMachine ? ("[Sub] " + state.sequenceName) : state.sequenceName;
+        std::string title = state.sequenceName;
+        if (state.isSubMachine) title = "[Sub] " + state.sequenceName;
+        if (state.isBlendSpace) title = "[BS] " + state.sequenceName;
         DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, title.c_str(), nodeBgColor, isActive);
         if (m_needRestorePositions)
             ed::SetNodePosition(StateNodeId(state.stateHash), ImVec2(state.nodePosX, state.nodePosY));
@@ -1349,13 +1393,29 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
 
         ImGui::Separator();
 
-        ImGui::Text("再生ファイル (Motion Sequence):");
-        ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
-        if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0)))
+        // サブマシンは自分では再生しないので、ブレンドスペースにはできない
+        if (!state.isSubMachine)
         {
-            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+            ImGui::Checkbox("ブレンドスペース (Blend Space)", &state.isBlendSpace);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("複数のクリップを、パラメータの値に応じて混ぜて再生します。\n"
+                                  "例: 前後左右の移動を、体から見た動く向き（MoveX / MoveY）で混ぜる。");
+        }
+
+        if (state.isBlendSpace)
+        {
+            DrawBlendSpaceSettings(state);
+        }
+        else
+        {
+            ImGui::Text("再生ファイル (Motion Sequence):");
+            ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
+            if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0)))
             {
-                state.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+                if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+                {
+                    state.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+                }
             }
         }
 
@@ -1780,6 +1840,27 @@ void AnimGraphWindow::HandleContextMenu()
 
             m_currentGraph.states.push_back(std::move(sub));
             // この階層にまだ Entry が無ければ、このサブマシンを Entry にする（root が空の場合など）
+            if (m_currentGraph.entryStateHash == 0)
+                m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
+            m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
+            m_newStateName[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        // ブレンドスペースを追加する（点は空。インスペクタでクリップと位置を足す）
+        if (ImGui::Button("ブレンドスペースを追加") && m_newStateName[0] != '\0')
+        {
+            std::string nm = m_newStateName;
+            AnimState   blend;
+            blend.stateHash    = MakeUniqueStateHash(nm);
+            blend.sequenceName = nm;
+            blend.isBlendSpace = true;
+
+            ImVec2 canvasPos = ed::ScreenToCanvas(m_newNodeSpawnPos);
+            blend.nodePosX   = canvasPos.x;
+            blend.nodePosY   = canvasPos.y;
+
+            m_currentGraph.states.push_back(std::move(blend));
             if (m_currentGraph.entryStateHash == 0)
                 m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
             m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
@@ -2235,6 +2316,20 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         // 階層のどこにある条件も漏れなく消す（root ＋ 全サブグラフ）
         ForEachTransitionList(m_rootGraph, stripConds);
 
+        // ブレンドスペースの軸に使っていたら、未設定に戻す
+        ForEachBlendSpace(m_rootGraph, [deadHash](AnimBlendSpace &bs) {
+            if (bs.paramXHash == deadHash)
+            {
+                bs.paramXHash = 0;
+                bs.paramXName.clear();
+            }
+            if (bs.paramYHash == deadHash)
+            {
+                bs.paramYHash = 0;
+                bs.paramYName.clear();
+            }
+        });
+
         m_currentGraph.parameters.erase(m_currentGraph.parameters.begin() + deleteIndex);
     }
 }
@@ -2255,6 +2350,20 @@ void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::str
     };
     // 階層のどこにある条件も漏れなく張り替える（root ＋ 全サブグラフ）
     ForEachTransitionList(m_rootGraph, patch);
+
+    // ブレンドスペースの軸の参照も張り替える
+    ForEachBlendSpace(m_rootGraph, [&](AnimBlendSpace &bs) {
+        if (bs.paramXHash == oldHash)
+        {
+            bs.paramXHash = newHash;
+            bs.paramXName = newName;
+        }
+        if (bs.paramYHash == oldHash)
+        {
+            bs.paramYHash = newHash;
+            bs.paramYName = newName;
+        }
+    });
 }
 
 
@@ -2278,4 +2387,285 @@ std::string AnimGraphWindow::MakeUniqueParamName(const std::string &base) const
         name = base + "_" + std::to_string(i);
     }
     return name;
+}
+
+
+
+// Float のパラメータを選ぶコンボ。選んだら hash と name を書き換える
+bool AnimGraphWindow::DrawFloatParamCombo(const char *label, uint32_t &hash, std::string &name)
+{
+    bool        changed = false;
+    const char *preview = name.empty() ? "(未設定)" : name.c_str();
+    if (ImGui::BeginCombo(label, preview))
+    {
+        // パラメータはステートマシン全体で共有（root だけが持つ）
+        for (const auto &p : m_rootGraph.parameters)
+        {
+            if (p.type != AnimParamType::Float) continue;
+
+            const bool selected = (p.hash == hash);
+            if (ImGui::Selectable(p.name.c_str(), selected))
+            {
+                hash    = p.hash;
+                name    = p.name;
+                changed = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// ブレンドスペース
+// ---------------------------------------------------------------------------
+
+// ブレンドスペースの種類・軸のパラメータ・追従の時間・点の一覧と、図を描く
+void AnimGraphWindow::DrawBlendSpaceSettings(AnimState &state)
+{
+    // 処理フロー:
+    // 1. 種類と軸のパラメータ
+    // 2. 入力の追従
+    // 3. 点の一覧（クリップと位置。追加・削除）
+    // 4. 図
+
+    AnimBlendSpace &bs   = state.blendSpace;
+    const bool      is1D = (bs.type == AnimBlendSpaceType::Blend1D);
+
+    // ---------------------------------------------------------
+    // 1. 種類と軸
+    // ---------------------------------------------------------
+    int         type    = static_cast<int>(bs.type);
+    const char *types[] = {"1D", "2D 方向型 (Directional)"};
+    if (ImGui::Combo("種類 (Type)", &type, types, IM_ARRAYSIZE(types)))
+    {
+        bs.type = static_cast<AnimBlendSpaceType>(type);
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("1D: 1 つの値で混ぜる。例: 速さで 歩き → 走り。\n"
+                          "2D 方向型: 向きで隣り合う 2 方向を混ぜる。例: 前後左右の移動。");
+
+    DrawFloatParamCombo("横軸 X (Param X)", bs.paramXHash, bs.paramXName);
+    if (!is1D)
+    {
+        DrawFloatParamCombo("縦軸 Y (Param Y)", bs.paramYHash, bs.paramYName);
+    }
+
+    // ---------------------------------------------------------
+    // 2. 追従
+    // ---------------------------------------------------------
+    ImGui::DragFloat("追従の時間 (Smoothing)", &bs.smoothingTime, 0.01f, 0.0f, 1.0f, "%.2f 秒");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("入力が急に変わったときに、姿勢が飛ばないよう寄せる時間です。\n"
+                          "例: 0.1〜0.2 秒。0 にすると寄せずにそのまま使います。");
+
+    // ---------------------------------------------------------
+    // 3. 点の一覧
+    // ---------------------------------------------------------
+    ImGui::Separator();
+    ImGui::Text("点 (Samples)  %d / %d", static_cast<int>(bs.samples.size()), CCL::Anim::kMaxBlendSamples);
+
+    int removeIndex = -1;
+    for (int i = 0; i < static_cast<int>(bs.samples.size()); ++i)
+    {
+        AnimBlendSample &sample = bs.samples[i];
+        ImGui::PushID(i);
+
+        const std::string fileName =
+            sample.sequenceFilePath.empty() ? "None" : std::filesystem::path(sample.sequenceFilePath).stem().string();
+        ImGui::Text("[%d] %s", i, fileName.c_str());
+        if (i == 0)
+        {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(時間の基準)");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ほかの点は、この点のクリップと同じ進み具合で再生します。\n"
+                                  "イベントと Finished の判定も、この点のクリップで行います。");
+        }
+
+        if (ImGui::SmallButton("クリップ..."))
+        {
+            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+            {
+                sample.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("削除")) removeIndex = i;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        if (is1D)
+        {
+            ImGui::DragFloat("##Pos", &sample.x, 0.01f);
+        }
+        else
+        {
+            float pos[2] = {sample.x, sample.y};
+            if (ImGui::DragFloat2("##Pos", pos, 0.01f))
+            {
+                sample.x = pos[0];
+                sample.y = pos[1];
+            }
+        }
+
+        ImGui::PopID();
+    }
+
+    // ループの外で消す（ループ中に erase すると添字がずれる）
+    if (removeIndex >= 0)
+    {
+        bs.samples.erase(bs.samples.begin() + removeIndex);
+    }
+
+    // 実行時の重みは固定長で持つので、上限より多くは足させない
+    if (static_cast<int>(bs.samples.size()) < CCL::Anim::kMaxBlendSamples)
+    {
+        if (ImGui::Button("+ 点を追加", ImVec2(-1, 0)))
+        {
+            bs.samples.push_back({});
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. 図
+    // ---------------------------------------------------------
+    ImGui::Separator();
+    DrawBlendSpacePlot(state);
+}
+
+
+
+// 点の配置と、入力・重みの図を描く。実行中ならその入力、そうでなければドラッグで試す入力を使う
+void AnimGraphWindow::DrawBlendSpacePlot(const AnimState &state)
+{
+    // 処理フロー:
+    // 1. 図の範囲（すべての点が入る四角）を決める
+    // 2. 入力と重みを決める（実行中ならその値、そうでなければドラッグで試す値から計算する）
+    // 3. 枠・軸・点・入力を描く（点の丸の大きさが重み）
+
+    const AnimBlendSpace &bs    = state.blendSpace;
+    const bool            is1D  = (bs.type == AnimBlendSpaceType::Blend1D);
+    const int             count = (std::min)(static_cast<int>(bs.samples.size()), CCL::Anim::kMaxBlendSamples);
+
+    // ---------------------------------------------------------
+    // 1. 範囲
+    // ---------------------------------------------------------
+
+    // 点が無くても形が分かるよう、-1〜1 は必ず入れる
+    float minX = -1.0f, maxX = 1.0f, minY = -1.0f, maxY = 1.0f;
+    for (int i = 0; i < count; ++i)
+    {
+        minX = (std::min)(minX, bs.samples[i].x);
+        maxX = (std::max)(maxX, bs.samples[i].x);
+        minY = (std::min)(minY, bs.samples[i].y);
+        maxY = (std::max)(maxY, bs.samples[i].y);
+    }
+
+    // 端の点が枠に重ならないよう、少し広げる
+    const float padX = (maxX - minX) * 0.15f;
+    const float padY = (maxY - minY) * 0.15f;
+    minX -= padX;
+    maxX += padX;
+    minY -= padY;
+    maxY += padY;
+
+    const float  width  = (std::min)(ImGui::GetContentRegionAvail().x, 260.0f);
+    const ImVec2 size   = ImVec2(width, is1D ? 50.0f : width);
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    // ドラッグを受けるため、図の大きさの見えないボタンを置く
+    ImGui::InvisibleButton("##BlendSpacePlot", size);
+    const bool dragging = ImGui::IsItemActive();
+
+    auto toScreen = [&](float x, float y) {
+        const float u = (x - minX) / (maxX - minX);
+        const float v = is1D ? 0.5f : (y - minY) / (maxY - minY);
+        return ImVec2(origin.x + u * size.x, origin.y + (1.0f - v) * size.y); // 画面は下向きが +
+    };
+
+    // ---------------------------------------------------------
+    // 2. 入力と重み
+    // ---------------------------------------------------------
+
+    // 選択中のエンティティが、ちょうどこのステートを再生しているときだけ実行中の値を使う
+    const bool runtime = m_runtimeBlendActive && (m_runtimeActiveStateHash == state.stateHash);
+
+    float                                          inputX  = 0.0f;
+    float                                          inputY  = 0.0f;
+    std::array<float, CCL::Anim::kMaxBlendSamples> weights = {};
+    if (runtime)
+    {
+        inputX  = m_runtimeBlendX;
+        inputY  = m_runtimeBlendY;
+        weights = m_runtimeBlendWeights;
+    }
+    else
+    {
+        // ドラッグした位置を入力にする（画面の座標を、パラメータ空間へ戻す）
+        if (dragging)
+        {
+            const ImVec2 mouse = ImGui::GetIO().MousePos;
+            m_blendPreviewX    = minX + (mouse.x - origin.x) / size.x * (maxX - minX);
+            m_blendPreviewY    = minY + (1.0f - (mouse.y - origin.y) / size.y) * (maxY - minY);
+        }
+        inputX = m_blendPreviewX;
+        inputY = is1D ? 0.0f : m_blendPreviewY;
+
+        // 実行時と同じ関数で重みを求める（図で試した結果が、そのままゲームでの混ざり方になる）
+        std::array<float, CCL::Anim::kMaxBlendSamples> xs = {};
+        std::array<float, CCL::Anim::kMaxBlendSamples> ys = {};
+        for (int i = 0; i < count; ++i)
+        {
+            xs[i] = bs.samples[i].x;
+            ys[i] = bs.samples[i].y;
+        }
+        CCL::Anim::ComputeBlendWeights(bs.type, xs.data(), ys.data(), count, inputX, inputY, weights.data());
+    }
+
+    // ---------------------------------------------------------
+    // 3. 描く
+    // ---------------------------------------------------------
+    ImDrawList  *drawList = ImGui::GetWindowDrawList();
+    const ImVec2 corner   = ImVec2(origin.x + size.x, origin.y + size.y);
+    drawList->AddRectFilled(origin, corner, IM_COL32(30, 30, 34, 255));
+    drawList->AddRect(origin, corner, IM_COL32(90, 90, 100, 255));
+
+    // 原点を通る軸
+    const ImVec2 zero = toScreen(0.0f, 0.0f);
+    drawList->AddLine(ImVec2(origin.x, zero.y), ImVec2(corner.x, zero.y), IM_COL32(70, 70, 80, 255));
+    if (!is1D) drawList->AddLine(ImVec2(zero.x, origin.y), ImVec2(zero.x, corner.y), IM_COL32(70, 70, 80, 255));
+
+    // 点。重みが大きいほど大きく明るく描き、重みを横に出す
+    for (int i = 0; i < count; ++i)
+    {
+        const AnimBlendSample &sample = bs.samples[i];
+        const ImVec2           pos    = toScreen(sample.x, sample.y);
+        const float            weight = weights[i];
+        const ImU32            color  = (weight > 0.001f) ? IM_COL32(110, 220, 150, 255) : IM_COL32(140, 140, 150, 255);
+        drawList->AddCircleFilled(pos, 3.0f + 8.0f * weight, color);
+
+        const std::string name =
+            sample.sequenceFilePath.empty() ? "None" : std::filesystem::path(sample.sequenceFilePath).stem().string();
+        char label[96];
+        snprintf(label, sizeof(label), "[%d] %.2f", i, weight);
+        drawList->AddText(ImVec2(pos.x + 6.0f, pos.y - 14.0f), IM_COL32(220, 220, 220, 255), label);
+        if (ImGui::IsMouseHoveringRect(ImVec2(pos.x - 8.0f, pos.y - 8.0f), ImVec2(pos.x + 8.0f, pos.y + 8.0f)))
+        {
+            ImGui::SetTooltip("%s (%.2f, %.2f)", name.c_str(), sample.x, sample.y);
+        }
+    }
+
+    // 入力。実行中は赤、試している間は黄色
+    const ImVec2 inputPos   = toScreen(inputX, inputY);
+    const ImU32  inputColor = runtime ? IM_COL32(255, 90, 90, 255) : IM_COL32(255, 210, 80, 255);
+    drawList->AddLine(ImVec2(inputPos.x - 6.0f, inputPos.y), ImVec2(inputPos.x + 6.0f, inputPos.y), inputColor, 2.0f);
+    drawList->AddLine(ImVec2(inputPos.x, inputPos.y - 6.0f), ImVec2(inputPos.x, inputPos.y + 6.0f), inputColor, 2.0f);
+
+    if (runtime)
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "実行中の入力: (%.2f, %.2f)", inputX, inputY);
+    else
+        ImGui::TextDisabled("図をドラッグして入力を試せます: (%.2f, %.2f)", inputX, inputY);
 }

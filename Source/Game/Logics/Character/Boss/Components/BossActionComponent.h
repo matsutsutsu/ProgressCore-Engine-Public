@@ -211,6 +211,10 @@ struct BossActionComponent
     bool            footworkLeft    = false;                 // 相手の周りを左へ回っているか
     BossFootworkDir footworkAnimDir = BossFootworkDir::None; // アニメに渡す前後左右
 
+    // 体から見た動く向き（x = 右、y = 前、長さ 1）。様子見と横移動で書き、
+    //   アニメのブレンドスペース（MoveX / MoveY）の入力にする
+    DirectX::SimpleMath::Vector2 localMoveDirection = DirectX::SimpleMath::Vector2::Zero;
+
     // 後方ステップ
     BossBackStepPhase backStepPhase    = BossBackStepPhase::Retreat;
     float             backStepStopTime = 0.0f; // 止まりのモーションの長さ [秒]

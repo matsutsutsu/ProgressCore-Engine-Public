@@ -50,7 +50,6 @@ namespace
      */
     void FireHitReaction(World *world, const DamageEventComponent &ev)
     {
-        // 大量のドローンはここで抜ける
         auto *anim = world->GetComponent<AnimParametersComponent>(ev.targetID);
         if (!anim) return;
 

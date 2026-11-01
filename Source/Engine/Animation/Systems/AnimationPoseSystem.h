@@ -4,6 +4,7 @@
 //
 // 責務:
 //   - 現在のクリップ（ブレンド中なら前のクリップも）のポーズを計算してブレンドする
+//   - ブレンドスペースなら、重みのある点のクリップを計算して重みで混ぜる
 //   - Force Root Lock（ルートボーンの固定）を掛け、Model へ SetNodePoses する
 //
 // 備考:
@@ -35,4 +36,13 @@ private:
     // ブレンドと Force Root Lock を行い、最終的な骨格ポーズを Model へ適用する
     void ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
                              Model *model, const AnimSequence *seq);
+
+    /**
+     * @brief 今側か前側の再生元（単体のクリップか、ブレンドスペース）のポーズを作る。
+     * @param previous 前側（クロスフェードの元）なら true。今側は poseBufferA、前側は poseBufferB に書く。
+     * @param pinClip  単体のクリップのとき、作った後にルートを固定するか（混ぜる前の固定）。
+     *                 ブレンドスペースは点ごとのルートが違うので、指定によらず点ごとに固定する。
+     * @return 時間の基準のクリップがモデルに無ければ false（何も書かない）。
+     */
+    bool ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip);
 };

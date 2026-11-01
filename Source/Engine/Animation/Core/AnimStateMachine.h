@@ -9,6 +9,7 @@
 //
 // 備考:
 //   - AnimState はサブステートマシンとして子グラフを持てる（階層ステートマシン）。
+//   - AnimState はブレンドスペースとして、複数のクリップを重みで混ぜて再生できる。
 //   - 評価は AnimControllerSystem、編集は AnimGraphWindow が行う。
 // ===========================================================================
 #include <vector>
@@ -90,6 +91,39 @@ struct AnimTransition
     std::vector<AnimCondition> conditions;
 };
 
+// ブレンドスペースの種類。int で保存するので、追加は末尾だけ
+enum class AnimBlendSpaceType : uint8_t
+{
+    Blend1D,      // X だけを見て、両隣の 2 点を混ぜる（例: 速さで 歩き → 走り）
+    Directional2D // X / Y の向きで、隣り合う 2 方向を混ぜる。原点に点があれば、長さで原点とも混ぜる
+};
+
+// ブレンドスペースの点 1 つ（クリップと、パラメータ空間での位置）
+struct AnimBlendSample
+{
+    std::string sequenceFilePath; // 再生する AnimSequence のファイルパス
+    float       x = 0.0f;         // パラメータ空間での位置
+    float       y = 0.0f;         // 1D では使わない
+
+    const AnimSequence *sequence = nullptr; // 束縛した実体（所有しない。ResourceManager が持つ）
+};
+
+// ブレンドスペース。複数のクリップを、パラメータの値に応じた重みで混ぜ続ける。
+//   時間は samples[0] を基準に進め、ほかの点は同じ進み具合（正規化時間）の姿勢を使う
+struct AnimBlendSpace
+{
+    AnimBlendSpaceType type = AnimBlendSpaceType::Directional2D;
+
+    uint32_t    paramXHash = 0; // 横軸のパラメータ
+    std::string paramXName;     // 表示用の名前
+    uint32_t    paramYHash = 0; // 縦軸のパラメータ（1D では使わない）
+    std::string paramYName;     // 表示用の名前
+
+    float smoothingTime = 0.1f; // 入力を目標へ寄せる時間 [秒]。0 なら寄せずにそのまま使う
+
+    std::vector<AnimBlendSample> samples; // [0] が時間の基準
+};
+
 // ステート（グラフのノード）
 struct AnimState
 {
@@ -118,6 +152,11 @@ struct AnimState
     const AnimSequence *sequence        = nullptr;
 
     std::vector<AnimTransition> transitions;
+
+    // --- ブレンドスペース ---
+    //   isSubMachine と同時には立てない。立っている間は sequence を使わず、blendSpace の点を混ぜる
+    bool           isBlendSpace = false; // true なら blendSpace の点を重みで混ぜて再生する
+    AnimBlendSpace blendSpace;           // isBlendSpace のときだけ有効
 
     // --- サブステートマシン ---
     //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なので unique_ptr で持つ。
@@ -167,7 +206,7 @@ inline AnimState::AnimState(const AnimState &o)
       nodePosX(o.nodePosX), nodePosY(o.nodePosY),
       // 束縛済みのポインタは共有リソースなので浅いコピーでよい
       speedCurve(o.speedCurve), rootMotionCurve(o.rootMotionCurve), sequence(o.sequence),
-      transitions(o.transitions), isSubMachine(o.isSubMachine),
+      transitions(o.transitions), isBlendSpace(o.isBlendSpace), blendSpace(o.blendSpace), isSubMachine(o.isSubMachine),
       subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
 {
 }
@@ -192,6 +231,8 @@ inline AnimState &AnimState::operator=(const AnimState &o)
     rootMotionCurve        = o.rootMotionCurve;
     sequence               = o.sequence;
     transitions            = o.transitions;
+    isBlendSpace           = o.isBlendSpace;
+    blendSpace             = o.blendSpace;
     isSubMachine           = o.isSubMachine;
     subGraph               = o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr;
     return *this;
@@ -281,6 +322,47 @@ inline void from_json(const json &j, AnimTransition &t)
     j.at("conditions").get_to(t.conditions);
 }
 
+// --- AnimBlendSample ---
+inline void to_json(json &j, const AnimBlendSample &s)
+{
+    j = json{
+        {"sequenceFilePath", s.sequenceFilePath},
+        {"x", s.x},
+        {"y", s.y}};
+}
+inline void from_json(const json &j, AnimBlendSample &s)
+{
+    s.sequenceFilePath = j.value("sequenceFilePath", std::string{});
+    s.x                = j.value("x", 0.0f);
+    s.y                = j.value("y", 0.0f);
+}
+
+// --- AnimBlendSpace ---
+inline void to_json(json &j, const AnimBlendSpace &b)
+{
+    j = json{
+        {"type", (int)b.type},
+        {"paramXHash", b.paramXHash},
+        {"paramXName", b.paramXName},
+        {"paramYHash", b.paramYHash},
+        {"paramYName", b.paramYName},
+        {"smoothingTime", b.smoothingTime},
+        {"samples", b.samples}};
+}
+inline void from_json(const json &j, AnimBlendSpace &b)
+{
+    b.type          = (AnimBlendSpaceType)j.value("type", (int)AnimBlendSpaceType::Directional2D);
+    b.paramXHash    = j.value("paramXHash", 0u);
+    b.paramXName    = j.value("paramXName", std::string{});
+    b.paramYHash    = j.value("paramYHash", 0u);
+    b.paramYName    = j.value("paramYName", std::string{});
+    b.smoothingTime = j.value("smoothingTime", 0.1f);
+    if (j.contains("samples"))
+    {
+        j.at("samples").get_to(b.samples);
+    }
+}
+
 // --- AnimState ---
 inline void to_json(json &j, const AnimState &s)
 {
@@ -299,6 +381,13 @@ inline void to_json(json &j, const AnimState &s)
         {"nodePosY", s.nodePosY},
         {"isSubMachine", s.isSubMachine},
         {"transitions", s.transitions}};
+
+    // ブレンドスペースのときだけ書き出す（通常のステートのファイルを変えないため）
+    if (s.isBlendSpace)
+    {
+        j["isBlendSpace"] = true;
+        j["blendSpace"]   = s.blendSpace;
+    }
 
     // サブマシンのときだけ子グラフを再帰的に書き出す
     if (s.isSubMachine && s.subGraph)
@@ -328,6 +417,17 @@ inline void from_json(const json &j, AnimState &s)
     if (j.contains("nodePosY"))
         j.at("nodePosY").get_to(s.nodePosY);
     j.at("transitions").get_to(s.transitions);
+
+    // ブレンドスペースの項目は、ブレンドスペースのステートにしか無い
+    s.isBlendSpace = j.value("isBlendSpace", false);
+    if (s.isBlendSpace && j.contains("blendSpace"))
+    {
+        j.at("blendSpace").get_to(s.blendSpace);
+    }
+    else
+    {
+        s.blendSpace = {};
+    }
 
     // サブマシンなら子グラフを再帰的に読み込む
     s.isSubMachine = j.value("isSubMachine", false);

@@ -70,6 +70,22 @@ struct ComponentMeta<AnimatorComponent>
         }
         ImGui::Text("終了: %s", anim.isFinished ? "True" : "False");
 
+        // ブレンドスペースの再生中は、入力と点ごとの重みを出す（どのクリップがどれだけ混ざっているか）
+        const AnimBlendPlayback &blend = anim.currentBlend;
+        if (blend.IsActive())
+        {
+            ImGui::Separator();
+            ImGui::TextDisabled("ブレンドスペース");
+            ImGui::Text("入力: (%.2f, %.2f)", blend.inputX, blend.inputY);
+            for (int i = 0; i < blend.sampleCount; ++i)
+            {
+                const char *name = blend.sequences[i] ? blend.sequences[i]->sequenceName.c_str() : "(未設定)";
+                ImGui::ProgressBar(blend.weights[i], ImVec2(120.0f, 0.0f));
+                ImGui::SameLine();
+                ImGui::Text("%s (%.1f, %.1f)", name, blend.xs[i], blend.ys[i]);
+            }
+        }
+
         return changed;
     }
 #else

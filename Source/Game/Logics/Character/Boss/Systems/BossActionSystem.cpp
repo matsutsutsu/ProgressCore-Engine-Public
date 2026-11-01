@@ -644,6 +644,9 @@ void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const 
     FaceToward(frame.transform, FlatToward(frame.transform.position, frame.playerPos), bossAction.turnSpeed, frame.dt, frame.joltHandle);
 
     bossAction.moveDirection = bossAction.lockedDirection;
+
+    // 体が回るので、体から見た進む向きは進んでいる間にも変わる。アニメは前後左右をこの向きで混ぜる
+    bossAction.localMoveDirection = BodyLocalDirection(bossAction.lockedDirection, frame.transform);
 }
 
 
@@ -952,8 +955,10 @@ void BossActionSystem::ProcessFootwork(BossActionComponent &bossAction, const Fr
     // --- 体の向き ---
 
     // 体は相手を向き続ける。動く向きとのずれは、アニメの前後左右で見せる
+    //   体から見た向きは、ブレンドスペース（MoveX / MoveY）の入力にもなる
     FaceToward(frame.transform, toPlayerDir, bossAction.turnSpeed, frame.dt, frame.joltHandle);
-    bossAction.footworkAnimDir = FootworkAnimDir(moveDir, frame.transform, bossAction.footworkAnimDir);
+    bossAction.localMoveDirection = BodyLocalDirection(moveDir, frame.transform);
+    bossAction.footworkAnimDir    = FootworkAnimDir(bossAction.localMoveDirection, bossAction.footworkAnimDir);
 
     // --- 終わり ---
 
@@ -1180,10 +1185,8 @@ void BossActionSystem::BeginFootwork(BossActionComponent &bossAction, const Fram
 
 
 
-// 様子見のアニメの向き（前後左右）を、体の正面から見た動く向きで選ぶ
-// 一番近い向きが、今の向きより kFootworkAnimDirHysteresis 以上近いときだけ切り替える
-BossFootworkDir BossActionSystem::FootworkAnimDir(const Vector3 &moveDir, const TransformComponent &transform,
-                                                  BossFootworkDir currentDir) const
+// 動く向きを、体から見た向き（x = 右、y = 前）に直す。moveDir が水平で長さ 1 なら、結果も長さ 1
+Vector2 BossActionSystem::BodyLocalDirection(const Vector3 &moveDir, const TransformComponent &transform) const
 {
     // 体の正面と右（水平）
     Vector3 facingDir = Vector3::Transform(Vector3::UnitZ, transform.rotation);
@@ -1191,9 +1194,18 @@ BossFootworkDir BossActionSystem::FootworkAnimDir(const Vector3 &moveDir, const 
     if (facingDir.LengthSquared() > 0.0001f) facingDir.Normalize();
     const Vector3 facingRightDir(facingDir.z, 0.0f, -facingDir.x);
 
-    // 動く向きが、前と右へそれぞれどれだけ向いているか（-1〜1）
-    const float frontAmount = moveDir.Dot(facingDir);
-    const float rightAmount = moveDir.Dot(facingRightDir);
+    // 動く向きが、右と前へそれぞれどれだけ向いているか（-1〜1）
+    return Vector2(moveDir.Dot(facingRightDir), moveDir.Dot(facingDir));
+}
+
+
+
+// 様子見のアニメの向き（前後左右）を、体から見た動く向きで選ぶ
+// 一番近い向きが、今の向きより kFootworkAnimDirHysteresis 以上近いときだけ切り替える
+BossFootworkDir BossActionSystem::FootworkAnimDir(const Vector2 &localMove, BossFootworkDir currentDir) const
+{
+    const float rightAmount = localMove.x;
+    const float frontAmount = localMove.y;
 
     // 4方向それぞれの近さ。様子見していない（None）は一番遠い扱い
     auto closenessOf = [&](BossFootworkDir dir) {
@@ -1226,7 +1238,8 @@ void BossActionSystem::BeginTravel(const Vector3 &moveDir, float travelDistance,
 {
     // --- アニメの左右 ---
 
-    // アニメは左右の2つしか無いので、相手から見て左寄りか右寄りかで選ぶ
+    // 相手から見て左寄りか右寄りかで、引くトリガー（SideTravelLeft / Right）を選ぶ
+    // どちらのトリガーでも同じブレンドスペースに入り、前後左右の混ぜ方は localMoveDirection が決める
     // lockedDirection はまだ相手への向き（下で進む向きに書き換える）
     const Vector3 toPlayerDir = bossAction.lockedDirection;
     const Vector3 rightDir(toPlayerDir.z, 0.0f, -toPlayerDir.x);

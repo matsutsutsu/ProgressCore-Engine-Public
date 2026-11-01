@@ -16,6 +16,8 @@ static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase
 static const uint32_t HASH_BACKSTEP_PHASE    = CCL::Utils::HashString("BackStepPhase");   // 後方ステップの段 +1。0=していない
 static const uint32_t HASH_FOOTWORK_DIR      = CCL::Utils::HashString("FootworkDir");     // 様子見の向き。0=していない 1=前 2=後ろ 3=左 4=右
 static const uint32_t HASH_CAN_FLINCH        = CCL::Utils::HashString("CanFlinch");       // ひるみの冷却が明けているか
+static const uint32_t HASH_MOVE_X            = CCL::Utils::HashString("MoveX");           // 体から見た動く向きの右成分（-1〜1）
+static const uint32_t HASH_MOVE_Y            = CCL::Utils::HashString("MoveY");           // 体から見た動く向きの前成分（-1〜1）
 
 void BossAnimSyncSystem::Update(float /*dt*/)
 {
@@ -50,6 +52,12 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         // 様子見から抜けたら、向きが残っていても 0 にする
         const bool footwork = (boss.currentState == BossActionState::Footwork);
         anim.SetFloat(HASH_FOOTWORK_DIR, footwork ? static_cast<float>(boss.footworkAnimDir) : 0.0f);
+
+        // 様子見と横移動のブレンドスペースは、前後左右のクリップを体から見た動く向きで混ぜる
+        //   FootworkDir は様子見に入る・出るの判定にだけ使う（0 = していない）
+        const bool directional = footwork || sideTravel;
+        anim.SetFloat(HASH_MOVE_X, directional ? boss.localMoveDirection.x : 0.0f);
+        anim.SetFloat(HASH_MOVE_Y, directional ? boss.localMoveDirection.y : 0.0f);
 
         // --- ひるみ ---
 
