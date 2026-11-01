@@ -6,8 +6,11 @@
 //   - 台本を新しく作る・開く・保存する。保存したらゲーム側に読み直させる
 //   - 保存した台本を、頭から・タイムラインの再生位置から、ゲームと同じ再生要求で流させる
 //   - ショットと4種類のトラックを ImSequencer の帯で並べ、ドラッグで時刻と長さを変える
-//   - 項目を足す・消す、選んだ項目の数値を直す
-//   - 一時停止中、再生位置の絵をゲーム画面に出す（プレビュー。カメラだけで、トラックは出さない）
+//   - 項目を足す・消す、選んだ項目の数値を直す（何も選んでいなければ台本の設定）
+//   - 再生位置の絵をゲーム画面に出す（プレビュー。カメラと被写界深度だけで、トラックは出さない）。
+//     出し方は「出さない / 一時停止中だけ / 止めずに出す」。止めずに出す間は、ムービー中として操作と敵の思考が止まる
+//   - 再生位置を実時間で進めてプレビューを流す（エディタ内の再生）
+//   - ゲームでこの台本を流している間、再生位置をムービーに付いていかせる
 //   - 今の画面のカメラ位置を、ショットの開始・終了へ取り込む
 //
 // 備考:
@@ -19,6 +22,7 @@
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Cinematic/CinematicScript.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -45,28 +49,46 @@ protected:
     void OnFrameBegin(EditorContext &context) override;
 
 private:
+    // ゲーム画面への出し方（kPreviewModeNames と同じ並び）
+    enum class PreviewMode : std::uint8_t
+    {
+        Off,         // 出さない
+        WhilePaused, // 一時停止中だけ出す
+        Live,        // 止めずに出す（操作と敵の思考は止まる）
+    };
+
     // ---- 画面の部品 ----
 
-    // 新規・開く・開き直す・保存・名前を付けて保存・ゲームで再生・ここから再生のボタンと、開いている台本の名前。
-    void DrawFileBar(EditorContext &context);
+    // 上の帯の1行目。新規・開く・開き直す・保存・名前を付けて保存と、開いている台本の名前
+    void DrawToolbar(EditorContext &context);
 
-    // 全体の長さ・開始待ち・スキップ可否。値を変えたら true。
-    bool DrawScriptSettings();
+    // 上の帯の2行目。再生・頭へ・ループ・再生位置と全体の長さ・画面への出し方・ゲームで流す
+    void DrawTransportBar(EditorContext &context);
 
-    // プレビューの切り替えと、再生位置の説明。
-    void DrawPreviewBar(EditorContext &context);
+    // 上の帯の3行目。今の状態の注意か、直近の結果を1行だけ出す
+    void DrawStatusLine(EditorContext &context);
 
-    // ショットとトラックの帯と、再生位置。帯を動かしたら true。
+    // 項目を足すボタン（再生位置に置く）。足したら true
+    bool DrawAddButtons();
+
+    // ショットとトラックの帯と、再生位置。帯を動かしたら true
     bool DrawTimeline();
 
-    // 項目を足す・消すボタン。台本を変えたら true。
-    bool DrawItemButtons();
-
-    // 選んでいる項目の数値。値を変えたら true。
+    // 選んでいる項目の名前・消すボタン・数値。何も選んでいなければ台本の設定。値を変えたら true
     bool DrawInspector(EditorContext &context);
+
+    // 開始待ち・スキップ可否。値を変えたら true
+    bool DrawScriptSettings();
+
+    // 選んでいる項目を台本から消し、選択を外す
+    void EraseSelected();
+
+    // 今、ゲーム画面にプレビューを出すか（ウィンドウが開いていて、出し方の条件に合うか）
+    bool IsPreviewShown(const EditorContext &context) const;
 
     // ---- 種類ごとの数値の欄。値を変えたら true ----
     bool DrawShotFields(EditorContext &context, CameraShot &shot);
+    bool DrawShotDofFields(EditorContext &context, CameraShot &shot);
     bool DrawSoundFields(EditorContext &context, CinematicSound &sound);
     bool DrawEffectFields(EditorContext &context, CinematicEffect &effect);
     bool DrawSignalFields(CinematicSignal &signal);
@@ -80,6 +102,26 @@ private:
      * @return 値を変えたら true。
      */
     bool DrawSubjectField(EditorContext &context, std::string &subject, const char *emptyMeans);
+
+    /**
+     * @brief ショットの開始か終了での、ピントの距離（カメラから注視点まで）を求める。再生側と同じ決め方。
+     * @param shot  ショット。
+     * @param toEnd true なら終了、false なら開始。
+     * @return ピントの距離（m）。
+     */
+    static float FocusDistance(const CameraShot &shot, bool toEnd);
+
+    // ---- 再生位置の進行 ----
+
+    /**
+     * @brief ゲームでこの台本を流していれば、再生位置をムービーの再生位置に合わせる。
+     * @param context エディタの文脈。
+     * @return ゲームでこの台本を流している最中なら true。
+     */
+    bool FollowGamePlayback(EditorContext &context);
+
+    // エディタ内の再生で、再生位置を実時間で進める。終わりに達したら、ループなら頭へ戻り、そうでなければ止める
+    void StepPreviewPlayback();
 
     // ---- 操作 ----
 
@@ -131,8 +173,11 @@ private:
     std::string     m_status;         // 直近の読み込み・保存・取り込みの結果
 
     // プレビュー
-    bool m_previewEnabled = true;  // 一時停止中に、再生位置の絵をゲーム画面へ出すか
+    PreviewMode m_previewMode = PreviewMode::WhilePaused; // ゲーム画面への出し方
     bool m_previewPushed  = false; // ムービー用カメラへプレビューを渡しているか（止めるのを1回で済ませる）
+    bool m_previewPlaying = false; // エディタ内の再生中か（一時停止のまま、再生位置を実時間で進める）
+    bool m_previewLoop    = true;  // エディタ内の再生で、終わりに達したら頭へ戻すか
+    bool m_followingGame  = false; // ゲームでこの台本を流している最中か（再生位置をそちらに合わせている）
 
     // タイムライン
     std::unique_ptr<CinematicTimelineSequence> m_sequence;          // 台本と ImSequencer のつなぎ

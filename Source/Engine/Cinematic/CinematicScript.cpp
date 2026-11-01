@@ -139,7 +139,8 @@ namespace
         if (!CheckKeys(j,
                        {"_comment", "start", "duration", "subject", "motion", "ease", "blendIn", "lookStart",
                         "lookEnd", "eyeStart", "eyeEnd", "angleStart", "angleEnd", "radiusStart", "radiusEnd",
-                        "heightStart", "heightEnd", "fovStart", "fovEnd"},
+                        "heightStart", "heightEnd", "fovStart", "fovEnd", "dof", "dofRange", "dofFalloff",
+                        "dofMaxBlur"},
                        err))
             return false;
 
@@ -168,6 +169,10 @@ namespace
             !ReadFloat(j, "heightEnd", shot.heightEnd, err) || !ReadFloat(j, "fovEnd", shot.fovEnd, err))
             return false;
 
+        if (!ReadBool(j, "dof", shot.dof, err) || !ReadFloat(j, "dofRange", shot.dofRange, err) ||
+            !ReadFloat(j, "dofFalloff", shot.dofFalloff, err) || !ReadFloat(j, "dofMaxBlur", shot.dofMaxBlur, err))
+            return false;
+
         // --- 値の範囲 ---
         if (shot.start < 0.0f)
         {
@@ -192,6 +197,13 @@ namespace
         if (shot.fovStart <= 0.0f || shot.fovStart >= 180.0f || shot.fovEnd <= 0.0f || shot.fovEnd >= 180.0f)
         {
             err = "\"fovStart\" / \"fovEnd\" は 0 より大きく 180 より小さく";
+            return false;
+        }
+
+        // 減衰の距離はシェーダで割るので、0 にはできない。
+        if (shot.dofRange < 0.0f || shot.dofFalloff <= 0.0f || shot.dofMaxBlur < 0.0f)
+        {
+            err = "\"dofRange\" / \"dofMaxBlur\" は 0 以上、\"dofFalloff\" は 0 より大きく";
             return false;
         }
         return true;
@@ -490,6 +502,10 @@ namespace
         j["heightEnd"]   = Num(s.heightEnd);
         j["fovStart"]    = Num(s.fovStart);
         j["fovEnd"]      = Num(s.fovEnd);
+        j["dof"]         = s.dof;
+        j["dofRange"]    = Num(s.dofRange);
+        j["dofFalloff"]  = Num(s.dofFalloff);
+        j["dofMaxBlur"]  = Num(s.dofMaxBlur);
         return j;
     }
 

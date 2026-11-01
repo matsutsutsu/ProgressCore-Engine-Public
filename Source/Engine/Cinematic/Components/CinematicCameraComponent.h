@@ -7,6 +7,7 @@
 //   - 再生中の台本と、再生の状態・再生位置・スキップの長押しの状態を持つ
 //   - トラック（SE・エフェクト・シグナル・アニメ）をどこまで出したかを持つ
 //   - エディタが見せたい台本と時刻（プレビュー）を持つ
+//   - 被写界深度の、最後に書いた値と効きを持つ
 //
 // 備考:
 //   同じ Entity に VirtualCamera を付ける。ムービーが何本あってもこの1台で映し、
@@ -62,6 +63,11 @@ struct CinematicCameraComponent
     DirectX::XMFLOAT3 blendFromPos  = {0.0f, 0.0f, 0.0f}; // 補間元のカメラ位置
     DirectX::XMFLOAT3 blendFromLook = {0.0f, 0.0f, 1.0f}; // 補間元の注視点
     float             blendFromFov  = 45.0f;              // 補間元の画角（度）
+    CinematicDof      blendFromDof;                       // 補間元の被写界深度
+
+    // 被写界深度。姿勢と同じく、最後に書いた値を次のショットの補間元にする
+    CinematicDof dof;              // 最後に書いた被写界深度
+    float        dofWeight = 0.0f; // 被写界深度の効き（0〜1）。再生中は 1 へ、止めたら 0 へ寄せて、TPS カメラとの切り替えに合わせる
 
     // トラックの進み具合。CinematicTrackSystem だけが書く
     std::uint32_t                   trackPlayCount = 0; // トラックが追っている再生の通し番号
@@ -74,6 +80,7 @@ struct CinematicCameraComponent
     // エディタのプレビュー。Cinematic Editor だけが書く。
     // 再生の状態（state・time・script）とは別に持つ。トラックは state を見て出すので、プレビューでは何も出ない。
     bool            previewActive = false; // エディタが、ある時刻の絵を見せているか（開始待ち・再生中は無視する）
+    bool            previewFreeze = false; // プレビューの間、ムービー中として操作と敵の思考を止めるか（一時停止せずに見るとき）
     CinematicScript previewScript;         // 見せる台本（エディタが編集中の写し）
     float           previewTime   = 0.0f;  // 見せる時刻（秒）
 };

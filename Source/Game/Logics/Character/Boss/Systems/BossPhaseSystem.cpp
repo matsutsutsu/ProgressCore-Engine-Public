@@ -7,6 +7,8 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Game/Logics/Tutorial/TutorialState.h" // チュートリアルでボスを待たせるか
+#include "Engine/Core/App/GameFlowState.h"        // ムービーが流れているか
+#include "Engine/Cinematic/CinematicEvents.h"     // 移行ムービーの再生要求
 
 using namespace CCL::ECS;
 
@@ -25,6 +27,9 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 
     // 攻撃を覚える前の項目と教え終えた後は、攻撃を出さずに待つ
     const bool bossWaiting = tutorial && tutorial->IsBossWaiting();
+
+    // 移行ムービーが流れている間は、移行演出（無敵・BT 停止）を続ける
+    const bool cinematic = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
 
     ForEach([&](BossPhaseComponent       &phase,
                 BehaviorTreeComponent    &bt,
@@ -45,7 +50,7 @@ void BossPhaseSystem::Update(float /*rawDt*/)
         // 2〜4. 形態
         // ---------------------------------------------------------
 
-        const BossPhase next = DecideNextPhase(phase, health, inTutorial, bossWaiting);
+        const BossPhase next = DecideNextPhase(phase, health, inTutorial, bossWaiting, cinematic);
 
         if (next != phase.phase)
         {
@@ -63,7 +68,8 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
                                            const HealthComponent    &health,
                                            bool                      inTutorial,
-                                           bool                      bossWaiting) const
+                                           bool                      bossWaiting,
+                                           bool                      cinematic) const
 {
     // --- 死亡 ---
 
@@ -75,8 +81,14 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
 
     // --- 移行演出 → 第2形態 ---
 
+    // 移行演出は、決めた時間が過ぎ、かつ移行ムービーが終わるまで続ける。
+    // ムービーは入った瞬間に頼むので、決めた時間（2.5秒）が過ぎる頃には必ず流れ始めている。
+    // 台本が無くてムービーが流れなければ、決めた時間で第2形態へ移る。
     if (phase.phase == BossPhase::Transition)
-        return (phase.timer > 0.0f) ? BossPhase::Transition : BossPhase::Combat2;
+    {
+        const bool holding = (phase.timer > 0.0f) || cinematic;
+        return holding ? BossPhase::Transition : BossPhase::Combat2;
+    }
 
     // 第1形態で HP がしきい値を割ったら移行演出へ。
     // 第2形態の BT が未設定なら移行しない（設定漏れでボスが止まるのを防ぐ）。
@@ -133,6 +145,10 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
         anim.SetTrigger(CCL::Utils::HashString(kRoarTrigger));
         phase.timer = kTransitionDuration;
+
+        // 移行ムービーを頼む。流れている間はプレイヤーの操作と敵の思考が止まる。
+        // 受け付けるかどうかは CinematicCameraSystem が決める（台本が無ければログを出して捨てる）。
+        m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kPhase2Cinematic});
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態へ移行開始（%.1f秒）", kTransitionDuration);
         break;
 

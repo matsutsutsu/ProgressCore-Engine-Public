@@ -23,6 +23,7 @@ struct GameFlowState
     //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする。
     //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない。
     //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）。
+    //    Cinematic Editor のプレビュー中も立つ（ゲームを動かしたままカメラを編集するため）。
     //    書き手は CinematicCameraSystem だけ。描画の段で書くので、ロジックの段には次の固定ステップから効く。
     bool cinematic = false;
 

@@ -10,7 +10,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
+#include <algorithm>
 #include <memory>
+#include <vector>
 
 using namespace CCL::ECS;
 
@@ -199,8 +201,9 @@ void CinematicTrackSystem::CollectPoints(CinematicCameraComponent &cine, FireLis
 void CinematicTrackSystem::SyncAnimations(CinematicCameraComponent &cine) const
 {
     // 処理フロー:
-    // 1. 区間を出たもの（再生中でなくなったものを含む）を離す
+    // 1. 区間を出たもの（再生中でなくなったものを含む）を、手放す候補にする
     // 2. 区間に入ったものを握る
+    // 3. 候補のうち、別のクリップがもう握っていない Entity だけを離す
 
     const std::vector<CinematicAnimation> &clips   = cine.script.animations;
     const bool                             playing = (cine.state == CinematicState::Playing);
@@ -212,15 +215,22 @@ void CinematicTrackSystem::SyncAnimations(CinematicCameraComponent &cine) const
     auto inRange = [&](const CinematicAnimation &c) { return playing && cine.time >= c.start && cine.time < c.End(); };
 
     // ---------------------------------------------------------
-    // 1. 離す
+    // 1. 手放す候補
     // ---------------------------------------------------------
 
-    // 握るより先に離す。
-    // 同じ相手へ続けて別のクリップを渡すとき、後から離すと、握ったばかりのクリップまで手放してしまう。
+    // ここではまだ離さない。同じ相手を次のクリップが握っているかは、2 で握った後でないと分からない。
+    // 先に離すと、重ねて置いた次のクリップまで手放してステートのクリップへ戻ってしまう。
+    struct PendingRelease
+    {
+        EntityID entity;
+        float    blendOut;
+    };
+    std::vector<PendingRelease> releases;
+
     for (std::size_t i = 0; i < clips.size(); ++i)
     {
         if (cine.animHeld[i] == InvalidEntityID || inRange(clips[i])) continue;
-        ReleaseAnimation(cine.animHeld[i], clips[i].blendOut);
+        releases.push_back({cine.animHeld[i], clips[i].blendOut});
         cine.animHeld[i] = InvalidEntityID;
     }
 
@@ -248,6 +258,20 @@ void CinematicTrackSystem::SyncAnimations(CinematicCameraComponent &cine) const
             (clips[i].start < cine.playStartTime) ? (cine.time - clips[i].start) * clips[i].speed : 0.0f;
 
         if (HoldAnimation(entity, clips[i], clipOffset)) cine.animHeld[i] = entity;
+    }
+
+    // ---------------------------------------------------------
+    // 3. 離す
+    // ---------------------------------------------------------
+
+    // 別のクリップが握っている相手は離さない。
+    // 次のクリップは握った時点で、自分の blendIn で前のクリップから混ぜ始めている（重ねて置いたときも、ぴったりつなげたときも）。
+    // ここで離すと、そのクリップを止めてステートのクリップへ戻してしまう。
+    for (const PendingRelease &release : releases)
+    {
+        const bool stillHeld =
+            std::find(cine.animHeld.begin(), cine.animHeld.end(), release.entity) != cine.animHeld.end();
+        if (!stillHeld) ReleaseAnimation(release.entity, release.blendOut);
     }
 }
 

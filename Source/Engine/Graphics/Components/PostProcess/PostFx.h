@@ -35,6 +35,7 @@
 
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ColorGradingConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 
@@ -50,7 +51,8 @@
     X(VignetteConfigComponent)            \
     X(ColorGradingConfigComponent)        \
     X(ChromaticAberrationConfigComponent) \
-    X(RadialBlurConfigComponent)
+    X(RadialBlurConfigComponent)          \
+    X(DepthOfFieldConfigComponent)
 
 namespace CCL::PostFx
 {
@@ -125,6 +127,11 @@ namespace CCL::PostFx
     inline SlotOf<RadialBlurConfigComponent> *RadialBlur(ECS::World &world, uint32_t source, int priority)
     {
         return Acquire<RadialBlurConfigComponent>(world, source, priority, "RadialBlur");
+    }
+
+    inline SlotOf<DepthOfFieldConfigComponent> *DepthOfField(ECS::World &world, uint32_t source, int priority)
+    {
+        return Acquire<DepthOfFieldConfigComponent>(world, source, priority, "DepthOfField");
     }
 
     // --- 後始末 ---

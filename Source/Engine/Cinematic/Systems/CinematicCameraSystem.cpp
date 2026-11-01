@@ -8,6 +8,8 @@
 #include "Engine/Core/App/GameFlowState.h"   // cinematic
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Graphics/Components/PostProcess/PostFx.h" // 被写界深度の上書きスロット
+#include "Engine/Core/Math/StringHash.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -26,12 +28,18 @@ namespace
 {
     constexpr float kSkipHoldSeconds = 1.0f; // スキップに要る長押しの時間（秒）
 
+    // 被写界深度の上書きスロット
+    const uint32_t  kDofSource         = CCL::Utils::HashString("Cinematic");
+    constexpr int   kDofPriority       = 50;   // ゲーム中の演出より手前に出す
+    constexpr float kDofFadeOutSeconds = 1.0f; // 終わった後、ぼけを消すまでの時間（秒）。TPS カメラへ戻るブレンドと同じくらい
+
     // ショットが映す絵
     struct ShotPose
     {
-        Vector3 eye;         // カメラ位置（ワールド、m）
-        Vector3 look;        // 注視点（ワールド、m）
-        float   fov = 45.0f; // 画角（度）
+        Vector3      eye;         // カメラ位置（ワールド、m）
+        Vector3      look;        // 注視点（ワールド、m）
+        float        fov = 45.0f; // 画角（度）
+        CinematicDof dof;         // 被写界深度
     };
 
     // --- ショットの選択 ---
@@ -136,6 +144,7 @@ namespace
         // 2. 注視点を求める
         // 3. カメラ位置を求める（Truck／Orbit）
         // 4. 画角を求める
+        // 5. 被写界深度を求める
 
         // 止めておく間は進行度 0 のままにし、終わってから残りの時間で最後まで動かす。
         // ショットの終わりの時刻は変えずに、書いた動きを頭から見せるため。
@@ -167,6 +176,13 @@ namespace
         }
 
         pose.fov = std::lerp(shot.fovStart, shot.fovEnd, e);
+
+        // ピントは注視点に合わせる。注視点が動けば、そのままピント送りになる。
+        // ぼかさないショットもピントの距離は求めておく。前後のショットと混ぜるとき、ピントが原点の方へ飛ばないようにするため。
+        pose.dof.focusDistance = Vector3::Distance(pose.eye, pose.look);
+        pose.dof.focusRange    = shot.dofRange;
+        pose.dof.falloff       = shot.dofFalloff;
+        pose.dof.maxBlur       = shot.dof ? shot.dofMaxBlur : 0.0f;
         return pose;
     }
 
@@ -189,6 +205,7 @@ namespace
         pose.eye      = Vector3::Lerp(cine.blendFromPos, pose.eye, w);
         pose.look     = Vector3::Lerp(cine.blendFromLook, pose.look, w);
         pose.fov      = std::lerp(cine.blendFromFov, pose.fov, w);
+        pose.dof      = CinematicDof::Lerp(cine.blendFromDof, pose.dof, w);
     }
 
     /**
@@ -407,17 +424,29 @@ void CinematicCameraSystem::Update(float dt)
         // ---------------------------------------------------------
         if (cine.state != CinematicState::Waiting && cine.state != CinematicState::Playing)
         {
+            // エディタが一時停止せずにプレビューを出している間は、ムービー中と同じくプレイヤーの操作と敵の思考を止める。
+            // ゲームを動かしたまま（アニメ・物理・エフェクトは動く）カメラを編集できるようにするため。
+            // 一時停止中のプレビューでは立てない。ロジックはもう止まっているので、立てても黒帯が出て HUD が消えるだけになる。
+            // 絵を書けない（基準が居ない）フレームでも止めたままにする。編集中に勝手に動き出さないように。
+            if (cine.previewActive && cine.previewFreeze) anyActive = true;
+
             // エディタが見せたい時刻があれば、その絵を書いてカメラを掌握する。
             // 再生中はムービーを優先するので、ここ（停止中）でだけ見る。
             if (cine.previewActive && WritePreviewPose(vcam, cine))
             {
                 vcam.priority = cine.activePriority;
+
+                // プレビューは時刻を飛ばして見るので、ぼけもすぐ切り替える
+                UpdateDof(cine, UsesDof(cine.previewScript) ? 1.0f : 0.0f, 0.0f, dt);
                 return;
             }
 
             // 停止中は優先度を下げるだけで、姿勢は最後に書いた値のまま残す。
             // Brain は TPS カメラへ戻すブレンドの補間元に、この最後の姿勢を使う。
             vcam.priority = cine.idlePriority;
+
+            // ぼけは TPS カメラへ戻るブレンドに合わせて消す。一瞬で消すと、戻り始めの1コマで絵がはっきり跳ぶ
+            UpdateDof(cine, 0.0f, kDofFadeOutSeconds, dt);
             return;
         }
 
@@ -445,6 +474,10 @@ void CinematicCameraSystem::Update(float dt)
 
         // 再生中は優先度を上げ、停止中は下げる
         vcam.priority = (wrote && !reachedEnd) ? cine.activePriority : cine.idlePriority;
+
+        // ぼけは、TPS カメラからこのカメラへ切り替わるブレンド（このカメラの blendTime）に合わせて効かせる。
+        // 終わったフレームからは停止中の側で消していく。
+        if (wrote && !reachedEnd) UpdateDof(cine, UsesDof(cine.script) ? 1.0f : 0.0f, vcam.blendTime, dt);
 
         // 開始待ち・再生中なら、ゲームの操作を止める
         if (cine.state != CinematicState::Finished) anyActive = true;
@@ -547,6 +580,7 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
             cine.blendFromPos  = vcam.resultPos;
             cine.blendFromLook = vcam.resultLookAt;
             cine.blendFromFov  = vcam.fov;
+            cine.blendFromDof  = cine.dof;
         }
 
         // ショットが変わった瞬間に、基準の対象と向きを決める
@@ -583,10 +617,11 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
     // 4. カメラへの書き込み
     // ---------------------------------------------------------
     ApplyPose(vcam, pose);
+    cine.dof = pose.dof;
     return true;
 }
 
-bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, const CinematicCameraComponent &cine) const
+bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCameraComponent &cine) const
 {
     // 処理フロー:
     // 1. 見せる時刻のショットを選ぶ
@@ -648,6 +683,7 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, const Cinemati
             pose.eye      = Vector3::Lerp(from.eye, pose.eye, w);
             pose.look     = Vector3::Lerp(from.look, pose.look, w);
             pose.fov      = std::lerp(from.fov, pose.fov, w);
+            pose.dof      = CinematicDof::Lerp(from.dof, pose.dof, w);
         }
     }
 
@@ -655,7 +691,50 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, const Cinemati
     // 4. カメラへの書き込み
     // ---------------------------------------------------------
     ApplyPose(vcam, pose);
+    cine.dof = pose.dof;
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// 被写界深度
+// ---------------------------------------------------------------------------
+
+void CinematicCameraSystem::UpdateDof(CinematicCameraComponent &cine, float target, float fadeTime, float dt) const
+{
+    // 効きを目標へ寄せる。時間が 0 なら一気に寄せる
+    if (fadeTime <= 0.0f)
+    {
+        cine.dofWeight = target;
+    }
+    else
+    {
+        const float step = dt / fadeTime;
+        cine.dofWeight   = (cine.dofWeight < target) ? std::min(target, cine.dofWeight + step)
+                                                     : std::max(target, cine.dofWeight - step);
+    }
+
+    // 効きが無くなったらスロットを手放し、シーンの設定へ戻す。
+    // 確保していなければ何もしないので、停止中に毎フレーム呼んでよい。
+    if (cine.dofWeight <= 0.0f)
+    {
+        CCL::PostFx::Release<DepthOfFieldConfigComponent>(*m_world, kDofSource);
+        return;
+    }
+
+    // シーンに DepthOfField が無ければ nullptr（ぼかせない。エディタの欄で知らせる）
+    if (auto *ov = CCL::PostFx::DepthOfField(*m_world, kDofSource, kDofPriority))
+    {
+        ov->weight               = cine.dofWeight;
+        ov->params.focusDistance = cine.dof.focusDistance;
+        ov->params.focusRange    = cine.dof.focusRange;
+        ov->params.falloff       = cine.dof.falloff;
+        ov->params.maxBlur       = cine.dof.maxBlur;
+    }
+}
+
+bool CinematicCameraSystem::UsesDof(const CinematicScript &script)
+{
+    return std::any_of(script.shots.begin(), script.shots.end(), [](const CameraShot &s) { return s.dof; });
 }
 
 // ---------------------------------------------------------------------------
@@ -753,6 +832,8 @@ void CinematicCameraSystem::OnGui()
         ImGui::Text("開始待ち %.2f / %.2f 秒  スキップ長押し %.2f / %.2f 秒%s", cine->waitTime,
                     cine->script.startDelay, cine->skipHoldTime, kSkipHoldSeconds,
                     cine->skipArmed ? "" : "（一度離すまで数えない）");
+        ImGui::Text("被写界深度 効き %.2f  ピント %.2f m  ぼけ %.4f", cine->dofWeight, cine->dof.focusDistance,
+                    cine->dof.maxBlur);
     });
 }
 

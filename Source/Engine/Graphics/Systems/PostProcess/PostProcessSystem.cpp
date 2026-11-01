@@ -85,11 +85,21 @@ void PostProcessSystem::Update(float dt)
         }
     }
 
+    // 被写界深度は、ムービーのショットが一時的に上書きする。
+    // 普段の設定がオフでもショットはぼかすので、パスのオン/オフは合成後のぼけが 0 かどうかで決める。
     if (auto *dof = postProcess->GetEffect<DepthOfFieldEffect>())
     {
         auto *comp = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
-        dof->SetEnabled(comp && comp->enable);
-        if (comp) dof->UpdateParams(comp->data);
+        if (comp)
+        {
+            const auto data = comp->Resolve();
+            dof->SetEnabled(data.dofMaxBlur > 0.0f);
+            dof->UpdateParams(data);
+        }
+        else
+        {
+            dof->SetEnabled(false);
+        }
     }
 
     if (auto *bloom = postProcess->GetEffect<BloomEffect>())

@@ -11,6 +11,7 @@
 //   - ムービーの開始待ち・再生中の間、GameFlowState::cinematic を立てる
 //   - 再生していない間、エディタが指した台本と時刻の絵を見せる（プレビュー）
 //   - エディタが台本を保存したら、台本を読み直す
+//   - ショットの被写界深度を、DepthOfFieldConfigComponent の上書きスロットへ書く
 //
 // 備考:
 //   どのカメラを映すかを決め、切り替えをブレンドするのは CameraBrainSystem（R01b）。
@@ -22,6 +23,7 @@
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 
 #include <SimpleMath.h>
 #include <map>
@@ -58,6 +60,14 @@ public:
         return types;
     }
 
+    // 被写界深度の上書きスロットを GetSingletonComponent で書く。ForEach のフィルタには載らないので、ここで申告する
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
+    {
+        auto types = IfSystem::GetWriteTypes();
+        types.push_back(CCL::ECS::TypeInfo<DepthOfFieldConfigComponent>::ID());
+        return types;
+    }
+
 private:
     // スキップボタンを今押しているか。エディタの操作中は false
     bool ReadSkipHeld() const;
@@ -90,10 +100,22 @@ private:
     /**
      * @brief エディタが指した台本と時刻の絵を、カメラへ書く（プレビュー）。
      * @param vcam 書き込む先のカメラ。
-     * @param cine 見せる台本と時刻（previewScript / previewTime）を持つ再生状態。再生の状態は書き換えない。
+     * @param cine 見せる台本と時刻（previewScript / previewTime）を持つ再生状態。再生の状態は書き換えず、被写界深度（dof）だけ書く。
      * @return 書けたら true。ショットが無い・基準が見つからないときは false で、カメラは書き換えない。
      */
-    bool WritePreviewPose(VirtualCamera &vcam, const CinematicCameraComponent &cine) const;
+    bool WritePreviewPose(VirtualCamera &vcam, CinematicCameraComponent &cine) const;
+
+    /**
+     * @brief 被写界深度の効きを目標へ寄せ、上書きスロットへ書く。効きが 0 になったらスロットを手放す。
+     * @param cine     書く被写界深度（dof）と効き（dofWeight）を持つ再生状態。
+     * @param target   効きの目標（0 か 1）。
+     * @param fadeTime 目標まで寄せる時間（秒）。0 ならすぐ。
+     * @param dt       経過時間（秒、実時間）。
+     */
+    void UpdateDof(CinematicCameraComponent &cine, float target, float fadeTime, float dt) const;
+
+    // 台本のショットに、ぼかすものが1つでもあるか。無ければ被写界深度に触らず、シーンの設定のままにする
+    static bool UsesDof(const CinematicScript &script);
 
     // 台本フォルダの JSON をすべて読み直す。読めなかった台本はログを出して外す
     void LoadAllScripts();

@@ -7,6 +7,7 @@
 //   - 構図の基準にする対象（Entity の名前）を持つ
 //   - カメラの動かし方と速さのカーブ、前のショットからのつなぎ方を持つ
 //   - カメラ位置・注視点・画角の、開始と終了の値を持つ
+//   - 被写界深度のオン/オフとぼけ方を持つ
 //
 // 備考:
 //  - 構造体にすることで１ショットをvector<CameraShot>で管理できるようになる
@@ -66,4 +67,30 @@ struct CameraShot
 
     float fovStart = 45.0f; // 開始の画角（度）
     float fovEnd   = 45.0f; // 終了の画角（度）
+
+    // --- 被写界深度。ピントは注視点（カメラから注視点までの距離）に合わせる ---
+    bool  dof        = false; // このショットでぼかすか
+    float dofRange   = 2.0f;  // ピントの前後でぼけない幅（m）
+    float dofFalloff = 6.0f;  // ぼけない幅の外から、最大のぼけに達するまでの距離（m）
+    float dofMaxBlur = 0.01f; // 最大のぼけの半径（画面に対する割合）
+};
+
+// ショットが映す被写界深度。カメラが毎フレーム求め、ショットの切り替えで混ぜる
+struct CinematicDof
+{
+    float focusDistance = 10.0f; // ピントの合う距離（m）
+    float focusRange    = 2.0f;  // ピントの前後でぼけない幅（m）
+    float falloff       = 6.0f;  // 最大のぼけに達するまでの距離（m）
+    float maxBlur       = 0.0f;  // 最大のぼけの半径。0 ならぼかさない
+
+    // a から b へ w（0〜1）だけ寄せる。ぼけの強さも寄せるので、オフのショットとの間はじわっと切り替わる
+    static CinematicDof Lerp(const CinematicDof &a, const CinematicDof &b, float w)
+    {
+        CinematicDof out;
+        out.focusDistance = a.focusDistance + (b.focusDistance - a.focusDistance) * w;
+        out.focusRange    = a.focusRange + (b.focusRange - a.focusRange) * w;
+        out.falloff       = a.falloff + (b.falloff - a.falloff) * w;
+        out.maxBlur       = a.maxBlur + (b.maxBlur - a.maxBlur) * w;
+        return out;
+    }
 };

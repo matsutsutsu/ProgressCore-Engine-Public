@@ -6,7 +6,7 @@
 // 責務:
 //   - 毎フレームの最初に、ボス本体への要求(currentActionId)を空にする
 //   - HP と経過時間から、次の形態を決める
-//   - 形態に入った瞬間だけの処理（BT の差し替え・無敵・アニメのトリガー）を行う
+//   - 形態に入った瞬間だけの処理（BT の差し替え・無敵・アニメのトリガー・移行ムービーの再生要求）を行う
 //   - 移行演出中と死亡中は、ドローンへの指示を止め続ける
 //
 // 備考:
@@ -70,12 +70,14 @@ private:
      *                    true なら最初から最後まで TutorialWait / TutorialAttack で戦う。
      * @param bossWaiting ボスを待たせるか（攻撃を覚える前の項目と、教え終えた後）。
      *                    true なら TutorialWait、false なら TutorialAttack にする。
+     * @param cinematic   ムービーが流れているか。流れている間は移行演出を終えない。
      * @return 遷移先の形態。変わらなければ今の形態。
      */
     BossPhase DecideNextPhase(const BossPhaseComponent &phase,
                               const HealthComponent    &health,
                               bool                      inTutorial,
-                              bool                      bossWaiting) const;
+                              bool                      bossWaiting,
+                              bool                      cinematic) const;
 
     // 形態に入った瞬間だけ走る処理（BT では書きにくい部分）。
     // BT の差し替え・無敵・アニメのトリガー・ドローンへの指示を行う。
@@ -104,5 +106,10 @@ private:
     static constexpr const char *kRoarTrigger = "Roar";
 
     // 形態移行の演出時間（秒）。この間ボスは無敵で、BT は止まる。
+    // 移行ムービーが流れている間は、この時間を過ぎても移行演出を続ける（ムービーの方が長くてよい）。
+    // ムービーの台本が無いときは、この時間で第2形態へ移る。
     static constexpr float kTransitionDuration = 2.5f;
+
+    // 移行演出に入った瞬間に流すムービーの台本
+    static constexpr const char *kPhase2Cinematic = "Assets/Cinematics/BossPhase2.json";
 };

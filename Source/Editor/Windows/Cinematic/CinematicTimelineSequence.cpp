@@ -180,8 +180,8 @@ const char *CinematicTimelineSequence::GetItemLabel(int index) const
     case RowKind::Shot:
     {
         const CameraShot &shot = s.shots[row.index];
-        std::snprintf(m_label, sizeof(m_label), "ショット%zu %s %s", row.index + 1,
-                      kCameraMotionNames[static_cast<int>(shot.motion)], shot.subject.c_str());
+        std::snprintf(m_label, sizeof(m_label), "ショット%zu %s %s%s", row.index + 1,
+                      kCameraMotionNames[static_cast<int>(shot.motion)], shot.subject.c_str(), shot.dof ? " DoF" : "");
         break;
     }
     case RowKind::Sound:
