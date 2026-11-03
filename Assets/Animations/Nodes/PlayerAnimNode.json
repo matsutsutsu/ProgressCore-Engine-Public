@@ -214,6 +214,13 @@
             "hash": 1254130737,
             "name": "HitDir",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1485051900,
+            "name": "IsRunning",
+            "type": 1
         }
     ],
     "states": [
@@ -236,10 +243,10 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
-                            "threshold": 2.0
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
                         }
                     ],
                     "logicType": 0,
@@ -283,16 +290,37 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 2,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 1485051900,
+                            "paramName": "IsRunning",
                             "threshold": 1.0
                         }
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
-                    "targetStateHash": 1168775091
+                    "targetStateHash": 4259699762
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1940673160
                 },
                 {
                     "blendDuration": 0.10000000149011612,
@@ -372,9 +400,9 @@
                             "threshold": 0.0
                         },
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
                             "threshold": 1.0
                         },
                         {
@@ -511,9 +539,9 @@
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
-                            "op": 1,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
                             "threshold": 1.0
                         }
                     ],
@@ -883,6 +911,172 @@
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 1,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 200.0,
+            "nodePosY": 430.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/RunStop.json",
+            "sequenceName": "RunStop",
+            "speedCurveName": "",
+            "stateHash": 4259699762,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 725382108,
+                            "paramName": "DashAttackReady",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3987189933
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1400263801
+                },
+                {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 1,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 480.0,
+            "nodePosY": 450.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/WalkStop.json",
+            "sequenceName": "WalkStop",
+            "speedCurveName": "",
+            "stateHash": 1940673160,
+            "transitions": [
+                {
+                    "blendDuration": 0.10000000149011612,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 725382108,
+                            "paramName": "DashAttackReady",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3987189933
+                },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1400263801
+                },
+                {
+                    "blendDuration": 0.15000000596046448,
                     "conditions": [
                         {
                             "op": 0,

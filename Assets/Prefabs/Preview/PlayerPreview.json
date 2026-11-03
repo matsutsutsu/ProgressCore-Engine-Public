@@ -12,7 +12,7 @@
                 },
                 "Material": null,
                 "Model": {
-                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.glb"
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.model.json"
                 },
                 "Name": {
                     "name": "PlayerPreview"

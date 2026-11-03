@@ -9,6 +9,7 @@ using namespace CCL::ECS;
 static const uint32_t HASH_IS_DASHING        = CCL::Utils::HashString("IsDashing");
 static const uint32_t HASH_IS_AIRBORNE       = CCL::Utils::HashString("IsAirborne");
 static const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("MoveInput");
+static const uint32_t HASH_IS_RUNNING        = CCL::Utils::HashString("IsRunning");
 static const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("DashAttackReady");
 static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("OnDash");
 
@@ -36,6 +37,11 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         // 攻撃中はルートモーションで動くので、速さが入力を表さない
         const bool wantsMove = movement.desiredVelocity.LengthSquared() > 0.01f;
         animParams.SetBool(HASH_MOVE_INPUT, wantsMove);
+
+        // 歩きか走りかは、速さでなくゲーム側の isRunning で決める
+        // 止まりモーションを歩き用・走り用で分けるのに使う
+        // 走りは無入力が続いてから解くので、手を離した瞬間はまだ走りのまま残っている
+        animParams.SetBool(HASH_IS_RUNNING, player.isRunning);
 
         // 次の攻撃をダッシュ攻撃にするかを、コードで判定する
         // グラフはこの bool と Attack トリガーで、DashAttack と Attack_1 を分ける

@@ -3,7 +3,7 @@
 // 概要: プレイヤーのゲーム側の状態を、アニメのパラメータへ書く System。
 //
 // 責務:
-//   - IsDashing / IsAirborne / MoveInput を書き、ダッシュを始めた瞬間に OnDash を立てる
+//   - IsDashing / IsAirborne / MoveInput / IsRunning を書き、ダッシュを始めた瞬間に OnDash を立てる
 //   - 次の攻撃をダッシュ攻撃にするかを判定し、DashAttackReady を書く
 //
 // 備考:
