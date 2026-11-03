@@ -48,14 +48,14 @@ const LockOnMarkerStyleComponent &LockOnMarkerHudSystem::GetStyle()
     return style ? *style : kDefaultStyle;
 }
 
+
+
+// ロックオン対象の体の中心を画面へ投影する（描けない位置なら false）
 bool LockOnMarkerHudSystem::ProjectTarget(EntityID target, DirectX::XMFLOAT2 &center) const
 {
     const auto *camera = m_world->HasResource<Camera *>() ? m_world->GetResource<Camera *>() : nullptr;
     const auto *trans  = m_world->GetComponent<TransformComponent>(target);
-    if (!camera || !trans)
-    {
-        return false;
-    }
+    if (!camera || !trans) return false;
 
     // 体の高さ。キャラクターのカプセルは足元が原点で、全体の高さは (halfHeight + radius) * 2。
     float height = kDefaultHeight;
@@ -71,23 +71,20 @@ bool LockOnMarkerHudSystem::ProjectTarget(EntityID target, DirectX::XMFLOAT2 &ce
     // Vector3::Transform は w での除算まで行うので、結果はそのまま NDC になる。
     const Vector3 ndc = Vector3::Transform(mid, viewProj);
 
-    // カメラの後ろ、または奥の切り捨て面より先。
-    if (ndc.z <= 0.0f || ndc.z >= 1.0f)
-    {
-        return false;
-    }
+    // カメラの後ろ、または奥の切り捨て面より先
+    if (ndc.z <= 0.0f || ndc.z >= 1.0f) return false;
 
-    // 画面の外。
-    if (std::fabs(ndc.x) > 1.0f || std::fabs(ndc.y) > 1.0f)
-    {
-        return false;
-    }
+    // 画面の外
+    if (std::fabs(ndc.x) > 1.0f || std::fabs(ndc.y) > 1.0f) return false;
 
     auto &gfx = Graphics::Instance();
     center    = {(ndc.x + 1.0f) * 0.5f * gfx.GetScreenWidth(), (1.0f - ndc.y) * 0.5f * gfx.GetScreenHeight()};
     return true;
 }
 
+
+
+// 線を1本、暗い縁取りと一緒に描画リストへ積む
 void LockOnMarkerHudSystem::PushStroke(UIDrawList &list, float x, float y, float len, float thick, float angle,
                                        const DirectX::XMFLOAT4 &color) const
 {
@@ -109,6 +106,8 @@ void LockOnMarkerHudSystem::PushStroke(UIDrawList &list, float x, float y, float
     list.items.push_back(item);
 }
 
+
+
 void LockOnMarkerHudSystem::Update(float dt)
 {
     // 処理フロー:
@@ -117,10 +116,7 @@ void LockOnMarkerHudSystem::Update(float dt)
     // 3. 輪の大きさと色を決める
     // 4. 輪と中心の◆を積む
 
-    if (!m_world->HasResource<UIDrawList>())
-    {
-        return;
-    }
+    if (!m_world->HasResource<UIDrawList>()) return;
     auto &list = m_world->GetResource<UIDrawList>();
 
     // ---------------------------------------------------------
@@ -135,27 +131,19 @@ void LockOnMarkerHudSystem::Update(float dt)
             target = player->lockOnTargetID;
         }
     }
-    if (target != InvalidEntityID && !m_world->IsEntityValid(target))
-    {
-        target = InvalidEntityID;
-    }
+    if (!m_world->IsEntityValid(target)) target = InvalidEntityID;
 
-    // 対象が変わったら、締まる演出を最初からやり直す。
+    // 対象が変わったら、締まる演出を最初からやり直す
     if (target != InvalidEntityID && target != m_target)
     {
         m_lockAge = 0.0f;
     }
-    if (target != InvalidEntityID)
-    {
-        m_target = target;
-    }
+    if (target != InvalidEntityID) m_target = target;
 
     // 何も狙っておらず、消えきっているなら何もしない
     // 調整値を探すのをこれより後にし、ロックオンしないシーン（タイトルなど）で毎フレーム探さないようにする
-    if (target == InvalidEntityID && m_presence <= 0.001f)
-    {
-        return;
-    }
+    if (target == InvalidEntityID && m_presence <= 0.001f) return;
+
     const LockOnMarkerStyleComponent &style = GetStyle();
 
     m_lockAge += dt;
@@ -165,40 +153,39 @@ void LockOnMarkerHudSystem::Update(float dt)
     // 2. 投影と表示の濃さ
     // ---------------------------------------------------------
 
-    // 投影できたときだけ位置を更新する。外れたら、最後の位置に残したまま消していく。
+    // 投影できたときだけ位置を更新する。外れたら、最後の位置に残したまま消していく
     DirectX::XMFLOAT2 center{};
     const bool        visible = (target != InvalidEntityID) && ProjectTarget(target, center);
-    if (visible)
-    {
-        m_center = center;
-    }
+    if (visible) m_center = center;
 
-    // 出るときは速く、消えるときは少しゆっくりにする。
+    // 出るときは速く、消えるときは少しゆっくりにする
     const float goal = visible ? 1.0f : 0.0f;
     const float step = (goal > m_presence ? style.fadeIn : style.fadeOut) * dt;
-    m_presence       = (goal > m_presence) ? std::min(goal, m_presence + step) : std::max(goal, m_presence - step);
-    if (m_presence <= 0.001f)
+    if (goal > m_presence)
     {
-        return;
+        m_presence = std::min(goal, m_presence + step);
     }
+    else
+    {
+        m_presence = std::max(goal, m_presence - step);
+    }
+    if (m_presence <= 0.001f) return;
 
     // ---------------------------------------------------------
     // 3. 大きさと色
     // ---------------------------------------------------------
 
-    // ロックした瞬間は開いた輪が、減速しながら縮む。解除した後は、消えながら少し広がる。
+    // ロックした瞬間は、開いた輪が減速しながら縮む
+    // 解除した後は、消えながら少し広がる
     const float acquire = std::clamp(m_lockAge / std::max(style.acquireTime, 0.01f), 0.0f, 1.0f);
     const float open    = (1.0f - acquire) * (1.0f - acquire); // 開いている量（1 → 0。最後ほどゆっくり止まる）
     float       scale   = 1.0f + style.acquireOpen * open;
-    if (!visible)
-    {
-        scale += 0.5f * (1.0f - m_presence);
-    }
+    if (!visible) scale += 0.5f * (1.0f - m_presence);
     const float R = style.radius * scale;
 
-    // 縮む間は白く光り、縮みきると深紅に落ち着く。
-    const float             white = 1.0f - std::clamp((m_lockAge - 0.05f) / 0.25f, 0.0f, 1.0f);
-    const DirectX::XMFLOAT4 &base = style.color;
+    // 縮む間は白く光り、縮みきると照準の色に落ち着く
+    const float              white = 1.0f - std::clamp((m_lockAge - 0.05f) / 0.25f, 0.0f, 1.0f);
+    const DirectX::XMFLOAT4 &base  = style.color;
     const DirectX::XMFLOAT4  color{base.x + (1.0f - base.x) * white, base.y + (1.0f - base.y) * white,
                                   base.z + (1.0f - base.z) * white, base.w * m_presence};
 
@@ -206,12 +193,13 @@ void LockOnMarkerHudSystem::Update(float dt)
     // 4. 輪と中心の◆
     // ---------------------------------------------------------
 
-    // 輪は、左右に切れ目のある2本の弧。円に沿って短い線を並べて作り、全体を m_spin だけ回す。
-    constexpr int   kArcs    = 2;
+    // 輪は、左右に切れ目のある2本の弧
+    // 円に沿って短い線を並べて作り、全体を m_spin だけ回す
+    constexpr int kArcs   = 2;
     constexpr int kPerArc = 10; // 1本の弧を作る線の数
     const float   arcSpan = style.arcSpan * kDegToRad;
     const float   segStep = arcSpan / kPerArc;
-    const float     segLen   = R * segStep * 1.2f; // 隣と少し重ねて、つなぎ目の隙間を消す
+    const float   segLen  = R * segStep * 1.2f; // 隣と少し重ねて、つなぎ目の隙間を消す
     for (int arc = 0; arc < kArcs; ++arc)
     {
         const float start = m_spin + 3.1415927f * static_cast<float>(arc);
@@ -219,7 +207,7 @@ void LockOnMarkerHudSystem::Update(float dt)
         {
             const float a = start + segStep * (static_cast<float>(j) + 0.5f);
 
-            // 横長の四角形を角度 + 90 度回し、線の長い辺を円の接線にそろえる。
+            // 横長の四角形を角度 + 90 度回し、線の長い辺を円の接線にそろえる
             PushStroke(list, m_center.x + std::cos(a) * R, m_center.y + std::sin(a) * R, segLen, style.thickness,
                        a * kRadToDeg + 90.0f, color);
         }

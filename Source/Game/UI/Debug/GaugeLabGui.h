@@ -1,14 +1,11 @@
 #pragma once
 // ===========================================================================
-// 概要: HP ゲージの見た目を確かめるための、HUD System の OnGui 用の欄をまとめたヘッダー。
+// 概要: HP ゲージの見た目を確かめるため、HUD System の OnGui に置く HP ボタンの欄。
 //
 // 責務:
-//   - HP をボタンで減らす・回復する欄を描く（戦わずに被弾・回復・瀕死の演出を起こすため）
+//   - HP をボタンで減らす・回復する（戦わずに被弾・回復・瀕死の演出を起こす）
 //
-// 備考: PlayerHealthHudSystem と BossHealthHudSystem の OnGui から呼ぶ。
-//       値の調整はインスペクタ（プレハブ）で行い、ここは状況を起こすだけにする。
-//       HP のボタンは HealthComponent を直接書き換えるので、ダメージの経路
-//       （被弾モーション・無敵時間など）は通らない。見た目を確かめる専用。
+// 備考: HealthComponent を直接書き換えるので、ダメージの経路（被弾モーション・無敵時間など）は通らない。
 // ===========================================================================
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 
@@ -27,8 +24,8 @@ namespace CCL::GameUI
     {
         const float maxHp = std::max(hp.maxHealth, 1.0f);
         char        label[32];
-
         std::snprintf(label, sizeof(label), "ダメージ %d%%", static_cast<int>(damageRatio * 100.0f + 0.5f));
+
         if (ImGui::Button(label))
         {
             hp.currentHealth = std::max(1.0f, hp.currentHealth - maxHp * damageRatio);
@@ -39,14 +36,8 @@ namespace CCL::GameUI
             hp.currentHealth = std::min(maxHp, hp.currentHealth + maxHp * 0.2f);
         }
         ImGui::SameLine();
-        if (ImGui::Button("HP 20% に"))
-        {
-            hp.currentHealth = maxHp * 0.2f;
-        }
+        if (ImGui::Button("HP 20% に")) hp.currentHealth = maxHp * 0.2f;
         ImGui::SameLine();
-        if (ImGui::Button("全快"))
-        {
-            hp.currentHealth = maxHp;
-        }
+        if (ImGui::Button("全快")) hp.currentHealth = maxHp;
     }
 } // namespace CCL::GameUI

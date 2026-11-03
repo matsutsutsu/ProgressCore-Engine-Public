@@ -91,8 +91,9 @@ void CinematicSignalSystem::SpawnTelop(const std::string &title, const std::stri
     telop.entities.push_back(box);
 
     // 名前（滑り込む）・線（伸びる）・線の先の◆。リザルト・ポーズの見出しと同じ部品を、入れ物を親にして使う
-    std::vector<EntityID> heading;
-    SpawnScreenHeading(w, box, title.c_str(), ScreenColor::kRed, heading, kTelopSortOrder);
+    const MenuStyleComponent style = GetMenuStyle(w);
+    std::vector<EntityID>    heading;
+    SpawnScreenHeading(w, box, title.c_str(), style.red, heading, kTelopSortOrder);
     for (EntityID id : heading)
     {
         telop.entities.push_back(id);
@@ -101,8 +102,8 @@ void CinematicSignalSystem::SpawnTelop(const std::string &title, const std::stri
 
     if (!subtitle.empty())
     {
-        const EntityID sub = SpawnTypedText(w, "TelopSubtitle", subtitle, ScreenLayout::kLeft, ScreenLayout::kSubY,
-                                            kSubtitlePx, ScreenColor::kSub, kSubtitleDelay, box);
+        const EntityID sub = SpawnTypedText(w, "TelopSubtitle", subtitle, style.left, style.SubY(), kSubtitlePx,
+                                            style.sub, kSubtitleDelay, box);
         telop.entities.push_back(sub);
         telop.parts.push_back({sub});
     }

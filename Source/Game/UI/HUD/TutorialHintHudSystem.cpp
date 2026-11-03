@@ -211,37 +211,38 @@ void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, const Tu
 
 
 
+// ---------------------------------------------------------------------------
+// 部品の操作
+// ---------------------------------------------------------------------------
+
+// 部品の位置と大きさを書く（x は左端、y は中心。どちらも帯の中心から）
 void TutorialHintHudSystem::SetRect(EntityID id, float x, float y, float width, float height)
 {
-    if (auto *t = m_world->GetComponent<UITransformComponent>(id))
-    {
-        t->offset = {x, y};
-        t->size   = {width, height};
-    }
+    auto *t = m_world->GetComponent<UITransformComponent>(id);
+    if (!t) return;
+
+    t->offset = {x, y};
+    t->size   = {width, height};
 }
 
 
 
 void TutorialHintHudSystem::SetAlpha(EntityID id, float alpha)
 {
-    if (auto *t = m_world->GetComponent<UITransformComponent>(id))
-    {
-        t->alpha = alpha;
-    }
+    if (auto *t = m_world->GetComponent<UITransformComponent>(id)) t->alpha = alpha;
 }
 
 
 
+// 文字の幅を見積もる（半角は高さの半分、全角は高さと同じ幅）
 float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelSize)
 {
     float width = 0.0f;
     for (const unsigned char c : text)
     {
         // UTF-8 の2バイト目以降は数えない
-        if ((c & 0xC0) == 0x80)
-        {
-            continue;
-        }
+        if ((c & 0xC0) == 0x80) continue;
+
         width += (c < 0x80) ? pixelSize * 0.5f : pixelSize;
     }
     return width;

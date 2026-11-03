@@ -846,6 +846,12 @@
     <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleSystem.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleComponent.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
@@ -877,6 +883,9 @@
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Input\InputPromptSystem.h">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Input\InputPromptStyleComponent.h">
       <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Input\InputIconComponent.h">
@@ -2285,6 +2294,12 @@
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleSystem.cpp">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
@@ -2307,6 +2322,9 @@
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Input\InputPromptStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp">

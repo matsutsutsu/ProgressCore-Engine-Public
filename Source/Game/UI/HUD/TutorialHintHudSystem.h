@@ -3,15 +3,12 @@
 // 概要: チュートリアルのヒント（ボタンのアイコンと1行の説明）を画面の下中央に出す System。
 //
 // 責務:
-//   - プレイヤーが現れたら、TutorialHint プレハブ（帯・ゲージ・アイコン・文・中央のボタン）を生成する
-//   - 今の項目のアイコンと文言を出し、文の長さに合わせて帯の幅と部品の並びを決める
-//   - 項目が変わったらフェードインし直す
-//   - 帯の真下の細いゲージで、今の項目の進み具合を出す
-//   - 回避の補助スローの「今だ」の間は、画面の中央に押すボタンを大きく出す
+//   - プレイヤーが現れたら、TutorialHint プレハブを生成する
+//   - 今の項目のアイコンと文言を出し、文の長さに合わせて帯を並べる
+//   - 帯の真下のゲージで、今の項目の進み具合を出す
+//   - 回避の「今だ」の間は、画面の中央に押すボタンを大きく出す
 //
 // 備考: 何をいつ出すかは TutorialSystem が TutorialState に書く。ここは見た目だけを持つ。
-//       見た目はプレハブ（Assets/Prefabs/UI/TutorialHint.json）が持ち、インスペクタで調整して
-//       インスペクタのプレハブ保存で残す。並べ方の寸法・切り替える色はルートの TutorialHintStyleComponent。
 //       全体登録はせず、TutorialScene だけが登録する。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -37,9 +34,14 @@ private:
     // --- 更新 ---
     // アイコンと文言を書き、文の幅に合わせて並べ直す
     void ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style);
+
+    // 今の項目の進み具合をゲージに映す
     void UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);
+
+    // 「今だ」の間だけ、押すボタンを画面の中央に大きく出す
     void UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);
 
+    // --- 部品の操作 ---
     // x は帯の中心からの横位置（左端）、y は帯の中心からの縦位置（中心。下が正）
     void SetRect(CCL::ECS::EntityID id, float x, float y, float width, float height);
     void SetAlpha(CCL::ECS::EntityID id, float alpha);
@@ -48,7 +50,7 @@ private:
     static float EstimateWidth(const std::string &text, float pixelSize);
 
     CCL::ECS::EntityID m_rootID  = CCL::ECS::InvalidEntityID; // プレハブのルート（Canvas と TutorialHintStyle）
-    bool               m_spawned = false;                     // 生成を試したか（失敗しても毎フレーム読み直さない）
+    bool               m_spawned = false;                     // 生成を試したか
 
     // --- 帯（TutorialHintRow の子） ---
     CCL::ECS::EntityID m_bandID  = CCL::ECS::InvalidEntityID; // 下地の黒帯

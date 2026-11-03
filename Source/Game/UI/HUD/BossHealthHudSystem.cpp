@@ -25,10 +25,10 @@ namespace
 {
     // --- プレハブ ---
     constexpr const char *kPrefabPath = "Assets/Prefabs/UI/BossHud.json";
-    constexpr const char *kRootName   = "BossHud";        // ルート（Canvas）。保存するときのプレハブ名にも使う
-    constexpr const char *kGaugeName  = "BossHpGauge";    // ゲージ（UIProgressBar）の子
-    constexpr const char *kNameName   = "BossHpName";     // ボスの名前（UIText）の子
-    constexpr const char *kSwarmName  = "BossSwarmCount"; // ドローンの残り数（UIText）の子
+    constexpr const char *kRootName   = "BossHud";        // ルート（Canvas）
+    constexpr const char *kGaugeName  = "BossHpGauge";    // ゲージの子
+    constexpr const char *kNameName   = "BossHpName";     // ボスの名前の子
+    constexpr const char *kSwarmName  = "BossSwarmCount"; // ドローンの残り数の子
 } // namespace
 
 
@@ -36,11 +36,11 @@ namespace
 void BossHealthHudSystem::Update(float dt)
 {
     // 処理フロー:
-    //   1. HP が残っているボスを1体選ぶ（居なければまとめて隠して終わる）
-    //   2. ボスが初めて出たフレームに、BossHud プレハブを生成する
-    //   3. 割合と、第2形態の目印・外側の光を書く
-    //   4. ドローンの残り数を書く
-    //   5. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
+    // 1. HP が残っているボスを1体選ぶ（居なければまとめて隠して終わる）
+    // 2. ボスが初めて出たフレームに、BossHud プレハブを生成する
+    // 3. 割合と、第2形態の目印・外側の光を書く
+    // 4. ドローンの残り数を書く
+    // 5. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
 
     // ---------------------------------------------------------
     // 1. ボスを選ぶ
@@ -65,7 +65,7 @@ void BossHealthHudSystem::Update(float dt)
         }
     });
 
-    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
+    auto *bar = m_world->GetComponent<UIProgressBarComponent>(m_barID);
 
     if (!found)
     {
@@ -77,16 +77,16 @@ void BossHealthHudSystem::Update(float dt)
     }
 
     // ---------------------------------------------------------
-    // 2. BossHud プレハブを生成する
+    // 2. 生成
     // ---------------------------------------------------------
     if (!m_spawned)
     {
         SpawnHud();
-        bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
+        bar = m_world->GetComponent<UIProgressBarComponent>(m_barID);
     }
     if (!bar) return;
 
-    // プレハブのルートにスタイルが無ければ、コンポーネントの既定値で動かす
+    // プレハブのルートにスタイルが無ければ、既定値で動かす
     static const BossHudStyleComponent kDefaultStyle{};
     const auto *stylePtr = m_world->GetComponent<BossHudStyleComponent>(m_rootID);
     const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
@@ -112,16 +112,17 @@ void BossHealthHudSystem::Update(float dt)
     // 光沢と外側の光の明滅の位相。ゲームの dt で進めるのでポーズ中は止まる
     bar->animTime += dt;
 
-    // 第2形態へ移る HP の位置に線を引き、HP がそこを下回ったら消す
-    // 第2形態の BT が無いボスは形態移行しない（BossPhaseComponent の phase2AssetPath）ので、線も引かない
+    // --- 第2形態の目印と光 ---
     {
+        // 第2形態の BT が無いボスは形態移行しないので、線も引かない
         const auto *phase     = m_world->GetComponent<BossPhaseComponent>(bossID);
         const bool  hasPhase2 = phase && !phase->phase2AssetPath.empty();
         const float threshold = hasPhase2 ? std::clamp(phase->phase2HealthThreshold / 100.0f, 0.0f, 1.0f) : 0.0f;
-        bar->marker           = (hasPhase2 && ratio > threshold) ? threshold : -1.0f;
 
-        // 第2形態に入ったら、外側の光をゆっくり明滅させる
-        // ボスが本気になったことを伝える
+        // 移る位置に線を引き、HP がそこを下回ったら消す
+        bar->marker = (hasPhase2 && ratio > threshold) ? threshold : -1.0f;
+
+        // 第2形態に入ったら、外側の光をゆっくり明滅させる（ボスが本気になったことを伝える）
         const bool inPhase2 = hasPhase2 && ratio <= threshold;
         if (inPhase2)
         {
@@ -171,9 +172,10 @@ void BossHealthHudSystem::Update(float dt)
     }
 
     // 揺れを減らすのはこの System。ウィジェットは揺れの量を持つだけ
+    // わずかな揺れが 1px 残り続けないよう、小さくなったら 0 にする
     m_shakeTime += dt;
     m_shake -= m_shake * CCL::Math::Damp(style.shakeDecay, dt);
-    if (m_shake < 0.02f) m_shake = 0.0f; // わずかな揺れが 1px 残り続けないように 0 にする
+    if (m_shake < 0.02f) m_shake = 0.0f;
     bar->shake        = m_shake;
     bar->shakeElapsed = m_shakeTime;
 
@@ -192,6 +194,31 @@ void BossHealthHudSystem::Update(float dt)
         bar->trailValue += (ratio - bar->trailValue) * k;
     }
     m_prevRatio = ratio;
+}
+
+
+
+void BossHealthHudSystem::OnGui()
+{
+    if (!m_world->GetComponent<UIProgressBarComponent>(m_barID))
+    {
+        ImGui::TextDisabled("ゲージがまだ作られていない（ボスが居るシーンで作る）");
+        return;
+    }
+
+    // 値の調整はインスペクタ、ここは被弾・回復・第2形態を起こして確かめる場所
+    ImGui::TextDisabled("見た目は Hierarchy の %s をインスペクタで調整し、プレハブ保存で %s へ残す", kRootName, kPrefabPath);
+
+    const auto *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
+    auto       *hp     = (battle && battle->HasBoss()) ? m_world->GetComponent<HealthComponent>(battle->bossEntity) : nullptr;
+    if (hp)
+    {
+        CCL::GameUI::DrawHealthButtons(*hp, 0.05f);
+    }
+    else
+    {
+        ImGui::TextDisabled("ボスが居ない");
+    }
 }
 
 
@@ -228,40 +255,8 @@ void BossHealthHudSystem::SpawnHud()
 // ゲージ以外の部品（名前・ドローン数）をまとめて隠す・出す
 void BossHealthHudSystem::SetDecorVisible(bool visible)
 {
-    if (auto *txt = m_world->GetComponent<UITextComponent>(m_nameID))
-    {
-        txt->visible = visible;
-    }
-    if (auto *txt = m_world->GetComponent<UITextComponent>(m_swarmID))
-    {
-        txt->visible = visible;
-    }
-}
-
-
-
-void BossHealthHudSystem::OnGui()
-{
-    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-    if (!bar)
-    {
-        ImGui::TextDisabled("ゲージがまだ作られていない（ボスが居るシーンで作る）");
-        return;
-    }
-
-    // 値の調整はインスペクタ、ここは被弾・回復・第2形態を起こして確かめる場所
-    ImGui::TextDisabled("見た目は Hierarchy の %s をインスペクタで調整し、プレハブ保存で %s へ残す", kRootName, kPrefabPath);
-
-    const auto *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
-    auto       *hp     = (battle && battle->HasBoss()) ? m_world->GetComponent<HealthComponent>(battle->bossEntity) : nullptr;
-    if (hp)
-    {
-        CCL::GameUI::DrawHealthButtons(*hp, 0.05f);
-    }
-    else
-    {
-        ImGui::TextDisabled("ボスが居ない");
-    }
+    if (auto *txt = m_world->GetComponent<UITextComponent>(m_nameID)) txt->visible = visible;
+    if (auto *txt = m_world->GetComponent<UITextComponent>(m_swarmID)) txt->visible = visible;
 }
 
 REGISTER_LOGIC_SYSTEM(BossHealthHudSystem, Priority::LogicStage::L06_HudSync);

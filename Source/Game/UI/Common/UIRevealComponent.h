@@ -1,15 +1,10 @@
 #pragma once
 // ===========================================================================
-// 概要: UI の部品が「演出で出てくる」ための設定と進み具合を持つコンポーネント UIRevealComponent。
+// 概要: UI の部品を演出つき（打ち込む・滑り込む・伸びる）で出すための設定と進み具合。
 //
 // 責務:
-//   - 出方（文字を打ち込む・左から滑り込む・左から伸びる）と、その時間を持つ
+//   - 出方と、その時間・速さを持つ
 //   - UIRevealSystem が書く進み具合を持つ
-//
-// 備考:
-//   動かすのは UIRevealSystem。左上の見出しの組み（ScreenHeadingUi.h）が付ける。
-//
-//   描画ステージで動かすので、ポーズ中（ゲームの時間が止まっている間）も進む。
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 
@@ -26,14 +21,14 @@ enum class UIRevealMode : uint8_t
 
 struct UIRevealComponent
 {
-    UIRevealMode       mode     = UIRevealMode::Type;
+    UIRevealMode       mode     = UIRevealMode::Type;         // 出方
     float              delay    = 0.0f;                       // 出始めるまでの時間（秒、画面を出してから）
     float              duration = 0.35f;                      // SlideIn / Grow にかける時間（秒）
     float              speed    = 70.0f;                      // Type: 1秒に打ち込む文字数
     float              distance = 40.0f;                      // SlideIn: 左へずらして始める量（px）
     float              length   = 0.0f;                       // Grow: 伸びきったときの幅（px）
     std::string        text;                                  // Type: 打ち終わったときの文字列
-    CCL::ECS::EntityID tip      = CCL::ECS::InvalidEntityID; // Grow: 伸びる先端についていく部品（線の先端の◆など）
+    CCL::ECS::EntityID tip      = CCL::ECS::InvalidEntityID; // Grow: 伸びる先端についていく部品
 
     // --- UIRevealSystem が書く進み具合 ---
     float elapsed  = 0.0f;  // 画面を出してからの秒数

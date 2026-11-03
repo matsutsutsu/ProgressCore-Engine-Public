@@ -24,9 +24,9 @@ namespace
 {
     // --- プレハブ ---
     constexpr const char *kPrefabPath = "Assets/Prefabs/UI/PlayerHud.json";
-    constexpr const char *kRootName   = "PlayerHud";     // ルート（Canvas）。保存するときのプレハブ名にも使う
-    constexpr const char *kGaugeName  = "PlayerHpGauge"; // ゲージ（UIProgressBar）の子
-    constexpr const char *kValueName  = "PlayerHpValue"; // 残り HP の数値（UIText）の子
+    constexpr const char *kRootName   = "PlayerHud";     // ルート（Canvas）
+    constexpr const char *kGaugeName  = "PlayerHpGauge"; // ゲージの子
+    constexpr const char *kValueName  = "PlayerHpValue"; // 残り HP の数値の子
 
     DirectX::XMFLOAT4 Lerp(const DirectX::XMFLOAT4 &a, const DirectX::XMFLOAT4 &b, float t)
     {
@@ -39,14 +39,14 @@ namespace
 void PlayerHealthHudSystem::Update(float dt)
 {
     // 処理フロー:
-    //   1. プレイヤーの HP を読む（居なければゲージを隠して終わる）
-    //   2. 初めてプレイヤーが居たフレームに、PlayerHud プレハブを生成する
-    //   3. 割合と、瀕死の色・脈打ち・外側の光を書く
-    //   4. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
-    //   5. 残り HP の数値を書く
+    // 1. プレイヤーの HP を読む（居なければゲージを隠して終わる）
+    // 2. 初めてプレイヤーが居たフレームに、PlayerHud プレハブを生成する
+    // 3. 割合と、瀕死の色・脈打ち・外側の光を書く
+    // 4. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
+    // 5. 残り HP の数値を書く
 
     // ---------------------------------------------------------
-    // 1. プレイヤーの HP を読む
+    // 1. プレイヤーの HP
     // ---------------------------------------------------------
 
     // 参照でなく値で写す
@@ -55,14 +55,14 @@ void PlayerHealthHudSystem::Update(float dt)
     float curHp = 0.0f;
     float maxHp = 0.0f;
     ForEach([&](const HealthComponent &hp, const PlayerComponent & /*tag*/) {
-        if (found) return; // プレイヤーは1体の前提。最初の1つだけを表示する
+        if (found) return; // プレイヤーは1体の前提
         found = true;
         curHp = hp.currentHealth;
         maxHp = hp.maxHealth;
     });
 
-    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-    auto *txt = (m_valueID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_valueID) : nullptr;
+    auto *bar = m_world->GetComponent<UIProgressBarComponent>(m_barID);
+    auto *txt = m_world->GetComponent<UITextComponent>(m_valueID);
 
     // プレイヤーが居ないシーン（タイトルなど）では作らない。作ってあれば隠す
     if (!found)
@@ -74,17 +74,17 @@ void PlayerHealthHudSystem::Update(float dt)
     }
 
     // ---------------------------------------------------------
-    // 2. PlayerHud プレハブを生成する
+    // 2. 生成
     // ---------------------------------------------------------
     if (!m_spawned)
     {
         SpawnHud();
-        bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-        txt = (m_valueID != InvalidEntityID) ? m_world->GetComponent<UITextComponent>(m_valueID) : nullptr;
+        bar = m_world->GetComponent<UIProgressBarComponent>(m_barID);
+        txt = m_world->GetComponent<UITextComponent>(m_valueID);
     }
     if (!bar) return;
 
-    // プレハブのルートにスタイルが無ければ、コンポーネントの既定値で動かす
+    // プレハブのルートにスタイルが無ければ、既定値で動かす
     static const PlayerHudStyleComponent kDefaultStyle{};
     const auto *stylePtr = m_world->GetComponent<PlayerHudStyleComponent>(m_rootID);
     const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
@@ -106,7 +106,7 @@ void PlayerHealthHudSystem::Update(float dt)
     bar->visible = true;
     bar->value   = ratio;
 
-    // 残りが少ないほど赤へ寄せ、赤くなった分だけ明るさを脈打たせる（多いときは静かな単色のまま）
+    // 残りが少ないほど赤へ寄せ、赤くなった分だけ明るさを脈打たせる
     // 2つの割合をインスペクタで同じにしても 0 で割らないよう、幅に下限を付ける
     const float lowRange = std::max(style.lowHpStart - style.lowHpFull, 1e-4f);
     const float low      = std::clamp((style.lowHpStart - ratio) / lowRange, 0.0f, 1.0f);
@@ -148,9 +148,10 @@ void PlayerHealthHudSystem::Update(float dt)
     }
 
     // 揺れを減らすのはこの System。ウィジェットは揺れの量を持つだけ
+    // わずかな揺れが 1px 残り続けないよう、小さくなったら 0 にする
     m_shakeTime += dt;
     m_shake -= m_shake * CCL::Math::Damp(style.shakeDecay, dt);
-    if (m_shake < 0.02f) m_shake = 0.0f; // わずかな揺れが 1px 残り続けないように 0 にする
+    if (m_shake < 0.02f) m_shake = 0.0f;
     bar->shake        = m_shake;
     bar->shakeElapsed = m_shakeTime;
 
@@ -173,13 +174,40 @@ void PlayerHealthHudSystem::Update(float dt)
     // ---------------------------------------------------------
     // 5. 残り HP の数値
     // ---------------------------------------------------------
+
+    // 最大値は出さない。割合はゲージの長さが伝える
     if (txt)
     {
         txt->visible = true;
         char      buf[16];
         const int cur = static_cast<int>(std::max(0.0f, curHp) + 0.5f);
-        std::snprintf(buf, sizeof(buf), "%d", cur); // 最大値は出さない。割合はゲージの長さが伝える
+        std::snprintf(buf, sizeof(buf), "%d", cur);
         txt->text = buf;
+    }
+}
+
+
+
+void PlayerHealthHudSystem::OnGui()
+{
+    if (!m_world->GetComponent<UIProgressBarComponent>(m_barID))
+    {
+        ImGui::TextDisabled("ゲージがまだ作られていない（プレイヤーが居るシーンで作る）");
+        return;
+    }
+
+    // 値の調整はインスペクタ、ここは被弾・回復・瀕死を起こして確かめる場所
+    ImGui::TextDisabled("見た目は Hierarchy の %s をインスペクタで調整し、プレハブ保存で %s へ残す", kRootName, kPrefabPath);
+
+    const auto *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
+    auto       *hp     = (battle && battle->HasPlayer()) ? m_world->GetComponent<HealthComponent>(battle->playerEntity) : nullptr;
+    if (hp)
+    {
+        CCL::GameUI::DrawHealthButtons(*hp, 0.1f);
+    }
+    else
+    {
+        ImGui::TextDisabled("プレイヤーが居ない");
     }
 }
 
@@ -207,32 +235,6 @@ void PlayerHealthHudSystem::SpawnHud()
     if (m_valueID == InvalidEntityID)
     {
         CCL_LOG_ERROR(LogCategory::Game, "[PlayerHud] %s に '%s' が見つかりません", kPrefabPath, kValueName);
-    }
-}
-
-
-
-void PlayerHealthHudSystem::OnGui()
-{
-    auto *bar = (m_barID != InvalidEntityID) ? m_world->GetComponent<UIProgressBarComponent>(m_barID) : nullptr;
-    if (!bar)
-    {
-        ImGui::TextDisabled("ゲージがまだ作られていない（プレイヤーが居るシーンで作る）");
-        return;
-    }
-
-    // 値の調整はインスペクタ、ここは被弾・回復・瀕死を起こして確かめる場所
-    ImGui::TextDisabled("見た目は Hierarchy の %s をインスペクタで調整し、プレハブ保存で %s へ残す", kRootName, kPrefabPath);
-
-    const auto *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
-    auto       *hp     = (battle && battle->HasPlayer()) ? m_world->GetComponent<HealthComponent>(battle->playerEntity) : nullptr;
-    if (hp)
-    {
-        CCL::GameUI::DrawHealthButtons(*hp, 0.1f);
-    }
-    else
-    {
-        ImGui::TextDisabled("プレイヤーが居ない");
     }
 }
 

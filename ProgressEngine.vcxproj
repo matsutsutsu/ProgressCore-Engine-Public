@@ -749,6 +749,8 @@
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleComponent.h" />
     <ClInclude Include="Source\Game\Core\GameSettings.h" />
     <ClInclude Include="Source\Game\UI\Screens\SettingsScreenSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h" />
@@ -767,6 +769,7 @@
     <ClInclude Include="Source\Game\UI\Screens\GameResultSystem.h" />
     <ClInclude Include="Source\Game\UI\Screens\PauseSystem.h" />
     <ClInclude Include="Source\Game\UI\Input\InputPromptSystem.h" />
+    <ClInclude Include="Source\Game\UI\Input\InputPromptStyleComponent.h" />
     <ClInclude Include="Source\Game\UI\Input\InputIconComponent.h" />
     <ClInclude Include="Source\Game\UI\Input\InputIconSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
@@ -1234,6 +1237,8 @@
     <ClCompile Include="Source\Game\UI\HUD\BossHudStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Core\GameSettings.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\SettingsScreenSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp" />
@@ -1247,6 +1252,7 @@
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\PauseSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Input\InputPromptStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputIconComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />

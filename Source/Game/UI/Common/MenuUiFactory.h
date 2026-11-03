@@ -1,10 +1,11 @@
 #pragma once
 // ===========================================================================
-// 概要: メニュー（タイトル・ポーズ・リザルト）と HUD の UI エンティティを作る関数をまとめたヘッダー。
+// 概要: メニューと HUD の UI エンティティを作る関数をまとめたヘッダー。
 //
 // 責務:
 //   - Canvas・ラベル・単色のパネル・ボタン・操作のヒントを作る
-//   - UI の親子関係に使う TransformComponent と、出てくるときのアニメーションを設定する
+//   - UI の親子関係と、出てくるときのアニメーションを設定する
+//   - メニュー共通の見た目（MenuStyle）を引く
 //
 // 備考: 作るだけで、状態の管理やシーンの切り替えは呼び出す System が行う。
 // ===========================================================================
@@ -21,40 +22,66 @@
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UIAppearComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Game/UI/Input/InputIconComponent.h"        // 操作のヒントのアイコン
-#include "Game/UI/Common/MenuButtonVisualComponent.h" // ボタンの選択の度合い（MenuButtonStyleSystem が動かす）
+#include "Game/UI/Input/InputIconComponent.h"
+#include "Game/UI/Common/MenuButtonVisualComponent.h"
+#include "Game/UI/Common/MenuStyleComponent.h"
 
 #include <string>
 #include <vector>
 
 namespace CCL::GameUI
 {
-    // SpawnButton が作ったボタンとラベルの EntityID（消すときに両方消せるよう、ラベルも返す）
+    // ---------------------------------------------------------------------------
+    // メニュー共通の見た目
+    // ---------------------------------------------------------------------------
+
+    // MenuStyle（MenuStyleSystem が置く）を探す。まだ無いシーンでは InvalidEntityID
+    inline CCL::ECS::EntityID FindMenuStyle(CCL::ECS::World &world)
+    {
+        for (const CCL::ECS::EntityID id : world.View<MenuStyleComponent>())
+        {
+            if (world.GetComponent<MenuStyleComponent>(id)) return id;
+        }
+        return CCL::ECS::InvalidEntityID;
+    }
+
+    // メニュー共通の見た目を返す。MenuStyle がまだ無いシーンでは既定値
+    // 値で返すのは、呼び出し側が途中で生成を挟んでも参照が無効にならないようにするため
+    inline MenuStyleComponent GetMenuStyle(CCL::ECS::World &world)
+    {
+        const auto *style = world.GetComponent<MenuStyleComponent>(FindMenuStyle(world));
+        return style ? *style : MenuStyleComponent{};
+    }
+
+    // ---------------------------------------------------------------------------
+    // 共通の部品
+    // ---------------------------------------------------------------------------
+
+    // SpawnButton が作ったボタンとラベル（消すときに両方消せるよう、ラベルも返す）
     struct MenuButtonIds
     {
-        CCL::ECS::EntityID button = CCL::ECS::InvalidEntityID;
-        CCL::ECS::EntityID label  = CCL::ECS::InvalidEntityID;
+        CCL::ECS::EntityID button = CCL::ECS::InvalidEntityID; // ボタン（当たり判定と帯）
+        CCL::ECS::EntityID label  = CCL::ECS::InvalidEntityID; // ラベル（UIText）
     };
 
-    // 出てくるときのアニメーションを設定する。appearDelay が 0 以上なら再生し、最初は見えなく（alpha = 0）する
+    // 出てくるときのアニメーションを設定する
+    // appearDelay が 0 以上なら再生し、出てくるまでは見えなく（alpha = 0）する
     inline void ConfigureAppear(UITransformComponent &t, UIAppearComponent &ap, float appearDelay)
     {
-        if (appearDelay >= 0.0f)
-        {
-            ap.play  = true;
-            ap.delay = appearDelay;
-            t.alpha  = 0.0f; // 出てくるまでは見えない（UIAppearSystem が 0 から 1 へ上げる）
-        }
+        if (appearDelay < 0.0f) return;
+
+        ap.play  = true;
+        ap.delay = appearDelay;
+        t.alpha  = 0.0f;
     }
 
     /**
      * @brief UI の親子関係に使う TransformComponent を作る。
      *
      * 配置は UITransformComponent が決めるが、親子関係は 3D と同じ TransformComponent を使う。
-     * エディタの Hierarchy の表示・ドラッグでの親子付け・UILayoutSystem の入れ子の計算がこれ1つで済む。
+     * Hierarchy の表示・ドラッグでの親子付け・入れ子の配置の計算がこれ1つで済む。
      *
      * @param parent 親のエンティティ。無効ならルート（0）にする。
-     * @return 親を設定した TransformComponent。
      */
     inline TransformComponent MakeUINode(CCL::ECS::EntityID parent)
     {
@@ -65,10 +92,8 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief UI の親子関係のルートになる Canvas を作る。矩形は常に画面全体で、他の UI はこの子にする。
-     * @param offset 子の UI をまとめて平行移動する量（px）。「メニュー全体を左下へ寄せる」ような調整を、
-     *        要素ごとではなく1か所で決められる（UILayoutUtil::ResolveUINode が Canvas を特別に扱う）。
-     *        エディタでは Canvas の「UI Transform (矩形)」の Offset がこれに当たる。
+     * @brief UI の親子関係のルートになる Canvas を作る。矩形は常に画面全体。
+     * @param offset 子の UI をまとめて平行移動する量（px）。
      * @note 3D の Transform は親子関係のためだけに使うので、動かしても UI の位置は変わらない。
      */
     inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name,
@@ -86,9 +111,9 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief 画面の中央を基準にしたテキストのラベルを作る。
-     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくるアニメーションを再生する。負なら再生しない
-     * @param parent      UI の親（Canvas など）。指定するとその子になり、矩形も親を基準に求める
+     * @brief 画面の中央を基準にした文字のラベルを作る。
+     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし。
+     * @param parent      UI の親（Canvas など）。矩形も親を基準に求める。
      */
     inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
                                          const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
@@ -118,10 +143,9 @@ namespace CCL::GameUI
 
     /**
      * @brief 単色のパネル（暗転など）を作る。size を大きくすれば画面全体を覆える。
-     * @param appearDelay  0 以上なら、その秒数だけ待ってから出てくるアニメーションを再生する。負なら再生しない
-     * @param appearSlideY 出てくるときに上へスライドする量（px）。暗転は 0（フェードだけ）にする
+     * @param appearDelay  0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし。
+     * @param appearSlideY 出てくるときに上へスライドする量（px）。暗転は 0（フェードだけ）。
      * @param colorBottom  指定すると、上端 color から下端 colorBottom への縦のグラデーションになる。
-     *        暗転は一色で塗るより、上下で濃さを変えた方が自然に見える
      */
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
                                          DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
@@ -156,16 +180,19 @@ namespace CCL::GameUI
         return e.ID();
     }
 
+    // ---------------------------------------------------------------------------
+    // ボタンと操作のヒント
+    // ---------------------------------------------------------------------------
+
     /**
      * @brief ボタン（当たり判定・斜めの帯）と、その上に重ねるラベルを作る。
      *
-     * 見た目は HP ゲージと同じ斜めの帯（UIProgressBar）にそろえる。普段は暗い板だけが見え、
-     * 選ぶと白金の帯が左から伸び、押すと白く飛んでグリッチが走る。動かすのは MenuButtonStyleSystem。
+     * 普段は暗い板だけが見え、選ぶと帯が左から伸び、押すと白く飛んでグリッチが走る。
+     * 動かすのは MenuButtonStyleSystem。大きさと色は MenuStyle から取る。
      *
-     * @param sortOrder   ボタンの帯の描画順。ラベルは +1 で手前に置く
-     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくるアニメーションを再生する（ボタンとラベルの両方）。
-     *        負なら再生しない
-     * @return 作ったボタンとラベルの EntityID
+     * @param focused     最初から選ばれた状態にするか。
+     * @param sortOrder   帯の描画順。ラベルは +1 で手前に置く。
+     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる（ボタンとラベルの両方）。負なら出てくる演出なし。
      */
     inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
                                      const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
@@ -174,8 +201,8 @@ namespace CCL::GameUI
     {
         using namespace CCL::ECS;
 
-        constexpr DirectX::XMFLOAT2 kSize{320.0f, 56.0f}; // 帯の大きさ（＝当たり判定）
-        constexpr float             kLabelPad = 40.0f;    // 帯の左端からラベルの左端まで（斜めに切った分をよける）
+        const MenuStyleComponent style = GetMenuStyle(world);
+        const DirectX::XMFLOAT2  size  = style.buttonSize;
 
         // --- ボタン ---
         auto btnArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
@@ -187,15 +214,16 @@ namespace CCL::GameUI
         bt.anchor = {0.5f, 0.5f};
         bt.pivot  = {0.5f, 0.5f};
         bt.offset = offset;
-        bt.size   = kSize;
+        bt.size   = size;
 
-        // UIButtonSystem は状態ごとに UIImage の色を差し替えるので画像は残すが、見た目は帯が受け持つので透明にする
+        // UIButtonSystem が状態ごとに UIImage の色を差し替えるので画像は残す
+        // 見た目は帯が受け持つので、色は全部透明にする
         UIImageComponent bimg;
         bimg.sortOrder = sortOrder;
 
         UIInteractableComponent inter;
         inter.focusable = true;
-        inter.isFocused = focused; // true なら最初から選ばれた状態にする
+        inter.isFocused = focused;
 
         UIButtonComponent bcomp;
         bcomp.onClickAction = action;
@@ -206,26 +234,28 @@ namespace CCL::GameUI
 
         // 選択の帯。value（伸びた量）は MenuButtonStyleSystem が選択に合わせて動かす
         UIProgressBarComponent bar;
-        bar.value      = 0.0f;
-        bar.sortOrder  = sortOrder;
-        bar.bgColor    = {0.0f, 0.0f, 0.02f, 0.40f};        // 選んでいないときも見える暗い板
-        bar.fillColor  = {0.96f, 0.88f, 0.62f, 1.0f};       // HP ゲージと同じ白金
-        bar.gradient   = 0.25f;
-        bar.slant      = 18.0f;
-        bar.glowColor  = {1.0f, 1.0f, 1.0f, 1.0f};          // 伸びている途中の先端を光らせる
-        bar.glowWidth  = 10.0f;
-        bar.sheen      = 0.3f;                               // 選んでいる間、光沢を流す
-        bar.glitch     = 1.0f;                               // 押した瞬間のグリッチ
-        bar.hitFlash   = 0.6f;
+        bar.value          = 0.0f;
+        bar.sortOrder      = sortOrder;
+        bar.bgColor        = style.buttonBg;
+        bar.fillColor      = style.buttonFill;
+        bar.gradient       = 0.25f;
+        bar.slant          = style.buttonSlant;
+        bar.glowColor      = style.buttonGlow;
+        bar.glowWidth      = 10.0f;
+        bar.sheen          = style.buttonSheen;
+        bar.glitch         = 1.0f; // 押した瞬間のグリッチ
+        bar.hitFlash       = 0.6f;
         bar.shakeAmplitude = 4.0f;
 
+        // 最初から選ばれているボタンは、帯が伸びた状態から始める
         MenuButtonVisualComponent vis;
-        vis.focus = focused ? 1.0f : 0.0f; // 最初から選ばれているボタンは、帯が伸びた状態から始める
+        vis.focus = focused ? 1.0f : 0.0f;
 
         UIAppearComponent bap;
         ConfigureAppear(bt, bap, appearDelay);
 
-        // --- ラベル（別のエンティティ。帯の左寄りに置き、ボタンと同じ親の子にする） ---
+        // --- ラベル ---
+        // 別のエンティティにして、帯の左寄りに置く。親はボタンと同じ
         auto labelArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                    UITextComponent, UIAppearComponent>();
         auto lbl       = EntityFactory::SpawnNamed(world, labelName, labelArch);
@@ -233,12 +263,14 @@ namespace CCL::GameUI
         UITransformComponent lt;
         lt.anchor = {0.5f, 0.5f};
         lt.pivot  = {0.0f, 0.5f}; // 左端で置く（帯の左端からの距離で決められる）
-        lt.offset = {offset.x - kSize.x * 0.5f + kLabelPad, offset.y - 14.0f};
-        lt.size   = {kSize.x - kLabelPad, 32.0f};
+        lt.offset = {offset.x - size.x * 0.5f + style.labelPad, offset.y - style.labelPx * 0.5f};
+        lt.size   = {size.x - style.labelPad, style.labelPx + 4.0f};
 
+        // 色は MenuButtonStyleSystem が毎フレーム付けるが、出てすぐの1フレームも同じ色にしておく
         UITextComponent lx;
         lx.text      = label;
-        lx.pixelSize = 28.0f;
+        lx.pixelSize = style.labelPx;
+        lx.color     = style.labelIdle;
         lx.sortOrder = sortOrder + 1;
 
         UIAppearComponent lap;
@@ -256,14 +288,13 @@ namespace CCL::GameUI
     /**
      * @brief メニューの下に出す操作のヒント（決定・選択）を作る。
      *
-     * タイトル・ポーズ・リザルトの3画面が同じ行を出すので、ここにまとめる。
-     * それぞれに書くと、座標やアイコンの種類が画面ごとにずれていく。
+     * 全画面が同じ行を出すので、ここにまとめる。
+     * 画面ごとに書くと、座標やアイコンの種類がずれていく。
      *
-     * @param yOffset 画面の中央からの縦の位置（px）。ボタンの下に来る値を渡す
-     * @param out     作ったエンティティを追加する（呼び出し側がまとめて消すため）
-     * @param xOffset 行全体を横に動かす量（px）。0 なら画面の中央。メニューを左に寄せた画面（タイトル）で、
-     *        ヒントだけ中央に残らないようにするため
-     * @note アイコンの画像は InputIconSystem が毎フレーム決める。ここは種類を指定するだけ
+     * @param yOffset 画面の中央からの縦の位置（px）。ボタンの下に来る値を渡す。
+     * @param out     作ったエンティティを足す先（呼び出し側がまとめて消すため）。
+     * @param xOffset 行全体を横に動かす量（px）。メニューを左に寄せた画面で使う。
+     * @note アイコンの画像は InputIconSystem が毎フレーム決める。ここは種類を指定するだけ。
      */
     inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
                                std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f,
@@ -273,22 +304,25 @@ namespace CCL::GameUI
 
         struct HintDef
         {
-            InputIconKind kind;
-            const char   *label;
-            const char   *name;
-            float         x;
+            InputIconKind kind;  // アイコンの種類
+            const char   *label; // アイコンの右に出す文字
+            const char   *name;  // エンティティの名前
+            float         x;     // 行の中で置く横位置（px）
         };
+
         // 決定を左、選択を右にする。よく押す方を先に読ませる
         const HintDef defs[] = {
             {InputIconKind::MenuConfirm, "決定", "HintConfirm", -150.0f},
             {InputIconKind::MenuNavigate, "選択", "HintNavigate", 30.0f},
         };
 
-        constexpr float kIcon = 28.0f;
-        constexpr float kText = 16.0f;
+        const MenuStyleComponent style  = GetMenuStyle(world);
+        const float              iconPx = style.hintIconPx;
+        const float              textPx = style.hintTextPx;
 
         for (const HintDef &d : defs)
         {
+            // --- アイコン ---
             auto iconArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                       UIImageComponent, InputIconComponent, UIAppearComponent>();
             auto icon     = EntityFactory::SpawnNamed(world, d.name, iconArch);
@@ -297,7 +331,7 @@ namespace CCL::GameUI
             it.anchor = {0.5f, 0.5f};
             it.pivot  = {0.5f, 0.5f};
             it.offset = {d.x + xOffset, yOffset};
-            it.size   = {kIcon, kIcon};
+            it.size   = {iconPx, iconPx};
 
             UIImageComponent img;
             img.sortOrder = sortOrder;
@@ -306,14 +340,16 @@ namespace CCL::GameUI
             InputIconComponent ic;
             ic.kind = d.kind;
 
+            // スライドさせずフェードだけにする（目立たせたいのはボタン）
             UIAppearComponent ap;
-            ap.slideY = 0.0f; // ヒントはスライドさせずフェードだけにする（目立たせたいのはボタン）
+            ap.slideY = 0.0f;
             ConfigureAppear(it, ap, appearDelay);
 
             icon.Set(MakeUINode(parent)).Set(it).Set(img).Set(ic).Set(ap);
             out.push_back(icon.ID());
 
-            // ラベルはアイコンの右。文字は左上を基準に描くので、縦の中央に来るよう上へずらす
+            // --- ラベル ---
+            // アイコンの右に置く。文字は左上を基準に描くので、縦の中央に来るよう上へずらす
             auto lblArch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent,
                                                      UITextComponent, UIAppearComponent>();
             auto lbl     = EntityFactory::SpawnNamed(world, (std::string(d.name) + "Label").c_str(), lblArch);
@@ -321,13 +357,13 @@ namespace CCL::GameUI
             UITransformComponent lt;
             lt.anchor = {0.5f, 0.5f};
             lt.pivot  = {0.5f, 0.5f};
-            lt.offset = {d.x + xOffset + kIcon + 44.0f, yOffset - (kText * 0.5f)};
-            lt.size   = {120.0f, kText};
+            lt.offset = {d.x + xOffset + iconPx + 44.0f, yOffset - (textPx * 0.5f)};
+            lt.size   = {120.0f, textPx};
 
             UITextComponent tx;
             tx.text      = d.label;
-            tx.pixelSize = kText;
-            tx.color     = {0.78f, 0.80f, 0.86f, 1.0f}; // ボタンの文字より少し暗くして目立たせない
+            tx.pixelSize = textPx;
+            tx.color     = style.hintColor;
             tx.sortOrder = sortOrder + 1;
 
             UIAppearComponent lap;
