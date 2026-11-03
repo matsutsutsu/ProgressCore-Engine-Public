@@ -277,12 +277,16 @@ void TutorialSystem::Update(float dt)
         cleared = m_hitCount >= 1 || m_stepTimer >= kStrikeTimeout;
         break;
 
-    // 説明を読む時間がたったら達成（最後の項目なので、教え終える）。攻撃は求めない。
+    // 説明を読む時間がたったら達成。攻撃は求めない。
     // この項目に入るのは Strike の余韻の後で、ラッシュはもう終わっている。
     // 当てることを条件にすると、ボスへ近づき直して攻撃するまで終わらなくなる
     case TutorialGoal::Rush:
         WriteProgress(state, m_stepTimer, kRushReadTime); // 読む時間の分だけ帯が満ちていく
         cleared = m_stepTimer >= kRushReadTime;
+        break;
+
+    // 自由練習は達成しない。遊ぶ人がポーズメニューの「タイトルへ」で抜けるまで続ける
+    case TutorialGoal::FreePlay:
         break;
     }
 
@@ -297,8 +301,7 @@ void TutorialSystem::Update(float dt)
     // 補助スローは達成した時点で解く。余韻の間ほぼ止まったままにならないように
     EndAssist();
 
-    // 余韻の無い項目（明転待ち・ジャスト回避）はすぐ進める。
-    // 最後の項目を終えると step が kTutorialStepCount になり、教え終える
+    // 余韻の無い項目（明転待ち・ジャスト回避）はすぐ進める
     if (def.holdTime <= 0.0f)
     {
         Advance(state, static_cast<uint8_t>(state.step + 1));

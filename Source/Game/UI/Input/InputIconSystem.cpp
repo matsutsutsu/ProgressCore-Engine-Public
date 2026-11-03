@@ -87,6 +87,8 @@ std::string InputIconSystem::ResolveFixedIcon(InputIconKind kind, ActiveDeviceTy
         return pad ? Pad("btn_a.png") : KM("key_enter.png");
     case InputIconKind::MenuNavigate:
         return pad ? Pad("dpad_all.png") : KM("arrows_all.png");
+    case InputIconKind::Pause:
+        return pad ? std::string{} : KM("key_escape.png"); // START の画像はまだ無いので、パッドでは隠す
     default:
         break;
     }

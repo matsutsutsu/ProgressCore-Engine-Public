@@ -2,6 +2,7 @@
 #include <Xinput.h>
 #include "GamePad.h"
 #include <algorithm>
+#include <cmath>
 #include <tracy/Tracy.hpp>
 
 #pragma comment(lib, "xinput.lib")
@@ -60,6 +61,8 @@ void GamePad::Update(float dt)
         axisLy   = static_cast<float>(pad.sThumbLY) / static_cast<float>(0x8000);
         axisRx   = static_cast<float>(pad.sThumbRX) / static_cast<float>(0x8000);
         axisRy   = static_cast<float>(pad.sThumbRY) / static_cast<float>(0x8000);
+
+        newButtonState |= StickToButtons(buttonState[0]);
     }
 
     // ボタン状態の更新
@@ -83,6 +86,31 @@ void GamePad::Update(float dt)
             ApplyVibrationHardware(0.0f, 0.0f); // モーター停止
         }
     }
+}
+
+GamePadButton GamePad::StickToButtons(GamePadButton prev) const
+{
+    // 押す境目と離す境目を分ける。1つの境目だと、その近くで指が震えただけで押し直しが続き、選択が何段も飛ぶ
+    constexpr float kPress   = 0.6f;  // この傾きを超えたら押したことにする
+    constexpr float kRelease = 0.35f; // この傾きを下回るまで押したままにする
+
+    const bool  horizontal = std::abs(axisLx) >= std::abs(axisLy); // 斜めは強く倒した方の向きだけにする
+    const float amount     = horizontal ? axisLx : axisLy;
+
+    // 今の向き（XInput の Y は上が正）
+    GamePadButton dir = 0;
+    if (horizontal)
+    {
+        dir = (amount > 0.0f) ? BTN_LSTICK_RIGHT : BTN_LSTICK_LEFT;
+    }
+    else
+    {
+        dir = (amount > 0.0f) ? BTN_LSTICK_UP : BTN_LSTICK_DOWN;
+    }
+
+    // 前から押している向きなら、離す境目までは押したまま
+    const float threshold = (prev & dir) ? kRelease : kPress;
+    return (std::abs(amount) > threshold) ? dir : 0;
 }
 
 void GamePad::SetVibration(float left, float right, float duration)

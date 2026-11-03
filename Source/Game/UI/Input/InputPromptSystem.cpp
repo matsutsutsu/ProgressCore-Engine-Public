@@ -15,7 +15,6 @@
 #include "Game/UI/Input/InputIconComponent.h"
 #include "Game/UI/Common/MenuUiFactory.h"               // SpawnCanvas / MakeUINode
 #include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
-
 #include <cstdio>
 #include <imgui.h>
 #include <json.hpp>
@@ -189,11 +188,17 @@ void InputPromptSystem::BuildRows()
 
 void InputPromptSystem::Update(float /*dt*/)
 {
-    // プレイヤーが居ない画面（タイトルなど）には出さない。作るのを遅らせるので、UI エンティティも作られない
+    // プレイヤーが現れるまで作らない
     if (!m_built)
     {
-        if (!m_world->HasResource<BattleContext>()) return;
-        if (!m_world->GetResource<BattleContext>().HasPlayer()) return;
+        if (!m_world->HasResource<BattleContext>())
+        {
+            return;
+        }
+        if (!m_world->GetResource<BattleContext>().HasPlayer())
+        {
+            return;
+        }
 
         BuildRows();
         m_built = true;
@@ -206,7 +211,10 @@ void InputPromptSystem::Update(float /*dt*/)
     {
         const auto *img = m_world->GetComponent<UIImageComponent>(m_iconIDs[i]);
         auto       *txt = m_world->GetComponent<UITextComponent>(m_labelIDs[i]);
-        if (img && txt) txt->visible = img->visible;
+        if (img && txt)
+        {
+            txt->visible = img->visible;
+        }
     }
 }
 
@@ -258,5 +266,4 @@ void InputPromptSystem::OnGui()
     if (changed) ApplyLayout();
 }
 
-// ゲージと同じ HUD のステージで表示を更新する
-REGISTER_LOGIC_SYSTEM(InputPromptSystem, Priority::LogicStage::L06_HudSync);
+// 全体登録はしない。TutorialScene::RegisterSystems だけが登録する

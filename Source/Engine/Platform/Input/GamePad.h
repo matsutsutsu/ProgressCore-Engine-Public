@@ -5,6 +5,7 @@
 // 責務:
 //   - ボタン（押下中・押した瞬間・離した瞬間）とスティック・トリガーの読み取り
 //   - スティックのデッドゾーン処理と -1..1 / 0..1 への正規化
+//   - 左スティックを倒した向きを、ボタン（BTN_LSTICK_*）としても扱えるようにする
 //   - 振動の開始と、指定時間後の自動停止
 // ===========================================================================
 
@@ -29,6 +30,12 @@ public:
     static const GamePadButton BTN_RIGHT_SHOULDER = (1 << 13);
     static const GamePadButton BTN_LEFT_TRIGGER   = (1 << 14); // トリガーを閾値以上引いたらボタン扱い
     static const GamePadButton BTN_RIGHT_TRIGGER  = (1 << 15);
+
+    // 左スティックを倒した向き。十字キーと同じくボタンとして押した瞬間を取れる（メニューの選択に使う）
+    static const GamePadButton BTN_LSTICK_UP    = (1 << 16);
+    static const GamePadButton BTN_LSTICK_RIGHT = (1 << 17);
+    static const GamePadButton BTN_LSTICK_DOWN  = (1 << 18);
+    static const GamePadButton BTN_LSTICK_LEFT  = (1 << 19);
 
 public:
     GamePad() {}
@@ -105,4 +112,11 @@ private:
 
     // XInput へモーターの強さを送る
     void ApplyVibrationHardware(float left, float right);
+
+    /**
+     * @brief 左スティックの傾きを、向きのボタン（BTN_LSTICK_*）に直す。
+     * @param prev 前のフレームのボタン状態。押している向きは、戻し切るまで押したままにする。
+     * @return 押している向きのビット集合（1つだけ）。
+     */
+    GamePadButton StickToButtons(GamePadButton prev) const;
 };

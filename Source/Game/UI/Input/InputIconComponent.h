@@ -32,6 +32,9 @@ enum class InputIconKind : std::uint8_t
 
     // メニューの上下の選択。MenuConfirm と同じ理由で固定
     MenuNavigate,
+
+    // ポーズ（ESC / START）。PauseSystem がキーを直接見ていて InputConfig.json を通らないので固定
+    Pause,
 };
 
 struct InputIconComponent

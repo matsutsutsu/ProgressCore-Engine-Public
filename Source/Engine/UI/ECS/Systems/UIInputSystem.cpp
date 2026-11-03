@@ -84,11 +84,12 @@ void UIInputSystem::Update(float /*dt*/)
                            m_world->GetResource<GameViewportInfo>().KeyboardToGame();
     auto keyTriggered = [&](int vk) { return keyUsable && input->GetKeyboard().IsTriggered(vk); };
 
+    // パッドは十字キーと左スティックのどちらでも選べる。スティックは倒した瞬間に1段だけ動く
     GamePad   &gp       = input->GetGamePad();
-    const bool navUp    = keyTriggered(VKEY_UP) || gp.IsTriggered(GamePad::BTN_UP);
-    const bool navDown  = keyTriggered(VKEY_DOWN) || gp.IsTriggered(GamePad::BTN_DOWN);
-    const bool navLeft  = keyTriggered(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT);
-    const bool navRight = keyTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT);
+    const bool navUp    = keyTriggered(VKEY_UP) || gp.IsTriggered(GamePad::BTN_UP | GamePad::BTN_LSTICK_UP);
+    const bool navDown  = keyTriggered(VKEY_DOWN) || gp.IsTriggered(GamePad::BTN_DOWN | GamePad::BTN_LSTICK_DOWN);
+    const bool navLeft  = keyTriggered(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT | GamePad::BTN_LSTICK_LEFT);
+    const bool navRight = keyTriggered(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT | GamePad::BTN_LSTICK_RIGHT);
     const bool confirm  = inputUsable && (keyTriggered(VKEY_RETURN) || keyTriggered(VKEY_SPACE) || gp.IsTriggered(GamePad::BTN_A));
     const bool anyDir   = inputUsable && (navUp || navDown || navLeft || navRight);
 

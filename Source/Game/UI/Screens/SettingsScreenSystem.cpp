@@ -589,9 +589,10 @@ void SettingsScreenSystem::Update(float dt)
     auto       key       = [&](int vk) { return keyUsable && input->GetKeyboard().IsTriggered(vk); };
     GamePad   &gp        = input->GetGamePad();
 
-    const int dir = (key(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT)) ? 1
-                  : (key(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT)) ? -1
-                                                                           : 0;
+    // 値の左右は、十字キーと左スティックのどちらでも変えられる（行の上下の選択と同じ）
+    const int dir = (key(VKEY_RIGHT) || gp.IsTriggered(GamePad::BTN_RIGHT | GamePad::BTN_LSTICK_RIGHT)) ? 1
+                  : (key(VKEY_LEFT) || gp.IsTriggered(GamePad::BTN_LEFT | GamePad::BTN_LSTICK_LEFT))   ? -1
+                                                                                                        : 0;
     if (key(VKEY_ESCAPE) || gp.IsTriggered(GamePad::BTN_B))
     {
         m_closePending  = true;

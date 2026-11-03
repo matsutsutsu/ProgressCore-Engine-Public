@@ -33,6 +33,7 @@ enum class TutorialGoal : uint8_t
     JustEvade,  // ジャスト回避を成立させる
     Strike,     // ジャスト回避の後に攻撃を当てる（当てなくても時間で進む）
     Rush,       // ラッシュの説明を読む（時間で進む。攻撃は求めない）
+    FreePlay,   // 自由に練習する（終わらない。ポーズメニューからタイトルへ戻って抜ける）
 };
 
 // 教える項目1つぶん
@@ -132,6 +133,14 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
      .text     = "ジャスト回避の後に攻撃ボタンを押すと、ラッシュで一気に斬り込める！",
      .goal     = TutorialGoal::Rush,
      .holdTime = 1.0f}, // 読む時間の間に帯が満ちるので、余韻は短くてよい
+
+    // 最後は終わらせずに、好きなだけ練習させる。抜けるときはポーズメニューの「タイトルへ」。
+    // 抜け方を教えることで、ポーズメニューがあることも伝える
+    {.name        = "FreePlay",
+     .icon        = InputIconKind::Pause,
+     .text        = "自由に練習しよう。ESC のメニューからタイトルへ戻れる",
+     .goal        = TutorialGoal::FreePlay,
+     .bossAttacks = true},
 };
 
 // 項目の数。TutorialState.step がこれに達したら教え終えた
