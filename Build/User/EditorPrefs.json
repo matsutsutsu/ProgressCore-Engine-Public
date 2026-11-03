@@ -1,7 +1,7 @@
 {
     "DialogHistory": {
         "AnimNode": "Assets\\Animations\\Nodes",
-        "AnimSequence": "Assets\\Animations\\Sequencer\\Valkyra",
+        "AnimSequence": "Assets\\Animations\\Sequencer\\Player",
         "BehaviorTree": "Assets\\BehaviorTree",
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",

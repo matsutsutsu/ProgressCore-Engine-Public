@@ -150,6 +150,10 @@ struct AnimSequence
     std::string targetAnimName;  // モデル内のアニメーション名
     float       duration = 0.0f; // クリップの長さ（秒）
 
+    // ステートに入ったとき、クリップのこの時刻から再生を始める（秒）。0 なら頭から。
+    //   ループするクリップは、1周目だけここから始まり、2周目からは頭に戻る
+    float startOffset = 0.0f;
+
     // startTime の昇順であること（AnimationSystem が nextEventIndex で順に見る前提）。
     //   ResourceManager::LoadAnimSequence がロード時に並べ替える
     std::vector<AnimNotifyEvent> events;
@@ -200,7 +204,7 @@ inline void from_json(const json &j, AnimNotifyEvent &e)
 inline void to_json(json &j, const AnimSequence &s)
 {
     j = json{
-        {"sequenceName", s.sequenceName}, {"targetModelPath", s.targetModelPath}, {"targetAnimName", s.targetAnimName}, {"duration", s.duration}, {"events", s.events}, {"speedCurve", s.speedCurve}, {"rootMotionCurve", s.rootMotionCurve}};
+        {"sequenceName", s.sequenceName}, {"targetModelPath", s.targetModelPath}, {"targetAnimName", s.targetAnimName}, {"duration", s.duration}, {"startOffset", s.startOffset}, {"events", s.events}, {"speedCurve", s.speedCurve}, {"rootMotionCurve", s.rootMotionCurve}};
 }
 inline void from_json(const json &j, AnimSequence &s)
 {
@@ -208,6 +212,7 @@ inline void from_json(const json &j, AnimSequence &s)
     s.targetModelPath = j.value("targetModelPath", std::string{});
     s.targetAnimName  = j.value("targetAnimName", std::string{});
     s.duration        = j.value("duration", 0.0f);
+    s.startOffset     = j.value("startOffset", 0.0f);
     if (j.contains("events"))
         j.at("events").get_to(s.events);
     if (j.contains("speedCurve"))

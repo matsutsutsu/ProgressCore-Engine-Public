@@ -201,10 +201,10 @@ struct AnimatorComponent
 
             currentBlend.Assign(params.blendSpace);
             currentSequence = sequence;
-            currentTimer    = 0.0f;
-            nextEventIndex  = 0;
             isFinished      = false;
             ++playCount;
+
+            StartAtOffset();
         }
         else if (!params.blendSpace)
         {
@@ -227,6 +227,38 @@ struct AnimatorComponent
             activeRootMotionCurve = &sequence->rootMotionCurve;
 
         lockVerticalRootMotion = params.lockVerticalRootMotion;
+    }
+
+    // 再生位置を、今のクリップの開始位置（startOffset）に置く
+    void StartAtOffset()
+    {
+        // --- 再生位置 ---
+
+        currentTimer = 0.0f;
+        if (currentSequence)
+        {
+            currentTimer = (std::min)((std::max)(currentSequence->startOffset, 0.0f), currentSequence->duration);
+        }
+
+        // 区間イベントは [previousFrameTimer, currentTimer] の重なりで見るので、こちらも開始位置にそろえる
+        previousFrameTimer = currentTimer;
+
+        // --- イベントの位置 ---
+
+        // 開始位置より手前のイベントは、発火済みとして飛ばす。
+        //   飛ばさないと、最初のステップで手前のイベントがまとめて発火する。
+        //   開始位置ちょうどのイベントは飛ばさない（SyncEventCursor の <= を使わないのはそのため）
+        nextEventIndex = 0;
+        if (!currentSequence)
+        {
+            return;
+        }
+
+        const auto &events = currentSequence->events;
+        while (nextEventIndex < static_cast<int>(events.size()) && events[nextEventIndex].startTime < currentTimer)
+        {
+            ++nextEventIndex;
+        }
     }
 
     /**

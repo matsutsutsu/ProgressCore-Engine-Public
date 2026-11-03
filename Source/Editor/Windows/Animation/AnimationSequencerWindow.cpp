@@ -1248,6 +1248,20 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 
         // 長さはアセットで決まるので表示だけ
         ImGui::Text("Duration: %.2f s", m_editingSequence.duration);
+
+        // 再生の開始位置は、シーケンスごとに決める
+        ImGui::SetNextItemWidth(90);
+        if (ImGui::DragFloat("再生開始 (s)##startOffset", &m_editingSequence.startOffset, 0.01f, 0.0f,
+                             m_editingSequence.duration, "%.2f"))
+        {
+            m_editingSequence.startOffset = std::clamp(m_editingSequence.startOffset, 0.0f, m_editingSequence.duration);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("ステートに入ったとき、この時刻から再生します。\n"
+                              "例: ジャンプの溜めを飛ばし、踏み切りの瞬間から見せる。0 で頭から。");
+        }
+
         ImGui::Checkbox("Edit Mode (Preview)", &context.isAnimEditMode);
 
         // 編集モード中だけ、今のポーズで止めておける
