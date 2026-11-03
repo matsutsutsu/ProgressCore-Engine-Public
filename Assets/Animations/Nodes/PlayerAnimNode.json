@@ -18,6 +18,21 @@
             "targetStateHash": 2240140813
         },
         {
+            "blendDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 3473368617,
+                    "paramName": "RushStrike",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 3987189933
+        },
+        {
             "blendDuration": 0.20000000298023224,
             "conditions": [
                 {
@@ -221,6 +236,20 @@
             "hash": 1485051900,
             "name": "IsRunning",
             "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2050920459,
+            "name": "RushAttack",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 3473368617,
+            "name": "RushStrike",
+            "type": 2
         }
     ],
     "states": [
@@ -583,6 +612,21 @@
             "stateHash": 3987189933,
             "transitions": [
                 {
+                    "blendDuration": 0.15000000596046448,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2050920459,
+                            "paramName": "RushAttack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2824690955
+                },
+                {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
@@ -756,6 +800,113 @@
                     "sourceGroupId": 0,
                     "targetStateHash": 2371348074
                 },
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 1,
+            "isLoop": false,
+            "isSubMachine": true,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 200.0,
+            "nodePosY": 600.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "",
+            "sequenceName": "RushCombo",
+            "speedCurveName": "",
+            "stateHash": 2824690955,
+            "subGraph": {
+                "anyStatePosX": 192.0,
+                "anyStatePosY": 336.0,
+                "anyStateTransitions": [],
+                "entryPosX": -52.0,
+                "entryPosY": 323.0,
+                "entryStateHash": 73938368,
+                "parameters": [],
+                "states": [
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 466.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+                        "sequenceName": "RushSlash_A",
+                        "speedCurveName": "",
+                        "stateHash": 73938368,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2050920459,
+                                        "paramName": "RushAttack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 124271225
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 594.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+                        "sequenceName": "RushSlash_B",
+                        "speedCurveName": "",
+                        "stateHash": 124271225,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2050920459,
+                                        "paramName": "RushAttack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 73938368
+                            }
+                        ]
+                    }
+                ]
+            },
+            "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [

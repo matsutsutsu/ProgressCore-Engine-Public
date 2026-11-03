@@ -150,8 +150,8 @@ const RushCameraShot &PlayerRushCameraSystem::SelectShot(const PlayerRushCameraC
         return cam.ready;
     case RushPhase::Attack:
         return cam.attack;
-    case RushPhase::Free:
-        return cam.free;
+    case RushPhase::Flurry:
+        return cam.flurry;
     }
     return cam.locked;
 }

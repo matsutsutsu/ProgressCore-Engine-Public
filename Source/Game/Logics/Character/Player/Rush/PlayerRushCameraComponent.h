@@ -43,8 +43,8 @@ struct PlayerRushCameraComponent
     RushCameraShot attack = {.distance = -2.2f, .fov = 4.0f, .pitch = 2.0f, .yaw = 8.0f, .roll = 0.0f,
                              .focus = 0.75f, .followBoost = 20.0f, .blendTime = 0.07f, .bounce = 0.4f};
 
-    // 自由＝中間へゆっくり戻す
-    RushCameraShot free = {.distance = 0.8f, .focus = 0.2f, .blendTime = 0.45f};
+    // 連撃＝中間へゆっくり戻す
+    RushCameraShot flurry = {.distance = 0.8f, .focus = 0.2f, .blendTime = 0.45f};
 
     // --- 設定：終了・ワンショット ---
     float releaseTime     = 0.6f;  // ラッシュ終了後、普段の構図へ戻しきる時間（秒）

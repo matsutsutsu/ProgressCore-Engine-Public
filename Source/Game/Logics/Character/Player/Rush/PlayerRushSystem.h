@@ -6,7 +6,7 @@
 //   - ジャスト回避の成立を受けて、ダッシュを打ち切りラッシュを始める
 //   - ラッシュ中は世界をスローにし、プレイヤーだけ実時間に戻す
 //   - ラッシュ中は無敵を保つ
-//   - フェーズ（回避離脱 → 待機 → 攻撃 → 自由）を進める
+//   - フェーズ（回避離脱 → 待機 → 攻撃 → 連撃）を進める。待機で攻撃しなければ、その場で終える
 //   - ラッシュ中かを画面演出（PlayerRushEffectComponent）へ伝える
 //
 // 備考:
@@ -71,7 +71,7 @@ private:
     /**
      * @brief 次のフェーズへ進める。
      *
-     * 回避離脱 → 待機 → 自由、攻撃 → 自由、自由 → 終了。待機 → 攻撃は EnterAttack が行う。
+     * 回避離脱 → 待機、待機 → 終了、攻撃 → 連撃、連撃 → 終了。待機 → 攻撃は EnterAttack が行う。
      * 回避離脱は予約した移動が終わったとき、それ以外は残り時間が尽きたときに呼ぶ。
      *
      * @param rush ラッシュの状態。phase と timer を書く。
@@ -106,8 +106,21 @@ private:
                       PlayerComponent &player, AnimParametersComponent &animParams,
                       const DirectX::SimpleMath::Vector3 &playerPos);
 
-    // 斬りを1回出す（Attack のトリガーと、詰める向きへの向き直り）
+    // 詰めの斬り（通常のダッシュ攻撃）を出す（RushStrike のトリガーと、詰める向きへの向き直り）
     void FireStrike(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams);
+
+    // 連撃に入る。次の攻撃までの猶予を満たし、連撃の経過を 0 から数える
+    void EnterFlurry(PlayerRushComponent &rush);
+
+    /**
+     * @brief ラッシュの次の段を出す。段の数の上限まで出した後は何もしない。
+     * @param rush       ラッシュの状態。rushStep を進め、timer に次の猶予か、最後の段の後の時間を書く。
+     * @param player     詰め先への向き直りを書く先。
+     * @param animParams RushAttack のトリガーを引く先。
+     * @param playerPos  プレイヤーの物理の位置（ワールド）。向き直る向きを求める。
+     */
+    void FireNextStep(PlayerRushComponent &rush, PlayerComponent &player,
+                      AnimParametersComponent &animParams, const DirectX::SimpleMath::Vector3 &playerPos);
 
     // ラッシュ中は、被弾処理が見る無敵タイマーを invincibleRefresh 以上に保つ
     void MaintainInvincibility(CCL::ECS::EntityID id, const PlayerRushComponent &rush);

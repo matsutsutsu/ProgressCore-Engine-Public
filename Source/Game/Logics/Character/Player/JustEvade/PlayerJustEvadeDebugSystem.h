@@ -87,7 +87,7 @@ private:
     /**
      * @brief 要求があれば、ラッシュを終わらせる。
      *
-     * 自由（Free）の時間切れにするだけで、終了そのものは PlayerRushSystem の EndRush に任せる
+     * 連撃（Flurry）の時間切れにするだけで、終了そのものは PlayerRushSystem の EndRush に任せる
      * （時間倍率の戻しなど、本番の終わり方と揃えるため）。
      *
      * @param rush フェーズと残り時間を書く先。

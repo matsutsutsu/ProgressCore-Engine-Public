@@ -21,7 +21,7 @@ COMPONENT_META_BEGIN_FULL(PlayerRushCameraComponent, "Player Rush Camera Compone
 RUSH_CAMERA_SHOT_FIELDS(locked, "回避離脱（引き）")
 RUSH_CAMERA_SHOT_FIELDS(ready, "待機（寄り）")
 RUSH_CAMERA_SHOT_FIELDS(attack, "攻撃")
-RUSH_CAMERA_SHOT_FIELDS(free, "自由")
+RUSH_CAMERA_SHOT_FIELDS(flurry, "連撃")
 
 CFIELD_FLOAT_RANGED(releaseTime, "戻しきる時間", 0.01f, 0.01f, 3.0f, "終了・瞬間演出")
 CFIELD(yawFollowsEvade, "ヨーを回避方向で反転", "終了・瞬間演出")

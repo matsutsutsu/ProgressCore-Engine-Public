@@ -18,11 +18,15 @@ void PlayerDashSystem::Update(float rawDt)
                       PlayerComponent            &player,
                       const PlayerInputComponent &playerInput,
                       const TransformComponent   &trans,
-                      const TimeStateComponent   &time) {
+                      const TimeStateComponent   &time,
+                      const PlayerRushComponent  &rush) {
         MaintainInvincibility(id, dash);
 
+        // ラッシュ中は押しても始めない
+        const bool dashPressed = playerInput.dashPressed && !rush.isActive;
+
         // ダッシュしていないときの歩き・走りは、後に走る PlayerMoveSystem が書く
-        UpdateDash(dash, player, playerInput.dashPressed, movement, trans, time, id);
+        UpdateDash(dash, player, dashPressed, movement, trans, time, id);
 
         PushWideFovRequest(id, dash.isDashing);
     });

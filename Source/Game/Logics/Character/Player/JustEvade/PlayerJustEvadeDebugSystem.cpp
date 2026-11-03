@@ -186,8 +186,8 @@ void PlayerJustEvadeDebugSystem::ForceEndRush(PlayerRushComponent &rush)
         return;
     }
 
-    // 自由の時間切れにする。この後に走る PlayerRushSystem（L02）が同じステップで EndRush を呼ぶ。
-    rush.phase   = RushPhase::Free;
+    // 連撃の時間切れにする。この後に走る PlayerRushSystem（L02）が同じステップで EndRush を呼ぶ。
+    rush.phase   = RushPhase::Flurry;
     rush.timer   = 0.0f;
     m_lastResult = "ラッシュを終了";
 }

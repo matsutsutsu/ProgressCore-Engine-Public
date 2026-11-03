@@ -18,9 +18,12 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 斬りのアニメのトリガー
-// 通常攻撃と同じ名前で、どの斬りになるかはアニメグラフが決める
-static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
+// 詰めの斬りのトリガー。アニメグラフの AnyState から、通常のダッシュ攻撃（DashAttack）へ入る
+static const uint32_t HASH_TRIG_RUSH_STRIKE = CCL::Utils::HashString("RushStrike");
+
+// ラッシュの段のトリガー。ダッシュ攻撃から RushCombo に入り、押すたびに Attack_1 の速い斬りを出し直す
+// （RushSlash_A と RushSlash_B を交互に行き来し、押すたびに頭から出し直す）
+static const uint32_t HASH_TRIG_RUSH_ATTACK = CCL::Utils::HashString("RushAttack");
 
 
 
@@ -117,10 +120,29 @@ void PlayerRushSystem::Update(float dt)
         case RushPhase::Attack:
             // 詰めて斬るまでを、ここで済ませる（通常攻撃は PlayerAttackSystem が止めている）
             DriveCloseIn(rush, movement, player, animParams, GetCharacterWorldPosition(joltHandle));
+
+            // 斬った後に押したら、残り時間を待たずに連撃へ移り、ラッシュの1段目を出す
+            if (rush.attackFired && input.attackPressed)
+            {
+                EnterFlurry(rush);
+                FireNextStep(rush, player, animParams, GetCharacterWorldPosition(joltHandle));
+            }
             break;
 
-        case RushPhase::Free:
-            // 自由。移動は上書きしない（ダッシュ・歩き・攻撃がそのまま効く）
+        case RushPhase::Flurry:
+            // 連撃。足を止め、押すたびにラッシュの次の段を出す
+            movement.desiredVelocity = Vector3::Zero;
+            if (input.attackPressed)
+            {
+                FireNextStep(rush, player, animParams, GetCharacterWorldPosition(joltHandle));
+            }
+
+            // 上限に達したら猶予を 0 にし、下の時間切れで終える
+            rush.flurryTime += dt;
+            if (rush.flurryTime >= rush.flurryMaxDuration)
+            {
+                rush.timer = 0.0f;
+            }
             break;
         }
 
@@ -161,6 +183,7 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
     rush.phase       = RushPhase::Locked;
     rush.timer       = 0.0f;
     rush.attackFired = false;              // 前のラッシュの斬り済みを持ち越さない
+    rush.rushStep    = 0;
     rush.evadeDir    = dash.dashDirection; // ダッシュした向きへ離れる
 
     // ダッシュを打ち切る。無敵はラッシュ側で保つ
@@ -187,20 +210,30 @@ void PlayerRushSystem::AdvancePhase(PlayerRushComponent &rush, TimeStateComponen
         break;
 
     case RushPhase::Ready:
-        // 攻撃しないまま時間切れ。自由へ移る
-        rush.phase = RushPhase::Free;
-        rush.timer = rush.freeDuration;
+        // 攻撃しないまま時間切れ。何も起こさず、すぐにスローを解く
+        EndRush(rush, time);
         break;
 
     case RushPhase::Attack:
-        rush.phase = RushPhase::Free;
-        rush.timer = rush.freeDuration;
+        // 詰めの斬りを押さずに見届けた。連撃へ移り、続けて押せばラッシュの段が出る
+        EnterFlurry(rush);
         break;
 
-    case RushPhase::Free:
+    case RushPhase::Flurry:
+        // 攻撃が途切れたか、最後の段を出し終えたか、上限に達した
         EndRush(rush, time);
         break;
     }
+}
+
+
+
+// 連撃に入る。入った時点で猶予を満たし、続けて押せば次の段が出る
+void PlayerRushSystem::EnterFlurry(PlayerRushComponent &rush)
+{
+    rush.phase      = RushPhase::Flurry;
+    rush.timer      = rush.flurryKeepTime;
+    rush.flurryTime = 0.0f;
 }
 
 
@@ -316,15 +349,52 @@ void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovement
 
 
 
-// 斬りを1回出す。踏み込みは攻撃アニメのルートモーションに任せる
+// 詰めの斬り（通常のダッシュ攻撃）を出す。踏み込みはダッシュ攻撃のルートモーションに任せる
 void PlayerRushSystem::FireStrike(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams)
 {
     rush.attackFired = true;
+    rush.rushStep    = 0; // 詰めの斬りは段に数えない。次に押すと最初の連撃
 
     player.attackFaceYaw   = std::atan2(rush.closeInDir.x, rush.closeInDir.z);
     player.attackFaceTimer = 0.22f;
 
-    animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+    // どのステートに居ても入れるよう、AnyState から直接ダッシュ攻撃へ入る
+    // 通常の入り方（Attack + DashAttackReady）は走っているかで決まり、詰めの最中に満たすとは限らない
+    animParams.SetTrigger(HASH_TRIG_RUSH_STRIKE, 0.25f);
+}
+
+
+
+// ラッシュの次の段を出す。段の数の上限まで出した後は、押しても何もしない
+void PlayerRushSystem::FireNextStep(PlayerRushComponent &rush, PlayerComponent &player,
+                                    AnimParametersComponent &animParams, const Vector3 &playerPos)
+{
+    if (rush.rushStep >= rush.rushStepCount)
+    {
+        return;
+    }
+    ++rush.rushStep;
+
+    // 次の段の受付区間が来たら、アニメグラフが次の段へ進める。それまで押した入力を覚えておく
+    animParams.SetTrigger(HASH_TRIG_RUSH_ATTACK, rush.rushInputBuffer);
+
+    // 詰め先が居れば、その方へ向き直る（回すのは PlayerJumpFacingSystem）
+    if (IsCloseInTargetAlive(rush.closeInTarget))
+    {
+        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
+        {
+            Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+            to.y       = 0.0f;
+            if (to.LengthSquared() > 1e-6f)
+            {
+                player.attackFaceYaw   = std::atan2(to.x, to.z);
+                player.attackFaceTimer = 0.22f;
+            }
+        }
+    }
+
+    // 最後の段を出したら、見届ける時間だけ残して終える。それまでは、押すたびに猶予を戻す
+    rush.timer = (rush.rushStep >= rush.rushStepCount) ? rush.flurryFinishTime : rush.flurryKeepTime;
 }
 
 
@@ -381,8 +451,8 @@ const char *PlayerRushSystem::PhaseLabel(RushPhase phase) const
         return "Ready (攻撃待機)";
     case RushPhase::Attack:
         return "Attack (間合い詰め)";
-    case RushPhase::Free:
-        return "Free (自由行動)";
+    case RushPhase::Flurry:
+        return "Flurry (連撃)";
     }
     return "?";
 }
@@ -416,6 +486,14 @@ void PlayerRushSystem::OnGui()
             ImGui::TextDisabled("inactive");
         }
         ImGui::Text("phase timer : %.3f s", rush->timer);
+        if (rush->isActive && rush->phase == RushPhase::Flurry)
+        {
+            ImGui::Text("flurry      : %.2f / %.2f s", rush->flurryTime, rush->flurryMaxDuration);
+        }
+        if (rush->isActive)
+        {
+            ImGui::Text("rush step   : %d / %d", rush->rushStep, rush->rushStepCount);
+        }
 
         const Vector3 ev = rush->evadeDir;
         ImGui::Text("evadeDir    : (%.2f, %.2f, %.2f)  len %.2f", ev.x, ev.y, ev.z, ev.Length());

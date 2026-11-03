@@ -7,8 +7,8 @@
 //   - 攻撃の瞬間に、ロックオン先か前方の最も近い敵の方へ向く yaw を書く
 //
 // 備考: 通常/ダッシュ/空中/コンボのどの攻撃になるかはアニメグラフが決める。
-//       ラッシュ中（自由フェーズ以外）は通常攻撃を出さない。攻撃入力は PlayerRushSystem が
-//       受け取り、間合いを詰めて斬る一連として扱う。
+//       ラッシュ中は通常攻撃を出さない。攻撃入力は PlayerRushSystem が受け取り、
+//       ラッシュの段（アニメグラフの RushCombo）として出す。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"

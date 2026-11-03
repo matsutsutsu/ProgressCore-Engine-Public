@@ -162,10 +162,10 @@ void PlayerAttackSystem::Update(float dt)
                       AnimParametersComponent    &animParams,
                       PlayerComponent            &player,
                       const PlayerRushComponent        &rush) {
-        // ラッシュ中は、自由フェーズ以外では通常攻撃を出さない。
-        //   回避離脱(Locked)・待機(Ready)・間合い詰め(Attack)の攻撃入力は PlayerRushSystem が受け取り、
-        //   「間合いを詰めて斬る」一連として扱う。ここで通常攻撃まで出ると、その場斬りが二重に起きる。
-        if (rush.isActive && rush.phase != RushPhase::Free)
+        // ラッシュ中は通常攻撃を出さない。
+        //   ラッシュ中の攻撃入力は PlayerRushSystem が受け取り、ラッシュの段（RushAttack）として出す。
+        //   ここで通常攻撃まで出ると、Attack と RushAttack の2つのトリガーが同時に立つ。
+        if (rush.isActive)
         {
             return;
         }

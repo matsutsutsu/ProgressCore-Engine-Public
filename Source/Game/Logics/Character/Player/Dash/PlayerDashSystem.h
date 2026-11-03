@@ -11,6 +11,7 @@
 // 備考:
 //   ダッシュしていないときの速さは、この後に走る PlayerMoveSystem が書く。
 //   ジャスト回避が成立したら、PlayerRushSystem がダッシュを打ち切ってラッシュを始める。
+//   ラッシュ中は新しいダッシュを始めない（その場の連撃を、回避で抜けさせない）。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
@@ -19,6 +20,7 @@
 #include "Game/Logics/Character/Player/Dash/PlayerDashComponent.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Core/PlayerInputComponent.h"
+#include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 
 class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
                                                    CCL::ECS::Write<CharacterMovementComponent>,
@@ -26,7 +28,8 @@ class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
                                                    CCL::ECS::Write<PlayerComponent>,
                                                    CCL::ECS::Read<PlayerInputComponent>,
                                                    CCL::ECS::Read<TransformComponent>,
-                                                   CCL::ECS::Read<TimeStateComponent>>
+                                                   CCL::ECS::Read<TimeStateComponent>,
+                                                   CCL::ECS::Read<PlayerRushComponent>>
 {
 public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}

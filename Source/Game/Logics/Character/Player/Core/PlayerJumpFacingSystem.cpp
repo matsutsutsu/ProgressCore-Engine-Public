@@ -38,7 +38,7 @@ void PlayerJumpFacingSystem::Update(float rawDt)
         if (!joltHandle.character) return;
         
         // ラッシュの回避離脱・待機は操作不能。向きもジャンプも受け付けない
-        // 間合い詰め・自由は、向き直り（attackFaceYaw）とジャンプを許す
+        // 間合い詰め・連撃は、向き直り（attackFaceYaw）を許す
         if (rush.isActive && (rush.phase == RushPhase::Locked || rush.phase == RushPhase::Ready))
         {
             return;
@@ -47,7 +47,10 @@ void PlayerJumpFacingSystem::Update(float rawDt)
         float dt         = time.localDt;
         bool  isGrounded = (joltHandle.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
-        UpdateJumpLogic(dt, isGrounded, pin.jumpPressed, movement, player, animParams, GetCharacterWorldPosition(joltHandle));
+        // ラッシュ中はジャンプさせない。連撃はその場で斬り続けるもので、跳ぶと空中のコンボに変わってしまう
+        const bool jumpPressed = pin.jumpPressed && !rush.isActive;
+
+        UpdateJumpLogic(dt, isGrounded, jumpPressed, movement, player, animParams, GetCharacterWorldPosition(joltHandle));
         UpdateBankingAndRotation(dt, movement, config.walkSpeed, player, trans, joltHandle);
     });
 }
