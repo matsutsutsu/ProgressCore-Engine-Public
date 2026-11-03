@@ -792,7 +792,16 @@
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\PlayerHudStyleComponent.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\UiPrefabUtil.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h">
@@ -802,6 +811,9 @@
       <Filter>Source\Game\Logics\Tutorial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\BossHudStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h">
@@ -817,6 +829,9 @@
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h">
@@ -2231,7 +2246,13 @@
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\PlayerHudStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp">
@@ -2240,10 +2261,16 @@
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\BossHudStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp">
@@ -2283,6 +2310,9 @@
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Input\InputIconComponentMeta.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">

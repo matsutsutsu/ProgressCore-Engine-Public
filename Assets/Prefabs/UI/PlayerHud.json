@@ -1,0 +1,125 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "PlayerHud"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0
+                },
+                "UI Transform (矩形)": {
+                    "offset": [0.0, 0.0],
+                    "scale": 1.0
+                },
+                "UI Canvas (UIのルート)": {},
+                "Player HUD Style (HPゲージの振る舞い)": {
+                    "fillNormal": [0.96, 0.88, 0.62, 1.0],
+                    "fillLow": [0.92, 0.24, 0.20, 1.0],
+                    "lowHpStart": 0.40,
+                    "lowHpFull": 0.25,
+                    "pulseHz": 1.6,
+                    "pulseDepth": 0.35,
+                    "trailHold": 0.30,
+                    "trailSpeed": 6.0,
+                    "shakeDecay": 9.0
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "PlayerHpGauge"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [0.0, 1.0],
+                    "pivot": [0.0, 1.0],
+                    "offset": [48.0, -56.0],
+                    "size": [440.0, 16.0],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Progress Bar (ゲージ)": {
+                    "value": 1.0,
+                    "visible": false,
+                    "sortOrder": 100,
+                    "showTrail": true,
+                    "bgColor": [0.0, 0.0, 0.0, 0.55],
+                    "fillColor": [0.96, 0.88, 0.62, 1.0],
+                    "trailColor": [1.0, 1.0, 1.0, 0.85],
+                    "gradient": 0.35,
+                    "frame": 2.0,
+                    "slant": 10.0,
+                    "segments": 5.0,
+                    "glowColor": [1.0, 0.95, 0.80, 0.8],
+                    "sheen": 0.12,
+                    "glitch": 1.0,
+                    "auraWidth": 8.0,
+                    "auraColor": [1.0, 0.18, 0.12, 0.9]
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "PlayerHpValue"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [1.0, 1.0],
+                    "pivot": [0.0, 1.0],
+                    "offset": [14.0, 0.0],
+                    "size": [80.0, 16.0],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Text (文字列)": {
+                    "text": "",
+                    "pixelSize": 16.0,
+                    "color": [0.86, 0.86, 0.88, 0.85],
+                    "visible": false,
+                    "sortOrder": 110,
+                    "shadow": true
+                }
+            },
+            "lid": 3
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "LockOnMarker"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1
+                },
+                "LockOn Marker Style (ロックオンの照準)": {
+                    "color": [0.95, 0.18, 0.22, 1.0],
+                    "radius": 16.0,
+                    "thickness": 2.0,
+                    "coreSize": 5.0,
+                    "arcSpan": 130.0,
+                    "spinSpeed": 1.2,
+                    "acquireTime": 0.2,
+                    "acquireOpen": 1.5,
+                    "fadeIn": 14.0,
+                    "fadeOut": 7.0
+                }
+            },
+            "lid": 4
+        }
+    ],
+    "magic": 1397506883,
+    "name": "PlayerHud",
+    "version": 1
+}

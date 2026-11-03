@@ -10,10 +10,14 @@ UE の Output Log の入力欄に貼って Enter するだけで動きます。
 
 py "C:\Users\2240209\Desktop\ProgressCore-Engine\Tools\UE5アセットエクスポートツール\batch_export_gltf.py"
 
+py "D:\03_Work_School\School_Projects\ProgressCore-Engine\Tools\UE5アセットエクスポートツール\batch_export_gltf.py"
+
 
 ■ スクリプトのファイルパス（Tools → Execute Python Script... で選ぶとき用）
 
 C:\Users\2240209\Desktop\ProgressCore-Engine\Tools\UE5アセットエクスポートツール\batch_export_gltf.py
+
+
 
 
 ■ よく使う出力先（フォルダ選択ダイアログの上のアドレス欄に貼る）

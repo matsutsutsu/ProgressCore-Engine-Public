@@ -15,12 +15,14 @@
 //   収集の帯（R10b_UICollect）で UIDrawList へ直接積む（他の収集 System と同じ帯）。
 //   カメラの行列はそれより前の R01b_CameraBrain で決まるので、同じフレームのカメラに合う。
 //
-//   色は HUD の敵側と同じ深紅（ボスの HP ゲージと同じ）。
+//   見た目と動きの調整値は LockOnMarkerStyleComponent。PlayerHud プレハブの子 LockOnMarker に付いていて、
+//   インスペクタで調整し、インスペクタのプレハブ保存で残す。見つからないシーンでは既定値で描く。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
+#include "Game/UI/HUD/LockOnMarkerStyleComponent.h"
 
 #include <DirectXMath.h>
 
@@ -62,20 +64,15 @@ private:
     void PushStroke(UIDrawList &list, float x, float y, float len, float thick, float angle,
                     const DirectX::XMFLOAT4 &color) const;
 
+    // 調整値を返す。PlayerHud の子 LockOnMarker が無ければ既定値
+    const LockOnMarkerStyleComponent &GetStyle();
+
+    CCL::ECS::EntityID m_styleID  = CCL::ECS::InvalidEntityID; // 調整値を持つエンティティ（見つけたら持っておく）
     CCL::ECS::EntityID m_target   = CCL::ECS::InvalidEntityID; // 最後に狙った対象
     float              m_lockAge  = 0.0f;                      // 今の対象をロックしてからの秒数
     float              m_presence = 0.0f;                      // 表示の濃さ（0〜1）
     float              m_spin     = 0.0f;                      // 弧の回転角（ラジアン）
     DirectX::XMFLOAT2  m_center{};                             // 最後に描いた中心（px）。解除後に消えていく間もここに描く
 
-    // --- 調整値 ---
-    static constexpr float kRadius      = 16.0f; // 輪の半径（px）。ボスの姿を隠さない小ささにする
-    static constexpr float kThickness   = 2.0f;  // 弧の太さ（px）
-    static constexpr float kCoreSize    = 5.0f;  // 中心の◆の一辺（px）
-    static constexpr float kAcquireTime = 0.2f;  // ロックした瞬間から、輪が縮みきるまでの時間（秒）
-    static constexpr float kAcquireOpen = 1.5f;  // 縮む前に開いている量（1 + この値 倍の大きさから縮む）
-    static constexpr float kSpinSpeed   = 1.2f;  // 弧の回る速さ（ラジアン/秒）
-    static constexpr float kFadeIn      = 14.0f; // 出る速さ（1/秒）
-    static constexpr float kFadeOut     = 7.0f;  // 消える速さ（1/秒）
-    static constexpr int   kSortOrder   = 90;    // 描画順。他の HUD（HP・切り払い）より奥
+    static constexpr int kSortOrder = 90; // 描画順。他の HUD（HP・切り払い）より奥
 };

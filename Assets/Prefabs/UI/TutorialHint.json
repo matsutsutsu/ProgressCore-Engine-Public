@@ -1,0 +1,417 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHint"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0
+                },
+                "UI Transform (矩形)": {
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "scale": 1.0
+                },
+                "UI Canvas (UIのルート)": {},
+                "Tutorial Hint Style (ヒントの帯)": {
+                    "bandHeight": 90.0,
+                    "padX": 39.0,
+                    "iconSize": 64.0,
+                    "gap": 22.0,
+                    "textSize": 36.0,
+                    "emphSize": 48.0,
+                    "barHeight": 8.0,
+                    "fillColor": [
+                        0.35,
+                        0.75,
+                        1.0,
+                        0.95
+                    ],
+                    "clearColor": [
+                        0.4,
+                        0.95,
+                        0.5,
+                        0.95
+                    ],
+                    "textColor": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "nowColor": [
+                        1.0,
+                        0.85,
+                        0.3,
+                        1.0
+                    ],
+                    "fadeSpeed": 10.0,
+                    "fillSpeed": 12.0,
+                    "nowFadeSpeed": 20.0
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintRow"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        1.0
+                    ],
+                    "pivot": [
+                        0.5,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        -200.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintBand"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "color": [
+                        0.02,
+                        0.03,
+                        0.05,
+                        0.7
+                    ],
+                    "sortOrder": 110,
+                    "texturePath": ""
+                }
+            },
+            "lid": 3
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintBar"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "color": [
+                        0.02,
+                        0.03,
+                        0.05,
+                        0.7
+                    ],
+                    "sortOrder": 110,
+                    "texturePath": ""
+                }
+            },
+            "lid": 4
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintFill"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "color": [
+                        0.35,
+                        0.75,
+                        1.0,
+                        0.95
+                    ],
+                    "sortOrder": 111,
+                    "texturePath": ""
+                }
+            },
+            "lid": 5
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintIcon"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "sortOrder": 112,
+                    "visible": false,
+                    "texturePath": ""
+                },
+                "Input Icon (操作アイコン)": {
+                    "kind": 0
+                }
+            },
+            "lid": 6
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintPlus"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Text (文字列)": {
+                    "text": "+",
+                    "pixelSize": 36.0,
+                    "sortOrder": 113,
+                    "shadow": true
+                }
+            },
+            "lid": 7
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintIcon2"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "sortOrder": 112,
+                    "visible": false,
+                    "texturePath": ""
+                },
+                "Input Icon (操作アイコン)": {
+                    "kind": 0
+                }
+            },
+            "lid": 8
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintText"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 2
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        0.0
+                    ],
+                    "size": [
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Text (文字列)": {
+                    "text": "",
+                    "pixelSize": 36.0,
+                    "sortOrder": 113,
+                    "shadow": true
+                }
+            },
+            "lid": 9
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "TutorialHintNowIcon"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1
+                },
+                "UI Transform (矩形)": {
+                    "anchor": [
+                        0.5,
+                        0.5
+                    ],
+                    "pivot": [
+                        0.5,
+                        0.5
+                    ],
+                    "offset": [
+                        0.0,
+                        140.0
+                    ],
+                    "size": [
+                        128.0,
+                        128.0
+                    ],
+                    "rotation": 0.0,
+                    "scale": 1.0
+                },
+                "UI Image (画像/単色)": {
+                    "sortOrder": 130,
+                    "visible": false,
+                    "texturePath": ""
+                },
+                "Input Icon (操作アイコン)": {
+                    "kind": 0
+                }
+            },
+            "lid": 10
+        }
+    ],
+    "magic": 1397506883,
+    "name": "TutorialHint",
+    "version": 1
+}

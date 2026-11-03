@@ -18,10 +18,35 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    constexpr DirectX::XMFLOAT4 kRed{0.95f, 0.18f, 0.22f, 1.0f}; // HUD の敵側の深紅
-    constexpr float             kDefaultHeight = 4.0f;           // カプセルが無い敵の体の高さ（m）
-    constexpr float             kRadToDeg      = 57.29578f;      // ラジアンを度にする倍率
+    constexpr float kDefaultHeight = 4.0f;      // カプセルが無い敵の体の高さ（m）
+    constexpr float kRadToDeg      = 57.29578f; // ラジアンを度にする倍率
+    constexpr float kDegToRad      = 0.0174533f; // 度をラジアンにする倍率
 } // namespace
+
+
+
+// 調整値を返す。PlayerHud の子 LockOnMarker が無ければ既定値
+const LockOnMarkerStyleComponent &LockOnMarkerHudSystem::GetStyle()
+{
+    static const LockOnMarkerStyleComponent kDefaultStyle{};
+
+    // 見つけたエンティティが無い・消えていたら探し直す
+    // PlayerHud は PlayerHealthHudSystem がプレイヤーの現れたときに作るので、最初は無いことがある
+    const auto *style = m_world->GetComponent<LockOnMarkerStyleComponent>(m_styleID);
+    if (!style)
+    {
+        for (const EntityID id : m_world->View<LockOnMarkerStyleComponent>())
+        {
+            style = m_world->GetComponent<LockOnMarkerStyleComponent>(id);
+            if (style)
+            {
+                m_styleID = id;
+                break;
+            }
+        }
+    }
+    return style ? *style : kDefaultStyle;
+}
 
 bool LockOnMarkerHudSystem::ProjectTarget(EntityID target, DirectX::XMFLOAT2 &center) const
 {
@@ -124,8 +149,17 @@ void LockOnMarkerHudSystem::Update(float dt)
     {
         m_target = target;
     }
+
+    // 何も狙っておらず、消えきっているなら何もしない
+    // 調整値を探すのをこれより後にし、ロックオンしないシーン（タイトルなど）で毎フレーム探さないようにする
+    if (target == InvalidEntityID && m_presence <= 0.001f)
+    {
+        return;
+    }
+    const LockOnMarkerStyleComponent &style = GetStyle();
+
     m_lockAge += dt;
-    m_spin += kSpinSpeed * dt;
+    m_spin += style.spinSpeed * dt;
 
     // ---------------------------------------------------------
     // 2. 投影と表示の濃さ
@@ -141,7 +175,7 @@ void LockOnMarkerHudSystem::Update(float dt)
 
     // 出るときは速く、消えるときは少しゆっくりにする。
     const float goal = visible ? 1.0f : 0.0f;
-    const float step = (goal > m_presence ? kFadeIn : kFadeOut) * dt;
+    const float step = (goal > m_presence ? style.fadeIn : style.fadeOut) * dt;
     m_presence       = (goal > m_presence) ? std::min(goal, m_presence + step) : std::max(goal, m_presence - step);
     if (m_presence <= 0.001f)
     {
@@ -153,19 +187,20 @@ void LockOnMarkerHudSystem::Update(float dt)
     // ---------------------------------------------------------
 
     // ロックした瞬間は開いた輪が、減速しながら縮む。解除した後は、消えながら少し広がる。
-    const float acquire = std::clamp(m_lockAge / kAcquireTime, 0.0f, 1.0f);
+    const float acquire = std::clamp(m_lockAge / std::max(style.acquireTime, 0.01f), 0.0f, 1.0f);
     const float open    = (1.0f - acquire) * (1.0f - acquire); // 開いている量（1 → 0。最後ほどゆっくり止まる）
-    float       scale   = 1.0f + kAcquireOpen * open;
+    float       scale   = 1.0f + style.acquireOpen * open;
     if (!visible)
     {
         scale += 0.5f * (1.0f - m_presence);
     }
-    const float R = kRadius * scale;
+    const float R = style.radius * scale;
 
     // 縮む間は白く光り、縮みきると深紅に落ち着く。
     const float             white = 1.0f - std::clamp((m_lockAge - 0.05f) / 0.25f, 0.0f, 1.0f);
-    const DirectX::XMFLOAT4 color{kRed.x + (1.0f - kRed.x) * white, kRed.y + (1.0f - kRed.y) * white,
-                                  kRed.z + (1.0f - kRed.z) * white, m_presence};
+    const DirectX::XMFLOAT4 &base = style.color;
+    const DirectX::XMFLOAT4  color{base.x + (1.0f - base.x) * white, base.y + (1.0f - base.y) * white,
+                                  base.z + (1.0f - base.z) * white, base.w * m_presence};
 
     // ---------------------------------------------------------
     // 4. 輪と中心の◆
@@ -173,9 +208,9 @@ void LockOnMarkerHudSystem::Update(float dt)
 
     // 輪は、左右に切れ目のある2本の弧。円に沿って短い線を並べて作り、全体を m_spin だけ回す。
     constexpr int   kArcs    = 2;
-    constexpr float kArcSpan = 130.0f * 0.0174533f; // 1本の弧の広がり（ラジアン）。残りの 50 度ずつが切れ目
-    constexpr int   kPerArc  = 10;                  // 1本の弧を作る線の数
-    const float     segStep  = kArcSpan / kPerArc;
+    constexpr int kPerArc = 10; // 1本の弧を作る線の数
+    const float   arcSpan = style.arcSpan * kDegToRad;
+    const float   segStep = arcSpan / kPerArc;
     const float     segLen   = R * segStep * 1.2f; // 隣と少し重ねて、つなぎ目の隙間を消す
     for (int arc = 0; arc < kArcs; ++arc)
     {
@@ -185,12 +220,12 @@ void LockOnMarkerHudSystem::Update(float dt)
             const float a = start + segStep * (static_cast<float>(j) + 0.5f);
 
             // 横長の四角形を角度 + 90 度回し、線の長い辺を円の接線にそろえる。
-            PushStroke(list, m_center.x + std::cos(a) * R, m_center.y + std::sin(a) * R, segLen, kThickness,
+            PushStroke(list, m_center.x + std::cos(a) * R, m_center.y + std::sin(a) * R, segLen, style.thickness,
                        a * kRadToDeg + 90.0f, color);
         }
     }
 
-    PushStroke(list, m_center.x, m_center.y, kCoreSize, kCoreSize, 45.0f, color);
+    PushStroke(list, m_center.x, m_center.y, style.coreSize, style.coreSize, 45.0f, color);
 }
 
 // 他の収集 System と同じ帯で、描画リストへ積む（カメラは R01b_CameraBrain で決まっている）

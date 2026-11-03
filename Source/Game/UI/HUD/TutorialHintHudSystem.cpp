@@ -1,52 +1,27 @@
 #include "Game/UI/HUD/TutorialHintHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/Core/Math/Interpolation.h" // Damp
 #include "Engine/Core/Math/StringHash.h"
-#include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Serialization/Factory/Prefab.h"
 
-#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/Input/InputIconComponent.h"
-#include "Game/UI/Common/MenuUiFactory.h"        // SpawnCanvas / MakeUINode
+#include "Game/UI/Common/UiPrefabUtil.h"         // FindChildByName
 #include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーが現れてから作る
 
 using namespace CCL::ECS;
 
 namespace
 {
-    // --- 帯 ---
-    constexpr float kBottom   = 200.0f; // 画面の下端から帯の中心まで（px）
-    constexpr float kBandH    = 90.0f;  // 帯の高さ（px）
-    constexpr float kPadX     = 39.0f;  // 帯の左右の余白（px）
-    constexpr float kIconSize = 64.0f;  // アイコンの一辺（px）。画像と同じ大きさ
-    constexpr float kGap      = 22.0f;  // アイコン・「+」・文の間（px）
-    constexpr float kTextSize = 36.0f;  // 文字の高さ（px）
-    constexpr float kEmphSize = 48.0f;  // 「今だ」の文字の高さ（px）
-
-    // --- ゲージ ---
-    constexpr float kBarH = 8.0f;                        // 太さ（px）
-    constexpr float kBarY = kBandH * 0.5f + kBarH * 0.5f; // 帯の下端にすき間なく付ける
-
-    // --- 中央の「今だ」のボタン ---
-    constexpr float kNowIconSize = 128.0f; // 画像（64px）のちょうど2倍
-    constexpr float kNowOffsetY  = 140.0f; // 画面の中央から下へ（px）
-
-    // --- 色 ---
-    constexpr DirectX::XMFLOAT4 kBandColor  = {0.02f, 0.03f, 0.05f, 0.70f};
-    constexpr DirectX::XMFLOAT4 kFillColor  = {0.35f, 0.75f, 1.00f, 0.95f};
-    constexpr DirectX::XMFLOAT4 kClearColor = {0.40f, 0.95f, 0.50f, 0.95f}; // 達成の余韻
-    constexpr DirectX::XMFLOAT4 kTextColor  = {1.00f, 1.00f, 1.00f, 1.00f};
-    constexpr DirectX::XMFLOAT4 kNowColor   = {1.00f, 0.85f, 0.30f, 1.00f}; // 「今だ」の文字
-
-    // --- 速さ（Damp の speed） ---
-    constexpr float kFadeSpeed    = 10.0f;
-    constexpr float kFillSpeed    = 12.0f;
-    constexpr float kNowFadeSpeed = 20.0f; // 押す瞬間なので速く
+    // --- プレハブ ---
+    constexpr const char *kPrefabPath = "Assets/Prefabs/UI/TutorialHint.json";
 } // namespace
+
+
 
 // ---------------------------------------------------------------------------
 // 更新
@@ -54,42 +29,59 @@ namespace
 
 void TutorialHintHudSystem::Update(float dt)
 {
+    // 処理フロー:
+    //   1. プレイヤーが現れたフレームに、TutorialHint プレハブを生成する
+    //   2. 今の項目のアイコンと文言を書き、帯を並べ直す
+    //   3. 帯全体をフェードさせる
+    //   4. ゲージと中央のボタンを進める
+
     if (!m_world->HasResource<TutorialState>()) return;
-    const TutorialState &state = m_world->GetResource<TutorialState>();
+
+    // ---------------------------------------------------------
+    // 1. 生成
+    // ---------------------------------------------------------
 
     // Initialize で作らないのは、その後のレベルの読み込みで消されるため
-    if (!m_built)
+    if (!m_spawned)
     {
         if (!m_world->HasResource<BattleContext>()) return;
         if (!m_world->GetResource<BattleContext>().HasPlayer()) return;
 
-        Build();
-        m_built = true;
-        return; // 作ったフレームはまだ部品を引けないので、書くのは次のフレームから
+        SpawnHud();
     }
+    if (m_rootID == InvalidEntityID) return;
 
-    // --- 文言 ---
-    // 項目が変わったら書き換えてフェードインし直す。「今だ」の切り替えは消さずにそのまま書き換える
+    // プレハブのルートにスタイルが無ければ、コンポーネントの既定値で動かす
+    static const TutorialHintStyleComponent kDefaultStyle{};
+    const auto *stylePtr = m_world->GetComponent<TutorialHintStyleComponent>(m_rootID);
+    const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
+
+    const TutorialState &state = m_world->GetResource<TutorialState>();
+
+    // ---------------------------------------------------------
+    // 2. 文言と並べ方
+    // ---------------------------------------------------------
     const TutorialStepDef *def = state.Current();
     if (def)
     {
+        // 項目が変わったらフェードインし直す
         if (state.step != m_lastStep)
         {
             m_alpha      = 0.0f;
             m_gaugeShown = 0.0f;
-            ApplyHint(*def, state.assistActive);
+            m_lastStep   = state.step;
         }
-        else if (state.assistActive != m_lastAssist)
-        {
-            ApplyHint(*def, state.assistActive);
-        }
-        m_lastStep   = state.step;
-        m_lastAssist = state.assistActive;
+
+        // 並べ直しは毎フレーム行う
+        // インスペクタで Style の寸法を変えたとき、その場で帯に反映されるように（数個の値を書くだけで軽い）
+        ApplyHint(*def, state.assistActive, style);
     }
 
-    // --- フェード ---
+    // ---------------------------------------------------------
+    // 3. フェード
+    // ---------------------------------------------------------
     const float target = state.showHint ? 1.0f : 0.0f;
-    m_alpha += (target - m_alpha) * CCL::Math::Damp(kFadeSpeed, dt);
+    m_alpha += (target - m_alpha) * CCL::Math::Damp(style.fadeSpeed, dt);
 
     SetAlpha(m_bandID, m_alpha);
     SetAlpha(m_barID, m_alpha);
@@ -99,15 +91,21 @@ void TutorialHintHudSystem::Update(float dt)
     SetAlpha(m_plusID, m_hasSecond ? m_alpha : 0.0f);
     SetAlpha(m_icon2ID, m_hasSecond ? m_alpha : 0.0f);
 
-    UpdateGauge(state, dt);
-    UpdateNowButton(state, dt);
+    // ---------------------------------------------------------
+    // 4. ゲージと中央のボタン
+    // ---------------------------------------------------------
+    UpdateGauge(state, style, dt);
+    UpdateNowButton(state, style, dt);
 }
 
-void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist)
+
+
+// アイコンと文言を書き、文の幅に合わせて並べ直す
+void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style)
 {
     const bool        useAssist = assist && def.assistText;
     const std::string text      = useAssist ? def.assistText : def.text;
-    const float       textSize  = useAssist ? kEmphSize : kTextSize;
+    const float       textSize  = useAssist ? style.emphSize : style.textSize;
 
     // 「今だ」は1つ目のボタンだけを出す
     m_hasSecond = def.action2 && !useAssist;
@@ -115,33 +113,36 @@ void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist)
     // --- 幅 ---
     // [アイコン] (+ [アイコン2]) [文] の組の幅を求め、帯の中央に置く
     const float textW = EstimateWidth(text, textSize);
-    const float plusW = EstimateWidth("+", kTextSize);
+    const float plusW = EstimateWidth("+", style.textSize);
 
-    float rowW = kIconSize + kGap + textW;
+    float rowW = style.iconSize + style.gap + textW;
     if (m_hasSecond)
     {
-        rowW += plusW + kGap + kIconSize + kGap;
+        rowW += plusW + style.gap + style.iconSize + style.gap;
     }
-    m_bandWidth = rowW + kPadX * 2.0f;
+    m_bandWidth = rowW + style.padX * 2.0f;
 
     // --- 並べる ---
     float x = -rowW * 0.5f;
 
-    SetRect(m_iconID, x, 0.0f, kIconSize, kIconSize);
-    x += kIconSize + kGap;
+    SetRect(m_iconID, x, 0.0f, style.iconSize, style.iconSize);
+    x += style.iconSize + style.gap;
 
     if (m_hasSecond)
     {
-        SetRect(m_plusID, x, 0.0f, plusW, kTextSize);
-        x += plusW + kGap;
+        SetRect(m_plusID, x, 0.0f, plusW, style.textSize);
+        x += plusW + style.gap;
 
-        SetRect(m_icon2ID, x, 0.0f, kIconSize, kIconSize);
-        x += kIconSize + kGap;
+        SetRect(m_icon2ID, x, 0.0f, style.iconSize, style.iconSize);
+        x += style.iconSize + style.gap;
     }
 
+    // ゲージは帯の下端にすき間なく付ける
+    const float barY = style.bandHeight * 0.5f + style.barHeight * 0.5f;
+
     SetRect(m_textID, x, 0.0f, textW, textSize);
-    SetRect(m_bandID, -m_bandWidth * 0.5f, 0.0f, m_bandWidth, kBandH);
-    SetRect(m_barID, -m_bandWidth * 0.5f, kBarY, m_bandWidth, kBarH);
+    SetRect(m_bandID, -m_bandWidth * 0.5f, 0.0f, m_bandWidth, style.bandHeight);
+    SetRect(m_barID, -m_bandWidth * 0.5f, barY, m_bandWidth, style.barHeight);
 
     // --- 中身 ---
     // アイコンの画像は InputIconSystem が種類とアクション名から決める
@@ -161,31 +162,42 @@ void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist)
     {
         tx->text      = text;
         tx->pixelSize = textSize;
-        tx->color     = useAssist ? kNowColor : kTextColor;
+        tx->color     = useAssist ? style.nowColor : style.textColor;
+    }
+    if (auto *tx = m_world->GetComponent<UITextComponent>(m_plusID))
+    {
+        tx->pixelSize = style.textSize;
     }
 }
 
-void TutorialHintHudSystem::UpdateGauge(const TutorialState &state, float dt)
+
+
+// 今の項目の進み具合をゲージに映す
+void TutorialHintHudSystem::UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
 {
     // 一気に伸ばすと増えたことが目に入らないので、滑らかに寄せる
-    m_gaugeShown += (state.progress - m_gaugeShown) * CCL::Math::Damp(kFillSpeed, dt);
+    m_gaugeShown += (state.progress - m_gaugeShown) * CCL::Math::Damp(style.fillSpeed, dt);
 
-    SetRect(m_fillID, -m_bandWidth * 0.5f, kBarY, m_bandWidth * m_gaugeShown, kBarH);
+    const float barY = style.bandHeight * 0.5f + style.barHeight * 0.5f;
+    SetRect(m_fillID, -m_bandWidth * 0.5f, barY, m_bandWidth * m_gaugeShown, style.barHeight);
 
     if (auto *img = m_world->GetComponent<UIImageComponent>(m_fillID))
     {
-        img->color = state.cleared ? kClearColor : kFillColor;
+        img->color = state.cleared ? style.clearColor : style.fillColor;
     }
 }
 
-void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, float dt)
+
+
+// 「今だ」の間だけ、押すボタンを画面の中央に大きく出す
+void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
 {
     // 下の帯まで目を動かさなくても、押すボタンが分かるように中央に出す
     const TutorialStepDef *def  = state.Current();
     const bool             show = state.assistActive && def && def->action;
 
     const float target = show ? 1.0f : 0.0f;
-    m_nowAlpha += (target - m_nowAlpha) * CCL::Math::Damp(kNowFadeSpeed, dt);
+    m_nowAlpha += (target - m_nowAlpha) * CCL::Math::Damp(style.nowFadeSpeed, dt);
     SetAlpha(m_nowIconID, m_nowAlpha);
 
     if (show)
@@ -197,14 +209,18 @@ void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, float dt
     }
 }
 
+
+
 void TutorialHintHudSystem::SetRect(EntityID id, float x, float y, float width, float height)
 {
     if (auto *t = m_world->GetComponent<UITransformComponent>(id))
     {
-        t->offset = {x, -kBottom + y};
+        t->offset = {x, y};
         t->size   = {width, height};
     }
 }
+
+
 
 void TutorialHintHudSystem::SetAlpha(EntityID id, float alpha)
 {
@@ -213,6 +229,8 @@ void TutorialHintHudSystem::SetAlpha(EntityID id, float alpha)
         t->alpha = alpha;
     }
 }
+
+
 
 float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelSize)
 {
@@ -229,83 +247,41 @@ float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelS
     return width;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 生成
 // ---------------------------------------------------------------------------
 
-void TutorialHintHudSystem::Build()
+// TutorialHint プレハブを生成し、部品の子を名前で引く
+void TutorialHintHudSystem::SpawnHud()
 {
-    const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "TutorialHintCanvas");
+    // 失敗しても試すのは1回だけにする
+    // プレハブが壊れているとき、毎フレーム読み直してエラーログが流れ続けないように
+    m_spawned = true;
 
-    // 描く順: 帯・ゲージの地(110) → ゲージの中身(111) → アイコン(112) → 文字(113) → 中央のボタン(130)
-    m_bandID  = SpawnImage(canvas, "TutorialHintBand", kBandColor, 110);
-    m_barID   = SpawnImage(canvas, "TutorialHintBar", kBandColor, 110);
-    m_fillID  = SpawnImage(canvas, "TutorialHintFill", kFillColor, 111);
-    m_iconID  = SpawnIcon(canvas, "TutorialHintIcon", RowTransform(), 112);
-    m_plusID  = SpawnText(canvas, "TutorialHintPlus", "+");
-    m_icon2ID = SpawnIcon(canvas, "TutorialHintIcon2", RowTransform(), 112);
-    m_textID  = SpawnText(canvas, "TutorialHintText", "");
+    m_rootID = Prefab::SpawnPrefab(*m_world, kPrefabPath);
+    if (m_rootID == InvalidEntityID) return; // 読めない理由は Prefab がログに出す
 
-    // 中央のボタンだけは、画面の中央を基準に置く
-    UITransformComponent nowT;
-    nowT.anchor = {0.5f, 0.5f};
-    nowT.pivot  = {0.5f, 0.5f};
-    nowT.offset = {0.0f, kNowOffsetY};
-    nowT.size   = {kNowIconSize, kNowIconSize};
-    nowT.alpha  = 0.0f;
-    m_nowIconID = SpawnIcon(canvas, "TutorialHintNowIcon", nowT, 130);
-}
+    // エディタで子の名前を変えると引けなくなる
+    // 黙って部品が消えると原因が分からないので、見つからなければログに出す
+    const auto find = [this](const char *name) {
+        const EntityID id = CCL::GameUI::FindChildByName(*m_world, m_rootID, name);
+        if (id == InvalidEntityID)
+        {
+            CCL_LOG_ERROR(LogCategory::Game, "[TutorialHint] %s に '%s' が見つかりません", kPrefabPath, name);
+        }
+        return id;
+    };
 
-UITransformComponent TutorialHintHudSystem::RowTransform()
-{
-    UITransformComponent t;
-    t.anchor = {0.5f, 1.0f};
-    t.pivot  = {0.0f, 0.5f};
-    t.offset = {0.0f, -kBottom};
-    t.alpha  = 0.0f;
-    return t;
-}
-
-EntityID TutorialHintHudSystem::SpawnImage(EntityID canvas, const char *name, DirectX::XMFLOAT4 color, int sortOrder)
-{
-    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent>();
-    auto e    = EntityFactory::SpawnNamed(*m_world, name, arch);
-
-    UIImageComponent img;
-    img.color     = color;
-    img.sortOrder = sortOrder;
-
-    e.Set(CCL::GameUI::MakeUINode(canvas)).Set(RowTransform()).Set(img);
-    return e.ID();
-}
-
-EntityID TutorialHintHudSystem::SpawnIcon(EntityID canvas, const char *name, const UITransformComponent &t, int sortOrder)
-{
-    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent,
-                                          InputIconComponent>();
-    auto e    = EntityFactory::SpawnNamed(*m_world, name, arch);
-
-    UIImageComponent img;
-    img.sortOrder = sortOrder;
-    img.visible   = false; // InputIconSystem が画像を決めるまで出さない
-
-    e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(img).Set(InputIconComponent{});
-    return e.ID();
-}
-
-EntityID TutorialHintHudSystem::SpawnText(EntityID canvas, const char *name, const char *text)
-{
-    auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UITextComponent>();
-    auto e    = EntityFactory::SpawnNamed(*m_world, name, arch);
-
-    UITextComponent tx;
-    tx.text      = text;
-    tx.pixelSize = kTextSize;
-    tx.sortOrder = 113;
-    tx.shadow    = true;
-
-    e.Set(CCL::GameUI::MakeUINode(canvas)).Set(RowTransform()).Set(tx);
-    return e.ID();
+    m_bandID    = find("TutorialHintBand");
+    m_barID     = find("TutorialHintBar");
+    m_fillID    = find("TutorialHintFill");
+    m_iconID    = find("TutorialHintIcon");
+    m_plusID    = find("TutorialHintPlus");
+    m_icon2ID   = find("TutorialHintIcon2");
+    m_textID    = find("TutorialHintText");
+    m_nowIconID = find("TutorialHintNowIcon");
 }
 
 // 全体登録（REGISTER_*）はせず、TutorialScene が登録する

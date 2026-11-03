@@ -3,19 +3,21 @@
 // 概要: チュートリアルのヒント（ボタンのアイコンと1行の説明）を画面の下中央に出す System。
 //
 // 責務:
-//   - 今の項目のアイコンと文言を出し、項目が変わったらフェードインし直す
+//   - プレイヤーが現れたら、TutorialHint プレハブ（帯・ゲージ・アイコン・文・中央のボタン）を生成する
+//   - 今の項目のアイコンと文言を出し、文の長さに合わせて帯の幅と部品の並びを決める
+//   - 項目が変わったらフェードインし直す
 //   - 帯の真下の細いゲージで、今の項目の進み具合を出す
 //   - 回避の補助スローの「今だ」の間は、画面の中央に押すボタンを大きく出す
 //
 // 備考: 何をいつ出すかは TutorialSystem が TutorialState に書く。ここは見た目だけを持つ。
+//       見た目はプレハブ（Assets/Prefabs/UI/TutorialHint.json）が持ち、インスペクタで調整して
+//       インスペクタのプレハブ保存で残す。並べ方の寸法・切り替える色はルートの TutorialHintStyleComponent。
 //       全体登録はせず、TutorialScene だけが登録する。
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
+#include "Game/UI/HUD/TutorialHintStyleComponent.h"
 
-#include "Engine/UI/ECS/Components/UITransformComponent.h"
-
-#include <DirectXMath.h>
 #include <string>
 
 class TutorialHintHudSystem : public CCL::ECS::IfSystem<TutorialHintHudSystem>
@@ -29,19 +31,14 @@ public:
     void Update(float dt) override;
 
 private:
-    // --- 生成 ---
-    void               Build();
-    CCL::ECS::EntityID SpawnImage(CCL::ECS::EntityID canvas, const char *name, DirectX::XMFLOAT4 color, int sortOrder);
-    CCL::ECS::EntityID SpawnIcon(CCL::ECS::EntityID canvas, const char *name, const UITransformComponent &t, int sortOrder);
-    CCL::ECS::EntityID SpawnText(CCL::ECS::EntityID canvas, const char *name, const char *text);
-
-    // 帯の中身の置き方。画面の下辺の中央を基準に、左端と縦の中央を合わせる。位置と大きさは ApplyHint が決める
-    static UITransformComponent RowTransform();
+    // TutorialHint プレハブを生成し、部品の子を名前で引く
+    void SpawnHud();
 
     // --- 更新 ---
-    void ApplyHint(const TutorialStepDef &def, bool assist); // アイコンと文言を書き、文の幅に合わせて並べ直す
-    void UpdateGauge(const TutorialState &state, float dt);
-    void UpdateNowButton(const TutorialState &state, float dt);
+    // アイコンと文言を書き、文の幅に合わせて並べ直す
+    void ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style);
+    void UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);
+    void UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);
 
     // x は帯の中心からの横位置（左端）、y は帯の中心からの縦位置（中心。下が正）
     void SetRect(CCL::ECS::EntityID id, float x, float y, float width, float height);
@@ -50,9 +47,10 @@ private:
     // 文字の幅を測る仕組みが UI に無いので、半角は高さの半分、全角は高さと同じ幅として数える
     static float EstimateWidth(const std::string &text, float pixelSize);
 
-    bool m_built = false;
+    CCL::ECS::EntityID m_rootID  = CCL::ECS::InvalidEntityID; // プレハブのルート（Canvas と TutorialHintStyle）
+    bool               m_spawned = false;                     // 生成を試したか（失敗しても毎フレーム読み直さない）
 
-    // --- 帯 ---
+    // --- 帯（TutorialHintRow の子） ---
     CCL::ECS::EntityID m_bandID  = CCL::ECS::InvalidEntityID; // 下地の黒帯
     CCL::ECS::EntityID m_barID   = CCL::ECS::InvalidEntityID; // 帯の真下のゲージの地
     CCL::ECS::EntityID m_fillID  = CCL::ECS::InvalidEntityID; // ゲージの中身
@@ -64,8 +62,7 @@ private:
     // --- 画面の中央 ---
     CCL::ECS::EntityID m_nowIconID = CCL::ECS::InvalidEntityID; // 「今だ」の間に大きく出すボタン
 
-    int   m_lastStep   = -1;    // 最後に書いた項目。変わったら書き換える
-    bool  m_lastAssist = false; // 最後に書いたとき「今だ」だったか
+    int   m_lastStep   = -1;    // 最後に出した項目。変わったらフェードインし直す
     bool  m_hasSecond  = false; // 今のヒントが同時押し（アイコン2つ）か
     float m_bandWidth  = 0.0f;  // 帯の幅（px）
     float m_alpha      = 0.0f;  // 帯全体の不透明度
