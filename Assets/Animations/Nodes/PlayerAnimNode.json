@@ -250,6 +250,13 @@
             "hash": 3473368617,
             "name": "RushStrike",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2799951452,
+            "name": "RushFinish",
+            "type": 2
         }
     ],
     "states": [
@@ -841,20 +848,35 @@
                 "parameters": [],
                 "states": [
                     {
-                        "applyRootMotion": false,
+                        "applyRootMotion": true,
                         "groupId": 0,
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
                         "nodePosX": -52.0,
-                        "nodePosY": 466.0,
+                        "nodePosY": 450.0,
                         "playbackSpeed": 1.0,
                         "rootMotionCurveName": "",
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushSlash.json",
                         "sequenceName": "RushSlash_A",
                         "speedCurveName": "",
                         "stateHash": 73938368,
                         "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2799951452,
+                                        "paramName": "RushFinish",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2799951452
+                            },
                             {
                                 "blendDuration": 0.10000000149011612,
                                 "conditions": [
@@ -873,7 +895,7 @@
                         ]
                     },
                     {
-                        "applyRootMotion": false,
+                        "applyRootMotion": true,
                         "groupId": 0,
                         "isLoop": false,
                         "isSubMachine": false,
@@ -882,11 +904,26 @@
                         "nodePosY": 594.0,
                         "playbackSpeed": 1.0,
                         "rootMotionCurveName": "",
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushSlash.json",
                         "sequenceName": "RushSlash_B",
                         "speedCurveName": "",
                         "stateHash": 124271225,
                         "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2799951452,
+                                        "paramName": "RushFinish",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2799951452
+                            },
                             {
                                 "blendDuration": 0.10000000149011612,
                                 "conditions": [
@@ -903,6 +940,22 @@
                                 "targetStateHash": 73938368
                             }
                         ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 706.0,
+                        "playbackSpeed": 0.699999988079071,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushFinish.json",
+                        "sequenceName": "RushFinish",
+                        "speedCurveName": "",
+                        "stateHash": 2799951452,
+                        "transitions": []
                     }
                 ]
             },

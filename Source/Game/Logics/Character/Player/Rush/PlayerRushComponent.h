@@ -20,8 +20,8 @@ enum class RushPhase : uint8_t
 {
     Locked = 0, // 回避離脱。回避の向きへ減速しながら離れる。操作不能
     Ready,      // 待機。攻撃の入力だけ受け付ける。攻撃で Attack、時間切れでラッシュが終わる
-    Attack,     // 間合いを詰めて、通常のダッシュ攻撃で斬る。終わったら Flurry
-    Flurry,     // 連撃。攻撃を押すたびにラッシュの次の段を出す。途切れるか上限でラッシュが終わる
+    Attack,     // 間合いを詰めて、通常のダッシュ攻撃で斬る。斬ってから attackDuration で Flurry
+    Flurry,     // 連撃。攻撃を押すたびに次の斬りを出し、決まった数を出したらとどめ。アニメが途切れたら終わる
 };
 
 struct PlayerRushComponent
@@ -30,23 +30,22 @@ struct PlayerRushComponent
 
     float worldScale  = 0.1f; // 世界の時間倍率（1 で等速）
     float playerScale = 1.0f; // プレイヤーの時間倍率（1 で実時間）
-    float slowRecover = 0.4f; // 終わった後、等速へ戻るまで（秒）
+    float slowRecover   = 0.4f; // 終わった後、等速へ戻るまで（秒）
+    float finishRecover = 0.4f; // とどめで終えた後、等速へ戻るまで（秒）。余韻を残すため slowRecover より長くする
 
     // --- フェーズの長さ（秒）---
 
     float lockedDuration = 0.25f; // 回避離脱。離脱の移動にかける時間
     float readyDuration  = 0.40f; // 待機。この間に攻撃しなければラッシュが終わる
-    float attackDuration = 0.35f; // 攻撃（詰め＋斬り）
+    float attackDuration = 0.35f; // 攻撃。詰めの斬りを出してから連撃へ移るまで。詰めきれずにこれを過ぎたら、ラッシュを終える
 
-    // --- 連撃（秒）---
+    // --- 連撃 ---
 
-    // 段は、アニメグラフの RushCombo（Attack_1 を速く流す RushSlash_A / B を交互に）。
-    // ダッシュ攻撃の後、RushAttack のトリガーで1段ずつ進む
-    int   rushStepCount     = 8;    // ラッシュの段の数の上限
-    float rushInputBuffer   = 0.5f; // 押した攻撃を、次の段の受付区間が来るまで覚えておく時間
-    float flurryKeepTime    = 1.0f; // 攻撃を押してから、次を押さずに連撃が続く時間。次の段の受付区間が来るより長くする
-    float flurryFinishTime  = 1.0f; // 最後の段を出してから、ラッシュを終えるまでの時間
-    float flurryMaxDuration = 6.0f; // 連撃の上限。押し続けても、ここで終わる
+    // アニメグラフの RushCombo。ダッシュ攻撃の後、RushAttack で斬り（RushSlash_A / B を交互）、
+    // 斬りを rushStepCount 回出した後に押すと、RushFinish でとどめを出す
+    int   rushStepCount     = 4;     // とどめの前に出す斬りの数
+    float rushInputBuffer   = 0.5f;  // 押した攻撃を、次の受付区間が来るまで覚えておく時間（秒）
+    float flurryMaxDuration = 10.0f; // 連撃の上限（秒）。アニメが続いていても、ここで終える
 
     // --- 回避離脱 ---
 
@@ -64,11 +63,14 @@ struct PlayerRushComponent
     // --- 実行時の状態 ---
 
     bool      isActive    = false;             // ラッシュ中か
+    bool      isRecovering = false;            // 終えた後、世界のスローが戻りきるのを待っているか（その間もプレイヤーは実時間）
     RushPhase phase       = RushPhase::Locked; // 今のフェーズ
-    float     timer       = 0.0f;              // 今のフェーズの残り（秒）。回避離脱では使わない。連撃では次の攻撃までの猶予
+    float     timer       = 0.0f;              // 今のフェーズの残り（秒）。回避離脱では使わない
     bool      attackFired = false;             // Attack で斬りを出したか
-    float     flurryTime  = 0.0f;              // 連撃に入ってからの時間（秒）。flurryMaxDuration で終える
-    int       rushStep    = 0;                 // 出したラッシュの段の数（詰めの斬りは数えない。最初の連撃で 1）
+    int       rushStep    = 0;                 // 連撃の斬りに入った数（アニメのステートで数える。詰めの斬りととどめは数えない）
+    bool      finishEntered = false;           // とどめのアニメに入ったか
+
+    uint32_t lastAnimState = 0; // 前のステップに見たアニメのステート（斬りに入った瞬間を数えるため）
 
     DirectX::SimpleMath::Vector3 evadeDir      = {0, 0, 0};                 // 離脱の向き（ダッシュの向き・正規化済み）
     DirectX::SimpleMath::Vector3 closeInDir    = {0, 0, 0};                 // 詰める向き（正規化済み）
