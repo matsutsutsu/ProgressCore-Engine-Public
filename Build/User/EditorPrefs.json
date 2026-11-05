@@ -7,7 +7,7 @@
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
         "Cinematic": "Assets\\Cinematics",
         "Model": "Assets\\Models\\Test",
-        "Prefab": "Assets\\Prefabs\\Player",
+        "Prefab": "Assets\\Prefabs\\Particles",
         "Scene": "Assets\\Scene\\TestScene",
         "Texture": "Assets\\Textures\\VFX\\Particle",
         "Timeline": "Assets\\Timelines"
