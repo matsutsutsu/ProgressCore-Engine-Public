@@ -7,21 +7,21 @@
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": false,
-                    "playbackSpeed": 0.699999988079071
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        29.38715362548828,
+                        -7.665353489558196e-21,
                         0.0,
-                        15.175006866455078
+                        9.41185891905225e-21
                     ],
                     "desiredVelocity": [
-                        0.8885289430618286,
                         0.0,
-                        0.458820641040802
+                        0.0,
+                        0.0
                     ],
-                    "isRootMotionActive": true,
+                    "isRootMotionActive": false,
                     "jumpImpulse": false,
                     "moveIntensity": 0.0,
                     "overrideSpeed": -1.0,
@@ -95,12 +95,12 @@
                     "turnSpeed": 10.0
                 },
                 "Player Dash Component": {
-                    "currentTimer": -0.003333514556288719,
+                    "currentTimer": -0.005458807572722435,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        -0.06714143604040146,
+                        -0.9998650550842285,
                         0.0,
-                        -0.9977434873580933
+                        0.0164286307990551
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -166,13 +166,18 @@
                     "attackFired": true,
                     "closeInSpeed": 150.0,
                     "closeInStopDistance": 20.0,
+                    "finishRecover": 0.4000000059604645,
                     "flurryMaxDuration": 10.0,
                     "invincibleRefresh": 0.10000000149011612,
                     "isActive": false,
+                    "isRecovering": false,
                     "leapSpeed": 168.0,
                     "lockedDuration": 0.3199999928474426,
                     "playerScale": 1.0,
-                    "readyDuration": 1.2300000190734863,
+                    "readyDuration": 2.4000000953674316,
+                    "rushInputBuffer": 0.5,
+                    "rushStep": 4,
+                    "rushStepCount": 4,
                     "slowRecover": 0.4000000059604645,
                     "timer": 0.0,
                     "worldScale": 0.05000000074505806
@@ -190,15 +195,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        57.38518142700195,
-                        0.11600276827812195,
-                        -46.57449722290039
+                        -88.14395904541016,
+                        -0.03940686956048012,
+                        -12.539368629455566
                     ],
                     "rotation": [
-                        3.000345365338224e-39,
-                        0.5201823711395264,
-                        4.926082582533532e-39,
-                        0.8540552258491516
+                        0.0,
+                        0.3351275324821472,
+                        -1.401298464324817e-45,
+                        -0.9421727657318115
                     ],
                     "scale": [
                         3.5,

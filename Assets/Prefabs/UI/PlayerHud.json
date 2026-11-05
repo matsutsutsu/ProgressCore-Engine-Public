@@ -117,6 +117,43 @@
                 }
             },
             "lid": 4
+        },
+        {
+            "components": {
+                "Name": {
+                    "name": "RushPrompt"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1
+                },
+                "UI Image (画像/単色)": {
+                    "texturePath": "",
+                    "visible": false,
+                    "sortOrder": 96
+                },
+                "Input Icon (操作アイコン)": {
+                    "kind": 0
+                },
+                "Rush Prompt Style (ラッシュの合図)": {
+                    "iconSize": 48.0,
+                    "ringRadius": 34.0,
+                    "ringThickness": 3.0,
+                    "ringColor": [1.0, 0.92, 0.70, 1.0],
+                    "trackColor": [0.0, 0.0, 0.0, 0.45],
+                    "warnColor": [0.95, 0.18, 0.22, 1.0],
+                    "targetOffset": [72.0, -48.0],
+                    "fallbackAnchor": [0.5, 0.62],
+                    "appearTime": 0.15,
+                    "appearOpen": 0.6,
+                    "warnRatio": 0.3,
+                    "burstTime": 0.18,
+                    "burstScale": 0.8,
+                    "fadeIn": 20.0,
+                    "fadeOut": 8.0
+                }
+            },
+            "lid": 5
         }
     ],
     "magic": 1397506883,

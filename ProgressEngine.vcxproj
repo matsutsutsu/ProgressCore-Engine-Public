@@ -756,6 +756,8 @@
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerStyleComponent.h" />
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptStyleComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\ScreenHeadingUi.h" />
@@ -1244,6 +1246,8 @@
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerStyleComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp" />

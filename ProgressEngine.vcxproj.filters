@@ -834,6 +834,12 @@
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptStyleComponent.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
@@ -2280,6 +2286,12 @@
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp">
