@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: テクスチャ・RTV・SRV を1組にしたレンダーターゲット。
+// 概要: テクスチャ・RTV・SRV を1組にしたレンダーターゲット
 //
 // 責務:
 //   - 指定サイズ・フォーマットでテクスチャと RTV・SRV を作り、持つ
 //   - クリアと、出力先への設定（ビューポート込み）を行う
 //
-// 備考: オフスクリーン描画やポストエフェクトの中間バッファに使う。
-//       Create() で作り、Release() かデストラクタで解放する。Create() し直せば作り直せる。
-//       多くのファイルが include するので、実装は .cpp に置く（インラインにするとビルドが遅くなる）。
+// 備考: オフスクリーン描画やポストエフェクトの中間バッファに使う
+//       Create() で作り、Release() かデストラクタで解放する。Create() し直せば作り直せる
+//       多くのファイルが include するので、実装は .cpp に置く（インラインにするとビルドが遅くなる）
 // ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
@@ -22,10 +22,7 @@ public:
     RenderTarget(const RenderTarget &)            = delete;
     RenderTarget &operator=(const RenderTarget &) = delete;
 
-    /**
-     * @brief GPU リソースを作る。既にあれば解放してから作り直す。
-     * @return 成功なら true。失敗したらログを出して false（前のリソースは解放済み）。
-     */
+    // GPU のリソースを作る。すでにあれば解放して作り直す。失敗したらログを出して false
     bool Create(ID3D11Device *device, UINT width, UINT height, DXGI_FORMAT format);
 
     // 持っているリソースを解放する
@@ -37,10 +34,7 @@ public:
     // 指定色でクリアする
     void Clear(ID3D11DeviceContext *dc, const float color[4]);
 
-    /**
-     * @brief 出力先に設定する（ビューポートも合わせて設定する）。
-     * @param dsv 深度ステンシルビュー。使わないなら nullptr
-     */
+    // 出力先にし、ビューポートも合わせる。dsv を使わないなら nullptr
     void Activate(ID3D11DeviceContext *dc, ID3D11DepthStencilView *dsv = nullptr);
 
     // ---- アクセサ ----

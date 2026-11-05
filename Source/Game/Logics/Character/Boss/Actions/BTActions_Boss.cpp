@@ -4,14 +4,14 @@
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/Character/Boss/Components/BossActionComponent.h" // 跳躍と突進の段
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // ドローンの技の時間割
-#include "Engine/ECS/Core/CCL_World.h" // world->GetComponent
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Engine/ECS/Core/CCL_World.h"
 
-#include <algorithm> // 待機の秒数を 0 以上にそろえる
+#include <algorithm>
 #include <cassert>
-#include <cmath> // 枠番号は param（float）で来るので丸める
+#include <cmath>
 
 namespace CCL::AI::BT
 {
@@ -21,12 +21,12 @@ namespace CCL::AI::BT
         // 共通の補助
         // ---------------------------------------------------------------------------
 
-        // nodeTimers の特別な値。
+        // nodeTimers の特別な値
         // 減らすのは BehaviorTreeSystem で、0 で止まる
         constexpr float kTimerNotStarted = -1.0f; // ノードに入った最初のフレーム
         constexpr float kTimerFinished   = 0.0f;  // 決めた時間を使い切った
 
-        // 評価中のノードの残り時間。
+        // 評価中のノードの残り時間
         // 配列がノード数と合わない木は
         // BehaviorTreeSystem::Update が評価しないので、
         // 範囲外にはならない
@@ -36,7 +36,9 @@ namespace CCL::AI::BT
             return ctx.bt->nodeTimers[ctx.nodeId];
         }
 
-        // ボスの足が地面から離れているか。
+
+
+        // ボスの足が地面から離れているか
         // 空中の技を途中で打ち切らせないために使う
         bool IsAirborne(BTContext &ctx)
         {
@@ -70,6 +72,8 @@ namespace CCL::AI::BT
             return false;
         }
 
+
+
         // ---------------------------------------------------------------------------
         // 汎用の行動（待機・蓄積ダメージ）
         // ---------------------------------------------------------------------------
@@ -83,8 +87,8 @@ namespace CCL::AI::BT
                 float &timer = NodeTimer(ctx);
 
                 // 入った最初のフレームに待つ秒数を入れ、
-                // 使い切ったら完了する（減らすのは BehaviorTreeSystem）。
-                // 負の秒数は 0 にそろえる。
+                // 使い切ったら完了する（減らすのは BehaviorTreeSystem）
+                // 負の秒数は 0 にそろえる
                 // そのままだと 0 にも -1 にもならず、時間切れを判定できない
                 if (timer == kTimerNotStarted)
                 {
@@ -111,7 +115,7 @@ namespace CCL::AI::BT
         // 移動
         // ---------------------------------------------------------------------------
 
-        // 相手へ歩いて近づく。
+        // 相手へ歩いて近づく
         // 一定時間ごとに Success を返し、BT に次の行動を選び直させる
         class MoveAction : public IBTAction
         {
@@ -149,9 +153,9 @@ namespace CCL::AI::BT
         // 体を動かす技（後方ステップ・跳躍・突進・横移動・間合いを取る・様子見）
         // ---------------------------------------------------------------------------
 
-        // ボス本体へ技を要求し、技が硬直まで終わったら完了する。
-        // 技の長さは BossActionComponent の段ごとの時間が決め、BT は持たない。
-        // 攻撃判定の時間はアニメクリップの HitBox イベントが決める。
+        // ボス本体へ技を要求し、技が硬直まで終わったら完了する
+        // 技の長さは BossActionComponent の段ごとの時間が決め、BT は持たない
+        // 攻撃判定の時間はアニメクリップの HitBox イベントが決める
         class MotionAction : public IBTAction
         {
         public:
@@ -203,9 +207,9 @@ namespace CCL::AI::BT
                 return BTNodeState::Running;
             }
 
-            // 別の枝が割り込もうとしたとき、打ち切ってよいか。
-            // BehaviorTreeSystem::CanAbortSubtree が基底クラス経由で呼ぶ。
-            // 空中では打ち切らせない。
+            // 別の枝が割り込もうとしたとき、打ち切ってよいか
+            // BehaviorTreeSystem::CanAbortSubtree が基底クラス経由で呼ぶ
+            // 空中では打ち切らせない
             // 要求が書かれなくなると BossActionSystem が待機へ倒れ、
             // 放物線の途中から落ちる
             bool CanAbort(BTContext &ctx) const override { return !IsAirborne(ctx); }
@@ -215,7 +219,7 @@ namespace CCL::AI::BT
         // ドローンへの指示（陣形・攻撃開始）
         // ---------------------------------------------------------------------------
 
-        // ドローンへ陣形を指示して、すぐに完了する。
+        // ドローンへ陣形を指示して、すぐに完了する
         // 予告や硬直の長さは持たず、BT のノードの並びで表す
         // （数字を C++ と BT の2か所に持たないため）:
         //     [陣形] [Wait 予告] [Strike] [Wait 攻撃＋硬直] [帰投] [Wait 次までの間]
@@ -238,16 +242,16 @@ namespace CCL::AI::BT
                 ctx.bt->lastLogActionId = id; // BT デバッガに出す行動名
 
                 // このノードが指す陣形を引く
-                // （C++ の陣形は ActionID から、データの陣形は param の枠番号から）。
-                // 対応する陣形が無ければ、指示を出さずに失敗する
+                // （C++ の陣形は ActionID から、データの陣形は param の枠番号から）
+                // 対応する陣形がなければ、指示を出さずに失敗する
                 DroneFormationType formation = DroneFormationType::None;
                 if (!TryResolveFormation(ctx, formation)) return BTNodeState::Failure;
 
                 auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity);
                 if (!cmd) return BTNodeState::Failure;
 
-                // 陣形を指示する。
-                // 読むのは DroneCommandSystem で、各機の持ち場へ配る。
+                // 陣形を指示する
+                // 読むのは DroneCommandSystem で、各機の持ち場へ配る
                 // 攻撃信号もここで下ろす。前の技の「今撃て」が残ると、
                 // 組み上がる途中の陣形が突っ込む
                 cmd->requestFormation  = formation;
@@ -255,16 +259,16 @@ namespace CCL::AI::BT
                 return BTNodeState::Success;
             }
 
-            // このノードが指す陣形を out に書いて true を返す。
+            // このノードが指す陣形を out に書いて true を返す
             // データの技は param の枠番号から、
-            // C++ の陣形技は ActionID から引く。
+            // C++ の陣形技は ActionID から引く
             // 引けなければ false（out はそのまま）
             bool TryResolveFormation(const BTContext &ctx, DroneFormationType &out) const
             {
                 // データ駆動の陣形の場合は param が枠番号になる
                 if (id == A_DroneFormation)
                 {
-                    // param は float で来るので丸める。
+                    // param は float で来るので丸める
                     // 0 は None、1～48 が陣形の枠番号
                     const int slot = static_cast<int>(std::lround(ctx.param));
                     if (slot <= 0 || slot >= static_cast<int>(kDroneFormationSlotCount))
@@ -275,16 +279,16 @@ namespace CCL::AI::BT
                     return true;
                 }
 
-                // C++ で書いた陣形技は、ActionID → 陣形の対応表を引く。
-                // 表に無い ID なら false。
+                // C++ で書いた陣形技は、ActionID → 陣形の対応表を引く
+                // 表にない ID なら false
                 // 対応表は BT_DRONE_ACTION_LIST の1か所だけに書く
                 return TryGetDroneFormation(id, out);
             }
         };
 
         // ドローンの攻撃開始。「今撃て」信号を立て、
-        // 下ろすのは次の陣形の指示（DroneAction）。
-        // [陣形] の後ろにこれが無い枝は、陣形を組んで戻るだけになる
+        // 下ろすのは次の陣形の指示（DroneAction）
+        // [陣形] の後ろにこれがない枝は、陣形を組んで戻るだけになる
         class DroneStrikeAction : public IBTAction
         {
         public:
@@ -305,7 +309,7 @@ namespace CCL::AI::BT
             }
         };
 
-        // ドローンの技を、予告から帰投まで1つのノードで出す。
+        // ドローンの技を、予告から帰投まで1つのノードで出す
         // 時間割は陣形が持つ（データの技は陣形エディタで決める）:
         //     [陣形] ─ 予告 ─ [撃つ] ─ 撃ってから戻すまで ─ [頭上円陣] ─ 間 ─ 完了
         // 時計は nodeTimers の1本だけ。最初のフレームに合計を入れ、残り時間から今の段を出す
@@ -341,7 +345,7 @@ namespace CCL::AI::BT
                 }
                 const auto formation = static_cast<DroneFormationType>(slot);
 
-                // 陣形が無い枠や、技でない隊形（円陣）を指していたら失敗する
+                // 陣形がない枠や、技でない隊形（円陣）を指していたら失敗する
                 const auto *registry = Formation::FormationRegistry::Find(*ctx.world);
                 const auto *technique = registry ? registry->Get(formation) : nullptr;
 
@@ -367,7 +371,7 @@ namespace CCL::AI::BT
                 {
                     timer = total;
 
-                    // 攻撃信号もここで下ろす。
+                    // 攻撃信号もここで下ろす
                     // 前の技の「今撃て」が残ると、組み上がる途中の陣形が突っ込む
                     cmd->requestFormation  = formation;
                     cmd->droneAttackActive = false;
@@ -377,7 +381,7 @@ namespace CCL::AI::BT
                 // 3. 段の境目
                 // ---------------------------------------------------------
 
-                // このフレームで進んだ区間（prev, now] に境目が入っていたら、その指示を出す。
+                // このフレームで進んだ区間（prev, now] に境目が入っていたら、その指示を出す
                 // 毎フレーム書かずに境目でだけ書くのは、陣形・攻撃実行・頭上円陣のノードを並べていたときと同じにするため
                 const float now  = total - timer;
                 const float prev = first ? -1.0f : now - ctx.dt;
@@ -440,7 +444,7 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_DroneFormation, std::make_unique<DroneAction>(A_DroneFormation));
 
         // C++ で書いた陣形は表から直接登録する
-        // （連番ループだと欠番も登録してしまう）。
+        // （連番ループだと欠番も登録してしまう）
         // 表の1行ごとに
         // 「reg.RegisterActionInstance(名前, DroneAction(名前));」が並ぶ
 #define CCL_REGISTER_DRONE_ACTION(Name, Id, Formation, Role, Display) reg.RegisterActionInstance(Name, std::make_unique<DroneAction>(Name));

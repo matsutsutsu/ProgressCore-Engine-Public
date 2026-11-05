@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近や横の速さ・被弾・ステージの端・左右の空き）。
+// 概要: どの敵でも使える汎用の BT 条件（距離・角度・接近や横の速さ・被弾・ステージの端・左右の空き）
 //
 // 責務:
 //   - blackboard の値とノードの param を比べる条件を定義する
 //   - それらを BTActionRegistry へ登録する（RegisterCommonConditions）
 //
-// 備考: ボス固有の条件は BTConditions_Boss.h。
+// 備考: ボス固有の条件は BTConditions_Boss.h
 //       間合いを ID ではなく param で持つのは、距離を条件クラスに定数で埋めると
-//       「敵の種類 × 間合い」の数だけ ActionID が増え、中間の値も作れないため。
+//       「敵の種類 × 間合い」の数だけ ActionID が増え、中間の値も作れないため
 // ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
@@ -17,7 +17,7 @@
 
 namespace CCL::AI::BT
 {
-    // ターゲットとの距離が param 未満。
+    // ターゲットとの距離が param 未満
     class DistanceLessThan : public IBTCondition
     {
     public:
@@ -27,7 +27,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // ターゲットとの距離が param より大きい。
+    // ターゲットとの距離が param より大きい
     class DistanceGreaterThan : public IBTCondition
     {
     public:
@@ -47,7 +47,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が正面 ±param 度の外側にいる（回り込まれている）。param=120 で背後側。
+    // 相手が正面 ±param 度の外側にいる（回り込まれている）。param=120 で背後側
     class TargetAngleGreaterThan : public IBTCondition
     {
     public:
@@ -57,7 +57,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が param m/s 以上の速さで近づいてきている。踏み込んでくる相手に合わせて出す技の条件に使う。
+    // 相手が param m/s 以上の速さで近づいてきている。踏み込んでくる相手に合わせて出す技の条件に使う
     class TargetApproaching : public IBTCondition
     {
     public:
@@ -77,7 +77,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手が param m/s 以上の速さで、自分の周りを横へ回っている。横に動き回る相手に合わせて出す技の条件に使う。
+    // 相手が param m/s 以上の速さで、自分の周りを横へ回っている。横に動き回る相手に合わせて出す技の条件に使う
     class TargetStrafing : public IBTCondition
     {
     public:
@@ -87,7 +87,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手の速さが param m/s 未満（止まりぎみ）。その場に留まる相手に合わせて出す技の条件に使う。
+    // 相手の速さが param m/s 未満（止まりぎみ）。その場に留まる相手に合わせて出す技の条件に使う
     class TargetSlow : public IBTCondition
     {
     public:
@@ -108,7 +108,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // ステージの端から param m 以内に居る。param=0 で壁際まで来たとき
+    // ステージの端から param m 以内にいる。param=0 で壁際まで来たとき
     class IsAtStageEdge : public IBTCondition
     {
     public:
@@ -128,7 +128,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 追い込まれている：ステージの端から param m 以内に居て、相手が中央側 ±70 度にいる（逃げ道を塞がれている）。
+    // 追い込まれている：ステージの端から param m 以内にいて、相手が中央側 ±70 度にいる（逃げ道を塞がれている）
     // C_IsAtStageEdge と C_TargetOnCenterSide の AND。スコアの状況による倍率は条件を1つしか持てないので、まとめた条件を用意する
     class Cornered : public IBTCondition
     {
@@ -151,7 +151,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手を向いて右に param m 以上の空きがある。
+    // 相手を向いて右に param m 以上の空きがある
     class SpaceOnRight : public IBTCondition
     {
     public:
@@ -171,7 +171,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ。
+    // どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ
     inline void RegisterCommonConditions()
     {
         auto &reg = BTActionRegistry::Instance();

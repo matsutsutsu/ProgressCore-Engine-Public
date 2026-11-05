@@ -1,5 +1,3 @@
-// ModelComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Platform/Core/Dialog.h"
@@ -17,8 +15,8 @@
 
 // ============================================================================
 // シリアライズ
-//   assetHash はパスに戻せないので、ResourceManager で引いたパスを保存する。
-//   generateLod は true のときだけ書く（既存のプレハブやシーンを保存し直しても差分を出さない）。
+//   assetHash はパスに戻せないので、ResourceManager で引いたパスを保存する
+//   generateLod は true のときだけ書く（既存のプレハブやシーンを保存し直しても差分を出さない）
 // ============================================================================
 namespace ComponentMetaJson
 {

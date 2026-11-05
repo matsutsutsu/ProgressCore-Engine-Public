@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: シェーダーをハッシュで登録し、初めて使うときに作ってキャッシュする入れ物。
+// 概要: シェーダーをハッシュで登録し、初めて使うときに作ってキャッシュする入れ物
 //
 // 責務:
 //   - シェーダーの作り方（ファクトリ）をハッシュごとに登録する
@@ -8,7 +8,7 @@
 //   - RenderQueue の並べ替えで使う 8bit の番号を、登録した順に振る
 //   - エディタのシェーダー選択に出す名前を、登録した順に持つ
 //
-// 備考: 登録は Graphics::Initialize がまとめて行う。
+// 備考: 登録は Graphics::Initialize がまとめて行う
 // ===========================================================================
 #include <unordered_map>
 #include <functional>
@@ -48,7 +48,7 @@ public:
         m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
-    // MaterialShader を名前で登録する。ハッシュは名前から作り、エディタのシェーダー選択にも登録した順に出る。
+    // MaterialShader を名前で登録する。ハッシュは名前から作り、エディタのシェーダー選択にも登録した順に出る
     // ファイルのパスは名前（N）から決まる
     //   cso : Assets/Shader/<N>VS.cso, Assets/Shader/<N>PS.cso
     //   hlsl: Shader/Material/<N>/<N>VS.hlsl, Shader/Material/<N>/<N>PS.hlsl（ホットリロードで監視する）
@@ -77,7 +77,7 @@ public:
         }
     }
 
-    // 作ってあればそれを、無ければファクトリで作って返す。未登録なら ErrorShader を返す
+    // 作ってあればそれを、なければファクトリで作って返す。未登録なら ErrorShader を返す
     Shader *GetShader(uint32_t shaderHash, ID3D11Device *device)
     {
         auto it = m_shaders.find(shaderHash);
@@ -90,7 +90,7 @@ public:
             return m_shaders[shaderHash].get();
         }
 
-        // 未登録なら、画面で気付けるようマゼンタの ErrorShader を返す。
+        // 未登録なら、画面で気付けるようマゼンタの ErrorShader を返す
         // ErrorShader も未登録なら nullptr
         if (shaderHash != "Error"_hash)
         {
@@ -116,7 +116,7 @@ public:
         return it != m_shaderSortIDs.end() ? it->second : 0;
     }
 
-    // 登録した順の (表示名, ハッシュ)。エディタのシェーダー選択が使う。
+    // 登録した順の (表示名, ハッシュ)。エディタのシェーダー選択が使う
     // 選んだ名前からハッシュを計算し直さなくて済むよう、ハッシュも持つ
     const std::vector<std::pair<std::string, uint32_t>> &GetRegisteredNames() const
     {

@@ -14,12 +14,12 @@
 #include "Engine/Graphics/Shader/PostProcess/SSAOEffect.h"
 #include "Engine/Graphics/Components/PostProcess/SSAOConfigComponent.h"
 #include "Engine/Graphics/Shader/PostProcess/PauseBlurEffect.h"
-#include "Engine/Core/App/GameFlowState.h" // ポーズ中だけ背景をぼかすため
+#include "Engine/Core/App/GameFlowState.h"
 
 // システムの実行順序の定義ヘッダー
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従
+#include "Engine/Core/Math/Interpolation.h"
 
 void PostProcessSystem::Update(float dt)
 {
@@ -27,7 +27,7 @@ void PostProcessSystem::Update(float dt)
     auto *postProcess = m_world->GetResource<PostProcessManager *>();
 
     // -------------------------------------------------------
-    // 1. 既定値。コンポーネントが無ければブルームはオフ、露出は 1.0
+    // 1. 既定値。コンポーネントがなければブルームはオフ、露出は 1.0
     // -------------------------------------------------------
     BloomConfigComponent finalBloom;
     finalBloom.enable = false;
@@ -54,11 +54,8 @@ void PostProcessSystem::Update(float dt)
     // -------------------------------------------------------
     // 4. 各エフェクトへ渡す
     // -------------------------------------------------------
-    // SetEnabled() は、コンポーネントが無いときも含めて毎フレーム必ず呼ぶ。
-    // PostProcessManager のエフェクトはアプリ全体で使い回すので、「コンポーネントが無ければ
-    // 何もしない」作りだと、前のシーンでオンにしたエフェクトが次のシーンでも動き続ける
-    // （実際に、ポストエフェクトの設定が無いシーンで前のシーンのエフェクトが動き続け、負荷が上がった）。
-    // 「コンポーネントが無い = 無効」を毎フレーム渡す。
+    // SetEnabled は、コンポーネントがないときも含めて毎フレーム呼ぶ
+    // エフェクトはアプリ全体で使い回すので、ないときに何もしないと、前のシーンでオンにしたエフェクトが動き続ける
 
     if (auto *ssao = postProcess->GetEffect<SSAOEffect>())
     {
@@ -67,9 +64,9 @@ void PostProcessSystem::Update(float dt)
         if (comp) ssao->UpdateParams(comp->data);
     }
 
-    // 放射状ブラーと色収差は、複数の演出が同時に求めることがある。
-    // 各演出は自分のスロットに書くだけで、最終的な値はここで決める。
-    // enable（普段の設定）が false でも演出は出すので、パスのオン/オフは合成後の強さが 0 かどうかで決める。
+    // 放射状ブラーと色収差は、複数の演出が同時に求めることがある
+    // 各演出は自分のスロットに書くだけで、最終的な値はここで決める
+    // enable（普段の設定）が false でも演出は出すので、パスのオン/オフは合成後の強さが 0 かどうかで決める
     if (auto *radial = postProcess->GetEffect<RadialBlurEffect>())
     {
         auto *comp = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
@@ -85,8 +82,8 @@ void PostProcessSystem::Update(float dt)
         }
     }
 
-    // 被写界深度は、ムービーのショットが一時的に上書きする。
-    // 普段の設定がオフでもショットはぼかすので、パスのオン/オフは合成後のぼけが 0 かどうかで決める。
+    // 被写界深度は、ムービーのショットが一時的に上書きする
+    // 普段の設定がオフでもショットはぼかすので、パスのオン/オフは合成後のぼけが 0 かどうかで決める
     if (auto *dof = postProcess->GetEffect<DepthOfFieldEffect>())
     {
         auto *comp = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
@@ -140,9 +137,9 @@ void PostProcessSystem::Update(float dt)
         if (comp) grading->UpdateParams(comp->Resolve());
     }
 
-    // ポーズ中の背景ぼかし。
-    //   世界の時計が止まっていても、この System は描画ステージなので実時間の dt が来る。
-    //   そのためポーズ中でもぼかしの量が徐々に変わり、一瞬で切り替わらない。
+    // ポーズ中の背景ぼかし
+    //   世界の時計が止まっていても、この System は描画ステージなので実時間の dt が来る
+    //   そのためポーズ中でもぼかしの量が徐々に変わり、一瞬で切り替わらない
     if (auto *blur = postProcess->GetEffect<PauseBlurEffect>())
     {
         const bool paused = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
@@ -161,5 +158,7 @@ void PostProcessSystem::Update(float dt)
 
     postProcess->toneMapConfig = finalToneMap;
 }
+
+
 
 REGISTER_RENDER_SYSTEM(PostProcessSystem, Priority::RenderStage::R09_PostProcess);

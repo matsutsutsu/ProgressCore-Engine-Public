@@ -26,7 +26,7 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
     // 生成・破棄の予約を確定させてから保存する（途中の状態の Entity を混ぜないため）
     world->ScrutinyAndApply();
 
-    // level ファイルの隣に <stem>.scene.json を書く。
+    // level ファイルの隣に <stem>.scene.json を書く
     fs::path    lp(levelPath);
     std::string stem = lp.stem().string();
     // "Foo.level.json" のような二重拡張子なら ".level" を外す
@@ -103,6 +103,8 @@ bool LevelSerializer::SaveLevel(World *world, const std::string &levelPath)
     return true;
 }
 
+
+
 // =====================================================================
 // ロード
 // =====================================================================
@@ -139,7 +141,7 @@ bool LevelSerializer::LoadLevel(World *world, const std::string &levelPath)
     fs::path       lp(levelPath);
     const fs::path scenePath = lp.parent_path() / sceneRel;
 
-    // 1. ステージを読み込む（World を全て消して差し替える）
+    // 1. ステージを読み込む（World をすべて消して差し替える）
     SceneManager::Instance().LoadScene(world, scenePath.string());
 
     // 2. プレハブを生成し直す

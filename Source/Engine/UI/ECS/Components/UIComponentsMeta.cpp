@@ -1,4 +1,3 @@
-// UI コンポーネントのシリアライズ/インスペクタ定義。computed*（レイアウト結果）は保存しない。
 #include "UITransformComponent.h"
 #include "UICanvasComponent.h"
 #include "UIImageComponent.h"
@@ -25,7 +24,7 @@ COMPONENT_META_END(UITransformComponent)
 // ===========================================================================
 // UICanvasComponent（UI カテゴリ）
 // ===========================================================================
-// メンバは無いが、登録しないとプレハブに保存されず、読み戻したルートが Canvas でなくなる
+// メンバはないが、登録しないとプレハブに保存されず、読み戻したルートが Canvas でなくなる
 COMPONENT_META_BEGIN_FULL(UICanvasComponent, "UI Canvas (UIのルート)", CCL::Categories::UI, 5, false)
 COMPONENT_META_END(UICanvasComponent)
 

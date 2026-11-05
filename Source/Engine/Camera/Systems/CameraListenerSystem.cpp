@@ -33,5 +33,7 @@ void CameraListenerSystem::Update(float dt)
         {up.x, up.y, up.z});
 }
 
+
+
 // CameraBrainSystem(R01b) がメインカメラを確定した後に読む
 REGISTER_RENDER_SYSTEM(CameraListenerSystem, Priority::RenderStage::R02_Environment);

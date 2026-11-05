@@ -16,7 +16,7 @@ void UIButtonSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID id, const UIInteractableComponent &inter,
                       const UIButtonComponent &btn, UIImageComponent &img) {
-        // 状態に応じた色へ差し替える（優先度は 無効 > 押下 > hover/focus > 通常）。
+        // 状態に応じた色へ差し替える（優先度は 無効 > 押下 > hover/focus > 通常）
         // マウスの hover とパッド/キーの focus は同じハイライトにする
         if (!inter.interactable)
             img.color = btn.disabledColor;
@@ -47,5 +47,7 @@ void UIButtonSystem::Update(float /*dt*/)
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIButtonSystem, Priority::RenderStage::R10_UI);

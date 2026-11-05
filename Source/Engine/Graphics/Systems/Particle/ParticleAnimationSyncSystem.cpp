@@ -24,7 +24,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
         // 1. owner を探す
         // ---------------------------------------------------------
 
-        // 見つかったら以後は親をたどらない。見つからない間は毎フレーム探し直す（階層が後から組まれる場合）。
+        // 見つかったら以後は親をたどらない。見つからない間は毎フレーム探し直す（階層が後から組まれる場合）
         //   親の循環に備えて 32 段で打ち切る
         if (particle.ownerEntity == InvalidEntityID)
         {
@@ -50,7 +50,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
 
         if (!animator || !animator->currentSequence)
         {
-            particle.SetEmitting(false); // 再生中のアニメーションが無いので出さない
+            particle.SetEmitting(false); // 再生中のアニメーションがないので出さない
             return;
         }
 
@@ -58,7 +58,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
         // 3. Particle 区間の判定
         // ---------------------------------------------------------
 
-        // タグは見ず、どれか 1 つの Particle 区間に入っていればオンにする。
+        // タグは見ず、どれか 1 つの Particle 区間に入っていればオンにする
         //   止めても出ている粒子は寿命まで残るので、区間の終わりで尾を引いて消える
         const AnimSequence *seq    = animator->currentSequence;
         bool                inside = false;
@@ -74,7 +74,7 @@ void ParticleAnimationSyncSystem::Update(float /*dt*/)
             }
         }
 
-        // 全エミッタへまとめて反映する。
+        // 全エミッタへまとめて反映する
         //   タグで出し分けるなら、tagHash は HitBox にしか求めていないので、
         //   ResourceManager::LoadAnimSequence で Particle にも求めるところから広げる
         particle.SetEmitting(inside);

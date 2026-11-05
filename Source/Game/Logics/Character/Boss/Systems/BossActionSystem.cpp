@@ -2,10 +2,10 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
-#include "Engine/Core/App/GameFlowState.h"                           // cinematic
-#include "Engine/Animation/Core/AnimStateMachine.h"                  // 止まりのモーションの長さ
-#include "Engine/Animation/Components/AnimParametersComponent.h"     // 技の開始のトリガー
-#include "Engine/Animation/Components/RootMotionComponent.h"         // 横移動中は足滑り補正を止める
+#include "Engine/Core/App/GameFlowState.h"
+#include "Engine/Animation/Core/AnimStateMachine.h"
+#include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 
@@ -92,7 +92,7 @@ namespace
 
 
     // 間合いを取る移動の向きの決め方
-    // 前後へはこの角度までしか傾けない。アニメが左右の横移動しか無いため
+    // 前後へはこの角度までしか傾けない。アニメが左右の横移動しかないため
     constexpr float kRepositionMaxTiltDeg  = 40.0f; // 真横からの傾きの上限 [度]
     constexpr float kRepositionRadialRange = 10.0f; // 保ちたい距離からこれだけずれると、前後が横と同じ強さ [m]
 
@@ -161,17 +161,16 @@ namespace
 // 入口
 // ---------------------------------------------------------------------------
 
-// テンプレート引数以外に読む型の申告
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
+    // テンプレート引数に足すと ForEach の絞り込みにもなり、アニメを持たないボスで動かなくなる
     types.push_back(CCL::ECS::TypeInfo<AnimStateMachineComponent>::ID()); // 止まりのモーションの長さと、ひるみ中か
     return types;
 }
 
 
 
-// テンプレート引数以外に書く型の申告
 std::vector<CCL::ECS::TypeID> BossActionSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
@@ -182,7 +181,6 @@ std::vector<CCL::ECS::TypeID> BossActionSystem::GetWriteTypes() const
 
 
 
-// ボス全員の、技の切り替えと1フレーム分の動き
 void BossActionSystem::Update(float rawDt)
 {
     // 処理フロー:
@@ -313,7 +311,6 @@ void BossActionSystem::Update(float rawDt)
 
 
 
-// デバッグ用。ボスの位置をインスペクタから直接動かす
 void BossActionSystem::OnGui()
 {
     auto bossView = m_world->View<TransformComponent, BossActionComponent>();
@@ -350,7 +347,6 @@ void BossActionSystem::OnGui()
 // 移動系の状態
 // ---------------------------------------------------------------------------
 
-// ボスの待機。足を止め、相手の方へゆっくり向き直る
 void BossActionSystem::ProcessIdle(BossActionComponent &bossAction, const Frame &frame)
 {
     // 足を止める
@@ -361,14 +357,13 @@ void BossActionSystem::ProcessIdle(BossActionComponent &bossAction, const Frame 
     if (bossAction.isFlinching) return;
 
     // 相手の方へ、移動中より遅く向き直る
-    // すぐ正対すると、背後を取る意味が無くなる
+    // すぐ正対すると、背後を取る意味がなくなる
     FaceToward(frame.transform, FlatToward(frame.transform.position, frame.playerPos), bossAction.idleTurnSpeed, frame.dt,
                frame.joltHandle);
 }
 
 
 
-// ボスの移動。Jolt の walkSpeed で相手へ向かって歩く
 void BossActionSystem::ProcessMove(BossActionComponent &bossAction, const Frame &frame)
 {
     Vector3 toPlayerDir = FlatToward(frame.transform.position, frame.playerPos);
@@ -396,8 +391,6 @@ void BossActionSystem::ProcessMove(BossActionComponent &bossAction, const Frame 
 // 行動の切り替え
 // ---------------------------------------------------------------------------
 
-// BT の技(ActionID)を、体の動き(BossActionState)に変える
-// 知らない技は待機(None)
 BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 {
     if (actionId == A_Move) return BossActionState::Move;
@@ -415,8 +408,6 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
 
 
 
-// 跳躍の技(ActionID)に対応する跳び方を返す。跳躍の技でなければ nullptr
-// 跳躍を増やすときは、ここに1行と BossActionComponent に BossLeapDef を1つ足す
 const BossLeapDef *BossActionSystem::LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const
 {
     if (actionId == A_BossLeapEscape) return &bossAction.escapeLeap;
@@ -427,7 +418,6 @@ const BossLeapDef *BossActionSystem::LeapDefOf(ActionID actionId, const BossActi
 
 
 
-// ひるみのアニメを再生しているかを読み、明けてからの冷却を進める
 void BossActionSystem::UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine,
                                     float dt) const
 {
@@ -458,7 +448,6 @@ void BossActionSystem::UpdateFlinch(BossActionComponent &bossAction, const AnimS
 
 
 
-// 状態遷移に入った瞬間呼ばれる処理
 void BossActionSystem::OnEnterState(BossActionState nextState, ActionID actionId, float actionParam,
                                     BossActionComponent &bossAction, const Frame &frame)
 {
@@ -562,8 +551,6 @@ void BossActionSystem::OnEnterState(BossActionState nextState, ActionID actionId
 // 技の状態
 // ---------------------------------------------------------------------------
 
-// ボスの後方ステップ。相手を向いたまま素早く下がり、着地して硬直する
-// 下がる移動そのものは、OnEnterState で予約した MoveTo が運ぶ
 void BossActionSystem::ProcessBackStep(BossActionComponent &bossAction, const Frame &frame)
 {
     // 入った瞬間の相手の方向を向き続ける（後から追わない）
@@ -589,8 +576,6 @@ void BossActionSystem::ProcessBackStep(BossActionComponent &bossAction, const Fr
 
 
 
-// ボスの横移動。相手を向いたまま、入った瞬間に決めた真横へ進む
-// 加速 → 最高速 → 減速。各段の移動は予約が運び、ここでは段の切り替えと向きだけを決める
 void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const Frame &frame)
 {
     // --- 段の切り替え ---
@@ -603,7 +588,7 @@ void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const 
         {
         case BossSideTravelPhase::Start:
             // 最高速のまま、残りの距離を進む
-            // 残りが無ければ減速へ直接進む（最高速の1フレームを挟むと、その分だけ進みすぎる）
+            // 残りがなければ減速へ直接進む（最高速の1フレームを挟むと、その分だけ進みすぎる）
             if (bossAction.sideTravelCruiseTime > 0.0f)
             {
                 frame.movement.MoveInDirection(bossAction.lockedDirection, bossAction.sideTravelSpeed,
@@ -651,8 +636,6 @@ void BossActionSystem::ProcessSideTravel(BossActionComponent &bossAction, const 
 
 
 
-// ボスの跳躍。溜め → 放物線で飛ぶ → 着地硬直
-// 跳躍3種はすべてここを通り、違いは leapDef（跳び方）だけ。飛ぶ移動は予約が運ぶ
 void BossActionSystem::ProcessLeap(BossActionComponent &bossAction, const Frame &frame)
 {
     // 処理フロー:
@@ -682,8 +665,6 @@ void BossActionSystem::ProcessLeap(BossActionComponent &bossAction, const Frame 
 
 
 
-// 跳躍の溜め。足を止めて相手を向き、溜めの時間が来たら踏み切る
-// 着地点はまだ決めない（溜めを見てから動いた相手に付いていかない）
 void BossActionSystem::ProcessLeapWindup(BossActionComponent &bossAction, const Frame &frame)
 {
     // 溜め中は、相手の方を向き続ける
@@ -698,8 +679,6 @@ void BossActionSystem::ProcessLeapWindup(BossActionComponent &bossAction, const 
 
 
 
-// 跳躍の踏み切り。着地点と飛ぶ向きを決め、最初の移動を予約する
-// 滞空は「頂点へ上がる」だけを予約し、留まる・降りるは AdvanceLeapPhase が続ける
 void BossActionSystem::TakeOffLeap(BossActionComponent &bossAction, const Frame &frame) const
 {
     // 踏み切った地点を覚える（跳躍中のドローンの陣形の高さに使う）
@@ -755,8 +734,6 @@ void BossActionSystem::TakeOffLeap(BossActionComponent &bossAction, const Frame 
 
 
 
-// 跳躍の頂点の高さを返す
-// 基準の高さに、相手が近いほど低く・遠いほど高くなる分を足す
 float BossActionSystem::LeapApexHeight(float baseHeight, float distanceToPlayer) const
 {
     // 近い〜遠いの間のどこにいるかを 0〜1 で出し、足す高さを直線で決める
@@ -770,8 +747,6 @@ float BossActionSystem::LeapApexHeight(float baseHeight, float distanceToPlayer)
 
 
 
-// 予約した移動が終わったときに、跳躍の次の段へ進む
-// 滞空だけは 上がる → 頂点に留まる → 降りる の3段。ほかは着地する
 void BossActionSystem::AdvanceLeapPhase(BossActionComponent &bossAction, const Frame &frame) const
 {
     const float halfFlightTime = (std::max)(0.05f, bossAction.leapDef.flight) * 0.5f;
@@ -797,8 +772,6 @@ void BossActionSystem::AdvanceLeapPhase(BossActionComponent &bossAction, const F
 
 
 
-// 跳躍の空中。跳んでいる向きへ体を向ける
-// 滞空だけは進まないので、浮いたまま相手を向き続ける
 void BossActionSystem::ProcessLeapAir(BossActionComponent &bossAction, const Frame &frame)
 {
     Vector3 lookDir = bossAction.lockedDirection;
@@ -813,7 +786,6 @@ void BossActionSystem::ProcessLeapAir(BossActionComponent &bossAction, const Fra
 
 
 
-// 跳躍の着地硬直。硬直を数え、跳躍攻撃でなければ相手へゆっくり向き直る
 void BossActionSystem::ProcessLeapLanding(BossActionComponent &bossAction, const Frame &frame)
 {
     ProcessRecovery(bossAction, bossAction.leapDef.landRecovery, frame);
@@ -827,9 +799,6 @@ void BossActionSystem::ProcessLeapLanding(BossActionComponent &bossAction, const
 
 
 
-// ボスの突進攻撃
-// 下がる → 空中で狙う → 構える → 突っ込む → 走り続ける → 止まる → 硬直
-// 各段の移動は予約が運び、ここでは段の切り替えと向きだけを決める
 void BossActionSystem::ProcessDash(BossActionComponent &bossAction, const Frame &frame)
 {
     // --- 段の切り替え ---
@@ -913,8 +882,6 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossAction, const Frame 
 
 
 
-// ボスの様子見。相手を向いたまま、間合いを保つ向きへ動き回る
-// 向きを毎フレーム決め直し、速度の上げ下げは物理（Jolt の加速・減速）に任せるので、曲がりながら滑らかに動く
 void BossActionSystem::ProcessFootwork(BossActionComponent &bossAction, const Frame &frame)
 {
     const Vector3 bossPos     = GetCharacterWorldPosition(frame.joltHandle);
@@ -973,7 +940,6 @@ void BossActionSystem::ProcessFootwork(BossActionComponent &bossAction, const Fr
 
 
 
-// 技の硬直。足を止めて硬直の時間を数え、終わったら BT へ技の終わりを知らせる
 void BossActionSystem::ProcessRecovery(BossActionComponent &bossAction, float recoveryTime, const Frame &frame)
 {
     frame.movement.desiredVelocity = Vector3::Zero;
@@ -993,8 +959,6 @@ void BossActionSystem::ProcessRecovery(BossActionComponent &bossAction, float re
 // 技の補助（狙い・着地点・横移動の計画）
 // ---------------------------------------------------------------------------
 
-// 突進の方向を固定し、突っ込む終点と長さを決める
-// 構え（Windup）に入る瞬間に1回だけ呼ぶ
 void BossActionSystem::LockDashAim(BossActionComponent &bossAction, const Vector3 &playerPos,
                                    const BattleContext &battle) const
 {
@@ -1002,7 +966,7 @@ void BossActionSystem::LockDashAim(BossActionComponent &bossAction, const Vector
     // 相手の位置で止めず、走り抜けた先で間合いを離す
     const Vector3 aimToPlayer = FlatToward(bossAction.dashAimPos, playerPos);
 
-    // 真下に相手が居て向きが決まらないときは、下がる前の向きで突っ込む
+    // 真下に相手がいて向きが決まらないときは、下がる前の向きで突っ込む
     const float aimToPlayerDistance = aimToPlayer.Length();
     Vector3     chargeDir           = bossAction.lockedDirection;
     if (aimToPlayerDistance > 0.001f) chargeDir = aimToPlayer / aimToPlayerDistance;
@@ -1022,8 +986,6 @@ void BossActionSystem::LockDashAim(BossActionComponent &bossAction, const Vector
 
 
 
-// 横移動の左右を技から決め、その真横へ動き出す
-// 技に入る瞬間に1回だけ呼ぶ
 void BossActionSystem::BeginSideTravel(ActionID actionId, float travelDistance, BossActionComponent &bossAction,
                                        const Frame &frame) const
 {
@@ -1040,8 +1002,6 @@ void BossActionSystem::BeginSideTravel(ActionID actionId, float travelDistance, 
 
 
 
-// 間合いを取る移動の向きを決める
-// 横 ＋ 距離を保つ前後 ＋ 壁から離れる内向き を足し、前後への傾きを抑える
 Vector3 BossActionSystem::RepositionDirection(float travelDistance, const BossActionComponent &bossAction,
                                               const Frame &frame) const
 {
@@ -1092,8 +1052,6 @@ Vector3 BossActionSystem::RepositionDirection(float travelDistance, const BossAc
 
 
 
-// 間合いを保つ向きを返す（正規化しない）。横 ＋ 距離を保つ前後 ＋ 壁から離れる内向き を足したもの
-// 間合いを取る（向きを1回だけ決める）と様子見（毎フレーム決め直す）の両方が使う
 Vector3 BossActionSystem::KeepDistanceVector(const Vector3 &bossPos, const Vector3 &toPlayerDir, bool moveLeft,
                                              const BossActionComponent &bossAction, const Frame &frame) const
 {
@@ -1134,7 +1092,7 @@ Vector3 BossActionSystem::KeepDistanceVector(const Vector3 &bossPos, const Vecto
     const float   distanceToWall    = frame.battle.arenaRadius - bossToCenter.Length();
     const float   wallAvoidDistance = bossAction.repositionWallDistance;
 
-    // 壁の手前に居るときだけ、中心へ押す
+    // 壁の手前にいるときだけ、中心へ押す
     if (wallAvoidDistance > 0.0f && distanceToWall < wallAvoidDistance && bossToCenter.LengthSquared() > 0.0001f)
     {
         const float pushStrength = std::clamp((wallAvoidDistance - distanceToWall) / wallAvoidDistance, 0.0f, 1.0f);
@@ -1146,8 +1104,6 @@ Vector3 BossActionSystem::KeepDistanceVector(const Vector3 &bossPos, const Vecto
 
 
 
-// 様子見の準備。1回の長さを下限〜上限から引き、相手の周りを回る側を決める
-// 技に入る瞬間に1回だけ呼ぶ
 void BossActionSystem::BeginFootwork(BossActionComponent &bossAction, const Frame &frame)
 {
     std::uniform_real_distribution<float> random01(0.0f, 1.0f);
@@ -1185,7 +1141,6 @@ void BossActionSystem::BeginFootwork(BossActionComponent &bossAction, const Fram
 
 
 
-// 動く向きを、体から見た向き（x = 右、y = 前）に直す。moveDir が水平で長さ 1 なら、結果も長さ 1
 Vector2 BossActionSystem::BodyLocalDirection(const Vector3 &moveDir, const TransformComponent &transform) const
 {
     // 体の正面と右（水平）
@@ -1200,8 +1155,6 @@ Vector2 BossActionSystem::BodyLocalDirection(const Vector3 &moveDir, const Trans
 
 
 
-// 様子見のアニメの向き（前後左右）を、体から見た動く向きで選ぶ
-// 一番近い向きが、今の向きより kFootworkAnimDirHysteresis 以上近いときだけ切り替える
 BossFootworkDir BossActionSystem::FootworkAnimDir(const Vector2 &localMove, BossFootworkDir currentDir) const
 {
     const float rightAmount = localMove.x;
@@ -1231,8 +1184,6 @@ BossFootworkDir BossActionSystem::FootworkAnimDir(const Vector2 &localMove, Boss
 
 
 
-// 横移動の動き方（加速 → 最高速 → 減速）で、好きな向きへ動き出す
-// 向きは水平で長さ 1。真横でなくてもよい（間合いを取る移動が斜めに使う）
 void BossActionSystem::BeginTravel(const Vector3 &moveDir, float travelDistance, BossActionComponent &bossAction,
                                    const Frame &frame) const
 {
@@ -1284,8 +1235,6 @@ void BossActionSystem::BeginTravel(const Vector3 &moveDir, float travelDistance,
 
 
 
-// 中央を挟んで、相手と反対側の着地点を返す（中央へ逃げる跳躍）
-// 中心からの距離は 半径×escapeLandingRatio
 Vector3 BossActionSystem::AwayToCenterLandingPoint(const BossActionComponent &bossAction, const Vector3 &takeoffPos,
                                                    const Vector3 &playerPos, const BattleContext &battle) const
 {
@@ -1297,7 +1246,7 @@ Vector3 BossActionSystem::AwayToCenterLandingPoint(const BossActionComponent &bo
     // 相手から見ると、頭上を越えて距離を取られる形になる
     Vector3 awayDir = FlatToward(playerPos, arenaCenterPos);
 
-    // 相手がちょうど中央に居るときは、自分→中央で代用する
+    // 相手がちょうど中央にいるときは、自分→中央で代用する
     if (awayDir.LengthSquared() <= 0.0001f)
     {
         awayDir = FlatToward(takeoffPos, arenaCenterPos);
@@ -1313,14 +1262,13 @@ Vector3 BossActionSystem::AwayToCenterLandingPoint(const BossActionComponent &bo
 
 
 
-// 相手の attackStandOff だけ手前の着地点を返す（跳躍攻撃）
 Vector3 BossActionSystem::TowardTargetLandingPoint(const BossActionComponent &bossAction, const Vector3 &takeoffPos,
                                                    const Vector3 &playerPos) const
 {
     const Vector3 takeoffToPlayer = FlatToward(takeoffPos, playerPos);
 
     const float distanceToPlayer = takeoffToPlayer.Length();
-    if (distanceToPlayer <= 0.001f) return takeoffPos; // 真上に居る。その場で跳ぶ
+    if (distanceToPlayer <= 0.001f) return takeoffPos; // 真上にいる。その場で跳ぶ
 
     // 手前で止めるぶんだけ引く。近すぎれば 0 ＝その場で跳んで叩く
     const float landingDistance = (std::max)(0.0f, distanceToPlayer - bossAction.attackStandOff);
@@ -1329,7 +1277,6 @@ Vector3 BossActionSystem::TowardTargetLandingPoint(const BossActionComponent &bo
 
 
 
-// 点がステージの円の外なら、中心へ向かって円の縁まで引き戻す
 Vector3 BossActionSystem::ClampInsideArena(const Vector3 &point, const BattleContext &battle) const
 {
     const Vector3 arenaCenterPos(battle.arenaCenter);
@@ -1346,8 +1293,6 @@ Vector3 BossActionSystem::ClampInsideArena(const Vector3 &point, const BattleCon
 
 
 
-// moveDir の向きへまっすぐ moveDistance 進んだ地点を返す（横移動・後方ステップ・突進の下がる・突っ込む）
-// 壁際でも向きは変えず、距離だけ縮めて壁の手前で止める
 Vector3 BossActionSystem::StraightPointInArena(const Vector3 &startPos, const Vector3 &moveDir, float moveDistance,
                                                const BattleContext &battle) const
 {
@@ -1367,5 +1312,5 @@ Vector3 BossActionSystem::StraightPointInArena(const Vector3 &startPos, const Ve
 
 
 
-// BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前。
+// BehaviorTreeSystem(L02) の後、JoltCharacterUpdateSystem(L03) の前
 REGISTER_LOGIC_SYSTEM(BossActionSystem, Priority::LogicStage::L02_PostUpdate);

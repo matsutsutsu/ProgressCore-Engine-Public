@@ -1,6 +1,6 @@
 #include "Engine/Physics/JoltIntegration/JoltPhysicsFacade.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 接地判定のレイヤーフィルタに使う
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 #include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -8,12 +8,12 @@
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Body/BodyFilter.h>
-#include <Jolt/Physics/Body/Body.h> // IsSensor()
+#include <Jolt/Physics/Body/Body.h>
 
 #include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Body/BodyLockInterface.h>
 
-#include <cmath> // std::atan2
+#include <cmath>
 
 using namespace DirectX;
 
@@ -64,12 +64,16 @@ bool JoltPhysicsFacade::ResolveBody(
     return true;
 }
 
+
+
 JPH::PhysicsSystem *JoltPhysicsFacade::GetPhysicsSystem() const
 {
     if (!m_world->HasResource<JoltPhysicsManager *>()) return nullptr;
     auto *manager = m_world->GetResource<JoltPhysicsManager *>();
     return manager ? manager->GetPhysicsSystem() : nullptr;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 並進
@@ -83,6 +87,8 @@ void JoltPhysicsFacade::AddForce(CCL::ECS::EntityID entity, const XMFLOAT3 &forc
     bi->ActivateBody(bodyID);
 }
 
+
+
 void JoltPhysicsFacade::AddImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &impulse)
 {
     JPH::BodyID         bodyID;
@@ -92,6 +98,8 @@ void JoltPhysicsFacade::AddImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &im
     bi->ActivateBody(bodyID);
 }
 
+
+
 void JoltPhysicsFacade::SetLinearVelocity(CCL::ECS::EntityID entity, const XMFLOAT3 &velocity)
 {
     JPH::BodyID         bodyID;
@@ -99,6 +107,8 @@ void JoltPhysicsFacade::SetLinearVelocity(CCL::ECS::EntityID entity, const XMFLO
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetLinearVelocity(bodyID, JPH::Vec3(velocity.x, velocity.y, velocity.z));
 }
+
+
 
 XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
 {
@@ -108,6 +118,8 @@ XMFLOAT3 JoltPhysicsFacade::GetLinearVelocity(CCL::ECS::EntityID entity)
     JPH::Vec3 vel = bi->GetLinearVelocity(bodyID);
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 回転
@@ -121,6 +133,8 @@ void JoltPhysicsFacade::AddTorque(CCL::ECS::EntityID entity, const XMFLOAT3 &tor
     bi->ActivateBody(bodyID);
 }
 
+
+
 void JoltPhysicsFacade::AddAngularImpulse(CCL::ECS::EntityID entity, const XMFLOAT3 &impulse)
 {
     JPH::BodyID         bodyID;
@@ -130,6 +144,8 @@ void JoltPhysicsFacade::AddAngularImpulse(CCL::ECS::EntityID entity, const XMFLO
     bi->ActivateBody(bodyID);
 }
 
+
+
 void JoltPhysicsFacade::SetAngularVelocity(CCL::ECS::EntityID entity, const XMFLOAT3 &velocity)
 {
     JPH::BodyID         bodyID;
@@ -137,6 +153,8 @@ void JoltPhysicsFacade::SetAngularVelocity(CCL::ECS::EntityID entity, const XMFL
     if (!ResolveBody(entity, bodyID, bi)) return;
     bi->SetAngularVelocity(bodyID, JPH::Vec3(velocity.x, velocity.y, velocity.z));
 }
+
+
 
 XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
 {
@@ -146,6 +164,8 @@ XMFLOAT3 JoltPhysicsFacade::GetAngularVelocity(CCL::ECS::EntityID entity)
     JPH::Vec3 vel = bi->GetAngularVelocity(bodyID);
     return XMFLOAT3(vel.GetX(), vel.GetY(), vel.GetZ());
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 位置・回転の強制設定
@@ -158,6 +178,8 @@ void JoltPhysicsFacade::SetPosition(CCL::ECS::EntityID entity, const XMFLOAT3 &p
     bi->SetPosition(bodyID, JPH::RVec3(position.x, position.y, position.z), JPH::EActivation::Activate);
 }
 
+
+
 void JoltPhysicsFacade::SetRotation(CCL::ECS::EntityID entity, const XMFLOAT4 &rotation)
 {
     JPH::BodyID         bodyID;
@@ -167,6 +189,8 @@ void JoltPhysicsFacade::SetRotation(CCL::ECS::EntityID entity, const XMFLOAT4 &r
                     JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w).Normalized(),
                     JPH::EActivation::Activate);
 }
+
+
 
 void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const DirectX::XMFLOAT3 &direction)
 {
@@ -179,17 +203,16 @@ void JoltPhysicsFacade::SetLookDirection(CCL::ECS::EntityID entity, const Direct
     const float lenSq = direction.x * direction.x + direction.z * direction.z;
     if (lenSq <= 1e-4f) return;
 
-    // atan2 から Y 軸回転を直接作る。
-    //   Quat::sFromTo(+Z, dir) は「2ベクトル間の最短弧」なので、dir がちょうど真後ろ(-Z)の
-    //   ときに回転軸が定まらず、Jolt が任意の垂直軸（X軸になりうる）を選ぶ。
-    //   その場合ボディが横倒しにひっくり返る。真後ろを向く＝180度ターンは実際に頻出するので、
-    //   atan2 から Y軸回転を直接組み立てて特異点そのものを無くす。
+    // atan2 から Y 軸の回転を直接作る
+    // Quat::sFromTo(+Z, dir) は dir が真後ろのとき回転軸が決まらず、ボディが横倒しになることがある
     const float yaw            = std::atan2(direction.x, direction.z);
     JPH::Quat   targetRotation = JPH::Quat::sRotation(JPH::Vec3::sAxisY(), yaw);
 
     // 回転を適用し、スリープ中なら起こす
     bi->SetRotation(bodyID, targetRotation, JPH::EActivation::Activate);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 空間クエリ
@@ -210,7 +233,7 @@ bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
     JPH::RVec3              rayDir(0.0f, -distance, 0.0f);
     JPH::RayCastResult      hit;
 
-    // 地面(NON_MOVING)だけに当てる。センサー・他キャラ・敵には接地判定を反応させない。
+    // 地面(NON_MOVING)だけに当てる。センサー・他キャラ・敵には接地判定を反応させない
     JPH::SpecifiedBroadPhaseLayerFilter bpFilter(BroadPhaseLayers::NON_MOVING);
     JPH::SpecifiedObjectLayerFilter     objFilter(PhysicsLayers::NON_MOVING);
     JPH::IgnoreSingleBodyFilter         ignoreSelf(handle->bodyID);
@@ -220,6 +243,8 @@ bool JoltPhysicsFacade::CheckGrounded(CCL::ECS::EntityID entity, float distance)
         bpFilter, objFilter, ignoreSelf);
 }
 
+
+
 PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3 &direction, float maxDistance, CCL::ECS::EntityID ignoreEntity)
 {
     PhysicsHitInfo info;
@@ -228,7 +253,7 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3
     if (!physicsSystem) return info;
 
     // ゼロ長／不正な方向を弾く。XMVector3Normalize は長さ0で NaN を返し、
-    //   NaN のレイは Jolt のブロードフェーズを壊す（AABB が NaN 化する）。
+    //   NaN のレイは Jolt のブロードフェーズを壊す（AABB が NaN 化する）
     const float dirLenSq = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
     if (!(dirLenSq > 1e-12f) || !(maxDistance > 0.0f)) return info;
 
@@ -281,6 +306,8 @@ PhysicsHitInfo JoltPhysicsFacade::RayCast(const XMFLOAT3 &origin, const XMFLOAT3
     return info;
 }
 
+
+
 PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XMFLOAT3 &direction, float maxDistance)
 {
     PhysicsHitInfo info;
@@ -301,7 +328,7 @@ PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XM
     XMStoreFloat3(&finalDir, dirVec);
     JPH::RVec3 rayDir(finalDir.x, finalDir.y, finalDir.z);
 
-    // 地形(NON_MOVING)だけにヒットさせる。プレイヤー/ボス/ドローン等の動的ボディは無視される。
+    // 地形(NON_MOVING)だけにヒットさせる。プレイヤー/ボス/ドローン等の動的ボディは無視される
     JPH::SpecifiedBroadPhaseLayerFilter bpFilter(BroadPhaseLayers::NON_MOVING);
     JPH::SpecifiedObjectLayerFilter     objFilter(PhysicsLayers::NON_MOVING);
 
@@ -320,12 +347,14 @@ PhysicsHitInfo JoltPhysicsFacade::RayCastStatic(const XMFLOAT3 &origin, const XM
     return info;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // キャラクター専用クエリ
 // ---------------------------------------------------------------------------
 bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity)
 {
-    // CharacterVirtual の内部状態を直接参照する（段差・坂・床速度を考慮した正確な接地判定）。
+    // CharacterVirtual の内部状態を直接参照する（段差・坂・床速度を考慮した正確な接地判定）
     auto *handle = m_world->GetComponent<JoltCharacterHandleComponent>(entity);
     if (!handle || !handle->character) return false;
 

@@ -33,5 +33,7 @@ void MenuStyleSystem::OnGui()
     ImGui::TextDisabled("開いている画面は、開き直すと反映される（ボタンの文字色と帯の速さはすぐ反映）");
 }
 
+
+
 // メニューを組む System（L02_Update 以降）より前に置く
 REGISTER_LOGIC_SYSTEM(MenuStyleSystem, Priority::LogicStage::L02_PreUpdate);

@@ -1,17 +1,13 @@
 ﻿#pragma once
 // ===========================================================================
-// 概要: PlayerRushEffectComponent の weight を実時間でフェードし、ビネット（周囲の暗がり）と
-//       放射ブラーへ毎フレーム反映する System。
+// 概要: ラッシュの画面演出を、ビネットと放射ブラーへ毎フレーム反映する System
 //
 // 責務:
-//   - active に応じて weight を fadeIn/fadeOut 時間でイーズする
-//   - ビネットと放射ブラーの設定に、自分のキーで取ったスロットを通して値を書く（フェードは共有）
-//   - 演出が消えている間は自分のスロットを手放す
+//   - rushActive に合わせて、weight を実時間でフェードする
+//   - 自分のスロットを通してビネットと放射ブラーへ書き、消えたら手放す
 //
-// 備考: シングルトンだけを触り、エンティティを回さないので SystemBase を直接継承する。
-//       ポストプロセスの設定本体は書き換えない。最終的な強さの合成と描画の有無は
-//       PostProcessSystem が決めるので、同時に走る命中の演出や被弾フラッシュと値を取り合わない。
-//       PostProcessSystem（R09）より前に走る必要があるので R02_Environment に登録する。
+// 備考: シングルトンだけを触り、エンティティを回さないので SystemBase を直接継承する
+//       強さの合成は PostProcessSystem が行うので、ほかの演出と値を取り合わない
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
@@ -22,12 +18,10 @@ public:
     PlayerRushEffectSystem() : SystemBase("PlayerRushEffectSystem") {}
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
-
-    // 触るポストプロセスの設定はすべて書くので Write で申告する（並列実行での競合を防ぐ）
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
-    // ScreenImpactSystem と同じステージで同じ設定を書くので、順番を決めておく。
-    // スロットが別なので結果は順番に依らないが、決めないと順序不定の警告が出る
+    // ScreenImpactSystem と同じ設定を書くので、順番を決めておく
+    // 結果は順番に依らないが、決めないと起動時に順序不定の警告が出る
     std::vector<const char *> GetRunAfter() const override { return {"ScreenImpactSystem"}; }
 
     void Update(float dt) override;

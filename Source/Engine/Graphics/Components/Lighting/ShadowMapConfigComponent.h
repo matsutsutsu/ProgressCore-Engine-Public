@@ -1,15 +1,8 @@
 #pragma once
-// ===========================================================================
-// 概要: カスケードシャドウの設定を持つシングルトンコンポーネント。シーンに1つ置く。
-//
-// 責務:
-//   - シャドウバイアス・影の色・カスケードの分割距離を持つ
-//
-// 備考: ShadowMapRenderSystem が毎フレーム読み、シャドウマップへ渡す。
-//       カスケードの数は ShaderShared.h の SHADOW_CASCADE_COUNT（3）で固定。
-// ===========================================================================
 #include <DirectXMath.h>
 
+// カスケードシャドウの設定。シーンに1つ置き、ShadowMapRenderSystem が毎フレーム読む
+// カスケードの数は ShaderShared.h の SHADOW_CASCADE_COUNT で固定
 struct ShadowMapConfigComponent
 {
     float             shadowBias  = 0.0015f;                  // 深度比較のずらし量。小さすぎると縞模様、大きすぎると影が浮く

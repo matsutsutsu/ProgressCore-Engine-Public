@@ -20,6 +20,8 @@ namespace
         return {DirectX::XMConvertToDegrees(pitch), DirectX::XMConvertToDegrees(yaw), DirectX::XMConvertToDegrees(roll)};
     }
 
+
+
     // QuatToEulerDegrees の逆変換。インスペクタで編集した角度を回転へ戻すため
     DirectX::XMFLOAT4 EulerDegreesToQuat(const DirectX::XMFLOAT3 &euler)
     {

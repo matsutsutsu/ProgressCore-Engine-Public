@@ -14,8 +14,8 @@ namespace CCL::ECS
         // 配っている最中に Chunk が増減しないよう、構造変更を止めておく
         std::shared_lock<std::shared_mutex> lock(cm->GetStructureMutex());
 
-        // 1. Chunk の構成が前回から変わったかを判定する。
-        //    変わっていなければ全 System × 全 Chunk の総当たりを丸ごと省ける。
+        // 1. Chunk の構成が前回から変わったかを判定する
+        //    変わっていなければ全 System × 全 Chunk の総当たりを丸ごと省ける
         auto &chunks           = cm->GetChunks(); // vector<unique_ptr<Chunk>>&
         bool  isStructureDirty = false;
 
@@ -82,7 +82,7 @@ namespace CCL::ECS
                         continue;
                     }
 
-                    // 必要 Component を全て持ち、かつ除外 Component を1つも持たない
+                    // 必要 Component をすべて持ち、かつ除外 Component を1つも持たない
                     if (ArchetypeHelper::LhasR(chunkArch, filter) &&
                         ArchetypeHelper::LExcludesR(chunkArch, exclude))
                     {
@@ -95,6 +95,8 @@ namespace CCL::ECS
             matchSystems(m_renderSystems);
         }
     }
+
+
 
     void SystemManager::OnGui()
     {

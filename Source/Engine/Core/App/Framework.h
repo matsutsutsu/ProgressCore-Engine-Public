@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: アプリ全体の起動・メインループ・終了を受け持つ最上位クラス Framework。
+// 概要: アプリ全体の起動・メインループ・終了を受け持つ最上位クラス Framework
 //
 // 責務:
 //   - エンジンの各サービス（ログ・描画・入力・音・物理・シーン・エディタ）の初期化と破棄
@@ -20,40 +20,23 @@ class ImGuiBufferSink;
 class Framework
 {
 public:
-    /**
-     * @brief エンジンの各サービスを初期化し、最初のシーンの生成を予約する。
-     * @param hWnd 描画先のウィンドウ。所有しない（作るのは Main.cpp の wWinMain）。
-     */
+    // エンジンの各サービスを初期化し、最初のシーンの生成を予約する。hWnd は所有しない
     Framework(HWND hWnd);
     ~Framework();
 
 private:
-    /**
-     * @brief 固定ステップ1回分だけ、ロジックと物理を進める。
-     * @param fixedTime 進める時間（秒）。常に FIXED_DT。
-     * @note 物理・ロジックなど、フレームレートで結果が変わってはいけない処理だけをここで進める。
-     * @note Run が1フレームに0〜4回（溜まった時間の分だけ）呼ぶ。一時停止中は呼ばれない。
-     */
+    // 固定ステップ1回分（FIXED_DT）だけ、ロジックと物理を進める
+    // Run が1フレームに0〜4回呼ぶ（溜まった時間の分だけ）。一時停止中は呼ばれない
     void FixedUpdate(float fixedTime);
 
-    /**
-     * @brief 可変フレームの更新（シーンの Update と、エディタが参照する World の差し替え）。
-     * @param elapsedTime 前フレームからの経過時間（秒）。エディタのデバッグ速度を掛けた値。
-     */
+    // シーンの Update と、エディタが見る World の差し替え。elapsedTime はエディタのデバッグ速度を掛けた値
     void Update(float elapsedTime);
 
-    /**
-     * @brief 1フレーム分を描画して Present する。
-     * @param elapsedTime 前フレームからの経過時間（秒）。Update と同じ値。
-     */
+    // 1フレーム分を描いて Present する
     void Render(float elapsedTime);
 
-    /**
-     * @brief OS・CPU・メモリ・起動したフォルダを、Shipping でもログに残す。
-     *
-     * 配布先で「動かない」と言われたときに、ログだけで実行環境の違いを確かめるため。
-     * GPU と画面は GraphicsDevice が報告する（デバイスを作った後でないと分からないため）。
-     */
+    // OS・CPU・メモリ・起動したフォルダを、Shipping でもログに残す（配布先の環境の違いをログで確かめるため）
+    // GPU と画面は GraphicsDevice が出す（デバイスを作った後でないと分からない）
     void LogPlatformInfo() const;
 
 public:

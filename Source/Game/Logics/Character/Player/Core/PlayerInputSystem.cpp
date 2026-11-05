@@ -4,15 +4,14 @@
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/App/GameFlowState.h"                          // エディタ操作中・演出中は入力を止める
-#include "Engine/Physics/Components/Character/KnockbackComponent.h" // 被弾の硬直中は入力を止める
+#include "Engine/Core/App/GameFlowState.h"
+#include "Engine/Physics/Components/Character/KnockbackComponent.h"
 
 #include <algorithm>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// プレイヤーの入力を読み、移動の向きと、ボタンを押した瞬間を書く
 void PlayerInputSystem::Update(float dt)
 {
     // 処理フロー:
@@ -81,7 +80,7 @@ void PlayerInputSystem::Update(float dt)
 
     ForEachWithID([&](EntityID id, CharacterMovementComponent &movement, PlayerInputComponent &pin) {
         // 被弾の硬直中も入力を止める
-        // KnockbackComponent が無いキャラは硬直しない扱いにするので、
+        // KnockbackComponent がないキャラは硬直しない扱いにするので、
         // ForEach の条件にせず GetComponent で引く
         bool stunned = false;
         if (const auto *kb = m_world->GetComponent<KnockbackComponent>(id))
@@ -105,7 +104,7 @@ void PlayerInputSystem::Update(float dt)
         }
 
         // 前のステップで離していて、今押しているときだけ true にする
-        // ロジックは1描画フレームに最大4回走り、その間は押下状態が変わらない。
+        // ロジックは1描画フレームに最大4回走り、その間は押下状態が変わらない
         // ここで1回にまとめないと、1回の押下が複数回の技になる
 
         // 入力を止めている間も、prev は実際の押下状態に合わせる

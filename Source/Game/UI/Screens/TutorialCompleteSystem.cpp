@@ -6,7 +6,7 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
-#include "Game/UI/Common/ScreenHeadingUi.h" // 左上の見出しと線
+#include "Game/UI/Common/ScreenHeadingUi.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
 
@@ -26,7 +26,7 @@ namespace
 
 void TutorialCompleteSystem::Initialize()
 {
-    // 決着（matchOver）を書くリソース。無ければ作る
+    // 決着（matchOver）を書くリソース。なければ作る
     if (!m_world->HasResource<GameFlowState>()) m_world->AddResource<GameFlowState>();
 
     // ポーズのボタンも同じイベントを出すので、actionHash で見分ける
@@ -111,7 +111,6 @@ void TutorialCompleteSystem::Update(float dt)
 
 
 
-// 完了の画面（暗転・見出し・ボタン）を作る
 void TutorialCompleteSystem::ShowUI()
 {
     // 処理フロー:
@@ -175,7 +174,6 @@ void TutorialCompleteSystem::ShowUI()
 
 
 
-// 完了の画面を消し、操作とボスを戻す（デバッグでやり直したとき）
 void TutorialCompleteSystem::CloseUI()
 {
     // Destroy は印を付けるだけで、実際に消すのはロジックの HierarchyCleanupSystem
@@ -196,5 +194,7 @@ void TutorialCompleteSystem::SetMatchOver(bool over)
 {
     if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().matchOver = over;
 }
+
+
 
 // 全体登録はせず、TutorialScene が登録する

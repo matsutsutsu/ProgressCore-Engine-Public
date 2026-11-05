@@ -1,4 +1,3 @@
-// PlayerHudStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/HUD/PlayerHudStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

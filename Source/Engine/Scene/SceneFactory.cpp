@@ -5,6 +5,8 @@ void SceneFactory::Register(const std::string &name, CreateFunc func)
     registry[name] = func;
 }
 
+
+
 Scene *SceneFactory::Create(const std::string &name)
 {
     auto it = registry.find(name);
@@ -14,6 +16,8 @@ Scene *SceneFactory::Create(const std::string &name)
     }
     return nullptr;
 }
+
+
 
 std::vector<std::string> SceneFactory::GetSceneNames() const
 {

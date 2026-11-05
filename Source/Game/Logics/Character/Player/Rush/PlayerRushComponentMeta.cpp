@@ -1,5 +1,3 @@
-// Rush（ジャスト回避成立後のラッシュ）のメタ定義。プレハブ/エディタからの読み書きを可能にする。
-
 #include "PlayerRushComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

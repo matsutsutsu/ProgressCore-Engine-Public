@@ -1,16 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: がれきの帯（DebrisFieldComponent）を回し、岩を RenderQueue に直接積む System（R08_Main）。
+// 概要: がれきの帯（DebrisFieldComponent）を回し、岩を RenderQueue に直接積む System（R08_Main）
 //
 // 責務:
 //   - フォルダのプレハブから岩の種類を読み、岩1個ごとの乱数を作る
 //   - 経過時間に TimeStateComponent の倍率を掛け、公転・自転・上下の揺れを計算する
 //   - 岩ごとのワールド行列を RenderCommand にして積む
 //
-// 備考: カリングと LOD は OpaquePass / NormalPrepass がメッシュごとに行うので、ここではしない。
-//       影は積まない。帯はステージの外にあり、影のカスケードに入らないため。
+// 備考: カリングと LOD は OpaquePass / NormalPrepass がメッシュごとに行うので、ここではしない
+//       影は積まない。帯はステージの外にあり、影のカスケードに入らないため
 //       ModelRenderSystem と同じステージで RenderQueue に積むので、GetRunAfter で直列にする
-//       （型が競合しないと並列に走り、RenderQueue の配列への push_back が競合する）。
+//       （型が競合しないと並列に走り、RenderQueue の配列への push_back が競合する）
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
@@ -19,10 +19,11 @@
 
 #include <cstdint>
 
-class DebrisFieldSystem : public CCL::ECS::IfSystem<DebrisFieldSystem,
-                                                    CCL::ECS::Write<DebrisFieldComponent>,
-                                                    CCL::ECS::Read<TransformComponent>,
-                                                    CCL::ECS::Read<TimeStateComponent>>
+class DebrisFieldSystem : public CCL::ECS::IfSystem<
+    DebrisFieldSystem,
+    CCL::ECS::Write<DebrisFieldComponent>,
+    CCL::ECS::Read<TransformComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     DebrisFieldSystem() : IfSystem("DebrisFieldSystem") {}

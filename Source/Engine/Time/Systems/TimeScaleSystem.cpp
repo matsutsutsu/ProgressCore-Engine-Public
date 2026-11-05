@@ -1,7 +1,7 @@
 #include "Engine/Time/Systems/TimeScaleSystem.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Core/Systems/SystemPriority.h" // 実行ステージの列挙
-#include "Engine/Time/TimeService.h"            // Debug GUI から意図ファサードを叩く
+#include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Time/TimeService.h"
 #include <algorithm>
 #include <imgui.h>
 
@@ -41,13 +41,13 @@ void TimeScaleSystem::Update(float rawDt)
         }
     };
 
-    // groupScale レイヤーは現在どの System も書かない（全て 1.0）。Time::SlowGroup 等を
-    // 足すときは「毎フレーム 1.0 へリセット → min で要求を合成」の形でここに層を用意する。
+    // groupScale レイヤーは現在どの System も書かない（すべて 1.0）。Time::SlowGroup 等を
+    // 足すときは「毎フレーム 1.0 へリセット → min で要求を合成」の形でここに層を用意する
 
     // 2. 世界全体の倍率を計算する
-    //    - 全体ヒットストップ    : 命中の一瞬停止（イーズ無しで即座に戻す）
+    //    - 全体ヒットストップ    : 命中の一瞬停止（イーズなしで即座に戻す）
     //    - シネマティックスロー  : 撃破スロー等（イーズを掛けて戻す）
-    //    どちらも globalScale に乗るので、group に関係なく全 Entity へ効く。
+    //    どちらも globalScale に乗るので、group に関係なく全 Entity へ効く
     float hitStopFactor = 1.0f;
     if (ctx.globalHitStopTimer > 0.0f)
     {
@@ -58,14 +58,14 @@ void TimeScaleSystem::Update(float rawDt)
             hitStopFactor = ctx.globalFreezeScale;
     }
 
-    // 撃破スロー等のシネマティックスローをイーズしながら 1.0 へ戻す。
+    // 撃破スロー等のシネマティックスローをイーズしながら 1.0 へ戻す
     updateSlowMotion(ctx.cinematicSlow);
 
     ctx.globalScale = ctx.baseGlobalScale * hitStopFactor * ctx.cinematicSlow.currentComputedScale;
 
     // 3. 各 Entity の localDt を確定する（Entity 同士は独立なので並列に回す）
     ForEachParallel([&](TimeStateComponent &time) {
-        // 【レイヤー1】個別の完全停止（ヒットストップ）が最優先
+        // ヒットストップ中は、ほかの倍率より優先する
         if (time.hitStopTimer > 0.0f)
         {
             time.hitStopTimer -= rawDt;
@@ -82,7 +82,7 @@ void TimeScaleSystem::Update(float rawDt)
             }
         }
 
-        // 【レイヤー2 & 3】倍率の合成。グループ倍率は switch ではなく配列で引く
+        // 倍率を合成する。グループの倍率は配列で引く
         float groupScale = ctx.groupScales[static_cast<size_t>(time.group)];
 
         // 全倍率を掛けて実効 dt を確定する
@@ -91,6 +91,8 @@ void TimeScaleSystem::Update(float rawDt)
         time.localDt     = rawDt * finalScale;
     });
 }
+
+
 
 void TimeScaleSystem::OnGui()
 {
@@ -122,5 +124,7 @@ void TimeScaleSystem::OnGui()
     if (ctx.isPaused && ImGui::Button("Step 1 Frame (F11)"))
         Time::StepFrame(*m_world);
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(TimeScaleSystem, Priority::LogicStage::L01_TimeScale);

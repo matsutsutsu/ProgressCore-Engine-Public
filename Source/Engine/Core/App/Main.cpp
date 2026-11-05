@@ -6,13 +6,10 @@
 #include <filesystem>
 
 #include "Framework.h"
-#include "Resources/Resource.h" // 埋め込んだアイコンの番号
+#include "Resources/Resource.h"
 
-// ハイブリッドGPU(Optimus/PowerXpress)搭載PCで、Windows が内蔵GPU(Intel等)を
-// 自動選択してしまう問題への対策。ドライバはexe側がこのシンボルをexportして
-// いるかを見て「高性能GPUを使いたい」という意思表示だと解釈する。
-// GraphicsDevice::Initialize 側の IDXGIFactory6::EnumAdapterByGpuPreference
-// による明示的なアダプタ選択と合わせた二重対策（こちらはドライバ側のフォールバック）。
+// ハイブリッド GPU の PC で、Windows が内蔵 GPU を選ぶのを防ぐ。ドライバはこのシンボルを高性能 GPU の要求と読む
+// GraphicsDevice::Initialize のアダプタの選択と合わせた二重の対策（こちらはドライバ側の受け皿）
 extern "C"
 {
     __declspec(dllexport) DWORD NvOptimusEnablement                  = 0x00000001;
@@ -31,15 +28,8 @@ const BOOL FULLSCREEN = TRUE;
 const BOOL FULLSCREEN = FALSE;
 #endif
 
-/**
- * @brief 作業フォルダを exe のあるフォルダへ合わせる。
- *
- * ファイルはすべて作業フォルダからの相対パス（Assets/...・Saved/...）で開くので、
- * ショートカットや別の場所から起動しても Assets を見つけられるようにする。
- *
- * @note exe の隣に Assets が無いときは、元の作業フォルダのままにする。
- *       開発中は exe が Build/Bin にあり、VS がリポジトリのルートを作業フォルダにして起動するため。
- */
+// 作業フォルダを exe のあるフォルダへ合わせる。ファイルはすべて作業フォルダからの相対パスで開くため
+// exe の隣に Assets がなければ、元の作業フォルダのままにする（開発中は VS がリポジトリのルートで起動する）
 static void SetWorkingDirectoryToExe()
 {
     wchar_t path[MAX_PATH] = {};
@@ -52,12 +42,16 @@ static void SetWorkingDirectoryToExe()
         std::filesystem::current_path(exeDir, ec);
 }
 
+
+
 // ウィンドウに紐付けた Framework へメッセージを転送する
 LRESULT CALLBACK fnWndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     Framework *f = reinterpret_cast<Framework *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     return f ? f->HandleMessage(hwnd, msg, wparam, lparam) : DefWindowProc(hwnd, msg, wparam, lparam);
 }
+
+
 
 INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line, INT cmd_show)
 {
@@ -113,13 +107,13 @@ INT WINAPI wWinMain(HINSTANCE instance, HINSTANCE prev_instance, LPWSTR cmd_line
     }
     else
     {
-        // ボーダーレスウィンドウ（モニタ全体を覆う、タイトルバーも枠も無いウィンドウ）
+        // ボーダーレスウィンドウ（モニタ全体を覆う、タイトルバーも枠もないウィンドウ）
         int screenW = GetSystemMetrics(SM_CXSCREEN);
         int screenH = GetSystemMetrics(SM_CYSCREEN);
 
         DWORD style = WS_POPUP | WS_VISIBLE;
 
-        // 枠が無いので、クライアント領域を合わせる AdjustWindowRect は要らない
+        // 枠がないので、クライアント領域を合わせる AdjustWindowRect は要らない
         hWnd = CreateWindowEx(
             0,
             _T("Game"),

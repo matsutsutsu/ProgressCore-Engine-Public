@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: System の登録・並び替え・更新を一括で管理するクラス。
+// 概要: System の登録・並び替え・更新を一括で管理するクラス
 //
 // 責務:
 //   - System を Logic / Render の2グループに分けて保持する
@@ -8,8 +8,8 @@
 //   - TaskScheduler で依存グラフを構築し、グループごとに並列実行する
 //   - 型指定での System 取得（GetSystem<T>）
 //
-// 備考: 実行順は「ステージ（優先度）→ 同値なら System 名」で決まる。
-//       順序を保証したい組は GetRunAfter / GetRunBefore で明示すること。
+// 備考: 実行順は「ステージ（優先度）→ 同値なら System 名」で決まる
+//       順序を保証したい組は GetRunAfter / GetRunBefore で明示すること
 // ===========================================================================
 
 #include <vector>
@@ -47,25 +47,14 @@ namespace CCL::ECS
         // 登録する System へ配る World を設定する（EditorScene::Initialize などで呼ぶ）
         void SetWorld(World *world) { m_world = world; }
 
-        /**
-         * @brief 共有ジョブプールを注入する（EngineServices が持つ唯一のプールを渡す）。
-         *
-         * @note RegisterSystem より前に呼ぶこと。各 System へ配るのは登録時のため。
-         */
+        // 共有のジョブプールを渡す。登録のときに各 System へ配るので、RegisterSystem より前に呼ぶ
         void SetJobSystem(JobSystem *js) { m_jobSystem = js; }
 
         // ============================================================
         // System 登録
         // ============================================================
 
-        /**
-         * @brief Logic グループへ System を登録する。
-         *
-         * @tparam T    登録する System 型（SystemBase 派生）
-         * @param stage 実行ステージ。値が小さいほど先に実行される
-         * @param args  T のコンストラクタへ転送する引数
-         * @return 登録した System へのポインタ（所有は SystemManager）
-         */
+        // ロジックのグループへ System を登録する。stage が小さいほど先に走る。所有は SystemManager
         template <class T, class... Args>
         T *RegisterSystem(Priority::LogicStage stage, Args &&...args)
         {
@@ -107,8 +96,8 @@ namespace CCL::ECS
         // Render グループを実行する（Render から呼ばれる）
         void UpdateRender(float dt)
         {
-            // シーンを切り替えたフレームは、ロジックの更新より先にここへ来る。
-            // ここで作らないと、そのフレームは描画の System が1つも走らない。
+            // シーンを切り替えたフレームは、ロジックの更新より先にここへ来る
+            // ここで作らないと、そのフレームは描画の System が1つも走らない
             BuildGraphsIfDirty();
             m_renderScheduler.Execute(dt, m_jobSystem);
         }
@@ -127,15 +116,7 @@ namespace CCL::ECS
         const TaskScheduler &GetLogicScheduler() const { return m_logicScheduler; }
         const TaskScheduler &GetRenderScheduler() const { return m_renderScheduler; }
 
-        /**
-         * @brief 指定した型の System を取得する。Logic → Render の順に探す。
-         *
-         * @return 見つかった System。未登録なら nullptr
-         *
-         * @code
-         *   auto *animSys = systemManager->GetSystem<AnimationSystem>();
-         * @endcode
-         */
+        // 型 T の System を、ロジック、描画の順に探して返す。なければ nullptr
         template <typename T>
         T *GetSystem() const
         {
@@ -161,19 +142,14 @@ namespace CCL::ECS
         // 全 System のマルチスレッドを一括で OFF にする（並列起因のバグ切り分け用）
         bool globalMultiThreadEnabled = true;
 
-        // 依存グラフ構築時に「順序が不定なペア」をログへ出すか（System Manager ウィンドウで切り替える）。
-        // 一覧が長くログを埋めるので、ふだんは出さない。
-        // SystemManager はシーンごとに作り直されるので、切り替えがシーンをまたいで残るよう static にする。
+        // 依存グラフ構築時に「順序が不定なペア」をログへ出すか（System Manager ウィンドウで切り替える）
+        // 一覧が長くログを埋めるので、ふだんは出さない
+        // SystemManager はシーンごとに作り直されるので、切り替えがシーンをまたいで残るよう static にする
         static inline bool logSchedulerAmbiguities = false;
 
     private:
-        /**
-         * @brief RegisterSystem の実体。System を生成し、依存を注入して初期化する。
-         *
-         * 生成 → World/ミューテックス/ジョブプール/優先度の注入 → Initialize →
-         * グループのリストへ追加 → 並び替え、の順で行う。
-         * Initialize は注入が全て済んでから呼ぶ必要がある（中で World を使う System があるため）。
-         */
+        // System を作り、World・mutex・ジョブプール・優先度を渡してから Initialize し、グループに足して並べ替える
+        // Initialize の中で World を使う System があるので、渡し終えてから呼ぶ
         template <class T, class... Args>
         T *RegisterSystemInternal(SystemGroup group, int priority, Args &&...args)
         {
@@ -185,9 +161,9 @@ namespace CCL::ECS
             // 所有権は sys がリストへ移すので、戻り値用に生ポインタを先に取っておく
             T *ptr = sys.get();
 
-            // インスペクタに出すかは OnGui を override したかで決まる。
+            // インスペクタに出すかは OnGui を override したかで決まる
             //   派生側にフラグを書かせない。書き忘れると一覧から静かに消えるだけで
-            //   気付けないので、宣言そのものを唯一の情報源にする。
+            //   気付けないので、宣言そのものを唯一の情報源にする
             ptr->hasGui = HasOwnOnGui<T>;
 
             if (m_world) ptr->SetWorld(m_world);
@@ -228,15 +204,15 @@ namespace CCL::ECS
         {
             if (!m_isGraphDirty) return;
 
-            // Logic と Render は同じ System の追加で古くなるので、まとめて作り直す。
+            // Logic と Render は同じ System の追加で古くなるので、まとめて作り直す
             m_logicScheduler.BuildGraph(m_logicSystems);
             m_renderScheduler.BuildGraph(m_renderSystems);
             m_isGraphDirty = false;
 
-            // 「同一ステージで型は競合するのに前後が宣言されていない」組を報告する。
+            // 「同一ステージで型は競合するのに前後が宣言されていない」組を報告する
             // 直列化はされるので同時実行事故は起きないが、どちらが先かは
             // ソートの並び順まかせ＝潜在的な順序バグ。ここに出たペアに実依存が
-            // あるなら GetRunAfter を書くか、ステージを分けること。
+            // あるなら GetRunAfter を書くか、ステージを分けること
             if (logSchedulerAmbiguities)
             {
                 m_logicScheduler.LogAmbiguities("Logic");
@@ -249,19 +225,9 @@ namespace CCL::ECS
         {
             auto &targetList = (group == SystemGroup::Logic) ? m_logicSystems : m_renderSystems;
 
-            // 優先度が同値のときは System 名で決着を付ける。
-            //
-            // なぜ必要か:
-            //   std::sort は安定ソートではないため、同値のシステム同士の相対順序は
-            //   保証されない。しかも本関数は RegisterSystemInternal のたびに呼ばれ、
-            //   その登録順自体が REGISTER_LOGIC_SYSTEM マクロによるグローバル変数の
-            //   初期化順（＝翻訳単位をまたぐ静的初期化順序）に依存する。
-            //   名前で決着を付けないと、.vcxproj にファイルを足しただけで実行順が
-            //   入れ替わる（BoneAttachment と JoltPush の順序逆転がこれ）。
-            //
-            //   名前で決着を付けても「正しい順序」にはならないが、少なくとも
-            //   毎回同じ順序になる。順序を実際に保証したい箇所は
-            //   GetRunAfter / GetRunBefore で明示的に宣言すること。
+            // 優先度が同じなら System 名で並べる。std::sort は安定でなく、登録の順も静的初期化の順で変わるので、
+            // 名前で決めないと、.vcxproj にファイルを足しただけで実行順が入れ替わる
+            // 名前の順は正しい順ではないので、順序が要る所は GetRunAfter / GetRunBefore で宣言する
             std::sort(targetList.begin(), targetList.end(),
                       [](const std::unique_ptr<SystemBase> &a, const std::unique_ptr<SystemBase> &b) {
                           if (a->GetPriority() != b->GetPriority())
@@ -270,8 +236,8 @@ namespace CCL::ECS
                       });
         }
 
-        // 共有ジョブプールへのポインタ（所有しない）。
-        // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される。
+        // 共有ジョブプールへのポインタ（所有しない）
+        // 実体は EngineServices が1つだけ持ち、SetJobSystem で注入される
         JobSystem *m_jobSystem = nullptr;
 
         std::vector<std::unique_ptr<SystemBase>> m_logicSystems;
@@ -283,7 +249,7 @@ namespace CCL::ECS
         TaskScheduler m_renderScheduler;
         bool          m_isGraphDirty = true; // true なら次の更新（Logic / Render の先に来た方）で依存グラフを作り直す
 
-        // 前回 ResolveTargetChunks で配った Chunk のポインタ列。変化が無ければ再分配を省く
+        // 前回 ResolveTargetChunks で配った Chunk のポインタ列。変化がなければ再分配を省く
         std::vector<void *> m_cachedChunkPointers;
     };
 

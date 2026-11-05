@@ -13,6 +13,8 @@ void TransparentPass::Initialize(const RenderServices &services)
     m_instanceBuffer.Create(services.device, 8192);
 }
 
+
+
 void TransparentPass::Execute(const RenderFrameContext &ctx)
 {
     ID3D11DeviceContext  *dc             = ctx.dc;
@@ -27,7 +29,7 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
     // ブレンドあり・深度はテストだけで書かない。ここに来るのは alphaMode が Blend のメッシュだけなので、全部この PSO で描く
     m_psoTransparent.Apply(dc, m_services->renderState);
 
-    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる。
+    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる
     // この配列は毎フレーム作り直すので、並べ替えて壊してかまわない
     auto &allTrans = queue->GetDeferredTransparentCommandsMutable();
     std::sort(allTrans.begin(), allTrans.end(),

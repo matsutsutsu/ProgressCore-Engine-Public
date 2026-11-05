@@ -1,4 +1,3 @@
-// BossPhaseComponent のシリアライズ/インスペクタ定義。
 #include "BossPhaseComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -26,7 +25,7 @@ struct ComponentMeta<BossPhaseComponent>
             CFIELD(phase2AssetPath, "第2形態AIパス", "Phase")
             CFIELD_FLOAT_RANGED(phase2HealthThreshold, "第2形態移行HP閾値", 0.1f, 0.0f, 100.0f, "Phase")
             CFIELD(tutorialAssetPath, "チュートリアルAIパス", "Tutorial")
-            // 形態とタイマーは実行時の値。保存しない。
+            // 形態とタイマーは実行時の値。保存しない
             CFIELD_ENUM_U8_RT(phase, "現在の形態", kBossPhaseNames, kBossPhaseCount, "State")
             CFIELD_RT(timer, "状態滞在タイマー", "State")};
         return fields;

@@ -37,7 +37,7 @@ void RenderDebugWindow::DrawContents(EditorContext &context)
 #ifdef ENABLE_EDITOR
     const auto &entries = RenderDebugRegistry::Instance().GetEntries();
 
-    // --- 深度の線形化に使う near/far をカメラから取る（カメラが無ければ前の値のまま） ---
+    // --- 深度の線形化に使う near/far をカメラから取る（カメラがなければ前の値のまま） ---
     if (context.world && context.world->HasResource<Camera *>())
     {
         if (Camera *cam = context.world->GetResource<Camera *>())

@@ -1,7 +1,7 @@
 #pragma once
 // ===========================================================================
-// 概要: UIDrawList を 2D パスで描くクラス UIRenderer。
-//       画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer で描く。
+// 概要: UIDrawList を 2D パスで描くクラス UIRenderer
+//       画像は Sprite、ゲージは UIGaugeSprite、文字は TextRenderer で描く
 //
 // 責務:
 //   - 描画アイテムに画面全体の不透明度を掛け、sortOrder の昇順に描く
@@ -9,7 +9,7 @@
 //   - 描き終えたら描画リストを空にする
 //   - Sprite をテクスチャのパスごとにキャッシュする（パスが空なら白テクスチャで単色の四角形）
 //
-// 備考: BaseScene::Render() の 2D パス（合成・深度の設定済み）から Flush を呼ぶ。
+// 備考: BaseScene::Render() の 2D パス（合成・深度の設定済み）から Flush を呼ぶ
 // ===========================================================================
 #include <d3d11.h>
 #include <memory>
@@ -31,15 +31,8 @@ public:
     UIRenderer();
     ~UIRenderer();
 
-    /**
-     * @brief 描画リストを sortOrder の昇順に描き、最後にリストの items を空にする。
-     * @param dc          描画に使うデバイスコンテキスト。
-     * @param device      Sprite・フォントを初めて作るときに使うデバイス。
-     * @param list        描く描画リスト。アイテムの色に不透明度を掛けて書き換える。
-     * @param renderState 加算合成へ切り替えるのに使う。nullptr なら additive を無視し、
-     *                    呼び出し側が設定済みの合成のまま全部を描く（発光しないが、消えはしない）。
-     * @note BaseScene::Render() の 2D パスの中から呼ぶ。
-     */
+    // 描画リストを sortOrder の昇順に描き、最後に items を空にする。BaseScene::Render の 2D パスから呼ぶ
+    // renderState が nullptr なら加算に切り替えず、今の合成のまま全部描く（光らないが消えはしない）
     void Flush(ID3D11DeviceContext *dc, ID3D11Device *device, UIDrawList &list,
                RenderState *renderState = nullptr);
 
@@ -52,13 +45,7 @@ private:
         Additive, // additive が true のものだけ
     };
 
-    /**
-     * @brief 並べ替え済みのアイテム列から、pass に当てはまるものだけを描く。
-     * @param dc      描画に使うデバイスコンテキスト。
-     * @param device  Sprite・フォントを初めて作るときに使うデバイス。
-     * @param ordered sortOrder の昇順に並べたアイテム。所有しない。
-     * @param pass    描くアイテムの種類。
-     */
+    // 並べ替え済みのアイテムのうち、pass の種類のものだけを描く
     void DrawItems(ID3D11DeviceContext *dc, ID3D11Device *device,
                    const std::vector<const UIDrawItem *> &ordered, BlendPass pass);
 

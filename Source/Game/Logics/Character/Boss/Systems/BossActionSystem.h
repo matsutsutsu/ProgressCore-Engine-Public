@@ -1,30 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: BT が出した技(BossCommandComponent)を、
-//       ボス本体の体の動き（速度・向き）に変える System。
+// 概要: BT が出した技（BossCommandComponent）を、ボス本体の動き（速度・向き）に変える System
 //
 // 責務:
-//   - currentActionId を BossActionState に変換し、
-//     技に入った瞬間に進行方向などを決める
-//   - 技に入った瞬間に、アニメの開始のトリガー（SideTravelLeft/Right / BackStep / Leap / Dash）を引く
-//   - 待機・移動・横移動・後方ステップ・跳躍・突進・様子見を1フレーム分進め、
-//     CharacterMovementComponent に書く
+//   - 技に入った瞬間に、進む向きを決めてアニメの開始のトリガーを引く
+//   - 待機・移動・横移動・後方ステップ・跳躍・突進・様子見を1フレーム分進める
 //   - 技が硬直まで終わったら actionFinished を立て、BT に知らせる
-//   - 向きを Transform と Jolt の両方に書く
-//   - 演出中と決着後は待機にする
-//   - ひるみのアニメの間は技を始めずに止め、明けてからの冷却を数える
+//   - 演出中・決着後・ひるみの間は技を始めずに待機する
 //
-// 備考:
-//   流れは BossCommand → BossActionSystem → CharacterMovementComponent
-//   → JoltCharacterUpdateSystem（CharacterVirtual）。
-//   実行ステージは L02_PostUpdate。
-//   BehaviorTreeSystem(L02_Update) の後、物理(L03_PrePhysics) の前。
-//
-//   技の長さは BossActionComponent の段ごとの時間が決める。
-//   BT は技を出して、actionFinished が立つのを待つだけ。
-//
-//   currentActionId は BossPhaseSystem が毎フレーム空にするので、
-//   BT が止まれば（一時停止を含む）待機(None)になる。
+// 備考: 流れは BossCommand → BossActionSystem → CharacterMovementComponent → JoltCharacterUpdateSystem
+//       BT は技を出して actionFinished を待つだけで、技の長さは BossActionComponent の段ごとの時間が決める
+//       currentActionId は BossPhaseSystem が毎フレーム空にするので、BT が止まれば待機になる
 // ===========================================================================
 #include <random>
 #include <vector>
@@ -43,14 +29,14 @@ struct BattleContext;
 struct AnimStateMachineComponent; // 後方ステップの止まりのモーションの長さと、ひるみ中かを読む
 
 class BossActionSystem : public CCL::ECS::IfSystem<
-                             BossActionSystem,
-                             CCL::ECS::Write<CharacterMovementComponent>,
-                             CCL::ECS::Write<BossActionComponent>,
-                             CCL::ECS::Write<TransformComponent>,
-                             CCL::ECS::Read<BossCommandComponent>,
-                             CCL::ECS::Read<JoltCharacterConfigComponent>,
-                             CCL::ECS::Read<JoltCharacterHandleComponent>,
-                             CCL::ECS::Read<TimeStateComponent>>
+    BossActionSystem,
+    CCL::ECS::Write<CharacterMovementComponent>,
+    CCL::ECS::Write<BossActionComponent>,
+    CCL::ECS::Write<TransformComponent>,
+    CCL::ECS::Read<BossCommandComponent>,
+    CCL::ECS::Read<JoltCharacterConfigComponent>,
+    CCL::ECS::Read<JoltCharacterHandleComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
     using Base = CCL::ECS::IfSystem<
         BossActionSystem,
@@ -66,28 +52,14 @@ public:
     BossActionSystem() : IfSystem("BossActionSystem") {}
     ~BossActionSystem() override = default;
 
-    // 全ボスについて、技の切り替わりを検出し、今の動きを1フレーム分進める。
     void Update(float dt) override;
-
-    // デバッグ用。ボスの位置をインスペクタから直接動かせる。
     void OnGui() override;
 
-    /**
-     * @brief テンプレート引数以外に読む型を申告する。
-     *
-     * Update が AnimStateMachineComponent（後方ステップの
-     * 止まりのモーションの長さと、ひるみ中か）を GetComponent で読むので、申告だけを足す。
-     * テンプレート引数には足さない。ForEach の絞り込みにもなるので、
-     * アニメを持たないボスで、この System が何も言わずに動かなくなる。
-     */
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
-
-    // Update が GetComponent で書く型の申告だけを足す（理由は GetReadTypes と同じ）
-    // AnimParametersComponent に技の開始のトリガー、RootMotionComponent に横移動中の足滑り補正の停止
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
 private:
-    // 1体・1フレーム分の材料。Process 関数へまとめて渡す。
+    // 1体・1フレーム分の材料。Process 関数へまとめて渡す
     // const Frame でも、参照先（transform・movement）は書き換えられる
     struct Frame
     {
@@ -98,13 +70,13 @@ private:
         const BattleContext                &battle;           // ステージの中心・半径
         DirectX::SimpleMath::Vector3        playerPos;        // 相手の足元（ワールド）
         float                               dt;               // この個体の時計の dt [秒]
-        const AnimStateMachineComponent    *animStateMachine; // アニメのステートの長さを引く。無ければ nullptr
+        const AnimStateMachineComponent    *animStateMachine; // アニメのステートの長さを引く。なければ nullptr
     };
 
-    // 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る（ひるみ中は向き直らない）。
+    // 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る（ひるみ中は向き直らない）
     void ProcessIdle(BossActionComponent &bossAction, const Frame &frame);
 
-    // 相手へ歩いて近づく。速さは Jolt の walkSpeed。
+    // 相手へ歩いて近づく。速さは Jolt の walkSpeed
     void ProcessMove(BossActionComponent &bossAction, const Frame &frame);
 
     // 横移動。相手を向いたまま、入った瞬間に決めた真横へ進む
@@ -141,8 +113,8 @@ private:
     DirectX::SimpleMath::Vector2 BodyLocalDirection(const DirectX::SimpleMath::Vector3 &moveDir,
                                                     const TransformComponent           &transform) const;
 
-    // 様子見のアニメの向き（前後左右）。体から見た動く向き（localMove）に一番近い向きを、
-    // 今の向き（currentDir）より十分に近いときだけ返す。そうでなければ currentDir のまま
+    // 様子見のアニメの向き（前後左右）を、体から見た動く向きで選ぶ
+    // 一番近い向きが、今の向きより kFootworkAnimDirHysteresis 以上近いときだけ切り替える
     BossFootworkDir FootworkAnimDir(const DirectX::SimpleMath::Vector2 &localMove, BossFootworkDir currentDir) const;
 
     // 後方ステップ。入った瞬間の相手の方向を向いたまま下がり、着地して硬直する
@@ -154,6 +126,7 @@ private:
     void ProcessLeap(BossActionComponent &bossAction, const Frame &frame);
 
     // 跳躍の溜め。足を止めて相手を向き、溜めの時間が来たら踏み切る
+    // 着地点はまだ決めない。溜めを見てから動いた相手に付いていかないようにする
     void ProcessLeapWindup(BossActionComponent &bossAction, const Frame &frame);
 
     // 跳躍の踏み切り。着地点と飛ぶ向きを決め、最初の移動を予約する
@@ -182,29 +155,20 @@ private:
     // 横移動・後方ステップ・跳躍・突進の最後の段で呼ぶ
     void ProcessRecovery(BossActionComponent &bossAction, float recoveryTime, const Frame &frame);
 
-    // 構え（Windup）に入る瞬間に1回だけ呼ぶ。
-    // 相手への方向を固定し、その方向へ dashDistance 進む終点と、突っ込む長さを決める。
+    // 構え（Windup）に入る瞬間に1回だけ呼ぶ
+    // 相手への方向を固定し、その方向へ dashDistance 進む終点と、突っ込む長さを決める
     void LockDashAim(BossActionComponent                &bossAction,
                      const DirectX::SimpleMath::Vector3 &playerPos,
                      const BattleContext                &battle) const;
 
-    /**
-     * @brief 中央を挟んで相手と反対側の着地点を返す。
-     *
-     * 中心からの距離は 半径×escapeLandingRatio。
-     *
-     * @param bossAction    escapeLandingRatio を持つボスの行動。
-     * @param takeoffPos 踏み切り地点（ワールド）。着地点の高さをこれにそろえる。
-     * @param playerPos  相手の位置（ワールド）。
-     * @param battle     ステージの情報（中心・半径）。
-     * @return 着地点（ワールド）。
-     */
+    // 中央を挟んで相手と反対側の着地点を返す。中心からの距離は、半径 × escapeLandingRatio
+    // 着地点の高さは踏み切り地点（takeoffPos）にそろえる
     DirectX::SimpleMath::Vector3 AwayToCenterLandingPoint(const BossActionComponent          &bossAction,
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos,
                                                           const BattleContext                &battle) const;
 
-    // 相手の位置から attackStandOff だけ手前の着地点。距離の上限は無い。
+    // 相手の位置から attackStandOff だけ手前の着地点。距離の上限はない
     DirectX::SimpleMath::Vector3 TowardTargetLandingPoint(const BossActionComponent          &bossAction,
                                                           const DirectX::SimpleMath::Vector3 &takeoffPos,
                                                           const DirectX::SimpleMath::Vector3 &playerPos) const;
@@ -215,24 +179,17 @@ private:
                                                       const DirectX::SimpleMath::Vector3 &moveDir, float moveDistance,
                                                       const BattleContext &battle) const;
 
-    /**
-     * @brief 点がステージの円の外なら、中心へ向かって円の縁まで引き戻す。
-     *
-     * 跳躍の着地点に使う。
-     *
-     * @param point  引き戻す点（ワールド）。
-     * @param battle ステージの情報。
-     *               円の半径は BattleContext::arenaRadius − 壁からの余白。
-     * @return ステージの円の内側に収めた点。
-     */
+    // 点がステージの円の外なら、中心へ向かって円の縁まで引き戻す。跳躍の着地点に使う
+    // 円の半径は BattleContext::arenaRadius から壁の余白を引いたもの
     DirectX::SimpleMath::Vector3 ClampInsideArena(const DirectX::SimpleMath::Vector3 &point,
                                                   const BattleContext                &battle) const;
 
-    // BT が出した技(ActionID) を、体の動き(BossActionState) へ変換する。
-    // 知らない技は None。
+    // BT が出した技(ActionID) を、体の動き(BossActionState) へ変換する
+    // 知らない技は None
     BossActionState TranslateAction(ActionID actionId) const;
 
-    // 跳躍の技(ActionID)に対応する跳び方を返す。跳躍の技でなければ nullptr
+    // 跳躍の技（ActionID）に対応する跳び方を返す。跳躍の技でなければ nullptr
+    // 跳躍を増やすときは、ここに1行と、BossActionComponent に BossLeapDef を1つ足す
     const BossLeapDef *LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const;
 
     // ひるみのアニメ（HitFront など）を再生しているかを isFlinching に書き、明けてからの冷却を進める

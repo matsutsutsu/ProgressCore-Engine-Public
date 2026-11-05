@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: チュートリアルのヒント（ボタンのアイコンと1行の説明）を画面の下中央に出す System。
+// 概要: チュートリアルのヒント（ボタンのアイコンと1行の説明）を画面の下中央に出す System
 //
 // 責務:
 //   - プレイヤーが現れたら、TutorialHint プレハブを生成する
@@ -8,8 +8,8 @@
 //   - 帯の真下のゲージで、今の項目の進み具合を出す
 //   - 回避の「今だ」の間は、画面の中央に押すボタンを大きく出す
 //
-// 備考: 何をいつ出すかは TutorialSystem が TutorialState に書く。ここは見た目だけを持つ。
-//       全体登録はせず、TutorialScene だけが登録する。
+// 備考: 何をいつ出すかは TutorialSystem が TutorialState に書く。ここは見た目だけを持つ
+//       全体登録はせず、TutorialScene だけが登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
@@ -17,7 +17,8 @@
 
 #include <string>
 
-class TutorialHintHudSystem : public CCL::ECS::IfSystem<TutorialHintHudSystem>
+class TutorialHintHudSystem : public CCL::ECS::IfSystem<
+    TutorialHintHudSystem>
 {
 public:
     TutorialHintHudSystem() : IfSystem("TutorialHintHudSystem") {}
@@ -42,11 +43,11 @@ private:
     void UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);
 
     // --- 部品の操作 ---
-    // x は帯の中心からの横位置（左端）、y は帯の中心からの縦位置（中心。下が正）
+    // 部品の位置と大きさを書く。x は左端、y は中心で、どちらも帯の中心から（y は下が正）
     void SetRect(CCL::ECS::EntityID id, float x, float y, float width, float height);
     void SetAlpha(CCL::ECS::EntityID id, float alpha);
 
-    // 文字の幅を測る仕組みが UI に無いので、半角は高さの半分、全角は高さと同じ幅として数える
+    // 文字の幅を測る仕組みが UI にないので、半角は高さの半分、全角は高さと同じ幅として数える
     static float EstimateWidth(const std::string &text, float pixelSize);
 
     CCL::ECS::EntityID m_rootID  = CCL::ECS::InvalidEntityID; // プレハブのルート（Canvas と TutorialHintStyle）

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: System 間・ECS 外とのイベント通信を仲介する EventBus。
+// 概要: System 間・ECS 外とのイベント通信を仲介する EventBus
 //
 // 責務:
 //   - イベント型ごとの購読者リストの管理（購読・解除は IfSystem::ListenEvent 経由のみ）
@@ -8,7 +8,7 @@
 //   - Publish ごとに、イベント型名付きの Tracy ゾーンを自動で張る
 //
 // 備考: 主に「ECS の世界」と「それ以外（UI 更新・サウンド再生・実績解除など）」
-//       をつなぐ橋渡しに使う。発行側は購読者を知らなくてよいので依存が減る。
+//       をつなぐ橋渡しに使う。発行側は購読者を知らなくてよいので依存が減る
 // ===========================================================================
 #include <algorithm>
 #include <cstdint>
@@ -51,22 +51,11 @@ namespace CCL::ECS
     // Publish の Tracy ゾーン（イベント型ごとに自動で名前が付く）
     // ============================================================
     //
-    // EventBus::Publish は同期呼び出しで、購読者のコールバックを発行元の
-    // コールスタック上でそのまま実行する。つまり購読者がやった重い仕事は
-    // Tracy 上では「発行した System」の中身として計上される
-    //  （例: PlayerJumpFacingSystem の中に SceneSerializer::Deserialize が現れる）。
-    // どのイベントが何を連れてきたのかを追えるように、Publish 自体へゾーンを置く。
-    //
-    // イベント種別ごとにマクロを書かなくて済むように、
-    //   ・テンプレートなので EventType ごとに別々の static が実体化される
-    //   ・その static に SourceLocationData を1個だけ持たせ、名前を型名にする
-    // という形にしている。新しいイベント型を足しても、こちら側の作業はゼロ。
-    //
-    // Tracy は SourceLocationData をポインタで同一視するので、名前の文字列が
-    // ネットワークへ流れるのは型ごとに1回だけ。毎回の発行コストはゾーン1個ぶん。
+    // Publish は購読者のコールバックを発行元のコールスタックでそのまま呼ぶので、購読者の重い処理は Tracy では発行した System の中に出る
+    // どのイベントが何を連れてきたかを追えるよう、Publish 自体にゾーンを置く。名前はイベントの型ごとの static で1回だけ作る
 #ifdef TRACY_ENABLE
     // typeid(T).name() は静的な寿命を持つ文字列。MSVC は "struct Foo" を返すので
-    // 接頭辞だけ飛ばして読みやすくする（ポインタを進めるだけなのでコピーは不要）。
+    // 接頭辞だけ飛ばして読みやすくする（ポインタを進めるだけなのでコピーは不要）
     template <typename T>
     inline const char *EventZoneName()
     {
@@ -92,7 +81,7 @@ namespace CCL::ECS
         return &loc;
     }
 
-// Publish 1回ぶんのスコープ。TRACY_ENABLE が無ければ丸ごと消える。
+// Publish 1回ぶんのスコープ。TRACY_ENABLE がなければ丸ごと消える
 #define CCL_EVENTBUS_PUBLISH_ZONE(EventT) tracy::ScopedZone _ccl_publish_zone(CCL::ECS::EventPublishSrcLoc<EventT>())
 #else
 #define CCL_EVENTBUS_PUBLISH_ZONE(EventT) (void)0
@@ -168,14 +157,8 @@ namespace CCL::ECS
         // イベント型 ID → そのイベント型の購読者リスト
         std::unordered_map<uint32_t, std::unique_ptr<IEventWrapper>> m_subscribers;
 
-        // 購読・解除は private にして、IfSystem::ListenEvent だけが呼べるようにする。
-        //
-        // なぜ塞ぐか:
-        //   ここを直接呼ぶと解除チケットが誰にも管理されず、System が破棄された後も
-        //   コールバックがリストに残る。ListenEvent は解除処理を m_eventCleanups に
-        //   積んでデストラクタで必ず外すため、購読の入口を1本に強制する。
-        //
-        // 購読したい System は IfSystem を継承して ListenEvent<EventType>(...) を使うこと。
+        // 購読と解除は private にし、IfSystem::ListenEvent からだけ呼べるようにする
+        // 直接呼ぶと解除の処理を誰も持たず、System を破棄した後もコールバックが残る（ListenEvent はデストラクタで必ず外す）
         template <class Derived, class... AccessTypes>
         friend class IfSystem;
 
@@ -212,9 +195,9 @@ namespace CCL::ECS
         template <typename EventType>
         void Publish(const EventType &eventData)
         {
-            // ここは同期呼び出し。購読者のコストは呼び出し元のゾーンに乗る。
+            // ここは同期呼び出し。購読者のコストは呼び出し元のゾーンに乗る
             //   イベント型ごとに別名のゾーンが自動で出るので、Tracy 上で
-            //   「このスパイクはどのイベントが連れてきたのか」を辿れる。
+            //   「このスパイクはどのイベントが連れてきたのか」を辿れる
             CCL_EVENTBUS_PUBLISH_ZONE(EventType);
 
             uint32_t typeId = EventTypeIDGenerator::GetID<EventType>();

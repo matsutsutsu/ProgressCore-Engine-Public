@@ -1,20 +1,21 @@
 #pragma once
 // ===========================================================================
-// 概要: タイトル画面のメニューを作り、ボタンでシーンを切り替える System。
+// 概要: タイトル画面のメニューを作り、ボタンでシーンを切り替える System
 //
 // 責務:
 //   - タイトルロゴ・ボタン・操作のヒントを作る
 //   - ロゴを、斬撃の光が走った跡に現れるように出す
 //   - ボタンに合わせて、ゲーム・チュートリアルへの切り替えか、アプリの終了を頼む
 //
-// 備考: 「設定」のボタンは SettingsScreenSystem が受ける。
-//       全体登録はせず、TitleScene が登録する。
+// 備考: 「設定」のボタンは SettingsScreenSystem が受ける
+//       全体登録はせず、TitleScene が登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
 
-class TitleMenuSystem
-    : public CCL::ECS::IfSystem<TitleMenuSystem, CCL::ECS::Read<UIButtonComponent>>
+class TitleMenuSystem : public CCL::ECS::IfSystem<
+    TitleMenuSystem,
+    CCL::ECS::Read<UIButtonComponent>>
 {
 public:
     TitleMenuSystem() : IfSystem("TitleMenuSystem") {}
@@ -29,7 +30,7 @@ private:
     // タイトルロゴ（本体・白く光る写し・斬撃の光）を作る
     void SpawnLogo(CCL::ECS::EntityID canvas);
 
-    // ロゴの登場演出を進める
+    // ロゴの登場演出を進める（斬撃の光が走った跡にロゴが現れ、走り終えたら白く光る）
     void AnimateLogo(float dt);
 
     bool m_menuSpawned   = false; // メニューを作ったか

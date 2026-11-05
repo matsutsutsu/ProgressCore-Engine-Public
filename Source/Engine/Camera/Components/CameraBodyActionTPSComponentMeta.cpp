@@ -1,5 +1,3 @@
-// CameraBodyTPSComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

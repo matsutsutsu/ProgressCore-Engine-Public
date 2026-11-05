@@ -70,7 +70,6 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
 // バッチの描画
 // ---------------------------------------------------------------------------
 
-// シャドウマップ・サンプラー・PSO など、全バッチで共通のものをバインドする
 void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
 {
     if (m_services->shadowMap)
@@ -78,7 +77,7 @@ void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
 
-    // マテリアルのテクスチャは異方性フィルタで読む。
+    // マテリアルのテクスチャは異方性フィルタで読む
     // トライリニアだと、斜めに見る面（床・壁）で遠くがぼやける
 
     // TransparentPass はこのサンプラーをそのまま使う
@@ -90,10 +89,9 @@ void OpaquePass::BindCommonResources(ID3D11DeviceContext *dc)
 
 
 
-// cursor から同じバッチキーが続く区間を切り出し、cursor をその次へ進める
 OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &sortKeys, size_t &cursor)
 {
-    // 同じモデルを多く置くほど count が大きくなり、インスタンシングが効く。
+    // 同じモデルを多く置くほど count が大きくなり、インスタンシングが効く
     // 1つしか置かないモデルは count == 1 で、1回ずつ描くのと変わらない
 
     BatchRange     batch{cursor, 0};
@@ -108,7 +106,6 @@ OpaquePass::BatchRange OpaquePass::ConsumeBatch(const std::vector<RenderKey> &so
 
 
 
-// バッチのモデルの全メッシュを、描くか半透明のキューへ回す
 void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, IMaterialShader &matShader)
 {
     ID3D11DeviceContext *dc       = ctx.dc;
@@ -134,7 +131,7 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
 
         const DirectX::BoundingBox localAABB = MeshCull::BuildLocalAABB(mesh);
 
-        // 半透明かどうかはマテリアルで決まる。
+        // 半透明かどうかはマテリアルで決まる
         // 同じモデルでも、窓だけ半透明のようにメッシュごとに違う
         if (activeMat->alphaMode == AlphaMode::Blend)
         {
@@ -144,7 +141,7 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
 
         ResolveVisibleInstances(ctx, mesh, batch, meshIdx, localAABB, isSkinned);
 
-        // 見えるインスタンスが無ければ、マテリアルの更新・IA の設定・描画をすべて飛ばす
+        // 見えるインスタンスがなければ、マテリアルの更新・IA の設定・描画をすべて飛ばす
         if (m_visibleCount == 0)
         {
             ++m_stat_culledMeshes;
@@ -174,7 +171,6 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
 // マテリアルの差し替えと半透明への回送
 // ---------------------------------------------------------------------------
 
-// meshIdx 番目のメッシュに使う上書きのマテリアルを引く。無ければ nullptr
 MaterialData *OpaquePass::ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const
 {
     if (meshIdx >= cmd.overrideCount) return nullptr;
@@ -185,7 +181,6 @@ MaterialData *OpaquePass::ResolveOverrideMaterial(const RenderCommand &cmd, size
 
 
 
-// 半透明のメッシュを、見えるインスタンスだけ TransparentPass 用のキューへ回す
 void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                                const BatchRange &batch, uint32_t shaderHash,
                                                const DirectX::BoundingBox &localAABB, bool isSkinned)
@@ -227,18 +222,17 @@ void OpaquePass::ForwardMeshToTransparentQueue(const RenderFrameContext &ctx, co
 // 見えるインスタンスの収集
 // ---------------------------------------------------------------------------
 
-// このメッシュの見えるインスタンスの列と、LOD の段ごとの数を決める
 void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh,
                                          const BatchRange &batch, size_t meshIdx,
                                          const DirectX::BoundingBox &localAABB, bool isSkinned)
 {
-    // NormalPrepass が残した列があれば使い、行列の計算・カリング・段の選択を省く。
+    // NormalPrepass が残した列があれば使い、行列の計算・カリング・段の選択を省く
     // 同じモデルを多く置くほど効く（ドローンなど）
     const uint64_t key = RenderQueue::MakeVisibleKey(batch.start, meshIdx);
     if (m_services->renderQueue->FindVisibleInstances(key, m_visibleData, m_visibleCount, m_visibleLevelCounts)) return;
 
     // NormalPrepass が走らなかったとき（シェーダーが取れない・enabled が false）は、
-    // 列が無いので自分で作る
+    // 列がないので自分で作る
     BuildVisibleInstances(ctx, mesh, batch, localAABB, isSkinned);
     m_visibleData  = m_instanceScratch.data();
     m_visibleCount = m_instanceScratch.size();
@@ -246,7 +240,6 @@ void OpaquePass::ResolveVisibleInstances(const RenderFrameContext &ctx, const Mo
 
 
 
-// バッチのインスタンスのうち、見えるものだけを集めて LOD の段の順に並べる
 void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned)
 {
@@ -266,7 +259,7 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
 
         if (isSkinned)
         {
-            // スキンメッシュはカリングせず全部積む。
+            // スキンメッシュはカリングせず全部積む
             // ワールド行列はボーン行列に入っているので単位行列
             DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
             m_instanceScratch.push_back(data);
@@ -278,7 +271,7 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
         m_instanceScratch.push_back(data);
     }
 
-    // 段も NormalPrepass と同じ関数で選ぶ。
+    // 段も NormalPrepass と同じ関数で選ぶ
     // 選び方が違うと、深度と本描画の形がずれる
     if (isSkinned)
     {
@@ -297,7 +290,6 @@ void OpaquePass::BuildVisibleInstances(const RenderFrameContext &ctx, const Mode
 // インスタンス描画
 // ---------------------------------------------------------------------------
 
-// 頂点・インデックスバッファとトポロジを設定する
 void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {
     const UINT stride = sizeof(ModelResource::Vertex);
@@ -309,11 +301,10 @@ void OpaquePass::BindMeshIA(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 
 
 
-// 見えるインスタンスを LOD の段ごとに、インスタンスバッファに入る数ずつに分けて描く
 void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh &mesh)
 {
-    // m_visibleData は段の順に並んでいるので、段ごとに区切って、その段の範囲のインデックスで描く。
-    // LOD が無いメッシュは、段0に全部入っている
+    // m_visibleData は段の順に並んでいるので、段ごとに区切って、その段の範囲のインデックスで描く
+    // LOD がないメッシュは、段0に全部入っている
     size_t levelStart = 0; // この段の先頭が m_visibleData の何番目か
     for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
     {
@@ -338,11 +329,10 @@ void OpaquePass::DrawInstancedBatched(ID3D11DeviceContext *dc, const Model::Mesh
 
 
 
-// スキンメッシュを1体ずつ描く
 void OpaquePass::DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                                       const BatchRange &batch)
 {
-    // スキンメッシュはカリングしていないので m_visibleCount == batch.count。
+    // スキンメッシュはカリングしていないので m_visibleCount == batch.count
     // k 番目の見えるインスタンスは、バッチの k 番目のコマンドに対応する
 
     ID3D11DeviceContext  *dc             = ctx.dc;

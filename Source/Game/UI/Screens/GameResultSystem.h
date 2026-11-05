@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ゲーム中に勝敗を判定し、リザルト画面をゲーム画面の上に重ねて出す System。
+// 概要: ゲーム中に勝敗を判定し、リザルト画面をゲーム画面の上に重ねて出す System
 //
 // 責務:
 //   - プレイヤーが倒れたら MISSION FAILED、敵を全部倒したら MISSION COMPLETE を出す
@@ -8,15 +8,16 @@
 //   - 決着したら GameFlowState::matchOver を立て、操作とボスを止める
 //   - 「もう一度」「タイトルへ」のボタンを受けてシーンを切り替える
 //
-// 備考: 全体登録はせず、GameScene と EditorScene が登録する。
+// 備考: 全体登録はせず、GameScene と EditorScene が登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 
 #include <atomic>
 
-class GameResultSystem
-    : public CCL::ECS::IfSystem<GameResultSystem, CCL::ECS::Read<HealthComponent>>
+class GameResultSystem : public CCL::ECS::IfSystem<
+    GameResultSystem,
+    CCL::ECS::Read<HealthComponent>>
 {
 public:
     GameResultSystem() : IfSystem("GameResultSystem") {}
@@ -27,6 +28,7 @@ public:
 
 private:
     void CountBattleStats(float dt); // 戦っている間の記録（時間・プレイヤーの ID）を数える
+    // 決着を GameFlowState に書き、プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める
     void EndMatch();                 // 決着を GameFlowState に書き、操作とボスを止める
     void ShowResultUI(bool win);     // リザルトの UI（暗転・見出し・記録・ボタン）を作る
 
@@ -47,7 +49,7 @@ private:
 
     // --- デバッグ用 ---
     bool m_debugEnabled     = true;  // false なら勝敗の判定もリザルトの表示もしない
-    bool m_dbgPlayerPresent = false; // 直前のフレームでプレイヤーが居たか
+    bool m_dbgPlayerPresent = false; // 直前のフレームでプレイヤーがいたか
     int  m_dbgAliveEnemies  = 0;     // 直前のフレームで生きていた敵の数
 
     static constexpr float kResultDelay = 1.0f; // 勝ちを判定してからリザルトを出すまでの最低の待ち時間（実時間の秒）

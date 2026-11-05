@@ -3,20 +3,20 @@
 #include <algorithm>
 #include "ShellIconLoader.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/Resource/ModelResource.h" // .model.json の判定を共有する
+#include "Engine/Graphics/Resource/ModelResource.h"
 
 #include <tracy/Tracy.hpp>
 
 namespace
 {
     /**
-     * @brief 2つのペインの境目のつまみを描く。ドラッグした分だけ size0 と size1 をやり取りする。
-     * @param split_vertically true なら左右に分ける縦のつまみ、false なら上下に分ける横のつまみ。
-     * @param thickness        つまみの太さ（px）。
-     * @param size0            1つ目（左・上）のペインの大きさ（px）。ドラッグで書き換える。
-     * @param size1            2つ目（右・下）のペインの大きさ（px）。ドラッグで書き換える。
-     * @param min_size0        1つ目のペインの最小の大きさ（px）。
-     * @param min_size1        2つ目のペインの最小の大きさ（px）。
+     * @brief 2つのペインの境目のつまみを描く。ドラッグした分だけ size0 と size1 をやり取りする
+     * @param split_vertically true なら左右に分ける縦のつまみ、false なら上下に分ける横のつまみ
+     * @param thickness        つまみの太さ（px）
+     * @param size0            1つ目（左・上）のペインの大きさ（px）。ドラッグで書き換える
+     * @param size1            2つ目（右・下）のペインの大きさ（px）。ドラッグで書き換える
+     * @param min_size0        1つ目のペインの最小の大きさ（px）
+     * @param min_size1        2つ目のペインの最小の大きさ（px）
      */
     void Splitter(bool split_vertically, float thickness, float *size0, float *size1, float min_size0, float min_size1)
     {
@@ -33,13 +33,15 @@ namespace
         ImGui::SetCursorPos(backup_pos);
     }
 
+
+
     /**
-     * @brief ファイルをドラッグ＆ドロップの送り元にする。受け取るのは HierarchyWindow。
+     * @brief ファイルをドラッグ＆ドロップの送り元にする。受け取るのは HierarchyWindow
      *
-     * ツリーとグリッドの両方から呼ぶ（別々に書くと、受け付ける拡張子が食い違う）。
+     * ツリーとグリッドの両方から呼ぶ（別々に書くと、受け付ける拡張子が食い違う）
      *
-     * @param filePath 送るファイルのパス。
-     * @param name     ドラッグ中に表示する名前。
+     * @param filePath 送るファイルのパス
+     * @param name     ドラッグ中に表示する名前
      */
     void DragSourceForFile(const std::string &filePath, const std::string &name)
     {
@@ -95,10 +97,14 @@ AssetBrowser::AssetBrowser(const std::string &rootPath, ID3D11Device *device)
     Refresh();
 }
 
+
+
 AssetBrowser::~AssetBrowser()
 {
     ShellIconLoader::ClearCache();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ツリー構築・初期化
@@ -125,6 +131,8 @@ void AssetBrowser::Refresh()
     CCL_LOG_INFO(LogCategory::Editor, "[AssetBrowser] Refreshed directory tree.");
 }
 
+
+
 void AssetBrowser::SetParents(AssetNode &node, AssetNode *parent)
 {
     node.parent = parent;
@@ -133,6 +141,8 @@ void AssetBrowser::SetParents(AssetNode &node, AssetNode *parent)
         SetParents(child, &node);
     }
 }
+
+
 
 void AssetBrowser::LoadDirectory(const fs::path &dirPath, AssetNode &node)
 {
@@ -172,6 +182,8 @@ void AssetBrowser::LoadDirectory(const fs::path &dirPath, AssetNode &node)
     });
 }
 
+
+
 AssetBrowser::AssetNode *AssetBrowser::FindNodeByPath(AssetNode &node, const fs::path &path)
 {
     if (node.path == path) return &node;
@@ -181,6 +193,8 @@ AssetBrowser::AssetNode *AssetBrowser::FindNodeByPath(AssetNode &node, const fs:
     }
     return nullptr;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ナビゲーション（履歴）
@@ -196,6 +210,8 @@ void AssetBrowser::NavigateTo(AssetNode *folder)
     selectedAssetPath = "";
 }
 
+
+
 void AssetBrowser::NavigateBack()
 {
     if (!historyBack.empty())
@@ -206,6 +222,8 @@ void AssetBrowser::NavigateBack()
         selectedAssetPath = "";
     }
 }
+
+
 
 void AssetBrowser::NavigateForward()
 {
@@ -218,6 +236,8 @@ void AssetBrowser::NavigateForward()
     }
 }
 
+
+
 void AssetBrowser::NavigateUp()
 {
     if (currentFolder && currentFolder->parent)
@@ -225,6 +245,8 @@ void AssetBrowser::NavigateUp()
         NavigateTo(currentFolder->parent);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画
@@ -262,6 +284,8 @@ void AssetBrowser::Draw()
 
     ImGui::End();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ツールバーとパンくずリスト
@@ -305,6 +329,8 @@ void AssetBrowser::DrawToolbar()
     DrawSearchBar();
 }
 
+
+
 void AssetBrowser::DrawBreadcrumbs()
 {
     if (!currentFolder) return;
@@ -335,6 +361,8 @@ void AssetBrowser::DrawBreadcrumbs()
     ImGui::PopStyleColor();
 }
 
+
+
 void AssetBrowser::DrawSearchBar()
 {
     ImGui::SetNextItemWidth(150.0f);
@@ -357,6 +385,8 @@ void AssetBrowser::DrawSearchBar()
         ImGui::EndTooltip();
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 左ペイン（フォルダツリー。1回のクリックで展開し、ファイルも表示する）
@@ -453,6 +483,8 @@ void AssetBrowser::DrawFolderTree(AssetNode &node)
     ImGui::PopID();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 右ペイン（アイコンのグリッド）
 // ---------------------------------------------------------------------------
@@ -533,13 +565,15 @@ void AssetBrowser::DrawGridView()
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // フィルタ判定
 // ---------------------------------------------------------------------------
 bool AssetBrowser::FilterAsset(const AssetNode &node)
 {
-    // ループ内で数千回呼ばれるので ZoneScopedN を入れない（計測の負荷で操作できないほど重くなる）。
-    // 拡張子が extensionMap に無いファイルは表示しない。
+    // ループ内で数千回呼ばれるので ZoneScopedN を入れない（計測の負荷で操作できないほど重くなる）
+    // 拡張子が extensionMap にないファイルは表示しない
 
     if (node.isDirectory) return true;
 

@@ -1,18 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: DirectXTK Audio（XAudio2）による IAudioAPI の実装 DxtkAudioManager。
+// 概要: DirectXTK Audio（XAudio2）で IAudioAPI を実装するクラス
 //
 // 責務:
-//   - AudioConfigDXTK.json の「イベント名 → 音源ファイル」を起動時に SoundEffect としてロードする
-//     （キーはイベント名のハッシュ）
-//   - 2D/3D の再生、再生中インスタンスの制御、3D リスナーの更新
-//   - スロー演出: SetGlobalSlow(0..1) で全再生音のピッチを下げ、スロー中はリバーブを掛ける
+//   - AudioConfigDXTK.json のイベント名と音源ファイルを、起動時に読み込む（キーはイベント名のハッシュ）
+//   - 2D / 3D の再生、再生中の音の制御、3D リスナーの更新
+//   - SetGlobalSlow で全部の音のピッチを下げ、スロー中はリバーブを掛ける
 //
-// 備考:
-//   - WAV は DXTK が直接読む。mp3/wma/aac は Media Foundation で PCM にデコードしてから渡す。
-//     読めないファイルは警告を出してスキップする。
-//   - XAudio2 に依存する実装は Impl（pimpl）に隠し、このヘッダに xaudio2 を持ち込まない。
-//   - AudioSystem が ForEachParallel の中から呼ぶため、内部のマップは mutex で保護する。
+// 備考: WAV は DXTK が直接読み、mp3 などは Media Foundation で PCM にしてから渡す。読めないものは警告して飛ばす
+//       XAudio2 に頼る部分は Impl に隠し、このヘッダに xaudio2 を持ち込まない
+//       AudioSystem が ForEachParallel の中から呼ぶので、内部のマップは mutex で守る
 // ===========================================================================
 #include "Engine/Audio/IAudioAPI.h"
 #include <memory>
@@ -25,7 +22,7 @@ public:
     DxtkAudioManager();
     ~DxtkAudioManager() override;
 
-    // 基底の const char* 版ヘルパーが uint32_t 版の override で隠蔽されるのを防ぐ。
+    // 基底の const char* 版ヘルパーが uint32_t 版の override で隠蔽されるのを防ぐ
     using IAudioAPI::PlayEvent;
     using IAudioAPI::PlayOneShot;
     using IAudioAPI::PlayOneShot3D;

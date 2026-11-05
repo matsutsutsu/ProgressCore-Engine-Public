@@ -1,6 +1,5 @@
-// BossCommandComponent のシリアライズ/インスペクタ定義。
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-#include "Game/Logics/AI/Drone/Components/DroneComponent.h" // kDroneFormationNames
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -25,7 +24,7 @@ struct ComponentMeta<BossCommandComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // どれも実行時の値。保存しない。
+            // どれも実行時の値。保存しない
             CFIELD_RT(currentActionId, "現在のActionID", "Current Command")
             CFIELD_RT(actionSerial, "技の依頼番号", "Current Command")
             CFIELD_ENUM_U8_RT(requestFormation, "フォーメーション要求", kDroneFormationNames.data(), kDroneFormationNames.size(), "Drone Control")};

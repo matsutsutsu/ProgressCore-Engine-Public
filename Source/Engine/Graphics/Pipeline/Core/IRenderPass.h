@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 描画の1段階（影・不透明・半透明・ポストプロセスなど）を表すパスの基底クラス。
+// 概要: 描画の1段階（影・不透明・半透明・ポストプロセスなど）を表すパスの基底クラス
 //
 // 責務:
 //   - Initialize で受け取った RenderServices を保持し、派生クラスに m_services で渡す
@@ -9,7 +9,7 @@
 //
 // 備考: エンジンが終わるまで変わらないもの（RenderServices）と、そのフレームだけ有効な
 //       もの（RenderFrameContext）を分けて受け取る。Execute が引数に取るのは後者だけにして、
-//       フレームごとに変わるデータがどれかを型で分かるようにしている。
+//       フレームごとに変わるデータがどれかを型で分かるようにしている
 // ===========================================================================
 #include <cstdint>
 #include <string>
@@ -30,20 +30,8 @@ public:
     const tracy::SourceLocationData *m_gpuSourceLocation = nullptr;
 #endif
 
-    /**
-     * @brief services を保持し、派生クラスは GPU リソースを作る。
-     * @param services ポインタはエンジンの終了まで有効
-     *
-     * GPU リソースが要る派生クラスは、オーバーライドして先に基底を呼ぶ。
-     * @code
-     *    void OpaquePass::Initialize(const RenderServices &services)
-     *    {
-     *        IRenderPass::Initialize(services); // m_services を保持
-     *        m_psoOpaque = PipelineState(PipelineStateDesc::DefaultOpaque());
-     *        m_instanceBuffer.Create(services.device, 8192);
-     *    }
-     * @endcode
-     */
+    // services を持つ。ポインタはエンジンの終了まで有効
+    // GPU のリソースが要る派生クラスは、上書きして先に IRenderPass::Initialize を呼ぶ
     virtual void Initialize(const RenderServices &services)
     {
         m_services = &services;

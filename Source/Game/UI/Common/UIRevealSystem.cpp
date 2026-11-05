@@ -5,7 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Engine/UI/Text/TextRenderer.h" // UTF-8 の文字数（日本語を文字の途中で切らない）
+#include "Engine/UI/Text/TextRenderer.h"
 
 #include <algorithm>
 
@@ -63,5 +63,7 @@ void UIRevealSystem::Update(float dt)
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIRevealSystem, Priority::RenderStage::R10_UI);

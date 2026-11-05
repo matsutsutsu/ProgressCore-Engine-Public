@@ -6,7 +6,7 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" // 体の高さ
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 
@@ -21,7 +21,7 @@ using namespace DirectX::SimpleMath;
 namespace
 {
     constexpr uint32_t kAttackAction   = CCL::Utils::HashString("Attack"); // InputConfig.json の攻撃のアクション名
-    constexpr float    kDefaultHeight  = 4.0f;      // カプセルが無い敵の体の高さ（m）
+    constexpr float    kDefaultHeight  = 4.0f;      // カプセルがない敵の体の高さ（m）
     constexpr float    kScreenMargin   = 8.0f;      // 画面の端から空ける幅（px）
     constexpr float    kSegmentOverlap = 1.15f;     // リングの線を隣と重ねる倍率。つなぎ目の隙間を消す
     constexpr float    kPi             = 3.1415927f;
@@ -98,7 +98,6 @@ void RushPromptHudSystem::Update(float dt)
 
 
 
-// プレイヤーのエンティティを返す。戦闘の情報が無いシーンでは無効
 EntityID RushPromptHudSystem::FindPlayer() const
 {
     if (!m_world->HasResource<BattleContext>()) return InvalidEntityID;
@@ -111,7 +110,6 @@ EntityID RushPromptHudSystem::FindPlayer() const
 
 
 
-// 待機の出入りを見て、表示の状態を切り替える
 void RushPromptHudSystem::SwitchState(const PlayerRushComponent *rush)
 {
     const bool ready = rush && rush->isActive && rush->phase == RushPhase::Ready;
@@ -148,7 +146,6 @@ void RushPromptHudSystem::SwitchState(const PlayerRushComponent *rush)
 
 
 
-// 濃さと残り時間を進める。消えきったら false
 bool RushPromptHudSystem::AdvanceState(const PlayerRushComponent *rush, const RushPromptStyleComponent &style,
                                        float dt)
 {
@@ -190,7 +187,6 @@ bool RushPromptHudSystem::AdvanceState(const PlayerRushComponent *rush, const Ru
 // 位置
 // ---------------------------------------------------------------------------
 
-// 合図の中心を決める。ロックオンしていなければ、画面の下寄り中央
 void RushPromptHudSystem::UpdateCenter(const PlayerComponent *player, const RushPromptStyleComponent &style)
 {
     auto       &gfx     = Graphics::Instance();
@@ -226,8 +222,6 @@ void RushPromptHudSystem::UpdateCenter(const PlayerComponent *player, const Rush
 
 
 
-// ロックオン対象の体の中心を画面へ投影する（描けない位置なら false）
-// LockOnMarkerHudSystem と同じ求め方にして、照準と位置をそろえる
 bool RushPromptHudSystem::ProjectTarget(EntityID target, XMFLOAT2 &center) const
 {
     if (!m_world->HasResource<Camera *>()) return false;
@@ -264,7 +258,6 @@ bool RushPromptHudSystem::ProjectTarget(EntityID target, XMFLOAT2 &center) const
 // 描画
 // ---------------------------------------------------------------------------
 
-// 残り時間のリングを積む
 void RushPromptHudSystem::PushRing(UIDrawList &list, const RushPromptStyleComponent &style, float scale,
                                    float alpha) const
 {
@@ -302,7 +295,6 @@ void RushPromptHudSystem::PushRing(UIDrawList &list, const RushPromptStyleCompon
 
 
 
-// リングを作る短い線を1本積む
 void RushPromptHudSystem::PushRingSegment(UIDrawList &list, float radius, int index, float fill, float thickness,
                                           const XMFLOAT4 &color, int sortOrder) const
 {
@@ -329,7 +321,6 @@ void RushPromptHudSystem::PushRingSegment(UIDrawList &list, float radius, int in
 
 
 
-// 攻撃ボタンのアイコンを、リングの中心に積む
 void RushPromptHudSystem::PushIcon(UIDrawList &list, const RushPromptStyleComponent &style, float scale,
                                    float alpha) const
 {
@@ -356,7 +347,6 @@ void RushPromptHudSystem::PushIcon(UIDrawList &list, const RushPromptStyleCompon
 // 調整値と画像
 // ---------------------------------------------------------------------------
 
-// 調整値を返す。PlayerHud の子 RushPrompt が無ければ既定値
 const RushPromptStyleComponent &RushPromptHudSystem::GetStyle()
 {
     static const RushPromptStyleComponent kDefaultStyle{};
@@ -364,8 +354,8 @@ const RushPromptStyleComponent &RushPromptHudSystem::GetStyle()
     const auto *style = m_world->GetComponent<RushPromptStyleComponent>(m_styleID);
     if (style) return *style;
 
-    // 見つけた子が無い・消えていたら探し直す
-    // PlayerHud はプレイヤーが現れてから作られるので、最初は無いことがある
+    // 見つけた子がない・消えていたら探し直す
+    // PlayerHud はプレイヤーが現れてから作られるので、最初はないことがある
     m_styleID = InvalidEntityID;
     for (const EntityID id : m_world->View<RushPromptStyleComponent>())
     {
@@ -390,18 +380,19 @@ const RushPromptStyleComponent &RushPromptHudSystem::GetStyle()
 
 
 
-// 攻撃ボタンの画像のパス。まだ決まっていなければ空
 const std::string &RushPromptHudSystem::GetIconPath() const
 {
     static const std::string kEmpty;
 
     // 画像のパスは、InputIconSystem が今のデバイスに合わせて毎フレーム書いている
-    // 子には UITransform が無いので、UIImageCollectSystem はこの画像を描かない
+    // 子には UITransform がないので、UIImageCollectSystem はこの画像を描かない
     const auto *img = m_world->GetComponent<UIImageComponent>(m_styleID);
     if (!img) return kEmpty;
 
     return img->texturePath;
 }
+
+
 
 // 描画リストへ積む
 REGISTER_RENDER_SYSTEM(RushPromptHudSystem, Priority::RenderStage::R10b_UICollect);

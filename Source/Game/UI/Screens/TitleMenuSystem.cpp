@@ -50,7 +50,7 @@ namespace
     constexpr DirectX::XMFLOAT2 kCanvasShift{-180.0f, 220.0f};
 
     // --- 画面の下を暗くする半透明のパネル（px） ---
-    // UI を左下に寄せているので、これが無いと操作のヒントが明るい床に重なって読めない
+    // UI を左下に寄せているので、これがないと操作のヒントが明るい床に重なって読めない
     // 上端を透明にしたグラデーションにして、像の顔と胴は明るく残す
     constexpr float kScrimW       = 2560.0f; // 幅。画面より大きくして、解像度が変わっても端が見えないようにする
     constexpr float kScrimBottomH = 760.0f;  // 高さ
@@ -106,7 +106,7 @@ void TitleMenuSystem::Initialize()
 void TitleMenuSystem::Update(float dt)
 {
     // メニューは Initialize ではなく最初の Update で作る
-    // Initialize の後に背景のレベルを読むと、PersistentTag の無いエンティティが全部消えるため
+    // Initialize の後に背景のレベルを読むと、PersistentTag のないエンティティが全部消えるため
     // 作ったエンティティは生成が反映される次のフレームから使える
     if (!m_menuSpawned)
     {
@@ -120,7 +120,6 @@ void TitleMenuSystem::Update(float dt)
 
 
 
-// タイトルの文字とボタンを作る（最初の Update で1回だけ）
 void TitleMenuSystem::SpawnMenu()
 {
     // 処理フロー:
@@ -180,7 +179,6 @@ void TitleMenuSystem::SpawnMenu()
 
 
 
-// タイトルロゴ（本体・白く光る写し・斬撃の光）を作る
 void TitleMenuSystem::SpawnLogo(CCL::ECS::EntityID canvas)
 {
     using namespace CCL::ECS;
@@ -249,7 +247,6 @@ void TitleMenuSystem::SpawnLogo(CCL::ECS::EntityID canvas)
 
 
 
-// ロゴの登場演出を進める（斬撃の光が走った跡にロゴが現れ、走り終えたら白く光る）
 void TitleMenuSystem::AnimateLogo(float dt)
 {
     // 処理フロー:

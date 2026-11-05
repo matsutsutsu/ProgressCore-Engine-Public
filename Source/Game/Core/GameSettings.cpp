@@ -8,8 +8,8 @@
 
 namespace
 {
-    // 遊んだ人の設定は、配布する Assets とは分けて Saved に置く。フォルダは最初の保存で作られる。
-    // Assets に置くと、Assets を丸ごとコピーして配ったときに、作業中の設定（BGM 0 など）まで配られてしまう。
+    // 遊んだ人の設定は、配布する Assets とは分けて Saved に置く。フォルダは最初の保存で作られる
+    // Assets に置くと、Assets を丸ごとコピーして配ったときに、作業中の設定（BGM 0 など）まで配られてしまう
     constexpr const char *kSettingsPath = "Saved/GameSettings.json";
 }
 
@@ -23,10 +23,12 @@ GameSettings &GameSettings::Instance()
     return settings;
 }
 
+
+
 void GameSettings::Load()
 {
-    // まだ一度も保存していなければ、ファイルは無い。既定値のまま使う。
-    // 有無を先に確かめる。ReadAllText はファイルが無いと ERROR を出すので、初回起動のたびにエラーログが残ってしまう。
+    // まだ一度も保存していなければ、ファイルはない。既定値のまま使う
+    // 有無を先に確かめる。ReadAllText はファイルがないと ERROR を出すので、初回起動のたびにエラーログが残ってしまう
     if (!FileSystem::Exists(kSettingsPath))
     {
         return;
@@ -38,7 +40,7 @@ void GameSettings::Load()
         return;
     }
 
-    // 範囲の外の値（手で書き換えたなど）は範囲へ収める。
+    // 範囲の外の値（手で書き換えたなど）は範囲へ収める
 
     try
     {
@@ -49,11 +51,13 @@ void GameSettings::Load()
     }
     catch (const std::exception &ex)
     {
-        // 壊れていても遊べるよう、既定値のまま続ける。
+        // 壊れていても遊べるよう、既定値のまま続ける
         (void)ex;
         CCL_LOG_ERROR(LogCategory::Game, "[Settings] 設定ファイルを読めませんでした（既定値で続行）: %s", ex.what());
     }
 }
+
+
 
 void GameSettings::Save() const
 {

@@ -1,26 +1,20 @@
 #pragma once
 // ===========================================================================
-// 概要: 同じ Archetype（コンポーネント構成）の Entity を、SoA でまとめて格納する
-//       固定定員のデータ領域 Chunk。
+// 概要: 同じ Archetype（コンポーネント構成）の Entity を SoA でまとめて格納する、定員固定のデータ領域
 //
 // 責務:
-//   - 定員分のメモリを Create 時に1回だけ確保し、以降は確保しない
-//   - Entity のスロット確保（AddEntity / InsertEntity）とコンポーネントの番地計算
-//   - 2段階の削除（MarkDestroyEntity で印 → CompactHoles で詰める）
+//   - 定員分のメモリを Create で1回だけ確保し、以降は確保しない
+//   - スロットの確保（AddEntity / InsertEntity）とコンポーネントの番地の計算
+//   - 2段階の削除（MarkDestroyEntity で印を付け、CompactHoles で詰める）
 //   - Finalize で型ごとのデストラクタを呼んで破棄する
 //
-// 備考: メモリの持ち方（SoA: Structure of Arrays）
-//   通常のオブジェクト指向（AoS）では、1体の中に座標・速度・HP がまとめて並ぶ。
-//   Chunk は逆に「コンポーネントの種類ごとの列」を並べる。
-//
-//     m_memoryBlock（1本の連続メモリ）
-//     ┌──────────────────┬──────────────────┬───
-//     │ Position × 定員   │ Velocity × 定員   │ ...
-//     └──────────────────┴──────────────────┴───
-//      ↑m_componentOffsets[0]  ↑m_componentOffsets[1]
-//
-//   同じ種類のデータが隙間なく並ぶので、ForEach で1種類ずつ走査すると
-//   CPU キャッシュに乗りやすく高速に回せる。
+// 備考: 1体ごとにデータを並べる（AoS）のではなく、コンポーネントの種類ごとの列を並べる（SoA）
+//         m_memoryBlock（1本の連続メモリ）
+//         ┌──────────────────┬──────────────────┬───
+//         │ Position × 定員   │ Velocity × 定員   │ ...
+//         └──────────────────┴──────────────────┴───
+//          ↑m_componentOffsets[0]  ↑m_componentOffsets[1]
+//       同じ種類のデータが隙間なく並ぶので、ForEach で1種類ずつ走査するとキャッシュに乗りやすい
 // ===========================================================================
 #include <vector>
 #include <cstdint>
@@ -48,62 +42,30 @@ namespace CCL::ECS
         // 生成・破棄
         // ============================================================
 
-        /**
-         * @brief 指定した Archetype 用に、定員分のメモリを一括確保して初期化する。
-         *
-         * ChunkManager が「その型構成の Chunk がまだ無い」ときに一度だけ呼ぶ。
-         *
-         * @param archetype             この Chunk が持つコンポーネントの種類とサイズ情報
-         * @param initialEntityCapacity 定員。ChunkManager::CalculateChunkCapacity() が
-         *                              16KB ÷ 1体のバイト数 で計算して渡す
-         */
+        // Archetype 用に定員分のメモリをまとめて確保する。その構成の Chunk がまだないときに1回だけ呼ぶ
+        // 定員は ChunkManager::CalculateChunkCapacity() が 16KB ÷ 1体のバイト数で決める
         void Create(const Archetype &archetype, size_t initialEntityCapacity = 16);
 
-        /**
-         * @brief 生きている全 Entity のデストラクタを呼び、メモリを解放する。
-         *
-         * ~Chunk() と ChunkManager::FinalizeAll()（World の終了時）から呼ばれる。
-         * 2回呼んでも安全。
-         */
+        // 生きている全 Entity のデストラクタを呼び、メモリを解放する。2回呼んでもよい
         void Finalize();
 
         // ============================================================
         // Entity の追加・削除
         // ============================================================
 
-        /**
-         * @brief スロットを1つ確保して名簿に EntityID を書く。メモリ確保は起きない。
-         * @return 確保したスロット番号。満員なら assert して InvalidIndex
-         */
+        // スロットを1つ確保して EntityID を書く。メモリの確保は起きない。満員なら assert して InvalidIndex
         size_t AddEntity(EntityID entity);
 
-        /**
-         * @brief AddEntity に加え、確保したスロットの全コンポーネントをゼロで埋める。
-         *
-         * AddEntity だけでは、前にそのスロットにいた Entity のデータが残っている。
-         * ChunkManager::AddEntity / MoveEntityBetweenChunks（移動先の確保）から呼ばれる。
-         *
-         * @return 確保したスロットの先頭コンポーネントへのポインタ
-         */
+        // AddEntity に加え、確保したスロットの全コンポーネントをゼロで埋める
+        // AddEntity だけだと、前にそのスロットにいた Entity のデータが残る
         void *InsertEntity(EntityID entity);
 
-        /**
-         * @brief 「このスロットは後で消す」と印を付ける。デストラクタは呼ばない。
-         *
-         * デストラクタは呼び出し側の責任。
-         * ChunkManager::ApplyDestroyOp（デストラクタを呼び終えた後）と
-         * MoveEntityBetweenChunks（移動元のスロットを空ける）から呼ばれる。
-         * 実際に詰めるのはフレーム境界の CompactHoles。
-         */
+        // 後で消すスロットに印を付ける。デストラクタは呼ばないので、呼び出し側が先に呼んでおく
+        // 実際に詰めるのはフレーム境界の CompactHoles
         void MarkDestroyEntity(size_t entityIndex);
 
-        /**
-         * @brief 印の付いたスロットを詰め、生きている Entity を前へ寄せる。
-         *
-         * @param onMoveCallback Entity が動くたびに (EntityID, 移動先 Chunk, 移動先スロット)
-         *                       で呼ばれる。ChunkManager が EntityID → 位置の対応表を
-         *                       更新するのに使う（無いと古いスロットを指したままになる）。
-         */
+        // 印の付いたスロットを詰め、生きている Entity を前へ寄せる
+        // Entity が動くたびに onMoveCallback を呼ぶ。ChunkManager はこれで住所録を直す（直さないと古いスロットを指す）
         void CompactHoles(const std::function<void(EntityID, Chunk *, size_t)> &onMoveCallback);
 
         // スロットが削除予約済みか。削除リストを線形探索する（件数は通常ごく少ない）
@@ -131,11 +93,7 @@ namespace CCL::ECS
 
         EntityID GetEntityByIndex(size_t i) const { return m_ownerEntities[i]; }
 
-        /**
-         * @brief Chunk 内の全 EntityID の配列の先頭を返す。
-         *
-         * System 側で「処理中の Entity の ID」が要る場合（ForEachWithID など）に使う。
-         */
+        // Chunk 内の全 EntityID の配列の先頭を返す（ForEachWithID などで使う）
         const EntityID *GetEntityIDs() const
         {
             if (m_ownerEntities.empty()) return nullptr;
@@ -163,10 +121,10 @@ namespace CCL::ECS
 
         std::vector<size_t> m_destroyedEntities; // 削除予約されたスロット番号
 
-        // Chunk の実データ。
+        // Chunk の実データ
         //   1本の連続メモリに種類ごとの列を並べた SoA。各列の先頭位置は
         //   m_componentOffsets が持つ。種類ごとに vector を分けないのは、
-        //   走査が1本の連続領域で済むようにするため。
+        //   走査が1本の連続領域で済むようにするため
         std::vector<uint8_t> m_memoryBlock;
         std::vector<size_t>  m_componentOffsets;
 
@@ -184,13 +142,8 @@ namespace CCL::ECS
             return InvalidIndex;
         }
 
-        /**
-         * @brief TypeID と スロット番号から、SoA 内の正確なメモリ番地を返す。
-         *
-         * Chunk 自身は中身が何の型かを知らないので、型不明の番地（void*）として返す。
-         *
-         * @return この Chunk がその型を持っていなければ nullptr
-         */
+        // TypeID とスロット番号から、SoA 内のメモリ番地を返す。この Chunk がその型を持たなければ nullptr
+        // Chunk は中身の型を知らないので、void* で返す
         void *GetComponentPtrByType(TypeID id, size_t entityIndex)
         {
             size_t compIdx = GetComponentIndex(id);
@@ -241,11 +194,7 @@ namespace CCL::ECS
         }
 
     private:
-        /**
-         * @brief 「何番目のスロットの、どのコンポーネント」かを指定して、その番地を返す。
-         * @param compIdx     コンポーネントの位置（m_archetype 内）
-         * @param entityIndex スロット番号（Chunk 内）
-         */
+        // m_archetype 内のコンポーネントの位置と、スロット番号から番地を返す
         void *GetComponentPtr(size_t compIdx, size_t entityIndex)
         {
             // メモリブロックの先頭 + 列の開始位置 + (スロット番号 × 1個のサイズ)

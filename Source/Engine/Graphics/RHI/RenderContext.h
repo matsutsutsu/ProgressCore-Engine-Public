@@ -1,17 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: レンダーパスへ渡す2種類のコンテキスト。
+// 概要: レンダーパスへ渡す2種類のコンテキスト
 //
 // 責務:
 //   - RenderServices: エンジンの起動から終了まで変わらないサービスへのポインタ
 //   - RenderFrameContext: そのフレームだけ有効な出力先・カメラ・サイズ
 //
-// 備考: 各パスはここから必要なものを受け取り、シングルトンを直接参照しない。
+// 備考: 各パスはここから必要なものを受け取り、シングルトンを直接参照しない
 // ===========================================================================
 #include <d3d11.h>
 #include <cstdint>
 
-// TracyD3D11Ctx（TRACY_ENABLE が無い構成では void* になる別名）
+// TracyD3D11Ctx（TRACY_ENABLE がない構成では void* になる別名）
 #include "tracy/TracyD3D11.hpp"
 
 class ResourceManager;
@@ -28,13 +28,8 @@ class ShapeRenderer;
 class PostProcessManager;
 class RenderQueue;
 
-/**
- * @brief 永続サービス。各 RenderPass が Initialize のときに受け取る。
- *
- * ポインタは Initialize の後、エンジンの終了まで変わらない（指す先の中身は変わってよい）。
- * パスがシングルトンを直接参照しないように、必要なものをここにまとめて渡す。
- * どのポインタも所有しない。
- */
+// 各 RenderPass が Initialize のときに受け取る、終了まで変わらないサービス。どのポインタも所有しない
+// パスがシングルトンを直接参照しないよう、要るものをここにまとめて渡す
 struct RenderServices
 {
     // ---- RHI / アセット ----
@@ -45,9 +40,9 @@ struct RenderServices
     ShaderRegistry    *shaders     = nullptr;
     const RenderState *renderState = nullptr;
 
-    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が持つ）。
+    // GPU 計測用の Tracy コンテキスト（GraphicsDevice が持つ）
     // ここに載せておけば、RenderPipeline が Graphics シングルトンを参照せずに済み、
-    // 下の層が上の層を知らない状態を保てる。
+    // 下の層が上の層を知らない状態を保てる
     TracyD3D11Ctx tracyContext = nullptr;
 
     // ---- 描画サブシステム ----
@@ -67,12 +62,7 @@ struct RenderServices
     UINT screenHeight = 0; // 画面の高さ（px）
 };
 
-/**
- * @brief 毎フレーム作り直すコンテキスト。
- *
- * そのフレームで変わるポインタと値をまとめる。パイプラインの Execute の間だけ有効。
- * どのポインタも所有しない。
- */
+// 毎フレーム作り直すコンテキスト。パイプラインの Execute の間だけ有効で、どのポインタも所有しない
 struct RenderFrameContext
 {
     ID3D11DeviceContext *dc     = nullptr;
@@ -84,9 +74,9 @@ struct RenderFrameContext
     ID3D11ShaderResourceView *sceneDepthSRV  = nullptr;
     ID3D11ShaderResourceView *sceneNormalSRV = nullptr;
 
-    // 今のスカイボックス背景（SkyboxComponent のもの、または既定）と、その明るさの倍率。
-    // EnvironmentSystem が決めて Graphics に渡し、MakeFrameContext がここへ入れる。
-    // null なら SkyboxPass は空を描かない。
+    // 今のスカイボックス背景（SkyboxComponent のもの、または既定）と、その明るさの倍率
+    // EnvironmentSystem が決めて Graphics に渡し、MakeFrameContext がここへ入れる
+    // null なら SkyboxPass は空を描かない
     ID3D11ShaderResourceView *skyboxSRV    = nullptr;
     float                     skyIntensity = 1.0f;
 

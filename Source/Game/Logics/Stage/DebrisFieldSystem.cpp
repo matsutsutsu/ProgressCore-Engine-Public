@@ -27,7 +27,7 @@ namespace
 
 void DebrisFieldSystem::Update(float dt)
 {
-    // 描画ステージはポーズ中も実時間で走るので、PresentationDt でポーズ中は 0 にする。
+    // 描画ステージはポーズ中も実時間で走るので、PresentationDt でポーズ中は 0 にする
     // その上で TimeState の倍率を掛け、スローやヒットストップで帯も一緒に遅くする
     const float presentDt = Time::PresentationDt(*m_world, dt);
 
@@ -43,6 +43,8 @@ void DebrisFieldSystem::Update(float dt)
     m_submittedLastFrame = submitted;
 }
 
+
+
 void DebrisFieldSystem::OnGui()
 {
     ImGui::Text("積んだ岩: %u", m_submittedLastFrame);
@@ -55,6 +57,8 @@ void DebrisFieldSystem::OnGui()
         });
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 岩の種類と乱数
@@ -77,11 +81,13 @@ void DebrisFieldSystem::RebuildIfChanged(DebrisFieldComponent &field)
     }
 }
 
+
+
 void DebrisFieldSystem::LoadKinds(DebrisFieldComponent &field)
 {
     field.kinds.clear();
 
-    // プレハブ自体は生成せず、JSON から Model と scale だけを読む。
+    // プレハブ自体は生成せず、JSON から Model と scale だけを読む
     // 岩の見た目はプレハブを正とし、プレハブを直せば帯の岩も変わるようにするため
     const auto paths = FileSystem::ListFiles(field.prefabFolder, ".json");
     for (const auto &path : paths)
@@ -122,9 +128,11 @@ void DebrisFieldSystem::LoadKinds(DebrisFieldComponent &field)
     }
 }
 
+
+
 void DebrisFieldSystem::BuildRocks(DebrisFieldComponent &field)
 {
-    // 種類が無いと kind の添字が指す先が無いので、岩も作らない
+    // 種類がないと kind の添字が指す先がないので、岩も作らない
     if (field.kinds.empty())
     {
         field.rocks.clear();
@@ -161,6 +169,8 @@ void DebrisFieldSystem::BuildRocks(DebrisFieldComponent &field)
     }
 }
 
+
+
 float DebrisFieldSystem::Hash01(uint32_t seed)
 {
     seed ^= seed >> 15;
@@ -170,6 +180,8 @@ float DebrisFieldSystem::Hash01(uint32_t seed)
     seed ^= seed >> 16;
     return static_cast<float>(seed & 0xFFFFFFu) / static_cast<float>(0xFFFFFFu);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画
@@ -187,7 +199,7 @@ void DebrisFieldSystem::SubmitRocks(const DebrisFieldComponent &field, const Tra
     // 1. ひな形
     // ---------------------------------------------------------
 
-    // シェーダーの決め方は ModelRenderSystem と同じ（先頭のマテリアル、無ければ PBR）。
+    // シェーダーの決め方は ModelRenderSystem と同じ（先頭のマテリアル、なければ PBR）
     // 同じモデルの岩が同じキーになり、OpaquePass で1つのインスタンス描画にまとまる
     std::vector<RenderCommand> templates(field.kinds.size());
     for (size_t k = 0; k < field.kinds.size(); ++k)
@@ -247,5 +259,7 @@ void DebrisFieldSystem::SubmitRocks(const DebrisFieldComponent &field, const Tra
         queue.SubmitOpaque(cmd);
     }
 }
+
+
 
 REGISTER_RENDER_SYSTEM(DebrisFieldSystem, Priority::RenderStage::R08_Main);

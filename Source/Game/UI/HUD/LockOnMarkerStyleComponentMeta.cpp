@@ -1,4 +1,3 @@
-// LockOnMarkerStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/HUD/LockOnMarkerStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

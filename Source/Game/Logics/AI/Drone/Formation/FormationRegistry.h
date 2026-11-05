@@ -1,18 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: DroneFormationType から IFormation の実装を引くレジストリ（World の Resource）。
+// 概要: DroneFormationType から IFormation の実装を引くレジストリ（World の Resource）
 //
 // 責務:
 //   - 陣形の種類ごとに実装のインスタンスを1つ持つ
 //   - 種類から実装を引く（未登録なら nullptr）
 //   - データ陣形の表示名を返す
 //
-// 備考: C++ の陣形を追加するときは Formations_*.h にクラスを書き、そのファイルの RegisterAll() へ1行足す。
-//       データ陣形は JSON を置けば起動時に登録される。
-//
-//       シングルトンにせず World ごとに持つ。中の陣形が World に依存する状態
-//       （JSON のデータ・その World の小隊・エディタのプレビュー）を持つため。
-//       シーンを切り替えると作り直されるので、Formation Editor で保存していない変更は消える。
+// 備考: C++ の陣形は Formations_*.h にクラスを書き、その RegisterAll() へ1行足す。データ陣形は JSON を置けば登録される
+//       中の陣形が World ごとの状態（JSON・小隊・エディタのプレビュー）を持つので、シングルトンにせず World ごとに持つ
+//       シーンを切り替えると作り直されるので、Formation Editor で保存していない変更は消える
 // ===========================================================================
 #include <array>
 #include <memory>
@@ -30,11 +27,7 @@ namespace CCL::AI::Formation
         FormationRegistry(const FormationRegistry &)            = delete;
         FormationRegistry &operator=(const FormationRegistry &) = delete;
 
-        /**
-         * @brief World に登録されているレジストリを返す。
-         * @param world 探す World。
-         * @return レジストリ。DroneFormationSystem::Initialize が作る前なら nullptr。
-         */
+        // World に登録されているレジストリを返す。DroneFormationSystem::Initialize が作る前なら nullptr
         static FormationRegistry *Find(CCL::ECS::World &world)
         {
             return world.HasResource<FormationRegistry>() ? &world.GetResource<FormationRegistry>() : nullptr;
@@ -65,11 +58,8 @@ namespace CCL::AI::Formation
                 if (formation) formation->BeginFrame(world);
         }
 
-        /**
-         * @brief データで書かれた技の名前（JSON の name）を返す。BTエディタが表示名に使う。
-         * @param type 調べる陣形の枠。
-         * @return 技の名前。陣形が所有する。C++ 実装の枠と空き枠は nullptr。
-         */
+        // データで書かれた技の名前（JSON の name）を返す。BT エディタが表示名に使う
+        // 文字列は陣形が持つ。C++ 実装の枠と空き枠は nullptr
         const char *DataFormationName(DroneFormationType type) const
         {
             IFormation *formation = Get(type);

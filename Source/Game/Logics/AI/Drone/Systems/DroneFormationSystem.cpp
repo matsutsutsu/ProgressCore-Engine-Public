@@ -26,7 +26,6 @@ namespace
     constexpr float kTelegraphTimeCap = 10.0f;
 } // namespace
 
-// Droneのアクションを登録する
 void DroneFormationSystem::Initialize()
 {
     // 評価するこの System が作るので、どのシーンでも同じ陣形が揃う
@@ -42,6 +41,8 @@ void DroneFormationSystem::Initialize()
 
     CCL_LOG_INFO(LogCategory::AI, "[DroneFormationSystem] 陣形クラス登録完了");
 }
+
+
 
 FormationContext DroneFormationSystem::MakeContext(float dt)
 {
@@ -72,8 +73,8 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
                 hasBoss       = true;
             }
 
-            // 跳躍中は、陣形の中心を踏み切った地点の高さに置く。
-            // 浮いたボスをそのまま中心にすると陣形ごと持ち上がり、地面を薙ぐ技がプレイヤーの頭上を素通りする。
+            // 跳躍中は、陣形の中心を踏み切った地点の高さに置く
+            // 浮いたボスをそのまま中心にすると陣形ごと持ち上がり、地面を薙ぐ技がプレイヤーの頭上を素通りする
             // 踏み切り前の溜め（Windup）と突進は揃えない（ドローンも一緒に持ち上がる見た目にする）
             if (const auto *act = m_world->GetComponent<BossActionComponent>(b))
             {
@@ -89,9 +90,9 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
 
     // --- 速度 ---
 
-    // 前フレームの中心との差から出す。地面の高さに揃えた中心と、ボスの実際の位置の2つを別々に測る。
+    // 前フレームの中心との差から出す。地面の高さに揃えた中心と、ボスの実際の位置の2つを別々に測る
 
-    // 一定の速さを超えたら瞬間移動（配置・リスポーン）とみなして含めない。
+    // 一定の速さを超えたら瞬間移動（配置・リスポーン）とみなして含めない
     // 含めると、ドローンが1フレームだけ数百 m/s で飛んでいく
     constexpr float kTeleportSpeed = 300.0f; // ボスの最速（突進 150 m/s 前後）より十分上
     auto velocityOf = [&](const DirectX::SimpleMath::Vector3 &now, const DirectX::SimpleMath::Vector3 &prev) {
@@ -121,8 +122,8 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
 
     // --- 狙いの固定 ---
 
-    // 撃つ合図の立ち上がりで1回だけ固定し、合図が下りたら解除する。
-    // 予備動作の間はプレイヤーを向き続けて避ける方向を読ませ、撃った後は追わない（避けても当たるのを防ぐ）。
+    // 撃つ合図の立ち上がりで1回だけ固定し、合図が下りたら解除する
+    // 予備動作の間はプレイヤーを向き続けて避ける方向を読ませ、撃った後は追わない（避けても当たるのを防ぐ）
 
     // 立ち上がりは DroneCommandSystem も検出しているが、その結果を使うと実行順で1フレームずれるので、ここで検出する
     if (attackActive && !m_prevAttackActive)
@@ -147,6 +148,8 @@ FormationContext DroneFormationSystem::MakeContext(float dt)
     return ctx;
 }
 
+
+
 void DroneFormationSystem::Update(float rawDt)
 {
     ZoneScopedN("DroneFormationSystem::Update");
@@ -158,7 +161,7 @@ void DroneFormationSystem::Update(float rawDt)
 
     // --- 時間 ---
 
-    // ドローンと同じ時計（敵グループ）で進める。rawDt だとジャスト回避のスロー中も陣形だけ等速になる。
+    // ドローンと同じ時計（敵グループ）で進める。rawDt だとジャスト回避のスロー中も陣形だけ等速になる
     // ボスの localDt は使わない。ボスだけヒットストップしたときに陣形まで止まるため
     float dt = rawDt;
     if (m_world->HasResource<TimeContext>())
@@ -189,7 +192,7 @@ void DroneFormationSystem::Update(float rawDt)
 
     // 陣形の仮想関数は機体ごとに呼ぶ。全機がほぼ同じ陣形なので分岐予測が当たり、コストは小さい
     ForEach([&](DroneComponent &drone) {
-        // 陣形が切り替わったら予告の時計を 0 から数え直す。前の陣形で待った時間を次の技へ持ち越さないため。
+        // 陣形が切り替わったら予告の時計を 0 から数え直す。前の陣形で待った時間を次の技へ持ち越さないため
         // データ陣形が Calculate の中でこの時計を読むので、Calculate より前に行う
         if (drone.telegraphFormation != drone.currentFormation)
         {
@@ -200,7 +203,7 @@ void DroneFormationSystem::Update(float rawDt)
         IFormation *formation = registry.Get(drone.currentFormation);
         if (!formation)
         {
-            // 未登録の陣形（None 等）では持ち場も springScale も書かない（陣形の外で動かす機は、動かす側が書く）。
+            // 未登録の陣形（None 等）では持ち場も springScale も書かない（陣形の外で動かす機は、動かす側が書く）
             // 予告の溜めだけは戻す。抱えたままだと、次に陣形が出た瞬間から全開で震える
             drone.telegraphTime     = 0.0f;
             drone.followFeedForward = DirectX::SimpleMath::Vector3::Zero;
@@ -215,7 +218,7 @@ void DroneFormationSystem::Update(float rawDt)
 
         formation->Calculate(drone, ctx);
 
-        // 予告の時計は「持ち場に着いていて、まだ撃つ合図が来ていない」間だけ進める。
+        // 予告の時計は「持ち場に着いていて、まだ撃つ合図が来ていない」間だけ進める
         // hasReachedSlot は帰投中だけ false に落ちるので、帰る途中は予告にならない
         drone.telegraphTime = (drone.hasReachedSlot && !drone.wantsAttack)
                                   ? (std::min)(kTelegraphTimeCap, drone.telegraphTime + dt)
@@ -226,11 +229,15 @@ void DroneFormationSystem::Update(float rawDt)
     });
 }
 
+
+
 void DroneFormationSystem::OnGui()
 {
     ImGui::SliderFloat("ボスの速度を乗せる割合", &m_bossCarry, 0.0f, 1.0f);
     ImGui::TextDisabled("1 でボスと一緒に動く。下げるほど少し遅れて引きずられる");
     ImGui::TextDisabled("（小隊突撃は先頭機を基準にするので対象外）");
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(DroneFormationSystem, Priority::LogicStage::L02_Update)

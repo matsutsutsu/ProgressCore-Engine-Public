@@ -15,7 +15,6 @@ static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("OnDash");
 
 
 
-// プレイヤーのゲーム側の状態を、アニメのパラメータへ書く
 void PlayerAnimParamSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const PlayerDashComponent &dash, const PlayerComponent &player,

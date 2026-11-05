@@ -1,19 +1,19 @@
 #pragma once
 // ===========================================================================
-// 概要: メニューと HUD の UI エンティティを作る関数をまとめたヘッダー。
+// 概要: メニューと HUD の UI エンティティを作る関数をまとめたヘッダー
 //
 // 責務:
 //   - Canvas・ラベル・単色のパネル・ボタン・操作のヒントを作る
 //   - UI の親子関係と、出てくるときのアニメーションを設定する
 //   - メニュー共通の見た目（MenuStyle）を引く
 //
-// 備考: 作るだけで、状態の管理やシーンの切り替えは呼び出す System が行う。
+// 備考: 作るだけで、状態の管理やシーンの切り替えは呼び出す System が行う
 // ===========================================================================
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UICanvasComponent.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
@@ -35,7 +35,7 @@ namespace CCL::GameUI
     // メニュー共通の見た目
     // ---------------------------------------------------------------------------
 
-    // MenuStyle（MenuStyleSystem が置く）を探す。まだ無いシーンでは InvalidEntityID
+    // MenuStyle（MenuStyleSystem が置く）を探す。まだないシーンでは InvalidEntityID
     inline CCL::ECS::EntityID FindMenuStyle(CCL::ECS::World &world)
     {
         for (const CCL::ECS::EntityID id : world.View<MenuStyleComponent>())
@@ -45,7 +45,7 @@ namespace CCL::GameUI
         return CCL::ECS::InvalidEntityID;
     }
 
-    // メニュー共通の見た目を返す。MenuStyle がまだ無いシーンでは既定値
+    // メニュー共通の見た目を返す。MenuStyle がまだないシーンでは既定値
     // 値で返すのは、呼び出し側が途中で生成を挟んでも参照が無効にならないようにするため
     inline MenuStyleComponent GetMenuStyle(CCL::ECS::World &world)
     {
@@ -76,12 +76,12 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief UI の親子関係に使う TransformComponent を作る。
+     * @brief UI の親子関係に使う TransformComponent を作る
      *
-     * 配置は UITransformComponent が決めるが、親子関係は 3D と同じ TransformComponent を使う。
-     * Hierarchy の表示・ドラッグでの親子付け・入れ子の配置の計算がこれ1つで済む。
+     * 配置は UITransformComponent が決めるが、親子関係は 3D と同じ TransformComponent を使う
+     * Hierarchy の表示・ドラッグでの親子付け・入れ子の配置の計算がこれ1つで済む
      *
-     * @param parent 親のエンティティ。無効ならルート（0）にする。
+     * @param parent 親のエンティティ。無効ならルート（0）にする
      */
     inline TransformComponent MakeUINode(CCL::ECS::EntityID parent)
     {
@@ -92,9 +92,9 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief UI の親子関係のルートになる Canvas を作る。矩形は常に画面全体。
-     * @param offset 子の UI をまとめて平行移動する量（px）。
-     * @note 3D の Transform は親子関係のためだけに使うので、動かしても UI の位置は変わらない。
+     * @brief UI の親子関係のルートになる Canvas を作る。矩形は常に画面全体
+     * @param offset 子の UI をまとめて平行移動する量（px）
+     * @note 3D の Transform は親子関係のためだけに使うので、動かしても UI の位置は変わらない
      */
     inline CCL::ECS::EntityID SpawnCanvas(CCL::ECS::World &world, const char *name,
                                           DirectX::XMFLOAT2 offset = {0.0f, 0.0f})
@@ -111,9 +111,9 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief 画面の中央を基準にした文字のラベルを作る。
-     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし。
-     * @param parent      UI の親（Canvas など）。矩形も親を基準に求める。
+     * @brief 画面の中央を基準にした文字のラベルを作る
+     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし
+     * @param parent      UI の親（Canvas など）。矩形も親を基準に求める
      */
     inline CCL::ECS::EntityID SpawnLabel(CCL::ECS::World &world, const char *name,
                                          const std::string &text, DirectX::XMFLOAT2 offset, float pixelSize, int sortOrder = 11,
@@ -142,10 +142,10 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief 単色のパネル（暗転など）を作る。size を大きくすれば画面全体を覆える。
-     * @param appearDelay  0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし。
-     * @param appearSlideY 出てくるときに上へスライドする量（px）。暗転は 0（フェードだけ）。
-     * @param colorBottom  指定すると、上端 color から下端 colorBottom への縦のグラデーションになる。
+     * @brief 単色のパネル（暗転など）を作る。size を大きくすれば画面全体を覆える
+     * @param appearDelay  0 以上なら、その秒数だけ待ってから出てくる。負なら出てくる演出なし
+     * @param appearSlideY 出てくるときに上へスライドする量（px）。暗転は 0（フェードだけ）
+     * @param colorBottom  指定すると、上端 color から下端 colorBottom への縦のグラデーションになる
      */
     inline CCL::ECS::EntityID SpawnPanel(CCL::ECS::World &world, const char *name,
                                          DirectX::XMFLOAT2 offset, DirectX::XMFLOAT2 size, DirectX::XMFLOAT4 color, int sortOrder,
@@ -185,14 +185,14 @@ namespace CCL::GameUI
     // ---------------------------------------------------------------------------
 
     /**
-     * @brief ボタン（当たり判定・斜めの帯）と、その上に重ねるラベルを作る。
+     * @brief ボタン（当たり判定・斜めの帯）と、その上に重ねるラベルを作る
      *
-     * 普段は暗い板だけが見え、選ぶと帯が左から伸び、押すと白く飛んでグリッチが走る。
-     * 動かすのは MenuButtonStyleSystem。大きさと色は MenuStyle から取る。
+     * 普段は暗い板だけが見え、選ぶと帯が左から伸び、押すと白く飛んでグリッチが走る
+     * 動かすのは MenuButtonStyleSystem。大きさと色は MenuStyle から取る
      *
-     * @param focused     最初から選ばれた状態にするか。
-     * @param sortOrder   帯の描画順。ラベルは +1 で手前に置く。
-     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる（ボタンとラベルの両方）。負なら出てくる演出なし。
+     * @param focused     最初から選ばれた状態にするか
+     * @param sortOrder   帯の描画順。ラベルは +1 で手前に置く
+     * @param appearDelay 0 以上なら、その秒数だけ待ってから出てくる（ボタンとラベルの両方）。負なら出てくる演出なし
      */
     inline MenuButtonIds SpawnButton(CCL::ECS::World &world, const char *btnName,
                                      const char *labelName, const std::string &label, DirectX::XMFLOAT2 offset,
@@ -286,15 +286,15 @@ namespace CCL::GameUI
     }
 
     /**
-     * @brief メニューの下に出す操作のヒント（決定・選択）を作る。
+     * @brief メニューの下に出す操作のヒント（決定・選択）を作る
      *
-     * 全画面が同じ行を出すので、ここにまとめる。
-     * 画面ごとに書くと、座標やアイコンの種類がずれていく。
+     * 全画面が同じ行を出すので、ここにまとめる
+     * 画面ごとに書くと、座標やアイコンの種類がずれていく
      *
-     * @param yOffset 画面の中央からの縦の位置（px）。ボタンの下に来る値を渡す。
-     * @param out     作ったエンティティを足す先（呼び出し側がまとめて消すため）。
-     * @param xOffset 行全体を横に動かす量（px）。メニューを左に寄せた画面で使う。
-     * @note アイコンの画像は InputIconSystem が毎フレーム決める。ここは種類を指定するだけ。
+     * @param yOffset 画面の中央からの縦の位置（px）。ボタンの下に来る値を渡す
+     * @param out     作ったエンティティを足す先（呼び出し側がまとめて消すため）
+     * @param xOffset 行全体を横に動かす量（px）。メニューを左に寄せた画面で使う
+     * @note アイコンの画像は InputIconSystem が毎フレーム決める。ここは種類を指定するだけ
      */
     inline void SpawnMenuHints(CCL::ECS::World &world, CCL::ECS::EntityID parent, float yOffset,
                                std::vector<CCL::ECS::EntityID> &out, int sortOrder = 230, float appearDelay = -1.0f,

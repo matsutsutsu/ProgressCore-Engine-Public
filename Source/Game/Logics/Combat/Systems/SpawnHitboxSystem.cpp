@@ -21,19 +21,21 @@ using namespace DirectX;
 
 namespace
 {
-    // 寿命が 0 で来たときに使う最短の寿命（秒）。
+    // 寿命が 0 で来たときに使う最短の寿命（秒）
     // FixedUpdate（60Hz）で3フレームほどあり、センサーが重なりを1回は見つけられる
     constexpr float kMinHitboxLifetime = 0.05f;
 } // namespace
 
 void SpawnHitboxSystem::Initialize()
 {
-    // AnimationSystem（L02_PostUpdate）が Publish し、その中でこのコールバックが呼ばれる。
+    // AnimationSystem（L02_PostUpdate）が Publish し、その中でこのコールバックが呼ばれる
     // Spawn はすぐには反映されず、後でまとめて反映される
     ListenEvent<AnimEventSpawnHitboxMessage>([this](const AnimEventSpawnHitboxMessage &msg) {
         OnSpawnHitbox(msg);
     });
 }
+
+
 
 void SpawnHitboxSystem::Update(float dt)
 {
@@ -46,7 +48,7 @@ void SpawnHitboxSystem::Update(float dt)
             return;
         }
 
-        // 追従する判定は、持ち主が消えた・アニメーションが切り替わったら寿命の途中でも消す。
+        // 追従する判定は、持ち主が消えた・アニメーションが切り替わったら寿命の途中でも消す
         // 持ち主の Animator は読むだけ（Animator を書く System は L02 で、ステージが分かれている）
         if (const auto *follow = m_world->GetComponent<HitboxLifeAnimComponent>(id))
         {
@@ -57,9 +59,11 @@ void SpawnHitboxSystem::Update(float dt)
     });
 }
 
+
+
 void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
 {
-    // 1. 持ち主の Transform。無ければ位置が決まらないので作らない
+    // 1. 持ち主の Transform。なければ位置が決まらないので作らない
     const auto *ownerT = m_world->GetComponent<TransformComponent>(msg.owner);
     if (!ownerT)
     {
@@ -79,7 +83,7 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
     XMFLOAT3 spawnPosF;
     XMStoreFloat3(&spawnPosF, spawnPos);
 
-    // 3. 誰に当てるかは、イベントの衝突レイヤーで決める（Sequencer の SpawnHitbox で選ぶ）。
+    // 3. 誰に当てるかは、イベントの衝突レイヤーで決める（Sequencer の SpawnHitbox で選ぶ）
     //    PLAYER_ATTACK ならボスに、BOSS_ATTACK ならプレイヤーに当たる
     const JPH::ObjectLayer layer = static_cast<JPH::ObjectLayer>(msg.attackLayer);
 
@@ -97,9 +101,9 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
     TransformComponent t{};
     if (msg.follow)
     {
-        // 持ち主の子にする。position はローカル座標で、回転は持ち主に任せる。
-        // 以降は TransformUpdateSystem が親の動きを反映し、JoltPushSystem が Kinematic の剛体を合わせる。
-        // 親の子リストへの登録は、TransformUpdateSystem が新しい子を見つけたときに行う。
+        // 持ち主の子にする。position はローカル座標で、回転は持ち主に任せる
+        // 以降は TransformUpdateSystem が親の動きを反映し、JoltPushSystem が Kinematic の剛体を合わせる
+        // 親の子リストへの登録は、TransformUpdateSystem が新しい子を見つけたときに行う
         //
         // 子の position には親の scale も掛かる（Valkyra は 5 倍）。一方、球の半径には scale が掛からず、
         // 追従しない判定の offset もメートルのまま使う。そろえるため、offset を持ち主のワールドの scale で割り、
@@ -126,8 +130,8 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
     }
     ref.Set(t);
 
-    // 作った時から判定を開いておく。ownerResolved を true にして、CombatAnimationSyncSystem に触らせない。
-    // 追従する判定は親をたどると持ち主の Animator が見つかるので、探させると HitBox 区間が無いとして閉じられる
+    // 作った時から判定を開いておく。ownerResolved を true にして、CombatAnimationSyncSystem に触らせない
+    // 追従する判定は親をたどると持ち主の Animator が見つかるので、探させると HitBox 区間がないとして閉じられる
     HitboxComponent hb{};
     hb.ownerID         = msg.owner;
     hb.damageAmount    = msg.damage;
@@ -172,6 +176,8 @@ void SpawnHitboxSystem::OnSpawnHitbox(const AnimEventSpawnHitboxMessage &msg)
                  msg.follow ? 1 : 0);
 }
 
-// 作るのはイベントで行うので、ステージは寿命を減らすタイミングだけに関わる。
+
+
+// 作るのはイベントで行うので、ステージは寿命を減らすタイミングだけに関わる
 // 当たり判定と同じ L05_Collision に置く
 REGISTER_LOGIC_SYSTEM(SpawnHitboxSystem, Priority::LogicStage::L05_Collision);

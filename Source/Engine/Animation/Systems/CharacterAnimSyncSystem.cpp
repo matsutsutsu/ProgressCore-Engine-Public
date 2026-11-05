@@ -1,5 +1,5 @@
 #include "CharacterAnimSyncSystem.h"
-#include "Engine/Animation/Components/RootMotionComponent.h" // externallyDriven
+#include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -50,7 +50,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // 前のステップの接地状態（変化の検出用）
         bool wasGrounded = animParams.GetBool(HASH_IS_GROUNDED);
 
-        // ゲーム側の移動アクション（ダッシュ等）が速度を制御中なら、足滑り補正を掛けない。
+        // ゲーム側の移動アクション（ダッシュ等）が速度を制御中なら、足滑り補正を掛けない
         //   ゲーム固有の PlayerDashComponent を読まず、Engine 側の externallyDriven を見る
         bool externallyDriven = false;
         if (auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id))
@@ -72,7 +72,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else if (!isGrounded && wasGrounded)
         {
-            // 上向きの速度があるときだけジャンプとみなす。
+            // 上向きの速度があるときだけジャンプとみなす
             //   歩いて落ちた場合はトリガーを立てず、グラフ側の条件（落下速度と空中の bool）で落下へ遷移させる
             if (currentYVel > 0.1f)
             {
@@ -84,10 +84,10 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // 3. 足滑りの防止
         // ---------------------------------------------------------
 
-        // 移動速度と基準速度（walkSpeed）の比で再生速度を伸縮させ、足の接地を床に合わせる。
+        // 移動速度と基準速度（walkSpeed）の比で再生速度を伸縮させ、足の接地を床に合わせる
         //   書き込み先は playbackSpeed ではなく footSlideMultiplier（理由は AnimatorComponent.h）
 
-        // ループするクリップ（ロコモーション）にだけ掛ける。
+        // ループするクリップ（ロコモーション）にだけ掛ける
         //   非ループ（攻撃など）に掛けると、走行中の速度で攻撃アニメまで最大 2.5 倍速になる
 
         // ムービーがクリップを握っている間も掛けない（演出のクリップは指定した速度で見せる）
@@ -102,7 +102,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         }
         else
         {
-            // 倍率は毎ステップ必ず代入する。
+            // 倍率は毎ステップ必ず代入する
             //   書かない経路があると、ロコモーションの倍率が攻撃へ持ち越される
             animator.footSlideMultiplier = 1.0f;
         }
@@ -111,6 +111,6 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
 
 
 
-// アニメーションの遷移評価（L02_Update の AnimControllerSystem）より前に置く。
+// アニメーションの遷移評価（L02_Update の AnimControllerSystem）より前に置く
 //   読むのは前のステップの物理（L04_Physics）の結果
 REGISTER_LOGIC_SYSTEM(CharacterAnimSyncSystem, Priority::LogicStage::L02_PreUpdate);

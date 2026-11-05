@@ -24,14 +24,14 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー。
+    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー
     // 向きは攻撃が来た方向（前 = 正面から当たった、後 = 背後から当たった）
     const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
     const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
 
-    // 向きごとのトリガー（HitDir と同じ並び）。
+    // 向きごとのトリガー（HitDir と同じ並び）
     // プレイヤーのアニメーショングラフは Hit と HitDir で HitReaction のサブステートマシンに入るが、
-    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）。
+    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
     // ボスは Hit / HitDir を持たないので、
     // 両方の形のトリガーを立てる
     const uint32_t HASH_HIT_DIRECTIONAL[4] = {
@@ -41,12 +41,12 @@ namespace
         CCL::Utils::HashString("HitRight")};
 
     /**
-     * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する。
+     * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する
      *
-     * 方向は攻撃の基準の位置から求め、無ければノックバックの向きを逆にして使う。
+     * 方向は攻撃の基準の位置から求め、なければノックバックの向きを逆にして使う
      *
-     * @param world 対象を引く World。所有しない。
-     * @param ev    受けたダメージのイベント。AnimParametersComponent を持たない相手（ドローンなど）には何もしない。
+     * @param world 対象を引く World。所有しない
+     * @param ev    受けたダメージのイベント。AnimParametersComponent を持たない相手（ドローンなど）には何もしない
      */
     void FireHitReaction(World *world, const DamageEventComponent &ev)
     {
@@ -65,9 +65,9 @@ namespace
             fwd.Normalize();
         const Vector3 right(fwd.z, 0.0f, -fwd.x);
 
-        // 攻撃が来た方向（受けた側から攻撃の基準の位置へ）を求める。
+        // 攻撃が来た方向（受けた側から攻撃の基準の位置へ）を求める
         // attackerID（誰の攻撃か）ではなく hitOriginID（実際に当たった物）を使う。ドローンの攻撃は
-        // ボスの攻撃として扱うので、attackerID を使うと背後から当たっても正面から当たったのけぞりになる。
+        // ボスの攻撃として扱うので、attackerID を使うと背後から当たっても正面から当たったのけぞりになる
         // 位置は親を持つ相手でもずれないよう、ワールド座標で比べる
         const CCL::ECS::EntityID originID =
             (ev.hitOriginID != CCL::ECS::InvalidEntityID) ? ev.hitOriginID : ev.attackerID;
@@ -109,7 +109,7 @@ void DamageResolutionSystem::Update(float dt)
     ForEachWithID([this](EntityID eventEntity, DamageEventComponent &event) {
         if (auto *health = m_world->GetComponent<HealthComponent>(event.targetID))
         {
-            // 無敵中はダメージもノックバックも無し（イベントは消す）
+            // 無敵中はダメージもノックバックもなし（イベントは消す）
             if (health->invincibilityTimer <= 0.0f)
             {
                 // --- HP を減らす ---
@@ -130,9 +130,9 @@ void DamageResolutionSystem::Update(float dt)
                 }
 
                 // --- ノックバック ---
-                // 受けた側に KnockbackComponent があれば、向き × 強さの速度を書く（無ければ何もしない）。
+                // 受けた側に KnockbackComponent があれば、向き × 強さの速度を書く（なければ何もしない）
                 // コンポーネントを付け外しせず、最初から付けておいた物に書くだけにするのは、
-                // 付け外しでアーキタイプの移動が起き、同時に多数が被弾したときに重くなるため。
+                // 付け外しでアーキタイプの移動が起き、同時に多数が被弾したときに重くなるため
                 // 実際に動かして減らすのは JoltCharacterUpdateSystem（CharacterVirtual なので壁を抜けない）
                 if (event.knockbackForce > 0.0f)
                 {
@@ -141,7 +141,7 @@ void DamageResolutionSystem::Update(float dt)
                         kb->velocity = event.knockbackDir * event.knockbackForce;
                         kb->timer    = kb->duration;
 
-                        // 操作を受け付けない硬直。滑る時間（timer）とは別に持つ。
+                        // 操作を受け付けない硬直。滑る時間（timer）とは別に持つ
                         // 続けて当たったら長い方を残す（後から来た弱い攻撃で硬直が短くならないように）
                         if (kb->stunDuration > kb->stunTimer)
                             kb->stunTimer = kb->stunDuration;
@@ -164,7 +164,7 @@ void DamageResolutionSystem::Update(float dt)
                 }
 
                 // --- 被弾の通知 ---
-                // 実際に当たったときだけ出す（無敵ですり抜けたときは出さない）。
+                // 実際に当たったときだけ出す（無敵ですり抜けたときは出さない）
                 // PlayerFeedbackSystem（プレイヤーの被弾演出）と BossPerceptionSystem が受ける
                 const bool isPlayer = m_world->HasComponent<PlayerComponent>(event.targetID);
                 m_world->GetEventBus().Publish(DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
@@ -194,5 +194,7 @@ void DamageResolutionSystem::Update(float dt)
         m_world->Destroy(eventEntity);
     });
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(DamageResolutionSystem, Priority::LogicStage::L06_DamageApply);

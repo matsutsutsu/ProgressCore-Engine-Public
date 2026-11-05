@@ -25,12 +25,16 @@ MaterialShader::MaterialShader(ID3D11Device      *device,
     m_psLastWriteTime = GetLastWriteTime(m_psHlslPath);
 }
 
+
+
 void MaterialShader::Begin(ID3D11DeviceContext *dc,
                            const RenderServices & /*s*/,
                            const RenderFrameContext & /*ctx*/)
 {
     ApplyShaderPipeline(dc, vertexShader.Get(), pixelShader.Get(), inputLayout.Get());
 }
+
+
 
 void MaterialShader::Update(ID3D11DeviceContext *dc,
                             const Model::Mesh   &mesh,
@@ -45,10 +49,14 @@ void MaterialShader::Update(ID3D11DeviceContext *dc,
     if (mat) UpdateMaterialProperties(dc, *mat, fallback);
 }
 
+
+
 void MaterialShader::End(ID3D11DeviceContext *dc, const RenderServices & /*s*/)
 {
     UnbindResources(dc);
 }
+
+
 
 void MaterialShader::CheckAndReload(ID3D11Device *device)
 {

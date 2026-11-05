@@ -4,7 +4,7 @@
 #include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
-#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h" // プロキシ剛体の Handle
+#include "Engine/Physics/Components/Jolt/JoltHandleComponent.h"
 
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
@@ -15,7 +15,6 @@
 
 
 
-// まだ作っていないキャラクターに、CharacterVirtual とプロキシ剛体を作る
 void JoltCharacterSetupSystem::Update(float dt)
 {
     // 処理フロー:
@@ -32,12 +31,12 @@ void JoltCharacterSetupSystem::Update(float dt)
                       const TransformComponent           &trans,
                       const JoltCharacterConfigComponent &config) {
         // キャラクターはカプセルで作る
-        // 角が無いので、段差や坂を滑らかに越えられる
+        // 角がないので、段差や坂を滑らかに越えられる
         auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(id);
         if (!capsule) return;
 
         // 作る位置と向き。親を持つキャラだけ、ワールド座標に直す
-        // 親が無ければローカルとワールドは同じ。
+        // 親がなければローカルとワールドは同じ
         // 生成したばかりで行列が未計算でも、ずれない
         JPH::RVec3 spawnPos(trans.position.x, trans.position.y, trans.position.z);
         JPH::Quat  spawnRot(trans.rotation.x, trans.rotation.y, trans.rotation.z, trans.rotation.w);
@@ -104,7 +103,7 @@ void JoltCharacterSetupSystem::Update(float dt)
         // UserData に EntityID を入れ、接触やレイから Entity を引けるようにする
         proxySettings.mUserData = static_cast<JPH::uint64>(id);
 
-        // 作れなかった（剛体の上限）ときはプロキシ無しで続ける
+        // 作れなかった（剛体の上限）ときはプロキシなしで続ける
         // 移動は CharacterVirtual が担うので、動きはする
         JPH::Body *proxy = bodyInterface.CreateBody(proxySettings);
         if (proxy != nullptr)

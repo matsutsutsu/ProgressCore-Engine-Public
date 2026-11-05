@@ -1,11 +1,4 @@
 #pragma once
-// ===========================================================================
-// 概要: UI の部品を演出つき（打ち込む・滑り込む・伸びる）で出すための設定と進み具合。
-//
-// 責務:
-//   - 出方と、その時間・速さを持つ
-//   - UIRevealSystem が書く進み具合を持つ
-// ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 
 #include <cstdint>
@@ -19,6 +12,8 @@ enum class UIRevealMode : uint8_t
     Grow,    // 左端を止めたまま、幅 0 から length まで伸びる（中心で置いた矩形用）
 };
 
+// UI の部品を演出つき（打ち込む・滑り込む・伸びる）で出すための設定と進み具合
+// 進み具合を書くのは UIRevealSystem
 struct UIRevealComponent
 {
     UIRevealMode       mode     = UIRevealMode::Type;         // 出方

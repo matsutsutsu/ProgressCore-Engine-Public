@@ -88,6 +88,8 @@ void GamePad::Update(float dt)
     }
 }
 
+
+
 GamePadButton GamePad::StickToButtons(GamePadButton prev) const
 {
     // 押す境目と離す境目を分ける。1つの境目だと、その近くで指が震えただけで押し直しが続き、選択が何段も飛ぶ
@@ -113,6 +115,8 @@ GamePadButton GamePad::StickToButtons(GamePadButton prev) const
     return (std::abs(amount) > threshold) ? dir : 0;
 }
 
+
+
 void GamePad::SetVibration(float left, float right, float duration)
 {
     if (left >= m_currentLeft || right >= m_currentRight || duration >= m_vibrationTimer)
@@ -123,6 +127,8 @@ void GamePad::SetVibration(float left, float right, float duration)
         ApplyVibrationHardware(left, right);
     }
 }
+
+
 
 void GamePad::ApplyVibrationHardware(float left, float right)
 {

@@ -1,14 +1,9 @@
 #pragma once
-// ===========================================================================
-// 概要: ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ）の
-//       設定値と実行時の状態を持つ Component。
-//       実行時の状態を書くのは BossActionSystem だけ。
-// ===========================================================================
 #include <SimpleMath.h>
 
-// ボス本体が今やっている動き。
+// ボス本体が今やっている動き
 // 並びを変えたら BossActionComponentMeta.cpp の
-// BossStateNames も同じ並びに直す。
+// BossStateNames も同じ並びに直す
 enum class BossActionState : uint8_t
 {
     None,       // 待機
@@ -94,6 +89,8 @@ struct BossLeapDef
     bool            landAttack   = false;                         // 着地で攻撃する（判定のある着地クリップ）
 };
 
+// ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ）の設定値と状態
+// 実行時の状態を書くのは BossActionSystem だけ
 struct BossActionComponent
 {
     // --- 移動（歩く速さは Jolt の walkSpeed）---
@@ -176,7 +173,7 @@ struct BossActionComponent
     // --- ひるみ ---
 
     // ひるむのは待機・移動・様子見の間だけ（アニメグラフの AnyState が group 1 に絞る）。技の最中はひるまない
-    float flinchCooldown = 3.0f; // ひるみが明けてから、次にひるめるまで [秒]。当て続けてはめられないようにする
+    float flinchCooldown = 3.0f; // ひるみが明けてから次にひるめるまで（秒）。はめ続けられないようにする
 
     // --- 実行時の状態（保存しない）---
 
@@ -227,6 +224,6 @@ struct BossActionComponent
     float                        dashChargeTime = 0.0f; // 突っ込む長さ [秒]
 
     // ひるみ
-    bool  isFlinching         = false; // ひるみのアニメを再生しているか（アニメグラフの今のステートから読む）
+    bool  isFlinching         = false; // ひるみのアニメを再生しているか（アニメのステートから読む）
     float flinchCooldownTimer = 0.0f;  // 次にひるめるまでの残り [秒]
 };

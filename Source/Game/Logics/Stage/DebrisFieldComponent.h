@@ -1,16 +1,4 @@
 #pragma once
-// ===========================================================================
-// 概要: ステージの外を回るがれきの帯。帯全体を Entity 1つで持つ。
-//
-// 責務:
-//   - 帯の形（半径・高さ）と動き（公転・自転・上下の揺れ）の設定を持つ
-//   - 岩の種類（プレハブから読んだモデル）と、岩1個ごとの乱数を実行時に持つ
-//
-// 備考: 岩は Entity にしない。1000個以上を Entity にすると、生成のたびに World の確定が走り、
-//       Transform・カリング・影の System も毎フレームその数だけ回るため。
-//       岩は DebrisFieldSystem が RenderQueue に直接積む。
-//       時間の倍率は、この Entity の TimeStateComponent 1つで帯全体に掛ける。
-// ===========================================================================
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 
 #include <DirectXMath.h>
@@ -25,7 +13,7 @@ struct DebrisKind
     DirectX::XMFLOAT3 scale{1, 1, 1};   // プレハブの Transform の scale
 };
 
-// 岩1個。範囲を掛ける前の 0〜1 の値で持つ。
+// 岩1個。範囲を掛ける前の 0〜1 の値で持つ
 // インスペクタで範囲を変えても、作り直さずにそのまま反映できるようにするため
 struct DebrisRock
 {
@@ -40,6 +28,9 @@ struct DebrisRock
     DirectX::XMFLOAT3 spinAxis{0, 1, 0}; // 自転の軸（単位ベクトル）
 };
 
+// ステージの外を回るがれきの帯。帯全体を Entity 1つで持つ
+// 岩は Entity にせず、DebrisFieldSystem が RenderQueue に直接積む
+// 1000個を超える岩を Entity にすると、Transform・カリング・影の System がその数だけ回るため
 struct DebrisFieldComponent
 {
     // --- 生成（変えると岩を作り直す） ---

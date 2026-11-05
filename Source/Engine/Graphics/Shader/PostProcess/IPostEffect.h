@@ -1,20 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: ポストプロセスのエフェクト1段分の基底クラス。
+// 概要: ポストプロセスのエフェクト1段分の基底クラス
 //
 // 責務:
 //   - Initialize / Resize / Process の口を用意する
 //   - 有効かどうか（m_enabled）を持つ
 //
-// 備考: PostProcessManager が HDR バッファ2枚の読み書きを交互に入れ替えながら、
-//       有効なエフェクトを登録した順に1回ずつ呼ぶ。
+// 備考: PostProcessManager が HDR バッファ2枚を交互に入れ替えながら、有効なエフェクトを登録順に1回ずつ呼ぶ
 //         [HDR A] --Process--> [HDR B] --Process--> [HDR A] --> ... --> ToneMap
-//
-//       Process は必ず outputRTV の全面を書くこと。Manager は Process の後で必ず読み書きを
-//       入れ替えるので、何も書かずに戻ると、次のエフェクトは2フレーム前の絵を読む。
-//       効果をかけないときも、入力を出力へ CopyResource する（VignetteEffect::Process の最初）。
-//
-//       縮小バッファなどが要るエフェクトは自分で持ち、Resize で作り直す（BloomEffect など）。
+//       Process は必ず outputRTV の全面を書く。何も書かずに戻ると、次のエフェクトが2フレーム前の絵を読む
+//       効果をかけないときも、入力を出力へ CopyResource する。縮小バッファなどは自分で持ち、Resize で作り直す
 // @code
 //    class VignetteEffect : public IPostEffect
 //    {
@@ -41,11 +36,8 @@ public:
     // 画面の大きさ（px）が変わったとき、途中のレンダーターゲットを作り直す
     virtual void Resize(ID3D11Device *device, UINT width, UINT height) = 0;
 
-    /**
-     * @brief エフェクトを1段かける。
-     * @param inputSRV 前のエフェクトの出力（最初はシーンを描いた HDR バッファ）
-     * @param outputRTV 書き込み先。効果をかけないときも含め、必ず全面を書く
-     */
+    // エフェクトを1段かける。inputSRV は前の段の出力（最初はシーンの HDR バッファ）
+    // outputRTV は、効果をかけないときも含めて必ず全面を書く
     virtual void Process(
         ID3D11DeviceContext      *dc,
         ID3D11ShaderResourceView *inputSRV,
@@ -58,8 +50,7 @@ public:
     void SetEnabled(bool v) noexcept { m_enabled = v; }
 
 protected:
-    // 既定は無効。PostProcessSystem は、シーンに設定のコンポーネントがあるエフェクトだけを
-    // 有効にする。既定を true にすると、設定の無いエフェクト（SSAO・DoF など）も
-    // 毎フレーム全部走り、GPU の時間を大きく使う
+    // 既定は無効。PostProcessSystem は、シーンに設定のコンポーネントがあるエフェクトだけを有効にする
+    // 既定を true にすると、設定のない SSAO や DoF まで毎フレーム走り、GPU の時間を大きく使う
     bool m_enabled = false;
 };

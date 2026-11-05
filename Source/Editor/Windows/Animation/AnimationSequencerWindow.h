@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: AnimSequence（クリップ 1 本の再生設定とイベント）を時間軸上で編集するウィンドウ。
+// 概要: AnimSequence（クリップ 1 本の再生設定とイベント）を時間軸上で編集するウィンドウ
 //
 // 責務:
 //   - ImSequencer によるイベント区間（攻撃判定・軌跡・音など）の編集
@@ -10,14 +10,14 @@
 //   - JSON の読み書き
 //
 // 備考:
-//   - 編集対象は内部のバッファ（m_editingSequence）。
-//     保存すると ResourceManager の同じインスタンスへ読み直させ、ゲームの再生に反映する。
-//   - 編集モードに入るときに Animator の currentSequence を控え、抜けるときに戻す。
+//   - 編集対象は内部のバッファ（m_editingSequence）
+//     保存すると ResourceManager の同じインスタンスへ読み直させ、ゲームの再生に反映する
+//   - 編集モードに入るときに Animator の currentSequence を控え、抜けるときに戻す
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Editor/Utils/CurveEditorWidget.h" // 速度カーブ編集ウィジェット
+#include "Editor/Utils/CurveEditorWidget.h"
 #include <DirectXMath.h>
 #include <memory>
 #include <string>
@@ -38,9 +38,9 @@ protected:
     void DrawContents(EditorContext &context) override;
 
     /**
-     * @brief ウィンドウが描画されなくなっても編集モードを確実に解除する。
-     * @note 編集モードは isEditorOverride を立て、対象エンティティのアニメを全 System で止める。
-     *       DrawContents は閉じる・畳む・選択を外すと呼ばれないので、解除はここで行う。
+     * @brief ウィンドウが描画されなくなっても編集モードを確実に解除する
+     * @note 編集モードは isEditorOverride を立て、対象エンティティのアニメを全 System で止める
+     *       DrawContents は閉じる・畳む・選択を外すと呼ばれないので、解除はここで行う
      */
     void OnFrameBegin(EditorContext &context) override;
 
@@ -49,9 +49,9 @@ private:
     void ResetStateOnEntitySwitch(EditorContext &context);
 
     /**
-     * @brief 編集モードを解除し、対象エンティティを編集前の状態へ戻す。
+     * @brief 編集モードを解除し、対象エンティティを編集前の状態へ戻す
      * @param target 解除対象。切替時は「切替前」のエンティティを渡すこと
-     *               （選択中のものへ復元すると、別モデルのシーケンスを差し込んでしまう）。
+     *               （選択中のものへ復元すると、別モデルのシーケンスを差し込んでしまう）
      */
     void ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target);
 
@@ -59,10 +59,15 @@ private:
     void ResetEditModeState(EditorContext &context);
 
     // --- 各ペインの描画 ---
+    // 編集中のファイルと長さを表示し、JSON の保存・読込のボタンを描く
     void DrawFileIO();                                                                       // ファイル名・長さと、保存・読込のボタン
+    // 編集モードの切り替えを Animator へ適用する。入るときに、再生中のシーケンスを控える
     void DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator);            // 編集モードの切り替えを Animator へ適用する
+    // 再生コントロールとタイムラインを描き、プレビューのポーズ・移動量・判定球を反映する
     void DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model); // 再生コントロールとタイムライン
+    // 選んだトラックの設定を描く。マスターなら長さと編集モード、イベントなら区間と種別ごとの値
     void DrawInspectorPane(EditorContext &context);                                          // 選んだトラックの設定
+    // 速度・ルートモーションのカーブを編集し、今の再生位置での値を出す
     void DrawCurvePane(float animTime);                                                      // 速度・ルートモーションのカーブ
 
     // Sound イベントの音を、AudioConfig に登録済みのイベント名から選ぶ（手入力も可）。変えたら true
@@ -72,32 +77,32 @@ private:
     bool DrawVfxPrefabPicker(AnimNotifyEvent &e);
 
     /**
-     * @brief 編集モード中、rootMotionCurve の前進量を選択エンティティの Transform に直接反映する。
+     * @brief 編集モード中、rootMotionCurve の前進量を選択エンティティの Transform に直接反映する
      *
-     * その場で移動量を確かめるためのプレビュー。
-     * 位置は毎フレーム「基準点 + 前方 × 前進量」で求め直すので、スクラブしても誤差が溜まらない。
+     * その場で移動量を確かめるためのプレビュー
+     * 位置は毎フレーム「基準点 + 前方 × 前進量」で求め直すので、スクラブしても誤差が溜まらない
      */
     void DrawRootMotionPreview(EditorContext &context, AnimatorComponent *animator);
 
     /**
-     * @brief 編集モード中、SpawnHitbox の判定球を GameView に線で描き、大きさと位置を確かめられるようにする。
-     * @note 選んでいるイベントは常に、それ以外は今の再生時刻が区間に入っているときだけ描く。
+     * @brief 編集モード中、SpawnHitbox の判定球を GameView に線で描き、大きさと位置を確かめられるようにする
+     * @note 選んでいるイベントは常に、それ以外は今の再生時刻が区間に入っているときだけ描く
      */
     void DrawHitboxPreview(EditorContext &context);
 
     // --- ポーズの固定 ---
 
     /**
-     * @brief 編集モードで見ている今のポーズのまま、選択中のエンティティを止めておく。
+     * @brief 編集モードで見ている今のポーズのまま、選択中のエンティティを止めておく
      *
-     * isEditorOverride を立てたまま、編集モードだけを抜ける（uiInteract が下りるので、フリーカメラを動かせる）。
-     * シーケンスは写しを固定側が持つ（m_editingSequence は選択を変えると作り直されるので、指したままにできない）。
+     * isEditorOverride を立てたまま、編集モードだけを抜ける（uiInteract が下りるので、フリーカメラを動かせる）
+     * シーケンスは写しを固定側が持つ（m_editingSequence は選択を変えると作り直されるので、指したままにできない）
      */
     void PinCurrentPose(EditorContext &context, AnimatorComponent *animator);
 
     /**
-     * @brief 固定を解き、そのエンティティを固定前（編集モードに入る前）の状態へ戻す。
-     * @param index m_pinnedPoses の添字。
+     * @brief 固定を解き、そのエンティティを固定前（編集モードに入る前）の状態へ戻す
+     * @param index m_pinnedPoses の添字
      */
     void UnpinPose(EditorContext &context, size_t index);
 
@@ -108,10 +113,10 @@ private:
     int FindPinnedPose(CCL::ECS::EntityID entity) const;
 
     /**
-     * @brief 消えたエンティティ・別物に置き換わったエンティティの固定を捨てる。
+     * @brief 消えたエンティティ・別物に置き換わったエンティティの固定を捨てる
      *
-     * シーンの読み直しで同じ ID が別のエンティティに使われると、そのエンティティを戻してしまう。
-     * Animator が固定側のシーケンスの写しを指していなければ、もう固定したものではないとみなす。
+     * シーンの読み直しで同じ ID が別のエンティティに使われると、そのエンティティを戻してしまう
+     * Animator が固定側のシーケンスの写しを指していなければ、もう固定したものではないとみなす
      */
     void PrunePinnedPoses(EditorContext &context);
 
@@ -164,7 +169,7 @@ private:
 
     // --- 選択の切り替えと編集モードの維持 ---
     CCL::ECS::EntityID m_lastSelectedEntity = CCL::ECS::InvalidEntityID; // 前のフレームで選んでいたエンティティ
-    CCL::ECS::EntityID m_editingEntity      = CCL::ECS::InvalidEntityID; // isEditorOverride を立てているエンティティ（Invalid なら無し）
+    CCL::ECS::EntityID m_editingEntity      = CCL::ECS::InvalidEntityID; // isEditorOverride を立てているエンティティ（Invalid ならなし）
     bool               m_editModeRefreshed  = false;                     // このフレームに DrawContents が編集モードを維持したか
 
     // 固定中のポーズ。ウィンドウを閉じても、選択を変えても解かない（解くのは解除のボタンだけ）

@@ -29,4 +29,6 @@ void AABBDebugDrawSystem::Update(float dt)
     });
 }
 
+
+
 REGISTER_RENDER_SYSTEM(AABBDebugDrawSystem, Priority::RenderStage::R08_Main);

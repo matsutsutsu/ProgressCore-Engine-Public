@@ -41,8 +41,8 @@ namespace
 {
     // ---------------------------------------------------------------------------
     // 階層の探索
-    //   現在地は fsm.activePath [ルート側..., 葉]。
-    //   サブマシンに入ったら、その entry を辿って葉まで降りる。
+    //   現在地は fsm.activePath [ルート側..., 葉]
+    //   サブマシンに入ったら、その entry を辿って葉まで降りる
     // ---------------------------------------------------------------------------
 
     // このグラフの直下のステートを hash で引く（子グラフはたどらない）
@@ -55,8 +55,8 @@ namespace
 
 
 
-    // graph 直下の targetHash に入り、サブマシンなら entry を辿って葉まで path を伸ばす。
-    //   返すのは葉ステート（実際に再生する対象）。targetHash が無ければ nullptr
+    // graph 直下の targetHash に入り、サブマシンなら entry を辿って葉まで path を伸ばす
+    //   返すのは葉ステート（実際に再生する対象）。targetHash がなければ nullptr
     const AnimState *EnterResolveLeaf(const AnimStateGraph &graph, uint32_t targetHash,
                                       std::vector<uint32_t> &path)
     {
@@ -75,7 +75,7 @@ namespace
 
 
 
-    // hash のステートを階層全体から探し、ルートからのパスを out に積む。無ければ nullptr。
+    // hash のステートを階層全体から探し、ルートからのパスを out に積む。なければ nullptr
     //   activePath を作り直すとき（食い違いの修復・エディタからのジャンプ）に使う
     const AnimState *BuildPathTo(const AnimStateGraph &g, uint32_t hash, std::vector<uint32_t> &out)
     {
@@ -135,16 +135,16 @@ namespace
 
 
 
-    // 遷移 1 本（受付区間 + 条件）が満たされるか。
+    // 遷移 1 本（受付区間 + 条件）が満たされるか
     //   自己遷移の除外とグループの判定は呼び出し側で行う
     bool ConditionsMet(const AnimatorComponent &animator, const AnimParametersComponent &params,
                        const AnimTransition &t)
     {
-        // 受付区間は OR の対象に含めない。
+        // 受付区間は OR の対象に含めない
         //   「この遷移を受け付けてよい時間帯か」という前提なので、OR でも区間の外では遷移させない
         if (!IsInCancelWindow(animator, t.requiredCancelMask)) return false;
 
-        // 条件が無ければ無条件で成立する。
+        // 条件がなければ無条件で成立する
         //   OR で false にすると、条件を消しただけで遷移しなくなる
         if (t.conditions.empty()) return true;
 
@@ -166,7 +166,7 @@ namespace
     // 遷移の実行と階層の評価
     // ---------------------------------------------------------------------------
 
-    // ステートが再生するクリップ。ブレンドスペースは時間の基準（点 [0]）を返す。無ければ nullptr
+    // ステートが再生するクリップ。ブレンドスペースは時間の基準（点 [0]）を返す。なければ nullptr
     const AnimSequence *StateSequence(const AnimState &state)
     {
         if (state.isBlendSpace)
@@ -205,7 +205,7 @@ namespace
         params.TryGetNumeric(blend.paramXHash, targetX);
         params.TryGetNumeric(blend.paramYHash, targetY);
 
-        // 入った直後は寄せずに目標から始める。
+        // 入った直後は寄せずに目標から始める
         //   0 から寄せると、入った瞬間だけ別の向きの姿勢が混ざる
         if (!blend.hasInput)
         {
@@ -225,7 +225,7 @@ namespace
 
 
 
-    // 遷移を実行する。graph は遷移が発火した階層（target はその直下のステート）。
+    // 遷移を実行する。graph は遷移が発火した階層（target はその直下のステート）
     //   実際に遷移したら true。false のときは fsm / params を一切変えていない
     bool FireTransition(const AnimStateGraph &graph, int level, const AnimTransition &t,
                         AnimStateMachineComponent &fsm, AnimatorComponent &animator,
@@ -236,16 +236,15 @@ namespace
         // 2. 使ったトリガーを消費する
         // 3. 現在地を張り替え、葉を再生する
 
-        // 【備考】
-        //   失敗しうる判定を先に済ませ、確定してから状態を変える。
-        //   順序を逆にすると、遷移先が無いときにトリガーだけ消える（押したのに入力だけ消える）。
-        //   壊れた path は次のステップの再構築で直ってしまうので、痕跡も残らない
+        // 失敗しうる判定を先に済ませ、確定してから状態を変える
+        // 順序を逆にすると、遷移先がないときにトリガーだけ消える（押したのに入力だけ消える）
+        // 壊れた path は次のステップの再構築で直ってしまうので、痕跡も残らない
 
         // ---------------------------------------------------------
         // 1. 遷移先の確認
         // ---------------------------------------------------------
 
-        // EnterResolveLeaf が nullptr を返すのは target がこの階層に無いときだけなので、
+        // EnterResolveLeaf が nullptr を返すのは target がこの階層にないときだけなので、
         //   同じ判定を先に行えば path を触る前に失敗を検出できる
         if (!FindDirectState(graph, t.targetStateHash))
         {
@@ -261,8 +260,8 @@ namespace
         // ---------------------------------------------------------
         for (const auto &cond : t.conditions)
         {
-            // 実際に立っているトリガーだけ消費する。
-            //   OR では成立していない条件も並ぶので、全て消すと関係ない先行入力まで消える
+            // 実際に立っているトリガーだけ消費する
+            //   OR では成立していない条件も並ぶので、すべて消すと関係ない先行入力まで消える
             if (cond.op == AnimConditionOp::Trigger && params.HasTrigger(cond.paramHash))
                 params.ConsumeTrigger(cond.paramHash);
         }
@@ -281,7 +280,7 @@ namespace
         }
         else
         {
-            // クリップ未設定のステートに入ると、ステートは変わったのに前のクリップが流れ続ける。
+            // クリップ未設定のステートに入ると、ステートは変わったのに前のクリップが流れ続ける
             //   気付けるよう警告を出す
             CCL_LOG_WARN(LogCategory::Game,
                          "[AnimController] ステート[%s]にクリップが設定されていません（再生は前のまま）",
@@ -305,9 +304,8 @@ namespace
         // 2. 今のステートがサブマシンなら、その出口の遷移を見てから子の階層へ降りる
         // 3. 葉なら、自身の遷移を見る
 
-        // 【備考】
-        //   外側（親）の遷移を内側（子）より先に見るので、外側が常に優先される。
-        //   例: AttackCombo の中で攻撃中でも、root の AnyState → HitReaction が先に通る
+        // 外側（親）の遷移を内側（子）より先に見るので、外側が常に優先される
+        // 例: AttackCombo の中で攻撃中でも、root の AnyState → HitReaction が先に通る
 
         const uint32_t   activeHash  = (static_cast<size_t>(level) < fsm.activePath.size())
                                            ? fsm.activePath[level]
@@ -405,9 +403,8 @@ void AnimControllerSystem::Update(float dt)
     // 1. まだ読んでいないグラフを読み込む（直列）
     // 2. ステートマシンを評価する（並列）
 
-    // 【備考】
-    //   2 段に分けるのは、ファイル I/O と ResourceManager がスレッドセーフでないため。
-    //   読込と束縛を 1 段目で済ませておけば、2 段目は ResourceManager を呼ばずに済む
+    // 2 段に分けるのは、ファイル I/O と ResourceManager がスレッドセーフでないため
+    // 読込と束縛を 1 段目で済ませておけば、2 段目は ResourceManager を呼ばずに済む
 
     ZoneScopedN("AnimControllerSystem::Update");
 
@@ -415,13 +412,13 @@ void AnimControllerSystem::Update(float dt)
     // 1. グラフの読込（直列）
     // ---------------------------------------------------------
 
-    // 読込済みなら先頭の早期 return で抜けるので、普段はほぼコストが無い
+    // 読込済みなら先頭の早期 return で抜けるので、普段はほぼコストがない
     ForEachWithID([](CCL::ECS::EntityID /*id*/,
                      AnimStateMachineComponent &fsm,
                      AnimatorComponent         &animator,
                      AnimParametersComponent   &params,
                      const TimeStateComponent & /*time*/) {
-        // 握られている間は読まない。読込で entry を再生すると、握っている側のクリップを上書きする。
+        // 握られている間は読まない。読込で entry を再生すると、握っている側のクリップを上書きする
         //   握りが離れた後の最初のステップで entry に入る
         if (animator.isEditorOverride || animator.isExternalOverride) return;
 
@@ -458,7 +455,7 @@ void AnimControllerSystem::Update(float dt)
 
         // --- 現在地の修復 ---
 
-        // activePath が空か、末尾が currentStateHash と食い違っていたら作り直す（外から書き換えられたときの保険）。
+        // activePath が空か、末尾が currentStateHash と食い違っていたら作り直す（外から書き換えられたときの保険）
         //   まず currentStateHash からパスを作り、見つからなければ entry から作り直す
         if (fsm.activePath.empty() || fsm.activePath.back() != fsm.currentStateHash)
         {
@@ -475,11 +472,11 @@ void AnimControllerSystem::Update(float dt)
 
         // --- ムービーの握り ---
 
-        // 握られている間は遷移を評価しない。評価すると、ムービーのクリップを Idle などへ戻してしまう。
+        // 握られている間は遷移を評価しない。評価すると、ムービーのクリップを Idle などへ戻してしまう
         //   トリガーの寿命は上で進めているので、ムービー中の入力が明けてから暴発することもない
         if (animator.isExternalOverride) return;
 
-        // 握りが離れた直後は、今のステートのクリップへブレンドして戻す。
+        // 握りが離れた直後は、今のステートのクリップへブレンドして戻す
         //   握っている間もステートは変わっていないので、遷移ではなく「今のステートに入り直す」だけでよい
         if (animator.externalReleaseBlend >= 0.0f)
         {
@@ -509,7 +506,6 @@ void AnimControllerSystem::Update(float dt)
 // 読込とジャンプ（初回の読込とインスペクタから呼ばれる）
 // ---------------------------------------------------------------------------
 
-// グラフを読み込んで束縛し、entry から再生し直す
 bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorComponent *animator,
                                      AnimParametersComponent *params)
 {
@@ -533,7 +529,7 @@ bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorCom
     // 2. パラメータの初期値
     // ---------------------------------------------------------
 
-    // まだ値を持っていないパラメータにだけ入れる。
+    // まだ値を持っていないパラメータにだけ入れる
     //   ゲーム側が先に書いた値（毎ステップ書く Speed など）を初期値で上書きしない
     if (params)
     {
@@ -572,7 +568,6 @@ bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorCom
 
 
 
-// 指定のステートへ入り直し、そのクリップを頭から再生する
 bool AnimControllerSystem::JumpToState(AnimStateMachineComponent &fsm, AnimatorComponent &animator, uint32_t stateHash)
 {
     // ルートからのパスを先に作り、見つかったときだけ現在地を差し替える
@@ -583,7 +578,7 @@ bool AnimControllerSystem::JumpToState(AnimStateMachineComponent &fsm, AnimatorC
     fsm.activePath       = std::move(path);
     fsm.currentStateHash = fsm.activePath.back();
 
-    // currentStateHash だけを書き換えると、ステートは変わってもクリップが前のまま流れる。
+    // currentStateHash だけを書き換えると、ステートは変わってもクリップが前のまま流れる
     //   握られている間は再生しない（理由は LoadGraph と同じ）
     if (animator.isEditorOverride || animator.isExternalOverride) return true;
     if (StateSequence(*leaf)) PlayState(animator, *leaf, 0.0f, true);
@@ -607,5 +602,7 @@ void AnimControllerSystem::OnGui()
         ImGui::SetTooltip("チェックを入れると、ステートが切り替わった瞬間にコンソールへログを出力します。\n高速遷移によるログ汚染を防ぐため、デバッグ時のみONにしてください。");
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(AnimControllerSystem, Priority::LogicStage::L02_Update);

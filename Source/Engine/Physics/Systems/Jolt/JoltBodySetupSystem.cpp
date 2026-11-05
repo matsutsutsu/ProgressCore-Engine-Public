@@ -9,7 +9,7 @@
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
-#include <Jolt/Physics/Collision/Shape/ScaledShape.h> // メッシュへのスケール適用
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -71,7 +71,7 @@ void JoltBodySetupSystem::Update(float dt)
             // 4-1. 同じ Entity の描画用モデルを取得
             auto *modelComp = m_world->GetComponent<ModelComponent>(id);
 
-            // モデルが無い、ロードされていない、または無効ならスキップ
+            // モデルがない、ロードされていない、または無効ならスキップ
             if (!modelComp || !modelComp->GetModel() || !meshCol->isEnabled) return;
 
             // リソース（CPU上の頂点データ）にアクセス
@@ -109,20 +109,20 @@ void JoltBodySetupSystem::Update(float dt)
             JPH::ShapeRefC         rawMeshShape = JoltShapeFactory::CreateChecked(meshSettings, id, "Mesh");
             if (rawMeshShape == nullptr) return;
 
-            // 4-4. Transform のスケールを形状に掛ける。
+            // 4-4. Transform のスケールを形状に掛ける
             // Jolt の剛体は Transform のスケールを持たないので、ここで掛けないと
-            // 見た目だけ拡大して当たり判定は元の大きさのままになる。
+            // 見た目だけ拡大して当たり判定は元の大きさのままになる
             JPH::ScaledShapeSettings scaledSettings(
                 rawMeshShape,
                 JPH::Vec3(trans.scale.x, trans.scale.y, trans.scale.z));
             shape = JoltShapeFactory::CreateChecked(scaledSettings, id, "Mesh(scaled)");
         }
 
-        // コライダーコンポーネントが一つも無い場合は物理実体を作れないのでスキップ
+        // コライダーコンポーネントが一つもない場合は物理実体を作れないのでスキップ
         if (shape == nullptr) return;
 
-        // 剛体の生成（JoltRigidbodyComponent の設定値を渡す）。
-        //  ローカルの trans.position ではなくワールド座標で生成する。
+        // 剛体の生成（JoltRigidbodyComponent の設定値を渡す）
+        //  ローカルの trans.position ではなくワールド座標で生成する
         DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
 
@@ -163,9 +163,9 @@ void JoltBodySetupSystem::Update(float dt)
         if (body == nullptr)
         {
             // 何も出さずに return してはいけない。ここを踏むと「一部のオブジェクトだけ
-            //   当たり判定が無い」という原因を追いにくい症状になる。
+            //   当たり判定がない」という原因を追いにくい症状になる
             //   特に Debug は cMaxBodies=1024（Release は 65536）なので、
-            //   Debug でだけ上限に触れるケースが実際に起こりうる。
+            //   Debug でだけ上限に触れるケースが実際に起こりうる
             CCL_LOG_ERROR(LogCategory::Physics,
                           "Jolt剛体の生成に失敗しました (Entity %llu)。ボディ数の上限に達した可能性があります",
                           static_cast<unsigned long long>(id));
@@ -179,12 +179,14 @@ void JoltBodySetupSystem::Update(float dt)
         bodyInterface.AddBody(body->GetID(), activation);
 
         // JoltHandleComponent を付ける。これで次のステップから生成の対象外になり、
-        // Pull / Push / Cleanup の各 System がこの Entity を扱い始める。
+        // Pull / Push / Cleanup の各 System がこの Entity を扱い始める
         JoltHandleComponent handleComp;
         handleComp.bodyID = body->GetID();
         m_world->AddComponent<JoltHandleComponent>(id, handleComp);
     });
 }
+
+
 
 // 物理計算（L04）より前に剛体を生成しておく
 REGISTER_LOGIC_SYSTEM(JoltBodySetupSystem, Priority::LogicStage::L03_PrePhysics);

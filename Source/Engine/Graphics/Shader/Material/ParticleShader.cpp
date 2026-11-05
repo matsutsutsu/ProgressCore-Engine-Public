@@ -8,6 +8,8 @@ ParticleShader::ParticleShader(ID3D11Device *device)
     LoadShaders(device);
 }
 
+
+
 void ParticleShader::LoadShaders(ID3D11Device *device)
 {
     GpuResourceUtils::LoadVertexShader(device, "Assets/Shader/particle_vs.cso", nullptr, 0, nullptr, m_vs.GetAddressOf());
@@ -20,6 +22,8 @@ void ParticleShader::LoadShaders(ID3D11Device *device)
     m_includeTime = GetLastWriteTime(m_includePath);
 }
 
+
+
 void ParticleShader::Begin(ID3D11DeviceContext *dc, const RenderServices &s, const RenderFrameContext &ctx)
 {
     dc->VSSetShader(m_vs.Get(), nullptr, 0);
@@ -27,12 +31,16 @@ void ParticleShader::Begin(ID3D11DeviceContext *dc, const RenderServices &s, con
     dc->PSSetShader(m_ps.Get(), nullptr, 0);
 }
 
+
+
 void ParticleShader::End(ID3D11DeviceContext *dc, const RenderServices &s)
 {
     dc->VSSetShader(nullptr, nullptr, 0);
     dc->GSSetShader(nullptr, nullptr, 0);
     dc->PSSetShader(nullptr, nullptr, 0);
 }
+
+
 
 void ParticleShader::CheckAndReload(ID3D11Device *device)
 {
@@ -52,6 +60,8 @@ void ParticleShader::CheckAndReload(ID3D11Device *device)
     }
 #endif
 }
+
+
 
 void ParticleShader::CompileShaders(ID3D11Device *device)
 {

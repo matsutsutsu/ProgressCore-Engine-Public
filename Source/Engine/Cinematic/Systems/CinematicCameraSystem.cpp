@@ -2,19 +2,19 @@
 #include "Engine/Cinematic/CinematicEvents.h"
 #include "Engine/Cinematic/CinematicSubject.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Time/TimeService.h" // PresentationDt（ポーズ中は 0）
+#include "Engine/Time/TimeService.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Core/Math/Interpolation.h" // SmoothStep
-#include "Engine/Core/App/GameFlowState.h"   // cinematic
+#include "Engine/Core/Math/Interpolation.h"
+#include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Platform/Core/FileSystem.h"
-#include "Engine/Graphics/Components/PostProcess/PostFx.h" // 被写界深度の上書きスロット
+#include "Engine/Graphics/Components/PostProcess/PostFx.h"
 #include "Engine/Core/Math/StringHash.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include <imgui.h> // デバッグ UI(OnGui)
+#include <imgui.h>
 #include <SimpleMath.h>
 #include <algorithm>
 #include <cmath>
@@ -44,21 +44,17 @@ namespace
 
     // --- ショットの選択 ---
 
-    /**
-     * @brief 再生位置 t で映すショットの番号を返す。
-     * @param shots 開始時刻の昇順に並んだショットの列。
-     * @param t     再生位置（秒）。
-     * @return 開始時刻が t 以下のショットのうち、最後のものの番号。先頭より前なら 0。列が空なら -1。
-     */
+    // 再生位置 t で映すショットの番号（shots は開始時刻の昇順）
+    // 先頭より前なら 0、列が空なら -1
     int FindShotIndex(const std::vector<CameraShot> &shots, float t)
     {
         if (shots.empty()) return -1;
 
         // 「t 以下の最後」にすると、ショットの隙間では前のショットが選ばれ続け（最後の絵で止まる）、
-        // 重なりでは後から始まるショットが選ばれる（そこでカットされる）。
+        // 重なりでは後から始まるショットが選ばれる（そこでカットされる）
 
-        // 覚えた番号から進めず、毎回先頭から探す。
-        // 再生し直しなどで t が後ろへ戻っても、正しいショットが選ばれるようにするため。
+        // 覚えた番号から進めず、毎回先頭から探す
+        // 再生し直しなどで t が後ろへ戻っても、正しいショットが選ばれるようにするため
         int index = 0;
         for (int i = 0; i < static_cast<int>(shots.size()); ++i)
         {
@@ -67,29 +63,23 @@ namespace
         return index;
     }
 
+
+
     // --- ショットの絵 ---
 
-    /**
-     * @brief ショットの先頭からの経過時間を、進行度（0〜1）に直す。
-     * @param time     ショットの先頭からの経過時間（秒）。
-     * @param duration ショットの長さ（秒）。
-     * @return 0〜1 の進行度。長さが 0 以下なら 1（最後の絵）。
-     */
+    // ショットの先頭からの経過時間を、0〜1 の進行度にする。長さが 0 以下なら 1（最後の絵）
     float ShotProgress(float time, float duration)
     {
-        // 長さ 0 で割ると無限大か NaN になり、clamp でも直せずカメラ位置が壊れる。
-        // インスペクタでは 0 にできないが、JSON を手で書けば入るので、割る前に弾く。
+        // 長さ 0 で割ると無限大か NaN になり、clamp でも直せずカメラ位置が壊れる
+        // インスペクタでは 0 にできないが、JSON を手で書けば入るので、割る前に弾く
         if (duration <= 0.0f) return 1.0f;
 
         return std::clamp(time / duration, 0.0f, 1.0f);
     }
 
-    /**
-     * @brief 進行度に速さのカーブを掛ける。
-     * @param t    進行度（0〜1）。
-     * @param ease 速さのカーブ。
-     * @return カーブを掛けた進行度（0〜1）。
-     */
+
+
+    // 進行度（0〜1）に速さのカーブを掛ける
     float ApplyEase(float t, CameraEase ease)
     {
         switch (ease)
@@ -106,19 +96,16 @@ namespace
         }
     }
 
-    /**
-     * @brief Orbit のカメラ位置を、注視点からのオフセットで返す。
-     * @param shot Orbit のショット。
-     * @param e    カーブを掛けた進行度（0〜1）。
-     * @return 注視点からのオフセット（m、基準の向きで回す前）。
-     */
+
+
+    // Orbit のカメラ位置を、注視点からのオフセット（m）で返す。基準の向きで回す前の値
     Vector3 OrbitOffset(const CameraShot &shot, float e)
     {
-        // 位置ではなく角度・距離・高さを補間する。
-        // 位置どうしを補間すると円ではなく弦の上を通り、途中で対象に近づいてしまう。
+        // 位置ではなく角度・距離・高さを補間する
+        // 位置どうしを補間すると円ではなく弦の上を通り、途中で対象に近づいてしまう
 
-        // 角度は数値のまま補間する。開始と終了の差の分だけ、値が増えれば右回り、減れば左回りに回る。
-        // 向きとして近い側へ回し直す計算はしないので、回る量と向きを書いた値で決められ、1周以上も回せる。
+        // 角度は数値のまま補間する。開始と終了の差の分だけ、値が増えれば右回り、減れば左回りに回る
+        // 向きとして近い側へ回し直す計算はしないので、回る量と向きを書いた値で決められ、1周以上も回せる
         const float angle  = DirectX::XMConvertToRadians(std::lerp(shot.angleStart, shot.angleEnd, e));
         const float radius = std::lerp(shot.radiusStart, shot.radiusEnd, e);
         const float height = std::lerp(shot.heightStart, shot.heightEnd, e);
@@ -127,15 +114,10 @@ namespace
         return {std::sin(angle) * radius, height, std::cos(angle) * radius};
     }
 
-    /**
-     * @brief ショットの、今の時刻での絵を求める。
-     * @param shot       映すショット。
-     * @param shotTime   ショットの先頭からの経過時間（秒）。
-     * @param holdTime   ショットの頭で、動かさずに最初の絵で止めておく時間（秒）。
-     * @param subjectPos 基準の位置（ワールド、m）。
-     * @param yaw        基準の向き（ラジアン、0 が +Z）。
-     * @return ワールドでのカメラ位置・注視点と、画角。
-     */
+
+
+    // ショットの、今の時刻での絵（ワールドのカメラ位置・注視点と画角）を求める
+    // holdTime はショットの頭で最初の絵のまま止めておく時間（秒）。yaw は基準の向き（ラジアン、0 が +Z）
     ShotPose EvaluateShot(const CameraShot &shot, float shotTime, float holdTime, const Vector3 &subjectPos,
                           float yaw)
     {
@@ -146,16 +128,16 @@ namespace
         // 4. 画角を求める
         // 5. 被写界深度を求める
 
-        // 止めておく間は進行度 0 のままにし、終わってから残りの時間で最後まで動かす。
-        // ショットの終わりの時刻は変えずに、書いた動きを頭から見せるため。
-        // 止めておく時間がショットより長いと動く時間が無いので、最後の絵になる。
+        // 止めておく間は進行度 0 のままにし、終わってから残りの時間で最後まで動かす
+        // ショットの終わりの時刻は変えずに、書いた動きを頭から見せるため
+        // 止めておく時間がショットより長いと動く時間がないので、最後の絵になる
         const float progress = ShotProgress(shotTime - holdTime, shot.duration - holdTime);
 
         // ショット内の進行度にイージング関数をかけて補間する
         const float e = ApplyEase(progress, shot.ease);
 
-        // オフセットは基準の向きで回してからワールドへ足す。
-        // 対象がどちらを向いていても「対象から見て右後ろ」が同じ構図になる。
+        // オフセットは基準の向きで回してからワールドへ足す
+        // 対象がどちらを向いていても「対象から見て右後ろ」が同じ構図になる
         const Matrix rot = Matrix::CreateRotationY(yaw);
 
         ShotPose      pose;
@@ -177,8 +159,8 @@ namespace
 
         pose.fov = std::lerp(shot.fovStart, shot.fovEnd, e);
 
-        // ピントは注視点に合わせる。注視点が動けば、そのままピント送りになる。
-        // ぼかさないショットもピントの距離は求めておく。前後のショットと混ぜるとき、ピントが原点の方へ飛ばないようにするため。
+        // ピントは注視点に合わせる。注視点が動けば、そのままピント送りになる
+        // ぼかさないショットもピントの距離は求めておく。前後のショットと混ぜるとき、ピントが原点の方へ飛ばないようにするため
         pose.dof.focusDistance = Vector3::Distance(pose.eye, pose.look);
         pose.dof.focusRange    = shot.dofRange;
         pose.dof.falloff       = shot.dofFalloff;
@@ -186,18 +168,14 @@ namespace
         return pose;
     }
 
-    /**
-     * @brief 入りのブレンド中なら、前のショットの絵から今のショットの絵へ混ぜる。
-     * @param cine     補間元の絵を持つ再生状態。
-     * @param shot     今のショット。
-     * @param shotTime ショットの先頭からの経過時間（秒）。
-     * @param pose     今のショットの絵。混ぜた絵で上書きする。
-     */
+
+
+    // 入りのブレンド中なら、前のショットの絵から今の絵へ混ぜて pose を上書きする
     void BlendFromPrevious(const CinematicCameraComponent &cine, const CameraShot &shot, float shotTime,
                            ShotPose &pose)
     {
-        // ブレンドの時間はショットの長さに含める。
-        // 台本の開始時刻と絵が替わり始める時刻をそろえ、後に足す演出を時刻どおりに合わせられるようにするため。
+        // ブレンドの時間はショットの長さに含める
+        // 台本の開始時刻と絵が替わり始める時刻をそろえ、後に足す演出を時刻どおりに合わせられるようにするため
         if (!cine.blendActive || shotTime >= shot.blendIn) return;
 
         // Brain のカメラ切り替えと同じ曲線にそろえる
@@ -208,34 +186,28 @@ namespace
         pose.dof      = CinematicDof::Lerp(cine.blendFromDof, pose.dof, w);
     }
 
-    /**
-     * @brief 求めた絵をカメラへ書き、Brain が採用してよい状態にする。
-     * @param vcam 書き込む先のカメラ。
-     * @param pose 書く絵。
-     */
+
+
+    // 求めた絵をカメラへ書き、Brain が採用してよい状態にする
     void ApplyPose(VirtualCamera &vcam, const ShotPose &pose)
     {
         vcam.resultPos    = pose.eye;
         vcam.resultLookAt = pose.look;
         vcam.resultUp     = {0.0f, 1.0f, 0.0f};
 
-        // 停止中は書かない。TPS カメラへ戻すブレンドの補間元に、最後の画角を残すため。
+        // 停止中は書かない。TPS カメラへ戻すブレンドの補間元に、最後の画角を残すため
         vcam.fov = pose.fov;
 
-        // 位置と注視点の両方をここで確定させたので、Brain が採用してよい状態にする。
-        // これを呼ばないと isValid が false のままで、優先度を上げても選ばれない。
+        // 位置と注視点の両方をここで確定させたので、Brain が採用してよい状態にする
+        // これを呼ばないと isValid が false のままで、優先度を上げても選ばれない
         vcam.MarkResolved();
     }
 
+
+
     // --- スキップ ---
 
-    /**
-     * @brief スキップボタンの長押しを数え、スキップするかを返す。
-     * @param cine 長押しの状態を持つ再生状態。
-     * @param held スキップボタンを今押しているか。
-     * @param dt   経過時間（秒）。ポーズ中は 0。
-     * @return 長押しが規定の時間に達したら true。
-     */
+    // スキップボタンの長押しを数え、規定の時間に達したら true。dt はポーズ中 0
     bool UpdateSkipHold(CinematicCameraComponent &cine, bool held, float dt)
     {
         if (!cine.script.allowSkip) return false;
@@ -247,8 +219,8 @@ namespace
             return false;
         }
 
-        // 押しっぱなしのまま再生に入った分は数えず、一度離してからの長押しだけを数える。
-        // 再生の直前にゲームの操作でボタンを押していただけで、スキップされないようにするため。
+        // 押しっぱなしのまま再生に入った分は数えず、一度離してからの長押しだけを数える
+        // 再生の直前にゲームの操作でボタンを押していただけで、スキップされないようにするため
         if (!cine.skipArmed) return false;
 
         cine.skipHoldTime += dt;
@@ -262,16 +234,16 @@ namespace
 
 void CinematicCameraSystem::Initialize()
 {
-    // 再生要求のたびにファイルを読むと、その瞬間にディスクの読み込みが入るので、先にすべて読んでおく。
+    // 再生要求のたびにファイルを読むと、その瞬間にディスクの読み込みが入るので、先にすべて読んでおく
     LoadAllScripts();
 
-    // 受け取りは mutex で守る。
+    // 受け取りは mutex で守る
     // 同じステージで並列に走る複数の System が、同時に発行してもよいように
     ListenEvent<CinematicPlayRequestEvent>([this](const CinematicPlayRequestEvent &ev) {
         std::lock_guard<std::mutex> lock(m_requestMutex);
 
-        // 同じフレームに2つ目以降が届いたら、先に届いた方を流して後は捨てる。
-        // 再生中に届いた要求を捨てるのと同じ考え方で、どちらを流すかの調整は頼む側の責務にする。
+        // 同じフレームに2つ目以降が届いたら、先に届いた方を流して後は捨てる
+        // 再生中に届いた要求を捨てるのと同じ考え方で、どちらを流すかの調整は頼む側の責務にする
         if (m_hasRequest)
         {
             CCL_LOG_WARN(LogCategory::Game, "[Cinematic] 同じフレームに2つ目の再生要求が届いたので捨てました: %s",
@@ -283,13 +255,15 @@ void CinematicCameraSystem::Initialize()
         m_hasRequest       = true;
     });
 
-    // エディタが台本を保存したら、次の Update で読み直す。
-    // 受け取ったその場で読み直すと、Update が台本の一覧を使っている最中に入れ替わりうる。
+    // エディタが台本を保存したら、次の Update で読み直す
+    // 受け取ったその場で読み直すと、Update が台本の一覧を使っている最中に入れ替わりうる
     ListenEvent<CinematicScriptsChangedEvent>([this](const CinematicScriptsChangedEvent &) {
         std::lock_guard<std::mutex> lock(m_requestMutex);
         m_reloadRequested = true;
     });
 }
+
+
 
 void CinematicCameraSystem::Update(float dt)
 {
@@ -306,7 +280,7 @@ void CinematicCameraSystem::Update(float dt)
     // 1. 再生要求・台本の書き換え・スキップボタン
     // ---------------------------------------------------------
 
-    // 取り出すと同時に空にする。
+    // 取り出すと同時に空にする
     bool        requested        = false;
     bool        reload           = false;
     std::string requestPath;
@@ -323,12 +297,12 @@ void CinematicCameraSystem::Update(float dt)
         m_pendingPath.clear();
     }
 
-    // 再生要求より先に読み直す。保存してすぐ再生要求を出したときに、新しい台本で流すため。
-    // 流しているムービーは写した台本で続くので、読み直しの影響は次の再生から。
+    // 再生要求より先に読み直す。保存してすぐ再生要求を出したときに、新しい台本で流すため
+    // 流しているムービーは写した台本で続くので、読み直しの影響は次の再生から
     if (reload) LoadAllScripts();
 
-    // 時間は描画フレームごとに実時間で進める。
-    // ポーズ中は PresentationDt が 0 を返すので、ムービーも止まる。
+    // 時間は描画フレームごとに実時間で進める
+    // ポーズ中は PresentationDt が 0 を返すので、ムービーも止まる
     const float playDt = Time::PresentationDt(*m_world, dt);
 
     // スキップするかどうかの入力受付
@@ -350,31 +324,31 @@ void CinematicCameraSystem::Update(float dt)
 
             if (cine.state == CinematicState::Waiting || cine.state == CinematicState::Playing)
             {
-                // 再生中のムービーを優先し、終わるまで次を受け付けない。開始待ちも再生中として扱う。
+                // 再生中のムービーを優先し、終わるまで次を受け付けない。開始待ちも再生中として扱う
                 CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生中のため、再生要求を捨てました: %s",
                              requestPath.c_str());
             }
             // 再生中でなく、台本が見つからなければ
             else if (found == m_scripts.end())
             {
-                // 読み込んでいない台本は流さない。
-                // 流すと映すものが無いまま操作だけ止まるので、何も始めずにログで知らせる。
+                // 読み込んでいない台本は流さない
+                // 流すと映すものがないまま操作だけ止まるので、何も始めずにログで知らせる
                 CCL_LOG_ERROR(LogCategory::Game, "[Cinematic] 台本 %s は読み込まれていないので、再生要求を捨てました",
                               requestPath.c_str());
             }
             // 再生中でなく、台本が見つかれば
             else
             {
-                // 台本は写して持つ。再生中に台本を読み直しても、流しているムービーは変わらない。
+                // 台本は写して持つ。再生中に台本を読み直しても、流しているムービーは変わらない
                 cine.script = found->second;
 
-                // トラックは、この番号が変わったことで新しい再生に入ったと気付き、前の再生の続きを片付ける。
-                // 同じ台本を続けて流すと状態や台本の中身では見分けられないので、通し番号で知らせる。
+                // トラックは、この番号が変わったことで新しい再生に入ったと気付き、前の再生の続きを片付ける
+                // 同じ台本を続けて流すと状態や台本の中身では見分けられないので、通し番号で知らせる
                 ++cine.playCount;
 
-                // 途中から流すとき（エディタの「ここから再生」）は、開始待ちを飛ばしてその位置から進める。
-                // 最初の絵で止めて待つのは、頭から流すときだけの演出のため。
-                // 長さちょうどから始めると何も映らずに終わるので、長さの手前までにする。
+                // 途中から流すとき（エディタの「ここから再生」）は、開始待ちを飛ばしてその位置から進める
+                // 最初の絵で止めて待つのは、頭から流すときだけの演出のため
+                // 長さちょうどから始めると何も映らずに終わるので、長さの手前までにする
                 const float startTime = std::clamp(requestStartTime, 0.0f, std::max(0.0f, cine.script.duration - 0.001f));
                 const bool  waits     = (startTime <= 0.0f) && (cine.script.startDelay > 0.0f);
 
@@ -399,8 +373,8 @@ void CinematicCameraSystem::Update(float dt)
             // スキップの長押しをカウント
             if (UpdateSkipHold(cine, skipHeld, playDt))
             {
-                // 開始待ちの途中でも、終わりの位置へ飛ぶ。
-                // 終わりの絵を 5 で書いてから 6 で終えるので、最後の絵を経て TPS カメラへ戻る。
+                // 開始待ちの途中でも、終わりの位置へ飛ぶ
+                // 終わりの絵を 5 で書いてから 6 で終えるので、最後の絵を経て TPS カメラへ戻る
                 cine.state   = CinematicState::Playing;
                 cine.time    = cine.script.duration;
                 cine.skipped = true;
@@ -408,7 +382,7 @@ void CinematicCameraSystem::Update(float dt)
             // 開始待ち秒数のカウント
             else if (cine.state == CinematicState::Waiting)
             {
-                // 待っている間は再生位置を 0 のままにして、最初の絵で止めておく。
+                // 待っている間は再生位置を 0 のままにして、最初の絵で止めておく
                 cine.waitTime += playDt;
                 if (cine.waitTime >= cine.script.startDelay) cine.state = CinematicState::Playing;
             }
@@ -424,14 +398,14 @@ void CinematicCameraSystem::Update(float dt)
         // ---------------------------------------------------------
         if (cine.state != CinematicState::Waiting && cine.state != CinematicState::Playing)
         {
-            // エディタが一時停止せずにプレビューを出している間は、ムービー中と同じくプレイヤーの操作と敵の思考を止める。
-            // ゲームを動かしたまま（アニメ・物理・エフェクトは動く）カメラを編集できるようにするため。
-            // 一時停止中のプレビューでは立てない。ロジックはもう止まっているので、立てても黒帯が出て HUD が消えるだけになる。
-            // 絵を書けない（基準が居ない）フレームでも止めたままにする。編集中に勝手に動き出さないように。
+            // エディタが一時停止せずにプレビューを出している間は、ムービー中と同じくプレイヤーの操作と敵の思考を止める
+            // ゲームを動かしたまま（アニメ・物理・エフェクトは動く）カメラを編集できるようにするため
+            // 一時停止中のプレビューでは立てない。ロジックはもう止まっているので、立てても黒帯が出て HUD が消えるだけになる
+            // 絵を書けない（基準がいない）フレームでも止めたままにする。編集中に勝手に動き出さないように
             if (cine.previewActive && cine.previewFreeze) anyActive = true;
 
-            // エディタが見せたい時刻があれば、その絵を書いてカメラを掌握する。
-            // 再生中はムービーを優先するので、ここ（停止中）でだけ見る。
+            // エディタが見せたい時刻があれば、その絵を書いてカメラを掌握する
+            // 再生中はムービーを優先するので、ここ（停止中）でだけ見る
             if (cine.previewActive && WritePreviewPose(vcam, cine))
             {
                 vcam.priority = cine.activePriority;
@@ -441,8 +415,8 @@ void CinematicCameraSystem::Update(float dt)
                 return;
             }
 
-            // 停止中は優先度を下げるだけで、姿勢は最後に書いた値のまま残す。
-            // Brain は TPS カメラへ戻すブレンドの補間元に、この最後の姿勢を使う。
+            // 停止中は優先度を下げるだけで、姿勢は最後に書いた値のまま残す
+            // Brain は TPS カメラへ戻すブレンドの補間元に、この最後の姿勢を使う
             vcam.priority = cine.idlePriority;
 
             // ぼけは TPS カメラへ戻るブレンドに合わせて消す。一瞬で消すと、戻り始めの1コマで絵がはっきり跳ぶ
@@ -461,13 +435,13 @@ void CinematicCameraSystem::Update(float dt)
         // 6. 終了と優先度
         // ---------------------------------------------------------
 
-        // 再生中で、再生位置が長さを超えたら終了する。
+        // 再生中で、再生位置が長さを超えたら終了する
         const bool reachedEnd = (cine.state == CinematicState::Playing) && (cine.time >= cine.script.duration);
 
         if (reachedEnd)
         {
             // 再生位置が長さを超えたら終了
-            // 終わりの絵は 5 で書いてある。このフレームから譲り、Brain がその絵から TPS カメラへ混ぜて戻す。
+            // 終わりの絵は 5 で書いてある。このフレームから譲り、Brain がその絵から TPS カメラへ混ぜて戻す
             cine.state = CinematicState::Finished;
             finished.push_back({cine.script.path, cine.skipped});
         }
@@ -475,8 +449,8 @@ void CinematicCameraSystem::Update(float dt)
         // 再生中は優先度を上げ、停止中は下げる
         vcam.priority = (wrote && !reachedEnd) ? cine.activePriority : cine.idlePriority;
 
-        // ぼけは、TPS カメラからこのカメラへ切り替わるブレンド（このカメラの blendTime）に合わせて効かせる。
-        // 終わったフレームからは停止中の側で消していく。
+        // ぼけは、TPS カメラからこのカメラへ切り替わるブレンド（このカメラの blendTime）に合わせて効かせる
+        // 終わったフレームからは停止中の側で消していく
         if (wrote && !reachedEnd) UpdateDof(cine, UsesDof(cine.script) ? 1.0f : 0.0f, vcam.blendTime, dt);
 
         // 開始待ち・再生中なら、ゲームの操作を止める
@@ -487,21 +461,21 @@ void CinematicCameraSystem::Update(float dt)
     // 7. 操作停止と終了の知らせ
     // ---------------------------------------------------------
 
-    // ムービー用カメラが見えないまま要求を取り出したら、その要求は消える。黙って消すと原因を追えないので知らせる。
+    // ムービー用カメラが見えないまま要求を取り出したら、その要求は消える。黙って消すと原因を追えないので知らせる
     if (requested && !anyCamera)
     {
         CCL_LOG_WARN(LogCategory::Game, "[Cinematic] ムービー用カメラが見つからないので、再生要求を捨てました: %s",
                      requestPath.c_str());
     }
 
-    // ムービー用カメラが無いシーンでは触らない。
-    // 描画の段で書くので、ロジックの段（プレイヤーの入力・敵の思考）には次の固定ステップから効く。
-    // 同じ段の CameraActionTPSSystem もこれを読むが、どちらも VirtualCamera を書くので同時には走らない。
+    // ムービー用カメラがないシーンでは触らない
+    // 描画の段で書くので、ロジックの段（プレイヤーの入力・敵の思考）には次の固定ステップから効く
+    // 同じ段の CameraActionTPSSystem もこれを読むが、どちらも VirtualCamera を書くので同時には走らない
     if (anyCamera && m_world->HasResource<GameFlowState>())
         m_world->GetResource<GameFlowState>().cinematic = anyActive;
 
-    // 終了の知らせは、ForEach を抜けてから出す。
-    // 購読側はその場で呼ばれるので、購読側の処理を Component の走査と重ねないため。
+    // 終了の知らせは、ForEach を抜けてから出す
+    // 購読側はその場で呼ばれるので、購読側の処理を Component の走査と重ねないため
     for (const auto &ev : finished)
     {
         CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 再生終了: %s (skipped=%s)", ev.scriptPath.c_str(),
@@ -510,6 +484,8 @@ void CinematicCameraSystem::Update(float dt)
     }
 }
 
+
+
 bool CinematicCameraSystem::ReadSkipHeld() const
 {
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return false;
@@ -517,10 +493,12 @@ bool CinematicCameraSystem::ReadSkipHeld() const
     const auto &inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
     if (!inputAPI || !inputAPI->IsGameInputActive()) return false;
 
-    // 長押しを数えるので、押している間ずっと true になる Jump（Down）を使う。
-    // Attack は押した瞬間だけ true（Triggered）なので、長押しを数えられない。
+    // 長押しを数えるので、押している間ずっと true になる Jump（Down）を使う
+    // Attack は押した瞬間だけ true（Triggered）なので、長押しを数えられない
     return inputAPI->GetAction("Jump");
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 台本の読み込み
@@ -530,7 +508,7 @@ void CinematicCameraSystem::LoadAllScripts()
 {
     m_scripts.clear();
 
-    // 指定したフォルダの中にある .json ファイルをすべて読み込む。
+    // 指定したフォルダの中にある .json ファイルをすべて読み込む
     for (const std::string &path : FileSystem::ListFiles(kCinematicScriptDir, ".json"))
     {
         CinematicScript script;
@@ -540,6 +518,8 @@ void CinematicCameraSystem::LoadAllScripts()
     CCL_LOG_INFO(LogCategory::Game, "[Cinematic] 台本を %zu 本読み込みました (%s)", m_scripts.size(),
                  kCinematicScriptDir);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // カメラへの書き込み
@@ -557,23 +537,23 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
     // 1. ショットの選択
     // ---------------------------------------------------------
 
-    // 再生中は、再生位置に合うショットを探す。
+    // 再生中は、再生位置に合うショットを探す
     const int index = FindShotIndex(cine.script.shots, cine.time);
 
-    // ショットが1つも無ければ映すものが無い
+    // ショットが1つもなければ映すものがない
     if (index < 0) return false;
 
-    // ショットが替わっても、同じカメラの姿勢を書き換えるだけにする。
-    // Brain から見ると同じカメラが選ばれ続けるので、切り替えのブレンドが入らずカットになる。
+    // ショットが替わっても、同じカメラの姿勢を書き換えるだけにする
+    // Brain から見ると同じカメラが選ばれ続けるので、切り替えのブレンドが入らずカットになる
     const CameraShot &shot = cine.script.shots[index];
     if (index != cine.activeShot)
     {
-        // 入りのブレンドの補間元は、替わる直前にこのカメラへ書いた絵（画面に出ていた絵）を止めて持つ。
+        // 入りのブレンドの補間元は、替わる直前にこのカメラへ書いた絵（画面に出ていた絵）を止めて持つ
         // 前のショットを計算し続ける形だと、入りのブレンド中にさらに替わったとき、
-        // 補間元が「混ぜている途中の絵」から「前のショットだけの絵」へ変わり、画面が跳ぶ。
+        // 補間元が「混ぜている途中の絵」から「前のショットだけの絵」へ変わり、画面が跳ぶ
 
-        // 最初のショットは混ぜない。
-        // TPS カメラからの切り替えは、Brain がこのカメラの blendTime で混ぜる。
+        // 最初のショットは混ぜない
+        // TPS カメラからの切り替えは、Brain がこのカメラの blendTime で混ぜる
         cine.blendActive = (cine.activeShot >= 0) && (shot.blendIn > 0.0f);
         if (cine.blendActive)
         {
@@ -592,11 +572,11 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
     // 2. 基準の位置
     // ---------------------------------------------------------
 
-    // 基準の位置は毎フレーム取り直す。対象が動いても、構図を保ったまま付いていく。
+    // 基準の位置は毎フレーム取り直す。対象が動いても、構図を保ったまま付いていく
     Vector3 subjectPos;
 
     // 対象のEntityの座標を取得する
-    // 基準が無いと姿勢を決められない
+    // 基準がないと姿勢を決められない
     if (!ResolveSubjectPosition(cine, shot, subjectPos)) return false;
 
     // ---------------------------------------------------------
@@ -621,6 +601,8 @@ bool CinematicCameraSystem::WriteShotPose(VirtualCamera &vcam, CinematicCameraCo
     return true;
 }
 
+
+
 bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCameraComponent &cine) const
 {
     // 処理フロー:
@@ -629,10 +611,9 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCamer
     // 3. 入りのブレンド中なら、前のショットの終わりの絵から混ぜる
     // 4. カメラへ書く
 
-    // 【備考】
-    // 再生と違い、時刻は前後に飛ぶ（つまみを戻す・飛ばす）。
-    // 「替わる直前に書いた絵を止めて持つ」再生のやり方は前のフレームに頼るので使えない。
-    // そこで、毎フレーム時刻だけから絵を求め直す。
+    // 再生と違い、時刻は前後に飛ぶ（つまみを戻す・飛ばす）
+    // 「替わる直前に書いた絵を止めて持つ」再生のやり方は前のフレームに頼るので使えない
+    // そこで、毎フレーム時刻だけから絵を求め直す
 
     // ---------------------------------------------------------
     // 1. ショットの選択
@@ -653,8 +634,8 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCamer
     // 2. ショットの絵
     // ---------------------------------------------------------
 
-    // 時刻が前後に飛ぶので、ショットに入った瞬間の基準を持てない。毎回名前で探し、今の位置と向きを使う。
-    // 見つからなくても警告は出さない（毎フレーム出続ける）。エディタの画面で知らせる。
+    // 時刻が前後に飛ぶので、ショットに入った瞬間の基準を持てない。毎回名前で探し、今の位置と向きを使う
+    // 見つからなくても警告は出さない（毎フレーム出続ける）。エディタの画面で知らせる
     Vector3 subjectPos;
     float   yaw = 0.0f;
     if (!Cinematic::FindSubjectPose(*m_world, shot.subject, subjectPos, yaw)) return false;
@@ -665,8 +646,8 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCamer
     // 3. 入りのブレンド
     // ---------------------------------------------------------
 
-    // 補間元は、前のショットを「替わった時刻」で求めた絵にする。
-    // 前のショット自身もまだ入りのブレンド中だった（ショットが短い）場合は、その混ぜ方までは再現しない。
+    // 補間元は、前のショットを「替わった時刻」で求めた絵にする
+    // 前のショット自身もまだ入りのブレンド中だった（ショットが短い）場合は、その混ぜ方までは再現しない
     if (blending && shotTime < shot.blendIn)
     {
         const CameraShot &prev         = shots[index - 1];
@@ -695,6 +676,8 @@ bool CinematicCameraSystem::WritePreviewPose(VirtualCamera &vcam, CinematicCamer
     return true;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 被写界深度
 // ---------------------------------------------------------------------------
@@ -713,15 +696,15 @@ void CinematicCameraSystem::UpdateDof(CinematicCameraComponent &cine, float targ
                                                      : std::max(target, cine.dofWeight - step);
     }
 
-    // 効きが無くなったらスロットを手放し、シーンの設定へ戻す。
-    // 確保していなければ何もしないので、停止中に毎フレーム呼んでよい。
+    // 効きがなくなったらスロットを手放し、シーンの設定へ戻す
+    // 確保していなければ何もしないので、停止中に毎フレーム呼んでよい
     if (cine.dofWeight <= 0.0f)
     {
         CCL::PostFx::Release<DepthOfFieldConfigComponent>(*m_world, kDofSource);
         return;
     }
 
-    // シーンに DepthOfField が無ければ nullptr（ぼかせない。エディタの欄で知らせる）
+    // シーンに DepthOfField がなければ nullptr（ぼかせない。エディタの欄で知らせる）
     if (auto *ov = CCL::PostFx::DepthOfField(*m_world, kDofSource, kDofPriority))
     {
         ov->weight               = cine.dofWeight;
@@ -732,10 +715,14 @@ void CinematicCameraSystem::UpdateDof(CinematicCameraComponent &cine, float targ
     }
 }
 
+
+
 bool CinematicCameraSystem::UsesDof(const CinematicScript &script)
 {
     return std::any_of(script.shots.begin(), script.shots.end(), [](const CameraShot &s) { return s.dof; });
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ショットの基準
@@ -748,11 +735,11 @@ void CinematicCameraSystem::EnterShot(CinematicCameraComponent &cine, const Came
 
     if (shot.subject.empty()) return;
 
-    // 名前で探すのは、ショットに入った瞬間の1回だけ。
-    // 毎フレームは見つけた Entity から直接引く（名前の比較を全 Entity に対して繰り返さない）。
+    // 名前で探すのは、ショットに入った瞬間の1回だけ
+    // 毎フレームは見つけた Entity から直接引く（名前の比較を全 Entity に対して繰り返さない）
     cine.shotSubject = Cinematic::FindEntityByName(*m_world, shot.subject);
 
-    // 見つからなければ、ショットの基準は無いものとして扱う
+    // 見つからなければ、ショットの基準はないものとして扱う
     if (cine.shotSubject == InvalidEntityID)
     {
         CCL_LOG_WARN(LogCategory::Game, "[Cinematic] ショットの基準 '%s' が見つかりません", shot.subject.c_str());
@@ -762,10 +749,12 @@ void CinematicCameraSystem::EnterShot(CinematicCameraComponent &cine, const Came
     const auto *trans = m_world->GetComponent<TransformComponent>(cine.shotSubject);
     if (!trans) return;
 
-    // 向きは、ショットに入った瞬間の値でショットの間ずっと固定する。
-    // 毎フレーム追うと、待機モーションの揺れや振り向きで、カメラまで振り回される。
+    // 向きは、ショットに入った瞬間の値でショットの間ずっと固定する
+    // 毎フレーム追うと、待機モーションの揺れや振り向きで、カメラまで振り回される
     cine.shotYaw = Cinematic::YawOf(*trans);
 }
+
+
 
 bool CinematicCameraSystem::ResolveSubjectPosition(const CinematicCameraComponent &cine, const CameraShot &shot,
                                                    Vector3 &outPos) const
@@ -782,11 +771,13 @@ bool CinematicCameraSystem::ResolveSubjectPosition(const CinematicCameraComponen
     const auto *trans = m_world->GetComponent<TransformComponent>(cine.shotSubject);
     if (!trans) return false;
 
-    // 描画用に補間した位置を使う。
-    // 固定ステップの位置をそのまま使うと、描画フレームとずれて対象とカメラの間がガタつく。
+    // 描画用に補間した位置を使う
+    // 固定ステップの位置をそのまま使うと、描画フレームとずれて対象とカメラの間がガタつく
     outPos = trans->GetRenderWorldPosition();
     return true;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -796,7 +787,7 @@ void CinematicCameraSystem::OnGui()
 {
     // --- 台本の選択 ---
 
-    // 選べるのは読み込めた台本だけ。読み直して消えた台本を選んでいたら、先頭に戻す。
+    // 選べるのは読み込めた台本だけ。読み直して消えた台本を選んでいたら、先頭に戻す
     if (m_scripts.find(m_guiScriptPath) == m_scripts.end())
         m_guiScriptPath = m_scripts.empty() ? std::string{} : m_scripts.begin()->first;
 
@@ -809,13 +800,13 @@ void CinematicCameraSystem::OnGui()
         ImGui::EndCombo();
     }
 
-    // 再生要求は、ゲーム側と同じくイベントで出す。
-    // ボタンから Component を直接書き換えると、イベントを受け付ける道を通らずに確認したことになる。
+    // 再生要求は、ゲーム側と同じくイベントで出す
+    // ボタンから Component を直接書き換えると、イベントを受け付ける道を通らずに確認したことになる
     if (ImGui::Button("再生要求を出す") && !m_guiScriptPath.empty())
         m_world->GetEventBus().Publish(CinematicPlayRequestEvent{m_guiScriptPath});
 
-    // 台本の JSON を書き換えたあと、シーンを開き直さずに確かめるため。
-    // 流しているムービーは写した台本で続くので、読み直しの影響は次の再生から。
+    // 台本の JSON を書き換えたあと、シーンを開き直さずに確かめるため
+    // 流しているムービーは写した台本で続くので、読み直しの影響は次の再生から
     ImGui::SameLine();
     if (ImGui::Button("台本を読み直す")) LoadAllScripts();
 
@@ -837,5 +828,7 @@ void CinematicCameraSystem::OnGui()
     });
 }
 
-// 他のカメラボディと同じステージ。Brain（R01b）より前に姿勢を確定させる。
+
+
+// 他のカメラボディと同じステージ。Brain（R01b）より前に姿勢を確定させる
 REGISTER_RENDER_SYSTEM(CinematicCameraSystem, Priority::RenderStage::R01_Camera);

@@ -1,4 +1,3 @@
-// BossActionComponent のシリアライズ/インスペクタ定義。
 #include "BossActionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -8,7 +7,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-// BossActionState と1対1で並べる。
+// BossActionState と1対1で並べる
 static const char *BossStateNames[] = {
     "None",
     "Move",
@@ -19,7 +18,7 @@ static const char *BossStateNames[] = {
     "Footwork",
 };
 
-// BossFootworkDir と1対1で並べる。
+// BossFootworkDir と1対1で並べる
 static const char *BossFootworkDirNames[] = {
     "None",    // 様子見していない
     "Forward", // 前
@@ -28,7 +27,7 @@ static const char *BossFootworkDirNames[] = {
     "Right",   // 右
 };
 
-// BossSideTravelPhase と1対1で並べる。
+// BossSideTravelPhase と1対1で並べる
 static const char *BossSideTravelPhaseNames[] = {
     "Start",  // 動き出し
     "Travel", // 一定の速さで進む
@@ -36,14 +35,14 @@ static const char *BossSideTravelPhaseNames[] = {
     "End",    // 止まり終えた
 };
 
-// BossLeapLanding と1対1で並べる。
+// BossLeapLanding と1対1で並べる
 static const char *BossLeapLandingNames[] = {
     "AwayToCenter", // 中央を挟んで相手と反対側
     "TowardTarget", // 相手の手前
     "InPlace",      // その場
 };
 
-// BossLeapPhase と1対1で並べる。
+// BossLeapPhase と1対1で並べる
 static const char *BossLeapPhaseNames[] = {
     "Windup",   // 溜め
     "Flight",   // 空中
@@ -52,14 +51,14 @@ static const char *BossLeapPhaseNames[] = {
     "Recovery", // 着地硬直
 };
 
-// BossBackStepPhase と1対1で並べる。
+// BossBackStepPhase と1対1で並べる
 static const char *BossBackStepPhaseNames[] = {
     "Retreat",  // 下がる
     "Stop",     // 止まる
     "Recovery", // 着地硬直
 };
 
-// BossDashPhase と1対1で並べる。
+// BossDashPhase と1対1で並べる
 static const char *BossDashPhaseNames[] = {
     "Retreat",  // 後ろへ下がる
     "Aim",      // 止まって狙う
@@ -133,7 +132,7 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(dashStopTime, "突進：止まるまでの時間 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRecovery, "突進：止まった後の硬直 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(flinchCooldown, "ひるみ：明けてから次にひるめるまで [秒]", 0.05f, 0.0f, 30.0f, "Flinch")
-            // ここから下は実行時の値。保存しない。
+            // ここから下は実行時の値。保存しない
             CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
             CFIELD_RT(lastActionTime, "前の技の長さ [秒]（溜めから硬直まで）", "State")
             CFIELD_RT(actionFinished, "今の技が終わったか", "State")

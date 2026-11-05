@@ -1,9 +1,7 @@
-// JoltCharacterConfigComponent のシリアライズ/インスペクタ定義。
-
 #include "JoltCharacterConfigComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // LayerNames / LayerCount
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
 COMPONENT_META_BEGIN_FULL(JoltCharacterConfigComponent, "Jolt Character Config", CCL::Categories::Physics, 205, false)
 

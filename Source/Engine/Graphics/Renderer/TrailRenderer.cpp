@@ -61,7 +61,7 @@ void TrailRenderer::Initialize(ID3D11Device *device)
     GpuResourceUtils::CreateDynamicConstantBuffer(
         device, sizeof(CbTrail), m_constantBuffer.GetAddressOf());
 
-    // テクスチャの無いトレイル用の 1x1 の白（頂点の色 × 白 で、頂点の色がそのまま出る）
+    // テクスチャのないトレイル用の 1x1 の白（頂点の色 × 白 で、頂点の色がそのまま出る）
     GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, m_whiteTex.GetAddressOf());
 
     // 加算の層。Additive は (SrcAlpha, One) なので、頂点のアルファがそのまま足す強さになる
@@ -81,6 +81,8 @@ void TrailRenderer::Initialize(ID3D11Device *device)
     m_initialized = true;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 三角形の受け付け
 // ---------------------------------------------------------------------------
@@ -96,6 +98,8 @@ size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
     remain -= remain % 3;
     return std::min(vertexCount, remain);
 }
+
+
 
 void TrailRenderer::SubmitTriangleList(const Vertex *verts, size_t vertexCount,
                                        ID3D11ShaderResourceView *texture)
@@ -118,6 +122,8 @@ void TrailRenderer::SubmitTriangleList(const Vertex *verts, size_t vertexCount,
         m_addBatches.push_back({texture, vertexCount});
 }
 
+
+
 void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertexCount)
 {
     if (!verts || vertexCount == 0)
@@ -131,6 +137,8 @@ void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertex
 
     m_distortVertices.insert(m_distortVertices.end(), verts, verts + vertexCount);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画
@@ -192,8 +200,8 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     ID3D11Buffer *cb = m_constantBuffer.Get();
     dc->VSSetConstantBuffers(0, 1, &cb); // b0
 
-    // 歪みの層。加算の芯を上に重ねるので先に描く。
-    // シーンの色（t5）は前のパスが別の SRV で上書きしている場合があるので、ここでバインドし直す。
+    // 歪みの層。加算の芯を上に重ねるので先に描く
+    // シーンの色（t5）は前のパスが別の SRV で上書きしている場合があるので、ここでバインドし直す
     // 読むのは写したテクスチャなので、描いている HDR バッファを同時に読むことにはならない
     ID3D11ShaderResourceView *sceneColorSRV = nullptr;
     if (distortCount > 0 && services.postProcess)
@@ -255,6 +263,8 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
 
     ClearPending();
 }
+
+
 
 void TrailRenderer::ClearPending()
 {

@@ -1,22 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: BehaviorTreeComponent を持つエンティティの BT を毎フレーム評価する System。
+// 概要: BehaviorTreeComponent を持つエンティティの BT を毎フレーム評価する System
 //
 // 責務:
-//   - 起動時に行動・条件を登録し、辞書（BTActionIds.h）との突き合わせを行う
-//   - 各個体へ木を配り、パスが変わったら実行状態を作り直す（直列）
-//   - 木を評価する（並列）。割り込み・自己中断・打ち切りの後始末を含む
+//   - 起動時に行動・条件を登録し、辞書（BTActionIds.h）と突き合わせる
+//   - 各個体へ木を配り（直列）、木を評価する（並列）
 //   - アクションが申告した Read/Write の型をスケジューラへ渡す
-//   - OnGui で blackboard の値と木を表示し、枝の強制実行と一時停止をできるようにする
+//   - OnGui で blackboard と木を表示し、枝の強制実行と一時停止をできるようにする
 //
-// 備考: Action/Condition は BTActionRegistry から ID で引く（switch は使わない）。
-//       評価の処理はボス固有の Component を読まない。ボスを知っているのは、
-//       Initialize の登録関数の呼び出しと、デバッグ UI での要求の後始末だけ。
-//
-//       実装は役割ごとに分けてある（同じクラスのメンバ関数を別 .cpp で定義）:
-//         BehaviorTreeSystem.cpp           初期化・木の配布・Update（毎フレームの入口）
-//         BehaviorTreeSystem_Evaluate.cpp  木の評価（並列）
-//         BehaviorTreeSystem_Debug.cpp     OnGui・強制実行のデバッグ UI
+// 備考: 評価の処理はボス固有の Component を読まない。ボスを知るのは、登録の呼び出しとデバッグ UI だけ
+//       実装は BehaviorTreeSystem.cpp（初期化・配布・Update）、_Evaluate.cpp（評価）、_Debug.cpp（OnGui）に分けてある
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
@@ -26,29 +19,29 @@
 #include "Engine/Time/Components/TimeState.h"
 
 class BehaviorTreeSystem : public CCL::ECS::IfSystem<
-                               BehaviorTreeSystem,
-                               CCL::ECS::Write<BehaviorTreeComponent>,
-                               CCL::ECS::Read<TransformComponent>,
-                               CCL::ECS::Read<TimeStateComponent>>
+    BehaviorTreeSystem,
+    CCL::ECS::Write<BehaviorTreeComponent>,
+    CCL::ECS::Read<TransformComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
-    // 申告をまとめるときに基底の実装を呼ぶための別名（テンプレート引数を何度も書かないため）。
-    using Base = CCL::ECS::IfSystem<BehaviorTreeSystem,
-                                    CCL::ECS::Write<BehaviorTreeComponent>,
-                                    CCL::ECS::Read<TransformComponent>,
-                                    CCL::ECS::Read<TimeStateComponent>>;
+    using Base = CCL::ECS::IfSystem<
+        BehaviorTreeSystem,
+        CCL::ECS::Write<BehaviorTreeComponent>,
+        CCL::ECS::Read<TransformComponent>,
+        CCL::ECS::Read<TimeStateComponent>>;
 
     BehaviorTreeSystem() : IfSystem("BehaviorTreeSystem") {}
     virtual ~BehaviorTreeSystem() override = default;
 
-    void Initialize() override; // 行動・条件の登録と、辞書との突き合わせ
+    void Initialize() override;
     void Update(float dt) override;
 
     void OnGui() override;
 
-    // 型の申告に、アクションが GetComponent<T>() で触る型（レジストリが集めたもの）を足す
+    // アクションが GetComponent<T>() で触る型（レジストリが集めたもの）も申告する
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
-    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override; // GetReadTypes の Write 版
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
 private:
     // 各エンティティへ、パスに対応する木を配り直す。並列ループの前に呼ぶ
@@ -143,7 +136,7 @@ private:
                            CCL::ECS::EntityID        entity,
                            float                     dt);
 
-    // 枝の先頭に並ぶ条件だけを評価する（行動は実行しない）。先頭に条件が無い枝は false
+    // 枝の先頭に並ぶ条件だけを評価する（行動は実行しない）。先頭に条件がない枝は false
     bool GuardsPass(BTNodeID                  nodeId,
                     BehaviorTreeComponent    &btComp,
                     const TransformComponent &myTrans,
@@ -151,7 +144,7 @@ private:
                     CCL::ECS::EntityID        entity,
                     float                     dt);
 
-    // UtilitySelector の候補に入れてよいか。条件の無い枝は、クールダウン中でなければ通す
+    // UtilitySelector の候補に入れてよいか。条件のない枝は、クールダウン中でなければ通す
     bool CandidatePasses(BTNodeID                  nodeId,
                          BehaviorTreeComponent    &btComp,
                          const TransformComponent &myTrans,
@@ -181,10 +174,10 @@ private:
     // 強制実行中か。true の間、評価は条件・クールダウン・割り込み・自己中断の関門を素通しにする
     static bool IgnoreGatesForDebug(const BehaviorTreeComponent &btComp);
 
-    // 評価を始めるノードを返す（強制実行中はその枝、無ければルート）。評価の並列ループから呼ぶ
+    // 評価を始めるノードを返す（強制実行中はその枝、なければルート）。評価の並列ループから呼ぶ
     BTNodeID ApplyDebugForcing(BehaviorTreeComponent &btComp, size_t nodeCount);
 
-    // UtilitySelector が技を選んだ瞬間の内訳を btComp.debugPickLog に写す。topIds は最初の抽選の上位（点数の高い順）。
+    // UtilitySelector が技を選んだ瞬間の内訳を btComp.debugPickLog に写す。topIds は最初の抽選の上位（点数の高い順）
     // 上位が3つに足りなければ、空いた枠に候補外の子（点数の高い順）を入れる
     static void RecordUtilityPick(const BTAsset         &asset,
                                   BTNodeID               selectorId,
@@ -199,7 +192,7 @@ private:
     // デバッグ UI。木を一覧にし、選んだ枝だけを評価させる（木のデータは書き換えない）
     void DrawForcedNodeGui(BehaviorTreeComponent &btComp, CCL::ECS::EntityID entity);
 
-    // DrawForcedNodeGui の再帰部分。1ノードを1行で描き、実行ボタンを付ける。
+    // DrawForcedNodeGui の再帰部分。1ノードを1行で描き、実行ボタンを付ける
     // parentIsUtility が true なら、スコア選択の子として点数も出す
     void DrawNodeRowRecursive(const BTAsset         &asset,
                               BTNodeID               nodeId,

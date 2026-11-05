@@ -11,6 +11,8 @@ namespace CCL::ECS
         return (size + alignment - 1) & ~(alignment - 1);
     }
 
+
+
     Chunk::~Chunk()
     {
         // 二重解放の防止は Finalize 側が持つ
@@ -18,13 +20,12 @@ namespace CCL::ECS
         Finalize();
     }
 
+
+
     void Chunk::Create(const Archetype &archetype, size_t initialEntityCapacity)
     {
-        // ここが一番の勘所:
-        //   各コンポーネント列の幅は「今いる数」ではなく【定員】で決まる。
-        //   定員682体なら、8体しか居なくても Position 列は682体分の幅を持つ。
-        //   そのため Velocity 列は 8192 バイトも先から始まる（Tools/ECSPlayground の実験1で見る値）。
-        //   この設計のおかげで、以降 Entity を何体足してもメモリ確保は二度と起きない。
+        // 列の幅は今いる数でなく定員で決める。8体しかいなくても、各列は定員ぶんの幅を持つ
+        // 先に定員ぶんを確保するので、Entity を足してもメモリの確保は起きない
 
         m_archetype    = archetype;
         m_capacity     = initialEntityCapacity;
@@ -39,18 +40,17 @@ namespace CCL::ECS
         m_componentOffsets.resize(compCount);
 
         size_t       currentOffset = 0;
-        const size_t ALIGNMENT     = 16; // SIMD 命令等を見据えた16バイトアライメント
+        const size_t ALIGNMENT     = 16; // 列の先頭をそろえる境界（バイト）
 
         for (size_t i = 0; i < compCount; ++i)
         {
-            // 1. 列の開始位置を16の倍数に切り上げる（CPU が読みやすい番地にする）
+            // 1. 列の開始位置を16の倍数に切り上げる
             currentOffset = AlignUp(currentOffset, ALIGNMENT);
 
             // 2. この列の開始位置を記録する
             m_componentOffsets[i] = currentOffset;
 
             // 3. 列の幅（1個のサイズ × 定員）だけ進める
-            //    例: Position(12byte) が定員100なら、1200バイト先へ
             currentOffset += m_archetype[i].typeSize * m_capacity;
         }
 
@@ -61,15 +61,15 @@ namespace CCL::ECS
         m_destroyedEntities.clear();
     }
 
+
+
     void Chunk::Finalize()
     {
-        // m_componentOffsets が空 ＝「まだ Create していない」か「もう Finalize 済み」。
-        // 二重解放を防ぐため何もしない
+        // 未作成か Finalize 済み。二重に解放しないよう何もしない
         if (m_componentOffsets.empty()) return;
 
-        // 1. 生きている要素だけに、型ごとのデストラクタを呼ぶ。
-        //    m_memoryBlock は生メモリなので、型が分からないと正しく破棄できない。
-        //    そのために TypeData がデストラクタの関数ポインタを持っている（型消去）
+        // 1. 生きている要素だけ、TypeData のデストラクタで破棄する
+        //    生のメモリなので、型ごとの関数ポインタがないと正しく破棄できない
         for (size_t ci = 0; ci < m_archetype.size(); ++ci)
         {
             size_t sz         = m_archetype[ci].typeSize;
@@ -93,6 +93,8 @@ namespace CCL::ECS
         m_entityCount = 0;
     }
 
+
+
     void *Chunk::InsertEntity(EntityID entity)
     {
         size_t writeIndex = AddEntity(entity);
@@ -106,13 +108,12 @@ namespace CCL::ECS
         return GetComponentPtr(0, writeIndex);
     }
 
+
+
     void Chunk::MarkDestroyEntity(size_t entityIndex)
     {
-        // 破棄が2段階になっている理由:
-        //   System が ForEach でループしている最中にスロットが前に詰まると、
-        //   ループが握っているポインタやインデックスが壊れる。
-        //   そこで「印を付けるだけ」に留め、実際に詰めるのは
-        //   フレーム境界の CompactAllChunks → CompactHoles でまとめて行う。
+        // 印を付けるだけで、詰めるのはフレームの境目の CompactHoles
+        // ForEach の途中でスロットが詰まると、ループが持っているポインタと添字が壊れる
 
         if (entityIndex >= m_entityCount) return;
 
@@ -120,30 +121,13 @@ namespace CCL::ECS
         m_destroyedEntities.push_back(entityIndex);
     }
 
+
+
     void Chunk::CompactHoles(const std::function<void(EntityID, Chunk *, size_t)> &onMoveCallback)
     {
-        // アルゴリズム（2本指の古典パターン）:
-        //   read  = 走査位置（前から順に全部見ていく指）
-        //   write = 詰め先位置（生きている要素を置く指）
-        //
-        //   空きスロット           → read だけ進める（write は据え置き＝穴を飛ばす）
-        //   生きていて前に穴が有る → read の中身を write へ移し、両方進める
-        //   生きていて前に穴が無い → 何もせず両方進める（read == write なので移動不要）
-        //
-        // 例: スロット [A, ×, B, ×, C]（× は削除予約）
-        //   read=0 A  : 穴なし → そのまま            write=1  [A, ×, B, ×, C]
-        //   read=1 ×  : 飛ばす                       write=1
-        //   read=2 B  : 穴あり → B を 1 へ移す       write=2  [A, B, -, ×, C]
-        //   read=3 ×  : 飛ばす                       write=2
-        //   read=4 C  : 穴あり → C を 2 へ移す       write=3  [A, B, C, -, -]
-        //   最後に m_entityCount = write = 3。後ろの2スロットは次の AddEntity で上書きされる。
-        //
-        // 移動のしかた:
-        //   型の mover（ムーブ構築）があればそれを使い、無ければ memmove で生コピー。
-        //   ムーブした後の移動元は「抜け殻」になるので、デストラクタを呼んで始末する
-        //   （std::string や shared_ptr をムーブした後を想像すると分かりやすい）。
-        //
-        // Tools/ECSPlayground の実験3で「最後尾の Entity が空いた穴へ移動する」のがこの関数の結果。
+        // 前から read で全部見て、生きている要素を write の位置へ詰める
+        // 例: [A, ×, B, ×, C] は [A, B, C] になり、m_entityCount は 3
+        // 移動は mover があればムーブ、なければ memmove。ムーブした元はデストラクタで始末する
 
         if (m_destroyedEntities.empty()) return;
 
@@ -158,8 +142,7 @@ namespace CCL::ECS
 
             if (isDead)
             {
-                // デストラクタは呼び出し元（ApplyDestroyOp など）で呼び終えているので、
-                // ここでは読むだけ進めて穴を飛ばせばよい
+                // 破棄は呼び出し元（ApplyDestroyOp など）で済んでいるので、穴を飛ばすだけ
                 ++read;
                 continue;
             }
@@ -189,7 +172,7 @@ namespace CCL::ECS
                     m_archetype[ci].destructor.Destruct(src);
                 }
 
-                // EntityID → 位置の対応表を ChunkManager に更新してもらう
+                // ChunkManager に住所録を直してもらう
                 if (onMoveCallback)
                 {
                     onMoveCallback(currentID, this, write);
@@ -205,13 +188,13 @@ namespace CCL::ECS
         m_destroyedEntities.clear();
     }
 
+
+
     size_t Chunk::AddEntity(EntityID entity)
     {
-        // Create() の時点で定員分を確保済みなので、ここは「空いているスロットに名前を書く」
-        // だけで終わる。ECS が大量の Entity 生成に強いのはこの構造のおかげ。
+        // 定員ぶんは Create で確保済みなので、空いているスロットに書くだけ
 
-        // 満員時は assert のみ。Release では assert が消えるので、
-        // 呼び出し側が定員を守る前提になっている（既知の弱点）
+        // 満員は assert でしか止めない。Release では素通りするので、呼び出し側が定員を守る
         if (m_entityCount >= m_capacity)
         {
             assert(false && "Chunk is full!");

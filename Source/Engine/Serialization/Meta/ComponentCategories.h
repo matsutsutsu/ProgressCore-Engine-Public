@@ -1,17 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: インスペクタのカテゴリ見出し名の定数。
-//
-// 責務:
-//   - ComponentMeta の category に使う名前を 1 か所で定義する
-//
-// 備考:
-//   - category はただの文字列なので、各所で直書きすると "Rendering" / "Render" のような
-//     表記ゆれで見出しが 2 つに分かれる。必ずここの定数から選び、無ければここに追加する。
-// @code
-//   COMPONENT_META_BEGIN_FULL(HealthComponent, "Health", CCL::Categories::Gameplay, 100, false)
-// @endcode
-// ===========================================================================
+// インスペクタのカテゴリ見出し名の定数。ComponentMeta の category はここの定数から選び、なければここに足す
+// ただの文字列なので、直書きすると "Rendering" / "Render" のような表記ゆれで見出しが2つに分かれる
 
 namespace CCL::Categories
 {

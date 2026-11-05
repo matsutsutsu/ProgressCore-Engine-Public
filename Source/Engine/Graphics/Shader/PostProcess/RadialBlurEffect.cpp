@@ -21,9 +21,13 @@ void RadialBlurEffect::Initialize(ID3D11Device *device, UINT /*width*/, UINT /*h
     device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 }
 
+
+
 void RadialBlurEffect::Resize(ID3D11Device * /*device*/, UINT /*width*/, UINT /*height*/)
 {
 }
+
+
 
 void RadialBlurEffect::Process(ID3D11DeviceContext      *dc,
                                ID3D11ShaderResourceView *inputSRV,

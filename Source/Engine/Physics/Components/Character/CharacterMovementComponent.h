@@ -1,30 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: 「キャラクターをどう動かしてほしいか」を、
-//       動かす側(JoltCharacterUpdateSystem)へ渡す共通の窓口。
-//       プレイヤーもボスも、移動はすべてここを経由する。
+// 概要: キャラクターをどう動かしてほしいかを、動かす側（JoltCharacterUpdateSystem）へ渡す窓口
+//       プレイヤーもボスも、移動はすべてここを通す
 //
-// 責務:
-//   - 移動の向き（desiredVelocity）と、1フレーム限りの上書きの依頼を受け取る
-//   - 決まった軌道の移動の予約（MoveTo / Hold / MoveInDirection）を受け取る
-//   - 持続する速度倍率と、ルートモーションの速度を受け取る
-//   - 物理へ渡した水平速度（currentVelocity）を公開する
-//
-// 備考:
-//   依頼が重なったときは、上の段ほど優先する（JoltCharacterUpdateSystem）。
-//     段 | 依頼                              | 効くもの           | ノックバック
-//     1  | 移動の予約 / use3DVelocity        | 水平も上下も丸ごと | 足さない
-//     2  | isRootMotionActive                | 水平               | 足す
-//     3  | overrideSpeed                     | 水平の速さ         | 足す
-//     4  | （依頼なし）walkSpeed             | 水平の速さ         | 足す
-//   speedMultiplier は 3・4 に掛かる。moveIntensity は 4 にだけ掛かる。
-//   1 の間は、ジャンプと重力も効かない。
-//
-//   決まった軌道で動く技（後退・跳躍など）は MoveTo / Hold / MoveInDirection で予約する。
-//   一度呼べば、終わるまで物理が毎フレーム運ぶ（Unreal の Root Motion Source と同じ考え方）。
-//
-//   overrideSpeed / use3DVelocity / jumpImpulse は1フレーム限りの依頼。
-//   物理が読んだ時点で既定値へ戻すので、依頼する側は効かせたいフレームに毎回書くだけでよい。
+// 備考: 依頼が重なったときは、上の段ほど優先する
+//         段 | 依頼                       | 効くもの           | ノックバック
+//         1  | 移動の予約 / use3DVelocity | 水平も上下も丸ごと | 足さない
+//         2  | isRootMotionActive         | 水平               | 足す
+//         3  | overrideSpeed              | 水平の速さ         | 足す
+//         4  | （依頼なし）walkSpeed      | 水平の速さ         | 足す
+//       speedMultiplier は 3・4、moveIntensity は 4 にだけ掛かる。1 の間はジャンプと重力も効かない
+//       決まった軌道の技は MoveTo / Hold / MoveInDirection で予約し、終わるまで物理が運ぶ
+//       overrideSpeed / use3DVelocity / jumpImpulse は1フレーム限り。効かせたいフレームに毎回書く
 // ===========================================================================
 #include <SimpleMath.h>
 #include <cstdint>

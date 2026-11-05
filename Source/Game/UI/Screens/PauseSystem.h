@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: Esc かパッドの START でゲームを一時停止し、ポーズメニューを重ねて出す System。
+// 概要: Esc かパッドの START でゲームを一時停止し、ポーズメニューを重ねて出す System
 //
 // 責務:
 //   - 一時停止を切り替え、GameFlowState.paused とゲームの時間を止める・戻す
@@ -8,16 +8,17 @@
 //   - 「ゲームに戻る」と「タイトルへ」のボタンを受ける
 //   - 製品ビルドでは、アプリが裏に回ったら自動で一時停止する
 //
-// 備考: 一時停止中は描画だけが回るので、解除の入力を拾えるよう描画ステージに置く。
-//       全体登録はせず、GameScene と EditorScene が登録する。
+// 備考: 一時停止中は描画だけが回るので、解除の入力を拾えるよう描画ステージに置く
+//       全体登録はせず、GameScene と EditorScene が登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
 
 #include <vector>
 
-class PauseSystem
-    : public CCL::ECS::IfSystem<PauseSystem, CCL::ECS::Read<UIButtonComponent>>
+class PauseSystem : public CCL::ECS::IfSystem<
+    PauseSystem,
+    CCL::ECS::Read<UIButtonComponent>>
 {
 public:
     PauseSystem() : IfSystem("PauseSystem") {}
@@ -33,8 +34,8 @@ private:
     void ClosePause(); // 再開してメニューを消す
 
     /**
-     * @brief 作ったメニューを、親の子のリストに繋ぐ（エディタの Hierarchy で木の形に見せるため）。
-     * @return 繋ぎ終えたら true。生成がまだ反映されていなければ false（次のフレームでもう一度呼ぶ）。
+     * @brief 作ったメニューを、親の子のリストに繋ぐ（エディタの Hierarchy で木の形に見せるため）
+     * @return 繋ぎ終えたら true。生成がまだ反映されていなければ false（次のフレームでもう一度呼ぶ）
      */
     bool LinkOverlay();
 

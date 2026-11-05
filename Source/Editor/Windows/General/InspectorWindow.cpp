@@ -16,12 +16,12 @@
 namespace
 {
     /**
-     * @brief カテゴリ見出し（英語の内部キー）を日本語の表示名に変換する。
+     * @brief カテゴリ見出し（英語の内部キー）を日本語の表示名に変換する
      *
-     * 内部キー（ComponentMeta の category）は英語のまま。ここは「見た目だけ」を訳す。
+     * 内部キー（ComponentMeta の category）は英語のまま。ここは「見た目だけ」を訳す
      *
-     * @param cat 内部キー。
-     * @return 表示名（文字列リテラル）。未知のカテゴリは nullptr を返し、呼び出し側で元の文字列を使う。
+     * @param cat 内部キー
+     * @return 表示名（文字列リテラル）。未知のカテゴリは nullptr を返し、呼び出し側で元の文字列を使う
      */
     const char *CategoryDisplayName(const std::string &cat)
     {
@@ -49,6 +49,8 @@ namespace
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 
+
+
 void InspectorWindow::DrawContents(EditorContext &context)
 {
     CCL::ECS::EntityID selected = context.selectedEntity;
@@ -61,8 +63,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
         return;
     }
 
-    // world は「アクティブなシーンが無い」ときに nullptr になる（Framework が毎フレーム設定）。
-    //   以降は無条件に world-> を辿るので、ここで必ず止める。
+    // world は「アクティブなシーンがない」ときに nullptr になる（Framework が毎フレーム設定）
+    //   以降は無条件に world-> を辿るので、ここで必ず止める
     if (!world)
     {
         ImGui::TextColored(ImVec4(1, 1, 0, 1), "シーンが読み込まれていません");
@@ -91,7 +93,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
     }
     else
     {
-        // 名前が無いエンティティは、名前欄の代わりに追加ボタンを同じ幅で置く
+        // 名前がないエンティティは、名前欄の代わりに追加ボタンを同じ幅で置く
         if (ImGui::Button("＋ 名前を追加", ImVec2(-idWidth, 0)))
         {
             std::string defaultName = "Entity_" + std::to_string(selected);
@@ -103,8 +105,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", idText);
 
-    // 複数選択中はその旨を表示し、削除は選択全体に適用されることを示す。
-    //   コンポーネントの編集は主選択の1体に対してだけ行う。
+    // 複数選択中はその旨を表示し、削除は選択全体に適用されることを示す
+    //   コンポーネントの編集は主選択の1体に対してだけ行う
     const size_t selCount = context.selectedEntities.size();
     if (selCount > 1)
     {
@@ -164,9 +166,9 @@ void InspectorWindow::DrawContents(EditorContext &context)
 
     // ============================================================
     // コンポーネントの一覧と編集
-    //   カテゴリの見出し（折りたたみ）の中に各コンポーネントを並べる二段構造。
-    //   ・カテゴリは ComponentMeta<T>::category（既定 "Misc"）を GUI レジストリ経由で引く。
-    //   ・見出しの並びは、属するコンポーネントの最小の sortPriority 順（同じなら名前順）。
+    //   カテゴリの見出し（折りたたみ）の中に各コンポーネントを並べる二段構造
+    //   ・カテゴリは ComponentMeta<T>::category（既定 "Misc"）を GUI レジストリ経由で引く
+    //   ・見出しの並びは、属するコンポーネントの最小の sortPriority 順（同じなら名前順）
     // ============================================================
     const auto &archetype = world->GetEntityArchetype(selected);
     auto       &registry  = ComponentGuiRegistry::Instance();
@@ -193,8 +195,8 @@ void InspectorWindow::DrawContents(EditorContext &context)
                    inspectorFilter.begin(), ::tolower);
     const bool filtering = !inspectorFilter.empty();
 
-    // コンポーネントの表示名を作る（レジストリの登録名、未登録なら型名）。
-    //   drawOne（描画）と componentMatches（検索の一致判定）で同じ名前を使うためにまとめる。
+    // コンポーネントの表示名を作る（レジストリの登録名、未登録なら型名）
+    //   drawOne（描画）と componentMatches（検索の一致判定）で同じ名前を使うためにまとめる
     auto computeCompName = [&](const auto &typeData) -> std::string {
         std::string compName = registry.GetName(typeData.id);
 
@@ -228,7 +230,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         return n.find(inspectorFilter) != std::string::npos;
     };
 
-    // コンポーネント1つぶんの描画。検索に一致しなければ何も描かない。
+    // コンポーネント1つぶんの描画。検索に一致しなければ何も描かない
     auto drawOne = [&](const auto &typeData) -> void {
         CCL::ECS::TypeID typeID = typeData.id;
 
@@ -254,7 +256,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.28f, 0.29f, 0.31f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.34f, 0.35f, 0.38f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.38f, 0.39f, 0.42f, 1.0f));
-        // GUI の無いコンポーネントは名前を暗くし、編集できるものと区別する
+        // GUI のないコンポーネントは名前を暗くし、編集できるものと区別する
         bool isNoGui = (compName.find("（GUIなし）") != std::string::npos);
         ImGui::PushStyleColor(ImGuiCol_Text,
                               isNoGui ? ImVec4(0.55f, 0.55f, 0.58f, 1.0f)   // 暗い灰
@@ -306,11 +308,11 @@ void InspectorWindow::DrawContents(EditorContext &context)
         ImGui::PopID();
     };
 
-    // カテゴリごとに typeData を振り分ける。
-    //   ・hidden のコンポーネントは一覧に出さない。
-    //   ・各カテゴリ内は sortPriority 昇順。
-    //   ・カテゴリ見出しの順は「属するコンポーネントの最小 priority」で決める。
-    //     priority 0 の Transform を持つ "Transform" カテゴリが必ず先頭に来る。
+    // カテゴリごとに typeData を振り分ける
+    //   ・hidden のコンポーネントは一覧に出さない
+    //   ・各カテゴリ内は sortPriority 昇順
+    //   ・カテゴリ見出しの順は「属するコンポーネントの最小 priority」で決める
+    //     priority 0 の Transform を持つ "Transform" カテゴリが必ず先頭に来る
     using TypeDataT = std::decay_t<decltype(*archetype.begin())>;
     struct CatEntry
     {
@@ -364,7 +366,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         const std::string &category = *catPtr;
         auto              &comps    = catMap[category].comps;
 
-        // 検索中：一致コンポーネントが1つも無いカテゴリは見出しごと隠す
+        // 検索中：一致コンポーネントが1つもないカテゴリは見出しごと隠す
         //   （空のカテゴリ帯が並んで「絞り込めていない」ように見えるのを防ぐ）
         if (filtering)
         {
@@ -389,7 +391,7 @@ void InspectorWindow::DrawContents(EditorContext &context)
         if (filtering)
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
 
-        // カテゴリの見出し。
+        // カテゴリの見出し
         //   ・コンポーネントのヘッダーより彩度の高い色にして、一段上の階層だと分かるようにする
         //   ・日本語の表示名（未知のカテゴリは英語の大文字）と、左端の色の帯を付ける
         std::string categoryLabel;

@@ -49,7 +49,9 @@ namespace
         return result;
     }
 
-    // ルートと全ての子孫を幅優先で集める（ルートが先頭）
+
+
+    // ルートとすべての子孫を幅優先で集める（ルートが先頭）
     std::vector<EntityID> CollectDescendants(EntityID root, const ChildMap &childMap)
     {
         std::vector<EntityID> result;
@@ -81,7 +83,7 @@ bool PrefabSerializer::Save(
     // 1. 親 → 子の表を作る
     ChildMap childMap = BuildParentToChildrenMap(world);
 
-    // 2. ルートと全ての子孫を集める
+    // 2. ルートとすべての子孫を集める
     std::vector<EntityID> entitiesToSave = CollectDescendants(rootEntity, childMap);
     if (entitiesToSave.empty()) return false;
 
@@ -114,7 +116,7 @@ bool PrefabSerializer::Save(
         size_t chunkIdx = chunkManager.SearchEntityIn(id, &index);
         if (chunkIdx == InvalidIndex)
         {
-            // 生成の予約中（ScrutinyAndApply 前）などで実体がまだ無い。
+            // 生成の予約中（ScrutinyAndApply 前）などで実体がまだない
             // 黙って落とすと「保存したのに空」の原因が分からないので必ずログを出す
             CCL_LOG_WARN(LogCategory::Editor,
                          "[Prefab] Entity %llu の実体が見つかりません。保存から除外しました",
@@ -125,8 +127,8 @@ bool PrefabSerializer::Save(
         Chunk *chunk = chunkManager.GetChunks()[chunkIdx].get();
         for (const auto &typeData : chunk->GetArchetype())
         {
-            // ここから下の continue は「このコンポーネントは保存されない」。
-            //   黙って落とすとプレハブが気付かないうちに壊れるので、理由を必ずログに出す。
+            // ここから下の continue は「このコンポーネントは保存されない」
+            //   黙って落とすとプレハブが気付かないうちに壊れるので、理由を必ずログに出す
             //   typeData.name は typeid の型名（例: "struct GPUParticleComponent"）
             const char *typeName = typeData.name ? typeData.name : "(unknown type)";
 

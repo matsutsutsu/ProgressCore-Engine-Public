@@ -1,5 +1,5 @@
-// stb_truetype の実装は、この翻訳単位でだけ展開する。
-// STBTT_STATIC で関数を static にし、ImGui が内部に持つ同名の stb 実装とリンク時に衝突しないようにする。
+// stb_truetype の実装は、この翻訳単位でだけ展開する
+// STBTT_STATIC で関数を static にし、ImGui が内部に持つ同名の stb 実装とリンク時に衝突しないようにする
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_STATIC
 #include "stb_truetype.h"
@@ -18,22 +18,16 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
-    /**
-     * @brief ファイルを丸ごとバイト列として読む。
-     * @param path 読むファイルのパス。
-     * @return ファイルの中身。開けなかったときは空。
-     */
+    // ファイルを丸ごと読む。開けなかったら空
     std::vector<unsigned char> ReadFile(const char *path)
     {
         return FileSystem::ReadAllBytes(path);
     }
 
-    /**
-     * @brief UTF-8 の文字列から1文字（コードポイント）を取り出し、i を次の文字の先頭へ進める。
-     * @param s 読む文字列（UTF-8）。
-     * @param i 読み始める位置（バイト）。読んだ分だけ進める。s.size() 未満であること。
-     * @return コードポイント。壊れたバイト列なら 0xFFFD（置き換え文字）を返し、1バイトだけ進める。
-     */
+
+
+    // UTF-8 の s から1文字（コードポイント）を取り出し、i を次の文字の先頭へ進める
+    // 壊れたバイト列なら 0xFFFD（置き換え文字）を返し、1バイトだけ進める
     uint32_t NextCodepoint(const std::string &s, size_t &i)
     {
         const auto c0 = static_cast<unsigned char>(s[i]);
@@ -43,7 +37,7 @@ namespace
             return c0;
         }
 
-        // 先頭バイトの上位ビットから、続くバイトの数を決める。
+        // 先頭バイトの上位ビットから、続くバイトの数を決める
         int      extra = 0;
         uint32_t cp    = 0;
         if ((c0 & 0xE0) == 0xC0)
@@ -67,7 +61,7 @@ namespace
             return 0xFFFD;
         }
 
-        // 続くバイトが足りない（文字列が文字の途中で切れている）。
+        // 続くバイトが足りない（文字列が文字の途中で切れている）
         if (i + extra >= s.size())
         {
             ++i;
@@ -132,12 +126,8 @@ struct TextRenderer::Impl
     std::unique_ptr<Sprite> dynAtlas;                           // 副のアトラスを描く Sprite
     int                     shelfX = 1, shelfY = 1, shelfH = 0; // 棚詰めの次の書き込み位置と、今の棚の高さ（px）
 
-    /**
-     * @brief 副のフォントの文字の情報を引く。まだ無ければメトリクスを測って登録する。
-     * @param cp 引く文字のコードポイント。
-     * @return 文字の情報。glyphs が所有する。アトラスにはまだ焼いていないことがある。
-     * @note 呼ぶ側で glyphMutex を取ること。
-     */
+    // 副のフォントの文字の情報を引き、なければ大きさを測って登録する。アトラスにはまだ焼いていないことがある
+    // 呼ぶ側で glyphMutex を取る
     Glyph &FindGlyph(uint32_t cp)
     {
         auto it = glyphs.find(cp);
@@ -160,14 +150,8 @@ struct TextRenderer::Impl
         return glyphs.emplace(cp, g).first->second;
     }
 
-    /**
-     * @brief 文字を副のアトラスへ焼く。焼き済みなら何もしない。
-     * @param dc アトラスのテクスチャへ書き込むデバイスコンテキスト。
-     * @param cp 焼く文字のコードポイント。
-     * @param g  焼く文字の情報（FindGlyph で引いたもの）。焼いた位置と、入ったかどうかを書き込む。
-     * @note 呼ぶ側で glyphMutex を取ること。
-     * @note アトラスが一杯なら g.fits を false にして諦める。その文字は以後描かない。
-     */
+    // 文字を副のアトラスへ焼く。焼き済みなら何もしない。呼ぶ側で glyphMutex を取る
+    // アトラスが一杯なら g.fits を false にし、その文字は以後描かない
     void BakeGlyph(ID3D11DeviceContext *dc, uint32_t cp, Glyph &g)
     {
         if (g.baked)
@@ -176,13 +160,13 @@ struct TextRenderer::Impl
         }
         g.baked = true;
 
-        // 空白など、絵の無い文字はアトラスに場所を取らない。
+        // 空白など、絵のない文字はアトラスに場所を取らない
         if (g.w <= 0 || g.h <= 0)
         {
             return;
         }
 
-        // 棚詰め: 左から順に並べ、今の段に入らなければ次の段へ移る。文字の間には 1px の余白を空ける。
+        // 棚詰め: 左から順に並べ、今の段に入らなければ次の段へ移る。文字の間には 1px の余白を空ける
         if (shelfX + g.w + 1 > kDynSize)
         {
             shelfX = 1;
@@ -199,8 +183,8 @@ struct TextRenderer::Impl
         shelfX += g.w + 1;
         shelfH = (g.h > shelfH) ? g.h : shelfH;
 
-        // 1チャンネル（覆う割合）で焼き、RGB を白・α を覆う割合にした RGBA へ直す。
-        // アトラスは、この文字の部分だけを書き換える。
+        // 1チャンネル（覆う割合）で焼き、RGB を白・α を覆う割合にした RGBA へ直す
+        // アトラスは、この文字の部分だけを書き換える
         std::vector<unsigned char> cov(static_cast<size_t>(g.w) * g.h);
         stbtt_MakeCodepointBitmap(&fallbackInfo, cov.data(), g.w, g.h, g.w, fallbackScale, fallbackScale,
                                   static_cast<int>(cp));
@@ -229,12 +213,16 @@ TextRenderer::TextRenderer()
 {
 }
 
+
+
 TextRenderer::~TextRenderer() = default;
 
 bool TextRenderer::IsReady() const
 {
     return m_impl && m_impl->ready;
 }
+
+
 
 bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float bakePixelHeight, const char *fallbackTtfPath)
 {
@@ -265,8 +253,8 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     // 2. 半角英数字を焼く
     // ---------------------------------------------------------
 
-    // 1チャンネル（覆う割合）の画像へ焼く。
-    // 戻り値が負なら入りきらなかったことを表すが、入った分は焼けている。半角英数字なら 512x512・48px で収まる。
+    // 1チャンネル（覆う割合）の画像へ焼く
+    // 戻り値が負なら入りきらなかったことを表すが、入った分は焼けている。半角英数字なら 512x512・48px で収まる
     std::vector<unsigned char> bitmap(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     stbtt_BakeFontBitmap(ttf.data(), 0, bakePixelHeight,
                          bitmap.data(), m_impl->atlasW, m_impl->atlasH,
@@ -290,8 +278,8 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     // 4. テクスチャ
     // ---------------------------------------------------------
 
-    // 覆う割合を RGBA（RGB は白、α に覆う割合）へ直す。
-    // Sprite はテクスチャの色 × 頂点の色で描くので、RGB を白にしておけば頂点の色がそのまま文字の色になる。
+    // 覆う割合を RGBA（RGB は白、α に覆う割合）へ直す
+    // Sprite はテクスチャの色 × 頂点の色で描くので、RGB を白にしておけば頂点の色がそのまま文字の色になる
     std::vector<uint32_t> rgba(static_cast<size_t>(m_impl->atlasW) * m_impl->atlasH);
     for (size_t i = 0; i < rgba.size(); ++i)
     {
@@ -332,9 +320,9 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     // 5. 副のフォント
     // ---------------------------------------------------------
 
-    // ここでは読み込みと空のアトラスの用意だけを行う。文字は DrawText で初めて描くときに焼く。
+    // ここでは読み込みと空のアトラスの用意だけを行う。文字は DrawText で初めて描くときに焼く
 
-    // 副のフォントが指定されていない・読めないときは、主のフォントで代用する。
+    // 副のフォントが指定されていない・読めないときは、主のフォントで代用する
     m_impl->fallbackTtf = fallbackTtfPath ? ReadFile(fallbackTtfPath) : ttf;
     if (m_impl->fallbackTtf.empty())
     {
@@ -368,6 +356,8 @@ bool TextRenderer::Initialize(ID3D11Device *device, const char *ttfPath, float b
     m_impl->ready = true;
     return true;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画と計測
@@ -406,7 +396,7 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
             const float sw = static_cast<float>(b.x1 - b.x0);
             const float sh = static_cast<float>(b.y1 - b.y0);
 
-            // 焼いた高さを基準にしたずれと大きさを、描く高さへ scale 倍して置く。
+            // 焼いた高さを基準にしたずれと大きさを、描く高さへ scale 倍して置く
             m_impl->atlas->Render(dc, penX + b.xoff * scale, baseY + b.yoff * scale, 0.0f, sw * scale, sh * scale,
                                   sx, sy, sw, sh, 0.0f, color.x, color.y, color.z, color.w);
             penX += b.xadvance * scale;
@@ -415,7 +405,7 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
 
         // --- それ以外（日本語など）: 副のアトラスから。初めて描く文字はここで焼く ---
 
-        // 0x20 未満は制御文字なので描かない。
+        // 0x20 未満は制御文字なので描かない
         if (!m_impl->hasFallback || cp < 0x20)
         {
             continue;
@@ -432,6 +422,8 @@ void TextRenderer::DrawText(ID3D11DeviceContext *dc, const std::string &text,
         penX += g.xadvance * scale;
     }
 }
+
+
 
 float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
 {
@@ -456,14 +448,16 @@ float TextRenderer::MeasureWidth(const std::string &text, float pixelSize) const
         }
         else if (m_impl->hasFallback && cp >= 0x20)
         {
-            // 幅を測るだけなので、アトラスには焼かない。
-            // 焼くには DeviceContext が要り、この関数は別のスレッドから呼ばれることがある。
+            // 幅を測るだけなので、アトラスには焼かない
+            // 焼くには DeviceContext が要り、この関数は別のスレッドから呼ばれることがある
             std::lock_guard<std::mutex> lk(m_impl->glyphMutex);
             w += m_impl->FindGlyph(cp).xadvance * scale;
         }
     }
     return (w > maxw) ? w : maxw;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 補助
@@ -479,6 +473,8 @@ size_t TextRenderer::Utf8Length(const std::string &text)
     return n;
 }
 
+
+
 std::string TextRenderer::Utf8Prefix(const std::string &text, size_t count)
 {
     size_t i = 0;
@@ -489,10 +485,12 @@ std::string TextRenderer::Utf8Prefix(const std::string &text, size_t count)
     return text.substr(0, i);
 }
 
+
+
 float TextRenderer::LineHeight(float pixelSize) const
 {
     const float scale = pixelSize / m_impl->bakePixel;
 
-    // descent は負なので、ascent - descent が文字の高さになる。これに行間を足す。
+    // descent は負なので、ascent - descent が文字の高さになる。これに行間を足す
     return (m_impl->ascent - m_impl->descent + m_impl->lineGap) * scale;
 }

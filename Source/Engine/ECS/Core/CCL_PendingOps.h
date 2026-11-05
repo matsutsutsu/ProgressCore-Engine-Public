@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
 // 概要: System 実行中に出た構造変更要求（生成・削除・コンポーネント追加/削除/修正）の
-//       遅延処理リスト。
+//       遅延処理リスト
 //
 // 責務:
 //   - 構造変更要求を PendingOp として記録する
 //   - 未適用のまま破棄するとき、AddComponent 用に確保した初期データを解放する
 //
-// 備考: System の更新中に Chunk の構造を変えると、走査中の配列が壊れる。
-//       そのため要求だけ溜めておき、World::ScrutinyAndApply で安全なタイミングに一括適用する。
+// 備考: System の更新中に Chunk の構造を変えると、走査中の配列が壊れる
+//       そのため要求だけ溜めておき、World::ScrutinyAndApply で安全なタイミングに一括適用する
 // ===========================================================================
 
 #include "Engine/ECS/Common/CCL_Types.h"
@@ -38,7 +38,7 @@ namespace CCL::ECS
         TypeID type     = 0; // 操作対象のコンポーネントの TypeID
         size_t typeSize = 0; // 操作対象のコンポーネントのサイズ（byte）
 
-        // AddComponent の初期データ（ヒープ上。所有する。PendingOps::Clear で解放）。
+        // AddComponent の初期データ（ヒープ上。所有する。PendingOps::Clear で解放）
         // factory を使う場合など、nullptr のこともある
         void      *data = nullptr;
         Destructor destructor; // data を破棄するための型消去デストラクタ
@@ -49,7 +49,7 @@ namespace CCL::ECS
         // Patch 用。既存コンポーネントのポインタを受け取り、中身を書き換えるラムダ
         std::function<void(void *)> patcher = nullptr;
 
-        // コピー・移動・代入用の関数ポインタ。
+        // コピー・移動・代入用の関数ポインタ
         // これらを ChunkManager まで運ばないと memcpy で代用されてしまい、
         // std::vector などを持つ型でクラッシュする
         TypeData::ConstructFunc constructor = nullptr; // コピー構築（placement new）
@@ -58,9 +58,9 @@ namespace CCL::ECS
 
         const char *name = nullptr; // デバッグ用の型名
 
-        // Spawn 時の Archetype を値で保持する。
+        // Spawn 時の Archetype を値で保持する
         //   ポインタで持ってはいけない。FrameAllocator 上の Archetype を指すと
-        //   Reset() 後にダングリングする。
+        //   Reset() 後にダングリングする
         Archetype spawnArchetype;
     };
 

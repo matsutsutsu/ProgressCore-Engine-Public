@@ -1,17 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: Entity の位置・回転・スケールと親子関係を持つコンポーネント TransformComponent。
+// 概要: Entity の位置・回転・スケールと親子関係を持つコンポーネント TransformComponent
 //
 // 責務:
 //   - ローカルの TRS（保存・編集する値）と、計算済みのワールド行列（キャッシュ）の保持
 //   - 描画補間用の前ステップの値（prevPosition / prevRotation）と描画用ワールド行列の保持
 //   - 親子関係（親の参照と、兄弟を連結リストでたどるための ID）
 //
-// 備考: 物理との同期ルール
-//   - Jolt の剛体をワープさせたいときは、必ず SetPosition() を使う。
-//     内部で isTeleported が立ち、JoltPushSystem が物理側の位置を上書きする。
-//   - 物理で動く物体（弾、キャラクター）の移動に SetPosition を毎フレーム使ってはいけない。
-//     毎ステップ物理側の位置を上書きしてしまい、物理の動き（速度・衝突応答）と競合する。
+// 備考: Jolt の剛体をワープさせるときは SetPosition を使う。isTeleported が立ち、JoltPushSystem が物理側の位置を上書きする
+//       物理で動く物（弾・キャラクター）を SetPosition で毎フレーム動かさない。物理の速度や衝突の応答と競合する
 // ===========================================================================
 #include <DirectXMath.h>
 #include "Engine/ECS/Common/CCL_Types.h"
@@ -47,24 +44,20 @@ struct TransformComponent
 
     // --- 親子関係 ---
 
-    // 親だけは EntityLink で持つ。
-    // シーン保存時に、シリアライザが EntityID をファイル内のローカル番号へ自動で変換できるようにするため。
+    // 親だけは EntityLink で持つ
+    // シーン保存時に、シリアライザが EntityID をファイル内のローカル番号へ自動で変換できるようにするため
     CCL::Serialization::EntityLink parent; // 親 Entity（保存対象。0 ならルート）
 
-    // 子と兄弟は、TransformUpdateSystem の SetParent / DetachChild が張り替える実行時の値。
-    // parent から復元できるので保存しない（ComponentMeta の Fields() に含めていない）。
+    // 子と兄弟は、TransformUpdateSystem の SetParent / DetachChild が張り替える実行時の値
+    // parent から復元できるので保存しない（ComponentMeta の Fields() に含めていない）
     CCL::ECS::EntityID firstChildID  = 0; // 最初の子（子の連結リストの先頭）
     CCL::ECS::EntityID prevSiblingID = 0; // 前の兄弟
     CCL::ECS::EntityID nextSiblingID = 0; // 次の兄弟
 
     // --- 操作・取得ヘルパー ---
 
-    /**
-     * @brief 位置をワープさせる。物理側へ反映させる印（isTeleported）も一緒に立てる。
-     * @param newPos 新しいローカル位置。
-     * @note prevPosition は変えない。ワープしたステップの描画では、旧位置と新位置の間が補間されて見える。
-     *       1フレームでも途中の位置を見せたくないときは、呼び出し側で prevPosition も同じ値にする。
-     */
+    // 位置をワープさせ、物理へ反映させる印（isTeleported）も立てる。newPos はローカルの位置
+    // prevPosition は変えないので、そのステップの描画では旧位置との間が補間される。途中を見せたくなければ prevPosition もそろえる
     void SetPosition(const DirectX::XMFLOAT3 &newPos)
     {
         position     = newPos;
@@ -86,10 +79,7 @@ struct TransformComponent
         return DirectX::XMFLOAT3(worldMatrix._41, worldMatrix._42, worldMatrix._43);
     }
 
-    /**
-     * @brief 描画補間済みのワールド座標を返す。カメラ追従など「見た目に追従させたい」用途専用。
-     * @return 描画補間済みのワールド座標。ロジックの判定には GetWorldPosition()（worldMatrix 基準）を使うこと。
-     */
+    // 描画の補間を済ませたワールド座標（カメラの追従など見た目用）。ロジックの判定には GetWorldPosition を使う
     DirectX::XMFLOAT3 GetRenderWorldPosition() const
     {
         return {renderWorldMatrix._41, renderWorldMatrix._42, renderWorldMatrix._43};
@@ -151,11 +141,7 @@ struct TransformComponent
         return out;
     }
 
-    /**
-     * @brief worldMatrix をその場で計算する。
-     * @param parentMatrix 親のワールド行列。渡せば親子を反映する。
-     * @note 通常は TransformUpdateSystem が計算するので、System の外で今すぐ行列が欲しいときだけ使う。
-     */
+    // worldMatrix をその場で求める。ふだんは TransformUpdateSystem が求めるので、System の外ですぐ欲しいときだけ使う
     void UpdateMatrix(const DirectX::XMMATRIX &parentMatrix = DirectX::XMMatrixIdentity())
     {
         using namespace DirectX;
@@ -171,10 +157,7 @@ struct TransformComponent
         XMStoreFloat4x4(&worldMatrix, world);
     }
 
-    /**
-     * @brief TRS からローカル行列（S * R * T）を合成する。
-     * @note 親変換は含まない純粋なローカル。階層解決・ボーン追従で共用。
-     */
+    // TRS からローカル行列（S * R * T）を作る。親の変換は含まない
     DirectX::XMMATRIX ComposeLocalMatrix() const
     {
         using namespace DirectX;

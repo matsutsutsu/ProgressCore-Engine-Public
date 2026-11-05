@@ -1,21 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: 2D パスで描く UI 要素を並べた描画リスト（World リソース）。
+// 概要: 2D パスで描く UI 要素を並べた描画リスト（World リソース）
 //
-// 責務:
-//   - 収集 System（UIImageCollectSystem / UITextCollectSystem / UIProgressBarCollectSystem など）が
-//     積んだ描画アイテムを、UIRenderer が描き終えるまで保持する
-//   - 画面全体に掛ける不透明度（重ねて入れ替える途中・ムービー中の HUD）を保持する
-//
-// 備考:
-//   UI は BaseScene::Render() の 2D パスで描く。
-//   描画ステージの System は UpdateRender 中に走るので、そこで直接描くと、後の 3D 描画に上書きされる。
-//
-//   画像・文字・ゲージを1つの配列で持ち、sortOrder で前後を決める。
-//
-//   items のクリアは、描く側（UIRenderer::Flush の末尾）が行う。
+// 備考: 描画ステージの System がここへ積み、BaseScene::Render() の 2D パスで UIRenderer が描く
+//       UpdateRender 中に直接描くと、後の 3D 描画に上書きされる
+//       画像・文字・ゲージを1つの配列に持ち、sortOrder で前後を決める。クリアは UIRenderer::Flush が行う
 // ===========================================================================
-#include "Engine/Graphics/Shader/Shared/UIShared.h" // ゲージの値（シェーダーへそのまま渡す）
+#include "Engine/Graphics/Shader/Shared/UIShared.h"
 
 #include <DirectXMath.h>
 #include <climits>

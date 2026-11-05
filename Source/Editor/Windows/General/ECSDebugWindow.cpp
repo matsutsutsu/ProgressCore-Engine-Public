@@ -10,6 +10,8 @@
 
 ECSDebugWindow::ECSDebugWindow() : EditorWindow("ECS Debugger") {}
 
+
+
 void ECSDebugWindow::DrawContents(EditorContext &context)
 {
     if (!context.world || !context.systemManager)
@@ -35,6 +37,8 @@ void ECSDebugWindow::DrawContents(EditorContext &context)
     }
 }
 
+
+
 const char *ECSDebugWindow::GetFriendlyTypeName(uint32_t id)
 {
     const std::string &name = ComponentGuiRegistry::Instance().GetComponentName(id);
@@ -48,6 +52,8 @@ const char *ECSDebugWindow::GetFriendlyTypeName(uint32_t id)
     snprintf(buf, sizeof(buf), "Unknown (ID:%u)", id);
     return buf;
 }
+
+
 
 // data から size バイトを、1行16バイトの16進数と ASCII で表示する
 static void DrawHexDump(const void *data, size_t size)
@@ -84,6 +90,8 @@ static void DrawHexDump(const void *data, size_t size)
         ImGui::TextDisabled("%s", lineBuffer);
     }
 }
+
+
 
 // ============================================================
 // Memory & Chunks（チャンクの使用状況と、エンティティの中身）
@@ -242,9 +250,9 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
                                 void *data = chunk->GetComponentPtrByType(td.id, e);
                                 if (data)
                                 {
-                                    // 値の表示と編集は GUI レジストリに任せる。
+                                    // 値の表示と編集は GUI レジストリに任せる
                                     // 型ごとのウィジェット（Transform なら Position の x/y/z スライダー等）は
-                                    // ComponentMeta の定義から作られる。
+                                    // ComponentMeta の定義から作られる
                                     ComponentGuiRegistry::Instance().Draw(td.id, data, id, world);
 
                                     ImGui::Spacing();
@@ -275,11 +283,13 @@ void ECSDebugWindow::DrawMemoryTab(CCL::ECS::World *world)
     ImGui::Columns(1);
 }
 
+
+
 // ============================================================
 // Execution Graph
-//   TaskScheduler が決めたバッチを上から順に描く。
-//   同じバッチ内の System は依存が無く、ワーカースレッドで並列に実行される。
-//   バッチ同士は上から順に直列に実行される（前のバッチの完了を待つ）。
+//   TaskScheduler が決めたバッチを上から順に描く
+//   同じバッチ内の System は依存がなく、ワーカースレッドで並列に実行される
+//   バッチ同士は上から順に直列に実行される（前のバッチの完了を待つ）
 // ============================================================
 void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManager)
 {
@@ -316,7 +326,7 @@ void ECSDebugWindow::DrawExecutionGraphTab(CCL::ECS::SystemManager *systemManage
             const auto &batch    = batches[i];
             const bool  parallel = batch.size() > 1;
 
-            // 並列のバッチ（複数スレッドで同時に実行）は緑、1つだけのバッチは灰。
+            // 並列のバッチ（複数スレッドで同時に実行）は緑、1つだけのバッチは灰
             const ImVec4 col = parallel ? ImVec4(0.40f, 0.90f, 0.50f, 1.0f)
                                         : ImVec4(0.70f, 0.70f, 0.70f, 1.0f);
             ImGui::TextColored(col, "Batch %zu  [%s x%zu]",

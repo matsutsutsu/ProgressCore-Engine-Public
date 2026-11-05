@@ -1,14 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: ブレンドスペースの重みの計算と、入力の追従。
-//
-// 責務:
-//   - 入力の位置から、点ごとの重み（合計 1）を求める（1D / 2D の方向型）
-//   - 入力を目標へ滑らかに寄せる
-//
-// 備考: 実行時（AnimControllerSystem）とエディタの図（AnimGraphWindow）の両方から使うので
-//       ヘッダに置いている。点の位置は配列で受け取り、AnimBlendSpace にも実行時のコピーにも使えるようにする。
-// ===========================================================================
+// ブレンドスペースの重みの計算と、入力の追従
+// 実行時（AnimControllerSystem）とエディタの図（AnimGraphWindow）の両方が使う。点の位置は配列で受け取る
 #include "Engine/Animation/Core/AnimStateMachine.h"
 #include <algorithm>
 #include <cmath>
@@ -91,7 +83,7 @@ namespace CCL::Anim
 
 
 
-    // 2D の方向型: 入力の向きをはさむ 2 方向を、角度の比で混ぜる。
+    // 2D の方向型: 入力の向きをはさむ 2 方向を、角度の比で混ぜる
     //   原点に点（中心）があれば、入力の長さで中心とも混ぜる（長さ 0 で中心だけ、外周で方向だけ）
     inline void ComputeWeightsDirectional2D(const float *xs, const float *ys, int count, float inputX, float inputY,
                                             float *outWeights)
@@ -117,7 +109,7 @@ namespace CCL::Anim
             }
         }
 
-        // 入力がほぼ 0 なら向きが決まらない。中心があれば中心、無ければ時間の基準の点だけを使う
+        // 入力がほぼ 0 なら向きが決まらない。中心があれば中心、なければ時間の基準の点だけを使う
         const float inputLength = std::sqrt(inputX * inputX + inputY * inputY);
         if (inputLength < kCenterEpsilon)
         {
@@ -157,7 +149,7 @@ namespace CCL::Anim
             }
         }
 
-        // 方向の点が無い（中心だけ）
+        // 方向の点がない（中心だけ）
         if (prev < 0)
         {
             outWeights[center] = 1.0f;
@@ -195,14 +187,7 @@ namespace CCL::Anim
 
 
 
-    /**
-     * @brief 入力の位置から、点ごとの重みを求める。
-     * @param type       ブレンドスペースの種類。
-     * @param xs, ys     点の位置。count 個。1D では ys を使わない。
-     * @param count      点の数。0 なら何もしない。
-     * @param inputX, inputY 入力の位置。1D では inputY を使わない。
-     * @param outWeights 求めた重みを書く先。count 個。合計は 1 になる。
-     */
+    // 入力の位置から、count 個の点の重み（合計 1）を求める。1D では ys と inputY を使わない
     inline void ComputeBlendWeights(AnimBlendSpaceType type, const float *xs, const float *ys, int count,
                                     float inputX, float inputY, float *outWeights)
     {

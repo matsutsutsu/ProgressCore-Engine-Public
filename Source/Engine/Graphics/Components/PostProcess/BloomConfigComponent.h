@@ -1,15 +1,8 @@
 #pragma once
-// ===========================================================================
-// 概要: ブルームの設定を持つシングルトンコンポーネント。シーンに1つ置く。
-//
-// 責務:
-//   - ブルームのオン/オフと GPU パラメータを持つ
-//
-// 備考: PostProcessSystem が毎フレーム読み、BloomEffect へ渡す。
-//       コンポーネントが無いか enable=false なら、ブルームは無効になる。
-// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
+// ブルームの設定。シーンに1つ置き、PostProcessSystem が毎フレーム読む
+// コンポーネントがないか enable が false なら、ブルームは無効
 struct BloomConfigComponent
 {
     bool                 enable = true;

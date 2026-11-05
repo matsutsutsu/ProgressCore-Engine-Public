@@ -1,22 +1,18 @@
 #pragma once
 // ===========================================================================
-// 概要: ムービーのシグナル（CinematicSignalEvent）を受けて、ゲーム側の演出を出す System。
+// 概要: ムービーのシグナル（CinematicSignalEvent）を受けて、ゲーム側の演出を出す System
 //
 // 責務:
-//   - "Telop": 画面左下にテロップ（大きな名前と、その下の1行）を出し、時間が来たら消す
+//   - "Telop" を受けたら、画面左下にテロップ（大きな名前と、その下の1行）を出し、時間が来たら消す
 //   - スキップで終わったら、出ているテロップを急いで消す
 //   - 知らない名前のシグナルは、警告ログを出して捨てる
 //
 // シグナルの引数:
-//   Telop: param = 名前（大きな文字）、param2 = 下の1行（空なら出さない）、value = 表示する秒数（0 なら 3 秒）
+//   Telop: param = 名前、param2 = 下の1行（空なら出さない）、value = 表示する秒数（0 なら 3 秒）
 //
-// 備考:
-//   なぜゲーム側にあるか: テロップの見た目（ScreenHeadingUi の部品）はゲーム側の知識だから。
-//   エンジンはシグナルの名前と引数を渡すだけで、意味を知らない。
-//
-//   シグナルはロジックの段（CinematicTrackSystem）から届くが、UI を作るのは描画の段にそろえたいので、
-//   受けたら溜めておき、自分の Update でまとめて処理する。
-//   表示時間は Time::PresentationDt で数えるので、ポーズ中はテロップも止まる。
+// 備考: テロップの見た目はゲーム側の知識なので、エンジンは名前と引数を渡すだけで意味を知らない
+//       シグナルはロジックの段から届くので、溜めておき、描画の段の Update でまとめて UI を作る
+//       表示時間は Time::PresentationDt で数えるので、ポーズ中はテロップも止まる
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Cinematic/CinematicEvents.h"
@@ -26,17 +22,14 @@
 #include <string>
 #include <vector>
 
-class CinematicSignalSystem : public CCL::ECS::IfSystem<CinematicSignalSystem,
-                                                        CCL::ECS::Write<UITextComponent>,
-                                                        CCL::ECS::Write<UIImageComponent>>
+class CinematicSignalSystem : public CCL::ECS::IfSystem<
+    CinematicSignalSystem,
+    CCL::ECS::Write<UITextComponent>,
+    CCL::ECS::Write<UIImageComponent>>
 {
 public:
-    CinematicSignalSystem()
-        : IfSystem("CinematicSignalSystem")
-    {
-    }
+    CinematicSignalSystem() : IfSystem("CinematicSignalSystem") {}
 
-    // シグナルと終了の知らせの購読を登録する
     void Initialize() override;
 
     void Update(float dt) override;
@@ -62,15 +55,9 @@ private:
         bool                            fadeCaptured = false; // parts の baseAlpha を控えたか
     };
 
-    // シグナル1つを処理する
     void HandleSignal(const CinematicSignalEvent &ev);
 
-    /**
-     * @brief テロップを出す。
-     * @param title    大きな文字（名前）。
-     * @param subtitle 下の1行。空なら出さない。
-     * @param seconds  消え始めるまでの秒数。
-     */
+    // テロップを出す。subtitle が空なら下の1行は出さない。seconds は消え始めるまでの秒数
     void SpawnTelop(const std::string &title, const std::string &subtitle, float seconds);
 
     // 出ているテロップの時間を進め、フェードさせ、消えきったものを破棄する

@@ -1,16 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: ログを表示するコンソールウィンドウ。
+// 概要: ログを表示するコンソールウィンドウ
 //
 // 責務:
 //   - レベル・カテゴリ・文字列でログを絞り込んで表示する
 //   - 1行・全体のクリップボードへのコピー
 //   - 行のダブルクリックで Visual Studio の該当行を開く
 //
-// 備考: 表示するのは ImGuiBufferSink のリングバッファを Snapshot() で複製したもの。
-//       描画中にロックを持ち続けると、ログを出す側のスレッドがその間止まるため。
+// 備考: 表示するのは ImGuiBufferSink のリングバッファを Snapshot() で複製したもの
+//       描画中にロックを持ち続けると、ログを出す側のスレッドがその間止まるため
 //       カテゴリ名は GetLogCategoryName() だけを使う。ここに独自の対応表を持つと、
-//       エンジン側にカテゴリを足したとき片方だけ古くなる。
+//       エンジン側にカテゴリを足したとき片方だけ古くなる
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -26,9 +26,9 @@ public:
     ConsoleWindow();
 
     /**
-     * @brief 表示に使うシンクを渡す。Framework の初期化時に呼ぶ。
+     * @brief 表示に使うシンクを渡す。Framework の初期化時に呼ぶ
      *
-     * ImGuiBufferSink を共有し、UI 側はロックを取って複製する Snapshot() で履歴を読む。
+     * ImGuiBufferSink を共有し、UI 側はロックを取って複製する Snapshot() で履歴を読む
      */
     void SetBufferSink(std::shared_ptr<ImGuiBufferSink> sink) { m_bufferSink = std::move(sink); }
 

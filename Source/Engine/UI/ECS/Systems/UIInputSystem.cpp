@@ -36,11 +36,8 @@ void UIInputSystem::Update(float /*dt*/)
     const bool pressed  = mouse.IsTriggered(Mouse::BTN_LEFT);
     const bool released = mouse.IsReleased(Mouse::BTN_LEFT);
 
-    // カーソルがこのフレームで動いたか。
-    //   hover した要素へ無条件にフォーカスを移すと、キーで選び直した直後に、
-    //   止まっているカーソルの下の要素へフォーカスが戻されてしまう。
-    //   動いたフレームだけ移すことで、マウスとパッドのどちらで操作しても
-    //   ハイライトされている 1 つが操作対象になる
+    // カーソルが動いたフレームだけ、hover した要素へフォーカスを移す
+    // いつも移すと、キーで選び直した直後に、止まっているカーソルの下の要素へ戻されてしまう
     const bool mouseMoved = (mouse.GetPositionX() != mouse.GetOldPositionX()) ||
                             (mouse.GetPositionY() != mouse.GetOldPositionY());
 
@@ -48,14 +45,14 @@ void UIInputSystem::Update(float /*dt*/)
     const float screenW = gfx.GetScreenWidth();
     const float screenH = gfx.GetScreenHeight();
 
-    // マウスのクライアント座標を UI の座標系（RT の解像度）へ変換する。
-    //   全画面 / Shipping: GameViewportInfo が無いか valid=false なので変換しない（クライアント == RT）。
+    // マウスのクライアント座標を UI の座標系（RT の解像度）へ変換する
+    //   全画面 / Shipping: GameViewportInfo がないか valid=false なので変換しない（クライアント == RT）
     //   エディタ: GameView が RT を縮小表示しているので、その表示矩形で正規化して戻す
     float mx = static_cast<float>(mouse.GetPositionX());
     float my = static_cast<float>(mouse.GetPositionY());
 
-    // ゲーム画面が実際に出ているフレームか。出ていないなら入力を一切受けない。
-    //   エディタで GameView が別タブの裏に隠れていると誰も矩形を書かず valid=false になる。
+    // ゲーム画面が実際に出ているフレームか。出ていないなら入力を一切受けない
+    //   エディタで GameView が別タブの裏に隠れていると誰も矩形を書かず valid=false になる
     //   そこで変換なしにすると、画面に出ていないボタンの矩形に他のエディタウィンドウ上の
     //   クリックが当たる（BT ウィンドウのクリックがポーズメニューの QUIT を押した）
     bool inputUsable = true;
@@ -70,16 +67,16 @@ void UIInputSystem::Update(float /*dt*/)
         }
         else if (vp.editorVisible)
         {
-            // エディタは動いているのに GameView が表示されていない。
+            // エディタは動いているのに GameView が表示されていない
             //   キーの決定も止める。止めないと BT ノードの名前入力中の Enter で
             //   裏の UI ボタンが決定されてしまう
             inputUsable = false;
         }
     }
 
-    // キーボードはエディタの別ウィンドウ（BT エディタなど）を操作中なら受けない。
-    //   Space や Enter はエディタでも使うので、そのまま読むと裏のボタンまで決定してしまう。
-    //   パッドはエディタで使わないので止めない。
+    // キーボードはエディタの別ウィンドウ（BT エディタなど）を操作中なら受けない
+    //   Space や Enter はエディタでも使うので、そのまま読むと裏のボタンまで決定してしまう
+    //   パッドはエディタで使わないので止めない
     const bool keyUsable = !m_world->HasResource<GameViewportInfo>() ||
                            m_world->GetResource<GameViewportInfo>().KeyboardToGame();
     auto keyTriggered = [&](int vk) { return keyUsable && input->GetKeyboard().IsTriggered(vk); };
@@ -176,8 +173,8 @@ void UIInputSystem::Update(float /*dt*/)
         }
     }
 
-    // カーソルを動かして要素に乗せたら、そこへフォーカスも移す。
-    //   これが無いと、キーで選んでいる要素とマウスが乗っている要素が別々にハイライトされ
+    // カーソルを動かして要素に乗せたら、そこへフォーカスも移す
+    //   これがないと、キーで選んでいる要素とマウスが乗っている要素が別々にハイライトされ
     //   （UIButtonSystem は hover と focus を同じ色にする）、決定キーがどちらに効くか分からなくなる
     if (mouseMoved && topID != InvalidEntityID && topFocusable)
         newFocus = topID;
@@ -203,5 +200,7 @@ void UIInputSystem::Update(float /*dt*/)
             inter.clicked = true;
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIInputSystem, Priority::RenderStage::R10_UI);

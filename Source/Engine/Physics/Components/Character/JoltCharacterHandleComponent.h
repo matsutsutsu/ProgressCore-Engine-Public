@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
 // 概要: JoltCharacterSetupSystem が生成した CharacterVirtual を持つ Component と、
-//       キャラを動かす側が共通で使う補助関数。
+//       キャラを動かす側が共通で使う補助関数
 //
 // 責務:
 //   - CharacterVirtual の参照カウント付きポインタを持つ
 //   - 物理の位置の取得・向きの書き込み・積分の dt を、全キャラで同じ形にする
 //
-// 備考: 手で付けない。JoltCharacterSetupSystem が生成時に付ける。
-//       JPH::Ref なので、Component が破棄されると CharacterVirtual も解放される。
+// 備考: 手で付けない。JoltCharacterSetupSystem が生成時に付ける
+//       JPH::Ref なので、Component が破棄されると CharacterVirtual も解放される
 // ===========================================================================
 #include <algorithm>
 
@@ -28,7 +28,7 @@ inline constexpr float kCharacterMinStepDt = 0.0001f;
 inline constexpr float kCharacterMaxStepDt = 0.0333f;
 
 // dt を、物理（JoltCharacterUpdateSystem）が積分に使う範囲へ丸める
-// 「居るべき位置へ届く速度」を出す処理も、物理と同じこの値で割る
+// 「いるべき位置へ届く速度」を出す処理も、物理と同じこの値で割る
 inline float CharacterStepDt(float dt)
 {
     return (std::max)(kCharacterMinStepDt, (std::min)(dt, kCharacterMaxStepDt));

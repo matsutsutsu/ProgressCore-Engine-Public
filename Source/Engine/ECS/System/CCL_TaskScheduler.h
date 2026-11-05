@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: System 間の依存関係を解析し、並列実行できるバッチ列を組んで実行するクラス。
+// 概要: System 間の依存関係を解析し、並列実行できるバッチ列を組んで実行するクラス
 //
 // 責務:
 //   - ステージ・明示的な順序宣言・Read/Write 型競合から実行バッチを構築する
@@ -28,28 +28,9 @@ namespace CCL::ECS
             return m_executionBatches;
         }
 
-        /**
-         * @brief 全 System の依存関係を解析し、実行バッチ（フェーズ）を構築する。
-         *
-         * 順序の決まり方（強い順に3段）:
-         *   1. Priority（ステージ）が違えば必ず直列。ステージが順序の骨格。
-         *   2. 同一ステージ内は GetRunAfter / GetRunBefore の宣言をトポロジカル
-         *      ソートして確定する。ここが「どちらが先か」を決める唯一の場所。
-         *   3. 宣言も型競合も無ければ、並列実行してよいものとして同じバッチに入れる。
-         *
-         * なぜ3段目だけでは足りなかったか:
-         *   Read/Write 型の競合解析は「同時に走らせてよいか」しか判定できない。
-         *   競合を見つければ直列化はするが、どちらを先にするかは配列の並び順
-         *   まかせになる。その並び順が静的初期化順序に依存していたため、
-         *   BoneAttachment と JoltPush の順序が環境によって逆転していた。
-         *   2段目の明示宣言はその穴を塞ぐためにある。
-         *
-         * 結果は m_executionBatches に入る。
-         *   外側 vector = 実行順序（Batch 0 -> Batch 1 -> ...）
-         *   内側 vector = 同時に並列実行してよい System の集合
-         *
-         * @param systems Priority 昇順（同値は System 名順）に並んだ System 群
-         */
+        // 全 System の依存を解析し、実行のバッチを m_executionBatches に作る（systems はステージの昇順、同じなら名前順）
+        // ステージが違えば直列。同じステージの中は GetRunAfter / GetRunBefore の宣言で順を決め、
+        // 宣言も型の競合もないものは同じバッチで並列に走らせる
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
             m_executionBatches.clear();
@@ -58,8 +39,8 @@ namespace CCL::ECS
 
             const size_t n = systems.size();
 
-            // Phase 0: 明示的な順序宣言を解決し、実行順の添字列を作る。
-            // systems の並びを土台に、同一ステージ内だけを宣言に従って組み替える。
+            // Phase 0: 明示的な順序宣言を解決し、実行順の添字列を作る
+            // systems の並びを土台に、同一ステージ内だけを宣言に従って組み替える
             std::vector<size_t> order = ResolveExplicitOrder(systems);
 
             // Phase 1: 前に置かれた System との競合を調べ、入るバッチを決める
@@ -78,17 +59,17 @@ namespace CCL::ECS
                     const size_t j        = order[oj];
                     bool         conflict = false;
 
-                    // ステージ（優先度）の境界は絶対の壁。
-                    // 優先度が違う System 同士はデータに関係なく必ず順番を待つ。
+                    // ステージ（優先度）の境界は絶対の壁
+                    // 優先度が違う System 同士はデータに関係なく必ず順番を待つ
                     if (systems[i]->GetPriority() != systems[j]->GetPriority())
                     {
                         conflict = true;
                     }
                     else if (HasExplicitOrder(*systems[i], *systems[j]))
                     {
-                        // 明示的な順序宣言があれば、型が無関係でも直列化する。
+                        // 明示的な順序宣言があれば、型が無関係でも直列化する
                         // Phase 0 で j が先に来るよう並べ替え済みなので、
-                        // ここで直列化すれば宣言通りの順序になる。
+                        // ここで直列化すれば宣言通りの順序になる
                         conflict = true;
                     }
                     else
@@ -119,15 +100,15 @@ namespace CCL::ECS
                         }
 
                         // Chunk 単位の競合チェックは初期化時点の情報しか持てず、
-                        // 実行中に Chunk が変わると誤判定するため無効のまま。
+                        // 実行中に Chunk が変わると誤判定するため無効のまま
 
                         if (typeConflict)
                         {
                             conflict = true;
 
-                            // 型は競合するのに順序が宣言されていない ＝ 順序不定。
-                            // 直列化はされるが、どちらが先かは並び順まかせになる。
-                            // 潜在バグとして記録し、起動時にまとめて報告する。
+                            // 型は競合するのに順序が宣言されていない ＝ 順序不定
+                            // 直列化はされるが、どちらが先かは並び順まかせになる
+                            // 潜在バグとして記録し、起動時にまとめて報告する
                             m_ambiguities.push_back({systems[j]->GetName(),
                                                      systems[i]->GetName(),
                                                      systems[i]->GetPriority()});
@@ -160,15 +141,8 @@ namespace CCL::ECS
 
         const std::vector<Ambiguity> &GetAmbiguities() const { return m_ambiguities; }
 
-        /**
-         * @brief 検出した順序不定ペアを Logger へ出力する。
-         *
-         * 「直列化はされているが、どちらが先かはソートの並び順で決まっている」組を
-         * 全部出す。ここに出たペアに実際の依存関係があるなら、GetRunAfter で順序を
-         * 宣言するか、ステージを分けること。本当に順不同でよいなら放置してよい。
-         *
-         * @param groupLabel ログに付けるグループ名（"Logic" / "Render"）
-         */
+        // 直列にはなっているが、どちらが先かがソートの並びで決まっている組をすべてログに出す
+        // 本当に依存があるなら、GetRunAfter で順を宣言するか、ステージを分ける
         void LogAmbiguities(const char *groupLabel) const
         {
             if (m_ambiguities.empty())
@@ -198,8 +172,8 @@ namespace CCL::ECS
             {
                 if (batch.empty()) continue;
 
-                // バッチ内が1個なら並列化の意味が無い。
-                // プール未注入（nullptr）でも必ず動くよう、ここで直列に逃がす。
+                // バッチ内が1個なら並列化の意味がない
+                // プール未注入（nullptr）でも必ず動くよう、ここで直列に逃がす
                 if (batch.size() == 1 || jobSystem == nullptr)
                 {
                     for (SystemBase *sys : batch)
@@ -246,16 +220,8 @@ namespace CCL::ECS
             return false;
         }
 
-        /**
-         * @brief 同一 Priority の区間ごとに順序宣言をトポロジカルソートし、実行順の添字列を返す。
-         *
-         * GetRunAfter / GetRunBefore を辺とみなして Kahn 法で並べる。
-         * 決定性のため、同時に実行可能になった候補は常に元の並び（＝名前順）で
-         * 取り出す。宣言が1つも無ければ結果は入力と完全に同じ並びになる。
-         *
-         * @param systems Priority 昇順（同値は System 名順）に並んでいる前提
-         * @return systems への添字を実行順に並べたもの
-         */
+        // 同じステージの区間ごとに、GetRunAfter / GetRunBefore を辺として Kahn 法で並べ、実行順の添字を返す
+        // 同時に並べられる候補は元の並び（名前順）で取り出すので、宣言がなければ入力と同じ並びになる
         std::vector<size_t> ResolveExplicitOrder(
             const std::vector<std::unique_ptr<SystemBase>> &systems) const
         {
@@ -295,8 +261,8 @@ namespace CCL::ECS
                     ++indeg[to];
                 };
 
-                // 宣言名を同一区間内の局所添字へ解決する。
-                // 解決できない場合は黙って無視せず、必ず理由をログに出す。
+                // 宣言名を同一区間内の局所添字へ解決する
+                // 解決できない場合は黙って無視せず、必ず理由をログに出す
                 auto resolveLocal = [&](const SystemBase &owner, const char *name,
                                         size_t &outLocal) -> bool {
                     if (name == nullptr) return false;
@@ -359,8 +325,8 @@ namespace CCL::ECS
 
                     if (pick == count)
                     {
-                        // 入次数0が無い ＝ 宣言が循環している。
-                        // 順序を決められないので、残りは名前順のまま流して続行する。
+                        // 入次数0がない ＝ 宣言が循環している
+                        // 順序を決められないので、残りは名前順のまま流して続行する
                         CCL_LOG_ERROR(LogCategory::ECS,
                                       "[Scheduler] stage %d の順序宣言に循環があります。"
                                       "残り %zu システムは名前順で実行します",

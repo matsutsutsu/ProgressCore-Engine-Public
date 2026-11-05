@@ -1,20 +1,8 @@
 #pragma once
-// ===========================================================================
-// 概要: ムービー用カメラ（シーンに1台）の設定と再生状態を持つコンポーネント。
-//
-// 責務:
-//   - 再生中／停止中の VirtualCamera の優先度を持つ
-//   - 再生中の台本と、再生の状態・再生位置・スキップの長押しの状態を持つ
-//   - トラック（SE・エフェクト・シグナル・アニメ）をどこまで出したかを持つ
-//   - エディタが見せたい台本と時刻（プレビュー）を持つ
-//   - 被写界深度の、最後に書いた値と効きを持つ
-//
-// 備考:
-//   同じ Entity に VirtualCamera を付ける。ムービーが何本あってもこの1台で映し、
-//   ムービーごとに切り替えるのは台本（どう映すかのデータ）だけにする。
-// ===========================================================================
+// ムービー用カメラ（シーンに1台）の設定と再生状態。同じ Entity に VirtualCamera を付ける
+// ムービーが何本あってもこの1台で映し、ムービーごとに替えるのは台本だけにする
 #include "Engine/Cinematic/CinematicScript.h"
-#include "Engine/ECS/Common/CCL_Types.h" // CCL::ECS::EntityID
+#include "Engine/ECS/Common/CCL_Types.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -77,8 +65,8 @@ struct CinematicCameraComponent
     std::vector<CCL::ECS::EntityID> animHeld;           // アニメごとに握っている Entity（script.animations の添字）。握っていなければ Invalid
     std::vector<std::uint8_t>       animEntered;        // アニメごとに、区間に入る処理を済ませたか（script.animations の添字）
 
-    // エディタのプレビュー。Cinematic Editor だけが書く。
-    // 再生の状態（state・time・script）とは別に持つ。トラックは state を見て出すので、プレビューでは何も出ない。
+    // エディタのプレビュー。Cinematic Editor だけが書く
+    // 再生の状態（state・time・script）とは別に持つ。トラックは state を見て出すので、プレビューでは何も出ない
     bool            previewActive = false; // エディタが、ある時刻の絵を見せているか（開始待ち・再生中は無視する）
     bool            previewFreeze = false; // プレビューの間、ムービー中として操作と敵の思考を止めるか（一時停止せずに見るとき）
     CinematicScript previewScript;         // 見せる台本（エディタが編集中の写し）

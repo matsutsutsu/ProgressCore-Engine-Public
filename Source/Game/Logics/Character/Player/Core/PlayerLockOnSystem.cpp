@@ -2,8 +2,8 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/Components/EntityLabel.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
-#include "Game/Logics/Combat/Components/EnemyTag.h"                           // ロックオン候補の絞り込み
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // ロックオン状態をカメラへ書く
+#include "Game/Logics/Combat/Components/EnemyTag.h"
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
@@ -17,8 +17,8 @@ void PlayerLockOnSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID playerID, PlayerComponent &player,
                       const PlayerInputComponent &pin, const TransformComponent &playerTrans) {
-        // 1. ロックオン対象が死亡しているか破棄されていれば解除する。
-        //    世代の違う ID を持ち続けないよう、Exists ではなく IsEntityValid で判定する。
+        // 1. ロックオン対象が死亡しているか破棄されていれば解除する
+        //    世代の違う ID を持ち続けないよう、Exists ではなく IsEntityValid で判定する
         if (player.lockOnTargetID != InvalidEntityID)
         {
             if (!m_world->IsEntityValid(player.lockOnTargetID) ||
@@ -28,10 +28,10 @@ void PlayerLockOnSystem::Update(float /*dt*/)
             }
         }
 
-        // 2. ロックオンのボタンを押した瞬間だけ切り替える。
-        //    押した瞬間の判定は PlayerInputSystem が済ませているので、ここでフラグを false にしない。
+        // 2. ロックオンのボタンを押した瞬間だけ切り替える
+        //    押した瞬間の判定は PlayerInputSystem が済ませているので、ここでフラグを false にしない
         //    false にしても入力側が同じフレームの次のステップで書き直すため、
-        //    1回の押下で切り替えが2回走って元に戻ることがある。
+        //    1回の押下で切り替えが2回走って元に戻ることがある
         if (pin.lockOnPressed)
         {
             // 3. ロックオン中なら解除する
@@ -42,15 +42,15 @@ void PlayerLockOnSystem::Update(float /*dt*/)
             }
             else
             {
-                // 4. EnemyTag を持つ生存中の敵から、プレイヤーに最も近いものを探す。
-                //    候補を一覧に溜めず、走査しながら最短を更新する。
+                // 4. EnemyTag を持つ生存中の敵から、プレイヤーに最も近いものを探す
+                //    候補を一覧に溜めず、走査しながら最短を更新する
                 //    候補は EnemyTag だけで絞る。特定の Component（BossActionComponent など）で絞ると、
-                //    敵の種類が増えるたびにここへ条件を足すことになる。
+                //    敵の種類が増えるたびにここへ条件を足すことになる
                 //
                 //    距離の上限は設けない。ステージが広く、ボスは跳躍や滞空で一気に間合いを
                 //    離すため、上限を置くと「離れた瞬間だけロックオンを受け付けない」という
                 //    操作感になる。遠い敵が小さく映る問題はカメラ側の引き
-                //    （lockOnDistanceGain）が吸収するので、ここで弾く必要がない。
+                //    （lockOnDistanceGain）が吸収するので、ここで弾く必要がない
                 EntityID closestEnemyID = InvalidEntityID;
                 float    closestDistSq  = (std::numeric_limits<float>::max)();
 
@@ -79,9 +79,9 @@ void PlayerLockOnSystem::Update(float /*dt*/)
             }
         }
 
-        // 6. 決まったロックオン状態を、毎フレーム最後にカメラへ書く。
+        // 6. 決まったロックオン状態を、毎フレーム最後にカメラへ書く
         //   カメラ(Engine)がプレイヤー(Game)を読む形にすると Engine→Game の依存になるため、
-        //   状態を持つこちらから書き込む。
+        //   状態を持つこちらから書き込む
         m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
             auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
             if (!tps || tps->target.id != playerID) return; // このプレイヤーを映していないカメラは飛ばす
@@ -91,6 +91,8 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         });
     });
 }
+
+
 
 // PlayerInputSystem(L01_Input) の後に走り、カメラ（Render ステージ）より前に対象を決める
 REGISTER_LOGIC_SYSTEM(PlayerLockOnSystem, Priority::LogicStage::L02_Update);

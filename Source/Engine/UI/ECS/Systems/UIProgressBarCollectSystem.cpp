@@ -22,7 +22,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
 
         const float v = std::clamp(bar.value, 0.0f, 1.0f);
 
-        // 被弾の揺れ。ゲージ全体の位置をずらす。
+        // 被弾の揺れ。ゲージ全体の位置をずらす
         //   X と Y で振動数をずらしているのは、同じにすると斜め 45 度の直線往復になり、
         //   揺れではなくスライドに見えるため（軌跡をリサージュ曲線にする）
         DirectX::XMFLOAT2 origin = t.computedPos;
@@ -74,5 +74,7 @@ void UIProgressBarCollectSystem::Update(float /*dt*/)
         drawList.items.push_back(std::move(item));
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIProgressBarCollectSystem, Priority::RenderStage::R10b_UICollect);

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: アニメーションのステートマシン（AnimStateGraph）をノードグラフで編集するウィンドウ。
+// 概要: アニメーションのステートマシン（AnimStateGraph）をノードグラフで編集するウィンドウ
 //
 // 責務:
 //   - ステート・遷移・サブステートマシン・ブレンドスペースの追加・削除と、遷移条件の編集
@@ -10,7 +10,7 @@
 //
 // 備考: 編集対象は m_rootGraph（サブマシンの中身も含むツリー全体）。今見ている階層は
 //       m_editPath で決まる。リンクの削除・選択は、毎フレーム作り直す m_linkLut
-//       （linkId → 遷移の素性）で解決する。
+//       （linkId → 遷移の素性）で解決する
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
@@ -43,19 +43,24 @@ private:
     // 描画
     // =====================================================================
     void DrawToolbar();       // 保存・読込・全表示・テキスト出力のボタン
+    // 今の階層のノードとリンクを描き、遷移の作成・削除・右クリックを処理する
     void DrawNodeWorkspace(); // 今の階層のノードとリンク
     void DrawInspector();     // 選んでいるノードかリンクの設定
 
+    // ステート（または Entry / AnyState）の設定を描く。nodeId は ed のノード ID（予約の負値か hash * 4）
     void DrawStateSettings(int nodeId);                    // ステートの設定。nodeId は ed のノード ID（予約の負値か hash * 4）
+    // 遷移の設定を描く。遷移はリンク ID から対応表で引き直す
     void DrawTransitionSettings(int linkId);               // 遷移の設定
+    // 遷移の設定（ブレンド時間・受付区間・AND/OR・条件の一覧）を描く。通常の遷移と AnyState の遷移で共通
     void DrawTransitionConditionUI(AnimTransition &trans); // 遷移の条件（通常の遷移と AnyState の遷移で共通）
 
     // =====================================================================
     // パラメータ（Unity の Parameters タブ相当）
     // =====================================================================
+    // root が持つ AnimParamDef を一覧で編集し、選択中のエンティティの今の値も並べて出す
     void DrawParameterPanel(EditorContext &context);
 
-    // パラメータの改名に合わせて、参照している全条件の paramHash / paramName を張り替える
+    // パラメータの改名に合わせて、全遷移・AnyState 遷移の条件の参照を張り替える
     void RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash);
 
     // base を元に、既存のパラメータと重ならない名前を返す（"NewFloat" → "NewFloat_2" など）
@@ -75,18 +80,18 @@ private:
     // =====================================================================
 
     /**
-     * @brief ステート名を変え、名前のハッシュを stateHash として取り直す。
+     * @brief ステート名を変え、名前のハッシュを stateHash として取り直す
      *
-     * ゲーム側は HashString("名前") でステートを引くので、名前とハッシュを常に一致させる。
-     * 同じ階層の遷移先・Entry・潜っている経路の参照も張り替える。
+     * ゲーム側は HashString("名前") でステートを引くので、名前とハッシュを常に一致させる
+     * 同じ階層の遷移先・Entry・潜っている経路の参照も張り替える
      *
-     * @param oldHash 変えるステート。どの階層にあってもよい。
-     * @param newName 新しい名前。既存の名前と重なれば連番を付けて一意にする。
+     * @param oldHash 変えるステート。どの階層にあってもよい
+     * @param newName 新しい名前。既存の名前と重なれば連番を付けて一意にする
      */
     void RenameState(uint32_t oldHash, std::string newName);
     void CommitStateName(); // 入力途中のステート名を確定する
 
-    // 今の階層のノード位置（ノードエディタ上のライブな値）をグラフへ書き戻す。
+    // 今の階層のノード位置（ノードエディタ上のライブな値）をグラフへ書き戻す
     //   階層を移る前と保存の前に呼ぶ。呼ばずに移ると、戻ったとき動かす前の位置に戻る
     void WriteBackNodePositions();
 
@@ -108,7 +113,9 @@ private:
     // =====================================================================
     AnimStateGraph &CurrentView();                            // m_editPath に沿って辿った、今編集している階層のグラフ
     void            DrawBreadcrumb();                         // 「Root > AttackCombo > ...」のパンくず。クリックで浅い階層へ戻る
+    // 指定のサブマシンへ潜る。今の階層になければ何もしない
     void            EnterSubMachine(uint32_t subMachineHash); // 指定のサブマシンへ潜る
+    // 階層全体で重ならない stateHash を採る。重なれば name に "_2", "_3"... を付け、その名前のハッシュを返す
     uint32_t        MakeUniqueStateHash(std::string &name);   // 階層全体で重ならない hash を採る（重なれば name に連番を付ける）
 
     // =====================================================================
@@ -125,7 +132,7 @@ private:
         bool operator==(const LinkRef &) const = default;
     };
     std::vector<std::pair<int, LinkRef>> m_linkLut;
-    const LinkRef                       *FindLink(int linkId) const; // リンク ID から遷移を引く。無ければ nullptr
+    const LinkRef                       *FindLink(int linkId) const; // リンク ID から遷移を引く。なければ nullptr
 
 private:
     AnimStateGraph        m_rootGraph;                                              // ツリー全体（保存・読込の対象）
@@ -145,14 +152,14 @@ private:
     bool     m_stateNameEdited  = false; // 未確定の変更があるか
 
     // --- ノードの配置と、次のフレームへの予約 ---
-    uint32_t m_nodeToPlaceHash      = 0;            // 次の描画で位置を置くノード（追加・複製・改名の直後。0 なら無し）
+    uint32_t m_nodeToPlaceHash      = 0;            // 次の描画で位置を置くノード（追加・複製・改名の直後。0 ならなし）
     bool     m_selectPlacedNode     = true;         // m_nodeToPlaceHash を置いたあと選択するか
-    uint32_t m_pendingEnterSub      = 0;            // 次のフレームの頭で潜るサブマシン（0 なら無し）
+    uint32_t m_pendingEnterSub      = 0;            // 次のフレームの頭で潜るサブマシン（0 ならなし）
     char     m_newStateName[64]     = "";           // 右クリックメニューで追加するステートの名前
     bool     m_needRestorePositions = false;        // 次の描画でノードの位置をグラフの値へ戻すか（読込・階層の移動の後）
     ImVec2   m_newNodeSpawnPos      = {0.0f, 0.0f}; // 右クリックした位置（スクリーン座標）
 
-    uint32_t m_runtimeActiveStateHash = 0; // 選択中のエンティティで実行中のステート（強調表示に使う。0 なら無し）
+    uint32_t m_runtimeActiveStateHash = 0; // 選択中のエンティティで実行中のステート（強調表示に使う。0 ならなし）
 
     // --- ブレンドスペースの図 ---
     bool                                           m_runtimeBlendActive  = false; // 選択中のエンティティがブレンドスペースを再生中か
@@ -163,7 +170,7 @@ private:
     float                                          m_blendPreviewY       = 1.0f;
 
     // --- パラメータの改名 ---
-    int  m_paramRenameIndex = -1; // 改名中のパラメータの添字（-1 なら無し）
+    int  m_paramRenameIndex = -1; // 改名中のパラメータの添字（-1 ならなし）
     char m_paramNameBuf[64] = ""; // 改名の入力
 
     // --- 遷移の作成（Unity の Make Transition と同じ操作）---

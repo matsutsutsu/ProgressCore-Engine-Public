@@ -2,7 +2,7 @@
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h" // プレビューの点数をゲームと同じ式で出す
+#include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h"
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -21,10 +21,9 @@ void BehaviorTreeWindow::DrawInspector()
     // 4. 親の種類で意味が決まる設定（割り込み・重み・点数）
     // 5. Undo の記録
 
-    // 【備考】
-    //   編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
-    //   記録は 5 にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
-    //   イテレータを使い終わってから行う。
+    // 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）
+    // 記録は 5 にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
+    // イテレータを使い終わってから行う
 
     ZoneScopedN("BTW: Inspector");
 
@@ -49,8 +48,8 @@ void BehaviorTreeWindow::DrawInspector()
             // 1. 名前
             // ---------------------------------------------------------
 
-            // 自分で付けるのはまとまり（Selector など）とコメント枠だけ。
-            // Action / Condition / Decorator は下で選んだ内容から名前が決まるので、入力欄は出さず表示だけする。
+            // 自分で付けるのはまとまり（Selector など）とコメント枠だけ
+            // Action / Condition / Decorator は下で選んだ内容から名前が決まるので、入力欄は出さず表示だけする
             if (UsesCustomName(it->type))
             {
                 char nameBuf[256];
@@ -132,7 +131,7 @@ void BehaviorTreeWindow::DrawInspector()
             if (it->type == EditorBTNodeType::Group)
             {
                 ImGui::Text("枠の色");
-                // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい。
+                // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい
                 for (int i = 0; i < kGroupPaletteCount; ++i)
                 {
                     if (i > 0) ImGui::SameLine();
@@ -163,12 +162,12 @@ void BehaviorTreeWindow::DrawInspector()
                     undoMessage           = "Change Condition";
 
                     // 引数を使う条件へ切り替えたのに 0 のままだと「距離0m未満」に
-                    // なって永久に成立しない。最初の1回だけ既定値を入れておく。
+                    // なって永久に成立しない。最初の1回だけ既定値を入れておく
                     if (GetConditionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 10.0f;
                 }
 
-                // 引数を持つ条件（間合いなど）だけ入力欄を出す。行動側と同じ仕組み。
+                // 引数を持つ条件（間合いなど）だけ入力欄を出す。行動側と同じ仕組み
                 if (const char *paramLabel = GetConditionParamLabel(it->actionOrConditionId))
                 {
                     if (ImGui::DragFloat(paramLabel, &it->param, 0.5f, 0.0f, 500.0f, "%.1f"))
@@ -188,15 +187,15 @@ void BehaviorTreeWindow::DrawInspector()
                     undoMessage           = "Change Action";
 
                     // 引数を使う行動へ切り替えたのに 0 のままだと「置いたのに何も起きない」
-                    // ように見えるので、最初の1回だけ既定値を入れておく。
-                    // 技を指す行動は枠番号なので既定値を入れない（1 は別の技の枠になる）。
+                    // ように見えるので、最初の1回だけ既定値を入れておく
+                    // 技を指す行動は枠番号なので既定値を入れない（1 は別の技の枠になる）
                     if (it->actionOrConditionId != A_DroneFormation &&
                         it->actionOrConditionId != A_DroneTechnique &&
                         GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 1.0f;
                 }
 
-                // データの技は数値ではなく技の名前で選ぶ。
+                // データの技は数値ではなく技の名前で選ぶ
                 if (it->actionOrConditionId == A_DroneFormation)
                 {
                     if (DrawDroneFormationCombo("技", it->param))
@@ -257,13 +256,13 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::Separator();
                 ImGui::Text("デコレーター");
 
-                // 子を待たずに並行して動かしたいときは Parallel ノードで書く。
+                // 子を待たずに並行して動かしたいときは Parallel ノードで書く
                 const char *decNames[] = {"反転 (Inverter)", "クールダウン (Cooldown)", "リトライ (Retry)"};
                 if (ImGui::Combo("種類", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
                     // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
-                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる。
-                    // 行動・条件の param が同じ理由で自動補完されるのに揃える。
+                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる
+                    // 行動・条件の param が同じ理由で自動補完されるのに揃える
                     if (it->param <= 0.0f)
                     {
                         if (it->decoratorType == 1)
@@ -312,8 +311,8 @@ void BehaviorTreeWindow::DrawInspector()
             // 4. 親の種類で意味が決まる設定
             // ---------------------------------------------------------
 
-            // 割り込み・重み・点数は、親の種類が合うときだけ出す。
-            // 他の親の下では意味を持たないので、常時出すと「効かない設定」が並んで混乱する。
+            // 割り込み・重み・点数は、親の種類が合うときだけ出す
+            // 他の親の下では意味を持たないので、常時出すと「効かない設定」が並んで混乱する
             {
                 const EditorBTNode *parent = nullptr;
                 for (const auto &lk : m_links)
@@ -330,7 +329,7 @@ void BehaviorTreeWindow::DrawInspector()
                     break;
                 }
 
-                // 割り込みと自己中断は Selector とスコア選択の下で効く。
+                // 割り込みと自己中断は Selector とスコア選択の下で効く
                 // 説明は仕組みではなく「どんな場面で使うか」を書く（仕組みはコードのコメントにある）
                 const bool canAbort = parent && (parent->type == EditorBTNodeType::Selector ||
                                                  parent->type == EditorBTNodeType::UtilitySelector);
@@ -339,7 +338,7 @@ void BehaviorTreeWindow::DrawInspector()
                     ImGui::Separator();
                     ImGui::Text("割り込み");
 
-                    // スコア選択の子には上下が無いので、相手は「下の枝」ではなく「ほかの技」
+                    // スコア選択の子には上下がないので、相手は「下の枝」ではなく「ほかの技」
                     const char *label = (parent->type == EditorBTNodeType::Selector) ? "下の枝の実行中も割り込む"
                                                                                      : "ほかの技の実行中も割り込む";
                     if (ImGui::Checkbox(label, &it->interrupt))
@@ -376,7 +375,7 @@ void BehaviorTreeWindow::DrawInspector()
                         undoMessage           = "Change Weight";
                     }
 
-                    // 数字だけでは何%になるか分からないので、兄弟の重みを合計して出す。
+                    // 数字だけでは何%になるか分からないので、兄弟の重みを合計して出す
                     float total = 0.0f;
                     for (const auto &lk : m_links)
                     {
@@ -408,7 +407,7 @@ void BehaviorTreeWindow::DrawInspector()
 
                     if (ImGui::Checkbox("距離で点数を変える", &it->useScoreRule))
                     {
-                        // 入れた瞬間に出やすさが変わらないよう、今の点数（weight）を優先度に引き継ぐ。
+                        // 入れた瞬間に出やすさが変わらないよう、今の点数（weight）を優先度に引き継ぐ
                         // 優先度を一度でも触っていれば（既定の 1 でなければ）そちらを残す
                         if (it->useScoreRule && it->scoreRule.base == 1.0f)
                         {
@@ -555,6 +554,8 @@ void BehaviorTreeWindow::DrawInspector()
     }
 }
 
+
+
 bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
 {
     bool        changed = false;
@@ -585,6 +586,8 @@ bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
     return changed;
 }
 
+
+
 bool BehaviorTreeWindow::DrawConditionCombo(const char *label, ActionID &currentId)
 {
     bool        changed = false;
@@ -614,6 +617,8 @@ bool BehaviorTreeWindow::DrawConditionCombo(const char *label, ActionID &current
     }
     return changed;
 }
+
+
 
 bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotParam)
 {
@@ -646,6 +651,8 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
     return changed;
 }
 
+
+
 bool BehaviorTreeWindow::DrawDroneTechniqueCombo(const char *label, float &slotParam)
 {
     bool      changed = false;
@@ -674,6 +681,8 @@ bool BehaviorTreeWindow::DrawDroneTechniqueCombo(const char *label, float &slotP
     return changed;
 }
 
+
+
 void BehaviorTreeWindow::DrawDroneTechniqueTiming(float slotParam) const
 {
     const int slot = static_cast<int>(std::lround(slotParam));
@@ -692,6 +701,8 @@ void BehaviorTreeWindow::DrawDroneTechniqueTiming(float slotParam) const
     else
         ImGui::TextDisabled("時間は C++ の陣形クラスで決めている");
 }
+
+
 
 // ---------------------------------------------------------------------------
 // スコア選択の一覧
@@ -736,6 +747,8 @@ std::string BehaviorTreeWindow::GetUtilityChildName(const EditorBTNode &child)
     return GetDisplayName(child);
 }
 
+
+
 void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool &needsUndo, std::string &undoMessage)
 {
     // 処理フロー:
@@ -743,9 +756,8 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
     // 2. プレビューの距離のスライダー
     // 3. 子の一覧表（優先度・距離はその場で編集できる）
 
-    // 【備考】
-    //   子を1つずつ選んで設定を見比べるのは手間なので、全員をここに並べる。
-    //   プレビューは距離と優先度だけで計算する。実行中の本当の点数は BehaviorTreeSystem の OnGui で見る。
+    // 子を1つずつ選んで設定を見比べるのは手間なので、全員をここに並べる
+    // プレビューは距離と優先度だけで計算する。実行中の本当の点数は BehaviorTreeSystem の OnGui で見る
 
     ImGui::Separator();
     ImGui::Text("候補の一覧");
@@ -825,7 +837,7 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
     // 3. 一覧表
     // ---------------------------------------------------------
 
-    // 一番見たいのは「どれが選ばれやすいか」なので、技の名前のすぐ右に確率と点数を置く。
+    // 一番見たいのは「どれが選ばれやすいか」なので、技の名前のすぐ右に確率と点数を置く
     // 横にはみ出したら横スクロール。縦は行の数ぶんの高さを取る（スクロールさせると一覧の意味が薄れる）
     enum Column : ImGuiID
     {
@@ -873,7 +885,7 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
         const ImGuiTableColumnSortSpecs &spec      = sortSpecs->Specs[0];
         const bool                       ascending = (spec.SortDirection == ImGuiSortDirection_Ascending);
 
-        // 距離で点数を変えない子は、距離の設定が無いので距離の列では最後に回す
+        // 距離で点数を変えない子は、距離の設定がないので距離の列では最後に回す
         auto rangeKey = [](const EditorBTNode &n) {
             return n.useScoreRule ? std::make_pair(n.scoreRule.bestMin, n.scoreRule.bestMax) : std::make_pair(FLT_MAX, FLT_MAX);
         };
@@ -1008,7 +1020,7 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
             ImGui::TextDisabled("-");
         }
 
-        // クールダウン（採点ルールの cooldown）。距離で変えない子はルールが無いので持てない
+        // クールダウン（採点ルールの cooldown）。距離で変えない子はルールがないので持てない
         ImGui::TableNextColumn();
         if (child.useScoreRule)
         {
@@ -1032,6 +1044,8 @@ void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool 
     ImGui::TextDisabled("距離の帯：濃い＝満点／薄れていく＝点数が下がる／黄色の線＝プレビューの距離");
 }
 
+
+
 bool BehaviorTreeWindow::SortUtilityChildrenByDistance(const EditorBTNode &selector)
 {
     // 処理フロー:
@@ -1039,9 +1053,8 @@ bool BehaviorTreeWindow::SortUtilityChildrenByDistance(const EditorBTNode &selec
     // 2. 得意な距離の近い順に並べ替える
     // 3. 近い技から左の席へ入れ、整列を予約する
 
-    // 【備考】
-    //   座標は新しく作らず、今の席を入れ替えるだけにする。並びは席の左右だけで決まるので、
-    //   席の数と位置が変わらなければ、ほかのノードとの位置関係も崩れない。
+    // 座標は新しく作らず、今の席を入れ替えるだけにする。並びは席の左右だけで決まるので、
+    // 席の数と位置が変わらなければ、ほかのノードとの位置関係も崩れない
 
     auto found = m_childrenOf.find(selector.id);
     if (found == m_childrenOf.end() || found->second.size() < 2)
@@ -1096,6 +1109,8 @@ bool BehaviorTreeWindow::SortUtilityChildrenByDistance(const EditorBTNode &selec
     return true;
 }
 
+
+
 void BehaviorTreeWindow::DrawDistanceBand(const EditorBTNode &child, float width) const
 {
     // 処理フロー:
@@ -1143,7 +1158,7 @@ void BehaviorTreeWindow::DrawDistanceBand(const EditorBTNode &child, float width
 
     if (!child.useScoreRule)
     {
-        // どの距離でも同じ点数。色を変えて、距離の設定が無いことが分かるようにする
+        // どの距離でも同じ点数。色を変えて、距離の設定がないことが分かるようにする
         drawList->AddRectFilled(ImVec2(origin.x, top), ImVec2(origin.x + width, bottom), IM_COL32(160, 160, 160, 120));
     }
     else

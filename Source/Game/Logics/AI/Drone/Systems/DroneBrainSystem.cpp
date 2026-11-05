@@ -1,8 +1,8 @@
 #include "DroneBrainSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 突撃の始め方・切り上げを技に聞く
-#include "Game/Logics/AI/Drone/Motion/DroneMotion.h"            // 突撃の始め方の既定・飛び出したか
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/Drone/Motion/DroneMotion.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -33,7 +33,7 @@ void DroneBrainSystem::Update(float /*dt*/)
     {
         const auto &battle = m_world->GetResource<BattleContext>();
 
-        // リソースは常にあるので、プレイヤーの実在を見る。見ないと、居ないフレームに原点へ突撃する
+        // リソースは常にあるので、プレイヤーの実在を見る。見ないと、いないフレームに原点へ突撃する
         if (battle.HasPlayer())
         {
             chargeInfo.playerPos = Vector3(battle.playerPos);
@@ -46,7 +46,7 @@ void DroneBrainSystem::Update(float /*dt*/)
 
     // --- 機体ごとの判断 ---
 
-    // 優先度順に上から判定し、最初に成立したものが currentState になる。
+    // 優先度順に上から判定し、最初に成立したものが currentState になる
     // 時間は各機の localDt（ヒットストップ中の機はタイマーも止まる）
     ForEachParallel([&](const TransformComponent &trans, DroneComponent &drone,
                         const TimeStateComponent &time) {
@@ -58,7 +58,7 @@ void DroneBrainSystem::Update(float /*dt*/)
         if (drone.wantsAttack)
         {
             // 攻撃に入った瞬間に通る
-            //  currentState がまだ FireCharge でない＝今フレームが突入フレーム。
+            //  currentState がまだ FireCharge でない＝今フレームが突入フレーム
             if (drone.currentState != DroneState::FireCharge)
             {
                 // 技が見つからなければ、既定と同じ直進の始め方にする
@@ -72,8 +72,8 @@ void DroneBrainSystem::Update(float /*dt*/)
                 drone.breakawayTimer = 0.0f; // 離脱中に次の合図が来たら、離脱の残りを捨てる
             }
 
-            // 自分で終了を決める技（弾幕）だけがここで離脱へ移る。
-            //  小隊攻撃などは HasFinishedCharge が false を返し続け、合図が下りるまで突撃を続ける。
+            // 自分で終了を決める技（弾幕）だけがここで離脱へ移る
+            //  小隊攻撃などは HasFinishedCharge が false を返し続け、合図が下りるまで突撃を続ける
             if (HasFinishedCharge(formations, trans, drone, dt))
             {
                 drone.wantsAttack    = false;
@@ -115,13 +115,15 @@ void DroneBrainSystem::Update(float /*dt*/)
     });
 }
 
+
+
 bool DroneBrainSystem::HasFinishedCharge(const CCL::AI::Formation::FormationRegistry *formations,
                                          const TransformComponent                      &trans,
                                          DroneComponent                                &drone,
                                          float                                          dt) const
 {
-    // まだ飛び出していない間は、飛距離の起点を今の位置に置き直し続ける。
-    // FireCharge へ入った瞬間に固定すると、弾幕は中央へ寄る移動まで飛距離に数え、届く前に打ち切る。
+    // まだ飛び出していない間は、飛距離の起点を今の位置に置き直し続ける
+    // FireCharge へ入った瞬間に固定すると、弾幕は中央へ寄る移動まで飛距離に数え、届く前に打ち切る
 
     // 当たらない区間＝まだ飛び出していない区間なので、動き方に聞けば済む
     if (!CCL::AI::Motion::IsChargeDangerous(drone))
@@ -141,6 +143,8 @@ bool DroneBrainSystem::HasFinishedCharge(const CCL::AI::Formation::FormationRegi
     return formation->IsChargeOver(flown, drone.chargeTimer);
 }
 
+
+
 bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const
 {
     if (drone.hasReachedSlot) return false;
@@ -156,6 +160,8 @@ bool DroneBrainSystem::NeedsApproach(const TransformComponent &trans, DroneCompo
 
     return true;
 }
+
+
 
 // 陣形（L02_Update）が今フレームの currentState を読めるよう手前に置く。ずらすと予備動作→突撃が1フレームずれる
 REGISTER_LOGIC_SYSTEM(DroneBrainSystem, Priority::LogicStage::L02_PreUpdate)

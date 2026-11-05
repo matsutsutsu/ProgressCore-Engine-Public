@@ -16,7 +16,7 @@
 #if defined(TRACY_ENABLE)
 namespace
 {
-    // LOD の段ごとの、このフレームに描いたインスタンスの数のグラフ。
+    // LOD の段ごとの、このフレームに描いたインスタンスの数のグラフ
     // Tracy は名前のポインタを持ち続けるので、定数で渡す
     const char *const kPlotLodInstances[MeshLod::kMaxLevels] = {
         "LOD0 Instances", "LOD1 Instances", "LOD2 Instances", "LOD3 Instances"};
@@ -29,7 +29,7 @@ void NormalPrepass::Initialize(const RenderServices &services)
 {
     IRenderPass::Initialize(services);
 
-    // 深度も書く（DefaultOpaque は TestAndWrite）。
+    // 深度も書く（DefaultOpaque は TestAndWrite）
     // OpaquePass で、隠れたピクセルの PBR を early-Z で飛ばせる
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
     m_pso                  = PipelineState(desc);
@@ -37,7 +37,7 @@ void NormalPrepass::Initialize(const RenderServices &services)
     m_instanceBuffer.Create(services.device, 8192);
     m_normalBuffer.Create(services.device, services.screenWidth, services.screenHeight);
 
-    // SRV は作った時点で Graphics に渡す。
+    // SRV は作った時点で Graphics に渡す
     // MakeFrameContext はパイプラインの実行前に ctx を作るので、
     // Execute の中で渡すと ctx.sceneNormalSRV が1フレーム遅れる
     PublishNormalSRV();
@@ -51,7 +51,7 @@ void NormalPrepass::OnResize(uint32_t width, uint32_t height)
     {
         m_normalBuffer.Resize(m_services->device, width, height);
 
-        // Resize で SRV が作り直される。
+        // Resize で SRV が作り直される
         // 渡し直さないと、Graphics に解放済みの SRV が残る
         PublishNormalSRV();
     }
@@ -59,7 +59,6 @@ void NormalPrepass::OnResize(uint32_t width, uint32_t height)
 
 
 
-// 法線バッファの SRV を Graphics に渡す
 void NormalPrepass::PublishNormalSRV()
 {
     Graphics::Instance().SetSceneNormalSRV(m_normalBuffer.GetSRV());
@@ -86,7 +85,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
     // 1. 描く準備
     // ---------------------------------------------------------
 
-    // OpaquePass より先に走るので、ここで並べる。
+    // OpaquePass より先に走るので、ここで並べる
     // OpaquePass も呼ぶが、並べ済みなら何もしない
     queue->SortAndBuildBatches();
 
@@ -143,9 +142,9 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             // 2. 見えるインスタンスと LOD の段
             // ---------------------------------------------------------
 
-            // 不透明のメッシュだけ深度を書く（マテリアルの選び方は OpaquePass と同じ）。
+            // 不透明のメッシュだけ深度を書く（マテリアルの選び方は OpaquePass と同じ）
             //   半透明（Blend）: 書くと、その奥にあるものが OpaquePass で消える
-            //   くり抜き（Mask）: テクスチャを読まず捨てられないので、穴の部分まで深度が残る。
+            //   くり抜き（Mask）: テクスチャを読まず捨てられないので、穴の部分まで深度が残る
             //                    深度は OpaquePass が discard した後の形で書く
             const MaterialHandle overrideHandle =
                 (meshIdx < current.overrideCount) ? current.overrideMaterials[meshIdx] : MaterialHandle{};
@@ -169,7 +168,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 data.customParams = cmd.customParams;
                 if (isSkinned)
                 {
-                    // スキンメッシュはカリングせず全部積む。
+                    // スキンメッシュはカリングせず全部積む
                     // ワールド行列はボーン行列に入っているので単位行列
                     DirectX::XMStoreFloat4x4(&data.world, DirectX::XMMatrixIdentity());
                     m_instanceScratch.push_back(data);
@@ -182,7 +181,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
                 }
             }
 
-            // インスタンスごとに段を選び、段の順（LOD0 → LOD1 → …）に並べる。
+            // インスタンスごとに段を選び、段の順（LOD0 → LOD1 → …）に並べる
             // スキンメッシュは LOD を持たないので、全部 LOD0 のまま
             MeshLod::LevelCounts levelCounts{};
             if (isSkinned)
@@ -207,7 +206,7 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             // 3. OpaquePass へ残して描く
             // ---------------------------------------------------------
 
-            // 見えるインスタンスの列と段ごとの数を残す。
+            // 見えるインスタンスの列と段ごとの数を残す
             // OpaquePass はこれを使い、カリングと段の選択を省く
             queue->StoreVisibleInstances(
                 RenderQueue::MakeVisibleKey(batchStart, meshIdx),
@@ -234,8 +233,8 @@ void NormalPrepass::Execute(const RenderFrameContext &ctx)
             }
             else
             {
-                // 段ごとに、その段の範囲のインデックスで描く。
-                // LOD が無いメッシュは、段0に全部入っている
+                // 段ごとに、その段の範囲のインデックスで描く
+                // LOD がないメッシュは、段0に全部入っている
                 size_t levelStart = 0; // この段の先頭が m_instanceScratch の何番目か
                 for (size_t level = 0; level < MeshLod::kMaxLevels; ++level)
                 {

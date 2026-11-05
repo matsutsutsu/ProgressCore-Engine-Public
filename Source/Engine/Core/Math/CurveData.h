@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: カーブ（キーフレーム列）のデータモデル CurveData と、その評価・JSON 変換。
+// 概要: カーブ（キーフレーム列）のデータモデル CurveData と、その評価・JSON 変換
 //
 // 責務:
 //   - キーの追加・並べ替え・接線（Auto/Flat）の再計算
 //   - 任意時刻の評価（区間はエルミート補間、範囲外は外挿モードに従う）
 //   - JSON との相互変換（エディタの保存形式と一致）
 //
-// 備考: エディタ非依存なので、ランタイムからも直接使える。
+// 備考: エディタ非依存なので、ランタイムからも直接使える
 // ===========================================================================
 #include <vector>
 #include <string>
@@ -81,7 +81,7 @@ struct CurveData
         return m_nextId++;
     }
 
-    // ID のキーが keys の何番目かを返す。無ければ -1
+    // ID のキーが keys の何番目かを返す。なければ -1
     int IndexOfId(uint32_t id) const
     {
         for (int i = 0; i < (int)keys.size(); ++i)
@@ -214,7 +214,7 @@ struct CurveData
     {
         return keys.empty() ? 1.0f : keys.back().time;
     }
-    // 全キーの値の最小・最大を返す。キーが無ければ 0〜1
+    // 全キーの値の最小・最大を返す。キーがなければ 0〜1
     void ValueRange(float &outMin, float &outMax) const
     {
         if (keys.empty())
@@ -324,7 +324,7 @@ private:
 // JSON シリアライズ（エディタの保存形式と一致。ランタイムからも読める）
 // ============================================================
 //   - CurveKeyframe.id はランタイム専用なので保存しない
-//   - interp が無いキーは Cubic として読む
+//   - interp がないキーは Cubic として読む
 inline void to_json(nlohmann::json &j, const CurveKeyframe &k)
 {
     j = nlohmann::json{
@@ -361,15 +361,8 @@ inline void from_json(const nlohmann::json &j, CurveData &c)
     c.RecalculateTangents(); // Auto/Flat の接線を確定（Aligned/Broken の手動値は尊重）
 }
 
-/**
- * @brief 実行時アセット用ローダ。
- *
- * エディタは複数カーブ文書 {name, curves:[...]} で保存するため、ランタイムでは「先頭の1本」を採用する（1ファイル = 1カーブ運用）。
- *
- * @param root 読み込んだ JSON。
- * @param out  読み込んだカーブを受け取る。
- * @return 読めたら true。キーが1つも無ければ false。
- */
+// 実行時のアセットとしてカーブを読む。キーが1つもなければ false
+// エディタは複数のカーブ {name, curves:[...]} で保存するので、ランタイムは先頭の1本を使う
 inline bool LoadCurveDataFromJson(const nlohmann::json &root, CurveData &out)
 {
     if (!root.contains("curves") || !root["curves"].is_array() || root["curves"].empty())

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 不透明のメッシュを先に1回描き、深度とビュー空間の法線を書き出すパス。
+// 概要: 不透明のメッシュを先に1回描き、深度とビュー空間の法線を書き出すパス
 //
 // 責務:
 //   - 不透明のコマンドを法線用のシェーダーで描き、NormalBuffer（SSAO が t6 で読む）に書く
@@ -9,7 +9,7 @@
 //     （OpaquePass は同じ列を使い、カリングをやり直さない）
 //   - LOD のあるメッシュは、インスタンスごとに段を選んで段の順に並べ、段ごとに描く
 //
-// 備考: OpaquePass より前に置く。LOD の段はここで決め、OpaquePass はそれに従う。
+// 備考: OpaquePass より前に置く。LOD の段はここで決め、OpaquePass はそれに従う
 // ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
@@ -27,10 +27,7 @@ public:
     ID3D11ShaderResourceView *GetNormalSRV() const noexcept { return m_normalBuffer.GetSRV(); }
 
 private:
-    /**
-     * @brief 法線バッファの SRV を Graphics に渡す（Graphics::MakeFrameContext が ctx.sceneNormalSRV に入れる）。
-     * @note SRV を作った・作り直した直後に呼ぶ。
-     */
+    // 法線バッファの SRV を Graphics に渡す（MakeFrameContext が ctx.sceneNormalSRV に入れる）。SRV を作り直した直後に呼ぶ
     void PublishNormalSRV();
 
     PipelineState             m_pso;

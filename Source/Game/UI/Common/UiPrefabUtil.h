@@ -1,10 +1,5 @@
 #pragma once
-// ===========================================================================
-// 概要: エディタで組んだ UI プレハブを、ゲームの System から使うための関数をまとめたヘッダー。
-//
-// 責務:
-//   - 生成したプレハブの階層から、名前で子のエンティティを探す
-// ===========================================================================
+// エディタで組んだ UI プレハブを、ゲームの System から使うための関数
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"

@@ -41,6 +41,8 @@ namespace CCL::AI::Formation
         }
     }
 
+
+
     void FormationAssetIO::ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj)
     {
         for (const FieldDescriptor &fd : fields)
@@ -63,12 +65,16 @@ namespace CCL::AI::Formation
         }
     }
 
+
+
     double FormationAssetIO::ShortestDouble(float v)
     {
         char       buf[32];
         const auto end = std::to_chars(buf, buf + sizeof(buf), v).ptr;
         return std::stod(std::string(buf, end));
     }
+
+
 
     // ============================================================
     // アセット全体の組み立て
@@ -99,7 +105,7 @@ namespace CCL::AI::Formation
                 jl.erase("leadThreshold");
             }
 
-            // キーが無いカーブは書かない（既定の easeIn として読まれる）
+            // キーがないカーブは書かない（既定の easeIn として読まれる）
             if (!l.curve.empty())
             {
                 jl["curve"] = l.curve;
@@ -123,6 +129,8 @@ namespace CCL::AI::Formation
         return j;
     }
 
+
+
     void FormationAssetIO::FromJson(const nlohmann::json &j, FormationAsset &a)
     {
         // 処理フロー:
@@ -130,7 +138,7 @@ namespace CCL::AI::Formation
         // 2. 動きの層を1枚ずつ読む
         // 3. 配置・見せ方・当たり方を読む
 
-        // 入れ子が丸ごと無いファイルも読めるよう、無ければ空オブジェクト（＝全項目既定値）で回す
+        // 入れ子が丸ごとないファイルも読めるよう、なければ空オブジェクト（＝全項目既定値）で回す
         const nlohmann::json none = nlohmann::json::object();
 
         ReadFields(j, Meta::RootFields(), &a);
@@ -143,7 +151,7 @@ namespace CCL::AI::Formation
             FormationLayer &l = a.layers.emplace_back();
             ReadFields(jl, Meta::LayerFields(), &l);
 
-            // null なら「カーブ無し＝p*p」
+            // null なら「カーブなし＝p*p」
             if (jl.contains("curve") && !jl.at("curve").is_null()) l.curve = jl.at("curve").get<CurveData>();
         }
 
@@ -153,6 +161,8 @@ namespace CCL::AI::Formation
         ReadFields(output, Meta::OutputFields(), &a.output);
         ReadFields(output.value("combat", none), Meta::CombatFields(), &a.output.combat);
     }
+
+
 
     // ============================================================
     // 検証
@@ -166,7 +176,7 @@ namespace CCL::AI::Formation
         // 3. 攻撃と予告の長さを直す
         // 4. 動きの層ごとに時間帯と震えの値を直す
 
-        // 直すのは、座標が NaN / inf になる値と、形が永久に動かない値だけ（NaN が1つ混ざると全機が消え、原因に辿り着けない）。
+        // 直すのは、座標が NaN / inf になる値と、形が永久に動かない値だけ（NaN が1つ混ざると全機が消え、原因に辿り着けない）
         // 見た目が変なだけの値（間隔0など）は作者の意図かもしれないので触らない
 
         const char *ctx      = context.empty() ? asset.name.c_str() : context.c_str();
@@ -211,7 +221,7 @@ namespace CCL::AI::Formation
         }
         if (asset.layout.shape == AssetShape::Model && asset.layout.modelPath.empty())
         {
-            // 直しようが無いので知らせるだけ（実行時は格子で並べる）
+            // 直しようがないので知らせるだけ（実行時は格子で並べる）
             CCL_LOG_ERROR(LogCategory::AI,
                           "[Formation] %s: 形が Model なのに layout.modelPath が空。格子で並べる", ctx);
         }
@@ -295,6 +305,8 @@ namespace CCL::AI::Formation
         return repaired;
     }
 
+
+
     // ============================================================
     // 入出力
     // ============================================================
@@ -333,6 +345,8 @@ namespace CCL::AI::Formation
         Validate(outAsset, virtualPath);
         return true;
     }
+
+
 
     bool FormationAssetIO::Save(const std::string &virtualPath, const FormationAsset &asset)
     {

@@ -1,20 +1,8 @@
 #pragma once
-// ===========================================================================
-// 概要: 仮想キャラクター（CharacterVirtual）の運動性能と物理レイヤーの設定。
-//
-// 責務:
-//   - 登れる坂・乗り越えられる段差など、地形との関わり方
-//   - 普段の歩く速さ・ジャンプ・重力・加減速の手触り
-//   - キャラクターの物理レイヤー
-//
-// 備考: これを付けると、JoltCharacterSetupSystem が
-//       CharacterVirtual と、他者から見える Kinematic のプロキシ剛体を作る。
-//       walkSpeed は普段の歩く速さで、技だけの速さは各キャラの Action が
-//       overrideSpeed で渡す（CharacterMovementComponent.h）。
-//       walkSpeed は足滑り補正の基準にもなる（CharacterAnimSyncSystem）。
-// ===========================================================================
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
+// 仮想キャラクター（CharacterVirtual）の運動性能と物理レイヤー。付けると JoltCharacterSetupSystem が作る
+// walkSpeed は普段の歩く速さで、足滑り補正の基準にもなる。技だけの速さは overrideSpeed で渡す
 struct JoltCharacterConfigComponent
 {
     // --- 物理レイヤー ---

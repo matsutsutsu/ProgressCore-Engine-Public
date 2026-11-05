@@ -1,24 +1,20 @@
 #pragma once
 // ===========================================================================
-// 概要: 不透明のメッシュを、同じシェーダー・モデル・マテリアルごとにまとめて
-//       インスタンシングで描くパス。
+// 概要: 不透明のメッシュを、シェーダー・モデル・マテリアルごとにまとめてインスタンシングで描くパス
 //
 // 責務:
 //   - RenderQueue の不透明のコマンドを並べ、同じキーが続く区間を1つのバッチにする
-//   - スキンでないメッシュは、インスタンスごとに視錐台カリングする（NormalPrepass の結果があれば使う）
-//   - LOD のあるメッシュは、NormalPrepass が選んだ段で、段ごとに描く
-//   - マテリアルの alphaMode が Blend のメッシュは描かず、TransparentPass 用のキューへ回す
+//   - スキンでないメッシュをインスタンスごとに視錐台カリングする（NormalPrepass の結果があれば使う）
+//   - LOD のあるメッシュは、NormalPrepass が選んだ段ごとに描く
+//   - alphaMode が Blend のメッシュは描かず、TransparentPass 用のキューへ回す
 //
-// 備考: Execute はフレームの流れだけを書き、各工程は private の関数に分けている。
-//       読む順は Execute → DrawBatch → その中で呼ぶ関数。
-//       スキンメッシュはアニメーションで形が変わり、元の姿勢の AABB からはみ出すことが
-//       あるので、カリングしない。
+// 備考: スキンメッシュはアニメーションで元の AABB からはみ出すことがあるので、カリングしない
 // ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
 #include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
-#include "Engine/Graphics/Renderer/Core/MeshLod.h" // MeshLod::LevelCounts
-#include "Engine/Graphics/Resource/Model.h"        // 引数に Model::Mesh を使う（入れ子の型は前方宣言できない）
+#include "Engine/Graphics/Renderer/Core/MeshLod.h"
+#include "Engine/Graphics/Resource/Model.h"
 
 #include <DirectXCollision.h>
 #include <cstdint>
@@ -47,7 +43,7 @@ public:
     }
 
 private:
-    // 並べたキーの列のうち、同じバッチキーが続く区間。
+    // 並べたキーの列のうち、同じバッチキーが続く区間
     // count がバッチのインスタンスの数（同じモデルを置いた数）になる
     struct BatchRange
     {
@@ -64,7 +60,7 @@ private:
     // バッチのモデルの全メッシュを、描くか半透明のキューへ回す
     void DrawBatch(const RenderFrameContext &ctx, const BatchRange &batch, IMaterialShader &matShader);
 
-    // meshIdx 番目のメッシュに使う上書きのマテリアル。無ければ nullptr
+    // meshIdx 番目のメッシュに使う上書きのマテリアル。なければ nullptr
     MaterialData *ResolveOverrideMaterial(const RenderCommand &cmd, size_t meshIdx) const;
 
     // 半透明のメッシュを、見えるインスタンスだけ TransparentPass 用のキューへ回す（距離も求める）
@@ -72,18 +68,8 @@ private:
                                        const BatchRange &batch, uint32_t shaderHash,
                                        const DirectX::BoundingBox &localAABB, bool isSkinned);
 
-    /**
-     * @brief このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount / m_visibleLevelCounts に入れる。
-     *
-     * NormalPrepass が同じ区切りで求めた列（段の順に並べたもの）があればそれを使い、無ければ自分で作る。
-     *
-     * @param ctx       今フレームの描画情報。
-     * @param mesh      描くメッシュ。
-     * @param batch     同じモデルが続く描画コマンドの区間。
-     * @param meshIdx   モデル内でのメッシュの番号。
-     * @param localAABB カリングに使うメッシュのローカル AABB。
-     * @param isSkinned スキンメッシュか。スキンメッシュはカリングしない。
-     */
+    // このメッシュの見えるインスタンスの列を決め、m_visibleData / m_visibleCount / m_visibleLevelCounts に入れる
+    // NormalPrepass が同じ区切りで求めた列があればそれを使い、なければ自分で作る。スキンメッシュはカリングしない
     void ResolveVisibleInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, const BatchRange &batch,
                                  size_t meshIdx, const DirectX::BoundingBox &localAABB, bool isSkinned);
 
@@ -104,19 +90,19 @@ private:
     PipelineState  m_psoOpaque; // 深度を書く・裏面カリング
     InstanceBuffer m_instanceBuffer;
 
-    // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）。
+    // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）
     // NormalPrepass の結果を使えたメッシュでは使わない
     std::vector<InstanceData> m_instanceScratch;
     std::vector<InstanceData> m_lodSortTemp; // m_instanceScratch を LOD の段の順に並べ替えるときの作業用
 
-    // 実際に描くインスタンスの列。RenderQueue の中の配列か m_instanceScratch を指す（所有しない）。
+    // 実際に描くインスタンスの列。RenderQueue の中の配列か m_instanceScratch を指す（所有しない）
     // RenderQueue のその配列に書き足すのは NormalPrepass だけなので、このパスが読んでいる間に
-    // 配列が確保し直されて、このポインタが無効になることは無い
+    // 配列が確保し直されて、このポインタが無効になることはない
     const InstanceData  *m_visibleData  = nullptr;
     size_t               m_visibleCount = 0;
     MeshLod::LevelCounts m_visibleLevelCounts{}; // m_visibleData の段ごとの数（列は段の順に並んでいる）
 
-    // カリングの集計（毎フレーム 0 に戻す。デバッガで見る用で、今は表示している UI は無い）
+    // カリングの集計（毎フレーム 0 に戻す。デバッガで見る用で、今は表示している UI はない）
     uint32_t m_stat_drawnMeshes  = 0;
     uint32_t m_stat_culledMeshes = 0;
 };

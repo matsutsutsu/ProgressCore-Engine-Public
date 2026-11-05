@@ -7,13 +7,13 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Math/StringHash.h"
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 当たり判定の調査用ログ
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h"
 
 using namespace CCL::ECS;
 
 namespace
 {
-    // Hitbox から親をたどり、最初に見つかった Animator を持つエンティティを返す（剣はキャラの子孫にある前提）。
+    // Hitbox から親をたどり、最初に見つかった Animator を持つエンティティを返す（剣はキャラの子孫にある前提）
     //   SpawnHitboxSystem が作る球は親を持たないので InvalidEntityID になり、寿命まで有効な判定のまま
     EntityID ResolveAnimatorOwner(CCL::ECS::World *world, EntityID hitboxID)
     {
@@ -48,7 +48,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
         // 1. 持ち主
         // ---------------------------------------------------------
 
-        // 見つからなかったことも覚える。
+        // 見つからなかったことも覚える
         //   覚えないと、親を持たない判定（SpawnHitboxSystem の球・ドローン）が毎フレーム親をたどり直す
         if (!hb.ownerResolved)
         {
@@ -65,7 +65,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
         const auto *animator = m_world->GetComponent<AnimatorComponent>(hb.ownerEntity);
         if (!animator || !animator->currentSequence || animator->isExternalOverride)
         {
-            // 持ち主が消えた・シーケンスが無いときは判定を閉じる。
+            // 持ち主が消えた・シーケンスがないときは判定を閉じる
             //   ムービーがクリップを握っている間も閉じる（攻撃モーションを見せただけでダメージが入るため）
             if (hb.isActive)
             {
@@ -90,7 +90,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
                 continue;
 
             // 今の時刻ではなく、このステップで進んだ範囲 [previousFrameTimer, currentTimer] と
-            //   区間 [startTime, endTime] の重なりで見る。
+            //   区間 [startTime, endTime] の重なりで見る
             //   速く再生して 1 ステップで区間を丸ごと飛び越しても、判定を取り逃さない
             const float t0 = animator->previousFrameTimer;
             const float t1 = animator->currentTimer;
@@ -102,7 +102,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             }
             else
             {
-                // ループで先頭に戻ったステップ: 進んだ範囲は [t0, duration] と [0, t1]。
+                // ループで先頭に戻ったステップ: 進んだ範囲は [t0, duration] と [0, t1]
                 //   どちらかに重なれば有効（こう書くと duration を見なくて済む）
                 overlaps = (ev.endTime >= t0) || (ev.startTime <= t1);
             }
@@ -135,10 +135,10 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
                 hb.isActive = true;
             }
 
-            // シーケンサーで HitBox 区間に入れた値を毎ステップ書く。
+            // シーケンサーで HitBox 区間に入れた値を毎ステップ書く
             //   隣の区間（コンボの次の段）に切り替わっても、その区間の値になる
 
-            // ownerID（誰の攻撃か）はアニメーションの持ち主のキャラにする。
+            // ownerID（誰の攻撃か）はアニメーションの持ち主のキャラにする
             //   自分に当てないための判定と、攻撃した側のヒットストップに使う
             hb.damageAmount    = activeEv->damage;
             hb.knockback       = activeEv->knockback;
@@ -151,7 +151,7 @@ void CombatAnimationSyncSystem::Update(float /*dt*/)
             // 区間を抜けた・アニメーションが切り替わった
             hb.isActive = false;
 
-            // 閉じないまま次の攻撃に入ると、履歴が消えず AlreadyHit で当たらなくなる。
+            // 閉じないまま次の攻撃に入ると、履歴が消えず AlreadyHit で当たらなくなる
             //   調査するときは ON と OFF のログが対で出ているかを確かめる
             HITDIAG_LOG(LogCategory::Game,
                         "[HitDiag/Sync]   OFF  hitbox=%llu hitCount=%u timer=[%.3f -> %.3f]",

@@ -1,7 +1,7 @@
 #include "BehaviorTreeSystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
-#include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h" // 技選択の記録の大きさ（kUtilityTopCount）
+#include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
 #include <algorithm>
@@ -32,14 +32,16 @@ namespace
         return nullptr;
     }
 
+
+
     /**
-     * @brief この枝で最初に見つかる Action の表示名を返す。
+     * @brief この枝で最初に見つかる Action の表示名を返す
      *
-     * Sequence や Selector は名前を持たないので、その枝が何をするかを中の先頭のアクションで示す。
+     * Sequence や Selector は名前を持たないので、その枝が何をするかを中の先頭のアクションで示す
      *
-     * @param asset  木の構造。
-     * @param nodeId 調べる枝の根のノード。
-     * @return 行動の表示名（ActionRegistry の文字列）。枝に Action が無ければ nullptr。
+     * @param asset  木の構造
+     * @param nodeId 調べる枝の根のノード
+     * @return 行動の表示名（ActionRegistry の文字列）。枝に Action がなければ nullptr
      */
     const char *FirstActionNameInSubtree(const BTAsset &asset, BTNodeID nodeId)
     {
@@ -55,6 +57,8 @@ namespace
         return nullptr;
     }
 
+
+
     // param を小数第1位までの文字列にする（10.0 → "10.0"）
     std::string FormatParam(float v)
     {
@@ -62,6 +66,8 @@ namespace
         std::snprintf(buf, sizeof(buf), "%.1f", v);
         return buf;
     }
+
+
 
     // ノードの種類の表示名（アセットに保存する文字列と同じ）
     const char *NodeTypeName(BTNodeType type)
@@ -121,7 +127,7 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
         const char *name = LookupEntryName(g_ConditionRegistry, g_ConditionRegistryCount, node.actionOrConditionId);
         label += name ? std::string(" : ") + name
                       : std::string(" : id=") + std::to_string(node.actionOrConditionId);
-        // param を出さないと「距離が N m 未満」が並ぶだけで何mの判定か分からない。
+        // param を出さないと「距離が N m 未満」が並ぶだけで何mの判定か分からない
         if (GetConditionParamLabel(node.actionOrConditionId))
             label += " (" + FormatParam(node.param) + ")";
     }
@@ -134,7 +140,7 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
     // 2. 実行状態の数字
     // ---------------------------------------------------------
 
-    // 色だけでは「なぜこのノードから進まないのか」が分からない。
+    // 色だけでは「なぜこのノードから進まないのか」が分からない
     //   行動 … 残り時間。0.00 なら待ち終わっている、-1 は未実行
     //   複合 … 今どの子で止まっているか（再開位置）。変わらなければその子が Running のまま
     //   Cooldown … 残りクールダウン。>0 の間はこの枝ごと Failure
@@ -213,8 +219,8 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
     {
         btComp.debugForcedNodeId = isForced ? -1 : static_cast<int>(nodeId);
 
-        // 前の技の「今撃て」信号が残ると、止めたはずのドローンが飛び続ける。
-        // 評価の処理にはボス固有の知識を持たせないので、この後始末はデバッグ UI だけで行う。
+        // 前の技の「今撃て」信号が残ると、止めたはずのドローンが飛び続ける
+        // 評価の処理にはボス固有の知識を持たせないので、この後始末はデバッグ UI だけで行う
         if (auto *cmd = m_world->GetComponent<BossCommandComponent>(entity))
         {
             cmd->droneAttackActive = false;
@@ -269,6 +275,8 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
     ImGui::PopID();
 }
 
+
+
 void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, EntityID entity)
 {
     if (!btComp.sharedAsset || btComp.sharedAsset->nodes.empty())
@@ -277,7 +285,7 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
         return;
     }
 
-    // 木の評価を止める。行動の要求は毎フレーム空にされるので、止めれば体も待機になる。
+    // 木の評価を止める。行動の要求は毎フレーム空にされるので、止めれば体も待機になる
     bool paused = btComp.debugPaused;
     if (ImGui::Checkbox("AIを止める（調整に集中）", &paused))
     {
@@ -319,6 +327,8 @@ void BehaviorTreeSystem::DrawForcedNodeGui(BehaviorTreeComponent &btComp, Entity
     DrawNodeRowRecursive(*btComp.sharedAsset, 0, btComp, entity);
 }
 
+
+
 void BehaviorTreeSystem::OnGui()
 {
     auto view = m_world->View<BehaviorTreeComponent>();
@@ -332,13 +342,13 @@ void BehaviorTreeSystem::OnGui()
         ImGui::Text("Asset Path: %s", btComp->assetPath.c_str());
 
         // lastLogActionId から行動名を逆引きする。行動が自分で書く値なので、A_Wait のように
-        // 書かない行動の間は前の行動が残る（見出しを Last にしているのはそのため）。
+        // 書かない行動の間は前の行動が残る（見出しを Last にしているのはそのため）
         const ActionEntry *lastAction = FindActionEntry(btComp->lastLogActionId);
         ImGui::TextColored(ImVec4(0.4f, 1.0f, 1.0f, 1.0f), "Last Action: %s", lastAction ? lastAction->name : "Idle");
 
         ImGui::Text("Distance To Target: %.2fm", btComp->blackboard.distanceToTarget);
 
-        // 角度と接近速度は符号に意味があるので、読み方を横に出す（右か左か、詰めか引きか）。
+        // 角度と接近速度は符号に意味があるので、読み方を横に出す（右か左か、詰めか引きか）
         ImGui::Text("Angle To Target  : %+.1f deg  [%s]", btComp->blackboard.angleToTarget,
                     (btComp->blackboard.angleToTarget >= 0.0f) ? "右" : "左");
         ImGui::Text("Closing Speed    : %+.2f m/s  [%s]", btComp->blackboard.targetClosingSpeed,
@@ -351,7 +361,7 @@ void BehaviorTreeSystem::OnGui()
 
         ImGui::Text("HP: %.1f%%", btComp->blackboard.healthPercentage);
 
-        // 木を並べて「この技を今すぐ出す」を選べるようにする。
+        // 木を並べて「この技を今すぐ出す」を選べるようにする
         if (ImGui::TreeNodeEx("強制実行（デバッグ）", ImGuiTreeNodeFlags_DefaultOpen))
         {
             DrawForcedNodeGui(*btComp, e);
@@ -361,6 +371,8 @@ void BehaviorTreeSystem::OnGui()
         ImGui::PopID();
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 強制実行の適用（評価の並列ループから呼ばれる）
@@ -374,24 +386,26 @@ bool BehaviorTreeSystem::IgnoreGatesForDebug(const BehaviorTreeComponent &btComp
     //   - UtilitySelector のふるい（CandidatePasses）
     //   - Selector の割り込み・自己中断（走っている枝を打ち切って別の枝へ移る）
     // 強制実行中にこれらが効くと、その場の距離やクールダウン次第で「押したのに何も出ない」
-    // 「出した直後に別の枝へ移る」になり、見たいものを見られない。なので全部素通しにする。
+    // 「出した直後に別の枝へ移る」になり、見たいものを見られない。なので全部素通しにする
     //
-    // 評価コードの中でデバッグのために分岐しているのは、この関数を呼んでいる所だけ。
-    // 影響範囲を知りたいときは、この関数名で検索すれば全部見つかる。
+    // 評価コードの中でデバッグのために分岐しているのは、この関数を呼んでいる所だけ
+    // 影響範囲を知りたいときは、この関数名で検索すれば全部見つかる
     return btComp.debugForcedNodeId >= 0;
 }
 
+
+
 BTNodeID BehaviorTreeSystem::ApplyDebugForcing(BehaviorTreeComponent &btComp, size_t nodeCount)
 {
-    // 強制実行は、DrawForcedNodeGui で選んだ枝だけを評価させるデバッグ機能。
+    // 強制実行は、DrawForcedNodeGui で選んだ枝だけを評価させるデバッグ機能
     // 選んだノードは debugForcedNodeId に入る（-1 は指定なし）。UI 側は値を書くだけで、
-    // 実際に評価の開始点を差し替えるのはここ。木のデータは書き換えない。
+    // 実際に評価の開始点を差し替えるのはここ。木のデータは書き換えない
     //
-    // 個体ごとの btComp しか触らないので、並列ループから呼んでも競合しない。
+    // 個体ごとの btComp しか触らないので、並列ループから呼んでも競合しない
 
     // 強制ノードが切り替わったら実行状態を捨てる。前の技の途中経過（再開位置・タイマー）が
-    // 新しい枝へ持ち越されると、切り替え直後の1回だけ挙動がおかしくなる。
-    // debugAppliedForcedNodeId は「最後に反映した指定」で、切り替わりの検出だけに使う。
+    // 新しい枝へ持ち越されると、切り替え直後の1回だけ挙動がおかしくなる
+    // debugAppliedForcedNodeId は「最後に反映した指定」で、切り替わりの検出だけに使う
     if (btComp.debugForcedNodeId != btComp.debugAppliedForcedNodeId)
     {
         btComp.debugAppliedForcedNodeId = btComp.debugForcedNodeId;
@@ -399,13 +413,15 @@ BTNodeID BehaviorTreeSystem::ApplyDebugForcing(BehaviorTreeComponent &btComp, si
         std::fill(btComp.nodeTimers.begin(), btComp.nodeTimers.end(), -1.0f);
     }
 
-    // 指定が無いか、木の範囲外（木が差し替わって古い番号が残った場合など）ならルートから評価する
+    // 指定がないか、木の範囲外（木が差し替わって古い番号が残った場合など）ならルートから評価する
     if (btComp.debugForcedNodeId < 0 || btComp.debugForcedNodeId >= static_cast<int>(nodeCount))
     {
         return 0;
     }
     return static_cast<BTNodeID>(btComp.debugForcedNodeId);
 }
+
+
 
 void BehaviorTreeSystem::RecordUtilityPick(const BTAsset         &asset,
                                            BTNodeID               selectorId,
@@ -419,10 +435,9 @@ void BehaviorTreeSystem::RecordUtilityPick(const BTAsset         &asset,
     // 2. 上位の内訳を写す（繰り上がりで選ばれた子がいれば足す）
     // 3. 上位が3つに足りなければ、空いた枠を候補外の子で埋める
 
-    // 【備考】
-    //   debugScores は次に選び直すと上書きされる。短い技（すぐ終わって次を選ぶ）だと
-    //   1フレームで消えて画面では読めないので、選んだ瞬間の内訳をここで写して残す。
-    //   個体ごとの btComp しか触らないので、並列ループから呼んでも競合しない。
+    // debugScores は次に選び直すと上書きされる。短い技（すぐ終わって次を選ぶ）だと
+    // 1フレームで消えて画面では読めないので、選んだ瞬間の内訳をここで写して残す
+    // 個体ごとの btComp しか触らないので、並列ループから呼んでも競合しない
 
     // 記録1件に上位3つ＋繰り上がりの1つが入ること
     static_assert(kPickRecordRows >= kUtilityTopCount + 1, "kPickRecordRows が上位の数より少ない");
@@ -466,7 +481,7 @@ void BehaviorTreeSystem::RecordUtilityPick(const BTAsset         &asset,
     // 3. 候補外で空いた枠を埋める
     // ---------------------------------------------------------
 
-    // 点数の高い順（＝候補に入っていれば選ばれやすかった順）に入れる。
+    // 点数の高い順（＝候補に入っていれば選ばれやすかった順）に入れる
     // 「出るはずの技がなぜ出ないか」を、表の空いた行で読めるようにするため
     const BTNode &selector = asset.nodes[selectorId];
     const int     limit    = (std::min)(static_cast<int>(selector.children.size()), kMaxWeightedSelectorChildren);
@@ -505,6 +520,8 @@ void BehaviorTreeSystem::RecordUtilityPick(const BTAsset         &asset,
         ++rec.rowCount;
     }
 }
+
+
 
 float BehaviorTreeSystem::CooldownLeft(BTNodeID nodeId, const BehaviorTreeComponent &btComp, const BTAsset &asset)
 {

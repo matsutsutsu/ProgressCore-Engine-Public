@@ -1,7 +1,7 @@
 #pragma once
 // ===========================================================================
 // 概要: 採用可能な vCam から最も優先度の高いものを選び、メインカメラ（Camera リソース）
-//       へ反映する System。
+//       へ反映する System
 //
 // 責務:
 //   - 最高優先度の vCam の選択（同値は EntityID で決定的に決める）
@@ -14,8 +14,9 @@
 
 class Camera;
 
-class CameraBrainSystem
-    : public CCL::ECS::IfSystem<CameraBrainSystem, CCL::ECS::Read<VirtualCamera>>
+class CameraBrainSystem : public CCL::ECS::IfSystem<
+    CameraBrainSystem,
+    CCL::ECS::Read<VirtualCamera>>
 {
 private:
     CCL::ECS::EntityID m_currentCamID = CCL::ECS::InvalidEntityID; // 現在採用している vCam
@@ -38,10 +39,6 @@ public:
     void Update(float dt) override;
 
 private:
-    /**
-     * @brief 採用可能な vCam のうち、最も優先度の高いものを選ぶ。
-     * @param outID 選ばれた vCam のエンティティID（見つからなければ InvalidEntityID）
-     * @return 選ばれた vCam。見つからなければ nullptr。
-     */
+    // 採用できる vCam のうち、優先度が一番高いものを返す。なければ nullptr で、outID は InvalidEntityID
     const VirtualCamera *SelectHighestPriorityCamera(CCL::ECS::EntityID &outID);
 };

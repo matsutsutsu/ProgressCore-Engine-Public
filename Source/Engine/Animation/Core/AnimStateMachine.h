@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: アニメーションのステートマシン（グラフ・ステート・遷移・条件）のデータ定義。
+// 概要: アニメーションのステートマシン（グラフ・ステート・遷移・条件）のデータ定義
 //
 // 責務:
 //   - AnimStateGraph / AnimState / AnimTransition / AnimCondition / AnimParamDef の定義
@@ -8,9 +8,9 @@
 //   - 実行時の現在地を持つ AnimStateMachineComponent の定義
 //
 // 備考:
-//   - AnimState はサブステートマシンとして子グラフを持てる（階層ステートマシン）。
-//   - AnimState はブレンドスペースとして、複数のクリップを重みで混ぜて再生できる。
-//   - 評価は AnimControllerSystem、編集は AnimGraphWindow が行う。
+//   - AnimState はサブステートマシンとして子グラフを持てる（階層ステートマシン）
+//   - AnimState はブレンドスペースとして、複数のクリップを重みで混ぜて再生できる
+//   - 評価は AnimControllerSystem、編集は AnimGraphWindow が行う
 // ===========================================================================
 #include <vector>
 #include <string>
@@ -37,14 +37,14 @@ enum class AnimConditionOp
     Finished
 };
 
-// 複数の条件の結合方法（AND = 全て満たす / OR = いずれかを満たす）
+// 複数の条件の結合方法（AND = すべて満たす / OR = いずれかを満たす）
 enum class AnimTransitionLogic
 {
     AND,
     OR
 };
 
-// パラメータの型（Unity Animator の Float / Bool / Trigger に相当）。
+// パラメータの型（Unity Animator の Float / Bool / Trigger に相当）
 //   Int は Float で代用できるので持たない。int で保存するので、追加は末尾だけ
 enum class AnimParamType : uint8_t
 {
@@ -53,7 +53,7 @@ enum class AnimParamType : uint8_t
     Trigger
 };
 
-// パラメータの定義（名前・型・初期値）。実行時の値は AnimParametersComponent が持つ。
+// パラメータの定義（名前・型・初期値）。実行時の値は AnimParametersComponent が持つ
 //   name を変えたら hash と、それを参照する AnimCondition も張り替えること（エディタが行う）
 struct AnimParamDef
 {
@@ -80,11 +80,11 @@ struct AnimTransition
     float               blendDuration   = 0.2f; // クロスフェード時間（秒）
     AnimTransitionLogic logicType       = AnimTransitionLogic::AND;
 
-    // この遷移を受け付けてよい CancelGroup のマスク。0 なら常に許可。
+    // この遷移を受け付けてよい CancelGroup のマスク。0 なら常に許可
     //   0 以外なら、再生中クリップの受付区間のうち、ビットが重なる区間の中だけで遷移できる
     uint32_t requiredCancelMask = 0;
 
-    // anyStateTransitions でだけ使う。0 ならどのステートからでも遷移できる。
+    // anyStateTransitions でだけ使う。0 ならどのステートからでも遷移できる
     //   0 以外なら、今のステートの groupId が一致するときだけ有効
     uint32_t sourceGroupId = 0;
 
@@ -108,7 +108,7 @@ struct AnimBlendSample
     const AnimSequence *sequence = nullptr; // 束縛した実体（所有しない。ResourceManager が持つ）
 };
 
-// ブレンドスペース。複数のクリップを、パラメータの値に応じた重みで混ぜ続ける。
+// ブレンドスペース。複数のクリップを、パラメータの値に応じた重みで混ぜ続ける
 //   時間は samples[0] を基準に進め、ほかの点は同じ進み具合（正規化時間）の姿勢を使う
 struct AnimBlendSpace
 {
@@ -159,7 +159,7 @@ struct AnimState
     AnimBlendSpace blendSpace;           // isBlendSpace のときだけ有効
 
     // --- サブステートマシン ---
-    //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なので unique_ptr で持つ。
+    //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なので unique_ptr で持つ
     //   コピーはディープコピーにする（特殊メンバは AnimStateGraph の定義後に定義する）
     bool                            isSubMachine = false; // true なら自分は再生せず、入ると subGraph の entry へ降りる
     std::unique_ptr<AnimStateGraph> subGraph;             // isSubMachine のときだけ有効
@@ -185,12 +185,12 @@ struct AnimStateGraph
     float                       anyStatePosX = 0.0f; // エディタ上の AnyState ノード位置
     float                       anyStatePosY = 0.0f;
 
-    // パラメータの定義（Unity の Parameters タブ相当）。
+    // パラメータの定義（Unity の Parameters タブ相当）
     //   使うのは root の分だけで、サブグラフの parameters は読まれない
     std::vector<AnimParamDef> parameters;
 };
 
-// AnimState の特殊メンバ。
+// AnimState の特殊メンバ
 //   unique_ptr<AnimStateGraph> の複製・破棄には完全型が要るので、AnimStateGraph の後に定義する
 inline AnimState::AnimState()                                 = default;
 inline AnimState::~AnimState()                                = default;
@@ -240,7 +240,7 @@ inline AnimState &AnimState::operator=(const AnimState &o)
 
 // ===========================================================================
 // nlohmann::json 変換
-//   読込は、後から追加したキーが無い古いファイルでも読めるよう既定値で補う。
+//   読込は、後から追加したキーがない古いファイルでも読めるよう既定値で補う
 // ===========================================================================
 using json = nlohmann::json;
 
@@ -418,7 +418,7 @@ inline void from_json(const json &j, AnimState &s)
         j.at("nodePosY").get_to(s.nodePosY);
     j.at("transitions").get_to(s.transitions);
 
-    // ブレンドスペースの項目は、ブレンドスペースのステートにしか無い
+    // ブレンドスペースの項目は、ブレンドスペースのステートにしかない
     s.isBlendSpace = j.value("isBlendSpace", false);
     if (s.isBlendSpace && j.contains("blendSpace"))
     {
@@ -477,11 +477,8 @@ inline void from_json(const json &j, AnimStateGraph &g)
 // 検索・コンポーネント
 // ===========================================================================
 
-/**
- * @brief どの階層にあるステートでも再帰的に探す（葉・サブマシンを問わない）。
- * @param hash 探すステートのハッシュ。階層をまたいでも同名のステートを作らないこと。
- * @return 見つかったステート。g が所有する。無ければ nullptr。
- */
+// どの階層のステートでも再帰で探す（葉・サブマシンを問わない）。なければ nullptr
+// 階層をまたいでも、同じ名前のステートを作らない
 inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t hash)
 {
     for (const auto &s : g.states)
@@ -500,12 +497,12 @@ struct AnimStateMachineComponent
     std::string    graphPath;     // グラフファイルのパス（保存対象）
     AnimStateGraph internalGraph; // 読み込んだグラフ（Entity ごとのコピー）
 
-    // 再生中の葉ステート（activePath の末尾）。
+    // 再生中の葉ステート（activePath の末尾）
     //   他の System（RootMotion・エディタ表示）は、これを今のステートとして読む
     uint32_t currentStateHash = 0;
 
-    // 階層ステートマシンの現在地 [ルート側..., 葉]。
-    //   例: [AttackCombo, Attack_1] はトップで AttackCombo（サブマシン）、その中で Attack_1（葉）。
+    // 階層ステートマシンの現在地 [ルート側..., 葉]
+    //   例: [AttackCombo, Attack_1] はトップで AttackCombo（サブマシン）、その中で Attack_1（葉）
     //   AnimControllerSystem が毎ステップ維持する
     std::vector<uint32_t> activePath;
 };

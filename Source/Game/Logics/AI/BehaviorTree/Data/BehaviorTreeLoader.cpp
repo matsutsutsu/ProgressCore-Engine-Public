@@ -65,21 +65,21 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
 
             node.param = jNode.value("param", 0.0f);
 
-            // 抽選の重み。書かれていなければ 1.0＝均等。
+            // 抽選の重み。書かれていなければ 1.0＝均等
             //   エディタは 1.0 のとき "weight" を書き出さないので、重みを一度も
-            //   触っていない木にはキー自体が無い。既定値はその穴を埋めるためにある。
+            //   触っていない木にはキー自体がない。既定値はその穴を埋めるためにある
             node.weight = jNode.value("weight", 1.0f);
 
-            // 割り込みの印。付いていない枝は、上の枝が終わるまで待つ。
+            // 割り込みの印。付いていない枝は、上の枝が終わるまで待つ
             node.interrupt = jNode.value("interrupt", false);
 
-            // 自己中断の印。付いていない枝は、条件が崩れても最後まで走り切る。
+            // 自己中断の印。付いていない枝は、条件が崩れても最後まで走り切る
             node.abortSelf = jNode.value("abortSelf", false);
 
-            // 採点ルール（UtilitySelector の子だけが使う）。書かれていなければ weight が点数になる。
-            //   ルールはノードに直接持たせず、木の scoreRules に並べてノードは添字だけを持つ。
+            // 採点ルール（UtilitySelector の子だけが使う）。書かれていなければ weight が点数になる
+            //   ルールはノードに直接持たせず、木の scoreRules に並べてノードは添字だけを持つ
             //   ルールを使うのは一部の子だけなので、全ノードに数十バイトずつ足すと
-            //   「添字の近いノードが同じキャッシュラインに載る」利点（BehaviorTreeData.h の備考）が薄れるため。
+            //   「添字の近いノードが同じキャッシュラインに載る」利点（BehaviorTreeData.h の備考）が薄れるため
             if (jNode.contains("score") && jNode["score"].is_object())
             {
                 node.scoreRuleIndex = static_cast<int16_t>(outAsset.scoreRules.size());
@@ -96,7 +96,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
 
             outAsset.nodes.push_back(node);
 
-            // 名前（デバッグ表示用）。エディタは名前を付けたまとまりにだけ書くので、無ければ空
+            // 名前（デバッグ表示用）。エディタは名前を付けたまとまりにだけ書くので、なければ空
             outAsset.nodeNames.push_back(jNode.value("name", std::string()));
         }
     }
@@ -112,7 +112,7 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
     // 3. 木の形
     // ---------------------------------------------------------
 
-    // 構造が壊れている木は、この先の ValidateNodes が範囲外を読む。必ず先に通す。
+    // 構造が壊れている木は、この先の ValidateNodes が範囲外を読む。必ず先に通す
     if (!ValidateStructure(outAsset, path))
     {
         outAsset.nodes.clear();
@@ -128,14 +128,16 @@ bool BehaviorTreeLoader::LoadFromJson(const std::string &path, BTAsset &outAsset
     return true;
 }
 
+
+
 ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void *jNodePtr, BTNodeType type,
                                                         const std::string &path)
 {
-    // 行動・条件は保存キー（"A_BossLeapAttack" などの文字列）で解決する。
-    // 数値IDだと、辞書の並びを変えた瞬間に保存済みのアセットが別の技を指すため。
+    // 行動・条件は保存キー（"A_BossLeapAttack" などの文字列）で解決する
+    // 数値IDだと、辞書の並びを変えた瞬間に保存済みのアセットが別の技を指すため
 
-    // アセットには数値IDも併記されていて、キーを引けなかったときだけそちらを使う。
-    // 知らないキーを 0（None）にしないのは、打ち間違えただけで木が丸ごと動かなくなるより、動いたまま警告が出る方が気づけるため。
+    // アセットには数値IDも併記されていて、キーを引けなかったときだけそちらを使う
+    // 知らないキーを 0（None）にしないのは、打ち間違えただけで木が丸ごと動かなくなるより、動いたまま警告が出る方が気づけるため
     const json &jNode = *static_cast<const json *>(jNodePtr);
 
     const ActionID numericId = static_cast<ActionID>(jNode.value("actionOrConditionId", 0));
@@ -157,13 +159,15 @@ ActionID BehaviorTreeLoader::ResolveActionOrConditionId(const void *jNodePtr, BT
     return numericId;
 }
 
+
+
 BTScoreRule BehaviorTreeLoader::ReadScoreRule(const void *jScorePtr, const std::string &path)
 {
     // 形: "score": { "base": 10,
     //                "distance": { "bestMin": 3, "bestMax": 8, "falloff": 2 },
     //                "bonus": [ { "condition": "C_RecentlyHit", "param": 0.6, "mult": 3.0 } ],
     //                "cooldown": 7 }
-    // 書き手はエディタ（BehaviorTreeWindow::WriteKeyAndParam）。キーの名前を変えるときは両方を直すこと。
+    // 書き手はエディタ（BehaviorTreeWindow::WriteKeyAndParam）。キーの名前を変えるときは両方を直すこと
     const json &jScore = *static_cast<const json *>(jScorePtr);
 
     BTScoreRule rule; // 書かれていない項目は既定値のまま
@@ -208,10 +212,12 @@ BTScoreRule BehaviorTreeLoader::ReadScoreRule(const void *jScorePtr, const std::
         }
     }
 
-    // クールダウン [秒]。負の値は 0（無し）にそろえる
+    // クールダウン [秒]。負の値は 0（なし）にそろえる
     rule.cooldown = (std::max)(0.0f, jScore.value("cooldown", rule.cooldown));
     return rule;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 検査
@@ -219,7 +225,7 @@ BTScoreRule BehaviorTreeLoader::ReadScoreRule(const void *jScorePtr, const std::
 
 namespace
 {
-    // 枝の中に Running を返しうる行動が1つでもあるか（無ければ、その枝は毎フレームすぐ終わる）
+    // 枝の中に Running を返しうる行動が1つでもあるか（なければ、その枝は毎フレームすぐ終わる）
     bool SubtreeCanBlock(const BTAsset &asset, BTNodeID nodeId)
     {
         const BTNode &node = asset.nodes[nodeId];
@@ -229,6 +235,8 @@ namespace
             if (SubtreeCanBlock(asset, c)) return true;
         return false;
     }
+
+
 
     // 枝の中に currentActionId を書く行動が1つでもあるか
     bool SubtreeWritesCommand(const BTAsset &asset, BTNodeID nodeId)
@@ -240,6 +248,8 @@ namespace
             if (SubtreeWritesCommand(asset, c)) return true;
         return false;
     }
+
+
 
     // 枝の中に条件があるか（失敗して次の枝へ進む可能性があるか）
     bool SubtreeHasCondition(const BTAsset &asset, BTNodeID nodeId)
@@ -257,11 +267,10 @@ bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::stri
     // 処理フロー:
     // 1. 子の添字が範囲内か
     // 2. 循環していないか
-    // 3. root から辿れないノードが無いか（警告だけ）
+    // 3. root から辿れないノードがないか（警告だけ）
 
-    // 【備考】
-    //   1 と 2 は「警告して続行」ではなく「読まない」にする。ValidateNodes も評価も asset.nodes[...] を
-    //   範囲チェックせずに再帰でたどるので、壊れた木はログではなく異常終了になるため。
+    // 1 と 2 は「警告して続行」ではなく「読まない」にする。ValidateNodes も評価も asset.nodes[...] を
+    // 範囲チェックせずに再帰でたどるので、壊れた木はログではなく異常終了になるため
 
     const size_t n = asset.nodes.size();
 
@@ -270,7 +279,7 @@ bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::stri
     // ---------------------------------------------------------
 
     // 1つでも範囲外があると、この直後の ValidateNodes が asset.nodes[child] を
-    // そのまま読む。std::vector::operator[] なので検出もされない。
+    // そのまま読む。std::vector::operator[] なので検出もされない
     bool ranged = true;
     for (size_t i = 0; i < n; ++i)
     {
@@ -291,9 +300,9 @@ bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::stri
     // ---------------------------------------------------------
 
     // 評価(EvaluateTreeRecursive)も検証(SubtreeCanBlock)も再帰で降りるので、
-    // 1周でもあるとスタックが尽きて落ちる。
+    // 1周でもあるとスタックが尽きて落ちる
 
-    // ここ自体は再帰を使わない。壊れた入力から守る側が同じ理由で落ちないようにするため。
+    // ここ自体は再帰を使わない。壊れた入力から守る側が同じ理由で落ちないようにするため
     enum : uint8_t
     {
         kWhite = 0,
@@ -345,9 +354,9 @@ bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::stri
     // 3. root(0) から辿り着けないノード
     // ---------------------------------------------------------
 
-    // 落ちはしないが、置いたのに繋ぎ忘れた枝がここで分かる。
+    // 落ちはしないが、置いたのに繋ぎ忘れた枝がここで分かる
 
-    // ERROR にはしない。デバッグの「強制実行」は任意のノードから始められるため。
+    // ERROR にはしない。デバッグの「強制実行」は任意のノードから始められるため
     std::vector<bool>   seen(n, false);
     std::vector<size_t> work{0};
     while (!work.empty())
@@ -373,6 +382,8 @@ bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::stri
     return true;
 }
 
+
+
 void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &path)
 {
     // 処理フロー（ノード1つごとに）:
@@ -386,8 +397,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
     // 8. 抽選できる子の数
     // 9. 採点ルールの距離の並び
 
-    // どの検査も「木としては読めるが、置いた本人の意図どおりには動かない」形を見つけるためのもの。
-    // 評価はワーカースレッドで並列に走りファイル名も持たないので、ファイル名付きで言えるのは読み込み時だけ。
+    // どの検査も「木としては読めるが、置いた本人の意図どおりには動かない」形を見つけるためのもの
+    // 評価はワーカースレッドで並列に走りファイル名も持たないので、ファイル名付きで言えるのは読み込み時だけ
     for (size_t i = 0; i < asset.nodes.size(); ++i)
     {
         const BTNode &node = asset.nodes[i];
@@ -398,7 +409,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         if (node.type == BTNodeType::Decorator)
         {
             // クールダウン0秒＝毎フレーム通過。新規作成の param は 0 なので、
-            // 「Cooldown を選んだが待機時間を触っていない」だけでこうなる。
+            // 「Cooldown を選んだが待機時間を触っていない」だけでこうなる
             if (node.decoratorType == BTDecoratorType::Cooldown && node.param <= 0.0f)
             {
                 CCL_LOG_WARN(LogCategory::AI,
@@ -406,7 +417,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "（＝クールダウンが効かない）: %s",
                              i, node.param, path.c_str());
             }
-            // 試行回数0＝子を一度も評価せず、常に Failure になる。
+            // 試行回数0＝子を一度も評価せず、常に Failure になる
             if (node.decoratorType == BTDecoratorType::Retry && node.param < 1.0f)
             {
                 CCL_LOG_WARN(LogCategory::AI,
@@ -419,7 +430,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "[BT] nodes[%zu] のデコレーターに子が繋がっていない: %s", i, path.c_str());
             }
             // 存在しない種別。評価の switch はどの case にも当たらず素通りするので、
-            // 修飾を付けたつもりのノードが何もしない。
+            // 修飾を付けたつもりのノードが何もしない
             if (static_cast<int>(node.decoratorType) > static_cast<int>(BTDecoratorType::Retry))
             {
                 CCL_LOG_WARN(LogCategory::AI,
@@ -434,7 +445,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // ---------------------------------------------------------
 
         // 主(children[0])と従(それ以降)で意味が違うので、置き間違えると
-        // 「従が一度も動かない」「技が終わっても体が止まらない」になる。どちらも実行中は静かなので、ここで言う。
+        // 「従が一度も動かない」「技が終わっても体が止まらない」になる。どちらも実行中は静かなので、ここで言う
         if (node.type == BTNodeType::Parallel)
         {
             if (node.children.empty())
@@ -444,8 +455,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             }
             else
             {
-                // 主が Running を返さないなら、従は一度も評価されない。
-                // 陣形指示のように即 Success を返す行動を主に置くと起きる。
+                // 主が Running を返さないなら、従は一度も評価されない
+                // 陣形指示のように即 Success を返す行動を主に置くと起きる
                 if (!SubtreeCanBlock(asset, node.children[0]) && node.children.size() > 1)
                 {
                     CCL_LOG_ERROR(LogCategory::AI,
@@ -455,7 +466,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                 }
 
                 // 従に「currentActionId を書く行動」があると、主より後に評価されるので
-                // 主の技の要求を上書きし、体が主の技を出せない。
+                // 主の技の要求を上書きし、体が主の技を出せない
                 for (size_t k = 1; k < node.children.size(); ++k)
                 {
                     if (!SubtreeWritesCommand(asset, node.children[k])) continue;
@@ -481,8 +492,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // 3. 毎フレーム即 Success の枝
         // ---------------------------------------------------------
 
-        // 選択系の子に毎フレーム即 Success を返す枝があると、そこから下が一度も評価されない。
-        // 失敗して次の枝へ進むことも無いので、外からは固まって見える。
+        // 選択系の子に毎フレーム即 Success を返す枝があると、そこから下が一度も評価されない
+        // 失敗して次の枝へ進むこともないので、外からは固まって見える
         if (node.type == BTNodeType::Selector || node.type == BTNodeType::WeightedSelector ||
             node.type == BTNodeType::UtilitySelector)
         {
@@ -503,7 +514,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // ---------------------------------------------------------
 
         // 印が「効かない場所」に付いていないか。付けたのに何も起きない状態は、
-        // 木を見ても分からない（印は正しく保存されていて、ただ誰も見ないだけ）。
+        // 木を見ても分からない（印は正しく保存されていて、ただ誰も見ないだけ）
         for (size_t k = 0; k < node.children.size(); ++k)
         {
             const BTNodeID child = node.children[k];
@@ -516,7 +527,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "印は無視される（割り込みを見るのはこの2つだけ）: %s",
                              static_cast<unsigned>(child), i, path.c_str());
             }
-            // 一番下の枝の検査は Selector だけ。UtilitySelector には上下が無く、どの子も割り込める
+            // 一番下の枝の検査は Selector だけ。UtilitySelector には上下がなく、どの子も割り込める
             else if (node.type == BTNodeType::Selector && k + 1 == node.children.size())
             {
                 CCL_LOG_WARN(LogCategory::AI,
@@ -538,8 +549,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // 5. 自己中断の印
         // ---------------------------------------------------------
 
-        // 4 と同じ理由で検査する。ただし「一番下の枝」の検査は無い。
-        // 押しのけられるのではなく自分から降りるので、一番下の枝でも意味があるため。
+        // 4 と同じ理由で検査する。ただし「一番下の枝」の検査はない
+        // 押しのけられるのではなく自分から降りるので、一番下の枝でも意味があるため
         for (const BTNodeID child : node.children)
         {
             if (!asset.nodes[child].abortSelf) continue;
@@ -551,7 +562,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "印は無視される（見直すのはこの2つだけ）: %s",
                              static_cast<unsigned>(child), i, path.c_str());
             }
-            // スコア選択の子は、採点ルールの点数（距離の外で 0 点）でも降りられるので、条件が無くてもよい
+            // スコア選択の子は、採点ルールの点数（距離の外で 0 点）でも降りられるので、条件がなくてもよい
             else if (!HasReadableGuard(asset, child) &&
                      !(node.type == BTNodeType::UtilitySelector && asset.nodes[child].scoreRuleIndex >= 0))
             {
@@ -566,10 +577,10 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // 6. 陣形指示の撃ち忘れ
         // ---------------------------------------------------------
 
-        // 陣形指示だけを置いてリリースを忘れると、形を作って帰るだけになる。
-        // 形は組み上がるので見た目は正しく、当たらないことにだけ気づけない。
+        // 陣形指示だけを置いてリリースを忘れると、形を作って帰るだけになる
+        // 形は組み上がるので見た目は正しく、当たらないことにだけ気づけない
 
-        // 後続の枝に任せる中継もあるので WARN に留める。
+        // 後続の枝に任せる中継もあるので WARN に留める
         if (node.type == BTNodeType::Sequence)
         {
             int lastFormation = -1;
@@ -600,9 +611,9 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // ---------------------------------------------------------
 
         // 0以下の枝は候補に入らないので、置いた本人は「たまたま出ない」と
-        // 思うだけで、一度も出ないことに気づけない。
+        // 思うだけで、一度も出ないことに気づけない
 
-        // UtilitySelector の子で採点ルールがあるものは weight を使わないので、代わりに優先度（その子が取れる最高点）を見る。
+        // UtilitySelector の子で採点ルールがあるものは weight を使わないので、代わりに優先度（その子が取れる最高点）を見る
         const bool isLottery = (node.type == BTNodeType::WeightedSelector || node.type == BTNodeType::UtilitySelector);
         if (isLottery && !node.children.empty())
         {
@@ -636,7 +647,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // 8. 抽選できる子の数
         // ---------------------------------------------------------
 
-        // 抽選の候補はスタック上の固定長配列に入れるので、上限を超えた分は何も言わずに抽選から漏れる。
+        // 抽選の候補はスタック上の固定長配列に入れるので、上限を超えた分は何も言わずに抽選から漏れる
         if (isLottery && node.children.size() > static_cast<size_t>(kMaxWeightedSelectorChildren))
         {
             CCL_LOG_ERROR(LogCategory::AI,
@@ -649,8 +660,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         // 9. 採点ルールの距離の並び
         // ---------------------------------------------------------
 
-        // 最小と最大を入れ違えると得意な範囲が消え、どの距離でも満点にならない。
-        // 点数が少し下がるだけで技は出るので、見た目では気づけない。
+        // 最小と最大を入れ違えると得意な範囲が消え、どの距離でも満点にならない
+        // 点数が少し下がるだけで技は出るので、見た目では気づけない
         if (node.scoreRuleIndex >= 0)
         {
             const BTScoreRule &r = asset.scoreRules[node.scoreRuleIndex];
@@ -664,6 +675,8 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
         }
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 種類の変換
@@ -680,6 +693,6 @@ BTNodeType BehaviorTreeLoader::StringToNodeType(const std::string &typeStr)
     if (typeStr == "UtilitySelector") return BTNodeType::UtilitySelector;
 
     // 知らない種別は Action として読む。ここで弾くと木が丸ごと無反応になるので、
-    // 行動として読み込んでおき、おかしさは ValidateNodes に報告させる。
+    // 行動として読み込んでおき、おかしさは ValidateNodes に報告させる
     return BTNodeType::Action;
 }

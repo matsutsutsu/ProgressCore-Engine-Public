@@ -8,7 +8,7 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // ルートモーションの出力を無効にする。overrideSpeed は書かない（読み手が既定値に戻す）。
+    // ルートモーションの出力を無効にする。overrideSpeed は書かない（読み手が既定値に戻す）
     //   途中で抜ける経路が多いので、消すものをここに集め、どの経路からも同じ状態で抜ける
     void ClearRootMotionOutput(CharacterMovementComponent &movement)
     {
@@ -25,12 +25,11 @@ void RootMotionSystem::Update(float /*rawDt*/)
     // 1. 適用しない場合を除く（編集中・外部が制御中・ステートが使わない）
     // 2. クリップの切り替わりと、時間が止まっているステップを除く
     // 3. ルートモーションカーブがあれば、カーブの差分で前進させる
-    // 4. 無ければ、ルートボーンの移動量から前進量を求める（ブレンド中は前後を補間）
+    // 4. なければ、ルートボーンの移動量から前進量を求める（ブレンド中は前後を補間）
     // 5. ワールド空間の速度にして書く
 
-    // 【備考】
-    //   出力は CharacterMovementComponent.rootMotionVelocity。動かすのは JoltCharacterUpdateSystem。
-    //   適用しない経路では、必ず出力を消してから抜ける（前のステートの値が残ると移動を上書きし続ける）
+    // 出力は CharacterMovementComponent.rootMotionVelocity。動かすのは JoltCharacterUpdateSystem
+    // 適用しない経路では、必ず出力を消してから抜ける（前のステートの値が残ると移動を上書きし続ける）
 
     ForEach([&](RootMotionComponent             &rm,
                 CharacterMovementComponent      &movement,
@@ -43,9 +42,9 @@ void RootMotionSystem::Update(float /*rawDt*/)
         // 1. 適用しない場合
         // ---------------------------------------------------------
 
-        // エディタ（シーケンサー）が Animator を操作している間は適用しない。
+        // エディタ（シーケンサー）が Animator を操作している間は適用しない
         //   編集中は currentTimer が自由に飛ぶので、その差分を前進量として読むと、
-        //   ルートモーションの無いアニメを見ているだけでキャラが歩き出す
+        //   ルートモーションのないアニメを見ているだけでキャラが歩き出す
         if (animator.isEditorOverride)
         {
             rm.enabled          = false;
@@ -57,7 +56,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
             return;
         }
 
-        // 外部（ダッシュ等）が移動を制御中、またはムービーがクリップを握っている間は適用しない。
+        // 外部（ダッシュ等）が移動を制御中、またはムービーがクリップを握っている間は適用しない
         //   ムービー中はステートが握る前のまま残るので、そのステートの applyRootMotion で判定すると、
         //   ムービーのクリップの移動量でキャラが歩き出しうる
         if (rm.externallyDriven || animator.isExternalOverride)
@@ -78,7 +77,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         Model *model = modelComp.GetModel();
         if (!rm.enabled || !animator.currentSequence || !model)
         {
-            // ルートモーションを使わないステート。
+            // ルートモーションを使わないステート
             //   出力を消さないと、前のステート（例: Attack_1）の値が残り、通常の移動を上書きし続ける
             rm.lastEvaluatedSeq = nullptr;
             ClearRootMotionOutput(movement);
@@ -101,7 +100,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         // 2. 切り替わりと停止中
         // ---------------------------------------------------------
 
-        // クリップが切り替わった、または同じクリップを頭から再生し直した。
+        // クリップが切り替わった、または同じクリップを頭から再生し直した
         //   ポインタだけで見ると、再生し直しを「ループで先頭へ戻った」と取り違え、
         //   前の再生の残り（末尾 - 前回の時刻）まで 1 ステップで前進してしまう
         if (rm.lastEvaluatedSeq != seq || rm.lastPlayCount != animator.playCount)
@@ -119,7 +118,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         const float ldt = time.localDt;
         if (ldt <= 0.0001f)
         {
-            // ヒットストップ・ポーズ中。速度を求められない（0 除算）ので出力を消す。
+            // ヒットストップ・ポーズ中。速度を求められない（0 除算）ので出力を消す
             //   フラグだけ立てたまま抜けると、読み手が古い rootMotionVelocity を今の速度として使い、
             //   バンク角やダッシュ攻撃の判定に影響する
             ClearRootMotionOutput(movement);
@@ -153,8 +152,8 @@ void RootMotionSystem::Update(float /*rawDt*/)
 
             const float speed = dist / ldt; // 前進速度（m/s）。負なら後退
 
-            // overrideSpeed は書かない。
-            //   isRootMotionActive を立てると、読み手は rootMotionVelocity を使って先に return するので使われない。
+            // overrideSpeed は書かない
+            //   isRootMotionActive を立てると、読み手は rootMotionVelocity を使って先に return するので使われない
             //   desiredVelocity は PlayerAnimParamSyncSystem が読むので書く
             movement.desiredVelocity    = forward;
             movement.isRootMotionActive = true;
@@ -251,5 +250,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         movement.rootMotionVelocity = forward * speed;
     });
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(RootMotionSystem, Priority::LogicStage::L02_Update);

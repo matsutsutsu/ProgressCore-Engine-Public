@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: コンポーネントの型と保存名の対応、保存・読込関数を持つレジストリ ComponentRegistry。
+// 概要: コンポーネントの型と保存名の対応、保存・読込関数を持つレジストリ ComponentRegistry
 //
 // 責務:
 //   - 型 ID ⇔ 保存名の対応と、型ごとの保存・読込関数を保持する（シングルトン）
 //   - REGISTER_COMPONENT マクロで、各コンポーネントを静的初期化時に登録する
 //
-// 備考: エディタ用の GUI 登録は ComponentRegistry_Editor.h に分けている（このヘッダは ImGui を使わない）。
+// 備考: エディタ用の GUI 登録は ComponentRegistry_Editor.h に分けている（このヘッダは ImGui を使わない）
 // ===========================================================================
 #include <cstdint>
 #include <functional>
@@ -96,9 +96,9 @@ private:
 
 // ===========================================================================
 // REGISTER_COMPONENT(T, Name)
-//   静的初期化で ComponentRegistry に T を登録する。
+//   静的初期化で ComponentRegistry に T を登録する
 //   登録用の変数はどこからも参照されないので、リンカの最適化（/OPT:REF）で
-//   消されないよう /include で残す。
+//   消されないよう /include で残す
 // ===========================================================================
 #ifdef _MSC_VER
 #define _CCL_LINK_IMPL(sym) __pragma(comment(linker, "/include:" #sym))

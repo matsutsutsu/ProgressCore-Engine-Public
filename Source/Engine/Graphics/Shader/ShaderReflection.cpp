@@ -16,6 +16,8 @@ namespace ShaderReflect
         return nullptr;
     }
 
+
+
     const VariableInfo *ConstantBufferInfo::FindVariable(const std::string &name) const
     {
         for (const auto &var : variables)
@@ -28,6 +30,8 @@ namespace ShaderReflect
         return nullptr;
     }
 
+
+
     bool ReflectionData::LoadFromCompiledFile(const char *filename)
     {
         const std::vector<uint8_t> bytecode = FileSystem::ReadAllBytes(filename);
@@ -39,6 +43,8 @@ namespace ShaderReflect
 
         return LoadFromBytecode(bytecode.data(), bytecode.size());
     }
+
+
 
     bool ReflectionData::LoadFromBytecode(const void *bytecode, size_t bytecodeSize)
     {
@@ -59,6 +65,8 @@ namespace ShaderReflect
         ExtractReflectionInfo(reflection.Get());
         return true;
     }
+
+
 
     void ReflectionData::MergeFromBytecode(const void *bytecode, size_t bytecodeSize)
     {
@@ -88,6 +96,8 @@ namespace ShaderReflect
         mergeByName(uavs, tmp.uavs);
     }
 
+
+
     void ReflectionData::ExtractReflectionInfo(ID3D11ShaderReflection *reflection)
     {
         D3D11_SHADER_DESC shaderDesc;
@@ -105,7 +115,7 @@ namespace ShaderReflect
             cbInfo.name = bufferDesc.Name;
             cbInfo.size = bufferDesc.Size;
 
-            // 定数バッファの説明にはスロットが無いので、同じ名前のリソースのバインド情報から取る
+            // 定数バッファの説明にはスロットがないので、同じ名前のリソースのバインド情報から取る
             for (UINT j = 0; j < shaderDesc.BoundResources; ++j)
             {
                 D3D11_SHADER_INPUT_BIND_DESC bindDesc;
@@ -203,6 +213,8 @@ namespace ShaderReflect
         }
     }
 
+
+
     const ConstantBufferInfo *ReflectionData::FindConstantBuffer(const std::string &name) const
     {
         for (const auto &cb : constantBuffers)
@@ -211,6 +223,8 @@ namespace ShaderReflect
         }
         return nullptr;
     }
+
+
 
     const ConstantBufferInfo *ReflectionData::FindConstantBufferBySlot(UINT slot) const
     {
@@ -221,6 +235,8 @@ namespace ShaderReflect
         return nullptr;
     }
 
+
+
     const TextureInfo *ReflectionData::FindTexture(const std::string &name) const
     {
         for (const auto &tex : textures)
@@ -230,6 +246,8 @@ namespace ShaderReflect
         return nullptr;
     }
 
+
+
     const SamplerInfo *ReflectionData::FindSampler(const std::string &name) const
     {
         for (const auto &samp : samplers)
@@ -238,6 +256,8 @@ namespace ShaderReflect
         }
         return nullptr;
     }
+
+
 
     void ReflectionData::PrintInfo() const
     {
@@ -269,6 +289,8 @@ namespace ShaderReflect
         }
     }
 
+
+
     const UnorderedAccessViewInfo *ReflectionData::FindUAV(const std::string &name) const
     {
         for (const auto &uav : uavs)
@@ -277,6 +299,8 @@ namespace ShaderReflect
         }
         return nullptr;
     }
+
+
 
     // ============================================================
     // AutoConstantBuffer
@@ -296,6 +320,8 @@ namespace ShaderReflect
         return SUCCEEDED(hr);
     }
 
+
+
     void AutoConstantBuffer::UpdateBuffer(ID3D11DeviceContext *dc)
     {
         if (isDirty && buffer)
@@ -305,6 +331,8 @@ namespace ShaderReflect
         }
     }
 
+
+
     void AutoConstantBuffer::BindVS(ID3D11DeviceContext *dc) const
     {
         if (buffer)
@@ -312,6 +340,8 @@ namespace ShaderReflect
             dc->VSSetConstantBuffers(bufferInfo.bindPoint, 1, buffer.GetAddressOf());
         }
     }
+
+
 
     void AutoConstantBuffer::BindPS(ID3D11DeviceContext *dc) const
     {
@@ -321,6 +351,8 @@ namespace ShaderReflect
         }
     }
 
+
+
     void AutoConstantBuffer::BindGS(ID3D11DeviceContext *dc) const
     {
         if (buffer)
@@ -329,6 +361,8 @@ namespace ShaderReflect
         }
     }
 
+
+
     void AutoConstantBuffer::BindCS(ID3D11DeviceContext *dc) const
     {
         if (buffer)
@@ -336,6 +370,8 @@ namespace ShaderReflect
             dc->CSSetConstantBuffers(bufferInfo.bindPoint, 1, buffer.GetAddressOf());
         }
     }
+
+
 
     void AutoConstantBuffer::SetRawData(const void *data, size_t size)
     {

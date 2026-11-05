@@ -34,7 +34,7 @@ namespace
     // デバッグ UI の部品
     // ============================================================
 
-    // 直前の項目にマウスを乗せている間だけ説明を出す。
+    // 直前の項目にマウスを乗せている間だけ説明を出す
     void HoverTooltip(const char *text)
     {
         if (ImGui::IsItemHovered())
@@ -51,6 +51,8 @@ void SquadUpdateSystem::Initialize()
     if (m_world->HasResource<SquadRegistry>()) return;
     m_world->AddResource<SquadRegistry>();
 }
+
+
 
 void SquadUpdateSystem::Update(float rawDt)
 {
@@ -74,6 +76,8 @@ void SquadUpdateSystem::Update(float rawDt)
         UpdateSquad(s, i, frame, reg.tuning);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 入力の収集
@@ -110,7 +114,7 @@ SquadUpdateSystem::SquadFrame SquadUpdateSystem::ReadFrame(float rawDt) const
 
     // --- プレイヤー ---
 
-    // プレイヤーが居なければ追う相手が無いので、小隊行動を解除する（Idle へ落ちる）
+    // プレイヤーがいなければ追う相手がないので、小隊行動を解除する（Idle へ落ちる）
     bool hasPlayer = false;
     if (m_world->HasResource<BattleContext>())
     {
@@ -126,6 +130,8 @@ SquadUpdateSystem::SquadFrame SquadUpdateSystem::ReadFrame(float rawDt) const
     frame.ordered = hasPlayer && (formation == DroneFormationType::SquadAssault);
     return frame;
 }
+
+
 
 void SquadUpdateSystem::GatherMembers(SquadRegistry &reg)
 {
@@ -148,6 +154,8 @@ void SquadUpdateSystem::GatherMembers(SquadRegistry &reg)
         }
     });
 }
+
+
 
 // ---------------------------------------------------------------------------
 // アンカーの動き
@@ -175,6 +183,8 @@ void SquadUpdateSystem::UpdateSquad(SquadState &squad, uint8_t squadId, const Sq
     ClampAltitude(squad);
 }
 
+
+
 SquadPhase SquadUpdateSystem::ChoosePhase(const SquadFrame &frame) const
 {
     if (!frame.ordered) return SquadPhase::Idle;
@@ -185,6 +195,8 @@ SquadPhase SquadUpdateSystem::ChoosePhase(const SquadFrame &frame) const
     // 指示はあるが合図はまだ＝予備動作
     return SquadPhase::Descend;
 }
+
+
 
 Vector3 SquadUpdateSystem::FollowLeadMember(SquadState &squad) const
 {
@@ -208,12 +220,14 @@ Vector3 SquadUpdateSystem::FollowLeadMember(SquadState &squad) const
     return Vector3::Zero;
 }
 
+
+
 void SquadUpdateSystem::UpdateDescend(SquadState &squad, SquadPhase prevPhase, const SquadFrame &frame,
                                       const SquadTuning &tuning) const
 {
     // --- 降り始め ---
 
-    // 降下に入った瞬間のアンカーの位置から降りる。
+    // 降下に入った瞬間のアンカーの位置から降りる
     // 直前まで先頭の機に重ねてあるので、頭上円陣の輪の上（ボスが滞空していればその高さ）から始まる
     if (prevPhase != SquadPhase::Descend)
     {
@@ -223,7 +237,7 @@ void SquadUpdateSystem::UpdateDescend(SquadState &squad, SquadPhase prevPhase, c
 
     // --- 位置 ---
 
-    // 真下の、地面から決まった高さへ降りる。ボスの高さは使わない（滞空中のボスを基準にすると下まで降りない）。
+    // 真下の、地面から決まった高さへ降りる。ボスの高さは使わない（滞空中のボスを基準にすると下まで降りない）
     // 始まりが既にそれより低ければ、その高さのまま留まる（上がらない）
     const float   bottomY = (std::min)(squad.descendFrom.y, kDroneGroundY + tuning.descendHeight);
     const Vector3 bottom(squad.descendFrom.x, bottomY, squad.descendFrom.z);
@@ -253,6 +267,8 @@ void SquadUpdateSystem::UpdateDescend(SquadState &squad, SquadPhase prevPhase, c
                      frame.dt);
 }
 
+
+
 void SquadUpdateSystem::UpdateChase(SquadState &squad, uint8_t squadId, SquadPhase prevPhase,
                                     const SquadFrame &frame, const SquadTuning &tuning) const
 {
@@ -275,20 +291,20 @@ void SquadUpdateSystem::UpdateChase(SquadState &squad, uint8_t squadId, SquadPha
 
     // --- 速さ ---
 
-    // 走り続けても追いつかれ、ダッシュなら振り切れる倍率にする（1 を超え、ダッシュ÷走行 未満）。
+    // 走り続けても追いつかれ、ダッシュなら振り切れる倍率にする（1 を超え、ダッシュ÷走行 未満）
     // 倍率で持つので、プレイヤーの速度を変えても関係が崩れない
 
-    // 小隊ごとに速さをばらすと旋回半径も着く時刻も変わり、全小隊が同じ線に重ならない。
+    // 小隊ごとに速さをばらすと旋回半径も着く時刻も変わり、全小隊が同じ線に重ならない
     // 一番遅い小隊でも倍率が 1 を超える幅にする（下回ると走って逃げるプレイヤーに追いつけない）
 
     // 個体差は小隊番号から決める。生存小隊の中での順番は撃破で変わり、追跡の途中で速さが跳ねるため
     const float speedRatio = tuning.chaseSpeedOverRun + tuning.chaseSpeedSpread * SquadVariation(squadId);
     const float topSpeed   = frame.playerRunSpeed * speedRatio;
 
-    // 狙う方向とのずれが大きいほど遅くする（正面なら最高速、真横より後ろなら下限の割合）。
+    // 狙う方向とのずれが大きいほど遅くする（正面なら最高速、真横より後ろなら下限の割合）
     // 一定の速さだと、通り過ぎた相手が旋回の円の内側に入り、周りを回り続けて当たらない。減速すれば小さく U ターンできる
 
-    // 速さの変化は chaseAccel で頭打ちにする。
+    // 速さの変化は chaseAccel で頭打ちにする
     // 無制限だと至近距離で切り返されても急ブレーキで小回りし、旋回上限で避けるという前提が崩れる
     const float facing      = std::clamp(aimCos, 0.0f, 1.0f);
     const float targetSpeed = topSpeed * (tuning.turnSlowMinScale + (1.0f - tuning.turnSlowMinScale) * facing);
@@ -301,12 +317,14 @@ void SquadUpdateSystem::UpdateChase(SquadState &squad, uint8_t squadId, SquadPha
     squad.anchorPos      = squad.anchorPos + squad.anchorVelocity * frame.dt;
 }
 
+
+
 float SquadUpdateSystem::SteerTowardPlayer(SquadState &squad, const Vector3 &playerPos, float aimSide,
                                            const SquadTuning &tuning, float dt) const
 {
     // --- 狙う点 ---
 
-    // 全小隊が同じ点を追うと1か所に集まるので、プレイヤーの左右へずらした点を狙う。
+    // 全小隊が同じ点を追うと1か所に集まるので、プレイヤーの左右へずらした点を狙う
     // ずれは近づくほど縮め、最後はプレイヤー本人へ向かわせる（ずらしたままだと最後まで横をかすめて外れる）
     const Vector3 toPlayer = playerPos - squad.anchorPos;
     const float   dist     = toPlayer.Length();
@@ -352,6 +370,8 @@ float SquadUpdateSystem::SteerTowardPlayer(SquadState &squad, const Vector3 &pla
     return cosA;
 }
 
+
+
 void SquadUpdateSystem::TurnAnchorToward(SquadState &squad, Vector3 face, float dt) const
 {
     if (face.LengthSquared() <= 0.001f) return;
@@ -364,6 +384,8 @@ void SquadUpdateSystem::TurnAnchorToward(SquadState &squad, Vector3 face, float 
         squad.anchorForward = blended;
     }
 }
+
+
 
 void SquadUpdateSystem::ClampAltitude(SquadState &squad) const
 {
@@ -384,11 +406,15 @@ void SquadUpdateSystem::ClampAltitude(SquadState &squad) const
     }
 }
 
+
+
 float SquadUpdateSystem::SquadVariation(uint8_t squadId) const
 {
     const float x = static_cast<float>(squadId) * 0.6180340f;
     return (x - std::floor(x)) * 2.0f - 1.0f;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 小隊への割り当て
@@ -442,6 +468,8 @@ void SquadUpdateSystem::AssignNewMembers(World &world)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // デバッグ UI
 // ---------------------------------------------------------------------------
@@ -454,6 +482,8 @@ void SquadUpdateSystem::OnGui()
     DrawTuning(reg.tuning);
     DrawSquadList(reg);
 }
+
+
 
 void SquadUpdateSystem::DrawTuning(SquadTuning &tuning) const
 {
@@ -495,6 +525,8 @@ void SquadUpdateSystem::DrawTuning(SquadTuning &tuning) const
     ImGui::TreePop();
 }
 
+
+
 void SquadUpdateSystem::DrawSquadList(const SquadRegistry &reg) const
 {
     int shown = 0;
@@ -510,6 +542,8 @@ void SquadUpdateSystem::DrawSquadList(const SquadRegistry &reg) const
     }
 }
 
+
+
 const char *SquadUpdateSystem::SquadPhaseName(SquadPhase phase) const
 {
     switch (phase)
@@ -519,6 +553,8 @@ const char *SquadUpdateSystem::SquadPhaseName(SquadPhase phase) const
     default: return "Chase";
     }
 }
+
+
 
 // DroneCommandSystem の後、DroneFormationSystem の前
 REGISTER_LOGIC_SYSTEM(SquadUpdateSystem, Priority::LogicStage::L02_Update)

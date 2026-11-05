@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: QueryPerformanceCounter による高精度タイマー HighResolutionTimer。
+// 概要: QueryPerformanceCounter による高精度タイマー HighResolutionTimer
 //
 // 責務:
 //   - フレーム間の経過時間（TimeInterval）と、停止時間を除いた累計時間（TimeStamp）の計測
@@ -25,7 +25,7 @@ public:
     // Reset() からの累計時間（秒）を返す。停止していた時間は含めない
     float TimeStamp() const
     {
-        // 停止中なら、止めた時点以降の時間は数えない。
+        // 停止中なら、止めた時点以降の時間は数えない
         // さらに過去にも停止があった場合、stop_time - base_time にはその停止時間が
         // 含まれているので、paused_time を引いて取り除く:
         //

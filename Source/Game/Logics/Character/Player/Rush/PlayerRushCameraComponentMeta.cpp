@@ -1,11 +1,9 @@
-// RushCamera（ラッシュ中のカメラ演出）のメタ定義。プレハブ/エディタからの読み書きを可能にする。
-
 #include "PlayerRushCameraComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
-// 1フェーズ分の構図（RushCameraShot）の項目を、指定のカテゴリでまとめて並べる。
-//   4フェーズで項目と範囲を揃えるため。プレハブのキーは "locked.distance" のような入れ子の名前になる。
+// 1フェーズ分の構図の項目を、指定のカテゴリに並べる。4フェーズで項目と範囲をそろえる
+// プレハブのキーは "locked.distance" のような入れ子の名前になる
 #define RUSH_CAMERA_SHOT_FIELDS(Shot, Category)                                        \
     CFIELD_FLOAT_RANGED(Shot.distance, "距離", 0.1f, -30.0f, 15.0f, Category)          \
     CFIELD_FLOAT_RANGED(Shot.fov, "画角", 0.5f, -40.0f, 40.0f, Category)               \

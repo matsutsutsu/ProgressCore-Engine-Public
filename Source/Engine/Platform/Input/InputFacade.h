@@ -1,7 +1,7 @@
 #pragma once
 // ===========================================================================
 // 概要: IInputAPI の実装。InputConfig.json の割り当てに従って、Input の生の入力を
-//       アクション／軸として評価する。
+//       アクション／軸として評価する
 //
 // 責務:
 //   - InputConfig.json の読み込み（ホットリロード対応）
@@ -26,7 +26,7 @@ private:
     // アクションごとの発火種別（未登録は Down 扱い）
     std::unordered_map<uint32_t, TriggerType> m_actionTriggerTypes;
 
-    // ゲームビューにフォーカスがある／全画面のときだけマウス視点を通す（既定 true）。
+    // ゲームビューにフォーカスがある／全画面のときだけマウス視点を通す（既定 true）
     bool m_gameInputActive = true;
 
 public:
@@ -86,10 +86,10 @@ public:
         return static_cast<float>(m_rawInput->GetMouse().GetVelocityY());
     }
 
-    // ゲーム側がマウス視点入力を受け付けてよいか（EditorWindowManager が毎フレーム更新する）。
+    // ゲーム側がマウス視点入力を受け付けてよいか（EditorWindowManager が毎フレーム更新する）
     //   true  = 全画面(F1) もしくはゲームビューにフォーカスがある
-    //   false = 他のエディタ窓を操作中 → マウスの移動量を 0 にして視点を止める
-    //   エディタ無しの構成では誰も呼ばないので true のまま。
+    //   false = ほかのエディタの窓を操作中。マウスの移動量を 0 にして視点を止める
+    //   エディタなしの構成では誰も呼ばないので true のまま
     void SetGameInputActive(bool v) { m_gameInputActive = v; }
     bool IsGameInputActive() const override { return m_gameInputActive; }
 

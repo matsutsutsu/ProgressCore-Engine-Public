@@ -18,9 +18,9 @@ using namespace CCL::AI::BT;
 namespace
 {
     /**
-     * @brief xorshift32 で次の乱数を返す。質は要らないが再現性は要る。
-     * @param state 乱数の状態。BehaviorTreeComponent が持つので個体ごとに独立し、ワーカースレッドをまたいでも列が混ざらない。
-     * @return 次の乱数。state も同じ値へ進む。
+     * @brief xorshift32 で次の乱数を返す。質は要らないが再現性は要る
+     * @param state 乱数の状態。BehaviorTreeComponent が持つので個体ごとに独立し、ワーカースレッドをまたいでも列が混ざらない
+     * @return 次の乱数。state も同じ値へ進む
      */
     uint32_t NextRandom(uint32_t &state)
     {
@@ -30,11 +30,15 @@ namespace
         return state;
     }
 
-    // [0,1) の実数を1つ引く。上位24bitだけ使う（xorshift は下位bitの質が落ちる）。
+
+
+    // [0,1) の実数を1つ引く。上位24bitだけ使う（xorshift は下位bitの質が落ちる）
     float NextRandom01(uint32_t &state)
     {
         return static_cast<float>(NextRandom(state) >> 8) * (1.0f / 16777216.0f);
     }
+
+
 
     // 子の並び（node.children）の中で childId が何番目か。見つからなければ -1
     int IndexOfChild(const BTNode &node, BTNodeID childId)
@@ -48,6 +52,8 @@ namespace
         }
         return -1;
     }
+
+
 
     // weights の先頭 count 個から、値に比例して1つ引いて添字を返す。total は count 個の合計
     int PickWeighted(const float *weights, int count, float total, uint32_t &rngState)
@@ -65,19 +71,21 @@ namespace
         return count - 1; // 丸め誤差で最後まで超えなかったときの保険
     }
 
+
+
     /**
-     * @brief サブツリーの実行状態（再開位置と行動の残り時間）をまとめて捨てる。
+     * @brief サブツリーの実行状態（再開位置と行動の残り時間）をまとめて捨てる
      *
-     * ResetChildActionsRecursive との違いは、再開位置（runningNodes）も消すこと。
-     * Parallel が「従」を止めるときに使う。
-     * 従は次のフレームから評価されなくなるので、途中の再開位置と残り時間を残すと、次にこの枝へ来たときに前回の続きから再開してしまう。
+     * ResetChildActionsRecursive との違いは、再開位置（runningNodes）も消すこと
+     * Parallel が「従」を止めるときに使う
+     * 従は次のフレームから評価されなくなるので、途中の再開位置と残り時間を残すと、次にこの枝へ来たときに前回の続きから再開してしまう
      *
-     * Cooldown のタイマーは消さない（Action だけ -1 に戻す）。
-     * クールダウンは枝をまたいで持ち越すべき情報で、ここで消すとクールダウン中の技が出せてしまう。
+     * Cooldown のタイマーは消さない（Action だけ -1 に戻す）
+     * クールダウンは枝をまたいで持ち越すべき情報で、ここで消すとクールダウン中の技が出せてしまう
      *
-     * @param nodeId 捨てる枝の根のノード。
-     * @param btComp 実行状態を持つコンポーネント。
-     * @param asset  木の構造。
+     * @param nodeId 捨てる枝の根のノード
+     * @param btComp 実行状態を持つコンポーネント
+     * @param asset  木の構造
      */
     void ResetSubtreeStateRecursive(BTNodeID nodeId, BehaviorTreeComponent &btComp, const BTAsset &asset)
     {
@@ -95,6 +103,8 @@ namespace
             ResetSubtreeStateRecursive(childId, btComp, asset);
         }
     }
+
+
 
     // 枝の下にある Action ノードのタイマーだけを -1（未実行）に戻す。再開位置と Cooldown は残す
     void ResetChildActionsRecursive(BTNodeID nodeId, BehaviorTreeComponent &btComp, const BTAsset &asset)
@@ -133,6 +143,8 @@ BTContext BehaviorTreeSystem::MakeContext(BTNodeID                  nodeId,
     return ctx;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 木の評価
 // ---------------------------------------------------------------------------
@@ -146,7 +158,7 @@ bool BehaviorTreeSystem::EvaluateCondition(BTNodeID                  nodeId,
 {
     const BTNode &node = asset.nodes[nodeId];
 
-    // 並列処理の中で Instance() を読むが、起動後は読み取りだけなので競合は起きない。
+    // 並列処理の中で Instance() を読むが、起動後は読み取りだけなので競合は起きない
     IBTCondition *cond = BTActionRegistry::Instance().GetCondition(node.actionOrConditionId);
     if (!cond) return false;
 
@@ -155,7 +167,8 @@ bool BehaviorTreeSystem::EvaluateCondition(BTNodeID                  nodeId,
 }
 
 
-// 先頭に並ぶ条件だけを評価する。条件が無い枝は false
+
+// 先頭に並ぶ条件だけを評価する。条件がない枝は false
 bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
                                     BehaviorTreeComponent    &btComp,
                                     const TransformComponent &myTrans,
@@ -163,11 +176,11 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
                                     EntityID                  entity,
                                     float                     dt)
 {
-    // 割り込み・自己中断で「今なら通るか」を知るための経路。
-    // 行動を評価すると技を出してしまうので、条件だけをたどる。
+    // 割り込み・自己中断で「今なら通るか」を知るための経路
+    // 行動を評価すると技を出してしまうので、条件だけをたどる
 
-    // どんな形なら条件を先に調べられるかは HasReadableGuard が決める。ここは同じ形をたどって条件を評価する。
-    // 条件が無い形を false にしているのは、無条件の割り込みを許さないため。
+    // どんな形なら条件を先に調べられるかは HasReadableGuard が決める。ここは同じ形をたどって条件を評価する
+    // 条件がない形を false にしているのは、無条件の割り込みを許さないため
     if (!HasReadableGuard(asset, nodeId)) return false;
 
     const BTNode &node = asset.nodes[nodeId];
@@ -177,7 +190,7 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
         const bool ok = EvaluateCondition(nodeId, btComp, myTrans, asset, entity, dt);
 
         // 木の色分けにも残す。「印は付いているのに割り込まない」とき、どの条件で止まって
-        // いるかがエディタ上で分かる。
+        // いるかがエディタ上で分かる
         btComp.debugNodeStates[nodeId] = ok ? BTDebugState::Success : BTDebugState::Failure;
         return ok;
     }
@@ -186,7 +199,7 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
         switch (node.decoratorType)
         {
         // クールダウン中の枝へは割り込ませない。ここを見ないと、通常の評価ではクールダウン中で
-        // 出せない技が、割り込みのときだけ出せてしまう。
+        // 出せない技が、割り込みのときだけ出せてしまう
         case BTDecoratorType::Cooldown:
             if (btComp.nodeTimers[nodeId] > 0.0f) return false;
             break;
@@ -194,16 +207,16 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
         case BTDecoratorType::Inverter:
             return !GuardsPass(node.children[0], btComp, myTrans, asset, entity, dt);
 
-        // Retry は同じフレームに繰り返すだけ。条件の結果は変わらないので素通しでよい。
+        // Retry は同じフレームに繰り返すだけ。条件の結果は変わらないので素通しでよい
         case BTDecoratorType::Retry: break;
         }
         return GuardsPass(node.children[0], btComp, myTrans, asset, entity, dt);
 
-    // 先頭に並ぶ条件を全部見る。条件でない子（行動）が来た所で終わる。
+    // 先頭に並ぶ条件を全部見る。条件でない子（行動）が来た所で終わる
     case BTNodeType::Sequence:
         for (const BTNodeID childId : node.children)
         {
-            // 先頭に並ぶ条件を全部見る。条件でない子（行動）が来た所で終わる。
+            // 先頭に並ぶ条件を全部見る。条件でない子（行動）が来た所で終わる
             if (!HasReadableGuard(asset, childId)) break;
             if (!GuardsPass(childId, btComp, myTrans, asset, entity, dt)) return false;
         }
@@ -212,6 +225,8 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
     default: return false;
     }
 }
+
+
 
 // UtilitySelector の候補に入れていいかどうか
 bool BehaviorTreeSystem::CandidatePasses(BTNodeID                  nodeId,
@@ -230,10 +245,12 @@ bool BehaviorTreeSystem::CandidatePasses(BTNodeID                  nodeId,
         return GuardsPass(nodeId, btComp, myTrans, asset, entity, dt);
     }
 
-    // 条件が無い枝（様子見など）は通す。ただしクールダウン中なら外す。外さないと上位の枠を占める。
-    // GuardsPass を「条件が無ければ通る」に変えて済ませてはいけない（割り込みの挙動まで変わる）。
+    // 条件がない枝（様子見など）は通す。ただしクールダウン中なら外す。外さないと上位の枠を占める
+    // GuardsPass を「条件がなければ通る」に変えて済ませてはいけない（割り込みの挙動まで変わる）
     return !TopCooldownActive(nodeId, btComp, asset);
 }
+
+
 
 bool BehaviorTreeSystem::TopCooldownActive(BTNodeID nodeId, const BehaviorTreeComponent &btComp, const BTAsset &asset) const
 {
@@ -260,6 +277,8 @@ bool BehaviorTreeSystem::TopCooldownActive(BTNodeID nodeId, const BehaviorTreeCo
     return false;
 }
 
+
+
 bool BehaviorTreeSystem::CanAbortSubtree(BTNodeID                  nodeId,
                                          BehaviorTreeComponent    &btComp,
                                          const TransformComponent &myTrans,
@@ -285,6 +304,8 @@ bool BehaviorTreeSystem::CanAbortSubtree(BTNodeID                  nodeId,
     return true;
 }
 
+
+
 void BehaviorTreeSystem::AbortSubtree(BTNodeID                  nodeId,
                                       BehaviorTreeComponent    &btComp,
                                       const TransformComponent &myTrans,
@@ -297,8 +318,8 @@ void BehaviorTreeSystem::AbortSubtree(BTNodeID                  nodeId,
     if (node.type == BTNodeType::Action)
     {
         // 走っていなかった行動にも OnAbort を呼ぶ。後始末は、走っていなかった行動が呼ばれても
-        // 何も起きない形で書くこと。
-        // どれが走っていたかを正確に持つより、何度呼んでも同じ結果になる後始末の方が壊れにくい。
+        // 何も起きない形で書くこと
+        // どれが走っていたかを正確に持つより、何度呼んでも同じ結果になる後始末の方が壊れにくい
         if (IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId))
         {
             BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
@@ -306,13 +327,13 @@ void BehaviorTreeSystem::AbortSubtree(BTNodeID                  nodeId,
         }
 
         // 残り時間を「未実行」へ戻す。途中の値が残ると、次にこの枝へ来たとき開始フレームと
-        // 判定されず、アニメのトリガーも引かれないまま残り時間だけ待って終わる。
+        // 判定されず、アニメのトリガーも引かれないまま残り時間だけ待って終わる
         btComp.nodeTimers[nodeId] = -1.0f;
     }
     else if (node.type == BTNodeType::Decorator && node.decoratorType == BTDecoratorType::Cooldown)
     {
         // 打ち切りでもクールダウンは掛ける。技は出してしまっているので、掛けないと
-        // 割り込みで中断されるたびに即また出せることになる。
+        // 割り込みで中断されるたびに即また出せることになる
         btComp.nodeTimers[nodeId] = node.param;
     }
 
@@ -365,7 +386,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
         // 並列処理の中で Instance() を読むけど、起動後は読み取りだけなので競合は起きない
         IBTAction *action = BTActionRegistry::Instance().GetAction(node.actionOrConditionId);
 
-        // アクションが無ければ失敗にする
+        // アクションがなければ失敗にする
         if (action)
         {
             BTContext ctx = MakeContext(nodeId, btComp, myTrans, entity, dt, node.param);
@@ -378,7 +399,7 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
 
         // 終わった行動は自分のタイマーを「未実行(-1)」へ戻す。この処理を Sequence の
         // 中だけに置いてはいけない。Selector や Decorator の直下の行動が一度完了すると
-        // 0 のままになり、以後ずっと即 Success（Wait が待たない／攻撃が二度と出ない）になる。
+        // 0 のままになり、以後ずっと即 Success（Wait が待たない／攻撃が二度と出ない）になる
         if (result != BTNodeState::Running && nodeId < btComp.nodeTimers.size())
         {
             btComp.nodeTimers[nodeId] = -1.0f;
@@ -401,6 +422,8 @@ BTNodeState BehaviorTreeSystem::EvaluateTreeRecursive(
     }
     return result;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ノードの種類ごとの評価
@@ -430,17 +453,17 @@ BTNodeState BehaviorTreeSystem::EvaluateSelector(
     // ---------------------------------------------------------
 
     // 走っている枝より上に interrupt の付いた枝があり、その先頭の条件が通るなら、
-    // 走っている枝を打ち切ってそちらへ切り替える。
+    // 走っている枝を打ち切ってそちらへ切り替える
 
     // 印の付いた枝だけを見る。全部の枝を毎フレーム見直さないのは、再開位置（runningNodes）が
     // 技を続けるための仕組みだから。Running の子を先に再開するので、出している最中の技が
-    // 次のフレームに別の技へ変わらない。割り込みはその例外を枝ごとに許す仕組みで、既定は許さない。
+    // 次のフレームに別の技へ変わらない。割り込みはその例外を枝ごとに許す仕組みで、既定は許さない
 
-    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）。
+    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）
 
     // 割り込んだ枝がすぐ Failure になると、下の枝を毎フレーム打ち切っては
     // やり直すことになり、技が一度も最後まで出ない。先頭の条件は「通ったら本当にその枝が
-    // 動く」ものにすること（被弾の枝が蓄積をリセットして自分で抜けるのが良い例）。
+    // 動く」ものにすること（被弾の枝が蓄積をリセットして自分で抜けるのが良い例）
     if (runningIndex > 0 && runningIndex < (int)node.children.size() && !IgnoreGatesForDebug(btComp))
     {
         for (int i = 0; i < runningIndex; ++i)
@@ -449,11 +472,11 @@ BTNodeState BehaviorTreeSystem::EvaluateSelector(
             if (!GuardsPass(node.children[i], btComp, myTrans, asset, entity, dt)) continue;
 
             // 打ち切れない技が走っている間は見送る。次のフレームにまた見にくるので、
-            // 空中の技なら着地した最初のフレームに入れ替わる。
+            // 空中の技なら着地した最初のフレームに入れ替わる
             if (!CanAbortSubtree(node.children[runningIndex], btComp, myTrans, asset, entity, dt)) break;
 
-            // 割り込みは画面からは読み取りにくい変化なので、ログに残す。
-            // 毎フレーム出るなら、割り込んだ枝がすぐ失敗して切り替えを繰り返している（上の注意）。
+            // 割り込みは画面からは読み取りにくい変化なので、ログに残す
+            // 毎フレーム出るなら、割り込んだ枝がすぐ失敗して切り替えを繰り返している（上の注意）
             CCL_LOG_INFO(LogCategory::AI, "[BT] 割り込み: %d 番目の枝が %d 番目の枝を打ち切った (nodes[%u])",
                          i, runningIndex, static_cast<unsigned>(nodeId));
 
@@ -469,11 +492,11 @@ BTNodeState BehaviorTreeSystem::EvaluateSelector(
     // ---------------------------------------------------------
 
     // 走っている枝に abortSelf が付いていて、その枝自身の先頭の条件が通らなくなったら、
-    // 打ち切って先頭から選び直す。予備動作の最中に間合いを外れたら技を取りやめる、といった用途。
+    // 打ち切って先頭から選び直す。予備動作の最中に間合いを外れたら技を取りやめる、といった用途
 
-    // 割り込みと違って切り替え先を決めないので、0 番目の枝でも見る。
-    // 割り込みで既に打ち切ったフレームは runningIndex が -1 なのでここは通らない。
-    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）。
+    // 割り込みと違って切り替え先を決めないので、0 番目の枝でも見る
+    // 割り込みで既に打ち切ったフレームは runningIndex が -1 なのでここは通らない
+    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）
     if (runningIndex >= 0 && runningIndex < (int)node.children.size() && !IgnoreGatesForDebug(btComp))
     {
         const BTNodeID runningChild = node.children[runningIndex];
@@ -522,6 +545,8 @@ BTNodeState BehaviorTreeSystem::EvaluateSelector(
     return result;
 }
 
+
+
 BTNodeState BehaviorTreeSystem::EvaluateSequence(
     BTNodeID                  nodeId,
     BehaviorTreeComponent    &btComp,
@@ -541,7 +566,7 @@ BTNodeState BehaviorTreeSystem::EvaluateSequence(
         startIndex = runningIndex;
     }
 
-    // 子が１つもなければ即 Success。子があれば順に評価する。
+    // 子が１つもなければ即 Success。子があれば順に評価する
     result = BTNodeState::Success;
     for (size_t i = startIndex; i < node.children.size(); ++i)
     {
@@ -567,6 +592,8 @@ BTNodeState BehaviorTreeSystem::EvaluateSequence(
     return result;
 }
 
+
+
 BTNodeState BehaviorTreeSystem::EvaluateDecorator(
     BTNodeID                  nodeId,
     BehaviorTreeComponent    &btComp,
@@ -578,12 +605,12 @@ BTNodeState BehaviorTreeSystem::EvaluateDecorator(
     const BTNode &node   = asset.nodes[nodeId];
     BTNodeState   result = BTNodeState::Failure;
 
-    // 生の int ではなく enum で分岐する（数値だとどれがどの修飾か読めない）。
+    // 生の int ではなく enum で分岐する（数値だとどれがどの修飾か読めない）
     const BTDecoratorType decType = node.decoratorType;
 
     // クールダウン中は子を評価せず即 Failure。タイマーは Action の残り時間と
-    // 同じ配列を共有するが、添字がノードIDなので衝突しない。
-    // 強制実行中は止めない（関門の素通し。理由は IgnoreGatesForDebug）。
+    // 同じ配列を共有するが、添字がノードIDなので衝突しない
+    // 強制実行中は止めない（関門の素通し。理由は IgnoreGatesForDebug）
     if (decType == BTDecoratorType::Cooldown && btComp.nodeTimers[nodeId] > 0.0f &&
         !IgnoreGatesForDebug(btComp))
     {
@@ -597,15 +624,15 @@ BTNodeState BehaviorTreeSystem::EvaluateDecorator(
 
     const BTNodeID childId = node.children[0];
 
-    // Retry は子を複数回評価する。
-    // 子が Success か Running ならループを抜ける。
+    // Retry は子を複数回評価する
+    // 子が Success か Running ならループを抜ける
     if (decType == BTDecoratorType::Retry)
     {
         // 同じフレームの中で繰り返し評価するので、
-        // Condition で距離などを測っても結果は変わらない。
-        // 使い道は、乱数や確率で失敗する行動を何度か試すくらい。
+        // Condition で距離などを測っても結果は変わらない
+        // 使い道は、乱数や確率で失敗する行動を何度か試すくらい
 
-        // param は試行回数。0 だと一度も子を評価しないので最低1回は回す。
+        // param は試行回数。0 だと一度も子を評価しないので最低1回は回す
         const int retryCount = (std::max)(1, static_cast<int>(node.param));
         for (int r = 0; r < retryCount; ++r)
         {
@@ -628,9 +655,9 @@ BTNodeState BehaviorTreeSystem::EvaluateDecorator(
         break;
 
     case BTDecoratorType::Cooldown:
-        // 子が最後まで終わったときだけクールダウンを始める。
+        // 子が最後まで終わったときだけクールダウンを始める
         // Running で始めると技の途中からタイマーが進み、
-        // Failure で始めると出していない技にクールダウンがかかる。
+        // Failure で始めると出していない技にクールダウンがかかる
         if (result == BTNodeState::Success) btComp.nodeTimers[nodeId] = node.param;
         break;
 
@@ -640,6 +667,8 @@ BTNodeState BehaviorTreeSystem::EvaluateDecorator(
     return result;
 }
 
+
+
 BTNodeState BehaviorTreeSystem::EvaluateParallel(
     BTNodeID                  nodeId,
     BehaviorTreeComponent    &btComp,
@@ -648,16 +677,16 @@ BTNodeState BehaviorTreeSystem::EvaluateParallel(
     EntityID                  entity,
     float                     dt)
 {
-    // 主従型の並行ノード。0番目の子が「主」で、その結果をそのまま返す。
-    // 1番目以降の「従」は主が走っている間だけ動かし、結果は捨てる。
-    // 「技を出しながら、その間ドローンにも指示を出す」を書くためのノード。
+    // 主従型の並行ノード。0番目の子が「主」で、その結果をそのまま返す
+    // 1番目以降の「従」は主が走っている間だけ動かし、結果は捨てる
+    // 「技を出しながら、その間ドローンにも指示を出す」を書くためのノード
     //
-    // 従には「毎フレーム評価されても安いもの」だけを置くこと。
+    // 従には「毎フレーム評価されても安いもの」だけを置くこと
     // 従に currentActionId を書く行動を置くと、主より後に評価されるので主の技の要求を上書きする
-    // （読み込み時に ValidateNodes が警告する）。
+    // （読み込み時に ValidateNodes が警告する）
     //
     // 再開位置を持たないのが Selector / Sequence との違い。毎フレーム全部の子を
-    // 評価し直すので、途中から再開する必要がない（各子のサブツリーは自分の再開位置で正しく再開する）。
+    // 評価し直すので、途中から再開する必要がない（各子のサブツリーは自分の再開位置で正しく再開する）
 
     const BTNode &node   = asset.nodes[nodeId];
     BTNodeState   result = BTNodeState::Failure;
@@ -667,15 +696,15 @@ BTNodeState BehaviorTreeSystem::EvaluateParallel(
         return BTNodeState::Failure;
     }
 
-    // 主を評価する。結果はそのまま返す。
+    // 主を評価する。結果はそのまま返す
     result = EvaluateTreeRecursive(node.children[0], btComp, myTrans, asset, entity, dt);
 
     if (result == BTNodeState::Running)
     {
         // 従を評価する。戻り値は使わない。主が終わったフレームには評価しない
-        // （終わった技の後に、従の指示だけが1回余計に出るのを避ける）。
-        // 従は主が終わるまで評価され続けるので、最後まで行くと先頭から繰り返す。
-        // 繰り返したくなければ、従の最後に長い待機を置く。
+        // （終わった技の後に、従の指示だけが1回余計に出るのを避ける）
+        // 従は主が終わるまで評価され続けるので、最後まで行くと先頭から繰り返す
+        // 繰り返したくなければ、従の最後に長い待機を置く
         for (size_t i = 1; i < node.children.size(); ++i)
         {
             EvaluateTreeRecursive(node.children[i], btComp, myTrans, asset, entity, dt);
@@ -683,10 +712,10 @@ BTNodeState BehaviorTreeSystem::EvaluateParallel(
     }
     else
     {
-        // 主が終わったので、この並行区間は終わり。従の実行状態を捨てる。
+        // 主が終わったので、この並行区間は終わり。従の実行状態を捨てる
         //   捨てないと、従の中の行動の残り時間が 0.0 のまま残り、次に
         //   この枝へ来たとき「もう終わっている」と判定されて一度も実行されない
-        //   （Action の後始末は、その行動が評価されたときにしか走らないため）。
+        //   （Action の後始末は、その行動が評価されたときにしか走らないため）
         for (size_t i = 1; i < node.children.size(); ++i)
         {
             ResetSubtreeStateRecursive(node.children[i], btComp, asset);
@@ -694,6 +723,8 @@ BTNodeState BehaviorTreeSystem::EvaluateParallel(
     }
     return result;
 }
+
+
 
 BTNodeState BehaviorTreeSystem::EvaluateWeightedSelector(
     BTNodeID                  nodeId,
@@ -703,24 +734,24 @@ BTNodeState BehaviorTreeSystem::EvaluateWeightedSelector(
     EntityID                  entity,
     float                     dt)
 {
-    // 子の weight に比例して1つ引き、失敗したらその枝を候補から外して引き直す。
-    // 条件で弾かれる枝があっても「出せる技のどれか」が必ず出る。
-    // 全部の重みが同じなら均等ランダムと同じ動作になる（既定の weight は 1.0）。
+    // 子の weight に比例して1つ引き、失敗したらその枝を候補から外して引き直す
+    // 条件で弾かれる枝があっても「出せる技のどれか」が必ず出る
+    // 全部の重みが同じなら均等ランダムと同じ動作になる（既定の weight は 1.0）
 
     const BTNode &node   = asset.nodes[nodeId];
     BTNodeState   result = BTNodeState::Failure;
 
-    // すでに Running だった子がいれば、まずその子を再評価する。
-    // 引き直すと出している途中の技が変わってしまうため、抽選はしない。
+    // すでに Running だった子がいれば、まずその子を再評価する
+    // 引き直すと出している途中の技が変わってしまうため、抽選はしない
     int runningIndex = btComp.runningNodes[nodeId];
     if (runningIndex >= 0 && runningIndex < (int)node.children.size())
     {
         result = EvaluateTreeRecursive(node.children[runningIndex], btComp, myTrans, asset, entity, dt);
 
-        // 終わったら（Success でも Failure でも）再開位置を消す。
+        // 終わったら（Success でも Failure でも）再開位置を消す
         // Failure でも、Selector のように他の子へは落ちない。今この場で引き直すと、
         // たった今失敗した枝をまた引く可能性がある。1フレーム譲って、次の
-        // フレームに抽選からやり直す。
+        // フレームに抽選からやり直す
         if (result != BTNodeState::Running)
         {
             btComp.runningNodes[nodeId] = -1;
@@ -728,9 +759,9 @@ BTNodeState BehaviorTreeSystem::EvaluateWeightedSelector(
         return result;
     }
 
-    // 候補を作る。
+    // 候補を作る
     // どちらもスタック上の固定長配列で持つ。評価はワーカースレッドで走るので、
-    // ここでヒープ確保をするとスレッド間でアロケータのロックを取り合う。
+    // ここでヒープ確保をするとスレッド間でアロケータのロックを取り合う
     BTNodeID cand[kMaxWeightedSelectorChildren];
     float    w[kMaxWeightedSelectorChildren];
     int      count = 0;
@@ -769,7 +800,7 @@ BTNodeState BehaviorTreeSystem::EvaluateWeightedSelector(
         }
 
         // 失敗した枝を候補から外す。末尾を詰めるので順番は崩れるが、
-        // 抽選は重みだけで決まるので並びは関係ない。
+        // 抽選は重みだけで決まるので並びは関係ない
         total     -= w[pick];
         cand[pick] = cand[count - 1];
         w[pick]    = w[count - 1];
@@ -779,11 +810,12 @@ BTNodeState BehaviorTreeSystem::EvaluateWeightedSelector(
 }
 
 
-// 今出せる子だけに絞り、点数の高い上位3つから点数に比例して1つ引く。点数は ScoreUtilityChild が出す。
+
+// 今出せる子だけに絞り、点数の高い上位3つから点数に比例して1つ引く。点数は ScoreUtilityChild が出す
 //
 // WeightedSelector との違いは2つ。引く前に「今出せない子」（先頭の条件が通らない・クールダウン中）を
-// 外すことと、引く範囲を上位3つに絞ること。出せない子が枠を占めないので、低い点の技が「数合わせ」で出ることがない。
-// 割り込み・自己中断の印は Selector と同じように付けられる（割り込みは上下の代わりに点数で決める）。
+// 外すことと、引く範囲を上位3つに絞ること。出せない子が枠を占めないので、低い点の技が「数合わせ」で出ることがない
+// 割り込み・自己中断の印は Selector と同じように付けられる（割り込みは上下の代わりに点数で決める）
 BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     BTNodeID                  nodeId,
     BehaviorTreeComponent    &btComp,
@@ -799,10 +831,9 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // 4. 点数の高い順に並べる
     // 5. 上位から抽選し、失敗したら外して詰める（1 で割り込んだ子は抽選せずに出す）
     //
-    // 【備考】
-    //   3 と 5 で、デバッグ表示用に点数・確率・選んだ子を btComp.debugScores に残す。
-    //   選び直したときだけ書くので、技を出している間は「その技を選んだときの点数」が見え続ける。
-    //   選べたら btComp.debugPickLog にも写す（すぐ次を選び直しても、前の選択が履歴に残る）。
+    // 3 と 5 で、デバッグ表示用に点数・確率・選んだ子を btComp.debugScores に残す
+    // 選び直したときだけ書くので、技を出している間は「その技を選んだときの点数」が見え続ける
+    // 選べたら btComp.debugPickLog にも写す（すぐ次を選び直しても、前の選択が履歴に残る）
 
     const BTNode &node   = asset.nodes[nodeId];
     BTNodeState   result = BTNodeState::Failure;
@@ -813,14 +844,14 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // 1. 割り込み
     // ---------------------------------------------------------
 
-    // Selector の割り込みは「上の枝」が割り込むが、スコア選択の子には上下が無い。
-    // 代わりに印の付いた子だけを見て、候補に入れる状態（条件・クールダウン・点数 > 0）になったら割り込む。
-    // 割り込める子が複数あれば点数の高い方。割り込んだ子は 5 で抽選せずに出す。
+    // Selector の割り込みは「上の枝」が割り込むが、スコア選択の子には上下がない
+    // 代わりに印の付いた子だけを見て、候補に入れる状態（条件・クールダウン・点数 > 0）になったら割り込む
+    // 割り込める子が複数あれば点数の高い方。割り込んだ子は 5 で抽選せずに出す
     //
     // 割り込んで出た技は、別の割り込みでは止めない。止められると、印の付いた技同士が
-    // 交互に止め合い、どちらも最後まで出ない。
-    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）。
-    BTNodeID interruptChild = 0xFFFF; // 割り込んで出す子。0xFFFF は無し
+    // 交互に止め合い、どちらも最後まで出ない
+    // 強制実行中は見ない（関門の素通し。理由は IgnoreGatesForDebug）
+    BTNodeID interruptChild = 0xFFFF; // 割り込んで出す子。0xFFFF はなし
     if (runningIndex >= 0 && runningIndex < (int)node.children.size() && !IgnoreGatesForDebug(btComp))
     {
         const BTNodeID runningChild = node.children[runningIndex];
@@ -878,19 +909,19 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // ---------------------------------------------------------
     // 2. 再開　前フレームで選んだ技を続けるため
     // ---------------------------------------------------------
-    // Running の子がいれば、まずその子を再評価する。抽選はしない。
+    // Running の子がいれば、まずその子を再評価する。抽選はしない
 
-    // 自己中断：走っている子に abortSelf が付いていて、候補に入れる状態でなくなったら降りる。
-    // 遠距離の弾幕を出している間に近づかれたら、弾幕をやめて近距離の技を選び直す、といった用途。
+    // 自己中断：走っている子に abortSelf が付いていて、候補に入れる状態でなくなったら降りる
+    // 遠距離の弾幕を出している間に近づかれたら、弾幕をやめて近距離の技を選び直す、といった用途
     //
-    // 「候補に入れる状態」は、先頭の条件が通り（条件があれば）、点数が 0 より大きいこと。
+    // 「候補に入れる状態」は、先頭の条件が通り（条件があれば）、点数が 0 より大きいこと
     // Selector の自己中断は先頭の条件だけを見るが、スコア選択は距離を採点ルールで決めるので、
-    // 距離の外で 0 点になったときも降りられるよう点数も見る。条件が無い子は条件の確認を飛ばす
-    // （GuardsPass は条件が無い枝を false にするので、そのままだと毎フレーム降りてしまう）。
-    // クールダウンは見ない。選んだ瞬間から数えるので、走っている子は必ずクールダウン中になる。
+    // 距離の外で 0 点になったときも降りられるよう点数も見る。条件がない子は条件の確認を飛ばす
+    // （GuardsPass は条件がない枝を false にするので、そのままだと毎フレーム降りてしまう）
+    // クールダウンは見ない。選んだ瞬間から数えるので、走っている子は必ずクールダウン中になる
     //
     // 打ち切れない技が走っている間は見送る（Selector と同じ）。降りたら下の 3 へ進み、
-    // このフレームのうちに選び直す。降りた子は候補に入れない状態なので、ふるいで外れて選ばれ直さない。
+    // このフレームのうちに選び直す。降りた子は候補に入れない状態なので、ふるいで外れて選ばれ直さない
     if (runningIndex >= 0 && runningIndex < (int)node.children.size() && !IgnoreGatesForDebug(btComp))
     {
         const BTNodeID runningChild = node.children[runningIndex];
@@ -939,7 +970,7 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // 上限を超える分を切り捨てる
     const int limit = (std::min)((int)node.children.size(), kMaxWeightedSelectorChildren);
 
-    // 点数が0以下の子は候補に入れない。条件で弾かれる子も候補に入れない。
+    // 点数が0以下の子は候補に入れない。条件で弾かれる子も候補に入れない
     for (int i = 0; i < limit; ++i)
     {
         // 子供のi番目のノードID取得
@@ -993,8 +1024,8 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
         const BTNodeID c = cand[i];
         const float    s = score[i];
 
-        // ひとつ前の点数と比べ、点数が低い方を後ろへずらす。
-        // 点数が同じなら元の並びを保つためにずらさない。
+        // ひとつ前の点数と比べ、点数が低い方を後ろへずらす
+        // 点数が同じなら元の並びを保つためにずらさない
         int            j = i - 1;
         while (j >= 0 && score[j] < s) // 左の方が点数低い間なら
         {
@@ -1011,7 +1042,7 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     // 5. 抽選
     // ---------------------------------------------------------
 
-    // 失敗した子を外して詰めると次点が上位の枠へ繰り上がるので、上位を選び直す処理が要らない。
+    // 失敗した子を外して詰めると次点が上位の枠へ繰り上がるので、上位を選び直す処理が要らない
     // 候補が尽きたら Failure（result の初期値のまま）
     bool     firstDraw = true;
     BTNodeID firstTop[kUtilityTopCount]; // 最初の抽選の上位（デバッグの記録用。詰める前の並びを残す）
@@ -1068,7 +1099,7 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
             // 詰め替えているので元の並びから探し直す
             btComp.runningNodes[nodeId] = (result == BTNodeState::Running) ? IndexOfChild(node, childId) : -1;
 
-            // 選んだ技はしばらく点数を下げる。同じ状況が続いても同じ技ばかり出さないため。
+            // 選んだ技はしばらく点数を下げる。同じ状況が続いても同じ技ばかり出さないため
             // Failure の子は「出した」に数えない（出していない技まで出にくくなるため）
             btComp.repeatTimers[childId] = kRepeatPenaltySeconds;
 
@@ -1099,6 +1130,8 @@ BTNodeState BehaviorTreeSystem::EvaluateUtilitySelector(
     return result;
 }
 
+
+
 float BehaviorTreeSystem::ScoreUtilityChild(BTNodeID                  childId,
                                             BehaviorTreeComponent    &btComp,
                                             const TransformComponent &myTrans,
@@ -1108,7 +1141,7 @@ float BehaviorTreeSystem::ScoreUtilityChild(BTNodeID                  childId,
                                             BTScoreDebug             &outDebug)
 {
     // 処理フロー:
-    // 1. 優先度 × 距離の倍率（ルールが無ければ weight）
+    // 1. 優先度 × 距離の倍率（ルールがなければ weight）
     // 2. 状況による倍率：当てはまる条件の倍率を全部掛ける
     // 3. 繰り返しの減点を掛ける
 
@@ -1122,7 +1155,7 @@ float BehaviorTreeSystem::ScoreUtilityChild(BTNodeID                  childId,
     // ---------------------------------------------------------
 
     // 判定には BT の条件ノードと同じ条件を使う。判断材料を足すときは条件を1つ足せばよく、
-    // 採点ルールの形も読み込みもエディタも直さずに済む。
+    // 採点ルールの形も読み込みもエディタも直さずに済む
     // ctx の nodeId は子のものを渡す（条件は nodeTimers を読まないので、どのノードの ID でも結果は同じ）
     outDebug.bonus      = 1.0f;
     const BTNode &child = asset.nodes[childId];
@@ -1151,7 +1184,7 @@ float BehaviorTreeSystem::ScoreUtilityChild(BTNodeID                  childId,
     // 3. 繰り返しの減点
     // ---------------------------------------------------------
 
-    // ルールの無い子（weight だけの子）にも掛ける。同じ技ばかり出さないのはスコア選択そのものの性質なので
+    // ルールのない子（weight だけの子）にも掛ける。同じ技ばかり出さないのはスコア選択そのものの性質なので
     outDebug.repeat = RepeatFactor(btComp.repeatTimers[childId]);
 
     return baseScore * outDebug.bonus * outDebug.repeat;

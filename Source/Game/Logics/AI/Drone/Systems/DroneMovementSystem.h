@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ドローンを目標座標へ移動・回転させる System（L03_PrePhysics）。
+// 概要: ドローンを目標座標へ移動・回転させる System（L03_PrePhysics）
 //
 // 責務:
 //   - currentState ごとに速度（currentVelocity）と姿勢を決める
@@ -8,8 +8,8 @@
 //   - 動き方の調整値（MotionTuning）を World に置き、調整 UI を出す
 //
 // 備考:
-//   Idle・MoveToTarget・FireCharge の動きは DroneMotion にある。
-//   ここに残すのは、どの技にも共通の Returning と、積分・床・姿勢の確定。
+//   Idle・MoveToTarget・FireCharge の動きは DroneMotion にある
+//   ここに残すのは、どの技にも共通の Returning と、積分・床・姿勢の確定
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
@@ -18,10 +18,10 @@
 #include "Engine/Time/Components/TimeState.h"
 
 class DroneMovementSystem : public CCL::ECS::IfSystem<
-                                DroneMovementSystem,
-                                CCL::ECS::Write<TransformComponent>,
-                                CCL::ECS::Write<DroneComponent>,
-                                CCL::ECS::Read<TimeStateComponent>>
+    DroneMovementSystem,
+    CCL::ECS::Write<TransformComponent>,
+    CCL::ECS::Write<DroneComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     DroneMovementSystem() : IfSystem("DroneMovementSystem") {}

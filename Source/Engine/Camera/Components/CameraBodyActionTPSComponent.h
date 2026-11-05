@@ -1,26 +1,15 @@
 #pragma once
-// ===========================================================================
-// 概要: アクション向け TPS カメラの調整パラメータと実行時状態。
-//
-// 責務:
-//   - 追従対象・距離・画角・回転制限・操作感度の調整値を持つ
-//   - カメラ衝突（地形へのめり込み回避）とルックアヘッドの調整値を持つ
-//   - ロックオン中のフレーミングと自動補正の調整値を持つ
-//   - 演出からの構図の上書き（framingOverrides）を発生源ごとに受け取る
-//   - 補間用の実行時状態を持つ（シリアライズしない）
-//
-// 備考: 挙動は CameraActionTPSSystem が計算する。ロックオン状態
-//       （lockOnTarget / isLockOnActive）はゲーム側の PlayerLockOnSystem が毎フレーム書く。
-// ===========================================================================
+// アクション向け TPS カメラの調整値と実行時の状態。挙動は CameraActionTPSSystem が計算する
+// ロックオンの状態（lockOnTarget / isLockOnActive）は、ゲーム側の PlayerLockOnSystem が毎フレーム書く
 
 #include "Engine/Serialization/Core/EntityLink.h"
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h" // 発生源ごとの上書きスロット（汎用テンプレート）
+#include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 #include <SimpleMath.h>
 
-// 演出がカメラへ出す構図の上書き。普段の構図への「足し込み量」で表す。
-//   値は足し込みなので、複数の演出が重なっても weight を掛けて足すだけで合成できる。
-//   カメラは要求の理由（ラッシュなのか必殺技なのか）を知らない。
+// 演出がカメラへ出す構図の上書き。普段の構図への「足し込み量」で表す
+//   値は足し込みなので、複数の演出が重なっても weight を掛けて足すだけで合成できる
+//   カメラは要求の理由（ラッシュなのか必殺技なのか）を知らない
 struct CameraFramingParams
 {
     float distanceOffset = 0.0f; // 距離の足し込み（m）。負で寄る、正で引く
@@ -44,31 +33,27 @@ struct CameraBodyTPSComponent
     float distance = 6.0f;  // ターゲットからの基本距離（m）
     float baseFov  = 45.0f; // 通常時の画角（度）
     float dashFov  = 70.0f; // wideFovRequest 中の画角（度）
-    // 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する。
-    // カメラがゲーム固有の PlayerDashComponent を読みに行かずに済むようにするためのフィールド。
+    // 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する
+    // カメラがゲーム固有の PlayerDashComponent を読みに行かずに済むようにするためのフィールド
     bool wideFovRequest = false;
 
     // --- 寄り（クローズアップ）要求：切り払い準備などで一時的にカメラを近づける ---
-    // true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する。
+    // true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する
     bool  closeUpRequest  = false;
     float closeUpDistance = 3.5f; // 寄り要求中の基準距離（m）。distance より近くする
 
     // --- 構図の上書き（演出からの要求） ---
-    // 演出側が自分の発生源キーでスロットを取り、毎フレーム値と weight を書く。終わったら Release。
+    // 演出側が自分の発生源キーでスロットを取り、毎フレーム値と weight を書く。終わったら Release
     // 1本の bool を共有すると、後から走る書き手が毎フレーム false を書いて他の演出を潰すため、
-    // 発生源ごとに分けて CameraActionTPSSystem が1か所で合成する。保存しない。
+    // 発生源ごとに分けて CameraActionTPSSystem が1か所で合成する。保存しない
     PostEffectOverrides<CameraFramingParams, 4> framingOverrides;
 
     float framingFollowDamping = 30.0f; // 上書き中、距離を外へ広げる速さ（地形で寄った後の戻しより速くする）
     float framingMaxLookShift  = 4.0f;  // 上書きで注視点を寄せる量の上限（m）。プレイヤーを画面内に残す
 
     // --- オービット（回転） ---
-    // ピッチの符号: CameraActionTPSSystem は
-    //     backwardDir.y = sin(pitch) / finalPos = pivot - backwardDir * distance
-    //   で配置するため、pitch が正のときカメラは pivot より「下」に来る。
-    //     ・pitch が負 → カメラが上 → 見下ろし
-    //     ・pitch が正 → カメラが下 → 見上げ
-    //   よって minPitch は見下ろし側の限界、maxPitch は見上げ側（地面へ潜る側）の限界。
+    // pitch が正だとカメラは pivot より下に来て見上げ、負なら上に来て見下ろす
+    // minPitch は見下ろし側の限界、maxPitch は見上げ側（地面へ潜る側）の限界
     float currentYaw   = 0.0f;   // 現在の水平角（度）。プレハブの値は初期ヨー角として使われる
     float currentPitch = 15.0f;  // 現在の垂直角（度）。プレハブの値は初期ピッチ角として使われる
     float minPitch     = -70.0f; // 見下ろし側の限界（度）。負に振るほど真上から覗き込む
@@ -94,10 +79,10 @@ struct CameraBodyTPSComponent
     float collisionRadius      = 0.3f;  // 衝突面から離す余白（m）。ニアクリップでのめり込みを防ぐ
     float collisionMinDistance = 0.8f;  // 衝突で寄っても、これ以上プレイヤーへ近づかない下限距離（m）
     float collisionInDamping   = 30.0f; // 障害物に当たったとき内側へ寄せる速さ（大きいほど素早い）
-    float collisionOutDamping  = 6.0f;  // 障害物が無くなったとき外側へ戻す速さ（小さいほどゆっくり戻る）
+    float collisionOutDamping  = 6.0f;  // 障害物がなくなったとき外側へ戻す速さ（小さいほどゆっくり戻る）
 
-    // カメラが寄ったとき、足元ではなく頭付近の高さへ持ち上げる強さ。
-    // 引き込み量に応じてカメラの Y を pivot（頭）の高さへ寄せる。0 = そのまま（足元に落ちる）、1 = 完全に頭の高さ。
+    // カメラが寄ったとき、足元ではなく頭付近の高さへ持ち上げる強さ
+    // 引き込み量に応じてカメラの Y を pivot（頭）の高さへ寄せる。0 = そのまま（足元に落ちる）、1 = 完全に頭の高さ
     float collisionHeadBias = 1.0f;
 
     float currentCamDistance = 0.0f; // 衝突を反映した現在のカメラ距離（m、実行時状態）
@@ -116,11 +101,11 @@ struct CameraBodyTPSComponent
     bool                           isLockOnActive = false; // ロックオン中か
 
     // ロックオン中に保つ見上げ角（度）。ヨーの自動補正と同じく、手動操作の直後
-    // （lockOnManualOverrideTimer の間）を除いてロックオン中ずっと寄せ続ける。
-    //   符号は上の「ピッチの符号」と同じ。正にするほどカメラが低くなって見上げる。
-    //   ドローンが上空から来るゲームなので、既定は正（＝低く構えて空を入れる）。
+    // （lockOnManualOverrideTimer の間）を除いてロックオン中ずっと寄せ続ける
+    //   符号は上の「ピッチの符号」と同じ。正にするほどカメラが低くなって見上げる
+    //   ドローンが上空から来るゲームなので、既定は正（＝低く構えて空を入れる）
     float lockOnPitch = 8.0f;
-    // 上の寄せの追従速度（CCL::Math::Damp の speed）。8 なら約 0.4 秒で 95% 寄る。
+    // 上の寄せの追従速度（CCL::Math::Damp の speed）。8 なら約 0.4 秒で 95% 寄る
     float lockOnPitchDamping = 8.0f;
 
     // --- フレーミング ---

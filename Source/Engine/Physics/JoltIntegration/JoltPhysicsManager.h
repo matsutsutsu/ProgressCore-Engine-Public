@@ -1,16 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: Jolt Physics の初期化・毎ステップの更新・終了処理を受け持つクラス。
+// 概要: Jolt Physics の初期化・毎ステップの更新・終了処理を受け持つクラス
 //
 // 責務:
 //   - PhysicsSystem・TempAllocator・ジョブシステム・接触リスナーの生成と破棄
 //   - 物理の時間を進める（Step）
 //   - System へ BodyInterface などの入口を公開する
 //
-// 備考: ECS の Component や System には依存しない。System からは World のリソース
-//       JoltPhysicsManager* を引き、GetBodyInterface() 経由で剛体を操作する。
-//       JPH::PhysicsSystem を直接いじらないこと。
-//       レイヤー定数とフィルタは PhysicsLayers.h にある。
+// 備考: ECS には依存しない。System は World のリソースから JoltPhysicsManager* を引き、GetBodyInterface で剛体を操作する
+//       JPH::PhysicsSystem は直接触らない。レイヤーの定数とフィルタは PhysicsLayers.h にある
 // ===========================================================================
 // Jolt の基本ヘッダ（他の Jolt ヘッダより先に）
 #include <Jolt/Jolt.h>
@@ -42,16 +40,8 @@ public:
     JoltPhysicsManager(const JoltPhysicsManager &)            = delete;
     JoltPhysicsManager &operator=(const JoltPhysicsManager &) = delete;
 
-    /**
-     * @brief 物理世界を初期化する。
-     *
-     * @param inSharedPool
-     *   ECS と共有するスレッドプール。渡すと物理ジョブもこのプールで走る
-     *   （JoltJobSystemAdapter 経由。スレッドプールが1本に統合され、
-     *     物理ジョブが Tracy にジョブ名付きゾーンとして出る）。
-     *   nullptr を渡すと Jolt 純正の JobSystemThreadPool を自前で立てる。
-     *   切り分け・比較用に残してある（Framework は共有プールを渡している）。
-     */
+    // 物理の世界を初期化する。inSharedPool を渡すと、物理のジョブも ECS と同じプールで走る（Framework は渡している）
+    // nullptr なら Jolt の JobSystemThreadPool を自前で立てる（切り分けと比べるために残してある）
     void Initialize(CCL::ECS::JobSystem *inSharedPool = nullptr);
 
     // 物理の時間を deltaTime 秒進める（1/30 秒で頭打ち）。JoltStepSystem から呼ぶ
@@ -61,7 +51,7 @@ public:
     JPH::BodyInterface &GetBodyInterface() const { return m_physicsSystem->GetBodyInterface(); }
 
     // ロックなし版。Step() 完了後で「誰も物理ボディに書き込まない」フェーズ限定で使う
-    //   （例: JoltPullSystem の読み取り専用同期）。それ以外では GetBodyInterface() を使う。
+    //   （例: JoltPullSystem の読み取り専用同期）。それ以外では GetBodyInterface() を使う
     JPH::BodyInterface &GetBodyInterfaceNoLock() const { return m_physicsSystem->GetBodyInterfaceNoLock(); }
 
     // CharacterVirtual の更新などに必要な一時アロケータを取得する

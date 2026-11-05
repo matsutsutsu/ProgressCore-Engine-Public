@@ -1,19 +1,19 @@
 #pragma once
 // ===========================================================================
-// 概要: 読込中に使う「ローカルインデックス → 新しい EntityID」の対応表 LoadContext。
+// 概要: 読込中に使う「ローカルインデックス → 新しい EntityID」の対応表 LoadContext
 //
 // 責務:
 //   - Entity を生成したときに「ローカルインデックス → 新しい EntityID」を登録する
 //   - コンポーネントの復元時に、EntityLink のローカルインデックスを EntityID に変換する
 //
 // 備考:
-//   - ローカルインデックスは 1 からの連番なので、map ではなく vector の添字で引く。
-//   - 0（参照なし）と範囲外は InvalidEntityID を返す（例外は投げない）。
+//   - ローカルインデックスは 1 からの連番なので、map ではなく vector の添字で引く
+//   - 0（参照なし）と範囲外は InvalidEntityID を返す（例外は投げない）
 // ===========================================================================
 #include <cstdint>
 #include <vector>
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "SaveContext.h" // LocalIndex の定義を共有
+#include "SaveContext.h"
 
 namespace CCL::Serialization
 {

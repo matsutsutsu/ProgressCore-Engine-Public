@@ -1,6 +1,6 @@
 ﻿#pragma once
 // ===========================================================================
-// 概要: シーンを描く HDR バッファと、ポストプロセスのエフェクトの列、最後のトーンマップをまとめるクラス。
+// 概要: シーンを描く HDR バッファと、ポストプロセスのエフェクトの列、最後のトーンマップをまとめるクラス
 //
 // 責務:
 //   - HDR バッファ2枚・SDR の出力・屈折用のシーンの色の写しを作る
@@ -8,8 +8,8 @@
 //   - EndScene で有効なエフェクトを順にかけ、トーンマップで SDR に書き出す
 //   - SceneColorGrabPass のために、その時点の HDR バッファを写す
 //
-// 備考: エフェクトをかける順は Initialize の AddEffect の順。増やすときはそこに1行足す。
-//       値は PostProcessSystem が型で引いて毎フレーム渡す。
+// 備考: エフェクトをかける順は Initialize の AddEffect の順。増やすときはそこに1行足す
+//       値は PostProcessSystem が型で引いて毎フレーム渡す
 // @code
 //    // PostProcessSystem から毎フレーム
 //    if (auto *bloom = postProcess->GetEffect<BloomEffect>())
@@ -44,13 +44,9 @@ public:
                     const float             clearColor[4],
                     ID3D11DepthStencilView *dsv);
 
-    /**
-     * @brief 有効なエフェクトを順にかけ、トーンマップして書き出す。
-     * @param targetRTV nullptr なら中で持つ SDR のバッファに書く（エディタの GameView に表示する用）
-     * @param sceneDepthSRV t4 にバインドする深度（SSAO・DoF が読む）
-     * @param sceneNormalSRV t6 にバインドする法線（SSAO が読む）
-     * @return SDR のバッファの SRV
-     */
+    // 有効なエフェクトを順にかけ、トーンマップして書き出す。返すのは SDR のバッファの SRV
+    // targetRTV が nullptr なら、中で持つ SDR のバッファ（エディタの GameView 用）に書く
+    // sceneDepthSRV は t4（SSAO と DoF が読む）、sceneNormalSRV は t6（SSAO が読む）にバインドする
     ID3D11ShaderResourceView *EndScene(ID3D11DeviceContext      *dc,
                                        ID3D11RenderTargetView   *targetRTV      = nullptr,
                                        ID3D11ShaderResourceView *sceneDepthSRV  = nullptr,
@@ -59,23 +55,15 @@ public:
     // HDR バッファを写し、写しを t5 にバインドする（SceneColorGrabPass から呼ばれる）
     void GrabSceneColor(ID3D11DeviceContext *dc);
 
-    /**
-     * @brief GrabSceneColor の写しを返す。
-     *
-     * 半透明やパーティクルの描画が t5 を上書きしている場合があるので、屈折を描くもの（TrailRenderer など）は毎回ここから取って自分でバインドする。
-     *
-     * @return 写しの SRV。所有しない。作れていなければ nullptr。
-     */
+    // GrabSceneColor の写しを返す（所有しない。作れていなければ nullptr）
+    // 半透明やパーティクルが t5 を上書きしていることがあるので、屈折を描くものは毎回ここから取ってバインドする
     ID3D11ShaderResourceView *GetSceneColorSRV() const;
 
     // ============================================================
     // エフェクト
     // ============================================================
 
-    /**
-     * @brief エフェクトを末尾に足して Initialize する。
-     * @tparam T IPostEffect の派生クラス
-     */
+    // IPostEffect の派生 T を末尾に足して Initialize する
     template <typename T, typename... Args>
     T *AddEffect(Args &&...args)
     {
@@ -88,7 +76,7 @@ public:
         return raw;
     }
 
-    // T のエフェクトを返す（最初に見つかったもの）。無ければ nullptr
+    // T のエフェクトを返す（最初に見つかったもの）。なければ nullptr
     template <typename T>
     T *GetEffect() const
     {
@@ -102,7 +90,7 @@ public:
 
     size_t GetEffectCount() const noexcept { return m_effects.size(); }
 
-    // トーンマップの設定（PostProcessSystem が毎フレーム写す）。
+    // トーンマップの設定（PostProcessSystem が毎フレーム写す）
     // 他のエフェクトの設定は、GetEffect<T>() で引いて UpdateParams で渡す
     ToneMapConfigComponent toneMapConfig;
 
@@ -112,7 +100,7 @@ private:
     UINT          m_height = 0; // px
 
     RenderTargetHandle m_hdrBuffers[2];    // 読み書きを交互に入れ替える HDR バッファ。シーンは [0] に描く
-    RenderTargetHandle m_outputSDR{};      // targetRTV が無いときの出力
+    RenderTargetHandle m_outputSDR{};      // targetRTV がないときの出力
     RenderTargetHandle m_sceneColorCopy{}; // GrabSceneColor の写し
 
     std::vector<std::unique_ptr<IPostEffect>> m_effects; // かける順

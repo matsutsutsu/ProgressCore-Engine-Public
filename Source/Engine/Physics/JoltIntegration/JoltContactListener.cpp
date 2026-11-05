@@ -1,39 +1,24 @@
 #include "JoltContactListener.h"
-#include <Jolt/Physics/Body/Body.h> // Body の完全な型（GetUserData などを呼ぶため）
-#include <utility>                  // std::swap
+#include <Jolt/Physics/Body/Body.h>
+#include <utility>
 
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"  // IsStaticWorldLayer
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h"
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
 namespace
 {
-    /**
-     * @brief 攻撃判定に関わる接触かを返す。計測対象を絞るのに使う。
-     *
-     * 地面や壁との接触まで出すとログが埋まって読めなくなるため、センサー（＝Hitbox の剣）が絡む対だけに絞る。
-     *
-     * @param a 接触の片方。
-     * @param b 接触のもう片方。
-     * @return どちらかがセンサーなら true。
-     */
+    // 攻撃判定に関わる接触か（どちらかがセンサー）。計測ログを絞るのに使う
+    // 地面や壁との接触まで出すと、ログが埋まって読めない
     bool IsAttackContact(const JPH::Body &a, const JPH::Body &b)
     {
         return a.IsSensor() || b.IsSensor();
     }
 
-    /**
-     * @brief 背景（壁・床・見えない壁）が絡む接触かを返す。
-     *
-     * OnContactPersisted は接触が続く限り毎フレーム呼ばれるため、地面に載っている剛体があるだけでイベントバッファが背景との接触で埋まる。
-     * 購読側（HitboxCollisionSystem / PlayerJustEvadeSystem）は全イベントを自前の vector へコピーしてから絞り込むので、コストは二重に乗る。
-     *
-     * 背景との接触を必要とする購読者はいない（攻撃レイヤーは pair フィルタでそもそも壁と当たらない）ので、ここで捨ててよい。
-     * キャラ側の JoltCharacterContactListener も同じ条件で捨てている。
-     *
-     * @param a 接触の片方。
-     * @param b 接触のもう片方。
-     * @return 背景が絡めば true。
-     */
+
+
+    // 背景（壁・床・見えない壁）が絡む接触か。絡む接触は捨てる
+    // OnContactPersisted は接触が続く限り毎フレーム来るので、地面に載る剛体だけでイベントのバッファが埋まる
+    // 背景との接触を使う購読者はいない（攻撃レイヤーはそもそも壁と当たらない）
     bool IsStaticWorldContact(const JPH::Body &a, const JPH::Body &b)
     {
         return PhysicsLayers::IsStaticWorldLayer(a.GetObjectLayer()) || PhysicsLayers::IsStaticWorldLayer(b.GetObjectLayer());
@@ -83,6 +68,8 @@ void JoltContactListener::EmitContactEvent(const JPH::Body &inBody1, const JPH::
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // Jolt からの通知
 // ---------------------------------------------------------------------------
@@ -94,26 +81,29 @@ void JoltContactListener::OnContactAdded(const JPH::Body &inBody1, const JPH::Bo
     EmitContactEvent(inBody1, inBody2, inManifold, "Add");
 }
 
+
+
 void JoltContactListener::OnContactPersisted(const JPH::Body &inBody1, const JPH::Body &inBody2,
                                              const JPH::ContactManifold &inManifold,
                                              JPH::ContactSettings & /*ioSettings*/)
 {
-    // Added と全く同じ扱いにする。Jolt は同じボディ対の2回目以降を Persisted に回すため
-    // (ContactListener.h の注記)、ここを実装しないと「重なり続けている間」の接触が
-    // 全て消える。攻撃判定の窓が開くより先に剣が相手へ入っていると Added は
-    // isActive=false のときに消費済みで、窓の中には Persisted しか残らず不発になる。
-    // 多段ヒットは HitboxCollisionSystem の AlreadyHit が防ぐので毎フレーム流して良い。
+    // Added と同じに扱う。判定の区間が開く前に剣が入っていると、区間の中には Persisted しか来ない
+    // 多段ヒットは HitboxCollisionSystem の AlreadyHit が防ぐので、毎フレーム流してよい
     EmitContactEvent(inBody1, inBody2, inManifold, "Persist");
 }
 
+
+
 void JoltContactListener::OnContactRemoved(const JPH::SubShapeIDPair &inSubShapePair)
 {
-    // Body へ触れないので BodyID の index だけ。Add/Persist のログと突き合わせる。
+    // Body へ触れないので BodyID の index だけ。Add/Persist のログと突き合わせる
     HITDIAG_LOG(LogCategory::Physics,
                 "[HitDiag/Contact] Body Remove  body %u/%u",
                 inSubShapePair.GetBody1ID().GetIndex(),
                 inSubShapePair.GetBody2ID().GetIndex());
 }
+
+
 
 // ---------------------------------------------------------------------------
 // イベントの受け渡し
@@ -125,9 +115,11 @@ void JoltContactListener::PushEvent(const JoltCollisionEvent &ev)
     m_events.push_back(ev);
 }
 
+
+
 std::vector<JoltCollisionEvent> JoltContactListener::GetAndClearEvents()
 {
-    // コピーではなく swap で受け渡す。ロックを持つのは中身の入れ替えの間だけで済み、要素のコピーも起きない。
+    // コピーではなく swap で受け渡す。ロックを持つのは中身の入れ替えの間だけで済み、要素のコピーも起きない
     std::vector<JoltCollisionEvent> out;
     {
         std::lock_guard<std::mutex> lock(m_mutex);

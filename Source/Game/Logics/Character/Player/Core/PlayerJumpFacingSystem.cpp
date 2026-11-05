@@ -21,7 +21,6 @@ static constexpr float kAttackTurnSpeed = 18.0f;
 
 
 
-// 生きているプレイヤーの、ジャンプと向きを1ステップ分進める
 void PlayerJumpFacingSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID                            id,
@@ -57,7 +56,6 @@ void PlayerJumpFacingSystem::Update(float rawDt)
 
 
 
-// 接地の状態を更新し、跳べるなら物理へジャンプを依頼する
 void PlayerJumpFacingSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jumpPressed, CharacterMovementComponent &movement, PlayerComponent &player, AnimParametersComponent &animParams, const DirectX::XMFLOAT3 &worldPos)
 {
     // --- 接地 ---
@@ -97,7 +95,7 @@ void PlayerJumpFacingSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jum
         player.isAirborne        = true;
 
         // 2段目だけ、ここでアニメのトリガーを引く
-        // 1段目は CharacterAnimSyncSystem が離陸の速度から OnJump を引く。
+        // 1段目は CharacterAnimSyncSystem が離陸の速度から OnJump を引く
         // 空中の2段目は、物理の状態からは見分けられない
         if (canDoubleJump) animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
 
@@ -109,7 +107,6 @@ void PlayerJumpFacingSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jum
 
 
 
-// 向きと旋回時の傾きを進め、傾きを含む向きを Transform に、yaw だけを Jolt に書く
 void PlayerJumpFacingSystem::UpdateBankingAndRotation(float dt, const CharacterMovementComponent &movement, float walkSpeed, PlayerComponent &player, TransformComponent &trans, const JoltCharacterHandleComponent &joltHandle)
 {
     // --- 向きと傾き ---

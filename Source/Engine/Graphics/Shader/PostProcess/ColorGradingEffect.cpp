@@ -21,9 +21,13 @@ void ColorGradingEffect::Initialize(ID3D11Device *device, UINT /*width*/, UINT /
     device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 }
 
+
+
 void ColorGradingEffect::Resize(ID3D11Device * /*device*/, UINT /*width*/, UINT /*height*/)
 {
 }
+
+
 
 void ColorGradingEffect::Process(ID3D11DeviceContext      *dc,
                                  ID3D11ShaderResourceView *inputSRV,

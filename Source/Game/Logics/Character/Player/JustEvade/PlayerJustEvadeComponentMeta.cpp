@@ -1,5 +1,3 @@
-// PlayerJustEvadeComponent のメタ定義。
-
 #include "PlayerJustEvadeComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

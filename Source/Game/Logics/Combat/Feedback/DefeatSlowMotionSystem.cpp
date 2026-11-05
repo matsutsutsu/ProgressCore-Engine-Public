@@ -5,7 +5,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Time/TimeService.h"
-#include "Engine/Cinematic/CinematicEvents.h" // 撃破ムービーの再生要求
+#include "Engine/Cinematic/CinematicEvents.h"
 
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
@@ -68,8 +68,8 @@ void DefeatSlowMotionSystem::Update(float dt)
 
     // --- 撃破ムービー ---
 
-    // ボスを倒したスローは通常のカメラで見せ、スローが終わってから撃破ムービーを頼む。
-    // ムービーの開始待ちはカメラを奪って最初の絵で止めるので、スローを見せる間には使えない。
+    // ボスを倒したスローは通常のカメラで見せ、スローが終わってから撃破ムービーを頼む
+    // ムービーの開始待ちはカメラを奪って最初の絵で止めるので、スローを見せる間には使えない
     if (bossDefeated && !m_defeatMovieArmed)
     {
         m_defeatMovieArmed = true;
@@ -83,6 +83,8 @@ void DefeatSlowMotionSystem::Update(float dt)
             m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kDefeatCinematic});
     }
 }
+
+
 
 // L06（ダメージの処理）で倒れたかが決まった後に見る
 REGISTER_LOGIC_SYSTEM(DefeatSlowMotionSystem, Priority::LogicStage::L07_Cleanup);

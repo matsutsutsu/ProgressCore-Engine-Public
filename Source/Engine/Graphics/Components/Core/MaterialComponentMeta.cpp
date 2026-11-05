@@ -1,5 +1,3 @@
-// MaterialComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
@@ -11,7 +9,7 @@
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT_CB_SCENE
+#include "Engine/Graphics/Shader/ShaderResources.h"
 #include <vector>
 
 #ifdef ENABLE_EDITOR
@@ -21,11 +19,8 @@
 
 // =====================================================================
 // シリアライズ
-//   ハンドル（overrideMaterials）は実行時だけ有効なので保存できない。
-//   代わりにスロットごとの .mat.json パス（overridePaths）を保存し、
-//   ロード時にパスから LoadMaterialAsset で復元する。
-//   ComponentSerializer<T> は REGISTER_COMPONENT より前に定義する
-//   （ComponentRegistry の Register<T> を実体化するときに見えている必要がある）。
+//   ハンドル（overrideMaterials）は実行時だけ有効なので、スロットごとの .mat.json のパス（overridePaths）を保存して読み直す
+//   ComponentSerializer<T> は、Register<T> を実体化する REGISTER_COMPONENT より前に定義する
 // =====================================================================
 namespace ComponentMetaJson
 {
@@ -34,7 +29,7 @@ namespace ComponentMetaJson
     {
         static void Save(json &j, const MaterialComponent &c, CCL::Serialization::SaveContext *)
         {
-            // スロット数は overrideMaterials 基準。パスは並走列から取る（無ければ空）。
+            // スロット数は overrideMaterials 基準。パスは並走列から取る（なければ空）
             json paths = json::array();
             for (size_t i = 0; i < c.overrideMaterials.size(); ++i)
             {
@@ -48,8 +43,8 @@ namespace ComponentMetaJson
 
         static void Load(const json &j, MaterialComponent &c, CCL::Serialization::LoadContext *)
         {
-            // 同じコンポーネントへ読み直すことがあるので、古いハンドルを先に解放する。
-            // 解放しないとマテリアルプールの枠が漏れる（「既定に戻す」ボタンと同じ後始末）。
+            // 同じコンポーネントへ読み直すことがあるので、古いハンドルを先に解放する
+            // 解放しないとマテリアルプールの枠が漏れる（「既定に戻す」ボタンと同じ後始末）
             for (auto handle : c.overrideMaterials)
                 ResourceManager::Instance().UnloadMaterial(handle);
 
@@ -66,7 +61,7 @@ namespace ComponentMetaJson
                     c.overridePaths[i] = path;
                     if (!path.empty())
                     {
-                        // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）。
+                        // パスが指す .mat.json を解決（内部でテクスチャも遅延ロード）
                         MaterialHandle h       = ResourceManager::Instance().LoadMaterialAsset(path);
                         c.overrideMaterials[i] = h; // 失敗時は無効ハンドル＝共有マテリアルへフォールバック
                     }
@@ -113,7 +108,7 @@ struct ComponentMeta<MaterialComponent>
     }
 
     // 描画時に Shader が自動で書く変数か。マテリアルの値は上書きされるので、編集欄に出さない
-    //   useAlbedoMap など: テクスチャの有無から決まる
+    //   useAlbedoMap など: テクスチャの有なから決まる
     //   alphaCutoff      : alphaMode が Mask のときだけ送る（スロットの「アルファ」欄で編集する）
     static bool IsAutoParam(const std::string &name)
     {
@@ -255,7 +250,7 @@ struct ComponentMeta<MaterialComponent>
                     {
                         // ダイアログが返すのは絶対パス。この文字列はそのままシーン/プレハブの
                         // JSON に保存されるので、相対パスに直してから持つ。絶対パスのままだと
-                        // 別の PC で読み込みに失敗し、エラーも出ずに共有マテリアルで描かれる。
+                        // 別の PC で読み込みに失敗し、エラーも出ずに共有マテリアルで描かれる
                         const std::string rel = FileDialog::ConvertToRelativePath(*path);
                         if (rm.SaveMaterialAsset(matHandle, rel))
                         {
@@ -270,7 +265,7 @@ struct ComponentMeta<MaterialComponent>
                     if (auto path = FileDialog::OpenPreset("Material", "マテリアルを選択", Graphics::Instance().GetWindowHandle()))
                     {
                         // 保存用と読み込み用で同じ文字列を使う。片方だけ絶対パスにすると、
-                        // 同じ .mat.json が絶対・相対の2つのキーでキャッシュに載る。
+                        // 同じ .mat.json が絶対・相対の2つのキーでキャッシュに載る
                         const std::string rel       = FileDialog::ConvertToRelativePath(*path);
                         MaterialHandle    newHandle = rm.LoadMaterialAsset(rel);
                         if (newHandle.IsValid())
@@ -318,7 +313,7 @@ struct ComponentMeta<MaterialComponent>
                             if (auto path = FileDialog::OpenPreset("Texture", "Select Texture", Graphics::Instance().GetWindowHandle()))
                             {
                                 // この文字列は .mat.json の assetPath として保存され、次の読み込みで
-                                // LoadTexture に渡る。相対パスにする理由は .mat.json の保存と同じ。
+                                // LoadTexture に渡る。相対パスにする理由は .mat.json の保存と同じ
                                 const std::string s = FileDialog::ConvertToRelativePath(*path);
                                 matPtr->SetTexture(slotHash, rm.LoadTexture(s.c_str()), s);
                                 changed = true;
@@ -341,9 +336,9 @@ struct ComponentMeta<MaterialComponent>
                 }
 
                 // --- 詳細パラメータ（シェーダーのリフレクションから一覧を作る）---
-                //   出すのはマテリアルの定数バッファ（b0〜b7）の色（float4）と数値（float）だけ。
-                //   b8 以降はカメラ・ライト・影・フォグなどフレームで共通の値で、マテリアルでは変えられない。
-                //   マテリアルに値が無い変数は GPU に 0 が送られるので、0 と表示し、触ったらマテリアルに書く
+                //   出すのはマテリアルの定数バッファ（b0〜b7）の色（float4）と数値（float）だけ
+                //   b8 以降はカメラ・ライト・影・フォグなどフレームで共通の値で、マテリアルでは変えられない
+                //   マテリアルに値がない変数は GPU に 0 が送られるので、0 と表示し、触ったらマテリアルに書く
                 if (ImGui::TreeNode("詳細パラメータ"))
                 {
                     Shader *shader = ShaderRegistry::Instance().GetShader(matPtr->shaderHash, Graphics::Instance().GetDevice());

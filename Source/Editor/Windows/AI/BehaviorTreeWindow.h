@@ -1,27 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: ビヘイビアツリーをノードグラフで組み立てるエディタウィンドウ。
+// 概要: ビヘイビアツリーをノードグラフで組み立てるエディタウィンドウ
 //
 // 責務:
 //   - 人が編集しやすい「ノードとリンクの網目」を持ち、編集・Undo・コピー＆貼り付けを行う
 //   - 保存時にランタイム用のフラット配列（Bake）へ変換する
 //   - 実行中の BT の状態をノードに重ねて表示する
 //
-// 備考:
-//   ランタイムの BT は配列しか知らないので、エディタ側の構造は自由に変えてよい。
-//
-//   守らないと壊れる規約:
-//     - 子の実行順は「左が先。X が同じなら上が先」。RebuildHierarchy が1か所で決め、Bake・Priority 表示・
-//       自動整列はその並びを使う。座標を動かす処理は、兄弟の左右関係を崩さないこと。
-//     - 保存項目は NodeToJson / NodeFromJson の2か所だけに書く（保存・読込・Undo が全部ここを通る）。
-//
-//   実装は役割ごとに分けてある（同じクラスのメンバ関数を別 .cpp で定義）:
-//   BehaviorTreeWindow.cpp            ウィンドウ枠・ツールバー・編集操作・Undo・表示名
-//   BehaviorTreeWindow_Graph.cpp      保存・読込・Bake・親子関係（描画なし）
-//   BehaviorTreeWindow_Layout.cpp     自動整列・コメント枠の配置
-//   BehaviorTreeWindow_Canvas.cpp     キャンバスの描画と入力
-//   BehaviorTreeWindow_Inspector.cpp  右ペイン：選択ノードの編集
-//   BehaviorTreeWindow_Outliner.cpp   左ペイン：木の一覧
+// 備考: ランタイムの BT は配列しか知らないので、エディタ側の構造は自由に変えてよい
+//       子の実行順は「左が先、X が同じなら上が先」。RebuildHierarchy が決め、Bake・優先度の表示・自動整列が使う
+//       座標を動かす処理は、兄弟の左右関係を崩さない。保存項目は NodeToJson / NodeFromJson の2か所だけに書く
+//       実装は BehaviorTreeWindow.cpp（枠・編集・Undo）と _Graph（保存・Bake）、_Layout（整列）、
+//       _Canvas（描画と入力）、_Inspector（右ペイン）、_Outliner（左ペイン）に分けてある
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
@@ -162,10 +152,10 @@ private:
     // 新しいIDを発行する（ノード・ピン・リンクで共通の連番）
     uint32_t GetNextId() { return ++m_idCounter; }
 
-    // IDからノードを引く。無ければ nullptr
+    // IDからノードを引く。なければ nullptr
     EditorBTNode *FindNode(uint32_t nodeId);
 
-    // エディタで選択中のエンティティが持つ BT。実行中の状態表示に使う。無ければ nullptr
+    // エディタで選択中のエンティティが持つ BT。実行中の状態表示に使う。なければ nullptr
     static const BehaviorTreeComponent *FindActiveAI(EditorContext &context);
 
     // 行動IDの表示名（未登録なら ID 入りの代わりの文字列）
@@ -201,10 +191,10 @@ private:
     // param を「長さ 1.5秒」の形にする。label は登録表の「長さ [秒]」形式（[単位] は省略可）
     static std::string FormatParam(const char *label, float value);
 
-    // 実行中の評価結果（実行中でない・対応が無いなら None）
+    // 実行中の評価結果（実行中でない・対応がないなら None）
     static BTDebugState DebugStateOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI);
 
-    // 実行中の残り時間 [秒]。-1 はランタイム側で未開始。実行中の BT が無ければ nullopt
+    // 実行中の残り時間 [秒]。-1 はランタイム側で未開始。実行中の BT がなければ nullopt
     static std::optional<float> DebugTimerOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI);
 
     // ============================================================
@@ -293,7 +283,7 @@ private:
     // （まとまりのノードは kCompositeMinWidth〜kCompositeMaxWidth）
     float TreeNodeWidthOf(const EditorBTNode &node, const std::string &title) const;
 
-    // まとまりのノード（子を並べて実行順を決める Selector / Sequence など）か。
+    // まとまりのノード（子を並べて実行順を決める Selector / Sequence など）か
     // 見出しを「種類」と「名前」の2行にし、幅と枠も変えて、行動・条件と見分けられるようにする
     static bool IsCompositeType(EditorBTNodeType type);
 
@@ -310,7 +300,7 @@ private:
     // 自動追従：実行中のノード（Action 優先）へカメラを寄せる
     void FollowRunningNode(const BehaviorTreeComponent *activeAI);
 
-    // ピンのドラッグでリンクを作る。何も無い所で離したら、ノード追加メニューを予約する
+    // ピンのドラッグでリンクを作る。何もない所で離したら、ノード追加メニューを予約する
     void HandleLinkCreation();
 
     // 線を伸ばした先に作ったノードを、伸ばし元のピンへ繋ぐ（出力から伸ばしたなら子、入力からなら親）
@@ -397,7 +387,7 @@ private:
     int    m_framesSinceOpen   = 0;             // 全体合わせをノードのサイズ確定まで待つためのカウンタ
     ImVec2 m_newNodeSpawnPos   = {0.0f, 0.0f};  // 右クリックした画面座標（新規ノードの置き場所）
 
-    uint32_t m_newNodeLinkPin        = 0;             // 線を何も無い所で離して開いたメニューの、伸ばし元のピン。0 なら右クリック／Space で開いた
+    uint32_t m_newNodeLinkPin        = 0;             // 線を何もない所で離して開いたメニューの、伸ばし元のピン。0 なら右クリック／Space で開いた
     bool     m_openCreateMenuForLink = false;         // 次の HandleContextMenu でメニューを開く（線を離したフレームに立つ）
     ImVec2   m_canvasScreenMin       = {0.0f, 0.0f};  // キャンバスの左上（画面座標）。毎フレーム描く前に取る
     ImVec2   m_canvasScreenSize      = {0.0f, 0.0f};  // キャンバスの大きさ（画面上のピクセル）

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: XInput のゲームパッド1台分の入力状態と振動を扱うクラス。
+// 概要: XInput のゲームパッド1台分の入力状態と振動を扱うクラス
 //
 // 責務:
 //   - ボタン（押下中・押した瞬間・離した瞬間）とスティック・トリガーの読み取り
@@ -84,13 +84,8 @@ public:
     float GetTriggerL() const { return triggerL; }
     float GetTriggerR() const { return triggerR; }
 
-    /**
-     * @brief 振動を始める。
-     * @param left 左モーター（低周波）の強さ 0..1
-     * @param right 右モーター（高周波）の強さ 0..1
-     * @param duration 振動を続ける時間（秒）。経過すると Update が止める
-     * @note 振動中に呼ばれた場合、強さか時間のどれかが今の値以上なら上書きする。
-     */
+    // 振動を始める。強さは左（低周波）・右（高周波）とも 0〜1、duration（秒）が過ぎると Update が止める
+    // 振動中なら、強さか時間のどれかが今以上のときだけ上書きする
     void SetVibration(float left, float right, float duration);
 
 private:
@@ -113,10 +108,6 @@ private:
     // XInput へモーターの強さを送る
     void ApplyVibrationHardware(float left, float right);
 
-    /**
-     * @brief 左スティックの傾きを、向きのボタン（BTN_LSTICK_*）に直す。
-     * @param prev 前のフレームのボタン状態。押している向きは、戻し切るまで押したままにする。
-     * @return 押している向きのビット集合（1つだけ）。
-     */
+    // 左スティックの傾きを、向きのボタン（BTN_LSTICK_*）1つに直す。押している向きは戻し切るまで押したままにする
     GamePadButton StickToButtons(GamePadButton prev) const;
 };

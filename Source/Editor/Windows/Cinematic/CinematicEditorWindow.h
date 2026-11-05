@@ -1,23 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: ムービーの台本（Assets/Cinematics/*.json）を時間軸で見て編集するウィンドウ。
+// 概要: ムービーの台本（Assets/Cinematics/*.json）を時間軸で見て編集するウィンドウ
 //
 // 責務:
-//   - 台本を新しく作る・開く・保存する。保存したらゲーム側に読み直させる
-//   - 保存した台本を、頭から・タイムラインの再生位置から、ゲームと同じ再生要求で流させる
-//   - ショットと4種類のトラックを ImSequencer の帯で並べ、ドラッグで時刻と長さを変える
-//   - 項目を足す・消す、選んだ項目の数値を直す（何も選んでいなければ台本の設定）
-//   - 再生位置の絵をゲーム画面に出す（プレビュー。カメラと被写界深度だけで、トラックは出さない）。
-//     出し方は「出さない / 一時停止中だけ / 止めずに出す」。止めずに出す間は、ムービー中として操作と敵の思考が止まる
-//   - 再生位置を実時間で進めてプレビューを流す（エディタ内の再生）
-//   - ゲームでこの台本を流している間、再生位置をムービーに付いていかせる
+//   - 台本を作る・開く・保存し、保存したらゲーム側に読み直させる。ゲームと同じ再生要求で流させる
+//   - ショットと4種類のトラックを ImSequencer の帯で並べ、ドラッグで時刻と長さを変え、選んだ項目の数値を直す
+//   - 再生位置の絵をゲーム画面に出す（カメラと被写界深度だけ）。エディタ内で再生し、ゲームの再生にも付いていく
 //   - 今の画面のカメラ位置を、ショットの開始・終了へ取り込む
 //
-// 備考:
-//   台本の意味は扱わない（読み書きは CinematicScriptIO、帯の並べ方は CinematicTimelineSequence、
-//   絵を作るのは CinematicCameraSystem）。
-//   編集はウィンドウが持つ写し（m_script）に対して行う。再生中のムービーが持つ台本は触らない。
-//   Undo は持たない。保存する前なら「開き直す」で元に戻せる。
+// 備考: 台本の意味は扱わない（読み書きは CinematicScriptIO、帯は CinematicTimelineSequence、絵は CinematicCameraSystem）
+//       編集はウィンドウが持つ写し（m_script）に対して行い、再生中のムービーの台本は触らない
+//       Undo は持たない。保存する前なら「開き直す」で元に戻せる
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Engine/Cinematic/CinematicScript.h"
@@ -31,21 +24,17 @@ class CinematicTimelineSequence;
 class CinematicEditorWindow : public EditorWindow
 {
 public:
-    // 既定は非表示。Window メニューから開く。
+    // 既定は非表示。Window メニューから開く
     CinematicEditorWindow();
 
-    // CinematicTimelineSequence の定義はこのヘッダに無いので、破棄も .cpp で行う。
+    // CinematicTimelineSequence の定義はこのヘッダにないので、破棄も .cpp で行う
     ~CinematicEditorWindow() override;
 
 protected:
     void DrawContents(EditorContext &context) override;
 
-    /**
-     * @brief 閉じられた・畳まれたフレームでも必ず呼ばれる。プレビューを出す・止めるのに使う。
-     *
-     * プレビュー中はムービー用カメラが画面を掌握するので、ウィンドウを閉じた瞬間に止めないと、
-     * ゲーム画面がプレビューの絵のまま戻らなくなる。
-     */
+    // 閉じた・畳んだフレームでも必ず呼ばれる。プレビューを出す・止めるのに使う
+    // プレビュー中はムービー用カメラが画面を握るので、閉じた瞬間に止めないと画面がプレビューのまま戻らない
     void OnFrameBegin(EditorContext &context) override;
 
 private:
@@ -94,30 +83,16 @@ private:
     bool DrawSignalFields(CinematicSignal &signal);
     bool DrawAnimationFields(EditorContext &context, CinematicAnimation &anim);
 
-    /**
-     * @brief 基準にする Entity の名前の欄。シーンに居なければ、その場で知らせる。
-     * @param context    エディタの文脈。
-     * @param subject    名前。
-     * @param emptyMeans 空のときの意味（例: "ワールドの原点"）。nullptr なら空は許さない。
-     * @return 値を変えたら true。
-     */
+    // 基準にする Entity の名前の欄。シーンにいなければその場で知らせる。値を変えたら true
+    // emptyMeans は空のときの意味（例: "ワールドの原点"）。nullptr なら空は許さない
     bool DrawSubjectField(EditorContext &context, std::string &subject, const char *emptyMeans);
 
-    /**
-     * @brief ショットの開始か終了での、ピントの距離（カメラから注視点まで）を求める。再生側と同じ決め方。
-     * @param shot  ショット。
-     * @param toEnd true なら終了、false なら開始。
-     * @return ピントの距離（m）。
-     */
+    // ショットの開始（toEnd が false）か終了での、ピントの距離（m）を求める。再生側と同じ決め方
     static float FocusDistance(const CameraShot &shot, bool toEnd);
 
     // ---- 再生位置の進行 ----
 
-    /**
-     * @brief ゲームでこの台本を流していれば、再生位置をムービーの再生位置に合わせる。
-     * @param context エディタの文脈。
-     * @return ゲームでこの台本を流している最中なら true。
-     */
+    // ゲームでこの台本を流していれば、再生位置をムービーに合わせて true を返す
     bool FollowGamePlayback(EditorContext &context);
 
     // エディタ内の再生で、再生位置を実時間で進める。終わりに達したら、ループなら頭へ戻り、そうでなければ止める
@@ -125,45 +100,26 @@ private:
 
     // ---- 操作 ----
 
-    /**
-     * @brief 今の画面のカメラ位置・向き・画角を、ショットの開始か終了へ取り込む。
-     *
-     * 基準の今の位置と向きから見たずれに直して書く。Truck はカメラ位置、Orbit は角度・半径・高さ。
-     * 注視点は、視線の上で基準に一番近い点にする。
-     *
-     * @param context エディタの文脈。
-     * @param shot    書き込む先のショット。
-     * @param toEnd   true なら終了の値、false なら開始の値へ書く。
-     * @return 取り込めたら true。基準が見つからない・画面のカメラが無いときは false（理由は m_status）。
-     */
+    // 今の画面のカメラ位置・向き・画角を、ショットの開始か終了（toEnd）へ取り込む
+    // 基準の今の位置と向きからのずれに直して書く。注視点は、視線の上で基準に一番近い点にする
+    // 基準が見つからない・画面のカメラがないときは false（理由は m_status）
     bool CaptureView(EditorContext &context, CameraShot &shot, bool toEnd);
 
-    /**
-     * @brief ムービー用カメラへ、見せる台本と時刻を渡す（または止める）。
-     * @param context エディタの文脈。
-     * @param active  見せるなら true。
-     */
+    // ムービー用カメラへ、見せる台本と時刻を渡す。active が false なら止める
     void PushPreview(EditorContext &context, bool active);
 
-    /**
-     * @brief 台本を読んで、編集する写しにする。
-     * @param path      読む台本のパス。
-     * @param keepView  再生位置と選んでいる行を残すか（保存の直後に読み直すとき）。
-     * @note 読めなかったときは、今開いている台本をそのまま残す（理由は m_status とログに出る）。
-     */
+    // 台本を読んで、編集する写しにする。keepView なら再生位置と選んでいる行を残す（保存直後の読み直し用）
+    // 読めなかったときは、今開いている台本をそのまま残す（理由は m_status とログ）
     void Open(const std::string &path, bool keepView);
 
-    // 何も無い台本にする。開いていた台本の、保存していない変更は捨てる。
+    // 何もない台本にする。開いていた台本の、保存していない変更は捨てる
     void NewScript();
 
-    /**
-     * @brief 今のパスへ保存する。保存できたら読み直し、ゲーム側にも読み直させる。
-     * @return 保存できたら true。書けない・決まりに合わないときは false（理由は m_status）。
-     * @note まだ一度も保存していない（パスが無い）台本は、保存先を選ばせる（SaveAs）。
-     */
+    // 今のパスへ保存し、保存できたら読み直してゲーム側にも読み直させる。失敗の理由は m_status
+    // まだパスがない台本は、保存先を選ばせる（SaveAs）
     bool Save(EditorContext &context);
 
-    // 保存先を選んで保存する。新しい台本の初めての保存と、別名で残すときに使う。
+    // 保存先を選んで保存する。新しい台本の初めての保存と、別名で残すときに使う
     void SaveAs(EditorContext &context);
 
     // ---- 状態 ----

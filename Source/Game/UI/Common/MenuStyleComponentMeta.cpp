@@ -1,4 +1,3 @@
-// MenuStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/Common/MenuStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

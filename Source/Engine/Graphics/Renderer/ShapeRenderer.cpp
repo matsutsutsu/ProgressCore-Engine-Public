@@ -20,11 +20,16 @@ bool ShapeRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
     if (!m_cullingEnabled) return true;
     return m_frustum.Intersects(sphere);
 }
+
+
+
 bool ShapeRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
 {
     if (!m_cullingEnabled) return true;
     return m_frustum.Intersects(box);
 }
+
+
 
 ShapeRenderer::ShapeRenderer(ID3D11Device *device)
 {
@@ -89,6 +94,8 @@ ShapeRenderer::ShapeRenderer(ID3D11Device *device)
     _ASSERT_EXPR(SUCCEEDED(hr), L"Failed to create debug depth stencil state");
 }
 
+
+
 ShapeRenderer::ShapeDrawList &ShapeRenderer::GetDrawList()
 {
     // thread_local の変数はスレッドごとに別にできる。スレッドにはポインタと持ち主の番号だけを持たせ、
@@ -117,6 +124,8 @@ ShapeRenderer::ShapeDrawList &ShapeRenderer::GetDrawList()
     return *myLocalList;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 図形の登録
 // ---------------------------------------------------------------------------
@@ -143,6 +152,8 @@ void ShapeRenderer::DrawBox(const DirectX::XMFLOAT3 &position, const DirectX::XM
     GetDrawList().boxes.push_back(data);
 }
 
+
+
 void ShapeRenderer::DrawSphere(const DirectX::XMFLOAT3 &position, float radius, const DirectX::XMFLOAT4 &color)
 {
     if (m_cullingEnabled)
@@ -161,6 +172,8 @@ void ShapeRenderer::DrawSphere(const DirectX::XMFLOAT3 &position, float radius, 
     data.customParams = color;
     GetDrawList().spheres.push_back(data);
 }
+
+
 
 void ShapeRenderer::DrawCapsule(const DirectX::XMFLOAT4X4 &transform, float radius, float height, const DirectX::XMFLOAT4 &color)
 {
@@ -234,6 +247,8 @@ void ShapeRenderer::DrawCapsule(const DirectX::XMFLOAT4X4 &transform, float radi
     }
 }
 
+
+
 void ShapeRenderer::DrawWireframeCylinder(const DirectX::XMFLOAT3 &position, float radius, float height, const DirectX::XMFLOAT4 &color)
 {
     if (m_cullingEnabled)
@@ -260,10 +275,12 @@ void ShapeRenderer::DrawWireframeCylinder(const DirectX::XMFLOAT3 &position, flo
     DrawLineNoCull({position.x, topPos.y, position.z + radius}, {position.x, btmPos.y, position.z + radius}, color);
 }
 
+
+
 void ShapeRenderer::DrawWireframeCircle(const DirectX::XMFLOAT3 &center, float radius, const DirectX::XMFLOAT4 &color, const DirectX::XMFLOAT4 &rotation)
 {
     // 円は「1つの形」として一度だけ判定する。線分ごとに判定すると、視錐台が1フレーム
-    // 古いぶんカメラを回したときに円が直線的に切れて見える（DrawLineNoCull の説明を参照）。
+    // 古いぶんカメラを回したときに円が直線的に切れて見える（DrawLineNoCull の説明を参照）
     if (m_cullingEnabled)
     {
         BoundingSphere bounds;
@@ -295,6 +312,8 @@ void ShapeRenderer::DrawWireframeCircle(const DirectX::XMFLOAT3 &center, float r
         P_prev = P_curr;
     }
 }
+
+
 
 void ShapeRenderer::DrawArrow(const DirectX::XMFLOAT3 &start, const DirectX::XMFLOAT3 &end, float headSize, const DirectX::XMFLOAT4 &color)
 {
@@ -336,6 +355,8 @@ void ShapeRenderer::DrawArrow(const DirectX::XMFLOAT3 &start, const DirectX::XMF
     DrawLine(p4, p1, color);
 }
 
+
+
 void ShapeRenderer::DrawBone(const DirectX::XMFLOAT4X4 &transform, float length, const DirectX::XMFLOAT4 &color)
 {
     DirectX::XMMATRIX W = DirectX::XMLoadFloat4x4(&transform);
@@ -348,6 +369,8 @@ void ShapeRenderer::DrawBone(const DirectX::XMFLOAT4X4 &transform, float length,
     data.customParams = color;
     GetDrawList().bones.push_back(data);
 }
+
+
 
 void ShapeRenderer::DrawLine(const DirectX::XMFLOAT3 &p1, const DirectX::XMFLOAT3 &p2, const DirectX::XMFLOAT4 &color)
 {
@@ -365,6 +388,8 @@ void ShapeRenderer::DrawLine(const DirectX::XMFLOAT3 &p1, const DirectX::XMFLOAT
 
     DrawLineNoCull(p1, p2, color);
 }
+
+
 
 void ShapeRenderer::DrawLineNoCull(const DirectX::XMFLOAT3 &p1, const DirectX::XMFLOAT3 &p2, const DirectX::XMFLOAT4 &color)
 {
@@ -396,12 +421,16 @@ void ShapeRenderer::DrawLineNoCull(const DirectX::XMFLOAT3 &p1, const DirectX::X
     GetDrawList().lines.push_back(data);
 }
 
+
+
 void ShapeRenderer::DrawTriangle(const DirectX::XMFLOAT3 &v1, const DirectX::XMFLOAT3 &v2, const DirectX::XMFLOAT3 &v3, const DirectX::XMFLOAT4 &color)
 {
     DrawLine(v1, v2, color);
     DrawLine(v2, v3, color);
     DrawLine(v3, v1, color);
 }
+
+
 
 void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3 &v0, const DirectX::XMFLOAT3 &v1, const DirectX::XMFLOAT3 &v2, const DirectX::XMFLOAT4 &color)
 {
@@ -432,6 +461,8 @@ void ShapeRenderer::DrawSolidTriangle(const DirectX::XMFLOAT3 &v0, const DirectX
     GetDrawList().solidTriangles.push_back(data);
 }
 
+
+
 void ShapeRenderer::DrawRay(const DirectX::XMFLOAT3 &origin, const DirectX::XMFLOAT3 &direction, float length, const DirectX::XMFLOAT4 &color)
 {
     XMVECTOR O   = XMLoadFloat3(&origin);
@@ -441,6 +472,8 @@ void ShapeRenderer::DrawRay(const DirectX::XMFLOAT3 &origin, const DirectX::XMFL
     XMStoreFloat3(&endPos, End);
     DrawLine(origin, endPos, color);
 }
+
+
 
 void ShapeRenderer::DrawGrid(float spacing, int subdivisions, const DirectX::XMFLOAT4 &color)
 {
@@ -456,6 +489,8 @@ void ShapeRenderer::DrawGrid(float spacing, int subdivisions, const DirectX::XMF
         DrawLine({x, 0, -halfSize}, {x, 0, halfSize}, color);
     }
 }
+
+
 
 void ShapeRenderer::DrawAxis(const DirectX::XMFLOAT4X4 &transform, float length)
 {
@@ -474,6 +509,8 @@ void ShapeRenderer::DrawAxis(const DirectX::XMFLOAT4X4 &transform, float length)
     DrawLine(p, z, {0.0f, 0.0f, 1.0f, 1.0f});
 }
 
+
+
 // ---------------------------------------------------------------------------
 // メッシュの生成
 // ---------------------------------------------------------------------------
@@ -485,6 +522,8 @@ void ShapeRenderer::CreateLineMesh(ID3D11Device *device)
     vertices.emplace_back(DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f));
     CreateMesh(device, vertices, lineMesh);
 }
+
+
 
 void ShapeRenderer::CreateMesh(ID3D11Device *device, const std::vector<DirectX::XMFLOAT3> &vertices, Mesh &mesh)
 {
@@ -498,6 +537,8 @@ void ShapeRenderer::CreateMesh(ID3D11Device *device, const std::vector<DirectX::
     mesh.vertexCount = static_cast<UINT>(vertices.size());
 }
 
+
+
 void ShapeRenderer::CreateBoxMesh(ID3D11Device *device, float width, float height, float depth)
 {
     DirectX::XMFLOAT3 pos[8] = {
@@ -508,6 +549,8 @@ void ShapeRenderer::CreateBoxMesh(ID3D11Device *device, float width, float heigh
         pos[0], pos[4], pos[1], pos[5], pos[2], pos[6], pos[3], pos[7]};
     CreateMesh(device, vertices, boxMesh);
 }
+
+
 
 void ShapeRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int subdivisions)
 {
@@ -534,6 +577,8 @@ void ShapeRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int sub
     CreateMesh(device, vertices, sphereMesh);
 }
 
+
+
 void ShapeRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius, int subdivisions)
 {
     std::vector<DirectX::XMFLOAT3> vertices;
@@ -558,6 +603,8 @@ void ShapeRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius, int
         }
     CreateMesh(device, vertices, halfSphereMesh);
 }
+
+
 
 void ShapeRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, float radius2, float start, float height, int subdivisions)
 {
@@ -586,6 +633,8 @@ void ShapeRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, floa
     CreateMesh(device, vertices, cylinderMesh);
 }
 
+
+
 void ShapeRenderer::CreateBoneMesh(ID3D11Device *device, float length)
 {
     float                          w        = length * 0.25f;
@@ -596,6 +645,8 @@ void ShapeRenderer::CreateBoneMesh(ID3D11Device *device, float length)
         pos[1], pos[4], pos[4], pos[3], pos[3], pos[5], pos[5], pos[1]};
     CreateMesh(device, vertices, boneMesh);
 }
+
+
 
 void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device *device)
 {
@@ -608,6 +659,8 @@ void ShapeRenderer::CreateTriangleFaceMesh(ID3D11Device *device)
 
     CreateMesh(device, vertices, triangleFaceMesh);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画
@@ -658,7 +711,7 @@ void ShapeRenderer::Render(ID3D11DeviceContext *dc, const DirectX::XMFLOAT4X4 &v
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                // チャンク幅はバッファの実容量から取る（容量を表す定数を別に持たない）。
+                // チャンク幅はバッファの実容量から取る（容量を表す定数を別に持たない）
                 size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
 
                 // 配列の一部を vector に写さず、ポインタと個数で渡す。写すと分けるたびに

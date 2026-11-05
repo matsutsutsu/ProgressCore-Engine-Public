@@ -1,5 +1,3 @@
-// DebrisFieldComponent のシリアライズ/インスペクタ定義。
-
 #include "Game/Logics/Stage/DebrisFieldComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -12,7 +10,7 @@
 
 // ===========================================================================
 // DebrisFieldComponent
-//   kinds / rocks は実行時に DebrisFieldSystem が作るので、Fields() に載せない。
+//   kinds / rocks は実行時に DebrisFieldSystem が作るので、Fields() に載せない
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(DebrisFieldComponent, "Debris Field", CCL::Categories::Effect, 190, false)
 CFIELD_T(prefabFolder, "プレハブのフォルダ", "生成",

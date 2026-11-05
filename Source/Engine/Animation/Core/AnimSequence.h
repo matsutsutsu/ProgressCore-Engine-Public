@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: 1 つのアニメーションクリップの再生設定とイベント（AnimSequence）のデータ定義。
+// 概要: 1 つのアニメーションクリップの再生設定とイベント（AnimSequence）のデータ定義
 //
 // 責務:
 //   - 再生対象（モデル・アニメ名・長さ）と、時間軸上のイベントを保持する
 //   - 速度カーブ・ルートモーションカーブを保持する
 //   - nlohmann::json との相互変換（シーケンサーの保存形式）
 //
-// 備考: ResourceManager が読み込んで保持し、全 Entity で共有する。
-//       AnimationSystem が読み、AnimationSequencerWindow が編集する。
+// 備考: ResourceManager が読み込んで保持し、全 Entity で共有する
+//       AnimationSystem が読み、AnimationSequencerWindow が編集する
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -20,9 +20,9 @@
 
 // ===========================================================================
 // Vector3 ⇔ json 変換
-//   nlohmann は ADL で、対象の型と同じ名前空間から to_json / from_json を探す。
-//   Vector3 は DirectX::SimpleMath の型なので、変換関数もこの名前空間に置く。
-//   外に置くと j["offset"] = vec や get_to(vec) がコンパイルエラーになる。
+//   nlohmann は ADL で、対象の型と同じ名前空間から to_json / from_json を探す
+//   Vector3 は DirectX::SimpleMath の型なので、変換関数もこの名前空間に置く
+//   外に置くと j["offset"] = vec や get_to(vec) がコンパイルエラーになる
 // ===========================================================================
 namespace DirectX::SimpleMath
 {
@@ -76,14 +76,14 @@ inline const std::vector<CancelFlagDef> &GetCancelFlagDefs()
 // アニメーションイベント
 // ===========================================================================
 
-// イベントの種別。シーケンサーのブロックの種類と 1:1 で対応する。
+// イベントの種別。シーケンサーのブロックの種類と 1:1 で対応する
 //   int で保存するので、追加は末尾だけ（途中に挿入しない）
 enum class AnimEventType : uint8_t
 {
     HitBox = 0,   // 武器タグに紐づく攻撃判定（区間）
     Sound,        // 効果音の再生（点）。stringParam = サウンドのイベント名
     Effect,       // VFX プレハブの生成（点）。stringParam = プレハブのパス
-    Blackboard,   // ブラックボードのフラグの ON/OFF（区間）。読む System は無い
+    Blackboard,   // ブラックボードのフラグの ON/OFF（区間）。読む System はない
     SpawnHitbox,  // 空間に独立した球状の判定を生成（区間の長さが生存時間）
     Trail,        // 武器の軌跡エフェクトの ON/OFF（区間）
     ComboWindow,  // コンボの先行入力の受付区間。stringParam = 受付名
@@ -93,7 +93,7 @@ enum class AnimEventType : uint8_t
     Count
 };
 
-// 1 つのアニメーションイベント。点イベントは startTime == endTime とする。
+// 1 つのアニメーションイベント。点イベントは startTime == endTime とする
 //   パラメータは汎用の float を使い回さず、用途ごとに名前を付けて持つ
 struct AnimNotifyEvent
 {
@@ -114,11 +114,11 @@ struct AnimNotifyEvent
     DirectX::SimpleMath::Vector3 offset = DirectX::SimpleMath::Vector3::Zero; // 発生位置のオフセット（m）
     float                        radius = 1.0f;                               // 球の半径（m）
 
-    // 判定球の物理レイヤー番号（誰に当てるか）。3 = PLAYER_ATTACK、4 = BOSS_ATTACK。
+    // 判定球の物理レイヤー番号（誰に当てるか）。3 = PLAYER_ATTACK、4 = BOSS_ATTACK
     //   Jolt に依存しないよう uint8_t で持ち、購読側で ObjectLayer にキャストする
     uint8_t attackLayer = 3;
 
-    // 判定球を持ち主に追従させるか（SpawnHitbox）。
+    // 判定球を持ち主に追従させるか（SpawnHitbox）
     //   true なら持ち主のアニメが切り替わったときに消える
     bool hitboxFollow = false;
 
@@ -126,7 +126,7 @@ struct AnimNotifyEvent
     float effectScale  = 1.0f;  // 大きさの倍率（粒子の大きさ・発生範囲・速度にまとめて掛かる）
     bool  effectFollow = false; // 基準（キャラ or 武器）に追従するか
 
-    // 基準にする武器のタグ（CombatRoster で引く）。空ならキャラが基準。
+    // 基準にする武器のタグ（CombatRoster で引く）。空ならキャラが基準
     //   stringParam はプレハブのパスに使っているので別に持つ
     std::string effectAttachTag;
 
@@ -135,7 +135,7 @@ struct AnimNotifyEvent
     float soundPitch       = 0.0f; // ピッチ（オクターブ。0 で等倍）
     float soundPitchRandom = 0.0f; // 鳴らすたびにずらすピッチの幅（± オクターブ。0 でずらさない）
 
-    // stringParam のハッシュ（HitBox のみ）。JSON には保存しない。
+    // stringParam のハッシュ（HitBox のみ）。JSON には保存しない
     //   ResourceManager::LoadAnimSequence が求める。from_json だけで読んだ場合は 0 のまま
     uint32_t tagHash = 0;
 };
@@ -150,11 +150,11 @@ struct AnimSequence
     std::string targetAnimName;  // モデル内のアニメーション名
     float       duration = 0.0f; // クリップの長さ（秒）
 
-    // ステートに入ったとき、クリップのこの時刻から再生を始める（秒）。0 なら頭から。
+    // ステートに入ったとき、クリップのこの時刻から再生を始める（秒）。0 なら頭から
     //   ループするクリップは、1周目だけここから始まり、2周目からは頭に戻る
     float startOffset = 0.0f;
 
-    // startTime の昇順であること（AnimationSystem が nextEventIndex で順に見る前提）。
+    // startTime の昇順であること（AnimationSystem が nextEventIndex で順に見る前提）
     //   ResourceManager::LoadAnimSequence がロード時に並べ替える
     std::vector<AnimNotifyEvent> events;
 
@@ -164,7 +164,7 @@ struct AnimSequence
 
 // ===========================================================================
 // nlohmann::json 変換（シーケンサーの保存形式）
-//   読込は、後から追加したキーが無い古いファイルでも読めるよう既定値で補う。
+//   読込は、後から追加したキーがない古いファイルでも読めるよう既定値で補う
 // ===========================================================================
 using json = nlohmann::json;
 

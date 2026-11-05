@@ -26,18 +26,22 @@ EntityID CameraTargetBindSystem::FindPlayer()
     return InvalidEntityID;
 }
 
+
+
 void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &target, EntityID entity)
 {
     if (entity == InvalidEntityID) return;
     if (!m_world->IsEntityValid(target.id)) target.id = entity;
 }
 
+
+
 void CameraTargetBindSystem::Update(float /*dt*/)
 {
     const EntityID playerId = FindPlayer();
     if (playerId == InvalidEntityID) return;
 
-    // VirtualCamera を持つエンティティを走査し、付いているカメラ Component の種類ごとに target を繋ぎ直す。
+    // VirtualCamera を持つエンティティを走査し、付いているカメラ Component の種類ごとに target を繋ぎ直す
     ForEachWithID([&](EntityID camID, const VirtualCamera & /*vcam*/) {
         if (auto *follow = m_world->GetComponent<CameraBodyFollow>(camID))
             BindIfInvalid(follow->target, playerId);
@@ -50,5 +54,7 @@ void CameraTargetBindSystem::Update(float /*dt*/)
     });
 }
 
-// カメラ本体(R01_Camera=100)より必ず前に走らせる。
+
+
+// カメラ本体(R01_Camera=100)より必ず前に走らせる
 REGISTER_RENDER_SYSTEM(CameraTargetBindSystem, Priority::RenderStage::R00b_CameraTargetBind);

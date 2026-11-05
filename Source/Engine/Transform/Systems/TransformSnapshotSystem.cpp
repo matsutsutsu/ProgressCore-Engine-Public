@@ -14,6 +14,7 @@ void TransformSnapshotSystem::Update(float dt)
 }
 
 
+
 // L01_Input と同じステージ。PlayerInputSystem 等は TransformComponent に書かないので、
 // 型が競合せず TaskScheduler が並列に実行できる
 REGISTER_LOGIC_SYSTEM(TransformSnapshotSystem, Priority::LogicStage::L01_Input);

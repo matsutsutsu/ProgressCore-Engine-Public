@@ -5,9 +5,9 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // 位置から敵方向を求める
-#include "Game/Logics/Combat/Components/HealthComponent.h"             // 敵判定（生存中の敵）
-#include "Game/Logics/Combat/Components/DeadTag.h"                     // 死亡除外
+#include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
+#include "Game/Logics/Combat/Components/DeadTag.h"
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -17,7 +17,7 @@ using namespace DirectX::SimpleMath;
 
 // 攻撃入力を表すトリガーはこれ1つだけ。通常/ダッシュ/空中/コンボの分岐はアニメグラフが
 //   パラメータ（DashAttackReady / IsAirborne など）とキャンセル区間で決めるため、
-//   コードは攻撃の種類ごとのトリガーを出さない（どの攻撃かの知識をグラフにまとめる）。
+//   コードは攻撃の種類ごとのトリガーを出さない（どの攻撃かの知識をグラフにまとめる）
 static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 
 namespace
@@ -37,7 +37,7 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
     EntityID best       = InvalidEntityID;
     float    bestDistSq = range * range;
 
-    // 候補を一覧に溜めず、走査しながら最も近いものを残す。
+    // 候補を一覧に溜めず、走査しながら最も近いものを残す
     m_world->ViewEach<HealthComponent, TransformComponent>([&](EntityID id) {
         if (id == selfID)
         {
@@ -84,6 +84,8 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
     return best;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 向き直り
 // ---------------------------------------------------------------------------
@@ -91,8 +93,8 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
 void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &player)
 {
     // 処理フロー:
-    // 1. 向く対象を決める（ロックオン優先、無ければ前方で最も近い敵）
-    // 2. 対象が無い／遠いなら向かない（今の向きのまま攻撃する）
+    // 1. 向く対象を決める（ロックオン優先、なければ前方で最も近い敵）
+    // 2. 対象がない／遠いなら向かない（今の向きのまま攻撃する）
     // 3. 対象方向の yaw を書き、向き直りの時間を立てる
 
     const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
@@ -121,7 +123,7 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
     // ---------------------------------------------------------
     // 2. 向かない条件
     // ---------------------------------------------------------
-    if (target == InvalidEntityID) // 敵が居なければ今の向きのまま攻撃する
+    if (target == InvalidEntityID) // 敵がいなければ今の向きのまま攻撃する
     {
         return;
     }
@@ -138,7 +140,7 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
         return;
     }
 
-    // ロックオン中でも attackFaceMaxDistance より遠い敵には向かず、入力方向のまま攻撃できるようにする。
+    // ロックオン中でも attackFaceMaxDistance より遠い敵には向かず、入力方向のまま攻撃できるようにする
     if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance)
     {
         return;
@@ -151,6 +153,8 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
     player.attackFaceTimer = kFaceDuration;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
@@ -162,9 +166,9 @@ void PlayerAttackSystem::Update(float dt)
                       AnimParametersComponent    &animParams,
                       PlayerComponent            &player,
                       const PlayerRushComponent        &rush) {
-        // ラッシュ中は通常攻撃を出さない。
-        //   ラッシュ中の攻撃入力は PlayerRushSystem が受け取り、ラッシュの段（RushAttack）として出す。
-        //   ここで通常攻撃まで出ると、Attack と RushAttack の2つのトリガーが同時に立つ。
+        // ラッシュ中は通常攻撃を出さない
+        //   ラッシュ中の攻撃入力は PlayerRushSystem が受け取り、ラッシュの段（RushAttack）として出す
+        //   ここで通常攻撃まで出ると、Attack と RushAttack の2つのトリガーが同時に立つ
         if (rush.isActive)
         {
             return;
@@ -172,15 +176,17 @@ void PlayerAttackSystem::Update(float dt)
 
         if (pin.attackPressed)
         {
-            // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）。
+            // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）
             SetAttackFacing(playerID, player);
 
-            // 攻撃は常に Attack トリガー1つで出す（第2引数は先行入力として保持する秒数）。
-            //   通常 / 空中 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない。
+            // 攻撃は常に Attack トリガー1つで出す（第2引数は先行入力として保持する秒数）
+            //   通常 / 空中 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない
             animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
         }
     });
 }
 
-// PlayerInputSystem(L01_Input) の後（GetRunAfter）、AnimControllerSystem(L02_Update) より前に走る。
+
+
+// PlayerInputSystem(L01_Input) の後（GetRunAfter）、AnimControllerSystem(L02_Update) より前に走る
 REGISTER_LOGIC_SYSTEM(PlayerAttackSystem, Priority::LogicStage::L01_Input);

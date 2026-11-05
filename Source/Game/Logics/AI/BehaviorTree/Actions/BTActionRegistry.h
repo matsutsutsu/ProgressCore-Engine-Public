@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ActionID から BT のアクション・条件のインスタンスを引くレジストリ（シングルトン）。
+// 概要: ActionID から BT のアクション・条件のインスタンスを引くレジストリ（シングルトン）
 //
 // 責務:
 //   - アクションと条件を ActionID ごとに1つずつ登録する
@@ -71,7 +71,7 @@ namespace CCL::AI::BT
         BTActionRegistry(const BTActionRegistry &)            = delete;
         BTActionRegistry &operator=(const BTActionRegistry &) = delete;
 
-        // src のうち dst に無い型を dst へ足す（件数が数個で、起動時にしか呼ばないので線形探索）
+        // src のうち dst にない型を dst へ足す（件数が数個で、起動時にしか呼ばないので線形探索）
         static void Merge(std::vector<TypeID> &dst, const std::vector<TypeID> &src)
         {
             for (TypeID t : src)

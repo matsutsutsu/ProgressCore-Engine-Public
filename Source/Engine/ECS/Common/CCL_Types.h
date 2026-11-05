@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ECS が扱う基本の ID 型と無効値の定義。
+// 概要: ECS が扱う基本の ID 型と無効値の定義
 //
 // 責務:
 //   - EntityID / TypeID / SystemID の型エイリアスとサイズ前提の検証
@@ -8,7 +8,7 @@
 //   - EntityID の Index / Generation の分解・合成（EntityHandle）
 //
 // 備考: 多くのヘッダから include されるので、依存を増やさないよう
-//       単純な型定義と定数だけを置く。
+//       単純な型定義と定数だけを置く
 // ===========================================================================
 
 #include <cstdint>
@@ -20,23 +20,8 @@ namespace CCL::ECS
     // ID 型エイリアス
     // ============================================================
     //
-    // 単なる uint64_t ではなく「Entity の ID である」と型名で分かるよう別名を付ける。
-    //   uint64_t id;  → 何の数字か不明
-    //   EntityID id;  → Entity の番号だと一目で分かる
-    //
-    // なぜ <cstdint> の固定幅型（uint64_t / uint16_t）を使うのか:
-    //   C++ の組み込み整数型が規格で保証しているのは「最低ビット数」だけで、
-    //   ちょうど何ビットかは処理系依存。
-    //
-    //     unsigned short     : 16bit "以上"
-    //     unsigned int       : 16bit "以上"
-    //     unsigned long      : 32bit "以上"  ← Windows=32 / Linux,macOS=64 で実際に割れる
-    //     unsigned long long : 64bit "以上"
-    //
-    //   対して uint64_t / uint32_t / uint16_t は「ちょうどそのビット数」を意味する。
-    //   EntityID は「上位32bit=世代 / 下位32bit=Index」のビットパッキングをしており、
-    //   "ちょうど64bit であること" が設計上の要求。unsigned long long（64bit以上）では
-    //   その意図を表現できないので uint64_t を使い、下の static_assert で固定する。
+    // 固定幅の型を使うのは、EntityID が上位32bit に世代、下位32bit に index を詰めるので、ちょうど64bit である必要があるため
+    // unsigned long などの組み込みの型は最低のビット数しか決まっていない（Windows と Linux で幅が変わる）
 
     using EntityID = uint64_t; // 個々の Entity の ID。上位32bitに世代、下位32bitに Index
     using TypeID   = uint16_t; // コンポーネント型（クラス）の ID（Position=1, Velocity=2 など）
@@ -59,10 +44,7 @@ namespace CCL::ECS
     // 無効値
     // ============================================================
     //
-    // unsigned 型を -1 にキャストすると、その型の最大値（全ビット1）になる。
-    // ECS では「実体は消さずに ID を無効化して論理削除」するパターンが多いので、
-    // 各 ID の無効値を定数で用意する。
-    // constexpr なのでヘッダで定義しても多重定義にならない（マクロより型安全）。
+    // unsigned を -1 にキャストした最大値（全ビットが 1）を、各 ID の無効値にする
 
     constexpr EntityID InvalidEntityID = static_cast<EntityID>(-1);
     constexpr TypeID   InvalidTypeID   = static_cast<TypeID>(-1);
@@ -73,24 +55,12 @@ namespace CCL::ECS
     // EntityHandle
     // ============================================================
 
-    /**
-     * @brief EntityID を Index と Generation に分解・合成するユーティリティ。
-     *
-     * EntityID は 64bit 整数で、上位32bitに「世代カウンタ」、下位32bitに
-     * 「配列インデックス」をパックして格納する。削除済みの古い EntityID が、
-     * 同じ Index を再利用した別の Entity を誤って指す「ダングリングID」問題を
-     * 世代チェックで防ぐため。
-     *
-     * @code
-     *   EntityID id = EntityHandle::Combine(index, generation);
-     *   uint32_t i  = EntityHandle::GetIndex(id);
-     *   uint32_t g  = EntityHandle::GetGeneration(id);
-     * @endcode
-     */
+    // EntityID を index と世代に分ける・まとめる。上位32bit が世代、下位32bit が index
+    // index を使い回しても、世代の照合で古い ID が別の Entity を指さないようにする
     struct EntityHandle
     {
-        // 下位32bit抽出用マスク。
-        // 0xFFFFFFFFULL は下位32bitが1、上位32bitが0の64bit定数。
+        // 下位32bit抽出用マスク
+        // 0xFFFFFFFFULL は下位32bitが1、上位32bitが0の64bit定数
         // 論理積（AND）を取ると、EntityID の下位32bit（配列インデックス）だけを取り出せる
         static constexpr EntityID INDEX_MASK = 0xFFFFFFFFULL;
 

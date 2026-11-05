@@ -4,9 +4,9 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Core/App/GameFlowState.h"
-#include "Engine/Core/Math/Interpolation.h" // SmoothStep
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Time/TimeService.h" // Time::PresentationDt（ポーズ中は止める）
+#include "Engine/Time/TimeService.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 
 #include <algorithm>
@@ -30,8 +30,8 @@ void CinematicFrameSystem::Update(float dt)
     // 1. 出具合
     // ---------------------------------------------------------
 
-    // ムービー中は出し、終わったら引っ込める。
-    // 時間は Time::PresentationDt で数えるので、ポーズ中は黒帯の動きも止まる。
+    // ムービー中は出し、終わったら引っ込める
+    // 時間は Time::PresentationDt で数えるので、ポーズ中は黒帯の動きも止まる
     const bool cinematic = m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
     dt                   = Time::PresentationDt(*m_world, dt);
     m_amount             = cinematic ? std::min(m_amount + dt / kInTime, 1.0f) : std::max(m_amount - dt / kOutTime, 0.0f);
@@ -42,7 +42,7 @@ void CinematicFrameSystem::Update(float dt)
     // 2. HUD
     // ---------------------------------------------------------
 
-    // 黒帯と同じ進み具合で薄くし、ムービーの間は画面に出さない。
+    // 黒帯と同じ進み具合で薄くし、ムービーの間は画面に出さない
     list.hudAlpha = 1.0f - k;
     if (k <= 0.0f)
     {
@@ -68,5 +68,7 @@ void CinematicFrameSystem::Update(float dt)
     bar.pos = {0.0f, sh - h}; // 下
     list.items.push_back(bar);
 }
+
+
 
 REGISTER_RENDER_SYSTEM(CinematicFrameSystem, Priority::RenderStage::R10b_UICollect);

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 小隊突撃（SquadAssault）の陣形。小隊ごとに一列縦隊で動く。
+// 概要: 小隊突撃（SquadAssault）の陣形。小隊ごとに一列縦隊で動く
 //
 // 責務:
 //   - 各機の持ち場を「1つ前の機体」の位置と速度から出す
@@ -9,8 +9,8 @@
 //   - 持ち場を床より下に置かない
 //
 // 備考:
-//   基準をボスではなく小隊のアンカー（SquadState.anchorPos）に置くので、小隊ごとに独立して動く。
-//   アンカーの動きは SquadUpdateSystem が決め、ここは「前の機体からどう繋がるか」だけを持つ。
+//   基準をボスではなく小隊のアンカー（SquadState.anchorPos）に置くので、小隊ごとに独立して動く
+//   アンカーの動きは SquadUpdateSystem が決め、ここは「前の機体からどう繋がるか」だけを持つ
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -21,11 +21,11 @@
 namespace CCL::AI::Formation::Squad
 {
     /**
-     * @brief 小隊突撃（SquadAssault）。一列縦隊（slot0 ─ slot1 ─ … ─ slot4）。
+     * @brief 小隊突撃（SquadAssault）。一列縦隊（slot0 ─ slot1 ─ … ─ slot4）
      *
-     * 位置も速度も、基準は「1つ前の機体」で小隊全体ではない。
-     * アンカーの向きを全機へ配ると、曲がった瞬間に一本の棒が回るようにしか見えない。
-     * 前の機体を基準にすれば、アンカーの描いた曲線が後続機へ順に伝わる。
+     * 位置も速度も、基準は「1つ前の機体」で小隊全体ではない
+     * アンカーの向きを全機へ配ると、曲がった瞬間に一本の棒が回るようにしか見えない
+     * 前の機体を基準にすれば、アンカーの描いた曲線が後続機へ順に伝わる
      */
     class SquadAssaultFormation : public IFormation
     {
@@ -35,7 +35,7 @@ namespace CCL::AI::Formation::Squad
 
         bool FollowsBoss() const override { return false; } // 基準はアンカー
 
-        // 追跡中は判定を開けたまま往復するので、何度も当てる。
+        // 追跡中は判定を開けたまま往復するので、何度も当てる
         // 間隔は1回すり抜ける時間より長くし、1回の通過で2度当てない
         FormationCombat GetCombat() const override
         {
@@ -145,7 +145,7 @@ namespace CCL::AI::Formation::Squad
     private:
         static constexpr float kSpringLagPerSlot = 0.06f; // 1つ後ろの席ごとにバネを弱める割合
 
-        const SquadRegistry *m_squads = nullptr; // BeginFrame で取った小隊の状態。無ければ nullptr
+        const SquadRegistry *m_squads = nullptr; // BeginFrame で取った小隊の状態。なければ nullptr
     };
 
     inline void RegisterAll(FormationRegistry &reg)

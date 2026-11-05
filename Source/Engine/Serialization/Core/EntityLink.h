@@ -1,20 +1,11 @@
 #pragma once
-// ===========================================================================
-// 概要: 保存できる Entity への参照 EntityLink。
-//
-// 責務:
-//   - EntityID を 1 つ持ち、EntityID と同じように扱えるようにする
-//   - 保存時はローカルインデックスへ、読込時は新しい EntityID へ自動で変換される目印になる
-//     （FieldKind::EntityLink。ComponentMetaJson.h を参照）
-//
-// 備考: 比較は暗黙変換 operator EntityID() に任せる。
-//         link1 == link2 / link1 == 0 / link1 == someID はどれも EntityID 同士の比較になる。
-// ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 
 namespace CCL::Serialization
 {
 
+    // 保存できる Entity への参照。保存時はローカルインデックスへ、読込時は新しい EntityID へ自動で直る
+    // 比較は暗黙変換 operator EntityID() に任せるので、link == 0 も link == someID も EntityID 同士の比較になる
     struct EntityLink
     {
         CCL::ECS::EntityID id = CCL::ECS::InvalidEntityID;
@@ -22,12 +13,12 @@ namespace CCL::Serialization
         constexpr EntityLink() = default;
         constexpr EntityLink(CCL::ECS::EntityID e) : id(e) {}
 
-        // EntityID への暗黙変換。operator== / operator!= は意図して持たない。
+        // EntityID への暗黙変換。operator== / operator!= は意図して持たない
         //   メンバーの operator== と暗黙変換が両方あると、link1 == link2 で
         //     A: link1.operator==(link2)
         //     B: (EntityID)link1 == (EntityID)link2
-        //   が同じコストで候補になり、C2593（あいまいな変換）になる。
-        //   メンバーの == が無ければ B だけになり、一意に決まる
+        //   が同じコストで候補になり、C2593（あいまいな変換）になる
+        //   メンバーの == がなければ B だけになり、一意に決まる
         constexpr operator CCL::ECS::EntityID() const { return id; }
 
         EntityLink &operator=(CCL::ECS::EntityID e)

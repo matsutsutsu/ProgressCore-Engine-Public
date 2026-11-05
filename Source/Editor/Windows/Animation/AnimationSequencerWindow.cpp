@@ -6,12 +6,12 @@
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Core/Components/NameComponent.h" // 固定中のポーズの一覧に名前を出す
+#include "Engine/Core/Components/NameComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Animation/Components/CombatRosterComponent.h"
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // 攻撃レイヤー選択(LayerNames)
-#include "Engine/Graphics/Renderer/ShapeRenderer.h"      // SpawnHitbox の判定球のプレビュー
-#include "Engine/Audio/IAudioAPI.h"                       // Sound イベントの音名一覧
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
+#include "Engine/Graphics/Renderer/ShapeRenderer.h"
+#include "Engine/Audio/IAudioAPI.h"
 
 // IO / Platform
 #include "Engine/Platform/Core/Dialog.h"
@@ -34,6 +34,9 @@ inline int SecToFrame(float sec)
 {
     return (int)(sec * 60.0f);
 }
+
+
+
 inline float FrameToSec(int frame)
 {
     return (float)frame / 60.0f;
@@ -200,7 +203,7 @@ public:
         if (!m_seq)
             return;
 
-        // ここで SyncFrameCache() を呼ばない。
+        // ここで SyncFrameCache() を呼ばない
         //   Get() は毎フレーム呼ばれるので、ここで作り直すと、ドラッグ中の値が毎フレーム戻されてドラッグできない
 
         if (index < 0 || index >= (int)m_frameCacheMap.size())
@@ -384,11 +387,11 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
         }
         m_prevSelectedAnimIndex = m_selectedAnimIndex;
 
-        // 選んだアニメーション名をシーケンスへ書き戻す。
-        //   新規や、モデルに無い名前だった場合は上で 0 番へフォールバックしているので、
+        // 選んだアニメーション名をシーケンスへ書き戻す
+        //   新規や、モデルにない名前だった場合は上で 0 番へフォールバックしているので、
         //   書き戻さないと targetAnimName が空のまま残る
 
-        // 空のままだと UpdateManual が GetAnimationIndex で -1 を引き、再生しても姿勢が変わらない。
+        // 空のままだと UpdateManual が GetAnimationIndex で -1 を引き、再生しても姿勢が変わらない
         //   コンボボックスは animations[] 側の名前を出すので、見た目では気付けない
         m_editingSequence.targetAnimName = animations[m_selectedAnimIndex].name;
 
@@ -454,12 +457,11 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
 
 
-// 選択中のエンティティが変わったら、編集中の内容を捨てて作り直す
 void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
 {
     if (context.selectedEntity != m_lastSelectedEntity)
     {
-        // 解除対象は「切替前」のエンティティ（m_lastSelectedEntity はまだ古い方を指している）。
+        // 解除対象は「切替前」のエンティティ（m_lastSelectedEntity はまだ古い方を指している）
         //   選択中の Animator へ復元すると、旧エンティティの override が残ったまま、
         //   新エンティティに別モデルのシーケンスが差し込まれる
         if (m_editingEntity != CCL::ECS::InvalidEntityID)
@@ -488,7 +490,6 @@ void AnimationSequencerWindow::ResetStateOnEntitySwitch(EditorContext &context)
 // ファイルの読み書き
 // ---------------------------------------------------------------------------
 
-// 編集中のファイルと長さを表示し、JSON の保存・読込のボタンを描く
 void AnimationSequencerWindow::DrawFileIO()
 {
     // Duration はアセットから取るので、表示だけにする（編集できない）
@@ -513,7 +514,7 @@ void AnimationSequencerWindow::DrawFileIO()
             {
                 CCL_LOG_SUCCESS(LogCategory::Editor, "Sequence Saved: %s", m_savePath.c_str());
 
-                // 保存した直後に、ResourceManager が持つ同じインスタンスへ読み直させる。
+                // 保存した直後に、ResourceManager が持つ同じインスタンスへ読み直させる
                 //   読み直さないと起動時の古い内容を返し続け、ゲームの再生に編集が反映されない
                 ResourceManager::Instance().ReloadAnimSequence(m_savePath.c_str());
             }
@@ -561,14 +562,13 @@ void AnimationSequencerWindow::DrawFileIO()
 // 編集モード
 // ---------------------------------------------------------------------------
 
-// 編集モードの切り替えを Animator へ適用する（入るときに、再生中のシーケンスを控える）
 void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, AnimatorComponent *animator)
 {
     if (context.isAnimEditMode)
     {
         if (!m_wasEditMode)
         {
-            // 固定中のエンティティを編集し直すときは、先に固定を解いて固定前へ戻す。
+            // 固定中のエンティティを編集し直すときは、先に固定を解いて固定前へ戻す
             //   戻さないと、固定側の写しを「編集前のシーケンス」として控えてしまい、解除しても元へ戻らない
             const int pinIndex = FindPinnedPose(context.selectedEntity);
             if (pinIndex >= 0)
@@ -583,7 +583,7 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
         animator->isEditorOverride = true;
         animator->currentSequence  = &m_editingSequence;
 
-        // 「今フレームも編集モードを維持した」印。
+        // 「今フレームも編集モードを維持した」印
         //   これが途切れたフレームを OnFrameBegin が検出して解除する（ウィンドウを閉じた・畳んだ場合）
         m_editingEntity     = context.selectedEntity;
         m_editModeRefreshed = true;
@@ -596,7 +596,6 @@ void AnimationSequencerWindow::DrawEditModeToggle(EditorContext &context, Animat
 
 
 
-// 編集モードを解除し、対象エンティティを編集前の状態へ戻す
 void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS::EntityID target)
 {
     // 編集モードを抜ける経路はすべてここを通る
@@ -623,7 +622,6 @@ void AnimationSequencerWindow::ReleaseEditMode(EditorContext &context, CCL::ECS:
 
 
 
-// ウィンドウ側の編集モードの状態だけを片付ける（エンティティには触らない）
 void AnimationSequencerWindow::ResetEditModeState(EditorContext &context)
 {
     m_rootMotionActive     = false;
@@ -637,7 +635,6 @@ void AnimationSequencerWindow::ResetEditModeState(EditorContext &context)
 
 
 
-// 描画されなかったフレームを検出し、編集モードを確実に解除する
 void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
 {
     // 処理フロー:
@@ -661,7 +658,7 @@ void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
     if (maintained)
         return;
 
-    // 維持されなかった＝もう画面に出ていない。
+    // 維持されなかった＝もう画面に出ていない
     //   ここで解除しないと isEditorOverride が残り、アニメ・遷移・ルートモーションが止まったままになる
     ReleaseEditMode(context, m_editingEntity);
 }
@@ -672,7 +669,6 @@ void AnimationSequencerWindow::OnFrameBegin(EditorContext &context)
 // ポーズの固定
 // ---------------------------------------------------------------------------
 
-// 今のポーズのまま、選択中のエンティティを止めておく
 void AnimationSequencerWindow::PinCurrentPose(EditorContext &context, AnimatorComponent *animator)
 {
     // 処理フロー:
@@ -694,8 +690,8 @@ void AnimationSequencerWindow::PinCurrentPose(EditorContext &context, AnimatorCo
     // ---------------------------------------------------------
     // 2. Animator を止めたままにする
     // ---------------------------------------------------------
-    // ポーズは今フレームの UpdateManual で Model へ当て済み。
-    //   isEditorOverride の間は AnimationPoseSystem が上書きしないので、そのまま残る。
+    // ポーズは今フレームの UpdateManual で Model へ当て済み
+    //   isEditorOverride の間は AnimationPoseSystem が上書きしないので、そのまま残る
     //   Model はエンティティごとの実体なので、他のキャラにも上書きされない
     animator->currentSequence  = pin.sequence.get();
     animator->currentTimer     = pin.time;
@@ -712,7 +708,6 @@ void AnimationSequencerWindow::PinCurrentPose(EditorContext &context, AnimatorCo
 
 
 
-// 固定を解き、そのエンティティを固定前の状態へ戻す
 void AnimationSequencerWindow::UnpinPose(EditorContext &context, size_t index)
 {
     if (index >= m_pinnedPoses.size()) return;
@@ -745,7 +740,6 @@ void AnimationSequencerWindow::UnpinPose(EditorContext &context, size_t index)
 
 
 
-// 固定を全部解く
 void AnimationSequencerWindow::UnpinAllPoses(EditorContext &context)
 {
     // 後ろから解く（erase で前の添字がずれないように）
@@ -757,7 +751,6 @@ void AnimationSequencerWindow::UnpinAllPoses(EditorContext &context)
 
 
 
-// 指定エンティティの固定の添字を返す。固定していなければ -1
 int AnimationSequencerWindow::FindPinnedPose(CCL::ECS::EntityID entity) const
 {
     for (size_t i = 0; i < m_pinnedPoses.size(); ++i)
@@ -772,12 +765,11 @@ int AnimationSequencerWindow::FindPinnedPose(CCL::ECS::EntityID entity) const
 
 
 
-// 消えた・別物に置き換わったエンティティの固定を捨てる
 void AnimationSequencerWindow::PrunePinnedPoses(EditorContext &context)
 {
     if (m_pinnedPoses.empty()) return;
 
-    // World が無い（シーンの切り替え中など）なら、固定していたエンティティはもう無い
+    // World がない（シーンの切り替え中など）なら、固定していたエンティティはもうない
     if (!context.world)
     {
         m_pinnedPoses.clear();
@@ -793,7 +785,6 @@ void AnimationSequencerWindow::PrunePinnedPoses(EditorContext &context)
 
 
 
-// 固定中のエンティティの一覧と、解除のボタンを描く
 void AnimationSequencerWindow::DrawPinnedPoseList(EditorContext &context)
 {
     if (m_pinnedPoses.empty()) return;
@@ -839,7 +830,6 @@ void AnimationSequencerWindow::DrawPinnedPoseList(EditorContext &context)
 // ルートモーションのプレビュー
 // ---------------------------------------------------------------------------
 
-// rootMotionCurve の前進量を Transform へ直接反映し、その場で移動量を確かめられるようにする
 void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, AnimatorComponent * /*animator*/)
 {
     if (!context.isAnimEditMode || !context.world) return;
@@ -850,7 +840,7 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     const CurveData &rmc = m_editingSequence.rootMotionCurve;
     if (rmc.empty())
     {
-        // カーブが無い（全キーを消した）ならプレビューを止める。
+        // カーブがない（全キーを消した）ならプレビューを止める
         //   次にキーが追加された瞬間の位置を、新しい基準点にする
         m_rootMotionActive = false;
         return;
@@ -861,10 +851,10 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
 
     if (!m_rootMotionActive)
     {
-        // 初めてプレビューが有効になったフレームで、今の位置を基準点として控える。
+        // 初めてプレビューが有効になったフレームで、今の位置を基準点として控える
         //   以後は毎フレーム「基準点 + 前方 * (curve(progress) - curve(0))」で絶対位置を求め直す
 
-        // 基準点（m_rootMotionBasePos）には、ループのたびに 1 周ぶんの前進を足す（DrawTimelinePane）。
+        // 基準点（m_rootMotionBasePos）には、ループのたびに 1 周ぶんの前進を足す（DrawTimelinePane）
         //   m_rootMotionOriginPos は足さない本当の開始位置で、編集モード終了時の復元に使う
         m_rootMotionOriginPos = trans->position;
         m_rootMotionBasePos   = trans->position;
@@ -883,7 +873,7 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
     };
     trans->SetPosition(newPos);
 
-    // worldMatrix は本来 TransformUpdateSystem が求めるが、この後すぐ model->UpdateTransform() が読むので、ここで求め直す。
+    // worldMatrix は本来 TransformUpdateSystem が求めるが、この後すぐ model->UpdateTransform() が読むので、ここで求め直す
     //   親を持つエンティティでは親の行列を見ていないので位置がずれる（プレビュー専用の簡易実装）
     trans->UpdateMatrix();
 }
@@ -894,7 +884,6 @@ void AnimationSequencerWindow::DrawRootMotionPreview(EditorContext &context, Ani
 // タイムライン
 // ---------------------------------------------------------------------------
 
-// 再生コントロールとタイムラインを描き、プレビューのポーズ・移動量・判定球を反映する
 void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, AnimatorComponent *animator, Model *model)
 {
     // 処理フロー:
@@ -930,8 +919,8 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
                 {
                     context.animEditTime = std::fmod(context.animEditTime, dur);
 
-                    // 1 周ぶんの前進量を、ルートモーションのプレビューの基準位置へ足す。
-                    //   次のループの進捗 0 が前のループの終端と一致し、原点へ戻らずに前進し続ける。
+                    // 1 周ぶんの前進量を、ルートモーションのプレビューの基準位置へ足す
+                    //   次のループの進捗 0 が前のループの終端と一致し、原点へ戻らずに前進し続ける
                     //   ここは再生による折り返しでだけ通る（スクラブでは通らない）
                     if (m_rootMotionActive && !m_editingSequence.rootMotionCurve.empty() && context.world)
                     {
@@ -1138,10 +1127,10 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     // 5. スクラブ
     // ---------------------------------------------------------
 
-    // 左ボタンを押している（実際にドラッグしている）ときだけスクラブとみなす。
+    // 左ボタンを押している（実際にドラッグしている）ときだけスクラブとみなす
     //   curFrame != prevFrame は、何も触っていなくても ImSequencer 内部の丸めだけで起こりうる
 
-    // 丸めをスクラブとみなすと、再生中に不規則な停止と巻き戻り・早送りが起き、速度が変わって見える。
+    // 丸めをスクラブとみなすと、再生中に不規則な停止と巻き戻り・早送りが起き、速度が変わって見える
     //   再生中の時間の進行は、1 のブロックだけが決める
     if (curFrame != prevFrame && ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
@@ -1154,7 +1143,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     // 6. プレビューの反映
     // ---------------------------------------------------------
 
-    // ルートモーションの前進量を Transform に反映する。
+    // ルートモーションの前進量を Transform に反映する
     //   下の UpdateTransform は worldMatrix を読むだけなので、先に位置を確定させる
     DrawRootMotionPreview(context, animator);
 
@@ -1179,7 +1168,6 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
 // 攻撃判定のプレビュー
 // ---------------------------------------------------------------------------
 
-// SpawnHitbox の判定球を GameView に線で描く
 void AnimationSequencerWindow::DrawHitboxPreview(EditorContext &context)
 {
     if (!context.isAnimEditMode || !context.world) return;
@@ -1224,7 +1212,6 @@ void AnimationSequencerWindow::DrawHitboxPreview(EditorContext &context)
 // インスペクタ（イベントの設定）
 // ---------------------------------------------------------------------------
 
-// 選んだトラックの設定（マスターなら長さと編集モード、イベントなら区間と種別ごとの値）を描く
 void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 {
     // 処理フロー:
@@ -1333,7 +1320,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         // 3. 種別ごとの設定
         // ---------------------------------------------------------
 
-        // 武器タグの選択（CombatRoster があれば一覧から、無ければ手入力）。HitBox / Trail / Particle で使う
+        // 武器タグの選択（CombatRoster があれば一覧から、なければ手入力）。HitBox / Trail / Particle で使う
         auto drawWeaponTagPicker = [&](AnimNotifyEvent &ev, bool &changed) {
             auto *roster = context.world->GetComponent<CombatRosterComponent>(context.selectedEntity);
             if (roster && roster->count > 0)
@@ -1582,7 +1569,6 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 
 
 
-// Sound イベントの音を、登録済みのイベント名から選ぶ（手入力も可）。変えたら true
 bool AnimationSequencerWindow::DrawSoundPicker(EditorContext &context, AnimNotifyEvent &e)
 {
     bool changed = false;
@@ -1614,7 +1600,7 @@ bool AnimationSequencerWindow::DrawSoundPicker(EditorContext &context, AnimNotif
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます");
 
-    // 一覧に無い名前を直接指定する欄
+    // 一覧にない名前を直接指定する欄
     char buf[256];
     strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
     ImGui::SetNextItemWidth(-1);
@@ -1628,7 +1614,6 @@ bool AnimationSequencerWindow::DrawSoundPicker(EditorContext &context, AnimNotif
 
 
 
-// Effect イベントの VFX を、プレハブの置き場所から選ぶ（手入力も可）。変えたら true
 bool AnimationSequencerWindow::DrawVfxPrefabPicker(AnimNotifyEvent &e)
 {
     namespace fs = std::filesystem;
@@ -1685,7 +1670,6 @@ bool AnimationSequencerWindow::DrawVfxPrefabPicker(AnimNotifyEvent &e)
 // カーブ
 // ---------------------------------------------------------------------------
 
-// 速度・ルートモーションのカーブを編集し、今の再生位置での値を出す
 void AnimationSequencerWindow::DrawCurvePane(float animTime)
 {
     // 処理フロー:
@@ -1734,10 +1718,10 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     // 3. 形のプリセット（ルートモーションのときだけ）
     // ---------------------------------------------------------
 
-    // 単調に増える形をボタン 1 つで作れるようにする。
+    // 単調に増える形をボタン 1 つで作れるようにする
     //   カーブは「進捗 → 累積前進距離（m）」で、0 から形を作るには接線を触る必要がある
 
-    // 移動距離は、末尾のキーの値を動かして決める。
+    // 移動距離は、末尾のキーの値を動かして決める
     //   距離専用の入力欄は置かず、他のキーと同じ操作にそろえる
     if (active == 1)
     {
@@ -1782,7 +1766,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
             c.RecalculateTangents();
         };
 
-        // 作り直すときの距離は、今のカーブの総移動量を引き継ぐ（無ければ 1.0）
+        // 作り直すときの距離は、今のカーブの総移動量を引き継ぐ（なければ 1.0）
         const float keepDist = rc.keys.empty() ? 1.0f : (rc.keys.back().value - rc.keys.front().value);
 
         ImGui::TextDisabled("形状プリセット:");

@@ -1,13 +1,9 @@
 #pragma once
-// ===========================================================================
-// 概要: ボスの形態（第1形態・移行演出・第2形態・死亡・チュートリアル）を
-//       持つ Component。形態を決めるのは BossPhaseSystem。
-// ===========================================================================
 #include <cstdint>
 #include <cstddef>
 #include <string>
 
-// 並びを変えたら kBossPhaseNames も同じ並びに直す。
+// 並びを変えたら kBossPhaseNames も同じ並びに直す
 enum class BossPhase : uint8_t
 {
     Combat,         // 第1形態
@@ -35,6 +31,7 @@ inline const char *ToString(BossPhase p)
     return (i < kBossPhaseCount) ? kBossPhaseNames[i] : "?";
 }
 
+// ボスの形態。形態を決めるのは BossPhaseSystem
 struct BossPhaseComponent
 {
     std::string phase2AssetPath;               // 第2形態の BT。空なら移行しない

@@ -8,6 +8,8 @@ ParticleComputeShader::ParticleComputeShader(ID3D11Device *device)
     LoadShaders(device);
 }
 
+
+
 bool ParticleComputeShader::LoadShaders(ID3D11Device *device)
 {
     bool allOk = true;
@@ -16,7 +18,7 @@ bool ParticleComputeShader::LoadShaders(ID3D11Device *device)
     // 開発中: HLSL をその場でコンパイルする（保存すると CheckAndReload ですぐに反映される）
     //   一度ローカルに受けて、成功したものだけ差し替える。メンバへ直接書くと
     //   ReleaseAndGetAddressOf が先に古いシェーダーを捨てるので、打ち間違い1つで
-    //   null になり、直すまで全パーティクルが止まる（ParticleShader と同じ書き方）。
+    //   null になり、直すまで全パーティクルが止まる（ParticleShader と同じ書き方）
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> initCS;
     Microsoft::WRL::ComPtr<ID3D11ComputeShader> updateCS;
 
@@ -38,15 +40,21 @@ bool ParticleComputeShader::LoadShaders(ID3D11Device *device)
     return allOk;
 }
 
+
+
 void ParticleComputeShader::Begin(ID3D11DeviceContext *dc, const RenderServices &, const RenderFrameContext &)
 {
 }
+
+
 
 void ParticleComputeShader::End(ID3D11DeviceContext *dc, const RenderServices &)
 {
     ID3D11ComputeShader *nullCS = nullptr;
     dc->CSSetShader(nullCS, nullptr, 0);
 }
+
+
 
 void ParticleComputeShader::CheckAndReload(ID3D11Device *device)
 {

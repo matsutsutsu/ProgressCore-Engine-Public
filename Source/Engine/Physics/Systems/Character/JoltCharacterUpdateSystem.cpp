@@ -17,7 +17,6 @@ using namespace CCL::ECS;
 
 
 
-// テンプレート引数以外に読む型の申告
 std::vector<TypeID> JoltCharacterUpdateSystem::GetReadTypes() const
 {
     auto types = IfSystem::GetReadTypes();
@@ -27,7 +26,6 @@ std::vector<TypeID> JoltCharacterUpdateSystem::GetReadTypes() const
 
 
 
-// テンプレート引数以外に書く型の申告
 std::vector<TypeID> JoltCharacterUpdateSystem::GetWriteTypes() const
 {
     auto types = IfSystem::GetWriteTypes();
@@ -37,7 +35,6 @@ std::vector<TypeID> JoltCharacterUpdateSystem::GetWriteTypes() const
 
 
 
-// 全キャラクターを、移動の依頼に合わせて1フレーム分動かす
 void JoltCharacterUpdateSystem::Update(float rawDt)
 {
     // 処理フロー:
@@ -98,7 +95,7 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
 
-        // 移動の予約があれば、このフレームに居るべき位置へ届く速度を依頼にする
+        // 移動の予約があれば、このフレームにいるべき位置へ届く速度を依頼にする
         ApplyMoveReservation(movement, ch, time.localDt);
 
         // 位置で動かす技（跳躍・突進など）の速度で、丸ごと置き換える
@@ -122,7 +119,6 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
 
 
 
-// ワープした印があれば、CharacterVirtual を Transform の位置・回転へ移す
 void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans, JPH::CharacterVirtual *ch)
 {
     if (trans.isTeleported)
@@ -139,7 +135,6 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
 
 
 
-// 重力とジャンプから、新しい上下の速度を出す
 float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY)
 {
     float vy = currentVy;
@@ -179,7 +174,6 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
 
 
 
-// 目標の水平速度へ、慣性付きで寄せる
 DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement)
 {
     // 速度の上書きを読み、すぐ既定値へ戻す
@@ -194,7 +188,7 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
         return movement.currentVelocity;
     }
 
-    // 目標の速さを決める。上書きがあればその速さ、無ければ歩く速さ
+    // 目標の速さを決める。上書きがあればその速さ、なければ歩く速さ
     // スティックの傾き（moveIntensity）は歩きにだけ掛ける。上書きは常に全開で出す
     float targetSpeed = config.walkSpeed;
 
@@ -229,7 +223,6 @@ DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVeloc
 
 
 
-// ノックバックを水平速度へ足し、ノックバックと硬直のタイマーを減らす
 void JoltCharacterUpdateSystem::ApplyKnockback(EntityID id, float safeDt, Vector3 &horizontalVel)
 {
     auto *kb = m_world->GetComponent<KnockbackComponent>(id);
@@ -263,7 +256,6 @@ void JoltCharacterUpdateSystem::ApplyKnockback(EntityID id, float safeDt, Vector
 
 
 
-// 移動の予約を1フレーム進め、居るべき位置へ届く速度を依頼にする
 void JoltCharacterUpdateSystem::ApplyMoveReservation(CharacterMovementComponent &movement, const JPH::CharacterVirtual *ch, float localDt)
 {
     CharacterMoveReservation &r = movement.reservation;
@@ -314,7 +306,7 @@ void JoltCharacterUpdateSystem::ApplyMoveReservation(CharacterMovementComponent 
         Vector3 want = Vector3::Lerp(r.start, r.target, eased);
         want.y += 4.0f * r.options.height * u * (1.0f - u);
 
-        // 居るべき位置へ届く速度。積分と同じ dt で割る
+        // いるべき位置へ届く速度。積分と同じ dt で割る
         // 上限で丸め、引っかかった遅れを1フレームで取り戻して瞬間移動に見えないようにする
         v = (want - now) / CharacterStepDt(localDt);
         if (v.LengthSquared() > r.options.maxSpeed * r.options.maxSpeed)
@@ -338,7 +330,6 @@ void JoltCharacterUpdateSystem::ApplyMoveReservation(CharacterMovementComponent 
 
 
 
-// 地形と干渉させて動かし、結果を Transform とプロキシ剛体へ書き戻す
 void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();

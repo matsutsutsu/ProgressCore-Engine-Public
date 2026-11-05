@@ -14,30 +14,16 @@
 #include <tracy/Tracy.hpp>
 
 // ---------------------------------------------------------------------------
-// ランタイム中のディスクアクセスを1箇所で可視化する。
-//
-// ゲーム中に突然 100ms 級のフレーム落ちが出たとき、犯人がファイル読みなら
-// 必ずここを通る（プレハブ / AnimSequence / カーブ / 設定 / モデル …）。
-// 呼び出し元ごとにゾーンを仕込んで回らなくても、この2関数を押さえれば
-// 「いつ・どのファイルが・何ms」が Tracy に残る。
-//
-//  ・ゾーンにファイルパスを ZoneText で貼る → タイムライン上でゾーンを選べば読める
-//  ・閾値を超えた読み込みは TracyMessage も出す → メッセージ一覧から探せる
-//    （タイムラインを目視で探し回らなくて済む。まれにしか出ないスパイク向け）
+// 実行中のディスクの読み込みは必ずここを通るので、ここで計測すれば、いつ・どのファイルが・何 ms かが Tracy に残る
+// ゾーンにパスを貼り、閾値を超えた読み込みは TracyMessage も出す（まれなスパイクをメッセージの一覧から探せる）
 // ---------------------------------------------------------------------------
 namespace
 {
-    // これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する。
+    // これを超えたら「フレーム落ちの原因になりうる読み込み」として記録する
     constexpr double kSlowFileReadMs = 2.0;
 
-    /**
-     * @brief 遅い読み込みだけ Tracy のメッセージ一覧へ流す。
-     * @param virtualPath 読み込んだファイルのパス。
-     * @param elapsedMs   読み込みにかかった時間（ミリ秒）。
-     * @param bytes       読み込んだ大きさ（バイト）。
-     * @note ファイルパスの添付（ZoneText）はここでは行えない。
-     *       ZoneText は同一スコープのゾーン変数（___tracy_scoped_zone）を参照するマクロなので、必ず呼び出し側に置く。
-     */
+    // 遅い読み込みだけ Tracy のメッセージ一覧へ流す
+    // ZoneText は呼び出し側のゾーンの変数を参照するマクロなので、パスの添付はここでなく呼び出し側でする
     void ReportSlowFileRead(const std::string &virtualPath, double elapsedMs, size_t bytes)
     {
 #ifdef TRACY_ENABLE
@@ -57,6 +43,8 @@ namespace
 #endif
     }
 
+
+
     // -----------------------------------------------------------------------
     // アーカイブ（.pak）
     //
@@ -65,14 +53,14 @@ namespace
     //   [目次]    entryCount 回: pathLength(u16) / path(UTF-8) / offset(u64) / size(u64)
     //   [中身]    各ファイルのバイト列。offset はアーカイブの先頭からの位置
     //
-    // path は . と .. を解決し、区切りを / にしたもの（大文字小文字は元のまま）。
+    // path は . と .. を解決し、区切りを / にしたもの（大文字小文字は元のまま）
     // 引くときは小文字にした鍵で探し、一覧を返すときは元の名前を使う
-    // （ファイル名から登録名を作るアセットがあるため、名前の大文字小文字は残す）。
+    // （ファイル名から登録名を作るアセットがあるため、名前の大文字小文字は残す）
     //
     // 暗号化（flags に kArchiveFlagXor が立っているとき）:
-    //   ヘッダより後ろ（目次と中身）の全バイトに、乱数列を XOR してある。ヘッダは平文のまま。
-    //   乱数列は「アーカイブ先頭からの位置」だけで決まるので、どこから読んでもその場で戻せる。
-    //   素材を手軽に取り出せなくするためのもので、鍵は exe に入っているため解析されれば破られる。
+    //   ヘッダより後ろ（目次と中身）の全バイトに、乱数列を XOR してある。ヘッダは平文のまま
+    //   乱数列は「アーカイブ先頭からの位置」だけで決まるので、どこから読んでもその場で戻せる
+    //   素材を手軽に取り出せなくするためのもので、鍵は exe に入っているため解析されれば破られる
     // -----------------------------------------------------------------------
 
     // Shipping で開くアーカイブ。作業ディレクトリ（普通は exe の隣）に置く
@@ -85,10 +73,7 @@ namespace
     // 乱数列の種。make_pak.py の KEY と同じ値にすること
     constexpr uint64_t kArchiveKey = 0x5A3C9E71D24B8F06ull;
 
-    /**
-     * @brief 64bit の値をよく混ぜる（splitmix64）。入力が 1 違うだけでも全く違う値になる。
-     * @note make_pak.py の splitmix と同じ計算。
-     */
+    // 64bit の値をよく混ぜる（splitmix64）。make_pak.py の splitmix と同じ計算
     uint64_t SplitMix64(uint64_t x)
     {
         uint64_t z = x + 0x9E3779B97F4A7C15ull;
@@ -97,14 +82,10 @@ namespace
         return z ^ (z >> 31);
     }
 
-    /**
-     * @brief アーカイブの一部を XOR で戻す（同じ処理をもう一度掛けると元に戻る）。
-     * @param data     戻すバイト列。その場で書き換える。
-     * @param size     data のバイト数。
-     * @param position data の先頭が、アーカイブ先頭から何バイト目か。
-     * @note 位置 p のバイトには「SplitMix64(鍵 ^ (p / 8)) の p % 8 番目のバイト」を XOR する。
-     *       8 バイトごとに違う値を使うので、同じ鍵を繰り返し掛けたときのような模様は出ない。
-     */
+
+
+    // アーカイブの一部を XOR で戻す（もう一度掛けると元に戻る）。position は data の先頭のアーカイブ内の位置
+    // 位置 p のバイトには SplitMix64(鍵 ^ (p / 8)) の p % 8 番目のバイトを掛けるので、8バイトごとに値が変わる
     void XorArchiveBytes(uint8_t *data, size_t size, uint64_t position)
     {
         size_t i = 0;
@@ -119,6 +100,8 @@ namespace
         }
     }
 
+
+
     struct ArchiveEntry
     {
         std::string path;   // 元の名前（正規化済み・大文字小文字はそのまま）
@@ -131,13 +114,8 @@ namespace
     std::unordered_map<std::string, ArchiveEntry> g_archiveEntries;          // 鍵は小文字にしたパス
     bool                                          g_archiveEncrypted = false; // 中身を XOR で戻す必要があるか
 
-    /**
-     * @brief パスの表記を揃える（\ を / に、. と .. を解決）。
-     * @param path 揃えるパス。
-     * @param toLower true なら英字を小文字にする（目次を引く鍵に使う）。
-     * @note 小文字にするのは ASCII だけ。日本語のファイル名（UTF-8）のバイトは触らない。
-     *       std::filesystem::path を通さないのは、UTF-8 の文字列を ANSI として解釈して化けるため。
-     */
+    // パスの表記をそろえる（\ を / に、. と .. を解決）。toLower なら英字を小文字にする（目次を引く鍵）
+    // std::filesystem::path を通さないのは、UTF-8 の文字列を ANSI として読んで化けるため
     std::string NormalizePath(const std::string &path, bool toLower)
     {
         std::vector<std::string> parts;
@@ -183,6 +161,8 @@ namespace
         return result;
     }
 
+
+
     const ArchiveEntry *FindArchiveEntry(const std::string &virtualPath)
     {
         if (g_archiveEntries.empty()) return nullptr;
@@ -190,6 +170,8 @@ namespace
         const auto it = g_archiveEntries.find(NormalizePath(virtualPath, true));
         return (it != g_archiveEntries.end()) ? &it->second : nullptr;
     }
+
+
 
     // アーカイブから1ファイルを読む。毎回開き直すので、複数スレッドから同時に呼んでよい
     bool ReadFromArchive(const ArchiveEntry &entry, std::vector<uint8_t> &out)
@@ -206,10 +188,9 @@ namespace
         return true;
     }
 
-    /**
-     * @brief 今の位置から size バイト読む。encrypted なら、読んだ位置の乱数列で戻す。
-     * @note 位置は読む前に tellg で取る（乱数列は位置で決まるため）。
-     */
+
+
+    // 今の位置から size バイト読む。encrypted なら、読んだ位置の乱数列で戻す（位置は読む前に tellg で取る）
     bool ReadArchiveBytes(std::ifstream &file, void *out, size_t size, bool encrypted)
     {
         const uint64_t position = static_cast<uint64_t>(file.tellg());
@@ -218,6 +199,8 @@ namespace
         if (encrypted) XorArchiveBytes(static_cast<uint8_t *>(out), size, position);
         return true;
     }
+
+
 
     template <class T>
     bool ReadValue(std::ifstream &file, T &out, bool encrypted = false)
@@ -238,6 +221,8 @@ void FileSystem::Initialize()
 #endif
     CCL_LOG_INFO(LogCategory::Core, "[FileSystem] Initialized.");
 }
+
+
 
 bool FileSystem::Mount(const std::string &archivePath)
 {
@@ -315,10 +300,14 @@ bool FileSystem::Mount(const std::string &archivePath)
     return true;
 }
 
+
+
 bool FileSystem::IsInArchive(const std::string &virtualPath)
 {
     return FindArchiveEntry(virtualPath) != nullptr;
 }
+
+
 
 std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtualPath)
 {
@@ -326,14 +315,18 @@ std::filesystem::path FileSystem::ResolvePhysicalPath(const std::string &virtual
     return std::filesystem::path(virtualPath);
 }
 
+
+
 bool FileSystem::Exists(const std::string &virtualPath)
 {
     if (FindArchiveEntry(virtualPath)) return true;
 
-    // 手入力のパスも渡ってくるので、例外を投げない版を使う（壊れたパスは「無い」扱い）
+    // 手入力のパスも渡ってくるので、例外を投げない版を使う（壊れたパスは「ない」扱い）
     std::error_code ec;
     return std::filesystem::exists(ResolvePhysicalPath(virtualPath), ec);
 }
+
+
 
 std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
                                                const std::string &extension)
@@ -341,7 +334,7 @@ std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
     std::vector<std::string>        result;
     std::unordered_set<std::string> seen; // アーカイブとディスクの両方にある名前を1つにまとめる（小文字の名前）
 
-    // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む。
+    // 拡張子の大小は OS によって揺れる。呼び出し側に小文字を強制させず、ここで畳む
     auto matchesExtension = [&extension](const std::string &fileName) {
         if (extension.empty()) return true;
         if (fileName.size() < extension.size()) return false;
@@ -369,7 +362,7 @@ std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
     // ---- ディスク ----
     const auto dir = ResolvePhysicalPath(virtualDir);
 
-    // ディレクトリが無いのは異常ではない（その種類のアセットをまだ作っていないだけ）。
+    // ディレクトリがないのは異常ではない（その種類のアセットをまだ作っていないだけ）
     std::error_code ec;
     if (std::filesystem::is_directory(dir, ec))
     {
@@ -381,16 +374,18 @@ std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
             if (!matchesExtension(fileName)) continue;
             if (!seen.insert(NormalizePath(fileName, true)).second) continue;
 
-            // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる。
+            // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる
             result.push_back(virtualDir + "/" + fileName);
         }
     }
 
     // ファイルシステムの列挙順は保証がない。並びが実行のたびに変わると、
-    // 「どのアセットが先に登録されたか」に依存する不具合が再現しなくなる。
+    // 「どのアセットが先に登録されたか」に依存する不具合が再現しなくなる
     std::sort(result.begin(), result.end());
     return result;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 読み書き
@@ -441,6 +436,8 @@ std::string FileSystem::ReadAllText(const std::string &virtualPath)
     return result;
 }
 
+
+
 bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string &content)
 {
 #ifdef SHIPPING_BUILD
@@ -467,7 +464,7 @@ bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string 
     file.flush();
 
     // write/flush の成否を確認する。見ないと、ディスク不足などで途中までしか
-    // 書けていなくても「保存できた」と報告してしまう。
+    // 書けていなくても「保存できた」と報告してしまう
     if (!file)
     {
         CCL_LOG_ERROR(LogCategory::Core, "[FileSystem] Write failed (disk full?): %s", virtualPath.c_str());
@@ -475,6 +472,8 @@ bool FileSystem::WriteAllText(const std::string &virtualPath, const std::string 
     }
     return true;
 }
+
+
 
 std::vector<uint8_t> FileSystem::ReadAllBytes(const std::string &virtualPath)
 {

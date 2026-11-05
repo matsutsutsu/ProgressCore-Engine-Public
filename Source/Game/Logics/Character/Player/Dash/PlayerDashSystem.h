@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: プレイヤーの回避ダッシュを処理する System。
+// 概要: プレイヤーの回避ダッシュを処理する System
 //
 // 責務:
 //   - ダッシュの開始・継続・終了と、ジャスト回避の受付を管理する
@@ -9,9 +9,9 @@
 //   - ダッシュ中はカメラへ画角を広げる要求を書く
 //
 // 備考:
-//   ダッシュしていないときの速さは、この後に走る PlayerMoveSystem が書く。
-//   ジャスト回避が成立したら、PlayerRushSystem がダッシュを打ち切ってラッシュを始める。
-//   ラッシュ中は新しいダッシュを始めない（その場の連撃を、回避で抜けさせない）。
+//   ダッシュしていないときの速さは、この後に走る PlayerMoveSystem が書く
+//   ジャスト回避が成立したら、PlayerRushSystem がダッシュを打ち切ってラッシュを始める
+//   ラッシュ中は新しいダッシュを始めない（その場の連撃を、回避で抜けさせない）
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
@@ -22,14 +22,15 @@
 #include "Game/Logics/Character/Player/Core/PlayerInputComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 
-class PlayerDashSystem : public CCL::ECS::IfSystem<PlayerDashSystem,
-                                                   CCL::ECS::Write<CharacterMovementComponent>,
-                                                   CCL::ECS::Write<PlayerDashComponent>,
-                                                   CCL::ECS::Write<PlayerComponent>,
-                                                   CCL::ECS::Read<PlayerInputComponent>,
-                                                   CCL::ECS::Read<TransformComponent>,
-                                                   CCL::ECS::Read<TimeStateComponent>,
-                                                   CCL::ECS::Read<PlayerRushComponent>>
+class PlayerDashSystem : public CCL::ECS::IfSystem<
+    PlayerDashSystem,
+    CCL::ECS::Write<CharacterMovementComponent>,
+    CCL::ECS::Write<PlayerDashComponent>,
+    CCL::ECS::Write<PlayerComponent>,
+    CCL::ECS::Read<PlayerInputComponent>,
+    CCL::ECS::Read<TransformComponent>,
+    CCL::ECS::Read<TimeStateComponent>,
+    CCL::ECS::Read<PlayerRushComponent>>
 {
 public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}
@@ -39,16 +40,8 @@ private:
     // 回避中は、被弾処理が見る HealthComponent の無敵タイマーを invincibleWindow 以上に保つ
     void MaintainInvincibility(CCL::ECS::EntityID id, const PlayerDashComponent &dash);
 
-    /**
-     * @brief ダッシュの開始・継続・終了を1ステップ分進める。終わったら走りに移す。
-     * @param dash        ダッシュの状態。
-     * @param player      走りと locomotion を書く先。
-     * @param dashPressed このステップにダッシュを押した瞬間か。
-     * @param movement    向きと速さを書く先。開始時は desiredVelocity を向きに使う。
-     * @param trans       入力が無いときの向きと、イベントの位置に使う。
-     * @param time        localDt でタイマーを進める。
-     * @param id          プレイヤーのエンティティ。
-     */
+    // ダッシュの開始・継続・終了を1ステップ進め、終わったら走りに移す
+    // 開始時は desiredVelocity を向きに使い、入力がなければ今の向き（trans）へ出す
     void UpdateDash(PlayerDashComponent &dash, PlayerComponent &player, bool dashPressed,
                     CharacterMovementComponent &movement, const TransformComponent &trans,
                     const TimeStateComponent &time, CCL::ECS::EntityID id);

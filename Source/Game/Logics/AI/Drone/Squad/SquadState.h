@@ -1,22 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: 小隊（5機編隊）の共有状態と調整値、それをまとめる World リソース。
+// 概要: 小隊（5機編隊）の状態と調整値、それをまとめる World リソース
 //
-// 責務:
-//   - 小隊1個ぶんの状態（SquadState）: アンカー・段階・各席の前フレームの位置と速度
-//   - 実行中に触る調整値（SquadTuning）: 隊列・追跡・降下
-//   - 全小隊の密配列（SquadRegistry）
-//
-// 備考:
-//   書き手は SquadUpdateSystem（単スレッド）だけで、陣形・移動の並列ループからは読むだけ。
-//
-//   実体のリーダー機を持たず、先頭の位置をデータ（アンカー）として持つ。先頭機が撃破されても隊列が崩れない。
+// 備考: 書くのは SquadUpdateSystem（単スレッド）だけ。陣形・移動の並列ループからは読むだけ
+//       リーダー機を持たず、先頭の位置をアンカーとして持つ。先頭の機が撃破されても隊列が崩れない
 // ===========================================================================
 #include <array>
 #include <cstdint>
 #include "SimpleMath.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // kDroneGroundY
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 
 // 小隊が飛べる一番低い高さ。追跡は外れても飛び続けるので、止めないと床を突き抜ける
 inline constexpr float kSquadFloorY = kDroneGroundY + 2.0f;
@@ -24,7 +17,7 @@ inline constexpr float kSquadFloorY = kDroneGroundY + 2.0f;
 // 小隊の段階。待機は BT が他の陣形（頭上円陣など）で作るので、ここには持たない
 enum class SquadPhase : uint8_t
 {
-    Idle,    // 小隊突撃の指示が無い。アンカーは先頭の機に重ねておくだけ
+    Idle,    // 小隊突撃の指示がない。アンカーは先頭の機に重ねておくだけ
     Descend, // 今いる場所（頭上円陣など）から真下へ降りてくる（予備動作）
     Chase,   // プレイヤーを追い続ける。攻撃の合図が落ちるまで続く
 };
@@ -32,7 +25,7 @@ enum class SquadPhase : uint8_t
 // 小隊1個ぶんの状態。書き手はすべて SquadUpdateSystem
 struct SquadState
 {
-    // --- アンカー（実体の無い先頭） ---
+    // --- アンカー（実体のない先頭） ---
 
     DirectX::SimpleMath::Vector3 anchorPos      = DirectX::SimpleMath::Vector3::Zero;  // 位置。席0の機がここを追う
     DirectX::SimpleMath::Vector3 anchorForward  = DirectX::SimpleMath::Vector3::UnitZ; // 向き（正規化済み）

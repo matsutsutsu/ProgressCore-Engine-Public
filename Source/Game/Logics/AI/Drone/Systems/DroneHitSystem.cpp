@@ -1,8 +1,8 @@
 #include "DroneHitSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h" // 陣形ごとの当たり方
-#include "Game/Logics/AI/Drone/Motion/DroneMotion.h" // 動き方ごとの「当たらない区間」
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/Drone/Motion/DroneMotion.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -85,6 +85,8 @@ void DroneHitSystem::Update(float /*dt*/)
         m_stateCount[i] = stateCount[i];
 }
 
+
+
 void DroneHitSystem::OnGui()
 {
     ImGui::Text("ドローン %d 機", m_droneCount);
@@ -102,6 +104,8 @@ void DroneHitSystem::OnGui()
         "・突撃中なのに『判定が開いている機』が 0 → 状態の判定がおかしい\n"
         "・開いているのに当たらない → 球の半径か、プレイヤー側の Hurtbox を疑う");
 }
+
+
 
 // 物理ステップ(L04)より前に判定の開け閉めを終わらせる
 REGISTER_LOGIC_SYSTEM(DroneHitSystem, Priority::LogicStage::L03_PrePhysics);

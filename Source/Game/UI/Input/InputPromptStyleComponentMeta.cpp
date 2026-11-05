@@ -1,4 +1,3 @@
-// InputPromptStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/Input/InputPromptStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

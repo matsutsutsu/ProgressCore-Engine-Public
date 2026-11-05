@@ -24,11 +24,15 @@ bool LoadImageData(tinygltf::Image *, const int, std::string *,
     return true;
 }
 
+
+
 // tinygltf のファイル読み込みを FileSystem 経由にする（.glb / .gltf 本体と、.gltf が参照する .bin の両方）
 static bool GltfFileExists(const std::string &path, void *)
 {
     return FileSystem::Exists(path);
 }
+
+
 
 static bool GltfReadWholeFile(std::vector<unsigned char> *out, std::string *err, const std::string &path, void *)
 {
@@ -41,15 +45,10 @@ static bool GltfReadWholeFile(std::vector<unsigned char> *out, std::string *err,
     return true;
 }
 
-/**
- * @brief 画像データの先頭のマジックナンバーから拡張子を決める。
- *
- * glb に埋め込まれたテクスチャは mimeType が "image/unknown" などで当てにならないことがあるので、実データの先頭のバイトで判定する。
- *
- * @param data 画像データの先頭。
- * @param size data の大きさ（バイト）。
- * @return 拡張子（"png" などドット無しの文字列リテラル）。判定できなければ "bin"。
- */
+
+
+// 画像データの先頭のマジックナンバーから拡張子（ドットなし）を決める。判定できなければ "bin"
+// glb に埋め込まれたテクスチャは、mimeType が "image/unknown" などで当てにならないことがある
 static const char *DetectImageExtensionFromBytes(const unsigned char *data, size_t size)
 {
     if (data == nullptr) return "bin";
@@ -60,6 +59,8 @@ static const char *DetectImageExtensionFromBytes(const unsigned char *data, size
     if (size >= 12 && std::memcmp(data, "RIFF", 4) == 0 && std::memcmp(data + 8, "WEBP", 4) == 0) return "webp";
     return "bin";
 }
+
+
 
 GLTFImporter::GLTFImporter(const char *filename)
     : filepath(filename)
@@ -103,13 +104,15 @@ GLTFImporter::GLTFImporter(const char *filename)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 読み込み
 // ---------------------------------------------------------------------------
 
 void GLTFImporter::LoadNodes(NodeList &nodes)
 {
-    // glTF にノードが無いときも、ファイル名のノードが1つ残るようにする
+    // glTF にノードがないときも、ファイル名のノードが1つ残るようにする
     ModelResource::Node &node = nodes.emplace_back();
     node.name                 = filepath.filename().stem().string();
 
@@ -156,6 +159,8 @@ void GLTFImporter::LoadNodes(NodeList &nodes)
         ConvertNodeAxisSystem(node);
     }
 }
+
+
 
 void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
 {
@@ -426,7 +431,7 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
                 }
             }
 
-            // 接線が無ければ、UV から求める
+            // 接線がなければ、UV から求める
             if (gltfPrimitive.attributes.find("TANGENT") == gltfPrimitive.attributes.end() &&
                 gltfPrimitive.attributes.find("POSITION") != gltfPrimitive.attributes.end() &&
                 gltfPrimitive.attributes.find("TEXCOORD_0") != gltfPrimitive.attributes.end())
@@ -439,6 +444,8 @@ void GLTFImporter::LoadMeshes(MeshList &meshes, const NodeList &nodes)
         }
     }
 }
+
+
 
 void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
 {
@@ -537,8 +544,8 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                     std::filesystem::path textureFilePath(gltfImage.uri);
                     if (textureFilePath.empty())
                     {
-                        // 画像に名前が無ければ、マテリアル名とテクスチャの種類から作る。
-                        // 拡張子は mimeType が当てにならないので、実データの先頭から決める。
+                        // 画像に名前がなければ、マテリアル名とテクスチャの種類から作る
+                        // 拡張子は mimeType が当てにならないので、実データの先頭から決める
                         const char *extension = DetectImageExtensionFromBytes(
                             reinterpret_cast<const unsigned char *>(imageData), imageSize);
                         textureFilePath = material.name + "_" + textureType + "." + extension;
@@ -549,7 +556,7 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
                     std::filesystem::path outputDirPath(dirpath / textureFilePath.parent_path());
                     if (!std::filesystem::exists(outputDirPath))
                     {
-                        // 無ければ作る
+                        // なければ作る
                         std::filesystem::create_directories(outputDirPath);
                     }
                     // 画像を書き出す
@@ -594,14 +601,16 @@ void GLTFImporter::LoadMaterials(MaterialList &materials, ID3D11Device *device)
     }
 }
 
+
+
 void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nodes, float sampleRate)
 {
     DirectX::XMVECTOR Epsilon = DirectX::XMVectorReplicate(0.00001f);
 
-    // チャンネルの適用先は glTF のノード番号で書かれているが、これはそのファイルの中での番号でしかない。
-    // 別ファイルのアニメーションを取り込むとき、モデル側の並びと一致する保証は無い。
+    // チャンネルの適用先は glTF のノード番号で書かれているが、これはそのファイルの中での番号でしかない
+    // 別ファイルのアニメーションを取り込むとき、モデル側の並びと一致する保証はない
     // 番号のまま使うと、ずれたときにエラーも出ずに別のボーンに適用されて姿勢が壊れるので、
-    // ボーン名でモデル側の番号に読み替えてから使う。
+    // ボーン名でモデル側の番号に読み替えてから使う
     std::unordered_map<std::string, int> modelNodeIndexByName;
     modelNodeIndexByName.reserve(nodes.size());
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
@@ -632,8 +641,8 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
         int   unresolvedChannels    = 0;
         for (const tinygltf::AnimationChannel &gltfAnimationChannel : gltfAnimation.channels)
         {
-            // 適用先のボーンをモデル側の番号に読み替える。
-            // モデルに無いボーンのチャンネルは捨て、最後にまとめてログに出す。
+            // 適用先のボーンをモデル側の番号に読み替える
+            // モデルにないボーンのチャンネルは捨て、最後にまとめてログに出す
             const int targetNode = gltfAnimationChannel.target_node;
             const int modelNodeIndex =
                 (targetNode >= 0 && static_cast<size_t>(targetNode) < modelNodeIndices.size())
@@ -657,11 +666,8 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
             minTime                        = (std::min)(minTime, gltfKeyframeTimes[0]);
             maxTime                        = (std::max)(animation.secondsLength, gltfKeyframeTimes[gltfInputAccessor.count - 1]);
 
-            // 補間の種類。
-            // glTF では interpolation が "CUBICSPLINE" のとき、出力のバッファは1キーフレームにつき
-            // [入りの接線, 値, 出の接線] の3つ組で並ぶ。1キーフレーム = 1要素のまま読むと、値ではなく
-            // 接線のベクトルを姿勢として読んでしまい、そのボーンだけ向きがおかしくなる。
-            // 指定が無ければ "LINEAR"。
+            // 補間の種類。指定がなければ "LINEAR"
+            // "CUBICSPLINE" の出力は1キーフレームにつき [入りの接線, 値, 出の接線] の3つ組なので、1要素ずつ読むと接線を姿勢として読む
             const bool isCubicSpline = (gltfAnimationSampler.interpolation == "CUBICSPLINE");
             const int  valueStride   = isCubicSpline ? 3 : 1; // CUBICSPLINE は3つ組の真ん中（値）だけを使う
 
@@ -676,7 +682,7 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                     // CUBICSPLINEは [in-tangent, value, out-tangent] の中央(添字+1)が実際の値
                     keyframe.value = gltfKeyframeValues[i * valueStride + (isCubicSpline ? 1 : 0)];
                 }
-                // キーフレームの値が全て同じなら最初のキーフレーム以外省く
+                // キーフレームの値がすべて同じなら最初のキーフレーム以外省く
                 bool              result = true;
                 DirectX::XMVECTOR A      = DirectX::XMLoadFloat3(&nodeAnim.scaleKeyframes.at(0).value);
                 for (size_t i = 1; i < nodeAnim.scaleKeyframes.size(); ++i)
@@ -701,12 +707,12 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                 {
                     ModelResource::QuaternionKeyframe &keyframe = nodeAnim.rotationKeyframes.emplace_back();
                     keyframe.seconds                            = gltfKeyframeTimes[i];
-                    // CUBICSPLINE は [in-tangent, value, out-tangent] の真ん中（添字 +1）が値。
-                    // 先頭（in-tangent）を読むと接線のベクトルを回転として扱い、そのボーンだけ向きが壊れる。
+                    // CUBICSPLINE は [in-tangent, value, out-tangent] の真ん中（添字 +1）が値
+                    // 先頭（in-tangent）を読むと接線のベクトルを回転として扱い、そのボーンだけ向きが壊れる
                     keyframe.value = gltfKeyframeValues[i * valueStride + (isCubicSpline ? 1 : 0)];
                 }
 
-                // キーフレームの値が全て同じなら最初のキーフレーム以外省く
+                // キーフレームの値がすべて同じなら最初のキーフレーム以外省く
                 bool              result = true;
                 DirectX::XMVECTOR A      = DirectX::XMLoadFloat4(&nodeAnim.rotationKeyframes.at(0).value);
                 for (size_t i = 1; i < nodeAnim.rotationKeyframes.size(); ++i)
@@ -735,7 +741,7 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                     keyframe.value = gltfKeyframeValues[i * valueStride + (isCubicSpline ? 1 : 0)];
                 }
 
-                // キーフレームの値が全て同じなら最初のキーフレーム以外省く
+                // キーフレームの値がすべて同じなら最初のキーフレーム以外省く
                 bool              result = true;
                 DirectX::XMVECTOR A      = DirectX::XMLoadFloat3(&nodeAnim.positionKeyframes.at(0).value);
                 for (size_t i = 1; i < nodeAnim.positionKeyframes.size(); ++i)
@@ -761,8 +767,8 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
                          animation.name.c_str(), unresolvedChannels);
         }
 
-        // チャンネルを1本も取り込めなかったときは minTime が初期値のままで、再生時間が負の大きな値になる。
-        // その後の引き算も壊れるので、ここで 0 にしておく。
+        // チャンネルを1本も取り込めなかったときは minTime が初期値のままで、再生時間が負の大きな値になる
+        // その後の引き算も壊れるので、ここで 0 にしておく
         if (minTime > maxTime)
         {
             minTime = maxTime;
@@ -790,7 +796,7 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
         // 右手系（glTF）から左手系（D3D）へ
         ConvertAnimationAxisSystem(animation);
 
-        // キーフレームが無いノードには、初期姿勢のキーフレームを1つ入れる
+        // キーフレームがないノードには、初期姿勢のキーフレームを1つ入れる
         for (size_t nodeIndex = 0; nodeIndex < animation.nodeAnims.size(); ++nodeIndex)
         {
             const ModelResource::Node &node     = nodes.at(nodeIndex);
@@ -838,6 +844,8 @@ void GLTFImporter::LoadAnimations(AnimationList &animations, const NodeList &nod
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 型の変換
 // ---------------------------------------------------------------------------
@@ -850,6 +858,8 @@ DirectX::XMFLOAT3 GLTFImporter::gltfVector3ToXMFLOAT3(const std::vector<double> 
         static_cast<float>(gltfValue.at(2)));
 }
 
+
+
 DirectX::XMFLOAT4 GLTFImporter::gltfQuaternionToXMFLOAT4(const std::vector<double> &gltfValue)
 {
     return DirectX::XMFLOAT4(
@@ -858,6 +868,8 @@ DirectX::XMFLOAT4 GLTFImporter::gltfQuaternionToXMFLOAT4(const std::vector<doubl
         static_cast<float>(gltfValue.at(2)),
         static_cast<float>(gltfValue.at(3)));
 }
+
+
 
 DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<double> &gltfValue)
 {
@@ -880,6 +892,8 @@ DirectX::XMFLOAT4X4 GLTFImporter::gltfMatrixToXMFLOAT4X4(const std::vector<doubl
         static_cast<float>(gltfValue.at(15)));
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 座標系の変換
 // ---------------------------------------------------------------------------
@@ -889,16 +903,22 @@ void GLTFImporter::ConvertPositionAxisSystem(DirectX::XMFLOAT3 &v)
     v.x = -v.x;
 }
 
+
+
 void GLTFImporter::ConvertPositionAxisSystem(DirectX::XMFLOAT4 &v)
 {
     v.x = -v.x;
 }
+
+
 
 void GLTFImporter::ConvertRotationAxisSystem(DirectX::XMFLOAT4 &q)
 {
     q.x = -q.x;
     q.w = -q.w;
 }
+
+
 
 void GLTFImporter::ConvertMatrixAxisSystem(DirectX::XMFLOAT4X4 &m)
 {
@@ -909,11 +929,15 @@ void GLTFImporter::ConvertMatrixAxisSystem(DirectX::XMFLOAT4X4 &m)
     m._41 = -m._41;
 }
 
+
+
 void GLTFImporter::ConvertNodeAxisSystem(ModelResource::Node &node)
 {
     ConvertPositionAxisSystem(node.translate);
     ConvertRotationAxisSystem(node.rotate);
 }
+
+
 
 void GLTFImporter::ConvertMeshAxisSystem(ModelResource::Mesh &mesh)
 {
@@ -932,7 +956,7 @@ void GLTFImporter::ConvertMeshAxisSystem(ModelResource::Mesh &mesh)
         p[2]           = temp;
     }
 
-    // ボーンの無いメッシュでは、ウェイトとボーン番号に残っている不定の値を消す
+    // ボーンのないメッシュでは、ウェイトとボーン番号に残っている不定の値を消す
     if (mesh.bones.empty())
     {
         for (auto &v : mesh.vertices)
@@ -948,6 +972,8 @@ void GLTFImporter::ConvertMeshAxisSystem(ModelResource::Mesh &mesh)
     }
 }
 
+
+
 void GLTFImporter::ConvertAnimationAxisSystem(ModelResource::Animation &animation)
 {
     for (ModelResource::NodeAnim &nodeAnim : animation.nodeAnims)
@@ -962,6 +988,8 @@ void GLTFImporter::ConvertAnimationAxisSystem(ModelResource::Animation &animatio
         }
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 接線の計算

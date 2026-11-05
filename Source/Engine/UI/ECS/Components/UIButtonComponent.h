@@ -1,18 +1,9 @@
 #pragma once
-// ===========================================================================
-// 概要: ボタンの状態ごとの色と、クリック時のアクション名を持つコンポーネント UIButtonComponent。
-//
-// 責務:
-//   - 通常 / hover / 押下 / 無効 の色と、hover 時の拡大率を保持する
-//   - クリック時に通知するアクション名を保持する
-//
-// 備考: UIButtonSystem が UIInteractableComponent の状態を見て UIImageComponent.color を差し替え、
-//       クリックされたら onClickAction のハッシュを UIButtonClickedEvent で発行する。
-//       状態ごとの画像の切り替えは未対応（色だけ）。
-// ===========================================================================
 #include <DirectXMath.h>
 #include <string>
 
+// ボタンの状態ごとの色と、クリック時のアクション名。状態ごとの画像の切り替えはなく、色だけ
+// UIButtonSystem が操作の状態を見て色を差し替え、クリックで UIButtonClickedEvent を出す
 struct UIButtonComponent
 {
     DirectX::XMFLOAT4 normalColor   = {0.25f, 0.28f, 0.35f, 1.0f};

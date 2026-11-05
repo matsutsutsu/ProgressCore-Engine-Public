@@ -1,5 +1,3 @@
-// PlayerDashComponent のメタ定義。
-
 #include "PlayerDashComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

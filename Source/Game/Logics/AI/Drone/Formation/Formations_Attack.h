@@ -1,28 +1,28 @@
 #pragma once
 // ===========================================================================
-// 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く。
+// 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く
 //
 // 責務:
 //   - 弾幕（Barrage）: 頭上の輪から1機ずつ中心へ寄り、プレイヤーへ撃ち出す
 //
 // 備考:
-//   データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、機体ごとに状態を持つ技は書けない。
-//   弾幕は機体ごとに発射の順番を持ち、撃つ瞬間まで狙い直し、撃った後は各機が独立して攻撃を終える。
+//   データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、機体ごとに状態を持つ技は書けない
+//   弾幕は機体ごとに発射の順番を持ち、撃つ瞬間まで狙い直し、撃った後は各機が独立して攻撃を終える
 // ===========================================================================
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 射出速度（kDroneChargeSpeedScale）
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 #include <cmath>
 #include <algorithm>
 
 namespace CCL::AI::Formation::Attack
 {
     /**
-     * @brief 弾幕（Barrage）。求める回避はジャスト回避。
+     * @brief 弾幕（Barrage）。求める回避はジャスト回避
      *
-     * 輪の上で待つ → 自分の番の少し前に中心へ寄る（これが予告）→ 中心でタメ → 発射（以降は直進）。
-     * 発射の瞬間まで1機ずつ今のプレイヤーを狙い続け、撃った後は直進するので避ける余地が残る。
+     * 輪の上で待つ → 自分の番の少し前に中心へ寄る（これが予告）→ 中心でタメ → 発射（以降は直進）
+     * 発射の瞬間まで1機ずつ今のプレイヤーを狙い続け、撃った後は直進するので避ける余地が残る
      */
     class BarrageFormation : public IFormation
     {
@@ -58,7 +58,7 @@ namespace CCL::AI::Formation::Attack
 
             // --- 飛び出した後 ---
 
-            // 順番待ちとタメの間はまだ撃っていないので、狙いを更新し続ける。
+            // 順番待ちとタメの間はまだ撃っていないので、狙いを更新し続ける
             // タメを含め忘れると古い座標を撃ち、歩いているだけで当たらなくなる
             const bool launched = (drone.currentState == DroneState::FireCharge) &&
                                   (drone.fireDelay <= 0.0f) && (drone.chargeWindup <= 0.0f);
@@ -94,7 +94,7 @@ namespace CCL::AI::Formation::Attack
 
             // --- 狙い ---
 
-            // 偏差射撃。狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度)。
+            // 偏差射撃。狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度)
             // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる
             const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
             const float windupLeft  = (drone.chargeWindup > 0.0f) ? drone.chargeWindup : 0.0f;
@@ -136,7 +136,7 @@ namespace CCL::AI::Formation::Attack
 
         static constexpr float kLeadFactor = 0.5f; // 先読みの強さ。0=今の位置 / 1=完全な迎撃。歩くだけでは避けられない値にする
 
-        // 突撃を終える飛距離 [m]。短いと届く前に判定が閉じ、重なっているのに当たらない。
+        // 突撃を終える飛距離 [m]。短いと届く前に判定が閉じ、重なっているのに当たらない
         // BT の発動距離（水平 120m）と発射地点の高さから逆算している。発動距離を伸ばすならここも伸ばす
         static constexpr float kChargeRange = 140.0f;
 

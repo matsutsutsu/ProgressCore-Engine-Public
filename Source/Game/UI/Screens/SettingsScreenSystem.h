@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 設定画面（視点の感度・BGM と効果音の音量）を開いて操作させ、設定をカメラと音声へ反映する System。
+// 概要: 設定画面（視点の感度・BGM と効果音の音量）を開いて操作させ、設定をカメラと音声へ反映する System
 //
 // 責務:
 //   - 「設定」のボタンが押されたら、設定画面を上に重ねて開く
@@ -8,7 +8,7 @@
 //   - 開いている間は、下の画面のボタンを操作できないようにする
 //   - 設定の値を毎フレーム、カメラと音声へ反映する
 //
-// 備考: 全シーンで動かす。ポーズ中も操作できるよう、描画ステージに置く。
+// 備考: 全シーンで動かす。ポーズ中も操作できるよう、描画ステージに置く
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
@@ -25,9 +25,10 @@ struct SettingsScreenState
     bool open = false; // 設定画面を開いているか（閉じる入れ替えの途中も true）
 };
 
-class SettingsScreenSystem : public CCL::ECS::IfSystem<SettingsScreenSystem,
-                                                       CCL::ECS::Read<UIInteractableComponent>,
-                                                       CCL::ECS::Read<UIButtonComponent>>
+class SettingsScreenSystem : public CCL::ECS::IfSystem<
+    SettingsScreenSystem,
+    CCL::ECS::Read<UIInteractableComponent>,
+    CCL::ECS::Read<UIButtonComponent>>
 {
 public:
     SettingsScreenSystem() : IfSystem("SettingsScreenSystem") {}
@@ -51,22 +52,17 @@ private:
     static constexpr int kValueRows = RowBack; // 値を持つ行の数
 
     // --- 反映と効果音 ---
+    // 設定の値をカメラ（感度）と音声（BGM・効果音の音量）へ反映する
     void ApplySettings();                       // 設定の値をカメラと音声へ反映する
-    void PlaySound(const char *eventName) const; // 効果音を1回鳴らす（音声が無いシーンでは何もしない）
+    void PlaySound(const char *eventName) const; // 効果音を1回鳴らす（音声がないシーンでは何もしない）
 
     // --- 開閉 ---
     void Open(CCL::ECS::EntityID opener); // 設定画面を作って開く。opener は開いたボタン
     void Close();                         // 設定画面を消して閉じ、保存する
     void UpdateFade(float dt);            // 重ねて入れ替える途中の不透明度を進め、描画リストへ書く
 
-    /**
-     * @brief 値を1段ずつ変える < か > の小さなボタンを作る。マウスで押すためのもので、フォーカスは受けない。
-     * @param name  エンティティの名前。記号の文字は後ろに "Glyph" を付けた名前になる。
-     * @param glyph ボタンに出す記号（"<" か ">"）。
-     * @param x     中心の X（px、画面の左上から）。
-     * @param y     中心の Y（px、画面の左上から）。
-     * @return 作ったボタン。記号の文字と一緒に m_overlay へ足す。
-     */
+    // 値を1段ずつ変える < か > の小さなボタンを作る。マウスで押すためのもので、フォーカスは受けない
+    // 記号の文字は name に "Glyph" を付けた名前になり、ボタンと一緒に m_overlay へ足す
     CCL::ECS::EntityID SpawnArrow(CCL::ECS::EntityID canvas, const char *name, const char *glyph, float x, float y);
 
     // --- 値 ---

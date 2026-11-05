@@ -3,17 +3,17 @@
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Graphics/RHI/Graphics.h"
 #include "Engine/Scene/SceneManager.h"
-#include "Engine/Scene/SceneFactory.h" // 登録済みシーン一覧（Sceneメニューの自動生成）
+#include "Engine/Scene/SceneFactory.h"
 #include "Engine/Platform/Core/Dialog.h"
 
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/Core/App/GameFlowState.h" // カーソル自由(UI操作)モードの共有フラグ
+#include "Engine/Core/App/GameFlowState.h"
 
 // マウス視点の可否（全画面 or ゲームビュー フォーカス）を InputFacade へ伝えるため
 #include "Engine/Core/App/EngineServices.h"
 #include "Engine/Platform/Input/InputFacade.h"
-#include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形の毎フレーム無効化
+#include "Engine/UI/ECS/GameViewportInfo.h"
 
 #include "Editor/Windows/General/AssetBrowserWindow.h"
 #include "Editor/Windows/General/ECSDebugWindow.h"
@@ -45,7 +45,7 @@
 #include <shellapi.h>
 #include <map>
 #include <sstream>
-#include <algorithm> // std::sort（Sceneメニューの名前順ソート）
+#include <algorithm>
 
 #include <tracy/Tracy.hpp>
 
@@ -81,6 +81,8 @@ void EditorWindowManager::Initialize()
     RegisterWindow<BuildingScatterWindow>();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // プレハブのフォルダ階層をメニュー化するためのヘルパー
 // ---------------------------------------------------------------------------
@@ -107,7 +109,7 @@ namespace
                     DirectX::XMFLOAT3  spawnPos = {0, 5, 0};
                     CCL::ECS::EntityID e        = Prefab::SpawnPrefab(*context.world, node.fullPath, spawnPos);
                     // プレハブの実体として印を付ける。レベル保存では {path, transform} の参照になり、
-                    // シーン（ベイク）保存では除外される。
+                    // シーン（ベイク）保存では除外される
                     if (e != CCL::ECS::InvalidEntityID)
                         context.world->AddComponent<PrefabInstanceComponent>(e, PrefabInstanceComponent{node.fullPath});
                     CCL_LOG_INFO(LogCategory::Editor, "Spawned Prefab: %s", displayName.c_str());
@@ -131,6 +133,9 @@ namespace
             }
         }
     }
+
+
+
     // Assets/Prefabs 以下の .json を集め直す
     void RefreshPrefabList(EditorContext &context)
     {
@@ -184,29 +189,29 @@ void EditorWindowManager::Draw(EditorContext &context)
             m_isVisible = !m_isVisible;
         }
 
-        // TAB で一時停止・再開を切り替える（ツールバーの Pause/Resume ボタンと同じ動作）。
-        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、切り替えない。
+        // TAB で一時停止・再開を切り替える（ツールバーの Pause/Resume ボタンと同じ動作）
+        //   テキスト入力欄にフォーカスがあるときは ImGui のフィールド移動を優先し、切り替えない
         if (ImGui::IsKeyPressed(ImGuiKey_Tab, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.isPaused = !context.isPaused;
         }
 
-        // F11 で1フレームだけコマ送り（一時停止中のみ有効）。false=リピートなしで1回だけ。
+        // F11 で1フレームだけコマ送り（一時停止中のみ有効）。false=リピートなしで1回だけ
         if (context.isPaused && ImGui::IsKeyPressed(ImGuiKey_F11, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.stepOneFrame = true;
         }
 
         // F2 で「カーソル自由(UI操作)モード」を切り替える。ゲームは動いたままカーソルだけ解放し、
-        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。テキスト入力中は無視する。
+        //   実行中に ImGui エディタ(シーケンサー等)を操作できるようにする。テキスト入力中は無視する
         if (ImGui::IsKeyPressed(ImGuiKey_F2, false) && !ImGui::GetIO().WantCaptureKeyboard)
         {
             context.cursorFreeToggle = !context.cursorFreeToggle;
         }
 
-        // 「カーソル自由」の最終状態を World リソースへ反映する。
+        // 「カーソル自由」の最終状態を World リソースへ反映する
         //   F2 が ON か、シーケンサーの Edit Mode 中なら true。カメラ(カーソルロック)と
-        //   PauseSystem(ESC抑制)がこれを読む。
+        //   PauseSystem(ESC抑制)がこれを読む
         if (context.world && context.world->HasResource<GameFlowState>())
         {
             context.world->GetResource<GameFlowState>().uiInteract =
@@ -220,17 +225,17 @@ void EditorWindowManager::Draw(EditorContext &context)
         RefreshPrefabList(context);
     }
 
-    // 今フレームのフォーカス状態はこの後 GameViewWindow が設定する。
-    // 窓が閉じている等で更新されない場合に前フレームの値が残らないよう先にクリア。
+    // 今フレームのフォーカス状態はこの後 GameViewWindow が設定する
+    // 窓が閉じている等で更新されない場合に前フレームの値が残らないよう先にクリア
     context.gameViewFocused = false;
 
-    // ゲーム画像の表示矩形も毎フレーム無効化。GameView が描いたフレームだけ再び valid=true になる。
+    // ゲーム画像の表示矩形も毎フレーム無効化。GameView が描いたフレームだけ再び valid=true になる
     //
     // editorVisible も併せて書く。valid=false には
     //   「全画面/Shipping なので恒等写像でよい」と
-    //   「エディタは出ているが GameView が隠れていてゲーム画面が無い」
+    //   「エディタは出ているが GameView が隠れていてゲーム画面がない」
     // の2つが混ざっており、後者で恒等写像に落とすと、画面に出ていないボタンを
-    // 他のウィンドウ上のクリックが押してしまう（GameViewportInfo.h の説明を参照）。
+    // 他のウィンドウ上のクリックが押してしまう（GameViewportInfo.h の説明を参照）
     if (context.world && context.world->HasResource<GameViewportInfo>())
     {
         auto &vp         = context.world->GetResource<GameViewportInfo>();
@@ -243,7 +248,7 @@ void EditorWindowManager::Draw(EditorContext &context)
     {
         ZoneScopedN("Draw Background Canvas");
 
-        // 全画面(F1)プレイ中は常にマウス視点を有効化する。
+        // 全画面(F1)プレイ中は常にマウス視点を有効化する
         if (auto &input = EngineServices::Instance().inputFacade)
             input->SetGameInputActive(true);
 
@@ -273,12 +278,14 @@ void EditorWindowManager::Draw(EditorContext &context)
         }
     }
 
-    // 窓描画後の確定したフォーカス状態を InputFacade へ反映。
+    // 窓描画後の確定したフォーカス状態を InputFacade へ反映
     //   ゲームビューにフォーカスがある時だけマウス視点を通す（編集中に視点が
-    //   マウスへ引っ張られるのを防ぐ）。
+    //   マウスへ引っ張られるのを防ぐ）
     if (auto &input = EngineServices::Instance().inputFacade)
         input->SetGameInputActive(context.gameViewFocused);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // メニューバー
@@ -303,6 +310,8 @@ void EditorWindowManager::DrawMainMenuBar(EditorContext &context)
         ImGui::EndMainMenuBar();
     }
 }
+
+
 
 void EditorWindowManager::DrawFileMenu(EditorContext &context)
 {
@@ -332,7 +341,7 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
 
         // ---- レベル = ステージ(ベイク) + プレハブ実体(参照配置) ----
         //   Open Scene/Save Scene が「ステージ層」だけを扱うのに対し、こちらは
-        //   プレハブ配置(プレイヤー/敵など)を参照ごと一括で保存/復元する。
+        //   プレハブ配置(プレイヤー/敵など)を参照ごと一括で保存/復元する
         if (ImGui::MenuItem("Open Level..."))
         {
             HWND hWnd = Graphics::Instance().GetWindowHandle();
@@ -360,12 +369,14 @@ void EditorWindowManager::DrawFileMenu(EditorContext &context)
     }
 }
 
+
+
 void EditorWindowManager::DrawEntityMenu(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawEntityMenu");
     if (ImGui::BeginMenu("Entity"))
     {
-        // world が無い（シーン未ロード）間は生成できない。他のメニューは確認している。
+        // world がない（シーン未ロード）間は生成できない。他のメニューは確認している
         ImGui::BeginDisabled(context.world == nullptr);
         if (ImGui::MenuItem("Add Empty Entity"))
         {
@@ -376,6 +387,8 @@ void EditorWindowManager::DrawEntityMenu(EditorContext &context)
         ImGui::EndMenu();
     }
 }
+
+
 
 void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
 {
@@ -454,6 +467,8 @@ void EditorWindowManager::DrawPrefabMenu(EditorContext &context)
     }
 }
 
+
+
 void EditorWindowManager::DrawSceneMenu(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawSceneMenu");
@@ -461,9 +476,9 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
     {
         auto &sceneMgr = SceneManager::Instance();
 
-        // SceneFactory へ REGISTER_SCENE で自己登録された全シーンをそのまま列挙する。
-        //   シーンを追加しても、このメニューへ手で書き足す必要はない。
-        //   登録先は unordered_map で順序が不定なので、表示は名前順にソートして安定させる。
+        // SceneFactory へ REGISTER_SCENE で自己登録された全シーンをそのまま列挙する
+        //   シーンを追加しても、このメニューへ手で書き足す必要はない
+        //   登録先は unordered_map で順序が不定なので、表示は名前順にソートして安定させる
         std::vector<std::string> sceneNames = SceneFactory::Instance().GetSceneNames();
         std::sort(sceneNames.begin(), sceneNames.end());
 
@@ -477,18 +492,18 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
         {
             const bool isCurrent = (name == currentName);
 
-            // 現在のシーンはチェックを付け、選べないようにする（自分自身への遷移を防ぐ）。
-            // 遷移中も多重遷移を避けるため全項目を無効化する。
+            // 現在のシーンはチェックを付け、選べないようにする（自分自身への遷移を防ぐ）
+            // 遷移中も多重遷移を避けるため全項目を無効化する
             ImGui::BeginDisabled(isCurrent || transitioning);
             if (ImGui::MenuItem(name.c_str(), nullptr, /*selected*/ isCurrent))
             {
-                // 全シーン共通でフェード付きの非同期遷移にする。
+                // 全シーン共通でフェード付きの非同期遷移にする
                 //   RequestTransition(async=true): 暗転 → 暗転中に対象シーンを別スレッドで読み込む
-                //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない。
+                //   → 読み込み完了後に1回だけ明転。メインスレッドを止めない
                 sceneMgr.RequestTransition(name, /*async*/ true);
 
                 // 遷移先では World もエンティティも作り直される。古い EntityID を
-                // 掴んだままだと、暗転中の数フレーム Inspector が無効な対象を描く。
+                // 掴んだままだと、暗転中の数フレーム Inspector が無効な対象を描く
                 //   （Undo 履歴の破棄は切替が実際に起きた瞬間に Framework が行う）
                 context.ClearSelection();
             }
@@ -499,6 +514,8 @@ void EditorWindowManager::DrawSceneMenu(EditorContext &context)
     }
 }
 
+
+
 void EditorWindowManager::DrawWindowMenu(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawWindowMenu");
@@ -508,12 +525,12 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
         {
         }
 
-        // 切り離した OS ウィンドウ(別画面に出した ImGui)を実際に描画するか。
-        //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる。
+        // 切り離した OS ウィンドウ(別画面に出した ImGui)を実際に描画するか
+        //   OFF にすると Exe 外のウィンドウは黒くなる代わりに負荷が下がる
         ImGui::MenuItem("外部ウィンドウを描画", nullptr, &context.renderExternalWindows);
 
         // 触っていない外部ウィンドウの描画を約15fpsまで落とす。別画面の数値を
-        //   滑らかに眺めたいときだけ OFF にする（そのぶんFPSは下がる）。
+        //   滑らかに眺めたいときだけ OFF にする（そのぶんFPSは下がる）
         ImGui::MenuItem("外部ウィンドウを間引く", nullptr, &context.throttleExternalWindows);
 
         ImGui::Separator();
@@ -529,6 +546,8 @@ void EditorWindowManager::DrawWindowMenu(EditorContext &context)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 再生操作と統計の帯
 // ---------------------------------------------------------------------------
@@ -537,9 +556,9 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
 {
     ZoneScopedN("EditorWindowManager::DrawPlayControlBar");
 
-    // 一時停止・再開の切り替えだけを行う。
+    // 一時停止・再開の切り替えだけを行う
     //   セーブやシーンのバックアップ・復元は行わない。押した瞬間に
-    //   context.isPaused を反転するだけで、Framework 側がその間 FixedUpdate を止める。
+    //   context.isPaused を反転するだけで、Framework 側がその間 FixedUpdate を止める
     float  menuBarWidth = ImGui::GetWindowWidth();
     float  buttonWidth  = 90.0f;
     ImVec2 btnSize      = ImVec2(buttonWidth, 0);
@@ -567,8 +586,8 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
         }
     }
 
-    // デバッグ速度（スロー再生）の切り替え。
-    //   等速以外のときは戻し忘れないよう、選択中の表示を色付きにする。
+    // デバッグ速度（スロー再生）の切り替え
+    //   等速以外のときは戻し忘れないよう、選択中の表示を色付きにする
     struct SpeedChoice
     {
         const char *label;
@@ -598,6 +617,8 @@ void EditorWindowManager::DrawPlayControlBar(EditorContext &context)
     }
     if (slowed) ImGui::PopStyleColor();
 }
+
+
 
 void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
 {
@@ -664,6 +685,8 @@ void EditorWindowManager::DrawPerformanceStatsBar(EditorContext &context)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // ツールメニュー
 // ---------------------------------------------------------------------------
@@ -717,6 +740,8 @@ void EditorWindowManager::DrawToolsMenu(EditorContext &context)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // レイアウトの保存・読み込み
 // ---------------------------------------------------------------------------
@@ -736,6 +761,8 @@ void EditorWindowManager::SaveLayout(const std::string &path)
     FileSystem::WriteAllText(path, j.dump(4));
     CCL_LOG_INFO(LogCategory::Editor, "Layout saved: %s", path.c_str());
 }
+
+
 
 void EditorWindowManager::LoadLayout(const std::string &path)
 {

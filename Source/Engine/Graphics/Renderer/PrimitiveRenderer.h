@@ -1,15 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: デバッグ用の塗り・ワイヤーフレームの図形（球・箱・円柱・カプセル・円錐）を描くクラス。
+// 概要: デバッグ用の塗り・ワイヤーフレームの図形（球・箱・円柱・カプセル・円錐）を描くクラス
 //
 // 責務:
 //   - Draw* で図形をインスタンスとして積む（別スレッドから呼んでよい）
 //   - Render で、図形と塗り方の組ごとにインスタンシングでまとめて描き、積んだものを空にする
 //
-// 備考: 大きさ 1 の図形を用意しておき、大きさ・向き・位置は呼び出し側が行列に入れて渡す。
-//       スレッドごとの配列に積む仕組みは ShapeRenderer と同じ。
-//       カリングはしない。PrimitiveComponent のカリングは ECS の System（FrustumCullingSystem）が行い、
-//       見えているものだけが PrimitiveRenderSystem から積まれる。
+// 備考: 大きさ 1 の図形を用意しておき、大きさ・向き・位置は呼び出し側が行列で渡す
+//       カリングはしない。見えているものだけを PrimitiveRenderSystem が積む（カリングは FrustumCullingSystem）
 // ===========================================================================
 #include <vector>
 #include <wrl.h>
@@ -51,10 +49,7 @@ public:
     PrimitiveRenderer(ID3D11Device *device);
     ~PrimitiveRenderer() {}
 
-    /**
-     * @brief 積んだ図形を描いて空にする。
-     * @param s renderState と sceneConstantBuffer を使う
-     */
+    // 積んだ図形を描いて空にする
     void Render(ID3D11DeviceContext *dc, const RenderServices &s);
 
     // transform は大きさ 1 の図形に掛けるワールド行列（大きさ・向き・位置を入れる）

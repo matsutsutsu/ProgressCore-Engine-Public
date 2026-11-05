@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 突撃中のドローンの当たり判定（Hitbox）を開け閉めする System。
+// 概要: 突撃中のドローンの当たり判定（Hitbox）を開け閉めする System
 //
 // 責務:
 //   - 危険な区間（突撃のリリース中）だけ HitboxComponent.isActive を立てる
@@ -8,7 +8,7 @@
 //   - ダメージの帰属先をボスにする
 //
 // 備考: 接触そのものは Jolt のセンサーが拾い、HitboxCollisionSystem（L05）が
-//       Hitbox×Hurtbox を見て DamageEvent を積む。ここは開け閉めだけを持つ。
+//       Hitbox×Hurtbox を見て DamageEvent を積む。ここは開け閉めだけを持つ
 // ===========================================================================
 #include <vector>
 
@@ -17,18 +17,19 @@
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/Combat/Components/CombatComponents.h"
 
-class DroneHitSystem : public CCL::ECS::IfSystem<DroneHitSystem,
-                                                 CCL::ECS::Read<DroneComponent>,
-                                                 CCL::ECS::Write<HitboxComponent>>
+class DroneHitSystem : public CCL::ECS::IfSystem<
+    DroneHitSystem,
+    CCL::ECS::Read<DroneComponent>,
+    CCL::ECS::Write<HitboxComponent>>
 {
 public:
     DroneHitSystem() : IfSystem("DroneHitSystem") {}
 
     /**
-     * @brief 同じステージで先に走らせる System を宣言する。
+     * @brief 同じステージで先に走らせる System を宣言する
      *
-     * 突撃の状態が確定した後でないと1フレームずれる。
-     * DroneBrainSystem は別ステージ（L02）で既に手前なので書かない（書くとスケジューラが警告する）。
+     * 突撃の状態が確定した後でないと1フレームずれる
+     * DroneBrainSystem は別ステージ（L02）で既に手前なので書かない（書くとスケジューラが警告する）
      */
     std::vector<const char *> GetRunAfter() const override
     {

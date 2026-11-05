@@ -1,22 +1,23 @@
 #pragma once
 // ===========================================================================
-// 概要: 画面左下にプレイヤーの HP ゲージを出し、HealthComponent に毎フレーム合わせる System。
+// 概要: 画面左下にプレイヤーの HP ゲージを出し、HealthComponent に毎フレーム合わせる System
 //
 // 責務:
-//   - プレイヤーが居るシーンで、PlayerHud プレハブを生成する
+//   - プレイヤーがいるシーンで、PlayerHud プレハブを生成する
 //   - HP の割合と残り HP の数値を書き、少ないときだけ赤く脈打たせる
 //   - 被弾・回復の演出（遅れて減るバー・揺れ・回復の光）を進める
 //
-// 備考: 見た目は PlayerHud プレハブ、振る舞いはルートの PlayerHudStyleComponent が持つ。
-//       プレハブには照準の調整値（子 LockOnMarker）も入っている。
+// 備考: 見た目は PlayerHud プレハブ、振る舞いはルートの PlayerHudStyleComponent が持つ
+//       プレハブには照準の調整値（子 LockOnMarker）も入っている
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
-class PlayerHealthHudSystem : public CCL::ECS::IfSystem<PlayerHealthHudSystem,
-                                                        CCL::ECS::Read<HealthComponent>,
-                                                        CCL::ECS::Read<PlayerComponent>>
+class PlayerHealthHudSystem : public CCL::ECS::IfSystem<
+    PlayerHealthHudSystem,
+    CCL::ECS::Read<HealthComponent>,
+    CCL::ECS::Read<PlayerComponent>>
 {
 public:
     PlayerHealthHudSystem() : IfSystem("PlayerHealthHudSystem") {}

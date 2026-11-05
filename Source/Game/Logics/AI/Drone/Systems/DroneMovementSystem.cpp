@@ -33,7 +33,7 @@ namespace
     // デバッグ UI の部品
     // ============================================================
 
-    // 直前の項目にマウスを乗せている間だけ説明を出す。
+    // 直前の項目にマウスを乗せている間だけ説明を出す
     void HoverTooltip(const char *text)
     {
         if (ImGui::IsItemHovered())
@@ -50,6 +50,8 @@ void DroneMovementSystem::Initialize()
     if (m_world->HasResource<Motion::MotionTuning>()) return;
     m_world->AddResource<Motion::MotionTuning>();
 }
+
+
 
 void DroneMovementSystem::Update(float rawDt)
 {
@@ -106,7 +108,7 @@ void DroneMovementSystem::Update(float rawDt)
 
         // --- 床 ---
 
-        // 地面へ潜らない保証はここ1か所だけが持つ。
+        // 地面へ潜らない保証はここ1か所だけが持つ
         // 離脱は持ち場を経由せず速度で動き、剛体追従は位置へ直接書くので、陣形側で目標を丸めても止まらない
         const float floorY = kDroneGroundY + kDroneGroundClearance;
         if (trans.position.y < floorY)
@@ -127,6 +129,8 @@ void DroneMovementSystem::Update(float rawDt)
         trans.isDirty = true;
     });
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 状態ごとの移動（どの技にも共通のもの）
@@ -166,6 +170,8 @@ void DroneMovementSystem::ProcessReturning(TransformComponent &trans, DroneCompo
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // デバッグ UI
 // ---------------------------------------------------------------------------
@@ -185,6 +191,8 @@ void DroneMovementSystem::OnGui()
     if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))
         tuning = Motion::MotionTuning{};
 }
+
+
 
 // JoltPushSystem（L03_PushToPhysics）が物理へ渡す前に位置を確定する
 REGISTER_LOGIC_SYSTEM(DroneMovementSystem, Priority::LogicStage::L03_PrePhysics);

@@ -15,17 +15,9 @@ using namespace CCL::Utils;
 
 namespace
 {
-    /**
-     * @brief キャッシュのキーにするために、パスの表記の揺れ（区切り文字・大文字小文字）をそろえる。
-     *
-     * Windows のファイルアクセスは大文字小文字を区別せず、区切り文字も混ざってよいが、HashString はバイト単位で完全に一致しないと同じ値にならない。
-     * Sequencer（保存）と AnimGraph（参照）が別々のダイアログで得たパスは、同じファイルでも "Assets/Anims/Attack.json" と "Assets\Anims\Attack.json" のように違うことがある。
-     * するとキャッシュの更新が素通りして「保存しても反映されない」原因になる。
-     *
-     * @param path そろえるパス。
-     * @return キャッシュのキーにするパス。
-     * @note ファイルの読み込み（FileSystem::ReadAllText など）には元の filename をそのまま使い、ハッシュを取るときだけこの形にする。
-     */
+    // キャッシュのキーにするため、パスの区切り文字と大文字小文字をそろえる。ファイルを読むときは元のパスを使う
+    // HashString はバイトが完全に一致しないと同じ値にならないので、"Assets/A.json" と "Assets\A.json" が別のキーになり、
+    // 保存しても反映されない
     std::string NormalizeAssetKey(const char *path)
     {
         std::string s = path ? path : "";
@@ -37,22 +29,24 @@ namespace
         return s;
     }
 
+
+
     // AnimSequence を読んだ後に行う処理（LoadAnimSequence と ReloadAnimSequence で共通）
     void FinalizeAnimSequence(AnimSequence &seq)
     {
-        // 1. startTime の小さい順に並べる。
+        // 1. startTime の小さい順に並べる
         //    AnimationSystem は前回の位置から先へ進めるだけでイベントを探す（O(1)）ので、
         //    events が昇順になっている必要がある。Sequencer の保存も手書きの JSON も
-        //    並びを保証しないので、読み込むたびにここで並べる。
+        //    並びを保証しないので、読み込むたびにここで並べる
         std::sort(seq.events.begin(), seq.events.end(),
                   [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
                       return a.startTime < b.startTime;
                   });
 
-        // 2. HitBox イベントの tagHash をここで1回だけ求める。
-        //    CombatAnimationSyncSystem が毎フレーム HashString せずに済む。
+        // 2. HitBox イベントの tagHash をここで1回だけ求める
+        //    CombatAnimationSyncSystem が毎フレーム HashString せずに済む
         //    tagHash は stringParam から求める値なので JSON には保存せず、読み込むたびに求め直す
-        //    （stringParam を手で書き換えても食い違わない）。
+        //    （stringParam を手で書き換えても食い違わない）
         for (auto &ev : seq.events)
         {
             if (ev.type == AnimEventType::HitBox && !ev.stringParam.empty())
@@ -84,6 +78,8 @@ void ResourceManager::ClearAll()
     m_particleBufferPool.Clear();
     m_animCurvePool.Clear();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // テクスチャ
@@ -147,6 +143,8 @@ TextureHandle ResourceManager::LoadTexture(const char *filename)
     return TextureHandle{};
 }
 
+
+
 TextureHandle ResourceManager::RegisterTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv)
 {
     if (!srv) return TextureHandle{};
@@ -157,17 +155,23 @@ TextureHandle ResourceManager::RegisterTexture(Microsoft::WRL::ComPtr<ID3D11Shad
     return m_texturePool.Create(srv);
 }
 
+
+
 ID3D11ShaderResourceView *ResourceManager::GetTexture(TextureHandle handle)
 {
     TextureResource *tex = m_texturePool.Get(handle);
     return tex ? tex->srv.Get() : nullptr;
 }
 
+
+
 void ResourceManager::UnloadTexture(TextureHandle handle)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_texturePool.Destroy(handle);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // モデルの共有データ
@@ -178,10 +182,10 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
 
     uint32_t hash = HashString(filename);
 
-    // シーンの非同期読み込みでワーカースレッドから呼ばれるので、m_modelRegistry は m_mutex で守る。
+    // シーンの非同期読み込みでワーカースレッドから呼ばれるので、m_modelRegistry は m_mutex で守る
     // ただし model->Load() は中で LoadTexture()（同じ m_mutex を取る）を呼ぶので、ロックを持ったまま
     // 呼ぶとデッドロックする。そこで、登録の操作だけをロックし、重い読み込みはロックの外で行い、
-    // 登録の直前にもう一度キャッシュを確かめる（ダブルチェック）。
+    // 登録の直前にもう一度キャッシュを確かめる（ダブルチェック）
 
     // 1) キャッシュにあるか（ロック中）
     {
@@ -203,7 +207,7 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     {
         model->Load(Graphics::Instance().GetDevice(), filename);
 
-        // LOD を予約されたモデルなら、ここで作る。
+        // LOD を予約されたモデルなら、ここで作る
         // レジストリに登録する前なので、ほかのスレッドや描画からはまだ見えておらず、書き換えても安全
         bool wantsLod = false;
         {
@@ -231,10 +235,14 @@ ModelHandle ResourceManager::LoadModelResource(const char *filename)
     return handle;
 }
 
+
+
 ModelResource *ResourceManager::GetModel(ModelHandle handle)
 {
     return m_modelPool.Get(handle);
 }
+
+
 
 void ResourceManager::RequestModelLod(const char *filename)
 {
@@ -244,11 +252,15 @@ void ResourceManager::RequestModelLod(const char *filename)
     m_lodRequests.insert(HashString(filename));
 }
 
+
+
 void ResourceManager::UnloadModel(ModelHandle handle)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_modelPool.Destroy(handle);
 }
+
+
 
 std::string ResourceManager::GetAssetPath(uint32_t hash)
 {
@@ -262,6 +274,8 @@ std::string ResourceManager::GetAssetPath(uint32_t hash)
     }
     return "";
 }
+
+
 
 // ---------------------------------------------------------------------------
 // モデルのインスタンス
@@ -280,6 +294,8 @@ ModelInstanceHandle ResourceManager::CreateModelInstance(const char *filename)
 
     return m_modelInstancePool.Create(Graphics::Instance().GetDevice(), filename, 60.0f);
 }
+
+
 
 ModelInstanceHandle ResourceManager::CreateModelInstanceFromHash(uint32_t hash)
 {
@@ -303,15 +319,21 @@ ModelInstanceHandle ResourceManager::CreateModelInstanceFromHash(uint32_t hash)
     return ModelInstanceHandle{};
 }
 
+
+
 Model *ResourceManager::GetModelInstance(ModelInstanceHandle handle)
 {
     return m_modelInstancePool.Get(handle);
 }
 
+
+
 void ResourceManager::UnloadModelInstance(ModelInstanceHandle handle)
 {
     m_modelInstancePool.Destroy(handle);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // マテリアル
@@ -321,21 +343,29 @@ MaterialHandle ResourceManager::CreateMaterial()
     return m_materialPool.Create();
 }
 
+
+
 MaterialHandle ResourceManager::CloneMaterial(MaterialHandle source)
 {
     if (MaterialData *src = m_materialPool.Get(source)) return m_materialPool.Create(*src);
     return m_materialPool.Create();
 }
 
+
+
 MaterialData *ResourceManager::GetMaterial(MaterialHandle handle)
 {
     return m_materialPool.Get(handle);
 }
 
+
+
 void ResourceManager::UnloadMaterial(MaterialHandle handle)
 {
     m_materialPool.Destroy(handle);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // アニメーション
@@ -383,6 +413,8 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     return seq;
 }
 
+
+
 const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 {
     if (!filename || filename[0] == '\0')
@@ -403,8 +435,8 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     if (!seq)
     {
         // 保存前に同じファイルを読み込んでいるはずなのに毎回ここに来るなら、Sequencer が保存した
-        // パスとゲームが参照しているパスが違っている（別のファイルとして扱われている）可能性が高い。
-        // ログの key と、ゲーム側が読んだパスを見比べると確かめられる。
+        // パスとゲームが参照しているパスが違っている（別のファイルとして扱われている）可能性が高い
+        // ログの key と、ゲーム側が読んだパスを見比べると確かめられる
         CCL_LOG_WARN(LogCategory::Core,
                      "ReloadAnimSequence: cache miss for '%s' (key='%s') -> 新規ロードとして扱います。"
                      "既存キャッシュに反映されない場合はパス表記のズレを疑ってください。",
@@ -433,6 +465,8 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
     CCL_LOG_SUCCESS(LogCategory::Core, "Reloaded AnimSequence: %s", filename);
     return seq;
 }
+
+
 
 const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
 {
@@ -475,6 +509,8 @@ const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // レンダーターゲット
 // ---------------------------------------------------------------------------
@@ -489,6 +525,8 @@ RenderTargetHandle ResourceManager::CreateRenderTarget(int width, int height, DX
     }
     return handle;
 }
+
+
 
 RenderTargetHandle ResourceManager::LoadRenderTarget(const std::string &name, ID3D11Device *device, UINT width, UINT height, DXGI_FORMAT format)
 {
@@ -506,11 +544,15 @@ RenderTargetHandle ResourceManager::LoadRenderTarget(const std::string &name, ID
     return RenderTargetHandle{};
 }
 
+
+
 RenderTarget *ResourceManager::GetRenderTarget(RenderTargetHandle handle)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_renderTargetPool.Get(handle);
 }
+
+
 
 void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle)
 {
@@ -522,6 +564,8 @@ void ResourceManager::UnloadRenderTarget(RenderTargetHandle handle)
     }
     m_renderTargetPool.Destroy(handle);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // GPU パーティクルのバッファ
@@ -582,15 +626,21 @@ ParticleBufferHandle ResourceManager::CreateParticleBuffer(ID3D11Device *device,
     return handle;
 }
 
+
+
 GPUParticleBufferSet *ResourceManager::GetParticleBuffer(ParticleBufferHandle handle)
 {
     return m_particleBufferPool.Get(handle);
 }
 
+
+
 void ResourceManager::UnloadParticleBuffer(ParticleBufferHandle handle)
 {
     m_particleBufferPool.Destroy(handle);
 }
+
+
 
 MaterialHandle ResourceManager::LoadMaterialAsset(const std::string &virtualPath)
 {
@@ -631,6 +681,8 @@ MaterialHandle ResourceManager::LoadMaterialAsset(const std::string &virtualPath
         return MaterialHandle{};
     }
 }
+
+
 
 bool ResourceManager::SaveMaterialAsset(MaterialHandle handle, const std::string &virtualPath)
 {

@@ -1,15 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: ドローン1機ずつの「持ち場とのずれ」を、ステージ上に3Dで描くデバッグ用の System（エディタのみ）。
+// 概要: ドローン1機ずつの「持ち場とのずれ」を、ステージ上に3Dで描くデバッグ用の System（エディタのみ）
 //
 // 責務:
 //   - 持ち場から離れている機を球で囲み、持ち場の小さな球と線でつなぐ（色は状態ごと）
 //   - 状態ごとの機数・剛体になれていない機の数・最大のずれを数え、調整 UI に出す
 //
 // 備考:
-//   陣形攻撃で一部の機が遅れる・ずれるときに、どの機がどの状態で離れているかを見るためのもの。
-//   読むだけで、ドローンの動きには触らない。
-//   1000機ぶん描くと読めないので、しきい値より離れている機だけを描く。
+//   陣形攻撃で一部の機が遅れる・ずれるときに、どの機がどの状態で離れているかを見るためのもの
+//   読むだけで、ドローンの動きには触らない
+//   1000機ぶん描くと読めないので、しきい値より離れている機だけを描く
 // ===========================================================================
 #include "SimpleMath.h"
 
@@ -20,9 +20,9 @@
 class ShapeRenderer;
 
 class DroneDebugDrawSystem : public CCL::ECS::IfSystem<
-                                 DroneDebugDrawSystem,
-                                 CCL::ECS::Read<TransformComponent>,
-                                 CCL::ECS::Read<DroneComponent>>
+    DroneDebugDrawSystem,
+    CCL::ECS::Read<TransformComponent>,
+    CCL::ECS::Read<DroneComponent>>
 {
 public:
     DroneDebugDrawSystem() : IfSystem("DroneDebugDrawSystem") {}

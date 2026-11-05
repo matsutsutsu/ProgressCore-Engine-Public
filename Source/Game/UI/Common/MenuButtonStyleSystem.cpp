@@ -3,10 +3,10 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
+#include "Engine/Core/Math/Interpolation.h"
 
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Game/UI/Common/MenuUiFactory.h" // FindMenuStyle
+#include "Game/UI/Common/MenuUiFactory.h"
 
 #include <algorithm>
 
@@ -66,5 +66,7 @@ void MenuButtonStyleSystem::Update(float dt)
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(MenuButtonStyleSystem, Priority::RenderStage::R10_UI);

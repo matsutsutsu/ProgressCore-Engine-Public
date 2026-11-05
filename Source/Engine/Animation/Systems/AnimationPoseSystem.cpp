@@ -37,7 +37,6 @@ void AnimationPoseSystem::Update(float dt)
 
 
 
-// ブレンドと Force Root Lock を行い、最終的な骨格ポーズを Model へ適用する
 void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
                                               Model *model, const AnimSequence *seq)
 {
@@ -64,14 +63,14 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     // 2. ポーズの計算
     // ---------------------------------------------------------
 
-    // 前側を作れたときだけクロスフェードする（前のクリップがモデルに無ければ、今側だけを出す）
+    // 前側を作れたときだけクロスフェードする（前のクリップがモデルになければ、今側だけを出す）
     const bool crossFading = animator.isBlending && animator.previousSequence;
     if (crossFading && ComputeSourcePose(model, animator, true, true))
     {
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Blend");
 
-        // ブレンド中は前と現在の両方を、混ぜる前に固定する。
-        //   前のクリップはルートボーンの番号が違うことがあるので、ComputeSourcePose が個別に特定する。
+        // ブレンド中は前と現在の両方を、混ぜる前に固定する
+        //   前のクリップはルートボーンの番号が違うことがあるので、ComputeSourcePose が個別に特定する
         //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
         ComputeSourcePose(model, animator, false, true);
 
@@ -92,9 +91,9 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     // 3. Force Root Lock
     // ---------------------------------------------------------
 
-    // RootMotionComponent を持つキャラは位置を常に Transform 側で決めるので、enabled に関係なく固定する。
-    //   enabled : 抽出した差分で Transform を動かす → 固定しないと二重に前進する
-    //   disabled: コード（ダッシュ等）が Transform を動かす → 固定しないとクリップの前進でモデルだけ滑る
+    // RootMotionComponent を持つキャラは位置を常に Transform 側で決めるので、enabled に関係なく固定する
+    //   enabled なら抽出した差分で Transform を動かすので、固定しないと二重に前進する
+    //   disabled ならコード（ダッシュなど）が Transform を動かすので、固定しないとモデルだけ滑る
     auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
     if (rootMotion && !animator.poseBufferA.empty())
         PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
@@ -110,7 +109,6 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
 
 
 
-// 今側か前側の再生元（単体のクリップか、ブレンドスペース）のポーズを作る
 bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip)
 {
     // 処理フロー:
@@ -148,11 +146,11 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
     // ---------------------------------------------------------
     ZoneScopedN("AnimationPoseSystem::ComputeSourcePose::BlendSpace");
 
-    // 時間の基準の進み具合（0〜1）を、各点のクリップの長さに掛けて時刻にする。
+    // 時間の基準の進み具合（0〜1）を、各点のクリップの長さに掛けて時刻にする
     //   長さの違うクリップでも、同じ進み具合の姿勢を混ぜるので、足の運びがそろう
     const float progress = (timeBase->duration > 0.0f) ? std::clamp(time / timeBase->duration, 0.0f, 1.0f) : 0.0f;
 
-    // 累計の重みで割りながら足し込むと、何番目に混ぜても重み付きの平均になる。
+    // 累計の重みで割りながら足し込むと、何番目に混ぜても重み付きの平均になる
     //   回転は球面補間なので厳密な平均ではないが、隣り合う 2〜3 点では差は見えない
     constexpr float kMinSampleWeight = 0.001f; // これより軽い点は見た目に効かないので計算しない
     float           accumulated      = 0.0f;
@@ -181,7 +179,7 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
         }
     }
 
-    // 混ぜられる点が 1 つも無い（クリップがモデルに無いなど）ときは、時間の基準のクリップだけを出す
+    // 混ぜられる点が 1 つもない（クリップがモデルにないなど）ときは、時間の基準のクリップだけを出す
     if (accumulated == 0.0f)
     {
         model->ComputeAnimation(baseIndex, time, out);

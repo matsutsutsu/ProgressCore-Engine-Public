@@ -3,7 +3,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Transform/Systems/HierarchyCleanupSystem.h" // 「誰が消えるか」の判定
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 
 #include <memory>
 #include <vector>
@@ -15,6 +15,8 @@ void AudioCleanupSystem::Update(float /*dt*/)
     if (!m_world) return;
     ExecuteCleanup(*m_world);
 }
+
+
 
 void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
@@ -46,6 +48,8 @@ void AudioCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
         e->activeHash = 0;
     }
 }
+
+
 
 // ゲーム中の通常の破棄（RequestDestroy → DestroyTag）は毎ステップここで拾う
 REGISTER_LOGIC_SYSTEM(AudioCleanupSystem, Priority::LogicStage::L07_Cleanup);

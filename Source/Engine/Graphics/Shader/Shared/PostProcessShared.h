@@ -1,12 +1,12 @@
 // ===========================================================================
-// 概要: ポストプロセスの各エフェクトで C++ と HLSL が共有する定数バッファ。
+// 概要: ポストプロセスの各エフェクトで C++ と HLSL が共有する定数バッファ
 //
 // 責務:
 //   - エフェクトごとの定数バッファの構造体を定義する
 //   - C++ 側で大きさを static_assert する（理由は ShaderShared.h を参照）
 //
-// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::CbBloomData など、HLSL では cbuffer になる。
-//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::CbBloomData など、HLSL では cbuffer になる
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う
 // ===========================================================================
 #ifndef POST_PROCESS_SHARED_H
 #define POST_PROCESS_SHARED_H

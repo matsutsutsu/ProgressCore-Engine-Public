@@ -18,6 +18,8 @@
 
 HierarchyWindow::HierarchyWindow() : EditorWindow("Hierarchy") {}
 
+
+
 // ---------------------------------------------------------------------------
 // 描画
 // ---------------------------------------------------------------------------
@@ -32,8 +34,8 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     auto &chunkManager = world->GetChunkManager();
     auto &chunks       = chunkManager.GetChunks();
 
-    // 前のフレームの一覧を必ず捨てる。
-    // 残したままだと過去の親子関係が溜まり、循環参照と誤って判定される。
+    // 前のフレームの一覧を必ず捨てる
+    // 残したままだと過去の親子関係が溜まり、循環参照と誤って判定される
     {
         ZoneScopedN("Hierarchy [1]: Clear & Alloc");
 
@@ -64,11 +66,11 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     ImGui::Separator();
 
     {
-        // チャンクを走査して一覧を作る。
+        // チャンクを走査して一覧を作る
         // 重い場合は m_openNodes.count() か IsEntityDestroyed() を疑う
         ZoneScopedN("Hierarchy [2]: Chunk Scan & Build");
 
-        // 検索していなければ、ルートから開いているノードだけをたどる。
+        // 検索していなければ、ルートから開いているノードだけをたどる
         // 検索中は全エンティティを集め、後で名前で絞る（階層は無視して平らに並べる）
         for (auto &chunkPtr : chunks)
         {
@@ -164,9 +166,9 @@ void HierarchyWindow::DrawContents(EditorContext &context)
                 context.SetSingleSelection(newEntity);
             }
         }
-        // モデルファイルのドロップ。
-        //   プレハブを作らずにモデル単体を置けるようにする。
-        //   アニメーションの確認を、何もないシーンでそのまま行うための入口。
+        // モデルファイルのドロップ
+        //   プレハブを作らずにモデル単体を置けるようにする
+        //   アニメーションの確認を、何もないシーンでそのまま行うための入口
         else if (const ImGuiPayload *modelPayload = ImGui::AcceptDragDropPayload("ASSET_MODEL"))
         {
             const char *modelPath = (const char *)modelPayload->Data;
@@ -174,7 +176,7 @@ void HierarchyWindow::DrawContents(EditorContext &context)
             // 先に読み込んでしまい、アニメーションを持つモデルにだけ
             // AnimatorComponent を付ける。アニメーションシーケンサは
             // ModelComponent と AnimatorComponent の両方がある
-            // エンティティだけを対象にするため、ここで揃えておく。
+            // エンティティだけを対象にするため、ここで揃えておく
             ModelComponent modelComponent(modelPath);
 
             bool hasAnimation = false;
@@ -249,6 +251,8 @@ void HierarchyWindow::DrawContents(EditorContext &context)
     }
 }
 
+
+
 void HierarchyWindow::DrawFlatNode(
     const FlatNode &node,
     EditorContext  &context)
@@ -291,10 +295,10 @@ void HierarchyWindow::DrawFlatNode(
     {
         ImGui::SetDragDropPayload("DND_ENTITY_ID", &node.entityID, sizeof(CCL::ECS::EntityID));
 
-        // ドラッグ中にカーソルの横に出す表示。
+        // ドラッグ中にカーソルの横に出す表示
         //   EntityID は 64bit。%u は 4byte しか読まないため、上位32bit の世代が
         //   落ちて「使い回されたIDが同じ番号に見える」表示バグになる（可変長引数なので
-        //   コンパイラも警告を出さない）。%llu + 明示キャストで受ける。
+        //   コンパイラも警告を出さない）。%llu + 明示キャストで受ける
         ImGui::Text("Drop Entity: %llu", static_cast<unsigned long long>(node.entityID));
 
         ImGui::EndDragDropSource();
@@ -421,6 +425,8 @@ void HierarchyWindow::DrawFlatNode(
     ImGui::Unindent(node.depth * ImGui::GetTreeNodeToLabelSpacing());
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 選択と複製
 // ---------------------------------------------------------------------------
@@ -452,6 +458,8 @@ void HierarchyWindow::FlattenChildren(
     }
 }
 
+
+
 void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext &context)
 {
     CCL::ECS::EntityID anchor = context.selectedEntity;
@@ -463,7 +471,7 @@ void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext &c
         if (m_flatList[i].entityID == clicked) clickedIdx = i;
     }
 
-    // どちらかが一覧に無い（検索で隠れているなど）なら、clicked を追加選択するだけにする
+    // どちらかが一覧にない（検索で隠れているなど）なら、clicked を追加選択するだけにする
     if (anchorIdx < 0 || clickedIdx < 0)
     {
         context.AddSelection(clicked);
@@ -481,6 +489,8 @@ void HierarchyWindow::SelectRangeTo(CCL::ECS::EntityID clicked, EditorContext &c
     }
     context.selectedEntity = clicked;
 }
+
+
 
 void HierarchyWindow::DuplicateSelection(EditorContext &context)
 {
@@ -501,6 +511,8 @@ void HierarchyWindow::DuplicateSelection(EditorContext &context)
         CCL_LOG_INFO(LogCategory::Editor, "Duplicated %zu entities", newRoots.size());
     }
 }
+
+
 
 bool HierarchyWindow::IsDescendantOf(
     CCL::ECS::EntityID targetEntity,

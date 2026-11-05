@@ -9,13 +9,13 @@
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/Input/InputIconComponent.h"
-#include "Game/UI/Common/MenuUiFactory.h"        // SpawnCanvas / MakeUINode
-#include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
+#include "Game/UI/Common/MenuUiFactory.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 #include <cstdio>
 #include <imgui.h>
@@ -57,7 +57,7 @@ void InputPromptSystem::Update(float /*dt*/)
 
     // --- 行名の表示 ---
     // 行名は、同じ行のアイコンが出ているときだけ出す
-    // 割り当ての無い操作でアイコンだけが消えると、読み込みに失敗したように見えるため
+    // 割り当てのない操作でアイコンだけが消えると、読み込みに失敗したように見えるため
     const size_t count = (std::min)(m_iconIDs.size(), m_labelIDs.size());
     for (size_t i = 0; i < count; ++i)
     {
@@ -91,7 +91,6 @@ void InputPromptSystem::OnGui()
 // 行の組み立てと配置
 // ---------------------------------------------------------------------------
 
-// InputPrompt プレハブを置き、操作の説明の行を作る（プレイヤーが現れた最初のフレームに1回だけ）
 void InputPromptSystem::Build()
 {
     // --- 調整値 ---
@@ -165,8 +164,6 @@ void InputPromptSystem::Build()
 
 
 
-// index 行目のアイコンと行名の矩形を、調整値から求める
-// 生成時と毎フレームの並べ直しで同じ式を使うため、配置の計算はここだけに置く
 void InputPromptSystem::ComputeRow(size_t index, const InputPromptStyleComponent &style,
                                    UITransformComponent &outIcon, UITransformComponent &outLabel) const
 {
@@ -191,7 +188,6 @@ void InputPromptSystem::ComputeRow(size_t index, const InputPromptStyleComponent
 
 
 
-// 調整値を、作ってある全部の行に反映する
 void InputPromptSystem::ApplyLayout(const InputPromptStyleComponent &style)
 {
     const size_t count = (std::min)(m_iconIDs.size(), m_labelIDs.size());
@@ -225,7 +221,6 @@ void InputPromptSystem::ApplyLayout(const InputPromptStyleComponent &style)
 
 
 
-// 調整値を返す。InputPrompt プレハブが無ければ既定値
 const InputPromptStyleComponent &InputPromptSystem::GetStyle() const
 {
     static const InputPromptStyleComponent kDefaultStyle{};
@@ -239,7 +234,6 @@ const InputPromptStyleComponent &InputPromptSystem::GetStyle() const
 // 設定の読み込み
 // ---------------------------------------------------------------------------
 
-// InputPromptConfig.json を読む。読めなければ既定の並びを返す
 void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
 {
     const std::string text = FileSystem::ReadAllText(kConfigPath);
@@ -265,7 +259,7 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
     }
 
     // 設定が読めなくても、操作の説明は消さない
-    // 説明が出ないと、その操作が無いように見えるため
+    // 説明が出ないと、その操作がないように見えるため
     if (outRows.empty())
     {
         outRows = {
@@ -278,5 +272,7 @@ void InputPromptSystem::LoadConfig(std::vector<ConfigRow> &outRows) const
         };
     }
 }
+
+
 
 // 全体登録はしない。TutorialScene::RegisterSystems だけが登録する

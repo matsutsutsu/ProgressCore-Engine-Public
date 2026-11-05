@@ -20,4 +20,6 @@ void FrustumCullingSystem::Update(float dt)
     });
 }
 
+
+
 REGISTER_RENDER_SYSTEM(FrustumCullingSystem, Priority::RenderStage::R05_Culling);

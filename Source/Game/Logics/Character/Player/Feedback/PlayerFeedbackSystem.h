@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: プレイヤーの被弾・攻撃命中に合わせて、画面とコントローラーの演出を出す System。
+// 概要: プレイヤーの被弾・攻撃命中に合わせて、画面とコントローラーの演出を出す System
 //
 // 責務:
 //   - プレイヤーの被弾（DamageTakenEvent）で、カメラの揺れ・振動・ビネット・色収差を始める
@@ -9,16 +9,16 @@
 //
 // 備考:
 //   ポストエフェクトは各 Config Component の上書きスロットへ目標値と weight を書くだけで、
-//   描画と合成は PostProcessSystem が行う。
+//   描画と合成は PostProcessSystem が行う
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <DirectXMath.h>
 #include "Game/Core/GameEvents.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
-class PlayerFeedbackSystem
-    : public CCL::ECS::IfSystem<PlayerFeedbackSystem,
-                                CCL::ECS::Read<PlayerComponent>>
+class PlayerFeedbackSystem : public CCL::ECS::IfSystem<
+    PlayerFeedbackSystem,
+    CCL::ECS::Read<PlayerComponent>>
 {
 public:
     PlayerFeedbackSystem() : IfSystem("PlayerFeedbackSystem") {}
@@ -26,9 +26,9 @@ public:
 
     void Initialize() override;
 
-    // テンプレート引数以外に書く型を申告する。
+    // テンプレート引数以外に書く型を申告する
     //   ポストプロセスの設定は上書きスロットを通して書くので、申告しないと同じ設定を書く
-    //   他の System と同じバッチに入って並列に走り、Acquire が同じ空きスロットを奪い合う。
+    //   他の System と同じバッチに入って並列に走り、Acquire が同じ空きスロットを奪い合う
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
     void Update(float dt) override;
@@ -40,10 +40,10 @@ private:
     // 被弾と攻撃命中
     // ============================================================
 
-    // プレイヤーの被弾で、揺れ・振動・ビネット・色収差を始める。
+    // プレイヤーの被弾で、揺れ・振動・ビネット・色収差を始める
     void OnPlayerDamaged(const DamageTakenEvent &event);
 
-    // プレイヤーの攻撃が命中したときに振動を出す（攻撃者がプレイヤーでなければ何もしない）。
+    // プレイヤーの攻撃が命中したときに振動を出す（攻撃者がプレイヤーでなければ何もしない）
     void OnPlayerAttackHit(const AttackHitConfirmedEvent &event);
 
     void StartAttackHitVibration(const AttackHitConfirmedEvent &event);
@@ -52,20 +52,14 @@ private:
     // カメラの揺れ
     // ============================================================
 
-    /**
-     * @brief 被弾時のカメラの揺れを要求する。
-     *
-     * カメラには触れず CameraShakeRequestEvent を出すだけ。
-     * 振幅・周波数・揺れる長さはカメラ側（CameraShake）で決め、ここが持つのは被弾のダメージ量をどれくらいの衝撃（trauma）とみなすかだけ。
-     *
-     * @param damageAmount 受けたダメージ量。
-     */
+    // 被弾時のカメラの揺れを要求する。カメラには触れず CameraShakeRequestEvent を出すだけ
+    // 振幅と長さはカメラ側が決め、ここはダメージ量をどれくらいの衝撃（trauma）とみなすかだけを持つ
     void StartDamageCameraShake(float damageAmount);
 
-    // ダメージ量から衝撃量(trauma)への換算係数。
+    // ダメージ量から衝撃量(trauma)への換算係数
     //
     // 実際の揺れは trauma の2乗に比例する。0.3 と 0.6 では揺れが4倍違うので、
-    // 小さい被弾でも揺らしたいなら下限を高めにする。
+    // 小さい被弾でも揺らしたいなら下限を高めにする
     float m_traumaPerDamage = 0.07f;
 
     float m_traumaMin = 0.45f; // 被弾時の衝撃量の下限（小さい被弾でも最低これだけ揺らす）
@@ -82,7 +76,7 @@ private:
     float m_vibrationRight    = 0.5f;
     float m_vibrationDuration = 0.2f;
 
-    // 攻撃命中時（モーターの強さ 0〜1、秒）。
+    // 攻撃命中時（モーターの強さ 0〜1、秒）
     // m_attackHitFeedbackScale はダメージ量をこの値で割って振動の倍率（0.25〜1.0）にする
     float m_attackHitVibrationLeft     = 0.55f;
     float m_attackHitVibrationRight    = 0.55f;
@@ -97,7 +91,7 @@ private:
     void UpdateDamageVignette(float dt);
 
     // 被弾ビネットの残り時間（秒）。元の設定は退避しない
-    // （PostProcess のスロットへ目標値と weight を書くだけでよい）。
+    // （PostProcess のスロットへ目標値と weight を書くだけでよい）
     float m_vignetteTimer = 0.0f;
 
     float m_vignetteDuration = 0.55f; // 継続時間（秒）

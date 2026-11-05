@@ -1,18 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: アニメーションの時間を進め、点イベントを発火する System（L02_PostUpdate）。
+// 概要: アニメーションの時間を進め、点イベントを発火する System（L02_PostUpdate）
 //
 // 責務:
-//   - AnimatorComponent の再生時刻とブレンドの時刻を Entity ごとの localDt で進める
-//   - クリップの点イベント（Sound / Effect / SpawnHitbox）を EventBus で発行する
-//   - ループと再生終了の判定
-//   - エディタ（シーケンサー）のプレビュー用に、指定時刻のポーズを直接適用する（UpdateManual）
+//   - 再生時刻とブレンドの時刻を Entity ごとの localDt で進める
+//   - クリップの点イベント（Sound / Effect / SpawnHitbox）を EventBus で出す
+//   - ループと再生終了を判定する
+//   - シーケンサーのプレビューで、指定時刻のポーズを直接当てる（UpdateManual）
 //
-// 備考:
-//   - 区間のイベント（HitBox / Trail / Particle など）は発行しない。
-//     各 System が再生時刻を見て区間内かを判定する。
-//   - ポーズの計算は AnimationPoseSystem（Render）が行う。
-//     時間とイベントは固定ステップの精度が要るので、ここ（Logic）に残している。
+// 備考: 区間のイベント（HitBox / Trail など）は出さない。各 System が再生時刻を見て判定する
+//       ポーズは AnimationPoseSystem が求める。時間とイベントは固定ステップの精度が要るので、ここに残す
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include <vector>
@@ -24,10 +21,11 @@ struct TimeStateComponent;
 class Model;
 struct AnimSequence;
 
-class AnimationSystem : public CCL::ECS::IfSystem<AnimationSystem,
-                                                  CCL::ECS::Write<AnimatorComponent>,
-                                                  CCL::ECS::Write<ModelComponent>,
-                                                  CCL::ECS::Read<TimeStateComponent>>
+class AnimationSystem : public CCL::ECS::IfSystem<
+    AnimationSystem,
+    CCL::ECS::Write<AnimatorComponent>,
+    CCL::ECS::Write<ModelComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     AnimationSystem(); // 型引数が前方宣言なので、基底の構築は完全な型が見える .cpp で行う
@@ -39,11 +37,8 @@ public:
     void UpdateManual(CCL::ECS::EntityID entity, float time);
 
 private:
-    /**
-     * @brief 点イベント（Sound / Effect / SpawnHitbox）のうち、今の時刻までに達したものを EventBus で発行する。
-     * @param movedForward このステップで順方向に進んだか。
-     *                     false（逆再生・シーク）なら発火せず、イベントの位置だけ現在時刻に合わせる。
-     */
+    // 点イベント（Sound / Effect / SpawnHitbox）のうち、今の時刻までに来たものを EventBus で出す
+    // movedForward が false（逆再生・シーク）なら出さず、イベントの位置だけ今の時刻に合わせる
     void DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
                              const AnimSequence *seq, bool movedForward);
 };

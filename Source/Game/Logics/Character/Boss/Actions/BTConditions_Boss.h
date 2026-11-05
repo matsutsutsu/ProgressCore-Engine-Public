@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ボス固有の BT 条件（BossPhaseComponent の形態を見るもの）。
+// 概要: ボス固有の BT 条件（BossPhaseComponent の形態を見るもの）
 //
 // 責務:
 //   - 第2形態かを判定する（IsPhase2）
@@ -8,8 +8,8 @@
 //   - これらを BTActionRegistry へ登録する
 //
 // 備考: 距離や HP はどの敵でも意味があるが、
-//       第2形態はボスにしか無いので分けている。
-//       BTActions_Boss.cpp と同じく、固有の Component は world から自分で取る。
+//       第2形態はボスにしかないので分けている
+//       BTActions_Boss.cpp と同じく、固有の Component は world から自分で取る
 // ===========================================================================
 #include "Game/Logics/AI/BehaviorTree/Actions/BTAction.h"
 #include "Game/Logics/AI/BehaviorTree/Actions/BTActionRegistry.h"
@@ -19,8 +19,8 @@
 
 namespace CCL::AI::BT
 {
-    // 第2形態か。
-    // 形態は BossPhaseComponent だけが持つので、blackboard へ写さず直接読む。
+    // 第2形態か
+    // 形態は BossPhaseComponent だけが持つので、blackboard へ写さず直接読む
     class IsPhase2 : public IBTCondition
     {
     public:
@@ -36,7 +36,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 第1形態で、HP が移行のしきい値以下か。
+    // 第1形態で、HP が移行のしきい値以下か
     class ShouldTransitionPhase2 : public IBTCondition
     {
     public:
@@ -55,7 +55,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // ボス固有の条件を登録する。起動時に1回だけ呼ぶ。
+    // ボス固有の条件を登録する。起動時に1回だけ呼ぶ
     inline void RegisterBossConditions()
     {
         auto &reg = BTActionRegistry::Instance();

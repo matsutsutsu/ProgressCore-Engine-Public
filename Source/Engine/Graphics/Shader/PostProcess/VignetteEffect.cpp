@@ -21,9 +21,13 @@ void VignetteEffect::Initialize(ID3D11Device *device, UINT /*width*/, UINT /*hei
     device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 }
 
+
+
 void VignetteEffect::Resize(ID3D11Device * /*device*/, UINT /*width*/, UINT /*height*/)
 {
 }
+
+
 
 void VignetteEffect::Process(ID3D11DeviceContext      *dc,
                              ID3D11ShaderResourceView *inputSRV,

@@ -1,18 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: 被写界深度（DoF）の設定と、演出からの一時的な上書きを持つシングルトンコンポーネント。シーンに1つ置く。
-//
-// 責務:
-//   - シーンが持つ普段の設定（enable / data）を持つ
-//   - 演出ごとの一時的な上書き（overrides）を持つ
-//   - 両方を合わせた、描画に渡す値を求める（Resolve）
-//   - 上書きの土台になる、今効いている値を返す（BaseParams）
-//
-// 備考: PostProcessSystem が毎フレーム読み、DepthOfFieldEffect へ渡す。既定はオフ。
-//       演出（ムービーのカメラなど）は enable / data を書き換えず、自分のスロットだけを触る。
-//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
-//       data は定数バッファの構造体なので、シリアライズは Meta の手書き（パターンC）。
-// ===========================================================================
+// 被写界深度の設定（シングルトン）。シーンの普段の設定と、演出ごとの一時的な上書き（overrides）を持つ。既定はオフ
+// 演出（ムービーのカメラなど）は enable / data を書き換えず、自分のスロットだけを触る。data の保存は Meta の手書き
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
@@ -34,8 +22,8 @@ struct DepthOfFieldConfigComponent
 
     PostEffectOverrides<DepthOfFieldOverrideParams> overrides;
 
-    // 描画に渡す値。普段の値から、効いているスロットへ priority の小さい順に寄せる。
-    // ぼけの強さも寄せるので、enable=false の土台（ぼけ 0）からでも、効き（t）に合わせてじわっとぼける。
+    // 描画に渡す値。普段の値から、効いているスロットへ priority の小さい順に寄せる
+    // ぼけの強さも寄せるので、enable=false の土台（ぼけ 0）からでも、効き（t）に合わせてじわっとぼける
     GpuData::CbDepthOfFieldData Resolve() const
     {
         DepthOfFieldOverrideParams out = BaseParams();

@@ -99,6 +99,8 @@ HRESULT GpuResourceUtils::LoadVertexShader(
     return hr;
 }
 
+
+
 HRESULT GpuResourceUtils::LoadPixelShader(
     ID3D11Device       *device,
     const char         *filename,
@@ -117,6 +119,8 @@ HRESULT GpuResourceUtils::LoadPixelShader(
     return hr;
 }
 
+
+
 HRESULT GpuResourceUtils::LoadGeometryShader(
     ID3D11Device          *device,
     const char            *filename,
@@ -133,6 +137,8 @@ HRESULT GpuResourceUtils::LoadGeometryShader(
     return hr;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // テクスチャ
 // ---------------------------------------------------------------------------
@@ -148,7 +154,7 @@ HRESULT GpuResourceUtils::LoadTexture(
     std::string           extension = filepath.extension().string();
     std::transform(extension.begin(), extension.end(), extension.begin(), tolower); // 小文字化
 
-    // ファイルの中身を読む（形式の判定は拡張子で行う。TGA は先頭に識別子が無く、中身からは判定できない）
+    // ファイルの中身を読む（形式の判定は拡張子で行う。TGA は先頭に識別子がなく、中身からは判定できない）
     const std::vector<uint8_t> bytes = FileSystem::ReadAllBytes(filename);
 
     // フォーマット毎に画像読み込み処理
@@ -215,6 +221,8 @@ HRESULT GpuResourceUtils::LoadTexture(
     }
     return hr;
 }
+
+
 
 HRESULT GpuResourceUtils::LoadTexture(
     ID3D11Device              *device,
@@ -294,6 +302,8 @@ HRESULT GpuResourceUtils::LoadTexture(
     return hr;
 }
 
+
+
 HRESULT GpuResourceUtils::CreateDummyTexture(
     ID3D11Device              *device,
     UINT                       color,
@@ -341,6 +351,8 @@ HRESULT GpuResourceUtils::CreateDummyTexture(
     return hr;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // バッファ
 // ---------------------------------------------------------------------------
@@ -361,6 +373,8 @@ HRESULT GpuResourceUtils::CreateConstantBuffer(ID3D11Device *device, UINT buffer
     return hr;
 }
 
+
+
 HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT bufferSize, ID3D11Buffer **constantBuffer)
 {
     D3D11_BUFFER_DESC desc{};
@@ -378,6 +392,8 @@ HRESULT GpuResourceUtils::CreateDynamicConstantBuffer(ID3D11Device *device, UINT
     return hr;
 }
 
+
+
 HRESULT GpuResourceUtils::CreateVertexBuffer(ID3D11Device *device, const void *data, UINT size, ID3D11Buffer **buffer)
 {
     D3D11_BUFFER_DESC desc{};
@@ -392,6 +408,8 @@ HRESULT GpuResourceUtils::CreateVertexBuffer(ID3D11Device *device, const void *d
     return device->CreateBuffer(&desc, &subData, buffer);
 }
 
+
+
 HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device, const UINT *data, UINT size, ID3D11Buffer **buffer)
 {
     D3D11_BUFFER_DESC desc{};
@@ -405,6 +423,8 @@ HRESULT GpuResourceUtils::CreateIndexBuffer(ID3D11Device *device, const UINT *da
 
     return device->CreateBuffer(&desc, &subData, buffer);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // シェーダーのコンパイル（.hlsl）
@@ -447,6 +467,8 @@ bool GpuResourceUtils::CompileVertexShader(ID3D11Device                   *devic
     return true;
 }
 
+
+
 bool GpuResourceUtils::CompileGeometryShader(ID3D11Device          *device,
                                              const std::wstring    &hlslPath,
                                              const char            *entryPoint,
@@ -473,6 +495,8 @@ bool GpuResourceUtils::CompileGeometryShader(ID3D11Device          *device,
     if (outShaderBlob) *outShaderBlob = shaderBlob.Detach();
     return true;
 }
+
+
 
 bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
                                           const std::wstring &hlslPath,
@@ -507,7 +531,7 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
         }
         else
         {
-            // エラーの内容が無いのは、ファイルを開けなかったとき
+            // エラーの内容がないのは、ファイルを開けなかったとき
             OutputDebugStringA("\n[Shader Compile Error] File not found or cannot be opened: ");
             OutputDebugStringW(hlslPath.c_str());
             OutputDebugStringA("\n");
@@ -526,6 +550,8 @@ bool GpuResourceUtils::CompilePixelShader(ID3D11Device       *device,
 
     return true;
 }
+
+
 
 bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
                                             const std::wstring &hlslPath, const char *entryPoint, const char *shaderModel,
@@ -548,7 +574,7 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
         }
         else
         {
-            // エラーの内容が無いのは、ファイルを開けなかったとき
+            // エラーの内容がないのは、ファイルを開けなかったとき
             CCL_LOG_ERROR(LogCategory::Render, "Compute Shader File not found or cannot be opened: %ls", hlslPath.c_str());
         }
         return false;
@@ -561,6 +587,8 @@ bool GpuResourceUtils::CompileComputeShader(ID3D11Device       *device,
 
     return true;
 }
+
+
 
 HRESULT GpuResourceUtils::LoadComputeShader(
     ID3D11Device         *device,

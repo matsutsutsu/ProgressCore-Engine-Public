@@ -37,6 +37,8 @@ namespace
                !drone.rigidLocked && drone.attackProgress < 1.0f;
     }
 
+
+
     ImVec4 ToImVec4(const XMFLOAT4 &c) { return ImVec4(c.x, c.y, c.z, c.w); }
 } // namespace
 
@@ -77,6 +79,8 @@ void DroneDebugDrawSystem::Update(float /*dt*/)
     });
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 描画
 // ---------------------------------------------------------------------------
@@ -88,6 +92,8 @@ void DroneDebugDrawSystem::DrawOffSlot(ShapeRenderer *renderer, const Vector3 &p
     renderer->DrawSphere(slot, kSlotRadius, color);
     renderer->DrawLine(position, slot, color);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -115,6 +121,8 @@ void DroneDebugDrawSystem::OnGui()
     ImGui::TextColored(ToImVec4(kUnlockedColor), "剛体になれていない: %d機", m_stats.unlocked);
     ImGui::Text("最大のずれ（離脱中は除く）: %.1f m", m_stats.maxDistance);
 }
+
+
 
 // R08_Main で ShapeRenderer に積む
 REGISTER_DEBUG_RENDER_SYSTEM(DroneDebugDrawSystem, Priority::RenderStage::R08_Main);

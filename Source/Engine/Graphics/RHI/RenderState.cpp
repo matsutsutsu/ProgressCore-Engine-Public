@@ -3,9 +3,9 @@
 
 namespace
 {
-    // 異方性フィルタリングの最大比率（D3D11 の上限は 16）。
-    //   8 と 16 の見た目の差は小さく、8 でも斜めの面のぼけはほぼ消える。
-    //   値はサンプリング回数の上限なので、上げるほどメモリ帯域を使う。
+    // 異方性フィルタリングの最大比率（D3D11 の上限は 16）
+    //   8 と 16 の見た目の差は小さく、8 でも斜めの面のぼけはほぼ消える
+    //   値はサンプリング回数の上限なので、上げるほどメモリ帯域を使う
     constexpr UINT kMaxAnisotropy = 8;
 } // namespace
 
@@ -143,7 +143,7 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // 深度テストあり（LESS_EQUAL）＆深度書き込みなし
-    //   スカイボックスを Z=1.0 の一番奥へ描くのもこれで足りる（1.0 <= 1.0 が通る）。
+    //   スカイボックスを Z=1.0 の一番奥へ描くのもこれで足りる（1.0 <= 1.0 が通る）
     {
         D3D11_DEPTH_STENCIL_DESC desc{};
         desc.DepthEnable    = true;
@@ -260,9 +260,9 @@ RenderState::RenderState(ID3D11Device *device)
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
     }
     // UI用の通常合成（色はストレートα合成。ただしRTのアルファは書き換えない）
-    //   Transparency との違いは、RenderTargetWriteMask から ALPHA を外したことだけ。
+    //   Transparency との違いは、RenderTargetWriteMask から ALPHA を外したことだけ
     //   不透明なシーンが書いた α=1 が残り、文字の透明部分に α の穴が開かないので、
-    //   エディタの GameView（ImGui::Image）で黒い枠が出ない。
+    //   エディタの GameView（ImGui::Image）で黒い枠が出ない
     {
         D3D11_BLEND_DESC desc{};
         desc.AlphaToCoverageEnable          = false;
@@ -274,7 +274,7 @@ RenderState::RenderState(ID3D11Device *device)
         desc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ONE;
         desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
         desc.RenderTarget[0].BlendOpAlpha   = D3D11_BLEND_OP_ADD;
-        // ALPHA を書き込み対象から除外し、RGB のみ更新する。
+        // ALPHA を書き込み対象から除外し、RGB のみ更新する
         desc.RenderTarget[0].RenderTargetWriteMask =
             D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE;
         HRESULT hr = device->CreateBlendState(&desc,

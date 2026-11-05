@@ -2,14 +2,13 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h" // カメラへ画角の要求を書く
-#include "Game/Logics/Combat/Components/HealthComponent.h"         // 回避の無敵を、被弾処理が見るタイマーへ書く
-#include "Game/Core/GameEvents.h"                                  // ダッシュを始めたイベント
+#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
+#include "Game/Core/GameEvents.h"
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 全プレイヤーの、回避ダッシュ・無敵・カメラの画角を1ステップ分進める
 void PlayerDashSystem::Update(float rawDt)
 {
     ForEachWithID([&](EntityID                    id,
@@ -34,7 +33,6 @@ void PlayerDashSystem::Update(float rawDt)
 
 
 
-// 回避中は、被弾処理が見る無敵タイマーを invincibleWindow 以上に保つ
 void PlayerDashSystem::MaintainInvincibility(EntityID id, const PlayerDashComponent &dash)
 {
     if (!dash.isInvincible) return;
@@ -51,7 +49,6 @@ void PlayerDashSystem::MaintainInvincibility(EntityID id, const PlayerDashCompon
 
 
 
-// ダッシュの開始・継続・終了を1ステップ分進める
 void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &player, bool dashPressed,
                                   CharacterMovementComponent &movement, const TransformComponent &trans,
                                   const TimeStateComponent &time, CCL::ECS::EntityID id)
@@ -82,7 +79,7 @@ void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &pl
         dash.currentTimer            = dash.dashDuration;
         player.locomotion            = PlayerComponent::GroundLocomotion::Dodge;
 
-        // 進む向きを決める。移動の入力があればその向き、無ければ正面
+        // 進む向きを決める。移動の入力があればその向き、なければ正面
         if (movement.desiredVelocity.LengthSquared() > 0.001f)
         {
             dash.dashDirection = movement.desiredVelocity;
@@ -133,7 +130,6 @@ void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &pl
 
 
 
-// このプレイヤーを映す TPS カメラへ、画角を広げる要求を書く
 void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
 {
     // 状態を持つゲーム側から書く

@@ -1,5 +1,3 @@
-// SkyboxComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentMetaJson.h"
@@ -17,7 +15,7 @@
 #endif
 
 // ---------------------------------------------------------------------------
-// シリアライズ: 3つのパスを保存・復元する。これでシーンごとに空を持てる。
+// シリアライズ: 3つのパスを保存・復元する。これでシーンごとに空を持てる
 // ---------------------------------------------------------------------------
 namespace ComponentMetaJson
 {
@@ -44,7 +42,7 @@ namespace ComponentMetaJson
             copyStr(c.irradiancePath, j, "irradiance");
             copyStr(c.prefilterPath, j, "prefilter");
 
-            // 明るさを足す前に保存したシーンには無いので、そのときは既定（1.0）のまま
+            // 明るさを足す前に保存したシーンにはないので、そのときは既定（1.0）のまま
             if (j.contains("skyIntensity"))
             {
                 c.skyIntensity = j["skyIntensity"].get<float>();
@@ -77,8 +75,8 @@ struct ComponentMeta<SkyboxComponent>
                                                  u8"空を見るとまぶしいときに下げる。キャラや地形の陰影は変わらない");
         ImGui::Separator();
 
-        // パス1行分: ラベル → 現在のパス → [読込...] [クリア]。
-        // handle を無効にすると、EnvironmentSystem が次のフレームで読み直す。
+        // パス1行分: ラベル → 現在のパス → [読込...] [クリア]
+        // handle を無効にすると、EnvironmentSystem が次のフレームで読み直す
         auto pathRow = [&](const char *label, char *path, TextureHandle &handle) {
             ComponentMetaImGui::Prop(label);
             ImGui::TextUnformatted(path[0] ? path : u8"(既定)");
@@ -135,6 +133,6 @@ struct ComponentMeta<SkyboxComponent>
 
 // 登録名は displayName から取る。文字列を直接書くと、インスペクタの見出し（displayName）と
 // JSON のキー・追加メニュー（登録名）が食い違い、見出しどおりのキーをプレハブに書いても
-// コンポーネントが付かない（エラーも出ない）。COMPONENT_META_END マクロは自動でこうしている。
+// コンポーネントが付かない（エラーも出ない）。COMPONENT_META_END マクロは自動でこうしている
 REGISTER_COMPONENT(SkyboxComponent, ComponentMeta<SkyboxComponent>::displayName)
 REGISTER_COMPONENT_EDITOR_GUI(SkyboxComponent)

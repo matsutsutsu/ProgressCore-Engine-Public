@@ -21,6 +21,8 @@ namespace
         return dx * dx + dy * dy;
     }
 
+
+
     // 目盛りの間隔を 1, 2, 5 × 10^n から選ぶ
     float NiceStep(float span, float targetDivs)
     {
@@ -34,6 +36,8 @@ namespace
         return nice * mag;
     }
 
+
+
     void FormatTick(char *buf, size_t n, float v, float step)
     {
         int decimals = 0;
@@ -41,6 +45,8 @@ namespace
         decimals = std::clamp(decimals, 0, 4);
         std::snprintf(buf, n, "%.*f", decimals, v);
     }
+
+
 
     void AddDashedLine(ImDrawList *dl, const ImVec2 &a, const ImVec2 &b, ImU32 col, float thick)
     {
@@ -65,6 +71,8 @@ void CurveEditorWidget::SetActiveCurve(int idx)
     m_activeCurve = idx;
     m_sel.clear();
 }
+
+
 
 void CurveEditorWidget::FrameAll(const std::vector<CurveData *> &curves)
 {
@@ -97,6 +105,8 @@ void CurveEditorWidget::FrameAll(const std::vector<CurveData *> &curves)
     m_viewMaxY = maxV + padY;
 }
 
+
+
 void CurveEditorWidget::DeleteSelected(CurveData *curve, bool &modified)
 {
     if (!curve || m_sel.empty()) return;
@@ -108,6 +118,8 @@ void CurveEditorWidget::DeleteSelected(CurveData *curve, bool &modified)
     curve->RecalculateTangents();
     modified = true;
 }
+
+
 
 bool CurveEditorWidget::Draw(const char *strId, const std::vector<CurveData *> &curves, Options &opts)
 {
@@ -126,6 +138,8 @@ bool CurveEditorWidget::Draw(const char *strId, const std::vector<CurveData *> &
     ImGui::PopID();
     return modified;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // キャンバス（描画と操作）
@@ -615,6 +629,8 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
     m_viewMaxY = viewMax.y;
     return modified;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 設定欄（選択中のキーと、編集中のカーブの設定）

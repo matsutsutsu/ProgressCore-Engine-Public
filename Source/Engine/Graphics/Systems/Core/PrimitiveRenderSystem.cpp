@@ -122,4 +122,6 @@ void PrimitiveRenderSystem::Update(float dt)
     });
 }
 
+
+
 REGISTER_RENDER_SYSTEM(PrimitiveRenderSystem, Priority::RenderStage::R08_Main);

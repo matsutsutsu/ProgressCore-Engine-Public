@@ -3,7 +3,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Platform/Input/InputKeyTable.h" // VK_* / GamePad::BTN_* / Mouse::BTN_*
+#include "Engine/Platform/Input/InputKeyTable.h"
 
 #include <memory>
 
@@ -15,6 +15,9 @@ namespace
     constexpr const char *kDirPad = "Assets/Textures/UI/InputPrompts/Pad/";
 
     std::string KM(const char *file) { return std::string(kDirKM) + file; }
+
+
+
     std::string Pad(const char *file) { return std::string(kDirPad) + file; }
 } // namespace
 
@@ -50,7 +53,7 @@ void InputIconSystem::Update(float /*dt*/)
         // 文字列の代入と、テクスチャのキャッシュの検索を毎フレーム走らせないため
         if (img.texturePath != path) img.texturePath = path;
 
-        // 割り当てが無い操作・アイコンを用意していない操作は隠す
+        // 割り当てがない操作・アイコンを用意していない操作は隠す
         // パスが空のままだと UIRenderer が白いダミーを貼り、白い四角が並んでしまう
         img.visible = !path.empty();
     });
@@ -58,7 +61,6 @@ void InputIconSystem::Update(float /*dt*/)
 
 
 
-// 割り当て（デバイスの種類とキーコード）をアイコンのパスに変える（対応表に無ければ空）
 std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
                                                 ActiveDeviceType    device) const
 {
@@ -120,7 +122,6 @@ std::string InputIconSystem::ResolveBindingIcon(const InputBinding &binding,
 
 
 
-// 割り当てに依らない固定のアイコン（移動・カメラ・メニューの操作）のパスを返す
 std::string InputIconSystem::ResolveFixedIcon(InputIconKind kind, ActiveDeviceType device) const
 {
     const bool pad = (device == ActiveDeviceType::GamePad);
@@ -135,12 +136,14 @@ std::string InputIconSystem::ResolveFixedIcon(InputIconKind kind, ActiveDeviceTy
     case InputIconKind::MenuNavigate:
         return pad ? Pad("dpad_all.png") : KM("arrows_all.png");
     case InputIconKind::Pause:
-        return pad ? std::string{} : KM("key_escape.png"); // START の画像はまだ無いので、パッドでは隠す
+        return pad ? std::string{} : KM("key_escape.png"); // START の画像はまだないので、パッドでは隠す
     default:
         break;
     }
     return {};
 }
+
+
 
 // ポーズ中は描画の System しか回らないので、描画ステージに置く
 // ロジックステージだと、ポーズ中に作ったヒントのアイコンが決まらない

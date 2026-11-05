@@ -15,7 +15,7 @@ namespace
         DirectX::XMFLOAT4 color; // rgb = 段の色、a = 重ねる濃さ
     };
 
-    // 段ごとの色。a は重ねる濃さ。
+    // 段ごとの色。a は重ねる濃さ
     // 半分にして、下の陰影が透けて形も見えるようにしている
     constexpr DirectX::XMFLOAT4 kLevelColors[MeshLod::kMaxLevels] = {
         {0.1f, 1.0f, 0.1f, 0.5f},  // LOD0：緑
@@ -39,7 +39,7 @@ void LodDebugPass::Initialize(const RenderServices &services)
     PipelineStateDesc desc = PipelineStateDesc::DefaultOpaque();
     desc.blend             = BlendState::UITransparency;
 
-    // 深度は LESS_EQUAL のテストだけ。
+    // 深度は LESS_EQUAL のテストだけ
     // NormalPrepass と同じ形を描くので同じ深度になり、表に見えている面にだけ色が乗る
     desc.depth = DepthState::TestOnly;
     m_pso      = PipelineState(desc);
@@ -52,7 +52,6 @@ void LodDebugPass::Initialize(const RenderServices &services)
 
 
 
-// 段 level の色を返す（範囲外は一番粗い段の色）
 DirectX::XMFLOAT4 LodDebugPass::GetLevelColor(size_t level)
 {
     return kLevelColors[(std::min)(level, MeshLod::kMaxLevels - 1)];
@@ -97,7 +96,7 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
     // 2. バッチとメッシュを回す
     // ---------------------------------------------------------
 
-    // バッチの区切り方は NormalPrepass と同じにする。
+    // バッチの区切り方は NormalPrepass と同じにする
     // 見えるインスタンスの列のキーが (バッチの先頭, メッシュ) のため
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
@@ -120,10 +119,10 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
         {
             const Model::Mesh &mesh = meshes[meshIdx];
 
-            // LOD の無いメッシュには色を付けない
+            // LOD のないメッシュには色を付けない
             if (!mesh.data || mesh.data->lods.empty()) continue;
 
-            // NormalPrepass が描かなかったメッシュ（半透明のバッチなど）は列が無いので飛ばす
+            // NormalPrepass が描かなかったメッシュ（半透明のバッチなど）は列がないので飛ばす
             const InstanceData  *visibleData  = nullptr;
             size_t               visibleCount = 0;
             MeshLod::LevelCounts levelCounts{};
@@ -174,7 +173,6 @@ void LodDebugPass::Execute(const RenderFrameContext &ctx)
 
 
 
-// 段の色を定数バッファへ書く
 void LodDebugPass::UpdateColor(ID3D11DeviceContext *dc, size_t level)
 {
     CbLodDebug cb;

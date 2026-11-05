@@ -9,11 +9,11 @@
 
 #include "Engine/UI/ECS/UIEvents.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
-#include "Game/UI/Common/ScreenHeadingUi.h"       // 左上の見出しと線
-#include "Game/UI/Screens/SettingsScreenSystem.h" // SettingsScreenState（設定画面を開いている間は Esc を受けない）
+#include "Game/UI/Common/ScreenHeadingUi.h"
+#include "Game/UI/Screens/SettingsScreenSystem.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeService.h"
-#include "Engine/Transform/Systems/TransformUpdateSystem.h" // SetParent（親の子のリストに繋ぐ）
+#include "Engine/Transform/Systems/TransformUpdateSystem.h"
 
 #include <cstdint>
 
@@ -159,7 +159,6 @@ void PauseSystem::Update(float /*dt*/)
 // メニューの開閉
 // ---------------------------------------------------------------------------
 
-// 一時停止してメニューを作る
 void PauseSystem::OpenPause()
 {
     // 処理フロー:
@@ -242,7 +241,6 @@ void PauseSystem::OpenPause()
 
 
 
-// 再開してメニューを消す
 void PauseSystem::ClosePause()
 {
     World &w = *m_world;
@@ -266,11 +264,10 @@ void PauseSystem::ClosePause()
 
 
 
-// 作ったメニューを、親の子のリストに繋ぐ（生成がまだ反映されていなければ false）
 bool PauseSystem::LinkOverlay()
 {
     // 親子のリストは TransformUpdateSystem（ロジック）が繋ぐが、一時停止中はロジックが止まっていて繋がらない
-    // 繋がないと Hierarchy に Canvas だけが子の無いルートとして出て、中身を確かめられない
+    // 繋がないと Hierarchy に Canvas だけが子のないルートとして出て、中身を確かめられない
     // 画面の配置は子から親をたどって決まるので、繋がなくても見た目は変わらない
     World &w = *m_world;
 

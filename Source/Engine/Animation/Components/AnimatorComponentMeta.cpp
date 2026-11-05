@@ -134,7 +134,7 @@ struct ComponentMeta<AnimStateMachineComponent>
 
         ImGui::TextDisabled("グラフファイル: %s", fsm.graphPath.empty() ? "なし" : fsm.graphPath.c_str());
 
-        // 読込は AnimControllerSystem の初回読込と同じ関数を通す（束縛の漏れを作らないため）。
+        // 読込は AnimControllerSystem の初回読込と同じ関数を通す（束縛の漏れを作らないため）
         //   エディタの一時停止中は Logic が回らないので、要求を積まずにその場で読む
         if (ImGui::Button("アニメグラフを読込... (JSON)"))
         {
@@ -204,7 +204,7 @@ struct ComponentMeta<AnimStateMachineComponent>
             if (isActive) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
             ImGui::PushID(static_cast<int>(state.stateHash));
 
-            // Animator が無いとクリップを流せないので、ジャンプさせない
+            // Animator がないとクリップを流せないので、ジャンプさせない
             if (ImGui::Selectable(label.c_str(), isActive) && animator)
             {
                 if (AnimControllerSystem::JumpToState(fsm, *animator, state.stateHash)) jumped = true;

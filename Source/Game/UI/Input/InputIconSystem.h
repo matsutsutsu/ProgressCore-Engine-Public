@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: InputIconComponent を持つ UIImage のアイコンを、今使っているデバイスに合わせる System。
+// 概要: InputIconComponent を持つ UIImage のアイコンを、今使っているデバイスに合わせる System
 //
 // 責務:
 //   - 割り当てや固定の種類から、アイコンの画像のパスを決める
-//   - パスが変わったときだけ書き換え、アイコンが無ければ隠す
+//   - パスが変わったときだけ書き換え、アイコンがなければ隠す
 //
-// 備考: アイコンの対応表はここにしか無い。
+// 備考: アイコンの対応表はここにしかない
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Platform/Input/IInputAPI.h"
@@ -16,9 +16,10 @@
 #include <string>
 #include <vector>
 
-class InputIconSystem : public CCL::ECS::IfSystem<InputIconSystem,
-                                                  CCL::ECS::Write<UIImageComponent>,
-                                                  CCL::ECS::Read<InputIconComponent>>
+class InputIconSystem : public CCL::ECS::IfSystem<
+    InputIconSystem,
+    CCL::ECS::Write<UIImageComponent>,
+    CCL::ECS::Read<InputIconComponent>>
 {
 public:
     InputIconSystem() : IfSystem("InputIconSystem") {}
@@ -30,7 +31,7 @@ public:
     void Update(float dt) override;
 
 private:
-    // 割り当て（デバイスの種類とキーコード）をアイコンのパスに変える（対応表に無ければ空）
+    // 割り当て（デバイスの種類とキーコード）をアイコンのパスに変える（対応表になければ空）
     std::string ResolveBindingIcon(const InputBinding &binding, ActiveDeviceType device) const;
 
     // 割り当てに依らない固定のアイコン（移動・カメラ・メニューの操作）のパスを返す

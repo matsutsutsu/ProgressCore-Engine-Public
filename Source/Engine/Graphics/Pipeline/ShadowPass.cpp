@@ -19,7 +19,7 @@ namespace
 {
     // Tracy は名前のポインタを持ち続けるので、どれもプログラム全体の寿命を持つ定数で渡す
 
-    // カスケードごとの GPU ゾーン。
+    // カスケードごとの GPU ゾーン
     // constexpr にすると MSVC 14.38 で C2131 になるので static const にする
     const tracy::SourceLocationData kCascadeGpuZones[3] = {
         {"GPU: Shadow Cascade 0", "ShadowPass::Execute", __FILE__, (uint32_t)__LINE__, 0},
@@ -52,8 +52,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     // 3. カスケードごとに、スキンメッシュを1体ずつ描き、それ以外をバッチで描く
     // 4. 描画先を戻し、デバッグ表示に登録する
 
-    // 【備考】
-    //   1 と 2 はどのカスケードでも同じなので、カスケードのループの外で1回だけ行う。
+    // 1 と 2 はどのカスケードでも同じなので、カスケードのループの外で1回だけ行う
 
     RenderQueue          *queue          = m_services->renderQueue;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
@@ -95,7 +94,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     // 2. メッシュを集めて並べる
     // ---------------------------------------------------------
 
-    // 共有の mesh->data（頂点・インデックスバッファ）の順に並べる。
+    // 共有の mesh->data（頂点・インデックスバッファ）の順に並べる
     // Model はエンティティごとに作られるので、Model::Mesh のアドレスで並べると
     // 同じモデルのドローンが1機ずつのバッチに分かれる
     {
@@ -130,7 +129,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     // ---------------------------------------------------------
 
 #if defined(TRACY_ENABLE)
-    TracyD3D11Ctx tracyCtx = m_services->tracyContext; // GPU 計測のコンテキスト（無ければ GPU ゾーンを作らない）
+    TracyD3D11Ctx tracyCtx = m_services->tracyContext; // GPU 計測のコンテキスト（なければ GPU ゾーンを作らない）
 #endif
 
     for (int cascadeIndex = 0; cascadeIndex < 3; ++cascadeIndex)
@@ -235,7 +234,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         {
             const Batch &batch = m_batchesScratch[bi];
 
-            // LOD のあるメッシュは一番粗い段で描く。影には形の細部がほとんど出ない。
+            // LOD のあるメッシュは一番粗い段で描く。影には形の細部がほとんど出ない
             // 距離で段を選ばないので、カスケードやインスタンスごとに分けなくてよい
             const MeshLod::DrawRange range = MeshLod::GetCoarsestDrawRange(*batch.meshData);
 
@@ -271,7 +270,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     dc->OMSetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.Get());
     dc->RSSetViewports(1, &oldVP);
 
-    // デバッグ表示に登録する。
+    // デバッグ表示に登録する
     // Texture2DArray なので、表示するスライスは RenderDebugWindow で選ぶ
     RenderDebugRegistry::Instance().Register({"ShadowMap (Cascades)", shadowMap->GetShaderResourceView(),
                                               shadowMap->GetWidth(), shadowMap->GetHeight(), DebugTexKind::Array});

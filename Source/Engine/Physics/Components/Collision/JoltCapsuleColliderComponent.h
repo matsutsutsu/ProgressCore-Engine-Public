@@ -1,16 +1,8 @@
 #pragma once
-// ===========================================================================
-// 概要: カプセル形のコライダー。剛体の形状、またはキャラクター（CharacterVirtual）の形状になる。
-//
-// 責務:
-//   - 円柱部分の半分の高さと半径、Entity の原点からのローカルなずれを持つ
-//
-// 備考: 全体の高さ = halfHeight * 2 + radius * 2。
-//       キャラクターに使う場合、JoltCharacterSetupSystem は localOffset/回転を使わず、
-//       足元が原点になるよう自前でずらす。
-// ===========================================================================
 #include <DirectXMath.h>
 
+// カプセル形のコライダー。剛体か、キャラクター（CharacterVirtual）の形状になる
+// 全体の高さは halfHeight * 2 + radius * 2。キャラクターでは localOffset と回転を使わず、足元を原点にする
 struct JoltCapsuleColliderComponent
 {
     float halfHeight = 0.5f; // 円柱部分の半分の高さ（m）

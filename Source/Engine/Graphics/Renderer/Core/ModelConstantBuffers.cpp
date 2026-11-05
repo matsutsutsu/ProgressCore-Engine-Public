@@ -15,6 +15,8 @@ ModelConstantBuffers::ModelConstantBuffers(ID3D11Device *device)
     _ASSERT_EXPR(SUCCEEDED(hr), L"CbSkeleton バッファ生成失敗");
 }
 
+
+
 void ModelConstantBuffers::BindAllGlobalConstantBuffers(ID3D11DeviceContext *dc)
 {
     // CbScene (b8)
@@ -30,6 +32,8 @@ void ModelConstantBuffers::BindAllGlobalConstantBuffers(ID3D11DeviceContext *dc)
         dc->VSSetConstantBuffers(SLOT_CB_SKELETON, 1, &skel);
     }
 }
+
+
 
 void ModelConstantBuffers::UpdateSkeletonConstants(ID3D11DeviceContext *dc,
                                                    const Model::Mesh   &mesh)

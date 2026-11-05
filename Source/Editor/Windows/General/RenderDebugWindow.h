@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 描画パスが RenderDebugRegistry に登録した中間テクスチャを一覧表示するウィンドウ。
+// 概要: 描画パスが RenderDebugRegistry に登録した中間テクスチャを一覧表示するウィンドウ
 //
 // 責務:
 //   - GBuffer・深度・法線・シャドウなどの中間バッファをサムネイルで表示する
@@ -8,7 +8,7 @@
 //   - 露出・チャンネル・配列スライスなどの表示設定を持つ
 //
 // 備考: 描画パスとは RenderDebugRegistry を介してだけつながる。既定は非表示で、
-//       Window メニューから開く。
+//       Window メニューから開く
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Editor/Windows/General/RenderTargetVisualizer.h"
@@ -16,7 +16,7 @@
 class RenderDebugWindow : public EditorWindow
 {
 public:
-    // 既定は非表示（必要時に Window メニューから開く）。
+    // 既定は非表示（必要時に Window メニューから開く）
     RenderDebugWindow() : EditorWindow("Render Debug", false) {} // 既定は非表示
 
 protected:

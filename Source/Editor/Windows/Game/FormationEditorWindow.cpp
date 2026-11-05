@@ -35,19 +35,23 @@ DataDrivenFormation *FormationEditorWindow::DataAt(DroneFormationType slot) cons
     return m_registry ? dynamic_cast<DataDrivenFormation *>(m_registry->Get(slot)) : nullptr;
 }
 
+
+
 FormationEditorWindow::Asset *FormationEditorWindow::CurrentAsset() const
 {
     auto *data = DataAt(m_slot);
     return data ? &data->GetMutableAsset() : nullptr;
 }
 
-// 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通。
+
+
+// 注意を引く文字の色。「未保存」「ボスAIは停止中」「置いても効かない組み合わせ」で共通
 constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
 
-// ファイルのパスを入れる文字列の項目と、選ぶときに使う FileDialog のプリセット。
+// ファイルのパスを入れる文字列の項目と、選ぶときに使う FileDialog のプリセット
 //
-// パスは手で打たせない。綴りを1文字間違えるとモデルが読めず、格子の形に戻るだけで原因に気づきにくい。
-// パスの項目を足すときは、ここへ1行足せば「参照...」ボタン付きで描かれる。
+// パスは手で打たせない。綴りを1文字間違えるとモデルが読めず、格子の形に戻るだけで原因に気づきにくい
+// パスの項目を足すときは、ここへ1行足せば「参照...」ボタン付きで描かれる
 struct PathField
 {
     const char *jsonName; // FieldDescriptor::jsonName
@@ -57,7 +61,7 @@ constexpr PathField kPathFields[] = {
     {"modelPath", "Model"},
 };
 
-// fd がパスの項目なら、そのプリセットを返す。
+// fd がパスの項目なら、そのプリセットを返す
 static const char *FindPathPreset(const FieldDescriptor &fd)
 {
     if (fd.kind != FieldKind::String || fd.jsonName == nullptr) return nullptr;
@@ -66,7 +70,9 @@ static const char *FindPathPreset(const FieldDescriptor &fd)
     return nullptr;
 }
 
-// パスの項目を「今のパス（読み取り専用）＋参照...」で描く。選び直したら true。
+
+
+// パスの項目を「今のパス（読み取り専用）＋参照...」で描く。選び直したら true
 static bool DrawPathField(const FieldDescriptor &fd, void *obj, const char *preset)
 {
     auto &path = *reinterpret_cast<std::string *>(static_cast<char *>(obj) + fd.offset);
@@ -86,10 +92,14 @@ static bool DrawPathField(const FieldDescriptor &fd, void *obj, const char *pres
     return changed;
 }
 
+
+
 FormationEditorWindow::FormationEditorWindow()
     : EditorWindow("Formation Editor", false), m_sequence(std::make_unique<FormationLayerSequence>())
 {
 }
+
+
 
 FormationEditorWindow::~FormationEditorWindow() = default;
 
@@ -101,6 +111,8 @@ int FormationEditorWindow::CountDrones(EditorContext &context) const
     return count;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 実機の掌握
 // ---------------------------------------------------------------------------
@@ -111,6 +123,8 @@ void FormationEditorWindow::Stage(EditorContext &context)
     PushStage(context);
 }
 
+
+
 void FormationEditorWindow::PushStage(EditorContext &context)
 {
     if (!m_staged || !context.world) return;
@@ -120,22 +134,22 @@ void FormationEditorWindow::PushStage(EditorContext &context)
 
     if (m_playing)
     {
-        // 本番と同じ速さで流す。攻撃は0.4秒ほどで終わるので、目で追うためのスローも持つ。
-        // 振り切った形を少し見せてから頭へ戻して繰り返す（毎回押し直すのは確認にならない）。
+        // 本番と同じ速さで流す。攻撃は0.4秒ほどで終わるので、目で追うためのスローも持つ
+        // 振り切った形を少し見せてから頭へ戻して繰り返す（毎回押し直すのは確認にならない）
         constexpr float kHoldSeconds = 0.5f;
         m_time += ImGui::GetIO().DeltaTime * (m_slowMotion ? 0.25f : 1.0f);
         if (m_time > asset->telegraphSeconds + asset->attackSeconds + kHoldSeconds) m_time = 0.0f;
     }
 
     // 本編と同じ順番で見せる。予告の間は撃つ合図を落として待機させ（向きは追い続け、当たらない）、
-    // 予告が終わったら合図を立てて攻撃へ進む。
+    // 予告が終わったら合図を立てて攻撃へ進む
     const bool  telegraph = (m_time < asset->telegraphSeconds);
     const float progress  = telegraph ? 0.0f : std::min(1.0f, (m_time - asset->telegraphSeconds) / asset->attackSeconds);
 
     const BossHandles boss = FindBoss(context);
 
     // ボスBTを止める。止めないと次のフレームに requestFormation を
-    // 書き戻され、押しても元の技へ戻る。
+    // 書き戻され、押しても元の技へ戻る
     if (boss.bt) boss.bt->debugPaused = true;
     if (boss.cmd)
     {
@@ -143,10 +157,12 @@ void FormationEditorWindow::PushStage(EditorContext &context)
         boss.cmd->droneAttackActive = !telegraph;
     }
 
-    // 時間を固定する。陣形が毎フレーム書くフィールドなので、外から固定するにはここを通す。
+    // 時間を固定する。陣形が毎フレーム書くフィールドなので、外から固定するにはここを通す
     if (auto *data = DataAt(m_slot))
         data->SetPreview(telegraph ? m_time : asset->telegraphSeconds, progress);
 }
+
+
 
 void FormationEditorWindow::Unstage(EditorContext &context)
 {
@@ -155,7 +171,7 @@ void FormationEditorWindow::Unstage(EditorContext &context)
     m_playing = false;
 
     // 固定していた時間を全データ陣形ぶん解除する。選択を切り替えながら掌握を
-    // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る。
+    // 続けた場合、前の陣形に上書き値が残るため1枠ずつ見る
     for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
         if (auto *data = DataAt(static_cast<DroneFormationType>(slot))) data->ClearPreview();
@@ -165,6 +181,8 @@ void FormationEditorWindow::Unstage(EditorContext &context)
     if (boss.bt) boss.bt->debugPaused = false;
     if (boss.cmd) boss.cmd->droneAttackActive = false; // 攻撃信号は落とす。形はBTが次に指示する
 }
+
+
 
 FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext &context) const
 {
@@ -180,10 +198,12 @@ FormationEditorWindow::BossHandles FormationEditorWindow::FindBoss(EditorContext
     return handles;
 }
 
+
+
 void FormationEditorWindow::OnFrameBegin(EditorContext &context)
 {
-    // 陣形の実体は World ごとにある（FormationRegistry.h）ので、毎フレーム今の World から引き直す。
-    // シーンが変わったら、前のシーンで付けた未保存の印は捨てる。その変更は作り直しで消えている。
+    // 陣形の実体は World ごとにある（FormationRegistry.h）ので、毎フレーム今の World から引き直す
+    // シーンが変わったら、前のシーンで付けた未保存の印は捨てる。その変更は作り直しで消えている
     FormationRegistry *registry = context.world ? FormationRegistry::Find(*context.world) : nullptr;
     if (registry != m_registry)
     {
@@ -192,7 +212,7 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &context)
     }
 
     // 閉じられた・畳まれたフレームでもここは走る。掌握したままウィンドウを閉じると
-    // ボスBTが止まったままになるので、見えなくなった時点で必ず解く。
+    // ボスBTが止まったままになるので、見えなくなった時点で必ず解く
     if (!GetVisible())
     {
         Unstage(context);
@@ -200,6 +220,8 @@ void FormationEditorWindow::OnFrameBegin(EditorContext &context)
     }
     PushStage(context);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 複製
@@ -210,7 +232,7 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     const Asset *src = CurrentAsset();
     if (!src) return false;
 
-    // 同名のファイルを黙って上書きすると、別の技が消える。
+    // 同名のファイルを黙って上書きすると、別の技が消える
     const std::string path = std::string("Assets/Formations/") + fileName + ".json";
     if (FileSystem::Exists(path))
     {
@@ -252,13 +274,15 @@ bool FormationEditorWindow::DuplicateCurrent(const char *fileName)
     return true;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 表を描く
 // ---------------------------------------------------------------------------
 
 bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &fields, void *obj)
 {
-    // 同じ表を動きの層ごとに何度も描くので、ID は描く対象のアドレスで分ける。
+    // 同じ表を動きの層ごとに何度も描くので、ID は描く対象のアドレスで分ける
     ImGui::PushID(obj);
 
     bool changed = false;
@@ -275,7 +299,7 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
             ImGui::TableSetColumnIndex(0);
             ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted(fd.name);
-            // 入力欄だけでなく表示名にマウスを乗せても説明を出す（こちらの方が狙いやすい）。
+            // 入力欄だけでなく表示名にマウスを乗せても説明を出す（こちらの方が狙いやすい）
             if (fd.tooltip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fd.tooltip);
 
             ImGui::TableSetColumnIndex(1);
@@ -298,21 +322,23 @@ bool FormationEditorWindow::DrawFields(const std::vector<FieldDescriptor> &field
     return changed;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 緩急の型
 // ---------------------------------------------------------------------------
-// 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ。
-// どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）。
+// 型は CurveData のキーとして動きの層へ書き込む。評価器は型を知らず、カーブを引くだけ
+// どの型から作ったかは CurveData::name に id を入れて覚える（一覧で今の型を選択状態にするため）
 
 namespace
 {
-    // 緩急の型ひとつ。キーは「進み 0〜1 → 動きの進み 0〜1」を描く。
+    // 緩急の型ひとつ。キーは「進み 0〜1 → 動きの進み 0〜1」を描く
     struct EasePreset
     {
         const char   *id; // CurveData::name に入れる。JSON に残るので英字
         const char   *label;
         const char   *tooltip;
-        int           keyCount; // 0 = キー無し（評価器の既定 t*t）
+        int           keyCount; // 0 = キーなし（評価器の既定 t*t）
         CurveKeyframe keys[3];
     };
 
@@ -342,8 +368,8 @@ namespace
           {.time = 1.0f, .value = 1.0f}}},
     };
 
-    // エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど評価器の既定 t*t になる。
-    // 「既定の形から手で直し始める」ための出発点。
+    // エルミート補間で両端の傾きを 0 と 2 にすると、ちょうど評価器の既定 t*t になる
+    // 「既定の形から手で直し始める」ための出発点
     constexpr CurveKeyframe kEaseInKeys[] = {
         {.time = 0.0f, .value = 0.0f},
         {.time = 1.0f, .value = 1.0f, .inTangent = 2.0f},
@@ -360,7 +386,7 @@ CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyfra
     {
         CurveKeyframe key = keys[k];
 
-        // 接線は手動(Broken)で持たせる。Auto のままだと読み込み時の接線の再計算で形が変わる。
+        // 接線は手動(Broken)で持たせる。Auto のままだと読み込み時の接線の再計算で形が変わる
         key.tangentIn  = TangentMode::Broken;
         key.tangentOut = TangentMode::Broken;
         key.id         = curve.GenId();
@@ -368,6 +394,8 @@ CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyfra
     }
     return curve;
 }
+
+
 
 void FormationEditorWindow::DrawEaseGraph(const Layer &layer)
 {
@@ -402,11 +430,13 @@ void FormationEditorWindow::DrawEaseGraph(const Layer &layer)
                           "縦 : 下の線 = 始まりの値 / 上の線 = 終わりの値");
 }
 
+
+
 bool FormationEditorWindow::DrawEase(Layer &layer)
 {
     bool changed = false;
 
-    // 今の型。キーが無ければ既定、name が一覧にあればその型、どれでもなければ手で直した形。
+    // 今の型。キーがなければ既定、name が一覧にあればその型、どれでもなければ手で直した形
     int current = -1;
     for (int i = 0; i < IM_ARRAYSIZE(kEasePresets); ++i)
     {
@@ -440,8 +470,8 @@ bool FormationEditorWindow::DrawEase(Layer &layer)
 
     DrawEaseGraph(layer);
 
-    // 細かい形はアニメーションと同じカーブエディタで直す。既定（キー無し）は直す対象のキーが
-    // 無いので、同じ形のキーを置いてから始める。
+    // 細かい形はアニメーションと同じカーブエディタで直す。既定（キーなし）は直す対象のキーが
+    // ないので、同じ形のキーを置いてから始める
     if (ImGui::TreeNode("形を手で直す"))
     {
         if (layer.curve.empty())
@@ -472,6 +502,8 @@ bool FormationEditorWindow::DrawEase(Layer &layer)
     return changed;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 動きの層
 // ---------------------------------------------------------------------------
@@ -487,6 +519,8 @@ bool FormationEditorWindow::DrawLayers(Asset &asset)
     changed |= DrawLayerDetail(asset.layers[m_selectedLayer]);
     return changed;
 }
+
+
 
 void FormationEditorWindow::DrawPlayback(const Asset &asset)
 {
@@ -511,20 +545,22 @@ void FormationEditorWindow::DrawPlayback(const Asset &asset)
         ImGui::Text("攻撃 %.2f / %.2f 秒", std::min(m_time - asset.telegraphSeconds, asset.attackSeconds), asset.attackSeconds);
 }
 
+
+
 bool FormationEditorWindow::DrawLayerButtons(Asset &asset)
 {
     bool changed = false;
 
     // 追加・並べ替え・削除は「選んでいる動き」に対して行う。層が減った直後でも
-    // 指している先が居るように、ここで選択を範囲内へ入れ直す。
+    // 指している先がいるように、ここで選択を範囲内へ入れ直す
     const int count         = static_cast<int>(asset.layers.size());
     m_selectedLayer         = std::clamp(m_selectedLayer, 0, std::max(0, count - 1));
     const bool hasSelection = (count > 0);
 
     if (ImGui::Button("+ 動きを足す"))
     {
-        // 既定値（始まりも終わりも 0）のままだと、足しても形が動かず効いているか分からない。
-        // 足した瞬間に実機で見て取れるよう、全体を 5m 持ち上げる動きで始める。
+        // 既定値（始まりも終わりも 0）のままだと、足しても形が動かず効いているか分からない
+        // 足した瞬間に実機で見て取れるよう、全体を 5m 持ち上げる動きで始める
         FormationLayer &added = asset.layers.emplace_back();
         added.type            = LayerType::Translate;
         added.axis            = AssetAxis::Up;
@@ -536,8 +572,8 @@ bool FormationEditorWindow::DrawLayerButtons(Asset &asset)
     ImGui::SameLine();
     if (ImGui::Button("+ 震えを足す"))
     {
-        // 予告の区間いっぱいに、全席をだんだん強くざわつかせる震えを置く。
-        // 振れ幅を 0 から始めるので、既定の緩急(p*p)で撃つ直前ほど強くなる。
+        // 予告の区間いっぱいに、全席をだんだん強くざわつかせる震えを置く
+        // 振れ幅を 0 から始めるので、既定の緩急(p*p)で撃つ直前ほど強くなる
         FormationLayer &added = asset.layers.emplace_back();
         added.type            = LayerType::Shiver;
         added.axis            = AssetAxis::Right;
@@ -580,6 +616,8 @@ bool FormationEditorWindow::DrawLayerButtons(Asset &asset)
     return changed;
 }
 
+
+
 bool FormationEditorWindow::DrawLayerDetail(Layer &layer)
 {
     char title[64];
@@ -590,7 +628,7 @@ bool FormationEditorWindow::DrawLayerDetail(Layer &layer)
 
     bool changed = DrawFields(Meta::LayerFields(), &layer);
 
-    // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す。
+    // 数値としては正しいが「置いても何も起きない」組み合わせ。画面からは気づけないので言葉で出す
     if (layer.type == LayerType::Shiver)
     {
         ImGui::TextDisabled("Shiver は予告の区間に置く震え。撃つ合図で攻撃が始まると止まる");
@@ -604,6 +642,8 @@ bool FormationEditorWindow::DrawLayerDetail(Layer &layer)
     return changed;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 時間軸
 // ---------------------------------------------------------------------------
@@ -612,15 +652,15 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
 {
     ImGui::TextDisabled("左 : 予告 %.2f 秒（震えだけ）  |  右 : 攻撃 %.2f 秒", asset.telegraphSeconds, asset.attackSeconds);
 
-    // 帯を1本も置かなくても、この設定が ON だと予告の間ずっと全機が震える。
-    // 予告の震えを探すのはこのタイムラインなので、「見せ方」の中ではなくここにも出す。
+    // 帯を1本も置かなくても、この設定が ON だと予告の間ずっと全機が震える
+    // 予告の震えを探すのはこのタイムラインなので、「見せ方」の中ではなくここにも出す
     ImGui::SameLine();
     bool changed = ImGui::Checkbox("全体のざわつき", &asset.output.useShiverTelegraph);
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("予告の間、帯とは別に全機を共通の震えでざわつかせる（「見せ方」の「撃つ前に震わせる」と同じ設定）\n"
                           "切ると、置いた Shiver の帯の震えだけになる");
 
-    // ImSequencer は動きが1つも無いと何も描かない。
+    // ImSequencer は動きが1つもないと何も描かない
     if (asset.layers.empty())
     {
         ImGui::TextDisabled("動きがありません（待機の形のまま）");
@@ -631,7 +671,7 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
     const int before = frame;
     m_sequence->Begin(asset, frame);
 
-    // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める。
+    // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める
     //   目盛り(20) + 行(20 x 数) + 下の横スクロール(14) + 内側の余白(8) + 少しの余裕
     constexpr float kItemHeight = 20.0f;
     const float     height      = kItemHeight * (asset.layers.size() + 1) + 14.0f + 8.0f + 4.0f;
@@ -658,6 +698,8 @@ bool FormationEditorWindow::DrawTimeline(Asset &asset)
     return changed;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 3ペイン
 // ---------------------------------------------------------------------------
@@ -682,18 +724,20 @@ void FormationEditorWindow::DrawContents(EditorContext &context)
     ImGui::EndChild();
 }
 
+
+
 void FormationEditorWindow::DrawListPane(EditorContext &context)
 {
     ImGui::SeparatorText("陣形");
 
-    // 名前のある枠（縦割り等）も空き枠も、データ陣形なら全部並べる。
+    // 名前のある枠（縦割り等）も空き枠も、データ陣形なら全部並べる
     for (size_t slot = 0; slot < kDroneFormationSlotCount; ++slot)
     {
         const auto type = static_cast<DroneFormationType>(slot);
         auto      *data = DataAt(type);
         if (!data) continue;
 
-        // 未保存の技には * を付ける。### 以降が ID なので、* が付いても選択は外れない。
+        // 未保存の技には * を付ける。### 以降が ID なので、* が付いても選択は外れない
         const bool        dirty = m_dirtySlots.count(type) > 0;
         const std::string label = data->GetAsset().name + (dirty ? " *" : "") + "###" + std::to_string(slot);
         if (ImGui::Selectable(label.c_str(), type == m_slot))
@@ -702,7 +746,7 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
             m_selectedLayer = 0;
             m_status.clear();
 
-            // 掌握中に選び直したら、そのまま新しい陣形を出す（「実機に出す」を押し直させない）。
+            // 掌握中に選び直したら、そのまま新しい陣形を出す（「実機に出す」を押し直させない）
             if (m_staged) PushStage(context);
         }
     }
@@ -731,6 +775,8 @@ void FormationEditorWindow::DrawListPane(EditorContext &context)
     }
 }
 
+
+
 void FormationEditorWindow::DrawEditPane(EditorContext &context)
 {
     Asset *asset = CurrentAsset();
@@ -749,7 +795,7 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
         }
         else
         {
-            // 失敗したら未保存のままにする。消したと思って閉じられると編集が消える。
+            // 失敗したら未保存のままにする。消したと思って閉じられると編集が消える
             m_status = "保存に失敗しました（コンソールを確認）";
         }
     }
@@ -776,7 +822,7 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
     ImGui::Separator();
 
     // 画面の主役は「動き」。評価器も「待機の形を作る → 動きを順にかける」の2段なので、
-    // 待機の形（割付・形・配置）は1つにまとめ、見出しに結果だけを出して既定では畳む。
+    // 待機の形（割付・形・配置）は1つにまとめ、見出しに結果だけを出して既定では畳む
     bool changed = false;
 
     if (ImGui::CollapsingHeader("基本", ImGuiTreeNodeFlags_DefaultOpen))
@@ -807,6 +853,8 @@ void FormationEditorWindow::DrawEditPane(EditorContext &context)
 
     if (changed) m_dirtySlots.insert(m_slot);
 }
+
+
 
 void FormationEditorWindow::DrawViewPane(EditorContext &context)
 {

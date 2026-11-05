@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 1つのモデルファイルの共有データ（ノード・メッシュ・マテリアル・アニメーション）。
+// 概要: 1つのモデルファイルの共有データ（ノード・メッシュ・マテリアル・アニメーション）
 //
 // 責務:
 //   - glTF（.glb / .gltf）かモデル定義ファイル（.model.json）を読み込む
@@ -8,8 +8,8 @@
 //   - 頂点・インデックスバッファとテクスチャなど、GPU のリソースを作る
 //   - メッシュごとと、モデル全体のローカル AABB を求める
 //
-// 備考: ResourceManager が1ファイルにつき1つだけ持ち、同じモデルの全インスタンス（Model）が共有する。
-//       .model.json の書き方は ModelResource.cpp の LoadModelSet の前のコメントを参照。
+// 備考: ResourceManager が1ファイルにつき1つだけ持ち、同じモデルの全インスタンス（Model）が共有する
+//       .model.json の書き方は ModelResource.cpp の LoadModelSet の前のコメントを参照
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -146,7 +146,7 @@ public:
         Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
         Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 
-        // LOD（GenerateLods が作る。保存しない）。lods が空なら LOD 無しで、indexBuffer をそのまま描く。
+        // LOD（GenerateLods が作る。保存しない）。lods が空なら LOD なしで、indexBuffer をそのまま描く
         // lodIndexBuffer には LOD0（indices の写し）から順に全段を詰めてあり、頂点バッファは全段で共有する
         std::vector<LodLevel>                lods;           // [0] が LOD0（元の形）。後ろほど粗い
         Microsoft::WRL::ComPtr<ID3D11Buffer> lodIndexBuffer; // 全段のインデックス
@@ -210,47 +210,27 @@ public:
     // 別ファイルのアニメーションを読み、animations の末尾に足す（ボーン名で対応づける）
     void AppendAnimations(const char *filename);
 
-    // 位置のリターゲットをするか。
-    //   true（既定）= ルート・Pelvis・Hips 以外のボーンはアニメーションの移動を使わず、
-    //                 バインドポーズの骨の長さを使う（体型の崩れを防ぐ）。
-    //   false       = アニメーションの移動をそのまま使う。モデルとアニメーションの骨格が同じで、
-    //                 スライドするボーンのように移動そのものが演出のときに使う。
-    //   .model.json の "translationRetargeting" で切り替える。cereal には保存せず、
-    //   キャッシュから読んだときも毎回 JSON の値で上書きする。
+    // 位置のリターゲットをするか（.model.json の "translationRetargeting"）
+    //   true（既定）なら、ルート・Pelvis・Hips 以外はバインドポーズの骨の長さを使う。false ならアニメーションの移動をそのまま使う
+    //   cereal には保存せず、キャッシュから読んだときも毎回 JSON の値で上書きする
     bool  GetTranslationRetargeting() const { return translationRetargeting; }
     void  SetTranslationRetargeting(bool enable) { translationRetargeting = enable; }
 
-    /**
-     * @brief モデル定義ファイル（.model.json）かを返す。
-     *
-     * 本体モデルと追加のアニメーションを1つの JSON で指定する形式。アセットブラウザの種類の判定でも使う。
-     *
-     * @param filename 調べるファイル名。
-     * @return モデル定義ファイルなら true。
-     */
+    // モデル定義ファイル（.model.json。本体と追加のアニメーションを1つの JSON で指定する）か
     static bool IsModelSetFile(const char *filename);
 
     // 頂点から mesh.boundsMin / boundsMax を求める
     void ComputeMeshBounds(Mesh &mesh);
 
-    /**
-     * @brief 全メッシュの AABB を合わせて、モデル全体の AABB を求める。
-     * @note スキンメッシュ以外は、ノードの初期姿勢の行列を掛けた位置で合わせる。
-     */
+    // 全メッシュの AABB を合わせて、モデル全体の AABB を求める。スキンでないメッシュは、ノードの初期姿勢の位置で合わせる
     void ComputeModelLocalAABB();
 
     // モデル全体のローカル AABB
     const DirectX::BoundingBox &GetBoundingBox() const { return m_boundingBox; }
 
-    /**
-     * @brief 全メッシュの LOD を作る（meshoptimizer で元の形を簡略化する）。
-     *
-     * ResourceManager が、読み込んだ直後・ほかのスレッドや描画から見えるようになる前に呼ぶ。
-     * 描画に使われ始めてから呼ぶと、描画中の lods と lodIndexBuffer を書き換えることになるので呼ばない。
-     *
-     * @param device インデックスバッファを作るデバイス。
-     * @note スキンメッシュと、マテリアルの範囲（subsets）が2つ以上あるメッシュには作らない。
-     */
+    // 全メッシュの LOD を、meshoptimizer で元の形を簡略化して作る
+    // 描画に使われ始めてから呼ぶと描画中のバッファを書き換えるので、ResourceManager が読み込んだ直後にだけ呼ぶ
+    // スキンメッシュと、マテリアルの範囲（subsets）が2つ以上あるメッシュには作らない
     void GenerateLods(ID3D11Device *device);
 
     // GenerateLods にかかった時間（ms）。作っていなければ 0

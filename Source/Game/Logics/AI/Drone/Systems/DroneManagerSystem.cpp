@@ -1,7 +1,7 @@
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Squad/SquadUpdateSystem.h" // 生成した機を小隊へ入れる
+#include "Game/Logics/AI/Drone/Squad/SquadUpdateSystem.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -40,6 +40,8 @@ void DroneManagerSystem::Update(float /*dt*/)
     battle.droneAliveCount = alive;
 }
 
+
+
 void DroneManagerSystem::TryAutoSpawnInitial()
 {
     if (m_autoSpawnDone) return;
@@ -54,6 +56,8 @@ void DroneManagerSystem::TryAutoSpawnInitial()
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 数え上げと番号の振り直し
 // ---------------------------------------------------------------------------
@@ -65,6 +69,8 @@ int DroneManagerSystem::GetAliveCount() const
     m_world->ViewEach<DroneComponent>([&count](EntityID) { ++count; });
     return count;
 }
+
+
 
 void DroneManagerSystem::ReindexAllDrones()
 {
@@ -85,6 +91,8 @@ void DroneManagerSystem::ReindexAllDrones()
     SquadUpdateSystem::AssignNewMembers(*m_world);
 }
 
+
+
 EntityID DroneManagerSystem::FindBoss() const
 {
     auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
@@ -92,6 +100,8 @@ EntityID DroneManagerSystem::FindBoss() const
         return b;
     return InvalidEntityID;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 生成と破棄
@@ -137,7 +147,7 @@ int DroneManagerSystem::SpawnDrones(int count)
             d->orbitRadius      = 8.0f;
             d->hasReachedSlot   = false;
 
-            // ホバーの位相を機体ごとにずらす。揃っていると群れが1枚の板として揺れる。
+            // ホバーの位相を機体ごとにずらす。揃っていると群れが1枚の板として揺れる
             // EntityID は続き番号なので、ハッシュでかき混ぜないと隣同士が揃って揺れる
             uint32_t phase = static_cast<uint32_t>(droneId) * 2654435761u;
             phase ^= phase >> 15;
@@ -162,6 +172,8 @@ int DroneManagerSystem::SpawnDrones(int count)
     return spawned;
 }
 
+
+
 int DroneManagerSystem::DestroyDrones(int count)
 {
     int  destroyed = 0;
@@ -176,6 +188,8 @@ int DroneManagerSystem::DestroyDrones(int count)
     return destroyed;
 }
 
+
+
 void DroneManagerSystem::DestroyAll()
 {
     auto view = m_world->View<DroneComponent>();
@@ -183,6 +197,8 @@ void DroneManagerSystem::DestroyAll()
         m_world->Destroy(e);
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -207,5 +223,7 @@ void DroneManagerSystem::OnGui()
         DestroyAll();
     ImGui::PopStyleColor();
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

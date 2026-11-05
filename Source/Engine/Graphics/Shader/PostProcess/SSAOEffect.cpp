@@ -1,10 +1,6 @@
-// 4回に分ける理由: 半球の中をいくつかサンプリングして求めた値は粒の粗いノイズが多く、
-// そのまま色に掛けると地面全体がざらざらして見えた。深度の差が大きい所はぼかさない
-// ぼかし（バイラテラル）で、物の輪郭を残したままノイズだけをならしてから掛ける。
-//
-// 途中のバッファは、描いた直後に描画先から外してから SRV として読む。D3D11 は描画先に
-// バインドしたままのテクスチャを SRV として読ませず 0 を返すので、合成で scene × 0 = 真っ黒になる。
-// BloomEffect のダウン・アップサンプルと同じく、各回の後に OMSetRenderTargets(1, &nullRTV, nullptr) を呼ぶ
+// 4回に分けるのは、半球のサンプリングだけではノイズが粗いため。深度の差が大きい所はぼかさないバイラテラルでならしてから掛ける
+// 途中のバッファは、描いた直後に描画先から外してから SRV として読む
+// D3D11 は描画先にバインドしたままのテクスチャを 0 として読ませるので、外さないと合成が真っ黒になる
 #include "SSAOEffect.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -13,6 +9,8 @@ SSAOEffect::~SSAOEffect()
 {
     ReleaseTargets();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 初期化とリソース
@@ -52,6 +50,8 @@ void SSAOEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
     CreateTargets(width, height);
 }
 
+
+
 void SSAOEffect::CreateTargets(UINT width, UINT height)
 {
     m_width  = width;
@@ -61,6 +61,8 @@ void SSAOEffect::CreateTargets(UINT width, UINT height)
     m_blurV  = ResourceManager::Instance().CreateRenderTarget(width, height, DXGI_FORMAT_R8_UNORM);
 }
 
+
+
 void SSAOEffect::ReleaseTargets()
 {
     if (m_rawAO.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_rawAO);
@@ -68,11 +70,15 @@ void SSAOEffect::ReleaseTargets()
     if (m_blurV.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_blurV);
 }
 
+
+
 void SSAOEffect::Resize(ID3D11Device * /*device*/, UINT width, UINT height)
 {
     ReleaseTargets();
     CreateTargets(width, height);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 毎フレームの処理
@@ -92,6 +98,8 @@ void SSAOEffect::CopyInputToOutput(ID3D11DeviceContext      *dc,
     if (src) src->Release();
     if (dst) dst->Release();
 }
+
+
 
 void SSAOEffect::Process(ID3D11DeviceContext      *dc,
                          ID3D11ShaderResourceView *inputSRV,

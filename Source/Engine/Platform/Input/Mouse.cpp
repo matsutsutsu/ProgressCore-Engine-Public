@@ -18,6 +18,8 @@ Mouse::Mouse(HWND hWnd)
     screenHeight = rc.bottom - rc.top;
 }
 
+
+
 void Mouse::Update()
 {
     ZoneScopedN("Mouse::Update");
@@ -48,16 +50,16 @@ void Mouse::Update()
     UINT screenH   = rc.bottom - rc.top;
     UINT viewportW = screenWidth;
     UINT viewportH = screenHeight;
-    // クライアント座標を、起動時のクライアントサイズ（= バックバッファの大きさ）の座標に直す。
+    // クライアント座標を、起動時のクライアントサイズ（= バックバッファの大きさ）の座標に直す
     // ウィンドウの大きさが起動時と同じなら何も変わらない
     positionX[1] = positionX[0];
     positionY[1] = positionY[0];
     positionX[0] = (LONG)(cursor.x / static_cast<float>(screenW) * static_cast<float>(viewportW));
     positionY[0] = (LONG)(cursor.y / static_cast<float>(screenH) * static_cast<float>(viewportH));
 
-    // カーソルロック（マウスルック）：カーソルを画面中央へ戻し、画面端で止まらないようにする。
-    //   ・ウィンドウが非フォーカスならロックしない（alt-tab でカーソルが閉じ込められない）。
-    //   ・ロック開始フレームは視点が飛ばないよう移動量を 0 にする。
+    // カーソルロック（マウスルック）：カーソルを画面中央へ戻し、画面端で止まらないようにする
+    //   ・ウィンドウが非フォーカスならロックしない（alt-tab でカーソルが閉じ込められない）
+    //   ・ロック開始フレームは視点が飛ばないよう移動量を 0 にする
     bool focused       = (::GetForegroundWindow() == hWnd);
     bool effectiveLock = m_lockRequested && focused && screenW > 0 && screenH > 0;
 

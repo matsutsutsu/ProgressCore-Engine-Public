@@ -5,7 +5,6 @@
 
 using namespace CCL::ECS;
 
-// ダッシュ中でないプレイヤーの、歩きと走りを進める
 void PlayerMoveSystem::Update(float /*dt*/)
 {
     ForEach([&](CharacterMovementComponent &movement,
@@ -21,7 +20,6 @@ void PlayerMoveSystem::Update(float /*dt*/)
 
 
 
-// 走りを解くかを決め、歩きか走りかに合わせて速さを書く
 void PlayerMoveSystem::UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementComponent &movement, float dt)
 {
     // --- 走りの解除 ---

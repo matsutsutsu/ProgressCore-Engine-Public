@@ -3,16 +3,16 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/HUD/PlayerHudStyleComponent.h"
-#include "Game/UI/Common/UiPrefabUtil.h"         // FindChildByName
-#include "Game/UI/Debug/GaugeLabGui.h"           // OnGui の HP ボタン
-#include "Game/Logics/AI/Battle/BattleContext.h" // OnGui で HP を書き換えるプレイヤーを引く
+#include "Game/UI/Common/UiPrefabUtil.h"
+#include "Game/UI/Debug/GaugeLabGui.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 #include <algorithm>
 #include <cmath>
@@ -39,8 +39,8 @@ namespace
 void PlayerHealthHudSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. プレイヤーの HP を読む（居なければゲージを隠して終わる）
-    // 2. 初めてプレイヤーが居たフレームに、PlayerHud プレハブを生成する
+    // 1. プレイヤーの HP を読む（いなければゲージを隠して終わる）
+    // 2. 初めてプレイヤーがいたフレームに、PlayerHud プレハブを生成する
     // 3. 割合と、瀕死の色・脈打ち・外側の光を書く
     // 4. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
     // 5. 残り HP の数値を書く
@@ -64,7 +64,7 @@ void PlayerHealthHudSystem::Update(float dt)
     auto *bar = m_world->GetComponent<UIProgressBarComponent>(m_barID);
     auto *txt = m_world->GetComponent<UITextComponent>(m_valueID);
 
-    // プレイヤーが居ないシーン（タイトルなど）では作らない。作ってあれば隠す
+    // プレイヤーがいないシーン（タイトルなど）では作らない。作ってあれば隠す
     if (!found)
     {
         if (bar) bar->visible = false;
@@ -84,7 +84,7 @@ void PlayerHealthHudSystem::Update(float dt)
     }
     if (!bar) return;
 
-    // プレハブのルートにスタイルが無ければ、既定値で動かす
+    // プレハブのルートにスタイルがなければ、既定値で動かす
     static const PlayerHudStyleComponent kDefaultStyle{};
     const auto *stylePtr = m_world->GetComponent<PlayerHudStyleComponent>(m_rootID);
     const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
@@ -213,7 +213,6 @@ void PlayerHealthHudSystem::OnGui()
 
 
 
-// PlayerHud プレハブを生成し、ゲージと数値の子を名前で引く
 void PlayerHealthHudSystem::SpawnHud()
 {
     // 失敗しても試すのは1回だけにする
@@ -237,5 +236,7 @@ void PlayerHealthHudSystem::SpawnHud()
         CCL_LOG_ERROR(LogCategory::Game, "[PlayerHud] %s に '%s' が見つかりません", kPrefabPath, kValueName);
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(PlayerHealthHudSystem, Priority::LogicStage::L06_HudSync);

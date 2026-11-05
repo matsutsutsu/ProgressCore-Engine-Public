@@ -46,14 +46,14 @@ public:
 
 BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor")
 {
-    // 視点や座標を ini に保存しない。前回クラッシュ時の壊れた座標が残ると復帰できないため。
+    // 視点や座標を ini に保存しない。前回クラッシュ時の壊れた座標が残ると復帰できないため
     ed::Config config;
     config.SettingsFile = nullptr;
     m_nodeContext       = ed::CreateEditor(&config);
 
-    // 背景のグリッドを大きく・濃くする。既定は 32 間隔・透明度 40/255 とかなり細かく薄い。
-    //   しかも透明度に「倍率の2乗」が掛かるので、全体を収めるために縮小していると事実上見えない。
-    //   間隔の GridSize はライブラリに足した項目（imgui_node_editor.h）。
+    // 背景のグリッドを大きく・濃くする。既定は 32 間隔・透明度 40/255 とかなり細かく薄い
+    //   しかも透明度に「倍率の2乗」が掛かるので、全体を収めるために縮小していると事実上見えない
+    //   間隔の GridSize はライブラリに足した項目（imgui_node_editor.h）
     ed::SetCurrentEditor(m_nodeContext);
     ed::GetStyle().GridSize                    = 64.0f;
     ed::GetStyle().Colors[ed::StyleColor_Grid] = ImColor(140, 140, 150, 130);
@@ -62,10 +62,14 @@ BehaviorTreeWindow::BehaviorTreeWindow() : EditorWindow("Behavior Tree Editor")
     CreateNode(EditorBTNodeType::Root, "ROOT", 0.0f, 0.0f);
 }
 
+
+
 BehaviorTreeWindow::~BehaviorTreeWindow()
 {
     if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // Undo の記録
@@ -73,16 +77,16 @@ BehaviorTreeWindow::~BehaviorTreeWindow()
 
 void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
 {
-    // グラフ全体を JSON にして比べるので重い。毎フレーム出ていたら、どこかが毎フレーム呼んでいる。
+    // グラフ全体を JSON にして比べるので重い。毎フレーム出ていたら、どこかが毎フレーム呼んでいる
     ZoneScopedN("BTW: RecordStateForUndo");
 
     nlohmann::json newState = GetGraphStateAsJson();
     // 状態が変わっていればコマンドをスタックに積む
     if (m_lastSavedState != newState)
     {
-        // グラフ変更はすべてここを通るので、未保存の印もここで立てる。
+        // グラフ変更はすべてここを通るので、未保存の印もここで立てる
         // ノードを「動かしただけ」はここを通らないので検出しない。誤検出で毎回警告が出ると
-        // 警告を読まなくなるので、取りこぼす側に倒してある。
+        // 警告を読まなくなるので、取りこぼす側に倒してある
         m_dirty = true;
         EditorCommandHistory::Instance().ExecuteCommand(
             std::make_unique<BTGraphChangeCommand>(this, commandName, m_lastSavedState, newState));
@@ -90,13 +94,15 @@ void BehaviorTreeWindow::RecordStateForUndo(const std::string &commandName)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // ウィンドウ枠
 // ---------------------------------------------------------------------------
 
 void BehaviorTreeWindow::DrawContents(EditorContext &context)
 {
-    // データの技の名前を引く先。陣形の実体は World ごとにあるので毎フレーム引き直す（FormationRegistry.h）。
+    // データの技の名前を引く先。陣形の実体は World ごとにあるので毎フレーム引き直す（FormationRegistry.h）
     m_formations = context.world ? CCL::AI::Formation::FormationRegistry::Find(*context.world) : nullptr;
 
     ed::SetCurrentEditor(m_nodeContext);
@@ -111,14 +117,14 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
 
     ZoneScopedN("BTW: DrawContents");
 
-    // 親子関係を、どのペインより先に確定させる。
-    //   ヒエラルキー・キャンバス・インスペクタが同じフレームで同じ並びを前提にできる。
+    // 親子関係を、どのペインより先に確定させる
+    //   ヒエラルキー・キャンバス・インスペクタが同じフレームで同じ並びを前提にできる
     RebuildHierarchy();
 
     const BehaviorTreeComponent *activeAI = FindActiveAI(context);
 
-    // 実行中の表示は、その AI が動かしている木を開いているときだけ出す。
-    //   状態は Bake 後の添字で対応付けるので、別のファイルに当てると無関係なノードが光る。
+    // 実行中の表示は、その AI が動かしている木を開いているときだけ出す
+    //   状態は Bake 後の添字で対応付けるので、別のファイルに当てると無関係なノードが光る
     if (activeAI && activeAI->assetPath != m_currentPath) activeAI = nullptr;
 
     if (ImGui::BeginTable("BTEditorTable", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV, availableSize))
@@ -150,6 +156,8 @@ void BehaviorTreeWindow::DrawContents(EditorContext &context)
     }
 }
 
+
+
 void BehaviorTreeWindow::DrawToolbar()
 {
     // 処理フロー:
@@ -162,7 +170,7 @@ void BehaviorTreeWindow::DrawToolbar()
     // ---------------------------------------------------------
     if (ImGui::Button("保存"))
     {
-        // 開いているファイル名を初期値にする。上書き保存のとき、毎回ファイル名を打ち直さずに済む。
+        // 開いているファイル名を初期値にする。上書き保存のとき、毎回ファイル名を打ち直さずに済む
         const std::string defaultName = m_currentPath.empty() ? "BossAI.json" : FileNameOf(m_currentPath);
         auto picked = FileDialog::SavePreset("BehaviorTreeNode", "Save Behavior Tree", defaultName);
         if (picked)
@@ -178,8 +186,8 @@ void BehaviorTreeWindow::DrawToolbar()
         if (picked)
         {
             std::string rel = FileDialog::ConvertToRelativePath(*picked);
-            // 未保存の変更があるなら、いきなり捨てずに確認する。
-            //   ここには Undo で戻す手段が無い（読み込んだ時点で履歴の基準も引き直す）。
+            // 未保存の変更があるなら、いきなり捨てずに確認する
+            //   ここには Undo で戻す手段がない（読み込んだ時点で履歴の基準も引き直す）
             if (m_dirty)
                 m_pendingOpenPath = rel;
             else
@@ -210,14 +218,14 @@ void BehaviorTreeWindow::DrawToolbar()
     // ---------------------------------------------------------
 
     // ウィンドウ名に "*" を足さずツールバー側に出す。ImGui はウィンドウ名を ID に使っているため、
-    // 名前を変えるとドッキング配置が別物として扱われる。
+    // 名前を変えるとドッキング配置が別物として扱われる
     if (m_dirty)
     {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "未保存");
     }
 
-    // 未保存のまま「開く」を押したときの確認。
+    // 未保存のまま「開く」を押したときの確認
     if (!m_pendingOpenPath.empty()) ImGui::OpenPopup("BTOpenConfirm");
     if (ImGui::BeginPopupModal("BTOpenConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -271,6 +279,8 @@ void BehaviorTreeWindow::DrawToolbar()
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 編集操作
 // ---------------------------------------------------------------------------
@@ -309,6 +319,8 @@ uint32_t BehaviorTreeWindow::CreateNode(EditorBTNodeType type, const std::string
     return node.id;
 }
 
+
+
 void BehaviorTreeWindow::DeleteNodeAndLinks(uint32_t nodeId)
 {
     auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const EditorBTNode &n) { return n.id == nodeId; });
@@ -327,6 +339,8 @@ void BehaviorTreeWindow::DeleteNodeAndLinks(uint32_t nodeId)
     CCL_LOG_INFO(LogCategory::Editor, "Node(ID:%u) and its connected links were deleted.", nodeId);
 }
 
+
+
 void BehaviorTreeWindow::DuplicateSelectedNodes()
 {
     // コピーして右下へずらして貼る。クリップボードは通さない（Ctrl+C で取っておいた内容を消さないため）
@@ -336,6 +350,8 @@ void BehaviorTreeWindow::DuplicateSelectedNodes()
     PasteFromJson(clip, ImVec2(clip.value("originX", 0.0f) + 50.0f, clip.value("originY", 0.0f) + 50.0f));
     RecordStateForUndo("Duplicate Nodes");
 }
+
+
 
 namespace
 {
@@ -352,6 +368,8 @@ void BehaviorTreeWindow::CopySelection()
     CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードをコピーしました", clip["nodes"].size());
 }
 
+
+
 void BehaviorTreeWindow::CutSelection()
 {
     const nlohmann::json clip = CopySelectionToJson();
@@ -367,6 +385,8 @@ void BehaviorTreeWindow::CutSelection()
     RecordStateForUndo("Cut Nodes");
 }
 
+
+
 void BehaviorTreeWindow::PasteClipboard(ImVec2 canvasPos)
 {
     const char *text = ImGui::GetClipboardText();
@@ -379,6 +399,8 @@ void BehaviorTreeWindow::PasteClipboard(ImVec2 canvasPos)
     PasteFromJson(clip, canvasPos);
     RecordStateForUndo("Paste Nodes");
 }
+
+
 
 nlohmann::json BehaviorTreeWindow::CopySelectionToJson()
 {
@@ -428,6 +450,8 @@ nlohmann::json BehaviorTreeWindow::CopySelectionToJson()
     }
     return clip;
 }
+
+
 
 void BehaviorTreeWindow::PasteFromJson(const nlohmann::json &clip, ImVec2 anchor)
 {
@@ -483,11 +507,15 @@ void BehaviorTreeWindow::PasteFromJson(const nlohmann::json &clip, ImVec2 anchor
     CCL_LOG_INFO(LogCategory::Editor, "[BT] %zu ノードを貼り付けました", newNodes.size());
 }
 
+
+
 EditorBTNode *BehaviorTreeWindow::FindNode(uint32_t nodeId)
 {
     auto it = std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const EditorBTNode &n) { return n.id == nodeId; });
     return (it == m_nodes.end()) ? nullptr : &*it;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 表示名・色・実行中の状態
@@ -499,10 +527,12 @@ const BehaviorTreeComponent *BehaviorTreeWindow::FindActiveAI(EditorContext &con
     return context.world->GetComponent<BehaviorTreeComponent>(context.selectedEntity);
 }
 
+
+
 ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
 {
-    // 9種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある。
-    // 明るさは、暗い背景の上で色の差が出て、かつ白い文字が読める程度にそろえている。
+    // 9種類の色相を 40° 以上ずつ離して、似た色が隣り合わないようにしてある
+    // 明るさは、暗い背景の上で色の差が出て、かつ白い文字が読める程度にそろえている
     switch (type)
     {
     case EditorBTNodeType::Root: return ImColor(90, 90, 96);              // 灰：始点（色を持たない）
@@ -517,6 +547,8 @@ ImColor BehaviorTreeWindow::HeaderColorOf(EditorBTNodeType type)
     default: return ImColor(100, 100, 100);
     }
 }
+
+
 
 const char *BehaviorTreeWindow::TypeNameOf(EditorBTNodeType type)
 {
@@ -537,6 +569,8 @@ const char *BehaviorTreeWindow::TypeNameOf(EditorBTNodeType type)
     }
 }
 
+
+
 const char *BehaviorTreeWindow::DecoratorNameOf(int decoratorType)
 {
     switch (decoratorType)
@@ -547,6 +581,8 @@ const char *BehaviorTreeWindow::DecoratorNameOf(int decoratorType)
     default: return "Unknown";
     }
 }
+
+
 
 bool BehaviorTreeWindow::UsesCustomName(EditorBTNodeType type)
 {
@@ -561,13 +597,15 @@ bool BehaviorTreeWindow::UsesCustomName(EditorBTNodeType type)
     }
 }
 
+
+
 std::string BehaviorTreeWindow::FormatParam(const char *label, float value)
 {
     // %g は 1.50 → "1.5"、25.0 → "25" のように余計な 0 を付けない
     char number[32];
     snprintf(number, sizeof(number), "%g", value);
 
-    // "長さ [秒]" → 名前 "長さ" と 単位 "秒" に分ける。[単位] が無ければ名前だけ
+    // "長さ [秒]" → 名前 "長さ" と 単位 "秒" に分ける。[単位] がなければ名前だけ
     const std::string text    = label;
     const size_t      bracket = text.find(" [");
     if (bracket == std::string::npos || text.back() != ']')
@@ -577,6 +615,8 @@ std::string BehaviorTreeWindow::FormatParam(const char *label, float value)
     const std::string unit = text.substr(bracket + 2, text.size() - bracket - 3);
     return name + " " + number + unit;
 }
+
+
 
 std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
 {
@@ -651,6 +691,8 @@ std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
     }
 }
 
+
+
 BTDebugState BehaviorTreeWindow::DebugStateOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI)
 {
     if (!activeAI || node.runtimeFlatIndex < 0 ||
@@ -659,6 +701,8 @@ BTDebugState BehaviorTreeWindow::DebugStateOf(const EditorBTNode &node, const Be
     return activeAI->debugNodeStates[static_cast<size_t>(node.runtimeFlatIndex)];
 }
 
+
+
 std::optional<float> BehaviorTreeWindow::DebugTimerOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI)
 {
     if (!activeAI || node.runtimeFlatIndex < 0 ||
@@ -666,6 +710,8 @@ std::optional<float> BehaviorTreeWindow::DebugTimerOf(const EditorBTNode &node, 
         return std::nullopt;
     return activeAI->nodeTimers[static_cast<size_t>(node.runtimeFlatIndex)];
 }
+
+
 
 const char *BehaviorTreeWindow::GetActionDisplayName(ActionID id)
 {
@@ -676,6 +722,8 @@ const char *BehaviorTreeWindow::GetActionDisplayName(ActionID id)
     return buf;
 }
 
+
+
 const char *BehaviorTreeWindow::GetConditionDisplayName(ActionID id)
 {
     if (const ActionEntry *e = FindConditionEntry(id))
@@ -684,6 +732,8 @@ const char *BehaviorTreeWindow::GetConditionDisplayName(ActionID id)
     snprintf(buf, sizeof(buf), "不明なCondition (ID:%d)", static_cast<int>(id));
     return buf;
 }
+
+
 
 const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam) const
 {
@@ -699,13 +749,15 @@ const char *BehaviorTreeWindow::GetDroneFormationLabel(float slotParam) const
     const auto  type = static_cast<DroneFormationType>(slot);
     const char *name = m_formations ? m_formations->DataFormationName(type) : nullptr;
 
-    // 名前が無い＝その枠に陣形が入っていない（またはシーンが無い）。指しても静止するので、そう見えるように出す。
+    // 名前がない＝その枠に陣形が入っていない（またはシーンがない）。指しても静止するので、そう見えるように出す
     if (!name)
         snprintf(buf, sizeof(buf), "ドローン：枠%d に陣形がありません", slot);
     else
         snprintf(buf, sizeof(buf), "ドローン：%s  (枠%d)", name, slot);
     return buf;
 }
+
+
 
 const char *BehaviorTreeWindow::GetDroneTechniqueLabel(float slotParam) const
 {
@@ -720,6 +772,8 @@ const char *BehaviorTreeWindow::GetDroneTechniqueLabel(float slotParam) const
         snprintf(buf, sizeof(buf), "ドローンの技：枠%d に技がありません", slot); // 指しても失敗するだけ
     return buf;
 }
+
+
 
 const char *BehaviorTreeWindow::DroneTechniqueName(int slot) const
 {

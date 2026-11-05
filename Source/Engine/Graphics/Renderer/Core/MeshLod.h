@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: インスタンスごとに LOD の段を選び、見えるインスタンスの列を段の順に並べ替える関数。
+// 概要: インスタンスごとに LOD の段を選び、見えるインスタンスの列を段の順に並べ替える関数
 //
 // 責務:
 //   - メッシュが画面に映る大きさから、LOD の段を選ぶ
 //   - インスタンスの列を LOD0 → LOD1 → … の順に並べ替え、段ごとの数を返す
 //   - 段ごとに、描くインデックスバッファと範囲を返す
 //
-// 備考: NormalPrepass と OpaquePass が同じ段で描くよう、選び方をここ1か所にまとめている。
-//       段がずれると、プリパスが書いた深度と本描画の形が合わず、ちらつきや穴になる。
+// 備考: NormalPrepass と OpaquePass が同じ段で描くよう、選び方をここ1か所にまとめている
+//       段がずれると、プリパスが書いた深度と本描画の形が合わず、ちらつきや穴になる
 // ===========================================================================
 #include <algorithm>
 #include <array>
@@ -44,21 +44,13 @@ namespace MeshLod
         UINT          indexCount  = 0;       // DrawIndexedInstanced の IndexCountPerInstance
     };
 
-    /**
-     * @brief 1つのインスタンスの段を、画面に映る大きさから選ぶ。
-     * @param localAABB   メッシュのローカル AABB。
-     * @param world       メッシュのワールド行列（MeshCull::ComputeMeshWorld の結果）。
-     * @param eye         カメラの位置。
-     * @param tanHalfFovY 縦の画角の半分の tan。
-     * @param levelCount  メッシュが持つ段の数。1以上。
-     * @return 選んだ段（0 〜 levelCount - 1）。
-     */
+    // 1つのインスタンスの段を、画面に映る大きさから選ぶ（0 〜 levelCount - 1）。world は MeshCull::ComputeMeshWorld の結果
     inline uint32_t SelectLevel(const DirectX::BoundingBox &localAABB, const DirectX::XMFLOAT4X4 &world,
                                 const DirectX::XMFLOAT3 &eye, float tanHalfFovY, uint32_t levelCount)
     {
         using namespace DirectX;
 
-        // 距離ではなく、画面の高さに対する大きさで選ぶ。
+        // 距離ではなく、画面の高さに対する大きさで選ぶ
         // 距離だけだと、ズームで画角を変えたときに見た目の粗さが変わる
 
         const XMMATRIX m = XMLoadFloat4x4(&world);
@@ -86,17 +78,8 @@ namespace MeshLod
         return (std::min)(level, levelCount - 1);
     }
 
-    /**
-     * @brief インスタンスの列を段の順（LOD0 → LOD1 → …）に並べ替え、段ごとの数を返す。
-     * @param instances 見えるインスタンスの列。並べ替えた結果で置き換える。
-     * @param temp      作業用の配列。中身は捨ててよい（instances と入れ替えるので容量を使い回せる）。
-     * @param mesh      インスタンスのメッシュ。
-     * @param localAABB メッシュのローカル AABB。
-     * @param eye       カメラの位置。
-     * @param fovY      縦の画角（ラジアン）。
-     * @return 段ごとのインスタンスの数。
-     * @note LOD が無いメッシュと、正射影（画角 0）のカメラでは並べ替えず、全部を LOD0 にする。
-     */
+    // instances を段の順に並べ替え、段ごとの数を返す。temp は作業用（instances と入れ替えて容量を使い回す）
+    // LOD がないメッシュと、正射影（fovY が 0）のカメラでは並べ替えず、すべて LOD0 にする
     inline LevelCounts SortInstancesByLevel(std::vector<InstanceData> &instances, std::vector<InstanceData> &temp,
                                            const Model::Mesh &mesh, const DirectX::BoundingBox &localAABB,
                                            const DirectX::XMFLOAT3 &eye, float fovY)
@@ -105,9 +88,8 @@ namespace MeshLod
         // 1. 段ごとの数を数える
         // 2. 段ごとの置き場所の先頭を決め、そこへ詰める
 
-        // 【備考】
-        //   比べて並べ替えず、数えて置き場所を決めるので、数に比例した時間で済む。
-        //   段は 1 と 2 で2回求める。段の配列を別に持たずに済み、1000 個程度なら十分に軽い。
+        // 比べて並べ替えず、数えて置き場所を決めるので、数に比例した時間で済む
+        // 段は 1 と 2 で2回求める。段の配列を別に持たずに済み、1000 個程度なら十分に軽い
 
         LevelCounts counts{};
 
@@ -156,10 +138,7 @@ namespace MeshLod
         return counts;
     }
 
-    /**
-     * @brief 段 level を描くときのインデックスバッファと範囲を返す。
-     * @note LOD が無いメッシュは、どの段でも元の indexBuffer の全体を返す。
-     */
+    // 段 level を描くときのインデックスバッファと範囲。LOD がないメッシュは、どの段でも元の indexBuffer の全体
     inline DrawRange GetDrawRange(const ModelResource::Mesh &data, size_t level)
     {
         if (data.lods.empty())
@@ -171,13 +150,7 @@ namespace MeshLod
         return {data.lodIndexBuffer.Get(), lod.startIndex, lod.indexCount};
     }
 
-    /**
-     * @brief 一番粗い段を描くときのインデックスバッファと範囲を返す。
-     *
-     * 影のように、形の細部が結果にほとんど出ない描画に使う。
-     *
-     * @note LOD が無いメッシュは、元の indexBuffer の全体を返す。
-     */
+    // 一番粗い段の範囲。影のように細部が結果に出ない描画に使う。LOD がないメッシュは元の indexBuffer の全体
     inline DrawRange GetCoarsestDrawRange(const ModelResource::Mesh &data)
     {
         if (data.lods.empty()) return GetDrawRange(data, 0);

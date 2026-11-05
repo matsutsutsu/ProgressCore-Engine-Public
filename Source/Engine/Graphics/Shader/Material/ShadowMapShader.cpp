@@ -16,6 +16,8 @@ ShadowMapShader::ShadowMapShader(ID3D11Device *device)
     InitializeReflection(device, "Assets/Shader/ShadowMapVS.cso");
 }
 
+
+
 void ShadowMapShader::Begin(ID3D11DeviceContext *dc,
                             const RenderServices & /*s*/,
                             const RenderFrameContext & /*ctx*/)
@@ -29,6 +31,8 @@ void ShadowMapShader::Begin(ID3D11DeviceContext *dc,
         pair.second.BindVS(dc);
     }
 }
+
+
 
 void ShadowMapShader::End(ID3D11DeviceContext *dc, const RenderServices & /*s*/)
 {

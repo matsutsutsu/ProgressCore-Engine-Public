@@ -42,11 +42,15 @@ bool NormalBuffer::Create(ID3D11Device *device, UINT width, UINT height)
     return true;
 }
 
+
+
 void NormalBuffer::Resize(ID3D11Device *device, UINT width, UINT height)
 {
     if (width == m_width && height == m_height) return;
     Create(device, width, height);
 }
+
+
 
 void NormalBuffer::Activate(ID3D11DeviceContext *dc, ID3D11DepthStencilView *dsv)
 {

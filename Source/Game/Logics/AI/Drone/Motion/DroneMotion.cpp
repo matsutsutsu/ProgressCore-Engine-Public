@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 突撃の速度倍率（kDroneChargeSpeedScale）
-#include "Game/Logics/AI/Drone/Squad/SquadState.h"       // バネ追従の強さ（SquadTuning::followGain）
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
+#include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
 using namespace DirectX::SimpleMath;
@@ -120,12 +120,14 @@ namespace CCL::AI::Motion
             return spring;
         }
 
+
+
         /**
-         * @brief 持ち場とのずれに比例した速度へ、今の速度を少しずつ寄せる（Idle と MoveToTarget）。
-         * @param trans  機体の Transform（位置を読む）。
-         * @param drone  動かす機体。currentVelocity を書く。
-         * @param dt     この機体の経過時間 [秒]。
-         * @param tuning バネの強さ。drone.springScale を掛けて使う。
+         * @brief 持ち場とのずれに比例した速度へ、今の速度を少しずつ寄せる（Idle と MoveToTarget）
+         * @param trans  機体の Transform（位置を読む）
+         * @param drone  動かす機体。currentVelocity を書く
+         * @param dt     この機体の経過時間 [秒]
+         * @param tuning バネの強さ。drone.springScale を掛けて使う
          */
         void ApplySpring(const TransformComponent &trans, DroneComponent &drone, float dt,
                          const SpringTuning &tuning)
@@ -133,8 +135,8 @@ namespace CCL::AI::Motion
             Vector3 displacement   = drone.targetPosition - trans.position;
             Vector3 targetVelocity = displacement * (tuning.gain * drone.springScale);
 
-            // 上限はバネの分だけに掛け、先渡しの速度は後で足す。
-            // 先渡しまで丸めると、ボスが上限より速く動いたときに置いていかれる。
+            // 上限はバネの分だけに掛け、先渡しの速度は後で足す
+            // 先渡しまで丸めると、ボスが上限より速く動いたときに置いていかれる
             const float maxSpeed = drone.moveSpeed * tuning.speedScale;
             if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
             {
@@ -147,15 +149,17 @@ namespace CCL::AI::Motion
                                                   (std::min)(tuning.damping * dt, 1.0f));
         }
 
+
+
         /**
-         * @brief 予告の震えの位置オフセットを返す。1軸だけを正弦波で揺らす。
+         * @brief 予告の震えの位置オフセットを返す。1軸だけを正弦波で揺らす
          *
-         * 揺らす軸は隣の機と変える（localIndex % 3）。3軸を同時に揺らすより安く、群れの表面がざわついて見える。
+         * 揺らす軸は隣の機と変える（localIndex % 3）。3軸を同時に揺らすより安く、群れの表面がざわついて見える
          *
-         * @param drone     震わせる機体。位相と軸を localIndex から決める。
-         * @param t         構え始めてからの経過時間 [秒]。
-         * @param amplitude 振れ幅 [m]。
-         * @return 位置オフセット [m]。
+         * @param drone     震わせる機体。位相と軸を localIndex から決める
+         * @param t         構え始めてからの経過時間 [秒]
+         * @param amplitude 振れ幅 [m]
+         * @return 位置オフセット [m]
          */
         Vector3 ShiverOffset(const DroneComponent &drone, float t, float amplitude)
         {
@@ -175,6 +179,8 @@ namespace CCL::AI::Motion
             }
         }
 
+
+
         // 直進の突撃（弾幕）。発射待ち → タメ → リリースの順に進む
         void MoveStraight(TransformComponent &trans, DroneComponent &drone, float dt)
         {
@@ -193,7 +199,7 @@ namespace CCL::AI::Motion
                 return;
             }
 
-            // 撃つ方向が無ければ飛ばさない
+            // 撃つ方向がなければ飛ばさない
             if (drone.fireDirection.LengthSquared() <= 0.001f)
             {
                 drone.currentVelocity = Vector3::Zero;
@@ -226,6 +232,8 @@ namespace CCL::AI::Motion
             }
         }
 
+
+
         // 剛体追従の突撃（データ陣形）。追いつくまではバネで寄せ、形が動く間は持ち場に一致させ、動き切ったら Idle のバネへ渡す
         void MoveRigidFollow(TransformComponent &trans, DroneComponent &drone, float dt)
         {
@@ -236,7 +244,7 @@ namespace CCL::AI::Motion
 
             // --- 動き切った後 ---
 
-            // 閉じ切った座標に固定し続けると、全機が同時に静止して不自然に見える。
+            // 閉じ切った座標に固定し続けると、全機が同時に静止して不自然に見える
             // 手を離すのは動きだけで、当たり判定は FireCharge の間は開いたまま
             if (drone.attackProgress >= 1.0f)
             {
@@ -246,7 +254,7 @@ namespace CCL::AI::Motion
 
             // --- 追いつくまで ---
 
-            // 持ち場に着く前に撃つ合図が来た機を、いきなり剛体にすると持ち場へ瞬間移動する。
+            // 持ち場に着く前に撃つ合図が来た機を、いきなり剛体にすると持ち場へ瞬間移動する
             // 一度追いついたら突撃の終わりまで剛体のままにする（速く動く腕の先で、1フレームの移動が閾値を超えても外れない）
             if (!drone.rigidLocked)
             {
@@ -260,8 +268,8 @@ namespace CCL::AI::Motion
 
             // --- 剛体 ---
 
-            // 速度は 0 にせず、実際に出ている速さの一部を残す。
-            // 0 にすると、上の受け渡しで Idle が静止から動き出し、結局同じ止まり方になる。
+            // 速度は 0 にせず、実際に出ている速さの一部を残す
+            // 0 にすると、上の受け渡しで Idle が静止から動き出し、結局同じ止まり方になる
             Vector3 carried = Vector3::Zero;
             if (dt > 0.0f)
             {
@@ -276,8 +284,8 @@ namespace CCL::AI::Motion
             }
             drone.currentVelocity = carried;
 
-            // この後の積分で currentVelocity * dt が足されるので、その分だけ手前に置く。
-            // 足し戻ると targetPosition ちょうどになるので、kRigidFollow をどう変えても形は歪まない。
+            // この後の積分で currentVelocity * dt が足されるので、その分だけ手前に置く
+            // 足し戻ると targetPosition ちょうどになるので、kRigidFollow をどう変えても形は歪まない
             trans.position = drone.targetPosition - carried * dt;
 
             if (drone.targetLookDirection.LengthSquared() > 0.001f)
@@ -287,6 +295,8 @@ namespace CCL::AI::Motion
                 TurnToward(trans, lookDir, /*includePitch*/ true, kRigidFollow.turnRate, dt);
             }
         }
+
+
 
         // バネ追従の突撃（小隊突撃）。持ち場へバネで寄るので、速いほど後ろへ流れて隊列がしなる
         void MoveSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
@@ -324,8 +334,8 @@ namespace CCL::AI::Motion
 
     Quaternion LookToRotation(const Vector3 &look, bool includePitch)
     {
-        // 前方 (0,0,-1) を pitch → yaw の順に回すと (-cos p·sin θ, sin p, -cos p·cos θ)。
-        // これを look と突き合わせると θ = atan2(-x, -z)、p = asin(y)。
+        // 前方 (0,0,-1) を pitch → yaw の順に回すと (-cos p·sin θ, sin p, -cos p·cos θ)
+        // これを look と突き合わせると θ = atan2(-x, -z)、p = asin(y)
         const float yaw = atan2f(-look.x, -look.z);
 
         if (!includePitch)
@@ -335,11 +345,15 @@ namespace CCL::AI::Motion
         return Quaternion::CreateFromYawPitchRoll(yaw, pitch, 0.0f);
     }
 
+
+
     void TurnToward(TransformComponent &trans, const Vector3 &look, bool includePitch, float turnRate, float dt)
     {
         trans.rotation = Quaternion::Slerp(trans.rotation, LookToRotation(look, includePitch),
                                            (std::min)(turnRate * dt, 1.0f));
     }
+
+
 
     // ============================================================
     // 持ち場へ戻る・持ち場を保つ
@@ -357,6 +371,8 @@ namespace CCL::AI::Motion
         }
     }
 
+
+
     void HoldSlot(TransformComponent &trans, DroneComponent &drone, float dt)
     {
         // 処理フロー:
@@ -367,7 +383,7 @@ namespace CCL::AI::Motion
 
         // --- バネ追従 ---
 
-        // 陣形を切り替えた直後は hasReachedSlot が立ったままなので、Idle のまま新しい持ち場へ向かう。
+        // 陣形を切り替えた直後は hasReachedSlot が立ったままなので、Idle のまま新しい持ち場へ向かう
         // 弱いバネでは間に合わないので、遠い間は MoveToTarget の強いバネで寄せる
         const float distance = Vector3::Distance(trans.position, drone.targetPosition);
         ApplySpring(trans, drone, dt, (distance > gTuning.farFromSlot) ? MoveToTargetSpring() : kIdle);
@@ -386,8 +402,8 @@ namespace CCL::AI::Motion
             const float t   = (std::min)(1.0f, drone.telegraphTime / kShiver.rampTime);
             const float amp = kShiver.amplitude * t * t;
 
-            // 速度ではなく座標を、今フレームと前フレームの差分だけ動かす。
-            // 速度で揺らすと振れ幅が「振幅 ÷ 角速度」に縮み、座標に足しっぱなしにすると群れごと流れていく。
+            // 速度ではなく座標を、今フレームと前フレームの差分だけ動かす
+            // 速度で揺らすと振れ幅が「振幅 ÷ 角速度」に縮み、座標に足しっぱなしにすると群れごと流れていく
             trans.position = Vector3(trans.position) + ShiverOffset(drone, drone.telegraphTime, amp) - ShiverOffset(drone, drone.telegraphTime - dt, amp);
         }
 
@@ -397,18 +413,22 @@ namespace CCL::AI::Motion
             TurnToward(trans, drone.targetLookDirection, /*includePitch*/ false, kIdle.turnRate, dt);
     }
 
+
+
     // ============================================================
     // 突撃
     // ============================================================
 
     void BeginMotionFrame(CCL::ECS::World &world)
     {
-        // 無ければ前の値（既定値）のまま
+        // なければ前の値（既定値）のまま
         if (world.HasResource<MotionTuning>())
             gTuning = world.GetResource<MotionTuning>();
         if (world.HasResource<SquadRegistry>())
             gSoftFollowGain = world.GetResource<SquadRegistry>().tuning.followGain;
     }
+
+
 
     void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt)
     {
@@ -426,6 +446,8 @@ namespace CCL::AI::Motion
         }
     }
 
+
+
     bool IsChargeDangerous(const DroneComponent &drone)
     {
         switch (drone.chargeMode)
@@ -438,12 +460,14 @@ namespace CCL::AI::Motion
         }
     }
 
+
+
     void BeginStraightCharge(DroneComponent &drone, const ChargeBeginInfo &info)
     {
         // 処理フロー:
         // 1. 移動方式を直進に戻す
         // 2. タメの時間を入れる
-        // 3. 撃つ方向が無ければ決める
+        // 3. 撃つ方向がなければ決める
 
         // 前の技の追従モードを持ち越さないよう、直進に戻す（追従する技は陣形が毎フレーム上書きする）
         drone.chargeMode   = ChargeMode::Straight;
@@ -452,7 +476,7 @@ namespace CCL::AI::Motion
         // 陣形が予備動作中に方向を書いていれば、それを使う
         if (drone.fireDirection.LengthSquared() >= 0.001f) return;
 
-        // 書いていなければプレイヤーへ向ける。居なければモデルの前方（-Z）
+        // 書いていなければプレイヤーへ向ける。いなければモデルの前方（-Z）
         Vector3 dir = -Vector3::UnitZ;
         if (info.hasPlayer)
         {

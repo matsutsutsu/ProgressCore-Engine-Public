@@ -11,7 +11,7 @@
 #include "Engine/UI/ECS/UIDrawList.h"
 
 #include "Game/Core/GameSettings.h"
-#include "Game/UI/Common/ScreenHeadingUi.h" // 左上の見出しと線
+#include "Game/UI/Common/ScreenHeadingUi.h"
 
 #include <algorithm>
 #include <cmath>
@@ -64,7 +64,6 @@ void SettingsScreenSystem::Initialize()
 
 
 
-// 効果音を1回鳴らす（音声が無いシーンでは何もしない）
 void SettingsScreenSystem::PlaySound(const char *eventName) const
 {
     if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
@@ -77,7 +76,6 @@ void SettingsScreenSystem::PlaySound(const char *eventName) const
 
 
 
-// 設定の値をカメラ（感度）と音声（BGM・効果音の音量）へ反映する
 void SettingsScreenSystem::ApplySettings()
 {
     const GameSettings &s = GameSettings::Instance();
@@ -109,7 +107,6 @@ void SettingsScreenSystem::ApplySettings()
 // 画面の開閉
 // ---------------------------------------------------------------------------
 
-// 値を1段ずつ変える < か > の小さなボタンを作る（マウスで押すためのもので、フォーカスは受けない）
 EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, const char *glyph, float x, float y)
 {
     auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent,
@@ -147,7 +144,6 @@ EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, con
 
 
 
-// 設定画面を作って開く（opener は開いたボタン）
 void SettingsScreenSystem::Open(EntityID opener)
 {
     // 処理フロー:
@@ -170,8 +166,8 @@ void SettingsScreenSystem::Open(EntityID opener)
     // 2. 下の画面のボタン
     // ---------------------------------------------------------
 
-    // 開いている間に、裏のボタンへ選択が移ったり、押せたりしないようにする。
-    // 操作できなくしたものだけを控え、閉じるときに戻す。
+    // 開いている間に、裏のボタンへ選択が移ったり、押せたりしないようにする
+    // 操作できなくしたものだけを控え、閉じるときに戻す
     m_disabled.clear();
     w.ViewEach<UIInteractableComponent>([&](EntityID id) {
         auto *inter = w.GetComponent<UIInteractableComponent>(id);
@@ -186,19 +182,19 @@ void SettingsScreenSystem::Open(EntityID opener)
     // 3. Canvas と暗転
     // ---------------------------------------------------------
 
-    // 作る部品はすべて Canvas の子にする。
+    // 作る部品はすべて Canvas の子にする
     m_overlay.clear();
     const EntityID canvas = SpawnCanvas(w, "SettingsCanvas");
     m_overlay.push_back(canvas);
 
-    // 下の画面（ポーズ・タイトル・HUD）の UI を薄くしながら設定画面を出す。
-    // 入れ替えは、設定画面が出そろう次のフレームから UpdateFade が始める。
+    // 下の画面（ポーズ・タイトル・HUD）の UI を薄くしながら設定画面を出す
+    // 入れ替えは、設定画面が出そろう次のフレームから UpdateFade が始める
     m_fadeStarted         = false;
     m_closing             = false;
     m_restoreBelowPending = false;
     m_fade                = 0.0f;
 
-    // 暗転は、ポーズ画面と同じ薄さにする。入れ替えると下の画面の暗転は隠れるので、こちらで同じ暗さを作る。
+    // 暗転は、ポーズ画面と同じ薄さにする。入れ替えると下の画面の暗転は隠れるので、こちらで同じ暗さを作る
     static const DirectX::XMFLOAT4 kDimBottom = {0.02f, 0.02f, 0.05f, 0.82f};
     m_overlay.push_back(SpawnPanel(w, "SettingsDim", {0.0f, 0.0f}, {4000.0f, 4000.0f}, {0.0f, 0.0f, 0.0f, 0.5f},
                                    kSortDim, -1.0f, 0.0f, canvas, &kDimBottom));
@@ -209,7 +205,7 @@ void SettingsScreenSystem::Open(EntityID opener)
     const MenuStyleComponent style = GetMenuStyle(w);
     SpawnScreenHeading(w, canvas, "SETTINGS", style.gold, m_overlay, kSortHead);
     {
-        // 英語の見出しに、日本語を小さく添える。打ち込みの演出は他の画面と同じ。
+        // 英語の見出しに、日本語を小さく添える。打ち込みの演出は他の画面と同じ
         UIRevealComponent rv;
         rv.mode  = UIRevealMode::Type;
         rv.delay = 0.2f;
@@ -223,7 +219,7 @@ void SettingsScreenSystem::Open(EntityID opener)
     // 5. 行
     // ---------------------------------------------------------
 
-    // 行のボタンは入れ物の中央からの位置で置く（SpawnButton の決まり）。
+    // 行のボタンは入れ物の中央からの位置で置く（SpawnButton の決まり）
     const float    rowsTop = style.RuleY() + kRowsGap;
     const float    boxH    = kRowH * static_cast<float>(RowCount);
     const EntityID box     = SpawnBox(w, "SettingsRows", {0.0f, 0.0f}, {style.left, rowsTop}, {320.0f, boxH}, canvas);
@@ -255,7 +251,7 @@ void SettingsScreenSystem::Open(EntityID opener)
 
         // --- 値の部品（< ゲージ > 値） ---
 
-        // 画面の左上を基準に、行の中心の高さへ置く。
+        // 画面の左上を基準に、行の中心の高さへ置く
         const float y = rowsTop + kRowH * (static_cast<float>(i) + 0.5f);
         char        name[32];
         std::snprintf(name, sizeof(name), "SettingsDec%d", i);
@@ -275,7 +271,7 @@ void SettingsScreenSystem::Open(EntityID opener)
             t.offset = {gaugeX, y};
             t.size   = {kGaugeW, 12.0f};
 
-            // HP ゲージと同じ、斜めの細いゲージにする。
+            // HP ゲージと同じ、斜めの細いゲージにする
             UIProgressBarComponent bar;
             bar.sortOrder  = kSortValue;
             bar.bgColor    = {0.0f, 0.0f, 0.02f, 0.6f};
@@ -285,7 +281,7 @@ void SettingsScreenSystem::Open(EntityID opener)
             bar.frame      = 1.5f;
             bar.frameColor = {0.96f, 0.88f, 0.62f, 0.35f};
 
-            // 生成は遅れて反映され、生成直後は GetComponent で引けない。初めの値はここで入れる。
+            // 生成は遅れて反映され、生成直後は GetComponent で引けない。初めの値はここで入れる
             bar.value = ValueRatio(i);
 
             e.Set(MakeUINode(canvas)).Set(t).Set(bar);
@@ -293,7 +289,7 @@ void SettingsScreenSystem::Open(EntityID opener)
             m_overlay.push_back(e.ID());
         }
 
-        // 値の文字。初めの値は、ゲージと同じ理由で生成時に入れる。
+        // 値の文字。初めの値は、ゲージと同じ理由で生成時に入れる
         std::snprintf(name, sizeof(name), "SettingsValue%d", i);
         m_valueText[i] = SpawnTextTopLeft(w, name, ValueText(i).c_str(), valueX, y - 12.0f, 24.0f, style.value, canvas, kSortValue);
         m_overlay.push_back(m_valueText[i]);
@@ -307,7 +303,6 @@ void SettingsScreenSystem::Open(EntityID opener)
 
 
 
-// 設定画面を消して閉じ、保存する
 void SettingsScreenSystem::Close()
 {
     // 処理フロー:
@@ -369,7 +364,6 @@ void SettingsScreenSystem::Close()
 // 値の調整と表示
 // ---------------------------------------------------------------------------
 
-// 行の値を dir（-1 / +1）の向きに1段変える
 void SettingsScreenSystem::Adjust(int row, int dir)
 {
     GameSettings &s = GameSettings::Instance();
@@ -397,7 +391,6 @@ void SettingsScreenSystem::Adjust(int row, int dir)
 
 
 
-// 値の表示（ゲージ・文字）を今の設定に合わせる
 void SettingsScreenSystem::RefreshValues()
 {
     for (int i = 0; i < kValueRows; ++i)
@@ -409,7 +402,6 @@ void SettingsScreenSystem::RefreshValues()
 
 
 
-// 行のゲージの値（0〜1）
 float SettingsScreenSystem::ValueRatio(int row) const
 {
     const GameSettings &s = GameSettings::Instance();
@@ -425,7 +417,6 @@ float SettingsScreenSystem::ValueRatio(int row) const
 
 
 
-// 行の値の文字（"1.00x"、"80" など）
 std::string SettingsScreenSystem::ValueText(int row) const
 {
     const GameSettings &s = GameSettings::Instance();
@@ -446,7 +437,6 @@ std::string SettingsScreenSystem::ValueText(int row) const
 // 毎フレーム
 // ---------------------------------------------------------------------------
 
-// 重ねて入れ替える途中の不透明度を進め、描画リストへ書く
 void SettingsScreenSystem::UpdateFade(float dt)
 {
     // 処理フロー:
@@ -454,11 +444,10 @@ void SettingsScreenSystem::UpdateFade(float dt)
     // 2. 入れ替えの進み具合を進める
     // 3. 描画リストへ不透明度を書く
 
-    // 【備考】
-    //   生成と破棄は次のフレームに反映される。
-    //   そこで、開いたときは設定画面が出そろう次のフレームから入れ替えを始め、
-    //   閉じたときは部品を消した次のフレームで不透明度を戻す。
-    //   同じフレームで切り替えると、暗転の無いフレームや2枚重なるフレームが挟まり、画面がちらつく。
+    // 生成と破棄は次のフレームに反映される
+    // そこで、開いたときは設定画面が出そろう次のフレームから入れ替えを始め、
+    // 閉じたときは部品を消した次のフレームで不透明度を戻す
+    // 同じフレームで切り替えると、暗転のないフレームや2枚重なるフレームが挟まり、画面がちらつく
 
     if (!m_world->HasResource<UIDrawList>()) return;
     UIDrawList &list = m_world->GetResource<UIDrawList>();
@@ -618,5 +607,7 @@ void SettingsScreenSystem::Update(float dt)
         if (inc && inc->clicked) Adjust(i, 1);
     }
 }
+
+
 
 REGISTER_RENDER_SYSTEM(SettingsScreenSystem, Priority::RenderStage::R10_UI);

@@ -14,7 +14,7 @@
 #include <imgui.h>
 #endif
 
-// DroneState と1対1で並べる（順番がずれると別の状態名が表示される）。
+// DroneState と1対1で並べる（順番がずれると別の状態名が表示される）
 static const char *DroneStateNames[] = {
     "Idle", "MoveToTarget", "FireCharge", "Returning"};
 
@@ -36,14 +36,14 @@ struct ComponentMeta<BehaviorTreeComponent>
 
 #ifdef ENABLE_EDITOR
     /**
-     * @brief インスペクタで、使う木（パス）の選択とキャッシュの読み直しを行う。
+     * @brief インスペクタで、使う木（パス）の選択とキャッシュの読み直しを行う
      *
-     * sharedAsset はここで書かない。書くのは BehaviorTreeSystem::SyncAssets だけ。
-     * SyncAssets は「使いたい木 != 今の sharedAsset」で差し替えを検出し、そのときだけ nodeTimers などを新しい木の長さで作り直す。
-     * ここで先に sharedAsset を差し替えると検出されず、前の木の長さのバッファが残って評価が毎フレーム見送られる。
+     * sharedAsset はここで書かない。書くのは BehaviorTreeSystem::SyncAssets だけ
+     * SyncAssets は「使いたい木 != 今の sharedAsset」で差し替えを検出し、そのときだけ nodeTimers などを新しい木の長さで作り直す
+     * ここで先に sharedAsset を差し替えると検出されず、前の木の長さのバッファが残って評価が毎フレーム見送られる
      *
-     * @param comp 表示・編集するコンポーネント。
-     * @return 値を変更したら true。
+     * @param comp 表示・編集するコンポーネント
+     * @return 値を変更したら true
      */
     static bool CustomGui(BehaviorTreeComponent &comp, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
@@ -74,7 +74,7 @@ struct ComponentMeta<BehaviorTreeComponent>
         ImGui::Separator();
 
         // キャッシュを捨てて読み直す。キャッシュの中身が新しい木に替わるので、この個体も
-        // 同じ木を使っている他の個体も、次のフレームの SyncAssets で受け取り直す。
+        // 同じ木を使っている他の個体も、次のフレームの SyncAssets で受け取り直す
         if (ImGui::Button("AI再読込"))
         {
             BTAssetCache::Instance().Reload(comp.assetPath);
@@ -89,8 +89,8 @@ struct ComponentMeta<BehaviorTreeComponent>
         ImGui::Separator();
 
         // ノード数はキャッシュから取る。ゲームを止めて編集している間は SyncAssets が
-        // 走らないので、sharedAsset を見ると選び直した木のノード数が出ない。
-        // GetOrLoad は2回目以降は検索だけで、失敗したパスも読みに行かない。
+        // 走らないので、sharedAsset を見ると選び直した木のノード数が出ない
+        // GetOrLoad は2回目以降は検索だけで、失敗したパスも読みに行かない
         const auto pending   = BTAssetCache::Instance().GetOrLoad(comp.assetPath);
         size_t     nodeCount = pending ? pending->nodes.size() : 0;
         ImGui::LabelText("Nodes", "%zu", nodeCount);
@@ -105,7 +105,7 @@ struct ComponentMeta<BehaviorTreeComponent>
 
     static const std::vector<FieldDescriptor> &Fields()
     {
-        // 第2形態のパスと HP のしきい値は BossPhaseComponent が持つ（ボスにしか無いため）。
+        // 第2形態のパスと HP のしきい値は BossPhaseComponent が持つ（ボスにしかないため）
         static const std::vector<FieldDescriptor> fields = {
             CFIELD(assetPath, "AIパス", "File")};
         return fields;
@@ -133,11 +133,11 @@ struct ComponentMeta<DroneComponent>
     static const std::vector<FieldDescriptor> &Fields()
     {
         static const std::vector<FieldDescriptor> fields = {
-            // 保存するのは所属と個体の設定値だけ。
-            //   下の _RT の欄は System が書く値なので保存しない（CFIELD_RT の説明を参照）。
+            // 保存するのは所属と個体の設定値だけ
+            //   下の _RT の欄は System が書く値なので保存しない（CFIELD_RT の説明を参照）
             //   ドローンは必ず DroneManagerSystem::SpawnDrones 経由で生まれ、
-            //   localIndex / totalDrones はその中の ReindexAllDrones が振り直す。
-            //   シーンに手置きされたドローンは存在しないので、保存しなくても復元できる。
+            //   localIndex / totalDrones はその中の ReindexAllDrones が振り直す
+            //   シーンに手置きされたドローンは存在しないので、保存しなくても復元できる
             CFIELD(ownerBossId, "親ボスID", "Hierarchy")
             CFIELD_FLOAT_RANGED(moveSpeed, "移動速度", 0.1f, 0.0f, 100.0f, "Stats")
             CFIELD_FLOAT_RANGED(orbitRadius, "旋回半径", 0.1f, 0.0f, 100.0f, "Stats")

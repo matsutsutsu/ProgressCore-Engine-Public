@@ -3,7 +3,7 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include <d3d11_1.h> // ID3DUserDefinedAnnotation
+#include <d3d11_1.h>
 
 #include "BloomEffect.h"
 #include "RadialBlurEffect.h"
@@ -38,12 +38,14 @@ void PostProcessManager::Initialize(ID3D11Device *device, UINT width, UINT heigh
     AddEffect<ChromaticAberrationEffect>();
     AddEffect<VignetteEffect>();
     AddEffect<ColorGradingEffect>();
-    // 最後に置き、ブルームや色の補正まで済んだ絵をぼかす。
+    // 最後に置き、ブルームや色の補正まで済んだ絵をぼかす
     // UI はポストプロセスの後に描くので、メニューはぼけない
     AddEffect<PauseBlurEffect>();
 
     Resize(device, width, height);
 }
+
+
 
 PostProcessManager::~PostProcessManager()
 {
@@ -54,6 +56,8 @@ PostProcessManager::~PostProcessManager()
     if (m_outputSDR.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_outputSDR);
     if (m_sceneColorCopy.IsValid()) ResourceManager::Instance().UnloadRenderTarget(m_sceneColorCopy);
 }
+
+
 
 void PostProcessManager::Resize(ID3D11Device *device, UINT width, UINT height)
 {
@@ -76,6 +80,8 @@ void PostProcessManager::Resize(ID3D11Device *device, UINT width, UINT height)
         effect->Resize(device, width, height);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // シーンの開始と終了（エフェクトの適用）
@@ -105,6 +111,8 @@ void PostProcessManager::BeginScene(ID3D11DeviceContext    *dc,
     dc->RSSetViewports(1, &vp);
 }
 
+
+
 ID3D11ShaderResourceView *PostProcessManager::EndScene(ID3D11DeviceContext      *dc,
                                                        ID3D11RenderTargetView   *targetRTV,
                                                        ID3D11ShaderResourceView *sceneDepthSRV,
@@ -120,7 +128,7 @@ ID3D11ShaderResourceView *PostProcessManager::EndScene(ID3D11DeviceContext      
     };
     if (!hdr[0] || !hdr[1])
     {
-        // Resize でレンダーターゲットを作れなかったとき。BeginScene も同じ理由で何もしていないので、絵はもともと無い
+        // Resize でレンダーターゲットを作れなかったとき。BeginScene も同じ理由で何もしていないので、絵はもともとない
         CCL_LOG_ERROR(LogCategory::Render,
                       "PostProcessManager::EndScene: HDR バッファが未生成のためポストプロセスを中止します。");
         return nullptr;
@@ -169,7 +177,7 @@ ID3D11ShaderResourceView *PostProcessManager::EndScene(ID3D11DeviceContext      
         }
 #endif
 
-        // BloomEffect は縮小バッファに描くのでビューポートを変えたまま戻る。
+        // BloomEffect は縮小バッファに描くのでビューポートを変えたまま戻る
         // 次のエフェクトがフル解像度で描けるよう、毎回ここで戻す
         dc->RSSetViewports(1, &vpHDR);
 
@@ -201,6 +209,8 @@ ID3D11ShaderResourceView *PostProcessManager::EndScene(ID3D11DeviceContext      
     return outputSDR->GetSRV();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // シーン色のコピー
 // ---------------------------------------------------------------------------
@@ -222,6 +232,8 @@ void PostProcessManager::GrabSceneColor(ID3D11DeviceContext *dc)
     ID3D11ShaderResourceView *srv = copy->GetSRV();
     dc->PSSetShaderResources(SLOT_SRV_SCENE_COLOR, 1, &srv);
 }
+
+
 
 ID3D11ShaderResourceView *PostProcessManager::GetSceneColorSRV() const
 {

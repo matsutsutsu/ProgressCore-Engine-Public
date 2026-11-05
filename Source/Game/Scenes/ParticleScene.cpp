@@ -10,8 +10,8 @@ void ParticleScene::Initialize()
 {
     BaseScene::Initialize();
 
-    // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む。
-    // BaseScene::Initialize はエンティティを作らないので、消されて困るものは無い
+    // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む
+    // BaseScene::Initialize はエンティティを作らないので、消されて困るものはない
     {
         std::string particleLevel = "Assets/Scene/TestScene/ParticleScene.level.json";
 
@@ -21,16 +21,22 @@ void ParticleScene::Initialize()
     }
 }
 
+
+
 void ParticleScene::Finalize()
 {
     BaseScene::Finalize();
 }
+
+
 
 void ParticleScene::RegisterSystems()
 {
     auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 }
+
+
 
 // SceneFactory へ登録する（SceneManager がこのクラスを include せずに済むように）
 REGISTER_SCENE(ParticleScene, "Particle")

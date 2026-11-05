@@ -1,21 +1,13 @@
 #pragma once
 // ===========================================================================
 // 概要: 描画に使うシェーダーの基底クラス（Shader）と、メッシュごとにマテリアルを送る
-//       シェーダーの基底クラス（IMaterialShader）。
+//       シェーダーの基底クラス（IMaterialShader）
 //
 // 責務:
 //   - Begin / End でシェーダーとステートをバインドする・外す
 //   - .cso のリフレクションから、定数バッファとテクスチャのスロットを求める
 //   - マテリアルの値とテクスチャを、定数バッファとスロットに送る
 //   - HLSL が更新されたら作り直す（CheckAndReload。対応している派生クラスだけ）
-//
-// 備考: 派生クラス
-//         MaterialShader          マテリアル（PBR / Phong / Lambert / Basic）。IMaterialShader
-//         ErrorShader             未登録のシェーダーの代わりに出すマゼンタ。IMaterialShader
-//         ShadowMapShader         シャドウマップ（頂点シェーダーだけ）
-//         NormalPrepassShader     NormalPrepass の法線
-//         ParticleShader          パーティクルの描画（バッファは ParticleRenderer がバインド）
-//         ParticleComputeShader   パーティクルの計算（Dispatch は GPUParticleUpdateSystem）
 // ===========================================================================
 #include "Engine/Graphics/RHI/RenderContext.h"
 #include "Engine/Graphics/Resource/Model.h"
@@ -36,11 +28,7 @@ public:
     Shader() {}
     virtual ~Shader() {}
 
-    /**
-     * @brief シェーダーとステートをバインドする。
-     * @param s renderState などを使う
-     * @param ctx camera などを使う
-     */
+    // シェーダーとステートをバインドする
     virtual void Begin(ID3D11DeviceContext      *dc,
                        const RenderServices     &s,
                        const RenderFrameContext &ctx) = 0;
@@ -77,21 +65,17 @@ protected:
 
     // csoPath のリフレクションを読み、b0〜b7（SLOT_CB_SCENE 未満）の定数バッファを作る
     bool InitializeReflection(ID3D11Device *device, const std::string &csoPath);
-    // 名前のテクスチャのスロット番号を引き、使うスロットとして覚える。無ければ -1
+    // 名前のテクスチャのスロット番号を引き、使うスロットとして覚える。なければ -1
     int  FetchTextureSlot(const std::string &name);
-    // 名前のサンプラーのスロット番号を引き、使うスロットとして覚える。無ければ -1
+    // 名前のサンプラーのスロット番号を引き、使うスロットとして覚える。なければ -1
     int  FetchSamplerSlot(const std::string &name);
     // シェーダー・入力レイアウト・定数バッファをバインドする
     void ApplyShaderPipeline(ID3D11DeviceContext *dc, ID3D11VertexShader *vs, ID3D11PixelShader *ps, ID3D11InputLayout *layout);
     // 定数バッファ・テクスチャ・シェーダーのバインドを外す
     void UnbindResources(ID3D11DeviceContext *dc);
 
-    /**
-     * @brief mat の値を定数バッファに書いて送り、テクスチャをバインドする。
-     * @param fallbackMat 上書きのマテリアルにテクスチャが無いスロットを埋めるマテリアル（モデル本来のもの。null 可）。
-     *        上書きのマテリアルをシーンに保存すると、パスを持たないモデル埋め込みのテクスチャは消えるので、
-     *        そのスロットはモデル本来のマテリアルのテクスチャで補う
-     */
+    // mat の値を定数バッファに書いて送り、テクスチャをバインドする
+    // 上書きのマテリアルを保存すると、モデルに埋め込みのテクスチャは消える。そのスロットは fallbackMat（モデル本来のもの）で埋める
     void                            UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialData &mat,
                                                              const MaterialData *fallbackMat = nullptr);
     std::filesystem::file_time_type GetLastWriteTime(const std::wstring &filepath);
@@ -103,10 +87,7 @@ protected:
 class IMaterialShader : public Shader
 {
 public:
-    /**
-     * @brief メッシュのマテリアルを定数バッファとテクスチャに送る。
-     * @param overrideMaterial nullptr なら mesh.material を使う。mesh.material は書き換えない
-     */
+    // メッシュのマテリアルを送る。overrideMaterial が nullptr なら mesh.material を使う（mesh.material は書き換えない）
     virtual void Update(ID3D11DeviceContext *dc,
                         const Model::Mesh   &mesh,
                         const MaterialData  *overrideMaterial = nullptr) = 0;

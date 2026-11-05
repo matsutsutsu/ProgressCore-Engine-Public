@@ -1,14 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: コンポーネントのフィールド記述子（FieldDescriptor）とメタデータ（ComponentMeta<T>）の定義。
-//
-// 責務:
-//   - フィールド 1 つ分の情報（名前・型・オフセット・表示設定・保存するか）を表す
-//   - コンポーネント型ごとの表示名・カテゴリ・フィールド一覧を ComponentMeta<T> で表す
-//   - FieldDescriptor を作る FD_* 関数と、オフセットでフィールドを読む RawField
-//
-// 備考: 定義は直接書かず、ComponentDefine.h の CFIELD / COMPONENT_META_BEGIN 系マクロで書く。
-// ===========================================================================
+// コンポーネントのフィールド記述子（FieldDescriptor）とメタデータ（ComponentMeta<T>）
+// 直接は書かず、ComponentDefine.h の CFIELD / COMPONENT_META_BEGIN 系マクロで書く
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -51,16 +43,13 @@ struct FieldDescriptor
     const char *const *enumNames  = nullptr; // enum 系でのみ使う
     int                enumCount  = 0;       // enum 系でのみ使う
     bool               serialize  = true;    // false なら保存しない（読込もしない）
-    const char        *tooltip    = nullptr; // ホバー時の説明（nullptr なら無し）
+    const char        *tooltip    = nullptr; // ホバー時の説明（nullptr ならなし）
     bool               readonly   = false;   // true なら表示だけで編集できない
     const char        *filePreset = nullptr; // null 以外なら String をファイルダイアログ付きで描く（FileDialog のプリセット名。例 "Texture"）
 };
 
-/**
- * @brief float のフィールドの FieldDescriptor を作る。
- *
- * FD_ 系の関数は、引数の順が全種類で共通（表示名, JSON キー, offset, 種別ごとの追加引数..., category, serialize, tooltip, readonly）。
- */
+// float のフィールドの FieldDescriptor を作る
+// FD_ 系の関数は引数の順が共通（表示名, JSON キー, offset, 種別ごとの引数..., category, serialize, tooltip, readonly）
 inline FieldDescriptor FD_Float(const char *name, const char *jsonName, size_t offset,
                                 float speed = 0.05f, float rmin = 0.0f, float rmax = 0.0f,
                                 const char *category = nullptr, bool serialize = true,
@@ -160,7 +149,7 @@ inline FieldDescriptor FD_String(const char *name, const char *jsonName, size_t 
 //   isSerializable : false ならシーン・プレハブに保存しない（ComponentRegistry）
 //   CustomGui()    : hasCustomGui == true のときの描画関数
 //   Fields()       : 保存と自動インスペクタの対象フィールド
-//   保存形式を変えたい場合はここではなく ComponentMetaJson::ComponentSerializer<T> を特殊化する。
+//   保存形式を変えたい場合はここではなく ComponentMetaJson::ComponentSerializer<T> を特殊化する
 // ===========================================================================
 template <typename T>
 struct ComponentMeta
@@ -186,8 +175,8 @@ struct ComponentMeta
 };
 
 // ===========================================================================
-// SFINAE: ComponentMeta<T> が category / sortPriority / hiddenInInspector を持つか。
-//   手書きの特殊化では書き忘れることがあるので、無ければ既定値を使うために調べる。
+// SFINAE: ComponentMeta<T> が category / sortPriority / hiddenInInspector を持つか
+//   手書きの特殊化では書き忘れることがあるので、なければ既定値を使うために調べる
 // ===========================================================================
 template <typename T, typename = void>
 struct HasCategory : std::false_type

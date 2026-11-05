@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: InputConfig.json に書くキー名と、実際のキーコードの対応表。
+// 概要: InputConfig.json に書くキー名と、実際のキーコードの対応表
 //
 // 責務:
 //   - キーボード／マウス／ゲームパッドのキー名 -> キーコードの変換
 //   - InputEditorWindow の選択肢と表示名、押されたキーの検出（キー割り当て用）
 //
 // 備考: エディタの選択肢と InputFacade の文字列変換を同じ表から作ることで、
-//       片方にだけキーを足して「保存できるのに反応しない」状態を防ぐ。
-//       キーを増やすときは、該当する表に1行足す。
+//       片方にだけキーを足して「保存できるのに反応しない」状態を防ぐ
+//       キーを増やすときは、該当する表に1行足す
 // ===========================================================================
 
 #include <Windows.h>
@@ -169,8 +169,8 @@ namespace InputKeyTable
     // ============================================================
     // エディタの選択肢
     //   「キーを直接選ぶ」UI 用。JSON に保存する Device 文字列・Key 文字列と、
-    //   人が読む表示名（PS 表記など）をまとめている。
-    //   ここに1行足せば、エディタの選択肢に増える。
+    //   人が読む表示名（PS 表記など）をまとめている
+    //   ここに1行足せば、エディタの選択肢に増える
     // ============================================================
     struct UnifiedEntry
     {
@@ -206,7 +206,7 @@ namespace InputKeyTable
     }
 
     // ----- ゲームパッド（ボタン）-----
-    //   display に Xbox と PS の両方の呼び名を併記する。
+    //   display に Xbox と PS の両方の呼び名を併記する
     inline const std::vector<UnifiedEntry> &GamePadEntries()
     {
         static const std::vector<UnifiedEntry> v = {
@@ -249,12 +249,7 @@ namespace InputKeyTable
         return v;
     }
 
-    /**
-     * @brief (device, key) に一致する統合エントリの表示名を返す。
-     * @param device デバイス名。
-     * @param key    キー名。
-     * @return 表示名。見つからなければ "device / key" を組み立てて返す。
-     */
+    // (device, key) に一致するエントリの表示名。なければ "device / key" を返す
     inline std::string DisplayNameOf(const std::string &device, const std::string &key)
     {
         auto search = [&](const std::vector<UnifiedEntry> &list) -> const UnifiedEntry * {
@@ -270,8 +265,8 @@ namespace InputKeyTable
     }
 
     // ---------------------------------------------------------------
-    // キー割り当て用: 押されているゲームパッドのボタンを1つ検出する。
-    //   wButtons は呼び出し側が取得した XINPUT_GAMEPAD::wButtons。見つからなければ false。
+    // キー割り当て用: 押されているゲームパッドのボタンを1つ検出する
+    //   wButtons は呼び出し側が取得した XINPUT_GAMEPAD::wButtons。見つからなければ false
     // ---------------------------------------------------------------
     struct PadHit
     {

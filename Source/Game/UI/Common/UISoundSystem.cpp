@@ -33,7 +33,7 @@ void UISoundSystem::Update(float /*dt*/)
     });
 
     // 選ばれているボタンは、マウスが乗っているものを優先する
-    // 無ければパッド・キーで選んでいるもの
+    // なければパッド・キーで選んでいるもの
     const EntityID selected = (hovered != InvalidEntityID) ? hovered : focused;
 
     // ---------------------------------------------------------
@@ -83,7 +83,7 @@ void UISoundSystem::Update(float /*dt*/)
 void UISoundSystem::Play(const char *eventName)
 {
     // イベント名とファイルの対応は Assets/Config/AudioConfigDXTK.json
-    // ファイルが無いイベントは読み込みで飛ばされ、鳴らしても何も起きない
+    // ファイルがないイベントは読み込みで飛ばされ、鳴らしても何も起きない
     if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
@@ -91,5 +91,7 @@ void UISoundSystem::Play(const char *eventName)
         audio->PlayOneShot(CCL::Utils::HashString(eventName));
     }
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UISoundSystem, Priority::RenderStage::R10_UI);

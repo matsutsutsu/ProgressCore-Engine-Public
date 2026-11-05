@@ -4,7 +4,7 @@
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
 #include "Engine/Graphics/Components/Core/MaterialComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
-#include "Engine/ECS/Common/CCL_Archetype.h" // ArchetypeHelper
+#include "Engine/ECS/Common/CCL_Archetype.h"
 #include "Engine/Serialization/Factory/EntityFactory.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -127,6 +127,8 @@ void BuildingScatterWindow::DrawContents(EditorContext &context)
         ImGui::Text("直近の生成: %d 個の建物", m_lastSpawnedCount);
 }
 
+
+
 void BuildingScatterWindow::Generate(EditorContext &context)
 {
     World *world = context.world;
@@ -153,7 +155,7 @@ void BuildingScatterWindow::Generate(EditorContext &context)
     const auto buildingArch = ArchetypeHelper::Generate<TransformComponent, ModelComponent, MaterialComponent, NameComponent>();
 
     // 選択モデルのマスター ModelComponent を1回だけ生成し、以降はコピーで使い回す
-    // (ループ内で毎回 SetModel すると数百回パス検索/ロードが走るため)。
+    // (ループ内で毎回 SetModel すると数百回パス検索/ロードが走るため)
     ModelComponent baseModels[8];
     for (int mi : models)
     {
@@ -244,7 +246,7 @@ void BuildingScatterWindow::Generate(EditorContext &context)
     }
 
     // ---- 3. 実体化してから親子付け ----
-    //   SpawnNamed は PendingOp に積むだけなので、SetParent の前に確定させる。
+    //   SpawnNamed は PendingOp に積むだけなので、SetParent の前に確定させる
     world->ScrutinyAndApply();
     for (const auto &[child, group] : childToGroup)
     {
@@ -257,6 +259,8 @@ void BuildingScatterWindow::Generate(EditorContext &context)
                  "[BuildingScatter] Generated %d buildings in %d group(s).", count, clusters);
 }
 
+
+
 void BuildingScatterWindow::DeleteAll(EditorContext &context)
 {
     World *world = context.world;
@@ -265,7 +269,7 @@ void BuildingScatterWindow::DeleteAll(EditorContext &context)
     for (EntityID g : m_spawnedGroups)
     {
         // Destroy は DestroyTag を付けるだけ。HierarchyCleanupSystem が子まで
-        // 再帰的に破棄する。無効IDは Destroy 側で弾かれるため手動削除後も安全。
+        // 再帰的に破棄する。無効IDは Destroy 側で弾かれるため手動削除後も安全
         world->Destroy(g);
     }
     const size_t n = m_spawnedGroups.size();

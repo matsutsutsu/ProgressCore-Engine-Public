@@ -25,15 +25,8 @@ namespace Prefab
     using namespace CCL::ECS;
 
     // ===========================================================================
-    // プレハブ JSON のキャッシュ
-    //   VFX はヒットのたびにプレハブから Entity を生成する
-    //   （HitImpactEvent → HitEffectSystem → VFX::Play → SpawnPrefab）。
-    //   キャッシュが無いと毎回 VFX_HitSpark.json（24KB）をパースし直し、
-    //   1 発あたり数 ms かかる（Tracy で計測）。ディスク読みは OS のキャッシュで軽くなるが、
-    //   パースは CPU の処理なので毎回かかる。
-    //   キャッシュするのは検証済みの entities 配列で、2 回目以降は DeserializeRaw へ直接渡す。
-    //   エディタ構成では、保存し直したプレハブがすぐ反映されるよう更新時刻を毎回確認する
-    //   （stat は数 μs でパースより 3 桁軽い）。Shipping では確認しない。
+    // プレハブの JSON のキャッシュ。VFX はヒットのたびにプレハブから作るので、毎回パースすると1発で数 ms かかる
+    // 持つのは検証済みの entities の配列。エディタ構成では、保存し直したプレハブをすぐ反映するよう更新時刻を毎回見る
     // ===========================================================================
     namespace
     {
@@ -55,7 +48,9 @@ namespace Prefab
             return ec ? std::filesystem::file_time_type{} : t;
         }
 
-        // 拡張子の無いパスに .json を足す（呼び出し側は "Assets/Prefabs/Particles/VFX_Jump" のように書ける）
+
+
+        // 拡張子のないパスに .json を足す（呼び出し側は "Assets/Prefabs/Particles/VFX_Jump" のように書ける）
         std::string ToJsonPath(const std::string &prefabPath)
         {
             std::string fullPath = prefabPath;
@@ -63,7 +58,9 @@ namespace Prefab
             return fullPath;
         }
 
-        // キャッシュから引く。無ければ読んで載せる。読めなければ nullptr。
+
+
+        // キャッシュから引く。なければ読んで載せる。読めなければ nullptr
         // g_prefabCacheMutex を持ったまま呼ぶこと
         const CachedPrefab *FindOrLoadCached(const std::string &fullPath)
         {
@@ -98,7 +95,9 @@ namespace Prefab
             return &it->second;
         }
 
-        // JSON の中の文字列から、テクスチャのパス（拡張子で判定）を集める。
+
+
+        // JSON の中の文字列から、テクスチャのパス（拡張子で判定）を集める
         // コンポーネント名では探さない。表示名を変えると JSON のキーも変わり、黙って拾えなくなるため
         void CollectTexturePaths(const nlohmann::json &node, std::vector<std::string> &out)
         {
@@ -136,6 +135,8 @@ namespace Prefab
         g_prefabCache.clear();
     }
 
+
+
     // ===========================================================================
     // 先読み
     // ===========================================================================
@@ -167,6 +168,8 @@ namespace Prefab
         return true;
     }
 
+
+
     // ===========================================================================
     // 生成
     // ===========================================================================
@@ -177,10 +180,10 @@ namespace Prefab
         const std::string fullPath = ToJsonPath(prefabPath);
         ZoneText(fullPath.c_str(), fullPath.size());
 
-        // パース済みの JSON をキャッシュから引く（無ければ読んで載せる）。
+        // パース済みの JSON をキャッシュから引く（なければ読んで載せる）
         //   ロックは DeserializeRaw まで保持する。要素への参照を持ったままロックを外すと、
-        //   その間に別スレッドが（エディタの更新検知で）erase して参照が無効になる。
-        //   DeserializeRaw は World を書き換えるのでもともと並行には走らせられず、直列にしても失うものは無い
+        //   その間に別スレッドが（エディタの更新検知で）erase して参照が無効になる
+        //   DeserializeRaw は World を書き換えるのでもともと並行には走らせられず、直列にしても失うものはない
         std::lock_guard<std::mutex> lock(g_prefabCacheMutex);
 
         const CachedPrefab *cached = FindOrLoadCached(fullPath);
@@ -204,6 +207,8 @@ namespace Prefab
         return rootID;
     }
 
+
+
     EntityID SpawnPrefab(World &world, const std::string &path,
                          const DirectX::XMFLOAT3 &position)
     {
@@ -215,6 +220,8 @@ namespace Prefab
         }
         return id;
     }
+
+
 
     EntityID SpawnPrefab(World &world, const std::string &path,
                          const DirectX::XMFLOAT3 &position,
@@ -231,6 +238,8 @@ namespace Prefab
         }
         return id;
     }
+
+
 
     EntityID SpawnPrefab(World &world, const std::string &path,
                          const DirectX::XMFLOAT3 &position, float rotationY)

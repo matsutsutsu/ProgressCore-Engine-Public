@@ -1,4 +1,3 @@
-// BossHudStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/HUD/BossHudStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

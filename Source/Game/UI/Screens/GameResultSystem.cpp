@@ -6,19 +6,19 @@
 #include "Engine/Platform/Core/Logger.h"
 
 #include "Engine/UI/ECS/UIEvents.h"
-#include "Game/UI/Common/ScreenHeadingUi.h" // 左上の見出し・線・記録の行
+#include "Game/UI/Common/ScreenHeadingUi.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
-#include "Game/Logics/AI/Battle/BattleContext.h"            // プレイヤーとボスの EntityID
-#include "Game/Logics/AI/Drone/Components/DroneComponent.h" // 群れの機数を数える
-#include "Game/Core/GameEvents.h"                           // 命中・被弾・ジャスト回避のイベント
+#include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
+#include "Game/Core/GameEvents.h"
 
-#include <algorithm> // std::clamp / std::max
-#include <cmath>     // std::lround
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
-#include <cstdio> // std::snprintf
+#include <cstdio>
 
 #include <imgui.h>
 
@@ -43,7 +43,7 @@ namespace
 
 void GameResultSystem::Initialize()
 {
-    // ポーズなどと共有するゲーム進行の状態。無ければ作る
+    // ポーズなどと共有するゲーム進行の状態。なければ作る
     if (!m_world->HasResource<GameFlowState>()) m_world->AddResource<GameFlowState>();
 
     // --- ボタン ---
@@ -115,7 +115,7 @@ void GameResultSystem::Update(float dt)
         // ムービーの再生要求は撃破のスロー（DefeatSlowMotionSystem の kClimaxDur）の後に出るので、
         // kResultDelay を待ち終えた時点では cinematic がもう立っている
         // kClimaxDur を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る
-        // ムービーが無いシーンでは cinematic が立たず、kResultDelay だけ待って出る
+        // ムービーがないシーンでは cinematic が立たず、kResultDelay だけ待って出る
         const bool cinematic =
             m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
 
@@ -162,7 +162,7 @@ void GameResultSystem::Update(float dt)
     m_dbgPlayerPresent = playerPresent;
     m_dbgAliveEnemies  = aliveEnemies;
 
-    // プレイヤーが居ないシーンでは判定しない
+    // プレイヤーがいないシーンでは判定しない
     // プレイヤーを置かない確認用のシーンで、敵が 0 になった瞬間に勝ちが出てしまうため
     if (!playerPresent) return;
 
@@ -248,7 +248,6 @@ void GameResultSystem::OnGui()
 // 勝敗と記録
 // ---------------------------------------------------------------------------
 
-// 戦っている間の記録（時間・プレイヤーの ID）を数える
 void GameResultSystem::CountBattleStats(float dt)
 {
     // Update はロジックの帯で走るので、ポーズ中は呼ばれない（時間も数えない）
@@ -261,7 +260,6 @@ void GameResultSystem::CountBattleStats(float dt)
 
 
 
-// 決着を GameFlowState に書き、プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める
 void GameResultSystem::EndMatch()
 {
     if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().matchOver = true;
@@ -273,7 +271,6 @@ void GameResultSystem::EndMatch()
 // リザルトの画面
 // ---------------------------------------------------------------------------
 
-// リザルトの UI（暗転・見出し・記録・ボタン）を作る
 void GameResultSystem::ShowResultUI(bool win)
 {
     // 処理フロー:

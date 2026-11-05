@@ -1,15 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: アニメーションの再生状態を持つコンポーネント AnimatorComponent。
-//
-// 責務:
-//   - 再生中の AnimSequence・再生時刻・次に発火するイベントの位置を保持する
-//   - クロスフェード中の前のクリップの状態を保持する
-//   - 再生中のブレンドスペースの点と重みを保持する
-//   - ポーズ計算用のバッファを保持する（毎フレームの確保を避けるため）
-//
-// 備考: 再生の開始は AnimControllerSystem が Play() で行い、時刻は AnimationSystem が進める。
-// ===========================================================================
+// アニメーションの再生状態（AnimatorComponent）。再生中のクリップ・時刻・クロスフェード・ブレンドスペースを持つ
+// 再生の開始は AnimControllerSystem の Play()、時刻を進めるのは AnimationSystem
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Animation/Core/AnimBlendSpaceMath.h"
@@ -20,8 +11,8 @@
 struct CurveData;
 
 
-// 再生中のブレンドスペース。グラフの AnimBlendSpace から、実行時に要る値だけをコピーして持つ。
-//   ポインタで持つと、グラフの再読込（internalGraph の差し替え）やエンティティの複製で指す先が無くなる
+// 再生中のブレンドスペース。グラフの AnimBlendSpace から、実行時に要る値だけをコピーして持つ
+//   ポインタで持つと、グラフの再読込（internalGraph の差し替え）やエンティティの複製で指す先がなくなる
 struct AnimBlendPlayback
 {
     int                sampleCount   = 0; // 0 ならブレンドスペースではない（単体のクリップ）
@@ -78,13 +69,13 @@ struct AnimatorComponent
 
     float currentTimer = 0.0f; // 再生時刻（秒）
 
-    // このステップで進める前の再生時刻（秒）。AnimationSystem が毎ステップ書く。
+    // このステップで進める前の再生時刻（秒）。AnimationSystem が毎ステップ書く
     //   区間イベントは [previousFrameTimer, currentTimer] との重なりで判定する（飛び越し対策）
     float previousFrameTimer = 0.0f;
 
     float playbackSpeed = 1.0f; // ステートの再生速度。Play() が書く
 
-    // 足滑り防止の再生速度倍率。CharacterAnimSyncSystem が毎ステップ書く。
+    // 足滑り防止の再生速度倍率。CharacterAnimSyncSystem が毎ステップ書く
     //   playbackSpeed とまとめないこと。2 つの System が 1 つの値を書くと、
     //   遷移したステップだけステートの速度が効き、次のステップで上書きされる
     float footSlideMultiplier = 1.0f;
@@ -108,7 +99,7 @@ struct AnimatorComponent
     float previousPlaybackSpeed = 1.0f;
 
     // --- ブレンドスペース ---
-    //   単体のクリップを再生している間は、どちらも sampleCount == 0。
+    //   単体のクリップを再生している間は、どちらも sampleCount == 0
     //   currentSequence は、ブレンドスペースの間も時間の基準（点 [0]）のクリップを指す
     AnimBlendPlayback currentBlend;  // 今のステートのブレンドスペース
     AnimBlendPlayback previousBlend; // クロスフェード中の前のステートのブレンドスペース（切り替えた瞬間の重みのまま）
@@ -121,24 +112,24 @@ struct AnimatorComponent
     // --- 外部からの握り ---
     bool isEditorOverride = false; // true の間はエディタ（シーケンサー）が再生を制御し、System は触らない
 
-    // true の間は外部（タイムラインのムービー）がクリップを決める。
-    //   止まるのは遷移の評価・ルートモーション・足滑り補正・攻撃判定だけ。
+    // true の間は外部（タイムラインのムービー）がクリップを決める
+    //   止まるのは遷移の評価・ルートモーション・足滑り補正・攻撃判定だけ
     //   時間の進行・ポーズ計算・Sound / Effect イベントは通常どおり動く
     bool isExternalOverride = false;
 
-    // 握りを離すときに外部が立てる「今のステートへ戻して」という要求。
+    // 握りを離すときに外部が立てる「今のステートへ戻して」という要求
     //   値は戻すときのクロスフェード時間（秒）。負なら要求なし。AnimControllerSystem が消費する
     float externalReleaseBlend = -1.0f;
 
-    // Play() に渡す再生パラメータ。
+    // Play() に渡す再生パラメータ
     //   bool と float が並ぶ引数は取り違えやすいので、指示付き初期化子で名前を書かせる（宣言順に書くこと）
     struct PlayParams
     {
         float                 blendTime              = 0.2f;    // クロスフェード時間（秒）。0 なら即座に切り替える
         bool                  loop                   = true;    // ループ再生するか
         float                 speed                  = 1.0f;    // 再生速度倍率
-        const CurveData      *curve                  = nullptr; // 速度カーブ（null ならシーケンス内蔵、それも無ければ等速）
-        const CurveData      *rootMotionCurve        = nullptr; // ルートモーションカーブ（null ならシーケンス内蔵、それも無ければボーンから抽出）
+        const CurveData      *curve                  = nullptr; // 速度カーブ（null ならシーケンス内蔵、それもなければ等速）
+        const CurveData      *rootMotionCurve        = nullptr; // ルートモーションカーブ（null ならシーケンス内蔵、それもなければボーンから抽出）
         bool                  lockVerticalRootMotion = false;   // Force Root Lock で Y も固定するか
         bool                  restart                = false;   // 同じクリップでも頭から再生し直すか（ステートに入るときは true）
         const AnimBlendSpace *blendSpace             = nullptr; // ブレンドスペースのステートなら、その定義（値でコピーする）。sequence には点 [0] を渡す
@@ -150,11 +141,11 @@ struct AnimatorComponent
         // --- クリップの切り替え ---
 
         // 比べるのはステートではなくクリップのポインタなので、別のステートが同じクリップを指すと
-        //   restart 無しでは何もせず、再生位置・isFinished・イベント位置が前のステートから引き継がれる。
+        //   restart なしでは何もせず、再生位置・isFinished・イベント位置が前のステートから引き継がれる
         //   isFinished が残ると、入った直後のステップで Finished 条件が成立して抜けてしまう
         if (currentSequence != sequence || params.restart)
         {
-            // 今のクリップを前のクリップとして控え、ブレンドを始める。
+            // 今のクリップを前のクリップとして控え、ブレンドを始める
             //   restart で同じクリップを再生し直すと previousSequence == sequence になるが、
             //   参照する時刻が違う（previousTimer と 0 秒）ので、自分自身とのクロスフェードとして成立する
             if (currentSequence && params.blendTime > 0.001f)
@@ -208,7 +199,7 @@ struct AnimatorComponent
         }
         else if (!params.blendSpace)
         {
-            // 同じクリップを頭から流し直さずに、単体のクリップとして再生し直す要求（ムービーなど）。
+            // 同じクリップを頭から流し直さずに、単体のクリップとして再生し直す要求（ムービーなど）
             //   ブレンドスペースの点 [0] と同じクリップでも、混ぜるのをやめる
             currentBlend.Assign(nullptr);
         }
@@ -217,7 +208,7 @@ struct AnimatorComponent
         isLoop        = params.loop;
         playbackSpeed = params.speed;
 
-        // カーブの指定が無ければ、シーケンス自身が持つカーブ（シーケンサーで編集したもの）を使う
+        // カーブの指定がなければ、シーケンス自身が持つカーブ（シーケンサーで編集したもの）を使う
         activeCurve = params.curve;
         if (!activeCurve && sequence && !sequence->speedCurve.empty())
             activeCurve = &sequence->speedCurve;
@@ -245,8 +236,8 @@ struct AnimatorComponent
 
         // --- イベントの位置 ---
 
-        // 開始位置より手前のイベントは、発火済みとして飛ばす。
-        //   飛ばさないと、最初のステップで手前のイベントがまとめて発火する。
+        // 開始位置より手前のイベントは、発火済みとして飛ばす
+        //   飛ばさないと、最初のステップで手前のイベントがまとめて発火する
         //   開始位置ちょうどのイベントは飛ばさない（SyncEventCursor の <= を使わないのはそのため）
         nextEventIndex = 0;
         if (!currentSequence)
@@ -261,11 +252,8 @@ struct AnimatorComponent
         }
     }
 
-    /**
-     * @brief nextEventIndex を現在の再生時刻に合わせ直す。
-     * @note 逆再生やシークで再生時刻が戻ったときに呼ぶ。
-     *       現在時刻より前のイベントを発火済みとして扱うので、順方向に再開しても二重に発火しない。
-     */
+    // nextEventIndex を今の再生時刻に合わせ直す。逆再生やシークで時刻が戻ったときに呼ぶ
+    // 今より前のイベントは出したものとして扱うので、順方向に戻しても二重に出ない
     void SyncEventCursor()
     {
         nextEventIndex = 0;

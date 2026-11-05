@@ -1,17 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: ボスの BT を止めたり、好きな枝を強制実行したりするデバッグ用ウィンドウ。
+// 概要: ボスの BT を止めたり、好きな枝を強制実行したりするデバッグ用ウィンドウ
 //
 // 責務:
 //   - ボスの BT の評価を止める・再開する
 //   - BT を見やすいツリーで並べ、選んだ枝だけを繰り返し実行させる
 //   - 今の状態（通常・停止中・強制実行中）を表示する
 //
-// 備考: 書き換えるのは BehaviorTreeComponent の debugPaused / debugForcedNodeId だけ。
-//       選んだ枝から評価する処理は BehaviorTreeSystem 側にある（ApplyDebugForcing）。
+// 備考: 書き換えるのは BehaviorTreeComponent の debugPaused / debugForcedNodeId だけ
+//       選んだ枝から評価する処理は BehaviorTreeSystem 側にある（ApplyDebugForcing）
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // BTAsset, BTNodeID
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
 
 #include <string>
 
@@ -47,7 +47,7 @@ private:
     // 行に出す文字列（名前・行動名・param）
     std::string MakeLabel(const BTAsset &asset, BTNodeID nodeId, const std::string &inheritedName) const;
 
-    // 枝の中で最初に見つかる行動の表示名。無ければ nullptr
+    // 枝の中で最初に見つかる行動の表示名。なければ nullptr
     const char *FirstActionName(const BTAsset &asset, BTNodeID nodeId) const;
 
     // 強制実行する枝を切り替える。-1 で通常の評価へ戻す

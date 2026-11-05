@@ -19,8 +19,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     // 3. リンクを描き、実行中のノードへ寄せる
     // 4. 入力（リンク作成・ショートカット・削除・メニュー）を処理する
 
-    // 【備考】
-    //   整列は ed::Begin の中でしかノードのサイズが取れないので、ここで処理する。
+    // 整列は ed::Begin の中でしかノードのサイズが取れないので、ここで処理する
 
     ZoneScopedN("BTW: NodeWorkspace");
 
@@ -51,7 +50,7 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
     // ---------------------------------------------------------
 
     // 整列はここで実行する。ed::GetNodeSize が前フレームの実サイズを返すので、
-    // 種類ごとの高さの違いを織り込んだ段組みができる。ed::Begin の外だと値が取れない。
+    // 種類ごとの高さの違いを織り込んだ段組みができる。ed::Begin の外だと値が取れない
     if (m_layoutRequested)
     {
         ZoneScopedN("BTW: AutoLayout");
@@ -69,9 +68,9 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
         int drawnNodes = 0;
         for (auto &node : m_nodes)
         {
-            // 生成・読込・Undo・整列の直後は、座標（とコメント枠の大きさ）をライブラリへ流し込む。
-            //   ed::Group(size) の引数は一度登録された後は無視されるので、大きさを外から変える口はここだけ。
-            //   全経路がこの分岐を通るので、呼び忘れる経路が無い。
+            // 生成・読込・Undo・整列の直後は、座標（とコメント枠の大きさ）をライブラリへ流し込む
+            //   ed::Group(size) の引数は一度登録された後は無視されるので、大きさを外から変える口はここだけ
+            //   全経路がこの分岐を通るので、呼び忘れる経路がない
             if (!node.positionInitialized)
             {
                 ed::SetNodePosition(node.id, ImVec2(node.posX, node.posY));
@@ -146,12 +145,14 @@ void BehaviorTreeWindow::DrawNodeWorkspace(const BehaviorTreeComponent *activeAI
 
     ed::PopStyleVar(); // 線の直線
 
-    // ライブラリ本体。ノードとリンクの実際の描画・当たり判定・選択はここでまとめて行われる。
+    // ライブラリ本体。ノードとリンクの実際の描画・当たり判定・選択はここでまとめて行われる
     {
         ZoneScopedN("BTW: ed::End");
         ed::End();
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ノードの描画
@@ -173,15 +174,15 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
     // ---------------------------------------------------------
 
     // 選択中はオレンジで光らせ、それ以外は役割ごとの色。塗り分けておくと、
-    // ズームアウトしたままでも「どの塊の話か」が読める。
+    // ズームアウトしたままでも「どの塊の話か」が読める
     const GroupPalette &palette     = GroupPaletteAt(node.groupColorIndex);
     const bool          isSelected  = ed::IsNodeSelected(node.id);
     const ImColor       borderColor = isSelected ? ImColor(255, 165, 0, 255) : ImColor(palette.border);
     const ImColor       headerColor = isSelected ? ImColor(150, 95, 20, 245) : ImColor(palette.header);
 
     // ノード背景は透明にする。コメント枠もノードなので、まず全面に StyleColor_NodeBg が敷かれ、
-    // その上に薄い枠色を重ねてもほとんど色が出ない。
-    // 色は BeginNode の時点で確定するので、Push は必ず BeginNode より前に置く。
+    // その上に薄い枠色を重ねてもほとんど色が出ない
+    // 色は BeginNode の時点で確定するので、Push は必ず BeginNode より前に置く
     ed::PushStyleColor(ed::StyleColor_NodeBg, ImColor(0, 0, 0, 0));
     ed::PushStyleColor(ed::StyleColor_GroupBg, ImColor(palette.bg));
     ed::PushStyleColor(ed::StyleColor_GroupBorder, borderColor);
@@ -196,10 +197,10 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
     // ---------------------------------------------------------
     const ImVec2 labelScreenPos = ImGui::GetCursorScreenPos();
 
-    // 見出し帯は「高さだけ持つ」Dummy で場所を取る。
+    // 見出し帯は「高さだけ持つ」Dummy で場所を取る
     //   ライブラリは「ノード上端から枠の上端まで」を掴める帯とみなし、枠の上端はこの Dummy の
-    //   下端で決まる。高さは帯の描画高と揃えること（縮めると掴める範囲も縮む）。
-    //   幅を 1px にするのは、幅がノード幅へ反映されて毎フレーム膨張するのを避けるため。
+    //   下端で決まる。高さは帯の描画高と揃えること（縮めると掴める範囲も縮む）
+    //   幅を 1px にするのは、幅がノード幅へ反映されて毎フレーム膨張するのを避けるため
     ImGui::Dummy(ImVec2(1.0f, kGroupHeaderH));
 
     ImDrawList  *drawList   = ImGui::GetWindowDrawList();
@@ -211,8 +212,8 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
     drawList->AddRectFilled(nodeMin, headerMax, headerColor, 8.0f, ImDrawFlags_RoundCornersTop);
     drawList->AddLine(ImVec2(nodeMin.x, headerMax.y), headerMax, ImColor(0, 0, 0, 150), 2.0f);
 
-    // 引いて見ているときは見出しの文字を拡大する（章立てとして読めるように）。
-    //   zoom が 0 に近いと割り算が発散するので、下限と上限の両方で抑える。
+    // 引いて見ているときは見出しの文字を拡大する（章立てとして読めるように）
+    //   zoom が 0 に近いと割り算が発散するので、下限と上限の両方で抑える
     const float zoom = ed::GetCurrentZoom();
     if (zoom < 0.6f)
     {
@@ -239,7 +240,7 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
     // ---------------------------------------------------------
 
     // GetNodeSize は「ノード全体」、width/height は
-    // 「枠」の寸法なので差分を引く。引かないと保存と読込のたびに枠が余白ぶん太っていく。
+    // 「枠」の寸法なので差分を引く。引かないと保存と読込のたびに枠が余白ぶん太っていく
     const ImVec2 actualSize = ed::GetNodeSize(node.id);
     const ImVec2 extra      = GroupFrameExtra();
     if (actualSize.x > 10.0f && actualSize.y > 10.0f)
@@ -249,11 +250,13 @@ void BehaviorTreeWindow::DrawGroupNode(EditorBTNode &node)
     }
 }
 
+
+
 ImVec2 BehaviorTreeWindow::PasteTargetOnCanvas()
 {
     // キャンバスの中では、ライブラリがマウス座標をキャンバス座標へ書き換えている
-    //   （imgui_canvas.cpp）。画面座標で判定するため、一時的にキャンバスを抜ける。
-    //   抜けずに ScreenToCanvas を掛けると二重に変換され、左上の遠くへ貼られる。
+    //   （imgui_canvas.cpp）。画面座標で判定するため、一時的にキャンバスを抜ける
+    //   抜けずに ScreenToCanvas を掛けると二重に変換され、左上の遠くへ貼られる
     ed::Suspend();
     const ImVec2 mouse  = ImGui::GetMousePos();
     const ImVec2 min    = m_canvasScreenMin;
@@ -266,6 +269,8 @@ ImVec2 BehaviorTreeWindow::PasteTargetOnCanvas()
     ed::Resume();
     return canvas;
 }
+
+
 
 void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComponent *activeAI)
 {
@@ -336,10 +341,10 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     // 3. 見出し
     // ---------------------------------------------------------
 
-    // 上限幅を超える名前は折り返し、帯の高さを行数に合わせて伸ばす。
-    // 先に折り返した文字の高さを測り（CalcTextSize）、その高さで帯を塗ってから文字を書く。
+    // 上限幅を超える名前は折り返し、帯の高さを行数に合わせて伸ばす
+    // 先に折り返した文字の高さを測り（CalcTextSize）、その高さで帯を塗ってから文字を書く
     //
-    // まとまりのノードは、名前の上に「アイコン＋種類」の小さな行を足す（UE5 の Composite と同じ形）。
+    // まとまりのノードは、名前の上に「アイコン＋種類」の小さな行を足す（UE5 の Composite と同じ形）
     //   ▶ SEQUENCE   ← 種類（小さめの文字）
     //   縦割り        ← 名前
     const float typeSize   = ImGui::GetFontSize() * 0.85f;             // 種類の行の文字の大きさ
@@ -370,9 +375,9 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     }
 
     // 折り返し幅を直接渡して描く。PushTextWrapPos はウィンドウ左端からの位置で指定するので、
-    // キャンバスを原点より左へ動かすと位置が負になり、ImGui が「折り返さない」とみなす。
-    // そうなると文字がノードの外へはみ出し、見た目と掴める範囲（ノードの枠）がずれる。
-    // 高さを測った CalcTextSize と同じ幅を渡すので、帯の高さと行数も必ず一致する。
+    // キャンバスを原点より左へ動かすと位置が負になり、ImGui が「折り返さない」とみなす
+    // そうなると文字がノードの外へはみ出し、見た目と掴める範囲（ノードの枠）がずれる
+    // 高さを測った CalcTextSize と同じ幅を渡すので、帯の高さと行数も必ず一致する
     drawList->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(headerStart.x + 10, headerStart.y + 8 + typeLineH),
                       ImGui::GetColorU32(ImGuiCol_Text), title.c_str(), nullptr, titleWrapW);
     ImGui::EndGroup();
@@ -405,12 +410,14 @@ void BehaviorTreeWindow::DrawTreeNode(EditorBTNode &node, const BehaviorTreeComp
     ed::PopStyleColor(2);
 }
 
+
+
 float BehaviorTreeWindow::TreeNodeWidthOf(const EditorBTNode &node, const std::string &title) const
 {
     float textW = ImGui::CalcTextSize(title.c_str()).x;
 
-    // 本文の行も収める。実行中だけ出る行（残り時間）は、出る種類のノードなら最初から幅を取っておく。
-    //   出たときに広げると、ゲーム中にノードの幅が伸び縮みして、並びや線がガタつく。
+    // 本文の行も収める。実行中だけ出る行（残り時間）は、出る種類のノードなら最初から幅を取っておく
+    //   出たときに広げると、ゲーム中にノードの幅が伸び縮みして、並びや線がガタつく
     auto fit = [&](const char *sample) { textW = (std::max)(textW, ImGui::CalcTextSize(sample).x); };
     if (node.executionOrder != -1) fit("Priority: 00");
     if (node.type == EditorBTNodeType::Action && IsWaitAction(node.actionOrConditionId)) fit("Wait: 00.0s");
@@ -423,6 +430,8 @@ float BehaviorTreeWindow::TreeNodeWidthOf(const EditorBTNode &node, const std::s
     }
     return (std::clamp)(textW + 20.0f, kNodeMinWidth, kNodeMaxWidth);
 }
+
+
 
 bool BehaviorTreeWindow::IsCompositeType(EditorBTNodeType type)
 {
@@ -439,10 +448,12 @@ bool BehaviorTreeWindow::IsCompositeType(EditorBTNodeType type)
     }
 }
 
+
+
 void BehaviorTreeWindow::DrawCompositeIcon(ImDrawList *drawList, EditorBTNodeType type, const ImVec2 &center,
                                            float size, ImU32 color)
 {
-    // 日本語フォントには矢印などの記号が無いので、線と図形で描く。形は子の扱い方を表す
+    // 日本語フォントには矢印などの記号がないので、線と図形で描く。形は子の扱い方を表す
     const float h = size * 0.5f; // 中心から端まで
     const float c = center.x;
     const float m = center.y;
@@ -479,6 +490,8 @@ void BehaviorTreeWindow::DrawCompositeIcon(ImDrawList *drawList, EditorBTNodeTyp
         break;
     }
 }
+
+
 
 void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const BehaviorTreeComponent *activeAI, float nodeWidth)
 {
@@ -521,6 +534,8 @@ void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const Beha
     ImGui::EndGroup();
 }
 
+
+
 void BehaviorTreeWindow::GetTreeNodeBorder(const EditorBTNode &node, const BehaviorTreeComponent *activeAI,
                                            ImColor &outColor, float &outWidth) const
 {
@@ -548,6 +563,8 @@ void BehaviorTreeWindow::GetTreeNodeBorder(const EditorBTNode &node, const Behav
     outColor = ImColor(60, 60, 60, 255);
     outWidth = 1.0f;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // リンク
@@ -592,10 +609,12 @@ void BehaviorTreeWindow::DrawLinks(const BehaviorTreeComponent *activeAI)
     }
 }
 
+
+
 void BehaviorTreeWindow::FollowRunningNode(const BehaviorTreeComponent *activeAI)
 {
-    // 実行中の見えているノードのうち、末端の Action を優先する。
-    //   親の Sequence なども Running になるが、実際に作業しているのは Action なので。
+    // 実行中の見えているノードのうち、末端の Action を優先する
+    //   親の Sequence なども Running になるが、実際に作業しているのは Action なので
     uint32_t target      = 0;
     bool     foundAction = false;
     for (const auto &node : m_nodes)
@@ -616,7 +635,7 @@ void BehaviorTreeWindow::FollowRunningNode(const BehaviorTreeComponent *activeAI
     if (target == m_lastTrackedNodeId) return;
 
     // ライブラリは「選択へ寄せる」しか持たないので、一瞬だけ対象を選択して寄せ、選択を元に戻す
-    // （インスペクタで見ているノードを奪わない）。倍率は変えない。
+    // （インスペクタで見ているノードを奪わない）。倍率は変えない
     std::vector<ed::NodeId> selected(static_cast<size_t>(ed::GetSelectedObjectCount()));
     selected.resize(static_cast<size_t>(ed::GetSelectedNodes(selected.data(), static_cast<int>(selected.size()))));
 
@@ -630,6 +649,8 @@ void BehaviorTreeWindow::FollowRunningNode(const BehaviorTreeComponent *activeAI
 
     m_lastTrackedNodeId = target;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 入力（リンク作成・削除・メニュー）
@@ -663,8 +684,8 @@ void BehaviorTreeWindow::HandleLinkCreation()
             }
         }
 
-        // 線を何も無い所で離した。繋ぎ元を覚えて、離した場所にノード追加メニューを出す（UE と同じ操作）。
-        //   メニューは Suspend した後でないと画面座標で開けないので、HandleContextMenu へ予約する。
+        // 線を何もない所で離した。繋ぎ元を覚えて、離した場所にノード追加メニューを出す（UE と同じ操作）
+        //   メニューは Suspend した後でないと画面座標で開けないので、HandleContextMenu へ予約する
         ed::PinId pinId = 0;
         if (ed::QueryNewNode(&pinId) && ed::AcceptNewItem())
         {
@@ -674,6 +695,8 @@ void BehaviorTreeWindow::HandleLinkCreation()
     }
     ed::EndCreate();
 }
+
+
 
 void BehaviorTreeWindow::HandleDeletion()
 {
@@ -707,6 +730,8 @@ void BehaviorTreeWindow::HandleDeletion()
     if (deleted) RecordStateForUndo("Delete Node/Link");
 }
 
+
+
 void BehaviorTreeWindow::FitInitialView()
 {
     if (!m_needInitialZoom) return;
@@ -714,11 +739,13 @@ void BehaviorTreeWindow::FitInitialView()
     // ノードの幅と高さが確定するまで待つ（3フレーム目以降）
     if (++m_framesSinceOpen <= 2) return;
 
-    // ノードが無いと NavigateToContent がゼロ除算で壊れる。
-    // 時間 0（即時）にするのは、補間中に NaN が増殖するのを防ぐため。
+    // ノードがないと NavigateToContent がゼロ除算で壊れる
+    // 時間 0（即時）にするのは、補間中に NaN が増殖するのを防ぐため
     if (!m_nodes.empty()) ed::NavigateToContent(0.0f);
     m_needInitialZoom = false;
 }
+
+
 
 namespace
 {
@@ -751,10 +778,12 @@ void BehaviorTreeWindow::LinkNewNodeToPin(uint32_t newNodeId, uint32_t fromPinId
     m_links.push_back({GetNextId(), n->outputPin.id, fromPinId});
 }
 
+
+
 void BehaviorTreeWindow::HandleContextMenu()
 {
     // 処理フロー:
-    // 1. メニューを開く（Space・背景の右クリック・線を何も無い所で離した）
+    // 1. メニューを開く（Space・背景の右クリック・線を何もない所で離した）
     // 2. 項目を出し、選ばれたノードを作る
     // 3. 線から開いたなら、作ったノードを伸ばし元のピンへ繋ぐ
 
@@ -781,7 +810,7 @@ void BehaviorTreeWindow::HandleContextMenu()
         m_newNodeLinkPin  = 0;
     }
 
-    // ピンから伸ばした線を何も無い所で離した（HandleLinkCreation が予約）。離した場所にノードを作る
+    // ピンから伸ばした線を何もない所で離した（HandleLinkCreation が予約）。離した場所にノードを作る
     if (m_openCreateMenuForLink)
     {
         ImGui::OpenPopup("Create New Node");
@@ -796,8 +825,8 @@ void BehaviorTreeWindow::HandleContextMenu()
     {
         ImVec2 canvasPos = ed::ScreenToCanvas(m_newNodeSpawnPos);
 
-        // 線から開いたときは、繋げられる種類だけを選べるようにする。
-        //   入力ピン（子の上辺）から伸ばしたなら新しいノードは親なので、子を持てない種類は選べない。
+        // 線から開いたときは、繋げられる種類だけを選べるようにする
+        //   入力ピン（子の上辺）から伸ばしたなら新しいノードは親なので、子を持てない種類は選べない
         const bool fromLink  = (m_newNodeLinkPin != 0);
         const bool fromInput = fromLink && std::any_of(m_nodes.begin(), m_nodes.end(), [&](const EditorBTNode &n) {
                                    return n.inputPin.id == m_newNodeLinkPin;
@@ -825,7 +854,7 @@ void BehaviorTreeWindow::HandleContextMenu()
         if (!fromLink)
         {
             ImGui::Separator();
-            // 選択ノードを囲むのが本命。空の枠を置いてから手で広げるのは最後の手段。
+            // 選択ノードを囲むのが本命。空の枠を置いてから手で広げるのは最後の手段
             if (ImGui::MenuItem("選択ノードをコメントで囲む", "Ctrl+G")) GroupSelectedNodes();
             if (ImGui::MenuItem("空のコメント枠を置く")) CreateNode(EditorBTNodeType::Group, "コメント", canvasPos.x, canvasPos.y);
 

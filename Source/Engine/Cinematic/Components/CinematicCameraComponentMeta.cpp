@@ -1,5 +1,3 @@
-// CinematicCameraComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Cinematic/Components/CinematicCameraComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

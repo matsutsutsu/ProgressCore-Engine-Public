@@ -1,15 +1,9 @@
 #pragma once
-// ===========================================================================
-// 概要: Jolt の接触1件を ECS の EventBus へ流すためのイベント。
-//
-// 責務:
-//   - 接触した2つの Entity と、接触点・法線・相対速度を持つ
-//
-// 備考: 接触リスナーが物理更新中に溜め、JoltCollisionEventSystem が L05 で配送する。
-// ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
+// Jolt の接触1件を EventBus へ流すイベント
+// 接触リスナーが物理の更新中に溜め、JoltCollisionEventSystem が L05 で配る
 struct JoltCollisionEvent
 {
     CCL::ECS::EntityID entityA;         // 接触した片方（キャラクターの接触では常にキャラクター自身）

@@ -25,7 +25,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
         m_lookTargetID = InvalidEntityID;
 
     // 見つかるまでは毎フレーム探す。プレハブの生成は後回しにされるので、最初の数フレームは
-    // まだ無いことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
+    // まだないことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
     if (m_lookTargetID == InvalidEntityID)
     {
         m_world->ViewEach<NameComponent, TransformComponent>([&](EntityID id) {
@@ -45,6 +45,8 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 
     return CCL::Title::DefaultLookTarget();
 }
+
+
 
 void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
                                      const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
@@ -75,6 +77,8 @@ void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
     if (changed) ++board.revision;
 }
 
+
+
 DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
     const DirectX::SimpleMath::Vector3 &base, const DirectX::SimpleMath::Vector3 &pivot) const
 {
@@ -100,6 +104,8 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
     return eye;
 }
 
+
+
 void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
                                   const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
 {
@@ -120,6 +126,8 @@ void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
@@ -137,6 +145,8 @@ void TitleCameraSystem::Update(float dt)
         ApplyPose(vcam, trans, DriftedEye(base, pivot), pivot);
     });
 }
+
+
 
 void TitleCameraSystem::OnGui()
 {

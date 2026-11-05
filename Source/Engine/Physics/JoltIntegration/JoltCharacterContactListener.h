@@ -1,23 +1,22 @@
 #pragma once
 // ===========================================================================
-// 概要: CharacterVirtual 専用の接触リスナー。接触をイベントにして共有バッファへ積む。
+// 概要: CharacterVirtual 専用の接触リスナー。接触をイベントにして共有バッファへ積む
 //
 // 責務:
 //   - 接触の追加・継続を JoltCollisionEvent にして、JoltContactListener のバッファへ積む
 //   - 背景（壁・床・見えない壁）との接触は捨てる
 //   - 攻撃レイヤーとの接触だけ、計測ログ（HitDiagnostics）を出す
 //
-// 備考: JoltCharacterUpdateSystem が、ExtendedUpdate の間だけキャラクターに付ける。
-//       EventBus へ直接出さず、剛体側と同じバッファへ積む。
-//       物理更新の途中でゲームロジックを走らせないためで、配送は L05 の JoltCollisionEventSystem。
-//       World には触れない（ワーカースレッドとのデータ競合を避ける）。
+// 備考: JoltCharacterUpdateSystem が、ExtendedUpdate の間だけキャラクターに付ける
+//       物理の更新の途中でゲームロジックを走らせないよう、EventBus へは直接出さない。配るのは L05 の JoltCollisionEventSystem
+//       World には触れない（ワーカースレッドと競合する）
 // ===========================================================================
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
 #include <Jolt/Physics/Body/BodyInterface.h>
 
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/Physics/JoltIntegration/JoltContactListener.h" // 収集先バッファ(sink)
+#include "Engine/Physics/JoltIntegration/JoltContactListener.h"
 
 class JoltCharacterContactListener : public JPH::CharacterContactListener
 {
@@ -40,7 +39,7 @@ public:
                                 JPH::CharacterContactSettings &ioSettings) override;
 
     // 接触が続いているフレームに呼ばれる。Added と同じくイベントにして積む
-    // これが無いと、攻撃判定が出る前から重なっていた相手（突進攻撃など）に当たらない
+    // これがないと、攻撃判定が出る前から重なっていた相手（突進攻撃など）に当たらない
     virtual void OnContactPersisted(const JPH::CharacterVirtual   *inCharacter,
                                     const JPH::BodyID             &inBodyID2,
                                     const JPH::SubShapeID         &inSubShapeID2,
@@ -54,10 +53,7 @@ public:
                                   const JPH::SubShapeID       &inSubShapeID2) override;
 
 private:
-    /**
-     * @brief Added / Persisted 共通の処理。接触1件をイベントにして sink へ積む。
-     * @param inPhase 計測ログに出す名前（"Add" / "Persist"）。判定には影響しない。
-     */
+    // Added / Persisted の共通の処理。inPhase は計測ログの表示用（"Add" / "Persist"）
     void EmitContactEvent(const JPH::CharacterVirtual *inCharacter,
                           const JPH::BodyID           &inBodyID2,
                           JPH::RVec3Arg                inContactPosition,

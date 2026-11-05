@@ -1,22 +1,22 @@
 #pragma once
 // ===========================================================================
-// 概要: BT のアクションと条件の基底クラスと、それらに渡す BTContext。
+// 概要: BT のアクションと条件の基底クラスと、それらに渡す BTContext
 //
 // 責務:
 //   - アクションの Execute / CanAbort / OnAbort と、条件の Evaluate を定義する
 //   - world から直接触る Component を、スケジューラへ申告する口を用意する
 //
 // 備考: BTContext はボス固有の Component を持たない。必要なアクションは Execute の中で
-//       ctx.world->GetComponent<T>(ctx.entity) で自分で取る。
-//       そのため BT の評価の処理はボスを知らず、他の敵にも使える。
+//       ctx.world->GetComponent<T>(ctx.entity) で自分で取る
+//       そのため BT の評価の処理はボスを知らず、他の敵にも使える
 // ===========================================================================
 #include <cstdint>
 #include <vector>
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"       // BTNodeState, ActionID, BTNodeID
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/ECS/Common/CCL_TypeInfo.h" // アクセス申告（TypeInfo<T>::ID）
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 
 namespace CCL::ECS{ class World;}
 struct TransformComponent;
@@ -47,8 +47,8 @@ namespace CCL::AI::BT
     }
 
     /**
-     * @brief BT の葉になる行動の基底。ActionID ごとに1つだけ作られ、全エンティティで共有される。
-     * @note 共有されるので、メンバに個体の状態を持たせない。状態は BTContext::bt の nodeTimers などに置く。
+     * @brief BT の葉になる行動の基底。ActionID ごとに1つだけ作られ、全エンティティで共有される
+     * @note 共有されるので、メンバに個体の状態を持たせない。状態は BTContext::bt の nodeTimers などに置く
      */
     class IBTAction
     {
@@ -59,15 +59,15 @@ namespace CCL::AI::BT
         virtual BTNodeState Execute(BTContext &ctx) = 0;
 
         /**
-         * @brief 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる。
-         * @note 拒否するのは、要求が書かれなくなった瞬間に動きが崩れる技だけ（空中の跳躍など）。
+         * @brief 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる
+         * @note 拒否するのは、要求が書かれなくなった瞬間に動きが崩れる技だけ（空中の跳躍など）
          */
         virtual bool CanAbort(BTContext &ctx) const { return true; }
 
         /**
-         * @brief 打ち切られたときの後始末。
-         * @note 打ち切りでは Execute が最後まで走らない。完了時の後始末を Execute に書いた技は、ここにも書く。
-         *       ボス本体への要求（currentActionId）は毎フレーム空にされるので、ここで取り下げなくてよい。
+         * @brief 打ち切られたときの後始末
+         * @note 打ち切りでは Execute が最後まで走らない。完了時の後始末を Execute に書いた技は、ここにも書く
+         *       ボス本体への要求（currentActionId）は毎フレーム空にされるので、ここで取り下げなくてよい
          */
         virtual void OnAbort(BTContext &ctx) {}
 
@@ -78,8 +78,8 @@ namespace CCL::AI::BT
     };
 
     /**
-     * @brief BT の条件ノードの基底。ActionID ごとに1つだけ作られ、全エンティティで共有される。
-     * @note 割り込みの判定でも呼ばれるので、評価しただけで状態が変わる書き方をしない。
+     * @brief BT の条件ノードの基底。ActionID ごとに1つだけ作られ、全エンティティで共有される
+     * @note 割り込みの判定でも呼ばれるので、評価しただけで状態が変わる書き方をしない
      */
     class IBTCondition
     {

@@ -1,26 +1,17 @@
 #pragma once
-// ===========================================================================
-// 概要: ドローンの陣形の種類（DroneFormationType）と、その表示名テーブル。
-//
-// 責務:
-//   - 陣形の一覧（識別子・保存値・表示名）を1つの X マクロ表で持つ
-//   - 表から enum と、インスペクタ用の名前テーブルを作る
-//   - データ陣形の予約枠（33〜48）の範囲を定める
-//
-// 備考: DroneComponent.h から分けてあるのは、この enum だけを使う側（BT のローダ・エディタ）が
-//       ドローンの状態とシリアライズ機構まで読み込まずに済むようにするため。
-// ===========================================================================
+// ドローンの陣形の種類と、その表示名テーブル
+// DroneComponent.h から分けて、enum だけを使う側（BT のローダ・エディタ）の依存を軽くしている
 #include <array>
 #include <cstddef>
 #include <cstdint>
 
-// 陣形の一覧 (識別子, 保存値, 表示名)。enum も表示名もこの表から作る。
+// 陣形の一覧 (識別子, 保存値, 表示名)。enum も表示名もこの表から作る
 //
-// 保存値はプレハブとシーンに保存されるので手で書く。欠番は埋めず、増やすときは 49 以降。
-// 追加時は FormationRegistry への登録も要る（無いと指定しても静止するだけ）。
+// 保存値はプレハブとシーンに保存されるので手で書く。欠番は埋めず、増やすときは 49 以降
+// 追加時は FormationRegistry への登録も要る（ないと指定しても静止するだけ）
 //
-// 33〜48 はデータ陣形（Assets/Formations/*.json）の予約枠。JSON の "slot" の番号へ起動時に入る。
-// 先に確保してあるので、エディタで技を作るたびにリビルドせずに済む。
+// 33〜48 はデータ陣形（Assets/Formations/*.json）の予約枠。JSON の "slot" の番号へ起動時に入る
+// 先に確保してあるので、エディタで技を作るたびにリビルドせずに済む
 #define DRONE_FORMATION_LIST(X)                               \
     X(None, 0, "命令なし（現状維持）")                        \
     X(LowOrbit, 1, "低空円陣")                                \
@@ -49,7 +40,7 @@
     X(DataSlot14, 47, "[空き枠] 枠14")                        \
     X(DataSlot15, 48, "[空き枠] 枠15")
 
-// ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う。
+// ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う
 enum class DroneFormationType : uint8_t
 {
 #define CCL_DRONE_FORMATION_ENUM(Name, Value, Display) Name = Value,
@@ -64,7 +55,7 @@ inline constexpr size_t kDroneFormationSlotCount = 49;
 inline constexpr uint8_t kDataFormationSlotFirst = 33;
 inline constexpr uint8_t kDataFormationSlotLast  = 48;
 
-// インスペクタ表示用の陣形名。欠番は "(欠番)" で埋める。
+// インスペクタ表示用の陣形名。欠番は "(欠番)" で埋める
 static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
 {
     std::array<const char *, kDroneFormationSlotCount> names{};

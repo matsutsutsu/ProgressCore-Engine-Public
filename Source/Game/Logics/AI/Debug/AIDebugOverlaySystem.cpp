@@ -1,9 +1,9 @@
 #include "AIDebugOverlaySystem.h"
 
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
-#include "Game/Logics/AI/Battle/BattleContext.h" // ドローン残数
-#include "Game/Logics/Combat/Components/HealthComponent.h"  // ボスHP
-#include "Engine/UI/ECS/GameViewportInfo.h"      // エディタでゲーム画面を表示している矩形
+#include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/Combat/Components/HealthComponent.h"
+#include "Engine/UI/ECS/GameViewportInfo.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -20,22 +20,22 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // ゲーム画面が映っている矩形（ImGui の画面座標）。
+    // ゲーム画面が映っている矩形（ImGui の画面座標）
     struct ScreenRect
     {
         float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
     };
 
     /**
-     * @brief ワールド座標を画面座標へ変換する。
+     * @brief ワールド座標を画面座標へ変換する
      *
-     * Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる。
+     * Vector3::Transform(coord) は w 除算込みなので、結果はそのまま NDC になる
      *
-     * @param world    変換する位置（ワールド）。
-     * @param viewProj ビュー × プロジェクション行列。
-     * @param rect     描画先の画面の矩形（px）。
-     * @param out      画面座標（px）を受け取る。
-     * @return 描ける位置なら true。カメラの後ろ・奥の切り捨て面より先なら false。
+     * @param world    変換する位置（ワールド）
+     * @param viewProj ビュー × プロジェクション行列
+     * @param rect     描画先の画面の矩形（px）
+     * @param out      画面座標（px）を受け取る
+     * @return 描ける位置なら true。カメラの後ろ・奥の切り捨て面より先なら false
      */
     bool WorldToScreen(const Vector3 &world, const Matrix &viewProj, const ScreenRect &rect, ImVec2 &out)
     {
@@ -47,7 +47,9 @@ namespace
         return true;
     }
 
-    // 黒い縁取り付きで文字を描く。背景が明るくても暗くても読めるようにする。
+
+
+    // 黒い縁取り付きで文字を描く。背景が明るくても暗くても読めるようにする
     void DrawOutlinedText(ImDrawList *drawList, ImFont *font, float size, const ImVec2 &pos, ImU32 col,
                           const char *text)
     {
@@ -57,16 +59,18 @@ namespace
         drawList->AddText(font, size, pos, col, text);
     }
 
+
+
     /**
-     * @brief 頭上に出す行動名を返す。BT が今 Running にしている行動を優先する。
+     * @brief 頭上に出す行動名を返す。BT が今 Running にしている行動を優先する
      *
-     * lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように書かない行動の間は前の技の名前が残る。
-     * 突進の後の待機中も「突進攻撃」と出続ける。
+     * lastLogActionId（行動が自分で書く「最後に実行した行動」）だけだと、A_Wait のように書かない行動の間は前の技の名前が残る
+     * 突進の後の待機中も「突進攻撃」と出続ける
      *
-     * runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す。
+     * runningNodeId は評価が子から先に返るので、実際に動いている末端の行動を指す
      *
-     * @param bt 表示する BT。
-     * @return 行動名（文字列リテラルか ActionRegistry の文字列）。停止中は "(AI 停止中)"、何も無ければ "Idle"。
+     * @param bt 表示する BT
+     * @return 行動名（文字列リテラルか ActionRegistry の文字列）。停止中は "(AI 停止中)"、何もなければ "Idle"
      */
     const char *CurrentActionName(const BehaviorTreeComponent &bt)
     {
@@ -79,10 +83,12 @@ namespace
                 if (const ActionEntry *e = FindActionEntry(node.actionOrConditionId)) return e->name;
         }
 
-        // Running の行動が無いフレーム（即 Success の行動だけで終わった等）は、最後に実行した行動を出す。
+        // Running の行動がないフレーム（即 Success の行動だけで終わった等）は、最後に実行した行動を出す
         if (const ActionEntry *e = FindActionEntry(bt.lastLogActionId)) return e->name;
         return "Idle";
     }
+
+
 
     ImU32 ToImColor(const DirectX::XMFLOAT4 &c)
     {
@@ -98,8 +104,8 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     if (!m_enabled && !m_showScores) return;
 
     // --- 投影先の矩形を決める ---
-    //   エディタ: ゲームは GameView パネル内の矩形に画像として表示されるので、その矩形へ変換する。
-    //   フルスクリーン / 矩形が取れないとき: OS のウィンドウ全体を使う。
+    //   エディタ: ゲームは GameView パネル内の矩形に画像として表示されるので、その矩形へ変換する
+    //   フルスクリーン / 矩形が取れないとき: OS のウィンドウ全体を使う
     const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
     ScreenRect   rect;
     if (m_world->HasResource<GameViewportInfo>() && m_world->GetResource<GameViewportInfo>().valid)
@@ -141,7 +147,7 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     ImDrawList *drawList = ImGui::GetForegroundDrawList();
     ImFont     *font     = ImGui::GetFont();
 
-    // プレイヤーが居るか（距離の行を出すか・頭上をどれだけ持ち上げるか）を見るのに使う。
+    // プレイヤーがいるか（距離の行を出すか・頭上をどれだけ持ち上げるか）を見るのに使う
     const BattleContext *battle = m_world->HasResource<BattleContext>() ? &m_world->GetResource<BattleContext>() : nullptr;
 
     auto view = m_world->View<BossPhaseComponent, BehaviorTreeComponent, TransformComponent>();
@@ -154,12 +160,12 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
 
         const bool hasPlayer = battle && battle->HasPlayer();
 
-        // 距離は自分で測り直さず、BT の距離条件が比べている blackboard の値をそのまま使う。
-        // 測り直すと、測る点（足元か中心か）や更新のタイミングが違ったときに、表示と判定が食い違う。
+        // 距離は自分で測り直さず、BT の距離条件が比べている blackboard の値をそのまま使う
+        // 測り直すと、測る点（足元か中心か）や更新のタイミングが違ったときに、表示と判定が食い違う
         const float distance = hasPlayer ? bt->blackboard.distanceToTarget : 0.0f;
 
         // --- 頭上の位置 ---
-        //   離れるほど高く出す（プレイヤーが居なければ足さない）。
+        //   離れるほど高く出す（プレイヤーがいなければ足さない）
         Vector3 worldPos = trans->position;
         worldPos.y += m_headOffsetY + distance * m_headOffsetPerMeter;
 
@@ -184,10 +190,10 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
         // 2) 行動（BT）：今 Running にしている行動：白
         lines[lineCount++] = {CurrentActionName(*bt), IM_COL32(255, 255, 255, 255)};
 
-        // 3) 距離：行動のすぐ下に置き、「この距離だからこの行動を選んだ」を続けて読めるようにする。
+        // 3) 距離：行動のすぐ下に置き、「この距離だからこの行動を選んだ」を続けて読めるようにする
         //    色は今いる帯（地面に塗られている帯）の色。赤なら「〜m 未満」、青なら「〜m 超」の
-        //    条件が通っている帯なので、数字の色だけで「今どちら側の枝が選ばれうるか」が読める。
-        //    どのリングよりも外なら白。
+        //    条件が通っている帯なので、数字の色だけで「今どちら側の枝が選ばれうるか」が読める
+        //    どのリングよりも外なら白
         char distanceText[32];
         if (m_showDistance && hasPlayer)
         {
@@ -243,9 +249,11 @@ void AIDebugOverlaySystem::Update(float /*dt*/)
     }
 }
 
+
+
 void AIDebugOverlaySystem::OnGui()
 {
-    // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す。
+    // 別ウィンドウは作らず、System Manager の各システム欄（このヘッダ配下）に直接出す
     ImGui::Checkbox("Show Floating Text", &m_enabled);
     ImGui::SliderFloat("Font Size", &m_fontSize, 10.0f, 100.0f);
     ImGui::SliderFloat("Head Offset Y", &m_headOffsetY, 0.0f, 15.0f);
@@ -268,6 +276,8 @@ void AIDebugOverlaySystem::OnGui()
     ImGui::TextDisabled("灰色の行 = 候補外。抽選確率の欄に理由（CD 残り秒 / 条件 / 距離外 / 0点）");
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 技選択のパネル
 // ---------------------------------------------------------------------------
@@ -279,10 +289,9 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
     // 2. それまでの選択の表を作る
     // 3. 2つの表を縦に並べて描く
 
-    // 【備考】
-    //   数字はどれも技を選んだ瞬間のもの（BehaviorTreeSystem::RecordUtilityPick が写したもの）。
-    //   毎フレームの点数ではないので、技を出している間は止まって見える。
-    //   「何秒前」は木を評価した時間で数える（一時停止・カットシーン中は進まない）。
+    // 数字はどれも技を選んだ瞬間のもの（BehaviorTreeSystem::RecordUtilityPick が写したもの）
+    // 毎フレームの点数ではないので、技を出している間は止まって見える
+    // 「何秒前」は木を評価した時間で数える（一時停止・カットシーン中は進まない）
 
     if (!bt.sharedAsset)
     {
@@ -309,7 +318,7 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
         return bt.debugPickLog[(bt.debugPickCount - 1 - back) % kPickLogSize];
     };
 
-    // 確率のセルの文字列。割り込みで選ばれた子は抽選していないので確率ではなく「割り込み」。
+    // 確率のセルの文字列。割り込みで選ばれた子は抽選していないので確率ではなく「割り込み」
     // 確率 0 は上位3つの外から繰り上がって選ばれた子
     auto chanceText = [&](const BTScoreDebug &row) {
         if (row.interrupted)
@@ -324,7 +333,7 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
         return std::string(buf);
     };
 
-    // 候補外の子の理由を、抽選確率の列に入れる短い文字にする。
+    // 候補外の子の理由を、抽選確率の列に入れる短い文字にする
     // 列を足すと候補外が出るたびに表の幅が変わるので、見出し「抽選確率」の幅（全角4文字）に収める
     auto excludedText = [&](const BTScoreDebug &row) {
         switch (row.state)
@@ -361,8 +370,8 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
     result.headers    = {"技", "抽選確率", "点数", "優先度", "距離", "状況", "減点"};
     result.rightAlign = {false, true, true, true, true, true, true};
 
-    // 候補が3つに足りないと、空いた枠に候補外の子が入っている（RecordUtilityPick）。
-    // 候補外の子には抽選確率が無いので、その欄に理由を書く
+    // 候補が3つに足りないと、空いた枠に候補外の子が入っている（RecordUtilityPick）
+    // 候補外の子には抽選確率がないので、その欄に理由を書く
     for (int i = 0; i < latest.rowCount; ++i)
     {
         const BTScoreDebug &row       = latest.rows[i];
@@ -445,6 +454,8 @@ float AIDebugOverlaySystem::DrawScorePanel(const BehaviorTreeComponent &bt, floa
     return bottom - top;
 }
 
+
+
 float AIDebugOverlaySystem::DrawPanelTable(const PanelTable &table, float left, float top, float &inOutWidth)
 {
     // 処理フロー:
@@ -452,9 +463,8 @@ float AIDebugOverlaySystem::DrawPanelTable(const PanelTable &table, float left, 
     // 2. 見出しを描く
     // 3. 表（列の見出し・行・罫線）を描く
 
-    // 【備考】
-    //   背景は描かない（DrawScorePanel が全部の表の下に1枚敷く）。
-    //   色と点数の読み方は画面に出さず、System Manager の OnGui に書く（パネルを小さく保つため）。
+    // 背景は描かない（DrawScorePanel が全部の表の下に1枚敷く）
+    // 色と点数の読み方は画面に出さず、System Manager の OnGui に書く（パネルを小さく保つため）
 
     ImDrawList *drawList = ImGui::GetForegroundDrawList();
     ImFont     *font     = ImGui::GetFont();
@@ -567,6 +577,8 @@ float AIDebugOverlaySystem::DrawPanelTable(const PanelTable &table, float left, 
     return y - top;
 }
 
+
+
 const char *AIDebugOverlaySystem::TechniqueName(const BTAsset &asset, BTNodeID nodeId)
 {
     if (nodeId >= asset.nodes.size())
@@ -585,10 +597,12 @@ const char *AIDebugOverlaySystem::TechniqueName(const BTAsset &asset, BTNodeID n
         return asset.nodeNames[id].c_str();
     }
 
-    // 名前が無い（エディタで名前を付けていない・名前を書き出す前の古いファイル）
+    // 名前がない（エディタで名前を付けていない・名前を書き出す前の古いファイル）
     const char *name = FirstActionName(asset, nodeId);
     return name ? name : "(名前なし)";
 }
+
+
 
 const char *AIDebugOverlaySystem::FirstActionName(const BTAsset &asset, BTNodeID nodeId)
 {
@@ -610,12 +624,16 @@ const char *AIDebugOverlaySystem::FirstActionName(const BTAsset &asset, BTNodeID
     return nullptr;
 }
 
+
+
 float AIDebugOverlaySystem::BasePriority(const BTAsset &asset, BTNodeID nodeId)
 {
     const BTNode &node = asset.nodes[nodeId];
     return (node.scoreRuleIndex >= 0) ? asset.scoreRules[node.scoreRuleIndex].base : node.weight;
 }
 
-// ImGui::NewFrame の後（SceneManager::Render の中）に走らせる必要があるので、Render ステージに置く。
-// R10_UI は最後の段なので、頭上のテキストが他の描画に隠れない。
+
+
+// ImGui::NewFrame の後（SceneManager::Render の中）に走らせる必要があるので、Render ステージに置く
+// R10_UI は最後の段なので、頭上のテキストが他の描画に隠れない
 REGISTER_DEBUG_RENDER_SYSTEM(AIDebugOverlaySystem, Priority::RenderStage::R10_UI);

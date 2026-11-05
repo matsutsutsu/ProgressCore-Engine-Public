@@ -1,13 +1,7 @@
 #pragma once
-// ===========================================================================
-// 概要: HP と無敵時間を持つコンポーネント。
-//
-// 責務:
-//   - 最大 HP・今の HP・無敵時間の長さと残りを持つ
-//
-// 備考: 敵か味方かは持たない。命中の敵味方は物理レイヤー（PLAYER_ATTACK / BOSS_ATTACK）が分ける。
-// ===========================================================================
 
+// HP と無敵時間
+// 敵か味方かは持たない。命中の敵味方は物理レイヤー（PLAYER_ATTACK / BOSS_ATTACK）が分ける
 struct HealthComponent
 {
     float maxHealth             = 100.0f;
@@ -15,7 +9,7 @@ struct HealthComponent
     float invincibilityTimer    = 0.0f; // 無敵の残り時間（秒）。DamageResolutionSystem が始め、HealthSystem が減らす
     float invincibilityDuration = 0.5f; // 被弾したときの無敵の長さ（秒）
 
-    // 倒れたときのスローを1体につき1回だけ出すためのフラグ（保存しない）。
+    // 倒れたときのスローを1体につき1回だけ出すためのフラグ（保存しない）
     // DefeatSlowMotionSystem が倒れたのを見つけたときに true にする
     bool deathFxFired = false;
 };

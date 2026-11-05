@@ -1,18 +1,14 @@
 #pragma once
-// ===========================================================================
-// 概要: ボスの BT が出した指示を持つ Component。
-//       （本体の技・ドローンの陣形・攻撃信号）
-//       BT のアクションが書き、
-//       BossActionSystem と DroneCommandSystem が読む。
-// ===========================================================================
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h" // ActionID
-#include "Game/Logics/AI/Drone/Components/DroneComponent.h"     // DroneFormationType
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 
+// ボスの BT が出した指示（本体の技・ドローンの陣形・攻撃信号）
+// BT のアクションが書き、BossActionSystem と DroneCommandSystem が読む
 struct BossCommandComponent
 {
     DroneFormationType requestFormation = DroneFormationType::None; // ドローンに組ませたい陣形
 
-    // 本体に出させたい技。0 は何もしない。
+    // 本体に出させたい技。0 は何もしない
     // BossPhaseSystem が毎フレーム 0 に戻す
     ActionID currentActionId    = 0;
     float    currentActionParam = 0.0f; // 技のノードの param（横移動の距離など）

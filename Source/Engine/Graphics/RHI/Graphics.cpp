@@ -83,6 +83,8 @@ void Graphics::Initialize(HWND hWnd)
     SetupRenderPipeline();
 }
 
+
+
 void Graphics::SetupRenderPipeline()
 {
     // パイプラインへ渡す永続サービスを埋める
@@ -116,7 +118,8 @@ void Graphics::SetupRenderPipeline()
     OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
 }
 
-// 既定の 3D シーン用のパス構成。登録順がそのまま実行順になる。
+
+
 void Graphics::BuildDefaultRenderPasses()
 {
     // TODO(2026-09-10): ローディング画面など軽い構成が要るシーン用に、別の Build*RenderPasses を用意して切り替えられるようにする
@@ -135,11 +138,12 @@ void Graphics::BuildDefaultRenderPasses()
     m_pipeline.AddPass<PostProcessPass>();                   // 12. ポストプロセス・最終出力
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 毎フレーム
 // ---------------------------------------------------------------------------
 
-// CbScene を書くのはここだけ。EnvironmentSystem はバインドするだけ。
 void Graphics::Update()
 {
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
@@ -147,11 +151,8 @@ void Graphics::Update()
 #endif
 
     // ------------------------------------------------------------------
-    // カメラのアスペクト比をバックバッファの実寸に合わせる。
-    //   CameraBrainSystem は GetAspect() を読んでそのまま書き戻すだけなので、
-    //   ここで合わせないと、ウィンドウサイズが変わったときに絵が横に伸びる。
-    //   アスペクトを更新するのはここだけにしておき、リサイズ処理を足してもカメラ側は触らずに済むようにする。
-    //   （fovY が 0 のうちは透視投影がまだ設定されていないので触らない）
+    // カメラのアスペクト比をバックバッファの実寸に合わせる（更新するのはここだけ）。合わせないと、ウィンドウの大きさが変わると絵が伸びる
+    // fovY が 0 のうちは、透視投影がまだ設定されていないので触らない
     // ------------------------------------------------------------------
     if (m_gfxDevice.GetHeight() > 0.0f && m_mainCamera.GetFovY() > 0.0f)
     {
@@ -208,6 +209,8 @@ void Graphics::Update()
     m_gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
 }
 
+
+
 void Graphics::Render(const RenderFrameContext &ctx)
 {
     // このスコープの D3D11 の描画コマンドを、Tracy の GPU タイムラインに記録する
@@ -216,6 +219,8 @@ void Graphics::Render(const RenderFrameContext &ctx)
     m_pipeline.Execute(ctx);
     UnbindAllResources(ctx.dc);
 }
+
+
 
 RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRTV) noexcept
 {
@@ -232,6 +237,8 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRT
     ctx.viewportH      = m_gfxDevice.GetHeightU();
     return ctx;
 }
+
+
 
 void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 {
@@ -252,6 +259,8 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
     dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 終了・画面への表示・デバイスロストからの復帰
 // ---------------------------------------------------------------------------
@@ -259,7 +268,7 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 void Graphics::Shutdown()
 {
     // ==============================================================
-    // 1. シングルトン（ResourceManager・ShaderRegistry）が持つ GPU リソースを解放する。
+    // 1. シングルトン（ResourceManager・ShaderRegistry）が持つ GPU リソースを解放する
     //    デバイスを壊す前に行う必要がある
     // ==============================================================
     ResourceManager::Instance().ClearAll();
@@ -292,7 +301,8 @@ void Graphics::Shutdown()
     m_gfxDevice.Shutdown();
 }
 
-// DXGI_ERROR_DEVICE_REMOVED / DEVICE_RESET を受け取ったら false を返す
+
+
 bool Graphics::Present(UINT syncInterval)
 {
     HRESULT hr = m_gfxDevice.Present(syncInterval);
@@ -318,8 +328,8 @@ bool Graphics::Present(UINT syncInterval)
     return true;
 }
 
-// HWND を控え、Shutdown()（ShaderRegistry・ResourceManager も空にする）の後に
-// Initialize() で新しいデバイスから全部作り直す。
+
+
 bool Graphics::RecoverFromDeviceLost()
 {
 
@@ -342,11 +352,7 @@ bool Graphics::RecoverFromDeviceLost()
     Shutdown();
 
     // ---- 3. 新しいデバイスで作り直す ----
-    // Initialize() が行う:
-    //   - 新しい D3D11 デバイスとスワップチェーンを作る
-    //   - シェーダーのファクトリを登録し直す
-    //   - SetupRenderPipeline() でパイプラインとパスを組み直す
-    // シェーダー本体は、GetShader() が最初に呼ばれたときに .cso から読み直される
+    // デバイス・スワップチェーン・パイプラインを作り直す。シェーダーは、最初に GetShader を呼んだときに .cso から読み直される
     Initialize(hWnd);
 
     OutputDebugStringA("[Graphics] ===== Device Lost Recovery: COMPLETE =====\n");

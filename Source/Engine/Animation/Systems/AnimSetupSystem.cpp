@@ -11,8 +11,7 @@ void AnimSetupSystem::Update(float /*dt*/)
     // 1. 足りないコンポーネントを持つ Entity を集める
     // 2. 走査が終わってから付ける
 
-    // 【備考】
-    //   コンポーネントの追加（アーキタイプの移動）を走査中に行うとイテレータが壊れるので、2 段に分ける
+    // コンポーネントの追加（アーキタイプの移動）を走査中に行うとイテレータが壊れるので、2 段に分ける
 
     std::vector<EntityID> needsParams;
     std::vector<EntityID> needsStateMachine;
@@ -22,9 +21,9 @@ void AnimSetupSystem::Update(float /*dt*/)
     // 1. 対象を集める
     // ---------------------------------------------------------
 
-    // SetExclude は使わず、足りないものを個別に調べる。
+    // SetExclude は使わず、足りないものを個別に調べる
     //   SetExclude<A, B, C>() は「どれか 1 つでも持っていたら除外」なので、
-    //   AnimStateMachine だけをプレハブに書いた Entity が残り 2 つを受け取れなくなる。
+    //   AnimStateMachine だけをプレハブに書いた Entity が残り 2 つを受け取れなくなる
     //   対象はキャラだけで数も少ないので、毎ステップ HasComponent で調べても十分軽い
     ForEachWithID([&](EntityID id, const AnimatorComponent &animator) {
         if (!m_world->HasComponent<AnimParametersComponent>(id))

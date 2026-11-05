@@ -1,7 +1,7 @@
 #include "Game/UI/HUD/TutorialHintHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -10,8 +10,8 @@
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/Input/InputIconComponent.h"
-#include "Game/UI/Common/UiPrefabUtil.h"         // FindChildByName
-#include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーが現れてから作る
+#include "Game/UI/Common/UiPrefabUtil.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 using namespace CCL::ECS;
 
@@ -51,7 +51,7 @@ void TutorialHintHudSystem::Update(float dt)
     }
     if (m_rootID == InvalidEntityID) return;
 
-    // プレハブのルートにスタイルが無ければ、コンポーネントの既定値で動かす
+    // プレハブのルートにスタイルがなければ、コンポーネントの既定値で動かす
     static const TutorialHintStyleComponent kDefaultStyle{};
     const auto *stylePtr = m_world->GetComponent<TutorialHintStyleComponent>(m_rootID);
     const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
@@ -100,7 +100,6 @@ void TutorialHintHudSystem::Update(float dt)
 
 
 
-// アイコンと文言を書き、文の幅に合わせて並べ直す
 void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style)
 {
     const bool        useAssist = assist && def.assistText;
@@ -172,7 +171,6 @@ void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, c
 
 
 
-// 今の項目の進み具合をゲージに映す
 void TutorialHintHudSystem::UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
 {
     // 一気に伸ばすと増えたことが目に入らないので、滑らかに寄せる
@@ -189,7 +187,6 @@ void TutorialHintHudSystem::UpdateGauge(const TutorialState &state, const Tutori
 
 
 
-// 「今だ」の間だけ、押すボタンを画面の中央に大きく出す
 void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
 {
     // 下の帯まで目を動かさなくても、押すボタンが分かるように中央に出す
@@ -215,7 +212,6 @@ void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, const Tu
 // 部品の操作
 // ---------------------------------------------------------------------------
 
-// 部品の位置と大きさを書く（x は左端、y は中心。どちらも帯の中心から）
 void TutorialHintHudSystem::SetRect(EntityID id, float x, float y, float width, float height)
 {
     auto *t = m_world->GetComponent<UITransformComponent>(id);
@@ -234,7 +230,6 @@ void TutorialHintHudSystem::SetAlpha(EntityID id, float alpha)
 
 
 
-// 文字の幅を見積もる（半角は高さの半分、全角は高さと同じ幅）
 float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelSize)
 {
     float width = 0.0f;
@@ -254,7 +249,6 @@ float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelS
 // 生成
 // ---------------------------------------------------------------------------
 
-// TutorialHint プレハブを生成し、部品の子を名前で引く
 void TutorialHintHudSystem::SpawnHud()
 {
     // 失敗しても試すのは1回だけにする
@@ -284,5 +278,7 @@ void TutorialHintHudSystem::SpawnHud()
     m_textID    = find("TutorialHintText");
     m_nowIconID = find("TutorialHintNowIcon");
 }
+
+
 
 // 全体登録（REGISTER_*）はせず、TutorialScene が登録する

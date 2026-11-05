@@ -1,19 +1,10 @@
 #pragma once
 // ===========================================================================
-// 概要: ドローン1機ぶんの状態（DroneComponent）と、そのフィールドの型。
+// 概要: ドローン1機ぶんの状態（DroneComponent）と、そのフィールドの型
 //
-// 責務:
-//   - 判断層・陣形・移動層など、ドローン系 System 間で受け渡す状態を持つ
-//   - 物理ステート（DroneState）・突撃の移動方式（ChargeMode）を定義する
-//
-// 備考:
-//   群れ全体で1つだけ持つ値（床の高さ・突撃速度倍率）は DroneTuning.h にある。
-//
-//   1つのフィールドを同じステージで書く System は1つだけにする。
-//   1000機を ForEachParallel で回せるのはこの規則があるからで、破るとデータ競合になる。
-//   各区分の「書き手=…」は主な書き手で、別ステージから書くフィールドもある（chargeWindup など）。
-//
-//   [RT] は実行時専用（セーブにもプレハブにも保存しない）。
+// 備考: 1つのフィールドを同じステージで書く System は1つだけにする
+//       1000機を ForEachParallel で回せるのはこの規則があるからで、破るとデータ競合になる
+//       [RT] は実行時専用で保存しない。群れ全体で1つの値は DroneTuning.h に置く
 // ===========================================================================
 #include <array>
 #include <cstdint>
@@ -22,7 +13,7 @@
 #include "Engine/Serialization/Meta/ComponentMeta.h"
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Serialization/Core/EntityLink.h"
-#include "Game/Logics/AI/Drone/Components/DroneFormationType.h" // 陣形の種類（BT側と共有するので別ヘッダ）
+#include "Game/Logics/AI/Drone/Components/DroneFormationType.h"
 
 // ドローン個体の物理ステート。書き手は DroneBrainSystem のみ
 enum class DroneState : uint8_t

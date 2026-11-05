@@ -24,6 +24,8 @@ namespace
         return out;
     }
 
+
+
     // UTF-16 -> UTF-8
     std::string WideToUtf8(std::wstring_view w)
     {
@@ -37,6 +39,8 @@ namespace
         return out;
     }
 
+
+
     // --- 状態 ---
 
     // 履歴: contextId -> 最後に開いたフォルダ
@@ -47,11 +51,7 @@ namespace
 
     // --- ヘルパー ---
 
-    /**
-     * @brief ファイルの種類の一覧を Win32 OFN の lpstrFilter 形式に変換する。
-     * @param filters ファイルの種類の一覧。
-     * @return "Label\0Pattern\0Label2\0Pattern2\0\0" の形の文字列。
-     */
+    // ファイルの種類の一覧を、OFN の lpstrFilter の形（"Label\0Pattern\0...\0\0"）にする
     std::wstring BuildFilterStringW(const std::vector<FileFilter> &filters)
     {
         std::wstring result;
@@ -77,6 +77,8 @@ namespace
         return result;
     }
 
+
+
     // 履歴キーを決める: contextId > title > "Default"
     std::string ResolveContextId(const FileDialogParams &params)
     {
@@ -84,6 +86,8 @@ namespace
         if (!params.title.empty()) return params.title;
         return "Default";
     }
+
+
 
     // 初期フォルダを決める（優先度順）:
     //   1. params.initialPath（ファイル指定ならその親、フォルダならそのまま）
@@ -117,6 +121,8 @@ namespace
         return {};
     }
 
+
+
     // 選択されたパスのフォルダ部分を履歴に残す
     void StoreHistory(const std::string &contextId, const std::filesystem::path &selected)
     {
@@ -125,6 +131,8 @@ namespace
         s_history[contextId] = dir;
     }
 
+
+
     // パス区切りを Windows 用（バックスラッシュ）に揃える
     std::wstring NormalizeSeparatorW(std::wstring s)
     {
@@ -132,6 +140,8 @@ namespace
             if (c == L'/') c = L'\\';
         return s;
     }
+
+
 
     // 絶対パスをカレントディレクトリ基準の相対パスに変換する（履歴の保存用）
     std::filesystem::path MakeRelative(const std::filesystem::path &p)
@@ -146,6 +156,8 @@ namespace
             return p;
         }
     }
+
+
 
     // 相対パスを絶対パスへ戻す（履歴の読み込み用）
     std::filesystem::path MakeAbsolute(const std::filesystem::path &p)
@@ -226,6 +238,8 @@ void FileDialog::Initialize(const std::filesystem::path &settingsPath)
     LoadHistory(settingsPath);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 基本 API
 // ---------------------------------------------------------------------------
@@ -256,9 +270,9 @@ namespace
 
         OPENFILENAMEW ofn{};
         ofn.lStructSize = sizeof(ofn);
-        // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする。
-        //   オーナー無しのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
-        //   ゲームループを止めたまま前面に出ず、フリーズしたように見えるため。
+        // オーナー窓が未指定なら、現在アクティブなアプリ窓を親にする
+        //   オーナーなしのモーダルダイアログはゲーム窓の裏に隠れ、単一スレッドの
+        //   ゲームループを止めたまま前面に出ず、フリーズしたように見えるため
         ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
         ofn.lpstrFilter     = wFilter.c_str();
         ofn.nFilterIndex    = 1;
@@ -286,7 +300,7 @@ namespace
         std::vector<std::filesystem::path> paths;
         if (!ret) return paths;
 
-        // 複数選択のときは "フォルダ\0ファイル1\0ファイル2\0\0" で返る。
+        // 複数選択のときは "フォルダ\0ファイル1\0ファイル2\0\0" で返る
         // 1つだけ選んだときは、単一選択と同じくフルパス1つが返る
         const wchar_t *p = fileBuf.data() + std::wcslen(fileBuf.data()) + 1;
         if (!multiSelect || *p == L'\0')
@@ -315,10 +329,14 @@ std::optional<std::filesystem::path> FileDialog::Open(const FileDialogParams &pa
     return paths.front();
 }
 
+
+
 std::vector<std::filesystem::path> FileDialog::OpenMulti(const FileDialogParams &params)
 {
     return ShowOpenDialog(params, true);
 }
+
+
 
 std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &params)
 {
@@ -329,7 +347,7 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &pa
     const std::wstring wFilter     = BuildFilterStringW(params.filters);
     const std::wstring wInitialDir = NormalizeSeparatorW(initialDir.wstring());
 
-    // 既定拡張子（params で指定が無ければプリセットから補う）
+    // 既定拡張子（params で指定がなければプリセットから補う）
     std::wstring wExt = Utf8ToWide(params.defaultExt);
     if (wExt.empty())
     {
@@ -357,7 +375,7 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &pa
 
     OPENFILENAMEW ofn{};
     ofn.lStructSize = sizeof(ofn);
-    // オーナー窓が未指定なら現在アクティブなアプリ窓を親にする（Open 側と同じ理由）。
+    // オーナー窓が未指定なら現在アクティブなアプリ窓を親にする（Open 側と同じ理由）
     ofn.hwndOwner       = params.ownerHwnd ? params.ownerHwnd : ::GetActiveWindow();
     ofn.lpstrFilter     = wFilter.c_str();
     ofn.nFilterIndex    = 1;
@@ -383,6 +401,8 @@ std::optional<std::filesystem::path> FileDialog::Save(const FileDialogParams &pa
     StoreHistory(contextId, selected);
     return selected;
 }
+
+
 
 std::string FileDialog::ConvertToRelativePath(const std::filesystem::path &absolutePath)
 {
@@ -411,6 +431,8 @@ std::string FileDialog::ConvertToRelativePath(const std::filesystem::path &absol
     return relativeStr;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // プリセット
 // ---------------------------------------------------------------------------
@@ -419,6 +441,8 @@ void FileDialog::RegisterPreset(std::string_view contextId, const FileDialogPres
 {
     s_presets[std::string(contextId)] = preset;
 }
+
+
 
 std::optional<std::filesystem::path> FileDialog::OpenPreset(
     std::string_view contextId, std::string_view title, HWND ownerHwnd)
@@ -433,6 +457,8 @@ std::optional<std::filesystem::path> FileDialog::OpenPreset(
     }
     return Open(p);
 }
+
+
 
 std::optional<std::filesystem::path> FileDialog::SavePreset(
     std::string_view contextId, std::string_view title,
@@ -451,6 +477,8 @@ std::optional<std::filesystem::path> FileDialog::SavePreset(
     return Save(p);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 履歴
 // ---------------------------------------------------------------------------
@@ -462,6 +490,8 @@ void FileDialog::ClearHistory(std::string_view contextId)
     else
         s_history.erase(std::string(contextId));
 }
+
+
 
 void FileDialog::LoadHistory(const std::filesystem::path &settingsPath)
 {
@@ -485,6 +515,8 @@ void FileDialog::LoadHistory(const std::filesystem::path &settingsPath)
         // 壊れていたら履歴なしで起動する
     }
 }
+
+
 
 void FileDialog::SaveHistory(const std::filesystem::path &settingsPath)
 {

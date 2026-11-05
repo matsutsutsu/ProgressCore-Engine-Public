@@ -3,17 +3,17 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 
 #include "Engine/UI/ECS/Components/UIProgressBarComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Game/Logics/AI/Battle/BattleContext.h"                      // ドローンの生存数
-#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h" // 第2形態へ移る HP の割合
+#include "Game/Logics/AI/Battle/BattleContext.h"
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/UI/HUD/BossHudStyleComponent.h"
-#include "Game/UI/Common/UiPrefabUtil.h" // FindChildByName
-#include "Game/UI/Debug/GaugeLabGui.h"   // OnGui の HP ボタン
+#include "Game/UI/Common/UiPrefabUtil.h"
+#include "Game/UI/Debug/GaugeLabGui.h"
 
 #include <algorithm>
 #include <cmath>
@@ -36,7 +36,7 @@ namespace
 void BossHealthHudSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. HP が残っているボスを1体選ぶ（居なければまとめて隠して終わる）
+    // 1. HP が残っているボスを1体選ぶ（いなければまとめて隠して終わる）
     // 2. ボスが初めて出たフレームに、BossHud プレハブを生成する
     // 3. 割合と、第2形態の目印・外側の光を書く
     // 4. ドローンの残り数を書く
@@ -86,7 +86,7 @@ void BossHealthHudSystem::Update(float dt)
     }
     if (!bar) return;
 
-    // プレハブのルートにスタイルが無ければ、既定値で動かす
+    // プレハブのルートにスタイルがなければ、既定値で動かす
     static const BossHudStyleComponent kDefaultStyle{};
     const auto *stylePtr = m_world->GetComponent<BossHudStyleComponent>(m_rootID);
     const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
@@ -114,7 +114,7 @@ void BossHealthHudSystem::Update(float dt)
 
     // --- 第2形態の目印と光 ---
     {
-        // 第2形態の BT が無いボスは形態移行しないので、線も引かない
+        // 第2形態の BT がないボスは形態移行しないので、線も引かない
         const auto *phase     = m_world->GetComponent<BossPhaseComponent>(bossID);
         const bool  hasPhase2 = phase && !phase->phase2AssetPath.empty();
         const float threshold = hasPhase2 ? std::clamp(phase->phase2HealthThreshold / 100.0f, 0.0f, 1.0f) : 0.0f;
@@ -223,7 +223,6 @@ void BossHealthHudSystem::OnGui()
 
 
 
-// BossHud プレハブを生成し、ゲージ・名前・ドローン数の子を名前で引く
 void BossHealthHudSystem::SpawnHud()
 {
     // 失敗しても試すのは1回だけにする
@@ -252,11 +251,12 @@ void BossHealthHudSystem::SpawnHud()
 
 
 
-// ゲージ以外の部品（名前・ドローン数）をまとめて隠す・出す
 void BossHealthHudSystem::SetDecorVisible(bool visible)
 {
     if (auto *txt = m_world->GetComponent<UITextComponent>(m_nameID)) txt->visible = visible;
     if (auto *txt = m_world->GetComponent<UITextComponent>(m_swarmID)) txt->visible = visible;
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(BossHealthHudSystem, Priority::LogicStage::L06_HudSync);

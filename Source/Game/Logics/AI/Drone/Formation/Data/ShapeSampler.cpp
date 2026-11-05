@@ -15,7 +15,7 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // 表面に落とす候補の数（出力する点の何倍か）。少ないと最遠点で選ぶ余地が無く、偶然の密集・隙間が残る
+    // 表面に落とす候補の数（出力する点の何倍か）。少ないと最遠点で選ぶ余地がなく、偶然の密集・隙間が残る
     constexpr int kCandidatesPerPoint = 8;
 
     constexpr uint32_t kSeed = 20261003u; // 乱数の種。固定して、同じモデルからは毎回同じ点を出す
@@ -26,12 +26,12 @@ namespace
     };
 
     /**
-     * @brief 各ノードの初期姿勢でのモデル空間の行列を求める（描画と同じ位置に点を置くため、AABB の計算と同じ式）。
+     * @brief 各ノードの初期姿勢でのモデル空間の行列を求める（描画と同じ位置に点を置くため、AABB の計算と同じ式）
      *
-     * glTF のノードは親が先に並ぶとは限らないので、親を再帰で先に求める。
+     * glTF のノードは親が先に並ぶとは限らないので、親を再帰で先に求める
      *
-     * @param model 行列を求めるモデル。
-     * @return ノードと同じ添字で並んだ行列の列。
+     * @param model 行列を求めるモデル
+     * @return ノードと同じ添字で並んだ行列の列
      */
     std::vector<XMFLOAT4X4> ComputeNodeGlobals(const ModelResource &model)
     {
@@ -59,7 +59,9 @@ namespace
         return globals;
     }
 
-    // モデルの全三角形をモデル空間で集める。
+
+
+    // モデルの全三角形をモデル空間で集める
     std::vector<Triangle> CollectTriangles(const ModelResource &model)
     {
         const std::vector<XMFLOAT4X4> globals = ComputeNodeGlobals(model);
@@ -67,8 +69,8 @@ namespace
         std::vector<Triangle> tris;
         for (const auto &mesh : model.GetMeshes())
         {
-            // 描くときと同じく、スキンメッシュ以外はノードの行列を掛けた位置に置く。
-            // スキンメッシュの頂点は最初からモデル空間（バインド姿勢）にある。
+            // 描くときと同じく、スキンメッシュ以外はノードの行列を掛けた位置に置く
+            // スキンメッシュの頂点は最初からモデル空間（バインド姿勢）にある
             XMMATRIX toModel = XMMatrixIdentity();
             if (mesh.bones.empty() && mesh.nodeIndex >= 0 && mesh.nodeIndex < static_cast<int>(globals.size()))
                 toModel = XMLoadFloat4x4(&globals[mesh.nodeIndex]);
@@ -89,18 +91,20 @@ namespace
         return tris;
     }
 
+
+
     /**
-     * @brief 面積に比例して、表面に count 個の点を落とす。
+     * @brief 面積に比例して、表面に count 個の点を落とす
      *
-     * 頂点をそのまま使うと、細かく分割された部分（柄の装飾など）に点が偏る。
+     * 頂点をそのまま使うと、細かく分割された部分（柄の装飾など）に点が偏る
      *
-     * @param tris  点を落とす三角形の列（モデル空間）。
-     * @param count 落とす点の数。
-     * @return 落とした点の列。三角形の面積の合計が 0 のときは空。
+     * @param tris  点を落とす三角形の列（モデル空間）
+     * @param count 落とす点の数
+     * @return 落とした点の列。三角形の面積の合計が 0 のときは空
      */
     std::vector<Vector3> SampleCandidates(const std::vector<Triangle> &tris, int count)
     {
-        // 面積の累積。乱数をこの範囲で振り、二分探索で三角形を選ぶ。
+        // 面積の累積。乱数をこの範囲で振り、二分探索で三角形を選ぶ
         std::vector<float> cumulative(tris.size());
         float              total = 0.0f;
         for (size_t i = 0; i < tris.size(); ++i)
@@ -125,7 +129,7 @@ namespace
                 tris.size() - 1);
             const Triangle &t = tris[idx];
 
-            // 三角形の中の一様な点。r1 の平方根を取らないと、頂点 a の近くに偏る。
+            // 三角形の中の一様な点。r1 の平方根を取らないと、頂点 a の近くに偏る
             const float s  = std::sqrt(uni(rng));
             const float r2 = uni(rng);
             points.push_back(t.a * (1.0f - s) + t.b * (s * (1.0f - r2)) + t.c * (s * r2));
@@ -133,14 +137,16 @@ namespace
         return points;
     }
 
+
+
     /**
-     * @brief 最遠点サンプリング。すでに選んだ点から一番遠い候補を順に選んで並べる。
+     * @brief 最遠点サンプリング。すでに選んだ点から一番遠い候補を順に選んで並べる
      *
-     * 最初の1点は重心から一番遠い点にして、毎回同じ並びにする。
+     * 最初の1点は重心から一番遠い点にして、毎回同じ並びにする
      *
-     * @param candidates 選ぶ元の候補点。
-     * @param count      選ぶ点の数。候補より多いときは候補の数まで。
-     * @return 選んだ順に並べた点の列。
+     * @param candidates 選ぶ元の候補点
+     * @param count      選ぶ点の数。候補より多いときは候補の数まで
+     * @return 選んだ順に並べた点の列
      */
     std::vector<Vector3> FarthestPointOrder(const std::vector<Vector3> &candidates, int count)
     {
@@ -167,7 +173,7 @@ namespace
             }
         }
 
-        // 各候補から「選んだ点のうち一番近いもの」までの距離。選ぶたびに縮めていく。
+        // 各候補から「選んだ点のうち一番近いもの」までの距離。選ぶたびに縮めていく
         std::vector<float> nearest(candidates.size(), FLT_MAX);
 
         size_t current = first;

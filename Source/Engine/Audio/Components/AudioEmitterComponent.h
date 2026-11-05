@@ -1,18 +1,10 @@
 #pragma once
-// ===========================================================================
-// 概要: Entity の位置から鳴り続ける音源のコンポーネント AudioEmitterComponent。
-//
-// 責務:
-//   - 鳴らす音の名前・音量・2D/3D の設定を保持する（保存対象）
-//   - AudioSystem が書く再生状態を保持する（保存しない）
-//
-// 備考: BGM や環境音など、ループして鳴らし続ける音に使う。
-//       撃ちっぱなしの効果音は IAudioAPI::PlayOneShot3D を直接呼ぶ。
-// ===========================================================================
 #include <cstdint>
 #include <string>
 #include <DirectXMath.h>
 
+// Entity の位置から鳴り続ける音源。BGM や環境音など、ループさせる音に使う
+// 再生状態は AudioSystem が書き、保存しない。撃ちっぱなしの効果音は IAudioAPI::PlayOneShot3D を使う
 struct AudioEmitterComponent
 {
     std::string eventName;      // 再生するイベント名（例: "bgm:/game"）。保存の基準はハッシュでなくこちら

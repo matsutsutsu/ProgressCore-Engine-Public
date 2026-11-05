@@ -1,22 +1,23 @@
 #pragma once
 // ===========================================================================
-// 概要: 画面上部にボスの HP ゲージと名前・ドローンの残り数を出し、毎フレーム合わせる System。
+// 概要: 画面上部にボスの HP ゲージと名前・ドローンの残り数を出し、毎フレーム合わせる System
 //
 // 責務:
 //   - ボスが初めて出たときに、BossHud プレハブを生成する
 //   - HP の割合と被弾の演出（遅れて減るバー・揺れ）を書く
 //   - 第2形態へ移る位置の目印と、第2形態の外側の光を書く
-//   - ドローンの生存数を書き、ボスが居ないときはまとめて隠す
+//   - ドローンの生存数を書き、ボスがいないときはまとめて隠す
 //
-// 備考: 見た目は BossHud プレハブ、振る舞いはルートの BossHudStyleComponent が持つ。
+// 備考: 見た目は BossHud プレハブ、振る舞いはルートの BossHudStyleComponent が持つ
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 
-class BossHealthHudSystem : public CCL::ECS::IfSystem<BossHealthHudSystem,
-                                                      CCL::ECS::Read<HealthComponent>,
-                                                      CCL::ECS::Read<BossActionComponent>>
+class BossHealthHudSystem : public CCL::ECS::IfSystem<
+    BossHealthHudSystem,
+    CCL::ECS::Read<HealthComponent>,
+    CCL::ECS::Read<BossActionComponent>>
 {
 public:
     BossHealthHudSystem() : IfSystem("BossHealthHudSystem") {}

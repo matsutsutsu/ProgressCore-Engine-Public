@@ -5,7 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h" // 体の高さ
+#include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 
@@ -18,20 +18,19 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    constexpr float kDefaultHeight = 4.0f;      // カプセルが無い敵の体の高さ（m）
+    constexpr float kDefaultHeight = 4.0f;      // カプセルがない敵の体の高さ（m）
     constexpr float kRadToDeg      = 57.29578f; // ラジアンを度にする倍率
     constexpr float kDegToRad      = 0.0174533f; // 度をラジアンにする倍率
 } // namespace
 
 
 
-// 調整値を返す。PlayerHud の子 LockOnMarker が無ければ既定値
 const LockOnMarkerStyleComponent &LockOnMarkerHudSystem::GetStyle()
 {
     static const LockOnMarkerStyleComponent kDefaultStyle{};
 
-    // 見つけたエンティティが無い・消えていたら探し直す
-    // PlayerHud は PlayerHealthHudSystem がプレイヤーの現れたときに作るので、最初は無いことがある
+    // 見つけたエンティティがない・消えていたら探し直す
+    // PlayerHud は PlayerHealthHudSystem がプレイヤーの現れたときに作るので、最初はないことがある
     const auto *style = m_world->GetComponent<LockOnMarkerStyleComponent>(m_styleID);
     if (!style)
     {
@@ -50,25 +49,24 @@ const LockOnMarkerStyleComponent &LockOnMarkerHudSystem::GetStyle()
 
 
 
-// ロックオン対象の体の中心を画面へ投影する（描けない位置なら false）
 bool LockOnMarkerHudSystem::ProjectTarget(EntityID target, DirectX::XMFLOAT2 &center) const
 {
     const auto *camera = m_world->HasResource<Camera *>() ? m_world->GetResource<Camera *>() : nullptr;
     const auto *trans  = m_world->GetComponent<TransformComponent>(target);
     if (!camera || !trans) return false;
 
-    // 体の高さ。キャラクターのカプセルは足元が原点で、全体の高さは (halfHeight + radius) * 2。
+    // 体の高さ。キャラクターのカプセルは足元が原点で、全体の高さは (halfHeight + radius) * 2
     float height = kDefaultHeight;
     if (const auto *capsule = m_world->GetComponent<JoltCapsuleColliderComponent>(target))
     {
         height = (capsule->halfHeight + capsule->radius) * 2.0f;
     }
 
-    // 位置は描画用に補間した座標を使い、モデルの見た目に合わせる。
+    // 位置は描画用に補間した座標を使い、モデルの見た目に合わせる
     const Vector3 mid      = Vector3(trans->GetRenderWorldPosition()) + Vector3(0.0f, height * 0.5f, 0.0f);
     const Matrix  viewProj = camera->GetView() * camera->GetProjection();
 
-    // Vector3::Transform は w での除算まで行うので、結果はそのまま NDC になる。
+    // Vector3::Transform は w での除算まで行うので、結果はそのまま NDC になる
     const Vector3 ndc = Vector3::Transform(mid, viewProj);
 
     // カメラの後ろ、または奥の切り捨て面より先
@@ -84,11 +82,10 @@ bool LockOnMarkerHudSystem::ProjectTarget(EntityID target, DirectX::XMFLOAT2 &ce
 
 
 
-// 線を1本、暗い縁取りと一緒に描画リストへ積む
 void LockOnMarkerHudSystem::PushStroke(UIDrawList &list, float x, float y, float len, float thick, float angle,
                                        const DirectX::XMFLOAT4 &color) const
 {
-    // 線の下に、一回り太い半透明の黒を敷く。明るい床や空の上でも、線が背景に溶けないようにする。
+    // 線の下に、一回り太い半透明の黒を敷く。明るい床や空の上でも、線が背景に溶けないようにする
     UIDrawItem back;
     back.kind      = UIDrawKind::Image;
     back.size      = {len + 2.0f, thick + 2.0f};
@@ -215,6 +212,8 @@ void LockOnMarkerHudSystem::Update(float dt)
 
     PushStroke(list, m_center.x, m_center.y, style.coreSize, style.coreSize, 45.0f, color);
 }
+
+
 
 // 他の収集 System と同じ帯で、描画リストへ積む（カメラは R01b_CameraBrain で決まっている）
 REGISTER_RENDER_SYSTEM(LockOnMarkerHudSystem, Priority::RenderStage::R10b_UICollect);

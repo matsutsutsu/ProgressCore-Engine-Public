@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: IPhysicsAPI の Jolt 実装。EntityID から剛体（JoltHandleComponent の BodyID）を引いて操作する。
+// 概要: IPhysicsAPI の Jolt 実装。EntityID から剛体（JoltHandleComponent の BodyID）を引いて操作する
 //
 // 責務:
 //   - IPhysicsAPI の各操作を JPH::BodyInterface / NarrowPhaseQuery の呼び出しへ変換する
 //   - レイキャストで自分自身とセンサーを除外する
 //
-// 備考: JoltPhysicsManager は World のリソースから毎回引く（保持しない）。
+// 備考: JoltPhysicsManager は World のリソースから毎回引く（保持しない）
 // ===========================================================================
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
 #include "Engine/ECS/Core/CCL_World.h"
@@ -56,17 +56,11 @@ public:
     bool IsCharacterGrounded(CCL::ECS::EntityID entity) override;
 
 private:
-    /**
-     * @brief EntityID から「操作対象の BodyID」と「BodyInterface」を解決する。
-     *
-     * JoltHandleComponent と JoltPhysicsManager リソースの存在も確認する。
-     * 操作系の全メソッドはこれを通してから JPH を呼ぶ。
-     *
-     * @return 解決できたら true。false のとき出力引数は不定なので触らないこと。
-     */
+    // EntityID から、操作する BodyID と BodyInterface を求める。操作の関数はすべてこれを通してから JPH を呼ぶ
+    // false のとき、出力の引数は不定なので触らない
     bool ResolveBody(CCL::ECS::EntityID entity,
                      JPH::BodyID &outBodyID, JPH::BodyInterface *&outInterface);
 
-    // 剛体を指定しない問い合わせ用。PhysicsSystem だけ取れればよいとき。無ければ nullptr
+    // 剛体を指定しない問い合わせ用。PhysicsSystem だけ取れればよいとき。なければ nullptr
     JPH::PhysicsSystem *GetPhysicsSystem() const;
 };

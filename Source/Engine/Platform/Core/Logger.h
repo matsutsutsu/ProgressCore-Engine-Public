@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: カテゴリ・レベル付きのログを、登録された出力先（シンク）へ配信するロガー。
+// 概要: カテゴリ・レベル付きのログを、登録された出力先（シンク）へ配信するロガー
 //
 // 責務:
 //   - LogCategory を X-Macro で1か所に定義する（追加は1行で済む）
@@ -31,9 +31,7 @@
     X(Game, "Game")              \
     X(AI, "AI")
 
-/**
- * @brief ログのカテゴリ。新しいカテゴリは CCL_LOG_CATEGORY_LIST に追加する
- */
+// ログのカテゴリ。新しいカテゴリは CCL_LOG_CATEGORY_LIST に足す
 enum class LogCategory : uint8_t
 {
 #define CCL_X(name, str) name,
@@ -42,9 +40,6 @@ enum class LogCategory : uint8_t
     Count
 };
 
-/**
- * @brief LogCategory を表示用文字列に変換する
- */
 constexpr const char *GetLogCategoryName(LogCategory c) noexcept
 {
     constexpr const char *kNames[] = {
@@ -93,8 +88,8 @@ public:
     virtual void Clear() {}
 };
 
-// 各シンクへログを配信する。Logger 自身は履歴を持たない。
-// UI 表示が必要な場合は ImGuiBufferSink を AddSink して、そのスナップショットを使う。
+// 各シンクへログを配信する。Logger 自身は履歴を持たない
+// UI 表示が必要な場合は ImGuiBufferSink を AddSink して、そのスナップショットを使う
 class Logger
 {
 public:
@@ -109,13 +104,7 @@ public:
     // 全シンクを登録解除する
     void ClearSinks();
 
-    /**
-     * @brief printf スタイルでログを記録する
-     * @param category ログカテゴリ
-     * @param level 重要度
-     * @param loc 呼び出し元情報（マクロから std::source_location::current() が渡される）
-     * @param fmt printf 形式の書式文字列
-     */
+    // printf の形でログを記録する。loc はマクロが std::source_location::current() を渡す
     void Log(LogCategory category, LogLevel level,
              const std::source_location &loc, const char *fmt, ...);
 
@@ -158,8 +147,8 @@ private:
 #define CCL_LOG_ERROR(category, ...) \
     Logger::Instance().Log((category), LogLevel::Error, std::source_location::current(), __VA_ARGS__)
 
-// エラーではないが、Shipping でも必ず残す情報（実行環境の報告など）。
-// 配布先で「動かない」と言われたときに、ログを送ってもらうだけで原因を絞れるようにする。
-// 起動時に数行だけ使う。毎フレームの処理では使わないこと（Shipping のログが膨らむ）。
+// エラーではないが、Shipping でも必ず残す情報（実行環境の報告など）
+// 配布先で「動かない」と言われたときに、ログを送ってもらうだけで原因を絞れるようにする
+// 起動時に数行だけ使う。毎フレームの処理では使わないこと（Shipping のログが膨らむ）
 #define CCL_LOG_ALWAYS(category, ...) \
     Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)

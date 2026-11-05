@@ -28,9 +28,11 @@ void SkyboxPass::Initialize(const RenderServices &services)
     _ASSERT_EXPR(SUCCEEDED(hr), L"Skybox 用定数バッファの作成に失敗");
 }
 
+
+
 void SkyboxPass::Execute(const RenderFrameContext &ctx)
 {
-    // 空が無いのは EnvironmentSystem が一度も走っていないフレームだけ（シーンの最初のフレームなど）
+    // 空がないのは EnvironmentSystem が一度も走っていないフレームだけ（シーンの最初のフレームなど）
     if (!ctx.camera || !ctx.skyboxSRV) return;
     ID3D11DeviceContext *dc = ctx.dc;
 
@@ -52,7 +54,7 @@ void SkyboxPass::Execute(const RenderFrameContext &ctx)
     dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf());
     dc->PSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf()); // 明るさの倍率は PS で掛ける
 
-    // テクスチャは EnvironmentSystem が SkyboxComponent（無ければ既定）から決め、ctx で渡してくる
+    // テクスチャは EnvironmentSystem が SkyboxComponent（なければ既定）から決め、ctx で渡してくる
     ID3D11ShaderResourceView *skyTex = ctx.skyboxSRV;
     dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, &skyTex);
 

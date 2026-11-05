@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: プレイヤーの地上の歩きと走りを処理する System。
+// 概要: プレイヤーの地上の歩きと走りを処理する System
 //
 // 責務:
 //   - 走り中に無入力が runIdleReleaseTime 続いたら、歩きに戻す
@@ -8,9 +8,9 @@
 //   - 歩きか走りかを locomotion へ書く
 //
 // 備考:
-//   走りに入るきっかけ（ダッシュの終わりで isRunning を立てる）は PlayerDashSystem。
-//   ダッシュ中はダッシュ側が速さを書くので、ここは何もしない。
-//   ジャンプと向きは PlayerJumpFacingSystem。
+//   走りに入るきっかけ（ダッシュの終わりで isRunning を立てる）は PlayerDashSystem
+//   ダッシュ中はダッシュ側が速さを書くので、ここは何もしない
+//   ジャンプと向きは PlayerJumpFacingSystem
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
@@ -20,11 +20,12 @@
 
 #include <vector>
 
-class PlayerMoveSystem : public CCL::ECS::IfSystem<PlayerMoveSystem,
-                                                   CCL::ECS::Write<CharacterMovementComponent>,
-                                                   CCL::ECS::Write<PlayerComponent>,
-                                                   CCL::ECS::Read<PlayerDashComponent>,
-                                                   CCL::ECS::Read<TimeStateComponent>>
+class PlayerMoveSystem : public CCL::ECS::IfSystem<
+    PlayerMoveSystem,
+    CCL::ECS::Write<CharacterMovementComponent>,
+    CCL::ECS::Write<PlayerComponent>,
+    CCL::ECS::Read<PlayerDashComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     PlayerMoveSystem() : IfSystem("PlayerMoveSystem") {}
@@ -36,6 +37,6 @@ public:
     std::vector<const char *> GetRunAfter() const override { return {"PlayerDashSystem"}; }
 
 private:
-    // 歩きと走りを1ステップ分進める
+    // 走りを解くかを決め、歩きか走りかに合わせて速さを書く
     void UpdateGroundLocomotion(PlayerComponent &player, CharacterMovementComponent &movement, float dt);
 };

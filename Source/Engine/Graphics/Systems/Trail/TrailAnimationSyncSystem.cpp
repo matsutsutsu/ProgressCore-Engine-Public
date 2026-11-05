@@ -21,7 +21,7 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
         // 1. owner の確認
         // ---------------------------------------------------------
 
-        // 持っている owner が消えていたら解く。
+        // 持っている owner が消えていたら解く
         //   消えた Entity の ID を持ち続けると、ID が使い回されたときに別の Entity を owner と見なす
         const AnimatorComponent *animator = nullptr;
         if (trail.ownerEntity != InvalidEntityID)
@@ -33,7 +33,7 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
             }
         }
 
-        // 見つかったら以後は親をたどらない。
+        // 見つかったら以後は親をたどらない
         //   見つからない間は毎フレーム探し直す（階層が後から組まれる場合に追従するため）
         if (trail.ownerEntity == InvalidEntityID)
         {
@@ -54,7 +54,7 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
             return;
         }
 
-        // 再生中のアニメーションが無いので出さない
+        // 再生中のアニメーションがないので出さない
         if (!animator || !animator->currentSequence)
         {
             trail.emitting = false;
@@ -67,7 +67,6 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
 
 
 
-// 親をたどり、最初に見つかった Animator を持つ祖先を返す
 EntityID TrailAnimationSyncSystem::FindAnimatorAncestor(const TransformComponent &transform) const
 {
     EntityID cur   = transform.parent; // EntityLink → EntityID 暗黙変換
@@ -89,10 +88,9 @@ EntityID TrailAnimationSyncSystem::FindAnimatorAncestor(const TransformComponent
 
 
 
-// 今の再生時刻が、どれか 1 つの Trail 区間に入っているか
 bool TrailAnimationSyncSystem::IsInsideTrailEvent(const AnimatorComponent &animator) const
 {
-    // タグは見ず、どれか 1 つの Trail 区間に入っていればオンにする。
+    // タグは見ず、どれか 1 つの Trail 区間に入っていればオンにする
     //   二刀流などで出し分けるなら、tagHash は HitBox にしか求めていないので、
     //   ResourceManager::LoadAnimSequence で Trail にも求めるところから広げる
     for (const auto &ev : animator.currentSequence->events)

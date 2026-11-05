@@ -6,8 +6,8 @@
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Animation/Core/AnimEventMessages.h"         // アニメーションの Effect イベント
-#include "Engine/Animation/Components/CombatRosterComponent.h" // Effect の武器タグ → 武器の Entity
+#include "Engine/Animation/Core/AnimEventMessages.h"
+#include "Engine/Animation/Components/CombatRosterComponent.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
 #include <algorithm>
@@ -29,8 +29,8 @@ namespace
 
 void VFXSystem::Initialize()
 {
-    // VFX::Play から自分を引けるようにする。
-    // World が消えるとこの登録も消えるので、シーンを切り替えても古いポインタは残らない。
+    // VFX::Play から自分を引けるようにする
+    // World が消えるとこの登録も消えるので、シーンを切り替えても古いポインタは残らない
     m_world->AddResource<VFXSystem *>(this);
 
     // アニメーションの Effect イベント（AnimationSystem が L02 で Publish する）
@@ -39,17 +39,21 @@ void VFXSystem::Initialize()
     PreloadPrefabs();
 }
 
+
+
 void VFXSystem::PreloadPrefabs()
 {
     ZoneScopedN("VFXSystem::PreloadPrefabs");
 
-    // VFXフォルダの中を全部読む。
+    // VFXフォルダの中を全部読む
     // 初回起動時の処理負荷を軽減させるために最初に読み込む
     for (const std::string &path : FileSystem::ListFiles(kVfxPrefabFolder, ".json"))
     {
         Prefab::Preload(path);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // アニメのイベントから出すエフェクト
@@ -59,7 +63,7 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
 {
     if (msg.effectPath.empty()) return;
 
-    // 1. 基準にする Entity と、その姿勢。姿勢が無ければ位置が決まらないので出さない
+    // 1. 基準にする Entity と、その姿勢。姿勢がなければ位置が決まらないので出さない
     const EntityID anchor  = ResolveAnchor(msg);
     const auto    *anchorT = m_world->GetComponent<TransformComponent>(anchor);
     if (!anchorT) return;
@@ -113,15 +117,17 @@ void VFXSystem::OnAnimEffect(const AnimEventEffectMessage &msg)
     transform->prevPosition = transform->position;
     transform->prevRotation = transform->rotation;
 
-    // 6. 継続放出を含むなら、ブロック長だけ出してから止める。
+    // 6. 継続放出を含むなら、ブロック長だけ出してから止める
     //    アニメのイベントから出した VFX には、Stop() を呼ぶ呼び出し側がいないため
     if (HasContinuousEmitter(*particle))
         m_timedStops.push_back({id, (std::max)(msg.duration, kMinEmitDuration)});
 }
 
+
+
 EntityID VFXSystem::ResolveAnchor(const AnimEventEffectMessage &msg) const
 {
-    // タグが無ければキャラそのもの
+    // タグがなければキャラそのもの
     if (msg.attachTag.empty()) return msg.entity;
 
     // 持ち主の CombatRoster からタグの武器を引く。引けなければキャラで出す（VFX が消えるより気づきやすい）
@@ -135,6 +141,8 @@ EntityID VFXSystem::ResolveAnchor(const AnimEventEffectMessage &msg) const
     }
     return weapon;
 }
+
+
 
 void VFXSystem::ApplyScale(GPUParticleComponent &particle, float s) const
 {
@@ -161,6 +169,8 @@ void VFXSystem::ApplyScale(GPUParticleComponent &particle, float s) const
     }
     particle.MarkDescChanged();
 }
+
+
 
 void VFXSystem::UpdateTimedStops(float dt)
 {
@@ -192,6 +202,8 @@ void VFXSystem::UpdateTimedStops(float dt)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 直接の再生と停止
 // ---------------------------------------------------------------------------
@@ -213,7 +225,7 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
     }
 
     // 2. 指定位置に置く
-    //    エディタで保存し直したプレハブには親の ID が入っていることがあるので、切り離しておく。
+    //    エディタで保存し直したプレハブには親の ID が入っていることがあるので、切り離しておく
     TransformUpdateSystem::DetachChild(*m_world, id);
     transform->position = worldPos;
     transform->isDirty  = true;
@@ -225,7 +237,7 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
 
     // 3. ワールド行列をここで計算する
     //    パーティクルの発生位置はワールド行列から読むが、TransformUpdateSystem が計算するのは
-    //    次のフレーム。待つと最初の1フレームだけ原点で粒子が出るので、ここで1回計算しておく。
+    //    次のフレーム。待つと最初の1フレームだけ原点で粒子が出るので、ここで1回計算しておく
     transform->UpdateMatrix();
 
     // 4. 全エミッタのバーストを起こす
@@ -233,36 +245,40 @@ EntityID VFXSystem::Play(const std::string &path, const DirectX::XMFLOAT3 &world
     particle->TriggerBurst();
 
     // 5. 破棄を予約する
-    //    継続放出はいつ終わるかがデータから決まらないので予約しない。
-    //    呼び出し側が Stop() を呼ぶまで出し続ける（ループする VFX が勝手に消えないように）。
+    //    継続放出はいつ終わるかがデータから決まらないので予約しない
+    //    呼び出し側が Stop() を呼ぶまで出し続ける（ループする VFX が勝手に消えないように）
     if (!HasContinuousEmitter(*particle))
         m_active.push_back({id, CalcParticleLifetime(*particle)});
 
     return id;
 }
 
+
+
 void VFXSystem::Stop(EntityID handle)
 {
     if (handle == InvalidEntityID || !m_world->IsEntityValid(handle)) return;
 
-    // 既に破棄待ちなら触らない。毎フレーム Stop を呼ばれても寿命が延び続けないように。
+    // 既に破棄待ちなら触らない。毎フレーム Stop を呼ばれても寿命が延び続けないように
     if (IsPendingDestroy(handle)) return;
 
     auto *particle = m_world->GetComponent<GPUParticleComponent>(handle);
     if (!particle)
     {
-        // パーティクルでないものが渡された。待つ理由が無いのですぐ破棄する
+        // パーティクルでないものが渡された。待つ理由がないのですぐ破棄する
         TransformUpdateSystem::MarkForDestruction(*m_world, handle);
         return;
     }
 
-    // 発生だけを止める（GPU へ emit_enabled=0 として渡る）。
-    //   出ている粒子は寿命まで残る。すぐに破棄すると粒子が途中で途切れる。
+    // 発生だけを止める（GPU へ emit_enabled=0 として渡る）
+    //   出ている粒子は寿命まで残る。すぐに破棄すると粒子が途中で途切れる
     particle->SetEmitting(false);
 
     // 最後の粒子が消えたころに破棄する
     m_active.push_back({handle, CalcParticleLifetime(*particle)});
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 破棄までの見届け
@@ -285,10 +301,10 @@ void VFXSystem::Update(float dt)
             continue;
         }
 
-        // 残り時間はその Entity の時間（localDt）で減らす。
+        // 残り時間はその Entity の時間（localDt）で減らす
         //   粒子は GPUParticleUpdateSystem が localDt で動かしているので、ここだけ実時間で数えると、
         //   ヒットストップやジャスト回避のスロー中に、まだ飛んでいる粒子を消してしまう
-        //   （0.3 倍のスロー中なら、寿命の3割しか進んでいない時点で破棄される）。
+        //   （0.3 倍のスロー中なら、寿命の3割しか進んでいない時点で破棄される）
         float step = dt;
         if (const auto *time = m_world->GetComponent<TimeStateComponent>(id))
             step = time->localDt;
@@ -310,12 +326,16 @@ void VFXSystem::Update(float dt)
     }
 }
 
+
+
 bool VFXSystem::HasContinuousEmitter(const GPUParticleComponent &particle) const
 {
     for (const auto &emitter : particle.emitters)
         if (emitter.desc.emitMode == 0) return true; // 0:継続 1:バースト
     return false;
 }
+
+
 
 float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) const
 {
@@ -325,7 +345,7 @@ float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) cons
     for (const auto &emitter : particle.emitters)
     {
         // spawnDelay（生まれるまでの待ち時間）は継続放出のときだけ効く
-        //   （バーストは生成時に age=0 から始まり、遅れを使わない）。
+        //   （バーストは生成時に age=0 から始まり、遅れを使わない）
         const float delay = (emitter.desc.emitMode == 1) ? 0.0f : emitter.desc.spawnDelay.y;
         const float life  = delay + emitter.desc.lifespan.y;
         if (life > longest) longest = life;
@@ -334,12 +354,16 @@ float VFXSystem::CalcParticleLifetime(const GPUParticleComponent &particle) cons
     return longest + kLifetimeMargin;
 }
 
+
+
 bool VFXSystem::IsPendingDestroy(EntityID handle) const
 {
     for (const auto &v : m_active)
         if (v.id == handle) return true;
     return false;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // どこからでも呼べる窓口（VFX::Play / Stop）
@@ -356,6 +380,8 @@ namespace VFX
         }
         return world.GetResource<VFXSystem *>()->Play(path, worldPos);
     }
+
+
 
     void Stop(World &world, EntityID handle)
     {

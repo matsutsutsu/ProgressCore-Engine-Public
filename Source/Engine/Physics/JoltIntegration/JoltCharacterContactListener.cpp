@@ -1,13 +1,12 @@
 #include "JoltCharacterContactListener.h"
 #include "Engine/Physics/Components/Collision/JoltCollisionEvent.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 計測ログ
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h"
 
 using namespace CCL::ECS;
 
 
 
-// 攻撃レイヤー（PLAYER_ATTACK / BOSS_ATTACK）との接触か
 bool JoltCharacterContactListener::IsAttackLayer(const JPH::BodyID &bodyID) const
 {
     if (!m_bodyInterface)
@@ -28,7 +27,6 @@ JoltCharacterContactListener::JoltCharacterContactListener(JoltContactListener *
 
 
 
-// 接触1件をイベントにして、剛体側と同じバッファへ積む
 void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual *inCharacter,
                                                     const JPH::BodyID           &inBodyID2,
                                                     JPH::RVec3Arg                inContactPosition,
@@ -71,7 +69,6 @@ void JoltCharacterContactListener::EmitContactEvent(const JPH::CharacterVirtual 
 
 
 
-// 接触が始まった
 void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *inCharacter,
                                                   const JPH::BodyID           &inBodyID2,
                                                   const JPH::SubShapeID & /*inSubShapeID2*/,
@@ -84,7 +81,6 @@ void JoltCharacterContactListener::OnContactAdded(const JPH::CharacterVirtual *i
 
 
 
-// 接触が続いている。Added と同じ扱いにする
 void JoltCharacterContactListener::OnContactPersisted(const JPH::CharacterVirtual *inCharacter,
                                                       const JPH::BodyID           &inBodyID2,
                                                       const JPH::SubShapeID & /*inSubShapeID2*/,
@@ -99,7 +95,6 @@ void JoltCharacterContactListener::OnContactPersisted(const JPH::CharacterVirtua
 
 
 
-// 接触が終わった。攻撃レイヤーなら計測ログだけ出す
 void JoltCharacterContactListener::OnContactRemoved(const JPH::CharacterVirtual * /*inCharacter*/,
                                                     const JPH::BodyID &inBodyID2,
                                                     const JPH::SubShapeID & /*inSubShapeID2*/)

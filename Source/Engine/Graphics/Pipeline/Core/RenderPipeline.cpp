@@ -1,8 +1,8 @@
 ﻿#include "RenderPipeline.h"
 
-#include <d3d11_1.h> // ID3DUserDefinedAnnotation
+#include <d3d11_1.h>
 #include <wrl/client.h>
-#include <Windows.h> // MultiByteToWideChar
+#include <Windows.h>
 
 #include "tracy/TracyD3D11.hpp"
 
@@ -10,6 +10,8 @@ void RenderPipeline::Initialize(const RenderServices &services)
 {
     m_services = services;
 }
+
+
 
 void RenderPipeline::Shutdown()
 {
@@ -21,13 +23,15 @@ void RenderPipeline::Shutdown()
     m_passes.clear();
 }
 
+
+
 void RenderPipeline::Execute(const RenderFrameContext &ctx)
 {
     if (!ctx.dc) return;
 
 #if defined(ENABLE_EDITOR)
-    // GPU マーカー。PIX / RenderDoc でパスの区切りが分かるようにする。
-    // 取れなければマーカー無しで続ける
+    // GPU マーカー。PIX / RenderDoc でパスの区切りが分かるようにする
+    // 取れなければマーカーなしで続ける
     Microsoft::WRL::ComPtr<ID3DUserDefinedAnnotation> annotation;
     ctx.dc->QueryInterface(IID_PPV_ARGS(annotation.GetAddressOf()));
 #endif
@@ -76,6 +80,8 @@ void RenderPipeline::Execute(const RenderFrameContext &ctx)
 #endif
     }
 }
+
+
 
 void RenderPipeline::OnResize(uint32_t width, uint32_t height)
 {

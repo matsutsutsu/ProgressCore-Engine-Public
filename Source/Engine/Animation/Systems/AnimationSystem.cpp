@@ -20,7 +20,7 @@
 // m_world を使わない時間の計算は、ここに置く
 namespace
 {
-    // 効果音のピッチに、±range の揺らぎを足して返す。
+    // 効果音のピッチに、±range の揺らぎを足して返す
     //   乱数の状態は thread_local に持つ（呼び出し元を並列にしても状態を共有しない）
     float RandomizePitch(float pitch, float range)
     {
@@ -35,14 +35,14 @@ namespace
     // 実効の再生速度（ステートの速度 × 足滑り補正 × 速度カーブ）を返す
     float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
     {
-        // ここに Tracy のゾーンを置かないこと。
+        // ここに Tracy のゾーンを置かないこと
         //   処理は数十ナノ秒でゾーン自体のコストと同程度になり、OS のプリエンプトを拾って巨大な値が出る
         float curveMultiplier = 1.0f;
         if (animator.activeCurve)
         {
             float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
 
-            // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる。
+            // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる
             //   [0,1] に丸めて防ぐ
             progress        = std::clamp(progress, 0.0f, 1.0f);
             curveMultiplier = animator.activeCurve->Evaluate(progress);
@@ -147,14 +147,13 @@ void AnimationSystem::Update(float dt)
     // 2. 点イベントを発火する
     // 3. ループと終了を判定する
 
-    // 【備考】
-    //   2 の後に 3 を行うので、ループ末尾ちょうどのイベントも、境界をまたいだステップで発火できる。
-    //   ポーズの計算は AnimationPoseSystem が 1 描画フレームに 1 回行う
+    // 2 の後に 3 を行うので、ループ末尾ちょうどのイベントも、境界をまたいだステップで発火できる
+    // ポーズの計算は AnimationPoseSystem が 1 描画フレームに 1 回行う
 
     ZoneScopedN("AnimationSystem::Update");
 
     // 直列に回す。DispatchPointEvents が EventBus へ Publish するので、
-    //   並列にするなら先に EventBus をスレッドセーフにすること。
+    //   並列にするなら先に EventBus をスレッドセーフにすること
     //   ModelComponent は Model を持つキャラだけに絞るために受け取っているだけで、ここでは触らない
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
         if (!animator.currentSequence) return;
@@ -176,7 +175,6 @@ void AnimationSystem::Update(float dt)
 
 
 
-// 点イベントのうち、今の時刻までに達したものを EventBus で発行する
 void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
                                           const AnimSequence *seq, bool movedForward)
 {
@@ -213,12 +211,12 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             break;
 
         case AnimEventType::SpawnHitbox: {
-            // ムービー（タイムライン）がクリップを握っている間は攻撃判定を出さない。
-            //   演出で攻撃モーションを見せただけで、近くのプレイヤーにダメージが入るため。
+            // ムービー（タイムライン）がクリップを握っている間は攻撃判定を出さない
+            //   演出で攻撃モーションを見せただけで、近くのプレイヤーにダメージが入るため
             //   音とエフェクトは演出として欲しいので、上の Sound / Effect は止めない
             if (animator.isExternalOverride) break;
 
-            // 生存時間はシーケンサーのブロック長。
+            // 生存時間はシーケンサーのブロック長
             //   点（startTime == endTime）なら 0 になり、購読側が最小の寿命を使う
             const float window = evt.endTime - evt.startTime;
             m_world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
@@ -231,11 +229,7 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         case AnimEventType::Trail:
         case AnimEventType::Particle:
         case AnimEventType::Blackboard:
-            // 区間のイベントは発火しない。各 System が再生時刻を見て区間内かを判定する。
-            //   HitBox     → CombatAnimationSyncSystem
-            //   Trail      → TrailAnimationSyncSystem
-            //   Particle   → ParticleAnimationSyncSystem
-            //   Blackboard → 読む System は無い
+            // 区間のイベント（HitBox / Trail / Particle など）は出さない。各 System が再生時刻を見て判定する
             break;
 
         default:
@@ -248,7 +242,6 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
 
 
 
-// 指定時刻のポーズを計算して Model へ適用する（シーケンサーのプレビュー用）
 void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 {
     ZoneScopedN("AnimationSystem::UpdateManual");
@@ -271,7 +264,7 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 
     model->ComputeAnimation(animIndex, time, animator->poseBufferA);
 
-    // Force Root Lock（プレビュー版）。RootMotionComponent の有無に関係なく常に固定する。
+    // Force Root Lock（プレビュー版）。RootMotionComponent の有無に関係なく常に固定する
     //   固定しないと、クリップ自身の前進と、ルートモーションカーブによる Transform の移動
     //   （AnimationSequencerWindow::DrawRootMotionPreview）が二重に掛かり、モデルだけ前に出る
     if (!animator->poseBufferA.empty())
@@ -282,5 +275,7 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 
     model->SetNodePoses(animator->poseBufferA);
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_PostUpdate);

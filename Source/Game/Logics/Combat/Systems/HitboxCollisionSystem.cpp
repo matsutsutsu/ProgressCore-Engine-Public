@@ -9,7 +9,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Physics/JoltIntegration/HitDiagnostics.h" // 当たり判定の調査用ログ
+#include "Engine/Physics/JoltIntegration/HitDiagnostics.h"
 
 #include <cstdio>
 
@@ -18,7 +18,7 @@ using DirectX::SimpleMath::Vector3;
 
 namespace
 {
-    // target が履歴の何番目か（無ければ -1）。最大8個なので線形に探す
+    // target が履歴の何番目か（なければ -1）。最大8個なので線形に探す
     int FindHitSlot(const HitboxComponent &box, EntityID target)
     {
         for (uint8_t i = 0; i < box.hitCount; ++i)
@@ -27,15 +27,17 @@ namespace
         return -1;
     }
 
+
+
 #if HITBOX_DIAGNOSTICS
     /**
-     * @brief hitTargets を "12,34," の形の文字列にする（調査用ログ）。
+     * @brief hitTargets を "12,34," の形の文字列にする（調査用ログ）
      *
-     * 多段ヒットの履歴が前の攻撃から残っていないかを見るため。
+     * 多段ヒットの履歴が前の攻撃から残っていないかを見るため
      *
-     * @param box     履歴を持つ Hitbox。
-     * @param out     書き込み先のバッファ。
-     * @param outSize out の大きさ（バイト）。
+     * @param box     履歴を持つ Hitbox
+     * @param out     書き込み先のバッファ
+     * @param outSize out の大きさ（バイト）
      */
     void FormatHitTargets(const HitboxComponent &box, char *out, size_t outSize)
     {
@@ -49,11 +51,11 @@ namespace
 #endif
 
     /**
-     * @brief target に当てたことを多段ヒットの履歴に記録する。
-     * @param box    履歴を持つ Hitbox。
-     * @param slot   FindHitSlot の結果。0 以上なら時刻だけ更新し、-1 なら末尾に足す（いっぱいなら何もしない）。
-     * @param target 当てた相手。
-     * @param now    当てた時刻（このシステムの時計 m_clock の値）。
+     * @brief target に当てたことを多段ヒットの履歴に記録する
+     * @param box    履歴を持つ Hitbox
+     * @param slot   FindHitSlot の結果。0 以上なら時刻だけ更新し、-1 なら末尾に足す（いっぱいなら何もしない）
+     * @param target 当てた相手
+     * @param now    当てた時刻（このシステムの時計 m_clock の値）
      */
     void RecordHit(HitboxComponent &box, int slot, EntityID target, float now)
     {
@@ -79,6 +81,8 @@ void HitboxCollisionSystem::Initialize()
     });
 }
 
+
+
 void HitboxCollisionSystem::Update(float dt)
 {
     m_clock += dt;
@@ -93,6 +97,8 @@ void HitboxCollisionSystem::Update(float dt)
     // 処理した接触は必ず捨てる。次のフレームに残すと同じ接触を2回調べてしまう
     m_pendingContacts.clear();
 }
+
+
 
 void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate, EntityID victimCandidate,
                                                      const DirectX::XMFLOAT3 &contactPos)
@@ -128,7 +134,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
         return;
     }
 
-    // 2. 受ける側が無敵なら、当たらなかったことにする。
+    // 2. 受ける側が無敵なら、当たらなかったことにする
     //    ここで弾かずに履歴へ残すと、回避ですり抜けただけで「もう当てた」扱いになり、
     //    無敵が切れた後もその攻撃では二度と当たらなくなる
     if (const auto *health = m_world->GetComponent<HealthComponent>(victimCandidate);
@@ -167,7 +173,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
     // 6. ノックバックの向き。攻撃の向きで決める。衝突の法線や剣先の位置で決めると、横に振った剣が
     //    相手の真横にある瞬間に当たったとき、真横へ飛んでしまう。そこで攻撃した側（剣なら持ち主）の
     //    前方を主に、攻撃した側から受けた側への向きを少し混ぜる。前方を主にすると振った向きへ飛び、
-    //    中心から外れて当たったときは外側への向きが少し残る。
+    //    中心から外れて当たったときは外側への向きが少し残る
     //    基準の位置は ownerID（誰の攻撃か）とは限らない。剣は持ち主の子なので持ち主でよいが、
     //    ドローンは持ち主から数十 m 離れて当たるので、自分自身を基準にする（useSelfAsHitOrigin）
     const EntityID hitOrigin =
@@ -199,7 +205,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             else
                 radial = Vector3::Zero;
 
-            // 前方 0.75、外向き 0.25 で混ぜる。
+            // 前方 0.75、外向き 0.25 で混ぜる
             // 判定自身が基準のとき（ドローン）は前方を混ぜない。基準が接触点のすぐそばにあるので、
             // 外向きの向きがそのまま進んできた向きになる。機体の forward 軸がモデルの前方と
             // 合っているかも気にしなくて済む
@@ -214,7 +220,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             }
             else if (!hitbox->useSelfAsHitOrigin && fwd.LengthSquared() > 1e-6f)
             {
-                // 前方と外向きが打ち消し合ったまれな場合は前方を使う。
+                // 前方と外向きが打ち消し合ったまれな場合は前方を使う
                 // 判定自身が基準のときは使わない。GetForward() は +Z だがドローンのモデルは前方が -Z なので、
                 // 真後ろへ飛ばしてしまう（外向きが 0 ならほぼ重なっているので、押さない方がよい）
                 knockDir   = fwd;
@@ -244,5 +250,7 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
                 "[HitDiag/Hit]    %llu -> %llu  dmg=%.1f",
                 attackerCandidate, victimCandidate, finalDamage);
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(HitboxCollisionSystem, Priority::LogicStage::L05_Collision);

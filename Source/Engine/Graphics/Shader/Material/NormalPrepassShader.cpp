@@ -21,6 +21,8 @@ NormalPrepassShader::NormalPrepassShader(ID3D11Device *device)
     InitializeReflection(device, "Assets/Shader/NormalPrepassVS.cso");
 }
 
+
+
 void NormalPrepassShader::Begin(ID3D11DeviceContext *dc,
                                 const RenderServices & /*s*/,
                                 const RenderFrameContext & /*ctx*/)
@@ -34,6 +36,8 @@ void NormalPrepassShader::Begin(ID3D11DeviceContext *dc,
         pair.second.BindVS(dc);
     }
 }
+
+
 
 void NormalPrepassShader::End(ID3D11DeviceContext *dc, const RenderServices & /*s*/)
 {

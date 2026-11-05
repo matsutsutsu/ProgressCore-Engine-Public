@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 攻撃しない中立の陣形（低空円陣・頭上円陣）と、頭上の待機リング。
+// 概要: 攻撃しない中立の陣形（低空円陣・頭上円陣）と、頭上の待機リング
 //
 // 責務:
 //   - LowOrbit: ボスの周りを低い高さで周回する
@@ -15,12 +15,12 @@
 namespace CCL::AI::Formation::Basic
 {
     /**
-     * @brief 通し番号を円周上の角度にする。全機で円を等分し、時間とともに回す。低空円陣と頭上リングが使う。
-     * @param localIndex  群れの中の通し番号。
-     * @param totalDrones 群れの総数。0 は 1 として扱う。
-     * @param time        陣形の経過時間 [秒]。
-     * @param spin        回る速さ [rad/s]。
-     * @return 角度 [rad]。
+     * @brief 通し番号を円周上の角度にする。全機で円を等分し、時間とともに回す。低空円陣と頭上リングが使う
+     * @param localIndex  群れの中の通し番号
+     * @param totalDrones 群れの総数。0 は 1 として扱う
+     * @param time        陣形の経過時間 [秒]
+     * @param spin        回る速さ [rad/s]
+     * @return 角度 [rad]
      */
     inline float RingAngle(uint16_t localIndex, uint16_t totalDrones, float time, float spin)
     {
@@ -75,7 +75,7 @@ namespace CCL::AI::Formation::Basic
         static constexpr float kHeight = 2.0f; // ボスより少し上に浮かせる高さ [m]
     };
 
-    // 頭上円陣（HighOrbit）: 攻撃と攻撃のあいだに使う中立陣形。
+    // 頭上円陣（HighOrbit）: 攻撃と攻撃のあいだに使う中立陣形
     // 低空円陣だとドローンが壁になり、プレイヤーが近づく地上の間合いを塞ぐ
     class HighOrbitFormation : public IFormation
     {

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 敵を倒した瞬間に、ゲーム全体を短い間スローにする System。
+// 概要: 敵を倒した瞬間に、ゲーム全体を短い間スローにする System
 //
 // 責務:
 //   - HP が 0 以下になった敵を1体につき1回だけ見つける（HealthComponent::deathFxFired）
@@ -8,16 +8,17 @@
 //   - 普通に倒したときは短いスローにし、続けて倒してもスローが続かないよう間を空ける
 //   - ボスを倒したスローが終わったら、撃破ムービーの再生を頼む
 //
-// 備考: 倒れたエンティティは消えずに残るので、フラグが無いと毎フレーム見つけてしまう。
+// 備考: 倒れたエンティティは消えずに残るので、フラグがないと毎フレーム見つけてしまう
 //       スローは Time::SlowWorld で TimeContext.cinematicSlow に書くだけ。TimeScaleSystem（L01）が
 //       globalScale に掛け、ease-out で元の速さに戻す。globalScale は TimeStateComponent の
-//       group に関係なく全部に効く。命中の瞬間のヒットストップは DamageResolutionSystem が行う。
+//       group に関係なく全部に効く。命中の瞬間のヒットストップは DamageResolutionSystem が行う
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 
-class DefeatSlowMotionSystem
-    : public CCL::ECS::IfSystem<DefeatSlowMotionSystem, CCL::ECS::Write<HealthComponent>>
+class DefeatSlowMotionSystem : public CCL::ECS::IfSystem<
+    DefeatSlowMotionSystem,
+    CCL::ECS::Write<HealthComponent>>
 {
 public:
     DefeatSlowMotionSystem() : IfSystem("DefeatSlowMotionSystem") {}

@@ -1,8 +1,3 @@
-// CharacterMovementComponent のシリアライズ/インスペクタ定義。
-//
-// 依頼と結果は毎フレーム書き直す値なので、インスペクタでは読み取り専用にする
-// 編集できると、実行中の値がプレハブに残る
-
 #include "CharacterMovementComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

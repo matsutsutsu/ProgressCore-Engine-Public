@@ -1,4 +1,3 @@
-// InputIconComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/Input/InputIconComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
@@ -9,7 +8,7 @@
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
 #endif
 
-#include <iterator> // std::size
+#include <iterator>
 
 namespace
 {

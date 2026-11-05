@@ -1,19 +1,11 @@
 #pragma once
 // ===========================================================================
-// 概要: FormationAsset の各項目を「どう保存し、どう画面に出すか」を書いた表。
+// 概要: FormationAsset の各項目を、どう保存してどう画面に出すかを書いた表
 //
-// 責務:
-//   - 構造体ごとの FieldDescriptor 表（割付・形・動き・配置・当たり方・見せ方・全体）
-//   - enum の値の名前テーブル（JSON にもこの綴りで書く）
-//
-// 備考:
-//   JSON の読み書きとインスペクタの両方がこの表を読むので、項目を増やすときはここへ1行足せばよい。
-//   記述子が offsetof で位置を持つので、入れ子の構造体は別の表にする（JSON もその単位で入れ子になる）。
-//
-//   CFIELD 系マクロを使わず FD_* を直に並べるのは、CFIELD が末尾のカンマを中に持ち、
-//   clang-format が2つめ以降を右へ階段状にずらしてしまうため。
-//
-//   表に載らないもの: FormationLayer::curve（カーブ専用の編集で扱う）、FormationAsset::sourcePath（保存も表示もしない）
+// 備考: JSON の読み書きとインスペクタの両方がこの表を読むので、項目を増やすときはここへ1行足す
+//       記述子は offsetof で位置を持つので、入れ子の構造体は別の表にする
+//       CFIELD を使わず FD_* を直に並べるのは、clang-format が2つめ以降を階段状にずらすため
+//       表に載らないもの: FormationLayer::curve（カーブの編集で扱う）、FormationAsset::sourcePath
 // ===========================================================================
 #include <iterator>
 #include <vector>
@@ -34,7 +26,7 @@ namespace CCL::AI::Formation::Meta
     inline constexpr const char *kLookNames[]       = {"Auto", "ToPlayer", "Inward"};
     inline constexpr const char *kChargeModeNames[] = {"Straight", "RigidFollow", "SoftFollow"};
 
-    // 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す。
+    // 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す
     template <size_t N>
     constexpr int NameCount(const char *const (&)[N])
     {

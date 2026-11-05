@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: 親を持つ Transform だけを、親が必ず先に来る順に並べたキャッシュ。
+// 概要: 親を持つ Transform だけを、親が必ず先に来る順に並べたキャッシュ
 //
 // 責務:
 //   - 親子関係が変わったときに並び順を作り直す（Rebuild）
 //   - 解決中の中間結果（親のワールド行列）を置く作業領域の提供
 //
 // 備考: TransformUpdateSystem が所有し、World リソースとして
-//       TransformInterpolationSystem にも並び順だけを読ませる。
+//       TransformInterpolationSystem にも並び順だけを読ませる
 // ===========================================================================
 #include <vector>
 #include <DirectXMath.h>
@@ -18,14 +18,8 @@ namespace CCL::ECS
     class World;
 }
 
-/**
- * @brief 非ルート（parent != 0）の Transform だけを、親が先に来る順に並べたキャッシュ。
- *
- * ルート（parent == 0）は含めない。ルートは並列にその場で計算され、worldMatrix に
- * 直接書かれる。このキャッシュは「親のワールド行列を引き継ぐ子孫」を
- * 親→子の順で解決するための並び順と参照情報だけを持つ。
- * 親子の無いシーンでは Count() == 0 になり、階層解決のコストは0。
- */
+// ルートでない Transform だけを、親が先に来る順に並べたキャッシュ
+// ルートは並列にその場で計算するので含めない。親子のないシーンでは Count() が 0 で、階層の解決は走らない
 class TransformHierarchyCache
 {
 public:
@@ -39,7 +33,7 @@ public:
         return (pure < m_idToOrder.size()) ? m_idToOrder[pure] : -1;
     }
 
-    size_t             Count() const { return m_order.size(); }                    // 非ルートの数（親子の無いシーンでは 0）
+    size_t             Count() const { return m_order.size(); }                    // 非ルートの数（親子のないシーンでは 0）
     CCL::ECS::EntityID EntityAt(int i) const { return m_order[i]; }                // i 番目の Entity
     int                ParentInOrderOf(int i) const { return m_parentInOrder[i]; } // i 番目の親の並び順の位置（-1 = 親はルート）
     CCL::ECS::EntityID ParentIdOf(int i) const { return m_parentId[i]; }           // i 番目の親の EntityID（常に有効）

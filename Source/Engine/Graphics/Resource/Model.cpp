@@ -15,16 +15,8 @@
 #include <cctype>
 #include <tracy/Tracy.hpp>
 
-/**
- * @brief 大文字小文字を無視した部分一致。
- *
- * ロード時に「ルート・Pelvis・Hips 系のボーンか」を一度だけ判定するのに使う。
- *
- * @param name   調べる名前。
- * @param needle 探す文字列。
- * @return name が needle を含めば true。
- * @note 毎フレームの処理から呼ばないこと。std::string のヒープ確保が骨の数 × フレーム分積み上がり、処理落ちの大きな原因になる。
- */
+// 大文字小文字を無視した部分一致。ロード時にルート・Pelvis・Hips 系のボーンかを一度だけ判定するのに使う
+// 毎フレームの処理からは呼ばない。std::string のヒープ確保が骨の数ぶん毎フレーム起きる
 static bool ContainsCI(const std::string &name, const char *needle)
 {
     std::string lower = name;
@@ -32,6 +24,8 @@ static bool ContainsCI(const std::string &name, const char *needle)
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return lower.find(needle) != std::string::npos;
 }
+
+
 
 // time を挟む2つのキーフレームを二分探索で探し、補間率を求める
 template <typename T>
@@ -65,9 +59,9 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
     outK0 = &(*(it - 1));
 
     // 0 除算を避ける。UE5 などの書き出しでは、IK の切り替えや姿勢の瞬間的な変更を表すために、
-    //   同じ時刻（またはごく僅かな差）に2つのキーフレームが置かれることがある。
+    //   同じ時刻（またはごく僅かな差）に2つのキーフレームが置かれることがある
     //   分母がほぼ 0 のまま割ると outRate が NaN / Inf になり、Slerp / Lerp に渡ってそのボーンの
-    //   向きが壊れる。瞬間的な変化とみなし、後ろのキーフレームの値をそのまま使う。
+    //   向きが壊れる。瞬間的な変化とみなし、後ろのキーフレームの値をそのまま使う
     const float delta = outK1->seconds - outK0->seconds;
     if (delta <= 1e-6f)
     {
@@ -79,6 +73,8 @@ void EvaluateKeyframes(const std::vector<T> &keyframes, float time, float &outRa
         outRate = (time - outK0->seconds) / delta;
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 生成
@@ -117,8 +113,8 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.rotation = src.rotate;
         dst.scale    = src.scale;
 
-        // 位置をリターゲットしないボーンかを、ここで一度だけ決める（毎フレーム文字列で判定しない）。
-        //   0 番（ルート）と Pelvis・Hips・Root 系のボーンだけが、アニメーションの位置の移動をそのまま使う。
+        // 位置をリターゲットしないボーンかを、ここで一度だけ決める（毎フレーム文字列で判定しない）
+        //   0 番（ルート）と Pelvis・Hips・Root 系のボーンだけが、アニメーションの位置の移動をそのまま使う
         dst.isRootOrPelvis = (i == 0) ||
                              ContainsCI(src.name, "pelvis") ||
                              ContainsCI(src.name, "hips") ||
@@ -190,7 +186,7 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
         dst.data->SetScalar("occlusionStrength"_hash, src.occlusionStrength);
         // alphaCutoff は上の dst.data->alphaCutoff に持つ。シェーダーへは Mask のときだけ Shader が送る
 
-        // テクスチャ。useAlbedoMap などの有無のフラグは、描画時に Shader がテクスチャの有無から決める
+        // テクスチャ。useAlbedoMap などの有無のフラグは、描画時に Shader がテクスチャの有なから決める
         if (src.baseMap)
         {
             dst.data->SetTexture("AlbedoMap"_hash, ResourceManager::Instance().RegisterTexture(src.baseMap));
@@ -248,6 +244,8 @@ Model::Model(ID3D11Device *device, const char *filename, float sampleRate)
     UpdateTransform(worldTransform);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 検索
 // ---------------------------------------------------------------------------
@@ -277,6 +275,8 @@ int Model::GetAnimationIndex(const char *name) const
     return (it != m_animIndexCache.end()) ? it->second : -1;
 }
 
+
+
 int Model::GetNodeIndex(const char *name) const
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
@@ -288,6 +288,8 @@ int Model::GetNodeIndex(const char *name) const
     }
     return -1;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ポーズの計算
@@ -328,15 +330,17 @@ void Model::UpdateTransform(const DirectX::XMFLOAT4X4 &worldTransform)
     }
 }
 
+
+
 void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const
 {
     // ここに Tracy のゾーンは置かない。ノードの数だけ（キャラ1体で 77〜118 回）毎フレーム呼ばれるので、
-    // ゾーンを出すコストで測りたい時間そのものが膨らむ。呼び出し元の ComputeAnimation の1ゾーンで足りる。
+    // ゾーンを出すコストで測りたい時間そのものが膨らむ。呼び出し元の ComputeAnimation の1ゾーンで足りる
 
     const ModelResource::NodeAnim &nodeAnim = animation.nodeAnims.at(nodeIndex);
 
-    // 先にバインドポーズ（モデルの元の姿勢）を入れておく。
-    // キーフレームが無いチャンネルが 0 になるのを防ぐ
+    // 先にバインドポーズ（モデルの元の姿勢）を入れておく
+    // キーフレームがないチャンネルが 0 になるのを防ぐ
     const Node &bindNode = nodes.at(nodeIndex);
     nodePose.position    = bindNode.position;
     nodePose.rotation    = bindNode.rotation;
@@ -345,20 +349,9 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     float rate;
 
     // --- 位置 ---
-    //
-    // 位置のリターゲット（体型の崩れを防ぐ）。
-    //   ルート・Pelvis・Hips 系以外は、アニメーションの位置の移動を使わず、モデルの骨の長さ
-    //   （bindNode.position）を使う。対象かどうかはロード時に決めた isRootOrPelvis を見るだけにする。
-    //   ここで骨の名前から判定し直してはいけない（小文字化と部分一致が毎フレーム × 骨の数だけ走る）。
-    //
-    //   対象外のノードでは結果を捨てるので、計算自体を飛ばす。isRootOrPelvis が true なのは
-    //   リグ全体で1〜3本だけなので、位置のキーフレーム探索と Lerp はほとんどのノードで省ける。
-    //   nodePose.position は上でバインドポーズを入れてあるので、else は要らない。
-    //
-    // リターゲットを切っているモデルでは、全ボーンの移動をそのまま使う。
-    //   モデルとアニメーションの骨格が同じであることが前提。スライドするボーン
-    //   （Valkyra の wing_blade_track など）は移動そのものが演出なので、
-    //   バインドポーズで上書きすると、その下のボーンごと位置が崩れる。
+    // ルート・Pelvis・Hips 系以外は、アニメーションの移動を使わずモデルの骨の長さ（bindNode.position）を使う（体型を崩さない）
+    // 対象はロード時に決めた isRootOrPelvis で見る。対象外は計算ごと飛ばす（nodePose.position にはバインドポーズが入っている）
+    // リターゲットを切ったモデルは、全ボーンの移動を使う。スライドするボーンは移動そのものが演出なので、上書きすると崩れる
     if (bindNode.isRootOrPelvis || !m_translationRetargeting)
     {
         const ModelResource::VectorKeyframe *posK0, *posK1;
@@ -395,6 +388,8 @@ void Model::ComputeNodePose(const ModelResource::Animation &animation, int nodeI
     }
 }
 
+
+
 void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, NodePose &nodePose) const
 {
     ZoneScopedN("Model::ComputeAnimation");
@@ -404,6 +399,8 @@ void Model::ComputeAnimation(int animationIndex, int nodeIndex, float time, Node
     const auto &animations = ResourceManager::Instance().GetModel(resource)->GetAnimations();
     ComputeNodePose(animations.at(animationIndex), nodeIndex, time, nodePose);
 }
+
+
 
 void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const
 {
@@ -426,6 +423,8 @@ void Model::ComputeAnimation(int animationIndex, float time, std::vector<NodePos
     }
 }
 
+
+
 void Model::SetNodePoses(const std::vector<NodePose> &nodePoses)
 {
     for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex)
@@ -438,6 +437,8 @@ void Model::SetNodePoses(const std::vector<NodePose> &nodePoses)
         node.scale    = pose.scale;
     }
 }
+
+
 
 void Model::GetNodePoses(std::vector<NodePose> &nodePoses) const
 {
@@ -452,6 +453,8 @@ void Model::GetNodePoses(std::vector<NodePose> &nodePoses) const
         pose.scale    = node.scale;
     }
 }
+
+
 
 void Model::BlendAnimations(
     const std::vector<NodePose> &animation0,
@@ -488,6 +491,8 @@ void Model::BlendAnimations(
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 共有データ
 // ---------------------------------------------------------------------------
@@ -497,10 +502,14 @@ const ModelResource *Model::GetResource() const
     return ResourceManager::Instance().GetModel(resource);
 }
 
+
+
 ModelResource *Model::GetResourceMutable()
 {
     return ResourceManager::Instance().GetModel(resource);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ルートモーションの補助
@@ -549,6 +558,8 @@ int Model::FindRealRootMotionNodeIndex(int animIndex) const
 
     return result;
 }
+
+
 
 const Model::NodePose &Model::GetPinnedPoseAtZero(int animIndex, int nodeIndex) const
 {

@@ -1,7 +1,7 @@
 #include "PlayerFeedbackSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 
-#include "Engine/Camera/CameraEvents.h" // CameraShakeRequestEvent（画面揺れの要求はこのイベントだけで出す）
+#include "Engine/Camera/CameraEvents.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
@@ -20,8 +20,8 @@
 
 namespace
 {
-    // PostProcess の上書きスロットの識別子と優先度。名前と優先度は使う側が決める。
-    // 被弾は、命中の演出(ScreenImpactSystem=10)・ジャスト回避(PlayerRushEffectSystem=20)より優先度を下げる。
+    // PostProcess の上書きスロットの識別子と優先度。名前と優先度は使う側が決める
+    // 被弾は、命中の演出(ScreenImpactSystem=10)・ジャスト回避(PlayerRushEffectSystem=20)より優先度を下げる
 
     const uint32_t kSource   = CCL::Utils::HashString("PlayerDamage");
     constexpr int  kPriority = 5;
@@ -32,8 +32,10 @@ namespace
         return timer;
     }
 
-    // 残り時間を 0〜1 に正規化して2乗した値（演出の強さの係数）を返す。
-    // 開始直後が 1 で、前半に大きく下がり、後半はゆっくり 0 に近づく。
+
+
+    // 残り時間を 0〜1 に正規化して2乗した値（演出の強さの係数）を返す
+    // 開始直後が 1 で、前半に大きく下がり、後半はゆっくり 0 に近づく
 
     float CalculateEnvelope(float timer, float duration)
     {
@@ -67,12 +69,16 @@ void PlayerFeedbackSystem::Initialize()
         });
 }
 
+
+
 void PlayerFeedbackSystem::Update(float dt)
 {
     UpdateDamageVignette(dt);
 
     UpdateDamageChromaticAberration(dt);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -233,6 +239,8 @@ void PlayerFeedbackSystem::OnGui()
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // イベントの受け口
 // ---------------------------------------------------------------------------
@@ -251,6 +259,8 @@ void PlayerFeedbackSystem::OnPlayerDamaged(
     // TODO(2026-08-25): 被弾の効果音を鳴らす
 }
 
+
+
 void PlayerFeedbackSystem::OnPlayerAttackHit(
     const AttackHitConfirmedEvent &event)
 {
@@ -261,6 +271,8 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
     // TODO(2026-08-25): 命中時のカメラの揺れと効果音を足す
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 揺れと振動
 // ---------------------------------------------------------------------------
@@ -268,8 +280,8 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
 void PlayerFeedbackSystem::StartDamageCameraShake(
     float damageAmount)
 {
-    // VirtualCamera へ直接書かない。直接書くと値の上書きになり、着地の揺れを被弾の揺れが消してしまう。
-    // 要求のイベントを出せば、受け側(CameraShakeSystem)が足し合わせて1つの揺れにする。
+    // VirtualCamera へ直接書かない。直接書くと値の上書きになり、着地の揺れを被弾の揺れが消してしまう
+    // 要求のイベントを出せば、受け側(CameraShakeSystem)が足し合わせて1つの揺れにする
     const float trauma =
         std::clamp(
             damageAmount * m_traumaPerDamage,
@@ -278,6 +290,8 @@ void PlayerFeedbackSystem::StartDamageCameraShake(
 
     m_world->GetEventBus().Publish(CameraShakeRequestEvent{trauma});
 }
+
+
 
 void PlayerFeedbackSystem::StartDamageVibration()
 {
@@ -295,6 +309,8 @@ void PlayerFeedbackSystem::StartDamageVibration()
         m_vibrationRight,
         m_vibrationDuration);
 }
+
+
 
 void PlayerFeedbackSystem::StartAttackHitVibration(
     const AttackHitConfirmedEvent &event)
@@ -323,6 +339,8 @@ void PlayerFeedbackSystem::StartAttackHitVibration(
         m_attackHitVibrationDuration);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 画面効果（ビネット・色収差）
 // ---------------------------------------------------------------------------
@@ -332,11 +350,13 @@ void PlayerFeedbackSystem::StartDamageVignette()
     m_vignetteTimer = m_vignetteDuration;
 }
 
+
+
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
-    // 演出が終わったら、自分のスロットを手放すだけでよい（元の設定にも他の演出にも触らない）。
+    // 演出が終わったら、自分のスロットを手放すだけでよい（元の設定にも他の演出にも触らない）
     //
-    // 色収差とは別のタイマーで終わるので、ReleaseAll ではなくビネットだけを手放す。
+    // 色収差とは別のタイマーで終わるので、ReleaseAll ではなくビネットだけを手放す
     if (m_vignetteTimer <= 0.0f)
     {
         CCL::PostFx::Release<VignetteConfigComponent>(*m_world, kSource);
@@ -347,8 +367,8 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 
     const float env = CalculateEnvelope(m_vignetteTimer, m_vignetteDuration);
 
-    // 目標値と、そこへ寄せる割合(weight)だけを書く。
-    // 元の設定からの補間と、他の演出との重ね合わせは Resolve() が行う。
+    // 目標値と、そこへ寄せる割合(weight)だけを書く
+    // 元の設定からの補間と、他の演出との重ね合わせは Resolve() が行う
     if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
     {
         ov->weight            = env;
@@ -360,17 +380,21 @@ void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
     }
 }
 
+
+
 void PlayerFeedbackSystem::StartDamageChromaticAberration()
 {
     m_chromaticTimer = m_chromaticDuration;
 }
 
+
+
 void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
 {
     // 触るのは自分のスロットだけ。設定本体(enable/data)や他の演出のスロットには書かないので、
-    // 命中やジャスト回避の演出の最中に被弾しても、互いを消し合わない。最終的な強さは PostProcessSystem が合成する。
+    // 命中やジャスト回避の演出の最中に被弾しても、互いを消し合わない。最終的な強さは PostProcessSystem が合成する
     //
-    // ビネットとは別のタイマーで終わるので、ReleaseAll ではなく色収差だけを手放す。
+    // ビネットとは別のタイマーで終わるので、ReleaseAll ではなく色収差だけを手放す
     if (m_chromaticTimer <= 0.0f)
     {
         CCL::PostFx::Release<ChromaticAberrationConfigComponent>(*m_world, kSource);
@@ -391,10 +415,14 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
     }
 }
 
+
+
 std::vector<CCL::ECS::TypeID> PlayerFeedbackSystem::GetWriteTypes() const
 {
     return {CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),
             CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID()};
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(PlayerFeedbackSystem, Priority::LogicStage::L06_Resolution);

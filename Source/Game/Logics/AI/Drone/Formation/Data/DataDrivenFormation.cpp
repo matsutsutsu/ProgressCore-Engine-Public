@@ -8,7 +8,7 @@
 
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 床の高さ（clampToGround）
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 #include "Game/Logics/AI/Drone/Formation/Data/FormationAssetIO.h"
 #include "Game/Logics/AI/Drone/Formation/Data/ShapeSampler.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -19,7 +19,7 @@ namespace CCL::AI::Formation::Data
 
     namespace
     {
-        // 陣形ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する。
+        // 陣形ローカル空間での軸ベクトル。Right/Up/Forward がそのまま X/Y/Z に対応する
         // Right = Up × Forward は X = Y × Z と同じ関係なので、単位軸まわりの回転がそのまま陣形ローカルの回転になる
         Vector3 AxisVector(AssetAxis axis)
         {
@@ -80,6 +80,8 @@ namespace CCL::AI::Formation::Data
         drone.targetLookDirection = lookWorld;
     }
 
+
+
     // ============================================================
     // 進行度
     // ============================================================
@@ -96,6 +98,8 @@ namespace CCL::AI::Formation::Data
 
         return drone.attackProgress;
     }
+
+
 
     // ============================================================
     // (1) 割付: 通し番号 → 席
@@ -146,6 +150,8 @@ namespace CCL::AI::Formation::Data
         outRows = rows;
     }
 
+
+
     Seat DataDrivenFormation::AssignSeat(const DroneComponent &drone) const
     {
         // 処理フロー:
@@ -194,6 +200,8 @@ namespace CCL::AI::Formation::Data
         return seat;
     }
 
+
+
     // ============================================================
     // (2) 形: 席 → ローカル座標（動かす前の「待機の形」）
     // ============================================================
@@ -212,13 +220,15 @@ namespace CCL::AI::Formation::Data
                      m_asset.name.c_str(), lo.modelPath.c_str(), m_shapePoints.size());
     }
 
+
+
     Vector3 DataDrivenFormation::MakeLocal(const Seat &seat, const DroneComponent &drone) const
     {
         const FormationLayout &lo = m_asset.layout;
 
         // --- モデルの形 ---
 
-        // 最遠点の順に並んだ点へ通し番号の順に置く。機数が減っても形が欠けず、粗くなるだけで済む。
+        // 最遠点の順に並んだ点へ通し番号の順に置く。機数が減っても形が欠けず、粗くなるだけで済む
         // 点が取れなかったときは下の格子へ戻す（全機が1点に重なると、何が壊れたか見た目で分からない）
         if (lo.shape == AssetShape::Model && !m_shapePoints.empty())
         {
@@ -242,6 +252,8 @@ namespace CCL::AI::Formation::Data
 
         return AxisVector(lo.columnAxis) * a + Vector3::UnitY * b;
     }
+
+
 
     // ============================================================
     // (3) 動き: 層を1枚ずつ当てる
@@ -287,9 +299,11 @@ namespace CCL::AI::Formation::Data
         }
     }
 
+
+
     float DataDrivenFormation::LayerValue(const FormationLayer &layer, const Seat &seat, float p) const
     {
-        // 0除算になる値（窓幅0・duration 0以下）は FormationAssetIO::Validate が読み込み時に直す。
+        // 0除算になる値（窓幅0・duration 0以下）は FormationAssetIO::Validate が読み込み時に直す
         // duration を窓幅までに抑えるのは、エディタで編集中の値でも保存後と同じ動きを見せるため
         const float width    = layer.windowEnd - layer.windowBegin;
         const float duration = (std::min)(layer.duration, width);
@@ -300,6 +314,8 @@ namespace CCL::AI::Formation::Data
         if (layer.mirror) value *= SideSign(seat);
         return value;
     }
+
+
 
     float DataDrivenFormation::SeatPhaseT(const FormationLayer &layer, const Seat &seat) const
     {
@@ -325,6 +341,8 @@ namespace CCL::AI::Formation::Data
         return std::clamp(t, 0.0f, 1.0f);
     }
 
+
+
     float DataDrivenFormation::SideSign(const Seat &seat) const
     {
         const int n = m_asset.assign.sideGroups;
@@ -332,11 +350,15 @@ namespace CCL::AI::Formation::Data
         return static_cast<float>(seat.side) * (2.0f / (n - 1)) - 1.0f;
     }
 
+
+
     float DataDrivenFormation::TelegraphT(const DroneComponent &drone) const
     {
         const float seconds = (m_telegraphOverride >= 0.0f) ? m_telegraphOverride : drone.telegraphTime;
         return seconds / m_asset.telegraphSeconds; // 上限で止めない。帯の外＝予告の後は震えない
     }
+
+
 
     // ============================================================
     // (4) 配置: ローカル → ワールド
@@ -352,6 +374,8 @@ namespace CCL::AI::Formation::Data
         return basis;
     }
 
+
+
     Vector3 DataDrivenFormation::ToWorld(const Vector3 &local, const Basis &basis, const Vector3 &bossPos) const
     {
         const FormationOrigin &origin = m_asset.origin;
@@ -364,6 +388,8 @@ namespace CCL::AI::Formation::Data
 
         return world;
     }
+
+
 
     // ============================================================
     // 機首と突撃方向
@@ -380,7 +406,7 @@ namespace CCL::AI::Formation::Data
             lookWorld.y = 0.0f;
             break;
 
-        // 左右対称の内側。mirror の符号の逆を向くので、2本の壁が必ず互いを向く。
+        // 左右対称の内側。mirror の符号の逆を向くので、2本の壁が必ず互いを向く
         // 座標から中心線を引く方式だと、奥行きのある壁の先端ほど内を向き、壁が弧を描いて見える
         case LookMode::Inward:
             lookWorld = basis.right * -SideSign(seat);
@@ -395,6 +421,8 @@ namespace CCL::AI::Formation::Data
         lookWorld.Normalize();
         return lookWorld;
     }
+
+
 
     // ============================================================
     // 登録（DroneFormationSystem::Initialize から呼ぶ）
@@ -417,7 +445,7 @@ namespace CCL::AI::Formation::Data
             FormationAsset asset;
             if (!FormationAssetIO::Load(path, asset)) continue;
 
-            // 欠番は BT から指す手段が無い
+            // 欠番は BT から指す手段がない
             if (asset.slot >= kDroneFormationSlotCount ||
                 std::string_view(kDroneFormationNames[asset.slot]) == "(欠番)")
             {
@@ -426,7 +454,7 @@ namespace CCL::AI::Formation::Data
                 continue;
             }
 
-            // 名前のある枠（縦割り等）も名乗れるが、先に登録した C++ 陣形か別の JSON が居れば弾く
+            // 名前のある枠（縦割り等）も名乗れるが、先に登録した C++ 陣形か別の JSON がいれば弾く
             const auto type = static_cast<DroneFormationType>(asset.slot);
             if (registry.Has(type))
             {

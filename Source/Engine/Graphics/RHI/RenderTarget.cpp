@@ -8,6 +8,8 @@ RenderTarget::~RenderTarget()
     Release();
 }
 
+
+
 void RenderTarget::Release()
 {
     m_texture.Reset();
@@ -17,6 +19,8 @@ void RenderTarget::Release()
     m_height = 0;
     m_format = DXGI_FORMAT_UNKNOWN;
 }
+
+
 
 bool RenderTarget::Create(ID3D11Device *device, UINT width, UINT height, DXGI_FORMAT format)
 {
@@ -98,6 +102,8 @@ bool RenderTarget::Create(ID3D11Device *device, UINT width, UINT height, DXGI_FO
     return true;
 }
 
+
+
 void RenderTarget::Clear(ID3D11DeviceContext *dc, const float color[4])
 {
     if (dc && m_rtv)
@@ -105,6 +111,8 @@ void RenderTarget::Clear(ID3D11DeviceContext *dc, const float color[4])
         dc->ClearRenderTargetView(m_rtv.Get(), color);
     }
 }
+
+
 
 void RenderTarget::Activate(ID3D11DeviceContext *dc, ID3D11DepthStencilView *dsv)
 {

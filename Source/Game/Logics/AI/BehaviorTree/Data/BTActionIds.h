@@ -1,27 +1,23 @@
 #pragma once
 // ===========================================================================
-// 概要: BTActionList.h の表から、BT の行動・条件の ID 定数と辞書を作るヘッダ。
+// 概要: BTActionList.h の表から、BT の行動・条件の ID 定数と辞書を作るヘッダ
 //
-// 責務:
-//   - ID 定数、辞書（表示名・分類・param の意味・振る舞い）、陣形への変換を表から作る
-//   - ID や保存キーから辞書を引く関数を提供する
-//   - 表の重複・分類の並び・ドローンの ID の区画を static_assert で検査する
-//
-// 備考: 技を足すときにこのファイルを触る必要はない。編集するのは BTActionList.h だけ。
-//       引くのは読み込み時とエディタだけなので線形探索でよい（実行中の評価は ID のまま）。
+// 備考: 技を足すときに触るのは BTActionList.h だけ
+//       表の重複と ID の区画は static_assert で検査する
+//       辞書を引くのは読み込み時とエディタだけなので、線形探索でよい
 // ===========================================================================
 #include <cstdint>
 #include <string_view>
 
-#include "Game/Logics/AI/BehaviorTree/Data/BTActionList.h"      // 語彙の表（編集するのはこちら）
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"  // ActionID
-#include "Game/Logics/AI/Drone/Components/DroneFormationType.h"            // 技IDから陣形を引くため
+#include "Game/Logics/AI/BehaviorTree/Data/BTActionList.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Game/Logics/AI/Drone/Components/DroneFormationType.h"
 
 // ============================================================
 // ID 定数
 // ============================================================
 //
-// 辞書と同じ表から作るので、「ID はあるが辞書に無い」という状態が起きない。
+// 辞書と同じ表から作るので、「ID はあるが辞書にない」という状態が起きない
 
 #define CCL_BT_DEFINE_ACTION_ID(Name, Id, Category, Kind, ParamLabel, Display) \
     inline constexpr ActionID Name = Id;
@@ -43,9 +39,9 @@ BT_DRONE_ACTION_LIST(CCL_BT_DEFINE_DRONE_ID)
 // ============================================================
 
 /**
- * @brief 行動・条件の分類。エディタのコンボの見出しになる。
+ * @brief 行動・条件の分類。エディタのコンボの見出しになる
  *
- * ActionEntry を行動と条件で共用しているので enum も1つにまとめている。
+ * ActionEntry を行動と条件で共用しているので enum も1つにまとめている
  */
 enum class BTCategory : uint8_t
 {
@@ -82,12 +78,12 @@ inline const char *BTCategoryName(BTCategory c)
 }
 
 /**
- * @brief BT上での実行特性。読み込み時の検査（BehaviorTreeLoader）が引く。
+ * @brief BT上での実行特性。読み込み時の検査（BehaviorTreeLoader）が引く
  *
- * Driving ⊂ Blocking。Driving は Parallel の主に置く必要がある。
+ * Driving ⊂ Blocking。Driving は Parallel の主に置く必要がある
  *
  * 2つのフラグではなく1列3値にしているのは、「Driving だが Blocking でない」という
- * あり得ない組み合わせを書けなくするため。
+ * あり得ない組み合わせを書けなくするため
  */
 enum class BTActionKind : uint8_t
 {
@@ -108,7 +104,7 @@ struct ActionEntry
 };
 
 // 並びは分類ごとにまとめる。エディタのコンボが「分類が変わった所で見出しを出す」
-// 作りなので、散らばると同じ見出しが何度も出る（下の static_assert で検査する）。
+// 作りなので、散らばると同じ見出しが何度も出る（下の static_assert で検査する）
 inline constexpr ActionEntry g_ActionRegistry[] = {
     {0, "None", "なし (None)", BTCategory::None, ""},
 
@@ -117,7 +113,7 @@ inline constexpr ActionEntry g_ActionRegistry[] = {
     BT_ACTION_LIST(CCL_BT_ACTION_ENTRY)
 #undef CCL_BT_ACTION_ENTRY
 
-// 陣形技は分類も振る舞いも全部同じ（指示を出して即 Success）なので、表に列を持たない。
+// 陣形技は分類も振る舞いも全部同じ（指示を出して即 Success）なので、表に列を持たない
 #define CCL_BT_DRONE_ENTRY(Name, Id, Formation, Role, Display) \
     {Name, #Name, Display, BTCategory::Drone, "", BTActionKind::Instant},
     BT_DRONE_ACTION_LIST(CCL_BT_DRONE_ENTRY)
@@ -140,8 +136,8 @@ inline constexpr int g_ConditionRegistryCount = sizeof(g_ConditionRegistry) / si
 // ============================================================
 
 /**
- * @brief 保存キーの読み替え（Unreal の ActiveClassRedirects と同じ役割）。定数名を変えたら、ここに1行足す。
- * @note 返してよいのは文字列リテラルか引数の key だけ（string_view は文字列の中身を持たないため）。
+ * @brief 保存キーの読み替え（Unreal の ActiveClassRedirects と同じ役割）。定数名を変えたら、ここに1行足す
+ * @note 返してよいのは文字列リテラルか引数の key だけ（string_view は文字列の中身を持たないため）
  */
 inline constexpr std::string_view RedirectKey(std::string_view key)
 {
@@ -149,7 +145,7 @@ inline constexpr std::string_view RedirectKey(std::string_view key)
     return key;
 }
 
-// ID から行動の辞書の行を引く。無ければ nullptr
+// ID から行動の辞書の行を引く。なければ nullptr
 inline const ActionEntry *FindActionEntry(ActionID id)
 {
     for (int i = 0; i < g_ActionRegistryCount; ++i)
@@ -157,7 +153,7 @@ inline const ActionEntry *FindActionEntry(ActionID id)
     return nullptr;
 }
 
-// ID から条件の辞書の行を引く。無ければ nullptr
+// ID から条件の辞書の行を引く。なければ nullptr
 inline const ActionEntry *FindConditionEntry(ActionID id)
 {
     for (int i = 0; i < g_ConditionRegistryCount; ++i)
@@ -225,10 +221,10 @@ static_assert(IsGroupedByCategory(g_ActionRegistry, g_ActionRegistryCount),
 static_assert(IsGroupedByCategory(g_ConditionRegistry, g_ConditionRegistryCount),
               "ConditionRegistry の分類が飛び飛びになっている（表の並びを分類順に直すこと）");
 
-// 陣形技（Drone 分類）は100番以上、それ以外は100番未満。
+// 陣形技（Drone 分類）は100番以上、それ以外は100番未満
 //
 // 番号の区画を決まりごとだけにせず、検査で守る。番号から種別を推測したときに
-// 必ず当たるようにするため。データの枠を増やしても末尾に伸ばせる。
+// 必ず当たるようにするため。データの枠を増やしても末尾に伸ばせる
 inline constexpr ActionID kDroneActionIdFirst = 100;
 
 // Drone 分類の行動がすべて kDroneActionIdFirst 以上で、それ以外がすべて未満か
@@ -259,10 +255,10 @@ inline constexpr bool RegistryHasKey(std::string_view key)
 }
 
 /**
- * @brief 読み替えが健全かを返す。RedirectKey に1行足したら、ここにも対応する1行を足す。
- * @param oldKey 読み替え元のキー。表に残っていれば改名し忘れ。
- * @param newKey 読み替え先のキー。表に無ければ綴り間違い。
- * @return 先が表にあり、元が表に無く、RedirectKey が元を先へ読み替えるなら true。
+ * @brief 読み替えが健全かを返す。RedirectKey に1行足したら、ここにも対応する1行を足す
+ * @param oldKey 読み替え元のキー。表に残っていれば改名し忘れ
+ * @param newKey 読み替え先のキー。表になければ綴り間違い
+ * @return 先が表にあり、元が表になく、RedirectKey が元を先へ読み替えるなら true
  */
 inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view newKey)
 {
@@ -274,13 +270,13 @@ inline constexpr bool IsRedirectValid(std::string_view oldKey, std::string_view 
 // 問い合わせ
 // ============================================================
 //
-// 番号の範囲ではなく表を引く。番号で判定すると、番号の付け方を変えたときに何も言わずに壊れる。
+// 番号の範囲ではなく表を引く。番号で判定すると、番号の付け方を変えたときに何も言わずに壊れる
 
 // C++ で書いた陣形技の ID から陣形を引く。それ以外（データの技を含む）は false で outFormation はそのまま
 inline bool TryGetDroneFormation(ActionID id, DroneFormationType &outFormation)
 {
     // BT_DRONE_ACTION_LIST の1行ごとに
-    // 「case ID: outFormation = 陣形; return true;」が並ぶ。
+    // 「case ID: outFormation = 陣形; return true;」が並ぶ
     //   例: case 102: outFormation = DroneFormationType::HighOrbit; return true;
     switch (id)
     {
@@ -306,7 +302,7 @@ inline bool IsDroneAction(ActionID id)
 // 当たり判定を持つ陣形（技）か。表の Role 列を引くので、隊形を足してもここは触らない
 inline bool IsDroneAttackFormation(ActionID id)
 {
-    // データの技は当たり判定を持つ攻撃技として作る前提（攻撃しない隊形は C++ 側にある）。
+    // データの技は当たり判定を持つ攻撃技として作る前提（攻撃しない隊形は C++ 側にある）
     if (id == A_DroneFormation) return true;
 
     // BT_DRONE_ACTION_LIST の1行ごとに

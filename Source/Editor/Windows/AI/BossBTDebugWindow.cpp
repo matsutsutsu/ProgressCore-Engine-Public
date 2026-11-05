@@ -30,6 +30,8 @@ namespace
         }
     }
 
+
+
     // param を小数第1位までの文字列にする
     std::string FormatParam(float value)
     {
@@ -64,8 +66,8 @@ void BossBTDebugWindow::DrawContents(EditorContext &context)
     ImGui::SameLine();
     ImGui::TextDisabled("（「実行」でその枝だけを繰り返す。条件とクールダウンは無視）");
 
-    // 「実行」ボタンとツリーを別の列に分ける。同じ列だと、親から引く線が子の行のボタンを貫く。
-    // 字下げはツリーの列にだけかけ、ボタンは縦一列にそろえる。ScrollY でツリーだけをスクロールさせる。
+    // 「実行」ボタンとツリーを別の列に分ける。同じ列だと、親から引く線が子の行のボタンを貫く
+    // 字下げはツリーの列にだけかけ、ボタンは縦一列にそろえる。ScrollY でツリーだけをスクロールさせる
     if (ImGui::BeginTable("##BossBT", 2, ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuter))
     {
         const float buttonWidth = ImGui::CalcTextSize("解除").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -77,6 +79,8 @@ void BossBTDebugWindow::DrawContents(EditorContext &context)
         ImGui::EndTable();
     }
 }
+
+
 
 void BossBTDebugWindow::DrawStatus(const BossHandles &boss)
 {
@@ -113,6 +117,8 @@ void BossBTDebugWindow::DrawStatus(const BossHandles &boss)
     }
 }
 
+
+
 void BossBTDebugWindow::DrawNode(const BTAsset &asset, BTNodeID nodeId, const BossHandles &boss,
                                  const std::string &inheritedName, int depth)
 {
@@ -120,8 +126,8 @@ void BossBTDebugWindow::DrawNode(const BTAsset &asset, BTNodeID nodeId, const Bo
 
     // --- 省く行 ---
 
-    // 子が1つの Decorator（クールダウン・採点の包み）は行を作らず、子の行にまとめる。
-    // 包みの行があると技1つで階層が1段深くなり、木が読みにくくなる。
+    // 子が1つの Decorator（クールダウン・採点の包み）は行を作らず、子の行にまとめる
+    // 包みの行があると技1つで階層が1段深くなり、木が読みにくくなる
     if (node.type == BTNodeType::Decorator && node.children.size() == 1)
     {
         const bool        hasName = nodeId < asset.nodeNames.size() && !asset.nodeNames[nodeId].empty();
@@ -130,7 +136,7 @@ void BossBTDebugWindow::DrawNode(const BTAsset &asset, BTNodeID nodeId, const Bo
         return;
     }
 
-    // 条件は単独で実行しても意味が無いので、ボタンを付けずに出す
+    // 条件は単独で実行しても意味がないので、ボタンを付けずに出す
     if (node.type == BTNodeType::Condition)
     {
         if (m_showConditions)
@@ -166,7 +172,7 @@ void BossBTDebugWindow::DrawNode(const BTAsset &asset, BTNodeID nodeId, const Bo
         ImGui::PushStyleColor(ImGuiCol_Text, kForcedColor);
     }
 
-    // 最初は上の2段だけ開く。全部開くと技の一覧が画面に収まらない。
+    // 最初は上の2段だけ開く。全部開くと技の一覧が画面に収まらない
     // DrawLinesToNodes で親から子へ線を引く（BT エディタのアウトラインと同じ）
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DrawLinesToNodes;
     if (depth < 2)
@@ -199,6 +205,8 @@ void BossBTDebugWindow::DrawNode(const BTAsset &asset, BTNodeID nodeId, const Bo
     ImGui::PopID();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 補助
 // ---------------------------------------------------------------------------
@@ -219,6 +227,8 @@ BossBTDebugWindow::BossHandles BossBTDebugWindow::FindBoss(EditorContext &contex
     }
     return handles;
 }
+
+
 
 std::string BossBTDebugWindow::MakeLabel(const BTAsset &asset, BTNodeID nodeId, const std::string &inheritedName) const
 {
@@ -250,7 +260,7 @@ std::string BossBTDebugWindow::MakeLabel(const BTAsset &asset, BTNodeID nodeId, 
         return name.empty() ? label : name + " : " + label;
     }
 
-    // --- 複合ノード：名前が無ければ種類と中身の先頭の行動 ---
+    // --- 複合ノード：名前がなければ種類と中身の先頭の行動 ---
 
     if (!name.empty())
     {
@@ -264,6 +274,8 @@ std::string BossBTDebugWindow::MakeLabel(const BTAsset &asset, BTNodeID nodeId, 
     }
     return label;
 }
+
+
 
 const char *BossBTDebugWindow::FirstActionName(const BTAsset &asset, BTNodeID nodeId) const
 {
@@ -283,6 +295,8 @@ const char *BossBTDebugWindow::FirstActionName(const BTAsset &asset, BTNodeID no
     }
     return nullptr;
 }
+
+
 
 void BossBTDebugWindow::SetForced(const BossHandles &boss, int nodeId)
 {

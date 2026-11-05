@@ -20,6 +20,8 @@ ModelRenderSystem::ModelRenderSystem() : IfSystem("ModelRenderSystem")
     SetExclude<NoRenderTag>();
 }
 
+
+
 void ModelRenderSystem::Update(float dt)
 {
     // Instance() の呼び出しをループの外に出す
@@ -36,8 +38,8 @@ void ModelRenderSystem::Update(float dt)
         Model *model = modelComp.GetModel();
         if (!model) return;
 
-        // シェーダーは先頭のマテリアルのものを使う（無ければ、モデルを読み込んだときの既定と同じ PBR）。
-        // スキンメッシュかどうかは、描画側（OpaquePass / ShadowPass）がメッシュごとに mesh.bones で判定する。
+        // シェーダーは先頭のマテリアルのものを使う（なければ、モデルを読み込んだときの既定と同じ PBR）
+        // スキンメッシュかどうかは、描画側（OpaquePass / ShadowPass）がメッシュごとに mesh.bones で判定する
         uint32_t shaderHash = "PBR"_hash;
 
         // 差し替えマテリアルがあればそちらを優先する
@@ -60,8 +62,8 @@ void ModelRenderSystem::Update(float dt)
         }
 
         // =========================================================
-        // ここでは描画せず、RenderCommand を RenderQueue に積むだけ。
-        // 実際のドローコールは OpaquePass 等がソート後にまとめて発行する。
+        // ここでは描画せず、RenderCommand を RenderQueue に積むだけ
+        // 実際のドローコールは OpaquePass 等がソート後にまとめて発行する
         // =========================================================
         RenderCommand cmd;
         cmd.shaderHash = shaderHash;
@@ -91,5 +93,7 @@ void ModelRenderSystem::Update(float dt)
         renderQueue.SubmitOpaque(cmd);
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(ModelRenderSystem, Priority::RenderStage::R08_Main);

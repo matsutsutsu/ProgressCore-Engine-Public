@@ -37,12 +37,14 @@ namespace
         return nice * mag;
     }
 
+
+
     /**
-     * @brief 目盛りの数値を文字列にする。小数の桁数は目盛りの間隔に合わせて変える。
-     * @param buf  書き込み先のバッファ。
-     * @param n    buf の大きさ（バイト）。
-     * @param v    書く値。
-     * @param step 目盛りの間隔。1 未満なら小数1桁、0.1 未満なら2桁、0.01 未満なら3桁。
+     * @brief 目盛りの数値を文字列にする。小数の桁数は目盛りの間隔に合わせて変える
+     * @param buf  書き込み先のバッファ
+     * @param n    buf の大きさ（バイト）
+     * @param v    書く値
+     * @param step 目盛りの間隔。1 未満なら小数1桁、0.1 未満なら2桁、0.01 未満なら3桁
      */
     void FormatTick(char *buf, size_t n, float v, float step)
     {
@@ -52,6 +54,8 @@ namespace
         if (step < 0.01f) decimals = 3;
         std::snprintf(buf, n, "%.*f", decimals, v);
     }
+
+
 
     // 破線
     void AddDashedLine(ImDrawList *dl, ImVec2 a, ImVec2 b, ImU32 col, float thickness, float dash = 6.0f, float gap = 5.0f)
@@ -71,11 +75,15 @@ namespace
         }
     }
 
+
+
     float Dist2(const ImVec2 &a, const ImVec2 &b)
     {
         const float dx = a.x - b.x, dy = a.y - b.y;
         return dx * dx + dy * dy;
     }
+
+
 
     // 新規カーブ用の色パレット（IM_COL32）
     ImU32 PaletteColor(uint32_t i)
@@ -92,6 +100,8 @@ namespace
         return palette[i % (sizeof(palette) / sizeof(palette[0]))];
     }
 
+
+
     const char *kInterpNames[]  = {"定数", "線形", "3次"};
     const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
     const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
@@ -106,11 +116,16 @@ CurveData *CurveEditorWindow::ActiveCurve()
     if (m_activeCurve >= 0 && m_activeCurve < (int)m_curves.size()) return &m_curves[m_activeCurve];
     return nullptr;
 }
+
+
+
 const CurveData *CurveEditorWindow::ActiveCurve() const
 {
     if (m_activeCurve >= 0 && m_activeCurve < (int)m_curves.size()) return &m_curves[m_activeCurve];
     return nullptr;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 初期化
@@ -129,6 +144,8 @@ void CurveEditorWindow::EnsureInitialized()
     m_selectedKeys.clear();
 }
 
+
+
 void CurveEditorWindow::AddCurve()
 {
     CurveData c;
@@ -142,6 +159,8 @@ void CurveEditorWindow::AddCurve()
     m_activeCurve = (int)m_curves.size() - 1;
     m_selectedKeys.clear();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // メイン
@@ -172,6 +191,8 @@ void CurveEditorWindow::DrawContents(EditorContext &context)
     }
     ImGui::EndChild();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ツールバー
@@ -242,6 +263,8 @@ void CurveEditorWindow::DrawToolbar()
                        "キャンバス: ダブルクリック=キー追加 / ドラッグ=移動 / 右or中ドラッグ=パン / ホイール=ズーム(Ctrl:横 Shift:縦) / 右クリック=メニュー / Alt+ハンドル=接線を割る");
 }
 
+
+
 // ---------------------------------------------------------------------------
 // カーブ一覧（左パネル）
 // ---------------------------------------------------------------------------
@@ -302,6 +325,8 @@ void CurveEditorWindow::DrawCurveList()
         m_selectedKeys.clear();
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // キャンバス（描画＋操作の中枢）
@@ -802,6 +827,8 @@ void CurveEditorWindow::DrawCanvas(float height)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // インスペクタ（選択キー & カーブ設定）
 // ---------------------------------------------------------------------------
@@ -934,6 +961,8 @@ void CurveEditorWindow::DrawInspector()
     ImGui::EndChild();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 操作の実装
 // ---------------------------------------------------------------------------
@@ -947,6 +976,8 @@ void CurveEditorWindow::DeleteSelectedKeys()
     m_selectedKeys.clear();
     curve->RecalculateTangents();
 }
+
+
 
 void CurveEditorWindow::FrameAll()
 {
@@ -967,6 +998,8 @@ void CurveEditorWindow::FrameAll()
     viewMin    = ImVec2(tMin - tPad, vMin - vPad);
     viewMax    = ImVec2(tMax + tPad, vMax + vPad);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // シリアライズ（curves配列フォーマット）
@@ -1011,6 +1044,8 @@ void CurveEditorWindow::SaveToFile(const std::string &path)
         CCL_LOG_ERROR(LogCategory::Editor, "Failed to save curve data: %s", e.what());
     }
 }
+
+
 
 bool CurveEditorWindow::LoadFromFile(const std::string &path)
 {

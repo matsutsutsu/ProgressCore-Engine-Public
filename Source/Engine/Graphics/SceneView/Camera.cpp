@@ -15,6 +15,8 @@ Camera::Camera()
     );
 }
 
+
+
 void Camera::SetLookAt(const DirectX::XMFLOAT3 &eye, const DirectX::XMFLOAT3 &focus, const DirectX::XMFLOAT3 &up)
 {
     DirectX::XMVECTOR Eye   = DirectX::XMLoadFloat3(&eye);
@@ -46,6 +48,8 @@ void Camera::SetLookAt(const DirectX::XMFLOAT3 &eye, const DirectX::XMFLOAT3 &fo
     UpdateFrustum();
 }
 
+
+
 void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ)
 {
     DirectX::XMMATRIX Projection = DirectX::XMMatrixPerspectiveFovLH(fovY, aspect, nearZ, farZ);
@@ -60,6 +64,8 @@ void Camera::SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ
     UpdateFrustum();
 }
 
+
+
 void Camera::SetOrthographic(float width, float height, float nearZ, float farZ)
 {
     DirectX::XMMATRIX Ortho = DirectX::XMMatrixOrthographicLH(width, height, nearZ, farZ);
@@ -72,6 +78,8 @@ void Camera::SetOrthographic(float width, float height, float nearZ, float farZ)
 
     UpdateFrustum();
 }
+
+
 
 void Camera::UpdateFrustum()
 {

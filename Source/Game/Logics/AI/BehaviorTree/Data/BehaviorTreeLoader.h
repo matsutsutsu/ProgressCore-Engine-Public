@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: BT エディタが書き出した JSON から、実行時に使う BTAsset を作るローダー。
+// 概要: BT エディタが書き出した JSON から、実行時に使う BTAsset を作るローダー
 //
 // 責務:
 //   - JSON のノードを読み、行動・条件を保存キーから ID に直す
@@ -21,7 +21,7 @@ private:
     // 文字列を BTNodeType に変換する。知らない文字列は Action として読む
     static BTNodeType StringToNodeType(const std::string &typeStr);
 
-    // 範囲外の子・循環が無いかを確かめる。false なら読み込みを中止する（path はログ用）
+    // 範囲外の子・循環がないかを確かめる。false なら読み込みを中止する（path はログ用）
     static bool ValidateStructure(const BTAsset &asset, const std::string &path);
 
     // 読めるが意図どおりには動かない形を警告する。ValidateStructure を通った木に使う

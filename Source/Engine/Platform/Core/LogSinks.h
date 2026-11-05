@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: Logger に登録する標準のログ出力先（シンク）3種。
+// 概要: Logger に登録する標準のログ出力先（シンク）3種
 //
 // 責務:
 //   - DebugStreamSink: Visual Studio の「出力」ウィンドウへ書く
@@ -94,23 +94,18 @@ public:
 //
 //   使い方: std::make_shared<FileSink>("Build/Logs/Engine.log");
 //     起動して最初のログを書くときに、前回起動時の Engine.log が残っていれば
-//     Engine.prev.log へ退避（2回前は破棄）してから新規に Engine.log を開く。
-//     常に「今回(Engine.log)＋前回(Engine.prev.log)」の2つが残る。
+//     Engine.prev.log へ退避（2回前は破棄）してから新規に Engine.log を開く
+//     常に「今回(Engine.log)＋前回(Engine.prev.log)」の2つが残る
 // ============================================================
 class FileSink : public ILogSink
 {
 public:
-    /**
-     * @param path 出力先パス（例: "Build/Logs/Engine.log"）。
-     */
+    // path は出力先（例: "Build/Logs/Engine.log"）
     explicit FileSink(std::filesystem::path path)
         : m_path(std::move(path))
     {
-        // ここではファイルを開かない（遅延生成）。
-        //   最初のログが実際に書き込まれるまでフォルダ/ファイルを作らないため、
-        //   Shipping のようにログが ERROR のみの構成だと「1件も出なければ何も残らない」。
-        //   正常時はログフォルダが増えず、問題が起きたときだけ記録が残る。
-        //   世代退避も「最初の書き込み時」に行うので、この遅延生成の性質は保たれる。
+        // ここではファイルを開かず、最初に書くときに開く（前回のログの退避もそのとき）
+        // ERROR だけの Shipping では、何も出なければファイルも残らない
     }
 
     ~FileSink() override
@@ -126,7 +121,7 @@ public:
     {
         std::lock_guard lock(m_mutex);
 
-        // 遅延生成：最初の書き込みでフォルダ作成＋世代退避＋ファイルオープン。
+        // 遅延生成：最初の書き込みでフォルダ作成＋世代退避＋ファイルオープン
         if (!m_opened)
         {
             std::error_code ec;
@@ -135,7 +130,7 @@ public:
 
             // 2世代ローテーション：前回起動の Engine.log が残っていれば
             //   Engine.prev.log へ退避してから新規に開く。これで「今回＋前回」を常に保持し、
-            //   2回前(既存の prev)は破棄する。1つ前を見返したい時はこの prev を開けばよい。
+            //   2回前(既存の prev)は破棄する。1つ前を見返したい時はこの prev を開けばよい
             if (std::filesystem::exists(m_path, ec))
             {
                 const auto prev = PrevPath();

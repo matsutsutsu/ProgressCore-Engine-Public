@@ -1,4 +1,3 @@
-// RushPromptStyleComponent のシリアライズ/インスペクタ定義。
 #include "Game/UI/HUD/RushPromptStyleComponent.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"

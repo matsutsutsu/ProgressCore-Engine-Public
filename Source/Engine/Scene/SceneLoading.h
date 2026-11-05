@@ -1,7 +1,7 @@
 #pragma once
 // ===========================================================================
-// 概要: 非同期ロードの間に表示する「つなぎ」のシーン SceneLoading。
-//       次のシーンを裏で読み込みながら、暗転の幕の上にローディング画面を描く。
+// 概要: 非同期ロードの間に表示する「つなぎ」のシーン SceneLoading
+//       次のシーンを裏で読み込みながら、暗転の幕の上にローディング画面を描く
 //
 // 責務:
 //   - 次のシーンの重い Initialize() を、SceneManager のロード専用 JobSystem で裏読みする
@@ -9,17 +9,13 @@
 //   - ローディング画面（見出し・ログ・ヒント・進捗リング）を暗転の幕の上に描く
 //   - アプリを起動して最初の読み込みでは、ローディング画面の代わりにエンジンのロゴ（スプラッシュ）を描く
 //
-// 備考:
-//   裏読みは「投げっぱなしにして毎フレーム完了を確かめる（fire-and-poll）」形にしている。
-//   毎フレームの並列処理のように WaitForCounter で待つと、読み込みの間メインスレッドが止まり、画面を描けない。
-//
-//   次のシーンは SetReady() を済ませた状態で渡すので、切り替えたときに Initialize() が二度走ることはない。
-//
-//   スプラッシュは、起動時の読み込みの待ち時間をそのままロゴの表示に使う。ロゴのために起動が遅くなることはない。
+// 備考: 裏読みは投げたままにし、毎フレーム完了を確かめる
+//       WaitForCounter で待つと、読み込みの間メインスレッドが止まって画面を描けない
+//       次のシーンは SetReady 済みで渡すので、切り替えたときに Initialize が二度走らない
 // ===========================================================================
 #include "Engine/Scene/BaseScene.h"
 
-#include "Engine/ECS/Jobs/CCL_JobSystem.h" // JobCounter（ロードジョブの完了待ち）
+#include "Engine/ECS/Jobs/CCL_JobSystem.h"
 
 #include <array>
 #include <atomic>
@@ -68,26 +64,12 @@ private:
     void DrawScreen(float alpha);   // 前景（方眼・見出し・ログ・ヒント・進捗リング）
     void DrawSplash(float alpha);   // スプラッシュ（POWERED BY PROGRESSCORE ENGINE）
 
-    /**
-     * @brief 中心の位置で置く、単色の四角形を1枚描く。
-     * @param cx    中心の X（px、画面の左上が原点）。
-     * @param cy    中心の Y（px、下向きが正）。
-     * @param w     幅（px）。
-     * @param h     高さ（px）。
-     * @param angle 中心まわりの回転（度）。45 で◆になる。
-     * @param r     色の R（0〜1）。
-     * @param g     色の G（0〜1）。
-     * @param b     色の B（0〜1）。
-     * @param a     不透明度（0〜1）。
-     * @note 最初の描画で m_white を作った後に呼ぶこと。
-     */
+    // 中心を (cx, cy)（px、左上が原点で下が正）に置いた、単色の四角形を1枚描く。angle が 45 なら◆になる
+    // 最初の描画で m_white を作った後に呼ぶ
     void DrawQuad(float cx, float cy, float w, float h, float angle, float r, float g, float b, float a);
 
 public:
-    /**
-     * @brief 裏読みする次のシーンを受け取る。
-     * @param nextScene 裏読みする次のシーン。Initialize() はまだ呼んでいないもの。切り替えを頼むまでこのシーンが持つ。
-     */
+    // 裏読みする次のシーンを受け取る。Initialize() はまだ呼んでいないもので、切り替えを頼むまでこのシーンが持つ
     SceneLoading(Scene *nextScene);
     virtual ~SceneLoading() override;
 

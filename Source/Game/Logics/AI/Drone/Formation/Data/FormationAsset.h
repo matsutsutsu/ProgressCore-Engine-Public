@@ -1,15 +1,4 @@
 #pragma once
-// ===========================================================================
-// 概要: データ陣形1つぶんの定義（FormationAsset）。Assets/Formations/*.json に保存する。
-//
-// 責務:
-//   - (1)割付 (2)形 (3)動き (4)配置 の各段のパラメータを持つ
-//   - 当たり方・機首の向け方・移動方式など、形以外の出力を持つ
-//   - 名乗る枠番号・攻撃と予告の長さを持つ
-//
-// 備考: 解釈は DataDrivenFormation.h、読み書きは FormationAssetIO、項目の表は
-//       FormationAssetMeta.h が担う。
-// ===========================================================================
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -20,7 +9,7 @@
 namespace CCL::AI::Formation
 {
 
-    // 陣形ローカル空間の3軸。ボスから見た向きで、間隔も回転軸もこれで指す。
+    // 陣形ローカル空間の3軸。ボスから見た向きで、間隔も回転軸もこれで指す
     enum class AssetAxis : uint8_t
     {
         Right,   // 横
@@ -28,14 +17,14 @@ namespace CCL::AI::Formation
         Forward, // 前
     };
 
-    // 通し番号をグループへ配る順序。
+    // 通し番号をグループへ配る順序
     enum class AssetSplit : uint8_t
     {
         Block,       // 0 0 0 0 1 1 1 1
         Interleaved, // 0 1 0 1 0 1 0 1
     };
 
-    // 待機の形の作り方。
+    // 待機の形の作り方
     enum class AssetShape : uint8_t
     {
         Grid,  // 格子に並べる（縦割り・挟み込みなど）
@@ -52,12 +41,12 @@ namespace CCL::AI::Formation
     // 形にかける動き1枚の種類
     enum class LayerType : uint8_t
     {
-        Rotate,    // ローカル原点まわりに回す（軸を選べるので「倒す」も「振る」もこれで表す）
+        Rotate,    // ローカル原点まわりに回す。倒す・振るもこれで表す
         Translate, // 軸方向へ平行移動する
         Shiver,    // 撃つ前の予告として小刻みに震わせる（時間帯は予告の中で数える）
     };
 
-    // 動き出す時刻を「何の単位で」ずらすか。席ごとに開始をずらして波を作る。
+    // 動き出す時刻を「何の単位で」ずらすか。席ごとに開始をずらして波を作る
     enum class PhaseSource : uint8_t
     {
         None,   // 全機いっせい
@@ -85,8 +74,8 @@ namespace CCL::AI::Formation
     };
 
     // (2) 形: 席 → ローカル座標（動かす前の待機の形）
-    //   Grid: 列方向は columnAxis で選び、行方向は常に Up。
-    //   Model: 通し番号の順にモデル表面の点へ並べる。格子の項目は使わない。
+    //   Grid: 列方向は columnAxis で選び、行方向は常に Up
+    //   Model: 通し番号の順にモデル表面の点へ並べる。格子の項目は使わない
     struct FormationLayout
     {
         AssetShape shape = AssetShape::Grid; // 待機の形の作り方
@@ -112,27 +101,27 @@ namespace CCL::AI::Formation
         float     tierStepB     = 0.0f; // 段グループ1つぶんの行方向オフセット [m]
     };
 
-    // (3) 動き: 形を加工する1枚。
+    // (3) 動き: 形を加工する1枚
     // 種類ごとに型を分けず1構造体にして、JSON とエディタで配列として並べ替えやすくする（使わない項目は出る）
     struct FormationLayer
     {
         LayerType type = LayerType::Rotate; // 動きの種類
         AssetAxis axis = AssetAxis::Right;  // 回す・動かす・震わせる軸
 
-        float from = 0.0f; // 始まりの量。Rotate は角度[度]、Translate は距離[m]、Shiver は振れ幅[m]
+        float from = 0.0f; // 始まりの量（Rotate は度、Translate は m、Shiver は振れ幅の m）
         float to   = 0.0f; // 終わりの量
 
-        float windowBegin = 0.0f; // この層が動き始める時刻。攻撃の長さを 0〜1 とした割合（Shiver は予告の長さに対して）
+        float windowBegin = 0.0f; // 動き始める時刻。攻撃の長さを 1 とした割合（Shiver は予告に対する割合）
         float windowEnd   = 1.0f; // この層が動き終わる時刻
 
-        // 1席が動き切るのに使う量（窓に対する割合）。
+        // 1席が動き切るのに使う量（窓に対する割合）
         // start = windowBegin + 席の位置 × ((windowEnd - windowBegin) - duration) で、最後の席がちょうど windowEnd で終わる
         float duration = 1.0f;
 
         PhaseSource phaseSource  = PhaseSource::None; // 動き出しを何の単位でずらすか
         bool        phaseReverse = false;             // ずらす向きを逆にする（反対の端から始める）
 
-        CurveData curve; // 進み → 変換量の緩急。キーが無ければ p*p（easeIn）
+        CurveData curve; // 進み → 変換量の緩急。キーがなければ p*p（easeIn）
 
         bool mirror = false; // 側グループごとに from/to の符号を反転する
 
@@ -161,7 +150,8 @@ namespace CCL::AI::Formation
         FormationCombat combat; // 当たり方と痛さ
     };
 
-    // 陣形1つぶん
+    // データ陣形1つぶんの定義。Assets/Formations/*.json に保存する
+    // 解釈は DataDrivenFormation.h、読み書きは FormationAssetIO が行う
     struct FormationAsset
     {
         std::string name = "Formation"; // 技の名前（エディタと BT に出る）
@@ -179,7 +169,7 @@ namespace CCL::AI::Formation
 
         float attackSeconds = 0.4f; // 撃つ合図から形が動き切るまで [秒]
 
-        // 撃つ前の予告の長さ [秒]。BT の「ドローンの技」はこの時間で撃つ。
+        // 撃つ前の予告の長さ [秒]。BT の「ドローンの技」はこの時間で撃つ
         // 陣形と Wait を並べて書いた枝は、Wait をこの値にそろえる
         // （ずれると、震えが途中で切れるか、震え終わっても撃たない）
         float telegraphSeconds = 1.0f;

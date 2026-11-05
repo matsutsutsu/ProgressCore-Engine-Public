@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: カスケードシャドウマップの、カスケードごとのライトのビュー・プロジェクション行列を求める関数。
+// 概要: カスケードシャドウマップの、カスケードごとのライトのビュー・プロジェクション行列を求める関数
 //
 // 責務:
 //   - カメラの視錐台を距離で分け、それぞれを囲むライトの正射影を作る
 //   - シャドウマップのテクセル単位に中心を丸め、カメラが動いたときの影のちらつきを抑える
 //
-// 備考: ShadowPass と ShadowMapRenderSystem が使う。
+// 備考: ShadowPass と ShadowMapRenderSystem が使う
 // ===========================================================================
 #include <DirectXMath.h>
 #include <vector>
@@ -38,15 +38,8 @@ inline std::vector<XMFLOAT3> GetFrustumCornersWorldSpace(const XMMATRIX &view, c
     return corners;
 }
 
-/**
- * @brief カスケード3枚分のライトのビュー・プロジェクション行列を求める。
- * @param cameraView カメラのビュー行列
- * @param fov カメラの縦の画角（rad）
- * @param aspectRatio カメラのアスペクト比
- * @param lightDir 平行光源の向き
- * @param cascadeSplits カスケードの境目のカメラからの距離（m）。例 {15, 50, 200}
- * @param outLightVP カスケードごとの結果
- */
+// カスケード3枚分のライトのビュー・プロジェクション行列を求める
+// cascadeSplits はカスケードの境目の、カメラからの距離（m）。例: {15, 50, 200}
 inline void CalculateCascadeMatrices(
     const XMMATRIX &cameraView,
     float fov, float aspectRatio,
@@ -93,7 +86,7 @@ inline void CalculateCascadeMatrices(
         minZ -= 1000.0f;
         maxZ += 1000.0f;
 
-        // カメラを動かすと影の輪郭がちらつく（シマリング）のを抑える。
+        // カメラを動かすと影の輪郭がちらつく（シマリング）のを抑える
         // 範囲を長い辺に合わせた正方形にして、カメラが回っても大きさが変わらないようにし、
         // 中心をテクセルの大きさ単位に丸めて、テクセル単位でしか動かないようにする
         float frustumWidth  = maxX - minX;
