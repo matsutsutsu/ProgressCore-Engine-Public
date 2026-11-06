@@ -181,11 +181,11 @@ void DroneMovementSystem::OnGui()
     if (!m_world->HasResource<Motion::MotionTuning>()) return;
     auto &tuning = m_world->GetResource<Motion::MotionTuning>();
 
-    ImGui::SliderFloat("持ち場へ寄る速さの上限", &tuning.moveSpeedScale, 1.0f, 6.0f, "x%.1f");
+    ImGui::DragFloat("持ち場へ寄る速さの上限", &tuning.moveSpeedScale,1.0f, 1.0f, 6.0f, "x%.1f");
     HoverTooltip("強いバネで出せる速さ（moveSpeed 倍）。生成直後の整列・陣形の切り替え・突撃後の帰還が速くなる");
-    ImGui::SliderFloat("強いバネに切り替える距離", &tuning.farFromSlot, 0.0f, 20.0f, "%.1f m");
+    ImGui::DragFloat("強いバネに切り替える距離", &tuning.farFromSlot,3.0f, 0.0f, 200.0f, "%.1f m");
     HoverTooltip("待機中でも持ち場からこれより遠いと強いバネで寄る。0 にすると常に強いバネになり、ホバーの揺れが消える");
-    ImGui::SliderFloat("剛体に切り替える距離", &tuning.rigidCatchUp, 0.1f, 5.0f, "%.1f m");
+    ImGui::DragFloat("剛体に切り替える距離", &tuning.rigidCatchUp,3.0f, 0.1f, 200.0f, "%.1f m");
     HoverTooltip("データ陣形の突撃で、持ち場にこれより近づいたら形に固定する。大きいほど早く固定されるが、固定の瞬間に跳んで見える");
 
     if (ImGui::Button("既定値に戻す", ImVec2(140, 24)))

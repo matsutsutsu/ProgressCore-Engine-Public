@@ -36,8 +36,8 @@ namespace CCL::AI::Motion
     struct MotionTuning
     {
         float moveSpeedScale = 4.0f; // 持ち場へ戻る強いバネで出せる速さの上限（moveSpeed 倍）
-        float farFromSlot    = 6.0f; // Idle でも持ち場からこれより遠い間は、強いバネで寄せる [m]
-        float rigidCatchUp   = 4.0f; // 剛体追従で、持ち場にこれより近づいたら剛体に切り替える [m]
+        float farFromSlot    = 20.0f; // Idle でも持ち場からこれより遠い間は、強いバネで寄せる [m]
+        float rigidCatchUp   = 20.0f; // 剛体追従で、持ち場にこれより近づいたら剛体に切り替える [m]
     };
 
     // ============================================================
