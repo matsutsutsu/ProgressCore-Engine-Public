@@ -20,8 +20,6 @@ void JoltCharacterDebugDrawSystem::Update(float dt)
     ForEach([&](const TransformComponent           &trans,
                 const CharacterMovementComponent   &movement,
                 const JoltCharacterHandleComponent &handle) {
-        if (!handle.character) return;
-
         XMFLOAT3 pos = trans.GetWorldPosition();
         pos.y += 1.0f; // 足元から 1m 上に描く
 

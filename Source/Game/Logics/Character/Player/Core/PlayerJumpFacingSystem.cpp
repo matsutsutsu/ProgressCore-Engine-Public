@@ -34,7 +34,6 @@ void PlayerJumpFacingSystem::Update(float rawDt)
                       const PlayerRushComponent          &rush,
                       const TimeStateComponent           &time) {
         if (m_world->HasComponent<Tag::DeadTag>(id)) return;
-        if (!joltHandle.character) return;
         
         // ラッシュの回避離脱・待機は操作不能。向きもジャンプも受け付けない
         // 間合い詰め・連撃は、向き直り（attackFaceYaw）を許す

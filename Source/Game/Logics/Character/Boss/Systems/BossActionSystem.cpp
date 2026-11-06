@@ -208,8 +208,6 @@ void BossActionSystem::Update(float rawDt)
                       const JoltCharacterConfigComponent &joltConfig,
                       const JoltCharacterHandleComponent &joltHandle,
                       const TimeStateComponent           &timeState) {
-        if (!joltHandle.character) return;
-
         // この個体の時計の dt（ヒットストップ・スローを含む）
         const float dt = timeState.localDt;
 

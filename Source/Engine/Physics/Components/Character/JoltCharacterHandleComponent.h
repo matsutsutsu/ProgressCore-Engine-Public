@@ -8,6 +8,8 @@
 //   - 物理の位置の取得・向きの書き込み・積分の dt を、全キャラで同じ形にする
 //
 // 備考: 手で付けない。JoltCharacterSetupSystem が生成時に付ける
+//       作った CharacterVirtual を入れてから付けるので、付いていれば character は必ず有効
+//       使う側で character の null チェックはしない
 //       JPH::Ref なので、Component が破棄されると CharacterVirtual も解放される
 // ===========================================================================
 #include <algorithm>
@@ -53,8 +55,7 @@ inline void SetCharacterRotation(TransformComponent &trans, const JoltCharacterH
     trans.rotation = visualRotation;
     trans.isDirty  = true;
 
-    if (handle.character)
-        handle.character->SetRotation(JPH::Quat(physicsRotation.x, physicsRotation.y, physicsRotation.z, physicsRotation.w));
+    handle.character->SetRotation(JPH::Quat(physicsRotation.x, physicsRotation.y, physicsRotation.z, physicsRotation.w));
 }
 
 // キャラクターの向きを、Transform（描画）と CharacterVirtual（物理）の両方に書く

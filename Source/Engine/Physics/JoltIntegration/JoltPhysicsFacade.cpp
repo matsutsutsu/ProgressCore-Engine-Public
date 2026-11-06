@@ -356,7 +356,7 @@ bool JoltPhysicsFacade::IsCharacterGrounded(CCL::ECS::EntityID entity)
 {
     // CharacterVirtual の内部状態を直接参照する（段差・坂・床速度を考慮した正確な接地判定）
     auto *handle = m_world->GetComponent<JoltCharacterHandleComponent>(entity);
-    if (!handle || !handle->character) return false;
+    if (!handle) return false;
 
     return handle->character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
 }

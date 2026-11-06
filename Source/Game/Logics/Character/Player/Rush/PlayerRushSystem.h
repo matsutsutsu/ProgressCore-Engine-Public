@@ -101,7 +101,12 @@ private:
     // プレイヤーに掛かる世界の時間倍率（全体 × 勢力）。timeCtx がなければ 1
     float CurrentWorldScale(const TimeStateComponent &time, const TimeContext *timeCtx) const;
 
-    // ラッシュを終え、世界のスローを戻し始める
+    // とどめが当たった瞬間に、プレイヤーも世界と一緒のスローに落とす
+    // 以降は世界が finishRecover かけて等速へ戻り、プレイヤーも同じ時計で戻る
+    void StartFinishSlow(PlayerRushComponent &rush, TimeStateComponent &time);
+
+    // ラッシュを終える
+    // とどめが当たっていなければ、ここから世界のスローを戻し始める
     void EndRush(PlayerRushComponent &rush);
 
     // ============================================================
@@ -137,5 +142,9 @@ private:
     // インスペクタに出すフェーズ名
     const char *PhaseLabel(RushPhase phase) const;
 
-    std::vector<CCL::ECS::EntityID> m_pendingStarts; // 成立を受けて、まだ始めていないプレイヤー
+    CCL::ECS::EntityID m_pendingStarts = CCL::ECS::InvalidEntityID; // 成立を受けて、まだ始めていないプレイヤー
+
+    // 前の Update から届いた命中の、攻撃した側。敵の命中も入る
+    // 1ステップに複数の攻撃が当たりうるので vector で溜める
+    std::vector<CCL::ECS::EntityID> m_hitAttackers;
 };

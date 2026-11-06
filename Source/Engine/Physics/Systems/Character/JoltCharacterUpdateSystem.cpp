@@ -56,8 +56,6 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
                       CharacterMovementComponent         &movement,
                       const JoltCharacterConfigComponent &config,
                       const TimeStateComponent           &time) {
-        if (!handle.character)
-            return;
         JPH::CharacterVirtual *ch = handle.character.GetPtr();
 
         // 積分にはこのキャラの時計の dt を使う

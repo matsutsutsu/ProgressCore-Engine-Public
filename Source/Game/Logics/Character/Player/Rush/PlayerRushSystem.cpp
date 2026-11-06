@@ -64,7 +64,13 @@ void PlayerRushSystem::Initialize()
     // ジャスト回避の成立を購読し、始めるプレイヤーを溜める
     // 成立は別の System のタスク上で届くので、その場では始めず Update で始める
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        m_pendingStarts.push_back(ev.playerID);
+        m_pendingStarts = ev.playerID;
+    });
+
+    // 攻撃の命中を購読し、当てた側を溜める。とどめが当たった瞬間を知るため
+    // ここでは誰の命中かを見ず、Update でラッシュ中のプレイヤーと照らし合わせる
+    ListenEvent<AttackHitConfirmedEvent>([this](const AttackHitConfirmedEvent &ev) {
+        m_hitAttackers.push_back(ev.attackerID);
     });
 }
 
@@ -81,25 +87,33 @@ void PlayerRushSystem::Update(float dt)
     // 1. 開始
     // ---------------------------------------------------------
 
-    for (EntityID id : m_pendingStarts)
-    {
-        auto *rush     = m_world->GetComponent<PlayerRushComponent>(id);
-        auto *dash     = m_world->GetComponent<PlayerDashComponent>(id);
-        auto *movement = m_world->GetComponent<CharacterMovementComponent>(id);
+    // ラッシュに入った瞬間の処理を行う
+    if (m_pendingStarts != CCL::ECS::InvalidEntityID){
+        // 必要なコンポーネントをそろえる
+        auto *rush     = m_world->GetComponent<PlayerRushComponent>(m_pendingStarts);
+        auto *dash     = m_world->GetComponent<PlayerDashComponent>(m_pendingStarts);
+        auto *movement = m_world->GetComponent<CharacterMovementComponent>(m_pendingStarts);
         if (rush && dash && movement)
         {
             StartRush(*rush, *dash, *movement);
         }
-    }
-    m_pendingStarts.clear();
+    }    
+    m_pendingStarts = CCL::ECS::InvalidEntityID;
 
     // ---------------------------------------------------------
     // 2. ラッシュ中の更新
     // ---------------------------------------------------------
 
-    const TimeContext *timeCtx = m_world->HasResource<TimeContext>()
-                                     ? &m_world->GetResource<TimeContext>()
-                                     : nullptr;
+    const TimeContext *timeCtx;
+    if (m_world->HasResource<TimeContext>())
+    {
+        timeCtx = &m_world->GetResource<TimeContext>();
+    }
+    else
+    {
+        timeCtx = nullptr;
+    }       
+
 
     bool anyActive = false;
 
@@ -112,6 +126,8 @@ void PlayerRushSystem::Update(float dt)
                       const PlayerInputComponent         &input,
                       const TransformComponent           & /*transform*/,
                       const JoltCharacterHandleComponent &joltHandle) {
+
+        // ラッシュ中じゃないならスローが戻るまでの間だけプレイヤーを実時間で動かす
         if (!rush.isActive)
         {
             // 終えた後も、世界のスローが戻りきるまではプレイヤーだけを実時間で動かす
@@ -121,9 +137,22 @@ void PlayerRushSystem::Update(float dt)
             }
             return;
         }
-        if (!joltHandle.character) return;
 
-        DriveTimeScale(rush, time, timeCtx);
+        // --- とどめの命中 ---
+
+        // プレイヤーがラッシュ中に攻撃を当てたかを探す
+        const bool hitThisStep = std::find(m_hitAttackers.begin(), m_hitAttackers.end(), id) != m_hitAttackers.end();
+
+        // プレイヤーが攻撃を当てたかつラッシュのアニメーションなら止めの瞬間
+        const bool finishHitThisStep = hitThisStep && rush.lastAnimState == HASH_STATE_RUSH_FINISH;
+
+        // 当たった最初の1回だけ、世界と一緒にスローへ入る
+        if (finishHitThisStep && !rush.finishHit) StartFinishSlow(rush, time);
+
+        // 当たるまでは、世界のスローを保ちプレイヤーだけ実時間にする
+        if (!rush.finishHit) DriveTimeScale(rush, time, timeCtx);
+
+        // ラッシュ中にプレイヤーを無敵にする
         MaintainInvincibility(id, rush);
 
         // --- フェーズごとの操作 ---
@@ -180,6 +209,9 @@ void PlayerRushSystem::Update(float dt)
         anyActive = anyActive || rush.isActive;
     });
 
+    // 命中はこのステップで照らし合わせ終えたので捨てる
+    m_hitAttackers.clear();
+
     // ---------------------------------------------------------
     // 3. 画面演出へ伝える
     // ---------------------------------------------------------
@@ -198,6 +230,7 @@ void PlayerRushSystem::Update(float dt)
 
 void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement)
 {
+    // ラッシュの状態の初期化
     rush.isActive      = true;
     rush.isRecovering  = false; // 前のラッシュの戻りの途中でも、ここから仕切り直す
     rush.phase         = RushPhase::Locked;
@@ -205,6 +238,7 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
     rush.attackFired   = false;
     rush.rushStep      = 0;
     rush.finishEntered = false;
+    rush.finishHit     = false;
     rush.lastAnimState = 0;
     rush.evadeDir      = dash.dashDirection;
 
@@ -214,9 +248,7 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
     dash.isJustEvadeWindowActive = false;
     dash.currentTimer            = dash.dashCooldown;
 
-    // ダッシュの向きへ離れる移動を予約する。壁に当たれば沿って滑る
-    // 速さは leapSpeed から 0 へ直線で落とすので、
-    // 進む距離は leapSpeed × lockedDuration ÷ 2
+    // ジャスト回避の向きに移動する処理の予約
     movement.MoveInDirection(rush.evadeDir, rush.leapSpeed, rush.lockedDuration, 0.0f);
 }
 
@@ -365,11 +397,34 @@ float PlayerRushSystem::CurrentWorldScale(const TimeStateComponent &time, const 
 
 
 
+// とどめの命中で、プレイヤーも世界と一緒のスローに落とす
+void PlayerRushSystem::StartFinishSlow(PlayerRushComponent &rush, TimeStateComponent &time)
+{
+    rush.finishHit = true;
+
+    // プレイヤーだけ実時間にする補正を外す。これでプレイヤーも世界の倍率で進む
+    time.cinematicScale = 1.0f;
+
+    // 世界のスローの要求はこれが最後。以降は finishRecover かけて等速へ戻る
+    Time::SustainWorldSlow(*m_world, rush.worldScale, rush.finishRecover);
+}
+
+
+
 void PlayerRushSystem::EndRush(PlayerRushComponent &rush)
 {
-    rush.isActive     = false;
+    rush.isActive = false;
+    rush.timer    = 0.0f;
+
+    // とどめが当たっていれば、スローは当たった瞬間から戻り始めている
+    // プレイヤーも世界と同じ時計で動いているので、戻りの補正はいらない
+    if (rush.finishHit)
+    {
+        rush.isRecovering = false;
+        return;
+    }
+
     rush.isRecovering = true;
-    rush.timer        = 0.0f;
 
     // 要求をやめれば、世界のスローは slowRecover かけて等速へ戻る
     // とどめで終えたときは、余韻を残すためにもっとゆっくり戻す

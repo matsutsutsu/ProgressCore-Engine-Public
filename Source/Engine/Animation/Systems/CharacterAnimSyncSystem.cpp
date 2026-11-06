@@ -33,8 +33,6 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
                       const JoltCharacterConfigComponent &config,
                       AnimParametersComponent            &animParams,
                       AnimatorComponent                  &animator) {
-        if (!joltHandle.character)
-            return;
         JPH::CharacterVirtual *ch = joltHandle.character.GetPtr();
 
         // ---------------------------------------------------------
