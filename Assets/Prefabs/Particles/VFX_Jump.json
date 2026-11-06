@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -54,7 +55,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
-                            "intensity": 5.0,
+                            "intensity": 10.0,
                             "lifespan": [
                                 0.30000001192092896,
                                 0.30000001192092896
@@ -115,7 +116,7 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 8.0,
-                            "burstCount": 25,
+                            "burstCount": 15,
                             "color": [
                                 0.5945945978164673,
                                 0.5172133445739746,
@@ -213,11 +214,11 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 20,
+                            "burstCount": 5,
                             "color": [
-                                0.0,
-                                0.0,
-                                0.0,
+                                0.11583012342453003,
+                                0.11583012342453003,
+                                0.11583012342453003,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -230,7 +231,7 @@
                             "emitMode": 1,
                             "emitRadius": [
                                 0.30000001192092896,
-                                1.0
+                                1.5
                             ],
                             "emitShape": 0,
                             "emitSize": [
@@ -252,8 +253,8 @@
                             "gravity": 0.0,
                             "intensity": 1.0,
                             "lifespan": [
-                                0.20000000298023224,
-                                0.30000001192092896
+                                0.15000000596046448,
+                                0.20000000298023224
                             ],
                             "lineEnd": [
                                 0.0,
@@ -348,7 +349,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
-                            "intensity": 5.0,
+                            "intensity": 10.0,
                             "lifespan": [
                                 0.30000001192092896,
                                 0.30000001192092896
@@ -446,7 +447,7 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
-                            "intensity": 5.0,
+                            "intensity": 10.0,
                             "lifespan": [
                                 0.4000000059604645,
                                 0.4000000059604645
