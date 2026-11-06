@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -17,10 +18,10 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 200,
+                            "burstCount": 50,
                             "color": [
                                 1.0,
-                                0.25482624769210815,
+                                0.5791505575180054,
                                 0.0,
                                 1.0
                             ],
@@ -30,7 +31,7 @@
                                 0.0,
                                 3.1415927410125732
                             ],
-                            "drag": 0.5,
+                            "drag": 0.0,
                             "emitMode": 1,
                             "emitRadius": [
                                 0.0,
@@ -38,12 +39,12 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.1899999976158142,
+                                0.30000001192092896,
                                 0.0
                             ],
                             "emitSpeed": [
                                 10.600000381469727,
-                                16.600000381469727
+                                30.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -54,10 +55,10 @@
                                 0.07999999821186066
                             ],
                             "gravity": -15.0,
-                            "intensity": 2.0,
+                            "intensity": 10.0,
                             "lifespan": [
-                                0.2800000011920929,
-                                1.1799999475479126
+                                0.25,
+                                0.3499999940395355
                             ],
                             "lineEnd": [
                                 0.0,
@@ -75,12 +76,15 @@
                             "name": "火花 オレンジ",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 3,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -170,12 +174,15 @@
                             "name": "残り火",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -209,9 +216,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 1,
                             "color": [
-                                1.0,
-                                1.0,
-                                1.0,
+                                0.0,
+                                0.0,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -228,8 +235,8 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                5.0,
-                                2.0
+                                0.0,
+                                5.0
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -241,13 +248,13 @@
                             ],
                             "fadeDuration": [
                                 0.0,
-                                0.07999999821186066
+                                0.10000000149011612
                             ],
                             "gravity": 0.0,
                             "intensity": 2.0,
                             "lifespan": [
-                                0.09000000357627869,
-                                0.09000000357627869
+                                0.12999999523162842,
+                                0.12999999523162842
                             ],
                             "lineEnd": [
                                 0.0,
@@ -265,12 +272,15 @@
                             "name": "フラッシュ",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
-                            "renderMode": 0,
+                            "renderMode": 1,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -281,7 +291,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_HitImpact_03.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_HitImpact_02.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -360,12 +370,15 @@
                             "name": "フラッシュ 暗",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 1,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.0,
@@ -455,12 +468,15 @@
                             "name": "火花 赤",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
@@ -550,12 +566,15 @@
                             "name": "火花 赤 copy",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
+                            "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
                             "scale": [
                                 1.0,
                                 1.0
                             ],
+                            "sizeEase": 0,
+                            "sizeEasePower": 2.0,
                             "sizeRandom": 1.0,
                             "spawnDelay": [
                                 0.0,
