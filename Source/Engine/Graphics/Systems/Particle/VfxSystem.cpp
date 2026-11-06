@@ -280,6 +280,18 @@ void VFXSystem::Stop(EntityID handle)
 
 
 
+void VFXSystem::Destroy(EntityID handle)
+{
+    // ID には世代が入っているので、寿命で消えた後の古い ID ならここで弾かれる
+    if (handle == InvalidEntityID || !m_world->IsEntityValid(handle)) return;
+
+    // 破棄の印を付ける。実際に消すのは HierarchyCleanupSystem（L07）
+    // 破棄待ちの予約は、消えた後の Update が「他から先に消された」として捨てる
+    TransformUpdateSystem::MarkForDestruction(*m_world, handle);
+}
+
+
+
 // ---------------------------------------------------------------------------
 // 破棄までの見届け
 // ---------------------------------------------------------------------------
@@ -391,6 +403,18 @@ namespace VFX
             return;
         }
         world.GetResource<VFXSystem *>()->Stop(handle);
+    }
+
+
+
+    void Destroy(World &world, EntityID handle)
+    {
+        if (!world.HasResource<VFXSystem *>())
+        {
+            CCL_LOG_ERROR(LogCategory::Core, "[VFX] VFXSystem が登録されていません");
+            return;
+        }
+        world.GetResource<VFXSystem *>()->Destroy(handle);
     }
 } // namespace VFX
 

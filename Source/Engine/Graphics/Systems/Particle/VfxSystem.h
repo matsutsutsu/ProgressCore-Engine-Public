@@ -52,6 +52,10 @@ public:
     // 破棄待ちの VFX には何もしないので、毎フレーム呼んでも寿命は延びない
     void Stop(CCL::ECS::EntityID handle);
 
+    // 出ている粒子ごと、すぐに消す。別の VFX に差し替えるときに使う
+    // 消えた後の handle を渡しても何もしない
+    void Destroy(CCL::ECS::EntityID handle);
+
 private:
     // 破棄待ちの VFX 1件
     struct ActiveVFX
@@ -105,4 +109,7 @@ namespace VFX
 
     // 再生中の VFX を止める（VFXSystem::Stop を呼ぶ）
     void Stop(CCL::ECS::World &world, CCL::ECS::EntityID handle);
+
+    // 再生中の VFX を粒子ごとすぐに消す（VFXSystem::Destroy を呼ぶ）
+    void Destroy(CCL::ECS::World &world, CCL::ECS::EntityID handle);
 } // namespace VFX

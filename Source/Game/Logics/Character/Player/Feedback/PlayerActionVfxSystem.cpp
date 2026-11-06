@@ -14,36 +14,55 @@ using namespace CCL::ECS;
 namespace
 {
     // バーストエミッタのプレハブ（拡張子 .json は Prefab 側が付ける）。見た目はエディタで調整する
-    const char *kJumpVfxPrefab = "Assets/Prefabs/Particles/VFX_Jump";
-    const char *kDashVfxPrefab = "Assets/Prefabs/Particles/VFX_Dash";
+    const char *kGroundJumpVfxPrefab = "Assets/Prefabs/Particles/VFX_GroundJump";
+    const char *kJumpVfxPrefab       = "Assets/Prefabs/Particles/VFX_Jump";
+    const char *kDashVfxPrefab       = "Assets/Prefabs/Particles/VFX_Dash";
+    const char *kJustEvadeVfxPrefab  = "Assets/Prefabs/Particles/VFX_JustEvade";
+
+    // ダッシュとジャスト回避の VFX を出す高さ。足元から上へずらす（m）
+    constexpr float kDashVfxYOffset = 2.0f;
 } // namespace
 
 void PlayerActionVfxSystem::Initialize()
 {
-    // 2段ジャンプ（jumpCount>=2）の瞬間だけ、その場に土煙の VFX を出す
-    //   地上からの1段目では出さず、空中でもう一度跳んだことを目立たせる
+    // 跳んだ瞬間に、その場に VFX を出す
+    // 地面からの1段目と、空中の2段目で見た目を分ける
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
-        if (e.jumpCount >= 2)
-            VFX::Play(*m_world, kJumpVfxPrefab, e.position);
+        const char *prefab = (e.jumpCount >= 2) ? kJumpVfxPrefab : kGroundJumpVfxPrefab;
+        VFX::Play(*m_world, prefab, e.position);
     });
 
     // ダッシュ（回避）開始の瞬間に、その場に VFX を出し、足元のトレイルを出す
+    // ジャスト回避が成立したら差し替えるので、出した VFX を覚えておく
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
-        float             vfxYOffset  = 2.0f;
-        DirectX::XMFLOAT3 vfxPosition = {e.position.x, e.position.y + vfxYOffset, e.position.z};
-
-        VFX::Play(*m_world, kDashVfxPrefab, vfxPosition);
+        const DirectX::XMFLOAT3 vfxPosition = {e.position.x, e.position.y + kDashVfxYOffset, e.position.z};
+        m_dashVfxID = VFX::Play(*m_world, kDashVfxPrefab, vfxPosition);
 
         ActivatePlayerFootTrails(e.playerID);
+    });
+
+    // ジャスト回避が成立したら、ダッシュの VFX を消して成立用の VFX に差し替える
+    ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &e) {
+        ReplaceDashVfxWithJustEvade(e.playerID);
     });
 }
 
 
 
-void PlayerActionVfxSystem::Update(float /*dt*/)
+// ダッシュの VFX を消し、成立した瞬間のプレイヤーの位置に成立用の VFX を出す
+void PlayerActionVfxSystem::ReplaceDashVfxWithJustEvade(CCL::ECS::EntityID playerID)
 {
-    // 毎フレームの処理はない。再生中の VFX の片付けは VFXSystem が行う
-    //   イベントを購読するためだけに System にしている
+    // 粒子が途中で切れても、ダッシュと成立の VFX が重ならない方を取る
+    // 寿命で消えた後なら、古い ID なので何もしない
+    VFX::Destroy(*m_world, m_dashVfxID);
+    m_dashVfxID = InvalidEntityID;
+
+    auto *playerTransform = m_world->GetComponent<TransformComponent>(playerID);
+    if (!playerTransform) return;
+
+    DirectX::XMFLOAT3 vfxPosition = playerTransform->GetWorldPosition();
+    vfxPosition.y += kDashVfxYOffset;
+    VFX::Play(*m_world, kJustEvadeVfxPrefab, vfxPosition);
 }
 
 
