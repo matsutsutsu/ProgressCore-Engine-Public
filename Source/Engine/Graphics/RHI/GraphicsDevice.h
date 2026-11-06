@@ -76,7 +76,7 @@ public:
     HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
-    // 使う GPU・機能レベル・画面の大きさを、Shipping でもログに残す（配布先の環境の違いをログで確かめるため）
+    // 使う GPU・ドライバ・機能レベル・画面の大きさを、Shipping でもログに書く
     // 機能レベルが 11_0 未満なら、シェーダー（SM5.0）を作れないので ERROR も出す
     void LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL featureLevel) const;
 

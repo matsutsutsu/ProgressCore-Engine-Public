@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -39,7 +40,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                0.699999988079071
+                                0.5
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -235,7 +236,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                0.699999988079071
+                                0.5
                             ],
                             "emitSpeed": [
                                 0.0,

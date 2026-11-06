@@ -95,7 +95,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
             hr = adapter->GetParent(IID_PPV_ARGS(factory2.GetAddressOf()));
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
-            // 選ぼうとした GPU ではなく、デバイスが実際に使っている GPU を報告する
+            // デバイスが実際に使っている GPU をログに書く
             LogAdapterInfo(adapter.Get(), featureLevel);
         }
 
@@ -354,9 +354,8 @@ void GraphicsDevice::LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL fea
         LARGE_INTEGER driver{};
         const bool    hasDriver = SUCCEEDED(adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &driver));
 
-        CCL_LOG_ALWAYS(LogCategory::Render, "[環境] GPU: %ls (vendor=0x%04X) / VRAM %zu MB / 共有メモリ %zu MB",
-                       desc.Description, desc.VendorId,
-                       desc.DedicatedVideoMemory / (1024 * 1024), desc.SharedSystemMemory / (1024 * 1024));
+        CCL_LOG_ALWAYS(LogCategory::Render, "[環境] GPU: %ls / VRAM %zu MB",
+                       desc.Description, desc.DedicatedVideoMemory / (1024 * 1024));
         if (hasDriver)
         {
             CCL_LOG_ALWAYS(LogCategory::Render, "[環境] ドライバ: %u.%u.%u.%u",
@@ -375,12 +374,11 @@ void GraphicsDevice::LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL fea
     }
 
     // --- 画面 ---
-    // 描画の大きさと、モニタの表示モードを並べて出す。食い違っていれば Windows の拡大縮小で引き伸ばされている
+    // 描画の大きさと、モニタの解像度・リフレッシュレート
     DEVMODEW mode{};
     mode.dmSize = sizeof(mode);
     EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &mode);
-    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 描画 %ux%u / 画面 %dx%d / モニタ %lux%lu %luHz / リモートデスクトップ: %s",
-                   m_width, m_height, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
-                   mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency,
+    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 描画 %ux%u / モニタ %lux%lu %luHz / リモートデスクトップ: %s",
+                   m_width, m_height, mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency,
                    GetSystemMetrics(SM_REMOTESESSION) ? "はい" : "いいえ");
 }

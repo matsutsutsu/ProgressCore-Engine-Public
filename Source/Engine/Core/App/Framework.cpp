@@ -71,8 +71,7 @@ Framework::Framework(HWND hWnd)
 
         // ログファイルの出力先。開発時は Build/ 配下に集約し、製品（Shipping）は exe の隣の Logs/ に置く
 
-        // Shipping でも起動時に実行環境（LogPlatformInfo・GraphicsDevice）を書くので、毎回ファイルが作られる
-        // それ以降に書かれるのは ERROR だけ
+        // Shipping は起動時の実行環境と ERROR だけを書く
         // 起動ごとに前回分を Engine.prev.log へ退避する2世代式
 #ifdef ENABLE_EDITOR
         const char *kLogPath = "Build/Logs/Engine.log";
@@ -96,8 +95,8 @@ Framework::Framework(HWND hWnd)
         ZoneScopedN("Init: Graphics");
         Graphics::Instance().Initialize(hWnd);
 
-        // 実行環境の報告（LogPlatformInfo と GraphicsDevice の GPU）はここで出そろう
-        // ERROR 以外はファイルへすぐ書かれないので、固まって強制終了されても残るよう、ここで書き出す
+        // 実行環境のログをファイルへ書き出す
+        // ERROR 以外は溜めてから書くので、強制終了されると消えるため
         Logger::Instance().Flush();
     }
 #ifdef ENABLE_EDITOR
@@ -439,12 +438,11 @@ void Framework::Render(float elapsedTime)
 
 void Framework::LogPlatformInfo() const
 {
-    // --- どの exe か ---
-    // 配布した版と、相手が動かした版が同じかを確かめるため
+    // --- ビルド日時 ---
     CCL_LOG_ALWAYS(LogCategory::Core, "[環境] ビルド: %s %s", __DATE__, __TIME__);
 
     // --- OS ---
-    // GetVersionEx は互換モードで古い版を返すことがあるので、ntdll の RtlGetVersion で本当の版を取る
+    // GetVersionEx は互換モードで古い版を返すので、RtlGetVersion を使う
     using RtlGetVersionFn = LONG(WINAPI *)(OSVERSIONINFOW *);
     OSVERSIONINFOW os{};
     os.dwOSVersionInfoSize = sizeof(os);
@@ -453,7 +451,7 @@ void Framework::LogPlatformInfo() const
     CCL_LOG_ALWAYS(LogCategory::Core, "[環境] Windows %lu.%lu (build %lu)", os.dwMajorVersion, os.dwMinorVersion, os.dwBuildNumber);
 
     // --- CPU ---
-    // exe は AVX2 を使う設定でビルドしているので、AVX2 のない CPU では動かない
+    // AVX2 を使う設定でビルドしているので、AVX2 のない CPU では動かない
     int  regs[4]    = {};
     char brand[49]  = {};
     __cpuid(regs, 0x80000000);
@@ -477,11 +475,10 @@ void Framework::LogPlatformInfo() const
                    memory.ullTotalPhys / (1024 * 1024), memory.ullAvailPhys / (1024 * 1024));
 
     // --- 起動したフォルダ ---
-    // ファイルはすべてここからの相対パスで読む。Assets と Data.pak のどちらが隣にあるかも出す
+    // Assets と Data.pak があるか。パスはユーザー名が入るので書かない
     std::error_code ec;
     const auto      cwd = std::filesystem::current_path(ec);
-    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] フォルダ: %s / Assets: %s / Data.pak: %s",
-                   cwd.u8string().c_str(),
+    CCL_LOG_ALWAYS(LogCategory::Core, "[環境] Assets: %s / Data.pak: %s",
                    std::filesystem::is_directory(cwd / "Assets", ec) ? "あり" : "なし",
                    std::filesystem::is_regular_file(cwd / "Data.pak", ec) ? "あり" : "なし");
 }

@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -19,9 +20,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 10,
                             "color": [
-                                0.3,
-                                0.9,
                                 1.0,
+                                0.5333333611488342,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -117,9 +118,9 @@
                             "attractorStrength": 5.0,
                             "burstCount": 35,
                             "color": [
-                                0.2,
-                                0.6,
                                 1.0,
+                                0.5333333611488342,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,

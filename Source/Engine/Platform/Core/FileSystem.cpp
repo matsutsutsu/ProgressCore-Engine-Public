@@ -234,7 +234,7 @@ bool FileSystem::Mount(const std::string &archivePath)
     std::ifstream file(archivePath, std::ios::in | std::ios::binary | std::ios::ate);
     if (!file.is_open())
     {
-        // 配布先でどちらから読んだかを確かめられるよう、Shipping でも残す
+        // pak とディスクのどちらから読んだかを、Shipping でも残す
         CCL_LOG_ALWAYS(LogCategory::Core, "[FileSystem] アーカイブがありません（ディスクから読みます）: %s", archivePath.c_str());
         return false;
     }

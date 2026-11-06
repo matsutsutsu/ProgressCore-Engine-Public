@@ -35,8 +35,8 @@ private:
     // 1フレーム分を描いて Present する
     void Render(float elapsedTime);
 
-    // OS・CPU・メモリ・起動したフォルダを、Shipping でもログに残す（配布先の環境の違いをログで確かめるため）
-    // GPU と画面は GraphicsDevice が出す（デバイスを作った後でないと分からない）
+    // ビルド日時・OS・CPU・メモリと、Assets・Data.pak の有無を Shipping でもログに書く
+    // GPU と画面は GraphicsDevice が書く（デバイスを作った後でないと分からない）
     void LogPlatformInfo() const;
 
 public:

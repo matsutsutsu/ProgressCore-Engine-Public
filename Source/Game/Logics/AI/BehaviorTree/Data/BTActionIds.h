@@ -80,7 +80,7 @@ inline const char *BTCategoryName(BTCategory c)
 /**
  * @brief BT上での実行特性。読み込み時の検査（BehaviorTreeLoader）が引く
  *
- * Driving ⊂ Blocking。Driving は Parallel の主に置く必要がある
+ * Driving ⊂ Blocking。Driving は Parallel の主か従のどちらか片方にだけ置ける（両方に置くと従が主の要求を上書きする）
  *
  * 2つのフラグではなく1列3値にしているのは、「Driving だが Blocking でない」という
  * あり得ない組み合わせを書けなくするため

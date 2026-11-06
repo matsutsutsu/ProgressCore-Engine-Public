@@ -465,9 +465,11 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                                   i, static_cast<unsigned>(node.children[0]), path.c_str());
                 }
 
-                // 従に「currentActionId を書く行動」があると、主より後に評価されるので
+                // 主と従の両方に「currentActionId を書く行動」があると、従は主より後に評価されるので
                 // 主の技の要求を上書きし、体が主の技を出せない
-                for (size_t k = 1; k < node.children.size(); ++k)
+                //   主が体を使わない（ドローンの技など）なら、従が体を動かしてよい。書くのは従だけなので上書きは起きない
+                const bool mainWritesCommand = SubtreeWritesCommand(asset, node.children[0]);
+                for (size_t k = 1; k < node.children.size() && mainWritesCommand; ++k)
                 {
                     if (!SubtreeWritesCommand(asset, node.children[k])) continue;
 

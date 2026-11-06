@@ -149,7 +149,7 @@
     Start-Process Build\bin\x64\Release\OVERCLEAVE.exe -WorkingDirectory Build\Pak
 
   Shipping も起動するたびに Logs\Engine.log を作り、最初に実行環境（ビルド日時・OS・CPU・
-  メモリ・フォルダ・GPU・機能レベル・画面）を書きます。それより後に書かれるのは ERROR だけです。
+  メモリ・Assets と Data.pak の有無・GPU・機能レベル・画面）を書きます。それより後に書かれるのは ERROR だけです。
   遊んだあとに Build\Pak\Logs\Engine.log を開き、[ERROR] の行が無ければエラーは出ていません。
 
   配布先で「動かない」と言われたときは、exe の隣の Logs\Engine.log を送ってもらってください。

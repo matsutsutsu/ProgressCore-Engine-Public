@@ -8,7 +8,7 @@
         "Cinematic": "Assets\\Cinematics",
         "Material": "Assets\\Materials",
         "Model": "Assets\\Models\\Weapon\\Hammer",
-        "Prefab": "Assets\\Prefabs\\Player",
+        "Prefab": "Assets\\Prefabs\\Particles",
         "Scene": "Assets\\Scene",
         "TextEditor": "Assets\\Prefabs\\Enemy",
         "Texture": "Assets\\Textures\\VFX\\Particle",

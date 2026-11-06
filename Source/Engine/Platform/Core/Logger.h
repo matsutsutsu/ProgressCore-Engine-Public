@@ -147,8 +147,7 @@ private:
 #define CCL_LOG_ERROR(category, ...) \
     Logger::Instance().Log((category), LogLevel::Error, std::source_location::current(), __VA_ARGS__)
 
-// エラーではないが、Shipping でも必ず残す情報（実行環境の報告など）
-// 配布先で「動かない」と言われたときに、ログを送ってもらうだけで原因を絞れるようにする
-// 起動時に数行だけ使う。毎フレームの処理では使わないこと（Shipping のログが膨らむ）
+// Shipping でも残す情報（起動時の実行環境など）
+// 毎フレームの処理では使わない（Shipping のログが膨らむ）
 #define CCL_LOG_ALWAYS(category, ...) \
     Logger::Instance().Log((category), LogLevel::Info, std::source_location::current(), __VA_ARGS__)
