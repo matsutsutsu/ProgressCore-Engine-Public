@@ -1,16 +1,14 @@
 {
     "DialogHistory": {
         "AnimNode": "Assets\\Animations\\Nodes",
-        "AnimSequence": "Assets\\Animations\\Sequencer\\Player",
+        "AnimSequence": "Assets\\Animations\\Sequencer\\Muriel",
         "BehaviorTree": "Assets\\BehaviorTree",
         "BehaviorTreeNode": "Assets\\BehaviorTree",
         "BehaviorTreeOutline": "Assets\\BehaviorTree",
         "Cinematic": "Assets\\Cinematics",
-        "Material": "Assets\\Materials",
-        "Model": "Assets\\Models\\Weapon\\Hammer",
-        "Prefab": "Assets\\Prefabs\\Player",
-        "Scene": "Assets\\Scene",
-        "TextEditor": "Assets\\Prefabs\\Enemy",
+        "Model": "Assets\\Models\\Test",
+        "Prefab": "Assets\\Prefabs\\Particles",
+        "Scene": "Assets\\Scene\\TestScene",
         "Texture": "Assets\\Textures\\VFX\\Particle",
         "Timeline": "Assets\\Timelines"
     }
