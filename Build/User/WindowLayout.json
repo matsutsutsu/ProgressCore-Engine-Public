@@ -30,7 +30,7 @@
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Boss BT Debugger",
@@ -38,7 +38,7 @@
         },
         {
             "name": "Formation Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Cinematic Editor",

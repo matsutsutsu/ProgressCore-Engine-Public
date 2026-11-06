@@ -791,7 +791,7 @@
             "posX": 4254.0,
             "posY": 466.0,
             "score": {
-                "base": 8.0,
+                "base": 9.0,
                 "bonus": [
                     {
                         "condition": "C_RecentlyHit",
@@ -801,7 +801,7 @@
                 ],
                 "cooldown": 10.0,
                 "distance": {
-                    "bestMax": 35.0,
+                    "bestMax": 40.0,
                     "bestMin": 10.0,
                     "falloff": 15.0
                 }
@@ -1371,7 +1371,7 @@
             ],
             "name": "ボス：突進攻撃",
             "score": {
-                "base": 8.0,
+                "base": 9.0,
                 "bonus": [
                     {
                         "condition": "C_RecentlyHit",
@@ -1381,7 +1381,7 @@
                 ],
                 "cooldown": 10.0,
                 "distance": {
-                    "bestMax": 35.0,
+                    "bestMax": 40.0,
                     "bestMin": 10.0,
                     "falloff": 15.0
                 }
