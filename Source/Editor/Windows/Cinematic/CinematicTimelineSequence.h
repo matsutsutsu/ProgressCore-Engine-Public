@@ -7,14 +7,18 @@
 //   - 台本の項目を、1項目 = 1行に並べる（ショット → SE → エフェクト → シグナル → アニメ）
 //   - 行の名前と帯の色
 //   - 帯をドラッグした結果を、台本の時刻と長さへ書き戻す
+//   - リップルが有効なら、ショットの帯を動かしたとき、その後ろの項目と全体の長さも一緒にずらす（CinematicRipple）
 //
 // 備考: 台本の意味は扱わない（読み書きは CinematicScriptIO、絵は CinematicCameraSystem）
 //       ImSequencer は帯の両端を int のコマで受け、ドラッグ中はその場所へ直接書くので、m_frames を別に持って往復させる
 //         Begin() で台本から写す。掴んでいる間は写し直さない（ドラッグ中の値を巻き戻してしまう）
 //         Flush() で書き戻す。動いたときだけ書く（クリックだけで書くと、打った 4.41 が 4.4333 に丸められる）
 //       点（SE・エフェクト・シグナル）は長さがないので、1コマ幅で描き、端を掴んでも長さは変えない
+//       リップルの控えは、ショットの帯を掴んだ瞬間（BeginEdit）に取り、離した次のフレームの Begin() で捨てる
 // ===========================================================================
 #include "ImSequencer.h"
+
+#include "Editor/Windows/Cinematic/CinematicRipple.h"
 
 #include <cstddef>
 #include <utility>
@@ -61,7 +65,8 @@ public:
     static int RowOf(const CinematicScript &script, RowKind kind, std::size_t index);
 
     // 描く前に毎フレーム呼ぶ。見せる台本と、再生位置のコマを渡す
-    void Begin(CinematicScript &script, int cursorFrame);
+    // ripple は、ショットの帯を動かしたときに後ろの項目も一緒にずらすか
+    void Begin(CinematicScript &script, int cursorFrame, bool ripple);
 
     // 掴んでいた帯が動いていたら台本へ書き戻す。書き戻したら true
     bool Flush();
@@ -75,7 +80,8 @@ public:
     int GetFrameMax() const override;
     int GetItemCount() const override { return static_cast<int>(m_rows.size()); }
 
-    void BeginEdit(int index) override { m_editIndex = index; }
+    // 帯を掴んだ瞬間に1回だけ呼ばれる。ショットの帯なら、リップルの控えを取る
+    void BeginEdit(int index) override;
     void EndEdit() override;
 
     const char *GetItemLabel(int index) const override;
@@ -105,6 +111,9 @@ private:
 
     int m_editIndex     = -1; // 掴んでいる帯。離すと -1
     int m_releasedIndex = -1; // 離したフレームだけ、離した帯の番号が入る
+
+    bool                      m_rippleEnabled = true; // ショットの帯を動かしたとき、後ろの項目も一緒にずらすか
+    CinematicRipple::Snapshot m_ripple;               // 掴んでいるショットの後ろの項目の、掴んだ瞬間の時刻
 
     mutable char m_label[128] = {}; // GetItemLabel の戻り値の置き場所（呼び出し側はすぐ描いて捨てる）
 };

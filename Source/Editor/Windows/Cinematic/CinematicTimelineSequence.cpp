@@ -71,17 +71,44 @@ bool CinematicTimelineSequence::RowAt(int row, Row &out) const
 // 編集の開始と書き戻し
 // ---------------------------------------------------------------------------
 
-void CinematicTimelineSequence::Begin(CinematicScript &script, int cursorFrame)
+void CinematicTimelineSequence::Begin(CinematicScript &script, int cursorFrame, bool ripple)
 {
-    m_script = &script;
-    m_cursor = cursorFrame;
-    if (m_editIndex < 0) Sync();
+    m_script        = &script;
+    m_cursor        = cursorFrame;
+    m_rippleEnabled = ripple;
+
+    // 掴んでいない間は、台本から帯を写し直す。リップルの控えも、離した次のフレームのここで捨てる
+    if (m_editIndex < 0)
+    {
+        m_ripple = {};
+        Sync();
+    }
+}
+
+
+
+void CinematicTimelineSequence::BeginEdit(int index)
+{
+    m_editIndex = index;
+
+    // ショットの帯を掴んだら、後ろの項目の今の時刻を控える。ドラッグ中は、毎フレームこの控えからずらし直す
+    m_ripple = {};
+    if (!m_rippleEnabled || index < 0 || index >= static_cast<int>(m_rows.size())) return;
+    if (m_rows[index].kind == RowKind::Shot) m_ripple = CinematicRipple::Capture(*m_script, m_rows[index].index);
 }
 
 
 
 bool CinematicTimelineSequence::Flush()
 {
+    // 処理フロー:
+    // 1. 掴んでいる（か離したばかりの）帯を決め、全体の長さの中に収める
+    // 2. 動いていたら、台本の時刻と長さへ書き戻す
+    // 3. リップルなら、後ろの項目と全体の長さもずらし、その帯を写し直す
+
+    // ---------------------------------------------------------
+    // 1. 帯を決めて収める
+    // ---------------------------------------------------------
     const int index = m_editIndex >= 0 ? m_editIndex : m_releasedIndex;
     m_releasedIndex = -1;
     if (index < 0 || index >= static_cast<int>(m_rows.size())) return false;
@@ -91,16 +118,21 @@ bool CinematicTimelineSequence::Flush()
 
     // 帯を全体の長さの外へは出さない（ImSequencer は左端 0 しか止めない）
     // 右端まで行かせないのは、全体の長さ以降に始まる項目を読み込みが書き間違いとして弾くため
+    // リップル中のショットの終わりだけは外へ出してよい。全体の長さも同じだけ伸びるので、最後のショットも伸ばせる
     auto &[start, end] = m_frames[index];
     const int maxFrame = GetFrameMax();
     start              = std::clamp(start, 0, maxFrame);
-    end                = std::clamp(end, start, maxFrame);
+    end                = m_ripple.valid ? std::max(end, start) : std::clamp(end, start, maxFrame);
 
     // 点は長さを持たないので、端を掴んで伸ばしても1コマ幅に戻す
     const bool isPoint = (row.kind == RowKind::Sound || row.kind == RowKind::Effect || row.kind == RowKind::Signal);
     if (isPoint) end = start;
 
     if (m_frames[index] == before) return false;
+
+    // ---------------------------------------------------------
+    // 2. 書き戻す
+    // ---------------------------------------------------------
 
     // 帯は「開始のコマの左端」から「終了のコマの右端」まで描かれるので、終わりの時刻は +1 して戻す
     // 長さは幅が変わったときだけ書き戻す。丸ごと動かしただけで書くと、アニメの「長さ 0（クリップ1回分）」が数字に変わる
@@ -122,6 +154,22 @@ bool CinematicTimelineSequence::Flush()
         s.animations[row.index].start = time;
         if (resized) s.animations[row.index].duration = length;
         break;
+    }
+
+    // ---------------------------------------------------------
+    // 3. リップル
+    // ---------------------------------------------------------
+
+    // 控えはショットの帯を掴んだときにだけあるので、ここに来るのはショットの帯を動かしたときだけ
+    if (m_ripple.valid)
+    {
+        CinematicRipple::Apply(s, m_ripple);
+
+        // 掴んでいる間は Begin() が写し直さないので、ずらした帯をここで写す。掴んでいる帯は ImSequencer の値のまま残す
+        for (std::size_t i = 0; i < m_rows.size(); ++i)
+        {
+            if (static_cast<int>(i) != index) m_frames[i] = ToFrames(m_rows[i]);
+        }
     }
     return true;
 }

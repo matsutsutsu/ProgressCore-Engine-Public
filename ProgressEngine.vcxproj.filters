@@ -2013,6 +2013,9 @@
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h">
       <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicRipple.h">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h">
       <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClInclude>
@@ -3093,6 +3096,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicRipple.cpp">
       <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">

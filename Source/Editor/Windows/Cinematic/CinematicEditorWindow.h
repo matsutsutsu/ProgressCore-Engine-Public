@@ -5,6 +5,7 @@
 // 責務:
 //   - 台本を作る・開く・保存し、保存したらゲーム側に読み直させる。ゲームと同じ再生要求で流させる
 //   - ショットと4種類のトラックを ImSequencer の帯で並べ、ドラッグで時刻と長さを変え、選んだ項目の数値を直す
+//   - リップル（ショットの終わりを動かすと、後ろの項目も一緒にずれる）の切り替え。帯のドラッグにも数値の欄にも効く
 //   - 再生位置の絵をゲーム画面に出す（カメラと被写界深度だけ）。エディタ内で再生し、ゲームの再生にも付いていく
 //   - 今の画面のカメラ位置を、ショットの開始・終了へ取り込む
 //
@@ -13,8 +14,10 @@
 //       Undo は持たない。保存する前なら「開き直す」で元に戻せる
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
+#include "Editor/Windows/Cinematic/CinematicRipple.h"
 #include "Engine/Cinematic/CinematicScript.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -57,7 +60,7 @@ private:
     // 上の帯の3行目。今の状態の注意か、直近の結果を1行だけ出す
     void DrawStatusLine(EditorContext &context);
 
-    // 項目を足すボタン（再生位置に置く）。足したら true
+    // 項目を足すボタン（再生位置に置く）と、リップルの切り替え。足したら true
     bool DrawAddButtons();
 
     // ショットとトラックの帯と、再生位置。帯を動かしたら true
@@ -76,7 +79,8 @@ private:
     bool IsPreviewShown(const EditorContext &context) const;
 
     // ---- 種類ごとの数値の欄。値を変えたら true ----
-    bool DrawShotFields(EditorContext &context, CameraShot &shot);
+    // ショットは、リップルで後ろの項目を探すのに添字が要るので、添字で受ける
+    bool DrawShotFields(EditorContext &context, std::size_t shotIndex);
     bool DrawShotDofFields(EditorContext &context, CameraShot &shot);
     bool DrawSoundFields(EditorContext &context, CinematicSound &sound);
     bool DrawEffectFields(EditorContext &context, CinematicEffect &effect);
@@ -140,4 +144,9 @@ private:
     float                                      m_time        = 0.0f; // 再生位置（秒）
     int                                        m_selectedRow = -1;   // 選んでいる行。下に数値を出す
     int                                        m_firstFrame  = 0;    // 横スクロールの位置（ImSequencer が書く）
+
+    // リップル
+    bool                      m_rippleEnabled   = true;  // ショットの終わりを動かしたとき、後ろの項目も一緒にずらすか
+    bool                      m_timeFieldActive = false; // ショットの「開始」「長さ」の欄を触っている最中か
+    CinematicRipple::Snapshot m_timeFieldRipple;         // その欄を触り始める直前の、後ろの項目の時刻
 };

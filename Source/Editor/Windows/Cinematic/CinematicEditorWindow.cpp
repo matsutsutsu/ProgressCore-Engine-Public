@@ -558,7 +558,8 @@ bool CinematicEditorWindow::DrawAddButtons()
     // 処理フロー:
     // 1. 置く時刻を決める
     // 2. 種類ごとのボタン。押したら足して、その項目を選ぶ
-    // 3. タイムラインの操作の早見
+    // 3. リップルの切り替え
+    // 4. タイムラインの操作の早見
 
     // ---------------------------------------------------------
     // 1. 置く時刻
@@ -651,7 +652,18 @@ bool CinematicEditorWindow::DrawAddButtons()
     }
 
     // ---------------------------------------------------------
-    // 3. 操作の早見（右端に寄せる）
+    // 3. リップル
+    // ---------------------------------------------------------
+    ImGui::SameLine(0.0f, kGroupSpacing);
+    ImGui::Checkbox("後ろも一緒にずらす", &m_rippleEnabled);
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("ショットの終わりを動かすと、それより後ろのショット・SE・エフェクト・シグナル・アニメと\n"
+                          "全体の長さも同じだけずれる（リップル）。ショットの途中にある項目は動かない");
+    }
+
+    // ---------------------------------------------------------
+    // 4. 操作の早見（右端に寄せる）
     // ---------------------------------------------------------
     const char *helpLabel = "(?)";
     ImGui::SameLine();
@@ -662,6 +674,7 @@ bool CinematicEditorWindow::DrawAddButtons()
     {
         ImGui::SetTooltip("帯の中をドラッグ : 時刻をずらす\n"
                           "帯の端をドラッグ : 長さを変える\n"
+                          "（「後ろも一緒にずらす」なら、ショットの後ろの項目も付いてくる）\n"
                           "上の目盛りをクリック : 再生位置を動かす\n"
                           "Ctrl + ホイール : 拡大・縮小");
     }
@@ -674,7 +687,7 @@ bool CinematicEditorWindow::DrawTimeline()
 {
     int       frame  = CinematicTimelineSequence::TimeToFrame(m_time);
     const int before = frame;
-    m_sequence->Begin(m_script, frame);
+    m_sequence->Begin(m_script, frame, m_rippleEnabled);
 
     // ImSequencer は項目が1つもないと何も描かない
     if (m_sequence->GetItemCount() == 0)
@@ -757,7 +770,7 @@ bool CinematicEditorWindow::DrawInspector(EditorContext &context)
     switch (row.kind)
     {
     case RowKind::Shot:
-        changed = DrawShotFields(context, m_script.shots[row.index]);
+        changed = DrawShotFields(context, row.index);
         break;
     case RowKind::Sound:
         changed = DrawSoundFields(context, m_script.sounds[row.index]);
@@ -837,22 +850,41 @@ void CinematicEditorWindow::EraseSelected()
 // 種類ごとの数値の欄
 // ---------------------------------------------------------------------------
 
-bool CinematicEditorWindow::DrawShotFields(EditorContext &context, CameraShot &shot)
+bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t shotIndex)
 {
     // 処理フロー:
-    // 1. 時間（開始・長さ・入りのブレンド）
+    // 1. 時間（開始・長さ・入りのブレンド）。リップルなら、開始・長さで終わりが動いた分だけ後ろもずらす
     // 2. 動き（基準・動かし方・速さのカーブ）
     // 3. 構図（開始と終了をタブで切り替える）
     // 4. 被写界深度
 
-    bool changed = false;
+    // リップルは他のショットの時刻を書き換えるが、配列の大きさは変えないので、この参照は最後まで使える
+    CameraShot &shot    = m_script.shots[shotIndex];
+    bool        changed = false;
 
     // ---------------------------------------------------------
     // 1. 時間
     // ---------------------------------------------------------
     ImGui::SeparatorText("時間");
-    changed |= DragSeconds("開始", shot.start);
-    changed |= DragSeconds("長さ", shot.duration, 0.01f);
+
+    // 開始・長さを触り始める直前の、後ろの項目の時刻を控える。触っている間は控え直さない
+    // 控え直すと、縮めたときにショットの途中にあった項目へ終わりが追いつき、そこから一緒に押してしまう
+    // 控えが別のショットのもの（欄を触ったまま選び直した）なら、取り直す
+    const bool otherShot = !m_timeFieldRipple.valid || m_timeFieldRipple.shotIndex != shotIndex;
+    if (m_rippleEnabled && (!m_timeFieldActive || otherShot))
+    {
+        m_timeFieldRipple = CinematicRipple::Capture(m_script, shotIndex);
+    }
+
+    bool timeChanged = DragSeconds("開始", shot.start);
+    bool timeActive  = ImGui::IsItemActive();
+    timeChanged |= DragSeconds("長さ", shot.duration, 0.01f);
+    timeActive |= ImGui::IsItemActive();
+    m_timeFieldActive = timeActive;
+
+    if (timeChanged && m_rippleEnabled) CinematicRipple::Apply(m_script, m_timeFieldRipple);
+    changed |= timeChanged;
+
     changed |= DragSeconds("入りのブレンド", shot.blendIn);
     if (ImGui::IsItemHovered())
     {
@@ -1362,7 +1394,7 @@ bool CinematicEditorWindow::IsPreviewShown(const EditorContext &) const { return
 
 
 
-bool CinematicEditorWindow::DrawShotFields(EditorContext &, CameraShot &) { return false; }
+bool CinematicEditorWindow::DrawShotFields(EditorContext &, std::size_t) { return false; }
 
 
 

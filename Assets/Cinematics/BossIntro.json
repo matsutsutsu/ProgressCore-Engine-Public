@@ -1,104 +1,318 @@
 {
-    "_comment": "ボス戦の導入ムービー。群れとステージを見せる -> プレイヤーを見上げる -> カットでボスを見上げて寄る -> プレイヤーの後ろからボスと向き合い、通常のカメラへ渡す。オフセットは対象の向き基準（+X=右, +Y=上, +Z=前）。シーンの最初のフレームから流すので、頭の約1.5秒はシーン遷移の明転と重なる",
-    "duration": 10.7,
-    "startDelay": 0.0,
-    "allowSkip": true,
-    "shots": [
-        {
-            "_comment": "Shot1: 引きの絵。高い位置からボスと群れの輪の周りをゆっくり回り込みながら降りる。最初の1.5秒は明転で黒から見えてくるので、その分だけ長くしてある",
-            "start": 0.0,
-            "duration": 4.1,
-            "subject": "Valkyra",
-            "motion": "Orbit",
-            "ease": "EaseInOut",
-            "lookStart": [0.0, 18.0, 0.0],
-            "lookEnd": [0.0, 13.0, 0.0],
-            "angleStart": 50.0,
-            "angleEnd": 15.0,
-            "radiusStart": 70.0,
-            "radiusEnd": 55.0,
-            "heightStart": 30.0,
-            "heightEnd": 14.0,
-            "fovStart": 50.0,
-            "fovEnd": 46.0
-        },
-        {
-            "_comment": "Shot2: カットでプレイヤーへ。低い位置から見上げ、斜め前から正面へ回り込みつつ寄る（画角を狭めて押し込む）",
-            "start": 4.1,
-            "duration": 1.8,
-            "subject": "Player",
-            "ease": "EaseOut",
-            "eyeStart": [-3.5, 1.5, 10.5],
-            "eyeEnd": [-1.8, 2.0, 9.0],
-            "lookStart": [-1.0, 4.0, 0.0],
-            "lookEnd": [-1.0, 4.3, 0.0],
-            "fovStart": 45.0,
-            "fovEnd": 38.0
-        },
-        {
-            "_comment": "Shot3: カットでボスへ。足元近くの低い位置から見上げ、望遠でゆっくり寄る（狭い画角で大きく見せる）",
-            "start": 5.9,
-            "duration": 3.0,
-            "subject": "Valkyra",
-            "ease": "EaseOut",
-            "eyeStart": [6.0, 1.5, 26.0],
-            "eyeEnd": [2.0, 2.0, 20.0],
-            "lookStart": [1.0, 7.5, 0.0],
-            "lookEnd": [0.0, 8.0, 0.0],
-            "fovStart": 34.0,
-            "fovEnd": 26.0
-        },
-        {
-            "_comment": "Shot4: プレイヤーの後ろ上からボスと向き合う。通常のカメラ（背中越し）に近い構図で終えて、切り替えを目立たせない。カメラ位置は、レベルの初期配置でのプレイヤーの後ろ上をボス基準に直した値",
-            "start": 8.9,
-            "duration": 1.8,
-            "subject": "Valkyra",
-            "ease": "EaseInOut",
-            "eyeStart": [57.46, 6.67, 39.81],
-            "eyeEnd": [61.24, 8.67, 44.96],
-            "lookStart": [0.0, 7.0, 0.0],
-            "lookEnd": [0.0, 6.0, 0.0],
-            "fovStart": 40.0,
-            "fovEnd": 45.0
-        }
-    ],
-    "sounds": [
-        {
-            "_comment": "カットでボスへ切り替わる瞬間の重い一撃。素材が揃うまでは倒れる音をピッチを下げて代用",
-            "time": 5.9,
-            "event": "sfx:/fall",
-            "volume": 1.0,
-            "pitch": -0.4
-        }
-    ],
-    "effects": [
-        {
-            "_comment": "ボスの足元に土煙。ボスが大きいので5倍",
-            "time": 5.9,
-            "effect": "Assets/Prefabs/Particles/VFX_Jump",
-            "subject": "Valkyra",
-            "scale": 5.0
-        }
-    ],
-    "signals": [
-        {
-            "_comment": "ボスが映って着地が決まった直後に名前を出す。下の1行は仮の文言",
-            "time": 6.2,
-            "name": "Telop",
-            "param": "VALKYRA",
-            "param2": "TARGET IDENTIFIED",
-            "value": 2.6
-        }
-    ],
-    "animations": [
-        {
-            "_comment": "カットでボスへ切り替わった瞬間、着地の踏ん張りを少し遅めに見せる（土煙・着地音と同じ時刻）。カットで隠れるので blendIn は 0",
-            "start": 5.9,
-            "subject": "Valkyra",
-            "sequence": "Assets/Animations/Sequencer/Valkyra/LeapLand.json",
-            "speed": 0.7,
-            "blendIn": 0.0,
-            "blendOut": 0.4
-        }
-    ]
+  "duration": 15.2333,
+  "startDelay": 0.0,
+  "allowSkip": true,
+  "shots": [
+    {
+      "start": 0.0,
+      "duration": 3.8,
+      "subject": "",
+      "motion": "Truck",
+      "ease": "EaseInOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        4.5,
+        4.0,
+        -57.5
+      ],
+      "lookEnd": [
+        3.5,
+        4.5,
+        -57.0
+      ],
+      "eyeStart": [
+        10.0,
+        21.0,
+        -84.0
+      ],
+      "eyeEnd": [
+        7.0,
+        13.0,
+        -76.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 50.0,
+      "fovEnd": 44.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 3.8,
+      "duration": 2.4,
+      "subject": "Player",
+      "motion": "Truck",
+      "ease": "Linear",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        3.8,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        3.8,
+        0.0
+      ],
+      "eyeStart": [
+        5.23,
+        1.44,
+        9.5
+      ],
+      "eyeEnd": [
+        -1.43,
+        2.91,
+        9.5
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 40.0,
+      "fovEnd": 38.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 6.2,
+      "duration": 1.6,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        1.2,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        1.2,
+        0.0
+      ],
+      "eyeStart": [
+        3.5,
+        0.6,
+        9.0
+      ],
+      "eyeEnd": [
+        2.2,
+        0.6,
+        8.5
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 30.0,
+      "fovEnd": 28.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 7.8,
+      "duration": 1.5333,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        9.3,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        9.4,
+        0.0
+      ],
+      "eyeStart": [
+        1.6,
+        8.6,
+        8.0
+      ],
+      "eyeEnd": [
+        1.0,
+        8.9,
+        6.5
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 22.0,
+      "fovEnd": 20.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 9.3333,
+      "duration": 1.7,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        5.6,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        6.0,
+        0.0
+      ],
+      "eyeStart": [
+        -4.0,
+        1.0,
+        12.0
+      ],
+      "eyeEnd": [
+        -5.5,
+        0.8,
+        16.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 56.0,
+      "fovEnd": 48.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 11.0333,
+      "duration": 2.2,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseInOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        8.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        8.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        3.0,
+        28.0
+      ],
+      "eyeEnd": [
+        0.0,
+        3.2,
+        24.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 50.0,
+      "fovEnd": 46.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 13.2333,
+      "duration": 2.0,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseInOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        6.0,
+        0.0
+      ],
+      "eyeStart": [
+        62.9,
+        6.2,
+        36.15
+      ],
+      "eyeEnd": [
+        61.24,
+        8.67,
+        44.96
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 36.0,
+      "fovEnd": 45.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    }
+  ],
+  "sounds": [
+    {
+      "time": 9.3333,
+      "event": "sfx:/fall",
+      "subject": "",
+      "volume": 1.0,
+      "pitch": -0.4
+    }
+  ],
+  "effects": [],
+  "signals": [
+    {
+      "time": 11.2333,
+      "name": "Telop",
+      "param": "VALKYRA",
+      "param2": "TARGET IDENTIFIED",
+      "value": 2.6
+    }
+  ],
+  "animations": [
+    {
+      "start": 9.3333,
+      "duration": 0.0,
+      "subject": "Valkyra",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/LeapLand.json",
+      "loop": false,
+      "speed": 0.7,
+      "blendIn": 0.0,
+      "blendOut": 0.4
+    }
+  ]
 }
