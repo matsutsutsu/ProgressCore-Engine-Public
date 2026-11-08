@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -17,7 +18,7 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 10,
+                            "burstCount": 1,
                             "color": [
                                 1.0,
                                 0.5328184962272644,
@@ -39,7 +40,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.10000000149011612,
-                                0.5
+                                1.0
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -54,10 +55,10 @@
                                 0.6000000238418579
                             ],
                             "gravity": 0.0,
-                            "intensity": 1.0,
+                            "intensity": 10.0,
                             "lifespan": [
-                                0.3499999940395355,
-                                0.3499999940395355
+                                0.30000001192092896,
+                                0.30000001192092896
                             ],
                             "lineEnd": [
                                 0.0,
@@ -86,8 +87,8 @@
                             "sizeEasePower": 2.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
-                                0.0,
-                                0.0
+                                0.10000000149011612,
+                                0.10000000149011612
                             ],
                             "spriteGrid": [
                                 1,
@@ -115,10 +116,10 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 5.0,
-                            "burstCount": 35,
+                            "burstCount": 100,
                             "color": [
                                 1.0,
-                                0.3706563711166382,
+                                0.7644787430763245,
                                 0.0,
                                 1.0
                             ],
@@ -136,12 +137,12 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.699999988079071,
-                                0.699999988079071
+                                0.20000000298023224,
+                                0.0
                             ],
                             "emitSpeed": [
-                                3.0,
-                                8.0
+                                20.0,
+                                30.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -152,10 +153,10 @@
                                 0.6000000238418579
                             ],
                             "gravity": 1.0,
-                            "intensity": 1.0,
+                            "intensity": 5.0,
                             "lifespan": [
-                                0.6499999761581421,
-                                0.949999988079071
+                                0.5,
+                                0.6000000238418579
                             ],
                             "lineEnd": [
                                 0.0,
@@ -168,11 +169,11 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 35,
-                            "maxSpeed": 10.0,
+                            "maxCount": 100,
+                            "maxSpeed": 0.0,
                             "name": "Dust",
-                            "noiseScale": 1.0,
-                            "noiseStrength": 12.699999809265137,
+                            "noiseScale": 5.0,
+                            "noiseStrength": 30.0,
                             "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,

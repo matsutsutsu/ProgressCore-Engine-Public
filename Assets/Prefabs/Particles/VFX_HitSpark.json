@@ -21,7 +21,7 @@
                             "burstCount": 130,
                             "color": [
                                 1.0,
-                                0.5791505575180054,
+                                0.6486486196517944,
                                 0.0,
                                 1.0
                             ],
@@ -43,7 +43,7 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                15.0,
+                                10.0,
                                 35.0
                             ],
                             "emitStretch": [
@@ -55,7 +55,7 @@
                                 0.07999999821186066
                             ],
                             "gravity": -30.0,
-                            "intensity": 10.0,
+                            "intensity": 13.0,
                             "lifespan": [
                                 0.3499999940395355,
                                 0.550000011920929
@@ -100,7 +100,7 @@
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 0.23000000417232513,
+                            "velocityStretch": 0.25,
                             "vortexStrength": 0.0
                         },
                         {
@@ -349,7 +349,7 @@
                                 0.05000000074505806
                             ],
                             "gravity": 0.0,
-                            "intensity": 30.0,
+                            "intensity": 15.0,
                             "lifespan": [
                                 0.17000000178813934,
                                 0.17000000178813934
@@ -395,6 +395,104 @@
                                 0.0
                             ],
                             "velocityStretch": 5.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 50,
+                            "color": [
+                                1.0,
+                                0.7413126826286316,
+                                0.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                3.1415927410125732
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.05000000074505806
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.15000000596046448,
+                                0.0
+                            ],
+                            "emitSpeed": [
+                                10.0,
+                                25.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.07999999821186066
+                            ],
+                            "gravity": -30.0,
+                            "intensity": 5.0,
+                            "lifespan": [
+                                0.3499999940395355,
+                                0.550000011920929
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 200,
+                            "maxSpeed": 0.0,
+                            "name": "火花 オレンジ copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 3,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 1.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.20000000298023224,
                             "vortexStrength": 0.0
                         }
                     ]

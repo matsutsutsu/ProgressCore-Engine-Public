@@ -3,6 +3,7 @@
         {
             "components": {
                 "GPUParticle": {
+                    "animControlled": false,
                     "emitters": [
                         {
                             "angularSpeed": [
@@ -19,9 +20,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 1,
                             "color": [
+                                0.0,
+                                0.5490196347236633,
                                 1.0,
-                                0.550000011920929,
-                                0.20000000298023224,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -38,7 +39,7 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                1.0,
+                                0.0,
                                 6.0
                             ],
                             "emitSpeed": [
@@ -117,9 +118,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 1,
                             "color": [
+                                0.0,
+                                0.0,
                                 1.0,
-                                0.8500000238418579,
-                                0.6000000238418579,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -192,7 +193,7 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle0_02.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Wind_09.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
@@ -215,16 +216,16 @@
                             "attractorStrength": 0.0,
                             "burstCount": 124,
                             "color": [
-                                1.0,
-                                1.0,
-                                1.0,
+                                0.8416988253593445,
+                                0.7858248353004456,
+                                0.6044632196426392,
                                 0.8500000238418579
                             ],
                             "colorMode": 0,
                             "colorRampPath": "",
                             "coneAngle": [
-                                1.350000023841858,
-                                1.5
+                                1.3499997854232788,
+                                1.5707961320877075
                             ],
                             "drag": 3.5,
                             "emitMode": 1,
@@ -234,8 +235,8 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.6200000047683716,
-                                1.6699999570846558
+                                0.10000000149011612,
+                                2.0
                             ],
                             "emitSpeed": [
                                 9.899999618530273,
@@ -250,9 +251,9 @@
                                 0.800000011920929
                             ],
                             "gravity": 1.0,
-                            "intensity": 1.0,
+                            "intensity": 1.2999999523162842,
                             "lifespan": [
-                                0.8999999761581421,
+                                0.30000001192092896,
                                 0.8999999761581421
                             ],
                             "lineEnd": [
@@ -273,7 +274,203 @@
                             "noiseStrength": 2.0,
                             "orientMode": 0,
                             "particleType": 1,
+                            "renderMode": 1,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 0.4000000059604645,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Smoke_02.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 124,
+                            "color": [
+                                0.32156863808631897,
+                                0.3137255012989044,
+                                0.29019609093666077,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                1.350000023841858,
+                                1.5
+                            ],
+                            "drag": 3.5,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                2.0
+                            ],
+                            "emitSpeed": [
+                                9.899999618530273,
+                                37.70000076293945
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.05000000074505806,
+                                0.800000011920929
+                            ],
+                            "gravity": 1.0,
+                            "intensity": 1.0,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.8999999761581421
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.800000011920929,
+                                0.0
+                            ],
+                            "localOffsetY": 0.5,
+                            "maxCount": 131,
+                            "maxSpeed": 0.0,
+                            "name": "Dust copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 2.0,
+                            "orientMode": 0,
+                            "particleType": 1,
                             "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 0.4000000059604645,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Smoke_02.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 50,
+                            "color": [
+                                0.8416988253593445,
+                                0.7858248353004456,
+                                0.6044632196426392,
+                                0.8500000238418579
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.1745329052209854
+                            ],
+                            "drag": 3.5,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                1.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                2.0
+                            ],
+                            "emitSpeed": [
+                                9.899999618530273,
+                                37.70000076293945
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.05000000074505806,
+                                0.800000011920929
+                            ],
+                            "gravity": 1.0,
+                            "intensity": 1.2999999523162842,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.699999988079071
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.800000011920929,
+                                0.0
+                            ],
+                            "localOffsetY": 0.5,
+                            "maxCount": 131,
+                            "maxSpeed": 0.0,
+                            "name": "Dust copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 2.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 1,
                             "scale": [
                                 1.0,
                                 1.0
