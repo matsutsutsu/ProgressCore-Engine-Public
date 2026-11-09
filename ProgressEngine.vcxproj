@@ -816,6 +816,9 @@
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSteps.h" />
     <ClInclude Include="Source\Game\UI\Screens\TutorialCompleteSystem.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
+    <ClInclude Include="Source\Game\Scenes\AnimLabScene.h" />
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.h" />
     <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h" />
     <ClInclude Include="Source\Game\Logics\Demo\DemoSwarmSystem.h" />
     <ClInclude Include="Source\Engine\Scene\SceneLoading.h" />
@@ -1303,6 +1306,9 @@
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TutorialCompleteSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\AnimLabScene.cpp" />
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp" />
     <ClCompile Include="Source\Game\Logics\Demo\DemoSwarmSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp" />

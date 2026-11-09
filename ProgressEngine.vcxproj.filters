@@ -529,6 +529,9 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AnimLab">
+      <UniqueIdentifier>{aa02d675-e392-405e-942d-0d9032d0aec7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\Debug">
       <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
     </Filter>
@@ -1995,6 +1998,15 @@
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\AnimLabScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridComponent.h">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.h">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h">
       <Filter>Source\Game\Scenes</Filter>
     </ClInclude>
@@ -3079,6 +3091,15 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\AnimLabScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp">
       <Filter>Source\Game\Scenes</Filter>

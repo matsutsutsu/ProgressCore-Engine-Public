@@ -1,0 +1,64 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Preview/PreviewFloor.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                40.0,
+                1.0,
+                40.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Preview/PlayerPreview.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Light/GameLighting.json",
+            "rotation": [
+                0.699999988079071,
+                0.0,
+                -0.5,
+                0.9200000166893005
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        }
+    ],
+    "scene": "AnimLab.scene.json",
+    "type": "level",
+    "version": 1
+}

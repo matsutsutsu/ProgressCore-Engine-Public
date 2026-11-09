@@ -445,12 +445,29 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
 
     // --- 左: タイムライン ---
     ImGui::TableSetColumnIndex(0);
+    const int prevSelectedEntry = m_selectedEntry;
     DrawTimelinePane(context, animator, model);
 
+    // タイムラインでイベントを選び直したら、カーブのタブを開いていてもイベントのタブへ戻す
+    const bool focusEventTab = (m_selectedEntry != prevSelectedEntry && m_selectedEntry >= 1);
+
     // --- 右: インスペクタとカーブ ---
+    // イベントの調整とカーブの調整は同時にしないので、タブで切り替えて片方だけを広く出す
     ImGui::TableSetColumnIndex(1);
-    DrawInspectorPane(context);
-    DrawCurvePane(context.animEditTime);
+    if (ImGui::BeginTabBar("##SeqSideTabs"))
+    {
+        if (ImGui::BeginTabItem("イベント", nullptr, focusEventTab ? ImGuiTabItemFlags_SetSelected : 0))
+        {
+            DrawInspectorPane(context);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("カーブ"))
+        {
+            DrawCurvePane(context.animEditTime);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 
     ImGui::EndTable();
 }
@@ -1682,8 +1699,6 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     // ---------------------------------------------------------
     // 1. 表示の切り替え
     // ---------------------------------------------------------
-    ImGui::Spacing();
-    ImGui::Separator();
     ImGui::TextColored(ImVec4(1, 0.6f, 0.2f, 1), "アニメーションカーブ (横軸 = 進捗 0〜1)");
 
     ImGui::Checkbox("速度##cv", &m_showSpeedCurve);
@@ -1795,14 +1810,15 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
             m_curveWidget.SetActiveCurve(1);
         }
 
-        ImGui::TextDisabled("移動距離は末尾キーの「値」を右のインスペクタかキャンバスでドラッグして決めます。");
+        ImGui::TextDisabled("移動距離は末尾キーの「値」を、キャンバスか下のキー設定でドラッグして決めます。");
     }
 
     // ---------------------------------------------------------
     // 4. カーブエディタ
     // ---------------------------------------------------------
+    // タブで列を占有できるので、残りの高さの半分までキャンバスを広げる（下にキー設定が入る）
     CurveEditorWidget::Options opt;
-    opt.height        = 240.0f;
+    opt.height        = (std::max)(240.0f, ImGui::GetContentRegionAvail().y * 0.5f);
     opt.showInspector = true;
     opt.showPlayhead  = true;
     opt.playheadX     = progress;

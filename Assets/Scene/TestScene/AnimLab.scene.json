@@ -1,0 +1,56 @@
+{
+    "entities": [
+        {
+            "components": {
+                "CameraBodyFree": {
+                    "currentPitch": -4.0,
+                    "currentYaw": 180.0,
+                    "lookSpeed": 0.20000000298023224,
+                    "moveSpeed": 22.932363510131836
+                },
+                "Name": {
+                    "name": "FreeCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        3.8,
+                        11.0
+                    ],
+                    "rotation": [
+                        0.09513140469789505,
+                        0.7149101495742798,
+                        -0.09920205175876617,
+                        0.6855745911598206
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 2.0,
+                    "farClip": 1000.0,
+                    "fov": 60.29999923706055,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 100
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "timestamp": 1794254152,
+    "version": 1
+}
