@@ -71,6 +71,15 @@ private:
     // ラッシュを始める。ダッシュを打ち切り、回避離脱の移動を予約する
     void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement);
 
+    // 回避離脱の向きとアニメを決める。StartRush の直後に呼ぶ
+    // 敵（なければ避けた攻撃）を正面に置き、跳ぶ向きに合わせて前後左右の回避を混ぜて出す
+    // attackerID は避けた攻撃。分からなければ InvalidEntityID
+    void BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams,
+                        const DirectX::SimpleMath::Vector3 &playerPos, CCL::ECS::EntityID attackerID);
+
+    // 回避離脱と待機の間、BeginEvadeAnim で決めた向きを保つ
+    void HoldEvadeFacing(const PlayerRushComponent &rush, PlayerComponent &player);
+
     // 次のフェーズへ進める
     // 回避離脱は移動が終わったとき、ほかは残り時間が尽きたときに呼ぶ
     void AdvancePhase(PlayerRushComponent &rush);
@@ -83,8 +92,8 @@ private:
     // ラッシュのアニメから抜けたら連撃を終える。fsm が nullptr なら抜けたとみなす
     void TrackRushAnim(PlayerRushComponent &rush, const AnimStateMachineComponent *fsm);
 
-    // 攻撃に入り、詰め先を決める。ロックオンがなければ今の正面へ詰める
-    void EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player);
+    // 攻撃に入り、詰め先を決めて突っ込む構えへ入る。ロックオンがなければ今の正面へ詰める
+    void EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player, AnimParametersComponent &animParams);
 
     // ============================================================
     // 時間
@@ -119,7 +128,7 @@ private:
                       PlayerComponent &player, AnimParametersComponent &animParams,
                       const DirectX::SimpleMath::Vector3 &playerPos);
 
-    // 詰めの斬り（通常のダッシュ攻撃）を出し、詰める向きへ向き直る
+    // 詰めの斬り（着地の斬り RushDiveEnd）を出し、詰める向きへ向き直る
     void FireStrike(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams);
 
     // 次の斬りを頼む。rushStepCount 回斬った後は、とどめを頼む
@@ -142,7 +151,8 @@ private:
     // インスペクタに出すフェーズ名
     const char *PhaseLabel(RushPhase phase) const;
 
-    CCL::ECS::EntityID m_pendingStarts = CCL::ECS::InvalidEntityID; // 成立を受けて、まだ始めていないプレイヤー
+    CCL::ECS::EntityID m_pendingStarts   = CCL::ECS::InvalidEntityID; // 成立を受けて、まだ始めていないプレイヤー
+    CCL::ECS::EntityID m_pendingAttacker = CCL::ECS::InvalidEntityID; // その成立で避けた攻撃
 
     // 前の Update から届いた命中の、攻撃した側。敵の命中も入る
     // 1ステップに複数の攻撃が当たりうるので vector で溜める

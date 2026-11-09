@@ -9,7 +9,7 @@ enum class RushPhase : uint8_t
 {
     Locked = 0, // 回避離脱。減速しながら離れる。操作は受け付けない
     Ready,      // 待機。攻撃の入力だけ受け付ける
-    Attack,     // 間合いを詰めて、ダッシュ攻撃で1回斬る
+    Attack,     // 突っ込む姿勢で間合いを詰めて、着地の斬りで1回斬る
     Flurry,     // 連撃。押すたびに斬り、決まった数の後にとどめ
 };
 
@@ -60,6 +60,8 @@ struct PlayerRushComponent
     bool      finishHit     = false;             // とどめが当たったか。当たってからは、プレイヤーも世界と一緒のスローで動く
 
     uint32_t lastAnimState = 0; // 前のステップのアニメのステート
+
+    float evadeFaceYaw = 0.0f; // 回避離脱と待機の間に向く方（ラジアン、0 で +Z）
 
     DirectX::SimpleMath::Vector3 evadeDir      = {0, 0, 0};                 // 離脱の向き（正規化済み）
     DirectX::SimpleMath::Vector3 closeInDir    = {0, 0, 0};                 // 詰める向き（正規化済み）

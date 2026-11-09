@@ -8,7 +8,7 @@
 struct JustEvadeSuccessEvent
 {
     CCL::ECS::EntityID playerID;   // 回避したプレイヤー
-    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。今は読む側がない
+    CCL::ECS::EntityID attackerID; // 避けた攻撃（ボスの剣の判定かドローン）。ラッシュがロックオンなしのとき向く先に使う
 };
 
 // ダメージを受けたときに出す（受けた側のイベント）

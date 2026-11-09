@@ -18,7 +18,7 @@
             "targetStateHash": 2240140813
         },
         {
-            "blendDuration": 0.10000000149011612,
+            "blendDuration": 0.05,
             "conditions": [
                 {
                     "op": 3,
@@ -30,7 +30,37 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "sourceGroupId": 0,
-            "targetStateHash": 3987189933
+            "targetStateHash": 194164990
+        },
+        {
+            "blendDuration": 0.1,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 2032584116,
+                    "paramName": "RushEvade",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 2032584116
+        },
+        {
+            "blendDuration": 0.05,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 28400074,
+                    "paramName": "RushCloseIn",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 4117666875
         },
         {
             "blendDuration": 0.20000000298023224,
@@ -257,6 +287,41 @@
             "hash": 2799951452,
             "name": "RushFinish",
             "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2032584116,
+            "name": "RushEvade",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 28400074,
+            "name": "RushCloseIn",
+            "type": 2
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 886235349,
+            "name": "IsRushing",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2752090756,
+            "name": "RushEvadeX",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 2768868375,
+            "name": "RushEvadeY",
+            "type": 0
         }
     ],
     "states": [
@@ -1746,6 +1811,210 @@
                     "sourceGroupId": 0,
                     "targetStateHash": 2371348074
                 },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -400.0,
+            "nodePosY": -60.0,
+            "playbackSpeed": 1.5,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveStart.json",
+            "sequenceName": "RushDiveStart",
+            "speedCurveName": "",
+            "stateHash": 4117666875,
+            "transitions": [
+                {
+                    "blendDuration": 0.05,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3177616503
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 886235349,
+                            "paramName": "IsRushing",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -400.0,
+            "nodePosY": 80.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveLoop.json",
+            "sequenceName": "RushDiveLoop",
+            "speedCurveName": "",
+            "stateHash": 3177616503,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 886235349,
+                            "paramName": "IsRushing",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 1,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -150.0,
+            "nodePosY": 160.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveEnd.json",
+            "sequenceName": "RushDiveEnd",
+            "speedCurveName": "",
+            "stateHash": 194164990,
+            "transitions": [
+                {
+                    "blendDuration": 0.1,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2050920459,
+                            "paramName": "RushAttack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2824690955
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 32,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "blendSpace": {
+                "paramXHash": 2752090756,
+                "paramXName": "RushEvadeX",
+                "paramYHash": 2768868375,
+                "paramYName": "RushEvadeY",
+                "samples": [
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushEvade_F.json",
+                        "x": 0.0,
+                        "y": 1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushEvade_B.json",
+                        "x": 0.0,
+                        "y": -1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushEvade_L.json",
+                        "x": -1.0,
+                        "y": 0.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushEvade_R.json",
+                        "x": 1.0,
+                        "y": 0.0
+                    }
+                ],
+                "smoothingTime": 0.0,
+                "type": 1
+            },
+            "groupId": 0,
+            "isBlendSpace": true,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -560.0,
+            "nodePosY": -260.0,
+            "playbackSpeed": 1.3,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "",
+            "sequenceName": "RushEvade",
+            "speedCurveName": "",
+            "stateHash": 2032584116,
+            "transitions": [
                 {
                     "blendDuration": 0.2,
                     "conditions": [

@@ -19,8 +19,20 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 詰めの斬りのトリガー。AnyState から通常のダッシュ攻撃（DashAttack）へ入る
+// 回避離脱のトリガーと、向いている方から見た跳ぶ向き（X は右が正、Y は前が正）
+// RushEvade は X / Y で前後左右の回避を混ぜるブレンドスペース
+static const uint32_t HASH_TRIG_RUSH_EVADE    = CCL::Utils::HashString("RushEvade");
+static const uint32_t HASH_PARAM_RUSH_EVADE_X = CCL::Utils::HashString("RushEvadeX");
+static const uint32_t HASH_PARAM_RUSH_EVADE_Y = CCL::Utils::HashString("RushEvadeY");
+
+// 詰め始めのトリガー。AnyState から突っ込む構え（RushDiveStart）へ入る
+static const uint32_t HASH_TRIG_RUSH_CLOSE_IN = CCL::Utils::HashString("RushCloseIn");
+
+// 詰めの斬りのトリガー。AnyState から着地の斬り（RushDiveEnd）へ入る
 static const uint32_t HASH_TRIG_RUSH_STRIKE = CCL::Utils::HashString("RushStrike");
+
+// ラッシュ中か。詰めきれずに終わったとき、突っ込む姿勢のループから待機へ戻すのに使う
+static const uint32_t HASH_PARAM_IS_RUSHING = CCL::Utils::HashString("IsRushing");
 
 // 連撃の斬りのトリガー。押すたびに RushSlash_A と B を交互に頭から出し直す
 static const uint32_t HASH_TRIG_RUSH_ATTACK = CCL::Utils::HashString("RushAttack");
@@ -29,10 +41,10 @@ static const uint32_t HASH_TRIG_RUSH_ATTACK = CCL::Utils::HashString("RushAttack
 static const uint32_t HASH_TRIG_RUSH_FINISH = CCL::Utils::HashString("RushFinish");
 
 // 連撃中にいてよいアニメのステート。ここから抜けたら連撃を終える
-static const uint32_t HASH_STATE_DASH_ATTACK  = CCL::Utils::HashString("DashAttack");
-static const uint32_t HASH_STATE_RUSH_SLASH_A = CCL::Utils::HashString("RushSlash_A");
-static const uint32_t HASH_STATE_RUSH_SLASH_B = CCL::Utils::HashString("RushSlash_B");
-static const uint32_t HASH_STATE_RUSH_FINISH  = CCL::Utils::HashString("RushFinish");
+static const uint32_t HASH_STATE_RUSH_DIVE_END = CCL::Utils::HashString("RushDiveEnd");
+static const uint32_t HASH_STATE_RUSH_SLASH_A  = CCL::Utils::HashString("RushSlash_A");
+static const uint32_t HASH_STATE_RUSH_SLASH_B  = CCL::Utils::HashString("RushSlash_B");
+static const uint32_t HASH_STATE_RUSH_FINISH   = CCL::Utils::HashString("RushFinish");
 
 
 
@@ -64,7 +76,8 @@ void PlayerRushSystem::Initialize()
     // ジャスト回避の成立を購読し、始めるプレイヤーを溜める
     // 成立は別の System のタスク上で届くので、その場では始めず Update で始める
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
-        m_pendingStarts = ev.playerID;
+        m_pendingStarts   = ev.playerID;
+        m_pendingAttacker = ev.attackerID; // ロックオンがないときは、避けた攻撃の方を向く
     });
 
     // 攻撃の命中を購読し、当てた側を溜める。とどめが当たった瞬間を知るため
@@ -93,12 +106,17 @@ void PlayerRushSystem::Update(float dt)
         auto *rush     = m_world->GetComponent<PlayerRushComponent>(m_pendingStarts);
         auto *dash     = m_world->GetComponent<PlayerDashComponent>(m_pendingStarts);
         auto *movement = m_world->GetComponent<CharacterMovementComponent>(m_pendingStarts);
-        if (rush && dash && movement)
+        auto *player   = m_world->GetComponent<PlayerComponent>(m_pendingStarts);
+        auto *anim     = m_world->GetComponent<AnimParametersComponent>(m_pendingStarts);
+        auto *trans    = m_world->GetComponent<TransformComponent>(m_pendingStarts);
+        if (rush && dash && movement && player && anim && trans)
         {
             StartRush(*rush, *dash, *movement);
+            BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition(), m_pendingAttacker);
         }
-    }    
-    m_pendingStarts = CCL::ECS::InvalidEntityID;
+    }
+    m_pendingStarts   = CCL::ECS::InvalidEntityID;
+    m_pendingAttacker = CCL::ECS::InvalidEntityID;
 
     // ---------------------------------------------------------
     // 2. ラッシュ中の更新
@@ -126,6 +144,9 @@ void PlayerRushSystem::Update(float dt)
                       const PlayerInputComponent         &input,
                       const TransformComponent           & /*transform*/,
                       const JoltCharacterHandleComponent &joltHandle) {
+
+        // ラッシュを終えたステップの値は、次のステップでグラフへ届く
+        animParams.SetBool(HASH_PARAM_IS_RUSHING, rush.isActive);
 
         // ラッシュ中じゃないならスローが戻るまでの間だけプレイヤーを実時間で動かす
         if (!rush.isActive)
@@ -162,13 +183,15 @@ void PlayerRushSystem::Update(float dt)
         case RushPhase::Locked:
             // 離れる移動は StartRush で予約してあり、物理が運ぶ
             // 運び終えたら待機へ進める。終点で速度が 0 になるので滑らない
+            HoldEvadeFacing(rush, player);
             if (!movement.IsMoving()) AdvancePhase(rush);
             break;
 
         case RushPhase::Ready:
             // 足を止めて、攻撃の入力を待つ
+            HoldEvadeFacing(rush, player);
             movement.desiredVelocity = Vector3::Zero;
-            if (input.attackPressed) EnterAttack(rush, player);
+            if (input.attackPressed) EnterAttack(rush, player, animParams);
             break;
 
         case RushPhase::Attack:
@@ -254,6 +277,77 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
 
 
 
+void PlayerRushSystem::BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent &player,
+                                      AnimParametersComponent &animParams, const Vector3 &playerPos,
+                                      CCL::ECS::EntityID attackerID)
+{
+    // 処理フロー:
+    // 1. 向く方を決める
+    // 2. 跳ぶ向きを、向いている方から見た左右と前後の量に直す
+    // 3. 回避のアニメを出す
+
+    // ---------------------------------------------------------
+    // 1. 向く方
+    // ---------------------------------------------------------
+
+    // ダッシュ中は進む方へ向きかけているが、ジャスト回避では敵を正面に置いたまま跳ぶ
+    // ロックオン中はその敵、なければ避けた攻撃の方。どちらもなければ今の向きのまま
+    rush.evadeFaceYaw = player.currentYaw;
+
+    EntityID faceTarget = PickCloseInTarget(player);
+    if (faceTarget == InvalidEntityID) faceTarget = attackerID;
+
+    if (faceTarget != InvalidEntityID && m_world->IsEntityValid(faceTarget))
+    {
+        if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(faceTarget))
+        {
+            Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
+            to.y       = 0.0f;
+            if (to.LengthSquared() > 1e-6f) rush.evadeFaceYaw = std::atan2(to.x, to.z);
+        }
+    }
+
+    HoldEvadeFacing(rush, player);
+
+    // ---------------------------------------------------------
+    // 2. 左右と前後の量
+    // ---------------------------------------------------------
+
+    // 左手系なので right = up × forward
+    const Vector3 forward(std::sin(rush.evadeFaceYaw), 0.0f, std::cos(rush.evadeFaceYaw));
+    const Vector3 right(forward.z, 0.0f, -forward.x);
+
+    float x = rush.evadeDir.Dot(right);
+    float y = rush.evadeDir.Dot(forward);
+
+    // 向きがないとき（テストで始めたときなど）は前へ跳んだことにする
+    if (x * x + y * y < 1e-4f)
+    {
+        x = 0.0f;
+        y = 1.0f;
+    }
+
+    // ---------------------------------------------------------
+    // 3. アニメ
+    // ---------------------------------------------------------
+
+    // 入った瞬間の重みはこの値で決まるので、トリガーより先に書く
+    animParams.SetFloat(HASH_PARAM_RUSH_EVADE_X, x);
+    animParams.SetFloat(HASH_PARAM_RUSH_EVADE_Y, y);
+    animParams.SetTrigger(HASH_TRIG_RUSH_EVADE);
+}
+
+
+
+void PlayerRushSystem::HoldEvadeFacing(const PlayerRushComponent &rush, PlayerComponent &player)
+{
+    // 攻撃の向き直りを借りる。移動の向きより優先されるので、跳ぶ方へ向き直らない
+    player.attackFaceYaw   = rush.evadeFaceYaw;
+    player.attackFaceTimer = 0.1f;
+}
+
+
+
 void PlayerRushSystem::AdvancePhase(PlayerRushComponent &rush)
 {
     switch (rush.phase)
@@ -318,7 +412,7 @@ void PlayerRushSystem::TrackRushAnim(PlayerRushComponent &rush, const AnimStateM
     }
 
     // 受付区間で押されないまま流れきると、アニメグラフが待機などへ戻す
-    const bool inRushAnim = state == HASH_STATE_DASH_ATTACK || state == HASH_STATE_RUSH_SLASH_A ||
+    const bool inRushAnim = state == HASH_STATE_RUSH_DIVE_END || state == HASH_STATE_RUSH_SLASH_A ||
                             state == HASH_STATE_RUSH_SLASH_B || state == HASH_STATE_RUSH_FINISH;
     if (!inRushAnim)
     {
@@ -328,7 +422,8 @@ void PlayerRushSystem::TrackRushAnim(PlayerRushComponent &rush, const AnimStateM
 
 
 
-void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player)
+void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player,
+                                   AnimParametersComponent &animParams)
 {
     rush.phase       = RushPhase::Attack;
     rush.timer       = rush.attackDuration;
@@ -339,6 +434,9 @@ void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerCompon
     // 詰め先がいないときは、今向いている方へ詰める。yaw 0 が +Z
     const float yaw = player.currentYaw;
     rush.closeInDir = Vector3(std::sin(yaw), 0.0f, std::cos(yaw));
+
+    // 突っ込む構えに入る。すでに間合いの中なら、同じステップの FireStrike が取り消す
+    animParams.SetTrigger(HASH_TRIG_RUSH_CLOSE_IN, 0.1f);
 }
 
 
@@ -504,9 +602,10 @@ void PlayerRushSystem::FireStrike(PlayerRushComponent &rush, PlayerComponent &pl
     player.attackFaceYaw   = std::atan2(rush.closeInDir.x, rush.closeInDir.z);
     player.attackFaceTimer = 0.22f;
 
-    // AnyState から直接ダッシュ攻撃へ入り、どのステートからでも出せるようにする
-    // 通常の入り方（Attack + DashAttackReady）は走っているかで決まり、
-    // 詰めの最中に満たすとは限らない
+    // 詰め始めの合図が残っていると、斬った後に構えへ引き戻される
+    animParams.ConsumeTrigger(HASH_TRIG_RUSH_CLOSE_IN);
+
+    // AnyState から入るので、構えでも突っ込む姿勢でも、詰めずに斬るときでも出せる
     animParams.SetTrigger(HASH_TRIG_RUSH_STRIKE, 0.25f);
 }
 
@@ -700,7 +799,10 @@ void PlayerRushSystem::OnGui()
         {
             auto *dash     = m_world->GetComponent<PlayerDashComponent>(id);
             auto *movement = m_world->GetComponent<CharacterMovementComponent>(id);
-            if (dash && movement)
+            auto *player   = m_world->GetComponent<PlayerComponent>(id);
+            auto *anim     = m_world->GetComponent<AnimParametersComponent>(id);
+            auto *trans    = m_world->GetComponent<TransformComponent>(id);
+            if (dash && movement && player && anim && trans)
             {
                 // ダッシュの向きがなければ、今向いている方へ離れる
                 if (Vector3(dash->dashDirection).LengthSquared() < 1e-4f)
@@ -712,6 +814,7 @@ void PlayerRushSystem::OnGui()
                     }
                 }
                 StartRush(*rush, *dash, *movement);
+                BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition(), InvalidEntityID);
             }
         }
 
