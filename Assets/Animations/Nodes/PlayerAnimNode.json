@@ -687,20 +687,50 @@
             ]
         },
         {
-            "applyRootMotion": false,
+            "applyRootMotion": true,
             "groupId": 2,
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
             "nodePosX": 794.0,
             "nodePosY": 194.0,
-            "playbackSpeed": 1.0,
+            "playbackSpeed": 1.4,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Attack.json",
             "sequenceName": "AirAttack",
             "speedCurveName": "",
             "stateHash": 899714431,
             "transitions": [
+                {
+                    "blendDuration": 0.05,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 1,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3877224255
+                },
+                {
+                    "blendDuration": 0.15,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 32,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3209907523
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -770,6 +800,21 @@
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 190275004
+                            },
+                            {
+                                "blendDuration": 0.15,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 2,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 4080261303
                             }
                         ]
                     },
@@ -787,6 +832,302 @@
                         "sequenceName": "Attack_2",
                         "speedCurveName": "",
                         "stateHash": 190275004,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.15,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 207052623
+                            },
+                            {
+                                "blendDuration": 0.15,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 2,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2213299812
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 722.0,
+                        "playbackSpeed": 1.3,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
+                        "sequenceName": "Attack_3",
+                        "speedCurveName": "",
+                        "stateHash": 207052623,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.05,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2739098918
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 850.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_4.json",
+                        "sequenceName": "Attack_4",
+                        "speedCurveName": "",
+                        "stateHash": 156719766,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.15,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 173497385
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -52.0,
+                        "nodePosY": 978.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_5.json",
+                        "sequenceName": "Attack_5",
+                        "speedCurveName": "",
+                        "stateHash": 173497385,
+                        "transitions": []
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 250.0,
+                        "nodePosY": 594.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/LeapSlash.json",
+                        "sequenceName": "LeapSlash",
+                        "speedCurveName": "",
+                        "stateHash": 2213299812,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2394258360
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 250.0,
+                        "nodePosY": 722.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/DiveSlash.json",
+                        "sequenceName": "DiveSlash",
+                        "speedCurveName": "",
+                        "stateHash": 2394258360,
+                        "transitions": []
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -330.0,
+                        "nodePosY": 722.0,
+                        "playbackSpeed": 1.3,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
+                        "sequenceName": "Attack_3_2",
+                        "speedCurveName": "",
+                        "stateHash": 2739098918,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.05,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2755876537
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -330.0,
+                        "nodePosY": 850.0,
+                        "playbackSpeed": 1.3,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
+                        "sequenceName": "Attack_3_3",
+                        "speedCurveName": "",
+                        "stateHash": 2755876537,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.05,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2772654156
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -330.0,
+                        "nodePosY": 978.0,
+                        "playbackSpeed": 1.3,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
+                        "sequenceName": "Attack_3_4",
+                        "speedCurveName": "",
+                        "stateHash": 2772654156,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.15,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 156719766
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 250.0,
+                        "nodePosY": 466.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/BackSlash.json",
+                        "sequenceName": "BackSlash",
+                        "speedCurveName": "",
+                        "stateHash": 4080261303,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 4236909013
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": true,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 530.0,
+                        "nodePosY": 466.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/LungeSlash.json",
+                        "sequenceName": "LungeSlash",
+                        "speedCurveName": "",
+                        "stateHash": 4236909013,
                         "transitions": []
                     }
                 ]
@@ -1296,6 +1637,117 @@
                 },
                 {
                     "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1168775091
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 3,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1100.0,
+            "nodePosY": 194.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveStart.json",
+            "sequenceName": "AirDiveStart",
+            "speedCurveName": "",
+            "stateHash": 3877224255,
+            "transitions": [
+                {
+                    "blendDuration": 0.05,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 1702703947
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 3,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 1100.0,
+            "nodePosY": 320.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveLoop.json",
+            "sequenceName": "AirDiveLoop",
+            "speedCurveName": "",
+            "stateHash": 1702703947,
+            "transitions": [
+                {
+                    "blendDuration": 0.05,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 2646078375,
+                            "paramName": "IsAirborne",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3000500490
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 1,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": 800.0,
+            "nodePosY": 330.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveEnd.json",
+            "sequenceName": "AirDiveEnd",
+            "speedCurveName": "",
+            "stateHash": 3000500490,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 3258288856,
+                            "paramName": "MoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 32,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2371348074
+                },
+                {
+                    "blendDuration": 0.2,
                     "conditions": [
                         {
                             "op": 4,

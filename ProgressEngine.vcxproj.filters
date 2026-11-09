@@ -1725,6 +1725,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Feedback</Filter>
     </ClInclude>
@@ -2868,6 +2871,9 @@
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.cpp">

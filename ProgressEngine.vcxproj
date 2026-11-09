@@ -781,6 +781,7 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Dash\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeSystem.h" />
@@ -1266,6 +1267,7 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.cpp" />

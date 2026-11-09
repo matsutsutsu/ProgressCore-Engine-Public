@@ -243,7 +243,8 @@ void TutorialSystem::Update(float dt)
         cleared = m_hitCount >= 1;
         break;
 
-    // コンボは Attack_1 → Attack_2 の2段（アニメグラフの AttackCombo）。2段目に入れば続けて押せている
+    // コンボはアニメグラフの AttackCombo。途中で遅らせ押しの派生に分かれるが、
+    // ここでは連打で2段目に入れば続けて押せていると見なす
     // この項目に入ってから1段目を出したコンボだけを数える。攻撃の項目から押し続けていると、
     // 入った直後に2段目へ移って達成になり、ヒントが一瞬で消えてしまうため
     case TutorialGoal::Combo:
