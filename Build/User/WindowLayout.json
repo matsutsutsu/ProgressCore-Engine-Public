@@ -45,10 +45,6 @@
             "visible": true
         },
         {
-            "name": "Curve Editor",
-            "visible": false
-        },
-        {
             "name": "Text Editor",
             "visible": false
         },

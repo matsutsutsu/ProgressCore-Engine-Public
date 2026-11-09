@@ -242,8 +242,6 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
             ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
             ss << "  Speed:  " << std::fixed << std::setprecision(2) << state.playbackSpeed << "x\n";
 
-            if (!state.speedCurveName.empty()) ss << "  Speed Curve: " << state.speedCurveName << "\n";
-            if (!state.rootMotionCurveName.empty()) ss << "  RM Curve:    " << state.rootMotionCurveName << "\n";
         }
 
         if (state.transitions.empty())

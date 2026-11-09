@@ -1707,7 +1707,7 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
     ImGui::SameLine();
     if (ImGui::Button("全体表示##cv")) m_fitCurveView = true;
     ImGui::SameLine();
-    ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / Alt+ハンドル=接線分離]");
+    ImGui::TextDisabled("[ダブルクリック=キー追加 / 右orホイール=パン&ズーム / ハンドル=傾きを手で決める]");
 
     m_editingSequence.speedCurve.visible      = m_showSpeedCurve;
     m_editingSequence.rootMotionCurve.visible = m_showRootCurve;
@@ -1757,22 +1757,22 @@ void AnimationSequencerWindow::DrawCurvePane(float animTime)
                 k1.interp = CurveInterp::Linear;
                 break;
             case 1: // イーズイン（ゆっくり踏み出して加速）
-                k0.interp     = CurveInterp::Cubic;
-                k0.tangentOut = TangentMode::Flat;
-                k1.interp     = CurveInterp::Cubic;
-                k1.tangentIn  = TangentMode::Auto;
+                k0.interp  = CurveInterp::Cubic;
+                k0.tangent = TangentMode::Flat;
+                k1.interp  = CurveInterp::Cubic;
+                k1.tangent = TangentMode::Auto;
                 break;
             case 2: // イーズアウト（勢いよく出て減速）
-                k0.interp     = CurveInterp::Cubic;
-                k0.tangentOut = TangentMode::Auto;
-                k1.interp     = CurveInterp::Cubic;
-                k1.tangentIn  = TangentMode::Flat;
+                k0.interp  = CurveInterp::Cubic;
+                k0.tangent = TangentMode::Auto;
+                k1.interp  = CurveInterp::Cubic;
+                k1.tangent = TangentMode::Flat;
                 break;
             case 3: // スムーズ（S字：加速→減速）
-                k0.interp     = CurveInterp::Cubic;
-                k0.tangentOut = TangentMode::Flat;
-                k1.interp     = CurveInterp::Cubic;
-                k1.tangentIn  = TangentMode::Flat;
+                k0.interp  = CurveInterp::Cubic;
+                k0.tangent = TangentMode::Flat;
+                k1.interp  = CurveInterp::Cubic;
+                k1.tangent = TangentMode::Flat;
                 break;
             }
             c.keys.push_back(k0);

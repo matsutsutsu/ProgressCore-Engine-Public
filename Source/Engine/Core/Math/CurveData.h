@@ -3,85 +3,63 @@
 // 概要: カーブ（キーフレーム列）のデータモデル CurveData と、その評価・JSON 変換
 //
 // 責務:
-//   - キーの追加・並べ替え・接線（Auto/Flat）の再計算
-//   - 任意時刻の評価（区間はエルミート補間、範囲外は外挿モードに従う）
-//   - JSON との相互変換（エディタの保存形式と一致）
+//   - キーの追加・並べ替え・接線（自動・水平）の再計算
+//   - 任意時刻の評価（区間は線形か 3 次エルミート。キーの範囲外は端の値）
+//   - JSON との相互変換
 //
 // 備考: エディタ非依存なので、ランタイムからも直接使える
 // ===========================================================================
 #include <vector>
 #include <string>
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <json.hpp>
 
-// キー区間の補間方式（あるキーの「右側の区間」の形状を決める）
+// キーの右側の区間をどう結ぶか。数値は保存形式に合わせている（0 は廃止したステップ補間）
 enum class CurveInterp : uint8_t
 {
-    Constant, // ステップ（次のキーまで値を保持）
-    Linear,   // 直線
-    Cubic     // エルミート曲線（接線で滑らかに補間）
+    Linear = 1, // 直線
+    Cubic  = 2, // 接線でなめらかに結ぶ
 };
 
-// 接線モード（Cubic のときの in/out 接線の決め方）
+// 3 次の区間で使う接線の決め方
 enum class TangentMode : uint8_t
 {
-    Auto,    // 前後キーから自動算出（滑らか）
-    Flat,    // 水平（傾き0）
-    Aligned, // 手動・in/out が一直線（角のない滑らかさ）
-    Broken   // 手動・in/out 独立（角を作れる）
-};
-
-// カーブ範囲外（両端の外側）を評価するときの振る舞い
-enum class ExtrapMode : uint8_t
-{
-    Constant,   // 端の値を保持
-    Linear,     // 端の傾きで直線的に延長
-    Cycle,      // ループ
-    PingPong,   // 折り返し
-    CycleOffset // ループ＋値の差分を累積（右肩上がりループ等）
+    Auto   = 0, // 前後のキーから求める
+    Flat   = 1, // 水平（傾き 0）
+    Manual = 2, // ハンドルで決めた傾きを保つ
 };
 
 struct CurveKeyframe
 {
     float       time       = 0.0f;
     float       value      = 0.0f;
-    float       inTangent  = 0.0f; // 傾き dy/dx（左側）
-    float       outTangent = 0.0f; // 傾き dy/dx（右側）
+    float       inTangent  = 0.0f; // 左側の傾き dy/dx
+    float       outTangent = 0.0f; // 右側の傾き dy/dx
     CurveInterp interp     = CurveInterp::Cubic;
-    TangentMode tangentIn  = TangentMode::Auto;
-    TangentMode tangentOut = TangentMode::Auto;
+    TangentMode tangent    = TangentMode::Auto;
 
-    uint32_t id = 0; // ランタイム専用の安定ID（ソートしても選択を追える）。シリアライズしない
+    uint32_t id = 0; // 並べ替えても選択を追うための番号。実行中だけ使い、保存しない
 };
 
 struct CurveData
 {
-    std::string                name         = "Curve";
-    uint32_t                   color        = 0xFF80FF00u; // IM_COL32(0,255,128,255) 相当（0xAABBGGRR）
-    bool                       visible      = true;
-    ExtrapMode                 preInfinity  = ExtrapMode::Constant;
-    ExtrapMode                 postInfinity = ExtrapMode::Constant;
+    std::string                name    = "Curve";
+    uint32_t                   color   = 0xFF80FF00u; // IM_COL32 と同じ並び（0xAABBGGRR）
+    bool                       visible = true;
     std::vector<CurveKeyframe> keys;
 
-    uint32_t m_nextId = 1; // キー ID の採番カウンタ
+    uint32_t m_nextId = 1; // キーの id の採番
 
-    // ============================================================
-    // 基本操作
-    // ============================================================
 
-    bool empty() const
-    {
-        return keys.empty();
-    }
-    // キーに振る新しい ID を返す（実行中だけ使う番号。保存しない）
-    uint32_t GenId()
-    {
-        return m_nextId++;
-    }
 
-    // ID のキーが keys の何番目かを返す。なければ -1
+    bool empty() const { return keys.empty(); }
+
+    uint32_t GenId() { return m_nextId++; }
+
+
+
+    // id のキーが keys の何番目かを返す。なければ -1
     int IndexOfId(uint32_t id) const
     {
         for (int i = 0; i < (int)keys.size(); ++i)
@@ -89,13 +67,17 @@ struct CurveData
         return -1;
     }
 
+
+
     void SortByTime()
     {
         std::stable_sort(keys.begin(), keys.end(),
                          [](const CurveKeyframe &a, const CurveKeyframe &b) { return a.time < b.time; });
     }
 
-    // キーを追加し、並べ替え後のインデックスを返す
+
+
+    // キーを追加し、並べ替えた後の添字を返す
     int AddKey(float t, float v)
     {
         CurveKeyframe k;
@@ -108,112 +90,63 @@ struct CurveData
         return IndexOfId(k.id);
     }
 
-    // ロード後などに、ID 未採番のキーへ一括で ID を割り当てる
+
+
+    // 読み込んだ直後のキーに id を振る
     void AssignMissingIds()
     {
         for (auto &k : keys)
             if (k.id == 0) k.id = GenId();
     }
 
-    // ============================================================
-    // 接線の再計算
-    // ============================================================
 
-    // Auto / Flat のキーだけ更新する。Aligned / Broken は手動値を尊重する
+
+    // 自動・水平のキーの傾きを決め直す。手動のキーは触らない
     void RecalculateTangents()
     {
         const size_t n = keys.size();
         for (size_t i = 0; i < n; ++i)
         {
-            auto &k = keys[i];
+            CurveKeyframe &k = keys[i];
+            if (k.tangent == TangentMode::Manual) continue;
 
-            // 前後キーから滑らかな傾きを推定する（Catmull-Rom 相当）。端のキーは片側だけで求める
-            float autoSlope = 0.0f;
-            if (n >= 2)
+            float slope = 0.0f;
+            if (k.tangent == TangentMode::Auto && n >= 2)
             {
-                if (i == 0)
-                {
-                    float dt  = keys[1].time - keys[0].time;
-                    autoSlope = (dt > 0.0f) ? (keys[1].value - keys[0].value) / dt : 0.0f;
-                }
-                else if (i == n - 1)
-                {
-                    float dt  = keys[i].time - keys[i - 1].time;
-                    autoSlope = (dt > 0.0f) ? (keys[i].value - keys[i - 1].value) / dt : 0.0f;
-                }
-                else
-                {
-                    float dt  = keys[i + 1].time - keys[i - 1].time;
-                    autoSlope = (dt > 0.0f) ? (keys[i + 1].value - keys[i - 1].value) / dt : 0.0f;
-                }
+                // 前後のキーを結んだ傾き。端のキーは隣との傾き
+                const size_t a  = (i == 0) ? 0 : i - 1;
+                const size_t b  = (i == n - 1) ? n - 1 : i + 1;
+                const float  dt = keys[b].time - keys[a].time;
+                slope           = (dt > 0.0f) ? (keys[b].value - keys[a].value) / dt : 0.0f;
             }
 
-            if (k.tangentIn == TangentMode::Auto)
-                k.inTangent = autoSlope;
-            else if (k.tangentIn == TangentMode::Flat)
-                k.inTangent = 0.0f;
-
-            if (k.tangentOut == TangentMode::Auto)
-                k.outTangent = autoSlope;
-            else if (k.tangentOut == TangentMode::Flat)
-                k.outTangent = 0.0f;
+            k.inTangent  = slope;
+            k.outTangent = slope;
         }
     }
 
-    // ============================================================
-    // 評価
-    // ============================================================
 
-    // 時刻 t の値を返す。範囲外は preInfinity / postInfinity に従って外挿する
+
+    // 時刻 t の値を返す。キーの範囲外は端のキーの値
     float Evaluate(float t) const
     {
         if (keys.empty()) return 0.0f;
-        const CurveKeyframe &first = keys.front();
-        const CurveKeyframe &last  = keys.back();
-        if (keys.size() == 1) return first.value;
+        if (t <= keys.front().time) return keys.front().value;
+        if (t >= keys.back().time) return keys.back().value;
 
-        const float period = last.time - first.time;
-
-        if (t < first.time) return EvaluatePre(t, period);
-        if (t > last.time) return EvaluatePost(t, period);
-
-        // 範囲内: t を挟むキー k0, k1 を二分探索する
+        // t を挟む 2 つのキーを二分探索する
         auto it = std::upper_bound(keys.begin(), keys.end(), t,
                                    [](float val, const CurveKeyframe &k) { return val < k.time; });
-        if (it == keys.begin()) return first.value;
-        if (it == keys.end()) return last.value;
-        const CurveKeyframe &k1 = *it;
-        const CurveKeyframe &k0 = *(it - 1);
-        return EvaluateSegment(k0, k1, t);
+        return EvaluateSegment(*(it - 1), *it, t);
     }
 
-    // 最初/最後の区間の傾き。ハンドルの向き計算や Linear 外挿に使う
-    float FirstSlope() const
-    {
-        if (keys.size() < 2) return 0.0f;
-        float dt = keys[1].time - keys[0].time;
-        return (dt > 0.0f) ? (keys[1].value - keys[0].value) / dt : 0.0f;
-    }
-    float LastSlope() const
-    {
-        const size_t n = keys.size();
-        if (n < 2) return 0.0f;
-        float dt = keys[n - 1].time - keys[n - 2].time;
-        return (dt > 0.0f) ? (keys[n - 1].value - keys[n - 2].value) / dt : 0.0f;
-    }
 
-    // ============================================================
-    // 範囲（エディタのフレーミング用）
-    // ============================================================
 
-    float MinTime() const
-    {
-        return keys.empty() ? 0.0f : keys.front().time;
-    }
-    float MaxTime() const
-    {
-        return keys.empty() ? 1.0f : keys.back().time;
-    }
+    float MinTime() const { return keys.empty() ? 0.0f : keys.front().time; }
+    float MaxTime() const { return keys.empty() ? 1.0f : keys.back().time; }
+
+
+
     // 全キーの値の最小・最大を返す。キーがなければ 0〜1
     void ValueRange(float &outMin, float &outMax) const
     {
@@ -231,142 +164,82 @@ struct CurveData
         }
     }
 
+
+
 private:
-    // 1区間の評価。補間方式は区間の左側のキー（k0）の interp で決まる
+    // 1 区間の評価。結び方は左側のキー（k0）の interp で決まる
     static float EvaluateSegment(const CurveKeyframe &k0, const CurveKeyframe &k1, float t)
     {
         const float dt = k1.time - k0.time;
         if (dt <= 0.0f) return k0.value;
         const float u = (t - k0.time) / dt;
 
-        switch (k0.interp)
-        {
-        case CurveInterp::Constant:
-            return k0.value;
-        case CurveInterp::Linear:
-            return k0.value + (k1.value - k0.value) * u;
-        case CurveInterp::Cubic:
-        default: {
-            // 3次エルミート基底関数。接線 m は傾き（dy/dx）に区間長を掛けて u 空間へ直す
-            const float u2  = u * u;
-            const float u3  = u2 * u;
-            const float h00 = 2.0f * u3 - 3.0f * u2 + 1.0f;
-            const float h10 = u3 - 2.0f * u2 + u;
-            const float h01 = -2.0f * u3 + 3.0f * u2;
-            const float h11 = u3 - u2;
-            const float m0  = k0.outTangent * dt;
-            const float m1  = k1.inTangent * dt;
-            return h00 * k0.value + h10 * m0 + h01 * k1.value + h11 * m1;
-        }
-        }
-    }
+        if (k0.interp == CurveInterp::Linear) return k0.value + (k1.value - k0.value) * u;
 
-    // 最初のキーより前の t を preInfinity に従って外挿する。period はキーの時間の幅
-    float EvaluatePre(float t, float period) const
-    {
-        const CurveKeyframe &first = keys.front();
-        switch (preInfinity)
-        {
-        case ExtrapMode::Constant:
-            return first.value;
-        case ExtrapMode::Linear:
-            return first.value + FirstSlope() * (t - first.time);
-        default:
-            return (period > 0.0f) ? EvaluateWrapped(t, period, preInfinity) : first.value;
-        }
-    }
-
-    // 最後のキーより後の t を postInfinity に従って外挿する。period はキーの時間の幅
-    float EvaluatePost(float t, float period) const
-    {
-        const CurveKeyframe &last = keys.back();
-        switch (postInfinity)
-        {
-        case ExtrapMode::Constant:
-            return last.value;
-        case ExtrapMode::Linear:
-            return last.value + LastSlope() * (t - last.time);
-        default:
-            return (period > 0.0f) ? EvaluateWrapped(t, period, postInfinity) : last.value;
-        }
-    }
-
-    // Cycle / PingPong / CycleOffset の共通処理。t を範囲内へ折り返してから評価する
-    float EvaluateWrapped(float t, float period, ExtrapMode mode) const
-    {
-        const CurveKeyframe &first = keys.front();
-        const CurveKeyframe &last  = keys.back();
-
-        const float rel     = t - first.time;
-        const float cyclesF = std::floor(rel / period);
-        const int   cycles  = (int)cyclesF;
-        float       local   = rel - cyclesF * period; // [0, period)
-        float       ct      = first.time + local;
-
-        if (mode == ExtrapMode::PingPong)
-        {
-            // 奇数周期は逆向きに読む。負の周期でも 0/1 になるよう剰余を正に直す
-            const int parity = ((cycles % 2) + 2) % 2;
-            if (parity == 1) ct = last.time - local;
-            ct = std::min(std::max(ct, first.time), last.time);
-            return Evaluate(ct);
-        }
-
-        ct         = std::min(std::max(ct, first.time), last.time);
-        float base = Evaluate(ct);
-        if (mode == ExtrapMode::CycleOffset)
-            base += (last.value - first.value) * cyclesF;
-        return base;
+        // 3 次エルミート補間。傾き（dy/dx）に区間の長さを掛けて u の空間へ直す
+        const float u2  = u * u;
+        const float u3  = u2 * u;
+        const float h00 = 2.0f * u3 - 3.0f * u2 + 1.0f;
+        const float h10 = u3 - 2.0f * u2 + u;
+        const float h01 = -2.0f * u3 + 3.0f * u2;
+        const float h11 = u3 - u2;
+        const float m0  = k0.outTangent * dt;
+        const float m1  = k1.inTangent * dt;
+        return h00 * k0.value + h10 * m0 + h01 * k1.value + h11 * m1;
     }
 };
 
+
+
 // ============================================================
-// JSON シリアライズ（エディタの保存形式と一致。ランタイムからも読める）
+// JSON
 // ============================================================
-//   - CurveKeyframe.id はランタイム専用なので保存しない
-//   - interp がないキーは Cubic として読む
+
 inline void to_json(nlohmann::json &j, const CurveKeyframe &k)
 {
     j = nlohmann::json{
-        {"time", k.time}, {"value", k.value}, {"inTangent", k.inTangent}, {"outTangent", k.outTangent}, {"interp", (int)k.interp}, {"tangentIn", (int)k.tangentIn}, {"tangentOut", (int)k.tangentOut}};
+        {"time", k.time},
+        {"value", k.value},
+        {"inTangent", k.inTangent},
+        {"outTangent", k.outTangent},
+        {"interp", (int)k.interp},
+        {"tangent", (int)k.tangent}};
 }
+
+
+
 inline void from_json(const nlohmann::json &j, CurveKeyframe &k)
 {
     k.time       = j.value("time", 0.0f);
     k.value      = j.value("value", 0.0f);
     k.inTangent  = j.value("inTangent", 0.0f);
     k.outTangent = j.value("outTangent", 0.0f);
-    k.interp     = (CurveInterp)j.value("interp", (int)CurveInterp::Cubic);
-    k.tangentIn  = (TangentMode)j.value("tangentIn", (int)TangentMode::Auto);
-    k.tangentOut = (TangentMode)j.value("tangentOut", (int)TangentMode::Auto);
-    k.id         = 0; // ロード後 AssignMissingIds で採番
+    k.interp     = (j.value("interp", (int)CurveInterp::Cubic) == (int)CurveInterp::Linear) ? CurveInterp::Linear
+                                                                                             : CurveInterp::Cubic;
+
+    // 旧形式は入と出で別のモード（tangentIn / tangentOut）を持ち、手動に 2 と 3 の 2 種類があった
+    const int mode = j.contains("tangent") ? j.value("tangent", 0) : j.value("tangentIn", 0);
+    k.tangent      = (mode >= (int)TangentMode::Manual) ? TangentMode::Manual : (TangentMode)mode;
+    k.id           = 0; // 読み込んだ後に AssignMissingIds で振る
 }
+
+
 
 inline void to_json(nlohmann::json &j, const CurveData &c)
 {
-    j = nlohmann::json{
-        {"name", c.name}, {"color", c.color}, {"visible", c.visible}, {"preInfinity", (int)c.preInfinity}, {"postInfinity", (int)c.postInfinity}, {"keys", c.keys}};
+    j = nlohmann::json{{"name", c.name}, {"color", c.color}, {"visible", c.visible}, {"keys", c.keys}};
 }
+
+
+
 inline void from_json(const nlohmann::json &j, CurveData &c)
 {
-    c.name         = j.value("name", std::string("Curve"));
-    c.color        = j.value("color", 0xFF80FF00u);
-    c.visible      = j.value("visible", true);
-    c.preInfinity  = (ExtrapMode)j.value("preInfinity", (int)ExtrapMode::Constant);
-    c.postInfinity = (ExtrapMode)j.value("postInfinity", (int)ExtrapMode::Constant);
+    c.name    = j.value("name", std::string("Curve"));
+    c.color   = j.value("color", 0xFF80FF00u);
+    c.visible = j.value("visible", true);
     c.keys.clear();
     if (j.contains("keys") && j["keys"].is_array())
         c.keys = j["keys"].get<std::vector<CurveKeyframe>>();
     c.AssignMissingIds();
-    c.RecalculateTangents(); // Auto/Flat の接線を確定（Aligned/Broken の手動値は尊重）
-}
-
-// 実行時のアセットとしてカーブを読む。キーが1つもなければ false
-// エディタは複数のカーブ {name, curves:[...]} で保存するので、ランタイムは先頭の1本を使う
-inline bool LoadCurveDataFromJson(const nlohmann::json &root, CurveData &out)
-{
-    if (!root.contains("curves") || !root["curves"].is_array() || root["curves"].empty())
-        return false;
-    out = root["curves"][0].get<CurveData>();
-    return !out.keys.empty();
+    c.RecalculateTangents();
 }

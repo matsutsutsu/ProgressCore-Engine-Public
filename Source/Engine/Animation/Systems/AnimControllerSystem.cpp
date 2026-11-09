@@ -178,15 +178,13 @@ namespace
 
 
 
-    // 葉ステートのクリップを、そのステートの再生設定（ループ・速度・カーブ）で再生する
+    // 葉ステートのクリップを、そのステートの再生設定（ループ・速度）で再生する
     void PlayState(AnimatorComponent &animator, const AnimState &leaf, float blendTime, bool restart)
     {
         animator.Play(StateSequence(leaf),
                       {.blendTime              = blendTime,
                        .loop                   = leaf.isLoop,
                        .speed                  = leaf.playbackSpeed,
-                       .curve                  = leaf.speedCurve,
-                       .rootMotionCurve        = leaf.rootMotionCurve,
                        .lockVerticalRootMotion = leaf.lockVerticalRootMotion,
                        .restart                = restart,
                        .blendSpace             = leaf.isBlendSpace ? &leaf.blendSpace : nullptr});
@@ -361,17 +359,13 @@ namespace
     // リソースの束縛
     // ---------------------------------------------------------------------------
 
-    // グラフ内の全ステートの sequence / curve / ブレンドスペースの点を束縛する（サブマシンの子も再帰的に）
+    // グラフ内の全ステートの sequence / ブレンドスペースの点を束縛する（サブマシンの子も再帰的に）
     void BindGraphResources(AnimStateGraph &g, ResourceManager &rm)
     {
         for (auto &state : g.states)
         {
             if (!state.sequenceFilePath.empty())
                 state.sequence = rm.LoadAnimSequence(state.sequenceFilePath.c_str());
-            if (!state.speedCurveName.empty())
-                state.speedCurve = rm.LoadAnimCurve(state.speedCurveName.c_str());
-            if (!state.rootMotionCurveName.empty())
-                state.rootMotionCurve = rm.LoadAnimCurve(state.rootMotionCurveName.c_str());
 
             // ブレンドスペースは、点ごとに自分のクリップを持つ
             if (state.isBlendSpace)

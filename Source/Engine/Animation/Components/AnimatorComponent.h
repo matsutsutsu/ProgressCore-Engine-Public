@@ -128,8 +128,6 @@ struct AnimatorComponent
         float                 blendTime              = 0.2f;    // クロスフェード時間（秒）。0 なら即座に切り替える
         bool                  loop                   = true;    // ループ再生するか
         float                 speed                  = 1.0f;    // 再生速度倍率
-        const CurveData      *curve                  = nullptr; // 速度カーブ（null ならシーケンス内蔵、それもなければ等速）
-        const CurveData      *rootMotionCurve        = nullptr; // ルートモーションカーブ（null ならシーケンス内蔵、それもなければボーンから抽出）
         bool                  lockVerticalRootMotion = false;   // Force Root Lock で Y も固定するか
         bool                  restart                = false;   // 同じクリップでも頭から再生し直すか（ステートに入るときは true）
         const AnimBlendSpace *blendSpace             = nullptr; // ブレンドスペースのステートなら、その定義（値でコピーする）。sequence には点 [0] を渡す
@@ -208,14 +206,9 @@ struct AnimatorComponent
         isLoop        = params.loop;
         playbackSpeed = params.speed;
 
-        // カーブの指定がなければ、シーケンス自身が持つカーブ（シーケンサーで編集したもの）を使う
-        activeCurve = params.curve;
-        if (!activeCurve && sequence && !sequence->speedCurve.empty())
-            activeCurve = &sequence->speedCurve;
-
-        activeRootMotionCurve = params.rootMotionCurve;
-        if (!activeRootMotionCurve && sequence && !sequence->rootMotionCurve.empty())
-            activeRootMotionCurve = &sequence->rootMotionCurve;
+        // カーブはシーケンサーでシーケンスに書き込んだもの。空なら等速・ボーンからの抽出になる
+        activeCurve           = (sequence && !sequence->speedCurve.empty()) ? &sequence->speedCurve : nullptr;
+        activeRootMotionCurve = (sequence && !sequence->rootMotionCurve.empty()) ? &sequence->rootMotionCurve : nullptr;
 
         lockVerticalRootMotion = params.lockVerticalRootMotion;
     }

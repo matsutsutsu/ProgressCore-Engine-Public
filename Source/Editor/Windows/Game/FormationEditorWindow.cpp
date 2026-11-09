@@ -386,10 +386,9 @@ CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyfra
     {
         CurveKeyframe key = keys[k];
 
-        // 接線は手動(Broken)で持たせる。Auto のままだと読み込み時の接線の再計算で形が変わる
-        key.tangentIn  = TangentMode::Broken;
-        key.tangentOut = TangentMode::Broken;
-        key.id         = curve.GenId();
+        // 接線は手動で持たせる。自動のままだと、読み込み時の接線の再計算で形が変わる
+        key.tangent = TangentMode::Manual;
+        key.id      = curve.GenId();
         curve.keys.push_back(key);
     }
     return curve;

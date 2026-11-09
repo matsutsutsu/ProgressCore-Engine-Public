@@ -1845,9 +1845,6 @@
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\Game\CurveEditorWindow.h">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -2983,9 +2980,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\Game\CurveEditorWindow.cpp">
-      <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>

@@ -20,7 +20,6 @@
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Core/Math/StringHash.h"
 
-struct CurveData;
 struct AnimStateGraph; // AnimState が子グラフを持つため先に宣言する
 
 // ===========================================================================
@@ -133,8 +132,6 @@ struct AnimState
 
     bool        isLoop        = true;
     float       playbackSpeed = 1.0f;
-    std::string speedCurveName;      // 速度カーブのファイルパス（空ならシーケンス内蔵のカーブ）
-    std::string rootMotionCurveName; // ルートモーションカーブのファイルパス（同上）
 
     bool applyRootMotion        = false; // ルートモーションで移動するか（Unity の Apply Root Motion）
     bool lockVerticalRootMotion = false; // ルートボーンの Y もバインドポーズへ固定するか（地上攻撃など）
@@ -147,9 +144,7 @@ struct AnimState
     float nodePosY = 0.0f;
 
     // --- 名前から束縛した実体（所有しない。ResourceManager が持つ）---
-    const CurveData    *speedCurve      = nullptr;
-    const CurveData    *rootMotionCurve = nullptr;
-    const AnimSequence *sequence        = nullptr;
+    const AnimSequence *sequence = nullptr;
 
     std::vector<AnimTransition> transitions;
 
@@ -200,12 +195,11 @@ inline AnimState &AnimState::operator=(AnimState &&) noexcept = default;
 // subGraph を新しい実体として複製する（葉ステートは subGraph == nullptr なので複製しない）
 inline AnimState::AnimState(const AnimState &o)
     : stateHash(o.stateHash), sequenceName(o.sequenceName), sequenceFilePath(o.sequenceFilePath),
-      isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), speedCurveName(o.speedCurveName),
-      rootMotionCurveName(o.rootMotionCurveName), applyRootMotion(o.applyRootMotion),
+      isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), applyRootMotion(o.applyRootMotion),
       lockVerticalRootMotion(o.lockVerticalRootMotion), groupId(o.groupId),
       nodePosX(o.nodePosX), nodePosY(o.nodePosY),
       // 束縛済みのポインタは共有リソースなので浅いコピーでよい
-      speedCurve(o.speedCurve), rootMotionCurve(o.rootMotionCurve), sequence(o.sequence),
+      sequence(o.sequence),
       transitions(o.transitions), isBlendSpace(o.isBlendSpace), blendSpace(o.blendSpace), isSubMachine(o.isSubMachine),
       subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
 {
@@ -220,15 +214,11 @@ inline AnimState &AnimState::operator=(const AnimState &o)
     sequenceFilePath       = o.sequenceFilePath;
     isLoop                 = o.isLoop;
     playbackSpeed          = o.playbackSpeed;
-    speedCurveName         = o.speedCurveName;
-    rootMotionCurveName    = o.rootMotionCurveName;
     applyRootMotion        = o.applyRootMotion;
     lockVerticalRootMotion = o.lockVerticalRootMotion;
     groupId                = o.groupId;
     nodePosX               = o.nodePosX;
     nodePosY               = o.nodePosY;
-    speedCurve             = o.speedCurve;
-    rootMotionCurve        = o.rootMotionCurve;
     sequence               = o.sequence;
     transitions            = o.transitions;
     isBlendSpace           = o.isBlendSpace;
@@ -372,8 +362,6 @@ inline void to_json(json &j, const AnimState &s)
         {"sequenceFilePath", s.sequenceFilePath},
         {"isLoop", s.isLoop},
         {"playbackSpeed", s.playbackSpeed},
-        {"speedCurveName", s.speedCurveName},
-        {"rootMotionCurveName", s.rootMotionCurveName},
         {"applyRootMotion", s.applyRootMotion},
         {"lockVerticalRootMotion", s.lockVerticalRootMotion},
         {"groupId", s.groupId},
@@ -403,10 +391,6 @@ inline void from_json(const json &j, AnimState &s)
         j.at("isLoop").get_to(s.isLoop);
     if (j.contains("playbackSpeed"))
         j.at("playbackSpeed").get_to(s.playbackSpeed);
-    if (j.contains("speedCurveName"))
-        j.at("speedCurveName").get_to(s.speedCurveName);
-    if (j.contains("rootMotionCurveName"))
-        j.at("rootMotionCurveName").get_to(s.rootMotionCurveName);
     if (j.contains("applyRootMotion"))
         j.at("applyRootMotion").get_to(s.applyRootMotion);
     if (j.contains("lockVerticalRootMotion"))

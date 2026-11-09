@@ -66,7 +66,6 @@ void ResourceManager::ClearAll()
     m_modelRegistry.clear();
     m_animSequenceRegistry.clear();
     m_assetPathRegistry.clear();
-    m_animCurveRegistry.clear();
 
     // 2. プールを空にする（中の ComPtr がここで Release される）
     m_texturePool.Clear();
@@ -76,7 +75,6 @@ void ResourceManager::ClearAll()
     m_animSequencePool.Clear();
     m_renderTargetPool.Clear();
     m_particleBufferPool.Clear();
-    m_animCurvePool.Clear();
 }
 
 
@@ -375,7 +373,7 @@ const AnimSequence *ResourceManager::LoadAnimSequence(const char *filename)
     if (!filename || filename[0] == '\0')
         return nullptr;
 
-    // LoadAnimCurve と同じく、レジストリとプールをロックで守る
+    // レジストリとプールをロックで守る
     std::lock_guard<std::mutex> lock(m_mutex);
 
     uint32_t hash = HashString(NormalizeAssetKey(filename).c_str());
@@ -464,49 +462,6 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
     CCL_LOG_SUCCESS(LogCategory::Core, "Reloaded AnimSequence: %s", filename);
     return seq;
-}
-
-
-
-const CurveData *ResourceManager::LoadAnimCurve(const char *filepath)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-    uint32_t                    hash = CCL::Utils::HashString(NormalizeAssetKey(filepath).c_str());
-
-    auto it = m_animCurveRegistry.find(hash);
-    if (it != m_animCurveRegistry.end())
-        return m_animCurvePool.Get(it->second);
-
-    std::string jsonStr = FileSystem::ReadAllText(filepath);
-    if (jsonStr.empty())
-    {
-        CCL_LOG_ERROR(LogCategory::Core, "Failed to open curve file: %s", filepath);
-        return nullptr;
-    }
-
-    CCL::Handle<CurveData> handle   = m_animCurvePool.Create();
-    CurveData             *newCurve = m_animCurvePool.Get(handle);
-    try
-    {
-        nlohmann::json j = nlohmann::json::parse(jsonStr);
-        // 複数のカーブを持つファイルなら先頭のカーブを読む。カーブ1本だけのファイルもそのまま読める
-        if (!LoadCurveDataFromJson(j, *newCurve))
-        {
-            CCL_LOG_ERROR(LogCategory::Core, "Curve has no keys: %s", filepath);
-            m_animCurvePool.Destroy(handle);
-            return nullptr;
-        }
-        m_animCurveRegistry[hash] = handle;
-        m_assetPathRegistry[hash] = filepath;
-        CCL_LOG_SUCCESS(LogCategory::Core, "Loaded Anim Curve: %s", filepath);
-        return newCurve;
-    }
-    catch (const std::exception &e)
-    {
-        CCL_LOG_ERROR(LogCategory::Core, "Failed to parse curve JSON: %s (%s)", filepath, e.what());
-        m_animCurvePool.Destroy(handle);
-        return nullptr;
-    }
 }
 
 

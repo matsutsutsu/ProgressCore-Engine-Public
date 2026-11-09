@@ -106,7 +106,6 @@ public:
     // キャッシュ済みのシーケンスを読み直し、同じインスタンスに上書きする（エディタで保存した直後に反映するため）
     // 作り直さないので、指しているポインタは有効なまま。キャッシュになければ読み込み、読めなければ今の内容を返す
     const AnimSequence *ReloadAnimSequence(const char *filename);
-    const CurveData    *LoadAnimCurve(const char *filepath);
 
     // ============================================================
     // レンダーターゲット
@@ -133,7 +132,6 @@ private:
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
     CCL::ResourcePool<GPUParticleBufferSet> m_particleBufferPool;
-    CCL::ResourcePool<CurveData>            m_animCurvePool;
 
     // --- パスのハッシュ → ハンドル（二重に読み込まないためのキャッシュ）---
     std::unordered_map<uint32_t, TextureHandle>          m_textureRegistry;
@@ -141,7 +139,6 @@ private:
     std::unordered_map<uint32_t, AnimSequenceHandle>     m_animSequenceRegistry;
     std::unordered_map<uint32_t, std::string>            m_assetPathRegistry; // パスのハッシュ → パス
     std::unordered_set<uint32_t>                         m_lodRequests;       // LOD を作るモデルのパスのハッシュ
-    std::unordered_map<uint32_t, CCL::Handle<CurveData>> m_animCurveRegistry;
 
     std::mutex m_mutex; // レジストリとプールを守る
 };

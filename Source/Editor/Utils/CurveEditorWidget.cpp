@@ -11,9 +11,12 @@
 // ---------------------------------------------------------------------------
 namespace
 {
-    const char *kInterpNames[]  = {"定数", "線形", "3次"};
-    const char *kTangentNames[] = {"自動", "フラット", "揃える", "分離"};
-    const char *kExtrapNames[]  = {"定数", "線形", "繰り返し", "往復", "オフセット繰り返し"};
+    // 並びは CurveInterp の値から 1 を引いた添字（Linear = 1, Cubic = 2）
+    const char *kInterpNames[]  = {"線形", "3次"};
+    const char *kTangentNames[] = {"自動", "水平", "手動"};
+
+    int         InterpToIndex(CurveInterp interp) { return (int)interp - 1; }
+    CurveInterp IndexToInterp(int index) { return (CurveInterp)(index + 1); }
 
     inline float Dist2(const ImVec2 &a, const ImVec2 &b)
     {
@@ -253,7 +256,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         }
     }
 
-    // --- 全カーブの描画（編集中でないカーブは薄く、キーの範囲外（外挿）は破線） ---
+    // --- 全カーブの描画（編集中でないカーブは薄く、キーの範囲外は破線） ---
     const float px = 2.0f; // 何ピクセルごとに評価するか
     for (int ci = 0; ci < (int)curves.size(); ++ci)
     {
@@ -401,7 +404,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         }
     }
 
-    // 左ドラッグ中（Ctrl でグリッドの半分の刻みに吸着、Alt で接線を片側だけ動かす）
+    // 左ドラッグ中（Ctrl でグリッドの半分の刻みに吸着）
     if (curve && active && m_drag != Drag::None)
     {
         ImVec2 cur = ToCurve(io.MousePos);
@@ -439,27 +442,11 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
                 if (std::fabs(denom) < 1e-4f) denom = (denom < 0 ? -1e-4f : 1e-4f);
                 float slope = (cur.y - k.value) / denom;
 
-                if (io.KeyAlt)
-                {
-                    if (m_drag == Drag::TangentIn)
-                    {
-                        k.inTangent = slope;
-                        k.tangentIn = TangentMode::Broken;
-                    }
-                    else
-                    {
-                        k.outTangent = slope;
-                        k.tangentOut = TangentMode::Broken;
-                    }
-                }
-                else
-                {
-                    k.inTangent  = slope;
-                    k.outTangent = slope;
-                    k.tangentIn  = TangentMode::Aligned;
-                    k.tangentOut = TangentMode::Aligned;
-                }
-                modified = true;
+                // 左右のハンドルは一直線に動かす。引いた時点で手動になり、自動の再計算から外れる
+                k.inTangent  = slope;
+                k.outTangent = slope;
+                k.tangent    = TangentMode::Manual;
+                modified     = true;
             }
         }
         else if (m_drag == Drag::BoxSelect)
@@ -585,31 +572,29 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
         const bool hasSel = !m_selectedKeys.empty();
         if (ImGui::BeginMenu("補間", hasSel && curve))
         {
-            for (int m = 0; m < 3; ++m)
+            for (int m = 0; m < IM_ARRAYSIZE(kInterpNames); ++m)
                 if (ImGui::MenuItem(kInterpNames[m]))
                 {
                     for (uint32_t id : m_selectedKeys)
                     {
                         int si = curve->IndexOfId(id);
-                        if (si >= 0) curve->keys[si].interp = (CurveInterp)m;
+                        if (si >= 0) curve->keys[si].interp = IndexToInterp(m);
                     }
                     modified = true;
                 }
             ImGui::EndMenu();
         }
+
+        // 手動はハンドルを引いたときに付くので、ここでは自動と水平だけを選べる
         if (ImGui::BeginMenu("接線", hasSel && curve))
         {
-            for (int m = 0; m < 4; ++m)
-                if (ImGui::MenuItem(kTangentNames[m]))
+            for (TangentMode mode : {TangentMode::Auto, TangentMode::Flat})
+                if (ImGui::MenuItem(kTangentNames[(int)mode]))
                 {
                     for (uint32_t id : m_selectedKeys)
                     {
                         int si = curve->IndexOfId(id);
-                        if (si >= 0)
-                        {
-                            curve->keys[si].tangentIn  = (TangentMode)m;
-                            curve->keys[si].tangentOut = (TangentMode)m;
-                        }
+                        if (si >= 0) curve->keys[si].tangent = mode;
                     }
                     curve->RecalculateTangents();
                     modified = true;
@@ -633,7 +618,7 @@ bool CurveEditorWidget::DrawCanvas(const char *strId, const std::vector<CurveDat
 
 
 // ---------------------------------------------------------------------------
-// 設定欄（選択中のキーと、編集中のカーブの設定）
+// 設定欄（選択中のキー）
 // ---------------------------------------------------------------------------
 void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bool &modified)
 {
@@ -641,23 +626,6 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
     if (!curve) return;
 
     ImGui::Spacing();
-
-    // 編集中のカーブの外挿
-    int pre = (int)curve->preInfinity;
-    ImGui::SetNextItemWidth(150);
-    if (ImGui::Combo("開始側の外挿", &pre, kExtrapNames, 5))
-    {
-        curve->preInfinity = (ExtrapMode)pre;
-        modified           = true;
-    }
-    ImGui::SameLine();
-    int post = (int)curve->postInfinity;
-    ImGui::SetNextItemWidth(150);
-    if (ImGui::Combo("終了側の外挿", &post, kExtrapNames, 5))
-    {
-        curve->postInfinity = (ExtrapMode)post;
-        modified            = true;
-    }
 
     if (m_sel.empty())
     {
@@ -668,14 +636,14 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
     if (m_sel.size() > 1)
     {
         ImGui::Text("%d 個のキーを選択中", (int)m_sel.size());
-        static int interpSel = 2; // 複数選択時のコンボの表示値（既定は3次）
+        static int interpSel = InterpToIndex(CurveInterp::Cubic); // 複数選択時のコンボの表示値
         ImGui::SetNextItemWidth(150);
-        if (ImGui::Combo("補間(全選択)", &interpSel, kInterpNames, 3))
+        if (ImGui::Combo("補間(全選択)", &interpSel, kInterpNames, IM_ARRAYSIZE(kInterpNames)))
         {
             for (uint32_t id : m_sel)
             {
                 int si = curve->IndexOfId(id);
-                if (si >= 0) curve->keys[si].interp = (CurveInterp)interpSel;
+                if (si >= 0) curve->keys[si].interp = IndexToInterp(interpSel);
             }
             modified = true;
         }
@@ -699,30 +667,23 @@ void CurveEditorWidget::DrawInspector(const std::vector<CurveData *> &curves, bo
     ImGui::SetNextItemWidth(120);
     if (ImGui::DragFloat("値", &key.value, 0.01f)) modified = true;
 
-    int interp = (int)key.interp;
+    int interp = InterpToIndex(key.interp);
     ImGui::SetNextItemWidth(120);
-    if (ImGui::Combo("補間", &interp, kInterpNames, 3))
+    if (ImGui::Combo("補間", &interp, kInterpNames, IM_ARRAYSIZE(kInterpNames)))
     {
-        key.interp = (CurveInterp)interp;
+        key.interp = IndexToInterp(interp);
         modified   = true;
     }
 
+    // 手動は「今の傾きのまま固定する」意味になる。ハンドルを引いても手動になる
     if (key.interp == CurveInterp::Cubic)
     {
-        int tin = (int)key.tangentIn;
-        ImGui::SetNextItemWidth(120);
-        if (ImGui::Combo("入接線", &tin, kTangentNames, 4))
-        {
-            key.tangentIn = (TangentMode)tin;
-            curve->RecalculateTangents();
-            modified = true;
-        }
         ImGui::SameLine();
-        int tout = (int)key.tangentOut;
+        int tangent = (int)key.tangent;
         ImGui::SetNextItemWidth(120);
-        if (ImGui::Combo("出接線", &tout, kTangentNames, 4))
+        if (ImGui::Combo("接線", &tangent, kTangentNames, IM_ARRAYSIZE(kTangentNames)))
         {
-            key.tangentOut = (TangentMode)tout;
+            key.tangent = (TangentMode)tangent;
             curve->RecalculateTangents();
             modified = true;
         }

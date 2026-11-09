@@ -8,7 +8,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.28,
+            "endTime": 0.2666666805744171,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -22,7 +22,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.03,
+            "startTime": 0.01666666753590107,
             "stringParam": "Weapon_R",
             "type": 5
         },
@@ -33,7 +33,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.28,
+            "endTime": 0.2666666805744171,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -47,7 +47,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.03,
+            "startTime": 0.01666666753590107,
             "stringParam": "Weapon_R",
             "type": 8
         },
@@ -58,7 +58,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.05,
+            "endTime": 0.05000000074505806,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -70,9 +70,9 @@
             },
             "radius": 1.0,
             "soundPitch": 0.0,
-            "soundPitchRandom": 0.07,
+            "soundPitchRandom": 0.07000000029802322,
             "soundVolume": 1.0,
-            "startTime": 0.05,
+            "startTime": 0.05000000074505806,
             "stringParam": "sfx:/slash_1",
             "type": 1
         },
@@ -83,8 +83,8 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.24,
-            "hitStopDuration": 0.05,
+            "endTime": 0.23333333432674408,
+            "hitStopDuration": 0.05000000074505806,
             "hitStopScale": 0.0,
             "hitboxFollow": false,
             "knockback": 20.0,
@@ -97,7 +97,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.05,
+            "startTime": 0.05000000074505806,
             "stringParam": "Weapon_R",
             "type": 0
         },
@@ -108,7 +108,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.65,
+            "endTime": 0.6499999761581421,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -122,7 +122,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.45,
+            "startTime": 0.44999998807907104,
             "stringParam": "Auto",
             "type": 6
         }
@@ -131,198 +131,31 @@
         "color": 4286643968,
         "keys": [
             {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.0,
-                "value": 0.0
+                "inTangent": -4.3824968338012695,
+                "interp": 2,
+                "outTangent": -4.3824968338012695,
+                "tangent": 0,
+                "time": -0.0028055012226104736,
+                "value": -0.023778438568115234
             },
             {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.05,
-                "value": 0.0
+                "inTangent": -50.91885757446289,
+                "interp": 2,
+                "outTangent": -50.91885757446289,
+                "tangent": 0,
+                "time": 0.12086117267608643,
+                "value": -0.5657472610473633
             },
             {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.1,
-                "value": -0.0273
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.15,
-                "value": -0.8191
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.2,
-                "value": -2.2003
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.25,
-                "value": -3.4857
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.3,
-                "value": -4.0585
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.35,
-                "value": -4.1736
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.4,
-                "value": -4.1763
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.45,
-                "value": -4.1544
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.5,
-                "value": -4.0351
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.55,
-                "value": -3.8428
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.6,
-                "value": -3.612
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.65,
-                "value": -3.3778
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.7,
-                "value": -3.1749
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.75,
-                "value": -3.0383
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.8,
-                "value": -3.0
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.85,
-                "value": -3.0
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.9,
-                "value": -3.0
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.95,
-                "value": -3.0
-            },
-            {
-                "inTangent": 0.0,
-                "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 1.0,
-                "value": -3.0
+                "inTangent": -102.09684753417969,
+                "interp": 2,
+                "outTangent": -102.09684753417969,
+                "tangent": 0,
+                "time": 0.23331180214881897,
+                "value": -12.046602249145508
             }
         ],
         "name": "Curve",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "sequenceName": "BackSlash",
@@ -330,8 +163,6 @@
         "color": 4286643968,
         "keys": [],
         "name": "Curve",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "startOffset": 0.0,
