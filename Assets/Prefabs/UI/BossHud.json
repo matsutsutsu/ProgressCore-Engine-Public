@@ -87,34 +87,6 @@
                 }
             },
             "lid": 3
-        },
-        {
-            "components": {
-                "Name": {
-                    "name": "BossSwarmCount"
-                },
-                "Transform": {
-                    "isStatic": false,
-                    "parent": 2
-                },
-                "UI Transform (矩形)": {
-                    "anchor": [0.0, 1.0],
-                    "pivot": [0.0, 0.0],
-                    "offset": [0.0, 8.0],
-                    "size": [900.0, 15.0],
-                    "rotation": 0.0,
-                    "scale": 1.0
-                },
-                "UI Text (文字列)": {
-                    "text": "",
-                    "pixelSize": 15.0,
-                    "color": [0.86, 0.86, 0.88, 0.80],
-                    "visible": false,
-                    "sortOrder": 110,
-                    "shadow": true
-                }
-            },
-            "lid": 4
         }
     ],
     "magic": 1397506883,

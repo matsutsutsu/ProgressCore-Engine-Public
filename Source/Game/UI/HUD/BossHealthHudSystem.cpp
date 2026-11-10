@@ -17,7 +17,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
 
 using namespace CCL::ECS;
 
@@ -28,7 +27,6 @@ namespace
     constexpr const char *kRootName   = "BossHud";        // ルート（Canvas）
     constexpr const char *kGaugeName  = "BossHpGauge";    // ゲージの子
     constexpr const char *kNameName   = "BossHpName";     // ボスの名前の子
-    constexpr const char *kSwarmName  = "BossSwarmCount"; // ドローンの残り数の子
 } // namespace
 
 
@@ -39,8 +37,7 @@ void BossHealthHudSystem::Update(float dt)
     // 1. HP が残っているボスを1体選ぶ（いなければまとめて隠して終わる）
     // 2. ボスが初めて出たフレームに、BossHud プレハブを生成する
     // 3. 割合と、第2形態の目印・外側の光を書く
-    // 4. ドローンの残り数を書く
-    // 5. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
+    // 4. 被弾・回復を見つけ、揺れと遅れて減るバーを進める
 
     // ---------------------------------------------------------
     // 1. ボスを選ぶ
@@ -137,20 +134,7 @@ void BossHealthHudSystem::Update(float dt)
     }
 
     // ---------------------------------------------------------
-    // 4. ドローンの残り数
-    // ---------------------------------------------------------
-    if (auto *swarm = m_world->GetComponent<UITextComponent>(m_swarmID))
-    {
-        const int alive = m_world->HasResource<BattleContext>()
-                              ? m_world->GetResource<BattleContext>().droneAliveCount
-                              : 0;
-        char buf[32];
-        std::snprintf(buf, sizeof(buf), "SWARM  %d", alive);
-        swarm->text = buf;
-    }
-
-    // ---------------------------------------------------------
-    // 5. 被弾・回復
+    // 4. 被弾・回復
     // ---------------------------------------------------------
 
     // HP が減ったら、遅れて減るバーを少し止めて失った分を見せ、ゲージを揺らす
@@ -234,7 +218,6 @@ void BossHealthHudSystem::SpawnHud()
 
     m_barID   = CCL::GameUI::FindChildByName(*m_world, m_rootID, kGaugeName);
     m_nameID  = CCL::GameUI::FindChildByName(*m_world, m_rootID, kNameName);
-    m_swarmID = CCL::GameUI::FindChildByName(*m_world, m_rootID, kSwarmName);
 
     // エディタで子の名前を変えると引けなくなる
     // 黙って消えると原因が分からないので、ログに出す
@@ -246,7 +229,6 @@ void BossHealthHudSystem::SpawnHud()
     };
     reportMissing(m_barID, kGaugeName);
     reportMissing(m_nameID, kNameName);
-    reportMissing(m_swarmID, kSwarmName);
 }
 
 
@@ -254,7 +236,6 @@ void BossHealthHudSystem::SpawnHud()
 void BossHealthHudSystem::SetDecorVisible(bool visible)
 {
     if (auto *txt = m_world->GetComponent<UITextComponent>(m_nameID)) txt->visible = visible;
-    if (auto *txt = m_world->GetComponent<UITextComponent>(m_swarmID)) txt->visible = visible;
 }
 
 

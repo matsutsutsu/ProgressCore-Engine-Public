@@ -12,7 +12,6 @@
 #include "Game/Logics/Combat/Components/EnemyTag.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Core/GameEvents.h"
 
 #include <algorithm>
@@ -33,6 +32,8 @@ namespace
     constexpr float kMenuDelay = 0.6f;  // 記録の最後の行を打ち始めてから、ボタンが出るまで
 
     constexpr float kMenuGap = 60.0f; // 記録の最後の行から、ボタンの入れ物の上端までの間隔（px）
+
+    constexpr int kRowCount = 4; // 記録の行の数
 } // namespace
 
 
@@ -290,10 +291,6 @@ void GameResultSystem::ShowResultUI(bool win)
     // デバッグの「リザルトを出す」から呼ばれたときも、操作とボスを止める
     EndMatch();
 
-    int swarm = 0;
-    w.ViewEach<DroneComponent>([&swarm](EntityID) { ++swarm; });
-    m_swarmMax = std::max(m_swarmMax, swarm);
-
     if (w.HasResource<BattleContext>())
     {
         const auto &battle = w.GetResource<BattleContext>();
@@ -329,11 +326,11 @@ void GameResultSystem::ShowResultUI(bool win)
     char sub[96];
     if (win)
     {
-        std::snprintf(sub, sizeof(sub), "ボス ミュリエルを撃破した");
+        std::snprintf(sub, sizeof(sub), "ボス VALKYRA を撃破した");
     }
     else
     {
-        std::snprintf(sub, sizeof(sub), "ボス ミュリエルの残りHP  %d%%",
+        std::snprintf(sub, sizeof(sub), "ボス VALKYRA の残りHP  %d%%",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
     }
     SpawnTypedText(w, "ResultSub", sub, style.left, style.SubY(), 20.0f, style.sub, kSubStart, canvas);
@@ -343,16 +340,15 @@ void GameResultSystem::ShowResultUI(bool win)
     // ---------------------------------------------------------
     const int   minutes = static_cast<int>(m_playTime) / 60;
     const float seconds = m_playTime - static_cast<float>(minutes * 60);
-    char        buf[5][48];
+    char        buf[kRowCount][48];
     std::snprintf(buf[0], sizeof(buf[0]), "%02d:%05.2f", minutes, seconds);
     std::snprintf(buf[1], sizeof(buf[1]), "%d回", m_hits.load());
     std::snprintf(buf[2], sizeof(buf[2]), "%d", (m_damageX10.load() + 5) / 10);
     std::snprintf(buf[3], sizeof(buf[3]), "%d回", m_justEvades.load());
-    std::snprintf(buf[4], sizeof(buf[4]), "%d機", m_swarmMax);
 
-    const char *labels[5] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避", "戦った群れ"};
-    const char *names[5]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade", "ResultSwarm"};
-    for (int i = 0; i < 5; ++i)
+    const char *labels[kRowCount] = {"経過時間", "攻撃のヒット数", "受けたダメージ", "ジャスト回避"};
+    const char *names[kRowCount]  = {"ResultTime", "ResultHits", "ResultDamage", "ResultEvade"};
+    for (int i = 0; i < kRowCount; ++i)
     {
         SpawnScreenRow(w, canvas, names[i], i, labels[i], buf[i], kRowStart + kRowStep * static_cast<float>(i), spawned);
     }
@@ -362,8 +358,9 @@ void GameResultSystem::ShowResultUI(bool win)
     // ---------------------------------------------------------
 
     // 記録が出そろってから出す
-    const float    menuTop   = style.RowY() + style.rowH * 4.0f + style.rowPx + kMenuGap;
-    const float    menuDelay = kRowStart + kRowStep * 4.0f + kMenuDelay;
+    const float    lastRow   = static_cast<float>(kRowCount - 1);
+    const float    menuTop   = style.RowY() + style.rowH * lastRow + style.rowPx + kMenuGap;
+    const float    menuDelay = kRowStart + kRowStep * lastRow + kMenuDelay;
     const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {style.left, menuTop}, {320.0f, 140.0f}, canvas);
 
     // 最初は「もう一度」を選んでおく

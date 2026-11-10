@@ -8,11 +8,11 @@
                 },
                 {
                     "Device": "GamePad_Button",
-                    "Key": "BTN_RIGHT_TRIGGER"
+                    "Key": "BTN_X"
                 },
                 {
                     "Device": "GamePad_Button",
-                    "Key": "BTN_X"
+                    "Key": "BTN_RIGHT_TRIGGER"
                 }
             ],
             "Name": "Attack",

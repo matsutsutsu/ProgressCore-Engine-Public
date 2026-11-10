@@ -44,7 +44,6 @@ private:
     std::atomic<int>                m_damageX10{0};                        // プレイヤーが受けたダメージの合計の 10 倍
     std::atomic<int>                m_justEvades{0};                       // ジャスト回避の成功回数
     std::atomic<CCL::ECS::EntityID> m_playerID{CCL::ECS::InvalidEntityID}; // プレイヤー。命中の攻撃者と比べる
-    int                             m_swarmMax    = 0;                     // 戦った群れの最大機数
     float                           m_bossHpRatio = 1.0f;                  // 結果が出た時点のボスの HP の割合（0〜1）
 
     // --- デバッグ用 ---
