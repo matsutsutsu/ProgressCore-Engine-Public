@@ -20,11 +20,23 @@ using namespace DirectX::SimpleMath;
 //   コードは攻撃の種類ごとのトリガーを出さない（どの攻撃かの知識をグラフにまとめる）
 static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 
+// 押したときのスティックの向き。コンボの派生をグラフがこれで選ぶ
+static const uint32_t HASH_PARAM_ATTACK_DIR = CCL::Utils::HashString("AttackDir");
+
 namespace
 {
     // 攻撃時に敵の方へ向く処理の定数。最大距離は PlayerComponent.attackFaceMaxDistance（エディタで調整できる）
-    constexpr float kFaceDuration = 0.22f;               // 敵の方へ向き直る時間（秒）
-    const float     kFaceConeCos  = std::cos(1.221730f); // 前方±70°の内積のしきい値（cos70°）
+    constexpr float kFaceDuration     = 0.22f;               // 敵の方へ向き直る時間（秒）
+    constexpr float kBackFaceDuration = 0.8f;                // 後ろの技で敵を向いたまま下がる時間（秒）
+    const float     kFaceConeCos      = std::cos(1.221730f); // 前方±70°の内積のしきい値（cos70°）
+
+    // AttackDir の値。グラフの遷移の条件と同じ数
+    constexpr float kAttackDirNeutral = 0.0f; // 倒していない・横
+    constexpr float kAttackDirForward = 1.0f; // 敵の方へ
+    constexpr float kAttackDirBack    = 2.0f; // 敵と反対へ
+
+    constexpr float kStickThreshold = 0.5f;                // これより浅い傾きはニュートラル
+    const float     kDirConeCos     = std::cos(0.872665f); // 前・後ろとみなす扇の半角（cos50°）
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -87,20 +99,20 @@ EntityID PlayerAttackSystem::FindBestFrontEnemy(EntityID selfID, const Vector3 &
 
 
 // ---------------------------------------------------------------------------
-// 向き直り
+// 向き
 // ---------------------------------------------------------------------------
 
-void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &player)
+bool PlayerAttackSystem::FindAttackTargetDir(EntityID playerID, const PlayerComponent &player, Vector3 &outDir)
 {
     // 処理フロー:
     // 1. 向く対象を決める（ロックオン優先、なければ前方で最も近い敵）
-    // 2. 対象がない／遠いなら向かない（今の向きのまま攻撃する）
-    // 3. 対象方向の yaw を書き、向き直りの時間を立てる
+    // 2. 対象がない／遠いなら false（今の向きのまま攻撃する）
+    // 3. 対象への水平の向きを返す
 
     const auto *ptrans = m_world->GetComponent<TransformComponent>(playerID);
     if (!ptrans)
     {
-        return;
+        return false;
     }
     const Vector3 playerPos(ptrans->position);
 
@@ -125,32 +137,53 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
     // ---------------------------------------------------------
     if (target == InvalidEntityID) // 敵がいなければ今の向きのまま攻撃する
     {
-        return;
+        return false;
     }
 
     const auto *etrans = m_world->GetComponent<TransformComponent>(target);
     if (!etrans)
     {
-        return;
+        return false;
     }
     Vector3 to = Vector3(etrans->position) - playerPos;
     to.y       = 0.0f;
     if (to.LengthSquared() < 1e-4f)
     {
-        return;
+        return false;
     }
 
     // ロックオン中でも attackFaceMaxDistance より遠い敵には向かず、入力方向のまま攻撃できるようにする
     if (to.LengthSquared() > player.attackFaceMaxDistance * player.attackFaceMaxDistance)
     {
-        return;
+        return false;
     }
 
     // ---------------------------------------------------------
-    // 3. yaw を書く（実際に向きを変えるのは PlayerJumpFacingSystem）
+    // 3. 向きを返す
     // ---------------------------------------------------------
-    player.attackFaceYaw   = std::atan2(to.x, to.z); // PlayerJumpFacingSystem と同じ atan2(x,z) 規約
-    player.attackFaceTimer = kFaceDuration;
+    to.Normalize();
+    outDir = to;
+    return true;
+}
+
+
+
+float PlayerAttackSystem::ClassifyAttackDir(const Vector3 &baseDir, const CharacterMovementComponent &movement) const
+{
+    // 少し倒しただけでは、本線のまま出す
+    if (movement.moveIntensity < kStickThreshold) return kAttackDirNeutral;
+
+    Vector3 stick = movement.desiredVelocity;
+    stick.y       = 0.0f;
+    if (stick.LengthSquared() < 1e-4f) return kAttackDirNeutral;
+    stick.Normalize();
+
+    const float d = stick.Dot(baseDir);
+    if (d >= kDirConeCos) return kAttackDirForward;
+    if (d <= -kDirConeCos) return kAttackDirBack;
+
+    // 横は、敵の周りを回りながら連打している。本線のまま出す
+    return kAttackDirNeutral;
 }
 
 
@@ -161,11 +194,12 @@ void PlayerAttackSystem::SetAttackFacing(EntityID playerID, PlayerComponent &pla
 
 void PlayerAttackSystem::Update(float dt)
 {
-    ForEachWithID([&](EntityID                    playerID,
-                      const PlayerInputComponent &pin,
-                      AnimParametersComponent    &animParams,
-                      PlayerComponent            &player,
-                      const PlayerRushComponent        &rush) {
+    ForEachWithID([&](EntityID                          playerID,
+                      const PlayerInputComponent       &pin,
+                      AnimParametersComponent          &animParams,
+                      PlayerComponent                  &player,
+                      const PlayerRushComponent        &rush,
+                      const CharacterMovementComponent &movement) {
         // ラッシュ中は通常攻撃を出さない
         //   ラッシュ中の攻撃入力は PlayerRushSystem が受け取り、ラッシュの段（RushAttack）として出す
         //   ここで通常攻撃まで出ると、Attack と RushAttack の2つのトリガーが同時に立つ
@@ -174,15 +208,49 @@ void PlayerAttackSystem::Update(float dt)
             return;
         }
 
-        if (pin.attackPressed)
-        {
-            // 攻撃の瞬間に対象の方へ向く（地上/空中どちらも）
-            SetAttackFacing(playerID, player);
+        if (!pin.attackPressed) return;
 
-            // 攻撃は常に Attack トリガー1つで出す（第2引数は先行入力として保持する秒数）
-            //   通常 / 空中 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない
-            animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
+        // 処理フロー:
+        // 1. 前・後ろの基準を決める。敵がいれば敵の方、いなければ今の正面
+        // 2. スティックの向きを AttackDir に書く
+        // 3. 向き直る
+        // 4. Attack トリガーを出す
+
+        // ---------------------------------------------------------
+        // 1. 基準
+        // ---------------------------------------------------------
+
+        Vector3    baseDir;
+        const bool hasTarget = FindAttackTargetDir(playerID, player, baseDir);
+        if (!hasTarget) baseDir = Vector3(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
+
+        // ---------------------------------------------------------
+        // 2. スティックの向き
+        // ---------------------------------------------------------
+
+        // 押した瞬間の向きを残す。先行入力の間にスティックが戻っても、押したときの技が出る
+        const float attackDir = ClassifyAttackDir(baseDir, movement);
+        animParams.SetFloat(HASH_PARAM_ATTACK_DIR, attackDir);
+
+        // ---------------------------------------------------------
+        // 3. 向き直り（地上/空中どちらも。実際に回すのは PlayerJumpFacingSystem）
+        // ---------------------------------------------------------
+
+        // 後ろの技は敵を正面に置いたまま下がる。短いと、倒したままのスティックの方へ振り向いてしまう
+        const bool back = (attackDir == kAttackDirBack);
+        if (hasTarget || back)
+        {
+            player.attackFaceYaw   = std::atan2(baseDir.x, baseDir.z);
+            player.attackFaceTimer = back ? kBackFaceDuration : kFaceDuration;
         }
+
+        // ---------------------------------------------------------
+        // 4. トリガー
+        // ---------------------------------------------------------
+
+        // 攻撃は常に Attack トリガー1つで出す（第2引数は先行入力として保持する秒数）
+        //   通常 / 空中 / コンボ継続の分岐はアニメグラフが決め、コードはステート名を見ない
+        animParams.SetTrigger(HASH_TRIG_ATTACK, 0.25f);
     });
 }
 

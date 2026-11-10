@@ -243,15 +243,16 @@ void TutorialSystem::Update(float dt)
         cleared = m_hitCount >= 1;
         break;
 
-    // コンボはアニメグラフの Atk_Combo。途中で遅らせ押しの派生に分かれるが、
-    // ここでは連打で2段目に入れば続けて押せていると見なす
+    // コンボはアニメグラフの Atk_Combo。2段目は押したときのスティックの向きで3つに分かれるが、
+    // ここではどれかに入れば続けて押せていると見なす
     // この項目に入ってから1段目を出したコンボだけを数える。攻撃の項目から押し続けていると、
     // 入った直後に2段目へ移って達成になり、ヒントが一瞬で消えてしまうため
     case TutorialGoal::Combo:
     {
         const std::string entered = EnteredAnimState(battle.playerEntity);
         if (entered == "Atk_Combo1") m_comboStarted = true;
-        cleared = m_comboStarted && entered == "Atk_Combo2";
+        const bool secondHit = entered == "Atk_Combo2" || entered == "Atk_LeapSlash" || entered == "Atk_BackSlash";
+        cleared = m_comboStarted && secondHit;
 
         // 1段目を出したら半分にする。続けて押せばよいと分かるように
         WriteProgress(state, m_comboStarted ? 1.0f : 0.0f, 2.0f);

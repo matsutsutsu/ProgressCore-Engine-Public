@@ -322,6 +322,13 @@
             "hash": 2768868375,
             "name": "RushEvadeY",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1648766028,
+            "name": "AttackDir",
+            "type": 0
         }
     ],
     "states": [
@@ -837,6 +844,12 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
@@ -845,17 +858,44 @@
                                 "targetStateHash": 1854676410
                             },
                             {
-                                "blendDuration": 0.15000000596046448,
+                                "blendDuration": 0.1,
                                 "conditions": [
                                     {
                                         "op": 3,
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
                                     }
                                 ],
                                 "logicType": 0,
-                                "requiredCancelMask": 2,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 1119050422
                             }
@@ -882,6 +922,12 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
@@ -890,19 +936,46 @@
                                 "targetStateHash": 1871454029
                             },
                             {
-                                "blendDuration": 0.15000000596046448,
+                                "blendDuration": 0.1,
                                 "conditions": [
                                     {
                                         "op": 3,
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
                                     }
                                 ],
                                 "logicType": 0,
-                                "requiredCancelMask": 2,
+                                "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
@@ -927,12 +1000,60 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 2137745516
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
@@ -957,12 +1078,60 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 1770788315
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
@@ -1045,12 +1214,60 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 2154523135
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
@@ -1075,12 +1292,60 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 2104190278
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
@@ -1105,12 +1370,60 @@
                                         "paramHash": 2343121693,
                                         "paramName": "Attack",
                                         "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 0.0
                                     }
                                 ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
                                 "targetStateHash": 1754010696
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 1.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 3220633253
+                            },
+                            {
+                                "blendDuration": 0.1,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    },
+                                    {
+                                        "op": 0,
+                                        "paramHash": 1648766028,
+                                        "paramName": "AttackDir",
+                                        "threshold": 2.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 1,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1119050422
                             }
                         ]
                     },
