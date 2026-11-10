@@ -20,7 +20,7 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // 回避離脱のトリガーと、向いている方から見た跳ぶ向き（X は右が正、Y は前が正）
-// RushEvade は X / Y で前後左右の回避を混ぜるブレンドスペース
+// Rush_Evade は X / Y で前後左右の回避を混ぜるブレンドスペース
 static const uint32_t HASH_TRIG_RUSH_EVADE    = CCL::Utils::HashString("RushEvade");
 static const uint32_t HASH_PARAM_RUSH_EVADE_X = CCL::Utils::HashString("RushEvadeX");
 static const uint32_t HASH_PARAM_RUSH_EVADE_Y = CCL::Utils::HashString("RushEvadeY");
@@ -34,17 +34,17 @@ static const uint32_t HASH_TRIG_RUSH_STRIKE = CCL::Utils::HashString("RushStrike
 // ラッシュ中か。詰めきれずに終わったとき、突っ込む姿勢のループから待機へ戻すのに使う
 static const uint32_t HASH_PARAM_IS_RUSHING = CCL::Utils::HashString("IsRushing");
 
-// 連撃の斬りのトリガー。押すたびに RushSlash_A と B を交互に頭から出し直す
+// 連撃の斬りのトリガー。押すたびに Rush_Slash_A と B を交互に頭から出し直す
 static const uint32_t HASH_TRIG_RUSH_ATTACK = CCL::Utils::HashString("RushAttack");
 
 // とどめのトリガー。斬りの途中から RushFinish へ移る
 static const uint32_t HASH_TRIG_RUSH_FINISH = CCL::Utils::HashString("RushFinish");
 
 // 連撃中にいてよいアニメのステート。ここから抜けたら連撃を終える
-static const uint32_t HASH_STATE_RUSH_DIVE_END = CCL::Utils::HashString("RushDiveEnd");
-static const uint32_t HASH_STATE_RUSH_SLASH_A  = CCL::Utils::HashString("RushSlash_A");
-static const uint32_t HASH_STATE_RUSH_SLASH_B  = CCL::Utils::HashString("RushSlash_B");
-static const uint32_t HASH_STATE_RUSH_FINISH   = CCL::Utils::HashString("RushFinish");
+static const uint32_t HASH_STATE_RUSH_DIVE_END = CCL::Utils::HashString("Rush_Dive_End");
+static const uint32_t HASH_STATE_RUSH_SLASH_A  = CCL::Utils::HashString("Rush_Slash_A");
+static const uint32_t HASH_STATE_RUSH_SLASH_B  = CCL::Utils::HashString("Rush_Slash_B");
+static const uint32_t HASH_STATE_RUSH_FINISH   = CCL::Utils::HashString("Rush_Finish");
 
 
 

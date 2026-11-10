@@ -77,8 +77,8 @@ private:
     float DecideFinisherFloor(const BossPhaseComponent &phase,
                               const HealthComponent    &health) const;
 
-    // Valkyra のアニメグラフの任意ステートから Death → DeathLoop へ入る
-    // DeathLoop には出る遷移がないので、撃破ムービーとリザルトの間も倒れた姿のまま残る
+    // Valkyra のアニメグラフの任意ステートから Death_Start → Death_Loop へ入る
+    // Death_Loop には出る遷移がないので、撃破ムービーとリザルトの間も倒れた姿のまま残る
     static constexpr const char *kDeathTrigger = "Death";
 
     // Valkyra のアニメグラフに Roar の遷移はまだなく、今は引いても何も起きない

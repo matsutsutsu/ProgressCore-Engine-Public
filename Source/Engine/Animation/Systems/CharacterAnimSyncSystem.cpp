@@ -12,12 +12,12 @@ using namespace DirectX::SimpleMath;
 
 // --- パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）---
 static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
-static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("YVelocity");
+static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("VelocityY");
 static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
 // --- 接地状態の変化で立てるトリガー ---
-static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("OnJump");
-static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("OnLand");
+static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("Jump");
+static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("Land");
 
 
 

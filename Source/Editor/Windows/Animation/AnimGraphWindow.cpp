@@ -1385,7 +1385,7 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         if (ImGui::InputText("状態名 (State Name)", m_stateNameBuf, sizeof(m_stateNameBuf))) m_stateNameEdited = true;
         if (ImGui::IsItemDeactivatedAfterEdit()) CommitStateName();
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Enter かフォーカスを外すと確定します。\nコードから名前で参照しているステート（例: BackStepStop）は、\n変えたらコード側の名前も合わせてください。");
+            ImGui::SetTooltip("Enter かフォーカスを外すと確定します。\nコードから名前で参照しているステート（例: Loco_BackStep_Stop）は、\n変えたらコード側の名前も合わせてください。");
 
         ImGui::Separator();
 

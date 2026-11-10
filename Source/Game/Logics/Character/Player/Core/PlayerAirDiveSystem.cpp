@@ -9,8 +9,8 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-static const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("AirDiveStart");
-static const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("AirDiveLoop");
+static const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("Air_Dive_Start");
+static const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("Air_Dive_Loop");
 
 namespace
 {
@@ -34,7 +34,7 @@ void PlayerAirDiveSystem::Update(float /*dt*/)
             return;
         }
 
-        // 落下は向いている方へ少し進めながら落とす。着地すればグラフが AirDiveEnd へ移り、ここで書かなくなる
+        // 落下は向いている方へ少し進めながら落とす。着地すればグラフが Air_Dive_End へ移り、ここで書かなくなる
         if (fsm.currentStateHash == HASH_STATE_DIVE_LOOP)
         {
             const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));

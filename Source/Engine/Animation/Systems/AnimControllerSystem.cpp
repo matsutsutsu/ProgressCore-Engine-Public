@@ -303,7 +303,7 @@ namespace
         // 3. 葉なら、自身の遷移を見る
 
         // 外側（親）の遷移を内側（子）より先に見るので、外側が常に優先される
-        // 例: AttackCombo の中で攻撃中でも、root の AnyState → HitReaction が先に通る
+        // 例: Atk_Combo の中で攻撃中でも、root の AnyState → Hit_Reaction が先に通る
 
         const uint32_t   activeHash  = (static_cast<size_t>(level) < fsm.activePath.size())
                                            ? fsm.activePath[level]
@@ -331,7 +331,7 @@ namespace
         // ---------------------------------------------------------
         if (activeState->isSubMachine && activeState->subGraph)
         {
-            // サブマシン自身の遷移は、サブマシン全体の出口（例: AttackCombo 全体 → Idle）
+            // サブマシン自身の遷移は、サブマシン全体の出口（例: Atk_Combo 全体 → Loco_Idle）
             for (const auto &t : activeState->transitions)
             {
                 if (!ConditionsMet(animator, params, t)) continue;

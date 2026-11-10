@@ -78,7 +78,7 @@ void RootMotionSystem::Update(float /*rawDt*/)
         if (!rm.enabled || !animator.currentSequence || !model)
         {
             // ルートモーションを使わないステート
-            //   出力を消さないと、前のステート（例: Attack_1）の値が残り、通常の移動を上書きし続ける
+            //   出力を消さないと、前のステート（例: Atk_Combo1）の値が残り、通常の移動を上書きし続ける
             rm.lastEvaluatedSeq = nullptr;
             ClearRootMotionOutput(movement);
             return;

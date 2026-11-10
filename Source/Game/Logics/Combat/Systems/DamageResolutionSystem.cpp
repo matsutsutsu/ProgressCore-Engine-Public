@@ -32,7 +32,7 @@ namespace
     const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
 
     // 向きごとのトリガー（HitDir と同じ並び）
-    // プレイヤーのアニメーショングラフは Hit と HitDir で HitReaction のサブステートマシンに入るが、
+    // プレイヤーのアニメーショングラフは Hit と HitDir で Hit_Reaction のサブステートマシンに入るが、
     // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
     // ボスは Hit / HitDir を持たないので、
     // 両方の形のトリガーを立てる
@@ -94,7 +94,7 @@ namespace
                 hitDir = (r >= 0.0f) ? 3.0f : 2.0f;
         }
 
-        // HitReaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
+        // Hit_Reaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
         anim->SetFloat(HASH_HIT_DIR, hitDir);
         anim->SetTrigger(HASH_HIT, 0.15f);
 

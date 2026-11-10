@@ -192,7 +192,7 @@ private:
     // 跳躍を増やすときは、ここに1行と、BossActionComponent に BossLeapDef を1つ足す
     const BossLeapDef *LeapDefOf(ActionID actionId, const BossActionComponent &bossAction) const;
 
-    // ひるみのアニメ（HitFront など）を再生しているかを isFlinching に書き、明けてからの冷却を進める
+    // ひるみのアニメ（Hit_F など）を再生しているかを isFlinching に書き、明けてからの冷却を進める
     // ひるんでいる間、Update は BT の要求を読まずに待機にする
     void UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine, float dt) const;
 

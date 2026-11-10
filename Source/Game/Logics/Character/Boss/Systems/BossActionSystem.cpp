@@ -125,12 +125,12 @@ namespace
 
 
     // 後方ステップの止まりのモーションを流すステート
-    // （ValkyraAnimNode.json の BackStepStop）
-    const uint32_t kBackStepStopState = CCL::Utils::HashString("BackStepStop");
+    // （ValkyraAnimNode.json の Loco_BackStep_Stop）
+    const uint32_t kBackStepStopState = CCL::Utils::HashString("Loco_BackStep_Stop");
 
     // ひるみのステート（ValkyraAnimNode.json）。どれかを再生している間は、技を始めずにその場で止まる
-    const uint32_t kFlinchStates[] = {CCL::Utils::HashString("HitFront"), CCL::Utils::HashString("HitBack"),
-                                      CCL::Utils::HashString("HitLeft"), CCL::Utils::HashString("HitRight")};
+    const uint32_t kFlinchStates[] = {CCL::Utils::HashString("Hit_F"), CCL::Utils::HashString("Hit_B"),
+                                      CCL::Utils::HashString("Hit_L"), CCL::Utils::HashString("Hit_R")};
 
     // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）
     // 跳躍3種は同じ "Leap"。着地のクリップは BossAnimSyncSystem が切り替える

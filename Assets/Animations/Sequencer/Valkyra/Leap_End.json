@@ -1,0 +1,48 @@
+{
+    "duration": 0.6333333253860474,
+    "events": [
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.6666666865348816,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.1666666716337204,
+            "stringParam": "Assets/Prefabs/Particles/VFX_BossLerp",
+            "type": 2
+        }
+    ],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "Leap_End",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "targetAnimName": "Jump_Recovery_0",
+    "targetModelPath": ""
+}

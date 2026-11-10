@@ -11,7 +11,7 @@ using namespace CCL::ECS;
 static const uint32_t HASH_IS_MOVING         = CCL::Utils::HashString("IsMoving");        // 歩いて近づいているか
 static const uint32_t HASH_SIDE_TRAVEL_PHASE = CCL::Utils::HashString("SideTravelPhase"); // 横移動の段 +1。0=横移動していない
 static const uint32_t HASH_IS_LEAPING        = CCL::Utils::HashString("IsLeaping");       // 踏み切り前〜着地の瞬間
-static const uint32_t HASH_LEAP_ATTACK       = CCL::Utils::HashString("LeapAttack");      // 着地で攻撃する跳躍か
+static const uint32_t HASH_LEAP_ATTACK       = CCL::Utils::HashString("IsLeapAttack");      // 着地で攻撃する跳躍か
 static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase");       // 突進の段 +1。0=突進していない
 static const uint32_t HASH_BACKSTEP_PHASE    = CCL::Utils::HashString("BackStepPhase");   // 後方ステップの段 +1。0=していない
 static const uint32_t HASH_FOOTWORK_DIR      = CCL::Utils::HashString("FootworkDir");     // 様子見の向き。0=していない 1=前 2=後ろ 3=左 4=右

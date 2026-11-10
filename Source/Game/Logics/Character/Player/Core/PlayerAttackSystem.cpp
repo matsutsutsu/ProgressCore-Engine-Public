@@ -16,7 +16,7 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // 攻撃入力を表すトリガーはこれ1つだけ。通常/ダッシュ/空中/コンボの分岐はアニメグラフが
-//   パラメータ（DashAttackReady / IsAirborne など）とキャンセル区間で決めるため、
+//   パラメータ（CanDashAttack / IsAirborne など）とキャンセル区間で決めるため、
 //   コードは攻撃の種類ごとのトリガーを出さない（どの攻撃かの知識をグラフにまとめる）
 static const uint32_t HASH_TRIG_ATTACK = CCL::Utils::HashString("Attack");
 

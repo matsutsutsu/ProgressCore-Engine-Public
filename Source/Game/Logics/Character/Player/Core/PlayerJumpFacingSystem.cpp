@@ -14,7 +14,7 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // 2段目のジャンプで引くアニメのトリガー
-static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("OnDoubleJump");
+static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("DoubleJump");
 
 // 攻撃時に敵へ向き直る速さ（角度差に掛ける係数、1/秒）
 static constexpr float kAttackTurnSpeed = 18.0f;
@@ -94,7 +94,7 @@ void PlayerJumpFacingSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jum
         player.isAirborne        = true;
 
         // 2段目だけ、ここでアニメのトリガーを引く
-        // 1段目は CharacterAnimSyncSystem が離陸の速度から OnJump を引く
+        // 1段目は CharacterAnimSyncSystem が離陸の速度から Jump を引く
         // 空中の2段目は、物理の状態からは見分けられない
         if (canDoubleJump) animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
 

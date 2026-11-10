@@ -92,7 +92,7 @@
       "start": 0.0,
       "duration": 4.0,
       "subject": "Valkyra",
-      "sequence": "Assets/Animations/Sequencer/Valkyra/DeathLoop.json",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Death_Loop.json",
       "loop": true,
       "speed": 1.0,
       "blendIn": 0.2,

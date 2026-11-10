@@ -80,7 +80,7 @@ enum class BossBackStepPhase : uint8_t
 // 技の長さ ＝ 溜め＋空中＋頂点に留まる＋着地硬直
 struct BossLeapDef
 {
-    float           windup       = 0.4f;                          // 溜め [秒]。LeapStart クリップより短く
+    float           windup       = 0.4f;                          // 溜め [秒]。Leap_Start クリップより短く
     float           flight       = 2.0f;                          // 空中 [秒]。滞空は上がる＋降りるの合計
     float           height       = 30.0f;                         // 頂点の高さ [m]
     float           landRecovery = 0.5f;                          // 着地硬直 [秒]

@@ -486,7 +486,7 @@ struct AnimStateMachineComponent
     uint32_t currentStateHash = 0;
 
     // 階層ステートマシンの現在地 [ルート側..., 葉]
-    //   例: [AttackCombo, Attack_1] はトップで AttackCombo（サブマシン）、その中で Attack_1（葉）
+    //   例: [Atk_Combo, Atk_Combo1] はトップで Atk_Combo（サブマシン）、その中で Atk_Combo1（葉）
     //   AnimControllerSystem が毎ステップ維持する
     std::vector<uint32_t> activePath;
 };

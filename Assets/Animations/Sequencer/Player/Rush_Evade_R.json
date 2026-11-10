@@ -1,0 +1,20 @@
+{
+    "duration": 0.6666666865348816,
+    "events": [],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "visible": true
+    },
+    "sequenceName": "Rush_Evade_R",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "visible": true
+    },
+    "startOffset": 0.18,
+    "targetAnimName": "Dodge_Combat_to_Run_R_Seq_0",
+    "targetModelPath": ""
+}

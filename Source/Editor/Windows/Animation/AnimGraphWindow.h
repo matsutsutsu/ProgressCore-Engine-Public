@@ -112,7 +112,7 @@ private:
     //   以降は今の階層だけを編集する（m_currentGraph はメンバではない）
     // =====================================================================
     AnimStateGraph &CurrentView();                            // m_editPath に沿って辿った、今編集している階層のグラフ
-    void            DrawBreadcrumb();                         // 「Root > AttackCombo > ...」のパンくず。クリックで浅い階層へ戻る
+    void            DrawBreadcrumb();                         // 「Root > Atk_Combo > ...」のパンくず。クリックで浅い階層へ戻る
     // 指定のサブマシンへ潜る。今の階層になければ何もしない
     void            EnterSubMachine(uint32_t subMachineHash); // 指定のサブマシンへ潜る
     // 階層全体で重ならない stateHash を採る。重なれば name に "_2", "_3"... を付け、その名前のハッシュを返す

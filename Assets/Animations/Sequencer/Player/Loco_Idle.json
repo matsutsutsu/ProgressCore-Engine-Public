@@ -1,0 +1,15 @@
+{
+    "duration": 10.0,
+    "events": [],
+    "rootMotionCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "sequenceName": "Loco_Idle",
+    "speedCurve": {
+        "keys": [],
+        "name": ""
+    },
+    "targetAnimName": "Idle_Combat_v02_Seq_0",
+    "targetModelPath": ""
+}

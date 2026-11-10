@@ -8,10 +8,10 @@ using namespace CCL::ECS;
 // アニメのパラメータ名のハッシュ（毎ステップ計算しないよう先に求める）
 static const uint32_t HASH_IS_DASHING        = CCL::Utils::HashString("IsDashing");
 static const uint32_t HASH_IS_AIRBORNE       = CCL::Utils::HashString("IsAirborne");
-static const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("MoveInput");
+static const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("HasMoveInput");
 static const uint32_t HASH_IS_RUNNING        = CCL::Utils::HashString("IsRunning");
-static const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("DashAttackReady");
-static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("OnDash");
+static const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("CanDashAttack");
+static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("Dash");
 
 
 
@@ -19,7 +19,7 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
 {
     ForEach([&](const PlayerDashComponent &dash, const PlayerComponent &player,
                 const CharacterMovementComponent &movement, AnimParametersComponent &animParams) {
-        // ダッシュに入るのは、始めた瞬間の OnDash トリガーで行う
+        // ダッシュに入るのは、始めた瞬間の Dash トリガーで行う
         // IsDashing で入ると、ダッシュ中に移った先（DashAttack）を毎ステップ Dash へ引き戻す
         const bool wasDashing = animParams.GetBool(HASH_IS_DASHING);
         if (dash.isDashing && !wasDashing)
@@ -29,7 +29,7 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         animParams.SetBool(HASH_IS_DASHING, dash.isDashing);
 
         // 空中かは、猶予付きの isAirborne を書く
-        // YVelocity / IsGrounded を直接見ると、小さな段差で落下へ遷移する
+        // VelocityY / IsGrounded を直接見ると、小さな段差で落下へ遷移する
         animParams.SetBool(HASH_IS_AIRBORNE, player.isAirborne);
 
         // 移動の入力があるかは、実際の速さでなく入力の向きで決める
@@ -43,7 +43,7 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         animParams.SetBool(HASH_IS_RUNNING, player.isRunning);
 
         // 次の攻撃をダッシュ攻撃にするかを、コードで判定する
-        // グラフはこの bool と Attack トリガーで、DashAttack と Attack_1 を分ける
+        // グラフはこの bool と Attack トリガーで、Atk_Dash と Atk_Combo1 を分ける
 
         // ダッシュ中・走り中に加え、ダッシュの半分の速さが残っている間も出す
         // 走りを解いた直後の猶予にする

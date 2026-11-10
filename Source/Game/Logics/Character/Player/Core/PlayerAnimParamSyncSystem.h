@@ -3,11 +3,11 @@
 // 概要: プレイヤーのゲーム側の状態を、アニメのパラメータへ書く System
 //
 // 責務:
-//   - IsDashing / IsAirborne / MoveInput / IsRunning を書き、ダッシュを始めた瞬間に OnDash を立てる
-//   - 次の攻撃をダッシュ攻撃にするかを判定し、DashAttackReady を書く
+//   - IsDashing / IsAirborne / HasMoveInput / IsRunning を書き、ダッシュを始めた瞬間に Dash を立てる
+//   - 次の攻撃をダッシュ攻撃にするかを判定し、CanDashAttack を書く
 //
 // 備考:
-//   物理から求める Speed / YVelocity / IsGrounded は、Engine の CharacterAnimSyncSystem が書く
+//   物理から求める Speed / VelocityY / IsGrounded は、Engine の CharacterAnimSyncSystem が書く
 //   こちらはゲームのルールに属する状態だけを書く（Engine から Game の Component を読まないため）
 //
 //   実行ステージは L02_PreUpdate。パラメータを読む AnimControllerSystem(L02_Update) より前

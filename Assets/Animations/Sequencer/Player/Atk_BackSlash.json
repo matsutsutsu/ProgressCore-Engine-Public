@@ -1,0 +1,171 @@
+{
+    "duration": 1.6666665077209473,
+    "events": [
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.2666666805744171,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.01666666753590107,
+            "stringParam": "Weapon_R",
+            "type": 5
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.2666666805744171,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.01666666753590107,
+            "stringParam": "Weapon_R",
+            "type": 8
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.05000000074505806,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.07000000029802322,
+            "soundVolume": 1.0,
+            "startTime": 0.05000000074505806,
+            "stringParam": "sfx:/slash_1",
+            "type": 1
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 6.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.23333333432674408,
+            "hitStopDuration": 0.05000000074505806,
+            "hitStopScale": 0.0,
+            "hitboxFollow": false,
+            "knockback": 20.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.05000000074505806,
+            "stringParam": "Weapon_R",
+            "type": 0
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 1,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.6499999761581421,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.44999998807907104,
+            "stringParam": "Auto",
+            "type": 6
+        }
+    ],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": -4.3824968338012695,
+                "interp": 2,
+                "outTangent": -4.3824968338012695,
+                "tangent": 0,
+                "time": -0.0028055012226104736,
+                "value": -0.023778438568115234
+            },
+            {
+                "inTangent": -50.91885757446289,
+                "interp": 2,
+                "outTangent": -50.91885757446289,
+                "tangent": 0,
+                "time": 0.12086117267608643,
+                "value": -0.5657472610473633
+            },
+            {
+                "inTangent": -102.09684753417969,
+                "interp": 2,
+                "outTangent": -102.09684753417969,
+                "tangent": 0,
+                "time": 0.23331180214881897,
+                "value": -12.046602249145508
+            }
+        ],
+        "name": "Curve",
+        "visible": true
+    },
+    "sequenceName": "Atk_BackSlash",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "visible": true
+    },
+    "startOffset": 0.0,
+    "targetAnimName": "Combo_Attack_02_03_Seq_0",
+    "targetModelPath": ""
+}

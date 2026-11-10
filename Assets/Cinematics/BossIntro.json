@@ -308,7 +308,7 @@
       "start": 9.3333,
       "duration": 0.0,
       "subject": "Valkyra",
-      "sequence": "Assets/Animations/Sequencer/Valkyra/LeapLand.json",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Leap_End.json",
       "loop": false,
       "speed": 0.7,
       "blendIn": 0.0,
