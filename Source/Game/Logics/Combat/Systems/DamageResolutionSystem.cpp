@@ -9,6 +9,8 @@
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -112,8 +114,24 @@ void DamageResolutionSystem::Update(float dt)
             // 無敵中はダメージもノックバックもなし（イベントは消す）
             if (health->invincibilityTimer <= 0.0f)
             {
+                // --- とどめか ---
+
+                // 攻撃した側の今のクリップのとどめ区間で見る
+                // アニメを持たない攻撃（ドローンなど）はとどめにならない
+                const auto *attackerAnim = m_world->GetComponent<AnimatorComponent>(event.attackerID);
+                const bool  isFinisher   = attackerAnim && attackerAnim->currentSequence &&
+                                        IsInEventWindow(*attackerAnim->currentSequence, AnimEventType::Finisher,
+                                                        attackerAnim->currentTimer);
+
                 // --- HP を減らす ---
-                health->currentHealth -= event.finalDamage;
+
+                // とどめ以外は finisherFloor より下げない（ボスの形態の線）
+                // もともと下にいるときは、引き上げずに今のまま
+                float nextHealth = health->currentHealth - event.finalDamage;
+                if (!isFinisher && nextHealth < health->finisherFloor)
+                    nextHealth = (std::min)(health->currentHealth, health->finisherFloor);
+
+                health->currentHealth      = nextHealth;
                 health->invincibilityTimer = health->invincibilityDuration;
 
                 CCL_LOG_INFO(LogCategory::Game,
@@ -176,7 +194,8 @@ void DamageResolutionSystem::Update(float dt)
                         event.targetID,
                         event.finalDamage,
                         event.hitStopDuration,
-                        event.hitStopScale});
+                        event.hitStopScale,
+                        isFinisher});
 
                 // --- のけぞり（前後左右） ---
                 // 倒れなかったときだけのけぞらせる。倒れたときは倒れるアニメーションに任せる（両方を再生しない）

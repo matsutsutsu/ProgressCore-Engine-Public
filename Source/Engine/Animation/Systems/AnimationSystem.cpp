@@ -229,6 +229,7 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         case AnimEventType::Trail:
         case AnimEventType::Particle:
         case AnimEventType::Blackboard:
+        case AnimEventType::Finisher:
             // 区間のイベント（HitBox / Trail / Particle など）は出さない。各 System が再生時刻を見て判定する
             break;
 

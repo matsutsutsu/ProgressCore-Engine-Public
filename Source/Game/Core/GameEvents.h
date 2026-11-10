@@ -31,6 +31,8 @@ struct AttackHitConfirmedEvent
     // 命中の重さ（ヒットストップの長さと、その間の時間の速さ）
     float hitStopDuration = 0.0f;
     float hitStopScale    = 1.0f;
+
+    bool isFinisher = false; // 攻撃した側のとどめ区間（AnimEventType::Finisher）の中で当てたか
 };
 
 // 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）

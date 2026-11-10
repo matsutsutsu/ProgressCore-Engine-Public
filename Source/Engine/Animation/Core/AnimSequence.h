@@ -89,6 +89,7 @@ enum class AnimEventType : uint8_t
     ComboWindow,  // コンボの先行入力の受付区間。stringParam = 受付名
     CancelWindow, // 行動キャンセルの受付区間。stringParam = 受付名
     Particle,     // GPU パーティクルの発生の ON/OFF（区間）。stringParam = タグ
+    Finisher,     // とどめの区間。この中で当てた攻撃をとどめとして扱う
 
     Count
 };
@@ -161,6 +162,20 @@ struct AnimSequence
     CurveData speedCurve;      // 再生速度カーブ（進捗 → 速度倍率）
     CurveData rootMotionCurve; // ルートモーションカーブ（進捗 → 累積前進距離 m）
 };
+
+
+
+// time（秒）が、type の区間イベントのどれかの中にあるか
+//   区間の両端ちょうども中として扱う
+inline bool IsInEventWindow(const AnimSequence &seq, AnimEventType type, float time)
+{
+    for (const auto &ev : seq.events)
+    {
+        if (ev.type != type) continue;
+        if (time >= ev.startTime && time <= ev.endTime) return true;
+    }
+    return false;
+}
 
 // ===========================================================================
 // nlohmann::json 変換（シーケンサーの保存形式）

@@ -112,9 +112,9 @@ void GameResultSystem::Update(float dt)
         m_winDelay -= dt;
 
         // 撃破ムービーが流れている間は出さない。終わるかスキップされたら出す
-        // ムービーの再生要求は撃破のスロー（DefeatSlowMotionSystem の kClimaxDur）の後に出るので、
+        // ムービーの再生要求は撃破のスロー（BossPhaseComponent の defeatSlowDuration）の後に出るので、
         // kResultDelay を待ち終えた時点では cinematic がもう立っている
-        // kClimaxDur を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る
+        // defeatSlowDuration を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る
         // ムービーがないシーンでは cinematic が立たず、kResultDelay だけ待って出る
         const bool cinematic =
             m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;

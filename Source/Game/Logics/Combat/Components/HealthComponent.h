@@ -12,4 +12,8 @@ struct HealthComponent
     // 倒れたときのスローを1体につき1回だけ出すためのフラグ（保存しない）
     // DefeatSlowMotionSystem が倒れたのを見つけたときに true にする
     bool deathFxFired = false;
+
+    // とどめ以外の攻撃では、HP をこれより下げない（保存しない）
+    // ボスは BossPhaseSystem が毎フレーム書く。0 なら下限なし
+    float finisherFloor = 0.0f;
 };

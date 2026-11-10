@@ -9,16 +9,30 @@
 #include "Game/Logics/Tutorial/TutorialState.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Cinematic/CinematicEvents.h"
+#include "Engine/Time/TimeService.h"
 
-using namespace CCL::ECS;
 
-void BossPhaseSystem::Update(float /*rawDt*/)
+namespace
 {
-    // 処理フロー（ボス1体ごとに）:
+    // 第1形態の HP の下限を、しきい値よりこの幅だけ上に置く（最大 HP に対する %）
+    // ちょうどだと「しきい値以下なら移行」に入り、とどめを待たずに移ってしまう
+    constexpr float kLineMarginPercent = 1.0f;
+
+    // 最後の形態の HP の下限。0 より上なので、とどめ以外では倒れない
+    constexpr float kLastStandHealth = 1.0f;
+} // namespace
+
+
+
+void BossPhaseSystem::Update(float rawDt)
+{
+    // 処理フロー:
     // 1. ボス本体への要求を空にする
     // 2. 次の形態を決め、変わったフレームだけ入ったときの処理をする
     // 3. 今の形態の毎フレームの処理をする
-    // 4. 移行演出のタイマーを進める
+    // 4. とどめ以外で下がらない HP の下限を書く
+    // 5. 移行演出のタイマーを進める
+    // 6. 移行のスローが終わったら、移行ムービーを頼む
 
     // TutorialState があるのはチュートリアルシーンだけ
     // なければ TutorialWait / TutorialAttack に入らない
@@ -47,9 +61,10 @@ void BossPhaseSystem::Update(float /*rawDt*/)
         cmd.currentActionId = 0;
 
         // ---------------------------------------------------------
-        // 2〜4. 形態
+        // 2〜5. 形態
         // ---------------------------------------------------------
 
+        // 次の第２形態に遷移していいか
         const BossPhase next = DecideNextPhase(phase, health, inTutorial, bossWaiting, cinematic);
 
         if (next != phase.phase)
@@ -60,8 +75,28 @@ void BossPhaseSystem::Update(float /*rawDt*/)
 
         TickPhase(phase, cmd, health);
 
+        // 形態の線は、とどめでしか越えられないようにする
+        // HP を減らす DamageResolutionSystem（L06）がこの値を見る
+        health.finisherFloor = DecideFinisherFloor(phase, health);
+
         // 時間で終わる形態（移行演出）のためのタイマー
         if (phase.timer > 0.0f) phase.timer -= time.localDt;
+
+        // ---------------------------------------------------------
+        // 6. 移行ムービー
+        // ---------------------------------------------------------
+
+        // スローの長さは実時間なので、スローのかからない rawDt で数える
+        // localDt で数えると、スローの間はほとんど減らない
+        if (phase.movieDelayTimer > 0.0f)
+        {
+            phase.movieDelayTimer -= rawDt;
+
+            // 流れている間は、プレイヤーの操作と敵の思考が止まる
+            // 受け付けるかは CinematicCameraSystem が決める（台本がなければログを出して捨てる）
+            if (phase.movieDelayTimer <= 0.0f)
+                m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kPhase2Cinematic});
+        }
     });
 }
 
@@ -75,7 +110,7 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
 {
     // --- 死亡 ---
 
-    // 死は終端。一度入ったら戻さない
+    // 死亡した際はreturn、BossPhase::Dead にする。BT は止まる
     if (phase.phase == BossPhase::Dead) return BossPhase::Dead;
 
     // DeadTag の付与はダメージと同フレームとは限らないので、HP を直接見る
@@ -84,7 +119,8 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
     // --- 移行演出 → 第2形態 ---
 
     // 移行演出は、決めた時間が過ぎ、かつ移行ムービーが終わるまで続ける
-    // ムービーは入った瞬間に頼むので、決めた時間（2.5秒）が過ぎる頃には必ず流れ始めている
+    // ムービーはスローの後に頼む。timer はボスの時間で減り、スロー中はほとんど減らないので、
+    // 頼む頃はまだ演出中になっている
     // 台本がなくてムービーが流れなければ、決めた時間で第2形態へ移る
     if (phase.phase == BossPhase::Transition)
     {
@@ -145,15 +181,16 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         cmd.requestFormation  = DroneFormationType::HighOrbit;
 
         // 演出中は無敵にする（TickPhase でも毎フレーム保つ）
-        health.invincibilityTimer = kTransitionDuration;
+        health.invincibilityTimer = phase.transitionDuration;
 
         anim.SetTrigger(CCL::Utils::HashString(kRoarTrigger));
-        phase.timer = kTransitionDuration;
+        phase.timer = phase.transitionDuration;
 
-        // 移行ムービーを頼む。流れている間はプレイヤーの操作と敵の思考が止まる
-        // 受け付けるかどうかは CinematicCameraSystem が決める（台本がなければログを出して捨てる）
-        m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kPhase2Cinematic});
-        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態へ移行開始（%.1f秒）", kTransitionDuration);
+        // とどめのスローを見せてから、移行ムービーを頼む（頼むのは Update の 6）
+        // ムービーはカメラを奪うので、すぐ頼むとスローが見えない
+        Time::SlowWorld(*m_world, phase.finishSlowScale, phase.finishSlowDuration);
+        phase.movieDelayTimer = phase.finishSlowDuration;
+        CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態へ移行開始（%.1f秒）", phase.transitionDuration);
         break;
 
     case BossPhase::Combat2:
@@ -241,5 +278,35 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
 
 
 
+// とどめ以外の攻撃で、HP をどこより下げないかを決める
+// 第1形態は第2形態へ移る線のすぐ上、最後の形態は 1。それ以外は 0（下限なし）
+float BossPhaseSystem::DecideFinisherFloor(const BossPhaseComponent &phase,
+                                           const HealthComponent    &health) const
+{
+    switch (phase.phase)
+    {
+    case BossPhase::Combat:
+        // 第2形態がないボスは、第1形態が最後の形態になる
+        // （DecideNextPhase と同じ条件で、移行するかを見る）
+        if (phase.phase2AssetPath.empty() || health.maxHealth <= 0.0f) return kLastStandHealth;
+        return health.maxHealth * (phase.phase2HealthThreshold + kLineMarginPercent) / 100.0f;
+
+    case BossPhase::Combat2:
+        return kLastStandHealth;
+
+    case BossPhase::Transition:
+    case BossPhase::Dead:
+    case BossPhase::TutorialWait:
+    case BossPhase::TutorialAttack:
+        // 移行演出は無敵、死亡後は守るものがない
+        // チュートリアルは TutorialHealthGuardSystem が HP を守る
+        return 0.0f;
+    }
+    return 0.0f;
+}
+
+
+
 // BehaviorTreeSystem(L02_Update) が assetPath を読む前に形態を決める
+// 第２形態に移行する際のassetPathを書き換えるため
 REGISTER_LOGIC_SYSTEM(BossPhaseSystem, Priority::LogicStage::L02_PreUpdate)

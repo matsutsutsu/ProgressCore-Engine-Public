@@ -18,7 +18,7 @@
             "targetStateHash": 2240140813
         },
         {
-            "blendDuration": 0.05,
+            "blendDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "op": 3,
@@ -33,7 +33,7 @@
             "targetStateHash": 194164990
         },
         {
-            "blendDuration": 0.1,
+            "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "op": 3,
@@ -48,7 +48,7 @@
             "targetStateHash": 2032584116
         },
         {
-            "blendDuration": 0.05,
+            "blendDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "op": 3,
@@ -334,10 +334,8 @@
             "nodePosX": 62.0,
             "nodePosY": 317.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Idle.json",
             "sequenceName": "Idle",
-            "speedCurveName": "",
             "stateHash": 1168775091,
             "transitions": [
                 {
@@ -381,10 +379,8 @@
             "nodePosX": 340.0,
             "nodePosY": 311.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Run.json",
             "sequenceName": "Run",
-            "speedCurveName": "",
             "stateHash": 2371348074,
             "transitions": [
                 {
@@ -470,10 +466,8 @@
             "nodePosX": 330.0,
             "nodePosY": -14.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Dash.json",
             "sequenceName": "Dash",
-            "speedCurveName": "",
             "stateHash": 1750693397,
             "transitions": [
                 {
@@ -550,10 +544,8 @@
             "nodePosX": 796.0,
             "nodePosY": -101.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Start.json",
             "sequenceName": "JumpStart",
-            "speedCurveName": "",
             "stateHash": 44339351,
             "transitions": [
                 {
@@ -582,10 +574,8 @@
             "nodePosX": 797.0,
             "nodePosY": 32.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
             "sequenceName": "JumpLoop",
-            "speedCurveName": "",
             "stateHash": 3209907523,
             "transitions": []
         },
@@ -598,10 +588,8 @@
             "nodePosX": 1126.0,
             "nodePosY": -134.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/DoubleJump.json",
             "sequenceName": "DoubleJump",
-            "speedCurveName": "",
             "stateHash": 2262072404,
             "transitions": [
                 {
@@ -630,10 +618,8 @@
             "nodePosX": 538.0,
             "nodePosY": 111.0,
             "playbackSpeed": 2.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_End.json",
             "sequenceName": "JumpEnd",
-            "speedCurveName": "",
             "stateHash": 3204239090,
             "transitions": [
                 {
@@ -677,10 +663,8 @@
             "nodePosX": -44.0,
             "nodePosY": -4.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/DashAttack.json",
             "sequenceName": "DashAttack",
-            "speedCurveName": "",
             "stateHash": 3987189933,
             "transitions": [
                 {
@@ -759,15 +743,13 @@
             "lockVerticalRootMotion": false,
             "nodePosX": 794.0,
             "nodePosY": 194.0,
-            "playbackSpeed": 1.4,
-            "rootMotionCurveName": "",
+            "playbackSpeed": 1.399999976158142,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Attack.json",
             "sequenceName": "AirAttack",
-            "speedCurveName": "",
             "stateHash": 899714431,
             "transitions": [
                 {
-                    "blendDuration": 0.05,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 3,
@@ -782,7 +764,7 @@
                     "targetStateHash": 3877224255
                 },
                 {
-                    "blendDuration": 0.15,
+                    "blendDuration": 0.15000000596046448,
                     "conditions": [
                         {
                             "op": 0,
@@ -822,10 +804,8 @@
             "nodePosX": -70.0,
             "nodePosY": 472.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "",
             "sequenceName": "AttackCombo",
-            "speedCurveName": "",
             "stateHash": 1400263801,
             "subGraph": {
                 "anyStatePosX": 192.0,
@@ -845,10 +825,8 @@
                         "nodePosX": -52.0,
                         "nodePosY": 466.0,
                         "playbackSpeed": 0.699999988079071,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_1.json",
                         "sequenceName": "Attack_1",
-                        "speedCurveName": "",
                         "stateHash": 240607861,
                         "transitions": [
                             {
@@ -867,7 +845,7 @@
                                 "targetStateHash": 190275004
                             },
                             {
-                                "blendDuration": 0.15,
+                                "blendDuration": 0.15000000596046448,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -892,14 +870,12 @@
                         "nodePosX": -52.0,
                         "nodePosY": 594.0,
                         "playbackSpeed": 0.699999988079071,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_2.json",
                         "sequenceName": "Attack_2",
-                        "speedCurveName": "",
                         "stateHash": 190275004,
                         "transitions": [
                             {
-                                "blendDuration": 0.15,
+                                "blendDuration": 0.15000000596046448,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -914,7 +890,7 @@
                                 "targetStateHash": 207052623
                             },
                             {
-                                "blendDuration": 0.15,
+                                "blendDuration": 0.15000000596046448,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -938,15 +914,13 @@
                         "lockVerticalRootMotion": false,
                         "nodePosX": -52.0,
                         "nodePosY": 722.0,
-                        "playbackSpeed": 1.3,
-                        "rootMotionCurveName": "",
+                        "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
                         "sequenceName": "Attack_3",
-                        "speedCurveName": "",
                         "stateHash": 207052623,
                         "transitions": [
                             {
-                                "blendDuration": 0.05,
+                                "blendDuration": 0.05000000074505806,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -971,14 +945,12 @@
                         "nodePosX": -52.0,
                         "nodePosY": 850.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_4.json",
                         "sequenceName": "Attack_4",
-                        "speedCurveName": "",
                         "stateHash": 156719766,
                         "transitions": [
                             {
-                                "blendDuration": 0.15,
+                                "blendDuration": 0.15000000596046448,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -1003,10 +975,8 @@
                         "nodePosX": -52.0,
                         "nodePosY": 978.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_5.json",
                         "sequenceName": "Attack_5",
-                        "speedCurveName": "",
                         "stateHash": 173497385,
                         "transitions": []
                     },
@@ -1019,14 +989,12 @@
                         "nodePosX": 250.0,
                         "nodePosY": 594.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/LeapSlash.json",
                         "sequenceName": "LeapSlash",
-                        "speedCurveName": "",
                         "stateHash": 2213299812,
                         "transitions": [
                             {
-                                "blendDuration": 0.1,
+                                "blendDuration": 0.10000000149011612,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -1051,10 +1019,8 @@
                         "nodePosX": 250.0,
                         "nodePosY": 722.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/DiveSlash.json",
                         "sequenceName": "DiveSlash",
-                        "speedCurveName": "",
                         "stateHash": 2394258360,
                         "transitions": []
                     },
@@ -1066,15 +1032,13 @@
                         "lockVerticalRootMotion": false,
                         "nodePosX": -330.0,
                         "nodePosY": 722.0,
-                        "playbackSpeed": 1.3,
-                        "rootMotionCurveName": "",
+                        "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
                         "sequenceName": "Attack_3_2",
-                        "speedCurveName": "",
                         "stateHash": 2739098918,
                         "transitions": [
                             {
-                                "blendDuration": 0.05,
+                                "blendDuration": 0.05000000074505806,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -1098,15 +1062,13 @@
                         "lockVerticalRootMotion": false,
                         "nodePosX": -330.0,
                         "nodePosY": 850.0,
-                        "playbackSpeed": 1.3,
-                        "rootMotionCurveName": "",
+                        "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
                         "sequenceName": "Attack_3_3",
-                        "speedCurveName": "",
                         "stateHash": 2755876537,
                         "transitions": [
                             {
-                                "blendDuration": 0.05,
+                                "blendDuration": 0.05000000074505806,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -1130,15 +1092,13 @@
                         "lockVerticalRootMotion": false,
                         "nodePosX": -330.0,
                         "nodePosY": 978.0,
-                        "playbackSpeed": 1.3,
-                        "rootMotionCurveName": "",
+                        "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Attack_3.json",
                         "sequenceName": "Attack_3_4",
-                        "speedCurveName": "",
                         "stateHash": 2772654156,
                         "transitions": [
                             {
-                                "blendDuration": 0.15,
+                                "blendDuration": 0.15000000596046448,
                                 "conditions": [
                                     {
                                         "op": 3,
@@ -1163,15 +1123,20 @@
                         "nodePosX": 250.0,
                         "nodePosY": 466.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/BackSlash.json",
                         "sequenceName": "BackSlash",
-                        "speedCurveName": "",
                         "stateHash": 4080261303,
                         "transitions": [
                             {
-                                "blendDuration": 0.1,
-                                "conditions": [],
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 3,
+                                        "paramHash": 2343121693,
+                                        "paramName": "Attack",
+                                        "threshold": 0.0
+                                    }
+                                ],
                                 "logicType": 0,
                                 "requiredCancelMask": 1,
                                 "sourceGroupId": 0,
@@ -1188,10 +1153,8 @@
                         "nodePosX": 530.0,
                         "nodePosY": 466.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/LungeSlash.json",
                         "sequenceName": "LungeSlash",
-                        "speedCurveName": "",
                         "stateHash": 4236909013,
                         "transitions": []
                     }
@@ -1239,10 +1202,8 @@
             "nodePosX": 200.0,
             "nodePosY": 600.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "",
             "sequenceName": "RushCombo",
-            "speedCurveName": "",
             "stateHash": 2824690955,
             "subGraph": {
                 "anyStatePosX": 192.0,
@@ -1262,10 +1223,8 @@
                         "nodePosX": -52.0,
                         "nodePosY": 450.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushSlash.json",
                         "sequenceName": "RushSlash_A",
-                        "speedCurveName": "",
                         "stateHash": 73938368,
                         "transitions": [
                             {
@@ -1309,10 +1268,8 @@
                         "nodePosX": -52.0,
                         "nodePosY": 594.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushSlash.json",
                         "sequenceName": "RushSlash_B",
-                        "speedCurveName": "",
                         "stateHash": 124271225,
                         "transitions": [
                             {
@@ -1356,10 +1313,8 @@
                         "nodePosX": -52.0,
                         "nodePosY": 706.0,
                         "playbackSpeed": 0.699999988079071,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushFinish.json",
                         "sequenceName": "RushFinish",
-                        "speedCurveName": "",
                         "stateHash": 2799951452,
                         "transitions": []
                     }
@@ -1392,10 +1347,8 @@
             "nodePosX": 76.0,
             "nodePosY": -174.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "",
             "sequenceName": "HitReaction",
-            "speedCurveName": "",
             "stateHash": 2240140813,
             "subGraph": {
                 "anyStatePosX": -500.0,
@@ -1415,10 +1368,8 @@
                         "nodePosX": -260.0,
                         "nodePosY": 0.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Front.json",
                         "sequenceName": "HitFront",
-                        "speedCurveName": "",
                         "stateHash": 448068029,
                         "transitions": [
                             {
@@ -1477,10 +1428,8 @@
                         "nodePosX": 40.0,
                         "nodePosY": -140.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Back.json",
                         "sequenceName": "HitBack",
-                        "speedCurveName": "",
                         "stateHash": 4038633241,
                         "transitions": []
                     },
@@ -1493,10 +1442,8 @@
                         "nodePosX": 40.0,
                         "nodePosY": 20.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Left.json",
                         "sequenceName": "HitLeft",
-                        "speedCurveName": "",
                         "stateHash": 2671032551,
                         "transitions": []
                     },
@@ -1509,10 +1456,8 @@
                         "nodePosX": 40.0,
                         "nodePosY": 180.0,
                         "playbackSpeed": 1.0,
-                        "rootMotionCurveName": "",
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_Right.json",
                         "sequenceName": "HitRight",
-                        "speedCurveName": "",
                         "stateHash": 1939215512,
                         "transitions": []
                     }
@@ -1560,10 +1505,8 @@
             "nodePosX": 200.0,
             "nodePosY": 430.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/RunStop.json",
             "sequenceName": "RunStop",
-            "speedCurveName": "",
             "stateHash": 4259699762,
             "transitions": [
                 {
@@ -1643,10 +1586,8 @@
             "nodePosX": 480.0,
             "nodePosY": 450.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/WalkStop.json",
             "sequenceName": "WalkStop",
-            "speedCurveName": "",
             "stateHash": 1940673160,
             "transitions": [
                 {
@@ -1726,14 +1667,12 @@
             "nodePosX": 1100.0,
             "nodePosY": 194.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveStart.json",
             "sequenceName": "AirDiveStart",
-            "speedCurveName": "",
             "stateHash": 3877224255,
             "transitions": [
                 {
-                    "blendDuration": 0.05,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 4,
@@ -1758,14 +1697,12 @@
             "nodePosX": 1100.0,
             "nodePosY": 320.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveLoop.json",
             "sequenceName": "AirDiveLoop",
-            "speedCurveName": "",
             "stateHash": 1702703947,
             "transitions": [
                 {
-                    "blendDuration": 0.05,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 0,
@@ -1790,14 +1727,12 @@
             "nodePosX": 800.0,
             "nodePosY": 330.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/AirDiveEnd.json",
             "sequenceName": "AirDiveEnd",
-            "speedCurveName": "",
             "stateHash": 3000500490,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 0,
@@ -1812,7 +1747,7 @@
                     "targetStateHash": 2371348074
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 4,
@@ -1837,14 +1772,12 @@
             "nodePosX": -400.0,
             "nodePosY": -60.0,
             "playbackSpeed": 1.5,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveStart.json",
             "sequenceName": "RushDiveStart",
-            "speedCurveName": "",
             "stateHash": 4117666875,
             "transitions": [
                 {
-                    "blendDuration": 0.05,
+                    "blendDuration": 0.05000000074505806,
                     "conditions": [
                         {
                             "op": 4,
@@ -1859,7 +1792,7 @@
                     "targetStateHash": 3177616503
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 0,
@@ -1884,14 +1817,12 @@
             "nodePosX": -400.0,
             "nodePosY": 80.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveLoop.json",
             "sequenceName": "RushDiveLoop",
-            "speedCurveName": "",
             "stateHash": 3177616503,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 0,
@@ -1916,14 +1847,12 @@
             "nodePosX": -150.0,
             "nodePosY": 160.0,
             "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/RushDiveEnd.json",
             "sequenceName": "RushDiveEnd",
-            "speedCurveName": "",
             "stateHash": 194164990,
             "transitions": [
                 {
-                    "blendDuration": 0.1,
+                    "blendDuration": 0.10000000149011612,
                     "conditions": [
                         {
                             "op": 3,
@@ -1938,7 +1867,7 @@
                     "targetStateHash": 2824690955
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 0,
@@ -1953,7 +1882,7 @@
                     "targetStateHash": 2371348074
                 },
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 4,
@@ -2008,15 +1937,13 @@
             "lockVerticalRootMotion": false,
             "nodePosX": -560.0,
             "nodePosY": -260.0,
-            "playbackSpeed": 1.3,
-            "rootMotionCurveName": "",
+            "playbackSpeed": 1.2999999523162842,
             "sequenceFilePath": "",
             "sequenceName": "RushEvade",
-            "speedCurveName": "",
             "stateHash": 2032584116,
             "transitions": [
                 {
-                    "blendDuration": 0.2,
+                    "blendDuration": 0.20000000298023224,
                     "conditions": [
                         {
                             "op": 4,

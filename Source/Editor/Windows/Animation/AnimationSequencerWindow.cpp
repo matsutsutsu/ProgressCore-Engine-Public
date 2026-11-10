@@ -143,7 +143,7 @@ public:
     {
         static const char *names[] = {
             "HitBox", "Sound", "Effect", "Blackboard",
-            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow", "Particle"};
+            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow", "Particle", "Finisher"};
         if (typeIndex < 0 || typeIndex >= (int)AnimEventType::Count)
             return "Unknown";
         return names[typeIndex];
@@ -191,6 +191,9 @@ public:
         case AnimEventType::CancelWindow:
             snprintf(buf, sizeof(buf), "Cancel: %s", ev.stringParam.c_str());
             break;
+        case AnimEventType::Finisher:
+            snprintf(buf, sizeof(buf), "Finisher");
+            break;
         default:
             snprintf(buf, sizeof(buf), "Event %d", evIdx);
             break;
@@ -232,8 +235,9 @@ public:
                 static const unsigned int colors[] = {
                     0xFF323296, 0xFF329632, 0xFF969632, 0xFF963296,
                     0xFF1010A0, 0xFF96A032, 0xFF32A096, 0xFF505050,
-                    0xFFC86432}; // Particle: 橙(まとい)
-                *color = colors[(int)m_seq->events[evIdx].type % 9];
+                    0xFFC86432,  // Particle: 橙(まとい)
+                    0xFF3232DC}; // Finisher: 赤
+                *color = colors[(int)m_seq->events[evIdx].type % 10];
             }
         }
     }
@@ -1069,6 +1073,9 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     ImGui::SameLine();
     if (ImGui::Button("+ Cancel"))
         AddEvt(AnimEventType::CancelWindow);
+    ImGui::SameLine();
+    if (ImGui::Button("+ Finisher"))
+        AddEvt(AnimEventType::Finisher);
 
     // ---------------------------------------------------------
     // 4. タイムライン
@@ -1575,6 +1582,15 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
             break;
         }
+        case AnimEventType::Finisher:
+            ImGui::TextColored(ImVec4(0.86f, 0.2f, 0.2f, 1), "とどめ (Finisher)");
+            ImGui::Spacing();
+            ImGui::TextDisabled("この区間の中で当てた攻撃を、とどめとして扱います。");
+            ImGui::TextDisabled("ボスの形態移行・撃破は、とどめが当たるまで待ちます。");
+            ImGui::TextDisabled("攻撃判定が当たるフレームを覆うように置いてください。");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Active [%.2fs - %.2fs]", e.startTime, e.endTime);
+            break;
         default:
             break;
         }

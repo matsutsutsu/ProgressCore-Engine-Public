@@ -20,7 +20,7 @@ namespace
     const char *kJustEvadeVfxPrefab  = "Assets/Prefabs/Particles/VFX_JustEvade";
 
     // ダッシュとジャスト回避の VFX を出す高さ。足元から上へずらす（m）
-    constexpr float kDashVfxYOffset = 2.0f;
+    constexpr float kVfxYOffset = 2.0f;
 } // namespace
 
 void PlayerActionVfxSystem::Initialize()
@@ -29,13 +29,22 @@ void PlayerActionVfxSystem::Initialize()
     // 地面からの1段目と、空中の2段目で見た目を分ける
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
         const char *prefab = (e.jumpCount >= 2) ? kJumpVfxPrefab : kGroundJumpVfxPrefab;
-        VFX::Play(*m_world, prefab, e.position);
+        DirectX::SimpleMath::Vector3 vfxPosition = {
+            e.position.x,
+            e.position.y + kVfxYOffset,
+            e.position.z
+        };
+        VFX::Play(*m_world, prefab, vfxPosition);
     });
 
     // ダッシュ（回避）開始の瞬間に、その場に VFX を出し、足元のトレイルを出す
     // ジャスト回避が成立したら差し替えるので、出した VFX を覚えておく
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
-        const DirectX::XMFLOAT3 vfxPosition = {e.position.x, e.position.y + kDashVfxYOffset, e.position.z};
+        DirectX::SimpleMath::Vector3 vfxPosition = {
+            e.position.x,
+            e.position.y + kVfxYOffset,
+            e.position.z
+        };
         m_dashVfxID = VFX::Play(*m_world, kDashVfxPrefab, vfxPosition);
 
         ActivatePlayerFootTrails(e.playerID);
@@ -61,7 +70,7 @@ void PlayerActionVfxSystem::ReplaceDashVfxWithJustEvade(CCL::ECS::EntityID playe
     if (!playerTransform) return;
 
     DirectX::XMFLOAT3 vfxPosition = playerTransform->GetWorldPosition();
-    vfxPosition.y += kDashVfxYOffset;
+    vfxPosition.y += kVfxYOffset;
     VFX::Play(*m_world, kJustEvadeVfxPrefab, vfxPosition);
 }
 
