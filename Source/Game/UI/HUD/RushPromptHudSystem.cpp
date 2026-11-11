@@ -51,7 +51,6 @@ void RushPromptHudSystem::Update(float dt)
     // ---------------------------------------------------------
     const EntityID playerID = FindPlayer();
     const auto    *rush     = m_world->GetComponent<PlayerRushComponent>(playerID);
-    const auto    *player   = m_world->GetComponent<PlayerComponent>(playerID);
 
     // ---------------------------------------------------------
     // 2. 表示の状態
@@ -74,7 +73,7 @@ void RushPromptHudSystem::Update(float dt)
     // ---------------------------------------------------------
 
     // 消えていく間は、最後の位置に残す
-    if (m_state == PromptState::Showing) UpdateCenter(player, style);
+    if (m_state == PromptState::Showing) UpdateCenter(rush, style);
 
     // 出た瞬間は、開いた大きさから減速しながら縮む
     const float appear = std::clamp(m_age / (std::max)(style.appearTime, 0.01f), 0.0f, 1.0f);
@@ -187,14 +186,16 @@ bool RushPromptHudSystem::AdvanceState(const PlayerRushComponent *rush, const Ru
 // 位置
 // ---------------------------------------------------------------------------
 
-void RushPromptHudSystem::UpdateCenter(const PlayerComponent *player, const RushPromptStyleComponent &style)
+// 合図の中心を、ラッシュの相手のそばか画面の決まった位置に決める
+void RushPromptHudSystem::UpdateCenter(const PlayerRushComponent *rush, const RushPromptStyleComponent &style)
 {
     auto       &gfx     = Graphics::Instance();
     const float screenW = static_cast<float>(gfx.GetScreenWidth());
     const float screenH = static_cast<float>(gfx.GetScreenHeight());
 
+    // ロックオンではなく、ラッシュの相手のそばに出す。ロックオンしていなくても敵の上に出る
     EntityID target = InvalidEntityID;
-    if (player) target = player->lockOnTargetID;
+    if (rush) target = rush->closeInTarget;
     if (!m_world->IsEntityValid(target)) target = InvalidEntityID;
 
     // --- 位置 ---

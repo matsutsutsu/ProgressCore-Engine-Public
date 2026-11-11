@@ -6,7 +6,8 @@
 //   - ダッシュを打ち切り、ラッシュを始める
 //   - ラッシュ中は世界をスローにし、プレイヤーだけ実時間・無敵で動かす
 //   - フェーズを進める（回避離脱 → 待機 → 攻撃 → 連撃）
-//   - ラッシュ中かを画面演出へ伝える
+//
+// 画面演出（PlayerRushEffectSystem）は、ここが書く isActive を直接読む
 //
 // 備考: 回避離脱の移動は開始時に MoveInDirection で予約し、物理が運び終えたら待機へ進める
 // ===========================================================================
@@ -68,14 +69,15 @@ private:
     // フェーズ
     // ============================================================
 
-    // ラッシュを始める。ダッシュを打ち切り、回避離脱の移動を予約する
-    void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement);
+    // ラッシュを始める。相手を決め、ダッシュを打ち切り、回避離脱の移動を予約する
+    // attackedID は避けた攻撃。分からなければ InvalidEntityID（相手なしで、正面へ斬る）
+    void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement,
+                   CCL::ECS::EntityID attackedID);
 
     // 回避離脱の向きとアニメを決める。StartRush の直後に呼ぶ
-    // 敵（なければ避けた攻撃）を正面に置き、跳ぶ向きに合わせて前後左右の回避を混ぜて出す
-    // attackerID は避けた攻撃。分からなければ InvalidEntityID
+    // 相手を正面に置き、跳ぶ向きに合わせて前後左右の回避を混ぜて出す
     void BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams,
-                        const DirectX::SimpleMath::Vector3 &playerPos, CCL::ECS::EntityID attackerID);
+                        const DirectX::SimpleMath::Vector3 &playerPos);
 
     // 回避離脱と待機の間、BeginEvadeAnim で決めた向きを保つ
     void HoldEvadeFacing(const PlayerRushComponent &rush, PlayerComponent &player);
@@ -92,7 +94,7 @@ private:
     // ラッシュのアニメから抜けたら連撃を終える。fsm が nullptr なら抜けたとみなす
     void TrackRushAnim(PlayerRushComponent &rush, const AnimStateMachineComponent *fsm);
 
-    // 攻撃に入り、詰め先を決めて突っ込む構えへ入る。ロックオンがなければ今の正面へ詰める
+    // 攻撃に入り、突っ込む構えへ入る。相手がいなければ今の正面へ詰める
     void EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player, AnimParametersComponent &animParams);
 
     // ============================================================
@@ -142,8 +144,9 @@ private:
     // 詰め先・デバッグ UI
     // ============================================================
 
-    // ロックオン中で生きている敵を返す。いなければ InvalidEntityID
-    CCL::ECS::EntityID PickCloseInTarget(const PlayerComponent &player) const;
+    // 避けた攻撃から、ラッシュの相手を決める
+    // 剣の判定やドローンは HitboxComponent の持ち主へ読み替える。生きていなければ InvalidEntityID
+    CCL::ECS::EntityID PickRushTarget(CCL::ECS::EntityID attackedID) const;
 
     // 詰め先がまだ存在して、生きているか
     bool IsCloseInTargetAlive(CCL::ECS::EntityID id) const;
@@ -152,7 +155,7 @@ private:
     const char *PhaseLabel(RushPhase phase) const;
 
     CCL::ECS::EntityID m_pendingStarts   = CCL::ECS::InvalidEntityID; // 成立を受けて、まだ始めていないプレイヤー
-    CCL::ECS::EntityID m_pendingAttacker = CCL::ECS::InvalidEntityID; // その成立で避けた攻撃
+    CCL::ECS::EntityID m_pendingAttacked = CCL::ECS::InvalidEntityID; // その成立で避けた攻撃
 
     // 前の Update から届いた命中の、攻撃した側。敵の命中も入る
     // 1ステップに複数の攻撃が当たりうるので vector で溜める

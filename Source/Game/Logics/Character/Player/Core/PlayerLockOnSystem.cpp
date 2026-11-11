@@ -3,6 +3,7 @@
 #include "Engine/Core/Components/EntityLabel.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
+#include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 #include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -12,6 +13,15 @@
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
+
+std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetReadTypes() const
+{
+    auto types = Base::GetReadTypes();
+    types.push_back(TypeInfo<PlayerRushComponent>::ID()); // ラッシュ中は、カメラにラッシュの相手を狙わせる
+    return types;
+}
+
+
 
 void PlayerLockOnSystem::Update(float /*dt*/)
 {
@@ -82,14 +92,33 @@ void PlayerLockOnSystem::Update(float /*dt*/)
         // 6. 決まったロックオン状態を、毎フレーム最後にカメラへ書く
         //   カメラ(Engine)がプレイヤー(Game)を読む形にすると Engine→Game の依存になるため、
         //   状態を持つこちらから書き込む
+        //   ラッシュ中はラッシュの相手を書くが、player.lockOnTargetID は変えない。終われば元のロックオンへ戻る
+        const EntityID cameraTarget = PickCameraTarget(playerID, player);
+
         m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
             auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
             if (!tps || tps->target.id != playerID) return; // このプレイヤーを映していないカメラは飛ばす
 
-            tps->lockOnTarget.id = player.lockOnTargetID;
-            tps->isLockOnActive  = (player.lockOnTargetID != InvalidEntityID);
+            tps->lockOnTarget.id = cameraTarget;
+            tps->isLockOnActive  = (cameraTarget != InvalidEntityID);
         });
     });
+}
+
+
+
+// カメラに狙わせる敵を、ラッシュの相手かロックオンの相手から選ぶ
+EntityID PlayerLockOnSystem::PickCameraTarget(EntityID playerID, const PlayerComponent &player) const
+{
+    // ラッシュの相手は、ロックオンと同じく死亡・破棄されていたら使わない
+    if (const auto *rush = m_world->GetComponent<PlayerRushComponent>(playerID))
+    {
+        const EntityID rushTarget = rush->closeInTarget;
+        const bool     alive      = m_world->IsEntityValid(rushTarget) && !m_world->HasComponent<Tag::DeadTag>(rushTarget);
+        if (rush->isActive && alive) return rushTarget;
+    }
+
+    return player.lockOnTargetID; // EntityLink から暗黙に変換する。手順1で死亡・破棄は外してある
 }
 
 

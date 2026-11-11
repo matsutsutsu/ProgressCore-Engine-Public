@@ -48,7 +48,10 @@ void PlayerJumpFacingSystem::Update(float rawDt)
         // ラッシュ中はジャンプさせない。連撃はその場で斬り続けるもので、跳ぶと空中のコンボに変わってしまう
         const bool jumpPressed = pin.jumpPressed && !rush.isActive;
 
+        // 物理的なジャンプ処理を行う関数
         UpdateJumpLogic(dt, isGrounded, jumpPressed, movement, player, animParams, GetCharacterWorldPosition(joltHandle));
+
+        // 向きと傾きの更新
         UpdateBankingAndRotation(dt, movement, config.walkSpeed, player, trans, joltHandle);
     });
 }

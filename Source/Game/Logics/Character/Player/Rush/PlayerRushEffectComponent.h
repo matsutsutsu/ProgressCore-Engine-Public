@@ -1,7 +1,7 @@
 #pragma once
 
-// ラッシュ中の画面演出（ビネットと放射ブラー）の設定と状態。シーンに1つ置くシングルトン
-// rushActive は PlayerRushSystem が書き、weight は PlayerRushEffectSystem が動かす
+// ラッシュ中の画面演出（ビネットと放射ブラー）の設定と状態。プレイヤーが PlayerRushComponent と一緒に持つ
+// weight は PlayerRushEffectSystem が、同じエンティティの PlayerRushComponent.isActive を見て動かす
 struct PlayerRushEffectComponent
 {
     // --- 調整値（保存する） ---
@@ -15,6 +15,5 @@ struct PlayerRushEffectComponent
 
     // --- 実行時の状態（保存しない） ---
 
-    bool  rushActive = false; // ラッシュ中か
-    float weight     = 0.0f;  // 今のフェードの重み（0〜1）
+    float weight = 0.0f; // 今のフェードの重み（0〜1）
 };

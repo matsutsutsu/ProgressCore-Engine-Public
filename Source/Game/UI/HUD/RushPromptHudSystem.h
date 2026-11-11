@@ -3,7 +3,7 @@
 // 概要: ラッシュの待機中に、攻撃ボタンのアイコンと残り時間のリングを出す System
 //
 // 責務:
-//   - 待機に入ったら、ロックオン中の敵のそばに合図を出す
+//   - 待機に入ったら、ラッシュの相手（避けた攻撃の持ち主）のそばに合図を出す
 //   - 待機の残り時間に合わせてリングを減らす
 //   - 押せたら広がりながら消し、押さずに終わったら薄れて消す
 //
@@ -14,7 +14,6 @@
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
-#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 #include "Game/UI/HUD/RushPromptStyleComponent.h"
 #include "Game/UI/Input/InputIconComponent.h"
@@ -26,7 +25,6 @@
 class RushPromptHudSystem : public CCL::ECS::IfSystem<
     RushPromptHudSystem,
     CCL::ECS::Read<PlayerRushComponent>,
-    CCL::ECS::Read<PlayerComponent>,
     CCL::ECS::Read<TransformComponent>,
     CCL::ECS::Read<UIImageComponent>,
     CCL::ECS::Write<InputIconComponent>>
@@ -63,10 +61,10 @@ private:
 
     // --- 位置 ---
 
-    // 合図の中心を決める。ロックオンしていなければ、画面の下寄り中央
-    void UpdateCenter(const PlayerComponent *player, const RushPromptStyleComponent &style);
+    // 合図の中心を決める。ラッシュの相手がいなければ、画面の下寄り中央
+    void UpdateCenter(const PlayerRushComponent *rush, const RushPromptStyleComponent &style);
 
-    // ロックオン対象の体の中心（足元と頭の中点）を画面へ投影する（px、左上が原点）
+    // 相手の体の中心（足元と頭の中点）を画面へ投影する（px、左上が原点）
     // LockOnMarkerHudSystem と同じ求め方にして、照準と位置をそろえる
     // カメラの後ろ・画面の外・カメラがないときは false を返し、center は書かない
     bool ProjectTarget(CCL::ECS::EntityID target, DirectX::XMFLOAT2 &center) const;

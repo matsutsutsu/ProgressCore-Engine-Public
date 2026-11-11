@@ -81,18 +81,6 @@
                     "skyFogSoftness": 0.3499999940395355,
                     "start": 40.0
                 },
-                "Player Rush Effect": {
-                    "attackTime": 0.029999999329447746,
-                    "chromaPeak": 0.019999999552965164,
-                    "duration": 0.5,
-                    "gradeMixPeak": 0.8999999761581421,
-                    "radialPeak": 0.3499999940395355,
-                    "releaseTime": 0.18000000715255737,
-                    "spikeDecay": 0.18000000715255737,
-                    "style": 2,
-                    "vignettePeak": 0.6000000238418579,
-                    "vignettePulse": 5.0
-                },
                 "Name": {
                     "name": "LightingSetup"
                 },

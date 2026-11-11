@@ -4,10 +4,10 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Time/TimeService.h"
 #include "Game/Core/GameEvents.h"
-#include "Game/Logics/Character/Player/Rush/PlayerRushEffectComponent.h"
 #include "Game/Logics/Character/Player/Dash/PlayerDashComponent.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
+#include "Game/Logics/Combat/Components/CombatComponents.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
 
@@ -55,8 +55,7 @@ static const uint32_t HASH_STATE_RUSH_FINISH   = CCL::Utils::HashString("Rush_Fi
 std::vector<CCL::ECS::TypeID> PlayerRushSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
-    types.push_back(TypeInfo<PlayerRushEffectComponent>::ID()); // ラッシュ中かを画面演出へ伝える
-    types.push_back(TypeInfo<PlayerDashComponent>::ID());       // 開始時にダッシュを打ち切る
+    types.push_back(TypeInfo<PlayerDashComponent>::ID()); // 開始時にダッシュを打ち切る
     return types;
 }
 
@@ -66,6 +65,7 @@ std::vector<CCL::ECS::TypeID> PlayerRushSystem::GetReadTypes() const
 {
     auto types = Base::GetReadTypes();
     types.push_back(TypeInfo<AnimStateMachineComponent>::ID()); // 連撃の終わりをアニメのステートで決める
+    types.push_back(TypeInfo<HitboxComponent>::ID());           // 避けた攻撃の持ち主を、ラッシュの相手にする
     return types;
 }
 
@@ -77,7 +77,7 @@ void PlayerRushSystem::Initialize()
     // 成立は別の System のタスク上で届くので、その場では始めず Update で始める
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &ev) {
         m_pendingStarts   = ev.playerID;
-        m_pendingAttacker = ev.attackerID; // ロックオンがないときは、避けた攻撃の方を向く
+        m_pendingAttacked = ev.attackerID; // この持ち主がラッシュの相手になる
     });
 
     // 攻撃の命中を購読し、当てた側を溜める。とどめが当たった瞬間を知るため
@@ -94,7 +94,6 @@ void PlayerRushSystem::Update(float dt)
     // 処理フロー:
     // 1. 届いたジャスト回避の成立から、ラッシュを始める
     // 2. ラッシュ中のプレイヤーを1ステップ進める
-    // 3. ラッシュ中かを画面演出へ伝える
 
     // ---------------------------------------------------------
     // 1. 開始
@@ -111,12 +110,12 @@ void PlayerRushSystem::Update(float dt)
         auto *trans    = m_world->GetComponent<TransformComponent>(m_pendingStarts);
         if (rush && dash && movement && player && anim && trans)
         {
-            StartRush(*rush, *dash, *movement);
-            BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition(), m_pendingAttacker);
+            StartRush(*rush, *dash, *movement, m_pendingAttacked);
+            BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition());
         }
     }
     m_pendingStarts   = CCL::ECS::InvalidEntityID;
-    m_pendingAttacker = CCL::ECS::InvalidEntityID;
+    m_pendingAttacked = CCL::ECS::InvalidEntityID;
 
     // ---------------------------------------------------------
     // 2. ラッシュ中の更新
@@ -130,10 +129,8 @@ void PlayerRushSystem::Update(float dt)
     else
     {
         timeCtx = nullptr;
-    }       
+    }
 
-
-    bool anyActive = false;
 
     ForEachWithID([&](EntityID                            id,
                       PlayerRushComponent                &rush,
@@ -228,21 +225,12 @@ void PlayerRushSystem::Update(float dt)
             if (rush.timer <= 0.0f) AdvancePhase(rush);
         }
 
+        // 画面演出は PlayerRushEffectSystem が isActive を直接読む
         // 終えたステップは isActive が false なので、そのステップから演出も消え始める
-        anyActive = anyActive || rush.isActive;
     });
 
     // 命中はこのステップで照らし合わせ終えたので捨てる
     m_hitAttackers.clear();
-
-    // ---------------------------------------------------------
-    // 3. 画面演出へ伝える
-    // ---------------------------------------------------------
-
-    if (auto *fx = m_world->GetSingletonComponent<PlayerRushEffectComponent>())
-    {
-        fx->rushActive = anyActive;
-    }
 }
 
 
@@ -251,8 +239,13 @@ void PlayerRushSystem::Update(float dt)
 // フェーズ
 // ---------------------------------------------------------------------------
 
-void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement)
+void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement,
+                                 CCL::ECS::EntityID attackedID)
 {
+    // 相手はロックオンでなく、避けた攻撃で決める
+    // ロックオンした敵と別の敵の攻撃を避けたときも、攻撃してきた方へ斬りかかる
+    rush.closeInTarget = PickRushTarget(attackedID);
+
     // ラッシュの状態の初期化
     rush.isActive      = true;
     rush.isRecovering  = false; // 前のラッシュの戻りの途中でも、ここから仕切り直す
@@ -278,8 +271,7 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
 
 
 void PlayerRushSystem::BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent &player,
-                                      AnimParametersComponent &animParams, const Vector3 &playerPos,
-                                      CCL::ECS::EntityID attackerID)
+                                      AnimParametersComponent &animParams, const Vector3 &playerPos)
 {
     // 処理フロー:
     // 1. 向く方を決める
@@ -290,16 +282,13 @@ void PlayerRushSystem::BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent
     // 1. 向く方
     // ---------------------------------------------------------
 
-    // ダッシュ中は進む方へ向きかけているが、ジャスト回避では敵を正面に置いたまま跳ぶ
-    // ロックオン中はその敵、なければ避けた攻撃の方。どちらもなければ今の向きのまま
+    // ダッシュ中は進む方へ向きかけているが、ジャスト回避では相手を正面に置いたまま跳ぶ
+    // 相手がいなければ今の向きのまま
     rush.evadeFaceYaw = player.currentYaw;
 
-    EntityID faceTarget = PickCloseInTarget(player);
-    if (faceTarget == InvalidEntityID) faceTarget = attackerID;
-
-    if (faceTarget != InvalidEntityID && m_world->IsEntityValid(faceTarget))
+    if (IsCloseInTargetAlive(rush.closeInTarget))
     {
-        if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(faceTarget))
+        if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
         {
             Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
             to.y       = 0.0f;
@@ -429,9 +418,8 @@ void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerCompon
     rush.timer       = rush.attackDuration;
     rush.attackFired = false;
 
-    rush.closeInTarget = PickCloseInTarget(player);
-
-    // 詰め先がいないときは、今向いている方へ詰める。yaw 0 が +Z
+    // 詰め先は StartRush で決めてある
+    // 相手がいないときは、今向いている方へ詰める。yaw 0 が +Z
     const float yaw = player.currentYaw;
     rush.closeInDir = Vector3(std::sin(yaw), 0.0f, std::cos(yaw));
 
@@ -551,7 +539,7 @@ void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovement
     Vector3 dir          = rush.closeInDir;
     bool    reachedRange = true;
 
-    // ロックオン中は、敵が動いても追えるように毎ステップ向け直す
+    // 相手がいるときは、動いても追えるように毎ステップ向け直す
     // closeInStopDistance まで近づいたら斬る
     if (IsCloseInTargetAlive(rush.closeInTarget))
     {
@@ -655,11 +643,21 @@ void PlayerRushSystem::MaintainInvincibility(EntityID id, const PlayerRushCompon
 // 詰め先
 // ---------------------------------------------------------------------------
 
-CCL::ECS::EntityID PlayerRushSystem::PickCloseInTarget(const PlayerComponent &player) const
+// 避けた攻撃の持ち主を、ラッシュの相手として返す
+CCL::ECS::EntityID PlayerRushSystem::PickRushTarget(CCL::ECS::EntityID attackedID) const
 {
-    const EntityID id = player.lockOnTargetID; // EntityLink から暗黙に変換する
-    if (!IsCloseInTargetAlive(id)) return InvalidEntityID;
-    return id;
+    if (!m_world->IsEntityValid(attackedID)) return InvalidEntityID;
+
+    // 剣の判定もドローンも HitboxComponent を持ち、ownerID が攻撃した本体（ボスなど）
+    // 持っていなければ、避けた物そのものを相手にする（デバッグの発行は敵本体を渡す）
+    EntityID target = attackedID;
+    if (const auto *hitbox = m_world->GetComponent<HitboxComponent>(attackedID))
+    {
+        if (hitbox->ownerID != InvalidEntityID) target = hitbox->ownerID;
+    }
+
+    if (!IsCloseInTargetAlive(target)) return InvalidEntityID;
+    return target;
 }
 
 
@@ -813,8 +811,9 @@ void PlayerRushSystem::OnGui()
                             Vector3(std::sin(player->currentYaw), 0.0f, std::cos(player->currentYaw));
                     }
                 }
-                StartRush(*rush, *dash, *movement);
-                BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition(), InvalidEntityID);
+                // 避けた攻撃がないので、相手なしで正面へ斬る
+                StartRush(*rush, *dash, *movement, InvalidEntityID);
+                BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition());
             }
         }
 

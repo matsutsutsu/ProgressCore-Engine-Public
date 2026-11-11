@@ -4,7 +4,6 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include "Game/Logics/Character/Player/Rush/PlayerRushEffectComponent.h"
 #include "Engine/Graphics/Components/PostProcess/PostFx.h"
 
 #include "Engine/Core/Math/StringHash.h"
@@ -32,18 +31,13 @@ namespace
 
 
 
-std::vector<CCL::ECS::TypeID> PlayerRushEffectSystem::GetReadTypes() const
-{
-    return {TypeInfo<PlayerRushEffectComponent>::ID()};
-}
-
-
-
 std::vector<CCL::ECS::TypeID> PlayerRushEffectSystem::GetWriteTypes() const
 {
     // 値を書くのはビネットと放射ブラーだけだが、後始末の PostFx::ReleaseAll は
     // 上書きを受け付けるすべての設定へ書くので、全部を申告する
-    return CCL::PostFx::AllWriteTypes();
+    auto types = Base::GetWriteTypes();
+    for (const TypeID id : CCL::PostFx::AllWriteTypes()) types.push_back(id);
+    return types;
 }
 
 
@@ -56,60 +50,61 @@ void PlayerRushEffectSystem::Update(float dt)
     // 3. 見えている間は、ビネットへ書く
     // 4. 同じ重みで放射ブラーへ書く
 
-    auto *justEvadeEffectComp = m_world->GetSingletonComponent<PlayerRushEffectComponent>();
-    if (!justEvadeEffectComp) return;
+    ForEach([&](PlayerRushEffectComponent &effect, const PlayerRushComponent &rush) {
 
-    // ---------------------------------------------------------
-    // 1. フェード
-    // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 1. フェード
+        // ---------------------------------------------------------
 
-    // dt は実時間なので、世界のスロー中もフェードの速さは変わらない
-    const bool  active   = justEvadeEffectComp->rushActive;
-    const float target   = active ? 1.0f : 0.0f;
-    const float fadeTime = active ? justEvadeEffectComp->fadeInTime : justEvadeEffectComp->fadeOutTime;
-    const float rate     = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;
+        // dt は実時間なので、世界のスロー中もフェードの速さは変わらない
+        // ラッシュを終えたステップから isActive が倒れるので、そこから消え始める
+        const bool  active   = rush.isActive;
+        const float target   = active ? 1.0f : 0.0f;
+        const float fadeTime = active ? effect.fadeInTime : effect.fadeOutTime;
+        const float rate     = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;
 
-    justEvadeEffectComp->weight = MoveToward(justEvadeEffectComp->weight, target, rate);
+        effect.weight = MoveToward(effect.weight, target, rate);
 
-    // ---------------------------------------------------------
-    // 2. 消えている間の後始末
-    // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 2. 消えている間の後始末
+        // ---------------------------------------------------------
 
-    // 自分のスロットだけを手放し、ほかの演出と設定本体には触れない
-    // 確保していないスロットの Release は何もしないので、毎フレーム呼んでよい
-    const bool visible = (justEvadeEffectComp->weight > 0.001f);
-    if (!visible)
-    {
-        CCL::PostFx::ReleaseAll(*m_world, kSource);
-        return;
-    }
+        // 自分のスロットだけを手放し、ほかの演出と設定本体には触れない
+        // 確保していないスロットの Release は何もしないので、毎フレーム呼んでよい
+        const bool visible = (effect.weight > 0.001f);
+        if (!visible)
+        {
+            CCL::PostFx::ReleaseAll(*m_world, kSource);
+            return;
+        }
 
-    // ---------------------------------------------------------
-    // 3. ビネット
-    // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 3. ビネット
+        // ---------------------------------------------------------
 
-    // 縁のぼかし（softness）は書かない
-    // スロットにはシーンの設定が土台に入っているので、書かない項目はシーンの見た目のまま
-    if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
-    {
-        ov->weight            = justEvadeEffectComp->weight;
-        ov->params.intensity  = justEvadeEffectComp->vignetteIntensity;
-        ov->params.radius     = justEvadeEffectComp->vignetteRadius;
-        ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
-        ov->params.pulseSpeed = 0.0f; // 明滅させない
-    }
+        // 縁のぼかし（softness）は書かない
+        // スロットにはシーンの設定が土台に入っているので、書かない項目はシーンの見た目のまま
+        if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
+        {
+            ov->weight            = effect.weight;
+            ov->params.intensity  = effect.vignetteIntensity;
+            ov->params.radius     = effect.vignetteRadius;
+            ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
+            ov->params.pulseSpeed = 0.0f; // 明滅させない
+        }
 
-    // ---------------------------------------------------------
-    // 4. 放射ブラー
-    // ---------------------------------------------------------
+        // ---------------------------------------------------------
+        // 4. 放射ブラー
+        // ---------------------------------------------------------
 
-    // 中心は書かず、シーンの設定のままにする
-    if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
-    {
-        ov->weight          = justEvadeEffectComp->weight;
-        ov->params.strength = justEvadeEffectComp->radialStrength;
-        ov->params.falloff  = justEvadeEffectComp->radialFalloff;
-    }
+        // 中心は書かず、シーンの設定のままにする
+        if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
+        {
+            ov->weight          = effect.weight;
+            ov->params.strength = effect.radialStrength;
+            ov->params.falloff  = effect.radialFalloff;
+        }
+    });
 }
 
 

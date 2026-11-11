@@ -13,7 +13,7 @@
 #include <json.hpp>
 using json = nlohmann::json;
 
-// 実行時の状態（rushActive / weight）は保存しないので並べない
+// 実行時の状態（weight）は保存しないので並べない
 COMPONENT_META_BEGIN_FULL(PlayerRushEffectComponent, "Player Rush Effect", CCL::Categories::Effect, 186, false)
 CFIELD_FLOAT_RANGED(vignetteIntensity, "ビネット強度", 0.01f, 0.0f, 1.0f, "ビネット")
 CFIELD_FLOAT_RANGED(vignetteRadius, "ビネット半径", 0.01f, 0.0f, 1.0f, "ビネット")

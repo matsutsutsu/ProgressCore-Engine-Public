@@ -14,15 +14,13 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushCameraComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
-#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 
 #include <vector>
 
 class PlayerRushCameraSystem : public CCL::ECS::IfSystem<
     PlayerRushCameraSystem,
     CCL::ECS::Write<PlayerRushCameraComponent>,
-    CCL::ECS::Read<PlayerRushComponent>,
-    CCL::ECS::Read<PlayerComponent>>
+    CCL::ECS::Read<PlayerRushComponent>>
 {
 public:
     PlayerRushCameraSystem() : IfSystem("PlayerRushCameraSystem") {}
@@ -40,8 +38,7 @@ private:
     using Base = CCL::ECS::IfSystem<
         PlayerRushCameraSystem,
         CCL::ECS::Write<PlayerRushCameraComponent>,
-        CCL::ECS::Read<PlayerRushComponent>,
-        CCL::ECS::Read<PlayerComponent>>;
+        CCL::ECS::Read<PlayerRushComponent>>;
 
     const RushCameraShot &SelectShot(const PlayerRushCameraComponent &cam, RushPhase phase) const;
 
@@ -66,6 +63,6 @@ private:
     // プレイヤーを映している TPS カメラを探す。なければ InvalidEntityID
     CCL::ECS::EntityID FindCamera(CCL::ECS::EntityID playerID) const;
 
-    // 注視点を寄せる先。ロックオン中で生きている敵、いなければ InvalidEntityID
-    CCL::ECS::EntityID PickFocusTarget(const PlayerComponent &player) const;
+    // 注視点を寄せる先。ラッシュの相手が生きていればその敵、いなければ InvalidEntityID
+    CCL::ECS::EntityID PickFocusTarget(const PlayerRushComponent &rush) const;
 };

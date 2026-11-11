@@ -67,9 +67,8 @@ void PlayerRushCameraSystem::Update(float dt)
     dt = Time::PresentationDt(*m_world, dt);
 
     ForEachWithID([&](EntityID                   id,
-                      PlayerRushCameraComponent       &cam,
-                      const PlayerRushComponent       &rush,
-                      const PlayerComponent     &player) {
+                      PlayerRushCameraComponent &cam,
+                      const PlayerRushComponent &rush) {
         const EntityID cameraID = FindCamera(id);
 
         // ---------------------------------------------------------
@@ -112,7 +111,7 @@ void PlayerRushCameraSystem::Update(float dt)
         if (rush.isActive)
         {
             const RushCameraShot     &shot = SelectShot(cam, rush.phase);
-            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, PickFocusTarget(player));
+            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, PickFocusTarget(rush));
             SpringToward(cam.current, cam.velocity, goal, shot.blendTime, shot.bounce, dt);
         }
         else if (cam.weight > 0.0f)
@@ -296,9 +295,10 @@ EntityID PlayerRushCameraSystem::FindCamera(EntityID playerID) const
 
 
 
-EntityID PlayerRushCameraSystem::PickFocusTarget(const PlayerComponent &player) const
+// 注視点を寄せる先として、ラッシュの相手を返す
+EntityID PlayerRushCameraSystem::PickFocusTarget(const PlayerRushComponent &rush) const
 {
-    const EntityID id = player.lockOnTargetID;
+    const EntityID id = rush.closeInTarget;
     if (id == InvalidEntityID || !m_world->IsEntityValid(id) || m_world->HasComponent<Tag::DeadTag>(id))
     {
         return InvalidEntityID;
