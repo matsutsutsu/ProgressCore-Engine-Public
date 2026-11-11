@@ -21,9 +21,13 @@ void ChromaticAberrationEffect::Initialize(ID3D11Device *device, UINT /*width*/,
     device->CreateSamplerState(&sampDesc, m_res->sampler.GetAddressOf());
 }
 
+
+
 void ChromaticAberrationEffect::Resize(ID3D11Device * /*device*/, UINT /*width*/, UINT /*height*/)
 {
 }
+
+
 
 void ChromaticAberrationEffect::Process(ID3D11DeviceContext      *dc,
                                         ID3D11ShaderResourceView *inputSRV,

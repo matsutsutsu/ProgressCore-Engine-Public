@@ -63,7 +63,7 @@
                 -50.0,
                 0.0
             ],
-            "prefab": "Assets/Prefabs/Particles/StageParticle.json",
+            "prefab": "Assets/Prefabs/Particles/VFX_StageParticle.json",
             "rotation": [
                 0.0,
                 0.0,
@@ -101,7 +101,7 @@
                 0.0,
                 5.0
             ],
-            "prefab": "./Assets\\Prefabs\\Enemy\\Muriel.json",
+            "prefab": "./Assets\\Prefabs\\Enemy\\Valkyra.json",
             "rotation": [
                 0.0,
                 0.8557052612304688,

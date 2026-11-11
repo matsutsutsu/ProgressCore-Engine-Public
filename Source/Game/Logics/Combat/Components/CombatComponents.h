@@ -1,16 +1,9 @@
 #pragma once
 // ===========================================================================
-// 概要: 戦闘の当たり判定（攻撃側の Hitbox・受ける側の Hurtbox）と、命中1回ぶんのイベントのコンポーネント。
+// 概要: 当たり判定（攻撃側の Hitbox・受ける側の Hurtbox）と、命中1回ぶんのイベント
 //
-// 責務:
-//   - 攻撃側と受ける側のパラメータを持つ
-//   - 命中1回ぶんの結果（DamageEventComponent）を持つ
-//   - SpawnHitboxSystem が作る判定の寿命を持つ
-//
-// 備考: HitboxCollisionSystem（L05）が命中を判定して DamageEvent を作り、
-//       DamageResolutionSystem（L06）が HP を減らしてノックバックを書く。
-//       すべて POD。多段ヒットの履歴はヒープを使わないよう固定長の配列にする。
-//       1対1のボス戦なので、クリティカルは持たない。
+// 備考: HitboxCollisionSystem（L05）が命中を判定し、DamageResolutionSystem（L06）が HP を減らす
+//       すべて POD。多段ヒットの履歴は固定長の配列で持ち、ヒープを使わない
 // ===========================================================================
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "SimpleMath.h"
@@ -32,20 +25,20 @@ struct HitboxComponent
     float                    hitTimes[MAX_HIT_TARGETS]   = {}; // その相手に最後に当てた時刻（HitboxCollisionSystem の時計）
     uint8_t                  hitCount                    = 0;  // hitTargets に入っている数
 
-    /// 同じ相手にもう一度当たるまでの間隔（秒）。負なら判定が開いている間は1回だけ。
-    /// 小隊突撃のように判定を開けたまま何度も往復する攻撃は、1回きりだと2周目から当たらない。
+    /// 同じ相手にもう一度当たるまでの間隔（秒）。負なら判定が開いている間は1回だけ
+    /// 小隊突撃のように判定を開けたまま何度も往復する攻撃は、1回きりだと2周目から当たらない
     /// 逆に 0 近くにすると重なっている間ずっと当たり、受けた側の無敵時間だけが痛さを決めてしまう
     float rehitInterval = -1.0f;
 
-    // ノックバックとのけぞりの向きを決めるときの基準の位置。
-    //   false（既定）: ownerID。剣は持ち主の子なので、持ち主の前方を基準にすると振った向きへ飛ぶ。
+    // ノックバックとのけぞりの向きを決めるときの基準の位置
+    //   false（既定）: ownerID。剣は持ち主の子なので、持ち主の前方を基準にすると振った向きへ飛ぶ
     //   true         : この判定自身。ドローンのように持ち主から遠く離れて当たる場合、ownerID を基準にすると
-    //                  背後から当たってもボスの正面から当たった向きに飛んでしまう。
+    //                  背後から当たってもボスの正面から当たった向きに飛んでしまう
     // どちらでも ownerID（誰の攻撃か）は変えない。変えるのは向きの基準だけ
     bool useSelfAsHitOrigin = false;
 
-    // 親をたどって見つけた、Animator を持つ持ち主（剣ならキャラ）。CombatAnimationSyncSystem が使う。
-    // 持ち主の HitBox 区間はどれでもこの判定を開く（1キャラが持つ攻撃判定は1つの前提）。
+    // 親をたどって見つけた、Animator を持つ持ち主（剣ならキャラ）。CombatAnimationSyncSystem が使う
+    // 持ち主の HitBox 区間はどれでもこの判定を開く（1キャラが持つ攻撃判定は1つの前提）
     CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
 
     // ownerEntity を探したか。見つからなかったことも覚えておく。覚えないと、親を持たない判定
@@ -71,7 +64,7 @@ struct DamageEventComponent
     CCL::ECS::EntityID attackerID  = CCL::ECS::InvalidEntityID; // 誰の攻撃か
     float              finalDamage = 0.0f;                      // 倍率をかけた後のダメージ
 
-    // 攻撃が来た位置の基準（剣なら持ち主、ドローンならその機体）。
+    // 攻撃が来た位置の基準（剣なら持ち主、ドローンならその機体）
     // attackerID と別に持つのは、ドローンの攻撃をボスの攻撃として扱いつつ、
     // のけぞりの向きは実際に当たった機体から求めたいため
     CCL::ECS::EntityID hitOriginID = CCL::ECS::InvalidEntityID;
@@ -87,18 +80,18 @@ struct DamageEventComponent
     DirectX::SimpleMath::Vector3 hitPosition = DirectX::SimpleMath::Vector3::Zero;
 };
 
-// SpawnHitboxSystem が作る球の攻撃判定の寿命。
-// SpawnHitboxSystem が付け、毎フレーム remainingLife を減らして 0 以下になったら消す。
-// 剣のように子のコライダを開け閉めする判定には付けない（そちらはアニメーションの区間で開け閉めする）。
+// SpawnHitboxSystem が作る球の攻撃判定の寿命
+// SpawnHitboxSystem が付け、毎フレーム remainingLife を減らして 0 以下になったら消す
+// 剣のように子のコライダを開け閉めする判定には付けない（そちらはアニメーションの区間で開け閉めする）
 // 保存せず、インスペクタにも出さない
 struct HitboxLifetimeComponent
 {
     float remainingLife = 0.0f; // 残りの時間（秒）
 };
 
-// SpawnHitboxSystem が作る球のうち、持ち主に追従するものだけが持つ。
+// SpawnHitboxSystem が作る球のうち、持ち主に追従するものだけが持つ
 // 持ち主のアニメーションが生成したときから切り替わったら、寿命の途中でも消す
-// （突進がひるみで中断されたときなどに、判定だけが残らないようにする）。
+// （突進がひるみで中断されたときなどに、判定だけが残らないようにする）
 // 保存せず、インスペクタにも出さない
 struct HitboxLifeAnimComponent
 {

@@ -1,7 +1,7 @@
 #include "JoltShapeUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
-#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h" // 形状生成と Result の検証
+#include "Engine/Physics/JoltIntegration/JoltShapeFactory.h"
 
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
@@ -11,14 +11,8 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 // ============================================================
-// 3つの System に共通する流れ:
-//   isDirty を見る → 基本形状を作る → localOffset/localRotation で包む → SetShape → dirty解除
-//
-// 「基本形状の作り方」だけが形状ごとに違うので、それ以外は
-// JoltShapeFactory::CreateOffsetShape に寄せてある（Result の検証も向こう持ち）。
-//
-// 形状生成に失敗したときは isDirty を下ろしてから抜ける。
-// 下ろさないと毎フレーム同じ失敗ログを出し続けてログが埋まるため。
+// 3つの System は、isDirty を見て基本形状を作り、ずらして SetShape する流れが同じなので、共通の部分は JoltShapeFactory::CreateOffsetShape に寄せる
+// 失敗したときも isDirty を下ろす。下ろさないと、毎フレーム同じ失敗のログが出る
 // ============================================================
 
 // ============================================================
@@ -43,6 +37,8 @@ void JoltBoxShapeUpdateSystem::Update(float dt)
     });
 }
 
+
+
 // ============================================================
 // SphereCollider
 // ============================================================
@@ -66,6 +62,8 @@ void JoltSphereShapeUpdateSystem::Update(float dt)
     });
 }
 
+
+
 // ============================================================
 // CapsuleCollider
 // ============================================================
@@ -87,6 +85,8 @@ void JoltCapsuleShapeUpdateSystem::Update(float dt)
         bodyInterface.SetShape(handle.bodyID, shape, true, JPH::EActivation::Activate);
     });
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(JoltBoxShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);
 REGISTER_LOGIC_SYSTEM(JoltSphereShapeUpdateSystem, Priority::LogicStage::L03_PrePhysics);

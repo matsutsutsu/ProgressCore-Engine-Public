@@ -5,21 +5,21 @@
 #include "Engine/Scene/SceneManager.h"
 #include "Engine/UI/Text/TextRenderer.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp / SmoothStep
+#include "Engine/Core/Math/Interpolation.h"
 
-#include <objbase.h> // CoInitializeEx / CoUninitialize（ワーカースレッドの COM 初期化）
+#include <objbase.h>
 #include <string>
-#include <algorithm> // std::min / std::clamp
-#include <cmath>     // std::exp / std::sin
-#include <cstdio>    // std::snprintf
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 namespace
 {
     constexpr float kProgressDamping = 8.0f; // 表示の進捗が目標値へ追いつく速さ（Damp の speed）
 
-    // 表示の進捗がここに届いたら完了とみなし、完了の演出（READY・リングの深紅）を始める。
-    //   進捗は指数的に 100% へ近づき、ちょうど 1.0 には届かないため、少し手前で区切る。
-    //   ログの最後の行もこの値で出し、完了の演出と同じ瞬間にそろえる。
+    // 表示の進捗がここに届いたら完了とみなし、完了の演出（READY・リングの深紅）を始める
+    //   進捗は指数的に 100% へ近づき、ちょうど 1.0 には届かないため、少し手前で区切る
+    //   ログの最後の行もこの値で出し、完了の演出と同じ瞬間にそろえる
     constexpr float kDoneProgress = 0.98f;
 
     constexpr float kDotR = 0.96f, kDotG = 0.88f, kDotB = 0.62f; // 飾り（線・◆・目盛り）の白金。HUD の色にそろえる
@@ -31,15 +31,15 @@ namespace
         const char *text; // 時刻の後ろに出す本文
     };
 
-    // ログの台本。読み込みの段階に見立てた行を並べ、待っている間に作品の中身（AI・陣形・群れ）を伝える。
-    // 実際の読み込みの段階とは連動しない（裏読みの途中経過は外から取れないため）。
+    // ログの台本。読み込みの段階に見立てた行を並べ、待っている間に作品の中身（AI・陣形・群れ）を伝える
+    // 実際の読み込みの段階とは連動しない（裏読みの途中経過は外から取れないため）
     constexpr LogLine kLogLines[kLogLineCount] = {
         {0.00f, "SYS   INIT WORLD"},
         {0.12f, "SYS   MEMORY CHECK ... OK"},
         {0.24f, "GFX   SHADER CACHE ... OK"},
         {0.36f, "GFX   LOADING STAGE"},
         {0.48f, "UNIT  LOADING PLAYER"},
-        {0.60f, "UNIT  LOADING ENEMY : MURIEL"},
+        {0.60f, "UNIT  LOADING ENEMY : VALKYRA"},
         {0.72f, "AI    LOADING DRONES"},
         {kDoneProgress, "SYS   ALL READY"},
     };
@@ -57,12 +57,7 @@ namespace
     int  g_tipIndex  = 0;    // 次の読み込みで出すヒントの番号
     bool g_firstLoad = true; // アプリを起動してから、まだ一度も読み込んでいないか
 
-    /**
-     * @brief 入力から 0〜1 の決まった乱数を返す。
-     * @param x 乱数の種。同じ値なら毎回同じ結果になる。
-     * @return 0 以上 1 未満の値。
-     * @note 粒子ノイズの散らばりと、表示し始めのちらつきに使う。
-     */
+    // x から 0 以上 1 未満の決まった乱数を返す。粒子のノイズの散らばりと、出始めのちらつきに使う
     float Hash(float x)
     {
         const float v = std::sin(x * 12.9898f) * 43758.5453f;
@@ -76,12 +71,16 @@ namespace
 
 SceneLoading::SceneLoading(Scene *nextScene) : m_nextScene(nextScene) {}
 
+
+
 SceneLoading::~SceneLoading()
 {
-    // ロードジョブが走っていれば、終わるまで待ってから破棄する。
-    // 通常は Finalize で待ち終えているのですぐ返る。Finalize を経ずに破棄されたときの安全策。
+    // ロードジョブが走っていれば、終わるまで待ってから破棄する
+    // 通常は Finalize で待ち終えているのですぐ返る。Finalize を経ずに破棄されたときの安全策
     SceneManager::Instance().GetLoaderJobs().WaitForCounter(&m_loadCounter);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 初期化・終了・更新
@@ -98,8 +97,8 @@ void SceneLoading::Initialize()
     // 1. 共通の初期化
     // ---------------------------------------------------------
 
-    // カメラ・リソースの登録だけを行う。
-    // SceneLoading は System を登録しないので軽い。
+    // カメラ・リソースの登録だけを行う
+    // SceneLoading は System を登録しないので軽い
     BaseScene::Initialize();
 
     m_isFinished = false;
@@ -109,8 +108,8 @@ void SceneLoading::Initialize()
     // ---------------------------------------------------------
     m_tipIndex = g_tipIndex++ % kTipCount;
 
-    // ロゴは製品ビルドの、起動して最初の読み込みでだけ出す。
-    // 開発ビルドでは出さず、起動時は読み込みが終わり次第抜けて、すぐ触れるようにする。
+    // ロゴは製品ビルドの、起動して最初の読み込みでだけ出す
+    // 開発ビルドでは出さず、起動時は読み込みが終わり次第抜けて、すぐ触れるようにする
 #ifdef SHIPPING_BUILD
     m_splash = g_firstLoad;
 #else
@@ -128,17 +127,17 @@ void SceneLoading::Initialize()
         Scene             *target   = m_nextScene;
         std::atomic<bool> *finished = &m_isFinished;
 
-        // ジョブはワーカースレッドで実行される。
-        // WaitForCounter で待たずに投げっぱなしにし、完了は Update で m_isFinished を見て知る。
-        // m_loadCounter は、Finalize とデストラクタで完了を待つために渡す。
+        // ジョブはワーカースレッドで実行される
+        // WaitForCounter で待たずに投げっぱなしにし、完了は Update で m_isFinished を見て知る
+        // m_loadCounter は、Finalize とデストラクタで完了を待つために渡す
         SceneManager::Instance().GetLoaderJobs().Execute(
             [target, finished]() {
-                // WIC 経由のテクスチャ読み込みには、このスレッドでの COM 初期化が要る。
+                // WIC 経由のテクスチャ読み込みには、このスレッドでの COM 初期化が要る
                 HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-                // 次のシーンの重い読み込み。
-                // DeviceContext（描画コマンド）は触らないこと。メインスレッドの描画と競合する。
-                // リソースの生成（CreateBuffer / CreateTexture）はスレッドセーフなので行ってよい。
+                // 次のシーンの重い読み込み
+                // DeviceContext（描画コマンド）は触らないこと。メインスレッドの描画と競合する
+                // リソースの生成（CreateBuffer / CreateTexture）はスレッドセーフなので行ってよい
                 target->Initialize();
                 target->SetReady();
 
@@ -147,22 +146,26 @@ void SceneLoading::Initialize()
                     CoUninitialize();
                 }
 
-                // 完了は最後に release で書く。
-                // メインスレッドが acquire で true を読んだ時点で、Initialize が作った World の中身もすべて見えている。
+                // 完了は最後に release で書く
+                // メインスレッドが acquire で true を読んだ時点で、Initialize が作った World の中身もすべて見えている
                 finished->store(true, std::memory_order_release);
             },
             &m_loadCounter);
     }
 }
 
+
+
 void SceneLoading::Finalize()
 {
-    // ロードジョブが終わるまで待つ（スレッドの join にあたる）。
-    // 裏読みの途中で this を壊すと、ジョブが m_isFinished へ書き込めなくなる。
+    // ロードジョブが終わるまで待つ（スレッドの join にあたる）
+    // 裏読みの途中で this を壊すと、ジョブが m_isFinished へ書き込めなくなる
     SceneManager::Instance().GetLoaderJobs().WaitForCounter(&m_loadCounter);
 
     BaseScene::Finalize();
 }
+
+
 
 void SceneLoading::Update(float elapsedTime)
 {
@@ -180,11 +183,11 @@ void SceneLoading::Update(float elapsedTime)
 
     BaseScene::Update(elapsedTime);
 
-    // ワーカースレッドの release と対になる acquire で読む。
+    // ワーカースレッドの release と対になる acquire で読む
     const bool done = m_isFinished.load(std::memory_order_acquire);
 
-    // 最低表示時間の間は、裏読みが終わっていても表示を続ける。
-    // ローディング画面はログが最後まで流れる長さ、スプラッシュはロゴを読める長さにしている。
+    // 最低表示時間の間は、裏読みが終わっていても表示を続ける
+    // ローディング画面はログが最後まで流れる長さ、スプラッシュはロゴを読める長さにしている
     const float minShow = m_splash ? kSplashTime : m_quick ? 0.0f : kMinShowTime;
     const bool  holding = time < minShow;
 
@@ -192,13 +195,13 @@ void SceneLoading::Update(float elapsedTime)
     // 2. 見せかけの進捗
     // ---------------------------------------------------------
 
-    // 裏読みの途中経過は取れない（Initialize の中は外から見えない）ので、進捗は時間で作る。
+    // 裏読みの途中経過は取れない（Initialize の中は外から見えない）ので、進捗は時間で作る
 
-    // 裏読み中は 90% へ近づき続ける。
-    // 長くかかっても止まって見えず、終わる前に 100% へ届くこともない。
+    // 裏読み中は 90% へ近づき続ける
+    // 長くかかっても止まって見えず、終わる前に 100% へ届くこともない
 
-    // 裏読みが終わったら 100% へ伸ばす。
-    // 最低表示時間の間は、その時間いっぱいを使って 100% にする。
+    // 裏読みが終わったら 100% へ伸ばす
+    // 最低表示時間の間は、その時間いっぱいを使って 100% にする
     float target = done ? 1.0f : 0.9f * (1.0f - std::exp(-time / kProgressTau));
     if (done && holding)
     {
@@ -206,7 +209,7 @@ void SceneLoading::Update(float elapsedTime)
     }
     m_progress += (target - m_progress) * CCL::Math::Damp(kProgressDamping, elapsedTime);
 
-    // 指数的に近づくので、kDoneProgress に届いたら 100% とみなして完了の演出を始める。
+    // 指数的に近づくので、kDoneProgress に届いたら 100% とみなして完了の演出を始める
     if (m_progress >= kDoneProgress)
     {
         m_outroTime += elapsedTime;
@@ -216,8 +219,8 @@ void SceneLoading::Update(float elapsedTime)
     // 3. ログ
     // ---------------------------------------------------------
 
-    // 進捗が各行の値に届いた時刻を記録する。行はこの時刻から1文字ずつ打ち込む。
-    // 見出しが組み上がる前（表示し始めから 0.4 秒）には出さない。
+    // 進捗が各行の値に届いた時刻を記録する。行はこの時刻から1文字ずつ打ち込む
+    // 見出しが組み上がる前（表示し始めから 0.4 秒）には出さない
     for (int i = 0; i < kLogLineCount; ++i)
     {
         if (m_logStart[i] < 0.0f && m_progress >= kLogLines[i].at && time >= kShowDelay + 0.4f)
@@ -230,11 +233,11 @@ void SceneLoading::Update(float elapsedTime)
     // 4. 表示の濃さ
     // ---------------------------------------------------------
 
-    // 裏読み中は kShowDelay だけ待ってから出す。
-    // すぐ終わる読み込みで一瞬だけ表示が出ると、かえってちらついて見える。
+    // 裏読み中は kShowDelay だけ待ってから出す
+    // すぐ終わる読み込みで一瞬だけ表示が出ると、かえってちらついて見える
 
-    // 裏読みが終わった後は、出していれば完了の演出（kOutroHold 秒）を見せてから消す。
-    // 出していなければ出さないまま次へ進む。
+    // 裏読みが終わった後は、出していれば完了の演出（kOutroHold 秒）を見せてから消す
+    // 出していなければ出さないまま次へ進む
     float visTarget = 0.0f;
     if (!done || holding)
     {
@@ -253,14 +256,14 @@ void SceneLoading::Update(float elapsedTime)
     // 5. 次のシーンへ
     // ---------------------------------------------------------
 
-    // RequestTransition は、黒の幕の保持を解いて次のシーンへ差し替え、フェードインを始める。
+    // RequestTransition は、黒の幕の保持を解いて次のシーンへ差し替え、フェードインを始める
 
-    // holding も条件に入れる。
+    // holding も条件に入れる
     // 入れないと、表示が出始める前（kShowDelay より前）に裏読みが終わったとき、
-    // 表示の濃さがまだ 0 なので「消えた」とみなされ、ローディング画面を一度も出さずに抜けてしまう。
-    // 製品ビルドは読み込みが速く、毎回この条件に当たる。
+    // 表示の濃さがまだ 0 なので「消えた」とみなされ、ローディング画面を一度も出さずに抜けてしまう
+    // 製品ビルドは読み込みが速く、毎回この条件に当たる
 
-    // kMinLoadTime は、読み込みが一瞬で終わったときにも黒を一拍置くための最低の待ち時間。
+    // kMinLoadTime は、読み込みが一瞬で終わったときにも黒を一拍置くための最低の待ち時間
     if (done && !holding && time >= kMinLoadTime && m_visibility <= 0.0f && m_nextScene)
     {
         if (SceneManager::Instance().RequestTransition(m_nextScene))
@@ -269,6 +272,8 @@ void SceneLoading::Update(float elapsedTime)
         }
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画
@@ -286,8 +291,8 @@ void SceneLoading::RenderOverFade()
         return;
     }
 
-    // TextRenderer と Sprite は自前で完結し、ResourceManager のモデルに触れない。
-    // そのため、裏で読み込み中でもメインスレッドだけで安全に描ける。
+    // TextRenderer と Sprite は自前で完結し、ResourceManager のモデルに触れない
+    // そのため、裏で読み込み中でもメインスレッドだけで安全に描ける
     auto         &gfx    = Graphics::Instance();
     auto         *dc     = gfx.GetDeviceContext();
     ID3D11Device *device = gfx.GetDevice();
@@ -296,7 +301,7 @@ void SceneLoading::RenderOverFade()
     // 1. 描画の道具
     // ---------------------------------------------------------
 
-    // 半角英数字は等幅の Ricty、日本語（ヒントなど）は M PLUS 1 で描く。
+    // 半角英数字は等幅の Ricty、日本語（ヒントなど）は M PLUS 1 で描く
     if (!m_text)
     {
         m_text = std::make_unique<TextRenderer>();
@@ -311,11 +316,11 @@ void SceneLoading::RenderOverFade()
     // 2. 合成と深度
     // ---------------------------------------------------------
 
-    // 幕の上に描くので、合成と深度は自分で設定する。
-    // 幕が透明で描かれなかったフレームでも、前の描画の設定を引き継がないようにする。
+    // 幕の上に描くので、合成と深度は自分で設定する
+    // 幕が透明で描かれなかったフレームでも、前の描画の設定を引き継がないようにする
 
-    // 合成は RT の α を書き換えない UITransparency にする。
-    // Transparency だと半透明の四角形が α に穴を開け、エディタの GameView でその部分だけ後ろのウィンドウが透ける。
+    // 合成は RT の α を書き換えない UITransparency にする
+    // Transparency だと半透明の四角形が α に穴を開け、エディタの GameView でその部分だけ後ろのウィンドウが透ける
     dc->OMSetBlendState(gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
     dc->OMSetDepthStencilState(gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
@@ -323,7 +328,7 @@ void SceneLoading::RenderOverFade()
     // 3. 描く
     // ---------------------------------------------------------
 
-    // 濃さが線形のままだと出入りが機械的に見えるので、両端をゆるやかにする。
+    // 濃さが線形のままだと出入りが機械的に見えるので、両端をゆるやかにする
     const float alpha = CCL::Math::SmoothStep(m_visibility);
     if (m_splash)
     {
@@ -334,12 +339,16 @@ void SceneLoading::RenderOverFade()
     DrawScreen(alpha);
 }
 
+
+
 void SceneLoading::DrawQuad(float cx, float cy, float w, float h, float angle, float r, float g, float b, float a)
 {
-    // Sprite は左上の位置で置き、四角形の中心で回す。中心の位置から左上へ戻して渡す。
+    // Sprite は左上の位置で置き、四角形の中心で回す。中心の位置から左上へ戻して渡す
     m_white->Render(Graphics::Instance().GetDeviceContext(), cx - w * 0.5f, cy - h * 0.5f, 0.0f, w, h, angle,
                     r, g, b, a);
 }
+
+
 
 void SceneLoading::DrawSplash(float alpha)
 {
@@ -357,7 +366,7 @@ void SceneLoading::DrawSplash(float alpha)
     const float cx  = sw * 0.5f;
     const float cy  = sh * 0.5f;
 
-    // 出てからの秒数。要素ごとに開始を少しずつ遅らせ、0.4 秒かけて出す。
+    // 出てからの秒数。要素ごとに開始を少しずつ遅らせ、0.4 秒かけて出す
     const float t      = std::max(0.0f, time - kShowDelay);
     auto        fadeIn = [&](float start) { return std::clamp((t - start) / 0.4f, 0.0f, 1.0f) * alpha; };
 
@@ -365,7 +374,7 @@ void SceneLoading::DrawSplash(float alpha)
     // 1. 地
     // ---------------------------------------------------------
 
-    // ほぼ黒の1色にして、ロゴだけを見せる。
+    // ほぼ黒の1色にして、ロゴだけを見せる
     DrawQuad(cx, cy, sw, sh, 0.0f, 0.02f, 0.02f, 0.03f, alpha);
 
     // ---------------------------------------------------------
@@ -373,7 +382,7 @@ void SceneLoading::DrawSplash(float alpha)
     // ---------------------------------------------------------
     DrawQuad(cx, cy - 92.0f * k, 10.0f * k, 10.0f * k, 45.0f, kDotR, kDotG, kDotB, fadeIn(0.0f));
 
-    // 線は中央から左右へ、減速しながら伸びる。
+    // 線は中央から左右へ、減速しながら伸びる
     {
         const float d    = std::clamp((t - 0.3f) / 0.5f, 0.0f, 1.0f);
         const float draw = 1.0f - (1.0f - d) * (1.0f - d);
@@ -397,7 +406,7 @@ void SceneLoading::DrawSplash(float alpha)
         m_text->DrawText(dc, s, cx - w * 0.5f, y, px, DirectX::XMFLOAT4{r, g, b, a});
     };
 
-    // 等幅のフォントなので、空白を挟んで字間を広げ、ロゴらしく見せる。
+    // 等幅のフォントなので、空白を挟んで字間を広げ、ロゴらしく見せる
     centered("P O W E R E D   B Y", cy - 64.0f * k, 18.0f * k, 0.93f, 0.91f, 0.86f, 0.6f * fadeIn(0.1f));
     centered("PROGRESSCORE ENGINE", cy - 30.0f * k, 60.0f * k, 0.93f, 0.91f, 0.86f, fadeIn(0.15f));
     centered("C++20  /  DIRECTX 11  /  ECS", cy + 76.0f * k, 16.0f * k, 0.93f, 0.91f, 0.86f, 0.5f * fadeIn(0.6f));
@@ -406,8 +415,8 @@ void SceneLoading::DrawSplash(float alpha)
     // 4. 待っている印
     // ---------------------------------------------------------
 
-    // 表示時間を過ぎても読み込みが終わっていなければ、右下に3つの点を順に点ける。
-    // 何も動かないと、止まっているように見える。
+    // 表示時間を過ぎても読み込みが終わっていなければ、右下に3つの点を順に点ける
+    // 何も動かないと、止まっているように見える
     if (time >= kSplashTime && !m_isFinished.load(std::memory_order_acquire))
     {
         const int step = static_cast<int>(time * 3.0f) % 4; // 点いている数（0〜3）
@@ -418,6 +427,8 @@ void SceneLoading::DrawSplash(float alpha)
         }
     }
 }
+
+
 
 void SceneLoading::DrawBackdrop(float alpha)
 {
@@ -432,8 +443,8 @@ void SceneLoading::DrawBackdrop(float alpha)
     const float sh  = gfx.GetScreenHeight();
     const float k   = sh / 1080.0f; // 1080p を基準にした拡大率
 
-    // 四隅の色を変えた1枚の四角形を描く。頂点の間の色は GPU がなめらかに補間する。
-    // 色の順は 左上・右上・左下・右下。
+    // 四隅の色を変えた1枚の四角形を描く。頂点の間の色は GPU がなめらかに補間する
+    // 色の順は 左上・右上・左下・右下
     auto gradient = [&](float x, float y, float w, float h, DirectX::XMFLOAT4 tl, DirectX::XMFLOAT4 tr,
                         DirectX::XMFLOAT4 bl, DirectX::XMFLOAT4 br) {
         const DirectX::XMFLOAT4 corners[4] = {tl, tr, bl, br};
@@ -444,8 +455,8 @@ void SceneLoading::DrawBackdrop(float alpha)
     // 1. 地
     // ---------------------------------------------------------
 
-    // 真っ黒にせず、青みのある墨色にする。
-    // 文字のある左上を明るくし、右下へ沈める。
+    // 真っ黒にせず、青みのある墨色にする
+    // 文字のある左上を明るくし、右下へ沈める
     gradient(0.0f, 0.0f, sw, sh,
              {0.150f, 0.155f, 0.175f, alpha}, {0.095f, 0.100f, 0.120f, alpha},
              {0.075f, 0.080f, 0.095f, alpha}, {0.035f, 0.038f, 0.050f, alpha});
@@ -454,8 +465,8 @@ void SceneLoading::DrawBackdrop(float alpha)
     // 2. 周辺減光
     // ---------------------------------------------------------
 
-    // 四辺から内側へ、頂点の色の補間でなめらかに暗くする。
-    // 暗さを段にすると、内側に四角い枠が見える。
+    // 四辺から内側へ、頂点の色の補間でなめらかに暗くする
+    // 暗さを段にすると、内側に四角い枠が見える
     {
         const float             ex = sw * 0.30f;
         const float             ey = sh * 0.30f;
@@ -471,11 +482,11 @@ void SceneLoading::DrawBackdrop(float alpha)
     // 3. 粒子ノイズ
     // ---------------------------------------------------------
 
-    // 1秒に 24 回散らし直す細かな点で、のっぺりした面にフィルムのような質感を足す。
+    // 1秒に 24 回散らし直す細かな点で、のっぺりした面にフィルムのような質感を足す
     {
         constexpr int kGrains = 1600;
 
-        // 種は 64 通りで使い回す。時間をそのまま種にすると、値が大きくなって sin の精度が落ちる。
+        // 種は 64 通りで使い回す。時間をそのまま種にすると、値が大きくなって sin の精度が落ちる
         const float seed = std::fmod(std::floor(time * 24.0f), 64.0f) * 17.0f;
         for (int i = 0; i < kGrains; ++i)
         {
@@ -487,6 +498,8 @@ void SceneLoading::DrawBackdrop(float alpha)
         }
     }
 }
+
+
 
 void SceneLoading::DrawScreen(float alpha)
 {
@@ -510,7 +523,7 @@ void SceneLoading::DrawScreen(float alpha)
     // 1. 時計と色
     // ---------------------------------------------------------
 
-    // 文字は少し温かみのある白、完了の合図は深紅。飾りの線は白金（kDot）。
+    // 文字は少し温かみのある白、完了の合図は深紅。飾りの線は白金（kDot）
     constexpr float kTextR = 0.93f, kTextG = 0.91f, kTextB = 0.86f;
     constexpr float kRedR = 0.95f, kRedG = 0.18f, kRedB = 0.22f;
 
@@ -518,7 +531,7 @@ void SceneLoading::DrawScreen(float alpha)
     const float lock  = std::clamp(m_outroTime / 0.25f, 0.0f, 1.0f);      // 完了の合図の進み具合（0〜1）
     const float lockE = 1.0f - (1.0f - lock) * (1.0f - lock);             // lock を減速しながら止まるよう整形したもの
 
-    // 表示が出始めた直後の 0.2 秒だけ、全体をちらつかせる。
+    // 表示が出始めた直後の 0.2 秒だけ、全体をちらつかせる
     if (boot < 0.2f && Hash(std::floor(time * 30.0f) + 0.5f) < 0.35f)
     {
         alpha *= 0.3f;
@@ -535,7 +548,7 @@ void SceneLoading::DrawScreen(float alpha)
     // 2. 方眼
     // ---------------------------------------------------------
 
-    // 線は控えめにし、交点に小さな十字を置いて方眼だと読めるようにする。
+    // 線は控えめにし、交点に小さな十字を置いて方眼だと読めるようにする
     const float grid  = 120.0f * k;
     const float cross = 9.0f * k; // 交点の十字の腕の長さ（端から端）
     for (float x = grid; x < sw; x += grid)
@@ -559,7 +572,7 @@ void SceneLoading::DrawScreen(float alpha)
     // 3. 見出しの下の線
     // ---------------------------------------------------------
 
-    // 左から減速しながら引かれ、先端に◆を置く。
+    // 左から減速しながら引かれ、先端に◆を置く
     {
         const float t    = std::clamp((boot - 0.15f) / 0.35f, 0.0f, 1.0f);
         const float draw = 1.0f - (1.0f - t) * (1.0f - t);
@@ -574,8 +587,8 @@ void SceneLoading::DrawScreen(float alpha)
     // 4. 進捗リング
     // ---------------------------------------------------------
 
-    // 真上から時計回りに、進捗の分だけ目盛りを点ける。
-    // 完了の合図が進むと、白金から深紅へ変わる。
+    // 真上から時計回りに、進捗の分だけ目盛りを点ける
+    // 完了の合図が進むと、白金から深紅へ変わる
     {
         const float cx    = sw - 170.0f * k;
         const float cy    = sh - 175.0f * k;
@@ -591,7 +604,7 @@ void SceneLoading::DrawScreen(float alpha)
             const float a   = 6.2831853f * u - 1.5707963f; // 真上（-90 度）から始める
             const bool  lit = u < m_progress;
 
-            // 縦長の四角形を角度 + 90 度回し、長い辺を半径の向きにそろえる。
+            // 縦長の四角形を角度 + 90 度回し、長い辺を半径の向きにそろえる
             DrawQuad(cx + std::cos(a) * R, cy + std::sin(a) * R, 3.0f * k, 10.0f * k, a * 57.29578f + 90.0f, ringR, ringG,
                      ringB, (lit ? 0.95f : 0.18f) * alpha);
         }
@@ -607,8 +620,8 @@ void SceneLoading::DrawScreen(float alpha)
 
             // --- リングの下の文字 ---
 
-            // 読み込み中は NOW LOADING、完了したら READY。
-            // READY は最初の 0.3 秒だけ点滅させ、完了したことに気付けるようにする。
+            // 読み込み中は NOW LOADING、完了したら READY
+            // READY は最初の 0.3 秒だけ点滅させ、完了したことに気付けるようにする
             const float sub = 19.0f * k;
             if (lock <= 0.0f)
             {
@@ -636,14 +649,14 @@ void SceneLoading::DrawScreen(float alpha)
         }
     }
 
-    // ここから先は文字だけなので、フォントが用意できていなければ描かない。
+    // ここから先は文字だけなので、フォントが用意できていなければ描かない
     if (!m_text || !m_text->IsReady())
     {
         return;
     }
 
-    // 文字列の先頭から n 文字だけを返す。時間で n を増やすと、1文字ずつ打ち込む表示になる。
-    // 数えるのはバイトではなく文字なので、日本語を文字の途中で切らない。
+    // 文字列の先頭から n 文字だけを返す。時間で n を増やすと、1文字ずつ打ち込む表示になる
+    // 数えるのはバイトではなく文字なので、日本語を文字の途中で切らない
     auto typed = [](const std::string &s, float n) {
         return TextRenderer::Utf8Prefix(s, static_cast<size_t>(std::max(n, 0.0f)));
     };
@@ -653,7 +666,7 @@ void SceneLoading::DrawScreen(float alpha)
     // 6. 見出し
     // ---------------------------------------------------------
 
-    // 大きな LOADING を左から減速しながら滑り込ませ、右に3つの四角を順に点ける。
+    // 大きな LOADING を左から減速しながら滑り込ませ、右に3つの四角を順に点ける
     {
         const float t     = std::clamp(boot / 0.35f, 0.0f, 1.0f);
         const float slide = (1.0f - t) * (1.0f - t) * 40.0f * k; // 定位置までの残りの距離（px）
@@ -672,8 +685,8 @@ void SceneLoading::DrawScreen(float alpha)
     // 7. ログ
     // ---------------------------------------------------------
 
-    // 出た時刻・本文の順に、1行ずつ打ち込む。
-    // 最新の行だけ白金で強調し、古い行は沈める。
+    // 出た時刻・本文の順に、1行ずつ打ち込む
+    // 最新の行だけ白金で強調し、古い行は沈める
     {
         const float px     = 20.0f * k;
         const float lineH  = 32.0f * k;
@@ -698,7 +711,7 @@ void SceneLoading::DrawScreen(float alpha)
             const float y = top + lineH * static_cast<float>(i);
             const float n = (time - m_logStart[i]) * 60.0f; // 表示する文字数（1秒に 60 文字）
 
-            // 時刻は、表示が出始めた時点を 0 秒として数える。
+            // 時刻は、表示が出始めた時点を 0 秒として数える
             char stamp[16];
             std::snprintf(stamp, sizeof(stamp), "%05.2f", std::max(0.0f, m_logStart[i] - kShowDelay));
 
@@ -709,7 +722,7 @@ void SceneLoading::DrawScreen(float alpha)
                              isNewest ? DirectX::XMFLOAT4{kDotR, kDotG, kDotB, alpha}
                                       : DirectX::XMFLOAT4{kTextR, kTextG, kTextB, 0.55f * alpha});
 
-            // 最新の行の末尾に、0.8 秒周期で点滅するカーソルを置く。
+            // 最新の行の末尾に、0.8 秒周期で点滅するカーソルを置く
             if (isNewest && std::fmod(time, 0.8f) < 0.4f)
             {
                 m_text->DrawText(dc, "_", bodyX + m_text->MeasureWidth(shown, px), y, px,
@@ -722,7 +735,7 @@ void SceneLoading::DrawScreen(float alpha)
     // 8. ヒント
     // ---------------------------------------------------------
 
-    // 左下に白金の札「ヒント」を置き、その右に1行を打ち込む。
+    // 左下に白金の札「ヒント」を置き、その右に1行を打ち込む
     if (boot > 0.5f)
     {
         const float px   = 30.0f * k;
@@ -738,6 +751,8 @@ void SceneLoading::DrawScreen(float alpha)
         m_text->DrawText(dc, typed(kTips[m_tipIndex], (boot - 0.5f) * 30.0f), left + tagW + 27.0f * k, tipY, px, textCol);
     }
 }
+
+
 
 void SceneLoading::OnDrawImGui()
 {

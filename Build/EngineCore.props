@@ -100,6 +100,7 @@
 				$(SolutionDir)External\nlohmann;
 				$(SolutionDir)External\DirectXTK-main\Inc;
 				$(SolutionDir)External\JoltPhysics\include;
+				$(SolutionDir)External\meshoptimizer\src;
 				$(SolutionDir)External\stb;
 
 				<!-- Tracy のヘッダは全構成で #include される（コード側は無条件 include）。

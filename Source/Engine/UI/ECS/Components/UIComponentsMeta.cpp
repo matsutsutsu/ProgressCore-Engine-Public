@@ -1,5 +1,5 @@
-// UI コンポーネントのシリアライズ/インスペクタ定義。computed*（レイアウト結果）は保存しない。
 #include "UITransformComponent.h"
+#include "UICanvasComponent.h"
 #include "UIImageComponent.h"
 #include "UITextComponent.h"
 #include "UIInteractableComponent.h"
@@ -20,6 +20,13 @@ CFIELD(size, "Size (px)", "Layout")
 CFIELD_FLOAT_RANGED(rotation, "Rotation (deg)", 0.5f, -360.0f, 360.0f, "Layout")
 CFIELD_FLOAT_RANGED(scale, "Scale", 0.01f, 0.01f, 10.0f, "Layout")
 COMPONENT_META_END(UITransformComponent)
+
+// ===========================================================================
+// UICanvasComponent（UI カテゴリ）
+// ===========================================================================
+// メンバはないが、登録しないとプレハブに保存されず、読み戻したルートが Canvas でなくなる
+COMPONENT_META_BEGIN_FULL(UICanvasComponent, "UI Canvas (UIのルート)", CCL::Categories::UI, 5, false)
+COMPONENT_META_END(UICanvasComponent)
 
 // ===========================================================================
 // UIImageComponent（UI カテゴリ）

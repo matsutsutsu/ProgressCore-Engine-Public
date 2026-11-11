@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ComponentMeta を使ってコンポーネントをインスペクタに描く関数群（エディタ構成のみ）。
+// 概要: ComponentMeta を使ってコンポーネントをインスペクタに描く関数群（エディタ構成のみ）
 //
 // 責務:
 //   - Fields() からの自動描画（カテゴリごとの 2 列の表）と、CustomGui への切り替え
@@ -20,10 +20,10 @@
 #include <type_traits>
 #include "Editor/Core/EditorCommandHistory.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Platform/Core/Dialog.h"              // パスのフィールドのファイルダイアログ
-#include "Engine/Graphics/RHI/Graphics.h"             // ダイアログの親ウィンドウ
-#include "Engine/Graphics/Resource/ResourceManager.h" // パスのフィールドのサムネイル
-#include "Engine/Graphics/Resource/ResourceTypes.h"   // TextureHandle
+#include "Engine/Platform/Core/Dialog.h"
+#include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/Resource/ResourceManager.h"
+#include "Engine/Graphics/Resource/ResourceTypes.h"
 #include <imgui.h>
 
 namespace ComponentMetaImGui
@@ -82,15 +82,8 @@ namespace ComponentMetaImGui
             ImGui::SetTooltip("%s", text);
     }
 
-    /**
-     * @brief 「ラベル左・ウィジェット右」の 1 行を始める。自動描画の表と同じ見た目を、表を組まずに出せる。
-     * @note 左にラベルを描き、直後のウィジェットの開始位置を固定の列にそろえて右端まで広げる。
-     *       ウィジェットのラベルは "##..." で隠すこと。
-     * @code
-     *   ComponentMetaImGui::Prop("速度");       ImGui::DragFloat("##spd", &v);
-     *   ComponentMetaImGui::Prop("色", "RGBA"); ImGui::ColorEdit4("##col", c);
-     * @endcode
-     */
+    // 左にラベル、右にウィジェットの1行を始める。ウィジェットのラベルは "##..." で隠す
+    // 例: ComponentMetaImGui::Prop("速度"); ImGui::DragFloat("##spd", &v);
     inline void Prop(const char *label, const char *tooltip = nullptr)
     {
         // ラベル列の幅（自動描画の表に近い値。インデントされていても列がそろう）
@@ -104,7 +97,7 @@ namespace ComponentMetaImGui
 
         ImGui::SameLine();
 
-        // 列の位置にそろえるが、左へは戻さない。
+        // 列の位置にそろえるが、左へは戻さない
         //   SetCursorPosX は絶対位置なので、kLabelWidth より長いラベル（約 300px のものがある）では
         //   カーソルが左へ戻り、ウィジェットがラベルに重なる。長いラベルの行はその分右へずらす
         const float alignedX = startX + kLabelWidth;
@@ -113,25 +106,8 @@ namespace ComponentMetaImGui
         ImGui::SetNextItemWidth(-FLT_MIN);
     }
 
-    /**
-     * @brief 1 行 1 フィールドのヘルパー。Prop → ラベルを隠したウィジェット → 変更したかを返す、を 1 関数で行う。
-     *
-     * ID は値のポインタで作るので、同じラベルが並んでも衝突しない。
-     *
-     * @param label 表示名。
-     * @param v     編集する値。
-     * @param speed ドラッグ1px あたりの変化量。
-     * @param lo    下限。lo と hi が両方 0 なら制限しない。
-     * @param hi    上限。
-     * @param tip   ツールチップ。nullptr なら出さない。
-     * @return 値を変更したら true。
-     *
-     * @code
-     * namespace mi = ComponentMetaImGui;
-     * changed |= mi::DragFloat("強度", &v, 0.01f, 0.0f, 1.0f);
-     * changed |= mi::Checkbox("有効", &b);
-     * @endcode
-     */
+    // ラベルと、ラベルを隠した DragFloat の1行。値を変えたら true。lo と hi が両方 0 なら制限しない
+    // ID は値のポインタで作るので、同じラベルが並んでもぶつからない
     inline bool DragFloat(const char *label, float *v, float speed = 0.1f,
                           float lo = 0.0f, float hi = 0.0f, const char *tip = nullptr)
     {
@@ -234,14 +210,7 @@ namespace ComponentMetaImGui
     // 自動描画
     // ===========================================================================
 
-    /**
-     * @brief フィールドのツールチップを作る。
-     *
-     * 説明（CFIELD_T）の後に「変数名: <jsonName>」を必ず付け、表示名が日本語でもホバーで C++ の変数名が分かるようにする。
-     *
-     * @param fd ツールチップを作るフィールド。
-     * @return ツールチップの文字列。
-     */
+    // フィールドのツールチップ。説明の後に「変数名: <jsonName>」を付け、表示名が日本語でも C++ の名前が分かるようにする
     inline std::string BuildFieldTooltip(const FieldDescriptor &fd)
     {
         std::string t;
@@ -260,13 +229,7 @@ namespace ComponentMetaImGui
         return t;
     }
 
-    /**
-     * @brief FieldDescriptor 1 つ分のウィジェットだけを描く。
-     * @param fd  描くフィールド。
-     * @param obj フィールドを持つコンポーネントの先頭。
-     * @return 値を変更したら true。
-     * @note ラベルと幅は呼び出し側が決める（PushID(offset) 済みなので "##v" でも ID は一意）。
-     */
+    // FieldDescriptor 1つ分のウィジェットだけを描く。値を変えたら true。ラベルと幅は呼び出し側が決める
     inline bool DrawField(const FieldDescriptor &fd, void *obj)
     {
         using namespace DirectX;
@@ -488,7 +451,7 @@ namespace ComponentMetaImGui
     {
         bool anyChanged = false;
 
-        // UI の操作は同時に 1 つなので、編集前の状態は static で持てる。
+        // UI の操作は同時に 1 つなので、編集前の状態は static で持てる
         //   ただし選択の切り替わりは防げない。CustomGui 側は IsAnyItemActive() が false になるまで
         //   Undo の記録を遅らせるので、その間に別の Entity を選ぶと「A のバックアップを B に」という
         //   コマンドが積まれ、Undo で B に A の値が書き込まれる。持ち主の EntityID も控え、食い違ったら捨てる
@@ -547,7 +510,7 @@ namespace ComponentMetaImGui
         }
         else
         {
-            // Fields() から 2 列の表で描く（左: 表示名、右: ウィジェットを幅いっぱい）。
+            // Fields() から 2 列の表で描く（左: 表示名、右: ウィジェットを幅いっぱい）
             //   同じカテゴリが離れて出てきても 1 つにまとめてから描く。まとめないと同じ名前の
             //   TreeNode / Table が 2 つでき、ホバー時に ImGui の ID 重複の警告が出る
             const auto &fields = ComponentMeta<T>::Fields();
@@ -666,7 +629,7 @@ namespace ComponentMetaImGui
                     }
                     else
                     {
-                        // カテゴリ無しは見出しなしで並べる
+                        // カテゴリなしは見出しなしで並べる
                         if (beginPropTable("##rootprops"))
                         {
                             for (const auto *fd : g.items)
@@ -696,8 +659,8 @@ namespace ComponentMetaImGui
     // 登録
     // ===========================================================================
 
-    // ComponentGuiRegistry に T の描画関数を登録する。
-    //   category / sortPriority / hiddenInInspector が無ければ "Misc" / 1000 / false を使う
+    // ComponentGuiRegistry に T の描画関数を登録する
+    //   category / sortPriority / hiddenInInspector がなければ "Misc" / 1000 / false を使う
     template <typename T, typename RegistryType>
     void RegisterGuiMeta(RegistryType &registry)
     {

@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
 // 概要: コンパイル済みのシェーダーから、定数バッファ・テクスチャ・サンプラー・UAV の情報を読むクラスと、
-//       その情報から作る定数バッファ（AutoConstantBuffer）。
+//       その情報から作る定数バッファ（AutoConstantBuffer）
 //
 // 責務:
 //   - D3DReflect で .cso やバイトコードを調べ、名前・スロット・大きさ・変数の位置を集める
 //   - 定数バッファの変数に名前（またはそのハッシュ）で値を書き、まとめて GPU に送る
 //
 // 備考: Shader がこれを使い、HLSL の cbuffer の中身を C++ 側で定義しなくても
-//       マテリアルの値を名前で送れるようにしている。
+//       マテリアルの値を名前で送れるようにしている
 // ===========================================================================
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -63,10 +63,11 @@ namespace ShaderReflect
     struct TextureInfo
     {
         std::string           name;
-        uint32_t              nameHash  = 0;
-        UINT                  bindPoint = 0;                         // レジスタの番号（t0 なら 0）
-        D3D_SHADER_INPUT_TYPE type      = D3D_SIT_CBUFFER;           // 読んだ後は D3D_SIT_TEXTURE
-        D3D_SRV_DIMENSION     dimension = D3D_SRV_DIMENSION_UNKNOWN; // Texture2D・Texture2DArray など
+        uint32_t              nameHash    = 0;
+        uint32_t              useFlagHash = 0;                         // "use" + name のハッシュ（AlbedoMap なら useAlbedoMap）
+        UINT                  bindPoint   = 0;                         // レジスタの番号（t0 なら 0）
+        D3D_SHADER_INPUT_TYPE type        = D3D_SIT_CBUFFER;           // 読んだ後は D3D_SIT_TEXTURE
+        D3D_SRV_DIMENSION     dimension   = D3D_SRV_DIMENSION_UNKNOWN; // Texture2D・Texture2DArray など
     };
 
     // サンプラー
@@ -89,12 +90,8 @@ namespace ShaderReflect
         // バイトコードを調べる（前の結果は消える）
         bool LoadFromBytecode(const void *bytecode, size_t bytecodeSize);
 
-        /**
-         * @brief 今の結果を残したまま、別のステージのバイトコードの結果を足す。
-         *
-         * 頂点シェーダーとピクセルシェーダーを1つにまとめるときに使う。
-         * 同じ名前のものは同じリソースとみなし、先に入っている方を残す。
-         */
+        // 今の結果に、別のステージのバイトコードの結果を足す（頂点とピクセルのシェーダーを1つにまとめるとき）
+        // 同じ名前のものは同じリソースとみなし、先に入っている方を残す
         void MergeFromBytecode(const void *bytecode, size_t bytecodeSize);
 
         const std::vector<ConstantBufferInfo> &GetConstantBuffers() const { return constantBuffers; }
@@ -106,7 +103,7 @@ namespace ShaderReflect
         const TextureInfo        *FindTexture(const std::string &name) const;
         const SamplerInfo        *FindSampler(const std::string &name) const;
 
-        // テクスチャの名前からスロットの番号を引く。無ければ -1
+        // テクスチャの名前からスロットの番号を引く。なければ -1
         int FindTextureSlot(const std::string &name) const
         {
             for (const auto &tex : textures)
@@ -116,7 +113,7 @@ namespace ShaderReflect
             return -1;
         }
 
-        // サンプラーの名前からスロットの番号を引く。無ければ -1
+        // サンプラーの名前からスロットの番号を引く。なければ -1
         int FindSamplerSlot(const std::string &name) const
         {
             for (const auto &samp : samplers)
@@ -151,8 +148,8 @@ namespace ShaderReflect
         // info の大きさで、CPU 側の写しと GPU のバッファ（DEFAULT）を作る
         bool Create(ID3D11Device *device, const ConstantBufferInfo &info);
 
-        // varName の変数の位置に value を書く（送るのは UpdateBuffer）。
-        // 変数が無い・value が変数より大きいなら false
+        // varName の変数の位置に value を書く（送るのは UpdateBuffer）
+        // 変数がない・value が変数より大きいなら false
         template <typename T>
         bool SetValue(const std::string &varName, const T &value)
         {
@@ -194,11 +191,7 @@ namespace ShaderReflect
         // data を先頭から書く（バッファより大きいぶんは切り捨てる）
         void SetRawData(const void *data, size_t size);
 
-        /**
-         * @brief CPU 側の写しを全部 0 にする。
-         *
-         * @note Shader::UpdateMaterialProperties がマテリアルごとに呼び、前のマテリアルの値が残らないようにする（理由はそちらを参照）。
-         */
+        // CPU 側の写しを全部 0 にする。前のマテリアルの値が残らないよう、Shader::UpdateMaterialProperties が呼ぶ
         void ResetToZero()
         {
             std::fill(cpuBuffer.begin(), cpuBuffer.end(), static_cast<BYTE>(0));

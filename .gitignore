@@ -431,3 +431,6 @@ structure.txt
 
 # 遊んだ人の設定（GameSettings.json など）。ゲームが実行時に作る
 /Saved/
+
+# 配布用アーカイブ（Tools/Pak作成ツール で作る。数百 MB あり、Assets から作り直せる）
+/Build/Pak/

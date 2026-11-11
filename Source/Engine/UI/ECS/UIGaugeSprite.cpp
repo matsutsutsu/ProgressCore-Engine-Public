@@ -17,10 +17,12 @@ UIGaugeSprite::UIGaugeSprite(ID3D11Device *device)
     _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 }
 
+
+
 void UIGaugeSprite::RenderGauge(ID3D11DeviceContext *dc, float x, float y, float w, float h,
                                 GpuData::CbUIGaugeData data, float alpha)
 {
-    // 四角形を矩形の外へ広げる量。縁の太さに、輪郭をぼかす 1px と端数の余裕を足す。
+    // 四角形を矩形の外へ広げる量。縁の太さに、輪郭をぼかす 1px と端数の余裕を足す
     //   形の外側に出る演出があれば、そのうち一番はみ出すものに合わせてさらに広げる
     //   （四角形の外は描けないので、足りないと光やずれた部分が途中で切れる）
     float extra = 0.0f;
@@ -33,7 +35,7 @@ void UIGaugeSprite::RenderGauge(ID3D11DeviceContext *dc, float x, float y, float
     dc->UpdateSubresource(m_cb.Get(), 0, nullptr, &data, 0, 0);
     dc->PSSetConstantBuffers(SLOT_CB_UIGAUGE, 1, m_cb.GetAddressOf());
 
-    // テクスチャ座標は四角形全体で 0〜1 にする（切り抜きをダミーテクスチャ全体にする）。
+    // テクスチャ座標は四角形全体で 0〜1 にする（切り抜きをダミーテクスチャ全体にする）
     // シェーダーはこれに四角形の大きさを掛けて px 座標に戻す
     const DirectX::XMFLOAT4 c          = {1.0f, 1.0f, 1.0f, alpha};
     const DirectX::XMFLOAT4 corners[4] = {c, c, c, c};

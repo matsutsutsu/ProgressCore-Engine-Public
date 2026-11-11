@@ -32,7 +32,7 @@ void CalculateWorldTransform(
 }
 
 // ==========================================================
-// 2. 位置・法線 のみの変換 (Lambert, Outline用)
+// 2. 位置・法線 のみの変換 (Lambert用)
 // ==========================================================
 void CalculateWorldTransform(
     in float4 localPos, in float3 localNormal,

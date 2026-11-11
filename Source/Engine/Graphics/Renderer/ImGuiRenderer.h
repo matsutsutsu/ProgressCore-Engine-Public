@@ -1,17 +1,17 @@
 #pragma once
 // ===========================================================================
-// 概要: Dear ImGui の初期化・フレームの開始・描画をまとめた static クラス。
+// 概要: Dear ImGui の初期化・フレームの開始・描画をまとめた static クラス
 //
 // 責務:
 //   - ImGui のコンテキストと Win32 / DX11 のバックエンドを作る・壊す
 //   - 毎フレーム、画面全体のドックスペースを作る
 //   - 切り離した OS ウィンドウ（マルチビューポート）の描画を、操作していない間は間引く
 //
-// 備考: エディタ入りのビルド（ENABLE_EDITOR）でだけ使う。
+// 備考: エディタ入りのビルド（ENABLE_EDITOR）でだけ使う
 // ===========================================================================
 #include <Windows.h>
 #include <d3d11.h>
-#include <imgui.h> // ImFont
+#include <imgui.h>
 
 class ImGuiRenderer
 {
@@ -21,24 +21,13 @@ public:
     static void NewFrame();
     static void Render(ID3D11DeviceContext *context);
 
-    /**
-     * @brief 切り離した OS ウィンドウを描いて Present するかを切り替える。
-     *
-     * ViewportsEnable 自体は切らない。切るには DestroyPlatformWindows が要り、それはシャットダウン専用のため。
-     *
-     * @param enabled 描くなら true。Play 中や F1 で UI を隠したときに false にする。
-     */
+    // 切り離した OS ウィンドウを描いて Present するか（Play 中や F1 で UI を隠したときは false）
+    // ViewportsEnable は切らない。切るには DestroyPlatformWindows が要り、それはシャットダウン専用
     static void SetPlatformWindowsEnabled(bool enabled);
     static bool ArePlatformWindowsEnabled() { return s_platformWindowsEnabled; }
 
-    /**
-     * @brief 操作していない間、切り離した OS ウィンドウの描画を間引くかを切り替える。
-     *
-     * ImGui は毎フレーム全部を作り直すので、間引かないと触っていないウィンドウもゲームと同じ頻度で描いて Present する。
-     * 別のモニタにウィンドウを出したときの負荷が大きく下がる。
-     *
-     * @param enabled 間引くなら true。
-     */
+    // 操作していない間、切り離した OS ウィンドウの描画を間引くか
+    // ImGui は毎フレーム全部を作り直すので、間引かないと触っていないウィンドウもゲームと同じ頻度で描く
     static void SetPlatformWindowsThrottled(bool enabled);
     static bool ArePlatformWindowsThrottled() { return s_platformWindowsThrottled; }
 

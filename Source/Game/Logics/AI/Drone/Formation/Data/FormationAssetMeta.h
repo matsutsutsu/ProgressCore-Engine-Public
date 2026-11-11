@@ -1,26 +1,11 @@
 #pragma once
 // ===========================================================================
-// 概要: FormationAsset の各項目を「どう保存し、どう画面に出すか」を書いた表。
+// 概要: FormationAsset の各項目を、どう保存してどう画面に出すかを書いた表
 //
-// 責務:
-//   - 構造体ごとの FieldDescriptor 表（割付・形・動き・配置・当たり方・見せ方・全体）
-//   - enum の値の名前テーブル（JSON にもこの綴りで書く）
-//
-// 備考:
-//   FieldDescriptor は Engine の記述子で、JSON 側(ComponentMetaJson::SerializeField)と
-//   インスペクタ側(ComponentMetaImGui::DrawField)がどちらもこれを読む。項目を増やす
-//   ときはここへ1行足せば、保存と UI の両方に反映される。
-//
-//   構造体ごとに表を分けているのは、記述子が offsetof で位置を持つため。入れ子の
-//   構造体は別の表として持ち、JSON もその単位で入れ子になる。
-//
-//   CFIELD 系マクロを使わず FD_* を直に並べているのは、CFIELD が末尾のカンマを
-//   マクロの中に持つため。マクロ呼び出しの間に区切りが無く、clang-format が
-//   2つめ以降を継続行と見なして右へ階段状にずらしてしまう。
-//
-//   表に載らないもの:
-//     FormationLayer::curve … CurveData は FieldKind に無いので、カーブ専用の編集で扱う
-//     FormationAsset::sourcePath … 保存も表示もしない
+// 備考: JSON の読み書きとインスペクタの両方がこの表を読むので、項目を増やすときはここへ1行足す
+//       記述子は offsetof で位置を持つので、入れ子の構造体は別の表にする
+//       CFIELD を使わず FD_* を直に並べるのは、clang-format が2つめ以降を階段状にずらすため
+//       表に載らないもの: FormationLayer::curve（カーブの編集で扱う）、FormationAsset::sourcePath
 // ===========================================================================
 #include <iterator>
 #include <vector>
@@ -31,8 +16,7 @@
 namespace CCL::AI::Formation::Meta
 {
 
-    // enum の値の名前。並びは enum の宣言順そのまま（添字がそのまま値になる）。
-    // JSON にもこの綴りで書くので、一度公開したら変えない。
+    // enum の値の名前。並びは enum の宣言順（添字がそのまま値）。JSON にもこの綴りで書くので、一度公開したら変えない
     inline constexpr const char *kAxisNames[]       = {"Right", "Up", "Forward"};
     inline constexpr const char *kShapeNames[]      = {"Grid", "Model"};
     inline constexpr const char *kSplitNames[]      = {"Block", "Interleaved"};
@@ -42,7 +26,7 @@ namespace CCL::AI::Formation::Meta
     inline constexpr const char *kLookNames[]       = {"Auto", "ToPlayer", "Inward"};
     inline constexpr const char *kChargeModeNames[] = {"Straight", "RigidFollow", "SoftFollow"};
 
-    // 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す。
+    // 名前テーブルの要素数を FD_EnumU8 が取る形(int)で返す
     template <size_t N>
     constexpr int NameCount(const char *const (&)[N])
     {
@@ -153,7 +137,9 @@ namespace CCL::AI::Formation::Meta
             FD_String("技の名前", "name", offsetof(T, name), nullptr, true, "一覧とインスペクタに出る表示名。自由に変えてよい"),
             FD_UInt8("枠番号", "slot", offsetof(T, slot), 1.0f, 0.0f, static_cast<float>(kDroneFormationSlotCount - 1), nullptr, true, "BT もプレハブもこの数値で技を指す。画面からは変えられない（登録先とずれるため）", true),
             FD_Float("攻撃の長さ [秒]", "attackSeconds", offsetof(T, attackSeconds), 0.01f, 0.01f, 10.0f, nullptr, true, "撃つ合図から形が動き切るまで"),
-            FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。ボスBTの予告の Wait と同じ値にする（今は BT がこの値を読まない）"),
+            FD_Float("予告の長さ [秒]", "telegraphSeconds", offsetof(T, telegraphSeconds), 0.01f, 0.05f, 10.0f, nullptr, true, "撃つ前に震える時間。BT の「ドローンの技」はこの時間が過ぎたら撃つ"),
+            FD_Float("撃ってから戻すまで [秒]", "recoverySeconds", offsetof(T, recoverySeconds), 0.01f, 0.0f, 30.0f, nullptr, true, "攻撃と硬直の長さ。過ぎたらドローンを頭上円陣へ戻す"),
+            FD_Float("戻してからの間 [秒]", "restSeconds", offsetof(T, restSeconds), 0.01f, 0.0f, 30.0f, nullptr, true, "ボスが次の技を選ぶまで待つ時間。0 ならすぐ選ぶ"),
         };
         return fields;
     }

@@ -1,12 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: 音を鳴らす要求を EventBus で送るためのイベント定義。
-//
-// 責務:
-//   - 発行側が IAudioAPI を知らずに効果音を鳴らせるようにする
-//
-// 備考: AudioSystem が購読し、IAudioAPI::PlayOneShot3D へ渡す。
-// ===========================================================================
+// 音を鳴らす要求のイベント。発行側は IAudioAPI を知らずに効果音を鳴らせる
+// AudioSystem が購読し、IAudioAPI::PlayOneShot3D へ渡す
 #include <cstdint>
 #include <DirectXMath.h>
 

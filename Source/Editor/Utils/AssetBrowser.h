@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: Assets フォルダの中身を、フォルダツリーとアイコンのグリッドで表示するブラウザ。
+// 概要: Assets フォルダの中身を、フォルダツリーとアイコンのグリッドで表示するブラウザ
 //
 // 責務:
 //   - フォルダを走査して木構造を作る（Refresh で作り直す）
@@ -8,7 +8,7 @@
 //   - 名前の検索と、種類ごとの表示フィルタ
 //   - モデル・プレハブのファイルをドラッグ＆ドロップの送り元にする
 //
-// 備考: AssetBrowserWindow が所有して描く。アイコンは ShellIconLoader で OS 標準のものを使う。
+// 備考: AssetBrowserWindow が所有して描く。アイコンは ShellIconLoader で OS 標準のものを使う
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -42,13 +42,13 @@ private:
     void LoadDirectory(const fs::path &dirPath, AssetNode &node);
 
     /**
-     * @brief node 以下の parent を張り直す。
+     * @brief node 以下の parent を張り直す
      *
-     * children は vector なので、走査中の追加で要素が移動し、その時点で取ったポインタは無効になる。
-     * 木が完成してから一括で設定する。
+     * children は vector なので、走査中の追加で要素が移動し、その時点で取ったポインタは無効になる
+     * 木が完成してから一括で設定する
      *
-     * @param node   張り直す木の根。
-     * @param parent node の親。根なら nullptr。
+     * @param node   張り直す木の根
+     * @param parent node の親。根なら nullptr
      */
     void SetParents(AssetNode &node, AssetNode *parent);
 

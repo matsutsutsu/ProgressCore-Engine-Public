@@ -16,6 +16,8 @@ static inline XMMATRIX ComposeLocal(const TransformComponent &t)
         XMLoadFloat4(&t.rotation), XMLoadFloat3(&t.position));
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
@@ -29,6 +31,8 @@ void TransformUpdateSystem::Initialize()
     }
 }
 
+
+
 void TransformUpdateSystem::Update(float dt)
 {
     // 処理フロー:
@@ -37,8 +41,7 @@ void TransformUpdateSystem::Update(float dt)
     // 3. ルートを並列に計算する
     // 4. 非ルートを親が先の順に解決する
 
-    // 【備考】
-    //   3 と 4 は入れ替えられない。4 はルートの親の worldMatrix を、3 で確定した値として読むため。
+    // 3 と 4 は入れ替えられない。4 はルートの親の worldMatrix を、3 で確定した値として読むため
 
     ProcessPendingParents();
 
@@ -52,9 +55,11 @@ void TransformUpdateSystem::Update(float dt)
     // Entity 数が多いのはルートなので、ここを並列にすると効果が大きい
     ComputeRootsParallel();
 
-    // 親子の無いシーンでは Count() == 0 ですぐ抜ける
+    // 親子のないシーンでは Count() == 0 ですぐ抜ける
     SolveHierarchy();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 階層の解決
@@ -91,7 +96,7 @@ bool TransformUpdateSystem::ScanDetectTopology()
 
         if (oi < 0)
         {
-            // キャッシュに無い非ルート＝新しく親子付けされた
+            // キャッシュにない非ルート＝新しく親子付けされた
             needRebuild = true;
             return;
         }
@@ -103,10 +108,12 @@ bool TransformUpdateSystem::ScanDetectTopology()
     return needRebuild;
 }
 
+
+
 void TransformUpdateSystem::ComputeRootsParallel()
 {
-    // 静的物体でも isDirty が立っていれば計算する。
-    // isDirty は生成・ロード直後に true なので、静的物体も最初の1回は必ず worldMatrix が作られる。
+    // 静的物体でも isDirty が立っていれば計算する
+    // isDirty は生成・ロード直後に true なので、静的物体も最初の1回は必ず worldMatrix が作られる
     ForEachParallel([](TransformComponent &t) {
         if (t.parent != 0) return;                               // 子は SolveHierarchy で計算する
         if (t.isStatic && !t.isDirty && !t.isTeleported) return; // 動いていない静的物体だけ省く
@@ -114,6 +121,8 @@ void TransformUpdateSystem::ComputeRootsParallel()
         t.isDirty = false;
     });
 }
+
+
 
 void TransformUpdateSystem::SolveHierarchy()
 {
@@ -151,6 +160,8 @@ void TransformUpdateSystem::SolveHierarchy()
     }
 }
 
+
+
 void TransformUpdateSystem::ProcessPendingParents()
 {
     // View は全 Chunk を走査する。0 件なら中身は回らないが、重くなるようなら
@@ -186,6 +197,8 @@ void TransformUpdateSystem::ProcessPendingParents()
     }
 }
 
+
+
 void TransformUpdateSystem::RepairBrokenLinks()
 {
     // キャッシュを作り直す直前だけ実行する
@@ -206,6 +219,8 @@ void TransformUpdateSystem::RepairBrokenLinks()
         }
     });
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 親子関係の操作
@@ -243,6 +258,8 @@ void TransformUpdateSystem::SetParent(World &world, EntityID childID, EntityID n
     parentTrans->firstChildID = childID;
 }
 
+
+
 void TransformUpdateSystem::DetachChild(World &world, EntityID childID)
 {
     auto *childTrans = world.GetComponent<TransformComponent>(childID);
@@ -273,6 +290,8 @@ void TransformUpdateSystem::DetachChild(World &world, EntityID childID)
     childTrans->nextSiblingID = 0;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 物理との受け渡し
 // ---------------------------------------------------------------------------
@@ -285,7 +304,7 @@ void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
 
     const EntityID parentID = trans.parent.id;
 
-    // 親がいなければローカル＝ワールド。大多数はここで終わる（追加コストなし）。
+    // 親がいなければローカル＝ワールド。大多数はここで終わる（追加コストなし）
     if (parentID == 0)
     {
         trans.position = worldPos;
@@ -297,7 +316,7 @@ void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
     const auto *parentTrans = world.GetComponent<TransformComponent>(parentID);
     if (!parentTrans)
     {
-        // 親リンクが切れている（破棄直後など）。ワールド値のまま置くのが最も無難。
+        // 親リンクが切れている（破棄直後など）。ワールド値のまま置くのが最も無難
         trans.position = worldPos;
         trans.rotation = worldRot;
         trans.isStatic = false;
@@ -322,12 +341,14 @@ void TransformUpdateSystem::WriteWorldTransform(World &world, EntityID entity,
     }
     else
     {
-        // 分解できない行列（スケール0など）。回転は触らず位置だけ反映しておく。
+        // 分解できない行列（スケール0など）。回転は触らず位置だけ反映しておく
         trans.rotation = worldRot;
     }
 
     trans.isStatic = false;
 }
+
+
 
 void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
                                                TransformComponent &trans, const DirectX::XMFLOAT3 &worldPos)
@@ -359,6 +380,8 @@ void TransformUpdateSystem::WriteWorldPosition(World &world, EntityID entity,
     XMStoreFloat3(&trans.position, localPos);
     trans.isStatic = false;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 破棄の予約
@@ -402,6 +425,8 @@ void TransformUpdateSystem::DestroyEntityWithHierarchy(World &world, EntityID en
     world.RequestDestroyEntity(entity);
 }
 
+
+
 void TransformUpdateSystem::MarkForDestruction(World &world, EntityID entity, bool destroyChildren)
 {
     if (!world.IsEntityValid(entity)) return;
@@ -425,5 +450,7 @@ void TransformUpdateSystem::MarkForDestruction(World &world, EntityID entity, bo
         }
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(TransformUpdateSystem, Priority::LogicStage::L02_PostUpdate);

@@ -9,14 +9,14 @@ namespace JoltShapeFactory
     JPH::ShapeRefC CreateChecked(
         const JPH::ShapeSettings &settings, uint64_t ownerId, const char *what)
     {
-        // Create() は結果を mCachedResult にキャッシュするため、複数回呼んでも安い。
+        // Create() は結果を mCachedResult にキャッシュするため、複数回呼んでも安い
         JPH::ShapeSettings::ShapeResult result = settings.Create();
 
         if (result.HasError())
         {
-            // ERROR は全構成で残る（Logger.h）。
-            // 何も出さずに nullptr を返すと「一部のオブジェクトだけ当たり判定が無い」という
-            // 原因を追いにくい症状になるため、必ず理由ごと残す。
+            // ERROR は全構成で残る（Logger.h）
+            // 何も出さずに nullptr を返すと「一部のオブジェクトだけ当たり判定がない」という
+            // 原因を追いにくい症状になるため、必ず理由ごと残す
             CCL_LOG_ERROR(LogCategory::Physics,
                           "%s の形状生成に失敗しました (Entity %llu): %s",
                           what,
@@ -28,6 +28,8 @@ namespace JoltShapeFactory
         return result.Get();
     }
 
+
+
     JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree)
     {
         const float pitch = DirectX::XMConvertToRadians(eulerDegree.x);
@@ -35,6 +37,8 @@ namespace JoltShapeFactory
         const float roll  = DirectX::XMConvertToRadians(eulerDegree.z);
         return JPH::Quat::sEulerAngles(JPH::Vec3(pitch, yaw, roll));
     }
+
+
 
     JPH::ShapeRefC CreateOffsetShape(
         const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,

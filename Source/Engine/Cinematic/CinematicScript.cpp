@@ -1,7 +1,7 @@
 #include "Engine/Cinematic/CinematicScript.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/Resource/ResourceManager.h" // アニメのトラックのクリップを読む
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 
 #include <json.hpp>
@@ -15,19 +15,13 @@ using nlohmann::json;
 namespace
 {
     // --- 項目と値の読み取り ---
-    // どれも、項目が無ければ out を書き換えずに true を返す（省略は既定値を使う）。
-    // 書き間違いなら err に理由を入れて false を返す。
+    // どれも、項目がなければ out を書き換えずに true を返す（省略は既定値を使う）
+    // 書き間違いなら err に理由を入れて false を返す
 
-    /**
-     * @brief 知っている項目だけで書かれているかを確かめる。
-     * @param j       確かめるオブジェクト。
-     * @param allowed 書いてよい項目の名前。
-     * @param err     知らない項目があったときの理由。
-     * @return 知らない項目が無ければ true。
-     */
+    // j に allowed にない項目があれば、理由を err に書いて false
     bool CheckKeys(const json &j, std::initializer_list<const char *> allowed, std::string &err)
     {
-        // 項目名の打ち間違いは、読み飛ばすと既定値で通ってしまい気付けないので、書き間違いとして扱う。
+        // 項目名の打ち間違いは、読み飛ばすと既定値で通ってしまい気付けないので、書き間違いとして扱う
         for (auto it = j.begin(); it != j.end(); ++it)
         {
             const std::string &key = it.key();
@@ -39,6 +33,8 @@ namespace
         }
         return true;
     }
+
+
 
     bool ReadFloat(const json &j, const char *key, float &out, std::string &err)
     {
@@ -52,6 +48,8 @@ namespace
         return true;
     }
 
+
+
     bool ReadBool(const json &j, const char *key, bool &out, std::string &err)
     {
         if (!j.contains(key)) return true;
@@ -64,6 +62,8 @@ namespace
         return true;
     }
 
+
+
     bool ReadString(const json &j, const char *key, std::string &out, std::string &err)
     {
         if (!j.contains(key)) return true;
@@ -75,6 +75,8 @@ namespace
         out = j[key].get<std::string>();
         return true;
     }
+
+
 
     bool ReadVec3(const json &j, const char *key, DirectX::XMFLOAT3 &out, std::string &err)
     {
@@ -89,17 +91,10 @@ namespace
         return true;
     }
 
-    /**
-     * @brief 名前で書いた列挙値を読む。
-     * @tparam Enum 読む列挙型。
-     * @tparam N    名前の数。
-     * @param j     読むオブジェクト。
-     * @param key   項目名。
-     * @param names 列挙値の名前（列挙の並びと同じ順）。
-     * @param out   読めたときだけ書き換える。
-     * @param err   書き間違いの理由。
-     * @return 項目が無いか、知っている名前なら true。
-     */
+
+
+    // key の列挙値を名前で読む（names は列挙と同じ順）。読めたときだけ out を書き換える
+    // 項目がないときも true。知らない名前なら理由を err に書いて false
     template <class Enum, std::size_t N>
     bool ReadEnum(const json &j, const char *key, const char *const (&names)[N], Enum &out, std::string &err)
     {
@@ -119,15 +114,11 @@ namespace
         return false;
     }
 
+
+
     // --- ショット ---
 
-    /**
-     * @brief ショット1つを読む。
-     * @param j    ショットのオブジェクト。
-     * @param shot 読んだ値を入れる先。
-     * @param err  書き間違いの理由。
-     * @return 読めたら true。
-     */
+    // ショット1つを読む。書き間違いがあれば理由を err に書いて false
     bool ParseShot(const json &j, CameraShot &shot, std::string &err)
     {
         if (!j.is_object())
@@ -139,7 +130,8 @@ namespace
         if (!CheckKeys(j,
                        {"_comment", "start", "duration", "subject", "motion", "ease", "blendIn", "lookStart",
                         "lookEnd", "eyeStart", "eyeEnd", "angleStart", "angleEnd", "radiusStart", "radiusEnd",
-                        "heightStart", "heightEnd", "fovStart", "fovEnd"},
+                        "heightStart", "heightEnd", "fovStart", "fovEnd", "dof", "dofRange", "dofFalloff",
+                        "dofMaxBlur"},
                        err))
             return false;
 
@@ -149,8 +141,8 @@ namespace
             !ReadEnum(j, "ease", kCameraEaseNames, shot.ease, err) || !ReadFloat(j, "blendIn", shot.blendIn, err))
             return false;
 
-        // 開始の値を先に読み、終了の値の既定を開始と同じにする。
-        // 終了を省略したら、その値はショットの間動かない。
+        // 開始の値を先に読み、終了の値の既定を開始と同じにする
+        // 終了を省略したら、その値はショットの間動かない
         if (!ReadVec3(j, "lookStart", shot.lookStart, err) || !ReadVec3(j, "eyeStart", shot.eyeStart, err) ||
             !ReadFloat(j, "angleStart", shot.angleStart, err) || !ReadFloat(j, "radiusStart", shot.radiusStart, err) ||
             !ReadFloat(j, "heightStart", shot.heightStart, err) || !ReadFloat(j, "fovStart", shot.fovStart, err))
@@ -168,6 +160,10 @@ namespace
             !ReadFloat(j, "heightEnd", shot.heightEnd, err) || !ReadFloat(j, "fovEnd", shot.fovEnd, err))
             return false;
 
+        if (!ReadBool(j, "dof", shot.dof, err) || !ReadFloat(j, "dofRange", shot.dofRange, err) ||
+            !ReadFloat(j, "dofFalloff", shot.dofFalloff, err) || !ReadFloat(j, "dofMaxBlur", shot.dofMaxBlur, err))
+            return false;
+
         // --- 値の範囲 ---
         if (shot.start < 0.0f)
         {
@@ -175,7 +171,7 @@ namespace
             return false;
         }
 
-        // 長さ 0 は進行度の割り算が壊れる（再生側でも弾くが、書き間違いとして先に知らせる）。
+        // 長さ 0 は進行度の割り算が壊れる（再生側でも弾くが、書き間違いとして先に知らせる）
         if (shot.duration <= 0.0f)
         {
             err = "\"duration\" は 0 より大きく";
@@ -188,19 +184,28 @@ namespace
             return false;
         }
 
-        // 画角は 0 度以下・180 度以上だと投影行列が作れない。
+        // 画角は 0 度以下・180 度以上だと投影行列が作れない
         if (shot.fovStart <= 0.0f || shot.fovStart >= 180.0f || shot.fovEnd <= 0.0f || shot.fovEnd >= 180.0f)
         {
             err = "\"fovStart\" / \"fovEnd\" は 0 より大きく 180 より小さく";
             return false;
         }
+
+        // 減衰の距離はシェーダで割るので、0 にはできない
+        if (shot.dofRange < 0.0f || shot.dofFalloff <= 0.0f || shot.dofMaxBlur < 0.0f)
+        {
+            err = "\"dofRange\" / \"dofMaxBlur\" は 0 以上、\"dofFalloff\" は 0 より大きく";
+            return false;
+        }
         return true;
     }
 
+
+
     // --- カメラ以外のトラック ---
 
-    // 点の時刻は、0 以上で全体の長さ以下にする。
-    // 長さを超えた点は、再生位置が届かないので一度も出ない。長さか時刻の書き間違いとして扱う。
+    // 点の時刻は、0 以上で全体の長さ以下にする
+    // 長さを超えた点は、再生位置が届かないので一度も出ない。長さか時刻の書き間違いとして扱う
     bool CheckPointTime(float time, float duration, std::string &err)
     {
         if (time < 0.0f || time > duration)
@@ -211,6 +216,8 @@ namespace
         return true;
     }
 
+
+
     // 必ず書く文字列が空でないかを確かめる
     bool RequireString(const std::string &value, const char *key, std::string &err)
     {
@@ -218,6 +225,8 @@ namespace
         err = std::string("\"") + key + "\" を書く";
         return false;
     }
+
+
 
     bool ParseSound(const json &j, float duration, CinematicSound &out, std::string &err)
     {
@@ -231,6 +240,8 @@ namespace
         return CheckPointTime(out.time, duration, err) && RequireString(out.event, "event", err);
     }
 
+
+
     bool ParseEffect(const json &j, float duration, CinematicEffect &out, std::string &err)
     {
         if (!CheckKeys(j, {"_comment", "time", "effect", "subject", "offset", "scale", "follow", "duration"}, err))
@@ -242,10 +253,12 @@ namespace
             !ReadFloat(j, "duration", out.duration, err))
             return false;
 
-        // エフェクトはアニメの Effect イベントと同じ経路で出すので、基準の Entity が要る。
+        // エフェクトはアニメの Effect イベントと同じ経路で出すので、基準の Entity が要る
         return CheckPointTime(out.time, duration, err) && RequireString(out.effect, "effect", err) &&
                RequireString(out.subject, "subject", err);
     }
+
+
 
     bool ParseSignal(const json &j, float duration, CinematicSignal &out, std::string &err)
     {
@@ -258,6 +271,8 @@ namespace
 
         return CheckPointTime(out.time, duration, err) && RequireString(out.name, "name", err);
     }
+
+
 
     bool ParseAnimation(const json &j, float duration, CinematicAnimation &out, std::string &err)
     {
@@ -285,14 +300,14 @@ namespace
             return false;
         }
 
-        // ループは終わりが無いので、長さを省略できない。
+        // ループは終わりがないので、長さを省略できない
         if (out.loop && out.duration <= 0.0f)
         {
             err = "\"loop\" が true のときは \"duration\" を書く";
             return false;
         }
 
-        // 再生のたびにファイルを読まないよう、台本を読むときにアニメも読んでおく。
+        // 再生のたびにファイルを読まないよう、台本を読むときにアニメも読んでおく
         out.resolved = ResourceManager::Instance().LoadAnimSequence(out.sequence.c_str());
         if (!out.resolved)
         {
@@ -300,30 +315,20 @@ namespace
             return false;
         }
 
-        // 長さの省略（0）は、クリップを1回最後まで再生する長さとみなす（CinematicAnimation::Length）。
+        // 長さの省略（0）は、クリップを1回最後まで再生する長さとみなす（CinematicAnimation::Length）
         out.clipDuration = out.resolved->duration;
         return true;
     }
 
-    /**
-     * @brief 台本のトラック1種類（配列）を読み、時刻の順に並べる。
-     * @tparam T     トラックの1要素の型。
-     * @tparam Parse 1要素を読む関数。bool(const json &, float, T &, std::string &)。
-     * @tparam Time  要素の時刻を返す関数。float(const T &)。
-     * @param root     ファイル全体のオブジェクト。
-     * @param key      配列の項目名。
-     * @param duration 全体の長さ（秒）。
-     * @param parse    1要素を読む関数。
-     * @param timeOf   要素の時刻を返す関数。
-     * @param out      読んだ要素を入れる先。
-     * @param err      書き間違いの理由。
-     * @return 項目が無いか、すべて読めたら true。
-     */
+
+
+    // 台本のトラック1種類（root[key] の配列）を読み、timeOf の時刻の順に並べる。項目がないときも true
+    // parse の形は bool(const json &, float duration, T &, std::string &err)
     template <class T, class Parse, class Time>
     bool ParseTrack(const json &root, const char *key, float duration, Parse parse, Time timeOf, std::vector<T> &out,
                     std::string &err)
     {
-        // トラックは使わない台本もあるので、省略してよい。
+        // トラックは使わない台本もあるので、省略してよい
         if (!root.contains(key)) return true;
 
         if (!root[key].is_array())
@@ -349,24 +354,20 @@ namespace
             out.push_back(std::move(item));
         }
 
-        // 再生側は先頭から順に「時刻を過ぎたか」を見るので、読んだときに並べておく。
+        // 再生側は先頭から順に「時刻を過ぎたか」を見るので、読んだときに並べておく
         std::stable_sort(out.begin(), out.end(), [&](const T &a, const T &b) { return timeOf(a) < timeOf(b); });
         return true;
     }
 
-    /**
-     * @brief 台本全体を読む。
-     * @param root   ファイル全体のオブジェクト。
-     * @param script 読んだ値を入れる先。
-     * @param err    書き間違いの理由。
-     * @return 読めたら true。
-     */
+
+
+    // 台本全体を読む。書き間違いがあれば理由を err に書いて false
     bool ParseScript(const json &root, CinematicScript &script, std::string &err)
     {
         // 処理フロー:
         // 1. 全体の設定を読む
         // 2. ショットを1つずつ読む
-        // 3. 開始時刻の順に並べ、映らないショットが無いか確かめる
+        // 3. 開始時刻の順に並べ、映らないショットがないか確かめる
         // 4. カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を読む
 
         // ---------------------------------------------------------
@@ -404,7 +405,7 @@ namespace
         // 2. ショット
         // ---------------------------------------------------------
 
-        // ショットの無い台本は、再生しても映すものが無い。
+        // ショットのない台本は、再生しても映すものがない
         if (!root.contains("shots") || !root["shots"].is_array() || root["shots"].empty())
         {
             err = "\"shots\" にショットを1つ以上、配列で書く";
@@ -427,12 +428,12 @@ namespace
         // 3. 並び順と映らないショット
         // ---------------------------------------------------------
 
-        // ショットの探し方は開始時刻の昇順を前提にしているので、読んだときに並べておく。
-        // 同じ開始時刻のショットは、書いた順を保つ。
+        // ショットの探し方は開始時刻の昇順を前提にしているので、読んだときに並べておく
+        // 同じ開始時刻のショットは、書いた順を保つ
         std::stable_sort(script.shots.begin(), script.shots.end(),
                          [](const CameraShot &a, const CameraShot &b) { return a.start < b.start; });
 
-        // 全体の長さ以降に始まるショットは、一度も映らない。長さか開始時刻の書き間違いとして扱う。
+        // 全体の長さ以降に始まるショットは、一度も映らない。長さか開始時刻の書き間違いとして扱う
         if (script.shots.back().start >= script.duration)
         {
             err = "開始時刻 " + std::to_string(script.shots.back().start) + " 秒のショットが、全体の長さ " +
@@ -453,21 +454,27 @@ namespace
                           [](const CinematicAnimation &a) { return a.start; }, script.animations, err);
     }
 
+
+
     // --- 書き出し ---
-    // 項目の並びを書いた順に保つため ordered_json を使う（json はキーの名前順に並べ替える）。
+    // 項目の並びを書いた順に保つため ordered_json を使う（json はキーの名前順に並べ替える）
 
     using ordered_json = nlohmann::ordered_json;
 
-    // float をそのまま double にすると 4.4 が 4.400000095367432 と書かれるので、小数4桁に丸める。
+    // float をそのまま double にすると 4.4 が 4.400000095367432 と書かれるので、小数4桁に丸める
     double Num(float v)
     {
         return std::round(static_cast<double>(v) * 10000.0) / 10000.0;
     }
 
+
+
     ordered_json Vec3(const DirectX::XMFLOAT3 &v)
     {
         return ordered_json::array({Num(v.x), Num(v.y), Num(v.z)});
     }
+
+
 
     ordered_json ShotToJson(const CameraShot &s)
     {
@@ -490,8 +497,14 @@ namespace
         j["heightEnd"]   = Num(s.heightEnd);
         j["fovStart"]    = Num(s.fovStart);
         j["fovEnd"]      = Num(s.fovEnd);
+        j["dof"]         = s.dof;
+        j["dofRange"]    = Num(s.dofRange);
+        j["dofFalloff"]  = Num(s.dofFalloff);
+        j["dofMaxBlur"]  = Num(s.dofMaxBlur);
         return j;
     }
+
+
 
     ordered_json SoundToJson(const CinematicSound &s)
     {
@@ -503,6 +516,8 @@ namespace
         j["pitch"]   = Num(s.pitch);
         return j;
     }
+
+
 
     ordered_json EffectToJson(const CinematicEffect &e)
     {
@@ -517,6 +532,8 @@ namespace
         return j;
     }
 
+
+
     ordered_json SignalToJson(const CinematicSignal &s)
     {
         ordered_json j;
@@ -527,6 +544,8 @@ namespace
         j["value"]  = Num(s.value);
         return j;
     }
+
+
 
     ordered_json AnimationToJson(const CinematicAnimation &a)
     {
@@ -542,11 +561,9 @@ namespace
         return j;
     }
 
-    /**
-     * @brief 要素の列を JSON の配列にする。
-     * @param items  書く要素の列。
-     * @param toJson 1要素を JSON にする関数。
-     */
+
+
+    // toJson で1要素ずつ JSON にして、配列にする
     template <class T, class ToJson>
     ordered_json ArrayToJson(const std::vector<T> &items, ToJson toJson)
     {
@@ -554,6 +571,8 @@ namespace
         for (const T &item : items) a.push_back(toJson(item));
         return a;
     }
+
+
 
     ordered_json ScriptToJson(const CinematicScript &script)
     {
@@ -572,7 +591,7 @@ namespace
 
 bool CinematicScriptIO::Load(const std::string &path, CinematicScript &out)
 {
-    // ファイルを丸ごと読み込む。空ならファイルが無いか空
+    // ファイルを丸ごと読み込む。空ならファイルがないか空
     const std::string text = FileSystem::ReadAllText(path);
     if (text.empty())
     {
@@ -580,7 +599,7 @@ bool CinematicScriptIO::Load(const std::string &path, CinematicScript &out)
         return false;
     }
 
-    // 例外を投げさせず、壊れた JSON は discarded として受け取る。
+    // 例外を投げさせず、壊れた JSON は discarded として受け取る
     const json root = json::parse(text, nullptr, false);
     if (root.is_discarded())
     {
@@ -603,6 +622,8 @@ bool CinematicScriptIO::Load(const std::string &path, CinematicScript &out)
     return true;
 }
 
+
+
 bool CinematicScriptIO::Save(const std::string &path, const CinematicScript &script, std::string &err)
 {
     // 処理フロー:
@@ -619,8 +640,8 @@ bool CinematicScriptIO::Save(const std::string &path, const CinematicScript &scr
     // 2. 読み込みと同じ決まりで確かめる
     // ---------------------------------------------------------
 
-    // 書いた文字列をそのまま読み直して確かめる。
-    // 決まりを書き出し側にもう一度書くと、読み込み側だけ直したときに食い違う。
+    // 書いた文字列をそのまま読み直して確かめる
+    // 決まりを書き出し側にもう一度書くと、読み込み側だけ直したときに食い違う
     CinematicScript check;
     if (!ParseScript(json::parse(text, nullptr, false), check, err))
     {

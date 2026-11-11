@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 描画まわり全体をまとめて持つシングルトン。
+// 概要: 描画まわり全体をまとめて持つシングルトン
 //
 // 責務:
 //   - GraphicsDevice（D3D11 のデバイス・RT・CbScene）と描画サブシステムを作って持つ
@@ -8,7 +8,7 @@
 //   - 毎フレーム CbScene と CbLight を GPU へ送り、パイプラインを実行する
 //   - デバイスロストを検出し、作り直す
 //
-// 備考: D3D11 の操作は GraphicsDevice に任せ、ここからは薄く呼ぶだけにしている。
+// 備考: D3D11 の操作は GraphicsDevice に任せ、ここからは薄く呼ぶだけにしている
 // ===========================================================================
 #include <memory>
 #include <string>
@@ -27,6 +27,8 @@
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/Graphics/Shader/PostProcess/PostProcessManager.h"
 
+class LodDebugPass;
+
 class Graphics
 {
 private:
@@ -43,16 +45,11 @@ public:
     void Initialize(HWND hWnd);
     void Shutdown();
 
-    /**
-     * @brief CbScene と CbLight を GPU へ送る。
-     * @note m_mainCamera を読むので、CameraBrainSystem が先にカメラを書いておくこと。
-     */
+    // CbScene と CbLight を GPU へ送る。CbScene を書くのはここだけ（EnvironmentSystem はバインドするだけ）
+    // m_mainCamera を読むので、先に CameraBrainSystem がカメラを書く
     void Update();
 
-    /**
-     * @brief 登録した全パスを順に実行し、最後にリソースのバインドを外す。
-     * @param ctx MakeFrameContext() で作った、このフレームだけのコンテキスト
-     */
+    // 登録した全パスを順に実行し、最後にリソースのバインドを外す。ctx は MakeFrameContext で作る
     void Render(const RenderFrameContext &ctx);
 
     // ============================================================
@@ -64,10 +61,7 @@ public:
     // フレームの先頭で呼ぶ。vsync の待ちをここに集める（Waitable スワップチェーン）
     void WaitForFrameLatency() const noexcept { m_gfxDevice.WaitForFrameLatency(); }
 
-    /**
-     * @brief スワップチェーンを提示する。
-     * @return デバイスロストを検出したら false。呼び出し側は RecoverFromDeviceLost() を呼ぶ。
-     */
+    // スワップチェーンを提示する。デバイスロストなら false を返すので、呼び出し側が RecoverFromDeviceLost を呼ぶ
     bool Present(UINT syncInterval);
 
     // ============================================================
@@ -102,39 +96,37 @@ public:
     PostProcessManager   *GetPostProcessManager() const { return m_postProcess.get(); }
     Camera               *GetMainCamera() noexcept { return &m_mainCamera; }
 
+    // LOD の色分け表示のパス（エディタが enabled を切り替える。所有するのは m_pipeline）
+    LodDebugPass *GetLodDebugPass() const noexcept { return m_lodDebugPass; }
+
     // ============================================================
     // デバイスロスト
     // ============================================================
-    /**
-     * @brief デバイスロストから復帰する。Shutdown() と Initialize(hWnd) をやり直す。
-     *
-     * 復帰後は ShaderRegistry と ResourceManager も空になっている。
-     * シーンの作り直しは、呼び出し側（Framework）が BaseScene::OnDeviceRecreated() で行う。
-     *
-     * @return 復帰できたら true
-     */
+    // デバイスロストから戻す（Shutdown と Initialize をやり直す）。戻せたら true
+    // 戻した後は ShaderRegistry と ResourceManager も空なので、シーンは Framework が BaseScene::OnDeviceRecreated で作り直す
     bool RecoverFromDeviceLost();
 
     // パイプラインに渡した RenderServices（EnvironmentSystem などパイプラインの外から使う）
     const RenderServices &GetRenderServices() const noexcept { return m_pipeline.GetServices(); }
 
-    /**
-     * @brief 今の Graphics の状態から、このフレームの RenderFrameContext を作る。
-     * @param overrideRTV 出力先。nullptr ならゲームビューの RTV
-     */
+    // 今の状態から、このフレームの RenderFrameContext を作る。overrideRTV が nullptr ならゲームビューへ描く
     RenderFrameContext MakeFrameContext(ID3D11RenderTargetView *overrideRTV = nullptr) noexcept;
 
     // NormalPrepass が作った法線バッファを受け取る（所有しない）
     void SetSceneNormalSRV(ID3D11ShaderResourceView *srv) noexcept { m_sceneNormalSRV = srv; }
 
-    // 今フレームのスカイボックス背景を受け取る（EnvironmentSystem が毎フレーム設定する）。
-    // MakeFrameContext が RenderFrameContext.skyboxSRV へ渡し、SkyboxPass が使う。
-    // 所有しない（実体は ResourceManager か EnvironmentSystem が持つ）。
-    void SetSkyboxSRV(ID3D11ShaderResourceView *srv) noexcept { m_pendingSkyboxSRV = srv; }
+    // 今フレームのスカイボックス背景と、その明るさの倍率を受け取る（EnvironmentSystem が毎フレーム設定する）
+    // MakeFrameContext が RenderFrameContext へ渡し、SkyboxPass が使う
+    // srv は所有しない（実体は ResourceManager が持つ）
+    void SetSkybox(ID3D11ShaderResourceView *srv, float intensity) noexcept
+    {
+        m_pendingSkyboxSRV    = srv;
+        m_pendingSkyIntensity = intensity;
+    }
 
 private:
     // メインカメラ。unique_ptr にしないのは、ECS の System が毎フレーム書き換えるので、
-    // null にならず、アドレスが変わらないことを保証したいため。
+    // null にならず、アドレスが変わらないことを保証したいため
     Camera m_mainCamera;
 
     GraphicsDevice m_gfxDevice; // D3D11 のデバイス・RT・CbScene
@@ -155,16 +147,17 @@ private:
 
     void SetupRenderPipeline();
 
-    /**
-     * @brief 既定のレンダーパス構成を m_pipeline へ登録する（登録順 = 実行順）。
-     *
-     * どのパスをどの順で回すかはこのエンジンの絵作りの仕様なので、汎用の RenderPipeline ではなく描画全体をまとめる Graphics が決める。
-     */
+    // 既定のパスを m_pipeline へ積む（積んだ順に実行する）
+    // どのパスをどの順で回すかはエンジンの絵作りの決まりなので、RenderPipeline でなく Graphics が決める
     void BuildDefaultRenderPasses();
 
     // パイプラインの実行後に、共通の定数バッファ・サンプラー・影の SRV を外す
     void UnbindAllResources(ID3D11DeviceContext *dc);
 
     ID3D11ShaderResourceView *m_sceneNormalSRV   = nullptr; // 法線バッファ（NormalPrepass が持つ。所有しない）
-    ID3D11ShaderResourceView *m_pendingSkyboxSRV = nullptr; // 今フレームのスカイボックス（所有しない）
+    ID3D11ShaderResourceView *m_pendingSkyboxSRV    = nullptr; // 今フレームのスカイボックス（所有しない）
+    float                     m_pendingSkyIntensity = 1.0f;    // 今フレームの空の明るさの倍率
+
+    // エディタが外から触るため変数を分けている
+    LodDebugPass *m_lodDebugPass = nullptr; // LOD の色分け表示のパス（BuildDefaultRenderPasses が入れる。所有しない）
 };

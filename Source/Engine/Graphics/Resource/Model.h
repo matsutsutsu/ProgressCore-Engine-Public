@@ -1,18 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: 1体分のモデルのインスタンス。共有の ModelResource を参照し、
-//       ノードの姿勢とマテリアルを個体ごとに持つ。
+// 概要: モデル1体分のインスタンス。共有の ModelResource を参照し、
+//       ノードの姿勢とマテリアルを個体ごとに持つ
 //
 // 責務:
-//   - ModelResource のノード階層を複製し、親子のポインタを張り直す
-//   - ModelResource のマテリアルから MaterialData を作る
-//   - アニメーションのキーフレームから各ノードの姿勢を求める・ブレンドする
+//   - ModelResource のノード階層を複製し、マテリアルから MaterialData を作る
+//   - アニメーションのキーフレームから、各ノードの姿勢を求めて混ぜる
 //   - ノードの姿勢から、ローカル・グローバル・ワールド行列を求める
-//   - ルートモーション用のルートボーンの特定と、0秒の姿勢をキャッシュする
+//   - ルートモーション用のルートボーンを見つけ、0秒の姿勢をキャッシュする
 //
-// 備考: 頂点やアニメーションなどの重いデータは ModelResource（ResourceManager が共有）が持つ。
-//       Mesh・Bone・Node はそのデータと、このインスタンスの nodes を指すポインタでつなぐ
-//       （どれも所有しない）。nodes の要素を指すので、nodes の大きさを後から変えてはいけない。
+// 備考: 頂点やアニメーションなどの重いデータは ModelResource が持つ
+//       Mesh・Bone・Node は、そのデータと nodes の要素を所有せずに指す。nodes の大きさを後から変えない
 // ===========================================================================
 #include "ModelResource.h"
 #include <DirectXMath.h>
@@ -49,10 +47,10 @@ public:
         Node               *parent = nullptr; // 親ノード（所有しない。ルートは nullptr）
         std::vector<Node *> children;         // 子ノード（所有しない）
 
-        // アニメーションの位置の移動をそのまま使うボーンか（ルート・Pelvis・Hips 系）。
-        //   false のボーンは位置をバインドポーズ（骨の長さ）で上書きし、体型の崩れを防ぐ。
+        // アニメーションの位置の移動をそのまま使うボーンか（ルート・Pelvis・Hips 系）
+        //   false のボーンは位置をバインドポーズ（骨の長さ）で上書きし、体型の崩れを防ぐ
         //   骨の名前で決まり実行中は変わらないので、ロード時に一度だけ判定してここに持つ
-        //   （毎フレーム文字列で判定すると重い）。
+        //   （毎フレーム文字列で判定すると重い）
         bool isRootOrPelvis = false;
     };
 
@@ -89,7 +87,7 @@ public:
         return meshes;
     }
 
-    // 名前からアニメーションの番号を引く。無ければ -1
+    // 名前からアニメーションの番号を引く。なければ -1
     int GetAnimationIndex(const char *name) const;
 
     const std::vector<Node> &GetNodes() const
@@ -101,7 +99,7 @@ public:
         return nodes;
     }
 
-    // 名前からノードの番号を引く。無ければ -1
+    // 名前からノードの番号を引く。なければ -1
     int GetNodeIndex(const char *name) const;
 
     // 各ノードの姿勢から、ローカル・グローバル・ワールド行列を求める
@@ -112,16 +110,8 @@ public:
     void ComputeAnimation(int animationIndex, float time, std::vector<NodePose> &nodePoses) const;
 
 private:
-    /**
-     * @brief 1ノード分の姿勢を求める本体。
-     *
-     * 取得済みの Animation を受け取るので、全ノード版がノードの数だけ ResourceManager を引き直さずに済む（呼び出し側で1回だけ取る）。
-     *
-     * @param animation 姿勢を求めるアニメーション。
-     * @param nodeIndex 姿勢を求めるノードの番号。
-     * @param time      再生時刻（秒）。
-     * @param nodePose  求めた姿勢を受け取る。
-     */
+    // 1ノード分の姿勢を求める本体
+    // 取得済みの Animation を受け取るので、全ノード版はノードの数だけ ResourceManager を引き直さずに済む
     void ComputeNodePose(const ModelResource::Animation &animation, int nodeIndex, float time, NodePose &nodePose) const;
 
 public:
@@ -152,15 +142,8 @@ public:
     // アニメーションの中で実際に水平に動いている、一番親に近いボーンを探す（結果はキャッシュする）
     int FindRealRootMotionNodeIndex(int animIndex) const;
 
-    /**
-     * @brief 指定クリップの0秒時点での、指定ノードの姿勢を返す（キャッシュ付き）。
-     *
-     * ルートモーションで前進量を打ち消す基準になる姿勢で、毎フレーム同じなので、初回だけ ComputeAnimation で求めて以後は使い回す。
-     *
-     * @param animIndex クリップの番号。
-     * @param nodeIndex ノードの番号。
-     * @return 0秒時点の姿勢。Model のキャッシュが所有する。
-     */
+    // 指定クリップの0秒時点での、指定ノードの姿勢を返す。Model のキャッシュが持つ
+    // ルートモーションで前進量を打ち消す基準で毎フレーム同じなので、初回だけ求めて使い回す
     const NodePose &GetPinnedPoseAtZero(int animIndex, int nodeIndex) const;
 
 private:
@@ -176,23 +159,17 @@ private:
     // UpdateTransform でノードを計算する順番（nodes の番号。親が必ず子より先）
     std::vector<int> m_nodeUpdateOrder;
 
-    // FindRealRootMotionNodeIndex の結果のキャッシュ（添字はアニメーションの番号）。
-    //   どのボーンがルートかはアニメーションのデータだけで決まり、後から変わらない。
-    //   一方で毎フレーム呼ばれる（AnimationSystem・RootMotionSystem）ので、キャッシュが無いと
-    //   全ノードの ComputeAnimation を毎フレーム2回ずつ走らせることになる。
-    //   -1 は「まだ求めていない」（有効なノード番号は 0 以上）。const 関数から書くので mutable。
+    // FindRealRootMotionNodeIndex の結果（添字はアニメーションの番号、-1 はまだ求めていない）
+    // ルートのボーンはデータだけで決まって変わらないが、毎フレーム呼ばれるのでキャッシュする
     mutable std::vector<int> m_rootMotionNodeCache;
 
-    // 位置のリターゲットをするか（ModelResource から写した値）。
-    //   false なら isRootOrPelvis に関係なく、アニメーションの移動をそのまま使う。
-    //   詳しくは ModelResource::GetTranslationRetargeting() を参照。
+    // 位置のリターゲットをするか（ModelResource から写した値）
+    //   false なら isRootOrPelvis に関係なく、アニメーションの移動をそのまま使う
+    //   詳しくは ModelResource::GetTranslationRetargeting() を参照
     bool m_translationRetargeting = true;
 
-    // アニメーション名のハッシュ → 番号の表。
-    //   GetAnimationIndex は毎フレーム（ブレンド中は2回）呼ばれる。名前と番号の対応は
-    //   ロード後に変わらないので、HashString をキーに一度だけ表を作って O(1) で引く
-    //   （std::string を比べる線形探索にしないこと）。
-    //   最初の GetAnimationIndex で作る（m_animIndexBuilt が作ったかどうか）。
+    // アニメーション名のハッシュから番号を引く表。最初の GetAnimationIndex で作る
+    // 毎フレーム呼ばれるので、文字列の線形探索にしない
     mutable std::unordered_map<uint32_t, int> m_animIndexCache;
     mutable bool                              m_animIndexBuilt = false;
 

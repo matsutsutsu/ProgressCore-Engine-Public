@@ -1,261 +1,284 @@
 #include "Game/UI/HUD/TutorialHintHudSystem.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/ECS/Common/CCL_Archetype.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp: フレームレートに依らない追従の係数
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Core/Math/StringHash.h"
-#include "Engine/Serialization/Factory/EntityFactory.h"
+#include "Engine/Platform/Core/Logger.h"
+#include "Engine/Serialization/Factory/Prefab.h"
 
-#include "Engine/Transform/Components/TransformComponent.h" // UI の親子関係に使う
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UIImageComponent.h"
 #include "Engine/UI/ECS/Components/UITextComponent.h"
 #include "Game/UI/Input/InputIconComponent.h"
-#include "Game/UI/Common/MenuUiFactory.h"        // SpawnCanvas / MakeUINode
-#include "Game/Logics/AI/Battle/BattleContext.h" // プレイヤーの有無で生成を決める
-
-#include <cmath>
-#include <initializer_list>
+#include "Game/UI/Common/UiPrefabUtil.h"
+#include "Game/Logics/AI/Battle/BattleContext.h"
 
 using namespace CCL::ECS;
 
 namespace
 {
-    constexpr float kBottom    = 190.0f; // 画面の下端から帯の中心まで（px）
-    constexpr float kBandH     = 64.0f;  // 帯の高さ（px）
-    constexpr float kPadX      = 28.0f;  // 帯の左右の余白（px）
-    constexpr float kIconSize  = 46.0f;  // アイコンの一辺（px）
-    constexpr float kIconGap   = 16.0f;  // アイコンと文の間（px）
-    constexpr float kTextSize  = 26.0f;  // 文字の高さ（px）
-    constexpr float kEmphSize  = 34.0f;  // 強調のときの文字の高さ（px）
-    constexpr float kFadeSpeed = 10.0f;  // フェードの速さ（Damp の speed）
+    // --- プレハブ ---
+    constexpr const char *kPrefabPath = "Assets/Prefabs/UI/TutorialHint.json";
 } // namespace
 
+
+
 // ---------------------------------------------------------------------------
-// 入口
+// 更新
 // ---------------------------------------------------------------------------
 
 void TutorialHintHudSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. UI を作る（プレイヤーが現れた最初のフレームだけ）
-    // 2. 出す文言を決め、フェードを進める
-    // 3. 「今だ」の段階なら文字を明滅させる
-    // 4. 不透明度を UI へ書く
+    //   1. プレイヤーが現れたフレームに、TutorialHint プレハブを生成する
+    //   2. 今の項目のアイコンと文言を書き、帯を並べ直す
+    //   3. 帯全体をフェードさせる
+    //   4. ゲージと中央のボタンを進める
 
     if (!m_world->HasResource<TutorialState>()) return;
-    const TutorialState &state = m_world->GetResource<TutorialState>();
 
     // ---------------------------------------------------------
-    // 1. UI を作る
+    // 1. 生成
     // ---------------------------------------------------------
 
     // Initialize で作らないのは、その後のレベルの読み込みで消されるため
-    if (!m_built)
+    if (!m_spawned)
     {
         if (!m_world->HasResource<BattleContext>()) return;
         if (!m_world->GetResource<BattleContext>().HasPlayer()) return;
 
-        Build();
-        m_built = true;
+        SpawnHud();
     }
+    if (m_rootID == InvalidEntityID) return;
+
+    // プレハブのルートにスタイルがなければ、コンポーネントの既定値で動かす
+    static const TutorialHintStyleComponent kDefaultStyle{};
+    const auto *stylePtr = m_world->GetComponent<TutorialHintStyleComponent>(m_rootID);
+    const auto &style    = stylePtr ? *stylePtr : kDefaultStyle;
+
+    const TutorialState &state = m_world->GetResource<TutorialState>();
 
     // ---------------------------------------------------------
-    // 2. 文言とフェード
+    // 2. 文言と並べ方
     // ---------------------------------------------------------
-
-    // 文言が変わったら、いったん消し切ってから差し替える。出したまま書き換えると、
-    // 新しい指示に変わったことに気付かず、前の説明を読み終えたつもりで見落とす
-    const Hint hint    = SelectHint(state);
-    const bool want    = state.showHint;
-    const bool changed = (m_currentText != hint.text);
-    if (changed && m_alpha < 0.05f) ApplyHint(hint);
-
-    const float target = (want && m_currentText == hint.text) ? 1.0f : 0.0f;
-    m_alpha += (target - m_alpha) * CCL::Math::Damp(kFadeSpeed, dt);
-
-    // ---------------------------------------------------------
-    // 3. 強調
-    // ---------------------------------------------------------
-
-    // 押す瞬間だと分かるよう、文字を明滅させる
-    m_pulse += dt;
-    if (auto *tx = m_world->GetComponent<UITextComponent>(m_textID))
-    {
-        if (hint.emphasize)
-        {
-            const float k = 0.5f + 0.5f * std::sin(m_pulse * 14.0f);
-            tx->color     = {1.0f, 0.78f + 0.22f * k, 0.25f + 0.35f * k, 1.0f};
-        }
-        else
-        {
-            tx->color = {1.0f, 1.0f, 1.0f, 1.0f};
-        }
-    }
-
-    // ---------------------------------------------------------
-    // 4. 不透明度
-    // ---------------------------------------------------------
-    for (EntityID id : {m_bandID, m_iconID, m_textID})
-    {
-        if (auto *t = m_world->GetComponent<UITransformComponent>(id)) t->alpha = m_alpha;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 中身と配置
-// ---------------------------------------------------------------------------
-
-TutorialHintHudSystem::Hint TutorialHintHudSystem::SelectHint(const TutorialState &state) const
-{
-    // 文言とアイコンは TutorialSteps.h の表から引く。ヒントの無い項目と教え終えた後は空にする
     const TutorialStepDef *def = state.Current();
-    if (!def || def->text[0] == '\0') return {};
+    if (def)
+    {
+        // 項目が変わったらフェードインし直す
+        if (state.step != m_lastStep)
+        {
+            m_alpha      = 0.0f;
+            m_gaugeShown = 0.0f;
+            m_lastStep   = state.step;
+        }
 
-    // 補助スローの「今だ」の段階では、押す瞬間だと分かる文言に差し替えて強調する
-    if (state.assistActive && def->assistText) return {def->icon, def->action, def->assistText, true};
-    return {def->icon, def->action, def->text};
+        // 並べ直しは毎フレーム行う
+        // インスペクタで Style の寸法を変えたとき、その場で帯に反映されるように（数個の値を書くだけで軽い）
+        ApplyHint(*def, state.assistActive, style);
+    }
+
+    // ---------------------------------------------------------
+    // 3. フェード
+    // ---------------------------------------------------------
+    const float target = state.showHint ? 1.0f : 0.0f;
+    m_alpha += (target - m_alpha) * CCL::Math::Damp(style.fadeSpeed, dt);
+
+    SetAlpha(m_bandID, m_alpha);
+    SetAlpha(m_barID, m_alpha);
+    SetAlpha(m_fillID, m_alpha);
+    SetAlpha(m_iconID, m_alpha);
+    SetAlpha(m_textID, m_alpha);
+    SetAlpha(m_plusID, m_hasSecond ? m_alpha : 0.0f);
+    SetAlpha(m_icon2ID, m_hasSecond ? m_alpha : 0.0f);
+
+    // ---------------------------------------------------------
+    // 4. ゲージと中央のボタン
+    // ---------------------------------------------------------
+    UpdateGauge(state, style, dt);
+    UpdateNowButton(state, style, dt);
 }
 
-void TutorialHintHudSystem::ApplyHint(const Hint &hint)
+
+
+void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style)
 {
-    m_currentText = hint.text;
+    const bool        useAssist = assist && def.assistText;
+    const std::string text      = useAssist ? def.assistText : def.text;
+    const float       textSize  = useAssist ? style.emphSize : style.textSize;
 
-    const float textSize = hint.emphasize ? kEmphSize : kTextSize;
-    const float textW    = EstimateWidth(hint.text, textSize);
-    const float groupW   = kIconSize + kIconGap + textW; // アイコンと文の組の幅。これを中央に置く
-    const float left     = -groupW * 0.5f;
+    // 「今だ」は1つ目のボタンだけを出す
+    m_hasSecond = def.action2 && !useAssist;
 
-    // 3つとも画面の下辺の中央を基準にし、帯の中心の高さに縦の中央をそろえる
-    if (auto *t = m_world->GetComponent<UITransformComponent>(m_bandID))
+    // --- 幅 ---
+    // [アイコン] (+ [アイコン2]) [文] の組の幅を求め、帯の中央に置く
+    const float textW = EstimateWidth(text, textSize);
+    const float plusW = EstimateWidth("+", style.textSize);
+
+    float rowW = style.iconSize + style.gap + textW;
+    if (m_hasSecond)
     {
-        t->size = {groupW + kPadX * 2.0f, kBandH};
+        rowW += plusW + style.gap + style.iconSize + style.gap;
     }
-    if (auto *t = m_world->GetComponent<UITransformComponent>(m_iconID))
+    m_bandWidth = rowW + style.padX * 2.0f;
+
+    // --- 並べる ---
+    float x = -rowW * 0.5f;
+
+    SetRect(m_iconID, x, 0.0f, style.iconSize, style.iconSize);
+    x += style.iconSize + style.gap;
+
+    if (m_hasSecond)
     {
-        t->offset = {left, -kBottom};
-    }
-    if (auto *t = m_world->GetComponent<UITransformComponent>(m_textID))
-    {
-        t->offset = {left + kIconSize + kIconGap, -kBottom};
-        t->size   = {textW, textSize};
+        SetRect(m_plusID, x, 0.0f, plusW, style.textSize);
+        x += plusW + style.gap;
+
+        SetRect(m_icon2ID, x, 0.0f, style.iconSize, style.iconSize);
+        x += style.iconSize + style.gap;
     }
 
-    // 画像は InputIconSystem が種類とアクション名から決める。
-    // 空のヒント（文言が空）は消し切った後に書くだけなので、アイコンは前のままでよい
-    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID); ic && hint.text[0] != '\0')
+    // ゲージは帯の下端にすき間なく付ける
+    const float barY = style.bandHeight * 0.5f + style.barHeight * 0.5f;
+
+    SetRect(m_textID, x, 0.0f, textW, textSize);
+    SetRect(m_bandID, -m_bandWidth * 0.5f, 0.0f, m_bandWidth, style.bandHeight);
+    SetRect(m_barID, -m_bandWidth * 0.5f, barY, m_bandWidth, style.barHeight);
+
+    // --- 中身 ---
+    // アイコンの画像は InputIconSystem が種類とアクション名から決める
+    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID))
     {
-        ic->kind = hint.icon;
-        if (hint.action) ic->actionHash = CCL::Utils::HashString(hint.action);
+        ic->kind = def.icon;
+        if (def.action)
+        {
+            ic->actionHash = CCL::Utils::HashString(def.action);
+        }
+    }
+    if (auto *ic = m_world->GetComponent<InputIconComponent>(m_icon2ID); ic && def.action2)
+    {
+        ic->actionHash = CCL::Utils::HashString(def.action2);
     }
     if (auto *tx = m_world->GetComponent<UITextComponent>(m_textID))
     {
-        tx->text      = hint.text;
+        tx->text      = text;
         tx->pixelSize = textSize;
+        tx->color     = useAssist ? style.nowColor : style.textColor;
+    }
+    if (auto *tx = m_world->GetComponent<UITextComponent>(m_plusID))
+    {
+        tx->pixelSize = style.textSize;
     }
 }
+
+
+
+void TutorialHintHudSystem::UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
+{
+    // 一気に伸ばすと増えたことが目に入らないので、滑らかに寄せる
+    m_gaugeShown += (state.progress - m_gaugeShown) * CCL::Math::Damp(style.fillSpeed, dt);
+
+    const float barY = style.bandHeight * 0.5f + style.barHeight * 0.5f;
+    SetRect(m_fillID, -m_bandWidth * 0.5f, barY, m_bandWidth * m_gaugeShown, style.barHeight);
+
+    if (auto *img = m_world->GetComponent<UIImageComponent>(m_fillID))
+    {
+        img->color = state.cleared ? style.clearColor : style.fillColor;
+    }
+}
+
+
+
+void TutorialHintHudSystem::UpdateNowButton(const TutorialState &state, const TutorialHintStyleComponent &style, float dt)
+{
+    // 下の帯まで目を動かさなくても、押すボタンが分かるように中央に出す
+    const TutorialStepDef *def  = state.Current();
+    const bool             show = state.assistActive && def && def->action;
+
+    const float target = show ? 1.0f : 0.0f;
+    m_nowAlpha += (target - m_nowAlpha) * CCL::Math::Damp(style.nowFadeSpeed, dt);
+    SetAlpha(m_nowIconID, m_nowAlpha);
+
+    if (show)
+    {
+        if (auto *ic = m_world->GetComponent<InputIconComponent>(m_nowIconID))
+        {
+            ic->actionHash = CCL::Utils::HashString(def->action);
+        }
+    }
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 部品の操作
+// ---------------------------------------------------------------------------
+
+void TutorialHintHudSystem::SetRect(EntityID id, float x, float y, float width, float height)
+{
+    auto *t = m_world->GetComponent<UITransformComponent>(id);
+    if (!t) return;
+
+    t->offset = {x, y};
+    t->size   = {width, height};
+}
+
+
+
+void TutorialHintHudSystem::SetAlpha(EntityID id, float alpha)
+{
+    if (auto *t = m_world->GetComponent<UITransformComponent>(id)) t->alpha = alpha;
+}
+
+
 
 float TutorialHintHudSystem::EstimateWidth(const std::string &text, float pixelSize)
 {
-    float w = 0.0f;
+    float width = 0.0f;
     for (const unsigned char c : text)
     {
-        if ((c & 0xC0) == 0x80) continue;           // UTF-8 の2バイト目以降は数えない
-        w += (c < 0x80) ? pixelSize * 0.5f : pixelSize; // 半角は高さの半分、それ以外は全角とみなす
+        // UTF-8 の2バイト目以降は数えない
+        if ((c & 0xC0) == 0x80) continue;
+
+        width += (c < 0x80) ? pixelSize * 0.5f : pixelSize;
     }
-    return w;
+    return width;
 }
 
-void TutorialHintHudSystem::Build()
+
+
+// ---------------------------------------------------------------------------
+// 生成
+// ---------------------------------------------------------------------------
+
+void TutorialHintHudSystem::SpawnHud()
 {
-    // 処理フロー:
-    // 1. 下地の帯を作る
-    // 2. アイコンを作る
-    // 3. 説明の1行を作る
+    // 失敗しても試すのは1回だけにする
+    // プレハブが壊れているとき、毎フレーム読み直してエラーログが流れ続けないように
+    m_spawned = true;
 
-    // 【備考】
-    //   3つとも画面の下辺の中央を基準に、下端から kBottom の高さへ置く。
-    //   左下のゲージと字幕の位置を避けるため。
+    m_rootID = Prefab::SpawnPrefab(*m_world, kPrefabPath);
+    if (m_rootID == InvalidEntityID) return; // 読めない理由は Prefab がログに出す
 
-    const EntityID canvas = CCL::GameUI::SpawnCanvas(*m_world, "TutorialHintCanvas");
+    // エディタで子の名前を変えると引けなくなる
+    // 黙って部品が消えると原因が分からないので、見つからなければログに出す
+    const auto find = [this](const char *name) {
+        const EntityID id = CCL::GameUI::FindChildByName(*m_world, m_rootID, name);
+        if (id == InvalidEntityID)
+        {
+            CCL_LOG_ERROR(LogCategory::Game, "[TutorialHint] %s に '%s' が見つかりません", kPrefabPath, name);
+        }
+        return id;
+    };
 
-    // ---------------------------------------------------------
-    // 1. 下地の帯
-    // ---------------------------------------------------------
-
-    // 明るい床や空の上でも白い文字が読めるよう、暗く敷く
-    {
-        auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent>();
-        auto e    = EntityFactory::SpawnNamed(*m_world, "TutorialHintBand", arch);
-
-        UITransformComponent t;
-        t.anchor = {0.5f, 1.0f};
-        t.pivot  = {0.5f, 0.5f};
-        t.offset = {0.0f, -kBottom};
-        t.size   = {400.0f, kBandH};
-        t.alpha  = 0.0f;
-
-        UIImageComponent img;
-        img.color       = {0.02f, 0.03f, 0.05f, 0.70f};
-        img.useGradient = true;
-        img.colorBottom = {0.02f, 0.03f, 0.05f, 0.45f};
-        img.sortOrder   = 110; // ゲージ（100〜102）より手前、右上の操作説明（120〜）より奥
-
-        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(img);
-        m_bandID = e.ID();
-    }
-
-    // ---------------------------------------------------------
-    // 2. アイコン
-    // ---------------------------------------------------------
-
-    // 画像は InputIconSystem が割り当てから決める
-    {
-        auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UIImageComponent,
-                                              InputIconComponent>();
-        auto e    = EntityFactory::SpawnNamed(*m_world, "TutorialHintIcon", arch);
-
-        UITransformComponent t;
-        t.anchor = {0.5f, 1.0f};
-        t.pivot  = {0.0f, 0.5f};
-        t.offset = {0.0f, -kBottom};
-        t.size   = {kIconSize, kIconSize};
-        t.alpha  = 0.0f;
-
-        UIImageComponent img;
-        img.sortOrder = 112;
-        img.visible   = false; // InputIconSystem が画像を決めるまで出さない
-
-        InputIconComponent ic;
-        ic.kind = InputIconKind::Action;
-
-        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(img).Set(ic);
-        m_iconID = e.ID();
-    }
-
-    // ---------------------------------------------------------
-    // 3. 説明の1行
-    // ---------------------------------------------------------
-    {
-        auto arch = ArchetypeHelper::Generate<TransformComponent, UITransformComponent, UITextComponent>();
-        auto e    = EntityFactory::SpawnNamed(*m_world, "TutorialHintText", arch);
-
-        UITransformComponent t;
-        t.anchor = {0.5f, 1.0f};
-        t.pivot  = {0.0f, 0.5f};
-        t.offset = {0.0f, -kBottom};
-        t.size   = {400.0f, kTextSize};
-        t.alpha  = 0.0f;
-
-        UITextComponent tx;
-        tx.text      = "";
-        tx.pixelSize = kTextSize;
-        tx.sortOrder = 113;
-        tx.shadow    = true;
-
-        e.Set(CCL::GameUI::MakeUINode(canvas)).Set(t).Set(tx);
-        m_textID = e.ID();
-    }
+    m_bandID    = find("TutorialHintBand");
+    m_barID     = find("TutorialHintBar");
+    m_fillID    = find("TutorialHintFill");
+    m_iconID    = find("TutorialHintIcon");
+    m_plusID    = find("TutorialHintPlus");
+    m_icon2ID   = find("TutorialHintIcon2");
+    m_textID    = find("TutorialHintText");
+    m_nowIconID = find("TutorialHintNowIcon");
 }
 
-// 全体登録（REGISTER_*）はせず、TutorialScene が登録する。ゲーム本編ではヒントを出さないため
+
+
+// 全体登録（REGISTER_*）はせず、TutorialScene が登録する

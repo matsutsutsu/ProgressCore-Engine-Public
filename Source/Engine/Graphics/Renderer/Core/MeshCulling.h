@@ -1,16 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: メッシュ単位の視錐台カリングと、メッシュのワールド行列を求める関数。
-//
-// 責務:
-//   - メッシュのローカル AABB を作る
-//   - ノードの行列とエンティティのワールド行列から、メッシュのワールド行列を求める
-//   - AABB が視錐台と重なるかを判定する
-//
-// 備考: OpaquePass と NormalPrepass が同じ基準でカリングするよう、判定を1か所にまとめている。
-//       基準がずれると、片方のパスだけで描かれない・余計に描かれるメッシュが出る。
-//       状態を持たない inline 関数で、メモリを確保しない。
-// ===========================================================================
+// メッシュ単位の視錐台カリングと、メッシュのワールド行列を求める関数。状態もメモリの確保も持たない
+// OpaquePass と NormalPrepass が同じ基準で判定するよう1か所にまとめる。ずれると片方のパスだけで描かれない
 #include <DirectXCollision.h>
 #include <DirectXMath.h>
 #include "Engine/Graphics/Resource/Model.h"
@@ -18,13 +8,8 @@
 namespace MeshCull
 {
 
-    /**
-     * @brief メッシュのローカル空間の AABB を boundsMin / boundsMax から作る。
-     *
-     * 頂点が無いメッシュは extents がとても大きくなり、常に見える扱いになる（描き漏れない側に倒れる）。
-     *
-     * @note mesh.data が null でないことは呼び出し側で確かめる。
-     */
+    // boundsMin / boundsMax から、メッシュのローカルの AABB を作る（mesh.data が null でないことは呼ぶ側で確かめる）
+    // 頂点がないメッシュはとても大きな箱になり、常に見える扱いになる（描き漏れない側に倒す）
     inline DirectX::BoundingBox BuildLocalAABB(const Model::Mesh &mesh)
     {
         using namespace DirectX;
@@ -36,12 +21,8 @@ namespace MeshCull
         return box;
     }
 
-    /**
-     * @brief メッシュのワールド行列を求める。描くときとカリングするときで、この掛ける順をそろえる。
-     * @param mesh        行列を求めるメッシュ。
-     * @param entityWorld エンティティのワールド行列。
-     * @return ノードがあれば node->globalTransform × entityWorld、無ければ entityWorld。
-     */
+    // メッシュのワールド行列。ノードがあれば node->globalTransform × entityWorld、なければ entityWorld
+    // 描くときとカリングするときで、掛ける順をこれでそろえる
     inline DirectX::XMFLOAT4X4 ComputeMeshWorld(const Model::Mesh         &mesh,
                                                 const DirectX::XMFLOAT4X4 &entityWorld)
     {
@@ -59,11 +40,8 @@ namespace MeshCull
         return out;
     }
 
-    /**
-     * @brief ローカルの AABB を world で変換し、視錐台と重なるかを判定する。
-     * @note BoundingBox::Transform は、回転した箱を包む軸平行の箱を返すので、実際より大きめに判定する。
-     * @return 少しでも重なれば true（DISJOINT のときだけ false）
-     */
+    // ローカルの AABB を world で変換し、視錐台と少しでも重なれば true
+    // 回転した箱を包む軸平行の箱で比べるので、実際より大きめに判定する
     inline bool IsMeshVisible(const DirectX::BoundingBox     &localAABB,
                               const DirectX::XMFLOAT4X4      &world,
                               const DirectX::BoundingFrustum &frustum)

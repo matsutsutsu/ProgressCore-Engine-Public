@@ -15,14 +15,18 @@ ErrorShader::ErrorShader(ID3D11Device *device)
 
     GpuResourceUtils::LoadPixelShader(device, "Assets/Shader/ErrorPS.cso", m_ps.GetAddressOf());
 
-    // 定数バッファもテクスチャも無いが、End で基底の UnbindResources を使うので読んでおく
+    // 定数バッファもテクスチャもないが、End で基底の UnbindResources を使うので読んでおく
     InitializeReflection(device, "Assets/Shader/ErrorPS.cso");
 }
+
+
 
 void ErrorShader::Begin(ID3D11DeviceContext *dc, const RenderServices &, const RenderFrameContext &)
 {
     ApplyShaderPipeline(dc, m_vs.Get(), m_ps.Get(), m_inputLayout.Get());
 }
+
+
 
 void ErrorShader::End(ID3D11DeviceContext *dc, const RenderServices &)
 {

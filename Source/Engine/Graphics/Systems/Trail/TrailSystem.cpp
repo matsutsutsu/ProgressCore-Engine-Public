@@ -15,7 +15,7 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-// 1区間あたりの補間分割数。断面列の密度。
+// 1区間あたりの補間分割数。断面列の密度
 static constexpr int SUBDIVISIONS = 4;
 
 // ---------------------------------------------------------------------------
@@ -43,6 +43,8 @@ void TrailSystem::RecordSegment(TrailComponent &trail, const DirectX::XMFLOAT3 &
     trail.segments[writeIdx].tip  = tip;
     trail.segments[writeIdx].age  = 0.0f;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 断面列の生成
@@ -100,6 +102,8 @@ void TrailSystem::BuildRings(const TrailComponent &trail, std::vector<Ring> &out
     }
 }
 
+
+
 TrailSystem::Ring TrailSystem::MakeRing(const TrailComponent    &trail,
                                         const DirectX::XMFLOAT3 &base,
                                         const DirectX::XMFLOAT3 &tip,
@@ -128,6 +132,8 @@ TrailSystem::Ring TrailSystem::MakeRing(const TrailComponent    &trail,
     return ring;
 }
 
+
+
 DirectX::XMFLOAT3 TrailSystem::CatmullRom(const DirectX::XMFLOAT3 &p0,
                                           const DirectX::XMFLOAT3 &p1,
                                           const DirectX::XMFLOAT3 &p2,
@@ -151,19 +157,21 @@ DirectX::XMFLOAT3 TrailSystem::CatmullRom(const DirectX::XMFLOAT3 &p0,
     return out;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 断面の補助
 // ---------------------------------------------------------------------------
 
 DirectX::XMVECTOR TrailSystem::RingTangent(const std::vector<Ring> &rings, size_t i) const
 {
-    // 末尾の断面は「次」が無いので直前の向きを流用する。
+    // 末尾の断面は「次」がないので直前の向きを流用する
     const size_t a = (i + 1 < rings.size()) ? i : (i - 1);
     const size_t b = a + 1;
 
     XMVECTOR dir = XMVectorSubtract(XMLoadFloat3(&rings[b].center), XMLoadFloat3(&rings[a].center));
 
-    // 静止直後などで前後の断面が重なると 0 ベクトルになる。適当な軸へ逃がす。
+    // 静止直後などで前後の断面が重なると 0 ベクトルになる。適当な軸へ逃がす
     if (XMVectorGetX(XMVector3LengthSq(dir)) < 1e-12f)
     {
         dir = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -172,20 +180,22 @@ DirectX::XMVECTOR TrailSystem::RingTangent(const std::vector<Ring> &rings, size_
     return XMVector3Normalize(dir);
 }
 
+
+
 void TrailSystem::RingBasis(DirectX::FXMVECTOR       tangent,
                             const DirectX::XMFLOAT3 &half,
                             DirectX::XMVECTOR       &outU,
                             DirectX::XMVECTOR       &outV) const
 {
-    // 半ベクトルから接線成分を抜くと、断面内に収まる基準軸 U になる。
-    // こうしておくと thickness=0 のとき筒が板と同じ太さで揃う。
+    // 半ベクトルから接線成分を抜くと、断面内に収まる基準軸 U になる
+    // こうしておくと thickness=0 のとき筒が板と同じ太さで揃う
     XMVECTOR u = XMLoadFloat3(&half);
     u          = XMVectorSubtract(u, XMVectorScale(tangent, XMVectorGetX(XMVector3Dot(u, tangent))));
 
     if (XMVectorGetX(XMVector3LengthSq(u)) < 1e-12f)
     {
-        // 板の向きが進行方向と平行＝断面が潰れている。適当な直交軸で代用する。
-        // 根本と先端をほぼ同じ点に置く使い方（足元の尾など）では常にこちらを通る。
+        // 板の向きが進行方向と平行＝断面が潰れている。適当な直交軸で代用する
+        // 根本と先端をほぼ同じ点に置く使い方（足元の尾など）では常にこちらを通る
         const XMVECTOR helper = (std::abs(XMVectorGetY(tangent)) > 0.99f)
                                     ? XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f)
                                     : XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
@@ -196,9 +206,11 @@ void TrailSystem::RingBasis(DirectX::FXMVECTOR       tangent,
     outV = XMVector3Normalize(XMVector3Cross(tangent, outU));
 }
 
+
+
 float TrailSystem::RingRadius(const TrailComponent &trail, const Ring &ring) const
 {
-    // thickness=0 は「根本→先端の長さの半分」＝板と同じ太さ。
+    // thickness=0 は「根本→先端の長さの半分」＝板と同じ太さ
     if (trail.thickness > 0.0f)
     {
         return trail.thickness * ring.taper;
@@ -206,6 +218,8 @@ float TrailSystem::RingRadius(const TrailComponent &trail, const Ring &ring) con
 
     return XMVectorGetX(XMVector3Length(XMLoadFloat3(&ring.half)));
 }
+
+
 
 TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent    &trail,
                                                 const DirectX::XMFLOAT3 &pos,
@@ -219,7 +233,7 @@ TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent    &trail,
     const float fade = (std::max)(1.0f - age * invLife, 0.0f);
     const float mask = fade * intensity;
 
-    // U＝長さ方向(先端0→末尾1)＝age正規化。tiling を掛け、スクロールオフセットを加える。
+    // U＝長さ方向(先端0→末尾1)＝age正規化。tiling を掛け、スクロールオフセットを加える
     const float    uAlong = std::clamp(age * invLife, 0.0f, 1.0f);
     const XMFLOAT2 uv     = {
         uAlong * trail.uvTiling.x + trail.uvScrollOffset.x,
@@ -231,15 +245,17 @@ TrailSystem::VertexPair TrailSystem::MakeVertex(const TrailComponent    &trail,
                                       trail.color.w * mask);
     pair.additive.uv       = uv;
 
-    // 歪みは色ではなくパラメータを運ぶ（意味は TrailDistortPS.hlsl と対）。
+    // 歪みは色ではなくパラメータを運ぶ（意味は TrailDistortPS.hlsl と対）
     // 加算色のアルファ(trail.color.w)を掛けないのは、「見た目は薄いが強く歪む」
-    // 陽炎のような使い方を潰さないため。歪みの強さは distortion だけで決める。
+    // 陽炎のような使い方を潰さないため。歪みの強さは distortion だけで決める
     pair.distort.position = pos;
     pair.distort.color    = XMFLOAT4(trail.distortion, trail.distortionChroma,
                                      trail.distortionNoise, mask);
     pair.distort.uv       = uv; // 歪みPSは未使用だが同レイアウトなので埋めておく
     return pair;
 }
+
+
 
 void TrailSystem::EmitSink::PushTriangle(const VertexPair &a,
                                          const VertexPair &b,
@@ -259,6 +275,8 @@ void TrailSystem::EmitSink::PushTriangle(const VertexPair &a,
     distort->push_back(c.distort);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 形状ごとの三角形生成
 // ---------------------------------------------------------------------------
@@ -277,7 +295,7 @@ void TrailSystem::EmitRibbon(const TrailComponent    &trail,
         const XMFLOAT3 b1 = {r1.center.x - r1.half.x, r1.center.y - r1.half.y, r1.center.z - r1.half.z};
         const XMFLOAT3 t1 = {r1.center.x + r1.half.x, r1.center.y + r1.half.y, r1.center.z + r1.half.z};
 
-        // V＝幅方向。根本(b)=0 / 先端(t)=1。
+        // V＝幅方向。根本(b)=0 / 先端(t)=1
         const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f, 0.0f);
         const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f, 1.0f);
         const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f, 0.0f);
@@ -288,22 +306,24 @@ void TrailSystem::EmitRibbon(const TrailComponent    &trail,
     }
 }
 
+
+
 void TrailSystem::EmitCross(const TrailComponent    &trail,
                             const std::vector<Ring> &rings,
                             const EmitSink          &sink) const
 {
-    // 1枚目は板と同じ。2枚目は進行方向まわりに 90 度回した面。
-    // これだけで「どの角度から見ても必ずどちらかの面が正面を向く」ようになる。
+    // 1枚目は板と同じ。2枚目は進行方向まわりに 90 度回した面
+    // これだけで「どの角度から見ても必ずどちらかの面が正面を向く」ようになる
     EmitRibbon(trail, rings, sink);
 
-    // 進行方向を軸に半ベクトルを 90 度回す（軸に垂直な成分だけを回せばよい）。
+    // 進行方向を軸に半ベクトルを 90 度回す（軸に垂直な成分だけを回せばよい）
     auto rotated = [&](const Ring &r, size_t index) -> XMVECTOR {
         const XMVECTOR axis = RingTangent(rings, index);
         const XMVECTOR half = XMLoadFloat3(&r.half);
         const XMVECTOR perp = XMVector3Cross(axis, half);
 
-        // 軸と半ベクトルが平行だと外積が 0 になる。その場合は回しても意味が無いので
-        // 板と同じ面を返し、二重描画で明るくなるだけに留める。
+        // 軸と半ベクトルが平行だと外積が 0 になる。その場合は回しても意味がないので
+        // 板と同じ面を返し、二重描画で明るくなるだけに留める
         if (XMVectorGetX(XMVector3LengthSq(perp)) < 1e-12f)
         {
             return half;
@@ -327,7 +347,7 @@ void TrailSystem::EmitCross(const TrailComponent    &trail,
         XMStoreFloat3(&b1, XMVectorSubtract(XMLoadFloat3(&r1.center), h1));
         XMStoreFloat3(&t1, XMVectorAdd(XMLoadFloat3(&r1.center), h1));
 
-        // V＝幅方向。2枚目(十字面)も根本=0 / 先端=1 で揃える。
+        // V＝幅方向。2枚目(十字面)も根本=0 / 先端=1 で揃える
         const VertexPair vb0 = MakeVertex(trail, b0, r0.age, 1.0f, 0.0f);
         const VertexPair vt0 = MakeVertex(trail, t0, r0.age, 1.0f, 1.0f);
         const VertexPair vb1 = MakeVertex(trail, b1, r1.age, 1.0f, 0.0f);
@@ -338,6 +358,8 @@ void TrailSystem::EmitCross(const TrailComponent    &trail,
     }
 }
 
+
+
 void TrailSystem::EmitTube(const TrailComponent    &trail,
                            const std::vector<Ring> &rings,
                            const DirectX::XMFLOAT3 &cameraEye,
@@ -346,7 +368,7 @@ void TrailSystem::EmitTube(const TrailComponent    &trail,
     const int sides = std::clamp(trail.tubeSides, 3, 16);
 
     // 断面ごとの正規直交フレーム。U は板の向き（＝根本→先端）を基準にするので、
-    // thickness=0 のときは板と同じ太さの筒になる。
+    // thickness=0 のときは板と同じ太さの筒になる
     m_tubeFrames.clear();
 
     for (size_t i = 0; i < rings.size(); ++i)
@@ -360,7 +382,7 @@ void TrailSystem::EmitTube(const TrailComponent    &trail,
     const XMVECTOR eye = XMLoadFloat3(&cameraEye);
     const float    rim = std::clamp(trail.rimPower, 0.0f, 1.0f);
 
-    // 断面 i の k 番目の頂点と、その明るさを求める。
+    // 断面 i の k 番目の頂点と、その明るさを求める
     auto ringVertex = [&](size_t i, int k, XMFLOAT3 &outPos, float &outIntensity) {
         const TubeFrame &frame = m_tubeFrames[i];
 
@@ -373,8 +395,8 @@ void TrailSystem::EmitTube(const TrailComponent    &trail,
             XMVectorAdd(XMLoadFloat3(&rings[i].center), XMVectorScale(dir, frame.radius));
         XMStoreFloat3(&outPos, pos);
 
-        // 視線に対して横を向く面ほど明るくする（＝輪郭が光る）。
-        // 加算合成では全面が同じ明るさだと、筒ではなく のっぺりした塊に見えるため。
+        // 視線に対して横を向く面ほど明るくする（＝輪郭が光る）
+        // 加算合成では全面が同じ明るさだと、筒ではなく のっぺりした塊に見えるため
         const XMVECTOR view   = XMVector3Normalize(XMVectorSubtract(pos, eye));
         const float    facing = std::abs(XMVectorGetX(XMVector3Dot(dir, view)));
         outIntensity          = 1.0f - rim * facing;
@@ -393,7 +415,7 @@ void TrailSystem::EmitTube(const TrailComponent    &trail,
             ringVertex(i + 1, k, p10, i10);
             ringVertex(i + 1, k1, p11, i11);
 
-            // V＝円周位置。継ぎ目を避けるため wrap 前の k, k+1 を使う。
+            // V＝円周位置。継ぎ目を避けるため wrap 前の k, k+1 を使う
             const float vK  = static_cast<float>(k) / static_cast<float>(sides);
             const float vK1 = static_cast<float>(k + 1) / static_cast<float>(sides);
 
@@ -407,6 +429,8 @@ void TrailSystem::EmitTube(const TrailComponent    &trail,
         }
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 更新
@@ -425,7 +449,7 @@ void TrailSystem::Update(float dt)
         return;
     }
 
-    // Tube のシルエット強調に使う視点。カメラが無いシーンでは原点扱いで害は無い。
+    // Tube のシルエット強調に使う視点。カメラがないシーンでは原点扱いで害はない
     XMFLOAT3 cameraEye = {0.0f, 0.0f, 0.0f};
     if (m_world->HasResource<Camera *>())
     {
@@ -449,11 +473,11 @@ void TrailSystem::Update(float dt)
         // 1. UV スクロール
         // ---------------------------------------------------------
 
-        // 尾の形ではなく模様の流れなので、描画 dt で進めてよい。
-        // 高リフレッシュレートほど滑らかになるだけで、速度は環境によらず同じ。
+        // 尾の形ではなく模様の流れなので、描画 dt で進めてよい
+        // 高リフレッシュレートほど滑らかになるだけで、速度は環境によらず同じ
 
         // timeScale を掛けるのは、スロー中に尾の老化だけ遅れて模様が等速で流れると、
-        // 尾だけが時間の流れから浮いて見えるため。
+        // 尾だけが時間の流れから浮いて見えるため
         const float scrollDt = presentDt * trail.timeScale;
 
         // 桁あふれを防ぐため、適当な値で巻き戻す
@@ -477,14 +501,11 @@ void TrailSystem::Update(float dt)
         // 3. 新しい断面を刻むか
         // ---------------------------------------------------------
 
-        // 区間の老化と寿命切れの破棄は TrailRecordSystem（ロジック）が行う。
-        // 尾の長さを環境のリフレッシュレートから切り離すため、時間の進行は固定 dt 側に一本化してある。
+        // 区間の老化と寿命切れの破棄は TrailRecordSystem（ロジック）が行う
+        // 尾の長さを環境のリフレッシュレートから切り離すため、時間の進行は固定 dt 側に一本化してある
 
-        // 刻む「頻度」はロジックが決め（sampleRequested）、刻む「位置」は補間済みの
-        // renderWorldMatrix、つまり実際に画面に見えている刃の位置で決める。
-        // 両方を描画側に置くと、ボーン姿勢が更新されないフレーム（90Hz なら3回に1回）で
-        // ルートの補間移動ぶんだけずれた断面が重複記録され、尾が二重の線になる。
-        // 逆に両方をロジックへ移すと、尾が補間中の刃から最大1ステップぶん離れる。
+        // 刻む頻度はロジックが決め（sampleRequested）、刻む位置は画面に見えている刃の位置（renderWorldMatrix）で決める
+        // 両方を描画側にすると尾が二重の線になり、両方をロジックにすると尾が刃から離れる
         const bool requested  = trail.sampleRequested;
         trail.sampleRequested = false; 
 
@@ -544,8 +565,8 @@ void TrailSystem::Update(float dt)
             break;
         }
 
-        // テクスチャはパスがあるときだけ引く。
-        // ResourceManager はパスでキャッシュするので、毎フレーム呼んでも読み込むのは初回だけ。
+        // テクスチャはパスがあるときだけ引く
+        // ResourceManager はパスでキャッシュするので、毎フレーム呼んでも読み込むのは初回だけ
         ID3D11ShaderResourceView *trailSRV = nullptr;
         if (!trail.texturePath.empty())
         {
@@ -560,6 +581,8 @@ void TrailSystem::Update(float dt)
         renderer->SubmitDistortTriangleList(m_distortVertices.data(), m_distortVertices.size());
     });
 }
+
+
 
 // 実際の描画は同じフレームの TrailPass が行う
 REGISTER_RENDER_SYSTEM(TrailSystem, Priority::RenderStage::R08_Main);

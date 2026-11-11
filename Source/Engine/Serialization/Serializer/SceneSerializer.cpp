@@ -13,7 +13,7 @@
 #include "Engine/Platform/Core/FileSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Transform/Systems/TransformUpdateSystem.h"
-#include "Engine/UI/ECS/Components/UITransformComponent.h" // UI は保存しない
+#include "Engine/UI/ECS/Components/UITransformComponent.h"
 
 #include <json.hpp>
 #include <fstream>
@@ -30,17 +30,8 @@ using CCL::Serialization::SaveContext;
 
 namespace
 {
-    /**
-     * @brief root とその子孫の EntityID を深さ優先で集める（root が先頭）。
-     *
-     * 親子・兄弟のリンクが壊れて循環していても、訪問済みの集合と深さの上限で止まる。
-     *
-     * @param world   探す World。所有しない。
-     * @param id      起点のエンティティ。
-     * @param out     集めた EntityID を積む先。
-     * @param visited 訪問済みの集合。
-     * @param depth   今の深さ。4096 を超えたら止める。
-     */
+    // root とその子孫の EntityID を、深さ優先で out に集める（root が先頭）
+    // リンクが壊れて循環していても、訪問済みの集合と深さの上限（4096）で止まる
     void CollectCloneSubtree(World *world, EntityID id,
                              std::vector<EntityID>        &out,
                              std::unordered_set<EntityID> &visited, int depth)
@@ -82,12 +73,12 @@ bool SceneSerializer::Serialize(World *world, const std::string &filepath)
             std::chrono::system_clock::now().time_since_epoch())
             .count();
 
-    // 1. 保存する Entity を集め、先にローカルインデックスを振る。
+    // 1. 保存する Entity を集め、先にローカルインデックスを振る
     //   A が後ろにある B を参照していても、B の番号が決まっているようにするため
     SaveContext           saveCtx;
     std::vector<EntityID> targets;
 
-    // PrefabInstanceComponent を持つルートとその子孫は保存しない。
+    // PrefabInstanceComponent を持つルートとその子孫は保存しない
     //   レベルファイル側でプレハブの参照として保存されるので、ここでも保存すると二重に配置され、
     //   プレハブの編集も反映されなくなる
     std::unordered_set<EntityID> prefabExcluded;
@@ -123,7 +114,7 @@ bool SceneSerializer::Serialize(World *world, const std::string &filepath)
             if (chunk->HasComponent<Tag::DestroyTag>()) continue;    // 削除予定
             if (chunk->HasComponent<Tag::PersistentTag>()) continue; // シーンをまたいで残る Entity
             if (chunk->HasComponent<Tag::EditorTransientTag>()) continue; // エディタがプレビュー用に置いたもの
-            // UI（HUD・メニュー）は各シーンの System が起動時に生成する。
+            // UI（HUD・メニュー）は各シーンの System が起動時に生成する
             // 保存すると、次の起動で「読込分 + System の生成分」の二重になる
             if (chunk->HasComponent<UITransformComponent>()) continue;
 
@@ -154,6 +145,8 @@ bool SceneSerializer::Serialize(World *world, const std::string &filepath)
     std::string jsonStr = root.dump(4);
     return FileSystem::WriteAllText(filepath, jsonStr);
 }
+
+
 
 void SceneSerializer::SerializeEntity(
     World *world, EntityID entityID, nlohmann::json &outJson, SaveContext &saveCtx)
@@ -189,6 +182,8 @@ void SceneSerializer::SerializeEntity(
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 読込
 // ---------------------------------------------------------------------------
@@ -219,7 +214,7 @@ bool SceneSerializer::LoadEntitiesJson(const std::string &filepath, nlohmann::js
         return false;
     }
 
-    // 形式の検証（magic が無いファイルは読まない）
+    // 形式の検証（magic がないファイルは読まない）
     if (!root.contains(CCL::Serialization::Keys::Magic))
     {
         CCL_LOG_ERROR(LogCategory::Core,
@@ -249,6 +244,8 @@ bool SceneSerializer::LoadEntitiesJson(const std::string &filepath, nlohmann::js
     return true;
 }
 
+
+
 std::vector<EntityID> SceneSerializer::Deserialize(World *world, const std::string &filepath)
 {
     ZoneScopedN("SceneSerializer::Deserialize");
@@ -258,6 +255,8 @@ std::vector<EntityID> SceneSerializer::Deserialize(World *world, const std::stri
 
     return DeserializeRaw(world, entities);
 }
+
+
 
 std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const nlohmann::json &entitiesJson)
 {
@@ -271,8 +270,8 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const nlohma
 
     auto &registry = ComponentRegistry::Instance();
 
-    // 1. 全 Entity の生成を予約し、「ローカルインデックス → 新しい EntityID」を登録する。
-    //   コンポーネントはまだ付けない（EntityLink の変換先を先に全て決めるため）
+    // 1. 全 Entity の生成を予約し、「ローカルインデックス → 新しい EntityID」を登録する
+    //   コンポーネントはまだ付けない（EntityLink の変換先を先にすべて決めるため）
     Archetype emptyArch;
     for (const auto &entityJson : entitiesJson)
     {
@@ -291,7 +290,7 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const nlohma
         }
     }
 
-    // 2. コンポーネントを復元する（AddComponent は予約として積まれる）。
+    // 2. コンポーネントを復元する（AddComponent は予約として積まれる）
     //   EntityLink はここで LoadContext により新しい EntityID に変換される
     {
         size_t i = 0;
@@ -324,8 +323,8 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const nlohma
     // 3. 予約した生成と AddComponent を確定させる
     world->ScrutinyAndApply();
 
-    // 4. 親子のリンクを張る。
-    //   parent は 2 で新しい EntityID になっているが、保存しない子・兄弟のリンクはまだ無いので、
+    // 4. 親子のリンクを張る
+    //   parent は 2 で新しい EntityID になっているが、保存しない子・兄弟のリンクはまだないので、
     //   SetParent で双方向に張り直す。全 Entity が実体化済みなので順番は問わない
     for (EntityID id : createdEntities)
     {
@@ -339,6 +338,8 @@ std::vector<EntityID> SceneSerializer::DeserializeRaw(World *world, const nlohma
 
     return createdEntities;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 複製（エディタ用。保存と読込をメモリ上だけで行う）

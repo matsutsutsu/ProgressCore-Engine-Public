@@ -18,6 +18,8 @@ void ShellIconLoader::ClearCache()
     folderCache.clear();
 }
 
+
+
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::GetIconSRV(
     const std::wstring &filePath, ID3D11Device *device)
 {
@@ -43,6 +45,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::GetIconSRV(
     return srv;
 }
 
+
+
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadFolderIconSRV(
     const std::wstring &folderPath, ID3D11Device *device)
 {
@@ -56,6 +60,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadFolderIcon
     }
     return nullptr;
 }
+
+
 
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadShellIconSRV(
     const std::wstring &filePath, ID3D11Device *device)
@@ -72,6 +78,8 @@ Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::LoadShellIconS
     }
     return nullptr;
 }
+
+
 
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ShellIconLoader::CreateSRVFromHICON(
     ID3D11Device *device, HICON hIcon)

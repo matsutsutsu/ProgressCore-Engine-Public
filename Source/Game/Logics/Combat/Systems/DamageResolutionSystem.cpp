@@ -9,6 +9,8 @@
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -24,14 +26,15 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー。
+    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー
     // 向きは攻撃が来た方向（前 = 正面から当たった、後 = 背後から当たった）
     const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
     const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
 
-    // 向きごとのトリガー（HitDir と同じ並び）。
-    // プレイヤーのアニメーショングラフは Hit と HitDir で HitReaction のサブステートマシンに入るが、
-    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る。ボスは Hit / HitDir を持たないので、
+    // 向きごとのトリガー（HitDir と同じ並び）
+    // プレイヤーのアニメーショングラフは Hit と HitDir で Hit_Reaction のサブステートマシンに入るが、
+    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
+    // ボスは Hit / HitDir を持たないので、
     // 両方の形のトリガーを立てる
     const uint32_t HASH_HIT_DIRECTIONAL[4] = {
         CCL::Utils::HashString("HitFront"),
@@ -40,16 +43,15 @@ namespace
         CCL::Utils::HashString("HitRight")};
 
     /**
-     * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する。
+     * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する
      *
-     * 方向は攻撃の基準の位置から求め、無ければノックバックの向きを逆にして使う。
+     * 方向は攻撃の基準の位置から求め、なければノックバックの向きを逆にして使う
      *
-     * @param world 対象を引く World。所有しない。
-     * @param ev    受けたダメージのイベント。AnimParametersComponent を持たない相手（ドローンなど）には何もしない。
+     * @param world 対象を引く World。所有しない
+     * @param ev    受けたダメージのイベント。AnimParametersComponent を持たない相手（ドローンなど）には何もしない
      */
     void FireHitReaction(World *world, const DamageEventComponent &ev)
     {
-        // 大量のドローンはここで抜ける
         auto *anim = world->GetComponent<AnimParametersComponent>(ev.targetID);
         if (!anim) return;
 
@@ -65,9 +67,9 @@ namespace
             fwd.Normalize();
         const Vector3 right(fwd.z, 0.0f, -fwd.x);
 
-        // 攻撃が来た方向（受けた側から攻撃の基準の位置へ）を求める。
+        // 攻撃が来た方向（受けた側から攻撃の基準の位置へ）を求める
         // attackerID（誰の攻撃か）ではなく hitOriginID（実際に当たった物）を使う。ドローンの攻撃は
-        // ボスの攻撃として扱うので、attackerID を使うと背後から当たっても正面から当たったのけぞりになる。
+        // ボスの攻撃として扱うので、attackerID を使うと背後から当たっても正面から当たったのけぞりになる
         // 位置は親を持つ相手でもずれないよう、ワールド座標で比べる
         const CCL::ECS::EntityID originID =
             (ev.hitOriginID != CCL::ECS::InvalidEntityID) ? ev.hitOriginID : ev.attackerID;
@@ -92,7 +94,7 @@ namespace
                 hitDir = (r >= 0.0f) ? 3.0f : 2.0f;
         }
 
-        // HitReaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
+        // Hit_Reaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
         anim->SetFloat(HASH_HIT_DIR, hitDir);
         anim->SetTrigger(HASH_HIT, 0.15f);
 
@@ -109,11 +111,27 @@ void DamageResolutionSystem::Update(float dt)
     ForEachWithID([this](EntityID eventEntity, DamageEventComponent &event) {
         if (auto *health = m_world->GetComponent<HealthComponent>(event.targetID))
         {
-            // 無敵中はダメージもノックバックも無し（イベントは消す）
+            // 無敵中はダメージもノックバックもなし（イベントは消す）
             if (health->invincibilityTimer <= 0.0f)
             {
+                // --- とどめか ---
+
+                // 攻撃した側の今のクリップのとどめ区間で見る
+                // アニメを持たない攻撃（ドローンなど）はとどめにならない
+                const auto *attackerAnim = m_world->GetComponent<AnimatorComponent>(event.attackerID);
+                const bool  isFinisher   = attackerAnim && attackerAnim->currentSequence &&
+                                        IsInEventWindow(*attackerAnim->currentSequence, AnimEventType::Finisher,
+                                                        attackerAnim->currentTimer);
+
                 // --- HP を減らす ---
-                health->currentHealth -= event.finalDamage;
+
+                // とどめ以外は finisherFloor より下げない（ボスの形態の線）
+                // もともと下にいるときは、引き上げずに今のまま
+                float nextHealth = health->currentHealth - event.finalDamage;
+                if (!isFinisher && nextHealth < health->finisherFloor)
+                    nextHealth = (std::min)(health->currentHealth, health->finisherFloor);
+
+                health->currentHealth      = nextHealth;
                 health->invincibilityTimer = health->invincibilityDuration;
 
                 CCL_LOG_INFO(LogCategory::Game,
@@ -130,9 +148,9 @@ void DamageResolutionSystem::Update(float dt)
                 }
 
                 // --- ノックバック ---
-                // 受けた側に KnockbackComponent があれば、向き × 強さの速度を書く（無ければ何もしない）。
+                // 受けた側に KnockbackComponent があれば、向き × 強さの速度を書く（なければ何もしない）
                 // コンポーネントを付け外しせず、最初から付けておいた物に書くだけにするのは、
-                // 付け外しでアーキタイプの移動が起き、同時に多数が被弾したときに重くなるため。
+                // 付け外しでアーキタイプの移動が起き、同時に多数が被弾したときに重くなるため
                 // 実際に動かして減らすのは JoltCharacterUpdateSystem（CharacterVirtual なので壁を抜けない）
                 if (event.knockbackForce > 0.0f)
                 {
@@ -141,7 +159,7 @@ void DamageResolutionSystem::Update(float dt)
                         kb->velocity = event.knockbackDir * event.knockbackForce;
                         kb->timer    = kb->duration;
 
-                        // 操作を受け付けない硬直。滑る時間（timer）とは別に持つ。
+                        // 操作を受け付けない硬直。滑る時間（timer）とは別に持つ
                         // 続けて当たったら長い方を残す（後から来た弱い攻撃で硬直が短くならないように）
                         if (kb->stunDuration > kb->stunTimer)
                             kb->stunTimer = kb->stunDuration;
@@ -164,7 +182,7 @@ void DamageResolutionSystem::Update(float dt)
                 }
 
                 // --- 被弾の通知 ---
-                // 実際に当たったときだけ出す（無敵ですり抜けたときは出さない）。
+                // 実際に当たったときだけ出す（無敵ですり抜けたときは出さない）
                 // PlayerFeedbackSystem（プレイヤーの被弾演出）と BossPerceptionSystem が受ける
                 const bool isPlayer = m_world->HasComponent<PlayerComponent>(event.targetID);
                 m_world->GetEventBus().Publish(DamageTakenEvent{event.targetID, event.finalDamage, isPlayer});
@@ -176,7 +194,8 @@ void DamageResolutionSystem::Update(float dt)
                         event.targetID,
                         event.finalDamage,
                         event.hitStopDuration,
-                        event.hitStopScale});
+                        event.hitStopScale,
+                        isFinisher});
 
                 // --- のけぞり（前後左右） ---
                 // 倒れなかったときだけのけぞらせる。倒れたときは倒れるアニメーションに任せる（両方を再生しない）
@@ -184,9 +203,11 @@ void DamageResolutionSystem::Update(float dt)
                     FireHitReaction(m_world, event);
 
                 // --- 当たった位置に火花を出す（HitEffectSystem が受けて GPU パーティクルを出す） ---
+                // どのパーティクルにするかは HitEffectSystem が決めるので、攻撃した側を渡すだけにする
                 m_world->GetEventBus().Publish(HitImpactEvent{
                     DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z},
-                    event.finalDamage});
+                    event.finalDamage,
+                    event.attackerID});
             }
         }
 
@@ -194,5 +215,7 @@ void DamageResolutionSystem::Update(float dt)
         m_world->Destroy(eventEntity);
     });
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(DamageResolutionSystem, Priority::LogicStage::L06_DamageApply);

@@ -56,6 +56,25 @@ namespace ImSequencer
       return clickedBtn;
    }
 
+   // 追加: 上下移動のボタン（SequencerAddDelButton と同じ大きさ・色で、中に三角を描く）。押したら true
+   static bool SequencerMoveButton(ImDrawList* draw_list, ImVec2 pos, bool up)
+   {
+      ImGuiIO& io = ImGui::GetIO();
+      ImRect btnRect(pos, ImVec2(pos.x + 16, pos.y + 16));
+      bool overBtn = btnRect.Contains(io.MousePos);
+      bool containedClick = overBtn && btnRect.Contains(io.MouseClickedPos[0]);
+      bool clickedBtn = containedClick && io.MouseReleased[0];
+      int btnColor = overBtn ? 0xAAEAFFAA : 0x77A3B2AA;
+
+      float midx = pos.x + 16 / 2 - 0.5f;
+      draw_list->AddRect(btnRect.Min, btnRect.Max, btnColor, 4);
+      if (up)
+         draw_list->AddTriangleFilled(ImVec2(midx, btnRect.Min.y + 4), ImVec2(btnRect.Max.x - 4, btnRect.Max.y - 5), ImVec2(btnRect.Min.x + 4, btnRect.Max.y - 5), btnColor);
+      else
+         draw_list->AddTriangleFilled(ImVec2(btnRect.Min.x + 4, btnRect.Min.y + 5), ImVec2(btnRect.Max.x - 4, btnRect.Min.y + 5), ImVec2(midx, btnRect.Max.y - 4), btnColor);
+      return clickedBtn;
+   }
+
    bool Sequencer(SequenceInterface* sequence, int* currentFrame, bool* expanded, int* selectedEntry, int* firstFrame, int sequenceOptions)
    {
       bool ret = false;
@@ -71,6 +90,8 @@ namespace ImSequencer
       static int movingPart = -1;
       int delEntry = -1;
       int dupEntry = -1;
+      int moveEntry = -1; // 追加: 上下移動のボタンが押された行
+      int moveDelta = 0;  // 追加: その向き（-1 で上、+1 で下）
       int ItemHeight = 20;
 
       bool popupOpened = false;
@@ -297,6 +318,21 @@ if (!panningView)
 
                if (SequencerAddDelButton(draw_list, ImVec2(contentMin.x + legendWidth - ItemHeight - ItemHeight + 2 - 10, tpos.y + 2), true))
                   dupEntry = i;
+            }
+
+            // 追加: 上下移動のボタン。DEL の 2 つと同じ位置に出す（両方を指定すると重なる）
+            if (sequenceOptions & SEQUENCER_MOVE)
+            {
+               if (sequence->CanMove(i, +1) && SequencerMoveButton(draw_list, ImVec2(contentMin.x + legendWidth - ItemHeight + 2 - 10, tpos.y + 2), false))
+               {
+                  moveEntry = i;
+                  moveDelta = +1;
+               }
+               if (sequence->CanMove(i, -1) && SequencerMoveButton(draw_list, ImVec2(contentMin.x + legendWidth - ItemHeight - ItemHeight + 2 - 10, tpos.y + 2), true))
+               {
+                  moveEntry = i;
+                  moveDelta = -1;
+               }
             }
             customHeight += sequence->GetCustomHeight(i);
          }
@@ -692,6 +728,22 @@ if (!panningView)
       if (dupEntry != -1)
       {
          sequence->Duplicate(dupEntry);
+      }
+
+      // 追加: 上下移動。描画の途中で並びを変えないよう、描き終えてから入れ替える
+      if (moveEntry != -1)
+      {
+         const int target = moveEntry + moveDelta;
+         sequence->Move(moveEntry, moveDelta);
+
+         // 選択は中身についていく（入れ替えた 2 行のどちらかを選んでいたら、行番号を入れ替える）
+         if (selectedEntry)
+         {
+            if (*selectedEntry == moveEntry)
+               *selectedEntry = target;
+            else if (*selectedEntry == target)
+               *selectedEntry = moveEntry;
+         }
       }
       return ret;
    }

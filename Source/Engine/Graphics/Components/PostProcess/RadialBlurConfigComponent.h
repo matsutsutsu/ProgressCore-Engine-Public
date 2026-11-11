@@ -1,20 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: 放射状ブラー（集中線）の設定と、演出からの一時的な上乗せを持つ
-//       シングルトンコンポーネント。
-//
-// 責務:
-//   - シーンが持つ普段の設定（enable / data: 中心・強さ・立ち上がり）を持つ
-//   - 演出ごとの一時的な上乗せ（overrides）を持つ
-//   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
-//   - 両方を合わせた、描画に渡す値（強さ・減衰）を求める（Resolve）
-//   - 上書きの土台になる、今効いている強さと減衰を返す（BaseParams）
-//
-// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
-//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
-//       PostProcessSystem が毎フレーム読み、RadialBlurEffect へ渡す。
-//       data は定数バッファの構造体なので、シリアライズは Meta の手書き（パターンC）。
-// ===========================================================================
+// 放射状ブラー（集中線）の設定（シングルトン）。シーンの普段の設定と、演出ごとの一時的な上乗せを持つ
+// 演出は enable / data を書き換えず、自分のスロットだけを触る。data の保存は Meta の手書き
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
@@ -46,8 +32,8 @@ struct RadialBlurConfigComponent
         return out;
     }
 
-    // 描画に渡す値。強さは ResolvedStrength と同じく最大値をとり、減衰はその最大を出したスロットのものを使う。
-    // 減衰はスロットの効き（t）でシーンの値から寄せる。フェードの途中で別のスロットへ勝ちが移っても跳ばないようにするため。
+    // 描画に渡す値。強さは ResolvedStrength と同じく最大値をとり、減衰はその最大を出したスロットのものを使う
+    // 減衰はスロットの効き（t）でシーンの値から寄せる。フェードの途中で別のスロットへ勝ちが移っても跳ばないようにするため
     GpuData::CbRadialBlurData Resolve() const
     {
         GpuData::CbRadialBlurData out = data;

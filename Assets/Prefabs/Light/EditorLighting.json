@@ -1,0 +1,139 @@
+{
+    "entities": [
+        {
+            "components": {
+                "BloomConfig": {
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.20000000298023224,
+                    "data.threshold": 1.0,
+                    "enable": true
+                },
+                "ColorGrading": {
+                    "brightness": 1.0,
+                    "contrast": 1.0,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 1.0,
+                    "tintB": 1.0,
+                    "tintG": 1.0,
+                    "tintR": 1.0
+                },
+                "DepthOfField": {
+                    "enable": false,
+                    "falloff": 8.0,
+                    "focusDistance": 10.0,
+                    "focusRange": 3.0,
+                    "maxBlur": 0.009999999776482582
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "groundColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5333333611488342
+                    ],
+                    "intensity": 1.0,
+                    "skyColor": [
+                        0.0,
+                        0.10309933125972748,
+                        0.35135138034820557,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.11583012342453003,
+                        0.11583012342453003,
+                        0.11583012342453003,
+                        1.0
+                    ],
+                    "enabled": true,
+                    "end": 500.0,
+                    "heightDensity": 0.11999999731779099,
+                    "heightStart": -70.69999694824219,
+                    "skyFogHeight": -1.0,
+                    "skyFogSoftness": 0.20999999344348907,
+                    "start": 59.0
+                },
+                "Name": {
+                    "name": "EditorLighting"
+                },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        7.0,
+                        50.0,
+                        70.0
+                    ],
+                    "shadowBias": 0.00019999999494757503,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "Sky / IBL": {
+                    "irradiance": "",
+                    "prefilter": "",
+                    "skyIntensity": 0.5,
+                    "skybox": ""
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "ToneMapConfig": {
+                    "data.chromaticAberration": 0.0,
+                    "data.colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "data.exposure": 0.4000000059604645
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.699999988079071,
+                        0.0,
+                        -0.5,
+                        0.9200000166893005
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "EditorLighting",
+    "version": 1
+}

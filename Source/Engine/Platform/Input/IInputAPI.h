@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: ゲーム側が使う入力 API のインターフェースと、入力割り当て（バインディング）の型。
+// 概要: ゲーム側が使う入力 API のインターフェースと、入力割り当て（バインディング）の型
 //
 // 責務:
 //   - アクション（ボタン）と軸（アナログ値）を名前で引く API を定義する
 //   - マウス位置・移動量、カーソルロック、振動の API を定義する
 //   - 割り当ての型（デバイス種別・キーコード・発火タイミング）を定義する
 //
-// 備考: 実装は InputFacade。World のリソース std::shared_ptr<IInputAPI> として登録される。
+// 備考: 実装は InputFacade。World のリソース std::shared_ptr<IInputAPI> として登録される
 // ===========================================================================
 #include <string>
 #include <vector>
@@ -85,23 +85,20 @@ public:
     // マウスとスクリーン情報の取得
     virtual float GetMouseX() const = 0;
     virtual float GetMouseY() const = 0;
-    /**
-     * @brief マウスの毎フレームの水平移動量を返す（GetMouseDeltaY は垂直）。TPSの視点回転などに使う。
-     * @return 移動量（ピクセル/フレーム）。スティックと違い「倒し量」ではなく既に「移動量」なので、利用側で dt を掛けないこと。
-     */
+    // マウスの1フレームの移動量（px）。スティックの倒し量と違ってすでに移動量なので、dt を掛けない
     virtual float GetMouseDeltaX() const  = 0;
     virtual float GetMouseDeltaY() const  = 0;
     virtual float GetScreenWidth() const  = 0;
     virtual float GetScreenHeight() const = 0;
 
     // --- マウスカーソルのロック（マウスルック） ---
-    //   lock=true でカーソルを画面中央へ固定して非表示にし、画面端で止まらないようにする。
-    //   既定の実装は何もしない。
+    //   lock=true でカーソルを画面中央へ固定して非表示にし、画面端で止まらないようにする
+    //   既定の実装は何もしない
     virtual void SetMouseLock(bool lock) { (void)lock; }
     virtual bool IsMouseLocked() const { return false; }
 
-    // ゲーム側がマウス視点入力を受け付けてよいか（エディタが毎フレーム更新する。エディタ無しの構成では常に true）。
-    //   カーソルロックの判定にも使う：エディタの別ウィンドウ操作中はカーソルを固定しない。
+    // ゲーム側がマウス視点入力を受け付けてよいか（エディタが毎フレーム更新する。エディタなしの構成では常に true）
+    //   カーソルロックの判定にも使う：エディタの別ウィンドウ操作中はカーソルを固定しない
     virtual bool IsGameInputActive() const { return true; }
 
     // --- 割り当ての登録 ---
@@ -114,7 +111,7 @@ public:
     // ============================================================
     // 入力の取得
     //   名前のハッシュで引く。GetAction は、エディタで設定された種別
-    //   (Down / Triggered / Released) に従って評価される。
+    //   (Down / Triggered / Released) に従って評価される
     // ============================================================
     virtual bool  GetAction(uint32_t actionHash) const = 0;
     virtual float GetAxis(uint32_t axisHash) const     = 0;
@@ -131,19 +128,13 @@ public:
 
     // ============================================================
     // 表示用：アクションに割り当てられたキーを引く
-    //   操作説明 UI が「Attack は何のボタンか」をアイコンに変換するために使う。
+    //   操作説明 UI が「Attack は何のボタンか」をアイコンに変換するために使う
     //   UI 側でアイコンを直接持たせない理由: InputConfig.json でキーを変えたときに
-    //   説明だけが古い操作を出し続けるため。割り当ての情報源は1つに保つ。
+    //   説明だけが古い操作を出し続けるため。割り当ての情報源は1つに保つ
     // ============================================================
 
-    /**
-     * @brief アクションに割り当てられたバインドのうち、指定デバイス側の「代表1件」を返す。
-     * @param device KeyboardMouse なら Keyboard/Mouse_Button、GamePad ならパッド系から選ぶ。
-     * @param outBinding 見つかった割り当て。false のときは書き換えない。
-     * @return 割り当てが1件も無ければ false（そのデバイスでは操作できないアクション）。
-     * @note 複数割り当てがある場合は「先に登録されたもの」を代表とする。JSON の記載順が
-     *       そのまま優先順になるので、見せたい方を上に書けばよい。
-     */
+    // アクションの割り当てのうち、device の側の代表1件を返す。なければ false（そのデバイスでは操作できない）
+    // 複数あるときは先に登録したもの。JSON に書いた順なので、見せたい方を上に書く
     virtual bool GetPrimaryBinding(uint32_t actionHash, ActiveDeviceType device,
                                    InputBinding &outBinding) const = 0;
 

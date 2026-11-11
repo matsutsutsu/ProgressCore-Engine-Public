@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: シェーダーをハッシュで登録し、初めて使うときに作ってキャッシュする入れ物。
+// 概要: シェーダーをハッシュで登録し、初めて使うときに作ってキャッシュする入れ物
 //
 // 責務:
 //   - シェーダーの作り方（ファクトリ）をハッシュごとに登録する
@@ -8,8 +8,7 @@
 //   - RenderQueue の並べ替えで使う 8bit の番号を、登録した順に振る
 //   - エディタのシェーダー選択に出す名前を、登録した順に持つ
 //
-// 備考: 登録は ShaderManifest が shaders.json から行う。
-//       ErrorShader だけは、shaders.json が壊れていても使えるよう Graphics::Initialize が C++ から登録する。
+// 備考: 登録は Graphics::Initialize がまとめて行う
 // ===========================================================================
 #include <unordered_map>
 #include <functional>
@@ -19,8 +18,6 @@
 #include "Engine/Core/Math/StringHash.h"
 #include <unordered_set>
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Graphics/RHI/PipelineState.h"
-#include <optional>
 #include <string>
 
 class ShaderRegistry
@@ -51,20 +48,24 @@ public:
         m_shaderSortIDs[shaderHash] = m_nextSortID++;
     }
 
-    // MaterialShader を登録する。psoDesc は写して持つ（nullptr なら PSO を持たない）
-    void RegisterMaterialShader(uint32_t           shaderHash,
-                                const std::string &vsCso, const std::wstring &vsHlsl,
-                                const std::string &psCso, const std::wstring &psHlsl,
-                                const PipelineStateDesc *psoDesc = nullptr)
+    // MaterialShader を名前で登録する。ハッシュは名前から作り、エディタのシェーダー選択にも登録した順に出る
+    // ファイルのパスは名前（N）から決まる
+    //   cso : Assets/Shader/<N>VS.cso, Assets/Shader/<N>PS.cso
+    //   hlsl: Shader/Material/<N>/<N>VS.hlsl, Shader/Material/<N>/<N>PS.hlsl（ホットリロードで監視する）
+    void RegisterMaterialShader(const std::string &name)
     {
-        // ファクトリは後で呼ばれるので、psoDesc の指す先ではなく値をラムダに持たせる
-        std::optional<PipelineStateDesc> psoCopy;
-        if (psoDesc) psoCopy = *psoDesc;
-        m_factories[shaderHash] = [vsCso, vsHlsl, psCso, psHlsl, psoCopy](ID3D11Device *device) {
-            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl,
-                                                    psoCopy ? &*psoCopy : nullptr);
+        const std::string  vsCso = "Assets/Shader/" + name + "VS.cso";
+        const std::string  psCso = "Assets/Shader/" + name + "PS.cso";
+        const std::wstring wName(name.begin(), name.end()); // 名前は ASCII だけなので、1文字ずつ広げれば足りる
+        const std::wstring vsHlsl = L"Shader/Material/" + wName + L"/" + wName + L"VS.hlsl";
+        const std::wstring psHlsl = L"Shader/Material/" + wName + L"/" + wName + L"PS.hlsl";
+
+        const uint32_t shaderHash = CCL::Utils::HashString(name);
+        m_factories[shaderHash]   = [vsCso, vsHlsl, psCso, psHlsl](ID3D11Device *device) {
+            return std::make_unique<MaterialShader>(device, vsCso, vsHlsl, psCso, psHlsl);
         };
         m_shaderSortIDs[shaderHash] = m_nextSortID++;
+        RegisterName(shaderHash, name);
     }
 
     // 作ったシェーダーの CheckAndReload を呼ぶ（Graphics が毎フレーム呼ぶ）
@@ -76,7 +77,7 @@ public:
         }
     }
 
-    // 作ってあればそれを、無ければファクトリで作って返す。未登録なら ErrorShader を返す
+    // 作ってあればそれを、なければファクトリで作って返す。未登録なら ErrorShader を返す
     Shader *GetShader(uint32_t shaderHash, ID3D11Device *device)
     {
         auto it = m_shaders.find(shaderHash);
@@ -89,7 +90,7 @@ public:
             return m_shaders[shaderHash].get();
         }
 
-        // 未登録なら、画面で気付けるようマゼンタの ErrorShader を返す。
+        // 未登録なら、画面で気付けるようマゼンタの ErrorShader を返す
         // ErrorShader も未登録なら nullptr
         if (shaderHash != "Error"_hash)
         {
@@ -115,28 +116,23 @@ public:
         return it != m_shaderSortIDs.end() ? it->second : 0;
     }
 
-    // ============================================================
-    // 表示名（エディタのシェーダー選択用）
-    // ============================================================
-    //   ShaderManifest が shaders.json の "name" を、書かれた順に登録する。
-    //   エディタは自分で一覧を持たずにこれを使うので、shaders.json に足すだけで選択肢にも出る
-
-    void RegisterName(uint32_t shaderHash, const std::string &name)
-    {
-        if (m_hashToName.find(shaderHash) == m_hashToName.end())
-        {
-            m_orderedNames.push_back({name, shaderHash});
-        }
-        m_hashToName[shaderHash] = name; // 2回目からは名前を書き換えるだけで、順番は変えない
-    }
-
-    // 登録した順の (表示名, ハッシュ)。選んだ名前からハッシュを計算し直さなくて済むよう、ハッシュも持つ
+    // 登録した順の (表示名, ハッシュ)。エディタのシェーダー選択が使う
+    // 選んだ名前からハッシュを計算し直さなくて済むよう、ハッシュも持つ
     const std::vector<std::pair<std::string, uint32_t>> &GetRegisteredNames() const
     {
         return m_orderedNames;
     }
 
 private:
+    void RegisterName(uint32_t shaderHash, const std::string &name)
+    {
+        if (m_hashToName.find(shaderHash) == m_hashToName.end())
+        {
+            m_orderedNames.push_back({name, shaderHash});
+        }
+        m_hashToName[shaderHash] = name; // 2回目（デバイスを作り直したとき）からは名前を書き換えるだけで、順番は変えない
+    }
+
     std::unordered_map<uint32_t, std::function<std::unique_ptr<Shader>(ID3D11Device *)>> m_factories;
     std::unordered_map<uint32_t, std::unique_ptr<Shader>>                                m_shaders;
 

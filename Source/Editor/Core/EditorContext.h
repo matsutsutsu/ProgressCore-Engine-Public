@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: エディタの各ウィンドウが共有する状態（EditorContext）。
+// 概要: エディタの各ウィンドウが共有する状態（EditorContext）
 //
 // 責務:
 //   - 対象の World / SystemManager を指す（所有しない）
@@ -9,7 +9,7 @@
 //   - ウィンドウ間の連携用の値（ギズモ・パス編集・ゲームビューのフォーカスなど）
 //
 // 備考: 読み込み・保存は Framework が安全なタイミングで実行するので、ここにはパスを
-//       予約するだけにする。
+//       予約するだけにする
 // ===========================================================================
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemManager.h"
@@ -27,13 +27,13 @@ struct EditorContext
     CCL::ECS::World         *world         = nullptr; // 編集対象の World（所有しない）
     CCL::ECS::SystemManager *systemManager = nullptr; // その World の SystemManager（所有しない）
 
-    // 主選択。Inspector・ギズモ・各種エディタが「今フォーカス中の1体」として参照する。
-    //   複数選択時は「最後に触れた1体」を指す。
+    // 主選択。Inspector・ギズモ・各種エディタが「今フォーカス中の1体」として参照する
+    //   複数選択時は「最後に触れた1体」を指す
     CCL::ECS::EntityID selectedEntity = CCL::ECS::InvalidEntityID;
 
-    // 選択セット（複数選択）。selectedEntity は常にこの中の1つ（主選択）。
-    //   ハイライトや一括操作（複製・削除）はこのセット全体を対象にする。
-    //   単一選択時は要素1、未選択時は空。
+    // 選択セット（複数選択）。selectedEntity は常にこの中の1つ（主選択）
+    //   ハイライトや一括操作（複製・削除）はこのセット全体を対象にする
+    //   単一選択時は要素1、未選択時は空
     std::vector<CCL::ECS::EntityID> selectedEntities;
 
     // ---- 選択の操作（選択の変更は必ずこれらを通す） ----
@@ -105,12 +105,12 @@ struct EditorContext
     }
 
     /**
-     * @brief 一括操作（複製・削除）用に、選択セットから「祖先も選択されている」ものを除いた集合を返す。
+     * @brief 一括操作（複製・削除）用に、選択セットから「祖先も選択されている」ものを除いた集合を返す
      *
-     * 親を操作すれば子も一緒に処理されるので、二重に処理しないようにする。
+     * 親を操作すれば子も一緒に処理されるので、二重に処理しないようにする
      *
-     * @return 祖先が選択されていないエンティティの列。
-     * @note 親子関係が循環していた場合に備え、祖先をたどる回数に上限（guard）を置いている。
+     * @return 祖先が選択されていないエンティティの列
+     * @note 親子関係が循環していた場合に備え、祖先をたどる回数に上限（guard）を置いている
      */
     std::vector<CCL::ECS::EntityID> GetTopLevelSelection() const
     {
@@ -143,28 +143,28 @@ struct EditorContext
     std::string pendingLoadScenePath;
     std::string pendingSaveScenePath;
 
-    // レベル（ステージ＋プレハブ参照）の読み込み・保存の予約パス。
-    //   シーンと同じく、安全なタイミングで Framework が実行する（遅延実行）。
+    // レベル（ステージ＋プレハブ参照）の読み込み・保存の予約パス
+    //   シーンと同じく、安全なタイミングで Framework が実行する（遅延実行）
     std::string pendingLoadLevelPath;
     std::string pendingSaveLevelPath;
 
-    // 一時停止。
-    //   true の間だけゲームロジック(FixedUpdate)の進行を止める。
-    //   セーブ・ロードやシーンのバックアップは行わない。起動時は false（実行中）。
+    // 一時停止
+    //   true の間だけゲームロジック(FixedUpdate)の進行を止める
+    //   セーブ・ロードやシーンのバックアップは行わない。起動時は false（実行中）
     bool isPaused = false;
 
     // コマ送り要求。一時停止中に true にすると、次の1フレームだけ物理を進めて
-    //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用。
+    //   すぐ false に戻る（Framework が消費）。停止中の1フレーム送り用
     bool stepOneFrame = false;
 
-    // デバッグ速度（スロー再生）。1.0 で等速。
-    //   Framework が実時間に掛けてからゲームへ渡すので、ゲーム側からは見えない。
-    //   ゲームとしてのスロー（TimeContext の倍率）とは別物で、ゲームのコードは読まないこと。
+    // デバッグ速度（スロー再生）。1.0 で等速
+    //   Framework が実時間に掛けてからゲームへ渡すので、ゲーム側からは見えない
+    //   ゲームとしてのスロー（TimeContext の倍率）とは別物で、ゲームのコードは読まないこと
     float debugSpeed = 1.0f;
 
-    // 「カーソル自由(UI操作)モード」の手動切り替えの状態（F2）。
+    // 「カーソル自由(UI操作)モード」の手動切り替えの状態（F2）
     //   これ または isAnimEditMode が true のとき、GameFlowState.uiInteract が立ち、
-    //   ゲームを止めずにカーソルが解放される（実行中に ImGui を操作できる）。
+    //   ゲームを止めずにカーソルが解放される（実行中に ImGui を操作できる）
     bool cursorFreeToggle = false;
 
     // アニメーションシーケンサーの Edit Mode（プレビュー）
@@ -180,19 +180,19 @@ struct EditorContext
     // ゲーム画面のテクスチャ（ID3D11ShaderResourceView*。所有しない）。ImGui に渡して描く
     void *gameSRV = nullptr;
 
-    // ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか。
+    // ゲームビュー(ImGuiウィンドウ)にフォーカスがあるか
     //   GameViewWindow が毎フレーム更新し、EditorWindowManager が
-    //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える。
+    //   「全画面 or フォーカス中」を InputFacade へ伝えてマウス視点の可否を切り替える
     bool gameViewFocused = false;
 
-    // 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか。
-    //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる。
+    // 切り離した OS ウィンドウ(ImGuiマルチビューポート)を実際に描画するか
+    //   true の間だけ Exe 外へドラッグしたウィンドウが表示・操作できる
     //   各外部ウィンドウは個別スワップチェーンを毎フレーム Present するため、
-    //   負荷が気になる場面では false にして描画を止められる。既定は有効。
+    //   負荷が気になる場面では false にして描画を止められる。既定は有効
     bool renderExternalWindows = true;
 
-    // 切り離した OS ウィンドウを、操作していない間だけ低頻度で描くか。
-    //   触っていない窓をゲームと同じ 60fps で Present し続けるのをやめる。
-    //   プレイ中に別画面の数値を滑らかに眺めたいときは false にする。既定は有効。
+    // 切り離した OS ウィンドウを、操作していない間だけ低頻度で描くか
+    //   触っていない窓をゲームと同じ 60fps で Present し続けるのをやめる
+    //   プレイ中に別画面の数値を滑らかに眺めたいときは false にする。既定は有効
     bool throttleExternalWindows = true;
 };

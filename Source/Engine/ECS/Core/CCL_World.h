@@ -1,27 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: ECS のあらゆる操作の窓口となる中央コンテナ World。
+// 概要: ECS のあらゆる操作の窓口になる中央コンテナ
 //
 // 責務:
 //   - Entity の発行・破棄・世代管理
-//   - Component の Add / Remove / Patch（全て遅延適用）
-//   - 構造変更（PendingOps）の確定（ScrutinyAndApply）
-//   - Resource（シングルトン的グローバルデータ）の保持
-//   - EventBus を介した System 間通信
+//   - Component の Add / Remove / Patch（すべて遅延して適用する）と、その確定（ScrutinyAndApply）
+//   - Resource（シングルトン的なグローバルデータ）の保持
+//   - EventBus を介した System 間の通信
 //
-// 備考: 構造変更（Add/Remove/Spawn/Destroy）は必ず遅延実行する。
-//       System のループ中に即時実行するとイテレータが無効になりクラッシュするため、
-//       PendingOps に積んで ScrutinyAndApply() で一括適用する。
-//
-//       確定と、System の処理対象 Chunk の一覧の作り直しは、別のタイミングで起きる。
-//         確定（ScrutinyAndApply）   : ロジックの更新の頭に加え、Prefab::SpawnPrefab の中でもその場で起きる。
-//                                      プレハブを1つ生成すると、そのとき積まれている予約が World 全体ぶん確定する。
-//         一覧の作り直し             : System が1つも動いていない境目（ロジックの更新の頭・描画の更新の頭）でだけ行う。
-//                                      並列に走る System が一覧を回っている最中に作り直すと壊れるため（CCL_ECSContext.h）。
-//       そのため、ロジックの途中で生成した Entity は、次の境目まで後ろの System の一覧に入らない。
-//
-//       関連: EntityRef（生成直後のメソッドチェーン）/ ComponentHandle（安全な参照）/
-//             ResourceWrapper（型消去したリソース格納）
+// 備考: 構造変更は必ず遅延させる。System のループ中に即時に行うと、イテレータが無効になる
+//       確定はロジックの更新の頭と Prefab::SpawnPrefab の中で起き、処理対象 Chunk の一覧の作り直しは
+//       System が1つも動いていない境目でだけ行う。そのため、ロジックの途中で作った Entity は次の境目まで一覧に入らない
 // ===========================================================================
 
 #include <atomic>
@@ -40,9 +29,9 @@
 #include "Engine/ECS/Jobs/CCL_FrameAllocator.h"
 #include "Engine/ECS/Events/CCL_EventBus.h"
 
-#include "CCL_Resource.h"        // ResourceIDGenerator / ResourceBase / ResourceWrapper
-#include "CCL_EntityRef.h"       // EntityRef
-#include "CCL_ComponentHandle.h" // ComponentHandle<T>
+#include "CCL_Resource.h"
+#include "CCL_EntityRef.h"
+#include "CCL_ComponentHandle.h"
 
 #include "Engine/Core/Components/DestroyTag.h"
 
@@ -65,28 +54,16 @@ namespace CCL::ECS
         // フレーム更新
         // ============================================================
 
-        /**
-         * @brief 溜まった PendingOps を確定し、Chunk 構造を整合させる。
-         *
-         * - Entity の Spawn / Destroy
-         * - Component の Add / Remove / Patch
-         *
-         * を一括処理し、必要に応じて Chunk 間遷移と CompactHoles を行う。
-         * ECSContext から「System 実行の前」に呼ばれる。この時だけ構造が変わる。
-         */
+        // 積んだ予約（Spawn / Destroy と、コンポーネントの Add / Remove / Patch）をまとめて当てる
+        // ECSContext が System を動かす前に呼ぶ。構造が変わるのはこのときだけ
         void ScrutinyAndApply();
 
         // ============================================================
         // コンポーネントの追加・削除（予約）
         // ============================================================
 
-        /**
-         * @brief コンポーネント追加リクエスト（デフォルト構築版）。
-         *
-         * 型 T のデフォルトコンストラクタで構築したコンポーネントを、
-         * 次回の ScrutinyAndApply で追加する。構築・破棄の関数ポインタも
-         * 一緒に運ぶので、shared_ptr 等を持つ型でも正しく解放される。
-         */
+        // T を既定の構築で追加する予約を積む（当たるのは次の ScrutinyAndApply）
+        // 構築と破棄の関数ポインタも運ぶので、shared_ptr などを持つ型も正しく解放される
         template <class T>
         void AddComponent(EntityID entity)
         {
@@ -110,18 +87,8 @@ namespace CCL::ECS
                                 td.name);
         }
 
-        /**
-         * @brief コンポーネント追加リクエスト（引数転送版）。
-         *
-         * 与えられた引数で T をその場で構築して FrameAllocator 上に一時保持し、
-         * PendingOp に積む。引数が0個の呼び出しは、より特殊化された
-         * デフォルト構築版の方が選ばれる。
-         *
-         * @code
-         *   world.AddComponent<Position>(entity, 10.0f, 20.0f); // 引数渡し
-         *   world.AddComponent<Velocity>(entity, someInstance); // インスタンス渡し
-         * @endcode
-         */
+        // 引数で T を構築して追加する予約を積む。値は FrameAllocator に一時的に置く
+        // 例: world.AddComponent<Position>(entity, 10.0f, 20.0f);
         template <class T, typename... Args>
         void AddComponent(EntityID entity, Args &&...args)
         {
@@ -162,38 +129,16 @@ namespace CCL::ECS
         // Entity の生成・破棄（予約）
         // ============================================================
 
-        /**
-         * @brief 指定 Archetype のエンティティ生成を予約する（低レベル API）。
-         *
-         * ID は即座に返るので呼び出し直後から AddComponent 等に使えるが、
-         * Chunk への配置は ScrutinyAndApply まで遅延される
-         * （それまで GetComponent は nullptr を返す）。
-         */
+        // archetype の Entity の生成を予約する（低レベル API）
+        // ID はすぐ返るが、Chunk に載るのは ScrutinyAndApply の後。それまで GetComponent は nullptr
         EntityID RequestSpawnEntity(const Archetype &archetype);
 
-        /**
-         * @brief Archetype から生成し、メソッドチェーン用ラッパーを返す（推奨 API）。
-         *
-         * @code
-         *   world.Spawn(arch)
-         *        .Set(Position{0, 0})
-         *        .Set(Velocity{1, 0});
-         * @endcode
-         *
-         * @note 実装は本ヘッダ末尾。
-         */
+        // archetype の Entity を生成し、Set を続けて書けるラッパーを返す
+        // 例: world.Spawn(arch).Set(Position{0, 0}).Set(Velocity{1, 0});
         EntityRef Spawn(const Archetype &archetype);
 
-        /**
-         * @brief 親子関係対応の安全な破棄（推奨：ゲーム側用）。
-         *
-         * この Entity に DestroyTag を付けるだけで、実際の破棄は
-         * HierarchyCleanUpSystem が DestroyTag を見て行う。
-         * 「親が消えたら子も消える」などの階層処理を1か所に集めるため。
-         *
-         * @note 親が消えても子を残したい場合は、Destroy の直前に
-         *       TransformUpdateSystem の DetachChild を呼ぶこと。
-         */
+        // 親子ごと破棄する（ゲーム側はこれを使う）。DestroyTag を付けるだけで、消すのは HierarchyCleanupSystem
+        // 子を残したいときは、先に TransformUpdateSystem の DetachChild を呼ぶ
         void Destroy(EntityID id)
         {
             if (!IsEntityValid(id)) return;
@@ -205,13 +150,7 @@ namespace CCL::ECS
             }
         }
 
-        /**
-         * @brief 親子関係を完全に無視する強制破棄（システム内部用）。
-         *
-         * Destroy() がタグベースの「ソフト削除」なのに対し、こちらは
-         * 直接 Destroy の PendingOp を積む。HierarchyCleanUpSystem 自身や
-         * フレームワーク内部で使う想定。ゲームロジックからは Destroy() を使うこと。
-         */
+        // 親子を見ずに、破棄の予約をすぐ積む。子は消えない。ふだんは Destroy を使う
         void RequestDestroyEntity(EntityID entity);
 
         // ============================================================
@@ -229,27 +168,18 @@ namespace CCL::ECS
         // 世代管理・妥当性チェック
         // ============================================================
 
-        /**
-         * @brief EntityID が現時点で有効かを世代カウンタで判定する。
-         *
-         * 削除されたインデックスが再利用されたとき、古い EntityID が新しい
-         * 別の Entity を誤って指してしまう問題を防ぐ。
-         */
+        // 世代を照合して、ID が今も有効かを返す。index が使い回されても、古い ID は false になる
         inline bool IsEntityValid(EntityID entity) const;
 
         // ============================================================
         // Resource（特定の Entity に属さない、世界に1つだけのデータ）
         // ============================================================
         //
-        // 例: Grid（空間分割）、DeltaTime（時間）、Input（入力状態）など。
+        // 例: Grid（空間分割）、DeltaTime（時間）、Input（入力状態）など
         // ResourceIDGenerator で型 T → uint32_t を採番し、その値を配列の添字に
-        // 使うので O(1) で引ける。
+        // 使うので O(1) で引ける
 
-        /**
-         * @brief 型 T のリソースを生成して World に登録する。
-         * @tparam T    リソース型
-         * @tparam Args T のコンストラクタに渡す引数
-         */
+        // T のリソースを args で構築して登録する
         template <typename T, typename... Args>
         void AddResource(Args &&...args)
         {
@@ -264,12 +194,7 @@ namespace CCL::ECS
                 std::make_unique<ResourceWrapper<T>>(std::forward<Args>(args)...);
         }
 
-        /**
-         * @brief 登録済みリソース T への参照を取得する（O(1)）。
-         *
-         * @note 未登録の場合は assert で落ちる。事前に HasResource で確認するか、
-         *       Initialize で必ず AddResource しておくこと。
-         */
+        // 登録済みのリソース T を返す。未登録なら assert で落ちる（先に HasResource で確かめる）
         template <typename T>
         T &GetResource()
         {
@@ -289,13 +214,8 @@ namespace CCL::ECS
         // コンポーネントの取得
         // ============================================================
 
-        /**
-         * @brief 指定 Entity の Component T を取得する。
-         * @return 見つかれば T*、無ければ nullptr
-         *
-         * @note 返るのは生ポインタ。構造変更（ScrutinyAndApply）を跨いで保持すると
-         *       ダングリングするので、フレームを跨ぐなら GetHandle を使うこと。
-         */
+        // Entity のコンポーネント T を返す。なければ nullptr
+        // 構造の変更（ScrutinyAndApply）をまたいで持つと宙に浮くので、フレームをまたぐなら GetHandle を使う
         template <class T>
         inline T *GetComponent(EntityID entity);
 
@@ -308,12 +228,7 @@ namespace CCL::ECS
         // TypeID 指定版
         bool HasComponent(EntityID entity, TypeID tid);
 
-        /**
-         * @brief 構造変更に強い ComponentHandle を取得する（推奨）。
-         *
-         * 生ポインタを長く保持するとダングリングするので、フレームを跨いだ
-         * 参照には必ずこちらを使うこと。
-         */
+        // 構造が変わっても使えるハンドルを返す。フレームをまたいで持つならこちら
         template <typename T>
         ComponentHandle<T> GetHandle(EntityID entity)
         {
@@ -331,49 +246,21 @@ namespace CCL::ECS
         // エディタ・検査用
         // ============================================================
 
-        /**
-         * @brief 指定 Entity の現在の Archetype を取得する。
-         *
-         * エディタが Chunk の内部構造を知らずに「この Entity は何を持っているか」を
-         * 一覧化するために使う。存在しない Entity なら空の Archetype を返す。
-         */
+        // Entity の今の Archetype を返す。いなければ空。エディタが、持っているコンポーネントを並べるのに使う
         const Archetype &GetEntityArchetype(EntityID entity) const;
 
         // ============================================================
         // View / Query
         // ============================================================
 
-        /**
-         * @brief 指定の Components... を全て持つ Entity の ID 一覧を取得する。
-         *
-         * @code
-         *   auto enemies = world->View<Position, Enemy>();
-         * @endcode
-         *
-         * @note 高頻度ループでは System の ForEach を使う方が速い。
-         *       本関数はエディタ等の単発処理向け。
-         */
+        // Components... をすべて持つ Entity の ID を集めて返す（エディタなどの単発の処理用）
+        // 毎フレームのループには、System の ForEach か ViewEach を使う
         template <class... Components>
         inline std::vector<EntityID> View();
 
-        /**
-         * @brief View と同じ条件の Entity を、確保せずに1件ずつ fn(EntityID) へ渡す。
-         *
-         * @details View は結果を vector に貯めるため、呼ぶたびにヒープ確保が起きる。
-         *          毎フレーム走る処理や、ドローンのように大量に該当するクエリでは
-         *          その確保自体が無視できないので、貯めずに流すこちらを使う。
-         *
-         * @code
-         *   world->ViewEach<DroneComponent, TransformComponent>([&](EntityID id) { ... });
-         * @endcode
-         *
-         * @note View と違い、空きスロットと削除予約済みの Entity は渡らない。
-         * @note コールバック内で AddComponent/DestroyEntity を呼んでよい（構造変更は
-         *       ScrutinyAndApply まで遅延されるため、走査中に Chunk は動かない）。
-         *       ただし即時に効く操作を足す場合はこの前提が崩れる点に注意。
-         * @note 高頻度ループでは System の ForEach の方がさらに速い。
-         *       本関数は「自分のアーキタイプ外を覗きたい」ときの手段。
-         */
+        // View と同じ条件の Entity を、vector に貯めずに1件ずつ fn(EntityID) へ渡す
+        // View と違い、空きスロットと削除予約済みの Entity は渡らない
+        // fn の中で AddComponent や Destroy を呼んでも、予約になるので走査中に Chunk は動かない
         template <class... Components, class Func>
         inline void ViewEach(Func &&fn);
 
@@ -381,14 +268,7 @@ namespace CCL::ECS
         // シングルトンコンポーネント
         // ============================================================
 
-        /**
-         * @brief シングルトンコンポーネント（持つ Entity が1体だけの型）を取得する。
-         *
-         * @note 見つけた時点で打ち切るため、ヒープ確保も全 Chunk 走査も起きない。
-         *       毎フレーム引き直してよい（＝ポインタを持ち回らなくてよい）。
-         *       生ポインタをフレームを跨いで保持すると Chunk 移動/穴詰めでダングリングするので、
-         *       保持したい場合は GetHandle() を使うこと。
-         */
+        // 持つ Entity が1体だけの型（シングルトン）を返す。見つけたら打ち切るので、毎フレーム引き直してよい
         template <typename T>
         inline T *GetSingletonComponent();
 
@@ -396,17 +276,8 @@ namespace CCL::ECS
         // 非テンプレート版の予約 API（テンプレート版から呼ばれる）
         // ============================================================
 
-        /**
-         * @brief コンポーネント追加の予約を1件積む。ここでは何も追加されない。
-         *
-         * @param ctor     構築関数。あれば適用時にその場で構築する（factory）。
-         *                 無ければゼロ埋めした一時データを持たせる
-         * @param dtor     デストラクタ
-         * @param copyCtor コピー構築
-         * @param assigner 代入演算子（同じ型構成のまま値だけ上書きするときに使う）
-         * @param mover    ムーブ構築（コピー禁止型でも運べるようにするため）
-         * @param name     デバッグ表示用の型名
-         */
+        // コンポーネント追加の予約を1件積む。ctor があれば当てるときにその場で構築し、なければゼロ埋めの値を持たせる
+        // assigner は型構成が同じまま値を上書きするとき、mover はコピーできない型を運ぶときに使う
         void RequestAddComponent(EntityID                           entity,
                                  TypeID                             tid,
                                  size_t                             size,
@@ -424,18 +295,9 @@ namespace CCL::ECS
         // コンポーネントの部分書き換え（予約）
         // ============================================================
 
-        /**
-         * @brief 既存コンポーネントの中身を、ラムダで部分書き換えする予約を積む。
-         *
-         * Prefab 生成直後で GetComponent がまだできないタイミングでも、
-         * 「特定のフィールドだけ差し替えたい」用途に使える。
-         *
-         * @code
-         *   world.PatchComponent<TransformComponent>(entity, [pos](auto& t){
-         *       t.position = pos;   // position だけ変更、scale 等は維持
-         *   });
-         * @endcode
-         */
+        // 既存のコンポーネントをラムダで部分的に書き換える予約を積む
+        // Prefab を生成した直後など、まだ GetComponent できないときに使う
+        // 例: world.PatchComponent<TransformComponent>(entity, [pos](auto &t) { t.position = pos; });
         template <class T>
         void PatchComponent(EntityID entity, std::function<void(T &)> action)
         {
@@ -490,9 +352,9 @@ namespace CCL::ECS
     // インライン実装
     // ============================================================
     //
-    // ここから下は World の完全定義が必要な実装。
+    // ここから下は World の完全定義が必要な実装
     // EntityRef / ComponentHandle のテンプレート実装も、World を完全に知った
-    // 後でないと書けないので、ここに集めている。
+    // 後でないと書けないので、ここに集めている
 
     inline bool World::IsEntityValid(EntityID entity) const
     {
@@ -572,7 +434,7 @@ namespace CCL::ECS
         const Archetype filter = ArchetypeHelper::Generate<T>();
         const TypeID    tid    = TypeInfo<T>::ID();
 
-        // 1件見つけた時点で返す。vector に貯めてから先頭を取り直す必要はない。
+        // 1件見つけた時点で返す。vector に貯めてから先頭を取り直す必要はない
         for (const auto &upChunk : m_chunkManager.GetChunks())
         {
             if (!upChunk) continue;

@@ -1,0 +1,55 @@
+{
+    "entities": [
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": null,
+                "Model": {
+                    "assetPath": "Assets/Models/Enemy/Valkyra/Valkyra.model.json"
+                },
+                "Name": {
+                    "name": "ValkyraPreview"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 2,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        1.024121880531311,
+                        -0.04281148314476013,
+                        28.65264129638672
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.9892306923866272,
+                        0.0,
+                        0.1463644802570343
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "ValkyraPreview",
+    "version": 1
+}

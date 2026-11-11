@@ -49,13 +49,15 @@ Vector3 ScreenToWorld::GetRayIntersectionY0(
     return intersection;
 }
 
+
+
 void ScreenToWorld::GetRay(
     float mouseX, float mouseY,
     float screenWidth, float screenHeight,
     const Camera &camera,
     Vector3 &outOrigin, Vector3 &outDir)
 {
-    // GetRayIntersectionY0 と同じ逆変換だが、Y=0 で切らずレイそのものを返す。
+    // GetRayIntersectionY0 と同じ逆変換だが、Y=0 で切らずレイそのものを返す
     Viewport vp;
     vp.x        = 0.0f;
     vp.y        = 0.0f;

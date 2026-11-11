@@ -3,6 +3,7 @@
 
 #ifdef ENABLE_EDITOR
 #include "Engine/Graphics/RHI/Graphics.h"
+#include "Engine/Graphics/Pipeline/LodDebugPass.h"
 #include "Engine/Graphics/SceneView/Camera.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include <imgui.h>
@@ -36,7 +37,7 @@ void RenderDebugWindow::DrawContents(EditorContext &context)
 #ifdef ENABLE_EDITOR
     const auto &entries = RenderDebugRegistry::Instance().GetEntries();
 
-    // --- 深度の線形化に使う near/far をカメラから取る（カメラが無ければ前の値のまま） ---
+    // --- 深度の線形化に使う near/far をカメラから取る（カメラがなければ前の値のまま） ---
     if (context.world && context.world->HasResource<Camera *>())
     {
         if (Camera *cam = context.world->GetResource<Camera *>())
@@ -55,6 +56,38 @@ void RenderDebugWindow::DrawContents(EditorContext &context)
     if (m_arraySlice < 0) m_arraySlice = 0;
     ImGui::TextDisabled("Depth linearize: near=%.2f far=%.1f (camera)", m_nearZ, m_farZ);
     ImGui::Separator();
+
+    // --- LOD の色分け（オンの間だけ、段ごとの色と描いた数を出す） ---
+    if (LodDebugPass *lodPass = Graphics::Instance().GetLodDebugPass())
+    {
+        ImGui::Checkbox("LOD を色分け", &lodPass->enabled);
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("LOD の切り替わる距離を確かめるときに使う。\n"
+                              "ドローンなど LOD のあるモデルに、段ごとの色を重ねて表示する。");
+        }
+
+        if (lodPass->enabled)
+        {
+            // ドローンの LOD は3段なので、LOD0〜2 を並べる
+            constexpr size_t kShownLevels = 3;
+
+            const MeshLod::LevelCounts &counts = lodPass->GetLastLevelCounts();
+            for (size_t level = 0; level < kShownLevels; ++level)
+            {
+                const DirectX::XMFLOAT4 color = LodDebugPass::GetLevelColor(level);
+
+                ImGui::PushID(static_cast<int>(level));
+                ImGui::ColorButton("##LodColor", ImVec4(color.x, color.y, color.z, 1.0f),
+                                   ImGuiColorEditFlags_NoTooltip, ImVec2(12.0f, 12.0f));
+                ImGui::PopID();
+
+                ImGui::SameLine();
+                ImGui::Text("LOD%zu: %u", level, counts[level]);
+            }
+        }
+        ImGui::Separator();
+    }
 
     if (entries.empty())
     {

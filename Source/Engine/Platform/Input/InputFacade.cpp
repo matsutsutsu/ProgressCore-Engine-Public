@@ -1,7 +1,7 @@
 #include "InputFacade.h"
 #include "InputKeyTable.h"
+#include "Engine/Platform/Core/FileSystem.h"
 #include <algorithm>
-#include <fstream>
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -27,6 +27,8 @@ namespace
         return InputDeviceType::Keyboard;
     }
 
+
+
     // JSON の "Key" 文字列 -> キーコード。キーの追加は InputKeyTable.h で行う
     unsigned int StringToKeyCode(const std::string &str)
     {
@@ -39,8 +41,8 @@ namespace
 // ---------------------------------------------------------------------------
 bool InputFacade::LoadConfig(const std::string &filePath)
 {
-    std::ifstream file(filePath);
-    if (!file.is_open())
+    const std::string text = FileSystem::ReadAllText(filePath);
+    if (text.empty())
     {
         return false;
     }
@@ -48,7 +50,7 @@ bool InputFacade::LoadConfig(const std::string &filePath)
     json doc;
     try
     {
-        file >> doc;
+        doc = json::parse(text);
     }
     catch (...)
     {
@@ -67,7 +69,7 @@ bool InputFacade::LoadConfig(const std::string &filePath)
         {
             std::string name = actionJson["Name"].get<std::string>();
 
-            // トリガー種別（無ければ "Down"）
+            // トリガー種別（なければ "Down"）
             std::string trig = actionJson.value("Trigger", std::string("Down"));
             SetActionTriggerType(name, StringToTriggerType(trig));
 
@@ -100,11 +102,15 @@ bool InputFacade::LoadConfig(const std::string &filePath)
     return true;
 }
 
+
+
 void InputFacade::AddActionBinding(const std::string &actionName, InputDeviceType device, unsigned int keyCode)
 {
     uint32_t hash = CCL::Utils::HashString(actionName);
     m_actionBindings[hash].push_back({device, keyCode, 1.0f});
 }
+
+
 
 void InputFacade::AddAxisBinding(const std::string &axisName, InputDeviceType device, unsigned int keyCode, float scale)
 {
@@ -112,11 +118,15 @@ void InputFacade::AddAxisBinding(const std::string &axisName, InputDeviceType de
     m_axisBindings[hash].push_back({device, keyCode, scale});
 }
 
+
+
 void InputFacade::SetActionTriggerType(const std::string &actionName, TriggerType type)
 {
     uint32_t hash              = CCL::Utils::HashString(actionName);
     m_actionTriggerTypes[hash] = type;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 評価
@@ -143,6 +153,8 @@ bool InputFacade::EvalActionDown(const std::vector<InputBinding> &binds) const
     return false;
 }
 
+
+
 bool InputFacade::EvalActionTriggered(const std::vector<InputBinding> &binds) const
 {
     for (const auto &bind : binds)
@@ -166,6 +178,8 @@ bool InputFacade::EvalActionTriggered(const std::vector<InputBinding> &binds) co
     return false;
 }
 
+
+
 bool InputFacade::EvalActionReleased(const std::vector<InputBinding> &binds) const
 {
     for (const auto &bind : binds)
@@ -188,20 +202,13 @@ bool InputFacade::EvalActionReleased(const std::vector<InputBinding> &binds) con
     return false;
 }
 
+
+
 #ifdef ENABLE_EDITOR
 namespace
 {
-    /**
-     * @brief エディタでウィジェットを操作している間かを返す。その間はゲーム入力を止める。
-     *
-     *   ・WantCaptureKeyboard : テキスト/数値欄にフォーカスがあり、キー入力を ImGui が受け取っている（名前入力中の WASD 漏れ防止）
-     *   ・IsAnyItemActive     : スライダー/DragFloat 等をドラッグ中（値の調整中）
-     *
-     * GameView 自体が ImGui ウィンドウなので、WantCaptureMouse は画面にマウスを乗せただけで true になり、通常のプレイを妨げる。
-     * そのためマウスのフラグは意図的に見ない。
-     *
-     * @return 操作中なら true。
-     */
+    // エディタでウィジェットを操作している間か。その間はゲームの入力を止める（名前の入力中に WASD が漏れない）
+    // WantCaptureMouse は見ない。GameView も ImGui のウィンドウなので、マウスを乗せただけで true になる
     inline bool EditorIsConsumingInput()
     {
         if (!ImGui::GetCurrentContext()) return false;
@@ -236,6 +243,8 @@ bool InputFacade::GetAction(uint32_t actionHash) const
         return EvalActionDown(it->second);
     }
 }
+
+
 
 float InputFacade::GetAxis(uint32_t axisHash) const
 {
@@ -289,6 +298,8 @@ float InputFacade::GetAxis(uint32_t axisHash) const
 
     return std::clamp(finalValue, -1.0f, 1.0f);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 振動

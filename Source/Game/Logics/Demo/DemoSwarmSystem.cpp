@@ -1,5 +1,5 @@
 #include "DemoSwarmSystem.h"
-#include "Game/Logics/AI/Drone/Motion/DroneMotionCommon.h" // LookToRotation
+#include "Game/Logics/AI/Drone/Motion/DroneMotion.h"
 #include <chrono>
 #include <cmath>
 
@@ -20,7 +20,7 @@ namespace
     // 最初に弾ける速さ。中心からの位置にこれを掛けたものが初速になる [1/s]
     constexpr float kBurst = 1.0f;
 
-    // 群れの中心点の高さ（一辺の長さに対する割合と、足す余白 [m]）。
+    // 群れの中心点の高さ（一辺の長さに対する割合と、足す余白 [m]）
     // 群れは中心点から上下に一辺の約55倍まで広がる（参考にした ECS デモの値で試算）ので、
     // 地面より下へ出ないようにする
     constexpr float kCenterHeightRate   = 60.0f;
@@ -35,16 +35,22 @@ namespace
         return (std::max)(1u, static_cast<uint32_t>(std::ceil(std::cbrt(static_cast<float>(count)))));
     }
 
+
+
     // 最初の塊の一辺の長さ [m]。調整値はこれに対する割合で持つ
     float BlockLength(uint32_t count)
     {
         return (std::max)(kSpacing, static_cast<float>(BlockSide(count) - 1) * kSpacing);
     }
 
+
+
     Vector3 SwarmCenter(uint32_t count)
     {
         return Vector3(0.0f, BlockLength(count) * kCenterHeightRate + kCenterHeightMargin, 0.0f);
     }
+
+
 
     // 番号から 0〜1 の値を作る。目標点の距離・回る速さを機体ごとにばらすのに使う
     float Hash01(uint32_t seed)
@@ -57,7 +63,11 @@ namespace
         return static_cast<float>(seed & 0xFFFFFFu) / static_cast<float>(0xFFFFFFu);
     }
 
+
+
     float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+
+
 
     // target へ向かう単位ベクトルに強さを掛けた加速度。重なっているときは 0
     Vector3 PullToward(const Vector3 &from, const Vector3 &target, float strength)
@@ -68,6 +78,8 @@ namespace
         return dir * strength;
     }
 
+
+
     // 速度の向きへ機首を向ける。止まっているときは今の向きのまま
     void FaceVelocity(TransformComponent &trans, Vector3 vel)
     {
@@ -76,11 +88,13 @@ namespace
         trans.rotation = CCL::AI::Motion::LookToRotation(vel, true);
     }
 
+
+
     /**
-     * @brief 一般機 index の、隊長機から見た目標点の位置を返す。
+     * @brief 一般機 index の、隊長機から見た目標点の位置を返す
      *
-     * 球面上に散らばった方向（フィボナッチ球）を、機体ごとの速さと向きで水平に回す。
-     * 距離も機体ごとにばらすので、目標点は隊長機の周りの厚みのある殻に散らばり、回り続ける。
+     * 球面上に散らばった方向（フィボナッチ球）を、機体ごとの速さと向きで水平に回す
+     * 距離も機体ごとにばらすので、目標点は隊長機の周りの厚みのある殻に散らばり、回り続ける
      */
     Vector3 OrbitOffset(uint32_t index, uint32_t count, float t, float length, const DemoSwarmTuning &tune)
     {
@@ -139,12 +153,16 @@ void DemoSwarmSystem::InitialState(uint32_t index, uint32_t count, Vector3 &outP
     outVel            = tangent * speed;
 }
 
+
+
 void DemoSwarmSystem::Reset(uint32_t count)
 {
     m_droneCount = count;
     m_elapsed    = 0.0f;
     InitialState(0, count, m_leaderPos, m_leaderVel);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 入口

@@ -26,9 +26,9 @@
 #include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 #include "Engine/Physics/Systems/Jolt/JoltCleanupSystem.h"
 
-#include "Engine/UI/ECS/UIDrawList.h"       // ECSネイティブUIの描画リスト
-#include "Engine/UI/ECS/GameViewportInfo.h" // GameView表示矩形（UIクリック判定の座標写像用）
-#include "Engine/Core/App/GameFlowState.h"  // ポーズ状態（ロジック停止の判定）
+#include "Engine/UI/ECS/UIDrawList.h"
+#include "Engine/UI/ECS/GameViewportInfo.h"
+#include "Engine/Core/App/GameFlowState.h"
 
 #include "tracy/Tracy.hpp"
 
@@ -49,7 +49,7 @@ void BaseScene::Initialize()
     float         screenWidth  = gfx.GetScreenWidth();
     float         screenHeight = gfx.GetScreenHeight();
 
-    // カメラの初期設定。
+    // カメラの初期設定
     //   カメラは Graphics が所有する。BaseScene はここで初期値を書くだけで、
     //   以降は CameraBrainSystem に任せる
     Camera *cam = gfx.GetMainCamera();
@@ -59,7 +59,7 @@ void BaseScene::Initialize()
         0.1f, 1000.0f);
     cam->SetLookAt({0.0f, 10.0f, -10.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-    // ECSContext を生成する。
+    // ECSContext を生成する
     // フレーム並列用の共有ジョブプール（EngineServices 所有）を注入し、
     // 各 World が自前のプールを持たず、アプリ全体で1つのプールを共有する
     {
@@ -88,8 +88,8 @@ void BaseScene::Initialize()
     auto myFacade = std::make_shared<JoltPhysicsFacade>(m_worldPtr);
     m_worldPtr->AddResource<std::shared_ptr<IPhysicsAPI>>(myFacade);
 
-    // Graphics が所有するサブシステムを ECS へ接続する。
-    // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される。
+    // Graphics が所有するサブシステムを ECS へ接続する
+    // ECS システムがライトを変更すれば Graphics::Update() の Bind に反映される
     m_worldPtr->AddResource<Camera *>(cam);
     m_worldPtr->AddResource<LightManager *>(gfx.GetLightManager());
     m_worldPtr->AddResource<PostProcessManager *>(gfx.GetPostProcessManager());
@@ -106,21 +106,25 @@ void BaseScene::Initialize()
     // マウス座標を UI 空間へ写像するのに使う。Shipping/全画面では valid=false のまま（変換なし）
     m_worldPtr->AddResource<GameViewportInfo>();
 
-    // 派生クラスの System 登録。リソースを全て登録した後に呼ぶ（System の Initialize がリソースを読むため）
+    // 派生クラスの System 登録。リソースをすべて登録した後に呼ぶ（System の Initialize がリソースを読むため）
     {
         ZoneScopedN("BaseScene: RegisterSystems");
         RegisterSystems();
     }
 }
 
+
+
 void BaseScene::Start()
 {
-    // Initialize で作った Entity を確定させ、各 System の処理対象へ入れてから最初のフレームに入る。
+    // Initialize で作った Entity を確定させ、各 System の処理対象へ入れてから最初のフレームに入る
     // シーン切り替えのフレームはロジックの更新より先に描画の更新が走り、ここで済ませないと、
-    // 最初の描画の更新では System から Entity が1つも見えない（そのフレームに届いたイベントを取りこぼす）。
-    // また、レベルの後に足した Entity（ムービー用カメラなど）は、ここまで生成の予約のまま残っている。
+    // 最初の描画の更新では System から Entity が1つも見えない（そのフレームに届いたイベントを取りこぼす）
+    // また、レベルの後に足した Entity（ムービー用カメラなど）は、ここまで生成の予約のまま残っている
     if (m_ecsContext) m_ecsContext->ApplyStructureChanges();
 }
+
+
 
 void BaseScene::Finalize()
 {
@@ -128,7 +132,7 @@ void BaseScene::Finalize()
     if (m_worldPtr)
     {
         // 全 Entity に破棄の印を付ける
-        // （World ごと消えるので、ここでは PersistentTag も関係なく全て破棄してよい）
+        // （World ごと消えるので、ここでは PersistentTag も関係なくすべて破棄してよい）
         auto &chunks = m_worldPtr->GetChunkManager().GetChunks();
         for (auto &chunkPtr : chunks)
         {
@@ -146,15 +150,15 @@ void BaseScene::Finalize()
 
         // DestroyTag を「今すぐ」適用する。AddComponent<DestroyTag> は遅延(pendingOps)なので、
         //   これを挟まないと下の JoltCleanup が「DestroyTag付きチャンク」を1つも見つけられず、
-        //   共有の Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる）。
+        //   共有の Jolt 空間に前シーンの剛体が残る（再戦時に見えないコライダーで引っかかる）
         m_worldPtr->ScrutinyAndApply();
 
         JoltCleanupSystem::ExecuteCleanup(*m_worldPtr);
 
-        // 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する。
+        // 音の後始末は「共有オーディオエンジンを丸ごと黙らせる」StopAll に一本化する
         //   このシーンの World はこの直後に完全破棄されるので、per-emitter の StopEvent
         //   （DestroyTag が正しく付き playingId が正確、という前提に依存＝取りこぼしやすい）
-        //   ではなく、前提の要らない StopAll で確実に止める（再戦時に BGM が二重に鳴るのを防ぐ）。
+        //   ではなく、前提の要らない StopAll で確実に止める（再戦時に BGM が二重に鳴るのを防ぐ）
         if (m_worldPtr->HasResource<std::shared_ptr<IAudioAPI>>())
         {
             if (auto &audio = m_worldPtr->GetResource<std::shared_ptr<IAudioAPI>>())
@@ -170,6 +174,8 @@ void BaseScene::Finalize()
     // この直後、SceneManager::Clear() がシーンを delete し、m_ecsContext ごと
     // World も System も解放される
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 毎フレーム
@@ -188,7 +194,7 @@ void BaseScene::Update(float elapsedTime)
 
     if (m_ecsContext)
     {
-        // ポーズ中は UpdatePaused（構造変更の適用 + 描画のみ）に切り替える。
+        // ポーズ中は UpdatePaused（構造変更の適用 + 描画のみ）に切り替える
         // ポーズ中でもオーバーレイの生成/破棄が反映され、UI も描ける
         const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>() && m_worldPtr->GetResource<GameFlowState>().paused;
         if (paused)
@@ -199,20 +205,19 @@ void BaseScene::Update(float elapsedTime)
 
     {
         ZoneScopedN("BaseScene: Graphics::Update");
-        // カメラ行列・CbScene の更新と CbLight のバインドを行う。
-        //   カメラは上の描画ステージ（CameraBrainSystem）で確定するので、必ずその後に呼ぶ。
-        //   前に呼ぶと、描画は1フレーム前のカメラ・カリング（FrustumCullingSystem）は今のカメラになり、
-        //   ムービーのカットのように視点が大きく飛んだフレームで、映るはずの物がほとんど消えて空だけになる。
-        //   描画ステージの System は描画を積むだけで、実際に描くのは Render() なので、ここで更新して間に合う
+        // カメラ行列と CbScene を更新し、CbLight をバインドする。カメラは上の CameraBrainSystem で決まるので、必ずその後に呼ぶ
+        // 前に呼ぶと描画とカリングでカメラが1フレームずれ、カットで視点が飛んだフレームに物が消えて空だけになる
         Graphics::Instance().Update();
     }
 }
+
+
 
 void BaseScene::FixedUpdate(float fixedTime)
 {
     ZoneScopedN("BaseScene::FixedUpdate");
 
-    // ポーズ中はゲームロジック・物理を止める（描画は Update 側で継続）。
+    // ポーズ中はゲームロジック・物理を止める（描画は Update 側で継続）
     const bool paused = m_worldPtr && m_worldPtr->HasResource<GameFlowState>() && m_worldPtr->GetResource<GameFlowState>().paused;
     if (paused) return;
 
@@ -223,6 +228,8 @@ void BaseScene::FixedUpdate(float fixedTime)
     }
 }
 
+
+
 void BaseScene::Render()
 {
     ZoneScopedN("BaseScene::Render Pipeline");
@@ -230,7 +237,7 @@ void BaseScene::Render()
     auto &gfx = Graphics::Instance();
     auto *dc  = gfx.GetDeviceContext();
 
-    // EnvironmentSystem がフォグ / IBL / ノイズと CbScene をバインドする。
+    // EnvironmentSystem がフォグ / IBL / ノイズと CbScene をバインドする
     // CbScene の中身は触らない（Graphics::Update() が書き込み済み）
     if (m_ecsContext && m_ecsContext->GetSystemManager())
     {
@@ -254,7 +261,7 @@ void BaseScene::Render()
     {
         ZoneScopedN("UI Render");
 
-        // UI 専用のα合成: 色はストレートα合成のまま、RT のアルファは書き換えない。
+        // UI 専用のα合成: 色はストレートα合成のまま、RT のアルファは書き換えない
         // 不透明シーンの α=1 が保たれ、文字の透明部分に α の穴が開かないので、
         // エディタの GameView（ImGui::Image）で「黒い枠」が出ない
         dc->OMSetBlendState(
@@ -270,14 +277,18 @@ void BaseScene::Render()
         OnRenderUI();
 
         // 画面遷移フェード（黒オーバーレイ）は SceneManager::Render が
-        // 全シーン描画の後に一元的に被せる（ここでは描かない）。
+        // 全シーン描画の後に一元的に被せる（ここでは描かない）
     }
 }
+
+
 
 void BaseScene::DrawGUI()
 {
     OnDrawImGui();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバイスの作り直し
@@ -286,7 +297,7 @@ void BaseScene::DrawGUI()
 void BaseScene::OnDeviceRecreated()
 {
     // Graphics::RecoverFromDeviceLost() が内部で Shutdown → Initialize を行い、
-    // D3D パイプライン・シェーダー・PostProcessManager は全て作り直された状態でここに来る。
+    // D3D パイプライン・シェーダー・PostProcessManager はすべて作り直された状態でここに来る
     // World を作り直して Initialize → Start を呼び直すことで、ResourceManager に
     // ロードし直された新しいリソースを使うようにする（ゲームの進行状態はリセットされる）
 

@@ -1,17 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: コンポーネントのインスペクタ描画を登録するマクロ REGISTER_COMPONENT_EDITOR_GUI。
-//
-// 責務:
-//   - エディタ構成（ENABLE_EDITOR）では ComponentGuiRegistry へ描画関数を登録する
-//   - それ以外の構成では何も生成しない空のマクロにする
-//
-// 備考: ComponentRegistry.h から分けてあるのは、エディタでない構成に ImGui を持ち込まないため。
-// @code
-//   REGISTER_COMPONENT(MyComp, "MyComp")   // 必須
-//   REGISTER_COMPONENT_EDITOR_GUI(MyComp)  // エディタ構成でだけ中身がある
-// @endcode
-// ===========================================================================
+// コンポーネントのインスペクタ描画を登録するマクロ。エディタでない構成では空になる
+// ComponentRegistry.h から分けて、エディタでない構成に ImGui を持ち込まない
 
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 

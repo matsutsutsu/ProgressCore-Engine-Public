@@ -63,21 +63,11 @@ PrimitiveRenderer::PrimitiveRenderer(ID3D11Device *device)
     CreateCapsuleMesh(device, 1.0f, 1.0f, 32, 16);
 }
 
-// ---------------------------------------------------------------------------
-// 可視判定と描画
-// ---------------------------------------------------------------------------
 
-bool PrimitiveRenderer::IsVisible(const DirectX::BoundingSphere &sphere)
-{
-    if (!m_cullingEnabled) return true;
-    return m_frustum.Intersects(sphere);
-}
 
-bool PrimitiveRenderer::IsVisible(const DirectX::BoundingOrientedBox &box)
-{
-    if (!m_cullingEnabled) return true;
-    return m_frustum.Intersects(box);
-}
+// ---------------------------------------------------------------------------
+// 描画
+// ---------------------------------------------------------------------------
 
 PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
 {
@@ -101,19 +91,11 @@ PrimitiveDrawList &PrimitiveRenderer::GetDrawList()
     return *myLocalList;
 }
 
-void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
-                               const RenderServices      &s,
-                               const DirectX::XMFLOAT4X4 &view,
-                               const DirectX::XMFLOAT4X4 &projection)
+
+
+void PrimitiveRenderer::Render(ID3D11DeviceContext *dc, const RenderServices &s)
 {
     ZoneScopedN("PrimitiveRenderer::Render");
-
-    // 次のフレームで積むときのカリング用に、視錐台を更新する
-    BoundingFrustum frustumLocal;
-    BoundingFrustum::CreateFromMatrix(frustumLocal, XMLoadFloat4x4(&projection));
-    XMMATRIX V    = XMLoadFloat4x4(&view);
-    XMMATRIX invV = XMMatrixInverse(nullptr, V);
-    frustumLocal.Transform(m_frustum, invV);
 
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
@@ -153,7 +135,7 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
             size_t drawOffset = 0;
             while (drawOffset < totalCount)
             {
-                // 分ける幅はバッファの実際の容量から取る（容量を表す定数を別に持たない）。
+                // 分ける幅はバッファの実際の容量から取る（容量を表す定数を別に持たない）
                 // 配列の一部を vector に写さず、ポインタと個数で渡す（写すと分けるたびにメモリを確保する）
                 size_t drawCount = (std::min)(totalCount - drawOffset, m_instanceBuffer.GetMaxInstances());
                 m_instanceBuffer.Write(dc, instances.data() + drawOffset, drawCount);
@@ -185,6 +167,8 @@ void PrimitiveRenderer::Render(ID3D11DeviceContext       *dc,
     dc->PSSetShader(nullptr, nullptr, 0);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 図形の登録
 // ---------------------------------------------------------------------------
@@ -193,42 +177,71 @@ void PrimitiveRenderer::DrawBox(const DirectX::XMFLOAT4X4 &transform, const Dire
 {
     GetDrawList().opaqueBoxes.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawWireframeBox(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().wireframeBoxes.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawSphere(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().opaqueSpheres.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawWireframeSphere(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().wireframeSpheres.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawCylinder(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().opaqueCylinders.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawWireframeCylinder(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().wireframeCylinders.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawCapsule(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().opaqueCapsules.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawWireframeCapsule(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().wireframeCapsules.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().opaqueCones.push_back({transform, color});
 }
+
+
+
 void PrimitiveRenderer::DrawWireframeCone(const DirectX::XMFLOAT4X4 &transform, const DirectX::XMFLOAT4 &color)
 {
     GetDrawList().wireframeCones.push_back({transform, color});
 }
+
+
 
 // ---------------------------------------------------------------------------
 // メッシュの生成
@@ -369,6 +382,8 @@ void PrimitiveRenderer::CreateSphereMesh(ID3D11Device *device, float radius, int
     buffer.indexCount = index_count;
 }
 
+
+
 void PrimitiveRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius, int slices, int stacks, GeometryBuffer &buffer)
 {
     int vertex_count = slices * (stacks - 1) + 1;
@@ -476,6 +491,8 @@ void PrimitiveRenderer::CreateHalfSphereMesh(ID3D11Device *device, float radius,
     buffer.indexCount = index_count;
 }
 
+
+
 void PrimitiveRenderer::CreateBoxMesh(ID3D11Device *device, float radius, float height, float depth, GeometryBuffer &buffer)
 {
     Vertex vertices[] = {
@@ -566,6 +583,8 @@ void PrimitiveRenderer::CreateBoxMesh(ID3D11Device *device, float radius, float 
 
     buffer.indexCount = sizeof(indices) / sizeof(indices[0]);
 }
+
+
 
 void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, float radius2, float start, float height, int slices, int stacks, GeometryBuffer &buffer)
 {
@@ -722,6 +741,8 @@ void PrimitiveRenderer::CreateCylinderMesh(ID3D11Device *device, float radius1, 
 
     buffer.indexCount = index_count;
 }
+
+
 
 void PrimitiveRenderer::CreateCapsuleMesh(ID3D11Device *device, float radius, float cylinderHeight, int slices, int rings)
 {

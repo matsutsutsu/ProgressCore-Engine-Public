@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 全 System の基底となる仮想インターフェース SystemBase。
+// 概要: 全 System の基底となる仮想インターフェース SystemBase
 //
 // 責務:
 //   - 処理対象 Chunk の集合と Filter（必要/除外 Component 構成）の保持
@@ -8,9 +8,9 @@
 //   - World / JobSystem / 構造変更 mutex への参照の保持
 //   - 優先度・名前などのメタ情報と、実行順序・Read/Write 型の申告口
 //
-// 備考: 重いテンプレート展開（ForEach 等）は派生テンプレートの IfSystem に集約する。
+// 備考: 重いテンプレート展開（ForEach 等）は派生テンプレートの IfSystem に集約する
 //       SystemManager / TaskScheduler のように SystemBase だけを扱うコードが、
-//       IfSystem の重いヘッダを引かずに済むようにするため。
+//       IfSystem の重いヘッダを引かずに済むようにするため
 // ===========================================================================
 
 #include <chrono>
@@ -35,19 +35,11 @@ namespace CCL::ECS
 
 namespace CCL::ECS
 {
-    /**
-     * @brief 全ての System に共通するインターフェースとデータを提供する基底クラス。
-     *
-     * 派生クラスは通常 `IfSystem<Derived, ...>` を経由して実装する。
-     * Filter の自動生成や型安全な ForEach は IfSystem 側が提供する。
-     */
+    // System の基底。ふつうは IfSystem<Derived, ...> を継承し、Filter と ForEach はそちらが作る
     class SystemBase
     {
     public:
-        /**
-         * @brief System を生成し、ユニークな SystemID を発行する。
-         * @param name デバッグ・GUI 表示用の名前
-         */
+        // name はデバッグと GUI の表示に使う
         SystemBase(const std::string &name) : m_name(name)
         {
             m_systemID = ID_Emitter::EmitSystemID();
@@ -59,25 +51,12 @@ namespace CCL::ECS
         // ライフサイクル
         // ============================================================
 
-        /**
-         * @brief System 登録時に1度だけ呼ばれる初期化処理。
-         *
-         * EventBus の購読や、事前計算したいデータの構築に使う。デフォルト実装は空。
-         */
+        // 登録したときに1回だけ呼ばれる。EventBus の購読などに使う
         virtual void Initialize() {}
 
-        /**
-         * @brief 派生クラスが必ず実装する更新ロジック本体。
-         * @param dt 前フレームからの経過時間（秒）
-         */
         virtual void Update(float dt) = 0;
 
-        /**
-         * @brief 計測付きで Update を呼び出すラッパー。
-         *
-         * TaskScheduler からはこの関数が呼ばれる。Tracy のゾーンを張り、
-         * `m_lastUpdateTime`（瞬間値）と `m_displayUpdateTime`（指数移動平均）を更新する。
-         */
+        // Tracy のゾーンを張り、計測しながら Update を呼ぶ。TaskScheduler はこちらを呼ぶ
         virtual void UpdateImpl(float dt)
         {
             ZoneScoped;
@@ -158,9 +137,9 @@ namespace CCL::ECS
         // ImGui によるインスペクタ描画（必要なら派生側で override）
         virtual void OnGui() {}
 
-        // エディタ用の GUI を持っているか。
-        //   登録時に SystemManager が OnGui の override 有無から自動で立てる。
-        //   派生側で手書きしない（書き忘れて一覧から消える事故を無くすため）。
+        // エディタ用の GUI を持っているか
+        //   登録時に SystemManager が OnGui の override 有なから自動で立てる
+        //   派生側で手書きしない（書き忘れて一覧から消える事故をなくすため）
         bool hasGui = false;
 
         bool isDebugVisible = false; // デバッグ描画を表示するか
@@ -183,27 +162,9 @@ namespace CCL::ECS
         // 実行順序の宣言（TaskScheduler がトポロジカルソートに使う）
         // ============================================================
 
-        /**
-         * @brief この System より「先に」実行されるべき System 名のリスト。
-         *
-         * Read/Write 型による依存解析は「同時に走らせてよいか」しか判定できない。
-         * 「どちらが先か」は決められないため、ステージ値が同じ System 同士の
-         * 順序はソートの並び順まかせになる（＝リンカ依存で不定）。
-         * ここで「A は B の後」と書けば、同一ステージ内でも順序が保証される。
-         *
-         * 型ではなく名前で指定するのは、typeid で書くと相手のヘッダを include する
-         * 必要が生じ、System 間にコンパイル時の依存が増えるため。名前なら疎結合の
-         * まま書ける。綴り間違いはグラフ構築時に検証してログへ出す（黙って無視しない）。
-         *
-         * @note ステージ（優先度）をまたぐ指定は無意味。ステージが違えば順序は
-         *       もともと保証されているため、同一ステージ内でのみ効く。
-         *
-         * @code
-         *   std::vector<const char*> GetRunAfter() const override {
-         *       return { "AnimSetupSystem" };
-         *   }
-         * @endcode
-         */
+        // 同じステージの中で、この System より先に走らせる System の名前
+        // 型の依存の解析は並列にしてよいかしか決めないので、同じステージの順序はこれで決める（ステージが違えば効かない）
+        // 名前で書くのは、相手のヘッダを include しないため。綴りの間違いは起動時にログに出る
         virtual std::vector<const char *> GetRunAfter() const { return {}; }
 
         // この System より「後に」実行されるべき System 名のリスト。規則は GetRunAfter と同じ
@@ -230,16 +191,8 @@ namespace CCL::ECS
         float       m_displayUpdateTime = 0.0f; // 表示用に滑らかにした Update 時間（ms、EMA）
     };
 
-    /**
-     * @brief T が自分で OnGui() を宣言しているか（＝インスペクタに出すべきか）。
-     *
-     * &T::OnGui の「型」で判る。override していれば void (T::*)() になり、
-     * 基底のものを継承しているだけなら void (SystemBase::*)() のままになる
-     * （&X::member の型は、名前を書いたクラスではなく宣言元のクラスで決まる）。
-     *
-     * これで派生側はフラグを書く必要が無くなる。OnGui を宣言する以外に
-     * 一覧へ載せる方法が存在しない＝載せ忘れが起こらない。
-     */
+    // T が自分で OnGui を宣言しているか（インスペクタに出すか）
+    // &T::OnGui の型は宣言したクラスで決まるので、override していなければ void (SystemBase::*)() のまま
     template <class T>
     inline constexpr bool HasOwnOnGui =
         !std::is_same_v<decltype(&T::OnGui), void (SystemBase::*)()>;

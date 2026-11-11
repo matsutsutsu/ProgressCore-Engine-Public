@@ -233,6 +233,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="External\meshoptimizer\src\meshoptimizer.h" />
     <ClInclude Include="External\imgui-docking\imconfig.h" />
     <ClInclude Include="External\imgui-docking\imgui.h" />
     <ClInclude Include="External\imgui-docking\imgui_impl_dx11.h">
@@ -326,7 +327,9 @@
     <ClInclude Include="Source\Editor\Windows\Game\FormationEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\Game\FormationLayerSequence.h" />
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicRipple.h" />
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h" />
+    <ClInclude Include="Source\Editor\Windows\AI\BossBTDebugWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -336,7 +339,6 @@
     <ClInclude Include="Source\Editor\Windows\General\ConsoleWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\Game\CurveEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\General\ECSDebugWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -368,6 +370,7 @@
     <ClInclude Include="Source\Engine\Animation\Components\AnimatorComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\AnimParametersComponent.h" />
     <ClInclude Include="Source\Engine\Animation\Components\RootMotionComponent.h" />
+    <ClInclude Include="Source\Engine\Animation\Core\AnimBlendSpaceMath.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimEventMessages.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h" />
@@ -461,7 +464,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\Particle\GPUParticleComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h" />
@@ -475,6 +477,7 @@
     <ClInclude Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\OpaquePass.h" />
     <ClInclude Include="Source\Engine\Graphics\RHI\NormalBuffer.h" />
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\LodDebugPass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\ParticlePass.h" />
     <ClInclude Include="Source\Engine\Graphics\Pipeline\TrailPass.h" />
@@ -498,6 +501,7 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\InstanceBuffer.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\ModelConstantBuffers.h" />
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshLod.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshCulling.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderDebugRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Renderer\ParticleRenderer.h" />
@@ -526,7 +530,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Core\Shader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ErrorShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\MaterialShader.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ParticleShader.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h" />
@@ -534,7 +537,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\Pass\ShadowUtils.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.h" />
@@ -545,7 +547,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\IPostEffect.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.h" />
-    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderReflection.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderRegistry.h" />
     <ClInclude Include="Source\Engine\Graphics\Shader\ShaderResources.h" />
@@ -566,6 +567,7 @@
     <ClInclude Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h" />
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h" />
     <ClInclude Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.h" />
     <ClInclude Include="Source\Engine\Physics\Components\Character\CharacterMovementComponent.h" />
@@ -655,6 +657,7 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTActionRegistry.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Actions\BTConditions.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionList.h" />
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\Data\BTActionIds.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -679,6 +682,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugRanges.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneFormationType.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneTuning.h" />
@@ -686,9 +690,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h" />
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.h" />
@@ -736,28 +738,40 @@
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIProgressBarComponent.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\PlayerHudStyleComponent.h" />
+    <ClInclude Include="Source\Game\UI\Common\UiPrefabUtil.h" />
     <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintStyleComponent.h" />
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h" />
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\BossHudStyleComponent.h" />
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleSystem.h" />
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleComponent.h" />
     <ClInclude Include="Source\Game\Core\GameSettings.h" />
     <ClInclude Include="Source\Game\UI\Screens\SettingsScreenSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h" />
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerStyleComponent.h" />
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptHudSystem.h" />
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptStyleComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealComponent.h" />
     <ClInclude Include="Source\Game\UI\Common\UIRevealSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\ScreenHeadingUi.h" />
     <ClInclude Include="Source\Game\Logics\Title\TitleComposition.h" />
     <ClInclude Include="Source\Game\Logics\Title\TitleCameraSystem.h" />
     <ClInclude Include="Source\Game\Logics\Title\TitleSwarmSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldSystem.h" />
     <ClInclude Include="Source\Game\UI\Common\MenuUiFactory.h" />
     <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h" />
     <ClInclude Include="Source\Game\UI\Screens\GameResultSystem.h" />
     <ClInclude Include="Source\Game\UI\Screens\PauseSystem.h" />
     <ClInclude Include="Source\Game\UI\Input\InputPromptSystem.h" />
+    <ClInclude Include="Source\Game\UI\Input\InputPromptStyleComponent.h" />
     <ClInclude Include="Source\Game\UI\Input\InputIconComponent.h" />
     <ClInclude Include="Source\Game\UI\Input\InputIconSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Components\UIAnimationComponent.h" />
@@ -766,6 +780,7 @@
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.h" />
     <ClInclude Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Dash\PlayerDashSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeSystem.h" />
@@ -800,11 +815,35 @@
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialSteps.h" />
     <ClInclude Include="Source\Game\UI\Screens\TutorialCompleteSystem.h" />
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h" />
+    <ClInclude Include="Source\Game\Scenes\AnimLabScene.h" />
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridComponent.h" />
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.h" />
     <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h" />
     <ClInclude Include="Source\Game\Logics\Demo\DemoSwarmSystem.h" />
     <ClInclude Include="Source\Engine\Scene\SceneLoading.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="External\meshoptimizer\src\allocator.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\clusterizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexanalyzer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\indexgenerator.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\meshletcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\meshletutils.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\opacitymap.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\overdrawoptimizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\partition.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\quantization.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\rasterizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\remesher.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\simplifier.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\spatialorder.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\stripifier.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\tangentspace.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vcacheoptimizer.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vertexcodec.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vertexfilter.cpp" />
+    <ClCompile Include="External\meshoptimizer\src\vfetchoptimizer.cpp" />
     <ClCompile Include="External\imgui-docking\imgui.cpp" />
     <ClCompile Include="External\imgui-docking\imgui_demo.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -889,7 +928,13 @@
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicRipple.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AI\BossBTDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
@@ -923,9 +968,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\General\ConsoleWindow.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\Game\CurveEditorWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\General\ECSDebugWindow.cpp">
@@ -1017,6 +1059,7 @@
     <ClCompile Include="Source\Engine\Graphics\Pipeline\Core\RenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\OpaquePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\RHI\NormalBuffer.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\LodDebugPass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\ParticlePass.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Pipeline\TrailPass.cpp" />
@@ -1059,14 +1102,12 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\Core\Shader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ErrorShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\MaterialShader.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleComputeShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ParticleShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\NormalPrepassShader.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\Pass\ShadowMap.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\BloomEffect.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\VignetteEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PauseBlurEffect.cpp" />
@@ -1076,7 +1117,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\SSAOEffect.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\PostProcessManager.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp" />
-    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Shader\ShaderReflection.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\EnvironmentSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Core\MaterialSetupSystem.cpp" />
@@ -1091,6 +1131,7 @@
     <ClCompile Include="Source\Engine\Graphics\Systems\Lighting\ShadowMapRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleRenderSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp" />
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp" />
     <ClCompile Include="Source\Engine\Graphics\Systems\PostProcess\PostProcessSystem.cpp" />
     <ClCompile Include="Source\Engine\Physics\Components\Character\CharacterMovementComponentMeta.cpp" />
@@ -1149,6 +1190,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Debug.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Evaluate.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\Data\BTAssetCache.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Components\EnemyTagMeta.cpp" />
@@ -1159,6 +1203,7 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.cpp" />
@@ -1166,8 +1211,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneManagerSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneCommandSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp" />
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Squad\SquadUpdateSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneHitSystem.cpp" />
@@ -1191,25 +1235,38 @@
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIButtonSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIProgressBarCollectSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\PlayerHudStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\BossHudStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Core\GameSettings.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\SettingsScreenSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp" />
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerStyleComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptHudSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleCameraSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\PauseSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Input\InputPromptStyleComponentMeta.cpp" />
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp" />
+    <ClCompile Include="Source\Game\UI\Input\InputIconComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAppearSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAnimParamSyncSystem.cpp" />
@@ -1245,6 +1302,9 @@
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialHealthGuardSystem.cpp" />
     <ClCompile Include="Source\Game\UI\Screens\TutorialCompleteSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp" />
+    <ClCompile Include="Source\Game\Scenes\AnimLabScene.cpp" />
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp" />
     <ClCompile Include="Source\Game\Logics\Demo\DemoSwarmSystem.cpp" />
     <ClCompile Include="Source\Engine\Scene\SceneLoading.cpp" />
@@ -1267,9 +1327,7 @@
     <None Include="Shader\Common\PBRLighting.hlsli" />
     <None Include="Shader\Common\Scene.hlsli" />
     <None Include="Shader\Common\Skinning.hlsli" />
-    <None Include="Shader\Common\ToonLighting.hlsli" />
     <None Include="Shader\Common\Transform.hlsli" />
-    <None Include="Shader\Material\Water\WaterShared.hlsli" />
     <None Include="Shader\Compute\GPUParticle\particle.hlsli" />
     <None Include="Shader\Material\Sprite\Sprite.hlsli" />
     <None Include="Shader\Pass\ShadowMap\ShadowMap.hlsli" />
@@ -1353,76 +1411,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Glow\GlowVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Hologram\HologramPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Fire\FirePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Fire\FireVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Water\WaterPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -1468,15 +1456,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
-    <FxCompile Include="Shader\Material\Toon\ToonPS.hlsl">
+    <FxCompile Include="Shader\Pass\LodDebug\LodDebugPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -1489,16 +1472,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Pass\Outline\OutlinePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Vertex</ShaderType>
@@ -1539,11 +1512,6 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomUpSamplePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Development|x64'">Pixel</ShaderType>

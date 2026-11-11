@@ -27,10 +27,14 @@ void CombatSoundSystem::Initialize()
     });
 }
 
+
+
 void CombatSoundSystem::Update(float /*dt*/)
 {
-    // 毎フレームの処理は無い。イベントを購読するためだけに System にしている。
+    // 毎フレームの処理はない。イベントを購読するためだけに System にしている
 }
+
+
 
 void CombatSoundSystem::Play(const char *eventName)
 {
@@ -44,5 +48,7 @@ void CombatSoundSystem::Play(const char *eventName)
     }
 }
 
-// 処理はイベントで行う。PlayerActionVfxSystem と同じ L07_Cleanup に置く。
+
+
+// 処理はイベントで行う。PlayerActionVfxSystem と同じ L07_Cleanup に置く
 REGISTER_LOGIC_SYSTEM(CombatSoundSystem, Priority::LogicStage::L07_Cleanup);

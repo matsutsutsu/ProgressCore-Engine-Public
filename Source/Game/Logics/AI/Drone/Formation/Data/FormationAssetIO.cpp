@@ -41,6 +41,8 @@ namespace CCL::AI::Formation
         }
     }
 
+
+
     void FormationAssetIO::ReadFields(const nlohmann::json &j, const std::vector<FieldDescriptor> &fields, void *obj)
     {
         for (const FieldDescriptor &fd : fields)
@@ -63,12 +65,16 @@ namespace CCL::AI::Formation
         }
     }
 
+
+
     double FormationAssetIO::ShortestDouble(float v)
     {
         char       buf[32];
         const auto end = std::to_chars(buf, buf + sizeof(buf), v).ptr;
         return std::stod(std::string(buf, end));
     }
+
+
 
     // ============================================================
     // アセット全体の組み立て
@@ -92,16 +98,14 @@ namespace CCL::AI::Formation
             nlohmann::json jl;
             WriteFields(jl, Meta::LayerFields(), &l);
 
-            // Shiver でしか意味を持たない値は、他の層には書かない。
-            // 書くと、ファイルを読んだ人に「何の周波数だ」と読まれる。
+            // Shiver でしか意味を持たない値は、他の層には書かない（読んだ人が迷う）
             if (l.type != LayerType::Shiver)
             {
                 jl.erase("frequency");
                 jl.erase("leadThreshold");
             }
 
-            // キーが無いカーブは書かない（既定の easeIn として読まれる）。
-            // 空の CurveData を毎層に書くと JSON が膨らむ。
+            // キーがないカーブは書かない（既定の easeIn として読まれる）
             if (!l.curve.empty())
             {
                 jl["curve"] = l.curve;
@@ -125,6 +129,8 @@ namespace CCL::AI::Formation
         return j;
     }
 
+
+
     void FormationAssetIO::FromJson(const nlohmann::json &j, FormationAsset &a)
     {
         // 処理フロー:
@@ -132,7 +138,7 @@ namespace CCL::AI::Formation
         // 2. 動きの層を1枚ずつ読む
         // 3. 配置・見せ方・当たり方を読む
 
-        // 入れ子が丸ごと無いファイルも読めるよう、無ければ空オブジェクト（＝全項目既定値）で回す。
+        // 入れ子が丸ごとないファイルも読めるよう、なければ空オブジェクト（＝全項目既定値）で回す
         const nlohmann::json none = nlohmann::json::object();
 
         ReadFields(j, Meta::RootFields(), &a);
@@ -145,7 +151,7 @@ namespace CCL::AI::Formation
             FormationLayer &l = a.layers.emplace_back();
             ReadFields(jl, Meta::LayerFields(), &l);
 
-            // null を書いて「カーブ無し＝p*p」を明示できるようにしてある。
+            // null なら「カーブなし＝p*p」
             if (jl.contains("curve") && !jl.at("curve").is_null()) l.curve = jl.at("curve").get<CurveData>();
         }
 
@@ -156,14 +162,11 @@ namespace CCL::AI::Formation
         ReadFields(output.value("combat", none), Meta::CombatFields(), &a.output.combat);
     }
 
+
+
     // ============================================================
     // 検証
     // ============================================================
-
-    // 直すのは「そのまま使うと座標が NaN / inf になる値」と「形が永久に動かない値」だけ。
-    // 1000機を並列で回すので、NaN が1つ混ざると全機が消えて、原因のアセットまで辿り着けなくなる。
-
-    // 見た目が変なだけの値（間隔0など）は作者の意図かもしれないので触らない。
 
     bool FormationAssetIO::Validate(FormationAsset &asset, const std::string &context)
     {
@@ -172,6 +175,9 @@ namespace CCL::AI::Formation
         // 2. モデルの形の値を直す
         // 3. 攻撃と予告の長さを直す
         // 4. 動きの層ごとに時間帯と震えの値を直す
+
+        // 直すのは、座標が NaN / inf になる値と、形が永久に動かない値だけ（NaN が1つ混ざると全機が消え、原因に辿り着けない）
+        // 見た目が変なだけの値（間隔0など）は作者の意図かもしれないので触らない
 
         const char *ctx      = context.empty() ? asset.name.c_str() : context.c_str();
         bool        repaired = false;
@@ -204,7 +210,7 @@ namespace CCL::AI::Formation
 
         // --- モデルの形 ---
 
-        // 0 以下だと全点が原点に潰れ、全機が1点に重なる。何が壊れたか見た目から分からないので直す。
+        // 0 以下だと全機が1点に重なり、何が壊れたか見た目から分からない
         if (asset.layout.modelScale <= 0.0f)
         {
             CCL_LOG_ERROR(LogCategory::AI,
@@ -215,15 +221,14 @@ namespace CCL::AI::Formation
         }
         if (asset.layout.shape == AssetShape::Model && asset.layout.modelPath.empty())
         {
-            // 直しようが無いので知らせるだけ。実行時は格子の形に戻して動かす。
+            // 直しようがないので知らせるだけ（実行時は格子で並べる）
             CCL_LOG_ERROR(LogCategory::AI,
                           "[Formation] %s: 形が Model なのに layout.modelPath が空。格子で並べる", ctx);
         }
 
         // --- 攻撃と予告の長さ ---
 
-        // 0以下だと attackProgress が進まず、形が永久に完成しない。
-        // 「撃ったのに何も起きない」は原因が最も分かりにくい壊れ方なので必ず直す。
+        // 0以下だと進行度が進まず、撃っても何も起きない（原因が最も分かりにくい壊れ方）
         if (asset.attackSeconds <= 0.0f)
         {
             CCL_LOG_ERROR(LogCategory::AI,
@@ -233,8 +238,7 @@ namespace CCL::AI::Formation
             repaired            = true;
         }
 
-        // Shiver の時間帯を「予告の何割か」に直すときの割る数。
-        // 0以下だと震えの位置が inf になる。
+        // Shiver の時間帯を予告の割合に直すときの割る数。0以下だと inf になる
         if (asset.telegraphSeconds <= 0.0f)
         {
             CCL_LOG_ERROR(LogCategory::AI,
@@ -250,7 +254,7 @@ namespace CCL::AI::Formation
         {
             FormationLayer &l = asset.layers[i];
 
-            // 進行度は 0〜1 にクランプされるので、窓がその外にあると永久に発火しない。
+            // 進行度は 0〜1 なので、窓がその外にあると永久に動かない
             l.windowBegin = std::clamp(l.windowBegin, 0.0f, 1.0f);
             l.windowEnd   = std::clamp(l.windowEnd, 0.0f, 1.0f);
 
@@ -276,7 +280,7 @@ namespace CCL::AI::Formation
             }
             else if (l.duration > width)
             {
-                // 窓より長いと最後の席が動き切る前に進行度が尽きる（形が途中で止まる）。
+                // 窓より長いと、最後の席が動き切る前に形が止まる
                 CCL_LOG_ERROR(LogCategory::AI,
                               "[Formation] %s layer[%zu]: duration=%.3f が窓幅 %.3f を超えている。窓幅に詰めた",
                               ctx, i, l.duration, width);
@@ -301,6 +305,8 @@ namespace CCL::AI::Formation
         return repaired;
     }
 
+
+
     // ============================================================
     // 入出力
     // ============================================================
@@ -321,7 +327,7 @@ namespace CCL::AI::Formation
             return false;
         }
 
-        // 構文エラーも、型が想定外（数値が文字列で書かれている等）も例外で来るので、まとめて包む。
+        // 構文エラーも型の違い（数値が文字列で書かれている等）も例外で来るので、まとめて包む
         try
         {
             FormationAsset asset;
@@ -334,16 +340,17 @@ namespace CCL::AI::Formation
             return false;
         }
 
-        // 保存先を覚えさせるのは読み込み側の仕事（JSON にはパスを書かない）。
         outAsset.sourcePath = virtualPath;
 
         Validate(outAsset, virtualPath);
         return true;
     }
 
+
+
     bool FormationAssetIO::Save(const std::string &virtualPath, const FormationAsset &asset)
     {
-        // 保存前に直しておくことで、「保存はできたが次に開けない」を作らない。
+        // 保存前に直し、「保存はできたが次に開けない」を作らない
         FormationAsset checked = asset;
         Validate(checked, virtualPath);
 

@@ -9,6 +9,13 @@
 #   [Selector]         子を上から試し、成功か実行中の子が出たらそこで止まる（OR）。全部失敗なら失敗
 #   [Sequence]         子を上から順に実行し、1つ失敗したらそこで失敗（AND）。全部成功なら成功
 #   [WeightedSelector] 子を weight に比例した確率で1つ引いて実行する。失敗したら候補から外して引き直す
+#   [UtilitySelector]  先頭の条件が通らない子・クールダウン中の子を外し、残りを点数の高い順に並べ、
+#                      上位3つから点数に比例して1つ引く。失敗したら外して詰め、次点を繰り上げて引き直す
+#                        点数 : score が付いた子は 優先度 × 距離の倍率。得意な距離 a〜b m では満点で、
+#                               範囲の外へ出るほど下がり、ぼかし幅 c m 離れると0点（候補外）。
+#                               続く「条件(値) xN」は、その条件が通ると点数を N 倍する（状況による倍率）。
+#                               score が無い子は weight が点数。
+#                               どの子も、選ばれてから10秒は点数が下がる（直後は0.3倍、10秒で元に戻る）
 #   [Parallel]         1番目の子（主）の結果を返す。主が実行中の間だけ、2番目以降（従）も毎フレーム動かす
 #   [Decorator]        1つだけの子の結果を修飾する
 #                        Cooldown N秒 : 子が成功したら、N 秒間この枝ごと失敗を返す
@@ -16,86 +23,62 @@
 #                        Inverter     : 成功と失敗を入れ替える
 #   [Condition]        条件を評価して成功/失敗を返す（その場で終わる）
 #   [Action]           行動を実行する。時間のかかる行動は、終わるまで実行中(Running)を返す
-#   [SubTree]          別に組んだ木をここに差し込んだもの（中身を字下げして展開してある）
 
 ROOT
-  [Selector] Root Selector
-    [Sequence] 被弾がかさんだら退く
-      [Condition] 被弾の蓄積 >= 最大HPの 6 %
+  [UtilitySelector] 技選択
+    [Sequence] ボス：中央へ跳んで逃げる  (score 優先度 5, 得意な距離 0〜20 m, ぼかし 10 m, C_DamageThresholdExceeded(6) x2, CD 25 秒（選んだ瞬間から）)
+      [Condition] ステージの端から 25 m 以内
+      [Condition] 相手が中央側 ±70 度にいる（追い込まれ）
+      [Action] ドローン：頭上円陣
+      [Action] ボス：中央へ跳んで逃げる
+    [Sequence] ドローン：横払い  (score 優先度 10, 得意な距離 0〜30 m, ぼかし 5 m, CD 8 秒（選んだ瞬間から）)
+      [Condition] 直近の被弾から 0.5 秒以内
+      [Action] ドローンの技：横なぎ
+    [Sequence] ボス：被弾がかさんだら退く  (score 優先度 5, 得意な距離 0〜40 m, ぼかし 15 m, C_DamageThresholdExceeded(6) x3)
+      [Condition] 被弾の蓄積 >= 最大HPの 3 %
       [Action] ボス：蓄積ダメージリセット
       [WeightedSelector] 重み付きセレクター（Weighted Selector）
-        [Sequence] ステージ中央に退避する（失敗しても再抽選で後退が選ばれる）  (weight 1)
+        [Sequence] ステージ中央に退避する  (weight 1)
           [Condition] ステージの端から 25 m 以内
           [Action] ドローン：頭上円陣
-          [Action] ボス：中央へ跳んで逃げる（全体時間 2秒）
-        [Sequence] シーケンス (Sequence)  (weight 1)
-          [Action] ドローン：縦割り  (枠24)
-          [Action] ボス：後方ステップ（全体時間 0.9秒）
-          [Action] 待機（待ち時間 0.6秒）
-          [Action] ドローン：攻撃実行
-          [Action] 待機（待ち時間 1秒）
-          [Action] ドローン：頭上円陣
-    [Decorator] Cooldown 30秒
-      [Sequence] 中央へ跳んで逃げる
-        [Condition] ステージの端から 25 m 以内
-        [Condition] 相手が中央側 ±70 度にいる（追い込まれ）
-        [Action] ドローン：頭上円陣
-        [Action] ボス：中央へ跳んで逃げる（全体時間 1.9秒）
-    [Decorator] Cooldown 10秒
-      [Sequence] シーケンス (Sequence)
-        [Condition] 距離が 25 m 未満
-        [Action] ボス：突進攻撃（全体時間 3秒）
-        [Action] 待機（待ち時間 3秒）
-    [Decorator] Cooldown 7秒
-      [Sequence] 縦割り
-        [Condition] 距離が 50 m 未満
-        [Action] ドローン：縦割り  (枠24)
-        [Action] 待機（待ち時間 1.5秒）
-        [Action] ドローン：攻撃実行
-        [Action] 待機（待ち時間 2秒）
-        [Action] ドローン：頭上円陣
-    [Decorator] Cooldown 10秒
-      [Sequence] 跳躍攻撃
-        [Condition] 距離が 80 m 未満
-        [Action] ドローン：頭上円陣
-        [Action] ボス：跳躍攻撃（全体時間 2.6秒）
-    [WeightedSelector] ドローン戦(中距離2択)
-      [Sequence] 横なぎ回転  (weight 1)
-        [Condition] 距離が 60 m 未満
-        [Action] ドローン：横なぎ回転  (枠22)
-        [Action] 待機（待ち時間 1.5秒）
-        [Action] ドローン：攻撃実行
-        [Action] 待機（待ち時間 2秒）
-        [Action] ドローン：頭上円陣
-        [Action] ボス：詰めながら待つ（長さ 1秒）
-      [Sequence] 挟み込み  (weight 1)
-        [Condition] 距離が 50 m 未満
-        [Action] ドローン：挟み込み1段  (枠25)
-        [Action] 待機（待ち時間 1.5秒）
-        [Action] ドローン：攻撃実行
-        [Action] 待機（待ち時間 2秒）
-        [Action] ドローン：頭上円陣
-        [Action] ボス：詰めながら待つ（長さ 1秒）
-    [Decorator] Cooldown 40秒
-      [Sequence] 滞空して陣形攻撃
-        [Condition] 距離が 80 m 超
-        [Parallel] 滞空(主)＋陣形(従)
-          [Action] ボス：その場で滞空（全体時間 10秒）  (主)
-          [Sequence] 陣形→撃つ  (従)
-            [Action] ドローン：小隊突撃
-            [Action] 待機（待ち時間 1.2秒）
+          [Action] ボス：中央へ跳んで逃げる
+        [Parallel] 後退しながらドローン攻撃  (weight 1)
+          [Sequence] 後退アクション  (主)
+            [Action] ボス：後方ステップ
+            [Action] 待機（待ち時間 0.5秒）
+            [Action] ドローン：頭上円陣
+          [Sequence] ドローン操作  (従)
+            [Action] ドローン：縦割り  (枠24)
+            [Action] 待機（待ち時間 1秒）
             [Action] ドローン：攻撃実行
-            [Action] 待機（待ち時間 20秒）
-        [Action] ドローン：頭上円陣
-    [Decorator] Cooldown 8秒
-      [Sequence] 弾幕(遠距離)
-        [Condition] 距離が 80 m 超
-        [Action] ドローン：弾幕
-        [Action] 待機（待ち時間 1.2秒）
-        [Action] ドローン：攻撃実行
-        [Action] 待機（待ち時間 4.2秒）
-        [Action] ドローン：頭上円陣
-        [Action] ボス：詰めながら待つ（長さ 3秒）
-    [Sequence] 遠ければ詰める
-      [Condition] 距離が 80 m 超
-      [Action] ボス：詰めながら待つ（長さ 1.5秒）
+            [Action] 待機（待ち時間 10秒）
+    [Sequence] ボス：突進攻撃  (score 優先度 8, 得意な距離 10〜25 m, ぼかし 15 m, C_RecentlyHit(0.6) x0.5, CD 10 秒（選んだ瞬間から）)
+      [Action] ボス：突進攻撃
+      [Action] 待機（待ち時間 1秒）
+    [Sequence] ドローン：挟み込み1段  (score 優先度 8, 得意な距離 20〜70 m, ぼかし 10 m, C_TargetStrafing(30) x3, CD 5 秒（選んだ瞬間から）)
+      [Action] ドローンの技：挟み込み1段
+    [Sequence] ボス：間合いを取る  (score 優先度 9, 得意な距離 10〜90 m, ぼかし 10 m, C_TargetApproaching(10) x2, C_RecentlyHit(0.6) x1.5, CD 4 秒（選んだ瞬間から）)
+      [Action] ボス：間合いを取る（動く距離 60m）
+    [Sequence] ドローン：縦割り  (score 優先度 8, 得意な距離 30〜90 m, ぼかし 10 m, C_TargetApproaching(30) x3, C_TargetSlow(10) x3, CD 7 秒（選んだ瞬間から）)
+      [Action] ドローンの技：縦割り
+    [Sequence] ドローン：長方形の壁突進  (score 優先度 7, 得意な距離 70〜120 m, ぼかし 10 m, C_TargetApproaching(10) x1.5, CD 12 秒（選んだ瞬間から）)
+      [Action] ドローンの技：長方形の壁突進
+    [Sequence] ボス：跳躍攻撃  (score 優先度 7, 得意な距離 70〜180 m, ぼかし 10 m, C_TargetRetreating(5) x2, CD 6 秒（選んだ瞬間から）)
+      [Action] ドローン：頭上円陣
+      [Action] ボス：跳躍攻撃
+      [Action] 待機（待ち時間 1秒）
+    [Sequence] ドローン：滞空して追従攻撃  (score 優先度 6, 得意な距離 80〜9999 m, ぼかし 10 m, CD 40 秒（選んだ瞬間から）)
+      [Parallel] 滞空(主)＋陣形(従)
+        [Action] ボス：その場で滞空  (主)
+        [Action] ドローン：頭上円陣  (従)
+        [Action] 待機（待ち時間 3秒）  (従)
+        [Action] ドローンの技：小隊突撃  (従)
+        [Action] 待機（待ち時間 60秒）  (従)
+      [Action] ドローン：頭上円陣
+      [Action] 待機（待ち時間 1.5秒）
+    [Sequence] シーケンス (Sequence)  (weight 1)
+      [Parallel] 並行ノード（Parallel）
+        [Action] ドローンの技：弾幕  (主)
+        [Action] ボス：間合いを取る（動く距離 1m）  (従)
+    [Sequence] ボス：様子見  (score 優先度 8, 得意な距離 0〜9999 m, ぼかし 0 m)
+      [Action] ボス：様子見

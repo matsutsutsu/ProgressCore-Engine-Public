@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: コンポーネントの型ごとに、インスペクタの描画関数と表示情報を持つレジストリ。
+// 概要: コンポーネントの型ごとに、インスペクタの描画関数と表示情報を持つレジストリ
 //
 // 責務:
 //   - 型ごとに表示名・カテゴリ・並び順・非表示フラグ・描画関数を登録する
@@ -9,7 +9,7 @@
 //
 // 備考: 登録は静的初期化（各 *Meta.cpp）から行われ、その時点では TypeID がまだ
 //       確定していない場合がある。そのため type_index をキーに保存し、TypeID との
-//       対応付けは最初に引かれたとき（ResolveBindings）にまとめて行う。
+//       対応付けは最初に引かれたとき（ResolveBindings）にまとめて行う
 // ===========================================================================
 #include <algorithm>
 #include <functional>
@@ -50,7 +50,7 @@ public:
         TypeData::AssignFunc    assigner    = nullptr;
         TypeData::MoveFunc      mover       = nullptr;
 
-        // World と EntityID だけで描画するためのラッパー。
+        // World と EntityID だけで描画するためのラッパー
         // InspectorWindow は void* へのキャストや GetComponent を自分で行わずに済む
         std::function<void(CCL::ECS::World *, EntityID)> drawInspector = nullptr;
     };
@@ -58,7 +58,7 @@ public:
     ComponentGuiRegistry() = default;
 
     /**
-     * @brief 型 T を登録する。
+     * @brief 型 T を登録する
      * @tparam T 登録するコンポーネントの型
      * @param name 表示名
      * @param category インスペクタのカテゴリ見出し
@@ -139,7 +139,7 @@ public:
         return "Unknown Component (ID: " + std::to_string(id) + ")";
     }
 
-    // カテゴリ見出し名。未登録は "Misc"。
+    // カテゴリ見出し名。未登録は "Misc"
     std::string GetCategory(TypeID id)
     {
         ResolveBindings();
@@ -151,7 +151,7 @@ public:
         return "Misc";
     }
 
-    // 並び順（小さいほど先頭）。未登録は最後。
+    // 並び順（小さいほど先頭）。未登録は最後
     int GetSortPriority(TypeID id)
     {
         ResolveBindings();
@@ -203,9 +203,9 @@ public:
     }
 
     /**
-     * @brief 表示名の参照を返す。GetName と違ってコピーせず、未登録を空文字列で判定できる。
-     * @param id 調べるコンポーネントの型。
-     * @return 表示名。レジストリが所有する。未登録なら空文字列。
+     * @brief 表示名の参照を返す。GetName と違ってコピーせず、未登録を空文字列で判定できる
+     * @param id 調べるコンポーネントの型
+     * @return 表示名。レジストリが所有する。未登録なら空文字列
      */
     const std::string &GetComponentName(TypeID id)
     {

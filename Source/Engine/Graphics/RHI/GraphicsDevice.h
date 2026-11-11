@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: D3D11 のデバイス・スワップチェーン・レンダーターゲット・CbScene を持つ RHI 層。
+// 概要: D3D11 のデバイス・スワップチェーン・レンダーターゲット・CbScene を持つ RHI 層
 //
 // 責務:
 //   - デバイス・コンテキスト・スワップチェーンを作って持つ
@@ -8,8 +8,8 @@
 //   - CbScene 定数バッファを持ち、中身を GPU へ送る
 //   - Clear / SetRenderTargets / Present を行う
 //
-// 備考: シングルトンではなく、Graphics が値メンバとして1つ持つ。
-//       描画サブシステム（ModelConstantBuffers など）とシェーダー登録は Graphics が受け持つ。
+// 備考: シングルトンではなく、Graphics が値メンバとして1つ持つ
+//       描画サブシステム（ModelConstantBuffers など）とシェーダー登録は Graphics が受け持つ
 // ===========================================================================
 #include <d3d11.h>
 #include <wrl.h>
@@ -25,17 +25,11 @@ public:
     GraphicsDevice(const GraphicsDevice &)            = delete;
     GraphicsDevice &operator=(const GraphicsDevice &) = delete;
 
-    /**
-     * @brief D3D11 デバイス・スワップチェーン・全 RT を生成する。
-     * @param hWnd 出力先ウィンドウ。
-     */
+    // D3D11 のデバイス・スワップチェーン・全部のレンダーターゲットを作る
     void Initialize(HWND hWnd);
 
-    /**
-     * @brief 全リソースを解放する。Graphics::Shutdown から呼ぶこと。
-     * @details ClearState / Flush / デバッグレポート / ComPtr リセットを行う。
-     *          この前にサブシステム（ModelConstantBuffers 等）を reset しておくこと。
-     */
+    // 全部のリソースを解放する。Graphics::Shutdown から呼ぶ
+    // 先にサブシステム（ModelConstantBuffers など）を reset しておく
     void Shutdown();
 
     // ---- デバイス ----
@@ -50,19 +44,15 @@ public:
     ID3D11RenderTargetView   *GetGameRTV() const noexcept { return m_gameRTV.Get(); }
     ID3D11ShaderResourceView *GetGameSRV() const noexcept { return m_gameSRV.Get(); }
 
-    // Tracy の GPU 計測コンテキスト。
-    // tracy::D3D11Ctx は TRACY_ENABLE が無い構成（Shipping）には無いので、
-    // どちらの構成にもある別名 TracyD3D11Ctx（無効時は void*）を使う。
+    // Tracy の GPU 計測コンテキスト
+    // tracy::D3D11Ctx は TRACY_ENABLE がない構成（Shipping）にはないので、
+    // どちらの構成にもある別名 TracyD3D11Ctx（無効時は void*）を使う
     TracyD3D11Ctx GetTracyContext() const noexcept { return m_tracyD3D11Ctx; }
 
     // ---- CbScene 定数バッファ ----
     ID3D11Buffer *GetSceneConstantBuffer() const noexcept { return m_sceneConstantBuffer.Get(); }
 
-    /**
-     * @brief CbScene の中身を GPU へ送る。
-     * @param data GpuData::CbScene へのポインタ
-     * @param size 構造体のバイト数（UpdateSubresource はバッファ全体を書くので使っていない）
-     */
+    // CbScene の中身を GPU へ送る。size は使っていない（UpdateSubresource はバッファ全体を書く）
     void UpdateSceneConstantBuffer(const void *data, size_t size);
 
     // ---- 画面サイズ ----
@@ -78,20 +68,18 @@ public:
     void    SetRenderTargets(bool useGameRTV);
     HRESULT Present(UINT syncInterval);
 
-    /**
-     * @brief 前のフレームの提示が終わり、次のフレームを作ってよくなるまで待つ。
-     *
-     * Waitable スワップチェーンの待機オブジェクトを待つ。フレームの先頭で1回だけ呼ぶ。
-     * vsync の待ちがここ1か所に集まるので、各描画パスの計測に混ざらない。
-     *
-     * @note 待機ハンドルが無い（作れなかった）ときはすぐに返る。
-     */
+    // 前のフレームの提示が終わり、次のフレームを作ってよくなるまで待つ。フレームの先頭で1回だけ呼ぶ
+    // vsync の待ちがここに集まるので、各パスの計測に混ざらない。待機ハンドルを作れなかったときはすぐ返る
     void WaitForFrameLatency() const noexcept;
 
     // デバイスが失われた原因（DXGI_ERROR_DEVICE_HUNG / _RESET / _REMOVED / DXGI_ERROR_DRIVER_INTERNAL_ERROR など）
     HRESULT GetDeviceRemovedReason() const noexcept;
 
 private:
+    // 使う GPU・ドライバ・機能レベル・画面の大きさを、Shipping でもログに書く
+    // 機能レベルが 11_0 未満なら、シェーダー（SM5.0）を作れないので ERROR も出す
+    void LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL featureLevel) const;
+
     HWND m_hWnd   = nullptr; // 出力先ウィンドウ（所有しない）
     UINT m_width  = 0;       // クライアント領域の幅（px）
     UINT m_height = 0;       // クライアント領域の高さ（px）
@@ -100,8 +88,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_context;
     Microsoft::WRL::ComPtr<IDXGISwapChain>      m_swapChain;
 
-    // Waitable スワップチェーンの待機オブジェクト（フレームの先頭で待つ）。
-    // スワップチェーンが持つものとして扱い、CloseHandle は呼ばない（プロセス終了で回収される）。
+    // Waitable スワップチェーンの待機オブジェクト（フレームの先頭で待つ）
+    // スワップチェーンが持つものとして扱い、CloseHandle は呼ばない（プロセス終了で回収される）
     HANDLE                                           m_frameLatencyWaitable = nullptr;
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   m_backBufferRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView>   m_depthStencilView;

@@ -1,15 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: 登録された RenderPass を、登録した順に実行するパイプライン。
+// 概要: 登録された RenderPass を、登録した順に実行するパイプライン
 //
 // 責務:
 //   - パスを持ち、追加した時点で Initialize する
 //   - 毎フレーム、有効なパスを順に Execute する（Tracy の計測と GPU マーカーで囲む）
 //   - 終了時に追加と逆の順で Shutdown する
 //
-// 備考: どのパスをどの順で積むかは Graphics::BuildDefaultRenderPasses が決める。
-//       このクラスは具体的なパスの型を知らないので、パスを増減してもこのファイルは
-//       再コンパイルされない。
+// 備考: どのパスをどの順で積むかは Graphics::BuildDefaultRenderPasses が決める
+//       具体的なパスの型を知らないので、パスを増減してもこのファイルは再コンパイルされない
 // @code
 //    RenderPipeline pipeline;
 //    pipeline.Initialize(services); // AddPass より前に呼ぶ
@@ -45,12 +44,7 @@ public:
     // 全パスを追加と逆の順で Shutdown し、破棄する
     void Shutdown();
 
-    /**
-     * @brief パスを末尾に追加し、その場で Initialize する。
-     * @tparam T IRenderPass の派生型
-     * @tparam Args T のコンストラクタの引数
-     * @return 追加したパス（所有するのは RenderPipeline。設定を変えたいときに使う）
-     */
+    // パスを末尾に足し、その場で Initialize する。返すパスは RenderPipeline が所有する（設定を変えるときに使う）
     template <typename T, typename... Args>
     T *AddPass(Args &&...args)
     {
@@ -70,7 +64,7 @@ public:
         raw->m_tracyZoneName = "Pass: " + name;
 
 #if defined(TRACY_ENABLE)
-        // Tracy の GPU ゾーンは SourceLocationData をずっと指し続けるので、static に置く。
+        // Tracy の GPU ゾーンは SourceLocationData をずっと指し続けるので、static に置く
         // 関数テンプレートの中の static は T ごとに別の変数になるので、パスの型ごとに1つできる
         static std::string                     staticGpuName = "GPU: " + name;
         static const tracy::SourceLocationData loc           = {

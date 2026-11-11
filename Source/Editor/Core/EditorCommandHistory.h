@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: エディタの Undo/Redo（コマンドパターン）。
+// 概要: エディタの Undo/Redo（コマンドパターン）
 //
 // 責務:
 //   - IEditorCommand: 実行（Redo）と取り消し（Undo）を持つ操作1回ぶんのインターフェース
@@ -35,9 +35,9 @@ public:
         return instance;
     }
 
-    // 履歴の上限。超えたぶんは古い方から捨てる。
+    // 履歴の上限。超えたぶんは古い方から捨てる
     //   上限を外してはいけない。BTGraphChangeCommand は1編集ごとにグラフ全体の JSON を
-    //   2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる。
+    //   2枚（編集前・編集後）抱えるため、長時間の編集セッションで際限なく積み上がる
     static constexpr size_t kMaxHistory = 128;
 
     // コマンドを実行して履歴に積む
@@ -54,14 +54,14 @@ public:
     }
 
     /**
-     * @brief 履歴を全部捨てる。シーンを切り替えるときに必ず呼ぶこと。
+     * @brief 履歴を全部捨てる。シーンを切り替えるときに必ず呼ぶこと
      *
-     * ChangeComponentCommand は World* を生ポインタで、対象を EntityID で持つ。
+     * ChangeComponentCommand は World* を生ポインタで、対象を EntityID で持つ
      * シーン切替は SceneManager::Clear() が currentScene ごと delete するので、
-     * 履歴を残したまま Ctrl+Z を押すと解放済みの World へ書き込む。
+     * 履歴を残したまま Ctrl+Z を押すと解放済みの World へ書き込む
      * World が生きていたとしても、EntityID の世代は World ごとに 1 から
      * 振り直される（CCL_World.cpp の m_entityGenerations）ため、前のシーンの ID が
-     * 新しいシーンの無関係なエンティティを指す。どちらの理由でも残してはいけない。
+     * 新しいシーンの無関係なエンティティを指す。どちらの理由でも残してはいけない
      */
     void Clear()
     {

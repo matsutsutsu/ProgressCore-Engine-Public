@@ -1,5 +1,3 @@
-// Rush（ジャスト回避成立後のラッシュ）のメタ定義。プレハブ/エディタからの読み書きを可能にする。
-
 #include "PlayerRushComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -8,15 +6,25 @@ COMPONENT_META_BEGIN_FULL(PlayerRushComponent, "Player Rush Component", CCL::Cat
 CFIELD_FLOAT_RANGED(worldScale, "世界スロー倍率", 0.01f, 0.01f, 1.0f, "設定")
 CFIELD_FLOAT_RANGED(playerScale, "自分の時間倍率", 0.05f, 0.1f, 5.0f, "設定")
 CFIELD_FLOAT_RANGED(slowRecover, "復帰イーズ", 0.01f, 0.0f, 2.0f, "設定")
+CFIELD_FLOAT_RANGED(finishRecover, "とどめ後の復帰イーズ", 0.01f, 0.0f, 3.0f, "設定")
 CFIELD_FLOAT_RANGED(lockedDuration, "回避離脱の長さ", 0.01f, 0.0f, 2.0f, "設定")
 CFIELD_FLOAT_RANGED(readyDuration, "待機の長さ", 0.01f, 0.0f, 3.0f, "設定")
 CFIELD_FLOAT_RANGED(attackDuration, "攻撃状態の長さ", 0.01f, 0.0f, 3.0f, "設定")
-CFIELD_FLOAT_RANGED(freeDuration, "自由の長さ", 0.01f, 0.0f, 3.0f, "設定")
+CFIELD(rushStepCount, "とどめ前の斬りの数", "設定")
+CFIELD_FLOAT_RANGED(rushInputBuffer, "攻撃の先行入力", 0.01f, 0.0f, 2.0f, "設定")
+CFIELD_FLOAT_RANGED(flurryMaxDuration, "連撃の上限", 0.1f, 0.0f, 20.0f, "設定")
+CFIELD_FLOAT_RANGED(startMaxDistance, "ラッシュを始められる距離", 0.5f, 0.0f, 200.0f, "設定")
+CFIELD_FLOAT_RANGED(evadeSlowScale, "範囲外の回避のスロー倍率", 0.01f, 0.01f, 1.0f, "設定")
+CFIELD_FLOAT_RANGED(evadeSlowDuration, "範囲外の回避のスローの長さ", 0.01f, 0.0f, 3.0f, "設定")
+CFIELD_FLOAT_RANGED(evadeSharedSlowTime, "範囲外の回避で自分も遅い時間", 0.01f, 0.0f, 3.0f, "設定")
 CFIELD_FLOAT_RANGED(leapSpeed, "回避離脱の初速", 1.0f, 0.0f, 300.0f, "設定")
 CFIELD_FLOAT_RANGED(closeInSpeed, "詰めの速さ", 1.0f, 0.0f, 200.0f, "設定")
 CFIELD_FLOAT_RANGED(closeInStopDistance, "詰めて止まる距離", 0.1f, 0.0f, 20.0f, "設定")
 CFIELD_FLOAT_RANGED(invincibleRefresh, "無敵の維持量", 0.01f, 0.0f, 1.0f, "設定")
 CFIELD(isActive, "ラッシュ中", "状態")
+CFIELD(isRecovering, "スロー復帰中", "状態")
 CFIELD(timer, "残り時間", "状態")
 CFIELD(attackFired, "斬り発火済み", "状態")
+CFIELD(rushStep, "入った斬りの数", "状態")
+CFIELD(finishHit, "とどめ命中済み", "状態")
 COMPONENT_META_END(PlayerRushComponent)

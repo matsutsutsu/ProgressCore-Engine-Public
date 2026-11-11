@@ -1,5 +1,3 @@
-// RootMotionComponent のシリアライズ/インスペクタ定義。
-// 中身は実行時の状態なので、カスタムシリアライザで空の枠だけを保存・読込する。
 #include "RootMotionComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -13,6 +11,7 @@
 
 namespace ComponentMetaJson
 {
+    // 中身は実行時の状態なので、空の枠だけを保存・読込する
     template <>
     struct ComponentSerializer<RootMotionComponent>
     {
@@ -24,6 +23,8 @@ namespace ComponentMetaJson
         }
     };
 } // namespace ComponentMetaJson
+
+
 
 template <>
 struct ComponentMeta<RootMotionComponent>

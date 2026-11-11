@@ -5,7 +5,7 @@
 // ピッキング用: スクリーン→レイ変換 と カリング用ワールドAABB
 #include "Engine/Core/Math/ScreenToWorld.h"
 #include "Engine/Graphics/Components/Culling/CullingComponents.h"
-#include "Engine/UI/ECS/GameViewportInfo.h" // UIクリック判定へゲーム画像の表示矩形を橋渡し
+#include "Engine/UI/ECS/GameViewportInfo.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,15 +21,16 @@ using namespace DirectX::SimpleMath;
 namespace
 {
     /**
-     * @brief レイと AABB で、最も手前に当たったエンティティを返す（ピッキング）。
+     * @brief レイと AABB で、最も手前に当たったエンティティを返す（ピッキング）
      *
-     * カリング用に各描画エンティティが持つ worldAABB（DirectX::BoundingBox）を使うので、追加のデータは要らない。
-     * BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける。
+     * カリング用に各描画エンティティが持つ worldAABB（DirectX::BoundingBox）を使うので、追加のデータは要らない
+     * BoundingBoxComponent は ModelCullingSetupSystem が自動で付ける
+     * カメラを包んでいる箱（ステージ全体など）は拾わない。それらはヒエラルキーから選ぶ
      *
-     * @param world  探す World。
-     * @param origin レイの始点（ワールド）。
-     * @param dir    レイの向き。
-     * @return 最も手前に当たったエンティティ。当たらなければ InvalidEntityID。
+     * @param world  探す World
+     * @param origin レイの始点（ワールド）
+     * @param dir    レイの向き
+     * @return 最も手前に当たったエンティティ。当たらなければ InvalidEntityID
      */
     CCL::ECS::EntityID PickEntity(CCL::ECS::World &world,
                                   const Vector3 &origin, const Vector3 &dir)
@@ -60,8 +61,10 @@ namespace
                 if (chunk->IsEntityDestroyed(i)) continue;
                 if (vis && !vis[i].isVisible) continue; // 非表示は拾わない
 
+                // カメラを包む箱は無視する
+                //   始点が箱の中だと Intersects は負の dist を返し、何をクリックしてもその箱が最も手前になるため
                 float dist = 0.0f;
-                if (boxes[i].worldAABB.Intersects(o, d, dist) && dist < bestDist)
+                if (boxes[i].worldAABB.Intersects(o, d, dist) && dist > 0.0f && dist < bestDist)
                 {
                     bestDist = dist;
                     best     = chunk->GetEntityByIndex(i);
@@ -75,8 +78,8 @@ namespace
 void GameViewWindow::DrawContents(EditorContext &context)
 {
     // この関数は ImGui::Begin("Game View") と End の間で呼ばれるので、
-    //   ここでの IsWindowFocused は「ゲームビュー窓」のフォーカス状態を指す。
-    //   これを EditorWindowManager が拾い、フォーカス中のみマウス視点を通す。
+    //   ここでの IsWindowFocused は「ゲームビュー窓」のフォーカス状態を指す
+    //   これを EditorWindowManager が拾い、フォーカス中のみマウス視点を通す
     context.gameViewFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
     ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -102,10 +105,10 @@ void GameViewWindow::DrawContents(EditorContext &context)
     {
         ImGui::Image(context.gameSRV, imageSize);
 
-        // ゲーム画像の表示矩形を UIInputSystem へ橋渡し（UIクリック判定の座標写像用）。
+        // ゲーム画像の表示矩形を UIInputSystem へ橋渡し（UIクリック判定の座標写像用）
         //   screenPos は ImGui スクリーン座標(マルチビューポートでは OS デスクトップ基準)なので、
-        //   メインビューポート原点を引いて「メインウィンドウのクライアント座標」へ直す。
-        //   これはプラットフォーム Mouse::GetPositionX/Y と同じ空間。
+        //   メインビューポート原点を引いて「メインウィンドウのクライアント座標」へ直す
+        //   これはプラットフォーム Mouse::GetPositionX/Y と同じ空間
         if (context.world && context.world->HasResource<GameViewportInfo>())
         {
             const ImVec2      mainPos = ImGui::GetMainViewport()->Pos;
@@ -122,16 +125,16 @@ void GameViewWindow::DrawContents(EditorContext &context)
     else
     {
         ImGui::Text("No Render Target Available.");
-        return; // 描画先が無いならギズモ系もスキップ
+        return; // 描画先がないならギズモ系もスキップ
     }
 
 #ifdef ENABLE_EDITOR
     // ============================================================
     // クリックによるエンティティの選択（ピッキング）
-    //   ・一時停止中だけ有効。実行中はクリックをゲームの入力に回すため選択しない。
+    //   ・一時停止中だけ有効。実行中はクリックをゲームの入力に回すため選択しない
     //   ・ゲーム画像の左上からの座標（local）で判定するので、ウィンドウの位置や
-    //     内部解像度に依存しない。
-    //   ・ギズモの操作中・ホバー中は選択しない。ドラッグ（カメラ回転等）の後のリリースも除外する。
+    //     内部解像度に依存しない
+    //   ・ギズモの操作中・ホバー中は選択しない。ドラッグ（カメラ回転等）の後のリリースも除外する
     // ============================================================
     if (context.isPaused && context.world &&
         context.world->HasResource<Camera *>() &&

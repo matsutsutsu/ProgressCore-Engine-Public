@@ -1,13 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: 平行光源・点光源・スポットライトのコンポーネント。
-//
-// 責務:
-//   - 各ライトの色・強さ・範囲・減衰などのパラメータを持つ
-//
-// 備考: 位置と向きは TransformComponent から取るので、ここには持たない。
-//       LightSystem が毎フレーム LightManager へ積み、Graphics::Update が GPU へ送る。
-// ===========================================================================
+// 平行光源・点光源・スポットライト。位置と向きは TransformComponent から取る
+// LightSystem が毎フレーム LightManager へ積み、Graphics::Update が GPU へ送る
 #include <DirectXMath.h>
 
 // 平行光源。向きは TransformComponent の回転から計算する

@@ -1,18 +1,7 @@
 #pragma once
-// ===========================================================================
-// 概要: 色収差の設定と、演出からの一時的な上乗せを持つシングルトンコンポーネント。
-//
-// 責務:
-//   - シーンが持つ普段の設定（enable / data）を持つ
-//   - 演出ごとの一時的な上乗せ（overrides）を持つ
-//   - 両方を合わせた最終的な強さを求める（ResolvedStrength）
-//   - 上書きの土台になる、今効いている強さを返す（BaseParams）
-//
-// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
-//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
-//       enable=false でも演出中は描くので、PostProcessSystem は合成後の強さが 0 かどうかで
-//       パスのオン/オフを決める。
-// ===========================================================================
+// 色収差の設定（シングルトン）。シーンの普段の設定と、演出ごとの一時的な上乗せ（overrides）を持つ
+// 演出は enable / data を書き換えず、自分のスロットだけを触る。仕組みは PostEffectOverrides.h を参照
+// enable が false でも演出中は描くので、PostProcessSystem は合成後の強さでパスのオン/オフを決める
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
@@ -33,13 +22,8 @@ struct ChromaticAberrationConfigComponent
 
     PostEffectOverrides<ChromaticOverrideParams> overrides;
 
-    /**
-     * @brief 描画に渡す強さを返す。普段の値と、効いている全スロットの最大値をとる。
-     *
-     * 足し合わせないのは、演出が重なったときに振り切れて画面が崩れるのを防ぐため（強い演出が前に出る）。
-     *
-     * @return 色収差の強さ。
-     */
+    // 描画に渡す強さ。普段の値と、効いている全スロットのうちの最大をとる
+    // 足し合わせると、演出が重なったときに振り切れて画面が崩れる
     float ResolvedStrength() const
     {
         float out = enable ? data.chromaStrength : 0.0f;
@@ -49,15 +33,8 @@ struct ChromaticAberrationConfigComponent
         return out;
     }
 
-    /**
-     * @brief 上書きの土台になる、今効いている強さを返す（新しく取ったスロットへ PostFx::Acquire が入れる）。
-     *
-     * enable=false のときは data の値ではなく 0 を返す。
-     * ResolvedStrength は最大値をとるので、切ってある強さを土台に入れると、
-     * 演出が weight を上げただけで作者が切ったはずの色収差が出てしまう。
-     *
-     * @return 土台にする強さ。
-     */
+    // 新しいスロットの土台にする、今効いている強さ（PostFx::Acquire が入れる）。enable が false なら 0
+    // 切ってある強さを土台に入れると、演出が weight を上げただけで、切ったはずの色収差が出てしまう
     ChromaticOverrideParams BaseParams() const
     {
         ChromaticOverrideParams p;

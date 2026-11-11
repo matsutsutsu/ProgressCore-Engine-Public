@@ -1,7 +1,7 @@
 #include "DroneManagerSystem.h"
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
-#include "Game/Logics/AI/Drone/Squad/SquadUpdateSystem.h" // 生成した機を小隊へ入れる
+#include "Game/Logics/AI/Drone/Squad/SquadUpdateSystem.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Serialization/Factory/Prefab.h"
@@ -30,7 +30,6 @@ namespace
 
 void DroneManagerSystem::Update(float /*dt*/)
 {
-    // ボスが揃い次第、最初にドローンを1回だけ配備する。
     TryAutoSpawnInitial();
 
     if (!m_world->HasResource<BattleContext>()) return;
@@ -41,20 +40,23 @@ void DroneManagerSystem::Update(float /*dt*/)
     battle.droneAliveCount = alive;
 }
 
+
+
 void DroneManagerSystem::TryAutoSpawnInitial()
 {
     if (m_autoSpawnDone) return;
 
-    // ボスが未生成のフレームは何もせず次フレームに再試行する。
     if (FindBoss() == InvalidEntityID) return;
 
     int spawned = SpawnDrones(kInitialSpawnCount);
     if (spawned > 0)
     {
-        m_autoSpawnDone = true; // 成功したらラッチして二度と自動生成しない
+        m_autoSpawnDone = true;
         CCL_LOG_INFO(LogCategory::Game, "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 数え上げと番号の振り直し
@@ -62,19 +64,19 @@ void DroneManagerSystem::TryAutoSpawnInitial()
 
 int DroneManagerSystem::GetAliveCount() const
 {
-    // 数えるだけなので確保しない（View だと機数ぶんの vector を作ってから捨てることになる）。
-
+    // View だと機数ぶんの vector を作るので、数えるだけの ViewEach にする
     int count = 0;
     m_world->ViewEach<DroneComponent>([&count](EntityID) { ++count; });
     return count;
 }
+
+
 
 void DroneManagerSystem::ReindexAllDrones()
 {
     int total = GetAliveCount();
     if (total <= 0) return;
 
-    // 全機に連番を振る。
     uint16_t idx  = 0;
     auto     view = m_world->View<DroneComponent>();
     for (auto e : view)
@@ -86,17 +88,20 @@ void DroneManagerSystem::ReindexAllDrones()
         d->totalDrones = static_cast<uint16_t>(total);
     }
 
-    // 小隊の席は小隊の係が決める。
     SquadUpdateSystem::AssignNewMembers(*m_world);
 }
+
+
 
 EntityID DroneManagerSystem::FindBoss() const
 {
     auto bossView = m_world->View<BossCommandComponent, TransformComponent>();
     for (auto b : bossView)
-        return b; // 最初の1体
+        return b;
     return InvalidEntityID;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 生成と破棄
@@ -138,17 +143,12 @@ int DroneManagerSystem::SpawnDrones(int count)
         if (auto *d = m_world->GetComponent<DroneComponent>(droneId))
         {
             d->ownerBossId = bossId;
-            // 生成時の初期陣形はボスの頭上高くで旋回する HighOrbit。
             d->currentFormation = DroneFormationType::HighOrbit;
             d->orbitRadius      = 8.0f;
-            d->hasReachedSlot   = false; // 生成直後は必ず MoveToTarget から始める
+            d->hasReachedSlot   = false;
 
-            // ホバーの揺れの位相を個体ごとにずらす。
-            // 0 のままだと全機の位相が一致し、群れが1枚の板として揺れる。
-
-            // 位相は EntityID を乗算ハッシュ（2654435761）でかき混ぜた値から決める。
-            // 続けて生成した機は EntityID も続き番号になるので、そのまま等間隔に使うと
-            // 隣り合う機の位相が近くなり、隣同士が揃って揺れる。
+            // ホバーの位相を機体ごとにずらす。揃っていると群れが1枚の板として揺れる
+            // EntityID は続き番号なので、ハッシュでかき混ぜないと隣同士が揃って揺れる
             uint32_t phase = static_cast<uint32_t>(droneId) * 2654435761u;
             phase ^= phase >> 15;
             d->hoverTimeOffset = static_cast<float>(phase % 65536u) * (kHoverPhasePeriod / 65536.0f);
@@ -164,14 +164,15 @@ int DroneManagerSystem::SpawnDrones(int count)
 
     // --- 番号の振り直し ---
 
-    // 既存＋新規をまとめて連番にしないと円が歪む。
-    // SpawnPrefab は生成をその場で確定させるので、ここで反映し直さなくても View が新しい機を拾える。
+    // 既存＋新規をまとめて連番にしないと円が歪む
     ReindexAllDrones();
 
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] %d 機スポーン（合計 %d）",
                  spawned, GetAliveCount());
     return spawned;
 }
+
+
 
 int DroneManagerSystem::DestroyDrones(int count)
 {
@@ -187,6 +188,8 @@ int DroneManagerSystem::DestroyDrones(int count)
     return destroyed;
 }
 
+
+
 void DroneManagerSystem::DestroyAll()
 {
     auto view = m_world->View<DroneComponent>();
@@ -194,6 +197,8 @@ void DroneManagerSystem::DestroyAll()
         m_world->Destroy(e);
     CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 全機破壊");
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -211,7 +216,7 @@ void DroneManagerSystem::OnGui()
     if (ImGui::Button("50機破壊", ImVec2(100, 30)))
         DestroyDrones(50);
 
-    // 全機を消すボタンだけ赤くして、押し間違えないようにする。
+    // 押し間違えないよう赤くする
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
     if (ImGui::Button("全機破壊", ImVec2(100, 30)))
@@ -219,5 +224,6 @@ void DroneManagerSystem::OnGui()
     ImGui::PopStyleColor();
 }
 
-// 陣形（DroneFormationSystem）と同じ L02_Update。前後は GetRunAfter で決める。
+
+
 REGISTER_LOGIC_SYSTEM(DroneManagerSystem, Priority::LogicStage::L02_Update)

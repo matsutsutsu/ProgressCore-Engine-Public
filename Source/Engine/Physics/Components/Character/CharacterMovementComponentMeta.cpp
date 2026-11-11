@@ -1,17 +1,10 @@
-// CharacterMovementComponent のシリアライズ/インスペクタ定義。
-//
-// 上書き要求(overrideSpeed/use3DVelocity/jumpImpulse)と結果(currentVelocity)は
-// 毎フレーム作り直される実行時状態なので、インスペクタでは読み取り専用にする。
-// ここを編集可能にすると、手で入れた値が次のフレームに消えるだけでなく、
-// プレハブへ実行中の値が焼き付いて「起動直後だけ速度が違う」といった事故になる。
-
 #include "CharacterMovementComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
 COMPONENT_META_BEGIN_FULL(CharacterMovementComponent, "Character Movement", CCL::Categories::Movement, 150, false)
 
-// Vector3 は XMFLOAT3 と別型で CFIELD の型推論に載らないため、FD_ を直接使う。
+// Vector3 は CFIELD の型推論に載らないので、FD_ を直接使う
 FD_Float3("要求速度", "desiredVelocity", offsetof(ThisType, desiredVelocity), 0.05f, "意思", true,
           "進みたい向き。入力層またはAIが毎フレーム書く。", true),
 CFIELD_RO(moveIntensity, "移動の強さ", "意思", "アナログ傾き量(0〜1)。通常歩行の速度割合。既定1.0=全開。毎フレーム入力層が書く。")
@@ -24,6 +17,6 @@ CFIELD_FLOAT_RANGED(speedMultiplier, "速度倍率", 0.05f, 0.0f, 5.0f, "係数"
 CFIELD_RO(isRootMotionActive, "ルートモーション中", "ルートモーション", nullptr)
 
 FD_Float3("現在速度", "currentVelocity", offsetof(ThisType, currentVelocity), 0.05f, "結果", true,
-                                  "慣性を含む実際の水平速度。書き手は物理側のみ。", true),
+                                  "慣性を含む、物理へ渡した水平速度（壁に当たる前）。書き手は物理側のみ。", true),
 
 COMPONENT_META_END(CharacterMovementComponent)

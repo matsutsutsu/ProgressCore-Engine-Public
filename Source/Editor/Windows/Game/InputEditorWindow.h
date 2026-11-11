@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 入力の割り当て（Assets/Config/InputConfig.json）を編集するウィンドウ。
+// 概要: 入力の割り当て（Assets/Config/InputConfig.json）を編集するウィンドウ
 //
 // 責務:
 //   - アクション（デジタル）と軸（アナログ）の追加・削除と、割り当ての編集
@@ -50,7 +50,7 @@ private:
 
     std::string m_configPath = "Assets/Config/InputConfig.json";
 
-    // キャプチャ（キー入力待ち）の対象。nullptr ならキャプチャ中でない。
+    // キャプチャ（キー入力待ち）の対象。nullptr ならキャプチャ中でない
     //   m_actions / m_axes の要素を指すので、それらを追加・削除したら必ず nullptr に戻す
     BindingData *m_captureTarget = nullptr;
 
@@ -58,24 +58,13 @@ private:
     // 拾わないよう、マウスボタンが一度離されるまで待つ
     bool m_captureArmed = false;
 
-    /**
-     * @brief 割り当て1つぶんを描く（デバイス / キー / キャプチャ / 軸なら感度）。
-     * @param b      編集する割り当て。
-     * @param isAxis 軸（移動・カメラなど連続値）のタブか。true なら感度の欄も出す。
-     */
+    // 割り当て1つぶんを描く（デバイス・キー・キャプチャ、軸なら感度も）
     void DrawBindingParams(BindingData &b, bool isAxis);
 
-    /**
-     * @brief デバイスの種類を選ぶラジオボタンを描く。切り替えたら b.device / b.key をそのデバイスの既定値に戻す。
-     * @param b      編集する割り当て。
-     * @param isAxis 軸のタブか。true ならゲームパッドの既定を左スティックにする。
-     */
+    // デバイスの種類を選ぶラジオボタン。切り替えたらキーをそのデバイスの既定に戻す（軸ならパッドは左スティック）
     void DrawDeviceSelector(BindingData &b, bool isAxis);
 
-    /**
-     * @brief 選択中のデバイスに応じたキーの候補をコンボボックスで出す（絞り込みの入力欄つき）。
-     * @param b      編集する割り当て。
-     * @param isAxis 軸のタブか。true ならゲームパッドの候補を「スティック / トリガー」と「ボタン」の見出しで分ける。
-     */
+    // 選択中のデバイスのキーの候補を、絞り込みの欄つきのコンボで出す
+    // 軸のタブでは、パッドの候補を「スティック / トリガー」と「ボタン」の見出しで分ける
     void DrawKeyCombo(BindingData &b, bool isAxis);
 };

@@ -15,8 +15,6 @@ void PrimitivePass::Execute(const RenderFrameContext &ctx)
 
     if (m_services->primitiveRenderer)
     {
-        m_services->primitiveRenderer->Render(
-            ctx.dc, *m_services,
-            ctx.camera->GetView(), ctx.camera->GetProjection());
+        m_services->primitiveRenderer->Render(ctx.dc, *m_services);
     }
 }

@@ -1,13 +1,10 @@
-// Jolt の Collider / Rigidbody コンポーネントのシリアライズ/インスペクタ定義。
-// どれも単純なデータなので、CFIELD マクロだけで定義する（カスタム GUI なし）。
-
 #include "Engine/Physics/Components/Collision/JoltBoxColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltSphereColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltCapsuleColliderComponent.h"
 #include "Engine/Physics/Components/Collision/JoltMeshColliderComponent.h"
 #include "Engine/Physics/Components/RigidBody/JoltRigidbodyComponent.h"
 
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // LayerNames / LayerCount
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -52,8 +49,8 @@ COMPONENT_META_END(JoltMeshColliderComponent)
 namespace
 {
     const char *const MotionTypeNames[] = {"Static", "Kinematic", "Dynamic"};
-    // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（ここに手書き配列を置かない）。
-    //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで反映される。
+    // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（ここに手書き配列を置かない）
+    //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで反映される
 } // namespace
 
 COMPONENT_META_BEGIN_FULL(JoltRigidbodyComponent, "Jolt Rigidbody", CCL::Categories::Physics, 200, false)

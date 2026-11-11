@@ -39,6 +39,7 @@ namespace ImSequencer
       SEQUENCER_ADD = 1 << 4,
       SEQUENCER_DEL = 1 << 5,
       SEQUENCER_COPYPASTE = 1 << 6,
+      SEQUENCER_MOVE = 1 << 7, // 追加: 各行の左に上下移動のボタンを出す（CanMove / Move を使う）
       SEQUENCER_EDIT_ALL = SEQUENCER_EDIT_STARTEND | SEQUENCER_CHANGE_FRAME
    };
 
@@ -60,6 +61,12 @@ namespace ImSequencer
       virtual void Add(int /*type*/) {}
       virtual void Del(int /*index*/) {}
       virtual void Duplicate(int /*index*/) {}
+
+      // 追加: 行の上下移動（SEQUENCER_MOVE のときだけ呼ばれる）
+      //   CanMove: index の行を delta（-1 で上、+1 で下）動かせるか。false の向きにはボタンを出さない
+      //   Move   : index の行を、隣（index + delta）の行と入れ替える
+      virtual bool CanMove(int /*index*/, int /*delta*/) const { return false; }
+      virtual void Move(int /*index*/, int /*delta*/) {}
 
       virtual void Copy() {}
       virtual void Paste() {}

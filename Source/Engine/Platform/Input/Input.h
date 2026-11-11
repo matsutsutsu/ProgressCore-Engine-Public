@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ゲームパッド・マウス・キーボードをまとめて保持し、毎フレーム更新するシングルトン。
+// 概要: ゲームパッド・マウス・キーボードをまとめて保持し、毎フレーム更新するシングルトン
 //
 // 責務:
 //   - 3デバイスの生成と毎フレームの Update
@@ -8,7 +8,7 @@
 //   - 直近に操作されたデバイス（キーボード＆マウス／ゲームパッド）の判定
 //
 // 備考: ゲーム側は IInputAPI（InputFacade）経由で読む。ここを直接使うのは
-//       Framework・BaseScene・InputFacade と、デバッグ用のフリーカメラだけ。
+//       Framework・BaseScene・InputFacade と、デバッグ用のフリーカメラだけ
 // ===========================================================================
 
 #include <memory>
@@ -16,7 +16,7 @@
 #include "Mouse.h"
 #include "Keyboard.h"
 
-#include "IInputAPI.h" // ActiveDeviceType
+#include "IInputAPI.h"
 
 class Input
 {
@@ -42,15 +42,8 @@ public:
     Keyboard &GetKeyboard() { return *keyboard; }
 
     // --- ロジック（固定ステップ）用の「押した瞬間」 ---
-    /**
-     * @brief 固定ステップ用の「押した瞬間」を返す。
-     *
-     * 描画フレームと固定ステップの回数は一致しないので、1フレームだけの「押した瞬間」をそのまま読むと、ステップが走らなかったフレームの入力を取りこぼす。
-     * ClearLogicInput() が呼ばれるまで OR で溜めておく。
-     *
-     * @param keyCode 調べるキー。
-     * @return 前回の ClearLogicInput() 以降に押されていれば true。
-     */
+    // 固定ステップ用の「押した瞬間」。前回の ClearLogicInput 以降に押されていれば true
+    // 描画フレームと固定ステップの回数は合わないので、1フレームだけの押した瞬間を読むと、ステップのないフレームの入力を落とす
     bool GetLogicKeyTriggered(int keyCode) const
     {
         if (keyCode < 0 || keyCode >= 256) return false;

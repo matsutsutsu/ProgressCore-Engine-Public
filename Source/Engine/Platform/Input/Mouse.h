@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: マウスのボタン・ホイール・カーソル位置を毎フレーム取得するクラス。
+// 概要: マウスのボタン・ホイール・カーソル位置を毎フレーム取得するクラス
 //
 // 責務:
 //   - ボタン（押下中・押した瞬間・離した瞬間）とホイール量の管理
@@ -87,10 +87,10 @@ public:
     int GetScreenWidth() const { return screenWidth; }
     int GetScreenHeight() const { return screenHeight; }
 
-    // カーソルロック（マウスルック用）。
-    //   true にすると Update() が毎フレーム、カーソルを画面中央へ戻して OS カーソルを隠す。
-    //   移動量(GetVelocity)は「中央からのずれ」になる。
-    //   ウィンドウが非フォーカスの間はロックしない（alt-tab でカーソルが閉じ込められない）。
+    // カーソルロック（マウスルック用）
+    //   true にすると Update() が毎フレーム、カーソルを画面中央へ戻して OS カーソルを隠す
+    //   移動量(GetVelocity)は「中央からのずれ」になる
+    //   ウィンドウが非フォーカスの間はロックしない（alt-tab でカーソルが閉じ込められない）
     void SetCursorLock(bool lock) { m_lockRequested = lock; }
     bool IsCursorLocked() const { return m_cursorHidden; }
 

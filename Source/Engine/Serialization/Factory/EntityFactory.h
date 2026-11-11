@@ -1,11 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: 名前付きの Entity やプレハブを生成して EntityRef で返すヘルパー関数群。
-//
-// 責務:
-//   - NameComponent を付けて Entity を生成する（NameComponent を ECS のコアに持ち込まないため）
-//   - プレハブを生成して EntityRef で返す
-// ===========================================================================
+// 名前付きの Entity やプレハブを生成して EntityRef で返す関数
+// NameComponent を付ける処理をここに置き、ECS のコアに NameComponent を持ち込まない
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Serialization/Factory/Prefab.h"
 #include "Engine/Core/Components/NameComponent.h"
@@ -20,7 +15,7 @@ namespace EntityFactory
     {
         auto ref = world.Spawn(baseArch);
 
-        // NameComponent が Archetype に無ければ、追加が予約される
+        // NameComponent が Archetype になければ、追加が予約される
         ref.Set(NameComponent{name});
 
         return ref;

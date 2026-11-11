@@ -258,14 +258,6 @@
                 "Name": {
                     "name": "TitleLighting"
                 },
-                "Player Rush Effect": {
-                    "fadeInTime": 0.20000000298023224,
-                    "fadeOutTime": 0.4000000059604645,
-                    "radialFalloff": 3.4000000953674316,
-                    "radialStrength": 0.6000000238418579,
-                    "vignetteIntensity": 0.5,
-                    "vignetteRadius": 0.20000000298023224
-                },
                 "RadialBlur": {
                     "centerX": 0.5,
                     "centerY": 0.5,

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ActionID から BT のアクション・条件のインスタンスを引くレジストリ（シングルトン）。
+// 概要: ActionID から BT のアクション・条件のインスタンスを引くレジストリ（シングルトン）
 //
 // 責務:
 //   - アクションと条件を ActionID ごとに1つずつ登録する
@@ -27,7 +27,9 @@ namespace CCL::AI::BT
             return reg;
         }
 
-        // --- 登録 ---
+        // --- 登録（起動時だけ。評価中に呼ぶと、並列に読んでいる配列が伸びる） ---
+
+        // 行動 T を作って id に登録する
         template <typename T>
         void RegisterAction(ActionID id)
         {
@@ -36,6 +38,7 @@ namespace CCL::AI::BT
             AccumulateAccess(*m_actions[id]);
         }
 
+        // 条件 T を作って id に登録する
         template <typename T>
         void RegisterCondition(ActionID id)
         {
@@ -44,7 +47,7 @@ namespace CCL::AI::BT
             AccumulateAccess(*m_conditions[id]);
         }
 
-        // コンストラクタ引数が要るアクション（TriggeredMotionAction など）を、作ったものごと登録する。
+        // コンストラクタ引数が要るアクションを、作ったものごと登録する（所有権はレジストリへ移る）
         void RegisterActionInstance(ActionID id, std::unique_ptr<IBTAction> action)
         {
             if (id >= m_actions.size()) m_actions.resize(id + 1);
@@ -53,17 +56,13 @@ namespace CCL::AI::BT
         }
 
         // --- 解決 ---
-        IBTAction    *GetAction(ActionID id) const { return (id < m_actions.size()) ? m_actions[id].get() : nullptr; }
-        IBTCondition *GetCondition(ActionID id) const { return (id < m_conditions.size()) ? m_conditions[id].get() : nullptr; }
+        IBTAction    *GetAction(ActionID id) const { return (id < m_actions.size()) ? m_actions[id].get() : nullptr; }          // 未登録なら nullptr
+        IBTCondition *GetCondition(ActionID id) const { return (id < m_conditions.size()) ? m_conditions[id].get() : nullptr; } // 未登録なら nullptr
 
-        // --- アクセス申告をまとめた結果（BehaviorTreeSystem がスケジューラへ渡す）---
-        //
-        // 登録済みの全アクション・条件が「world から直接触る」と申告した型の和集合。
-        // BehaviorTreeSystem 自身の Read<>/Write<> には現れない読み書きを、ここで申告に載せる。
+        // --- アクセス申告（全登録分の和集合。BehaviorTreeSystem がスケジューラへ渡す） ---
         const std::vector<TypeID> &ExtraWriteTypes() const { return m_extraWrites; }
         const std::vector<TypeID> &ExtraReadTypes() const { return m_extraReads; }
 
-        // その ID の行動・条件が登録されているか（起動時の突き合わせ用）。
         bool HasAction(ActionID id) const { return GetAction(id) != nullptr; }
         bool HasCondition(ActionID id) const { return GetCondition(id) != nullptr; }
 
@@ -72,20 +71,14 @@ namespace CCL::AI::BT
         BTActionRegistry(const BTActionRegistry &)            = delete;
         BTActionRegistry &operator=(const BTActionRegistry &) = delete;
 
-        /**
-         * @brief 申告を和集合として溜める。
-         *
-         * 件数が数個なので線形探索で足りる（登録は起動時に1回だけで、実行中には呼ばれない）。
-         *
-         * @param dst 溜める先。src のうち dst に無い型を足す。
-         * @param src 足す申告。
-         */
+        // src のうち dst にない型を dst へ足す（件数が数個で、起動時にしか呼ばないので線形探索）
         static void Merge(std::vector<TypeID> &dst, const std::vector<TypeID> &src)
         {
             for (TypeID t : src)
                 if (std::find(dst.begin(), dst.end(), t) == dst.end()) dst.push_back(t);
         }
 
+        // 登録した行動・条件（T は IBTAction か IBTCondition）の申告を、全体の申告に足す
         template <typename T>
         void AccumulateAccess(const T &node)
         {
@@ -93,11 +86,11 @@ namespace CCL::AI::BT
             Merge(m_extraReads, node.GetExtraReadTypes());
         }
 
-        std::vector<std::unique_ptr<IBTAction>>    m_actions;
-        std::vector<std::unique_ptr<IBTCondition>> m_conditions;
+        std::vector<std::unique_ptr<IBTAction>>    m_actions;    // ActionID を添字にした行動。未登録の添字は nullptr
+        std::vector<std::unique_ptr<IBTCondition>> m_conditions; // ActionID を添字にした条件。未登録の添字は nullptr
 
-        std::vector<TypeID> m_extraWrites;
-        std::vector<TypeID> m_extraReads;
+        std::vector<TypeID> m_extraWrites; // 全登録分の Write 申告の和集合
+        std::vector<TypeID> m_extraReads;  // 全登録分の Read 申告の和集合
     };
 
 } // namespace CCL::AI::BT

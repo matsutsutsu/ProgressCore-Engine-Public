@@ -1,8 +1,8 @@
 #include "Game/Logics/Cinematic/CinematicSignalSystem.h"
-#include "Game/UI/Common/ScreenHeadingUi.h" // テロップの部品（滑り込む見出し・伸びる線・打ち込まれる1行）
+#include "Game/UI/Common/ScreenHeadingUi.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
-#include "Engine/Time/TimeService.h" // Time::PresentationDt（ポーズ中はテロップも止める）
+#include "Engine/Time/TimeService.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -42,6 +42,8 @@ void CinematicSignalSystem::Initialize()
     });
 }
 
+
+
 void CinematicSignalSystem::Update(float dt)
 {
     dt = Time::PresentationDt(*m_world, dt);
@@ -61,6 +63,8 @@ void CinematicSignalSystem::Update(float dt)
     UpdateTelops(dt);
 }
 
+
+
 void CinematicSignalSystem::HandleSignal(const CinematicSignalEvent &ev)
 {
     if (ev.name == "Telop")
@@ -69,10 +73,12 @@ void CinematicSignalSystem::HandleSignal(const CinematicSignalEvent &ev)
         return;
     }
 
-    // エンジンは名前の意味を知らないので、台本の読み込みでは打ち間違いに気付けない。
-    // 黙って捨てると気付く場所が無くなるので、受け手のここで知らせる。
+    // エンジンは名前の意味を知らないので、台本の読み込みでは打ち間違いに気付けない
+    // 黙って捨てると気付く場所がなくなるので、受け手のここで知らせる
     CCL_LOG_WARN(LogCategory::Game, "[CinematicSignal] 知らないシグナルです: %s", ev.name.c_str());
 }
+
+
 
 // ---------------------------------------------------------------------------
 // テロップ
@@ -91,8 +97,9 @@ void CinematicSignalSystem::SpawnTelop(const std::string &title, const std::stri
     telop.entities.push_back(box);
 
     // 名前（滑り込む）・線（伸びる）・線の先の◆。リザルト・ポーズの見出しと同じ部品を、入れ物を親にして使う
-    std::vector<EntityID> heading;
-    SpawnScreenHeading(w, box, title.c_str(), ScreenColor::kRed, heading, kTelopSortOrder);
+    const MenuStyleComponent style = GetMenuStyle(w);
+    std::vector<EntityID>    heading;
+    SpawnScreenHeading(w, box, title.c_str(), style.red, heading, kTelopSortOrder);
     for (EntityID id : heading)
     {
         telop.entities.push_back(id);
@@ -101,14 +108,16 @@ void CinematicSignalSystem::SpawnTelop(const std::string &title, const std::stri
 
     if (!subtitle.empty())
     {
-        const EntityID sub = SpawnTypedText(w, "TelopSubtitle", subtitle, ScreenLayout::kLeft, ScreenLayout::kSubY,
-                                            kSubtitlePx, ScreenColor::kSub, kSubtitleDelay, box);
+        const EntityID sub = SpawnTypedText(w, "TelopSubtitle", subtitle, style.left, style.SubY(), kSubtitlePx,
+                                            style.sub, kSubtitleDelay, box);
         telop.entities.push_back(sub);
         telop.parts.push_back({sub});
     }
 
     m_telops.push_back(std::move(telop));
 }
+
+
 
 void CinematicSignalSystem::UpdateTelops(float dt)
 {
@@ -146,12 +155,16 @@ void CinematicSignalSystem::UpdateTelops(float dt)
     m_telops.erase(std::remove_if(m_telops.begin(), m_telops.end(), done), m_telops.end());
 }
 
+
+
 float CinematicSignalSystem::ReadPartAlpha(EntityID id) const
 {
     if (const auto *tx = m_world->GetComponent<UITextComponent>(id)) return tx->color.w;
     if (const auto *img = m_world->GetComponent<UIImageComponent>(id)) return img->color.w;
     return 1.0f;
 }
+
+
 
 void CinematicSignalSystem::ApplyPartAlpha(const TelopPart &part, float k) const
 {
@@ -163,5 +176,7 @@ void CinematicSignalSystem::ApplyPartAlpha(const TelopPart &part, float k) const
     if (auto *img = m_world->GetComponent<UIImageComponent>(part.id))
         img->color.w = part.baseAlpha * k;
 }
+
+
 
 REGISTER_RENDER_SYSTEM(CinematicSignalSystem, Priority::RenderStage::R10_UI);

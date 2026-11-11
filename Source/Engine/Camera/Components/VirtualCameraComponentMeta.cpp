@@ -1,5 +1,3 @@
-// VirtualCamera関連コンポーネントのシリアライズ/インスペクタ定義。
-
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -53,8 +51,8 @@ struct ComponentMeta<CameraBodyFollow>
         {
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID"))
             {
-                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる。
-                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う。
+                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる
+                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う
                 CCL::ECS::EntityID droppedID = *(const CCL::ECS::EntityID *)payload->Data;
                 comp.target.id               = droppedID;
                 changed                      = true;
@@ -126,8 +124,8 @@ struct ComponentMeta<CameraAimLookAt>
         {
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("DND_ENTITY_ID"))
             {
-                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる。
-                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う。
+                // ペイロードは HierarchyWindow が sizeof(CCL::ECS::EntityID) で積んでいる
+                // 読み側で生の型を書くと、EntityID の幅を変えたときにここだけ食い違う
                 CCL::ECS::EntityID droppedID = *(const CCL::ECS::EntityID *)payload->Data;
                 comp.target.id               = droppedID;
                 changed                      = true;
@@ -162,11 +160,8 @@ REGISTER_COMPONENT_EDITOR_GUI(CameraAimLookAt)
 // ============================================================================
 // CameraShake
 // ============================================================================
-// trauma(蓄積量) / elapsed / seed は要求が来るたびに書き換わる実行時状態なので
-// シリアライズ対象から外している。保存しておくと、非ゼロの蓄積量が焼き込まれた
-// プレハブがロード直後に勝手に揺れ始める。
-// 揺れの「強さ・速さ・長さ」はすべてここに集約されている。発生源は衝撃量(trauma)
-// だけを送るので、演出の調整はこの4つを触れば全ての揺れに効く。
+// trauma / elapsed / seed は実行中に書き換わる状態なので保存しない（保存すると、読み込んだ直後から揺れ始める）
+// 揺れの強さ・速さ・長さはここに集めてあるので、調整はこの4つを触ればすべての揺れに効く
 COMPONENT_META_BEGIN_FULL(CameraShake, "Camera Shake", CCL::Categories::Camera, 330, false)
 CFIELD_FLOAT_RANGED(amplitude, "最大振幅", 0.1f, 0.0f, 100.0f, "Shake Settings")
 CFIELD_FLOAT_RANGED(frequency, "揺れの周波数(Hz)", 0.5f, 0.1f, 120.0f, "Shake Settings")

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: ECS を使うシーン共通の基底クラス BaseScene。
+// 概要: ECS を使うシーン共通の基底クラス BaseScene
 //
 // 責務:
 //   - ECSContext（World + SystemManager）の生成と、共通リソースの World への登録
@@ -8,7 +8,7 @@
 //   - シーン終了時の後片付け（剛体・音・Entity の即時破棄）
 //   - GPU デバイスロストからの復帰（既定では丸ごと作り直す）
 //
-// 備考: 派生クラスは RegisterSystems / OnRenderUI / OnDrawImGui を上書きして拡張する。
+// 備考: 派生クラスは RegisterSystems / OnRenderUI / OnDrawImGui を上書きして拡張する
 // ===========================================================================
 #include <memory>
 #include <string>
@@ -19,7 +19,7 @@
 
 #include "Engine/Scene/SceneManager.h"
 
-#include "Engine/UI/ECS/UIRenderer.h" // ECS の UI を2Dパスで描く
+#include "Engine/UI/ECS/UIRenderer.h"
 
 class BaseScene : public Scene
 {
@@ -46,12 +46,8 @@ public:
     CCL::ECS::World         *GetWorld() override { return m_worldPtr; }
     CCL::ECS::SystemManager *GetSystemManager() override { return m_ecsContext->GetSystemManager(); }
 
-    /**
-     * @brief GPU デバイスロストからの復帰後に Framework から呼ばれる。
-     * @details デフォルト実装は ECS ワールドをリセットして Initialize() + Start() を
-     *          再実行する（完全な再ロード）。
-     *          ゲームの進行状態を保ちたい場合は派生クラスでオーバーライドすること。
-     */
+    // デバイスロストから戻った後に Framework が呼ぶ。既定は World をリセットして Initialize と Start をやり直す
+    // ゲームの進み具合を残したいなら、派生クラスで上書きする
     virtual void OnDeviceRecreated();
 
 protected:

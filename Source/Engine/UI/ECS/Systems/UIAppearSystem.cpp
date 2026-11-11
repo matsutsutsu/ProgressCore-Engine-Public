@@ -44,4 +44,6 @@ void UIAppearSystem::Update(float dt)
     });
 }
 
+
+
 REGISTER_RENDER_SYSTEM(UIAppearSystem, Priority::RenderStage::R10_UI);

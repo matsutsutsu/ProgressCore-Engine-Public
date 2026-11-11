@@ -1,13 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: ライトの視点から、カスケードシャドウマップ（3枚）に深度を描くパス。
+// 概要: ライトの視点から、カスケードシャドウマップ（3枚）に深度を描くパス
 //
 // 責務:
 //   - カメラとライトの向きから、カスケードごとのビュー・プロジェクション行列を求める
 //   - 影を落とすメッシュを集めてメッシュ順に並べ、カスケードごとにインスタンシングで描く
+//   - LOD のあるメッシュは、一番粗い段で描く
 //   - シャドウマップの定数バッファ（行列・分割距離・バイアスなど）を更新する
-//
-// 備考: スキンメッシュはボーン行列が1体ごとに違うので、まとめずに1体ずつ描く。
 // ===========================================================================
 #include "Engine/Graphics/Pipeline/Core/IRenderPass.h"
 #include "Engine/Graphics/RHI/PipelineState.h"
@@ -30,18 +29,18 @@ private:
         uint8_t             cascadeMask; // 描くカスケードのビット（bit i = カスケード i）
     };
 
-    // 同じメッシュのインスタンスをまとめたもの
+    // 同じメッシュデータ（頂点・インデックスバッファ）のインスタンスをまとめたもの
     struct Batch
     {
-        const Model::Mesh        *mesh = nullptr; // 所有しない
-        std::vector<InstanceData> data;
+        const ModelResource::Mesh *meshData = nullptr; // 所有しない
+        std::vector<InstanceData>  data;               // インスタンスごとのワールド行列
     };
 
-    PipelineState  m_psoShadow;
+    PipelineState  m_psoShadow; // 深度バイアス付きのラスタライザ
     InstanceBuffer m_instanceBuffer;
 
-    // 毎フレーム作り直す作業用の配列。clear() は確保済みの容量を残すので、
-    // 数フレームで大きさが落ち着き、それ以降はメモリを確保しない
+    // 毎フレーム作り直す作業用の配列
+    // clear() は容量を残すので、数フレームで落ち着いた後はメモリを確保しない
     std::vector<SortItem> m_itemsScratch;
     std::vector<Batch>    m_batchesScratch;
     size_t                m_batchCount = 0; // m_batchesScratch のうち、このカスケードで使っている数

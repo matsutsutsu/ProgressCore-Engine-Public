@@ -8,15 +8,21 @@ void ImGuiThemes::ApplyLight()
     ImGui::StyleColorsLight();
 }
 
+
+
 void ImGuiThemes::ApplyDark()
 {
     ImGui::StyleColorsDark();
 }
 
+
+
 void ImGuiThemes::ApplyClassic()
 {
     ImGui::StyleColorsClassic();
 }
+
+
 
 void ImGuiThemes::ApplyEditorDark()
 {
@@ -54,6 +60,8 @@ void ImGuiThemes::ApplyEditorDark()
     style.WindowBorderSize = 1.0f;
 }
 
+
+
 void ImGuiThemes::ApplyDarcula()
 {
     ImGuiStyle &style  = ImGui::GetStyle();
@@ -69,6 +77,8 @@ void ImGuiThemes::ApplyDarcula()
     colors[ImGuiCol_TitleBg]        = ImVec4(0.13f, 0.13f, 0.17f, 1.00f);
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.20f, 0.20f, 0.25f, 1.00f);
 }
+
+
 
 void ImGuiThemes::ApplySkeltonDarcula()
 {
@@ -89,6 +99,8 @@ void ImGuiThemes::ApplySkeltonDarcula()
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.20f, 0.20f, 0.25f, 1.00f);
 }
 
+
+
 void ImGuiThemes::ApplyUnityDark()
 {
     ImGuiStyle &style  = ImGui::GetStyle();
@@ -104,6 +116,8 @@ void ImGuiThemes::ApplyUnityDark()
     colors[ImGuiCol_TitleBg]        = ImVec4(0.14f, 0.14f, 0.14f, 1.0f);
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.18f, 0.18f, 0.18f, 1.0f);
 }
+
+
 
 void ImGuiThemes::ApplyVisualStudioDark()
 {
@@ -121,6 +135,8 @@ void ImGuiThemes::ApplyVisualStudioDark()
     colors[ImGuiCol_TitleBgActive]  = ImVec4(0.13f, 0.13f, 0.13f, 1.0f);
 }
 
+
+
 void ImGuiThemes::ApplyCatppuccinMocha()
 {
     ImVec4 *colors                 = ImGui::GetStyle().Colors;
@@ -133,6 +149,8 @@ void ImGuiThemes::ApplyCatppuccinMocha()
     colors[ImGuiCol_Border]        = ImVec4(0.20f, 0.19f, 0.28f, 1.00f);
 }
 
+
+
 void ImGuiThemes::ApplyTokyoNight()
 {
     ImVec4 *colors            = ImGui::GetStyle().Colors;
@@ -144,6 +162,8 @@ void ImGuiThemes::ApplyTokyoNight()
     colors[ImGuiCol_Border]   = ImVec4(0.12f, 0.12f, 0.20f, 1.00f);
 }
 
+
+
 void ImGuiThemes::ApplyDracula()
 {
     ImVec4 *colors            = ImGui::GetStyle().Colors;
@@ -153,6 +173,8 @@ void ImGuiThemes::ApplyDracula()
     colors[ImGuiCol_Button]   = ImVec4(0.37f, 0.27f, 0.50f, 1.00f); // Purple
     colors[ImGuiCol_Text]     = ImVec4(0.97f, 0.97f, 0.97f, 1.00f); // Foreground
 }
+
+
 
 void ImGuiThemes::ApplyNord()
 {
@@ -169,7 +191,7 @@ void ImGuiThemes::ApplyNord()
     colors[ImGuiCol_TabActive]  = ImVec4(0.53f, 0.75f, 0.82f, 1.00f); // Nord 8
     colors[ImGuiCol_TabHovered] = ImVec4(0.37f, 0.44f, 0.52f, 1.00f);
 
-    // フォーカスの無いウィンドウのタブ
+    // フォーカスのないウィンドウのタブ
     colors[ImGuiCol_TabUnfocused]       = ImVec4(0.18f, 0.20f, 0.23f, 1.00f);
     colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.27f, 0.30f, 0.35f, 1.00f);
 

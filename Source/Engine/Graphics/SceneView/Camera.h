@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: ビュー行列・プロジェクション行列と視錐台を持つ、描画用のカメラ。
+// 概要: ビュー行列・プロジェクション行列と視錐台を持つ、描画用のカメラ
 //
 // 責務:
 //   - 視点・注視点・上方向からビュー行列を作り、前・右・上の向きを求める
 //   - 画角・アスペクト比・クリップ距離から透視投影の行列を作る
 //   - 行列が変わるたびに、ワールド空間の視錐台を作り直す
 //
-// 備考: 実体は Graphics が1つだけ持ち（m_mainCamera）、CameraBrainSystem が毎フレーム書き込む。
+// 備考: 実体は Graphics が1つだけ持ち（m_mainCamera）、CameraBrainSystem が毎フレーム書き込む
 // ===========================================================================
 #include <DirectXMath.h>
 #include <DirectXCollision.h>
@@ -20,24 +20,10 @@ public:
     // 視点 eye から注視点 focus を向くビュー行列を作る
     void SetLookAt(const DirectX::XMFLOAT3 &eye, const DirectX::XMFLOAT3 &focus, const DirectX::XMFLOAT3 &up);
 
-    /**
-     * @brief 透視投影の行列を作る。
-     * @param fovY 縦の画角（rad）
-     * @param aspect アスペクト比（幅 / 高さ）
-     * @param nearZ 近クリップ面までの距離（m）
-     * @param farZ 遠クリップ面までの距離（m）
-     */
+    // 透視投影の行列を作る。fovY は縦の画角（ラジアン）、aspect は幅 / 高さ
     void SetPerspectiveFov(float fovY, float aspect, float nearZ, float farZ);
 
-    /**
-     * @brief 正射影の行列を作る。
-     * @param width 投影する範囲の幅（m）
-     * @param height 投影する範囲の高さ（m）
-     * @param nearZ 近クリップ面までの距離（m）
-     * @param farZ 遠クリップ面までの距離（m）
-     *
-     * 正射影には画角が無いので、GetFovY() は 0 を返す。
-     */
+    // 正射影の行列を作る（幅と高さは m）。画角がないので、GetFovY は 0 を返す
     void SetOrthographic(float width, float height, float nearZ, float farZ);
 
     const DirectX::XMFLOAT4X4 &GetView() const { return view; }
@@ -75,7 +61,7 @@ private:
     void UpdateFrustum();
 
     // コンストラクタは SetPerspectiveFov → UpdateFrustum の順に走り、UpdateFrustum は
-    // view の逆行列を取る。既定値が無いと、その時点で未初期化の値を読むので単位行列を入れておく。
+    // view の逆行列を取る。既定値がないと、その時点で未初期化の値を読むので単位行列を入れておく
     DirectX::XMFLOAT4X4 view{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     DirectX::XMFLOAT4X4 projection{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 

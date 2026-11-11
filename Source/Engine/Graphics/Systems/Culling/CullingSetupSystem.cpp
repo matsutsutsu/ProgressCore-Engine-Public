@@ -35,6 +35,8 @@ void ModelCullingSetupSystem::Update(float dt)
     }
 }
 
+
+
 // =======================================================================
 // Primitiveのセットアップ
 // =======================================================================
@@ -64,6 +66,8 @@ void PrimitiveCullingSetupSystem::Update(float dt)
         m_world->AddComponent<VisibilityComponent>(id);
     }
 }
+
+
 
 // 付けたコンポーネントは次のロジック更新の先頭で反映されるので、同じ R05 でも順番は問わない
 REGISTER_RENDER_SYSTEM(ModelCullingSetupSystem, Priority::RenderStage::R05_Culling);

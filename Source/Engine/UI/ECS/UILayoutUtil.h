@@ -1,16 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: アンカー方式の UI 矩形を画面上のピクセル矩形へ変換する関数群。
-//
-// 責務:
-//   - TransformComponent の親子をたどり、親の矩形と実効スケールを基準に子の矩形を決める
-//
-// 備考:
-//   - Canvas（UICanvasComponent）は画面全体を基準に、自身の offset で平行移動・scale で拡縮する。
-//     Canvas を動かすと配下の UI がまとめて動く。
-//   - scale は子へ継承する（子の実効 scale = 親の実効 scale × 自身の scale）。
-//   - 呼び出すのは UILayoutSystem だけ。
-// ===========================================================================
+// アンカー方式の UI 矩形を、画面上のピクセル矩形へ変換する関数。呼ぶのは UILayoutSystem だけ
+// Canvas は画面全体を基準に offset で動き、scale は子へ継承する（子の実効 scale = 親 × 自身）
 #include "Engine/UI/ECS/Components/UITransformComponent.h"
 #include "Engine/UI/ECS/Components/UICanvasComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
@@ -32,18 +22,15 @@ namespace CCL::UI
     };
 
     // 親をたどる深さの上限。UI の入れ子は Canvas → パネル → 部品の数段しか要らないので、
-    // これを超えるのは親子リンクが循環している（A の親が B、B の親が A）とき。
+    // これを超えるのは親子リンクが循環している（A の親が B、B の親が A）とき
     // ヒエラルキーのドラッグ&ドロップで作れてしまい、そのまま再帰するとスタックオーバーフローで
     // クラッシュするため、ここで打ち切って画面基準にする
     inline constexpr int kMaxUIDepth = 16;
 
-    /**
-     * @brief Entity の UI 矩形と実効スケールを、親（TransformComponent.parent）をたどって求める。
-     * @note 基準にする矩形は次のとおり。
-     *       - 自身が UICanvasComponent を持つ: 画面全体を offset で平行移動、scale で拡縮したもの
-     *       - 親が UITransformComponent を持つ: 親の矩形と実効スケール
-     *       - それ以外（親なし・親が UI でない）: 画面全体、scale=1
-     */
+    // Entity の UI の矩形と実効のスケールを、親をたどって求める。基準にする矩形は、
+    //   自分が UICanvasComponent を持つ   : 画面全体を offset で動かし、scale で拡縮したもの
+    //   親が UITransformComponent を持つ : 親の矩形と実効のスケール
+    //   それ以外                         : 画面全体で、scale は 1
     inline UIResolved ResolveUINode(CCL::ECS::World &world, CCL::ECS::EntityID id,
                                     const UITransformComponent &t, float screenW, float screenH,
                                     int depth = 0)

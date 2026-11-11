@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: インスタンシング描画で使う、インスタンスごとのデータの StructuredBuffer。
+// 概要: インスタンシング描画で使う、インスタンスごとのデータの StructuredBuffer
 //
 // 責務:
 //   - DYNAMIC の StructuredBuffer と、その SRV を作る
 //   - CPU から書き込み（Map / Unmap）、頂点シェーダーにバインドする
 //
-// 備考: 容量（最大インスタンス数）は Create で決まる。それより多く書こうとしたぶんは切り捨てる。
+// 備考: 容量（最大インスタンス数）は Create で決まる。それより多く書こうとしたぶんは切り捨てる
 // ===========================================================================
 #include <d3d11.h>
 #include <wrl.h>
@@ -19,8 +19,8 @@ struct InstanceData
 {
     DirectX::XMFLOAT4X4 world; // ワールド行列
 
-    // シェーダーごとに意味を決める4つの値。
-    // Phong では z = 被弾フラッシュの強さ。
+    // シェーダーごとに意味を決める4つの値
+    // Phong では z = 被弾フラッシュの強さ
     // ShapeRenderer / PrimitiveRenderer では図形の色
     DirectX::XMFLOAT4 customParams;
 };
@@ -28,13 +28,8 @@ struct InstanceData
 class InstanceBuffer
 {
 public:
-    /**
-     * @brief maxInstances 個分のバッファを作る。
-     *
-     * 容量を知りたいときは必ず GetMaxInstances() を使う。容量を表す定数を別に作ると、
-     * この既定の引数と食い違ったとき、Write が切り捨てた先のまだ書いていないインスタンスを
-     * DrawInstanced が読んで描いてしまう。エラーは出ないので、見た目でしか気付けない。
-     */
+    // maxInstances 個分のバッファを作る。容量は必ず GetMaxInstances で知る
+    // 容量の定数を別に作ってこの既定値と食い違うと、まだ書いていないインスタンスまで描かれる（エラーは出ない）
     void Create(ID3D11Device *device, size_t maxInstances = 4096)
     {
         m_maxInstances = maxInstances;

@@ -20,8 +20,8 @@ using namespace CCL::ECS;
 
 namespace
 {
-    constexpr const char *kLevelPath   = "Assets/Scene/DemoSwarm.level.json";
-    // 隊長機だけドローンのモデルにし、一般機はキューブにする。
+    constexpr const char *kLevelPath   = "Assets/Scene/TestScene/DemoSwarm.level.json";
+    // 隊長機だけドローンのモデルにし、一般機はキューブにする
     // ドローンは1機で約2万頂点（ファイルサイズからの概算）あり、千機を超えると描画の重さで
     // 更新処理の速さが見えなくなるため
     constexpr const char *kLeaderPrefab   = "Assets/Prefabs/Demo/DemoSwarmDrone.json"; // モデルだけのドローン
@@ -55,12 +55,16 @@ void DemoSwarmScene::Initialize()
     RespawnSwarm(static_cast<uint32_t>(m_requestedCount));
 }
 
+
+
 void DemoSwarmScene::Finalize()
 {
     m_drones.clear();
     m_swarmSystem = nullptr;
     BaseScene::Finalize();
 }
+
+
 
 void DemoSwarmScene::RegisterSystems()
 {
@@ -71,6 +75,8 @@ void DemoSwarmScene::RegisterSystems()
     m_swarmSystem = sysManager.RegisterSystem<DemoSwarmSystem>(Priority::LogicStage::L02_Update);
 }
 
+
+
 void DemoSwarmScene::RespawnSwarm(uint32_t count)
 {
     // 処理フロー:
@@ -80,7 +86,7 @@ void DemoSwarmScene::RespawnSwarm(uint32_t count)
 
     ZoneScopedN("DemoSwarmScene::RespawnSwarm");
 
-    // 最初の位置と速度は System の調整値で決まるので、System が無ければ作れない
+    // 最初の位置と速度は System の調整値で決まるので、System がなければ作れない
     if (!m_swarmSystem) return;
 
     // --- 今の群れを消す ---
@@ -101,7 +107,7 @@ void DemoSwarmScene::RespawnSwarm(uint32_t count)
         DirectX::SimpleMath::Vector3 pos, vel;
         m_swarmSystem->InitialState(i, count, pos, vel);
 
-        // 最初から塊の中の位置に置く。
+        // 最初から塊の中の位置に置く
         // prevPosition もそろえて、描画補間で1フレームだけ原点から伸びるのを防ぐ
         if (auto *trans = m_worldPtr->GetComponent<TransformComponent>(id))
         {
@@ -137,6 +143,8 @@ void DemoSwarmScene::RespawnSwarm(uint32_t count)
     CCL_LOG_INFO(LogCategory::Game, "[DemoSwarm] %u 機を生成", count);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 毎フレーム
 // ---------------------------------------------------------------------------
@@ -153,6 +161,8 @@ void DemoSwarmScene::Update(float elapsedTime)
     BaseScene::Update(elapsedTime);
 }
 
+
+
 void DemoSwarmScene::OnDrawImGui()
 {
 #ifdef ENABLE_EDITOR
@@ -167,7 +177,7 @@ void DemoSwarmScene::OnDrawImGui()
             m_requestedCount = (std::max)(m_requestedCount, kMinCount);
         if (ImGui::Button("この機数で作り直す")) m_pendingCount = m_requestedCount;
 
-        // PrimitiveRenderer は1スレッドぶんの描画リストに 10 万個を超えて積まれると、全部捨てて描かない。
+        // PrimitiveRenderer は1スレッドぶんの描画リストに 10 万個を超えて積まれると、全部捨てて描かない
         // 直列だと1スレッドに全機が積まれるので、それを超える機数では何も映らなくなる
         if (m_requestedCount > kPrimitiveListLimit)
             ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
@@ -182,7 +192,7 @@ void DemoSwarmScene::OnDrawImGui()
 
         ImGui::Text("群れの更新 %.3f ms", m_swarmSystem->GetUpdateMs());
 
-        // ForEachParallel は Chunk 数がコア数×2 未満だと直列に逃げる（CCL_IfSystem.h）。
+        // ForEachParallel は Chunk 数がコア数×2 未満だと直列に逃げる（CCL_IfSystem.h）
         // 並列のつもりで撮って実は直列だった、を防ぐために実際どちらで動いているかを出す
         unsigned int threads = std::thread::hardware_concurrency();
         if (threads == 0) threads = 4;
@@ -219,6 +229,8 @@ void DemoSwarmScene::OnDrawImGui()
     ImGui::End();
 #endif
 }
+
+
 
 // SceneFactory へ登録する（SceneManager がこのクラスを include せずに済むように）
 REGISTER_SCENE(DemoSwarmScene, "DemoSwarm")

@@ -15,6 +15,8 @@ void LightManager::Initialize(ID3D11Device *device)
     }
 }
 
+
+
 void LightManager::Bind(ID3D11DeviceContext *dc, int slot)
 {
     if (!constantBuffer || slot < 0) return;

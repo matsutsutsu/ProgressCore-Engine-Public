@@ -17,6 +17,8 @@ void ToneMapEffect::Initialize(ID3D11Device *device)
     device->CreateSamplerState(&sampDesc, m_sampler.GetAddressOf());
 }
 
+
+
 void ToneMapEffect::Process(ID3D11DeviceContext      *dc,
                             ID3D11ShaderResourceView *inputHDR,
                             ID3D11RenderTargetView   *outputSDR,

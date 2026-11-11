@@ -1,25 +1,14 @@
 #pragma once
-// ===========================================================================
-// 概要: 骨格ポーズの後処理の共通関数。
-//
-// 責務:
-//   - ルートボーンを基準姿勢へ固定する（Force Root Lock）
-//
-// 備考: 実行時（AnimationPoseSystem）とエディタのプレビュー（AnimationSystem::UpdateManual）の
-//       両方から使うのでヘッダに置いている。
-// ===========================================================================
+// 骨格ポーズの後処理の共通関数
+// 実行時（AnimationPoseSystem）とエディタのプレビュー（AnimationSystem::UpdateManual）の両方が使う
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include <vector>
 
 namespace CCL::Anim
 {
-    /**
-     * @brief ルートボーンの XZ（lockVertical なら Y も）を基準姿勢へ固定する。
-     * @note XZ はクリップ自身の 0 秒目を基準にする（前進量を消すのが目的なので、クリップごとの基準でよい）。
-     *       Y は ModelResource のバインドポーズを基準にする。クリップの 0 秒目の Y を基準にすると、
-     *       その姿勢が膝を曲げている場合にアニメ全体がその分浮く・沈むため。
-     */
+    // ルートボーンの XZ（lockVertical なら Y も）を基準の姿勢へ固定する
+    // XZ はクリップの0秒目を基準にする。Y はバインドポーズを基準にする（0秒目が膝を曲げていると、アニメ全体が浮き沈みする）
     inline void PinRootMotionNode(Model *model, int animIndex, int rootNodeIndex,
                                   std::vector<Model::NodePose> &poseBuffer, bool lockVertical)
     {

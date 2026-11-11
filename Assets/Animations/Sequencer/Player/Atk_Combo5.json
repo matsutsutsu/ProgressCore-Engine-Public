@@ -1,0 +1,415 @@
+{
+    "duration": 1.8666666746139526,
+    "events": [
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.62,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.4,
+            "stringParam": "Weapon_R",
+            "type": 5
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.62,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.4,
+            "stringParam": "Weapon_R",
+            "type": 8
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 10.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.58,
+            "hitStopDuration": 0.15,
+            "hitStopScale": 0.0,
+            "hitboxFollow": false,
+            "knockback": 40.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.42,
+            "stringParam": "Weapon_R",
+            "type": 0
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.45,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.07,
+            "soundVolume": 1.0,
+            "startTime": 0.45,
+            "stringParam": "sfx:/slash_2",
+            "type": 1
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 8.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.7,
+            "hitStopDuration": 0.1,
+            "hitStopScale": 0.0,
+            "hitboxFollow": true,
+            "knockback": 50.0,
+            "offset": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 2.5
+            },
+            "radius": 6.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.55,
+            "stringParam": "",
+            "type": 4
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 3.0,
+            "endTime": 0.56,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 2.5
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.56,
+            "stringParam": "Assets/Prefabs/Particles/VFX_GroundJump",
+            "type": 2
+        },
+        {
+            "attackLayer": 0,
+            "cancelMask": 32,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 1.85,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 1.0,
+            "stringParam": "",
+            "type": 7
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 1.8666666746139526,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.0,
+            "stringParam": "",
+            "type": 9
+        }
+    ],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.0,
+                "value": 0.0
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.05,
+                "value": 1.4345
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.1,
+                "value": 2.6655
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.15,
+                "value": 3.4073
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.2,
+                "value": 4.3801
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.25,
+                "value": 6.477
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.3,
+                "value": 8.3995
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.35,
+                "value": 8.6489
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.4,
+                "value": 8.6527
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.45,
+                "value": 8.6528
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.5,
+                "value": 8.6528
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.55,
+                "value": 8.6562
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.6,
+                "value": 8.8465
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.65,
+                "value": 9.2335
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.7,
+                "value": 9.6548
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.75,
+                "value": 9.9504
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.8,
+                "value": 10.0
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.85,
+                "value": 10.0
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.9,
+                "value": 10.0
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.95,
+                "value": 10.0
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 1,
+                "outTangent": 0.0,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 1.0,
+                "value": 10.0
+            }
+        ],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "Atk_Combo5",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [],
+        "name": "Curve",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "startOffset": 0.0,
+    "targetAnimName": "Combo_Attack_04_04_Seq_0",
+    "targetModelPath": ""
+}

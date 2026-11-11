@@ -2,9 +2,9 @@
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
-#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h" // 第2形態へ移るしきい値
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 
-#include <algorithm> // std::max
+#include <algorithm>
 
 using namespace CCL::ECS;
 
@@ -22,6 +22,8 @@ std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
     };
 }
 
+
+
 void TutorialHealthGuardSystem::Update(float /*dt*/)
 {
     ForEachWithID([&](EntityID id, HealthComponent &health) {
@@ -38,11 +40,13 @@ void TutorialHealthGuardSystem::Update(float /*dt*/)
         const auto *phase = m_world->GetComponent<BossPhaseComponent>(id);
         if (!phase || phase->phase2AssetPath.empty()) return;
 
-        // 下限はしきい値より kBossMarginPercent だけ上に置く。
+        // 下限はしきい値より kBossMarginPercent だけ上に置く
         // しきい値ちょうどだと、BossPhaseSystem の「しきい値以下なら移行」の判定に入ってしまう
         const float floor    = health.maxHealth * (phase->phase2HealthThreshold + kBossMarginPercent) / 100.0f;
         health.currentHealth = std::max(health.currentHealth, floor);
     });
 }
+
+
 
 // 全体登録（REGISTER_*）はせず、TutorialScene が登録する。ゲーム本編では倒れる・形態が移るようにするため

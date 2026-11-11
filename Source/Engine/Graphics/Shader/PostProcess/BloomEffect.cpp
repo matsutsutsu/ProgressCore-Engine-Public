@@ -24,6 +24,8 @@ BloomEffect::~BloomEffect()
     ReleaseChains();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 初期化とリソース
 // ---------------------------------------------------------------------------
@@ -62,11 +64,15 @@ void BloomEffect::Initialize(ID3D11Device *device, UINT width, UINT height)
     CreateChains(width, height);
 }
 
+
+
 void BloomEffect::Resize(ID3D11Device * /*device*/, UINT width, UINT height)
 {
     ReleaseChains();
     CreateChains(width, height);
 }
+
+
 
 void BloomEffect::CreateChains(UINT width, UINT height)
 {
@@ -85,6 +91,8 @@ void BloomEffect::CreateChains(UINT width, UINT height)
     }
 }
 
+
+
 void BloomEffect::ReleaseChains()
 {
     for (auto h : m_downChain)
@@ -95,6 +103,8 @@ void BloomEffect::ReleaseChains()
     m_downChain.clear();
     m_upChain.clear();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 毎フレームの処理
@@ -109,6 +119,8 @@ void BloomEffect::UpdateCbBloom(ID3D11DeviceContext *dc, const GpuData::CbBloomD
         dc->Unmap(m_res->cbBloom.Get(), 0);
     }
 }
+
+
 
 void BloomEffect::Process(
     ID3D11DeviceContext      *dc,
@@ -180,7 +192,7 @@ void BloomEffect::Process(
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
     }
 
-    // 拡大（m_downChain の一番小さいもの → ... → m_upChain[0]）。
+    // 拡大（m_downChain の一番小さいもの → ... → m_upChain[0]）
     // 1つ大きい m_downChain と足しながら大きくしていく
     dc->PSSetShader(m_res->psUp.Get(), nullptr, 0);
 

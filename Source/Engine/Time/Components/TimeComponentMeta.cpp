@@ -1,5 +1,3 @@
-// TimeStateComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/Time/Components/TimeState.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

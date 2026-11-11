@@ -8,6 +8,8 @@
 
 using namespace CCL::ECS;
 
+
+
 void TrailAnimationSyncSystem::Update(float /*dt*/)
 {
     ForEach([this](const TransformComponent &transform, TrailComponent &trail) {
@@ -19,8 +21,8 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
         // 1. owner の確認
         // ---------------------------------------------------------
 
-        // 持っている owner が消えていたら解く。
-        // 消えた Entity の ID を持ち続けると、ID が使い回されたときに別の Entity を owner と見なすため。
+        // 持っている owner が消えていたら解く
+        //   消えた Entity の ID を持ち続けると、ID が使い回されたときに別の Entity を owner と見なす
         const AnimatorComponent *animator = nullptr;
         if (trail.ownerEntity != InvalidEntityID)
         {
@@ -31,8 +33,8 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
             }
         }
 
-        // 見つかったら以後は親をたどらない。
-        // 見つからない間は毎フレーム探し直す（階層が後から組まれる場合に追従するため）。
+        // 見つかったら以後は親をたどらない
+        //   見つからない間は毎フレーム探し直す（階層が後から組まれる場合に追従するため）
         if (trail.ownerEntity == InvalidEntityID)
         {
             trail.ownerEntity = FindAnimatorAncestor(transform);
@@ -52,7 +54,7 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
             return;
         }
 
-        // 再生中のアニメーションが無いので出さない
+        // 再生中のアニメーションがないので出さない
         if (!animator || !animator->currentSequence)
         {
             trail.emitting = false;
@@ -62,6 +64,8 @@ void TrailAnimationSyncSystem::Update(float /*dt*/)
         trail.emitting = IsInsideTrailEvent(*animator);
     });
 }
+
+
 
 EntityID TrailAnimationSyncSystem::FindAnimatorAncestor(const TransformComponent &transform) const
 {
@@ -82,10 +86,13 @@ EntityID TrailAnimationSyncSystem::FindAnimatorAncestor(const TransformComponent
     return InvalidEntityID;
 }
 
+
+
 bool TrailAnimationSyncSystem::IsInsideTrailEvent(const AnimatorComponent &animator) const
 {
-    // タグは見ず、どれか1つの Trail 区間に入っていればオンにする。
-    // 二刀流などで出し分けるなら、ev.tagHash との照合を足す。
+    // タグは見ず、どれか 1 つの Trail 区間に入っていればオンにする
+    //   二刀流などで出し分けるなら、tagHash は HitBox にしか求めていないので、
+    //   ResourceManager::LoadAnimSequence で Trail にも求めるところから広げる
     for (const auto &ev : animator.currentSequence->events)
     {
         if (ev.type != AnimEventType::Trail)
@@ -102,5 +109,7 @@ bool TrailAnimationSyncSystem::IsInsideTrailEvent(const AnimatorComponent &anima
     return false;
 }
 
-// AnimationSystem(L02_PostUpdate) の後、TrailRecordSystem(L06) と描画の TrailSystem(R08) の前に走る。
+
+
+// AnimationSystem（L02_PostUpdate）の後、TrailRecordSystem（L06）と描画の TrailSystem（R08）の前に走る
 REGISTER_LOGIC_SYSTEM(TrailAnimationSyncSystem, Priority::LogicStage::L05_Collision);

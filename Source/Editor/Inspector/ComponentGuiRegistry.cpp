@@ -11,6 +11,8 @@ ComponentGuiRegistry &ComponentGuiRegistry::Instance()
     return s;
 }
 
+
+
 void ComponentGuiRegistry::Draw(
     TypeID id, void *data, EntityID entity, CCL::ECS::World *world)
 {

@@ -1,0 +1,29 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Name": {
+                    "name": "InputPrompt"
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0
+                },
+                "Input Prompt Style (操作の説明)": {
+                    "iconSize": 59.0,
+                    "rowHeight": 59.0,
+                    "labelWidth": 108.0,
+                    "labelGap": 10.0,
+                    "textSize": 28.0,
+                    "marginRight": 28.0,
+                    "marginTop": 12.0,
+                    "alpha": 0.7
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "InputPrompt",
+    "version": 1
+}

@@ -4,21 +4,19 @@
 
 > 関連ドキュメント: レンダリング経路の全体像は `Render_Architecture_Map.md`、スロット共有の詳細契約は `ShaderBindingContract.md`（存在すれば）を参照。本書は「シェーダー本体の仕様と追加手順」に特化。
 
-**凡例**: ✅=現行の実装で使用中 / ⚠️=マニフェスト未登録（現在は未使用）
-
 ---
 
 ## 1. 3行サマリ
 
-- マテリアルシェーダーの追加は **HLSL を書いて `shaders.json` に1行足すだけ**（C++・再ビルド不要）。
-- 見た目は **HLSL の中身**、ブレンド/カリング/深度は **`shaders.json` の PSO 指定** が決める。`MaterialShader` という C++ クラスは中身を知らない汎用配送屋。
+- マテリアルシェーダーは **HLSL を書いて、`Graphics::Initialize` で `RegisterMaterialShader("<名前>")` を1行足す**と使える。
+- 見た目は **HLSL の中身**が決める。ブレンド・深度・カリングは**描くパス**が決め、不透明か半透明かは**マテリアルの `alphaMode`** で決まる（§3）。
 - マテリアルのパラメータは **cbuffer の変数名 = `MaterialData` のキー** で自動連携（リフレクション）。C++ 側に構造体定義は要らない。
 
 ---
 
 ## 2. ファイル配置と命名規約（最重要）
 
-シェーダー名を `N` とすると、パスは**すべて機械的に決まる**。
+シェーダー名を `N` とすると、パスは**すべて機械的に決まる**（`ShaderRegistry::RegisterMaterialShader` が名前から作る）。
 
 | 種類 | パス |
 |------|------|
@@ -27,42 +25,44 @@
 | ビルド出力 (VS) | `Assets/Shader/<N>VS.cso` |
 | ビルド出力 (PS) | `Assets/Shader/<N>PS.cso` |
 
-`ShaderManifest` がこの規約からパスを導出して登録するため、**この命名を外すと即 `ErrorShader`（マゼンタ）になる**。VS プロジェクトのシェーダーファイルは、出力 `.cso` 名も `<N>VS.cso`/`<N>PS.cso` になるよう設定すること。
+VS プロジェクトのシェーダーファイルは、出力 `.cso` 名も `<N>VS.cso`/`<N>PS.cso` になるよう設定すること。
 
 ---
 
-## 3. 登録の仕組み（shaders.json）
+## 3. 登録の仕組みと、不透明・半透明の振り分け
 
-`Assets/Shader/shaders.json` が唯一の登録リスト。`ShaderManifest::LoadAndRegister`（`FileSystem` 経由で読む）が起動時に一括登録する。`Graphics.cpp` は触らない。
+### 登録（`Graphics::Initialize`）
 
-```json
-{
-  "materialShaders": [
-    { "name": "PBR" },
-    { "name": "Glow",     "blend": "additive" },
-    { "name": "Grass",    "cull":  "none" },
-    { "name": "GhostPBR", "blend": "transparency", "depth": "testOnly" }
-  ],
-  "customShaders": [
-    { "name": "Outline", "class": "OutlineShader" }
-  ]
-}
+```cpp
+shaders.RegisterShader<ErrorShader>("Error"_hash);       // 最初に登録する（並べ替えの番号 0）
+
+shaders.RegisterMaterialShader("PBR");                    // マテリアルのシェーダー。
+shaders.RegisterMaterialShader("Phong");                  // エディタのシェーダー選択にこの順で出る
+shaders.RegisterMaterialShader("Lambert");
+shaders.RegisterMaterialShader("Basic");
+
+shaders.RegisterShader<ShadowMapShader>("ShadowMap"_hash); // 専用の C++ クラスを持つシェーダー
+shaders.RegisterShader<ParticleShader>("Particle"_hash);
+shaders.RegisterShader<NormalPrepassShader>("NormalPrepass"_hash);
 ```
 
-### PSO フィールド（任意・省略時はパス既定）
+マテリアルやシーンは、シェーダーを**名前のハッシュの数値**で保存している。登録する名前を変えたり消したりすると、それを使っていたメッシュは未登録のハッシュを要求し、`ErrorShader`（マゼンタ）で描かれる。
 
-| フィールド | 値 | 意味 |
-|-----------|----|----|
-| `blend` | `opaque` / `transparency`(`alpha`) / `additive`(`add`) / `subtract` / `multiply` | 合成方法 |
-| `cull`  | `back` / `none` | カリング（`none`=両面描画） |
-| `depth` | `testWrite`(`default`) / `testOnly`(`readOnly`) / `writeOnly` / `none` / `testLessEqual` | 深度テスト/書き込み |
+### 不透明・半透明の振り分け
 
-- **ベース自動選択**: `blend` が透明系（transparency/additive/subtract/multiply）なら土台が自動で「深度書込なし・両面」になる。`cull`/`depth` を明示すればその軸だけ上書き。
-- `blend`/`cull`/`depth` を**1つも書かない**とパス既定 PSO をそのまま使う（＝既存挙動、リスクゼロ）。
+メッシュごとに、マテリアルの `alphaMode`（glTF の `alphaMode` をインポート時に入れたもの）で決まる。シェーダーは関係しない。
 
-### customShaders（C++ クラスが必要な特殊シェーダー）
+| alphaMode | 描くパス | PSO |
+|-----------|---------|-----|
+| `Opaque` | NormalPrepass → OpaquePass | 深度を書く・裏面カリング |
+| `Mask` | OpaquePass だけ（NormalPrepass は飛ばす）。PBR の PS が `alpha < alphaCutoff` を `discard` | 同上 |
+| `Blend` | TransparentPass（カメラから遠い順に1つずつ） | ブレンドあり・深度はテストだけ・両面 |
 
-GS/CS や独自バインドが要るものは `RegisterShader<T>` が必要。`ShaderManifest.cpp` の `CustomRegistrars` にクラス名→型の対応が1行ある。**新しいカスタム C++ シェーダーを足すときだけ**そこに追記する（文字列から型は生成できないため不可避）。
+判定は `OpaquePass::DrawBatch` と `NormalPrepass::Execute` のメッシュのループの中にある。PS は `alpha` を出力するだけでよい（PBR は `AlbedoMap.a × baseColor.a`）。
+
+- `alphaCutoff` は `Shader::UpdateMaterialProperties` が自動で送る（Mask のときだけマテリアルの値、それ以外は 0 = 何も捨てない）。
+- Mask の制限: 影（ShadowPass）は切り抜かずに四角い形で落ちる。SSAO 用の法線も書かれない。
+- エディタでは、マテリアルスロットの「アルファ」欄で不透明 / くり抜き / 半透明としきい値を変えられる。
 
 ---
 
@@ -90,7 +90,7 @@ GS/CS や独自バインドが要るものは `RegisterShader<T>` が必要。`S
 
 | slot | 名前 | 用途 |
 |------|------|------|
-| t0 | `SLOT_SRV_MAT_TEX0` | Albedo / Diffuse / Emissive(Glow) |
+| t0 | `SLOT_SRV_MAT_TEX0` | Albedo / Diffuse |
 | t1 | `SLOT_SRV_MAT_TEX1` | Normal |
 | t2 | `SLOT_SRV_MAT_TEX2` | MetalRough / Occlusion |
 | t3 | `SLOT_SRV_MAT_TEX3` | Emissive 等の追加マップ（※パーティクルbufと共有） |
@@ -139,6 +139,7 @@ struct VS_OUT {
 | `ApplyHeightFog(...)` | `Common.hlsli` | 高さ/距離フォグ |
 | `CalculateIBL / CalculateAllLightsPBR` | `PBRLighting.hlsli` | PBR ライティング |
 | `CalculateShadowWeight(...)` | `ShadowMap.hlsli` | カスケードシャドウ |
+| `ApplyHitFlash / ApplyRimLightParams / ScrollUV / Pulse / SampleGlobalNoise` | `MaterialEffect.hlsli` | 被弾フラッシュ・リム・時間・ノイズの小物 |
 
 `cameraPosition` / `viewProjection` / `gFog*` などは `CbScene`/`CbFog`（Per-frame）に入っており、`Graphics::Update` が毎フレーム埋めるので**マテリアル側で追加バインド不要**。
 
@@ -147,8 +148,11 @@ struct VS_OUT {
 ## 6. マテリアル cbuffer のルール
 
 - 変数名がそのまま `MaterialData` のキー: `SetScalar("intensity"_hash, 3.0f)` ⇔ HLSL の `float intensity;`。
+- 名前は全シェーダーでそろえる: 色は `baseColor`、テクスチャは `AlbedoMap` / `NormalMap` / `MetalRoughMap` / `EmissiveMap`。
+- **`use` + テクスチャ名の変数（`useAlbedoMap` など）は自動で決まる**: `Shader::UpdateMaterialProperties` がテクスチャの有無を見て 1 / 0 を書く。マテリアルに持たせる必要はなく、エディタにも出ない。
+- **色は `float4` で宣言する**（`float3` にしない）。C++ は色を `float4`（16 バイト）で送り、変数の方が小さいと書き込まれない。
 - 全体サイズは **16 バイトの倍数**にする（`float2 _pad;` 等で調整）。個々の変数はリフレクションがオフセットで拾うので、順序を変えても名前が合えば動く。
-- `float4` は色、`float` はスカラーとしてエディタ（Advanced Parameters）が自動でスライダー/カラーピッカーを出す。
+- `float4` は色、`float` はスカラーとして、エディタの「詳細パラメータ」が自動でカラーピッカー/スライダーを出す。対象はマテリアルの定数バッファ（b0〜b7）だけ。マテリアルに値が無い変数は 0（GPU に送られる値）で表示される。
 
 ---
 
@@ -156,97 +160,57 @@ struct VS_OUT {
 
 **lit** = ライティング計算あり / **unlit** = 発光・単純出力（陰影なし）
 
-### PBR ✅ （lit・不透明）
-標準的な物理ベース表面。`Assets/Shader/PBRPS.cso`。
-- **CB(b0)**: `baseColor`(f4), `emissiveColor`(f3), `metalness`(f), `roughness`(f), `occlusionStrength`(f), `useAlbedoMap`/`useNormalMap`/`useMetalRoughMap`/`useOcclusionMap`(f)
+### PBR （lit）
+標準的な物理ベース表面。モデル読み込み時の既定。
+- **CB(b0)**: `baseColor`(f4), `emissiveColor`(f4, rgb だけ使う), `metalness`(f), `roughness`(f), `occlusionStrength`(f), `useAlbedoMap`/`useNormalMap`/`useMetalRoughMap`/`useEmissiveMap`(f, 自動), `useOcclusionMap`(f)
 - **Tex**: AlbedoMap t0 / NormalMap t1 / MetalRoughMap t2 / EmissiveMap t3
-- **PSO**: 既定（不透明）
+- **出力アルファ**: `AlbedoMap.a × baseColor.a`（`alphaMode = Blend` のときに効く）
 - **用途**: キャラ・小物・地形など普通の質感。
 
-### GhostPBR ✅ （lit・半透明）
-PBR の陰影を保ったまま透明度だけ調整。
-- **CB(b0)**: PBR と同一 + `ghostAlpha`(f)
-- **PSO**: `blend: transparency`, `depth: testOnly`
-- **用途**: 半透明キャラ・幽霊。`ghostAlpha` は 0.3〜0.5 目安（1.0 だと不透明と同じ）。
-
-### Glow ✅ （unlit・加算）
-面全体が均一に光る自己発光。
-- **CB(b0)**: `glowColor`(f4), `intensity`(f), `useEmissiveMap`(f), `_pad`(f2)
-- **Tex**: EmissiveMap t0
-- **PSO**: `blend: additive`
-- **用途**: 魔法弾・エネルギー体・発光紋様など「それ自体が光源」。加算合成は `SrcBlend=SRC_ALPHA` なので出力アルファが強さ倍率になる。
-
-### Hologram ✅ （unlit・加算）
-視線と法線の角度で**輪郭だけ**光るフレネル発光。
-- **CB(b0)**: `rimColor`(f4), `rimPower`(f), `intensity`(f), `_pad`(f2)
-- **Tex**: なし
-- **PSO**: `blend: additive`
-- **用途**: シールド・ホログラム・幽霊の縁。複雑形状に直貼りすると全体が光るので、**一回り大きい殻メッシュや単純形状に適用**するのが定石。`rimPower` 3〜8 で鋭い輪郭。
-
-### Grass ✅ （unlit・不透明・両面・アルファクリップ）
-アルファで形を切り抜く両面描画。
-- **CB(b0)**: `baseColor`(f4), `alphaClipThreshold`(f), `_pad`(f3)
-- **Tex**: DiffuseMap t0（**アルファ抜きテクスチャが実質必須**）
-- **PSO**: `cull: none`
-- **用途**: 草・葉の板ポリ（十字配置カード等）。`alphaClipThreshold` は 0.5 目安（1.0 だと全消え）。閉じた立体や不透明テクスチャに使っても Basic と同じ見た目にしかならない（切り抜くものが無い/裏面が見えないため）。
-
-### Basic ✅ （unlit・不透明）
+### Basic （unlit）
 テクスチャ×色をそのまま出す最小シェーダー。ライティング計算を一切行わない。
-- **CB**: `materialColor`(f4) ※このシェーダーのみ `SLOT_CB_MESH` に置いている（他は `SLOT_CB_MATERIAL`）
-- **Tex**: DiffuseMap t0
-- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
+- **CB**: `baseColor`(f4) ※このシェーダーのみ `SLOT_CB_MESH` に置いている（他は `SLOT_CB_MATERIAL`）
+- **Tex**: AlbedoMap t0
 - **用途**: UI 的な板、デバッグ表示、ライティング不要のオブジェクト。最も軽い。
 
-### Lambert ✅ （lit・不透明）
+### Lambert （lit）
 名前に反して**拡散反射のみではない**。`CalculateAllLights` で平行光源・点光源・スポットライトを
 一括計算するため、鏡面反射も含まれる。法線マップは扱わない。
-- **CB**: `materialColor`(f4)
-- **Tex**: DiffuseMap t0
+- **CB**: `baseColor`(f4)
+- **Tex**: AlbedoMap t0
 - **処理**: α<0.01 で `discard` → 影の重み → 全ライト計算（diffuse+specular）→ 半球環境光 → 高さフォグ
-- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
 - **用途**: 法線マップ不要な一般オブジェクト。Phong から法線マップと各種エフェクトを外した位置づけ。
 
-### Phong ✅ （lit・不透明・法線マップ対応）
-マテリアル系で**最も機能が多い**シェーダー。名前は Phong だが、実態は法線マップ＋各種エフェクト込み。
-- **CB**: `materialColor`(f4)
-- **Tex**: DiffuseMap t0 / NormalMap t1
+### Phong （lit・法線マップ対応）
+マテリアル系で**最も機能が多い**シェーダー。名前は Phong だが、実態は法線マップ＋被弾フラッシュ込み。
+- **CB**: `baseColor`(f4)
+- **Tex**: AlbedoMap t0 / NormalMap t1
 - **頂点経由**: `customParams.z`=被弾フラッシュ強度
-- **処理**: 法線マップ適用 → 影 → 全ライト計算 → 半球環境光
-  → リムライト → 高さフォグ → ヒットフラッシュ
-- **PSO**: マニフェスト側に指定なし（既定の不透明設定）
+- **処理**: 法線マップ適用 → 影 → 全ライト計算 → 半球環境光 → 高さフォグ → ヒットフラッシュ
 - **用途**: キャラクター・敵など、被弾演出が要るオブジェクトの標準シェーダー。
 
-### Toon ✅ （lit・不透明・セルルック）
-ランプテクスチャで階調を制御するセルシェーディング。
-- **CB**: `materialColor`(f4), `gRimColor`(f4), `gRimPower`(f), `gRimIntensity`(f), `gToonPadding`(f2)
-- **Tex**: DiffuseMap t0 / NormalMap t1 / ToonRampMap t2
-- **処理**: 法線マップ → `CalcToonDirectionalLight`（ランプ参照）
-  → 半球環境光 → Toon 専用リムライト → 影色 → 高さフォグ
-- **注意**: トゥーン化されるのは**平行光源のみ**。点光源・スポットライトは計算に入らない。
-- **用途**: セルルックのキャラクター。共通リムライトは呼ばず、専用リムで置き換えている。
-
-### Sprite ✅ （2D・マニフェスト外）
+### Sprite （2D・登録外）
 2D スプライト用。`Source/Engine/Graphics/Renderer/Sprite.cpp` が直接扱い、
-`shaders.json` には登録されない（マテリアル差し替え経路の対象外）。
+`ShaderRegistry` には登録しない（マテリアル差し替え経路の対象外）。
 `Sprite.hlsli` を共有し、頂点レイアウトも 3D マテリアルとは別系統。
 
-### カスタム（非マテリアル・RegisterShader<T>）
+### 専用の C++ クラスを持つシェーダー（RegisterShader<T>）
 | 名前 | クラス | 役割 |
 |------|--------|------|
-| Outline | `OutlineShader` | 輪郭線パス |
 | ShadowMap | `ShadowMapShader` | シャドウ深度書き込み |
 | Particle | `ParticleShader` | GPU パーティクル（GS 使用） |
+| NormalPrepass | `NormalPrepassShader` | SSAO 用の法線書き込み |
 
 ---
 
-## 8. 新しいシェーダーを追加する手順
+## 8. 新しいマテリアルシェーダーを追加する手順
 
 1. `Shader/Material/<N>/<N>VS.hlsl` と `<N>PS.hlsl` を書く（§9 のテンプレ推奨）。
-2. VS プロジェクトに追加し、出力 `.cso` 名を `<N>VS.cso`/`<N>PS.cso` に設定してビルド。
-3. `shaders.json` の `materialShaders` に `{ "name": "<N>" }` を追加（必要なら `blend`/`cull`/`depth`）。
-4. 起動 → エディタのシェーダーコンボに自動で出る。メッシュのマテリアルで選択し、Advanced Parameters で値を設定。
+2. VS プロジェクトに追加し、出力 `.cso` 名を `<N>VS.cso`/`<N>PS.cso` に設定する。
+3. `Graphics::Initialize` に `shaders.RegisterMaterialShader("<N>");` を足してビルド。
+4. 起動 → エディタの Material コンポーネントの「シェーダー」欄に出る。シェーダーはモデル単位で1つ（先頭のスロットのものでモデル全体を描く）。値はスロットごとの「詳細パラメータ」で設定。
 
-C++ とエンジン再ビルドは不要（②③の拡張が入るまで `.cso` ビルドだけは VS 側に残る）。
+半透明にしたいときは、シェーダーではなくマテリアルの `alphaMode` を `Blend` にする（§3）。
 
 ---
 
@@ -257,9 +221,8 @@ C++ とエンジン再ビルドは不要（②③の拡張が入るまで `.cso`
 ```hlsl
 // <Name>PS.hlsl
 // Category : lit / unlit
-// PSO      : blend=... cull=... depth=...   (shaders.json と一致させる)
-// Params   : glowColor(f4) 発光色 / intensity(f) 強さ
-// Textures : EmissiveMap(t0)
+// Params   : baseColor(f4) 色 / intensity(f) 強さ
+// Textures : AlbedoMap(t0)
 // Use      : 一言用途
 ```
 
@@ -267,17 +230,13 @@ C++ とエンジン再ビルドは不要（②③の拡張が入るまで `.cso`
 
 ## 10. 既知の落とし穴
 
-- **「Fill All Missing With Defaults」は一律 1.0 を入れる。** `alphaClipThreshold`(→0.5)、`ghostAlpha`(→0.4)、`useXxxMap`（テクスチャ未設定なら 0）など、変数によっては押した直後に手で直さないと真っ黒/全消えになる。
-- **`useXxxMap` フラグの罠**: 1.0 なのに対応テクスチャ未バインドだと黒くなる。将来的にはエンジン側でテクスチャ有無から自動設定するのが望ましい（本書 §改善提案）。
-- **加算合成の強さはアルファ依存**: `BlendState::Additive` は `SrcBlend=SRC_ALPHA`。PS の出力アルファが 0 だと何も足されない。
-- **命名を規約から外すと即マゼンタ**: `<N>VS.cso`/`<N>PS.cso` が見つからないと `ErrorShader`。起動ログに cso 欠落の警告が出るので確認する。
+- **Phong / Lambert / Basic は `AlbedoMap` を必ず読む**: テクスチャが無いと null を読んで黒くなる。エディタの「白を設定」で白いテクスチャを入れる。
+- **`alphaMode = Blend` で出力アルファが 0 だと見えない**: 半透明は「出力アルファの割合で手前の色を混ぜる」ので、`baseColor.a` が 0 なら何も描かれない。UE から書き出したモデルは、不透明度がテクスチャ側にあって係数が 0 になっていることがある。
+- **命名と cso がずれていると止まる**: 登録した名前の `<N>VS.cso`/`<N>PS.cso` が無いと、初めて使うときに読み込みの assert で止まる。
 
 ---
 
 ## 11. 改善提案（今後の TODO 候補）
 
-1. **`useXxxMap` の自動化**: `MaterialShader::Update` でテクスチャ束縛の有無から `useXxxMap` を自動設定し、GUI から除外する（「真っ黒事故」の恒久対策）。
-2. **`shaders.json` に `defaults` ブロック**: `"defaults": { "ghostAlpha": 0.4 }` を材質生成時に流し込み、新規マテリアルを最初から使える状態にする。
-3. **VS の共通化**: 同一な材質 VS を `Transform.hlsli` のマクロに集約し、各 `<N>VS.hlsl` を数行化してドリフトを防ぐ。
-4. **PBR emissive の `useEmissiveMap` ガード追加**（他マップと一貫させる）。
-5. （既出）② VS リフレクション対応 → 頂点アニメ（風揺れ等）を HLSL だけで。③ デバッグ時ランタイムコンパイル → `.cso` ビルド工程の廃止。
+1. **Mask の影**: ShadowMap にピクセルシェーダーとマテリアルのテクスチャを足して `discard` すれば、影も切り抜いた形になる。
+2. VS リフレクション対応 → 頂点アニメ（風揺れ等）を HLSL だけで。デバッグ時ランタイムコンパイル → `.cso` ビルド工程の廃止。

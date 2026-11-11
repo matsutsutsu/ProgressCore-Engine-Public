@@ -1,15 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: フラスタムカリングで使う、境界箱と表示フラグのコンポーネント。
-//
-// 責務:
-//   - BoundingBoxComponent: ワールド空間の AABB を持つ
-//   - VisibilityComponent: 今フレーム描くかどうかを持つ
-//
-// 備考: どちらも実行時に計算する値なので、シーンには保存しない。
-//       CullingSetupSystem が付け、BoundsUpdateSystem が AABB を更新し、
-//       FrustumCullingSystem が isVisible を毎フレーム書き換える。
-// ===========================================================================
+// フラスタムカリングで使う境界箱（BoundingBoxComponent）と表示フラグ（VisibilityComponent）。保存しない
+// CullingSetupSystem が付け、BoundsUpdateSystem が AABB を、FrustumCullingSystem が isVisible を書く
 #include <DirectXCollision.h>
 
 struct BoundingBoxComponent

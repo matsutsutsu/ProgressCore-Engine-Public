@@ -8,13 +8,23 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Graphics/RHI/RenderContext.h" // RenderServices
+#include "Engine/Graphics/RHI/RenderContext.h"
 
 #include "Engine/Graphics/Components/Lighting/FogComponent.h"
 #include "Engine/Graphics/Components/Lighting/SkyboxComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+
+namespace
+{
+    // 空と IBL の初期設定。シーンごとに変えたいときは SkyboxComponent（Sky / IBL）で上書きする
+    constexpr const char *kDefaultSkyboxPath     = "Assets/Textures/IBL/skybox_highres.dds";
+    constexpr const char *kDefaultIrradiancePath = "Assets/Textures/IBL/ibl_sky_iem.dds";
+    constexpr const char *kDefaultPrefilterPath  = "Assets/Textures/IBL/ibl_sky_pmrem.dds";
+    constexpr const char *kBrdfLutPath           = "Assets/Textures/IBL/ibl_brdf_lut.png"; // 空に依存しないので上書きしない
+    constexpr float       kDefaultSkyIntensity   = 1.0f;
+} // namespace
 
 void EnvironmentSystem::Initialize()
 {
@@ -23,11 +33,11 @@ void EnvironmentSystem::Initialize()
     if (noiseHandle.IsValid())
         m_globalNoiseSRV = ResourceManager::Instance().GetTexture(noiseHandle);
 
-    // 既定の IBL とスカイボックス（SkyboxComponent が無いか、パスが空のときに使う）
-    auto irrHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_iem.dds");
-    auto preHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_sky_pmrem.dds");
-    auto lutHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/ibl_brdf_lut.png");
-    auto skyHandle = ResourceManager::Instance().LoadTexture("Assets/Textures/IBL/skybox_highres.dds");
+    // 既定の IBL とスカイボックス（SkyboxComponent がないか、パスが空のときに使う）
+    auto irrHandle = ResourceManager::Instance().LoadTexture(kDefaultIrradiancePath);
+    auto preHandle = ResourceManager::Instance().LoadTexture(kDefaultPrefilterPath);
+    auto lutHandle = ResourceManager::Instance().LoadTexture(kBrdfLutPath);
+    auto skyHandle = ResourceManager::Instance().LoadTexture(kDefaultSkyboxPath);
     if (irrHandle.IsValid()) m_irradianceMapSRV = ResourceManager::Instance().GetTexture(irrHandle);
     if (preHandle.IsValid()) m_prefilterMapSRV = ResourceManager::Instance().GetTexture(preHandle);
     if (lutHandle.IsValid()) m_brdfLutSRV = ResourceManager::Instance().GetTexture(lutHandle);
@@ -38,23 +48,29 @@ void EnvironmentSystem::Initialize()
         Graphics::Instance().GetDevice(), sizeof(GpuData::CbFog), m_fogConstantBuffer.GetAddressOf());
 }
 
+
+
 std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
 {
     return {CCL::ECS::TypeInfo<FogComponent>::ID(),
             CCL::ECS::TypeInfo<TransformComponent>::ID()};
 }
 
+
+
 void EnvironmentSystem::Update(float /*dt*/)
 {
     // 処理はすべて BindGlobalResources で行う（描画パスの直前に呼ばれる）
 }
 
+
+
 void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const RenderServices &s)
 {
     if (!m_world) return;
 
-    // 1. CbScene (b8) / CbSkeleton (b12) をバインドする。
-    //    中身は Graphics::Update() が書いた後なので、ここで書き換えてはいけない。
+    // 1. CbScene (b8) / CbSkeleton (b12) をバインドする
+    //    中身は Graphics::Update() が書いた後なので、ここで書き換えてはいけない
     if (m_world->HasResource<ModelConstantBuffers *>())
     {
         if (auto *renderer = m_world->GetResource<ModelConstantBuffers *>())
@@ -71,18 +87,16 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     }
 
     // 3. フォグ定数バッファ (b11)
-    //   既定はフォグ無し。gFogColor.a=0 で、ジオメトリ（ApplyHeightFog）と
-    //   スカイボックス（地平線フォグ）の両方のフォグが消える。
-    //   FogComponent が無いか enabled=false なら、この既定のまま送る。
-    GpuData::CbFog fogData = {{0.5f, 0.5f, 0.5f, 0.0f}, {0.0f, 1000.0f, 10.0f, 0.0f}, {}, {}, {}, {}};
+    //   既定はフォグなし。gFogColor.a=0 で、ジオメトリ（ApplyHeightFog）と
+    //   スカイボックス（地平線フォグ）の両方のフォグが消える
+    //   FogComponent がないか enabled=false なら、この既定のまま送る
+    GpuData::CbFog fogData = {{0.5f, 0.5f, 0.5f, 0.0f}, {0.0f, 1000.0f, 10.0f, 0.0f}, {}, {}};
 
     if (auto *fog = m_world->GetSingletonComponent<FogComponent>(); fog && fog->enabled)
     {
         fogData.gFogColor       = fog->color;
         fogData.gFogParams      = {fog->start, fog->end, fog->heightStart, fog->heightDensity};
         fogData.gFogCenter    = fog->center;
-        fogData.gFogRimColor  = {fog->rimColor.x, fog->rimColor.y, fog->rimColor.z, 1.0f};
-        fogData.gFogRimParams = {fog->rimPower, fog->rimStrength, 0.0f, 0.0f};
         fogData.gSkyFogParams = {fog->skyFogHeight, fog->skyFogSoftness, 0.0f, 0.0f};
     }
 
@@ -99,16 +113,19 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
 
     // =================================================================
     // 4. スカイボックスと IBL を決める
-    //   SkyboxComponent（シングルトン）が空・IEM・PMREM の .dds パスを持つ。
-    //   フォグのノイズと同じく、ハンドルが無効なときに読み込む。
-    //   パスが空か読み込みに失敗したら、Initialize で用意した既定を使う。
+    //   SkyboxComponent（シングルトン）が空・IEM・PMREM の .dds パスを持つ
+    //   フォグのノイズと同じく、ハンドルが無効なときに読み込む
+    //   パスが空か読み込みに失敗したら、Initialize で用意した既定を使う
     // =================================================================
     ID3D11ShaderResourceView *skyboxSRV     = m_defaultSkyboxSRV.Get();
     ID3D11ShaderResourceView *irradianceSRV = m_irradianceMapSRV.Get();
     ID3D11ShaderResourceView *prefilterSRV  = m_prefilterMapSRV.Get();
+    float                     skyIntensity  = kDefaultSkyIntensity;
 
     if (auto *sky = m_world->GetSingletonComponent<SkyboxComponent>())
     {
+        skyIntensity = sky->skyIntensity;
+
         auto &rm = ResourceManager::Instance();
 
         // パスがあってハンドルが無効なら読み込む（パスを変えるとインスペクタがハンドルを無効にする）
@@ -130,8 +147,8 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
     dc->PSSetShaderResources(SLOT_SRV_IBL_IRRADIANCE, 3, iblSRVs);
 
     // 4b. スカイボックスの背景は SkyboxPass が描くときに t17 へバインドする。ここでは Graphics に渡すだけ
-    //     （SkyboxPass は World を参照できないので、MakeFrameContext 経由で渡す）。
-    Graphics::Instance().SetSkyboxSRV(skyboxSRV);
+    //     （SkyboxPass は World を参照できないので、MakeFrameContext 経由で渡す）
+    Graphics::Instance().SetSkybox(skyboxSRV, skyIntensity);
 
     // 5. IBL 用サンプラ (s3)
     if (s.renderState)
@@ -140,5 +157,7 @@ void EnvironmentSystem::BindGlobalResources(ID3D11DeviceContext *dc, const Rende
         dc->PSSetSamplers(SLOT_SMP_IBL, 1, &smp);
     }
 }
+
+
 
 REGISTER_RENDER_SYSTEM(EnvironmentSystem, Priority::RenderStage::R02_Environment);

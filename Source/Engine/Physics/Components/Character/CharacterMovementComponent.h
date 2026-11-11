@@ -1,82 +1,138 @@
 #pragma once
 // ===========================================================================
-// 概要: 「キャラクターをどう動かしてほしいか」を、動かす側(JoltCharacterUpdateSystem)へ
-//       渡すための共通の窓口。プレイヤーもボスも AI も、移動はすべてここを経由する。
+// 概要: キャラクターをどう動かしてほしいかを、動かす側（JoltCharacterUpdateSystem）へ渡す窓口
+//       プレイヤーもボスも、移動はすべてここを通す
 //
-// 責務:
-//   - 移動の意思（desiredVelocity）と、1フレーム限りの上書き要求を受け取る
-//   - 持続する速度倍率と、ルートモーションの速度を受け取る
-//   - 物理側が確定した実際の水平速度（currentVelocity）を公開する
-//
-// 備考: 名前に Input を付けていないのは、ボタン入力（PlayerInputComponent）と
-//       区別するため。こちらは入力・AI・アクション・アニメのどこからでも書かれる
-//       「移動の指令と結果」で、入力由来のフィールドは desiredVelocity だけ。
-//
-// 誰が書くか（層）:
-//   ・移動の意思      … 入力(PlayerInputSystem) / AI(BossActionSystem 等)
-//   ・上書き要求      … アクション(PlayerDashSystem / RootMotionSystem 等)
-//   ・成立した命令    … キャラ制御(PlayerJumpFacingSystem)
-//   ・結果            … JoltCharacterUpdateSystem（読むのはカメラ/アニメ/演出）
-//
-// 上書き要求は「1フレーム限りの依頼」:
-//   overrideSpeed / use3DVelocity / jumpImpulse は、JoltCharacterUpdateSystem が
-//   読んだ時点で既定値へ戻される（consume-on-read）。
-//   依頼する側は「効かせたいフレームに毎回書く」だけでよく、解除処理を書かない。
-//   解除を各アクション側の責任にすると、離脱経路のどれか1つで書き忘れただけで
-//   「ずっと速い／ずっと止まる」が残り続けるため。
+// 備考: 依頼が重なったときは、上の段ほど優先する
+//         段 | 依頼                       | 効くもの           | ノックバック
+//         1  | 移動の予約 / use3DVelocity | 水平も上下も丸ごと | 足さない
+//         2  | isRootMotionActive         | 水平               | 足す
+//         3  | overrideSpeed              | 水平の速さ         | 足す
+//         4  | （依頼なし）walkSpeed      | 水平の速さ         | 足す
+//       speedMultiplier は 3・4、moveIntensity は 4 にだけ掛かる。1 の間はジャンプと重力も効かない
+//       決まった軌道の技は MoveTo / Hold / MoveInDirection で予約し、終わるまで物理が運ぶ
+//       overrideSpeed / use3DVelocity / jumpImpulse は1フレーム限り。効かせたいフレームに毎回書く
 // ===========================================================================
 #include <SimpleMath.h>
+#include <cstdint>
+
+// MoveTo の進み方
+enum class MoveEase : uint8_t
+{
+    Linear,  // 等速
+    EaseOut, // 速く動き始めて、終点で止まる
+    EaseIn,  // ゆっくり動き始めて、終点で一番速くなる
+};
+
+// MoveTo の細かい指定。指定しなければ、等速で浮かない
+struct MoveToOptions
+{
+    float    height   = 0.0f;             // 途中で浮く高さ [m]。中間で最大、両端で 0
+    MoveEase ease     = MoveEase::Linear; // 進み方
+    float    maxSpeed = 150.0f;           // 速さの上限 [m/s]。引っかかった遅れを一気に取り戻さない
+};
+
+// 予約の種類
+enum class MoveReservationKind : uint8_t
+{
+    ToPoint,     // MoveTo。終点まで運ぶ（位置で動かす）
+    Hold,        // Hold。その場に留める
+    InDirection, // MoveInDirection。決めた向きへ走る（速度で動かす。壁に沿って滑る）
+};
+
+// 予約した移動1つ分の状態
+// 書くのは CharacterMovementComponent の予約の関数と JoltCharacterUpdateSystem だけ
+struct CharacterMoveReservation
+{
+    MoveReservationKind          kind       = MoveReservationKind::ToPoint;
+    DirectX::SimpleMath::Vector3 start      = {0, 0, 0}; // 始点。予約後の最初の物理更新で取る
+    DirectX::SimpleMath::Vector3 target     = {0, 0, 0}; // 終点（ワールド）
+    DirectX::SimpleMath::Vector3 direction  = {0, 0, 0}; // 走る向き（InDirection）
+    float                        startSpeed = 0.0f;      // 走り始めの速さ [m/s]（InDirection）
+    float                        endSpeed   = 0.0f;      // 走り終わりの速さ [m/s]（InDirection）
+    float                        duration   = 0.0f;      // かける時間 [秒]
+    float                        elapsed    = 0.0f;      // 経過 [秒]
+    MoveToOptions                options;
+    bool                         active   = false; // 運んでいる最中か
+    bool                         started  = false; // 始点を取ったか
+    bool                         stopNext = false; // 次の物理更新で速度を 0 にする（終点で滑らない）
+    float                        leftover = 0.0f;  // 終わったときに余った時間 [秒]。続けて予約した次へ引き継ぐ
+};
 
 struct CharacterMovementComponent
 {
-    // =======================================================================
-    // 移動の意思（毎フレーム書かれる想定。書き手は入力層または AI）
-    // =======================================================================
-    // 進みたい向き（正規化済み）。長さは速度ではなく「動かしたいか」の意味しか持たない。
-    DirectX::SimpleMath::Vector3 desiredVelocity = {0, 0, 0};
+    // --- 移動の予約 ---
+    
+    // 予約が終わった次のフレームに続けて予約すると、止まらずにつながる
+    // 余った時間も引き継ぐので、段を何回つないでも技の長さがずれない
+    CharacterMoveReservation reservation;
 
-    // 移動の「強さ」(0〜1)。アナログスティックの傾き量をそのまま速度の割合にするための値。
-    //   desiredVelocity が「方向」、こちらが「どれだけ速く」を表す（方向と強さの分離）。
-    //   通常歩行(config.walkSpeed)にのみ掛かり、ダッシュ等の overrideSpeed には掛からない。
-    //   既定 1.0＝全開。キーボードや AI は書き換えないのでそのまま最大速度で動く。
-    float moveIntensity = 1.0f;
+    // --- 移動の向き（入力・AI が毎フレーム書く）---
 
-    // =======================================================================
-    // 上書き要求（consume-on-read。効かせたいフレームだけ書く）
-    // =======================================================================
-    // 速度の上書き（m/秒）。負値＝上書きなし（config.walkSpeed を使う）。
-    float overrideSpeed = -1.0f;
+    DirectX::SimpleMath::Vector3 desiredVelocity = {0, 0, 0}; // 進みたい向き（正規化済み）。速さは持たない
+    float                        moveIntensity   = 1.0f;      // 歩きの強さ 0〜1（スティックの傾き）
 
-    // true の間は重力も水平計算も無視して velocity3D をそのまま速度に使う。
-    //
-    // 「向いた方向へ上下を含めて突進」する技で使う汎用の窓口（現状の利用者なし。将来の突進技向けに残す）。
-    bool                         use3DVelocity = false;
-    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度（m/秒）
+    // --- 1フレーム限りの依頼（物理が読んだら既定値へ戻す）---
 
-    // このフレームにジャンプが成立した。押下ではなく「跳ぶと決まった」の意味。
-    //
-    // 入力の押下は PlayerInputComponent.jumpPressed。2段ジャンプの可否など
-    // 成立条件はキャラ制御側(PlayerJumpFacingSystem)が判断し、結果だけをここへ載せる。
-    bool jumpImpulse = false;
+    float                        overrideSpeed = -1.0f;              // 今だけこの速さ [m/s]。負で依頼なし
+    bool                         use3DVelocity = false;              // velocity3D をそのまま速度に使う
+    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度 [m/s]
+    bool                         jumpImpulse   = false;              // このフレームに跳ぶと決まった
 
-    // =======================================================================
-    // 持続する係数（毎フレーム書かれる想定。consume-on-read ではない）
-    // =======================================================================
-    // 速度倍率(1.0で等倍)。walkSpeed/overrideSpeed の両方に掛かる。
-    //
-    // ジャスト回避チェインの段数に応じた移動速度上昇など、
-    // 「効いている間ずっと」の性質を持つものはこちら。
-    float speedMultiplier = 1.0f;
+    // --- 持続する係数（毎フレーム書く。物理は戻さない）---
 
-    // =======================================================================
-    // ルートモーション専用の通信領域（RootMotionSystem が唯一の書き手）
-    // =======================================================================
+    float speedMultiplier = 1.0f; // 速度倍率。1 で等倍
+
+    // --- ルートモーション（RootMotionSystem だけが書く）---
+
     bool                         isRootMotionActive = false;              // ルートモーション中か
-    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメから求めたワールド空間の移動速度（m/秒）
+    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメから求めた速度 [m/s]
 
-    // =======================================================================
-    // 結果（JoltCharacterUpdateSystem が唯一の書き手。他は読むだけ）
-    // =======================================================================
-    // 慣性を含む実際の水平速度（m/秒）。カメラのルックアヘッドやアニメ・演出が読む。
+    // --- 結果（JoltCharacterUpdateSystem だけが書く）---
+
+    // 物理へ渡した水平速度 [m/s]。慣性込み、壁に当たる前の値
     DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
+
+
+
+    // target まで duration 秒かけて運ぶ予約をする
+    // 始点は次の物理更新の位置。着いたら速度を 0 にして止まる
+    void MoveTo(const DirectX::SimpleMath::Vector3 &target, float duration, const MoveToOptions &options = {})
+    {
+        BeginReservation(MoveReservationKind::ToPoint, duration);
+        reservation.target  = target;
+        reservation.options = options;
+    }
+
+    // その場に duration 秒留める予約をする（重力も効かない）
+    // 空中で止まって狙う、頂点で浮くなどに使う
+    void Hold(float duration) { BeginReservation(MoveReservationKind::Hold, duration); }
+
+    // direction へ duration 秒走る予約をする。速さは speed から endSpeed へ直線で変える
+    // 行き先の点を持たないので、壁に当たれば沿って滑りながら走り続ける
+    void MoveInDirection(const DirectX::SimpleMath::Vector3 &direction, float speed, float duration, float endSpeed)
+    {
+        BeginReservation(MoveReservationKind::InDirection, duration);
+        reservation.direction  = direction;
+        reservation.startSpeed = speed;
+        reservation.endSpeed   = endSpeed;
+    }
+
+    // 予約を取り消す。止めずに、それまでの速度の慣性を残す
+    void CancelMove() { reservation = {}; }
+
+    // 予約した移動の最中か。終わったら false
+    bool IsMoving() const { return reservation.active; }
+
+    // 新しい予約を始める。終わったばかりの予約の余った時間を引き継ぐ
+    void BeginReservation(MoveReservationKind kind, float duration)
+    {
+        const float carry    = reservation.active ? 0.0f : reservation.leftover;
+        reservation          = {};
+        reservation.kind     = kind;
+        reservation.duration = duration;
+        reservation.elapsed  = carry;
+        reservation.active   = true;
+    }
+
 };

@@ -1,0 +1,59 @@
+{
+    "entities": [
+        {
+            "components": {
+                "Debris Field": {
+                    "bobAmplitude": 1.5,
+                    "bobFrequency": 0.15000000596046448,
+                    "count": 1200,
+                    "heightMax": 60.0,
+                    "heightMin": -20.0,
+                    "orbitSpeed": 1.5,
+                    "prefabFolder": "Assets/Prefabs/Stage/Props",
+                    "radiusMax": 1006.0,
+                    "radiusMin": 230.0,
+                    "scaleMax": 1.2000000476837158,
+                    "scaleMin": 0.30000001192092896,
+                    "seed": 1,
+                    "speedJitter": 0.30000001192092896,
+                    "spinSpeedMax": 15.0
+                },
+                "Name": {
+                    "name": "DebrisRing"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 3,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        -48.5,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 1
+        }
+    ],
+    "magic": 1397506883,
+    "name": "DebrisRing",
+    "version": 1
+}

@@ -1,0 +1,239 @@
+{
+    "duration": 1.75,
+    "events": [
+        {
+            "attackLayer": 3,
+            "cancelMask": 1,
+            "damage": 0.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 1.1666666269302368,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.6666666865348816,
+            "stringParam": "",
+            "type": 6
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.6666666865348816,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.0833333358168602,
+            "stringParam": "Weapon_R",
+            "type": 5
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 5.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.25,
+            "hitStopDuration": 0.05000000074505806,
+            "hitStopScale": 0.0,
+            "knockback": 25.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.0833333358168602,
+            "stringParam": "Weapon_R",
+            "type": 0
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 5.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.6666666865348816,
+            "hitStopDuration": 0.09000000357627869,
+            "hitStopScale": 0.0,
+            "knockback": 20.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.4166666567325592,
+            "stringParam": "Weapon_R",
+            "type": 0
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.0833333358168602,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.07,
+            "soundVolume": 1.0,
+            "startTime": 0.0833333358168602,
+            "stringParam": "sfx:/slash_1",
+            "type": 1
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.4166666567325592,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.07,
+            "soundVolume": 1.0,
+            "startTime": 0.4166666567325592,
+            "stringParam": "sfx:/slash_1",
+            "type": 1
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.6666666865348816,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "startTime": 0.0833333358168602,
+            "stringParam": "Weapon_R",
+            "type": 8
+        }
+    ],
+    "rootMotionCurve": {
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": 78.59949493408203,
+                "interp": 2,
+                "outTangent": 78.59949493408203,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": -0.0035902857780456543,
+                "value": 1.0099387168884277
+            },
+            {
+                "inTangent": 21.88058853149414,
+                "interp": 2,
+                "outTangent": 21.88058853149414,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.11259162425994873,
+                "value": 10.141778945922852
+            },
+            {
+                "inTangent": 4.062737464904785,
+                "interp": 2,
+                "outTangent": 4.062737464904785,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.5518136620521545,
+                "value": 13.162503242492676
+            },
+            {
+                "inTangent": 1.3343325853347778,
+                "interp": 2,
+                "outTangent": 1.3343325853347778,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 1.0049283504486084,
+                "value": 13.767108917236328
+            }
+        ],
+        "name": "カーブ",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "sequenceName": "Atk_Combo1",
+    "speedCurve": {
+        "color": 4286643968,
+        "keys": [
+            {
+                "inTangent": 7.911107063293457,
+                "interp": 2,
+                "outTangent": 7.911107063293457,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.0011342912912368774,
+                "value": 0.570148229598999
+            },
+            {
+                "inTangent": -0.8091123700141907,
+                "interp": 2,
+                "outTangent": -0.8091123700141907,
+                "tangentIn": 2,
+                "tangentOut": 2,
+                "time": 0.16262316703796387,
+                "value": 1.8477040529251099
+            },
+            {
+                "inTangent": -1.0393702983856201,
+                "interp": 2,
+                "outTangent": -1.0393702983856201,
+                "tangentIn": 0,
+                "tangentOut": 0,
+                "time": 0.987964391708374,
+                "value": 0.9898688793182373
+            }
+        ],
+        "name": "カーブ",
+        "postInfinity": 0,
+        "preInfinity": 0,
+        "visible": true
+    },
+    "targetAnimName": "Combo_Attack_01_02_Seq_0",
+    "targetModelPath": ""
+}

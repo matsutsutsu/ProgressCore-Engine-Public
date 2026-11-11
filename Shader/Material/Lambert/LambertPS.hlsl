@@ -3,20 +3,20 @@
 
 cbuffer CbMaterial : register(REG_CB(SLOT_CB_MATERIAL))
 {
-    float4 materialColor;
+    float4 baseColor;
 };
 
-Texture2D DiffuseMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
+Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
 float4 main(VS_OUT pin) : SV_TARGET
 {
 	// 1. ベースカラーの取得
-    float4 texColor = DiffuseMap.Sample(LinearSampler, pin.texcoord);
-    float4 baseColor = texColor * materialColor;
+    float4 texColor = AlbedoMap.Sample(LinearSampler, pin.texcoord);
+    float4 surfaceColor = texColor * baseColor;
 
     // 透明なら早めに処理を打ち切る (最適化)
-    if (baseColor.a < 0.01f)
+    if (surfaceColor.a < 0.01f)
         discard;
 
     // =========================================================
@@ -26,8 +26,8 @@ float4 main(VS_OUT pin) : SV_TARGET
     surf.pos = pin.position.xyz; // ワールド座標
     surf.normal = normalize(pin.normal);
     surf.viewDir = normalize(cameraPosition.xyz - pin.position.xyz);
-    surf.color = baseColor.rgb;
-    surf.alpha = baseColor.a;
+    surf.color = surfaceColor.rgb;
+    surf.alpha = surfaceColor.a;
 
     // =========================================================
     // 3. ECSライトシステム(CbLight)で全ライトを一括計算！
@@ -48,7 +48,7 @@ float4 main(VS_OUT pin) : SV_TARGET
                                          float4(1, 1, 1, 1));
 
     // 5. 最終カラー合成 (Diffuse + Specular + Ambient)
-    float3 finalColor = lit.diffuse + lit.specular + (baseColor.rgb * ambient);
+    float3 finalColor = lit.diffuse + lit.specular + (surfaceColor.rgb * ambient);
 
     // 6. フォグの適用（距離フォグと高さフォグ）
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);

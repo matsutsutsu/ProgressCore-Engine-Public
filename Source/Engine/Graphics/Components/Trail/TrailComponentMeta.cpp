@@ -1,5 +1,3 @@
-// TrailComponent のシリアライズ/インスペクタ定義。
-
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Graphics/Components/Trail/TrailComponent.h"
 
@@ -17,7 +15,7 @@ using json = nlohmann::json;
 
 // ===========================================================================
 // TrailComponent
-//   リングバッファ（segments/head/count）は Fields() に載せないので、保存も編集もしない。
+//   リングバッファ（segments/head/count）は Fields() に載せないので、保存も編集もしない
 // ===========================================================================
 COMPONENT_META_BEGIN_FULL(TrailComponent, "Weapon Trail", CCL::Categories::Effect, 180, false)
 CFIELD_ENUM_U8(shape, "断面の形", TrailShapeNames, TrailShapeCount, "形状")

@@ -1,5 +1,3 @@
-// PrimitiveComponent のシリアライズ/インスペクタ定義。
-
 #include "PrimitiveComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

@@ -1,0 +1,102 @@
+{
+  "duration": 4.0,
+  "startDelay": 0.0,
+  "allowSkip": true,
+  "shots": [
+    {
+      "start": 0.0,
+      "duration": 2.2,
+      "subject": "Valkyra",
+      "motion": "Orbit",
+      "ease": "EaseOut",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        5.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        5.5,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": 45.0,
+      "angleEnd": 10.0,
+      "radiusStart": 26.0,
+      "radiusEnd": 22.0,
+      "heightStart": -3.0,
+      "heightEnd": -2.0,
+      "fovStart": 35.0,
+      "fovEnd": 32.0,
+      "dof": false,
+      "dofRange": 4.0,
+      "dofFalloff": 15.0,
+      "dofMaxBlur": 0.008
+    },
+    {
+      "start": 2.2,
+      "duration": 1.8,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseIn",
+      "blendIn": 0.0,
+      "lookStart": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        6.0,
+        16.0
+      ],
+      "eyeEnd": [
+        0.0,
+        6.5,
+        12.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 30.0,
+      "fovEnd": 24.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    }
+  ],
+  "sounds": [],
+  "effects": [],
+  "signals": [],
+  "animations": [
+    {
+      "start": 0.0,
+      "duration": 4.0,
+      "subject": "Valkyra",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Death_Loop.json",
+      "loop": true,
+      "speed": 1.0,
+      "blendIn": 0.2,
+      "blendOut": 0.3
+    }
+  ]
+}

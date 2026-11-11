@@ -1,4 +1,3 @@
-// AudioEmitterComponent のシリアライズ/インスペクタ定義。
 #include "Engine/Audio/Components/AudioEmitterComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
@@ -7,8 +6,8 @@
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
 #include "Engine/Serialization/Meta/ComponentMetaImGui.h"
-#include "Engine/ECS/Core/CCL_World.h" // World からオーディオ資源を引く
-#include "Engine/Audio/IAudioAPI.h"    // イベント名一覧（カタログ）
+#include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/Audio/IAudioAPI.h"
 #include <memory>
 #include <vector>
 #include <cstdio>
@@ -71,7 +70,7 @@ struct ComponentMeta<AudioEmitterComponent>
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます。");
 
-        // 一覧に無い名前を直接指定するための手入力欄
+        // 一覧にない名前を直接指定するための手入力欄
         char buf[256] = {};
         std::snprintf(buf, sizeof(buf), "%s", comp.eventName.c_str());
         ImGui::TextDisabled("または名前を直接指定");

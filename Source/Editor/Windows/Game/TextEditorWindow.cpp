@@ -18,6 +18,8 @@ TextEditorWindow::TextEditorWindow() : EditorWindow("Text Editor")
     m_textBuffer.resize(1024 * 1024, '\0');
 }
 
+
+
 void TextEditorWindow::DrawContents(EditorContext &context)
 {
     // ---- ファイルパスと操作ボタン ----
@@ -68,6 +70,8 @@ void TextEditorWindow::DrawContents(EditorContext &context)
                               ImGuiInputTextFlags_AllowTabInput);
 }
 
+
+
 void TextEditorWindow::LoadFile(const char *path)
 {
     std::string rawText = FileSystem::ReadAllText(path);
@@ -84,6 +88,8 @@ void TextEditorWindow::LoadFile(const char *path)
         std::copy(rawText.begin(), rawText.end(), m_textBuffer.begin());
     }
 }
+
+
 
 void TextEditorWindow::SaveFile(const char *path)
 {

@@ -5,7 +5,7 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/UI/ECS/Components/UITextComponent.h"
-#include "Engine/UI/Text/TextRenderer.h" // UTF-8 の文字数（日本語を文字の途中で切らない）
+#include "Engine/UI/Text/TextRenderer.h"
 
 #include <algorithm>
 
@@ -14,6 +14,7 @@ using namespace CCL::ECS;
 void UIRevealSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID id, UIRevealComponent &rv, UITransformComponent &t) {
+        // --- 進み具合 ---
         rv.elapsed += dt;
         if (!rv.captured)
         {
@@ -21,28 +22,25 @@ void UIRevealSystem::Update(float dt)
             rv.captured = true;
         }
 
-        const float local = rv.elapsed - rv.delay;                                     // 出始めてからの秒数
+        const float local = rv.elapsed - rv.delay;                                          // 出始めてからの秒数
         const float a     = std::clamp(local / std::max(rv.duration, 0.0001f), 0.0f, 1.0f); // SlideIn / Grow の進み具合
-        const float eased = 1.0f - (1.0f - a) * (1.0f - a);                            // 減速しながら止まる
+        const float eased = 1.0f - (1.0f - a) * (1.0f - a);                                 // 減速しながら止まる
 
+        // --- 出方ごとの動き ---
         switch (rv.mode)
         {
         case UIRevealMode::Type:
         {
             auto *tx = m_world->GetComponent<UITextComponent>(id);
-            if (!tx)
-            {
-                break;
-            }
+            if (!tx) break;
+
             // 数えるのはバイトではなく文字（日本語は1文字が3バイト）
             const auto  count = static_cast<size_t>(std::max(local * rv.speed, 0.0f));
             std::string shown = TextRenderer::Utf8Prefix(rv.text, count);
-            if (tx->text != shown)
-            {
-                tx->text = std::move(shown);
-            }
+            if (tx->text != shown) tx->text = std::move(shown);
             break;
         }
+
         case UIRevealMode::SlideIn:
             t.offset.x = rv.baseX - (1.0f - eased) * rv.distance;
             t.alpha    = a;
@@ -50,9 +48,11 @@ void UIRevealSystem::Update(float dt)
 
         case UIRevealMode::Grow:
         {
+            // 中心で置いた矩形なので、左端を baseX に止めたまま中心をずらす
             const float w = rv.length * eased;
             t.size.x      = w;
-            t.offset.x    = rv.baseX + w * 0.5f; // 中心で置くので、左端を baseX に止める
+            t.offset.x    = rv.baseX + w * 0.5f;
+
             if (auto *tipT = m_world->GetComponent<UITransformComponent>(rv.tip))
             {
                 tipT->offset.x = rv.baseX + w;
@@ -63,5 +63,7 @@ void UIRevealSystem::Update(float dt)
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIRevealSystem, Priority::RenderStage::R10_UI);

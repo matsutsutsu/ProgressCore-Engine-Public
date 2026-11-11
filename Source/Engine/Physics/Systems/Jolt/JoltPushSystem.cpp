@@ -46,10 +46,10 @@ void JoltPushSystem::Update(float dt)
             {
                 if (bodyInterface.GetMotionType(joltBody.bodyID) == JPH::EMotionType::Kinematic)
                 {
-                    // SetPositionAndRotation（瞬間移動）で「遅延ゼロ」に追従させる。
+                    // SetPositionAndRotation（瞬間移動）で「遅延ゼロ」に追従させる
                     //   MoveKinematic は目標到達がステップ末＝1フレーム遅れ、速い攻撃の振りでは
-                    //   大きくズレてしまう（遅い移動では当たるのに攻撃で当たらない原因になる）。
-                    //   ここが正確でないと接触イベントが正しく発生しないため、位置の正確さを最優先する。
+                    //   大きくズレてしまう（遅い移動では当たるのに攻撃で当たらない原因になる）
+                    //   ここが正確でないと接触イベントが正しく発生しないため、位置の正確さを最優先する
                     bodyInterface.SetPositionAndRotation(
                         joltBody.bodyID, joltPos, joltRot, JPH::EActivation::Activate);
                 }
@@ -57,9 +57,8 @@ void JoltPushSystem::Update(float dt)
         });
 }
 
-// 物理計算の前にワープを完了させる。
-//   ただし BoneAttachmentSystem(L03_PrePhysics) が剣などの worldMatrix を
-//   ボーン追従で確定させた「後」に読む必要があるため、1段後ろの L03_PushToPhysics に置く。
-//   （L03_PrePhysics のままだと BoneAttachment より先に走り、追従前の素の位置を
-//     ボディへ焼いてしまい、剣が振りに追従せず攻撃が当たらない。）
+
+
+// 物理の計算の前にワープを済ませる
+// BoneAttachmentSystem（L03_PrePhysics）が剣の worldMatrix を確定させた後に読むので、1段後ろの L03_PushToPhysics に置く
 REGISTER_LOGIC_SYSTEM(JoltPushSystem, Priority::LogicStage::L03_PushToPhysics);

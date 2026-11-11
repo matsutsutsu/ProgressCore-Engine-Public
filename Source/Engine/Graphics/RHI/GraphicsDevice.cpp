@@ -1,9 +1,9 @@
 #include "GraphicsDevice.h"
 #include "Engine/Core/Math/Misc.h"
-#include "Engine/Graphics/Shader/Shared/ShaderShared.h" // _ASSERT_EXPR, HRTrace
+#include "Engine/Graphics/Shader/Shared/ShaderShared.h"
 #include "Engine/Graphics/RHI/DebugName.h"
 #include "Engine/Platform/Core/Logger.h"
-#include <dxgi1_6.h> // IDXGIFactory6::EnumAdapterByGpuPreference (高性能GPUの明示選択)
+#include <dxgi1_6.h>
 #pragma comment(lib, "dxgi.lib")
 
 // ---------------------------------------------------------------------------
@@ -22,11 +22,8 @@ void GraphicsDevice::Initialize(HWND hWnd)
     HRESULT hr = S_OK;
 
     // ---- 高性能 GPU（dGPU）を明示して選ぶ ----
-    // ハイブリッドグラフィックス（Optimus / PowerXpress）の PC では、アダプタに nullptr を渡すと
-    // OS やドライバの省電力の判断で内蔵 GPU（Intel など）が選ばれることがある。
-    // IDXGIFactory6::EnumAdapterByGpuPreference に DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE を指定し、dGPU を選ぶ。
-    // 対応していない OS（Windows 10 1803 より前）や列挙に失敗したときは chosenAdapter が null のままで、
-    // 既定のアダプタを使う。
+    // ハイブリッド GPU の PC でアダプタに nullptr を渡すと内蔵 GPU が選ばれることがあるので、EnumAdapterByGpuPreference で dGPU を選ぶ
+    // 対応していない OS や列挙に失敗したときは chosenAdapter が null のままで、既定のアダプタを使う
     Microsoft::WRL::ComPtr<IDXGIAdapter1> chosenAdapter;
     {
         Microsoft::WRL::ComPtr<IDXGIFactory1> factory1;
@@ -58,7 +55,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
     // ---- デバイス（スワップチェーンは後で waitable 付きで別に作る）----
     // D3D11CreateDeviceAndSwapChain でまとめて作ってはいけない。vsync の待ちを自分で制御する
     // FRAME_LATENCY_WAITABLE_OBJECT は CreateSwapChainForHwnd からしか使えないので、
-    // デバイスとスワップチェーンは分けて作る。
+    // デバイスとスワップチェーンは分けて作る
     {
         UINT createDeviceFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -74,7 +71,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
         };
 
         // アダプタを指定するときは DriverType を D3D_DRIVER_TYPE_UNKNOWN にする
-        // （pAdapter != nullptr と D3D_DRIVER_TYPE_HARDWARE を一緒に指定すると E_INVALIDARG になる）。
+        // （pAdapter != nullptr と D3D_DRIVER_TYPE_HARDWARE を一緒に指定すると E_INVALIDARG になる）
         const D3D_DRIVER_TYPE driverType = chosenAdapter ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE;
 
         D3D_FEATURE_LEVEL featureLevel;
@@ -84,6 +81,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
             D3D11_SDK_VERSION,
             m_device.GetAddressOf(), &featureLevel, m_context.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] D3D11 デバイスを作れません: hr=0x%08X", hr);
 
         // ---- このデバイスを作った DXGI ファクトリ（IDXGIFactory2）を取る ----
         Microsoft::WRL::ComPtr<IDXGIFactory2> factory2;
@@ -96,13 +94,16 @@ void GraphicsDevice::Initialize(HWND hWnd)
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
             hr = adapter->GetParent(IID_PPV_ARGS(factory2.GetAddressOf()));
             _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+
+            // デバイスが実際に使っている GPU をログに書く
+            LogAdapterInfo(adapter.Get(), featureLevel);
         }
 
         // ---- Waitable スワップチェーン ----
         //   FRAME_LATENCY_WAITABLE_OBJECT で、「今のフレームの提示が終わるまで次のフレームを
         //   作り始めない」ための待機オブジェクトを持つスワップチェーンを作る。vsync の待ちが
         //   フレーム先頭の WaitForFrameLatency() 1か所に集まり、ShadowPass など個々のパスの
-        //   CPU ゾーンに混ざらなくなる（Tracy が読みやすくなる）。入力遅延も減る。
+        //   CPU ゾーンに混ざらなくなる（Tracy が読みやすくなる）。入力遅延も減る
         DXGI_SWAP_CHAIN_DESC1 scd{};
         scd.Width       = m_width;
         scd.Height      = m_height;
@@ -118,14 +119,15 @@ void GraphicsDevice::Initialize(HWND hWnd)
             m_device.Get(), hWnd, &scd, nullptr /*fullscreen desc=windowed*/, nullptr,
             swapChain1.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] スワップチェーンを作れません: hr=0x%08X (%ux%u)", hr, m_width, m_height);
         hr = swapChain1.As(&m_swapChain); // IDXGISwapChain1 は IDXGISwapChain の派生
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
 
         // ---- 最大フレーム遅延を 2 にして、待機ハンドルを取る ----
-        //   1 にすると CPU と GPU が交互に待つことになり、両方の時間が足し算になる。
-        //   合計が1フレーム分（16.7ms など）を超えると、vsync で 30FPS に落ちる。
-        //   2 なら CPU（次のフレーム）と GPU（今のフレーム）が1枚分重なって並行に動き、60FPS を保てる。
-        //   待ちは WaitForFrameLatency() の1か所のままで、既定の 3 より遅延も小さい。
+        //   1 にすると CPU と GPU が交互に待つことになり、両方の時間が足し算になる
+        //   合計が1フレーム分（16.7ms など）を超えると、vsync で 30FPS に落ちる
+        //   2 なら CPU（次のフレーム）と GPU（今のフレーム）が1枚分重なって並行に動き、60FPS を保てる
+        //   待ちは WaitForFrameLatency() の1か所のままで、既定の 3 より遅延も小さい
         Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
         if (SUCCEEDED(m_swapChain.As(&swapChain2)))
         {
@@ -158,6 +160,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
         d.BindFlags  = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
         hr           = m_device->CreateTexture2D(&d, nullptr, tex.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
+        if (FAILED(hr)) CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] 深度バッファを作れません: hr=0x%08X (%ux%u)", hr, m_width, m_height);
 
         D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
         dsvDesc.Format        = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -190,7 +193,7 @@ void GraphicsDevice::Initialize(HWND hWnd)
         t.Usage      = D3D11_USAGE_DEFAULT;
         t.BindFlags  = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
         // 他のリソースと同じく HRESULT を確かめる。失敗を見逃すと null の RTV を
-        // OMSetRenderTargets し続け、何も映らないのに落ちもしないという、原因を追いにくい壊れ方をする。
+        // OMSetRenderTargets し続け、何も映らないのに落ちもしないという、原因を追いにくい壊れ方をする
         hr = m_device->CreateTexture2D(&t, nullptr, m_gameTex.GetAddressOf());
         _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
         hr = m_device->CreateRenderTargetView(m_gameTex.Get(), nullptr, m_gameRTV.GetAddressOf());
@@ -219,6 +222,8 @@ void GraphicsDevice::Initialize(HWND hWnd)
     }
 }
 
+
+
 void GraphicsDevice::Shutdown()
 {
     // 1. コンテキストの状態を消す（描画サブシステムを解放した後に呼ぶこと）
@@ -245,8 +250,8 @@ void GraphicsDevice::Shutdown()
     m_depthSRV.Reset();
     m_backBufferRTV.Reset();
     m_swapChain.Reset();
-    // 待機ハンドルはスワップチェーンと一緒に無効になるので捨てる（無効なハンドルを待たないように）。
-    // デバイスロストからの復帰では、Initialize が新しいスワップチェーンから取り直す。
+    // 待機ハンドルはスワップチェーンと一緒に無効になるので捨てる（無効なハンドルを待たないように）
+    // デバイスロストからの復帰では、Initialize が新しいスワップチェーンから取り直す
     m_frameLatencyWaitable = nullptr;
     m_context.Reset();
 
@@ -269,6 +274,8 @@ void GraphicsDevice::Shutdown()
     m_device.Reset();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 毎フレームの操作
 // ---------------------------------------------------------------------------
@@ -281,6 +288,8 @@ void GraphicsDevice::UpdateSceneConstantBuffer(const void *data, size_t /*size*/
     }
 }
 
+
+
 void GraphicsDevice::Clear(float r, float g, float b, float a, bool useGameRTV)
 {
     float color[4]{r, g, b, a};
@@ -292,6 +301,8 @@ void GraphicsDevice::Clear(float r, float g, float b, float a, bool useGameRTV)
                                      D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
+
+
 void GraphicsDevice::SetRenderTargets(bool useGameRTV)
 {
     if (useGameRTV)
@@ -301,22 +312,73 @@ void GraphicsDevice::SetRenderTargets(bool useGameRTV)
     m_context->RSSetViewports(1, &m_viewport);
 }
 
+
+
 HRESULT GraphicsDevice::Present(UINT syncInterval)
 {
     return m_swapChain->Present(syncInterval, 0);
 }
+
+
 
 HRESULT GraphicsDevice::GetDeviceRemovedReason() const noexcept
 {
     return m_device ? m_device->GetDeviceRemovedReason() : DXGI_ERROR_DEVICE_REMOVED;
 }
 
+
+
 void GraphicsDevice::WaitForFrameLatency() const noexcept
 {
-    // 待機ハンドルが無い（作れなかった）ときは待たずに進む
+    // 待機ハンドルがない（作れなかった）ときは待たずに進む
     if (!m_frameLatencyWaitable) return;
 
-    // 前のフレームの提示が終わり、次を作ってよくなるまで待つ。
-    //   1秒のタイムアウトはハングしたときのため（普段は vsync の間隔でシグナルされる）。
+    // 前のフレームの提示が終わり、次を作ってよくなるまで待つ
+    //   1秒のタイムアウトはハングしたときのため（普段は vsync の間隔でシグナルされる）
     WaitForSingleObjectEx(m_frameLatencyWaitable, 1000, TRUE);
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 実行環境の報告
+// ---------------------------------------------------------------------------
+
+void GraphicsDevice::LogAdapterInfo(IDXGIAdapter *adapter, D3D_FEATURE_LEVEL featureLevel) const
+{
+    // --- GPU とドライバ ---
+    DXGI_ADAPTER_DESC desc{};
+    if (adapter && SUCCEEDED(adapter->GetDesc(&desc)))
+    {
+        // ドライバの版は 64bit の値に 16bit ずつ4つ入っている（例: 31.0.15.5222）
+        LARGE_INTEGER driver{};
+        const bool    hasDriver = SUCCEEDED(adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &driver));
+
+        CCL_LOG_ALWAYS(LogCategory::Render, "[環境] GPU: %ls / VRAM %zu MB",
+                       desc.Description, desc.DedicatedVideoMemory / (1024 * 1024));
+        if (hasDriver)
+        {
+            CCL_LOG_ALWAYS(LogCategory::Render, "[環境] ドライバ: %u.%u.%u.%u",
+                           HIWORD(driver.HighPart), LOWORD(driver.HighPart), HIWORD(driver.LowPart), LOWORD(driver.LowPart));
+        }
+    }
+
+    // --- 機能レベル ---
+    // シェーダーはすべて SM5.0 で作ってあるので、11_0 より下のデバイスでは1つも作れない
+    const unsigned major = (static_cast<unsigned>(featureLevel) >> 12) & 0xF;
+    const unsigned minor = (static_cast<unsigned>(featureLevel) >> 8) & 0xF;
+    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 機能レベル: %u_%u", major, minor);
+    if (featureLevel < D3D_FEATURE_LEVEL_11_0)
+    {
+        CCL_LOG_ERROR(LogCategory::Render, "[GraphicsDevice] 機能レベル %u_%u では SM5.0 のシェーダーを作れません（11_0 以上が必要）", major, minor);
+    }
+
+    // --- 画面 ---
+    // 描画の大きさと、モニタの解像度・リフレッシュレート
+    DEVMODEW mode{};
+    mode.dmSize = sizeof(mode);
+    EnumDisplaySettingsW(nullptr, ENUM_CURRENT_SETTINGS, &mode);
+    CCL_LOG_ALWAYS(LogCategory::Render, "[環境] 描画 %ux%u / モニタ %lux%lu %luHz / リモートデスクトップ: %s",
+                   m_width, m_height, mode.dmPelsWidth, mode.dmPelsHeight, mode.dmDisplayFrequency,
+                   GetSystemMetrics(SM_REMOTESESSION) ? "はい" : "いいえ");
 }

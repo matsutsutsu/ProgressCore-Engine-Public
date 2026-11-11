@@ -1,12 +1,14 @@
 #include "Graphics.h"
 #include <chrono>
 #include <cmath>
-#include "Engine/Graphics/Shader/ShaderManifest.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/SceneView/Camera.h"
 
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
 #include "Engine/Graphics/Shader/Material/ErrorShader.h"
+#include "Engine/Graphics/Shader/Material/ShadowMapShader.h"
+#include "Engine/Graphics/Shader/Material/ParticleShader.h"
+#include "Engine/Graphics/Shader/Material/NormalPrepassShader.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Renderer/Core/RenderQueue.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
@@ -17,6 +19,7 @@
 #include "Engine/Graphics/Pipeline/ShadowPass.h"
 #include "Engine/Graphics/Pipeline/NormalPrepass.h"
 #include "Engine/Graphics/Pipeline/OpaquePass.h"
+#include "Engine/Graphics/Pipeline/LodDebugPass.h"
 #include "Engine/Graphics/Pipeline/SkyboxPass.h"
 #include "Engine/Graphics/Pipeline/SceneColorGrabPass.h"
 #include "Engine/Graphics/Pipeline/TransparentPass.h"
@@ -60,16 +63,27 @@ void Graphics::Initialize(HWND hWnd)
     m_modelConstants->SetSceneConstantBuffer(m_gfxDevice.GetSceneConstantBuffer());
 
     // ---- 3. シェーダー登録 ----
-    // 未登録のシェーダーの代わりに描く ErrorShader は、shaders.json に頼らず先に登録する
-    ShaderRegistry::Instance().RegisterShader<ErrorShader>("Error"_hash);
+    ShaderRegistry &shaders = ShaderRegistry::Instance();
 
-    // マテリアルのシェーダーは Assets/Shader/shaders.json に1行足せば増やせる（再ビルド不要）
-    ShaderManifest::LoadAndRegister("Assets/Shader/shaders.json",
-                                    ShaderRegistry::Instance());
+    // 未登録のシェーダーの代わりに描く ErrorShader を最初に登録する（並べ替えの番号が 0 になる）
+    shaders.RegisterShader<ErrorShader>("Error"_hash);
+
+    // マテリアルのシェーダー。エディタのシェーダー選択にこの順で出る
+    shaders.RegisterMaterialShader("PBR");
+    shaders.RegisterMaterialShader("Phong");
+    shaders.RegisterMaterialShader("Lambert");
+    shaders.RegisterMaterialShader("Basic");
+
+    // 専用の C++ クラスを持つシェーダー（各パスがハッシュで取り出す）
+    shaders.RegisterShader<ShadowMapShader>("ShadowMap"_hash);
+    shaders.RegisterShader<ParticleShader>("Particle"_hash);
+    shaders.RegisterShader<NormalPrepassShader>("NormalPrepass"_hash);
 
     // ---- 4. レンダーパイプライン ----
     SetupRenderPipeline();
 }
+
+
 
 void Graphics::SetupRenderPipeline()
 {
@@ -104,29 +118,32 @@ void Graphics::SetupRenderPipeline()
     OutputDebugStringA("[Graphics] RenderPipeline initialized.\n");
 }
 
-// 既定の 3D シーン用のパス構成。登録順がそのまま実行順になる。
+
+
 void Graphics::BuildDefaultRenderPasses()
 {
     // TODO(2026-09-10): ローディング画面など軽い構成が要るシーン用に、別の Build*RenderPasses を用意して切り替えられるようにする
 
-    m_pipeline.AddPass<SetupPass>();          //  1. HDR バッファのクリアとバインド
-    m_pipeline.AddPass<ShadowPass>();         //  2. シャドウマップ
-    m_pipeline.AddPass<NormalPrepass>();      //  3. 深度と法線のプリパス。不透明の深度を先に決める
-    m_pipeline.AddPass<OpaquePass>();         //  4. 不透明（深度が決まっているので early-Z が効く）
-    m_pipeline.AddPass<SkyboxPass>();         //  5. スカイボックス
-    m_pipeline.AddPass<SceneColorGrabPass>(); //  6. 屈折用にシーンカラーを写し取る
-    m_pipeline.AddPass<TransparentPass>();    //  7. 半透明（距離でソート）
-    m_pipeline.AddPass<ParticlePass>();       //  8. パーティクル
-    m_pipeline.AddPass<TrailPass>();          //  9. 武器トレイル。ブルームに拾わせるためポストプロセスより前
-    m_pipeline.AddPass<PrimitivePass>();      // 10. デバッグプリミティブ
-    m_pipeline.AddPass<PostProcessPass>();    // 11. ポストプロセス・最終出力
+    m_pipeline.AddPass<SetupPass>();                         //  1. HDR バッファのクリアとバインド
+    m_pipeline.AddPass<ShadowPass>();                        //  2. シャドウマップ
+    m_pipeline.AddPass<NormalPrepass>();                     //  3. 深度と法線のプリパス。不透明の深度を先に決める
+    m_pipeline.AddPass<OpaquePass>();                        //  4. 不透明（深度が決まっているので early-Z が効く）
+    m_lodDebugPass = m_pipeline.AddPass<LodDebugPass>();     //  5. LOD の段の色分け（既定はオフ。エディタで切り替える）
+    m_pipeline.AddPass<SkyboxPass>();                        //  6. スカイボックス
+    m_pipeline.AddPass<SceneColorGrabPass>();                //  7. 屈折用にシーンカラーを写し取る
+    m_pipeline.AddPass<TransparentPass>();                   //  8. 半透明（距離でソート）
+    m_pipeline.AddPass<ParticlePass>();                      //  9. パーティクル
+    m_pipeline.AddPass<TrailPass>();                         // 10. 武器トレイル。ブルームに拾わせるためポストプロセスより前
+    m_pipeline.AddPass<PrimitivePass>();                     // 11. デバッグプリミティブ
+    m_pipeline.AddPass<PostProcessPass>();                   // 12. ポストプロセス・最終出力
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 毎フレーム
 // ---------------------------------------------------------------------------
 
-// CbScene を書くのはここだけ。EnvironmentSystem はバインドするだけ。
 void Graphics::Update()
 {
 #if defined(_DEBUG) || defined(ENABLE_EDITOR)
@@ -134,11 +151,8 @@ void Graphics::Update()
 #endif
 
     // ------------------------------------------------------------------
-    // カメラのアスペクト比をバックバッファの実寸に合わせる。
-    //   CameraBrainSystem は GetAspect() を読んでそのまま書き戻すだけなので、
-    //   ここで合わせないと、ウィンドウサイズが変わったときに絵が横に伸びる。
-    //   アスペクトを更新するのはここだけにしておき、リサイズ処理を足してもカメラ側は触らずに済むようにする。
-    //   （fovY が 0 のうちは透視投影がまだ設定されていないので触らない）
+    // カメラのアスペクト比をバックバッファの実寸に合わせる（更新するのはここだけ）。合わせないと、ウィンドウの大きさが変わると絵が伸びる
+    // fovY が 0 のうちは、透視投影がまだ設定されていないので触らない
     // ------------------------------------------------------------------
     if (m_gfxDevice.GetHeight() > 0.0f && m_mainCamera.GetFovY() > 0.0f)
     {
@@ -195,6 +209,8 @@ void Graphics::Update()
     m_gfxDevice.UpdateSceneConstantBuffer(&data, sizeof(data));
 }
 
+
+
 void Graphics::Render(const RenderFrameContext &ctx)
 {
     // このスコープの D3D11 の描画コマンドを、Tracy の GPU タイムラインに記録する
@@ -203,6 +219,8 @@ void Graphics::Render(const RenderFrameContext &ctx)
     m_pipeline.Execute(ctx);
     UnbindAllResources(ctx.dc);
 }
+
+
 
 RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRTV) noexcept
 {
@@ -214,10 +232,13 @@ RenderFrameContext Graphics::MakeFrameContext(ID3D11RenderTargetView *overrideRT
     ctx.sceneDepthSRV  = m_gfxDevice.GetDepthSRV();
     ctx.sceneNormalSRV = m_sceneNormalSRV;
     ctx.skyboxSRV      = m_pendingSkyboxSRV; // EnvironmentSystem が決めた今の空
+    ctx.skyIntensity   = m_pendingSkyIntensity;
     ctx.viewportW      = m_gfxDevice.GetWidthU();
     ctx.viewportH      = m_gfxDevice.GetHeightU();
     return ctx;
 }
+
+
 
 void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 {
@@ -238,6 +259,8 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
     dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 終了・画面への表示・デバイスロストからの復帰
 // ---------------------------------------------------------------------------
@@ -245,7 +268,7 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
 void Graphics::Shutdown()
 {
     // ==============================================================
-    // 1. シングルトン（ResourceManager・ShaderRegistry）が持つ GPU リソースを解放する。
+    // 1. シングルトン（ResourceManager・ShaderRegistry）が持つ GPU リソースを解放する
     //    デバイスを壊す前に行う必要がある
     // ==============================================================
     ResourceManager::Instance().ClearAll();
@@ -261,6 +284,7 @@ void Graphics::Shutdown()
 
     // 各パスの Shutdown が走る
     m_pipeline.Shutdown();
+    m_lodDebugPass = nullptr; // パスは破棄されたので指さない（デバイスロストからの復帰で作り直される）
 
     // 描画サブシステムを作ったのと逆の順に解放する
     m_postProcess.reset();
@@ -277,7 +301,8 @@ void Graphics::Shutdown()
     m_gfxDevice.Shutdown();
 }
 
-// DXGI_ERROR_DEVICE_REMOVED / DEVICE_RESET を受け取ったら false を返す
+
+
 bool Graphics::Present(UINT syncInterval)
 {
     HRESULT hr = m_gfxDevice.Present(syncInterval);
@@ -303,8 +328,8 @@ bool Graphics::Present(UINT syncInterval)
     return true;
 }
 
-// HWND を控え、Shutdown()（ShaderRegistry・ResourceManager も空にする）の後に
-// Initialize() で新しいデバイスから全部作り直す。
+
+
 bool Graphics::RecoverFromDeviceLost()
 {
 
@@ -327,11 +352,7 @@ bool Graphics::RecoverFromDeviceLost()
     Shutdown();
 
     // ---- 3. 新しいデバイスで作り直す ----
-    // Initialize() が行う:
-    //   - 新しい D3D11 デバイスとスワップチェーンを作る
-    //   - ShaderManifest からシェーダーのファクトリを登録し直す
-    //   - SetupRenderPipeline() でパイプラインとパスを組み直す
-    // シェーダー本体は、GetShader() が最初に呼ばれたときに .cso から読み直される
+    // デバイス・スワップチェーン・パイプラインを作り直す。シェーダーは、最初に GetShader を呼んだときに .cso から読み直される
     Initialize(hWnd);
 
     OutputDebugStringA("[Graphics] ===== Device Lost Recovery: COMPLETE =====\n");

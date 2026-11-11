@@ -1,16 +1,14 @@
 // ===========================================================================
-// 概要: GPU パーティクルで C++ と HLSL が共有する構造体（粒子1個・エミッターの定数バッファ）。
+// 概要: GPU パーティクルで C++ と HLSL が共有する構造体（粒子1個・エミッターの定数バッファ）
 //
 // 責務:
 //   - GpuParticle（StructuredBuffer の1要素）を定義する
 //   - CbParticleStatic（設定の値）と CbParticleDynamic（毎フレームの値）を定義する
 //   - C++ 側で大きさを static_assert する
 //
-// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::GpuParticle など、
-//       HLSL（particle.hlsli が include する）では cbuffer になる。
-//       2つの定数バッファは隣り合うスロット（b6, b7）なので、
-//       SetConstantBuffers(SLOT_CB_PARTICLE_STATIC, 2, cbs) で1回でバインドできる。
-//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// 備考: ShaderShared.h と同じく、C++ では GpuData の構造体、HLSL（particle.hlsli）では cbuffer になる
+//       2つの定数バッファは隣のスロット（b6, b7）なので、SetConstantBuffers の1回でバインドできる
+//       HLSL からも読むので、#pragma once でなくインクルードガードを使う
 // ===========================================================================
 
 #ifndef PARTICLE_SHARED_H
@@ -19,8 +17,8 @@
 #include "Engine/Graphics/Shader/ShaderResources.h"
 
 // コンピュートシェーダーの1グループのスレッド数。HLSL の numthreads と C++ の Dispatch の
-//   グループ数計算の両方がこれを見る（片方だけ変えると末尾の粒子が更新されなくなる）。
-//   GPU は 32（NVIDIA）か 64（AMD）スレッドを1単位で動かすので、64 にして遊ぶスレッドを無くす。
+//   グループ数計算の両方がこれを見る（片方だけ変えると末尾の粒子が更新されなくなる）
+//   GPU は 32（NVIDIA）か 64（AMD）スレッドを1単位で動かすので、64 にして遊ぶスレッドをなくす
 #define PARTICLE_CS_THREADS 64
 
 #ifdef __cplusplus
@@ -48,7 +46,7 @@ namespace GpuData
     //
     //   種類（Point / Quad）はエミッターの全粒子で同じなので、粒子ごとには持たず
     //   CbParticleStatic::particle_type を読む。大きさの倍率（particle_scale）は
-    //   発生したときに size へ掛けてしまうので、粒子ごとの倍率も持たない。
+    //   発生したときに size へ掛けてしまうので、粒子ごとの倍率も持たない
     //
     //   並び（80 バイト = 16 バイト × 5）
     //     offset  0: state, angle, angular_speed, mass
@@ -123,7 +121,7 @@ namespace GpuData
         int emit_mode;   // offset 164: 0 = 出し続ける, 1 = バースト
         int burst_count; // offset 168: バーストで出す数
 
-        // offset 172: 速さの上限（m/s）。0 以下なら上限なし。
+        // offset 172: 速さの上限（m/s）。0 以下なら上限なし
         //   上限をシェーダーに定数で書いてはいけない。設定から渡さないと、初速を上限より
         //   大きくしても黙って上限に抑えられ、設定が効かないように見える
         float max_speed; // offset 172
@@ -140,8 +138,8 @@ namespace GpuData
         float  emit_shape;    // offset 220: 0 = 楕円の円盤, 1 = 線分（emit_rotation で刃の向きに合わせる）
 
         // ---- 大きさのばらつき（offset 224〜239） ----
-        // offset 224: 0 なら emit_size ちょうど、1 なら 0〜emit_size の一様な乱数。
-        //   1枚だけ出して広げる衝撃波のように、毎回同じ大きさで出したい効果のために外から決める。
+        // offset 224: 0 なら emit_size ちょうど、1 なら 0〜emit_size の一様な乱数
+        //   1枚だけ出して広げる衝撃波のように、毎回同じ大きさで出したい効果のために外から決める
         //   既定は 1
         float  size_random;  // offset 224
         float  intensity;    // offset 228: 発光の強さ（色に掛ける倍率。1 で選んだ色のまま、1 超で光る）
@@ -168,7 +166,7 @@ namespace GpuData
         float burst_trigger; // offset 36: 0 より大きいとバーストする（GPUParticleUpdateSystem が使ったら 0 に戻す）
         float emit_enabled;  // offset 40: 出し続けるモードで、0 なら出さない（アニメーションに合わせて止める）
 
-        // offset 44: エミッターごとの乱数の種（0 はまだ割り当てていない）。
+        // offset 44: エミッターごとの乱数の種（0 はまだ割り当てていない）
         //   粒子の番号だけを種にすると、同じプレハブから出したエフェクトはどれも全く同じ粒子の
         //   配置になるので、この値を混ぜてエミッターごとに違う乱数にする
         uint instance_seed; // offset 44

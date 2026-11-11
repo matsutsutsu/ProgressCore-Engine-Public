@@ -8,9 +8,7 @@
 #include <cmath>
 #include <cstring>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX;
@@ -27,7 +25,7 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
         m_lookTargetID = InvalidEntityID;
 
     // 見つかるまでは毎フレーム探す。プレハブの生成は後回しにされるので、最初の数フレームは
-    // まだ無いことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
+    // まだないことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
     if (m_lookTargetID == InvalidEntityID)
     {
         m_world->ViewEach<NameComponent, TransformComponent>([&](EntityID id) {
@@ -47,6 +45,8 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::ResolveLookTarget()
 
     return CCL::Title::DefaultLookTarget();
 }
+
+
 
 void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
                                      const DirectX::SimpleMath::Vector3 &lookTarget, const VirtualCamera &vcam)
@@ -77,6 +77,8 @@ void TitleCameraSystem::PublishBoard(const DirectX::SimpleMath::Vector3 &eye,
     if (changed) ++board.revision;
 }
 
+
+
 DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
     const DirectX::SimpleMath::Vector3 &base, const DirectX::SimpleMath::Vector3 &pivot) const
 {
@@ -102,6 +104,8 @@ DirectX::SimpleMath::Vector3 TitleCameraSystem::DriftedEye(
     return eye;
 }
 
+
+
 void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans,
                                   const DirectX::SimpleMath::Vector3 &eye, const DirectX::SimpleMath::Vector3 &pivot) const
 {
@@ -122,6 +126,8 @@ void TitleCameraSystem::ApplyPose(VirtualCamera &vcam, TransformComponent &trans
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
@@ -140,9 +146,10 @@ void TitleCameraSystem::Update(float dt)
     });
 }
 
+
+
 void TitleCameraSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     ImGui::TextUnformatted("タイトルカメラ（構図の調整）");
 
     if (m_world->HasResource<CCL::Title::CompositionBoard>())
@@ -164,5 +171,4 @@ void TitleCameraSystem::OnGui()
     ImGui::SliderFloat("横流れ周期[秒]", &m_swayPeriod, 4.0f, 60.0f, "%.1f");
     ImGui::SliderFloat("上下うねり[m]", &m_riseAmplitude, 0.0f, 3.0f, "%.2f");
     ImGui::SliderFloat("上下周期[秒]", &m_risePeriod, 4.0f, 60.0f, "%.1f");
-#endif
 }

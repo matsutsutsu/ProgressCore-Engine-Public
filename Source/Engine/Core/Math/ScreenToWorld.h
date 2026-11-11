@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 画面の2D座標から3D空間への変換を行うユーティリティ ScreenToWorld。
+// 概要: 画面の2D座標から3D空間への変換を行うユーティリティ ScreenToWorld
 //
 // 責務:
 //   - マウス座標から Y=0 平面との交点を求める
@@ -13,35 +13,14 @@
 class ScreenToWorld
 {
 public:
-    /**
-     * @brief マウスのスクリーン座標から、ワールド空間の Y=0 平面との交点を計算する。
-     *
-     * @param mouseX       マウスのX座標
-     * @param mouseY       マウスのY座標
-     * @param screenWidth  画面の幅（ピクセル）
-     * @param screenHeight 画面の高さ（ピクセル）
-     * @param camera       現在の描画に使用しているカメラ
-     * @return Y=0 平面上のワールド座標 (X, 0, Z)。レイが平面と平行なら (0, 0, 0)
-     */
+    // マウスの画面座標から、ワールドの Y=0 の平面との交点 (X, 0, Z) を求める。レイが平面と平行なら (0, 0, 0)
     static DirectX::SimpleMath::Vector3 GetRayIntersectionY0(
         float mouseX, float mouseY,
         float screenWidth, float screenHeight,
         const Camera &camera);
 
-    /**
-     * @brief スクリーン座標から、ワールド空間のピッキング用レイ(始点+方向)を生成する。
-     *
-     * Y=0 平面に限定しない汎用レイ。オブジェクト選択（レイと AABB の判定）に使う。
-     * mouseX/mouseY と screenWidth/screenHeight は「同じ座標系」であれば単位は不問。
-     * GameView のように画像内の相対座標（local）と表示サイズ（imageSize）を渡せば、
-     * レンダーターゲットの実解像度やウィンドウ位置に依存せず正しいレイになる。
-     *
-     * @param mouseX,mouseY      対象領域の左上を原点としたマウス座標
-     * @param screenWidth/Height 対象領域のサイズ（mouse と同じ座標系）
-     * @param camera             現在の描画カメラ
-     * @param outOrigin          [out] レイ始点（ニアクリップ面上の点）
-     * @param outDir             [out] 正規化されたレイ方向
-     */
+    // 画面座標から、ピッキング用のレイ（始点はニアクリップ面上、向きは正規化）を作る。物を選ぶときに使う
+    // マウスと画面の大きさが同じ座標系なら単位は問わないので、GameView は画像の中の座標と表示の大きさを渡せばよい
     static void GetRay(
         float mouseX, float mouseY,
         float screenWidth, float screenHeight,

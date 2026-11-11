@@ -17,14 +17,16 @@ std::vector<CCL::ECS::TypeID> LightSystem::GetReadTypes() const
             CCL::ECS::TypeInfo<TransformComponent>::ID()};
 }
 
+
+
 void LightSystem::Update(float dt)
 {
     if (!m_world || !m_world->HasResource<LightManager *>()) return;
     LightManager *lightManager = m_world->GetResource<LightManager *>();
     if (!lightManager) return;
 
-    // 1. 毎フレーム空にしてから積み直す。
-    //    Clear と積み込みを別の System に分けると順番が保証されないので、1つの System で行う。
+    // 1. 毎フレーム空にしてから積み直す
+    //    Clear と積み込みを別の System に分けると順番が保証されないので、1つの System で行う
     lightManager->Clear();
 
     // 2. 平行光源
@@ -101,6 +103,8 @@ void LightSystem::Update(float dt)
 
 }
 
+
+
 DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotation)
 {
     using namespace DirectX;
@@ -112,5 +116,7 @@ DirectX::XMFLOAT3 LightSystem::CalculateDirection(const DirectX::XMFLOAT4 &rotat
     XMStoreFloat3(&result, dir);
     return result;
 }
+
+
 
 REGISTER_RENDER_SYSTEM(LightSystem, Priority::RenderStage::R02_Environment);

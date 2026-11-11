@@ -1,20 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: ムービーの再生を進め、ムービー用カメラの姿勢と優先度を VirtualCamera へ書く System。
+// 概要: ムービーの再生を進め、ムービー用カメラの姿勢と優先度を VirtualCamera へ書く System
 //
 // 責務:
-//   - 台本フォルダの JSON を起動時にすべて読んでおく
-//   - 再生要求（CinematicPlayRequestEvent）で指された台本を、指された位置（既定は頭）から流す。開始待ち・再生中に届いたものは捨てる
-//   - 開始待ちと再生位置を実時間で進め、長さに達したか長押しでスキップされたら終えて知らせる
-//   - 開始待ち・再生中は姿勢と画角を書き、優先度を上げてカメラを掌握する。それ以外は優先度を下げて譲る
-//   - ショットの基準にする対象を名前で探し、その位置と向きからカメラの位置を決める
-//   - ムービーの開始待ち・再生中の間、GameFlowState::cinematic を立てる
-//   - 再生していない間、エディタが指した台本と時刻の絵を見せる（プレビュー）
-//   - エディタが台本を保存したら、台本を読み直す
+//   - 起動時に台本フォルダの JSON をすべて読み、エディタが保存したら読み直す
+//   - 再生要求で指された台本を流し、長さに達するか長押しでスキップされたら終えて知らせる
+//   - 開始待ちと再生中は、姿勢と画角を書いて優先度を上げ、GameFlowState::cinematic を立てる
+//   - 再生していない間は、エディタが指した台本と時刻の絵を見せる（プレビュー）
+//   - ショットの被写界深度を、DepthOfFieldConfigComponent の上書きスロットへ書く
 //
-// 備考:
-//   どのカメラを映すかを決め、切り替えをブレンドするのは CameraBrainSystem（R01b）。
-//   この System は優先度を上げ下げするだけで、Brain に選ばれる側に回る。
+// 備考: どのカメラを映すかとブレンドは CameraBrainSystem（R01b）が決める。ここは優先度を上げ下げするだけ
+//       開始待ちと再生位置は実時間で進める。開始待ち・再生中に届いた要求は捨てる
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
@@ -22,15 +18,17 @@
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Core/Components/NameComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 
 #include <SimpleMath.h>
 #include <map>
 #include <mutex>
 #include <string>
 
-class CinematicCameraSystem : public CCL::ECS::IfSystem<CinematicCameraSystem,
-                                                        CCL::ECS::Write<VirtualCamera>,
-                                                        CCL::ECS::Write<CinematicCameraComponent>>
+class CinematicCameraSystem : public CCL::ECS::IfSystem<
+    CinematicCameraSystem,
+    CCL::ECS::Write<VirtualCamera>,
+    CCL::ECS::Write<CinematicCameraComponent>>
 {
 public:
     CinematicCameraSystem() : IfSystem("CinematicCameraSystem") {}
@@ -43,13 +41,8 @@ public:
     // 再生の状態を表示し、台本を選んで再生要求を出す・台本を読み直すテスト用ボタンを置く
     void OnGui() override;
 
-    /**
-     * @brief 読み取る Component 型をスケジューラへ申告する。
-     *
-     * ショットの基準にする対象（プレイヤーやボス）の名前と位置を GetComponent / ViewEach で読む。
-     * ForEach のフィルタには載らないので、ここで足しておかないと、
-     * それらを書く System と並列に走ってしまう。
-     */
+    // ショットの基準にする対象の名前と位置を GetComponent / ViewEach で読むので申告する
+    // 申告しないと、それらを書く System と並列に走ってしまう
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
         auto types = IfSystem::GetReadTypes();
@@ -58,42 +51,39 @@ public:
         return types;
     }
 
+    // 被写界深度の上書きスロットを GetSingletonComponent で書く。ForEach のフィルタには載らないので、ここで申告する
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
+    {
+        auto types = IfSystem::GetWriteTypes();
+        types.push_back(CCL::ECS::TypeInfo<DepthOfFieldConfigComponent>::ID());
+        return types;
+    }
+
 private:
     // スキップボタンを今押しているか。エディタの操作中は false
     bool ReadSkipHeld() const;
 
-    /**
-     * @brief 今の再生位置の絵（姿勢と画角）をカメラへ書く。
-     * @param vcam 書き込む先のカメラ。
-     * @param cine 再生状態。ショットが替わった瞬間なら、補間元と基準もここで決める。
-     * @return 書けたら true。ショットが無い・基準が見つからないときは false で、カメラは書き換えない。
-     */
+    // 今の再生位置の絵（姿勢と画角）をカメラへ書く。ショットが替わった瞬間なら、補間元と基準もここで決める
+    // ショットがない・基準が見つからないときは false を返し、カメラは書き換えない
     bool WriteShotPose(VirtualCamera &vcam, CinematicCameraComponent &cine) const;
 
-    /**
-     * @brief ショットに入った瞬間に、基準にする対象とその向きを決める。
-     * @param cine 書き込む先（shotSubject / shotYaw）。
-     * @param shot 入ったショット。
-     */
+    // ショットに入った瞬間に、基準にする対象とその向き（shotSubject / shotYaw）を決める
     void EnterShot(CinematicCameraComponent &cine, const CameraShot &shot) const;
 
-    /**
-     * @brief 今のショットの基準の位置（ワールド、m）を求める。
-     * @param cine    今のショットの基準（shotSubject）を持つ再生状態。
-     * @param shot    今のショット。
-     * @param outPos  基準の位置。subject が空ならワールドの原点。
-     * @return 基準の対象が見つからない・消えたときは false。
-     */
+    // 今のショットの基準の位置（ワールド、m）を求める。subject が空ならワールドの原点
+    // 基準の対象が見つからない・消えたときは false
     bool ResolveSubjectPosition(const CinematicCameraComponent &cine, const CameraShot &shot,
                                 DirectX::SimpleMath::Vector3 &outPos) const;
 
-    /**
-     * @brief エディタが指した台本と時刻の絵を、カメラへ書く（プレビュー）。
-     * @param vcam 書き込む先のカメラ。
-     * @param cine 見せる台本と時刻（previewScript / previewTime）を持つ再生状態。再生の状態は書き換えない。
-     * @return 書けたら true。ショットが無い・基準が見つからないときは false で、カメラは書き換えない。
-     */
-    bool WritePreviewPose(VirtualCamera &vcam, const CinematicCameraComponent &cine) const;
+    // エディタが指した台本と時刻の絵を、カメラへ書く（プレビュー）。再生の状態は変えず、被写界深度だけ書く
+    // ショットがない・基準が見つからないときは false を返し、カメラは書き換えない
+    bool WritePreviewPose(VirtualCamera &vcam, CinematicCameraComponent &cine) const;
+
+    // 被写界深度の効きを target（0 か 1）へ fadeTime 秒で寄せ、上書きスロットへ書く。効きが 0 になったら手放す
+    void UpdateDof(CinematicCameraComponent &cine, float target, float fadeTime, float dt) const;
+
+    // 台本のショットに、ぼかすものが1つでもあるか。なければ被写界深度に触らず、シーンの設定のままにする
+    static bool UsesDof(const CinematicScript &script);
 
     // 台本フォルダの JSON をすべて読み直す。読めなかった台本はログを出して外す
     void LoadAllScripts();

@@ -1,24 +1,13 @@
 #pragma once
-// ===========================================================================
-// 概要: ビネットの設定と、演出からの一時的な上書きを持つシングルトンコンポーネント。
-//
-// 責務:
-//   - シーンが持つ普段の設定（enable / data）を持つ
-//   - 演出ごとの一時的な上書き（overrides）を持つ
-//   - 両方を重ねた最終的なパラメータを求める（Resolve）
-//   - 上書きの土台になる、今の設定そのままの値を返す（BaseParams）
-//
-// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
-//       最終的な値は PostProcessSystem が Resolve() で求める。
-//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
-// ===========================================================================
+// ビネットの設定（シングルトン）。シーンの普段の設定と、演出ごとの一時的な上書き（overrides）を持つ
+// 演出は enable / data を書き換えず、自分のスロットだけを触る。最終的な値は PostProcessSystem が Resolve() で求める
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
 #include <cmath>
 
-// ビネットの一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）。
+// ビネットの一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）
 struct VignetteOverrideParams
 {
     DirectX::XMFLOAT4 color      = {0.0f, 0.0f, 0.0f, 1.0f}; // 周辺を塗る色
@@ -58,14 +47,8 @@ struct VignetteConfigComponent
         return p;
     }
 
-    /**
-     * @brief 描画に渡すパラメータを返す。普段の設定に、上書きを priority の小さい順に重ねる。
-     *
-     * 色収差のように最大値をとらないのは、ビネットの色・半径・脈動が組み合わせで意味を持つため。
-     * 項目ごとに最大値をとると、どの演出とも違う色と形になる。
-     *
-     * @return 定数バッファへ渡すパラメータ。vigTime は演出ではなく PostProcessSystem が進める値なので触らない。
-     */
+    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる（vigTime は PostProcessSystem が進めるので触らない）
+    // 色収差のように最大をとらないのは、色・半径・脈動が組み合わせで意味を持つため。項目ごとに最大をとると、どの演出とも違う見た目になる
     GpuData::CbVignetteData Resolve() const
     {
         GpuData::CbVignetteData out = data;

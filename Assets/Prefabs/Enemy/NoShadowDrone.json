@@ -47,7 +47,8 @@
                     "paths": []
                 },
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.glb"
+                    "assetPath": "Assets/Models/Enemy/Drone/SM_Drone.glb",
+                    "generateLod": true
                 },
                 "Name": {
                     "name": "Drone"

@@ -1,32 +1,17 @@
 #pragma once
-// ===========================================================================
-// 概要: ドローンの陣形の種類（DroneFormationType）と、その表示名テーブル。
-//
-// 責務:
-//   - 陣形の一覧（識別子・保存値・表示名）を1つの X マクロ表で持つ
-//   - 表から enum と、インスペクタ用の名前テーブルを作る
-//   - データ陣形の予約枠（33〜48）の範囲を定める
-//
-// 備考: DroneComponent.h から分けてあるのは、BT の技 ID から陣形を引くためにこの
-//       enum を使う側（BTローダ・BTエディタ・ActionRegistry）が、ドローン1機ぶんの
-//       状態とシリアライズ機構まで読み込まずに済むようにするため。
-// ===========================================================================
+// ドローンの陣形の種類と、その表示名テーブル
+// DroneComponent.h から分けて、enum だけを使う側（BT のローダ・エディタ）の依存を軽くしている
 #include <array>
 #include <cstddef>
 #include <cstdint>
 
-// 陣形の一覧 (識別子, 保存値, 表示名)。enum も表示名もこの表から作る。
+// 陣形の一覧 (識別子, 保存値, 表示名)。enum も表示名もこの表から作る
 //
-// 値を手で書くのは、この数値がプレハブとシーンに保存されているため。
-// 欠番は削除した陣形の値なので埋めない。増やすときは 49 以降。
+// 保存値はプレハブとシーンに保存されるので手で書く。欠番は埋めず、増やすときは 49 以降
+// 追加時は FormationRegistry への登録も要る（ないと指定しても静止するだけ）
 //
-// 追加時は FormationRegistry への IFormation 登録も要る（無いと指定しても静止するだけ）。
-//
-// 33〜48 はデータ陣形（Assets/Formations/*.json）の予約枠。
-// JSON 側が "slot" で名乗った番号へ起動時に入る。
-//
-// 枠を先に確保してあるのは、陣形を1つ作るたびにこの表と ActionRegistry を編集して
-// リビルドするのでは、エディタで組む意味が半分消えるため。枠を使い切ったら 49 以降を足す。
+// 33〜48 はデータ陣形（Assets/Formations/*.json）の予約枠。JSON の "slot" の番号へ起動時に入る
+// 先に確保してあるので、エディタで技を作るたびにリビルドせずに済む
 #define DRONE_FORMATION_LIST(X)                               \
     X(None, 0, "命令なし（現状維持）")                        \
     X(LowOrbit, 1, "低空円陣")                                \
@@ -55,7 +40,7 @@
     X(DataSlot14, 47, "[空き枠] 枠14")                        \
     X(DataSlot15, 48, "[空き枠] 枠15")
 
-// ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う。
+// ボスがドローン群へ出す「どの形を作れ」の指示。BossCommandComponent でも使う
 enum class DroneFormationType : uint8_t
 {
 #define CCL_DRONE_FORMATION_ENUM(Name, Value, Display) Name = Value,
@@ -63,16 +48,14 @@ enum class DroneFormationType : uint8_t
 #undef CCL_DRONE_FORMATION_ENUM
 };
 
-// 保存値の上限+1（欠番を含む）。インスペクタが値をそのまま添字にするため、
-// 名前テーブルは詰めた長さではなくこの長さで作る。
+// 保存値の上限+1（欠番を含む）。インスペクタが値をそのまま添字にするので、名前テーブルはこの長さで作る
 inline constexpr size_t kDroneFormationSlotCount = 49;
 
-// 名前を持たない、新しい技のための空き枠（両端を含む）。エディタの複製はここから空きを探す。
-// 名前のある枠（縦割り等）も JSON が名乗れる。C++ 実装のある枠だけは登録時に弾く。
+// 新しい技のための空き枠（両端を含む）。エディタの複製はここから空きを探す
 inline constexpr uint8_t kDataFormationSlotFirst = 33;
 inline constexpr uint8_t kDataFormationSlotLast  = 48;
 
-// インスペクタ表示用の陣形名。欠番は "(欠番)" で埋める。
+// インスペクタ表示用の陣形名。欠番は "(欠番)" で埋める
 static constexpr std::array<const char *, kDroneFormationSlotCount> MakeDroneFormationNames()
 {
     std::array<const char *, kDroneFormationSlotCount> names{};

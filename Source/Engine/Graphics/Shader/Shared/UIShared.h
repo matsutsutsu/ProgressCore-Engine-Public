@@ -1,13 +1,5 @@
-// ===========================================================================
-// 概要: UI の 2D パスで C++ と HLSL が共有する定数バッファ。
-//
-// 責務:
-//   - ゲージ（UIGaugePS）の定数バッファの構造体を定義する
-//   - C++ 側で大きさを static_assert する（理由は ShaderShared.h を参照）
-//
-// 備考: PostProcessShared.h と同じ書き分けで、C++ では GpuData::CbUIGaugeData、HLSL では cbuffer になる。
-//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
-// ===========================================================================
+// UI の 2D パスで C++ と HLSL が共有する定数バッファ（ゲージの UIGaugePS）
+// C++ では GpuData::CbUIGaugeData、HLSL では cbuffer になる。HLSL も読むのでインクルードガードを使う
 #ifndef UI_SHARED_H
 #define UI_SHARED_H
 

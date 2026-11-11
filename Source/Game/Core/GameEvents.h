@@ -1,30 +1,23 @@
 #pragma once
-// ===========================================================================
-// 概要: ゲームの System どうしが EventBus でやり取りするイベントの型。
-//
-// 責務:
-//   - ジャスト回避・被弾・命中・ジャンプ・ダッシュを知らせるイベントを定義する
-//
-// 備考: カメラへの演出の要求（CameraShakeRequestEvent など）は Engine/Camera/CameraEvents.h にある。
-//       カメラがゲーム側の型を知らずに済むようにするため。
-// ===========================================================================
+// ゲームの System どうしが EventBus でやり取りするイベント
+// カメラへの演出の要求は、カメラがゲーム側の型を知らずに済むよう Engine/Camera/CameraEvents.h に置く
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
-// ジャスト回避に成功した瞬間に出す。PlayerJustEvadeSystem が出し、PlayerJustEvadeSystem（スロー・ラッシュ）が受ける
+// ジャスト回避に成功した瞬間に出す。受けた PlayerRushSystem がラッシュを始める
 struct JustEvadeSuccessEvent
 {
     CCL::ECS::EntityID playerID;   // 回避したプレイヤー
-    CCL::ECS::EntityID attackerID; // 攻撃してきた敵。今は誰も読まないが、反撃の演出に使うため持たせておく
+    CCL::ECS::EntityID attackerID; // 避けた攻撃（ボスの剣の判定かドローン）。ラッシュはこの持ち主へ斬りかかる
 };
 
-// ダメージを受けたときに出す（受けた側のイベント）。
+// ダメージを受けたときに出す（受けた側のイベント）
 // DamageResolutionSystem が出し、PlayerFeedbackSystem と BossPerceptionSystem が受ける
 struct DamageTakenEvent
 {
     CCL::ECS::EntityID targetID;     // ダメージを受けたエンティティ
     float              damageAmount; // 受けたダメージ量
-    bool               isPlayer;     // 受けたのがプレイヤーか（受け取る側でコンポーネントを引かずに済むように）
+    bool               isPlayer;     // 受けたのがプレイヤーか
 };
 
 // 攻撃が相手にダメージを与えたときに出す（攻撃した側のイベント）
@@ -38,17 +31,20 @@ struct AttackHitConfirmedEvent
     // 命中の重さ（ヒットストップの長さと、その間の時間の速さ）
     float hitStopDuration = 0.0f;
     float hitStopScale    = 1.0f;
+
+    bool isFinisher = false; // 攻撃した側のとどめ区間（AnimEventType::Finisher）の中で当てたか
 };
 
-// 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）。
+// 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）
 // HitEffectSystem が受けて、当たった位置に GPU パーティクルを出す
 struct HitImpactEvent
 {
-    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 当たった位置（ワールド座標）
-    float             power    = 1.0f;               // 命中の強さ（演出の大きさに使う）
+    DirectX::XMFLOAT3  position   = {0.0f, 0.0f, 0.0f};          // 当たった位置（ワールド座標）
+    float              power      = 1.0f;                        // 命中の強さ（演出の大きさに使う）
+    CCL::ECS::EntityID attackerID = CCL::ECS::InvalidEntityID;   // 攻撃した側。ラッシュ中のプレイヤーなら HitEffectSystem がパーティクルを差し替える
 };
 
-// プレイヤーが跳んだ瞬間に出す。PlayerActionVfxSystem が受けて土煙などを出す。
+// プレイヤーが跳んだ瞬間に出す。PlayerActionVfxSystem が受けて土煙などを出す
 // 移動の System が VFX やプレハブを知らずに済むよう、跳んだことだけを知らせる
 struct PlayerJumpedEvent
 {

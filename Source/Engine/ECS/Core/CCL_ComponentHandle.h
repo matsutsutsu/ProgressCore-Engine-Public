@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 生ポインタ T* の代わりに保持できる、安全なコンポーネント参照 ComponentHandle<T>。
+// 概要: 生ポインタ T* の代わりに保持できる、安全なコンポーネント参照 ComponentHandle<T>
 //
 // 責務:
 //   - (World*, EntityID) を保持し、アクセスのたびに最新のアドレスを引き直す
@@ -8,7 +8,7 @@
 //
 // 備考: Chunk 内のコンポーネントは Entity の追加・削除や Archetype 遷移で
 //       メモリ上の位置が変わる。生ポインタを持ち続けると構造変更後に
-//       ダングリングしてクラッシュするため、長く持つ参照はこちらを使う。
+//       ダングリングしてクラッシュするため、長く持つ参照はこちらを使う
 // ===========================================================================
 
 #include <cassert>
@@ -20,23 +20,8 @@ namespace CCL::ECS
     // 前方宣言（World の完全定義は実装側で必要）
     class World;
 
-    /**
-     * @brief コンポーネントへの安全な間接アクセス用ハンドル。
-     *
-     * 内部に `(World*, EntityID)` を持つだけなので軽量で、コピーも安い。
-     * アクセスのたびに `World::GetComponent<T>(id)` を呼び直すので、
-     *   - 構造変更後でも常に最新のアドレスを取得できる
-     *   - Entity が削除された場合は nullptr / IsValid()==false になる
-     *
-     * @tparam T 参照したいコンポーネント型
-     *
-     * @code
-     *   ComponentHandle<Health> h = world.GetHandle<Health>(playerId);
-     *   if (h) {                  // 暗黙の bool 変換で生存確認
-     *       h->hp -= 10;          // operator-> でアクセス
-     *   }
-     * @endcode
-     */
+    // コンポーネントを間接に指すハンドル。(World*, EntityID) だけを持ち、使うたびに GetComponent で引き直す
+    // 構造が変わっても今のアドレスを返し、Entity が消えれば nullptr になる。フレームをまたいで持つときに使う
     template <typename T>
     class ComponentHandle
     {
@@ -53,25 +38,13 @@ namespace CCL::ECS
         {
         }
 
-        /**
-         * @brief ハンドルが有効か（Entity が生きており、対象 Component を持つか）。
-         * @note 実装は CCL_World.h の末尾。
-         */
+        // Entity が生きていて、T を持っているか
         bool IsValid() const;
 
-        /**
-         * @brief 明示的にポインタを取得する。
-         * @return 有効なら T*、無効なら nullptr。
-         * @note 実装は CCL_World.h の末尾（World::GetComponent を呼ぶため）。
-         */
+        // T* を返す。無効なら nullptr
         T *Get() const;
 
-        /**
-         * @brief ポインタのように使えるアクセサ。
-         *
-         * @note 無効なハンドルへのアクセスは assert で即座に止まる。
-         *       「いつのまにかダングリング」というバグを開発中に見つけやすくするため。
-         */
+        // 無効なハンドルに触ると assert で止まる（宙に浮いたポインタを開発中に見つける）
         T *operator->() const
         {
             T *ptr = Get();

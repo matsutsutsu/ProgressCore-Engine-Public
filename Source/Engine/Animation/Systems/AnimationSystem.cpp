@@ -17,13 +17,11 @@
 #include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Time/Components/TimeState.h"
 
-// m_world を使わない計算はここに置く
+// m_world を使わない時間の計算は、ここに置く
 namespace
 {
-    /**
-     * @brief 効果音のピッチに、±range の揺らぎを足して返す。
-     * @note 乱数はスレッドごとに持つ（イベントの処理は並列に走ることがあるため）。
-     */
+    // 効果音のピッチに、±range の揺らぎを足して返す
+    //   乱数の状態は thread_local に持つ（呼び出し元を並列にしても状態を共有しない）
     float RandomizePitch(float pitch, float range)
     {
         if (range <= 0.0f) return pitch;
@@ -32,42 +30,41 @@ namespace
         return pitch + dist(rng);
     }
 
-    /**
-     * @brief 実効の再生速度（ステートの速度 × 足滑り補正 × 速度カーブ）を返す。
-     * @note ここに Tracy のゾーンを置かないこと。処理は数十ナノ秒（CurveData::Evaluate は
-     *       O(log n)）でゾーン自体のコストと同程度になり、OS のプリエンプトの時間を拾って
-     *       まれに巨大な値が出る。ゾーンは AnimationSystem::Update の粒度に留める。
-     */
+
+
+    // 実効の再生速度（ステートの速度 × 足滑り補正 × 速度カーブ）を返す
     float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
     {
+        // ここに Tracy のゾーンを置かないこと
+        //   処理は数十ナノ秒でゾーン自体のコストと同程度になり、OS のプリエンプトを拾って巨大な値が出る
         float curveMultiplier = 1.0f;
         if (animator.activeCurve)
         {
             float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
-            // ループの境界をまたいだステップでは currentTimer が duration を超えて progress>1 になり、
-            //   速度カーブが外挿されて一瞬速度が跳ねる。[0,1] に丸めて防ぐ
+
+            // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる
+            //   [0,1] に丸めて防ぐ
             progress        = std::clamp(progress, 0.0f, 1.0f);
             curveMultiplier = animator.activeCurve->Evaluate(progress);
         }
         return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
     }
 
-    /**
-     * @brief currentTimer（ブレンド中なら previousTimer も）を dt 分進める。
-     * @return 順方向に進んだか（逆再生・シークならイベントを発火しない）
-     */
+
+
+    // currentTimer（ブレンド中なら previousTimer も）を進める。順方向に進んだら true
     bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
     {
         const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
         const float prevTime       = animator.currentTimer;
 
-        // 進める前の時刻を控える（区間 HitBox の判定に使う）
+        // 進める前の時刻を控える（区間イベントの判定に使う）
         animator.previousFrameTimer = prevTime;
 
         animator.currentTimer += localDt * effectiveSpeed;
         const bool movedForward = (animator.currentTimer >= prevTime);
 
-        // ブレンド中は前のクリップの時刻も進める
+        // --- 前のクリップ（ブレンド中だけ）---
         if (animator.isBlending)
         {
             animator.currentBlendTime += localDt;
@@ -79,12 +76,12 @@ namespace
             {
                 if (!animator.previousLoop)
                 {
-                    // 非ループ（JumpEnd など）: duration を超えたら末尾で止める
+                    // 非ループ: duration を超えたら末尾で止める
                     animator.previousTimer = (std::min)(animator.previousTimer, animator.previousSequence->duration);
                 }
                 else
                 {
-                    // ループ（Run など）: 剰余でループ内の時刻に戻す
+                    // ループ: 剰余でループ内の時刻に戻す
                     animator.previousTimer = std::fmod(animator.previousTimer, animator.previousSequence->duration);
                     if (animator.previousTimer < 0.0f)
                         animator.previousTimer += animator.previousSequence->duration;
@@ -100,6 +97,8 @@ namespace
 
         return movedForward;
     }
+
+
 
     // duration の境界でループ・終了を判定し、currentTimer をクリップ内に収める
     void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
@@ -139,13 +138,23 @@ using CCL::Anim::PinRootMotionNode;
 
 AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
+
+
 void AnimationSystem::Update(float dt)
 {
+    // 処理フロー:
+    // 1. 時間を進める（速度カーブを含む）
+    // 2. 点イベントを発火する
+    // 3. ループと終了を判定する
+
+    // 2 の後に 3 を行うので、ループ末尾ちょうどのイベントも、境界をまたいだステップで発火できる
+    // ポーズの計算は AnimationPoseSystem が 1 描画フレームに 1 回行う
+
     ZoneScopedN("AnimationSystem::Update");
 
     // 直列に回す。DispatchPointEvents が EventBus へ Publish するので、
-    // 並列にするなら先に EventBus をスレッドセーフにすること。
-    // ModelComponent は Model を持つキャラだけに絞るために受け取っているだけで、ここでは触らない
+    //   並列にするなら先に EventBus をスレッドセーフにすること
+    //   ModelComponent は Model を持つキャラだけに絞るために受け取っているだけで、ここでは触らない
     ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
         if (!animator.currentSequence) return;
 
@@ -154,19 +163,17 @@ void AnimationSystem::Update(float dt)
 
         const AnimSequence *seq = animator.currentSequence;
 
-        // 1. 時間を進める（速度カーブを含む）
         const bool movedForward = AdvanceTimers(animator, seq, time.localDt);
 
-        // 2. 点イベントを発火する
         DispatchPointEvents(id, animator, seq, movedForward);
 
-        // 3. ループと終了を判定する
         ResolveLoopAndFinish(animator, seq);
 
-        // ポーズの計算は AnimationPoseSystem が 1 描画フレームに 1 回行う
         (void)modelComp;
     });
 }
+
+
 
 void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorComponent &animator,
                                           const AnimSequence *seq, bool movedForward)
@@ -180,11 +187,11 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         return;
     }
 
+    // events は startTime 昇順なので、nextEventIndex から順に見て、まだ達していないところで止める
     while (animator.nextEventIndex < static_cast<int>(seq->events.size()))
     {
         const auto &evt = seq->events[animator.nextEventIndex];
 
-        // まだ開始時刻に達していなければ終わり
         if (animator.currentTimer < evt.startTime)
             break;
 
@@ -204,14 +211,13 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             break;
 
         case AnimEventType::SpawnHitbox: {
-            // ムービー（タイムライン）がクリップを握っている間は攻撃判定を出さない。
-            //   演出で攻撃モーションを見せただけで、近くのプレイヤーにダメージが入ってしまうため。
+            // ムービー（タイムライン）がクリップを握っている間は攻撃判定を出さない
+            //   演出で攻撃モーションを見せただけで、近くのプレイヤーにダメージが入るため
             //   音とエフェクトは演出として欲しいので、上の Sound / Effect は止めない
             if (animator.isExternalOverride) break;
 
-            // 空間に独立した球状の判定の生成を依頼する。
-            //   生存時間はシーケンサーのブロック長。点（startTime==endTime）なら 0 になり、
-            //   購読側が最小の寿命を使う
+            // 生存時間はシーケンサーのブロック長
+            //   点（startTime == endTime）なら 0 になり、購読側が最小の寿命を使う
             const float window = evt.endTime - evt.startTime;
             m_world->GetEventBus().Publish(AnimEventSpawnHitboxMessage{
                 id, evt.offset, evt.radius, evt.damage, evt.hitStopDuration, evt.hitStopScale, window,
@@ -221,11 +227,10 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
 
         case AnimEventType::HitBox:
         case AnimEventType::Trail:
+        case AnimEventType::Particle:
         case AnimEventType::Blackboard:
-            // 区間のイベントは発火しない。各 System が再生時刻を見て区間内かを判定する。
-            //   HitBox     → CombatAnimationSyncSystem
-            //   Trail      → TrailAnimationSyncSystem
-            //   Blackboard → 読む System は未実装
+        case AnimEventType::Finisher:
+            // 区間のイベント（HitBox / Trail / Particle など）は出さない。各 System が再生時刻を見て判定する
             break;
 
         default:
@@ -235,6 +240,8 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
         animator.nextEventIndex++;
     }
 }
+
+
 
 void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 {
@@ -258,7 +265,7 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 
     model->ComputeAnimation(animIndex, time, animator->poseBufferA);
 
-    // Force Root Lock（プレビュー版）。RootMotionComponent の有無に関係なく常に固定する。
+    // Force Root Lock（プレビュー版）。RootMotionComponent の有無に関係なく常に固定する
     //   固定しないと、クリップ自身の前進と、ルートモーションカーブによる Transform の移動
     //   （AnimationSequencerWindow::DrawRootMotionPreview）が二重に掛かり、モデルだけ前に出る
     if (!animator->poseBufferA.empty())
@@ -269,5 +276,7 @@ void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
 
     model->SetNodePoses(animator->poseBufferA);
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(AnimationSystem, Priority::LogicStage::L02_PostUpdate);

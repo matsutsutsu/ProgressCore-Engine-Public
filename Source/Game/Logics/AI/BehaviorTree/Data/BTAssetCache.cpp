@@ -13,6 +13,8 @@ BTAssetCache &BTAssetCache::Instance()
     return cache;
 }
 
+
+
 std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
 {
     if (path.empty()) return nullptr;
@@ -22,11 +24,13 @@ std::shared_ptr<const BTAsset> BTAssetCache::GetOrLoad(const std::string &path)
     auto it = m_assets.find(path);
     if (it != m_assets.end()) return it->second;
 
-    // 失敗したことのあるパスは読みに行かない（ログは初回の1回だけ出してある）
+    // 失敗したことのあるパスは読みに行かない。毎フレーム再試行するとログが埋まって他の警告が見えなくなる
     if (m_failed.count(path)) return nullptr;
 
     return LoadLocked(path);
 }
+
+
 
 std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 {
@@ -34,19 +38,21 @@ std::shared_ptr<const BTAsset> BTAssetCache::Reload(const std::string &path)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 失敗の記録も消して、m_assets と m_failed に同じパスが入らない状態を保つ。
+    // 失敗の記録も消して、m_assets と m_failed に同じパスが入らない状態を保つ
     //
     //   消し忘れても読み直し自体は成功する。Reload は GetOrLoad を経由せず
     //   LoadLocked を直接呼ぶので、m_failed の判定（毎フレーム再試行しないための
-    //   確認）を通らないため。
+    //   確認）を通らないため
     //   ただし両方にパスが残り、GetOrLoad が m_assets を先に見る順番に
     //   頼って動いているだけの状態になる。順番を入れ替えると
-    //   「直したのに読まれない」が起きる。
+    //   「直したのに読まれない」が起きる
     m_assets.erase(path);
     m_failed.erase(path);
 
     return LoadLocked(path);
 }
+
+
 
 std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
 {
@@ -66,6 +72,8 @@ std::shared_ptr<const BTAsset> BTAssetCache::LoadLocked(const std::string &path)
     return shared;
 }
 
+
+
 // ---------------------------------------------------------------------------
 // キャッシュの管理
 // ---------------------------------------------------------------------------
@@ -76,6 +84,8 @@ void BTAssetCache::Clear()
     m_assets.clear();
     m_failed.clear();
 }
+
+
 
 size_t BTAssetCache::Count() const
 {

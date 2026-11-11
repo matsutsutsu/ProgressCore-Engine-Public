@@ -1,12 +1,12 @@
 #pragma once
 // ===========================================================================
-// 概要: モデルの描画で使う定数バッファ（CbSkeleton と CbScene）をバインドするクラス。
+// 概要: モデルの描画で使う定数バッファ（CbSkeleton と CbScene）をバインドするクラス
 //
 // 責務:
 //   - CbSkeleton（b12）を持ち、メッシュのボーン行列を書き込む
 //   - CbScene（b8。Graphics が持つ）と CbSkeleton を頂点・ピクセルシェーダーにバインドする
 //
-// 備考: 描画（ドローコール）はしない。各 RenderPass が呼ぶ。
+// 備考: 描画（ドローコール）はしない。各 RenderPass が呼ぶ
 // @code
 //    // 描画パスから（スキンメッシュのボーン行列を送る）
 //    modelConstants->UpdateSkeletonConstants(dc, mesh);
@@ -37,10 +37,8 @@ public:
     // CbScene と CbSkeleton をバインドする（EnvironmentSystem と NormalPrepass から呼ばれる）
     void BindAllGlobalConstantBuffers(ID3D11DeviceContext *dc);
 
-    /**
-     * @brief メッシュのボーン行列を CbSkeleton に書き、頂点シェーダーにバインドする。
-     * @param mesh ボーンが無ければ、メッシュのノードのワールド行列を 0 番に入れる
-     */
+    // メッシュのボーン行列を CbSkeleton に書き、頂点シェーダーにバインドする
+    // ボーンがなければ、メッシュのノードのワールド行列を 0 番に入れる
     void UpdateSkeletonConstants(ID3D11DeviceContext *dc, const Model::Mesh &mesh);
 
 private:

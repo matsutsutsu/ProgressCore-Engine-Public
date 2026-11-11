@@ -10,8 +10,8 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // スロットの識別子と優先度。エンジンは演出の中身を知らないので、名前と優先度は使う側が決める。
-    // ジャスト回避の演出（20）より低くして、同時に出たらジャスト回避を優先する。
+    // スロットの識別子と優先度。エンジンは演出の中身を知らないので、名前と優先度は使う側が決める
+    // ジャスト回避の演出（20）より低くして、同時に出たらジャスト回避を優先する
     const uint32_t kSource   = CCL::Utils::HashString("ScreenImpact");
     constexpr int  kPriority = 10;
 } // namespace
@@ -19,19 +19,19 @@ namespace
 void ScreenImpactSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 演出が無い間は自分のスロットを手放す
+    // 1. 演出がない間は自分のスロットを手放す
     // 2. 残り時間を進めて強さを求める
     // 3. 放射ブラーと色収差のスロットへ書く
 
     auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>();
 
     // ---------------------------------------------------------
-    // 1. 演出が無い間
+    // 1. 演出がない間
     // ---------------------------------------------------------
-    // weight を 0 にするのではなくスロットごと手放し、他の演出に枠を空ける。
+    // weight を 0 にするのではなくスロットごと手放し、他の演出に枠を空ける
     //
-    // 確保していないスロットへの Release は何もしないので、毎フレーム呼んでよい。
-    // 「前のフレームで出していたか」を覚えておく必要がない。
+    // 確保していないスロットへの Release は何もしないので、毎フレーム呼んでよい
+    // 「前のフレームで出していたか」を覚えておく必要がない
     if (impact == nullptr || impact->timer <= 0.0f)
     {
         CCL::PostFx::ReleaseAll(*m_world, kSource);
@@ -51,7 +51,7 @@ void ScreenImpactSystem::Update(float dt)
     // ---------------------------------------------------------
     // 3. 自分のスロットへ書く
     // ---------------------------------------------------------
-    // 設定本体（enable / data）には触れない。合成は PostProcessSystem が行う。
+    // 設定本体（enable / data）には触れない。合成は PostProcessSystem が行う
     if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
     {
         ov->weight          = 1.0f;
@@ -64,6 +64,8 @@ void ScreenImpactSystem::Update(float dt)
         ov->params.strength = impact->chromaticStrength * strength;
     }
 }
+
+
 
 // カメラが決まった後、PostProcessSystem（R09）の前に走らせる
 REGISTER_RENDER_SYSTEM(ScreenImpactSystem, Priority::RenderStage::R02_Environment);

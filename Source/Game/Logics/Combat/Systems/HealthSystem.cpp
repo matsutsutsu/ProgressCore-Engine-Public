@@ -27,6 +27,8 @@ void HealthSystem::Update(float dt)
     });
 }
 
+
+
 void HealthSystem::OnGui()
 {
     ImGui::Text("Health Monitor");
@@ -69,7 +71,7 @@ void HealthSystem::OnGui()
                 ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0,
                                        IM_COL32(160, 30, 30, 120));
 
-            // 名前（NameComponent が無ければ ID を出す）
+            // 名前（NameComponent がなければ ID を出す）
             ImGui::TableSetColumnIndex(0);
             {
                 const auto *nameComp = m_world->GetComponent<NameComponent>(id);
@@ -122,5 +124,7 @@ void HealthSystem::OnGui()
         ImGui::EndTable();
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(HealthSystem, Priority::LogicStage::L06_HealthManagement);

@@ -1,29 +1,27 @@
 #pragma once
 // ===========================================================================
-// 概要: 必要 Component 構成（Filter）を自動生成し、型安全な ForEach API を
-//       提供する System 用テンプレート基底クラス IfSystem。
+// 概要: 必要な Component の構成（Filter）を型から作り、型安全な ForEach を提供する System の基底クラス
 //
 // 責務:
-//   - AccessTypes（Read<T> / Write<T>）から Filter を自動構築する
-//   - Read<T> を const T& で渡し、書き込みを型で禁止する
-//   - ForEach / ForEachParallel / ForEachWithID / ForEachWithIDParallel の提供
-//   - イベント購読の自動解除（ListenEvent）
-//   - Read/Write 型を TaskScheduler の依存解析へ自動申告する
+//   - Read<T> / Write<T> から Filter を作り、Read<T> は const T& で渡して書き込みを型で禁止する
+//   - ForEach / ForEachParallel / ForEachWithID / ForEachWithIDParallel を提供する
+//   - イベントの購読を、System の破棄時に自動で解除する（ListenEvent）
+//   - Read / Write の型を、TaskScheduler の依存解析へ自動で申告する
 //
-// 備考: SystemBase 単体は「処理対象 Chunk を受け取る器」でしかない。
-//       重いテンプレート展開はすべてこのヘッダに集約している。
+// 備考: SystemBase は処理する Chunk を受け取る器だけで、重いテンプレートの展開はこのヘッダに集める
 //
 // @code
-//   class MovementSystem
-//     : public IfSystem<MovementSystem, Write<Position>, Read<Velocity>>
+//   class MovementSystem : public IfSystem<
+//       MovementSystem,
+//       Write<Position>,
+//       Read<Velocity>>
 //   {
 //   public:
 //       MovementSystem() : IfSystem("MovementSystem") {}
-//       void Update(float dt) override {
-//           ForEachParallel([dt](Position& p, const Velocity& v){
-//               p.x += v.x * dt;
-//               p.y += v.y * dt;
-//           });
+//
+//       void Update(float dt) override
+//       {
+//           ForEachParallel([dt](Position &p, const Velocity &v) { p.x += v.x * dt; });
 //       }
 //   };
 // @endcode
@@ -47,32 +45,20 @@
 
 namespace CCL::ECS
 {
-    /**
-     * @brief 必要 Component 構成を自動生成し、型安全な ForEach API を提供する
-     *        System 派生用テンプレート基底クラス。
-     *
-     * @tparam Derived     CRTP 用の派生クラス自身
-     * @tparam AccessTypes アクセス指定子（Read<T> / Write<T>）を可変長で指定
-     *
-     * 例: `IfSystem<MovementSystem, Write<Position>, Read<Velocity>>`
-     *   → Filter は {Position, Velocity}
-     *   → ForEach 内で Position は `&`、Velocity は `const &` で受け取れる
-     */
+    // Derived は CRTP の派生クラス自身、AccessTypes は Read<T> / Write<T> の並び
+    // 例: IfSystem<MovementSystem, Write<Position>, Read<Velocity>> なら、Filter は {Position, Velocity}
     template <class Derived, class... AccessTypes>
     class IfSystem : public SystemBase
     {
     public:
-        /**
-         * @brief AccessTypes... から Filter（Archetype）を自動構築する。
-         * @param name デバッグ・GUI 表示用の名前
-         */
+        // AccessTypes から Filter（Archetype）を作る。name はデバッグと GUI の表示に使う
         IfSystem(const std::string &name) : SystemBase(name)
         {
             // Read<T>/Write<T> のラッパーから生の型 RawType を取り出して Filter を生成
             m_filter = ArchetypeHelper::Generate<typename AccessTypes::RawType...>();
         }
 
-        // 登録済みのイベント購読を全て自動解除する
+        // 登録済みのイベント購読をすべて自動解除する
         virtual ~IfSystem() override
         {
             for (auto &cleanup : m_eventCleanups)
@@ -83,12 +69,7 @@ namespace CCL::ECS
         }
 
     private:
-        /**
-         * @brief ListenEvent で登録したイベントの「購読解除処理」を溜めておく箱。
-         *
-         * std::function に包むことで「何のイベント型か」をラムダの中に閉じ込めつつ、
-         * 外からは同じ型（void()）として並べられる（型消去）。
-         */
+        // ListenEvent で登録した購読解除の処理。std::function に包み、イベントの型によらず同じ型で並べる
         std::vector<std::function<void()>> m_eventCleanups;
 
     protected:
@@ -96,16 +77,8 @@ namespace CCL::ECS
         // イベント購読 API
         // ============================================================
 
-        /**
-         * @brief イベントを購読する。購読解除はデストラクタで自動的に行われる。
-         *
-         * EventBus の Subscribe / Unsubscribe を直接使うと解除し忘れの危険がある。
-         * この API は解除処理を m_eventCleanups に積むので、System の破棄時に
-         * 一括で安全に解除される。
-         *
-         * @tparam EventType 受信したいイベント型
-         * @param callback   受信時に呼ばれるコールバック
-         */
+        // イベントを購読する。解除の処理を m_eventCleanups に積み、デストラクタで一括して解除する
+        // EventBus の Subscribe / Unsubscribe を直接使うと、解除し忘れる
         template <typename EventType>
         void ListenEvent(std::function<void(const EventType &)> callback)
         {
@@ -124,25 +97,8 @@ namespace CCL::ECS
             });
         }
 
-        /**
-         * @brief 除外コンポーネントを設定する（コンストラクタ内で呼ぶ想定）。
-         *
-         * ここで指定した型を1つでも持つ Entity は、この System の処理対象から外れる。
-         *
-         * @tparam ExcludeTypes 除外したいコンポーネント型（可変長）
-         *
-         * @code
-         *   class MovementSystem
-         *     : public IfSystem<MovementSystem, Write<Position>, Read<Velocity>>
-         *   {
-         *   public:
-         *       MovementSystem() : IfSystem("MovementSystem") {
-         *           // DeadTag か Frozen を持つ Entity は動かさない
-         *           SetExclude<DeadTag, Frozen>();
-         *       }
-         *   };
-         * @endcode
-         */
+        // 指定した型を1つでも持つ Entity を、この System の処理対象から外す。コンストラクタで呼ぶ
+        // 例: SetExclude<DeadTag, Frozen>();
         template <typename... ExcludeTypes>
         void SetExclude()
         {
@@ -153,20 +109,8 @@ namespace CCL::ECS
         // ForEach（シングルスレッド）
         // ============================================================
 
-        /**
-         * @brief 全 TargetChunk を順に走査し、各 Entity に対して func を実行する。
-         *
-         * Read<T> を指定したコンポーネントは `const T&`、Write<T> を指定した
-         * コンポーネントは `T&` として func に渡される（型レベルで強制）。
-         *
-         * @param func ラムダ式。引数は AccessTypes::ParamType...
-         *
-         * @code
-         *   ForEach([dt](Position& p, const Velocity& v){
-         *       p.x += v.x * dt;
-         *   });
-         * @endcode
-         */
+        // TargetChunk の全 Entity に func を呼ぶ。Read<T> は const T&、Write<T> は T& で渡す
+        // 例: ForEach([dt](Position &p, const Velocity &v) { p.x += v.x * dt; });
         template <typename Func>
         void ForEach(Func &&func)
         {
@@ -175,14 +119,8 @@ namespace CCL::ECS
                 const size_t count = chunk->GetEntityCount();
                 if (count == 0) continue;
 
-                // 1. 各コンポーネント配列の生ポインタを一括取得（ループ外で1回だけ）
-                // AccessTypes...                   テンプレートの引数パック。Write<T>/Read<T> の型リスト
-                // typename AccessTypes::RawType... 素の型を取り出す → TransformComponent
-                // TypeInfo<...>::ID()              型から数値IDを取得
-                // static_cast<RawType*>            void* に型を貼りなおす
-                // std::make_tuple(...)             それぞれの型の配列ポインタを tuple にまとめる
-                // 結論: auto componentArrays = std::make_tuple(
-                //         TransformComponent*, VelocityComponent*, RenderComponent* ...);
+                // 1. 各コンポーネントの配列の先頭を、ループの外で1回だけ取り出して tuple にまとめる
+                //    AccessTypes::RawType... を展開するので、tuple<TransformComponent*, VelocityComponent*, ...> になる
                 auto componentArrays = std::make_tuple(
                     static_cast<typename AccessTypes::RawType *>(
                         chunk->GetComponentPtrByType(
@@ -193,7 +131,7 @@ namespace CCL::ECS
                 // 2. Chunk 内の Entity をループ
                 for (size_t i = 0; i < count; ++i)
                 {
-                    // 削除予約済み Entity をスキップ。
+                    // 削除予約済み Entity をスキップ
                     // hasDestroyed が false（大半）なら右辺の重い関数呼び出しを
                     // 短絡評価で省略し、通常時の速度を保つ
                     if (hasDestroyed && chunk->IsEntityDestroyed(i)) continue;
@@ -212,16 +150,8 @@ namespace CCL::ECS
         // ForEachParallel（並列）
         // ============================================================
 
-        /**
-         * @brief ForEach の並列実行版。Chunk をスレッド数で均等割りして処理する。
-         *
-         * 並列化の準備コストが見合わない場合（Chunk 数が少ない、JobSystem
-         * が無い、enableMultiThread が false）は自動的にシングルスレッド版へ
-         * フォールバックする。
-         *
-         * @note Chunk 単位で分割するので、同じ Chunk を2つのジョブが触ることはなく
-         *       データ競合は起きない。
-         */
+        // ForEach を、Chunk をワーカーに分けて並列に回す。同じ Chunk を2つのジョブが触ることはない
+        // Chunk が少ない・JobSystem がない・enableMultiThread が false のときは、1スレッドで回す
         template <typename Func>
         void ForEachParallel(Func &&func)
         {
@@ -256,7 +186,7 @@ namespace CCL::ECS
 
                 m_jobSystem->Execute(
                     [this, i, end, func]() {
-                        // Tracy 上で System 名が見えるよう、ゾーン名を動的に付け直す。
+                        // Tracy 上で System 名が見えるよう、ゾーン名を動的に付け直す
                         // " [Batch]" を付けて、メインスレッドの通常 Update と見分けられるようにする
                         ZoneScoped;
                         std::string batchName = m_name + " [Batch]";
@@ -303,15 +233,7 @@ namespace CCL::ECS
         // ForEachWithID（EntityID 付き、シングルスレッド）
         // ============================================================
 
-        /**
-         * @brief ForEach の EntityID 付き版。相互作用処理や他 Entity の参照に使う。
-         *
-         * @code
-         *   ForEachWithID([this](EntityID id, Health& h){
-         *       if (h.hp <= 0) world->Destroy(id);
-         *   });
-         * @endcode
-         */
+        // ForEach に EntityID も渡す版。ほかの Entity を参照するときに使う
         template <typename Func>
         void ForEachWithID(Func &&func)
         {
@@ -430,8 +352,8 @@ namespace CCL::ECS
         std::vector<TypeID> GetReadTypes() const override
         {
             std::vector<TypeID> res;
-            // C++17 の fold 式（カンマ演算子の畳み込み）で AccessTypes... を順に展開する。
-            //   (..., 式) は AccessTypes の数だけ「式」を並べて順に評価する。
+            // C++17 の fold 式（カンマ演算子の畳み込み）で AccessTypes... を順に展開する
+            //   (..., 式) は AccessTypes の数だけ「式」を並べて順に評価する
             //   IsWrite が false のものだけ res に加える（true なら void() で何もしない）
             (...,
              (AccessTypes::IsWrite
@@ -456,18 +378,10 @@ namespace CCL::ECS
         // 内部ヘルパー: tuple → 引数展開
         // ============================================================
 
-        /**
-         * @brief tuple<T1*, T2*, ...> の各配列から i 番目の要素を取り出し、
-         *        AccessTypes::ParamType にキャストして func に渡す。
-         *
-         * Read<T> 指定のものは強制的に const T& になり、書き込み不可となる
-         * （コンパイル時に型レベルで保証）。
-         *
-         * Is... は 0, 1, 2, ... の整数列（make_index_sequence が生成）。
-         * `...` で Is ごとに展開され、最終的に
-         *   func(static_cast<P0>(arr0[i]), static_cast<P1>(arr1[i]), ...)
-         * という1回の呼び出しになる。
-         */
+        // arrays の各配列から i 番目を取り出し、AccessTypes::ParamType にキャストして func に渡す
+        // Is... は make_index_sequence が作る 0, 1, 2, ... で、展開すると
+        //   func(static_cast<P0>(arr0[i]), static_cast<P1>(arr1[i]), ...)
+        // の1回の呼び出しになる。Read<T> は const T& になるので、書き込みはコンパイルで弾かれる
         template <typename Func, typename Tuple, size_t... Is>
         void ForEachImpl(Func &&func, Tuple &arrays, size_t i, std::index_sequence<Is...>)
         {

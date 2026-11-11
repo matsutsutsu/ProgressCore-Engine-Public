@@ -9,14 +9,12 @@
 #include "Engine/Time/Components/TimeState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
-#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // HighRing
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 
 #include <cmath>
 #include <cstring>
 
-#ifdef ENABLE_EDITOR
 #include <imgui.h>
-#endif
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -29,10 +27,10 @@ namespace
     // 本編で戦う相手だと伝わらなくなる
     constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
-    // 輪の中心を決めるために探すボス像の名前。像を動かせば輪も追従する。
+    // 輪の中心を決めるために探すボス像の名前。像を動かせば輪も追従する
     constexpr const char *kBossName = "TitleBossStatue";
 
-    // 速さの個体差。全機が同じ速さだと、回る輪が1つの固い物に見える。
+    // 速さの個体差。全機が同じ速さだと、回る輪が1つの固い物に見える
     // moveSpeed（待機中の追従の最高速）に掛ける倍率の範囲
     constexpr float kSpeedSpreadMin = 0.90f;
     constexpr float kSpeedSpreadMax = 1.10f;
@@ -44,6 +42,8 @@ std::vector<TypeID> TitleSwarmSystem::GetWriteTypes() const
     types.push_back(TypeInfo<TransformComponent>::ID()); // 生成した直後に座標を書く
     return types;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 群れの配置と生成
@@ -59,6 +59,8 @@ float TitleSwarmSystem::Hash01(uint32_t seed)
     return static_cast<float>(seed & 0xFFFFFFu) / static_cast<float>(0xFFFFFFu);
 }
 
+
+
 bool TitleSwarmSystem::ResolveBossPos(Vector3 &out)
 {
     // 覚えていた像が消えていたら忘れる（シーンを切り替えたときなど）
@@ -66,7 +68,7 @@ bool TitleSwarmSystem::ResolveBossPos(Vector3 &out)
         m_bossID = InvalidEntityID;
 
     // 見つかるまでは毎フレーム探す。プレハブの生成は後回しにされるので、最初の数フレームは
-    // まだ無いことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
+    // まだないことがある（Name と Transform を持つエンティティを1周するだけなので軽い）
     if (m_bossID == InvalidEntityID)
     {
         m_world->ViewEach<NameComponent, TransformComponent>([&](EntityID id) {
@@ -86,11 +88,15 @@ bool TitleSwarmSystem::ResolveBossPos(Vector3 &out)
     return true;
 }
 
+
+
 Vector3 TitleSwarmSystem::SlotPosition(const Vector3 &bossPos, uint16_t index) const
 {
     // 本編の頭上の円陣と同じ式。半径・高さ・回転の速さは HighRing の定数で決まる
     return bossPos + HighRing::SlotOffset(index, kDroneCount, m_elapsed);
 }
+
+
 
 void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
 {
@@ -108,7 +114,7 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
             trans->position = slot;
             trans->isDirty  = true;
             // 生成したフレームのうちに worldMatrix を求めておく。Jolt の剛体は生成時の
-            // worldMatrix を見るので、これが無いと当たり判定だけ原点に置かれる
+            // worldMatrix を見るので、これがないと当たり判定だけ原点に置かれる
             trans->UpdateMatrix();
         }
 
@@ -117,12 +123,12 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
             // 陣形の計算から外す。None には陣形が登録されていないので DroneFormationSystem が何もしない
             drone->currentFormation = DroneFormationType::None;
 
-            // 通し番号がそのまま輪の上の位置になる。タイトルにはボスが居ないので、
+            // 通し番号がそのまま輪の上の位置になる。タイトルにはボスがいないので、
             // DroneManagerSystem が番号を振り直すことはない
             drone->localIndex  = i;
             drone->totalDrones = kDroneCount;
 
-            // 追従の速さに個体差を出す。kLagGroupSize 機ごとの組で、後ろの番号ほど持ち場へ寄るバネを弱める。
+            // 追従の速さに個体差を出す。kLagGroupSize 機ごとの組で、後ろの番号ほど持ち場へ寄るバネを弱める
             // 陣形の外で動かすので、DroneFormationSystem はこの値を書き換えない
             const uint16_t seat = static_cast<uint16_t>(i % kLagGroupSize);
             drone->springScale  = 1.0f - static_cast<float>(seat) * kLagPerSeat;
@@ -165,13 +171,15 @@ void TitleSwarmSystem::SpawnSwarm(const Vector3 &bossPos)
     CCL_LOG_INFO(LogCategory::Game, "[TitleSwarm] タイトル演出用に %d 機を配置", spawned);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
 
 void TitleSwarmSystem::Update(float dt)
 {
-    // 輪の中心はボス像。レベルを読み込んだ直後の数フレームは無いことがあるので待つ
+    // 輪の中心はボス像。レベルを読み込んだ直後の数フレームはないことがあるので待つ
     Vector3 bossPos;
     if (!ResolveBossPos(bossPos)) return;
 
@@ -201,9 +209,10 @@ void TitleSwarmSystem::Update(float dt)
     });
 }
 
+
+
 void TitleSwarmSystem::OnGui()
 {
-#ifdef ENABLE_EDITOR
     ImGui::TextUnformatted("タイトルの群れ（ボス頭上の円陣）");
     ImGui::Text("機数 %d / 生成 %s / ボス像 %s", kDroneCount, m_spawned ? "済" : "未",
                 (m_bossID != InvalidEntityID) ? "検出" : "未検出");
@@ -217,5 +226,4 @@ void TitleSwarmSystem::OnGui()
     const float gap = DirectX::XM_2PI * HighRing::kRadius / static_cast<float>(kDroneCount);
     ImGui::Text("機体間隔 %.2fm（機体の見た目は約3m）%s", gap,
                 (gap < 3.0f) ? "  ← 隣と重なる" : "");
-#endif
 }

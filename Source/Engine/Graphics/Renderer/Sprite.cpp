@@ -7,6 +7,8 @@ Sprite::Sprite(ID3D11Device *device)
 {
 }
 
+
+
 Sprite::Sprite(ID3D11Device *device, const char *filename)
 {
     HRESULT hr = S_OK;
@@ -85,6 +87,8 @@ Sprite::Sprite(ID3D11Device *device, const char *filename)
     }
 }
 
+
+
 Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, float width, float height)
     : Sprite(device)
 {
@@ -94,6 +98,8 @@ Sprite::Sprite(ID3D11Device *device, Microsoft::WRL::ComPtr<ID3D11ShaderResource
     textureWidth       = width;
     textureHeight      = height;
 }
+
+
 
 void Sprite::Render(ID3D11DeviceContext *dc,
                     float dx, float dy,
@@ -189,6 +195,8 @@ void Sprite::Render(ID3D11DeviceContext *dc,
     dc->Draw(4, 0);
 }
 
+
+
 void Sprite::Render(ID3D11DeviceContext *dc,
                     float dx, float dy,
                     float dz,
@@ -202,6 +210,8 @@ void Sprite::Render(ID3D11DeviceContext *dc,
     const DirectX::XMFLOAT4 corners[4] = {c, c, c, c};
     Render(dc, dx, dy, dz, dw, dh, sx, sy, sw, sh, angle, corners);
 }
+
+
 
 void Sprite::Render(ID3D11DeviceContext *dc,
                     float dx, float dy,

@@ -46,7 +46,7 @@ import unreal
 # 出力形式:
 #   False -> .gltf （JSON + .bin とテクスチャが同フォルダに分割出力）
 #   True  -> .glb  （1ファイルに全部入りのバイナリ）
-EXPORT_GLB = False
+EXPORT_GLB = True
 
 # 出力先フォルダの中での置き方:
 #   True  -> 選んだフォルダの直下へ平置き

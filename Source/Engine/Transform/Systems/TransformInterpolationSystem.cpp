@@ -8,16 +8,9 @@
 using namespace CCL::ECS;
 using namespace DirectX;
 
-/**
- * @brief ローカルの前ステップ値と現在値を alpha で補間し、ローカル行列を合成する。
- * @param t     補間する Transform。静的物体は動かないので補間せず、現在の値をそのまま使う。
- * @param alpha 補間の割合（0=前ステップ, 1=現在）。
- * @return 補間したローカル行列。
- * @note 行列ではなく TRS を補間する（位置は線形補間、回転は球面線形補間）。
- *       行列の成分をそのまま補間すると、回転の途中で縮んだり歪んだりするため。
- * @note ワールドではなくローカルを補間し、親の描画用行列を後から掛ける。
- *       親と一緒に回る子が、親の回転に沿った弧を描くようにするため（ワールド位置の補間だと弦の上を通る）。
- */
+// ローカルの前ステップの値と今の値を alpha（0 が前ステップ、1 が今）で補間し、ローカル行列にする。静的な物は補間しない
+// 行列でなく TRS を補間する。行列の成分を補間すると、回転の途中で縮んだり歪んだりする
+// ワールドでなくローカルを補間するのは、親と一緒に回る子が弧を描くようにするため（ワールドの位置の補間だと弦の上を通る）
 static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alpha)
 {
     if (t.isStatic)
@@ -30,6 +23,8 @@ static inline XMMATRIX ComposeLocalRender(const TransformComponent &t, float alp
     XMVECTOR slerpRot = XMQuaternionSlerp(XMLoadFloat4(&t.prevRotation), XMLoadFloat4(&t.rotation), alpha);
     return XMMatrixAffineTransformation(XMLoadFloat3(&t.scale), XMVectorZero(), slerpRot, lerpPos);
 }
+
+
 
 void TransformInterpolationSystem::Update(float dt)
 {
@@ -61,11 +56,11 @@ void TransformInterpolationSystem::Update(float dt)
     // 3. 非ルート
     // ---------------------------------------------------------
 
-    // TransformUpdateSystem::SolveHierarchy と対になる処理。
-    // 「補間したローカル × 親の renderWorldMatrix」を、キャッシュの並び（親が先）の順に計算する。
+    // TransformUpdateSystem::SolveHierarchy と対になる処理
+    // 「補間したローカル × 親の renderWorldMatrix」を、キャッシュの並び（親が先）の順に計算する
 
-    // キャッシュの作業領域（WorldAt / StoreWorld）にはロジック用の worldMatrix が入っている。
-    // 描画用の値で上書きしないよう、キャッシュは並び順を読むだけにし、途中の結果は m_renderWorldDense に書く。
+    // キャッシュの作業領域（WorldAt / StoreWorld）にはロジック用の worldMatrix が入っている
+    // 描画用の値で上書きしないよう、キャッシュは並び順を読むだけにし、途中の結果は m_renderWorldDense に書く
     if (!m_world->HasResource<TransformHierarchyCache *>()) return;
     TransformHierarchyCache *cache = m_world->GetResource<TransformHierarchyCache *>();
     if (!cache) return;
@@ -101,5 +96,7 @@ void TransformInterpolationSystem::Update(float dt)
         XMStoreFloat4x4(&t->renderWorldMatrix, world);    // 描画用に書き戻し
     }
 }
+
+
 
 REGISTER_RENDER_SYSTEM(TransformInterpolationSystem, Priority::RenderStage::R00_Interpolation);

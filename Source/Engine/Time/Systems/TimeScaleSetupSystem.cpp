@@ -31,5 +31,7 @@ void TimeScaleSetupSystem::Update(float dt)
     }
 }
 
+
+
 // TimeScaleSystem が localDt を書く前に TimeState をそろえておくため、1段前のステージに置く
 REGISTER_LOGIC_SYSTEM(TimeScaleSetupSystem, Priority::LogicStage::L01_TimeSetup)

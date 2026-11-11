@@ -17,8 +17,12 @@
 
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
-#include "Engine/Graphics/Resource/ResourceManager.h" // テクスチャをパス単位でキャッシュして読むため
+#include "Engine/Graphics/Resource/ResourceManager.h"
 #include <winsock.h>
+#include <chrono>
+#include <cfloat>
+#include <meshoptimizer.h>
+#include "tracy/Tracy.hpp"
 
 #include "ModelResource.h"
 
@@ -57,6 +61,8 @@ namespace DirectX
             cereal::make_nvp("w", v.w));
     }
 
+
+
     template <class Archive>
     void serialize(Archive &archive, XMFLOAT2 &v)
     {
@@ -64,6 +70,8 @@ namespace DirectX
             cereal::make_nvp("x", v.x),
             cereal::make_nvp("y", v.y));
     }
+
+
 
     template <class Archive>
     void serialize(Archive &archive, XMFLOAT3 &v)
@@ -74,6 +82,8 @@ namespace DirectX
             cereal::make_nvp("z", v.z));
     }
 
+
+
     template <class Archive>
     void serialize(Archive &archive, XMFLOAT4 &v)
     {
@@ -83,6 +93,8 @@ namespace DirectX
             cereal::make_nvp("z", v.z),
             cereal::make_nvp("w", v.w));
     }
+
+
 
     template <class Archive>
     void serialize(Archive &archive, XMFLOAT4X4 &m)
@@ -112,6 +124,8 @@ void ModelResource::Node::serialize(Archive &archive, int version)
         CEREAL_NVP(translate));
 }
 
+
+
 template <class Archive>
 void ModelResource::Material::serialize(Archive &ar, int version)
 {
@@ -130,6 +144,8 @@ void ModelResource::Material::serialize(Archive &ar, int version)
        CEREAL_NVP(alphaMode));
 }
 
+
+
 template <class Archive>
 void ModelResource::Subset::serialize(Archive &archive, int version)
 {
@@ -138,6 +154,8 @@ void ModelResource::Subset::serialize(Archive &archive, int version)
         CEREAL_NVP(indexCount),
         CEREAL_NVP(materialIndex));
 }
+
+
 
 template <class Archive>
 void ModelResource::Vertex::serialize(Archive &archive, int version)
@@ -151,6 +169,8 @@ void ModelResource::Vertex::serialize(Archive &archive, int version)
         CEREAL_NVP(boneIndex));
 }
 
+
+
 template <class Archive>
 void ModelResource::Bone::serialize(Archive &archive, int version)
 {
@@ -158,6 +178,8 @@ void ModelResource::Bone::serialize(Archive &archive, int version)
         CEREAL_NVP(nodeIndex),
         CEREAL_NVP(offsetTransform));
 }
+
+
 
 template <class Archive>
 void ModelResource::Mesh::serialize(Archive &archive, int version)
@@ -175,6 +197,8 @@ void ModelResource::Mesh::serialize(Archive &archive, int version)
         CEREAL_NVP(boundsMax));
 }
 
+
+
 template <class Archive>
 void ModelResource::VectorKeyframe::serialize(Archive &archive, int version)
 {
@@ -183,6 +207,8 @@ void ModelResource::VectorKeyframe::serialize(Archive &archive, int version)
         CEREAL_NVP(value));
 }
 
+
+
 template <class Archive>
 void ModelResource::QuaternionKeyframe::serialize(Archive &archive, int version)
 {
@@ -190,6 +216,8 @@ void ModelResource::QuaternionKeyframe::serialize(Archive &archive, int version)
         CEREAL_NVP(seconds),
         CEREAL_NVP(value));
 }
+
+
 
 template <class Archive>
 void ModelResource::NodeAnim::serialize(Archive &archive, int version)
@@ -200,6 +228,8 @@ void ModelResource::NodeAnim::serialize(Archive &archive, int version)
         CEREAL_NVP(scaleKeyframes));
 }
 
+
+
 template <class Archive>
 void ModelResource::Animation::serialize(Archive &archive, int version)
 {
@@ -209,13 +239,15 @@ void ModelResource::Animation::serialize(Archive &archive, int version)
         CEREAL_NVP(nodeAnims));
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 読み込み
 // ---------------------------------------------------------------------------
 
 void ModelResource::Load(ID3D11Device *device, const char *filename)
 {
-    // .cereal のキャッシュがあればそれを読み、無ければ glTF を読んでキャッシュを書く
+    // .cereal のキャッシュがあればそれを読み、なければ glTF を読んでキャッシュを書く
 
     // テクスチャを探す起点になるディレクトリ
     char drive[32], dir[256], dirname[256];
@@ -236,7 +268,7 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
 
     // キャッシュ（.cereal）があればそれを読む
     filepath.replace_extension(".cereal");
-    if (std::filesystem::exists(filepath))
+    if (FileSystem::Exists(filepath.string()))
     {
         Deserialize(filepath.string().c_str());
     }
@@ -262,23 +294,25 @@ void ModelResource::Load(ID3D11Device *device, const char *filename)
     ComputeModelLocalAABB();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // モデル定義ファイル（.model.json）
-//   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式。
+//   本体モデル1つと、別ファイルのアニメーションを1枚のJSONで束ねる形式
 //
 //     {
-//         "model": "Muriel.glb"
+//         "model": "Valkyra.glb"
 //     }
 //
-//   パスはこのJSONが置かれたディレクトリからの相対で書く。
+//   パスはこのJSONが置かれたディレクトリからの相対で書く
 //
-//   "animations" の書き方は3通り。
+//   "animations" の書き方は3通り
 //     省略   … 既定の "Animations" フォルダを走査する（推奨）
 //     文字列 … 指定したフォルダを走査する
 //     配列   … 書いたファイルだけを、書いた順に読む
-//   走査にしておけば、アニメーションを増やすたびにこのJSONを編集しなくてよい。
-//   アニメーションをモデルに焼き込まず、別ファイルのまま扱うための形式。
-//   .glb を直接指定する使い方もできる。
+//   走査にしておけば、アニメーションを増やすたびにこのJSONを編集しなくてよい
+//   アニメーションをモデルに焼き込まず、別ファイルのまま扱うための形式
+//   .glb を直接指定する使い方もできる
 // ---------------------------------------------------------------------------
 bool ModelResource::IsModelSetFile(const char *filename)
 {
@@ -292,6 +326,8 @@ bool ModelResource::IsModelSetFile(const char *filename)
 
     return path.compare(path.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
+
+
 
 void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
 {
@@ -315,7 +351,7 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         const nlohmann::json j = nlohmann::json::parse(text);
         modelRelative          = j.at("model").get<std::string>();
 
-        // 配列のときだけ明示列挙。それ以外（文字列 / 省略）はフォルダ走査にする。
+        // 配列のときだけ明示列挙。それ以外（文字列 / 省略）はフォルダ走査にする
         if (j.contains("animations") && j.at("animations").is_array())
         {
             animationRelatives = j.at("animations").get<std::vector<std::string>>();
@@ -347,24 +383,18 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     if (!animationDirRelative.empty())
     {
         animationDir = baseDir / animationDirRelative;
-        if (std::filesystem::is_directory(animationDir))
+        for (const char *extension : {".gltf", ".glb"})
         {
-            for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator(animationDir))
+            for (const std::string &path : FileSystem::ListFiles(animationDir.string(), extension))
             {
-                if (!entry.is_regular_file()) continue;
-
-                std::string extension = entry.path().extension().string();
-                std::transform(extension.begin(), extension.end(), extension.begin(), tolower);
-                if (extension != ".gltf" && extension != ".glb") continue;
-
-                animationPaths.emplace_back(entry.path());
+                animationPaths.emplace_back(path);
             }
-
-            // directory_iterator の順序はファイルシステム依存なので並べ直す。
-            // 照合は名前で行うため順序は動作に影響しないが、
-            // .cereal の中身が実行のたびに入れ替わるのを防ぐ。
-            std::sort(animationPaths.begin(), animationPaths.end());
         }
+
+        // 2つの拡張子の一覧を足したので並べ直す
+        // 照合は名前で行うため順序は動作に影響しないが、
+        // .cereal の中身が実行のたびに入れ替わるのを防ぐ
+        std::sort(animationPaths.begin(), animationPaths.end());
     }
     else
     {
@@ -375,7 +405,14 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
         }
     }
 
-    if (!std::filesystem::exists(modelPath))
+    std::filesystem::path cachePath = jsonPath;
+    cachePath.replace_extension(".cereal"); // Valkyra.model.json → Valkyra.model.cereal
+
+    // アーカイブ（Shipping）の中のキャッシュは、作成時点の最新として比べずに使う
+    // アーカイブの中には更新時刻がなく、元のモデルも入れないことがあるため
+    const bool cacheInArchive = FileSystem::IsInArchive(cachePath.string());
+
+    if (!cacheInArchive && !FileSystem::Exists(modelPath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Render, "本体モデルが見つかりません: %s", modelPath.string().c_str());
         return;
@@ -383,13 +420,10 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
 
     // ---- キャッシュが古くないか ----
     // .glb を直接指定したときは「.cereal があればそのまま使う」が、この形式はアニメーションを
-    // 何度も差し替えながら使う前提なので、元のファイルの方が新しければ作り直す。
-    // 作り直さないと、書き出したのに反映されないという、原因の分かりにくい状態になる。
-    std::filesystem::path cachePath = jsonPath;
-    cachePath.replace_extension(".cereal"); // Muriel.model.json → Muriel.model.cereal
-
-    bool cacheUsable = std::filesystem::exists(cachePath);
-    if (cacheUsable)
+    // 何度も差し替えながら使う前提なので、元のファイルの方が新しければ作り直す
+    // 作り直さないと、書き出したのに反映されないという、原因の分かりにくい状態になる
+    bool cacheUsable = cacheInArchive || std::filesystem::exists(cachePath);
+    if (cacheUsable && !cacheInArchive)
     {
         const std::filesystem::file_time_type cacheTime = std::filesystem::last_write_time(cachePath);
 
@@ -402,9 +436,9 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
 
         cacheUsable = !isNewerThanCache(jsonPath) && !isNewerThanCache(modelPath);
 
-        // フォルダ走査のときはフォルダ自体の更新時刻も見る。
+        // フォルダ走査のときはフォルダ自体の更新時刻も見る
         // ファイルの追加・削除は個々の mtime には現れないが、
-        // 親ディレクトリの mtime は動くのでこれで増減を検知できる。
+        // 親ディレクトリの mtime は動くのでこれで増減を検知できる
         if (cacheUsable && !animationDir.empty())
         {
             cacheUsable = !isNewerThanCache(animationDir);
@@ -445,9 +479,9 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     // 位置リターゲットの設定は cereal に保存していないので、キャッシュから読んだときも含めて毎回ここで入れる
     SetTranslationRetargeting(useTranslationRetargeting);
 
-    // テクスチャを探す起点は、定義ファイルではなく本体モデルの場所にする。
+    // テクスチャを探す起点は、定義ファイルではなく本体モデルの場所にする
     // glb に埋め込まれたテクスチャは GLTFImporter が glb と同じ階層の Textures/ に書き出すので、
-    // こうしておけば定義ファイルを別のフォルダに置いても壊れない。
+    // こうしておけば定義ファイルを別のフォルダに置いても壊れない
     char modelDrive[32], modelDir[256], modelDirName[256];
     const std::string modelPathString = modelPath.string();
     ::_splitpath_s(modelPathString.c_str(), modelDrive, sizeof(modelDrive), modelDir, sizeof(modelDir), nullptr, 0, nullptr, 0);
@@ -456,6 +490,8 @@ void ModelResource::LoadModelSet(ID3D11Device *device, const char *filename)
     BuildModel(device, modelDirName);
     ComputeModelLocalAABB();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // アニメの追加
@@ -471,7 +507,7 @@ void ModelResource::AppendAnimations(const char *filename)
         CCL_LOG_ERROR(LogCategory::Render, "アニメーションの形式が未対応です: %s", filename);
         return;
     }
-    if (!std::filesystem::exists(filepath))
+    if (!FileSystem::Exists(filepath.string()))
     {
         CCL_LOG_ERROR(LogCategory::Render, "アニメーションファイルが見つかりません: %s", filename);
         return;
@@ -479,12 +515,8 @@ void ModelResource::AppendAnimations(const char *filename)
 
     GLTFImporter importer(filename);
 
-    // GLTFImporter::LoadAnimations はボーン名でモデル側へ対応付けるので、
-    // ノードの並びが違っていても正しく適用される。
-    // ただし骨格そのものが別物だと全チャンネルが適用先を失い、
-    // 「読めたのに動かない」という分かりにくい結果になる。
-    // フォルダ走査では無関係のファイルが紛れ込むこともあるため、
-    // 名前がどれだけ重なっているかを先に見ておく。
+    // アニメーションはボーン名でモデルへ対応付けるので、ノードの並びが違ってもよい
+    // ただ骨格が別物だと、読めたのに動かない結果になる。フォルダの走査では関係ないファイルも混ざるので、名前の重なりを先に見る
     std::vector<Node> animationNodes;
     importer.LoadNodes(animationNodes);
 
@@ -495,8 +527,8 @@ void ModelResource::AppendAnimations(const char *filename)
         if (!node.name.empty()) modelNodeNames.insert(node.name);
     }
 
-    // 名無しノード（glTF のルートなど）は空名同士で何にでも一致して
-    // しまうので、数えるのは名前のあるノードだけにする。
+    // 名なしノード（glTF のルートなど）は空名同士で何にでも一致して
+    // しまうので、数えるのは名前のあるノードだけにする
     size_t      namedNodeCount   = 0;
     size_t      matchedNodeCount = 0;
     std::string firstUnmatchedName;
@@ -532,6 +564,8 @@ void ModelResource::AppendAnimations(const char *filename)
     importer.LoadAnimations(animations, nodes);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // モデルの組み立て
 // ---------------------------------------------------------------------------
@@ -558,16 +592,18 @@ void ModelResource::ComputeMeshBounds(Mesh &mesh)
     mesh.boundsMax = maxV;
 }
 
+
+
 void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
 {
     for (Material &material : materials)
     {
-        // テクスチャを読む。無ければ白の 1x1 を代わりに使う
+        // テクスチャを読む。なければ白の 1x1 を代わりに使う
         auto loadTexture = [&](const std::string                                &textureFileName,
                                Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> &outSRV) {
             if (textureFileName.empty())
             {
-                // 指定が無ければ白で代用する
+                // 指定がなければ白で代用する
                 HRESULT hr = GpuResourceUtils::CreateDummyTexture(device, 0xFFFFFFFF, outSRV.GetAddressOf());
                 _ASSERT_EXPR(SUCCEEDED(hr), HRTrace(hr));
                 return;
@@ -577,22 +613,19 @@ void ModelResource::BuildModel(ID3D11Device *device, const char *dirname)
             char fullpath[256];
             ::_makepath_s(fullpath, 256, nullptr, dirname, textureFileName.c_str(), nullptr);
 
-            // 同じ名前の .dds があれば、そちらを使う（モデルは PNG を指したままでよい）。
-            // texconv で作った BCn 圧縮の DDS を隣に置くだけで、VRAM が減り sRGB も正しく扱われる。
+            // 同じ名前の .dds があれば、そちらを使う（モデルは PNG を指したままでよい）
+            // texconv で作った BCn 圧縮の DDS を隣に置くだけで、VRAM が減り sRGB も正しく扱われる
             {
                 char drive[8], dir[256], fname[256], ext[64];
                 ::_splitpath_s(fullpath, drive, dir, fname, ext);
                 char ddspath[256];
                 ::_makepath_s(ddspath, 256, drive, dir, fname, ".dds");
-                if (::GetFileAttributesA(ddspath) != INVALID_FILE_ATTRIBUTES)
+                if (FileSystem::Exists(ddspath))
                     ::strcpy_s(fullpath, ddspath);
             }
 
-            // GpuResourceUtils を直接呼ぶとモデルごとに毎回デコードが走るので、
-            // パス単位でキャッシュする ResourceManager を通す。同じテクスチャを複数のモデルが
-            // 使っていてもデコードは1回で済む。
-            // （BuildModel は ResourceManager::LoadModelResource のロックの外から呼ばれるので、
-            //   ここで LoadTexture を呼んでもデッドロックしない）
+            // ResourceManager を通し、同じテクスチャのデコードを1回で済ませる
+            // BuildModel は LoadModelResource のロックの外から呼ばれるので、ここで LoadTexture を呼んでもデッドロックしない
             ResourceManager &resourceManager = ResourceManager::Instance();
             TextureHandle    handle          = resourceManager.LoadTexture(fullpath);
             if (ID3D11ShaderResourceView *srv = resourceManager.GetTexture(handle))
@@ -668,6 +701,8 @@ HRESULT hr = device->CreateBuffer(&bufferDesc, &subresourceData, mesh.vertexBuff
     }
 }
 
+
+
 void ModelResource::ComputeModelLocalAABB()
 {
     using namespace DirectX;
@@ -739,6 +774,142 @@ void ModelResource::ComputeModelLocalAABB()
     }
 }
 
+
+
+// ---------------------------------------------------------------------------
+// LOD
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // LOD1 以降の作り方。gltfpack で見た目を確かめた設定と同じにしてある
+    //   LOD1 = -si 0.25 -sp -se 0.02（形を保って 25% まで）
+    //   LOD2 = -si 0.05 -sa          （形の繋がりを無視して 5% まで。遠景と影用）
+    struct LodSetting
+    {
+        float targetRatio; // 元の三角形数に対する目標の割合
+        float maxError;    // 許す形のずれ（モデルの大きさに対する割合）。超えるとそこで簡略化をやめる
+        bool  sloppy;      // true なら meshopt_simplifySloppy（目標の数まで強制的に減らす）
+    };
+
+    constexpr LodSetting kLodSettings[] = {
+        {0.25f, 0.02f, false},  // LOD1：中距離
+        {0.05f, FLT_MAX, true}, // LOD2：遠景・影
+    };
+} // namespace
+
+void ModelResource::GenerateLods(ID3D11Device *device)
+{
+    ZoneScopedN("ModelResource::GenerateLods");
+
+    // 読み込み時に毎回作るか、インポート時に作って保存するかを、この時間を見て決める
+    const auto start = std::chrono::steady_clock::now();
+
+    for (Mesh &mesh : meshes)
+    {
+        BuildMeshLods(device, mesh);
+    }
+
+    const auto end = std::chrono::steady_clock::now();
+    m_lodBuildMs   = std::chrono::duration<float, std::milli>(end - start).count();
+}
+
+
+
+void ModelResource::BuildMeshLods(ID3D11Device *device, Mesh &mesh)
+{
+    // 処理フロー
+    //   1. 対象外のメッシュを除く
+    //   2. LOD0（元の形）の後ろに、LOD1 以降のインデックスを作って詰める
+    //   3. 全段を入れたインデックスバッファを作る
+
+    // ---------------------------------------------------------
+    // 1. 対象外のメッシュを除く
+    // ---------------------------------------------------------
+
+    // スキンメッシュはボーンで形が変わるので、レストポーズで簡略化しても形が合わない
+    // subsets が2つ以上あると、マテリアルの範囲ごとに簡略化しないと境目が崩れる（今はドローンの1つで足りる）
+    if (!mesh.bones.empty() || mesh.subsets.size() > 1)
+    {
+        return;
+    }
+    if (mesh.indices.empty() || mesh.vertices.empty())
+    {
+        return;
+    }
+
+    // ---------------------------------------------------------
+    // 2. LOD0 の後ろに LOD1 以降を詰める
+    // ---------------------------------------------------------
+
+    const float *positions   = &mesh.vertices[0].position.x;
+    const size_t vertexCount = mesh.vertices.size();
+    const size_t sourceCount = mesh.indices.size();
+
+    // 頂点はどの段も元の頂点バッファを指すので、インデックスだけを段ごとに作る
+    std::vector<UINT>     allIndices(mesh.indices);
+    std::vector<LodLevel> levels;
+    levels.push_back({0, static_cast<UINT>(sourceCount)});
+
+    std::vector<UINT> lodIndices(sourceCount); // 1段分の結果（元より多くはならない）
+    for (const LodSetting &setting : kLodSettings)
+    {
+        // 目標の数は三角形の区切り（3の倍数）にそろえる
+        const size_t target = static_cast<size_t>(static_cast<float>(sourceCount) * setting.targetRatio) / 3 * 3;
+
+        size_t count = 0;
+        if (setting.sloppy)
+        {
+            // Sloppy：目標の数まで強制的に減らす。超えても止めない
+            count = meshopt_simplifySloppy(lodIndices.data(), mesh.indices.data(), sourceCount,
+                                           positions, vertexCount, sizeof(Vertex),
+                                           nullptr, target, setting.maxError, nullptr);
+        }
+        else
+        {
+            // Permissive：UV や法線の継ぎ目をまたいでも減らす。付けないと継ぎ目の多いモデルは途中で止まる
+            count = meshopt_simplify(lodIndices.data(), mesh.indices.data(), sourceCount,
+                                     positions, vertexCount, sizeof(Vertex),
+                                     target, setting.maxError, meshopt_SimplifyPermissive, nullptr);
+        }
+
+        // 目標の数まで減らせなかった場合は、そこで止める
+        if (count == 0)
+        {
+            break;
+        }
+
+        levels.push_back({static_cast<UINT>(allIndices.size()), static_cast<UINT>(count)});
+        allIndices.insert(allIndices.end(), lodIndices.begin(), lodIndices.begin() + count);
+    }
+
+    // ---------------------------------------------------------
+    // 3. 全段のインデックスバッファを作る
+    // ---------------------------------------------------------
+
+    D3D11_BUFFER_DESC bufferDesc = {};
+    bufferDesc.ByteWidth         = static_cast<UINT>(sizeof(UINT) * allIndices.size());
+    bufferDesc.Usage             = D3D11_USAGE_IMMUTABLE;
+    bufferDesc.BindFlags         = D3D11_BIND_INDEX_BUFFER;
+
+    D3D11_SUBRESOURCE_DATA subresourceData = {};
+    subresourceData.pSysMem                = allIndices.data();
+
+    Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+    if (FAILED(device->CreateBuffer(&bufferDesc, &subresourceData, buffer.GetAddressOf())))
+    {
+        // 作れなければ LOD なしのまま（indexBuffer で元の形を描く）
+        CCL_LOG_ERROR(LogCategory::Render, "[ModelResource] LOD のインデックスバッファを作れませんでした (indices=%zu)",
+                      allIndices.size());
+        return;
+    }
+
+    mesh.lods           = std::move(levels);
+    mesh.lodIndexBuffer = buffer;
+}
+
+
+
 // ---------------------------------------------------------------------------
 // キャッシュの保存・読み込み
 // ---------------------------------------------------------------------------
@@ -768,10 +939,27 @@ void ModelResource::Serialize(const char *filename)
     }
 }
 
+
+
+namespace
+{
+    // FileSystem で読んだバイト列を、コピーせずに std::istream として見せる（cereal が istream から読むため）
+    struct MemoryStreamBuf : std::streambuf
+    {
+        explicit MemoryStreamBuf(std::vector<uint8_t> &bytes)
+        {
+            char *begin = reinterpret_cast<char *>(bytes.data());
+            setg(begin, begin, begin + bytes.size());
+        }
+    };
+} // namespace
+
 void ModelResource::Deserialize(const char *filename)
 {
-    std::ifstream istream(filename, std::ios::binary);
-    if (istream.is_open())
+    std::vector<uint8_t> bytes = FileSystem::ReadAllBytes(filename);
+    MemoryStreamBuf      streamBuf(bytes);
+    std::istream         istream(&streamBuf);
+    if (!bytes.empty())
     {
         cereal::BinaryInputArchive archive(istream);
 

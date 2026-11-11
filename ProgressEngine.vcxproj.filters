@@ -56,6 +56,9 @@
     <Filter Include="External\ImPlot">
       <UniqueIdentifier>{87c7b048-48fb-4e29-ac3d-b44260b537b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\meshoptimizer">
+      <UniqueIdentifier>{281c208d-64d5-498f-975b-1847db9682fb}</UniqueIdentifier>
+    </Filter>
     <Filter Include="External\imgui-docking">
       <UniqueIdentifier>{c85446c9-90d2-4441-add5-5aac511d95ce}</UniqueIdentifier>
     </Filter>
@@ -417,6 +420,9 @@
     <Filter Include="Source\Game\Logics\Title">
       <UniqueIdentifier>{1f57441e-e4e2-40e1-8c8a-1f744e32ada0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Stage">
+      <UniqueIdentifier>{6b0d3c2e-8f41-4a7d-9c55-2e8a1d4f7b90}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\Combat\Feedback">
       <UniqueIdentifier>{cee96189-a3fe-466e-96f2-c7116bfbc804}</UniqueIdentifier>
     </Filter>
@@ -442,9 +448,6 @@
     <Filter Include="Shader\Material\Phong">
       <UniqueIdentifier>{53e07590-7c14-48a5-9a50-0838466f082c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader\Material\Toon">
-      <UniqueIdentifier>{a6edb9bf-13a1-4e65-98eb-c439e0aee7a6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shader\Material\Sprite">
       <UniqueIdentifier>{3507bcf8-30c6-4874-acdd-63af07150527}</UniqueIdentifier>
     </Filter>
@@ -453,27 +456,6 @@
     </Filter>
     <Filter Include="Shader\Material\PBR">
       <UniqueIdentifier>{7fe08d8d-9ddd-4639-b0e7-a230086cd0d3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Glow">
-      <UniqueIdentifier>{a0a81a85-1408-40de-9bd8-6353baff6c1f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Hologram">
-      <UniqueIdentifier>{89c2f0cc-d6e1-41e2-9bf4-e95577026c72}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Fire">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Water">
-      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\Refraction">
-      <UniqueIdentifier>{00601cf2-b82d-479c-b444-dafa34ba8bfc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\GhostPBR">
-      <UniqueIdentifier>{2ed6532d-2763-44c1-ad75-6dcc87492a5e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Material\EnergyStream">
-      <UniqueIdentifier>{e6277476-9d98-4bf6-8531-1e88079f10f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Renderer">
       <UniqueIdentifier>{627c6b60-21df-45c0-b745-ffef10d97ed8}</UniqueIdentifier>
@@ -493,11 +475,11 @@
     <Filter Include="Shader\Pass\ShadowMap">
       <UniqueIdentifier>{06034f22-f2c0-48eb-802c-41fd61f27fb6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader\Pass\LodDebug">
+      <UniqueIdentifier>{4aae03a1-e33a-4cb7-b95f-46eb1c3c6786}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shader\Pass\NormalPrepass">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shader\Pass\Outline">
-      <UniqueIdentifier>{8c257204-934c-4af4-8fff-539fb5e193f3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shader\Pass\SkyBox">
       <UniqueIdentifier>{7aa7b402-62ad-4c1d-bdb8-5ade6932aa53}</UniqueIdentifier>
@@ -547,6 +529,9 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\AnimLab">
+      <UniqueIdentifier>{aa02d675-e392-405e-942d-0d9032d0aec7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AI\Debug">
       <UniqueIdentifier>{da596e9b-e651-47b7-a01a-cd4a8da293d7}</UniqueIdentifier>
     </Filter>
@@ -587,6 +572,9 @@
     </ClInclude>
     <ClInclude Include="External\imgui-docking\imconfig.h">
       <Filter>External\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="External\meshoptimizer\src\meshoptimizer.h">
+      <Filter>External\meshoptimizer</Filter>
     </ClInclude>
     <ClInclude Include="External\imgui-docking\imgui.h">
       <Filter>External\imgui-docking</Filter>
@@ -689,9 +677,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Resource\ResourceManager.h">
       <Filter>Source\Engine\Graphics\Resource</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\Material\OutlineShader.h">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.h">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
@@ -810,7 +795,16 @@
     <ClInclude Include="Source\Game\UI\HUD\PlayerHealthHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\PlayerHudStyleComponent.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\UiPrefabUtil.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\TutorialHintHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\TutorialHintStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Tutorial\TutorialState.h">
@@ -820,6 +814,9 @@
       <Filter>Source\Game\Logics\Tutorial</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\HUD\BossHealthHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\BossHudStyleComponent.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\MenuButtonVisualComponent.h">
@@ -837,6 +834,15 @@
     <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.h">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\LockOnMarkerStyleComponent.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptHudSystem.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\HUD\RushPromptStyleComponent.h">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\UISoundSystem.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
@@ -847,6 +853,12 @@
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Common\MenuButtonStyleSystem.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleSystem.h">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Common\MenuStyleComponent.h">
       <Filter>Source\Game\UI\Common</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Screens\TitleMenuSystem.h">
@@ -861,6 +873,12 @@
     <ClInclude Include="Source\Game\Logics\Title\TitleSwarmSystem.h">
       <Filter>Source\Game\Logics\Title</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldComponent.h">
+      <Filter>Source\Game\Logics\Stage</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Stage\DebrisFieldSystem.h">
+      <Filter>Source\Game\Logics\Stage</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\UI\Debug\GaugeLabGui.h">
       <Filter>Source\Game\UI\Debug</Filter>
     </ClInclude>
@@ -874,6 +892,9 @@
       <Filter>Source\Game\UI\Screens</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Input\InputPromptSystem.h">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\UI\Input\InputPromptStyleComponent.h">
       <Filter>Source\Game\UI\Input</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\UI\Input\InputIconComponent.h">
@@ -945,6 +966,9 @@
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\RenderQueue.h">
       <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshLod.h">
+      <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Renderer\Core\MeshCulling.h">
       <Filter>Source\Engine\Graphics\Renderer\Core</Filter>
     </ClInclude>
@@ -1013,6 +1037,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\AI\BossBTDebugWindow.h">
+      <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
@@ -1096,6 +1123,9 @@
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimGraphSerializer.h">
+      <Filter>Source\Engine\Animation\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Core\AnimBlendSpaceMath.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h">
@@ -1208,6 +1238,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\RHI\NormalBuffer.h">
       <Filter>Source\Engine\Graphics\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Pipeline\LodDebugPass.h">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Pipeline\NormalPrepass.h">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
@@ -1330,6 +1363,9 @@
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.h">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.h">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.h">
@@ -1614,9 +1650,6 @@
     <ClInclude Include="Source\Engine\Graphics\Shader\Shared\ShaderShared.h">
       <Filter>Source\Engine\Graphics\Shader\_Shared</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\DistortionConfigComponent.h">
-      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
@@ -1640,9 +1673,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\SSAOConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.h">
-      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.h">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
@@ -1696,6 +1726,9 @@
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.h">
@@ -1812,9 +1845,6 @@
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\Game\CurveEditorWindow.h">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.h">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClInclude>
@@ -1823,9 +1853,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Utils\CurveEditorWidget.h">
       <Filter>Source\Editor\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Shader\ShaderManifest.h">
-      <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
@@ -1863,13 +1890,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.h">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\IChargeMotion.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.h">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.h">
+    <ClInclude Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.h">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.h">
@@ -1926,6 +1947,9 @@
     <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.h">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.h">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossActionComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClInclude>
@@ -1965,8 +1989,20 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
       <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Scenes\AnimLabScene.h">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridComponent.h">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.h">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\DemoSwarmScene.h">
       <Filter>Source\Game\Scenes</Filter>
@@ -1987,6 +2023,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicRipple.h">
       <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h">
@@ -2026,6 +2065,69 @@
     </ClCompile>
     <ClCompile Include="External\imgui-docking\imgui_impl_win32.cpp">
       <Filter>External\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\allocator.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\clusterizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexanalyzer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\indexgenerator.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\meshletcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\meshletutils.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\opacitymap.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\overdrawoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\partition.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\quantization.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\rasterizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\remesher.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\simplifier.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\spatialorder.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\stripifier.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\tangentspace.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vcacheoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vertexcodec.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vertexfilter.cpp">
+      <Filter>External\meshoptimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="External\meshoptimizer\src\vfetchoptimizer.cpp">
+      <Filter>External\meshoptimizer</Filter>
     </ClCompile>
     <ClCompile Include="External\imgui-docking\imgui_tables.cpp">
       <Filter>External\imgui-docking</Filter>
@@ -2092,9 +2194,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Resource\ResourceManager.cpp">
       <Filter>Source\Engine\Graphics\Resource</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\Material\OutlineShader.cpp">
-      <Filter>Source\Engine\Graphics\Shader\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\Material\ShadowMapShader.cpp">
       <Filter>Source\Engine\Graphics\Shader\Material</Filter>
@@ -2177,7 +2276,13 @@
     <ClCompile Include="Source\Game\UI\HUD\PlayerHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\PlayerHudStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\TutorialHintHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\TutorialHintStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Tutorial\TutorialSystem.cpp">
@@ -2186,10 +2291,22 @@
     <ClCompile Include="Source\Game\UI\HUD\BossHealthHudSystem.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\BossHudStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\Common\UIRevealSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\LockOnMarkerStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptHudSystem.cpp">
+      <Filter>Source\Game\UI\HUD</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\HUD\RushPromptStyleComponentMeta.cpp">
       <Filter>Source\Game\UI\HUD</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Common\UISoundSystem.cpp">
@@ -2204,6 +2321,12 @@
     <ClCompile Include="Source\Game\UI\Common\MenuButtonStyleSystem.cpp">
       <Filter>Source\Game\UI\Common</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleSystem.cpp">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Common\MenuStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\Common</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\Screens\TitleMenuSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
     </ClCompile>
@@ -2212,6 +2335,12 @@
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Title\TitleSwarmSystem.cpp">
       <Filter>Source\Game\Logics\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Stage</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Stage\DebrisFieldSystem.cpp">
+      <Filter>Source\Game\Logics\Stage</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\UI\Screens\GameResultSystem.cpp">
       <Filter>Source\Game\UI\Screens</Filter>
@@ -2222,7 +2351,13 @@
     <ClCompile Include="Source\Game\UI\Input\InputPromptSystem.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\UI\Input\InputPromptStyleComponentMeta.cpp">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\UI\Input\InputIconSystem.cpp">
+      <Filter>Source\Game\UI\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\UI\Input\InputIconComponentMeta.cpp">
       <Filter>Source\Game\UI\Input</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\UI\ECS\Systems\UIAnimationSystem.cpp">
@@ -2275,6 +2410,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\AI\BossBTDebugWindow.cpp">
+      <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
@@ -2408,6 +2546,9 @@
     <ClCompile Include="Source\Engine\Graphics\RHI\NormalBuffer.cpp">
       <Filter>Source\Engine\Graphics\RHI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Pipeline\LodDebugPass.cpp">
+      <Filter>Source\Engine\Graphics\Pipeline</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Pipeline\NormalPrepass.cpp">
       <Filter>Source\Engine\Graphics\Pipeline</Filter>
     </ClCompile>
@@ -2514,6 +2655,9 @@
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\GPUParticleUpdateSystem.cpp">
+      <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Graphics\Systems\Particle\ParticleAnimationSyncSystem.cpp">
       <Filter>Source\Engine\Graphics\Systems\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Systems\Particle\VFXSystem.cpp">
@@ -2678,9 +2822,6 @@
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\ToneMapEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\DistortionEffect.cpp">
-      <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Graphics\Shader\PostProcess\RadialBlurEffect.cpp">
       <Filter>Source\Engine\Graphics\Shader\PostProcess</Filter>
     </ClCompile>
@@ -2739,6 +2880,9 @@
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAttackSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerAirDiveSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.cpp">
@@ -2837,9 +2981,6 @@
     <ClCompile Include="Source\Engine\Graphics\Components\Core\PrimitiveComponentMeta.cpp">
       <Filter>Source\Engine\Graphics\Components\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\Game\CurveEditorWindow.cpp">
-      <Filter>Source\Editor\Windows\Game</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\JoltIntegration\JoltCharacterContactListener.cpp">
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
@@ -2848,9 +2989,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\Utils\CurveEditorWidget.cpp">
       <Filter>Source\Editor\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Graphics\Shader\ShaderManifest.cpp">
-      <Filter>Source\Engine\Graphics\Shader</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
@@ -2879,10 +3017,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneMovementSystem.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\ChargeMotions.cpp">
-      <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotionCommon.cpp">
+    <ClCompile Include="Source\Game\Logics\AI\Drone\Motion\DroneMotion.cpp">
       <Filter>Source\Game\Logics\AI\Drone\Motion</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Drone\Systems\DroneBrainSystem.cpp">
@@ -2904,6 +3039,15 @@
       <Filter>Source\Engine\Physics\JoltIntegration</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BTUtilityScore.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Debug.cpp">
+      <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\BehaviorTree\BehaviorTreeSystem_Evaluate.cpp">
       <Filter>Source\Game\Logics\AI\BehaviorTree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossActionComponentMeta.cpp">
@@ -2936,8 +3080,20 @@
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Scenes\AnimLabScene.cpp">
+      <Filter>Source\Game\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridComponentMeta.cpp">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AnimLab\PreviewGridDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AnimLab</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\DemoSwarmScene.cpp">
       <Filter>Source\Game\Scenes</Filter>
@@ -2961,6 +3117,9 @@
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.cpp">
+      <Filter>Source\Editor\Windows\Cinematic</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicRipple.cpp">
       <Filter>Source\Editor\Windows\Cinematic</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
@@ -3007,16 +3166,10 @@
     <None Include="Shader\Common\Transform.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
-    <None Include="Shader\Material\Water\WaterShared.hlsli">
-      <Filter>Shader\Material\Water</Filter>
-    </None>
     <None Include="Shader\Common\PBRLighting.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
     <None Include="Shader\Common\MaterialEffect.hlsli">
-      <Filter>Shader\Common</Filter>
-    </None>
-    <None Include="Shader\Common\ToonLighting.hlsli">
       <Filter>Shader\Common</Filter>
     </None>
     <None Include="Build\EditorTooling.props">
@@ -3057,20 +3210,11 @@
     <FxCompile Include="Shader\Material\Basic\BasicPS.hlsl">
       <Filter>Shader\Material\Basic</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Material\Refraction\RefractionVS.hlsl">
-      <Filter>Shader\Material\Refraction</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Refraction\RefractionPS.hlsl">
-      <Filter>Shader\Material\Refraction</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Material\Lambert\LambertPS.hlsl">
       <Filter>Shader\Material\Lambert</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Phong\PhongPS.hlsl">
       <Filter>Shader\Material\Phong</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Toon\ToonPS.hlsl">
-      <Filter>Shader\Material\Toon</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\UIGaugePS.hlsl">
       <Filter>Shader\Material\Sprite</Filter>
@@ -3090,14 +3234,14 @@
     <FxCompile Include="Shader\Renderer\Primitive\PrimitiveRendererVS.hlsl">
       <Filter>Shader\Renderer\Primitive</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Pass\Outline\OutlinePS.hlsl">
-      <Filter>Shader\Pass\Outline</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Pass\ShadowMap\ShadowMapVS.hlsl">
       <Filter>Shader\Pass\ShadowMap</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassVS.hlsl">
       <Filter>Shader\Pass\NormalPrepass</Filter>
+    </FxCompile>
+    <FxCompile Include="Shader\Pass\LodDebug\LodDebugPS.hlsl">
+      <Filter>Shader\Pass\LodDebug</Filter>
     </FxCompile>
     <FxCompile Include="Shader\Pass\NormalPrepass\NormalPrepassPS.hlsl">
       <Filter>Shader\Pass\NormalPrepass</Filter>
@@ -3135,12 +3279,6 @@
     <FxCompile Include="Shader\Material\PBR\PBRPS.hlsl">
       <Filter>Shader\Material\PBR</Filter>
     </FxCompile>
-    <FxCompile Include="Shader\Pass\Outline\OutlineVS.hlsl">
-      <Filter>Shader\Pass\Outline</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Toon\ToonVS.hlsl">
-      <Filter>Shader\Material\Toon</Filter>
-    </FxCompile>
     <FxCompile Include="Shader\Material\Sprite\SpriteVS.hlsl">
       <Filter>Shader\Material\Sprite</Filter>
     </FxCompile>
@@ -3172,9 +3310,6 @@
       <Filter>Shader\Pass\SkyBox</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\BloomCompositePS.hlsl">
-      <Filter>Shader\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\PostProcess\DistortionPS.hlsl">
       <Filter>Shader\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shader\PostProcess\RadialBlurPS.hlsl">
@@ -3212,42 +3347,6 @@
     </FxCompile>
     <FxCompile Include="Shader\Pass\Error\ErrorVS.hlsl">
       <Filter>Shader\Pass\Error</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Glow\GlowVS.hlsl">
-      <Filter>Shader\Material\Glow</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Glow\GlowPS.hlsl">
-      <Filter>Shader\Material\Glow</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Hologram\HologramPS.hlsl">
-      <Filter>Shader\Material\Hologram</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Hologram\HologramVS.hlsl">
-      <Filter>Shader\Material\Hologram</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Fire\FirePS.hlsl">
-      <Filter>Shader\Material\Fire</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Fire\FireVS.hlsl">
-      <Filter>Shader\Material\Fire</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Water\WaterPS.hlsl">
-      <Filter>Shader\Material\Water</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\Water\WaterVS.hlsl">
-      <Filter>Shader\Material\Water</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRPS.hlsl">
-      <Filter>Shader\Material\GhostPBR</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\GhostPBR\GhostPBRVS.hlsl">
-      <Filter>Shader\Material\GhostPBR</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamVS.hlsl">
-      <Filter>Shader\Material\EnergyStream</Filter>
-    </FxCompile>
-    <FxCompile Include="Shader\Material\EnergyStream\EnergyStreamPS.hlsl">
-      <Filter>Shader\Material\EnergyStream</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

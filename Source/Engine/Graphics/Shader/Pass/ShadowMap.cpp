@@ -79,6 +79,8 @@ ShadowMap::ShadowMap(ID3D11Device *device, UINT width, UINT height)
     viewport.TopLeftY = 0.0f;
 }
 
+
+
 void ShadowMap::Activate(ID3D11DeviceContext *dc, int cascadeIndex)
 {
     dc->ClearDepthStencilView(depthStencilViews[cascadeIndex].Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -86,10 +88,14 @@ void ShadowMap::Activate(ID3D11DeviceContext *dc, int cascadeIndex)
     dc->OMSetRenderTargets(0, nullptr, depthStencilViews[cascadeIndex].Get());
 }
 
+
+
 void ShadowMap::Deactivate(ID3D11DeviceContext *dc)
 {
     dc->OMSetRenderTargets(0, nullptr, nullptr);
 }
+
+
 
 void ShadowMap::Bind(ID3D11DeviceContext *dc, int srvSlot, int samplerSlot, int cbSlot)
 {
@@ -113,6 +119,8 @@ void ShadowMap::Bind(ID3D11DeviceContext *dc, int srvSlot, int samplerSlot, int 
         dc->PSSetConstantBuffers((UINT)cbSlot, 1, cbs);
     }
 }
+
+
 
 void ShadowMap::UpdateConstantBuffer(ID3D11DeviceContext *dc, const GpuData::CbShadow &data)
 {

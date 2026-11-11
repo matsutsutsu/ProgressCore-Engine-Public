@@ -28,15 +28,17 @@ void TitleScene::Initialize()
     CCL_LOG_INFO(LogCategory::Core, "TitleScene Initialize");
 }
 
+
+
 void TitleScene::RegisterSystems()
 {
     auto &m = *(m_ecsContext->GetSystemManager());
 
     // 他のシーンと同じく全 System を登録する。タイトルでも 3D 描画・アニメーション・パーティクルと、
-    // ドローンの移動を使うため。
+    // ドローンの移動を使うため
     // 戦闘と AI の System を登録しても問題はない。BattleContext は BattleContextSyncSystem が
-    // 必ず登録するが、プレイヤーとボスが居ないので各 System の ForEach は何もしない
-    // （HasPlayer() / HasBoss() も false のまま）。DroneCommandSystem もボスが居ないとすぐ戻るので、
+    // 必ず登録するが、プレイヤーとボスがいないので各 System の ForEach は何もしない
+    // （HasPlayer() / HasBoss() も false のまま）。DroneCommandSystem もボスがいないとすぐ戻るので、
     // タイトルの群れは TitleSwarmSystem の指示だけで動く
     CCL::ECS::SystemRegistry::Instance().RegisterAll(m);
 
@@ -51,6 +53,8 @@ void TitleScene::RegisterSystems()
     // メニューの生成と、ボタンでのシーン遷移
     m.RegisterSystem<TitleMenuSystem>(Priority::LogicStage::L02_Update);
 }
+
+
 
 // SceneFactory へ登録する（SceneManager がこのクラスを include せずに済むように）
 REGISTER_SCENE(TitleScene, "Title")

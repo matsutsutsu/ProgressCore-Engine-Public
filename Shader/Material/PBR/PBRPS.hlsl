@@ -8,7 +8,7 @@
 cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
 {
     float4 baseColor;
-    float3 emissiveColor;
+    float4 emissiveColor; // rgb だけ使う。C++ は色を float4 で送るので、float3 にすると大きさが合わず届かない
     float metalness;
     float roughness;
     float occlusionStrength;
@@ -19,6 +19,8 @@ cbuffer CbMesh : register(REG_CB(SLOT_CB_MATERIAL))
     float useMetalRoughMap;
     float useOcclusionMap;
     float useEmissiveMap;
+
+    float alphaCutoff; // これより小さいアルファを捨てる。alphaMode が Mask のときだけ 0 より大きい（Shader が自動で送る）
 };
 
 Texture2D AlbedoMap : register(REG_SRV(SLOT_SRV_MAT_TEX0));
@@ -58,6 +60,10 @@ float4 main(VS_OUT pin) : SV_TARGET
     surf.albedo = albedoTex.rgb * baseColor.rgb;
     float alpha = albedoTex.a * baseColor.a;
 
+    // くり抜き（Mask）。Mask 以外は alphaCutoff が 0 なので、何も捨てない
+    if (alpha < alphaCutoff)
+        discard;
+
     // メタル・ラフネス・オクルージョンマップ（無い場合は白として扱う）
     // R: AO, G: Roughness, B: Metalness
     float4 mrSample = useMetalRoughMap > 0.5f ? MetalRoughMap.Sample(LinearSampler, pin.texcoord) : float4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -93,22 +99,10 @@ float4 main(VS_OUT pin) : SV_TARGET
     // ------------------------------------------------------------
     // 3. 最終合成とエフェクト
     // ------------------------------------------------------------
-    float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor : float3(0.0f, 0.0f, 0.0f);
+    float3 emissive = useEmissiveMap > 0.5f ? EmissiveMap.Sample(LinearSampler, pin.texcoord).rgb * emissiveColor.rgb : float3(0.0f, 0.0f, 0.0f);
 
     // 直接光 ＋ 環境光 ＋ 発光
     float3 finalColor = ambientIBL + light.diffuse + light.specular + emissive;
-
-    // リムライト
-    if (gFogRimParams.y > 0.0f)
-    {
-        float NdotV = saturate(dot(surf.normal, surf.viewDir));
-        float rimFactor = pow(1.0f - NdotV, gFogRimParams.x);
-        float curvature = length(fwidth(surf.normal));
-        float flatMask = saturate(curvature * 100.0f);
-        float floorMask = 1.0f - step(0.9f, surf.normal.y);
-
-        finalColor += rimFactor * gFogRimColor.rgb * gFogRimParams.y * flatMask * floorMask;
-    }
 
     // フォグ
     finalColor = ApplyHeightFog(surf.pos, cameraPosition.xyz, finalColor);

@@ -4,7 +4,7 @@
             "components": {
                 "AnimParameters": null,
                 "AnimStateMachine": {
-                    "graphPath": "Assets/Animations/Nodes/MurielAnimNode.json"
+                    "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
                     "isLoop": true,
@@ -20,7 +20,7 @@
                     "paths": []
                 },
                 "Model": {
-                    "assetPath": "Assets/Models/Enemy/Muriel/Muriel.model.json"
+                    "assetPath": "Assets/Models/Enemy/Valkyra/Valkyra.model.json"
                 },
                 "Name": {
                     "name": "TitleBossStatue"

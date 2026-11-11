@@ -2,13 +2,24 @@
     "entities": [
         {
             "components": {
-                "Material": null,
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": [
+                        "Assets/Materials/PreviewFloor.json"
+                    ]
+                },
                 "Model": {
                     "assetPath": "Assets/Models/Shape/Plane.glb"
                 },
                 "Name": {
                     "name": "PreviewFloor"
                 },
+                "Preview Grid": null,
                 "TimeState": {
                     "buffScale": 1.0,
                     "cinematicScale": 1.0,

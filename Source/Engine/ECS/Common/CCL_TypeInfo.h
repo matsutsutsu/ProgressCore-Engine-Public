@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 任意の型 T の「型ID・サイズ・型名・構築/破棄関数」を提供する型情報レイヤー。
+// 概要: 任意の型 T の「型ID・サイズ・型名・構築/破棄関数」を提供する型情報レイヤー
 //
 // 責務:
 //   - TypeInfo<T>: 型 T → 数値 ID の変換（コンパイル時テンプレート）
@@ -9,11 +9,11 @@
 
 #include <cstddef>
 #include <string>
-#include <new>         // placement new
-#include <type_traits> // std::is_copy_constructible_v 等
+#include <new>
+#include <type_traits>
 #include <typeinfo>
 #include <cassert>
-#include <utility> // std::move
+#include <utility>
 
 #include "CCL_Types.h"
 #include "CCL_IDEmitter.h"
@@ -25,49 +25,20 @@ namespace CCL::ECS
     // TypeInfo<T>
     // ============================================================
 
-    /**
-     * @brief 任意のコンポーネント型 T に「ユニークな数値 ID」を割り当てる
-     *        テンプレートユーティリティ。
-     *
-     * 型そのものではなく数値 ID で比較することで、Archetype の一致判定や
-     * コンポーネント配置オフセットの計算を速くする。
-     *
-     * @code
-     *   TypeInfo<Position>::ID();   // 例: 1
-     *   TypeInfo<Velocity>::ID();   // 例: 2
-     *   TypeInfo<Position>::ID();   // 例: 1（必ず同じ値）
-     * @endcode
-     */
+    // コンポーネントの型 T に、一意な数値の ID を割り当てる。Archetype は型でなくこの ID で比べる
     template <class T>
     class TypeInfo
     {
     public:
-        /**
-         * @brief 型 T に紐づく永続ユニーク ID を返す。
-         *
-         * @note 採番を「関数ローカル static」で行うのが要点。初回呼び出し時に
-         *       初期化されるので、静的初期化中に呼ばれても必ず正しい値を返す。
-         *
-         *       `inline static` メンバにしてはいけない。動的初期化の順序が翻訳単位を
-         *       またいで保証されない(unordered initialization)ため、静的初期化中に走る
-         *       REGISTER_COMPONENT がゼロ初期化のままの 0 を読む。ComponentRegistry の
-         *       TypeID→名前の対応表が 0 番に化け、「プレハブは読み込めるのに保存すると
-         *       特定コンポーネントが消える」という無言の破損になる
-         *       (どの型が壊れるかはリンク順次第)。
-         *       ID_Emitter が関数ローカル static なのも同じ理由。
-         */
+        // T の ID を返す。採番は関数ローカルの static で行い、静的初期化の途中で呼ばれても正しい値を返す
+        // inline static のメンバにすると、翻訳単位をまたぐ初期化の順が決まらず、REGISTER_COMPONENT が 0 を読む
+        // すると型と名前の対応が 0 番に化け、保存したときに特定のコンポーネントが黙って消える
         static TypeID ID()
         {
             static const TypeID s_id = ID_Emitter::EmitTypeID();
             return s_id;
         }
 
-        /**
-         * @brief sizeof(T) を返す。
-         *
-         * Chunk が SoA 配置を計算するのに使う
-         * （先頭アドレス + entityIndex * Size() で各 Entity の番地が決まる）。
-         */
         static size_t Size()
         {
             return sizeof(T);
@@ -85,47 +56,22 @@ namespace CCL::ECS
     // TypeData
     // ============================================================
 
-    /**
-     * @brief 任意のコンポーネント型 T を「実行時に持ち回れる情報」として
-     *        パッケージ化したレコード。
-     *
-     * TypeInfo<T> がコンパイル時テンプレートなのに対し、TypeData は
-     * 実行時に std::vector に格納したり、関数引数で渡したりするための
-     * 「型情報の運び屋」。ECS が各コンポーネント型を「メモリ操作できるデータ」
-     * として一律に扱うための中核データ構造。
-     *
-     * 含まれる情報:
-     *   - id                 : コンポーネント型を識別する ID（整数比較で済む）
-     *   - typeSize           : 1個あたりのメモリサイズ
-     *   - destructor         : デストラクタ呼び出しを型消去で持つ
-     *   - constructor        : placement new によるコピー構築
-     *   - assigner           : operator= による代入
-     *   - mover              : ムーブ構築（placement new + std::move）
-     *   - defaultConstructor : デフォルトコンストラクタ呼び出し
-     *   - name               : デバッグ用の型名
-     */
+    // 型 T の ID・大きさ・構築と破棄の関数を、実行時に持ち回れる形にまとめたもの
+    // Chunk は型を知らないので、コンポーネントをこの関数ポインタで作り、運び、壊す
     class TypeData
     {
     public:
         TypeData()  = default;
         ~TypeData() = default;
 
-        // vector 等に格納するため、コピー・ムーブは全て有効
+        // vector 等に格納するため、コピー・ムーブはすべて有効
         TypeData(const TypeData &)            = default;
         TypeData &operator=(const TypeData &) = default;
         TypeData(TypeData &&)                 = default;
         TypeData &operator=(TypeData &&)      = default;
 
-        /**
-         * @brief 型 T から TypeData の各フィールドを一括初期化する。
-         *
-         * id / size / 各種構築関数（コピー・ムーブ・代入・デフォルト構築）と
-         * デストラクタを一気に登録する。
-         *
-         * @note コピーが禁止された型でもコンパイルが通るよう、`if constexpr` で
-         *       コピー可能かをコンパイル時に判定している。禁止型のコピーを
-         *       実行時に呼んでしまった場合は assert で止まる。
-         */
+        // T から各欄を埋める。コピーできない型でもコンパイルが通るよう if constexpr で分け、
+        // そうした型のコピーが実行時に呼ばれたら assert で止める
         template <class T>
         void Create()
         {
@@ -139,8 +85,8 @@ namespace CCL::ECS
                 new (dst) T();
             };
 
-            // コピー構築（placement new）。
-            // 未初期化メモリへの新規構築。assigner と違って operator= は呼ばない。
+            // コピー構築（placement new）
+            // 未初期化メモリへの新規構築。assigner と違って operator= は呼ばない
             if constexpr (std::is_copy_constructible_v<T>)
             {
                 constructor = [](void *dst, const void *src) {
@@ -170,7 +116,7 @@ namespace CCL::ECS
                 };
             }
 
-            // ムーブ構築（CompactHoles / MoveEntityBetweenChunks で使う）。
+            // ムーブ構築（CompactHoles / MoveEntityBetweenChunks で使う）
             // dst は未初期化メモリなので operator= ではなく placement new + std::move
             mover = [](void *dst, void *src) {
                 new (dst) T(std::move(*reinterpret_cast<T *>(src)));
@@ -192,16 +138,7 @@ namespace CCL::ECS
         MoveFunc             mover              = nullptr;
         DefaultConstructFunc defaultConstructor = nullptr;
 
-        /**
-         * @brief id で比較する。Archetype が TypeData の集合をソートして持つために使う。
-         *
-         * ソート順を一定にしておくと、コンポーネントの指定順が違っても
-         * 同一 Archetype だと高速に判定できる。
-         *
-         *   A: [ Velocity(2), Position(1) ]  →ソート→ [Position(1), Velocity(2)]
-         *   B: [ Position(1), Velocity(2) ]  →ソート→ [Position(1), Velocity(2)]
-         *   A == B ⇒ true
-         */
+        // id で並べる。Archetype は TypeData を id の順に持ち、指定した順によらず同じ構成を一致させる
         bool operator<(const TypeData &r) const { return id < r.id; }
         bool operator==(const TypeData &r) const { return id == r.id; }
     };

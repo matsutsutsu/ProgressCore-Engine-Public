@@ -1,28 +1,20 @@
 #pragma once
 // ===========================================================================
-// 概要: JPH::ShapeSettings から形状を生成するときに必ず通す関数群。
+// 概要: JPH::ShapeSettings から形状を作るときに必ず通す関数
 //
 // 責務:
-//   - 形状生成の Result を検証し、失敗したらログを出して nullptr を返す
-//   - 基本形状をローカルの位置・回転でずらした形状の生成
-//   - 度数のオイラー角から Jolt のクォータニオンへの変換
+//   - 形状の生成結果を確かめ、失敗したらログを出して nullptr を返す
+//   - 基本形状を、ローカルの位置・回転でずらした形状を作る
+//   - 度のオイラー角を、Jolt のクォータニオンに直す
 //
-// なぜ必要か:
-// JPH::Result::Get() の実体は次の通り（Jolt/Core/Result.h）:
-//     const Type & Get() const { JPH_ASSERT(IsValid()); return mResult; }
-// mResult は union のメンバで、エラー時は構築されていない。
-// つまり失敗した Result に Get() を呼ぶと、未初期化の ShapeRefC をコピーすることになり、
-// そのコピーコンストラクタが野良ポインタに AddRef() する。
+// 備考: 失敗した JPH::Result に Get() を呼ぶと、構築されていない ShapeRefC をコピーし、野良ポインタに AddRef する
+//       JPH_ASSERT は Release / Development で消えるので、警告なしにメモリを壊す
+//       形状の生成は退化した三角形や半径0のカプセルなどで普通に失敗するので、Create().Get() を直接書かない
 //
-// しかも JPH_ASSERT は JPH_ENABLE_ASSERTS が無い構成（Release / Development）では
-// 完全に消えるため、この事故は何の警告も出さずにメモリを壊す。
-//
-// 形状生成はモデル次第で普通に失敗する（メッシュの退化三角形、三角形数の上限、
-// 半径0のカプセルなど）。そのため Create().Get() を直書きせず、必ずここを通す。
-//
-// 使い方:
+// @code
 //   JPH::ShapeRefC shape = JoltShapeFactory::CreateChecked(settings, entityID, "Box");
-//   if (shape == nullptr) return;   // 失敗はログに出た上で nullptr が返る
+//   if (shape == nullptr) return; // 失敗はログに出ている
+// @endcode
 // ===========================================================================
 
 #include <Jolt/Jolt.h>
@@ -34,40 +26,16 @@
 namespace JoltShapeFactory
 {
 
-    /**
-     * @brief 形状を生成し、Result を必ず検証してから取り出す。
-     *
-     * @param settings 生成元の設定
-     * @param ownerId 失敗ログに出す持ち主のID（EntityID をそのまま渡す）
-     * @param what 失敗ログに出す形状の種類名（"Box" / "Mesh" など）
-     * @return 成功なら形状、失敗なら nullptr（呼び側の nullptr チェックに合流させる）
-     *
-     * @note ECS に依存しないよう、ID は uint64_t で受け取る（JoltIntegration は ECS を知らない）。
-     */
+    // 形状を作り、結果を確かめてから取り出す。失敗したら ownerId と what をログに出して nullptr
+    // JoltIntegration は ECS を知らないので、ID は uint64_t で受け取る
     JPH::ShapeRefC CreateChecked(
         const JPH::ShapeSettings &settings, uint64_t ownerId, const char *what);
 
-    /**
-     * @brief 度数の XYZ オイラー角を Jolt のクォータニオンへ変換する。
-     *
-     * コライダーのローカル回転はインスペクタで度数のまま持っているため。
-     *
-     * @param eulerDegree XYZ オイラー角（度）。
-     * @return 変換したクォータニオン。
-     */
+    // 度の XYZ オイラー角を、Jolt のクォータニオンに直す（インスペクタはコライダーの回転を度で持つ）
     JPH::Quat EulerDegreeToJoltQuat(const DirectX::XMFLOAT3 &eulerDegree);
 
-    /**
-     * @brief 基本形状を作り、ローカルの位置・回転でずらした形状（RotatedTranslatedShape）で包む。
-     *
-     * Box / Sphere / Capsule の生成時（JoltBodySetupSystem）と更新時（JoltShapeUpdateSystem）で共通。
-     * 2回の生成とも Result を検証する。
-     *
-     * @param base 基本形状の設定（Box/Sphere/Capsule）
-     * @param localOffset 形状のローカル位置のずれ（m）
-     * @param localEuler 形状のローカル回転（度）。球では {0,0,0} を渡す
-     * @return 失敗時は nullptr（理由はログ済み）
-     */
+    // 基本形状（Box / Sphere / Capsule）を作り、ローカルの位置（m）と回転（度）でずらした形状で包む。失敗したら nullptr
+    // 剛体を作るとき（JoltBodySetupSystem）と形を変えるとき（JoltShapeUpdateSystem）で共通に使う
     JPH::ShapeRefC CreateOffsetShape(
         const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,
         const DirectX::XMFLOAT3 &localEuler, uint64_t ownerId, const char *what);

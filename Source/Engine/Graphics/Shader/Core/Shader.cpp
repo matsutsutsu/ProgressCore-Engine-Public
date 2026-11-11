@@ -2,7 +2,9 @@
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
+#include "Engine/Core/Math/StringHash.h"
 #include <algorithm>
+#include <iterator>
 
 // ---------------------------------------------------------------------------
 // リフレクション
@@ -25,6 +27,8 @@ bool Shader::InitializeReflection(ID3D11Device *device, const std::string &csoPa
     return true;
 }
 
+
+
 int Shader::FetchTextureSlot(const std::string &name)
 {
     int slot = m_reflection.FindTextureSlot(name);
@@ -36,6 +40,8 @@ int Shader::FetchTextureSlot(const std::string &name)
     return slot;
 }
 
+
+
 int Shader::FetchSamplerSlot(const std::string &name)
 {
     int slot = m_reflection.FindSamplerSlot(name);
@@ -45,6 +51,8 @@ int Shader::FetchSamplerSlot(const std::string &name)
     }
     return slot;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 描画時のバインド
@@ -62,6 +70,8 @@ void Shader::ApplyShaderPipeline(ID3D11DeviceContext *dc, ID3D11VertexShader *vs
         pair.second.BindPS(dc);
     }
 }
+
+
 
 void Shader::UnbindResources(ID3D11DeviceContext *dc)
 {
@@ -85,37 +95,22 @@ void Shader::UnbindResources(ID3D11DeviceContext *dc)
     dc->IASetInputLayout(nullptr);
 }
 
+
+
 void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialData &mat,
                                       const MaterialData *fallbackMat)
 {
-    // 定数バッファ:
-    //   定数バッファはシェーダー1つにつき1組で、そのシェーダーを使う全マテリアルが共有する。
-    //   なのでマテリアルごとに必ず 0 に戻し、このマテリアルの値を書き直して毎回送る。
-    //   「値を1つも書かなかったバッファは送らない」という最適化を入れてはいけない。
-    //   前に描いたオブジェクトの値が残って次のオブジェクトに漏れる（関係ない敵やドローンが真っ黒になった）。
-    //
-    //   対象は b0 だけでなく、このシェーダーの b0〜b7 の全部。OutlineShader は輪郭線の値
-    //   （gOutlineColor / gOutlineSize）を b1 の CbOutline に置いているので、b0 だけにすると輪郭線の太さが 0 になる。
-    //
-    //   逆に b0〜b7 にはマテリアル以外の値を置いてはいけない。ここで毎回 0 にするので、
-    //   前に書いた値は消える。メッシュごと・オブジェクトごとの値は b8 以降に置く。
-    for (auto &cbPair : m_constantBuffers)
+    // テクスチャ:
+    //   先にバインドし、テクスチャがあったかを覚えておく。「use + テクスチャ名」の変数
+    //   （useAlbedoMap など）があれば、下の定数バッファにその有無を 1 / 0 で書く
+    //   フラグをマテリアルに持たせると、テクスチャだけ差し替えたときにずれて黒くなるので、ここで決める
+    struct TextureFlag
     {
-        auto &cb = cbPair.second;
-
-        cb.ResetToZero();
-
-        for (const auto &prop : mat.scalars)
-        {
-            cb.SetValue(prop.nameHash, prop.value);
-        }
-        for (const auto &prop : mat.colors)
-        {
-            cb.SetValue(prop.nameHash, prop.value);
-        }
-
-        cb.UpdateBuffer(dc);
-    }
+        uint32_t hash;
+        float    value;
+    };
+    TextureFlag textureFlags[SLOT_SRV_SHADOW]; // マテリアルのテクスチャは t0〜t9 だけ
+    size_t      textureFlagCount = 0;
 
     const auto &shaderTextures = m_reflection.GetTextures();
 
@@ -123,8 +118,8 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
     {
         // t10（SLOT_SRV_SHADOW）以降はフレーム共通・ドローごとのもので、マテリアルのテクスチャではない
         if (texInfo.bindPoint >= SLOT_SRV_SHADOW) continue;
-        // t4〜t6（深度・シーンの色・法線）はパス側がバインドする。マテリアルに無いからと
-        // null をバインドすると、屈折などが常に黒くなる
+        // t4〜t6（深度・シーンの色・法線）はパス側がバインドする。マテリアルにないからと
+        // null をバインドすると、パスが入れたものを消してしまう
         if (texInfo.bindPoint == SLOT_SRV_SCENE_DEPTH ||
             texInfo.bindPoint == SLOT_SRV_SCENE_COLOR ||
             texInfo.bindPoint == SLOT_SRV_SCENE_NORMAL)
@@ -158,8 +153,44 @@ void Shader::UpdateMaterialProperties(ID3D11DeviceContext *dc, const MaterialDat
             ID3D11ShaderResourceView *nullSRV = nullptr;
             dc->PSSetShaderResources(slot, 1, &nullSRV);
         }
+
+        if (textureFlagCount < std::size(textureFlags))
+        {
+            textureFlags[textureFlagCount++] = {texInfo.useFlagHash, hasTex ? 1.0f : 0.0f};
+        }
+    }
+
+    // 定数バッファはシェーダーごとに1組で、全マテリアルが共有する。マテリアルごとに b0〜b7 をすべて 0 に戻して書き直す
+    // 書かなかったバッファを送らずに済ませると、前に描いた物の値が残って次の物に漏れる
+    // そのため b0〜b7 にはマテリアルの値だけを置く。メッシュやオブジェクトごとの値は b8 以降に置く
+    for (auto &cbPair : m_constantBuffers)
+    {
+        auto &cb = cbPair.second;
+
+        cb.ResetToZero();
+
+        for (const auto &prop : mat.scalars)
+        {
+            cb.SetValue(prop.nameHash, prop.value);
+        }
+        for (const auto &prop : mat.colors)
+        {
+            cb.SetValue(prop.nameHash, prop.value);
+        }
+        // テクスチャの有無はマテリアルの値より後に書き、古いマテリアルファイルに残ったフラグを上書きする
+        for (size_t i = 0; i < textureFlagCount; ++i)
+        {
+            cb.SetValue(textureFlags[i].hash, textureFlags[i].value);
+        }
+        // くり抜きのしきい値。Mask のマテリアルだけ alphaCutoff を送り、それ以外は 0（何も捨てない）にする
+        // glTF の alphaCutoff は不透明のマテリアルにも既定の 0.5 が入っているので、そのまま送ると穴があく
+        cb.SetValue("alphaCutoff"_hash, mat.alphaMode == AlphaMode::Mask ? mat.alphaCutoff : 0.0f);
+
+        cb.UpdateBuffer(dc);
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ホットリロード
@@ -173,6 +204,8 @@ std::filesystem::file_time_type Shader::GetLastWriteTime(const std::wstring &fil
     }
     return (std::filesystem::file_time_type::min)();
 }
+
+
 
 void Shader::ResetReflection()
 {

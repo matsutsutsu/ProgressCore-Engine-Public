@@ -1,17 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: Jolt の衝突レイヤー（ObjectLayer / BroadPhaseLayer）の定義と、衝突フィルタ。
+// 概要: Jolt の衝突レイヤー（ObjectLayer / BroadPhaseLayer）の定義と、衝突フィルタ
 //
 // 責務:
 //   - ObjectLayer の定数・個数・インスペクタ用の名前を X-Macro から生成する
 //   - BroadPhaseLayer の定義
 //   - 「どのレイヤーがどのバケツに入り、何と当たるか」を決めるフィルタ3種の宣言
 //
-// 備考: System / Listener / Component から JoltPhysicsManager（重い型）を include せずに
-//       レイヤーだけを参照できるよう、ヘッダを分けている。
-//       レイヤーを増やすときは PHYSICS_OBJECT_LAYER_LIST に1行足す。
-//       ただし「どのバケツに入るか」「何と当たるか」は自動では決まらないので、
-//       PhysicsLayers.cpp の3フィルタと IsStaticWorldLayer を必ず手で更新する。
+// 備考: JoltPhysicsManager を include せずにレイヤーだけ使えるよう、ヘッダを分けている
+//       レイヤーを増やすときは PHYSICS_OBJECT_LAYER_LIST に1行足す
+//       どのバケツに入り何と当たるかは自動で決まらないので、PhysicsLayers.cpp のフィルタ3つと IsStaticWorldLayer も直す
 // ===========================================================================
 
 #include <Jolt/Jolt.h>
@@ -21,13 +19,13 @@
 // ============================================================
 // レイヤーの定義元（X-Macro）。(定数名, 値, 表示名)
 // ============================================================
-// 前提: プレイヤー vs ボスの1対1アクション。
-//   本体レイヤー: PLAYER / BOSS（+ 壁 NON_MOVING）。
-//   攻撃レイヤー: PLAYER_ATTACK(=ボスに命中) / BOSS_ATTACK(=プレイヤーに命中)。
+// 前提: プレイヤー vs ボスの1対1アクション
+//   本体レイヤー: PLAYER / BOSS（+ 壁 NON_MOVING）
+//   攻撃レイヤー: PLAYER_ATTACK(=ボスに命中) / BOSS_ATTACK(=プレイヤーに命中)
 //     攻撃レイヤーで「誰に当てるか」を表現する。剣も空間判定(SpawnHitbox)も
-//       この攻撃レイヤーを載せることで、味方誤爆せず相手にだけ当たる。
+//       この攻撃レイヤーを載せることで、味方誤爆せず相手にだけ当たる
 //   INVISIBLE_WALL: 落下防止用の見えない壁。地形(NON_MOVING)と違い、
-//     カメラのレイキャストにも飛行ドローン（BOSS_ATTACK 層）にも反応せず、地上キャラだけを止める。
+//     カメラのレイキャストにも飛行ドローン（BOSS_ATTACK 層）にも反応せず、地上キャラだけを止める
 #define PHYSICS_OBJECT_LAYER_LIST(X)     \
     X(NON_MOVING, 0, "NON_MOVING")       \
     X(PLAYER, 1, "PLAYER")               \
@@ -59,26 +57,17 @@ namespace PhysicsLayers
     };
     static constexpr int LayerCount = static_cast<int>(NUM_LAYERS);
 
-// X-Macro の値が 0,1,2,... と連番であることの検証。
+// X-Macro の値が 0,1,2,... と連番であることの検証
 //   NUM_LAYERS は「行数」を数えているだけなので、飛び番(例: X(FOO, 9, "FOO"))を
-//   書くと BPLayerInterfaceImpl::mObjectToBroadPhase[] の範囲外アクセスになる。
-//   JPH_ASSERT は Release/Development では消えるため、コンパイル時に止める。
+//   書くと BPLayerInterfaceImpl::mObjectToBroadPhase[] の範囲外アクセスになる
+//   JPH_ASSERT は Release/Development では消えるため、コンパイル時に止める
 #define X(name, value, str) static_assert(name < NUM_LAYERS, #name " の値が NUM_LAYERS 以上です。PHYSICS_OBJECT_LAYER_LIST の値は 0 から連番にしてください");
     PHYSICS_OBJECT_LAYER_LIST(X)
 #undef X
 
-    /**
-     * @brief 動かない背景のレイヤーか（接触イベントを出す必要がないか）。
-     *
-     * @details
-     *  壁・床・落下防止の見えない壁は、キャラが押し付けられている間ずっと接触が続く。
-     *  OnContactPersisted は接触が継続する限り毎フレーム呼ばれるため、ここを弾かないと
-     *  イベントバッファが背景との接触で埋まる（購読側は全イベントを自前のvectorへ
-     *  コピーしてから絞り込むので、コストは二重に乗る）。
-     *
-     * @note レイヤーを増やしたときは PhysicsLayers.cpp の3フィルタに加えてこの関数も見直す。
-     *       背景なのにここで判定が漏れていると、エラーも出ずに処理だけが重くなる。
-     */
+    // 動かない背景のレイヤーか（接触のイベントを出さなくてよいか）
+    // 背景との接触は押し付けている間ずっと続き、OnContactPersisted が毎フレーム来るので、ここで弾かないとバッファが埋まる
+    // レイヤーを増やしたら、PhysicsLayers.cpp のフィルタ3つとこの関数を見直す。漏れても、エラーなしに重くなるだけ
     inline constexpr bool IsStaticWorldLayer(JPH::ObjectLayer layer)
     {
         return layer == NON_MOVING || layer == INVISIBLE_WALL;

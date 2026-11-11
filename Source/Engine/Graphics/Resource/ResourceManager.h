@@ -1,7 +1,7 @@
 #pragma once
 // ===========================================================================
 // 概要: テクスチャ・モデル・マテリアル・アニメーション・レンダーターゲット・粒子バッファを
-//       種類ごとのプールで持ち、ハンドルで貸し出すシングルトン。
+//       種類ごとのプールで持ち、ハンドルで貸し出すシングルトン
 //
 // 責務:
 //   - ファイルから読み込み、パスのハッシュでキャッシュして二重に読まない
@@ -10,13 +10,14 @@
 //
 // 備考: シーンの非同期読み込みでワーカースレッドからも呼ばれるので、レジストリとプールの操作は
 //       m_mutex で守る。重いファイル読み込みはロックの外で行う（中で LoadTexture を呼ぶと
-//       同じ m_mutex を取り直してデッドロックする）。
+//       同じ m_mutex を取り直してデッドロックする）
 // ===========================================================================
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <string>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Engine/Core/Math/StringHash.h"
 #include "ResourcePool.h"
@@ -70,8 +71,12 @@ public:
     // 解放する。このデータを参照している Model が残っていないときだけ呼ぶこと
     void UnloadModel(ModelHandle handle);
 
-    // パスのハッシュからパスを引く（ModelComponent のシリアライズ・インスペクタ用）。無ければ空文字
+    // パスのハッシュからパスを引く（ModelComponent のシリアライズ・インスペクタ用）。なければ空文字
     std::string GetAssetPath(uint32_t hash);
+
+    // filename のモデルを読み込むときに LOD も作るよう予約する（ModelComponent::SetModel がインスタンスを作る前に呼ぶ）
+    // 読み込み済みのモデルには効かない。描画に使われているバッファを後から書き換えないため
+    void RequestModelLod(const char *filename);
 
     // ============================================================
     // モデルのインスタンス（Model）
@@ -98,16 +103,9 @@ public:
     // アニメーション
     // ============================================================
     const AnimSequence *LoadAnimSequence(const char *filename);
-    /**
-     * @brief キャッシュ済みのシーケンスをファイルから読み直し、同じインスタンスに上書きする。
-     *
-     * 作り直さないので、これを指している currentSequence などのポインタは有効なまま新しい内容になる（エディタで保存した直後に反映するため）。
-     *
-     * @param filename 読み直すシーケンスのファイル名。
-     * @return 読み直したシーケンス。ResourceManager が所有する。キャッシュに無ければ新規に読み込み、ファイルが読めなければ今の内容のまま返す。
-     */
+    // キャッシュ済みのシーケンスを読み直し、同じインスタンスに上書きする（エディタで保存した直後に反映するため）
+    // 作り直さないので、指しているポインタは有効なまま。キャッシュになければ読み込み、読めなければ今の内容を返す
     const AnimSequence *ReloadAnimSequence(const char *filename);
-    const CurveData    *LoadAnimCurve(const char *filepath);
 
     // ============================================================
     // レンダーターゲット
@@ -134,14 +132,13 @@ private:
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
     CCL::ResourcePool<GPUParticleBufferSet> m_particleBufferPool;
-    CCL::ResourcePool<CurveData>            m_animCurvePool;
 
     // --- パスのハッシュ → ハンドル（二重に読み込まないためのキャッシュ）---
     std::unordered_map<uint32_t, TextureHandle>          m_textureRegistry;
     std::unordered_map<uint32_t, ModelHandle>            m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle>     m_animSequenceRegistry;
     std::unordered_map<uint32_t, std::string>            m_assetPathRegistry; // パスのハッシュ → パス
-    std::unordered_map<uint32_t, CCL::Handle<CurveData>> m_animCurveRegistry;
+    std::unordered_set<uint32_t>                         m_lodRequests;       // LOD を作るモデルのパスのハッシュ
 
     std::mutex m_mutex; // レジストリとプールを守る
 };

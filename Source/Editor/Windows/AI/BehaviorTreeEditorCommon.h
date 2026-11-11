@@ -1,14 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: BehaviorTreeWindow_*.cpp だけが共有する定数と小さな汎用関数。
-//
-// 責務:
-//   - コメント枠の配色、ノードの幅、自動整列の間隔などの定数
-//   - ノードエディタの ID の変換、パスからファイル名を取り出す関数
-//
-// 備考: 状態を持たない値と純粋関数だけを置く。BT 固有の処理（色の決定・JSON 化など）は
-//       BehaviorTreeWindow の private メンバにして、クラス宣言から辿れるようにしてある。
-// ===========================================================================
+// BehaviorTreeWindow_*.cpp だけが共有する定数と、状態を持たない小さな関数
+// BT 固有の処理（色の決定・JSON 化など）は BehaviorTreeWindow の private メンバに置く
 #include <cstdint>
 #include <string>
 #include <imgui.h>
@@ -18,9 +10,7 @@ namespace ed = ax::NodeEditor;
 
 namespace BTEditor
 {
-    // コメント枠の配色1組
-    //   見出し帯を一番濃くするのは、内側の塗りがノード背景と重なるうえ面積が広く、
-    //   濃くすると中のノードが読めなくなるため。色の違いは帯で見せる。
+    // コメント枠の配色1組。色の違いは見出し帯で見せる（内側を濃くすると中のノードが読めなくなる）
     struct GroupPalette
     {
         const char *name;   // インスペクタに出す色名
@@ -50,6 +40,10 @@ namespace BTEditor
     inline constexpr float kNodeMinWidth = 100.0f; // 下限。「Priority: 3」が収まる程度
     inline constexpr float kNodeMaxWidth = 180.0f; // 上限。これを超える名前は折り返す
 
+    // まとまりのノード（Selector / Sequence など）の幅。行動・条件と見分けやすいよう、通常ノードより広く取る
+    inline constexpr float kCompositeMinWidth = 200.0f; // 下限
+    inline constexpr float kCompositeMaxWidth = 260.0f; // 上限。これを超える名前は折り返す
+
     // 自動整列の間隔
     inline constexpr float kLayoutHGap     = 40.0f;  // 兄弟どうしの間隔
     inline constexpr float kLayoutVGap     = 90.0f;  // 段と段の間隔
@@ -60,20 +54,13 @@ namespace BTEditor
     inline constexpr float kGroupPad     = 24.0f; // コメント枠がノードを囲むときの余白
     inline constexpr float kGroupHeaderH = 30.0f; // コメント枠の見出し帯の高さ（＝掴める範囲）
 
-    // ライブラリが返すID(uintptr_t)をこちらのID型へ戻す。
-    //   ID はこちらが uint32_t で発行して預けているだけなので、切り詰めても情報は落ちない。
+    // ライブラリが返すID(uintptr_t)をこちらのID型へ戻す（こちらが uint32_t で発行したものなので切り詰めてよい）
     inline uint32_t ToEditorId(uintptr_t id) { return static_cast<uint32_t>(id); }
 
-    /**
-     * @brief パスからファイル名を取り出す（"Assets/BehaviorTree/Common.json" → "Common.json"）。
-     *
-     * std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して std::string へそのまま繋げないため。
-     *
-     * @param path '/' 区切りに揃えたパス。
-     * @return ファイル名。
-     */
+    // パスからファイル名を取り出す（"Assets/BehaviorTree/Common.json" → "Common.json"）
     inline std::string FileNameOf(const std::string &path)
     {
+        // std::filesystem を通さないのは、C++20 の u8string() が std::u8string を返して std::string へそのまま繋げないため
         const size_t slash = path.find_last_of("/\\");
         return (slash == std::string::npos) ? path : path.substr(slash + 1);
     }

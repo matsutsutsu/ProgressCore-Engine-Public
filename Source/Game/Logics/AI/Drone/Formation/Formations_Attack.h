@@ -1,52 +1,50 @@
 #pragma once
 // ===========================================================================
-// 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く。
+// 概要: C++ で書く攻撃陣形。データ（Assets/Formations/*.json）で書けない技だけを置く
 //
 // 責務:
 //   - 弾幕（Barrage）: 頭上の輪から1機ずつ中心へ寄り、プレイヤーへ撃ち出す
 //
 // 備考:
-//   データで書けないのは、機体が自分の状態を覚えて振る舞いを変える技。弾幕は機体ごとに
-//   発射の順番(fireDelay)を持ち、撃つ瞬間まで先読みで狙い直し、撃った後は各機が
-//   独立して攻撃を終える。データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、
-//   この3つはどれも表せない。
-//
-//   縦割り・挟み込み・横なぎは Assets/Formations/*.json にある
-//   （Data/DataDrivenFormation.h が解釈する）。
+//   データ陣形は「全機に同じ進行度を配って形を動かす」だけなので、機体ごとに状態を持つ技は書けない
+//   弾幕は機体ごとに発射の順番を持ち、撃つ瞬間まで狙い直し、撃った後は各機が独立して攻撃を終える
 // ===========================================================================
-#include "Game/Logics/AI/Drone/Components/DroneTuning.h" // 射出速度（kDroneChargeSpeedScale）
+#include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h" // 弾幕が頭上リングを借りる
+#include "Game/Logics/AI/Drone/Formation/Formations_Basic.h"
 #include <cmath>
 #include <algorithm>
 
 namespace CCL::AI::Formation::Attack
 {
-    // 弾幕（Barrage）。求める回避はジャスト回避。
-    // 頭上の輪を回したまま1機ずつ中心へ降り、そこからプレイヤーへ高速で撃ち出す。
-    //   輪の上で待つ → 自分の番の kGatherTime 秒前に中心へ寄る（これが予告）
-    //   → fireDelay が 0 になったら中心でタメ → 発射（以降は直進）
-    //
-    // 置き技（縦割り・挟み込み）と違い、発射の瞬間まで1機ずつ今のプレイヤーを狙い続ける。
-    // 撃ち出した後は直進するので、そこで避ける余地が残る。
-    struct BarrageFormation : public IFormation
+    /**
+     * @brief 弾幕（Barrage）。求める回避はジャスト回避
+     *
+     * 輪の上で待つ → 自分の番の少し前に中心へ寄る（これが予告）→ 中心でタメ → 発射（以降は直進）
+     * 発射の瞬間まで1機ずつ今のプレイヤーを狙い続け、撃った後は直進するので避ける余地が残る
+     */
+    class BarrageFormation : public IFormation
     {
-        // 撃ち出したら各機が独立して飛ぶので、終了判断は個体に持たせる（帰投の時刻が機体ごとに異なる）。
-        ChargeLifecycle GetLifecycle() const override { return ChargeLifecycle::Individual; }
-
-        // 主に飛距離で切り上げ、経過時間は壁際・遠距離で飛距離が伸びない場合の保険にする。
+    public:
+        // 撃った機から順に帰す。経過時間は、壁際などで飛距離が伸びないときの保険
         bool IsChargeOver(float flownDistance, float flownTime) const override
         {
             return flownDistance > kChargeRange || flownTime > kChargeTimeout;
         }
 
-        // 中心へ集まる移動そのものが予告。震えを足すと予告が二重になり、どちらを読むか分かりにくくなる。
+        // 中心へ集まる動きが予告なので、震えを足すと二重になる
         bool UsesShiverTelegraph() const override { return false; }
 
-        // 発射待ちは弾幕だけが使う値なので、弾幕から抜ける機の分は弾幕が捨てる。
-        // 残すと、まだ撃っていなかった機が次の技で「発射待ち」のまま当たり判定を開かない。
+        // 残すと、まだ撃っていなかった機が次の技で発射待ちのまま当たり判定を開かない
         void OnExit(DroneComponent &drone) const override { drone.fireDelay = 0.0f; }
+
+        // 1機ずつ順に撃つので、撃ってから戻すまでを長く取る
+        bool TryGetTiming(TechniqueTiming &out) const override
+        {
+            out = {1.2f, 4.2f, 3.0f};
+            return true;
+        }
 
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override
         {
@@ -60,11 +58,8 @@ namespace CCL::AI::Formation::Attack
 
             // --- 飛び出した後 ---
 
-            // 陣形が持ち場を書かなくなるのは「飛び出した後」だけ。
-            // 順番待ちも中央でのタメもまだ撃っていないので、狙いを更新し続ける。
-
-            // 判定に chargeWindup（タメ）を含めること。
-            // 見落とすと着弾の 0.5 秒以上前の座標を撃つことになり、歩いているだけで当たらなくなる。
+            // 順番待ちとタメの間はまだ撃っていないので、狙いを更新し続ける
+            // タメを含め忘れると古い座標を撃ち、歩いているだけで当たらなくなる
             const bool launched = (drone.currentState == DroneState::FireCharge) &&
                                   (drone.fireDelay <= 0.0f) && (drone.chargeWindup <= 0.0f);
             if (launched) return;
@@ -75,24 +70,18 @@ namespace CCL::AI::Formation::Attack
 
             // --- 持ち場 ---
 
-            // 待機位置は頭上円陣と同じ輪。
-            // 回転位相まで共有するので、BT が 頭上円陣 → 弾幕 と切り替えてもドローンは動かない。
+            // 待機位置は頭上円陣と同じ輪
             const Vector3 slot = ctx.bossPos + Basic::HighRing::SlotOffset(
                                                    drone.localIndex, drone.totalDrones, ctx.time);
 
-            // 発射地点は輪の中心の少し下。
             const Vector3 muzzle =
                 ctx.bossPos + Vector3::UnitY * (Basic::HighRing::kHeight - kGatherDrop);
 
-            // 自分の番が近づくほど中心へ寄る。
-
-            // 寄せ方は二乗にする。
-            // 序盤をほぼ動かさず、直前に素早く中心へ寄る形にするため（線形だといつ撃つのか読めない）。
+            // 自分の番が近づくほど中心へ寄る。二乗にして直前に素早く寄せる（線形だといつ撃つのか読めない）
             float gather = 0.0f;
             if (drone.currentState == DroneState::FireCharge && drone.fireDelay <= 0.0f)
             {
-                // 中央でのタメ中は持ち場を発射地点のままにする。
-                // 輪へ戻すと下の飛翔時間が「輪から撃つ」前提になり、実際の発射地点とずれた先読みになる。
+                // タメ中は発射地点のまま。輪へ戻すと、下の先読みが実際の発射地点とずれる
                 gather = 1.0f;
             }
             else if (drone.fireDelay > 0.0f && drone.fireDelay < kGatherTime)
@@ -105,14 +94,11 @@ namespace CCL::AI::Formation::Attack
 
             // --- 狙い ---
 
-            // 偏差射撃。今いる場所を撃つと、飛翔時間ぶん必ず後ろへ外れる。
-            // そのため 狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度) を解く。
-
-            // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる。
+            // 偏差射撃。狙う先 ＝ 今の位置 ＋ 速度 × (タメの残り ＋ 距離÷射出速度)
+            // 距離が狙う先に依存する循環なので、1回だけ計算し直して精度を上げる
             const float launchSpeed = drone.moveSpeed * kDroneChargeSpeedScale;
             const float windupLeft  = (drone.chargeWindup > 0.0f) ? drone.chargeWindup : 0.0f;
 
-            // 足元(playerPos)ではなく体の中心を狙う（足元は地面なので身長ぶん下に刺さる）。
             Vector3 aimPoint = ctx.playerCenter;
             if (launchSpeed > 0.001f)
             {
@@ -136,10 +122,7 @@ namespace CCL::AI::Formation::Attack
 
             // --- 発射順 ---
 
-            // 発射順は先頭（localIndex が小さい機）ほど早い。
-
-            // まだ攻撃に入っていない間だけ割り振る。
-            // 撃つ合図が出た後に書き直すと、順番がリセットされ続けて永久に撃てなくなる。
+            // localIndex が小さい機ほど早い。攻撃に入る前だけ配る（後で書き直すと順番が戻り続けて撃てない）
             if (drone.currentState != DroneState::FireCharge)
             {
                 drone.fireDelay =
@@ -151,21 +134,15 @@ namespace CCL::AI::Formation::Attack
         static constexpr float kGatherTime = 0.6f; // 発射の何秒前から中心へ寄り始めるか
         static constexpr float kGatherDrop = 6.0f; // 輪の高さから何m下を発射地点にするか
 
-        // 先読みの強さ。0=今の位置を撃つ / 1=完全な迎撃。狙いは発射の瞬間に固定されるので、
-        // 歩くだけでは避けられず、回避すれば避けられる値にする。
-        static constexpr float kLeadFactor = 0.5f;
+        static constexpr float kLeadFactor = 0.5f; // 先読みの強さ。0=今の位置 / 1=完全な迎撃。歩くだけでは避けられない値にする
 
-        // この距離 [m] を飛んだら突撃を終える。短いと届く前にやめるので、BT の発動距離から逆算する。
-        //   届かないと判定が閉じた後の離脱の惰性（440 m/s から減速）でプレイヤーを素通りし、
-        //   重なっているのに当たらない（BT を 距離>80m にした時、56m のままで全弾外れになった）。
-        //   発射地点はボスの 14m 上なので、水平 120m なら √(120²+14²) ≒ 121m。余裕を見て 140m。
-        //   BT の発動距離を 120m より遠くするならここも伸ばすこと。
+        // 突撃を終える飛距離 [m]。短いと届く前に判定が閉じ、重なっているのに当たらない
+        // BT の発動距離（水平 120m）と発射地点の高さから逆算している。発動距離を伸ばすならここも伸ばす
         static constexpr float kChargeRange = 140.0f;
 
-        static constexpr float kChargeTimeout = 2.0f; // 突撃の最長時間 [秒]（壁際用の保険）
+        static constexpr float kChargeTimeout = 2.0f; // 突撃の最長時間 [秒]
     };
 
-    // 登録（DroneFormationSystem::Initialize から呼ぶ）。
     inline void RegisterAll(FormationRegistry &reg)
     {
         reg.Register<BarrageFormation>(DroneFormationType::Barrage);

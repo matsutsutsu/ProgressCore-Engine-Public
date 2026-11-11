@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: コンポーネントと JSON の相互変換。
+// 概要: コンポーネントと JSON の相互変換
 //
 // 責務:
 //   - FieldDescriptor 1 つ分の JSON への書き出しと読込（SerializeField / DeserializeField）
 //   - コンポーネント全体の変換（ComponentSerializer<T>）
 //
 // 備考:
-//   - 保存形式を変える方法は ComponentSerializer<T> の特殊化だけ。既定は Fields() を順に変換する。
-//   - EntityLink は SaveContext / LoadContext でローカルインデックスと EntityID を変換する。
+//   - 保存形式を変える方法は ComponentSerializer<T> の特殊化だけ。既定は Fields() を順に変換する
+//   - EntityLink は SaveContext / LoadContext でローカルインデックスと EntityID を変換する
 // ===========================================================================
 #include "ComponentMeta.h"
 #include "Engine/Serialization/Core/EntityLink.h"
@@ -86,7 +86,7 @@ namespace ComponentMetaJson
             break;
 
         case FieldKind::EntityLink: {
-            // Entity への参照は EntityID ではなくローカルインデックスで書く（ctx が無ければ EntityID のまま）
+            // Entity への参照は EntityID ではなくローカルインデックスで書く（ctx がなければ EntityID のまま）
             const EntityLink &link = RawField<const EntityLink>(obj, fd.offset);
             j[fd.jsonName]         = saveCtx ? saveCtx->GetOrRegister(link.id)
                                              : static_cast<uint64_t>(link.id);
@@ -120,7 +120,7 @@ namespace ComponentMetaJson
         }
     }
 
-    // FieldDescriptor 1 つ分を JSON から読む。キーが無ければ既定値のまま
+    // FieldDescriptor 1 つ分を JSON から読む。キーがなければ既定値のまま
     inline void DeserializeField(const json &j, const FieldDescriptor &fd, void *obj, LoadContext *loadCtx)
     {
         if (!fd.serialize || !fd.jsonName || !j.contains(fd.jsonName)) return;
@@ -188,19 +188,8 @@ namespace ComponentMetaJson
         }
     }
 
-    /**
-     * @brief コンポーネント全体の変換。既定は Fields() を順に変換する。
-     * @note 保存形式を変えたいときはこの構造体を特殊化し、Save / Load を書く。
-     * @code
-     *   namespace ComponentMetaJson {
-     *       template <>
-     *       struct ComponentSerializer<MyComponent> {
-     *           static void Save(json &j, const MyComponent &c, SaveContext *ctx) { ... }
-     *           static void Load(const json &j, MyComponent &c, LoadContext *ctx) { ... }
-     *       };
-     *   }
-     * @endcode
-     */
+    // コンポーネント全体の変換。既定は Fields() を順に変換する
+    // 保存の形を変えたいときは、この構造体を特殊化して Save / Load を書く
     template <typename T>
     struct ComponentSerializer
     {

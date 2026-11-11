@@ -1,23 +1,20 @@
 #pragma once
 // ===========================================================================
-// 概要: チュートリアルを教え終えたら、完了の画面を出して次へ進ませる System。
+// 概要: チュートリアルを教え終えたら、完了の画面を出して次へ進ませる System
 //
 // 責務:
-//   - 教え終えたら（TutorialState::IsFinished）、GameFlowState::matchOver を立てて操作とボスを止める
-//   - 少し待ってから、完了の画面（見出し・ボタン）をゲーム画面の上に重ねて出す
+//   - 教え終えたら、GameFlowState::matchOver を立てて操作とボスを止める
+//   - 少し待ってから、完了の画面をゲーム画面の上に重ねて出す
 //   - 「本番へ」「もう一度」「タイトルへ」のボタンを受けてシーンを切り替える
 //
-// 備考: 画面の組みはリザルト・ポーズと共通（ScreenHeadingUi.h）。出てくる演出は UIRevealSystem が動かす。
-//
-//       デバッグ窓の「最初から開始」で教え終えた状態から戻ったら、画面を消して操作を戻す。
-//
-//       全体登録（REGISTER_*）はせず、TutorialScene が登録する。
+// 備考: 全体登録はせず、TutorialScene が登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
 #include <vector>
 
-class TutorialCompleteSystem : public CCL::ECS::IfSystem<TutorialCompleteSystem>
+class TutorialCompleteSystem : public CCL::ECS::IfSystem<
+    TutorialCompleteSystem>
 {
 public:
     TutorialCompleteSystem() : IfSystem("TutorialCompleteSystem") {}

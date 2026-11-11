@@ -5,7 +5,7 @@
 
 namespace
 {
-    // サムネイル用なので、変換後の幅はここで頭打ちにする（VRAM と GPU の負荷を抑える）。
+    // サムネイル用なので、変換後の幅はここで頭打ちにする（VRAM と GPU の負荷を抑える）
     constexpr uint32_t kMaxBakeWidth = 512;
 } // namespace
 
@@ -27,7 +27,7 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
             device, sizeof(Cb), m_cb.GetAddressOf())))
         return false;
 
-    // デバッグ表示ではピクセルをそのまま見たいので、補間しない POINT サンプラーにする。
+    // デバッグ表示ではピクセルをそのまま見たいので、補間しない POINT サンプラーにする
     D3D11_SAMPLER_DESC sd = {};
     sd.Filter             = D3D11_FILTER_MIN_MAG_MIP_POINT;
     sd.AddressU = sd.AddressV = sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -35,14 +35,14 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
         return false;
 
     // 不透明ブレンド（SSAOEffect 等と同じ）。直前のパスの加算・乗算ブレンドが
-    // 残っていると、全画面三角形を描いても意図した色で上書きされず黒く見える。
+    // 残っていると、全画面三角形を描いても意図した色で上書きされず黒く見える
     D3D11_BLEND_DESC bd                      = {};
     bd.RenderTarget[0].BlendEnable           = FALSE;
     bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
     if (FAILED(device->CreateBlendState(&bd, m_opaqueBlendState.GetAddressOf())))
         return false;
 
-    // 深度テストは無効（描画先に DSV を付けないので不要だが、残った状態の影響を受けないよう明示する）。
+    // 深度テストは無効（描画先に DSV を付けないので不要だが、残った状態の影響を受けないよう明示する）
     D3D11_DEPTH_STENCIL_DESC dsd = {};
     dsd.DepthEnable              = FALSE;
     dsd.StencilEnable            = FALSE;
@@ -53,9 +53,11 @@ bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
     return true;
 }
 
+
+
 RenderTarget *RenderTargetVisualizer::AcquirePoolTarget(ID3D11Device *device, uint32_t w, uint32_t h)
 {
-    // このフレームの m_poolIndex 番目の RenderTarget を返す（無ければ作り、サイズが違えば作り直す）。
+    // このフレームの m_poolIndex 番目の RenderTarget を返す（なければ作り、サイズが違えば作り直す）
     if (m_poolIndex >= m_pool.size())
         m_pool.push_back(std::make_unique<RenderTarget>());
 
@@ -70,12 +72,14 @@ RenderTarget *RenderTargetVisualizer::AcquirePoolTarget(ID3D11Device *device, ui
     return rt;
 }
 
+
+
 namespace
 {
     // ImGui の DX11 バックエンド（ImGui_ImplDX11_RenderDrawData）と同じく、
-    // 変更するステートを丸ごと退避 → 描画 → 丸ごと復元する。
+    // 変更するステートを丸ごと退避 → 描画 → 丸ごと復元する
     // 個々のハザード（SRV と DSV の同時バインド等）を1つずつ対処するのではなく、触るステージ
-    // （IA/VS/PS/OM/RS）をまとめて保存しておくことで、描画後に状態が変わったまま残るのを防ぐ。
+    // （IA/VS/PS/OM/RS）をまとめて保存しておくことで、描画後に状態が変わったまま残るのを防ぐ
     struct PipelineStateBackup
     {
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView>   rtv;
@@ -162,15 +166,15 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     if (!rt) return src;
 
     // 全ステートを退避する。個々のリソースが今ほかのステージ（DSV 等）で使われているかに
-    // 関係なく、描画後にそのまま元へ戻せる。
+    // 関係なく、描画後にそのまま元へ戻せる
     PipelineStateBackup backup;
     backup.Save(dc);
 
-    // 出力ステージ（RTV/DSV）を、SRV をバインドする前に空にする。
+    // 出力ステージ（RTV/DSV）を、SRV をバインドする前に空にする
     // GraphicsDevice::SetRenderTargets() はエディタ UI の描画中も深度バッファを
     // DSV としてバインドしたままなので、SceneDepth を表示するとき src がその DSV と
     // 同じリソースになりうる。DSV を外さずに同じリソースを SRV としてバインドすると、
-    // D3D11 のハザード検出によって出力のバインドが外され、描画が壊れる。
+    // D3D11 のハザード検出によって出力のバインドが外され、描画が壊れる
     dc->OMSetRenderTargets(0, nullptr, nullptr);
 
     // 定数バッファ更新
@@ -220,7 +224,7 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     rt->Activate(dc); // RTV とビューポートを RenderTarget のサイズに設定する
     dc->Draw(3, 0);
 
-    // 描画後はすぐ SRV と RTV を外してから、退避したステートを復元する。
+    // 描画後はすぐ SRV と RTV を外してから、退避したステートを復元する
     dc->PSSetShaderResources(0, 1, &nullSRV);
     dc->PSSetShaderResources(1, 1, &nullSRV);
     dc->OMSetRenderTargets(0, nullptr, nullptr);

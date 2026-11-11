@@ -7,13 +7,24 @@ using namespace CCL::ECS;
 
 void AnimSetupSystem::Update(float /*dt*/)
 {
-    // コンポーネントの追加（アーキタイプの移動）を走査中に行うとイテレータが壊れるので、
-    // 対象の ID を先に集めてから付ける
+    // 処理フロー:
+    // 1. 足りないコンポーネントを持つ Entity を集める
+    // 2. 走査が終わってから付ける
+
+    // コンポーネントの追加（アーキタイプの移動）を走査中に行うとイテレータが壊れるので、2 段に分ける
+
     std::vector<EntityID> needsParams;
     std::vector<EntityID> needsStateMachine;
     std::vector<EntityID> needsRootMotion;
 
-    // 足りないコンポーネントを個別に調べる
+    // ---------------------------------------------------------
+    // 1. 対象を集める
+    // ---------------------------------------------------------
+
+    // SetExclude は使わず、足りないものを個別に調べる
+    //   SetExclude<A, B, C>() は「どれか 1 つでも持っていたら除外」なので、
+    //   AnimStateMachine だけをプレハブに書いた Entity が残り 2 つを受け取れなくなる
+    //   対象はキャラだけで数も少ないので、毎ステップ HasComponent で調べても十分軽い
     ForEachWithID([&](EntityID id, const AnimatorComponent &animator) {
         if (!m_world->HasComponent<AnimParametersComponent>(id))
         {
@@ -29,7 +40,9 @@ void AnimSetupSystem::Update(float /*dt*/)
         }
     });
 
-    // 走査が終わってから、足りないものだけを付ける
+    // ---------------------------------------------------------
+    // 2. 付ける
+    // ---------------------------------------------------------
     for (auto id : needsParams)
     {
         m_world->AddComponent<AnimParametersComponent>(id);
@@ -43,6 +56,8 @@ void AnimSetupSystem::Update(float /*dt*/)
         m_world->AddComponent<RootMotionComponent>(id);
     }
 }
+
+
 
 // 同じステージの AnimControllerSystem は GetRunAfter でこの System の後に走る
 REGISTER_LOGIC_SYSTEM(AnimSetupSystem, Priority::LogicStage::L02_Update);

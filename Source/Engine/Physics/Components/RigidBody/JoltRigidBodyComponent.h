@@ -1,20 +1,11 @@
 #pragma once
-// ===========================================================================
-// 概要: 剛体の物理パラメータ（動き方・レイヤー・材質・初速など）。Jolt のポインタは持たない。
-//
-// 責務:
-//   - JoltBodySetupSystem が剛体を生成するときの設定値を持つ
-//
-// 備考: これと TransformComponent、形状（Box/Sphere/Capsule/Mesh のコライダー）を
-//       Entity に付けると、JoltBodySetupSystem が Jolt 空間に剛体を生成する。
-//       生成後に反映されるのは motionType だけ（JoltPushSystem が同期する）。
-//       それ以外の値を変えても、生成済みの剛体には反映されない。
-// ===========================================================================
-#include "Engine/Physics/JoltIntegration/PhysicsLayers.h" // Manager 全体は引かず、レイヤー定義だけを使う
+#include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Body/MotionType.h>
 #include <DirectXMath.h>
 
+// 剛体の物理パラメータ。Transform と形状のコライダーと一緒に付けると、JoltBodySetupSystem が剛体を作る
+// 生成後に反映されるのは motionType だけで、ほかの値を変えても生成済みの剛体には効かない
 struct JoltRigidbodyComponent
 {
     JPH::EMotionType motionType  = JPH::EMotionType::Dynamic; // Static / Kinematic / Dynamic

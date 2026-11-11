@@ -11,15 +11,15 @@ void GPUParticleRenderSystem::Update(float dt)
 
     ForEach([&](GPUParticleComponent &particle,
                 const TransformComponent & /*transform*/) {
-        // エミッタごとに1コマンド積む。
-        //   ParticleRenderer が renderMode → テクスチャの順にソートするので、ここでは順番を気にしない。
+        // エミッタごとに1コマンド積む
+        //   ParticleRenderer が renderMode → テクスチャの順にソートするので、ここでは順番を気にしない
         for (const ParticleEmitter &emitter : particle.emitters)
         {
             if (!emitter.isInitialized || !emitter.computeBuffer.IsValid()) continue;
 
-            // インスペクタで非表示にした層は積まない。
-            //   シミュレーション（R07）は止めないので、表示に戻すと続きから見える。
-            //   保存しない値なので、エディタを含まないビルドでは常に true。
+            // インスペクタで非表示にした層は積まない
+            //   シミュレーション（R07）は止めないので、表示に戻すと続きから見える
+            //   保存しない値なので、エディタを含まないビルドでは常に true
             if (!emitter.previewVisible) continue;
 
             ParticleDrawCommand cmd;
@@ -31,6 +31,8 @@ void GPUParticleRenderSystem::Update(float dt)
         }
     });
 }
+
+
 
 void GPUParticleRenderSystem::ReleaseAllResources()
 {
@@ -44,5 +46,7 @@ void GPUParticleRenderSystem::ReleaseAllResources()
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(GPUParticleRenderSystem, Priority::RenderStage::R08_Main);

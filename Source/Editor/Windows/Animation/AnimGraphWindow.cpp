@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Engine/Animation/Components/AnimParametersComponent.h"
+#include "Engine/Animation/Components/AnimatorComponent.h"
 
 #include "Engine/Platform/Core/Dialog.h"
 #include "Engine/Platform/Core/Logger.h"
@@ -20,34 +21,41 @@
 namespace ed = ax::NodeEditor;
 
 // ---------------------------------------------------------------------------
-// 安定ID採番ヘルパー
-//   ノード = hash*4+0 / 入力ピン = +1 / 出力ピン = +2 （スロット分離で隣接衝突を排除）
-//   予約ID(Entry/AnyState)は「4で割って余り3」の負値に固定する。
-//   ノード(≡0)・入力(≡1)・出力(≡2) のどれとも mod4 が一致しないため、
-//   どんなハッシュ値が来ても予約IDと絶対に衝突しない（スロット3は未使用）。
+// ノードエディタの ID の採番
 // ---------------------------------------------------------------------------
+
+// ID の下位 2 ビットで種類を分ける（0 = ステートノード / 1 = 遷移の出力ピン / 2 = 遷移の入力ピン / 3 = 予約）
+//   ノードは hash * 4、ピンは linkId * 4 + 1 / + 2、予約 ID（Entry / AnyState）は余り 3 の負値
+//   種類ごとに余りが違うので、種類をまたいで衝突しない
+
+// ノード同士は、ハッシュの上位 2 ビットだけが違うと同じ ID になる（hash * 4 で上位が落ちるため）
+//   32bit のハッシュでは起こる確率が低いので許容している
 namespace
 {
     inline int StateNodeId(uint32_t h) { return (int)(h * 4u + 0u); }
 
-    // 遷移(リンク)1本ごとの端点ピン。種は linkId（遷移ごとに一意）。
-    //   下位2ビットが「何のIDか」を表す規則を全体で共有している:
-    //     0 = ステートノード / 1 = 遷移の出力ピン / 2 = 遷移の入力ピン / 3 = 予約ID
-    //   この規則に乗せると、ハッシュを使わずに衝突しないことが採番だけで保証できる。
+
+
+    // 遷移（リンク）1 本ごとの端点ピン。種は linkId（遷移ごとに一意。理由は DrawNodeWorkspace の 1）
     inline int TransOutPin(int linkId) { return linkId * 4 + 1; }
+
+
+
     inline int TransInPin(int linkId) { return linkId * 4 + 2; }
 
-    // 予約ID（すべて mod4 == 3。ノード/ピンのスロット0,1,2と交差しない）
+
+
+    // --- 予約 ID（すべて余り 3）---
     constexpr int ENTRY_NODE_ID     = -1;  // 0xFFFFFFFF & 3 == 3
     constexpr int ENTRY_LINK_ID     = -9;  // & 3 == 3
     constexpr int ANY_STATE_NODE_ID = -13; // & 3 == 3
 
-    // リンクID。素性解決は m_linkLut で行うため、ここは「同フレーム内で一意」であれば足りる。
+    // リンク ID の開始値。遷移の素性は m_linkLut で引くので、同じフレームの中で一意なら足りる
     constexpr int NORMAL_LINK_BASE = 0x00100000;
     constexpr int ANY_LINK_BASE    = 0x00200000;
 
-    // ツリー全体（root＋全サブグラフ）の「全 transition リスト」へ関数を適用する。
-    //   パラメータ削除/リネーム時に、階層のどこにある条件も漏れなく張り替えるために使う。
+    // ツリー全体（root ＋ 全サブグラフ）の遷移リストへ fn を適用する
+    //   パラメータの削除・改名で、階層のどこにある条件も漏れなく張り替えるために使う
     template <class F>
     void ForEachTransitionList(AnimStateGraph &g, F fn)
     {
@@ -58,19 +66,55 @@ namespace
         }
         fn(g.anyStateTransitions);
     }
+
+
+
+    // ツリー全体（root ＋ 全サブグラフ）のブレンドスペースへ fn を適用する
+    //   パラメータの削除・改名で、軸に使っている参照も張り替えるために使う
+    template <class F>
+    void ForEachBlendSpace(AnimStateGraph &g, F fn)
+    {
+        for (auto &s : g.states)
+        {
+            if (s.isBlendSpace) fn(s.blendSpace);
+            if (s.isSubMachine && s.subGraph) ForEachBlendSpace(*s.subGraph, fn);
+        }
+    }
+
+
+
+    // hash のステートを直下に持つ階層を、ツリー全体から探す。なければ nullptr
+    AnimStateGraph *FindOwnerGraph(AnimStateGraph &g, uint32_t hash)
+    {
+        for (auto &s : g.states)
+        {
+            if (s.stateHash == hash) return &g;
+            if (s.isSubMachine && s.subGraph)
+            {
+                if (AnimStateGraph *owner = FindOwnerGraph(*s.subGraph, hash)) return owner;
+            }
+        }
+        return nullptr;
+    }
 } // namespace
 
-// ---------------------------------------------------------------------------
-// エディタ内での遷移エフェクト（パルス）を管理するためのローカル状態
-// ---------------------------------------------------------------------------
-static uint32_t s_prevActiveState = 0;
-static uint32_t s_highlightSrc    = 0;
-static uint32_t s_highlightDst    = 0;
-static float    s_highlightTimer  = 0.0f;
+
 
 // ---------------------------------------------------------------------------
-// 矢印(三角形)のみを描画するヘルパー関数
+// 実行中の遷移の強調表示（パルス）の状態
 // ---------------------------------------------------------------------------
+static uint32_t s_prevActiveState = 0;    // 前のフレームで実行中だったステート
+static uint32_t s_highlightSrc    = 0;    // 強調する遷移の元
+static uint32_t s_highlightDst    = 0;    // 強調する遷移の先
+static float    s_highlightTimer  = 0.0f; // 強調の残り時間（秒）
+
+
+
+// ---------------------------------------------------------------------------
+// 描画の補助
+// ---------------------------------------------------------------------------
+
+// p0 → p1 の向きを示す三角形だけを描く（線は描かない）
 static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVec2 &p1, ImU32 color)
 {
     ImVec2 dir    = ImVec2(p1.x - p0.x, p1.y - p0.y);
@@ -80,7 +124,7 @@ static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVe
     dir.x /= length;
     dir.y /= length;
 
-    // 矢印を線の真ん中ではなく、ターゲットノードの「直前（80px手前）」に配置する (Unity風)
+    // 矢印は線の真ん中ではなく、遷移先ノードの手前（最大 80px）に置く（Unity と同じ見た目）
     float  offset   = (std::min)(length * 0.8f, 80.0f);
     ImVec2 arrowPos = ImVec2(p1.x - dir.x * offset, p1.y - dir.y * offset);
 
@@ -94,13 +138,54 @@ static void DrawTriangleArrow(ImDrawList *drawList, const ImVec2 &p0, const ImVe
     drawList->AddTriangleFilled(pt1, pt2, pt3, color);
 }
 
-// ---------------------------------------------------------------------------
-// アニメーショングラフを人間が読めるテキスト形式にダンプする
-// ---------------------------------------------------------------------------
-static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
-{
-    std::stringstream ss;
 
+
+// ---------------------------------------------------------------------------
+// テキスト出力（グラフの構造を読める形で書き出す）
+// ---------------------------------------------------------------------------
+
+// 遷移 1 本（遷移先・ブレンド・条件）を書き出す
+static void DumpTransition(std::stringstream &ss, const AnimStateGraph &graph, const AnimTransition &t)
+{
+    std::string targetName = "Unknown";
+    for (const auto &s : graph.states)
+    {
+        if (s.stateHash == t.targetStateHash) targetName = s.sequenceName;
+    }
+    ss << "  => " << targetName
+       << "  (Blend: " << std::fixed << std::setprecision(2) << t.blendDuration
+       << "s, Logic: " << (t.logicType == AnimTransitionLogic::AND ? "AND" : "OR") << ")\n";
+
+    for (const auto &c : t.conditions)
+    {
+        ss << "     - [" << c.paramName << "] ";
+        switch (c.op)
+        {
+        case AnimConditionOp::Equal:
+            ss << "== " << c.threshold;
+            break;
+        case AnimConditionOp::Greater:
+            ss << "> " << c.threshold;
+            break;
+        case AnimConditionOp::Less:
+            ss << "< " << c.threshold;
+            break;
+        case AnimConditionOp::Trigger:
+            ss << "Triggered";
+            break;
+        case AnimConditionOp::Finished:
+            ss << "Finished";
+            break;
+        }
+        ss << "\n";
+    }
+}
+
+
+
+// 1 階層分を書き出し、続けてサブマシンの中身を書き出す。path はこの階層までの経路（"Combat/" など。root は空）
+static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, const std::string &path)
+{
     // 1. Entry State (開始地点) の特定
     std::string entryName = "None";
     for (const auto &s : graph.states)
@@ -112,6 +197,7 @@ static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
         }
     }
     ss << "========================================================\n";
+    if (!path.empty()) ss << "[ SUB MACHINE ] " << path << "\n";
     ss << "[ ENTRY STATE ] -> " << entryName << "\n";
     ss << "========================================================\n\n";
 
@@ -121,38 +207,7 @@ static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
         ss << "[ ANY STATE ] (どこからでも遷移可能)\n";
         for (const auto &t : graph.anyStateTransitions)
         {
-            std::string targetName = "Unknown";
-            for (const auto &s : graph.states)
-            {
-                if (s.stateHash == t.targetStateHash) targetName = s.sequenceName;
-            }
-            ss << "  => " << targetName
-               << "  (Blend: " << std::fixed << std::setprecision(2) << t.blendDuration
-               << "s, Logic: " << (t.logicType == AnimTransitionLogic::AND ? "AND" : "OR") << ")\n";
-
-            for (const auto &c : t.conditions)
-            {
-                ss << "     - [" << c.paramName << "] ";
-                switch (c.op)
-                {
-                case AnimConditionOp::Equal:
-                    ss << "== " << c.threshold;
-                    break;
-                case AnimConditionOp::Greater:
-                    ss << "> " << c.threshold;
-                    break;
-                case AnimConditionOp::Less:
-                    ss << "< " << c.threshold;
-                    break;
-                case AnimConditionOp::Trigger:
-                    ss << "Triggered";
-                    break;
-                case AnimConditionOp::Finished:
-                    ss << "Finished";
-                    break;
-                }
-                ss << "\n";
-            }
+            DumpTransition(ss, graph, t);
         }
         ss << "\n";
     }
@@ -160,13 +215,34 @@ static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
     // 3. 各ステートとそこから伸びる遷移リスト
     for (const auto &state : graph.states)
     {
-        ss << "[ STATE ] " << state.sequenceName << "\n";
-        ss << "  File:   " << (state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath) << "\n";
-        ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
-        ss << "  Speed:  " << std::fixed << std::setprecision(2) << state.playbackSpeed << "x\n";
+        if (state.isSubMachine)
+        {
+            ss << "[ SUB MACHINE ] " << state.sequenceName << "  (中身は後ろに続く)\n";
+        }
+        else if (state.isBlendSpace)
+        {
+            const AnimBlendSpace &bs = state.blendSpace;
+            const bool            is1D = (bs.type == AnimBlendSpaceType::Blend1D);
+            ss << "[ BLEND SPACE ] " << state.sequenceName << "  (" << (is1D ? "1D" : "2D Directional") << ")\n";
+            ss << "  Param:  X=" << (bs.paramXName.empty() ? "None" : bs.paramXName);
+            if (!is1D) ss << "  Y=" << (bs.paramYName.empty() ? "None" : bs.paramYName);
+            ss << "  Smoothing=" << std::fixed << std::setprecision(2) << bs.smoothingTime << "s\n";
+            ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
+            for (size_t i = 0; i < bs.samples.size(); ++i)
+            {
+                const AnimBlendSample &sample = bs.samples[i];
+                ss << "  [" << i << "] (" << std::setprecision(2) << sample.x << ", " << sample.y << ") "
+                   << (sample.sequenceFilePath.empty() ? "None" : sample.sequenceFilePath) << (i == 0 ? "  <- 時間の基準" : "") << "\n";
+            }
+        }
+        else
+        {
+            ss << "[ STATE ] " << state.sequenceName << "\n";
+            ss << "  File:   " << (state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath) << "\n";
+            ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
+            ss << "  Speed:  " << std::fixed << std::setprecision(2) << state.playbackSpeed << "x\n";
 
-        if (!state.speedCurveName.empty()) ss << "  Speed Curve: " << state.speedCurveName << "\n";
-        if (!state.rootMotionCurveName.empty()) ss << "  RM Curve:    " << state.rootMotionCurveName << "\n";
+        }
 
         if (state.transitions.empty())
         {
@@ -176,55 +252,51 @@ static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
         {
             for (const auto &t : state.transitions)
             {
-                std::string targetName = "Unknown";
-                for (const auto &s : graph.states)
-                {
-                    if (s.stateHash == t.targetStateHash) targetName = s.sequenceName;
-                }
-                ss << "  => " << targetName
-                   << "  (Blend: " << std::fixed << std::setprecision(2) << t.blendDuration
-                   << "s, Logic: " << (t.logicType == AnimTransitionLogic::AND ? "AND" : "OR") << ")\n";
-
-                for (const auto &c : t.conditions)
-                {
-                    ss << "     - [" << c.paramName << "] ";
-                    switch (c.op)
-                    {
-                    case AnimConditionOp::Equal:
-                        ss << "== " << c.threshold;
-                        break;
-                    case AnimConditionOp::Greater:
-                        ss << "> " << c.threshold;
-                        break;
-                    case AnimConditionOp::Less:
-                        ss << "< " << c.threshold;
-                        break;
-                    case AnimConditionOp::Trigger:
-                        ss << "Triggered";
-                        break;
-                    case AnimConditionOp::Finished:
-                        ss << "Finished";
-                        break;
-                    }
-                    ss << "\n";
-                }
+                DumpTransition(ss, graph, t);
             }
         }
         ss << "--------------------------------------------------------\n";
     }
 
+    // 4. サブマシンの中身
+    for (const auto &state : graph.states)
+    {
+        if (!state.isSubMachine || !state.subGraph) continue;
+
+        ss << "\n";
+        DumpAnimGraph(ss, *state.subGraph, path + state.sequenceName + "/");
+    }
+}
+
+
+
+// グラフ全体（サブマシンの中も含む）をテキストにする
+static std::string DumpAnimGraphToString(const AnimStateGraph &graph)
+{
+    std::stringstream ss;
+    DumpAnimGraph(ss, graph, "");
     return ss.str();
 }
+
+
+
+// ---------------------------------------------------------------------------
+// 生成・破棄
+// ---------------------------------------------------------------------------
 
 AnimGraphWindow::AnimGraphWindow() : EditorWindow("Anim Graph Editor")
 {
     m_nodeContext = ed::CreateEditor();
 }
 
+
+
 AnimGraphWindow::~AnimGraphWindow()
 {
     if (m_nodeContext) ed::DestroyEditor(m_nodeContext);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 階層ナビゲーション
@@ -232,8 +304,7 @@ AnimGraphWindow::~AnimGraphWindow()
 
 AnimStateGraph &AnimGraphWindow::CurrentView()
 {
-    // m_editPath に沿って m_rootGraph を辿り、「今編集中の階層グラフ」を返す。
-    //   途中でサブマシンが見つからない（削除された等）場合は root へ戻す（安全策）。
+    // 途中でサブマシンが見つからない（消した等）なら、root へ戻す
 
     AnimStateGraph *g = &m_rootGraph;
     for (uint32_t h : m_editPath)
@@ -255,14 +326,17 @@ AnimStateGraph &AnimGraphWindow::CurrentView()
     return *g;
 }
 
+
+
 void AnimGraphWindow::EnterSubMachine(uint32_t subMachineHash)
 {
-    // 指定サブマシンが現在の階層に実在する時だけ潜る。
-
     AnimStateGraph &view = CurrentView();
     for (auto &s : view.states)
         if (s.stateHash == subMachineHash && s.isSubMachine && s.subGraph)
         {
+            WriteBackNodePositions(); // 今の階層で動かした位置を、離れる前に控える
+            ed::ClearSelection();     // 前の階層のノード・リンクの選択を持ち込まない
+
             m_editPath.push_back(subMachineHash);
             m_selectedNodeId       = 0;
             m_selectedLinkId       = 0;
@@ -271,10 +345,36 @@ void AnimGraphWindow::EnterSubMachine(uint32_t subMachineHash)
         }
 }
 
+
+
+void AnimGraphWindow::WriteBackNodePositions()
+{
+    if (!m_nodeContext) return;
+    ed::SetCurrentEditor(m_nodeContext);
+
+    AnimStateGraph &view = CurrentView();
+
+    // まだ一度も描画していないノードは FLT_MAX が返るので、書き戻さない
+    auto ReadLivePos = [](int nodeId, float &outX, float &outY) {
+        const ImVec2 pos = ed::GetNodePosition(nodeId);
+        if (pos.x == FLT_MAX) return;
+        outX = pos.x;
+        outY = pos.y;
+    };
+
+    ReadLivePos(ENTRY_NODE_ID, view.entryPosX, view.entryPosY);
+    ReadLivePos(ANY_STATE_NODE_ID, view.anyStatePosX, view.anyStatePosY);
+    for (auto &state : view.states)
+    {
+        ReadLivePos(StateNodeId(state.stateHash), state.nodePosX, state.nodePosY);
+    }
+}
+
+
+
 uint32_t AnimGraphWindow::MakeUniqueStateHash(std::string &name)
 {
-    // 階層全体で衝突しない stateHash を採る（同名衝突は評価器の誤爆やパス崩れの元）。
-    //   衝突時は name に "_2","_3"... を付与して一意化し、その最終 name の hash を返す。
+    // 階層をまたいで同じハッシュがあると、FindStateRecursive が別のステートを返す
 
     const std::string base = name;
     for (int i = 1; i < 10000; ++i)
@@ -286,10 +386,120 @@ uint32_t AnimGraphWindow::MakeUniqueStateHash(std::string &name)
     return CCL::Utils::HashString(name.c_str());
 }
 
+
+
+void AnimGraphWindow::RenameState(uint32_t oldHash, std::string newName)
+{
+    // 処理フロー:
+    // 1. 対象のステートと、それを持つ階層を探す
+    // 2. 新しい名前から一意なハッシュを採る
+    // 3. 参照を張り替える
+    // 4. ノードの位置と選択を引き継ぐ
+
+    // ---------------------------------------------------------
+    // 1. 対象
+    // ---------------------------------------------------------
+    AnimStateGraph *owner = FindOwnerGraph(m_rootGraph, oldHash);
+    if (!owner || newName.empty()) return;
+
+    AnimState *state = nullptr;
+    for (auto &s : owner->states)
+    {
+        if (s.stateHash == oldHash)
+        {
+            state = &s;
+            break;
+        }
+    }
+    if (state->sequenceName == newName) return;
+
+    // ハッシュを張り替える前に控える
+    //   CurrentView は m_editPath のハッシュで階層を辿るので、張り替えの途中で呼ぶと root へ戻ってしまう
+    const bool isInView    = (owner == &CurrentView());
+    const bool wasSelected = (m_selectedNodeId == StateNodeId(oldHash));
+
+    // ---------------------------------------------------------
+    // 2. ハッシュ
+    // ---------------------------------------------------------
+
+    // 名前を元に戻しただけ（ハッシュが今と同じ）なら、名前だけ直す
+    //   一意化に通すと、自分自身と重なったと見なされて連番が付く
+    if (CCL::Utils::HashString(newName.c_str()) == oldHash)
+    {
+        state->sequenceName = newName;
+        return;
+    }
+    const uint32_t newHash = MakeUniqueStateHash(newName);
+
+    // ---------------------------------------------------------
+    // 3. 参照の張り替え
+    // ---------------------------------------------------------
+    auto Patch = [oldHash, newHash](uint32_t &hash) {
+        if (hash == oldHash) hash = newHash;
+    };
+
+    // 遷移は同じ階層の中にしか張れないので、張り替えるのは owner の中だけでよい
+    Patch(owner->entryStateHash);
+    for (auto &t : owner->anyStateTransitions)
+    {
+        Patch(t.targetStateHash);
+    }
+    for (auto &s : owner->states)
+    {
+        for (auto &t : s.transitions)
+        {
+            Patch(t.targetStateHash);
+        }
+    }
+
+    // 潜っている経路や、作成中の遷移の起点がこのステートなら、それも張り替える
+    for (auto &hash : m_editPath)
+    {
+        Patch(hash);
+    }
+    Patch(m_transitionSourceHash);
+
+    state->sequenceName = newName;
+    state->stateHash    = newHash;
+
+    // ---------------------------------------------------------
+    // 4. ノードの位置と選択
+    // ---------------------------------------------------------
+
+    // ノード ID はハッシュから作るので、名前を変えると別のノードになる
+    //   今見ている階層なら、古いノードのライブな位置へ新しいノードを置く
+    if (isInView)
+    {
+        const ImVec2 pos = ed::GetNodePosition(StateNodeId(oldHash));
+        if (pos.x != FLT_MAX)
+        {
+            state->nodePosX = pos.x;
+            state->nodePosY = pos.y;
+        }
+        m_nodeToPlaceHash  = newHash;
+        m_selectPlacedNode = wasSelected;
+    }
+}
+
+
+
+void AnimGraphWindow::CommitStateName()
+{
+    if (m_stateNameEdited) RenameState(m_stateNameHash, m_stateNameBuf);
+
+    // 次に描くとき、確定後の名前（連番が付くこともある）で入力欄を作り直させる
+    m_stateNameEdited = false;
+    m_stateNameHash   = 0;
+}
+
+
+
 void AnimGraphWindow::DrawBreadcrumb()
 {
     if (ImGui::Button("Root"))
     {
+        WriteBackNodePositions(); // 今の階層で動かした位置を、離れる前に控える
+        ed::ClearSelection();
         m_editPath.clear();
         m_needRestorePositions = true;
     }
@@ -315,6 +525,8 @@ void AnimGraphWindow::DrawBreadcrumb()
         ImGui::PopID();
         if (clicked)
         {
+            WriteBackNodePositions();
+            ed::ClearSelection();
             m_editPath.resize(i + 1); // この段まで戻る
             m_needRestorePositions = true;
             break;
@@ -325,7 +537,7 @@ void AnimGraphWindow::DrawBreadcrumb()
             break;
     }
 
-    // 潜っている階層に Entry が無いと、そのサブマシンに入っても何も再生されない。警告する。
+    // 潜っている階層に Entry がないと、そのサブマシンに入っても何も再生されないので警告する
     AnimStateGraph &view = CurrentView();
     if (!m_editPath.empty() && view.entryStateHash == 0 && !view.states.empty())
     {
@@ -335,41 +547,70 @@ void AnimGraphWindow::DrawBreadcrumb()
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // ノードの作業領域（描画と操作）
 // ---------------------------------------------------------------------------
 
 void AnimGraphWindow::DrawContents(EditorContext &context)
 {
+    // 処理フロー:
+    // 1. 前のフレームで予約したサブマシンへ潜る
+    // 2. 選択中のエンティティで実行中のステートを読む
+    // 3. ツールバーとパンくずを描く
+    // 4. 左にノードの作業領域、右にパラメータとインスペクタを描く
+
     ed::SetCurrentEditor(m_nodeContext);
 
-    // このフレームの頭で「潜る」予約を消化（前フレームのダブルクリック等）。
-    //   描画中に m_editPath を書き換えると参照が飛ぶため、フレーム境界で処理する。
+    // ---------------------------------------------------------
+    // 1. 潜る予約
+    // ---------------------------------------------------------
+
+    // 描画中に m_editPath を書き換えると参照が飛ぶので、フレームの頭で処理する
     if (m_pendingEnterSub != 0)
     {
         EnterSubMachine(m_pendingEnterSub);
         m_pendingEnterSub = 0;
     }
 
-    // ================================================================
-    // リアルタイム・デバッグ (選択中エンティティのステート同期)
-    // ================================================================
+    // ---------------------------------------------------------
+    // 2. 実行中のステート
+    // ---------------------------------------------------------
+
+    // ノードの強調表示に使う。読むのは葉のステートだけ
+    //   ブレンドスペースを再生中なら、図に描く入力と重みも写す
     m_runtimeActiveStateHash = 0;
-    // エンティティが選択されており、ワールドが存在する場合
+    m_runtimeBlendActive     = false;
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world)
     {
         auto *fsm = context.world->GetComponent<AnimStateMachineComponent>(context.selectedEntity);
         if (fsm)
         {
-            // 現在のステートハッシュを記憶する
             m_runtimeActiveStateHash = fsm->currentStateHash;
+        }
+
+        auto *animator = context.world->GetComponent<AnimatorComponent>(context.selectedEntity);
+        if (animator && animator->currentBlend.IsActive())
+        {
+            m_runtimeBlendActive  = true;
+            m_runtimeBlendX       = animator->currentBlend.inputX;
+            m_runtimeBlendY       = animator->currentBlend.inputY;
+            m_runtimeBlendWeights = animator->currentBlend.weights;
         }
     }
 
+    // ---------------------------------------------------------
+    // 3. ツールバーとパンくず
+    // ---------------------------------------------------------
     DrawToolbar();
-    DrawBreadcrumb(); // 階層パンくず（Root > Combat > ...）
+    DrawBreadcrumb();
 
-    // カラム幅の強制上書きを初回のみにし、ユーザーが境界線をドラッグできるようにする
+    // ---------------------------------------------------------
+    // 4. 作業領域・パラメータ・インスペクタ
+    // ---------------------------------------------------------
+
+    // カラム幅の上書きは初回だけにし、境界線をドラッグできるようにする
     static bool initColumns = true;
     ImGui::Columns(2, "AnimGraphColumns");
     if (initColumns)
@@ -378,15 +619,15 @@ void AnimGraphWindow::DrawContents(EditorContext &context)
         initColumns = false;
     }
 
-    // ノードエディタの「仮想座標系」が漏れ出さないよう、ChildWindowで完全にカプセル化する
+    // ノードエディタの座標系（キャンバス座標）が外へ漏れないよう、ChildWindow で囲む
     ImGui::BeginChild("NodeWorkspaceChild", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     DrawNodeWorkspace();
     ImGui::EndChild();
 
     ImGui::NextColumn();
 
-    // 右カラムを上下に分ける：上=パラメータパネル / 下=インスペクタ（Unity Animator 風）
-    // パラメータの一覧が潰れて見えなくならないよう、上に 55% を割り当てる。
+    // 右カラムは上がパラメータ、下がインスペクタ（Unity Animator と同じ並び）
+    //   パラメータの一覧が潰れて見えなくならないよう、上に 55% を割り当てる
     const float paramPanelHeight = ImGui::GetContentRegionAvail().y * 0.55f;
 
     ImGui::BeginChild("ParameterPanelChild", ImVec2(0, paramPanelHeight), true);
@@ -400,9 +641,20 @@ void AnimGraphWindow::DrawContents(EditorContext &context)
     ImGui::Columns(1);
 }
 
+
+
 void AnimGraphWindow::DrawNodeWorkspace()
 {
-    // 「今見ている階層」を局所参照で束ねる（以降の m_currentGraph は現在の階層グラフを指す）。
+    // 処理フロー:
+    // 1. ピンの採番規則を決める
+    // 2. 全遷移を並べ、ノードの中心を求める関数を用意する
+    // 3. ノードを描く（ピンは相手のノードの方向に置く）
+    // 4. 実行中のステートの変化を見て、遷移の強調を始める
+    // 5. リンクを描き、リンク ID → 遷移の対応表を作る
+    // 6. 遷移の作成中なら、仮の線を描いて遷移先のクリックを受け付ける
+    // 7. 削除・右クリックを処理し、選択を読む
+
+    // 今見ている階層（以降の m_currentGraph はメンバではなく、この局所参照）
     AnimStateGraph &m_currentGraph = CurrentView();
 
     ed::Begin("My Anim Node Editor");
@@ -417,15 +669,23 @@ void AnimGraphWindow::DrawNodeWorkspace()
     std::unordered_map<int, ImVec2> pinPositions;
     ImDrawList                     *drawList = ImGui::GetWindowDrawList();
 
-    // --- 1. ピンIDは遷移ごとに一意な linkId から採番する ---
-    //   (src, dst) の組をハッシュすると、同じ元→先に遷移を2本張ったとき両者が同じピンIDになる。
-    //   node-editor は同じフレームで同じIDの BeginPin を2回受け取ると内部の対応表が壊れ、
-    //   グラフを開いた瞬間にフリーズする。TransOutPin/TransInPin の採番規則に乗せれば、
-    //   ステートノードとも、出力↔入力どうしでも、衝突しないことが式で保証される。
+    // ---------------------------------------------------------
+    // 1. ピンの採番
+    // ---------------------------------------------------------
+
+    // ピン ID は遷移ごとに一意な linkId から作る
+    //   (src, dst) の組から作ると、同じ元 → 先に遷移を 2 本張ったとき同じピン ID になる
+
+    // node-editor は同じフレームで同じ ID の BeginPin を 2 回受け取ると内部の対応表が壊れ、
+    //   グラフを開いた瞬間にフリーズする
     auto GetOutPinId = [](int linkId) -> int { return TransOutPin(linkId); };
     auto GetInPinId  = [](int linkId) -> int { return TransInPin(linkId); };
 
-    // --- 2. 全遷移を先にリストにし、ノードの中心座標を求められるようにする ---
+    // ---------------------------------------------------------
+    // 2. 全遷移とノードの中心
+    // ---------------------------------------------------------
+
+    // 全遷移を先に並べておく（ノードを描くときに、相手のノードの方向へピンを置くため）
     struct TransInfo
     {
         uint32_t src;
@@ -453,11 +713,8 @@ void AnimGraphWindow::DrawNodeWorkspace()
         }
     }
 
-    // ノード中心をライブ座標で取得する。
-    //   保存済みの nodePosX/Y を使ってはいけない。ノードをドラッグした直後、
-    //   「保存前の古い位置」から線が伸びる。
-    //   ed::GetNodePosition / GetNodeSize で現在の実座標・実サイズを取ること。
-    //   返り値は「キャンバス座標」。スクリーン変換は呼び出し側で行う。
+    // ノードの中心を、ノードエディタのライブな位置とサイズから求める（キャンバス座標）
+    //   保存済みの nodePosX/Y を使うと、ドラッグした直後に古い位置から線が伸びる
     auto GetNodeCenter = [&](uint32_t hash) -> ImVec2 {
         int nodeId;
         if (hash == ENTRY_HASH)
@@ -479,7 +736,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
         return ImVec2(pos.x + size.x * 0.5f, pos.y + size.y * 0.5f);
     };
 
-    // 法線（直角）オフセットを計算 (進行方向に対して左へ8pxずらす)
+    // 進行方向に対して左へ 8px ずらすオフセット（往復の遷移の線が重ならないように）
     auto CalcNormalOffset = [](ImVec2 p0, ImVec2 p1) -> ImVec2 {
         ImVec2 dir = ImVec2(p1.x - p0.x, p1.y - p0.y);
         float  len = std::sqrt(dir.x * dir.x + dir.y * dir.y);
@@ -490,9 +747,13 @@ void AnimGraphWindow::DrawNodeWorkspace()
         return ImVec2(-dir.y * 8.0f, dir.x * 8.0f);
     };
 
-    // --- 3. ノードの描画と、相手のノードの方向に合わせたピンの配置 ---
+    // ---------------------------------------------------------
+    // 3. ノード
+    // ---------------------------------------------------------
+
+    // ノードを 1 つ描き、そのノードが端になる遷移のピンを相手の方向に置く
     auto DrawBlockNode = [&](int nodeId, uint32_t nodeHash, const char *title, ImVec4 bgColor, bool isActive) {
-        // 強調の優先度: 実行中(青パルス) > エディタ選択(黄) > 通常
+        // 強調の優先度: 実行中（青のパルス） > エディタで選択中（黄） > 通常
         const bool isSelected = (m_selectedNodeId == nodeId);
 
         ed::PushStyleColor(ed::StyleColor_NodeBg, bgColor);
@@ -571,7 +832,6 @@ void AnimGraphWindow::DrawNodeWorkspace()
             ed::PopStyleColor();
     };
 
-    // 各ノードの描画実行
     DrawBlockNode(ENTRY_NODE_ID, ENTRY_HASH, "Entry", ImVec4(0.15f, 0.6f, 0.15f, 1.0f), false);
     if (m_needRestorePositions)
         ed::SetNodePosition(ENTRY_NODE_ID, ImVec2(m_currentGraph.entryPosX, m_currentGraph.entryPosY));
@@ -585,16 +845,20 @@ void AnimGraphWindow::DrawNodeWorkspace()
         const bool isEntry  = (m_currentGraph.entryStateHash == state.stateHash);
         const bool isActive = (m_runtimeActiveStateHash == state.stateHash);
 
-        // サブマシン(節)は紫系で色分けし、名前に [Sub] を付けて「潜れる」ことを明示する。
-        ImVec4 nodeBgColor;
+        // サブマシンは紫系で色分けし、名前に [Sub] を付けて潜れることを示す
+        //   ブレンドスペースは緑系にして [BS] を付ける（Entry・実行中の色はそちらを優先する）
+        const ImVec4 idleColor = state.isBlendSpace ? ImVec4(0.18f, 0.42f, 0.30f, 1.0f) : ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
+        ImVec4       nodeBgColor;
         if (state.isSubMachine)
             nodeBgColor = ImVec4(0.32f, 0.24f, 0.48f, 1.0f);
         else
             nodeBgColor = isEntry ? ImVec4(0.9f, 0.5f, 0.1f, 1.0f)
                                   : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f)
-                                              : ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+                                              : idleColor);
 
-        std::string title = state.isSubMachine ? ("[Sub] " + state.sequenceName) : state.sequenceName;
+        std::string title = state.sequenceName;
+        if (state.isSubMachine) title = "[Sub] " + state.sequenceName;
+        if (state.isBlendSpace) title = "[BS] " + state.sequenceName;
         DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, title.c_str(), nodeBgColor, isActive);
         if (m_needRestorePositions)
             ed::SetNodePosition(StateNodeId(state.stateHash), ImVec2(state.nodePosX, state.nodePosY));
@@ -610,13 +874,18 @@ void AnimGraphWindow::DrawNodeWorkspace()
                 break;
             }
         }
-        ed::SelectNode(StateNodeId(m_nodeToPlaceHash));
-        m_nodeToPlaceHash = 0;
+
+        // 改名で置き直しただけで、選ばれていなかったノードは選択しない
+        if (m_selectPlacedNode) ed::SelectNode(StateNodeId(m_nodeToPlaceHash));
+        m_nodeToPlaceHash  = 0;
+        m_selectPlacedNode = true;
     }
 
-    // -----------------------------------------------------------------
-    // 実行中のステート変化を検知して、遷移エフェクトのタイマーを発火させる
-    // -----------------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4. 遷移の強調
+    // ---------------------------------------------------------
+
+    // 実行中のステートが変わったら、その遷移を短い間だけ強調する
     if (m_runtimeActiveStateHash != s_prevActiveState)
     {
         if (s_prevActiveState != 0 && m_runtimeActiveStateHash != 0)
@@ -624,7 +893,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
             s_highlightSrc = s_prevActiveState;
             s_highlightDst = m_runtimeActiveStateHash;
 
-            // 遷移が続けて起きても強調が重ならないよう、強調は 0.3秒と短くする
+            // 遷移が続けて起きても強調が重ならないよう、0.3 秒と短くする
             s_highlightTimer = 0.3f;
         }
         s_prevActiveState = m_runtimeActiveStateHash;
@@ -636,7 +905,11 @@ void AnimGraphWindow::DrawNodeWorkspace()
             s_highlightTimer = 0.0f;
     }
 
-    // --- 4. リンクの描画（当たり判定と描画順は NodeEditor に任せる） ---
+    // ---------------------------------------------------------
+    // 5. リンク
+    // ---------------------------------------------------------
+
+    // 当たり判定と描画順は node-editor に任せる
     m_linkLut.clear();
     for (const auto &t : allTrans)
     {
@@ -645,7 +918,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
 
         bool isSelected = (m_selectedLinkId == t.linkId);
 
-        // --- 遷移エフェクトの対象リンクかどうかを判定 ---
+        // --- 強調する遷移か ---
         bool isJustTransitioned = false;
         if (s_highlightTimer > 0.0f)
         {
@@ -655,7 +928,7 @@ void AnimGraphWindow::DrawNodeWorkspace()
             }
             else if (t.isAny && t.dst == s_highlightDst)
             {
-                // 通常ステートからの遷移が存在しない場合のみ、AnyStateからの遷移として扱う
+                // 通常の遷移がないときだけ、AnyState からの遷移として強調する
                 bool hasNormal = false;
                 for (const auto &tr : allTrans)
                 {
@@ -670,36 +943,39 @@ void AnimGraphWindow::DrawNodeWorkspace()
             }
         }
 
-        // --- 状況に応じたリンクの「色」と「太さ」の決定 ---
+        // --- 色と太さ ---
         ImVec4 linkColor = t.isAny ? ImVec4(0.4f, 0.8f, 0.8f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
         if (m_runtimeActiveStateHash == t.src)
         {
-            linkColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f); // 実行中のステートから伸びる線は「青」
+            linkColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f); // 実行中のステートから伸びる線は青
         }
 
-        // 選択時、または遷移直後は「オレンジ色」にハイライト
+        // 選択中か遷移した直後は、オレンジで太くする
         if (isSelected || isJustTransitioned)
         {
             linkColor = ImVec4(1.0f, 0.65f, 0.0f, 1.0f);
         }
 
-        // 遷移直後や選択時は線を太くして視認性を上げる
         float thickness = (isSelected || isJustTransitioned) ? 4.0f : 2.5f;
 
-        // リンクの描画
         ed::Link(t.linkId, srcPin, dstPin, linkColor, thickness);
 
         m_linkLut.push_back({t.linkId, LinkRef{t.src, t.dst, t.isAny}});
 
-        // 矢印(三角形)の描画
+        // 矢印は node-editor が描かないので自前で描く
         if (pinPositions.count(srcPin) && pinPositions.count(dstPin))
         {
             DrawTriangleArrow(drawList, pinPositions[srcPin], pinPositions[dstPin], ImGui::ColorConvertFloat4ToU32(linkColor));
         }
     }
 
-    // --- 5. Make Transition 中の仮の線 ---
+    // 対応表ができたので、遷移の増減でずれたリンクの選択を付け直す
+    SyncSelectedLink();
+
+    // ---------------------------------------------------------
+    // 6. 遷移の作成中（Make Transition）
+    // ---------------------------------------------------------
     if (m_editorMode == EditorMode::CreatingTransition)
     {
         uint32_t srcHash = m_isTransitionSourceAnyState ? ANY_HASH : m_transitionSourceHash;
@@ -710,9 +986,9 @@ void AnimGraphWindow::DrawNodeWorkspace()
         ed::Suspend();
         ImDrawList *overlay = ImGui::GetForegroundDrawList();
 
-        // ソースノードの矩形を「スクリーン座標」で求める。
+        // ソースノードの矩形を「スクリーン座標」で求める
         //   GetNodeSize はキャンバス座標サイズなので、左上(min)と右下(max)を
-        //   それぞれ CanvasToScreen して引き算し、ズーム適用後の実サイズを得る。
+        //   それぞれ CanvasToScreen して引き算し、ズーム適用後の実サイズを得る
         ImVec2 srcMinCanvas  = ed::GetNodePosition(srcNodeId);
         ImVec2 srcSizeCanvas = ed::GetNodeSize(srcNodeId);
         if (srcSizeCanvas.x <= 0.0f)
@@ -726,8 +1002,8 @@ void AnimGraphWindow::DrawNodeWorkspace()
         ImVec2 srcCenter((srcMin.x + srcMax.x) * 0.5f, (srcMin.y + srcMax.y) * 0.5f);
         ImVec2 mousePos = ImGui::GetMousePos();
 
-        // 中心からマウス方向へ伸ばし、ノード矩形の外周との交点を始点にする。
-        //   矩形と線分の交差を、方向ベクトルを矩形の半サイズでスケールして求める。
+        // 中心からマウス方向へ伸ばし、ノード矩形の外周との交点を始点にする
+        //   矩形と線分の交差を、方向ベクトルを矩形の半サイズでスケールして求める
         auto EdgePoint = [](ImVec2 c, ImVec2 halfSize, ImVec2 dir) -> ImVec2 {
             // dir 方向に矩形外周まで伸ばすスケール t を求める（軸ごとに最小を取る）
             float tx = (std::abs(dir.x) > 1e-4f) ? (halfSize.x / std::abs(dir.x)) : FLT_MAX;
@@ -866,12 +1142,15 @@ void AnimGraphWindow::DrawNodeWorkspace()
         m_needRestorePositions = false;
     }
 
+    // ---------------------------------------------------------
+    // 7. 操作と選択
+    // ---------------------------------------------------------
     HandleInteraction();
     HandleContextMenu();
 
     ed::End();
 
-    // 選択状態の取得
+    // 選択を読む（インスペクタの表示と、次のフレームのリンクの付け直しに使う）
     ed::NodeId selNode;
     ed::LinkId selLink;
     m_selectedNodeId = 0;
@@ -880,13 +1159,53 @@ void AnimGraphWindow::DrawNodeWorkspace()
         m_selectedNodeId = (int)(intptr_t)selNode.Get();
     else if (ed::GetSelectedLinks(&selLink, 1) > 0)
         m_selectedLinkId = (int)(intptr_t)selLink.Get();
+
+    // 次のフレームで ID がずれていないか比べるため、今指している遷移を控える
+    if (const LinkRef *ref = FindLink(m_selectedLinkId)) m_selectedLinkRef = *ref;
 }
+
+
+
+void AnimGraphWindow::SyncSelectedLink()
+{
+    // リンク ID は描画順の連番なので、遷移を足したり消したりすると同じ ID が別の遷移を指す
+    //   付け直さないと、インスペクタが黙って別の遷移を表示・編集してしまう
+    if (m_selectedLinkId == 0) return;
+
+    const LinkRef *now = FindLink(m_selectedLinkId);
+    if (now && *now == m_selectedLinkRef) return;
+
+    for (const auto &[id, ref] : m_linkLut)
+    {
+        if (ref == m_selectedLinkRef)
+        {
+            ed::SelectLink(id);
+            m_selectedLinkId = id;
+            return;
+        }
+    }
+
+    // 同じ遷移がもうない（消した・Entry を付け替えた）なら選択を外す
+    ed::ClearSelection();
+    m_selectedLinkId = 0;
+}
+
+
 
 void AnimGraphWindow::HandleInteraction()
 {
+    // 処理フロー:
+    // 1. ダブルクリックしたサブマシンへ潜る予約をする
+    // 2. 削除されたリンクの遷移を消す
+    // 3. 削除されたノードと、それへ入る遷移を消す
+
     AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層を編集対象にする
 
-    // ダブルクリックしたノードがサブマシンなら、フレーム末に潜る予約をする。
+    // ---------------------------------------------------------
+    // 1. ダブルクリック
+    // ---------------------------------------------------------
+
+    // 潜るのは次のフレームの頭（描画の途中で m_editPath を変えないため）
     if (ed::NodeId dbl = ed::GetDoubleClickedNode())
     {
         int raw = (int)(intptr_t)dbl.Get();
@@ -898,6 +1217,9 @@ void AnimGraphWindow::HandleInteraction()
             }
     }
 
+    // ---------------------------------------------------------
+    // 2. リンクの削除
+    // ---------------------------------------------------------
     if (ed::BeginDelete())
     {
         ed::LinkId linkId;
@@ -939,6 +1261,11 @@ void AnimGraphWindow::HandleInteraction()
             }
         }
 
+        // ---------------------------------------------------------
+        // 3. ノードの削除
+        // ---------------------------------------------------------
+
+        // Entry と AnyState は消させない
         ed::NodeId nodeId;
         while (ed::QueryDeletedNode(&nodeId))
         {
@@ -988,6 +1315,8 @@ void AnimGraphWindow::HandleInteraction()
     ed::EndDelete();
 }
 
+
+
 const AnimGraphWindow::LinkRef *AnimGraphWindow::FindLink(int linkId) const
 {
     for (const auto &[id, ref] : m_linkLut)
@@ -995,6 +1324,8 @@ const AnimGraphWindow::LinkRef *AnimGraphWindow::FindLink(int linkId) const
             return &ref;
     return nullptr;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // インスペクタ（ステート・遷移の設定）
@@ -1005,6 +1336,10 @@ void AnimGraphWindow::DrawInspector()
     ImGui::Text("インスペクタ (Inspector)");
     ImGui::Separator();
 
+    // 選択が別へ移ったら、入力途中のステート名を捨てずに確定する
+    //   入力欄はその時点で描かれなくなるので、フォーカスが外れた合図を受け取れない
+    if (m_stateNameEdited && StateNodeId(m_stateNameHash) != m_selectedNodeId) CommitStateName();
+
     if (m_selectedNodeId != 0)
         DrawStateSettings(m_selectedNodeId);
     else if (m_selectedLinkId != 0)
@@ -1012,6 +1347,8 @@ void AnimGraphWindow::DrawInspector()
     else
         ImGui::TextDisabled("項目を選択してください。\n(Select a Node or Link)");
 }
+
+
 
 void AnimGraphWindow::DrawStateSettings(int nodeId)
 {
@@ -1037,20 +1374,44 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         if (StateNodeId(state.stateHash) != nodeId)
             continue;
 
-        char nameBuf[64];
-        strncpy_s(nameBuf, sizeof(nameBuf), state.sequenceName.c_str(), _TRUNCATE);
-        if (ImGui::InputText("状態名 (State Name)", nameBuf, sizeof(nameBuf)))
-            state.sequenceName = nameBuf;
+        // 名前は確定（Enter・フォーカスを外す）したときだけ反映する
+        //   1文字ごとに反映すると、入力途中の名前ごとにハッシュを取り直してしまう
+        if (m_stateNameHash != state.stateHash)
+        {
+            strncpy_s(m_stateNameBuf, sizeof(m_stateNameBuf), state.sequenceName.c_str(), _TRUNCATE);
+            m_stateNameHash   = state.stateHash;
+            m_stateNameEdited = false;
+        }
+        if (ImGui::InputText("状態名 (State Name)", m_stateNameBuf, sizeof(m_stateNameBuf))) m_stateNameEdited = true;
+        if (ImGui::IsItemDeactivatedAfterEdit()) CommitStateName();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Enter かフォーカスを外すと確定します。\nコードから名前で参照しているステート（例: Loco_BackStep_Stop）は、\n変えたらコード側の名前も合わせてください。");
 
         ImGui::Separator();
 
-        ImGui::Text("再生ファイル (Motion Sequence):");
-        ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
-        if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0)))
+        // サブマシンは自分では再生しないので、ブレンドスペースにはできない
+        if (!state.isSubMachine)
         {
-            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+            ImGui::Checkbox("ブレンドスペース (Blend Space)", &state.isBlendSpace);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("複数のクリップを、パラメータの値に応じて混ぜて再生します。\n"
+                                  "例: 前後左右の移動を、体から見た動く向き（MoveX / MoveY）で混ぜる。");
+        }
+
+        if (state.isBlendSpace)
+        {
+            DrawBlendSpaceSettings(state);
+        }
+        else
+        {
+            ImGui::Text("再生ファイル (Motion Sequence):");
+            ImGui::TextDisabled("%s", state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath.c_str());
+            if (ImGui::Button("ファイルを選択 (Browse...)##Motion", ImVec2(-1, 0)))
             {
-                state.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+                if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+                {
+                    state.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+                }
             }
         }
 
@@ -1066,8 +1427,8 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         ImGui::DragFloat("再生速度 (Playback Speed)", &state.playbackSpeed, 0.05f, 0.0f, 5.0f);
 
         ImGui::Separator();
-        // 軽量サブステートマシン：グループID。同じ番号のステート群に対して、AnyState 遷移側の
-        //   「Source Group」を同じ番号にすると、その群限定の割り込み遷移になる（減線）。
+        // グループ ID（軽量サブステートマシン）
+        //   AnyState の遷移の Source Group を同じ番号にすると、その群限定の割り込み遷移になる
         {
             int gid = (int)state.groupId;
             if (ImGui::InputInt("グループID (Group ID)", &gid))
@@ -1089,6 +1450,8 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
     }
 }
 
+
+
 void AnimGraphWindow::DrawTransitionSettings(int linkId)
 {
     AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層の遷移を対象にする
@@ -1105,7 +1468,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     if (!ref)
         return;
 
-    // ハッシュからライブな遷移を引き直す（ダングリング無し）
+    // ポインタを持ち越さず、ハッシュから今の遷移を引き直す
     AnimTransition *trans    = nullptr;
     std::string     fromName = "Unknown", toName = "Unknown";
 
@@ -1152,8 +1515,8 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     ImGui::Text("遷移先 (To): %s", toName.c_str());
     ImGui::Separator();
 
-    // 軽量サブステートマシン：AnyState 遷移のみ「グループ限定スコープ」を指定できる。
-    //   0=どこからでも。0 以外にすると、現在ステートの Group ID が一致する時だけ有効。
+    // AnyState の遷移だけ、グループ限定（Source Group）を指定できる
+    //   0 ならどこからでも、0 以外なら今のステートの Group ID が一致するときだけ有効
     if (ref->isAnyState)
     {
         int sg = (int)trans->sourceGroupId;
@@ -1169,6 +1532,8 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     // 通常の遷移も Any State の遷移も同じ UI で編集する
     DrawTransitionConditionUI(*trans);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ツールバーとファイル
@@ -1208,23 +1573,21 @@ void AnimGraphWindow::DrawToolbar()
 
     ImGui::SameLine();
 
-    // =======================================================
-    // 構造のテキスト化ボタン
-    // =======================================================
+    // --- テキスト出力 ---
     if (ImGui::Button("テキスト出力 (Export Text)"))
     {
         try
         {
-            // 出力先のフォルダを確保
+            // 出力先は Build/Logs（ログと同じ場所）
             std::filesystem::create_directories("Build/Logs");
 
-            // ファイル名が未設定(保存前)なら "Untitled_AnimGraph" を使う
+            // ファイル名が未設定（保存前）なら "Untitled_AnimGraph" を使う
             std::string filename = m_currentFilePath.empty()
                                        ? "Untitled_AnimGraph"
                                        : std::filesystem::path(m_currentFilePath).stem().string();
 
             std::string txtPath  = "Build/Logs/" + filename + ".txt";
-            std::string dumpText = DumpAnimGraphToString(CurrentView());
+            std::string dumpText = DumpAnimGraphToString(m_rootGraph); // サブマシンの中まで書き出す
 
             std::ofstream txtOut(txtPath);
             if (txtOut.is_open())
@@ -1237,46 +1600,33 @@ void AnimGraphWindow::DrawToolbar()
                 CCL_LOG_ERROR(LogCategory::Editor, "[Anim Editor] Failed to open file for text dump: %s", txtPath.c_str());
             }
         }
-        // CCL_LOG_WARN は非Debug構成で ((void)0) に潰れるため、e が未使用になる。
-        //   maybe_unused を付けて構成差で警告が出ないようにする。
+        // CCL_LOG_WARN は Shipping で ((void)0) に潰れ、e が未使用になる
+        //   maybe_unused を付けて、構成によって警告が出ないようにする
         catch ([[maybe_unused]] const std::exception &e)
         {
             CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] Failed to export text dump: %s", e.what());
         }
     }
-    // =======================================================
 }
+
+
 
 void AnimGraphWindow::SaveGraph(const std::string &path)
 {
-    if (m_nodeContext)
-    {
-        ed::SetCurrentEditor(m_nodeContext);
+    // 保存ボタンは入力欄より先に描くので、押したフレームではまだ名前の確定が届いていない
+    CommitStateName();
 
-        // ライブなノード位置は「今画面に見えている階層(view)」のノードに書き戻す。
-        AnimStateGraph &view = CurrentView();
+    // 他の階層の位置は、階層を移るときに書き戻し済み
+    WriteBackNodePositions();
 
-        ImVec2 entryPos = ed::GetNodePosition(ENTRY_NODE_ID);
-        view.entryPosX  = entryPos.x;
-        view.entryPosY  = entryPos.y;
-
-        for (auto &state : view.states)
-        {
-            ImVec2 pos     = ed::GetNodePosition(StateNodeId(state.stateHash));
-            state.nodePosX = pos.x;
-            state.nodePosY = pos.y;
-        }
-
-        ImVec2 anyPos     = ed::GetNodePosition(ANY_STATE_NODE_ID);
-        view.anyStatePosX = anyPos.x;
-        view.anyStatePosY = anyPos.y;
-    }
-    // 保存はツリー全体（root）を書き出す（サブマシンの中身も再帰的に含まれる）。
+    // 書き出すのはツリー全体（root）。サブマシンの中身も再帰的に含まれる
     if (AnimGraphSerializer::SaveToJSON(m_rootGraph, path))
         CCL_LOG_SUCCESS(LogCategory::Editor, "アニメグラフを保存しました: %s", path.c_str());
     else
         CCL_LOG_ERROR(LogCategory::Editor, "アニメグラフの保存に失敗しました: %s", path.c_str());
 }
+
+
 
 void AnimGraphWindow::LoadGraph(const std::string &path)
 {
@@ -1284,10 +1634,17 @@ void AnimGraphWindow::LoadGraph(const std::string &path)
     {
         ed::ClearSelection();
         m_editPath.clear(); // 読込後は root 表示から始める
-        // ロードが成功したら、次のフレームで座標を復元するフラグを立てる
-        m_needRestorePositions = true;
+
+        // 入力途中の名前は前のグラフのもの
+        //   確定させると、読んだグラフの同じハッシュのステートを改名してしまう
+        m_stateNameEdited = false;
+        m_stateNameHash   = 0;
+
+        m_needRestorePositions = true; // 次のフレームでノードの位置を復元する
     }
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 右クリックメニュー
@@ -1295,29 +1652,40 @@ void AnimGraphWindow::LoadGraph(const std::string &path)
 
 void AnimGraphWindow::HandleContextMenu()
 {
-    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層に対して生成/削除する
+    // 処理フロー:
+    // 1. どこで右クリックしたかを見て、メニューを開く
+    // 2. ノードのメニュー（遷移の作成・Entry 指定・複製・削除）
+    // 3. 背景のメニュー（ステート・サブマシンの追加）
+
+    AnimStateGraph &m_currentGraph = CurrentView(); // 現在の階層に対して追加・削除する
 
     ed::Suspend();
 
+    // ---------------------------------------------------------
+    // 1. メニューを開く
+    // ---------------------------------------------------------
+
+    // 開いたノードはポップアップが閉じるまで覚えておく（次のフレーム以降も同じノードを操作する）
     static int s_contextNodeId = 0;
     ed::NodeId contextNodeId;
 
-    // 1. ノード上での右クリック
     if (ed::ShowNodeContextMenu(&contextNodeId))
     {
         ImGui::OpenPopup("NodeContextMenu");
         s_contextNodeId = (int)(intptr_t)contextNodeId.Get();
     }
-    // 2. 背景での右クリック
     else if (ed::ShowBackgroundContextMenu())
     {
         ImGui::OpenPopup("AnimCanvasContextMenu");
         m_newNodeSpawnPos = ImGui::GetMousePosOnOpeningCurrentPopup();
     }
 
+    // ---------------------------------------------------------
+    // 2. ノードのメニュー
+    // ---------------------------------------------------------
     if (ImGui::BeginPopup("NodeContextMenu"))
     {
-        // 対象ノードのステート名を表示（どのノードを操作しているか明示）
+        // どのノードを操作しているかを、先頭にステート名で出す
         uint32_t    ctxHash = 0;
         const char *ctxName = "Node";
         if (s_contextNodeId == ENTRY_NODE_ID)
@@ -1356,7 +1724,7 @@ void AnimGraphWindow::HandleContextMenu()
             }
         }
 
-        // --- ステート操作（通常ノードのみ。Entry/AnyStateは対象外）---
+        // --- ステート操作（通常のノードだけ。Entry / AnyState は対象外）---
         if (ctxHash != 0)
         {
             if (ImGui::MenuItem("Set as Entry"))
@@ -1366,7 +1734,7 @@ void AnimGraphWindow::HandleContextMenu()
 
             if (ImGui::MenuItem("Duplicate"))
             {
-                // 同名+"_Copy" で複製する。同じ名前が既にあれば "_Copy_2" 等にずらし、ハッシュの衝突を避ける。
+                // 「名前 + _Copy」で複製する。同じ名前が既にあれば "_Copy_2" などにずらす
                 for (const auto &s : m_currentGraph.states)
                 {
                     if (s.stateHash == ctxHash)
@@ -1376,7 +1744,7 @@ void AnimGraphWindow::HandleContextMenu()
                         copy.stateHash = MakeUniqueStateHash(copy.sequenceName);
                         copy.nodePosX += 30.0f;
                         copy.nodePosY += 30.0f;
-                        copy.transitions.clear(); // 複製は遷移を引き継がない（重複ハッシュ事故防止）
+                        copy.transitions.clear(); // 遷移は引き継がない
                         m_currentGraph.states.push_back(copy);
                         m_nodeToPlaceHash = copy.stateHash;
                         break;
@@ -1387,7 +1755,7 @@ void AnimGraphWindow::HandleContextMenu()
             ImGui::Separator();
             if (ImGui::MenuItem("Delete"))
             {
-                // このノードへ入る/出る遷移を全削除してからノード削除
+                // このノードへ入る遷移を消してから、ノードを消す（出る遷移はノードと一緒に消える）
                 for (auto &s : m_currentGraph.states)
                     s.transitions.erase(
                         std::remove_if(s.transitions.begin(), s.transitions.end(),
@@ -1413,6 +1781,9 @@ void AnimGraphWindow::HandleContextMenu()
         ImGui::EndPopup();
     }
 
+    // ---------------------------------------------------------
+    // 3. 背景のメニュー
+    // ---------------------------------------------------------
     if (ImGui::BeginPopup("AnimCanvasContextMenu"))
     {
         ImGui::Text("キャンバス操作 (Canvas Actions)");
@@ -1434,8 +1805,8 @@ void AnimGraphWindow::HandleContextMenu()
             newState.nodePosY = canvasPos.y;
 
             m_currentGraph.states.push_back(std::move(newState));
-            // この階層にまだ Entry が無ければ、最初に置いた状態を自動で初期状態にする
-            //（特に新規サブマシンは entry 未設定なので、これが無いと何も再生されない）。
+            // この階層にまだ Entry がなければ、最初に置いたステートを Entry にする
+            //   新しいサブマシンは Entry がないので、これがないと入っても何も再生されない
             if (m_currentGraph.entryStateHash == 0)
                 m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
             m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
@@ -1443,8 +1814,8 @@ void AnimGraphWindow::HandleContextMenu()
             ImGui::CloseCurrentPopup();
         }
 
-        // サブステートマシン（潜れる箱）を追加：中身は空の子グラフ。
-        //   生成後、そのノードをダブルクリックで潜って中身を編集する。
+        // サブステートマシンを追加する（中身は空の子グラフ）
+        //   追加後、そのノードをダブルクリックで潜って中身を作る
         if (ImGui::Button("サブステートマシンを追加") && m_newStateName[0] != '\0')
         {
             std::string nm = m_newStateName;
@@ -1459,7 +1830,28 @@ void AnimGraphWindow::HandleContextMenu()
             sub.nodePosY     = canvasPos.y;
 
             m_currentGraph.states.push_back(std::move(sub));
-            // 親階層にまだ Entry が無ければ、このサブマシンを初期状態にする（root が空の場合等）。
+            // この階層にまだ Entry がなければ、このサブマシンを Entry にする（root が空の場合など）
+            if (m_currentGraph.entryStateHash == 0)
+                m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
+            m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
+            m_newStateName[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        // ブレンドスペースを追加する（点は空。インスペクタでクリップと位置を足す）
+        if (ImGui::Button("ブレンドスペースを追加") && m_newStateName[0] != '\0')
+        {
+            std::string nm = m_newStateName;
+            AnimState   blend;
+            blend.stateHash    = MakeUniqueStateHash(nm);
+            blend.sequenceName = nm;
+            blend.isBlendSpace = true;
+
+            ImVec2 canvasPos = ed::ScreenToCanvas(m_newNodeSpawnPos);
+            blend.nodePosX   = canvasPos.x;
+            blend.nodePosY   = canvasPos.y;
+
+            m_currentGraph.states.push_back(std::move(blend));
             if (m_currentGraph.entryStateHash == 0)
                 m_currentGraph.entryStateHash = m_currentGraph.states.back().stateHash;
             m_nodeToPlaceHash = m_currentGraph.states.back().stateHash;
@@ -1472,30 +1864,42 @@ void AnimGraphWindow::HandleContextMenu()
     ed::Resume();
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 遷移の条件
 // ---------------------------------------------------------------------------
 
 void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
 {
-    // パラメータはステートマシン全体で共有するため、ドロップダウンは常に root を参照する。
+    // 処理フロー:
+    // 1. ブレンド時間
+    // 2. 遷移を許可する受付区間（requiredCancelMask）
+    // 3. 条件の結合方法（AND / OR）
+    // 4. 条件の一覧（対象の選択と、型に合わせた入力欄）
+
+    // パラメータはステートマシン全体で共有するので、選択肢は常に root から出す
     AnimStateGraph &m_currentGraph = m_rootGraph;
+
+    // ---------------------------------------------------------
+    // 1. ブレンド時間
+    // ---------------------------------------------------------
 
     ImGui::Text("遷移設定 (Transition Settings)");
     ImGui::DragFloat("ブレンド時間 (Blend Duration)", &trans.blendDuration, 0.01f, 0.0f, 2.0f, "%.2f s");
     ImGui::Separator();
 
-    // =========================================================================
-    // ビットマスクによるキャンセル窓の要求指定 (チェックボックス化)
-    // =========================================================================
+    // ---------------------------------------------------------
+    // 2. 受付区間
+    // ---------------------------------------------------------
     ImGui::Text("遷移を許可する窓 (Required Cancel Mask):");
     ImGui::TextDisabled("※複数チェック時は「いずれかの窓」で許可されます。");
 
-    // プレビューの文字列を作る
+    // 選んでいる受付区間の名前をつなげて、コンボボックスの表示にする
     std::string previewMask = "";
     if (trans.requiredCancelMask == 0)
     {
-        // 全てOFF（0）の場合は「常時許可」とみなす
+        // すべて OFF（0）なら常に許可
         previewMask = "[ 常時遷移可能 (None) ]";
     }
     else
@@ -1510,7 +1914,6 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         }
     }
 
-    // ドロップダウン（コンボボックス）
     ImGui::SetNextItemWidth(-1);
     if (ImGui::BeginCombo("##ReqCancelMask", previewMask.c_str()))
     {
@@ -1529,20 +1932,26 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
     }
     ImGui::Separator();
 
+    // ---------------------------------------------------------
+    // 3. 結合方法
+    // ---------------------------------------------------------
     int         logicOp    = (int)trans.logicType;
     const char *logicOps[] = {"すべて満たす (AND)", "いずれかを満たす (OR)"};
     if (ImGui::Combo("条件判定方法 (Logic)", &logicOp, logicOps, IM_ARRAYSIZE(logicOps)))
         trans.logicType = (AnimTransitionLogic)logicOp;
     ImGui::Separator();
 
+    // ---------------------------------------------------------
+    // 4. 条件の一覧
+    // ---------------------------------------------------------
     ImGui::Text("遷移条件 (Conditions)");
     if (ImGui::Button("+ 条件を追加 (Add Condition)"))
     {
-        // 初期状態はエラーを防ぐため「再生終了」にしておく
+        // 追加した直後は「再生終了」にしておく（パラメータ未選択のままでも判定できる）
         trans.conditions.push_back({0, "", AnimConditionOp::Finished, 0.0f});
     }
 
-    // 削除するインデックスを記憶する変数（遅延削除用）
+    // 削除はループの後で行う（ループ中に erase すると添字がずれる）
     int conditionToDelete = -1;
 
     for (size_t c = 0; c < trans.conditions.size(); ++c)
@@ -1552,9 +1961,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         ImGui::PushID((int)c);
         ImGui::Spacing();
 
-        // =========================================================================
-        // 1. Target (対象) の選択
-        // =========================================================================
+        // --- 対象の選択 ---
         std::string preview = "未選択";
         if (cond.op == AnimConditionOp::Finished)
         {
@@ -1568,7 +1975,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         ImGui::SetNextItemWidth(160);
         if (ImGui::BeginCombo("##Target", preview.c_str()))
         {
-            // 特別な項目：再生終了
+            // パラメータではない特別な項目
             bool isSelFinished = (cond.op == AnimConditionOp::Finished);
             if (ImGui::Selectable("[ 再生終了 (Finished) ]", isSelFinished))
             {
@@ -1589,13 +1996,13 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
                 {
                     cond.paramName = pd.name;
                     cond.paramHash = pd.hash;
-                    // パラメータが変わったので、型に応じてデフォルトの演算子を自動設定する
+                    // 型に合わせて演算子の初期値を決める
                     if (pd.type == AnimParamType::Trigger)
                         cond.op = AnimConditionOp::Trigger;
                     else if (pd.type == AnimParamType::Bool)
                         cond.op = AnimConditionOp::Equal;
                     else
-                        cond.op = AnimConditionOp::Greater; // Floatのデフォルト
+                        cond.op = AnimConditionOp::Greater;
                 }
                 if (sel)
                     ImGui::SetItemDefaultFocus();
@@ -1605,9 +2012,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
 
         ImGui::SameLine();
 
-        // =========================================================================
-        // 2. パラメータの型に応じたスマートUIの出し分け
-        // =========================================================================
+        // --- 型に合わせた入力欄 ---
         if (cond.op == AnimConditionOp::Finished)
         {
             // Finished の場合は演算子も閾値も不要
@@ -1615,7 +2020,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         }
         else if (cond.paramHash != 0)
         {
-            // 対象パラメータの型を検索
+            // 対象パラメータの型を引く
             AnimParamType pType = AnimParamType::Float;
             for (const auto &pd : m_currentGraph.parameters)
             {
@@ -1634,7 +2039,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
             }
             else if (pType == AnimParamType::Bool)
             {
-                // Bool は == に固定し、true/false のドロップダウンに変更
+                // Bool は == に固定し、true / false を選ばせる
                 cond.op = AnimConditionOp::Equal;
                 ImGui::Text(" は ");
                 ImGui::SameLine();
@@ -1649,7 +2054,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
             }
             else if (pType == AnimParamType::Float)
             {
-                // Float の場合は無意味な演算子を排除
+                // Float では Trigger / Finished を選べないようにする
                 if (cond.op == AnimConditionOp::Trigger || cond.op == AnimConditionOp::Finished)
                     cond.op = AnimConditionOp::Greater;
 
@@ -1670,7 +2075,7 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
             ImGui::TextDisabled("対象を選択...");
         }
 
-        // 行の右端に削除ボタン
+        // 行の右端の削除ボタン
         ImGui::SameLine();
         if (ImGui::Button("X", ImVec2(24, 0)))
         {
@@ -1680,31 +2085,40 @@ void AnimGraphWindow::DrawTransitionConditionUI(AnimTransition &trans)
         ImGui::PopID();
     }
 
-    // 遅延削除の実行
     if (conditionToDelete >= 0)
     {
         trans.conditions.erase(trans.conditions.begin() + conditionToDelete);
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // パラメータパネル（Unity Animator の Parameters タブ相当）
-//   グラフが所有する AnimParamDef を一覧編集する。実行中は選択エンティティの
-//   AnimParametersComponent から現在値を読み、ライブ表示する。
 // ---------------------------------------------------------------------------
+
 void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 {
-    // パラメータはステートマシン全体で共有（root が唯一の所有者）。
+    // 処理フロー:
+    // 1. 型ごとの追加ボタン
+    // 2. 一覧（名前・初期値・今の値・削除）
+    // 3. 削除の反映（参照している条件も消す）
+
+    // パラメータはステートマシン全体で共有（root だけが持つ）
     AnimStateGraph &m_currentGraph = m_rootGraph;
 
     ImGui::Text("パラメータ (Parameters)");
     ImGui::SameLine();
 
-    // --- 追加ボタン（型ごと） ---
+    // ---------------------------------------------------------
+    // 1. 追加ボタン
+    // ---------------------------------------------------------
+
+    // 2 回押しても同じ名前（＝同じハッシュ）にならないよう、連番を付ける
     if (ImGui::SmallButton("+ Float"))
     {
         AnimParamDef p;
-        p.name = "NewFloat";
+        p.name = MakeUniqueParamName("NewFloat");
         p.type = AnimParamType::Float;
         p.hash = CCL::Utils::HashString(p.name.c_str());
         m_currentGraph.parameters.push_back(p);
@@ -1713,7 +2127,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
     if (ImGui::SmallButton("+ Bool"))
     {
         AnimParamDef p;
-        p.name = "NewBool";
+        p.name = MakeUniqueParamName("NewBool");
         p.type = AnimParamType::Bool;
         p.hash = CCL::Utils::HashString(p.name.c_str());
         m_currentGraph.parameters.push_back(p);
@@ -1722,7 +2136,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
     if (ImGui::SmallButton("+ Trigger"))
     {
         AnimParamDef p;
-        p.name = "NewTrigger";
+        p.name = MakeUniqueParamName("NewTrigger");
         p.type = AnimParamType::Trigger;
         p.hash = CCL::Utils::HashString(p.name.c_str());
         m_currentGraph.parameters.push_back(p);
@@ -1730,7 +2144,11 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 
     ImGui::Separator();
 
-    // --- ライブ値参照用（実行中エンティティの実値） ---
+    // ---------------------------------------------------------
+    // 2. 一覧
+    // ---------------------------------------------------------
+
+    // 今の値は、選択中のエンティティの AnimParametersComponent から読む
     AnimParametersComponent *liveParams = nullptr;
     if (context.selectedEntity != CCL::ECS::InvalidEntityID && context.world)
         liveParams = context.world->GetComponent<AnimParametersComponent>(context.selectedEntity);
@@ -1753,7 +2171,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         ImGui::PushID(i);
         ImGui::TableNextRow();
 
-        // --- 列1: 名前（ダブルクリックでリネーム編集） ---
+        // --- 列 1: 名前（ダブルクリックで改名） ---
         ImGui::TableSetColumnIndex(0);
         if (m_paramRenameIndex == i)
         {
@@ -1765,19 +2183,28 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                 std::string newName = m_paramNameBuf;
                 if (!newName.empty() && newName != p.name)
                 {
-                    uint32_t oldHash = p.hash;
-                    uint32_t newHash = CCL::Utils::HashString(newName.c_str());
-                    // 参照している全条件を張り替える（これを怠ると条件が壊れる）
-                    RenameParameterReferences(oldHash, newName, newHash);
-                    p.name = newName;
-                    p.hash = newHash;
+                    // 既存の名前と重なるなら改名しない
+                    //   同じハッシュの定義が 2 つになり、片方を消すともう片方を使う条件まで消える
+                    if (MakeUniqueParamName(newName) != newName)
+                    {
+                        CCL_LOG_WARN(LogCategory::Editor, "[Anim Editor] パラメータ名 '%s' は既にあります", newName.c_str());
+                    }
+                    else
+                    {
+                        uint32_t oldHash = p.hash;
+                        uint32_t newHash = CCL::Utils::HashString(newName.c_str());
+                        // 参照している全条件を張り替える（怠ると、条件が消えたパラメータを指す）
+                        RenameParameterReferences(oldHash, newName, newHash);
+                        p.name = newName;
+                        p.hash = newHash;
+                    }
                 }
                 m_paramRenameIndex = -1;
             }
         }
         else
         {
-            // アイコン的に型を色分け表示
+            // 型ごとに色を分ける
             ImVec4 col = (p.type == AnimParamType::Float)  ? ImVec4(0.5f, 0.8f, 1.0f, 1.0f)
                          : (p.type == AnimParamType::Bool) ? ImVec4(0.6f, 1.0f, 0.6f, 1.0f)
                                                            : ImVec4(1.0f, 0.8f, 0.4f, 1.0f);
@@ -1791,7 +2218,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                 ImGui::SetTooltip("ID: 0x%08X\n(ダブルクリックでリネーム)", p.hash);
         }
 
-        // --- 列2: 型とデフォルト値 ---
+        // --- 列 2: 型と初期値 ---
         ImGui::TableSetColumnIndex(1);
         switch (p.type)
         {
@@ -1809,14 +2236,21 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
             break;
         }
 
-        // --- 列3: ライブ値（実行中の実値） ---
+        // --- 列 3: 今の値 ---
         ImGui::TableSetColumnIndex(2);
-        if (liveParams)
+        if (liveParams && p.type == AnimParamType::Trigger)
+        {
+            // トリガーは Float / Bool とは別の、寿命付きの一覧に入っている
+            const bool on = liveParams->HasTrigger(p.hash);
+            ImGui::TextColored(on ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                               on ? "TRUE" : "false");
+        }
+        else if (liveParams)
         {
             float fv = 0.0f;
             if (liveParams->TryGetNumeric(p.hash, fv))
             {
-                if (p.type == AnimParamType::Bool || p.type == AnimParamType::Trigger)
+                if (p.type == AnimParamType::Bool)
                     ImGui::TextColored(fv != 0.0f ? ImVec4(0.4f, 1.0f, 0.4f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
                                        fv != 0.0f ? "TRUE" : "false");
                 else
@@ -1828,7 +2262,7 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
         else
             ImGui::TextDisabled("-");
 
-        // --- 列4: 削除ボタン（明示的に見える形で） ---
+        // --- 列 4: 削除ボタン ---
         ImGui::TableSetColumnIndex(3);
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.60f, 0.20f, 0.20f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.25f, 0.25f, 1.0f));
@@ -1851,11 +2285,15 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
 
     ImGui::EndTable();
 
-    // ループ外で削除（イテレータ破壊回避）
+    // ---------------------------------------------------------
+    // 3. 削除の反映
+    // ---------------------------------------------------------
+
+    // ループの外で消す（ループ中に erase すると添字がずれる）
     if (deleteIndex >= 0)
     {
-        // 消すパラメータを参照している遷移条件も一緒に除去する。
-        // これを怠ると、存在しないハッシュを参照する「壊れた条件」が残る。
+        // 消すパラメータを参照している遷移条件も一緒に消す
+        //   残すと、存在しないハッシュを参照する条件が残る
         const uint32_t deadHash   = m_currentGraph.parameters[deleteIndex].hash;
         auto           stripConds = [deadHash](std::vector<AnimTransition> &transitions) {
             for (auto &t : transitions)
@@ -1864,17 +2302,31 @@ void AnimGraphWindow::DrawParameterPanel(EditorContext &context)
                                    [deadHash](const AnimCondition &c) { return c.paramHash == deadHash; }),
                     t.conditions.end());
         };
-        // 階層のどこにある条件も漏れなく除去（root＋全サブグラフ）。
+        // 階層のどこにある条件も漏れなく消す（root ＋ 全サブグラフ）
         ForEachTransitionList(m_rootGraph, stripConds);
+
+        // ブレンドスペースの軸に使っていたら、未設定に戻す
+        ForEachBlendSpace(m_rootGraph, [deadHash](AnimBlendSpace &bs) {
+            if (bs.paramXHash == deadHash)
+            {
+                bs.paramXHash = 0;
+                bs.paramXName.clear();
+            }
+            if (bs.paramYHash == deadHash)
+            {
+                bs.paramYHash = 0;
+                bs.paramYName.clear();
+            }
+        });
 
         m_currentGraph.parameters.erase(m_currentGraph.parameters.begin() + deleteIndex);
     }
 }
 
+
+
 void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::string &newName, uint32_t newHash)
 {
-    // パラメータ名変更時、全遷移・AnyState遷移の条件参照を張り替える。
-
     auto patch = [&](std::vector<AnimTransition> &transitions) {
         for (auto &t : transitions)
             for (auto &c : t.conditions)
@@ -1884,6 +2336,320 @@ void AnimGraphWindow::RenameParameterReferences(uint32_t oldHash, const std::str
                     c.paramName = newName;
                 }
     };
-    // 階層のどこにある条件も漏れなく張り替える（root＋全サブグラフ）。
+    // 階層のどこにある条件も漏れなく張り替える（root ＋ 全サブグラフ）
     ForEachTransitionList(m_rootGraph, patch);
+
+    // ブレンドスペースの軸の参照も張り替える
+    ForEachBlendSpace(m_rootGraph, [&](AnimBlendSpace &bs) {
+        if (bs.paramXHash == oldHash)
+        {
+            bs.paramXHash = newHash;
+            bs.paramXName = newName;
+        }
+        if (bs.paramYHash == oldHash)
+        {
+            bs.paramYHash = newHash;
+            bs.paramYName = newName;
+        }
+    });
+}
+
+
+
+std::string AnimGraphWindow::MakeUniqueParamName(const std::string &base) const
+{
+    // 重なりは名前ではなくハッシュで調べる（条件はハッシュでパラメータを引くため）
+    auto IsTaken = [this](const std::string &name) {
+        const uint32_t hash = CCL::Utils::HashString(name.c_str());
+        for (const auto &p : m_rootGraph.parameters)
+        {
+            if (p.hash == hash) return true;
+        }
+        return false;
+    };
+
+    std::string name = base;
+    for (int i = 2; IsTaken(name); ++i)
+    {
+        name = base + "_" + std::to_string(i);
+    }
+    return name;
+}
+
+
+
+bool AnimGraphWindow::DrawFloatParamCombo(const char *label, uint32_t &hash, std::string &name)
+{
+    bool        changed = false;
+    const char *preview = name.empty() ? "(未設定)" : name.c_str();
+    if (ImGui::BeginCombo(label, preview))
+    {
+        // パラメータはステートマシン全体で共有（root だけが持つ）
+        for (const auto &p : m_rootGraph.parameters)
+        {
+            if (p.type != AnimParamType::Float) continue;
+
+            const bool selected = (p.hash == hash);
+            if (ImGui::Selectable(p.name.c_str(), selected))
+            {
+                hash    = p.hash;
+                name    = p.name;
+                changed = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// ブレンドスペース
+// ---------------------------------------------------------------------------
+
+void AnimGraphWindow::DrawBlendSpaceSettings(AnimState &state)
+{
+    // 処理フロー:
+    // 1. 種類と軸のパラメータ
+    // 2. 入力の追従
+    // 3. 点の一覧（クリップと位置。追加・削除）
+    // 4. 図
+
+    AnimBlendSpace &bs   = state.blendSpace;
+    const bool      is1D = (bs.type == AnimBlendSpaceType::Blend1D);
+
+    // ---------------------------------------------------------
+    // 1. 種類と軸
+    // ---------------------------------------------------------
+    int         type    = static_cast<int>(bs.type);
+    const char *types[] = {"1D", "2D 方向型 (Directional)"};
+    if (ImGui::Combo("種類 (Type)", &type, types, IM_ARRAYSIZE(types)))
+    {
+        bs.type = static_cast<AnimBlendSpaceType>(type);
+    }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("1D: 1 つの値で混ぜる。例: 速さで 歩き → 走り。\n"
+                          "2D 方向型: 向きで隣り合う 2 方向を混ぜる。例: 前後左右の移動。");
+
+    DrawFloatParamCombo("横軸 X (Param X)", bs.paramXHash, bs.paramXName);
+    if (!is1D)
+    {
+        DrawFloatParamCombo("縦軸 Y (Param Y)", bs.paramYHash, bs.paramYName);
+    }
+
+    // ---------------------------------------------------------
+    // 2. 追従
+    // ---------------------------------------------------------
+    ImGui::DragFloat("追従の時間 (Smoothing)", &bs.smoothingTime, 0.01f, 0.0f, 1.0f, "%.2f 秒");
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("入力が急に変わったときに、姿勢が飛ばないよう寄せる時間です。\n"
+                          "例: 0.1〜0.2 秒。0 にすると寄せずにそのまま使います。");
+
+    // ---------------------------------------------------------
+    // 3. 点の一覧
+    // ---------------------------------------------------------
+    ImGui::Separator();
+    ImGui::Text("点 (Samples)  %d / %d", static_cast<int>(bs.samples.size()), CCL::Anim::kMaxBlendSamples);
+
+    int removeIndex = -1;
+    for (int i = 0; i < static_cast<int>(bs.samples.size()); ++i)
+    {
+        AnimBlendSample &sample = bs.samples[i];
+        ImGui::PushID(i);
+
+        const std::string fileName =
+            sample.sequenceFilePath.empty() ? "None" : std::filesystem::path(sample.sequenceFilePath).stem().string();
+        ImGui::Text("[%d] %s", i, fileName.c_str());
+        if (i == 0)
+        {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(時間の基準)");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("ほかの点は、この点のクリップと同じ進み具合で再生します。\n"
+                                  "イベントと Finished の判定も、この点のクリップで行います。");
+        }
+
+        if (ImGui::SmallButton("クリップ..."))
+        {
+            if (auto path = FileDialog::OpenPreset("AnimSequence", "Select Anim Sequence"))
+            {
+                sample.sequenceFilePath = FileDialog::ConvertToRelativePath(*path);
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("削除")) removeIndex = i;
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        if (is1D)
+        {
+            ImGui::DragFloat("##Pos", &sample.x, 0.01f);
+        }
+        else
+        {
+            float pos[2] = {sample.x, sample.y};
+            if (ImGui::DragFloat2("##Pos", pos, 0.01f))
+            {
+                sample.x = pos[0];
+                sample.y = pos[1];
+            }
+        }
+
+        ImGui::PopID();
+    }
+
+    // ループの外で消す（ループ中に erase すると添字がずれる）
+    if (removeIndex >= 0)
+    {
+        bs.samples.erase(bs.samples.begin() + removeIndex);
+    }
+
+    // 実行時の重みは固定長で持つので、上限より多くは足させない
+    if (static_cast<int>(bs.samples.size()) < CCL::Anim::kMaxBlendSamples)
+    {
+        if (ImGui::Button("+ 点を追加", ImVec2(-1, 0)))
+        {
+            bs.samples.push_back({});
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. 図
+    // ---------------------------------------------------------
+    ImGui::Separator();
+    DrawBlendSpacePlot(state);
+}
+
+
+
+void AnimGraphWindow::DrawBlendSpacePlot(const AnimState &state)
+{
+    // 処理フロー:
+    // 1. 図の範囲（すべての点が入る四角）を決める
+    // 2. 入力と重みを決める（実行中ならその値、そうでなければドラッグで試す値から計算する）
+    // 3. 枠・軸・点・入力を描く（点の丸の大きさが重み）
+
+    const AnimBlendSpace &bs    = state.blendSpace;
+    const bool            is1D  = (bs.type == AnimBlendSpaceType::Blend1D);
+    const int             count = (std::min)(static_cast<int>(bs.samples.size()), CCL::Anim::kMaxBlendSamples);
+
+    // ---------------------------------------------------------
+    // 1. 範囲
+    // ---------------------------------------------------------
+
+    // 点がなくても形が分かるよう、-1〜1 は必ず入れる
+    float minX = -1.0f, maxX = 1.0f, minY = -1.0f, maxY = 1.0f;
+    for (int i = 0; i < count; ++i)
+    {
+        minX = (std::min)(minX, bs.samples[i].x);
+        maxX = (std::max)(maxX, bs.samples[i].x);
+        minY = (std::min)(minY, bs.samples[i].y);
+        maxY = (std::max)(maxY, bs.samples[i].y);
+    }
+
+    // 端の点が枠に重ならないよう、少し広げる
+    const float padX = (maxX - minX) * 0.15f;
+    const float padY = (maxY - minY) * 0.15f;
+    minX -= padX;
+    maxX += padX;
+    minY -= padY;
+    maxY += padY;
+
+    const float  width  = (std::min)(ImGui::GetContentRegionAvail().x, 260.0f);
+    const ImVec2 size   = ImVec2(width, is1D ? 50.0f : width);
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    // ドラッグを受けるため、図の大きさの見えないボタンを置く
+    ImGui::InvisibleButton("##BlendSpacePlot", size);
+    const bool dragging = ImGui::IsItemActive();
+
+    auto toScreen = [&](float x, float y) {
+        const float u = (x - minX) / (maxX - minX);
+        const float v = is1D ? 0.5f : (y - minY) / (maxY - minY);
+        return ImVec2(origin.x + u * size.x, origin.y + (1.0f - v) * size.y); // 画面は下向きが +
+    };
+
+    // ---------------------------------------------------------
+    // 2. 入力と重み
+    // ---------------------------------------------------------
+
+    // 選択中のエンティティが、ちょうどこのステートを再生しているときだけ実行中の値を使う
+    const bool runtime = m_runtimeBlendActive && (m_runtimeActiveStateHash == state.stateHash);
+
+    float                                          inputX  = 0.0f;
+    float                                          inputY  = 0.0f;
+    std::array<float, CCL::Anim::kMaxBlendSamples> weights = {};
+    if (runtime)
+    {
+        inputX  = m_runtimeBlendX;
+        inputY  = m_runtimeBlendY;
+        weights = m_runtimeBlendWeights;
+    }
+    else
+    {
+        // ドラッグした位置を入力にする（画面の座標を、パラメータ空間へ戻す）
+        if (dragging)
+        {
+            const ImVec2 mouse = ImGui::GetIO().MousePos;
+            m_blendPreviewX    = minX + (mouse.x - origin.x) / size.x * (maxX - minX);
+            m_blendPreviewY    = minY + (1.0f - (mouse.y - origin.y) / size.y) * (maxY - minY);
+        }
+        inputX = m_blendPreviewX;
+        inputY = is1D ? 0.0f : m_blendPreviewY;
+
+        // 実行時と同じ関数で重みを求める（図で試した結果が、そのままゲームでの混ざり方になる）
+        std::array<float, CCL::Anim::kMaxBlendSamples> xs = {};
+        std::array<float, CCL::Anim::kMaxBlendSamples> ys = {};
+        for (int i = 0; i < count; ++i)
+        {
+            xs[i] = bs.samples[i].x;
+            ys[i] = bs.samples[i].y;
+        }
+        CCL::Anim::ComputeBlendWeights(bs.type, xs.data(), ys.data(), count, inputX, inputY, weights.data());
+    }
+
+    // ---------------------------------------------------------
+    // 3. 描く
+    // ---------------------------------------------------------
+    ImDrawList  *drawList = ImGui::GetWindowDrawList();
+    const ImVec2 corner   = ImVec2(origin.x + size.x, origin.y + size.y);
+    drawList->AddRectFilled(origin, corner, IM_COL32(30, 30, 34, 255));
+    drawList->AddRect(origin, corner, IM_COL32(90, 90, 100, 255));
+
+    // 原点を通る軸
+    const ImVec2 zero = toScreen(0.0f, 0.0f);
+    drawList->AddLine(ImVec2(origin.x, zero.y), ImVec2(corner.x, zero.y), IM_COL32(70, 70, 80, 255));
+    if (!is1D) drawList->AddLine(ImVec2(zero.x, origin.y), ImVec2(zero.x, corner.y), IM_COL32(70, 70, 80, 255));
+
+    // 点。重みが大きいほど大きく明るく描き、重みを横に出す
+    for (int i = 0; i < count; ++i)
+    {
+        const AnimBlendSample &sample = bs.samples[i];
+        const ImVec2           pos    = toScreen(sample.x, sample.y);
+        const float            weight = weights[i];
+        const ImU32            color  = (weight > 0.001f) ? IM_COL32(110, 220, 150, 255) : IM_COL32(140, 140, 150, 255);
+        drawList->AddCircleFilled(pos, 3.0f + 8.0f * weight, color);
+
+        const std::string name =
+            sample.sequenceFilePath.empty() ? "None" : std::filesystem::path(sample.sequenceFilePath).stem().string();
+        char label[96];
+        snprintf(label, sizeof(label), "[%d] %.2f", i, weight);
+        drawList->AddText(ImVec2(pos.x + 6.0f, pos.y - 14.0f), IM_COL32(220, 220, 220, 255), label);
+        if (ImGui::IsMouseHoveringRect(ImVec2(pos.x - 8.0f, pos.y - 8.0f), ImVec2(pos.x + 8.0f, pos.y + 8.0f)))
+        {
+            ImGui::SetTooltip("%s (%.2f, %.2f)", name.c_str(), sample.x, sample.y);
+        }
+    }
+
+    // 入力。実行中は赤、試している間は黄色
+    const ImVec2 inputPos   = toScreen(inputX, inputY);
+    const ImU32  inputColor = runtime ? IM_COL32(255, 90, 90, 255) : IM_COL32(255, 210, 80, 255);
+    drawList->AddLine(ImVec2(inputPos.x - 6.0f, inputPos.y), ImVec2(inputPos.x + 6.0f, inputPos.y), inputColor, 2.0f);
+    drawList->AddLine(ImVec2(inputPos.x, inputPos.y - 6.0f), ImVec2(inputPos.x, inputPos.y + 6.0f), inputColor, 2.0f);
+
+    if (runtime)
+        ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "実行中の入力: (%.2f, %.2f)", inputX, inputY);
+    else
+        ImGui::TextDisabled("図をドラッグして入力を試せます: (%.2f, %.2f)", inputX, inputY);
 }

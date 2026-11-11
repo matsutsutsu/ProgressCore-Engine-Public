@@ -1,13 +1,13 @@
 #pragma once
 // ===========================================================================
-// 概要: 全シーンの抽象基底クラス Scene。
+// 概要: 全シーンの抽象基底クラス Scene
 //
 // 責務:
 //   - シーンのライフサイクル（Initialize → Start → 更新/描画 → Finalize）の定義
 //   - 初期化済みフラグ（非同期ロードでワーカースレッドから立てられる）
 //   - エディタ・フレームワークへ World / SystemManager を渡す窓口
 //
-// 備考: 実際のシーンは BaseScene を継承して作る。
+// 備考: 実際のシーンは BaseScene を継承して作る
 // ===========================================================================
 #include <memory>
 #include <atomic>
@@ -21,10 +21,10 @@ namespace CCL::ECS
 class Scene
 {
 protected:
-    // 状態管理は一番親のクラスが責任を持つ。
-    // 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic。
+    // 状態管理は一番親のクラスが責任を持つ
+    // 非同期ロード時はワーカースレッドが書き、メインスレッドが読むため atomic
     //    acquire/release で「Initialize が構築した World の中身」の可視性まで保証する
-    //    （release で立てた ready を acquire で観測した後は、World へ安全にアクセスできる）。
+    //    （release で立てた ready を acquire で観測した後は、World へ安全にアクセスできる）
     std::atomic<bool> m_isReady{false};
 
 public:
@@ -53,8 +53,8 @@ public:
 
     virtual void Render() = 0;
 
-    // 画面遷移の黒い幕（SceneManager::DrawFade）より手前に描くもの。既定では何も描かない。
-    //   幕は全ての描画の上に被さるので、暗転中にも見せたいもの（ローディングの表示）はここで描く
+    // 画面遷移の黒い幕（SceneManager::DrawFade）より手前に描くもの。既定では何も描かない
+    //   幕はすべての描画の上に被さるので、暗転中にも見せたいもの（ローディングの表示）はここで描く
     virtual void RenderOverFade() {}
 
     // ImGui の描画

@@ -1,21 +1,20 @@
 #pragma once
 // ===========================================================================
 // 概要: ポストプロセスの設定コンポーネントを読み、PostProcessManager の各エフェクトへ
-//       渡す System（R09_PostProcess）。
+//       渡す System（R09_PostProcess）
 //
 // 責務:
 //   - 各エフェクトのオン/オフとパラメータを毎フレーム設定する
 //   - 演出からの上書き（overrides）を合成した値を渡す
 //   - ポーズ中の背景ぼかしの量を実時間で進める
 //
-// 備考: エフェクトはアプリ全体で使い回すので、設定コンポーネントが無いシーンでも
-//       毎フレーム「無効」を明示して渡す（Update 内のコメント参照）。
+// 備考: エフェクトはアプリ全体で使い回すので、設定コンポーネントがないシーンでも
+//       毎フレーム「無効」を明示して渡す（Update 内のコメント参照）
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
 #include "Engine/Graphics/Components/PostProcess/BloomConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ToneMapConfigComponent.h"
-#include "Engine/Graphics/Components/PostProcess/DistortionConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/DepthOfFieldConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
@@ -35,7 +34,6 @@ public:
     {
         return {CCL::ECS::TypeInfo<BloomConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<ToneMapConfigComponent>::ID(),
-                CCL::ECS::TypeInfo<DistortionConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<DepthOfFieldConfigComponent>::ID(),
                 CCL::ECS::TypeInfo<VignetteConfigComponent>::ID(),

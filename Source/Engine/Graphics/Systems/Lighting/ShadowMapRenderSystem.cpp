@@ -8,14 +8,14 @@
 #include "Engine/Graphics/Components/Core/NoRenderTag.h"
 #include "Engine/Graphics/Components/Core/NoShadowTag.h"
 #include "Engine/Graphics/Renderer/Core/RenderQueue.h"
-#include "Engine/Graphics/Renderer/Core/MeshCulling.h" // メッシュの AABB（Opaque/Normal と同じ関数を使う）
+#include "Engine/Graphics/Renderer/Core/MeshCulling.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include "Engine/Graphics/Shader/Pass/ShadowMap.h"
 #include "Engine/Graphics/Shader/Pass/ShadowUtils.h"
 
-#include <DirectXCollision.h> // BoundingBox / BoundingOrientedBox 交差判定用
+#include <DirectXCollision.h>
 
 using namespace CCL::ECS;
 using namespace DirectX;
@@ -23,34 +23,27 @@ using namespace DirectX;
 ShadowMapRenderSystem::ShadowMapRenderSystem()
     : IfSystem("ShadowMapRenderSystem")
 {
-    // 影を落とさない2種を走査対象から外す。
-    //    NoRenderTag: 当たり判定だけのジオメトリ。外さないと、見えないのに影だけ出る。
-    //    NoShadowTag: 見えるが影は落とさないもの。カスケード3枚分のラスタライズが無くなる。
-    // SetExclude は上書きなので、1回の呼び出しでまとめて並べる。2回呼ぶと先の指定が消える。
+    // 影を落とさない2種を走査対象から外す
+    //    NoRenderTag: 当たり判定だけのジオメトリ。外さないと、見えないのに影だけ出る
+    //    NoShadowTag: 見えるが影は落とさないもの。カスケード3枚分のラスタライズがなくなる
+    // SetExclude は上書きなので、1回の呼び出しでまとめて並べる。2回呼ぶと先の指定が消える
     SetExclude<NoRenderTag, NoShadowTag>();
 }
+
+
 
 void ShadowMapRenderSystem::Update(float dt)
 {
     RenderShadowMap();
 }
 
+
+
 // ============================================================================
-// 影描画コマンドを作って積む
-//   手順:
-//     1. カメラのビュー錐台を距離で 3 分割し、各カスケードのライト空間 VP 行列を作る
-//     2. その VP の逆行列で「NDCの立方体 → ワールド空間の傾いた箱(OBB)」を復元し、
-//        各カスケードが実際にワールド上でカバーする領域を表す OBB を 3 つ得る
-//     3. 各エンティティ／各メッシュの AABB を 3 つのカスケード OBB と交差判定し、
-//        「入っているカスケードだけ」を示すビットマスク(cascadeMask)を作る
-//     4. どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）
-//
-//   カリングは2段階:
-//     - モデル単位の早期棄却：モデル全体の AABB が全カスケード外なら、
-//       メッシュを一つも調べずにエンティティごと捨てる（最速の枝刈り）
-//     - メッシュ単位の絞り込み：Sponza のような「1体で数百メッシュ」のモデルは
-//       モデル全体 AABB が全カスケードに掛かってしまうため、メッシュごとに
-//       個別の cascadeMask を作って、遠い/視界外のメッシュを落とす
+// 影の描画コマンドを作って積む
+//   カメラの視錐台を距離で3つに分け、各カスケードが覆うワールドの箱（OBB）を、ライトの VP の逆行列から求める
+//   モデル全体の AABB がどのカスケードにも入らなければ、メッシュを見ずに捨てる
+//   入るなら、メッシュごとに入っているカスケードのビット（cascadeMask）を作り、どこにも入らないメッシュは積まない
 // ============================================================================
 void ShadowMapRenderSystem::RenderShadowMap()
 {
@@ -76,7 +69,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
     }
 
     // ------------------------------------------------------------------
-    // 3. カスケードの行列を計算し、交差判定用のOBBを3つ作成する。
+    // 3. カスケードの行列を計算し、交差判定用のOBBを3つ作成する
     //    lightVPs[i] : カスケード i のライト空間ビュー射影行列
     // ------------------------------------------------------------------
     DirectX::XMMATRIX lightVPs[3];
@@ -111,22 +104,22 @@ void ShadowMapRenderSystem::RenderShadowMap()
 
         // --- (A) モデル単位の早期棄却 ------------------------------------
         // モデル全体の worldAABB がどのカスケードにも掛からなければ、
-        // メッシュを一つも調べずにこのエンティティ全体を捨てる（最速の枝刈り）。
+        // メッシュを一つも調べずにこのエンティティ全体を捨てる（最速の枝刈り）
         uint8_t modelMask = 0;
         if (cascadeOBBs[0].Intersects(bounds.worldAABB)) modelMask |= (1 << 0);
         if (cascadeOBBs[1].Intersects(bounds.worldAABB)) modelMask |= (1 << 1);
         if (cascadeOBBs[2].Intersects(bounds.worldAABB)) modelMask |= (1 << 2);
         if (modelMask == 0) return; // 全カスケード外：影に一切寄与しない
 
-        // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列。
+        // 基準は renderWorldMatrix（補間済み）。ModelRenderSystem が描画に使うのと同じ行列
         //   worldMatrix（固定ステップ）を使うと、影だけが最大1固定ステップぶん
         //   本体から遅れる。BoneAttachmentRenderSystem(R04) が本システム(R06)より
-        //   先に走るので、この時点で renderWorldMatrix は確定している。
+        //   先に走るので、この時点で renderWorldMatrix は確定している
         const DirectX::XMMATRIX entityWorld = DirectX::XMLoadFloat4x4(&trans.renderWorldMatrix);
 
         // --- (B) メッシュ単位の絞り込み ----------------------------------
         // Sponza のような巨大単一モデルは、モデル全体 AABB では全カスケードに
-        // 掛かってしまう。メッシュ個別に AABB を作って cascadeMask を精密化する。
+        // 掛かってしまう。メッシュ個別に AABB を作って cascadeMask を精密化する
         for (const auto &mesh : pModel->GetMeshes())
         {
             if (!mesh.data) continue;
@@ -137,13 +130,13 @@ void ShadowMapRenderSystem::RenderShadowMap()
             if (isSkinned)
             {
                 // スキンドはアニメーションで実形状がレストポーズ AABB を超えうるため、
-                // メッシュ単位では絞らずモデル単位のマスクを踏襲する（影欠けを防ぐ安全側）。
+                // メッシュ単位では絞らずモデル単位のマスクを踏襲する（影欠けを防ぐ安全側）
                 meshMask = modelMask;
             }
             else
             {
-                // このメッシュのワールド行列を作る。
-                // 描画時の世界変換（node->globalTransform * entityWorld）と一致させること。
+                // このメッシュのワールド行列を作る
+                // 描画時の世界変換（node->globalTransform * entityWorld）と一致させること
                 DirectX::XMMATRIX meshWorld = entityWorld;
                 if (mesh.node)
                 {
@@ -154,22 +147,22 @@ void ShadowMapRenderSystem::RenderShadowMap()
                 DirectX::BoundingBox worldAABB;
                 MeshCull::BuildLocalAABB(mesh).Transform(worldAABB, meshWorld);
 
-                // このメッシュ専用の cascadeMask を、各カスケード OBB との交差から作る。
+                // このメッシュ専用の cascadeMask を、各カスケード OBB との交差から作る
                 meshMask = 0;
                 if (cascadeOBBs[0].Intersects(worldAABB)) meshMask |= (1 << 0);
                 if (cascadeOBBs[1].Intersects(worldAABB)) meshMask |= (1 << 1);
                 if (cascadeOBBs[2].Intersects(worldAABB)) meshMask |= (1 << 2);
             }
 
-            // どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）。
+            // どのカスケードにも入らないメッシュはキューに積まない（＝影描画から除外）
             if (meshMask == 0) continue;
 
             ShadowCommand cmd;
             cmd.model = pModel;
             cmd.mesh  = &mesh;
-            // worldMatrix は「エンティティのワールド行列」をそのまま積む。
-            //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない。
-            //   上の entityWorld と同じ renderWorldMatrix を使うこと（判定と描画の一致）。
+            // worldMatrix は「エンティティのワールド行列」をそのまま積む
+            //   node の合成は ShadowPass 側で行う仕様なので、ここでは合成しない
+            //   上の entityWorld と同じ renderWorldMatrix を使うこと（判定と描画の一致）
             cmd.worldMatrix = trans.renderWorldMatrix;
             cmd.cascadeMask = meshMask; // メッシュ個別のカスケードマスク
 
@@ -177,5 +170,7 @@ void ShadowMapRenderSystem::RenderShadowMap()
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(ShadowMapRenderSystem, Priority::RenderStage::R06_Shadow);

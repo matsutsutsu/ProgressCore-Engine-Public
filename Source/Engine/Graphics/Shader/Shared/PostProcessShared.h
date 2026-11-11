@@ -1,12 +1,12 @@
 // ===========================================================================
-// 概要: ポストプロセスの各エフェクトで C++ と HLSL が共有する定数バッファ。
+// 概要: ポストプロセスの各エフェクトで C++ と HLSL が共有する定数バッファ
 //
 // 責務:
 //   - エフェクトごとの定数バッファの構造体を定義する
 //   - C++ 側で大きさを static_assert する（理由は ShaderShared.h を参照）
 //
-// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::CbBloomData など、HLSL では cbuffer になる。
-//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+// 備考: ShaderShared.h と同じ書き分けで、C++ では GpuData::CbBloomData など、HLSL では cbuffer になる
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う
 // ===========================================================================
 #ifndef POST_PROCESS_SHARED_H
 #define POST_PROCESS_SHARED_H
@@ -45,14 +45,6 @@ namespace GpuData
         float  chromaticAberration;
         float  pad2[2];
         float4 colorTint; // rgb = 掛ける色, w = 1
-    };
-
-    // Distortion（16 バイト）
-    PP_STRUCT(CbDistortionData, SLOT_CB_DISTORTION)
-    {
-        float time;
-        float strength;
-        float pad3[2];
     };
 
     // RadialBlur（16 バイト）
@@ -131,8 +123,6 @@ namespace GpuData
 static_assert(sizeof(GpuData::CbBloomData) == 32, "CbBloomData size mismatch");
 static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");
-static_assert(
-    sizeof(GpuData::CbDistortionData) == 16, "CbDistortionData size mismatch");
 static_assert(
     sizeof(GpuData::CbRadialBlurData) == 16, "CbRadialBlurData size mismatch");
 static_assert(

@@ -19,7 +19,9 @@ namespace
         return {pitch, yaw, roll};
     }
 
-    // コライダー可視化の色。シーンの色と被らないよう明るい緑にしている。
+
+
+    // コライダー可視化の色。シーンの色と被らないよう明るい緑にしている
     const DirectX::XMFLOAT4 COLLIDER_COLOR = {0.2f, 1.0f, 0.2f, 1.0f};
 } // namespace
 
@@ -68,6 +70,8 @@ void JoltBoxDebugDrawSystem::Update(float dt)
     });
 }
 
+
+
 // ============================================================
 // SphereCollider
 // ============================================================
@@ -99,6 +103,8 @@ void JoltSphereDebugDrawSystem::Update(float dt)
     });
 }
 
+
+
 // ============================================================
 // CapsuleCollider
 // ============================================================
@@ -129,6 +135,8 @@ void JoltCapsuleDebugDrawSystem::Update(float dt)
         renderer->DrawCapsule(mat, capsule.radius, capsule.halfHeight * 2.0f, COLLIDER_COLOR);
     });
 }
+
+
 
 // ============================================================
 // MeshCollider
@@ -179,6 +187,8 @@ void JoltMeshDebugDrawSystem::Update(float dt)
         }
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(JoltBoxDebugDrawSystem, Priority::RenderStage::R08_Main);
 REGISTER_RENDER_SYSTEM(JoltSphereDebugDrawSystem, Priority::RenderStage::R08_Main);

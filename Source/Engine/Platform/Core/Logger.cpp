@@ -27,11 +27,15 @@ Logger &Logger::Instance()
     return instance;
 }
 
+
+
 Logger::~Logger()
 {
     // 終了時に必ずフラッシュ (取りこぼし防止)
     Flush();
 }
+
+
 
 void Logger::AddSink(std::shared_ptr<ILogSink> sink)
 {
@@ -40,17 +44,23 @@ void Logger::AddSink(std::shared_ptr<ILogSink> sink)
     m_sinks.push_back(std::move(sink));
 }
 
+
+
 void Logger::RemoveSink(const std::shared_ptr<ILogSink> &sink)
 {
     std::lock_guard lock(m_mutex);
     m_sinks.erase(std::remove(m_sinks.begin(), m_sinks.end(), sink), m_sinks.end());
 }
 
+
+
 void Logger::ClearSinks()
 {
     std::lock_guard lock(m_mutex);
     m_sinks.clear();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ログの出力
@@ -106,6 +116,8 @@ void Logger::Log(LogCategory category, LogLevel level,
     }
 }
 
+
+
 void Logger::Clear()
 {
     std::lock_guard lock(m_mutex);
@@ -120,6 +132,8 @@ void Logger::Clear()
         }
     }
 }
+
+
 
 void Logger::Flush()
 {

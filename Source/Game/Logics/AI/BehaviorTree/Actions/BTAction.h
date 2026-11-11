@@ -1,98 +1,96 @@
 #pragma once
 // ===========================================================================
-// 概要: BT のアクションと条件の基底クラスと、それらに渡す BTContext。
+// 概要: BT のアクションと条件の基底クラスと、それらに渡す BTContext
 //
 // 責務:
 //   - アクションの Execute / CanAbort / OnAbort と、条件の Evaluate を定義する
 //   - world から直接触る Component を、スケジューラへ申告する口を用意する
 //
 // 備考: BTContext はボス固有の Component を持たない。必要なアクションは Execute の中で
-//       ctx.world->GetComponent<T>(ctx.entity) で自分で取る。
-//       そのため BT の評価の処理はボスを知らず、他の敵にも使える。
+//       ctx.world->GetComponent<T>(ctx.entity) で自分で取る
+//       そのため BT の評価の処理はボスを知らず、他の敵にも使える
 // ===========================================================================
 #include <cstdint>
 #include <vector>
 
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"       // BTNodeState, ActionID, BTNodeID
-#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h" // BehaviorTreeComponent
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeComponents.h"
 #include "Engine/ECS/Common/CCL_Types.h"
-#include "Engine/ECS/Common/CCL_TypeInfo.h" // アクセス申告（TypeInfo<T>::ID）
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 
-namespace CCL::ECS
-{
-    class World;
-}
+namespace CCL::ECS{ class World;}
 struct TransformComponent;
 
 namespace CCL::AI::BT
 {
-    // アクション/条件が受け取る情報。どのエンティティのBTでも使える汎用データだけ。
+    // アクション/条件が受け取る情報。どのエンティティのBTでも使える汎用データだけ
     struct BTContext
     {
-        CCL::ECS::World   *world  = nullptr;
-        CCL::ECS::EntityID entity = 0;
+        CCL::ECS::World   *world  = nullptr; // 評価中の World（所有しない）
+        CCL::ECS::EntityID entity = 0;       // BT を動かしているエンティティ
 
-        BehaviorTreeComponent *bt = nullptr;
+        BehaviorTreeComponent *bt = nullptr; // そのエンティティの実行状態（所有しない）
 
-        const TransformComponent *myTransform = nullptr;
+        const TransformComponent *myTransform = nullptr; // そのエンティティの姿勢（所有しない）
 
-        BTNodeID nodeId = 0; // nodeTimers[nodeId] を引くのに使う
-        float    dt     = 0.0f;
+        BTNodeID nodeId = 0;    // 評価中のノード。nodeTimers[nodeId] を引くのに使う
+        float    dt     = 0.0f; // フレームの経過時間（秒）
 
-        // ノードの数値パラメータ。待機の秒数や硬直など行動の引数（既定 0）。
-        float param = 0.0f;
+        float param = 0.0f; // ノードの数値パラメータ。待機の秒数や硬直など行動の引数
     };
 
-    // アクセスの申告。スケジューラへ、BT が何を触るかを伝える。
-    //
-    // アクションが GetComponent<T>() で行う読み書きは BehaviorTreeSystem の
-    // Read<>/Write<> 宣言に現れず、スケジューラからは見えない。申告が無いと、たとえば
-    // TriggeredMotionAction と AnimControllerSystem が同じ AnimParametersComponent を書くのに
-    // 「競合なし」と判定され、同じ vector へ push_back と erase が同時に入る。
-    // そこでアクション自身に申告させ、レジストリがまとめて BehaviorTreeSystem の申告に足す。
-    //
-    // ここに書き忘れた Component は、何のエラーも出ずにデータ競合になる。
-    // GetComponent<T>() を新しく書いたら必ず1行足すこと。
+    // 型の並びを TypeID の配列にする。GetExtraWriteTypes / GetExtraReadTypes の戻り値を作るのに使う
     template <typename... Ts>
     inline std::vector<CCL::ECS::TypeID> TypeIDsOf()
     {
         return {CCL::ECS::TypeInfo<Ts>::ID()...};
     }
 
-    struct IBTAction
+    /**
+     * @brief BT の葉になる行動の基底。ActionID ごとに1つだけ作られ、全エンティティで共有される
+     * @note 共有されるので、メンバに個体の状態を持たせない。状態は BTContext::bt の nodeTimers などに置く
+     */
+    class IBTAction
     {
+    public:
         virtual ~IBTAction() = default;
-        // 1フレーム分の行動。Success / Failure / Running を返す。
+
+        // 1フレーム分の行動を進める。続くなら Running を返す。ワーカースレッドから並列に呼ばれる
         virtual BTNodeState Execute(BTContext &ctx) = 0;
 
         /**
-         * @brief 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる。
-         *
-         * 拒否するのは、要求を取り下げた瞬間に動きが崩れる技だけ。跳躍がその例で、空中で
-         * 要求が下りると体を動かす側が待機になり、放物線の途中から重力で落ちる。
+         * @brief 途中で打ち切られてよいか。false を返すと、その枝への割り込みは見送られる
+         * @note 拒否するのは、要求が書かれなくなった瞬間に動きが崩れる技だけ（空中の跳躍など）
          */
         virtual bool CanAbort(BTContext &ctx) const { return true; }
 
         /**
-         * @brief 打ち切られたときの後始末。出したままの要求を取り下げるのに使う。
-         *
-         * 完了時の後始末を Execute の中に書いている技は、ここにも同じ取り下げが要る。
-         * 打ち切りでは Execute が最後まで走らないので、完了時の後始末を通らない。
+         * @brief 打ち切られたときの後始末
+         * @note 打ち切りでは Execute が最後まで走らない。完了時の後始末を Execute に書いた技は、ここにも書く
+         *       ボス本体への要求（currentActionId）は毎フレーム空にされるので、ここで取り下げなくてよい
          */
         virtual void OnAbort(BTContext &ctx) {}
 
-        // GetComponent<T>() で書き換える／読む Component（上の説明を参照）。
+
+        // BTAction派生経由で読み書きするComponentを登録する
         virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
         virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }
     };
 
-    struct IBTCondition
+    /**
+     * @brief BT の条件ノードの基底。ActionID ごとに1つだけ作られ、全エンティティで共有される
+     * @note 割り込みの判定でも呼ばれるので、評価しただけで状態が変わる書き方をしない
+     */
+    class IBTCondition
     {
-        virtual ~IBTCondition()               = default;
+    public:
+        virtual ~IBTCondition() = default;
+
+        // 条件を評価する。閾値は ctx.param。ワーカースレッドから並列に呼ばれる
         virtual bool Evaluate(BTContext &ctx) = 0;
 
-        virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; }
-        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }
+        virtual std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const { return {}; } // IBTAction の同名関数と同じ
+        virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }  // IBTAction の同名関数と同じ
     };
 
 } // namespace CCL::AI::BT

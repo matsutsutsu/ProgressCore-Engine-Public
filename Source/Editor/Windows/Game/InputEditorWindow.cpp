@@ -1,9 +1,9 @@
 #include "Editor/Windows/Game/InputEditorWindow.h"
 #include "Engine/Platform/Input/IInputAPI.h"
-#include "Engine/Platform/Input/InputKeyTable.h" // 共通キーテーブル
+#include "Engine/Platform/Input/InputKeyTable.h"
 #include "Engine/Platform/Core/FileSystem.h"
 #include <imgui.h>
-#include <Xinput.h> // キャプチャでパッドのボタンを読む
+#include <Xinput.h>
 #include <json.hpp>
 #include <cstring>
 #include <cctype>
@@ -16,6 +16,8 @@ InputEditorWindow::InputEditorWindow() : EditorWindow("InputMappingEditor")
 {
     LoadFromJson();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ファイルの読み書き
@@ -70,6 +72,8 @@ void InputEditorWindow::LoadFromJson()
     }
 }
 
+
+
 void InputEditorWindow::SaveToJson()
 {
     json doc;
@@ -104,15 +108,17 @@ void InputEditorWindow::SaveToJson()
     FileSystem::WriteAllText(m_configPath, doc.dump(4));
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 描画
 // ---------------------------------------------------------------------------
 
 void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
 {
-    // デバイスの選択（ラジオボタン）。
-    //   切り替えたら b.device / b.key を、そのデバイスの既定値に戻す。
-    //   軸のタブ（isAxis=true）ではゲームパッドの既定を左スティックにする。
+    // デバイスの選択（ラジオボタン）
+    //   切り替えたら b.device / b.key を、そのデバイスの既定値に戻す
+    //   軸のタブ（isAxis=true）ではゲームパッドの既定を左スティックにする
 
     using DC = InputKeyTable::DeviceClass;
     DC cur   = InputKeyTable::ClassOf(b.device);
@@ -139,11 +145,13 @@ void InputEditorWindow::DrawDeviceSelector(BindingData &b, bool isAxis)
           "NONE");
 }
 
+
+
 void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
 {
-    // キーの選択（コンボボックス）。
-    //   選択中のデバイスに対応した候補だけを出す（絞り込みの入力欄つき）。
-    //   軸のタブのゲームパッドは「スティック / トリガー」と「ボタン」を見出しで分ける。
+    // キーの選択（コンボボックス）
+    //   選択中のデバイスに対応した候補だけを出す（絞り込みの入力欄つき）
+    //   軸のタブのゲームパッドは「スティック / トリガー」と「ボタン」を見出しで分ける
 
     using DC = InputKeyTable::DeviceClass;
     DC cls   = InputKeyTable::ClassOf(b.device);
@@ -218,11 +226,13 @@ void InputEditorWindow::DrawKeyCombo(BindingData &b, bool isAxis)
     }
 }
 
+
+
 void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
 {
     DrawDeviceSelector(b, isAxis);
 
-    // 軸（左スティック等）には個別のキーが無いので、コンボは出さず読み取り専用で表示する
+    // 軸（左スティック等）には個別のキーがないので、コンボは出さず読み取り専用で表示する
     if (InputKeyTable::IsAnalogDevice(b.device))
     {
         b.key            = "NONE";
@@ -305,6 +315,8 @@ void InputEditorWindow::DrawBindingParams(BindingData &b, bool isAxis)
         ImGui::DragFloat("感度 / 方向##Scale", &b.scale, 0.1f, -1.0f, 1.0f);
     }
 }
+
+
 
 void InputEditorWindow::DrawContents(EditorContext &context)
 {

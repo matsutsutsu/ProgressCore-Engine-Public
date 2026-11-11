@@ -1,5 +1,3 @@
-// DirectionalLight・PointLight・SpotLight のシリアライズ/インスペクタ定義。
-
 #include "Engine/Graphics/Components/Lighting/LightComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"

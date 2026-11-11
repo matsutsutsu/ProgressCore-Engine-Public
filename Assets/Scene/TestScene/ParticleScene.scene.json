@@ -1,0 +1,505 @@
+{
+    "entities": [
+        {
+            "components": {
+                "BloomConfig": {
+                    "data.intensity": 1.0,
+                    "data.radius": 1.0,
+                    "data.softKnee": 0.20000000298023224,
+                    "data.threshold": 1.0,
+                    "enable": true
+                },
+                "ChromaticAberration": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "ColorGrading": {
+                    "brightness": 1.0,
+                    "contrast": 1.0,
+                    "enable": true,
+                    "mixAmount": 1.0,
+                    "saturation": 1.0,
+                    "tintB": 1.0,
+                    "tintG": 1.0,
+                    "tintR": 1.0
+                },
+                "DepthOfField": {
+                    "enable": false,
+                    "falloff": 8.0,
+                    "focusDistance": 10.0,
+                    "focusRange": 3.0,
+                    "maxBlur": 0.009999999776482582
+                },
+                "DirectionalLight": {
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "groundColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5333333611488342
+                    ],
+                    "intensity": 1.0,
+                    "skyColor": [
+                        0.0,
+                        0.10309933125972748,
+                        0.35135138034820557,
+                        1.0
+                    ]
+                },
+                "Fog": {
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "enabled": false,
+                    "end": 500.0,
+                    "heightDensity": 0.5,
+                    "heightStart": 0.0,
+                    "rimColor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "rimPower": 3.0,
+                    "rimStrength": 0.0,
+                    "skyFogHeight": -1.0,
+                    "skyFogSoftness": 0.0,
+                    "start": 40.0
+                },
+                "Name": {
+                    "name": "LightingSetup"
+                },
+                "RadialBlur": {
+                    "centerX": 0.5,
+                    "centerY": 0.5,
+                    "enable": false,
+                    "falloff": 2.0,
+                    "strength": 0.0
+                },
+                "SSAO": {
+                    "bias": 0.019999999552965164,
+                    "enable": true,
+                    "intensity": 0.800000011920929,
+                    "maxDistance": 50.0,
+                    "radius": 0.5
+                },
+                "Screen Impact": {
+                    "chromaticStrength": 0.012000000104308128,
+                    "duration": 0.2199999988079071,
+                    "radialStrength": 0.3499999940395355,
+                    "shakeTrauma": 0.18000000715255737
+                },
+                "ShadowMapConfig": {
+                    "cascadeSplits": [
+                        15.0,
+                        50.0,
+                        200.0
+                    ],
+                    "shadowBias": 0.00019999999494757503,
+                    "shadowColor": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "ToneMapConfig": {
+                    "data.chromaticAberration": 0.0,
+                    "data.colorTint": [
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.0
+                    ],
+                    "data.exposure": 0.4000000059604645
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        0.0,
+                        5.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.699999988079071,
+                        0.0,
+                        -0.5,
+                        0.9200000166893005
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "Vignette": {
+                    "colorB": 0.0,
+                    "colorG": 0.0,
+                    "colorR": 0.0,
+                    "enable": true,
+                    "intensity": 0.4000000059604645,
+                    "pulseSpeed": 0.0,
+                    "radius": 0.550000011920929,
+                    "softness": 0.3499999940395355
+                }
+            },
+            "lid": 1
+        },
+        {
+            "components": {
+                "CameraBodyFree": {
+                    "currentPitch": -11.500093460083008,
+                    "currentYaw": -7.668137550354004e-05,
+                    "lookSpeed": 0.20000000298023224,
+                    "moveSpeed": 8.0
+                },
+                "Name": {
+                    "name": "FreeCamera"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        -0.9482517242431641,
+                        8.504507064819336,
+                        -16.221866607666016
+                    ],
+                    "rotation": [
+                        0.10018887370824814,
+                        -6.65804236632539e-07,
+                        6.704350852260177e-08,
+                        0.9949684143066406
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "VirtualCamera": {
+                    "blendTime": 2.0,
+                    "farClip": 1000.0,
+                    "fov": 60.29999923706055,
+                    "nearClip": 0.10000000149011612,
+                    "priority": 100
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "AnimParameters": null,
+                "AnimStateMachine": {
+                    "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
+                },
+                "Animator": {
+                    "isLoop": true,
+                    "playbackSpeed": 1.0
+                },
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
+                "Model": {
+                    "assetPath": "Assets/Models/Player/SK_SciFITrooper_Man_03.model.json"
+                },
+                "Name": {
+                    "name": "Player"
+                },
+                "RootMotion": null,
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 0,
+                    "position": [
+                        -5.599999904632568,
+                        0.0,
+                        5.099999904632568
+                    ],
+                    "rotation": [
+                        1.2611686178923354e-44,
+                        0.9576292037963867,
+                        1.5414283107572988e-44,
+                        0.288004070520401
+                    ],
+                    "scale": [
+                        3.5,
+                        3.5,
+                        3.5
+                    ]
+                }
+            },
+            "lid": 3
+        },
+        {
+            "components": {
+                "BoneAttachmentComponent": {
+                    "boneName": "hand_r"
+                },
+                "GPUParticle": {
+                    "animControlled": true,
+                    "emitters": [
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 1,
+                            "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
+                            "coneAngle": [
+                                0.0,
+                                3.140000104904175
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                0.11999999731779099
+                            ],
+                            "emitShape": 1,
+                            "emitSize": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                1.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.20000000298023224,
+                                0.30000001192092896
+                            ],
+                            "gravity": 0.0,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.8899999856948853
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                4.349999904632568,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 8000,
+                            "maxSpeed": 10.0,
+                            "name": "",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                0.5,
+                                0.5
+                            ],
+                            "sizeRandom": 1.0,
+                            "spawnDelay": [
+                                0.00800000037997961,
+                                0.0560000017285347
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        }
+                    ]
+                },
+                "Hitbox": {
+                    "damageAmount": 15.0,
+                    "hitStopDuration": 0.20999999344348907,
+                    "hitStopScale": 0.0,
+                    "isActive": false,
+                    "knockback": 20.0,
+                    "rehitInterval": -1.0
+                },
+                "Jolt Capsule Collider": {
+                    "halfHeight": 2.5999999046325684,
+                    "localOffset": [
+                        0.0,
+                        2.200000047683716,
+                        0.0
+                    ],
+                    "localRotationEuler": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "radius": 0.5
+                },
+                "Jolt Rigidbody": {
+                    "friction": 0.20000000298023224,
+                    "gravityFactor": 1.0,
+                    "initialVelocity": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "isSensor": true,
+                    "motionType": 1,
+                    "objectLayer": 3,
+                    "restitution": 0.0,
+                    "useCCD": false
+                },
+                "Material": {
+                    "customParams": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "paths": []
+                },
+                "Model": {
+                    "assetPath": "Assets/Models/Weapon/Sword.gltf"
+                },
+                "Name": {
+                    "name": "Sword"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 3,
+                    "position": [
+                        0.10000000149011612,
+                        0.019999999552965164,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        0.30000001192092896,
+                        0.5,
+                        0.30000001192092896
+                    ]
+                },
+                "Weapon Trail": {
+                    "animControlled": true,
+                    "baseOffset": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "burstDuration": 0.25,
+                    "burstTimer": 0.0,
+                    "color": [
+                        1.0,
+                        0.3706563711166382,
+                        0.0,
+                        1.0
+                    ],
+                    "distortion": 0.0,
+                    "distortionChroma": 0.0,
+                    "distortionNoise": 0.0,
+                    "emitting": false,
+                    "lifeTime": 0.18000000715255737,
+                    "minDistance": 0.019999999552965164,
+                    "rimPower": 0.699999988079071,
+                    "shape": 0,
+                    "texturePath": "",
+                    "thickness": 0.0,
+                    "tipOffset": [
+                        0.0,
+                        2.7200000286102295,
+                        0.0
+                    ],
+                    "tubeSides": 6,
+                    "useInterpolation": true,
+                    "uvScroll": [
+                        0.0,
+                        0.0
+                    ],
+                    "uvTiling": [
+                        1.0,
+                        1.0
+                    ],
+                    "width": 1.0,
+                    "widthCurvePower": 0.10000000149011612
+                }
+            },
+            "lid": 4
+        }
+    ],
+    "magic": 1397506883,
+    "timestamp": 1792049000,
+    "version": 1
+}

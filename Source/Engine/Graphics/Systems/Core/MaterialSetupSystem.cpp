@@ -18,4 +18,6 @@ void MaterialSetupSystem::Update(float dt)
     }
 }
 
+
+
 REGISTER_LOGIC_SYSTEM(MaterialSetupSystem, Priority::LogicStage::L02_PostUpdate);

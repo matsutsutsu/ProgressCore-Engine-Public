@@ -1,16 +1,17 @@
 #include "TutorialScene.h"
 #include "Engine/Scene/SceneFactory.h"
 
-#include "Engine/Serialization/Serializer/LevelSerializer.h" // レベル読み込み
+#include "Engine/Serialization/Serializer/LevelSerializer.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 
-#include "Game/Logics/Tutorial/TutorialSystem.h"            // 教える項目の進行
-#include "Game/Logics/Tutorial/TutorialHealthGuardSystem.h" // プレイヤーを倒れさせず、ボスの形態を移らせない
-#include "Game/UI/HUD/TutorialHintHudSystem.h"              // ヒントの表示
-#include "Game/UI/Screens/TutorialCompleteSystem.h"         // 教え終えた後の画面
-#include "Game/UI/Screens/PauseSystem.h"                    // ESC/STARTでポーズ＋ポーズメニュー
+#include "Game/Logics/Tutorial/TutorialSystem.h"
+#include "Game/Logics/Tutorial/TutorialHealthGuardSystem.h"
+#include "Game/UI/HUD/TutorialHintHudSystem.h"
+#include "Game/UI/Input/InputPromptSystem.h"
+#include "Game/UI/Screens/TutorialCompleteSystem.h"
+#include "Game/UI/Screens/PauseSystem.h"
 
 #include "tracy/Tracy.hpp"
 
@@ -35,10 +36,14 @@ void TutorialScene::Initialize()
     CCL_LOG_INFO(LogCategory::Core, "TutorialScene Initialize");
 }
 
+
+
 void TutorialScene::Finalize()
 {
     BaseScene::Finalize();
 }
+
+
 
 void TutorialScene::RegisterSystems()
 {
@@ -47,12 +52,15 @@ void TutorialScene::RegisterSystems()
 
     // --- チュートリアルだけで使う System（全体登録していないのでここで登録する） ---
 
-    // ヒントを出す TutorialHintHudSystem と同じステージに置き、同じフレームのうちに映させる。
+    // ヒントを出す TutorialHintHudSystem と同じステージに置き、同じフレームのうちに映させる
     // TutorialState のリソースはこの System の Initialize が作る
     sysManager.RegisterSystem<TutorialSystem>(Priority::LogicStage::L06_HudSync);
 
     // 他の HUD と同じステージ。TutorialSystem の後に走る（GetRunAfter）
     sysManager.RegisterSystem<TutorialHintHudSystem>(Priority::LogicStage::L06_HudSync);
+
+    // 操作の説明。チュートリアルの間だけ右上に出しておく。ゲージと同じ HUD のステージに置く
+    sysManager.RegisterSystem<InputPromptSystem>(Priority::LogicStage::L06_HudSync);
 
     // ダメージで HP を引いた（L06_DamageApply）後、0 以下で倒れたことにする（L06_HealthManagement）前に HP を戻す
     sysManager.RegisterSystem<TutorialHealthGuardSystem>(Priority::LogicStage::L06_StatusEffect);
@@ -63,5 +71,7 @@ void TutorialScene::RegisterSystems()
     // ポーズは描画ステージに置く。ロジックステージはポーズ中に止まり、解除の入力を拾えなくなる
     sysManager.RegisterSystem<PauseSystem>(Priority::RenderStage::R10_UI);
 }
+
+
 
 REGISTER_SCENE(TutorialScene, "Tutorial")

@@ -3,7 +3,7 @@
 #include "Engine/Graphics/RHI/RenderState.h"
 #include "Engine/Graphics/Shader/ShaderResources.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Core/Math/StringHash.h" // "_hash"
+#include "Engine/Core/Math/StringHash.h"
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
@@ -17,7 +17,7 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     sampDesc.AddressW           = D3D11_TEXTURE_ADDRESS_WRAP;
     device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
 
-    // テクスチャが無いエミッター用の 1x1 の白
+    // テクスチャがないエミッター用の 1x1 の白
     uint32_t             white      = 0xFFFFFFFF;
     D3D11_TEXTURE2D_DESC texDesc    = {};
     texDesc.Width                   = 1;
@@ -48,15 +48,21 @@ void ParticleRenderer::Initialize(ID3D11Device *device)
     m_isLoaded = true;
 }
 
+
+
 void ParticleRenderer::BeginFrame()
 {
     m_drawCommands.clear();
 }
 
+
+
 void ParticleRenderer::Draw(const ParticleDrawCommand &cmd)
 {
     m_drawCommands.push_back(cmd);
 }
+
+
 
 void ParticleRenderer::Render(const RenderServices &services, const RenderFrameContext &frameCtx)
 {

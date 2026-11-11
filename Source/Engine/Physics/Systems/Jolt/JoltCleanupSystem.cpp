@@ -1,7 +1,7 @@
 #include "JoltCleanupSystem.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/ECS/Core/CCL_World.h"
-#include "Engine/Transform/Systems/HierarchyCleanupSystem.h" // 「誰が消えるか」の唯一の定義元
+#include "Engine/Transform/Systems/HierarchyCleanupSystem.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -13,6 +13,8 @@ void JoltCleanupSystem::Update(float dt)
     ExecuteCleanup(*m_world);
 }
 
+
+
 void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 {
     bool                hasJolt     = world.HasResource<JoltPhysicsManager *>();
@@ -21,12 +23,8 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 
     JPH::BodyInterface &bodyInterface = joltManager->GetBodyInterface();
 
-    // DestroyTag で絞り込んではいけない。
-    //   DestroyTag は「削除の起点」にしか付かないのに、HierarchyCleanupSystem は
-    //   その子孫まで破棄する。チャンクを DestroyTag で絞ると子の剛体を取りこぼし、
-    //   ECS から消えた後もブロードフェーズに居座り続ける（＝見えないコライダー）。
-    //   実例: Player.json / Muriel.json の武器は親を持つ子Entityで、剛体を持つ。
-    //   そのため判定は HierarchyCleanupSystem と同じ収集関数に一本化する。
+    // DestroyTag で絞らない。DestroyTag は起点にしか付かないので、子の剛体（武器など）を取りこぼし、見えないコライダーが残る
+    // 消える Entity は HierarchyCleanupSystem と同じ関数で求める
     std::vector<CCL::ECS::EntityID> doomed;
     doomed.reserve(64);
     HierarchyCleanupSystem::CollectDoomedEntities(world, doomed);
@@ -51,10 +49,12 @@ void JoltCleanupSystem::ExecuteCleanup(CCL::ECS::World &world)
 
         bodyInterface.DestroyBody(bodyID);
 
-        // Jolt から破棄したらコンポーネント側のIDも無効化する。
-        // エンティティが次フレームまで残っていても、上の有効判定で弾かれ二重破棄にならない。
+        // Jolt から破棄したらコンポーネント側のIDも無効化する
+        // エンティティが次フレームまで残っていても、上の有効判定で弾かれ二重破棄にならない
         bodyID = JPH::BodyID(); // デフォルトコンストラクタは無効なID(cInvalidBodyID)を生成する
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(JoltCleanupSystem, Priority::LogicStage::L07_Cleanup);

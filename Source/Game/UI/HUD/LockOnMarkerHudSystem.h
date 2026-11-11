@@ -1,81 +1,64 @@
 #pragma once
 // ===========================================================================
-// 概要: ロックオン中の敵の体の中心に、小さな照準（2本の弧の輪と中心の◆）を描く System。
+// 概要: ロックオン中の敵の体の中心に、小さな照準（2本の弧の輪と中心の◆）を描く System
 //
 // 責務:
-//   - プレイヤーの lockOnTargetID を読み、対象の体の中心を画面へ投影する
-//   - 小さな輪（左右に切れ目のある2本の弧。ゆっくり回る）と中心の◆を描く
-//   - ロックした瞬間に、開いた輪を白く光らせながら縮め、深紅に落ち着かせる
-//   - 解除したら、少し広がりながら消す。カメラの後ろ・画面の外にいる間は隠す
+//   - ロックオン対象の体の中心を画面へ投影する
+//   - 回る2本の弧と中心の◆を描く
+//   - ロックした瞬間は白く光りながら縮め、解除したら広がりながら消す
+//   - 対象がラッシュを始められる範囲の外なら、くすんだ色にする
 //
-// 備考:
-//   ボスの姿を隠さないよう、画面上の大きさは距離に関係なく一定で小さくする。
-//
-//   弧は細い四角形を円に沿って並べて描く。UI のエンティティは作らず、
-//   収集の帯（R10b_UICollect）で UIDrawList へ直接積む（他の収集 System と同じ帯）。
-//   カメラの行列はそれより前の R01b_CameraBrain で決まるので、同じフレームのカメラに合う。
-//
-//   色は HUD の敵側と同じ深紅（ボスの HP ゲージと同じ）。
+// 備考: UI のエンティティは作らず、UIDrawList へ線を直接積む
+//       見た目と動きの調整値は LockOnMarkerStyleComponent（PlayerHud プレハブの子 LockOnMarker）
+//       範囲の判定はラッシュの開始と同じ IsInRushStartRange を使い、色とラッシュの出方を一致させる
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
+#include "Game/UI/HUD/LockOnMarkerStyleComponent.h"
 
 #include <DirectXMath.h>
 
-class LockOnMarkerHudSystem : public CCL::ECS::IfSystem<LockOnMarkerHudSystem,
-                                                        CCL::ECS::Read<PlayerComponent>,
-                                                        CCL::ECS::Read<TransformComponent>>
+class LockOnMarkerHudSystem : public CCL::ECS::IfSystem<
+    LockOnMarkerHudSystem,
+    CCL::ECS::Read<PlayerComponent>,
+    CCL::ECS::Read<PlayerRushComponent>, // 範囲の距離（startMaxDistance）
+    CCL::ECS::Read<TransformComponent>>
 {
 public:
     LockOnMarkerHudSystem() : IfSystem("LockOnMarkerHudSystem") {}
 
-    // 描画リストは System をまたいで共有する1本の配列で、スケジューラはリソースの共有を見ない。
-    // 同じ帯の収集 System（画像 → 文字 → ゲージの順につないである）の後ろに並べ、同時に積まないようにする
-    std::vector<const char *> GetRunAfter() const override
-    {
-        return {"UIProgressBarCollectSystem"};
-    }
+    // 描画リストは System をまたいで共有する1本の配列で、スケジューラはリソースの共有を見ない
+    // 同じ帯の収集 System の後ろに並べ、同時に積まないようにする
+    std::vector<const char *> GetRunAfter() const override { return {"UIProgressBarCollectSystem"}; }
 
-    void Update(float dt) override; // ロックオンの状態に合わせて、照準を描画リストへ積む
+    void Update(float dt) override;
 
 private:
-    /**
-     * @brief ロックオン対象の体の中心（足元と頭の中点）を画面へ投影する。
-     * @param target ロックオン対象。
-     * @param center 画面座標（px、画面の左上が原点）を受け取る。false のときは書かない。
-     * @return 描ける位置なら true。カメラの後ろ・画面の外・カメラが無いときは false。
-     */
+    // ロックオン対象の体の中心（足元と頭の中点）を画面へ投影する（px、左上が原点）
+    // カメラの後ろ・画面の外・カメラがないときは false を返し、center は書かない
     bool ProjectTarget(CCL::ECS::EntityID target, DirectX::XMFLOAT2 &center) const;
 
-    /**
-     * @brief 線を1本、描画リストへ積む。下に一回り太い暗い縁取りも積む。
-     * @param list  積む先。
-     * @param x     線の中心の X（px、画面の左上が原点）。
-     * @param y     線の中心の Y（px）。
-     * @param len   線の長さ（px）。
-     * @param thick 線の太さ（px）。
-     * @param angle 中心まわりの回転（度）。
-     * @param color 線の色。縁取りの濃さもこの α に合わせる。
-     */
+    // 線を1本、描画リストへ積む。下に一回り太い暗い縁取りも積む
+    // (x, y) は線の中心（px、左上が原点）、angle は中心まわりの回転（度）。縁取りの濃さは color の α に合わせる
     void PushStroke(UIDrawList &list, float x, float y, float len, float thick, float angle,
                     const DirectX::XMFLOAT4 &color) const;
 
+    // 調整値を返す。PlayerHud の子 LockOnMarker がなければ既定値
+    const LockOnMarkerStyleComponent &GetStyle();
+
+    // 対象がラッシュを始められる範囲の外か。プレイヤーか対象の位置が分からなければ false（範囲内の色のまま）
+    bool IsOutOfRushRange(CCL::ECS::EntityID playerID, CCL::ECS::EntityID target) const;
+
+    CCL::ECS::EntityID m_styleID  = CCL::ECS::InvalidEntityID; // 調整値を持つエンティティ（見つけたら持っておく）
     CCL::ECS::EntityID m_target   = CCL::ECS::InvalidEntityID; // 最後に狙った対象
     float              m_lockAge  = 0.0f;                      // 今の対象をロックしてからの秒数
     float              m_presence = 0.0f;                      // 表示の濃さ（0〜1）
     float              m_spin     = 0.0f;                      // 弧の回転角（ラジアン）
-    DirectX::XMFLOAT2  m_center{};                             // 最後に描いた中心（px）。解除後に消えていく間もここに描く
+    float              m_outOfRange = 0.0f;                    // 範囲外の色の混ぜ具合（0 = 範囲内の色、1 = 範囲外の色）
+    DirectX::XMFLOAT2  m_center{};                             // 最後に描いた中心（px）。消えていく間もここに描く
 
-    // --- 調整値 ---
-    static constexpr float kRadius      = 16.0f; // 輪の半径（px）。ボスの姿を隠さない小ささにする
-    static constexpr float kThickness   = 2.0f;  // 弧の太さ（px）
-    static constexpr float kCoreSize    = 5.0f;  // 中心の◆の一辺（px）
-    static constexpr float kAcquireTime = 0.2f;  // ロックした瞬間から、輪が縮みきるまでの時間（秒）
-    static constexpr float kAcquireOpen = 1.5f;  // 縮む前に開いている量（1 + この値 倍の大きさから縮む）
-    static constexpr float kSpinSpeed   = 1.2f;  // 弧の回る速さ（ラジアン/秒）
-    static constexpr float kFadeIn      = 14.0f; // 出る速さ（1/秒）
-    static constexpr float kFadeOut     = 7.0f;  // 消える速さ（1/秒）
-    static constexpr int   kSortOrder   = 90;    // 描画順。他の HUD（HP・切り払い）より奥
+    static constexpr int kSortOrder = 90; // 描画順。他の HUD（HP・切り払い）より奥
 };

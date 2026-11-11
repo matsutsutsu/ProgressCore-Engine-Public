@@ -1,5 +1,6 @@
 #include "JoltCharacterUpdateSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Engine/Physics/JoltIntegration/JoltPhysicsManager.h"
 #include "Engine/Physics/JoltIntegration/JoltCharacterContactListener.h"
 #include "Engine/Physics/JoltIntegration/PhysicsLayers.h"
@@ -14,8 +15,35 @@
 using namespace DirectX::SimpleMath;
 using namespace CCL::ECS;
 
+
+
+std::vector<TypeID> JoltCharacterUpdateSystem::GetReadTypes() const
+{
+    auto types = IfSystem::GetReadTypes();
+    types.push_back(TypeInfo<JoltHandleComponent>::ID()); // プロキシ剛体
+    return types;
+}
+
+
+
+std::vector<TypeID> JoltCharacterUpdateSystem::GetWriteTypes() const
+{
+    auto types = IfSystem::GetWriteTypes();
+    types.push_back(TypeInfo<KnockbackComponent>::ID()); // ノックバックと硬直のタイマー
+    return types;
+}
+
+
+
 void JoltCharacterUpdateSystem::Update(float rawDt)
 {
+    // 処理フロー:
+    // 1. ワープを反映する
+    // 2. 上下の速度（重力・ジャンプ）を決める
+    // 3. 水平の速度（ルートモーション・速度の上書き・歩き）を決め、ノックバックを足す
+    // 4. 移動の予約（MoveTo）か位置で動かす依頼（use3DVelocity）があれば、速度を丸ごと置き換える
+    // 5. 地形と干渉させて動かし、Transform とプロキシ剛体へ書き戻す
+
     if (!m_world->HasResource<JoltPhysicsManager *>())
         return;
     auto               &joltManager   = m_world->GetResource<JoltPhysicsManager *>();
@@ -28,89 +56,73 @@ void JoltCharacterUpdateSystem::Update(float rawDt)
                       CharacterMovementComponent         &movement,
                       const JoltCharacterConfigComponent &config,
                       const TimeStateComponent           &time) {
-        if (!handle.character)
-            return;
         JPH::CharacterVirtual *ch = handle.character.GetPtr();
 
-        // dt を 0.0001〜0.0333 秒に収める。
-        // rawDt(実時間)ではなく time.localDt(このキャラの実効dt)で積分する。
-        //   ヒットストップ/スロー/ポーズといった時間スケールを移動にも反映させるため。
-        //   実時間で積分すると「タイマーは localDt・移動は実時間」になり、
-        //   ジャスト回避のスロー中にダッシュが何倍にも伸びる。
-        float safeDt = (std::max)(0.0001f, (std::min)(time.localDt, 0.0333f));
-        // presenceプロキシ(Kinematic剛体)の MoveKinematic 用 dt。
-        // 物理本体の Step(dt) は常に実時間で回る（JoltStepSystem は time スケールを掛けない）。
-        //   MoveKinematic は「dt 秒で目標へ到達する速度」を内部で速度化するため、ここに
-        //   safeDt(スロー中は極小) を渡すと、その速度を Step 側が実dtで積分して 10 倍以上
-        //   オーバーシュートし、プロキシが無限遠へ飛んで QuadTree の AABB が NaN/Inf 化して
-        //   ブロードフェーズがクラッシュする。そのためプロキシの追従には実dtを使う。
-        float moveDt     = (std::max)(0.0001f, (std::min)(rawDt, 0.0333f));
+        // 積分にはこのキャラの時計の dt を使う
+        // ヒットストップやスローを移動にも効かせる（実時間だとスロー中にダッシュが伸びる）
+        float safeDt = CharacterStepDt(time.localDt);
+
+        // プロキシ剛体の追従には実時間の dt を使う
+        // 物理の Step は実時間で回るので、スローの dt を渡すとプロキシが飛んでいく
+        float moveDt     = CharacterStepDt(rawDt);
         bool  isGrounded = (ch->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround);
 
-        // 1. ワープ処理の解決
+        // ---------------------------------------------------------
+        // 1. ワープ
+        // ---------------------------------------------------------
+
         ApplyTeleportIfNeeded(trans, ch);
 
-        // 2. 鉛直方向（重力とジャンプ）の計算
+        // ---------------------------------------------------------
+        // 2. 上下の速度
+        // ---------------------------------------------------------
+
         float currentVy = ch->GetLinearVelocity().GetY();
         float newVy     = CalculateVerticalVelocity(safeDt, currentVy, config, movement, isGrounded, gravityY);
 
-        // 3. 水平方向（慣性付きの加減速）の計算
+        // ---------------------------------------------------------
+        // 3. 水平の速度
+        // ---------------------------------------------------------
+
         Vector3 newHorizontalVel = CalculateHorizontalVelocity(safeDt, config, movement);
+        ApplyKnockback(id, safeDt, newHorizontalVel);
 
-        // 3.5 ノックバック（被弾で書き込まれた速度を減衰させつつ水平速度へ加算）。
-        //     CharacterVirtual 経由で動かすので壁抜けしない。残り時間比で線形に減衰させ、
-        //     命中直後が最大 → 0 へ。KnockbackComponent は被弾側に常設で付ける。
-        if (auto *kb = m_world->GetComponent<KnockbackComponent>(id))
-        {
-            if (kb->timer > 0.0f)
-            {
-                const float k = (kb->duration > 0.0f) ? (kb->timer / kb->duration) : 1.0f; // 1→0
-                newHorizontalVel.x += kb->velocity.x * k;
-                newHorizontalVel.z += kb->velocity.z * k;
-
-                kb->timer -= safeDt;
-                if (kb->timer <= 0.0f)
-                {
-                    kb->timer    = 0.0f;
-                    kb->velocity = Vector3::Zero;
-                }
-            }
-
-            // 操作を受け付けない硬直。localDt 基準なのでヒットストップ中は凍り、
-            // 止まっている間に硬直だけ消化されることがない。
-            if (kb->stunTimer > 0.0f)
-            {
-                kb->stunTimer -= safeDt;
-                if (kb->stunTimer < 0.0f)
-                    kb->stunTimer = 0.0f;
-            }
-        }
+        // ---------------------------------------------------------
+        // 4. 位置で動かす依頼
+        // ---------------------------------------------------------
 
         JPH::Vec3 finalVel(newHorizontalVel.x, newVy, newHorizontalVel.z);
 
-        // アクション層からの3D速度上書き（切り払いの3D突進など）。重力(newVy)も水平計算も
-        // 無視して velocity3D を丸ごと使う＝向いた方向へ上下含めて真っ直ぐ飛ぶ。
+        // 移動の予約があれば、このフレームにいるべき位置へ届く速度を依頼にする
+        ApplyMoveReservation(movement, ch, time.localDt);
+
+        // 位置で動かす技（跳躍・突進など）の速度で、丸ごと置き換える
+        // 重力・ジャンプ・ノックバックも効かない。1フレーム限りの依頼なので読んだら戻す
         if (movement.use3DVelocity)
         {
             finalVel                 = JPH::Vec3(movement.velocity3D.x, movement.velocity3D.y, movement.velocity3D.z);
-            movement.currentVelocity = movement.velocity3D; // 突進解除後の慣性引き継ぎ用に更新
-            movement.use3DVelocity   = false;               // 1フレーム限りの依頼として消費する
+            movement.currentVelocity = movement.velocity3D; // 依頼が終わった後に慣性を引き継ぐ
+            movement.use3DVelocity   = false;
         }
 
         ch->SetLinearVelocity(finalVel);
 
-        // 4. 物理更新と Transform / presenceプロキシへの同期
-        //    CharacterVirtual の積分は safeDt(スロー反映)、プロキシ追従は moveDt(実時間)。
+        // ---------------------------------------------------------
+        // 5. 地形と干渉させて動かす
+        // ---------------------------------------------------------
+
         UpdatePhysicsAndSync(safeDt, moveDt, joltManager, ch, config, trans, id);
     });
 }
+
+
 
 void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans, JPH::CharacterVirtual *ch)
 {
     if (trans.isTeleported)
     {
-        // Jolt はワールド座標で受け取る。trans.position はローカル欄なので、
-        // 親を持つキャラでも正しくなるよう worldMatrix 由来の値を渡す。
+        // Jolt にはワールド座標を渡す
+        // trans.position は親からの相対なので、親を持つキャラでずれる
         const DirectX::XMFLOAT3 worldPos = trans.GetWorldPosition();
         const DirectX::XMFLOAT4 worldRot = trans.GetWorldRotation();
         ch->SetPosition(JPH::RVec3(worldPos.x, worldPos.y, worldPos.z));
@@ -119,13 +131,15 @@ void JoltCharacterUpdateSystem::ApplyTeleportIfNeeded(TransformComponent &trans,
     }
 }
 
+
+
 float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float currentVy, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement, bool isGrounded, float gravityY)
 {
     float vy = currentVy;
     if (isGrounded && vy <= 0.0f) vy = 0.0f;
 
-    // ジャンプ成立は1フレーム限りの命令。読んだ側で消費することで、命令を出した側
-    //（PlayerJumpFacingSystem 等）が不成立フレームに false を書き戻す責任を持たなくてよい。
+    // ジャンプが決まったフレームだけ、初速を与える
+    // 読んだらここで戻すので、依頼した側は戻さなくてよい
     if (movement.jumpImpulse)
     {
         movement.jumpImpulse = false;
@@ -133,17 +147,18 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
         isGrounded           = false; // ジャンプした瞬間は空中扱いにする
     }
 
-    // 空中の時のみ重力を適用する
+    // 空中のときだけ重力を掛ける
     if (!isGrounded)
     {
-        // 落下中は重力を強める（上昇より落下を速くして着地を締める）
+        // 落下中は重力を強める
+        // 上昇より落下を速くして、着地を締める
         float currentGravityScale = config.gravityScale;
         if (vy < 0.0f)
         {
             currentGravityScale = config.fallGravityScale;
         }
 
-        // ジャンプ頂点付近は重力を弱めて少し浮かせる（Apex Hang Time）
+        // ジャンプの頂点付近は重力を弱め、少し浮かせる
         if (std::abs(vy) < config.apexVelocityThreshold)
         {
             currentGravityScale = config.apexGravityScale;
@@ -155,99 +170,205 @@ float JoltCharacterUpdateSystem::CalculateVerticalVelocity(float safeDt, float c
     return vy;
 }
 
+
+
 DirectX::SimpleMath::Vector3 JoltCharacterUpdateSystem::CalculateHorizontalVelocity(float safeDt, const JoltCharacterConfigComponent &config, CharacterMovementComponent &movement)
 {
-    // 速度上書きは1フレーム限りの依頼として、読んだ時点で既定へ戻す。
-    //   上書きしたい側は「効かせたいフレームに毎回書く」だけでよく、離脱経路ごとに
-    //   -1.0f を書き戻す必要がない（早期 return で書き忘れると「ずっと速い／ずっと
-    //   止まる」が残り続ける）。
+    // 速度の上書きを読み、すぐ既定値へ戻す
+    // 依頼した側は効かせたいフレームに毎回書くだけでよく、戻し忘れが起きない
     const float requestedSpeed = movement.overrideSpeed;
     movement.overrideSpeed     = -1.0f;
 
-    // 1. ルートモーション中: 慣性(Lerp)を殺し、アニメーションの速度を100%適用する
+    // ルートモーション中は、慣性を付けずにアニメの速度をそのまま使う
     if (movement.isRootMotionActive)
     {
         movement.currentVelocity = movement.rootMotionVelocity;
         return movement.currentVelocity;
     }
 
-    // 2. 通常移動 / ダッシュ中: 目標速度へ Lerp で寄せて慣性を付ける
+    // 目標の速さを決める。上書きがあればその速さ、なければ歩く速さ
+    // スティックの傾き（moveIntensity）は歩きにだけ掛ける。上書きは常に全開で出す
     float targetSpeed = config.walkSpeed;
 
     if (requestedSpeed >= 0.0f)
     {
-        // ダッシュ等の上書き速度は「全開」で出したいので、アナログ傾き量の影響を受けない。
         targetSpeed = requestedSpeed;
     }
     else
     {
-        // 通常歩行のみ、スティックの傾き量(0〜1)を速度割合として掛ける＝アナログ段階移動。
-        //   キーボードや AI は moveIntensity=1.0 のままなので従来どおり最大速度で歩く。
         targetSpeed *= std::clamp(movement.moveIntensity, 0.0f, 1.0f);
     }
 
-    // アクション層の速度倍率(チェイン段数などによる移動速度上昇)。負値の暴走を防ぐためクランプ。
+    // 速度倍率（チェイン段数による移動速度上昇など）を掛ける
+    // 負の値は 1 として扱う
     targetSpeed *= (movement.speedMultiplier > 0.0f) ? movement.speedMultiplier : 1.0f;
 
     Vector3 targetVelocity = movement.desiredVelocity * targetSpeed;
 
-    // 加速と減速でレートを分ける（config で調整可能）。目標速度が現在速度以上なら加速、
-    // 下回るなら減速レートを使う。これで「すぐ最高速へ乗る」「狙ったぶんだけ滑って止まる」を
-    // 別々に調整できる。
+    // 速くなるときは加速、遅くなるときは減速の速さで寄せる
+    // 「すぐ最高速に乗る」と「狙ったぶんだけ滑って止まる」を別々に調整できる
     const float curSpeed = movement.currentVelocity.Length();
     const float tgtSpeed = targetVelocity.Length();
     const float rate     = (tgtSpeed >= curSpeed) ? config.acceleration : config.deceleration;
 
-    // Lerp の係数は [0,1] に収める。rate * safeDt が 1 を超えると目標を通り越して
-    //   逆方向へ飛び、係数が大きいほど発振する（rate=30, dt=0.0333 で既に 1.0）。
-    //   config で加減速を上げたときに「速くなる」ではなく「暴れる」になるのを防ぐ。
+    // 寄せる割合を 1 までに収める
+    // 1 を超えると目標を通り越し、加減速を上げたときに発振する
     const float t            = (std::min)(rate * safeDt, 1.0f);
     movement.currentVelocity = Vector3::Lerp(movement.currentVelocity, targetVelocity, t);
 
     return movement.currentVelocity;
 }
 
+
+
+void JoltCharacterUpdateSystem::ApplyKnockback(EntityID id, float safeDt, Vector3 &horizontalVel)
+{
+    auto *kb = m_world->GetComponent<KnockbackComponent>(id);
+    if (!kb) return;
+
+    // 命中直後が最大で、残り時間の比で 0 まで弱めて足す
+    // CharacterVirtual の速度として動かすので、壁抜けしない
+    if (kb->timer > 0.0f)
+    {
+        const float k = (kb->duration > 0.0f) ? (kb->timer / kb->duration) : 1.0f; // 1→0
+        horizontalVel.x += kb->velocity.x * k;
+        horizontalVel.z += kb->velocity.z * k;
+
+        kb->timer -= safeDt;
+        if (kb->timer <= 0.0f)
+        {
+            kb->timer    = 0.0f;
+            kb->velocity = Vector3::Zero;
+        }
+    }
+
+    // 操作を受け付けない硬直を減らす
+    // このキャラの dt で減らすので、ヒットストップ中は止まる
+    if (kb->stunTimer > 0.0f)
+    {
+        kb->stunTimer -= safeDt;
+        if (kb->stunTimer < 0.0f)
+            kb->stunTimer = 0.0f;
+    }
+}
+
+
+
+void JoltCharacterUpdateSystem::ApplyMoveReservation(CharacterMovementComponent &movement, const JPH::CharacterVirtual *ch, float localDt)
+{
+    CharacterMoveReservation &r = movement.reservation;
+
+    // 終わった次のフレームは、速度を 0 にして止める
+    // 運んだ速度が残ると、着地した後に地面を滑る（続けて予約していれば、ここには来ない）
+    if (r.stopNext)
+    {
+        r.stopNext             = false;
+        r.leftover             = 0.0f;
+        movement.use3DVelocity = true;
+        movement.velocity3D    = Vector3::Zero;
+        return;
+    }
+
+    if (!r.active) return;
+
+    const JPH::RVec3 p = ch->GetPosition();
+    const Vector3    now(static_cast<float>(p.GetX()), static_cast<float>(p.GetY()), static_cast<float>(p.GetZ()));
+
+    // 予約した後の最初のフレームに、今の物理の位置を始点にする
+    // Hold は始点そのものに留める
+    if (!r.started)
+    {
+        r.start   = now;
+        r.started = true;
+        if (r.kind == MoveReservationKind::Hold) r.target = now;
+    }
+
+    // 進み具合 u（0=始め, 1=終わり）を出す
+    r.elapsed += localDt;
+    const float u = (r.duration > 0.0f) ? (std::min)(1.0f, r.elapsed / r.duration) : 1.0f;
+
+    Vector3 v;
+    if (r.kind == MoveReservationKind::InDirection)
+    {
+        // 決めた向きへ、速さを直線で変えながら走る
+        v = r.direction * (r.startSpeed + (r.endSpeed - r.startSpeed) * u);
+    }
+    else
+    {
+        // 水平は進み方に合わせ、高さは途中で浮かせる
+        // 1-(1-u)^2 は u=1 で傾き 0、u^2 は u=0 で傾き 0、4h*u(1-u) は両端で 0
+        float eased = u;
+        if (r.options.ease == MoveEase::EaseOut) eased = 1.0f - (1.0f - u) * (1.0f - u);
+        if (r.options.ease == MoveEase::EaseIn) eased = u * u;
+
+        Vector3 want = Vector3::Lerp(r.start, r.target, eased);
+        want.y += 4.0f * r.options.height * u * (1.0f - u);
+
+        // いるべき位置へ届く速度。積分と同じ dt で割る
+        // 上限で丸め、引っかかった遅れを1フレームで取り戻して瞬間移動に見えないようにする
+        v = (want - now) / CharacterStepDt(localDt);
+        if (v.LengthSquared() > r.options.maxSpeed * r.options.maxSpeed)
+        {
+            v.Normalize();
+            v *= r.options.maxSpeed;
+        }
+    }
+
+    movement.use3DVelocity = true;
+    movement.velocity3D    = v;
+
+    // 終わった。次のフレームに速度を 0 にし、余った時間を次の予約へ渡せるようにする
+    if (u >= 1.0f)
+    {
+        r.active   = false;
+        r.stopNext = true;
+        r.leftover = (std::max)(0.0f, r.elapsed - r.duration);
+    }
+}
+
+
+
 void JoltCharacterUpdateSystem::UpdatePhysicsAndSync(float safeDt, float moveDt, JoltPhysicsManager *joltManager, JPH::CharacterVirtual *ch, const JoltCharacterConfigComponent &config, TransformComponent &trans, EntityID id)
 {
     JPH::PhysicsSystem         *physicsSystem = joltManager->GetPhysicsSystem();
-    JoltHandleComponent        *kinBody       = m_world->GetComponent<JoltHandleComponent>(id); // presenceプロキシ
+    JoltHandleComponent        *kinBody       = m_world->GetComponent<JoltHandleComponent>(id); // プロキシ剛体
     JPH::IgnoreSingleBodyFilter bodyFilter(kinBody ? kinBody->bodyID : JPH::BodyID());          // 自分のプロキシは無視
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
     updateSettings.mWalkStairsStepUp     = JPH::Vec3(0.0f, config.maxStepHeight, 0.0f);
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0.0f, -config.maxStepHeight, 0.0f);
 
-    // キャラクター用の接触リスナー（剛体側と同じバッファへ蓄積）。
+    // 接触をイベントにするリスナーを、動かす間だけ付ける
+    // 剛体側と同じバッファへ積み、物理の後でまとめて配送する
     JoltCharacterContactListener contactListener(joltManager->GetContactListener(), id, &physicsSystem->GetBodyInterface());
     ch->SetListener(&contactListener);
 
-    // キャラ自身のレイヤーは config.objectLayer に統一（presenceプロキシと同じ層で世界を見る）
+    // 地形と干渉させて動かす
+    // キャラが世界を見る層は、プロキシ剛体と同じ config.objectLayer
     ch->ExtendedUpdate(
         safeDt, physicsSystem->GetGravity(), updateSettings,
         physicsSystem->GetDefaultBroadPhaseLayerFilter(config.objectLayer),
         physicsSystem->GetDefaultLayerFilter(config.objectLayer),
         bodyFilter, {}, *joltManager->GetTempAllocator());
 
-    // リスナーはスタック変数なので、スコープを抜ける前に必ず外す
+    // リスナーはスタック変数なので、抜ける前に必ず外す
     ch->SetListener(nullptr);
 
+    // 位置だけを Transform へ書き戻す（向きはゲーム側が書く）
+    // CharacterVirtual はワールド座標なので、親を考えてローカルへ直して書く
     JPH::RVec3 pos = ch->GetPosition();
-    // CharacterVirtual が返すのはワールド座標。position はローカル欄なので変換して書く
-    // （回転はゲーム層が別途 ch->SetRotation で流しているのでここでは触らない）。
     TransformUpdateSystem::WriteWorldPosition(*m_world, id, trans,
                                               {pos.GetX(), pos.GetY(), pos.GetZ()});
 
-    // presence プロキシ（Kinematic 剛体）を CharacterVirtual に追従させる。
-    //   SetPosition のテレポートではなく MoveKinematic を使うことで、
-    //   「dt後に目標へ到達する速度」が乗り、他の動的ボディとの接触に相対速度が反映される。
-    //   これで攻撃判定/レイ/敵からキャラクターを検知できる。
+    // プロキシ剛体を CharacterVirtual に追従させる
+    // MoveKinematic で動かすと速度が乗り、攻撃判定やレイから正しく見える
     if (kinBody)
     {
         JPH::Quat joltRot = ch->GetRotation();
-        // 実時間(moveDt)で追従させる。Step が実dtで速度を積分するため、ここも実dtで
-        //   速度化しないとスロー中にオーバーシュートしてプロキシが飛ぶ（QuadTreeクラッシュ）。
         joltManager->GetBodyInterface().MoveKinematic(kinBody->bodyID, pos, joltRot, moveDt);
     }
 }
+
+
 
 REGISTER_LOGIC_SYSTEM(JoltCharacterUpdateSystem, Priority::LogicStage::L03_PrePhysics);

@@ -1,20 +1,20 @@
 #include "SceneManager.h"
 #include "SceneFactory.h"
 
-// 具体シーンは各 .cpp の REGISTER_SCENE で SceneFactory へ自己登録される。
-// ここで include すると Engine→Game 依存になるため、名前(文字列)だけで扱う。
-#include "Engine/Scene/SceneLoading.h" // 非同期ロード用のローディングシーン
+// 具体シーンは各 .cpp の REGISTER_SCENE で SceneFactory へ自己登録される
+// ここで include すると Engine→Game 依存になるため、名前(文字列)だけで扱う
+#include "Engine/Scene/SceneLoading.h"
 
 #include "Engine/Serialization/Serializer/SceneSerializer.h"
 #include "Engine/Serialization/Registry/ComponentRegistry.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 
-// フェード描画用（◆タイルワイプ）。
+// フェード描画用（◆タイルワイプ）
 #include "Engine/Graphics/RHI/Graphics.h"
-#include "Engine/Core/Math/Interpolation.h" // SmoothStep()
+#include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Graphics/Renderer/Sprite.h"
-#include "Engine/Audio/IAudioAPI.h" // 画面切り替えの効果音
+#include "Engine/Audio/IAudioAPI.h"
 
 // ロード前検証（破壊前のファイル存在確認）に使用
 #include "Engine/Platform/Core/FileSystem.h"
@@ -29,12 +29,11 @@
 
 #include "tracy/Tracy.hpp"
 
-#include <algorithm> // std::clamp
-#include <cmath>     // std::sin / std::atan
+#include <algorithm>
+#include <cmath>
 
 using namespace CCL::ECS;
 
-// m_fadeQuad（unique_ptr<Sprite>）の破棄に Sprite の完全型が要るので、ここで定義する
 SceneManager::SceneManager()  = default;
 SceneManager::~SceneManager() = default;
 
@@ -47,11 +46,11 @@ void SceneManager::Initialize()
     ZoneScopedN("SceneManager::Initialize");
 
     // シーンの登録は、各シーンの .cpp 末尾にある REGISTER_SCENE マクロが
-    // 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）。
-    // ここでは名前で参照するだけなので、具体的なシーンのヘッダは要らない。
+    // 静的初期化時に済ませている（"Editor" / "Particle" / "Title" / "Game"）
+    // ここでは名前で参照するだけなので、具体的なシーンのヘッダは要らない
 
-    // 最初に表示するシーン。製品ビルドはタイトルから始める。
-    // 「起動して最初に何が出るか」も作品の一部なので、ゲームへ直行させない。
+    // 最初に表示するシーン。製品ビルドはタイトルから始める
+    // 「起動して最初に何が出るか」も作品の一部なので、ゲームへ直行させない
 #ifdef SHIPPING_BUILD
     constexpr const char *kStartupScene = "Title";
 #else
@@ -59,15 +58,17 @@ void SceneManager::Initialize()
 #endif
     ChangeSceneAsync(kStartupScene);
 
-    // 起動直後は、ふだんの非同期遷移で「黒を保持して裏読みしている途中」と同じ状態から始める。
-    // 黒の上にスプラッシュ（ローディング画面）が出て、読み終わったら次のシーンへ1回だけ明転する。
+    // 起動直後は、ふだんの非同期遷移で「黒を保持して裏読みしている途中」と同じ状態から始める
+    // 黒の上にスプラッシュ（ローディング画面）が出て、読み終わったら次のシーンへ1回だけ明転する
 
-    // 黒からのフェードインで始めると、読み終わったときに黒い画面の上でもう一度暗転し直すことになる。
-    // その間、何も映らない黒い時間が挟まる。
+    // 黒からのフェードインで始めると、読み終わったときに黒い画面の上でもう一度暗転し直すことになる
+    // その間、何も映らない黒い時間が挟まる
     m_fadeAlpha = 1.0f;
     m_fade      = FadeState::Hold;
     m_asyncHold = true;
 }
+
+
 
 void SceneManager::FixedUpdate(float fixedTime)
 {
@@ -78,31 +79,33 @@ void SceneManager::FixedUpdate(float fixedTime)
     }
 }
 
+
+
 void SceneManager::Update(float elapsedTime)
 {
     ZoneScopedN("SceneManager::Update");
 
     // フェードを先に進める。黒に達した瞬間に「予約された切替」を発火し、
-    // nextScene をセットするので、直後の切替ブロックが同じフレームで処理する。
+    // nextScene をセットするので、直後の切替ブロックが同じフレームで処理する
     // （黒で完全に隠れている間に重い切替・初期化が走る＝ポップインが見えない）
     AdvanceFade(elapsedTime);
 
     if (nextScene != nullptr)
     {
-        // シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する。
+        // シーン切替フレーム（起動直後もここ）。重い初期化が集中するので個別に計測する
         ZoneScopedN("SceneManager: Scene Switch");
 
         Clear();
 
         // 切替の通し番号を進める。World もエンティティも作り直されるので、
         // 前のシーンを指していた参照（エディタの Undo 履歴・選択）は
-        // ここを境に全部無効になる。
+        // ここを境に全部無効になる
         ++m_sceneSerial;
 
         currentScene = nextScene;
         nextScene    = nullptr;
 
-        // 1段階目: 重いデータのロード（Initialize）。
+        // 1段階目: 重いデータのロード（Initialize）
         // SceneLoading 経由で裏読み済みなら IsReady() が true なので飛ばす
         if (!currentScene->IsReady())
         {
@@ -114,8 +117,8 @@ void SceneManager::Update(float elapsedTime)
             currentScene->SetReady();
         }
 
-        // 2段階目: GPU へのセットアップ（Start）。
-        // 必ずメインスレッドのこのタイミングで1回だけ呼ばれる。
+        // 2段階目: GPU へのセットアップ（Start）
+        // 必ずメインスレッドのこのタイミングで1回だけ呼ばれる
         // dc->Map など DeviceContext を使う処理はここで行う
         {
             ZoneScopedN("Scene::Start (GPU setup)");
@@ -129,6 +132,8 @@ void SceneManager::Update(float elapsedTime)
     }
 }
 
+
+
 void SceneManager::Render()
 {
     if (currentScene != nullptr)
@@ -136,7 +141,7 @@ void SceneManager::Render()
         currentScene->Render();
     }
 
-    // フェードの黒矩形は最前面。シーンの描画（UI 含む）の後に全ての上へ被せる。
+    // フェードの黒矩形は最前面。シーンの描画（UI 含む）の後にすべての上へ被せる
     // BaseScene 側には書かず、遷移の所有者であるここで一元的に描く
     DrawFade();
 
@@ -147,6 +152,8 @@ void SceneManager::Render()
     }
 }
 
+
+
 void SceneManager::DrawGUI()
 {
     if (currentScene != nullptr)
@@ -154,6 +161,8 @@ void SceneManager::DrawGUI()
         currentScene->DrawGUI();
     }
 }
+
+
 
 void SceneManager::Clear()
 {
@@ -164,13 +173,12 @@ void SceneManager::Clear()
         currentScene = nullptr;
     }
 
-    // SceneManager 自身は Meyer's Singleton（static ローカル変数）のため、
-    // このインスタンスの実体の破棄は wWinMain リターン後の静的破棄タイミングまで
-    // 起きない＝Graphics::Shutdown()（デバイス破棄・リークレポート）より後になる。
-    // m_fadeQuad はここで明示的に解放しておかないと、GraphicsDevice::Shutdown()
-    // の ReportLiveDeviceObjects で「真のリーク」として誤検出されてしまう。
+    // SceneManager は static のローカル変数なので、破棄は Graphics::Shutdown の後になる
+    // ここで解放しないと、ReportLiveDeviceObjects が m_fadeQuad をリークとして報告する
     m_fadeQuad.reset();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // シーンファイルの保存・読み込み
@@ -184,11 +192,13 @@ void SceneManager::SaveScene(CCL::ECS::World *world, const std::string &filepath
     SceneSerializer::Serialize(world, filepath);
 }
 
+
+
 void SceneManager::LoadScene(CCL::ECS::World *world, const std::string &filepath)
 {
-    // 0. 破棄する前に、ファイルが読めるかを確かめる。
+    // 0. 破棄する前に、ファイルが読めるかを確かめる
     //   この関数は「全破棄 → デシリアライズ」の順で動くので、ファイルが欠けている/空だと
-    //   破棄だけが実行され、World が丸ごと消える（実際に全 Entity が消える事故が起きた）。
+    //   破棄だけが実行され、World が丸ごと消える（実際に全 Entity が消える事故が起きた）
     //   読めないと分かったら、今の World には一切手を付けずに中止する
     const std::string jsonStr = FileSystem::ReadAllText(filepath);
     if (jsonStr.empty())
@@ -221,7 +231,7 @@ void SceneManager::LoadScene(CCL::ECS::World *world, const std::string &filepath
         }
     }
 
-    // 2. 後片付けの System を直接呼び、1フレーム待たずに今すぐ物理空間とメモリから消す。
+    // 2. 後片付けの System を直接呼び、1フレーム待たずに今すぐ物理空間とメモリから消す
     //    DestroyTag の付与は遅延されるので、先に確定させないと下の Cleanup が対象を見つけられない
     world->ScrutinyAndApply();
 
@@ -237,11 +247,13 @@ void SceneManager::LoadScene(CCL::ECS::World *world, const std::string &filepath
     // 積んだ破棄予約を今すぐ確定させる
     world->ScrutinyAndApply();
 
-    // 3. ファイルから Entity を作り直す。
+    // 3. ファイルから Entity を作り直す
     //    ファイル内の番号で書かれた親子参照（EntityLink）は、Deserialize の中で
     //    新しい EntityID へ自動で読み替えられる
     SceneSerializer::Deserialize(world, filepath);
 }
+
+
 
 // ---------------------------------------------------------------------------
 // シーン切り替え
@@ -259,6 +271,8 @@ void SceneManager::ChangeScene(const std::string &name)
     }
 }
 
+
+
 void SceneManager::ChangeSceneAsync(const std::string &name)
 {
     // 対象シーンを生成する（この時点では Initialize を走らせないので軽い）
@@ -270,9 +284,11 @@ void SceneManager::ChangeSceneAsync(const std::string &name)
     CCL_LOG_INFO(LogCategory::Core, "========== シーン切り替え: %s ==========", name.c_str());
 
     // ローディング画面で包む。target の重い Initialize() は
-    // SceneLoading がワーカースレッドで裏読みし、完了後に本線へ切り替える。
+    // SceneLoading がワーカースレッドで裏読みし、完了後に本線へ切り替える
     ChangeScene(new SceneLoading(target));
 }
+
+
 
 void SceneManager::ChangeScene(Scene *scene)
 {
@@ -284,6 +300,8 @@ void SceneManager::ChangeScene(Scene *scene)
 
     nextScene = scene;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 画面遷移フェード
@@ -303,19 +321,21 @@ bool SceneManager::RequestTransition(const std::string &name, bool async)
     return true;
 }
 
+
+
 bool SceneManager::RequestTransition(Scene *readyScene)
 {
     if (!readyScene) return false;
 
-    // 非同期ロードの黒保持中に SceneLoading から呼ばれるケース。
-    //   すでに画面は黒（alpha=1）で、ローディングも黒の裏で完了している。
+    // 非同期ロードの黒保持中に SceneLoading から呼ばれるケース
+    //   すでに画面は黒（alpha=1）で、ローディングも黒の裏で完了している
     //   ここで「新たに暗転し直す」とチラつくので、暗転はせず本命へ差し替えて
-    //   そのままフェードイン（黒→ゲーム）する。
+    //   そのままフェードイン（黒→ゲーム）する
     if (m_asyncHold)
     {
         ChangeScene(readyScene); // nextScene に本命をセット（次の Update で切り替わる）
         m_asyncHold = false;
-        m_fade      = FadeState::In; // alpha は 1 のまま → ゲームへ1回だけ明転
+        m_fade      = FadeState::In; // alpha は 1 のまま、ゲームへ1回だけ明転する
         return true;
     }
 
@@ -331,9 +351,11 @@ bool SceneManager::RequestTransition(Scene *readyScene)
     return true;
 }
 
+
+
 void SceneManager::PlayTransitionSound()
 {
-    // 音声は World のリソースにある。今のシーンの World から引く（無ければ鳴らさない）。
+    // 音声は World のリソースにある。今のシーンの World から引く（なければ鳴らさない）
     CCL::ECS::World *world = currentScene ? currentScene->GetWorld() : nullptr;
     if (!world || !world->HasResource<std::shared_ptr<IAudioAPI>>())
     {
@@ -345,12 +367,16 @@ void SceneManager::PlayTransitionSound()
     }
 }
 
+
+
 void SceneManager::FadeInFromBlack(float dur)
 {
     m_fadeInDur = (dur > 0.0001f) ? dur : 0.0001f;
     m_fadeAlpha = 1.0f; // 黒から
     m_fade      = FadeState::In;
 }
+
+
 
 void SceneManager::AdvanceFade(float dt)
 {
@@ -370,7 +396,7 @@ void SceneManager::AdvanceFade(float dt)
 
     case FadeState::Hold:
         // 非同期ロード中は黒のまま待機（明転しない）。ロード完了時に
-        // SceneLoading が RequestTransition(Scene*) を呼び、そこで In へ移る。
+        // SceneLoading が RequestTransition(Scene*) を呼び、そこで In へ移る
         if (m_asyncHold) break;
 
         // 通常（同期切り替え）は黒を少しタメてから明転する。この裏で新シーンの
@@ -395,6 +421,8 @@ void SceneManager::AdvanceFade(float dt)
     }
 }
 
+
+
 void SceneManager::BeginPendingChange()
 {
     if (!m_pendingValid) return;
@@ -408,7 +436,7 @@ void SceneManager::BeginPendingChange()
     }
     else if (m_pendingAsync)
     {
-        // 名前 + 非同期: 黒のまま裏読みする（ローディング画面は見せない）。
+        // 名前 + 非同期: 黒のまま裏読みする（ローディング画面は見せない）
         // 完了まで黒を保持し、本命が用意できたら「1回だけ」フェードインする
         ChangeSceneAsync(m_pendingName);
         m_asyncHold = true;
@@ -420,6 +448,8 @@ void SceneManager::BeginPendingChange()
     }
 }
 
+
+
 void SceneManager::DrawFade()
 {
     // 処理フロー:
@@ -430,11 +460,10 @@ void SceneManager::DrawFade()
     // 5. 黒の◆を描く
     // 6. 波の先頭に光の筋を描く
 
-    // 【備考】
-    //   ◆タイルワイプ: 画面を◆の格子に区切り、左から右へ斜めに、◆が育って画面を埋める（暗転）。
-    //   明転は同じ向きのまま◆が縮んで消える。左から先に晴れ、動きが右へ続く。
+    // ◆タイルワイプ: 画面を◆の格子に区切り、左から右へ斜めに、◆が育って画面を埋める（暗転）
+    // 明転は同じ向きのまま◆が縮んで消える。左から先に晴れ、動きが右へ続く
 
-    // 透明なら描かない。
+    // 透明なら描かない
     if (m_fadeAlpha <= 0.001f)
     {
         return;
@@ -451,16 +480,16 @@ void SceneManager::DrawFade()
     // 1. 合成・深度と道具
     // ---------------------------------------------------------
 
-    // 半透明合成・深度無効を明示的に設定し、他のパスの状態に依存しないようにする。
+    // 半透明合成・深度無効を明示的に設定し、他のパスの状態に依存しないようにする
 
-    // 合成は RT の α を書き換えない UITransparency にする。
-    // 縁の半透明の◆が α に穴を開けると、エディタの GameView でその部分だけ後ろのウィンドウが透ける。
+    // 合成は RT の α を書き換えない UITransparency にする
+    // 縁の半透明の◆が α に穴を開けると、エディタの GameView でその部分だけ後ろのウィンドウが透ける
     dc->OMSetBlendState(
         gfx.GetRenderState()->GetBlendState(BlendState::UITransparency), nullptr, 0xffffffff);
     dc->OMSetDepthStencilState(
         gfx.GetRenderState()->GetDepthStencilState(DepthState::NoTestNoWrite), 0);
 
-    // 白のテクスチャの Sprite。色を掛けて単色の四角形を描く。
+    // 白のテクスチャの Sprite。色を掛けて単色の四角形を描く
     if (!m_fadeQuad)
     {
         m_fadeQuad = std::make_unique<Sprite>(gfx.GetDevice());
@@ -473,7 +502,7 @@ void SceneManager::DrawFade()
     // 2. 完全な黒
     // ---------------------------------------------------------
 
-    // 暗転しきった間・ローディング中は、1枚の黒で確実に覆う。
+    // 暗転しきった間・ローディング中は、1枚の黒で確実に覆う
     if (m_fadeAlpha >= 0.999f)
     {
         m_fadeQuad->Render(dc, 0.0f, 0.0f, 0.0f, sw, sh, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -495,19 +524,19 @@ void SceneManager::DrawFade()
     const float cell      = kCellPx * k;
     const float span      = sw + sh * kSlope; // u 座標 0〜1 に対応する画面上の長さ
 
-    // 各セルの育ち具合（0〜1）。暗転では 1 が黒で覆った状態。明転では反転して、先に波が来た所から晴れる。
+    // 各セルの育ち具合（0〜1）。暗転では 1 が黒で覆った状態。明転では反転して、先に波が来た所から晴れる
     auto coverage = [&](float x, float y) {
         const float u = (x + y * kSlope) / span;
         const float t = std::clamp((front - u) / kBand, 0.0f, 1.0f);
         return revealing ? 1.0f - t : t;
     };
-    // 中心 (cx, cy)・対角線の半分 half の◆を描く。四角形を 45 度回すので、辺の長さは half * √2 になる。
+    // 中心 (cx, cy)・対角線の半分 half の◆を描く。四角形を 45 度回すので、辺の長さは half * √2 になる
     auto diamond = [&](float cx, float cy, float half, float r, float g, float b, float a) {
         const float side = half * 1.41421356f;
         m_fadeQuad->Render(dc, cx - side * 0.5f, cy - side * 0.5f, 0.0f, side, side, 45.0f, r, g, b, a);
     };
 
-    // セルの◆が四隅まで覆うには、対角線の半分がセルの幅と同じだけ要る。少し足して隙間を消す。
+    // セルの◆が四隅まで覆うには、対角線の半分がセルの幅と同じだけ要る。少し足して隙間を消す
     const float fullHalf = cell + 1.5f;
     const int   cols     = static_cast<int>(sw / cell) + 2;
     const int   rows     = static_cast<int>(sh / cell) + 2;
@@ -516,8 +545,8 @@ void SceneManager::DrawFade()
     // 4. 白金の縁
     // ---------------------------------------------------------
 
-    // 育つ途中の◆だけに描く。
-    // 次の黒の◆が上から覆うので、隣が黒く埋まった所には残らない。
+    // 育つ途中の◆だけに描く
+    // 次の黒の◆が上から覆うので、隣が黒く埋まった所には残らない
     for (int row = 0; row < rows; ++row)
     {
         for (int col = 0; col < cols; ++col)
@@ -538,7 +567,7 @@ void SceneManager::DrawFade()
     // 5. 黒の◆
     // ---------------------------------------------------------
 
-    // 縁より一回り小さく始め、育ちきると縁を飲み込んでセルを覆う。
+    // 縁より一回り小さく始め、育ちきると縁を飲み込んでセルを覆う
     for (int row = 0; row < rows; ++row)
     {
         for (int col = 0; col < cols; ++col)
@@ -559,11 +588,11 @@ void SceneManager::DrawFade()
     // 6. 光の筋
     // ---------------------------------------------------------
 
-    // 波の先頭に細い光の筋を走らせる。波の出入りの両端では消す。
+    // 波の先頭に細い光の筋を走らせる。波の出入りの両端では消す
     const float streakA = std::sin(p * 3.1415927f);
     if (streakA > 0.01f)
     {
-        // u = front の線は x + y * kSlope = front * span。画面の縦の中央を通る点から、傾けて縦に伸ばす。
+        // u = front の線は x + y * kSlope = front * span。画面の縦の中央を通る点から、傾けて縦に伸ばす
         const float x     = front * span - sh * 0.5f * kSlope;
         const float angle = std::atan(kSlope) * 57.29578f; // 下ほど左へ寄る向き
         const float len   = sh * 1.3f;

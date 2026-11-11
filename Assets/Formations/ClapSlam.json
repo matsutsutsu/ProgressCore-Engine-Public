@@ -61,6 +61,8 @@
     "look": "ToPlayer",
     "useShiverTelegraph": true
   },
+  "recoverySeconds": 1.6,
+  "restSeconds": 0.8,
   "slot": 25,
   "telegraphSeconds": 1.5
 }

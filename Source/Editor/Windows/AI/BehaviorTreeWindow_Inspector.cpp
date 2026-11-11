@@ -2,18 +2,28 @@
 #include "Editor/Windows/AI/BehaviorTreeEditorCommon.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BTActionIds.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+#include "Game/Logics/AI/BehaviorTree/BTUtilityScore.h"
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 using namespace BTEditor;
 
 void BehaviorTreeWindow::DrawInspector()
 {
-    // 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）。
-    // 記録は関数の最後にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
-    // イテレータを使い終わってから行う。
+    // 処理フロー:
+    // 1. 名前
+    // 2. 種類ごとの説明
+    // 3. 種類ごとの設定（コメント枠・条件・行動・デコレーター・スコア選択の一覧）
+    // 4. 親の種類で意味が決まる設定（割り込み・重み・点数）
+    // 5. Undo の記録
+
+    // 編集の Undo は「入力を確定したとき」に1回だけ積む（ドラッグ中の毎フレームは積まない）
+    // 記録は 5 にまとめる。記録は m_nodes の中身を読み直すので、編集中のノードを指す
+    // イテレータを使い終わってから行う
 
     ZoneScopedN("BTW: Inspector");
 
@@ -31,14 +41,15 @@ void BehaviorTreeWindow::DrawInspector()
 
         if (it != m_nodes.end())
         {
-            // =========================================================
-            // Undoを安全に記録するための遅延フラグ
-            // =========================================================
-            bool        needsUndo   = false;
-            std::string undoMessage = "Inspector Changed";
+            bool        needsUndo   = false;               // 5 で Undo を記録するか
+            std::string undoMessage = "Inspector Changed"; // 履歴に出す操作名
 
-            // ノード名。自分で付けるのはまとまり（Selector など）とコメント枠だけ。
-            // Action / Condition / Decorator は下で選んだ内容から名前が決まるので、入力欄は出さず表示だけする。
+            // ---------------------------------------------------------
+            // 1. 名前
+            // ---------------------------------------------------------
+
+            // 自分で付けるのはまとまり（Selector など）とコメント枠だけ
+            // Action / Condition / Decorator は下で選んだ内容から名前が決まるので、入力欄は出さず表示だけする
             if (UsesCustomName(it->type))
             {
                 char nameBuf[256];
@@ -61,9 +72,9 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::TextDisabled("（設定から自動で決まる）");
             }
 
-            // =========================================================
-            // ノード種類ごとの説明
-            // =========================================================
+            // ---------------------------------------------------------
+            // 2. 種類ごとの説明
+            // ---------------------------------------------------------
             ImGui::Spacing();
 
             // ウィンドウ幅で折り返す
@@ -105,11 +116,9 @@ void BehaviorTreeWindow::DrawInspector()
                                        "失敗した枝は候補から外して引き直す。\n"
                                        "重みは子ノード側で設定（既定 1.0）。");
                 break;
-            case EditorBTNodeType::SubTree:
-                ImGui::TextUnformatted("木を1本まとめた箱。中の入口に繋いだ木がこの位置で動く。\n"
-                                       "保存時は中身に展開されるので、動作は直接置いた場合と同じ。\n"
-                                       "ダブルクリックで中へ、パンくずで外へ。\n"
-                                       "右クリック →「選択をサブツリーにまとめる」で作れる。");
+            case EditorBTNodeType::UtilitySelector:
+                ImGui::TextUnformatted("出せる子のうち、点数の高い上位3つから抽選する。\n"
+                                       "点数は子ノード側で設定。");
                 break;
             }
             ImGui::PopStyleColor();
@@ -117,12 +126,12 @@ void BehaviorTreeWindow::DrawInspector()
             ImGui::Separator();
 
             // ---------------------------------------------------------
-            // 各種プロパティの編集とUndoフラグのセット
+            // 3. 種類ごとの設定
             // ---------------------------------------------------------
             if (it->type == EditorBTNodeType::Group)
             {
                 ImGui::Text("枠の色");
-                // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい。
+                // 色見本を横に並べる。名前のコンボより、押した結果が想像しやすい
                 for (int i = 0; i < kGroupPaletteCount; ++i)
                 {
                     if (i > 0) ImGui::SameLine();
@@ -153,12 +162,12 @@ void BehaviorTreeWindow::DrawInspector()
                     undoMessage           = "Change Condition";
 
                     // 引数を使う条件へ切り替えたのに 0 のままだと「距離0m未満」に
-                    // なって永久に成立しない。最初の1回だけ既定値を入れておく。
+                    // なって永久に成立しない。最初の1回だけ既定値を入れておく
                     if (GetConditionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 10.0f;
                 }
 
-                // 引数を持つ条件（間合いなど）だけ入力欄を出す。行動側と同じ仕組み。
+                // 引数を持つ条件（間合いなど）だけ入力欄を出す。行動側と同じ仕組み
                 if (const char *paramLabel = GetConditionParamLabel(it->actionOrConditionId))
                 {
                     if (ImGui::DragFloat(paramLabel, &it->param, 0.5f, 0.0f, 500.0f, "%.1f"))
@@ -178,14 +187,15 @@ void BehaviorTreeWindow::DrawInspector()
                     undoMessage           = "Change Action";
 
                     // 引数を使う行動へ切り替えたのに 0 のままだと「置いたのに何も起きない」
-                    // ように見えるので、最初の1回だけ既定値を入れておく。
-                    // データの技は枠番号なので既定値を入れない（1 は別の技の枠になる）。
+                    // ように見えるので、最初の1回だけ既定値を入れておく
+                    // 技を指す行動は枠番号なので既定値を入れない（1 は別の技の枠になる）
                     if (it->actionOrConditionId != A_DroneFormation &&
+                        it->actionOrConditionId != A_DroneTechnique &&
                         GetActionParamLabel(it->actionOrConditionId) && it->param <= 0.0f)
                         it->param = 1.0f;
                 }
 
-                // データの技は数値ではなく技の名前で選ぶ。
+                // データの技は数値ではなく技の名前で選ぶ
                 if (it->actionOrConditionId == A_DroneFormation)
                 {
                     if (DrawDroneFormationCombo("技", it->param))
@@ -193,6 +203,15 @@ void BehaviorTreeWindow::DrawInspector()
                         needsUndo   = true;
                         undoMessage = "Change Drone Formation";
                     }
+                }
+                else if (it->actionOrConditionId == A_DroneTechnique)
+                {
+                    if (DrawDroneTechniqueCombo("技", it->param))
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Drone Technique";
+                    }
+                    DrawDroneTechniqueTiming(it->param);
                 }
                 // 引数を持つ行動（待機の秒数、近接の硬直など）だけ入力欄を出す
                 else if (const char *paramLabel = GetActionParamLabel(it->actionOrConditionId))
@@ -232,26 +251,18 @@ void BehaviorTreeWindow::DrawInspector()
                 }
             }
 
-            if (it->type == EditorBTNodeType::SubTree)
-            {
-                ImGui::Separator();
-                ImGui::Text("サブツリー");
-                ImGui::TextDisabled("中のノード数: %d", static_cast<int>(CollectSubTreeContents(it->id).size()));
-                if (ImGui::Button("中へ入る")) RequestEnterSubTree(it->id);
-            }
-
             if (it->type == EditorBTNodeType::Decorator)
             {
                 ImGui::Separator();
                 ImGui::Text("デコレーター");
 
-                // 子を待たずに並行して動かしたいときは Parallel ノードで書く。
+                // 子を待たずに並行して動かしたいときは Parallel ノードで書く
                 const char *decNames[] = {"反転 (Inverter)", "クールダウン (Cooldown)", "リトライ (Retry)"};
                 if (ImGui::Combo("種類", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
                     // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
-                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる。
-                    // 行動・条件の param が同じ理由で自動補完されるのに揃える。
+                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる
+                    // 行動・条件の param が同じ理由で自動補完されるのに揃える
                     if (it->param <= 0.0f)
                     {
                         if (it->decoratorType == 1)
@@ -290,9 +301,18 @@ void BehaviorTreeWindow::DrawInspector()
                 }
             }
 
-            // 親が重み付きセレクターのときだけ、重みの欄を出す。
-            //   重みは他の親の下では意味を持たないので、常時出すと
-            //   「効かない設定」が並んで混乱する。
+            // スコア選択は、子の設定を1つずつ開かずに並べて比べられるよう、ここに一覧を出す
+            if (it->type == EditorBTNodeType::UtilitySelector)
+            {
+                DrawUtilityOverview(*it, needsUndo, undoMessage);
+            }
+
+            // ---------------------------------------------------------
+            // 4. 親の種類で意味が決まる設定
+            // ---------------------------------------------------------
+
+            // 割り込み・重み・点数は、親の種類が合うときだけ出す
+            // 他の親の下では意味を持たないので、常時出すと「効かない設定」が並んで混乱する
             {
                 const EditorBTNode *parent = nullptr;
                 for (const auto &lk : m_links)
@@ -309,20 +329,26 @@ void BehaviorTreeWindow::DrawInspector()
                     break;
                 }
 
-                // 割り込みは Selector の下でしか意味を持たない（上下関係があるのはそこだけ）。
-                if (parent && parent->type == EditorBTNodeType::Selector)
+                // 割り込みと自己中断は Selector とスコア選択の下で効く
+                // 説明は仕組みではなく「どんな場面で使うか」を書く（仕組みはコードのコメントにある）
+                const bool canAbort = parent && (parent->type == EditorBTNodeType::Selector ||
+                                                 parent->type == EditorBTNodeType::UtilitySelector);
+                if (canAbort)
                 {
                     ImGui::Separator();
                     ImGui::Text("割り込み");
 
-                    if (ImGui::Checkbox("下の枝の実行中も割り込む", &it->interrupt))
+                    // スコア選択の子には上下がないので、相手は「下の枝」ではなく「ほかの技」
+                    const char *label = (parent->type == EditorBTNodeType::Selector) ? "下の枝の実行中も割り込む"
+                                                                                     : "ほかの技の実行中も割り込む";
+                    if (ImGui::Checkbox(label, &it->interrupt))
                     {
                         needsUndo   = true;
                         undoMessage = "Change Interrupt";
                     }
-                    ImGui::TextDisabled("下の枝の実行中もこの枝の条件を毎フレーム見て、");
-                    ImGui::TextDisabled("成立したら中断して選び直す。");
-                    ImGui::TextDisabled("枝の先頭に条件ノードが要る。");
+                    ImGui::TextDisabled("何をしていても、すぐに出したい技に使う。");
+                    ImGui::TextDisabled("例：被弾がかさんだら退く／体幹が崩れたら怯む");
+                    ImGui::TextDisabled("枝の先頭に条件を置いて使う。");
 
                     ImGui::Separator();
                     ImGui::Text("自己中断");
@@ -332,9 +358,9 @@ void BehaviorTreeWindow::DrawInspector()
                         needsUndo   = true;
                         undoMessage = "Change Abort Self";
                     }
-                    ImGui::TextDisabled("この枝の実行中も条件を毎フレーム見て、");
-                    ImGui::TextDisabled("外れたら中断して選び直す。");
-                    ImGui::TextDisabled("枝の先頭に条件ノードが要る。");
+                    ImGui::TextDisabled("前提が崩れたら、途中でやめたい技に使う。");
+                    ImGui::TextDisabled("例：弾幕の途中で近づかれたらやめる");
+                    ImGui::TextDisabled("枝の先頭に条件を置いて使う。");
                 }
 
                 if (parent && parent->type == EditorBTNodeType::WeightedSelector)
@@ -349,7 +375,7 @@ void BehaviorTreeWindow::DrawInspector()
                         undoMessage           = "Change Weight";
                     }
 
-                    // 数字だけでは何%になるか分からないので、兄弟の重みを合計して出す。
+                    // 数字だけでは何%になるか分からないので、兄弟の重みを合計して出す
                     float total = 0.0f;
                     for (const auto &lk : m_links)
                     {
@@ -372,10 +398,150 @@ void BehaviorTreeWindow::DrawInspector()
                         ImGui::TextDisabled("条件で外れる枝があれば、実際はこれより高い");
                     }
                 }
+
+                // 確率は「その場で出せる子」と「上位3つに入るか」で決まるので、エディタでは出さない
+                if (parent && parent->type == EditorBTNodeType::UtilitySelector)
+                {
+                    ImGui::Separator();
+                    ImGui::Text("スコア");
+
+                    if (ImGui::Checkbox("距離で点数を変える", &it->useScoreRule))
+                    {
+                        // 入れた瞬間に出やすさが変わらないよう、今の点数（weight）を優先度に引き継ぐ
+                        // 優先度を一度でも触っていれば（既定の 1 でなければ）そちらを残す
+                        if (it->useScoreRule && it->scoreRule.base == 1.0f)
+                        {
+                            it->scoreRule.base = it->weight;
+                        }
+                        needsUndo   = true;
+                        undoMessage = "Toggle Score Rule";
+                    }
+
+                    if (!it->useScoreRule)
+                    {
+                        // ルールなし：weight をそのまま点数にする（保存先も weight）
+                        ImGui::DragFloat("点数", &it->weight, 0.1f, 0.0f, 100.0f, "%.2f");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score";
+                        }
+
+                        if (it->weight <= 0.0f)
+                        {
+                            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f), "0 以下は選ばれない");
+                        }
+                    }
+                    else
+                    {
+                        // ルールあり：点数 = 優先度 × 距離の台形（0〜1）
+                        BTScoreRule &r = it->scoreRule;
+
+                        ImGui::DragFloat("優先度", &r.base, 0.1f, 0.0f, 100.0f, "%.2f");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score Base";
+                        }
+
+                        // 得意な距離は最小と最大を1行で入れる（DragFloatRange2 は最小 > 最大にならないよう抑える）
+                        ImGui::DragFloatRange2("得意な距離", &r.bestMin, &r.bestMax, 0.1f, 0.0f, 9999.0f,
+                                               "%.1f m", "%.1f m");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score Distance";
+                        }
+
+                        ImGui::DragFloat("ぼかし幅", &r.falloff, 0.1f, 0.0f, 9999.0f, "%.1f m");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score Falloff";
+                        }
+
+                        // 読み込み時にも警告するが、ここで出せば入れ違えたその場で気づける（JSON を手で直した場合など）
+                        if (r.bestMin > r.bestMax || r.falloff < 0.0f)
+                        {
+                            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f), "距離の値が不正");
+                        }
+                        if (r.base <= 0.0f)
+                        {
+                            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f), "0 以下は選ばれない");
+                        }
+                        ImGui::TextDisabled("範囲外はぼかし幅で 0 点まで下がる");
+
+                        // クールダウン：選んだ瞬間から数える（技の最中も減る）
+                        ImGui::Spacing();
+                        ImGui::DragFloat("クールダウン", &r.cooldown, 0.1f, 0.0f, 120.0f, "%.1f 秒");
+                        if (ImGui::IsItemDeactivatedAfterEdit())
+                        {
+                            needsUndo   = true;
+                            undoMessage = "Change Score Cooldown";
+                        }
+                        ImGui::TextDisabled("連発させたくない技に使う。例：突進は10秒に1回まで");
+
+                        // 状況による倍率：条件が通れば点数に倍率を掛ける。消すと後ろを前へ詰める
+                        ImGui::Spacing();
+                        ImGui::Text("状況による倍率");
+                        for (int i = 0; i < r.bonusCount; ++i)
+                        {
+                            BTScoreBonus &b = r.bonuses[i];
+                            ImGui::PushID(i);
+
+                            if (DrawConditionCombo("条件", b.conditionId))
+                            {
+                                needsUndo   = true;
+                                undoMessage = "Change Score Bonus";
+                            }
+                            if (const char *paramLabel = GetConditionParamLabel(b.conditionId))
+                            {
+                                ImGui::DragFloat(paramLabel, &b.param, 0.1f, 0.0f, 500.0f, "%.1f");
+                                if (ImGui::IsItemDeactivatedAfterEdit())
+                                {
+                                    needsUndo   = true;
+                                    undoMessage = "Change Score Bonus";
+                                }
+                            }
+                            ImGui::DragFloat("倍率", &b.mult, 0.05f, 0.0f, 10.0f, "x%.2f");
+                            if (ImGui::IsItemDeactivatedAfterEdit())
+                            {
+                                needsUndo   = true;
+                                undoMessage = "Change Score Bonus";
+                            }
+
+                            const bool remove = ImGui::SmallButton("削除");
+                            ImGui::PopID();
+                            ImGui::Separator();
+
+                            if (remove)
+                            {
+                                for (int k = i; k + 1 < r.bonusCount; ++k)
+                                {
+                                    r.bonuses[k] = r.bonuses[k + 1];
+                                }
+                                --r.bonusCount;
+                                needsUndo   = true;
+                                undoMessage = "Remove Score Bonus";
+                                break; // 並びが変わったので、この先は次のフレームに描く
+                            }
+                        }
+
+                        if (r.bonusCount < kMaxScoreBonuses && ImGui::Button("倍率を追加"))
+                        {
+                            r.bonuses[r.bonusCount++] = BTScoreBonus{0, 0.0f, 1.5f};
+                            needsUndo                 = true;
+                            undoMessage               = "Add Score Bonus";
+                        }
+                    }
+                }
             }
 
-            // `it` を使い終わった一番最後に Undo を記録する。
-            // 記録で m_nodes を読み直すと it が無効になりうるため
+            // ---------------------------------------------------------
+            // 5. Undo の記録
+            // ---------------------------------------------------------
+
+            // `it` を使い終わった一番最後に記録する。記録で m_nodes を読み直すと it が無効になりうるため
             if (needsUndo)
             {
                 RecordStateForUndo(undoMessage);
@@ -387,6 +553,8 @@ void BehaviorTreeWindow::DrawInspector()
         ImGui::TextDisabled("ノードが選択されていない");
     }
 }
+
+
 
 bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
 {
@@ -418,6 +586,8 @@ bool BehaviorTreeWindow::DrawActionCombo(const char *label, ActionID &currentId)
     return changed;
 }
 
+
+
 bool BehaviorTreeWindow::DrawConditionCombo(const char *label, ActionID &currentId)
 {
     bool        changed = false;
@@ -448,6 +618,8 @@ bool BehaviorTreeWindow::DrawConditionCombo(const char *label, ActionID &current
     return changed;
 }
 
+
+
 bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotParam)
 {
     bool      changed = false;
@@ -477,4 +649,564 @@ bool BehaviorTreeWindow::DrawDroneFormationCombo(const char *label, float &slotP
         ImGui::SetTooltip("陣形エディタで作った技。BT には枠番号で保存されるので、名前は後から変えてよい");
 
     return changed;
+}
+
+
+
+bool BehaviorTreeWindow::DrawDroneTechniqueCombo(const char *label, float &slotParam)
+{
+    bool      changed = false;
+    const int current = static_cast<int>(std::lround(slotParam));
+
+    if (ImGui::BeginCombo(label, GetDroneTechniqueLabel(slotParam)))
+    {
+        for (int slot = 0; slot < static_cast<int>(kDroneFormationSlotCount); ++slot)
+        {
+            const char *name = DroneTechniqueName(slot);
+            if (!name) continue; // 円陣などの隊形と空き枠は出さない
+
+            char item[96];
+            snprintf(item, sizeof(item), "%s  (枠%d)", name, slot);
+
+            const bool selected = (slot == current);
+            if (ImGui::Selectable(item, selected))
+            {
+                slotParam = static_cast<float>(slot);
+                changed   = true;
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    return changed;
+}
+
+
+
+void BehaviorTreeWindow::DrawDroneTechniqueTiming(float slotParam) const
+{
+    const int slot = static_cast<int>(std::lround(slotParam));
+    if (!DroneTechniqueName(slot)) return;
+
+    const CCL::AI::Formation::IFormation *formation = m_formations->Get(static_cast<DroneFormationType>(slot));
+    CCL::AI::Formation::TechniqueTiming   timing;
+    formation->TryGetTiming(timing);
+
+    ImGui::Text("予告 %.2f 秒 → 撃って %.2f 秒で戻す → 間 %.2f 秒",
+                timing.telegraph, timing.recovery, timing.rest);
+
+    // 時間は BT ではなく陣形が持つ
+    if (formation->DisplayName())
+        ImGui::TextDisabled("時間は陣形エディタで変える");
+    else
+        ImGui::TextDisabled("時間は C++ の陣形クラスで決めている");
+}
+
+
+
+// ---------------------------------------------------------------------------
+// スコア選択の一覧
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // プレビューの距離のスライダーの右端 [m]。ボスの技の間合い（遠距離は 80m 超）が収まる長さ
+    constexpr float kPreviewMaxDistance = 120.0f;
+
+    // プレビュー用の点数。ゲームと同じ「優先度 × 距離の倍率」だが、条件・クールダウン・
+    // 状況による倍率・繰り返しの減点はゲームの状況で決まるので含めない
+    float PreviewScore(const EditorBTNode &child, float distance)
+    {
+        if (!child.useScoreRule)
+        {
+            return child.weight;
+        }
+        return child.scoreRule.base * CCL::AI::BT::DistanceFactor(child.scoreRule, distance);
+    }
+} // namespace
+
+std::string BehaviorTreeWindow::GetUtilityChildName(const EditorBTNode &child)
+{
+    // 技の枝は「Cooldown → Sequence（名前付き）」の形が多い。Cooldown の表示名（"Cooldown 7秒"）では
+    // どの技か分からないので、子を1つだけ持つ修飾を下へたどり、名前の付いたまとまりを探す
+    const EditorBTNode *node = &child;
+    while (node && node->type == EditorBTNodeType::Decorator)
+    {
+        auto found = m_childrenOf.find(node->id);
+        if (found == m_childrenOf.end() || found->second.empty())
+        {
+            break;
+        }
+        node = FindNode(found->second.front());
+    }
+
+    if (node && UsesCustomName(node->type) && !node->name.empty())
+    {
+        return node->name;
+    }
+    return GetDisplayName(child);
+}
+
+
+
+void BehaviorTreeWindow::DrawUtilityOverview(const EditorBTNode &selector, bool &needsUndo, std::string &undoMessage)
+{
+    // 処理フロー:
+    // 1. 子を集め、プレビューの距離での点数と確率を出す
+    // 2. プレビューの距離のスライダー
+    // 3. 子の一覧表（優先度・距離はその場で編集できる）
+
+    // 子を1つずつ選んで設定を見比べるのは手間なので、全員をここに並べる
+    // プレビューは距離と優先度だけで計算する。実行中の本当の点数は BehaviorTreeSystem の OnGui で見る
+
+    ImGui::Separator();
+    ImGui::Text("候補の一覧");
+
+    auto found = m_childrenOf.find(selector.id);
+    if (found == m_childrenOf.end() || found->second.empty())
+    {
+        ImGui::TextDisabled("子がない");
+        return;
+    }
+    const std::vector<uint32_t> &children = found->second;
+
+    // ---------------------------------------------------------
+    // 1. 点数と確率
+    // ---------------------------------------------------------
+    struct Row
+    {
+        EditorBTNode *node;   // 子
+        std::string   name;   // 表に出す名前
+        float         score;  // プレビューの距離での点数
+        float         chance; // 選ばれる確率（上位3つの外は 0）
+    };
+
+    std::vector<Row> rows;
+    for (uint32_t childId : children)
+    {
+        EditorBTNode *child = FindNode(childId);
+        if (!child)
+        {
+            continue;
+        }
+        rows.push_back({child, GetUtilityChildName(*child), PreviewScore(*child, m_utilityPreviewDistance), 0.0f});
+    }
+
+    // ゲームと同じく、点数の高い上位から比例して引く（同点は元の並び順。stable_sort なので保たれる）
+    std::vector<size_t> order;
+    for (size_t i = 0; i < rows.size(); ++i)
+    {
+        if (rows[i].score > 0.0f)
+        {
+            order.push_back(i);
+        }
+    }
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) { return rows[a].score > rows[b].score; });
+
+    const size_t top   = (std::min)(order.size(), static_cast<size_t>(CCL::AI::BT::kUtilityTopCount));
+    float        total = 0.0f;
+    for (size_t i = 0; i < top; ++i)
+    {
+        total += rows[order[i]].score;
+    }
+    for (size_t i = 0; i < top; ++i)
+    {
+        rows[order[i]].chance = rows[order[i]].score / total;
+    }
+
+    // ---------------------------------------------------------
+    // 2. プレビューの距離
+    // ---------------------------------------------------------
+    ImGui::SliderFloat("プレビューの距離", &m_utilityPreviewDistance, 0.0f, kPreviewMaxDistance, "%.0f m");
+    ImGui::TextDisabled("距離と優先度だけで計算（条件・クールダウン・状況による倍率・減点は含めない）");
+
+    if (ImGui::Button("キャンバスを距離順に並べる"))
+    {
+        if (SortUtilityChildrenByDistance(selector))
+        {
+            needsUndo   = true;
+            undoMessage = "Sort Utility Children By Distance";
+        }
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("子を、得意な距離が近い技から左へ並べ直す。\nボスの動きは変わらない（並びが効くのは点数が同じときだけ）");
+    }
+
+    // ---------------------------------------------------------
+    // 3. 一覧表
+    // ---------------------------------------------------------
+
+    // 一番見たいのは「どれが選ばれやすいか」なので、技の名前のすぐ右に確率と点数を置く
+    // 横にはみ出したら横スクロール。縦は行の数ぶんの高さを取る（スクロールさせると一覧の意味が薄れる）
+    enum Column : ImGuiID
+    {
+        kColName,
+        kColChance,
+        kColScore,
+        kColPriority,
+        kColRange,
+        kColFalloff,
+        kColBand,
+        kColBonus,
+        kColCooldown,
+        kColCount,
+    };
+    constexpr float kBandWidth = 160.0f; // 距離の帯の幅 [px]
+
+    const float           tableHeight = ImGui::GetFrameHeightWithSpacing() * static_cast<float>(rows.size() + 1) +
+                                        ImGui::GetStyle().ScrollbarSize + 4.0f;
+    const ImGuiTableFlags flags       = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                                        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
+                                        ImGuiTableFlags_Sortable | ImGuiTableFlags_SortTristate;
+    if (!ImGui::BeginTable("##utilityTable", kColCount, flags, ImVec2(0.0f, tableHeight)))
+    {
+        return;
+    }
+
+    // 最初は得意な距離の近い順。見出しを押すたびに 昇順 → 降順 → キャンバスの並び を回る
+    ImGui::TableSetupColumn("技", 0, 0.0f, kColName);
+    ImGui::TableSetupColumn("確率", 0, 0.0f, kColChance);
+    ImGui::TableSetupColumn("点数", 0, 0.0f, kColScore);
+    ImGui::TableSetupColumn("優先度", 0, 0.0f, kColPriority);
+    ImGui::TableSetupColumn("得意な距離", ImGuiTableColumnFlags_DefaultSort, 0.0f, kColRange);
+    ImGui::TableSetupColumn("ぼかし", 0, 0.0f, kColFalloff);
+    char bandHeader[48];
+    snprintf(bandHeader, sizeof(bandHeader), "距離の帯 (0〜%.0fm)", kPreviewMaxDistance);
+    ImGui::TableSetupColumn(bandHeader, ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, kBandWidth, kColBand);
+    ImGui::TableSetupColumn("状況", ImGuiTableColumnFlags_NoSort, 0.0f, kColBonus);
+    ImGui::TableSetupColumn("CD", 0, 0.0f, kColCooldown);
+    ImGui::TableHeadersRow();
+
+    // 並べ替え。行は毎フレーム作り直すので、毎フレーム並べる（多くても16行）
+    const ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs();
+    if (sortSpecs && sortSpecs->SpecsCount > 0)
+    {
+        const ImGuiTableColumnSortSpecs &spec      = sortSpecs->Specs[0];
+        const bool                       ascending = (spec.SortDirection == ImGuiSortDirection_Ascending);
+
+        // 距離で点数を変えない子は、距離の設定がないので距離の列では最後に回す
+        auto rangeKey = [](const EditorBTNode &n) {
+            return n.useScoreRule ? std::make_pair(n.scoreRule.bestMin, n.scoreRule.bestMax) : std::make_pair(FLT_MAX, FLT_MAX);
+        };
+        auto less = [&](const Row &a, const Row &b) {
+            const EditorBTNode &na = *a.node;
+            const EditorBTNode &nb = *b.node;
+            switch (spec.ColumnUserID)
+            {
+            case kColName: return a.name < b.name;
+            case kColChance: return a.chance < b.chance;
+            case kColScore: return a.score < b.score;
+            case kColPriority: return (na.useScoreRule ? na.scoreRule.base : na.weight) < (nb.useScoreRule ? nb.scoreRule.base : nb.weight);
+            case kColRange: return rangeKey(na) < rangeKey(nb);
+            case kColFalloff: return (na.useScoreRule ? na.scoreRule.falloff : -1.0f) < (nb.useScoreRule ? nb.scoreRule.falloff : -1.0f);
+            case kColCooldown: return (na.useScoreRule ? na.scoreRule.cooldown : -1.0f) < (nb.useScoreRule ? nb.scoreRule.cooldown : -1.0f);
+            default: return false;
+            }
+        };
+        std::stable_sort(rows.begin(), rows.end(), [&](const Row &a, const Row &b) {
+            return ascending ? less(a, b) : less(b, a);
+        });
+    }
+
+    for (Row &row : rows)
+    {
+        EditorBTNode &child = *row.node;
+        ImGui::PushID(static_cast<int>(child.id));
+        ImGui::TableNextRow();
+
+        // 技：名前を押すとその子を選ぶ（状況による倍率はその子のインスペクタで編集する）
+        ImGui::TableNextColumn();
+        if (ImGui::Selectable(row.name.c_str()))
+        {
+            ed::ClearSelection();
+            ed::SelectNode(child.id);
+            ed::NavigateToSelection(false, 0.3f);
+        }
+
+        // 確率と点数（プレビューの距離での値）
+        ImGui::TableNextColumn();
+        if (row.chance > 0.0f)
+        {
+            ImGui::Text("%.0f%%", row.chance * 100.0f);
+        }
+        else
+        {
+            ImGui::TextDisabled("-");
+        }
+
+        ImGui::TableNextColumn();
+        if (row.score > 0.0f)
+        {
+            ImGui::Text("%.1f", row.score);
+        }
+        else
+        {
+            ImGui::TextDisabled("候補外");
+        }
+
+        // 優先度：距離で変えない子は weight がそのまま優先度（保存先が違うだけで意味は同じ）
+        ImGui::TableNextColumn();
+        float &priority = child.useScoreRule ? child.scoreRule.base : child.weight;
+        ImGui::SetNextItemWidth(60.0f);
+        ImGui::DragFloat("##priority", &priority, 0.1f, 0.0f, 100.0f, "%.1f");
+        if (ImGui::IsItemDeactivatedAfterEdit())
+        {
+            needsUndo   = true;
+            undoMessage = "Change Score";
+        }
+
+        // 得意な距離：距離で変えない子にはボタンだけ出す。押すと距離で変える設定に切り替える
+        ImGui::TableNextColumn();
+        if (child.useScoreRule)
+        {
+            ImGui::SetNextItemWidth(130.0f);
+            ImGui::DragFloatRange2("##range", &child.scoreRule.bestMin, &child.scoreRule.bestMax, 0.1f, 0.0f, 9999.0f,
+                                   "%.0f", "%.0f m");
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                needsUndo   = true;
+                undoMessage = "Change Score Distance";
+            }
+        }
+        else if (ImGui::SmallButton("距離で変える"))
+        {
+            child.useScoreRule   = true;
+            child.scoreRule.base = child.weight; // 出やすさを変えずに切り替える
+            needsUndo            = true;
+            undoMessage          = "Toggle Score Rule";
+        }
+
+        // ぼかし
+        ImGui::TableNextColumn();
+        if (child.useScoreRule)
+        {
+            ImGui::SetNextItemWidth(60.0f);
+            ImGui::DragFloat("##falloff", &child.scoreRule.falloff, 0.1f, 0.0f, 9999.0f, "%.0f m");
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                needsUndo   = true;
+                undoMessage = "Change Score Falloff";
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("-");
+        }
+
+        // 距離の帯：縦に並べて見ると、どの距離に技が集まり、どこが空いているかが分かる
+        ImGui::TableNextColumn();
+        DrawDistanceBand(child, kBandWidth);
+
+        // 状況：件数だけ出し、中身はマウスを乗せたときに出す（表の幅を取らないため）
+        ImGui::TableNextColumn();
+        if (child.useScoreRule && child.scoreRule.bonusCount > 0)
+        {
+            ImGui::Text("%d件", static_cast<int>(child.scoreRule.bonusCount));
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::BeginTooltip();
+                for (int b = 0; b < child.scoreRule.bonusCount; ++b)
+                {
+                    const BTScoreBonus &bonus = child.scoreRule.bonuses[b];
+                    const char         *name  = GetConditionDisplayName(bonus.conditionId);
+                    ImGui::Text("%s（%g） x%.2f", name ? name : "未設定", bonus.param, bonus.mult);
+                }
+                ImGui::EndTooltip();
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("-");
+        }
+
+        // クールダウン（採点ルールの cooldown）。距離で変えない子はルールがないので持てない
+        ImGui::TableNextColumn();
+        if (child.useScoreRule)
+        {
+            ImGui::SetNextItemWidth(60.0f);
+            ImGui::DragFloat("##cooldown", &child.scoreRule.cooldown, 0.1f, 0.0f, 120.0f, "%.0f 秒");
+            if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                needsUndo   = true;
+                undoMessage = "Change Score Cooldown";
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("-");
+        }
+
+        ImGui::PopID();
+    }
+    ImGui::EndTable();
+
+    ImGui::TextDisabled("距離の帯：濃い＝満点／薄れていく＝点数が下がる／黄色の線＝プレビューの距離");
+}
+
+
+
+bool BehaviorTreeWindow::SortUtilityChildrenByDistance(const EditorBTNode &selector)
+{
+    // 処理フロー:
+    // 1. 今の並び（左から）と、各子の席（座標）を控える
+    // 2. 得意な距離の近い順に並べ替える
+    // 3. 近い技から左の席へ入れ、整列を予約する
+
+    // 座標は新しく作らず、今の席を入れ替えるだけにする。並びは席の左右だけで決まるので、
+    // 席の数と位置が変わらなければ、ほかのノードとの位置関係も崩れない
+
+    auto found = m_childrenOf.find(selector.id);
+    if (found == m_childrenOf.end() || found->second.size() < 2)
+    {
+        return false;
+    }
+
+    // ---------------------------------------------------------
+    // 1. 今の並びと席
+    // ---------------------------------------------------------
+
+    // m_childrenOf は RebuildHierarchy が左から（X が同じなら上から）並べてある
+    std::vector<EditorBTNode *> current;
+    std::vector<ImVec2>         seats;
+    for (uint32_t id : found->second)
+    {
+        if (EditorBTNode *child = FindNode(id))
+        {
+            current.push_back(child);
+            seats.push_back(ImVec2(child->posX, child->posY));
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 2. 得意な距離の近い順
+    // ---------------------------------------------------------
+
+    // 距離で点数を変えない子は、どの距離でも出るので右端へ
+    auto rangeKey = [](const EditorBTNode *n) {
+        return n->useScoreRule ? std::make_pair(n->scoreRule.bestMin, n->scoreRule.bestMax) : std::make_pair(FLT_MAX, FLT_MAX);
+    };
+    std::vector<EditorBTNode *> sorted = current;
+    std::stable_sort(sorted.begin(), sorted.end(),
+                     [&](const EditorBTNode *a, const EditorBTNode *b) { return rangeKey(a) < rangeKey(b); });
+    if (sorted == current)
+    {
+        return false;
+    }
+
+    // ---------------------------------------------------------
+    // 3. 席へ入れる
+    // ---------------------------------------------------------
+    for (size_t i = 0; i < sorted.size(); ++i)
+    {
+        sorted[i]->posX                = seats[i].x;
+        sorted[i]->posY                = seats[i].y;
+        sorted[i]->positionInitialized = false; // 次の描画で座標をライブラリへ流し込む
+    }
+
+    // 子の下の枝は元の位置に残っているので、整列で子の下へ連れて行く
+    m_layoutRequested = true;
+    return true;
+}
+
+
+
+void BehaviorTreeWindow::DrawDistanceBand(const EditorBTNode &child, float width) const
+{
+    // 処理フロー:
+    // 1. マスを取る
+    // 2. ものさし（20m ごとの目盛り）
+    // 3. 帯（満点の範囲は濃く、ぼかしの範囲は点数に合わせて薄れていく）
+    // 4. プレビューの距離の縦線
+    // 5. マウスを乗せたら数字で出す
+
+    // ---------------------------------------------------------
+    // 1. マス
+    // ---------------------------------------------------------
+    const float  height = ImGui::GetTextLineHeight();
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImGui::Dummy(ImVec2(width, height));
+
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    const float top      = origin.y + height * 0.2f;
+    const float bottom   = origin.y + height * 0.8f;
+
+    // 距離 [m] → マスの中の x。右端より遠い距離は右端に寄せる
+    auto xOf = [&](float meters) {
+        return origin.x + width * std::clamp(meters / kPreviewMaxDistance, 0.0f, 1.0f);
+    };
+
+    // ---------------------------------------------------------
+    // 2. ものさし
+    // ---------------------------------------------------------
+    drawList->AddRectFilled(ImVec2(origin.x, top), ImVec2(origin.x + width, bottom), IM_COL32(255, 255, 255, 20));
+    for (float m = 20.0f; m < kPreviewMaxDistance; m += 20.0f)
+    {
+        drawList->AddLine(ImVec2(xOf(m), top), ImVec2(xOf(m), bottom), IM_COL32(255, 255, 255, 50));
+    }
+
+    // ---------------------------------------------------------
+    // 3. 帯
+    // ---------------------------------------------------------
+
+    // 濃さ＝その距離での距離の倍率（ゲームと同じ式）。0〜1 を透明〜濃いに写す
+    const BTScoreRule &rule    = child.scoreRule;
+    auto               colorAt = [&](float meters) {
+        const float factor = CCL::AI::BT::DistanceFactor(rule, meters);
+        return IM_COL32(90, 170, 255, static_cast<int>(220.0f * factor));
+    };
+
+    if (!child.useScoreRule)
+    {
+        // どの距離でも同じ点数。色を変えて、距離の設定がないことが分かるようにする
+        drawList->AddRectFilled(ImVec2(origin.x, top), ImVec2(origin.x + width, bottom), IM_COL32(160, 160, 160, 120));
+    }
+    else
+    {
+        // 0 点になる境目。マスの外へはみ出す分は端で切る
+        const float zeroMin = (std::max)(0.0f, rule.bestMin - rule.falloff);
+        const float zeroMax = (std::min)(kPreviewMaxDistance, rule.bestMax + rule.falloff);
+        const float bestMin = (std::min)(rule.bestMin, kPreviewMaxDistance);
+        const float bestMax = (std::min)(rule.bestMax, kPreviewMaxDistance);
+
+        // 近い側のぼかし → 満点 → 遠い側のぼかし
+        if (bestMin > zeroMin)
+        {
+            drawList->AddRectFilledMultiColor(ImVec2(xOf(zeroMin), top), ImVec2(xOf(bestMin), bottom),
+                                              colorAt(zeroMin), colorAt(bestMin), colorAt(bestMin), colorAt(zeroMin));
+        }
+        if (bestMax > bestMin)
+        {
+            drawList->AddRectFilled(ImVec2(xOf(bestMin), top), ImVec2(xOf(bestMax), bottom), colorAt(bestMin));
+        }
+        if (zeroMax > bestMax)
+        {
+            drawList->AddRectFilledMultiColor(ImVec2(xOf(bestMax), top), ImVec2(xOf(zeroMax), bottom),
+                                              colorAt(bestMax), colorAt(zeroMax), colorAt(zeroMax), colorAt(bestMax));
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 4. プレビューの距離
+    // ---------------------------------------------------------
+    const float previewX = xOf(m_utilityPreviewDistance);
+    drawList->AddLine(ImVec2(previewX, origin.y), ImVec2(previewX, origin.y + height), IM_COL32(255, 220, 80, 255), 2.0f);
+
+    // ---------------------------------------------------------
+    // 5. 数字
+    // ---------------------------------------------------------
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        if (!child.useScoreRule)
+        {
+            ImGui::Text("距離で点数を変えない（どの距離でも同じ点数）");
+        }
+        else
+        {
+            ImGui::Text("満点：%.0f〜%.0f m", rule.bestMin, rule.bestMax);
+            ImGui::Text("点数が付く：%.0f〜%.0f m", (std::max)(0.0f, rule.bestMin - rule.falloff), rule.bestMax + rule.falloff);
+        }
+        ImGui::EndTooltip();
+    }
 }

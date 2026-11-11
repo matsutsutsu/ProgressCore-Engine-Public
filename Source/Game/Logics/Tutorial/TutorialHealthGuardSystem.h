@@ -1,27 +1,22 @@
 #pragma once
 // ===========================================================================
-// 概要: チュートリアル中、プレイヤーとボスの HP を下限で止める System。
+// 概要: チュートリアル中、プレイヤーとボスの HP を下限で止める System
 //
 // 責務:
 //   - プレイヤーの HP を kPlayerMinHealth より下げない（倒れない）
 //   - ボスの HP を、第2形態へ移るしきい値より下げない（形態移行が始まらない）
 //
-// 備考: チュートリアルは勝ち負けを決める場ではないので、倒れて練習が途切れないようにする。
-//
-//       ボスも同じで、攻撃を当てる練習をしているうちに HP が削れ、
-//       形態移行の演出（Transition）が始まってしまわないようにする。
-//
-//       どちらも無敵にはしない。被弾ののけぞりと HP の減りは本番と同じに見せる。
-//
-//       ダメージで HP を引く DamageResolutionSystem（L06_DamageApply）と、0 以下で DeadTag を付ける
-//       HealthSystem（L06_HealthManagement）の間の段で走る。ここで戻しておけば、下限より下の HP を見る System は無い。
-//
-//       全体登録はせず、TutorialScene だけが登録する。
+// 備考: チュートリアルは勝ち負けの場ではないので、倒れたり形態移行が始まったりして練習が途切れないようにする
+//       無敵にはしないので、のけぞりと HP の減りは本番と同じに見える
+//       DamageResolutionSystem（L06_DamageApply）と HealthSystem（L06_HealthManagement）の間で走る
+//       TutorialScene だけが登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 
-class TutorialHealthGuardSystem : public CCL::ECS::IfSystem<TutorialHealthGuardSystem, CCL::ECS::Write<HealthComponent>>
+class TutorialHealthGuardSystem : public CCL::ECS::IfSystem<
+    TutorialHealthGuardSystem,
+    CCL::ECS::Write<HealthComponent>>
 {
 public:
     TutorialHealthGuardSystem() : IfSystem("TutorialHealthGuardSystem") {}

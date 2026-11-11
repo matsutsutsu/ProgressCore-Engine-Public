@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: 再生中のムービーの台本から、カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を出す System。
+// 概要: 再生中のムービーの台本から、カメラ以外のトラック（SE・エフェクト・シグナル・アニメ）を出す System
 //
 // 責務:
 //   - 再生位置が時刻を過ぎた点（SE・エフェクト・シグナル）を1回ずつ出す。スキップで飛ばした分は出さない
@@ -8,11 +8,9 @@
 //   - 新しい再生に入ったら、前の再生の続き（握ったままのアニメ）を片付けて頭から追う
 //   - 途中から流す再生では、開始位置より前の点を出さず、区間の途中のアニメはその分進めた位置から握る
 //
-// 備考:
-//   再生位置を進めるのは CinematicCameraSystem（描画の段）。この System はロジックの段で、それを読むだけ。
-//   ロジックの段に置くのは、SE とエフェクトの受け手（AudioSystem・VFXSystem）とアニメの持ち主
-//   （AnimControllerSystem）がロジックの段にあるため。
-//   再生位置を読むのは次のロジックの更新なので、点は固定ステップ1回分まで遅れて出る。
+// 備考: 再生位置を進めるのは CinematicCameraSystem（描画の段）で、この System はそれを読むだけ
+//       受け手（AudioSystem・VFXSystem・AnimControllerSystem）がロジックの段にあるので、ここもロジックに置く
+//       そのため点は、固定ステップ1回分まで遅れて出る
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
@@ -24,20 +22,17 @@
 #include <functional>
 #include <vector>
 
-class CinematicTrackSystem : public CCL::ECS::IfSystem<CinematicTrackSystem,
-                                                       CCL::ECS::Write<CinematicCameraComponent>>
+class CinematicTrackSystem : public CCL::ECS::IfSystem<
+    CinematicTrackSystem,
+    CCL::ECS::Write<CinematicCameraComponent>>
 {
 public:
     CinematicTrackSystem() : IfSystem("CinematicTrackSystem"){}
 
     void Update(float dt) override;
 
-    /**
-     * @brief 書き込む Component 型をスケジューラへ申告する。
-     *
-     * 対象の AnimatorComponent を GetComponent で書く（アニメを握る・離す）。
-     * ForEach のフィルタには載らないので、ここで足しておかないと、それを書く System と並列に走ってしまう。
-     */
+    // 対象の AnimatorComponent を GetComponent で書く（アニメを握る・離す）ので申告する
+    // 申告しないと、それを書く System と並列に走ってしまう
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
     {
         auto types = IfSystem::GetWriteTypes();
@@ -45,11 +40,7 @@ public:
         return types;
     }
 
-    /**
-     * @brief 読み取る Component 型をスケジューラへ申告する。
-     *
-     * 対象の名前（NameComponent）で Entity を探し、SE・エフェクトの受け手がその位置（TransformComponent）を読む。
-     */
+    // 対象を名前（NameComponent）で探し、SE・エフェクトの受け手がその位置（TransformComponent）を読む
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override
     {
         auto types = IfSystem::GetReadTypes();
@@ -61,26 +52,15 @@ public:
 private:
     using FireList = std::vector<std::function<void()>>; // ForEach を抜けてから出す知らせ
 
-    /**
-     * @brief 再生位置を過ぎた点（SE・エフェクト・シグナル）を集め、次に出す番号を進める。
-     * @param cine 再生状態。スキップで終えていたら、集めずに番号だけ最後まで進める。
-     * @param out  出す知らせを足す先。
-     */
+    // 再生位置を過ぎた点（SE・エフェクト・シグナル）を out へ集め、次に出す番号を進める
+    // スキップで終えていたら、集めずに番号だけ最後まで進める
     void CollectPoints(CinematicCameraComponent &cine, FireList &out) const;
 
-    /**
-     * @brief アニメの区間を出たものを離し、入ったものを握る。
-     * @param cine 再生状態。再生中でなければ、握っているものをすべて離す。
-     */
+    // アニメの区間を出たものを離し、入ったものを握る。再生中でなければ、握っているものをすべて離す
     void SyncAnimations(CinematicCameraComponent &cine) const;
 
-    /**
-     * @brief 対象の AnimatorComponent を握り、クリップを再生させる。
-     * @param entity     握る Entity。
-     * @param clip       再生させるアニメの区間。
-     * @param clipOffset クリップの再生位置（秒、クリップ内の時刻）。途中から握るときだけ 0 より大きい。
-     * @return 握れたら true。
-     */
+    // 対象の AnimatorComponent を握り、クリップを再生させる。握れたら true
+    // clipOffset はクリップ内の再生位置（秒）で、途中から握るときだけ 0 より大きい
     bool HoldAnimation(CCL::ECS::EntityID entity, const CinematicAnimation &clip, float clipOffset) const;
 
     // 対象の AnimatorComponent を離し、元のステートへ blendOut 秒で戻させる

@@ -20,6 +20,8 @@ void BoneAttachmentSystem::Update(float dt)
     });
 }
 
+
+
 void BoneAttachmentSystem::ResolveAttachment(EntityID id, TransformComponent &trans, BoneAttachmentComponent &attach)
 {
     // 処理フロー:
@@ -60,13 +62,11 @@ void BoneAttachmentSystem::ResolveAttachment(EntityID id, TransformComponent &tr
     XMStoreFloat4x4(&world4, world);
     trans.worldMatrix = world4; // TransformUpdateSystem が親基準で計算した値を上書きする
 
-    // モデルのノード行列はここでは焼かない（BoneAttachmentRenderSystem の仕事）。
-    //   焼いた行列は描画にしか使われないのに、このシステムは FixedUpdate 側で
-    //   1描画フレームに最大4回まわる（Framework::Run の MAX_STEPS）。しかも
-    //   ModelPoseUpdateSystem（R03）が全モデルを丸ごと焼き直すため、ここで焼いても
-    //   一度も読まれずに上書きされる。
+    // モデルのノード行列はここでは焼かない。焼いても、描画の前に ModelPoseUpdateSystem がすべて焼き直す
     PropagateSubtree(trans.firstChildID, world4);
 }
+
+
 
 void BoneAttachmentSystem::PropagateSubtree(EntityID firstChild, const XMFLOAT4X4 &parentWorld)
 {
@@ -107,6 +107,8 @@ void BoneAttachmentSystem::PropagateSubtree(EntityID firstChild, const XMFLOAT4X
         }
     }
 }
+
+
 
 // JoltPushSystem（L03_PushToPhysics）が剣などの剛体を追従位置へ押し込む前に確定させる
 REGISTER_LOGIC_SYSTEM(BoneAttachmentSystem, Priority::LogicStage::L03_PrePhysics);

@@ -1,16 +1,9 @@
 #pragma once
-// ===========================================================================
-// 概要: UI の画像（または単色の矩形）の見た目を持つコンポーネント UIImageComponent。
-//
-// 責務:
-//   - 画像パス・色・グラデーション・合成方法・描画順を保持する
-//
-// 備考: UIImageCollectSystem が UITransformComponent の computed 矩形と合わせて UIDrawList に積み、
-//       UIRenderer が 2D パスで描く。texturePath が空なら color の単色で塗る（パネル・背景など）。
-// ===========================================================================
 #include <DirectXMath.h>
 #include <string>
 
+// UI の画像、または単色の矩形の見た目。texturePath が空なら color で塗る
+// UIImageCollectSystem が UITransformComponent の矩形と合わせて積み、UIRenderer が 2D パスで描く
 struct UIImageComponent
 {
     std::string       texturePath;                      // 画像パス。空なら単色塗り
@@ -20,7 +13,7 @@ struct UIImageComponent
     bool              useGradient = false;
     DirectX::XMFLOAT4 colorBottom = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    // テクスチャの切り出し範囲（正規化 [0,1]。xy = 左上 / zw = 幅と高さ）。既定は全体。
+    // テクスチャの切り出し範囲（正規化 [0,1]。xy = 左上 / zw = 幅と高さ）。既定は全体
     //   矩形の幅と一緒に縮めると、画像を引き伸ばさずに端から隠せる（タイトルロゴが左から現れる演出）
     DirectX::XMFLOAT4 uvRect = {0.0f, 0.0f, 1.0f, 1.0f};
 

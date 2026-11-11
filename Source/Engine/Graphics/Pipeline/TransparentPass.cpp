@@ -13,6 +13,8 @@ void TransparentPass::Initialize(const RenderServices &services)
     m_instanceBuffer.Create(services.device, 8192);
 }
 
+
+
 void TransparentPass::Execute(const RenderFrameContext &ctx)
 {
     ID3D11DeviceContext  *dc             = ctx.dc;
@@ -24,11 +26,10 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
     {
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
+    // ブレンドあり・深度はテストだけで書かない。ここに来るのは alphaMode が Blend のメッシュだけなので、全部この PSO で描く
     m_psoTransparent.Apply(dc, m_services->renderState);
 
-    const PipelineState *lastPso = &m_psoTransparent;
-
-    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる。
+    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる
     // この配列は毎フレーム作り直すので、並べ替えて壊してかまわない
     auto &allTrans = queue->GetDeferredTransparentCommandsMutable();
     std::sort(allTrans.begin(), allTrans.end(),
@@ -43,16 +44,6 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
 
         if (!matShader) continue;
         matShader->Begin(dc, *m_services, ctx);
-
-        // シェーダーの PSO（無ければパスの既定）を、今の PSO と違うときだけ適用する
-        {
-            const PipelineState *want = shader->GetPSO() ? shader->GetPSO() : &m_psoTransparent;
-            if (want != lastPso)
-            {
-                want->Apply(dc, m_services->renderState);
-                lastPso = want;
-            }
-        }
 
         const Model::Mesh &mesh = *info.mesh;
 

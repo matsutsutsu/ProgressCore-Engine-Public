@@ -10,6 +10,8 @@ void Input::Initialize(HWND hWnd)
     keyboard = std::make_unique<Keyboard>();
 }
 
+
+
 void Input::Update(float dt)
 {
     ZoneScopedN("Input::Update");
@@ -18,8 +20,8 @@ void Input::Update(float dt)
     mouse->Update();
     keyboard->Update();
 
-    // 裏に回っている間は、キーとマウスを何も押していない扱いにする。
-    //   Alt+Tab で離れると「離した」の通知が届かず、戻ったときに押しっぱなしのまま歩き続ける。
+    // 裏に回っている間は、キーとマウスを何も押していない扱いにする
+    //   Alt+Tab で離れると「離した」の通知が届かず、戻ったときに押しっぱなしのまま歩き続ける
     //   マウスは画面全体のボタンを読むので、そのままだと他のアプリでのクリックを拾う
     if (!m_appActive)
     {
@@ -29,7 +31,7 @@ void Input::Update(float dt)
 
     // 1. 直近に操作されたデバイスの判定
     // ゲームパッド: スティックのドリフト（指を離しても微小な値が出続ける現象）で
-    // UI のアイコン表示が勝手に切り替わらないよう、0.1 未満の傾きは無視する。
+    // UI のアイコン表示が勝手に切り替わらないよう、0.1 未満の傾きは無視する
     if (gamePad->GetButtonDown() != 0 ||
         std::abs(gamePad->GetAxisLX()) > 0.1f || std::abs(gamePad->GetAxisLY()) > 0.1f ||
         std::abs(gamePad->GetAxisRX()) > 0.1f || std::abs(gamePad->GetAxisRY()) > 0.1f ||
@@ -45,8 +47,8 @@ void Input::Update(float dt)
         m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
     }
 
-    // 2. ロジック用に「押した瞬間」を溜める。
-    //    OR で溜めるので、ClearLogicInput までに一度でも押されればフラグが立ったままになる。
+    // 2. ロジック用に「押した瞬間」を溜める
+    //    OR で溜めるので、ClearLogicInput までに一度でも押されればフラグが立ったままになる
     m_logicPadButtonDown |= gamePad->GetButtonDown();
     m_logicMouseButtonDown |= mouse->GetButtonDown();
 
@@ -62,6 +64,8 @@ void Input::Update(float dt)
         }
     }
 }
+
+
 
 void Input::ClearLogicInput()
 {

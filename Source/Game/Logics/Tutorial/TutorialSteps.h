@@ -1,21 +1,15 @@
 #pragma once
 // ===========================================================================
-// 概要: チュートリアルで教える項目の表（kTutorialSteps）。
+// 概要: チュートリアルで教える項目の表。並び順が教える順番になる
 //
-// 責務:
-//   - 項目ごとに、ヒントのアイコンと文言・達成の条件の種類・ボスに攻撃させるかを持つ
-//   - 並び順で教える順番を決める
-//
-// 備考: 行は指定初期化子（.text = ...）で書き、使わない列は省いて既定値のままにする。
-//
-//       何をどれだけしたら達成か（距離・回数・時間切れ）は、TutorialSystem.cpp が TutorialGoal ごとに持つ。
-//       ヒントの文に数を書いた項目は、TutorialSystem.cpp の定数と合わせること。
-//       項目を増やしたら、TutorialGoal と TutorialSystem::Update の switch にも足すこと。
+// 備考: 行は指定初期化子（.text = ...）で書き、使わない列は省く
+//       達成の量（距離・回数・時間切れ）は TutorialSystem.cpp が持つ。文に数を書いた項目は、その定数と合わせる
+//       項目を増やしたら、TutorialGoal と TutorialSystem::Update の switch にも足す
 // ===========================================================================
-#include "Game/UI/Input/InputIconComponent.h" // ヒントのアイコンの種類
+#include "Game/UI/Input/InputIconComponent.h"
 
 #include <cstdint>
-#include <iterator> // std::size
+#include <iterator>
 
 // 達成の条件の種類。表の行と1対1で、TutorialSystem::Update の switch で判定する
 enum class TutorialGoal : uint8_t
@@ -32,7 +26,8 @@ enum class TutorialGoal : uint8_t
     DashAttack, // ダッシュ攻撃を出す
     JustEvade,  // ジャスト回避を成立させる
     Strike,     // ジャスト回避の後に攻撃を当てる（当てなくても時間で進む）
-    Rush,       // ラッシュの説明を読んで、攻撃を当てる（説明を読む時間がたつまで進まない）
+    Rush,       // ラッシュの説明を読む（時間で進む。攻撃は求めない）
+    FreePlay,   // 自由に練習する。終わらず、ポーズメニューからタイトルへ戻って抜ける
 };
 
 // 教える項目1つぶん
@@ -41,10 +36,12 @@ struct TutorialStepDef
     const char   *name        = "";                    // 名前（デバッグ表示用）
     InputIconKind icon        = InputIconKind::Action; // ヒントのアイコンの種類。移動と視点は固定のアイコン（Move / Camera）
     const char   *action      = nullptr;               // icon が Action のときに出すアクション名（InputConfig.json の Name）
+    const char   *action2     = nullptr;               // 同時押しを教える2つ目のアクション名
     const char   *text        = "";                    // ヒントの1行（UTF-8）。空ならヒントを出さない
     const char   *assistText  = nullptr;               // 補助スローの「今だ」の段階で差し替える1行。nullptr なら差し替えない
     TutorialGoal  goal        = TutorialGoal::Wait;    // 達成の条件の種類
-    bool          bossAttacks = false;                 // この項目の間、ボスに手加減の攻撃をさせるか。false ならボスは待機して撃たない
+    bool          bossAttacks = false;                 // この項目の間、ボスに手加減の攻撃をさせるか
+    float         holdTime    = 1.2f;                  // 達成してから次の項目へ進むまでの余韻（秒・実時間）
 };
 
 // 教える項目の表。並び順がそのまま教える順番になる
@@ -52,7 +49,7 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
     // --- 動かす ---
 
     // シーンに入ってすぐは明転の途中なので、少し待ってから始める。ボスもこの間は待たせる
-    {.name = "WaitBattle", .goal = TutorialGoal::Wait},
+    {.name = "WaitBattle", .goal = TutorialGoal::Wait, .holdTime = 0.0f},
 
     {.name = "Move",
      .icon = InputIconKind::Move,
@@ -66,7 +63,7 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
 
     {.name   = "Dash",
      .action = "Dash",
-     .text   = "回避ダッシュ。一瞬で大きく動ける、そのまま走り続ける",
+     .text   = "ダッシュ。一瞬で大きく動き、そのまま走りに移る",
      .goal   = TutorialGoal::Dash},
 
     {.name   = "Jump",
@@ -84,7 +81,7 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
     // 先にロックオンさせる。ボスを画面に捉え続けられるので、この後の攻撃で見失わない
     {.name   = "LockOn",
      .action = "LockOn",
-     .text   = "ボスをロックオン。視点がボスを追い続ける",
+     .text   = "ボスをロックオン。もう一度押すと解除（押すたびに切り替え）",
      .goal   = TutorialGoal::LockOn},
 
     {.name   = "Attack",
@@ -97,21 +94,24 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
      .text   = "攻撃ボタンを連続で押すと、コンボになる",
      .goal   = TutorialGoal::Combo},
 
-    {.name   = "DashAttack",
-     .action = "Attack",
-     .text   = "ダッシュ中か走っている間に攻撃すると、ダッシュ攻撃",
+    // 「ダッシュ ＋ 攻撃」と2つのボタンを並べて出す
+    {.name    = "DashAttack",
+     .action  = "Dash",
+     .action2 = "Attack",
+     .text    = "ダッシュ中か走っている間に攻撃すると、ダッシュ攻撃",
      .goal   = TutorialGoal::DashAttack},
 
     // --- 読んで避けて斬り込む（ここからボスが攻撃してくる） ---
 
-    // ボスに攻撃させるのは、攻撃を避ける練習からだけにする。
+    // ボスに攻撃させるのは、攻撃を避ける練習からだけにする
     // 移動や攻撃を覚えている最中に被弾すると、何を教わっているのか分からなくなるため
     {.name        = "ReadAndEvade",
      .action      = "Dash",
-     .text        = "陣形の形を読み、突っ込んでくる瞬間に回避",
-     .assistText  = "今だ！ 回避",
+     .text        = "敵の攻撃のタイミングに合わせてダッシュをするとジャスト回避ができる",
+     .assistText  = "今だ！ ダッシュ！",
      .goal        = TutorialGoal::JustEvade,
-     .bossAttacks = true},
+     .bossAttacks = true,
+     .holdTime    = 0.0f}, // 成立するとすぐラッシュに入るので、余韻を挟まない
 
     // ジャスト回避の接近でボスの近くへ運ばれている間に促す
     {.name        = "Strike",
@@ -121,10 +121,19 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
      .bossAttacks = true},
 
     // 今のジャスト回避から攻撃までが「ラッシュ」だと名前を付けて説明する。体験した直後に言うと結び付けやすい
-    {.name        = "Rush",
-     .action      = "Attack",
-     .text        = "ジャスト回避の後に攻撃ボタンを押すと、ラッシュで一気に斬り込める！",
-     .goal        = TutorialGoal::Rush,
+    // 読むだけの項目なので、ボスは待たせる（読んでいる間に被弾させない）
+    {.name     = "Rush",
+     .action   = "Attack",
+     .text     = "ジャスト回避の後に攻撃ボタンを押すと、ラッシュで一気に斬り込める！",
+     .goal     = TutorialGoal::Rush,
+     .holdTime = 1.0f}, // 読む時間の間に帯が満ちるので、余韻は短くてよい
+
+    // 最後は終わらせずに、好きなだけ練習させる。抜けるときはポーズメニューの「タイトルへ」
+    // 抜け方を教えることで、ポーズメニューがあることも伝える
+    {.name        = "FreePlay",
+     .icon        = InputIconKind::Pause,
+     .text        = "自由に練習しよう。ESC のメニューからタイトルへ戻れる",
+     .goal        = TutorialGoal::FreePlay,
      .bossAttacks = true},
 };
 

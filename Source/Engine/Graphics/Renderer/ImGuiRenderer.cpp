@@ -9,7 +9,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// 操作をやめてから、間引かずに描き続ける時間（秒）。
+// 操作をやめてから、間引かずに描き続ける時間（秒）
 // ホバーの色が戻る・ツールチップが消えるといった変化が数フレーム続くので、
 // 操作が止まった瞬間に間引くと、途中の1コマが画面に残って見える
 static constexpr float kPlatformActiveTail = 0.4f;
@@ -57,7 +57,7 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceCont
 
     ImGuiStyle &style = ImGui::GetStyle();
 
-    // ウィンドウ左上の折りたたみボタンを出さない。
+    // ウィンドウ左上の折りたたみボタンを出さない
     // 押し間違えてタイトルバーだけになり、レイアウトが崩れたように見えるのを防ぐ
     style.WindowMenuButtonPosition = ImGuiDir_None;
 
@@ -76,18 +76,12 @@ void ImGuiRenderer::Initialize(HWND hWnd, ID3D11Device *device, ID3D11DeviceCont
     ImGui_ImplWin32_Init(hWnd);
     ImGui_ImplDX11_Init(device, dc);
 
-    // 切り離した OS ウィンドウのスワップチェーンについて（計測済み。変えないこと）:
-    //   DX11 のバックエンドの既定は BufferCount = 1 / DXGI_SWAP_EFFECT_DISCARD（古い BLT モデル）。
-    //   ImGui_ImplDX11_SetSwapChainDescs() でフリップモデル（FLIP_DISCARD / BufferCount = 2）に
-    //   変えられる。実際に変えて、モニタ2枚・外に出したウィンドウ4枚・垂直同期なしで計った結果:
-    //
-    //     間引きあり + フリップ  3.97 / 3.91 ms      間引きあり + 既定  3.93 / 3.93 ms
-    //
-    //   差は出なかった。Present の回数を間引き（ShouldRenderPlatformWindows）で減らせば、
-    //   1回あたりの方式の差は目立たない。一方で CreateSwapChain が失敗する環境では、
-    //   IM_ASSERT は NDEBUG で消えるので、null のスワップチェーンを Present して落ちる。
-    //   得が無くリスクだけが残るので変えていない。
+    // 切り離したウィンドウのスワップチェーンは、バックエンドの既定（BLT モデル）のままにする
+    // フリップモデルに変えて計っても差は出なかった（Present の回数は間引きで減らしている）
+    // 一方で CreateSwapChain が失敗する環境では、null のスワップチェーンを Present して落ちる
 }
+
+
 
 void ImGuiRenderer::Finalize()
 {
@@ -97,6 +91,8 @@ void ImGuiRenderer::Finalize()
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 毎フレーム
@@ -117,7 +113,7 @@ void ImGuiRenderer::NewFrame()
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
 
-    // 画面全体を覆う枠なしのウィンドウを作り、その中をドックスペースにする。
+    // 画面全体を覆う枠なしのウィンドウを作り、その中をドックスペースにする
     // PassthruCentralNode で、真ん中の何もドッキングしていない所はゲーム画面が透けて見え、操作も通る
     const ImGuiWindowFlags   window_flags   = ImGuiWindowFlags_None | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
     const ImGuiDockNodeFlags docspace_flags = ImGuiDockNodeFlags_None
@@ -143,6 +139,8 @@ void ImGuiRenderer::NewFrame()
     ImGui::End();
 }
 
+
+
 void ImGuiRenderer::Render(ID3D11DeviceContext *context)
 {
     ZoneScopedN("ImGuiRenderer::Render (Total)");
@@ -167,7 +165,7 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
             ZoneScopedN("ImGui::UpdatePlatformWindows");
             ImGui::UpdatePlatformWindows();
         }
-        // UpdatePlatformWindows() は OS ウィンドウを作る・壊す・動かすので、毎フレーム呼ぶ。
+        // UpdatePlatformWindows() は OS ウィンドウを作る・壊す・動かすので、毎フレーム呼ぶ
         // 間引けるのは描画と Present だけ
         if (s_platformWindowsEnabled && ShouldRenderPlatformWindows())
         {
@@ -177,14 +175,16 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
     }
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 別ウィンドウ（マルチビューポート）の描画制御
 // ---------------------------------------------------------------------------
 
 bool ImGuiRenderer::ShouldRenderPlatformWindows()
 {
-    // Unity（Repaint）や Unreal（Slate の Invalidation）のエディタは、変化したウィンドウだけを描き直す。
-    // ImGui にはその仕組みが無いので、操作中は毎フレーム、放置中は低い頻度で描く、で近づける
+    // Unity（Repaint）や Unreal（Slate の Invalidation）のエディタは、変化したウィンドウだけを描き直す
+    // ImGui にはその仕組みがないので、操作中は毎フレーム、放置中は低い頻度で描く、で近づける
 
     if (!s_platformWindowsThrottled) return true;
 
@@ -201,11 +201,8 @@ bool ImGuiRenderer::ShouldRenderPlatformWindows()
         return true;
     }
 
-    // 操作中かどうかを、マウスの移動やボタンで直接判定してはいけない。プレイ中はマウスで
-    // 視点を動かし続け、攻撃でボタンも押すので、一番間引きたい場面で常に描くことになる。
-    // WantCaptureMouse はカーソルが ImGui のウィンドウの上にあるときだけ true で、
-    // ゲーム画面（PassthruCentralNode）の上では false になる。ImGui が掴んでいる間
-    // （ドラッグ・サイズ変更・スライダー）はカーソルがウィンドウの外に出ても true のまま
+    // マウスの移動やボタンで判定しない。プレイ中は視点と攻撃で常に動くので、一番間引きたい場面で毎回描いてしまう
+    // WantCaptureMouse は、カーソルが ImGui のウィンドウの上にあるか、ImGui が掴んでいる間だけ true
     const bool active = io.WantCaptureMouse || io.WantTextInput || ImGui::IsAnyItemActive();
     if (active)
     {
@@ -229,10 +226,14 @@ bool ImGuiRenderer::ShouldRenderPlatformWindows()
     return false;
 }
 
+
+
 void ImGuiRenderer::SetPlatformWindowsEnabled(bool enabled)
 {
     s_platformWindowsEnabled = enabled;
 }
+
+
 
 void ImGuiRenderer::SetPlatformWindowsThrottled(bool enabled)
 {
@@ -243,6 +244,8 @@ void ImGuiRenderer::SetPlatformWindowsThrottled(bool enabled)
     s_platformIdleTime  = 0.0f;
     s_platformIdleAccum = 0.0f;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // Win32 メッセージ

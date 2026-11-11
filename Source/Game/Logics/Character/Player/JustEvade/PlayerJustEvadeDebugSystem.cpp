@@ -2,10 +2,10 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Graphics/SceneView/Camera.h" // 方向ボタンをカメラ基準の向きにする
-#include "Game/Core/GameEvents.h"             // JustEvadeSuccessEvent
+#include "Engine/Graphics/SceneView/Camera.h"
+#include "Game/Core/GameEvents.h"
 
-#include <imgui.h> // デバッグ UI(OnGui)
+#include <imgui.h>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -40,8 +40,8 @@ void PlayerJustEvadeDebugSystem::Update(float dt)
         // ---------------------------------------------------------
         TryForceSuccess(id, evade, dash, player);
 
-        // 差し込んだのにダッシュが始まらなかった（硬直中など）ときは、成立の対象を取り消す。
-        // 残しておくと、後で自分で押したダッシュが勝手に成立してしまう。
+        // 差し込んだのにダッシュが始まらなかった（硬直中など）ときは、成立の対象を取り消す
+        // 残しておくと、後で自分で押したダッシュが勝手に成立してしまう
         if (m_forcedDir != EvadeDir::None)
         {
             --m_forceFramesLeft;
@@ -69,6 +69,8 @@ void PlayerJustEvadeDebugSystem::Update(float dt)
     });
 }
 
+
+
 // ---------------------------------------------------------------------------
 // 差し込み
 // ---------------------------------------------------------------------------
@@ -88,7 +90,7 @@ void PlayerJustEvadeDebugSystem::InjectDash(PlayerInputComponent &pin, Character
         return;
     }
 
-    // ダッシュ中・クールダウン中は始められない。明けるまで少し待つ。
+    // ダッシュ中・クールダウン中は始められない。明けるまで少し待つ
     if (dash.isDashing || dash.currentTimer > 0.0f)
     {
         m_pendingTimeout -= dt;
@@ -108,7 +110,7 @@ void PlayerJustEvadeDebugSystem::InjectDash(PlayerInputComponent &pin, Character
         return;
     }
 
-    // 本物の入力と同じ形で書く。向きは PlayerDashSystem が desiredVelocity から決める。
+    // 本物の入力と同じ形で書く。向きは PlayerDashSystem が desiredVelocity から決める
     movement.desiredVelocity = dir;
     pin.dashPressed          = true;
 
@@ -117,6 +119,8 @@ void PlayerJustEvadeDebugSystem::InjectDash(PlayerInputComponent &pin, Character
     m_pendingDir      = EvadeDir::None;
     m_lastResult      = std::string("ダッシュを差し込んだ: ") + DirLabel(m_forcedDir);
 }
+
+
 
 void PlayerJustEvadeDebugSystem::TryForceSuccess(EntityID id, PlayerJustEvadeComponent &evade, PlayerDashComponent &dash,
                                            const PlayerComponent &player)
@@ -127,17 +131,17 @@ void PlayerJustEvadeDebugSystem::TryForceSuccess(EntityID id, PlayerJustEvadeCom
         return;
     }
 
-    // PlayerJustEvadeSystem と同じ条件：受付窓が開いていて、このダッシュでまだ成立していない。
+    // PlayerJustEvadeSystem と同じ条件：受付窓が開いていて、このダッシュでまだ成立していない
     if (!dash.isDashing || !dash.isJustEvadeWindowActive || evade.isJustSuccess)
     {
         return;
     }
 
-    // 成立。書き方は PlayerJustEvadeSystem と揃える（受付を閉じ、成立フラグを立て、イベントを出す）。
+    // 成立。書き方は PlayerJustEvadeSystem と揃える（受付を閉じ、成立フラグを立て、イベントを出す）
     dash.isJustEvadeWindowActive = false;
     evade.isJustSuccess          = true;
 
-    // 攻撃してきた敵の代わりにロックオン先を載せる（今は誰も読まない）。
+    // 攻撃してきた敵の代わりにロックオン先を載せる（今は誰も読まない）
     m_world->GetEventBus().Publish(JustEvadeSuccessEvent{id, player.lockOnTargetID});
 
     m_lastResult = std::string("成立: ") +
@@ -147,9 +151,11 @@ void PlayerJustEvadeDebugSystem::TryForceSuccess(EntityID id, PlayerJustEvadeCom
     m_forceFramesLeft = 0;
 }
 
+
+
 void PlayerJustEvadeDebugSystem::InjectAutoAttack(PlayerInputComponent &pin, const PlayerRushComponent &rush, float dt)
 {
-    // 待機の外では数え直す（次の待機でもう一度入れられるように）。
+    // 待機の外では数え直す（次の待機でもう一度入れられるように）
     if (!rush.isActive || rush.phase != RushPhase::Ready)
     {
         m_readyElapsed     = 0.0f;
@@ -165,12 +171,14 @@ void PlayerJustEvadeDebugSystem::InjectAutoAttack(PlayerInputComponent &pin, con
     m_readyElapsed += dt;
     if (m_readyElapsed >= m_autoAttackDelay)
     {
-        // PlayerRushSystem が待機中の攻撃入力として受け取り、詰め→斬りへ進む。
+        // PlayerRushSystem が待機中の攻撃入力として受け取り、詰め→斬りへ進む
         pin.attackPressed  = true;
         m_autoAttackIssued = true;
         m_lastResult += " → 自動攻撃";
     }
 }
+
+
 
 void PlayerJustEvadeDebugSystem::ForceEndRush(PlayerRushComponent &rush)
 {
@@ -186,11 +194,13 @@ void PlayerJustEvadeDebugSystem::ForceEndRush(PlayerRushComponent &rush)
         return;
     }
 
-    // 自由の時間切れにする。この後に走る PlayerRushSystem（L02）が同じステップで EndRush を呼ぶ。
-    rush.phase   = RushPhase::Free;
+    // 連撃の時間切れにする。この後に走る PlayerRushSystem（L02）が同じステップで EndRush を呼ぶ
+    rush.phase   = RushPhase::Flurry;
     rush.timer   = 0.0f;
     m_lastResult = "ラッシュを終了";
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 向き
@@ -203,7 +213,7 @@ Vector3 PlayerJustEvadeDebugSystem::ToWorldDir(EvadeDir dir) const
         return Vector3::Zero;
     }
 
-    // PlayerInputSystem と同じく、カメラの前方と右方を水平にして使う。
+    // PlayerInputSystem と同じく、カメラの前方と右方を水平にして使う
     const Camera *camera  = m_world->GetResource<Camera *>();
     Vector3       forward = camera->GetFront();
     Vector3       right   = camera->GetRight();
@@ -228,6 +238,8 @@ Vector3 PlayerJustEvadeDebugSystem::ToWorldDir(EvadeDir dir) const
     return Vector3::Zero;
 }
 
+
+
 const char *PlayerJustEvadeDebugSystem::DirLabel(EvadeDir dir) const
 {
     switch (dir)
@@ -245,6 +257,8 @@ const char *PlayerJustEvadeDebugSystem::DirLabel(EvadeDir dir) const
     }
     return "-";
 }
+
+
 
 // ---------------------------------------------------------------------------
 // デバッグ UI
@@ -304,5 +318,7 @@ void PlayerJustEvadeDebugSystem::OnGui()
     ImGui::TextDisabled("F2 でカーソルを出したままボタンを押しても差し込める");
 }
 
-// 入力の確定（PlayerInputSystem）の後、ダッシュの開始（PlayerDashSystem, L02）より前に入力を差し込む。
+
+
+// 入力の確定（PlayerInputSystem）の後、ダッシュの開始（PlayerDashSystem, L02）より前に入力を差し込む
 REGISTER_LOGIC_SYSTEM(PlayerJustEvadeDebugSystem, Priority::LogicStage::L01_Input);

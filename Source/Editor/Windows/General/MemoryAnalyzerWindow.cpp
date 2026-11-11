@@ -8,6 +8,8 @@ MemoryAnalyzerWindow::MemoryAnalyzerWindow()
 {
 }
 
+
+
 void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
 {
     // 0.2 秒（60fps で約12フレーム）に1回だけプールを走査する
@@ -48,6 +50,8 @@ void MemoryAnalyzerWindow::DrawContents(EditorContext &context)
     DrawTextureTableSection();
 }
 
+
+
 void MemoryAnalyzerWindow::DrawOverviewSection()
 {
     float vramMb   = static_cast<float>(m_cachedTotalVram) / (1024.0f * 1024.0f);
@@ -69,6 +73,8 @@ void MemoryAnalyzerWindow::DrawOverviewSection()
     ImGui::ProgressBar(ratio, ImVec2(-1, 25), "");
     ImGui::PopStyleColor();
 }
+
+
 
 void MemoryAnalyzerWindow::DrawTextureTableSection()
 {

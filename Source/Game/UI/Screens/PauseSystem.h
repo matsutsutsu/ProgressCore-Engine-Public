@@ -1,28 +1,24 @@
 #pragma once
 // ===========================================================================
-// 概要: Esc かパッドの START でゲームを一時停止し、ポーズメニュー（ゲームに戻る / 設定 / タイトルへ）を重ねて出す System。
+// 概要: Esc かパッドの START でゲームを一時停止し、ポーズメニューを重ねて出す System
 //
 // 責務:
-//   - 一時停止の切り替えを受け、GameFlowState.paused とゲームの時間（Time::Pause / Resume）を切り替える
-//   - 一時停止したらメニューの UI（左上の見出し・ボタン）を作り、解除したら消す
-//   - 「ゲームに戻る」と「タイトルへ」のボタンを受ける（「設定」は SettingsScreenSystem が受ける）
+//   - 一時停止を切り替え、GameFlowState.paused とゲームの時間を止める・戻す
+//   - 一時停止したらメニューの UI を作り、解除したら消す
+//   - 「ゲームに戻る」と「タイトルへ」のボタンを受ける
 //   - 製品ビルドでは、アプリが裏に回ったら自動で一時停止する
 //
-// 備考:
-//   描画ステージ（R10_UI）に登録する。
-//   一時停止中はロジックと物理が止まり、描画だけが UpdatePaused で回るので、ロジックステージだと解除の入力を拾えない。
-//
-//   画面の組みはリザルトと共通なので、ScreenHeadingUi.h で作る。
-//
-//   全体登録（REGISTER_*）はせず、GameScene と EditorScene が登録する。ゲーム本編でだけ動かす。
+// 備考: 一時停止中は描画だけが回るので、解除の入力を拾えるよう描画ステージに置く
+//       全体登録はせず、GameScene と EditorScene が登録する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/UI/ECS/Components/UIButtonComponent.h"
 
 #include <vector>
 
-class PauseSystem
-    : public CCL::ECS::IfSystem<PauseSystem, CCL::ECS::Read<UIButtonComponent>>
+class PauseSystem : public CCL::ECS::IfSystem<
+    PauseSystem,
+    CCL::ECS::Read<UIButtonComponent>>
 {
 public:
     PauseSystem() : IfSystem("PauseSystem") {}
@@ -38,13 +34,8 @@ private:
     void ClosePause(); // 再開してメニューを消す
 
     /**
-     * @brief 作ったメニューを、親の子のリストに繋ぐ（エディタの Hierarchy で木の形に見せるため）。
-     *
-     * 親子のリストは TransformUpdateSystem（ロジック）が繋ぐが、一時停止中はロジックが止まっていて繋がらない。
-     * 繋がないと、Hierarchy に Canvas だけが子の無いルートとして出て、中身を確かめられない。
-     * 画面の配置は子から親をたどって決まるので、繋がなくても見た目は変わらない。
-     *
-     * @return 繋ぎ終えたら true。生成がまだ反映されていなければ false（次のフレームでもう一度呼ぶ）。
+     * @brief 作ったメニューを、親の子のリストに繋ぐ（エディタの Hierarchy で木の形に見せるため）
+     * @return 繋ぎ終えたら true。生成がまだ反映されていなければ false（次のフレームでもう一度呼ぶ）
      */
     bool LinkOverlay();
 

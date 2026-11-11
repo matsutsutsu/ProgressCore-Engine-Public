@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: コンポーネントのメタ定義を書くためのマクロ群（CFIELD / COMPONENT_META_BEGIN 等）。
+// 概要: コンポーネントのメタ定義を書くためのマクロ群（CFIELD / COMPONENT_META_BEGIN 等）
 //
 // 責務:
 //   - フィールドの型から FieldDescriptor を自動で作る（CFIELD 系）
@@ -95,7 +95,7 @@ namespace ComponentMetaHelpers
 // CFIELD 系: フィールドを 1 つ宣言する
 //   型から自動で決まる: float / int / bool / uint8_t / uint16_t / uint32_t /
 //                       XMFLOAT2 / XMFLOAT3 / XMFLOAT4 / std::string / EntityLink
-//   ThisType を使うので、COMPONENT_META_BEGIN か CCL_META_USING_THIS の中でだけ使える。
+//   ThisType を使うので、COMPONENT_META_BEGIN か CCL_META_USING_THIS の中でだけ使える
 // ===========================================================================
 
 // 基本形: CFIELD(field, "表示名", "カテゴリ")
@@ -116,10 +116,9 @@ namespace ComponentMetaHelpers
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
         Display, #Field, offsetof(ThisType, Field), Category, Tooltip, true),
 
-// CFIELD_*_RT: 実行時専用のフィールド。インスペクタには出すが保存しない。
+// CFIELD_*_RT: 実行時専用のフィールド。インスペクタには出すが保存しない
 //   System が書くフィールド（現在のステート・タイマー・計算済みの目標など）を保存すると、
 //   保存した瞬間の値がプレハブに残り、そこから生成した Entity がその値で始まってしまう
-//   （Drone.json に currentState=FireCharge が残っていた）。
 //   今の値を見られること自体はデバッグに要るので、表示は残して保存だけを止める
 #define CFIELD_RT(Field, Display, Category)                                                                                     \
     ComponentMetaHelpers::MakeFieldAuto<ThisType,                                                                               \
@@ -139,7 +138,7 @@ namespace ComponentMetaHelpers
 #define CFIELD_COLOR(Field, Display, Category) \
     FD_Color(Display, #Field, offsetof(ThisType, Field), Category),
 
-// ファイルパス（std::string）をテキスト入力とファイルダイアログで編集する。
+// ファイルパス（std::string）をテキスト入力とファイルダイアログで編集する
 //   Preset は FileDialog のプリセット名（例 "Texture"）。説明が不要なら nullptr
 //   CFIELD_ASSET(field, "表示名", "カテゴリ", "Texture", "説明")
 #define CFIELD_ASSET(Field, Display, Category, Preset, Tooltip) \
@@ -155,7 +154,7 @@ namespace ComponentMetaHelpers
 #define CFIELD_INT_RANGED(Field, Display, Min, Max, Category) \
     FD_Int(Display, #Field, offsetof(ThisType, Field), Min, Max, Category),
 
-// uint8 の enum（コンボボックスに enum 名を出す）。
+// uint8 の enum（コンボボックスに enum 名を出す）
 //   EnumCount には std::size(...)（size_t）を渡せるよう、ここで int にキャストする
 #define CFIELD_ENUM_U8(Field, Display, EnumNames, EnumCount, Category) \
     FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames, static_cast<int>(EnumCount), Category),
@@ -174,11 +173,11 @@ namespace ComponentMetaHelpers
 //   REGISTER_COMPONENT_EDITOR_GUI を 1 ブロックで書く。入口は 3 種類（どれも END で閉じる）:
 //     COMPONENT_META_BEGIN(T, "表示名")                               カテゴリ Misc / 並び順 1000
 //     COMPONENT_META_BEGIN_CAT(T, "表示名", "カテゴリ")               並び順 1000
-//     COMPONENT_META_BEGIN_FULL(T, "表示名", "カテゴリ", 並び順, 非表示) 全て指定（並び順は小さいほど上段）
-//   同じ T を別の翻訳単位で特殊化しないこと（ODR 違反になる）。
+//     COMPONENT_META_BEGIN_FULL(T, "表示名", "カテゴリ", 並び順, 非表示) すべて指定（並び順は小さいほど上段）
+//   同じ T を別の翻訳単位で特殊化しないこと（ODR 違反になる）
 // ===========================================================================
 
-// 全て指定する版（他の BEGIN はこれを呼ぶ）
+// すべて指定する版（他の BEGIN はこれを呼ぶ）
 #define COMPONENT_META_BEGIN_FULL(T, NameStr, CategoryStr, Priority, Hidden)                                                  \
     template <>                                                                                                               \
     struct ComponentMeta<T>                                                                                                   \

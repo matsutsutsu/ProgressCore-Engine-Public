@@ -17,6 +17,8 @@ void UILayoutSystem::Initialize()
         m_world->AddResource<UIDrawList>();
 }
 
+
+
 void UILayoutSystem::Update(float /*dt*/)
 {
     auto       &gfx     = Graphics::Instance();
@@ -28,6 +30,8 @@ void UILayoutSystem::Update(float /*dt*/)
         CCL::UI::ComputeUIRect(*m_world, id, t, screenW, screenH);
     });
 }
+
+
 
 // 描画リストへ積むのは次の帯（R10b_UICollect）の収集 System
 REGISTER_RENDER_SYSTEM(UILayoutSystem, Priority::RenderStage::R10_UI);

@@ -30,7 +30,7 @@ void UITextCollectSystem::Update(float /*dt*/)
         item.text      = txt.text;
         item.pixelSize = txt.pixelSize;
 
-        // 影は本体と同じ sortOrder で先に積む。並べ替えは安定ソートなので、影が本体のすぐ後ろに来る。
+        // 影は本体と同じ sortOrder で先に積む。並べ替えは安定ソートなので、影が本体のすぐ後ろに来る
         //   ずらす量を文字の高さに比例させるのは、固定 px だと小さい文字では影が離れすぎて二重に見えるため
         if (txt.shadow)
         {
@@ -43,5 +43,7 @@ void UITextCollectSystem::Update(float /*dt*/)
         drawList.items.push_back(std::move(item));
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UITextCollectSystem, Priority::RenderStage::R10b_UICollect);

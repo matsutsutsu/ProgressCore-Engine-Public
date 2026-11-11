@@ -1,5 +1,3 @@
-// 戦闘関連コンポーネントのシリアライズ/インスペクタ定義。
-
 #include "Engine/ECS/Core/CCL_World.h"
 #include <algorithm>
 #include "Game/Logics/Combat/Components/CombatComponents.h"
@@ -162,7 +160,7 @@ namespace ComponentMetaJson
         }
         static void Load(const json &j, CombatRosterComponent &comp, LoadContext *ctx)
         {
-            // count は entries の数から決める。count だけを見ると、count のキーが無い JSON で
+            // count は entries の数から決める。count だけを見ると、count のキーがない JSON で
             // 何も言わずに 0 件になってしまう
             comp.count = 0;
             if (j.contains("entries") && j["entries"].is_array())
@@ -189,7 +187,7 @@ namespace ComponentMetaJson
                     if (entry.contains("id"))
                     {
                         uint64_t rawId = entry["id"].get<uint64_t>();
-                        // 保存するときに EntityID ではなく LocalIndex（uint32）に変えてある。
+                        // 保存するときに EntityID ではなく LocalIndex（uint32）に変えてある
                         // 明示的にキャストしないと C4244（64bit から 32bit への暗黙の縮小）の警告が出る
                         comp.entries[idx].id = ctx
                                                    ? ctx->Resolve(static_cast<CCL::Serialization::LoadContext::LocalIndex>(rawId))

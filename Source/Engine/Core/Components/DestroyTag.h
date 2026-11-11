@@ -1,10 +1,5 @@
 #pragma once
-// ===========================================================================
-// 概要: 削除待ちの Entity に付けるタグ DestroyTag。
-//
-// 責務:
-//   - World::Destroy が付け、HierarchyCleanUpSystem が見て子ごと破棄する目印になる
-// ===========================================================================
+// 削除待ちの Entity に付けるタグ。World::Destroy が付け、HierarchyCleanUpSystem が子ごと破棄する
 
 namespace Tag
 {

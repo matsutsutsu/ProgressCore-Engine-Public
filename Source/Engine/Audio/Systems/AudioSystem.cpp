@@ -1,9 +1,9 @@
 #include "AudioSystem.h"
 #include "Engine/Audio/IAudioAPI.h"
 #include "Engine/Audio/Components/AudioEvents.h"
-#include "Engine/Animation/Core/AnimEventMessages.h" // アニメーションの Sound イベント
+#include "Engine/Animation/Core/AnimEventMessages.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
-#include "Engine/Time/Components/TimeState.h" // TimeContext（時間倍率 → 音のスロー演出）
+#include "Engine/Time/Components/TimeState.h"
 
 #include <algorithm>
 
@@ -23,7 +23,7 @@ void AudioSystem::Initialize()
         }
     });
 
-    // アニメーションの Sound イベント（AnimationSystem が L02 で Publish する）。
+    // アニメーションの Sound イベント（AnimationSystem が L02 で Publish する）
     //   鳴らす位置はその瞬間の entity のワールド位置で、以降は追従しない
     ListenEvent<AnimEventSoundMessage>([this](const AnimEventSoundMessage &e) {
         if (!m_world || e.eventPath.empty()) return;
@@ -40,6 +40,8 @@ void AudioSystem::Initialize()
     });
 }
 
+
+
 void AudioSystem::Update(float dt)
 {
     if (!m_world) return;
@@ -50,7 +52,7 @@ void AudioSystem::Update(float dt)
 
     // エミッター同士は独立なので並列に回す（DxtkAudioManager 側は mutex で保護されている）
     ForEachParallel([&api](const TransformComponent &transform, AudioEmitterComponent &emitter) {
-        // eventHash は eventName のキャッシュで、0 のときだけ名前から導出する。
+        // eventHash は eventName のキャッシュで、0 のときだけ名前から導出する
         //   インスペクタは名前と同時にハッシュも更新する。コードから名前を変えるときは eventHash を 0 に戻すこと
         if (emitter.eventHash == 0 && !emitter.eventName.empty())
             emitter.eventHash = CCL::Utils::HashString(emitter.eventName.c_str());
@@ -93,7 +95,7 @@ void AudioSystem::Update(float dt)
         }
     });
 
-    // ゲームの時間倍率をそのまま音のスロー度にする。
+    // ゲームの時間倍率をそのまま音のスロー度にする
     //   globalScale が 1 未満（ジャスト回避・撃破スロー等）になると slow>0 になり、
     //   DxtkAudioManager が全再生音のピッチを下げてリバーブを掛ける
     if (m_world->HasResource<TimeContext>())
@@ -105,6 +107,8 @@ void AudioSystem::Update(float dt)
 
     // api->Update はここでは呼ばない（AudioEngineTickSystem が 1 描画フレームに 1 回呼ぶ）
 }
+
+
 
 // 物理（L04_Physics）で Transform が確定した後に音源位置を同期する
 REGISTER_LOGIC_SYSTEM(AudioSystem, Priority::LogicStage::L06_Resolution);

@@ -21,19 +21,18 @@ GPUParticleUpdateSystem::~GPUParticleUpdateSystem() = default;
 // 定数バッファの組み立て
 // ---------------------------------------------------------------------------
 
-// 画面で見た色（sRGB）を、シェーダーが計算に使うリニアな値へ直す。
-//   ToneMapPS が最後に pow(x, 1/2.2) で画面用に戻すので、ここで 2.2 乗しておくと
-//   インスペクタで選んだ色がそのまま画面に出る。直さないと 0.3 が 0.58 まで持ち上がり、
-//   濃いオレンジが薄いオレンジになる（粒子の色が全体に薄く見えていた原因の1つ）。
-//   アルファは色ではなく割合なので変えない。
+// 画面で見た色（sRGB）を、シェーダーが計算に使うリニアな値へ直す。アルファは割合なので変えない
+// ToneMapPS が最後に 1/2.2 乗で戻すので、ここで 2.2 乗しておくと、インスペクタで選んだ色がそのまま画面に出る
 static GpuData::float4 SrgbToLinear(const GpuData::float4 &c)
 {
     const auto toLin = [](float v) { return std::pow((std::max)(v, 0.0f), 2.2f); };
     return {toLin(c.x), toLin(c.y), toLin(c.z), c.w};
 }
 
+
+
 // BuildStaticCb — desc（エミッタの設定）から CbParticleStatic を組み立てる
-//   desc が変わったとき（ParticleEmitter::staticDirty）と、初期化のときだけ呼ぶ。
+//   desc が変わったとき（ParticleEmitter::staticDirty）と、初期化のときだけ呼ぶ
 static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
 {
     GpuData::CbParticleStatic cb = {};
@@ -86,6 +85,8 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     return cb;
 }
 
+
+
 // BuildDynamicCb — 実行時の値から CbParticleDynamic（80 バイト）を組み立てる。毎フレーム呼ぶ
 static GpuData::CbParticleDynamic BuildDynamicCb(
     const TransformComponent &transform,
@@ -94,23 +95,24 @@ static GpuData::CbParticleDynamic BuildDynamicCb(
     GpuData::uint instanceSeed)
 {
     GpuData::CbParticleDynamic cb = {};
-    // ローカルではなくワールドの回転を使う。ボーン追従（BoneAttachmentSystem）は
-    //   ワールド行列にボーンの向きを入れるが、ローカルの rotation は更新しないので、
-    //   transform.rotation だと剣の向きに付いていかず、線分や速度の向きがずれる。
-    cb.emit_rotation  = transform.GetWorldRotation();
-    cb.world_position = transform.GetWorldPosition();
+    // ワールドの回転を使う。ボーン追従はワールド行列だけを更新するので、ローカルの rotation だと剣の向きに付いていかない
+    // 姿勢は描画の補間済みのものを使う。ロジックの行列は 1/60 秒でしか動かないので、描画の FPS が高いと粒子が同じ姿勢に固まる
+    cb.emit_rotation  = transform.GetRenderWorldRotation();
+    cb.world_position = transform.GetRenderWorldPosition();
     cb.time           = time;
     cb.delta_time     = dt;
     cb.burst_trigger  = burstTrigger;
     cb.emit_enabled   = emitEnabled; // 継続放出のオン/オフ。0 なら新しい粒子を出さない
     // エミッタごとの乱数の種。spawn() がこれを混ぜて粒子ごとの種を作るので、
-    //   同じプレハブから出した VFX でも、個体ごとに粒子の配置が変わる。
+    //   同じプレハブから出した VFX でも、個体ごとに粒子の配置が変わる
     cb.instance_seed = instanceSeed;
     // 前フレームの姿勢。spawn 側で今のフレームとの間を補間し、生成位置を軌道上に並べる
     cb.prev_emit_rotation  = prevRot;
     cb.prev_world_position = prevPos;
     return cb;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // 初期化と毎フレーム
@@ -140,6 +142,8 @@ void GPUParticleUpdateSystem::Initialize()
     }
 }
 
+
+
 void GPUParticleUpdateSystem::Update(float dt)
 {
     ZoneScopedN("GPUParticleUpdateSystem::Update");
@@ -160,18 +164,18 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->PSSetShaderResources(0, 16, nullSRVs);
     dc->CSSetShaderResources(0, 16, nullSRVs);
 
-    // 世界の時計が止まっている間は、シミュレーションを止める。
+    // 世界の時計が止まっている間は、シミュレーションを止める
     //   この System は描画ステージなのでポーズ中（UpdatePaused）も走るが、倍率（scale）を作る
-    //   TimeScaleSystem はロジックなので止まっていて、scale は古い値のまま残る。
-    //   TimeContext.isPaused を見て dt=0 にすれば、time も発生も進まず完全に止まる。
+    //   TimeScaleSystem はロジックなので止まっていて、scale は古い値のまま残る
+    //   TimeContext.isPaused を見て dt=0 にすれば、time も発生も進まず完全に止まる
     bool worldPaused = false;
     if (m_world->HasResource<TimeContext>())
         worldPaused = m_world->GetResource<TimeContext>().isPaused;
 
     // 1フレームで進める時間の上限。ロジックは1フレームに最大4ステップ（Framework::Run の
-    //   MAX_STEPS × FIXED_DT = 4/60 秒）しか進まないので、粒子も同じだけで止める。
-    //   上限が無いと、ウィンドウのドラッグなどで1フレームが長引いたときに粒子だけ一気に進み、
-    //   ロジック側で数えている VFX の破棄タイマー（VFXSystem）と時間がずれる。
+    //   MAX_STEPS × FIXED_DT = 4/60 秒）しか進まないので、粒子も同じだけで止める
+    //   上限がないと、ウィンドウのドラッグなどで1フレームが長引いたときに粒子だけ一気に進み、
+    //   ロジック側で数えている VFX の破棄タイマー（VFXSystem）と時間がずれる
     constexpr float kMaxFrameDt = 4.0f / 60.0f;
     const float     frameDt     = (std::min)(dt, kMaxFrameDt);
 
@@ -180,28 +184,24 @@ void GPUParticleUpdateSystem::Update(float dt)
                 const TransformComponent &transform,
                 const TimeStateComponent &clock) {
         // ---- エフェクト全体で共通の値を、エミッタのループの前に1回だけ決める ----
-        //   time は Entity の時間なので、ループ内で進めるとエミッタの数だけ重ねて足される。
-        //
-        //   進める時間は「この描画フレームの dt × Entity の時間倍率」。
-        //   localDt はロジック1ステップ（1/60 秒）分の値なので、毎フレーム動くこの System が
-        //   そのまま足すと FPS に比例して速くなっていた（144 FPS で寿命が 2.4 倍の速さで減る）。
-        //   倍率（scale）を掛けるのは、ヒットストップ（0）やスローを今まで通り効かせるため。
+        //   time は Entity の時間なので、ループの中で進めるとエミッタの数だけ重なる
+        //   進める時間は 描画フレームの dt × Entity の時間の倍率。localDt を足すと、FPS に比例して速くなる
         EffectFrame frame;
         frame.dt = worldPaused ? 0.0f : frameDt * clock.scale;
         particle.time += frame.dt;
         frame.time = particle.time;
 
-        const GpuData::float3 curPos = transform.GetWorldPosition();
-        const GpuData::float4 curRot = transform.GetWorldRotation();
+        const GpuData::float3 curPos = transform.GetRenderWorldPosition();
+        const GpuData::float4 curRot = transform.GetRenderWorldRotation();
         frame.prevPos                = particle.hasPrevTransform ? particle.prevWorldPos : curPos;
         frame.prevRot                = particle.hasPrevTransform ? particle.prevWorldRot : curRot;
 
         // ---- エミッタごとに Dispatch ----
         for (ParticleEmitter &emitter : particle.emitters)
         {
-            // エミッタごとの乱数の種を一度だけ決める（0 は未割り当て）。
+            // エミッタごとの乱数の種を一度だけ決める（0 は未割り当て）
             //   ここで決めるのは、プレハブ生成・シーン読み込み・エディタでの追加の
-            //   どの経路で作られても必ず通る場所がここだけだから。
+            //   どの経路で作られても必ず通る場所がここだけだから
             if (emitter.instanceSeed == 0)
                 emitter.instanceSeed = NextInstanceSeed();
 
@@ -227,6 +227,8 @@ void GPUParticleUpdateSystem::Update(float dt)
     dc->CSSetShader(nullptr, nullptr, 0);
 }
 
+
+
 // ---------------------------------------------------------------------------
 // バッファの作り直し
 // ---------------------------------------------------------------------------
@@ -237,6 +239,8 @@ GpuData::uint GPUParticleUpdateSystem::NextInstanceSeed()
     if (m_nextInstanceSeed == 0) m_nextInstanceSeed = 1; // 一周したら 0 を飛ばす
     return seed;
 }
+
+
 
 void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
 {
@@ -251,7 +255,7 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
     ID3D11Device *device = Graphics::Instance().GetDevice();
     if (!device || emitter.desc.maxCount <= 0) return;
 
-    // TODO(2026-03-27): ResourceManager で粒子バッファをプールし、作り直しの処理時間の跳ねを無くす
+    // TODO(2026-03-27): ResourceManager で粒子バッファをプールし、作り直しの処理時間の跳ねをなくす
     emitter.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, emitter.desc.maxCount);
 
     emitter.isInitialized = true;
@@ -260,11 +264,12 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
     // time はエフェクト全体の値なので、1エミッタを作り直しても戻さない
 }
 
+
+
 // ---------------------------------------------------------------------------
 // コンピュートシェーダーの実行
 // ---------------------------------------------------------------------------
 
-// InitCS を1エミッタ分 Dispatch する。
 void GPUParticleUpdateSystem::DispatchInitCS(
     ID3D11DeviceContext      *dc,
     ParticleComputeShader    *cs,
@@ -282,11 +287,11 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     dc->UpdateSubresource(buf->staticCB.Get(), 0, nullptr, &staticCb, 0, 0);
     emitter.staticDirty = false;
 
-    // 動的 CB（InitCS では dt に 1/60 秒相当の 0.016 を使う）。
-    //   発生のオン/オフも渡す。オフなら継続モードの先行生成をせず、粒子ゼロから始める。
-    //   初期化時は前フレームの姿勢が無いので、今の姿勢を入れる（補間で尾を引かせない）。
-    const GpuData::float3 curPos = transform.GetWorldPosition();
-    const GpuData::float4 curRot = transform.GetWorldRotation();
+    // 動的 CB（InitCS では dt に 1/60 秒相当の 0.016 を使う）
+    //   発生のオン/オフも渡す。オフなら継続モードの先行生成をせず、粒子ゼロから始める
+    //   初期化時は前フレームの姿勢がないので、今の姿勢を入れる（補間で尾を引かせない）
+    const GpuData::float3 curPos = transform.GetRenderWorldPosition();
+    const GpuData::float4 curRot = transform.GetRenderWorldRotation();
     auto                  dynCb  = BuildDynamicCb(transform, curPos, curRot, frame.time, 0.016f, emitter.burstTrigger,
                                                   emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
     dc->UpdateSubresource(buf->dynamicCB.Get(), 0, nullptr, &dynCb, 0, 0);
@@ -310,7 +315,8 @@ void GPUParticleUpdateSystem::DispatchInitCS(
     emitter.needsGpuInit = false;
 }
 
-// UpdateCS を1エミッタ分 Dispatch する。
+
+
 void GPUParticleUpdateSystem::DispatchUpdateCS(
     ID3D11DeviceContext      *dc,
     ParticleComputeShader    *cs,
@@ -331,9 +337,9 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
         emitter.staticDirty = false;
     }
 
-    // 動的 CB: 毎フレーム送る。
-    //   前フレームの姿勢を渡して、生成位置を軌道上に並べる（サブフレーム補間）。
-    //   time・dt・前フレームの姿勢はエフェクト全体で共通なので frame から受け取る。
+    // 動的 CB: 毎フレーム送る
+    //   前フレームの姿勢を渡して、生成位置を軌道上に並べる（サブフレーム補間）
+    //   time・dt・前フレームの姿勢はエフェクト全体で共通なので frame から受け取る
     auto dynCb = BuildDynamicCb(transform, frame.prevPos, frame.prevRot,
                                 frame.time, frame.dt, emitter.burstTrigger,
                                 emitter.emitting ? 1.0f : 0.0f, emitter.instanceSeed);
@@ -379,11 +385,13 @@ void GPUParticleUpdateSystem::DispatchUpdateCS(
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX1, 1, nullSRV);
     dc->CSSetShaderResources(SLOT_SRV_MAT_TEX2, 1, nullSRV);
 
-    // バーストの要求は1フレームで使い切る。
+    // バーストの要求は1フレームで使い切る
     //   継続モードでも必ず消す。継続中はシェーダーが burst_trigger を読まないので、
-    //   立てたままバーストに切り替えると、その瞬間に意図しないバーストが起きる。
+    //   立てたままバーストに切り替えると、その瞬間に意図しないバーストが起きる
     emitter.burstTrigger = 0.0f;
 }
+
+
 
 // ---------------------------------------------------------------------------
 // ノイズテクスチャ
@@ -417,5 +425,7 @@ void GPUParticleUpdateSystem::CreateNoiseTexture(ID3D11Device *device)
 
     SetDebugName(m_noiseSRV.Get(), "GPUParticleUpdateSystem_NoiseSRV");
 }
+
+
 
 REGISTER_RENDER_SYSTEM(GPUParticleUpdateSystem, Priority::RenderStage::R07_PreMain);

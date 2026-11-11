@@ -20,11 +20,15 @@ void Keyboard::Update()
     }
 }
 
+
+
 bool Keyboard::IsDown(int key) const
 {
     if (key < 0 || key >= 256) return false;
     return currentState[key] != 0;
 }
+
+
 
 bool Keyboard::IsTriggered(int key) const
 {
@@ -32,6 +36,8 @@ bool Keyboard::IsTriggered(int key) const
     // 今押されていて、かつ 前は押されていなかった
     return (currentState[key] != 0) && (oldState[key] == 0);
 }
+
+
 
 bool Keyboard::IsReleased(int key) const
 {

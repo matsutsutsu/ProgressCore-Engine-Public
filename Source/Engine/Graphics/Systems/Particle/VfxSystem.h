@@ -1,23 +1,16 @@
 #pragma once
 // ===========================================================================
-// 概要: ワールド座標に VFX（パーティクル）を1行で出すための System と API（L08_Prefab）。
+// 概要: ワールド座標に VFX（パーティクル）を1行で出すための System と API（L08_Prefab）
 //
 // 責務:
 //   - プレハブから VFX の Entity を作り、指定位置に置いてバーストを起こす
 //   - 粒子が消えたころに Entity を破棄する
+//   - 初期化のときに VFX のプレハブを先読みし、初回の再生でカクつかないようにする
+//   - アニメーションの Effect イベントを受け、持ち主の向き・オフセット・追従を反映して出す
 //
-// 備考: VFX のプレハブは Transform・GPUParticle・TimeState を持つ1 Entity であること。
-//       親子を持つプレハブは扱わない。複数の層を持つエフェクトはエミッタを増やして作る。
-//
-//       後始末の決まり（間違えやすい）:
-//       - 全エミッタがバーストなら、粒子が消えた後に自動で破棄する。呼んだら放っておいてよい。
-//       - 継続放出のエミッタを1つでも含むと、自動では破棄しない。継続放出は自分では
-//         終わらないので、いつ消すかをエンジンは決められない。戻り値を持っておき、
-//         要らなくなったら Stop() を呼ぶ。勝手に消すと、ループする VFX が再生中に突然消える。
-//
-//       アニメーションの Effect イベント（AnimEventEffectMessage）もここで受ける。
-//       持ち主の向き・オフセット・大きさの倍率・追従を反映して出し、継続放出の VFX は
-//       ブロック長だけ出してから Stop() する（アニメのイベントから出すものは呼び出し側が無いため）。
+// 備考: VFX のプレハブは Transform・GPUParticle・TimeState を持つ1 Entity にする。親子は扱わない
+//       全エミッタがバーストなら自動で破棄する。継続放出を1つでも含むと、いつ消すかを決められないので破棄しない
+//       そのときは戻り値を持っておき、要らなくなったら Stop() を呼ぶ（アニメのイベントから出したものはブロック長で止める）
 //
 // @code
 //   VFX::Play(*m_world, "Assets/Prefabs/Particles/VFX_HitSpark", hitPos);
@@ -35,36 +28,33 @@
 
 struct AnimEventEffectMessage;
 
-class VFXSystem : public CCL::ECS::IfSystem<VFXSystem,
-                                            CCL::ECS::Write<TransformComponent>,
-                                            CCL::ECS::Write<GPUParticleComponent>,
-                                            CCL::ECS::Read<TimeStateComponent>>
+class VFXSystem : public CCL::ECS::IfSystem<
+    VFXSystem,
+    CCL::ECS::Write<TransformComponent>,
+    CCL::ECS::Write<GPUParticleComponent>,
+    CCL::ECS::Read<TimeStateComponent>>
 {
 public:
     VFXSystem() : IfSystem("VFXSystem") {}
 
     // 自分を World のリソースに登録し（VFX::Play から引くため）、アニメの Effect イベントを購読する
+    // VFX のプレハブも先読みする
     void Initialize() override;
 
     // 停止待ち・破棄待ちの VFX の残り時間を減らし、尽きたものを止める・破棄する
     void Update(float dt) override;
 
-    /**
-     * @brief 指定位置に VFX を1つ出す。
-     * @return 作った EntityID。失敗したら InvalidEntityID。
-     * @note 継続放出を含むと自動では破棄しないので、戻り値を持っておいて Stop() する。
-     *       全エミッタがバーストなら戻り値は捨ててよい。
-     */
+    // 指定位置に VFX を1つ出す。失敗したら InvalidEntityID
+    // 継続放出を含むものは自動で破棄しないので、戻り値を持っておいて Stop する
     CCL::ECS::EntityID Play(const std::string &path, const DirectX::XMFLOAT3 &worldPos);
 
-    /**
-     * @brief 再生中の VFX を止める。
-     *
-     * 発生だけを止め、出ている粒子は寿命まで残してから破棄する（すぐ消すと粒子が途中で途切れる）。
-     *
-     * @param handle 止める VFX。破棄待ちの VFX には何もしない（毎フレーム呼ばれても寿命が延びない）。
-     */
+    // 発生だけを止め、出ている粒子は寿命まで残してから破棄する（すぐ消すと粒子が途中で切れる）
+    // 破棄待ちの VFX には何もしないので、毎フレーム呼んでも寿命は延びない
     void Stop(CCL::ECS::EntityID handle);
+
+    // 出ている粒子ごと、すぐに消す。別の VFX に差し替えるときに使う
+    // 消えた後の handle を渡しても何もしない
+    void Destroy(CCL::ECS::EntityID handle);
 
 private:
     // 破棄待ちの VFX 1件
@@ -74,28 +64,23 @@ private:
         float              remain = 0.0f; // 破棄までの残り時間（秒）
     };
 
-    /**
-     * @brief アニメの Effect イベント1つから VFX を1つ出す。
-     * @note  持ち主に Transform が無いと位置が決まらないので出さない。
-     */
+    // アニメの Effect イベント1つから VFX を出す。持ち主に Transform がなければ出さない
     void OnAnimEffect(const AnimEventEffectMessage &msg);
 
-    /**
-     * @brief Effect イベントの基準にする Entity を返す（位置・向き・追従の親）。
-     * @return attachTag が空ならキャラ、あれば持ち主の CombatRoster から引いた武器。
-     *         引けないときは警告を出してキャラを返す。
-     */
+    // Effect イベントの基準の Entity を返す。attachTag が空ならキャラ、あれば CombatRoster から引いた武器
+    // 引けなければ警告してキャラを返す
     CCL::ECS::EntityID ResolveAnchor(const AnimEventEffectMessage &msg) const;
 
-    /**
-     * @brief VFX 全体の大きさを倍率 s で変える（粒子の大きさ・発生範囲・速度・加速度）。
-     * @note  GPU パーティクルは Transform の scale を見ないので、エミッタの設定へ直接掛ける。
-     *        プレハブから作った直後の、この Entity 専用の設定にだけ使うこと。
-     */
+    // VFX 全体の大きさを s 倍する（粒子の大きさ・発生範囲・速度・加速度）
+    // GPU パーティクルは Transform の scale を見ないので、エミッタの設定へ直接掛ける。プレハブから作った直後にだけ使う
     void ApplyScale(GPUParticleComponent &particle, float s) const;
 
     // 停止待ちの VFX の残り時間を減らし、尽きたものを Stop() する
     void UpdateTimedStops(float dt);
+
+    // VFX のプレハブ（JSON と中のテクスチャ）を全部先読みする
+    // 初めて出したフレームに PNG のデコードが来てカクつくのを、シーンの切り替え中に済ませておく
+    void PreloadPrefabs();
 
     // 継続放出（emitMode==0）のエミッタを含むか。含むなら自動では破棄しない
     bool HasContinuousEmitter(const GPUParticleComponent &particle) const;
@@ -124,4 +109,7 @@ namespace VFX
 
     // 再生中の VFX を止める（VFXSystem::Stop を呼ぶ）
     void Stop(CCL::ECS::World &world, CCL::ECS::EntityID handle);
+
+    // 再生中の VFX を粒子ごとすぐに消す（VFXSystem::Destroy を呼ぶ）
+    void Destroy(CCL::ECS::World &world, CCL::ECS::EntityID handle);
 } // namespace VFX

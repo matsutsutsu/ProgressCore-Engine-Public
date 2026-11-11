@@ -1,5 +1,5 @@
 // ===========================================================================
-// 概要: C++ と HLSL の両方から include し、定数バッファなどの構造体の並びを1か所で決めるヘッダー。
+// 概要: C++ と HLSL の両方から include し、定数バッファなどの構造体の並びを1か所で決めるヘッダー
 //
 // 責務:
 //   - エンジン全体で使う構造体（ライト・インスタンス・シーン・影・フォグ）を定義する
@@ -7,14 +7,14 @@
 //   - C++ 側で大きさを static_assert し、HLSL との食い違いをビルド時に見つける
 //
 // 備考: 特定のシステムだけで使う構造体は別のヘッダーに分ける（パーティクルは ParticleShared.h、
-//       ポストプロセスは PostProcessShared.h）。
-//       HLSL からも読むので #pragma once ではなくインクルードガードを使う。
+//       ポストプロセスは PostProcessShared.h）
+//       HLSL からも読むので #pragma once ではなくインクルードガードを使う
 // ===========================================================================
 
 #ifndef SHADER_SHARED_H
 #define SHADER_SHARED_H
 
-#include "Engine/Graphics/Shader/ShaderResources.h" // SLOT_*, REG_CB
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 // ==================================================================
 // 配列の大きさ（C++ と HLSL で違うと定数バッファの並びがずれるので、ここで共有する）
@@ -33,7 +33,7 @@
 #include <DirectXMath.h>
 #include <cstdint>
 
-// C++ には float2 などが無いので、同じ名前の別名を作る。
+// C++ には float2 などがないので、同じ名前の別名を作る
 // この namespace はファイルの最後で閉じる（HLSL では namespace を開かない）
 namespace GpuData
 {
@@ -61,8 +61,8 @@ namespace GpuData
     // ==================================================================
     // ライト
     //   どれも大きさを 16 バイトの倍数にしてある。そうすると HLSL の cbuffer の配列で
-    //   要素の間に詰め物が入らず、C++ の配列と並びが一致する。
-    //   メンバを足すときも 16 バイトの倍数を崩さないこと。
+    //   要素の間に詰め物が入らず、C++ の配列と並びが一致する
+    //   メンバを足すときも 16 バイトの倍数を崩さないこと
     // ==================================================================
     struct DirectionalLight
     {
@@ -133,7 +133,7 @@ namespace GpuData
 
     // ==================================================================
     // カメラ・シーン
-    //   書くのは Graphics::Update だけ。他から UpdateSubresource しないこと。
+    //   書くのは Graphics::Update だけ。他から UpdateSubresource しないこと
     //   メンバの名前は HLSL での名前をそのまま使う
     // ==================================================================
     CB_STRUCT(CbScene, SLOT_CB_SCENE)
@@ -174,22 +174,15 @@ namespace GpuData
         float4 gFogColor;
         float4 gFogParams;      // x = 始まる距離（m）, y = 終わる距離（m）, z = 高さフォグの基準の高さ（m）, w = 高さで薄くなる割合（1/m）
         float4 gFogCenter;    // 距離を測る中心（ワールド座標）
-        float4 gFogRimColor;
-        float4 gFogRimParams; // x = リムの鋭さ, y = 強さ
         float4 gSkyFogParams; // x = 空にフォグがかかり始める視線の高さ（向きの y）, y = ぼかす幅
     };
 
 // ==================================================================
 // C++ だけ: 大きさの確認
 // ==================================================================
-//   static_assert(条件, メッセージ) は、条件が false ならコンパイルエラーにする（C++11）。
-//   sizeof(型) はその型の大きさ（バイト）。
-//
-//   定義は1つなのに確かめる理由: C++ と HLSL で詰め方の決まりが違うため。
-//   HLSL の cbuffer は、メンバが 16 バイトの区切りをまたがないように詰め物を入れるが、
-//   C++ は入れない。たとえば CbLight の最後に float を1つ足すと、C++ では 1108 バイト、
-//   HLSL では 1120 バイトになり、以後の値が1つずつずれて読まれる。
-//   動きはするのに色などがおかしくなるだけなので、ここでビルドを止めて気付けるようにする
+//   C++ と HLSL で詰め方の決まりが違うので、大きさを static_assert で確かめる
+//   HLSL の cbuffer はメンバが 16 バイトの区切りをまたがないよう詰め物を入れるが、C++ は入れない
+//   ずれると動きはするのに、以後の値が1つずつずれて読まれ、色などがおかしくなる
 #ifdef __cplusplus
     static_assert(sizeof(DirectionalLight) == 64, "DirectionalLight size mismatch vs HLSL");
     static_assert(sizeof(PointLight) == 48, "PointLight size mismatch vs HLSL");
@@ -199,7 +192,7 @@ namespace GpuData
     static_assert(sizeof(CbSkeleton) == 16384, "CbSkeleton size mismatch vs HLSL");
     static_assert(sizeof(CbScene) == 272, "CbScene size mismatch vs HLSL");
     static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
-    static_assert(sizeof(CbFog) == 96, "CbFog size mismatch vs HLSL");
+    static_assert(sizeof(CbFog) == 64, "CbFog size mismatch vs HLSL");
 
 } // namespace GpuData
 

@@ -1,0 +1,159 @@
+{
+    "instances": [
+        {
+            "position": [
+                0.0,
+                5.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Light\\GameLighting.json",
+            "rotation": [
+                0.699999988079071,
+                0.0,
+                -0.5,
+                0.9200000166893005
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                -149.7321319580078,
+                -66.7051773071289,
+                98.89816284179688
+            ],
+            "prefab": "./Assets\\Prefabs\\Camera\\FreeCamera.json",
+            "rotation": [
+                -0.17173390090465546,
+                0.7679586410522461,
+                -0.23039865493774414,
+                -0.5724189281463623
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                -0.8232846260070801,
+                9.689481735229492,
+                -64.83714294433594
+            ],
+            "prefab": "./Assets\\Prefabs\\Player\\PlayerFollowCamera.json",
+            "rotation": [
+                0.11562424153089523,
+                -0.010410704649984837,
+                0.0012119252933189273,
+                0.9932377338409424
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                -50.0,
+                0.0
+            ],
+            "prefab": "Assets/Prefabs/Particles/StageParticle.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Audio\\BGM_Game.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "position": [
+                -1.180290937423706,
+                0.6695569753646851,
+                -47.80885696411133
+            ],
+            "prefab": "./Assets\\Prefabs\\Player\\Player.json",
+            "rotation": [
+                0.0,
+                -9.374184628541116e-06,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                3.5,
+                3.5,
+                3.5
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                8.399999618530273,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Stage\\ColliderTorus.json",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                180.0,
+                200.0,
+                180.0
+            ]
+        },
+        {
+            "position": [
+                0.0,
+                -1.0468037128448486,
+                0.0
+            ],
+            "prefab": "./Assets\\Prefabs\\Enemy\\Valkyra.json",
+            "rotation": [
+                0.0,
+                0.9969487190246582,
+                0.0,
+                0.07805878669023514
+            ],
+            "scale": [
+                5.0,
+                5.0,
+                5.0
+            ]
+        }
+    ],
+    "scene": "PlayerTestStage.scene.json",
+    "type": "level",
+    "version": 1
+}

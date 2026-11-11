@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: カスケードシャドウマップ（SHADOW_CASCADE_COUNT 枚の Texture2DArray の深度）。
+// 概要: カスケードシャドウマップ（SHADOW_CASCADE_COUNT 枚の Texture2DArray の深度）
 //
 // 責務:
 //   - 深度テクスチャと、カスケードごとの DSV・全カスケードを読む SRV を作る
@@ -8,7 +8,7 @@
 //   - シャドウマップ・比較サンプラー・CbShadow を、描画するシェーダーにバインドする
 //   - 影の色・濃さ・バイアス・カスケードの分割距離（params）を持つ
 //
-// 備考: Graphics が1つ作り、RenderServices::shadowMap で渡す。
+// 備考: Graphics が1つ作り、RenderServices::shadowMap で渡す
 // ===========================================================================
 #include <d3d11.h>
 #include <DirectXMath.h>

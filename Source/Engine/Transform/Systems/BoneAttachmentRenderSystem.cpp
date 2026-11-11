@@ -17,6 +17,8 @@ void BoneAttachmentRenderSystem::Update(float dt)
     });
 }
 
+
+
 void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformComponent &trans, const BoneAttachmentComponent &attach)
 {
     // 処理フロー:
@@ -35,7 +37,7 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     Model *model = parentModel->GetModel();
     if (!model) return;
 
-    // boneName の解決結果（cachedBoneIndex）は、ロジック版が既に埋めている前提。
+    // boneName の解決結果（cachedBoneIndex）は、ロジック版が既に埋めている前提
     // 未解決（-1）ならロジック版がまだ走っていない初回などなので、描画は1フレームだけ待つ
     if (attach.cachedBoneIndex == -1) return;
 
@@ -57,12 +59,14 @@ void BoneAttachmentRenderSystem::ResolveRenderAttachment(EntityID id, TransformC
     PropagateRenderSubtree(trans.firstChildID, world4);
 }
 
+
+
 void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X4 &world)
 {
-    // ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で先に焼いてしまう。
-    // このシステム（R04）で正しい renderWorldMatrix が確定した後に焼き直し、後から書いた方を採用させる。
+    // ModelPoseUpdateSystem（R03）は追従先も「前フレームの renderWorldMatrix」で先に焼いてしまう
+    // このシステム（R04）で正しい renderWorldMatrix が確定した後に焼き直し、後から書いた方を採用させる
 
-    // 焼き直さないと、武器などの追従物だけ描画が1フレーム遅れる。
+    // 焼き直さないと、武器などの追従物だけ描画が1フレーム遅れる
 
     if (auto *mc = m_world->GetComponent<ModelComponent>(id))
     {
@@ -72,6 +76,8 @@ void BoneAttachmentRenderSystem::BakeModelIfPresent(EntityID id, const XMFLOAT4X
         }
     }
 }
+
+
 
 void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, const XMFLOAT4X4 &parentRenderWorld)
 {
@@ -114,6 +120,8 @@ void BoneAttachmentRenderSystem::PropagateRenderSubtree(EntityID firstChild, con
     }
 }
 
-// R00_Interpolation（親の renderWorldMatrix 確定）の後、R08_Main（描画）の前に置く。
+
+
+// R00_Interpolation（親の renderWorldMatrix 確定）の後、R08_Main（描画）の前に置く
 // 親のボーン姿勢（globalTransform）は ModelPoseUpdateSystem（R03）が焼くので、その後の R04 帯にする
 REGISTER_RENDER_SYSTEM(BoneAttachmentRenderSystem, Priority::RenderStage::R04_BoundsUpdate);

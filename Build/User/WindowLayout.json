@@ -33,16 +33,16 @@
             "visible": false
         },
         {
+            "name": "Boss BT Debugger",
+            "visible": true
+        },
+        {
             "name": "Formation Editor",
             "visible": false
         },
         {
             "name": "Cinematic Editor",
-            "visible": false
-        },
-        {
-            "name": "Curve Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Text Editor",

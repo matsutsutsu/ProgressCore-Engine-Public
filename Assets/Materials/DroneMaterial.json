@@ -1,0 +1,63 @@
+{
+    "Material": {
+        "alphaCutoff": 0.5,
+        "alphaMode": 0,
+        "colors": [
+            {
+                "nameHash": 3017126927,
+                "value": {
+                    "w": 1.0,
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            {
+                "nameHash": 3277330129,
+                "value": {
+                    "w": 20.0,
+                    "x": 10.0,
+                    "y": 10.0,
+                    "z": 10.0
+                }
+            }
+        ],
+        "scalars": [
+            {
+                "nameHash": 3723718503,
+                "value": 1.0
+            },
+            {
+                "nameHash": 3139841781,
+                "value": 1.0
+            },
+            {
+                "nameHash": 2108445091,
+                "value": 1.0
+            }
+        ],
+        "shaderHash": 3792258943,
+        "textures": [
+            {
+                "assetPath": "",
+                "nameHash": 1832272046
+            },
+            {
+                "assetPath": "",
+                "nameHash": 2909645500
+            },
+            {
+                "assetPath": "",
+                "nameHash": 3423049160
+            },
+            {
+                "assetPath": "",
+                "nameHash": 1292088972
+            },
+            {
+                "assetPath": "",
+                "nameHash": 4148941893
+            }
+        ]
+    }
+}

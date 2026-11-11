@@ -13,13 +13,15 @@ ConsoleWindow::ConsoleWindow() : EditorWindow("Console")
         f = true;
 }
 
+
+
 namespace
 {
     /**
-     * @brief devenv のコマンドラインで、Visual Studio に該当ファイル・行を開かせる。
-     * @param file 開くファイル。
-     * @param line 開く行（1始まり）。
-     * @note devenv が PATH に無ければ CreateProcess が失敗し、何も起きない。
+     * @brief devenv のコマンドラインで、Visual Studio に該当ファイル・行を開かせる
+     * @param file 開くファイル
+     * @param line 開く行（1始まり）
+     * @note devenv が PATH になければ CreateProcess が失敗し、何も起きない
      */
     void OpenInVisualStudio(const std::string &file, int line)
     {
@@ -37,6 +39,8 @@ namespace
         }
     }
 
+
+
     ImVec4 LevelColor(LogLevel level)
     {
         switch (level)
@@ -52,6 +56,8 @@ namespace
             return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
         }
     }
+
+
 
     // 1行をコピー用の文字列にする
     std::string FormatLine(const LogMessage &m)
@@ -113,8 +119,8 @@ void ConsoleWindow::DrawContents(EditorContext & /*context*/)
     ImGui::Separator();
 
     // ---- Snapshot の取得と絞り込み ----
-    // 0.1 秒に1回だけ Snapshot を取り直し、毎フレーム全ログを複製するのを避ける。
-    // 絞り込みの結果（s_cachedFiltered）も同じタイミングで作り直す。
+    // 0.1 秒に1回だけ Snapshot を取り直し、毎フレーム全ログを複製するのを避ける
+    // 絞り込みの結果（s_cachedFiltered）も同じタイミングで作り直す
     static std::vector<LogMessage> s_cachedMessages;
     static std::vector<int>        s_cachedFiltered; // 表示する行の s_cachedMessages での添字
     static float                   s_updateTimer = 0.0f;

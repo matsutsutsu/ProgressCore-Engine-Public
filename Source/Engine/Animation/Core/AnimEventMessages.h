@@ -1,13 +1,6 @@
 #pragma once
-// ===========================================================================
-// 概要: アニメーションの点イベントを他の System へ送るメッセージの定義。
-//
-// 責務:
-//   - AnimationSystem がクリップの指定時刻に達したとき、EventBus で
-//     音・エフェクト・判定球の生成を依頼するためのデータ
-//
-// 備考: EventBus::Publish はその場で購読側を呼ぶので、購読側は軽い処理に留めること。
-// ===========================================================================
+// アニメーションの点イベントで、音・エフェクト・判定球の生成を他の System へ頼むメッセージ
+// EventBus::Publish はその場で購読側を呼ぶので、購読側は軽い処理に留める
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "SimpleMath.h"
 #include <string>
@@ -21,7 +14,7 @@ struct AnimEventSoundMessage
     float              pitch;     // ピッチ（オクターブ単位。0 で等倍）
 };
 
-// VFX（GPU パーティクルのプレハブ）の生成を依頼する。VFXSystem が受ける。
+// VFX（GPU パーティクルのプレハブ）の生成を依頼する。VFXSystem が受ける
 //   offset は entity のローカル座標（前方 = キャラの向き）で、メートル単位（キャラの scale は掛からない）
 struct AnimEventEffectMessage
 {
@@ -34,7 +27,7 @@ struct AnimEventEffectMessage
     std::string                  attachTag;  // 基準にする武器のタグ（entity の CombatRoster で引く）。空なら entity が基準
 };
 
-// 空間に独立した球状の判定（ヒットボックス）の生成を依頼する。
+// 空間に独立した球状の判定（ヒットボックス）の生成を依頼する
 //   offset は owner のローカル座標（前方 = キャラの向き）で、購読側で owner の回転を掛けて
 //   ワールド位置にする。lifeTime はシーケンサーのブロック長（endTime - startTime）
 struct AnimEventSpawnHitboxMessage

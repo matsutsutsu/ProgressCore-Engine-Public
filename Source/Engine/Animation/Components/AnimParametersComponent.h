@@ -1,18 +1,11 @@
 #pragma once
-// ===========================================================================
-// 概要: アニメーションの遷移条件が参照するパラメータを持つコンポーネント AnimParametersComponent。
-//
-// 責務:
-//   - Float / Bool / Trigger のパラメータを名前ハッシュで保持する
-//   - Trigger の先行入力の寿命を管理する
-//
-// 備考: 書くのはゲーム側や CharacterAnimSyncSystem、読むのは AnimControllerSystem。
-//       件数が少ないので map ではなく vector の線形探索で持つ。
-// ===========================================================================
 #include <vector>
 #include <cstdint>
 #include <algorithm>
 
+// アニメの遷移条件が見るパラメータ（Float / Bool / Trigger）を名前ハッシュで持つ
+// 書くのはゲーム側と CharacterAnimSyncSystem、読むのは AnimControllerSystem
+// 件数が少ないので、map ではなく vector の線形探索で引く
 struct AnimParametersComponent
 {
     struct FloatParam
@@ -30,7 +23,7 @@ struct AnimParametersComponent
     struct TriggerParam
     {
         uint32_t hash;
-        float    lifetime;
+        float    lifetime; // 残りの寿命（秒）
     };
 
     std::vector<FloatParam>   floats;
@@ -83,22 +76,14 @@ struct AnimParametersComponent
         return false;
     }
 
-    /**
-     * @brief トリガーを立てる（先行入力として登録する）。
-     * @param hash       トリガーのハッシュ
-     * @param bufferTime 先行入力の猶予時間（秒）。既定 0.15 秒（60fps で約 9 フレーム）
-     * @note 押した瞬間を bufferTime だけ残しておくのが役割で、遷移してよいタイミングは決めない。
-     *       遷移が通るのは、寿命が残っていて、かつシーケンサの ComboWindow / CancelWindow の
-     *       区間内にいるときだけ（AnimControllerSystem の ConditionsMet が両方を見る）。
-     *       早すぎる入力を待たせるのがここ、弾くのが窓の側。
-     */
+    // トリガーを先行入力として立てる。すでにあれば寿命を上書きする。bufferTime は猶予（秒）
+    // 遷移してよいタイミングは決めない。それは遷移の側の受付区間（requiredCancelMask）が決める
     void SetTrigger(uint32_t hash, float bufferTime = 0.15f)
     {
         for (auto &t : triggers)
         {
             if (t.hash == hash)
             {
-                // 既にあれば寿命を上書きする
                 t.lifetime = bufferTime;
                 return;
             }
@@ -136,14 +121,13 @@ struct AnimParametersComponent
             t.lifetime -= dt;
         }
 
-        // 寿命が 0 以下のトリガーをまとめて削除する（erase-remove）
         triggers.erase(
             std::remove_if(triggers.begin(), triggers.end(),
                            [](const TriggerParam &t) { return t.lifetime <= 0.0f; }),
             triggers.end());
     }
 
-    // Float か Bool（1/0 として）の値を取り出す。どちらにも無ければ false
+    // Float か Bool（1/0 として）の値を取り出す。どちらにもなければ false
     bool TryGetNumeric(uint32_t hash, float &outValue) const
     {
         for (const auto &p : floats)
@@ -165,7 +149,7 @@ struct AnimParametersComponent
         return false;
     }
 
-    // トリガーを全て消す。被弾・回避・死亡など、それまでの先行入力を無効にしたいときに呼ぶ
+    // トリガーをすべて消す。被弾・回避・死亡など、それまでの先行入力を無効にしたいときに呼ぶ
     void ClearTriggers()
     {
         triggers.clear();

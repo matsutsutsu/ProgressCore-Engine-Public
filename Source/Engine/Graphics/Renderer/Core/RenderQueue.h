@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: 描画システムが積んだ描画コマンドを1フレーム分ため、RenderPass に渡すキュー。
+// 概要: 描画システムが積んだ描画コマンドを1フレーム分ため、RenderPass に渡すキュー
 //
 // 責務:
 //   - 不透明・半透明・影のコマンドをためる（ModelRenderSystem・OpaquePass・ShadowMapRenderSystem が積む）
 //   - 不透明のコマンドを シェーダー → モデル → マテリアル の順のキーで並べる
 //   - NormalPrepass が求めた見えるインスタンスの列を、OpaquePass に渡す
 //
-// 備考: BaseScene がフレームの最初に BeginFrame を呼んで空にする。
-//       並べるのは 8 バイトのキーと元の添字だけで、コマンド本体は動かさない。
+// 備考: BaseScene がフレームの最初に BeginFrame を呼んで空にする
+//       並べるのは 8 バイトのキーと元の添字だけで、コマンド本体は動かさない
 // ===========================================================================
 #include <vector>
 #include <array>
@@ -19,18 +19,22 @@
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
 #include "Engine/Graphics/Shader/ShaderRegistry.h"
-#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h" // InstanceData
+#include "Engine/Graphics/Renderer/Core/InstanceBuffer.h"
+#include "Engine/Graphics/Renderer/Core/MeshLod.h"
 
 // 不透明のモデル1体分の描画コマンド
 struct RenderCommand
 {
-    uint32_t                      shaderHash;        // 1つ目のマテリアルのシェーダー
-    uint32_t                      assetHash;         // モデルのパスのハッシュ（同じモデルをまとめるのに使う）
-    const Model                  *model;             // 所有しない
-    DirectX::XMFLOAT4X4           worldMatrix;       // エンティティのワールド行列
-    std::array<MaterialHandle, 4> overrideMaterials; // メッシュごとの上書きのマテリアル（先頭の4つまで）
-    uint8_t                       overrideCount = 0; // overrideMaterials のうち使っている数
-    DirectX::XMFLOAT4             customParams;      // InstanceData::customParams に入れる値
+    // 上書きのマテリアルを持てるメッシュの数。これより後ろのメッシュは、モデル本来のマテリアルで描く
+    static constexpr size_t kMaxOverrideMaterials = 16;
+
+    uint32_t                                          shaderHash;        // 1つ目のマテリアルのシェーダー
+    uint32_t                                          assetHash;         // モデルのパスのハッシュ（同じモデルをまとめるのに使う）
+    const Model                                      *model;             // 所有しない
+    DirectX::XMFLOAT4X4                               worldMatrix;       // エンティティのワールド行列
+    std::array<MaterialHandle, kMaxOverrideMaterials> overrideMaterials; // メッシュごとの上書きのマテリアル（先頭から）
+    uint8_t                                           overrideCount = 0; // overrideMaterials のうち使っている数
+    DirectX::XMFLOAT4                                 customParams;      // InstanceData::customParams に入れる値
 };
 
 // 半透明のメッシュ1つ分の描画コマンド（OpaquePass が積む。カメラからの距離で並べる）
@@ -71,7 +75,7 @@ public:
         return instance;
     }
 
-    // 並べ替えで使う ShaderRegistry を渡す（Graphics の初期化で1回だけ呼ぶ）。
+    // 並べ替えで使う ShaderRegistry を渡す（Graphics の初期化で1回だけ呼ぶ）
     // 毎フレームの並べ替えで ShaderRegistry::Instance() を引かないために持っておく
     void Initialize(ShaderRegistry *shaders) { m_shaderRegistry = shaders; }
 
@@ -91,17 +95,10 @@ public:
     // ============================================================
     // メッシュごとの見えるインスタンスの列（NormalPrepass → OpaquePass）
     // ============================================================
-    //   NormalPrepass と OpaquePass は、同じ並べたキーの列を同じバッチの区切りで回し、
-    //   同じ MeshCull でカリングするので、(バッチ, メッシュ) ごとの見えるインスタンスの列は一致する。
-    //   先に走る NormalPrepass の結果をここに置き、OpaquePass が読んで計算を省く。
-    //
-    //   書くのは NormalPrepass だけ、読むのは OpaquePass だけにしている。OpaquePass が
-    //   書き足さないので、読んでいる間に m_visibleArena が確保し直されて、返したポインタが
-    //   無効になることは無い。
-    //
-    //   見つからなければ OpaquePass が自分で計算する。NormalPrepass はブレンドありのバッチを
-    //   飛ばし、パス自体が走らないこともある（シェーダーが取れない・enabled が false）ので、
-    //   見つからないのは異常ではない。
+    //   NormalPrepass と OpaquePass は同じキーの列を同じ区切りで回すので、(バッチ, メッシュ) ごとの見えるインスタンスは一致する
+    //   先に走る NormalPrepass が結果をここに置き、OpaquePass が読んで計算を省く。書くのは NormalPrepass だけなので、読む間に確保し直されない
+    //   見つからなければ OpaquePass が自分で求める。NormalPrepass が走らないこともあるので、異常ではない
+    //   列は LOD の段の順に並べ、段ごとの数も置く
 
     // (バッチの先頭の添字, メッシュの番号) からキーを作る
     static uint64_t MakeVisibleKey(size_t batchStart, size_t meshIndex)
@@ -109,22 +106,26 @@ public:
         return (static_cast<uint64_t>(batchStart) << 32) | static_cast<uint32_t>(meshIndex);
     }
 
-    // カリング済みの見えるインスタンスの列を key（MakeVisibleKey）で控える。OpaquePass が FindVisibleInstances で再利用する
-    void StoreVisibleInstances(uint64_t key, const InstanceData *data, size_t count)
+    // カリング済みの見えるインスタンスの列（段の順に並べたもの）と段ごとの数を key（MakeVisibleKey）で控える
+    // OpaquePass が FindVisibleInstances で再利用する
+    void StoreVisibleInstances(uint64_t key, const InstanceData *data, size_t count,
+                               const MeshLod::LevelCounts &levelCounts)
     {
         if (!data) return;
         const uint32_t offset = static_cast<uint32_t>(m_visibleArena.size());
         m_visibleArena.insert(m_visibleArena.end(), data, data + count);
-        m_visibleIndex[key] = {offset, static_cast<uint32_t>(count)};
+        m_visibleIndex[key] = {offset, static_cast<uint32_t>(count), levelCounts};
     }
 
-    // 見つかれば outData / outCount に入れて true。count == 0（全部カリングされた）も見つかった扱い
-    bool FindVisibleInstances(uint64_t key, const InstanceData *&outData, size_t &outCount) const
+    // 見つかれば outData / outCount / outLevelCounts に入れて true。count == 0（全部カリングされた）も見つかった扱い
+    bool FindVisibleInstances(uint64_t key, const InstanceData *&outData, size_t &outCount,
+                              MeshLod::LevelCounts &outLevelCounts) const
     {
         const auto it = m_visibleIndex.find(key);
         if (it == m_visibleIndex.end()) return false;
-        outData  = m_visibleArena.data() + it->second.offset;
-        outCount = it->second.count;
+        outData        = m_visibleArena.data() + it->second.offset;
+        outCount       = it->second.count;
+        outLevelCounts = it->second.levelCounts;
         return true;
     }
 
@@ -147,16 +148,8 @@ public:
         m_shadowCommands.push_back(cmd);
     }
 
-    /**
-     * @brief 不透明のコマンドのキーを作って並べる。
-     *
-     * そのフレームで最初に呼んだパス（NormalPrepass か OpaquePass）だけが並べ、
-     * 2回目からは何もしない（同じ m_sortKeys を使う）。
-     *
-     * @note Initialize が呼ばれていなければ、シェーダーの部分は常に 0 になる。
-     * @note マテリアルの部分は、上書きのマテリアルの組み合わせ（overrideMaterials の全部）ごとの番号。
-     *       組み合わせが1つでも違えば別のバッチになる。
-     */
+    // 不透明のコマンドのキーを作って並べる。そのフレームで最初に呼んだパスだけが並べ、2回目からは何もしない
+    // マテリアルの部分は上書きのマテリアルの組み合わせごとの番号なので、1つでも違えば別のバッチになる
     void SortAndBuildBatches()
     {
         if (m_batchesBuilt) return;
@@ -193,8 +186,9 @@ private:
     // 見えるインスタンスの列を詰めた配列と、キー → 配列の区間 の表
     struct VisibleSpan
     {
-        uint32_t offset;
-        uint32_t count;
+        uint32_t             offset;
+        uint32_t             count;
+        MeshLod::LevelCounts levelCounts; // 段ごとの数（合計が count）
     };
     std::vector<InstanceData>                 m_visibleArena;
     std::unordered_map<uint64_t, VisibleSpan> m_visibleIndex;
@@ -206,14 +200,8 @@ private:
     // このフレームで見つけた上書きのマテリアルの組み合わせ（それを最初に使ったコマンドの添字）
     std::vector<uint32_t> m_overrideSets;
 
-    /**
-     * @brief 上書きのマテリアルの組み合わせに、このフレームだけの番号を振る。
-     *
-     * 組み合わせは普通は数種類しかないので、線形に探す。
-     *
-     * @param commandIndex 番号を振る描画コマンドの添字。
-     * @return 組み合わせの番号。組み合わせが同じなら同じ番号、上書きが無ければ 0。
-     */
+    // 上書きのマテリアルの組み合わせに、このフレームだけの番号を振る（同じ組み合わせなら同じ番号、上書きなしは 0）
+    // 組み合わせはふつう数種類しかないので、線形に探す
     uint32_t GetOverrideSetID(uint32_t commandIndex)
     {
         const RenderCommand &cmd = m_opaqueCommands[commandIndex];

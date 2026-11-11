@@ -3,7 +3,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Engine/Core/Math/Interpolation.h" // Damp(): フレームレート非依存の追従係数
+#include "Engine/Core/Math/Interpolation.h"
 
 #include <cmath>
 
@@ -18,5 +18,7 @@ void UIAnimationSystem::Update(float dt)
         t.scale += (a.targetScale - t.scale) * k;
     });
 }
+
+
 
 REGISTER_RENDER_SYSTEM(UIAnimationSystem, Priority::RenderStage::R10_UI);

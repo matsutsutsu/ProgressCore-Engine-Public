@@ -1,32 +1,22 @@
 #pragma once
-// ===========================================================================
-// 概要: 色調補正の設定と、演出からの一時的な上書きを持つシングルトンコンポーネント。
-//
-// 責務:
-//   - シーンが持つ普段の設定（enable / data）を持つ
-//   - 演出ごとの一時的な上書き（overrides）を持つ
-//   - 両方を重ねた最終的なパラメータを求める（Resolve）
-//   - 上書きの土台になる、今の設定そのままの値を返す（BaseParams）
-//
-// 備考: 演出システムは enable / data を書き換えず、自分のスロットだけを触る。
-//       スロットの仕組みと理由は PostEffectOverrides.h を参照。
-// ===========================================================================
+// 色調補正の設定（シングルトン）。シーンの普段の設定と、演出ごとの一時的な上書き（overrides）を持つ
+// 演出は enable / data を書き換えず、自分のスロットだけを触る。仕組みは PostEffectOverrides.h を参照
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 #include "Engine/Graphics/Components/PostProcess/PostEffectOverrides.h"
 
 #include <DirectXMath.h>
 #include <cmath>
 
-// 色調補正の一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）。
+// 色調補正の一時上書きの中身。寄せる先の目標値だけを持つ（どれだけ寄せるかは weight）
 struct ColorGradingOverrideParams
 {
     DirectX::XMFLOAT4 tint       = {1.0f, 1.0f, 1.0f, 1.0f}; // 色味
     float             saturation = 1.0f;                     // 彩度
     float             contrast   = 1.0f;                     // コントラスト
 
-    // この演出が求める mix のピーク。普段の mix より小さくはしない。
+    // この演出が求める mix のピーク。普段の mix より小さくはしない
     // mix は「色調補正をどれだけ画面に効かせるか」の全体の強さなので、
-    // 演出で普段の設定より弱めてはいけない。そのため他の項目と違い最大値で合わせる。
+    // 演出で普段の設定より弱めてはいけない。そのため他の項目と違い最大値で合わせる
     float mixPeak = 0.0f;
 };
 
@@ -58,10 +48,7 @@ struct ColorGradingConfigComponent
         return p;
     }
 
-    /**
-     * @brief 描画に渡すパラメータを返す。普段の設定に、上書きを priority の小さい順に重ねる。
-     * @return 定数バッファへ渡すパラメータ。明るさ（gradeBrightness）はどの演出も触らないので、普段の値のまま。
-     */
+    // 描画に渡すパラメータ。普段の設定に、上書きを priority の小さい順に重ねる（明るさはどの演出も触らない）
     GpuData::CbColorGradingData Resolve() const
     {
         GpuData::CbColorGradingData out = data;

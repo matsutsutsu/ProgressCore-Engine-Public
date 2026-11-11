@@ -1,5 +1,3 @@
-// BoundingBox・Visibility・NoRenderTag・NoShadowTag のシリアライズ/インスペクタ定義。
-
 #include "CullingComponents.h"
 #include "Engine/Graphics/Components/Core/NoRenderTag.h"
 #include "Engine/Graphics/Components/Core/NoShadowTag.h"
@@ -13,7 +11,7 @@
 
 // ===========================================================================
 // BoundingBoxComponent
-//   実行時に計算する値なので保存しない（isSerializable = false）。確認用に表示だけする。
+//   実行時に計算する値なので保存しない（isSerializable = false）。確認用に表示だけする
 // ===========================================================================
 template <>
 struct ComponentMeta<BoundingBoxComponent>
@@ -42,7 +40,7 @@ REGISTER_COMPONENT_EDITOR_GUI(BoundingBoxComponent)
 
 // ===========================================================================
 // VisibilityComponent
-//   FrustumCullingSystem が毎フレーム書き換えるので保存しない。
+//   FrustumCullingSystem が毎フレーム書き換えるので保存しない
 // ===========================================================================
 template <>
 struct ComponentMeta<VisibilityComponent>
@@ -70,8 +68,8 @@ REGISTER_COMPONENT_EDITOR_GUI(VisibilityComponent)
 
 // ===========================================================================
 // NoRenderTag
-//   付いているかどうかだけが意味を持つので、フィールドは無い。
-//   シーンを作る人が付ける設定なので、シーン/プレハブに保存する。
+//   付いているかどうかだけが意味を持つので、フィールドはない
+//   シーンを作る人が付ける設定なので、シーン/プレハブに保存する
 // ===========================================================================
 template <>
 struct ComponentMeta<NoRenderTag>
@@ -89,7 +87,7 @@ struct ComponentMeta<NoRenderTag>
 
     static const std::vector<FieldDescriptor> &Fields()
     {
-        // フィールド無し（タグの有無だけが意味を持つ）
+        // フィールドなし（タグの有無だけが意味を持つ）
         static const std::vector<FieldDescriptor> fields = {};
         return fields;
     }
@@ -99,7 +97,7 @@ REGISTER_COMPONENT_EDITOR_GUI(NoRenderTag)
 
 // ===========================================================================
 // NoShadowTag
-//   NoRenderTag と同じく、フィールドを持たずシーン/プレハブに保存する。
+//   NoRenderTag と同じく、フィールドを持たずシーン/プレハブに保存する
 // ===========================================================================
 template <>
 struct ComponentMeta<NoShadowTag>
@@ -117,12 +115,12 @@ struct ComponentMeta<NoShadowTag>
 
     static const std::vector<FieldDescriptor> &Fields()
     {
-        // フィールド無し（タグの有無だけが意味を持つ）
+        // フィールドなし（タグの有無だけが意味を持つ）
         static const std::vector<FieldDescriptor> fields = {};
         return fields;
     }
 };
 // 登録名は displayName から取る。登録名はプレハブ JSON のキーになるので、
-// 表示名とずれると、表示名どおりにキーを書いても読み込まれない（エラーも出ない）。
+// 表示名とずれると、表示名どおりにキーを書いても読み込まれない（エラーも出ない）
 REGISTER_COMPONENT(NoShadowTag, ComponentMeta<NoShadowTag>::displayName)
 REGISTER_COMPONENT_EDITOR_GUI(NoShadowTag)

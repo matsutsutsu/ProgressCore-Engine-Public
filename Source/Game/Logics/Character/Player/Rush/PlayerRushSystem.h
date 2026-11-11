@@ -1,21 +1,21 @@
 #pragma once
 // ===========================================================================
-// 概要: ジャスト回避成立後の「ラッシュ」を駆動する System。
+// 概要: ジャスト回避の成立後の「ラッシュ」を進める System
 //
 // 責務:
-//   - ジャスト回避の成功(JustEvadeSuccessEvent)を受けて、ダッシュを中断しラッシュを開始する
-//   - ラッシュ中は世界を一律スローにし、プレイヤーだけ実時間へ戻す
-//   - ラッシュ中は常に無敵を維持する
-//   - フェーズ（回避離脱→待機→攻撃→自由）を進める
-//   - ラッシュ中かどうかを画面演出(PlayerRushEffectComponent)へ伝える
+//   - 避けた攻撃の持ち主が範囲内なら、ダッシュを打ち切り、ラッシュを始める
+//     範囲外なら、ダッシュはそのまま続け、世界だけを短くスローにする
+//   - ラッシュ中は世界をスローにし、プレイヤーだけ実時間・無敵で動かす
+//   - フェーズを進める（回避離脱 → 待機 → 攻撃 → 連撃）
 //
-// 備考: 回避ダッシュ本体は PlayerDashSystem、歩き／走りは PlayerMoveSystem（別System）。
-//       画面演出は PlayerRushEffectSystem(R02)。
-//       この System は PlayerDashSystem と PlayerMoveSystem の後に走り、ラッシュ中は移動を上書きする。
+// 画面演出（PlayerRushEffectSystem）は、ここが書く isActive を直接読む
+//
+// 備考: 回避離脱の移動は開始時に MoveInDirection で予約し、物理が運び終えたら待機へ進める
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
+#include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
@@ -25,110 +25,149 @@
 #include <vector>
 
 struct PlayerDashComponent;
+struct AnimStateMachineComponent;
 
-class PlayerRushSystem : public CCL::ECS::IfSystem<PlayerRushSystem,
-                                                   CCL::ECS::Write<PlayerRushComponent>,
-                                                   CCL::ECS::Write<TimeStateComponent>,
-                                                   CCL::ECS::Write<CharacterMovementComponent>,
-                                                   CCL::ECS::Write<PlayerComponent>,
-                                                   CCL::ECS::Write<AnimParametersComponent>,
-                                                   CCL::ECS::Read<PlayerInputComponent>,
-                                                   CCL::ECS::Read<TransformComponent>>
+class PlayerRushSystem : public CCL::ECS::IfSystem<
+    PlayerRushSystem,
+    CCL::ECS::Write<PlayerRushComponent>,
+    CCL::ECS::Write<TimeStateComponent>,
+    CCL::ECS::Write<CharacterMovementComponent>,
+    CCL::ECS::Write<PlayerComponent>,
+    CCL::ECS::Write<AnimParametersComponent>,
+    CCL::ECS::Read<PlayerInputComponent>,
+    CCL::ECS::Read<TransformComponent>,           // 詰め先の敵の位置
+    CCL::ECS::Read<JoltCharacterHandleComponent>> // 自分の物理の位置
 {
 public:
     PlayerRushSystem() : IfSystem("PlayerRushSystem") {}
 
     void Initialize() override;
     void Update(float dt) override;
-
-    // ラッシュの状態と「移動の指令と結果」をインスペクタに出す（離脱/間合い詰めが効かない時の切り分け用）。
     void OnGui() override;
 
-    // Filter 外へ書く型を申告する（画面演出のシングルトン・開始時に中断する PlayerDashComponent）。
-    // 宣言しないと、同じ型を触る他 System との並列実行で競合を検出できない。
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
-    // 移動(CharacterMovementComponent)を PlayerDashSystem・PlayerMoveSystem と同じ L02_Update で書くので、順番を宣言する。
+    // 移動を書く2つより後に走り、ラッシュ中は上書きする
     std::vector<const char *> GetRunAfter() const override { return {"PlayerDashSystem", "PlayerMoveSystem"}; }
 
+    // 出したトリガーを、同じステップのアニメの遷移に使わせる
+    std::vector<const char *> GetRunBefore() const override { return {"AnimControllerSystem"}; }
+
 private:
-    // 基底の Write 申告を足し込むためのエイリアス。
-    using Base = CCL::ECS::IfSystem<PlayerRushSystem,
-                                    CCL::ECS::Write<PlayerRushComponent>,
-                                    CCL::ECS::Write<TimeStateComponent>,
-                                    CCL::ECS::Write<CharacterMovementComponent>,
-                                    CCL::ECS::Write<PlayerComponent>,
-                                    CCL::ECS::Write<AnimParametersComponent>,
-                                    CCL::ECS::Read<PlayerInputComponent>,
-                                    CCL::ECS::Read<TransformComponent>>;
+    using Base = CCL::ECS::IfSystem<
+        PlayerRushSystem,
+        CCL::ECS::Write<PlayerRushComponent>,
+        CCL::ECS::Write<TimeStateComponent>,
+        CCL::ECS::Write<CharacterMovementComponent>,
+        CCL::ECS::Write<PlayerComponent>,
+        CCL::ECS::Write<AnimParametersComponent>,
+        CCL::ECS::Read<PlayerInputComponent>,
+        CCL::ECS::Read<TransformComponent>,
+        CCL::ECS::Read<JoltCharacterHandleComponent>>;
 
-    // ラッシュを開始する（ダッシュを中断し、ダッシュ方向を離脱方向にして回避離脱から始める）。
-    void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash);
+    // ============================================================
+    // フェーズ
+    // ============================================================
 
-    /**
-     * @brief 現フェーズの残り時間が尽きたときに、次のフェーズへ時間遷移させる。
-     *
-     * 回避離脱 → 待機 → 自由、攻撃 → 自由、自由 → 終了。待機→攻撃は時間でなく攻撃入力で起きる。
-     *
-     * @param rush ラッシュの状態（phase / timer を書く）。
-     * @param time プレイヤーの時間の状態（終了時に cinematicScale を戻す）。
-     */
-    void AdvancePhase(PlayerRushComponent &rush, TimeStateComponent &time);
+    // ラッシュを始める。相手を覚え、ダッシュを打ち切り、回避離脱の移動を予約する
+    // target は PickRushTarget で決めた相手。いなければ InvalidEntityID（相手なしで、正面へ斬る）
+    void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement,
+                   CCL::ECS::EntityID target);
 
-    /**
-     * @brief ラッシュ中の時間制御を1フレーム進める。
-     *
-     * 一律の世界スローを維持しつつ、cinematicScale でプレイヤーだけ実時間へ戻す。
-     *
-     * @param rush    ラッシュの状態（worldScale / playerScale を読む）。
-     * @param time    プレイヤーの時間の状態（cinematicScale を書く。group を読む）。
-     * @param timeCtx 全体の時間倍率。nullptr なら等速とみなす。
-     */
+    // 回避離脱の向きとアニメを決める。StartRush の直後に呼ぶ
+    // 相手を正面に置き、跳ぶ向きに合わせて前後左右の回避を混ぜて出す
+    void BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams,
+                        const DirectX::SimpleMath::Vector3 &playerPos);
+
+    // 回避離脱と待機の間、BeginEvadeAnim で決めた向きを保つ
+    void HoldEvadeFacing(const PlayerRushComponent &rush, PlayerComponent &player);
+
+    // 次のフェーズへ進める
+    // 回避離脱は移動が終わったとき、ほかは残り時間が尽きたときに呼ぶ
+    void AdvancePhase(PlayerRushComponent &rush);
+
+    // 連撃に入る
+    // 終わりはアニメで決めるので、残り時間には上限だけを入れる
+    void EnterFlurry(PlayerRushComponent &rush);
+
+    // 連撃中のアニメから、入った斬りの数を数える
+    // ラッシュのアニメから抜けたら連撃を終える。fsm が nullptr なら抜けたとみなす
+    void TrackRushAnim(PlayerRushComponent &rush, const AnimStateMachineComponent *fsm);
+
+    // 攻撃に入り、突っ込む構えへ入る。相手がいなければ今の正面へ詰める
+    void EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player, AnimParametersComponent &animParams);
+
+    // ============================================================
+    // 時間
+    // ============================================================
+
+    // 世界のスロー（slowWorldScale）を保ち、プレイヤーの時計だけを実時間へ戻す
+    // ラッシュ中と、範囲外の回避の短いスローの間に呼ぶ
+    // timeCtx が nullptr なら等速とみなす
     void DriveTimeScale(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
 
-    // 回避離脱（Locked）。残り時間から進行度を出し、EaseOut で初速から 0 へ落としながら前進させる。
-    void DriveLeap(PlayerRushComponent &rush, CharacterMovementComponent &movement);
+    // 範囲外のジャスト回避で、世界だけの短いスロー（evadeSlowScale を evadeSlowDuration 秒）を始める
+    // 終わったらラッシュの後と同じく DriveRecovery で戻す
+    void StartEvadeSlow(PlayerRushComponent &rush);
 
-    // 攻撃状態（Attack）に入る。詰め先（ロックオン敵 or 向いている方向）を決める。
-    void EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player);
+    // 範囲外の回避のスローを1ステップ進める。timeCtx が nullptr なら等速とみなす
+    // 世界は遅く保ち、プレイヤーは最初の evadeSharedSlowTime 秒で世界と同じ遅さから実時間へ寄せる
+    void DriveEvadeSlow(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
 
-    /**
-     * @brief 攻撃状態（Attack）を1フレーム進める。詰め → 斬り の順で、System 内で完結させる。
-     *
-     * 斬り前は closeInSpeed で詰める（ロックオン中は毎フレーム敵へ向け直す）。間合い（closeInStopDistance）
-     * に入る／詰め先が無ければ、その場で斬りを1回出し、以降は攻撃アニメ（ルートモーションの踏み込み）に移動を委ねる。
-     *
-     * @param rush      ラッシュの状態（closeInDir / closeInTarget / attackFired を読み書き）。
-     * @param movement  動かす側への指令（desiredVelocity / overrideSpeed を書く）。
-     * @param player    向き直りの yaw（attackFaceYaw / attackFaceTimer）を書く先。
-     * @param animParams 斬りのトリガーを出す先。
-     * @param playerPos プレイヤーのワールド位置。敵との距離・方向を測るのに使う。
-     */
+    // 終了後、世界のスローが戻る間もプレイヤーを実時間で動かす
+    // 戻りきったら補正を外し、isRecovering を倒す
+    void DriveRecovery(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
+
+    // プレイヤーに掛かる世界の時間倍率（全体 × 勢力）。timeCtx がなければ 1
+    float CurrentWorldScale(const TimeStateComponent &time, const TimeContext *timeCtx) const;
+
+    // とどめが当たった瞬間に、プレイヤーも世界と一緒のスローに落とす
+    // 以降は世界が finishRecover かけて等速へ戻り、プレイヤーも同じ時計で戻る
+    void StartFinishSlow(PlayerRushComponent &rush, TimeStateComponent &time);
+
+    // ラッシュを終える
+    // とどめが当たっていなければ、ここから世界のスローを戻し始める
+    void EndRush(PlayerRushComponent &rush);
+
+    // ============================================================
+    // 間合い詰め・連撃・無敵
+    // ============================================================
+
+    // 攻撃を1ステップ進める。詰め先へ詰めて、間合いに入ったら1回だけ斬る
+    // playerPos はプレイヤーの物理の位置（ワールド）
     void DriveCloseIn(PlayerRushComponent &rush, CharacterMovementComponent &movement,
                       PlayerComponent &player, AnimParametersComponent &animParams,
                       const DirectX::SimpleMath::Vector3 &playerPos);
 
-    // 斬りを1回出す（Attack トリガー＋対象への向き直り）。以降は攻撃アニメに移動を委ねる。
+    // 詰めの斬り（着地の斬り RushDiveEnd）を出し、詰める向きへ向き直る
     void FireStrike(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams);
 
-    // プレイヤーをその場で止める（移動の意思を打ち消す）。待機フェーズの操作不能に使う。
-    void StopPlayer(CharacterMovementComponent &movement);
+    // 次の斬りを頼む。rushStepCount 回斬った後は、とどめを頼む
+    void RequestNextStep(PlayerRushComponent &rush, PlayerComponent &player,
+                         AnimParametersComponent &animParams, const DirectX::SimpleMath::Vector3 &playerPos);
 
-    // ラッシュ中、被弾処理が見る無敵タイマーを invincibleRefresh 以上に保つ。
+    // ラッシュ中は、被弾処理が見る無敵タイマーを invincibleRefresh 以上に保つ
     void MaintainInvincibility(CCL::ECS::EntityID id, const PlayerRushComponent &rush);
 
-    // ラッシュを終える（スローの要求をやめ、時間倍率を戻す）。
-    void EndRush(PlayerRushComponent &rush, TimeStateComponent &time);
+    // ============================================================
+    // 詰め先・デバッグ UI
+    // ============================================================
 
-    // 間合い詰めの詰め先を選ぶ。ロックオン中で生存している敵。無ければ InvalidEntityID。
-    CCL::ECS::EntityID PickCloseInTarget(const PlayerComponent &player) const;
+    // 避けた攻撃から、ラッシュの相手を決める
+    // 剣の判定やドローンは HitboxComponent の持ち主へ読み替える。生きていなければ InvalidEntityID
+    CCL::ECS::EntityID PickRushTarget(CCL::ECS::EntityID attackedID) const;
 
-    // 詰め先がまだ有効（存在し生存中）かを返す。
+    // 詰め先がまだ存在して、生きているか
     bool IsCloseInTargetAlive(CCL::ECS::EntityID id) const;
 
-    // フェーズ名をインスペクタ表示用の文字列にする。
+    // インスペクタに出すフェーズ名
     const char *PhaseLabel(RushPhase phase) const;
 
-    // ジャスト回避の成功で届いた「開始したいプレイヤー」。別タスクで届くので溜めて Update で開始する。
-    std::vector<CCL::ECS::EntityID> m_pendingStarts;
+    CCL::ECS::EntityID m_pendingStarts   = CCL::ECS::InvalidEntityID; // 成立を受けて、まだ始めていないプレイヤー
+    CCL::ECS::EntityID m_pendingAttacked = CCL::ECS::InvalidEntityID; // その成立で避けた攻撃
+
+    // 前の Update から届いた命中の、攻撃した側。敵の命中も入る
+    // 1ステップに複数の攻撃が当たりうるので vector で溜める
+    std::vector<CCL::ECS::EntityID> m_hitAttackers;
 };

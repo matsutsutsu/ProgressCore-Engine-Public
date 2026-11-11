@@ -1,14 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: GPU パーティクルの描画を受け付け、ParticlePass でまとめて描くクラス。
+// 概要: GPU パーティクルの描画を受け付け、ParticlePass でまとめて描くクラス
 //
 // 責務:
 //   - GPUParticleRenderSystem が積んだ描画コマンドを1フレーム分ためる
 //   - ブレンドの種類とテクスチャの順に並べ、ステートの切り替えを減らして描く
 //
-// 備考: 粒子の位置などはコンピュートシェーダーが GPU 上のバッファに書いている。
+// 備考: 粒子の位置などはコンピュートシェーダーが GPU 上のバッファに書いている
 //       頂点バッファは使わず粒子の数だけ点を描き、ジオメトリシェーダーがそのバッファを読んで
-//       各点を四角形に広げる。
+//       各点を四角形に広げる
 // ===========================================================================
 #include "Engine/Graphics/Components/Particle/GPUParticleComponent.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
@@ -49,7 +49,7 @@ private:
     std::vector<ParticleDrawCommand> m_drawCommands;
 
     Microsoft::WRL::ComPtr<ID3D11SamplerState>       sampler;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture; // テクスチャが無いときの 1x1 の白
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> defaultTexture; // テクスチャがないときの 1x1 の白
 
     bool m_isLoaded = false; // Initialize が済んだか
 

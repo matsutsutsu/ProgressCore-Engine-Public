@@ -36,4 +36,6 @@ void UIImageCollectSystem::Update(float /*dt*/)
     });
 }
 
+
+
 REGISTER_RENDER_SYSTEM(UIImageCollectSystem, Priority::RenderStage::R10b_UICollect);
