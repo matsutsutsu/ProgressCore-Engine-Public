@@ -18,6 +18,12 @@ void main(uint3 dtid : SV_DispatchThreadID)
     // 種別は粒子ごとに持たず、GS/PS が CbParticleStatic.particle_type を直接読む
     // （全粒子で同一の値のため、1粒子あたり4バイトを節約する）。
 
+    // エミッタへの追従。前のフレームから生きている粒子を、エミッタが動いた分 × 追従率だけずらす
+    //   この後で生まれる粒子は spawn() が今のフレームの軌道上に置くので、生まれる前にずらしておく
+    //   移動量に delta_time を掛けないので、スロー中の粒子もエミッタの動きにそのまま付いていく
+    if (follow_ratio > 0.0f && p.state == STATE_ALIVE)
+        p.position += (world_position - prev_world_position) * follow_ratio;
+
     if (emit_mode == 1)  // バーストモード
     {
         if (burst_trigger > 0.0f && id < (uint)burst_count)

@@ -146,9 +146,10 @@ namespace GpuData
         int    orient_mode;  // offset 232: 0 = ビルボード, 1 = ワールド水平, 2 = エミッタの向きの平面
         int    size_ease;    // offset 236: 大きさの変わり方 0 = 線形, 1 = Ease-In, 2 = Ease-Out, 3 = Ease-InOut
 
-        // ---- 大きさのイージング（offset 240〜255） ----
+        // ---- 大きさのイージング・エミッタへの追従（offset 240〜255） ----
         float  size_ease_power; // offset 240: 曲線の急さ（1 で線形と同じ）
-        float3 _pad_static3;    // offset 244: 16 バイトの倍数にする詰め物
+        float  follow_ratio;    // offset 244: 生まれた後の粒子がエミッタの移動に付いていく割合（0 = その場に残る, 1 = 完全に付いていく）
+        float2 _pad_static3;    // offset 248: 16 バイトの倍数にする詰め物
     };
 
     // ==================================================================
