@@ -203,9 +203,11 @@ void DamageResolutionSystem::Update(float dt)
                     FireHitReaction(m_world, event);
 
                 // --- 当たった位置に火花を出す（HitEffectSystem が受けて GPU パーティクルを出す） ---
+                // どのパーティクルにするかは HitEffectSystem が決めるので、攻撃した側を渡すだけにする
                 m_world->GetEventBus().Publish(HitImpactEvent{
                     DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z},
-                    event.finalDamage});
+                    event.finalDamage,
+                    event.attackerID});
             }
         }
 

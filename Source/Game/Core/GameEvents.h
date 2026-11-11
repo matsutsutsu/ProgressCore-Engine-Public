@@ -39,8 +39,9 @@ struct AttackHitConfirmedEvent
 // HitEffectSystem が受けて、当たった位置に GPU パーティクルを出す
 struct HitImpactEvent
 {
-    DirectX::XMFLOAT3 position = {0.0f, 0.0f, 0.0f}; // 当たった位置（ワールド座標）
-    float             power    = 1.0f;               // 命中の強さ（演出の大きさに使う）
+    DirectX::XMFLOAT3  position   = {0.0f, 0.0f, 0.0f};          // 当たった位置（ワールド座標）
+    float              power      = 1.0f;                        // 命中の強さ（演出の大きさに使う）
+    CCL::ECS::EntityID attackerID = CCL::ECS::InvalidEntityID;   // 攻撃した側。ラッシュ中のプレイヤーなら HitEffectSystem がパーティクルを差し替える
 };
 
 // プレイヤーが跳んだ瞬間に出す。PlayerActionVfxSystem が受けて土煙などを出す
