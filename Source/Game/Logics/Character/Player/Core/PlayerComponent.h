@@ -43,9 +43,18 @@ struct PlayerComponent
 
     // --- 攻撃時に敵へ向く（PlayerAttackSystem が書き、PlayerJumpFacingSystem が回す）---
 
-    float attackFaceYaw         = 0.0f; // 向く先の yaw（rad）
-    float attackFaceTimer       = 0.0f; // 向く残りの長さ（秒）。この間は移動の向きより優先
-    float attackFaceMaxDistance = 5.0f; // この距離以内の敵にだけ向く（m）
+    float attackFaceYaw          = 0.0f;  // 向く先の yaw（rad）
+    float attackFaceTimer        = 0.0f;  // 向く残りの長さ（秒）。この間は移動の向きより優先
+    float attackFaceMaxDistance  = 5.0f;  // この距離以内の敵にだけ向く（m）
+    float attackFaceConeAngle    = 70.0f; // ロックオンしていないとき、向く敵を探す前方の扇の半角（度）
+    float attackFaceDuration     = 0.22f; // 敵の方へ向き直る長さ（秒）
+    float attackBackFaceDuration = 0.8f;  // 後ろの技で、敵を向いたまま下がる長さ（秒）
+
+    // --- 攻撃の入力（PlayerAttackSystem が読む）---
+
+    float attackInputBuffer    = 0.25f; // 押した攻撃を覚えておく長さ（秒）。この間に受付区間が開けば次の技が出る
+    float attackStickThreshold = 0.5f;  // スティックをこれより深く倒したときだけ、前・後ろの技にする（0〜1）
+    float attackDirConeAngle   = 50.0f; // 敵の方・敵と反対の方とみなす扇の半角（度）
 
     // --- ロックオン ---
 

@@ -61,12 +61,39 @@ struct CharacterMoveReservation
 
 struct CharacterMovementComponent
 {
-    // --- 移動の予約（終わるまで物理が運ぶ）---
-    //
+    // --- 移動の予約 ---
+    
     // 予約が終わった次のフレームに続けて予約すると、止まらずにつながる
     // 余った時間も引き継ぐので、段を何回つないでも技の長さがずれない
-
     CharacterMoveReservation reservation;
+
+    // --- 移動の向き（入力・AI が毎フレーム書く）---
+
+    DirectX::SimpleMath::Vector3 desiredVelocity = {0, 0, 0}; // 進みたい向き（正規化済み）。速さは持たない
+    float                        moveIntensity   = 1.0f;      // 歩きの強さ 0〜1（スティックの傾き）
+
+    // --- 1フレーム限りの依頼（物理が読んだら既定値へ戻す）---
+
+    float                        overrideSpeed = -1.0f;              // 今だけこの速さ [m/s]。負で依頼なし
+    bool                         use3DVelocity = false;              // velocity3D をそのまま速度に使う
+    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度 [m/s]
+    bool                         jumpImpulse   = false;              // このフレームに跳ぶと決まった
+
+    // --- 持続する係数（毎フレーム書く。物理は戻さない）---
+
+    float speedMultiplier = 1.0f; // 速度倍率。1 で等倍
+
+    // --- ルートモーション（RootMotionSystem だけが書く）---
+
+    bool                         isRootMotionActive = false;              // ルートモーション中か
+    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメから求めた速度 [m/s]
+
+    // --- 結果（JoltCharacterUpdateSystem だけが書く）---
+
+    // 物理へ渡した水平速度 [m/s]。慣性込み、壁に当たる前の値
+    DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
+
+
 
     // target まで duration 秒かけて運ぶ予約をする
     // 始点は次の物理更新の位置。着いたら速度を 0 にして止まる
@@ -108,29 +135,4 @@ struct CharacterMovementComponent
         reservation.active   = true;
     }
 
-    // --- 移動の向き（入力・AI が毎フレーム書く）---
-
-    DirectX::SimpleMath::Vector3 desiredVelocity = {0, 0, 0}; // 進みたい向き（正規化済み）。速さは持たない
-    float                        moveIntensity   = 1.0f;      // 歩きの強さ 0〜1（スティックの傾き）
-
-    // --- 1フレーム限りの依頼（物理が読んだら既定値へ戻す）---
-
-    float                        overrideSpeed = -1.0f;             // 今だけこの速さ [m/s]。負で依頼なし
-    bool                         use3DVelocity = false;             // velocity3D をそのまま速度に使う
-    DirectX::SimpleMath::Vector3 velocity3D    = {0.0f, 0.0f, 0.0f}; // use3DVelocity 中の速度 [m/s]
-    bool                         jumpImpulse   = false;             // このフレームに跳ぶと決まった
-
-    // --- 持続する係数（毎フレーム書く。物理は戻さない）---
-
-    float speedMultiplier = 1.0f; // 速度倍率。1 で等倍
-
-    // --- ルートモーション（RootMotionSystem だけが書く）---
-
-    bool                         isRootMotionActive = false;              // ルートモーション中か
-    DirectX::SimpleMath::Vector3 rootMotionVelocity = {0.0f, 0.0f, 0.0f}; // アニメから求めた速度 [m/s]
-
-    // --- 結果（JoltCharacterUpdateSystem だけが書く）---
-
-    // 物理へ渡した水平速度 [m/s]。慣性込み、壁に当たる前の値
-    DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
 };

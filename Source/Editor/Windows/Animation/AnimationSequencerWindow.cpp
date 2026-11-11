@@ -47,6 +47,20 @@ inline float FrameToSec(int frame)
 // Effect イベントで選べる VFX プレハブの置き場所（VFX::Play と同じく拡張子なしのパスで保存する）
 constexpr const char *kVfxPrefabDir = "Assets/Prefabs/Particles";
 
+namespace
+{
+    // ImSequencer.cpp の中に直接書かれている寸法（ItemHeight / headerSize / scrollBarSize / 下の余白）
+    //   タイムラインの高さを、全部の行が収まる分だけ取るのに使う。ImSequencer 側を変えたらここも合わせる
+    constexpr float kSeqRowHeight    = 20.0f; // 1 行（マスターとイベント）の高さ
+    constexpr float kSeqHeaderHeight = 20.0f; // 上の目盛りの帯
+    constexpr float kSeqScrollHeight = 14.0f; // 下の横スクロールバー
+    constexpr float kSeqBottomMargin = 8.0f;  // 行の領域を切り出すときに引かれる余白
+
+    // 丸めで行の領域がわずかに足りなくなるのを防ぐ余裕
+    //   足りないと中の子ウィンドウが数 px だけスクロールできるようになり、ホイールを外のウィンドウへ渡さなくなる
+    constexpr float kSeqHeightSlack = 2.0f;
+} // namespace
+
 // ---------------------------------------------------------------------------
 // ImSequencer へ AnimSequence のイベントを見せる橋渡し（pImpl）
 // ---------------------------------------------------------------------------
@@ -286,6 +300,27 @@ public:
             m_seq->events.push_back(m_seq->events[evIdx]);
             SyncFrameCache();
         }
+    }
+
+    // index の行を delta 行（-1 で上、+1 で下）動かせるか
+    // マスター（0）は動かさず、イベントをマスターより上へも入れない
+    virtual bool CanMove(int index, int delta) const override
+    {
+        const int target = index + delta;
+        return m_seq && index >= 1 && target >= 1 && target < GetItemCount();
+    }
+
+    // index の行を隣の行と入れ替える
+    // 変わるのは表示とファイル内の順番だけ。実行時は ResourceManager が読み込むたびに開始時刻の順へ並べ直す
+    virtual void Move(int index, int delta) override
+    {
+        if (!CanMove(index, delta)) return;
+
+        // 行番号はマスターを含むので、events の添字は 1 引いた値
+        std::swap(m_seq->events[index - 1], m_seq->events[index - 1 + delta]);
+
+        // ImSequencer が見るフレームの表を、入れ替えた後の並びで作り直す
+        SyncFrameCache();
     }
 };
 
@@ -1083,11 +1118,27 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     int curFrame  = context.isAnimEditMode ? SecToFrame(context.animEditTime) : SecToFrame(animator->currentTimer);
     int prevFrame = curFrame;
 
+    // 全部の行が収まる高さを取る
+    //   ImSequencer は残りの高さをそのまま使うので、ウィンドウが低いと下の行が隠れて見えない
+    //   行の数から高さを決め、ウィンドウに入りきらない分はウィンドウ全体のスクロールで見る
+    const ImGuiStyle &style          = ImGui::GetStyle();
+    const float       rowsHeight     = kSeqRowHeight * (float)m_sequencerImpl->GetItemCount();
+    const float       timelineHeight = kSeqHeaderHeight + rowsHeight + style.FramePadding.y * 2.0f +
+                                 kSeqScrollHeight + kSeqBottomMargin + kSeqHeightSlack;
+
+    // この子ウィンドウ自体はスクロールさせず、ホイールを外のウィンドウへ渡す
+    ImGui::BeginChild("##SeqTimeline", ImVec2(0.0f, timelineHeight), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+    // 各行の左のボタンは、追加・削除（SEQUENCER_DEL）ではなく上下移動（SEQUENCER_MOVE）を出す
+    //   削除は Delete キーで行う
     m_expanded   = true;
     bool changed = ImSequencer::Sequencer(
         m_sequencerImpl.get(), &curFrame, &m_expanded, &m_selectedEntry, &m_firstFrame,
         ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD |
-            ImSequencer::SEQUENCER_DEL | ImSequencer::SEQUENCER_CHANGE_FRAME);
+            ImSequencer::SEQUENCER_MOVE | ImSequencer::SEQUENCER_CHANGE_FRAME);
+
+    ImGui::EndChild();
 
     // --- ドラッグ後のスナップ（選んだイベントの境界をスナップ単位へ丸める）---
     if (changed)
@@ -1396,9 +1447,10 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("吹き飛ばしの強さ。対ボスは弱め(0〜数値小)推奨");
             ImGui::TextColored(ImVec4(1, 0.7f, 0.3f, 1), "Hit Stop");
-            if (ImGui::SliderFloat("Duration", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+            // 数値の入力でも範囲の外へ出さない（AlwaysClamp）。TimeScale は 1 を超えると早送りになる
+            if (ImGui::DragFloat("Duration", &e.hitStopDuration, 0.005f, 0.0f, 1.0f, "%.3f s", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
-            if (ImGui::SliderFloat("TimeScale", &e.hitStopScale, 0.0f, 1.0f, "%.2f x"))
+            if (ImGui::DragFloat("TimeScale", &e.hitStopScale, 0.005f, 0.0f, 1.0f, "%.3f x", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
             break;
         }
@@ -1412,7 +1464,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
                 ch = true;
             if (ImGui::DragFloat("Knockback", &e.knockback, 0.1f, 0.0f, 100.0f, "%.1f"))
                 ch = true;
-            if (ImGui::SliderFloat("HitStop", &e.hitStopDuration, 0.0f, 1.0f, "%.2f s"))
+            if (ImGui::DragFloat("HitStop", &e.hitStopDuration, 0.005f, 0.0f, 1.0f, "%.3f s", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
             if (ImGui::Checkbox("持ち主に追従", &e.hitboxFollow))
                 ch = true;
@@ -1457,16 +1509,17 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Sound (効果音)");
             if (DrawSoundPicker(context, e))
                 ch = true;
-            if (ImGui::SliderFloat("音量", &e.soundVolume, 0.0f, 2.0f, "%.2f x"))
+            // 数値の入力でも範囲の外へ出さない（AlwaysClamp）
+            if (ImGui::DragFloat("音量", &e.soundVolume, 0.01f, 0.0f, 2.0f, "%.2f x", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
             if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("1 で等倍、0 で無音。Ctrl+クリックで数値入力");
-            if (ImGui::SliderFloat("ピッチ", &e.soundPitch, -1.0f, 1.0f, "%.2f oct"))
+                ImGui::SetTooltip("1 で等倍、0 で無音。ダブルクリックで数値入力");
+            if (ImGui::DragFloat("ピッチ", &e.soundPitch, 0.005f, -1.0f, 1.0f, "%.3f oct", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("オクターブ単位。0 で等倍、+1 で 1 オクターブ上、-1 で 1 オクターブ下\n"
                                   "スロー演出中は、これにさらにスロー分の低下が足されます");
-            if (ImGui::SliderFloat("ピッチの揺らぎ", &e.soundPitchRandom, 0.0f, 0.5f, "±%.2f oct"))
+            if (ImGui::DragFloat("ピッチの揺らぎ", &e.soundPitchRandom, 0.002f, 0.0f, 0.5f, "±%.3f oct", ImGuiSliderFlags_AlwaysClamp))
                 ch = true;
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("鳴らすたびに、ピッチをこの幅でランダムにずらします。0 でずらしません\n"

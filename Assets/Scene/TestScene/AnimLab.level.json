@@ -44,7 +44,7 @@
                 5.0,
                 0.0
             ],
-            "prefab": "Assets/Prefabs/Light/GameLighting.json",
+            "prefab": "Assets/Prefabs/Light/EditorLighting.json",
             "rotation": [
                 0.699999988079071,
                 0.0,

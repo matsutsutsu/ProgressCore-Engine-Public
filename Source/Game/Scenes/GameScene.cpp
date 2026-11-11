@@ -23,19 +23,18 @@ void GameScene::Initialize()
     ZoneScopedN("GameScene::Initialize");
 
     BaseScene::Initialize(); // リソースの登録と RegisterSystems
-
-    // LoadLevel は PersistentTag の付いていないエンティティを全部消してから読み込む
+  
     {
         ZoneScopedN("GameScene: LoadLevel BossBattleStage");
 
         std::string bossBattleLevel = "Assets/Scene/BossBattleStage.level.json";
 
         if (!LevelSerializer::LoadLevel(m_worldPtr, bossBattleLevel))
-            CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場レベルの読み込みに失敗: %s", bossBattleLevel.c_str());
+            CCL_LOG_ERROR(LogCategory::Core, "GameScene: 戦場シーンの読み込みに失敗: %s", bossBattleLevel.c_str());
     }
 
-    // ムービー用カメラはレベルに入れずここで足す（EditorScene も同じく自分で足す）
-    // ムービーを使うかどうかを、レベルのデータではなくシーンのコードで決めるため
+    // ムービー用カメラはレベルに入れずここで足す
+    // ムービーがあるかどうかはレベル側ではなくシーン側が持つ
     {
         ZoneScopedN("GameScene: SpawnPrefab CinematicCamera");
 
@@ -48,11 +47,7 @@ void GameScene::Initialize()
         }
     }
 
-    // 導入ムービーは、シーンの準備として頼んでおく（シーン遷移の明転を待たない）
-    // 明転の間もロジックは進むので、待つとその間にボスが動き出し、ムービーの構図が崩れる
-    // 受け手は要求を控えるだけで、取り出すのは最初のフレームの描画の更新なので、ロジックの1歩目から操作と AI が止まる
-    // ムービーの頭は明転と重なるので、台本の最初のショットは明転の長さを見込んで書く
-    // 非同期読み込みではこの関数は裏のスレッドで走るが、受け手は mutex で守って控えるだけなので問題ない
+    // 導入ムービーのイベントを送る
     m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
 
     CCL_LOG_INFO(LogCategory::Core, "GameScene Initialize");
@@ -72,10 +67,10 @@ void GameScene::RegisterSystems()
     auto &sysManager = *(m_ecsContext->GetSystemManager());
     CCL::ECS::SystemRegistry::Instance().RegisterAll(sysManager);
 
-    // リザルトとポーズはゲーム本編でだけ動かしたいので、全体登録（REGISTER_*）せずここで登録する
+    // リザルトとポーズはゲーム本編でだけ動かしたいので、ここで個別に登録する
     sysManager.RegisterSystem<GameResultSystem>(Priority::LogicStage::L02_PostUpdate);
 
-    // ポーズは描画ステージに置く。ロジックステージはポーズ中に止まり、解除の入力を拾えなくなる
+    // ゲームのポーズ処理を登録する。ゲーム専用にしたいので
     sysManager.RegisterSystem<PauseSystem>(Priority::RenderStage::R10_UI);
 }
 

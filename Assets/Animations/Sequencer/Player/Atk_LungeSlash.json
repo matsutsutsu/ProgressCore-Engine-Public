@@ -104,7 +104,7 @@
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 25.0,
+            "damage": 3.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
@@ -112,7 +112,7 @@
             "hitStopDuration": 0.25,
             "hitStopScale": 0.0,
             "hitboxFollow": false,
-            "knockback": 50.0,
+            "knockback": 3.0,
             "offset": {
                 "x": 0.0,
                 "y": 0.0,
@@ -122,7 +122,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.11666666716337204,
+            "startTime": 0.0833333358168602,
             "stringParam": "Weapon_R",
             "type": 0
         },
@@ -158,7 +158,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 1.933333158493042,
+            "endTime": 0.75,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -175,6 +175,31 @@
             "startTime": 0.0,
             "stringParam": "",
             "type": 9
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 25.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.5833333134651184,
+            "hitStopDuration": 0.25,
+            "hitStopScale": 1.0,
+            "hitboxFollow": true,
+            "knockback": 50.0,
+            "offset": {
+                "x": 0.0,
+                "y": 2.0,
+                "z": 3.0
+            },
+            "radius": 4.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.0833333358168602,
+            "stringParam": "",
+            "type": 4
         }
     ],
     "rootMotionCurve": {
@@ -201,8 +226,8 @@
                 "interp": 2,
                 "outTangent": 0.0,
                 "tangent": 1,
-                "time": 0.17127367854118347,
-                "value": 25.0
+                "time": 0.20100000500679016,
+                "value": 35.0
             },
             {
                 "inTangent": 0.0,
@@ -210,7 +235,7 @@
                 "outTangent": 0.0,
                 "tangent": 1,
                 "time": 1.011262059211731,
-                "value": 25.0
+                "value": 35.0
             }
         ],
         "name": "Curve",
@@ -219,7 +244,48 @@
     "sequenceName": "Atk_LungeSlash",
     "speedCurve": {
         "color": 4286643968,
-        "keys": [],
+        "keys": [
+            {
+                "inTangent": -0.21026800572872162,
+                "interp": 2,
+                "outTangent": -0.21026800572872162,
+                "tangent": 0,
+                "time": 0.0002426719292998314,
+                "value": 1.0003880262374878
+            },
+            {
+                "inTangent": 0.0,
+                "interp": 2,
+                "outTangent": 0.0,
+                "tangent": 1,
+                "time": 0.05121254175901413,
+                "value": 0.9896706938743591
+            },
+            {
+                "inTangent": -45.740028381347656,
+                "interp": 2,
+                "outTangent": -45.740028381347656,
+                "tangent": 0,
+                "time": 0.05777380242943764,
+                "value": 0.19739800691604614
+            },
+            {
+                "inTangent": 31.17414093017578,
+                "interp": 2,
+                "outTangent": 31.17414093017578,
+                "tangent": 2,
+                "time": 0.0662185326218605,
+                "value": 0.3032962679862976
+            },
+            {
+                "inTangent": 105.32569885253906,
+                "interp": 2,
+                "outTangent": 105.32569885253906,
+                "tangent": 2,
+                "time": 0.0719304084777832,
+                "value": 1.0052692890167236
+            }
+        ],
         "name": "Curve",
         "visible": true
     },

@@ -17,6 +17,12 @@ CFIELD_FLOAT_RANGED(bankingMultiplier, "バンキング係数", 0.1f, 0.0f, 5.0f
 CFIELD_FLOAT_RANGED(maxBankingAngle, "最大バンキング角", 1.0f, 0.0f, 90.0f, "見た目")
 
 CFIELD_FLOAT_RANGED(attackFaceMaxDistance, "攻撃時オートフェイス距離", 0.5f, 0.0f, 30.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackFaceConeAngle, "オートフェイスの扇の半角(度)", 1.0f, 0.0f, 180.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackFaceDuration, "向き直る時間", 0.01f, 0.0f, 2.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackBackFaceDuration, "後ろの技で敵を向く時間", 0.01f, 0.0f, 3.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackInputBuffer, "攻撃の先行入力", 0.01f, 0.0f, 1.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackStickThreshold, "派生に必要なスティックの傾き", 0.01f, 0.0f, 1.0f, "攻撃")
+CFIELD_FLOAT_RANGED(attackDirConeAngle, "前・後ろとみなす扇の半角(度)", 1.0f, 0.0f, 90.0f, "攻撃")
 
 // --- 実行時状態（書き手はシステム。表示はするが保存しない）-----------------
 //   保存すると、保存した瞬間の値がプレハブに残り、そこから生成した個体が

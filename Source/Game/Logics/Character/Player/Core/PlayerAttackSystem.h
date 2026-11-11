@@ -31,8 +31,9 @@ public:
     PlayerAttackSystem() : IfSystem("PlayerAttackSystem") {}
     virtual ~PlayerAttackSystem() = default;
 
-    // PlayerInputSystem が書いた PlayerInputComponent を読むので、同じ L01_Input の中でその後に走る
-    std::vector<const char *> GetRunAfter() const override { return {"PlayerInputSystem"}; }
+    // 書いた attackFaceYaw / attackFaceTimer を、同じ L02_PreUpdate の PlayerJumpFacingSystem が回す
+    //   宣言しないと順が名前の並びまかせになり、逆になると向き直りが 1 ステップ遅れる
+    std::vector<const char *> GetRunBefore() const override { return {"PlayerJumpFacingSystem"}; }
 
     void Update(float dt) override;
 
@@ -48,5 +49,7 @@ private:
                              DirectX::SimpleMath::Vector3 &outDir);
 
     // スティックの向きを、baseDir（敵の方か今の正面）に対する前・後ろ・それ以外に分けて AttackDir の値で返す
-    float ClassifyAttackDir(const DirectX::SimpleMath::Vector3 &baseDir, const CharacterMovementComponent &movement) const;
+    // 傾きのしきい値と扇の角度は player の調整値を使う
+    float ClassifyAttackDir(const DirectX::SimpleMath::Vector3 &baseDir, const PlayerComponent &player,
+                            const CharacterMovementComponent &movement) const;
 };

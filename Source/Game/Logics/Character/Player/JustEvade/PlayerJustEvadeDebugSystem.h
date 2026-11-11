@@ -40,8 +40,10 @@ public:
 
     void OnGui() override;
 
-    // 入力を確定させた後（PlayerInputSystem）に上書きする。攻撃入力を書くので PlayerAttackSystem より後にする
-    std::vector<const char *> GetRunAfter() const override { return {"PlayerInputSystem", "PlayerAttackSystem"}; }
+    // 入力を確定させた後（PlayerInputSystem）に上書きする
+    //   入れた攻撃入力は後のステージの PlayerAttackSystem も読むが、入れるのはラッシュの待機中だけなので
+    //   PlayerAttackSystem はラッシュ中として抜け、通常攻撃は出ない
+    std::vector<const char *> GetRunAfter() const override { return {"PlayerInputSystem"}; }
 
 private:
     // 方向ボタンで要求された向き（カメラ基準）
