@@ -57,8 +57,8 @@ void PlayerRushEffectSystem::Update(float dt)
         // ---------------------------------------------------------
 
         // dt は実時間なので、世界のスロー中もフェードの速さは変わらない
-        // ラッシュを終えたステップから isActive が倒れるので、そこから消え始める
-        const bool  active   = rush.isActive;
+        // ラッシュ中と、範囲外の回避の短いスロー中に出す。どちらも終えたステップから消え始める
+        const bool  active   = rush.isActive || rush.evadeSlowTimer > 0.0f;
         const float target   = active ? 1.0f : 0.0f;
         const float fadeTime = active ? effect.fadeInTime : effect.fadeOutTime;
         const float rate     = (fadeTime > 0.0001f) ? (dt / fadeTime) : 1.0f;

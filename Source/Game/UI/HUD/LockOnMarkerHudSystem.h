@@ -6,14 +6,17 @@
 //   - ロックオン対象の体の中心を画面へ投影する
 //   - 回る2本の弧と中心の◆を描く
 //   - ロックした瞬間は白く光りながら縮め、解除したら広がりながら消す
+//   - 対象がラッシュを始められる範囲の外なら、くすんだ色にする
 //
 // 備考: UI のエンティティは作らず、UIDrawList へ線を直接積む
 //       見た目と動きの調整値は LockOnMarkerStyleComponent（PlayerHud プレハブの子 LockOnMarker）
+//       範囲の判定はラッシュの開始と同じ IsInRushStartRange を使い、色とラッシュの出方を一致させる
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/UI/ECS/UIDrawList.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
+#include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 #include "Game/UI/HUD/LockOnMarkerStyleComponent.h"
 
 #include <DirectXMath.h>
@@ -21,6 +24,7 @@
 class LockOnMarkerHudSystem : public CCL::ECS::IfSystem<
     LockOnMarkerHudSystem,
     CCL::ECS::Read<PlayerComponent>,
+    CCL::ECS::Read<PlayerRushComponent>, // 範囲の距離（startMaxDistance）
     CCL::ECS::Read<TransformComponent>>
 {
 public:
@@ -45,11 +49,15 @@ private:
     // 調整値を返す。PlayerHud の子 LockOnMarker がなければ既定値
     const LockOnMarkerStyleComponent &GetStyle();
 
+    // 対象がラッシュを始められる範囲の外か。プレイヤーか対象の位置が分からなければ false（範囲内の色のまま）
+    bool IsOutOfRushRange(CCL::ECS::EntityID playerID, CCL::ECS::EntityID target) const;
+
     CCL::ECS::EntityID m_styleID  = CCL::ECS::InvalidEntityID; // 調整値を持つエンティティ（見つけたら持っておく）
     CCL::ECS::EntityID m_target   = CCL::ECS::InvalidEntityID; // 最後に狙った対象
     float              m_lockAge  = 0.0f;                      // 今の対象をロックしてからの秒数
     float              m_presence = 0.0f;                      // 表示の濃さ（0〜1）
     float              m_spin     = 0.0f;                      // 弧の回転角（ラジアン）
+    float              m_outOfRange = 0.0f;                    // 範囲外の色の混ぜ具合（0 = 範囲内の色、1 = 範囲外の色）
     DirectX::XMFLOAT2  m_center{};                             // 最後に描いた中心（px）。消えていく間もここに描く
 
     static constexpr int kSortOrder = 90; // 描画順。他の HUD（HP・切り払い）より奥

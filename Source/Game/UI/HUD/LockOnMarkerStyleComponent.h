@@ -12,6 +12,13 @@ struct LockOnMarkerStyleComponent
     float             coreSize  = 5.0f;   // 中心の◆の一辺（px）
     float             arcSpan   = 130.0f; // 1本の弧の広がり（度）。残りの (180 - これ) 度ずつが切れ目
 
+    // --- ラッシュの範囲 ---
+    // 狙っている敵がラッシュを始められる距離（PlayerRushComponent.startMaxDistance）より遠いときの色
+    // 今ジャスト回避しても反撃に移れないことを、照準の深紅から鮮やかさを抜いた色で伝える
+    // 黄色系は HUD で「今がチャンス」（ラッシュの合図・チュートリアルの「今だ」）に使っているので避ける
+    DirectX::XMFLOAT4 outOfRangeColor = {0.55f, 0.20f, 0.22f, 0.70f};
+    float             rangeBlendSpeed = 10.0f; // 範囲の内外が変わったとき、色が移る速さ（1/秒）。境目でチカチカさせない
+
     // --- 動き ---
     float spinSpeed   = 1.2f;  // 弧の回る速さ（ラジアン/秒）
     float acquireTime = 0.2f;  // ロックした瞬間から、輪が縮みきるまでの時間（秒）

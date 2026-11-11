@@ -108,32 +108,39 @@ void LockOnMarkerHudSystem::PushStroke(UIDrawList &list, float x, float y, float
 void LockOnMarkerHudSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 今のロックオン対象を読む
+    // 1. 今のロックオン対象と、ラッシュの範囲の外かを読む
     // 2. 対象を画面へ投影し、表示の濃さを進める
-    // 3. 輪の大きさと色を決める
+    // 3. 輪の大きさと色を決める（範囲の外なら、くすんだ色へ寄せる）
     // 4. 輪と中心の◆を積む
 
     if (!m_world->HasResource<UIDrawList>()) return;
     auto &list = m_world->GetResource<UIDrawList>();
 
     // ---------------------------------------------------------
-    // 1. ロックオン対象
+    // 1. ロックオン対象と範囲
     // ---------------------------------------------------------
-    EntityID target = InvalidEntityID;
+    EntityID playerID = InvalidEntityID;
+    EntityID target   = InvalidEntityID;
     if (m_world->HasResource<BattleContext>())
     {
         const auto &battle = m_world->GetResource<BattleContext>();
         if (const auto *player = battle.HasPlayer() ? m_world->GetComponent<PlayerComponent>(battle.playerEntity) : nullptr)
         {
-            target = player->lockOnTargetID;
+            playerID = battle.playerEntity;
+            target   = player->lockOnTargetID;
         }
     }
     if (!m_world->IsEntityValid(target)) target = InvalidEntityID;
 
+    // 範囲の外なら 1、内なら 0。ここへ向けて色の混ぜ具合を寄せる
+    const float rangeGoal = (target != InvalidEntityID && IsOutOfRushRange(playerID, target)) ? 1.0f : 0.0f;
+
     // 対象が変わったら、締まる演出を最初からやり直す
+    // 色は前の対象から移すのではなく、新しい対象の色から始める
     if (target != InvalidEntityID && target != m_target)
     {
-        m_lockAge = 0.0f;
+        m_lockAge    = 0.0f;
+        m_outOfRange = rangeGoal;
     }
     if (target != InvalidEntityID) m_target = target;
 
@@ -180,9 +187,27 @@ void LockOnMarkerHudSystem::Update(float dt)
     if (!visible) scale += 0.5f * (1.0f - m_presence);
     const float R = style.radius * scale;
 
+    // ラッシュの範囲の内外で色を変える。境目で毎フレーム切り替わってもチカチカしないよう、少しずつ寄せる
+    // 対象がいない（消えていく）間は寄せず、最後の色のまま消す
+    if (target != InvalidEntityID)
+    {
+        const float rangeStep = style.rangeBlendSpeed * dt;
+        if (rangeGoal > m_outOfRange)
+        {
+            m_outOfRange = std::min(rangeGoal, m_outOfRange + rangeStep);
+        }
+        else
+        {
+            m_outOfRange = std::max(rangeGoal, m_outOfRange - rangeStep);
+        }
+    }
+
+    DirectX::XMFLOAT4 base{};
+    DirectX::XMStoreFloat4(&base, DirectX::XMVectorLerp(DirectX::XMLoadFloat4(&style.color),
+                                                        DirectX::XMLoadFloat4(&style.outOfRangeColor), m_outOfRange));
+
     // 縮む間は白く光り、縮みきると照準の色に落ち着く
-    const float              white = 1.0f - std::clamp((m_lockAge - 0.05f) / 0.25f, 0.0f, 1.0f);
-    const DirectX::XMFLOAT4 &base  = style.color;
+    const float white = 1.0f - std::clamp((m_lockAge - 0.05f) / 0.25f, 0.0f, 1.0f);
     const DirectX::XMFLOAT4  color{base.x + (1.0f - base.x) * white, base.y + (1.0f - base.y) * white,
                                   base.z + (1.0f - base.z) * white, base.w * m_presence};
 
@@ -211,6 +236,20 @@ void LockOnMarkerHudSystem::Update(float dt)
     }
 
     PushStroke(list, m_center.x, m_center.y, style.coreSize, style.coreSize, 45.0f, color);
+}
+
+
+
+// 対象がラッシュを始められる範囲の外かを、ラッシュの開始と同じ判定で調べる
+bool LockOnMarkerHudSystem::IsOutOfRushRange(EntityID playerID, EntityID target) const
+{
+    // 判定はプレイヤーと敵の位置（描画用の補間前）で行い、ラッシュの開始と同じ値を見る
+    const auto *rush        = m_world->GetComponent<PlayerRushComponent>(playerID);
+    const auto *playerTrans = m_world->GetComponent<TransformComponent>(playerID);
+    const auto *targetTrans = m_world->GetComponent<TransformComponent>(target);
+    if (!rush || !playerTrans || !targetTrans) return false;
+
+    return !IsInRushStartRange(*rush, playerTrans->GetWorldPosition(), targetTrans->GetWorldPosition());
 }
 
 

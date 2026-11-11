@@ -3,7 +3,8 @@
 // 概要: ジャスト回避の成立後の「ラッシュ」を進める System
 //
 // 責務:
-//   - ダッシュを打ち切り、ラッシュを始める
+//   - 避けた攻撃の持ち主が範囲内なら、ダッシュを打ち切り、ラッシュを始める
+//     範囲外なら、ダッシュはそのまま続け、世界だけを短くスローにする
 //   - ラッシュ中は世界をスローにし、プレイヤーだけ実時間・無敵で動かす
 //   - フェーズを進める（回避離脱 → 待機 → 攻撃 → 連撃）
 //
@@ -69,10 +70,10 @@ private:
     // フェーズ
     // ============================================================
 
-    // ラッシュを始める。相手を決め、ダッシュを打ち切り、回避離脱の移動を予約する
-    // attackedID は避けた攻撃。分からなければ InvalidEntityID（相手なしで、正面へ斬る）
+    // ラッシュを始める。相手を覚え、ダッシュを打ち切り、回避離脱の移動を予約する
+    // target は PickRushTarget で決めた相手。いなければ InvalidEntityID（相手なしで、正面へ斬る）
     void StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement,
-                   CCL::ECS::EntityID attackedID);
+                   CCL::ECS::EntityID target);
 
     // 回避離脱の向きとアニメを決める。StartRush の直後に呼ぶ
     // 相手を正面に置き、跳ぶ向きに合わせて前後左右の回避を混ぜて出す
@@ -101,9 +102,18 @@ private:
     // 時間
     // ============================================================
 
-    // 世界のスローを保ち、プレイヤーの時計だけを実時間へ戻す
+    // 世界のスロー（slowWorldScale）を保ち、プレイヤーの時計だけを実時間へ戻す
+    // ラッシュ中と、範囲外の回避の短いスローの間に呼ぶ
     // timeCtx が nullptr なら等速とみなす
     void DriveTimeScale(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
+
+    // 範囲外のジャスト回避で、世界だけの短いスロー（evadeSlowScale を evadeSlowDuration 秒）を始める
+    // 終わったらラッシュの後と同じく DriveRecovery で戻す
+    void StartEvadeSlow(PlayerRushComponent &rush);
+
+    // 範囲外の回避のスローを1ステップ進める。timeCtx が nullptr なら等速とみなす
+    // 世界は遅く保ち、プレイヤーは最初の evadeSharedSlowTime 秒で世界と同じ遅さから実時間へ寄せる
+    void DriveEvadeSlow(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
 
     // 終了後、世界のスローが戻る間もプレイヤーを実時間で動かす
     // 戻りきったら補正を外し、isRecovering を倒す

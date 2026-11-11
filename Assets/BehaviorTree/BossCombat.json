@@ -247,21 +247,6 @@
             "startPin": 5
         },
         {
-            "endPin": 779,
-            "id": 781,
-            "startPin": 776
-        },
-        {
-            "endPin": 728,
-            "id": 782,
-            "startPin": 780
-        },
-        {
-            "endPin": 784,
-            "id": 785,
-            "startPin": 780
-        },
-        {
             "endPin": 800,
             "id": 802,
             "startPin": 400
@@ -290,6 +275,11 @@
             "endPin": 808,
             "id": 809,
             "startPin": 233
+        },
+        {
+            "endPin": 728,
+            "id": 810,
+            "startPin": 776
         }
     ],
     "editor_nodes": [
@@ -536,8 +526,8 @@
             "inputPinId": 393,
             "name": "ドローン：滞空して追従攻撃",
             "outputPinId": 394,
-            "posX": 7780.0,
-            "posY": 446.0,
+            "posX": 7812.0,
+            "posY": 590.0,
             "score": {
                 "base": 6.0,
                 "cooldown": 40.0,
@@ -555,8 +545,8 @@
             "inputPinId": 399,
             "name": "滞空(主)＋陣形(従)",
             "outputPinId": 400,
-            "posX": 7556.0,
-            "posY": 667.0,
+            "posX": 7588.0,
+            "posY": 811.0,
             "type": 8
         },
         {
@@ -566,8 +556,8 @@
             "inputPinId": 402,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 7329.0,
-            "posY": 862.0,
+            "posX": 7361.0,
+            "posY": 1006.0,
             "type": 4
         },
         {
@@ -577,8 +567,8 @@
             "inputPinId": 417,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 8081.0,
-            "posY": 718.0,
+            "posX": 8113.0,
+            "posY": 862.0,
             "type": 4
         },
         {
@@ -615,8 +605,8 @@
             "inputPinId": 0,
             "name": "【ドローン】　滞空ドローン攻撃",
             "outputPinId": 0,
-            "posX": 7104.0,
-            "posY": 400.0,
+            "posX": 7136.0,
+            "posY": 544.0,
             "type": 5,
             "width": 1376.0
         },
@@ -894,8 +884,8 @@
             "inputPinId": 620,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 7515.0,
-            "posY": 1086.0,
+            "posX": 7547.0,
+            "posY": 1230.0,
             "type": 4
         },
         {
@@ -905,8 +895,8 @@
             "inputPinId": 626,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 8278.0,
-            "posY": 718.0,
+            "posX": 8310.0,
+            "posY": 862.0,
             "type": 4
         },
         {
@@ -1005,8 +995,8 @@
             "inputPinId": 728,
             "outputPinId": 0,
             "param": 17.0,
-            "posX": 8801.0,
-            "posY": 862.0,
+            "posX": 8929.0,
+            "posY": 702.0,
             "score": {
                 "base": 7.0,
                 "cooldown": 18.0,
@@ -1036,8 +1026,8 @@
             "inputPinId": 734,
             "outputPinId": 0,
             "param": 32.0,
-            "posX": 7716.0,
-            "posY": 1086.0,
+            "posX": 7748.0,
+            "posY": 1230.0,
             "type": 4
         },
         {
@@ -1207,35 +1197,14 @@
             "type": 2
         },
         {
-            "actionId": 0,
-            "id": 778,
-            "inputPinId": 779,
-            "name": "並行ノード（Parallel）",
-            "outputPinId": 780,
-            "posX": 8900.0,
-            "posY": 638.0,
-            "type": 8
-        },
-        {
-            "action": "A_BossFootwork",
-            "actionId": 15,
-            "id": 783,
-            "inputPinId": 784,
-            "outputPinId": 0,
-            "param": 1.0,
-            "posX": 9045.0,
-            "posY": 862.0,
-            "type": 4
-        },
-        {
             "action": "A_DroneHighOrbit",
             "actionId": 102,
             "id": 786,
             "inputPinId": 787,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 7345.0,
-            "posY": 1086.0,
+            "posX": 7377.0,
+            "posY": 1230.0,
             "type": 4
         },
         {
@@ -1245,8 +1214,8 @@
             "inputPinId": 797,
             "outputPinId": 0,
             "param": 60.0,
-            "posX": 7926.0,
-            "posY": 1086.0,
+            "posX": 7958.0,
+            "posY": 1230.0,
             "type": 4
         },
         {
@@ -1255,8 +1224,8 @@
             "inputPinId": 800,
             "name": "シーケンス (Sequence)",
             "outputPinId": 801,
-            "posX": 7588.0,
-            "posY": 878.0,
+            "posX": 7620.0,
+            "posY": 1022.0,
             "type": 2
         },
         {
@@ -1271,7 +1240,7 @@
             "type": 4
         }
     ],
-    "last_id_counter": 809,
+    "last_id_counter": 810,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1693,41 +1662,6 @@
             "type": "Action"
         },
         {
-            "actionOrConditionId": 0,
-            "children": [
-                35,
-                36
-            ],
-            "name": "並行ノード（Parallel）",
-            "type": "Parallel"
-        },
-        {
-            "action": "A_BossFootwork",
-            "actionOrConditionId": 15,
-            "children": [],
-            "param": 0.0,
-            "type": "Action"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                37,
-                38,
-                39
-            ],
-            "name": "ステージ中央に退避する",
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                40,
-                41
-            ],
-            "name": "後退しながらドローン攻撃",
-            "type": "Parallel"
-        },
-        {
             "abortSelf": true,
             "action": "A_DroneTechnique",
             "actionOrConditionId": 129,
@@ -1749,8 +1683,27 @@
             "action": "A_BossFootwork",
             "actionOrConditionId": 15,
             "children": [],
-            "param": 1.0,
+            "param": 0.0,
             "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                35,
+                36,
+                37
+            ],
+            "name": "ステージ中央に退避する",
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                38,
+                39
+            ],
+            "name": "後退しながらドローン攻撃",
+            "type": "Parallel"
         },
         {
             "actionOrConditionId": 7,
@@ -1776,9 +1729,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                42,
-                43,
-                44
+                40,
+                41,
+                42
             ],
             "name": "後退アクション",
             "type": "Sequence"
@@ -1786,10 +1739,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
+                43,
+                44,
                 45,
-                46,
-                47,
-                48
+                46
             ],
             "name": "ドローン操作",
             "type": "Sequence"

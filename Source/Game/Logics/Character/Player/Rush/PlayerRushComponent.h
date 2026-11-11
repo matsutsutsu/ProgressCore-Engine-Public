@@ -29,6 +29,21 @@ struct PlayerRushComponent
     float readyDuration  = 0.40f; // 待機の長さ（秒）
     float attackDuration = 0.35f; // 斬ってから連撃へ移るまで（秒）
 
+    // --- 始められる範囲 ---
+
+    // ラッシュ時の、相手との距離がこの値より離れていたら、ラッシュを始めない（ジャスト回避だけになる）
+    float startMaxDistance = 80.0f; // （m）
+
+    // 範囲外でジャスト回避したときの短いスロー。世界だけ遅くし、プレイヤーは実時間で動ける
+    // 終わった後は、ラッシュの後と同じく slowRecover かけて等速へ戻る
+    // ダッシュ（約0.16秒）が終わった後も、遅い世界を自分だけ動ける時間がはっきり残る長さにする
+    float evadeSlowScale    = 0.1f; // 世界の時間倍率（1 で等速）。ラッシュの worldScale に近いほど同じ手応えになる
+    float evadeSlowDuration = 1.0f; // 長さ（秒）
+
+    // 成立した直後は、プレイヤーも世界と一緒に遅くして手応えを出す
+    // この秒数をかけて、世界と同じ遅さから実時間へ寄せる。最初ほどゆっくり離れる（0 で最初から実時間）
+    float evadeSharedSlowTime = 0.3f; // （秒）
+
     // --- 回避離脱 ---
 
     float leapSpeed = 120.0f; // 離脱の初速（m/秒）
@@ -52,6 +67,8 @@ struct PlayerRushComponent
 
     bool      isActive      = false;             // ラッシュ中か
     bool      isRecovering  = false;             // 終了後、スローが戻るのを待っているか
+    float     evadeSlowTimer = 0.0f;             // 範囲外の回避の短いスローの残り（秒）。0 なら出ていない
+    float     slowWorldScale = 0.1f;             // 今かけている世界スローの倍率。ラッシュなら worldScale、範囲外の回避なら evadeSlowScale
     RushPhase phase         = RushPhase::Locked; // 今のフェーズ
     float     timer         = 0.0f;              // 今のフェーズの残り（秒）。回避離脱では使わない
     bool      attackFired   = false;             // Attack で斬りを出したか
@@ -67,3 +84,16 @@ struct PlayerRushComponent
     DirectX::SimpleMath::Vector3 closeInDir    = {0, 0, 0};                 // 詰める向き（正規化済み）
     CCL::ECS::EntityID           closeInTarget = CCL::ECS::InvalidEntityID; // ラッシュの相手（避けた攻撃の持ち主）。開始時に決める。分からなければ無効
 };
+
+
+
+// 相手がラッシュを始められる範囲にいるか
+// 詰めは水平に動くので、高さは見ずに水平距離で比べる。ラッシュの開始とロックオンの照準の色で同じ判定を使う
+inline bool IsInRushStartRange(const PlayerRushComponent          &rush,
+                               const DirectX::SimpleMath::Vector3 &playerPos,
+                               const DirectX::SimpleMath::Vector3 &targetPos)
+{
+    const float dx = targetPos.x - playerPos.x;
+    const float dz = targetPos.z - playerPos.z;
+    return dx * dx + dz * dz <= rush.startMaxDistance * rush.startMaxDistance;
+}

@@ -92,7 +92,7 @@ void PlayerRushSystem::Initialize()
 void PlayerRushSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 届いたジャスト回避の成立から、ラッシュを始める
+    // 1. 届いたジャスト回避の成立から、相手が範囲内ならラッシュを始める
     // 2. ラッシュ中のプレイヤーを1ステップ進める
 
     // ---------------------------------------------------------
@@ -110,8 +110,25 @@ void PlayerRushSystem::Update(float dt)
         auto *trans    = m_world->GetComponent<TransformComponent>(m_pendingStarts);
         if (rush && dash && movement && player && anim && trans)
         {
-            StartRush(*rush, *dash, *movement, m_pendingAttacked);
-            BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition());
+            // 相手はロックオンでなく、避けた攻撃で決める
+            // ロックオンした敵と別の敵の攻撃を避けたときも、攻撃してきた方へ斬りかかる
+            const EntityID target      = PickRushTarget(m_pendingAttacked);
+            const auto    *targetTrans = m_world->GetComponent<TransformComponent>(target);
+
+            // 相手が遠ければラッシュを始めず、ジャスト回避だけにする。ダッシュは打ち切らずに続く
+            // 相手が分からないときは、これまで通り始めて正面へ斬る
+            const bool inRange = !targetTrans ||
+                                 IsInRushStartRange(*rush, trans->GetWorldPosition(), targetTrans->GetWorldPosition());
+            if (inRange)
+            {
+                StartRush(*rush, *dash, *movement, target);
+                BeginEvadeAnim(*rush, *player, *anim, trans->GetWorldPosition());
+            }
+            else
+            {
+                // 成功した手応えは残すため、世界だけを短くスローにする
+                StartEvadeSlow(*rush);
+            }
         }
     }
     m_pendingStarts   = CCL::ECS::InvalidEntityID;
@@ -148,9 +165,21 @@ void PlayerRushSystem::Update(float dt)
         // ラッシュ中じゃないならスローが戻るまでの間だけプレイヤーを実時間で動かす
         if (!rush.isActive)
         {
-            // 終えた後も、世界のスローが戻りきるまではプレイヤーだけを実時間で動かす
-            if (rush.isRecovering)
+            if (rush.evadeSlowTimer > 0.0f)
             {
+                // 範囲外の回避の短いスロー。最初はプレイヤーも一緒に遅く、そこから実時間へ戻す
+                // 時間切れになったら、ラッシュの後と同じ戻りへ移る
+                DriveEvadeSlow(rush, time, timeCtx);
+                rush.evadeSlowTimer -= dt;
+                if (rush.evadeSlowTimer <= 0.0f)
+                {
+                    rush.evadeSlowTimer = 0.0f;
+                    rush.isRecovering   = true;
+                }
+            }
+            else if (rush.isRecovering)
+            {
+                // 終えた後も、世界のスローが戻りきるまではプレイヤーだけを実時間で動かす
                 DriveRecovery(rush, time, timeCtx);
             }
             return;
@@ -240,15 +269,14 @@ void PlayerRushSystem::Update(float dt)
 // ---------------------------------------------------------------------------
 
 void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent &dash, CharacterMovementComponent &movement,
-                                 CCL::ECS::EntityID attackedID)
+                                 CCL::ECS::EntityID target)
 {
-    // 相手はロックオンでなく、避けた攻撃で決める
-    // ロックオンした敵と別の敵の攻撃を避けたときも、攻撃してきた方へ斬りかかる
-    rush.closeInTarget = PickRushTarget(attackedID);
-
     // ラッシュの状態の初期化
-    rush.isActive      = true;
-    rush.isRecovering  = false; // 前のラッシュの戻りの途中でも、ここから仕切り直す
+    rush.closeInTarget  = target;
+    rush.isActive       = true;
+    rush.isRecovering   = false; // 前のラッシュの戻りの途中でも、ここから仕切り直す
+    rush.evadeSlowTimer = 0.0f;  // 範囲外の回避のスローの途中でも、ラッシュのスローに切り替える
+    rush.slowWorldScale = rush.worldScale;
     rush.phase         = RushPhase::Locked;
     rush.timer         = 0.0f;
     rush.attackFired   = false;
@@ -435,15 +463,16 @@ void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerCompon
 
 void PlayerRushSystem::DriveTimeScale(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx)
 {
-    // 毎ステップ要求し続けて、世界を worldScale の遅さに保つ
-    Time::SustainWorldSlow(*m_world, rush.worldScale, rush.slowRecover);
+    // 毎ステップ要求し続けて、世界を slowWorldScale の遅さに保つ
+    // slowWorldScale はラッシュなら worldScale、範囲外の回避なら evadeSlowScale
+    Time::SustainWorldSlow(*m_world, rush.slowWorldScale, rush.slowRecover);
 
     // localDt = rawDt × 世界の倍率 × cinematicScale なので、
     // cinematicScale を playerScale ÷ 世界の倍率にすると、プレイヤーだけ playerScale で進む
 
-    // 割る数は worldScale より下げない
+    // 割る数は slowWorldScale より下げない
     // ほかのスローで世界がさらに遅くなっても、cinematicScale が大きくなりすぎない
-    const float worldFloor = (std::max)(CurrentWorldScale(time, timeCtx), rush.worldScale);
+    const float worldFloor = (std::max)(CurrentWorldScale(time, timeCtx), rush.slowWorldScale);
 
     time.cinematicScale = rush.playerScale / worldFloor;
 }
@@ -466,8 +495,9 @@ void PlayerRushSystem::DriveRecovery(PlayerRushComponent &rush, TimeStateCompone
 
     // プレイヤーの倍率も、世界の戻り具合に合わせて playerScale から 1 へ寄せる
     // 世界が戻りきった瞬間に、プレイヤーの速さが跳ばないようにする
-    const float worldFloor = (std::max)(currentWorld, rush.worldScale);
-    const float progress   = std::clamp((worldFloor - rush.worldScale) / (std::max)(1.0f - rush.worldScale, 1e-4f), 0.0f, 1.0f);
+    // 戻る元の遅さは、かけていたスロー（ラッシュか範囲外の回避か）で決まる
+    const float worldFloor = (std::max)(currentWorld, rush.slowWorldScale);
+    const float progress   = std::clamp((worldFloor - rush.slowWorldScale) / (std::max)(1.0f - rush.slowWorldScale, 1e-4f), 0.0f, 1.0f);
     const float playerRate = std::lerp(rush.playerScale, 1.0f, progress);
 
     time.cinematicScale = playerRate / worldFloor;
@@ -479,6 +509,39 @@ float PlayerRushSystem::CurrentWorldScale(const TimeStateComponent &time, const 
 {
     if (!timeCtx) return 1.0f;
     return timeCtx->globalScale * timeCtx->groupScales[static_cast<size_t>(time.group)];
+}
+
+
+
+// 範囲外のジャスト回避で、世界だけの短いスローを始める
+void PlayerRushSystem::StartEvadeSlow(PlayerRushComponent &rush)
+{
+    // ダッシュには触らない。打ち切らずに、そのまま最後まで走らせる
+    // スローの間と戻りの間は、ラッシュと同じ DriveTimeScale / DriveRecovery でプレイヤーを実時間にする
+    rush.evadeSlowTimer = rush.evadeSlowDuration;
+    rush.slowWorldScale = rush.evadeSlowScale;
+    rush.isRecovering   = false; // 前のスローの戻りの途中でも、ここから仕切り直す
+}
+
+
+
+// 範囲外の回避のスローを1ステップ進める。最初はプレイヤーも世界と一緒に遅くする
+void PlayerRushSystem::DriveEvadeSlow(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx)
+{
+    // 世界を遅く保ち、プレイヤーを実時間にする補正を入れる（ラッシュと同じ処理）
+    DriveTimeScale(rush, time, timeCtx);
+
+    // 成立してから evadeSharedSlowTime の間は、その補正を弱める
+    // cinematicScale が 1 なら世界と同じ遅さ、DriveTimeScale の値なら実時間。その間を寄せる
+    // 2乗で寄せるので、最初は一緒に遅いまま止まって見え、後半で自分だけ速くなる
+    if (rush.evadeSharedSlowTime <= 0.0f) return;
+
+    const float elapsed = rush.evadeSlowDuration - rush.evadeSlowTimer;
+    if (elapsed >= rush.evadeSharedSlowTime) return;
+
+    // スローの途中でインスペクタから長さを縮めると elapsed が負になるので、0 で止める
+    const float progress = (std::max)(elapsed, 0.0f) / rush.evadeSharedSlowTime;
+    time.cinematicScale  = std::lerp(1.0f, time.cinematicScale, progress * progress);
 }
 
 
@@ -644,7 +707,7 @@ void PlayerRushSystem::MaintainInvincibility(EntityID id, const PlayerRushCompon
 // ---------------------------------------------------------------------------
 
 // 避けた攻撃の持ち主を、ラッシュの相手として返す
-CCL::ECS::EntityID PlayerRushSystem::PickRushTarget(CCL::ECS::EntityID attackedID) const
+EntityID PlayerRushSystem::PickRushTarget(EntityID attackedID) const
 {
     if (!m_world->IsEntityValid(attackedID)) return InvalidEntityID;
 
@@ -712,6 +775,10 @@ void PlayerRushSystem::OnGui()
         if (rush->isActive)
         {
             ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "ACTIVE   %s", PhaseLabel(rush->phase));
+        }
+        else if (rush->evadeSlowTimer > 0.0f)
+        {
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "EVADE SLOW (範囲外)  残り %.2f s", rush->evadeSlowTimer);
         }
         else
         {
