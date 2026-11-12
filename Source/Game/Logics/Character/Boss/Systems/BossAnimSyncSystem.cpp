@@ -16,6 +16,7 @@ static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase
 static const uint32_t HASH_BACKSTEP_PHASE    = CCL::Utils::HashString("BackStepPhase");   // 後方ステップの段 +1。0=していない
 static const uint32_t HASH_FOOTWORK_DIR      = CCL::Utils::HashString("FootworkDir");     // 様子見の向き。0=していない 1=前 2=後ろ 3=左 4=右
 static const uint32_t HASH_CAN_FLINCH        = CCL::Utils::HashString("CanFlinch");       // ひるみの冷却が明けているか
+static const uint32_t HASH_IS_EXHAUSTED      = CCL::Utils::HashString("IsExhausted");     // 疲れているか
 static const uint32_t HASH_MOVE_X            = CCL::Utils::HashString("MoveX");           // 体から見た動く向きの右成分（-1〜1）
 static const uint32_t HASH_MOVE_Y            = CCL::Utils::HashString("MoveY");           // 体から見た動く向きの前成分（-1〜1）
 
@@ -63,6 +64,11 @@ void BossAnimSyncSystem::Update(float /*dt*/)
 
         // 冷却中はひるませない。技の最中にひるまないのは、グラフの AnyState が group 1 に絞っているため
         anim.SetBool(HASH_CAN_FLINCH, boss.flinchCooldownTimer <= 0.0f);
+
+        // --- 疲れ ---
+
+        // 入るのは BossActionSystem が引く Exhausted のトリガー。抜けるのはこれが false になったとき
+        anim.SetBool(HASH_IS_EXHAUSTED, boss.currentState == BossActionState::Exhausted);
     });
 }
 

@@ -139,6 +139,7 @@ namespace
     const uint32_t kBackStepTrigger        = CCL::Utils::HashString("BackStep");
     const uint32_t kLeapTrigger            = CCL::Utils::HashString("Leap");
     const uint32_t kDashTrigger            = CCL::Utils::HashString("Dash");
+    const uint32_t kExhaustedTrigger       = CCL::Utils::HashString("Exhausted");
 
     // 体の状態に入った瞬間に引くトリガーを返す。0 は引かない
     // 待機・移動は、グラフが状態の値でクリップを選ぶ
@@ -150,6 +151,7 @@ namespace
         case BossActionState::BackStep:   return kBackStepTrigger;
         case BossActionState::Leap:       return kLeapTrigger;
         case BossActionState::Dash:       return kDashTrigger;
+        case BossActionState::Exhausted:  return kExhaustedTrigger;
         default:                          return 0;
         }
     }
@@ -287,6 +289,10 @@ void BossActionSystem::Update(float rawDt)
         case BossActionState::Footwork:
             ProcessFootwork(bossAction, frame);
             break;
+        case BossActionState::Exhausted:
+            // 足を止め、向き直らずに決めた長さだけ待つ。疲れている間は相手を追わない
+            ProcessRecovery(bossAction, bossAction.exhaustedDuration, frame);
+            break;
         default:
             ProcessIdle(bossAction, frame);
             break;
@@ -401,6 +407,7 @@ BossActionState BossActionSystem::TranslateAction(ActionID actionId) const
     if (actionId == A_BossAirHover) return BossActionState::Leap;
     if (actionId == A_BossDashAttack) return BossActionState::Dash;
     if (actionId == A_BossFootwork) return BossActionState::Footwork;
+    if (actionId == A_BossExhausted) return BossActionState::Exhausted;
     return BossActionState::None;
 }
 
@@ -538,7 +545,7 @@ void BossActionSystem::OnEnterState(BossActionState nextState, ActionID actionId
         break;
 
     default:
-        // 待機・移動は、入るときの準備が要らない
+        // 待機・移動・疲れは、入るときの準備が要らない
         break;
     }
 }

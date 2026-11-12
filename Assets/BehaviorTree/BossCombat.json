@@ -280,6 +280,106 @@
             "endPin": 728,
             "id": 810,
             "startPin": 776
+        },
+        {
+            "endPin": 812,
+            "id": 814,
+            "startPin": 5
+        },
+        {
+            "endPin": 816,
+            "id": 824,
+            "startPin": 813
+        },
+        {
+            "endPin": 818,
+            "id": 825,
+            "startPin": 813
+        },
+        {
+            "endPin": 821,
+            "id": 826,
+            "startPin": 813
+        },
+        {
+            "endPin": 823,
+            "id": 827,
+            "startPin": 813
+        },
+        {
+            "endPin": 829,
+            "id": 833,
+            "startPin": 819
+        },
+        {
+            "endPin": 832,
+            "id": 834,
+            "startPin": 819
+        },
+        {
+            "endPin": 836,
+            "id": 840,
+            "startPin": 830
+        },
+        {
+            "endPin": 838,
+            "id": 841,
+            "startPin": 830
+        },
+        {
+            "endPin": 843,
+            "id": 845,
+            "startPin": 839
+        },
+        {
+            "endPin": 847,
+            "id": 849,
+            "startPin": 844
+        },
+        {
+            "endPin": 851,
+            "id": 852,
+            "startPin": 848
+        },
+        {
+            "endPin": 854,
+            "id": 856,
+            "startPin": 844
+        },
+        {
+            "endPin": 858,
+            "id": 859,
+            "startPin": 855
+        },
+        {
+            "endPin": 861,
+            "id": 863,
+            "startPin": 844
+        },
+        {
+            "endPin": 865,
+            "id": 866,
+            "startPin": 862
+        },
+        {
+            "endPin": 868,
+            "id": 870,
+            "startPin": 844
+        },
+        {
+            "endPin": 872,
+            "id": 873,
+            "startPin": 869
+        },
+        {
+            "endPin": 875,
+            "id": 877,
+            "startPin": 844
+        },
+        {
+            "endPin": 879,
+            "id": 880,
+            "startPin": 876
         }
     ],
     "editor_nodes": [
@@ -1238,9 +1338,283 @@
             "posX": 1118.0,
             "posY": 686.0,
             "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 811,
+            "inputPinId": 812,
+            "interrupt": true,
+            "name": "ボス：怒り連発",
+            "outputPinId": 813,
+            "posX": 11000.0,
+            "posY": 450.0,
+            "score": {
+                "base": 30.0,
+                "cooldown": 20.0,
+                "distance": {
+                    "bestMax": 40.0,
+                    "bestMin": 0.0,
+                    "falloff": 30.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "actionId": 11,
+            "condition": "C_DamageThresholdExceeded",
+            "id": 815,
+            "inputPinId": 816,
+            "outputPinId": 0,
+            "param": 6.0,
+            "posX": 9900.0,
+            "posY": 691.0,
+            "type": 3
+        },
+        {
+            "actionId": 0,
+            "id": 817,
+            "inputPinId": 818,
+            "name": "連発（主）＋怒りの印（従）",
+            "outputPinId": 819,
+            "posX": 10500.0,
+            "posY": 691.0,
+            "type": 8
+        },
+        {
+            "action": "A_BossExhausted",
+            "actionId": 17,
+            "id": 820,
+            "inputPinId": 821,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 12200.0,
+            "posY": 691.0,
+            "type": 4
+        },
+        {
+            "action": "A_ResetDamage",
+            "actionId": 3,
+            "id": 822,
+            "inputPinId": 823,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 12450.0,
+            "posY": 691.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 828,
+            "inputPinId": 829,
+            "name": "構え＋3連発",
+            "outputPinId": 830,
+            "posX": 10200.0,
+            "posY": 932.0,
+            "type": 2
+        },
+        {
+            "action": "A_BossRage",
+            "actionId": 16,
+            "id": 831,
+            "inputPinId": 832,
+            "outputPinId": 0,
+            "param": 0.0,
+            "posX": 11700.0,
+            "posY": 932.0,
+            "type": 4
+        },
+        {
+            "action": "A_Wait",
+            "actionId": 1,
+            "id": 835,
+            "inputPinId": 836,
+            "outputPinId": 0,
+            "param": 0.6,
+            "posX": 9900.0,
+            "posY": 1173.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "decoratorType": 3,
+            "id": 837,
+            "inputPinId": 838,
+            "outputPinId": 839,
+            "param": 3.0,
+            "posX": 10400.0,
+            "posY": 1173.0,
+            "type": 6
+        },
+        {
+            "actionId": 0,
+            "id": 842,
+            "inputPinId": 843,
+            "name": "怒りの技",
+            "outputPinId": 844,
+            "posX": 10400.0,
+            "posY": 1414.0,
+            "type": 9
+        },
+        {
+            "actionId": 0,
+            "id": 846,
+            "inputPinId": 847,
+            "name": "怒り：横払い",
+            "outputPinId": 848,
+            "posX": 9600.0,
+            "posY": 1655.0,
+            "score": {
+                "base": 10.0,
+                "distance": {
+                    "bestMax": 30.0,
+                    "bestMin": 0.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionId": 129,
+            "id": 850,
+            "inputPinId": 851,
+            "outputPinId": 0,
+            "param": 22.0,
+            "posX": 9600.0,
+            "posY": 1896.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 853,
+            "inputPinId": 854,
+            "name": "怒り：突進",
+            "outputPinId": 855,
+            "posX": 10000.0,
+            "posY": 1655.0,
+            "score": {
+                "base": 9.0,
+                "distance": {
+                    "bestMax": 40.0,
+                    "bestMin": 10.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "action": "A_BossDashAttack",
+            "actionId": 10,
+            "id": 857,
+            "inputPinId": 858,
+            "outputPinId": 0,
+            "param": 3.0,
+            "posX": 10000.0,
+            "posY": 1896.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 860,
+            "inputPinId": 861,
+            "name": "怒り：挟み込み",
+            "outputPinId": 862,
+            "posX": 10400.0,
+            "posY": 1655.0,
+            "score": {
+                "base": 8.0,
+                "distance": {
+                    "bestMax": 70.0,
+                    "bestMin": 20.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionId": 129,
+            "id": 864,
+            "inputPinId": 865,
+            "outputPinId": 0,
+            "param": 25.0,
+            "posX": 10400.0,
+            "posY": 1896.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 867,
+            "inputPinId": 868,
+            "name": "怒り：縦割り",
+            "outputPinId": 869,
+            "posX": 10800.0,
+            "posY": 1655.0,
+            "score": {
+                "base": 8.0,
+                "distance": {
+                    "bestMax": 90.0,
+                    "bestMin": 30.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionId": 129,
+            "id": 871,
+            "inputPinId": 872,
+            "outputPinId": 0,
+            "param": 24.0,
+            "posX": 10800.0,
+            "posY": 1896.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "id": 874,
+            "inputPinId": 875,
+            "name": "怒り：壁突進",
+            "outputPinId": 876,
+            "posX": 11200.0,
+            "posY": 1655.0,
+            "score": {
+                "base": 7.0,
+                "distance": {
+                    "bestMax": 120.0,
+                    "bestMin": 70.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": 2
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionId": 129,
+            "id": 878,
+            "inputPinId": 879,
+            "outputPinId": 0,
+            "param": 34.0,
+            "posX": 11200.0,
+            "posY": 1896.0,
+            "type": 4
+        },
+        {
+            "actionId": 0,
+            "groupColorIndex": 0,
+            "height": 1750.0,
+            "id": 881,
+            "inputPinId": 0,
+            "name": "【怒り】殴られ続けると3連発→4秒疲れる",
+            "outputPinId": 0,
+            "posX": 9500.0,
+            "posY": 380.0,
+            "type": 5,
+            "width": 3300.0
         }
     ],
-    "last_id_counter": 810,
+    "last_id_counter": 881,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1255,7 +1629,8 @@
                 8,
                 9,
                 10,
-                11
+                11,
+                12
             ],
             "name": "技選択",
             "type": "UtilitySelector"
@@ -1263,10 +1638,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                12,
                 13,
                 14,
-                15
+                15,
+                16
             ],
             "name": "ボス：中央へ跳んで逃げる",
             "score": {
@@ -1290,9 +1665,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                16,
                 17,
-                18
+                18,
+                19
             ],
             "interrupt": true,
             "name": "ドローン：横払い",
@@ -1310,9 +1685,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                19,
                 20,
-                21
+                21,
+                22
             ],
             "name": "ボス：被弾がかさんだら退く",
             "score": {
@@ -1335,8 +1710,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                22,
-                23
+                23,
+                24
             ],
             "name": "ボス：突進攻撃",
             "score": {
@@ -1360,7 +1735,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                24
+                25
             ],
             "name": "ドローン：挟み込み1段",
             "score": {
@@ -1384,7 +1759,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                25
+                26
             ],
             "name": "ボス：間合いを取る",
             "score": {
@@ -1413,7 +1788,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                26
+                27
             ],
             "name": "ドローン：縦割り",
             "score": {
@@ -1442,7 +1817,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                27
+                28
             ],
             "name": "ドローン：長方形の壁突進",
             "score": {
@@ -1466,9 +1841,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                28,
                 29,
-                30
+                30,
+                31
             ],
             "name": "ボス：跳躍攻撃",
             "score": {
@@ -1492,7 +1867,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                31
+                32
             ],
             "name": "ドローン：弾幕攻撃",
             "score": {
@@ -1509,7 +1884,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                32
+                33
             ],
             "name": "ボス：様子見",
             "score": {
@@ -1518,6 +1893,27 @@
                     "bestMax": 9999.0,
                     "bestMin": 40.0,
                     "falloff": 10.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                34,
+                35,
+                36,
+                37
+            ],
+            "interrupt": true,
+            "name": "ボス：怒り連発",
+            "score": {
+                "base": 30.0,
+                "cooldown": 20.0,
+                "distance": {
+                    "bestMax": 40.0,
+                    "bestMin": 0.0,
+                    "falloff": 30.0
                 }
             },
             "type": "Sequence"
@@ -1589,8 +1985,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                33,
-                34
+                38,
+                39
             ],
             "name": "重み付きセレクター（Weighted Selector）",
             "type": "WeightedSelector"
@@ -1687,11 +2083,41 @@
             "type": "Action"
         },
         {
+            "actionOrConditionId": 11,
+            "children": [],
+            "condition": "C_DamageThresholdExceeded",
+            "param": 6.0,
+            "type": "Condition"
+        },
+        {
             "actionOrConditionId": 0,
             "children": [
-                35,
-                36,
-                37
+                40,
+                41
+            ],
+            "name": "連発（主）＋怒りの印（従）",
+            "type": "Parallel"
+        },
+        {
+            "action": "A_BossExhausted",
+            "actionOrConditionId": 17,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_ResetDamage",
+            "actionOrConditionId": 3,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                42,
+                43,
+                44
             ],
             "name": "ステージ中央に退避する",
             "type": "Sequence"
@@ -1699,11 +2125,27 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                38,
-                39
+                45,
+                46
             ],
             "name": "後退しながらドローン攻撃",
             "type": "Parallel"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                47,
+                48
+            ],
+            "name": "構え＋3連発",
+            "type": "Sequence"
+        },
+        {
+            "action": "A_BossRage",
+            "actionOrConditionId": 16,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
         },
         {
             "actionOrConditionId": 7,
@@ -1729,9 +2171,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                40,
-                41,
-                42
+                49,
+                50,
+                51
             ],
             "name": "後退アクション",
             "type": "Sequence"
@@ -1739,13 +2181,29 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                43,
-                44,
-                45,
-                46
+                52,
+                53,
+                54,
+                55
             ],
             "name": "ドローン操作",
             "type": "Sequence"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 0.6,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                56
+            ],
+            "decoratorType": 3,
+            "param": 3.0,
+            "type": "Decorator"
         },
         {
             "action": "A_BossBackStep",
@@ -1794,6 +2252,137 @@
             "actionOrConditionId": 1,
             "children": [],
             "param": 10.0,
+            "type": "Action"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                57,
+                58,
+                59,
+                60,
+                61
+            ],
+            "name": "怒りの技",
+            "type": "UtilitySelector"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                62
+            ],
+            "name": "怒り：横払い",
+            "score": {
+                "base": 10.0,
+                "distance": {
+                    "bestMax": 30.0,
+                    "bestMin": 0.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                63
+            ],
+            "name": "怒り：突進",
+            "score": {
+                "base": 9.0,
+                "distance": {
+                    "bestMax": 40.0,
+                    "bestMin": 10.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                64
+            ],
+            "name": "怒り：挟み込み",
+            "score": {
+                "base": 8.0,
+                "distance": {
+                    "bestMax": 70.0,
+                    "bestMin": 20.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                65
+            ],
+            "name": "怒り：縦割り",
+            "score": {
+                "base": 8.0,
+                "distance": {
+                    "bestMax": 90.0,
+                    "bestMin": 30.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                66
+            ],
+            "name": "怒り：壁突進",
+            "score": {
+                "base": 7.0,
+                "distance": {
+                    "bestMax": 120.0,
+                    "bestMin": 70.0,
+                    "falloff": 15.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：横なぎ",
+            "param": 22.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_BossDashAttack",
+            "actionOrConditionId": 10,
+            "children": [],
+            "param": 3.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：挟み込み1段",
+            "param": 25.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：縦割り",
+            "param": 24.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：長方形の壁突進",
+            "param": 34.0,
             "type": "Action"
         }
     ]

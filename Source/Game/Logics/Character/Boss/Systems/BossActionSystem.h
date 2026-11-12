@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 技に入った瞬間に、進む向きを決めてアニメの開始のトリガーを引く
-//   - 待機・移動・横移動・後方ステップ・跳躍・突進・様子見を1フレーム分進める
+//   - 待機・移動・横移動・後方ステップ・跳躍・突進・様子見・疲れを1フレーム分進める
 //   - 技が硬直まで終わったら actionFinished を立て、BT に知らせる
 //   - 演出中・決着後・ひるみの間は技を始めずに待機する
 //
@@ -152,7 +152,7 @@ private:
     void ProcessDash(BossActionComponent &bossAction, const Frame &frame);
 
     // 技の硬直。足を止めて recoveryTime 秒数え、終わったら actionFinished を立てる
-    // 横移動・後方ステップ・跳躍・突進の最後の段で呼ぶ
+    // 横移動・後方ステップ・跳躍・突進の最後の段と、疲れの間ずっと呼ぶ
     void ProcessRecovery(BossActionComponent &bossAction, float recoveryTime, const Frame &frame);
 
     // 構え（Windup）に入る瞬間に1回だけ呼ぶ

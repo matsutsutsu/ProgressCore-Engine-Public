@@ -424,6 +424,13 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
                              "[BT] nodes[%zu] のリトライ回数が %.0f。1未満は子を評価できない: %s",
                              i, node.param, path.c_str());
             }
+            // 繰り返し1回＝修飾していないのと同じ。新規作成の param は 0 なので、回数を触っていないとこうなる
+            if (node.decoratorType == BTDecoratorType::Repeat && node.param < 2.0f)
+            {
+                CCL_LOG_WARN(LogCategory::AI,
+                             "[BT] nodes[%zu] の繰り返し回数が %.0f。2未満は1回で終わり、繰り返さない: %s",
+                             i, node.param, path.c_str());
+            }
             if (node.children.empty())
             {
                 CCL_LOG_WARN(LogCategory::AI,
@@ -431,7 +438,7 @@ void BehaviorTreeLoader::ValidateNodes(const BTAsset &asset, const std::string &
             }
             // 存在しない種別。評価の switch はどの case にも当たらず素通りするので、
             // 修飾を付けたつもりのノードが何もしない
-            if (static_cast<int>(node.decoratorType) > static_cast<int>(BTDecoratorType::Retry))
+            if (static_cast<int>(node.decoratorType) > static_cast<int>(BTDecoratorType::Repeat))
             {
                 CCL_LOG_WARN(LogCategory::AI,
                              "[BT] nodes[%zu] の修飾の種類が %d。この番号は存在しないので"

@@ -422,6 +422,7 @@ float BehaviorTreeWindow::TreeNodeWidthOf(const EditorBTNode &node, const std::s
     if (node.executionOrder != -1) fit("Priority: 00");
     if (node.type == EditorBTNodeType::Action && IsWaitAction(node.actionOrConditionId)) fit("Wait: 00.0s");
     if (node.type == EditorBTNodeType::Decorator && node.decoratorType == 1) fit("Cooling: 00.0s");
+    if (node.type == EditorBTNodeType::Decorator && node.decoratorType == 3) fit("Repeat: 00/00");
 
     // 左右の余白 10px ずつ。まとまりのノードは行動・条件と見分けやすいよう広めの範囲に収める
     if (IsCompositeType(node.type))
@@ -526,6 +527,14 @@ void BehaviorTreeWindow::DrawTreeNodeDetail(const EditorBTNode &node, const Beha
         else if (isCooldown && timer)
         {
             ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Ready");
+        }
+
+        // Repeat の終えた回数（ゲーム実行中のみ）
+        const std::optional<int> done = DebugRunningIndexOf(node, activeAI);
+        if (node.decoratorType == 3 && done)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "Repeat: %d/%d", (std::max)(0, *done),
+                               static_cast<int>(node.param));
         }
     }
 

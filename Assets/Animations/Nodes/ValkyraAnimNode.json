@@ -18,6 +18,21 @@
             "targetStateHash": 4065026230
         },
         {
+            "blendDuration": 0.25,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1983172076,
+                    "paramName": "Exhausted",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 104245611
+        },
+        {
             "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
@@ -362,6 +377,20 @@
             "hash": 2676410775,
             "name": "MoveY",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1424353852,
+            "name": "IsExhausted",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1983172076,
+            "name": "Exhausted",
+            "type": 2
         }
     ],
     "states": [
@@ -1104,6 +1133,85 @@
             "speedCurveName": "",
             "stateHash": 1240008620,
             "transitions": []
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": false,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -398.0,
+            "nodePosY": 650.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Exhausted_Start.json",
+            "sequenceName": "Exhausted_Start",
+            "speedCurveName": "",
+            "stateHash": 104245611,
+            "transitions": [
+                {
+                    "blendDuration": 0.2,
+                    "conditions": [
+                        {
+                            "op": 4,
+                            "paramHash": 0,
+                            "paramName": "",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 604061351
+                },
+                {
+                    "blendDuration": 0.3,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1424353852,
+                            "paramName": "IsExhausted",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 281267617
+                }
+            ]
+        },
+        {
+            "applyRootMotion": false,
+            "groupId": 0,
+            "isLoop": true,
+            "isSubMachine": false,
+            "lockVerticalRootMotion": false,
+            "nodePosX": -198.0,
+            "nodePosY": 650.0,
+            "playbackSpeed": 1.0,
+            "rootMotionCurveName": "",
+            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Exhausted_Loop.json",
+            "sequenceName": "Exhausted_Loop",
+            "speedCurveName": "",
+            "stateHash": 604061351,
+            "transitions": [
+                {
+                    "blendDuration": 0.4,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 1424353852,
+                            "paramName": "IsExhausted",
+                            "threshold": 0.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 281267617
+                }
+            ]
         },
         {
             "applyRootMotion": false,

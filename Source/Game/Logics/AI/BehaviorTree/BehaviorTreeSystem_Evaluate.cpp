@@ -209,6 +209,9 @@ bool BehaviorTreeSystem::GuardsPass(BTNodeID                  nodeId,
 
         // Retry は同じフレームに繰り返すだけ。条件の結果は変わらないので素通しでよい
         case BTDecoratorType::Retry: break;
+
+        // Repeat は条件の結果を変えない。通るかどうかは子の先頭の条件で決まる
+        case BTDecoratorType::Repeat: break;
         }
         return GuardsPass(node.children[0], btComp, myTrans, asset, entity, dt);
 
@@ -663,6 +666,40 @@ BTNodeState BehaviorTreeSystem::EvaluateDecorator(
 
     case BTDecoratorType::Retry:
         break; // 上のループで結果は確定済み
+
+    case BTDecoratorType::Repeat: {
+        // 終えた回数は再開位置の欄に持つ。-1 は0回を表す
+        // 打ち切り（AbortSubtree）で -1 に戻るので、
+        // 途中で切られた枝は、次に来たとき0回から始まる
+
+        // 子が失敗したら、回数を捨てて失敗を返す
+        if (result == BTNodeState::Failure)
+        {
+            btComp.runningNodes[nodeId] = -1;
+            break;
+        }
+
+        // 子の最中は数えない。数えるのは子が成功したフレームだけ
+        if (result != BTNodeState::Success) break;
+
+        // 今終わった1回を足す。回数の指定が0以下なら1回として扱う
+        const int done        = (std::max)(0, btComp.runningNodes[nodeId]) + 1;
+        const int repeatCount = (std::max)(1, static_cast<int>(node.param));
+
+        // 回数に届いたら、回数を捨てて成功を返す。親はここで次の子へ進む
+        if (done >= repeatCount)
+        {
+            btComp.runningNodes[nodeId] = -1;
+            break;
+        }
+
+        // まだ届かなければ回数を残し、Running を返して親をここで待たせる
+        // 次の回は次のフレームに始める。同じフレームで回すと、
+        // その場で終わる子（Instant の行動）が1フレームで N 回分終わってしまう
+        btComp.runningNodes[nodeId] = done;
+        result                      = BTNodeState::Running;
+        break;
+    }
     }
     return result;
 }

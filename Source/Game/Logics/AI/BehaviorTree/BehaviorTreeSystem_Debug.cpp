@@ -144,6 +144,7 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
     //   行動 … 残り時間。0.00 なら待ち終わっている、-1 は未実行
     //   複合 … 今どの子で止まっているか（再開位置）。変わらなければその子が Running のまま
     //   Cooldown … 残りクールダウン。>0 の間はこの枝ごと Failure
+    //   Repeat … 終えた回数。再開位置の欄に持っているので、再開位置としては出さない
     char buf[64];
     if (nodeId < btComp.nodeTimers.size())
     {
@@ -160,7 +161,14 @@ void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
             label += buf;
         }
     }
-    if (nodeId < btComp.runningNodes.size() && !node.children.empty())
+    const bool isRepeat = node.type == BTNodeType::Decorator && node.decoratorType == BTDecoratorType::Repeat;
+    if (isRepeat && nodeId < btComp.runningNodes.size())
+    {
+        std::snprintf(buf, sizeof(buf), "  繰り返し %d/%d", (std::max)(0, btComp.runningNodes[nodeId]),
+                      static_cast<int>(node.param));
+        label += buf;
+    }
+    else if (nodeId < btComp.runningNodes.size() && !node.children.empty())
     {
         const int bookmark = btComp.runningNodes[nodeId];
         if (bookmark >= 0)

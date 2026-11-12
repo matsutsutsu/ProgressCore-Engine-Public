@@ -1059,6 +1059,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossStatusVfxComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTConditions_Boss.h">
       <Filter>Source\Game\Logics\Character\Boss\Actions</Filter>
     </ClInclude>
@@ -1968,6 +1971,9 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
@@ -2037,6 +2043,9 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossStatusVfxComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Components\EnemyTagMeta.cpp">
@@ -3066,6 +3075,9 @@
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">

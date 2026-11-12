@@ -407,6 +407,7 @@ std::string BehaviorTreeWindow::BuildOutlineText()
 #   [Decorator]        1つだけの子の結果を修飾する
 #                        Cooldown N秒 : 子が成功したら、N 秒間この枝ごと失敗を返す
 #                        Retry N回    : 子が失敗したら、同じフレーム内で N 回まで試し直す
+#                        Repeat N回   : 子が成功するたびに数え、N 回に届くまで次のフレームから子をやり直す
 #                        Inverter     : 成功と失敗を入れ替える
 #   [Condition]        条件を評価して成功/失敗を返す（その場で終わる）
 #   [Action]           行動を実行する。時間のかかる行動は、終わるまで実行中(Running)を返す

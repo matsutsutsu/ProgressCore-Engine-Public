@@ -13,6 +13,7 @@ enum class BossActionState : uint8_t
     Leap,       // 跳躍
     Dash,       // 突進攻撃
     Footwork,   // 様子見（間合いを保ちながら動き回る）
+    Exhausted,  // 疲れ（その場で止まる）
 };
 
 // 様子見で動く向き。体の正面から見た前後左右（アニメの4方向）
@@ -89,7 +90,7 @@ struct BossLeapDef
     bool            landAttack   = false;                         // 着地で攻撃する（判定のある着地クリップ）
 };
 
-// ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ）の設定値と状態
+// ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ・疲れ）の設定値と状態
 // 実行時の状態を書くのは BossActionSystem だけ
 struct BossActionComponent
 {
@@ -174,6 +175,10 @@ struct BossActionComponent
 
     // ひるむのは待機・移動・様子見の間だけ（アニメグラフの AnyState が group 1 に絞る）。技の最中はひるまない
     float flinchCooldown = 3.0f; // ひるみが明けてから次にひるめるまで（秒）。はめ続けられないようにする
+
+    // --- 疲れ ---
+
+    float exhaustedDuration = 4.0f; // その場で止まる長さ [秒]
 
     // --- 実行時の状態（保存しない）---
 

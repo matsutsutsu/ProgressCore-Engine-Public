@@ -19,4 +19,11 @@ struct BossCommandComponent
 
     bool droneAttackActive     = false; // ドローンへの「今撃て」信号
     bool prevDroneAttackActive = false; // 前フレームの信号（立ち上がり検出）
+
+    // --- 怒り ---
+
+    // 読む側は raging だけを見る。書くのは怒りの行動（A_BossRage）が rageRequested へ
+    // BossPhaseSystem がフレームの最初に rageRequested を raging へ写し、false に戻す
+    bool rageRequested = false; // このフレームに怒りの行動が評価されたか
+    bool raging        = false; // 怒り中か（前のフレームに怒りの行動が評価された）
 };

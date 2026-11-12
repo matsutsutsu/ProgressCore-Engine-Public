@@ -25,7 +25,7 @@ enum class BTDebugState : uint8_t
 };
 
 /**
- * @brief 修飾の種類。アセットが実際に使っているのは Cooldown だけで、残り2つは実装だけがある状態
+ * @brief 修飾の種類。Cooldown 以外は、まだアセットで使っていない
  *
  * 「子を開始させて手を離す」修飾（Async）は置かない。技は評価されている間だけ currentActionId を
  * 書き直す作りなので、手を離した次のフレームに要求が消え、体が技を出し切れないため
@@ -35,7 +35,8 @@ enum class BTDecoratorType : uint8_t
 {
     Inverter = 0, // 結果を反転 (Success <-> Failure)。Running は反転しない
     Cooldown = 1, // 子が成功してから param 秒が経つまで Failure
-    Retry    = 2  // 失敗したら同じフレームで param 回まで試し直す。条件の子には効かない
+    Retry    = 2, // 失敗したら同じフレームで param 回まで試し直す。条件の子には効かない
+    Repeat   = 3  // 子が成功するたびに数え、param 回に届くまで子をやり直す
 };
 
 /**
