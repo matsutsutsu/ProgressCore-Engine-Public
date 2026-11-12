@@ -54,6 +54,7 @@
                                 0.0,
                                 0.6000000238418579
                             ],
+                            "followRatio": 0.0,
                             "gravity": 0.0,
                             "intensity": 10.0,
                             "lifespan": [
@@ -84,7 +85,7 @@
                                 10.0
                             ],
                             "sizeEase": 2,
-                            "sizeEasePower": 2.0,
+                            "sizeEasePower": 3.0,
                             "sizeRandom": 0.0,
                             "spawnDelay": [
                                 0.10000000149011612,
@@ -152,6 +153,7 @@
                                 0.0,
                                 0.6000000238418579
                             ],
+                            "followRatio": 0.0,
                             "gravity": 1.0,
                             "intensity": 5.0,
                             "lifespan": [
@@ -198,7 +200,7 @@
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 0.0,
+                            "velocityStretch": 0.10000000149011612,
                             "vortexStrength": 0.0
                         }
                     ]
