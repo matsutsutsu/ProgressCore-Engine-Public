@@ -26,7 +26,7 @@
 #include "Editor/Windows/General/ConsoleWindow.h"
 #include "Editor/Windows/Animation/AnimGraphWindow.h"
 #include "Editor/Windows/AI/BehaviorTreeWindow.h"
-#include "Editor/Windows/AI/BossBTDebugWindow.h"
+#include "Editor/Windows/AI/BossDebugWindow.h"
 #include "Editor/Windows/Game/FormationEditorWindow.h"
 #include "Editor/Windows/Cinematic/CinematicEditorWindow.h"
 #include "Editor/Windows/General/MemoryAnalyzerWindow.h"
@@ -67,7 +67,7 @@ void EditorWindowManager::Initialize()
     RegisterWindow<AnimationSequencerWindow>();
     RegisterWindow<AnimGraphWindow>();
     RegisterWindow<BehaviorTreeWindow>();
-    RegisterWindow<BossBTDebugWindow>();
+    RegisterWindow<BossDebugWindow>();
     RegisterWindow<FormationEditorWindow>();
     RegisterWindow<CinematicEditorWindow>();
 

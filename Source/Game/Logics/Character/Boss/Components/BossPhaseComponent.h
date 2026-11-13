@@ -51,4 +51,8 @@ struct BossPhaseComponent
     float     timer = 0.0f;              // 形態の残り時間 [秒]（移行演出）
 
     float movieDelayTimer = 0.0f; // 移行ムービーを頼むまでの残り [実時間の秒]。0 以下なら待っていない
+
+    // デバッグ: 移行演出を飛ばして第2形態へ移る要求（保存しない）
+    // Boss Debugger が立て、BossPhaseSystem が受けて下ろす
+    bool debugSkipToPhase2 = false;
 };

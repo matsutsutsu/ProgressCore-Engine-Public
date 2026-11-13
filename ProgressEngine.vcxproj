@@ -329,7 +329,7 @@
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicEditorWindow.h" />
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicRipple.h" />
     <ClInclude Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.h" />
-    <ClInclude Include="Source\Editor\Windows\AI\BossBTDebugWindow.h" />
+    <ClInclude Include="Source\Editor\Windows\AI\BossDebugWindow.h" />
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">false</ExcludedFromBuild>
@@ -936,7 +936,7 @@
     <ClCompile Include="Source\Editor\Windows\Cinematic\CinematicTimelineSequence.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AI\BossBTDebugWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BossDebugWindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">

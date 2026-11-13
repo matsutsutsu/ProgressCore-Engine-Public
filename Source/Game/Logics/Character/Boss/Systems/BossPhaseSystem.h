@@ -10,6 +10,7 @@
 //   - 移行のスローが終わったら、移行ムービーの再生を頼む
 //   - 移行演出中と死亡中は、ドローンへの指示を止め続ける
 //   - 形態の線（移行のしきい値・0）を、とどめでしか越えられないよう HP の下限を書く
+//   - デバッグの要求（Boss Debugger）を受け、移行演出を飛ばして第2形態へ移る
 //
 // 備考: ボスの System の並び（すべて L02）
 //         BossPerceptionSystem … 判断材料を書く（PreUpdate）
@@ -72,6 +73,14 @@ private:
     void TickPhase(const BossPhaseComponent &phase,
                    BossCommandComponent     &cmd,
                    HealthComponent          &health) const;
+
+    // デバッグ: 移行演出を飛ばして第2形態へ移る（Boss Debugger の要求 debugSkipToPhase2 を受ける）
+    // 第1形態で、第2形態の BT があるときだけ移る。HP はしきい値まで下げる
+    void SkipToPhase2ForDebug(BossPhaseComponent      &phase,
+                              BehaviorTreeComponent   &bt,
+                              BossCommandComponent    &cmd,
+                              AnimParametersComponent &anim,
+                              HealthComponent         &health) const;
 
     // とどめ以外の攻撃で HP を下げない下限を決める（HealthComponent.finisherFloor に書く値）
     float DecideFinisherFloor(const BossPhaseComponent &phase,

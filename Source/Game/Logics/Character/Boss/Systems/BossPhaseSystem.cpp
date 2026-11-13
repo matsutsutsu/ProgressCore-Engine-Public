@@ -69,6 +69,11 @@ void BossPhaseSystem::Update(float rawDt)
         // 2〜5. 形態
         // ---------------------------------------------------------
 
+        // デバッグの要求（Boss Debugger の「第2形態から（演出なし）」）
+        //   形態を変えたときの処理（BT の差し替え・無敵の解除）は OnEnterPhase にあるので、
+        //   ウィンドウは phase を直接書かず、要求だけを立てる
+        if (phase.debugSkipToPhase2) SkipToPhase2ForDebug(phase, bt, cmd, anim, health);
+
         // 次の第２形態に遷移していいか
         const BossPhase next = DecideNextPhase(phase, health, inTutorial, bossWaiting, cinematic);
 
@@ -279,6 +284,32 @@ void BossPhaseSystem::TickPhase(const BossPhaseComponent &phase,
         // 技は BT が選ぶ
         break;
     }
+}
+
+
+
+void BossPhaseSystem::SkipToPhase2ForDebug(BossPhaseComponent      &phase,
+                                           BehaviorTreeComponent   &bt,
+                                           BossCommandComponent    &cmd,
+                                           AnimParametersComponent &anim,
+                                           HealthComponent         &health) const
+{
+    // 要求は1回で下ろす。移れなかったときも残さない（後で第1形態に戻っても勝手に飛ばないように）
+    phase.debugSkipToPhase2 = false;
+
+    // 移れるのは DecideNextPhase が移行演出へ入るのと同じ条件のときだけ
+    if (phase.phase != BossPhase::Combat || phase.phase2AssetPath.empty() || health.maxHealth <= 0.0f) return;
+
+    // HP は移行のしきい値まで下げる（普段の流れでも、第2形態はしきい値より下から始まる）
+    health.currentHealth = (std::min)(health.currentHealth, health.maxHealth * phase.phase2HealthThreshold / 100.0f);
+
+    // 第1形態の技の撃ちかけを消す（移行演出に入るときと同じ止め方）
+    cmd.droneAttackActive = false;
+    cmd.requestFormation  = DroneFormationType::HighOrbit;
+
+    OnEnterPhase(BossPhase::Combat2, phase, bt, cmd, anim, health);
+    phase.phase = BossPhase::Combat2;
+    CCL_LOG_INFO(LogCategory::AI, "[BossPhase] デバッグ: 移行演出を飛ばして第2形態へ");
 }
 
 

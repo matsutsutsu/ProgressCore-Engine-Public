@@ -180,6 +180,11 @@ struct BossActionComponent
 
     float exhaustedDuration = 4.0f; // その場で止まる長さ [秒]
 
+    // --- 怒り ---
+
+    // 怒り中に掛けるのは、攻撃の技（突進・跳躍攻撃）の硬直だけ。予兆は縮めない
+    float rageRecoveryScale = 0.4f; // 怒り中の、攻撃の技の硬直の倍率（1 で普段どおり）
+
     // --- 実行時の状態（保存しない）---
 
     DirectX::SimpleMath::Vector3 moveDirection = DirectX::SimpleMath::Vector3::Zero; // 動いている向き（水平）

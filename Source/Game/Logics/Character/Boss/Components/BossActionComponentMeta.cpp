@@ -134,6 +134,7 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(dashRecovery, "突進：止まった後の硬直 [秒]", 0.01f, 0.0f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(flinchCooldown, "ひるみ：明けてから次にひるめるまで [秒]", 0.05f, 0.0f, 30.0f, "Flinch")
             CFIELD_FLOAT_RANGED(exhaustedDuration, "疲れ：その場で止まる長さ [秒]（怒りの連発の後の反撃の時間）", 0.05f, 0.0f, 15.0f, "Exhausted")
+            CFIELD_FLOAT_RANGED(rageRecoveryScale, "怒り：突進・跳躍攻撃の硬直の倍率（1 で普段どおり）", 0.01f, 0.0f, 1.0f, "Rage")
             // ここから下は実行時の値。保存しない
             CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
             CFIELD_RT(lastActionTime, "前の技の長さ [秒]（溜めから硬直まで）", "State")

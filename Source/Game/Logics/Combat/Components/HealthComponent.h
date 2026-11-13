@@ -16,4 +16,8 @@ struct HealthComponent
     // とどめ以外の攻撃では、HP をこれより下げない（保存しない）
     // ボスは BossPhaseSystem が毎フレーム書く。0 なら下限なし
     float finisherFloor = 0.0f;
+
+    // デバッグ: 当たっても HP を減らさない（保存しない）。Boss Debugger が切り替える
+    // 当たった演出・被弾の通知（怒りの蓄積）はそのまま出る
+    bool debugNoDamage = false;
 };

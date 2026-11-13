@@ -131,6 +131,10 @@ void DamageResolutionSystem::Update(float dt)
                 if (!isFinisher && nextHealth < health->finisherFloor)
                     nextHealth = (std::min)(health->currentHealth, health->finisherFloor);
 
+                // デバッグで HP を減らさない間は、HP だけ据え置く（とどめでも線を越えない）
+                // 下の演出・被弾の通知は普段どおり出すので、コンボや怒りの連発はそのまま試せる
+                if (health->debugNoDamage) nextHealth = health->currentHealth;
+
                 health->currentHealth      = nextHealth;
                 health->invincibilityTimer = health->invincibilityDuration;
 

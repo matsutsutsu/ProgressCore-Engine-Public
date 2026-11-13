@@ -236,7 +236,8 @@ void BossActionSystem::Update(float rawDt)
         }
 
         // このフレームのアクションに必要な情報をまとめる
-        const Frame frame{transform, movement, joltConfig, joltHandle, battle, playerPos, dt, animStateMachine};
+        // raging は BossPhaseSystem がフレームの最初に写した値（前のフレームに怒りの行動が評価されたか）
+        const Frame frame{transform, movement, joltConfig, joltHandle, battle, playerPos, dt, animStateMachine, command.raging};
 
         // ---------------------------------------------------------
         // 2. 動きに入った瞬間
@@ -793,7 +794,10 @@ void BossActionSystem::ProcessLeapAir(BossActionComponent &bossAction, const Fra
 
 void BossActionSystem::ProcessLeapLanding(BossActionComponent &bossAction, const Frame &frame)
 {
-    ProcessRecovery(bossAction, bossAction.leapDef.landRecovery, frame);
+    // 怒り中の跳躍攻撃は着地硬直を縮め、連発の間を詰める（逃げる跳躍・滞空は縮めない）
+    const bool  shorten  = frame.raging && bossAction.leapDef.landAttack;
+    const float recovery = shorten ? bossAction.leapDef.landRecovery * bossAction.rageRecoveryScale : bossAction.leapDef.landRecovery;
+    ProcessRecovery(bossAction, recovery, frame);
 
     // 跳躍攻撃の硬直中は向きを固定する
     // 相手を追うと、横へ避けても判定が付いてきて後隙を攻撃できない
@@ -864,7 +868,9 @@ void BossActionSystem::ProcessDash(BossActionComponent &bossAction, const Frame 
     // 振り向くと、避けたのに狙われ続けているように見える
     if (bossAction.dashPhase == BossDashPhase::Recovery)
     {
-        ProcessRecovery(bossAction, bossAction.dashRecovery, frame);
+        // 怒り中は硬直を縮め、連発の間を詰める
+        const float recovery = frame.raging ? bossAction.dashRecovery * bossAction.rageRecoveryScale : bossAction.dashRecovery;
+        ProcessRecovery(bossAction, recovery, frame);
         return;
     }
 

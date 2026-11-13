@@ -71,6 +71,7 @@ private:
         DirectX::SimpleMath::Vector3        playerPos;        // 相手の足元（ワールド）
         float                               dt;               // この個体の時計の dt [秒]
         const AnimStateMachineComponent    *animStateMachine; // アニメのステートの長さを引く。なければ nullptr
+        bool                                raging;           // 怒りの連発中か（攻撃の技の硬直を縮める）
     };
 
     // 待機。足を止め、idleTurnSpeed でゆっくり相手へ向き直る（ひるみ中は向き直らない）
