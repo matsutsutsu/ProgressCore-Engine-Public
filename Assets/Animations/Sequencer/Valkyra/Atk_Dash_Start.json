@@ -92,9 +92,9 @@
             },
             "radius": 1.0,
             "soundPitch": 0.0,
-            "soundVolume": 1.0,
+            "soundVolume": 1.5,
             "startTime": 0.4166666567325592,
-            "stringParam": "sfx:/boss_dash_travel",
+            "stringParam": "sfx:/SE_BossDash",
             "type": 1
         }
     ],

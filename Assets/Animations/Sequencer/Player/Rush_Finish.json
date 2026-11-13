@@ -123,7 +123,7 @@
             "soundPitchRandom": 0.07000000029802322,
             "soundVolume": 1.0,
             "startTime": 0.1666666716337204,
-            "stringParam": "sfx:/slash_2",
+            "stringParam": "sfx:/SE_PlayerRushFinish",
             "type": 1
         },
         {

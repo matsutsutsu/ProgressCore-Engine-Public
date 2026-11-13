@@ -42,11 +42,13 @@ public:
     // ファイルが存在すれば true
     static bool Exists(const std::string &virtualPath);
 
-    // フォルダの直下のファイルを、名前の順に列挙する（再帰しない）。extension は "." 付きの小文字で、空なら全部
-    // 置けば増える形のアセット（陣形など）に使う。ディスクを走査するので、起動時と読み直しのときだけ呼ぶ
+    // フォルダの中のファイルを、名前の順に列挙する。extension は "." 付きの小文字で、空なら全部
+    // recursive が false なら直下だけ、true ならサブフォルダの中も探す（返るパスは virtualDir/サブフォルダ/名前）
+    // 置けば増える形のアセット（陣形・音など）に使う。ディスクを走査するので、起動時と読み直しのときだけ呼ぶ
     // アーカイブを開いているときは、アーカイブとディスクの両方から集める（同じ名前は1つ）
     static std::vector<std::string> ListFiles(const std::string &virtualDir,
-                                              const std::string &extension);
+                                              const std::string &extension,
+                                              bool               recursive = false);
 
 private:
     // 仮想パスを OS の物理パスに変換する

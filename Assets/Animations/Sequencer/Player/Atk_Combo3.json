@@ -96,9 +96,9 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07000000029802322,
-            "soundVolume": 1.0,
+            "soundVolume": 1.7,
             "startTime": 0.05000000074505806,
-            "stringParam": "sfx:/slash_1",
+            "stringParam": "sfx:/SE_PlayerSlashLight",
             "type": 1
         },
         {
@@ -171,9 +171,9 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07000000029802322,
-            "soundVolume": 1.0,
+            "soundVolume": 1.7,
             "startTime": 0.25,
-            "stringParam": "sfx:/slash_1",
+            "stringParam": "sfx:/SE_PlayerSlashLight",
             "type": 1
         },
         {

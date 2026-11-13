@@ -9,7 +9,6 @@
 #include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Platform/Core/FileSystem.h"
 
-#include <json.hpp>
 #include <windows.h>
 
 // Media Foundation: mp3/wma/aac 等をロード時に PCM へデコードするために使う（Windows 標準）
@@ -53,6 +52,19 @@ namespace
     // 3D ワンショットが等倍で聞こえる距離 [m]。これより遠いと距離に反比例して小さくなる
     //   DXTK の既定は 1m で、カメラから 20m 先のボスの音が 1/20 になってしまう
     constexpr float kOneShotFullVolumeDistance = 10.0f;
+
+    // この名前のフォルダの下の音は BGM（名前が "bgm:/" で始まり、BGM の音量が掛かる）。それ以外は効果音
+    constexpr const char *kBgmFolderName = "BGM";
+
+    // この名前のフォルダの中は読み込まない（使わない候補の置き場。どの深さにあっても飛ばす）
+    constexpr const char *kUnusedFolderName = "Unused";
+
+    // 効果音の前後で、これより小さい所を無音とみなして削る（一番大きい所に対する割合。0.0056 ≒ -45dB）
+    constexpr float kSilenceRatio = 0.0056f;
+
+    // 無音を削るとき、音の手前と後ろに残す長さ [秒]。立ち上がりと余韻の端を欠かないため
+    constexpr float kSilenceKeepBefore = 0.005f;
+    constexpr float kSilenceKeepAfter  = 0.05f;
 
     // UTF-8 → ワイド文字列（SoundEffect が wchar_t* を要求するため）
     std::wstring ToWide(const std::string &s)
@@ -177,6 +189,71 @@ namespace
         CoTaskMemFree(wfx);
         return true;
     }
+
+
+
+    // PCM の前後の無音を削る（start と bytes を、聞こえる区間だけを指すよう縮める）
+    // 拾ってきた効果音は前後に無音が付いていることが多く、鳴るのが遅れたり、ボイスを長く占有したりするため
+    // 16bit 整数と 32bit 浮動小数だけを見る。それ以外の形式（ADPCM など）は何もしない
+    void TrimSilence(const WAVEFORMATEX *wfx, const uint8_t *&start, size_t &bytes)
+    {
+        // ---- 形式を調べる ----
+        // WAVE_FORMAT_EXTENSIBLE のときは、SubFormat の先頭の値が本来の形式（1=PCM, 3=浮動小数）
+        WORD formatTag = wfx->wFormatTag;
+        if (formatTag == WAVE_FORMAT_EXTENSIBLE)
+            formatTag = static_cast<WORD>(reinterpret_cast<const WAVEFORMATEXTENSIBLE *>(wfx)->SubFormat.Data1);
+        const bool isPcm16 = (formatTag == WAVE_FORMAT_PCM && wfx->wBitsPerSample == 16);
+        const bool isFloat = (formatTag == WAVE_FORMAT_IEEE_FLOAT && wfx->wBitsPerSample == 32);
+        if (!isPcm16 && !isFloat) return;
+
+        const size_t frameBytes = wfx->nBlockAlign;
+        const size_t channels   = wfx->nChannels;
+        const size_t frameCount = bytes / frameBytes;
+        if (frameCount == 0) return;
+
+        // 1フレーム（全チャンネルの1サンプル）の大きさ。チャンネルの中で一番大きい値（0〜1）
+        auto frameLevel = [&](size_t frame) {
+            float level = 0.0f;
+            for (size_t ch = 0; ch < channels; ++ch)
+            {
+                const uint8_t *sample = start + frame * frameBytes + ch * (wfx->wBitsPerSample / 8);
+                float          value  = 0.0f;
+                if (isPcm16)
+                {
+                    int16_t s16 = 0;
+                    std::memcpy(&s16, sample, sizeof(s16));
+                    value = s16 / 32768.0f;
+                }
+                else
+                {
+                    std::memcpy(&value, sample, sizeof(value));
+                }
+                level = (std::max)(level, std::fabs(value));
+            }
+            return level;
+        };
+
+        // ---- 無音のしきい値を決める ----
+        float peak = 0.0f;
+        for (size_t i = 0; i < frameCount; ++i) peak = (std::max)(peak, frameLevel(i));
+        if (peak <= 0.0f) return;
+        const float threshold = peak * kSilenceRatio;
+
+        // ---- 聞こえる区間を探す ----
+        size_t firstFrame = 0;
+        while (firstFrame < frameCount && frameLevel(firstFrame) < threshold) ++firstFrame;
+        size_t endFrame = frameCount;
+        while (endFrame > firstFrame && frameLevel(endFrame - 1) < threshold) --endFrame;
+
+        // 手前と後ろに少し残す
+        const size_t keepBefore = static_cast<size_t>(wfx->nSamplesPerSec * kSilenceKeepBefore);
+        const size_t keepAfter  = static_cast<size_t>(wfx->nSamplesPerSec * kSilenceKeepAfter);
+        firstFrame              = (firstFrame > keepBefore) ? firstFrame - keepBefore : 0;
+        endFrame                = (std::min)(frameCount, endFrame + keepAfter);
+
+        start += firstFrame * frameBytes;
+        bytes = (endFrame - firstFrame) * frameBytes;
+    }
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -234,6 +311,23 @@ struct DxtkAudioManager::Impl
 
     // そのイベントの種類の音量の倍率
     float CategoryVolume(uint32_t hash) const { return bgmHashes.count(hash) ? bgmVolume : sfxVolume; }
+
+    // 3D の音の発音位置に、音源のチャンネル数を教える
+    //   発音位置は既定でモノラル前提。ステレオの音とチャンネル数が食い違うと、左右の振り分けの計算が正しくない
+    static void SetEmitterChannels(Playing &p, const SoundEffect &sfx)
+    {
+        const unsigned int channels = sfx.GetFormat()->nChannels;
+        if (channels > 1) p.emitter.EnableDefaultMultiChannel(channels);
+    }
+
+    // 3D の音へ、聴き手と発音位置から音量と左右の振り分けを計算して掛ける
+    //   チャンネルごとの向き（pChannelAzimuths）は発音位置の中の配列を指す必要がある
+    //   Playing を vector や map へ移すとポインタが移す前の場所を指したままになるので、計算の前に毎回つなぎ直す
+    void Apply3D(Playing &p)
+    {
+        p.emitter.pChannelAzimuths = p.emitter.EmitterAzimuths;
+        p.inst->Apply3D(listener, p.emitter, /*rhcoords*/ false);
+    }
 
     // ハッシュから SoundEffect を引く（なければ nullptr）
     SoundEffect *Find(uint32_t hash)
@@ -362,46 +456,56 @@ void DxtkAudioManager::Update(float dt)
 // ---------------------------------------------------------------------------
 // データロード
 // ---------------------------------------------------------------------------
-void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
+// フォルダの下の音声ファイルを全部読み込み、ファイル名からイベント名を付ける
+void DxtkAudioManager::LoadSoundFolder(const std::string &rootDir)
 {
     if (!m_impl->ready || !m_impl->engine) return;
 
-    const std::string jsonStr = FileSystem::ReadAllText(configFilePath);
-    if (jsonStr.empty())
-    {
-        CCL_LOG_WARN(LogCategory::Core, "[Audio] 設定ファイルが空か存在しません: %s", configFilePath.c_str());
-        return;
-    }
+    // BGM フォルダの中のパスはこれで始まる（例: "Assets/Audio/BGM/"）
+    const std::string bgmDirPrefix = rootDir + "/" + kBgmFolderName + "/";
 
-    nlohmann::json root;
-    try
-    {
-        root = nlohmann::json::parse(jsonStr);
-    }
-    catch (const std::exception &ex)
-    {
-        CCL_LOG_ERROR(LogCategory::Core, "[Audio] AudioConfig の JSON parse 失敗 (%s): %s",
-                      configFilePath.c_str(), ex.what());
-        return;
-    }
-
-    if (!root.contains("sounds") || !root["sounds"].is_array())
-    {
-        CCL_LOG_WARN(LogCategory::Core, "[Audio] AudioConfig に \"sounds\" 配列がありません: %s", configFilePath.c_str());
-        return;
-    }
+    // 使わない候補の置き場のフォルダは、パスの途中にこれが入る（例: "Assets/Audio/SE/Unused/"）
+    const std::string unusedDirPart = std::string("/") + kUnusedFolderName + "/";
 
     int loaded = 0, skipped = 0;
-    for (const auto &e : root["sounds"])
+    for (const std::string &file : FileSystem::ListFiles(rootDir, "", /*recursive*/ true))
     {
-        const std::string event = e.value("event", std::string{});
-        const std::string file  = e.value("file", std::string{});
-        if (event.empty() || file.empty()) continue;
+        // ---- 読む対象か ----
+        // 使わない候補の置き場と、音声以外（メモなど）は黙って飛ばす
+        if (file.find(unusedDirPart) != std::string::npos) continue;
+        const std::string ext = LowerExt(file);
+        if (ext != ".wav" && ext != ".mp3") continue;
 
+        // 日本語などの名前は飛ばす
+        //   列挙で返る名前は Windows の文字コード（Shift_JIS）で、エディタの表示（UTF-8）では化けて選べないため
+        const bool hasNonAscii = std::any_of(file.begin(), file.end(), [](char c) { return static_cast<unsigned char>(c) >= 0x80; });
+        if (hasNonAscii)
+        {
+            ++skipped;
+            CCL_LOG_WARN(LogCategory::Core, "[Audio] 名前に英数字以外があるので読みません。英数字の名前に変えてください: %s", file.c_str());
+            continue;
+        }
+
+        // ---- イベント名を作る ----
+        // "bgm:/" か "sfx:/" に、拡張子を除いたファイル名を付ける（例: ".../Player/SE_PlayerSlashLight.mp3" → "sfx:/SE_PlayerSlashLight"）
+        const size_t      fileNameBegin = file.find_last_of('/') + 1;
+        const std::string fileStem      = file.substr(fileNameBegin, file.size() - fileNameBegin - ext.size());
+        const bool        isBgm         = file.compare(0, bgmDirPrefix.size(), bgmDirPrefix) == 0;
+        const std::string event         = (isBgm ? "bgm:/" : "sfx:/") + fileStem;
+        const uint32_t    hash          = CCL::Utils::HashString(event.c_str());
+
+        // 別のフォルダに同じ名前があると区別できない。先に見つかった方（パスの名前順で前）を使う
+        if (m_impl->sounds.count(hash))
+        {
+            ++skipped;
+            CCL_LOG_WARN(LogCategory::Core, "[Audio] 同じ名前の音がもうあるので読みません（名前を変えてください）: %s (%s)", event.c_str(), file.c_str());
+            continue;
+        }
+
+        // ---- 読み込む ----
         try
         {
             std::unique_ptr<SoundEffect> sfx;
-            const std::string            ext = LowerExt(file);
 
             const std::vector<uint8_t> fileBytes = FileSystem::ReadAllBytes(file);
             if (fileBytes.empty())
@@ -417,8 +521,14 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
                 WAVData info{};
                 if (FAILED(LoadWAVAudioInMemoryEx(buf.get(), fileBytes.size(), info)))
                     throw std::runtime_error("WAV の解析失敗");
-                sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), buf, info.wfx, info.startAudio,
-                                                    info.audioBytes, info.loopStart, info.loopLength);
+
+                // 効果音は前後の無音を削る。ループ位置を持つ音は位置がずれるので削らない
+                const uint8_t *start = info.startAudio;
+                size_t         bytes = info.audioBytes;
+                if (!isBgm && info.loopLength == 0) TrimSilence(info.wfx, start, bytes);
+
+                sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), buf, info.wfx, start,
+                                                    bytes, info.loopStart, info.loopLength);
             }
             else if (m_impl->mfStarted)
             {
@@ -429,6 +539,9 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
                 size_t                     bytes = 0;
                 if (!DecodeAudioBytesToPcm(fileBytes, ToWide(file), buf, &wfx, &start, &bytes))
                     throw std::runtime_error("Media Foundation デコード失敗");
+
+                // 効果音は前後の無音を削る（mp3 は作りの都合で頭に無音が入りやすい）
+                if (!isBgm) TrimSilence(wfx, start, bytes);
                 // buf（[WAVEFORMATEX][PCM]）の所有権は SoundEffect へ移る
                 sfx = std::make_unique<SoundEffect>(m_impl->engine.get(), buf, wfx, start, bytes);
             }
@@ -437,9 +550,8 @@ void DxtkAudioManager::LoadConfig(const std::string &configFilePath)
                 throw std::runtime_error("非WAVの再生には Media Foundation が必要（初期化失敗）");
             }
 
-            const uint32_t hash  = CCL::Utils::HashString(event.c_str());
             m_impl->sounds[hash] = std::move(sfx);
-            if (event.rfind("bgm:", 0) == 0) m_impl->bgmHashes.insert(hash);
+            if (isBgm) m_impl->bgmHashes.insert(hash);
             m_impl->eventNames.push_back(event);
             ++loaded;
         }
@@ -496,7 +608,8 @@ void DxtkAudioManager::PlayOneShot3D(uint32_t eventHash, const DirectX::XMFLOAT3
 
     p.emitter.SetPosition(position);
     p.emitter.CurveDistanceScaler = kOneShotFullVolumeDistance;
-    p.inst->Apply3D(m_impl->listener, p.emitter, /*rhcoords*/ false);
+    Impl::SetEmitterChannels(p, *sfx);
+    m_impl->Apply3D(p);
     p.userVolume = (std::max)(volume, 0.0f);
     p.isBgm      = m_impl->bgmHashes.count(eventHash) != 0;
     p.inst->SetVolume(p.userVolume * m_impl->CategoryVolume(eventHash));
@@ -548,7 +661,8 @@ uint32_t DxtkAudioManager::PlayEvent3D(uint32_t eventHash, const DirectX::XMFLOA
     if (!p.inst) return 0;
 
     p.emitter.SetPosition(position);
-    p.inst->Apply3D(m_impl->listener, p.emitter, false);
+    Impl::SetEmitterChannels(p, *sfx);
+    m_impl->Apply3D(p);
     p.isBgm = m_impl->bgmHashes.count(eventHash) != 0;
     p.inst->SetVolume(m_impl->CategoryVolume(eventHash));
     m_impl->ApplyPitch(p, -kSlowMaxPitch * m_impl->slow);
@@ -635,7 +749,7 @@ void DxtkAudioManager::SetEvent3DAttributes(uint32_t playingId, const DirectX::X
     auto                        it = m_impl->playing.find(playingId);
     if (it == m_impl->playing.end() || !it->second.inst || !it->second.is3D) return;
     it->second.emitter.SetPosition(pos);
-    it->second.inst->Apply3D(m_impl->listener, it->second.emitter, false);
+    m_impl->Apply3D(it->second);
 }
 
 

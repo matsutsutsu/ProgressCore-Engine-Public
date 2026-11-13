@@ -68,7 +68,7 @@ struct ComponentMeta<AudioEmitterComponent>
             ImGui::EndCombo();
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます。");
+            ImGui::SetTooltip("Assets/Audio の下に置いた音から選びます。");
 
         // 一覧にない名前を直接指定するための手入力欄
         char buf[256] = {};
@@ -80,7 +80,7 @@ struct ComponentMeta<AudioEmitterComponent>
             changed = true;
         }
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("例: bgm:/game を入力して[Enter]。");
+            ImGui::SetTooltip("例: bgm:/GameBGM を入力して[Enter]。");
 
         ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Hash: 0x%08X", comp.eventHash);
         ImGui::Spacing();

@@ -47,6 +47,9 @@ DEFAULT_OUT = REPO_ROOT / "Build" / "Pak" / "Data.pak"
 # Sponza などの glTF サンプル置き場。ゲームからは使っていない
 EXCLUDE_DIRS = ["Assets/Models/Test"]
 
+# 音の Unused フォルダは使わない候補の置き場。エンジンも読まない（DxtkAudioManager::LoadSoundFolder）
+UNUSED_AUDIO_DIR_NAME = "unused"
+
 # ArialUni はエディタ（ImGui）専用で、配布物に同梱できないフォント
 EXCLUDE_FILES = ["Assets/Fonts/ArialUni.ttf"]
 
@@ -111,6 +114,8 @@ def exclusion_reason(rel: str, file: Path):
     for d in EXCLUDE_DIRS:
         if lower.startswith(lower_ascii(d) + "/"):
             return "Test フォルダ"
+    if lower.startswith("assets/audio/") and "/" + UNUSED_AUDIO_DIR_NAME + "/" in lower:
+        return "使わない音（Unused フォルダ）"
     if lower in (lower_ascii(f) for f in EXCLUDE_FILES):
         return "同梱しないフォント"
 

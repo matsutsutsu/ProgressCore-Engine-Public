@@ -4,7 +4,7 @@
             "components": {
                 "AudioEmitterComponent": {
                     "autoPlay": true,
-                    "eventName": "bgm:/title",
+                    "eventName": "bgm:/TitleBGM",
                     "is3D": false,
                     "volume": 0.10000000149011612
                 },

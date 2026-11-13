@@ -1684,7 +1684,7 @@ bool AnimationSequencerWindow::DrawSoundPicker(EditorContext &context, AnimNotif
         ImGui::EndCombo();
     }
     if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Assets/Config/AudioConfigDXTK.json に登録した音から選びます");
+        ImGui::SetTooltip("Assets/Audio の下に置いた音から選びます");
 
     // 一覧にない名前を直接指定する欄
     char buf[256];
