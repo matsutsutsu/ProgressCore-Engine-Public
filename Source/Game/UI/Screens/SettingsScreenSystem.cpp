@@ -385,7 +385,7 @@ void SettingsScreenSystem::Adjust(int row, int dir)
 
     // 効果音の音量を変えたときに、下の「移動」の音が新しい音量で鳴るよう、先に反映する
     ApplySettings();
-    PlaySound("sfx:/ui_move");
+    PlaySound("sfx:/SE_UIMove");
     RefreshValues();
 }
 
@@ -543,7 +543,7 @@ void SettingsScreenSystem::Update(float dt)
         m_closing = true;
 
         // 押して閉じたときは UISoundSystem が「決定」を鳴らす。Esc・B で閉じたときだけ「閉じる」を鳴らす
-        if (m_closeByCancel) PlaySound("sfx:/ui_close");
+        if (m_closeByCancel) PlaySound("sfx:/SE_UIClose");
     }
 
     // 入れ替えの途中は、操作を受けない。入れ替えが終わったら閉じる

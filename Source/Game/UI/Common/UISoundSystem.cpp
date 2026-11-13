@@ -43,23 +43,23 @@ void UISoundSystem::Update(float /*dt*/)
     // 1フレームに鳴らすのは1つだけにする。上の条件ほど優先する
     if (clicked)
     {
-        Play("sfx:/ui_confirm");
+        Play("sfx:/SE_UIConfirm");
     }
     else if (m_buttonCount == 0 && count > 0)
     {
         // メニューが開いた（ポーズ・リザルトなど）
-        Play("sfx:/ui_open");
+        Play("sfx:/SE_UIOpen");
     }
     else if (m_buttonCount > 0 && count == 0 && !m_clickedLast)
     {
         // 押さずに閉じた（Esc でポーズを閉じたなど）
-        Play("sfx:/ui_close");
+        Play("sfx:/SE_UIClose");
     }
     else if (selected != InvalidEntityID && m_selected != InvalidEntityID && selected != m_selected)
     {
         // 別のボタンへ移った
         // 開いた瞬間の最初の選択（前のフレームで何も選ばれていない）では鳴らさない
-        Play("sfx:/ui_move");
+        Play("sfx:/SE_UIMove");
     }
 
     // ---------------------------------------------------------
@@ -82,8 +82,8 @@ void UISoundSystem::Update(float /*dt*/)
 
 void UISoundSystem::Play(const char *eventName)
 {
-    // イベント名とファイルの対応は Assets/Config/AudioConfigDXTK.json
-    // ファイルがないイベントは読み込みで飛ばされ、鳴らしても何も起きない
+    // イベント名は Assets/Audio/SE の下のファイル名（例: UI/SE_UIMove.wav → "sfx:/SE_UIMove"）
+    // ファイルがないイベントは読み込まれず、鳴らしても何も起きない
     if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())

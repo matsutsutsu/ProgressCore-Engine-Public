@@ -73,7 +73,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.10000000149011612,
-            "stringParam": "sfx:/boss_land_impact",
+            "stringParam": "sfx:/SE_BossLeapImpact",
             "type": 1
         }
     ],

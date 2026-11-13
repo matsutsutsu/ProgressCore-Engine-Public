@@ -81,9 +81,9 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07,
-            "soundVolume": 1.0,
+            "soundVolume": 3.0,
             "startTime": 0.25,
-            "stringParam": "sfx:/slash_dash",
+            "stringParam": "sfx:/SE_PlayerSlashDash",
             "type": 1
         },
         {

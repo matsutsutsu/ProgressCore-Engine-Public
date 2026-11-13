@@ -98,7 +98,7 @@
             "soundPitchRandom": 0.07,
             "soundVolume": 1.0,
             "startTime": 0.45,
-            "stringParam": "sfx:/slash_2",
+            "stringParam": "sfx:/SE_PlayerSlashHeavy",
             "type": 1
         },
         {
