@@ -6,14 +6,18 @@
 
 #include "Engine/Graphics/Systems/Particle/VFXSystem.h"
 #include "Game/Core/GameEvents.h"
+#include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 
 using namespace CCL::ECS;
 
 namespace
 {
-    // 火花を一度に出すエミッタのプレハブ
+    // プレイヤーの攻撃が敵に当たったときに出すプレハブ
     const char *kHitSparkPrefab = "Assets/Prefabs/Particles/VFX_HitSpark";
+
+    // 敵（ボス・ドローン）の攻撃がプレイヤーに当たったときに出すプレハブ
+    const char *kEnemyHitPrefab = "Assets/Prefabs/Particles/VFX_EnemyHit";
 
     // ラッシュ中のプレイヤーの命中で、通常の火花の代わりに出すプレハブ
     const char *kRushHitPrefab       = "Assets/Prefabs/Particles/VFX_RushHit";       // 詰めの斬りと連撃
@@ -48,6 +52,9 @@ void HitEffectSystem::Update(float /*dt*/)
 // 　ラッシュ以外で差し替える予定がないので実装に最適なこの形にしている！
 const char *HitEffectSystem::PickHitPrefab(EntityID attackerID) const
 {
+    // 攻撃した側がプレイヤーでなければ、敵の攻撃用のパーティクル
+    if (!m_world->HasComponent<PlayerComponent>(attackerID)) return kEnemyHitPrefab;
+
     // ラッシュ中のプレイヤーでなければ、通常の火花パーティクル
     const auto *rush = m_world->GetComponent<PlayerRushComponent>(attackerID);
     if (!rush || !rush->isActive) return kHitSparkPrefab;
