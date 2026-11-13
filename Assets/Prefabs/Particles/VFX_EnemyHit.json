@@ -20,9 +20,9 @@
                             "attractorStrength": 0.0,
                             "burstCount": 130,
                             "color": [
-                                1.0,
-                                0.6486486196517944,
                                 0.0,
+                                0.5714285373687744,
+                                1.0,
                                 1.0
                             ],
                             "colorMode": 0,
@@ -43,8 +43,8 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                10.0,
-                                35.0
+                                20.0,
+                                40.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -56,10 +56,10 @@
                             ],
                             "followRatio": 0.0,
                             "gravity": -30.0,
-                            "intensity": 13.0,
+                            "intensity": 5.0,
                             "lifespan": [
-                                0.3499999940395355,
-                                0.550000011920929
+                                0.30000001192092896,
+                                0.4000000059604645
                             ],
                             "lineEnd": [
                                 0.0,
@@ -74,7 +74,7 @@
                             "localOffsetY": 0.0,
                             "maxCount": 200,
                             "maxSpeed": 0.0,
-                            "name": "火花 オレンジ",
+                            "name": "Spark Bule",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "orientMode": 0,
@@ -139,7 +139,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.0,
-                                8.0
+                                5.0
                             ],
                             "emitSpeed": [
                                 0.0,
@@ -173,7 +173,7 @@
                             "localOffsetY": 0.0,
                             "maxCount": 1,
                             "maxSpeed": 0.0,
-                            "name": "フラッシュ",
+                            "name": "Impact Black",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "orientMode": 0,
@@ -219,7 +219,7 @@
                             "burstCount": 1,
                             "color": [
                                 1.0,
-                                0.1853281855583191,
+                                0.0,
                                 0.0,
                                 1.0
                             ],
@@ -272,7 +272,7 @@
                             "localOffsetY": 0.0,
                             "maxCount": 1,
                             "maxSpeed": 0.0,
-                            "name": "フラッシュ copy",
+                            "name": "Flash",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "orientMode": 0,
@@ -318,15 +318,15 @@
                             "burstCount": 1,
                             "color": [
                                 1.0,
-                                1.0,
-                                1.0,
+                                0.0,
+                                0.0,
                                 1.0
                             ],
                             "colorMode": 0,
                             "colorRampPath": "",
                             "coneAngle": [
                                 0.0,
-                                3.1415915489196777
+                                0.0
                             ],
                             "drag": 0.0,
                             "emitMode": 1,
@@ -337,11 +337,11 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.0,
-                                0.5
+                                7.0
                             ],
                             "emitSpeed": [
-                                3.0,
-                                3.0
+                                0.0,
+                                0.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -349,14 +349,14 @@
                             ],
                             "fadeDuration": [
                                 0.0,
-                                0.05000000074505806
+                                0.10000000149011612
                             ],
                             "followRatio": 0.0,
                             "gravity": 0.0,
-                            "intensity": 15.0,
+                            "intensity": 2.0,
                             "lifespan": [
-                                0.17000000178813934,
-                                0.17000000178813934
+                                0.25,
+                                0.25
                             ],
                             "lineEnd": [
                                 0.0,
@@ -369,9 +369,9 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 50,
+                            "maxCount": 1,
                             "maxSpeed": 0.0,
-                            "name": "スラッシュ",
+                            "name": "Impact",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "orientMode": 0,
@@ -393,12 +393,12 @@
                                 1
                             ],
                             "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_08.png",
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle0_02.png",
                             "uvScrollSpeed": [
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 5.0,
+                            "velocityStretch": 0.0,
                             "vortexStrength": 0.0
                         },
                         {
@@ -414,10 +414,10 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 50,
+                            "burstCount": 60,
                             "color": [
                                 1.0,
-                                0.7413126826286316,
+                                0.7644787430763245,
                                 0.0,
                                 1.0
                             ],
@@ -435,12 +435,12 @@
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.15000000596046448,
+                                0.20000000298023224,
                                 0.0
                             ],
                             "emitSpeed": [
                                 10.0,
-                                25.0
+                                35.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -454,8 +454,8 @@
                             "gravity": -30.0,
                             "intensity": 5.0,
                             "lifespan": [
-                                0.3499999940395355,
-                                0.550000011920929
+                                0.15000000596046448,
+                                0.25
                             ],
                             "lineEnd": [
                                 0.0,
@@ -470,7 +470,7 @@
                             "localOffsetY": 0.0,
                             "maxCount": 200,
                             "maxSpeed": 0.0,
-                            "name": "火花 オレンジ copy",
+                            "name": "Spark orange",
                             "noiseScale": 1.0,
                             "noiseStrength": 0.0,
                             "orientMode": 0,
@@ -497,7 +497,7 @@
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 0.20000000298023224,
+                            "velocityStretch": 0.2199999988079071,
                             "vortexStrength": 0.0
                         }
                     ]
