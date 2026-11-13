@@ -684,6 +684,7 @@
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugRanges.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h" />
+    <ClInclude Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneComponent.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneFormationType.h" />
     <ClInclude Include="Source\Game\Logics\AI\Drone\Components\DroneTuning.h" />
@@ -711,6 +712,14 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTActions_Boss.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionGeometry.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
@@ -1207,6 +1216,7 @@
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugOverlaySystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Debug\AIDebugSpatialSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\FormationAssetIO.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\DataDrivenFormation.cpp" />
     <ClCompile Include="Source\Game\Logics\AI\Drone\Formation\Data\ShapeSampler.cpp" />
@@ -1223,6 +1233,13 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPhaseSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Actions\BTActions_Boss.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />

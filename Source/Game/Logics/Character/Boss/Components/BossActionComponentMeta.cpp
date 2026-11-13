@@ -36,13 +36,6 @@ static const char *BossRepositionPhaseNames[] = {
     "End",    // 止まり終えた
 };
 
-// BossLeapLanding と1対1で並べる
-static const char *BossLeapLandingNames[] = {
-    "AwayToCenter", // 中央を挟んで相手と反対側
-    "TowardTarget", // 相手の手前
-    "InPlace",      // その場
-};
-
 // BossLeapPhase と1対1で並べる
 static const char *BossLeapPhaseNames[] = {
     "Windup",   // 溜め
@@ -101,26 +94,23 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_FLOAT_RANGED(backStepRecovery, "後退：着地硬直 [秒]", 0.01f, 0.0f, 3.0f, "Back Step")
             CFIELD_FLOAT_RANGED(backStepHeight, "後退：浮く高さ [m]", 0.1f, 0.0f, 10.0f, "Back Step")
             CFIELD_FLOAT_RANGED(escapeLeap.windup, "中央へ逃げる：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Escape")
-            CFIELD_FLOAT_RANGED(escapeLeap.flight, "中央へ逃げる：空中 [秒]", 0.01f, 0.1f, 5.0f, "Leap Escape")
+            CFIELD_FLOAT_RANGED(escapeLeap.flight, "中央へ逃げる：空中 [秒]（放物線）", 0.01f, 0.1f, 5.0f, "Leap Escape")
             CFIELD_FLOAT_RANGED(escapeLeap.landRecovery, "中央へ逃げる：着地硬直 [秒]", 0.01f, 0.0f, 3.0f, "Leap Escape")
             CFIELD_FLOAT_RANGED(escapeLeap.height, "中央へ逃げる：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Escape")
-            CFIELD_ENUM_U8(escapeLeap.landing, "中央へ逃げる：着地点の決め方", BossLeapLandingNames, std::size(BossLeapLandingNames), "Leap Escape")
-            CFIELD(escapeLeap.landAttack, "中央へ逃げる：着地で攻撃する", "Leap Escape")
             CFIELD_FLOAT_RANGED(escapeLandingRatio, "中央へ逃げる：着地点（半径に対する割合）", 0.01f, 0.0f, 0.9f, "Leap Escape")
             CFIELD_FLOAT_RANGED(attackLeap.windup, "跳躍攻撃：溜め [秒]", 0.01f, 0.0f, 2.0f, "Leap Attack")
-            CFIELD_FLOAT_RANGED(attackLeap.flight, "跳躍攻撃：空中 [秒]", 0.01f, 0.1f, 5.0f, "Leap Attack")
+            CFIELD_FLOAT_RANGED(attackLeap.descentTime, "跳躍攻撃：頂点の前後の時間 [秒]（上りと、ゆっくりの後から着地まで。毎回同じ）", 0.01f, 0.05f, 3.0f, "Leap Attack")
+            CFIELD_FLOAT_RANGED(attackLeap.hover, "跳躍攻撃：頂点でゆっくりになる時間 [秒]（合図）", 0.01f, 0.01f, 3.0f, "Leap Attack")
+            CFIELD_FLOAT_RANGED(attackLeap.hangGravityRatio, "跳躍攻撃：ゆっくりの間の重力の割合（1 でふつう）", 0.01f, 0.01f, 1.0f, "Leap Attack")
             CFIELD_FLOAT_RANGED(attackLeap.landRecovery, "跳躍攻撃：着地硬直 [秒]", 0.01f, 0.0f, 3.0f, "Leap Attack")
             CFIELD_FLOAT_RANGED(attackLeap.height, "跳躍攻撃：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Leap Attack")
-            CFIELD_ENUM_U8(attackLeap.landing, "跳躍攻撃：着地点の決め方", BossLeapLandingNames, std::size(BossLeapLandingNames), "Leap Attack")
-            CFIELD(attackLeap.landAttack, "跳躍攻撃：着地で攻撃する", "Leap Attack")
             CFIELD_FLOAT_RANGED(attackStandOff, "跳躍攻撃：相手の手前に降りる距離 [m]", 0.1f, 0.0f, 20.0f, "Leap Attack")
             CFIELD_FLOAT_RANGED(hoverLeap.windup, "滞空：溜め [秒]", 0.01f, 0.0f, 2.0f, "Air Hover")
-            CFIELD_FLOAT_RANGED(hoverLeap.flight, "滞空：上昇＋下降 [秒]", 0.01f, 0.1f, 5.0f, "Air Hover")
-            CFIELD_FLOAT_RANGED(hoverLeap.hover, "滞空：頂点に留まる [秒]", 0.05f, 0.0f, 30.0f, "Air Hover")
+            CFIELD_FLOAT_RANGED(hoverLeap.riseTime, "滞空：上がる時間 [秒]", 0.01f, 0.05f, 3.0f, "Air Hover")
+            CFIELD_FLOAT_RANGED(hoverLeap.hover, "滞空：頂点に留まる [秒]", 0.05f, 0.01f, 30.0f, "Air Hover")
+            CFIELD_FLOAT_RANGED(hoverLeap.descentTime, "滞空：降りる時間 [秒]", 0.01f, 0.05f, 3.0f, "Air Hover")
             CFIELD_FLOAT_RANGED(hoverLeap.landRecovery, "滞空：着地硬直 [秒]", 0.01f, 0.0f, 3.0f, "Air Hover")
             CFIELD_FLOAT_RANGED(hoverLeap.height, "滞空：頂点の高さ [m]", 0.1f, 0.0f, 60.0f, "Air Hover")
-            CFIELD_ENUM_U8(hoverLeap.landing, "滞空：着地点の決め方", BossLeapLandingNames, std::size(BossLeapLandingNames), "Air Hover")
-            CFIELD(hoverLeap.landAttack, "滞空：着地で攻撃する", "Air Hover")
             CFIELD_FLOAT_RANGED(dashRetreatTime, "突進：下がる時間 [秒]", 0.01f, 0.05f, 3.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRetreatDistance, "突進：下がる距離 [m]", 0.1f, 0.0f, 30.0f, "Dash Attack")
             CFIELD_FLOAT_RANGED(dashRetreatHeight, "突進：浮く高さ [m]", 0.1f, 0.0f, 20.0f, "Dash Attack")

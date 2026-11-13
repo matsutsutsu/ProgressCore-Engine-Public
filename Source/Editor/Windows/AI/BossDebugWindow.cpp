@@ -10,6 +10,7 @@
 #include "Game/Logics/AI/Debug/AIDebugOverlaySystem.h"
 #include "Game/Logics/AI/Debug/AIDebugSpatialSystem.h"
 #include "Game/Logics/AI/Debug/DroneDebugDrawSystem.h"
+#include "Game/Logics/AI/Debug/BossLeapDebugDrawSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemManager.h"
 
@@ -375,6 +376,7 @@ void BossDebugWindow::DrawDisplayTab(EditorContext &context)
     DrawSystemSection<AIDebugOverlaySystem>(systems, "頭上の文字・技選択のパネル");
     DrawSystemSection<AIDebugSpatialSystem>(systems, "地面の帯");
     DrawSystemSection<DroneDebugDrawSystem>(systems, "ドローン");
+    DrawSystemSection<BossLeapDebugDrawSystem>(systems, "跳躍の軌道");
     DrawSystemSection<BossActionSystem>(systems, "本体（位置のワープなど）");
 }
 

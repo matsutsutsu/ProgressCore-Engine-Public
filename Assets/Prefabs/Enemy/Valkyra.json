@@ -7,18 +7,18 @@
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": true,
+                    "isLoop": false,
                     "playbackSpeed": 1.0
                 },
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
                 "BossActionComponent": {
-                    "attackLeap.flight": 1.0,
+                    "attackLeap.descentTime": 0.4000000059604645,
+                    "attackLeap.hangGravityRatio": 0.6299999952316284,
                     "attackLeap.height": 20.0,
-                    "attackLeap.landAttack": true,
+                    "attackLeap.hover": 0.28999999165534973,
                     "attackLeap.landRecovery": 1.25,
-                    "attackLeap.landing": 1,
                     "attackLeap.windup": 0.3499999940395355,
                     "attackStandOff": 3.0,
                     "backStepDistance": 40.0,
@@ -39,22 +39,21 @@
                     "escapeLandingRatio": 0.30000001192092896,
                     "escapeLeap.flight": 1.100000023841858,
                     "escapeLeap.height": 30.0,
-                    "escapeLeap.landAttack": false,
                     "escapeLeap.landRecovery": 0.2199999988079071,
-                    "escapeLeap.landing": 0,
                     "escapeLeap.windup": 0.25,
+                    "exhaustedDuration": 4.0,
                     "flinchCooldown": 3.0,
                     "footworkMaxTime": 3.0,
                     "footworkMinTime": 1.5,
                     "footworkSpeed": 40.0,
-                    "hoverLeap.flight": 0.8999999761581421,
+                    "hoverLeap.descentTime": 0.44999998807907104,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.hover": 8.170000076293945,
-                    "hoverLeap.landAttack": false,
                     "hoverLeap.landRecovery": 0.6299999952316284,
-                    "hoverLeap.landing": 2,
+                    "hoverLeap.riseTime": 0.44999998807907104,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
+                    "rageRecoveryScale": 0.4000000059604645,
                     "repositionAccelTime": 0.25,
                     "repositionDecelTime": 0.3499999940395355,
                     "repositionFarDistance": 110.5,
@@ -76,9 +75,9 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        -2.802596928649634e-45,
                         0.0,
-                        -2.802596928649634e-45
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -162,15 +161,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -10.354063987731934,
-                        0.7334567904472351,
-                        -40.53843688964844
+                        -23.08686065673828,
+                        0.25342702865600586,
+                        63.45075988769531
                     ],
                     "rotation": [
                         -0.0,
-                        -0.9284453988075256,
+                        -0.3029005527496338,
                         -0.0,
-                        0.3714688718318939
+                        0.9530221819877625
                     ],
                     "scale": [
                         5.0,
@@ -238,6 +237,7 @@
                                 0.5,
                                 0.5
                             ],
+                            "followRatio": 0.0,
                             "gravity": 0.0,
                             "intensity": 2.0,
                             "lifespan": [
@@ -336,6 +336,7 @@
                                 0.5,
                                 0.5
                             ],
+                            "followRatio": 0.0,
                             "gravity": 0.0,
                             "intensity": 5.0,
                             "lifespan": [
@@ -444,26 +445,26 @@
                             "attractorStrength": 0.0,
                             "burstCount": 0,
                             "color": [
-                                0.9,
-                                0.92,
-                                0.95,
-                                0.35
+                                0.8999999761581421,
+                                0.9200000166893005,
+                                0.949999988079071,
+                                0.3499999940395355
                             ],
                             "colorMode": 0,
                             "colorRampPath": "",
                             "coneAngle": [
                                 0.0,
-                                0.4
+                                0.4000000059604645
                             ],
                             "drag": 0.0,
                             "emitMode": 0,
                             "emitRadius": [
-                                0.3,
-                                1.2
+                                0.30000001192092896,
+                                1.2000000476837158
                             ],
                             "emitShape": 0,
                             "emitSize": [
-                                0.8,
+                                0.800000011920929,
                                 3.0
                             ],
                             "emitSpeed": [
@@ -475,10 +476,10 @@
                                 1.0
                             ],
                             "fadeDuration": [
-                                0.3,
-                                0.8
+                                0.30000001192092896,
+                                0.800000011920929
                             ],
-                            "followRatio": 0.3,
+                            "followRatio": 0.30000001192092896,
                             "gravity": 0.0,
                             "intensity": 1.0,
                             "lifespan": [
@@ -510,7 +511,7 @@
                             ],
                             "sizeEase": 2,
                             "sizeEasePower": 2.799999952316284,
-                            "sizeRandom": 0.4,
+                            "sizeRandom": 0.4000000059604645,
                             "spawnDelay": [
                                 0.0,
                                 0.0

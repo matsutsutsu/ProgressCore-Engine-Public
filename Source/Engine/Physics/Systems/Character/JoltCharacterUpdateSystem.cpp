@@ -295,19 +295,11 @@ void JoltCharacterUpdateSystem::ApplyMoveReservation(CharacterMovementComponent 
     }
     else
     {
-        // 水平は進み方に合わせ、高さは途中で浮かせる
-        // 1-(1-u)^2 は u=1 で傾き 0、u^2 は u=0 で傾き 0、4h*u(1-u) は両端で 0
-        float eased = u;
-        if (r.options.ease == MoveEase::EaseOut) eased = 1.0f - (1.0f - u) * (1.0f - u);
-        if (r.options.ease == MoveEase::EaseIn) eased = u * u;
-
-        Vector3 want = Vector3::Lerp(r.start, r.target, eased);
-        want.y += 4.0f * r.options.height * u * (1.0f - u);
-
         // いるべき位置へ届く速度。積分と同じ dt で割る
-        // 上限で丸め、引っかかった遅れを1フレームで取り戻して瞬間移動に見えないようにする
-        v = (want - now) / CharacterStepDt(localDt);
-        if (v.LengthSquared() > r.options.maxSpeed * r.options.maxSpeed)
+        // 上限があるときだけ丸める（既定は上限なし。遅れても予約の時間どおりに着く）
+        const Vector3 plannedPos = ReservationPlannedPosition(r, u);
+        v = (plannedPos - now) / CharacterStepDt(localDt);
+        if (r.options.maxSpeed > 0.0f && v.LengthSquared() > r.options.maxSpeed * r.options.maxSpeed)
         {
             v.Normalize();
             v *= r.options.maxSpeed;

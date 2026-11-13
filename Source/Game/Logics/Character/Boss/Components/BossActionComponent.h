@@ -37,23 +37,14 @@ enum class BossRepositionPhase : uint8_t
     End,    // 止まり終えた
 };
 
-// 跳躍の着地点の決め方
-// 並びを変えたら BossActionComponentMeta.cpp の BossLeapLandingNames も直す
-enum class BossLeapLanding : uint8_t
-{
-    AwayToCenter, // 中央を挟んで相手と反対側
-    TowardTarget, // 相手の手前
-    InPlace,      // その場
-};
-
 // 跳躍の段
 // 並びを変えたら BossActionComponentMeta.cpp の BossLeapPhaseNames も直す
 enum class BossLeapPhase : uint8_t
 {
     Windup,   // 溜め
-    Flight,   // 空中（滞空は頂点へ上がるまで）
-    Hover,    // 頂点で停止（滞空だけ）
-    Descent,  // 頂点から降りる（滞空だけ）
+    Flight,   // 空中（跳躍攻撃・滞空は頂点の段へ入るまで）
+    Hover,    // 頂点の段（跳躍攻撃はゆっくり進む、滞空は留まる）
+    Descent,  // 頂点の段から降りる（跳躍攻撃・滞空だけ）
     Recovery, // 着地硬直
 };
 
@@ -77,17 +68,32 @@ enum class BossBackStepPhase : uint8_t
     Recovery, // 着地硬直
 };
 
-// 跳躍1種類分の跳び方。跳躍の技どうしの違いは、すべてここに持つ
-// 技の長さ ＝ 溜め＋空中＋頂点に留まる＋着地硬直
+// 跳躍の種類。種類ごとに、飛び方・着地点・着地で攻撃するかが決まっている
+// 並びを変えたら BossLeapDebugDrawSystem.cpp の kLeapKindNames も直す
+enum class BossLeapKind : uint8_t
+{
+    Escape, // 中央へ逃げる。中央を挟んで相手と反対側へ、放物線で飛ぶ
+    Attack, // 跳躍攻撃。相手の手前へ、頂点でゆっくりになる放物線で飛び、着地で叩く
+    Hover,  // 滞空。真上へ上がって頂点に留まり、同じ所へ降りる
+};
+
+// 跳躍1種類分の跳び方
+// 技の長さ（どれも溜めと着地硬直を足す）
+//   Escape … flight
+//   Attack … descentTime（上り）＋ hover（頂点）＋ descentTime（降り）
+//   Hover  … riseTime ＋ hover ＋ descentTime
 struct BossLeapDef
 {
-    float           windup       = 0.4f;                          // 溜め [秒]。Leap_Start クリップより短く
-    float           flight       = 2.0f;                          // 空中 [秒]。滞空は上がる＋降りるの合計
-    float           height       = 30.0f;                         // 頂点の高さ [m]
-    float           landRecovery = 0.5f;                          // 着地硬直 [秒]
-    float           hover        = 0.0f;                          // 頂点に留まる [秒]。0 なら留まらない
-    BossLeapLanding landing      = BossLeapLanding::AwayToCenter; // 着地点の決め方
-    bool            landAttack   = false;                         // 着地で攻撃する（判定のある着地クリップ）
+    BossLeapKind kind             = BossLeapKind::Escape; // 種類。技ごとに決まっているので保存しない
+    float        windup           = 0.4f;                 // 溜め [秒]。Leap_Start クリップより短く
+    float        flight           = 2.0f;                 // 空中 [秒]。Escape だけ
+    float        riseTime         = 0.4f;                 // 頂点まで上がる時間 [秒]。Hover だけ
+    float        hover            = 0.0f;                 // 頂点に留まる [秒]。Attack・Hover だけ
+    float        descentTime      = 0.4f;                 // 頂点から着地点へ降りる時間 [秒]。Attack・Hover だけ
+                                                          //   Attack は上りも同じ長さ。距離に関係なく毎回同じなので、避けるタイミングが覚えられる
+    float        hangGravityRatio = 0.2f;                 // 頂点で留まる間の重力の割合（1 でふつう）。Attack だけ
+    float        height           = 30.0f;                // 頂点の高さ [m]
+    float        landRecovery     = 0.5f;                 // 着地硬直 [秒]
 };
 
 // ボス本体の動き（移動・間合いを取る・様子見・後方ステップ・跳躍・突進・ひるみ・疲れ）の設定値と状態
@@ -130,29 +136,33 @@ struct BossActionComponent
     // --- 跳躍3種 ---
 
     // 中央へ逃げる
-    BossLeapDef escapeLeap{.windup       = 0.25f,
+    BossLeapDef escapeLeap{.kind         = BossLeapKind::Escape,
+                           .windup       = 0.25f,
                            .flight       = 1.1f,
                            .height       = 40.0f,
-                           .landRecovery = 0.55f,
-                           .landing      = BossLeapLanding::AwayToCenter};
+                           .landRecovery = 0.55f};
     float       escapeLandingRatio = 0.3f; // 着地点の中心からの距離（半径比）
 
     // 跳躍攻撃
-    BossLeapDef attackLeap{.windup       = 0.35f,
-                           .flight       = 2.0f,
-                           .height       = 30.0f,
-                           .landRecovery = 0.5f,
-                           .landing      = BossLeapLanding::TowardTarget,
-                           .landAttack   = true};
+    // 着地点は踏み切りで決めて変えない。避け方は場所でなくタイミング
+    // 頂点でゆっくりになるのが合図で、そこから着地までの長さ（descentTime）は毎回同じ
+    BossLeapDef attackLeap{.kind             = BossLeapKind::Attack,
+                           .windup           = 0.35f,
+                           .hover            = 0.45f,
+                           .descentTime      = 0.4f,
+                           .hangGravityRatio = 0.2f,
+                           .height           = 30.0f,
+                           .landRecovery     = 0.5f};
     float       attackStandOff = 3.0f; // 相手の手前に降りる距離 [m]
 
     // 滞空
-    BossLeapDef hoverLeap{.windup       = 0.3f,
-                          .flight       = 0.9f,
-                          .height       = 16.0f,
-                          .landRecovery = 0.63f,
+    BossLeapDef hoverLeap{.kind         = BossLeapKind::Hover,
+                          .windup       = 0.3f,
+                          .riseTime     = 0.45f,
                           .hover        = 2.0f,
-                          .landing      = BossLeapLanding::InPlace};
+                          .descentTime  = 0.45f,
+                          .height       = 16.0f,
+                          .landRecovery = 0.63f};
 
     // --- 突進攻撃 ---
 
@@ -204,6 +214,10 @@ struct BossActionComponent
     BossLeapPhase                leapPhase      = BossLeapPhase::Windup;
     DirectX::SimpleMath::Vector3 leapTakeoffPos = DirectX::SimpleMath::Vector3::Zero; // ドローンの陣形の高さに使う
     DirectX::SimpleMath::Vector3 leapLandingPos = DirectX::SimpleMath::Vector3::Zero;
+
+    // 跳躍攻撃の計画。踏み切りの瞬間に PlanAttackLeap が決める
+    DirectX::SimpleMath::Vector3 leapHangEndPos = DirectX::SimpleMath::Vector3::Zero; // 頂点で留まり終える位置
+    float                        leapHangSpeed  = 0.0f; // 留まる段の出入りの縦の速さ [m/s]。入るとき上へ、出るとき下へこの速さ
 
     // 間合いを取る
     BossRepositionPhase repositionPhase      = BossRepositionPhase::Start;

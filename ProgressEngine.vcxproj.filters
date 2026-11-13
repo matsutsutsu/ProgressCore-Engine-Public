@@ -529,6 +529,9 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Systems\Actions">
+      <UniqueIdentifier>{2264e17f-ee66-403c-b491-fcd38dccfdc8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AnimLab">
       <UniqueIdentifier>{aa02d675-e392-405e-942d-0d9032d0aec7}</UniqueIdentifier>
     </Filter>
@@ -1968,6 +1971,30 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionGeometry.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
@@ -1996,6 +2023,9 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
@@ -3074,6 +3104,27 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
@@ -3093,6 +3144,9 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">
