@@ -43,7 +43,7 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                10.0,
+                                15.0,
                                 35.0
                             ],
                             "emitStretch": [
@@ -139,7 +139,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.0,
-                                6.0
+                                7.0
                             ],
                             "emitSpeed": [
                                 0.0,
