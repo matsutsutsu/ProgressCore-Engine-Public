@@ -120,8 +120,8 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         btComp.blackboard.distanceToArenaEdge   = DistanceToArenaEdge(myWorldPos, battle);
         btComp.blackboard.targetAngleFromCenter = TargetAngleFromCenterDeg(myWorldPos, targetPos, battle);
 
-        // 横移動の向きを選ぶための左右の空き。向きは体の正面でなく相手への向きで測る
-        // （横移動が進む向きと同じ基準にする）
+        // 左右へ動く向きを選ぶための左右の空き。向きは体の正面でなく相手への向きで測る
+        // （間合いを取る・様子見が左右を決める基準と同じにする）
         Vector3 toTarget = targetPos - myWorldPos;
         toTarget.y       = 0.0f;
         if (toTarget.LengthSquared() > 0.0001f)

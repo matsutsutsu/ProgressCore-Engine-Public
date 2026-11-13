@@ -141,7 +141,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手を向いて左に param m 以上の空きがある。横移動で壁へ突っ込まないための条件に使う
+    // 相手を向いて左に param m 以上の空きがある。左右へ動く技で壁へ突っ込まないための条件に使う
     class SpaceOnLeft : public IBTCondition
     {
     public:

@@ -171,7 +171,7 @@ namespace CCL::AI::BT
         };
 
         // ---------------------------------------------------------------------------
-        // 体を動かす技（後方ステップ・跳躍・突進・横移動・間合いを取る・様子見）
+        // 体を動かす技（後方ステップ・跳躍・突進・間合いを取る・様子見）
         // ---------------------------------------------------------------------------
 
         // ボス本体へ技を要求し、技が硬直まで終わったら完了する
@@ -459,8 +459,6 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossLeapAttack, std::make_unique<MotionAction>(A_BossLeapAttack));
         reg.RegisterActionInstance(A_BossAirHover, std::make_unique<MotionAction>(A_BossAirHover));
         reg.RegisterActionInstance(A_BossDashAttack, std::make_unique<MotionAction>(A_BossDashAttack));
-        reg.RegisterActionInstance(A_BossSideTravelLeft, std::make_unique<MotionAction>(A_BossSideTravelLeft));
-        reg.RegisterActionInstance(A_BossSideTravelRight, std::make_unique<MotionAction>(A_BossSideTravelRight));
         reg.RegisterActionInstance(A_BossReposition, std::make_unique<MotionAction>(A_BossReposition));
         reg.RegisterActionInstance(A_BossFootwork, std::make_unique<MotionAction>(A_BossFootwork));
         reg.RegisterActionInstance(A_BossExhausted, std::make_unique<MotionAction>(A_BossExhausted));

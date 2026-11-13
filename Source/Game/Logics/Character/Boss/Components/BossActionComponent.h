@@ -8,7 +8,7 @@ enum class BossActionState : uint8_t
 {
     None,       // 待機
     Move,       // 歩いて近づく
-    SideTravel, // 横移動
+    Reposition, // 間合いを取る（一気に動いて止まる）
     BackStep,   // 後方ステップ
     Leap,       // 跳躍
     Dash,       // 突進攻撃
@@ -27,9 +27,9 @@ enum class BossFootworkDir : uint8_t
     Right,   // 右
 };
 
-// 横移動の段
-// 並びを変えたら BossActionComponentMeta.cpp の BossSideTravelPhaseNames も直す
-enum class BossSideTravelPhase : uint8_t
+// 間合いを取るの段
+// 並びを変えたら BossActionComponentMeta.cpp の BossRepositionPhaseNames も直す
+enum class BossRepositionPhase : uint8_t
 {
     Start,  // 動き出し（速くなる）
     Travel, // 一定の速さで進む
@@ -90,7 +90,7 @@ struct BossLeapDef
     bool            landAttack   = false;                         // 着地で攻撃する（判定のある着地クリップ）
 };
 
-// ボス本体の動き（移動・横移動・後方ステップ・跳躍・突進・ひるみ・疲れ）の設定値と状態
+// ボス本体の動き（移動・間合いを取る・様子見・後方ステップ・跳躍・突進・ひるみ・疲れ）の設定値と状態
 // 実行時の状態を書くのは BossActionSystem だけ
 struct BossActionComponent
 {
@@ -99,17 +99,15 @@ struct BossActionComponent
     float turnSpeed     = 8.0f; // 移動中・溜め中の向き直り
     float idleTurnSpeed = 4.0f; // 待機中の向き直り
 
-    // --- 横移動 ---
+    // --- 間合いを取る ---
 
     // 動く距離は BT のノードの param が決める。技の長さは 距離÷速さ から決まる
     // 加速・減速の時間はアニメのクリップの長さと別。クリップは段の切り替えでブレンドして移る
-    float sideTravelSpeed     = 90.0f; // 最高速 [m/s]
-    float sideTravelAccelTime = 0.25f; // 0 から最高速までの時間 [秒]
-    float sideTravelDecelTime = 0.35f; // 最高速から止まるまでの時間 [秒]
+    float repositionSpeed     = 90.0f; // 最高速 [m/s]
+    float repositionAccelTime = 0.25f; // 0 から最高速までの時間 [秒]
+    float repositionDecelTime = 0.35f; // 最高速から止まるまでの時間 [秒]
 
-    // --- 間合いを取る ---
-
-    // 動き方（速さ・加速・減速）は横移動の値を使う。動く距離は BT のノードの param
+    // 動く向きの決め方
     float repositionNearDistance = 20.0f; // 相手がこれより近いと、離れながら回る [m]
     float repositionFarDistance  = 45.0f; // 相手がこれより遠いと、詰めながら回る [m]
     float repositionWallDistance = 20.0f; // 壁がこれより近いと、内側へ寄りながら回る [m]
@@ -207,18 +205,18 @@ struct BossActionComponent
     DirectX::SimpleMath::Vector3 leapTakeoffPos = DirectX::SimpleMath::Vector3::Zero; // ドローンの陣形の高さに使う
     DirectX::SimpleMath::Vector3 leapLandingPos = DirectX::SimpleMath::Vector3::Zero;
 
-    // 横移動
-    BossSideTravelPhase sideTravelPhase      = BossSideTravelPhase::Start;
-    bool                sideTravelLeft       = false; // 左へ動くか（アニメの左右を選ぶ）
-    float               sideTravelCruiseTime = 0.0f;  // 最高速で進む長さ [秒]
-    float               sideTravelStopTime   = 0.0f;  // 今回の減速の時間 [秒]。距離が短いと縮む
+    // 間合いを取る
+    BossRepositionPhase repositionPhase      = BossRepositionPhase::Start;
+    bool                repositionLeft       = false; // 左へ動くか（アニメの左右を選ぶ）
+    float               repositionCruiseTime = 0.0f;  // 最高速で進む長さ [秒]
+    float               repositionStopTime   = 0.0f;  // 今回の減速の時間 [秒]。距離が短いと縮む
 
     // 様子見
     float           footworkTime    = 0.0f;                  // 今回の長さ [秒]（下限〜上限から引いた値）
     bool            footworkLeft    = false;                 // 相手の周りを左へ回っているか
     BossFootworkDir footworkAnimDir = BossFootworkDir::None; // アニメに渡す前後左右
 
-    // 体から見た動く向き（x = 右、y = 前、長さ 1）。様子見と横移動で書き、
+    // 体から見た動く向き（x = 右、y = 前、長さ 1）。様子見と間合いを取るで書き、
     //   アニメのブレンドスペース（MoveX / MoveY）の入力にする
     DirectX::SimpleMath::Vector2 localMoveDirection = DirectX::SimpleMath::Vector2::Zero;
 

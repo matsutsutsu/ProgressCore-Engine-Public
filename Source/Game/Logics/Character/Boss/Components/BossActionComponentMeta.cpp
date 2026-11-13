@@ -11,7 +11,7 @@
 static const char *BossStateNames[] = {
     "None",
     "Move",
-    "SideTravel",
+    "Reposition",
     "BackStep",
     "Leap",
     "Dash",
@@ -28,8 +28,8 @@ static const char *BossFootworkDirNames[] = {
     "Right",   // 右
 };
 
-// BossSideTravelPhase と1対1で並べる
-static const char *BossSideTravelPhaseNames[] = {
+// BossRepositionPhase と1対1で並べる
+static const char *BossRepositionPhaseNames[] = {
     "Start",  // 動き出し
     "Travel", // 一定の速さで進む
     "Stop",   // 止まる
@@ -87,9 +87,9 @@ struct ComponentMeta<BossActionComponent>
         static const std::vector<FieldDescriptor> fields = {
             CFIELD_FLOAT_RANGED(turnSpeed, "旋回速度(移動中)", 0.1f, 0.0f, 100.0f, "Stats")
             CFIELD_FLOAT_RANGED(idleTurnSpeed, "旋回速度(待機中)", 0.1f, 0.0f, 100.0f, "Stats")
-            CFIELD_FLOAT_RANGED(sideTravelSpeed, "横移動：最高速 [m/s]（距離は BT のノードで指定）", 0.5f, 1.0f, 180.0f, "Side Travel")
-            CFIELD_FLOAT_RANGED(sideTravelAccelTime, "横移動：加速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Side Travel")
-            CFIELD_FLOAT_RANGED(sideTravelDecelTime, "横移動：減速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Side Travel")
+            CFIELD_FLOAT_RANGED(repositionSpeed, "間合い：最高速 [m/s]（距離は BT のノードで指定）", 0.5f, 1.0f, 180.0f, "Reposition")
+            CFIELD_FLOAT_RANGED(repositionAccelTime, "間合い：加速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Reposition")
+            CFIELD_FLOAT_RANGED(repositionDecelTime, "間合い：減速の時間 [秒]", 0.01f, 0.0f, 2.0f, "Reposition")
             CFIELD_FLOAT_RANGED(repositionNearDistance, "間合い：これより近いと離れる [m]", 0.5f, 0.0f, 180.0f, "Reposition")
             CFIELD_FLOAT_RANGED(repositionFarDistance, "間合い：これより遠いと詰める [m]", 0.5f, 0.0f, 180.0f, "Reposition")
             CFIELD_FLOAT_RANGED(repositionWallDistance, "間合い：壁がこれより近いと内側へ寄る [m]", 0.5f, 0.0f, 90.0f, "Reposition")
@@ -139,8 +139,8 @@ struct ComponentMeta<BossActionComponent>
             CFIELD_ENUM_U8_RT(currentState, "現在の状態", BossStateNames, std::size(BossStateNames), "State")
             CFIELD_RT(lastActionTime, "前の技の長さ [秒]（溜めから硬直まで）", "State")
             CFIELD_RT(actionFinished, "今の技が終わったか", "State")
-            CFIELD_ENUM_U8_RT(sideTravelPhase, "横移動の段", BossSideTravelPhaseNames, std::size(BossSideTravelPhaseNames), "State")
-            CFIELD_RT(sideTravelCruiseTime, "横移動：最高速で進む長さ [秒]", "State")
+            CFIELD_ENUM_U8_RT(repositionPhase, "間合いを取るの段", BossRepositionPhaseNames, std::size(BossRepositionPhaseNames), "State")
+            CFIELD_RT(repositionCruiseTime, "間合い：最高速で進む長さ [秒]", "State")
             CFIELD_RT(footworkTime, "様子見：今回の長さ [秒]", "State")
             CFIELD_ENUM_U8_RT(footworkAnimDir, "様子見：アニメの向き", BossFootworkDirNames, std::size(BossFootworkDirNames), "State")
             CFIELD_ENUM_U8_RT(leapPhase, "跳躍の段", BossLeapPhaseNames, std::size(BossLeapPhaseNames), "State")

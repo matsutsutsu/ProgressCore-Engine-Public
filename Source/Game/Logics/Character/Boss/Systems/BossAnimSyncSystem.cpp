@@ -9,7 +9,7 @@ using namespace CCL::ECS;
 
 // アニメグラフの遷移条件に使うパラメータ
 static const uint32_t HASH_IS_MOVING         = CCL::Utils::HashString("IsMoving");        // 歩いて近づいているか
-static const uint32_t HASH_SIDE_TRAVEL_PHASE = CCL::Utils::HashString("SideTravelPhase"); // 横移動の段 +1。0=横移動していない
+static const uint32_t HASH_SIDE_TRAVEL_PHASE = CCL::Utils::HashString("SideTravelPhase"); // 間合いを取るの段 +1。0=間合いを取っていない
 static const uint32_t HASH_IS_LEAPING        = CCL::Utils::HashString("IsLeaping");       // 踏み切り前〜着地の瞬間
 static const uint32_t HASH_LEAP_ATTACK       = CCL::Utils::HashString("IsLeapAttack");      // 着地で攻撃する跳躍か
 static const uint32_t HASH_DASH_PHASE        = CCL::Utils::HashString("DashPhase");       // 突進の段 +1。0=突進していない
@@ -35,11 +35,11 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         anim.SetBool(HASH_IS_LEAPING, isLeaping);
         anim.SetBool(HASH_LEAP_ATTACK, leap && boss.leapDef.landAttack);
 
-        // --- 横移動・突進・後方ステップ ---
+        // --- 間合いを取る・突進・後方ステップ ---
 
         // 段の長さは調整値や距離で変わるので、クリップの長さでなく段の番号で切り替えさせる
-        const bool sideTravel = (boss.currentState == BossActionState::SideTravel);
-        anim.SetFloat(HASH_SIDE_TRAVEL_PHASE, sideTravel ? static_cast<float>(boss.sideTravelPhase) + 1.0f : 0.0f);
+        const bool repositioning = (boss.currentState == BossActionState::Reposition);
+        anim.SetFloat(HASH_SIDE_TRAVEL_PHASE, repositioning ? static_cast<float>(boss.repositionPhase) + 1.0f : 0.0f);
 
         const bool dash = (boss.currentState == BossActionState::Dash);
         anim.SetFloat(HASH_DASH_PHASE, dash ? static_cast<float>(boss.dashPhase) + 1.0f : 0.0f);
@@ -54,9 +54,9 @@ void BossAnimSyncSystem::Update(float /*dt*/)
         const bool footwork = (boss.currentState == BossActionState::Footwork);
         anim.SetFloat(HASH_FOOTWORK_DIR, footwork ? static_cast<float>(boss.footworkAnimDir) : 0.0f);
 
-        // 様子見と横移動のブレンドスペースは、前後左右のクリップを体から見た動く向きで混ぜる
+        // 様子見と間合いを取るのブレンドスペースは、前後左右のクリップを体から見た動く向きで混ぜる
         //   FootworkDir は様子見に入る・出るの判定にだけ使う（0 = していない）
-        const bool directional = footwork || sideTravel;
+        const bool directional = footwork || repositioning;
         anim.SetFloat(HASH_MOVE_X, directional ? boss.localMoveDirection.x : 0.0f);
         anim.SetFloat(HASH_MOVE_Y, directional ? boss.localMoveDirection.y : 0.0f);
 

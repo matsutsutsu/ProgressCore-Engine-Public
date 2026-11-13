@@ -11,7 +11,7 @@ struct BossCommandComponent
     // 本体に出させたい技。0 は何もしない
     // BossPhaseSystem が毎フレーム 0 に戻す
     ActionID currentActionId    = 0;
-    float    currentActionParam = 0.0f; // 技のノードの param（横移動の距離など）
+    float    currentActionParam = 0.0f; // 技のノードの param（間合いを取るの距離など）
 
     // 技の依頼番号。BT が技を出し始めるたびに1増やす（0 に戻さない）
     // 同じ技を続けて出しても、本体は新しい技として始め直す
