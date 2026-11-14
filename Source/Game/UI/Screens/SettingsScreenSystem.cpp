@@ -46,6 +46,10 @@ namespace
 
     constexpr float kFadeTime = 0.2f; // 下の画面と設定画面を入れ替える時間（秒）
 
+    // 効果音全体の音量の基準。設定画面の値（0〜1）にこれを掛けてから音声へ渡す
+    // BGM はプレハブの volume で下げているので、効果音だけここで下げる。全体が大きい・小さいときはこの値を変える
+    constexpr float kSfxMixGain = 0.3f;
+
     // 値を刻み（step）の倍数に丸める
     // 足し引きを繰り返して、0.30000001 のような半端な値にならないようにする
     float Snap(float v, float step) { return std::round(v / step) * step; }
@@ -95,7 +99,7 @@ void SettingsScreenSystem::ApplySettings()
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
     {
         audio->SetCategoryVolume(AudioCategory::BGM, s.bgmVolume);
-        audio->SetCategoryVolume(AudioCategory::SFX, s.sfxVolume);
+        audio->SetCategoryVolume(AudioCategory::SFX, s.sfxVolume * kSfxMixGain);
         m_appliedBgm = s.bgmVolume;
         m_appliedSfx = s.sfxVolume;
     }

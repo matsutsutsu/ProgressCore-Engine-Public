@@ -1,20 +1,14 @@
 #pragma once
 // ===========================================================================
-// 概要: ムービーの台本（ショットと4種類のトラック）を ImSequencer の帯として見せるアダプタ
+// 概要: ムービーの台本を ImSequencer の帯として見せるアダプタ
 //
 // 責務:
-//   - 「秒」と「int のコマ」の往復
-//   - 台本の項目を、1項目 = 1行に並べる（ショット → SE → エフェクト → シグナル → アニメ）
-//   - 行の名前と帯の色
-//   - 帯をドラッグした結果を、台本の時刻と長さへ書き戻す
-//   - リップルが有効なら、ショットの帯を動かしたとき、その後ろの項目と全体の長さも一緒にずらす（CinematicRipple）
+//   - 台本の項目を1項目1行に並べ（ショット → SE → エフェクト → シグナル → アニメ）、名前と色を付ける
+//   - 帯をドラッグした結果を、台本の時刻と長さへ書き戻す。リップルなら後ろの項目もずらす
 //
-// 備考: 台本の意味は扱わない（読み書きは CinematicScriptIO、絵は CinematicCameraSystem）
-//       ImSequencer は帯の両端を int のコマで受け、ドラッグ中はその場所へ直接書くので、m_frames を別に持って往復させる
-//         Begin() で台本から写す。掴んでいる間は写し直さない（ドラッグ中の値を巻き戻してしまう）
-//         Flush() で書き戻す。動いたときだけ書く（クリックだけで書くと、打った 4.41 が 4.4333 に丸められる）
-//       点（SE・エフェクト・シグナル）は長さがないので、1コマ幅で描き、端を掴んでも長さは変えない
-//       リップルの控えは、ショットの帯を掴んだ瞬間（BeginEdit）に取り、離した次のフレームの Begin() で捨てる
+// 備考: ImSequencer は帯の両端を int のコマで受け、ドラッグ中はそこへ直接書く。台本は秒なので m_frames を挟む
+//       掴んでいる間は台本から写し直さない（ドラッグ中の値を巻き戻してしまう）
+//       書き戻すのは動いたときだけ（クリックだけで書くと、打った 4.41 が 4.4333 に丸められる）
 // ===========================================================================
 #include "ImSequencer.h"
 
@@ -46,26 +40,16 @@ public:
         std::size_t index; // その種類の配列の添字
     };
 
-    // 1秒を何コマに分けるか。ゲームの1コマ（60fps）までは要らないが、0.1秒刻みでは帯の端を合わせにくい
+    // 1秒のコマ数。0.1秒刻みでは帯の端を合わせにくい
     static constexpr int kFramesPerSecond = 30;
 
-    // 秒 → コマ
-    static int TimeToFrame(float time);
-
-    // コマ → 秒
+    static int   TimeToFrame(float time);
     static float FrameToTime(int frame);
 
-    /**
-     * @brief 台本の項目が何行目に描かれるかを返す
-     * @param script 台本
-     * @param kind   項目の種類
-     * @param index  その種類の配列の添字
-     * @return 行の番号（ショット → SE → エフェクト → シグナル → アニメ の順に数える）
-     */
+    // 台本の項目が何行目に描かれるか
     static int RowOf(const CinematicScript &script, RowKind kind, std::size_t index);
 
-    // 描く前に毎フレーム呼ぶ。見せる台本と、再生位置のコマを渡す
-    // ripple は、ショットの帯を動かしたときに後ろの項目も一緒にずらすか
+    // 描く前に毎フレーム呼ぶ。ripple なら、ショットの帯を動かしたときに後ろの項目もずらす
     void Begin(CinematicScript &script, int cursorFrame, bool ripple);
 
     // 掴んでいた帯が動いていたら台本へ書き戻す。書き戻したら true
@@ -86,34 +70,30 @@ public:
 
     const char *GetItemLabel(int index) const override;
 
-    /**
-     * @brief index 行目の帯を ImSequencer に渡す
-     * @param index 行の番号
-     * @param start 帯の開始のコマへのポインタを受け取る。ImSequencer がドラッグで書き換える。nullptr 可
-     * @param end   帯の終了のコマへのポインタを受け取る。nullptr 可
-     * @param type  行の種類（RowKind の整数値）を受け取る。nullptr 可
-     * @param color 帯の色を受け取る。nullptr 可
-     */
+    // 長さを持つショットとアニメだけ。点（SE・エフェクト・シグナル）はどこを掴んでも丸ごと動く
+    bool CanResize(int index) const override;
+
+    // index 行目の帯の両端のコマ（ImSequencer がドラッグで書き換える）・種類・色を渡す。どの出力も nullptr 可
     void Get(int index, int **start, int **end, int *type, unsigned int *color) override;
 
 private:
     // 台本の項目を行へ並べ直し、帯の両端を m_frames へ写す
     void Sync();
 
-    // 行の項目 → 帯の両端のコマ
+    // 行の項目の、帯の両端のコマ
     std::pair<int, int> ToFrames(const Row &row) const;
 
     CinematicScript *m_script = nullptr;
     int              m_cursor = 0; // 再生位置のコマ。帯の明暗に使う
 
-    std::vector<Row>                 m_rows;
-    std::vector<std::pair<int, int>> m_frames;
+    std::vector<Row>                 m_rows;   // 行と台本の項目の対応
+    std::vector<std::pair<int, int>> m_frames; // 行ごとの帯の両端のコマ
 
     int m_editIndex     = -1; // 掴んでいる帯。離すと -1
     int m_releasedIndex = -1; // 離したフレームだけ、離した帯の番号が入る
 
-    bool                      m_rippleEnabled = true; // ショットの帯を動かしたとき、後ろの項目も一緒にずらすか
-    CinematicRipple::Snapshot m_ripple;               // 掴んでいるショットの後ろの項目の、掴んだ瞬間の時刻
+    bool                      m_rippleEnabled = true; // ショットの帯を動かしたとき、後ろの項目もずらすか
+    CinematicRipple::Snapshot m_ripple;               // 掴んだ瞬間の、後ろの項目の時刻
 
-    mutable char m_label[128] = {}; // GetItemLabel の戻り値の置き場所（呼び出し側はすぐ描いて捨てる）
+    mutable char m_label[128] = {}; // GetItemLabel の戻り値の置き場所
 };

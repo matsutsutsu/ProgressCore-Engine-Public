@@ -20,10 +20,7 @@ void CinematicFrameSystem::Update(float dt)
     // 2. HUD の不透明度を書く
     // 3. 上下の黒帯を積む
 
-    if (!m_world->HasResource<UIDrawList>())
-    {
-        return;
-    }
+    if (!m_world->HasResource<UIDrawList>()) return;
     UIDrawList &list = m_world->GetResource<UIDrawList>();
 
     // ---------------------------------------------------------
@@ -44,10 +41,7 @@ void CinematicFrameSystem::Update(float dt)
 
     // 黒帯と同じ進み具合で薄くし、ムービーの間は画面に出さない
     list.hudAlpha = 1.0f - k;
-    if (k <= 0.0f)
-    {
-        return;
-    }
+    if (k <= 0.0f) return;
 
     // ---------------------------------------------------------
     // 3. 黒帯

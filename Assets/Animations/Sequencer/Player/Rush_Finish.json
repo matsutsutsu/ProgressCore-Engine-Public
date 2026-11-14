@@ -108,7 +108,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.1666666716337204,
+            "endTime": 0.25,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -121,9 +121,9 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07000000029802322,
-            "soundVolume": 1.0,
+            "soundVolume": 1.2999999523162842,
             "startTime": 0.1666666716337204,
-            "stringParam": "sfx:/SE_PlayerRushFinish",
+            "stringParam": "sfx:/SE_PlayerSlashHeavy",
             "type": 1
         },
         {
@@ -159,8 +159,7 @@
                 "inTangent": 40.60216522216797,
                 "interp": 2,
                 "outTangent": 40.60216522216797,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": -0.005024142563343048,
                 "value": 1.0167169570922852
             },
@@ -168,8 +167,7 @@
                 "inTangent": 10.854353904724121,
                 "interp": 2,
                 "outTangent": 10.854353904724121,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": 0.20277878642082214,
                 "value": 9.453965187072754
             },
@@ -177,15 +175,12 @@
                 "inTangent": 0.6936318874359131,
                 "interp": 2,
                 "outTangent": 0.6936318874359131,
-                "tangentIn": 2,
-                "tangentOut": 2,
+                "tangent": 2,
                 "time": 0.9758419394493103,
                 "value": 11.663384437561035
             }
         ],
         "name": "",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "sequenceName": "Rush_Finish",
@@ -196,8 +191,7 @@
                 "inTangent": 4.755338668823242,
                 "interp": 2,
                 "outTangent": 4.755338668823242,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": 0.0013695508241653442,
                 "value": 0.7111334800720215
             },
@@ -205,8 +199,7 @@
                 "inTangent": 4.1744890213012695,
                 "interp": 2,
                 "outTangent": 4.1744890213012695,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": 0.16005335748195648,
                 "value": 1.465728759765625
             },
@@ -214,8 +207,7 @@
                 "inTangent": -1.1152679920196533,
                 "interp": 2,
                 "outTangent": -1.1152679920196533,
-                "tangentIn": 2,
-                "tangentOut": 2,
+                "tangent": 2,
                 "time": 0.5383275151252747,
                 "value": 2.9526586532592773
             },
@@ -223,15 +215,12 @@
                 "inTangent": -0.2659948170185089,
                 "interp": 2,
                 "outTangent": -0.2659948170185089,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": 1.0038201808929443,
                 "value": 2.8288400173187256
             }
         ],
         "name": "",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "startOffset": 0.0,

@@ -1,6 +1,5 @@
 {
   "duration": 15.2333,
-  "startDelay": 0.0,
   "allowSkip": true,
   "shots": [
     {
@@ -9,7 +8,6 @@
       "subject": "",
       "motion": "Truck",
       "ease": "EaseInOut",
-      "blendIn": 0.0,
       "lookStart": [
         4.5,
         4.0,
@@ -49,7 +47,6 @@
       "subject": "Player",
       "motion": "Truck",
       "ease": "Linear",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         3.8,
@@ -89,7 +86,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         1.2,
@@ -129,7 +125,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         9.3,
@@ -169,7 +164,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         5.6,
@@ -209,7 +203,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseInOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         8.0,
@@ -249,7 +242,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseInOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         7.0,

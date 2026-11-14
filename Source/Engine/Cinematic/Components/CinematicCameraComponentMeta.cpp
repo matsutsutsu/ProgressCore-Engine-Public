@@ -12,6 +12,5 @@ CFIELD_INT_RANGED(activePriority, "再生中の優先度", -1000, 1000, "Priorit
 CFIELD_INT_RANGED(idlePriority, "停止中の優先度", -1000, 1000, "Priority")
 CFIELD_ENUM_U8_RT(state, "状態", kCinematicStateNames, kCinematicStateCount, "State")
 CFIELD_RT(time, "再生位置（秒）", "State")
-CFIELD_RT(waitTime, "開始待ちの経過（秒）", "State")
 CFIELD_RT(activeShot, "今のショット番号", "State")
 COMPONENT_META_END(CinematicCameraComponent)

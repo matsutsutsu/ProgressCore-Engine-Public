@@ -1,6 +1,5 @@
 {
   "duration": 4.0,
-  "startDelay": 0.0,
   "allowSkip": true,
   "shots": [
     {
@@ -9,7 +8,6 @@
       "subject": "Valkyra",
       "motion": "Orbit",
       "ease": "EaseOut",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         5.0,
@@ -49,7 +47,6 @@
       "subject": "Valkyra",
       "motion": "Truck",
       "ease": "EaseIn",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         7.0,

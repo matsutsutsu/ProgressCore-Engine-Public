@@ -12,15 +12,17 @@
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/Character/Player/Dash/PlayerDashComponent.h"
 
 #include <SimpleMath.h>
 #include <algorithm>
 #include <cmath>
+#include <iterator>
+#include <utility>
 
 #include <imgui.h>
-#include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 
 using namespace CCL::ECS;
 using DirectX::SimpleMath::Vector3;
@@ -28,18 +30,27 @@ using DirectX::SimpleMath::Vector3;
 namespace
 {
     // --- 項目の達成に必要な量 ---
-    constexpr float kWaitBattleTime = 1.0f;  // 明転を待つ時間（秒・実時間）
-    constexpr float kMoveMeters     = 80.0f; // 移動: 水平に動く距離（m）
+    constexpr float kWaitBattleTime = 1.0f;   // 明転を待つ時間（秒・実時間）
+    constexpr float kMoveMeters     = 80.0f;  // 移動: 水平に動く距離（m）
     constexpr float kLookDegrees    = 270.0f; // 視点: カメラを回す角度（度）
-    constexpr int   kDashCount      = 2;     // ダッシュ: 出す回数
-    constexpr float kStrikeTimeout  = 5.0f;  // 斬り込み: 当てなくても次へ進む時間（秒・実時間）
-    constexpr float kRushReadTime   = 3.0f;  // ラッシュ: 説明を読ませる時間。これがたったら終える（秒・実時間）
+    constexpr int   kDashCount      = 2;      // ダッシュ: 出す回数
+    constexpr float kStrikeTimeout  = 5.0f;   // 斬り込み: 当てなくても次へ進む時間（秒・実時間）
+    constexpr float kRushReadTime   = 3.0f;   // ラッシュ: 説明を読ませる時間（秒・実時間）
 
-    // --- 回避の補助スロー ---
-    constexpr int   kMaxAssists       = 3;     // 補助スローを掛ける回数の上限
+    // --- 本線のコンボ ---
+    // アニメグラフ Atk_Combo のステート名を出る順に並べる。乱れ斬りは Atk_Combo3 を4回
+    constexpr const char *kMainCombo[] = {
+        "Atk_Combo1", "Atk_Combo2",
+        "Atk_Combo3", "Atk_Combo3_2", "Atk_Combo3_3", "Atk_Combo3_4",
+        "Atk_Combo4", "Atk_Combo5",
+    };
+    constexpr int kMainComboStages = static_cast<int>(std::size(kMainCombo));
+
+    // --- 回避の補助スロー（回数は限らない。成功するまで毎回掛ける） ---
     constexpr float kAssistWarnTime   = 0.5f;  // 予告のスローを始める、当たるまでの残り（秒・ゲーム時間）
     constexpr float kAssistNowTime    = 0.07f; // 「今だ」に入る、当たるまでの残り（秒・ゲーム時間）
     constexpr float kAssistMissRadius = 2.5f;  // 最も近づいたときにこの距離以下なら「当たる」とみなす（m）
+
     // 世界の速さ（1.0 = 等速）。小さいほどゆっくり。ゆっくりにしたいときはこの2つだけを変える
     constexpr float kAssistWarnScale = 0.3f;  // 予告: 迫ってくるのを見せる間（約 1.4 秒）
     constexpr float kAssistNowScale  = 0.03f; // 今だ: 「今だ！」を出して押させる間（約 2.3 秒）
@@ -49,6 +60,8 @@ namespace
                                      kAssistNowTime / kAssistNowScale + 1.0f;
 } // namespace
 
+
+
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
@@ -56,23 +69,22 @@ namespace
 void TutorialSystem::Initialize()
 {
     // この System を登録するのは TutorialScene だけ。リソースがあることが「チュートリアル中」の印になる
-    if (!m_world->HasResource<TutorialState>())
-        m_world->AddResource<TutorialState>();
+    if (!m_world->HasResource<TutorialState>()) m_world->AddResource<TutorialState>();
 
     // イベントは発行元の System の中で届くので、印を立てるだけにして Update で読む
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &) {
-        m_justEvaded = true;
+        m_pendingEvents.justEvaded = true;
     });
     ListenEvent<AttackHitConfirmedEvent>([this](const AttackHitConfirmedEvent &e) {
-        if (e.attackerID == m_playerID) ++m_playerHits;
+        if (e.attackerID == m_playerID) ++m_pendingEvents.playerHits;
     });
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &e) {
-        if (e.playerID == m_playerID) ++m_dashed;
+        if (e.playerID == m_playerID) ++m_pendingEvents.dashed;
     });
 
     // 跳ぶのはプレイヤーだけなので、誰が跳んだかは見ない
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
-        m_jumpedStage = e.jumpCount;
+        m_pendingEvents.jumpedStage = e.jumpCount;
     });
 }
 
@@ -80,15 +92,16 @@ void TutorialSystem::Initialize()
 
 std::vector<TypeID> TutorialSystem::GetReadTypes() const
 {
+    // どれも ForEach を使わずに引くので、ここで申告する
     return {
-        TypeInfo<DroneComponent>::ID(),
-        TypeInfo<TransformComponent>::ID(),
-        TypeInfo<BossCommandComponent>::ID(),
-        TypeInfo<TimeStateComponent>::ID(),
-        TypeInfo<CameraBodyTPSComponent>::ID(),
-        TypeInfo<PlayerComponent>::ID(),
-        TypeInfo<AnimStateMachineComponent>::ID(),
-        TypeInfo<PlayerDashComponent>::ID(),
+        TypeInfo<DroneComponent>::ID(),            // 突撃中のドローン
+        TypeInfo<TransformComponent>::ID(),        // ドローンの位置
+        TypeInfo<TimeStateComponent>::ID(),        // ドローンが進んだ時間
+        TypeInfo<BossCommandComponent>::ID(),      // ボスが組ませている陣形
+        TypeInfo<CameraBodyTPSComponent>::ID(),    // 視点の項目のカメラ
+        TypeInfo<PlayerComponent>::ID(),           // ロックオン先
+        TypeInfo<AnimStateMachineComponent>::ID(), // 出た攻撃
+        TypeInfo<PlayerDashComponent>::ID(),       // 補助スロー中にダッシュしたか
     };
 }
 
@@ -101,11 +114,8 @@ void TutorialSystem::Update(float dt)
     // 2. イベントの印を取り出す
     // 3. ムービー中と決着後は教えない
     // 4. 達成した後の余韻の間は、待ってから次の項目へ進める
-    // 5. 今の項目を達成したかを判定し、進み具合を書く
+    // 5. 今の項目を達成したかを判定する
     // 6. 達成したら余韻に入る（余韻のない項目はすぐ次へ）
-
-    // 何を見せるか（文言・順番）は TutorialSteps.h の表が持ち、
-    // 何をどれだけしたら達成か（量・時間切れ）は、このファイルの先頭の定数と下の switch が持つ
 
     // ---------------------------------------------------------
     // 1. 教えている途中か
@@ -129,35 +139,26 @@ void TutorialSystem::Update(float dt)
     // ---------------------------------------------------------
 
     // 印は毎フレーム取り出して消す。関係のない項目の間に立った印を、後の項目へ持ち越さないため
-    const bool justEvaded  = m_justEvaded;
-    const int  playerHits  = m_playerHits;
-    const int  dashed      = m_dashed;
-    const int  jumpedStage = m_jumpedStage; // このフレームに跳んだ段（跳んでいなければ 0）
-    m_justEvaded  = false;
-    m_playerHits  = 0;
-    m_dashed      = 0;
-    m_jumpedStage = 0;
+    const FrameEvents events = std::exchange(m_pendingEvents, FrameEvents{});
 
     // ---------------------------------------------------------
     // 3. ムービー中と決着後
     // ---------------------------------------------------------
 
     // ムービー中はプレイヤーが操作できず、決着後はもう戦わない。どちらもヒントを出しても押せない
-    if (m_world->HasResource<GameFlowState>())
+    const GameFlowState *flow = m_world->HasResource<GameFlowState>() ? &m_world->GetResource<GameFlowState>() : nullptr;
+    if (flow && (flow->cinematic || flow->matchOver))
     {
-        const GameFlowState &flow = m_world->GetResource<GameFlowState>();
-        if (flow.cinematic || flow.matchOver)
-        {
-            EndAssist();
+        EndAssist();
 
-            // 止まっている間は記録しないので、明けた直後に古い位置・角度との差を足さないよう消しておく
-            m_droneMotion.clear();
-            m_hasLastSample = false;
-            return;
-        }
+        // 止まっている間は記録しないので、明けた直後に古い位置・角度との差を足さないよう消しておく
+        m_droneMotion.clear();
+        m_hasLastSample = false;
+        return;
     }
 
-    const TutorialStepDef &def = kTutorialSteps[state.step];
+    const TutorialStepDef &def     = kTutorialSteps[state.step];
+    const bool             hasText = def.text[0] != '\0';
 
     // ---------------------------------------------------------
     // 4. 余韻
@@ -169,139 +170,30 @@ void TutorialSystem::Update(float dt)
     {
         m_clearTimer -= dt;
 
-        state.showHint = def.text[0] != '\0';
+        state.showHint = hasText;
         state.cleared  = true;
         state.progress = 1.0f;
 
-        if (m_clearTimer <= 0.0f)
-        {
-            Advance(state, static_cast<uint8_t>(state.step + 1));
-        }
+        if (m_clearTimer <= 0.0f) Advance(state);
         return;
     }
 
     // ---------------------------------------------------------
-    // 5. 達成の判定と進み具合
+    // 5. 達成の判定
     // ---------------------------------------------------------
     m_stepTimer += dt;
 
-    bool cleared = false;
-
-    // 量を数えない項目は空のまま。達成した瞬間に余韻で満たされる
+    // 量を数えない項目は帯が空のまま。達成した瞬間に余韻で満たされる
+    // ヒントは文言のある項目で出す。出す場面を選ぶ項目（ジャスト回避）は EvaluateGoal が決め直す
     WriteProgress(state, 0.0f, 1.0f);
+    state.showHint = hasText;
 
-    // ヒントは文言のある項目で出す。出す場面を選ぶ項目（ジャスト回避）は下で決め直す
-    state.showHint = def.text[0] != '\0';
-
-    switch (def.goal)
-    {
-    // シーンに入ってすぐは明転の途中なので、時間だけで進める
-    case TutorialGoal::Wait:
-        cleared = m_stepTimer >= kWaitBattleTime;
-        break;
-
-    case TutorialGoal::Move:
-    {
-        const float meters = AccumulateMove(battle);
-        WriteProgress(state, meters, kMoveMeters);
-        cleared = meters >= kMoveMeters;
-        break;
-    }
-
-    case TutorialGoal::Look:
-    {
-        const float degrees = AccumulateLook(battle.playerEntity);
-        WriteProgress(state, degrees, kLookDegrees);
-        cleared = degrees >= kLookDegrees;
-        break;
-    }
-
-    // 2回出させて、一瞬で大きく動けることと、出した後も走り続けることを体で覚えてもらう
-    case TutorialGoal::Dash:
-        m_dashCount += dashed;
-        WriteProgress(state, static_cast<float>(m_dashCount), static_cast<float>(kDashCount));
-        cleared = m_dashCount >= kDashCount;
-        break;
-
-    // 1段目の項目で2段ジャンプしても達成にする（1段目は跳んだ後なので、段の数で比べる）
-    case TutorialGoal::Jump:
-        cleared = jumpedStage >= 1;
-        break;
-
-    case TutorialGoal::DoubleJump:
-        cleared = jumpedStage >= 2;
-        break;
-
-    case TutorialGoal::LockOn:
-        if (const auto *player = m_world->GetComponent<PlayerComponent>(battle.playerEntity))
-            cleared = player->lockOnTargetID != InvalidEntityID;
-        break;
-
-    case TutorialGoal::Attack:
-        m_hitCount += playerHits;
-        WriteProgress(state, static_cast<float>(m_hitCount), 1.0f);
-        cleared = m_hitCount >= 1;
-        break;
-
-    // コンボはアニメグラフの Atk_Combo。2段目は押したときのスティックの向きで3つに分かれるが、
-    // ここではどれかに入れば続けて押せていると見なす
-    // この項目に入ってから1段目を出したコンボだけを数える。攻撃の項目から押し続けていると、
-    // 入った直後に2段目へ移って達成になり、ヒントが一瞬で消えてしまうため
-    case TutorialGoal::Combo:
-    {
-        const std::string entered = EnteredAnimState(battle.playerEntity);
-        if (entered == "Atk_Combo1") m_comboStarted = true;
-        const bool secondHit = entered == "Atk_Combo2" || entered == "Atk_LeapSlash" || entered == "Atk_BackSlash";
-        cleared = m_comboStarted && secondHit;
-
-        // 1段目を出したら半分にする。続けて押せばよいと分かるように
-        WriteProgress(state, m_comboStarted ? 1.0f : 0.0f, 2.0f);
-        break;
-    }
-
-    // ダッシュ攻撃は、ダッシュ中か走っている間に攻撃すると出る（PlayerAnimParamSyncSystem の DashAttackReady）
-    case TutorialGoal::DashAttack:
-        cleared = EnteredAnimState(battle.playerEntity) == "Atk_Dash";
-        break;
-
-    // 形を見る前に「回避」と言っても何を避けるのか分からないので、陣形が組まれ始めてからヒントを出す
-    // ヒントを出した後は、突撃が当たる直前に補助スローを掛ける
-    case TutorialGoal::JustEvade:
-        cleared = justEvaded;
-        if (cleared) break;
-        if (IsBossAttackFormationActive()) m_sawAttackShape = true;
-        state.showHint = m_sawAttackShape;
-        TickEvadeAssist(state, dt);
-        break;
-
-    // 1回当てれば達成。当てなくても時間で進める
-    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）
-    case TutorialGoal::Strike:
-        m_hitCount += playerHits;
-        WriteProgress(state, static_cast<float>(m_hitCount), 1.0f);
-        cleared = m_hitCount >= 1 || m_stepTimer >= kStrikeTimeout;
-        break;
-
-    // 説明を読む時間がたったら達成。攻撃は求めない
-    // この項目に入るのは Strike の余韻の後で、ラッシュはもう終わっている
-    // 当てることを条件にすると、ボスへ近づき直して攻撃するまで終わらなくなる
-    case TutorialGoal::Rush:
-        WriteProgress(state, m_stepTimer, kRushReadTime); // 読む時間の分だけ帯が満ちていく
-        cleared = m_stepTimer >= kRushReadTime;
-        break;
-
-    // 自由練習は達成しない。遊ぶ人がポーズメニューの「タイトルへ」で抜けるまで続ける
-    case TutorialGoal::FreePlay:
-        break;
-    }
+    const bool cleared = EvaluateGoal(state, def, battle, events, dt);
 
     // ---------------------------------------------------------
     // 6. 余韻に入る・次の項目へ
     // ---------------------------------------------------------
-    if (!cleared)
-    {
-        return;
-    }
+    if (!cleared) return;
 
     // 補助スローは達成した時点で解く。余韻の間ほぼ止まったままにならないように
     EndAssist();
@@ -309,13 +201,125 @@ void TutorialSystem::Update(float dt)
     // 余韻のない項目（明転待ち・ジャスト回避）はすぐ進める
     if (def.holdTime <= 0.0f)
     {
-        Advance(state, static_cast<uint8_t>(state.step + 1));
+        Advance(state);
         return;
     }
 
     m_clearTimer   = def.holdTime;
     state.cleared  = true;
     state.progress = 1.0f;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 達成の判定
+// ---------------------------------------------------------------------------
+
+bool TutorialSystem::EvaluateGoal(TutorialState &state, const TutorialStepDef &def, const BattleContext &battle,
+                                  const FrameEvents &events, float dt)
+{
+    const EntityID player = battle.playerEntity;
+
+    switch (def.goal)
+    {
+    // シーンに入ってすぐは明転の途中なので、時間だけで進める
+    case TutorialGoal::Wait:
+        return m_stepTimer >= kWaitBattleTime;
+
+    case TutorialGoal::Move:
+    {
+        const float meters = AccumulateMove(battle);
+        WriteProgress(state, meters, kMoveMeters);
+        return meters >= kMoveMeters;
+    }
+
+    case TutorialGoal::Look:
+    {
+        const float degrees = AccumulateLook(player);
+        WriteProgress(state, degrees, kLookDegrees);
+        return degrees >= kLookDegrees;
+    }
+
+    // 2回出させて、一瞬で大きく動けることと、出した後も走り続けることを体で覚えてもらう
+    case TutorialGoal::Dash:
+        m_dashCount += events.dashed;
+        WriteProgress(state, m_dashCount, kDashCount);
+        return m_dashCount >= kDashCount;
+
+    // 1段目の項目で2段ジャンプしても達成にする（1段目は跳んだ後なので、段の数で比べる）
+    case TutorialGoal::Jump:
+        return events.jumpedStage >= 1;
+
+    case TutorialGoal::DoubleJump:
+        return events.jumpedStage >= 2;
+
+    // --- 斬る ---
+
+    case TutorialGoal::LockOn:
+    {
+        const auto *pc = m_world->GetComponent<PlayerComponent>(player);
+        return pc && pc->lockOnTargetID != InvalidEntityID;
+    }
+
+    case TutorialGoal::Attack:
+        m_hitCount += events.playerHits;
+        WriteProgress(state, m_hitCount, 1);
+        return m_hitCount >= 1;
+
+    // 本線を最後の段まで出し切ったら達成。帯は今つながっている段の数で満ちていき、途切れたら空に戻る
+    // 段は1段目から数える。攻撃の項目から押し続けて途中の段から入っても、そこからは数えない
+    case TutorialGoal::Combo:
+        m_chainStage = AdvanceMainCombo(EnteredAnimState(player), m_chainStage);
+        WriteProgress(state, m_chainStage, kMainComboStages);
+        return m_chainStage >= kMainComboStages;
+
+    // 派生は本線のどの段からでも出る。押した瞬間のスティックの向きで分かれる（PlayerAttackSystem の AttackDir）
+    case TutorialGoal::ComboForward:
+        return TrackTwoStep(state, EnteredAnimState(player), "Atk_LeapSlash", "Atk_DiveSlash");
+
+    case TutorialGoal::ComboBack:
+        return TrackTwoStep(state, EnteredAnimState(player), "Atk_BackSlash", "Atk_LungeSlash");
+
+    // ダッシュ攻撃は、ダッシュ中か走っている間に攻撃すると出る（PlayerAnimParamSyncSystem の DashAttackReady）
+    // 続けて押すと本線の1段目に入る
+    case TutorialGoal::DashAttack:
+        return TrackTwoStep(state, EnteredAnimState(player), "Atk_Dash", "Atk_Combo1");
+
+    case TutorialGoal::AirAttack:
+        return TrackTwoStep(state, EnteredAnimState(player), "Air_Attack", "Air_Dive_Start");
+
+    // --- 読んで避けて斬り込む ---
+
+    // 形を見る前に「回避」と言っても何を避けるのか分からないので、陣形が組まれ始めてからヒントを出す
+    // ヒントを出した後は、突撃が当たる直前に補助スローを掛ける
+    case TutorialGoal::JustEvade:
+        if (events.justEvaded) return true;
+        if (IsBossAttackFormationActive()) m_sawAttackShape = true;
+        state.showHint = m_sawAttackShape;
+        TickEvadeAssist(state, dt);
+        return false;
+
+    // 1回当てれば達成。当てなくても時間で進める
+    // （ボスに背を向けて回避した、などで届かないことがあり、そこで止めると先を教えられない）
+    case TutorialGoal::Strike:
+        m_hitCount += events.playerHits;
+        WriteProgress(state, m_hitCount, 1);
+        return m_hitCount >= 1 || m_stepTimer >= kStrikeTimeout;
+
+    // 説明を読む時間がたったら達成。攻撃は求めない
+    // この項目に入るのは Strike の余韻の後で、ラッシュはもう終わっている
+    // 当てることを条件にすると、ボスへ近づき直して攻撃するまで終わらなくなる
+    case TutorialGoal::Rush:
+        WriteProgress(state, m_stepTimer, kRushReadTime); // 読む時間の分だけ帯が満ちていく
+        return m_stepTimer >= kRushReadTime;
+
+    // 自由練習は達成しない。遊ぶ人がポーズメニューの「タイトルへ」で抜けるまで続ける
+    case TutorialGoal::FreePlay:
+        return false;
+    }
+
+    return false;
 }
 
 
@@ -327,13 +331,27 @@ void TutorialSystem::WriteProgress(TutorialState &state, float done, float goal)
 
 
 
+void TutorialSystem::WriteProgress(TutorialState &state, int done, int goal) const
+{
+    WriteProgress(state, static_cast<float>(done), static_cast<float>(goal));
+}
+
+
+
 // ---------------------------------------------------------------------------
 // 項目の進行
 // ---------------------------------------------------------------------------
 
-void TutorialSystem::Advance(TutorialState &state, uint8_t next)
+void TutorialSystem::Advance(TutorialState &state)
 {
-    state.step       = next;
+    JumpToStep(state, static_cast<uint8_t>(state.step + 1));
+}
+
+
+
+void TutorialSystem::JumpToStep(TutorialState &state, uint8_t step)
+{
+    state.step       = step;
     m_stepTimer      = 0.0f;
     m_clearTimer     = 0.0f;
     m_sawAttackShape = false;
@@ -343,7 +361,7 @@ void TutorialSystem::Advance(TutorialState &state, uint8_t next)
     m_lookAngle    = 0.0f;
     m_dashCount    = 0;
     m_hitCount     = 0;
-    m_comboStarted = false;
+    m_chainStage   = 0;
 
     // 前のフレームの値も捨てる。項目に入った直後に、前の項目の頃の値との差を見て達成にしないため
     m_hasLastSample = false;
@@ -359,7 +377,7 @@ void TutorialSystem::Advance(TutorialState &state, uint8_t next)
 void TutorialSystem::Restart(TutorialState &state)
 {
     // 項目を最初に戻すだけで、BossPhaseSystem がボスを TutorialWait にする（最初の項目はボスを待たせるため）
-    Advance(state, 0);
+    JumpToStep(state, 0);
     m_assistCount = 0;
 }
 
@@ -434,6 +452,32 @@ std::string TutorialSystem::EnteredAnimState(EntityID playerID)
 
 
 
+int TutorialSystem::AdvanceMainCombo(const std::string &entered, int stage) const
+{
+    if (entered.empty()) return stage; // 切り替わっていない
+
+    if (entered == kMainCombo[0]) return 1;
+    if (stage > 0 && stage < kMainComboStages && entered == kMainCombo[stage]) return stage + 1;
+    return 0;
+}
+
+
+
+bool TutorialSystem::TrackTwoStep(TutorialState &state, const std::string &entered, const char *first, const char *second)
+{
+    if (!entered.empty())
+    {
+        if (entered == first) m_chainStage = 1;
+        else if (m_chainStage == 1 && entered == second) m_chainStage = 2;
+        else m_chainStage = 0;
+    }
+
+    WriteProgress(state, m_chainStage, 2);
+    return m_chainStage >= 2;
+}
+
+
+
 // ---------------------------------------------------------------------------
 // ジャスト回避の項目（ヒントの場面と補助スロー）
 // ---------------------------------------------------------------------------
@@ -492,7 +536,6 @@ void TutorialSystem::TickEvadeAssist(TutorialState &state, float realDt)
     // スローは次のフレームから効き、しかも 0.07 秒は等速なら4フレームしかないため
     if (!m_assistRunning)
     {
-        if (m_assistCount >= kMaxAssists) return;
         if (dashing) return; // 自分で避けようとしている。邪魔をしない
         if (timeToStrike < 0.0f || timeToStrike > kAssistWarnTime) return;
 
@@ -651,19 +694,16 @@ void TutorialSystem::OnGui()
     const TutorialStepDef *def = state.Current();
     ImGui::Text("項目     : %d / %d  %s", state.step + 1, kTutorialStepCount, def ? def->name : "Done");
     ImGui::Text("経過     : %.1f 秒", m_stepTimer);
-    ImGui::Text("進み具合 : 移動 %.1f m / 視点 %.0f 度 / ダッシュ %d 回 / 命中 %d 回",
-                m_moveDistance, m_lookAngle, m_dashCount, m_hitCount);
-    ImGui::Text("補助     : %d / %d 回%s", m_assistCount, kMaxAssists,
+    ImGui::Text("進み具合 : 移動 %.1f m / 視点 %.0f 度 / ダッシュ %d 回 / 命中 %d 回 / 連携 %d 手",
+                m_moveDistance, m_lookAngle, m_dashCount, m_hitCount, m_chainStage);
+    ImGui::Text("補助     : %d 回%s", m_assistCount,
                 m_assistRunning ? (m_assistNow ? "（今だ）" : "（予告）") : "");
 
     if (m_world->HasResource<BattleContext>())
     {
         const BattleContext &battle = m_world->GetResource<BattleContext>();
-        if (battle.HasBoss())
-        {
-            if (const auto *phase = m_world->GetComponent<BossPhaseComponent>(battle.bossEntity))
-                ImGui::Text("ボス形態 : %s", ToString(phase->phase));
-        }
+        const auto *phase = battle.HasBoss() ? m_world->GetComponent<BossPhaseComponent>(battle.bossEntity) : nullptr;
+        if (phase) ImGui::Text("ボス形態 : %s", ToString(phase->phase));
     }
 
     // --- 操作 ---
@@ -673,9 +713,9 @@ void TutorialSystem::OnGui()
     if (ImGui::Button("最初から開始")) Restart(state);
     ImGui::SameLine();
     ImGui::BeginDisabled(state.IsFinished());
-    if (ImGui::Button("次の項目へ")) Advance(state, static_cast<uint8_t>(state.step + 1));
+    if (ImGui::Button("次の項目へ")) Advance(state);
     ImGui::SameLine();
-    if (ImGui::Button("完了扱いで終了")) Advance(state, kTutorialStepCount); // 完了の画面が出る
+    if (ImGui::Button("完了扱いで終了")) JumpToStep(state, kTutorialStepCount); // 完了の画面が出る
     ImGui::EndDisabled();
 }
 
