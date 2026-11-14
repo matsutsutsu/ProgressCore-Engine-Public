@@ -13,6 +13,7 @@
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Core/GameEvents.h"
+#include "Game/Logics/Combat/Feedback/FinishPresentationState.h"
 
 #include <algorithm>
 #include <cmath>
@@ -106,21 +107,21 @@ void GameResultSystem::Update(float dt)
     // 1. 勝った後の待ち
     // ---------------------------------------------------------
 
-    // 勝ちはすぐには出さない。最後の敵を倒したフレームから、撃破のスローが始まるため
-    // dt はスローの影響を受けない実時間なので、kResultDelay を数え終えれば、スローも終わっている
+    // 勝ちはすぐには出さない。最後の敵を倒したフレームから、とどめのスローが始まるため
+    // dt はスローの影響を受けない実時間で数える
     if (m_pendingWin)
     {
         m_winDelay -= dt;
 
-        // 撃破ムービーが流れている間は出さない。終わるかスキップされたら出す
-        // ムービーの再生要求は撃破のスロー（BossPhaseComponent の defeatSlowDuration）の後に出るので、
-        // kResultDelay を待ち終えた時点では cinematic がもう立っている
-        // defeatSlowDuration を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る
-        // ムービーがないシーンでは cinematic が立たず、kResultDelay だけ待って出る
+        // とどめのスローと撃破ムービーの間は出さない。ムービーが終わるかスキップされたら出す
+        // ムービーはスローが明けたフレームに頼まれるので、2つの待ちは途切れずにつながる
+        // ムービーがないシーンでは cinematic が立たず、スローが明けた後に出る
         const bool cinematic =
             m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+        const bool finishing =
+            m_world->HasResource<FinishPresentationState>() && m_world->GetResource<FinishPresentationState>().active;
 
-        if (m_winDelay <= 0.0f && !cinematic)
+        if (m_winDelay <= 0.0f && !cinematic && !finishing)
         {
             m_resultShown = true;
             ShowResultUI(true); // MISSION COMPLETE

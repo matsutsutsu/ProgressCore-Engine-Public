@@ -1,5 +1,6 @@
 #include "Game/Logics/Cinematic/CinematicSignalSystem.h"
 #include "Game/UI/Common/ScreenHeadingUi.h"
+#include "Game/Logics/AI/Drone/Systems/DroneManagerSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Time/TimeService.h"
@@ -73,6 +74,9 @@ void CinematicSignalSystem::HandleSignal(const CinematicSignalEvent &ev)
         SpawnTelop(ev.param, ev.param2, ev.value > 0.0f ? ev.value : kDefaultTelopSeconds);
         return;
     }
+
+    // 増援は DroneManagerSystem が受ける
+    if (ev.name == DroneManagerSystem::kReinforceSignal) return;
 
     // エンジンは名前の意味を知らないので、台本の読み込みでは打ち間違いに気付けない
     // 黙って捨てると気付く場所がなくなるので、受け手のここで知らせる

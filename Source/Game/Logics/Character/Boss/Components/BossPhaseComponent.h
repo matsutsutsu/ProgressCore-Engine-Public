@@ -39,18 +39,14 @@ struct BossPhaseComponent
     std::string tutorialAssetPath;             // チュートリアルの BT。空なら本来の BT で戦う
 
     // --- 移行演出 ---
-    float transitionDuration = 2.5f;  // 演出の長さ [秒]。この間は無敵で BT が止まる
-    float finishSlowScale    = 0.10f; // とどめのスローの時間の速さ（0 で止まる、1 で等速）
-    float finishSlowDuration = 0.85f; // とどめのスローの長さ [実時間の秒]。明けたら移行ムービー
+    float transitionDuration = 2.5f; // 演出の長さ [秒]。この間は無敵で BT が止まる
 
-    // --- 撃破演出 ---
-    float defeatSlowScale    = 0.10f; // 倒したときのスローの時間の速さ（0 で止まる、1 で等速）
-    float defeatSlowDuration = 0.85f; // 倒したときのスローの長さ [実時間の秒]。明けたら撃破ムービー
+    // --- フィニッシュ演出（とどめで線を越えたとき。移行でも撃破でも同じ。長さは台本で決まる） ---
+    float finishSlowScale   = 0.10f; // スローの時間の速さ（0 で止まる、1 で等速）
+    float finishSlowRecover = 0.40f; // 保ち終えてから等速へ戻るまで [実時間の秒]
 
     BossPhase phase = BossPhase::Combat; // 今の形態
     float     timer = 0.0f;              // 形態の残り時間 [秒]（移行演出）
-
-    float movieDelayTimer = 0.0f; // 移行ムービーを頼むまでの残り [実時間の秒]。0 以下なら待っていない
 
     // デバッグ: 移行演出を飛ばして第2形態へ移る要求（保存しない）
     // Boss Debugger が立て、BossPhaseSystem が受けて下ろす

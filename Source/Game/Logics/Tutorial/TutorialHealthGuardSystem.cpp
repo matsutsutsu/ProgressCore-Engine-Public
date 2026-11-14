@@ -10,8 +10,7 @@ using namespace CCL::ECS;
 
 namespace
 {
-    constexpr float kPlayerMinHealth   = 1.0f; // プレイヤーの HP の下限
-    constexpr float kBossMarginPercent = 1.0f; // ボスの HP の下限を、しきい値より上に置く幅（最大 HP に対する %）
+    constexpr float kPlayerMinHealth = 1.0f; // プレイヤーの HP の下限
 } // namespace
 
 std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
@@ -40,9 +39,8 @@ void TutorialHealthGuardSystem::Update(float /*dt*/)
         const auto *phase = m_world->GetComponent<BossPhaseComponent>(id);
         if (!phase || phase->phase2AssetPath.empty()) return;
 
-        // 下限はしきい値より kBossMarginPercent だけ上に置く
-        // しきい値ちょうどだと、BossPhaseSystem の「しきい値以下なら移行」の判定に入ってしまう
-        const float floor    = health.maxHealth * (phase->phase2HealthThreshold + kBossMarginPercent) / 100.0f;
+        // 形態が移るのはしきい値より下に落ちたときなので、ちょうどで止めれば移らない
+        const float floor    = health.maxHealth * phase->phase2HealthThreshold / 100.0f;
         health.currentHealth = std::max(health.currentHealth, floor);
     });
 }

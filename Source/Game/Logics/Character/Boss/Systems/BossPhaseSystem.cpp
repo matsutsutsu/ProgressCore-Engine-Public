@@ -8,23 +8,17 @@
 #include "Engine/Platform/Core/Logger.h"
 #include "Game/Logics/Tutorial/TutorialState.h"
 #include "Engine/Core/App/GameFlowState.h"
-#include "Engine/Cinematic/CinematicEvents.h"
-#include "Engine/Time/TimeService.h"
 
 
 namespace
 {
-    // 第1形態の HP の下限を、しきい値よりこの幅だけ上に置く（最大 HP に対する %）
-    // ちょうどだと「しきい値以下なら移行」に入り、とどめを待たずに移ってしまう
-    constexpr float kLineMarginPercent = 1.0f;
-
     // 最後の形態の HP の下限。0 より上なので、とどめ以外では倒れない
     constexpr float kLastStandHealth = 1.0f;
 } // namespace
 
 
 
-void BossPhaseSystem::Update(float rawDt)
+void BossPhaseSystem::Update(float /*dt*/)
 {
     // 処理フロー:
     // 1. ボス本体への要求を空にし、怒り中かを確定する
@@ -32,7 +26,6 @@ void BossPhaseSystem::Update(float rawDt)
     // 3. 今の形態の毎フレームの処理をする
     // 4. とどめ以外で下がらない HP の下限を書く
     // 5. 移行演出のタイマーを進める
-    // 6. 移行のスローが終わったら、移行ムービーを頼む
 
     // TutorialState があるのはチュートリアルシーンだけ
     // なければ TutorialWait / TutorialAttack に入らない
@@ -66,7 +59,7 @@ void BossPhaseSystem::Update(float rawDt)
         cmd.rageRequested = false;
 
         // ---------------------------------------------------------
-        // 2〜5. 形態
+        // 2 ～ 5. 形態
         // ---------------------------------------------------------
 
         // デバッグの要求（Boss Debugger の「第2形態から（演出なし）」）
@@ -91,22 +84,6 @@ void BossPhaseSystem::Update(float rawDt)
 
         // 時間で終わる形態（移行演出）のためのタイマー
         if (phase.timer > 0.0f) phase.timer -= time.localDt;
-
-        // ---------------------------------------------------------
-        // 6. 移行ムービー
-        // ---------------------------------------------------------
-
-        // スローの長さは実時間なので、スローのかからない rawDt で数える
-        // localDt で数えると、スローの間はほとんど減らない
-        if (phase.movieDelayTimer > 0.0f)
-        {
-            phase.movieDelayTimer -= rawDt;
-
-            // 流れている間は、プレイヤーの操作と敵の思考が止まる
-            // 受け付けるかは CinematicCameraSystem が決める（台本がなければログを出して捨てる）
-            if (phase.movieDelayTimer <= 0.0f)
-                m_world->GetEventBus().Publish(CinematicPlayRequestEvent{kPhase2Cinematic});
-        }
     });
 }
 
@@ -129,8 +106,8 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
     // --- 移行演出 → 第2形態 ---
 
     // 移行演出は、決めた時間が過ぎ、かつ移行ムービーが終わるまで続ける
-    // ムービーはスローの後に頼む。timer はボスの時間で減り、スロー中はほとんど減らないので、
-    // 頼む頃はまだ演出中になっている
+    // ムービーはとどめのスローの後に頼まれる。timer はボスの時間で減り、スロー中はほとんど減らないので、
+    // 頼まれる頃はまだ演出中になっている
     // 台本がなくてムービーが流れなければ、決めた時間で第2形態へ移る
     if (phase.phase == BossPhase::Transition)
     {
@@ -138,15 +115,14 @@ BossPhase BossPhaseSystem::DecideNextPhase(const BossPhaseComponent &phase,
         return holding ? BossPhase::Transition : BossPhase::Combat2;
     }
 
-    // 第1形態で HP がしきい値を割ったら移行演出へ
-    // 第2形態の BT が未設定なら移行しない（設定漏れでボスが止まるのを防ぐ）
-    // TutorialWait / TutorialAttack は見なくてよい
-    // チュートリアルでは TutorialHealthGuardSystem が HP をしきい値より下げない
-    if (phase.phase == BossPhase::Combat && !phase.phase2AssetPath.empty() && health.maxHealth > 0.0f)
-    {
-        const float hpPercent = (health.currentHealth / health.maxHealth) * 100.0f;
-        if (hpPercent <= phase.phase2HealthThreshold) return BossPhase::Transition;
-    }
+    // --- とどめで線を越えた ---
+
+    // とどめ以外は線で止まるので、線より下にいるのはとどめが線を越えたときだけ
+    // 最後の形態なら倒れ、そうでなければ移行演出へ
+    // チュートリアルの形態は線が 0 なので、ここには入らない
+    const bool fighting   = phase.phase == BossPhase::Combat || phase.phase == BossPhase::Combat2;
+    const bool belowFloor = health.currentHealth < DecideFinisherFloor(phase, health);
+    if (fighting && belowFloor) return IsLastForm(phase, health) ? BossPhase::Dead : BossPhase::Transition;
 
     // --- チュートリアル ---
 
@@ -195,11 +171,6 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
 
         anim.SetTrigger(CCL::Utils::HashString(kRoarTrigger));
         phase.timer = phase.transitionDuration;
-
-        // とどめのスローを見せてから、移行ムービーを頼む（頼むのは Update の 6）
-        // ムービーはカメラを奪うので、すぐ頼むとスローが見えない
-        Time::SlowWorld(*m_world, phase.finishSlowScale, phase.finishSlowDuration);
-        phase.movieDelayTimer = phase.finishSlowDuration;
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] 第2形態へ移行開始（%.1f秒）", phase.transitionDuration);
         break;
 
@@ -218,6 +189,10 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         // 入ったときにも指示を消すのは、
         // 死んだ瞬間に攻撃の指示が1フレーム残らないようにするため
         anim.SetTrigger(CCL::Utils::HashString(kDeathTrigger));
+
+        // とどめが最後の線を越えても、HP が 0 の上に残ることがある
+        // 0 にそろえて、倒れたことを HP で見るほかの System にも伝える
+        health.currentHealth = (std::min)(health.currentHealth, 0.0f);
 
         cmd.droneAttackActive = false;
         cmd.requestFormation  = DroneFormationType::None;
@@ -314,21 +289,15 @@ void BossPhaseSystem::SkipToPhase2ForDebug(BossPhaseComponent      &phase,
 
 
 
-// とどめ以外の攻撃で、HP をどこより下げないかを決める
-// 第1形態は第2形態へ移る線のすぐ上、最後の形態は 1。それ以外は 0（下限なし）
 float BossPhaseSystem::DecideFinisherFloor(const BossPhaseComponent &phase,
                                            const HealthComponent    &health) const
 {
     switch (phase.phase)
     {
     case BossPhase::Combat:
-        // 第2形態がないボスは、第1形態が最後の形態になる
-        // （DecideNextPhase と同じ条件で、移行するかを見る）
-        if (phase.phase2AssetPath.empty() || health.maxHealth <= 0.0f) return kLastStandHealth;
-        return health.maxHealth * (phase.phase2HealthThreshold + kLineMarginPercent) / 100.0f;
-
     case BossPhase::Combat2:
-        return kLastStandHealth;
+        if (IsLastForm(phase, health)) return kLastStandHealth;
+        return health.maxHealth * phase.phase2HealthThreshold / 100.0f;
 
     case BossPhase::Transition:
     case BossPhase::Dead:
@@ -339,6 +308,16 @@ float BossPhaseSystem::DecideFinisherFloor(const BossPhaseComponent &phase,
         return 0.0f;
     }
     return 0.0f;
+}
+
+
+
+bool BossPhaseSystem::IsLastForm(const BossPhaseComponent &phase, const HealthComponent &health) const
+{
+    if (phase.phase == BossPhase::Combat2) return true;
+
+    // 第2形態の BT が未設定なら移行しない（設定漏れでボスが止まるのを防ぐ）
+    return phase.phase2AssetPath.empty() || health.maxHealth <= 0.0f;
 }
 
 
