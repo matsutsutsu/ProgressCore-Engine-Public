@@ -7,19 +7,19 @@
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": false,
+                    "isLoop": true,
                     "playbackSpeed": 1.0
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        3.485225200653076,
+                        -4.882991220256372e-07,
                         0.0,
-                        -6.5716753005981445
+                        -1.3734332071635436e-07
                     ],
                     "desiredVelocity": [
                         0.0,
                         0.0,
-                        -0.0
+                        0.0
                     ],
                     "isRootMotionActive": false,
                     "jumpImpulse": false,
@@ -29,7 +29,7 @@
                     "use3DVelocity": false
                 },
                 "HealthComponent": {
-                    "currentHealth": 292.0,
+                    "currentHealth": 276.0,
                     "invincibilityDuration": 0.5,
                     "maxHealth": 300.0
                 },
@@ -104,9 +104,9 @@
                     "currentTimer": -0.003333514556288719,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        -0.997683584690094,
+                        -0.9684262275695801,
                         0.0,
-                        -0.06802612543106079
+                        -0.24930031597614288
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -169,7 +169,7 @@
                 },
                 "Player Rush Component": {
                     "attackDuration": 0.46000000834465027,
-                    "attackFired": true,
+                    "attackFired": false,
                     "closeInSpeed": 150.0,
                     "closeInStopDistance": 20.0,
                     "evadeSharedSlowTime": 0.30000001192092896,
@@ -186,7 +186,7 @@
                     "playerScale": 1.0,
                     "readyDuration": 2.4000000953674316,
                     "rushInputBuffer": 0.5,
-                    "rushStep": 4,
+                    "rushStep": 0,
                     "rushStepCount": 4,
                     "slowRecover": 0.4000000059604645,
                     "startMaxDistance": 80.0,
@@ -214,15 +214,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        54.66337203979492,
-                        0.5321347117424011,
-                        6.415320873260498
+                        -60.05604934692383,
+                        0.10613036155700684,
+                        45.1960334777832
                     ],
                     "rotation": [
-                        -0.004913731943815947,
-                        0.968878448009491,
-                        -0.001255137613043189,
-                        0.2474851757287979
+                        1.401298464324817e-45,
+                        -0.7971080541610718,
+                        -1.401298464324817e-45,
+                        0.6038367748260498
                     ],
                     "scale": [
                         3.5,
@@ -658,19 +658,19 @@
                                 0.0
                             ],
                             "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
+                            "attractorStrength": -15.0,
                             "burstCount": 0,
                             "color": [
-                                1.0,
-                                1.0,
-                                1.0,
+                                0.7953667640686035,
+                                0.7933036684989929,
+                                0.2610276937484741,
                                 1.0
                             ],
-                            "colorMode": 1,
+                            "colorMode": 0,
                             "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                             "coneAngle": [
-                                0.0,
-                                3.140000104904175
+                                0.61086505651474,
+                                0.8726645112037659
                             ],
                             "drag": 0.0,
                             "emitMode": 0,
@@ -680,44 +680,44 @@
                             ],
                             "emitShape": 1,
                             "emitSize": [
-                                0.07000000029802322,
-                                0.18000000715255737
+                                0.20000000298023224,
+                                0.0
                             ],
                             "emitSpeed": [
-                                1.0,
-                                1.0
+                                5.0,
+                                15.0
                             ],
                             "emitStretch": [
                                 1.0,
                                 1.0
                             ],
                             "fadeDuration": [
-                                0.20000000298023224,
-                                0.30000001192092896
+                                0.0,
+                                0.10000000149011612
                             ],
                             "followRatio": 0.0,
                             "gravity": 0.0,
-                            "intensity": 4.449999809265137,
+                            "intensity": 5.0,
                             "lifespan": [
-                                0.30000001192092896,
-                                0.5
+                                0.10000000149011612,
+                                0.25
                             ],
                             "lineEnd": [
                                 0.0,
-                                4.349999904632568,
+                                3.0,
                                 0.0
                             ],
                             "localOffset": [
                                 0.0,
-                                0.0,
+                                1.350000023841858,
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 15440,
-                            "maxSpeed": 10.0,
+                            "maxCount": 500,
+                            "maxSpeed": 0.0,
                             "name": "",
                             "noiseScale": 1.0,
-                            "noiseStrength": 0.0,
+                            "noiseStrength": 10.0,
                             "orientMode": 0,
                             "particleType": 1,
                             "renderMode": 0,
@@ -727,10 +727,10 @@
                             ],
                             "sizeEase": 0,
                             "sizeEasePower": 2.0,
-                            "sizeRandom": 1.0,
+                            "sizeRandom": 0.49000000953674316,
                             "spawnDelay": [
                                 0.0,
-                                0.017999999225139618
+                                0.0
                             ],
                             "spriteGrid": [
                                 1,
@@ -742,8 +742,8 @@
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 0.0,
-                            "vortexStrength": 0.0
+                            "velocityStretch": 0.10000000149011612,
+                            "vortexStrength": 350.0
                         }
                     ]
                 },
@@ -839,7 +839,7 @@
                     "burstTimer": 0.0,
                     "color": [
                         1.0,
-                        0.3706563711166382,
+                        0.48648643493652344,
                         0.0,
                         1.0
                     ],
@@ -851,7 +851,7 @@
                     "minDistance": 0.019999999552965164,
                     "rimPower": 0.699999988079071,
                     "shape": 0,
-                    "texturePath": "Assets/Textures/VFX/Trail/T_Trail_Sword_02.png",
+                    "texturePath": "Assets/Textures/VFX/Trail/T_Trail_Fade_01.png",
                     "thickness": 0.0,
                     "timeScale": 1.0,
                     "tipOffset": [
