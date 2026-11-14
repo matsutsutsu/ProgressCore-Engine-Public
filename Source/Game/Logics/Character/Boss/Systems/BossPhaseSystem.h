@@ -6,8 +6,7 @@
 // 責務:
 //   - 毎フレームの最初に、ボス本体への要求(currentActionId)を空にし、怒り中かを確定する
 //   - HP と経過時間から、次の形態を決める
-//   - 形態に入った瞬間だけの処理（BT の差し替え・無敵・アニメのトリガー・移行のスロー）を行う
-//   - 移行のスローが終わったら、移行ムービーの再生を頼む
+//   - 形態に入った瞬間だけの処理（BT の差し替え・無敵・アニメのトリガー）を行う
 //   - 移行演出中と死亡中は、ドローンへの指示を止め続ける
 //   - 形態の線（移行のしきい値・0）を、とどめでしか越えられないよう HP の下限を書く
 //   - デバッグの要求（Boss Debugger）を受け、移行演出を飛ばして第2形態へ移る
@@ -83,8 +82,12 @@ private:
                               HealthComponent         &health) const;
 
     // とどめ以外の攻撃で HP を下げない下限を決める（HealthComponent.finisherFloor に書く値）
+    // 第1形態は第2形態へ移るしきい値、最後の形態は 1。それ以外は 0（下限なし）
     float DecideFinisherFloor(const BossPhaseComponent &phase,
                               const HealthComponent    &health) const;
+
+    // 今の形態が最後か。最後なら、とどめで線を越えたときに倒れる
+    bool IsLastForm(const BossPhaseComponent &phase, const HealthComponent &health) const;
 
     // Valkyra のアニメグラフの任意ステートから Death_Start → Death_Loop へ入る
     // Death_Loop には出る遷移がないので、撃破ムービーとリザルトの間も倒れた姿のまま残る
@@ -93,7 +96,4 @@ private:
     // Valkyra のアニメグラフに Roar の遷移はまだなく、今は引いても何も起きない
     // グラフに足せばそのまま繋がる。アニメがなくても形態の移行はできる
     static constexpr const char *kRoarTrigger = "Roar";
-
-    // 移行演出のスローの後に流すムービーの台本
-    static constexpr const char *kPhase2Cinematic = "Assets/Cinematics/BossPhase2.json";
 };

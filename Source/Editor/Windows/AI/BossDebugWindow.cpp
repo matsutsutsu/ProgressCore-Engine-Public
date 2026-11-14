@@ -7,6 +7,8 @@
 #include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
 #include "Game/Logics/Character/Boss/Systems/BossActionSystem.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
+#include "Game/Core/GameEvents.h"
+#include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/Debug/AIDebugOverlaySystem.h"
 #include "Game/Logics/AI/Debug/AIDebugSpatialSystem.h"
 #include "Game/Logics/AI/Debug/DroneDebugDrawSystem.h"
@@ -23,7 +25,7 @@ namespace
     const ImVec4 kForcedColor(1.00f, 0.55f, 0.20f, 1.0f); // 強制実行中の行
 
     // 「第2形態へ（演出あり）」で、HP をしきい値よりこの幅だけ下に置く（最大 HP に対する %）
-    // ちょうどしきい値にすると、割り算の誤差で「しきい値以下」にならず移らないことがある
+    // 形態が移るのは、しきい値より下に落ちたときだけなので
     constexpr float kBelowLinePercent = 0.1f;
 
     // System の OnGui を、折りたためる見出しの下に出す
@@ -323,7 +325,7 @@ void BossDebugWindow::DrawHealthTab(const BossHandles &boss)
     if (ImGui::Button("全回復")) health.currentHealth = health.maxHealth;
     ImGui::SameLine();
 
-    // 下限は第1形態なら移行の線のすぐ上、最後の形態なら 1（BossPhaseSystem が毎フレーム書く）
+    // 下限は第1形態なら移行のしきい値、最後の形態なら 1（BossPhaseSystem が毎フレーム書く）
     // 下限ちょうどにすれば、次のとどめの命中でちょうど線を越える
     const bool  toPhase2   = (phase.phase == BossPhase::Combat) && !phase.phase2AssetPath.empty();
     const char *floorLabel = toPhase2 ? "とどめ1発で第2形態へ" : "とどめ1発で撃破";
@@ -342,8 +344,18 @@ void BossDebugWindow::DrawHealthTab(const BossHandles &boss)
     const bool canEnterPhase2 = toPhase2 && health.maxHealth > 0.0f;
     ImGui::BeginDisabled(!canEnterPhase2);
 
+    // とどめが線を越えたときと同じにする
+    // HP を線の下へ落として形態を移し、フィニッシュ演出も始める
     if (ImGui::Button("第2形態へ（演出あり）"))
+    {
         health.currentHealth = health.maxHealth * (phase.phase2HealthThreshold - kBelowLinePercent) / 100.0f;
+
+        const auto *trans = boss.world->GetComponent<TransformComponent>(boss.id);
+        FinishBlowEvent blow;
+        blow.targetID = boss.id;
+        if (trans) blow.position = trans->GetWorldPosition();
+        boss.world->GetEventBus().Publish(blow);
+    }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
         ImGui::SetTooltip("HP をしきい値の少し下にする。次のフレームに、普段どおり移行演出（スロー → ムービー）が始まる");
     ImGui::SameLine();
@@ -398,6 +410,8 @@ BossDebugWindow::BossHandles BossDebugWindow::FindBoss(EditorContext &context) c
         handles.phase  = context.world->GetComponent<BossPhaseComponent>(boss);
         handles.action = context.world->GetComponent<BossActionComponent>(boss);
         handles.health = context.world->GetComponent<HealthComponent>(boss);
+        handles.world  = context.world;
+        handles.id     = boss;
         break;
     }
     return handles;

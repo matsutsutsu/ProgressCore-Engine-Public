@@ -9,7 +9,7 @@
 //   - 全 System と、ゲーム本編だけで使う System（リザルト・ポーズ）を登録する
 //
 // 備考: EditorScene も同じレベルを読み、同じくムービー用カメラを足して導入ムービーを流す
-//       撃破ムービーの再生は DefeatSlowMotionSystem が頼む
+//       移行ムービーと撃破ムービーの再生は FinishPresentationSystem が頼む
 //       AI が共有する BattleContext には触らない（書くのは BattleContextSyncSystem だけ）
 // ===========================================================================
 #include "Engine/Scene/BaseScene.h"

@@ -135,6 +135,12 @@ void DamageResolutionSystem::Update(float dt)
                 // 下の演出・被弾の通知は普段どおり出すので、コンボや怒りの連発はそのまま試せる
                 if (health->debugNoDamage) nextHealth = health->currentHealth;
 
+                // とどめが線を越えたか。線の上から下へ落としたこの一撃だけを数える
+                // 0 は下限なしなので、越える線がない
+                const bool hasFloor   = health->finisherFloor > 0.0f;
+                const bool brokeFloor = isFinisher && hasFloor && health->currentHealth >= health->finisherFloor &&
+                                        nextHealth < health->finisherFloor;
+
                 health->currentHealth      = nextHealth;
                 health->invincibilityTimer = health->invincibilityDuration;
 
@@ -200,6 +206,16 @@ void DamageResolutionSystem::Update(float dt)
                         event.hitStopDuration,
                         event.hitStopScale,
                         isFinisher});
+
+                // --- とどめの通知 ---
+                // 形態の移行か撃破かは、受けた側が次のフレームに決める
+                if (brokeFloor)
+                {
+                    m_world->GetEventBus().Publish(FinishBlowEvent{
+                        event.attackerID,
+                        event.targetID,
+                        DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z}});
+                }
 
                 // --- のけぞり（前後左右） ---
                 // 倒れなかったときだけのけぞらせる。倒れたときは倒れるアニメーションに任せる（両方を再生しない）

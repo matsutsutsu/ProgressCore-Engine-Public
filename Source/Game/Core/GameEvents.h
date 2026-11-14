@@ -35,6 +35,15 @@ struct AttackHitConfirmedEvent
     bool isFinisher = false; // 攻撃した側のとどめ区間（AnimEventType::Finisher）の中で当てたか
 };
 
+// とどめの一撃が HP の線（HealthComponent.finisherFloor）を上から下へ越えた瞬間に出す
+// 第2形態への移行でも撃破でも出る。どちらになったかは、受けた側の形態で見る
+struct FinishBlowEvent
+{
+    CCL::ECS::EntityID attackerID = CCL::ECS::InvalidEntityID; // とどめを当てた側
+    CCL::ECS::EntityID targetID   = CCL::ECS::InvalidEntityID; // 線を越えられた側
+    DirectX::XMFLOAT3  position   = {0.0f, 0.0f, 0.0f};        // 当たった位置（ワールド座標）
+};
+
 // 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）
 // HitEffectSystem が受けて、当たった位置に GPU パーティクルを出す
 struct HitImpactEvent

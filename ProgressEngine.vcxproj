@@ -807,7 +807,8 @@
     <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationState.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Components\DeadTag.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Components\CombatComponents.h" />
@@ -1309,7 +1310,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\Components\CombatComponentsMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\HealthSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Systems\HitboxCollisionSystem.cpp" />

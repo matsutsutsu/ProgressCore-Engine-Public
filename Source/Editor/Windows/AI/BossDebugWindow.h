@@ -11,13 +11,16 @@
 //         BehaviorTreeComponent の debugPaused / debugForcedNodeId
 //         HealthComponent の currentHealth / debugNoDamage
 //         BossPhaseComponent の debugSkipToPhase2（実際に形態を変えるのは BossPhaseSystem）
+//       「第2形態へ（演出あり）」だけは、とどめと同じ FinishBlowEvent も出す
 //       [表示] は各 System の OnGui をそのまま呼ぶ。設定の持ち主は System のまま
 // ===========================================================================
 #include "Editor/Core/EditorWindow.h"
 #include "Game/Logics/AI/BehaviorTree/Data/BehaviorTreeData.h"
+#include "Engine/ECS/Common/CCL_Types.h"
 
 #include <string>
 
+namespace CCL::ECS { class World; }
 struct BehaviorTreeComponent;
 struct BossCommandComponent;
 struct BossPhaseComponent;
@@ -41,6 +44,9 @@ private:
         BossPhaseComponent    *phase  = nullptr; // 形態（所有しない）
         BossActionComponent   *action = nullptr; // 本体の動き（所有しない）
         HealthComponent       *health = nullptr; // HP（所有しない）
+
+        CCL::ECS::World   *world = nullptr;                    // ボスのいるワールド（所有しない）
+        CCL::ECS::EntityID id    = CCL::ECS::InvalidEntityID; // ボスのエンティティ
     };
 
     // 最初に見つかったボスを返す（1対1の戦闘前提）

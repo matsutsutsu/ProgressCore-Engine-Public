@@ -1092,7 +1092,10 @@
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.h">
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.h">
+      <Filter>Source\Game\Logics\Combat\Feedback</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationState.h">
       <Filter>Source\Game\Logics\Combat\Feedback</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.h">
@@ -2486,7 +2489,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.cpp">
       <Filter>Source\Game\Logics\Combat\Feedback</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.cpp">

@@ -1,0 +1,166 @@
+{
+  "duration": 2.7967,
+  "allowSkip": false,
+  "shots": [
+    {
+      "start": 0.0,
+      "duration": 0.6333,
+      "subject": "Player",
+      "motion": "Orbit",
+      "ease": "EaseOut",
+      "lookStart": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "lookEnd": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        10.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": -65.0,
+      "angleEnd": -40.0,
+      "radiusStart": 30.0,
+      "radiusEnd": 30.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.8,
+      "fovStart": 40.0,
+      "fovEnd": 34.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    },
+    {
+      "start": 0.6333,
+      "duration": 0.7,
+      "subject": "Player",
+      "motion": "Orbit",
+      "ease": "Linear",
+      "lookStart": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "lookEnd": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        10.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": -40.0,
+      "angleEnd": -40.0,
+      "radiusStart": 30.0,
+      "radiusEnd": 30.0,
+      "heightStart": 0.8,
+      "heightEnd": 0.8,
+      "fovStart": 34.0,
+      "fovEnd": 34.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    },
+    {
+      "start": 1.3333,
+      "duration": 0.2333,
+      "subject": "Player",
+      "motion": "Orbit",
+      "ease": "EaseIn",
+      "lookStart": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "lookEnd": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        10.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": -40.0,
+      "angleEnd": -40.0,
+      "radiusStart": 30.0,
+      "radiusEnd": 25.0,
+      "heightStart": 0.8,
+      "heightEnd": 0.5,
+      "fovStart": 34.0,
+      "fovEnd": 20.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    },
+    {
+      "start": 1.5667,
+      "duration": 1.2,
+      "subject": "Player",
+      "motion": "Orbit",
+      "ease": "EaseIn",
+      "lookStart": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "lookEnd": [
+        2.0,
+        4.5,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        10.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": -40.0,
+      "angleEnd": -40.0,
+      "radiusStart": 25.0,
+      "radiusEnd": 25.0,
+      "heightStart": 0.5,
+      "heightEnd": 0.5,
+      "fovStart": 20.0,
+      "fovEnd": 20.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    }
+  ],
+  "sounds": [],
+  "effects": [],
+  "signals": [],
+  "animations": []
+}
