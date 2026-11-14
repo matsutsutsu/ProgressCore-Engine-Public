@@ -7,21 +7,21 @@
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
                 "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
+                    "isLoop": false,
+                    "playbackSpeed": 0.699999988079071
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        -4.882991220256372e-07,
                         0.0,
-                        -1.3734332071635436e-07
+                        0.0,
+                        0.30361172556877136
                     ],
                     "desiredVelocity": [
                         0.0,
                         0.0,
-                        0.0
+                        1.0
                     ],
-                    "isRootMotionActive": false,
+                    "isRootMotionActive": true,
                     "jumpImpulse": false,
                     "moveIntensity": 0.0,
                     "overrideSpeed": -1.0,
@@ -29,7 +29,7 @@
                     "use3DVelocity": false
                 },
                 "HealthComponent": {
-                    "currentHealth": 276.0,
+                    "currentHealth": 159.0,
                     "invincibilityDuration": 0.5,
                     "maxHealth": 300.0
                 },
@@ -214,15 +214,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -60.05604934692383,
-                        0.10613036155700684,
-                        45.1960334777832
+                        0.45460909605026245,
+                        -1.0423043966293335,
+                        -12.100052833557129
                     ],
                     "rotation": [
-                        1.401298464324817e-45,
-                        -0.7971080541610718,
-                        -1.401298464324817e-45,
-                        0.6038367748260498
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
                     ],
                     "scale": [
                         3.5,
@@ -666,7 +666,7 @@
                                 0.2610276937484741,
                                 1.0
                             ],
-                            "colorMode": 0,
+                            "colorMode": 1,
                             "colorRampPath": "Assets/Textures/VFX/Ramp/T_Ramp_Fire.png",
                             "coneAngle": [
                                 0.61086505651474,
@@ -699,8 +699,8 @@
                             "gravity": 0.0,
                             "intensity": 5.0,
                             "lifespan": [
-                                0.10000000149011612,
-                                0.25
+                                0.15000000596046448,
+                                0.30000001192092896
                             ],
                             "lineEnd": [
                                 0.0,
@@ -713,7 +713,7 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 500,
+                            "maxCount": 2000,
                             "maxSpeed": 0.0,
                             "name": "",
                             "noiseScale": 1.0,
