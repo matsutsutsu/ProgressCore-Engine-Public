@@ -150,7 +150,7 @@ void ImGuiRenderer::Render(ID3D11DeviceContext *context)
         ZoneScopedN("ImGui::Render (Build Draw Data)");
         ImGui::Render();
     }
-1456
+
     {
         // 作った頂点データを DX11 で描く
         ZoneScopedN("ImGui_ImplDX11_RenderDrawData (GPU Submit)");
