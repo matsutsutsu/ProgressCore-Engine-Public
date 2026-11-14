@@ -20,7 +20,7 @@ namespace
     constexpr float kJustEvadeVolume       = 2.0f;
     constexpr float kJustEvadeSlowVolume   = 0.9f;
     constexpr float kPlayerDashVolume      = 1.0f;
-    constexpr float kPlayerJumpVolume      = 1.5f;
+    constexpr float kPlayerJumpVolume      = 2.5f;
 
     // ジャンプの段ごとのピッチ（オクターブ）。1段目は地面を蹴るので低く重く、2段目は空中なので高く軽く
     constexpr float kJumpPitchGround = -0.15f;
