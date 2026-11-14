@@ -68,7 +68,7 @@
                     "defeatSlowScale": 0.10000000149011612,
                     "finishSlowDuration": 0.8500000238418579,
                     "finishSlowScale": 0.10000000149011612,
-                    "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
+                    "phase2AssetPath": "",
                     "phase2HealthThreshold": 50.0,
                     "transitionDuration": 2.5,
                     "tutorialAssetPath": "Assets/BehaviorTree/BossTutorial.json"
@@ -93,9 +93,9 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 886.0,
+                    "currentHealth": 850.0,
                     "invincibilityDuration": 0.0,
-                    "maxHealth": 1000.0
+                    "maxHealth": 850.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0

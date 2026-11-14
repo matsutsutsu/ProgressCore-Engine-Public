@@ -1,71 +1,32 @@
 {
-  "duration": 4.0,
+  "duration": 7.4,
   "allowSkip": true,
   "shots": [
     {
       "start": 0.0,
-      "duration": 2.2,
+      "duration": 1.5,
       "subject": "Valkyra",
-      "motion": "Orbit",
+      "motion": "Truck",
       "ease": "EaseOut",
       "lookStart": [
         0.0,
-        5.0,
-        0.0
-      ],
-      "lookEnd": [
-        0.0,
-        5.5,
-        0.0
-      ],
-      "eyeStart": [
-        0.0,
-        10.0,
-        -20.0
-      ],
-      "eyeEnd": [
-        0.0,
-        10.0,
-        -20.0
-      ],
-      "angleStart": 45.0,
-      "angleEnd": 10.0,
-      "radiusStart": 26.0,
-      "radiusEnd": 22.0,
-      "heightStart": -3.0,
-      "heightEnd": -2.0,
-      "fovStart": 35.0,
-      "fovEnd": 32.0,
-      "dof": false,
-      "dofRange": 4.0,
-      "dofFalloff": 15.0,
-      "dofMaxBlur": 0.008
-    },
-    {
-      "start": 2.2,
-      "duration": 1.8,
-      "subject": "Valkyra",
-      "motion": "Truck",
-      "ease": "EaseIn",
-      "lookStart": [
-        0.0,
-        7.0,
-        0.0
-      ],
-      "lookEnd": [
-        0.0,
-        7.0,
-        0.0
-      ],
-      "eyeStart": [
-        0.0,
-        6.0,
-        16.0
-      ],
-      "eyeEnd": [
-        0.0,
         6.5,
-        12.0
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        6.8,
+        0.0
+      ],
+      "eyeStart": [
+        4.0,
+        5.0,
+        13.0
+      ],
+      "eyeEnd": [
+        3.0,
+        5.2,
+        11.0
       ],
       "angleStart": 0.0,
       "angleEnd": 0.0,
@@ -73,27 +34,179 @@
       "radiusEnd": 5.0,
       "heightStart": 0.0,
       "heightEnd": 0.0,
-      "fovStart": 30.0,
-      "fovEnd": 24.0,
+      "fovStart": 32.0,
+      "fovEnd": 29.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    },
+    {
+      "start": 1.5,
+      "duration": 2.9,
+      "subject": "Valkyra",
+      "motion": "Orbit",
+      "ease": "EaseInOut",
+      "lookStart": [
+        0.0,
+        6.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": 35.0,
+      "angleEnd": -20.0,
+      "radiusStart": 18.0,
+      "radiusEnd": 15.0,
+      "heightStart": -3.0,
+      "heightEnd": -2.0,
+      "fovStart": 38.0,
+      "fovEnd": 34.0,
+      "dof": false,
+      "dofRange": 3.0,
+      "dofFalloff": 10.0,
+      "dofMaxBlur": 0.012
+    },
+    {
+      "start": 4.4,
+      "duration": 3.0,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseOut",
+      "lookStart": [
+        0.0,
+        10.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        14.0,
+        0.0
+      ],
+      "eyeStart": [
+        2.5,
+        2.0,
+        18.0
+      ],
+      "eyeEnd": [
+        9.0,
+        6.0,
+        46.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 58.0,
+      "fovEnd": 46.0,
       "dof": false,
       "dofRange": 3.0,
       "dofFalloff": 10.0,
       "dofMaxBlur": 0.012
     }
   ],
-  "sounds": [],
-  "effects": [],
-  "signals": [],
+  "sounds": [
+    {
+      "time": 4.4,
+      "event": "sfx:/SE_BossLeapImpact",
+      "subject": "",
+      "volume": 1.0,
+      "pitch": -0.3
+    },
+    {
+      "time": 4.4,
+      "event": "sfx:/Sci-fi_DroneSE",
+      "subject": "",
+      "volume": 1.0,
+      "pitch": 0.0
+    }
+  ],
+  "effects": [
+    {
+      "time": 4.4,
+      "effect": "Assets/Prefabs/Particles/VFX_BossLeapImpact",
+      "subject": "Valkyra",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.5,
+      "follow": true,
+      "duration": 0.0
+    }
+  ],
+  "signals": [
+    {
+      "time": 4.4,
+      "name": "DroneReinforce",
+      "param": "",
+      "param2": "",
+      "value": 0.0
+    },
+    {
+      "time": 5.4,
+      "name": "Telop",
+      "param": "PHASE 2",
+      "param2": "SWARM REINFORCED",
+      "value": 1.5
+    }
+  ],
   "animations": [
     {
       "start": 0.0,
-      "duration": 4.0,
+      "duration": 0.0,
+      "subject": "Valkyra",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Death_Start.json",
+      "loop": false,
+      "speed": 1.0,
+      "blendIn": 0.15,
+      "blendOut": 0.3
+    },
+    {
+      "start": 0.9,
+      "duration": 0.7,
       "subject": "Valkyra",
       "sequence": "Assets/Animations/Sequencer/Valkyra/Death_Loop.json",
       "loop": true,
       "speed": 1.0,
       "blendIn": 0.2,
       "blendOut": 0.3
+    },
+    {
+      "start": 1.5,
+      "duration": 0.0,
+      "subject": "Valkyra",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Roar_Charge.json",
+      "loop": false,
+      "speed": 1.5,
+      "blendIn": 0.3,
+      "blendOut": 0.3
+    },
+    {
+      "start": 4.35,
+      "duration": 0.0,
+      "subject": "Valkyra",
+      "sequence": "Assets/Animations/Sequencer/Valkyra/Roar_Release.json",
+      "loop": false,
+      "speed": 1.0,
+      "blendIn": 0.2,
+      "blendOut": 0.5
     }
   ]
 }
