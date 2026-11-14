@@ -48,18 +48,19 @@ void CinematicSignalSystem::Update(float dt)
 {
     dt = Time::PresentationDt(*m_world, dt);
 
+    // 届いたシグナルを1つずつ処理し、テロップを出す
     std::vector<CinematicSignalEvent> pending;
     pending.swap(m_pending);
-    for (const auto &ev : pending)
-        HandleSignal(ev);
+    for (const auto &ev : pending) HandleSignal(ev);
 
+    // スキップで終わったら、出ているテロップをすぐ消え始めさせる
     if (m_dismissTelops)
     {
-        for (auto &telop : m_telops)
-            telop.remain = 0.0f;
+        for (auto &telop : m_telops) telop.remain = 0.0f;
         m_dismissTelops = false;
     }
 
+    // テロップの残り時間を進め、消えきったものを破棄する
     UpdateTelops(dt);
 }
 

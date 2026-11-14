@@ -17,8 +17,8 @@
 struct GameSettings
 {
     float lookSensitivity = 1.0f; // 視点の感度の倍率（マウス・スティック共通）
-    float bgmVolume       = 0.5f; // BGM の音量（0〜1）
-    float sfxVolume       = 0.5f; // 効果音の音量（0〜1）
+    float bgmVolume       = 0.7f; // BGM の音量（0〜1）
+    float sfxVolume       = 0.7f; // 効果音の音量（0〜1）
 
     // --- 範囲と、設定画面の左右の入力で変える1段の刻み ---
     static constexpr float kSensitivityMin  = 0.25f; // 感度の最小

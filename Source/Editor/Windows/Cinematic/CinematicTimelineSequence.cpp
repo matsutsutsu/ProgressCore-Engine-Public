@@ -12,7 +12,7 @@
 
 namespace
 {
-    // パスからファイル名（拡張子なし）だけを取り出す。行の名前が長くなりすぎないように
+    // 行の名前が長くなりすぎないよう、ファイル名（拡張子なし）だけにする
     std::string StemOf(const std::string &path)
     {
         return std::filesystem::path(path).stem().string();
@@ -102,9 +102,9 @@ void CinematicTimelineSequence::BeginEdit(int index)
 bool CinematicTimelineSequence::Flush()
 {
     // 処理フロー:
-    // 1. 掴んでいる（か離したばかりの）帯を決め、全体の長さの中に収める
+    // 1. 掴んでいる（か離したばかりの）帯を、全体の長さの中に収める
     // 2. 動いていたら、台本の時刻と長さへ書き戻す
-    // 3. リップルなら、後ろの項目と全体の長さもずらし、その帯を写し直す
+    // 3. リップルなら、後ろの項目と全体の長さもずらす
 
     // ---------------------------------------------------------
     // 1. 帯を決めて収める
@@ -116,17 +116,12 @@ bool CinematicTimelineSequence::Flush()
     const Row                 row    = m_rows[index];
     const std::pair<int, int> before = ToFrames(row);
 
-    // 帯を全体の長さの外へは出さない（ImSequencer は左端 0 しか止めない）
-    // 右端まで行かせないのは、全体の長さ以降に始まる項目を読み込みが書き間違いとして弾くため
-    // リップル中のショットの終わりだけは外へ出してよい。全体の長さも同じだけ伸びるので、最後のショットも伸ばせる
+    // 全体の長さ以降に始まる項目は映らないので、外へは出さない（ImSequencer は左端 0 しか止めない）
+    // リップル中のショットの終わりだけは出してよい。全体の長さも同じだけ伸びる
     auto &[start, end] = m_frames[index];
     const int maxFrame = GetFrameMax();
     start              = std::clamp(start, 0, maxFrame);
     end                = m_ripple.valid ? std::max(end, start) : std::clamp(end, start, maxFrame);
-
-    // 点は長さを持たないので、端を掴んで伸ばしても1コマ幅に戻す
-    const bool isPoint = (row.kind == RowKind::Sound || row.kind == RowKind::Effect || row.kind == RowKind::Signal);
-    if (isPoint) end = start;
 
     if (m_frames[index] == before) return false;
 
@@ -160,12 +155,12 @@ bool CinematicTimelineSequence::Flush()
     // 3. リップル
     // ---------------------------------------------------------
 
-    // 控えはショットの帯を掴んだときにだけあるので、ここに来るのはショットの帯を動かしたときだけ
+    // 控えはショットの帯を掴んだときにだけある
     if (m_ripple.valid)
     {
         CinematicRipple::Apply(s, m_ripple);
 
-        // 掴んでいる間は Begin() が写し直さないので、ずらした帯をここで写す。掴んでいる帯は ImSequencer の値のまま残す
+        // 掴んでいる間は Begin() が写し直さないので、ずらした帯をここで写す
         for (std::size_t i = 0; i < m_rows.size(); ++i)
         {
             if (static_cast<int>(i) != index) m_frames[i] = ToFrames(m_rows[i]);
@@ -268,6 +263,14 @@ const char *CinematicTimelineSequence::GetItemLabel(int index) const
         break;
     }
     return m_label;
+}
+
+
+
+bool CinematicTimelineSequence::CanResize(int index) const
+{
+    const RowKind kind = m_rows[index].kind;
+    return kind == RowKind::Shot || kind == RowKind::Animation;
 }
 
 

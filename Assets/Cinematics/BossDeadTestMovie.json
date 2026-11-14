@@ -1,6 +1,5 @@
 {
   "duration": 5.0,
-  "startDelay": 0.0,
   "allowSkip": true,
   "shots": [
     {
@@ -9,7 +8,6 @@
       "subject": "Player",
       "motion": "Orbit",
       "ease": "Linear",
-      "blendIn": 0.0,
       "lookStart": [
         0.0,
         0.0,

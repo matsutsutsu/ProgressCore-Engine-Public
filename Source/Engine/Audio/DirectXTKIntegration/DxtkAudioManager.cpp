@@ -779,6 +779,6 @@ void DxtkAudioManager::SetGlobalSlow(float slow01)
 
 std::vector<std::string> DxtkAudioManager::GetEventNames() const
 {
-    // ロックせずにコピーを返す。呼ぶのはエディタのメインスレッドだけで、ロード後は変化しないため
+    // ロックせずにコピーを返す。一覧はロード後に変化しないため（エディタと CombatSoundSystem が読む）
     return m_impl->eventNames;
 }

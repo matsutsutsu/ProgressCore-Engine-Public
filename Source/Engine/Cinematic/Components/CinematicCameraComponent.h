@@ -12,63 +12,50 @@
 enum class CinematicState : std::uint8_t
 {
     Idle,     // 一度も再生していない
-    Waiting,  // 最初の絵で止めて、開始を待っている
     Playing,  // 再生中
     Finished, // 再生が終わった（次の再生要求まで保つ）
 };
 
-// Metaファイル用の文字列配列
-inline constexpr const char *kCinematicStateNames[] = {"Idle", "Waiting", "Playing", "Finished"};
+// Meta 用の名前（CinematicState の並びと同じ順）
+inline constexpr const char *kCinematicStateNames[] = {"Idle", "Playing", "Finished"};
 inline constexpr std::size_t kCinematicStateCount   = sizeof(kCinematicStateNames) / sizeof(kCinematicStateNames[0]);
 
 struct CinematicCameraComponent
 {
-    // --- 優先度 ---
-    int activePriority = 300;   // 再生中のカメラの優先度。他のカメラより高くして切り替える
-    int idlePriority   = -1000; // 停止中のカメラの優先度。他のカメラより低くして譲る
+    int activePriority = 300;   // 再生中の優先度。他のカメラより高くして画面を握る
+    int idlePriority   = -1000; // 停止中の優先度。他のカメラより低くして譲る
 
-    // --- 実行時状態（保存しない） ---
-    CinematicScript script;            // 再生中の台本。再生要求を受け付けたときに写す
-    std::uint32_t   playCount     = 0; // 受け付けた再生の通し番号
-    float           playStartTime = 0.0f; // 今回の再生を始めた位置（秒）。トラックはこれより前の点を出さない
+    // --- 再生状態（保存しない） ---
+    CinematicScript script;                              // 再生中の台本の写し
+    CinematicState  state         = CinematicState::Idle; // 再生の状態
+    float           time          = 0.0f;                 // 再生位置（秒）
+    float           playStartTime = 0.0f;                 // 今回の再生を始めた位置（秒）
+    std::uint32_t   playCount     = 0;                    // 受け付けた再生の通し番号
+    int             activeShot    = -1;                   // 今映しているショットの番号
 
-    CinematicState state      = CinematicState::Idle; // 再生の状態
-    float          time       = 0.0f;                 // 再生位置（秒）
-    float          waitTime   = 0.0f;                 // 開始待ちの経過時間（秒）
-    int            activeShot = -1;                   // 今映しているショットの番号。-1 はまだ映していない
-
-    // スキップの長押し
-    float skipHoldTime = 0.0f;  // スキップボタンを押し続けている時間（秒）
-    bool  skipArmed    = false; // 再生が始まってからスキップボタンを一度離したか
+    // --- スキップ ---
+    float skipHoldTime = 0.0f;  // 長押しの経過（秒）
+    bool  skipArmed    = false; // 再生が始まってから一度ボタンを離したか
     bool  skipped      = false; // 今回の再生をスキップで終えたか
 
-    // 今のショットの基準。ショットに入った瞬間に決める
-    CCL::ECS::EntityID shotSubject = CCL::ECS::InvalidEntityID; // 基準の Entity。subject が空か見つからなければ Invalid
+    // --- 今のショットの基準。ショットに入った瞬間に決める ---
+    CCL::ECS::EntityID shotSubject = CCL::ECS::InvalidEntityID; // 基準の Entity
     float              shotYaw     = 0.0f;                      // 基準の向き（ラジアン、0 が +Z）
 
-    // 入りのブレンドの補間元。ショットに入った瞬間に決める
-    bool              blendActive   = false;              // 前のショットの絵から混ぜているか
-    DirectX::XMFLOAT3 blendFromPos  = {0.0f, 0.0f, 0.0f}; // 補間元のカメラ位置
-    DirectX::XMFLOAT3 blendFromLook = {0.0f, 0.0f, 1.0f}; // 補間元の注視点
-    float             blendFromFov  = 45.0f;              // 補間元の画角（度）
-    CinematicDof      blendFromDof;                       // 補間元の被写界深度
-
-    // 被写界深度。姿勢と同じく、最後に書いた値を次のショットの補間元にする
+    // --- 被写界深度 ---
     CinematicDof dof;              // 最後に書いた被写界深度
-    float        dofWeight = 0.0f; // 被写界深度の効き（0〜1）。再生中は 1 へ、止めたら 0 へ寄せて、TPS カメラとの切り替えに合わせる
+    float        dofWeight = 0.0f; // 効き（0〜1）
 
-    // トラックの進み具合。CinematicTrackSystem だけが書く
+    // --- トラックの進み具合。CinematicTrackSystem だけが書く ---
     std::uint32_t                   trackPlayCount = 0; // トラックが追っている再生の通し番号
-    std::size_t                     nextSound      = 0; // 次に出す SE の番号（script.sounds の添字）
-    std::size_t                     nextEffect     = 0; // 次に出すエフェクトの番号（script.effects の添字）
-    std::size_t                     nextSignal     = 0; // 次に出すシグナルの番号（script.signals の添字）
-    std::vector<CCL::ECS::EntityID> animHeld;           // アニメごとに握っている Entity（script.animations の添字）。握っていなければ Invalid
-    std::vector<std::uint8_t>       animEntered;        // アニメごとに、区間に入る処理を済ませたか（script.animations の添字）
+    std::size_t                     nextSound      = 0; // 次に出す SE の番号
+    std::size_t                     nextEffect     = 0; // 次に出すエフェクトの番号
+    std::size_t                     nextSignal     = 0; // 次に出すシグナルの番号
+    std::vector<CCL::ECS::EntityID> animHeld;           // アニメごとに握っている Entity
+    std::vector<std::uint8_t>       animEntered;        // アニメごとに、区間に入ったか
 
-    // エディタのプレビュー。Cinematic Editor だけが書く
-    // 再生の状態（state・time・script）とは別に持つ。トラックは state を見て出すので、プレビューでは何も出ない
-    bool            previewActive = false; // エディタが、ある時刻の絵を見せているか（開始待ち・再生中は無視する）
-    bool            previewFreeze = false; // プレビューの間、ムービー中として操作と敵の思考を止めるか（一時停止せずに見るとき）
-    CinematicScript previewScript;         // 見せる台本（エディタが編集中の写し）
+    // --- エディタのプレビュー。Cinematic Editor だけが書く ---
+    bool            previewActive = false; // ある時刻の絵を見せているか（再生中は無視する）
+    CinematicScript previewScript;         // 見せる台本（編集中の写し）
     float           previewTime   = 0.0f;  // 見せる時刻（秒）
 };
