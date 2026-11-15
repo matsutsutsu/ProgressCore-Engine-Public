@@ -722,7 +722,7 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossVoiceSystem.h" />    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Dash\PlayerDashComponent.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeComponent.h" />
@@ -1243,7 +1243,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossVoiceSystem.cpp" />    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\UI\ECS\Components\UIComponentsMeta.cpp" />

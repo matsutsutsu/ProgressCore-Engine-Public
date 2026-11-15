@@ -127,6 +127,12 @@
                     "paramHash": 1116791579,
                     "paramName": "IsDashing",
                     "threshold": 0.0
+                },
+                {
+                    "op": 0,
+                    "paramHash": 886235349,
+                    "paramName": "IsRushing",
+                    "threshold": 0.0
                 }
             ],
             "logicType": 0,

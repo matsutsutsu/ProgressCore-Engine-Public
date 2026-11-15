@@ -195,7 +195,7 @@ void BossPhaseSystem::OnEnterPhase(BossPhase                next,
         health.currentHealth = (std::min)(health.currentHealth, 0.0f);
 
         cmd.droneAttackActive = false;
-        cmd.requestFormation  = DroneFormationType::None;
+        cmd.requestFormation  = DroneFormationType::HighOrbit;
 
         phase.timer = 0.0f;
         CCL_LOG_INFO(LogCategory::AI, "[BossPhase] ボス死亡 → Dead へ");

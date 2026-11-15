@@ -18,7 +18,7 @@ namespace
     constexpr float kPlayerHurtVolume      = 1.3f;
     constexpr float kBossHurtVolume        = 1.6f;
     constexpr float kJustEvadeVolume       = 2.0f;
-    constexpr float kJustEvadeSlowVolume   = 0.9f;
+    constexpr float kJustEvadeSlowVolume   = 1.1f;
     constexpr float kPlayerDashVolume      = 1.0f;
     constexpr float kPlayerJumpVolume      = 2.5f;
 
@@ -109,18 +109,22 @@ void CombatSoundSystem::PlayVaried(VariedSound &sound, float volume, float pitch
     if (count > 1 && sound.last >= 0)
     {
         // 直前の1つを除いた中から選び、直前以降の番号は1つずらす
-        index = std::uniform_int_distribution<int>(0, count - 2)(m_random);
+        std::uniform_int_distribution<int> pick(0, count - 2);
+        index = pick(m_random);
         if (index >= sound.last) index++;
     }
     else if (count > 1)
     {
-        index = std::uniform_int_distribution<int>(0, count - 1)(m_random);
+        std::uniform_int_distribution<int> pick(0, count - 1);
+        index = pick(m_random);
     }
     sound.last = index;
 
     // 2. ピッチと音量を少し揺らす
-    const float pitchJitter  = std::uniform_real_distribution<float>(-kPitchJitter, kPitchJitter)(m_random);
-    const float volumeJitter = std::uniform_real_distribution<float>(-kVolumeJitter, kVolumeJitter)(m_random);
+    std::uniform_real_distribution<float> pitchDist(-kPitchJitter, kPitchJitter);
+    std::uniform_real_distribution<float> volumeDist(-kVolumeJitter, kVolumeJitter);
+    const float pitchJitter  = pitchDist(m_random);
+    const float volumeJitter = volumeDist(m_random);
 
     audio->PlayOneShot(sound.hashes[index], volume * (1.0f + volumeJitter), pitch + pitchJitter);
 }
