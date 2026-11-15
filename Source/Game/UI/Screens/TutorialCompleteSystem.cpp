@@ -121,6 +121,9 @@ void TutorialCompleteSystem::ShowUI()
     using namespace CCL::GameUI;
     World &w = *m_world;
 
+    // ボタンを押せるように、ここで初めてマウスカーソルを解放する
+    SetResultOpen(true);
+
     // ---------------------------------------------------------
     // 1. Canvas と暗転
     // ---------------------------------------------------------
@@ -186,6 +189,7 @@ void TutorialCompleteSystem::CloseUI()
     m_done  = false;
     m_shown = false;
     SetMatchOver(false);
+    SetResultOpen(false);
 }
 
 
@@ -193,6 +197,13 @@ void TutorialCompleteSystem::CloseUI()
 void TutorialCompleteSystem::SetMatchOver(bool over)
 {
     if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().matchOver = over;
+}
+
+
+
+void TutorialCompleteSystem::SetResultOpen(bool open)
+{
+    if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().resultOpen = open;
 }
 
 

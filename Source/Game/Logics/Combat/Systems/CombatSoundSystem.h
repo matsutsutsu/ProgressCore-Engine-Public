@@ -13,7 +13,9 @@
 //       プレイヤーへの手応えなので、距離で小さくならないよう 2D で鳴らす。イベント名は Assets/Audio/SE の下のファイル名
 //
 //       ダッシュとジャンプは回数が多いので、毎回ピッチと音量を少し揺らす
-//       SE_PlayerDash_01 のように「元の名前_〇〇」のファイルを置くと候補に加わり、毎回その中から選ぶ
+//       SE_PlayerJump_01 のように「元の名前_〇〇」のファイルを置くと候補に加わり、毎回その中から選ぶ
+//
+//       音量とピッチは OnGui で試せる。再起動で戻るので、決まった値はこのヘッダの初期値に書く
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
@@ -31,8 +33,16 @@ public:
 
     void Initialize() override;
     void Update(float dt) override; // 鳴らすのはイベントを受けたときで、毎フレームの処理はない
+    void OnGui() override;
 
 private:
+    // 音ごとの鳴らし方
+    struct SoundSetting
+    {
+        float volume = 1.0f; // 音量の倍率（1 で等倍）
+        float pitch  = 0.0f; // オクターブ（0 で等倍）
+    };
+
     // 候補の中から選んで、揺らして鳴らす音
     struct VariedSound
     {
@@ -43,16 +53,31 @@ private:
     };
 
     // イベント名の効果音を1回鳴らす（音声がないシーンでは何もしない）
-    // volume は音量の倍率（1 で等倍）、pitch はオクターブ（0 で等倍）
-    void Play(const char *eventName, float volume, float pitch = 0.0f);
+    void Play(const char *eventName, const SoundSetting &setting);
 
-    // 候補の中から直前と違うものを選び、ピッチと音量を少し揺らして鳴らす。pitch は揺らす前の基準
-    void PlayVaried(VariedSound &sound, float volume, float pitch);
+    // 候補の中から直前と違うものを選び、ピッチと音量を少し揺らして鳴らす
+    void PlayVaried(VariedSound &sound, const SoundSetting &setting);
 
     // 読み込み済みの音から、元の名前と「元の名前_〇〇」を候補に集める
     void CollectVariants(VariedSound &sound, const IAudioAPI &audio);
 
-    VariedSound  m_dashSound{"sfx:/SE_PlayerDash"};
+    // OnGui で1つの音の音量とピッチを出す。「鳴らす」が押されたら true
+    bool DrawSetting(const char *label, SoundSetting &setting);
+
+    // 音ごとの鳴らし方
+    SoundSetting m_playerHurt    {1.3f, 0.0f};
+    SoundSetting m_bossHurt      {1.6f, 0.0f};
+    SoundSetting m_justEvade     {2.0f, 0.0f};
+    SoundSetting m_justEvadeSlow {1.1f, 0.0f};
+    SoundSetting m_dash          {3.0f, 0.0f}; // ジャンプの1段目と同じ鳴らし方
+    SoundSetting m_jumpGround    {2.5f, -0.15f}; // 1段目は地面を蹴るので低く重く
+    SoundSetting m_jumpAir       {2.5f, 0.1f};   // 2段目は空中なので高く軽く
+
+    // ダッシュとジャンプの揺らぎ。毎回同じに聞こえないようにする
+    float m_pitchJitter  = 0.06f; // ピッチの揺れ幅（±オクターブ。0.06 で約 ±4%）
+    float m_volumeJitter = 0.1f;  // 音量の揺れ幅（±倍率）
+
+    VariedSound  m_dashSound{"sfx:/SE_PlayerJump"}; // ダッシュもジャンプと同じ音
     VariedSound  m_jumpSound{"sfx:/SE_PlayerJump"};
     std::mt19937 m_random{std::random_device{}()};
 };

@@ -292,6 +292,9 @@ void GameResultSystem::ShowResultUI(bool win)
     // デバッグの「リザルトを出す」から呼ばれたときも、操作とボスを止める
     EndMatch();
 
+    // ボタンを押せるように、ここで初めてマウスカーソルを解放する
+    if (w.HasResource<GameFlowState>()) w.GetResource<GameFlowState>().resultOpen = true;
+
     if (w.HasResource<BattleContext>())
     {
         const auto &battle = w.GetResource<BattleContext>();

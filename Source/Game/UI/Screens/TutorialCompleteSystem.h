@@ -29,6 +29,9 @@ private:
     // matchOver を書く。決着と同じく、プレイヤーの操作・ボスの思考と技・視点入力をまとめて止める
     void SetMatchOver(bool over);
 
+    // resultOpen を書く。画面を出している間だけマウスカーソルを解放する
+    void SetResultOpen(bool open);
+
     bool  m_done          = false; // 教え終えたのを見たか
     bool  m_shown         = false; // 画面を出したか
     float m_showDelay     = 0.0f;  // 画面を出すまでの残り時間（実時間の秒）

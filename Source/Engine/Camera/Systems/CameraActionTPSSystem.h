@@ -54,7 +54,7 @@ private:
         float mouseDY       = 0.0f;  // マウス垂直移動量（ピクセル/フレーム）
         bool  rmbHeld       = false; // 右クリック押下中か
         bool  hasManualLook = false; // しきい値を超える視点操作があったか（ロックオン補正の停止判定用）
-        bool  cursorFree    = false; // カーソルを固定しない（ポーズ中・UI操作中・決着後・ウィンドウ非アクティブ）
+        bool  cursorFree    = false; // カーソルを固定しない（ポーズ中・UI操作中・決着の画面・ウィンドウ非アクティブ）
         bool  blockLook     = false; // カットシーン中。視点入力を一切受け付けない
     };
 

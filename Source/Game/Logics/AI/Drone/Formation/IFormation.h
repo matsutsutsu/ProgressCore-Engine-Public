@@ -116,6 +116,10 @@ namespace CCL::AI::Formation
          */
         virtual bool IsChargeOver(float flownDistance, float flownTime) const { return false; }
 
+        // 突撃を続けたまま、当たり判定だけ先に閉じるか
+        // 既定は false で、突撃している間ずっと当たる（小隊・弾幕）
+        virtual bool IsHitWindowOver(const DroneComponent &drone) const { return false; }
+
         /**
          * @brief この陣形から別の陣形へ切り替わる機の後始末
          *

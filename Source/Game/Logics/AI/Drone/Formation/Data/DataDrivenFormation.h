@@ -54,6 +54,9 @@ namespace CCL::AI::Formation::Data
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
 
+        // 形が動き切ったら閉じる。動き切った形は戻すまで残るので、開けたままだと吹き飛んだ先で何度も当たる
+        bool IsHitWindowOver(const DroneComponent &drone) const override { return drone.attackProgress >= 1.0f; }
+
         bool TryGetTiming(TechniqueTiming &out) const override
         {
             out = {m_asset.telegraphSeconds, m_asset.recoverySeconds, m_asset.restSeconds};

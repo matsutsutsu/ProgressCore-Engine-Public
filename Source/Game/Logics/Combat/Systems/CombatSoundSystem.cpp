@@ -10,26 +10,9 @@
 #include <memory>
 #include <string>
 
+#include <imgui.h>
+
 using namespace CCL::ECS;
-
-namespace
-{
-    // 音ごとの音量の倍率
-    constexpr float kPlayerHurtVolume      = 1.3f;
-    constexpr float kBossHurtVolume        = 1.6f;
-    constexpr float kJustEvadeVolume       = 2.0f;
-    constexpr float kJustEvadeSlowVolume   = 1.1f;
-    constexpr float kPlayerDashVolume      = 1.0f;
-    constexpr float kPlayerJumpVolume      = 2.5f;
-
-    // ジャンプの段ごとのピッチ（オクターブ）。1段目は地面を蹴るので低く重く、2段目は空中なので高く軽く
-    constexpr float kJumpPitchGround = -0.15f;
-    constexpr float kJumpPitchAir    = 0.1f;
-
-    // 回数が多い音の揺らぎ。毎回同じに聞こえないようにする
-    constexpr float kPitchJitter  = 0.06f; // ピッチの揺れ幅（±オクターブ。0.06 で約 ±4%）
-    constexpr float kVolumeJitter = 0.1f;  // 音量の揺れ幅（±倍率）
-}
 
 
 
@@ -39,25 +22,24 @@ void CombatSoundSystem::Initialize()
     // プレイヤーの被弾は広がりのある重い衝撃、ボスへの命中は短く鋭い衝撃（連続で当たっても濁らない）
     ListenEvent<DamageTakenEvent>([this](const DamageTakenEvent &e) {
         if (e.isPlayer)
-            Play("sfx:/SE_PlayerHurt", kPlayerHurtVolume);
+            Play("sfx:/SE_PlayerHurt", m_playerHurt);
         else
-            Play("sfx:/SE_BossHurt", kBossHurtVolume);
+            Play("sfx:/SE_BossHurt", m_bossHurt);
     });
 
     // ジャスト回避は金属の「キィン」と、続くラッシュのスローに合わせた低い音を重ねる
     ListenEvent<JustEvadeSuccessEvent>([this](const JustEvadeSuccessEvent &) {
-        Play("sfx:/SE_PlayerJustEvade", kJustEvadeVolume);
-        Play("sfx:/SE_PlayerJustEvadeSlow", kJustEvadeSlowVolume);
+        Play("sfx:/SE_PlayerJustEvade", m_justEvade);
+        Play("sfx:/SE_PlayerJustEvadeSlow", m_justEvadeSlow);
     });
 
-    // ダッシュは回数が多いので、一番短い風切り音
+    // ダッシュはジャンプと同じ風切り音（SE_PlayerJump）
     ListenEvent<PlayerDashedEvent>([this](const PlayerDashedEvent &) {
-        PlayVaried(m_dashSound, kPlayerDashVolume, 0.0f);
+        PlayVaried(m_dashSound, m_dash);
     });
 
     ListenEvent<PlayerJumpedEvent>([this](const PlayerJumpedEvent &e) {
-        const float pitch = (e.jumpCount >= 2) ? kJumpPitchAir : kJumpPitchGround;
-        PlayVaried(m_jumpSound, kPlayerJumpVolume, pitch);
+        PlayVaried(m_jumpSound, (e.jumpCount >= 2) ? m_jumpAir : m_jumpGround);
     });
 }
 
@@ -70,8 +52,41 @@ void CombatSoundSystem::Update(float /*dt*/)
 
 
 
+void CombatSoundSystem::OnGui()
+{
+    if (DrawSetting("被弾（プレイヤー）", m_playerHurt)) Play("sfx:/SE_PlayerHurt", m_playerHurt);
+    if (DrawSetting("命中（ボス）", m_bossHurt)) Play("sfx:/SE_BossHurt", m_bossHurt);
+    if (DrawSetting("ジャスト回避", m_justEvade)) Play("sfx:/SE_PlayerJustEvade", m_justEvade);
+    if (DrawSetting("ジャスト回避のスロー", m_justEvadeSlow)) Play("sfx:/SE_PlayerJustEvadeSlow", m_justEvadeSlow);
+    if (DrawSetting("ダッシュ", m_dash)) PlayVaried(m_dashSound, m_dash);
+    if (DrawSetting("ジャンプ（1段目）", m_jumpGround)) PlayVaried(m_jumpSound, m_jumpGround);
+    if (DrawSetting("ジャンプ（2段目）", m_jumpAir)) PlayVaried(m_jumpSound, m_jumpAir);
+
+    ImGui::SeparatorText("揺らぎ（ダッシュとジャンプ）");
+    ImGui::SliderFloat("ピッチの揺れ幅", &m_pitchJitter, 0.0f, 0.3f, "±%.2f オクターブ");
+    ImGui::SliderFloat("音量の揺れ幅", &m_volumeJitter, 0.0f, 0.5f, "±%.2f");
+
+    ImGui::TextDisabled("再起動で戻る。決まった値は CombatSoundSystem.h の初期値に書く");
+}
+
+
+
+bool CombatSoundSystem::DrawSetting(const char *label, SoundSetting &setting)
+{
+    // 同じ名前のスライダーが並ぶので、音ごとに ID を分ける
+    ImGui::PushID(label);
+    ImGui::SeparatorText(label);
+    ImGui::SliderFloat("音量", &setting.volume, 0.0f, 3.0f, "%.2f");
+    ImGui::SliderFloat("ピッチ", &setting.pitch, -1.0f, 1.0f, "%.2f オクターブ");
+    const bool play = ImGui::Button("鳴らす");
+    ImGui::PopID();
+    return play;
+}
+
+
+
 // イベント名の効果音を、音量の倍率とピッチを指定して1回鳴らす
-void CombatSoundSystem::Play(const char *eventName, float volume, float pitch)
+void CombatSoundSystem::Play(const char *eventName, const SoundSetting &setting)
 {
     if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>())
     {
@@ -79,13 +94,13 @@ void CombatSoundSystem::Play(const char *eventName, float volume, float pitch)
     }
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
     {
-        audio->PlayOneShot(CCL::Utils::HashString(eventName), volume, pitch);
+        audio->PlayOneShot(CCL::Utils::HashString(eventName), setting.volume, setting.pitch);
     }
 }
 
 
 
-void CombatSoundSystem::PlayVaried(VariedSound &sound, float volume, float pitch)
+void CombatSoundSystem::PlayVaried(VariedSound &sound, const SoundSetting &setting)
 {
     if (!m_world->HasResource<std::shared_ptr<IAudioAPI>>())
     {
@@ -121,12 +136,12 @@ void CombatSoundSystem::PlayVaried(VariedSound &sound, float volume, float pitch
     sound.last = index;
 
     // 2. ピッチと音量を少し揺らす
-    std::uniform_real_distribution<float> pitchDist(-kPitchJitter, kPitchJitter);
-    std::uniform_real_distribution<float> volumeDist(-kVolumeJitter, kVolumeJitter);
+    std::uniform_real_distribution<float> pitchDist(-m_pitchJitter, m_pitchJitter);
+    std::uniform_real_distribution<float> volumeDist(-m_volumeJitter, m_volumeJitter);
     const float pitchJitter  = pitchDist(m_random);
     const float volumeJitter = volumeDist(m_random);
 
-    audio->PlayOneShot(sound.hashes[index], volume * (1.0f + volumeJitter), pitch + pitchJitter);
+    audio->PlayOneShot(sound.hashes[index], setting.volume * (1.0f + volumeJitter), setting.pitch + pitchJitter);
 }
 
 

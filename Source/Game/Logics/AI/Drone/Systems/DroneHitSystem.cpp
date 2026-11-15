@@ -14,11 +14,13 @@ using namespace CCL::ECS;
 
 namespace
 {
-    // 当たり判定を開くべきかを返す。突撃中だけ開き、その中の「当たらない区間」は動き方に聞く
-    bool IsDangerous(const DroneComponent &d)
+    // 当たり判定を開くべきかを返す。突撃中だけ開き、その中の「当たらない区間」は動き方と技に聞く
+    bool IsDangerous(const DroneComponent &d, const CCL::AI::Formation::IFormation *formation)
     {
         // 離脱（Returning）は FireCharge と別の状態なので、帰り道はここで自動的に当たらなくなる
         if (d.currentState != DroneState::FireCharge) return false;
+
+        if (formation && formation->IsHitWindowOver(d)) return false;
 
         return CCL::AI::Motion::IsChargeDangerous(d);
     }
@@ -53,7 +55,8 @@ void DroneHitSystem::Update(float /*dt*/)
             if (s >= 0 && s < 4) ++stateCount[s];
         }
 
-        const bool dangerous = IsDangerous(drone);
+        const auto *formation = registry ? registry->Get(drone.currentFormation) : nullptr;
+        const bool  dangerous = IsDangerous(drone, formation);
 
         // 判定が開いた瞬間に命中済みの履歴を捨てる。捨てないと2回目の突撃が同じ相手に当たらない
         if (dangerous && !box.isActive) box.hitCount = 0;
@@ -66,8 +69,7 @@ void DroneHitSystem::Update(float /*dt*/)
 
         if (!dangerous) return;
 
-        const auto *formation = registry ? registry->Get(drone.currentFormation) : nullptr;
-        const auto  combat    = formation ? formation->GetCombat() : CCL::AI::Formation::FormationCombat{};
+        const auto combat   = formation ? formation->GetCombat() : CCL::AI::Formation::FormationCombat{};
         box.damageAmount    = combat.damage;
         box.knockback       = combat.knockback;
         box.hitStopDuration = combat.hitStopDuration;

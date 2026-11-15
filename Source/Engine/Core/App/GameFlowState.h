@@ -29,6 +29,12 @@ struct GameFlowState
     //    書き手は GameResultSystem と、チュートリアルを教え終えたときの TutorialCompleteSystem
     bool matchOver = false;
 
+    // 「決着の画面を出している」。リザルト・チュートリアル完了の画面を出してから、シーンを切り替えるまで true
+    //    ・CameraActionTPSSystem: マウスカーソルの固定を外す
+    //    matchOver とは別に持つのは、決着から画面が出るまでの間（とどめのスロー・撃破ムービー）にカーソルを出さないため
+    //    書き手は matchOver と同じ2つ
+    bool resultOpen = false;
+
     // アプリ終了要求。タイトル画面の QUIT から立てる
     //    ゲーム中のポーズ／リザルトはタイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている
     //    System からは PostQuitMessage を呼ばず、このフラグを立てるだけにする（理由は Framework::Run の 3）
