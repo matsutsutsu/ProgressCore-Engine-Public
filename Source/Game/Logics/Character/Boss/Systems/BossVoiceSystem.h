@@ -4,14 +4,17 @@
 //
 // 責務:
 //   - 戦闘開始・第2形態への移行・撃破・プレイヤーを倒した、の4つの場面で1回ずつしゃべらせる
+//   - 怒りに入ったときと、疲れたときに、そのたびに声を出させる
 //   - 場面ごとの候補から1つをランダムに選び、2D で鳴らす
 //
-// 備考: どの場面も1回の戦いで1回しか起きず、同時にも起きないので、セリフどうしの重なりは気にしない
+// 備考: どの場面も同時には起きないので、セリフどうしの重なりは気にしない
 //       距離で小さくならないよう 2D で鳴らす
 //       セリフの一覧と訳は Docs/Game/BossVoiceList.md
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
+#include "Game/Logics/Character/Boss/Components/BossActionComponent.h"
+#include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossPhaseComponent.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 
@@ -21,12 +24,16 @@
 class BossVoiceSystem : public CCL::ECS::IfSystem<
     BossVoiceSystem,
     CCL::ECS::Read<BossPhaseComponent>,
-    CCL::ECS::Read<HealthComponent>>
+    CCL::ECS::Read<HealthComponent>,
+    CCL::ECS::Read<BossCommandComponent>,
+    CCL::ECS::Read<BossActionComponent>>
 {
     using Base = CCL::ECS::IfSystem<
         BossVoiceSystem,
         CCL::ECS::Read<BossPhaseComponent>,
-        CCL::ECS::Read<HealthComponent>>;
+        CCL::ECS::Read<HealthComponent>,
+        CCL::ECS::Read<BossCommandComponent>,
+        CCL::ECS::Read<BossActionComponent>>;
 
 public:
     BossVoiceSystem() : IfSystem("BossVoiceSystem") {}
@@ -43,8 +50,11 @@ private:
     // プレイヤーが倒れているか（プレイヤーがいなければ false）
     bool IsPlayerDown() const;
 
-    bool      m_hasPrev   = false;
-    BossPhase m_prevPhase = BossPhase::Combat; // 前のフレームの形態（変わった瞬間を拾う）
+    // 前のフレームの状態（変わった瞬間を拾う）
+    bool            m_hasPrev    = false;
+    BossPhase       m_prevPhase  = BossPhase::Combat;
+    BossActionState m_prevAction = BossActionState::None;
+    bool            m_prevRaging = false;
 
     float m_combatTime     = 0.0f; // 第1形態がムービーなしで続いた時間 [秒]
     bool  m_saidBattle     = false;
