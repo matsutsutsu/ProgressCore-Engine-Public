@@ -1,6 +1,6 @@
 {
-    "anyStatePosX": 360.0,
-    "anyStatePosY": -377.0,
+    "anyStatePosX": 880.0,
+    "anyStatePosY": -260.0,
     "anyStateTransitions": [
         {
             "blendDuration": 0.20000000298023224,
@@ -171,8 +171,8 @@
             "targetStateHash": 517565587
         }
     ],
-    "entryPosX": -348.0,
-    "entryPosY": 314.0,
+    "entryPosX": 0.0,
+    "entryPosY": 130.0,
     "entryStateHash": 281267617,
     "parameters": [
         {
@@ -262,8 +262,15 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 1254130737,
-            "name": "HitDir",
+            "hash": 370176331,
+            "name": "HitDirX",
+            "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 353398712,
+            "name": "HitDirY",
             "type": 0
         },
         {
@@ -344,8 +351,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 62.0,
-            "nodePosY": 317.0,
+            "nodePosX": 440.0,
+            "nodePosY": 130.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Loco_Idle.json",
             "sequenceName": "Loco_Idle",
@@ -389,8 +396,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 340.0,
-            "nodePosY": 311.0,
+            "nodePosX": 1100.0,
+            "nodePosY": 130.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Loco_Run.json",
             "sequenceName": "Loco_Run",
@@ -476,8 +483,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 330.0,
-            "nodePosY": -14.0,
+            "nodePosX": 880.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Loco_Dash.json",
             "sequenceName": "Loco_Dash",
@@ -491,12 +498,39 @@
                             "paramHash": 2343121693,
                             "paramName": "Attack",
                             "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 2646078375,
+                            "paramName": "IsAirborne",
+                            "threshold": 0.0
                         }
                     ],
                     "logicType": 0,
                     "requiredCancelMask": 0,
                     "sourceGroupId": 0,
                     "targetStateHash": 1922912354
+                },
+                {
+                    "blendDuration": 0.05000000074505806,
+                    "conditions": [
+                        {
+                            "op": 3,
+                            "paramHash": 2343121693,
+                            "paramName": "Attack",
+                            "threshold": 0.0
+                        },
+                        {
+                            "op": 0,
+                            "paramHash": 2646078375,
+                            "paramName": "IsAirborne",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 0,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 3355143492
                 },
                 {
                     "blendDuration": 0.20000000298023224,
@@ -554,8 +588,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 796.0,
-            "nodePosY": -101.0,
+            "nodePosX": 1540.0,
+            "nodePosY": -130.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Start.json",
             "sequenceName": "Jump_Start",
@@ -584,8 +618,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 797.0,
-            "nodePosY": 32.0,
+            "nodePosX": 1760.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Loop.json",
             "sequenceName": "Jump_Loop",
@@ -598,8 +632,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1126.0,
-            "nodePosY": -134.0,
+            "nodePosX": 1540.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_Double.json",
             "sequenceName": "Jump_Double",
@@ -610,8 +644,8 @@
                     "conditions": [
                         {
                             "op": 4,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "paramHash": 0,
+                            "paramName": "",
                             "threshold": 0.0
                         }
                     ],
@@ -628,8 +662,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 538.0,
-            "nodePosY": 111.0,
+            "nodePosX": 660.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 2.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Jump_End.json",
             "sequenceName": "Jump_End",
@@ -655,8 +689,8 @@
                     "conditions": [
                         {
                             "op": 4,
-                            "paramHash": 174817312,
-                            "paramName": "Speed",
+                            "paramHash": 0,
+                            "paramName": "",
                             "threshold": 0.0
                         }
                     ],
@@ -673,8 +707,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -44.0,
-            "nodePosY": -4.0,
+            "nodePosX": 550.0,
+            "nodePosY": 260.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Dash.json",
             "sequenceName": "Atk_Dash",
@@ -754,8 +788,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 794.0,
-            "nodePosY": 194.0,
+            "nodePosX": 1540.0,
+            "nodePosY": 130.0,
             "playbackSpeed": 1.399999976158142,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Attack.json",
             "sequenceName": "Air_Attack",
@@ -814,18 +848,18 @@
             "isLoop": false,
             "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": -70.0,
-            "nodePosY": 472.0,
+            "nodePosX": 440.0,
+            "nodePosY": 390.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "",
             "sequenceName": "Atk_Combo",
             "stateHash": 3323160492,
             "subGraph": {
-                "anyStatePosX": 192.0,
-                "anyStatePosY": 336.0,
+                "anyStatePosX": 0.0,
+                "anyStatePosY": -260.0,
                 "anyStateTransitions": [],
-                "entryPosX": -52.0,
-                "entryPosY": 323.0,
+                "entryPosX": 0.0,
+                "entryPosY": 0.0,
                 "entryStateHash": 1837898791,
                 "parameters": [],
                 "states": [
@@ -835,8 +869,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 466.0,
+                        "nodePosX": 220.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 0.699999988079071,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo1.json",
                         "sequenceName": "Atk_Combo1",
@@ -913,8 +947,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 594.0,
+                        "nodePosX": 440.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 0.699999988079071,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo2.json",
                         "sequenceName": "Atk_Combo2",
@@ -991,8 +1025,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 722.0,
+                        "nodePosX": 660.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo3.json",
                         "sequenceName": "Atk_Combo3",
@@ -1069,8 +1103,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 850.0,
+                        "nodePosX": 1540.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo4.json",
                         "sequenceName": "Atk_Combo4",
@@ -1147,8 +1181,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 978.0,
+                        "nodePosX": 1760.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo5.json",
                         "sequenceName": "Atk_Combo5",
@@ -1161,8 +1195,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": 250.0,
-                        "nodePosY": 594.0,
+                        "nodePosX": 880.0,
+                        "nodePosY": -260.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_LeapSlash.json",
                         "sequenceName": "Atk_LeapSlash",
@@ -1191,8 +1225,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": 250.0,
-                        "nodePosY": 722.0,
+                        "nodePosX": 1100.0,
+                        "nodePosY": -260.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_DiveSlash.json",
                         "sequenceName": "Atk_DiveSlash",
@@ -1205,8 +1239,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -330.0,
-                        "nodePosY": 722.0,
+                        "nodePosX": 880.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo3.json",
                         "sequenceName": "Atk_Combo3_2",
@@ -1283,8 +1317,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -330.0,
-                        "nodePosY": 850.0,
+                        "nodePosX": 1100.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo3.json",
                         "sequenceName": "Atk_Combo3_3",
@@ -1361,8 +1395,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -330.0,
-                        "nodePosY": 978.0,
+                        "nodePosX": 1320.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.2999999523162842,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_Combo3.json",
                         "sequenceName": "Atk_Combo3_4",
@@ -1439,8 +1473,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": 250.0,
-                        "nodePosY": 466.0,
+                        "nodePosX": 880.0,
+                        "nodePosY": 260.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_BackSlash.json",
                         "sequenceName": "Atk_BackSlash",
@@ -1469,8 +1503,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": 530.0,
-                        "nodePosY": 466.0,
+                        "nodePosX": 1100.0,
+                        "nodePosY": 260.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Atk_LungeSlash.json",
                         "sequenceName": "Atk_LungeSlash",
@@ -1518,18 +1552,18 @@
             "isLoop": false,
             "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 200.0,
-            "nodePosY": 600.0,
+            "nodePosX": 220.0,
+            "nodePosY": 260.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "",
             "sequenceName": "Rush_Combo",
             "stateHash": 3530959226,
             "subGraph": {
-                "anyStatePosX": 192.0,
-                "anyStatePosY": 336.0,
+                "anyStatePosX": 0.0,
+                "anyStatePosY": -130.0,
                 "anyStateTransitions": [],
-                "entryPosX": -52.0,
-                "entryPosY": 323.0,
+                "entryPosX": 0.0,
+                "entryPosY": 0.0,
                 "entryStateHash": 1294793669,
                 "parameters": [],
                 "states": [
@@ -1539,8 +1573,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 450.0,
+                        "nodePosX": 220.0,
+                        "nodePosY": 0.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Slash.json",
                         "sequenceName": "Rush_Slash_A",
@@ -1584,8 +1618,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 594.0,
+                        "nodePosX": 220.0,
+                        "nodePosY": 130.0,
                         "playbackSpeed": 1.0,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Slash.json",
                         "sequenceName": "Rush_Slash_B",
@@ -1629,8 +1663,8 @@
                         "isLoop": false,
                         "isSubMachine": false,
                         "lockVerticalRootMotion": false,
-                        "nodePosX": -52.0,
-                        "nodePosY": 706.0,
+                        "nodePosX": 440.0,
+                        "nodePosY": 65.0,
                         "playbackSpeed": 0.699999988079071,
                         "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Finish.json",
                         "sequenceName": "Rush_Finish",
@@ -1640,6 +1674,21 @@
                 ]
             },
             "transitions": [
+                {
+                    "blendDuration": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "op": 0,
+                            "paramHash": 4231015070,
+                            "paramName": "HasMoveInput",
+                            "threshold": 1.0
+                        }
+                    ],
+                    "logicType": 0,
+                    "requiredCancelMask": 32,
+                    "sourceGroupId": 0,
+                    "targetStateHash": 2454546476
+                },
                 {
                     "blendDuration": 0.20000000298023224,
                     "conditions": [
@@ -1659,129 +1708,47 @@
         },
         {
             "applyRootMotion": false,
+            "blendSpace": {
+                "paramXHash": 370176331,
+                "paramXName": "HitDirX",
+                "paramYHash": 353398712,
+                "paramYName": "HitDirY",
+                "samples": [
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_F.json",
+                        "x": 0.0,
+                        "y": 1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_B.json",
+                        "x": 0.0,
+                        "y": -1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_L.json",
+                        "x": -1.0,
+                        "y": 0.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_R.json",
+                        "x": 1.0,
+                        "y": 0.0
+                    }
+                ],
+                "smoothingTime": 0.0,
+                "type": 1
+            },
             "groupId": 0,
+            "isBlendSpace": true,
             "isLoop": false,
-            "isSubMachine": true,
+            "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 76.0,
-            "nodePosY": -174.0,
+            "nodePosX": 1100.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "",
             "sequenceName": "Hit_Reaction",
             "stateHash": 3459859052,
-            "subGraph": {
-                "anyStatePosX": -500.0,
-                "anyStatePosY": -260.0,
-                "anyStateTransitions": [],
-                "entryPosX": -520.0,
-                "entryPosY": 0.0,
-                "entryStateHash": 60437995,
-                "parameters": [],
-                "states": [
-                    {
-                        "applyRootMotion": false,
-                        "groupId": 0,
-                        "isLoop": false,
-                        "isSubMachine": false,
-                        "lockVerticalRootMotion": false,
-                        "nodePosX": -260.0,
-                        "nodePosY": 0.0,
-                        "playbackSpeed": 1.0,
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_F.json",
-                        "sequenceName": "Hit_F",
-                        "stateHash": 60437995,
-                        "transitions": [
-                            {
-                                "blendDuration": 0.0,
-                                "conditions": [
-                                    {
-                                        "op": 0,
-                                        "paramHash": 1254130737,
-                                        "paramName": "HitDir",
-                                        "threshold": 1.0
-                                    }
-                                ],
-                                "logicType": 0,
-                                "requiredCancelMask": 0,
-                                "sourceGroupId": 0,
-                                "targetStateHash": 127548471
-                            },
-                            {
-                                "blendDuration": 0.0,
-                                "conditions": [
-                                    {
-                                        "op": 0,
-                                        "paramHash": 1254130737,
-                                        "paramName": "HitDir",
-                                        "threshold": 2.0
-                                    }
-                                ],
-                                "logicType": 0,
-                                "requiredCancelMask": 0,
-                                "sourceGroupId": 0,
-                                "targetStateHash": 4254739577
-                            },
-                            {
-                                "blendDuration": 0.0,
-                                "conditions": [
-                                    {
-                                        "op": 0,
-                                        "paramHash": 1254130737,
-                                        "paramName": "HitDir",
-                                        "threshold": 3.0
-                                    }
-                                ],
-                                "logicType": 0,
-                                "requiredCancelMask": 0,
-                                "sourceGroupId": 0,
-                                "targetStateHash": 395990375
-                            }
-                        ]
-                    },
-                    {
-                        "applyRootMotion": false,
-                        "groupId": 0,
-                        "isLoop": false,
-                        "isSubMachine": false,
-                        "lockVerticalRootMotion": false,
-                        "nodePosX": 40.0,
-                        "nodePosY": -140.0,
-                        "playbackSpeed": 1.0,
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_B.json",
-                        "sequenceName": "Hit_B",
-                        "stateHash": 127548471,
-                        "transitions": []
-                    },
-                    {
-                        "applyRootMotion": false,
-                        "groupId": 0,
-                        "isLoop": false,
-                        "isSubMachine": false,
-                        "lockVerticalRootMotion": false,
-                        "nodePosX": 40.0,
-                        "nodePosY": 20.0,
-                        "playbackSpeed": 1.0,
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_L.json",
-                        "sequenceName": "Hit_L",
-                        "stateHash": 4254739577,
-                        "transitions": []
-                    },
-                    {
-                        "applyRootMotion": false,
-                        "groupId": 0,
-                        "isLoop": false,
-                        "isSubMachine": false,
-                        "lockVerticalRootMotion": false,
-                        "nodePosX": 40.0,
-                        "nodePosY": 180.0,
-                        "playbackSpeed": 1.0,
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Player/Hit_R.json",
-                        "sequenceName": "Hit_R",
-                        "stateHash": 395990375,
-                        "transitions": []
-                    }
-                ]
-            },
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
@@ -1794,7 +1761,7 @@
                         }
                     ],
                     "logicType": 0,
-                    "requiredCancelMask": 0,
+                    "requiredCancelMask": 32,
                     "sourceGroupId": 0,
                     "targetStateHash": 2454546476
                 },
@@ -1821,8 +1788,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 200.0,
-            "nodePosY": 430.0,
+            "nodePosX": 990.0,
+            "nodePosY": 260.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Loco_Run_Stop.json",
             "sequenceName": "Loco_Run_Stop",
@@ -1902,8 +1869,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 480.0,
-            "nodePosY": 450.0,
+            "nodePosX": 1100.0,
+            "nodePosY": 390.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Loco_Walk_Stop.json",
             "sequenceName": "Loco_Walk_Stop",
@@ -1983,8 +1950,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1100.0,
-            "nodePosY": 194.0,
+            "nodePosX": 1540.0,
+            "nodePosY": 260.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Dive_Start.json",
             "sequenceName": "Air_Dive_Start",
@@ -2013,8 +1980,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1100.0,
-            "nodePosY": 320.0,
+            "nodePosX": 1540.0,
+            "nodePosY": 390.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Dive_Loop.json",
             "sequenceName": "Air_Dive_Loop",
@@ -2043,8 +2010,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 800.0,
-            "nodePosY": 330.0,
+            "nodePosX": 1320.0,
+            "nodePosY": 260.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Air_Dive_End.json",
             "sequenceName": "Air_Dive_End",
@@ -2088,8 +2055,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -400.0,
-            "nodePosY": -60.0,
+            "nodePosX": 220.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.5,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Dive_Start.json",
             "sequenceName": "Rush_Dive_Start",
@@ -2133,8 +2100,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -400.0,
-            "nodePosY": 80.0,
+            "nodePosX": 0.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Dive_Loop.json",
             "sequenceName": "Rush_Dive_Loop",
@@ -2163,8 +2130,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -150.0,
-            "nodePosY": 160.0,
+            "nodePosX": 440.0,
+            "nodePosY": 0.0,
             "playbackSpeed": 1.0,
             "sequenceFilePath": "Assets/Animations/Sequencer/Player/Rush_Dive_End.json",
             "sequenceName": "Rush_Dive_End",
@@ -2254,8 +2221,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -560.0,
-            "nodePosY": -260.0,
+            "nodePosX": 220.0,
+            "nodePosY": -130.0,
             "playbackSpeed": 1.2999999523162842,
             "sequenceFilePath": "",
             "sequenceName": "Rush_Evade",

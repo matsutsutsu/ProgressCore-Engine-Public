@@ -26,16 +26,19 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー
+    // のけぞりのアニメーションのパラメータ。再生は Hit トリガー、向きは HitDirX / HitDirY
     // 向きは攻撃が来た方向（前 = 正面から当たった、後 = 背後から当たった）
-    const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
-    const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
+    const uint32_t HASH_HIT       = CCL::Utils::HashString("Hit");
+    const uint32_t HASH_HIT_DIR_X = CCL::Utils::HashString("HitDirX");
+    const uint32_t HASH_HIT_DIR_Y = CCL::Utils::HashString("HitDirY");
 
-    // 向きごとのトリガー（HitDir と同じ並び）
-    // プレイヤーのアニメーショングラフは Hit と HitDir で Hit_Reaction のサブステートマシンに入るが、
-    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
-    // ボスは Hit / HitDir を持たないので、
-    // 両方の形のトリガーを立てる
+    // 向きの番号（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）ごとの、ブレンドスペースの点の位置
+    //   プレイヤーの Hit_Reaction は、この4点に前後左右ののけぞりを置いたブレンドスペース
+    const DirectX::XMFLOAT2 kHitDirPos[4] = {{0.0f, 1.0f}, {0.0f, -1.0f}, {-1.0f, 0.0f}, {1.0f, 0.0f}};
+
+    // 向きごとのトリガー（向きの番号と同じ並び）
+    // ボスのグラフは、このトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
+    // ボスは Hit / HitDirX / HitDirY を持たないので、両方の形を立てる
     const uint32_t HASH_HIT_DIRECTIONAL[4] = {
         CCL::Utils::HashString("HitFront"),
         CCL::Utils::HashString("HitBack"),
@@ -81,28 +84,28 @@ namespace
             fromAttacker = -ev.knockbackDir;
         fromAttacker.y = 0.0f;
 
-        // 方向を HitDir に変える。方向が分からないとき（環境からのダメージなど）は前（0）にする
-        float hitDir = 0.0f;
+        // 方向を向きの番号に変える。方向が分からないとき（環境からのダメージなど）は前（0）にする
+        int dirIndex = 0;
         if (fromAttacker.LengthSquared() > 1e-6f)
         {
             fromAttacker.Normalize();
             const float f = fromAttacker.Dot(fwd);   // 正なら前
             const float r = fromAttacker.Dot(right); // 正なら右
             if (std::abs(f) >= std::abs(r))
-                hitDir = (f >= 0.0f) ? 0.0f : 1.0f;
+                dirIndex = (f >= 0.0f) ? 0 : 1;
             else
-                hitDir = (r >= 0.0f) ? 3.0f : 2.0f;
+                dirIndex = (r >= 0.0f) ? 3 : 2;
         }
 
-        // Hit_Reaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
-        anim->SetFloat(HASH_HIT_DIR, hitDir);
+        // 向きを先に書いてからトリガーを立てる
+        //   ブレンドスペースは入った瞬間の向きをそのまま使うので、後から書くと最初の1ステップだけ別の向きが混ざる
+        anim->SetFloat(HASH_HIT_DIR_X, kHitDirPos[dirIndex].x);
+        anim->SetFloat(HASH_HIT_DIR_Y, kHitDirPos[dirIndex].y);
         anim->SetTrigger(HASH_HIT, 0.15f);
 
         // 向きごとのトリガーしか持たないグラフ（ボス）のため。持っていないパラメータへの
         // SetTrigger は無視されるので、どちらの形のグラフでも両方立ててよい
-        const int dirIndex = static_cast<int>(hitDir);
-        if (dirIndex >= 0 && dirIndex < 4)
-            anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
+        anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
 } // namespace
 

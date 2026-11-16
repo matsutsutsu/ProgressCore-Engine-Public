@@ -26,11 +26,11 @@
         },
         {
             "name": "Anim Graph Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Behavior Tree Editor",
-            "visible": false
+            "visible": true
         },
         {
             "name": "Boss Debugger",

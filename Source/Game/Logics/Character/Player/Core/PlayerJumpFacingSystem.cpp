@@ -13,7 +13,8 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-// 2段目のジャンプで引くアニメのトリガー
+// ジャンプで引くアニメのトリガー（1段目 / 2段目）
+static const uint32_t HASH_TRIG_JUMP        = CCL::Utils::HashString("Jump");
 static const uint32_t HASH_TRIG_DOUBLE_JUMP = CCL::Utils::HashString("DoubleJump");
 
 // 攻撃時に敵へ向き直る速さ（角度差に掛ける係数、1/秒）
@@ -96,10 +97,17 @@ void PlayerJumpFacingSystem::UpdateJumpLogic(float dt, bool isGrounded, bool jum
         player.timeSinceGrounded = player.airborneGraceTime;
         player.isAirborne        = true;
 
-        // 2段目だけ、ここでアニメのトリガーを引く
-        // 1段目は CharacterAnimSyncSystem が離陸の速度から Jump を引く
-        // 空中の2段目は、物理の状態からは見分けられない
-        if (canDoubleJump) animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
+        // アニメのトリガーを引く。1段目は Jump、2段目は DoubleJump
+        //   物理の状態（地面を離れた・上向きの速度）から推測しないのは、
+        //   ルートモーションやノックバックで浮いただけで Jump が立ち、攻撃の途中にジャンプのアニメが割り込むため
+        if (canDoubleJump)
+        {
+            animParams.SetTrigger(HASH_TRIG_DOUBLE_JUMP);
+        }
+        else
+        {
+            animParams.SetTrigger(HASH_TRIG_JUMP);
+        }
 
         // 跳んだことを、何段目かと一緒に知らせる
         // どの VFX を出すかは購読側（PlayerActionVfxSystem）が決める
