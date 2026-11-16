@@ -100,8 +100,8 @@ void BossActionSystem::Update(float rawDt)
 
     // 演出中・決着後かを、全個体ぶん1回だけ調べる
     // 決着後も止めるのは、倒れたプレイヤーへ技を出し続けないため
-    const GameFlowState *gameFlow               = m_world->HasResource<GameFlowState>() ? &m_world->GetResource<GameFlowState>() : nullptr;
-    const bool           isCinematicOrMatchOver = gameFlow && (gameFlow->cinematic || gameFlow->matchOver);
+    const bool isCinematicOrMatchOver =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().GameplayFrozen();
 
     ForEachWithID([&](EntityID                            entity,
                       CharacterMovementComponent         &movement,

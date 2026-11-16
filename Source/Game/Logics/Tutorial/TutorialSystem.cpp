@@ -146,8 +146,7 @@ void TutorialSystem::Update(float dt)
     // ---------------------------------------------------------
 
     // ムービー中はプレイヤーが操作できず、決着後はもう戦わない。どちらもヒントを出しても押せない
-    const GameFlowState *flow = m_world->HasResource<GameFlowState>() ? &m_world->GetResource<GameFlowState>() : nullptr;
-    if (flow && (flow->cinematic || flow->matchOver))
+    if (m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().GameplayFrozen())
     {
         EndAssist();
 

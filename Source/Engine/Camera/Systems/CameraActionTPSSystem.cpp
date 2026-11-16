@@ -129,22 +129,16 @@ CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI
                        std::abs(in.mouseDX) > kMouseThreshold ||
                        std::abs(in.mouseDY) > kMouseThreshold;
 
-    // ポーズ中・UI の操作中・決着の画面を出している間・エディタのほかのウィンドウの操作中は、カーソルを固定せずマウスルックも止める
-    // 決着しただけ（matchOver）では外さない。とどめのスローと撃破ムービーの間にカーソルが出てしまう
-    const bool flowPaused =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().paused;
-    const bool flowUiInteract =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().uiInteract;
-    const bool flowResultOpen =
-        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().resultOpen;
+    const GameFlowState *flow = m_world->HasResource<GameFlowState>() ? &m_world->GetResource<GameFlowState>() : nullptr;
 
-    in.cursorFree = flowPaused || flowUiInteract || flowResultOpen || !inputAPI->IsGameInputActive();
+    // カーソルを解放する間と、エディタのほかのウィンドウの操作中は、カーソルを固定せずマウスルックも止める
+    //   解放する条件（ポーズ・UI 操作モード・決着の画面）は GameFlowState::CursorFree
+    in.cursorFree = (flow && flow->CursorFree()) || !inputAPI->IsGameInputActive();
 
-    // ムービー中と決着後は視点の入力を受けない。IInputAPI を直接読むので、PlayerInputSystem と同じ条件がここにも要る
+    // ムービー中と決着後は視点の入力を受けない。IInputAPI を直接読むので、PlayerInputSystem とは別にここでも塞ぐ
     // 塞がないと、演出の間に動かした分だけ currentYaw が回り、明けたときにカメラが別の方を向く
     // カーソルの固定は続ける（外すとフルスクリーンでポインタが窓の外へ出る）
-    in.blockLook = m_world->HasResource<GameFlowState>() &&
-                   (m_world->GetResource<GameFlowState>().cinematic || m_world->GetResource<GameFlowState>().matchOver);
+    in.blockLook = flow && flow->GameplayFrozen();
 
     return in;
 }
