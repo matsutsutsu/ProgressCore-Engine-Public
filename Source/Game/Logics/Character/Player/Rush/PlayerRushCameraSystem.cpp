@@ -30,7 +30,7 @@ namespace
     constexpr float kMinZeta    = 0.2f;  // 減衰比の下限。これより小さいと何度も揺れ返して酔う
     constexpr float kMaxStepArg = 0.25f; // 1刻みの omega*dt の上限。超えると発散する
     constexpr int   kMaxSubstep = 8;     // 刻みの上限。dt が大きいフレームでも回しすぎない
-} // namespace
+}
 
 
 

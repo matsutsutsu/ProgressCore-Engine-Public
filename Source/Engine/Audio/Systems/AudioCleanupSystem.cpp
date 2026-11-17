@@ -10,7 +10,7 @@
 
 using namespace CCL::ECS;
 
-void AudioCleanupSystem::Update(float /*dt*/)
+void AudioCleanupSystem::Update(float dt)
 {
     if (!m_world) return;
     ExecuteCleanup(*m_world);

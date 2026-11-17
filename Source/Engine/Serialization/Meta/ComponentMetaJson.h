@@ -50,7 +50,7 @@ namespace _MetaJsonDX
             v.w = j[3];
         }
     }
-} // namespace _MetaJsonDX
+}
 
 namespace ComponentMetaJson
 {
@@ -219,4 +219,4 @@ namespace ComponentMetaJson
         ComponentSerializer<T>::Load(j, component, ctx);
     }
 
-} // namespace ComponentMetaJson
+}

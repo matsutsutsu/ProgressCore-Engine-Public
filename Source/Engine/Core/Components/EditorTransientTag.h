@@ -7,4 +7,4 @@ namespace Tag
     struct EditorTransientTag
     {
     };
-} // namespace Tag
+}

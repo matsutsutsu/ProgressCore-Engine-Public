@@ -326,7 +326,7 @@ namespace CCL::AI::Motion
                 TurnToward(trans, look, /*includePitch*/ true, kSoftFollow.turnRate, dt);
             }
         }
-    } // namespace
+    }
 
     // ============================================================
     // 姿勢
@@ -492,4 +492,4 @@ namespace CCL::AI::Motion
         drone.targetLookDirection = dir;
     }
 
-} // namespace CCL::AI::Motion
+}

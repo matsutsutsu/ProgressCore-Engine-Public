@@ -31,9 +31,10 @@ public:
     PlayerAttackSystem() : IfSystem("PlayerAttackSystem") {}
     virtual ~PlayerAttackSystem() = default;
 
-    // 書いた attackFaceYaw / attackFaceTimer を、同じ L02_PreUpdate の PlayerJumpFacingSystem が回す
+    // 書いた attackFaceYaw / attackFaceTimer を、同じ L02_PreUpdate の PlayerFacingSystem が回す
     //   宣言しないと順が名前の並びまかせになり、逆になると向き直りが 1 ステップ遅れる
-    std::vector<const char *> GetRunBefore() const override { return {"PlayerJumpFacingSystem"}; }
+    // PlayerJumpSystem とは使うデータが重ならないが、どちらも PlayerComponent を書くので順を決めておく
+    std::vector<const char *> GetRunBefore() const override { return {"PlayerJumpSystem", "PlayerFacingSystem"}; }
 
     void Update(float dt) override;
 

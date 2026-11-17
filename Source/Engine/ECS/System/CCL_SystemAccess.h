@@ -21,4 +21,4 @@ namespace CCL::ECS
         using ParamType               = T &; // ループ内で受け取る型（非const参照）
         static constexpr bool IsWrite = true;
     };
-} // namespace CCL::ECS
+}

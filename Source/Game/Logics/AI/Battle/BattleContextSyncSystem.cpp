@@ -21,7 +21,7 @@ namespace
 
     // 追跡する速度の上限（m/s）。テレポートなどの異常値を抑える（Player.json の走行速度 65.5 より十分に大きくする）
     constexpr float kMaxTrackedSpeed = 120.0f;
-} // namespace
+}
 
 void BattleContextSyncSystem::Initialize()
 {

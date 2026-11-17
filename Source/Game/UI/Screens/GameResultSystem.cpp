@@ -35,7 +35,7 @@ namespace
     constexpr float kMenuGap = 60.0f; // 記録の最後の行から、ボタンの入れ物の上端までの間隔（px）
 
     constexpr int kRowCount = 4; // 記録の行の数
-} // namespace
+}
 
 
 

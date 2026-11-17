@@ -763,7 +763,7 @@ namespace
     {
         return type != EditorBTNodeType::Condition && type != EditorBTNodeType::Action && type != EditorBTNodeType::Group;
     }
-} // namespace
+}
 
 void BehaviorTreeWindow::LinkNewNodeToPin(uint32_t newNodeId, uint32_t fromPinId)
 {

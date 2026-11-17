@@ -179,4 +179,4 @@ namespace CCL::AI::Formation::Data
     // C++ 陣形の登録より後に呼ぶ。先に呼ぶと、C++ 実装のある枠を名乗った JSON を弾けない
     void RegisterAll(FormationRegistry &registry);
 
-} // namespace CCL::AI::Formation::Data
+}

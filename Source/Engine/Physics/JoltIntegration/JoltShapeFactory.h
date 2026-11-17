@@ -40,4 +40,4 @@ namespace JoltShapeFactory
         const JPH::ShapeSettings &base, const DirectX::XMFLOAT3 &localOffset,
         const DirectX::XMFLOAT3 &localEuler, uint64_t ownerId, const char *what);
 
-} // namespace JoltShapeFactory
+}

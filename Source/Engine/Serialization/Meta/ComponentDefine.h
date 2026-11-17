@@ -89,7 +89,7 @@ namespace ComponentMetaHelpers
         }
     }
 
-} // namespace ComponentMetaHelpers
+}
 
 // ===========================================================================
 // CFIELD 系: フィールドを 1 つ宣言する

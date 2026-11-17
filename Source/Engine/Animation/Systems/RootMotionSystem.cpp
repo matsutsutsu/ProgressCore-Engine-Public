@@ -15,11 +15,11 @@ namespace
         movement.isRootMotionActive = false;
         movement.rootMotionVelocity = Vector3::Zero;
     }
-} // namespace
+}
 
 
 
-void RootMotionSystem::Update(float /*rawDt*/)
+void RootMotionSystem::Update(float rawDt)
 {
     // 処理フロー:
     // 1. 適用しない場合を除く（編集中・外部が制御中・ステートが使わない）

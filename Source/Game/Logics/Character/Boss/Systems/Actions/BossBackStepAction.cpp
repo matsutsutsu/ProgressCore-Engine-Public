@@ -34,7 +34,7 @@ namespace
     // 後方ステップの止まりのモーションを流すステート
     // （ValkyraAnimNode.json の Loco_BackStep_Stop）
     const uint32_t kBackStepStopState = CCL::Utils::HashString("Loco_BackStep_Stop");
-} // namespace
+}
 
 
 

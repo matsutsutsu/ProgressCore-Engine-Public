@@ -802,7 +802,8 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.h" />
-    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.h" />
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.h" />
     <ClInclude Include="Source\Engine\Animation\Components\CombatRosterComponent.h" />
     <ClInclude Include="Source\Game\Logics\Combat\Systems\CombatSoundSystem.h" />
@@ -1304,7 +1305,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerFeedbackSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerLockOnSystem.cpp" />
-    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Character\Player\JustEvade\PlayerJustEvadeComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Combat\Components\CombatComponentsMeta.cpp" />

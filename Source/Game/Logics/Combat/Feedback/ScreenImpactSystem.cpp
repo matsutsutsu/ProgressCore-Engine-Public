@@ -14,7 +14,7 @@ namespace
     // ジャスト回避の演出（20）より低くして、同時に出たらジャスト回避を優先する
     const uint32_t kSource   = CCL::Utils::HashString("ScreenImpact");
     constexpr int  kPriority = 10;
-} // namespace
+}
 
 void ScreenImpactSystem::Update(float dt)
 {

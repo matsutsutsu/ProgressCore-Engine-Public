@@ -75,7 +75,7 @@ namespace ComponentMetaJson
             }
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<MaterialComponent>

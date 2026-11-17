@@ -254,7 +254,7 @@ namespace
         start += firstFrame * frameBytes;
         bytes = (endFrame - firstFrame) * frameBytes;
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // Impl（XAudio2 に依存する状態はここに隠す）

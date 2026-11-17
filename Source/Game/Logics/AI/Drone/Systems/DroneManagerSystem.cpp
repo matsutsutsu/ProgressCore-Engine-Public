@@ -30,7 +30,7 @@ namespace
     // 一度に出すと 80m/s で一瞬で持ち場に着き、リングが急に濃くなるだけに見える
     constexpr int   kReinforceBatch    = 8;
     constexpr float kReinforceInterval = 0.1f;
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 毎ステップと自動配備

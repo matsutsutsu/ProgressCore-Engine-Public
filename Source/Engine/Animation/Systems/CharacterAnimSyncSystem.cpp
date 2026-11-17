@@ -20,7 +20,7 @@ static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("Land");
 
 
 
-void CharacterAnimSyncSystem::Update(float /*dt*/)
+void CharacterAnimSyncSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 物理の状態を取り出す
@@ -63,7 +63,7 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
 
         // 着地した瞬間にトリガーを立てる
-        //   離陸の側（Jump）はここでは立てない。跳ぶと決めたゲーム側が立てる（理由は PlayerJumpFacingSystem）
+        //   離陸の側（Jump）はここでは立てない。跳ぶと決めたゲーム側が立てる（理由は PlayerJumpSystem）
         if (isGrounded && !wasGrounded)
         {
             animParams.SetTrigger(HASH_TRIG_LAND);

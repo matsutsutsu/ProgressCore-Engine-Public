@@ -30,4 +30,4 @@ namespace CCL::AI::BT
 
     // 繰り返しの減点の倍率（0.3〜1）。選んだ直後が一番低く、remainingSeconds が 0 に近づくほど 1 へ戻る
     float RepeatFactor(float remainingSeconds);
-} // namespace CCL::AI::BT
+}

@@ -19,7 +19,7 @@ namespace
 {
     // --- プレハブ ---
     constexpr const char *kPrefabPath = "Assets/Prefabs/UI/TutorialHint.json";
-} // namespace
+}
 
 
 

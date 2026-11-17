@@ -357,7 +357,7 @@ namespace
 {
     // クリップボードの JSON の目印。関係ない文字列（他アプリのコピー）を貼ろうとしても無視できるように
     constexpr const char *kClipboardFormat = "ProgressCore.BehaviorTree.Clipboard";
-} // namespace
+}
 
 void BehaviorTreeWindow::CopySelection()
 {

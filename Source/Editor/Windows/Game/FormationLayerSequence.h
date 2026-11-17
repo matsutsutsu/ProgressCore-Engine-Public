@@ -22,7 +22,7 @@ namespace CCL::AI::Formation
 {
     struct FormationAsset;
     struct FormationLayer;
-} // namespace CCL::AI::Formation
+}
 
 class FormationLayerSequence : public ImSequencer::SequenceInterface
 {

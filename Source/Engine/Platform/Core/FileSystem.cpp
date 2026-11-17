@@ -207,7 +207,7 @@ namespace
     {
         return ReadArchiveBytes(file, &out, sizeof(T), encrypted);
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // パスと一覧

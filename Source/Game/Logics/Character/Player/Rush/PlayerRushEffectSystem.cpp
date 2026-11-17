@@ -27,7 +27,7 @@ namespace
         if (current < target) return (std::min)(current + rate, target);
         return (std::max)(current - rate, target);
     }
-} // namespace
+}
 
 
 

@@ -28,4 +28,4 @@ namespace CCL::GameUI
         }
         return CCL::ECS::InvalidEntityID;
     }
-} // namespace CCL::GameUI
+}

@@ -64,4 +64,4 @@ namespace CCL::AI::BT
         reg.RegisterCondition<ShouldTransitionPhase2>(C_ShouldTransitionPhase2);
     }
 
-} // namespace CCL::AI::BT
+}

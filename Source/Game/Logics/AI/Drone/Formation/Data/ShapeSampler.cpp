@@ -196,7 +196,7 @@ namespace
         }
         return ordered;
     }
-} // namespace
+}
 
 namespace CCL::AI::Formation
 {
@@ -234,4 +234,4 @@ namespace CCL::AI::Formation
         return FarthestPointOrder(candidates, maxPoints);
     }
 
-} // namespace CCL::AI::Formation
+}

@@ -144,4 +144,4 @@ namespace CCL::AI::Formation::Meta
         return fields;
     }
 
-} // namespace CCL::AI::Formation::Meta
+}

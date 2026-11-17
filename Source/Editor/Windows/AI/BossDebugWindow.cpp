@@ -75,7 +75,7 @@ namespace
         std::snprintf(buf, sizeof(buf), "%.1f", value);
         return buf;
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 描画

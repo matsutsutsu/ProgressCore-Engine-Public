@@ -36,7 +36,7 @@ namespace DirectX::SimpleMath
         j.at("y").get_to(v.y);
         j.at("z").get_to(v.z);
     }
-} // namespace DirectX::SimpleMath
+}
 
 // ===========================================================================
 // キャンセルグループ（ComboWindow / CancelWindow が許可する行動のビットマスク）

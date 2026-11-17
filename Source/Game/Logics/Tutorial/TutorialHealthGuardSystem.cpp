@@ -12,7 +12,7 @@ namespace
 {
     constexpr float kPlayerMinHealth      = 1.0f;  // プレイヤーの HP の下限
     constexpr float kBossMinHealthPercent = 50.0f; // ボスの HP の下限（最大 HP に対する %）
-} // namespace
+}
 
 std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
 {
@@ -24,7 +24,7 @@ std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
 
 
 
-void TutorialHealthGuardSystem::Update(float /*dt*/)
+void TutorialHealthGuardSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID id, HealthComponent &health) {
         // --- プレイヤー: 倒れない ---

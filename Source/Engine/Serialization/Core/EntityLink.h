@@ -43,4 +43,4 @@ namespace CCL::Serialization
     static_assert(sizeof(EntityLink) == sizeof(CCL::ECS::EntityID),
                   "EntityLink must be same size as EntityID.");
 
-} // namespace CCL::Serialization
+}

@@ -18,7 +18,7 @@ namespace JPH
 {
     class BodyInterface;
     class PhysicsSystem;
-} // namespace JPH
+}
 
 class JoltPhysicsFacade : public IPhysicsAPI
 {

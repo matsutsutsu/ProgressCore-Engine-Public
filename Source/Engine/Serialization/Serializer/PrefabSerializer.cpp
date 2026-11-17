@@ -72,7 +72,7 @@ namespace
         }
         return result;
     }
-} // anonymous namespace
+}
 
 bool PrefabSerializer::Save(
     const std::string &filepath, World *world, EntityID rootEntity, const std::string &name)

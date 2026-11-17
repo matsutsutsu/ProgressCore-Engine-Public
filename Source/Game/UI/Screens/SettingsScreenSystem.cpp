@@ -53,7 +53,7 @@ namespace
     // 値を刻み（step）の倍数に丸める
     // 足し引きを繰り返して、0.30000001 のような半端な値にならないようにする
     float Snap(float v, float step) { return std::round(v / step) * step; }
-} // namespace
+}
 
 
 

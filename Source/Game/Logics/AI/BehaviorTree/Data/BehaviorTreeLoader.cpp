@@ -260,7 +260,7 @@ namespace
             if (SubtreeHasCondition(asset, c)) return true;
         return false;
     }
-} // namespace
+}
 
 bool BehaviorTreeLoader::ValidateStructure(const BTAsset &asset, const std::string &path)
 {

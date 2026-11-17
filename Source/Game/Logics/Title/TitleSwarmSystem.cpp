@@ -34,7 +34,7 @@ namespace
     // moveSpeed（待機中の追従の最高速）に掛ける倍率の範囲
     constexpr float kSpeedSpreadMin = 0.90f;
     constexpr float kSpeedSpreadMax = 1.10f;
-} // namespace
+}
 
 std::vector<TypeID> TitleSwarmSystem::GetWriteTypes() const
 {

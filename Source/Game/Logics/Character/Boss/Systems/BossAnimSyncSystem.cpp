@@ -20,7 +20,7 @@ static const uint32_t HASH_IS_EXHAUSTED      = CCL::Utils::HashString("IsExhaust
 static const uint32_t HASH_MOVE_X            = CCL::Utils::HashString("MoveX");           // 体から見た動く向きの右成分（-1〜1）
 static const uint32_t HASH_MOVE_Y            = CCL::Utils::HashString("MoveY");           // 体から見た動く向きの前成分（-1〜1）
 
-void BossAnimSyncSystem::Update(float /*dt*/)
+void BossAnimSyncSystem::Update(float dt)
 {
     ForEach([&](const BossActionComponent &boss, AnimParametersComponent &anim) {
         // --- 移動 ---

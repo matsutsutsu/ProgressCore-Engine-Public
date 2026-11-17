@@ -26,7 +26,7 @@ namespace
     constexpr float    kSegmentOverlap = 1.15f;     // リングの線を隣と重ねる倍率。つなぎ目の隙間を消す
     constexpr float    kPi             = 3.1415927f;
     constexpr float    kRadToDeg       = 57.29578f;
-} // namespace
+}
 
 
 

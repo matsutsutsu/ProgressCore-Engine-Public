@@ -34,7 +34,7 @@ namespace
     {
         return InputKeyTable::StringToKeyCode(str);
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 読み込みと登録
@@ -214,7 +214,7 @@ namespace
         if (!ImGui::GetCurrentContext()) return false;
         return ImGui::GetIO().WantCaptureKeyboard || ImGui::IsAnyItemActive();
     }
-} // namespace
+}
 #endif
 
 bool InputFacade::GetAction(uint32_t actionHash) const

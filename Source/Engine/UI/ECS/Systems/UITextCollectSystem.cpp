@@ -10,7 +10,7 @@
 
 using namespace CCL::ECS;
 
-void UITextCollectSystem::Update(float /*dt*/)
+void UITextCollectSystem::Update(float dt)
 {
     if (!m_world->HasResource<UIDrawList>())
         return;

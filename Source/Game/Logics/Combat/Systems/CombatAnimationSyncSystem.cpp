@@ -30,11 +30,11 @@ namespace
         }
         return InvalidEntityID;
     }
-} // namespace
+}
 
 
 
-void CombatAnimationSyncSystem::Update(float /*dt*/)
+void CombatAnimationSyncSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 持ち主（Animator を持つ祖先）を探して覚える

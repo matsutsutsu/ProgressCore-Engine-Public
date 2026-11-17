@@ -1746,7 +1746,10 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.h">
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.h">
@@ -2935,7 +2938,10 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.cpp">

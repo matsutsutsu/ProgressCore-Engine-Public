@@ -8,7 +8,7 @@
 //   - プレイヤーを追う TPS カメラをプレイヤーの背後へ回し、補間を飛ばして一度で合わせる
 //
 // 備考: カメラの向きはプレハブに保存されるので、保存したときの向きから始まらないよう、実行時に位置関係から求める
-//       PlayerJumpFacingSystem は currentYaw から回転を作るので、その前に走る
+//       PlayerFacingSystem は currentYaw から回転を作るので、その前に走る
 //       currentYaw は GetComponent で書いていて申告に載らないため、GetRunBefore で順序を決める
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -29,7 +29,7 @@ public:
     void Update(float dt) override;
 
     // currentYaw を読んで Transform を作る側より先に走る
-    std::vector<const char *> GetRunBefore() const override { return {"PlayerJumpFacingSystem"}; }
+    std::vector<const char *> GetRunBefore() const override { return {"PlayerFacingSystem"}; }
 
 private:
     // プレイヤーとボスがそろっていれば向きを決める。false の間は毎フレーム試し直す

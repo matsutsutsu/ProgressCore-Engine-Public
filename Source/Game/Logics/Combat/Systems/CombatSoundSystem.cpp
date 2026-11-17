@@ -45,7 +45,7 @@ void CombatSoundSystem::Initialize()
 
 
 
-void CombatSoundSystem::Update(float /*dt*/)
+void CombatSoundSystem::Update(float dt)
 {
     // 毎フレームの処理はない。イベントを購読するためだけに System にしている
 }

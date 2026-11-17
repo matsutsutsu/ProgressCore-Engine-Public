@@ -58,7 +58,7 @@ namespace CCL::ECS
             SystemRegistry::Instance().AddRegistration(func);
         }
     };
-} // namespace CCL::ECS
+}
 
 // ============================================================
 // 自動登録マクロ

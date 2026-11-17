@@ -16,4 +16,4 @@ namespace CCL
         const char          *name = (nc && nc->name[0] != '\0') ? nc->name : "Entity";
         return std::string(name) + "(#" + std::to_string(static_cast<unsigned long long>(id)) + ")";
     }
-} // namespace CCL
+}

@@ -157,4 +157,4 @@ namespace MeshLod
         return GetDrawRange(data, data.lods.size() - 1);
     }
 
-} // namespace MeshLod
+}

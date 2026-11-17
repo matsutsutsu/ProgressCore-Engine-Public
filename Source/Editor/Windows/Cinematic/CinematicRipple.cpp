@@ -35,7 +35,7 @@ namespace
             if (index < items.size()) items[index].*member = std::max(0.0f, originTime + shift);
         }
     }
-} // namespace
+}
 
 
 

@@ -56,7 +56,7 @@ namespace
         default:                          return 0;
         }
     }
-} // namespace
+}
 
 
 

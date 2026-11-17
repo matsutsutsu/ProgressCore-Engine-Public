@@ -71,7 +71,7 @@ namespace
             ++box.hitCount;
         }
     }
-} // namespace
+}
 
 void HitboxCollisionSystem::Initialize()
 {

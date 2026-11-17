@@ -141,7 +141,7 @@ namespace
         anim.resolved     = anim.sequence.empty() ? nullptr : ResourceManager::Instance().LoadAnimSequence(anim.sequence.c_str());
         anim.clipDuration = anim.resolved ? anim.resolved->duration : 0.0f;
     }
-} // namespace
+}
 
 
 

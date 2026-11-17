@@ -119,4 +119,4 @@ namespace AIDebugRanges
             if (distance < ring.radius) return &ring;
         return nullptr;
     }
-} // namespace AIDebugRanges
+}

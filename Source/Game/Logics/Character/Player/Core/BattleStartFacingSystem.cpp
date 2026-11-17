@@ -14,7 +14,7 @@ using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-void BattleStartFacingSystem::Update(float /*dt*/)
+void BattleStartFacingSystem::Update(float dt)
 {
     if (m_applied) return;
     m_applied = TryApplyFacing();
@@ -41,7 +41,7 @@ bool BattleStartFacingSystem::TryApplyFacing()
     toBoss.Normalize();
 
     // --- プレイヤーをボスへ向ける ---
-    // PlayerJumpFacingSystem と同じ規約: atan2(x, z) でラジアン、0 が +Z
+    // PlayerFacingSystem と同じ規約: atan2(x, z) でラジアン、0 が +Z
     if (auto *player = m_world->GetComponent<PlayerComponent>(battle.playerEntity))
     {
         player->currentYaw  = std::atan2(toBoss.x, toBoss.z);
@@ -77,5 +77,5 @@ bool BattleStartFacingSystem::TryApplyFacing()
 
 
 
-// BattleContextSyncSystem(L01_WorldState) の後、PlayerJumpFacingSystem より前（同じ L02_PreUpdate なので GetRunBefore で指定）
+// BattleContextSyncSystem(L01_WorldState) の後、PlayerFacingSystem より前（同じ L02_PreUpdate なので GetRunBefore で指定）
 REGISTER_LOGIC_SYSTEM(BattleStartFacingSystem, Priority::LogicStage::L02_PreUpdate);

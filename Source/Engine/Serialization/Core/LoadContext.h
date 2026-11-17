@@ -65,4 +65,4 @@ namespace CCL::Serialization
         }
     };
 
-} // namespace CCL::Serialization
+}

@@ -274,7 +274,7 @@ namespace
         for (const T &item : items) a.push_back(toJson(item));
         return a;
     }
-} // namespace
+}
 
 
 

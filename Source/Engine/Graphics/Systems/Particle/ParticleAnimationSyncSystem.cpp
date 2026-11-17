@@ -8,7 +8,7 @@
 
 using namespace CCL::ECS;
 
-void ParticleAnimationSyncSystem::Update(float /*dt*/)
+void ParticleAnimationSyncSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. owner（Animator を持つ祖先）を探して持つ

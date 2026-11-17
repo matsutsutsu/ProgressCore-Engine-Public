@@ -82,4 +82,4 @@ namespace CCL::AI::Motion
     // 撃つ方向は、陣形が書いていればそれ、なければプレイヤーへ向け、突撃中は変えない
     void BeginStraightCharge(DroneComponent &drone, const ChargeBeginInfo &info);
 
-} // namespace CCL::AI::Motion
+}

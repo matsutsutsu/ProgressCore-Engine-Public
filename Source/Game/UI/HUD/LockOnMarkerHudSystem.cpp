@@ -21,7 +21,7 @@ namespace
     constexpr float kDefaultHeight = 4.0f;      // カプセルがない敵の体の高さ（m）
     constexpr float kRadToDeg      = 57.29578f; // ラジアンを度にする倍率
     constexpr float kDegToRad      = 0.0174533f; // 度をラジアンにする倍率
-} // namespace
+}
 
 
 

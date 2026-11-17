@@ -47,7 +47,7 @@ namespace
 
         return normalizedTime * normalizedTime;
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口

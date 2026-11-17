@@ -36,7 +36,7 @@ namespace
 
     // PrimitiveRenderer が1スレッドぶんの描画リストで受け付ける上限（PrimitiveRenderer.cpp）
     constexpr int kPrimitiveListLimit = 100000;
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 生成・破棄

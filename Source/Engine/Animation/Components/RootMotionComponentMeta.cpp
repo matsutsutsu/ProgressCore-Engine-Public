@@ -22,7 +22,7 @@ namespace ComponentMetaJson
         {
         }
     };
-} // namespace ComponentMetaJson
+}
 
 
 

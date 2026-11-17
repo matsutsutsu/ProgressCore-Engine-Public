@@ -73,4 +73,4 @@ namespace CCL::AI::BT
         // 選んだ直後は kFloor、時間が経つほど直線で 1 へ戻る
         return kFloor + (1.0f - kFloor) * elapsed;
     }
-} // namespace CCL::AI::BT
+}

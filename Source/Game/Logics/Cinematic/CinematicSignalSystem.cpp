@@ -26,7 +26,7 @@ namespace
     // 入れ物ごと左下へ置けば、解像度が変わっても画面の下端からの距離が保たれる
     constexpr DirectX::XMFLOAT2 kTelopBoxSize   = {1400.0f, 360.0f};
     constexpr DirectX::XMFLOAT2 kTelopBoxOffset = {0.0f, -40.0f}; // 下端から少し浮かせる
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口とシグナルの振り分け

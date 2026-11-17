@@ -27,4 +27,4 @@ namespace CCL::Anim
                 poseBuffer[rootNodeIndex].position.y = modelRes->GetNodes()[rootNodeIndex].translate.y;
         }
     }
-} // namespace CCL::Anim
+}

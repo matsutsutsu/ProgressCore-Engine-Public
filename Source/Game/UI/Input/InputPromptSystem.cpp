@@ -29,7 +29,7 @@ namespace
     constexpr const char *kConfigPath = "Assets/Config/InputPromptConfig.json";
     constexpr const char *kPrefabPath = "Assets/Prefabs/UI/InputPrompt.json";
     constexpr const char *kStyleName  = "InputPrompt"; // 調整値を持つプレハブのエンティティ名
-} // namespace
+}
 
 
 
@@ -37,7 +37,7 @@ namespace
 // 入口
 // ---------------------------------------------------------------------------
 
-void InputPromptSystem::Update(float /*dt*/)
+void InputPromptSystem::Update(float dt)
 {
     // --- 生成 ---
     // プレイヤーの操作説明なので、プレイヤーが現れてから作る

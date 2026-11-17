@@ -17,7 +17,7 @@ namespace
     {
         return std::filesystem::path(path).stem().string();
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 秒とコマの変換

@@ -105,4 +105,4 @@ namespace CCL::ECS
         std::unique_ptr<SystemManager> m_systemManager;
     };
 
-} // namespace CCL::ECS
+}

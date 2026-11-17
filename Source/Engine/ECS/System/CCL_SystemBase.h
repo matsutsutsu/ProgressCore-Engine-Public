@@ -31,7 +31,7 @@ namespace CCL::ECS
     class Chunk;
     class World;
     class JobSystem;
-} // namespace CCL::ECS
+}
 
 namespace CCL::ECS
 {
@@ -199,4 +199,4 @@ namespace CCL::ECS
     // decltype(式)                     … 式の型を返す（ここではメンバ関数ポインタの型）
     // std::is_same_v<type1, type2>     … 2つの型が同じかどうかを判定する
 
-} // namespace CCL::ECS
+}

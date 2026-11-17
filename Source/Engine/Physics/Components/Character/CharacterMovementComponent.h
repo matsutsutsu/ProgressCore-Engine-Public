@@ -122,6 +122,7 @@ struct CharacterMovementComponent
     // --- 結果（JoltCharacterUpdateSystem だけが書く）---
 
     // 物理へ渡した水平速度 [m/s]。慣性込み、壁に当たる前の値
+    // use3DVelocity の依頼の後は、縦の速さもしばらく残る。水平だけ使うときは y を 0 にする
     DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
 
 

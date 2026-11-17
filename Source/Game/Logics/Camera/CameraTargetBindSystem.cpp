@@ -36,7 +36,7 @@ void CameraTargetBindSystem::BindIfInvalid(CCL::Serialization::EntityLink &targe
 
 
 
-void CameraTargetBindSystem::Update(float /*dt*/)
+void CameraTargetBindSystem::Update(float dt)
 {
     const EntityID playerId = FindPlayer();
     if (playerId == InvalidEntityID) return;

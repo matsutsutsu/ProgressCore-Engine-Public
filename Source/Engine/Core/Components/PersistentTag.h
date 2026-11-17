@@ -8,4 +8,4 @@ namespace Tag
     struct PersistentTag
     {
     };
-} // namespace Tag
+}

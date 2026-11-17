@@ -30,7 +30,7 @@ namespace
     // カスケードごとのグラフ
     const char *const kPlotInstances[3] = {"Shadow C0 Instances", "Shadow C1 Instances", "Shadow C2 Instances"};
     const char *const kPlotTriangles[3] = {"Shadow C0 Triangles", "Shadow C1 Triangles", "Shadow C2 Triangles"};
-} // namespace
+}
 #endif
 
 

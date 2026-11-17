@@ -740,7 +740,7 @@ namespace
         }
         return child.scoreRule.base * CCL::AI::BT::DistanceFactor(child.scoreRule, distance);
     }
-} // namespace
+}
 
 std::string BehaviorTreeWindow::GetUtilityChildName(const EditorBTNode &child)
 {

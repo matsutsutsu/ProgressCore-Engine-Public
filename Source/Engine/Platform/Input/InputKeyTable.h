@@ -361,4 +361,4 @@ namespace InputKeyTable
         }
         return {};
     }
-} // namespace InputKeyTable
+}

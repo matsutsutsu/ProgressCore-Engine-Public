@@ -55,7 +55,7 @@ namespace
                 ev.tagHash = 0;
         }
     }
-} // namespace
+}
 
 void ResourceManager::ClearAll()
 {

@@ -40,13 +40,13 @@ namespace
 
 
     ImVec4 ToImVec4(const XMFLOAT4 &c) { return ImVec4(c.x, c.y, c.z, c.w); }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
 
-void DroneDebugDrawSystem::Update(float /*dt*/)
+void DroneDebugDrawSystem::Update(float dt)
 {
     if (!m_enabled) return;
 

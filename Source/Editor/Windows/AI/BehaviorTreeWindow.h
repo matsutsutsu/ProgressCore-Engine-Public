@@ -29,7 +29,7 @@ namespace ax
     {
         struct EditorContext;
     }
-} // namespace ax
+}
 
 struct BehaviorTreeComponent;
 

@@ -8,7 +8,7 @@
 
 using namespace CCL::ECS;
 
-void UIImageCollectSystem::Update(float /*dt*/)
+void UIImageCollectSystem::Update(float dt)
 {
     if (!m_world->HasResource<UIDrawList>()) return;
 

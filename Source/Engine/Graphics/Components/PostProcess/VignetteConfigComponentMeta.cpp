@@ -36,7 +36,7 @@ namespace ComponentMetaJson
             if (j.contains("pulseSpeed")) c.data.vigPulseSpeed = j["pulseSpeed"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<VignetteConfigComponent>

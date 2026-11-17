@@ -383,7 +383,7 @@ namespace
                 BindGraphResources(*state.subGraph, rm);
         }
     }
-} // namespace
+}
 
 
 

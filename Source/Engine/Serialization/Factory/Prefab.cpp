@@ -127,7 +127,7 @@ namespace Prefab
                 }
             }
         }
-    } // namespace
+    }
 
     void ClearPrefabCache()
     {
@@ -258,4 +258,4 @@ namespace Prefab
         return id;
     }
 
-} // namespace Prefab
+}

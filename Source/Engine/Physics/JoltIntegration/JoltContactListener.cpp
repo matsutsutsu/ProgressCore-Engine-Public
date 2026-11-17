@@ -23,7 +23,7 @@ namespace
     {
         return PhysicsLayers::IsStaticWorldLayer(a.GetObjectLayer()) || PhysicsLayers::IsStaticWorldLayer(b.GetObjectLayer());
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // イベントの作成

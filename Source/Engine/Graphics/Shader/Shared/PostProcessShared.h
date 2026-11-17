@@ -119,7 +119,7 @@ namespace GpuData
     };
 
 #ifdef __cplusplus
-} // namespace GpuData
+}
 static_assert(sizeof(GpuData::CbBloomData) == 32, "CbBloomData size mismatch");
 static_assert(
     sizeof(GpuData::CbToneMapData) == 32, "CbToneMapData size mismatch");

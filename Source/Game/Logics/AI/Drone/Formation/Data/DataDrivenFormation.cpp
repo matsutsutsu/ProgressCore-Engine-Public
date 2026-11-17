@@ -33,7 +33,7 @@ namespace CCL::AI::Formation::Data
                 return Vector3::UnitX; // Right
             }
         }
-    } // namespace
+    }
 
     // ============================================================
     // 全体の流れ
@@ -126,7 +126,7 @@ namespace CCL::AI::Formation::Data
             g.perGroup   = (std::max)(1, total / g.groupCount);
             return g;
         }
-    } // namespace
+    }
 
     void DataDrivenFormation::GridSize(const FormationAsset &asset, int totalDrones, int &outCols, int &outRows)
     {
@@ -483,4 +483,4 @@ namespace CCL::AI::Formation::Data
                      loaded, empties.empty() ? "なし" : empties.c_str());
     }
 
-} // namespace CCL::AI::Formation::Data
+}

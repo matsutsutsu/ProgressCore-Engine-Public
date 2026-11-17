@@ -15,7 +15,7 @@ namespace
         if (!file) file = std::strrchr(fullPath, '/');
         return file ? file + 1 : fullPath;
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 出力先の登録

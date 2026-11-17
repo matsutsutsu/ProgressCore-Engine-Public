@@ -70,4 +70,4 @@ namespace CCL::AI::Formation
         std::array<std::unique_ptr<IFormation>, 256> m_formations; // DroneFormationType の値を添字にした陣形の実体
     };
 
-} // namespace CCL::AI::Formation
+}

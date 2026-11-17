@@ -93,4 +93,4 @@ namespace CCL::AI::BT
         virtual std::vector<CCL::ECS::TypeID> GetExtraReadTypes() const { return {}; }  // IBTAction の同名関数と同じ
     };
 
-} // namespace CCL::AI::BT
+}

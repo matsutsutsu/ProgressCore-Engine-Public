@@ -153,4 +153,4 @@ namespace CCL::AI::Formation::Squad
         reg.Register<SquadAssaultFormation>(DroneFormationType::SquadAssault);
     }
 
-} // namespace CCL::AI::Formation::Squad
+}

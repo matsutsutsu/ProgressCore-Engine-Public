@@ -21,7 +21,7 @@ std::vector<CCL::ECS::TypeID> BossStatusVfxSystem::GetReadTypes() const
 
 
 
-void BossStatusVfxSystem::Update(float /*dt*/)
+void BossStatusVfxSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. owner（BossCommandComponent を持つ祖先）を探して持つ

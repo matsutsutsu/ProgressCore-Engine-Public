@@ -55,4 +55,4 @@ namespace JoltShapeFactory
         return CreateChecked(offsetSettings, ownerId, what);
     }
 
-} // namespace JoltShapeFactory
+}

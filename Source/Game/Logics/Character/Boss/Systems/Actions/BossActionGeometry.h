@@ -106,4 +106,4 @@ namespace BossActionGeometry
     {
         return FlatToward(startPos, StraightPointInArena(startPos, moveDir, moveDistance, battle)).Length();
     }
-} // namespace BossActionGeometry
+}

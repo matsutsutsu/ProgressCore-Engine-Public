@@ -361,4 +361,4 @@ namespace CCL::ECS
 
         std::vector<Ambiguity> m_ambiguities; // BuildGraph 中に検出した順序不定ペア
     };
-} // namespace CCL::ECS
+}

@@ -111,4 +111,4 @@ namespace CCL::AI::Formation::Basic
         reg.Register<HighOrbitFormation>(DroneFormationType::HighOrbit);
     }
 
-} // namespace CCL::AI::Formation::Basic
+}

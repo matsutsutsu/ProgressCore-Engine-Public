@@ -33,4 +33,4 @@ namespace CinematicRipple
 
     // 今のショットの終わりと控えた終わりの差だけ、控えた項目と全体の長さをずらす
     void Apply(CinematicScript &script, const Snapshot &snapshot);
-} // namespace CinematicRipple
+}

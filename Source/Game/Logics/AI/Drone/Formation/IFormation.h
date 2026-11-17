@@ -151,4 +151,4 @@ namespace CCL::AI::Formation
         virtual const char *DisplayName() const { return nullptr; }
     };
 
-} // namespace CCL::AI::Formation
+}

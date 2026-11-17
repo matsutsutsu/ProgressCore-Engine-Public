@@ -17,7 +17,7 @@ namespace
         outputRTV->GetResource(&dst);
         if (src && dst) dc->CopyResource(dst.Get(), src.Get());
     }
-} // namespace
+}
 
 BloomEffect::~BloomEffect()
 {

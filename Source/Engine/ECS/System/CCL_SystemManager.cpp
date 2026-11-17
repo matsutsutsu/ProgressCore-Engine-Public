@@ -266,4 +266,4 @@ namespace CCL::ECS
         ImGui::End();
     }
 
-} // namespace CCL::ECS
+}

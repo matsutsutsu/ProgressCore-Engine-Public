@@ -142,7 +142,7 @@ namespace
         cine.skipHoldTime += dt;
         return cine.skipHoldTime >= kSkipHoldSeconds;
     }
-} // namespace
+}
 
 
 

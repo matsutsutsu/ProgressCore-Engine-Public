@@ -10,7 +10,7 @@ namespace
 {
     // 保ちたい距離からこれだけずれると、前後が横と同じ強さ [m]
     constexpr float kRepositionRadialRange = 10.0f;
-} // namespace
+}
 
 
 

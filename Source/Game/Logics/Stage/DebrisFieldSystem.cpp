@@ -23,7 +23,7 @@ using json = nlohmann::json;
 namespace
 {
     constexpr float kTwoPi = XM_2PI;
-} // namespace
+}
 
 void DebrisFieldSystem::Update(float dt)
 {

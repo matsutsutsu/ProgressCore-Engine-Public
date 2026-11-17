@@ -9,18 +9,19 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-static const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("Air_Dive_Start");
-static const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("Air_Dive_Loop");
-
 namespace
 {
+    // 空中ダイブのアニメのステート名のハッシュ（構え / 落下）
+    const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("Air_Dive_Start");
+    const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("Air_Dive_Loop");
+
     constexpr float kDiveFallSpeed    = 45.0f; // 落ちる速さ（m/秒）
     constexpr float kDiveForwardSpeed = 6.0f;  // 落ちながら前へ進む速さ（m/秒）
-} // namespace
+}
 
 
 
-void PlayerAirDiveSystem::Update(float /*dt*/)
+void PlayerAirDiveSystem::Update(float dt)
 {
     ForEach([&](CharacterMovementComponent      &movement,
                 const AnimStateMachineComponent &fsm,

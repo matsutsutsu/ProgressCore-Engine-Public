@@ -107,7 +107,7 @@ namespace
         // SetTrigger は無視されるので、どちらの形のグラフでも両方立ててよい
         anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
-} // namespace
+}
 
 void DamageResolutionSystem::Update(float dt)
 {

@@ -132,7 +132,7 @@ namespace
         }
     }
 
-} // namespace
+}
 
 using CCL::Anim::PinRootMotionNode;
 

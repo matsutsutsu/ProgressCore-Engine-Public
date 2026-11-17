@@ -374,4 +374,4 @@ namespace CCL::GameUI
             out.push_back(lbl.ID());
         }
     }
-} // namespace CCL::GameUI
+}

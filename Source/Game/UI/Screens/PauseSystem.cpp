@@ -25,7 +25,7 @@ namespace
 
     constexpr float kMenuDelay = 0.15f;  // ボタンが出るまでの時間（秒）。すぐ操作したい画面なので短くする
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
-} // namespace
+}
 
 
 
@@ -72,7 +72,7 @@ std::vector<TypeID> PauseSystem::GetWriteTypes() const
 
 
 
-void PauseSystem::Update(float /*dt*/)
+void PauseSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 作ったメニューを、親の子のリストに繋ぐ

@@ -77,7 +77,6 @@ void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &pl
         dash.isInvincible            = true;
         dash.isJustEvadeWindowActive = true;
         dash.currentTimer            = dash.dashDuration;
-        player.locomotion            = PlayerComponent::GroundLocomotion::Dodge;
 
         // 進む向きを決める。移動の入力があればその向き、なければ正面
         if (movement.desiredVelocity.LengthSquared() > 0.001f)

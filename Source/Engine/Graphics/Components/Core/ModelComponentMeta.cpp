@@ -45,7 +45,7 @@ namespace ComponentMetaJson
             }
         }
     };
-} // namespace ComponentMetaJson
+}
 
 // ============================================================================
 // ComponentMeta<ModelComponent>

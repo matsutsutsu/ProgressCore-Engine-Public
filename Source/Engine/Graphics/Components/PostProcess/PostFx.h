@@ -141,4 +141,4 @@ namespace CCL::PostFx
         return {CCL_POSTFX_OVERRIDABLE_LIST(CCL_POSTFX_X)};
 #undef CCL_POSTFX_X
     }
-} // namespace CCL::PostFx
+}

@@ -39,4 +39,4 @@ namespace CCL::ECS
         EntityID ID() const { return id; }
     };
 
-} // namespace CCL::ECS
+}

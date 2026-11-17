@@ -376,7 +376,7 @@ namespace
     };
 
     constexpr const char *kCustomEaseId = "Custom"; // カーブエディタで手を入れたもの
-} // namespace
+}
 
 CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyframe *keys, int count)
 {

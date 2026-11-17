@@ -63,4 +63,4 @@ namespace CCL::AI::Formation
         static double ShortestDouble(float v);
     };
 
-} // namespace CCL::AI::Formation
+}

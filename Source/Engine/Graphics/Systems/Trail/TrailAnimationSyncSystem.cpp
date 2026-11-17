@@ -10,7 +10,7 @@ using namespace CCL::ECS;
 
 
 
-void TrailAnimationSyncSystem::Update(float /*dt*/)
+void TrailAnimationSyncSystem::Update(float dt)
 {
     ForEach([this](const TransformComponent &transform, TrailComponent &trail) {
         // 処理フロー:

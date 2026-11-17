@@ -180,4 +180,4 @@ namespace CCL::AI::Formation
         FormationOutput output; // 当たり方と見せ方
     };
 
-} // namespace CCL::AI::Formation
+}

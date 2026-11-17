@@ -39,7 +39,7 @@ void BossPerceptionSystem::Initialize()
 
 
 
-void BossPerceptionSystem::Update(float /*rawDt*/)
+void BossPerceptionSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<BattleContext>()) return;
     const auto &battle = m_world->GetResource<BattleContext>();

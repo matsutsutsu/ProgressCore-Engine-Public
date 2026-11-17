@@ -14,11 +14,11 @@ namespace
 {
     // 最後の形態の HP の下限。0 より上なので、とどめ以外では倒れない
     constexpr float kLastStandHealth = 1.0f;
-} // namespace
+}
 
 
 
-void BossPhaseSystem::Update(float /*dt*/)
+void BossPhaseSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. ボス本体への要求を空にし、怒り中かを確定する

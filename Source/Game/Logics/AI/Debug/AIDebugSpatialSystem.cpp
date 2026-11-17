@@ -38,7 +38,7 @@ namespace
 
     // 地面の帯は輪郭の線より少しだけ下へ置く。同じ高さだとちらつく
     constexpr float kFillDrop = 0.02f;
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 図形の描画
@@ -163,7 +163,7 @@ std::vector<CCL::ECS::TypeID> AIDebugSpatialSystem::GetReadTypes() const
 
 
 
-void AIDebugSpatialSystem::Update(float /*dt*/)
+void AIDebugSpatialSystem::Update(float dt)
 {
     if (!m_enabled) return;
 

@@ -11,7 +11,7 @@ using namespace CCL::ECS;
 
 
 
-void UISoundSystem::Update(float /*dt*/)
+void UISoundSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. ボタンの状態を集める

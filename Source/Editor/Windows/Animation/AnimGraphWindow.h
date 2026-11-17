@@ -27,7 +27,7 @@ namespace ax
     {
         struct EditorContext;
     }
-} // namespace ax
+}
 
 class AnimGraphWindow : public EditorWindow
 {

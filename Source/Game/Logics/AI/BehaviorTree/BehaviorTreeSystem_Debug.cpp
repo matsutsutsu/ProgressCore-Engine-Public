@@ -94,7 +94,7 @@ namespace
             return "Unknown";
         }
     }
-} // namespace
+}
 
 void BehaviorTreeSystem::DrawNodeRowRecursive(const BTAsset         &asset,
                                               BTNodeID               nodeId,

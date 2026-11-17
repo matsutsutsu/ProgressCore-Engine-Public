@@ -13,7 +13,7 @@ namespace
     // アニメの向きは、斜め45度の付近で毎フレーム入れ替わらないよう、差が付いたときだけ切り替える
     constexpr float kFootworkSideLookAhead     = 30.0f; // 回る側を決めるとき、左右の空きを見る距離 [m]
     constexpr float kFootworkAnimDirHysteresis = 0.2f;  // 今の向きより、内積がこれだけ大きい向きへ切り替える
-} // namespace
+}
 
 
 

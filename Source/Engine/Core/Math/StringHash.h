@@ -16,7 +16,7 @@ namespace CCL::Utils
         }
         return hash;
     }
-} // namespace CCL::Utils
+}
 
 // 名前空間の外に置くことで、どこでも "abc"_hash と書けるようにする
 constexpr uint32_t operator"" _hash(const char *str, size_t)

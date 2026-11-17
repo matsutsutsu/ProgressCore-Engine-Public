@@ -20,7 +20,7 @@ namespace
     constexpr float kSubStart  = 0.35f;  // 線の下の1行を打ち始めるまで（秒。画面を出してから）
     constexpr float kMenuDelay = 0.6f;   // ボタンが出るまで（秒。画面を出してから）
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
-} // namespace
+}
 
 
 

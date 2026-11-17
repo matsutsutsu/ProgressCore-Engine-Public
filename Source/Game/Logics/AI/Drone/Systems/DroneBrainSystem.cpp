@@ -18,9 +18,9 @@ namespace
 
     constexpr float kBreakawayTime   = 1.6f; // 突き抜けた後に減速する時間 [秒]
     constexpr float kArriveThreshold = 2.5f; // 陣形スロットへ到着とみなす距離 [m]
-} // namespace
+}
 
-void DroneBrainSystem::Update(float /*dt*/)
+void DroneBrainSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. プレイヤーの位置を読む

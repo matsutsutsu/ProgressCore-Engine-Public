@@ -24,7 +24,7 @@ namespace
     constexpr const char *kDefaultPrefilterPath  = "Assets/Textures/IBL/ibl_sky_pmrem.dds";
     constexpr const char *kBrdfLutPath           = "Assets/Textures/IBL/ibl_brdf_lut.png"; // 空に依存しないので上書きしない
     constexpr float       kDefaultSkyIntensity   = 1.0f;
-} // namespace
+}
 
 void EnvironmentSystem::Initialize()
 {
@@ -58,7 +58,7 @@ std::vector<CCL::ECS::TypeID> EnvironmentSystem::GetReadTypes() const
 
 
 
-void EnvironmentSystem::Update(float /*dt*/)
+void EnvironmentSystem::Update(float dt)
 {
     // 処理はすべて BindGlobalResources で行う（描画パスの直前に呼ばれる）
 }

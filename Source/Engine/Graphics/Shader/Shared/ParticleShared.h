@@ -186,7 +186,7 @@ namespace GpuData
     static_assert(sizeof(CbParticleStatic) == 256, "CbParticleStatic size mismatch");
     static_assert(sizeof(CbParticleDynamic) == 80, "CbParticleDynamic size mismatch");
 
-} // namespace GpuData
+}
 
 #undef CB_PARTICLE_STRUCT
 #else

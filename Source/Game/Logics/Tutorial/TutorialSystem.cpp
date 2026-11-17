@@ -58,7 +58,7 @@ namespace
     // 補助を掛け続ける上限（秒・実時間）。上の2つから決まる長さに、1秒の余裕を足す
     constexpr float kAssistMaxTime = (kAssistWarnTime - kAssistNowTime) / kAssistWarnScale +
                                      kAssistNowTime / kAssistNowScale + 1.0f;
-} // namespace
+}
 
 
 

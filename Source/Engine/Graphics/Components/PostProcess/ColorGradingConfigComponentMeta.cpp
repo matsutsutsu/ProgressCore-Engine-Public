@@ -36,7 +36,7 @@ namespace ComponentMetaJson
             if (j.contains("mixAmount")) c.data.gradeMixAmount = j["mixAmount"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<ColorGradingConfigComponent>

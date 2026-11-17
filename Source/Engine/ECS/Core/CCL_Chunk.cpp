@@ -209,4 +209,4 @@ namespace CCL::ECS
         return index;
     }
 
-} // namespace CCL::ECS
+}

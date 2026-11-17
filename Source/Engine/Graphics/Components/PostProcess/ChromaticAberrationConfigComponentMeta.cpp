@@ -30,7 +30,7 @@ namespace ComponentMetaJson
             if (j.contains("falloff")) c.data.chromaFalloff = j["falloff"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<ChromaticAberrationConfigComponent>

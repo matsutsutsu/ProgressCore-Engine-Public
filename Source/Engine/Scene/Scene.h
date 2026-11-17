@@ -16,7 +16,7 @@ namespace CCL::ECS
 {
     class World;
     class SystemManager;
-} // namespace CCL::ECS
+}
 
 class Scene
 {

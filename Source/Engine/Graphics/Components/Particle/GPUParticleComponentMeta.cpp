@@ -174,7 +174,7 @@ namespace
         STR("texturePath", d.texturePath, sizeof(d.texturePath));
         STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
     }
-} // namespace
+}
 
 // =====================================================================
 // シリアライズ
@@ -241,7 +241,7 @@ namespace ComponentMetaJson
             }
         }
     };
-} // namespace ComponentMetaJson
+}
 
 // =====================================================================
 // ComponentMeta<GPUParticleComponent>

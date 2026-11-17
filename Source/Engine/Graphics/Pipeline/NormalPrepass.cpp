@@ -20,7 +20,7 @@ namespace
     // Tracy は名前のポインタを持ち続けるので、定数で渡す
     const char *const kPlotLodInstances[MeshLod::kMaxLevels] = {
         "LOD0 Instances", "LOD1 Instances", "LOD2 Instances", "LOD3 Instances"};
-} // namespace
+}
 #endif
 
 

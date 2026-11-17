@@ -193,4 +193,4 @@ namespace CCL::AI::BT
         reg.RegisterCondition<RecentlyHit>(C_RecentlyHit);
     }
 
-} // namespace CCL::AI::BT
+}

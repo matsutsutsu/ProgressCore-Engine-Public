@@ -215,7 +215,7 @@ namespace ComponentMetaJson
             if (j.contains("invincibilityDuration")) comp.invincibilityDuration = j["invincibilityDuration"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 // ===================================================================
 // CombatRosterComponent

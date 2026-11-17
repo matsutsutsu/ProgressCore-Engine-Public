@@ -22,7 +22,7 @@ namespace
     // ラッシュ中のプレイヤーの命中で、通常の火花の代わりに出すプレハブ
     const char *kRushHitPrefab       = "Assets/Prefabs/Particles/VFX_RushHit";       // 詰めの斬りと連撃
     const char *kRushFinishHitPrefab = "Assets/Prefabs/Particles/VFX_RushFinishHit"; // とどめ
-} // namespace
+}
 
 
 
@@ -40,7 +40,7 @@ void HitEffectSystem::Initialize()
 
 
 
-void HitEffectSystem::Update(float /*dt*/)
+void HitEffectSystem::Update(float dt)
 {
     // 何もしない。イベントを購読するために System にしている
 }

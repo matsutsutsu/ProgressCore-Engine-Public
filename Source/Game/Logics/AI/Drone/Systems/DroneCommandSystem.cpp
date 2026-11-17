@@ -8,7 +8,7 @@
 
 using namespace CCL::ECS;
 
-void DroneCommandSystem::Update(float /*dt*/)
+void DroneCommandSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. ボスの命令を読む

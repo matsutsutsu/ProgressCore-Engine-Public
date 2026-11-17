@@ -40,4 +40,4 @@ namespace BossActionCommon
     // 動く向きを、体から見た向き（x = 右、y = 前）に直す。moveDir が水平で長さ 1 なら、結果も長さ 1
     DirectX::SimpleMath::Vector2 BodyLocalDirection(const DirectX::SimpleMath::Vector3 &moveDir,
                                                     const TransformComponent           &transform);
-} // namespace BossActionCommon
+}

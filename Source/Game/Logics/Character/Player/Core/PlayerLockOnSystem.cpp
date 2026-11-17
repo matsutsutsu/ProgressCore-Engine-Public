@@ -23,7 +23,7 @@ std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetReadTypes() const
 
 
 
-void PlayerLockOnSystem::Update(float /*dt*/)
+void PlayerLockOnSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID playerID, PlayerComponent &player,
                       const PlayerInputComponent &pin, const TransformComponent &playerTrans) {

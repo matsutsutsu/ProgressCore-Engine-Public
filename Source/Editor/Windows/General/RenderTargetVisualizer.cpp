@@ -7,7 +7,7 @@ namespace
 {
     // サムネイル用なので、変換後の幅はここで頭打ちにする（VRAM と GPU の負荷を抑える）
     constexpr uint32_t kMaxBakeWidth = 512;
-} // namespace
+}
 
 bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
 {
@@ -146,7 +146,7 @@ namespace
             dc->PSSetSamplers(0, 1, &smpPtr);
         }
     };
-} // namespace
+}
 
 ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext      *dc,
                                                             ID3D11ShaderResourceView *src, uint32_t w, uint32_t h, const RTVisualizeParams &p)

@@ -32,7 +32,7 @@ constexpr float kHeadLiftEpsilon = 0.001f;
 
 // 長さがこれ以下のベクトルは向きを論じられないものとして扱う（m）
 constexpr float kMinLength = 1e-4f;
-} // namespace
+}
 
 void CameraActionTPSSystem::Initialize()
 {

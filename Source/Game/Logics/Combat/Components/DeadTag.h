@@ -7,4 +7,4 @@ namespace Tag
     {
     };
 
-} // namespace Tag
+}

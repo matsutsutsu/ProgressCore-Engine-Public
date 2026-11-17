@@ -14,7 +14,7 @@ namespace
 {
     constexpr float kPendingTimeout = 1.0f; // ダッシュのクールダウン明けを待つ上限（秒）
     constexpr int   kForceSteps     = 3;    // 差し込んだダッシュが始まるのを待つステップ数
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口

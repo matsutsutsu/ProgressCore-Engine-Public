@@ -71,7 +71,7 @@ namespace
                       m.file.c_str(), m.line, m.text.c_str());
         return buf;
     }
-} // namespace
+}
 
 void ConsoleWindow::DrawContents(EditorContext & /*context*/)
 {

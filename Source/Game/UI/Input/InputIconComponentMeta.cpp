@@ -14,7 +14,7 @@ namespace
 {
     // InputIconKind の並びと同じ順にする
     constexpr const char *kInputIconKindNames[] = {"Action", "Move", "Camera", "MenuConfirm", "MenuNavigate", "Pause"};
-} // namespace
+}
 
 // アクション名のハッシュは System が生成時・ヒントの切り替え時に書くので保存しない
 COMPONENT_META_BEGIN_FULL(InputIconComponent, "Input Icon (操作アイコン)", CCL::Categories::UI, 70, false)

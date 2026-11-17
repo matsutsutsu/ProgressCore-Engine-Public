@@ -24,7 +24,7 @@ namespace
     // 寿命が 0 で来たときに使う最短の寿命（秒）
     // FixedUpdate（60Hz）で3フレームほどあり、センサーが重なりを1回は見つけられる
     constexpr float kMinHitboxLifetime = 0.05f;
-} // namespace
+}
 
 void SpawnHitboxSystem::Initialize()
 {

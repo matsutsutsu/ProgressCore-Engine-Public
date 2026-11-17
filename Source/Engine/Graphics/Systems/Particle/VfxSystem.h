@@ -112,4 +112,4 @@ namespace VFX
 
     // 再生中の VFX を粒子ごとすぐに消す（VFXSystem::Destroy を呼ぶ）
     void Destroy(CCL::ECS::World &world, CCL::ECS::EntityID handle);
-} // namespace VFX
+}

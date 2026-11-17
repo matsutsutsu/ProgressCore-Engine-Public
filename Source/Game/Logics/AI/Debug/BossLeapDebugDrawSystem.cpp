@@ -48,7 +48,7 @@ namespace
     {
         return a.kind == b.kind && a.duration == b.duration && a.start == b.start && a.target == b.target;
     }
-} // namespace
+}
 
 
 
@@ -56,7 +56,7 @@ namespace
 // 入口
 // ---------------------------------------------------------------------------
 
-void BossLeapDebugDrawSystem::Update(float /*dt*/)
+void BossLeapDebugDrawSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 最初に見つかったボスの様子を記録する

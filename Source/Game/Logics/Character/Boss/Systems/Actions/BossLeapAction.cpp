@@ -15,7 +15,7 @@ namespace
     constexpr float kLeapHeightFarDistance  = 80.0f;  // この距離以上で一番高くなる [m]
     constexpr float kLeapHeightOffsetMin    = 0.0f; // 一番近いときに基準へ足す高さ [m]
     constexpr float kLeapHeightOffsetMax    = 10.0f;  // 一番遠いときに基準へ足す高さ [m]
-} // namespace
+}
 
 
 

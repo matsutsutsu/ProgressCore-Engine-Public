@@ -55,7 +55,7 @@ namespace
     constexpr float kScrimW       = 2560.0f; // 幅。画面より大きくして、解像度が変わっても端が見えないようにする
     constexpr float kScrimBottomH = 760.0f;  // 高さ
     constexpr float kScrimBottomY = 240.0f;  // 縦の中心。パネルの上端が画面の y ≒ 520px に来る
-} // namespace
+}
 
 
 

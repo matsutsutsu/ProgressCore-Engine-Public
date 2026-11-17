@@ -39,7 +39,7 @@ namespace
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", text);
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口

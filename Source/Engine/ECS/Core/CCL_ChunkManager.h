@@ -199,4 +199,4 @@ namespace CCL::ECS
         mutable std::shared_mutex m_structureMutex;
     };
 
-} // namespace CCL::ECS
+}

@@ -24,9 +24,9 @@ namespace
 
         return CCL::AI::Motion::IsChargeDangerous(d);
     }
-} // namespace
+}
 
-void DroneHitSystem::Update(float /*dt*/)
+void DroneHitSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. ダメージの帰属先（ボス）を決める

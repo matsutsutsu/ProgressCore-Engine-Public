@@ -34,4 +34,4 @@ namespace CinematicScriptIO
 
     // ショットとトラックを時刻の順に並べ直す。同じ時刻は書いた順を保つ
     void SortByTime(CinematicScript &script);
-} // namespace CinematicScriptIO
+}

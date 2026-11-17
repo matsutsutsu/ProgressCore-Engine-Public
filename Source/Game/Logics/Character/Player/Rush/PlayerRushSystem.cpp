@@ -621,7 +621,7 @@ void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovement
         }
     }
 
-    // 詰める向きへ向かせる。体を回すのは PlayerJumpFacingSystem
+    // 詰める向きへ向かせる。体を回すのは PlayerFacingSystem
     player.attackFaceYaw   = std::atan2(dir.x, dir.z);
     player.attackFaceTimer = 0.1f;
 

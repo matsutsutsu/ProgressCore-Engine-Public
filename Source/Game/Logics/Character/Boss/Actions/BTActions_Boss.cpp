@@ -432,7 +432,7 @@ namespace CCL::AI::BT
                 return BTNodeState::Running;
             }
         };
-    } // namespace
+    }
 
     // ---------------------------------------------------------------------------
     // 登録
@@ -479,4 +479,4 @@ namespace CCL::AI::BT
         BT_DRONE_ACTION_LIST(CCL_REGISTER_DRONE_ACTION)
 #undef CCL_REGISTER_DRONE_ACTION
     }
-} // namespace CCL::AI::BT
+}

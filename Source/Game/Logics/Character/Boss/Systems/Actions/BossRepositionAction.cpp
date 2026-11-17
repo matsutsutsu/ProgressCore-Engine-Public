@@ -13,7 +13,7 @@ namespace
     // 間合いを取る移動の向きの決め方
     // 前後へはこの角度までしか傾けない。アニメが左右の移動しかないため
     constexpr float kRepositionMaxTiltDeg = 40.0f; // 真横からの傾きの上限 [度]
-} // namespace
+}
 
 
 

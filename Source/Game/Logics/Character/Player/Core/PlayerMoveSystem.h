@@ -5,12 +5,11 @@
 // 責務:
 //   - 走り中に無入力が runIdleReleaseTime 続いたら、歩きに戻す
 //   - 走り中は、走る速さを overrideSpeed へ書く
-//   - 歩きか走りかを locomotion へ書く
 //
 // 備考:
 //   走りに入るきっかけ（ダッシュの終わりで isRunning を立てる）は PlayerDashSystem
 //   ダッシュ中はダッシュ側が速さを書くので、ここは何もしない
-//   ジャンプと向きは PlayerJumpFacingSystem
+//   ジャンプは PlayerJumpSystem、向きは PlayerFacingSystem
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"

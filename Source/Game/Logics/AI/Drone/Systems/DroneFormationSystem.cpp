@@ -24,7 +24,7 @@ namespace
 {
     // 予告の時計（telegraphTime）の上限 [秒]。際限なく育たないための蓋
     constexpr float kTelegraphTimeCap = 10.0f;
-} // namespace
+}
 
 void DroneFormationSystem::Initialize()
 {

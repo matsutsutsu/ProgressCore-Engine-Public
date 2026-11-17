@@ -25,6 +25,6 @@ namespace CCL::Serialization
         inline constexpr const char *EntityLocal = "lid"; // ローカルインデックス
         inline constexpr const char *Components  = "components";
         inline constexpr const char *Name        = "name"; // プレハブ名
-    } // namespace Keys
+    }
 
-} // namespace CCL::Serialization
+}

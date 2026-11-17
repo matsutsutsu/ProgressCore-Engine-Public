@@ -148,4 +148,4 @@ namespace CCL::AI::Formation::Attack
         reg.Register<BarrageFormation>(DroneFormationType::Barrage);
     }
 
-} // namespace CCL::AI::Formation::Attack
+}

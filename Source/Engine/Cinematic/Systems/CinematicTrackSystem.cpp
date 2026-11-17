@@ -26,7 +26,7 @@ namespace
 
 
 
-void CinematicTrackSystem::Update(float /*dt*/)
+void CinematicTrackSystem::Update(float dt)
 {
     FireList fires;
 
