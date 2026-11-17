@@ -33,17 +33,8 @@ namespace
     const uint32_t HASH_HIT_DIR_Y = CCL::Utils::HashString("HitDirY");
 
     // 向きの番号（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）ごとの、ブレンドスペースの点の位置
-    //   プレイヤーの Hit_Reaction は、この4点に前後左右ののけぞりを置いたブレンドスペース
+    //   プレイヤーとボスの Hit_Reaction は、この4点に前後左右ののけぞりを置いたブレンドスペース
     const DirectX::XMFLOAT2 kHitDirPos[4] = {{0.0f, 1.0f}, {0.0f, -1.0f}, {-1.0f, 0.0f}, {1.0f, 0.0f}};
-
-    // 向きごとのトリガー（向きの番号と同じ並び）
-    // ボスのグラフは、このトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
-    // ボスは Hit / HitDirX / HitDirY を持たないので、両方の形を立てる
-    const uint32_t HASH_HIT_DIRECTIONAL[4] = {
-        CCL::Utils::HashString("HitFront"),
-        CCL::Utils::HashString("HitBack"),
-        CCL::Utils::HashString("HitLeft"),
-        CCL::Utils::HashString("HitRight")};
 
     /**
      * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する
@@ -102,10 +93,6 @@ namespace
         anim->SetFloat(HASH_HIT_DIR_X, kHitDirPos[dirIndex].x);
         anim->SetFloat(HASH_HIT_DIR_Y, kHitDirPos[dirIndex].y);
         anim->SetTrigger(HASH_HIT, 0.15f);
-
-        // 向きごとのトリガーしか持たないグラフ（ボス）のため。持っていないパラメータへの
-        // SetTrigger は無視されるので、どちらの形のグラフでも両方立ててよい
-        anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
 }
 

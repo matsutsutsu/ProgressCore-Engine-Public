@@ -29,9 +29,8 @@ using namespace BossActionGeometry;
 
 namespace
 {
-    // ひるみのステート（ValkyraAnimNode.json）。どれかを再生している間は、技を始めずにその場で止まる
-    const uint32_t kFlinchStates[] = {CCL::Utils::HashString("Hit_F"), CCL::Utils::HashString("Hit_B"),
-                                      CCL::Utils::HashString("Hit_L"), CCL::Utils::HashString("Hit_R")};
+    // ひるみのステート（ValkyraAnimNode.json の前後左右のブレンドスペース）。再生している間は、技を始めずにその場で止まる
+    const uint32_t kFlinchState = CCL::Utils::HashString("Hit_Reaction");
 
     // 技の開始で引くアニメのトリガー（ValkyraAnimNode.json）
     // 跳躍3種は同じ "Leap"。着地のクリップは BossAnimSyncSystem が切り替える
@@ -276,18 +275,7 @@ BossActionSystem::TranslatedAction BossActionSystem::TranslateAction(ActionID ac
 void BossActionSystem::UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine,
                                     float dt) const
 {
-    bossAction.isFlinching = false;
-    if (animStateMachine)
-    {
-        for (uint32_t flinchState : kFlinchStates)
-        {
-            if (animStateMachine->currentStateHash == flinchState)
-            {
-                bossAction.isFlinching = true;
-                break;
-            }
-        }
-    }
+    bossAction.isFlinching = animStateMachine && animStateMachine->currentStateHash == kFlinchState;
 
     // 冷却は明けてから数えるので、ひるんでいる間は満タンに保つ
     // dt はこの個体の時計なので、ヒットストップ中は冷却も止まる

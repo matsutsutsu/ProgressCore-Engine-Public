@@ -74,7 +74,7 @@ private:
     // 知らない技は None
     TranslatedAction TranslateAction(ActionID actionId, const BossActionComponent &bossAction) const;
 
-    // ひるみのアニメ（Hit_F など）を再生しているかを isFlinching に書き、明けてからの冷却を進める
+    // ひるみのアニメ（Hit_Reaction）を再生しているかを isFlinching に書き、明けてからの冷却を進める
     // ひるんでいる間、Update は BT の要求を読まずに待機にする
     void UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine, float dt) const;
 
