@@ -3,7 +3,10 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include <algorithm>
+#include <cmath>
 #include <tracy/Tracy.hpp>
+
+#include "Engine/Core/Components/RenderInterpState.h"
 
 #include "Engine/Animation/Core/AnimPoseUtils.h"
 #include "Engine/Animation/Core/AnimSequence.h"
@@ -24,21 +27,29 @@ void AnimationPoseSystem::Update(float dt)
     // 直列に回す。Model は Entity ごとのインスタンスだが、
     //   並列にするなら、ポーズ計算の中で書く Model のキャッシュ（mutable）と
     //   m_world->GetComponent を並列に呼んで安全かを先に確かめること
-    ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
+
+    // 描画の補間の割合（0 = 1つ前のステップ、1 = 最新のステップ）。Framework::Run が毎フレーム書く
+    //   ない場合は 1 にして、今までどおり最新のステップの時刻で姿勢を作る
+    float alpha = 1.0f;
+    if (m_world->HasResource<RenderInterpState>()) alpha = m_world->GetResource<RenderInterpState>().alpha;
+
+    ForEachWithID([this, alpha](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
         if (!animator.currentSequence) return;
 
         // エディタで操作中は AnimationSystem::UpdateManual がポーズを作るので触らない
         if (animator.isEditorOverride) return;
 
         if (Model *model = modelComp.GetModel())
-            ComputeAndApplyPose(id, animator, model, animator.currentSequence);
+        {
+            ComputeAndApplyPose(id, animator, model, animator.currentSequence, alpha);
+        }
     });
 }
 
 
 
 void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
-                                              Model *model, const AnimSequence *seq)
+                                              Model *model, const AnimSequence *seq, float alpha)
 {
     // 処理フロー:
     // 1. クリップの番号とルートボーンを引く
@@ -65,14 +76,14 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
 
     // 前側を作れたときだけクロスフェードする（前のクリップがモデルになければ、今側だけを出す）
     const bool crossFading = animator.isBlending && animator.previousSequence;
-    if (crossFading && ComputeSourcePose(model, animator, true, true))
+    if (crossFading && ComputeSourcePose(model, animator, true, true, alpha))
     {
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Blend");
 
         // ブレンド中は前と現在の両方を、混ぜる前に固定する
         //   前のクリップはルートボーンの番号が違うことがあるので、ComputeSourcePose が個別に特定する
         //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
-        ComputeSourcePose(model, animator, false, true);
+        ComputeSourcePose(model, animator, false, true, alpha);
 
         float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
         blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
@@ -84,7 +95,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
         ZoneScopedN("AnimationPoseSystem::ComputeAndApplyPose::Model->ComputeAnimation");
 
         // 単体のクリップは 3. でまとめて固定する
-        ComputeSourcePose(model, animator, false, false);
+        ComputeSourcePose(model, animator, false, false, alpha);
     }
 
     // ---------------------------------------------------------
@@ -109,7 +120,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
 
 
 
-bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip)
+bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip, float alpha)
 {
     // 処理フロー:
     // 1. 今側か前側かで、読む値と書く先を選ぶ
@@ -119,8 +130,10 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
     // ---------------------------------------------------------
     // 1. 今側か前側か
     // ---------------------------------------------------------
+
+    // 今側の時刻は描画の割合で補間する。前側（クロスフェードで消えていく方）は補間せず、最新のステップの時刻のまま
     const AnimSequence           *timeBase = previous ? animator.previousSequence : animator.currentSequence;
-    const float                   time     = previous ? animator.previousTimer : animator.currentTimer;
+    const float                   time     = previous ? animator.previousTimer : InterpolateCurrentTimer(animator, alpha);
     const AnimBlendPlayback      &blend    = previous ? animator.previousBlend : animator.currentBlend;
     std::vector<Model::NodePose> &out      = previous ? animator.poseBufferB : animator.poseBufferA;
 
@@ -185,6 +198,56 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
         model->ComputeAnimation(baseIndex, time, out);
     }
     return true;
+}
+
+
+
+// 今のクリップの、描画で使う時刻を返す（1ステップ前の時刻から今の時刻までを alpha で補間する）
+float AnimationPoseSystem::InterpolateCurrentTimer(const AnimatorComponent &animator, float alpha) const
+{
+    // 処理フロー:
+    // 1. ループの境界をまたいだステップなら、続きの時刻に直す
+    // 2. alpha で補間する
+    // 3. ループならクリップの長さの中へ戻す
+
+    // previousFrameTimer は AnimationSystem が時刻を進める直前に書く値
+    //   Play() でクリップを切り替えたときは、開始の時刻にそろうので、前のクリップの時刻とは補間しない
+    //   ヒットストップ中は時刻が進まず2つが同じになるので、骨も止まったままになる
+    const float duration = animator.currentSequence->duration;
+    const float fromTime = animator.previousFrameTimer;
+    float       toTime   = animator.currentTimer;
+    const bool  wraps    = animator.isLoop && duration > 0.0f;
+
+    // ---------------------------------------------------------
+    // 1. ループの境界
+    // ---------------------------------------------------------
+
+    // 末尾から先頭へ戻ったステップは、今の時刻に長さを足して「末尾の続き」にする
+    //   そのまま補間すると、末尾から先頭へ逆向きに再生した姿勢が1フレームだけ映る
+    //   1ステップでクリップの半分より多く進むことはないので、差が半分を超えたら境界をまたいだと判定する
+    //   逆再生で先頭から末尾へ戻ったときは、反対に長さを引く
+    if (wraps)
+    {
+        if (fromTime - toTime > duration * 0.5f) toTime += duration;
+        else if (toTime - fromTime > duration * 0.5f) toTime -= duration;
+    }
+
+    // ---------------------------------------------------------
+    // 2. 補間
+    // ---------------------------------------------------------
+    float renderTime = std::lerp(fromTime, toTime, alpha);
+
+    // ---------------------------------------------------------
+    // 3. クリップの長さの中へ戻す
+    // ---------------------------------------------------------
+
+    // 1 で長さを足し引きした分を戻す。非ループの時刻は AnimationSystem が 0〜長さに収めているので触らない
+    if (wraps)
+    {
+        renderTime = std::fmod(renderTime, duration);
+        if (renderTime < 0.0f) renderTime += duration;
+    }
+    return renderTime;
 }
 
 
