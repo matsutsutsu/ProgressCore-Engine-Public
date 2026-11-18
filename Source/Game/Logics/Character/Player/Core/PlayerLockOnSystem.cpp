@@ -4,7 +4,7 @@
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
-#include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLockOnComponent.h"
 #include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -26,7 +26,7 @@ std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetReadTypes() const
 std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
-    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // カメラのロックオンの欄
+    types.push_back(TypeInfo<PlayerCameraLockOnComponent>::ID()); // カメラが狙う敵
     return types;
 }
 
@@ -95,10 +95,10 @@ void PlayerLockOnSystem::Update(float dt)
         // 最後にラッシュ中ならロックオンした敵じゃなくて攻撃をよけた敵にターゲットを向ける
         const EntityID cameraTarget = PickCameraTarget(playerID, player);
 
-        if (auto *tps = m_world->GetComponent<PlayerCameraComponent>(FindPlayerCamera(*m_world, playerID)))
+        if (auto *lockOn = m_world->GetComponent<PlayerCameraLockOnComponent>(FindPlayerCamera(*m_world, playerID)))
         {
-            tps->lockOnTarget.id = cameraTarget;
-            tps->isLockOnActive  = (cameraTarget != InvalidEntityID);
+            lockOn->target.id = cameraTarget;
+            lockOn->isActive  = (cameraTarget != InvalidEntityID);
         }
     });
 }

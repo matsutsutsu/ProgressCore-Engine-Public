@@ -3,6 +3,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Time/TimeService.h"
+#include "Engine/Core/Math/Angle.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/Components/TimeState.h"
 #include "Game/Logics/Camera/PlayerCameraComponent.h"
@@ -413,11 +414,8 @@ float TutorialSystem::AccumulateLook(EntityID playerID)
     // 前のフレームからの差を、左右どちらに回したかに関係なく足していく
     if (m_hasLastSample)
     {
-        float delta = camera->currentYaw - m_lastCameraYaw;
-
         // 差は -180〜180 度に直す。角度が 360 度を越えて回り込んだ瞬間に、大きく回したと数えないため
-        while (delta > 180.0f) delta -= 360.0f;
-        while (delta < -180.0f) delta += 360.0f;
+        const float delta = CCL::Math::WrapDegrees(camera->currentYaw - m_lastCameraYaw);
         m_lookAngle += std::abs(delta);
     }
     m_lastCameraYaw = camera->currentYaw;

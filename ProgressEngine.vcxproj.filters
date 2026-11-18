@@ -927,6 +927,9 @@
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\Angle.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\Interpolation.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
@@ -1783,6 +1786,9 @@
       <Filter>Source\Engine\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraComponent.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponent.h">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
@@ -2993,6 +2999,9 @@
       <Filter>Source\Game\Logics\Character\Player\Feedback</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponentMeta.cpp">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">

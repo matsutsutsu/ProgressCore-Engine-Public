@@ -7,6 +7,7 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Angle.h"
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -158,11 +159,7 @@ float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &tra
     const float targetYaw = atan2f(toTarget.x, toTarget.z);
 
     // -π〜π に収める
-    float diff = targetYaw - myYaw;
-    while (diff > DirectX::XM_PI)
-        diff -= DirectX::XM_2PI;
-    while (diff < -DirectX::XM_PI)
-        diff += DirectX::XM_2PI;
+    const float diff = CCL::Math::WrapRadians(targetYaw - myYaw);
 
     return DirectX::XMConvertToDegrees(diff);
 }

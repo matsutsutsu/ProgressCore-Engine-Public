@@ -49,7 +49,7 @@ struct PlayerRushCameraComponent
     CameraFramingParams current{};                // 今カメラへ出している構図
     CameraFramingParams velocity{};               // current の各値の速さ。focusTarget は使わない
     float               weight         = 0.0f;  // 構図の効き（0〜1）
-    float               yawSign        = 1.0f;  // ヨーと傾きの左右（±1）
+    float               yawSign        = 1.0f;  // ヨーと傾きの左右。カメラから見て左へ避けたら +1、右なら -1
     bool                wasActive      = false; // 前フレームにラッシュ中だったか
     bool                wasAttackFired = false; // 前フレームに斬り済みだったか
 };

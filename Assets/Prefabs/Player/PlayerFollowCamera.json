@@ -8,7 +8,7 @@
                     "frequency": 22.0,
                     "rotationRatio": 0.3499999940395355
                 },
-                "PlayerCamera": {
+                "Player Camera": {
                     "baseFov": 70.0,
                     "closeUpDistance": 3.5,
                     "collisionEnabled": true,
@@ -23,17 +23,6 @@
                     "distance": 17.5,
                     "enableCursorLock": true,
                     "fovDamping": 8.5,
-                    "lockOnAllowManualCamera": true,
-                    "lockOnAssistStrength": 3.0,
-                    "lockOnDistanceGain": 0.3499999940395355,
-                    "lockOnManualOverrideTime": 0.25,
-                    "lockOnMaxCorrectionSpeed": 180.0,
-                    "lockOnMaxExtraDistance": 8.0,
-                    "lockOnMaxLookShift": 3.0,
-                    "lockOnPitch": -8.0,
-                    "lockOnPitchDamping": 8.0,
-                    "lockOnSubjugationRatio": 0.3499999940395355,
-                    "lockOnYawDeadZone": 20.0,
                     "lookSpeedX": 120.0,
                     "lookSpeedY": 120.0,
                     "lookaheadDamping": 1.600000023841858,
@@ -51,6 +40,19 @@
                         5.0,
                         0.0
                     ]
+                },
+                "Player Camera Lock On": {
+                    "allowManualCamera": true,
+                    "assistStrength": 3.0,
+                    "distanceGain": 0.3499999940395355,
+                    "manualOverrideTime": 0.25,
+                    "maxCorrectionSpeed": 180.0,
+                    "maxExtraDistance": 8.0,
+                    "maxLookShift": 3.0,
+                    "pitch": -8.0,
+                    "pitchDamping": 8.0,
+                    "subjugationRatio": 0.3499999940395355,
+                    "yawDeadZone": 20.0
                 },
                 "Name": {
                     "name": "PlayerFollowCamera"

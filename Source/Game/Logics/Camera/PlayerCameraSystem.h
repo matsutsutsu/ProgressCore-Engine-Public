@@ -1,22 +1,23 @@
 #pragma once
 // ===========================================================================
-// 概要: PlayerCameraComponent を持つカメラの位置・向き・画角を毎フレーム計算する System
+// 概要: プレイヤーを追う TPS カメラの姿勢と画角を毎フレーム決める System
 //
 // 責務:
-//   - スティックとマウスの入力でオービット角を更新し、ロックオン中はヨーとピッチを自動で補正する
-//   - 地形へのめり込みを避け（レイキャスト）、進む向きを先読みする
-//   - 演出からの構図の上書き（framingOverrides）を合成して、距離・画角・角度・注視点へ足す
-//   - 画角パンチの要求を受け、マウスルック中はカーソルを固定する
+//   - 視点の入力で向きを回し、ロックオン中は敵の方へ補正する
+//   - 演出の上書き（framingOverrides）を合成して、普段の構図へ足す
+//   - 地形を避けて、カメラを置く位置を決める
+//   - マウスで視点を回す間は、カーソルを固定する
 //
-// 備考: R00b で CameraTargetBindSystem が target を決めておくこと。未解決ならそのカメラは黙って飛ばす
-//       ここ（R01_Camera）で姿勢を確定し、R01b の CameraBrainSystem が採用・ブレンドする。揺れは後段の CameraShakeSystem
-//       カーソルの固定は全カメラを見てから1つに決める（SetMouseLock はフレームに1回）ので、直列の ForEach で回す
+// 備考: CameraTargetBindSystem（R00b）が target を決めた後に走る
+//       SetMouseLock をフレームに1回にするため、カメラは直列で回す
 // ===========================================================================
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLockOnComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Engine/ECS/Common/CCL_TypeInfo.h"
 #include "Game/Core/GameEvents.h"
 
 #include <memory>
@@ -29,112 +30,112 @@ class IPhysicsAPI;
 class PlayerCameraSystem : public CCL::ECS::IfSystem<
     PlayerCameraSystem,
     CCL::ECS::Write<VirtualCamera>,
-    CCL::ECS::Write<PlayerCameraComponent>, // 内部状態(Pitch/Yaw等)を更新するためWrite
-    CCL::ECS::Write<TransformComponent>>    // カメラ自身のTransformを確定させるためWrite
+    CCL::ECS::Write<PlayerCameraComponent>, // 向きと補間中の状態を書く
+    CCL::ECS::Write<TransformComponent>>    // カメラ自身の位置と向きを書く
 {
 public:
     PlayerCameraSystem() : IfSystem("PlayerCameraSystem") {}
     virtual ~PlayerCameraSystem() = default;
 
-    // FOV パンチ要求（CameraFovPunchRequestEvent）の購読を始める
-    // 購読では要求をためるだけにして、画角を書き換えるのは Update にする（揺れの CameraShakeSystem と同じ形）
     void Initialize() override;
 
-    // 全 TPS カメラの位置・向き・画角を、このフレームの分だけ確定させる
     void Update(float dt) override;
 
-    // 揺れはこの System が書いた結果に足すので、揺れより前に走る
-    // 揺れの側（Engine）が Game の System 名を知らずに済むよう、こちらで宣言する
+    // 揺れはこの System が決めた位置に足すので、揺れより前に走る
     std::vector<const char *> GetRunBefore() const override { return {"CameraShakeSystem"}; }
+
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
+    {
+        auto types = IfSystem::GetWriteTypes();
+        types.push_back(CCL::ECS::TypeInfo<PlayerCameraLockOnComponent>::ID()); // 無いカメラもあるので ForEach に入れない
+        return types;
+    }
 
 private:
     // =======================================================================
     // 作業データ
     // =======================================================================
 
-    // 1フレーム分の視点入力と、入力を無効にする条件
-    // カメラ台数に関係なくフレーム先頭で1度だけ作り、各カメラへ読み取り専用で渡す
+    // 1フレーム分の視点の入力と、入力を止める条件
+    // カメラの台数によらず、フレームの初めに1回だけ作る
     struct FrameInput
     {
-        float lookX         = 0.0f;  // 右スティックX の倒し量（-1..1）。速度入力なので dt を掛ける
-        float lookY         = 0.0f;  // 右スティックY の倒し量（-1..1）
-        float mouseDX       = 0.0f;  // マウス水平移動量（ピクセル/フレーム）。移動量なので dt を掛けない
-        float mouseDY       = 0.0f;  // マウス垂直移動量（ピクセル/フレーム）
-        bool  rmbHeld       = false; // 右クリック押下中か
-        bool  hasManualLook = false; // しきい値を超える視点操作があったか（ロックオン補正の停止判定用）
-        bool  cursorFree    = false; // カーソルを固定しない（ポーズ中・UI操作中・決着の画面・ウィンドウ非アクティブ）
-        bool  blockLook     = false; // カットシーン中。視点入力を一切受け付けない
+        float lookX         = 0.0f;  // 右スティックの左右（-1〜1）
+        float lookY         = 0.0f;  // 右スティックの上下（-1〜1）
+        float mouseDX       = 0.0f;  // マウスの水平移動量（ピクセル）
+        float mouseDY       = 0.0f;  // マウスの垂直移動量（ピクセル）
+        bool  rmbHeld       = false; // 右クリックを押しているか
+        bool  hasManualLook = false; // しきい値を超えて視点を動かしたか
+        bool  cursorFree    = false; // カーソルを固定しないか
+        bool  blockLook     = false; // 視点の入力を受けないか
     };
 
-    // カメラ1台を更新する間だけ生きる作業セット
-    //   各段階が必要とするもの（対象・入力・dt）はほぼ共通なので1つに束ねる
-    //   束ねないとすべての宣言が引数の列で埋まり、何をする関数なのかが読めなくなる
-    //   参照を持つので Update のループ内だけで使い、保存しない
+    // カメラ1台を更新する間だけ使う作業セット。参照を持つので保存しない
+    // enemy があるときは、lockOn も必ずある
     struct CameraContext
     {
-        VirtualCamera            &vcam;    // このカメラが出す答え（Brain が読む）
-        PlayerCameraComponent    &tps;     // 調整値と実行時状態
-        TransformComponent       &trans;   // カメラ自身の Transform
-        const TransformComponent &target;  // 追従対象。必ず存在する
-        const TransformComponent *enemy;   // ロックオン対象。していなければ nullptr（所有しない）
-        const FrameInput         &in;      // このフレームの視点入力
-        IPhysicsAPI              *physics; // 地形判定用。nullptr なら衝突回避をしない（所有しない）
-        float                     dt;      // このフレームの経過時間（秒）
+        VirtualCamera               &vcam;    // このカメラが出す結果
+        PlayerCameraComponent       &tps;     // 調整値と状態
+        PlayerCameraLockOnComponent *lockOn;  // ロックオンの設定。無ければ nullptr（所有しない）
+        TransformComponent          &trans;   // カメラ自身の Transform
+        const TransformComponent    &target;  // 追従する相手
+        const TransformComponent    *enemy;   // ロックオンの敵。無ければ nullptr（所有しない）
+        const FrameInput            &in;      // このフレームの視点の入力
+        IPhysicsAPI                 *physics; // 地形の判定。無ければ nullptr（所有しない）
+        float                        dt;      // 経過時間（秒）
 
-        CameraFramingParams framing{};                    // 演出の上書きを合成した足し込み量（UpdateCamera の先頭で決める）
-        bool                framingMovesDistance = false; // 距離を動かしている上書きが1つでもあるか（距離を外へ戻す速さの切り替えに使う）
+        CameraFramingParams framing{};                    // 合成した上書きの足し込み量
+        bool                framingMovesDistance = false; // 距離を動かす上書きがあるか
     };
 
     // =======================================================================
     // フレーム単位
     // =======================================================================
 
-    // ためた FOV パンチ要求を取り出して空にする
+    // ためた FOV パンチの要求を取り出して空にする
     std::vector<CameraFovPunchRequestEvent> TakeFovPunches();
 
-    // 視点入力を読み、入力を無効にする条件を確定する
+    // 視点の入力を読み、入力を止める条件を決める
     FrameInput ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const;
 
-    // カメラ1台分の姿勢を確定させる。このカメラがカーソルの固定を求めるなら true
+    // カメラ1台の姿勢を決める。カーソルの固定を求めるなら true
     bool UpdateCamera(CameraContext &c) const;
 
-    // 演出の上書きスロットを priority の小さい順に合成し、c.framing / c.framingMovesDistance へ入れる
-    // 足し込み量は weight を掛けて足す。注視点の寄せ先は、後に重なる方（priority の大きい方）を採る
+    // 上書きのスロットを合成して、c.framing へ入れる
+    // 注視点の寄せ先は、priority の大きい方を採る
     void ResolveFraming(CameraContext &c) const;
 
     // =======================================================================
-    // どの向きから見るか（オービット角）
+    // どの向きから見るか
     // =======================================================================
 
-    // オービット角（currentYaw / currentPitch）を確定させる
+    // ヨーとピッチ（currentYaw / currentPitch）を決める
     void UpdateOrbitAngles(CameraContext &c) const;
 
-    // 手動の視点入力をオービット角へ積む
+    // 手で動かした分を、ヨーとピッチへ足す
     void ApplyManualLook(CameraContext &c) const;
 
-    // 敵が画面中央から外れた分だけ、ヨー（左右）を自動で補正する
+    // 敵が中央から外れた分だけ、ヨーを敵の方へ回す
     void ApplyLockOnYawAssist(CameraContext &c) const;
 
-    // ピッチ（上下）を lockOnPitch へ寄せ、ロックオン中の見上げ角を保つ
+    // ピッチを、ロックオンの pitch へ寄せる
     void ApplyLockOnPitchAssist(CameraContext &c) const;
 
     // =======================================================================
     // どこを中心に、どこへ置くか
     // =======================================================================
 
-    // 注視点と回り込みの中心を決め、1フレーム分追従する（結果は currentLookAt / currentPivot）
-    // 戻り値は、衝突を考える前の基準距離（m）。実際の距離は ResolveCameraPosition が決める
+    // 注視点と回り込みの中心を、1フレーム分追従させる
+    // 戻り値は、地形を考える前の距離（m）
     float UpdateFraming(CameraContext &c) const;
 
-    // pivot から見てカメラが立つ方向（正規化済み）を、角度（度）から求める。pitch が正ならカメラは pivot より下
-    static DirectX::SimpleMath::Vector3 ComputeBackwardDir(float yawDeg, float pitchDeg);
-
-    // 地形を避けたカメラ位置を求め、currentCamDistance を更新する
+    // 地形を避けたカメラの位置を返し、currentCamDistance を進める
+    // viewDir はカメラが見ている向き
     DirectX::SimpleMath::Vector3 ResolveCameraPosition(
-        CameraContext &c, const DirectX::SimpleMath::Vector3 &backwardDir,
+        CameraContext &c, const DirectX::SimpleMath::Vector3 &viewDir,
         float desiredDistance) const;
 
-    // 頭の高さへ持ち上げた位置が地形に入っていれば、押し戻した位置を返す
+    // 頭の高さへ上げた位置が地形に入っていれば、押し戻した位置を返す
     DirectX::SimpleMath::Vector3 ResolveHeadLiftCollision(
         const CameraContext &c, const DirectX::SimpleMath::Vector3 &liftedPos) const;
 
@@ -142,15 +143,15 @@ private:
     // 出力
     // =======================================================================
 
-    // 画角を進め、確定した姿勢を Transform と VirtualCamera へ書き出す
+    // 画角を進め、姿勢を Transform と VirtualCamera へ書き出す
     void WriteCameraResult(CameraContext &c, const DirectX::SimpleMath::Vector3 &finalPos,
-                           const DirectX::SimpleMath::Vector3 &backwardDir) const;
+                           const DirectX::SimpleMath::Vector3 &viewDir) const;
 
     // =======================================================================
     // 届いた要求
     // =======================================================================
 
-    // 購読は発行した System のタスクで走るので、Update と同時に触られうる。mutex で守る
-    std::mutex                              m_punchMutex;
-    std::vector<CameraFovPunchRequestEvent> m_pendingPunches; // まだ反映していない FOV パンチ要求
+    // 購読は発行した System のタスクで走るので、Update と同時に触られうる
+    std::mutex                              m_punchMutex;     // m_pendingPunches を守る
+    std::vector<CameraFovPunchRequestEvent> m_pendingPunches; // まだ反映していない FOV パンチの要求
 };

@@ -3,6 +3,7 @@
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Angle.h"
 #include <cmath>
 #include <algorithm>
 #include <DirectXMath.h>
@@ -17,15 +18,6 @@ namespace
     constexpr float kRollFollowSpeed = 8.0f;   // 曲がっているとき、目標の傾きへ寄せる速さ（1/秒）
     constexpr float kRollReturnSpeed = 10.0f;  // 攻撃中・止まっているとき、傾きを 0 へ戻す速さ（1/秒）
     constexpr float kMinMoveInputSq  = 0.001f; // 移動の入力があると判定する長さの2乗
-
-    // 角度の差を -π〜π に収める
-    // 収めないと、1周近く遠回りして向き直る
-    float WrapAngle(float angle)
-    {
-        while (angle > DirectX::XM_PI) angle -= DirectX::XM_2PI;
-        while (angle < -DirectX::XM_PI) angle += DirectX::XM_2PI;
-        return angle;
-    }
 }
 
 
@@ -78,7 +70,7 @@ void PlayerFacingSystem::UpdateYawAndRoll(float dt, const CharacterMovementCompo
     {
         player.attackFaceTimer -= dt;
 
-        const float angleDiff = WrapAngle(player.attackFaceYaw - player.currentYaw);
+        const float angleDiff = CCL::Math::WrapRadians(player.attackFaceYaw - player.currentYaw);
         player.currentYaw += angleDiff * kAttackTurnSpeed * dt;
         player.currentRoll = std::lerp(player.currentRoll, 0.0f, kRollReturnSpeed * dt);
         return;
@@ -99,7 +91,7 @@ void PlayerFacingSystem::UpdateYawAndRoll(float dt, const CharacterMovementCompo
     // 移動の向きへ、近い回り方で向き直る
     horizontalMove.Normalize();
     const float targetYaw = atan2f(horizontalMove.x, horizontalMove.z);
-    const float angleDiff = WrapAngle(targetYaw - player.currentYaw);
+    const float angleDiff = CCL::Math::WrapRadians(targetYaw - player.currentYaw);
     player.currentYaw += angleDiff * player.turnSpeed * dt;
 
     // 傾きは、回す前の角度差から求める

@@ -125,6 +125,12 @@ namespace ComponentMetaHelpers
                                         std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
         Display, #Field, offsetof(ThisType, Field), Category, nullptr, false, false),
 
+// 説明付きの実行時専用: CFIELD_RT_T(field, "表示名", "カテゴリ", "説明")
+#define CFIELD_RT_T(Field, Display, Category, Tooltip)                                                                          \
+    ComponentMetaHelpers::MakeFieldAuto<ThisType,                                                                               \
+                                        std::remove_cv_t<std::remove_reference_t<decltype(std::declval<ThisType &>().Field)>>>( \
+        Display, #Field, offsetof(ThisType, Field), Category, Tooltip, false, false),
+
 // uint8 の enum（実行時専用）
 #define CFIELD_ENUM_U8_RT(Field, Display, EnumNames, EnumCount, Category) \
     FD_EnumU8(Display, #Field, offsetof(ThisType, Field), EnumNames,      \
@@ -150,6 +156,10 @@ namespace ComponentMetaHelpers
 #define CFIELD_FLOAT_RANGED(Field, Display, Speed, Min, Max, Category) \
     FD_Float(Display, #Field, offsetof(ThisType, Field), Speed, Min, Max, Category),
 
+// 説明付きの範囲 float: CFIELD_FLOAT_RANGED_T(field, "表示名", 速度, 最小, 最大, "カテゴリ", "説明")
+#define CFIELD_FLOAT_RANGED_T(Field, Display, Speed, Min, Max, Category, Tooltip) \
+    FD_Float(Display, #Field, offsetof(ThisType, Field), Speed, Min, Max, Category, true, Tooltip),
+
 // 範囲を指定する int
 #define CFIELD_INT_RANGED(Field, Display, Min, Max, Category) \
     FD_Int(Display, #Field, offsetof(ThisType, Field), Min, Max, Category),
@@ -166,6 +176,10 @@ namespace ComponentMetaHelpers
 // ドラッグ速度を指定する Float3（位置やスケールなど）
 #define CFIELD_FLOAT3_FAST(Field, Display, Speed, Category) \
     FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category),
+
+// 説明付きの Float3: CFIELD_FLOAT3_FAST_T(field, "表示名", 速度, "カテゴリ", "説明")
+#define CFIELD_FLOAT3_FAST_T(Field, Display, Speed, Category, Tooltip) \
+    FD_Float3(Display, #Field, offsetof(ThisType, Field), Speed, Category, true, Tooltip),
 
 // ===========================================================================
 // COMPONENT_META_BEGIN 系 〜 COMPONENT_META_END

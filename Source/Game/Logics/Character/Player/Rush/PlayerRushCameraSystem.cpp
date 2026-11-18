@@ -239,15 +239,15 @@ float PlayerRushCameraSystem::DecideYawSign(const PlayerRushComponent &rush, Ent
     const auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
     if (!tps) return 1.0f;
 
-    // カメラの水平の前方
-    // PlayerCameraSystem はカメラを pivot から (cos yaw, sin yaw) の向きに置くので、前方はその逆
-    const float yawRad = DirectX::XMConvertToRadians(tps->currentYaw);
-    const float fwdX   = -std::cos(yawRad);
-    const float fwdZ   = -std::sin(yawRad);
+    // カメラが水平に見ている向きと、その右
+    // 左手系なので、右は (z, 0, -x)
+    const Vector3 viewDir  = CameraViewDir(tps->currentYaw, 0.0f);
+    const Vector3 rightDir = {viewDir.z, 0.0f, -viewDir.x};
 
-    // 前方と回避方向の外積の y 成分で、左右を判定する
-    const float crossY = fwdZ * rush.evadeDir.x - fwdX * rush.evadeDir.z;
-    return (crossY >= 0.0f) ? 1.0f : -1.0f;
+    // 右へ避けたら -1、左へ避けたら +1
+    // 前後に避けたときも、右か左の成分で決める
+    if (rush.evadeDir.Dot(rightDir) > 0.0f) return -1.0f;
+    return 1.0f;
 }
 
 

@@ -392,6 +392,7 @@
     <ClInclude Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.h" />
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h" />
     <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
     <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraSystem.h" />
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h" />
@@ -422,6 +423,7 @@
     <ClInclude Include="Source\Engine\Core\Components\PrefabInstanceComponent.h" />
     <ClInclude Include="Source\Engine\Core\Components\RenderInterpState.h" />
     <ClInclude Include="Source\Engine\Core\Math\CurveData.h" />
+    <ClInclude Include="Source\Engine\Core\Math\Angle.h" />
     <ClInclude Include="Source\Engine\Core\Math\Interpolation.h" />
     <ClInclude Include="Source\Engine\Core\Math\Misc.h" />
     <ClInclude Include="Source\Engine\Core\Math\ScreenToWorld.h" />
@@ -1030,6 +1032,7 @@
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.cpp" />
     <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraSystem.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp" />

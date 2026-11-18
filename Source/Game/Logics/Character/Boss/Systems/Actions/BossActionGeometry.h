@@ -10,6 +10,7 @@
 
 #include <SimpleMath.h>
 
+#include "Engine/Core/Math/Angle.h"
 #include "Engine/Physics/Components/Character/JoltCharacterHandleComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
@@ -52,9 +53,7 @@ namespace BossActionGeometry
         const float currentYaw = atan2f(currentForward.x, currentForward.z);
 
         // 差を -π〜π に収める
-        float yawDiff = targetYaw - currentYaw;
-        while (yawDiff > DirectX::XM_PI) yawDiff -= DirectX::XM_2PI;
-        while (yawDiff < -DirectX::XM_PI) yawDiff += DirectX::XM_2PI;
+        const float yawDiff = CCL::Math::WrapRadians(targetYaw - currentYaw);
 
         const float newYaw = currentYaw + yawDiff * (std::min)(turnSpeed * dt, 1.0f);
         SetCharacterRotation(transform, joltHandle,
