@@ -1,8 +1,16 @@
 #pragma once
 // ゲームの System どうしが EventBus でやり取りするイベント
-// カメラへの演出の要求は、カメラがゲーム側の型を知らずに済むよう Engine/Camera/CameraEvents.h に置く
+// 画面の揺れの要求は Engine のカメラが受けるので、Engine/Camera/CameraEvents.h に置く
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
+
+// 指定エンティティを追従している TPS カメラの画角を瞬間的に変える要求（FOVパンチ）
+// CameraActionTPSSystem が受ける。設定後は CameraBodyTPSComponent::fovDamping により自動的に元へ戻る
+struct CameraFovPunchRequestEvent
+{
+    CCL::ECS::EntityID targetID; // このエンティティを追従しているカメラが対象
+    float              fov;      // 瞬間的に設定する画角（度）
+};
 
 // ジャスト回避に成功した瞬間に出す。受けた PlayerRushSystem がラッシュを始める
 struct JustEvadeSuccessEvent

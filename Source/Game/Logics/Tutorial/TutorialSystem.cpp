@@ -5,7 +5,7 @@
 #include "Engine/Time/TimeService.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/Components/TimeState.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
 
 #include "Game/Core/GameEvents.h"

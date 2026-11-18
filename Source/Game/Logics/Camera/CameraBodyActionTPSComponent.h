@@ -37,11 +37,6 @@ struct CameraBodyTPSComponent
     // カメラがゲーム固有の PlayerDashComponent を読みに行かずに済むようにするためのフィールド
     bool wideFovRequest = false;
 
-    // --- 寄り（クローズアップ）要求：切り払い準備などで一時的にカメラを近づける ---
-    // true の間だけ基準距離を closeUpDistance へ寄せる。ゲーム側が毎フレーム設定する
-    bool  closeUpRequest  = false;
-    float closeUpDistance = 3.5f; // 寄り要求中の基準距離（m）。distance より近くする
-
     // --- 構図の上書き（演出からの要求） ---
     // 演出側が自分の発生源キーでスロットを取り、毎フレーム値と weight を書く。終わったら Release
     // 1本の bool を共有すると、後から走る書き手が毎フレーム false を書いて他の演出を潰すため、

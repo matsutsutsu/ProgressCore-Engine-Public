@@ -1,5 +1,5 @@
 #pragma once
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
 
 // フェーズ1つ分の構図。blendTime と bounce 以外は、普段のカメラへの足し込み量

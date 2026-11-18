@@ -6,9 +6,10 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Engine/Time/TimeService.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
+#include "Game/Core/GameEvents.h"
 
 #include <imgui.h>
 

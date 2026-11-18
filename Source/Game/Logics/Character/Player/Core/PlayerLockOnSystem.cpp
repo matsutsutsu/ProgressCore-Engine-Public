@@ -4,7 +4,7 @@
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 

@@ -391,9 +391,9 @@
     <ClInclude Include="Source\Engine\Audio\Systems\AudioSystem.h" />
     <ClInclude Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.h" />
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h" />
-    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h" />
+    <ClInclude Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponent.h" />
     <ClInclude Include="Source\Engine\Camera\Components\VirtualCameraComponents.h" />
-    <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h" />
+    <ClInclude Include="Source\Game\Logics\Camera\CameraActionTPSSystem.h" />
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h" />
     <ClInclude Include="Source\Engine\Cinematic\CinematicEvents.h" />
     <ClInclude Include="Source\Engine\Cinematic\CinematicScript.h" />
@@ -1028,9 +1028,9 @@
     <ClCompile Include="Source\Engine\Audio\Systems\AudioCleanupSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Engine\Audio\Systems\AudioEngineTickSystem.cpp" />
-    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp" />
+    <ClCompile Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Camera\Components\VirtualCameraComponentMeta.cpp" />
-    <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp" />
+    <ClCompile Include="Source\Game\Logics\Camera\CameraActionTPSSystem.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\Components\CinematicCameraComponentMeta.cpp" />
     <ClCompile Include="Source\Engine\Cinematic\Systems\CinematicCameraSystem.cpp" />

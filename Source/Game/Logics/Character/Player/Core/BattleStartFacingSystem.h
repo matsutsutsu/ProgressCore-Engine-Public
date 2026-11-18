@@ -12,7 +12,7 @@
 //       currentYaw は GetComponent で書いていて申告に載らないため、GetRunBefore で順序を決める
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 
 #include <vector>
 

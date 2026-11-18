@@ -15,7 +15,7 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 
 #include <memory>
@@ -38,6 +38,10 @@ public:
 
     // 全 TPS カメラの位置・向き・画角を、このフレームの分だけ確定させる
     void Update(float dt) override;
+
+    // 揺れはこの System が書いた結果に足すので、揺れより前に走る
+    // 揺れの側（Engine）が Game の System 名を知らずに済むよう、こちらで宣言する
+    std::vector<const char *> GetRunBefore() const override { return {"CameraShakeSystem"}; }
 
 private:
     // =======================================================================

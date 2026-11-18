@@ -1782,8 +1782,8 @@
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h">
       <Filter>Source\Engine\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h">
-      <Filter>Source\Engine\Camera\Components</Filter>
+    <ClInclude Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponent.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
@@ -1794,8 +1794,8 @@
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
-      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    <ClInclude Include="Source\Game\Logics\Camera\CameraActionTPSSystem.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h">
       <Filter>Source\Engine\Cinematic</Filter>
@@ -2986,8 +2986,8 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerActionVfxSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Feedback</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp">
-      <Filter>Source\Engine\Camera\Components</Filter>
+    <ClCompile Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
@@ -2998,8 +2998,8 @@
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    <ClCompile Include="Source\Game\Logics\Camera\CameraActionTPSSystem.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp">
       <Filter>Source\Engine\Cinematic</Filter>

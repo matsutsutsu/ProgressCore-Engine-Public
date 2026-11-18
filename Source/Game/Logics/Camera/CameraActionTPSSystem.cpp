@@ -1,8 +1,8 @@
-#include "Engine/Camera/Systems/CameraActionTPSSystem.h"
+#include "Game/Logics/Camera/CameraActionTPSSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/IInputAPI.h"
-#include "Engine/Camera/CameraEvents.h"
 #include "Engine/Core/Math/Interpolation.h"
+#include "Game/Core/GameEvents.h"
 
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
@@ -346,14 +346,12 @@ float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
 
     // 1. プレイヤー基準の注視点と基準距離を出す
     //    position（非補間）ではなく renderWorldMatrix の平行移動成分（補間済み）を使う
-    //    寄り要求中（切り払い準備など）は基準距離を closeUpDistance へ寄せる。実際の
-    //    寄り/戻りは currentCamDistance の指数減衰で滑らかに補間される
     const Vector3 pivot = Vector3(c.target.GetRenderWorldPosition()) + tps.targetOffset;
 
     // ここから下の3つが「このフレームの目標」。補間はしていない
     Vector3 goalLookAt   = pivot;
     Vector3 goalPivot    = pivot;
-    float   goalDistance = tps.closeUpRequest ? tps.closeUpDistance : tps.distance;
+    float   goalDistance = tps.distance;
 
     if (c.enemy)
     {

@@ -4,7 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Audio/IAudioAPI.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/GamePad.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
