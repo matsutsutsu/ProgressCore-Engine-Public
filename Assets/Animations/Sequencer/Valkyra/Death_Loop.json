@@ -18,6 +18,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Stun_Loop_0",
-    "targetModelPath": ""
+    "targetAnimName": "Stun_Loop_0"
 }

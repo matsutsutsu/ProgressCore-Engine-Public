@@ -6,6 +6,7 @@
 //   - 再生中のクリップのポーズを求め、ブレンド中なら前のクリップと混ぜる
 //   - ブレンドスペースなら、重みのある点のクリップを重みで混ぜる
 //   - ルートボーンを固定（Force Root Lock）し、Model へ渡す
+//   - シーケンサーのプレビューで、指定時刻のポーズを直接当てる（ApplyPoseAt）
 //
 // 備考: 時間とイベントは AnimationSystem（ロジック）が進め、ポーズはここ（描画）で求める
 //       ロジックは1描画フレームに最大4回走るので、そこで求めると最後の1回以外は捨てられる
@@ -31,6 +32,10 @@ public:
     virtual ~AnimationPoseSystem() = default;
 
     void Update(float dt) override;
+
+    // エディタ（シーケンサー）用。今のクリップの time（秒）のポーズを求めて Model へ当てる
+    // ブレンドは見ず、Force Root Lock は RootMotionComponent の有無に関係なく掛ける
+    void ApplyPoseAt(CCL::ECS::EntityID entity, float time);
 
 private:
     // ブレンドと Force Root Lock を行い、最終的な骨格ポーズを Model へ適用する

@@ -36,7 +36,7 @@ void AnimationPoseSystem::Update(float dt)
     ForEachWithID([this, alpha](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
         if (!animator.currentSequence) return;
 
-        // エディタで操作中は AnimationSystem::UpdateManual がポーズを作るので触らない
+        // エディタで操作中は ApplyPoseAt がポーズを作るので触らない
         if (animator.isEditorOverride) return;
 
         if (Model *model = modelComp.GetModel())
@@ -85,10 +85,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
         //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
         ComputeSourcePose(model, animator, false, true, alpha);
 
-        float blendRate = (animator.blendDuration > 0.0f) ? (animator.currentBlendTime / animator.blendDuration) : 1.0f;
-        blendRate       = std::clamp(blendRate, 0.0f, 1.0f);
-
-        Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, blendRate, animator.poseBufferA);
+        Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, animator.GetBlendRate(), animator.poseBufferA);
     }
     else
     {
@@ -242,12 +239,35 @@ float AnimationPoseSystem::InterpolateCurrentTimer(const AnimatorComponent &anim
     // ---------------------------------------------------------
 
     // 1 で長さを足し引きした分を戻す。非ループの時刻は AnimationSystem が 0〜長さに収めているので触らない
-    if (wraps)
-    {
-        renderTime = std::fmod(renderTime, duration);
-        if (renderTime < 0.0f) renderTime += duration;
-    }
+    if (wraps) renderTime = CCL::Anim::WrapClipTime(renderTime, duration, true);
     return renderTime;
+}
+
+
+
+void AnimationPoseSystem::ApplyPoseAt(CCL::ECS::EntityID entity, float time)
+{
+    ZoneScopedN("AnimationPoseSystem::ApplyPoseAt");
+
+    auto *animator  = m_world->GetComponent<AnimatorComponent>(entity);
+    auto *modelComp = m_world->GetComponent<ModelComponent>(entity);
+    if (!animator || !animator->currentSequence || !modelComp) return;
+
+    Model *model = modelComp->GetModel();
+    if (!model) return;
+
+    const int animIndex = model->GetAnimationIndex(animator->currentSequence->targetAnimName.c_str());
+    if (animIndex == -1) return;
+
+    model->ComputeAnimation(animIndex, time, animator->poseBufferA);
+
+    // RootMotionComponent の有無に関係なく固定する
+    //   固定しないと、クリップ自身の前進と、ルートモーションカーブによる Transform の移動
+    //   （シーケンサーのルートモーションのプレビュー）が二重に掛かり、モデルだけ前に出る
+    const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
+    PinRootMotionNode(model, animIndex, rootNodeIndex, animator->poseBufferA, animator->lockVerticalRootMotion);
+
+    model->SetNodePoses(animator->poseBufferA);
 }
 
 

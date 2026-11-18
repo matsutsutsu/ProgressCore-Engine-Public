@@ -23,7 +23,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.0833333358168602,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 5
         },
         {
@@ -48,7 +48,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.0833333358168602,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 8
         },
         {
@@ -73,7 +73,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.1666666716337204,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -123,7 +123,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.35,
-            "stringParam": "Combo",
+            "stringParam": "",
             "type": 6
         },
         {
@@ -235,6 +235,5 @@
         "visible": true
     },
     "startOffset": 0.0,
-    "targetAnimName": "Combo_Attack_01_01_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Combo_Attack_01_01_Seq_0"
 }

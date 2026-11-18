@@ -34,26 +34,14 @@ namespace
     // AnimSequence を読んだ後に行う処理（LoadAnimSequence と ReloadAnimSequence で共通）
     void FinalizeAnimSequence(AnimSequence &seq)
     {
-        // 1. startTime の小さい順に並べる
-        //    AnimationSystem は前回の位置から先へ進めるだけでイベントを探す（O(1)）ので、
-        //    events が昇順になっている必要がある。Sequencer の保存も手書きの JSON も
-        //    並びを保証しないので、読み込むたびにここで並べる
+        // startTime の小さい順に並べる
+        //   AnimationSystem は前回の位置から先へ進めるだけでイベントを探す（O(1)）ので、
+        //   events が昇順になっている必要がある。Sequencer の保存も手書きの JSON も
+        //   並びを保証しないので、読み込むたびにここで並べる
         std::sort(seq.events.begin(), seq.events.end(),
                   [](const AnimNotifyEvent &a, const AnimNotifyEvent &b) {
                       return a.startTime < b.startTime;
                   });
-
-        // 2. HitBox イベントの tagHash をここで1回だけ求める
-        //    CombatAnimationSyncSystem が毎フレーム HashString せずに済む
-        //    tagHash は stringParam から求める値なので JSON には保存せず、読み込むたびに求め直す
-        //    （stringParam を手で書き換えても食い違わない）
-        for (auto &ev : seq.events)
-        {
-            if (ev.type == AnimEventType::HitBox && !ev.stringParam.empty())
-                ev.tagHash = HashString(ev.stringParam.c_str());
-            else
-                ev.tagHash = 0;
-        }
     }
 }
 

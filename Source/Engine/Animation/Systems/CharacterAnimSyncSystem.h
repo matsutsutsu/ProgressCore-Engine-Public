@@ -3,7 +3,7 @@
 // 概要: キャラクターの物理状態をアニメーションパラメータへ書き込む System（L02_PreUpdate）
 //
 // 責務:
-//   - Jolt の CharacterVirtual から Speed / VelocityY / IsGrounded を書き、着地で Land トリガーを立てる
+//   - Jolt の CharacterVirtual から VelocityY / IsGrounded を書き、着地で Land トリガーを立てる
 //   - 移動速度に合わせてロコモーションの再生速度を伸縮させ、足滑りを防ぐ（footSlideMultiplier）
 //
 // 備考: 扱うのは物理由来の値だけ。「ダッシュ中か」のようなゲーム固有の状態は

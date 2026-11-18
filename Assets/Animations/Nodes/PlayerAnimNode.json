@@ -178,13 +178,6 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 174817312,
-            "name": "Speed",
-            "type": 0
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
             "hash": 1116791579,
             "name": "IsDashing",
             "type": 1

@@ -44,6 +44,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jump_Start_0",
-    "targetModelPath": ""
+    "targetAnimName": "Jump_Start_0"
 }

@@ -67,6 +67,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Travel_Fwd_0",
-    "targetModelPath": ""
+    "targetAnimName": "Travel_Fwd_0"
 }

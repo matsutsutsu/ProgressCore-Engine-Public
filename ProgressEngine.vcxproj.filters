@@ -1140,6 +1140,9 @@
     <ClInclude Include="Source\Engine\Animation\Core\AnimBlendSpaceMath.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Core\AnimOwnerUtils.h">
+      <Filter>Source\Engine\Animation\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>

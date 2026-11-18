@@ -40,4 +40,36 @@ public:
     }
 
     void Update(float dt) override;
+
+private:
+    using Vector3 = DirectX::SimpleMath::Vector3;
+
+    // このステップでルートモーションを使うか。使わないなら出力を消し、基準の時刻を捨ててから false を返す
+    static bool ShouldApply(RootMotionComponent &rm, CharacterMovementComponent &movement,
+                            const AnimatorComponent &animator, const AnimStateMachineComponent &fsm,
+                            const Model *model);
+
+    // クリップが切り替わった（頭から再生し直した）なら、基準の時刻を今に合わせて true を返す
+    static bool ResetOnClipChange(RootMotionComponent &rm, const AnimatorComponent &animator);
+
+    // ルートモーションカーブから、前回からの前進距離（m）を求め、基準の時刻を進める
+    static float AdvanceCurveDistance(RootMotionComponent &rm, const AnimatorComponent &animator);
+
+    // ルートボーンの、前回からの移動量（ローカル空間）を求め、基準の時刻を進める。ブレンド中は前後を補間する
+    static Vector3 AdvanceBoneDelta(RootMotionComponent &rm, const AnimatorComponent &animator, Model *model,
+                                    int animIndex);
+
+    // ルートボーンの t0 から t1（秒）までの移動量
+    // t1 < t0 はループで先頭へ戻ったとして、「末尾まで + 先頭から」でつなぐ
+    static Vector3 ExtractBoneDelta(Model *model, int animIndex, int rootNodeIndex, float t0, float t1,
+                                    float duration);
+
+    // キャラの正面を水平にした向き（長さ 1）
+    static Vector3 FlatForward(const TransformComponent &trans);
+
+    // 向き forward・速さ speed（m/秒）の移動を出力に書く。speed が負なら後退
+    static void WriteOutput(CharacterMovementComponent &movement, const Vector3 &forward, float speed);
+
+    // 出力を無効にする
+    static void ClearOutput(CharacterMovementComponent &movement);
 };

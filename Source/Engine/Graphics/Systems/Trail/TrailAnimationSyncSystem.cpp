@@ -1,6 +1,7 @@
 #include "TrailAnimationSyncSystem.h"
 
 #include "Engine/Animation/Components/AnimatorComponent.h"
+#include "Engine/Animation/Core/AnimOwnerUtils.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -13,100 +14,23 @@ using namespace CCL::ECS;
 void TrailAnimationSyncSystem::Update(float dt)
 {
     ForEach([this](const TransformComponent &transform, TrailComponent &trail) {
-        // 処理フロー:
-        // 1. owner（Animator を持つ祖先）を確かめる
-        // 2. animControlled なら、owner の再生時刻から emitting を決める
-
-        // ---------------------------------------------------------
-        // 1. owner の確認
-        // ---------------------------------------------------------
-
-        // 持っている owner が消えていたら解く
-        //   消えた Entity の ID を持ち続けると、ID が使い回されたときに別の Entity を owner と見なす
-        const AnimatorComponent *animator = nullptr;
-        if (trail.ownerEntity != InvalidEntityID)
-        {
-            animator = m_world->GetComponent<AnimatorComponent>(trail.ownerEntity);
-            if (!animator)
-            {
-                trail.ownerEntity = InvalidEntityID;
-            }
-        }
-
-        // 見つかったら以後は親をたどらない
-        //   見つからない間は毎フレーム探し直す（階層が後から組まれる場合に追従するため）
-        if (trail.ownerEntity == InvalidEntityID)
-        {
-            trail.ownerEntity = FindAnimatorAncestor(transform);
-            if (trail.ownerEntity != InvalidEntityID)
-            {
-                animator = m_world->GetComponent<AnimatorComponent>(trail.ownerEntity);
-            }
-        }
-
-        // ---------------------------------------------------------
-        // 2. emitting の決定
-        // ---------------------------------------------------------
+        // 持ち主（Animator を持つ祖先）を確かめ、消えていたら親をたどって探し直す
+        trail.ownerEntity = CCL::Anim::RefreshAnimatorOwner(*m_world, transform, trail.ownerEntity);
 
         // 手動のトレイルには触れない（emitting はインスペクタや ActivateFor の値のまま）
-        if (!trail.animControlled)
-        {
-            return;
-        }
+        if (!trail.animControlled) return;
 
         // 再生中のアニメーションがないので出さない
+        const AnimatorComponent *animator = m_world->GetComponent<AnimatorComponent>(trail.ownerEntity);
         if (!animator || !animator->currentSequence)
         {
             trail.emitting = false;
             return;
         }
 
-        trail.emitting = IsInsideTrailEvent(*animator);
+        // どれか 1 つの Trail 区間に入っていれば、持ち主の子にあるトレイルをすべてオンにする
+        trail.emitting = IsInEventWindow(*animator->currentSequence, AnimEventType::Trail, animator->currentTimer);
     });
-}
-
-
-
-EntityID TrailAnimationSyncSystem::FindAnimatorAncestor(const TransformComponent &transform) const
-{
-    EntityID cur   = transform.parent; // EntityLink → EntityID 暗黙変換
-    int      guard = 0;
-
-    while (cur != InvalidEntityID && cur != 0 && guard++ < 32)
-    {
-        if (m_world->GetComponent<AnimatorComponent>(cur))
-        {
-            return cur;
-        }
-
-        const auto *parentTransform = m_world->GetComponent<TransformComponent>(cur);
-        cur                         = parentTransform ? static_cast<EntityID>(parentTransform->parent) : InvalidEntityID;
-    }
-
-    return InvalidEntityID;
-}
-
-
-
-bool TrailAnimationSyncSystem::IsInsideTrailEvent(const AnimatorComponent &animator) const
-{
-    // タグは見ず、どれか 1 つの Trail 区間に入っていればオンにする
-    //   二刀流などで出し分けるなら、tagHash は HitBox にしか求めていないので、
-    //   ResourceManager::LoadAnimSequence で Trail にも求めるところから広げる
-    for (const auto &ev : animator.currentSequence->events)
-    {
-        if (ev.type != AnimEventType::Trail)
-        {
-            continue;
-        }
-
-        if (animator.currentTimer >= ev.startTime && animator.currentTimer <= ev.endTime)
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 

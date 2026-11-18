@@ -18,6 +18,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Dodge_Combat_to_Run_Fast_F_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Dodge_Combat_to_Run_Fast_F_Seq_0"
 }

@@ -68,6 +68,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jump_Recovery_0",
-    "targetModelPath": ""
+    "targetAnimName": "Jump_Recovery_0"
 }

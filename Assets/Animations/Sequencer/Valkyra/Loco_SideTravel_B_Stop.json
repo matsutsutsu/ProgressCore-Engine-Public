@@ -18,6 +18,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Travel_Bwd_Stop_0",
-    "targetModelPath": ""
+    "targetAnimName": "Travel_Bwd_Stop_0"
 }

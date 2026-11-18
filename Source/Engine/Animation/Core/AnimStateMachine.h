@@ -22,6 +22,44 @@
 
 struct AnimStateGraph; // AnimState が子グラフを持つため先に宣言する
 
+// コピーすると指す先も複製する unique_ptr（AnimState::subGraph に使う）
+//   unique_ptr のままだと AnimState のコピーを手で書くことになり、メンバを足したときに写し忘れる
+//   指す先の型は不完全なままでよい。複製と破棄は、使う所で完全な型が見えていればいい
+template <class T>
+class ClonePtr
+{
+public:
+    ClonePtr() = default;
+    ClonePtr(std::nullptr_t) {}
+    ClonePtr(std::unique_ptr<T> ptr) noexcept : m_ptr(std::move(ptr)) {}
+
+    ClonePtr(const ClonePtr &other) : m_ptr(Clone(other)) {}
+    ClonePtr &operator=(const ClonePtr &other)
+    {
+        // 複製を作ってから差し替えるので、other が自分の指す先の中にあっても壊れない
+        m_ptr = Clone(other);
+        return *this;
+    }
+
+    ClonePtr(ClonePtr &&) noexcept            = default;
+    ClonePtr &operator=(ClonePtr &&) noexcept = default;
+
+    T   *get() const { return m_ptr.get(); }
+    T   &operator*() const { return *m_ptr; }
+    T   *operator->() const { return m_ptr.get(); }
+    void reset() { m_ptr.reset(); }
+
+    explicit operator bool() const { return m_ptr != nullptr; }
+
+private:
+    static std::unique_ptr<T> Clone(const ClonePtr &other)
+    {
+        return other.m_ptr ? std::make_unique<T>(*other.m_ptr) : nullptr;
+    }
+
+    std::unique_ptr<T> m_ptr; // 指す先（所有する）
+};
+
 // ===========================================================================
 // データ定義
 // ===========================================================================
@@ -154,17 +192,9 @@ struct AnimState
     AnimBlendSpace blendSpace;           // isBlendSpace のときだけ有効
 
     // --- サブステートマシン ---
-    //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なので unique_ptr で持つ
-    //   コピーはディープコピーにする（特殊メンバは AnimStateGraph の定義後に定義する）
-    bool                            isSubMachine = false; // true なら自分は再生せず、入ると subGraph の entry へ降りる
-    std::unique_ptr<AnimStateGraph> subGraph;             // isSubMachine のときだけ有効
-
-    AnimState();
-    ~AnimState();
-    AnimState(const AnimState &other);            // ディープコピー（subGraph を複製）
-    AnimState &operator=(const AnimState &other); // ディープコピー
-    AnimState(AnimState &&) noexcept;
-    AnimState &operator=(AnimState &&) noexcept;
+    //   AnimStateGraph ⊃ AnimState ⊃ AnimStateGraph の再帰型なのでポインタで持つ
+    bool                     isSubMachine = false; // true なら自分は再生せず、入ると subGraph の entry へ降りる
+    ClonePtr<AnimStateGraph> subGraph;             // isSubMachine のときだけ有効。ステートをコピーすると子グラフも複製する
 };
 
 // グラフ全体（1 階層分）
@@ -185,49 +215,6 @@ struct AnimStateGraph
     std::vector<AnimParamDef> parameters;
 };
 
-// AnimState の特殊メンバ
-//   unique_ptr<AnimStateGraph> の複製・破棄には完全型が要るので、AnimStateGraph の後に定義する
-inline AnimState::AnimState()                                 = default;
-inline AnimState::~AnimState()                                = default;
-inline AnimState::AnimState(AnimState &&) noexcept            = default;
-inline AnimState &AnimState::operator=(AnimState &&) noexcept = default;
-
-// subGraph を新しい実体として複製する（葉ステートは subGraph == nullptr なので複製しない）
-inline AnimState::AnimState(const AnimState &o)
-    : stateHash(o.stateHash), sequenceName(o.sequenceName), sequenceFilePath(o.sequenceFilePath),
-      isLoop(o.isLoop), playbackSpeed(o.playbackSpeed), applyRootMotion(o.applyRootMotion),
-      lockVerticalRootMotion(o.lockVerticalRootMotion), groupId(o.groupId),
-      nodePosX(o.nodePosX), nodePosY(o.nodePosY),
-      // 束縛済みのポインタは共有リソースなので浅いコピーでよい
-      sequence(o.sequence),
-      transitions(o.transitions), isBlendSpace(o.isBlendSpace), blendSpace(o.blendSpace), isSubMachine(o.isSubMachine),
-      subGraph(o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr)
-{
-}
-
-// メンバを足したら、こことコピーコンストラクタの両方に足すこと
-inline AnimState &AnimState::operator=(const AnimState &o)
-{
-    if (this == &o) return *this;
-    stateHash              = o.stateHash;
-    sequenceName           = o.sequenceName;
-    sequenceFilePath       = o.sequenceFilePath;
-    isLoop                 = o.isLoop;
-    playbackSpeed          = o.playbackSpeed;
-    applyRootMotion        = o.applyRootMotion;
-    lockVerticalRootMotion = o.lockVerticalRootMotion;
-    groupId                = o.groupId;
-    nodePosX               = o.nodePosX;
-    nodePosY               = o.nodePosY;
-    sequence               = o.sequence;
-    transitions            = o.transitions;
-    isBlendSpace           = o.isBlendSpace;
-    blendSpace             = o.blendSpace;
-    isSubMachine           = o.isSubMachine;
-    subGraph               = o.subGraph ? std::make_unique<AnimStateGraph>(*o.subGraph) : nullptr;
-    return *this;
-}
-
 // ===========================================================================
 // nlohmann::json 変換
 //   読込は、後から追加したキーがない古いファイルでも読めるよう既定値で補う
@@ -238,120 +225,14 @@ using json = nlohmann::json;
 inline void to_json(json &j, const AnimStateGraph &g);
 inline void from_json(const json &j, AnimStateGraph &g);
 
-// --- AnimParamDef ---
-inline void to_json(json &j, const AnimParamDef &p)
-{
-    j = json{
-        {"name", p.name},
-        {"hash", p.hash},
-        {"type", (int)p.type},
-        {"defaultFloat", p.defaultFloat},
-        {"defaultBool", p.defaultBool}};
-}
-inline void from_json(const json &j, AnimParamDef &p)
-{
-    p.name         = j.value("name", std::string{"NewParam"});
-    p.hash         = j.value("hash", 0u);
-    p.type         = (AnimParamType)j.value("type", 0);
-    p.defaultFloat = j.value("defaultFloat", 0.0f);
-    p.defaultBool  = j.value("defaultBool", false);
-}
-
-// --- AnimCondition ---
-inline void to_json(json &j, const AnimCondition &c)
-{
-    j = json{
-        {"paramHash", c.paramHash},
-        {"paramName", c.paramName},
-        {"op", (int)c.op},
-        {"threshold", c.threshold}};
-}
-inline void from_json(const json &j, AnimCondition &c)
-{
-    j.at("paramHash").get_to(c.paramHash);
-    if (j.contains("paramName"))
-        j.at("paramName").get_to(c.paramName);
-    else
-        c.paramName = "";
-    int op = 0;
-    j.at("op").get_to(op);
-    c.op = (AnimConditionOp)op;
-    j.at("threshold").get_to(c.threshold);
-}
-
-// --- AnimTransition ---
-inline void to_json(json &j, const AnimTransition &t)
-{
-    j = json{
-        {"targetStateHash", t.targetStateHash},
-        {"blendDuration", t.blendDuration},
-        {"logicType", (int)t.logicType},
-        {"requiredCancelMask", t.requiredCancelMask},
-        {"sourceGroupId", t.sourceGroupId},
-        {"conditions", t.conditions}};
-}
-inline void from_json(const json &j, AnimTransition &t)
-{
-    j.at("targetStateHash").get_to(t.targetStateHash);
-    if (j.contains("blendDuration"))
-        j.at("blendDuration").get_to(t.blendDuration);
-    else
-        t.blendDuration = 0.2f;
-    if (j.contains("logicType"))
-    {
-        int l = 0;
-        j.at("logicType").get_to(l);
-        t.logicType = (AnimTransitionLogic)l;
-    }
-    else
-        t.logicType = AnimTransitionLogic::AND;
-
-    t.requiredCancelMask = j.value("requiredCancelMask", 0u);
-    t.sourceGroupId      = j.value("sourceGroupId", 0u);
-
-    j.at("conditions").get_to(t.conditions);
-}
-
-// --- AnimBlendSample ---
-inline void to_json(json &j, const AnimBlendSample &s)
-{
-    j = json{
-        {"sequenceFilePath", s.sequenceFilePath},
-        {"x", s.x},
-        {"y", s.y}};
-}
-inline void from_json(const json &j, AnimBlendSample &s)
-{
-    s.sequenceFilePath = j.value("sequenceFilePath", std::string{});
-    s.x                = j.value("x", 0.0f);
-    s.y                = j.value("y", 0.0f);
-}
-
-// --- AnimBlendSpace ---
-inline void to_json(json &j, const AnimBlendSpace &b)
-{
-    j = json{
-        {"type", (int)b.type},
-        {"paramXHash", b.paramXHash},
-        {"paramXName", b.paramXName},
-        {"paramYHash", b.paramYHash},
-        {"paramYName", b.paramYName},
-        {"smoothingTime", b.smoothingTime},
-        {"samples", b.samples}};
-}
-inline void from_json(const json &j, AnimBlendSpace &b)
-{
-    b.type          = (AnimBlendSpaceType)j.value("type", (int)AnimBlendSpaceType::Directional2D);
-    b.paramXHash    = j.value("paramXHash", 0u);
-    b.paramXName    = j.value("paramXName", std::string{});
-    b.paramYHash    = j.value("paramYHash", 0u);
-    b.paramYName    = j.value("paramYName", std::string{});
-    b.smoothingTime = j.value("smoothingTime", 0.1f);
-    if (j.contains("samples"))
-    {
-        j.at("samples").get_to(b.samples);
-    }
-}
+// 次の型はキーをメンバ名のままにし、ファイルにないキーを構造体の初期値で補う（メンバを足したらここにも足す）
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AnimParamDef, name, hash, type, defaultFloat, defaultBool)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AnimCondition, paramHash, paramName, op, threshold)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AnimTransition, targetStateHash, blendDuration, logicType,
+                                                requiredCancelMask, sourceGroupId, conditions)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AnimBlendSample, sequenceFilePath, x, y)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(AnimBlendSpace, type, paramXHash, paramXName, paramYHash, paramYName,
+                                                smoothingTime, samples)
 
 // --- AnimState ---
 inline void to_json(json &j, const AnimState &s)

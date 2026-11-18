@@ -11,7 +11,6 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // --- パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）---
-static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
 static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("VelocityY");
 static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
@@ -58,7 +57,6 @@ void CharacterAnimSyncSystem::Update(float dt)
         // ---------------------------------------------------------
         // 2. パラメータとトリガー
         // ---------------------------------------------------------
-        animParams.SetFloat(HASH_SPEED, currentSpeed);
         animParams.SetFloat(HASH_Y_VELOCITY, currentYVel);
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
 

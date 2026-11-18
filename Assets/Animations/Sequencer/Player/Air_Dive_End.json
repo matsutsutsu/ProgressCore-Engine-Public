@@ -23,7 +23,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.0,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 5
         },
         {
@@ -48,7 +48,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.0,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 8
         },
         {
@@ -73,7 +73,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.01666666753590107,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -191,6 +191,5 @@
         "visible": true
     },
     "startOffset": 0.0,
-    "targetAnimName": "Attack_Air_To_Floor_End_01_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Attack_Air_To_Floor_End_01_Seq_0"
 }

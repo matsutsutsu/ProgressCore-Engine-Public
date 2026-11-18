@@ -18,6 +18,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Jog_Fwd_0",
-    "targetModelPath": ""
+    "targetAnimName": "Jog_Fwd_0"
 }

@@ -1,7 +1,7 @@
 #include "Editor/Windows/Animation/AnimationSequencerWindow.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
-#include "Engine/Animation/Systems/AnimationSystem.h"
+#include "Engine/Animation/Systems/AnimationPoseSystem.h"
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Graphics/Resource/ResourceManager.h"
@@ -59,6 +59,32 @@ namespace
     // 丸めで行の領域がわずかに足りなくなるのを防ぐ余裕
     //   足りないと中の子ウィンドウが数 px だけスクロールできるようになり、ホイールを外のウィンドウへ渡さなくなる
     constexpr float kSeqHeightSlack = 2.0f;
+
+    // ImSequencer の追加メニューに並べる種別
+    //   AnimEventType の番号には欠番があるので、メニューの番号ではなくこの表で種別を引く
+    constexpr AnimEventType kMenuEventTypes[] = {
+        AnimEventType::HitBox, AnimEventType::Sound, AnimEventType::Effect,
+        AnimEventType::SpawnHitbox, AnimEventType::Trail, AnimEventType::ComboWindow,
+        AnimEventType::CancelWindow, AnimEventType::Particle, AnimEventType::Finisher};
+    constexpr int kMenuEventTypeCount = static_cast<int>(std::size(kMenuEventTypes));
+
+    // 種別の表示名
+    const char *GetEventTypeName(AnimEventType type)
+    {
+        switch (type)
+        {
+        case AnimEventType::HitBox: return "HitBox";
+        case AnimEventType::Sound: return "Sound";
+        case AnimEventType::Effect: return "Effect";
+        case AnimEventType::SpawnHitbox: return "SpawnHitbox";
+        case AnimEventType::Trail: return "Trail";
+        case AnimEventType::ComboWindow: return "ComboWindow";
+        case AnimEventType::CancelWindow: return "CancelWindow";
+        case AnimEventType::Particle: return "Particle";
+        case AnimEventType::Finisher: return "Finisher";
+        default: return "Unknown";
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -148,19 +174,16 @@ public:
     {
     }
 
+    // ImSequencer の追加メニューが使う。menuIndex は kMenuEventTypes の番号
     virtual int GetItemTypeCount() const override
     {
-        return (int)AnimEventType::Count;
+        return kMenuEventTypeCount;
     }
 
-    virtual const char *GetItemTypeName(int typeIndex) const override
+    virtual const char *GetItemTypeName(int menuIndex) const override
     {
-        static const char *names[] = {
-            "HitBox", "Sound", "Effect", "Blackboard",
-            "SpawnHitbox", "Trail", "ComboWindow", "CancelWindow", "Particle", "Finisher"};
-        if (typeIndex < 0 || typeIndex >= (int)AnimEventType::Count)
-            return "Unknown";
-        return names[typeIndex];
+        if (menuIndex < 0 || menuIndex >= kMenuEventTypeCount) return "Unknown";
+        return GetEventTypeName(kMenuEventTypes[menuIndex]);
     }
 
     virtual const char *GetItemLabel(int index) const override
@@ -178,38 +201,20 @@ public:
         const auto &ev = m_seq->events[evIdx];
         switch (ev.type)
         {
-        case AnimEventType::HitBox:
-            snprintf(buf, sizeof(buf), "HitBox: %s", ev.stringParam.c_str());
-            break;
         case AnimEventType::Sound:
             snprintf(buf, sizeof(buf), "Sound: %s", ev.stringParam.c_str());
             break;
         case AnimEventType::Effect:
             snprintf(buf, sizeof(buf), "Effect: %s", ev.stringParam.c_str());
             break;
-        case AnimEventType::Blackboard:
-            snprintf(buf, sizeof(buf), "BB: %s", ev.stringParam.c_str());
-            break;
-        case AnimEventType::SpawnHitbox:
-            snprintf(buf, sizeof(buf), "SpawnHitbox");
-            break;
-        case AnimEventType::Trail:
-            snprintf(buf, sizeof(buf), "Trail: %s", ev.stringParam.c_str());
-            break;
-        case AnimEventType::Particle:
-            snprintf(buf, sizeof(buf), "Particle: %s", ev.stringParam.c_str());
-            break;
         case AnimEventType::ComboWindow:
-            snprintf(buf, sizeof(buf), "Combo: %s", ev.stringParam.c_str());
+            snprintf(buf, sizeof(buf), "Combo");
             break;
         case AnimEventType::CancelWindow:
-            snprintf(buf, sizeof(buf), "Cancel: %s", ev.stringParam.c_str());
-            break;
-        case AnimEventType::Finisher:
-            snprintf(buf, sizeof(buf), "Finisher");
+            snprintf(buf, sizeof(buf), "Cancel");
             break;
         default:
-            snprintf(buf, sizeof(buf), "Event %d", evIdx);
+            snprintf(buf, sizeof(buf), "%s", GetEventTypeName(ev.type));
             break;
         }
         return buf;
@@ -256,23 +261,24 @@ public:
         }
     }
 
-    virtual void Add(int type) override
+    // ImSequencer の追加メニューから呼ばれる。menuIndex は kMenuEventTypes の番号
+    virtual void Add(int menuIndex) override
     {
-        if (!m_seq)
-            return;
+        if (menuIndex < 0 || menuIndex >= kMenuEventTypeCount) return;
+        AddEvent(kMenuEventTypes[menuIndex]);
+    }
+
+    // type のイベントを、頭から 0.5 秒の区間で末尾に足す
+    void AddEvent(AnimEventType type)
+    {
+        if (!m_seq) return;
+
         AnimNotifyEvent ev;
-        ev.type      = (AnimEventType)type;
+        ev.type      = type;
         ev.startTime = 0.0f;
         ev.endTime   = (std::min)(0.5f, m_seq->duration);
 
-        if (type == (int)AnimEventType::Effect)
-            ev.stringParam = std::string(kVfxPrefabDir) + "/VFX_HitSpark";
-        if (type == (int)AnimEventType::HitBox)
-            ev.stringParam = "Weapon_R";
-        if (type == (int)AnimEventType::Trail)
-            ev.stringParam = "Weapon_R";
-        if (type == (int)AnimEventType::Particle)
-            ev.stringParam = "Weapon_R";
+        if (type == AnimEventType::Effect) ev.stringParam = std::string(kVfxPrefabDir) + "/VFX_HitSpark";
 
         m_seq->events.push_back(ev);
         SyncFrameCache();
@@ -430,7 +436,7 @@ void AnimationSequencerWindow::DrawContents(EditorContext &context)
         //   新規や、モデルにない名前だった場合は上で 0 番へフォールバックしているので、
         //   書き戻さないと targetAnimName が空のまま残る
 
-        // 空のままだと UpdateManual が GetAnimationIndex で -1 を引き、再生しても姿勢が変わらない
+        // 空のままだと ApplyPoseAt が GetAnimationIndex で -1 を引き、再生しても姿勢が変わらない
         //   コンボボックスは animations[] 側の名前を出すので、見た目では気付けない
         m_editingSequence.targetAnimName = animations[m_selectedAnimIndex].name;
 
@@ -746,7 +752,7 @@ void AnimationSequencerWindow::PinCurrentPose(EditorContext &context, AnimatorCo
     // ---------------------------------------------------------
     // 2. Animator を止めたままにする
     // ---------------------------------------------------------
-    // ポーズは今フレームの UpdateManual で Model へ当て済み
+    // ポーズは今フレームの ApplyPoseAt で Model へ当て済み
     //   isEditorOverride の間は AnimationPoseSystem が上書きしないので、そのまま残る
     //   Model はエンティティごとの実体なので、他のキャラにも上書きされない
     animator->currentSequence  = pin.sequence.get();
@@ -1076,7 +1082,7 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
 
     // 今の再生位置から 30 フレームの区間でイベントを足し、選択する
     auto AddEvt = [&](AnimEventType t) {
-        m_sequencerImpl->Add((int)t);
+        m_sequencerImpl->AddEvent(t);
         auto &e     = m_editingSequence.events.back();
         int   s     = context.isAnimEditMode ? SecToFrame(context.animEditTime) : 0;
         e.startTime = FrameToSec(s);
@@ -1225,9 +1231,9 @@ void AnimationSequencerWindow::DrawTimelinePane(EditorContext &context, Animator
     // 今の時刻のポーズを Model へ当てる
     if (context.isAnimEditMode && context.systemManager)
     {
-        if (auto *animSys = context.systemManager->GetSystem<AnimationSystem>())
+        if (auto *poseSys = context.systemManager->GetSystem<AnimationPoseSystem>())
         {
-            animSys->UpdateManual(context.selectedEntity, context.animEditTime);
+            poseSys->ApplyPoseAt(context.selectedEntity, context.animEditTime);
             if (auto *tr = context.world->GetComponent<TransformComponent>(context.selectedEntity))
                 model->UpdateTransform(tr->worldMatrix);
         }
@@ -1353,7 +1359,7 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
 
         ImGui::TextColored(ImVec4(0.5f, 1, 0.5f, 1), "Selected Event");
         ImGui::Spacing();
-        ImGui::TextDisabled("Type: %s", m_sequencerImpl->GetItemTypeName((int)e.type));
+        ImGui::TextDisabled("Type: %s", GetEventTypeName(e.type));
         // 開始・終了を秒で入力する（タイムラインのドラッグより細かく合わせられる）
         {
             float startSec = e.startTime;
@@ -1388,58 +1394,14 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         ImGui::Spacing();
         ImGui::Spacing();
 
-        char buf[256];
-        strcpy_s(buf, sizeof(buf), e.stringParam.c_str());
-
         // ---------------------------------------------------------
         // 3. 種別ごとの設定
         // ---------------------------------------------------------
-
-        // 武器タグの選択（CombatRoster があれば一覧から、なければ手入力）。HitBox / Trail / Particle で使う
-        auto drawWeaponTagPicker = [&](AnimNotifyEvent &ev, bool &changed) {
-            auto *roster = context.world->GetComponent<CombatRosterComponent>(context.selectedEntity);
-            if (roster && roster->count > 0)
-            {
-                ImGui::Text("Weapon Tag:");
-                ImGui::SetNextItemWidth(-1);
-                const char *preview = ev.stringParam.empty() ? "Select Tag..." : ev.stringParam.c_str();
-                if (ImGui::BeginCombo("##Tag", preview))
-                {
-                    for (int i = 0; i < roster->count; ++i)
-                    {
-                        bool sel = (ev.stringParam == roster->entries[i].tag);
-                        if (ImGui::Selectable(roster->entries[i].tag, sel))
-                        {
-                            ev.stringParam = roster->entries[i].tag;
-                            changed        = true;
-                        }
-                        if (sel)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-            }
-            else
-            {
-                char tagBuf[256];
-                strcpy_s(tagBuf, sizeof(tagBuf), ev.stringParam.c_str());
-                ImGui::Text("Weapon Tag (no roster):");
-                ImGui::SetNextItemWidth(-1);
-                if (ImGui::InputText("##Tag", tagBuf, sizeof(tagBuf)))
-                {
-                    ev.stringParam = tagBuf;
-                    changed        = true;
-                }
-            }
-        };
-
         switch (e.type)
         {
         case AnimEventType::HitBox: {
-            drawWeaponTagPicker(e, ch);
-            ImGui::Spacing();
-            ImGui::Separator();
             ImGui::TextColored(ImVec4(1, 0.5f, 0.5f, 1), "Attack");
+            ImGui::TextDisabled("この区間中、持ち主の子にある攻撃判定が有効になります。");
             if (ImGui::DragFloat("Damage", &e.damage, 0.5f, 0.0f, 1000.0f, "%.1f"))
                 ch = true;
             if (ImGui::DragFloat("Knockback", &e.knockback, 0.1f, 0.0f, 100.0f, "%.1f"))
@@ -1487,9 +1449,8 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
         }
         case AnimEventType::Trail:
             ImGui::TextColored(ImVec4(0.6f, 0.85f, 1.0f, 1), "Weapon Trail (軌跡)");
-            drawWeaponTagPicker(e, ch);
             ImGui::Spacing();
-            ImGui::TextDisabled("この区間中、対象武器の Weapon Trail が emitting=ON になります");
+            ImGui::TextDisabled("この区間中、持ち主の子にある Weapon Trail がすべて emitting=ON になります");
             ImGui::TextDisabled("(武器側で Anim Controlled を ON にしておくこと)。");
             ImGui::TextDisabled("軌跡の色・尾の長さは武器の Weapon Trail コンポーネントで調整します。");
             ImGui::Spacing();
@@ -1497,9 +1458,8 @@ void AnimationSequencerWindow::DrawInspectorPane(EditorContext &context)
             break;
         case AnimEventType::Particle:
             ImGui::TextColored(ImVec4(0.85f, 0.5f, 0.25f, 1), "GPU Particle (まとい)");
-            drawWeaponTagPicker(e, ch);
             ImGui::Spacing();
-            ImGui::TextDisabled("この区間中、対象エミッタの GPU Particle が emitting=ON になります。");
+            ImGui::TextDisabled("この区間中、持ち主の子にある GPU Particle がすべて emitting=ON になります。");
             ImGui::TextDisabled("(エミッタ側で Anim Controlled を ON にし、剣ボーンに子付けしておくこと)。");
             ImGui::TextDisabled("粒子の見た目・力場は GPU Particle Emitter コンポーネントで調整します。");
             ImGui::Spacing();

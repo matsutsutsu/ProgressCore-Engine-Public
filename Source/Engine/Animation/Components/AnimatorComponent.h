@@ -7,8 +7,25 @@
 #include <vector>
 #include <array>
 #include <cstdint>
+#include <cmath>
+#include <algorithm>
 
 struct CurveData;
+
+namespace CCL::Anim
+{
+    // time（秒）をクリップの長さの中に収める。ループなら先頭へ折り返し、ループしないなら末尾で止める
+    //   ループしないときは負の時刻を 0 にそろえない。duration が 0 以下なら time のまま返す
+    inline float WrapClipTime(float time, float duration, bool loop)
+    {
+        if (duration <= 0.0f) return time;
+        if (!loop) return (std::min)(time, duration);
+
+        float wrapped = std::fmod(time, duration);
+        if (wrapped < 0.0f) wrapped += duration;
+        return wrapped;
+    }
+}
 
 
 // 再生中のブレンドスペース。グラフの AnimBlendSpace から、実行時に要る値だけをコピーして持つ
@@ -110,6 +127,8 @@ struct AnimatorComponent
     std::vector<Model::NodePose> poseBufferC; // ブレンドスペースで、点 1 本分を計算する作業用
 
     // --- 外部からの握り ---
+    //   エディタとムービーは別々に握って離すので、2 つのフラグで持つ
+    //   1 つの値にまとめると、片方が離したときに、もう片方の握りまで消える
     bool isEditorOverride = false; // true の間はエディタ（シーケンサー）が再生を制御し、System は触らない
 
     // true の間は外部（タイムラインのムービー）がクリップを決める
@@ -151,26 +170,8 @@ struct AnimatorComponent
                 previousSequence = currentSequence;
 
                 // currentTimer は duration を超えていることがあるので、クリップ内の時刻に直してから控える
-                if (currentSequence->duration > 0.0f)
-                {
-                    if (!isLoop)
-                    {
-                        // 非ループ: 末尾のポーズを保つよう duration で止める
-                        previousTimer = (std::min)(currentTimer, currentSequence->duration);
-                    }
-                    else
-                    {
-                        // ループ: はみ出た分を剰余でループ内の時刻に戻す
-                        previousTimer = std::fmod(currentTimer, currentSequence->duration);
-                        if (previousTimer < 0.0f)
-                            previousTimer += currentSequence->duration;
-                    }
-                }
-                else
-                {
-                    previousTimer = currentTimer;
-                }
-
+                //   ループしないクリップは、末尾のポーズを保つよう末尾で止める
+                previousTimer         = CCL::Anim::WrapClipTime(currentTimer, currentSequence->duration, isLoop);
                 previousLoop          = isLoop;
                 previousPlaybackSpeed = playbackSpeed;
 
@@ -257,5 +258,15 @@ struct AnimatorComponent
         {
             ++nextEventIndex;
         }
+    }
+
+    // エディタかムービーが再生を握っているか（グラフの遷移とルートモーションを止めるときに見る）
+    bool IsOverridden() const { return isEditorOverride || isExternalOverride; }
+
+    // クロスフェードの進み具合（0 = 前のクリップだけ、1 = 今のクリップだけ）
+    float GetBlendRate() const
+    {
+        if (blendDuration <= 0.0f) return 1.0f;
+        return std::clamp(currentBlendTime / blendDuration, 0.0f, 1.0f);
     }
 };

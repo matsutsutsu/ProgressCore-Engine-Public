@@ -72,6 +72,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Hit_Combat_F_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Hit_Combat_F_Seq_0"
 }
