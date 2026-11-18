@@ -108,12 +108,10 @@ void PlayerLockOnSystem::Update(float dt)
 // カメラに狙わせる敵を、ラッシュの相手かロックオンの相手から選ぶ
 EntityID PlayerLockOnSystem::PickCameraTarget(EntityID playerID, const PlayerComponent &player) const
 {
-    // ラッシュの相手は、ロックオンと同じく死亡・破棄されていたら使わない
+    // ラッシュの相手が死ぬと、PlayerRushSystem が無効にする
     if (const auto *rush = m_world->GetComponent<PlayerRushComponent>(playerID))
     {
-        const EntityID rushTarget = rush->closeInTarget;
-        const bool     alive      = m_world->IsEntityValid(rushTarget) && !m_world->HasComponent<Tag::DeadTag>(rushTarget);
-        if (rush->isActive && alive) return rushTarget;
+        if (rush->isActive && rush->closeInTarget != InvalidEntityID) return rush->closeInTarget;
     }
 
     return player.lockOnTargetID; // EntityLink から暗黙に変換する。手順1で死亡・破棄は外してある

@@ -59,7 +59,4 @@ private:
 
     // 斬りの瞬間の画角パンチと揺れを要求する
     void PunchStrike(const PlayerRushCameraComponent &cam, CCL::ECS::EntityID playerID, CCL::ECS::EntityID cameraID);
-
-    // 注視点を寄せる先。ラッシュの相手が生きていればその敵、いなければ InvalidEntityID
-    CCL::ECS::EntityID PickFocusTarget(const PlayerRushComponent &rush) const;
 };

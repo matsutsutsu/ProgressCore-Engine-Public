@@ -185,6 +185,12 @@ void PlayerRushSystem::Update(float dt)
             return;
         }
 
+        // --- ラッシュの相手 ---
+
+        // 相手が死んだら、相手なしにする
+        // ほかの System は、無効でなければ生きている相手として使う
+        if (!IsCloseInTargetAlive(rush.closeInTarget)) rush.closeInTarget = InvalidEntityID;
+
         // --- とどめの命中 ---
 
         // プレイヤーがラッシュ中に攻撃を当てたかを探す
@@ -314,14 +320,11 @@ void PlayerRushSystem::BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent
     // 相手がいなければ今の向きのまま
     rush.evadeFaceYaw = player.currentYaw;
 
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
-        {
-            Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            if (to.LengthSquared() > 1e-6f) rush.evadeFaceYaw = std::atan2(to.x, to.z);
-        }
+        Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
+        to.y       = 0.0f;
+        if (to.LengthSquared() > 1e-6f) rush.evadeFaceYaw = std::atan2(to.x, to.z);
     }
 
     HoldEvadeFacing(rush, player);
@@ -604,20 +607,17 @@ void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovement
 
     // 相手がいるときは、動いても追えるように毎ステップ向け直す
     // closeInStopDistance まで近づいたら斬る
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
-        {
-            Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            const float dist = to.Length();
+        Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+        to.y       = 0.0f;
+        const float dist = to.Length();
 
-            reachedRange = (dist <= rush.closeInStopDistance);
-            if (dist > 1e-3f)
-            {
-                dir             = to / dist;
-                rush.closeInDir = dir;
-            }
+        reachedRange = (dist <= rush.closeInStopDistance);
+        if (dist > 1e-3f)
+        {
+            dir             = to / dist;
+            rush.closeInDir = dir;
         }
     }
 
@@ -671,17 +671,14 @@ void PlayerRushSystem::RequestNextStep(PlayerRushComponent &rush, PlayerComponen
     animParams.SetTrigger(finish ? HASH_TRIG_RUSH_FINISH : HASH_TRIG_RUSH_ATTACK, rush.rushInputBuffer);
 
     // 詰め先がいれば、その方へ向かせる
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
+        Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+        to.y       = 0.0f;
+        if (to.LengthSquared() > 1e-6f)
         {
-            Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            if (to.LengthSquared() > 1e-6f)
-            {
-                player.attackFaceYaw   = std::atan2(to.x, to.z);
-                player.attackFaceTimer = 0.22f;
-            }
+            player.attackFaceYaw   = std::atan2(to.x, to.z);
+            player.attackFaceTimer = 0.22f;
         }
     }
 }
@@ -727,7 +724,7 @@ EntityID PlayerRushSystem::PickRushTarget(EntityID attackedID) const
 
 bool PlayerRushSystem::IsCloseInTargetAlive(CCL::ECS::EntityID id) const
 {
-    return id != InvalidEntityID && m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
+    return m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
 }
 
 

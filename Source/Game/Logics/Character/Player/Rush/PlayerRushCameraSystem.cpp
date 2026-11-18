@@ -9,7 +9,6 @@
 #include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/Time/TimeService.h"
-#include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Core/GameEvents.h"
 
 #include <imgui.h>
@@ -113,7 +112,8 @@ void PlayerRushCameraSystem::Update(float dt)
         if (rush.isActive)
         {
             const RushCameraShot     &shot = SelectShot(cam, rush.phase);
-            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, PickFocusTarget(rush));
+            // 注視点はラッシュの相手へ寄せる。相手が死ぬと PlayerRushSystem が無効にする
+            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, rush.closeInTarget);
             SpringToward(cam.current, cam.velocity, goal, shot.blendTime, shot.bounce, dt);
         }
         else if (cam.weight > 0.0f)
@@ -272,23 +272,6 @@ void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, E
     {
         m_world->GetEventBus().Publish(CameraShakeRequestEvent{cam.strikeShake});
     }
-}
-
-
-
-// ---------------------------------------------------------------------------
-// 探索
-// ---------------------------------------------------------------------------
-
-// 注視点を寄せる先として、ラッシュの相手を返す
-EntityID PlayerRushCameraSystem::PickFocusTarget(const PlayerRushComponent &rush) const
-{
-    const EntityID id = rush.closeInTarget;
-    if (id == InvalidEntityID || !m_world->IsEntityValid(id) || m_world->HasComponent<Tag::DeadTag>(id))
-    {
-        return InvalidEntityID;
-    }
-    return id;
 }
 
 

@@ -39,6 +39,6 @@ private:
         CCL::ECS::Read<TransformComponent>>;
 
     // カメラに狙わせる敵を返す
-    // ラッシュ中で相手が生きていればラッシュの相手、それ以外はロックオンの相手
+    // ラッシュ中で相手がいればラッシュの相手、それ以外はロックオンの相手
     CCL::ECS::EntityID PickCameraTarget(CCL::ECS::EntityID playerID, const PlayerComponent &player) const;
 };

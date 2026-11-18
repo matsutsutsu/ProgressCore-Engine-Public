@@ -82,7 +82,7 @@ struct PlayerRushComponent
 
     DirectX::SimpleMath::Vector3 evadeDir      = {0, 0, 0};                 // 離脱の向き（正規化済み）
     DirectX::SimpleMath::Vector3 closeInDir    = {0, 0, 0};                 // 詰める向き（正規化済み）
-    CCL::ECS::EntityID           closeInTarget = CCL::ECS::InvalidEntityID; // ラッシュの相手（避けた攻撃の持ち主）。開始時に決める。分からなければ無効
+    CCL::ECS::EntityID           closeInTarget = CCL::ECS::InvalidEntityID; // ラッシュの相手（避けた攻撃の持ち主）。開始時に決める。分からないときと死んだら無効
 };
 
 
