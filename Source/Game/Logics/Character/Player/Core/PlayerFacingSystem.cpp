@@ -34,14 +34,20 @@ void PlayerFacingSystem::Update(float rawDt)
                       const TimeStateComponent           &time) {
         if (m_world->HasComponent<Tag::DeadTag>(id)) return;
 
-        // ラッシュの回避離脱・待機は操作不能。向きを変えない
-        // 間合い詰め・連撃は、向き直り（attackFaceYaw）を許す
+        const float dt = time.localDt;
+
+        // ラッシュの回避離脱・待機は操作不能。移動の向きへは回さない
+        // 向き直り（HoldEvadeFacing が書く相手の方）だけを許し、相手を正面に置いて回避のアニメと向きを合わせる
+        // 傾きも 0 へ戻す。戻さないと、ダッシュで曲がったときの傾きが残り、傾いたまま待機してしまう
+        // 間合い詰め・連撃は、ふつうの処理で向き直り（attackFaceYaw）を許す
         if (rush.isActive && (rush.phase == RushPhase::Locked || rush.phase == RushPhase::Ready))
         {
+            if (player.attackFaceTimer > 0.0f) TurnToAttackFace(dt, player);
+            else player.currentRoll = std::lerp(player.currentRoll, 0.0f, kRollReturnSpeed * dt);
+
+            ApplyRotation(player, trans, joltHandle);
             return;
         }
-
-        const float dt = time.localDt;
 
         // 向きと傾きの更新
         UpdateYawAndRoll(dt, movement, config.walkSpeed, player);
@@ -65,14 +71,9 @@ void PlayerFacingSystem::UpdateYawAndRoll(float dt, const CharacterMovementCompo
     // --- 攻撃中 ---
 
     // 移動の向きより優先して、敵へ速く向き直る
-    // 傾きは 0 に戻し、まっすぐ斬るように見せる
     if (player.attackFaceTimer > 0.0f)
     {
-        player.attackFaceTimer -= dt;
-
-        const float angleDiff = CCL::Math::WrapRadians(player.attackFaceYaw - player.currentYaw);
-        player.currentYaw += angleDiff * kAttackTurnSpeed * dt;
-        player.currentRoll = std::lerp(player.currentRoll, 0.0f, kRollReturnSpeed * dt);
+        TurnToAttackFace(dt, player);
         return;
     }
 
@@ -100,6 +101,20 @@ void PlayerFacingSystem::UpdateYawAndRoll(float dt, const CharacterMovementCompo
 
     // 目標のroll角度に滑らかに近づける
     player.currentRoll     = std::lerp(player.currentRoll, targetRoll, kRollFollowSpeed * dt);
+}
+
+
+
+void PlayerFacingSystem::TurnToAttackFace(float dt, PlayerComponent &player)
+{
+    player.attackFaceTimer -= dt;
+
+    // 角度差に比例して回すので、離れているほど速く回り、近づくほどゆっくり止まる
+    const float angleDiff = CCL::Math::WrapRadians(player.attackFaceYaw - player.currentYaw);
+    player.currentYaw += angleDiff * kAttackTurnSpeed * dt;
+
+    // 傾きは 0 に戻し、まっすぐ斬る・跳ぶように見せる
+    player.currentRoll = std::lerp(player.currentRoll, 0.0f, kRollReturnSpeed * dt);
 }
 
 

@@ -12,18 +12,18 @@
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        -44.930580139160156,
                         0.0,
-                        -47.652896881103516
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
-                        -0.6756505370140076,
                         0.0,
-                        -0.7372221350669861
+                        0.0,
+                        0.0
                     ],
                     "isRootMotionActive": false,
                     "jumpImpulse": false,
-                    "moveIntensity": 1.0,
+                    "moveIntensity": 0.0,
                     "overrideSpeed": -1.0,
                     "speedMultiplier": 1.0,
                     "use3DVelocity": false
@@ -101,12 +101,13 @@
                     "turnSpeed": 10.0
                 },
                 "Player Dash Component": {
-                    "currentTimer": -0.003333514556288719,
+                    "cameraFovOffset": 20.0,
+                    "currentTimer": -0.005458807572722435,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        -0.8449539542198181,
+                        -0.5023548603057861,
                         0.0,
-                        0.5348391532897949
+                        0.8646615743637085
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -170,6 +171,7 @@
                 "Player Rush Component": {
                     "attackDuration": 0.46000000834465027,
                     "attackFired": true,
+                    "closeInMaxDuration": 2.0,
                     "closeInSpeed": 150.0,
                     "closeInStopDistance": 20.0,
                     "evadeSharedSlowTime": 0.30000001192092896,
@@ -189,7 +191,10 @@
                     "rushStep": 4,
                     "rushStepCount": 4,
                     "slowRecover": 0.4000000059604645,
-                    "startMaxDistance": 80.0,
+                    "startMaxDistance": 100.0,
+                    "strikeDistance": 1.5,
+                    "strikeTrackTime": 0.2199999988079071,
+                    "strikeTrackTimer": 0.0,
                     "timer": 0.0,
                     "worldScale": 0.05000000074505806
                 },
@@ -214,15 +219,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -54.32295227050781,
-                        -0.10481485724449158,
-                        78.26168823242188
+                        -47.78563690185547,
+                        0.6660456657409668,
+                        4.909242153167725
                     ],
                     "rotation": [
-                        0.04768988862633705,
-                        0.9277021884918213,
-                        -0.019008789211511612,
-                        -0.36977431178092957
+                        -1.3320023995992427e-28,
+                        -0.3196420669555664,
+                        3.948552405338648e-28,
+                        0.9475383758544922
                     ],
                     "scale": [
                         3.5,
@@ -277,7 +282,7 @@
                         0.0
                     ],
                     "burstDuration": 2.0,
-                    "burstTimer": 0.20000122487545013,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.291930615901947,
@@ -287,7 +292,7 @@
                     "distortion": 0.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
-                    "emitting": true,
+                    "emitting": false,
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,
@@ -360,7 +365,7 @@
                         0.0
                     ],
                     "burstDuration": 2.0,
-                    "burstTimer": 0.20000122487545013,
+                    "burstTimer": 0.0,
                     "color": [
                         1.0,
                         0.291930615901947,
@@ -370,7 +375,7 @@
                     "distortion": 0.0,
                     "distortionChroma": 0.0,
                     "distortionNoise": 0.0,
-                    "emitting": true,
+                    "emitting": false,
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,

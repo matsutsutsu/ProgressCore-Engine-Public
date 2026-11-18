@@ -5,11 +5,9 @@
 #include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Camera/CameraEvents.h"
-#include "Engine/Camera/Components/VirtualCameraComponents.h"
 #include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/Time/TimeService.h"
-#include "Game/Core/GameEvents.h"
 
 #include <imgui.h>
 
@@ -42,16 +40,7 @@ namespace
 std::vector<TypeID> PlayerRushCameraSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
-    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // 構図の上書きスロット
-    return types;
-}
-
-
-
-std::vector<TypeID> PlayerRushCameraSystem::GetReadTypes() const
-{
-    auto types = Base::GetReadTypes();
-    types.push_back(TypeInfo<VirtualCamera>::ID()); // 画角パンチの基準にする今の画角
+    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // 構図の上書きスロットと画角パンチ
     return types;
 }
 
@@ -99,7 +88,7 @@ void PlayerRushCameraSystem::Update(float dt)
         const bool attackFiredNow = rush.isActive && rush.phase == RushPhase::Attack && rush.attackFired;
         if (attackFiredNow && !cam.wasAttackFired)
         {
-            PunchStrike(cam, id, cameraID);
+            PunchStrike(cam, cameraID);
         }
 
         cam.wasActive      = rush.isActive;
@@ -130,6 +119,12 @@ void PlayerRushCameraSystem::Update(float dt)
 
         auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
         if (!tps) return;
+
+        // 回避離脱と待機の間は、手で視点を回させない。回すと、作った構図が触った分だけ崩れる
+        // 攻撃に入ったら自由に回せるようにする
+        // 1フレーム限りの依頼なので、攻撃に入ったフレームから操作が戻る。止めた間の入力は捨てる
+        const bool blockLook = rush.isActive && (rush.phase == RushPhase::Locked || rush.phase == RushPhase::Ready);
+        if (blockLook) tps->blockLookRequest = true;
 
         if (cam.weight <= 0.0f)
         {
@@ -256,15 +251,15 @@ float PlayerRushCameraSystem::DecideYawSign(const PlayerRushComponent &rush, Ent
 // 瞬間の演出
 // ---------------------------------------------------------------------------
 
-void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, EntityID playerID, EntityID cameraID)
+void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, EntityID cameraID)
 {
-    // 画角パンチは「瞬間的にこの画角にする」要求なので、今の画角に足した値を渡す
-    // その後は fovDamping で、攻撃の寄りの画角へ戻っていく
+    // 画角はカメラが次の更新で足し、fovDamping で攻撃の寄りの画角へ戻す
+    // 同じフレームに重なったら、大きい方だけにする
     if (cam.strikeFovPunch > 0.0f)
     {
-        if (const auto *vcam = (cameraID != InvalidEntityID) ? m_world->GetComponent<VirtualCamera>(cameraID) : nullptr)
+        if (auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr)
         {
-            m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerID, vcam->fov + cam.strikeFovPunch});
+            tps->pendingFovPunch = (std::max)(tps->pendingFovPunch, cam.strikeFovPunch);
         }
     }
 

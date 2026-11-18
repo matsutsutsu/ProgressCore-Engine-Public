@@ -11,6 +11,7 @@
 // 画面演出（PlayerRushEffectSystem）は、ここが書く isActive を直接読む
 //
 // 備考: 回避離脱の移動は開始時に MoveInDirection で予約し、物理が運び終えたら待機へ進める
+//       詰めは毎ステップ MoveTo で相手の手前へ予約し直す。終点で止まるので、勢いで通り過ぎない
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Time/Components/TimeState.h"
@@ -107,6 +108,10 @@ private:
     // timeCtx が nullptr なら等速とみなす
     void DriveTimeScale(PlayerRushComponent &rush, TimeStateComponent &time, const TimeContext *timeCtx);
 
+    // 待機の間、プレイヤーの時間倍率を playerScale から readyPlayerScale へ readySlowInTime かけて絞る
+    // DriveTimeScale の直後に呼ぶ。回避のアニメを決めの姿勢のまま止めて見せる
+    void DriveReadySlow(const PlayerRushComponent &rush, TimeStateComponent &time);
+
     // 範囲外のジャスト回避で、世界だけの短いスロー（evadeSlowScale を evadeSlowDuration 秒）を始める
     // 終わったらラッシュの後と同じく DriveRecovery で戻す
     void StartEvadeSlow(PlayerRushComponent &rush);
@@ -134,14 +139,19 @@ private:
     // 間合い詰め・連撃・無敵
     // ============================================================
 
-    // 攻撃を1ステップ進める。詰め先へ詰めて、間合いに入ったら1回だけ斬る
-    // playerPos はプレイヤーの物理の位置（ワールド）
-    void DriveCloseIn(PlayerRushComponent &rush, CharacterMovementComponent &movement,
-                      PlayerComponent &player, AnimParametersComponent &animParams,
+    // 攻撃を1ステップ進める。詰め先へ向き、斬る位置の手前 closeInStopDistance に入ったら1回だけ斬る
+    // 移動は ChaseStrikePosition が運ぶ。playerPos はプレイヤーの物理の位置（ワールド）
+    void DriveCloseIn(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams,
                       const DirectX::SimpleMath::Vector3 &playerPos);
 
     // 詰めの斬り（着地の斬り RushDiveEnd）を出し、詰める向きへ向き直る
     void FireStrike(PlayerRushComponent &rush, PlayerComponent &player, AnimParametersComponent &animParams);
+
+    // 相手の手前 strikeDistance の位置（斬る位置）へ、closeInSpeed の等速で1ステップ寄せる
+    // 斬る前の詰めと、斬った後の吸い付きの両方で使う。相手がいないか、もう近ければ寄せない
+    // ルートモーションより優先される MoveTo で運ぶので、斬りのアニメ中でも効く
+    void ChaseStrikePosition(const PlayerRushComponent &rush, CharacterMovementComponent &movement,
+                             const DirectX::SimpleMath::Vector3 &playerPos);
 
     // 次の斬りを頼む。rushStepCount 回斬った後は、とどめを頼む
     void RequestNextStep(PlayerRushComponent &rush, PlayerComponent &player,

@@ -38,6 +38,10 @@ private:
     // 向き（yaw）と傾き（roll）を1ステップ進める。攻撃中は敵の方、それ以外は移動の向きへ回す
     void UpdateYawAndRoll(float dt, const CharacterMovementComponent &movement, float walkSpeed, PlayerComponent &player);
 
+    // attackFaceYaw へ速く向き直り、傾きを 0 へ戻す。attackFaceTimer も減らす
+    // 攻撃中と、ラッシュの回避離脱・待機で使う
+    void TurnToAttackFace(float dt, PlayerComponent &player);
+
     // 旋回時の傾きの目標（rad）を返す。曲がる角度と、walkSpeed に対する今の速さの比で決める
     float CalcBankingRoll(float angleDiff, const CharacterMovementComponent &movement, float walkSpeed, const PlayerComponent &player) const;
 

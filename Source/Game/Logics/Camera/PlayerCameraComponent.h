@@ -40,6 +40,14 @@ struct PlayerCameraComponent
     float framingFollowDamping = 30.0f; // 上書きで引くときの速さ
     float framingMaxLookShift  = 4.0f;  // 上書きで注視点をずらす上限（m）
 
+    // 演出が書き、次の更新で一度だけ画角へ足して 0 に戻す
+    // 足した後は fovDamping で普段の画角へ戻る。保存しない
+    float pendingFovPunch = 0.0f; // 画角へ足す量（度）
+
+    // 演出が書き、次の更新で視点の入力を捨てて false に戻す。書き続けている間だけ効く。保存しない
+    // 作った構図を、プレイヤーが視点を回して崩さないようにする
+    bool blockLookRequest = false; // 手で視点を回させないか
+
     // --- オービット ---
     // ピッチが正だと、カメラは pivot より下にいて見上げる
     float currentYaw   = 0.0f;   // 今のヨー（度）。プレハブの値は初期値

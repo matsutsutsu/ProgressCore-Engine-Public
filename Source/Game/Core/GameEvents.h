@@ -4,14 +4,6 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
-// 指定エンティティを追従している TPS カメラの画角を瞬間的に変える要求（FOVパンチ）
-// PlayerCameraSystem が受ける。設定後は PlayerCameraComponent::fovDamping により自動的に元へ戻る
-struct CameraFovPunchRequestEvent
-{
-    CCL::ECS::EntityID targetID; // このエンティティを追従しているカメラが対象
-    float              fov;      // 瞬間的に設定する画角（度）
-};
-
 // ジャスト回避に成功した瞬間に出す。受けた PlayerRushSystem がラッシュを始める
 struct JustEvadeSuccessEvent
 {

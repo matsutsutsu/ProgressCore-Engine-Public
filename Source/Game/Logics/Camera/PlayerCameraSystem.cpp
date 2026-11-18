@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <utility>
 
 using namespace CCL::ECS;
 using namespace DirectX;
@@ -37,26 +36,6 @@ namespace
 
 
 
-void PlayerCameraSystem::Initialize()
-{
-    // 要求をためるだけにして、画角を書き換えるのは Update にする
-    // ここで書き換えると、書くのが発行した System になり、申告と食い違う
-    ListenEvent<CameraFovPunchRequestEvent>([this](const CameraFovPunchRequestEvent &ev) {
-        std::lock_guard lock(m_punchMutex);
-        m_pendingPunches.push_back(ev);
-    });
-}
-
-
-
-std::vector<CameraFovPunchRequestEvent> PlayerCameraSystem::TakeFovPunches()
-{
-    std::lock_guard lock(m_punchMutex);
-    return std::exchange(m_pendingPunches, {});
-}
-
-
-
 // ---------------------------------------------------------------------------
 // フレーム単位
 // ---------------------------------------------------------------------------
@@ -64,7 +43,7 @@ std::vector<CameraFovPunchRequestEvent> PlayerCameraSystem::TakeFovPunches()
 void PlayerCameraSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 届いた要求と、このフレームの視点の入力を読む
+    // 1. このフレームの視点の入力を読む
     // 2. カメラを1台ずつ更新する
     // 3. カーソルを固定するかを決める
 
@@ -74,12 +53,8 @@ void PlayerCameraSystem::Update(float dt)
     dt = Time::PresentationDt(*m_world, dt);
 
     // ---------------------------------------------------------
-    // 1. 要求と入力
+    // 1. 入力
     // ---------------------------------------------------------
-
-    // 届いた FOV パンチの要求を取り出す
-    // 下で抜けたときも、古い要求を次のフレームへ持ち越さない
-    const std::vector<CameraFovPunchRequestEvent> punches = TakeFovPunches();
 
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
     auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
@@ -101,10 +76,9 @@ void PlayerCameraSystem::Update(float dt)
     bool wantCursorLock = false;
 
     ForEachWithID([&](EntityID camID, VirtualCamera &vcam, PlayerCameraComponent &tps, TransformComponent &trans) {
-        // このカメラが追う相手への FOV パンチを反映する
-        // 画角を一瞬変え、あとは fovDamping で目標の画角へ戻っていく
-        for (const CameraFovPunchRequestEvent &punch : punches)
-            if (punch.targetID == tps.target.id) vcam.fov = punch.fov;
+        // 演出が書いた画角パンチを、一度だけ足す
+        vcam.fov += tps.pendingFovPunch;
+        tps.pendingFovPunch = 0.0f;
 
         // 追従する相手がまだ決まっていないカメラは飛ばす
         // プレハブを作った直後などに起きる
@@ -121,7 +95,18 @@ void PlayerCameraSystem::Update(float dt)
             if (!enemyTrans) lockOn->isActive = false;
         }
 
-        CameraContext c{vcam, tps, lockOn, trans, *targetTrans, enemyTrans, in, physicsAPI.get(), dt};
+        // 演出が視点の入力を止めているなら、このカメラだけ入力を捨てる
+        // 触っていないことにもする。触ったことにすると、ロックオンの補正がその間止まる
+        // 依頼は1フレーム限りなので、読んだら戻す
+        FrameInput camIn = in;
+        if (tps.blockLookRequest)
+        {
+            camIn.blockLook     = true;
+            camIn.hasManualLook = false;
+        }
+        tps.blockLookRequest = false;
+
+        CameraContext c{vcam, tps, lockOn, trans, *targetTrans, enemyTrans, camIn, physicsAPI.get(), dt};
 
         // 姿勢を決める。カーソルの固定を求めたら覚えておく
         if (UpdateCamera(c)) wantCursorLock = true;

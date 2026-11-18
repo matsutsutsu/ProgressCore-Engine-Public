@@ -21,20 +21,12 @@ struct PlayerRushCameraComponent
 {
     // --- フェーズごとの構図 ---
 
-    // 回避離脱。勢いよく引いて傾け、行き過ぎの反動で止まった瞬間を作る
-    RushCameraShot locked = {.distance = 3.0f, .fov = 12.0f, .pitch = -6.0f, .yaw = 18.0f, .roll = 6.0f,
-                             .focus = 0.3f, .blendTime = 0.12f, .bounce = 0.5f};
-
-    // 待機。低い 3/4 アングルで寄り、敵を見上げる
-    RushCameraShot ready = {.distance = -1.8f, .fov = -6.0f, .pitch = 6.0f, .yaw = 28.0f, .roll = -3.0f,
-                            .focus = 0.55f, .blendTime = 0.18f, .bounce = 0.2f};
-
-    // 攻撃。寄りながら画角を広げ、追従を締めて突進に付いていく
-    RushCameraShot attack = {.distance = -2.2f, .fov = 4.0f, .pitch = 2.0f, .yaw = 8.0f, .roll = 0.0f,
-                             .focus = 0.75f, .followBoost = 20.0f, .blendTime = 0.07f, .bounce = 0.4f};
-
-    // 連撃。中間の距離へゆっくり戻す
-    RushCameraShot flurry = {.distance = 0.8f, .focus = 0.2f, .blendTime = 0.45f};
+    // 値はプレハブで決める。ここで持つと、プレハブで詰めた値とずれた古い値が残って紛らわしい
+    // 何も入れなければ足し込みは 0 で、そのフェーズは普段の構図のまま
+    RushCameraShot locked; // 回避離脱
+    RushCameraShot ready;  // 待機
+    RushCameraShot attack; // 攻撃（詰めと詰めの斬り）
+    RushCameraShot flurry; // 連撃
 
     // --- 終了・瞬間の演出 ---
 

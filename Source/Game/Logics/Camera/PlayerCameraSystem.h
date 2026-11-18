@@ -18,10 +18,8 @@
 #include "Game/Logics/Camera/PlayerCameraLockOnComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/ECS/Common/CCL_TypeInfo.h"
-#include "Game/Core/GameEvents.h"
 
 #include <memory>
-#include <mutex>
 #include <vector>
 
 class IInputAPI;
@@ -36,8 +34,6 @@ class PlayerCameraSystem : public CCL::ECS::IfSystem<
 public:
     PlayerCameraSystem() : IfSystem("PlayerCameraSystem") {}
     virtual ~PlayerCameraSystem() = default;
-
-    void Initialize() override;
 
     void Update(float dt) override;
 
@@ -92,9 +88,6 @@ private:
     // フレーム単位
     // =======================================================================
 
-    // ためた FOV パンチの要求を取り出して空にする
-    std::vector<CameraFovPunchRequestEvent> TakeFovPunches();
-
     // 視点の入力を読み、入力を止める条件を決める
     FrameInput ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const;
 
@@ -146,12 +139,4 @@ private:
     // 画角を進め、姿勢を Transform と VirtualCamera へ書き出す
     void WriteCameraResult(CameraContext &c, const DirectX::SimpleMath::Vector3 &finalPos,
                            const DirectX::SimpleMath::Vector3 &viewDir) const;
-
-    // =======================================================================
-    // 届いた要求
-    // =======================================================================
-
-    // 購読は発行した System のタスクで走るので、Update と同時に触られうる
-    std::mutex                              m_punchMutex;     // m_pendingPunches を守る
-    std::vector<CameraFovPunchRequestEvent> m_pendingPunches; // まだ反映していない FOV パンチの要求
 };
