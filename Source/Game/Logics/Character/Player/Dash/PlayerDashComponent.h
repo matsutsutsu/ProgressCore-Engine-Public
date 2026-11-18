@@ -11,6 +11,7 @@ struct PlayerDashComponent
     float dashCooldown     = 0.5f;  // 次に出せるまでの待ち（秒）
     float justEvadeWindow  = 0.08f; // 開始からジャスト回避を受け付ける長さ（秒）
     float invincibleWindow = 0.06f; // 回避が終わった後も残る無敵の長さ（秒）
+    float cameraFovOffset  = 20.0f; // ダッシュ中にカメラの画角へ足す量（度）。スピード感を出す
 
     // --- 実行時の状態 ---
 

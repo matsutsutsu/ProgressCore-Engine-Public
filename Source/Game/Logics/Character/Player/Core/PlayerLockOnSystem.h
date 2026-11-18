@@ -29,6 +29,7 @@ public:
     void Update(float dt) override;
 
     std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
 
 private:
     using Base = CCL::ECS::IfSystem<

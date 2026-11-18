@@ -1,5 +1,5 @@
 #pragma once
-// アクション向け TPS カメラの調整値と実行時の状態。挙動は CameraActionTPSSystem が計算する
+// アクション向け TPS カメラの調整値と実行時の状態。挙動は PlayerCameraSystem が計算する
 // ロックオンの状態（lockOnTarget / isLockOnActive）は、ゲーム側の PlayerLockOnSystem が毎フレーム書く
 
 #include "Engine/Serialization/Core/EntityLink.h"
@@ -23,7 +23,7 @@ struct CameraFramingParams
     CCL::ECS::EntityID focusTarget = CCL::ECS::InvalidEntityID; // 注視点を寄せる先。Invalid なら寄せない
 };
 
-struct CameraBodyTPSComponent
+struct PlayerCameraComponent
 {
     // --- ターゲット ---
     CCL::Serialization::EntityLink target;                            // 追従対象の Entity
@@ -31,19 +31,15 @@ struct CameraBodyTPSComponent
 
     // --- 距離と画角 ---
     float distance = 6.0f;  // ターゲットからの基本距離（m）
-    float baseFov  = 45.0f; // 通常時の画角（度）
-    float dashFov  = 70.0f; // wideFovRequest 中の画角（度）
-    // 画角を dashFov 側へ広げてほしいという要求。ゲーム側（PlayerDashSystem 等）が毎フレーム設定する
-    // カメラがゲーム固有の PlayerDashComponent を読みに行かずに済むようにするためのフィールド
-    bool wideFovRequest = false;
+    float baseFov  = 45.0f; // 通常時の画角（度）。ダッシュ・ラッシュでの変化は framingOverrides の fovOffset で足す
 
     // --- 構図の上書き（演出からの要求） ---
     // 演出側が自分の発生源キーでスロットを取り、毎フレーム値と weight を書く。終わったら Release
     // 1本の bool を共有すると、後から走る書き手が毎フレーム false を書いて他の演出を潰すため、
-    // 発生源ごとに分けて CameraActionTPSSystem が1か所で合成する。保存しない
+    // 発生源ごとに分けて PlayerCameraSystem が1か所で合成する。保存しない
     PostEffectOverrides<CameraFramingParams, 4> framingOverrides;
 
-    float framingFollowDamping = 30.0f; // 上書き中、距離を外へ広げる速さ（地形で寄った後の戻しより速くする）
+    float framingFollowDamping = 30.0f; // 距離を動かす上書きの間、距離を外へ広げる速さ（地形で寄った後の戻しより速くする）
     float framingMaxLookShift  = 4.0f;  // 上書きで注視点を寄せる量の上限（m）。プレイヤーを画面内に残す
 
     // --- オービット（回転） ---

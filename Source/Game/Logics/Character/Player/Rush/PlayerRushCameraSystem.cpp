@@ -6,7 +6,8 @@
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Camera/CameraEvents.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/Time/TimeService.h"
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Core/GameEvents.h"
@@ -42,7 +43,7 @@ namespace
 std::vector<TypeID> PlayerRushCameraSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
-    types.push_back(TypeInfo<CameraBodyTPSComponent>::ID()); // 構図の上書きスロット
+    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // 構図の上書きスロット
     return types;
 }
 
@@ -70,7 +71,7 @@ void PlayerRushCameraSystem::Update(float dt)
     ForEachWithID([&](EntityID                   id,
                       PlayerRushCameraComponent &cam,
                       const PlayerRushComponent &rush) {
-        const EntityID cameraID = FindCamera(id);
+        const EntityID cameraID = FindPlayerCamera(*m_world, id);
 
         // ---------------------------------------------------------
         // 1. 開始・斬りの瞬間
@@ -127,7 +128,7 @@ void PlayerRushCameraSystem::Update(float dt)
         // 3. カメラへ書く
         // ---------------------------------------------------------
 
-        auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<CameraBodyTPSComponent>(cameraID) : nullptr;
+        auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
         if (!tps) return;
 
         if (cam.weight <= 0.0f)
@@ -235,11 +236,11 @@ void PlayerRushCameraSystem::SpringStep(float &x, float &v, float goal, float om
 
 float PlayerRushCameraSystem::DecideYawSign(const PlayerRushComponent &rush, EntityID cameraID) const
 {
-    const auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<CameraBodyTPSComponent>(cameraID) : nullptr;
+    const auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
     if (!tps) return 1.0f;
 
     // カメラの水平の前方
-    // CameraActionTPSSystem はカメラを pivot から (cos yaw, sin yaw) の向きに置くので、前方はその逆
+    // PlayerCameraSystem はカメラを pivot から (cos yaw, sin yaw) の向きに置くので、前方はその逆
     const float yawRad = DirectX::XMConvertToRadians(tps->currentYaw);
     const float fwdX   = -std::cos(yawRad);
     const float fwdZ   = -std::sin(yawRad);
@@ -278,23 +279,6 @@ void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, E
 // ---------------------------------------------------------------------------
 // 探索
 // ---------------------------------------------------------------------------
-
-EntityID PlayerRushCameraSystem::FindCamera(EntityID playerID) const
-{
-    EntityID found = InvalidEntityID;
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-        if (found != InvalidEntityID) return;
-
-        const auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (tps && tps->target.id == playerID)
-        {
-            found = camID;
-        }
-    });
-    return found;
-}
-
-
 
 // 注視点を寄せる先として、ラッシュの相手を返す
 EntityID PlayerRushCameraSystem::PickFocusTarget(const PlayerRushComponent &rush) const

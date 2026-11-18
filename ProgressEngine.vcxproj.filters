@@ -1782,7 +1782,7 @@
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h">
       <Filter>Source\Engine\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponent.h">
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraComponent.h">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
@@ -1794,7 +1794,7 @@
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Camera\CameraActionTPSSystem.h">
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraSystem.h">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h">
@@ -1828,6 +1828,9 @@
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraLookup.h">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.h">
@@ -2953,6 +2956,9 @@
     <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraLookup.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
@@ -2986,7 +2992,7 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerActionVfxSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Feedback</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Camera\CameraBodyActionTPSComponentMeta.cpp">
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraComponentMeta.cpp">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">
@@ -2998,7 +3004,7 @@
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Camera\CameraActionTPSSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraSystem.cpp">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp">

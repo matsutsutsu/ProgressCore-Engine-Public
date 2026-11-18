@@ -1,6 +1,6 @@
 #include "Game/Logics/Camera/CameraTargetBindSystem.h"
 
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
@@ -49,7 +49,7 @@ void CameraTargetBindSystem::Update(float dt)
         if (auto *aim = m_world->GetComponent<CameraAimLookAt>(camID))
             BindIfInvalid(aim->target, playerId);
 
-        if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID))
+        if (auto *tps = m_world->GetComponent<PlayerCameraComponent>(camID))
             BindIfInvalid(tps->target, playerId);
     });
 }

@@ -8,6 +8,7 @@ CFIELD_FLOAT_RANGED(dashDuration, "ダッシュ継続時間", 0.01f, 0.0f, 5.0f,
 CFIELD_FLOAT_RANGED(dashCooldown, "ダッシュ再使用時間", 0.01f, 0.0f, 10.0f, "設定")
 CFIELD_FLOAT_RANGED(justEvadeWindow, "ジャスト回避受付時間", 0.01f, 0.0f, 10.0f, "設定")
 CFIELD_FLOAT_RANGED(invincibleWindow, "回避の無敵時間", 0.01f, 0.0f, 2.0f, "設定")
+CFIELD_FLOAT_RANGED(cameraFovOffset, "ダッシュ中の画角の足し込み", 0.5f, -30.0f, 60.0f, "設定")
 
 CFIELD(isDashing, "ダッシュ中", "状態")
 CFIELD(isInvincible, "無敵中", "状態")

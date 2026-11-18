@@ -1,4 +1,4 @@
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Engine/Serialization/Meta/ComponentDefine.h"
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
@@ -18,11 +18,11 @@ static void Help(const char *text) { ComponentMetaImGui::Help(text); }
 #endif
 
 template <>
-struct ComponentMeta<CameraBodyTPSComponent>
+struct ComponentMeta<PlayerCameraComponent>
 {
-    CCL_META_USING_THIS(CameraBodyTPSComponent)
+    CCL_META_USING_THIS(PlayerCameraComponent)
 
-    static constexpr const char *displayName       = "Camera Body Action TPS";
+    static constexpr const char *displayName       = "Player Camera";
     static constexpr const char *category          = CCL::Categories::Camera;
     static constexpr int         sortPriority      = 350;
     static constexpr bool        hiddenInInspector = false;
@@ -30,7 +30,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
-    static bool CustomGui(CameraBodyTPSComponent &comp, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
+    static bool CustomGui(PlayerCameraComponent &comp, unsigned long long /*entityID*/ = 0, void * /*world*/ = nullptr)
     {
         namespace mi = ComponentMetaImGui;
         bool changed = false;
@@ -144,11 +144,8 @@ struct ComponentMeta<CameraBodyTPSComponent>
         changed |= mi::DragFloat(u8"基本視野角", &comp.baseFov, 0.1f, 10.0f, 120.0f, u8"変数名: baseFov");
         Help(u8"通常時の視野角(FOV)。\n"
              u8"大きいほど広い範囲が映り、画面の遠近感が強くなります。\n"
-             u8"小さいほど望遠レンズのようになります。");
-
-        changed |= mi::DragFloat(u8"ダッシュ視野角", &comp.dashFov, 0.1f, 10.0f, 160.0f, u8"変数名: dashFov");
-        Help(u8"ダッシュ中の視野角(FOV)。\n"
-             u8"大きくするとダッシュ時にスピード感が強くなります。");
+             u8"小さいほど望遠レンズのようになります。\n"
+             u8"ダッシュ中の広がりは Player Dash Component の「ダッシュ中の画角の足し込み」で決めます。");
 
         ImGui::SeparatorText(u8"回転・オービット");
 
@@ -210,7 +207,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
              u8"小さいほど遅れて追従し、ゴムのような動きになります。");
 
         changed |= mi::DragFloat(u8"視野角補間速度", &comp.fovDamping, 0.1f, 0.0f, 50.0f, u8"変数名: fovDamping");
-        Help(u8"通常FOVとダッシュFOVの切り替わり速度。\n"
+        Help(u8"目標の視野角（基本視野角＋演出の足し込み）へ寄る速さ。\n"
              u8"大きいほど素早く変化します。\n"
              u8"小さいほどゆっくり滑らかに変化します。");
 
@@ -218,7 +215,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
 
         changed |= mi::DragFloat(u8"上書き中の引く速さ", &comp.framingFollowDamping, 0.5f, 1.0f, 100.0f, u8"変数名: framingFollowDamping");
         Help(u8"演出（ラッシュなど）がカメラを引くときの追従の速さ。\n"
-             u8"地形に当たっていないときだけ使います。\n"
+             u8"距離を動かす演出の間で、地形に当たっていないときだけ使います。\n"
              u8"小さいと引きが演出に間に合いません。");
 
         changed |= mi::DragFloat(u8"上書きの注視ずれ上限", &comp.framingMaxLookShift, 0.1f, 0.0f, 15.0f, u8"変数名: framingMaxLookShift");
@@ -267,7 +264,7 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 
 #else
-    static bool CustomGui(CameraBodyTPSComponent &, unsigned long long, void *)
+    static bool CustomGui(PlayerCameraComponent &, unsigned long long, void *)
     {
         return false;
     }
@@ -281,7 +278,6 @@ struct ComponentMeta<CameraBodyTPSComponent>
             CFIELD_FLOAT_RANGED(distance, "カメラ距離", 0.1f, 1.0f, 100.0f, "Positioning")
 
             CFIELD_FLOAT_RANGED(baseFov, "基本視野角", 1.0f, 10.0f, 120.0f, "Dynamic Lens")
-            CFIELD_FLOAT_RANGED(dashFov, "ダッシュ視野角", 1.0f, 10.0f, 160.0f, "Dynamic Lens")
 
             CFIELD_FLOAT_RANGED(currentPitch, "初期ピッチ角", 1.0f, -85.0f, 85.0f, "Orbit Settings")
             CFIELD_FLOAT_RANGED(currentYaw, "初期ヨー角", 1.0f, -360.0f, 360.0f, "Orbit Settings")
@@ -327,5 +323,5 @@ struct ComponentMeta<CameraBodyTPSComponent>
     }
 };
 
-REGISTER_COMPONENT(CameraBodyTPSComponent, "CameraBodyTPS")
-REGISTER_COMPONENT_EDITOR_GUI(CameraBodyTPSComponent)
+REGISTER_COMPONENT(PlayerCameraComponent, "PlayerCamera")
+REGISTER_COMPONENT_EDITOR_GUI(PlayerCameraComponent)

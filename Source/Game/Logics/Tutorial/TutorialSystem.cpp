@@ -5,7 +5,8 @@
 #include "Engine/Time/TimeService.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Engine/Time/Components/TimeState.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/Animation/Core/AnimStateMachine.h"
 
 #include "Game/Core/GameEvents.h"
@@ -98,7 +99,7 @@ std::vector<TypeID> TutorialSystem::GetReadTypes() const
         TypeInfo<TransformComponent>::ID(),        // ドローンの位置
         TypeInfo<TimeStateComponent>::ID(),        // ドローンが進んだ時間
         TypeInfo<BossCommandComponent>::ID(),      // ボスが組ませている陣形
-        TypeInfo<CameraBodyTPSComponent>::ID(),    // 視点の項目のカメラ
+        TypeInfo<PlayerCameraComponent>::ID(),     // 視点の項目のカメラ
         TypeInfo<PlayerComponent>::ID(),           // ロックオン先
         TypeInfo<AnimStateMachineComponent>::ID(), // 出た攻撃
         TypeInfo<PlayerDashComponent>::ID(),       // 補助スロー中にダッシュしたか
@@ -405,12 +406,8 @@ float TutorialSystem::AccumulateMove(const BattleContext &battle)
 
 float TutorialSystem::AccumulateLook(EntityID playerID)
 {
-    // このプレイヤーを映している TPS カメラを探す（PlayerLockOnSystem と同じ探し方）
-    const CameraBodyTPSComponent *camera = nullptr;
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-        const auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (tps && tps->target.id == playerID) camera = tps;
-    });
+    // このプレイヤーを映している TPS カメラを探す
+    const auto *camera = m_world->GetComponent<PlayerCameraComponent>(FindPlayerCamera(*m_world, playerID));
     if (!camera) return m_lookAngle;
 
     // 前のフレームからの差を、左右どちらに回したかに関係なく足していく

@@ -1,6 +1,6 @@
 #pragma once
 // ===========================================================================
-// 概要: CameraBodyTPSComponent を持つカメラの位置・向き・画角を毎フレーム計算する System
+// 概要: PlayerCameraComponent を持つカメラの位置・向き・画角を毎フレーム計算する System
 //
 // 責務:
 //   - スティックとマウスの入力でオービット角を更新し、ロックオン中はヨーとピッチを自動で補正する
@@ -15,25 +15,29 @@
 
 #include "Engine/ECS/System/CCL_IfSystem.h"
 #include "Engine/Camera/Components/VirtualCameraComponents.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Engine/Transform/Components/TransformComponent.h"
+#include "Game/Core/GameEvents.h"
 
 #include <memory>
+#include <mutex>
+#include <vector>
 
 class IInputAPI;
 class IPhysicsAPI;
 
-class CameraActionTPSSystem : public CCL::ECS::IfSystem<
-    CameraActionTPSSystem,
+class PlayerCameraSystem : public CCL::ECS::IfSystem<
+    PlayerCameraSystem,
     CCL::ECS::Write<VirtualCamera>,
-    CCL::ECS::Write<CameraBodyTPSComponent>, // 内部状態(Pitch/Yaw等)を更新するためWrite
-    CCL::ECS::Write<TransformComponent>>     // カメラ自身のTransformを確定させるためWrite
+    CCL::ECS::Write<PlayerCameraComponent>, // 内部状態(Pitch/Yaw等)を更新するためWrite
+    CCL::ECS::Write<TransformComponent>>    // カメラ自身のTransformを確定させるためWrite
 {
 public:
-    CameraActionTPSSystem() : IfSystem("CameraActionTPSSystem") {}
-    virtual ~CameraActionTPSSystem() = default;
+    PlayerCameraSystem() : IfSystem("PlayerCameraSystem") {}
+    virtual ~PlayerCameraSystem() = default;
 
-    // FOV パンチ要求（CameraFovPunchRequestEvent）の購読を登録する
+    // FOV パンチ要求（CameraFovPunchRequestEvent）の購読を始める
+    // 購読では要求をためるだけにして、画角を書き換えるのは Update にする（揺れの CameraShakeSystem と同じ形）
     void Initialize() override;
 
     // 全 TPS カメラの位置・向き・画角を、このフレームの分だけ確定させる
@@ -69,7 +73,7 @@ private:
     struct CameraContext
     {
         VirtualCamera            &vcam;    // このカメラが出す答え（Brain が読む）
-        CameraBodyTPSComponent   &tps;     // 調整値と実行時状態
+        PlayerCameraComponent    &tps;     // 調整値と実行時状態
         TransformComponent       &trans;   // カメラ自身の Transform
         const TransformComponent &target;  // 追従対象。必ず存在する
         const TransformComponent *enemy;   // ロックオン対象。していなければ nullptr（所有しない）
@@ -77,13 +81,16 @@ private:
         IPhysicsAPI              *physics; // 地形判定用。nullptr なら衝突回避をしない（所有しない）
         float                     dt;      // このフレームの経過時間（秒）
 
-        CameraFramingParams framing{};             // 演出の上書きを合成した足し込み量（UpdateCamera の先頭で決める）
-        bool                framingActive = false; // 効いている上書きが1つでもあるか
+        CameraFramingParams framing{};                    // 演出の上書きを合成した足し込み量（UpdateCamera の先頭で決める）
+        bool                framingMovesDistance = false; // 距離を動かしている上書きが1つでもあるか（距離を外へ戻す速さの切り替えに使う）
     };
 
     // =======================================================================
     // フレーム単位
     // =======================================================================
+
+    // ためた FOV パンチ要求を取り出して空にする
+    std::vector<CameraFovPunchRequestEvent> TakeFovPunches();
 
     // 視点入力を読み、入力を無効にする条件を確定する
     FrameInput ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const;
@@ -91,7 +98,7 @@ private:
     // カメラ1台分の姿勢を確定させる。このカメラがカーソルの固定を求めるなら true
     bool UpdateCamera(CameraContext &c) const;
 
-    // 演出の上書きスロットを priority の小さい順に合成し、c.framing / c.framingActive へ入れる
+    // 演出の上書きスロットを priority の小さい順に合成し、c.framing / c.framingMovesDistance へ入れる
     // 足し込み量は weight を掛けて足す。注視点の寄せ先は、後に重なる方（priority の大きい方）を採る
     void ResolveFraming(CameraContext &c) const;
 
@@ -138,4 +145,12 @@ private:
     // 画角を進め、確定した姿勢を Transform と VirtualCamera へ書き出す
     void WriteCameraResult(CameraContext &c, const DirectX::SimpleMath::Vector3 &finalPos,
                            const DirectX::SimpleMath::Vector3 &backwardDir) const;
+
+    // =======================================================================
+    // 届いた要求
+    // =======================================================================
+
+    // 購読は発行した System のタスクで走るので、Update と同時に触られうる。mutex で守る
+    std::mutex                              m_punchMutex;
+    std::vector<CameraFovPunchRequestEvent> m_pendingPunches; // まだ反映していない FOV パンチ要求
 };

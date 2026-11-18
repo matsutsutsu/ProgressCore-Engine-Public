@@ -49,14 +49,14 @@ bool BattleStartFacingSystem::TryApplyFacing()
     }
 
     // --- 追従カメラをプレイヤーの背後へ回す ---
-    // CameraActionTPSSystem と同じ規約: atan2(z, x) で度、0 が +X
+    // PlayerCameraSystem と同じ規約: atan2(z, x) で度、0 が +X
     // カメラ位置は pivot - backwardDir * distance なので、backwardDir を
     // 「プレイヤー→ボス」に合わせると、カメラはプレイヤーの背後に立ち、
     // 視線がプレイヤー越しにボスを向く
     const float camYawDeg = XMConvertToDegrees(std::atan2(toBoss.z, toBoss.x));
 
     int oriented = 0;
-    ForEach([&](CameraBodyTPSComponent &tps) {
+    ForEach([&](PlayerCameraComponent &tps) {
         // プレイヤーを追っているカメラだけが対象
         if (tps.target.id != battle.playerEntity) return;
 

@@ -5,7 +5,7 @@
 #include <DirectXMath.h>
 
 // 指定エンティティを追従している TPS カメラの画角を瞬間的に変える要求（FOVパンチ）
-// CameraActionTPSSystem が受ける。設定後は CameraBodyTPSComponent::fovDamping により自動的に元へ戻る
+// PlayerCameraSystem が受ける。設定後は PlayerCameraComponent::fovDamping により自動的に元へ戻る
 struct CameraFovPunchRequestEvent
 {
     CCL::ECS::EntityID targetID; // このエンティティを追従しているカメラが対象

@@ -12,7 +12,7 @@
 //       currentYaw は GetComponent で書いていて申告に載らないため、GetRunBefore で順序を決める
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 
 #include <vector>
 
@@ -20,7 +20,7 @@
 // （プレイヤーとカメラは別エンティティなので1つのフィルタには載らない）
 class BattleStartFacingSystem : public CCL::ECS::IfSystem<
     BattleStartFacingSystem,
-    CCL::ECS::Write<CameraBodyTPSComponent>>
+    CCL::ECS::Write<PlayerCameraComponent>>
 {
 public:
     BattleStartFacingSystem() : IfSystem("BattleStartFacingSystem") {}

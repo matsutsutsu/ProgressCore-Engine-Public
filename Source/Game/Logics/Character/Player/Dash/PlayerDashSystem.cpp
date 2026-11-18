@@ -2,12 +2,29 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Engine/Core/Math/StringHash.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Game/Logics/Combat/Components/HealthComponent.h"
 #include "Game/Core/GameEvents.h"
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
+
+namespace
+{
+    const uint32_t kCameraSource   = CCL::Utils::HashString("DashCamera"); // 構図の上書きスロットの発生源
+    constexpr int  kCameraPriority = 0;                                    // 他の演出と重なったときの順（大きいほど後）。ラッシュは 10
+}
+
+std::vector<TypeID> PlayerDashSystem::GetWriteTypes() const
+{
+    auto types = Base::GetWriteTypes();
+    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // カメラの構図の上書きスロット
+    return types;
+}
+
+
 
 void PlayerDashSystem::Update(float rawDt)
 {
@@ -27,7 +44,7 @@ void PlayerDashSystem::Update(float rawDt)
         // ダッシュしていないときの歩き・走りは、後に走る PlayerMoveSystem が書く
         UpdateDash(dash, player, dashPressed, movement, trans, time, id);
 
-        PushWideFovRequest(id, dash.isDashing);
+        PushCameraFraming(id, dash);
     });
 }
 
@@ -129,16 +146,26 @@ void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &pl
 
 
 
-void PlayerDashSystem::PushWideFovRequest(EntityID playerID, bool wide)
+// ダッシュ中は画角の足し込みをカメラの上書きスロットへ書き、終わったら手放す
+void PlayerDashSystem::PushCameraFraming(EntityID playerID, const PlayerDashComponent &dash)
 {
-    // 状態を持つゲーム側から書く
-    // カメラ（Engine）が PlayerDashComponent（Game）を読まずに済む
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-        auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (!tps || tps->target.id != playerID) return;
+    // 状態を持つゲーム側から書く。カメラはダッシュを知らず、足し込み量だけを受け取る
+    // 画角は weight を 0/1 で切り替えるだけでいい。カメラ側が fovDamping でなめらかに寄せる
+    auto *tps = m_world->GetComponent<PlayerCameraComponent>(FindPlayerCamera(*m_world, playerID));
+    if (!tps) return;
 
-        tps->wideFovRequest = wide;
-    });
+    if (!dash.isDashing)
+    {
+        tps->framingOverrides.Release(kCameraSource);
+        return;
+    }
+
+    if (auto *slot = tps->framingOverrides.Acquire(kCameraSource, kCameraPriority))
+    {
+        slot->weight           = 1.0f;
+        slot->params           = CameraFramingParams{};
+        slot->params.fovOffset = dash.cameraFovOffset;
+    }
 }
 
 

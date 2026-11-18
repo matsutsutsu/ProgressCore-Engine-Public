@@ -1,8 +1,7 @@
-#include "Game/Logics/Camera/CameraActionTPSSystem.h"
+#include "Game/Logics/Camera/PlayerCameraSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Core/Math/Interpolation.h"
-#include "Game/Core/GameEvents.h"
 
 #include "Engine/Physics/Components/Character/CharacterMovementComponent.h"
 #include "Engine/Physics/JoltIntegration/IPhysicsAPI.h"
@@ -15,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <utility>
 
 using namespace CCL::ECS;
 using namespace DirectX;
@@ -34,19 +34,24 @@ constexpr float kHeadLiftEpsilon = 0.001f;
 constexpr float kMinLength = 1e-4f;
 }
 
-void CameraActionTPSSystem::Initialize()
+// FOV パンチ要求の購読を始める。ここではためるだけ
+void PlayerCameraSystem::Initialize()
 {
-    // 画角の瞬間的な変化(FOVパンチ)要求を受信する
+    // ここで VirtualCamera を書き換えると、書いているのは発行した System（申告は Read）になってしまう
+    // 書き込みを Update の1か所に閉じるため、要求だけを受け止める
     ListenEvent<CameraFovPunchRequestEvent>([this](const CameraFovPunchRequestEvent &ev) {
-        ForEach([&](VirtualCamera &vcam, const CameraBodyTPSComponent &tps, TransformComponent &trans) {
-            if (tps.target.id == ev.targetID)
-            {
-                // 画角を瞬間的に変える。次のフレームから Update の fovDamping による
-                // 指数減衰で目標の画角へ戻る
-                vcam.fov = ev.fov;
-            }
-        });
+        std::lock_guard lock(m_punchMutex);
+        m_pendingPunches.push_back(ev);
     });
+}
+
+
+
+// ためた FOV パンチ要求を取り出して空にする
+std::vector<CameraFovPunchRequestEvent> PlayerCameraSystem::TakeFovPunches()
+{
+    std::lock_guard lock(m_punchMutex);
+    return std::exchange(m_pendingPunches, {});
 }
 
 
@@ -55,12 +60,15 @@ void CameraActionTPSSystem::Initialize()
 // フレーム単位
 // ---------------------------------------------------------------------------
 
-void CameraActionTPSSystem::Update(float dt)
+void PlayerCameraSystem::Update(float dt)
 {
     // 描画ステージなのでポーズ中も走る。実時間 dt のまま減衰を進めると、止まった世界へ
     // カメラだけが追いつこうとして動くので、ポーズ中は dt=0 で回して姿勢を凍結する
     // return で抜けないのは、末尾のカーソルロック解除（ポーズメニュー用）を走らせるため
     dt = Time::PresentationDt(*m_world, dt);
+
+    // 届いた FOV パンチ要求を取り出す。下で抜けても、古い要求を次のフレームへ持ち越さない
+    const std::vector<CameraFovPunchRequestEvent> punches = TakeFovPunches();
 
     // 1. 今のフレームの視点入力と、入力を無効にする条件を確定する
     //    カメラが何台あっても入力は共通なので、ここで1度だけ読む
@@ -79,7 +87,12 @@ void CameraActionTPSSystem::Update(float dt)
     //    戻り値は「このカメラがカーソル固定を要求するか」。1台でも要求すれば固定する
     bool wantCursorLock = false;
 
-    ForEach([&](VirtualCamera &vcam, CameraBodyTPSComponent &tps, TransformComponent &trans) {
+    ForEach([&](VirtualCamera &vcam, PlayerCameraComponent &tps, TransformComponent &trans) {
+        // このカメラが追う相手への FOV パンチを反映する。画角を瞬間的に変え、
+        // 下の UpdateCamera から fovDamping の指数減衰で目標の画角へ戻っていく
+        for (const CameraFovPunchRequestEvent &punch : punches)
+            if (punch.targetID == tps.target.id) vcam.fov = punch.fov;
+
         // 追従対象。R00b の CameraTargetBindSystem が解決済み。まだ結び付いていない
         // フレーム（プレハブ生成直後など）は、このカメラを何もせず飛ばす
         auto *targetTrans = m_world->GetComponent<TransformComponent>(tps.target.id);
@@ -113,8 +126,8 @@ void CameraActionTPSSystem::Update(float dt)
 
 
 
-CameraActionTPSSystem::FrameInput
-CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const
+PlayerCameraSystem::FrameInput
+PlayerCameraSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI) const
 {
     FrameInput in;
 
@@ -145,7 +158,7 @@ CameraActionTPSSystem::ReadFrameInput(const std::shared_ptr<IInputAPI> &inputAPI
 
 
 
-bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
+bool PlayerCameraSystem::UpdateCamera(CameraContext &c) const
 {
     // ロックオンの処理は1箇所にまとまっていない。カメラの向きは 1、画面の構図は 2 が持つ
     // 狙う相手の決定と解除は本システムの外（ゲーム側の PlayerLockOnSystem）の役割
@@ -182,15 +195,17 @@ bool CameraActionTPSSystem::UpdateCamera(CameraContext &c) const
 
 
 
-void CameraActionTPSSystem::ResolveFraming(CameraContext &c) const
+void PlayerCameraSystem::ResolveFraming(CameraContext &c) const
 {
     // 足し込み量は weight を掛けて足すだけでよい（順番に依らない）
     // 注視点の寄せ先は1つしか持てないので、後に重なる方（priority が大きい方）で上書きする
     CameraFramingParams sum{};
-    bool                active = false;
+    bool                movesDistance = false;
 
     c.tps.framingOverrides.ForEachActive([&](const CameraFramingParams &p, float w) {
-        active = true;
+        // 距離を外へ戻す速さを切り替えるのは、距離を動かす上書き（ラッシュの引きなど）だけにする
+        // 画角だけの上書き（ダッシュ）で切り替えると、壁で寄ったカメラがダッシュ中だけ速く戻ってしまう
+        if (p.distanceOffset != 0.0f) movesDistance = true;
 
         sum.distanceOffset += p.distanceOffset * w;
         sum.fovOffset += p.fovOffset * w;
@@ -206,8 +221,8 @@ void CameraActionTPSSystem::ResolveFraming(CameraContext &c) const
         }
     });
 
-    c.framing       = sum;
-    c.framingActive = active;
+    c.framing              = sum;
+    c.framingMovesDistance = movesDistance;
 }
 
 
@@ -216,7 +231,7 @@ void CameraActionTPSSystem::ResolveFraming(CameraContext &c) const
 // どの向きから見るか（オービット角）
 // ---------------------------------------------------------------------------
 
-void CameraActionTPSSystem::UpdateOrbitAngles(CameraContext &c) const
+void PlayerCameraSystem::UpdateOrbitAngles(CameraContext &c) const
 {
     // 同じ currentYaw / currentPitch を上から順に上書きしていく
     // 順序そのものが仕様なので、並べ替えると挙動が変わる
@@ -263,7 +278,7 @@ void CameraActionTPSSystem::UpdateOrbitAngles(CameraContext &c) const
 
 
 
-void CameraActionTPSSystem::ApplyManualLook(CameraContext &c) const
+void PlayerCameraSystem::ApplyManualLook(CameraContext &c) const
 {
     auto       &tps = c.tps;
     const auto &in  = c.in;
@@ -284,7 +299,7 @@ void CameraActionTPSSystem::ApplyManualLook(CameraContext &c) const
 
 
 
-void CameraActionTPSSystem::ApplyLockOnYawAssist(CameraContext &c) const
+void PlayerCameraSystem::ApplyLockOnYawAssist(CameraContext &c) const
 {
     auto &tps = c.tps;
 
@@ -322,7 +337,7 @@ void CameraActionTPSSystem::ApplyLockOnYawAssist(CameraContext &c) const
 
 
 
-void CameraActionTPSSystem::ApplyLockOnPitchAssist(CameraContext &c) const
+void PlayerCameraSystem::ApplyLockOnPitchAssist(CameraContext &c) const
 {
     // ロックオン中は見上げ角を lockOnPitch へ寄せ続け、カメラを低く構える
     // ドローンが上空から来るので、注視点はそのままに、頭上の空を画面に入れる
@@ -340,7 +355,7 @@ void CameraActionTPSSystem::ApplyLockOnPitchAssist(CameraContext &c) const
 // どこを中心に、どこへ置くか
 // ---------------------------------------------------------------------------
 
-float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
+float PlayerCameraSystem::UpdateFraming(CameraContext &c) const
 {
     auto &tps = c.tps;
 
@@ -433,7 +448,7 @@ float CameraActionTPSSystem::UpdateFraming(CameraContext &c) const
 
 
 
-Vector3 CameraActionTPSSystem::ComputeBackwardDir(float yawDeg, float pitchDeg)
+Vector3 PlayerCameraSystem::ComputeBackwardDir(float yawDeg, float pitchDeg)
 {
     const float pitchRad = XMConvertToRadians(pitchDeg);
     const float yawRad   = XMConvertToRadians(yawDeg);
@@ -449,7 +464,7 @@ Vector3 CameraActionTPSSystem::ComputeBackwardDir(float yawDeg, float pitchDeg)
 
 
 
-Vector3 CameraActionTPSSystem::ResolveCameraPosition(CameraContext &c, const Vector3 &backwardDir,
+Vector3 PlayerCameraSystem::ResolveCameraPosition(CameraContext &c, const Vector3 &backwardDir,
                                                      float desiredDistance) const
 {
     // 判定するのは地形(NON_MOVING)だけ。間をドローンやボスが横切ってもカメラは寄らない
@@ -477,12 +492,12 @@ Vector3 CameraActionTPSSystem::ResolveCameraPosition(CameraContext &c, const Vec
 
     // 2. 寄せ量を補間して、カメラ位置を出す
     //    fast-in / slow-out：内側へ寄せるのは素早く、外側へ戻すのはゆっくり補間する
-    //    ただし演出の上書き中で地形に当たっていないときは、外へも速く広げる
+    //    ただし距離を動かす上書きの間で地形に当たっていないときは、外へも速く広げる
     //    引きの速さは演出側が自分でイーズしているので、ここでさらに遅らせると引きが間に合わない
     float colDamping = tps.collisionInDamping;
     if (resolvedDist >= tps.currentCamDistance)
     {
-        colDamping = (c.framingActive && !blocked)
+        colDamping = (c.framingMovesDistance && !blocked)
                          ? (std::max)(tps.collisionOutDamping, tps.framingFollowDamping)
                          : tps.collisionOutDamping;
     }
@@ -513,7 +528,7 @@ Vector3 CameraActionTPSSystem::ResolveCameraPosition(CameraContext &c, const Vec
 
 
 
-Vector3 CameraActionTPSSystem::ResolveHeadLiftCollision(const CameraContext &c,
+Vector3 PlayerCameraSystem::ResolveHeadLiftCollision(const CameraContext &c,
                                                         const Vector3 &liftedPos) const
 {
     // 持ち上げた先は、距離を決めたときのレイキャストの経路上にない（Y方向へずらしたため）
@@ -543,14 +558,12 @@ Vector3 CameraActionTPSSystem::ResolveHeadLiftCollision(const CameraContext &c,
 // 出力
 // ---------------------------------------------------------------------------
 
-void CameraActionTPSSystem::WriteCameraResult(CameraContext &c, const Vector3 &finalPos,
+void PlayerCameraSystem::WriteCameraResult(CameraContext &c, const Vector3 &finalPos,
                                               const Vector3 &backwardDir) const
 {
     // 1. 画角を要求値へ寄せる
-    //    「広げたい」という要求はゲーム側(PlayerDashSystem 等)が wideFovRequest へ
-    //    書き込む。カメラは理由を知らずに要求だけを見る
-    //    演出の上書きの画角は、その上に足し込む
-    const float targetFov = (c.tps.wideFovRequest ? c.tps.dashFov : c.tps.baseFov) + c.framing.fovOffset;
+    //    普段の画角に、演出の上書き（ダッシュ・ラッシュなど）の足し込みを足す。カメラは理由を知らない
+    const float targetFov = c.tps.baseFov + c.framing.fovOffset;
     const float fovBlend  = CCL::Math::Damp(c.tps.fovDamping, c.dt);
 
     c.vcam.fov = std::lerp(c.vcam.fov, targetFov, fovBlend);
@@ -591,4 +604,4 @@ void CameraActionTPSSystem::WriteCameraResult(CameraContext &c, const Vector3 &f
 
 
 // R01_Camera ステージで姿勢を確定させ、CameraBrainSystem(R01b) がそれを読む
-REGISTER_RENDER_SYSTEM(CameraActionTPSSystem, Priority::RenderStage::R01_Camera);
+REGISTER_RENDER_SYSTEM(PlayerCameraSystem, Priority::RenderStage::R01_Camera);

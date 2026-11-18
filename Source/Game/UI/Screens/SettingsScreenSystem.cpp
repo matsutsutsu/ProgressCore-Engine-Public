@@ -4,7 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Audio/IAudioAPI.h"
-#include "Game/Logics/Camera/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/GamePad.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
@@ -86,8 +86,8 @@ void SettingsScreenSystem::ApplySettings()
 
     // --- カメラ ---
     // カメラは作り直されることがあるので、感度の倍率は毎フレーム書く
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID id) {
-        if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(id)) tps->sensitivityScale = s.lookSensitivity;
+    m_world->ViewEach<PlayerCameraComponent>([&](EntityID id) {
+        if (auto *tps = m_world->GetComponent<PlayerCameraComponent>(id)) tps->sensitivityScale = s.lookSensitivity;
     });
 
     // --- 音声 ---
