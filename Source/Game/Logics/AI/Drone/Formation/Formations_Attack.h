@@ -64,8 +64,6 @@ namespace CCL::AI::Formation::Attack
                                   (drone.fireDelay <= 0.0f) && (drone.chargeWindup <= 0.0f);
             if (launched) return;
 
-            drone.chargeMode = ChargeMode::Straight;
-
             const int total = (drone.totalDrones > 0) ? drone.totalDrones : 1;
 
             // --- 持ち場 ---

@@ -9,15 +9,14 @@
 //
 // 備考: どのパスをどの順で積むかは Graphics::BuildDefaultRenderPasses が決める
 //       具体的なパスの型を知らないので、パスを増減してもこのファイルは再コンパイルされない
-// @code
+//
+// 使い方:
 //    RenderPipeline pipeline;
 //    pipeline.Initialize(services); // AddPass より前に呼ぶ
 //    pipeline.AddPass<ShadowPass>();
 //    pipeline.AddPass<OpaquePass>();
 //    pipeline.AddPass<PostProcessPass>();
-//    // 毎フレーム
-//    pipeline.Execute(frameCtx);
-// @endcode
+//    pipeline.Execute(frameCtx);    // 毎フレーム
 // ===========================================================================
 #include <memory>
 #include <type_traits>

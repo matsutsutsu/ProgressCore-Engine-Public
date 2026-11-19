@@ -68,6 +68,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     // 1. 描く準備
     // ---------------------------------------------------------
 
+    // 今の描画先とビューポートを控える（4 で戻す）
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView> oldRTV;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> oldDSV;
     dc->OMGetRenderTargets(1, oldRTV.GetAddressOf(), oldDSV.GetAddressOf());
@@ -81,6 +82,7 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
     const DirectX::XMFLOAT3 lightDir =
         m_services->lightManager->GetDirectionalLight().direction;
 
+    // カメラの視錐台を分割距離で切り、カスケードごとにライトから見たビュー・プロジェクション行列を求める
     DirectX::XMMATRIX lightVPs[3];
     CalculateCascadeMatrices(
         XMLoadFloat4x4(&ctx.camera->GetView()),
@@ -108,6 +110,8 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
             SortItem item;
             item.mesh        = cmd.mesh;
             item.cascadeMask = cmd.cascadeMask;
+
+            // スキンメッシュとノードのないメッシュはエンティティの行列のまま、それ以外はノードの行列も掛ける
             if (!cmd.mesh->bones.empty() || !cmd.mesh->node)
             {
                 item.worldMatrix = cmd.worldMatrix;
@@ -145,7 +149,9 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         int64_t instanceCount = 0; // このカスケードで描いたインスタンスの数（スキンメッシュは1体1つ）
         int64_t triangleCount = 0; // このカスケードで描いた三角形の数
 
-        // --- 定数バッファ ---
+        // --- 描画先と定数バッファ ---
+
+        // このカスケードの深度をクリアして描画先にする
         shadowMap->Activate(dc, cascadeIndex);
         m_psoShadow.Apply(dc, m_services->renderState);
 
@@ -162,8 +168,12 @@ void ShadowPass::Execute(const RenderFrameContext &ctx)
         cbData.shadow_bias         = shadowMap->params.shadowBias;
         cbData.currentCascadeIndex = cascadeIndex;
         shadowMap->UpdateConstantBuffer(dc, cbData);
+
+        // 定数バッファだけをバインドする（-1 のスロットは飛ばす）
+        // 描いている最中のシャドウマップは、テクスチャとして読めない
         shadowMap->Bind(dc, -1, -1, SLOT_CB_SHADOW);
 
+        // 影用の頂点シェーダーと入力レイアウトを設定する。深度だけ書くので、ピクセルシェーダーは外す
         shader->Begin(dc, *m_services, ctx);
         dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 

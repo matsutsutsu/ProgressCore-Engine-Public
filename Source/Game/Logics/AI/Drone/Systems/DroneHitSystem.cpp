@@ -2,7 +2,6 @@
 
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
-#include "Game/Logics/AI/Drone/Motion/DroneMotion.h"
 
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -12,25 +11,11 @@
 
 using namespace CCL::ECS;
 
-namespace
-{
-    // 当たり判定を開くべきかを返す。突撃中だけ開き、その中の「当たらない区間」は動き方と技に聞く
-    bool IsDangerous(const DroneComponent &d, const CCL::AI::Formation::IFormation *formation)
-    {
-        // 離脱（Returning）は FireCharge と別の状態なので、帰り道はここで自動的に当たらなくなる
-        if (d.currentState != DroneState::FireCharge) return false;
-
-        if (formation && formation->IsHitWindowOver(d)) return false;
-
-        return CCL::AI::Motion::IsChargeDangerous(d);
-    }
-}
-
 void DroneHitSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. ダメージの帰属先（ボス）を決める
-    // 2. 機体ごとに判定を開け閉めし、陣形の当たり方を写す
+    // 2. 機体ごとに判定を開け閉めし、開いた瞬間に技の当たり方を写す
     // 3. デバッグ表示用の機数を残す
 
     // --- 帰属先 ---
@@ -55,28 +40,15 @@ void DroneHitSystem::Update(float dt)
             if (s >= 0 && s < 4) ++stateCount[s];
         }
 
+        // 技が見つからない機（命令なしの陣形）は当てない
         const auto *formation = registry ? registry->Get(drone.currentFormation) : nullptr;
-        const bool  dangerous = IsDangerous(drone, formation);
+        const bool  open      = formation && formation->IsHitOpen(drone);
 
-        // 判定が開いた瞬間に命中済みの履歴を捨てる。捨てないと2回目の突撃が同じ相手に当たらない
-        if (dangerous && !box.isActive) box.hitCount = 0;
+        // 開いた瞬間に、技の当たり方を Hitbox へ写す
+        if (open && !box.isActive) OpenHitbox(box, formation->GetCombat(), owner);
 
-        box.isActive = dangerous;
-        box.ownerID  = owner;
-
-        // ノックバックの向きは、ボスではなく実際に当てたこの機体から取る
-        box.useSelfAsHitOrigin = true;
-
-        if (!dangerous) return;
-
-        const auto combat   = formation ? formation->GetCombat() : CCL::AI::Formation::FormationCombat{};
-        box.damageAmount    = combat.damage;
-        box.knockback       = combat.knockback;
-        box.hitStopDuration = combat.hitStopDuration;
-        box.hitStopScale    = combat.hitStopScale;
-        box.rehitInterval   = combat.rehitInterval;
-
-        ++activeCount;
+        box.isActive = open;
+        if (open) ++activeCount;
     });
 
     // --- デバッグ表示 ---
@@ -85,6 +57,23 @@ void DroneHitSystem::Update(float dt)
     m_activeCount = activeCount;
     for (int i = 0; i < 4; ++i)
         m_stateCount[i] = stateCount[i];
+}
+
+
+
+void DroneHitSystem::OpenHitbox(HitboxComponent &box, const CCL::AI::Formation::FormationCombat &combat, EntityID owner) const
+{
+    box.hitCount = 0;
+    box.ownerID  = owner;
+
+    // ノックバックの向きは、ボスではなく実際に当てたこの機体から取る
+    box.useSelfAsHitOrigin = true;
+
+    box.damageAmount    = combat.damage;
+    box.knockback       = combat.knockback;
+    box.hitStopDuration = combat.hitStopDuration;
+    box.hitStopScale    = combat.hitStopScale;
+    box.rehitInterval   = combat.rehitInterval;
 }
 
 

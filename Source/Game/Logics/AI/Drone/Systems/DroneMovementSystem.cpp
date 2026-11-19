@@ -1,5 +1,6 @@
 #include "DroneMovementSystem.h"
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h"
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
 #include "Game/Logics/AI/Drone/Motion/DroneMotion.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -68,8 +69,10 @@ void DroneMovementSystem::Update(float rawDt)
     // 並列ループの中で World を引かないよう、ループの前に写し取る
     Motion::BeginMotionFrame(*m_world);
 
-    ForEachParallel([this](TransformComponent &trans, DroneComponent &drone,
-                           const TimeStateComponent &time) {
+    const auto *formations = CCL::AI::Formation::FormationRegistry::Find(*m_world);
+
+    ForEachParallel([&](TransformComponent &trans, DroneComponent &drone,
+                        const TimeStateComponent &time) {
         float dt = time.localDt; // 各機の時間。ヒットストップ中は 0 になり止まる
 
         // --- ホバーの位相 ---
@@ -94,9 +97,11 @@ void DroneMovementSystem::Update(float rawDt)
         case DroneState::Idle:
             Motion::HoldSlot(trans, drone, dt);
             break;
-        case DroneState::FireCharge:
-            Motion::MoveCharge(trans, drone, dt);
+        case DroneState::FireCharge: {
+            const ChargeMode mode = formations ? formations->ChargeModeOf(drone.currentFormation) : ChargeMode::Straight;
+            Motion::MoveCharge(trans, drone, mode, dt);
             break;
+        }
         case DroneState::Returning:
             ProcessReturning(trans, drone, dt);
             break;

@@ -1,13 +1,16 @@
-// Shader/Renderer/Trail/TrailPS.hlsl
-// 加算ブレンド(SrcAlpha, One)前提の最小ピクセルシェーダ。
-// 頂点カラー × トレイルテクスチャ を出力する。
-//   ・テクスチャ未設定のトレイルには C++ 側が 1x1 白を刺すので、白×色＝色そのまま
-//     ＝従来の単色トレイルと完全一致（後方互換）。
-//   ・テクスチャの α で輪郭形状、RGB で模様、U(長さ)方向グラデで寿命色変化が出せる。
-// rgb は事前乗算しない（ブレンドの SrcAlpha が強度を掛けるため）。
+// ===========================================================================
+// 概要: トレイルの加算の層。頂点の色にトレイルのテクスチャを掛ける
+//
+// 入力: TrailVS の出力（頂点の色・UV）
+// 出力: 色（加算ブレンド SrcAlpha, One で重ねる）
+//
+// 備考: テクスチャを設定していないトレイルには、C++ が 1x1 の白を置く。白 × 色 = 色なので、単色のトレイルになる
+//       テクスチャの α で輪郭の形、RGB で模様、U（長さの方向）のグラデーションで寿命に沿った色の変化を出せる
+//       rgb に α を掛けておかない（ブレンドの SrcAlpha が掛ける）
+// ===========================================================================
 #include "Shader/Common/Scene.hlsli"
 
-Texture2D    gTrailTex : register(t0);
+Texture2D    gTrailTex : register(REG_SRV(SLOT_SRV_TRAIL_TEX));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
 struct PSInput

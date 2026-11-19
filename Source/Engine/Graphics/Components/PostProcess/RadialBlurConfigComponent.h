@@ -26,9 +26,8 @@ struct RadialBlurConfigComponent
     float ResolvedStrength() const
     {
         float out = enable ? data.blurStrength : 0.0f;
-        overrides.ForEachActive([&out](const RadialBlurOverrideParams &p, float t) {
-            out = (std::max)(out, p.strength * t);
-        });
+        for (const auto *s : overrides.SortedActive())
+            out = (std::max)(out, s->params.strength * s->Amount());
         return out;
     }
 
@@ -39,18 +38,19 @@ struct RadialBlurConfigComponent
         GpuData::CbRadialBlurData out = data;
         out.blurStrength              = enable ? data.blurStrength : 0.0f;
 
-        overrides.ForEachActive([&](const RadialBlurOverrideParams &p, float t) {
-            const float strength = p.strength * t;
-            if (strength > out.blurStrength)
-            {
-                out.blurStrength = strength;
-                out.blurFalloff  = data.blurFalloff + (p.falloff - data.blurFalloff) * t;
-            }
-        });
+        for (const auto *s : overrides.SortedActive())
+        {
+            const float t        = s->Amount();
+            const float strength = s->params.strength * t;
+            if (strength <= out.blurStrength) continue;
+
+            out.blurStrength = strength;
+            out.blurFalloff  = data.blurFalloff + (s->params.falloff - data.blurFalloff) * t;
+        }
         return out;
     }
 
-    // 上書きの土台になる、今効いている強さと減衰。enable=false なら強さは 0（理由は色収差と同じ）
+    // 上書きの土台になる、今効いている強さと減衰（Acquire の base に渡す）。enable=false なら強さは 0（理由は色収差と同じ）
     RadialBlurOverrideParams BaseParams() const
     {
         RadialBlurOverrideParams p;

@@ -1,6 +1,7 @@
 #include "Sprite.h"
 #include "Engine/Core/Math/Misc.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
 Sprite::Sprite(ID3D11Device *device)
     : Sprite(device, nullptr)
@@ -189,8 +190,8 @@ void Sprite::Render(ID3D11DeviceContext *dc,
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     dc->VSSetShader(vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(pixelShader.Get(), nullptr, 0);
-    dc->PSSetShaderResources(0, 1, shaderResourceView.GetAddressOf());
-    dc->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+    dc->PSSetShaderResources(SLOT_SRV_SPRITE, 1, shaderResourceView.GetAddressOf());
+    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, samplerState.GetAddressOf());
 
     dc->Draw(4, 0);
 }

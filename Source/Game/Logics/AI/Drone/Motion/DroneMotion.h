@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 持ち場へ戻る動き（MoveToTarget）と、持ち場を保つ動き（Idle）
-//   - 突撃中（FireCharge）の動き。技（IFormation）が書いた drone.chargeMode で3通りに分ける
+//   - 突撃中（FireCharge）の動き。技の移動方式（IFormation::GetChargeMode）で3通りに分ける
 //       Straight    … 弾幕。タメ → 直進
 //       RigidFollow … データ陣形。持ち場に毎フレーム一致させ、形が歪まない
 //       SoftFollow  … 小隊突撃。持ち場へバネで寄り、隊列がしなる
@@ -70,13 +70,13 @@ namespace CCL::AI::Motion
     // 並列ループの前に1回だけ呼ぶ。ループの中で World を引かないため
     void BeginMotionFrame(CCL::ECS::World &world);
 
-    // 突撃中の速度と姿勢を決める。drone.chargeMode で動き方を選ぶ
-    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt);
+    // 突撃中の速度と姿勢を、技の移動方式 mode の動き方で決める
+    void MoveCharge(TransformComponent &trans, DroneComponent &drone, ChargeMode mode, float dt);
 
     // 突撃中（FireCharge）のこの機に、当たり判定を開けてよいかを返す
     // 動き方ごとの当たらない区間（直進なら発射待ちとタメ）だけを答える
     // DroneBrainSystem は、もう飛び出したかの判定にも使う
-    bool IsChargeDangerous(const DroneComponent &drone);
+    bool IsChargeDangerous(const DroneComponent &drone, ChargeMode mode);
 
     // 直進の突撃を始める（IFormation::OnChargeBegin の既定）。FireCharge へ入った瞬間に1回だけ呼ぶ
     // 撃つ方向は、陣形が書いていればそれ、なければプレイヤーへ向け、突撃中は変えない

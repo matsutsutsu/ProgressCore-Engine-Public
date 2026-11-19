@@ -51,6 +51,13 @@ namespace CCL::AI::Formation
 
         bool Has(DroneFormationType type) const { return Get(type) != nullptr; }
 
+        // 陣形の突撃中の移動方式を返す。未登録なら直進
+        ChargeMode ChargeModeOf(DroneFormationType type) const
+        {
+            const IFormation *formation = Get(type);
+            return formation ? formation->GetChargeMode() : ChargeMode::Straight;
+        }
+
         // 登録済みの全陣形の IFormation::BeginFrame を呼ぶ
         void BeginFrame(CCL::ECS::World &world)
         {

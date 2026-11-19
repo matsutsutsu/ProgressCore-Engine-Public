@@ -254,7 +254,7 @@ void Graphics::UnbindAllResources(ID3D11DeviceContext *dc)
     dc->PSSetConstantBuffers(SLOT_CB_LIGHT, 1, &nullCB);
     dc->VSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
     dc->PSSetConstantBuffers(SLOT_CB_SHADOW, 1, &nullCB);
-    dc->PSSetSamplers(0, 1, &nullSampler);
+    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &nullSampler);
     dc->PSSetSamplers(SLOT_SMP_SHADOW, 1, &nullSampler);
     dc->PSSetShaderResources(SLOT_SRV_SHADOW, 1, &nullSRV);
 }

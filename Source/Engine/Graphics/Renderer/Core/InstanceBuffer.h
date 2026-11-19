@@ -37,10 +37,10 @@ public:
         D3D11_BUFFER_DESC desc   = {};
         desc.ByteWidth           = static_cast<UINT>(sizeof(InstanceData) * maxInstances);
         desc.Usage               = D3D11_USAGE_DYNAMIC; // 毎回 CPU から書き換える
-        desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
+        desc.BindFlags           = D3D11_BIND_SHADER_RESOURCE; // シェーダーから読むリソース（SRV）にする
         desc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
-        desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-        desc.StructureByteStride = sizeof(InstanceData);
+        desc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED; // 構造体の配列として扱う
+        desc.StructureByteStride = sizeof(InstanceData); // 要素の１つの大きさ
 
         if (FAILED(device->CreateBuffer(&desc, nullptr, m_buffer.GetAddressOf())))
         {

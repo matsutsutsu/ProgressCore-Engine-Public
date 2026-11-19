@@ -161,12 +161,12 @@ void SSAOEffect::Process(ID3D11DeviceContext      *dc,
         }
         dc->PSSetConstantBuffers(SLOT_CB_SSAO_BLUR, 1, m_res->cbBlur.GetAddressOf());
         dc->PSSetShader(m_res->psBlur.Get(), nullptr, 0);
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &input);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &input);
         output->Activate(dc);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRV = nullptr;
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &nullSRV);
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
     };
 
@@ -182,10 +182,10 @@ void SSAOEffect::Process(ID3D11DeviceContext      *dc,
         dc->OMSetRenderTargets(1, &outputRTV, nullptr);
 
         ID3D11ShaderResourceView *srvs[] = {inputSRV, blurV->GetSRV()};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, srvs);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRVs[] = {nullptr, nullptr};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, nullSRVs);
     }
 }

@@ -198,7 +198,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 
     ID3D11Buffer *cb = m_constantBuffer.Get();
-    dc->VSSetConstantBuffers(0, 1, &cb); // b0
+    dc->VSSetConstantBuffers(SLOT_CB_TRAIL, 1, &cb);
 
     // 歪みの層。加算の芯を上に重ねるので先に描く
     // シーンの色（t5）は前のパスが別の SRV で上書きしている場合があるので、ここでバインドし直す
@@ -245,13 +245,13 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
             if (batch.count == 0)
                 continue;
             ID3D11ShaderResourceView *srv = batch.srv ? batch.srv : m_whiteTex.Get();
-            dc->PSSetShaderResources(0, 1, &srv); // t0: gTrailTex
+            dc->PSSetShaderResources(SLOT_SRV_TRAIL_TEX, 1, &srv);
             dc->Draw(static_cast<UINT>(batch.count), start);
             start += static_cast<UINT>(batch.count);
         }
 
         ID3D11ShaderResourceView *nullSRV = nullptr;
-        dc->PSSetShaderResources(0, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_TRAIL_TEX, 1, &nullSRV);
     }
 
     // 後のパスにステートを残さない

@@ -1671,9 +1671,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h">
-      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>

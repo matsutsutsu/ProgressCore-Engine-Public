@@ -36,8 +36,8 @@ private:
         std::vector<InstanceData>  data;               // インスタンスごとのワールド行列
     };
 
-    PipelineState  m_psoShadow; // 深度バイアス付きのラスタライザ
-    InstanceBuffer m_instanceBuffer;
+    PipelineState  m_psoShadow;      // 深度バイアス付きのラスタライザ
+    InstanceBuffer m_instanceBuffer; // バッチの行列を頂点シェーダーへ渡す
 
     // 毎フレーム作り直す作業用の配列
     // clear() は容量を残すので、数フレームで落ち着いた後はメモリを確保しない

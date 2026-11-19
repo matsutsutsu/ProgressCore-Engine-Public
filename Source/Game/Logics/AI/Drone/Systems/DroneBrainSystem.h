@@ -18,7 +18,7 @@
 #include "Engine/Time/Components/TimeState.h"
 #include <SimpleMath.h>
 
-namespace CCL::AI::Formation { class FormationRegistry; }
+namespace CCL::AI::Formation { class IFormation; }
 
 class DroneBrainSystem : public CCL::ECS::IfSystem<
     DroneBrainSystem,
@@ -36,8 +36,12 @@ private:
     // 距離だけで判定すると、Idle の追従で閾値をまたいで MoveToTarget が点滅するので、初回の到着をラッチする
     bool NeedsApproach(const TransformComponent &trans, DroneComponent &drone) const;
 
-    // 突撃を切り上げるべきかを返す。飛び出してからの飛距離と経過時間を測り、技（IsChargeOver）に聞く
-    // 飛び出す前は、飛距離の起点（chargeStartPos）と経過時間を置き直す。formations がなければ切り上げない
-    bool HasFinishedCharge(const CCL::AI::Formation::FormationRegistry *formations,
+    // 突撃の飛距離の起点（chargeStartPos）と経過時間（chargeTimer）を記録する
+    // 飛び出す前は起点を今の位置に置き直し続け、飛び出した後だけ時間を数える。formation が nullptr なら直進として扱う
+    void TrackChargeFlight(const CCL::AI::Formation::IFormation *formation,
                            const TransformComponent &trans, DroneComponent &drone, float dt) const;
+
+    // 技（IsChargeOver）に、飛距離と経過時間から突撃を切り上げるかを聞く。formation が nullptr なら切り上げない
+    bool IsChargeFinished(const CCL::AI::Formation::IFormation *formation,
+                          const TransformComponent &trans, const DroneComponent &drone) const;
 };

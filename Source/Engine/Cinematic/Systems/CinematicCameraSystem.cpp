@@ -8,7 +8,6 @@
 #include "Engine/Core/App/GameFlowState.h"
 #include "Engine/Platform/Input/IInputAPI.h"
 #include "Engine/Platform/Core/FileSystem.h"
-#include "Engine/Graphics/Components/PostProcess/PostFx.h"
 #include "Engine/Core/Math/StringHash.h"
 
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -458,15 +457,18 @@ void CinematicCameraSystem::UpdateDof(CinematicCameraComponent &cine, float targ
                                                      : std::max(target, cine.dofWeight - step);
     }
 
+    // シーンに DepthOfField がなければ、ぼかさない
+    auto *dof = m_world->GetSingletonComponent<DepthOfFieldConfigComponent>();
+    if (!dof) return;
+
     // 確保していなければ何もしないので、停止中に毎フレーム呼んでよい
     if (cine.dofWeight <= 0.0f)
     {
-        CCL::PostFx::Release<DepthOfFieldConfigComponent>(*m_world, kDofSource);
+        dof->overrides.Release(kDofSource);
         return;
     }
 
-    // シーンに DepthOfField がなければ nullptr
-    if (auto *ov = CCL::PostFx::DepthOfField(*m_world, kDofSource, kDofPriority))
+    if (auto *ov = dof->overrides.Acquire(kDofSource, kDofPriority, dof->BaseParams()))
     {
         ov->weight               = cine.dofWeight;
         ov->params.focusDistance = cine.dof.focusDistance;

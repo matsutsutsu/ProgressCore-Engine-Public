@@ -15,7 +15,8 @@
 #include "Engine/ECS/System/CCL_IfSystem.h"
 
 #include "Game/Logics/Combat/Feedback/ScreenImpactComponent.h"
-#include "Engine/Graphics/Components/PostProcess/PostFx.h"
+#include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
 
 class ScreenImpactSystem : public CCL::ECS::SystemBase
 {
@@ -27,14 +28,12 @@ public:
         return {CCL::ECS::TypeInfo<ScreenImpactComponent>::ID()};
     }
 
-    /**
-     * @brief テンプレート引数以外に書く型を申告する
-     *
-     * 後始末に PostFx::ReleaseAll を使うので、上書きを受け付ける全コンポーネントへ書く
-     * 申告より広い範囲へ書くと、同じ設定を書く他の System と同じバッチに入って並列に走り、
-     * Acquire が同じ空きスロットを奪い合う
-     */
-    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override { return CCL::PostFx::AllWriteTypes(); }
+    // 放射ブラーと色収差の上書きの枠へ書く
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override
+    {
+        return {CCL::ECS::TypeInfo<RadialBlurConfigComponent>::ID(),
+                CCL::ECS::TypeInfo<ChromaticAberrationConfigComponent>::ID()};
+    }
 
     void Update(float dt) override;
 };

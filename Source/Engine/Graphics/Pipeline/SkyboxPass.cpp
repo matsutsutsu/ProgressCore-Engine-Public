@@ -36,6 +36,8 @@ void SkyboxPass::Execute(const RenderFrameContext &ctx)
     if (!ctx.camera || !ctx.skyboxSRV) return;
     ID3D11DeviceContext *dc = ctx.dc;
 
+    // --- 定数バッファ ---
+
     const DirectX::XMMATRIX V     = DirectX::XMLoadFloat4x4(&ctx.camera->GetView());
     const DirectX::XMMATRIX P     = DirectX::XMLoadFloat4x4(&ctx.camera->GetProjection());
     const DirectX::XMMATRIX invVP = DirectX::XMMatrixInverse(nullptr, V * P);
@@ -49,6 +51,8 @@ void SkyboxPass::Execute(const RenderFrameContext &ctx)
         dc->Unmap(m_cbSkybox.Get(), 0);
     }
 
+    // --- シェーダーと空のテクスチャ ---
+
     dc->VSSetShader(m_vertexShader.Get(), nullptr, 0);
     dc->PSSetShader(m_pixelShader.Get(), nullptr, 0);
     dc->VSSetConstantBuffers(SLOT_CB_SKYBOX, 1, m_cbSkybox.GetAddressOf());
@@ -57,6 +61,8 @@ void SkyboxPass::Execute(const RenderFrameContext &ctx)
     // テクスチャは EnvironmentSystem が SkyboxComponent（なければ既定）から決め、ctx で渡してくる
     ID3D11ShaderResourceView *skyTex = ctx.skyboxSRV;
     dc->PSSetShaderResources(SLOT_SRV_SKYBOX_BG, 1, &skyTex);
+
+    // --- ステートと描画 ---
 
     dc->IASetInputLayout(nullptr);
     dc->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);

@@ -1,6 +1,11 @@
-// Shader/Pass/NormalPrepass/NormalPrepassPS.hlsl
+// ===========================================================================
+// 概要: 法線プリパス（NormalPrepass）。ビュー空間の法線の XY を書く
 //
-// 法線プリパス用のピクセルシェーダー。ビュー空間法線の XY のみを RG16_FLOAT へ書く。
+// 入力: NormalPrepassVS の出力（ビュー空間の法線）
+// 出力: 法線の XY（-1〜1）を RG16_FLOAT に書く
+//
+// 備考: Z は書かない。読む側（DepthUtils.hlsli の SampleSceneViewNormal）が XY から戻す
+// ===========================================================================
 struct NORMAL_VS_OUT
 {
     float4 vertex     : SV_POSITION;

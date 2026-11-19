@@ -31,8 +31,10 @@ void ToneMapEffect::Process(ID3D11DeviceContext      *dc,
     dc->VSSetShader(m_vs.Get(), nullptr, 0);
     dc->PSSetShader(m_ps.Get(), nullptr, 0);
 
+    // 色収差で画面の外を読むことがあるので、端で止めるサンプラーを置く
+    // s1 に置かないと、前の描画が残した繰り返しのサンプラーで読んでしまう
     ID3D11SamplerState *smp = m_sampler.Get();
-    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smp);
+    dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &smp);
 
     GpuData::CbToneMapData cbData{
         config.data.exposure,
@@ -47,9 +49,9 @@ void ToneMapEffect::Process(ID3D11DeviceContext      *dc,
     }
     dc->PSSetConstantBuffers(SLOT_CB_TONEMAP, 1, m_cbToneMap.GetAddressOf());
 
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &inputHDR);
+    dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &inputHDR);
     dc->Draw(3, 0);
 
     ID3D11ShaderResourceView *nullSRV = nullptr;
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &nullSRV);
 }

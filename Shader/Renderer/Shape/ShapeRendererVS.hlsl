@@ -1,17 +1,20 @@
+// ===========================================================================
+// 概要: 線（ShapeRenderer）の頂点シェーダー。元の線分をインスタンスの行列で伸ばして置く
+//
+// 入力: 線分の頂点（位置）とインスタンスの番号
+// 出力: 画面の位置・色（customParams）
+// ===========================================================================
 #include "Shader/Renderer/Shape/ShapeRenderer.hlsli"
 
 VS_OUT main(float4 position : POSITION, uint instanceID : SV_InstanceID)
 {
     VS_OUT vout;
-    
-    // インスタンスバッファから、この線の「ワールド行列」と「色」を取り出す
+
     float4x4 world = GetInstanceWorld(instanceID);
     float4 instanceColor = GetInstanceCustomParams(instanceID);
 
-    // ワールド行列でローカルな線分をスケール＆回転し、配置する
     float4 worldPos = mul(position, world);
-    
-    // Scene.hlsli の viewProjection を用いてクリップ空間へ
+
     vout.position = mul(worldPos, viewProjection);
     vout.color = instanceColor;
 

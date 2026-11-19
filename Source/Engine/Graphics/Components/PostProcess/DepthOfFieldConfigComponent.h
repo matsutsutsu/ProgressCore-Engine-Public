@@ -28,17 +28,20 @@ struct DepthOfFieldConfigComponent
     {
         DepthOfFieldOverrideParams out = BaseParams();
 
-        overrides.ForEachActive([&out](const DepthOfFieldOverrideParams &p, float t) {
+        for (const auto *s : overrides.SortedActive())
+        {
+            const auto &p = s->params;
+            const float t = s->Amount();
             out.focusDistance += (p.focusDistance - out.focusDistance) * t;
             out.focusRange += (p.focusRange - out.focusRange) * t;
             out.falloff += (p.falloff - out.falloff) * t;
             out.maxBlur += (p.maxBlur - out.maxBlur) * t;
-        });
+        }
 
         return {out.focusDistance, out.focusRange, out.falloff, out.maxBlur};
     }
 
-    // 上書きの土台になる、今効いている値。enable=false ならぼけは 0（シーンではぼかしていないため）
+    // 上書きの土台になる、今効いている値（Acquire の base に渡す）。enable=false ならぼけは 0（シーンではぼかしていないため）
     DepthOfFieldOverrideParams BaseParams() const
     {
         DepthOfFieldOverrideParams p;

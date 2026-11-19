@@ -1,7 +1,11 @@
-// Shader/Core/ErrorVS.hlsl
-// 未登録シェーダーのフォールバック用 VS。標準モデル頂点を viewProjection で変換するだけ。
-#include "Shader/Common/Common.hlsli"      // viewProjection (CbScene)
-#include "Shader/Common/Transform.hlsli"   // CalculateWorldTransform
+// ===========================================================================
+// 概要: シェーダーが見つからないメッシュ用の頂点シェーダー。位置を画面へ移すだけ
+//
+// 入力: モデルの頂点（ほかのマテリアルと同じ並び。位置とボーンだけ使う）とインスタンスの番号
+// 出力: 画面の位置
+// ===========================================================================
+#include "Shader/Common/Common.hlsli"
+#include "Shader/Common/Transform.hlsli"
 
 float4 main(
     float4 position : POSITION,

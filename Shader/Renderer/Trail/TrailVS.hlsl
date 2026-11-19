@@ -1,16 +1,17 @@
-// Shader/Renderer/Trail/TrailVS.hlsl
-// 武器トレイル用の最小頂点シェーダ。加算レイヤと歪みレイヤで共用する。
-// ワールド空間で積まれた頂点を viewProjection で投影するだけ。
-// viewProjection は C++ 側から転置なしでアップロードされるため row_major で受ける
-// （エンジン共通の ShaderShared.h と同じ規約）。
+// ===========================================================================
+// 概要: 武器のトレイルの頂点シェーダー。ワールド座標で積まれた頂点を画面へ移す（加算の層と歪みの層で共用）
 //
-// worldPos を渡すのは歪みレイヤのため。ピクセル側で ddx/ddy を取ると
-// 面の法線が求まるので、頂点フォーマットに法線を足さずに屈折方向を作れる。
-// 加算レイヤ(TrailPS)はこの出力を読まないが、余分な VS 出力は許容される。
+// 入力: ワールド座標の頂点（位置・色・UV）
+// 出力: 画面の位置・色・ワールド座標・UV
+//
+// 備考: ワールド座標を渡すのは歪みの層のため。PS で ddx / ddy を取ると面の法線が求まるので、頂点に法線を足さずに済む
+//       加算の層（TrailPS）はワールド座標を読まないが、使わない出力があっても問題ない
+// ===========================================================================
+#include "Engine/Graphics/Shader/ShaderResources.h"
 
-cbuffer CbTrail : register(b0)
+cbuffer CbTrail : register(REG_CB(SLOT_CB_TRAIL))
 {
-    row_major float4x4 viewProjection;
+    row_major float4x4 viewProjection; // C++ は転置せずに送るので row_major で受ける（ShaderShared.h と同じ決まり）
 };
 
 struct VSInput

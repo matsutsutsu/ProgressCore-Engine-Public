@@ -42,17 +42,11 @@ namespace CCL::AI::Formation::Data
     void DataDrivenFormation::Calculate(DroneComponent &drone, const FormationContext &ctx)
     {
         // 処理フロー:
-        // 1. 移動方式をアセットから写し、モデルの形を用意する
-        // 2. 攻撃の進行度を進める
-        // 3. 席を決め、待機の形を作る（(1)割付・(2)形）
-        // 4. 動きの層を上から順に当てる（(3)動き）
-        // 5. ワールドへ移す（(4)配置）
-        // 6. 機首と突撃方向を決める
-
-        drone.chargeMode = m_asset.output.chargeMode;
-
-        // 形がモデル参照の場合にドローンの配置位置を計算する
-        EnsureShape();
+        // 1. 攻撃の進行度を進める
+        // 2. 席を決め、待機の形を作る（(1)割付・(2)形）
+        // 3. 動きの層を上から順に当てる（(3)動き）
+        // 4. ワールドへ移す（(4)配置）
+        // 5. 機首と突撃方向を決める
 
         // 攻撃の進行度を進める
         const float p = AdvanceProgress(drone, ctx);
@@ -89,14 +83,16 @@ namespace CCL::AI::Formation::Data
     float DataDrivenFormation::AdvanceProgress(DroneComponent &drone, const FormationContext &ctx) const
     {
         // 撃つ合図が来るまで 0 に保ち、予備動作の形で待つ（プレイヤーはこの形から回避方向を読む）
+        const float end = HitWindowEnd();
         if (m_progressOverride >= 0.0f)
-            drone.attackProgress = (std::min)(1.0f, m_progressOverride); // エディタの手送り
+            drone.attackProgress = (std::min)(end, m_progressOverride); // エディタの手送り
         else if (drone.wantsAttack)
-            drone.attackProgress = (std::min)(1.0f, drone.attackProgress + ctx.dt / m_asset.attackSeconds);
+            drone.attackProgress = (std::min)(end, drone.attackProgress + ctx.dt / m_asset.attackSeconds);
         else
             drone.attackProgress = 0.0f;
 
-        return drone.attackProgress;
+        // 形は動き切った所で止める
+        return (std::min)(1.0f, drone.attackProgress);
     }
 
 

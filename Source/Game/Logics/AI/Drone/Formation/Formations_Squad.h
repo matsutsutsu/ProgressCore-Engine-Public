@@ -35,6 +35,9 @@ namespace CCL::AI::Formation::Squad
 
         bool FollowsBoss() const override { return false; } // 基準はアンカー
 
+        // 剛体にすると隊列が歪まず、1枚の板が近づいてくるようにしか見えない
+        ChargeMode GetChargeMode() const override { return ChargeMode::SoftFollow; }
+
         // 追跡中は判定を開けたまま往復するので、何度も当てる
         // 間隔は1回すり抜ける時間より長くし、1回の通過で2度当てない
         FormationCombat GetCombat() const override
@@ -62,7 +65,7 @@ namespace CCL::AI::Formation::Squad
             using namespace DirectX::SimpleMath;
 
             // 処理フロー:
-            // 1. 移動方式をバネ追従にし、後ろの席ほどバネを弱める
+            // 1. 後ろの席ほどバネを弱める
             // 2. 「1つ前の機体」を決める
             // 3. 持ち場と先渡しの速度を決める
             // 4. 持ち場を床より下に置かない
@@ -74,10 +77,7 @@ namespace CCL::AI::Formation::Squad
             const SquadState  &squad  = m_squads->squads[drone.squadId];
             const SquadTuning &tuning = m_squads->tuning;
 
-            // --- 移動方式 ---
-
-            // 剛体にすると隊列が歪まず、1枚の板が近づいてくるようにしか見えない
-            drone.chargeMode = ChargeMode::SoftFollow;
+            // --- バネの強さ ---
 
             // 後ろの席ほど遅れて曲がり、隊列が先頭から順にしなる
             drone.springScale = 1.0f - static_cast<float>(drone.slotInSquad) * kSpringLagPerSlot;

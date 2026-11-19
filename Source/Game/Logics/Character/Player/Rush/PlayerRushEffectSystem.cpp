@@ -4,7 +4,8 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
-#include "Engine/Graphics/Components/PostProcess/PostFx.h"
+#include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
+#include "Engine/Graphics/Components/PostProcess/RadialBlurConfigComponent.h"
 
 #include "Engine/Core/Math/StringHash.h"
 
@@ -33,10 +34,10 @@ namespace
 
 std::vector<CCL::ECS::TypeID> PlayerRushEffectSystem::GetWriteTypes() const
 {
-    // 値を書くのはビネットと放射ブラーだけだが、後始末の PostFx::ReleaseAll は
-    // 上書きを受け付けるすべての設定へ書くので、全部を申告する
+    // ビネットと放射ブラーの上書きの枠へ書く
     auto types = Base::GetWriteTypes();
-    for (const TypeID id : CCL::PostFx::AllWriteTypes()) types.push_back(id);
+    types.push_back(TypeInfo<VignetteConfigComponent>::ID());
+    types.push_back(TypeInfo<RadialBlurConfigComponent>::ID());
     return types;
 }
 
@@ -46,9 +47,13 @@ void PlayerRushEffectSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. フェードの重みを実時間で目標へ寄せる
-    // 2. 消えている間は、自分のスロットを手放して終える
+    // 2. 消えている間は、自分の枠を空けて終える
     // 3. 見えている間は、ビネットへ書く
     // 4. 同じ重みで放射ブラーへ書く
+
+    // シーンに設定がなければ nullptr。その演出だけ出さない
+    auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
+    auto *radial   = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
 
     ForEach([&](PlayerRushEffectComponent &effect, const PlayerRushComponent &rush) {
 
@@ -69,12 +74,13 @@ void PlayerRushEffectSystem::Update(float dt)
         // 2. 消えている間の後始末
         // ---------------------------------------------------------
 
-        // 自分のスロットだけを手放し、ほかの演出と設定本体には触れない
-        // 確保していないスロットの Release は何もしないので、毎フレーム呼んでよい
+        // 自分の枠だけを空け、ほかの演出と設定本体には触れない
+        // 確保していない枠の Release は何もしないので、毎フレーム呼んでよい
         const bool visible = (effect.weight > 0.001f);
         if (!visible)
         {
-            CCL::PostFx::ReleaseAll(*m_world, kSource);
+            if (vignette) vignette->overrides.Release(kSource);
+            if (radial) radial->overrides.Release(kSource);
             return;
         }
 
@@ -83,14 +89,15 @@ void PlayerRushEffectSystem::Update(float dt)
         // ---------------------------------------------------------
 
         // 縁のぼかし（softness）は書かない
-        // スロットにはシーンの設定が土台に入っているので、書かない項目はシーンの見た目のまま
-        if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
+        // 枠にはシーンの設定が土台に入っているので、書かない項目はシーンの見た目のまま
+        auto *vigSlot = vignette ? vignette->overrides.Acquire(kSource, kPriority, vignette->BaseParams()) : nullptr;
+        if (vigSlot)
         {
-            ov->weight            = effect.weight;
-            ov->params.intensity  = effect.vignetteIntensity;
-            ov->params.radius     = effect.vignetteRadius;
-            ov->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
-            ov->params.pulseSpeed = 0.0f; // 明滅させない
+            vigSlot->weight            = effect.weight;
+            vigSlot->params.intensity  = effect.vignetteIntensity;
+            vigSlot->params.radius     = effect.vignetteRadius;
+            vigSlot->params.color      = {0.0f, 0.0f, 0.0f, 1.0f};
+            vigSlot->params.pulseSpeed = 0.0f; // 明滅させない
         }
 
         // ---------------------------------------------------------
@@ -98,11 +105,12 @@ void PlayerRushEffectSystem::Update(float dt)
         // ---------------------------------------------------------
 
         // 中心は書かず、シーンの設定のままにする
-        if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
+        auto *radialSlot = radial ? radial->overrides.Acquire(kSource, kPriority, radial->BaseParams()) : nullptr;
+        if (radialSlot)
         {
-            ov->weight          = effect.weight;
-            ov->params.strength = effect.radialStrength;
-            ov->params.falloff  = effect.radialFalloff;
+            radialSlot->weight          = effect.weight;
+            radialSlot->params.strength = effect.radialStrength;
+            radialSlot->params.falloff  = effect.radialFalloff;
         }
     });
 }

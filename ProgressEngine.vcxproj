@@ -470,7 +470,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\BloomConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\RadialBlurConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h" />
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ChromaticAberrationConfigComponent.h" />
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\ColorGradingConfigComponent.h" />

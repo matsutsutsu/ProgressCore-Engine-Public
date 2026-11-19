@@ -6,7 +6,7 @@
 //   - LowOrbit: ボスの周りを低い高さで周回する
 //   - HighOrbit: ボスの頭上高くで周回する（攻撃と攻撃のあいだに使う）
 //   - HighRing: 頭上円陣と弾幕が共有する待機リングの位置計算
-//   - 攻撃で使った値（attackProgress・chargeMode）を戻す
+//   - 攻撃で使った値（attackProgress）を戻す
 // ===========================================================================
 #include "Game/Logics/AI/Drone/Formation/IFormation.h"
 #include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
@@ -68,7 +68,6 @@ namespace CCL::AI::Formation::Basic
 
             // 攻撃で使った値を戻す（BT が攻撃の合間に中立の陣形を挟むので、次の攻撃へ漏れない）
             drone.attackProgress = 0.0f;
-            drone.chargeMode     = ChargeMode::Straight;
         }
 
         static constexpr float kSpin   = 0.5f; // 回転速度 [rad/s]
@@ -101,7 +100,6 @@ namespace CCL::AI::Formation::Basic
             }
 
             drone.attackProgress = 0.0f;
-            drone.chargeMode     = ChargeMode::Straight;
         }
     };
 

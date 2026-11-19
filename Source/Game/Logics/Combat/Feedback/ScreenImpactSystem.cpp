@@ -19,22 +19,25 @@ namespace
 void ScreenImpactSystem::Update(float dt)
 {
     // 処理フロー:
-    // 1. 演出がない間は自分のスロットを手放す
+    // 1. 演出がない間は自分の枠を空ける
     // 2. 残り時間を進めて強さを求める
-    // 3. 放射ブラーと色収差のスロットへ書く
+    // 3. 放射ブラーと色収差の枠へ書く
 
-    auto *impact = m_world->GetSingletonComponent<ScreenImpactComponent>();
+    auto *impact    = m_world->GetSingletonComponent<ScreenImpactComponent>();
+    auto *radial    = m_world->GetSingletonComponent<RadialBlurConfigComponent>();
+    auto *chromatic = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
 
     // ---------------------------------------------------------
     // 1. 演出がない間
     // ---------------------------------------------------------
-    // weight を 0 にするのではなくスロットごと手放し、他の演出に枠を空ける
+    // weight を 0 にするのではなく枠ごと空け、他の演出に譲る
     //
-    // 確保していないスロットへの Release は何もしないので、毎フレーム呼んでよい
+    // 確保していない枠への Release は何もしないので、毎フレーム呼んでよい
     // 「前のフレームで出していたか」を覚えておく必要がない
     if (impact == nullptr || impact->timer <= 0.0f)
     {
-        CCL::PostFx::ReleaseAll(*m_world, kSource);
+        if (radial) radial->overrides.Release(kSource);
+        if (chromatic) chromatic->overrides.Release(kSource);
         return;
     }
 
@@ -49,19 +52,22 @@ void ScreenImpactSystem::Update(float dt)
     const float strength = t * impact->power; // 命中した瞬間が最大で、残り時間に比例して弱くなる
 
     // ---------------------------------------------------------
-    // 3. 自分のスロットへ書く
+    // 3. 自分の枠へ書く
     // ---------------------------------------------------------
     // 設定本体（enable / data）には触れない。合成は PostProcessSystem が行う
-    if (auto *ov = CCL::PostFx::RadialBlur(*m_world, kSource, kPriority))
+    auto *radialSlot = radial ? radial->overrides.Acquire(kSource, kPriority, radial->BaseParams()) : nullptr;
+    if (radialSlot)
     {
-        ov->weight          = 1.0f;
-        ov->params.strength = impact->radialStrength * strength;
+        radialSlot->weight          = 1.0f;
+        radialSlot->params.strength = impact->radialStrength * strength;
     }
 
-    if (auto *ov = CCL::PostFx::ChromaticAberration(*m_world, kSource, kPriority))
+    auto *chromaticSlot =
+        chromatic ? chromatic->overrides.Acquire(kSource, kPriority, chromatic->BaseParams()) : nullptr;
+    if (chromaticSlot)
     {
-        ov->weight          = 1.0f;
-        ov->params.strength = impact->chromaticStrength * strength;
+        chromaticSlot->weight          = 1.0f;
+        chromaticSlot->params.strength = impact->chromaticStrength * strength;
     }
 }
 

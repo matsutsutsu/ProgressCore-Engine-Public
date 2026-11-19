@@ -195,7 +195,11 @@ void PlayerCameraSystem::ResolveFraming(CameraContext &c) const
     CameraFramingParams sum{};
     bool                movesDistance = false;
 
-    c.tps.framingOverrides.ForEachActive([&](const CameraFramingParams &p, float w) {
+    for (const auto *s : c.tps.framingOverrides.SortedActive())
+    {
+        const auto &p = s->params;
+        const float w = s->Amount();
+
         // 距離を外へ戻す速さを変えるのは、距離を動かす上書きのときだけ
         // 画角だけの上書きで変えると、壁で寄ったカメラがその間だけ速く戻る
         if (p.distanceOffset != 0.0f) movesDistance = true;
@@ -213,7 +217,7 @@ void PlayerCameraSystem::ResolveFraming(CameraContext &c) const
             sum.focusTarget = p.focusTarget;
             sum.focus       = std::clamp(p.focus * w, 0.0f, 1.0f);
         }
-    });
+    }
 
     c.framing              = sum;
     c.framingMovesDistance = movesDistance;

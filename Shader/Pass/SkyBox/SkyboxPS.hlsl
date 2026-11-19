@@ -1,7 +1,15 @@
+// ===========================================================================
+// 概要: 空（SkyboxPass）。視線の向きでキューブマップを読み、地平線より下をフォグの色に寄せる
+//
+// 入力: SkyboxVS の出力（視線の向き）
+// 出力: 空の色（HDR）
+//
+// 備考: 地平線のフォグで、ApplyHeightFog で霧に溶けた地形と、その奥の空を同じ色でつなぐ
+//       フォグがないシーンは gFogColor.a が 0 なので、空の色のまま
+// ===========================================================================
 #include "Engine/Graphics/Shader/ShaderResources.h"
-#include "Shader/Common/Scene.hlsli" // CbFog(gFogColor) を取り込む
+#include "Shader/Common/Scene.hlsli"
 
-// IBLですでにセットされている s1 を流用する超絶スマートな設計
 TextureCube SkyboxMap : register(REG_SRV(SLOT_SRV_SKYBOX_BG));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
@@ -23,27 +31,17 @@ float4 main(VS_OUT pin) : SV_TARGET
 {
     float3 dir = normalize(pin.rayDir);
 
-    // Mipレベル強制(SampleLevel)をやめ、通常のSampleを使用する
-    // これによりカメラの解像度に合わせた最適なミップマップが自動選択され、
-    // ジャギー（ピクセルのチラつき）のない最高品質の空が描画されます。
+    // ミップは指定せず、画面の大きさに合ったものを自動で選ばせる（指定するとちらつく）
     float3 envColor = SkyboxMap.Sample(LinearSampler, dir).rgb;
 
-    // 空の背景だけを暗くする。IBL（物の陰影）は別のテクスチャから引くので変わらない。
-    // 地平線フォグより前に掛け、霧の色は FogComponent の色のまま保つ
+    // 空の背景だけを暗くする。IBL（物の陰影）は別のテクスチャから引くので変わらない
+    // 地平線のフォグより前に掛け、霧の色は FogComponent の色のまま保つ
     envColor *= skyIntensity;
 
-    // ------------------------------------------------------------------
-    // 距離フォグと背景を繋ぐ「地平線フォグ」。
-    //   視線が地平線より下（島の下の虚空）を向くほど gFogColor へ寄せる。
-    //   これで空っぽの空間も霧色になり、ApplyHeightFog で霧に溶けた地形と
-    //   背景が同じ色で連続する（境目が消える）。
-    //   dir.y : +1=真上, 0=地平線, -1=真下
-    //   強度は gFogColor.a（FogComponent.color の α）と連動。
-    //   位置/幅は FogComponent の skyFogHeight / skyFogSoftness で調整可能。
-    //   フォグ無効/未設定時は gFogColor.a=0 なので下2行は無効化される。
-    // ------------------------------------------------------------------
-    float kHorizon = gSkyFogParams.x;              // フォグ開始の視線高
-    float kBand    = max(gSkyFogParams.y, 1e-3f);  // フェード幅（0除算回避）
+    // 地平線のフォグ。視線が gSkyFogParams.x の高さより下を向くほど、gFogColor へ寄せる
+    // dir.y は +1 で真上、0 で地平線、-1 で真下。強さは gFogColor.a
+    float kHorizon = gSkyFogParams.x;              // フォグがかかり始める視線の高さ
+    float kBand    = max(gSkyFogParams.y, 1e-3f);  // ぼかす幅（0 で割らないよう下限を付ける）
     float fogT = 1.0f - smoothstep(kHorizon, kHorizon + kBand, dir.y);
     fogT       = saturate(fogT * gFogColor.a);
     envColor   = lerp(envColor, gFogColor.rgb, fogT);

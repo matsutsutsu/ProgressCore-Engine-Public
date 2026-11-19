@@ -85,6 +85,7 @@ shaders.RegisterShader<NormalPrepassShader>("NormalPrepass"_hash);
 
 > b0/b1 は Per-pass のポスプロ（Bloom/ToneMap）と物理スロットを共有。時間的に排他なので衝突しない。
 > b0 は UI の 2D パスのゲージ（`SLOT_CB_UIGAUGE`、`UIGaugePS`）も使う。`UIRenderer` がドローごとにバインドする。
+> b0 はマテリアルを使わない専用シェーダーも使う：トレイル（`SLOT_CB_TRAIL`）、エディタの RT 表示（`SLOT_CB_RT_DEBUG`）。
 
 ### Shader Resource / Texture (t)
 
@@ -95,16 +96,18 @@ shaders.RegisterShader<NormalPrepassShader>("NormalPrepass"_hash);
 | t2 | `SLOT_SRV_MAT_TEX2` | MetalRough / Occlusion |
 | t3 | `SLOT_SRV_MAT_TEX3` | Emissive 等の追加マップ（※パーティクルbufと共有） |
 | t10 | Shadow (Array) | Per-frame |
-| t11/t12 | Instance / Bone | Per-object |
-| t14-17 | IBL / Skybox | Per-frame |
+| t11 | `SLOT_SRV_INSTANCE` | Per-object |
+| t14-17 | IBL / Skybox | Per-frame（IBL の3枚は連番。`static_assert` で確認） |
+
+> t0/t1 はポストプロセスの入力（`SLOT_SRV_POST_INPUT0` / `SLOT_SRV_POST_INPUT1`。連番）とも共有する。
+> t0 はトレイル（`SLOT_SRV_TRAIL_TEX`）・スプライト（`SLOT_SRV_SPRITE`）・RT 表示（`SLOT_SRV_RT_DEBUG`、配列は t1 の `SLOT_SRV_RT_DEBUG_ARRAY`）も使う。
 
 ### Sampler (s)
 
 | slot | 名前 |
 |------|------|
-| s0 | `SLOT_SMP_DEFAULT` |
-| s1 | `SLOT_SMP_LINEAR`（材質標準） |
-| s2 | `SLOT_SMP_ANISOTROPIC` |
+| s0 | `SLOT_SMP_DEFAULT`（スプライト・RT 表示） |
+| s1 | `SLOT_SMP_LINEAR`（マテリアル・ポストプロセス・トレイル。何を置くかは描く側が決める） |
 | s3 | `SLOT_SMP_IBL` |
 | s10 | `SLOT_SMP_SHADOW`（比較サンプラ） |
 

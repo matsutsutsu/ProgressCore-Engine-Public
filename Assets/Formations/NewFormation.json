@@ -28,7 +28,6 @@
     "clampToGround": false,
     "combat": {
       "damage": 8.0,
-      "hitRadius": 2.5,
       "hitStopDuration": 0.05,
       "hitStopScale": 0.0,
       "knockback": 12.0

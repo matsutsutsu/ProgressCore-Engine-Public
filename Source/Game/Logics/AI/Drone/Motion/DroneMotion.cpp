@@ -430,9 +430,9 @@ namespace CCL::AI::Motion
 
 
 
-    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt)
+    void MoveCharge(TransformComponent &trans, DroneComponent &drone, ChargeMode mode, float dt)
     {
-        switch (drone.chargeMode)
+        switch (mode)
         {
         case ChargeMode::RigidFollow:
             MoveRigidFollow(trans, drone, dt);
@@ -448,9 +448,9 @@ namespace CCL::AI::Motion
 
 
 
-    bool IsChargeDangerous(const DroneComponent &drone)
+    bool IsChargeDangerous(const DroneComponent &drone, ChargeMode mode)
     {
-        switch (drone.chargeMode)
+        switch (mode)
         {
         case ChargeMode::RigidFollow:
         case ChargeMode::SoftFollow:
@@ -464,13 +464,6 @@ namespace CCL::AI::Motion
 
     void BeginStraightCharge(DroneComponent &drone, const ChargeBeginInfo &info)
     {
-        // 処理フロー:
-        // 1. 移動方式を直進に戻す
-        // 2. タメの時間を入れる
-        // 3. 撃つ方向がなければ決める
-
-        // 前の技の追従モードを持ち越さないよう、直進に戻す（追従する技は陣形が毎フレーム上書きする）
-        drone.chargeMode   = ChargeMode::Straight;
         drone.chargeWindup = kStraightCharge.windup;
 
         // 陣形が予備動作中に方向を書いていれば、それを使う

@@ -6,7 +6,6 @@
 
 #include "Engine/Graphics/Components/PostProcess/VignetteConfigComponent.h"
 #include "Engine/Graphics/Components/PostProcess/ChromaticAberrationConfigComponent.h"
-#include "Engine/Graphics/Components/PostProcess/PostFx.h"
 
 #include "Engine/Platform/Input/IInputAPI.h"
 
@@ -354,22 +353,24 @@ void PlayerFeedbackSystem::StartDamageVignette()
 
 void PlayerFeedbackSystem::UpdateDamageVignette(float dt)
 {
-    // 演出が終わったら、自分のスロットを手放すだけでよい（元の設定にも他の演出にも触らない）
-    //
-    // 色収差とは別のタイマーで終わるので、ReleaseAll ではなくビネットだけを手放す
+    auto *vignette = m_world->GetSingletonComponent<VignetteConfigComponent>();
+
+    // 演出が終わったら、自分の枠を空けるだけでよい（元の設定にも他の演出にも触らない）
+    // 色収差とは別のタイマーで終わるので、ビネットの枠だけを空ける
     if (m_vignetteTimer <= 0.0f)
     {
-        CCL::PostFx::Release<VignetteConfigComponent>(*m_world, kSource);
+        if (vignette) vignette->overrides.Release(kSource);
         return;
     }
 
     TickTimer(m_vignetteTimer, dt);
 
     const float env = CalculateEnvelope(m_vignetteTimer, m_vignetteDuration);
+    if (!vignette) return;
 
     // 目標値と、そこへ寄せる割合(weight)だけを書く
     // 元の設定からの補間と、他の演出との重ね合わせは Resolve() が行う
-    if (auto *ov = CCL::PostFx::Vignette(*m_world, kSource, kPriority))
+    if (auto *ov = vignette->overrides.Acquire(kSource, kPriority, vignette->BaseParams()))
     {
         ov->weight            = env;
         ov->params.intensity  = m_vignettePeak;
@@ -391,13 +392,14 @@ void PlayerFeedbackSystem::StartDamageChromaticAberration()
 
 void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
 {
-    // 触るのは自分のスロットだけ。設定本体(enable/data)や他の演出のスロットには書かないので、
+    // 触るのは自分の枠だけ。設定本体(enable/data)や他の演出の枠には書かないので、
     // 命中やジャスト回避の演出の最中に被弾しても、互いを消し合わない。最終的な強さは PostProcessSystem が合成する
-    //
-    // ビネットとは別のタイマーで終わるので、ReleaseAll ではなく色収差だけを手放す
+    auto *chromatic = m_world->GetSingletonComponent<ChromaticAberrationConfigComponent>();
+
+    // ビネットとは別のタイマーで終わるので、色収差の枠だけを空ける
     if (m_chromaticTimer <= 0.0f)
     {
-        CCL::PostFx::Release<ChromaticAberrationConfigComponent>(*m_world, kSource);
+        if (chromatic) chromatic->overrides.Release(kSource);
         return;
     }
 
@@ -407,8 +409,9 @@ void PlayerFeedbackSystem::UpdateDamageChromaticAberration(float dt)
         CalculateEnvelope(
             m_chromaticTimer,
             m_chromaticDuration);
+    if (!chromatic) return;
 
-    if (auto *ov = CCL::PostFx::ChromaticAberration(*m_world, kSource, kPriority))
+    if (auto *ov = chromatic->overrides.Acquire(kSource, kPriority, chromatic->BaseParams()))
     {
         ov->weight          = env;
         ov->params.strength = m_chromaticPeak;

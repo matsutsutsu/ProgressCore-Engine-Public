@@ -1,4 +1,9 @@
-// Shader/Vertex/BasicVS.hlsl
+// ===========================================================================
+// 概要: Basic マテリアルの頂点シェーダー。位置を画面へ移し、UV を渡す
+//
+// 入力: モデルの頂点（位置・ボーン・UV）とインスタンスの番号
+// 出力: VS_OUT のうち、画面の位置と UV だけ（ほかは 0）
+// ===========================================================================
 #include "Shader/Common/Common.hlsli"
 #include "Shader/Common/Transform.hlsli"
 
@@ -13,12 +18,10 @@ VS_OUT main(
     VS_OUT vout = (VS_OUT) 0;
     float4 worldPos;
 
-    // 1. 位置のみのオーバーロード関数が自動的に呼ばれる
     CalculateWorldTransform(
         position, boneWeights, boneIndices, instanceID, worldPos
     );
 
-    // 2. カメラ空間への投影
     vout.vertex = mul(worldPos, viewProjection);
     vout.texcoord = texcoord;
 

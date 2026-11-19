@@ -4,7 +4,7 @@
 //
 // 責務:
 //   - 1機分の持ち場を計算する Calculate を定める
-//   - 当たり方（FormationCombat）・技の時間割（TechniqueTiming）・予告の有無を陣形ごとに返す
+//   - 当たり方・移動方式・時間割・予告の有無を陣形ごとに返し、当たり判定を開く区間を決める（IsHitOpen）
 //   - 突撃の始め方（OnChargeBegin）と切り上げ方（IsChargeOver）を陣形ごとに決める
 //   - 陣形計算に要る情報（FormationContext）をまとめる
 //
@@ -93,7 +93,8 @@ namespace CCL::AI::Formation
         /**
          * @brief 突撃（FireCharge）へ入った瞬間の準備（タメ・撃つ方向）
          *
-         * 既定は直進の突撃の始め方。追従の技も既定のままでよい（同じフレームの Calculate が移動方式を書き直す）
+         * 既定は直進の突撃の始め方。追従の技も既定のままにする
+         * 合図が下りて頭上円陣へ切り替わるフレームは、突撃のまま直進で1フレーム動く。そこで飛び出さないようタメを入れておく
          *
          * @param drone 突撃を始める機体
          * @param info  プレイヤーの位置など
@@ -119,6 +120,19 @@ namespace CCL::AI::Formation
         // 突撃を続けたまま、当たり判定だけ先に閉じるか
         // 既定は false で、突撃している間ずっと当たる（小隊・弾幕）
         virtual bool IsHitWindowOver(const DroneComponent &drone) const { return false; }
+
+        // 突撃中の移動方式。既定は直進（弾幕と、技でない隊形）
+        virtual ChargeMode GetChargeMode() const { return ChargeMode::Straight; }
+
+        // この機の当たり判定を開くかを返す。DroneHitSystem が毎フレーム呼ぶ
+        // 突撃中で、移動方式の当たらない区間でも、技が先に閉じた後でもないときだけ開く
+        bool IsHitOpen(const DroneComponent &drone) const
+        {
+            // 離脱（Returning）は FireCharge と別の状態なので、帰り道は当たらない
+            if (drone.currentState != DroneState::FireCharge) return false;
+            if (IsHitWindowOver(drone)) return false;
+            return Motion::IsChargeDangerous(drone, GetChargeMode());
+        }
 
         /**
          * @brief この陣形から別の陣形へ切り替わる機の後始末

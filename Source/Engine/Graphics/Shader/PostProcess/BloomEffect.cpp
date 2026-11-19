@@ -142,7 +142,7 @@ void BloomEffect::Process(
     dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
 
     ID3D11SamplerState *samplers[] = {m_res->sampler.Get()};
-    dc->PSSetSamplers(SLOT_SMP_BLOOM, 1, samplers);
+    dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, samplers);
 
     // 明るい所を抜き出す（inputSRV → m_downChain[0]）
     {
@@ -160,12 +160,12 @@ void BloomEffect::Process(
         dc->PSSetConstantBuffers(SLOT_CB_BLOOM, 1, m_res->cbBloom.GetAddressOf());
 
         dc->PSSetShader(m_res->psExtract.Get(), nullptr, 0);
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &inputSRV);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &inputSRV);
         down0->Activate(dc);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRV = nullptr;
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &nullSRV);
     }
 
     // 縮小（m_downChain[i] → m_downChain[i + 1]）
@@ -183,11 +183,11 @@ void BloomEffect::Process(
 
         dst->Activate(dc);
         ID3D11ShaderResourceView *srvs[] = {src->GetSRV()};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, srvs);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRV = nullptr;
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &nullSRV);
         ID3D11RenderTargetView *nullRTV = nullptr;
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
     }
@@ -212,11 +212,11 @@ void BloomEffect::Process(
 
         dst->Activate(dc);
         ID3D11ShaderResourceView *srvs[] = {currentSRV, highRes->GetSRV()};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, srvs);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRVs[] = {nullptr, nullptr};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, nullSRVs);
         ID3D11RenderTargetView *nullRTV = nullptr;
         dc->OMSetRenderTargets(1, &nullRTV, nullptr);
 
@@ -253,11 +253,11 @@ void BloomEffect::Process(
         dc->OMSetRenderTargets(1, &outputRTV, nullptr);
 
         ID3D11ShaderResourceView *srvs[] = {inputSRV, finalGlow->GetSRV()};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, srvs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, srvs);
         dc->Draw(3, 0);
 
         ID3D11ShaderResourceView *nullSRVs[] = {nullptr, nullptr};
-        dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 2, nullSRVs);
+        dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 2, nullSRVs);
         // 描画先から外すのは PostProcessManager が行う
     }
 }
