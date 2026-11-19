@@ -52,8 +52,9 @@ private:
     // クリップが切り替わった（頭から再生し直した）なら、基準の時刻を今に合わせて true を返す
     static bool ResetOnClipChange(RootMotionComponent &rm, const AnimatorComponent &animator);
 
-    // ルートモーションカーブから、前回からの前進距離（m）を求め、基準の時刻を進める
-    static float AdvanceCurveDistance(RootMotionComponent &rm, const AnimatorComponent &animator);
+    // ルートモーションカーブ curve から、前回からの前進距離（m）を求め、基準の時刻を進める
+    static float AdvanceCurveDistance(RootMotionComponent &rm, const AnimatorComponent &animator,
+                                      const CurveData &curve);
 
     // ルートボーンの、前回からの移動量（ローカル空間）を求め、基準の時刻を進める。ブレンド中は前後を補間する
     static Vector3 AdvanceBoneDelta(RootMotionComponent &rm, const AnimatorComponent &animator, Model *model,

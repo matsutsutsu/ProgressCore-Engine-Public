@@ -7,10 +7,8 @@
 #include "Engine/Serialization/Meta/ComponentCategories.h"
 
 #include "Engine/Animation/Systems/AnimControllerSystem.h"
-#include "Engine/Graphics/Resource/ResourceManager.h"
 #include <algorithm>
 #include "Engine/Platform/Core/Dialog.h"
-#include "Engine/Platform/Core/FileSystem.h"
 
 #ifdef ENABLE_EDITOR
 #include "Editor/Inspector/ComponentGuiRegistry.h"
@@ -33,35 +31,13 @@ struct ComponentMeta<AnimatorComponent>
     static constexpr bool        isSerializable    = true;
 
 #ifdef ENABLE_EDITOR
+    // 再生の中身はアニメグラフが決めるので、ここは今の再生の確認だけにする
     static bool CustomGui(AnimatorComponent &anim, unsigned long long /*entityID*/ = 0, void * /*worldPtr*/ = nullptr)
     {
-        bool changed = false;
-
-        if (ImGui::DragFloat("再生速度", &anim.playbackSpeed, 0.05f, -5.0f, 5.0f)) changed = true;
-        if (ImGui::Checkbox("ループ", &anim.isLoop)) changed = true;
-        ImGui::Separator();
-
-        ImGui::TextDisabled("動的プレビュー");
-        if (ImGui::Button("シーケンスを読込&再生... (JSON)", ImVec2(-1, 0)))
-        {
-            if (auto pathOpt = FileDialog::OpenPreset("AnimSequence"))
-            {
-                std::string         finalPath = FileDialog::ConvertToRelativePath(*pathOpt);
-                const AnimSequence *loadedSeq = ResourceManager::Instance().LoadAnimSequence(finalPath.c_str());
-
-                if (loadedSeq)
-                {
-                    anim.Play(loadedSeq, {.blendTime = 0.2f, .loop = true, .speed = 1.0f});
-                    changed = true;
-                }
-            }
-        }
-        ImGui::Separator();
-
         if (!anim.currentSequence)
         {
             ImGui::TextColored(ImVec4(1, 1, 0, 1), "再生中のシーケンスなし");
-            return changed;
+            return false;
         }
 
         const AnimSequence *seq = anim.currentSequence;
@@ -84,7 +60,7 @@ struct ComponentMeta<AnimatorComponent>
             ImGui::TreePop();
         }
 
-        return changed;
+        return false;
     }
 #else
     static bool CustomGui(AnimatorComponent &, unsigned long long, void *)
@@ -93,12 +69,11 @@ struct ComponentMeta<AnimatorComponent>
     }
 #endif
 
+    // 保存する値はない（再生速度・ループはステートの設定で、再生のたびに Play が書く）
     static const std::vector<FieldDescriptor> &Fields()
     {
-        static const std::vector<FieldDescriptor> fields = {
-            CFIELD_FLOAT_RANGED(playbackSpeed, "再生速度", 0.05f, -5.0f, 5.0f, "再生")
-            CFIELD(isLoop, "ループ", "再生")};
-        return fields;
+        static const std::vector<FieldDescriptor> empty;
+        return empty;
     }
 };
 REGISTER_COMPONENT(AnimatorComponent, "Animator")
@@ -132,7 +107,7 @@ struct ComponentMeta<AnimStateMachineComponent>
 
         ImGui::TextDisabled("グラフファイル: %s", fsm.graphPath.empty() ? "なし" : fsm.graphPath.c_str());
 
-        // 読込は AnimControllerSystem の初回読込と同じ関数を通す（束縛の漏れを作らないため）
+        // 読込は AnimControllerSystem の初回読込と同じ関数を通す（entry への入り方をそろえるため）
         //   エディタの一時停止中は Logic が回らないので、要求を積まずにその場で読む
         if (ImGui::Button("アニメグラフを読込... (JSON)"))
         {
@@ -155,14 +130,15 @@ struct ComponentMeta<AnimStateMachineComponent>
         if (!fsm.graphPath.empty())
         {
             ImGui::SameLine();
+            // ファイルを読み直す。同じグラフを使うほかの Entity にも反映される
             if (ImGui::Button("グラフ再読込"))
             {
-                if (AnimControllerSystem::LoadGraph(fsm, animator, params)) changed = true;
+                if (AnimControllerSystem::ReloadGraph(fsm, animator, params)) changed = true;
             }
         }
         ImGui::Separator();
 
-        if (fsm.internalGraph.states.empty())
+        if (!fsm.graph || fsm.graph->states.empty())
         {
             ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "[エラー] アニメグラフが未設定です!");
             return changed;
@@ -174,7 +150,7 @@ struct ComponentMeta<AnimStateMachineComponent>
         ImGui::TextColored(kActiveColor, "%s", BuildActivePathLabel(fsm).c_str());
 
         // ステートが多く、開いたままだとインスペクタが縦に伸びるので、既定では閉じておく
-        if (ImGui::TreeNode("##StateJump", "ステートへジャンプ（%d）", CountStates(fsm.internalGraph)))
+        if (ImGui::TreeNode("##StateJump", "ステートへジャンプ（%d）", CountStates(*fsm.graph)))
         {
             // 名前で絞ると、階層をたどらずに目的のステートを探せる
             static ImGuiTextFilter filter;
@@ -182,11 +158,11 @@ struct ComponentMeta<AnimStateMachineComponent>
 
             if (filter.IsActive())
             {
-                if (DrawMatchingStates(fsm, animator, fsm.internalGraph, filter, "")) changed = true;
+                if (DrawMatchingStates(fsm, animator, *fsm.graph, filter, "")) changed = true;
             }
             else
             {
-                if (DrawStateTree(fsm, animator, fsm.internalGraph)) changed = true;
+                if (DrawStateTree(fsm, animator, *fsm.graph)) changed = true;
             }
             ImGui::TreePop();
         }
@@ -200,18 +176,17 @@ struct ComponentMeta<AnimStateMachineComponent>
     static std::string BuildActivePathLabel(const AnimStateMachineComponent &fsm)
     {
         std::string           label;
-        const AnimStateGraph *graph = &fsm.internalGraph;
+        const AnimStateGraph *graph = fsm.graph;
         for (uint32_t hash : fsm.activePath)
         {
             if (!graph) break;
 
-            const auto it = std::find_if(graph->states.begin(), graph->states.end(),
-                                         [hash](const AnimState &s) { return s.stateHash == hash; });
-            if (it == graph->states.end()) break;
+            const AnimState *state = FindDirectState(*graph, hash);
+            if (!state) break;
 
             if (!label.empty()) label += " > ";
-            label += it->sequenceName;
-            graph = it->subGraph.get();
+            label += state->stateName;
+            graph = state->subGraph.get();
         }
         return label.empty() ? "Unknown" : label;
     }
@@ -253,7 +228,7 @@ struct ComponentMeta<AnimStateMachineComponent>
             if (isActive) ImGui::PushStyleColor(ImGuiCol_Text, kActiveColor);
             if (isSub && isActive) ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
 
-            const bool open    = ImGui::TreeNodeEx("##State", flags, "%s%s", isSub ? "[Sub] " : "", state.sequenceName.c_str());
+            const bool open    = ImGui::TreeNodeEx("##State", flags, "%s%s", isSub ? "[Sub] " : "", state.stateName.c_str());
             const bool clicked = ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen();
             if (isActive) ImGui::PopStyleColor();
 
@@ -278,8 +253,8 @@ struct ComponentMeta<AnimStateMachineComponent>
         bool jumped = false;
         for (const auto &state : graph.states)
         {
-            const std::string label = prefix + state.sequenceName;
-            if (filter.PassFilter(state.sequenceName.c_str()))
+            const std::string label = prefix + state.stateName;
+            if (filter.PassFilter(state.stateName.c_str()))
             {
                 ImGui::PushID(static_cast<int>(state.stateHash));
                 const bool clicked = ImGui::Selectable(label.c_str(), IsOnActivePath(fsm, state.stateHash));
@@ -390,9 +365,9 @@ struct ComponentMeta<AnimParametersComponent>
         ImGui::TableNextColumn();
 
         const AnimParamDef *def = nullptr;
-        if (fsm)
+        if (fsm && fsm->graph)
         {
-            for (const auto &d : fsm->internalGraph.parameters)
+            for (const auto &d : fsm->graph->parameters)
                 if (d.hash == hash) def = &d;
         }
 

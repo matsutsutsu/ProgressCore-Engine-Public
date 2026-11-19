@@ -68,9 +68,9 @@ void RootMotionSystem::Update(float rawDt)
         // ---------------------------------------------------------
 
         // カーブがあれば、ボーンではなくカーブの差分だけ正面へ前進させる
-        if (animator.activeRootMotionCurve && !animator.activeRootMotionCurve->empty())
+        if (const CurveData *curve = animator.GetRootMotionCurve())
         {
-            const float dist = AdvanceCurveDistance(rm, animator);
+            const float dist = AdvanceCurveDistance(rm, animator, *curve);
             WriteOutput(movement, FlatForward(trans), dist / ldt);
             return;
         }
@@ -118,7 +118,7 @@ bool RootMotionSystem::ShouldApply(RootMotionComponent &rm, CharacterMovementCom
     // 再生中の葉ステートはサブマシンの中にもありうるので、再帰的に探す
     if (apply)
     {
-        const AnimState *st = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash);
+        const AnimState *st = fsm.GetCurrentState();
         apply               = st && st->applyRootMotion;
     }
     rm.enabled = apply;
@@ -151,10 +151,10 @@ bool RootMotionSystem::ResetOnClipChange(RootMotionComponent &rm, const Animator
 
 
 
-float RootMotionSystem::AdvanceCurveDistance(RootMotionComponent &rm, const AnimatorComponent &animator)
+float RootMotionSystem::AdvanceCurveDistance(RootMotionComponent &rm, const AnimatorComponent &animator,
+                                             const CurveData &curve)
 {
-    const CurveData *curve    = animator.activeRootMotionCurve;
-    const float      duration = animator.currentSequence->duration;
+    const float duration = animator.currentSequence->duration;
 
     // カーブは進捗（0〜1）から累積の前進距離（m）を返す
     const float p0 = std::clamp(rm.prevTimer / duration, 0.0f, 1.0f);
@@ -162,8 +162,8 @@ float RootMotionSystem::AdvanceCurveDistance(RootMotionComponent &rm, const Anim
     rm.prevTimer   = animator.currentTimer;
 
     // ループで進捗が戻った場合は「末尾まで + 先頭から」でつなぐ
-    if (p1 >= p0) return curve->Evaluate(p1) - curve->Evaluate(p0);
-    return (curve->Evaluate(1.0f) - curve->Evaluate(p0)) + (curve->Evaluate(p1) - curve->Evaluate(0.0f));
+    if (p1 >= p0) return curve.Evaluate(p1) - curve.Evaluate(p0);
+    return (curve.Evaluate(1.0f) - curve.Evaluate(p0)) + (curve.Evaluate(p1) - curve.Evaluate(0.0f));
 }
 
 

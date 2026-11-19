@@ -24,8 +24,8 @@ AnimationPoseSystem::AnimationPoseSystem() : IfSystem("AnimationPoseSystem") {}
 
 void AnimationPoseSystem::Update(float dt)
 {
-    // 直列に回す。Model は Entity ごとのインスタンスだが、
-    //   並列にするなら、ポーズ計算の中で書く Model のキャッシュ（mutable）と
+    // 直列に回す。作業用のポーズ（m_currentPose など）を全 Entity で使い回しているため
+    //   並列にするなら、作業用のポーズをスレッドごとに分け、ポーズ計算の中で書く Model のキャッシュ（mutable）と
     //   m_world->GetComponent を並列に呼んで安全かを先に確かめること
 
     // 描画の補間の割合（0 = 1つ前のステップ、1 = 最新のステップ）。Framework::Run が毎フレーム書く
@@ -33,7 +33,7 @@ void AnimationPoseSystem::Update(float dt)
     float alpha = 1.0f;
     if (m_world->HasResource<RenderInterpState>()) alpha = m_world->GetResource<RenderInterpState>().alpha;
 
-    ForEachWithID([this, alpha](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp) {
+    ForEachWithID([this, alpha](CCL::ECS::EntityID id, const AnimatorComponent &animator, ModelComponent &modelComp) {
         if (!animator.currentSequence) return;
 
         // エディタで操作中は ApplyPoseAt がポーズを作るので触らない
@@ -48,7 +48,7 @@ void AnimationPoseSystem::Update(float dt)
 
 
 
-void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
+void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, const AnimatorComponent &animator,
                                               Model *model, const AnimSequence *seq, float alpha)
 {
     // 処理フロー:
@@ -85,7 +85,7 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
         //   ノード [0] 決め打ちだと、Hips=1 のリグでブレンド中だけ前進が漏れ、終了でその場へ戻る
         ComputeSourcePose(model, animator, false, true, alpha);
 
-        Model::BlendAnimations(animator.poseBufferB, animator.poseBufferA, animator.GetBlendRate(), animator.poseBufferA);
+        Model::BlendAnimations(m_previousPose, m_currentPose, animator.GetBlendRate(), m_currentPose);
     }
     else
     {
@@ -103,21 +103,21 @@ void AnimationPoseSystem::ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorCom
     //   enabled なら抽出した差分で Transform を動かすので、固定しないと二重に前進する
     //   disabled ならコード（ダッシュなど）が Transform を動かすので、固定しないとモデルだけ滑る
     auto *rootMotion = m_world->GetComponent<RootMotionComponent>(id);
-    if (rootMotion && !animator.poseBufferA.empty())
-        PinRootMotionNode(model, animIndex, rootNodeIndex, animator.poseBufferA, animator.lockVerticalRootMotion);
+    if (rootMotion && !m_currentPose.empty())
+        PinRootMotionNode(model, animIndex, rootNodeIndex, m_currentPose, animator.lockVerticalRootMotion);
 
     // ---------------------------------------------------------
     // 4. Model へ書く
     // ---------------------------------------------------------
     {
         ZoneScopedN("AnimationPoseSystem::SetNodePoses");
-        model->SetNodePoses(animator.poseBufferA);
+        model->SetNodePoses(m_currentPose);
     }
 }
 
 
 
-bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip, float alpha)
+bool AnimationPoseSystem::ComputeSourcePose(Model *model, const AnimatorComponent &animator, bool previous, bool pinClip, float alpha)
 {
     // 処理フロー:
     // 1. 今側か前側かで、読む値と書く先を選ぶ
@@ -132,7 +132,7 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
     const AnimSequence           *timeBase = previous ? animator.previousSequence : animator.currentSequence;
     const float                   time     = previous ? animator.previousTimer : InterpolateCurrentTimer(animator, alpha);
     const AnimBlendPlayback      &blend    = previous ? animator.previousBlend : animator.currentBlend;
-    std::vector<Model::NodePose> &out      = previous ? animator.poseBufferB : animator.poseBufferA;
+    std::vector<Model::NodePose> &out      = previous ? m_previousPose : m_currentPose;
 
     const int baseIndex = model->GetAnimationIndex(timeBase->targetAnimName.c_str());
     if (baseIndex == -1) return false;
@@ -175,7 +175,7 @@ bool AnimationPoseSystem::ComputeSourcePose(Model *model, AnimatorComponent &ani
 
         // 1 本目は out へ直接、2 本目からは作業用のバッファへ計算して混ぜる
         const bool                    first  = (accumulated == 0.0f);
-        std::vector<Model::NodePose> &target = first ? out : animator.poseBufferC;
+        std::vector<Model::NodePose> &target = first ? out : m_samplePose;
         model->ComputeAnimation(sampleIndex, progress * sample->duration, target);
 
         // 混ぜる前に、点ごとにルートを固定する（点ごとにルートボーンの番号と前進量が違う）
@@ -259,15 +259,15 @@ void AnimationPoseSystem::ApplyPoseAt(CCL::ECS::EntityID entity, float time)
     const int animIndex = model->GetAnimationIndex(animator->currentSequence->targetAnimName.c_str());
     if (animIndex == -1) return;
 
-    model->ComputeAnimation(animIndex, time, animator->poseBufferA);
+    model->ComputeAnimation(animIndex, time, m_currentPose);
 
     // RootMotionComponent の有無に関係なく固定する
     //   固定しないと、クリップ自身の前進と、ルートモーションカーブによる Transform の移動
     //   （シーケンサーのルートモーションのプレビュー）が二重に掛かり、モデルだけ前に出る
     const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
-    PinRootMotionNode(model, animIndex, rootNodeIndex, animator->poseBufferA, animator->lockVerticalRootMotion);
+    PinRootMotionNode(model, animIndex, rootNodeIndex, m_currentPose, animator->lockVerticalRootMotion);
 
-    model->SetNodePoses(animator->poseBufferA);
+    model->SetNodePoses(m_currentPose);
 }
 
 

@@ -46,7 +46,8 @@ void BossBackStepAction::Enter(BossActionComponent &bossAction, const BossAction
 
     // 止まりのモーションの長さを、アニメグラフから取る
     // 下がる長さ＝下がり始め＋止まりのモーション。取れなければ 0.4 秒
-    bossAction.backStepStopTime = frame.animStateMachine ? StatePlayTime(frame.animStateMachine->internalGraph, kBackStepStopState, 0.4f) : 0.4f;
+    const AnimStateGraph *graph = frame.animStateMachine ? frame.animStateMachine->graph : nullptr;
+    bossAction.backStepStopTime = graph ? StatePlayTime(*graph, kBackStepStopState, 0.4f) : 0.4f;
 
     const float retreatTime      = (std::max)(0.0f, bossAction.backStepRetreatTime);
     const float backStepMoveTime = (std::max)(0.05f, retreatTime + bossAction.backStepStopTime);

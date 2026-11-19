@@ -1,7 +1,6 @@
 #pragma once
 // アニメーションの再生状態（AnimatorComponent）。再生中のクリップ・時刻・クロスフェード・ブレンドスペースを持つ
 // 再生の開始は AnimControllerSystem の Play()、時刻を進めるのは AnimationSystem
-#include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Animation/Core/AnimSequence.h"
 #include "Engine/Animation/Core/AnimBlendSpaceMath.h"
 #include <vector>
@@ -9,8 +8,6 @@
 #include <cstdint>
 #include <cmath>
 #include <algorithm>
-
-struct CurveData;
 
 namespace CCL::Anim
 {
@@ -29,7 +26,7 @@ namespace CCL::Anim
 
 
 // 再生中のブレンドスペース。グラフの AnimBlendSpace から、実行時に要る値だけをコピーして持つ
-//   ポインタで持つと、グラフの再読込（internalGraph の差し替え）やエンティティの複製で指す先がなくなる
+//   ポインタで持つと、グラフを読み直したときに指す先がなくなる（読み直しはグラフの中身を丸ごと差し替える）
 struct AnimBlendPlayback
 {
     int                sampleCount   = 0; // 0 ならブレンドスペースではない（単体のクリップ）
@@ -78,9 +75,7 @@ struct AnimBlendPlayback
 struct AnimatorComponent
 {
     // --- 再生中のクリップ ---
-    const AnimSequence *currentSequence       = nullptr; // 所有しない（ResourceManager が持つ）
-    const CurveData    *activeCurve           = nullptr; // 再生速度カーブ。所有しない
-    const CurveData    *activeRootMotionCurve = nullptr; // ルートモーションカーブ。nullptr ならボーンから抽出。所有しない
+    const AnimSequence *currentSequence = nullptr; // 所有しない（ResourceManager が持つ）
 
     bool lockVerticalRootMotion = false; // Force Root Lock で Y も固定するか（ステートの設定）
 
@@ -120,11 +115,6 @@ struct AnimatorComponent
     //   currentSequence は、ブレンドスペースの間も時間の基準（点 [0]）のクリップを指す
     AnimBlendPlayback currentBlend;  // 今のステートのブレンドスペース
     AnimBlendPlayback previousBlend; // クロスフェード中の前のステートのブレンドスペース（切り替えた瞬間の重みのまま）
-
-    // --- ポーズ計算用のバッファ（毎フレームの確保を避けるため保持する）---
-    std::vector<Model::NodePose> poseBufferA; // 現在のクリップ（ブレンド後の結果もここ）
-    std::vector<Model::NodePose> poseBufferB; // 前のクリップ
-    std::vector<Model::NodePose> poseBufferC; // ブレンドスペースで、点 1 本分を計算する作業用
 
     // --- 外部からの握り ---
     //   エディタとムービーは別々に握って離すので、2 つのフラグで持つ
@@ -207,10 +197,6 @@ struct AnimatorComponent
         isLoop        = params.loop;
         playbackSpeed = params.speed;
 
-        // カーブはシーケンサーでシーケンスに書き込んだもの。空なら等速・ボーンからの抽出になる
-        activeCurve           = (sequence && !sequence->speedCurve.empty()) ? &sequence->speedCurve : nullptr;
-        activeRootMotionCurve = (sequence && !sequence->rootMotionCurve.empty()) ? &sequence->rootMotionCurve : nullptr;
-
         lockVerticalRootMotion = params.lockVerticalRootMotion;
     }
 
@@ -258,6 +244,20 @@ struct AnimatorComponent
         {
             ++nextEventIndex;
         }
+    }
+
+    // 今のクリップの再生速度カーブ。シーケンスに書いていなければ nullptr（等速で再生する）
+    const CurveData *GetSpeedCurve() const
+    {
+        if (!currentSequence || currentSequence->speedCurve.empty()) return nullptr;
+        return &currentSequence->speedCurve;
+    }
+
+    // 今のクリップのルートモーションカーブ。シーケンスに書いていなければ nullptr（ルートボーンから移動量を求める）
+    const CurveData *GetRootMotionCurve() const
+    {
+        if (!currentSequence || currentSequence->rootMotionCurve.empty()) return nullptr;
+        return &currentSequence->rootMotionCurve;
     }
 
     // エディタかムービーが再生を握っているか（グラフの遷移とルートモーションを止めるときに見る）

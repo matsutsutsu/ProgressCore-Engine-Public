@@ -6,10 +6,7 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": {},
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },

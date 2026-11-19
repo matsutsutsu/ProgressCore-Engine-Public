@@ -430,7 +430,7 @@ void PlayerRushSystem::EnterFlurry(PlayerRushComponent &rush)
 
 void PlayerRushSystem::TrackRushAnim(PlayerRushComponent &rush, const AnimStateMachineComponent *fsm)
 {
-    const uint32_t state = fsm ? fsm->currentStateHash : 0u;
+    const uint32_t state = fsm ? fsm->GetCurrentStateHash() : 0u;
 
     // 斬りのステートに入った瞬間だけ数える
     // 押した回数で数えると、受付区間の前の連打まで数えてしまう

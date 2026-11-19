@@ -15,16 +15,17 @@
 //       Transform の補間（TransformInterpolationSystem）と同じ考え方で、ロジックが進まない描画フレームでも骨が動く
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
+#include "Engine/Graphics/Resource/Model.h"
+#include <vector>
 
 // 実体は struct なので struct で宣言する（class と混ぜると C4099 になる）
 struct AnimatorComponent;
 struct ModelComponent;
-class Model;
 struct AnimSequence;
 
 class AnimationPoseSystem : public CCL::ECS::IfSystem<
     AnimationPoseSystem,
-    CCL::ECS::Write<AnimatorComponent>,
+    CCL::ECS::Read<AnimatorComponent>, // 再生の状態は読むだけ（進めるのは AnimationSystem）
     CCL::ECS::Write<ModelComponent>>
 {
 public:
@@ -39,16 +40,21 @@ public:
 
 private:
     // ブレンドと Force Root Lock を行い、最終的な骨格ポーズを Model へ適用する
-    void ComputeAndApplyPose(CCL::ECS::EntityID id, AnimatorComponent &animator,
+    void ComputeAndApplyPose(CCL::ECS::EntityID id, const AnimatorComponent &animator,
                              Model *model, const AnimSequence *seq, float alpha);
 
-    // 今の側か前の側（previous）の再生元のポーズを作る。今は poseBufferA、前は poseBufferB に書く
+    // 今の側か前の側（previous）の再生元のポーズを作る。今は m_currentPose、前は m_previousPose に書く
     // pinClip は単体のクリップで混ぜる前にルートを固定するか。ブレンドスペースは点ごとに固定する
     // alpha は今の側の時刻の補間に使う（前の側は補間しない）
     // 時間の基準のクリップがモデルになければ false（何も書かない）
-    bool ComputeSourcePose(Model *model, AnimatorComponent &animator, bool previous, bool pinClip, float alpha);
+    bool ComputeSourcePose(Model *model, const AnimatorComponent &animator, bool previous, bool pinClip, float alpha);
 
     // 今のクリップの、描画で使う時刻を返す
     // 1ステップ前の時刻（previousFrameTimer）から今の時刻（currentTimer）までを alpha で補間する
     float InterpolateCurrentTimer(const AnimatorComponent &animator, float alpha) const;
+
+    // --- ポーズ計算の作業用（全 Entity で使い回し、毎フレームの確保を避ける。直列に回すので共有してよい）---
+    std::vector<Model::NodePose> m_currentPose;  // 今のクリップ（ブレンド後の結果もここ）
+    std::vector<Model::NodePose> m_previousPose; // クロスフェード中の前のクリップ
+    std::vector<Model::NodePose> m_samplePose;   // ブレンドスペースで、点 1 本分を計算する作業用
 };

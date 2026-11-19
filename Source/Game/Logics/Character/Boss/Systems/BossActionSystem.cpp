@@ -275,7 +275,7 @@ BossActionSystem::TranslatedAction BossActionSystem::TranslateAction(ActionID ac
 void BossActionSystem::UpdateFlinch(BossActionComponent &bossAction, const AnimStateMachineComponent *animStateMachine,
                                     float dt) const
 {
-    bossAction.isFlinching = animStateMachine && animStateMachine->currentStateHash == kFlinchState;
+    bossAction.isFlinching = animStateMachine && animStateMachine->GetCurrentStateHash() == kFlinchState;
 
     // 冷却は明けてから数えるので、ひるんでいる間は満タンに保つ
     // dt はこの個体の時計なので、ヒットストップ中は冷却も止まる

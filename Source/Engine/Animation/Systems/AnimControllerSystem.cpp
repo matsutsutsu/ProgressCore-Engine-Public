@@ -4,22 +4,12 @@
 #include <cmath>
 #include <imgui.h>
 #include "Engine/Graphics/Resource/ResourceManager.h"
-#include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include "Engine/Platform/Core/Logger.h"
 #include <tracy/Tracy.hpp>
 
 // ---------------------------------------------------------------------------
 // 階層の探索
 // ---------------------------------------------------------------------------
-
-const AnimState *AnimControllerSystem::FindDirectState(const AnimStateGraph &graph, uint32_t hash)
-{
-    for (const auto &s : graph.states)
-        if (s.stateHash == hash) return &s;
-    return nullptr;
-}
-
-
 
 const AnimState *AnimControllerSystem::DescendToLeaf(const AnimState *st, std::vector<uint32_t> &path)
 {
@@ -222,7 +212,6 @@ bool AnimControllerSystem::FireTransition(const AnimStateGraph &graph, int level
     // ---------------------------------------------------------
     fsm.activePath.resize(static_cast<size_t>(level)); // この階層より内側を捨てる
     const AnimState *leaf = EnterResolveLeaf(graph, t.targetStateHash, fsm.activePath);
-    fsm.currentStateHash  = fsm.activePath.back();
 
     if (StateSequence(*leaf))
     {
@@ -235,12 +224,12 @@ bool AnimControllerSystem::FireTransition(const AnimStateGraph &graph, int level
         //   気付けるよう警告を出す
         CCL_LOG_WARN(LogCategory::Game,
                      "[AnimController] ステート[%s]にクリップが設定されていません（再生は前のまま）",
-                     leaf->sequenceName.c_str());
+                     leaf->stateName.c_str());
     }
 
     if (enableLog)
         CCL_LOG_SUCCESS(LogCategory::Game, "[AnimController] -> [%s] (depth=%d)",
-                        leaf->sequenceName.c_str(), (int)fsm.activePath.size());
+                        leaf->stateName.c_str(), (int)fsm.activePath.size());
     return true;
 }
 
@@ -309,36 +298,6 @@ bool AnimControllerSystem::EvaluateLevel(const AnimStateGraph &graph, int level,
 
 
 // ---------------------------------------------------------------------------
-// リソースの束縛
-// ---------------------------------------------------------------------------
-
-void AnimControllerSystem::BindGraphResources(AnimStateGraph &graph, ResourceManager &rm)
-{
-    for (auto &state : graph.states)
-    {
-        if (!state.sequenceFilePath.empty())
-            state.sequence = rm.LoadAnimSequence(state.sequenceFilePath.c_str());
-
-        // ブレンドスペースは、点ごとに自分のクリップを持つ
-        if (state.isBlendSpace)
-        {
-            for (auto &sample : state.blendSpace.samples)
-            {
-                if (!sample.sequenceFilePath.empty())
-                {
-                    sample.sequence = rm.LoadAnimSequence(sample.sequenceFilePath.c_str());
-                }
-            }
-        }
-
-        if (state.isSubMachine && state.subGraph)
-            BindGraphResources(*state.subGraph, rm);
-    }
-}
-
-
-
-// ---------------------------------------------------------------------------
 // 毎ステップの更新
 // ---------------------------------------------------------------------------
 
@@ -349,7 +308,7 @@ void AnimControllerSystem::Update(float dt)
     // 2. ステートマシンを評価する（並列）
 
     // 2 段に分けるのは、ファイル I/O と ResourceManager がスレッドセーフでないため
-    // 読込と束縛を 1 段目で済ませておけば、2 段目は ResourceManager を呼ばずに済む
+    // グラフの受け取りを 1 段目で済ませておけば、2 段目は ResourceManager を呼ばずに済む
 
     ZoneScopedN("AnimControllerSystem::Update");
 
@@ -367,11 +326,11 @@ void AnimControllerSystem::Update(float dt)
         //   握りが離れた後の最初のステップで entry に入る
         if (animator.IsOverridden()) return;
 
-        // 未読込のグラフだけ処理する（読込済みかパス未設定なら何もしない）
-        if (!fsm.internalGraph.states.empty() || fsm.graphPath.empty()) return;
+        // まだグラフを受け取っていない Entity だけ処理する（受け取り済みかパス未設定なら何もしない）
+        if (fsm.graph || fsm.graphPath.empty()) return;
 
-        // ここに来るのは初回だけ。起動直後は全キャラ分がこのフレームに集中し、処理が一時的に重くなる
-        ZoneScopedN("AnimCtrl: LoadGraph+Bind (first frame)");
+        // ここに来るのは初回だけ。同じグラフを使う Entity のうち、ファイルを読むのは最初の 1 体だけ
+        ZoneScopedN("AnimCtrl: LoadGraph (first frame)");
 
         // 失敗したらパスを消し、毎フレーム再試行しない
         if (!LoadGraph(fsm, &animator, &params)) fsm.graphPath = "";
@@ -396,24 +355,14 @@ void AnimControllerSystem::Update(float dt)
         // 評価の前に寿命を進める。localDt なので、ヒットストップやスロー中は寿命も遅く減る
         params.TickTriggers(time.localDt);
 
-        if (fsm.internalGraph.states.empty()) return;
+        if (!fsm.graph) return;
 
-        // --- 現在地の修復 ---
+        // --- 現在地の確認 ---
 
-        // activePath が空か、末尾が currentStateHash と食い違っていたら作り直す（外から書き換えられたときの保険）
-        //   まず currentStateHash からパスを作り、見つからなければ entry から作り直す
-        if (fsm.activePath.empty() || fsm.activePath.back() != fsm.currentStateHash)
-        {
-            fsm.activePath.clear();
-            const AnimState *cur = BuildPathTo(fsm.internalGraph, fsm.currentStateHash, fsm.activePath);
-            if (!cur)
-            {
-                fsm.activePath.clear();
-                cur = EnterResolveLeaf(fsm.internalGraph, fsm.internalGraph.entryStateHash, fsm.activePath);
-                if (!cur) return; // entry も見つからない（グラフが壊れている）
-            }
-            if (!fsm.activePath.empty()) fsm.currentStateHash = fsm.activePath.back();
-        }
+        // 現在地がグラフの中でたどれなければ、entry から入り直す
+        //   同じグラフを使う別の Entity がグラフを読み直し、いたステートがなくなった場合など
+        if (!fsm.GetCurrentState()) EnterEntry(fsm, &animator);
+        if (fsm.activePath.empty()) return; // entry も見つからない（グラフが壊れている）
 
         // --- ムービーの握り ---
 
@@ -425,8 +374,7 @@ void AnimControllerSystem::Update(float dt)
         //   握っている間もステートは変わっていないので、遷移ではなく「今のステートに入り直す」だけでよい
         if (animator.externalReleaseBlend >= 0.0f)
         {
-            if (const AnimState *leaf = FindStateRecursive(fsm.internalGraph, fsm.currentStateHash);
-                leaf && StateSequence(*leaf))
+            if (const AnimState *leaf = fsm.GetCurrentState(); leaf && StateSequence(*leaf))
             {
                 PlayState(animator, *leaf, animator.externalReleaseBlend, true);
             }
@@ -436,7 +384,7 @@ void AnimControllerSystem::Update(float dt)
         // --- 遷移の評価 ---
 
         // ルートから葉へ評価する。どこかの階層で遷移したら、このステップはそこで終わる
-        EvaluateLevel(fsm.internalGraph, 0, fsm, animator, params, enableLog);
+        EvaluateLevel(*fsm.graph, 0, fsm, animator, params, enableLog);
 
         // --- ブレンドスペースの重み ---
 
@@ -454,60 +402,23 @@ void AnimControllerSystem::Update(float dt)
 bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorComponent *animator,
                                      AnimParametersComponent *params)
 {
-    // 処理フロー:
-    // 1. 一時のグラフへ読み込み、クリップを束縛する
-    // 2. パラメータの初期値を入れる
-    // 3. entry へ入って再生する
+    // 同じファイルを読み込み済みなら、その実体を受け取るだけでファイルは読まない
+    const AnimStateGraph *graph = ResourceManager::Instance().LoadAnimGraph(fsm.graphPath.c_str());
+    if (!graph) return false;
 
-    // ---------------------------------------------------------
-    // 1. 読込と束縛
-    // ---------------------------------------------------------
+    StartGraph(fsm, *graph, animator, params);
+    return true;
+}
 
-    // 一時のグラフへ読む。失敗しても今のグラフ（再読込なら実行中のもの）を壊さない
-    AnimStateGraph graph;
-    if (!AnimGraphSerializer::LoadFromJSON(graph, fsm.graphPath)) return false;
 
-    BindGraphResources(graph, ResourceManager::Instance());
-    fsm.internalGraph = std::move(graph);
 
-    // ---------------------------------------------------------
-    // 2. パラメータの初期値
-    // ---------------------------------------------------------
+bool AnimControllerSystem::ReloadGraph(AnimStateMachineComponent &fsm, AnimatorComponent *animator,
+                                       AnimParametersComponent *params)
+{
+    const AnimStateGraph *graph = ResourceManager::Instance().ReloadAnimGraph(fsm.graphPath.c_str());
+    if (!graph) return false;
 
-    // まだ値を持っていないパラメータにだけ入れる
-    //   ゲーム側が先に書いた値（毎ステップ書く Speed など）を初期値で上書きしない
-    if (params)
-    {
-        for (const auto &def : fsm.internalGraph.parameters)
-        {
-            float current = 0.0f;
-            if (params->TryGetNumeric(def.hash, current)) continue;
-
-            if (def.type == AnimParamType::Float)
-            {
-                params->SetFloat(def.hash, def.defaultFloat);
-            }
-            else if (def.type == AnimParamType::Bool)
-            {
-                params->SetBool(def.hash, def.defaultBool);
-            }
-        }
-    }
-
-    // ---------------------------------------------------------
-    // 3. entry へ入る
-    // ---------------------------------------------------------
-
-    // entry に入り、サブマシンなら葉まで降りて activePath を作る
-    fsm.activePath.clear();
-    const AnimState *leaf = EnterResolveLeaf(fsm.internalGraph, fsm.internalGraph.entryStateHash, fsm.activePath);
-    fsm.currentStateHash  = fsm.activePath.empty() ? fsm.internalGraph.entryStateHash : fsm.activePath.back();
-
-    // 握られている間は再生しない（握っている側のクリップを上書きしないため）
-    if (!animator || animator->IsOverridden()) return true;
-
-    // 最初の再生なのでブレンドしない。再読込のときも entry の頭から流し直す
-    if (leaf && StateSequence(*leaf)) PlayState(*animator, *leaf, 0.0f, true);
+    StartGraph(fsm, *graph, animator, params);
     return true;
 }
 
@@ -515,19 +426,58 @@ bool AnimControllerSystem::LoadGraph(AnimStateMachineComponent &fsm, AnimatorCom
 
 bool AnimControllerSystem::JumpToState(AnimStateMachineComponent &fsm, AnimatorComponent &animator, uint32_t stateHash)
 {
+    if (!fsm.graph) return false;
+
     // ルートからのパスを先に作り、見つかったときだけ現在地を差し替える
     std::vector<uint32_t> path;
-    const AnimState      *leaf = BuildPathTo(fsm.internalGraph, stateHash, path);
+    const AnimState      *leaf = BuildPathTo(*fsm.graph, stateHash, path);
     if (!leaf) return false;
 
-    fsm.activePath       = std::move(path);
-    fsm.currentStateHash = fsm.activePath.back();
+    fsm.activePath = std::move(path);
 
-    // currentStateHash だけを書き換えると、ステートは変わってもクリップが前のまま流れる
-    //   握られている間は再生しない（理由は LoadGraph と同じ）
+    // 現在地だけを書き換えると、ステートは変わってもクリップが前のまま流れる
+    //   握られている間は再生しない（握っている側のクリップを上書きしないため）
     if (animator.IsOverridden()) return true;
     if (StateSequence(*leaf)) PlayState(animator, *leaf, 0.0f, true);
     return true;
+}
+
+
+
+void AnimControllerSystem::StartGraph(AnimStateMachineComponent &fsm, const AnimStateGraph &graph,
+                                      AnimatorComponent *animator, AnimParametersComponent *params)
+{
+    fsm.graph = &graph;
+
+    // パラメータの初期値は、まだ値を持っていないパラメータにだけ入れる
+    //   ゲーム側が先に書いた値（毎ステップ書く VelocityY など）を初期値で上書きしない
+    if (params)
+    {
+        for (const auto &def : graph.parameters)
+        {
+            float current = 0.0f;
+            if (params->TryGetNumeric(def.hash, current)) continue;
+
+            if (def.type == AnimParamType::Float) params->SetFloat(def.hash, def.defaultFloat);
+            else if (def.type == AnimParamType::Bool) params->SetBool(def.hash, def.defaultBool);
+        }
+    }
+
+    // 再読込のときも entry の頭から流し直す
+    EnterEntry(fsm, animator);
+}
+
+
+
+void AnimControllerSystem::EnterEntry(AnimStateMachineComponent &fsm, AnimatorComponent *animator)
+{
+    fsm.activePath.clear();
+    const AnimState *leaf = EnterResolveLeaf(*fsm.graph, fsm.graph->entryStateHash, fsm.activePath);
+
+    // 握られている間は再生しない（握っている側のクリップを上書きしないため）
+    //   入り直しなのでブレンドしない
+    if (!animator || animator->IsOverridden()) return;
+    if (leaf && StateSequence(*leaf)) PlayState(*animator, *leaf, 0.0f, true);
 }
 
 

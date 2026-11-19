@@ -9,6 +9,7 @@
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
 
 #include "Engine/Platform/Core/FileSystem.h"
+#include "Engine/Animation/Core/AnimGraphSerializer.h"
 #include <sstream>
 
 using namespace CCL::Utils;
@@ -53,6 +54,7 @@ void ResourceManager::ClearAll()
     m_textureRegistry.clear();
     m_modelRegistry.clear();
     m_animSequenceRegistry.clear();
+    m_animGraphRegistry.clear();
     m_assetPathRegistry.clear();
 
     // 2. プールを空にする（中の ComPtr がここで Release される）
@@ -61,6 +63,7 @@ void ResourceManager::ClearAll()
     m_modelInstancePool.Clear();
     m_materialPool.Clear();
     m_animSequencePool.Clear();
+    m_animGraphPool.Clear();
     m_renderTargetPool.Clear();
     m_particleBufferPool.Clear();
 }
@@ -450,6 +453,82 @@ const AnimSequence *ResourceManager::ReloadAnimSequence(const char *filename)
 
     CCL_LOG_SUCCESS(LogCategory::Core, "Reloaded AnimSequence: %s", filename);
     return seq;
+}
+
+
+
+const AnimStateGraph *ResourceManager::LoadAnimGraph(const char *filename)
+{
+    if (!filename || filename[0] == '\0') return nullptr;
+
+    const uint32_t hash = HashString(NormalizeAssetKey(filename).c_str());
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto                        it = m_animGraphRegistry.find(hash);
+        if (it != m_animGraphRegistry.end())
+        {
+            if (AnimStateGraph *graph = m_animGraphPool.Get(it->second)) return graph;
+        }
+    }
+
+    // 読込と結び付けはロックの外で行う（結び付けの中の LoadAnimSequence が同じ m_mutex を取る）
+    AnimStateGraph loaded;
+    if (!AnimGraphSerializer::LoadFromJSON(loaded, filename)) return nullptr;
+    BindGraphResources(loaded);
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    AnimGraphHandle handle    = m_animGraphPool.Create();
+    AnimStateGraph *graph     = m_animGraphPool.Get(handle);
+    *graph                    = std::move(loaded);
+    m_animGraphRegistry[hash] = handle;
+    return graph;
+}
+
+
+
+const AnimStateGraph *ResourceManager::ReloadAnimGraph(const char *filename)
+{
+    if (!filename || filename[0] == '\0') return nullptr;
+
+    const uint32_t  hash  = HashString(NormalizeAssetKey(filename).c_str());
+    AnimStateGraph *graph = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto                        it = m_animGraphRegistry.find(hash);
+        if (it != m_animGraphRegistry.end()) graph = m_animGraphPool.Get(it->second);
+    }
+    if (!graph) return LoadAnimGraph(filename);
+
+    // 読めなければ今の内容のまま
+    AnimStateGraph loaded;
+    if (!AnimGraphSerializer::LoadFromJSON(loaded, filename)) return graph;
+    BindGraphResources(loaded);
+
+    // 同じ実体へ上書きする（指している Entity はそのまま新しい中身を見る）
+    std::lock_guard<std::mutex> lock(m_mutex);
+    *graph = std::move(loaded);
+
+    CCL_LOG_SUCCESS(LogCategory::Core, "Reloaded AnimGraph: %s", filename);
+    return graph;
+}
+
+
+
+void ResourceManager::BindGraphResources(AnimStateGraph &graph)
+{
+    for (auto &state : graph.states)
+    {
+        if (!state.sequenceFilePath.empty()) state.sequence = LoadAnimSequence(state.sequenceFilePath.c_str());
+
+        // ブレンドスペースは、点ごとに自分のクリップを持つ
+        if (state.isBlendSpace)
+        {
+            for (auto &sample : state.blendSpace.samples)
+                if (!sample.sequenceFilePath.empty()) sample.sequence = LoadAnimSequence(sample.sequenceFilePath.c_str());
+        }
+
+        if (state.isSubMachine && state.subGraph) BindGraphResources(*state.subGraph);
+    }
 }
 
 

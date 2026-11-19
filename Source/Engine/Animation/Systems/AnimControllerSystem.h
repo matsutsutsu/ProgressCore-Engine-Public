@@ -3,12 +3,12 @@
 // 概要: アニメーションのステートマシンを評価して遷移を決める System（L02_Update）
 //
 // 責務:
-//   - グラフファイルを読み込み（初回とインスペクタの再読込）、クリップ・カーブを束縛して entry を再生する
+//   - グラフを ResourceManager から受け取り（初回とインスペクタの再読込）、entry から再生する
 //   - AnimParametersComponent の値で遷移条件を判定し、遷移したら AnimatorComponent へ再生を指示する
 //   - トリガー（先行入力）の寿命を進める
 //
 // 備考:
-//   - 読込と束縛（ResourceManager・ファイル I/O）は直列、評価は並列の 2 段に分けている
+//   - グラフの受け取り（ResourceManager・ファイル I/O）は直列、評価は並列の 2 段に分けている
 //   - 階層ステートマシンは外側（親）の遷移を内側（子）より優先して評価する
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -16,8 +16,6 @@
 #include "Engine/Animation/Components/AnimParametersComponent.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
 #include "Engine/Time/Components/TimeState.h"
-
-class ResourceManager;
 
 class AnimControllerSystem : public CCL::ECS::IfSystem<
     AnimControllerSystem,
@@ -37,11 +35,16 @@ public:
 
     void OnGui() override;
 
-    // fsm.graphPath のグラフを読み、クリップを結び付けて entry から再生し直す。失敗したら何も変えない
-    // パラメータの初期値は、まだ値を持っていないものにだけ入れる。ファイルを読むので、メインスレッドから呼ぶ
+    // fsm.graphPath のグラフを ResourceManager から受け取り、entry から再生し直す。読めなければ false で何も変えない
+    // パラメータの初期値は、まだ値を持っていないものにだけ入れる。ファイルを読むことがあるので、メインスレッドから呼ぶ
     // animator が握られている間（IsOverridden）は、ステートだけ entry に戻して再生しない
     static bool LoadGraph(AnimStateMachineComponent &fsm, AnimatorComponent *animator,
                           AnimParametersComponent *params);
+
+    // fsm.graphPath のファイルを読み直してから、LoadGraph と同じことをする（インスペクタの「グラフ再読込」用）
+    // 同じグラフを使うほかの Entity も新しい中身を見る。いたステートがなくなっていれば、次のステップで entry へ戻る
+    static bool ReloadGraph(AnimStateMachineComponent &fsm, AnimatorComponent *animator,
+                            AnimParametersComponent *params);
 
     // 指定のステートへ入り直し、クリップを頭から再生する（エディタからのジャンプ用）。サブマシンなら entry の葉まで降りる
     // 見つからなければ false で何も変えない。animator が握られている間は、ステートだけ変えて再生しない
@@ -49,9 +52,6 @@ public:
 
 private:
     // --- 階層の探索（現在地は fsm.activePath [ルート側..., 葉]）---
-
-    // このグラフの直下のステートを hash で引く（子グラフはたどらない）
-    static const AnimState *FindDirectState(const AnimStateGraph &graph, uint32_t hash);
 
     // st がサブマシンなら entry をたどって葉まで path を伸ばし、葉を返す。葉ならそのまま返す
     static const AnimState *DescendToLeaf(const AnimState *st, std::vector<uint32_t> &path);
@@ -96,10 +96,14 @@ private:
     static bool EvaluateLevel(const AnimStateGraph &graph, int level, AnimStateMachineComponent &fsm,
                               AnimatorComponent &animator, AnimParametersComponent &params, bool enableLog);
 
-    // --- リソースの束縛 ---
+    // --- グラフの開始 ---
 
-    // グラフ内の全ステートの sequence / ブレンドスペースの点を束縛する（サブマシンの子も再帰的に）
-    static void BindGraphResources(AnimStateGraph &graph, ResourceManager &rm);
+    // fsm に graph を持たせ、パラメータの初期値を入れて entry から再生する（LoadGraph と ReloadGraph の共通部分）
+    static void StartGraph(AnimStateMachineComponent &fsm, const AnimStateGraph &graph,
+                           AnimatorComponent *animator, AnimParametersComponent *params);
+
+    // fsm.graph の entry に入り、サブマシンなら葉まで降りる。animator が握られていなければ、葉のクリップを頭から再生する
+    static void EnterEntry(AnimStateMachineComponent &fsm, AnimatorComponent *animator);
 
     bool m_enableTransitionLog = false; // 遷移のたびにログを出すか（遷移が多くログが埋まるので既定は OFF）
 };

@@ -145,14 +145,14 @@ float AnimationSystem::ComputeEffectiveSpeed(const AnimatorComponent &animator, 
     // ここに Tracy のゾーンを置かないこと
     //   処理は数十ナノ秒でゾーン自体のコストと同程度になり、OS のプリエンプトを拾って巨大な値が出る
     float curveMultiplier = 1.0f;
-    if (animator.activeCurve)
+    if (const CurveData *curve = animator.GetSpeedCurve())
     {
         float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
 
         // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる
         //   [0,1] に丸めて防ぐ
         progress        = std::clamp(progress, 0.0f, 1.0f);
-        curveMultiplier = animator.activeCurve->Evaluate(progress);
+        curveMultiplier = curve->Evaluate(progress);
     }
     return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
 }

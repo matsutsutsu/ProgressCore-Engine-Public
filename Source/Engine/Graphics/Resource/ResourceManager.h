@@ -29,6 +29,7 @@
 #include "Engine/Graphics/Components/Particle/GPUParticleBuffer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Animation/Core/AnimSequence.h"
+#include "Engine/Animation/Core/AnimStateMachine.h"
 #include "Engine/Core/Math/CurveData.h"
 
 class ResourceManager
@@ -107,6 +108,12 @@ public:
     // 作り直さないので、指しているポインタは有効なまま。キャッシュになければ読み込み、読めなければ今の内容を返す
     const AnimSequence *ReloadAnimSequence(const char *filename);
 
+    // アニメグラフを読み、中のステートが指すシーケンスも読み込んで結び付ける。同じファイルは 1 つの実体を共有する
+    const AnimStateGraph *LoadAnimGraph(const char *filename);
+    // キャッシュ済みのグラフを読み直し、同じ実体に上書きする（インスペクタの「グラフ再読込」用）
+    // 作り直さないので、指しているポインタは有効なまま。キャッシュになければ読み込み、読めなければ今の内容を返す
+    const AnimStateGraph *ReloadAnimGraph(const char *filename);
+
     // ============================================================
     // レンダーターゲット
     // ============================================================
@@ -124,12 +131,17 @@ public:
     void                  UnloadParticleBuffer(ParticleBufferHandle handle);
 
 private:
+    // グラフ内の全ステートのクリップとブレンドスペースの点を、ファイルパスから結び付ける（サブマシンの子も）
+    // 中で LoadAnimSequence が m_mutex を取るので、ロックを持たずに呼ぶ
+    void BindGraphResources(AnimStateGraph &graph);
+
     // --- プール ---
     CCL::ResourcePool<TextureResource>      m_texturePool;
     CCL::ResourcePool<ModelResource>        m_modelPool;
     CCL::ResourcePool<Model>                m_modelInstancePool;
     CCL::ResourcePool<MaterialData>         m_materialPool;
     CCL::ResourcePool<AnimSequence>         m_animSequencePool;
+    CCL::ResourcePool<AnimStateGraph>       m_animGraphPool;
     CCL::ResourcePool<RenderTarget>         m_renderTargetPool;
     CCL::ResourcePool<GPUParticleBufferSet> m_particleBufferPool;
 
@@ -137,6 +149,7 @@ private:
     std::unordered_map<uint32_t, TextureHandle>          m_textureRegistry;
     std::unordered_map<uint32_t, ModelHandle>            m_modelRegistry;
     std::unordered_map<uint32_t, AnimSequenceHandle>     m_animSequenceRegistry;
+    std::unordered_map<uint32_t, AnimGraphHandle>        m_animGraphRegistry;
     std::unordered_map<uint32_t, std::string>            m_assetPathRegistry; // パスのハッシュ → パス
     std::unordered_set<uint32_t>                         m_lodRequests;       // LOD を作るモデルのパスのハッシュ
 

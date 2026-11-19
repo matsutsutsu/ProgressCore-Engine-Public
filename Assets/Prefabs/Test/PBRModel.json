@@ -2,10 +2,7 @@
     "entities": [
         {
             "components": {
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": {},
                 "Material": null,
                 "Model": {
                     "assetPath": "Assets/Models/Test/DamagedHelmet/glTF/DamagedHelmet.gltf"

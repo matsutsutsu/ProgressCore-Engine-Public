@@ -433,15 +433,15 @@ std::string TutorialSystem::EnteredAnimState(EntityID playerID)
     // ステートが切り替わった瞬間だけを見る。今そのステートにいるかで見ると、
     // 前の項目の間に入ったステートのまま次の項目へ移ったとき（攻撃を当てたのがダッシュ攻撃だった、など）、
     // 何もしていないのに達成してしまう
-    const uint32_t current = fsm->currentStateHash;
+    const uint32_t current = fsm->GetCurrentStateHash();
     const bool     changed = m_hasLastSample && current != m_lastAnimState;
     m_lastAnimState        = current;
     m_hasLastSample        = true;
     if (!changed) return {};
 
     // 名前で返す。呼ぶ側はアニメグラフ上の名前で比べるので、ハッシュの作り方に頼らない
-    const AnimState *state = FindStateRecursive(fsm->internalGraph, current);
-    return state ? state->sequenceName : std::string{};
+    const AnimState *state = fsm->GetCurrentState();
+    return state ? state->stateName : std::string{};
 }
 
 

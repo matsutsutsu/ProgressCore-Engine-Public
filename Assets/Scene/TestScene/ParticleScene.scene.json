@@ -218,10 +218,7 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": {},
                 "Material": {
                     "customParams": [
                         0.0,

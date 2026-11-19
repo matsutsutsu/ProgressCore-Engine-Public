@@ -28,7 +28,7 @@ void PlayerAirDiveSystem::Update(float dt)
                 const PlayerComponent           &player) {
         // 構えでは重力を切って空中に止め、溜めてから落ちるように見せる
         // use3DVelocity は重力とジャンプより優先される1ステップ限りの依頼なので、この間は毎ステップ書く
-        if (fsm.currentStateHash == HASH_STATE_DIVE_START)
+        if (fsm.GetCurrentStateHash() == HASH_STATE_DIVE_START)
         {
             movement.use3DVelocity = true;
             movement.velocity3D    = Vector3::Zero;
@@ -36,7 +36,7 @@ void PlayerAirDiveSystem::Update(float dt)
         }
 
         // 落下は向いている方へ少し進めながら落とす。着地すればグラフが Air_Dive_End へ移り、ここで書かなくなる
-        if (fsm.currentStateHash == HASH_STATE_DIVE_LOOP)
+        if (fsm.GetCurrentStateHash() == HASH_STATE_DIVE_LOOP)
         {
             const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
             movement.use3DVelocity = true;

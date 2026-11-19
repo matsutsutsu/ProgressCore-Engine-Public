@@ -164,8 +164,8 @@ struct AnimBlendSpace
 // ステート（グラフのノード）
 struct AnimState
 {
-    uint32_t    stateHash = 0;    // HashString(sequenceName)。ゲーム側はこの値でステートを引く
-    std::string sequenceName;     // ステート名（シーケンスの名前ではない）
+    uint32_t    stateHash = 0;    // HashString(stateName)。ゲーム側はこの値でステートを引く
+    std::string stateName;        // ステート名（ファイルには "sequenceName" のキーで保存する）
     std::string sequenceFilePath; // 再生する AnimSequence のファイルパス
 
     bool        isLoop        = true;
@@ -239,7 +239,7 @@ inline void to_json(json &j, const AnimState &s)
 {
     j = json{
         {"stateHash", s.stateHash},
-        {"sequenceName", s.sequenceName},
+        {"sequenceName", s.stateName}, // 名前を変える前のキーのまま
         {"sequenceFilePath", s.sequenceFilePath},
         {"isLoop", s.isLoop},
         {"playbackSpeed", s.playbackSpeed},
@@ -265,7 +265,7 @@ inline void to_json(json &j, const AnimState &s)
 inline void from_json(const json &j, AnimState &s)
 {
     j.at("stateHash").get_to(s.stateHash);
-    j.at("sequenceName").get_to(s.sequenceName);
+    j.at("sequenceName").get_to(s.stateName);
     if (j.contains("sequenceFilePath"))
         j.at("sequenceFilePath").get_to(s.sequenceFilePath);
     if (j.contains("isLoop"))
@@ -342,6 +342,14 @@ inline void from_json(const json &j, AnimStateGraph &g)
 // 検索・コンポーネント
 // ===========================================================================
 
+// このグラフの直下のステートを hash で引く（子グラフはたどらない）。なければ nullptr
+inline const AnimState *FindDirectState(const AnimStateGraph &graph, uint32_t hash)
+{
+    for (const auto &s : graph.states)
+        if (s.stateHash == hash) return &s;
+    return nullptr;
+}
+
 // どの階層のステートでも再帰で探す（葉・サブマシンを問わない）。なければ nullptr
 // 階層をまたいでも、同じ名前のステートを作らない
 inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t hash)
@@ -357,17 +365,35 @@ inline const AnimState *FindStateRecursive(const AnimStateGraph &g, uint32_t has
 }
 
 // Entity ごとのステートマシンの状態
+//   グラフそのものは共有し、Entity ごとに持つのは「グラフの中のどこにいるか」だけ
 struct AnimStateMachineComponent
 {
-    std::string    graphPath;     // グラフファイルのパス（保存対象）
-    AnimStateGraph internalGraph; // 読み込んだグラフ（Entity ごとのコピー）
+    std::string graphPath; // グラフファイルのパス（保存対象）
 
-    // 再生中の葉ステート（activePath の末尾）
-    //   他の System（RootMotion・エディタ表示）は、これを今のステートとして読む
-    uint32_t currentStateHash = 0;
+    // 読み込んだグラフ。所有しない（ResourceManager が持ち、同じファイルを使う Entity で共有する）
+    //   実行中は誰も書き換えない。読み直すと、同じ実体のまま中身が差し替わる
+    const AnimStateGraph *graph = nullptr;
 
     // 階層ステートマシンの現在地 [ルート側..., 葉]
     //   例: [Atk_Combo, Atk_Combo1] はトップで Atk_Combo（サブマシン）、その中で Atk_Combo1（葉）
-    //   AnimControllerSystem が毎ステップ維持する
+    //   書くのは AnimControllerSystem だけ
     std::vector<uint32_t> activePath;
+
+    // 再生中の葉ステートのハッシュ（activePath の末尾）。まだどこにも入っていなければ 0
+    uint32_t GetCurrentStateHash() const { return activePath.empty() ? 0u : activePath.back(); }
+
+    // 再生中の葉ステート。activePath がグラフの中でたどれなければ nullptr
+    const AnimState *GetCurrentState() const
+    {
+        const AnimStateGraph *level = graph;
+        const AnimState      *state = nullptr;
+        for (uint32_t hash : activePath)
+        {
+            if (!level) return nullptr;
+            state = FindDirectState(*level, hash);
+            if (!state) return nullptr;
+            level = state->subGraph.get();
+        }
+        return state;
+    }
 };
