@@ -3,9 +3,9 @@
 // 概要: 小隊（5機編隊）のアンカーを動かす System。小隊単位の判断はここに集める
 //
 // 責務:
-//   - 各小隊の生存数と、各席の前フレームの位置・速度を集める
-//   - 段階（Idle / Descend / Chase）を決め、アンカーを動かす
-//   - 生成された機を、小隊の空き席へ入れる
+//   - 各席の前フレームの位置・速度を集める
+//   - 小隊ごとに段階（Idle / FormFan / Arc / Return）を決め、アンカーを動かす
+//   - 通し番号から、機体の小隊と席を決める
 //
 // 備考: 各機の持ち場は、アンカーを起点に陣形（Formations_Squad.h）が出す
 //       機体ごとのループで行うと、同じ小隊の計算を5回繰り返し、同じ小隊へ並列に書き込む
@@ -19,8 +19,6 @@
 #include "Game/Logics/AI/Drone/Squad/SquadState.h"
 #include "Engine/Transform/Components/TransformComponent.h"
 #include "Game/Logics/Character/Boss/Components/BossCommandComponent.h"
-
-namespace CCL::ECS { class World; }
 
 class SquadUpdateSystem : public CCL::ECS::IfSystem<
     SquadUpdateSystem,
@@ -55,74 +53,76 @@ public:
 
     void OnGui() override;
 
-    // まだ小隊に入っていない機を、空いている席へ入れる。DroneManagerSystem が生成の直後に呼ぶ
-    // 所属は一度決めたら変えない。振り直すと生き残った機の所属まで入れ替わり、同じ部隊に見えない
-    static void AssignNewMembers(CCL::ECS::World &world);
+    // 通し番号（localIndex）から、この機の小隊と席を決める。DroneManagerSystem が番号を振り直すたびに呼ぶ
+    static void AssignSeat(DroneComponent &drone);
 
 private:
     // 全小隊に共通の、このフレームの入力。Update の先頭で1回だけ集める
     struct SquadFrame
     {
-        bool                         ordered        = false; // 小隊突撃が指示されていて、プレイヤーもいる
-        bool                         attacking      = false; // 攻撃の合図が立っている
-        DirectX::SimpleMath::Vector3 playerPos      = DirectX::SimpleMath::Vector3::Zero; // プレイヤーの位置（ワールド）
-        float                        playerRunSpeed = 0.0f; // 追跡の速さの基準 [m/s]
-        float                        dt             = 0.0f; // 敵の時間で進めた経過時間 [秒]
+        bool                         ordered     = false; // 弧撃ちが指示されていて、ボスとプレイヤーもいる
+        bool                         attack      = false; // ボスの「今撃て」信号
+        int                          launchCount = 0;     // 飛ばす小隊の数（いる小隊の数を超えない）
+        DirectX::SimpleMath::Vector3 bossPos     = DirectX::SimpleMath::Vector3::Zero;  // ボスの位置（ワールド）
+        DirectX::SimpleMath::Vector3 playerPos   = DirectX::SimpleMath::Vector3::Zero;  // プレイヤーの体の中心（ワールド）
+        DirectX::SimpleMath::Vector3 aimDir      = DirectX::SimpleMath::Vector3::UnitZ; // ボスからプレイヤーへの水平の向き
+        float                        dt          = 0.0f;  // 敵の時間で進めた経過時間 [秒]
     };
 
     // ============================================================
     // 入力の収集
     // ============================================================
 
-    // 時間・ボスの命令・プレイヤーを読み、このフレームの入力にまとめる
-    // rawDt に敵の時間の倍率を掛けて frame.dt にする。プレイヤーがいなければ ordered は false
-    SquadFrame ReadFrame(float rawDt) const;
-
-    // 各小隊の生存数と、各席の位置・速度を集め直す
+    // 各席の位置・速度を集め直し、機体のいる小隊の数を返す
     // Movement（L03）より前に走るので、集まるのは前フレームの位置
-    void GatherMembers(SquadRegistry &reg);
+    int GatherMembers(SquadRegistry &reg);
+
+    // 時間・ボスの命令・ボスとプレイヤーの位置を読み、このフレームの入力にまとめる
+    SquadFrame ReadFrame(float rawDt, int squadCount, const SquadTuning &tuning) const;
 
     // ============================================================
     // アンカーの動き
     // ============================================================
 
-    // 小隊1つの段階を決めてアンカーを動かす。squadId で追跡の速さと狙いをずらす
+    // 小隊1つの段階を決めてアンカーを動かす
     void UpdateSquad(SquadState &squad, uint8_t squadId, const SquadFrame &frame, const SquadTuning &tuning) const;
 
-    // 次の段階を決める。優先度順に上から調べ、最初に成立したものを採る
-    SquadPhase ChoosePhase(const SquadFrame &frame) const;
+    // 次の段階を決める。番号の若い小隊から launchCount 個だけを扇へ並べ、撃つ合図で飛ばし、飛び終わったら戻す
+    // squad.phase はまだ前フレームの段階のまま読む
+    SquadPhase ChoosePhase(const SquadState &squad, uint8_t squadId, const SquadFrame &frame) const;
 
-    // 指示がない間（Idle）、アンカーを先頭の機に重ねておき、その機の速度を返す
-    // 降下や追跡が始まった瞬間に、アンカーが原点からでなく機体の今いる場所から動き出す
+    // アンカーを先頭の機に重ねておく（Idle と Return。機体は陣形が頭上円陣の席へ寄せる）
+    // 動き出した瞬間に、アンカーが原点からでなく機体の今いる場所から動き出す
     // アンカーの速度は 0 にする。先頭の機の速度を渡すと、席0の機が止まらずに流れ続ける
-    DirectX::SimpleMath::Vector3 FollowLeadMember(SquadState &squad) const;
+    void FollowLeadMember(SquadState &squad) const;
 
-    // 降下。入った瞬間の位置から、真下の地面近くまで descendTime 秒かけて降りる
-    // この動き自体が予告で、降り切った場所から追跡が始まる
-    void UpdateDescend(SquadState &squad, SquadPhase prevPhase, const SquadFrame &frame,
+    // 扇へ並ぶ。入った瞬間の位置から、扇の位置まで fanFormTime 秒かけて動き、並んだらそこに留まる
+    void UpdateFormFan(SquadState &squad, uint8_t squadId, SquadPhase prevPhase, const SquadFrame &frame,
                        const SquadTuning &tuning) const;
 
-    // 追跡。アンカーがプレイヤーを追い続ける。速さは曲がるときだけ落とす
-    // squadId で、速さのばらつきと、狙いを左右どちらへずらすかを決める
-    void UpdateChase(SquadState &squad, uint8_t squadId, SquadPhase prevPhase, const SquadFrame &frame,
-                     const SquadTuning &tuning) const;
+    // この小隊が並ぶ扇の位置（ワールド）を返す
+    DirectX::SimpleMath::Vector3 FanPosition(uint8_t squadId, const SquadFrame &frame, const SquadTuning &tuning) const;
 
-    // アンカーの向きを、旋回上限の範囲でプレイヤーへ曲げる。aimSide は狙いをずらす左右（-1 / +1）
-    // 戻り値は、曲げる前の向きと狙う向きのなす角の cos。曲がるときの減速に使う
-    // 終末ロックは持たない。近づくほど見る角度が速く変わり、旋回上限を超えたところで曲がりきれなくなる
-    float SteerTowardPlayer(SquadState &squad, const DirectX::SimpleMath::Vector3 &playerPos, float aimSide,
-                            const SquadTuning &tuning, float dt) const;
+    // この小隊の扇の上の角度 [rad] を返す。0 が真上で、プレイヤーから見て右が正
+    float FanAngle(uint8_t squadId, const SquadFrame &frame, const SquadTuning &tuning) const;
+
+    // 弧を描いて飛ぶ。入った瞬間に道筋を決め、一定の速さで進める
+    // 道筋の終わりから先は最後の向きのまま直進し、最後の機が終点を越えたら ChoosePhase が Return にする
+    void UpdateArc(SquadState &squad, uint8_t squadId, SquadPhase prevPhase, const SquadFrame &frame,
+                   const SquadTuning &tuning) const;
+
+    // 最後の席の機が終点（撃った瞬間のプレイヤー位置）を越えたかを返す
+    bool HasTailPassed(const SquadState &squad) const;
+
+    // 撃った瞬間の位置から、弧の道筋（始点・曲がり角・終点・通り過ぎた先）を決める
+    void BeginArc(SquadState &squad, uint8_t squadId, const SquadFrame &frame, const SquadTuning &tuning) const;
+
+    // 道筋の進み具合 progress の位置を返し、その点の接線（進み具合1あたりの移動量）を outTangent に書く
+    DirectX::SimpleMath::Vector3 SampleArc(const SquadState &squad, float progress,
+                                           DirectX::SimpleMath::Vector3 &outTangent) const;
 
     // アンカーの向きを face の方へ少しずつ寄せる。face がほぼ 0 なら変えない
     void TurnAnchorToward(SquadState &squad, DirectX::SimpleMath::Vector3 face, float dt) const;
-
-    // アンカーが床へ沈まないように、位置と速度・向きの下向き成分を止める
-    // 降下と追跡の最後に必ず通す
-    void ClampAltitude(SquadState &squad) const;
-
-    // 小隊番号から -1〜1 の値を作る。追跡の速さの個体差に使う
-    // 乱数にしないので、当たり外れを同じ条件で再現できる。黄金比の小数部で、連番でも偏らない
-    float SquadVariation(uint8_t squadId) const;
 
     // ============================================================
     // デバッグ UI
@@ -130,9 +130,4 @@ private:
 
     // 小隊の調整値をスライダーで出す
     void DrawTuning(SquadTuning &tuning) const;
-
-    // 生きている小隊のアンカーの位置と段階を、先頭から数個まで出す
-    void DrawSquadList(const SquadRegistry &reg) const;
-
-    const char *SquadPhaseName(SquadPhase phase) const;
 };

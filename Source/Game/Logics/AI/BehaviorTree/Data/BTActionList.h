@@ -110,5 +110,5 @@ enum class DroneActionRole : uint8_t
                                                                                            \
     /* Attack */                                                                           \
     X(A_DroneBarrage,       103, Barrage,      Attack,  "ドローン：弾幕 (Barrage)")        \
-    X(A_DroneSquadAssault,  111, SquadAssault, Attack,  "ドローン：小隊突撃 (Squad Assault)")
+    X(A_DroneSquadArc,      111, SquadArc,     Attack,  "ドローン：小隊の弧撃ち (Squad Arc)")
 

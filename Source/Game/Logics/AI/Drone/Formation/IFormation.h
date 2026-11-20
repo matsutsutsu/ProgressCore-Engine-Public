@@ -118,7 +118,7 @@ namespace CCL::AI::Formation
         virtual bool IsChargeOver(float flownDistance, float flownTime) const { return false; }
 
         // 突撃を続けたまま、当たり判定だけ先に閉じるか
-        // 既定は false で、突撃している間ずっと当たる（小隊・弾幕）
+        // 既定は false で、突撃している間ずっと当たる（弾幕）。小隊の弧撃ちは、弧を飛んでいる小隊の機だけを当てる
         virtual bool IsHitWindowOver(const DroneComponent &drone) const { return false; }
 
         // 突撃中の移動方式。既定は直進（弾幕と、技でない隊形）
@@ -154,7 +154,7 @@ namespace CCL::AI::Formation
         virtual bool UsesShiverTelegraph() const { return true; }
 
         // 持ち場がボスに付いて動くか。true ならボスの速度を先渡しし、ボスが速く動いても置いていかれない
-        // false にするのは、ボス以外を基準に動く陣形（小隊）
+        // false にするのは、ボス以外を基準に動く陣形（今はない。小隊の弧撃ちは、飛ぶ機だけ Calculate で上書きする）
         virtual bool FollowsBoss() const { return true; }
 
         // ボスが跳躍で浮いている間も、実際の高さを中心にするか

@@ -142,9 +142,9 @@ void DroneManagerSystem::ReindexAllDrones()
 
         d->localIndex  = idx++;
         d->totalDrones = static_cast<uint16_t>(total);
-    }
 
-    SquadUpdateSystem::AssignNewMembers(*m_world);
+        SquadUpdateSystem::AssignSeat(*d); // 小隊と席は通し番号から決まる
+    }
 }
 
 

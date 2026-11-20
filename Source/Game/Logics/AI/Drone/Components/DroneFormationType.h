@@ -22,7 +22,7 @@
     X(ClapSlam, 25, "挟み込み1段")                            \
     X(DoubleClapSlam_UpperFirst, 27, "挟み込み2段・上段先攻") \
     X(DoubleClapSlam_LowerFirst, 28, "挟み込み2段・下段先攻") \
-    X(SquadAssault, 32, "小隊突撃")                           \
+    X(SquadArc, 32, "小隊の弧撃ち")                           \
     X(DataSlot00, 33, "[空き枠] 枠0")                         \
     X(DataSlot01, 34, "[空き枠] 枠1")                         \
     X(DataSlot02, 35, "[空き枠] 枠2")                         \
