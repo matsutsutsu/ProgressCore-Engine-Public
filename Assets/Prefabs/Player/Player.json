@@ -26,9 +26,9 @@
                     "use3DVelocity": false
                 },
                 "HealthComponent": {
-                    "currentHealth": 300.0,
+                    "currentHealth": 150.0,
                     "invincibilityDuration": 0.5,
-                    "maxHealth": 300.0
+                    "maxHealth": 150.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
