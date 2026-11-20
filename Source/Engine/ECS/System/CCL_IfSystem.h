@@ -352,19 +352,19 @@ namespace CCL::ECS
         std::vector<TypeID> GetReadTypes() const override
         {
             std::vector<TypeID> res;
-            // C++17 の fold 式（カンマ演算子の畳み込み）で AccessTypes... を順に展開する
+
+            //  fold 式（カンマ演算子の畳み込み）で AccessTypes... を順に展開する
             //   (..., 式) は AccessTypes の数だけ「式」を並べて順に評価する
             //   IsWrite が false のものだけ res に加える（true なら void() で何もしない）
             (...,
-             (AccessTypes::IsWrite
-                  ? void()
-                  : res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())));
+             (AccessTypes::IsWrite ? void() : res.push_back(TypeInfo<typename AccessTypes::RawType>::ID())));
             return res;
         }
 
         // Write<T> を指定された型 ID のリストを返す。展開の仕組みは GetReadTypes と同じ
         std::vector<TypeID> GetWriteTypes() const override
         {
+            // IsWriteがtrueのときだけ res に加える
             std::vector<TypeID> res;
             (...,
              (AccessTypes::IsWrite

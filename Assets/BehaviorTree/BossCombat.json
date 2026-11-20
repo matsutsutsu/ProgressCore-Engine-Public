@@ -405,6 +405,11 @@
             "endPin": 895,
             "id": 896,
             "startPin": 813
+        },
+        {
+            "endPin": 393,
+            "id": 897,
+            "startPin": 5
         }
     ],
     "editor_nodes": [
@@ -424,8 +429,8 @@
             "inputPinId": 4,
             "name": "技選択",
             "outputPinId": 5,
-            "posX": 3893.0,
-            "posY": 210.0,
+            "posX": 3892.0,
+            "posY": 187.0,
             "type": 9
         },
         {
@@ -648,10 +653,10 @@
             "actionId": 0,
             "id": 392,
             "inputPinId": 393,
-            "name": "ドローン：滞空して追従攻撃",
+            "name": "ドローン：滞空して小隊攻撃",
             "outputPinId": 394,
-            "posX": 7812.0,
-            "posY": 590.0,
+            "posX": 7956.0,
+            "posY": 478.0,
             "score": {
                 "base": 6.0,
                 "cooldown": 40.0,
@@ -669,8 +674,8 @@
             "inputPinId": 399,
             "name": "滞空(主)＋陣形(従)",
             "outputPinId": 400,
-            "posX": 7588.0,
-            "posY": 811.0,
+            "posX": 7732.0,
+            "posY": 699.0,
             "type": 8
         },
         {
@@ -680,8 +685,8 @@
             "inputPinId": 402,
             "outputPinId": 0,
             "param": 10.0,
-            "posX": 7361.0,
-            "posY": 1006.0,
+            "posX": 7505.0,
+            "posY": 894.0,
             "type": 4
         },
         {
@@ -691,8 +696,8 @@
             "inputPinId": 417,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 8113.0,
-            "posY": 862.0,
+            "posX": 8257.0,
+            "posY": 750.0,
             "type": 4
         },
         {
@@ -729,8 +734,8 @@
             "inputPinId": 0,
             "name": "【ドローン】　滞空ドローン攻撃",
             "outputPinId": 0,
-            "posX": 7136.0,
-            "posY": 544.0,
+            "posX": 7280.0,
+            "posY": 432.0,
             "type": 5,
             "width": 1376.0
         },
@@ -1008,8 +1013,8 @@
             "inputPinId": 620,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 7547.0,
-            "posY": 1230.0,
+            "posX": 7691.0,
+            "posY": 1118.0,
             "type": 4
         },
         {
@@ -1019,8 +1024,8 @@
             "inputPinId": 626,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 8310.0,
-            "posY": 862.0,
+            "posX": 8454.0,
+            "posY": 750.0,
             "type": 4
         },
         {
@@ -1150,8 +1155,8 @@
             "inputPinId": 734,
             "outputPinId": 0,
             "param": 32.0,
-            "posX": 7748.0,
-            "posY": 1230.0,
+            "posX": 7892.0,
+            "posY": 1118.0,
             "type": 4
         },
         {
@@ -1327,8 +1332,8 @@
             "inputPinId": 787,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 7377.0,
-            "posY": 1230.0,
+            "posX": 7521.0,
+            "posY": 1118.0,
             "type": 4
         },
         {
@@ -1338,8 +1343,8 @@
             "inputPinId": 797,
             "outputPinId": 0,
             "param": 60.0,
-            "posX": 7958.0,
-            "posY": 1230.0,
+            "posX": 8102.0,
+            "posY": 1118.0,
             "type": 4
         },
         {
@@ -1348,8 +1353,8 @@
             "inputPinId": 800,
             "name": "シーケンス (Sequence)",
             "outputPinId": 801,
-            "posX": 7620.0,
-            "posY": 1022.0,
+            "posX": 7764.0,
+            "posY": 910.0,
             "type": 2
         },
         {
@@ -1693,7 +1698,7 @@
             "type": 4
         }
     ],
-    "last_id_counter": 896,
+    "last_id_counter": 897,
     "nodes": [
         {
             "actionOrConditionId": 0,
@@ -1709,7 +1714,8 @@
                 9,
                 10,
                 11,
-                12
+                12,
+                13
             ],
             "name": "技選択",
             "type": "UtilitySelector"
@@ -1717,10 +1723,10 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                13,
                 14,
                 15,
-                16
+                16,
+                17
             ],
             "name": "ボス：中央へ跳んで逃げる",
             "score": {
@@ -1744,9 +1750,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                17,
                 18,
-                19
+                19,
+                20
             ],
             "name": "ドローン：横払い",
             "score": {
@@ -1763,9 +1769,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                20,
                 21,
-                22
+                22,
+                23
             ],
             "name": "ボス：被弾がかさんだら退く",
             "score": {
@@ -1788,8 +1794,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                23,
-                24
+                24,
+                25
             ],
             "name": "ボス：突進攻撃",
             "score": {
@@ -1813,8 +1819,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                25,
-                26
+                26,
+                27
             ],
             "name": "ドローン：挟み込み1段",
             "score": {
@@ -1838,7 +1844,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                27
+                28
             ],
             "name": "ボス：間合いを取る",
             "score": {
@@ -1867,8 +1873,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                28,
-                29
+                29,
+                30
             ],
             "name": "ドローン：縦割り",
             "score": {
@@ -1897,8 +1903,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                30,
-                31
+                31,
+                32
             ],
             "name": "ドローン：長方形の壁突進",
             "score": {
@@ -1922,9 +1928,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                32,
                 33,
-                34
+                34,
+                35
             ],
             "name": "ボス：跳躍攻撃",
             "score": {
@@ -1948,7 +1954,26 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                35
+                36,
+                37,
+                38
+            ],
+            "name": "ドローン：滞空して小隊攻撃",
+            "score": {
+                "base": 6.0,
+                "cooldown": 40.0,
+                "distance": {
+                    "bestMax": 9999.0,
+                    "bestMin": 80.0,
+                    "falloff": 10.0
+                }
+            },
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                39
             ],
             "name": "ドローン：弾幕攻撃",
             "score": {
@@ -1965,7 +1990,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                36
+                40
             ],
             "name": "ボス：様子見",
             "score": {
@@ -1981,11 +2006,11 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                37,
-                38,
-                39,
-                40,
-                41
+                41,
+                42,
+                43,
+                44,
+                45
             ],
             "interrupt": true,
             "name": "ボス：怒り連発",
@@ -2067,8 +2092,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                42,
-                43
+                46,
+                47
             ],
             "name": "重み付きセレクター（Weighted Selector）",
             "type": "WeightedSelector"
@@ -2161,6 +2186,29 @@
             "type": "Action"
         },
         {
+            "actionOrConditionId": 0,
+            "children": [
+                48,
+                49
+            ],
+            "name": "滞空(主)＋陣形(従)",
+            "type": "Parallel"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.5,
+            "type": "Action"
+        },
+        {
             "abortSelf": true,
             "action": "A_DroneTechnique",
             "actionOrConditionId": 129,
@@ -2195,8 +2243,8 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                44,
-                45
+                50,
+                51
             ],
             "name": "連発（主）＋怒りの印（従）",
             "type": "Parallel"
@@ -2225,9 +2273,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                46,
-                47,
-                48
+                52,
+                53,
+                54
             ],
             "name": "ステージ中央に退避する",
             "type": "Sequence"
@@ -2235,18 +2283,36 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                49,
-                50
+                55,
+                56
             ],
             "name": "後退しながらドローン攻撃",
             "type": "Parallel"
         },
         {
+            "action": "A_BossAirHover",
+            "actionOrConditionId": 9,
+            "children": [],
+            "param": 10.0,
+            "type": "Action"
+        },
+        {
             "actionOrConditionId": 0,
             "children": [
-                51,
-                52,
-                53
+                57,
+                58,
+                59,
+                60
+            ],
+            "name": "シーケンス (Sequence)",
+            "type": "Sequence"
+        },
+        {
+            "actionOrConditionId": 0,
+            "children": [
+                61,
+                62,
+                63
             ],
             "name": "構え＋3連発",
             "type": "Sequence"
@@ -2282,9 +2348,9 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                54,
-                55,
-                56
+                64,
+                65,
+                66
             ],
             "name": "後退アクション",
             "type": "Sequence"
@@ -2292,13 +2358,42 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                57,
-                58,
-                59,
-                60
+                67,
+                68,
+                69,
+                70
             ],
             "name": "ドローン操作",
             "type": "Sequence"
+        },
+        {
+            "action": "A_DroneHighOrbit",
+            "actionOrConditionId": 102,
+            "children": [],
+            "param": 0.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 1.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_DroneTechnique",
+            "actionOrConditionId": 129,
+            "children": [],
+            "name": "ドローンの技：小隊突撃",
+            "param": 32.0,
+            "type": "Action"
+        },
+        {
+            "action": "A_Wait",
+            "actionOrConditionId": 1,
+            "children": [],
+            "param": 60.0,
+            "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
@@ -2317,7 +2412,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                61
+                71
             ],
             "decoratorType": 3,
             "param": 3.0,
@@ -2375,11 +2470,11 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                62,
-                63,
-                64,
-                65,
-                66
+                72,
+                73,
+                74,
+                75,
+                76
             ],
             "name": "怒りの技",
             "type": "UtilitySelector"
@@ -2387,7 +2482,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                67
+                77
             ],
             "name": "怒り：横払い",
             "score": {
@@ -2403,7 +2498,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                68
+                78
             ],
             "name": "怒り：突進",
             "score": {
@@ -2419,7 +2514,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                69
+                79
             ],
             "name": "怒り：跳躍攻撃",
             "score": {
@@ -2435,7 +2530,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                70
+                80
             ],
             "name": "怒り：縦割り",
             "score": {
@@ -2451,7 +2546,7 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                71
+                81
             ],
             "name": "怒り：壁突進",
             "score": {

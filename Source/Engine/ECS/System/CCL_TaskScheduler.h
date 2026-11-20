@@ -31,16 +31,19 @@ namespace CCL::ECS
         // 全 System の依存を解析し、実行のバッチを m_executionBatches に作る（systems はステージの昇順、同じなら名前順）
         // ステージが違えば直列。同じステージの中は GetRunAfter / GetRunBefore の宣言で順を決め、
         // 宣言も型の競合もないものは同じバッチで並列に走らせる
+        // 引数 ... SystemManagerが持っているSystem一覧を取得
         void BuildGraph(const std::vector<std::unique_ptr<SystemBase>> &systems)
         {
+            // 前回のシステムの予定表・順序不定の記録を空にする
             m_executionBatches.clear();
             m_ambiguities.clear();
             if (systems.empty()) return;
 
+            // システムの数を取得
             const size_t n = systems.size();
 
             // Phase 0: 明示的な順序宣言を解決し、実行順の添字列を作る
-            // systems の並びを土台に、同一ステージ内だけを宣言に従って組み替える
+            // GetRunAfter/Beforeを反映した並び順を作る
             std::vector<size_t> order = ResolveExplicitOrder(systems);
 
             // Phase 1: 前に置かれた System との競合を調べ、入るバッチを決める
@@ -226,8 +229,8 @@ namespace CCL::ECS
             const std::vector<std::unique_ptr<SystemBase>> &systems) const
         {
             const size_t        n = systems.size();
-            std::vector<size_t> result;
-            result.reserve(n);
+            std::vector<size_t> result; // 戻り値の並び版
+            result.reserve(n); // システムのサイズをあらかじめ確保しておく
 
             // 名前 -> 添字。別ステージを指す宣言も検出したいので全 System を対象にする
             std::unordered_map<std::string, size_t> indexByName;

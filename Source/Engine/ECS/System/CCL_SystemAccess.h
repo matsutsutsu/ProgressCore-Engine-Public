@@ -10,7 +10,7 @@ namespace CCL::ECS
     {
         using RawType                 = T;         // 実際のコンポーネント型
         using ParamType               = const T &; // ループ内で受け取る型（const参照）
-        static constexpr bool IsWrite = false;
+        static constexpr bool IsWrite = false;     // 書き込むかどうか
     };
 
     // 書き込み可能アクセス。ForEach では T& で渡される
