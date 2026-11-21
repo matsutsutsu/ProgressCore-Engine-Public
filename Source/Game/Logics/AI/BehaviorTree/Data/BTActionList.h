@@ -75,7 +75,8 @@
     X(C_IsPhase2,                9,  State,   "",                       "フェーズ >= 2")                          \
     X(C_ShouldTransitionPhase2,  10, State,   "",                       "第2形態移行条件 (HP半分以下 & 第1形態)") \
     X(C_DamageThresholdExceeded, 11, State,   "最大HPに対する割合 [%]", "被弾の蓄積 >= 最大HPの N %")         \
-    X(C_RecentlyHit,             12, State,   "経過時間 [秒]",          "直近の被弾から N 秒以内")
+    X(C_RecentlyHit,             12, State,   "経過時間 [秒]",          "直近の被弾から N 秒以内")                \
+    X(C_BattleTimeLessThan,      18, State,   "経過時間 [秒]",          "戦い始めてから N 秒以内")
 
 // ============================================================
 // ドローンの陣形
