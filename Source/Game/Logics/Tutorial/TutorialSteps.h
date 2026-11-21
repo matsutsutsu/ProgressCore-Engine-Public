@@ -44,8 +44,13 @@ struct TutorialStepDef
     const char   *assistText  = nullptr;               // 補助スローの「今だ」の段階で差し替える1行。nullptr なら差し替えない
     TutorialGoal  goal        = TutorialGoal::Wait;    // 達成の条件の種類
     bool          bossAttacks = false;                 // この項目の間、ボスに手加減の攻撃をさせるか
+    bool          needLockOn  = false;                 // ロックオン中に出した技だけ数えるか。外している間はロックオンを促す
     float         holdTime    = 1.2f;                  // 達成してから次の項目へ進むまでの余韻（秒・実時間）
 };
+
+// needLockOn の項目でロックオンを外している間に、ヒントの帯へ出すボタンと1行
+inline constexpr const char *kTutorialLockOnAction = "LockOn";
+inline constexpr const char *kTutorialLockOnText   = "ボスをロックオンしてから試そう";
 
 // 教える項目の表。並び順がそのまま教える順番になる
 inline constexpr TutorialStepDef kTutorialSteps[] = {
@@ -94,25 +99,33 @@ inline constexpr TutorialStepDef kTutorialSteps[] = {
      .text   = "ボスに近づいて、攻撃",
      .goal   = TutorialGoal::Attack},
 
+    // 派生（前・後ろ）は、本線のどの段からでも、押した瞬間のスティックの向きで分かれる
+    // 1発目はまだコンボに入っていないので派生しない。文で「攻撃の後」と言っておく
+    // アイコンは前（W / スティック上）・後ろ（S / スティック下）の向き付きにする
+    // 派生の向きはボスが基準で、入力はカメラが基準。ロックオン中だけ、カメラがボスを向いて前＝ボスの方になる
+    // そのため、ロックオン中に出した技だけを数える（needLockOn）
+    // 文は「倒して」だとキーボードに合わないので「入力して」にする
+
+    // 前の派生は、本線の連打より先に教える
+    {.name       = "ComboForward",
+     .icon       = InputIconKind::MoveForward,
+     .action2    = "Attack",
+     .text       = "攻撃の後、ボスの方へ入力して攻撃で跳び斬り。続けて押すと叩きつけ",
+     .goal       = TutorialGoal::ComboForward,
+     .needLockOn = true},
+
     // 本線は Atk_Combo1 → 2 → 乱れ斬り（3 を4回）→ 4 → 5 の8段
     {.name   = "Combo",
      .action = "Attack",
      .text   = "攻撃ボタンを連打すると、乱れ斬りを経て8段まで続くコンボになる",
      .goal   = TutorialGoal::Combo},
 
-    // ここから2つは派生。本線のどの段からでも、押した瞬間のスティックの向きで分かれる
-    // 1発目はまだコンボに入っていないので派生しない。文で「攻撃の後」と言っておく
-    {.name    = "ComboForward",
-     .icon    = InputIconKind::Move,
-     .action2 = "Attack",
-     .text    = "攻撃の後、ボスの方へ倒して攻撃で跳び斬り。続けて押すと叩きつけ",
-     .goal    = TutorialGoal::ComboForward},
-
-    {.name    = "ComboBack",
-     .icon    = InputIconKind::Move,
-     .action2 = "Attack",
-     .text    = "攻撃の後、ボスと逆へ倒して攻撃で退き斬り。続けて押すと踏み込み斬り",
-     .goal    = TutorialGoal::ComboBack},
+    {.name       = "ComboBack",
+     .icon       = InputIconKind::MoveBack,
+     .action2    = "Attack",
+     .text       = "攻撃の後、ボスと逆へ入力して攻撃で退き斬り。続けて押すと踏み込み斬り",
+     .goal       = TutorialGoal::ComboBack,
+     .needLockOn = true},
 
     // 「ダッシュ ＋ 攻撃」と2つのボタンを並べて出す
     {.name    = "DashAttack",

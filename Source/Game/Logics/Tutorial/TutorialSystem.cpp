@@ -116,7 +116,7 @@ void TutorialSystem::Update(float dt)
     // 2. イベントの印を取り出す
     // 3. ムービー中と決着後は教えない
     // 4. 達成した後の余韻の間は、待ってから次の項目へ進める
-    // 5. 今の項目を達成したかを判定する
+    // 5. 今の項目を達成したかを判定する（ロックオンが要る項目で外していれば、判定せずに促す）
     // 6. 達成したら余韻に入る（余韻のない項目はすぐ次へ）
 
     // ---------------------------------------------------------
@@ -128,6 +128,7 @@ void TutorialSystem::Update(float dt)
     // ヒントと補助の表示は、出す場面かどうかを毎フレーム決め直す
     state.showHint     = false;
     state.assistActive = false;
+    state.lockOnPrompt = false;
     state.cleared      = false;
     if (state.IsFinished()) return;
 
@@ -188,6 +189,16 @@ void TutorialSystem::Update(float dt)
     // ヒントは文言のある項目で出す。出す場面を選ぶ項目（ジャスト回避）は EvaluateGoal が決め直す
     WriteProgress(state, 0.0f, 1.0f);
     state.showHint = hasText;
+
+    // ロックオンが要る項目で外していれば、判定せずにロックオンを促す
+    // 外している間に出た技は数えない。アニメの切り替わりは読み捨て、続けて出せた手の数も 0 に戻す
+    if (def.needLockOn && !IsLockedOn(battle.playerEntity))
+    {
+        state.lockOnPrompt = true;
+        EnteredAnimState(battle.playerEntity);
+        m_chainStage = 0;
+        return;
+    }
 
     const bool cleared = EvaluateGoal(state, def, battle, events, dt);
 
@@ -258,10 +269,7 @@ bool TutorialSystem::EvaluateGoal(TutorialState &state, const TutorialStepDef &d
     // --- 斬る ---
 
     case TutorialGoal::LockOn:
-    {
-        const auto *pc = m_world->GetComponent<PlayerComponent>(player);
-        return pc && pc->lockOnTargetID != InvalidEntityID;
-    }
+        return IsLockedOn(player);
 
     case TutorialGoal::Attack:
         m_hitCount += events.playerHits;
@@ -387,6 +395,14 @@ void TutorialSystem::Restart(TutorialState &state)
 // ---------------------------------------------------------------------------
 // 動いた量・回した量・出た攻撃
 // ---------------------------------------------------------------------------
+
+bool TutorialSystem::IsLockedOn(EntityID playerID) const
+{
+    const auto *pc = m_world->GetComponent<PlayerComponent>(playerID);
+    return pc && pc->lockOnTargetID != InvalidEntityID;
+}
+
+
 
 float TutorialSystem::AccumulateMove(const BattleContext &battle)
 {

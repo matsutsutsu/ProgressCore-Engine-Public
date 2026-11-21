@@ -7,16 +7,6 @@
             "startPin": 2
         },
         {
-            "endPin": 18,
-            "id": 20,
-            "startPin": 5
-        },
-        {
-            "endPin": 22,
-            "id": 24,
-            "startPin": 19
-        },
-        {
             "endPin": 26,
             "id": 27,
             "startPin": 23
@@ -57,18 +47,8 @@
             "startPin": 23
         },
         {
-            "endPin": 86,
-            "id": 87,
-            "startPin": 73
-        },
-        {
-            "endPin": 72,
-            "id": 91,
-            "startPin": 90
-        },
-        {
-            "endPin": 89,
-            "id": 92,
+            "endPin": 22,
+            "id": 93,
             "startPin": 5
         }
     ],
@@ -95,23 +75,12 @@
         },
         {
             "actionId": 0,
-            "decoratorType": 1,
-            "id": 17,
-            "inputPinId": 18,
-            "outputPinId": 19,
-            "param": 5.0,
-            "posX": 547.0,
-            "posY": 478.0,
-            "type": 6
-        },
-        {
-            "actionId": 0,
             "id": 21,
             "inputPinId": 22,
-            "name": "縦割り（予兆を長く）",
+            "name": "縦割り",
             "outputPinId": 23,
-            "posX": 500.0,
-            "posY": 719.0,
+            "posX": 804.0,
+            "posY": 430.0,
             "type": 2
         },
         {
@@ -121,8 +90,8 @@
             "inputPinId": 26,
             "outputPinId": 0,
             "param": 50.0,
-            "posX": -191.0,
-            "posY": 960.0,
+            "posX": 41.0,
+            "posY": 670.0,
             "type": 3
         },
         {
@@ -132,8 +101,8 @@
             "inputPinId": 29,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": 187.0,
-            "posY": 960.0,
+            "posX": 491.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -143,8 +112,8 @@
             "inputPinId": 32,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 416.0,
-            "posY": 960.0,
+            "posX": 720.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -154,8 +123,8 @@
             "inputPinId": 35,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 625.0,
-            "posY": 960.0,
+            "posX": 929.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -165,8 +134,8 @@
             "inputPinId": 38,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 822.0,
-            "posY": 960.0,
+            "posX": 1126.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -176,8 +145,8 @@
             "inputPinId": 41,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 1042.0,
-            "posY": 960.0,
+            "posX": 1346.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -187,61 +156,28 @@
             "inputPinId": 44,
             "outputPinId": 0,
             "param": 1.0,
-            "posX": 1239.0,
-            "posY": 960.0,
-            "type": 4
-        },
-        {
-            "actionId": 0,
-            "id": 71,
-            "inputPinId": 72,
-            "name": "間合いを保つ",
-            "outputPinId": 73,
-            "posX": 1668.0,
-            "posY": 699.0,
-            "type": 2
-        },
-        {
-            "action": "A_BossBackStep",
-            "actionId": 4,
-            "id": 78,
-            "inputPinId": 79,
-            "outputPinId": 0,
-            "param": 1.5,
-            "posX": -10.0,
-            "posY": 960.0,
+            "posX": 1543.0,
+            "posY": 671.0,
             "type": 4
         },
         {
             "action": "A_BossReposition",
             "actionId": 14,
-            "id": 85,
-            "inputPinId": 86,
+            "id": 78,
+            "inputPinId": 79,
             "outputPinId": 0,
             "param": 30.0,
-            "posX": 1668.0,
-            "posY": 940.0,
+            "posX": 222.0,
+            "posY": 670.0,
             "type": 4
-        },
-        {
-            "actionId": 0,
-            "decoratorType": 1,
-            "id": 88,
-            "inputPinId": 89,
-            "outputPinId": 90,
-            "param": 8.0,
-            "posX": 1715.0,
-            "posY": 456.0,
-            "type": 6
         }
     ],
-    "last_id_counter": 92,
+    "last_id_counter": 93,
     "nodes": [
         {
             "actionOrConditionId": 0,
             "children": [
-                1,
-                2
+                1
             ],
             "name": "Root Selector",
             "type": "Selector"
@@ -249,42 +185,16 @@
         {
             "actionOrConditionId": 0,
             "children": [
-                3
-            ],
-            "decoratorType": 1,
-            "param": 5.0,
-            "type": "Decorator"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                4
-            ],
-            "decoratorType": 1,
-            "param": 8.0,
-            "type": "Decorator"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                2,
+                3,
+                4,
                 5,
                 6,
                 7,
                 8,
-                9,
-                10,
-                11,
-                12
+                9
             ],
-            "name": "縦割り（予兆を長く）",
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                13
-            ],
-            "name": "間合いを保つ",
+            "name": "縦割り",
             "type": "Sequence"
         },
         {
@@ -295,10 +205,10 @@
             "type": "Condition"
         },
         {
-            "action": "A_BossBackStep",
-            "actionOrConditionId": 4,
+            "action": "A_BossReposition",
+            "actionOrConditionId": 14,
             "children": [],
-            "param": 1.5,
+            "param": 30.0,
             "type": "Action"
         },
         {
@@ -341,13 +251,6 @@
             "actionOrConditionId": 1,
             "children": [],
             "param": 1.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_BossReposition",
-            "actionOrConditionId": 14,
-            "children": [],
-            "param": 30.0,
             "type": "Action"
         }
     ]

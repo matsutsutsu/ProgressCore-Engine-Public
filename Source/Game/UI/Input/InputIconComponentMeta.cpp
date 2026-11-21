@@ -13,7 +13,8 @@
 namespace
 {
     // InputIconKind の並びと同じ順にする
-    constexpr const char *kInputIconKindNames[] = {"Action", "Move", "Camera", "MenuConfirm", "MenuNavigate", "Pause"};
+    constexpr const char *kInputIconKindNames[] = {"Action",       "Move",  "Camera",      "MenuConfirm",
+                                                   "MenuNavigate", "Pause", "MoveForward", "MoveBack"};
 }
 
 // アクション名のハッシュは System が生成時・ヒントの切り替え時に書くので保存しない

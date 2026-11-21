@@ -76,6 +76,9 @@ private:
 
     // --- 動いた量・回した量・出た攻撃 ---
 
+    // プレイヤーがいま敵をロックオンしているか
+    bool IsLockedOn(CCL::ECS::EntityID playerID) const;
+
     // 移動の項目で、この項目に入ってから水平に動いた距離（m）を足していき、その合計を返す
     float AccumulateMove(const BattleContext &battle);
 

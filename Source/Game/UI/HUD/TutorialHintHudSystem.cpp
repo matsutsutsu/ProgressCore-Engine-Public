@@ -74,7 +74,7 @@ void TutorialHintHudSystem::Update(float dt)
 
         // 並べ直しは毎フレーム行う
         // インスペクタで Style の寸法を変えたとき、その場で帯に反映されるように（数個の値を書くだけで軽い）
-        ApplyHint(*def, state.assistActive, style);
+        ApplyHint(*def, state.assistActive, state.lockOnPrompt, style);
     }
 
     // ---------------------------------------------------------
@@ -100,14 +100,22 @@ void TutorialHintHudSystem::Update(float dt)
 
 
 
-void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style)
+void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, bool lockOnPrompt,
+                                      const TutorialHintStyleComponent &style)
 {
-    const bool        useAssist = assist && def.assistText;
-    const std::string text      = useAssist ? def.assistText : def.text;
-    const float       textSize  = useAssist ? style.emphSize : style.textSize;
+    // --- 出すボタンと文 ---
+    // ロックオンを促している間は、項目の文の代わりにロックオンのボタンと促す1行を出す
+    const bool          useAssist = !lockOnPrompt && assist && def.assistText;
+    const InputIconKind iconKind  = lockOnPrompt ? InputIconKind::Action : def.icon;
+    const char         *action    = lockOnPrompt ? kTutorialLockOnAction : def.action;
+    const float         textSize  = useAssist ? style.emphSize : style.textSize;
 
-    // 「今だ」は1つ目のボタンだけを出す
-    m_hasSecond = def.action2 && !useAssist;
+    std::string text = def.text;
+    if (lockOnPrompt) text = kTutorialLockOnText;
+    else if (useAssist) text = def.assistText;
+
+    // 「今だ」とロックオンの催促は1つ目のボタンだけを出す
+    m_hasSecond = def.action2 && !useAssist && !lockOnPrompt;
 
     // --- 幅 ---
     // [アイコン] (+ [アイコン2]) [文] の組の幅を求め、帯の中央に置く
@@ -147,10 +155,10 @@ void TutorialHintHudSystem::ApplyHint(const TutorialStepDef &def, bool assist, c
     // アイコンの画像は InputIconSystem が種類とアクション名から決める
     if (auto *ic = m_world->GetComponent<InputIconComponent>(m_iconID))
     {
-        ic->kind = def.icon;
-        if (def.action)
+        ic->kind = iconKind;
+        if (action)
         {
-            ic->actionHash = CCL::Utils::HashString(def.action);
+            ic->actionHash = CCL::Utils::HashString(action);
         }
     }
     if (auto *ic = m_world->GetComponent<InputIconComponent>(m_icon2ID); ic && def.action2)

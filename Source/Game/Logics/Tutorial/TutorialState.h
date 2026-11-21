@@ -11,6 +11,7 @@ struct TutorialState
     uint8_t step         = 0;     // いま教えている項目（kTutorialSteps の添字）。kTutorialStepCount で終わり
     bool    showHint     = false; // ヒントを画面に出すか
     bool    assistActive = false; // 回避の補助スローで「今だ」を出す段階か
+    bool    lockOnPrompt = false; // ロックオンを促しているか（needLockOn の項目で、ロックオンを外している間）
 
     // --- 進み具合（ヒントの帯をゲージにして出す） ---
     float progress = 0.0f;  // 今の項目の達成までの割合（0〜1）

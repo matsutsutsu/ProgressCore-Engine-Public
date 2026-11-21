@@ -337,7 +337,7 @@ void GameResultSystem::ShowResultUI(bool win)
         std::snprintf(sub, sizeof(sub), "ボス VALKYRA の残りHP  %d%%",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
     }
-    SpawnTypedText(w, "ResultSub", sub, style.left, style.SubY(), 20.0f, style.sub, kSubStart, canvas);
+    SpawnTypedText(w, "ResultSub", sub, style.left, style.SubY(), style.subPx, style.sub, kSubStart, canvas);
 
     // ---------------------------------------------------------
     // 4. 記録の行
@@ -362,14 +362,17 @@ void GameResultSystem::ShowResultUI(bool win)
     // ---------------------------------------------------------
 
     // 記録が出そろってから出す
+    // 入れ物はボタン2つがちょうど入る大きさにする。幅をボタンと同じにして、ボタンの左端を記録の左端にそろえる
     const float    lastRow   = static_cast<float>(kRowCount - 1);
     const float    menuTop   = style.RowY() + style.rowH * lastRow + style.rowPx + kMenuGap;
     const float    menuDelay = kRowStart + kRowStep * lastRow + kMenuDelay;
-    const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {style.left, menuTop}, {320.0f, 140.0f}, canvas);
+    const float    halfPitch = style.buttonPitch * 0.5f;
+    const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {style.left, menuTop},
+                                        {style.buttonSize.x, style.buttonPitch + style.buttonSize.y}, canvas);
 
     // 最初は「もう一度」を選んでおく
-    SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
-    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, 43.0f}, "result_title", false, 230,
+    SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -halfPitch}, "retry", true, 230, menuDelay, menu);
+    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, halfPitch}, "result_title", false, 230,
                 menuDelay + 0.08f, menu);
-    SpawnMenuHints(w, menu, 125.0f, spawned, 240, menuDelay + 0.16f);
+    SpawnMenuHints(w, menu, style.HintY(halfPitch), spawned, 240, menuDelay + 0.16f);
 }
