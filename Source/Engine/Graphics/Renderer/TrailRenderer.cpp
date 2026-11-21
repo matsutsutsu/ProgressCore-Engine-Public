@@ -14,7 +14,7 @@ using namespace DirectX;
 
 namespace
 {
-    // b0 の定数バッファ。ShaderShared.h と同じく HLSL 側も row_major で受けるので、
+    // b0 の定数バッファ。HLSL 側は row_major で受けるので、
     // Camera の行列を転置せずにそのまま送る
     struct CbTrail
     {
@@ -28,10 +28,7 @@ namespace
 
 void TrailRenderer::Initialize(ID3D11Device *device)
 {
-    if (m_initialized || !device)
-    {
-        return;
-    }
+    if (m_initialized || !device) return;
 
     const D3D11_INPUT_ELEMENT_DESC layout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
@@ -90,8 +87,7 @@ void TrailRenderer::Initialize(ID3D11Device *device)
 size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
 {
     const size_t used = m_vertices.size() + m_distortVertices.size();
-    if (used + vertexCount <= MAX_VERTICES)
-        return vertexCount;
+    if (used + vertexCount <= MAX_VERTICES) return vertexCount;
 
     // 入りきらないぶんは、三角形の区切り（3頂点ずつ）で切り捨てる
     size_t remain = MAX_VERTICES - used;
@@ -104,36 +100,36 @@ size_t TrailRenderer::ClampToCapacity(size_t vertexCount) const
 void TrailRenderer::SubmitTriangleList(const Vertex *verts, size_t vertexCount,
                                        ID3D11ShaderResourceView *texture)
 {
-    if (!verts || vertexCount == 0)
-        return;
+    if (!verts || vertexCount == 0) return;
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
     vertexCount = ClampToCapacity(vertexCount);
-    if (vertexCount == 0)
-        return;
+    if (vertexCount == 0) return;
 
     m_vertices.insert(m_vertices.end(), verts, verts + vertexCount);
 
     // 直前の区間と同じテクスチャならつなげて、1回のドローコールで描く
     if (!m_addBatches.empty() && m_addBatches.back().srv == texture)
+    {
         m_addBatches.back().count += vertexCount;
+    }
     else
+    {
         m_addBatches.push_back({texture, vertexCount});
+    }
 }
 
 
 
 void TrailRenderer::SubmitDistortTriangleList(const Vertex *verts, size_t vertexCount)
 {
-    if (!verts || vertexCount == 0)
-        return;
+    if (!verts || vertexCount == 0) return;
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
     vertexCount = ClampToCapacity(vertexCount);
-    if (vertexCount == 0)
-        return;
+    if (vertexCount == 0) return;
 
     m_distortVertices.insert(m_distortVertices.end(), verts, verts + vertexCount);
 }
@@ -148,8 +144,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
 {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    if (m_vertices.empty() && m_distortVertices.empty())
-        return;
+    if (m_vertices.empty() && m_distortVertices.empty()) return;
 
     // 描けないときも、次のフレームに持ち越さないよう捨てる
     if (!m_initialized || !ctx.dc || !ctx.camera || !services.renderState)
@@ -180,10 +175,8 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         if (SUCCEEDED(dc->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
         {
             Vertex *dst = static_cast<Vertex *>(mapped.pData);
-            if (additiveCount > 0)
-                std::memcpy(dst, m_vertices.data(), additiveCount * sizeof(Vertex));
-            if (distortCount > 0)
-                std::memcpy(dst + additiveCount, m_distortVertices.data(), distortCount * sizeof(Vertex));
+            if (additiveCount > 0) std::memcpy(dst, m_vertices.data(), additiveCount * sizeof(Vertex));
+            if (distortCount > 0) std::memcpy(dst + additiveCount, m_distortVertices.data(), distortCount * sizeof(Vertex));
             dc->Unmap(m_vertexBuffer.Get(), 0);
         }
     }
@@ -204,12 +197,11 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
     // シーンの色（t5）は前のパスが別の SRV で上書きしている場合があるので、ここでバインドし直す
     // 読むのは写したテクスチャなので、描いている HDR バッファを同時に読むことにはならない
     ID3D11ShaderResourceView *sceneColorSRV = nullptr;
-    if (distortCount > 0 && services.postProcess)
-        sceneColorSRV = services.postProcess->GetSceneColorSRV();
+    if (distortCount > 0 && services.postProcess) sceneColorSRV = services.postProcess->GetSceneColorSRV();
 
     if (sceneColorSRV)
     {
-        // 歪みのピクセルシェーダーは gView / gTimeParams / gScreenParams を CbScene（b8）から読む
+        // 歪みのピクセルシェーダーは gView / gScreenParams を CbScene（b8）から読む
         if (services.sceneConstantBuffer)
         {
             ID3D11Buffer *sceneCb = services.sceneConstantBuffer;
@@ -242,8 +234,7 @@ void TrailRenderer::Render(const RenderServices &services, const RenderFrameCont
         UINT start = 0;
         for (const AddBatch &batch : m_addBatches)
         {
-            if (batch.count == 0)
-                continue;
+            if (batch.count == 0) continue;
             ID3D11ShaderResourceView *srv = batch.srv ? batch.srv : m_whiteTex.Get();
             dc->PSSetShaderResources(SLOT_SRV_TRAIL_TEX, 1, &srv);
             dc->Draw(static_cast<UINT>(batch.count), start);

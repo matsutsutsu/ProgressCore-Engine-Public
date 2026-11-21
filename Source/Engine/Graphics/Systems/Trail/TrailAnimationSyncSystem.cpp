@@ -15,6 +15,7 @@ void TrailAnimationSyncSystem::Update(float dt)
 {
     ForEach([this](const TransformComponent &transform, TrailComponent &trail) {
         // 持ち主（Animator を持つ祖先）を確かめ、消えていたら親をたどって探し直す
+        // アニメ制御でなくても探す。TrailRecordSystem が一時トレイルを持ち主の時計で進めるため
         trail.ownerEntity = CCL::Anim::RefreshAnimatorOwner(*m_world, transform, trail.ownerEntity);
 
         // 手動のトレイルには触れない（emitting はインスペクタや ActivateFor の値のまま）
@@ -28,12 +29,12 @@ void TrailAnimationSyncSystem::Update(float dt)
             return;
         }
 
-        // どれか 1 つの Trail 区間に入っていれば、持ち主の子にあるトレイルをすべてオンにする
+        // 今の再生時刻が、どれか1つの Trail 区間に入っていれば出す
+        // 同じ持ち主の下にあるトレイルは、すべて同時にオンになる
         trail.emitting = IsInEventWindow(*animator->currentSequence, AnimEventType::Trail, animator->currentTimer);
     });
 }
 
 
 
-// AnimationSystem（L02_PostUpdate）の後、TrailRecordSystem（L06）と描画の TrailSystem（R08）の前に走る
 REGISTER_LOGIC_SYSTEM(TrailAnimationSyncSystem, Priority::LogicStage::L05_Collision);
