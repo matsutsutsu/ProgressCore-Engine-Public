@@ -36,13 +36,15 @@ void PlayerDashSystem::Update(float rawDt)
                       const TransformComponent   &trans,
                       const TimeStateComponent   &time,
                       const PlayerRushComponent  &rush) {
-        MaintainInvincibility(id, dash);
-
         // ラッシュ中は押しても始めない
         const bool dashPressed = playerInput.dashPressed && !rush.isActive;
 
         // ダッシュしていないときの歩き・走りは、後に走る PlayerMoveSystem が書く
         UpdateDash(dash, player, dashPressed, movement, trans, time, id);
+
+        // 無敵は始めた後に保つ
+        // 先に保つと押したフレームだけ無敵が入らず、同じフレームでジャスト回避の成立と被弾が両方起きる
+        MaintainInvincibility(id, dash);
 
         PushCameraFraming(id, dash);
     });
@@ -107,6 +109,10 @@ void PlayerDashSystem::UpdateDash(PlayerDashComponent &dash, PlayerComponent &pl
             dash.dashDirection = (forward.LengthSquared() > 0.001f) ? forward : Vector3::UnitZ;
         }
         dash.dashDirection.Normalize();
+
+        // 攻撃の向き固定を解く
+        // 残っていると、PlayerFacingSystem が敵の方を向かせたままにし、進む向きと体の向きがずれる
+        player.attackFaceTimer = 0.0f;
 
         // 始めたことを知らせる（どの VFX を出すかは購読側が決める）
         m_world->GetEventBus().Publish(PlayerDashedEvent{trans.position, id});
