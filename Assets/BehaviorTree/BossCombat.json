@@ -1419,7 +1419,7 @@
             "posX": 9796.0,
             "posY": 1627.0,
             "score": {
-                "base": 8.0,
+                "base": 5.0,
                 "distance": {
                     "bestMax": 20.0,
                     "bestMin": 0.0,
@@ -1451,7 +1451,7 @@
                 "base": 9.0,
                 "distance": {
                     "bestMax": 60.0,
-                    "bestMin": 10.0,
+                    "bestMin": 0.0,
                     "falloff": 15.0
                 }
             },
@@ -1506,7 +1506,7 @@
             "posX": 10996.0,
             "posY": 1627.0,
             "score": {
-                "base": 8.0,
+                "base": 4.0,
                 "distance": {
                     "bestMax": 90.0,
                     "bestMin": 30.0,
@@ -1535,7 +1535,7 @@
             "posX": 11396.0,
             "posY": 1627.0,
             "score": {
-                "base": 7.0,
+                "base": 2.0,
                 "distance": {
                     "bestMax": 120.0,
                     "bestMin": 70.0,
@@ -2407,7 +2407,7 @@
             ],
             "name": "怒り：横払い",
             "score": {
-                "base": 8.0,
+                "base": 5.0,
                 "distance": {
                     "bestMax": 20.0,
                     "bestMin": 0.0,
@@ -2426,7 +2426,7 @@
                 "base": 9.0,
                 "distance": {
                     "bestMax": 60.0,
-                    "bestMin": 10.0,
+                    "bestMin": 0.0,
                     "falloff": 15.0
                 }
             },
@@ -2455,7 +2455,7 @@
             ],
             "name": "怒り：縦割り",
             "score": {
-                "base": 8.0,
+                "base": 4.0,
                 "distance": {
                     "bestMax": 90.0,
                     "bestMin": 30.0,
@@ -2471,7 +2471,7 @@
             ],
             "name": "怒り：壁突進",
             "score": {
-                "base": 7.0,
+                "base": 2.0,
                 "distance": {
                     "bestMax": 120.0,
                     "bestMin": 70.0,

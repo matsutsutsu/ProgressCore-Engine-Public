@@ -6,7 +6,7 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
-                "Animator": {},
+                "Animator": null,
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
@@ -38,7 +38,7 @@
                     "escapeLeap.height": 30.0,
                     "escapeLeap.landRecovery": 0.2199999988079071,
                     "escapeLeap.windup": 0.25,
-                    "exhaustedDuration": 4.0,
+                    "exhaustedDuration": 5.0,
                     "flinchCooldown": 3.0,
                     "footworkMaxTime": 3.0,
                     "footworkMinTime": 1.5,
@@ -88,9 +88,9 @@
                 },
                 "EnemyTag": null,
                 "HealthComponent": {
-                    "currentHealth": 850.0,
+                    "currentHealth": 1000.0,
                     "invincibilityDuration": 0.0,
-                    "maxHealth": 850.0
+                    "maxHealth": 1000.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -156,15 +156,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        38.916748046875,
-                        0.2528412938117981,
-                        -54.89906692504883
+                        -8.471165102719169e-08,
+                        -1.0468932390213013,
+                        5.0
                     ],
                     "rotation": [
                         0.0,
-                        0.9629297256469727,
+                        0.9999999403953552,
                         0.0,
-                        0.26975226402282715
+                        9.77853051153943e-06
                     ],
                     "scale": [
                         5.0,

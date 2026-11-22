@@ -54,7 +54,7 @@
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 15.0,
+            "damage": 16.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
