@@ -25,7 +25,7 @@ namespace
 
     constexpr float kMenuDelay = 0.15f;  // ボタンが出るまでの時間（秒）。すぐ操作したい画面なので短くする
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
-} // namespace
+}
 
 
 
@@ -72,7 +72,7 @@ std::vector<TypeID> PauseSystem::GetWriteTypes() const
 
 
 
-void PauseSystem::Update(float /*dt*/)
+void PauseSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 作ったメニューを、親の子のリストに繋ぐ
@@ -204,18 +204,20 @@ void PauseSystem::OpenPause()
     // 英語の見出しに、日本語を小さく添える
     const MenuStyleComponent style = GetMenuStyle(w);
     SpawnScreenHeading(w, canvas, "PAUSE", style.gold, m_overlay);
-    m_overlay.push_back(SpawnTypedText(w, "PauseSub", "一時停止", style.left, style.SubY(), 20.0f, style.sub, 0.2f, canvas));
+    m_overlay.push_back(SpawnTypedText(w, "PauseSub", "一時停止", style.left, style.SubY(), style.subPx, style.sub, 0.2f, canvas));
 
     // ---------------------------------------------------------
     // 4. ボタンと操作のヒント
     // ---------------------------------------------------------
 
     // 見出しの下の線から、少し間をあけた位置に並べる
-    const EntityID menu = SpawnBox(w, "PauseMenu", {0.0f, 0.0f}, {style.left, style.RuleY() + kMenuGap},
-                                   {320.0f, 225.0f}, canvas);
+    // 入れ物はボタン3つがちょうど入る大きさにする。幅をボタンと同じにして、ボタンの左端を見出しの左端にそろえる
+    const float    pitch = style.buttonPitch;
+    const EntityID menu  = SpawnBox(w, "PauseMenu", {0.0f, 0.0f}, {style.left, style.RuleY() + kMenuGap},
+                                    {style.buttonSize.x, pitch * 2.0f + style.buttonSize.y}, canvas);
     m_overlay.push_back(menu);
 
-    auto resume = SpawnButton(w, "BtnResume", "LblResume", "ゲームに戻る", {0.0f, -85.0f}, "resume", true, 230, kMenuDelay, menu);
+    auto resume = SpawnButton(w, "BtnResume", "LblResume", "ゲームに戻る", {0.0f, -pitch}, "resume", true, 230, kMenuDelay, menu);
     m_overlay.push_back(resume.button);
     m_overlay.push_back(resume.label);
 
@@ -227,13 +229,13 @@ void PauseSystem::OpenPause()
 
     // ここからはタイトルへ戻れるだけにする。アプリの終了はタイトル画面の「終了」だけ
     // ゲーム中からすぐ終了できると、押し間違えたときに戻れない
-    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "タイトルへ", {0.0f, 85.0f}, "pause_title", false, 230,
+    auto toTitle = SpawnButton(w, "BtnPauseTitle", "LblPauseTitle", "タイトルへ", {0.0f, pitch}, "pause_title", false, 230,
                                kMenuDelay + 0.06f, menu);
     m_overlay.push_back(toTitle.button);
     m_overlay.push_back(toTitle.label);
 
     // 操作のヒントは、ボタンより少し遅れて出す
-    SpawnMenuHints(w, menu, 165.0f, m_overlay, 240, kMenuDelay + 0.12f);
+    SpawnMenuHints(w, menu, style.HintY(pitch), m_overlay, 240, kMenuDelay + 0.12f);
 
     // 親の子のリストへは、生成が反映される次のフレームに繋ぐ（Update）
     m_linkPending = true;

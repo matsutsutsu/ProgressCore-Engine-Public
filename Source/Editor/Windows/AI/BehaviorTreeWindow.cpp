@@ -357,7 +357,7 @@ namespace
 {
     // クリップボードの JSON の目印。関係ない文字列（他アプリのコピー）を貼ろうとしても無視できるように
     constexpr const char *kClipboardFormat = "ProgressCore.BehaviorTree.Clipboard";
-} // namespace
+}
 
 void BehaviorTreeWindow::CopySelection()
 {
@@ -578,6 +578,7 @@ const char *BehaviorTreeWindow::DecoratorNameOf(int decoratorType)
     case 0: return "Inverter (反転)";
     case 1: return "Cooldown (待機)";
     case 2: return "Retry (再試行)";
+    case 3: return "Repeat (繰り返し)";
     default: return "Unknown";
     }
 }
@@ -687,6 +688,7 @@ std::string BehaviorTreeWindow::GetDisplayName(const EditorBTNode &node) const
     {
     case 1: return std::string("Cooldown ") + number + "秒";
     case 2: return std::string("Retry ") + number + "回";
+    case 3: return std::string("Repeat ") + number + "回";
     default: return DecoratorNameOf(node.decoratorType);
     }
 }
@@ -709,6 +711,16 @@ std::optional<float> BehaviorTreeWindow::DebugTimerOf(const EditorBTNode &node, 
         node.runtimeFlatIndex >= static_cast<int>(activeAI->nodeTimers.size()))
         return std::nullopt;
     return activeAI->nodeTimers[static_cast<size_t>(node.runtimeFlatIndex)];
+}
+
+
+
+std::optional<int> BehaviorTreeWindow::DebugRunningIndexOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI)
+{
+    if (!activeAI || node.runtimeFlatIndex < 0 ||
+        node.runtimeFlatIndex >= static_cast<int>(activeAI->runningNodes.size()))
+        return std::nullopt;
+    return activeAI->runningNodes[static_cast<size_t>(node.runtimeFlatIndex)];
 }
 
 

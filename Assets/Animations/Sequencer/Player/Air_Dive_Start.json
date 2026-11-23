@@ -23,7 +23,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.05,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 5
         }
     ],
@@ -45,6 +45,5 @@
         "visible": true
     },
     "startOffset": 0.0,
-    "targetAnimName": "Attack_Air_To_Floor_Start_01_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Attack_Air_To_Floor_Start_01_Seq_0"
 }

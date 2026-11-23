@@ -104,9 +104,9 @@
             "prefab": "./Assets\\Prefabs\\Enemy\\Valkyra.json",
             "rotation": [
                 0.0,
-                0.8557052612304688,
+                1.0,
                 0.0,
-                0.5174635052680969
+                0.0
             ],
             "scale": [
                 5,

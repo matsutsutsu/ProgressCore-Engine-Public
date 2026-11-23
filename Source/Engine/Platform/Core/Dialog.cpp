@@ -166,7 +166,7 @@ namespace
         return std::filesystem::absolute(p);
     }
 
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 初期化
@@ -320,7 +320,7 @@ namespace
         StoreHistory(contextId, paths.front());
         return paths;
     }
-} // namespace
+}
 
 std::optional<std::filesystem::path> FileDialog::Open(const FileDialogParams &params)
 {

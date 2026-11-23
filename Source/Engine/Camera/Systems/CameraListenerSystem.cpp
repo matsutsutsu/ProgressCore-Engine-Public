@@ -10,8 +10,6 @@ using namespace DirectX::SimpleMath;
 
 void CameraListenerSystem::Update(float dt)
 {
-    if (!m_world) return;
-
     if (!m_world->HasResource<Camera *>() || !m_world->HasResource<std::shared_ptr<IAudioAPI>>()) return;
 
     Camera *mainCamera = m_world->GetResource<Camera *>();

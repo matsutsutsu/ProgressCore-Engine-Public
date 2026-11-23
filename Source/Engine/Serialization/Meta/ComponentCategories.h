@@ -39,4 +39,4 @@ namespace CCL::Categories
     // 分類が決まらない場合
     inline constexpr const char *Misc = "Misc"; // ComponentMeta<T> の既定値と同じ
 
-} // namespace CCL::Categories
+}

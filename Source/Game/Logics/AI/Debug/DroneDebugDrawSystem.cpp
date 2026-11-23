@@ -1,5 +1,7 @@
 #include "DroneDebugDrawSystem.h"
 
+#include "Game/Logics/AI/Drone/Formation/FormationRegistry.h"
+
 #include "Engine/Graphics/Renderer/ShapeRenderer.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
@@ -30,23 +32,23 @@ namespace
     constexpr float kOffSlotRadius = 1.5f; // 離れている機を囲む球の半径 [m]。線より面積を取り、遠くからでも見える大きさ
     constexpr float kSlotRadius    = 0.3f; // 持ち場の球の半径 [m]
 
-    // 剛体追従の突撃中で、持ち場へバネで追いかけている最中か
-    bool IsChasingRigidSlot(const DroneComponent &drone)
+    // 剛体追従の突撃中で、持ち場へバネで追いかけている最中か。mode はこの機の技の移動方式
+    bool IsChasingRigidSlot(const DroneComponent &drone, ChargeMode mode)
     {
-        return drone.currentState == DroneState::FireCharge && drone.chargeMode == ChargeMode::RigidFollow &&
+        return drone.currentState == DroneState::FireCharge && mode == ChargeMode::RigidFollow &&
                !drone.rigidLocked && drone.attackProgress < 1.0f;
     }
 
 
 
     ImVec4 ToImVec4(const XMFLOAT4 &c) { return ImVec4(c.x, c.y, c.z, c.w); }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口
 // ---------------------------------------------------------------------------
 
-void DroneDebugDrawSystem::Update(float /*dt*/)
+void DroneDebugDrawSystem::Update(float dt)
 {
     if (!m_enabled) return;
 
@@ -56,6 +58,8 @@ void DroneDebugDrawSystem::Update(float /*dt*/)
 
     m_stats = Stats{};
 
+    const auto *formations = CCL::AI::Formation::FormationRegistry::Find(*m_world);
+
     // 全機で m_stats に足し込むので並列にしない（ShapeRenderer は並列で積めるが、1000機なら直列で十分軽い）
     ForEach([&](const TransformComponent &trans, const DroneComponent &drone) {
         const size_t state = static_cast<size_t>(drone.currentState);
@@ -63,7 +67,8 @@ void DroneDebugDrawSystem::Update(float /*dt*/)
 
         ++m_stats.byState[state];
 
-        const bool unlocked = IsChasingRigidSlot(drone);
+        const ChargeMode mode     = formations ? formations->ChargeModeOf(drone.currentFormation) : ChargeMode::Straight;
+        const bool       unlocked = IsChasingRigidSlot(drone, mode);
         if (unlocked) ++m_stats.unlocked;
 
         // 離脱は持ち場を離れるのが正しいので、数えるだけで描かない

@@ -6,7 +6,7 @@
 //   - ダッシュの開始・継続・終了と、ジャスト回避の受付を管理する
 //   - 回避中は HealthComponent の無敵タイマーを保つ
 //   - ダッシュが終わったら走りに移す（isRunning）
-//   - ダッシュ中はカメラへ画角を広げる要求を書く
+//   - ダッシュ中はカメラの構図の上書きスロットへ、画角の足し込みを書く
 //
 // 備考:
 //   ダッシュしていないときの速さは、この後に走る PlayerMoveSystem が書く
@@ -36,7 +36,19 @@ public:
     PlayerDashSystem() : IfSystem("PlayerDashSystem") {}
     void Update(float dt) override;
 
+    std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
+
 private:
+    using Base = CCL::ECS::IfSystem<
+        PlayerDashSystem,
+        CCL::ECS::Write<CharacterMovementComponent>,
+        CCL::ECS::Write<PlayerDashComponent>,
+        CCL::ECS::Write<PlayerComponent>,
+        CCL::ECS::Read<PlayerInputComponent>,
+        CCL::ECS::Read<TransformComponent>,
+        CCL::ECS::Read<TimeStateComponent>,
+        CCL::ECS::Read<PlayerRushComponent>>;
+
     // 回避中は、被弾処理が見る HealthComponent の無敵タイマーを invincibleWindow 以上に保つ
     void MaintainInvincibility(CCL::ECS::EntityID id, const PlayerDashComponent &dash);
 
@@ -46,6 +58,6 @@ private:
                     CharacterMovementComponent &movement, const TransformComponent &trans,
                     const TimeStateComponent &time, CCL::ECS::EntityID id);
 
-    // このプレイヤーを映す TPS カメラへ、画角を広げる要求を書く
-    void PushWideFovRequest(CCL::ECS::EntityID playerID, bool wide);
+    // このプレイヤーを映す TPS カメラの上書きスロットへ、ダッシュ中だけ画角の足し込みを書く
+    void PushCameraFraming(CCL::ECS::EntityID playerID, const PlayerDashComponent &dash);
 };

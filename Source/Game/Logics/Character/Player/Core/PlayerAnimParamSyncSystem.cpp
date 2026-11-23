@@ -5,20 +5,27 @@
 
 using namespace CCL::ECS;
 
-// アニメのパラメータ名のハッシュ（毎ステップ計算しないよう先に求める）
-static const uint32_t HASH_IS_DASHING        = CCL::Utils::HashString("IsDashing");
-static const uint32_t HASH_IS_AIRBORNE       = CCL::Utils::HashString("IsAirborne");
-static const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("HasMoveInput");
-static const uint32_t HASH_IS_RUNNING        = CCL::Utils::HashString("IsRunning");
-static const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("CanDashAttack");
-static const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("Dash");
+namespace
+{
+    // アニメのパラメータ名のハッシュ（毎ステップ計算しないよう先に求める）
+    const uint32_t HASH_IS_DASHING        = CCL::Utils::HashString("IsDashing");
+    const uint32_t HASH_IS_AIRBORNE       = CCL::Utils::HashString("IsAirborne");
+    const uint32_t HASH_MOVE_INPUT        = CCL::Utils::HashString("HasMoveInput");
+    const uint32_t HASH_IS_RUNNING        = CCL::Utils::HashString("IsRunning");
+    const uint32_t HASH_DASH_ATTACK_READY = CCL::Utils::HashString("CanDashAttack");
+    const uint32_t HASH_TRIG_DASH         = CCL::Utils::HashString("Dash");
+
+    constexpr float kMinMoveInputSq       = 0.01f; // 移動の入力があると判定する長さの2乗
+    constexpr float kDashAttackSpeedRatio = 0.5f;  // ダッシュの速さに対して、ダッシュ攻撃を出せる速さの割合
+}
 
 
 
-void PlayerAnimParamSyncSystem::Update(float /*dt*/)
+void PlayerAnimParamSyncSystem::Update(float dt)
 {
     ForEach([&](const PlayerDashComponent &dash, const PlayerComponent &player,
                 const CharacterMovementComponent &movement, AnimParametersComponent &animParams) {
+
         // ダッシュに入るのは、始めた瞬間の Dash トリガーで行う
         // IsDashing で入ると、ダッシュ中に移った先（DashAttack）を毎ステップ Dash へ引き戻す
         const bool wasDashing = animParams.GetBool(HASH_IS_DASHING);
@@ -28,27 +35,23 @@ void PlayerAnimParamSyncSystem::Update(float /*dt*/)
         }
         animParams.SetBool(HASH_IS_DASHING, dash.isDashing);
 
-        // 空中かは、猶予付きの isAirborne を書く
-        // VelocityY / IsGrounded を直接見ると、小さな段差で落下へ遷移する
+        // 空中にいるかどうかはisAirborneを見る
+        // 小さな段差で反応しないようにGroundで判定はしない
         animParams.SetBool(HASH_IS_AIRBORNE, player.isAirborne);
 
-        // 移動の入力があるかは、実際の速さでなく入力の向きで決める
-        // 攻撃中はルートモーションで動くので、速さが入力を表さない
-        const bool wantsMove = movement.desiredVelocity.LengthSquared() > 0.01f;
+        // 移動の入力は入力を取得する
+        const bool wantsMove = movement.desiredVelocity.LengthSquared() > kMinMoveInputSq;
         animParams.SetBool(HASH_MOVE_INPUT, wantsMove);
 
-        // 歩きか走りかは、速さでなくゲーム側の isRunning で決める
-        // 止まりモーションを歩き用・走り用で分けるのに使う
-        // 走りは無入力が続いてから解くので、手を離した瞬間はまだ走りのまま残っている
+        // 走っている状態をセットする
         animParams.SetBool(HASH_IS_RUNNING, player.isRunning);
 
-        // 次の攻撃をダッシュ攻撃にするかを、コードで判定する
-        // グラフはこの bool と Attack トリガーで、Atk_Dash と Atk_Combo1 を分ける
+        // ダッシュ攻撃ができるかどうか
+        // 速さは水平だけで測る。空中ダイブの後は落ちる速さも入っているので、それを数えないようにする
+        const DirectX::SimpleMath::Vector3 horizontalVel(movement.currentVelocity.x, 0.0f, movement.currentVelocity.z);
 
-        // ダッシュ中・走り中に加え、ダッシュの半分の速さが残っている間も出す
-        // 走りを解いた直後の猶予にする
-        const float dashAtkSpeed    = dash.dashSpeed * 0.5f;
-        const bool  stillFast       = movement.currentVelocity.LengthSquared() >= (dashAtkSpeed * dashAtkSpeed);
+        const float dashAtkSpeed    = dash.dashSpeed * kDashAttackSpeedRatio;
+        const bool  stillFast       = horizontalVel.LengthSquared() >= (dashAtkSpeed * dashAtkSpeed);
         const bool  dashAttackReady = dash.isDashing || player.isRunning || stillFast;
         animParams.SetBool(HASH_DASH_ATTACK_READY, dashAttackReady);
     });

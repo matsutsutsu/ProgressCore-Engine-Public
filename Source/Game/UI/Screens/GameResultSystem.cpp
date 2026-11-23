@@ -13,6 +13,7 @@
 #include "Game/Logics/Character/Player/Core/PlayerComponent.h"
 #include "Game/Logics/AI/Battle/BattleContext.h"
 #include "Game/Core/GameEvents.h"
+#include "Game/Logics/Combat/Feedback/FinishPresentationState.h"
 
 #include <algorithm>
 #include <cmath>
@@ -34,7 +35,7 @@ namespace
     constexpr float kMenuGap = 60.0f; // 記録の最後の行から、ボタンの入れ物の上端までの間隔（px）
 
     constexpr int kRowCount = 4; // 記録の行の数
-} // namespace
+}
 
 
 
@@ -106,21 +107,21 @@ void GameResultSystem::Update(float dt)
     // 1. 勝った後の待ち
     // ---------------------------------------------------------
 
-    // 勝ちはすぐには出さない。最後の敵を倒したフレームから、撃破のスローが始まるため
-    // dt はスローの影響を受けない実時間なので、kResultDelay を数え終えれば、スローも終わっている
+    // 勝ちはすぐには出さない。最後の敵を倒したフレームから、とどめのスローが始まるため
+    // dt はスローの影響を受けない実時間で数える
     if (m_pendingWin)
     {
         m_winDelay -= dt;
 
-        // 撃破ムービーが流れている間は出さない。終わるかスキップされたら出す
-        // ムービーの再生要求は撃破のスロー（BossPhaseComponent の defeatSlowDuration）の後に出るので、
-        // kResultDelay を待ち終えた時点では cinematic がもう立っている
-        // defeatSlowDuration を kResultDelay 以上に延ばすと、ムービーの前にリザルトが出る
-        // ムービーがないシーンでは cinematic が立たず、kResultDelay だけ待って出る
+        // とどめのスローと撃破ムービーの間は出さない。ムービーが終わるかスキップされたら出す
+        // ムービーはスローが明けたフレームに頼まれるので、2つの待ちは途切れずにつながる
+        // ムービーがないシーンでは cinematic が立たず、スローが明けた後に出る
         const bool cinematic =
             m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().cinematic;
+        const bool finishing =
+            m_world->HasResource<FinishPresentationState>() && m_world->GetResource<FinishPresentationState>().active;
 
-        if (m_winDelay <= 0.0f && !cinematic)
+        if (m_winDelay <= 0.0f && !cinematic && !finishing)
         {
             m_resultShown = true;
             ShowResultUI(true); // MISSION COMPLETE
@@ -291,6 +292,9 @@ void GameResultSystem::ShowResultUI(bool win)
     // デバッグの「リザルトを出す」から呼ばれたときも、操作とボスを止める
     EndMatch();
 
+    // ボタンを押せるように、ここで初めてマウスカーソルを解放する
+    if (w.HasResource<GameFlowState>()) w.GetResource<GameFlowState>().resultOpen = true;
+
     if (w.HasResource<BattleContext>())
     {
         const auto &battle = w.GetResource<BattleContext>();
@@ -333,7 +337,7 @@ void GameResultSystem::ShowResultUI(bool win)
         std::snprintf(sub, sizeof(sub), "ボス VALKYRA の残りHP  %d%%",
                       static_cast<int>(m_bossHpRatio * 100.0f + 0.5f));
     }
-    SpawnTypedText(w, "ResultSub", sub, style.left, style.SubY(), 20.0f, style.sub, kSubStart, canvas);
+    SpawnTypedText(w, "ResultSub", sub, style.left, style.SubY(), style.subPx, style.sub, kSubStart, canvas);
 
     // ---------------------------------------------------------
     // 4. 記録の行
@@ -358,14 +362,17 @@ void GameResultSystem::ShowResultUI(bool win)
     // ---------------------------------------------------------
 
     // 記録が出そろってから出す
+    // 入れ物はボタン2つがちょうど入る大きさにする。幅をボタンと同じにして、ボタンの左端を記録の左端にそろえる
     const float    lastRow   = static_cast<float>(kRowCount - 1);
     const float    menuTop   = style.RowY() + style.rowH * lastRow + style.rowPx + kMenuGap;
     const float    menuDelay = kRowStart + kRowStep * lastRow + kMenuDelay;
-    const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {style.left, menuTop}, {320.0f, 140.0f}, canvas);
+    const float    halfPitch = style.buttonPitch * 0.5f;
+    const EntityID menu      = SpawnBox(w, "ResultMenu", {0.0f, 0.0f}, {style.left, menuTop},
+                                        {style.buttonSize.x, style.buttonPitch + style.buttonSize.y}, canvas);
 
     // 最初は「もう一度」を選んでおく
-    SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -42.0f}, "retry", true, 230, menuDelay, menu);
-    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, 43.0f}, "result_title", false, 230,
+    SpawnButton(w, "BtnRetry", "LblRetry", "もう一度", {0.0f, -halfPitch}, "retry", true, 230, menuDelay, menu);
+    SpawnButton(w, "BtnResultTitle", "LblResultTitle", "タイトルへ", {0.0f, halfPitch}, "result_title", false, 230,
                 menuDelay + 0.08f, menu);
-    SpawnMenuHints(w, menu, 125.0f, spawned, 240, menuDelay + 0.16f);
+    SpawnMenuHints(w, menu, style.HintY(halfPitch), spawned, 240, menuDelay + 0.16f);
 }

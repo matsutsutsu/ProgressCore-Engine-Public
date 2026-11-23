@@ -7,6 +7,8 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
+#include "Engine/Core/Math/Angle.h"
+#include "Engine/Core/App/GameFlowState.h"
 
 #include <SimpleMath.h>
 #include <cmath>
@@ -39,16 +41,26 @@ void BossPerceptionSystem::Initialize()
 
 
 
-void BossPerceptionSystem::Update(float /*rawDt*/)
+void BossPerceptionSystem::Update(float rawDt)
 {
     if (!m_world->HasResource<BattleContext>()) return;
     const auto &battle = m_world->GetResource<BattleContext>();
     if (!battle.HasPlayer()) return; // プレイヤーがまだいなければ何もしない
 
+    // ムービー中・決着後かを、全個体ぶん1回だけ調べる
+    const bool gameplayFrozen =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().GameplayFrozen();
+
     ForEach([&](BehaviorTreeComponent    &btComp,
                 const TransformComponent &trans,
                 const HealthComponent    &health,
                 const TimeStateComponent &time) {
+        // --- 戦いの経過時間 ---
+
+        // BT が止まっている間（ムービー中・決着後）は数えない
+        // 数えると、開幕のムービーの長さだけ「戦い始めてから」の時間が先に進んでしまう
+        if (!gameplayFrozen) btComp.blackboard.battleTime += time.localDt;
+
         // --- 被弾と HP ---
 
         // 残り時間ではなく経過時間で持つ
@@ -120,8 +132,8 @@ void BossPerceptionSystem::Update(float /*rawDt*/)
         btComp.blackboard.distanceToArenaEdge   = DistanceToArenaEdge(myWorldPos, battle);
         btComp.blackboard.targetAngleFromCenter = TargetAngleFromCenterDeg(myWorldPos, targetPos, battle);
 
-        // 横移動の向きを選ぶための左右の空き。向きは体の正面でなく相手への向きで測る
-        // （横移動が進む向きと同じ基準にする）
+        // 左右へ動く向きを選ぶための左右の空き。向きは体の正面でなく相手への向きで測る
+        // （間合いを取る・様子見が左右を決める基準と同じにする）
         Vector3 toTarget = targetPos - myWorldPos;
         toTarget.y       = 0.0f;
         if (toTarget.LengthSquared() > 0.0001f)
@@ -158,11 +170,7 @@ float BossPerceptionSystem::SignedAngleToTargetDeg(const TransformComponent &tra
     const float targetYaw = atan2f(toTarget.x, toTarget.z);
 
     // -π〜π に収める
-    float diff = targetYaw - myYaw;
-    while (diff > DirectX::XM_PI)
-        diff -= DirectX::XM_2PI;
-    while (diff < -DirectX::XM_PI)
-        diff += DirectX::XM_2PI;
+    const float diff = CCL::Math::WrapRadians(targetYaw - myYaw);
 
     return DirectX::XMConvertToDegrees(diff);
 }

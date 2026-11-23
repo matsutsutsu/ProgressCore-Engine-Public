@@ -87,8 +87,8 @@ private:
     void DrawSkinnedInstances(const RenderFrameContext &ctx, const Model::Mesh &mesh, size_t meshIdx,
                               const BatchRange &batch);
 
-    PipelineState  m_psoOpaque; // 深度を書く・裏面カリング
-    InstanceBuffer m_instanceBuffer;
+    PipelineState  m_psoOpaque;      // 深度を書く・裏面カリング
+    InstanceBuffer m_instanceBuffer; // 見えるインスタンスの行列を頂点シェーダーへ渡す
 
     // 見えるインスタンスを集める作業用の配列（メッシュごとに使い回す）
     // NormalPrepass の結果を使えたメッシュでは使わない

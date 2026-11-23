@@ -6,15 +6,12 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/PlayerAnimNode.json"
                 },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": {},
                 "Character Movement": {
                     "currentVelocity": [
-                        -4.324382377792618e-14,
                         0.0,
-                        9.761993053107251e-14
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -29,9 +26,9 @@
                     "use3DVelocity": false
                 },
                 "HealthComponent": {
-                    "currentHealth": 300.0,
+                    "currentHealth": 150.0,
                     "invincibilityDuration": 0.5,
-                    "maxHealth": 300.0
+                    "maxHealth": 150.0
                 },
                 "Hurtbox": {
                     "damageMultiplier": 1.0
@@ -86,7 +83,13 @@
                 },
                 "Player Component": {
                     "airborneGraceTime": 0.47999998927116394,
+                    "attackBackFaceDuration": 0.800000011920929,
+                    "attackDirConeAngle": 50.0,
+                    "attackFaceConeAngle": 70.0,
+                    "attackFaceDuration": 0.2199999988079071,
                     "attackFaceMaxDistance": 15.0,
+                    "attackInputBuffer": 0.25,
+                    "attackStickThreshold": 0.5,
                     "bankingMultiplier": 0.5,
                     "maxBankingAngle": 30.0,
                     "maxJumps": 2,
@@ -95,12 +98,13 @@
                     "turnSpeed": 10.0
                 },
                 "Player Dash Component": {
+                    "cameraFovOffset": 20.0,
                     "currentTimer": -0.005458807572722435,
                     "dashCooldown": 0.47999998927116394,
                     "dashDirection": [
-                        0.9203281998634338,
+                        -0.5023548603057861,
                         0.0,
-                        0.3911471366882324
+                        0.8646615743637085
                     ],
                     "dashDuration": 0.1599999964237213,
                     "dashSpeed": 114.0,
@@ -164,8 +168,13 @@
                 "Player Rush Component": {
                     "attackDuration": 0.46000000834465027,
                     "attackFired": true,
+                    "closeInMaxDuration": 2.0,
                     "closeInSpeed": 150.0,
                     "closeInStopDistance": 20.0,
+                    "evadeSharedSlowTime": 0.30000001192092896,
+                    "evadeSlowDuration": 1.0,
+                    "evadeSlowScale": 0.10000000149011612,
+                    "finishHit": true,
                     "finishRecover": 0.4000000059604645,
                     "flurryMaxDuration": 10.0,
                     "invincibleRefresh": 0.10000000149011612,
@@ -179,6 +188,10 @@
                     "rushStep": 4,
                     "rushStepCount": 4,
                     "slowRecover": 0.4000000059604645,
+                    "startMaxDistance": 100.0,
+                    "strikeDistance": 1.5,
+                    "strikeTrackTime": 0.2199999988079071,
+                    "strikeTrackTimer": 0.0,
                     "timer": 0.0,
                     "worldScale": 0.05000000074505806
                 },
@@ -203,15 +216,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        -95.48328399658203,
-                        -0.1124546229839325,
-                        8.621514320373535
+                        -47.78563690185547,
+                        0.6660456657409668,
+                        4.909242153167725
                     ],
                     "rotation": [
-                        -1.8729688692569833e-31,
-                        -0.2069934606552124,
-                        8.852476804065167e-31,
-                        0.9783423542976379
+                        -1.3320023995992427e-28,
+                        -0.3196420669555664,
+                        3.948552405338648e-28,
+                        0.9475383758544922
                     ],
                     "scale": [
                         3.5,
@@ -280,7 +293,7 @@
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,
-                    "shape": 2,
+                    "shape": 1,
                     "texturePath": "",
                     "thickness": 0.8999999761581421,
                     "timeScale": 1.0,
@@ -363,7 +376,7 @@
                     "lifeTime": 0.25999999046325684,
                     "minDistance": 1.0,
                     "rimPower": 0.0,
-                    "shape": 2,
+                    "shape": 1,
                     "texturePath": "",
                     "thickness": 0.8999999761581421,
                     "timeScale": 1.0,
@@ -408,7 +421,7 @@
                                 0.0
                             ],
                             "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
+                            "attractorStrength": -1.0,
                             "burstCount": 0,
                             "color": [
                                 1.0,
@@ -445,6 +458,7 @@
                                 0.20000000298023224,
                                 0.30000001192092896
                             ],
+                            "followRatio": 0.0,
                             "gravity": 0.0,
                             "intensity": 4.449999809265137,
                             "lifespan": [
@@ -462,7 +476,7 @@
                                 0.0
                             ],
                             "localOffsetY": 0.0,
-                            "maxCount": 15440,
+                            "maxCount": 15000,
                             "maxSpeed": 10.0,
                             "name": "",
                             "noiseScale": 1.0,
@@ -497,11 +511,11 @@
                     ]
                 },
                 "Hitbox": {
-                    "damageAmount": 5.0,
-                    "hitStopDuration": 0.09000000357627869,
+                    "damageAmount": 30.0,
+                    "hitStopDuration": 0.44999998807907104,
                     "hitStopScale": 0.0,
                     "isActive": false,
-                    "knockback": 20.0,
+                    "knockback": 50.0,
                     "rehitInterval": -1.0
                 },
                 "Jolt Capsule Collider": {

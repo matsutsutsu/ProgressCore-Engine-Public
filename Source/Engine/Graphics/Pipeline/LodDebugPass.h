@@ -34,10 +34,10 @@ private:
     // 段の色を定数バッファへ書く
     void UpdateColor(ID3D11DeviceContext *dc, size_t level);
 
-    PipelineState                             m_pso;         // 半透明・深度はテストだけ
-    InstanceBuffer                            m_instanceBuffer;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader; // 段の色を出すだけのピクセルシェーダー
-    Microsoft::WRL::ComPtr<ID3D11Buffer>      m_colorBuffer; // 段の色（b0）
+    PipelineState                             m_pso;            // 半透明・深度はテストだけ
+    InstanceBuffer                            m_instanceBuffer; // 見えるインスタンスの行列を頂点シェーダーへ渡す
+    Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pixelShader;    // 段の色を出すだけのピクセルシェーダー
+    Microsoft::WRL::ComPtr<ID3D11Buffer>      m_colorBuffer;    // 段の色（b0）
 
     MeshLod::LevelCounts m_lastLevelCounts{}; // 直近に描いたフレームの、段ごとのインスタンスの数
 };

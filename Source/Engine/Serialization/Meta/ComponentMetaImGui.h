@@ -694,6 +694,6 @@ namespace ComponentMetaImGui
             }));
     }
 
-} // namespace ComponentMetaImGui
+}
 
 #endif

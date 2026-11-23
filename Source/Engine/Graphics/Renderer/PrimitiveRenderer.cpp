@@ -17,7 +17,7 @@ namespace
         DirectX::XMFLOAT3 position;
         DirectX::XMFLOAT3 normal;
     };
-} // namespace
+}
 
 std::atomic<uint64_t> PrimitiveRenderer::s_instanceCounter = 0;
 

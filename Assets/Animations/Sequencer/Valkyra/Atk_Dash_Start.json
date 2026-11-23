@@ -92,9 +92,34 @@
             },
             "radius": 1.0,
             "soundPitch": 0.0,
-            "soundVolume": 1.0,
+            "soundVolume": 1.5,
             "startTime": 0.4166666567325592,
-            "stringParam": "sfx:/boss_dash_travel",
+            "stringParam": "sfx:/SE_BossDash",
+            "type": 1
+        },
+        {
+            "attackLayer": 3,
+            "cancelMask": 0,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.4166666865348816,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.05,
+            "soundVolume": 1.0,
+            "startTime": 0.4166666865348816,
+            "stringParam": "sfx:/Muriel_Effort_Attack_07",
             "type": 1
         }
     ],
@@ -115,6 +140,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Travel_Fwd_Start_0",
-    "targetModelPath": ""
+    "targetAnimName": "Travel_Fwd_Start_0"
 }

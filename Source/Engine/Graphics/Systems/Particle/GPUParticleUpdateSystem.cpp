@@ -42,6 +42,7 @@ static GpuData::CbParticleStatic BuildStaticCb(const ParticleEmitterDesc &d)
     cb.size_random               = d.sizeRandom;
     cb.size_ease                 = d.sizeEase;
     cb.size_ease_power           = d.sizeEasePower;
+    cb.follow_ratio              = d.followRatio;
     cb.cone_angle                = d.coneAngle;
     cb.emit_speed                = d.emitSpeed;
     cb.emit_angular_speed        = d.angularSpeed;
@@ -157,12 +158,11 @@ void GPUParticleUpdateSystem::Update(float dt)
     }
     if (!m_computeShader->GetInitCS() || !m_computeShader->GetUpdateCS()) return;
 
-    // UAV をバインドする前に、同じバッファを SRV として持っているスロットをすべて外す
-    ID3D11ShaderResourceView *nullSRVs[16] = {};
-    dc->VSSetShaderResources(0, 16, nullSRVs);
-    dc->GSSetShaderResources(0, 16, nullSRVs);
-    dc->PSSetShaderResources(0, 16, nullSRVs);
-    dc->CSSetShaderResources(0, 16, nullSRVs);
+    // UAV をバインドする前に、同じバッファを SRV として持っているスロットを外す
+    // パーティクルのバッファを SRV で読むのは、描画の VS と GS だけ
+    ID3D11ShaderResourceView *nullSRV = nullptr;
+    dc->VSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, &nullSRV);
+    dc->GSSetShaderResources(SLOT_SRV_PARTICLE_BUF, 1, &nullSRV);
 
     // 世界の時計が止まっている間は、シミュレーションを止める
     //   この System は描画ステージなのでポーズ中（UpdatePaused）も走るが、倍率（scale）を作る

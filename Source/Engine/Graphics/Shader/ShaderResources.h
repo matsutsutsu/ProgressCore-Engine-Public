@@ -36,6 +36,10 @@
 // --- UI の 2D パス（UIRenderer がドローごとにバインド） ---
 #define SLOT_CB_UIGAUGE 0 // ゲージ1本分の値（UIShared.h）。2D パスではマテリアルもポストプロセスも動かない
 
+// --- 専用シェーダー（マテリアルを使わない描画。その描画の中でだけ使う） ---
+#define SLOT_CB_TRAIL 0    // トレイルの viewProjection
+#define SLOT_CB_RT_DEBUG 0 // エディタのレンダーターゲット表示の設定
+
 // --- フレームごと（Graphics / EnvironmentSystem がバインド） ---
 #define SLOT_CB_SCENE 8   // viewProjection・カメラ・平行光源など。書くのは Graphics::Update だけ
 #define SLOT_CB_LIGHT 9   // 点光源・スポットライトの配列
@@ -68,10 +72,16 @@
 #define SLOT_SRV_SCENE_COLOR 5  // SceneColorGrabPass が写したシーンの色
 #define SLOT_SRV_SCENE_NORMAL 6 // NormalPrepass の法線
 
-// --- パスごと・ポストプロセス ---
-//     t0〜t2 はマテリアルと同じ番号を使う（同時には使わない）
-#define SLOT_SRV_BLOOM_IN 0
-#define SLOT_SRV_BLOOM_HIGHRES 1
+// --- ポストプロセス（各エフェクトがバインド） ---
+//     t0・t1 はマテリアルと同じ番号を使う（同時には使わない）
+#define SLOT_SRV_POST_INPUT0 0 // 前の段の絵（エフェクトの入力）
+#define SLOT_SRV_POST_INPUT1 1 // 2枚目の入力（ブルームの高解像度側・SSAO のぼかした AO）
+
+// --- 専用シェーダー（マテリアルを使わない描画。その描画の中でだけ使う） ---
+#define SLOT_SRV_TRAIL_TEX 0       // トレイルのテクスチャ
+#define SLOT_SRV_SPRITE 0          // スプライトのテクスチャ
+#define SLOT_SRV_RT_DEBUG 0        // エディタで表示するレンダーターゲット（Texture2D）
+#define SLOT_SRV_RT_DEBUG_ARRAY 1  // 同じく Texture2DArray のとき
 
 // --- フレームごと（Graphics / EnvironmentSystem） ---
 #define SLOT_SRV_SHADOW 10 // Texture2DArray（カスケード）
@@ -79,7 +89,6 @@
 
 // --- ドローごと ---
 #define SLOT_SRV_INSTANCE 11 // StructuredBuffer<InstanceData>
-#define SLOT_SRV_BONE 12     // 今は使っていない（ボーン行列は CbSkeleton で送る）
 
 // --- IBL（フレームごと。EnvironmentSystem） ---
 #define SLOT_SRV_IBL_IRRADIANCE 14
@@ -95,12 +104,10 @@
 // ==================================================================
 // サンプラー（s）
 // ==================================================================
-#define SLOT_SMP_DEFAULT 0
-#define SLOT_SMP_LINEAR 1 // ポストプロセスとマテリアルで使うリニア
-#define SLOT_SMP_ANISOTROPIC 2
+#define SLOT_SMP_DEFAULT 0 // スプライトとエディタのレンダーターゲット表示
+#define SLOT_SMP_LINEAR 1  // マテリアル・ポストプロセス・トレイル。何を置くかは描く側が決める
 #define SLOT_SMP_IBL 3
 #define SLOT_SMP_SHADOW 10 // SamplerComparisonState
-#define SLOT_SMP_BLOOM 1   // s1 は SLOT_SMP_LINEAR と同じ番号
 
 // ==================================================================
 // HLSL 用: スロット番号から register の名前を作るマクロ（C++ では使わない）
@@ -119,6 +126,18 @@
 #define REG_SRV(slot) REG_SRV_IMPL(slot)
 #define REG_UAV(slot) REG_UAV_IMPL(slot)
 #define REG_SMP(slot) REG_SMP_IMPL(slot)
+#endif
+
+// ==================================================================
+// C++ 用: 1回の Set*(先頭の番号, 数, ...) でまとめてバインドしている組
+// 番号が連続していないと、後ろのものが別のスロットに入る
+// ==================================================================
+#ifdef __cplusplus
+static_assert(SLOT_CB_PARTICLE_DYNAMIC == SLOT_CB_PARTICLE_STATIC + 1, "パーティクルの定数バッファは連番にする");
+static_assert(SLOT_SRV_POST_INPUT1 == SLOT_SRV_POST_INPUT0 + 1, "ポストプロセスの入力は連番にする");
+static_assert(SLOT_SRV_IBL_PREFILTER == SLOT_SRV_IBL_IRRADIANCE + 1 &&
+                  SLOT_SRV_IBL_BRDFLUT == SLOT_SRV_IBL_IRRADIANCE + 2,
+              "IBL の3枚は連番にする");
 #endif
 
 #endif // SHADER_RESOURCES_H

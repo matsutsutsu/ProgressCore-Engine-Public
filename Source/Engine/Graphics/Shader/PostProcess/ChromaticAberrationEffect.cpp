@@ -61,10 +61,10 @@ void ChromaticAberrationEffect::Process(ID3D11DeviceContext      *dc,
     ID3D11SamplerState *smp = m_res->sampler.Get();
     dc->PSSetSamplers(SLOT_SMP_LINEAR, 1, &smp);
     dc->PSSetConstantBuffers(SLOT_CB_CHROMATIC, 1, m_res->cb.GetAddressOf());
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &inputSRV);
+    dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &inputSRV);
 
     dc->Draw(3, 0);
 
     ID3D11ShaderResourceView *nullSRV = nullptr;
-    dc->PSSetShaderResources(SLOT_SRV_BLOOM_IN, 1, &nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_POST_INPUT0, 1, &nullSRV);
 }

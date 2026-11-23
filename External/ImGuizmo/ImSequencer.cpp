@@ -93,6 +93,7 @@ namespace ImSequencer
       int moveEntry = -1; // 追加: 上下移動のボタンが押された行
       int moveDelta = 0;  // 追加: その向き（-1 で上、+1 で下）
       int ItemHeight = 20;
+      const float kMinSlotWidth = 14.f; // 追加: 帯を描いて掴める最小の幅（px）
 
       bool popupOpened = false;
       int sequenceCount = sequence->GetItemCount();
@@ -388,6 +389,15 @@ if (!panningView)
             ImVec2 slotP1(pos.x + *start * framePixelWidth, pos.y + 2);
             ImVec2 slotP2(pos.x + *end * framePixelWidth + framePixelWidth, pos.y + ItemHeight - 2);
             ImVec2 slotP3(pos.x + *end * framePixelWidth + framePixelWidth, pos.y + ItemHeight - 2 + localCustomHeight);
+            // 追加: 細い帯も掴めるよう、幅に下限を設ける。足りない分は帯の中心から左右へ広げる
+            const float slotWidth = slotP2.x - slotP1.x;
+            if (slotWidth < kMinSlotWidth)
+            {
+               const float grow = (kMinSlotWidth - slotWidth) * 0.5f;
+               slotP1.x -= grow;
+               slotP2.x += grow;
+               slotP3.x += grow;
+            }
             unsigned int slotColor = color | 0xFF000000;
             unsigned int slotColorHalf = (color & 0xFFFFFF) | 0x40000000;
 
@@ -401,7 +411,9 @@ if (!panningView)
                sequence->DoubleClick(i);
             }
             // Ensure grabbable handles
-            const float max_handle_width = slotP2.x - slotP1.x / 3.0f;
+            // 修正: 元は slotP2.x - slotP1.x / 3.0f で、両端のつまみが帯全体を覆い、丸ごと動かせなかった
+            // 追加: 長さを変えられない帯は両端のつまみを作らず、どこを掴んでも丸ごと動かす
+            const float max_handle_width = sequence->CanResize(i) ? (slotP2.x - slotP1.x) / 3.0f : 0.0f;
             const float min_handle_width = ImMin(10.0f, max_handle_width);
             const float handle_width = ImClamp(framePixelWidth / 2.0f, min_handle_width, max_handle_width);
             ImRect rects[3] = { ImRect(slotP1, ImVec2(slotP1.x + handle_width, slotP2.y))

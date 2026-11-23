@@ -46,13 +46,21 @@ namespace CCL::AI::Formation::Data
         // エディタが実行中の陣形を直接編集するための入口（コピーだと画面に反映されない）
         FormationAsset &GetMutableAsset() { return m_asset; }
 
+        // エディタがモデルのパスを変えていたら、モデルの形を取り直す
+        void BeginFrame(CCL::ECS::World &world) override { EnsureShape(); }
+
         // 1機分の持ち場を出す。(1)割付 → (2)形 → (3)動き → (4)配置 の順に、下の private 関数を呼ぶ
         void Calculate(DroneComponent &drone, const FormationContext &ctx) override;
 
         const char *DisplayName() const override { return m_asset.name.c_str(); }
 
         FormationCombat GetCombat() const override { return m_asset.output.combat; }
+        ChargeMode      GetChargeMode() const override { return m_asset.output.chargeMode; }
         bool            UsesShiverTelegraph() const override { return m_asset.output.useShiverTelegraph; }
+
+        // 形が動き切ってから kHitGraceSeconds 経ったら閉じる
+        // 動き切った形は戻すまで残るので、開けたままだと吹き飛んだ先で何度も当たる
+        bool IsHitWindowOver(const DroneComponent &drone) const override { return drone.attackProgress >= HitWindowEnd(); }
 
         bool TryGetTiming(TechniqueTiming &out) const override
         {
@@ -98,8 +106,16 @@ namespace CCL::AI::Formation::Data
 
         // --- 進行度 ---
 
-        // 攻撃の進行度（0〜1）を進めて drone.attackProgress に書き、その値を返す
-        // wantsAttack が下りたら 0 に戻る。エディタが時間を固定している間は、その値を返す
+        // 形が動き切ってからも当たる時間 [秒]
+        // 動き切った瞬間に閉じると、挟み込みが閉じる中心線（＝狙ったプレイヤーの位置）だけ当たらない
+        static constexpr float kHitGraceSeconds = 0.1f;
+
+        // 判定を閉じる進行度。1 を超えた分が kHitGraceSeconds にあたる
+        float HitWindowEnd() const { return 1.0f + kHitGraceSeconds / m_asset.attackSeconds; }
+
+        // 攻撃の進行度を進めて drone.attackProgress に書き、形に使う値（0〜1）を返す
+        // drone.attackProgress は判定を閉じる所（HitWindowEnd）まで 1 を超えて進む
+        // wantsAttack が下りたら 0 に戻る。エディタが時間を固定している間は、その値を使う
         float AdvanceProgress(DroneComponent &drone, const FormationContext &ctx) const;
 
         // --- (1) 割付 ---
@@ -110,8 +126,7 @@ namespace CCL::AI::Formation::Data
         // --- (2) 形 ---
 
         // 形が Model のとき、モデルの表面の点を用意する。パスが変わったときだけ取り直す
-        // エディタはアセットを直接書き換えて知らせないので、Calculate の頭で毎回パスを見比べる
-        // Calculate から呼ぶので、機体のループが直列（ForEach）であることが前提
+        // エディタはアセットを直接書き換えて知らせないので、BeginFrame で毎フレーム見比べる
         void EnsureShape();
 
         // 席を、動かす前の「待機の形」のローカル座標にする
@@ -176,4 +191,4 @@ namespace CCL::AI::Formation::Data
     // C++ 陣形の登録より後に呼ぶ。先に呼ぶと、C++ 実装のある枠を名乗った JSON を弾けない
     void RegisterAll(FormationRegistry &registry);
 
-} // namespace CCL::AI::Formation::Data
+}

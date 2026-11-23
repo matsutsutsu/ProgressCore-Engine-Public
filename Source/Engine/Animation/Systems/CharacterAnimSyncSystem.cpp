@@ -11,17 +11,15 @@ using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
 // --- パラメータ名のハッシュ（毎ステップ計算しないよう先に求めておく）---
-static const uint32_t HASH_SPEED       = CCL::Utils::HashString("Speed");
 static const uint32_t HASH_Y_VELOCITY  = CCL::Utils::HashString("VelocityY");
 static const uint32_t HASH_IS_GROUNDED = CCL::Utils::HashString("IsGrounded");
 
-// --- 接地状態の変化で立てるトリガー ---
-static const uint32_t HASH_TRIG_JUMP = CCL::Utils::HashString("Jump");
+// --- 着地で立てるトリガー ---
 static const uint32_t HASH_TRIG_LAND = CCL::Utils::HashString("Land");
 
 
 
-void CharacterAnimSyncSystem::Update(float /*dt*/)
+void CharacterAnimSyncSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 物理の状態を取り出す
@@ -59,23 +57,14 @@ void CharacterAnimSyncSystem::Update(float /*dt*/)
         // ---------------------------------------------------------
         // 2. パラメータとトリガー
         // ---------------------------------------------------------
-        animParams.SetFloat(HASH_SPEED, currentSpeed);
         animParams.SetFloat(HASH_Y_VELOCITY, currentYVel);
         animParams.SetBool(HASH_IS_GROUNDED, isGrounded);
 
-        // 接地状態が変わった瞬間にトリガーを立てる
+        // 着地した瞬間にトリガーを立てる
+        //   離陸の側（Jump）はここでは立てない。跳ぶと決めたゲーム側が立てる（理由は PlayerJumpSystem）
         if (isGrounded && !wasGrounded)
         {
             animParams.SetTrigger(HASH_TRIG_LAND);
-        }
-        else if (!isGrounded && wasGrounded)
-        {
-            // 上向きの速度があるときだけジャンプとみなす
-            //   歩いて落ちた場合はトリガーを立てず、グラフ側の条件（落下速度と空中の bool）で落下へ遷移させる
-            if (currentYVel > 0.1f)
-            {
-                animParams.SetTrigger(HASH_TRIG_JUMP);
-            }
         }
 
         // ---------------------------------------------------------

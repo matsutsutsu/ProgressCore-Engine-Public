@@ -60,7 +60,7 @@ namespace GpuData
 
 #ifdef __cplusplus
     static_assert(sizeof(CbUIGaugeData) == 192, "CbUIGaugeData のサイズが HLSL の cbuffer と一致しない");
-} // namespace GpuData
+}
 #endif
 
 #endif // UI_SHARED_H

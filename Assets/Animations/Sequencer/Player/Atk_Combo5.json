@@ -8,7 +8,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.62,
+            "endTime": 0.6166666746139526,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -22,8 +22,8 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.4,
-            "stringParam": "Weapon_R",
+            "startTime": 0.4000000059604645,
+            "stringParam": "",
             "type": 5
         },
         {
@@ -33,7 +33,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.62,
+            "endTime": 0.6166666746139526,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -47,19 +47,19 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.4,
-            "stringParam": "Weapon_R",
+            "startTime": 0.4000000059604645,
+            "stringParam": "",
             "type": 8
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 10.0,
+            "damage": 17.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.58,
-            "hitStopDuration": 0.15,
+            "endTime": 0.5833333134651184,
+            "hitStopDuration": 0.15000000596046448,
             "hitStopScale": 0.0,
             "hitboxFollow": false,
             "knockback": 40.0,
@@ -72,8 +72,8 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.42,
-            "stringParam": "Weapon_R",
+            "startTime": 0.4166666567325592,
+            "stringParam": "",
             "type": 0
         },
         {
@@ -83,7 +83,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.45,
+            "endTime": 0.44999998807907104,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -95,21 +95,21 @@
             },
             "radius": 1.0,
             "soundPitch": 0.0,
-            "soundPitchRandom": 0.07,
+            "soundPitchRandom": 0.07000000029802322,
             "soundVolume": 1.0,
-            "startTime": 0.45,
-            "stringParam": "sfx:/slash_2",
+            "startTime": 0.44999998807907104,
+            "stringParam": "sfx:/SE_PlayerSlashHeavy",
             "type": 1
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 8.0,
+            "damage": 11.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 0.7,
-            "hitStopDuration": 0.1,
+            "endTime": 0.699999988079071,
+            "hitStopDuration": 0.10000000149011612,
             "hitStopScale": 0.0,
             "hitboxFollow": true,
             "knockback": 50.0,
@@ -122,7 +122,7 @@
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.55,
+            "startTime": 0.550000011920929,
             "stringParam": "",
             "type": 4
         },
@@ -133,21 +133,21 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 3.0,
-            "endTime": 0.56,
+            "endTime": 0.6666666865348816,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
             "knockback": 0.0,
             "offset": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 2.0,
                 "z": 2.5
             },
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
-            "startTime": 0.56,
+            "startTime": 0.5833333134651184,
             "stringParam": "Assets/Prefabs/Particles/VFX_GroundJump",
             "type": 2
         },
@@ -158,7 +158,7 @@
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
-            "endTime": 1.85,
+            "endTime": 1.850000023841858,
             "hitStopDuration": 0.0,
             "hitStopScale": 1.0,
             "hitboxFollow": false,
@@ -206,198 +206,175 @@
         "color": 4286643968,
         "keys": [
             {
-                "inTangent": 0.0,
+                "inTangent": 28.689998626708984,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "outTangent": 28.689998626708984,
+                "tangent": 0,
                 "time": 0.0,
                 "value": 0.0
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 26.654998779296875,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.05,
-                "value": 1.4345
+                "outTangent": 26.654998779296875,
+                "tangent": 0,
+                "time": 0.05000000074505806,
+                "value": 1.434499979019165
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 19.727998733520508,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.1,
-                "value": 2.6655
+                "outTangent": 19.727998733520508,
+                "tangent": 0,
+                "time": 0.10000000149011612,
+                "value": 2.6654999256134033
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 17.145998001098633,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.15,
-                "value": 3.4073
+                "outTangent": 17.145998001098633,
+                "tangent": 0,
+                "time": 0.15000000596046448,
+                "value": 3.4072999954223633
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 30.697004318237305,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.2,
-                "value": 4.3801
+                "outTangent": 30.697004318237305,
+                "tangent": 0,
+                "time": 0.20000000298023224,
+                "value": 4.380099773406982
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 40.19399642944336,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "outTangent": 40.19399642944336,
+                "tangent": 0,
                 "time": 0.25,
-                "value": 6.477
+                "value": 6.4770002365112305
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 21.7189998626709,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.3,
-                "value": 8.3995
+                "outTangent": 21.7189998626709,
+                "tangent": 0,
+                "time": 0.30000001192092896,
+                "value": 8.399499893188477
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 2.532005548477173,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.35,
-                "value": 8.6489
+                "outTangent": 2.532005548477173,
+                "tangent": 0,
+                "time": 0.3499999940395355,
+                "value": 8.648900032043457
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 0.03899574652314186,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.4,
-                "value": 8.6527
+                "outTangent": 0.03899574652314186,
+                "tangent": 0,
+                "time": 0.4000000059604645,
+                "value": 8.652700424194336
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 0.0009918214054778218,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.45,
-                "value": 8.6528
+                "outTangent": 0.0009918214054778218,
+                "tangent": 0,
+                "time": 0.44999998807907104,
+                "value": 8.652799606323242
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 0.03400801867246628,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "outTangent": 0.03400801867246628,
+                "tangent": 0,
                 "time": 0.5,
-                "value": 8.6528
+                "value": 8.652799606323242
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 1.9370074272155762,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.55,
-                "value": 8.6562
+                "outTangent": 1.9370074272155762,
+                "tangent": 0,
+                "time": 0.550000011920929,
+                "value": 8.656200408935547
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 5.772993087768555,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.6,
-                "value": 8.8465
+                "outTangent": 5.772993087768555,
+                "tangent": 0,
+                "time": 0.6000000238418579,
+                "value": 8.846500396728516
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 8.083003044128418,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.65,
-                "value": 9.2335
+                "outTangent": 8.083003044128418,
+                "tangent": 0,
+                "time": 0.6499999761581421,
+                "value": 9.233499526977539
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 7.16900634765625,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.7,
-                "value": 9.6548
+                "outTangent": 7.16900634765625,
+                "tangent": 0,
+                "time": 0.699999988079071,
+                "value": 9.654800415039063
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 3.4519951343536377,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "outTangent": 3.4519951343536377,
+                "tangent": 0,
                 "time": 0.75,
-                "value": 9.9504
+                "value": 9.950400352478027
             },
             {
-                "inTangent": 0.0,
+                "inTangent": 0.495996356010437,
                 "interp": 1,
-                "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.8,
+                "outTangent": 0.495996356010437,
+                "tangent": 0,
+                "time": 0.800000011920929,
                 "value": 10.0
             },
             {
                 "inTangent": 0.0,
                 "interp": 1,
                 "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.85,
+                "tangent": 0,
+                "time": 0.8500000238418579,
                 "value": 10.0
             },
             {
                 "inTangent": 0.0,
                 "interp": 1,
                 "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.9,
+                "tangent": 0,
+                "time": 0.8999999761581421,
                 "value": 10.0
             },
             {
                 "inTangent": 0.0,
                 "interp": 1,
                 "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
-                "time": 0.95,
+                "tangent": 0,
+                "time": 0.949999988079071,
                 "value": 10.0
             },
             {
                 "inTangent": 0.0,
                 "interp": 1,
                 "outTangent": 0.0,
-                "tangentIn": 0,
-                "tangentOut": 0,
+                "tangent": 0,
                 "time": 1.0,
                 "value": 10.0
             }
         ],
         "name": "Curve",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "sequenceName": "Atk_Combo5",
@@ -405,11 +382,8 @@
         "color": 4286643968,
         "keys": [],
         "name": "Curve",
-        "postInfinity": 0,
-        "preInfinity": 0,
         "visible": true
     },
     "startOffset": 0.0,
-    "targetAnimName": "Combo_Attack_04_04_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Combo_Attack_04_04_Seq_0"
 }

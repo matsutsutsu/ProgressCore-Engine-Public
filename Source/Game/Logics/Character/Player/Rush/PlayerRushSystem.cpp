@@ -185,6 +185,12 @@ void PlayerRushSystem::Update(float dt)
             return;
         }
 
+        // --- ラッシュの相手 ---
+
+        // 相手が死んだら、相手なしにする
+        // ほかの System は、無効でなければ生きている相手として使う
+        if (!IsCloseInTargetAlive(rush.closeInTarget)) rush.closeInTarget = InvalidEntityID;
+
         // --- とどめの命中 ---
 
         // プレイヤーがラッシュ中に攻撃を当てたかを探す
@@ -197,7 +203,12 @@ void PlayerRushSystem::Update(float dt)
         if (finishHitThisStep && !rush.finishHit) StartFinishSlow(rush, time);
 
         // 当たるまでは、世界のスローを保ちプレイヤーだけ実時間にする
-        if (!rush.finishHit) DriveTimeScale(rush, time, timeCtx);
+        // 待機の間だけは、その上からプレイヤーも遅くする
+        if (!rush.finishHit)
+        {
+            DriveTimeScale(rush, time, timeCtx);
+            if (rush.phase == RushPhase::Ready) DriveReadySlow(rush, time);
+        }
 
         // ラッシュ中にプレイヤーを無敵にする
         MaintainInvincibility(id, rush);
@@ -222,7 +233,7 @@ void PlayerRushSystem::Update(float dt)
 
         case RushPhase::Attack:
             // 通常攻撃は PlayerAttackSystem が止めているので、詰めの斬りはここで出す
-            DriveCloseIn(rush, movement, player, animParams, GetCharacterWorldPosition(joltHandle));
+            DriveCloseIn(rush, player, animParams, GetCharacterWorldPosition(joltHandle));
 
             // 斬った後に押したら、残り時間を待たずに連撃へ移る
             if (rush.attackFired && input.attackPressed)
@@ -243,6 +254,16 @@ void PlayerRushSystem::Update(float dt)
             TrackRushAnim(rush, m_world->GetComponent<AnimStateMachineComponent>(id));
             break;
         }
+
+        // --- 斬る位置への寄せ ---
+
+        // 斬る前は届くまで、斬った後は当たり判定が閉じるまで、相手の手前へ寄せ続ける
+        // 早押しで連撃へ移っても詰めの斬りのアニメは流れ続けるので、斬った後はフェーズによらずに進める
+        const bool closingIn = rush.phase == RushPhase::Attack && !rush.attackFired;
+        if (closingIn || rush.strikeTrackTimer > 0.0f) ChaseStrikePosition(rush, movement, GetCharacterWorldPosition(joltHandle));
+
+        // 斬ったステップから数える
+        rush.strikeTrackTimer = (std::max)(rush.strikeTrackTimer - dt, 0.0f);
 
         // --- フェーズの時間 ---
 
@@ -280,6 +301,7 @@ void PlayerRushSystem::StartRush(PlayerRushComponent &rush, PlayerDashComponent 
     rush.phase         = RushPhase::Locked;
     rush.timer         = 0.0f;
     rush.attackFired   = false;
+    rush.strikeTrackTimer = 0.0f;
     rush.rushStep      = 0;
     rush.finishEntered = false;
     rush.finishHit     = false;
@@ -314,14 +336,11 @@ void PlayerRushSystem::BeginEvadeAnim(PlayerRushComponent &rush, PlayerComponent
     // 相手がいなければ今の向きのまま
     rush.evadeFaceYaw = player.currentYaw;
 
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *targetTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
-        {
-            Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            if (to.LengthSquared() > 1e-6f) rush.evadeFaceYaw = std::atan2(to.x, to.z);
-        }
+        Vector3 to = Vector3(targetTrans->GetWorldPosition()) - playerPos;
+        to.y       = 0.0f;
+        if (to.LengthSquared() > 1e-6f) rush.evadeFaceYaw = std::atan2(to.x, to.z);
     }
 
     HoldEvadeFacing(rush, player);
@@ -411,7 +430,7 @@ void PlayerRushSystem::EnterFlurry(PlayerRushComponent &rush)
 
 void PlayerRushSystem::TrackRushAnim(PlayerRushComponent &rush, const AnimStateMachineComponent *fsm)
 {
-    const uint32_t state = fsm ? fsm->currentStateHash : 0u;
+    const uint32_t state = fsm ? fsm->GetCurrentStateHash() : 0u;
 
     // 斬りのステートに入った瞬間だけ数える
     // 押した回数で数えると、受付区間の前の連打まで数えてしまう
@@ -442,8 +461,10 @@ void PlayerRushSystem::TrackRushAnim(PlayerRushComponent &rush, const AnimStateM
 void PlayerRushSystem::EnterAttack(PlayerRushComponent &rush, const PlayerComponent &player,
                                    AnimParametersComponent &animParams)
 {
+    // 届くまでの時間は距離で変わるので、普通に詰めるときには効かない長さの保険だけ入れる
+    // 壁に阻まれて届かないときに、スローと無敵のまま固まらないようにする
     rush.phase       = RushPhase::Attack;
-    rush.timer       = rush.attackDuration;
+    rush.timer       = rush.closeInMaxDuration;
     rush.attackFired = false;
 
     // 詰め先は StartRush で決めてある
@@ -475,6 +496,25 @@ void PlayerRushSystem::DriveTimeScale(PlayerRushComponent &rush, TimeStateCompon
     const float worldFloor = (std::max)(CurrentWorldScale(time, timeCtx), rush.slowWorldScale);
 
     time.cinematicScale = rush.playerScale / worldFloor;
+}
+
+
+
+void PlayerRushSystem::DriveReadySlow(const PlayerRushComponent &rush, TimeStateComponent &time)
+{
+    // 待機に入ってからの時間。timer は実時間で減るので、プレイヤーを遅くしても進み方は変わらない
+    const float elapsed = (std::max)(rush.readyDuration - rush.timer, 0.0f);
+
+    // 0 から 1 へ進む割合。始めは速く、終わりほどゆっくり寄せて、体が自然に止まって見えるようにする
+    float progress = 1.0f;
+    if (rush.readySlowInTime > 0.0f) progress = (std::min)(elapsed / rush.readySlowInTime, 1.0f);
+    const float eased = 1.0f - (1.0f - progress) * (1.0f - progress);
+
+    // DriveTimeScale はプレイヤーを playerScale で進める cinematicScale を書いている
+    // そこに「なりたい倍率 ÷ playerScale」を掛けると、プレイヤーはなりたい倍率で進む
+    // 攻撃を押して待機を抜けると、次のステップからはこの処理が呼ばれず、すぐ playerScale に戻る
+    const float playerRate = std::lerp(rush.playerScale, rush.readyPlayerScale, eased);
+    time.cinematicScale *= playerRate / (std::max)(rush.playerScale, 1e-4f);
 }
 
 
@@ -589,11 +629,10 @@ void PlayerRushSystem::EndRush(PlayerRushComponent &rush)
 // 間合い詰め・連撃・無敵
 // ---------------------------------------------------------------------------
 
-void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovementComponent &movement,
-                                    PlayerComponent &player, AnimParametersComponent &animParams,
-                                    const Vector3 &playerPos)
+void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, PlayerComponent &player,
+                                    AnimParametersComponent &animParams, const Vector3 &playerPos)
 {
-    // 斬った後の移動は、攻撃アニメのルートモーションに任せる
+    // 移動は ChaseStrikePosition が運ぶ。ここは向きと、斬りを出すかだけを決める
     if (rush.attackFired) return;
 
     // --- 詰める向きと、斬るか ---
@@ -603,40 +642,29 @@ void PlayerRushSystem::DriveCloseIn(PlayerRushComponent &rush, CharacterMovement
     bool    reachedRange = true;
 
     // 相手がいるときは、動いても追えるように毎ステップ向け直す
-    // closeInStopDistance まで近づいたら斬る
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    // 斬る位置（相手の手前 strikeDistance）まで残り closeInStopDistance になったら斬る
+    // 斬った後も寄せ続けるので、振り始めを少し前にずらしても届く
+    if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
-        {
-            Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            const float dist = to.Length();
+        Vector3 toTarget = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+        toTarget.y       = 0.0f;
+        const float targetDistance = toTarget.Length();
 
-            reachedRange = (dist <= rush.closeInStopDistance);
-            if (dist > 1e-3f)
-            {
-                dir             = to / dist;
-                rush.closeInDir = dir;
-            }
+        reachedRange = (targetDistance - rush.strikeDistance <= rush.closeInStopDistance);
+        if (targetDistance > 1e-3f)
+        {
+            dir             = toTarget / targetDistance;
+            rush.closeInDir = dir;
         }
     }
 
-    // 詰める向きへ向かせる。体を回すのは PlayerJumpFacingSystem
+    // 詰める向きへ向かせる。体を回すのは PlayerFacingSystem
     player.attackFaceYaw   = std::atan2(dir.x, dir.z);
     player.attackFaceTimer = 0.1f;
 
-    // --- 斬る・詰める ---
+    // --- 斬る ---
 
-    if (reachedRange)
-    {
-        FireStrike(rush, player, animParams);
-        return;
-    }
-
-    // 詰めている間は攻撃アニメが流れない
-    // ルートモーションに邪魔されないので、overrideSpeed が効く
-    movement.desiredVelocity = dir;
-    movement.overrideSpeed   = rush.closeInSpeed;
+    if (reachedRange) FireStrike(rush, player, animParams);
 }
 
 
@@ -650,6 +678,9 @@ void PlayerRushSystem::FireStrike(PlayerRushComponent &rush, PlayerComponent &pl
     // 詰めにかかった時間に左右されないようにするため
     rush.timer = rush.attackDuration;
 
+    // 当たり判定が閉じるまで、相手へ寄せ続ける。同じステップから ChaseStrikePosition が運ぶ
+    rush.strikeTrackTimer = rush.strikeTrackTime;
+
     player.attackFaceYaw   = std::atan2(rush.closeInDir.x, rush.closeInDir.z);
     player.attackFaceTimer = 0.22f;
 
@@ -658,6 +689,50 @@ void PlayerRushSystem::FireStrike(PlayerRushComponent &rush, PlayerComponent &pl
 
     // AnyState から入るので、構えでも突っ込む姿勢でも、詰めずに斬るときでも出せる
     animParams.SetTrigger(HASH_TRIG_RUSH_STRIKE, 0.25f);
+}
+
+
+
+void PlayerRushSystem::ChaseStrikePosition(const PlayerRushComponent &rush, CharacterMovementComponent &movement,
+                                           const Vector3 &playerPos)
+{
+    // 処理フロー:
+    // 1. 斬る位置（相手の手前 strikeDistance）までの残りの距離を測る
+    // 2. 残りがあれば、closeInSpeed の等速で着くように MoveTo で運ぶ
+
+    // ---------------------------------------------------------
+    // 1. 残りの距離
+    // ---------------------------------------------------------
+
+    // 相手がいなければ動かさない。その場で正面へ斬る
+    const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget);
+    if (!enemyTrans) return;
+
+    // 高さは見ずに水平距離で測る
+    Vector3 toTarget = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+    toTarget.y       = 0.0f;
+    const float targetDistance = toTarget.Length();
+
+    // もう strikeDistance より近ければ、押し込まない
+    // 前のステップの予約が残っていても、行き先は前の相手の手前なので、そのまま運び終えさせる
+    const float gapDistance = targetDistance - rush.strikeDistance;
+    if (gapDistance <= 0.0f) return;
+
+    // ---------------------------------------------------------
+    // 2. 運ぶ
+    // ---------------------------------------------------------
+
+    // 相手が動いても追えるように、毎ステップ行き先を決め直す
+    // 高さは今のまま。上下は着地の斬りのアニメに任せる
+    Vector3 strikePos = playerPos + toTarget / targetDistance * gapDistance;
+    strikePos.y       = playerPos.y;
+
+    // 残りの距離を closeInSpeed で割った時間で運ぶので、加速なしの等速で進む
+    // 予約は終点で速度を 0 にして止まるので、勢いで通り過ぎない
+    // 上限は、時間がごく短くなったときの保険
+    MoveToOptions options;
+    options.maxSpeed = rush.closeInSpeed;
+    movement.MoveTo(strikePos, (std::max)(gapDistance / (std::max)(rush.closeInSpeed, 1e-3f), 1e-3f), options);
 }
 
 
@@ -671,17 +746,14 @@ void PlayerRushSystem::RequestNextStep(PlayerRushComponent &rush, PlayerComponen
     animParams.SetTrigger(finish ? HASH_TRIG_RUSH_FINISH : HASH_TRIG_RUSH_ATTACK, rush.rushInputBuffer);
 
     // 詰め先がいれば、その方へ向かせる
-    if (IsCloseInTargetAlive(rush.closeInTarget))
+    if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
     {
-        if (const auto *enemyTrans = m_world->GetComponent<TransformComponent>(rush.closeInTarget))
+        Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
+        to.y       = 0.0f;
+        if (to.LengthSquared() > 1e-6f)
         {
-            Vector3 to = Vector3(enemyTrans->GetWorldPosition()) - playerPos;
-            to.y       = 0.0f;
-            if (to.LengthSquared() > 1e-6f)
-            {
-                player.attackFaceYaw   = std::atan2(to.x, to.z);
-                player.attackFaceTimer = 0.22f;
-            }
+            player.attackFaceYaw   = std::atan2(to.x, to.z);
+            player.attackFaceTimer = 0.22f;
         }
     }
 }
@@ -727,7 +799,7 @@ EntityID PlayerRushSystem::PickRushTarget(EntityID attackedID) const
 
 bool PlayerRushSystem::IsCloseInTargetAlive(CCL::ECS::EntityID id) const
 {
-    return id != InvalidEntityID && m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
+    return m_world->IsEntityValid(id) && !m_world->HasComponent<Tag::DeadTag>(id);
 }
 
 
@@ -828,10 +900,10 @@ void PlayerRushSystem::OnGui()
             ImGui::Text("desiredVelocity : (%.2f, %.2f, %.2f)", dv.x, dv.y, dv.z);
             ImGui::Text("overrideSpeed   : %.2f  (-1=上書きなし)", mv->overrideSpeed);
             ImGui::Text("currentVelocity : len %.2f m/s", Vector3(mv->currentVelocity).Length());
-            ImGui::Text("reservation     : %s", mv->IsMoving() ? "moving (離脱を予約中)" : "-");
+            ImGui::Text("reservation     : %s", mv->IsMoving() ? "moving (離脱・詰めを予約中)" : "-");
 
-            // ルートモーション中は overrideSpeed が効かないので、目立たせる
-            // 詰めの移動が出ないときの主な原因になる
+            // 予約がないときは、ルートモーションが移動を決めるので目立たせる
+            // 吸い付きが終わった後に、斬りのアニメで前へ出ている分が分かる
             if (mv->isRootMotionActive)
             {
                 ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.2f, 1.0f),

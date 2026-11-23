@@ -105,7 +105,7 @@ namespace DirectX
             cereal::make_nvp("_31", m._31), cereal::make_nvp("_32", m._32), cereal::make_nvp("_33", m._33), cereal::make_nvp("_34", m._34),
             cereal::make_nvp("_41", m._41), cereal::make_nvp("_42", m._42), cereal::make_nvp("_43", m._43), cereal::make_nvp("_44", m._44));
     }
-} // namespace DirectX
+}
 
 // ---------------------------------------------------------------------------
 // シリアライズ（cereal）
@@ -796,7 +796,7 @@ namespace
         {0.25f, 0.02f, false},  // LOD1：中距離
         {0.05f, FLT_MAX, true}, // LOD2：遠景・影
     };
-} // namespace
+}
 
 void ModelResource::GenerateLods(ID3D11Device *device)
 {
@@ -952,7 +952,7 @@ namespace
             setg(begin, begin, begin + bytes.size());
         }
     };
-} // namespace
+}
 
 void ModelResource::Deserialize(const char *filename)
 {

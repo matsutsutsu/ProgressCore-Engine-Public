@@ -204,4 +204,4 @@ namespace ShaderReflect
         std::vector<BYTE>                    cpuBuffer;       // GPU に送る前の CPU 側の写し
         bool                                 isDirty = false; // 前に送ってから書き換えたか
     };
-} // namespace ShaderReflect
+}

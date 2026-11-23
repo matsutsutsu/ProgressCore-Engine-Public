@@ -26,7 +26,6 @@
     "baseB": 0.0,
     "centerColumns": true,
     "columnAxis": "Right",
-    "modelEdgeRatio": 0.0,
     "modelPath": "Assets/Models/Weapon/Hammer/Rubber_play_Hummer.glb",
     "modelPitch": 0.0,
     "modelRoll": 0.0,

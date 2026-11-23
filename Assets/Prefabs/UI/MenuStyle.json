@@ -16,9 +16,10 @@
                     "ruleGap": 20.0,
                     "ruleW": 820.0,
                     "subGap": 16.0,
+                    "subPx": 26.0,
                     "rowGap": 72.0,
-                    "rowH": 46.0,
-                    "rowPx": 26.0,
+                    "rowH": 56.0,
+                    "rowPx": 32.0,
                     "valueOffset": 300.0,
                     "typeSpeed": 70.0,
                     "gold": [
@@ -52,11 +53,12 @@
                         0.8
                     ],
                     "buttonSize": [
-                        320.0,
-                        56.0
+                        420.0,
+                        72.0
                     ],
-                    "labelPad": 40.0,
-                    "labelPx": 28.0,
+                    "buttonPitch": 92.0,
+                    "labelPad": 46.0,
+                    "labelPx": 34.0,
                     "buttonBg": [
                         0.0,
                         0.0,
@@ -75,7 +77,7 @@
                         1.0,
                         1.0
                     ],
-                    "buttonSlant": 18.0,
+                    "buttonSlant": 22.0,
                     "buttonSheen": 0.3,
                     "labelIdle": [
                         0.92,
@@ -91,8 +93,9 @@
                     ],
                     "focusSpeed": 16.0,
                     "pressTime": 0.35,
-                    "hintIconPx": 28.0,
-                    "hintTextPx": 16.0,
+                    "hintIconPx": 40.0,
+                    "hintTextPx": 24.0,
+                    "hintGap": 52.0,
                     "hintColor": [
                         0.78,
                         0.8,

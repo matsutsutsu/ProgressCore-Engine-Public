@@ -17,19 +17,35 @@ void TransparentPass::Initialize(const RenderServices &services)
 
 void TransparentPass::Execute(const RenderFrameContext &ctx)
 {
+    // 処理フロー:
+    // 1. 描く準備（シャドウマップと半透明用の PSO）
+    // 2. 半透明のコマンドを、カメラから遠い順に並べる
+    // 3. 1メッシュずつ、インスタンスの値とマテリアルを入れて描く
+
     ID3D11DeviceContext  *dc             = ctx.dc;
     RenderQueue          *queue          = m_services->renderQueue;
     ModelConstantBuffers *modelConstants = m_services->modelConstants;
     if (!queue || !modelConstants) return;
 
+    // ---------------------------------------------------------
+    // 1. 描く準備
+    // ---------------------------------------------------------
+
+    // マテリアルのシェーダーが影を計算できるよう、シャドウマップをバインドする
     if (m_services->shadowMap)
     {
         m_services->shadowMap->Bind(dc, SLOT_SRV_SHADOW, SLOT_SMP_SHADOW, SLOT_CB_SHADOW);
     }
-    // ブレンドあり・深度はテストだけで書かない。ここに来るのは alphaMode が Blend のメッシュだけなので、全部この PSO で描く
+
+    // ブレンドあり・深度はテストだけで書かない
+    // ここに来るのは alphaMode が Blend のメッシュだけなので、全部この PSO で描く
     m_psoTransparent.Apply(dc, m_services->renderState);
 
-    // OpaquePass が回した半透明のコマンドを、遠い順にその場で並べる
+    // ---------------------------------------------------------
+    // 2. 遠い順に並べる
+    // ---------------------------------------------------------
+
+    // OpaquePass が回した半透明のコマンドを、その場で並べ替える
     // この配列は毎フレーム作り直すので、並べ替えて壊してかまわない
     auto &allTrans = queue->GetDeferredTransparentCommandsMutable();
     std::sort(allTrans.begin(), allTrans.end(),
@@ -37,12 +53,17 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
                   return l.distance > r.distance;
               });
 
+    // ---------------------------------------------------------
+    // 3. 1メッシュずつ描く
+    // ---------------------------------------------------------
+
     for (const TransparencyCommand &info : allTrans)
     {
         Shader          *shader    = m_services->shaders->GetShader(info.shaderHash, m_services->device);
         IMaterialShader *matShader = shader ? shader->AsMaterial() : nullptr;
-
         if (!matShader) continue;
+
+        // シェーダーと入力レイアウトを設定する
         matShader->Begin(dc, *m_services, ctx);
 
         const Model::Mesh &mesh = *info.mesh;
@@ -54,6 +75,9 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
             overrideMat = m_services->resources->GetMaterial(info.overrideMaterial);
         }
 
+        // --- インスタンス1体分の値 ---
+
+        // スキンメッシュは、ワールド行列がボーン行列に入っているので単位行列にする
         const bool   isSkinned = !mesh.bones.empty();
         InstanceData singleData;
         singleData.customParams = info.customParams;
@@ -69,9 +93,13 @@ void TransparentPass::Execute(const RenderFrameContext &ctx)
         m_instanceBuffer.Write(dc, &singleData, 1);
         m_instanceBuffer.Bind(dc, SLOT_SRV_INSTANCE);
 
+        // スキンメッシュは、この1体のボーン行列を CbSkeleton に書く
         if (isSkinned) modelConstants->UpdateSkeletonConstants(dc, mesh);
 
+        // このメッシュのマテリアルの値を定数バッファに書き、テクスチャをバインドする
         matShader->Update(dc, mesh, overrideMat);
+
+        // --- 描画 ---
 
         UINT stride = sizeof(ModelResource::Vertex), offset = 0;
         dc->IASetVertexBuffers(0, 1, mesh.data->vertexBuffer.GetAddressOf(), &stride, &offset);

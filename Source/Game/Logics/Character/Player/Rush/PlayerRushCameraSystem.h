@@ -6,9 +6,10 @@
 //   - フェーズの構図へ、ばねで寄せる
 //   - 寄せた値を、TPS カメラの構図の上書きスロットへ書く
 //   - 回避成立と斬りの瞬間に、揺れと画角パンチを要求する
+//   - 回避離脱と待機の間は、手で視点を回させないよう要求する
 //
 // 備考: フェーズは読むだけで、ラッシュの進行には触らない
-//       カメラ側はラッシュを知らず、構図の足し込み量だけを受け取る
+//       カメラ側はラッシュを知らず、構図の足し込み量と視点の入力を止める依頼だけを受け取る
 //       描画ステージで動くので、世界のスロー中も実時間で動く（ポーズ中は止まる）
 // ===========================================================================
 #include "Engine/ECS/System/CCL_IfSystem.h"
@@ -29,7 +30,6 @@ public:
     void OnGui() override;
 
     std::vector<CCL::ECS::TypeID> GetWriteTypes() const override;
-    std::vector<CCL::ECS::TypeID> GetReadTypes() const override;
 
     // カメラの target が決まってから、そのカメラを探す
     std::vector<const char *> GetRunAfter() const override { return {"CameraTargetBindSystem"}; }
@@ -58,11 +58,5 @@ private:
     float DecideYawSign(const PlayerRushComponent &rush, CCL::ECS::EntityID cameraID) const;
 
     // 斬りの瞬間の画角パンチと揺れを要求する
-    void PunchStrike(const PlayerRushCameraComponent &cam, CCL::ECS::EntityID playerID, CCL::ECS::EntityID cameraID);
-
-    // プレイヤーを映している TPS カメラを探す。なければ InvalidEntityID
-    CCL::ECS::EntityID FindCamera(CCL::ECS::EntityID playerID) const;
-
-    // 注視点を寄せる先。ラッシュの相手が生きていればその敵、いなければ InvalidEntityID
-    CCL::ECS::EntityID PickFocusTarget(const PlayerRushComponent &rush) const;
+    void PunchStrike(const PlayerRushCameraComponent &cam, CCL::ECS::EntityID cameraID);
 };

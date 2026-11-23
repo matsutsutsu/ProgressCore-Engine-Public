@@ -71,13 +71,12 @@ void Mouse::Update()
         int scaledCenterX = (viewportW > 0) ? (int)(cxClient / static_cast<float>(viewportW) * static_cast<float>(screenW)) : cxClient;
         int scaledCenterY = (viewportH > 0) ? (int)(cyClient / static_cast<float>(viewportH) * static_cast<float>(screenH)) : cyClient;
 
-        if (!m_cursorHidden)
+        if (!m_locked)
         {
-            // ロック開始フレーム：移動量0（視点ジャンプ防止）＋カーソルを隠す
+            // ロック開始フレーム：移動量0（視点ジャンプ防止）
             positionX[1] = positionX[0];
             positionY[1] = positionY[0];
-            ::ShowCursor(FALSE);
-            m_cursorHidden = true;
+            m_locked     = true;
         }
         else
         {
@@ -91,10 +90,17 @@ void Mouse::Update()
         ::ClientToScreen(hWnd, &c);
         ::SetCursorPos(c.x, c.y);
     }
-    else if (m_cursorHidden)
+    else
     {
-        // ロック解除：カーソルを再表示する
-        ::ShowCursor(TRUE);
-        m_cursorHidden = false;
+        m_locked = false;
+    }
+
+    // カーソルの表示：ロック中か、ゲームパッドで操作している間は隠す
+    // ShowCursor は表示カウンタを増減するので、切り替わったフレームだけ呼ぶ
+    const bool hide = effectiveLock || (m_hideRequested && focused);
+    if (hide != m_cursorHidden)
+    {
+        ::ShowCursor(hide ? FALSE : TRUE);
+        m_cursorHidden = hide;
     }
 }

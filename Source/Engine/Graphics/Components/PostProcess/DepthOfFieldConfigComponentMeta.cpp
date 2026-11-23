@@ -30,7 +30,7 @@ namespace ComponentMetaJson
             if (j.contains("maxBlur")) c.data.dofMaxBlur = j["maxBlur"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<DepthOfFieldConfigComponent>

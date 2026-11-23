@@ -14,7 +14,7 @@ using namespace CCL::ECS;
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-void BattleStartFacingSystem::Update(float /*dt*/)
+void BattleStartFacingSystem::Update(float dt)
 {
     if (m_applied) return;
     m_applied = TryApplyFacing();
@@ -41,7 +41,7 @@ bool BattleStartFacingSystem::TryApplyFacing()
     toBoss.Normalize();
 
     // --- プレイヤーをボスへ向ける ---
-    // PlayerJumpFacingSystem と同じ規約: atan2(x, z) でラジアン、0 が +Z
+    // PlayerFacingSystem と同じ規約: atan2(x, z) でラジアン、0 が +Z
     if (auto *player = m_world->GetComponent<PlayerComponent>(battle.playerEntity))
     {
         player->currentYaw  = std::atan2(toBoss.x, toBoss.z);
@@ -49,14 +49,12 @@ bool BattleStartFacingSystem::TryApplyFacing()
     }
 
     // --- 追従カメラをプレイヤーの背後へ回す ---
-    // CameraActionTPSSystem と同じ規約: atan2(z, x) で度、0 が +X
-    // カメラ位置は pivot - backwardDir * distance なので、backwardDir を
-    // 「プレイヤー→ボス」に合わせると、カメラはプレイヤーの背後に立ち、
-    // 視線がプレイヤー越しにボスを向く
-    const float camYawDeg = XMConvertToDegrees(std::atan2(toBoss.z, toBoss.x));
+    // ボスの方を見るヨーにすると、カメラはプレイヤーの背後に立ち、
+    // プレイヤー越しにボスを見る
+    const float camYawDeg = CameraYawFromViewDir(toBoss);
 
     int oriented = 0;
-    ForEach([&](CameraBodyTPSComponent &tps) {
+    ForEach([&](PlayerCameraComponent &tps) {
         // プレイヤーを追っているカメラだけが対象
         if (tps.target.id != battle.playerEntity) return;
 
@@ -77,5 +75,5 @@ bool BattleStartFacingSystem::TryApplyFacing()
 
 
 
-// BattleContextSyncSystem(L01_WorldState) の後、PlayerJumpFacingSystem より前（同じ L02_PreUpdate なので GetRunBefore で指定）
+// BattleContextSyncSystem(L01_WorldState) の後、PlayerFacingSystem より前（同じ L02_PreUpdate なので GetRunBefore で指定）
 REGISTER_LOGIC_SYSTEM(BattleStartFacingSystem, Priority::LogicStage::L02_PreUpdate);

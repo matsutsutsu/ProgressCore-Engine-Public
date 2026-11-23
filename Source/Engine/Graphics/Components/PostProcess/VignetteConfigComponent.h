@@ -35,7 +35,7 @@ struct VignetteConfigComponent
     // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 上書きの土台になる、今の設定そのままの値（新しく取ったスロットへ PostFx::Acquire が入れる）
+    // 上書きの土台になる、今の設定そのままの値（Acquire の base に渡す）
     VignetteOverrideParams BaseParams() const
     {
         VignetteOverrideParams p;
@@ -52,7 +52,10 @@ struct VignetteConfigComponent
     GpuData::CbVignetteData Resolve() const
     {
         GpuData::CbVignetteData out = data;
-        overrides.ForEachActive([&out](const VignetteOverrideParams &p, float t) {
+        for (const auto *s : overrides.SortedActive())
+        {
+            const auto &p     = s->params;
+            const float t     = s->Amount();
             out.vigColor.x    = std::lerp(out.vigColor.x, p.color.x, t);
             out.vigColor.y    = std::lerp(out.vigColor.y, p.color.y, t);
             out.vigColor.z    = std::lerp(out.vigColor.z, p.color.z, t);
@@ -61,7 +64,7 @@ struct VignetteConfigComponent
             out.vigRadius     = std::lerp(out.vigRadius, p.radius, t);
             out.vigSoftness   = std::lerp(out.vigSoftness, p.softness, t);
             out.vigPulseSpeed = std::lerp(out.vigPulseSpeed, p.pulseSpeed, t);
-        });
+        }
         return out;
     }
 };

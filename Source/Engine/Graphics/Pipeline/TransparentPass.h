@@ -21,5 +21,5 @@ public:
 
 private:
     PipelineState  m_psoTransparent; // ブレンドあり・深度はテストだけ・両面
-    InstanceBuffer m_instanceBuffer;
+    InstanceBuffer m_instanceBuffer; // 描くメッシュ1体分の行列を頂点シェーダーへ渡す
 };

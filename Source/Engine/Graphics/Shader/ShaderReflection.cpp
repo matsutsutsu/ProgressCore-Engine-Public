@@ -381,4 +381,4 @@ namespace ShaderReflect
         std::memcpy(cpuBuffer.data(), data, copySize);
         isDirty = true;
     }
-} // namespace ShaderReflect
+}

@@ -21,7 +21,7 @@ namespace
 {
     // 先読みする VFX のプレハブの置き場
     constexpr const char *kVfxPrefabFolder = "Assets/Prefabs/Particles";
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 初期化
@@ -416,6 +416,6 @@ namespace VFX
         }
         world.GetResource<VFXSystem *>()->Destroy(handle);
     }
-} // namespace VFX
+}
 
 REGISTER_LOGIC_SYSTEM(VFXSystem, Priority::LogicStage::L08_Prefab);

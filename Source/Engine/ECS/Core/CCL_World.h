@@ -493,4 +493,4 @@ namespace CCL::ECS
         return EntityRef{this, id};
     }
 
-} // namespace CCL::ECS
+}

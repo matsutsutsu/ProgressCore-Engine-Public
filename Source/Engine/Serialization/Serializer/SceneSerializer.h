@@ -20,7 +20,7 @@ namespace CCL::Serialization
 {
     class SaveContext;
     class LoadContext;
-} // namespace CCL::Serialization
+}
 
 class SceneSerializer
 {

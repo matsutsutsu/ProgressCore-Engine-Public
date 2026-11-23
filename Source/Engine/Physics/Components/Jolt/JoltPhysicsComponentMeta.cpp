@@ -51,7 +51,7 @@ namespace
     const char *const MotionTypeNames[] = {"Static", "Kinematic", "Dynamic"};
     // ObjectLayer の名前は PhysicsLayers::LayerNames を使う（ここに手書き配列を置かない）
     //   レイヤーを増やしても PhysicsLayers.h の X-Macro に1行足すだけで反映される
-} // namespace
+}
 
 COMPONENT_META_BEGIN_FULL(JoltRigidbodyComponent, "Jolt Rigidbody", CCL::Categories::Physics, 200, false)
 CFIELD_ENUM_U8(motionType, "モーションタイプ", MotionTypeNames, 3, "物理")

@@ -4,12 +4,12 @@
 #include "Game/Logics/Combat/Components/DeadTag.h"
 #include "Game/Logics/Combat/Components/EnemyTag.h"
 #include "Game/Logics/Character/Player/Rush/PlayerRushComponent.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLockOnComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 
 #include <SimpleMath.h>
-#include <limits>
 
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
@@ -23,58 +23,61 @@ std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetReadTypes() const
 
 
 
-void PlayerLockOnSystem::Update(float /*dt*/)
+std::vector<CCL::ECS::TypeID> PlayerLockOnSystem::GetWriteTypes() const
+{
+    auto types = Base::GetWriteTypes();
+    types.push_back(TypeInfo<PlayerCameraLockOnComponent>::ID()); // カメラが狙う敵
+    return types;
+}
+
+
+
+void PlayerLockOnSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID playerID, PlayerComponent &player,
                       const PlayerInputComponent &pin, const TransformComponent &playerTrans) {
-        // 1. ロックオン対象が死亡しているか破棄されていれば解除する
-        //    世代の違う ID を持ち続けないよう、Exists ではなく IsEntityValid で判定する
-        if (player.lockOnTargetID != InvalidEntityID)
+            
+        // 1. ロックオンの対象が削除されていたらロックオンを解除する
+        // 世代の違う ID を持ち続けないよう、Exists ではなく IsEntityValid で判定する
+        // ロックオンしていないときも false になり、無効のまま変わらない
+        if (!m_world->IsEntityValid(player.lockOnTargetID) ||
+            m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
         {
-            if (!m_world->IsEntityValid(player.lockOnTargetID) ||
-                m_world->HasComponent<Tag::DeadTag>(player.lockOnTargetID))
-            {
-                player.lockOnTargetID = InvalidEntityID;
-            }
+            player.lockOnTargetID = InvalidEntityID;
         }
 
-        // 2. ロックオンのボタンを押した瞬間だけ切り替える
-        //    押した瞬間の判定は PlayerInputSystem が済ませているので、ここでフラグを false にしない
-        //    false にしても入力側が同じフレームの次のステップで書き直すため、
-        //    1回の押下で切り替えが2回走って元に戻ることがある
+        // 2. ロックオンのボタンを押した瞬間にロックオンする
         if (pin.lockOnPressed)
         {
             // 3. ロックオン中なら解除する
             if (player.lockOnTargetID != InvalidEntityID)
             {
-                player.lockOnTargetID = InvalidEntityID;
-                CCL_LOG_INFO(LogCategory::Game, "Lock-On Cleared by User.");
+                player.lockOnTargetID = InvalidEntityID;               
             }
             else
             {
-                // 4. EnemyTag を持つ生存中の敵から、プレイヤーに最も近いものを探す
-                //    候補を一覧に溜めず、走査しながら最短を更新する
-                //    候補は EnemyTag だけで絞る。特定の Component（BossActionComponent など）で絞ると、
-                //    敵の種類が増えるたびにここへ条件を足すことになる
-                //
-                //    距離の上限は設けない。ステージが広く、ボスは跳躍や滞空で一気に間合いを
-                //    離すため、上限を置くと「離れた瞬間だけロックオンを受け付けない」という
-                //    操作感になる。遠い敵が小さく映る問題はカメラ側の引き
-                //    （lockOnDistanceGain）が吸収するので、ここで弾く必要がない
+                // 4. EnemyTag を持つ敵から、プレイヤーに近いものを探す
                 EntityID closestEnemyID = InvalidEntityID;
-                float    closestDistSq  = (std::numeric_limits<float>::max)();
+                float    closestDistSq  = 0.0f;
 
+                // 生きている敵全ての距離を比べて一番距離が短い敵を取得する
                 m_world->ViewEach<Tag::EnemyTag, TransformComponent>([&](EntityID enemyID) {
+                    // 死んでいる敵は除外する
                     if (m_world->HasComponent<Tag::DeadTag>(enemyID)) return;
+
 
                     auto *enemyTrans = m_world->GetComponent<TransformComponent>(enemyID);
                     if (!enemyTrans) return;
 
-                    // 高さも含めた3D の距離で比べる
+                    // 高さも含めた距離で比べる
                     float distSq = Vector3::DistanceSquared(playerTrans.position, enemyTrans->position);
-                    if (distSq < closestDistSq)
+
+                    // 1体目はそのまま採り、2体目からは近いほうに入れ替える
+                    if (closestEnemyID == InvalidEntityID || distSq < closestDistSq)
                     {
                         closestDistSq  = distSq;
+
+                        // 一番敵のIDをセットする
                         closestEnemyID = enemyID;
                     }
                 });
@@ -83,25 +86,20 @@ void PlayerLockOnSystem::Update(float /*dt*/)
                 if (closestEnemyID != InvalidEntityID)
                 {
                     player.lockOnTargetID = closestEnemyID;
-                    CCL_LOG_SUCCESS(LogCategory::Game, "Lock-On Target Confirmed! Target: %s",
-                                    CCL::EntityLabel(*m_world, closestEnemyID).c_str());
                 }
             }
         }
 
-        // 6. 決まったロックオン状態を、毎フレーム最後にカメラへ書く
-        //   カメラ(Engine)がプレイヤー(Game)を読む形にすると Engine→Game の依存になるため、
-        //   状態を持つこちらから書き込む
-        //   ラッシュ中はラッシュの相手を書くが、player.lockOnTargetID は変えない。終われば元のロックオンへ戻る
+        // 6. 最終的なロックオン状態をプレイヤーのカメラコンポーネントに書き込む
+
+        // 最後にラッシュ中ならロックオンした敵じゃなくて攻撃をよけた敵にターゲットを向ける
         const EntityID cameraTarget = PickCameraTarget(playerID, player);
 
-        m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-            auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-            if (!tps || tps->target.id != playerID) return; // このプレイヤーを映していないカメラは飛ばす
-
-            tps->lockOnTarget.id = cameraTarget;
-            tps->isLockOnActive  = (cameraTarget != InvalidEntityID);
-        });
+        if (auto *lockOn = m_world->GetComponent<PlayerCameraLockOnComponent>(FindPlayerCamera(*m_world, playerID)))
+        {
+            lockOn->target.id = cameraTarget;
+            lockOn->isActive  = (cameraTarget != InvalidEntityID);
+        }
     });
 }
 
@@ -110,12 +108,10 @@ void PlayerLockOnSystem::Update(float /*dt*/)
 // カメラに狙わせる敵を、ラッシュの相手かロックオンの相手から選ぶ
 EntityID PlayerLockOnSystem::PickCameraTarget(EntityID playerID, const PlayerComponent &player) const
 {
-    // ラッシュの相手は、ロックオンと同じく死亡・破棄されていたら使わない
+    // ラッシュの相手が死ぬと、PlayerRushSystem が無効にする
     if (const auto *rush = m_world->GetComponent<PlayerRushComponent>(playerID))
     {
-        const EntityID rushTarget = rush->closeInTarget;
-        const bool     alive      = m_world->IsEntityValid(rushTarget) && !m_world->HasComponent<Tag::DeadTag>(rushTarget);
-        if (rush->isActive && alive) return rushTarget;
+        if (rush->isActive && rush->closeInTarget != InvalidEntityID) return rush->closeInTarget;
     }
 
     return player.lockOnTargetID; // EntityLink から暗黙に変換する。手順1で死亡・破棄は外してある
@@ -123,5 +119,4 @@ EntityID PlayerLockOnSystem::PickCameraTarget(EntityID playerID, const PlayerCom
 
 
 
-// PlayerInputSystem(L01_Input) の後に走り、カメラ（Render ステージ）より前に対象を決める
 REGISTER_LOGIC_SYSTEM(PlayerLockOnSystem, Priority::LogicStage::L02_Update);

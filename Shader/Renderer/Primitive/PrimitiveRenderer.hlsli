@@ -1,22 +1,22 @@
 #ifndef PRIMITIVE_HLSLI
 #define PRIMITIVE_HLSLI
 
-// エンジンの共通インクルードを活用する
-#include "Shader/Common/Scene.hlsli"      // CbScene (b8) が定義されている
-#include "Shader/Common/Instancing.hlsli" // g_InstanceData (t11) が定義されている
+// PrimitiveRenderer（箱・球・カプセルなどの単純な形）の VS と PS が共有する型
+#include "Shader/Common/Scene.hlsli"
+#include "Shader/Common/Instancing.hlsli"
 
-// C++側の D3D11_INPUT_ELEMENT_DESC と完全に一致させる
+// C++ の入力レイアウト（D3D11_INPUT_ELEMENT_DESC）と同じ並びにする
 struct VS_IN
 {
-    float4 position : POSITION; // 12byte
-    float3 normal : NORMAL; // 12byte
+    float4 position : POSITION;
+    float3 normal : NORMAL;
 };
 
 struct VS_OUT
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR; // ピクセルシェーダーに渡す色
-    float3 worldNormal : NORMAL; // ワールド空間での法線ベクトル
+    float4 color : COLOR;        // インスタンスの色
+    float3 worldNormal : NORMAL; // ワールド空間の法線
 };
 
 #endif

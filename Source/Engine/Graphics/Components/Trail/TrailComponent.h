@@ -1,130 +1,90 @@
 #pragma once
-// 剣など振る武器の軌跡（ソードトレイル）。武器の Entity に付け、TrailRecordSystem が刻み、TrailSystem が描く
-// 断面は固定長のリングに持ち、lifeTime を超えた古いものから捨てる。先端が minDistance 以上動いたときだけ刻む
-// animControlled なら、TrailAnimationSyncSystem が Animator の Trail 区間から emitting を書く
 #include "Engine/ECS/Common/CCL_Types.h"
 #include "Engine/Graphics/Resource/ResourceTypes.h"
 #include <DirectXMath.h>
 #include <cstdint>
 #include <string>
 
-// 断面の作り方
-// Ribbon は板1枚なので、面が視線と平行になると線につぶれる。剣の軌跡は振る面を
-// 見せるものなのでそれでよいが、足元の尾のようにどこから見ても太さが欲しいときは
-// Cross / Tube を使う
+// 断面の作り方。Ribbon は面が視線と平行になると線につぶれるので、
+// どこから見ても太さが欲しいときは Tube を使う
 enum class TrailShape : uint8_t
 {
-    Ribbon = 0, // 根本→先端の線分を掃いた板1枚（剣向き）
-    Cross  = 1, // 板を進行方向まわりに複製して十字にする（軽い。真横から見ても消えない）
-    Tube   = 2, // 断面を円にして押し出した筒（足元の尾など、太さが欲しいとき）
+    Ribbon = 0, // 根本から先端までの線分を掃いた板1枚
+    Tube   = 1, // 断面を円にして押し出した筒
 };
 
 // CFIELD_ENUM_U8 用の表示名（TrailShape の並びと一致させる）
 static constexpr const char *TrailShapeNames[] = {
     "Ribbon (板1枚)",
-    "Cross (十字)",
     "Tube (筒)",
 };
-static constexpr int TrailShapeCount = 3;
+static constexpr int TrailShapeCount = 2;
 
+// 剣や足元に付ける軌跡。TrailRecordSystem が時間を進め、
+// TrailSystem が断面を刻んで描く
 struct TrailComponent
 {
-    // ============================================================
-    // 設定（保存する。座標は Entity のローカル空間）
-    // ============================================================
-    DirectX::XMFLOAT3 baseOffset = {0.0f, 0.0f, 0.0f};       // 刃の根本（ローカル, m）
-    DirectX::XMFLOAT3 tipOffset  = {0.0f, 1.0f, 0.0f};       // 刃の先端（ローカル, m）
-    DirectX::XMFLOAT4 color      = {0.6f, 0.8f, 1.0f, 1.0f}; // 加算する色（rgb）と基準のアルファ（a）
+    // --- 設定（保存する。座標は Entity のローカル空間） ---
 
-    // トレイルに貼るテクスチャの相対パス（例: "Assets/Textures/Trail/slash.dds"）
-    // 空なら白テクスチャ扱いで単色になる。設定すると色 × テクスチャで描く
-    // U は尾の長さ方向（先端 0 → 末尾 1）、V は幅方向（根本 0 → 先端 1）
-    // アルファで輪郭の形、RGB で模様、U 方向のグラデーションで寿命による色の変化を出せる
-    std::string texturePath;
+    DirectX::XMFLOAT3 baseOffset = {0.0f, 0.0f, 0.0f};       // 刃の根本（m）
+    DirectX::XMFLOAT3 tipOffset  = {0.0f, 1.0f, 0.0f};       // 刃の先端（m）
+    DirectX::XMFLOAT4 color      = {0.6f, 0.8f, 1.0f, 1.0f}; // 加算する色と基準のアルファ
 
-    DirectX::XMFLOAT2 uvTiling = {1.0f, 1.0f}; // UV の繰り返し回数（x: 長さ方向, y: 幅方向）
-    DirectX::XMFLOAT2 uvScroll = {0.0f, 0.0f}; // UV のスクロール速度（x: 長さ方向, y: 幅方向, UV/秒）。流れる模様に使う
+    std::string texturePath; // 貼るテクスチャのパス
 
-    float lifeTime    = 0.18f; // 1つの断面が消えるまでの時間（秒）。尾の長さになる
-    float minDistance = 0.02f; // 先端がこの距離（m）以上動いたら新しい断面を刻む
-    bool  emitting    = true;  // 断面を刻むか。animControlled=false のときは手動で切り替える
+    DirectX::XMFLOAT2 uvTiling = {1.0f, 1.0f}; // UV の繰り返し回数（長さ, 幅）
+    DirectX::XMFLOAT2 uvScroll = {0.0f, 0.0f}; // UV の流れる速さ（UV/秒）
+
+    float lifeTime    = 0.18f; // 断面が消えるまでの時間（秒）
+    float minDistance = 0.02f; // 刻むのに要る先端の移動量（m）
+    bool  emitting    = true;  // 断面を刻むか
 
     bool useInterpolation = true; // 断面の間を Catmull-Rom で補間するか
 
-    // true なら、祖先の Animator の Trail 区間イベントで emitting を切り替える
-    // false なら emitting は手動（インスペクタ、または常にオン）
-    bool animControlled = false;
+    bool animControlled = false; // アニメの Trail 区間で emitting を切り替えるか
 
-    float width           = 1.0f; // トレイル全体の幅の倍率。1.0 で刃の長さのまま
-    float widthCurvePower = 1.5f; // 尾に向かって細くなる強さ。大きいほど急に細くなる
+    float width           = 1.0f; // 幅の倍率
+    float widthCurvePower = 1.5f; // 尾に向かって細くなる強さ
 
     uint8_t shape = static_cast<uint8_t>(TrailShape::Ribbon); // 断面の作り方（TrailShape）
 
-    // Cross / Tube の半径（m）。0 なら根本→先端の長さの半分を使う
-    // 足元に付けるときは baseOffset と tipOffset をほぼ同じ点にして、ここで太さを決めると扱いやすい
-    float thickness = 0.0f;
+    float thickness = 0.0f; // 筒の半径（m）
+    int   tubeSides = 6;    // 筒の円周の分割数（3〜16）
 
-    int tubeSides = 6; // Tube の円周の分割数（3〜16）。増やすほど滑らかで重い
+    float distortion = 0.0f; // 背景をずらす最大量（px）
 
-    // Tube の輪郭の強調（0〜1）。1 で輪郭だけ光る筒、0 で均一な塊
-    // 加算合成は全面が同じ明るさだと平たく見えるので、視線に対して横を向く面ほど明るくして丸みを出す
-    float rimPower = 0.7f;
+    float burstDuration = 0.25f; // ActivateFor で出す時間（秒）
 
-    // --- 歪み（屈折）レイヤ ---
-    // 背景をずらす最大量（ピクセル）。0 なら歪みレイヤを作らない
-    // 加算レイヤと同じ形を2枚目として重ね、SceneColorGrabPass が取っておいたシーンカラーを
-    // 屈折させて描く。ずらす方向は面の法線をビュー空間に落とした xy なので、
-    // 面がカメラを向くほど 0 に近づき、輪郭で最も強く歪む
-    float distortion = 0.0f;
+    // --- 実行時の状態（保存しない） ---
 
-    float distortionChroma = 0.0f; // 屈折の色ずれ（0〜1）。RGB のずらし量に差をつける
+    TextureHandle     textureHandle;                  // texturePath から引いたテクスチャ
+    DirectX::XMFLOAT2 uvScrollOffset = {0.0f, 0.0f}; // uvScroll を積んだ今のずれ
 
-    // 陽炎のようなゆらぎ（0〜1）。グローバルノイズでずらす方向を乱す
-    // 板（Ribbon）が正面を向いていると法線による歪みはほぼ 0 になるので、
-    // 剣の軌跡のように面を見せる使い方で歪ませたいときはここを上げる
-    float distortionNoise = 0.0f;
+    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID; // Animator を持つ祖先
 
-    float burstDuration = 0.25f; // ActivateFor で一時的にトレイルを出す時間（秒）。ダッシュなどで使う
+    float timeScale = 1.0f; // 老化に使った時間の倍率
 
-    // ============================================================
-    // 実行時状態（保存しない）
-    // ============================================================
-    TextureHandle     textureHandle;                   // texturePath から引いたテクスチャ。TrailSystem が毎フレーム引き直す（ResourceManager がパスでキャッシュする）
-    DirectX::XMFLOAT2 uvScrollOffset = {0.0f, 0.0f};  // uvScroll を積み上げた今のずれ。TrailSystem が毎フレーム進める
-
-    // Animator を持つ祖先。InvalidEntityID は未解決
-    // TrailAnimationSyncSystem が親をたどって探し、ここに持つ。animControlled でなくても探す
-    // （一時トレイルの時計に、その持ち主の TimeStateComponent を使うため）
-    CCL::ECS::EntityID ownerEntity = CCL::ECS::InvalidEntityID;
-
-    // 断面の老化に使っている時間の倍率（自分の時計の localDt ÷ ロジックの dt）
-    // TrailRecordSystem がロジックの1ステップごとに書き、描画側の TrailSystem が
-    // UV スクロールを同じ速さで遅くするために読む
-    float timeScale = 1.0f;
-
-    // 1フレーム分の刃の断面（根本と先端の線分）と経過時間
+    // 記録した1つの断面（刃の根本と先端）
     struct Segment
     {
-        DirectX::XMFLOAT3 base = {};   // 記録したときの根本のワールド座標（m）
-        DirectX::XMFLOAT3 tip  = {};   // 記録したときの先端のワールド座標（m）
-        float             age  = 0.0f; // 記録してからの経過時間（秒）。lifeTime を超えたら捨てる
+        DirectX::XMFLOAT3 base = {};   // 根本のワールド座標（m）
+        DirectX::XMFLOAT3 tip  = {};   // 先端のワールド座標（m）
+        float             age  = 0.0f; // 記録してからの時間（秒）
     };
 
-    // リングの容量（尾の最大の区間数）。満杯なら一番古い断面から上書きする
-    // スロー中は断面が長く残るので、等速（剣で約 11 個）よりずっと多く要る。1区間 28 バイトで約 7KB
+    // リングの容量。スロー中は断面が長く残るので、
+    // 等速で要る数よりずっと多く取ってある
     static constexpr int MAX_SEGMENTS = 256;
 
     Segment segments[MAX_SEGMENTS] = {}; // 断面のリングバッファ
     int     head                   = 0;  // 一番古い断面の添字
     int     count                  = 0;  // 有効な断面の数
 
-    // TrailRecordSystem（ロジック）が毎ステップ立てる「1区間刻んでよい」印。描画の TrailSystem は立っているフレームだけ刻み、必ず降ろす
-    // 剣の姿勢は 60Hz でしか変わらないので、描画のレートで刻むと 144Hz で同じ姿勢の断面が重なり、尾が二重に見える
-    bool sampleRequested = false;
+    bool sampleRequested = false; // 1区間刻んでいい印（TrailSystem が降ろす）
 
-    float burstTimer = 0.0f; // 一時的なトレイルの残り時間（秒）
+    float burstTimer = 0.0f; // 一時トレイルの残り時間（秒）
 
-    // duration（秒）の間だけトレイルを出す。切れると emitting が false に戻る
+    // duration 秒の間だけトレイルを出す。切れると emitting が false に戻る
     void ActivateFor(float duration)
     {
         burstTimer = duration;
@@ -134,10 +94,7 @@ struct TrailComponent
     // 一時トレイルのタイマーを進め、切れたら emitting を落とす
     void UpdateBurstTimer(float dt)
     {
-        if (burstTimer <= 0.0f)
-        {
-            return;
-        }
+        if (burstTimer <= 0.0f) return;
 
         burstTimer -= dt;
 

@@ -78,4 +78,4 @@ namespace CCL::ECS
         bool m_shutdown = false; // true になったらワーカーはキューを空にしてから終了する
     };
 
-} // namespace CCL::ECS
+}

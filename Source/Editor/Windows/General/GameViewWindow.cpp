@@ -73,7 +73,7 @@ namespace
         }
         return best;
     }
-} // namespace
+}
 
 void GameViewWindow::DrawContents(EditorContext &context)
 {

@@ -30,7 +30,7 @@ namespace ComponentMetaJson
             if (j.contains("falloff")) c.data.blurFalloff = j["falloff"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<RadialBlurConfigComponent>

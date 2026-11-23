@@ -36,7 +36,7 @@ namespace DirectX
         j.at("z").get_to(v.z);
         j.at("w").get_to(v.w);
     }
-} // namespace DirectX
+}
 
 struct MaterialScalar
 {

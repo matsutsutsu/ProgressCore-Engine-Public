@@ -28,7 +28,7 @@ namespace
     constexpr float kAttackDirNeutral = 0.0f; // 倒していない・横
     constexpr float kAttackDirForward = 1.0f; // 敵の方へ
     constexpr float kAttackDirBack    = 2.0f; // 敵と反対へ
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 対象の探索
@@ -209,14 +209,14 @@ void PlayerAttackSystem::Update(float dt)
         animParams.SetFloat(HASH_PARAM_ATTACK_DIR, attackDir);
 
         // ---------------------------------------------------------
-        // 3. 向き直り（地上/空中どちらも。実際に回すのは PlayerJumpFacingSystem）
+        // 3. 向き直り（地上/空中どちらも。実際に回すのは PlayerFacingSystem）
         // ---------------------------------------------------------
 
         // 後ろの技は敵を正面に置いたまま下がる。短いと、倒したままのスティックの方へ振り向いてしまう
         const bool back = (attackDir == kAttackDirBack);
         if (hasTarget || back)
         {
-            // baseDirの基準方向をYawに書いた状態で、PlayerJumpFacingSystem が回す
+            // baseDirの基準方向をYawに書いた状態で、PlayerFacingSystem が回す
             player.attackFaceYaw   = std::atan2(baseDir.x, baseDir.z);
             player.attackFaceTimer = back ? player.attackBackFaceDuration : player.attackFaceDuration;
         }

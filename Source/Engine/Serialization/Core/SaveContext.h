@@ -61,4 +61,4 @@ namespace CCL::Serialization
         LocalIndex                                         m_nextLocalIndex = 1; // 次に割り当てる番号（0 は予約）
     };
 
-} // namespace CCL::Serialization
+}

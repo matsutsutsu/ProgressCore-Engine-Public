@@ -1,9 +1,9 @@
 #ifndef SHAPE_HLSLI
 #define SHAPE_HLSLI
 
-// エンジンの共通インクルードを活用する
-#include "Shader/Common/Scene.hlsli"      // CbScene (b8) / viewProjection 
-#include "Shader/Common/Instancing.hlsli" // g_InstanceData (t11) 
+// ShapeRenderer（デバッグ用の線）の VS と PS が共有する型
+#include "Shader/Common/Scene.hlsli"
+#include "Shader/Common/Instancing.hlsli"
 
 struct VS_OUT
 {

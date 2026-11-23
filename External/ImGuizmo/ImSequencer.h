@@ -68,6 +68,9 @@ namespace ImSequencer
       virtual bool CanMove(int /*index*/, int /*delta*/) const { return false; }
       virtual void Move(int /*index*/, int /*delta*/) {}
 
+      // 追加: 帯の両端を掴んで長さを変えられるか。false なら帯のどこを掴んでも丸ごと動く（長さのない点など）
+      virtual bool CanResize(int /*index*/) const { return true; }
+
       virtual void Copy() {}
       virtual void Paste() {}
 

@@ -2,139 +2,16 @@
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
-#include <cmath>
 #include <algorithm>
 #include <random>
 #include <tracy/Tracy.hpp>
 
 #include "Engine/Animation/Core/AnimEventMessages.h"
-#include "Engine/Animation/Core/AnimPoseUtils.h"
 #include "Engine/Core/Math/CurveData.h"
 
 #include "Engine/Graphics/Components/Core/ModelComponent.h"
-#include "Engine/Graphics/Resource/ModelResource.h"
 #include "Engine/Animation/Components/AnimatorComponent.h"
-#include "Engine/Animation/Components/RootMotionComponent.h"
 #include "Engine/Time/Components/TimeState.h"
-
-// m_world を使わない時間の計算は、ここに置く
-namespace
-{
-    // 効果音のピッチに、±range の揺らぎを足して返す
-    //   乱数の状態は thread_local に持つ（呼び出し元を並列にしても状態を共有しない）
-    float RandomizePitch(float pitch, float range)
-    {
-        if (range <= 0.0f) return pitch;
-        thread_local std::minstd_rand rng{std::random_device{}()};
-        std::uniform_real_distribution<float> dist(-range, range);
-        return pitch + dist(rng);
-    }
-
-
-
-    // 実効の再生速度（ステートの速度 × 足滑り補正 × 速度カーブ）を返す
-    float ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
-    {
-        // ここに Tracy のゾーンを置かないこと
-        //   処理は数十ナノ秒でゾーン自体のコストと同程度になり、OS のプリエンプトを拾って巨大な値が出る
-        float curveMultiplier = 1.0f;
-        if (animator.activeCurve)
-        {
-            float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
-
-            // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる
-            //   [0,1] に丸めて防ぐ
-            progress        = std::clamp(progress, 0.0f, 1.0f);
-            curveMultiplier = animator.activeCurve->Evaluate(progress);
-        }
-        return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
-    }
-
-
-
-    // currentTimer（ブレンド中なら previousTimer も）を進める。順方向に進んだら true
-    bool AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
-    {
-        const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
-        const float prevTime       = animator.currentTimer;
-
-        // 進める前の時刻を控える（区間イベントの判定に使う）
-        animator.previousFrameTimer = prevTime;
-
-        animator.currentTimer += localDt * effectiveSpeed;
-        const bool movedForward = (animator.currentTimer >= prevTime);
-
-        // --- 前のクリップ（ブレンド中だけ）---
-        if (animator.isBlending)
-        {
-            animator.currentBlendTime += localDt;
-
-            // 前のクリップは切り替え前の速度で進める
-            animator.previousTimer += localDt * animator.previousPlaybackSpeed;
-
-            if (animator.previousSequence && animator.previousSequence->duration > 0.0f)
-            {
-                if (!animator.previousLoop)
-                {
-                    // 非ループ: duration を超えたら末尾で止める
-                    animator.previousTimer = (std::min)(animator.previousTimer, animator.previousSequence->duration);
-                }
-                else
-                {
-                    // ループ: 剰余でループ内の時刻に戻す
-                    animator.previousTimer = std::fmod(animator.previousTimer, animator.previousSequence->duration);
-                    if (animator.previousTimer < 0.0f)
-                        animator.previousTimer += animator.previousSequence->duration;
-                }
-            }
-
-            if (animator.currentBlendTime >= animator.blendDuration)
-            {
-                animator.isBlending       = false;
-                animator.previousSequence = nullptr;
-            }
-        }
-
-        return movedForward;
-    }
-
-
-
-    // duration の境界でループ・終了を判定し、currentTimer をクリップ内に収める
-    void ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
-    {
-        if (seq->duration <= 0.0f) return;
-
-        if (animator.currentTimer >= seq->duration)
-        {
-            if (animator.isLoop)
-            {
-                animator.currentTimer   = std::fmod(animator.currentTimer, seq->duration);
-                animator.nextEventIndex = 0;
-            }
-            else
-            {
-                animator.currentTimer = seq->duration;
-                animator.isFinished   = true;
-            }
-        }
-        else if (animator.currentTimer < 0.0f)
-        {
-            if (animator.isLoop)
-            {
-                animator.currentTimer = std::fmod(animator.currentTimer, seq->duration) + seq->duration;
-                animator.SyncEventCursor();
-            }
-            else
-            {
-                animator.currentTimer = 0.0f;
-            }
-        }
-    }
-
-} // namespace
-
-using CCL::Anim::PinRootMotionNode;
 
 AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
@@ -142,20 +19,12 @@ AnimationSystem::AnimationSystem() : IfSystem("AnimationSystem") {}
 
 void AnimationSystem::Update(float dt)
 {
-    // 処理フロー:
-    // 1. 時間を進める（速度カーブを含む）
-    // 2. 点イベントを発火する
-    // 3. ループと終了を判定する
-
-    // 2 の後に 3 を行うので、ループ末尾ちょうどのイベントも、境界をまたいだステップで発火できる
-    // ポーズの計算は AnimationPoseSystem が 1 描画フレームに 1 回行う
-
     ZoneScopedN("AnimationSystem::Update");
 
     // 直列に回す。DispatchPointEvents が EventBus へ Publish するので、
     //   並列にするなら先に EventBus をスレッドセーフにすること
-    //   ModelComponent は Model を持つキャラだけに絞るために受け取っているだけで、ここでは触らない
-    ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, ModelComponent &modelComp, const TimeStateComponent &time) {
+    ForEachWithID([this](CCL::ECS::EntityID id, AnimatorComponent &animator, const ModelComponent &,
+                         const TimeStateComponent &time) {
         if (!animator.currentSequence) return;
 
         // エディタで操作中は時間を進めず、イベントも発火しない
@@ -163,13 +32,14 @@ void AnimationSystem::Update(float dt)
 
         const AnimSequence *seq = animator.currentSequence;
 
+        // 再生時刻（ブレンド中は前のクリップの時刻も）を、速度カーブ込みで進める
         const bool movedForward = AdvanceTimers(animator, seq, time.localDt);
 
+        // 今の時刻までに来た点イベント（音・エフェクト・判定球）を EventBus で出す
         DispatchPointEvents(id, animator, seq, movedForward);
 
+        // 末尾を過ぎたら、ループなら先頭へ戻し、ループしないなら終了にする
         ResolveLoopAndFinish(animator, seq);
-
-        (void)modelComp;
     });
 }
 
@@ -225,15 +95,8 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
             break;
         }
 
-        case AnimEventType::HitBox:
-        case AnimEventType::Trail:
-        case AnimEventType::Particle:
-        case AnimEventType::Blackboard:
-        case AnimEventType::Finisher:
-            // 区間のイベント（HitBox / Trail / Particle など）は出さない。各 System が再生時刻を見て判定する
-            break;
-
         default:
+            // 区間のイベント（HitBox / Trail / 受付区間など）は出さない。各 System が再生時刻を見て判定する
             break;
         }
 
@@ -243,38 +106,100 @@ void AnimationSystem::DispatchPointEvents(CCL::ECS::EntityID id, AnimatorCompone
 
 
 
-void AnimationSystem::UpdateManual(CCL::ECS::EntityID entity, float time)
+bool AnimationSystem::AdvanceTimers(AnimatorComponent &animator, const AnimSequence *seq, float localDt)
 {
-    ZoneScopedN("AnimationSystem::UpdateManual");
+    const float effectiveSpeed = ComputeEffectiveSpeed(animator, seq);
+    const float prevTime       = animator.currentTimer;
 
-    auto *animator  = m_world->GetComponent<AnimatorComponent>(entity);
-    auto *modelComp = m_world->GetComponent<ModelComponent>(entity);
+    // 進める前の時刻を控える（区間イベントの判定に使う）
+    animator.previousFrameTimer = prevTime;
 
-    if (!animator || !modelComp || !modelComp->GetModel())
-        return;
+    animator.currentTimer += localDt * effectiveSpeed;
+    const bool movedForward = (animator.currentTimer >= prevTime);
 
-    Model *model = modelComp->GetModel();
-
-    const AnimSequence *seq = animator->currentSequence;
-    if (!seq)
-        return;
-
-    int animIndex = model->GetAnimationIndex(seq->targetAnimName.c_str());
-    if (animIndex == -1)
-        return;
-
-    model->ComputeAnimation(animIndex, time, animator->poseBufferA);
-
-    // Force Root Lock（プレビュー版）。RootMotionComponent の有無に関係なく常に固定する
-    //   固定しないと、クリップ自身の前進と、ルートモーションカーブによる Transform の移動
-    //   （AnimationSequencerWindow::DrawRootMotionPreview）が二重に掛かり、モデルだけ前に出る
-    if (!animator->poseBufferA.empty())
+    // --- 前のクリップ（ブレンド中だけ）---
+    if (animator.isBlending)
     {
-        const int rootNodeIndex = model->FindRealRootMotionNodeIndex(animIndex);
-        PinRootMotionNode(model, animIndex, rootNodeIndex, animator->poseBufferA, animator->lockVerticalRootMotion);
+        animator.currentBlendTime += localDt;
+
+        // 前のクリップは切り替え前の設定（速度・ループ）で進める
+        animator.previousTimer += localDt * animator.previousPlaybackSpeed;
+
+        const AnimSequence *prevSeq = animator.previousSequence;
+        if (prevSeq) animator.previousTimer = CCL::Anim::WrapClipTime(animator.previousTimer, prevSeq->duration, animator.previousLoop);
+
+        if (animator.currentBlendTime >= animator.blendDuration)
+        {
+            animator.isBlending       = false;
+            animator.previousSequence = nullptr;
+        }
     }
 
-    model->SetNodePoses(animator->poseBufferA);
+    return movedForward;
+}
+
+
+
+float AnimationSystem::ComputeEffectiveSpeed(const AnimatorComponent &animator, const AnimSequence *seq)
+{
+    // ここに Tracy のゾーンを置かないこと
+    //   処理は数十ナノ秒でゾーン自体のコストと同程度になり、OS のプリエンプトを拾って巨大な値が出る
+    float curveMultiplier = 1.0f;
+    if (const CurveData *curve = animator.GetSpeedCurve())
+    {
+        float progress = (seq->duration > 0.0f) ? (animator.currentTimer / seq->duration) : 0.0f;
+
+        // ループの境界をまたいだステップでは progress > 1 になり、速度カーブが外挿されて一瞬跳ねる
+        //   [0,1] に丸めて防ぐ
+        progress        = std::clamp(progress, 0.0f, 1.0f);
+        curveMultiplier = curve->Evaluate(progress);
+    }
+    return animator.playbackSpeed * animator.footSlideMultiplier * curveMultiplier;
+}
+
+
+
+void AnimationSystem::ResolveLoopAndFinish(AnimatorComponent &animator, const AnimSequence *seq)
+{
+    if (seq->duration <= 0.0f) return;
+
+    if (animator.currentTimer >= seq->duration)
+    {
+        if (animator.isLoop)
+        {
+            animator.currentTimer   = CCL::Anim::WrapClipTime(animator.currentTimer, seq->duration, true);
+            animator.nextEventIndex = 0;
+        }
+        else
+        {
+            animator.currentTimer = seq->duration;
+            animator.isFinished   = true;
+        }
+    }
+    else if (animator.currentTimer < 0.0f)
+    {
+        if (animator.isLoop)
+        {
+            animator.currentTimer = CCL::Anim::WrapClipTime(animator.currentTimer, seq->duration, true);
+            animator.SyncEventCursor();
+        }
+        else
+        {
+            animator.currentTimer = 0.0f;
+        }
+    }
+}
+
+
+
+float AnimationSystem::RandomizePitch(float pitch, float range)
+{
+    if (range <= 0.0f) return pitch;
+
+    // 乱数の状態は thread_local に持つ（呼び出し元を並列にしても状態を共有しない）
+    thread_local std::minstd_rand rng{std::random_device{}()};
+    std::uniform_real_distribution<float> dist(-range, range);
+    return pitch + dist(rng);
 }
 
 

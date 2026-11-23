@@ -20,6 +20,7 @@ struct MaterialData;
 struct GPUParticleBufferSet;
 class RenderTarget;
 struct AnimSequence;
+struct AnimStateGraph;
 
 // テクスチャの実体と、その情報
 struct TextureAsset
@@ -50,3 +51,4 @@ using MaterialHandle       = CCL::Handle<MaterialData>;
 using ParticleBufferHandle = CCL::Handle<GPUParticleBufferSet>;
 using RenderTargetHandle   = CCL::Handle<RenderTarget>;
 using AnimSequenceHandle   = CCL::Handle<AnimSequence>;
+using AnimGraphHandle      = CCL::Handle<AnimStateGraph>;

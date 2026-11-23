@@ -143,4 +143,4 @@ namespace CCL::ECS
         bool operator==(const TypeData &r) const { return id == r.id; }
     };
 
-} // namespace CCL::ECS
+}

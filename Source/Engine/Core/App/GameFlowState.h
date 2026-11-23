@@ -1,38 +1,46 @@
 #pragma once
-// ゲーム進行の共有状態（World リソース）。ポーズ・UI 操作中・ムービー中・終了要求を System 間で共有する
+
+// ゲーム進行の共有状態（World リソース）
+// ポーズ・UI 操作中・ムービー中・終了要求を System 間で共有する
 struct GameFlowState
 {
-    // true の間、ゲームロジック/物理（FixedUpdate = UpdateLogic）を止める
-    // 描画・UI（Update = UpdatePaused）は継続するので、ポーズ画面が操作できる
+    // --- 状態 ---
+    // ムービー中のポーズのように重なるので、enum でなく別々の bool で持つ
+
+    // ポーズ中。ロジックと物理を止め、描画と UI だけ動かす
+    // FixedUpdateを止めてUpdateは動かす
     bool paused = false;
 
-    // 「カーソル自由(UI操作)モード」。true の間はゲームを止めずに
-    //    マウスカーソルだけ解放する（＝実行中に ImGui エディタを操作できる）
-    //    ・カメラ: この間はカーソルをロックせず、マウスルックも止める
-    //    ・PauseSystem: この間は ESC のポーズ切替を抑制する
-    //    エディタ側（F2 トグル / シーケンサーの EditMode）が毎フレーム設定する
+    // UI 操作モード（F2・シーケンサーの編集中）。ゲームは止めずにカーソルを解放する
+    //   エディタが毎フレーム上書きする
     bool uiInteract = false;
 
-    // 「カットシーン中」。ムービーが開始待ち・再生中の間 true
-    //    ・PlayerInputSystem: 全ゲーム入力を中立値にして操作を奪う
-    //    ・BehaviorTreeSystem: 木を凍らせ、演出中に敵が動き出さないようにする
-    //    ・GameResultSystem: 勝ちのリザルトを、撃破ムービーが終わるまで出さない
-    //    paused と違ってゲーム自体は止めない（アニメも物理もカメラも動き続ける）
-    //    Cinematic Editor のプレビュー中も立つ（ゲームを動かしたままカメラを編集するため）
-    //    書き手は CinematicCameraSystem だけ。描画の段で書くので、ロジックの段には次の固定ステップから効く
+    // ムービーの開始待ち・再生中。ゲーム自体は止めない
+    //   描画の段で書くので、ロジックには次の固定ステップから効く
+    // 　一部のプレイヤーや敵AIの入力を阻止するために使うフラグ
     bool cinematic = false;
 
-    // 「決着した」。勝ち負けが決まった瞬間から、シーンを切り替えるまで true
-    //    ・PlayerInputSystem: 全ゲーム入力を中立値にする（リザルトの裏でプレイヤーが動かないように）
-    //    ・BehaviorTreeSystem / BossActionSystem: ボスの思考と技を止める（倒れたプレイヤーへ攻撃し続けないように）
-    //    ・CameraActionTPSSystem: 視点入力を止める（リザルトをマウスで操作している間にカメラが回らないように）
-    //    cinematic と同じく、ゲーム自体は止めない（倒れるアニメや物理は動き続ける）
-    //    書き手は GameResultSystem と、チュートリアルを教え終えたときの TutorialCompleteSystem
+    // 決着してから、シーンを切り替えるまで。ゲーム自体は止めない
     bool matchOver = false;
 
-    // アプリ終了要求。タイトル画面の QUIT から立てる
-    //    ゲーム中のポーズ／リザルトはタイトルへ戻すだけで、アプリを終了する出口はタイトルの1か所だけにしている
-    //    System からは PostQuitMessage を呼ばず、このフラグを立てるだけにする（理由は Framework::Run の 3）
-    //    書き込みはジョブの WaitForCounter が同期点になるので、メインスレッドから確実に見える
+    // 決着の画面（リザルト・チュートリアル完了）を出してから、シーンを切り替えるまで
+    bool resultOpen = false;
+
+    // アプリの終了要求。タイトルの「終了」だけが立てる
+    //   System からは PostQuitMessage を呼ばずにこれを立てる
     bool quitRequested = false;
+
+    // --- 組み合わせ ---
+    // 読み手ごとに条件を書くと、フラグを足したときに直し漏れが出るのでここにまとめる
+
+    // プレイを止めるか（ムービー中・決着後）。AI・ボスの技・視点の入力を止める
+    bool GameplayFrozen() const { return cinematic || matchOver; }
+
+    // プレイヤーの操作を止めるか。上に UI 操作モードを足したもの
+    //   UI 操作モードの間も敵は動かす。動いている戦闘を見ながら調整するため
+    bool PlayerInputBlocked() const { return GameplayFrozen() || uiInteract; }
+
+    // カーソルを解放するか（ポーズ・UI 操作モード・決着の画面）
+    //   matchOver だけでは解放しない。とどめのスローとムービーの間に出てしまう
+    bool CursorFree() const { return paused || uiInteract || resultOpen; }
 };

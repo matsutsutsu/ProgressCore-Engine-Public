@@ -1,8 +1,8 @@
 #ifndef POST_PROCESS_VS_HLSLI
 #define POST_PROCESS_VS_HLSLI
 
-// FullScreenVS と PS の入力シグネチャを一致させる最小構造体。
-// Common.hlsli の VS_OUT は 3D 描画用(NORMAL/TANGENT 等)なのでポストプロセスでは使わない。
+// FullScreenVS の出力と、ポストプロセスの PS の入力
+// Common.hlsli の VS_OUT は 3D の描画用（法線などを持つ）で、FullScreenVS の出力と形が合わないので使わない
 struct VS_OUT
 {
     float4 position : SV_POSITION;

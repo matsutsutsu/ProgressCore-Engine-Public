@@ -35,8 +35,10 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
     m_stat_drawnMeshes  = 0;
     m_stat_culledMeshes = 0;
 
+    // シャドウマップ・サンプラー・PSO など、全バッチで共通のものをバインドする
     BindCommonResources(dc);
 
+    // コマンドをキーで並べる。NormalPrepass が先に並べていれば何もしない
     queue->SortAndBuildBatches();
     const auto &sortKeys       = queue->GetSortedKeys();
     const auto &opaqueCommands = queue->GetOpaqueCommands();
@@ -55,11 +57,16 @@ void OpaquePass::Execute(const RenderFrameContext &ctx)
             continue;
         }
 
+        // 同じキーが続く区間を1つのバッチとして切り出し、cursor を次のバッチへ進める
         const BatchRange batch = ConsumeBatch(sortKeys, cursor);
 
+        // シェーダーと入力レイアウトを設定する
         matShader->Begin(dc, *m_services, ctx);
+
+        // バッチのモデルをメッシュごとに描く。半透明のメッシュは TransparentPass 用のキューへ回す
         DrawBatch(ctx, batch, *matShader);
 
+        // シェーダーがバインドした定数バッファとテクスチャを外す
         matShader->End(dc, *m_services);
     }
 }
@@ -139,6 +146,7 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
             continue;
         }
 
+        // 見えるインスタンスの列を決める。NormalPrepass が残した列があればそれを使う
         ResolveVisibleInstances(ctx, mesh, batch, meshIdx, localAABB, isSkinned);
 
         // 見えるインスタンスがなければ、マテリアルの更新・IA の設定・描画をすべて飛ばす
@@ -149,9 +157,13 @@ void OpaquePass::DrawBatch(const RenderFrameContext &ctx, const BatchRange &batc
         }
         ++m_stat_drawnMeshes;
 
+        // このメッシュのマテリアルの値を定数バッファに書き、テクスチャをバインドする
         matShader.Update(dc, mesh, overrideMat);
+
+        // 頂点・インデックスバッファとトポロジを設定する
         BindMeshIA(dc, mesh);
 
+        // スキンメッシュは1体ずつ、それ以外は LOD の段ごとにインスタンシングで描く
         if (isSkinned)
         {
             DrawSkinnedInstances(ctx, mesh, meshIdx, batch);

@@ -1,13 +1,16 @@
-// Shader/Common/Transform.hlsli
+// ===========================================================================
+// 概要: 頂点をワールド空間へ動かす関数。スキンメッシュとインスタンシングの両方を1つの入口で扱う
+//
+// 備考: ボーンの重みの合計で見分ける。重みがあればスキンメッシュ（ボーンの行列）、なければ
+//       インスタンスのワールド行列を使う。必要な出力の数に合わせて3つの形がある
+// ===========================================================================
 #ifndef TRANSFORM_HLSLI
 #define TRANSFORM_HLSLI
 
 #include "Shader/Common/Skinning.hlsli"
 #include "Shader/Common/Instancing.hlsli"
 
-// ==========================================================
-// 1. 位置・法線・タンジェント の変換 (Phong, PBR, Toon用)
-// ==========================================================
+// 位置・法線・接線（Phong・PBR など、法線マップを使うマテリアル用）
 void CalculateWorldTransform(
     in float4 localPos, in float3 localNormal, in float4 localTangent,
     in float4 boneWeights, in uint4 boneIndices, in uint instanceID,
@@ -23,7 +26,7 @@ void CalculateWorldTransform(
     }
     else
     {
-        // インスタンシング（静的メッシュ）
+        // インスタンシング（ボーンのないメッシュ）
         float4x4 world = GetInstanceWorld(instanceID);
         outWorldPos = mul(localPos, world);
         outWorldNormal = normalize(mul(float4(localNormal, 0), world).xyz);
@@ -31,9 +34,7 @@ void CalculateWorldTransform(
     }
 }
 
-// ==========================================================
-// 2. 位置・法線 のみの変換 (Lambert用)
-// ==========================================================
+// 位置・法線（Lambert 用）
 void CalculateWorldTransform(
     in float4 localPos, in float3 localNormal,
     in float4 boneWeights, in uint4 boneIndices, in uint instanceID,
@@ -53,9 +54,7 @@ void CalculateWorldTransform(
     }
 }
 
-// ==========================================================
-// 3. 位置 のみの変換 (Basic, ShadowMap用)
-// ==========================================================
+// 位置だけ（Basic・影用）
 void CalculateWorldTransform(
     in float4 localPos,
     in float4 boneWeights, in uint4 boneIndices, in uint instanceID,

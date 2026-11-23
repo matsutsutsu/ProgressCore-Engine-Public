@@ -92,4 +92,4 @@ namespace CCL::ECS
         }
     };
 
-} // namespace CCL::ECS
+}

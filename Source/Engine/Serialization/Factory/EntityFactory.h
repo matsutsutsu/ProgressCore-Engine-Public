@@ -29,4 +29,4 @@ namespace EntityFactory
         return {&world, id};
     }
 
-} // namespace EntityFactory
+}

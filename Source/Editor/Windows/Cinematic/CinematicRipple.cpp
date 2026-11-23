@@ -6,8 +6,7 @@
 
 namespace
 {
-    // 「後ろ」とみなす余裕（秒）。終わり 3.8 + 2.4 と次の開始 6.2 のような、足し算の誤差で外れないようにする
-    // 保存は小数4桁なのでそれより大きく、タイムラインの1コマ（1/30秒）よりは十分小さくする
+    // 「後ろ」とみなす余裕（秒）。3.8 + 2.4 と 6.2 のような足し算の誤差で外れないようにする
     constexpr float kEdgeTolerance = 0.001f;
 
 
@@ -36,11 +35,10 @@ namespace
             if (index < items.size()) items[index].*member = std::max(0.0f, originTime + shift);
         }
     }
-} // namespace
+}
 
 
 
-// shotIndex のショットより後ろにある項目の、今の時刻を控える
 CinematicRipple::Snapshot CinematicRipple::Capture(const CinematicScript &script, std::size_t shotIndex)
 {
     Snapshot snapshot;
@@ -52,8 +50,7 @@ CinematicRipple::Snapshot CinematicRipple::Capture(const CinematicScript &script
     snapshot.originEnd      = shot.start + shot.duration;
     snapshot.originDuration = script.duration;
 
-    // 元の終わり以降に始まるものを集める。ショット自身は、長さが 0 でも集めない
-    // ショット以外は除く添字がないので、どの添字とも重ならない配列の大きさを渡す
+    // ショット自身は除く。ほかの種類は除く添字がないので、どの添字とも重ならない配列の大きさを渡す
     const float threshold = snapshot.originEnd - kEdgeTolerance;
     CollectFrom(script.shots, &CameraShot::start, threshold, shotIndex, snapshot.shots);
     CollectFrom(script.sounds, &CinematicSound::time, threshold, script.sounds.size(), snapshot.sounds);
@@ -66,7 +63,6 @@ CinematicRipple::Snapshot CinematicRipple::Capture(const CinematicScript &script
 
 
 
-// 今のショットの終わりと控えた終わりの差だけ、控えた項目と全体の長さをずらす
 void CinematicRipple::Apply(CinematicScript &script, const Snapshot &snapshot)
 {
     if (!snapshot.valid || snapshot.shotIndex >= script.shots.size()) return;
@@ -80,6 +76,6 @@ void CinematicRipple::Apply(CinematicScript &script, const Snapshot &snapshot)
     PlaceShifted(script.signals, &CinematicSignal::time, snapshot.signals, shift);
     PlaceShifted(script.animations, &CinematicAnimation::start, snapshot.animations, shift);
 
-    // 全体の長さも同じだけ伸び縮みさせる。後ろの項目が全体の長さの外へ押し出されないようにするため
+    // 後ろの項目が全体の長さの外へ押し出されないよう、全体の長さも同じだけずらす
     script.duration = std::max(0.0f, snapshot.originDuration + shift);
 }

@@ -56,6 +56,7 @@ namespace
         j["velocityStretch"] = SafeF(d.velocityStretch);
         j["noiseScale"]      = SafeF(d.noiseScale);
         j["noiseStrength"]   = SafeF(d.noiseStrength);
+        j["followRatio"]     = SafeF(d.followRatio);
 
         j["colorMode"]    = d.colorMode;
         j["renderMode"]   = d.renderMode;
@@ -141,6 +142,8 @@ namespace
         F("velocityStretch", d.velocityStretch);
         F("noiseScale", d.noiseScale);
         F("noiseStrength", d.noiseStrength);
+        // followRatio がない JSON は既定の 0（その場に残る）のまま読む。今までと同じ見た目
+        F("followRatio", d.followRatio);
 
         I("colorMode", d.colorMode);
         I("renderMode", d.renderMode);
@@ -171,7 +174,7 @@ namespace
         STR("texturePath", d.texturePath, sizeof(d.texturePath));
         STR("colorRampPath", d.colorRampPath, sizeof(d.colorRampPath));
     }
-} // namespace
+}
 
 // =====================================================================
 // シリアライズ
@@ -238,7 +241,7 @@ namespace ComponentMetaJson
             }
         }
     };
-} // namespace ComponentMetaJson
+}
 
 // =====================================================================
 // ComponentMeta<GPUParticleComponent>
@@ -733,6 +736,14 @@ struct ComponentMeta<GPUParticleComponent>
 
                 changed |= ImGui::DragFloat(u8"空気抵抗・減衰 (Drag)", &d.drag, 0.05f, 0.0f, 20.0f);
                 Help(u8"速度を毎秒この割合だけ削ります。大きいほど早く止まります。");
+
+                ImGui::SeparatorText(u8"エミッタへの追従 (Follow)");
+                changed |= ImGui::SliderFloat(u8"追従率 (Follow Ratio)", &d.followRatio, 0.0f, 1.0f, "%.2f");
+                Help(u8"生まれた後の粒子を、エミッタが動いた分のこの割合だけ一緒に動かします。\n"
+                     u8"  0 = その場に残る (命中の火花など)\n"
+                     u8"  1 = 完全に付いていく (体にまとうオーラなど)\n"
+                     u8"1 だと体に貼り付いて見えやすいので、少し尾を引かせたいときは 0.7〜0.9。\n"
+                     u8"位置の移動だけに付いていき、回転には付いていきません。");
 
                 ImGui::EndTabItem();
             }

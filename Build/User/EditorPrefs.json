@@ -8,10 +8,10 @@
         "Cinematic": "Assets\\Cinematics",
         "Material": "Assets\\Materials",
         "Model": "Assets\\Models\\Weapon\\Hammer",
-        "Prefab": "Assets\\Prefabs\\Enemy",
+        "Prefab": "Assets\\Prefabs",
         "Scene": "Assets\\Scene\\TestScene",
         "TextEditor": "Assets\\Prefabs\\Enemy",
-        "Texture": "Assets\\Textures\\VFX\\Particle",
+        "Texture": "Assets\\Textures\\VFX\\Trail",
         "Timeline": "Assets\\Timelines"
     }
 }

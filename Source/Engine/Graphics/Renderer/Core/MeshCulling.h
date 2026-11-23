@@ -51,4 +51,4 @@ namespace MeshCull
         return frustum.Contains(worldBox) != DirectX::DISJOINT;
     }
 
-} // namespace MeshCull
+}

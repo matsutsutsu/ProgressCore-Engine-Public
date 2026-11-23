@@ -5,7 +5,7 @@
 
 using namespace CCL::ECS;
 
-void PlayerMoveSystem::Update(float /*dt*/)
+void PlayerMoveSystem::Update(float dt)
 {
     ForEach([&](CharacterMovementComponent &movement,
                 PlayerComponent            &player,
@@ -44,17 +44,9 @@ void PlayerMoveSystem::UpdateGroundLocomotion(PlayerComponent &player, Character
 
     // --- 速さ ---
 
-    if (player.isRunning)
-    {
-        movement.overrideSpeed = player.runSpeed;
-        player.locomotion      = PlayerComponent::GroundLocomotion::Run;
-    }
-    else
-    {
-        // 歩きは overrideSpeed を書かない
-        // 書かなければ、物理が Jolt の walkSpeed で歩かせる
-        player.locomotion = PlayerComponent::GroundLocomotion::Walk;
-    }
+    // 走り中は、走る速さを物理へ依頼する
+    // 歩きは書かない。書かなければ、物理が Jolt の walkSpeed で歩かせる
+    if (player.isRunning) movement.overrideSpeed = player.runSpeed;
 }
 
 

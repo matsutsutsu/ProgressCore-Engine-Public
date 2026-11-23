@@ -100,4 +100,4 @@ namespace CCL::ECS
     private:
         std::vector<PendingOp> m_ops;
     };
-} // namespace CCL::ECS
+}

@@ -14,7 +14,7 @@ namespace
         int      parentOrder; // 親の並び順の位置（親がルートなら -1）
         EntityID parentId;    // 親の EntityID
     };
-} // namespace
+}
 
 void TransformHierarchyCache::Rebuild(World &world)
 {

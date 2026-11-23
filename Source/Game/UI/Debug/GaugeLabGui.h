@@ -34,4 +34,4 @@ namespace CCL::GameUI
         ImGui::SameLine();
         if (ImGui::Button("全快")) hp.currentHealth = maxHp;
     }
-} // namespace CCL::GameUI
+}

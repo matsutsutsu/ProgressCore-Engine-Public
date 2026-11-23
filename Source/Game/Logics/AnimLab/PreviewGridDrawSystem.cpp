@@ -14,11 +14,11 @@ namespace
     const XMFLOAT4 kAxisZColor(0.3f, 0.5f, 1.0f, 1.0f);   // 前後の軸
 
     constexpr float kLift = 0.02f; // 床の面と重なって線がちらつかないよう、少し浮かせる [m]
-} // namespace
+}
 
 
 
-void PreviewGridDrawSystem::Update(float /*dt*/)
+void PreviewGridDrawSystem::Update(float dt)
 {
     if (!m_world->HasResource<ShapeRenderer *>()) return;
     auto *renderer = m_world->GetResource<ShapeRenderer *>();

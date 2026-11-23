@@ -54,6 +54,7 @@
                                 0.0,
                                 0.6000000238418579
                             ],
+                            "followRatio": 1.0,
                             "gravity": 0.0,
                             "intensity": 10.0,
                             "lifespan": [
@@ -152,6 +153,7 @@
                                 0.0,
                                 0.6000000238418579
                             ],
+                            "followRatio": 1.0,
                             "gravity": 1.0,
                             "intensity": 5.0,
                             "lifespan": [
@@ -250,6 +252,7 @@
                                 0.0,
                                 0.6000000238418579
                             ],
+                            "followRatio": 1.0,
                             "gravity": 0.0,
                             "intensity": 2.0,
                             "lifespan": [

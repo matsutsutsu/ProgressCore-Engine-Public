@@ -1,17 +1,25 @@
-// BloomDownsamplePS.hlsl
+// ===========================================================================
+// 概要: ブルームの縮小。1つ上の段の光を、半分の大きさにしながらぼかす
+//
+// 入力: 1つ上の段の光（gTexelSize はこの入力の1ピクセルの大きさ）
+// 出力: 半分の大きさの光
+//
+// 備考: 点の位置は一般的な 13 タップの縮小と同じだが、重みは違う
+//       重みの合計が 1 にならず（約 0.78）、縮小するたびに少し暗くなる
+// ===========================================================================
 #include "Shader/PostProcess/Bloom.hlsli"
 
 float4 main(VS_OUT input) : SV_TARGET
 {
-    float2 uv = input.texcoord;
-    float2 texel = gTexelSize; // 入力テクスチャの1ピクセルサイズ
+    float2 uv    = input.texcoord;
+    float2 texel = gTexelSize;
 
-    // Dual Filter (13-tap)
-    // -----------------------------------------------------
-    // Center
+    // --- 13 点を取る ---
+
+    // 中心
     float3 c_center = gInputTexture.Sample(LinearSampler, uv).rgb;
-    
-    // Inner Box (4 samples)
+
+    // 内側の4点（斜めに1ピクセル）
     float3 c_inner = (
         gInputTexture.Sample(LinearSampler, uv + float2(-1, -1) * texel).rgb +
         gInputTexture.Sample(LinearSampler, uv + float2(1, -1) * texel).rgb +
@@ -19,7 +27,7 @@ float4 main(VS_OUT input) : SV_TARGET
         gInputTexture.Sample(LinearSampler, uv + float2(1, 1) * texel).rgb
     );
 
-    // Outer Box (4 corners + 4 sides = 8 samples)
+    // 外側の8点（2ピクセル離れた四隅と上下左右）
     float3 c_outer = (
         gInputTexture.Sample(LinearSampler, uv + float2(-2, -2) * texel).rgb +
         gInputTexture.Sample(LinearSampler, uv + float2(0, -2) * texel).rgb +
@@ -31,24 +39,16 @@ float4 main(VS_OUT input) : SV_TARGET
         gInputTexture.Sample(LinearSampler, uv + float2(2, 2) * texel).rgb
     );
 
-    // 加重平均
-    // CenterはOuterに含まれる位置(0,0)と重複するため少し調整しても良いが、
-    // ここでは標準的な Dual Filter のウェイトを使用
-    // Inner(4) * 0.5 + Outer(8+Center) * 0.125
-    // ※提示されたコードをベースに少し整理しましたが、元の計算式でもOKです
-    
-    // ユーザー様の元の計算式を採用する場合:
-    float3 color = 0.0f;
-    color += c_inner * 0.5f; // Box (4隅)
-    color += (c_outer + c_center) * 0.125f; // Box (中心周辺)
-    
-    color /= 4.0f; // 正規化
+    // --- 重みを付けて平均する ---
 
-    // 【重要】安全装置
-    if (any(isnan(color)) || any(isinf(color)))
-    {
-        return float4(0, 0, 0, 0);
-    }
+    // 内側を重くした平均（重みの合計はヘッダの備考のとおり 1 にならない）
+    float3 color = 0.0f;
+    color += c_inner * 0.5f;
+    color += (c_outer + c_center) * 0.125f;
+    color /= 4.0f;
+
+    // NaN や無限大は 0 にする。残すと次の段で周りに広がり、黒い四角になる
+    if (any(isnan(color)) || any(isinf(color))) return float4(0, 0, 0, 0);
 
     return float4(color, 1.0f);
 }

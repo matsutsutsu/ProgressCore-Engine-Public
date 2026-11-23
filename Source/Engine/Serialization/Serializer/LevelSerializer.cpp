@@ -165,6 +165,18 @@ bool LevelSerializer::LoadLevel(World *world, const std::string &levelPath)
             {
                 rot = {e["rotation"][0].get<float>(), e["rotation"][1].get<float>(),
                        e["rotation"][2].get<float>(), e["rotation"][3].get<float>()};
+
+                // 長さが1でないクォータニオンは、行列にしたとき長さの2乗で拡大される
+                // JSON を手で書き換えて角度（度）を入れても、モデルが膨らまないよう正規化する
+                const DirectX::XMVECTOR q = DirectX::XMLoadFloat4(&rot);
+                if (DirectX::XMVectorGetX(DirectX::XMVector4LengthSq(q)) > 1e-8f)
+                {
+                    DirectX::XMStoreFloat4(&rot, DirectX::XMQuaternionNormalize(q));
+                }
+                else
+                {
+                    rot = {0, 0, 0, 1};
+                }
             }
             if (e.contains("scale") && e["scale"].is_array() && e["scale"].size() == 3)
             {

@@ -34,7 +34,8 @@ private:
 
     // --- 更新 ---
     // アイコンと文言を書き、文の幅に合わせて並べ直す
-    void ApplyHint(const TutorialStepDef &def, bool assist, const TutorialHintStyleComponent &style);
+    // lockOnPrompt の間は、項目の文の代わりにロックオンを促す1行を出す
+    void ApplyHint(const TutorialStepDef &def, bool assist, bool lockOnPrompt, const TutorialHintStyleComponent &style);
 
     // 今の項目の進み具合をゲージに映す
     void UpdateGauge(const TutorialState &state, const TutorialHintStyleComponent &style, float dt);

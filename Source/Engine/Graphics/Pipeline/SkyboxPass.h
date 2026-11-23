@@ -21,9 +21,9 @@ public:
     void Execute(const RenderFrameContext &ctx) override;
 
 private:
-    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader;
-    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;
-    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cbSkybox;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vertexShader; // 画面を覆う三角形を作る
+    Microsoft::WRL::ComPtr<ID3D11PixelShader>  m_pixelShader;  // 視線方向から空の色を引く
+    Microsoft::WRL::ComPtr<ID3D11Buffer>       m_cbSkybox;     // CbSkybox の定数バッファ
 
     // SkyboxVS.hlsl / SkyboxPS.hlsl の CbSkybox と同じ並び
     struct CbSkybox

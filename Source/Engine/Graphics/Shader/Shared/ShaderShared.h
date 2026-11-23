@@ -194,7 +194,7 @@ namespace GpuData
     static_assert(sizeof(CbShadow) == 240, "CbShadow size mismatch vs HLSL");
     static_assert(sizeof(CbFog) == 64, "CbFog size mismatch vs HLSL");
 
-} // namespace GpuData
+}
 
 #undef ROW_MAJOR
 #undef CB_STRUCT

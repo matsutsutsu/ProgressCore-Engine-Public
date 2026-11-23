@@ -310,15 +310,19 @@ namespace CCL::GameUI
             float         x;     // 行の中で置く横位置（px）
         };
 
-        // 決定を左、選択を右にする。よく押す方を先に読ませる
-        const HintDef defs[] = {
-            {InputIconKind::MenuConfirm, "決定", "HintConfirm", -150.0f},
-            {InputIconKind::MenuNavigate, "選択", "HintNavigate", 30.0f},
-        };
-
         const MenuStyleComponent style  = GetMenuStyle(world);
         const float              iconPx = style.hintIconPx;
         const float              textPx = style.hintTextPx;
+
+        // 決定のアイコンの左端を、ボタンの左端にそろえる
+        // ボタンの幅を変えても、ヒントがボタンの下からずれないようにする
+        const float confirmX = -style.buttonSize.x * 0.5f + iconPx * 0.5f;
+
+        // 決定を左、選択を右にする。よく押す方を先に読ませる
+        const HintDef defs[] = {
+            {InputIconKind::MenuConfirm, "決定", "HintConfirm", confirmX},
+            {InputIconKind::MenuNavigate, "選択", "HintNavigate", confirmX + 180.0f},
+        };
 
         for (const HintDef &d : defs)
         {
@@ -374,4 +378,4 @@ namespace CCL::GameUI
             out.push_back(lbl.ID());
         }
     }
-} // namespace CCL::GameUI
+}

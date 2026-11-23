@@ -109,7 +109,7 @@ namespace
         const float theta = static_cast<float>(index) * kGoldenAngle + sign * speed * t;
         return Vector3(ring * std::cos(theta), y, ring * std::sin(theta)) * radius;
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 最初の状態

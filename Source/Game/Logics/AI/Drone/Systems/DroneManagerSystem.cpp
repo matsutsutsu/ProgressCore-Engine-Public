@@ -10,7 +10,9 @@
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Core/Components/EntityLabel.h"
+#include "Engine/Cinematic/CinematicEvents.h"
 #include <SimpleMath.h>
+#include <algorithm>
 
 #include <imgui.h>
 
@@ -21,16 +23,33 @@ namespace
 {
     constexpr const char *kDronePrefab = "Assets/Prefabs/Enemy/Drone.json";
 
-    constexpr int kInitialSpawnCount = 120; // シーン開始時の配備数。高度合成数を参考に120にした
-} // namespace
+    constexpr int kInitialSpawnCount   = 120; // シーン開始時の配備数。高度合成数を参考に120にした
+    constexpr int kReinforceSpawnCount = 120; // 第2形態の増援。初期と同数で、群れを2倍にする
+
+    // 増援は 0.1 秒ごとに 8 機ずつ、1.5 秒かけて出す
+    // 一度に出すと 80m/s で一瞬で持ち場に着き、リングが急に濃くなるだけに見える
+    constexpr int   kReinforceBatch    = 8;
+    constexpr float kReinforceInterval = 0.1f;
+}
 
 // ---------------------------------------------------------------------------
 // 毎ステップと自動配備
 // ---------------------------------------------------------------------------
 
-void DroneManagerSystem::Update(float /*dt*/)
+void DroneManagerSystem::Initialize()
+{
+    // シグナルはムービーの段から届くので、ここでは印だけ付け、生成は Update で行う
+    ListenEvent<CinematicSignalEvent>([this](const CinematicSignalEvent &ev) {
+        if (ev.name == kReinforceSignal) m_reinforceRequested = true;
+    });
+}
+
+
+
+void DroneManagerSystem::Update(float dt)
 {
     TryAutoSpawnInitial();
+    TryReinforcePhase2(dt);
 
     if (!m_world->HasResource<BattleContext>()) return;
     auto &battle = m_world->GetResource<BattleContext>();
@@ -54,6 +73,43 @@ void DroneManagerSystem::TryAutoSpawnInitial()
         m_autoSpawnDone = true;
         CCL_LOG_INFO(LogCategory::Game, "[DroneManager] シーン開始：初期ドローン %d 機を自動配備", spawned);
     }
+}
+
+
+
+void DroneManagerSystem::TryReinforcePhase2(float dt)
+{
+    // 処理フロー:
+    // 1. 増援を始めるかを決める
+    // 2. 間隔ごとに一団ずつ出す
+
+    // ---------------------------------------------------------
+    // 1. 始める
+    // ---------------------------------------------------------
+
+    // ムービーをスキップするとシグナルは出ない。Boss Debugger で第2形態へ飛ばすとムービー自体が流れない
+    // どちらの場合も、第2形態に入った時点で始める
+    if (!m_reinforceStarted)
+    {
+        if (!m_reinforceRequested && !IsBossInPhase2()) return;
+
+        m_reinforceStarted = true;
+        m_reinforceLeft    = kReinforceSpawnCount;
+        m_reinforceTimer   = 0.0f;
+        CCL_LOG_INFO(LogCategory::Game, "[DroneManager] 第2形態：増援 %d 機の配備を開始", kReinforceSpawnCount);
+    }
+
+    // ---------------------------------------------------------
+    // 2. 一団ずつ出す
+    // ---------------------------------------------------------
+    if (m_reinforceLeft <= 0) return;
+
+    m_reinforceTimer -= dt;
+    if (m_reinforceTimer > 0.0f) return;
+    m_reinforceTimer += kReinforceInterval;
+
+    // ボスがいなくて出せなかったときは、次の間隔でやり直す
+    m_reinforceLeft -= SpawnDrones((std::min)(kReinforceBatch, m_reinforceLeft));
 }
 
 
@@ -86,9 +142,9 @@ void DroneManagerSystem::ReindexAllDrones()
 
         d->localIndex  = idx++;
         d->totalDrones = static_cast<uint16_t>(total);
-    }
 
-    SquadUpdateSystem::AssignNewMembers(*m_world);
+        SquadUpdateSystem::AssignSeat(*d); // 小隊と席は通し番号から決まる
+    }
 }
 
 
@@ -99,6 +155,17 @@ EntityID DroneManagerSystem::FindBoss() const
     for (auto b : bossView)
         return b;
     return InvalidEntityID;
+}
+
+
+
+bool DroneManagerSystem::IsBossInPhase2() const
+{
+    const EntityID boss = FindBoss();
+    if (boss == InvalidEntityID) return false;
+
+    const auto *phase = m_world->GetComponent<BossPhaseComponent>(boss);
+    return phase && phase->phase == BossPhase::Combat2;
 }
 
 

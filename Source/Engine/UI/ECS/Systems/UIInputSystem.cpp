@@ -24,9 +24,9 @@ namespace
     constexpr int VKEY_DOWN   = 0x28;
     constexpr int VKEY_RETURN = 0x0D;
     constexpr int VKEY_SPACE  = 0x20;
-} // namespace
+}
 
-void UIInputSystem::Update(float /*dt*/)
+void UIInputSystem::Update(float dt)
 {
     if (!m_world->HasResource<Input *>()) return;
     Input *input = m_world->GetResource<Input *>();

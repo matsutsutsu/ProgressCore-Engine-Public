@@ -9,25 +9,26 @@
 using namespace CCL::ECS;
 using namespace DirectX::SimpleMath;
 
-static const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("Air_Dive_Start");
-static const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("Air_Dive_Loop");
-
 namespace
 {
+    // 空中ダイブのアニメのステート名のハッシュ（構え / 落下）
+    const uint32_t HASH_STATE_DIVE_START = CCL::Utils::HashString("Air_Dive_Start");
+    const uint32_t HASH_STATE_DIVE_LOOP  = CCL::Utils::HashString("Air_Dive_Loop");
+
     constexpr float kDiveFallSpeed    = 45.0f; // 落ちる速さ（m/秒）
     constexpr float kDiveForwardSpeed = 6.0f;  // 落ちながら前へ進む速さ（m/秒）
-} // namespace
+}
 
 
 
-void PlayerAirDiveSystem::Update(float /*dt*/)
+void PlayerAirDiveSystem::Update(float dt)
 {
     ForEach([&](CharacterMovementComponent      &movement,
                 const AnimStateMachineComponent &fsm,
                 const PlayerComponent           &player) {
         // 構えでは重力を切って空中に止め、溜めてから落ちるように見せる
         // use3DVelocity は重力とジャンプより優先される1ステップ限りの依頼なので、この間は毎ステップ書く
-        if (fsm.currentStateHash == HASH_STATE_DIVE_START)
+        if (fsm.GetCurrentStateHash() == HASH_STATE_DIVE_START)
         {
             movement.use3DVelocity = true;
             movement.velocity3D    = Vector3::Zero;
@@ -35,7 +36,7 @@ void PlayerAirDiveSystem::Update(float /*dt*/)
         }
 
         // 落下は向いている方へ少し進めながら落とす。着地すればグラフが Air_Dive_End へ移り、ここで書かなくなる
-        if (fsm.currentStateHash == HASH_STATE_DIVE_LOOP)
+        if (fsm.GetCurrentStateHash() == HASH_STATE_DIVE_LOOP)
         {
             const Vector3 forward(std::sin(player.currentYaw), 0.0f, std::cos(player.currentYaw));
             movement.use3DVelocity = true;

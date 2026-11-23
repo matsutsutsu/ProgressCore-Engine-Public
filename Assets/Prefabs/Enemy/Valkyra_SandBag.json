@@ -6,10 +6,7 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": {},
                 "Character Movement": {
                     "currentVelocity": [
                         2.802596928649634e-45,

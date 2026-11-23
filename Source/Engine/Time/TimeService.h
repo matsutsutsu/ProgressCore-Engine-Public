@@ -14,7 +14,7 @@ namespace CCL
     {
         class World;
     }
-} // namespace CCL
+}
 
 namespace Time
 {
@@ -55,4 +55,4 @@ namespace Time
     // 描画の段はポーズ中も実時間で走るので、realDt のままだと止まった世界へカメラだけが追いつこうとする
     // スローとヒットストップは掛けない（カメラは実時間で動かす方が手触りがよい）
     float PresentationDt(CCL::ECS::World &world, float realDt);
-} // namespace Time
+}

@@ -1,13 +1,14 @@
 #include "Editor/Windows/General/RenderTargetVisualizer.h"
 #include "Engine/Graphics/RHI/RenderTarget.h"
 #include "Engine/Graphics/RHI/GpuResourceUtils.h"
+#include "Engine/Graphics/Shader/ShaderResources.h"
 #include <algorithm>
 
 namespace
 {
     // サムネイル用なので、変換後の幅はここで頭打ちにする（VRAM と GPU の負荷を抑える）
     constexpr uint32_t kMaxBakeWidth = 512;
-} // namespace
+}
 
 bool RenderTargetVisualizer::EnsureInitialized(ID3D11Device *device)
 {
@@ -117,10 +118,10 @@ namespace
             dc->IAGetIndexBuffer(ib.GetAddressOf(), &ibFormat, &ibOffset);
             dc->VSGetShader(vs.GetAddressOf(), nullptr, nullptr);
             dc->PSGetShader(ps.GetAddressOf(), nullptr, nullptr);
-            dc->PSGetConstantBuffers(0, 1, psCb0.GetAddressOf());
-            dc->PSGetShaderResources(0, 1, psSrv0.GetAddressOf());
-            dc->PSGetShaderResources(1, 1, psSrv1.GetAddressOf());
-            dc->PSGetSamplers(0, 1, psSampler0.GetAddressOf());
+            dc->PSGetConstantBuffers(SLOT_CB_RT_DEBUG, 1, psCb0.GetAddressOf());
+            dc->PSGetShaderResources(SLOT_SRV_RT_DEBUG, 1, psSrv0.GetAddressOf());
+            dc->PSGetShaderResources(SLOT_SRV_RT_DEBUG_ARRAY, 1, psSrv1.GetAddressOf());
+            dc->PSGetSamplers(SLOT_SMP_DEFAULT, 1, psSampler0.GetAddressOf());
         }
 
         void Restore(ID3D11DeviceContext *dc) const
@@ -137,16 +138,16 @@ namespace
             dc->VSSetShader(vs.Get(), nullptr, 0);
             dc->PSSetShader(ps.Get(), nullptr, 0);
             ID3D11Buffer *cbPtr = psCb0.Get();
-            dc->PSSetConstantBuffers(0, 1, &cbPtr);
+            dc->PSSetConstantBuffers(SLOT_CB_RT_DEBUG, 1, &cbPtr);
             ID3D11ShaderResourceView *srv0Ptr = psSrv0.Get();
-            dc->PSSetShaderResources(0, 1, &srv0Ptr);
+            dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG, 1, &srv0Ptr);
             ID3D11ShaderResourceView *srv1Ptr = psSrv1.Get();
-            dc->PSSetShaderResources(1, 1, &srv1Ptr);
+            dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG_ARRAY, 1, &srv1Ptr);
             ID3D11SamplerState *smpPtr = psSampler0.Get();
-            dc->PSSetSamplers(0, 1, &smpPtr);
+            dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smpPtr);
         }
     };
-} // namespace
+}
 
 ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext      *dc,
                                                             ID3D11ShaderResourceView *src, uint32_t w, uint32_t h, const RTVisualizeParams &p)
@@ -202,31 +203,31 @@ ID3D11ShaderResourceView *RenderTargetVisualizer::Visualize(ID3D11DeviceContext 
     dc->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     dc->VSSetShader(m_vs.Get(), nullptr, 0);
     dc->PSSetShader(m_ps.Get(), nullptr, 0);
-    dc->PSSetConstantBuffers(0, 1, m_cb.GetAddressOf());
+    dc->PSSetConstantBuffers(SLOT_CB_RT_DEBUG, 1, m_cb.GetAddressOf());
     ID3D11SamplerState *smp = m_sampler.Get();
-    dc->PSSetSamplers(0, 1, &smp);
+    dc->PSSetSamplers(SLOT_SMP_DEFAULT, 1, &smp);
     dc->OMSetBlendState(m_opaqueBlendState.Get(), nullptr, 0xFFFFFFFF);
     dc->OMSetDepthStencilState(m_noDepthState.Get(), 0);
 
-    // src を t0（Texture2D）か t1（Texture2DArray）にバインドする
+    // src を、Texture2D と Texture2DArray のうち合う方のスロットにバインドし、もう一方は外す
     ID3D11ShaderResourceView *nullSRV = nullptr;
     if (p.useArray != 0)
     {
-        dc->PSSetShaderResources(0, 1, &nullSRV);
-        dc->PSSetShaderResources(1, 1, &src);
+        dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG_ARRAY, 1, &src);
     }
     else
     {
-        dc->PSSetShaderResources(0, 1, &src);
-        dc->PSSetShaderResources(1, 1, &nullSRV);
+        dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG, 1, &src);
+        dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG_ARRAY, 1, &nullSRV);
     }
 
     rt->Activate(dc); // RTV とビューポートを RenderTarget のサイズに設定する
     dc->Draw(3, 0);
 
     // 描画後はすぐ SRV と RTV を外してから、退避したステートを復元する
-    dc->PSSetShaderResources(0, 1, &nullSRV);
-    dc->PSSetShaderResources(1, 1, &nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG, 1, &nullSRV);
+    dc->PSSetShaderResources(SLOT_SRV_RT_DEBUG_ARRAY, 1, &nullSRV);
     dc->OMSetRenderTargets(0, nullptr, nullptr);
 
     backup.Restore(dc);

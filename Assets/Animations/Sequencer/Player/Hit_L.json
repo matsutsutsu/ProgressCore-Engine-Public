@@ -1,6 +1,32 @@
 {
     "duration": 0.8333332538604736,
-    "events": [],
+    "events": [
+        {
+            "attackLayer": 0,
+            "cancelMask": 32,
+            "damage": 0.0,
+            "effectAttachTag": "",
+            "effectFollow": false,
+            "effectScale": 1.0,
+            "endTime": 0.8333332538604736,
+            "hitStopDuration": 0.0,
+            "hitStopScale": 1.0,
+            "hitboxFollow": false,
+            "knockback": 0.0,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "radius": 1.0,
+            "soundPitch": 0.0,
+            "soundPitchRandom": 0.0,
+            "soundVolume": 1.0,
+            "startTime": 0.5,
+            "stringParam": "",
+            "type": 7
+        }
+    ],
     "rootMotionCurve": {
         "color": 4286643968,
         "keys": [],
@@ -18,6 +44,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Hit_Combat_L_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Hit_Combat_L_Seq_0"
 }

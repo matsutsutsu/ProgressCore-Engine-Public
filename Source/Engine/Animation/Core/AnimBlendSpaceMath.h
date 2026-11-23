@@ -209,4 +209,4 @@ namespace CCL::Anim
             ComputeWeightsDirectional2D(xs, ys, count, inputX, inputY, outWeights);
         }
     }
-} // namespace CCL::Anim
+}

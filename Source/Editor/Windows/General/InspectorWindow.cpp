@@ -45,7 +45,7 @@ namespace
         if (cat == "Misc") return "その他";
         return nullptr; // 未知カテゴリは元の名前を使う
     }
-} // namespace
+}
 
 InspectorWindow::InspectorWindow() : EditorWindow("Inspector") {}
 

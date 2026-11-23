@@ -82,4 +82,4 @@ namespace CCL::ECS
         void (*copyFunc)(void *, const void *) = nullptr;
     };
 
-} // namespace CCL::ECS
+}

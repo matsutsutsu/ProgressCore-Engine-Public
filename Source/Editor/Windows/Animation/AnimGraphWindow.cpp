@@ -96,7 +96,7 @@ namespace
         }
         return nullptr;
     }
-} // namespace
+}
 
 
 
@@ -150,7 +150,7 @@ static void DumpTransition(std::stringstream &ss, const AnimStateGraph &graph, c
     std::string targetName = "Unknown";
     for (const auto &s : graph.states)
     {
-        if (s.stateHash == t.targetStateHash) targetName = s.sequenceName;
+        if (s.stateHash == t.targetStateHash) targetName = s.stateName;
     }
     ss << "  => " << targetName
        << "  (Blend: " << std::fixed << std::setprecision(2) << t.blendDuration
@@ -192,7 +192,7 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
     {
         if (s.stateHash == graph.entryStateHash)
         {
-            entryName = s.sequenceName;
+            entryName = s.stateName;
             break;
         }
     }
@@ -217,13 +217,13 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
     {
         if (state.isSubMachine)
         {
-            ss << "[ SUB MACHINE ] " << state.sequenceName << "  (中身は後ろに続く)\n";
+            ss << "[ SUB MACHINE ] " << state.stateName << "  (中身は後ろに続く)\n";
         }
         else if (state.isBlendSpace)
         {
             const AnimBlendSpace &bs = state.blendSpace;
             const bool            is1D = (bs.type == AnimBlendSpaceType::Blend1D);
-            ss << "[ BLEND SPACE ] " << state.sequenceName << "  (" << (is1D ? "1D" : "2D Directional") << ")\n";
+            ss << "[ BLEND SPACE ] " << state.stateName << "  (" << (is1D ? "1D" : "2D Directional") << ")\n";
             ss << "  Param:  X=" << (bs.paramXName.empty() ? "None" : bs.paramXName);
             if (!is1D) ss << "  Y=" << (bs.paramYName.empty() ? "None" : bs.paramYName);
             ss << "  Smoothing=" << std::fixed << std::setprecision(2) << bs.smoothingTime << "s\n";
@@ -237,7 +237,7 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
         }
         else
         {
-            ss << "[ STATE ] " << state.sequenceName << "\n";
+            ss << "[ STATE ] " << state.stateName << "\n";
             ss << "  File:   " << (state.sequenceFilePath.empty() ? "None" : state.sequenceFilePath) << "\n";
             ss << "  Loop:   " << (state.isLoop ? "True" : "False") << "\n";
             ss << "  Speed:  " << std::fixed << std::setprecision(2) << state.playbackSpeed << "x\n";
@@ -264,7 +264,7 @@ static void DumpAnimGraph(std::stringstream &ss, const AnimStateGraph &graph, co
         if (!state.isSubMachine || !state.subGraph) continue;
 
         ss << "\n";
-        DumpAnimGraph(ss, *state.subGraph, path + state.sequenceName + "/");
+        DumpAnimGraph(ss, *state.subGraph, path + state.stateName + "/");
     }
 }
 
@@ -411,7 +411,7 @@ void AnimGraphWindow::RenameState(uint32_t oldHash, std::string newName)
             break;
         }
     }
-    if (state->sequenceName == newName) return;
+    if (state->stateName == newName) return;
 
     // ハッシュを張り替える前に控える
     //   CurrentView は m_editPath のハッシュで階層を辿るので、張り替えの途中で呼ぶと root へ戻ってしまう
@@ -426,7 +426,7 @@ void AnimGraphWindow::RenameState(uint32_t oldHash, std::string newName)
     //   一意化に通すと、自分自身と重なったと見なされて連番が付く
     if (CCL::Utils::HashString(newName.c_str()) == oldHash)
     {
-        state->sequenceName = newName;
+        state->stateName = newName;
         return;
     }
     const uint32_t newHash = MakeUniqueStateHash(newName);
@@ -459,7 +459,7 @@ void AnimGraphWindow::RenameState(uint32_t oldHash, std::string newName)
     }
     Patch(m_transitionSourceHash);
 
-    state->sequenceName = newName;
+    state->stateName = newName;
     state->stateHash    = newHash;
 
     // ---------------------------------------------------------
@@ -512,7 +512,7 @@ void AnimGraphWindow::DrawBreadcrumb()
         for (auto &s : g->states)
             if (s.stateHash == m_editPath[i])
             {
-                name = s.sequenceName.c_str();
+                name = s.stateName.c_str();
                 sub  = &s;
                 break;
             }
@@ -587,7 +587,7 @@ void AnimGraphWindow::DrawContents(EditorContext &context)
         auto *fsm = context.world->GetComponent<AnimStateMachineComponent>(context.selectedEntity);
         if (fsm)
         {
-            m_runtimeActiveStateHash = fsm->currentStateHash;
+            m_runtimeActiveStateHash = fsm->GetCurrentStateHash();
         }
 
         auto *animator = context.world->GetComponent<AnimatorComponent>(context.selectedEntity);
@@ -856,9 +856,9 @@ void AnimGraphWindow::DrawNodeWorkspace()
                                   : (isActive ? ImVec4(0.2f, 0.5f, 0.8f, 1.0f)
                                               : idleColor);
 
-        std::string title = state.sequenceName;
-        if (state.isSubMachine) title = "[Sub] " + state.sequenceName;
-        if (state.isBlendSpace) title = "[BS] " + state.sequenceName;
+        std::string title = state.stateName;
+        if (state.isSubMachine) title = "[Sub] " + state.stateName;
+        if (state.isBlendSpace) title = "[BS] " + state.stateName;
         DrawBlockNode(StateNodeId(state.stateHash), state.stateHash, title.c_str(), nodeBgColor, isActive);
         if (m_needRestorePositions)
             ed::SetNodePosition(StateNodeId(state.stateHash), ImVec2(state.nodePosX, state.nodePosY));
@@ -1378,7 +1378,7 @@ void AnimGraphWindow::DrawStateSettings(int nodeId)
         //   1文字ごとに反映すると、入力途中の名前ごとにハッシュを取り直してしまう
         if (m_stateNameHash != state.stateHash)
         {
-            strncpy_s(m_stateNameBuf, sizeof(m_stateNameBuf), state.sequenceName.c_str(), _TRUNCATE);
+            strncpy_s(m_stateNameBuf, sizeof(m_stateNameBuf), state.stateName.c_str(), _TRUNCATE);
             m_stateNameHash   = state.stateHash;
             m_stateNameEdited = false;
         }
@@ -1488,7 +1488,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
         {
             if (s.stateHash == ref->srcHash)
             {
-                fromName = s.sequenceName;
+                fromName = s.stateName;
                 for (auto &t : s.transitions)
                     if (t.targetStateHash == ref->dstHash)
                     {
@@ -1505,7 +1505,7 @@ void AnimGraphWindow::DrawTransitionSettings(int linkId)
     for (const auto &s : m_currentGraph.states)
         if (s.stateHash == ref->dstHash)
         {
-            toName = s.sequenceName;
+            toName = s.stateName;
             break;
         }
 
@@ -1698,7 +1698,7 @@ void AnimGraphWindow::HandleContextMenu()
                 if (StateNodeId(s.stateHash) == s_contextNodeId)
                 {
                     ctxHash = s.stateHash;
-                    ctxName = s.sequenceName.c_str();
+                    ctxName = s.stateName.c_str();
                     break;
                 }
         }
@@ -1740,8 +1740,8 @@ void AnimGraphWindow::HandleContextMenu()
                     if (s.stateHash == ctxHash)
                     {
                         AnimState copy = s;
-                        copy.sequenceName += "_Copy";
-                        copy.stateHash = MakeUniqueStateHash(copy.sequenceName);
+                        copy.stateName += "_Copy";
+                        copy.stateHash = MakeUniqueStateHash(copy.stateName);
                         copy.nodePosX += 30.0f;
                         copy.nodePosY += 30.0f;
                         copy.transitions.clear(); // 遷移は引き継がない
@@ -1798,7 +1798,7 @@ void AnimGraphWindow::HandleContextMenu()
             std::string nm = m_newStateName;
             AnimState   newState;
             newState.stateHash    = MakeUniqueStateHash(nm); // 階層全体で一意化
-            newState.sequenceName = nm;
+            newState.stateName = nm;
 
             ImVec2 canvasPos  = ed::ScreenToCanvas(m_newNodeSpawnPos);
             newState.nodePosX = canvasPos.x;
@@ -1821,7 +1821,7 @@ void AnimGraphWindow::HandleContextMenu()
             std::string nm = m_newStateName;
             AnimState   sub;
             sub.stateHash    = MakeUniqueStateHash(nm);
-            sub.sequenceName = nm;
+            sub.stateName = nm;
             sub.isSubMachine = true;
             sub.subGraph     = std::make_unique<AnimStateGraph>(); // 空の子グラフ
 
@@ -1844,7 +1844,7 @@ void AnimGraphWindow::HandleContextMenu()
             std::string nm = m_newStateName;
             AnimState   blend;
             blend.stateHash    = MakeUniqueStateHash(nm);
-            blend.sequenceName = nm;
+            blend.stateName = nm;
             blend.isBlendSpace = true;
 
             ImVec2 canvasPos = ed::ScreenToCanvas(m_newNodeSpawnPos);

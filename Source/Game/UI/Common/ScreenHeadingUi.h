@@ -192,4 +192,4 @@ namespace CCL::GameUI
         out.push_back(SpawnTypedText(world, name, value, style.ValueX(), y, style.rowPx,
                                      valueColor ? *valueColor : style.value, valueDelay, canvas));
     }
-} // namespace CCL::GameUI
+}

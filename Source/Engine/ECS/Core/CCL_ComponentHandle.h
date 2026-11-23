@@ -66,4 +66,4 @@ namespace CCL::ECS
         EntityID m_id;
     };
 
-} // namespace CCL::ECS
+}

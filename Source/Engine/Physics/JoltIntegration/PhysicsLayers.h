@@ -72,7 +72,7 @@ namespace PhysicsLayers
     {
         return layer == NON_MOVING || layer == INVISIBLE_WALL;
     }
-} // namespace PhysicsLayers
+}
 
 // ============================================================
 // BroadPhaseLayer（ブロードフェーズの区分け）。数が少なく設計判断そのものなので手書きで管理する
@@ -82,7 +82,7 @@ namespace BroadPhaseLayers
     static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
     static constexpr JPH::BroadPhaseLayer MOVING(1); // 動くもの全般（PLAYER/BOSS/攻撃レイヤーをまとめる）
     static constexpr JPH::uint            NUM_LAYERS(2);
-} // namespace BroadPhaseLayers
+}
 
 // ============================================================
 // 衝突フィルタ（実装は PhysicsLayers.cpp）

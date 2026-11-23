@@ -93,4 +93,4 @@ namespace CCL::AI::BT
         std::vector<TypeID> m_extraReads;  // 全登録分の Read 申告の和集合
     };
 
-} // namespace CCL::AI::BT
+}

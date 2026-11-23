@@ -49,4 +49,4 @@ namespace Prefab
     // 読み込んだプレハブの JSON のキャッシュを捨てる（次の SpawnPrefab で読み直す）
     void ClearPrefabCache();
 
-} // namespace Prefab
+}

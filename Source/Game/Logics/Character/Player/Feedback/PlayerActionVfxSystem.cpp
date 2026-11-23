@@ -21,7 +21,7 @@ namespace
 
     // ダッシュとジャスト回避の VFX を出す高さ。足元から上へずらす（m）
     constexpr float kVfxYOffset = 2.0f;
-} // namespace
+}
 
 void PlayerActionVfxSystem::Initialize()
 {

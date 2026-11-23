@@ -207,7 +207,7 @@ namespace
     {
         return ReadArchiveBytes(file, &out, sizeof(T), encrypted);
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // パスと一覧
@@ -329,7 +329,8 @@ bool FileSystem::Exists(const std::string &virtualPath)
 
 
 std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
-                                               const std::string &extension)
+                                               const std::string &extension,
+                                               bool               recursive)
 {
     std::vector<std::string>        result;
     std::unordered_set<std::string> seen; // アーカイブとディスクの両方にある名前を1つにまとめる（小文字の名前）
@@ -345,38 +346,46 @@ std::vector<std::string> FileSystem::ListFiles(const std::string &virtualDir,
     };
 
     // ---- アーカイブ ----
-    // 目次から「このフォルダの直下」にあるものを拾う
+    // 目次から「このフォルダの中」にあるものを拾う。recursive でなければ直下だけ
     const std::string dirKey = NormalizePath(virtualDir, true) + "/";
     for (const auto &[key, entry] : g_archiveEntries)
     {
         if (key.compare(0, dirKey.size(), dirKey) != 0) continue;
-        if (key.find('/', dirKey.size()) != std::string::npos) continue; // さらに下のフォルダの中
+        if (!recursive && key.find('/', dirKey.size()) != std::string::npos) continue; // さらに下のフォルダの中
 
-        const std::string fileName = entry.path.substr(entry.path.find_last_of('/') + 1); // 元の大文字小文字のまま
-        if (!matchesExtension(fileName)) continue;
+        // フォルダからの相対パス（元の大文字小文字のまま）。直下ならファイル名だけ
+        //   鍵は entry.path を小文字にしただけで長さが同じなので、同じ位置で切れる
+        const std::string relativePath = entry.path.substr(dirKey.size());
+        if (!matchesExtension(relativePath)) continue;
         if (!seen.insert(key.substr(dirKey.size())).second) continue;
 
-        result.push_back(virtualDir + "/" + fileName);
+        result.push_back(virtualDir + "/" + relativePath);
     }
 
     // ---- ディスク ----
     const auto dir = ResolvePhysicalPath(virtualDir);
 
+    // 1ファイルを結果に足す（直下だけ探すときと、下のフォルダまで探すときで共通）
+    auto addDiskFile = [&](const std::filesystem::directory_entry &entry) {
+        if (!entry.is_regular_file()) return;
+
+        // フォルダからの相対パス（/ 区切り）。直下ならファイル名だけ
+        const std::string relativePath = entry.path().lexically_relative(dir).generic_string();
+        if (!matchesExtension(relativePath)) return;
+        if (!seen.insert(NormalizePath(relativePath, true)).second) return;
+
+        // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる
+        result.push_back(virtualDir + "/" + relativePath);
+    };
+
     // ディレクトリがないのは異常ではない（その種類のアセットをまだ作っていないだけ）
     std::error_code ec;
     if (std::filesystem::is_directory(dir, ec))
     {
-        for (const auto &entry : std::filesystem::directory_iterator(dir, ec))
-        {
-            if (!entry.is_regular_file()) continue;
-
-            const std::string fileName = entry.path().filename().string();
-            if (!matchesExtension(fileName)) continue;
-            if (!seen.insert(NormalizePath(fileName, true)).second) continue;
-
-            // 物理パスではなく仮想パスで返す。呼び出し側がそのまま ReadAllText へ渡せる
-            result.push_back(virtualDir + "/" + fileName);
-        }
+        if (recursive)
+            for (const auto &entry : std::filesystem::recursive_directory_iterator(dir, ec)) addDiskFile(entry);
+        else
+            for (const auto &entry : std::filesystem::directory_iterator(dir, ec)) addDiskFile(entry);
     }
 
     // ファイルシステムの列挙順は保証がない。並びが実行のたびに変わると、

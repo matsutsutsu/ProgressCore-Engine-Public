@@ -362,4 +362,4 @@ namespace CCL::AI::Formation
         return true;
     }
 
-} // namespace CCL::AI::Formation
+}

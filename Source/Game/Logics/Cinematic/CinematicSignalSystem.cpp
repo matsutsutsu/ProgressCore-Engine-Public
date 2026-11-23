@@ -1,5 +1,6 @@
 #include "Game/Logics/Cinematic/CinematicSignalSystem.h"
 #include "Game/UI/Common/ScreenHeadingUi.h"
+#include "Game/Logics/AI/Drone/Systems/DroneManagerSystem.h"
 #include "Engine/ECS/Core/CCL_World.h"
 #include "Engine/Platform/Core/Logger.h"
 #include "Engine/Time/TimeService.h"
@@ -25,7 +26,7 @@ namespace
     // 入れ物ごと左下へ置けば、解像度が変わっても画面の下端からの距離が保たれる
     constexpr DirectX::XMFLOAT2 kTelopBoxSize   = {1400.0f, 360.0f};
     constexpr DirectX::XMFLOAT2 kTelopBoxOffset = {0.0f, -40.0f}; // 下端から少し浮かせる
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 入口とシグナルの振り分け
@@ -48,18 +49,19 @@ void CinematicSignalSystem::Update(float dt)
 {
     dt = Time::PresentationDt(*m_world, dt);
 
+    // 届いたシグナルを1つずつ処理し、テロップを出す
     std::vector<CinematicSignalEvent> pending;
     pending.swap(m_pending);
-    for (const auto &ev : pending)
-        HandleSignal(ev);
+    for (const auto &ev : pending) HandleSignal(ev);
 
+    // スキップで終わったら、出ているテロップをすぐ消え始めさせる
     if (m_dismissTelops)
     {
-        for (auto &telop : m_telops)
-            telop.remain = 0.0f;
+        for (auto &telop : m_telops) telop.remain = 0.0f;
         m_dismissTelops = false;
     }
 
+    // テロップの残り時間を進め、消えきったものを破棄する
     UpdateTelops(dt);
 }
 
@@ -72,6 +74,9 @@ void CinematicSignalSystem::HandleSignal(const CinematicSignalEvent &ev)
         SpawnTelop(ev.param, ev.param2, ev.value > 0.0f ? ev.value : kDefaultTelopSeconds);
         return;
     }
+
+    // 増援は DroneManagerSystem が受ける
+    if (ev.name == DroneManagerSystem::kReinforceSignal) return;
 
     // エンジンは名前の意味を知らないので、台本の読み込みでは打ち間違いに気付けない
     // 黙って捨てると気付く場所がなくなるので、受け手のここで知らせる

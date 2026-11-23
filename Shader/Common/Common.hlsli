@@ -6,18 +6,17 @@
 #include "Shader/Pass/ShadowMap/ShadowMap.hlsli"
 
 
-// プロジェクトで使う「最大公約数」的な頂点出力構造体
+// 3D のマテリアルの頂点シェーダーの出力。どのマテリアルも同じ形にして、PS を入れ替えられるようにする
 struct VS_OUT
 {
     float4 vertex : SV_POSITION;
     float2 texcoord : TEXCOORD;
-    float3 normal : NORMAL;
-    float4 position : POSITION;
-    float4 tangent : TANGENT;
+    float3 normal : NORMAL;       // ワールド空間
+    float4 position : POSITION;   // ワールド座標
+    float4 tangent : TANGENT;     // ワールド空間。w は従法線の向き（±1）
     float4 shadowPos : SHADOW_POS;
 
-    // 個体ごとの汎用パラメータを受け渡す
-    float4 customParams : CUSTOM_PARAMS;
+    float4 customParams : CUSTOM_PARAMS; // インスタンスごとの汎用の値（InstanceData.customParams）
 };
 
 

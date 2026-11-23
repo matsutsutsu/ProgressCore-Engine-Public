@@ -31,7 +31,7 @@ namespace
         sprintf_s(path, "Assets/Models/Building/Scifi-Building_%02d.glb", modelIndex0 + 1);
         return std::string(path);
     }
-} // namespace
+}
 
 // =========================================================================
 // UI

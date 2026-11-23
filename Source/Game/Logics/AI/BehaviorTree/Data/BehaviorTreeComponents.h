@@ -38,6 +38,7 @@ struct AIBlackboard
     float accumulatedDamage      = 0.0f;    // 前回 A_ResetDamage してからの被弾量（ダメージの値そのもの）
     float accumulatedDamageRatio = 0.0f;    // accumulatedDamage を最大 HP で割ったもの（%）
     float timeSinceLastHit       = 9999.0f; // 直近の被弾からの経過時間（秒）
+    float battleTime             = 0.0f;    // 戦いが動いていた時間の合計（秒）。ムービー中・決着後は進まない
 };
 
 // UtilitySelector の子が候補に入ったか。入らなかったならその理由（デバッグ表示用）

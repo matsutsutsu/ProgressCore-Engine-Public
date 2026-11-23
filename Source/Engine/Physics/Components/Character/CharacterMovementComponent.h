@@ -15,6 +15,7 @@
 // ===========================================================================
 #include <SimpleMath.h>
 #include <cstdint>
+#include <optional>
 
 // MoveTo の進み方
 enum class MoveEase : uint8_t
@@ -27,9 +28,12 @@ enum class MoveEase : uint8_t
 // MoveTo の細かい指定。指定しなければ、等速で浮かない
 struct MoveToOptions
 {
-    float    height   = 0.0f;             // 途中で浮く高さ [m]。中間で最大、両端で 0
-    MoveEase ease     = MoveEase::Linear; // 進み方
-    float    maxSpeed = 150.0f;           // 速さの上限 [m/s]。引っかかった遅れを一気に取り戻さない
+    float                height             = 0.0f;             // 途中で浮く高さ [m]。中間で最大、両端で 0
+    MoveEase             ease               = MoveEase::Linear; // 進み方
+    std::optional<float> verticalStartSpeed = std::nullopt;     // 縦の始めの速さ [m/s]（+ が上）。指定すると、高さだけ等加速度で動く
+                                                                //   始めにこの速さで出て、時間ちょうどに終点の高さへ着く（重力で投げた動き）
+                                                                //   指定しなければ、高さも ease で進む
+    float                maxSpeed           = 0.0f;             // 速さの上限 [m/s]。0 で上限なし。引っかかった遅れを一気に取り戻させたくないときだけ付ける
 };
 
 // 予約の種類
@@ -58,6 +62,33 @@ struct CharacterMoveReservation
     bool                         stopNext = false; // 次の物理更新で速度を 0 にする（終点で滑らない）
     float                        leftover = 0.0f;  // 終わったときに余った時間 [秒]。続けて予約した次へ引き継ぐ
 };
+
+// 予約した移動（MoveTo / Hold）で、進み具合 u（0=始め, 1=終わり）のときにいるべき位置を返す
+// 物理（JoltCharacterUpdateSystem）とデバッグ描画が同じ式を使う。2か所で持つと、描いた線と実際の動きが食い違う
+inline DirectX::SimpleMath::Vector3 ReservationPlannedPosition(const CharacterMoveReservation &r, float u)
+{
+    // 進み方に合わせて、u を進んだ割合に直す
+    // 1-(1-u)^2 は u=1 で傾き 0、u^2 は u=0 で傾き 0
+    float eased = u;
+    if (r.options.ease == MoveEase::EaseOut) eased = 1.0f - (1.0f - u) * (1.0f - u);
+    if (r.options.ease == MoveEase::EaseIn) eased = u * u;
+
+    DirectX::SimpleMath::Vector3 plannedPos = DirectX::SimpleMath::Vector3::Lerp(r.start, r.target, eased);
+
+    // 縦の始めの速さがあれば、高さだけ等加速度で動かす
+    // y = 始めの高さ + v*t + a*t^2/2。a は「時間ちょうどに終点の高さへ着く」ように決める
+    if (r.options.verticalStartSpeed && r.duration > 0.0f)
+    {
+        const float startSpeed   = *r.options.verticalStartSpeed;
+        const float elapsedTime  = u * r.duration;
+        const float acceleration = 2.0f * ((r.target.y - r.start.y) - startSpeed * r.duration) / (r.duration * r.duration);
+        plannedPos.y = r.start.y + startSpeed * elapsedTime + 0.5f * acceleration * elapsedTime * elapsedTime;
+    }
+
+    // 途中で浮かせる。4h*u(1-u) は両端で 0
+    plannedPos.y += 4.0f * r.options.height * u * (1.0f - u);
+    return plannedPos;
+}
 
 struct CharacterMovementComponent
 {
@@ -91,6 +122,7 @@ struct CharacterMovementComponent
     // --- 結果（JoltCharacterUpdateSystem だけが書く）---
 
     // 物理へ渡した水平速度 [m/s]。慣性込み、壁に当たる前の値
+    // use3DVelocity の依頼の後は、縦の速さもしばらく残る。水平だけ使うときは y を 0 にする
     DirectX::SimpleMath::Vector3 currentVelocity = {0, 0, 0};
 
 

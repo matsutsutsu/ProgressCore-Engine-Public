@@ -18,9 +18,9 @@ namespace
 
     constexpr float kBreakawayTime   = 1.6f; // 突き抜けた後に減速する時間 [秒]
     constexpr float kArriveThreshold = 2.5f; // 陣形スロットへ到着とみなす距離 [m]
-} // namespace
+}
 
-void DroneBrainSystem::Update(float /*dt*/)
+void DroneBrainSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. プレイヤーの位置を読む
@@ -57,12 +57,14 @@ void DroneBrainSystem::Update(float /*dt*/)
         // 攻撃命令の流れ ボスBT → BossCommandComponent → DroneCommandSystem 
         if (drone.wantsAttack)
         {
+            const auto *formation = formations ? formations->Get(drone.currentFormation) : nullptr;
+
             // 攻撃に入った瞬間に通る
             //  currentState がまだ FireCharge でない＝今フレームが突入フレーム
             if (drone.currentState != DroneState::FireCharge)
             {
-                // 技が見つからなければ、既定と同じ直進の始め方にする
-                if (const auto *formation = formations ? formations->Get(drone.currentFormation) : nullptr)
+                // 技にタメと撃つ方向を準備させる。技が見つからなければ、既定と同じ直進の始め方にする
+                if (formation)
                     formation->OnChargeBegin(drone, chargeInfo);
                 else
                     CCL::AI::Motion::BeginStraightCharge(drone, chargeInfo);
@@ -72,9 +74,12 @@ void DroneBrainSystem::Update(float /*dt*/)
                 drone.breakawayTimer = 0.0f; // 離脱中に次の合図が来たら、離脱の残りを捨てる
             }
 
+            // 飛距離の起点と経過時間を記録する
+            TrackChargeFlight(formation, trans, drone, dt);
+
             // 自分で終了を決める技（弾幕）だけがここで離脱へ移る
-            //  小隊攻撃などは HasFinishedCharge が false を返し続け、合図が下りるまで突撃を続ける
-            if (HasFinishedCharge(formations, trans, drone, dt))
+            //  小隊攻撃などは false を返し続け、合図が下りるまで突撃を続ける
+            if (IsChargeFinished(formation, trans, drone))
             {
                 drone.wantsAttack    = false;
                 drone.breakawayTimer = kBreakawayTime;
@@ -117,26 +122,33 @@ void DroneBrainSystem::Update(float /*dt*/)
 
 
 
-bool DroneBrainSystem::HasFinishedCharge(const CCL::AI::Formation::FormationRegistry *formations,
-                                         const TransformComponent                      &trans,
-                                         DroneComponent                                &drone,
-                                         float                                          dt) const
+void DroneBrainSystem::TrackChargeFlight(const CCL::AI::Formation::IFormation *formation,
+                                         const TransformComponent             &trans,
+                                         DroneComponent                       &drone,
+                                         float                                 dt) const
 {
+    const ChargeMode mode = formation ? formation->GetChargeMode() : ChargeMode::Straight;
+
     // まだ飛び出していない間は、飛距離の起点を今の位置に置き直し続ける
     // FireCharge へ入った瞬間に固定すると、弾幕は中央へ寄る移動まで飛距離に数え、届く前に打ち切る
-
     // 当たらない区間＝まだ飛び出していない区間なので、動き方に聞けば済む
-    if (!CCL::AI::Motion::IsChargeDangerous(drone))
+    if (!CCL::AI::Motion::IsChargeDangerous(drone, mode))
     {
         drone.chargeStartPos = Vector3(trans.position);
         drone.chargeTimer    = 0.0f;
-        return false;
+        return;
     }
 
     drone.chargeTimer += dt;
+}
 
+
+
+bool DroneBrainSystem::IsChargeFinished(const CCL::AI::Formation::IFormation *formation,
+                                        const TransformComponent             &trans,
+                                        const DroneComponent                 &drone) const
+{
     // 技が見つからなければ自分では終えない（合図が下りるまで続ける）
-    const auto *formation = formations ? formations->Get(drone.currentFormation) : nullptr;
     if (!formation) return false;
 
     const float flown = (Vector3(trans.position) - drone.chargeStartPos).Length();

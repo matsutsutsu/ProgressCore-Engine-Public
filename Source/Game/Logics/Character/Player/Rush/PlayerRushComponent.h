@@ -4,11 +4,11 @@
 #include "Engine/ECS/Common/CCL_Types.h"
 
 // ラッシュのフェーズ。成立した直後から順に進む
-// スローはとどめが当たるまでフェーズによらず一定で、フェーズは操作と演出だけを切り替える
+// 世界のスローはとどめが当たるまでフェーズによらず一定。プレイヤーの時計は待機の間だけ遅くする
 enum class RushPhase : uint8_t
 {
     Locked = 0, // 回避離脱。減速しながら離れる。操作は受け付けない
-    Ready,      // 待機。攻撃の入力だけ受け付ける
+    Ready,      // 待機。攻撃の入力だけ受け付ける。プレイヤーも遅くなり、回避の姿勢のまま止まって見える
     Attack,     // 突っ込む姿勢で間合いを詰めて、着地の斬りで1回斬る
     Flurry,     // 連撃。押すたびに斬り、決まった数の後にとどめ
 };
@@ -23,11 +23,21 @@ struct PlayerRushComponent
     float slowRecover   = 0.4f; // 終了後、等速へ戻るまで（秒）
     float finishRecover = 0.4f; // とどめが当たってから等速へ戻るまで（秒）。外したときは終了後の戻りに使う
 
+    // 待機の間は、プレイヤーの時間倍率を playerScale から readyPlayerScale へ絞る
+    // 回避のアニメが終わって待機の棒立ちに戻らないよう、回避の姿勢のまま止めて見せる
+    // 待機の長さ（readyDuration）は実時間で数えるので、絞っても判断の時間は伸びない
+    float readyPlayerScale = 0.1f;  // 待機中のプレイヤーの時間倍率（1 で実時間）
+    float readySlowInTime  = 0.15f; // 待機に入ってから readyPlayerScale まで絞りきる時間（秒）。始めは速く、終わりほどゆっくり寄せる
+
     // --- フェーズの長さ ---
 
     float lockedDuration = 0.25f; // 回避離脱の長さ（秒）
     float readyDuration  = 0.40f; // 待機の長さ（秒）
     float attackDuration = 0.35f; // 斬ってから連撃へ移るまで（秒）
+
+    // 詰めの保険。壁に阻まれて届かないときに、ここで終える
+    // 普通に詰めるときには効かない長さにする（closeInSpeed で startMaxDistance＋離脱の分を詰める時間より長く）
+    float closeInMaxDuration = 2.0f; // （秒）
 
     // --- 始められる範囲 ---
 
@@ -50,8 +60,12 @@ struct PlayerRushComponent
 
     // --- 間合い詰め ---
 
-    float closeInSpeed        = 90.0f; // 詰める速さ（m/秒）
-    float closeInStopDistance = 3.0f;  // 敵にこの距離まで近づいたら斬る（m）
+    // 相手の手前 strikeDistance の位置（斬る位置）へ、等速で寄せる。斬った後も strikeTrackTime の間は寄せ続ける
+    // 出した瞬間の距離だけで決めると、逃げる相手や、少し手前で出した斬りが届かない
+    float closeInSpeed        = 90.0f; // 寄せる速さ（m/秒）。加速なしの等速
+    float closeInStopDistance = 3.0f;  // 斬る位置まで残りこの距離になったら斬りを出す（m）。斬りの振り始めの分だけ前にずらす
+    float strikeTrackTime     = 0.22f; // 斬った後に寄せ続ける長さ（秒）。Rush_Dive_End の当たり判定の終わりに合わせる
+    float strikeDistance      = 1.5f;  // 斬る位置の、相手からの距離（m）。これより近ければ寄せない
 
     // --- 連撃 ---
 
@@ -72,6 +86,7 @@ struct PlayerRushComponent
     RushPhase phase         = RushPhase::Locked; // 今のフェーズ
     float     timer         = 0.0f;              // 今のフェーズの残り（秒）。回避離脱では使わない
     bool      attackFired   = false;             // Attack で斬りを出したか
+    float     strikeTrackTimer = 0.0f;           // 斬った後の吸い付きの残り（秒）。0 なら寄せていない
     int       rushStep      = 0;                 // 連撃で入った斬りの数。詰めの斬りは含まない
     bool      finishEntered = false;             // とどめのアニメに入ったか
     bool      finishHit     = false;             // とどめが当たったか。当たってからは、プレイヤーも世界と一緒のスローで動く
@@ -82,7 +97,7 @@ struct PlayerRushComponent
 
     DirectX::SimpleMath::Vector3 evadeDir      = {0, 0, 0};                 // 離脱の向き（正規化済み）
     DirectX::SimpleMath::Vector3 closeInDir    = {0, 0, 0};                 // 詰める向き（正規化済み）
-    CCL::ECS::EntityID           closeInTarget = CCL::ECS::InvalidEntityID; // ラッシュの相手（避けた攻撃の持ち主）。開始時に決める。分からなければ無効
+    CCL::ECS::EntityID           closeInTarget = CCL::ECS::InvalidEntityID; // ラッシュの相手（避けた攻撃の持ち主）。開始時に決める。分からないときと死んだら無効
 };
 
 

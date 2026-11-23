@@ -1,6 +1,6 @@
 {
-    "anyStatePosX": 304.0,
-    "anyStatePosY": -16.0,
+    "anyStatePosX": -535.0,
+    "anyStatePosY": -267.0,
     "anyStateTransitions": [
         {
             "blendDuration": 0.20000000298023224,
@@ -15,7 +15,22 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "sourceGroupId": 0,
-            "targetStateHash": 4065026230
+            "targetStateHash": 2400311838
+        },
+        {
+            "blendDuration": 0.25,
+            "conditions": [
+                {
+                    "op": 3,
+                    "paramHash": 1983172076,
+                    "paramName": "Exhausted",
+                    "threshold": 0.0
+                }
+            ],
+            "logicType": 0,
+            "requiredCancelMask": 0,
+            "sourceGroupId": 0,
+            "targetStateHash": 965698619
         },
         {
             "blendDuration": 0.10000000149011612,
@@ -60,7 +75,7 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "sourceGroupId": 0,
-            "targetStateHash": 1296711174
+            "targetStateHash": 1922912354
         },
         {
             "blendDuration": 0.15000000596046448,
@@ -81,15 +96,15 @@
             "logicType": 1,
             "requiredCancelMask": 0,
             "sourceGroupId": 0,
-            "targetStateHash": 3962258115
+            "targetStateHash": 2232132948
         },
         {
             "blendDuration": 0.10000000149011612,
             "conditions": [
                 {
                     "op": 3,
-                    "paramHash": 448068029,
-                    "paramName": "HitFront",
+                    "paramHash": 1700614218,
+                    "paramName": "Hit",
                     "threshold": 0.0
                 },
                 {
@@ -102,70 +117,7 @@
             "logicType": 0,
             "requiredCancelMask": 0,
             "sourceGroupId": 1,
-            "targetStateHash": 60437995
-        },
-        {
-            "blendDuration": 0.10000000149011612,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 4038633241,
-                    "paramName": "HitBack",
-                    "threshold": 0.0
-                },
-                {
-                    "op": 0,
-                    "paramHash": 2425226407,
-                    "paramName": "CanFlinch",
-                    "threshold": 1.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "sourceGroupId": 1,
-            "targetStateHash": 127548471
-        },
-        {
-            "blendDuration": 0.10000000149011612,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 2671032551,
-                    "paramName": "HitLeft",
-                    "threshold": 0.0
-                },
-                {
-                    "op": 0,
-                    "paramHash": 2425226407,
-                    "paramName": "CanFlinch",
-                    "threshold": 1.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "sourceGroupId": 1,
-            "targetStateHash": 4254739577
-        },
-        {
-            "blendDuration": 0.10000000149011612,
-            "conditions": [
-                {
-                    "op": 3,
-                    "paramHash": 1939215512,
-                    "paramName": "HitRight",
-                    "threshold": 0.0
-                },
-                {
-                    "op": 0,
-                    "paramHash": 2425226407,
-                    "paramName": "CanFlinch",
-                    "threshold": 1.0
-                }
-            ],
-            "logicType": 0,
-            "requiredCancelMask": 0,
-            "sourceGroupId": 1,
-            "targetStateHash": 395990375
+            "targetStateHash": 3459859052
         },
         {
             "blendDuration": 0.20000000298023224,
@@ -219,8 +171,8 @@
             "targetStateHash": 281267617
         }
     ],
-    "entryPosX": -48.0,
-    "entryPosY": 304.0,
+    "entryPosX": -395.0,
+    "entryPosY": -27.0,
     "entryStateHash": 281267617,
     "parameters": [
         {
@@ -233,30 +185,23 @@
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 448068029,
-            "name": "HitFront",
+            "hash": 1700614218,
+            "name": "Hit",
             "type": 2
         },
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 4038633241,
-            "name": "HitBack",
-            "type": 2
+            "hash": 370176331,
+            "name": "HitDirX",
+            "type": 0
         },
         {
             "defaultBool": false,
             "defaultFloat": 0.0,
-            "hash": 2671032551,
-            "name": "HitLeft",
-            "type": 2
-        },
-        {
-            "defaultBool": false,
-            "defaultFloat": 0.0,
-            "hash": 1939215512,
-            "name": "HitRight",
-            "type": 2
+            "hash": 353398712,
+            "name": "HitDirY",
+            "type": 0
         },
         {
             "defaultBool": false,
@@ -362,6 +307,20 @@
             "hash": 2676410775,
             "name": "MoveY",
             "type": 0
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1424353852,
+            "name": "IsExhausted",
+            "type": 1
+        },
+        {
+            "defaultBool": false,
+            "defaultFloat": 0.0,
+            "hash": 1983172076,
+            "name": "Exhausted",
+            "type": 2
         }
     ],
     "states": [
@@ -371,8 +330,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 170.0,
-            "nodePosY": 298.0,
+            "nodePosX": -75.0,
+            "nodePosY": -27.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Idle.json",
@@ -387,8 +346,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 436.0,
-            "nodePosY": 298.0,
+            "nodePosX": -635.0,
+            "nodePosY": 753.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Move.json",
@@ -399,18 +358,49 @@
         },
         {
             "applyRootMotion": false,
+            "blendSpace": {
+                "paramXHash": 370176331,
+                "paramXName": "HitDirX",
+                "paramYHash": 353398712,
+                "paramYName": "HitDirY",
+                "samples": [
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_F.json",
+                        "x": 0.0,
+                        "y": 1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_B.json",
+                        "x": 0.0,
+                        "y": -1.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_L.json",
+                        "x": -1.0,
+                        "y": 0.0
+                    },
+                    {
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_R.json",
+                        "x": 1.0,
+                        "y": 0.0
+                    }
+                ],
+                "smoothingTime": 0.0,
+                "type": 1
+            },
             "groupId": 0,
+            "isBlendSpace": true,
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -398.0,
-            "nodePosY": -231.0,
+            "nodePosX": -75.0,
+            "nodePosY": -507.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_F.json",
-            "sequenceName": "Hit_F",
+            "sequenceFilePath": "",
+            "sequenceName": "Hit_Reaction",
             "speedCurveName": "",
-            "stateHash": 60437995,
+            "stateHash": 3459859052,
             "transitions": [
                 {
                     "blendDuration": 0.20000000298023224,
@@ -435,104 +425,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": -228.0,
-            "nodePosY": -233.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_B.json",
-            "sequenceName": "Hit_B",
-            "speedCurveName": "",
-            "stateHash": 127548471,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": false,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": -52.0,
-            "nodePosY": -233.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_L.json",
-            "sequenceName": "Hit_L",
-            "speedCurveName": "",
-            "stateHash": 4254739577,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": false,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 124.0,
-            "nodePosY": -233.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Hit_R.json",
-            "sequenceName": "Hit_R",
-            "speedCurveName": "",
-            "stateHash": 395990375,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": false,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 540.0,
+            "nodePosX": -466.0,
+            "nodePosY": 333.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Start.json",
@@ -578,8 +472,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 298.0,
-            "nodePosY": 680.0,
+            "nodePosX": -186.0,
+            "nodePosY": 333.0,
             "playbackSpeed": 1.5,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Stop.json",
@@ -631,8 +525,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 560.0,
-            "nodePosY": 680.0,
+            "nodePosX": -975.0,
+            "nodePosY": 93.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Leap_Start.json",
@@ -663,8 +557,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 760.0,
-            "nodePosY": 680.0,
+            "nodePosX": -975.0,
+            "nodePosY": 213.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Leap_Loop.json",
@@ -716,8 +610,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 960.0,
-            "nodePosY": 680.0,
+            "nodePosX": -975.0,
+            "nodePosY": 333.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Leap_End.json",
@@ -769,8 +663,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 960.0,
-            "nodePosY": 820.0,
+            "nodePosX": -715.0,
+            "nodePosY": 333.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Leap_End_Attack.json",
@@ -820,157 +714,155 @@
             "applyRootMotion": false,
             "groupId": 0,
             "isLoop": false,
-            "isSubMachine": false,
+            "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 560.0,
-            "nodePosY": 960.0,
+            "nodePosX": 605.0,
+            "nodePosY": -147.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Start.json",
-            "sequenceName": "Atk_Dash_Retreat",
+            "sequenceFilePath": "",
+            "sequenceName": "Atk_Dash",
             "speedCurveName": "",
-            "stateHash": 1296711174,
-            "transitions": [
-                {
-                    "blendDuration": 0.10000000149011612,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 1.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 2849566788
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": false,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 756.0,
-            "nodePosY": 954.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Stop.json",
-            "sequenceName": "Atk_Dash_Aim",
-            "speedCurveName": "",
-            "stateHash": 2849566788,
-            "transitions": [
-                {
-                    "blendDuration": 0.10000000149011612,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 2.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 541390029
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": false,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 960.0,
-            "nodePosY": 960.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Atk_Dash_Start.json",
-            "sequenceName": "Atk_Dash_Start",
-            "speedCurveName": "",
-            "stateHash": 541390029,
-            "transitions": [
-                {
-                    "blendDuration": 0.10000000149011612,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 4.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 981397965
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 2969413448,
-                            "paramName": "DashPhase",
-                            "threshold": 0.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 281267617
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": true,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": 1160.0,
-            "nodePosY": 960.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Atk_Dash_Loop.json",
-            "sequenceName": "Atk_Dash_Loop",
-            "speedCurveName": "",
-            "stateHash": 981397965,
+            "stateHash": 1922912354,
+            "subGraph": {
+                "anyStatePosX": -75.0,
+                "anyStatePosY": -207.0,
+                "anyStateTransitions": [
+                    {
+                        "blendDuration": 0.10000000149011612,
+                        "conditions": [
+                            {
+                                "op": 3,
+                                "paramHash": 1750693397,
+                                "paramName": "Dash",
+                                "threshold": 0.0
+                            }
+                        ],
+                        "logicType": 0,
+                        "requiredCancelMask": 0,
+                        "sourceGroupId": 0,
+                        "targetStateHash": 1296711174
+                    }
+                ],
+                "entryPosX": -395.0,
+                "entryPosY": -27.0,
+                "entryStateHash": 1296711174,
+                "parameters": [],
+                "states": [
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -75.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Start.json",
+                        "sequenceName": "Atk_Dash_Retreat",
+                        "speedCurveName": "",
+                        "stateHash": 1296711174,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 1,
+                                        "paramHash": 2969413448,
+                                        "paramName": "DashPhase",
+                                        "threshold": 1.5
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2849566788
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 205.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Retreat_Stop.json",
+                        "sequenceName": "Atk_Dash_Aim",
+                        "speedCurveName": "",
+                        "stateHash": 2849566788,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 1,
+                                        "paramHash": 2969413448,
+                                        "paramName": "DashPhase",
+                                        "threshold": 2.5
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 541390029
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 485.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Atk_Dash_Start.json",
+                        "sequenceName": "Atk_Dash_Start",
+                        "speedCurveName": "",
+                        "stateHash": 541390029,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.10000000149011612,
+                                "conditions": [
+                                    {
+                                        "op": 1,
+                                        "paramHash": 2969413448,
+                                        "paramName": "DashPhase",
+                                        "threshold": 4.5
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 981397965
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": true,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 765.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Atk_Dash_Loop.json",
+                        "sequenceName": "Atk_Dash_Loop",
+                        "speedCurveName": "",
+                        "stateHash": 981397965,
+                        "transitions": []
+                    }
+                ]
+            },
             "transitions": [
                 {
                     "blendDuration": 0.10000000149011612,
@@ -1010,8 +902,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1360.0,
-            "nodePosY": 960.0,
+            "nodePosX": 605.0,
+            "nodePosY": 93.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Atk_Dash_End.json",
@@ -1061,134 +953,191 @@
             "applyRootMotion": false,
             "groupId": 0,
             "isLoop": false,
-            "isSubMachine": false,
+            "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": -398.0,
-            "nodePosY": 540.0,
+            "nodePosX": -595.0,
+            "nodePosY": -507.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Death_Start.json",
-            "sequenceName": "Death_Start",
+            "sequenceFilePath": "",
+            "sequenceName": "Death_Down",
             "speedCurveName": "",
-            "stateHash": 4065026230,
-            "transitions": [
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 4,
-                            "paramHash": 0,
-                            "paramName": "",
-                            "threshold": 0.0
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 1240008620
-                }
-            ]
-        },
-        {
-            "applyRootMotion": false,
-            "groupId": 0,
-            "isLoop": true,
-            "isSubMachine": false,
-            "lockVerticalRootMotion": false,
-            "nodePosX": -198.0,
-            "nodePosY": 540.0,
-            "playbackSpeed": 1.0,
-            "rootMotionCurveName": "",
-            "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Death_Loop.json",
-            "sequenceName": "Death_Loop",
-            "speedCurveName": "",
-            "stateHash": 1240008620,
+            "stateHash": 2400311838,
+            "subGraph": {
+                "anyStatePosX": -75.0,
+                "anyStatePosY": -207.0,
+                "anyStateTransitions": [
+                    {
+                        "blendDuration": 0.20000000298023224,
+                        "conditions": [
+                            {
+                                "op": 3,
+                                "paramHash": 2443131885,
+                                "paramName": "Death",
+                                "threshold": 0.0
+                            }
+                        ],
+                        "logicType": 0,
+                        "requiredCancelMask": 0,
+                        "sourceGroupId": 0,
+                        "targetStateHash": 4065026230
+                    }
+                ],
+                "entryPosX": -395.0,
+                "entryPosY": -27.0,
+                "entryStateHash": 4065026230,
+                "parameters": [],
+                "states": [
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -75.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Death_Start.json",
+                        "sequenceName": "Death_Start",
+                        "speedCurveName": "",
+                        "stateHash": 4065026230,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.20000000298023224,
+                                "conditions": [
+                                    {
+                                        "op": 4,
+                                        "paramHash": 0,
+                                        "paramName": "",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 1240008620
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": true,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 205.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Death_Loop.json",
+                        "sequenceName": "Death_Loop",
+                        "speedCurveName": "",
+                        "stateHash": 1240008620,
+                        "transitions": []
+                    }
+                ]
+            },
             "transitions": []
         },
         {
             "applyRootMotion": false,
-            "blendSpace": {
-                "paramXHash": 2659633156,
-                "paramXName": "MoveX",
-                "paramYHash": 2676410775,
-                "paramYName": "MoveY",
-                "samples": [
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_L_Start.json",
-                        "x": -1.0,
-                        "y": 0.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_R_Start.json",
-                        "x": 1.0,
-                        "y": 0.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_F_Start.json",
-                        "x": 0.0,
-                        "y": 1.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_B_Start.json",
-                        "x": 0.0,
-                        "y": -1.0
-                    }
-                ],
-                "smoothingTime": 0.10000000149011612,
-                "type": 1
-            },
             "groupId": 0,
-            "isBlendSpace": true,
             "isLoop": false,
-            "isSubMachine": false,
+            "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 700.0,
-            "nodePosY": 150.0,
+            "nodePosX": 431.0,
+            "nodePosY": -507.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "",
-            "sequenceName": "Loco_SideTravel_Start",
+            "sequenceName": "Exhausted_Rest",
             "speedCurveName": "",
-            "stateHash": 3962258115,
+            "stateHash": 965698619,
+            "subGraph": {
+                "anyStatePosX": -75.0,
+                "anyStatePosY": -207.0,
+                "anyStateTransitions": [
+                    {
+                        "blendDuration": 0.25,
+                        "conditions": [
+                            {
+                                "op": 3,
+                                "paramHash": 1983172076,
+                                "paramName": "Exhausted",
+                                "threshold": 0.0
+                            }
+                        ],
+                        "logicType": 0,
+                        "requiredCancelMask": 0,
+                        "sourceGroupId": 0,
+                        "targetStateHash": 104245611
+                    }
+                ],
+                "entryPosX": -395.0,
+                "entryPosY": -27.0,
+                "entryStateHash": 104245611,
+                "parameters": [],
+                "states": [
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -75.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Exhausted_Start.json",
+                        "sequenceName": "Exhausted_Start",
+                        "speedCurveName": "",
+                        "stateHash": 104245611,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.2,
+                                "conditions": [
+                                    {
+                                        "op": 4,
+                                        "paramHash": 0,
+                                        "paramName": "",
+                                        "threshold": 0.0
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 604061351
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "groupId": 0,
+                        "isLoop": true,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 205.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Exhausted_Loop.json",
+                        "sequenceName": "Exhausted_Loop",
+                        "speedCurveName": "",
+                        "stateHash": 604061351,
+                        "transitions": []
+                    }
+                ]
+            },
             "transitions": [
                 {
-                    "blendDuration": 0.15000000596046448,
+                    "blendDuration": 0.4,
                     "conditions": [
                         {
-                            "op": 1,
-                            "paramHash": 2571090873,
-                            "paramName": "SideTravelPhase",
-                            "threshold": 2.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 2479211857
-                },
-                {
-                    "blendDuration": 0.15000000596046448,
-                    "conditions": [
-                        {
-                            "op": 1,
-                            "paramHash": 2571090873,
-                            "paramName": "SideTravelPhase",
-                            "threshold": 1.5
-                        }
-                    ],
-                    "logicType": 0,
-                    "requiredCancelMask": 0,
-                    "sourceGroupId": 0,
-                    "targetStateHash": 2067843071
-                },
-                {
-                    "blendDuration": 0.20000000298023224,
-                    "conditions": [
-                        {
-                            "op": 2,
-                            "paramHash": 2571090873,
-                            "paramName": "SideTravelPhase",
-                            "threshold": 0.5
+                            "op": 0,
+                            "paramHash": 1424353852,
+                            "paramName": "IsExhausted",
+                            "threshold": 0.0
                         }
                     ],
                     "logicType": 0,
@@ -1200,49 +1149,161 @@
         },
         {
             "applyRootMotion": false,
-            "blendSpace": {
-                "paramXHash": 2659633156,
-                "paramXName": "MoveX",
-                "paramYHash": 2676410775,
-                "paramYName": "MoveY",
-                "samples": [
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_L_Loop.json",
-                        "x": -1.0,
-                        "y": 0.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_R_Loop.json",
-                        "x": 1.0,
-                        "y": 0.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Footwork_F.json",
-                        "x": 0.0,
-                        "y": 1.0
-                    },
-                    {
-                        "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Footwork_B.json",
-                        "x": 0.0,
-                        "y": -1.0
-                    }
-                ],
-                "smoothingTime": 0.10000000149011612,
-                "type": 1
-            },
             "groupId": 0,
-            "isBlendSpace": true,
-            "isLoop": true,
-            "isSubMachine": false,
+            "isLoop": false,
+            "isSubMachine": true,
             "lockVerticalRootMotion": false,
-            "nodePosX": 900.0,
-            "nodePosY": 150.0,
+            "nodePosX": 270.0,
+            "nodePosY": 393.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "",
-            "sequenceName": "Loco_SideTravel_Loop",
+            "sequenceName": "Loco_SideTravel",
             "speedCurveName": "",
-            "stateHash": 2067843071,
+            "stateHash": 2232132948,
+            "subGraph": {
+                "anyStatePosX": -75.0,
+                "anyStatePosY": -207.0,
+                "anyStateTransitions": [
+                    {
+                        "blendDuration": 0.15000000596046448,
+                        "conditions": [
+                            {
+                                "op": 3,
+                                "paramHash": 2206702047,
+                                "paramName": "SideTravelLeft",
+                                "threshold": 0.0
+                            },
+                            {
+                                "op": 3,
+                                "paramHash": 2680688912,
+                                "paramName": "SideTravelRight",
+                                "threshold": 0.0
+                            }
+                        ],
+                        "logicType": 1,
+                        "requiredCancelMask": 0,
+                        "sourceGroupId": 0,
+                        "targetStateHash": 3962258115
+                    }
+                ],
+                "entryPosX": -395.0,
+                "entryPosY": -27.0,
+                "entryStateHash": 3962258115,
+                "parameters": [],
+                "states": [
+                    {
+                        "applyRootMotion": false,
+                        "blendSpace": {
+                            "paramXHash": 2659633156,
+                            "paramXName": "MoveX",
+                            "paramYHash": 2676410775,
+                            "paramYName": "MoveY",
+                            "samples": [
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_L_Start.json",
+                                    "x": -1.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_R_Start.json",
+                                    "x": 1.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_F_Start.json",
+                                    "x": 0.0,
+                                    "y": 1.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_B_Start.json",
+                                    "x": 0.0,
+                                    "y": -1.0
+                                }
+                            ],
+                            "smoothingTime": 0.10000000149011612,
+                            "type": 1
+                        },
+                        "groupId": 0,
+                        "isBlendSpace": true,
+                        "isLoop": false,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": -110.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "",
+                        "sequenceName": "Loco_SideTravel_Start",
+                        "speedCurveName": "",
+                        "stateHash": 3962258115,
+                        "transitions": [
+                            {
+                                "blendDuration": 0.15000000596046448,
+                                "conditions": [
+                                    {
+                                        "op": 1,
+                                        "paramHash": 2571090873,
+                                        "paramName": "SideTravelPhase",
+                                        "threshold": 1.5
+                                    }
+                                ],
+                                "logicType": 0,
+                                "requiredCancelMask": 0,
+                                "sourceGroupId": 0,
+                                "targetStateHash": 2067843071
+                            }
+                        ]
+                    },
+                    {
+                        "applyRootMotion": false,
+                        "blendSpace": {
+                            "paramXHash": 2659633156,
+                            "paramXName": "MoveX",
+                            "paramYHash": 2676410775,
+                            "paramYName": "MoveY",
+                            "samples": [
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_L_Loop.json",
+                                    "x": -1.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_SideTravel_R_Loop.json",
+                                    "x": 1.0,
+                                    "y": 0.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Footwork_F.json",
+                                    "x": 0.0,
+                                    "y": 1.0
+                                },
+                                {
+                                    "sequenceFilePath": "Assets/Animations/Sequencer/Valkyra/Loco_Footwork_B.json",
+                                    "x": 0.0,
+                                    "y": -1.0
+                                }
+                            ],
+                            "smoothingTime": 0.10000000149011612,
+                            "type": 1
+                        },
+                        "groupId": 0,
+                        "isBlendSpace": true,
+                        "isLoop": true,
+                        "isSubMachine": false,
+                        "lockVerticalRootMotion": false,
+                        "nodePosX": 240.0,
+                        "nodePosY": -27.0,
+                        "playbackSpeed": 1.0,
+                        "rootMotionCurveName": "",
+                        "sequenceFilePath": "",
+                        "sequenceName": "Loco_SideTravel_Loop",
+                        "speedCurveName": "",
+                        "stateHash": 2067843071,
+                        "transitions": []
+                    }
+                ]
+            },
             "transitions": [
                 {
                     "blendDuration": 0.15000000596046448,
@@ -1313,8 +1374,8 @@
             "isLoop": false,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1100.0,
-            "nodePosY": 150.0,
+            "nodePosX": 550.0,
+            "nodePosY": 393.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "",
@@ -1397,8 +1458,8 @@
             "isLoop": true,
             "isSubMachine": false,
             "lockVerticalRootMotion": false,
-            "nodePosX": 1450.0,
-            "nodePosY": 150.0,
+            "nodePosX": -920.0,
+            "nodePosY": -267.0,
             "playbackSpeed": 1.0,
             "rootMotionCurveName": "",
             "sequenceFilePath": "",

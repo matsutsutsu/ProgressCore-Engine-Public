@@ -10,9 +10,9 @@ using namespace CCL::ECS;
 
 namespace
 {
-    constexpr float kPlayerMinHealth   = 1.0f; // プレイヤーの HP の下限
-    constexpr float kBossMarginPercent = 1.0f; // ボスの HP の下限を、しきい値より上に置く幅（最大 HP に対する %）
-} // namespace
+    constexpr float kPlayerMinHealth      = 1.0f;  // プレイヤーの HP の下限
+    constexpr float kBossMinHealthPercent = 50.0f; // ボスの HP の下限（最大 HP に対する %）
+}
 
 std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
 {
@@ -24,7 +24,7 @@ std::vector<TypeID> TutorialHealthGuardSystem::GetReadTypes() const
 
 
 
-void TutorialHealthGuardSystem::Update(float /*dt*/)
+void TutorialHealthGuardSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID id, HealthComponent &health) {
         // --- プレイヤー: 倒れない ---
@@ -34,15 +34,13 @@ void TutorialHealthGuardSystem::Update(float /*dt*/)
             return;
         }
 
-        // --- ボス: 形態移行のしきい値を割らない ---
+        // --- ボス: 倒れない ---
 
-        // 第2形態の BT が未設定なら形態移行が起きないので、下限も設けない（BossPhaseSystem と同じ条件）
-        const auto *phase = m_world->GetComponent<BossPhaseComponent>(id);
-        if (!phase || phase->phase2AssetPath.empty()) return;
+        // チュートリアルの形態（TutorialWait / TutorialAttack）は第2形態へ移らないので、
+        // 第2形態の有無に関係なく同じ下限で止める
+        if (!m_world->HasComponent<BossPhaseComponent>(id)) return;
 
-        // 下限はしきい値より kBossMarginPercent だけ上に置く
-        // しきい値ちょうどだと、BossPhaseSystem の「しきい値以下なら移行」の判定に入ってしまう
-        const float floor    = health.maxHealth * (phase->phase2HealthThreshold + kBossMarginPercent) / 100.0f;
+        const float floor    = health.maxHealth * kBossMinHealthPercent / 100.0f;
         health.currentHealth = std::max(health.currentHealth, floor);
     });
 }

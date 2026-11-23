@@ -35,10 +35,10 @@
     X(A_BossLeapAttack,      8,   Boss,    Driving,  "",              "ボス：跳躍攻撃 (Leap Attack)")           \
     X(A_BossAirHover,        9,   Boss,    Driving,  "",              "ボス：その場で滞空 (Air Hover)")         \
     X(A_BossDashAttack,      10,  Boss,    Driving,  "",              "ボス：突進攻撃 (Dash Attack)")           \
-    X(A_BossSideTravelLeft,  12,  Boss,    Driving,  "動く距離 [m]",  "ボス：左へ横移動 (Side Travel Left)")    \
-    X(A_BossSideTravelRight, 13,  Boss,    Driving,  "動く距離 [m]",  "ボス：右へ横移動 (Side Travel Right)")   \
     X(A_BossReposition,      14,  Boss,    Driving,  "動く距離 [m]",  "ボス：間合いを取る (Reposition)")        \
     X(A_BossFootwork,        15,  Boss,    Driving,  "",              "ボス：様子見 (Footwork)")                \
+    X(A_BossRage,            16,  Boss,    Blocking, "",              "ボス：怒り（Parallel の従に置く）")      \
+    X(A_BossExhausted,       17,  Boss,    Driving,  "",              "ボス：疲れ (Exhausted)")                 \
                                                                                                                 \
     /* Drone */                                                                                                 \
     X(A_DroneFormation,      128, Drone,   Instant,  "技の枠番号",    "ドローン：データの技")                   \
@@ -75,7 +75,8 @@
     X(C_IsPhase2,                9,  State,   "",                       "フェーズ >= 2")                          \
     X(C_ShouldTransitionPhase2,  10, State,   "",                       "第2形態移行条件 (HP半分以下 & 第1形態)") \
     X(C_DamageThresholdExceeded, 11, State,   "最大HPに対する割合 [%]", "被弾の蓄積 >= 最大HPの N %")         \
-    X(C_RecentlyHit,             12, State,   "経過時間 [秒]",          "直近の被弾から N 秒以内")
+    X(C_RecentlyHit,             12, State,   "経過時間 [秒]",          "直近の被弾から N 秒以内")                \
+    X(C_BattleTimeLessThan,      18, State,   "経過時間 [秒]",          "戦い始めてから N 秒以内")
 
 // ============================================================
 // ドローンの陣形
@@ -110,5 +111,5 @@ enum class DroneActionRole : uint8_t
                                                                                            \
     /* Attack */                                                                           \
     X(A_DroneBarrage,       103, Barrage,      Attack,  "ドローン：弾幕 (Barrage)")        \
-    X(A_DroneSquadAssault,  111, SquadAssault, Attack,  "ドローン：小隊突撃 (Squad Assault)")
+    X(A_DroneSquadArc,      111, SquadArc,     Attack,  "ドローン：小隊の弧撃ち (Squad Arc)")
 

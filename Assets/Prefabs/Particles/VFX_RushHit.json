@@ -18,7 +18,7 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 130,
+                            "burstCount": 70,
                             "color": [
                                 1.0,
                                 0.6486486196517944,
@@ -43,8 +43,8 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                10.0,
-                                35.0
+                                30.0,
+                                50.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -54,11 +54,12 @@
                                 0.0,
                                 0.07999999821186066
                             ],
-                            "gravity": -30.0,
-                            "intensity": 13.0,
+                            "followRatio": 0.0,
+                            "gravity": -50.0,
+                            "intensity": 5.0,
                             "lifespan": [
-                                0.3499999940395355,
-                                0.550000011920929
+                                0.20000000298023224,
+                                0.3499999940395355
                             ],
                             "lineEnd": [
                                 0.0,
@@ -85,7 +86,7 @@
                             ],
                             "sizeEase": 3,
                             "sizeEasePower": 2.0,
-                            "sizeRandom": 1.0,
+                            "sizeRandom": 0.5099999904632568,
                             "spawnDelay": [
                                 0.0,
                                 0.0
@@ -100,203 +101,7 @@
                                 0.0,
                                 0.0
                             ],
-                            "velocityStretch": 0.25,
-                            "vortexStrength": 0.0
-                        },
-                        {
-                            "angularSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "attractorLocal": true,
-                            "attractorPos": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
-                            "burstCount": 1,
-                            "color": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "colorMode": 0,
-                            "colorRampPath": "",
-                            "coneAngle": [
-                                0.0,
-                                0.0
-                            ],
-                            "drag": 0.0,
-                            "emitMode": 1,
-                            "emitRadius": [
-                                0.0,
-                                0.0
-                            ],
-                            "emitShape": 0,
-                            "emitSize": [
-                                0.0,
-                                8.0
-                            ],
-                            "emitSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "emitStretch": [
-                                1.0,
-                                1.0
-                            ],
-                            "fadeDuration": [
-                                0.0,
-                                0.10000000149011612
-                            ],
-                            "gravity": 0.0,
-                            "intensity": 2.0,
-                            "lifespan": [
-                                0.15000000596046448,
-                                0.15000000596046448
-                            ],
-                            "lineEnd": [
-                                0.0,
-                                1.0,
-                                0.0
-                            ],
-                            "localOffset": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "localOffsetY": 0.0,
-                            "maxCount": 1,
-                            "maxSpeed": 0.0,
-                            "name": "フラッシュ",
-                            "noiseScale": 1.0,
-                            "noiseStrength": 0.0,
-                            "orientMode": 0,
-                            "particleType": 1,
-                            "renderMode": 1,
-                            "scale": [
-                                1.0,
-                                1.0
-                            ],
-                            "sizeEase": 0,
-                            "sizeEasePower": 2.0,
-                            "sizeRandom": 0.0,
-                            "spawnDelay": [
-                                0.0,
-                                0.0
-                            ],
-                            "spriteGrid": [
-                                1,
-                                1
-                            ],
-                            "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_HitImpact_02.png",
-                            "uvScrollSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "velocityStretch": 0.0,
-                            "vortexStrength": 0.0
-                        },
-                        {
-                            "angularSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "attractorLocal": true,
-                            "attractorPos": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "attractorRadius": 0.0,
-                            "attractorStrength": 0.0,
-                            "burstCount": 1,
-                            "color": [
-                                1.0,
-                                0.1853281855583191,
-                                0.0,
-                                1.0
-                            ],
-                            "colorMode": 0,
-                            "colorRampPath": "",
-                            "coneAngle": [
-                                0.0,
-                                0.0
-                            ],
-                            "drag": 0.0,
-                            "emitMode": 1,
-                            "emitRadius": [
-                                0.0,
-                                0.0
-                            ],
-                            "emitShape": 0,
-                            "emitSize": [
-                                0.0,
-                                5.0
-                            ],
-                            "emitSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "emitStretch": [
-                                1.0,
-                                1.0
-                            ],
-                            "fadeDuration": [
-                                0.0,
-                                0.10000000149011612
-                            ],
-                            "gravity": 0.0,
-                            "intensity": 10.0,
-                            "lifespan": [
-                                0.17000000178813934,
-                                0.17000000178813934
-                            ],
-                            "lineEnd": [
-                                0.0,
-                                1.0,
-                                0.0
-                            ],
-                            "localOffset": [
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "localOffsetY": 0.0,
-                            "maxCount": 1,
-                            "maxSpeed": 0.0,
-                            "name": "フラッシュ copy",
-                            "noiseScale": 1.0,
-                            "noiseStrength": 0.0,
-                            "orientMode": 0,
-                            "particleType": 1,
-                            "renderMode": 0,
-                            "scale": [
-                                1.0,
-                                1.0
-                            ],
-                            "sizeEase": 0,
-                            "sizeEasePower": 2.0,
-                            "sizeRandom": 0.0,
-                            "spawnDelay": [
-                                0.0,
-                                0.0
-                            ],
-                            "spriteGrid": [
-                                1,
-                                1
-                            ],
-                            "spriteMode": 0,
-                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Fade_01.png",
-                            "uvScrollSpeed": [
-                                0.0,
-                                0.0
-                            ],
-                            "velocityStretch": 0.0,
+                            "velocityStretch": 0.20000000298023224,
                             "vortexStrength": 0.0
                         },
                         {
@@ -334,7 +139,7 @@
                             "emitShape": 0,
                             "emitSize": [
                                 0.0,
-                                0.5
+                                0.4000000059604645
                             ],
                             "emitSpeed": [
                                 3.0,
@@ -348,8 +153,9 @@
                                 0.0,
                                 0.05000000074505806
                             ],
+                            "followRatio": 0.0,
                             "gravity": 0.0,
-                            "intensity": 15.0,
+                            "intensity": 7.0,
                             "lifespan": [
                                 0.17000000178813934,
                                 0.17000000178813934
@@ -410,10 +216,10 @@
                             ],
                             "attractorRadius": 0.0,
                             "attractorStrength": 0.0,
-                            "burstCount": 50,
+                            "burstCount": 70,
                             "color": [
                                 1.0,
-                                0.7413126826286316,
+                                0.0,
                                 0.0,
                                 1.0
                             ],
@@ -435,8 +241,8 @@
                                 0.0
                             ],
                             "emitSpeed": [
-                                10.0,
-                                25.0
+                                15.0,
+                                30.0
                             ],
                             "emitStretch": [
                                 1.0,
@@ -446,11 +252,12 @@
                                 0.0,
                                 0.07999999821186066
                             ],
+                            "followRatio": 0.0,
                             "gravity": -30.0,
                             "intensity": 5.0,
                             "lifespan": [
                                 0.3499999940395355,
-                                0.550000011920929
+                                0.4000000059604645
                             ],
                             "lineEnd": [
                                 0.0,
@@ -493,6 +300,303 @@
                                 0.0
                             ],
                             "velocityStretch": 0.20000000298023224,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 1,
+                            "color": [
+                                0.0,
+                                0.8030886650085449,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                3.141592264175415
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                4.0
+                            ],
+                            "emitSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.10000000149011612
+                            ],
+                            "followRatio": 0.0,
+                            "gravity": 0.0,
+                            "intensity": 2.0,
+                            "lifespan": [
+                                0.20000000298023224,
+                                0.20000000298023224
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 2,
+                            "maxSpeed": 10.0,
+                            "name": "impact",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 0.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Snow_02.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 1,
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                3.141592264175415
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                2.0
+                            ],
+                            "emitSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.10000000149011612
+                            ],
+                            "followRatio": 0.0,
+                            "gravity": 0.0,
+                            "intensity": 1.0,
+                            "lifespan": [
+                                0.20000000298023224,
+                                0.20000000298023224
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 2,
+                            "maxSpeed": 10.0,
+                            "name": "impact copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 0.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Attack_05.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 1,
+                            "color": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.23529411852359772
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                3.141592264175415
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 1,
+                            "emitRadius": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.10000000149011612,
+                                6.0
+                            ],
+                            "emitSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.10000000149011612
+                            ],
+                            "followRatio": 0.0,
+                            "gravity": 0.0,
+                            "intensity": 3.0,
+                            "lifespan": [
+                                0.20000000298023224,
+                                0.20000000298023224
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 0.0,
+                            "maxCount": 2,
+                            "maxSpeed": 10.0,
+                            "name": "impact copy copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 0.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 1,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.0,
+                            "sizeRandom": 0.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
                             "vortexStrength": 0.0
                         }
                     ]

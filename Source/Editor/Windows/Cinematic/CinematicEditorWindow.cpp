@@ -37,23 +37,21 @@ using RowKind = CinematicTimelineSequence::RowKind;
 
 namespace
 {
-    // 注意を引く文字の色。「未保存」「基準が見つからない」などで共通
-    constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f);
+    constexpr ImVec4 kWarnColor(1.0f, 0.75f, 0.2f, 1.0f); // 注意を引く文字の色
 
     // --- 配置 ---
     constexpr float kInspectorWidth       = 400.0f; // 右のペインの幅
-    constexpr float kLabelChars           = 9.0f;   // インスペクタで欄の右に残す名前の幅（文字数）。「握るときのブレンド」が収まる
+    constexpr float kLabelChars           = 9.0f;   // インスペクタで欄の右に残す名前の幅（文字数）
     constexpr float kGroupSpacing         = 24.0f;  // 上の帯で、まとまりの間に空ける幅
-    constexpr float kTransportButtonWidth = 56.0f;  // 再生・停止のボタンの幅（文字が替わっても幅を変えない）
+    constexpr float kTransportButtonWidth = 56.0f;  // 再生・停止のボタンの幅
     constexpr float kDurationFieldWidth   = 90.0f;  // 全体の長さの欄の幅
-    constexpr float kPreviewModeWidth     = 150.0f; // 画面への出し方の欄の幅
 
-    // 画面への出し方の名前（PreviewMode の並びと同じ順）
-    constexpr const char *kPreviewModeNames[] = {"出さない", "一時停止中だけ", "止めずに出す"};
+    // --- 再生 ---
+    constexpr const char *kUnsavedPlaybackName    = "（新しい台本）"; // 保存前の台本を流すときの名前
+    constexpr int         kPlayStartTimeoutFrames = 30;              // 再生要求を出してから、流れ始めるのを待つフレーム数
 
-    // --- 欄の部品 ---
 
-    // 文字列の欄。変えたら true
+
     bool InputString(const char *label, std::string &value)
     {
         char buf[256];
@@ -65,7 +63,6 @@ namespace
 
 
 
-    // 秒の欄。変えたら true
     bool DragSeconds(const char *label, float &value, float min = 0.0f)
     {
         return ImGui::DragFloat(label, &value, 0.01f, min, FLT_MAX, "%.2f 秒");
@@ -73,7 +70,6 @@ namespace
 
 
 
-    // 3つの数値（位置・ずれ）の欄。変えたら true
     bool DragVec3(const char *label, DirectX::XMFLOAT3 &v)
     {
         return ImGui::DragFloat3(label, &v.x, 0.05f, 0.0f, 0.0f, "%.2f");
@@ -81,15 +77,7 @@ namespace
 
 
 
-    /**
-     * @brief 列挙値を名前の一覧から選ぶ欄
-     * @tparam Enum 列挙型
-     * @tparam N    名前の数
-     * @param label 欄の名前
-     * @param names 列挙値の名前（列挙の並びと同じ順）
-     * @param value 選んでいる値
-     * @return 変えたら true
-     */
+    // 列挙値を名前の一覧（列挙と同じ順）から選ぶ欄
     template <class Enum, std::size_t N>
     bool ComboEnum(const char *label, const char *const (&names)[N], Enum &value)
     {
@@ -101,17 +89,10 @@ namespace
 
 
 
-    /**
-     * @brief ファイルのパスの欄。手で打たせず、参照ボタンの FileDialog で選ぶ
-     * @param label    欄の名前
-     * @param path     パス
-     * @param preset   FileDialog のプリセット
-     * @param stripExt 拡張子を落として書くか（エフェクトのプレハブは拡張子なしで指す）
-     * @return 選び直したら true
-     */
+    // パスの欄。綴りを間違えると読めず原因に気付きにくいので、手で打たせずに参照ボタンで選ばせる
+    // stripExt なら拡張子を落とす（エフェクトのプレハブは拡張子なしで指す）
     bool PathField(const char *label, std::string &path, const char *preset, bool stripExt)
     {
-        // パスは手で打たせない（綴りを1文字間違えると読めず、原因に気づきにくい）
         ImGui::PushID(label);
         bool changed = false;
         if (ImGui::Button("参照..."))
@@ -139,15 +120,7 @@ namespace
 
 
 
-    // --- 台本 ---
-
-    /**
-     * @brief 時刻 t で映るショットを返す（再生と同じ「開始時刻が t 以下のうち最後」）
-     *
-     * 編集中の写しは並び替えていないので、並び順に頼らず開始時刻で比べる
-     *
-     * @return 映るショット。ショットがなければ nullptr
-     */
+    // 時刻 t で映るショット（開始時刻が t 以下のうち最後）。編集中の写しは並んでいないので開始時刻で比べる
     const CameraShot *ShotAt(const std::vector<CameraShot> &shots, float t)
     {
         const CameraShot *found = nullptr;
@@ -162,17 +135,15 @@ namespace
 
 
 
-    // アニメのファイルを読み、長さの自動（0）に使うクリップの長さを入れる
+    // アニメのファイルを読み、「長さ 0（クリップ1回分）」に使うクリップの長さを入れる
     void ResolveAnimation(CinematicAnimation &anim)
     {
         anim.resolved     = anim.sequence.empty() ? nullptr : ResourceManager::Instance().LoadAnimSequence(anim.sequence.c_str());
         anim.clipDuration = anim.resolved ? anim.resolved->duration : 0.0f;
     }
-} // namespace
+}
 
-// ---------------------------------------------------------------------------
-// 生成・破棄
-// ---------------------------------------------------------------------------
+
 
 CinematicEditorWindow::CinematicEditorWindow()
     : EditorWindow("Cinematic Editor", false), m_sequence(std::make_unique<CinematicTimelineSequence>())
@@ -183,44 +154,41 @@ CinematicEditorWindow::CinematicEditorWindow()
 
 CinematicEditorWindow::~CinematicEditorWindow() = default;
 
+
+
 // ---------------------------------------------------------------------------
 // 画面
 // ---------------------------------------------------------------------------
 
 void CinematicEditorWindow::DrawContents(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. 上の帯: ファイルの操作、再生の操作、直近の結果と注意
-    // 2. 左のペイン: 項目を足すボタンと、タイムライン
-    // 3. 右のペイン: 選んでいる項目の数値（何も選んでいなければ台本の設定）
-
-    // 項目を足すのはタイムラインより先、数値と消すボタンはタイムラインより後に描く
-    // タイムラインが行と台本の項目の対応を作り直すので、足した項目を同じフレームで並べ、数値の欄はその対応で引くため
-
-    // ---------------------------------------------------------
-    // 1. 上の帯
-    // ---------------------------------------------------------
+    // 新規・開く・保存の行
     DrawToolbar(context);
     ImGui::Separator();
 
+    // 再生の操作と、全体の長さの行
     DrawTransportBar(context);
+
+    // 今の状態の注意か、直近の結果を1行
     DrawStatusLine(context);
 
-    // ---------------------------------------------------------
-    // 2. 左のペイン
-    // ---------------------------------------------------------
+    // --- 左: タイムライン ---
     const float timelineWidth = -(kInspectorWidth + ImGui::GetStyle().ItemSpacing.x);
-
     ImGui::BeginChild("timelinePane", ImVec2(timelineWidth, 0.0f), true);
+
+    // 項目を足すボタン。足した項目は次のタイムラインで行に並ぶ
     m_dirty |= DrawAddButtons();
+
+    // ショットとトラックの帯
     m_dirty |= DrawTimeline();
     ImGui::EndChild();
 
-    // ---------------------------------------------------------
-    // 3. 右のペイン
-    // ---------------------------------------------------------
+    // --- 右: インスペクタ ---
     ImGui::SameLine();
     ImGui::BeginChild("inspectorPane", ImVec2(0.0f, 0.0f), true);
+
+    // 選んでいる項目の数値の欄
+    // タイムラインの後に描くので、行と項目の対応が作り直された後になり、足した項目を同じフレームで出せる
     m_dirty |= DrawInspector(context);
     ImGui::EndChild();
 }
@@ -229,170 +197,52 @@ void CinematicEditorWindow::DrawContents(EditorContext &context)
 
 void CinematicEditorWindow::OnFrameBegin(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. ゲームでこの台本を流していれば、再生位置をムービーに付いていかせる
-    // 2. エディタ内の再生なら、再生位置を実時間で進める
-    // 3. プレビューを出す・止める
+    // ゲームでこの台本が流れていれば、再生位置をそれに合わせる
+    m_followingGame = FollowGamePlayback(context);
 
-    // ---------------------------------------------------------
-    // 1. ゲームでの再生に付いていく
-    // ---------------------------------------------------------
-    m_followingGame = GetVisible() && FollowGamePlayback(context);
+    // エディタから流したムービーが終わったら、一時停止へ戻すかループで流し直す
+    // ウィンドウを閉じていても見るので、流している途中で閉じても一時停止へ戻せる
+    UpdatePlayback(context);
 
-    // ---------------------------------------------------------
-    // 2. エディタ内の再生
-    // ---------------------------------------------------------
-    const bool active = IsPreviewShown(context);
-
-    // プレビューが出ていない・ゲームで流している（そちらの再生位置を見せる）間は、エディタ内の再生を止める
-    if (!active || m_followingGame)
-    {
-        m_previewPlaying = false;
-    }
-    if (m_previewPlaying)
-    {
-        StepPreviewPlayback();
-    }
-
-    // ---------------------------------------------------------
-    // 3. プレビュー
-    // ---------------------------------------------------------
-
-    // 止めるのは、出していたときの1回だけ
-    if (active || m_previewPushed)
-    {
-        PushPreview(context, active);
-    }
+    // 一時停止中だけ、再生位置の絵をゲーム画面へ出す。止めるのは出していたときの1回だけ
+    const bool active = GetVisible() && m_previewEnabled && context.isPaused;
+    if (active || m_previewPushed) PushPreview(context, active);
     m_previewPushed = active;
-}
-
-
-
-bool CinematicEditorWindow::IsPreviewShown(const EditorContext &context) const
-{
-    if (!GetVisible())
-    {
-        return false;
-    }
-
-    // 「止めずに出す」の間は、カメラ側がムービー中として扱い、プレイヤーの操作と敵の思考を止める
-    switch (m_previewMode)
-    {
-    case PreviewMode::WhilePaused:
-        return context.isPaused;
-    case PreviewMode::Live:
-        return true;
-    case PreviewMode::Off:
-    default:
-        return false;
-    }
-}
-
-
-
-bool CinematicEditorWindow::FollowGamePlayback(EditorContext &context)
-{
-    if (!context.world || m_script.path.empty()) return false;
-
-    bool following = false;
-    context.world->ViewEach<CinematicCameraComponent>([&](EntityID id) {
-        const auto *cine = context.world->GetComponent<CinematicCameraComponent>(id);
-        if (!cine) return;
-
-        // 開いている台本を流しているときだけ合わせる。別の台本の再生位置は、この時間軸では意味がない
-        const bool playing = (cine->state == CinematicState::Waiting) || (cine->state == CinematicState::Playing);
-        if (!playing || cine->script.path != m_script.path) return;
-
-        m_time    = cine->time;
-        following = true;
-    });
-    return following;
-}
-
-
-
-void CinematicEditorWindow::StepPreviewPlayback()
-{
-    // 実時間で進める。一時停止中はゲームの時計（dt）が 0 なので、ゲームの時計には頼らない
-    m_time += ImGui::GetIO().DeltaTime;
-    if (m_time < m_script.duration) return;
-
-    if (m_previewLoop && m_script.duration > 0.0f)
-    {
-        m_time = std::fmod(m_time, m_script.duration);
-    }
-    else
-    {
-        m_time           = m_script.duration;
-        m_previewPlaying = false;
-    }
 }
 
 
 
 void CinematicEditorWindow::DrawToolbar(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. 開く（新規・開く・開き直す）
-    // 2. 保存（保存・名前を付けて保存）
-    // 3. 開いている台本の名前と、未保存の印
+    const bool hasFile = !m_script.path.empty();
 
-    const bool hasFile = !m_script.path.empty(); // 一度でも保存した（ファイルがある）台本か
-
-    // ---------------------------------------------------------
-    // 1. 開く
-    // ---------------------------------------------------------
-    if (ImGui::Button("新規"))
-    {
-        NewScript();
-    }
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("空の台本から作る（保存していない変更は捨てる）");
-    }
+    // --- 開く ---
+    if (ImGui::Button("新規")) NewScript();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("空の台本から作る（保存していない変更は捨てる）");
 
     ImGui::SameLine();
     if (ImGui::Button("開く..."))
     {
-        if (auto picked = FileDialog::OpenPreset("Cinematic"))
-        {
-            Open(FileDialog::ConvertToRelativePath(*picked), false);
-        }
+        if (auto picked = FileDialog::OpenPreset("Cinematic")) Open(FileDialog::ConvertToRelativePath(*picked), false);
     }
 
     ImGui::SameLine();
     ImGui::BeginDisabled(!hasFile);
-    if (ImGui::Button("開き直す"))
-    {
-        Open(m_script.path, true);
-    }
+    if (ImGui::Button("開き直す")) Open(m_script.path, true);
     ImGui::EndDisabled();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("いじった分を捨てて、保存した状態に戻す");
-    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) ImGui::SetTooltip("いじった分を捨てて、保存した状態に戻す");
 
-    // ---------------------------------------------------------
-    // 2. 保存
-    // ---------------------------------------------------------
+    // --- 保存 ---
     ImGui::SameLine(0.0f, kGroupSpacing);
-    if (ImGui::Button("保存"))
-    {
-        Save(context);
-    }
+    if (ImGui::Button("保存")) Save(context);
 
     ImGui::SameLine();
-    if (ImGui::Button("名前を付けて保存..."))
-    {
-        SaveAs(context);
-    }
+    if (ImGui::Button("名前を付けて保存...")) SaveAs(context);
 
-    // ---------------------------------------------------------
-    // 3. 開いている台本
-    // ---------------------------------------------------------
+    // --- 開いている台本 ---
     ImGui::SameLine(0.0f, kGroupSpacing);
     ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(hasFile ? m_script.path.c_str() : "（新しい台本）");
+    ImGui::TextUnformatted(hasFile ? m_script.path.c_str() : kUnsavedPlaybackName);
 
     if (m_dirty)
     {
@@ -405,50 +255,39 @@ void CinematicEditorWindow::DrawToolbar(EditorContext &context)
 
 void CinematicEditorWindow::DrawTransportBar(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. エディタ内の再生（再生・頭へ・ループ）
-    // 2. 再生位置と全体の長さ
-    // 3. ゲーム画面への出し方
-    // 4. ゲームで流す
-
-    const bool hasFile = !m_script.path.empty();
-    const bool shown   = IsPreviewShown(context);
-
-    // ---------------------------------------------------------
-    // 1. エディタ内の再生
-    // ---------------------------------------------------------
-
-    // 再生できるのは、ゲーム画面に絵を出している間だけ（出していなければ、進めても見えない）
-    ImGui::BeginDisabled(!shown || m_followingGame);
-    if (ImGui::Button(m_previewPlaying ? "停止" : "再生", ImVec2(kTransportButtonWidth, 0.0f)))
+    // --- 再生 ---
+    ImGui::BeginDisabled(m_script.shots.empty());
+    if (ImGui::Button(m_playing ? "停止" : "再生", ImVec2(kTransportButtonWidth, 0.0f)))
     {
-        // 終わりで止まっていたら、頭から流し直す
-        if (!m_previewPlaying && m_time >= m_script.duration)
+        if (m_playing)
         {
-            m_time = 0.0f;
+            StopPlayback(context, true);
         }
-        m_previewPlaying = !m_previewPlaying;
+        else
+        {
+            // 終わりで止まっていたら、頭から流す
+            StartPlayback(context, (m_time >= m_script.duration) ? 0.0f : m_time);
+        }
     }
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
-        ImGui::SetTooltip("カメラの動きだけを流して、構図とタイミングを見る（保存しなくてよい）");
+        ImGui::SetTooltip("再生位置から、SE・エフェクト・アニメまで本番どおりに流す（保存しなくてよい）\n"
+                          "一時停止中に押すと、流し終えたところで止まる");
     }
 
     ImGui::SameLine();
-    ImGui::BeginDisabled(m_followingGame);
     if (ImGui::Button("頭へ"))
     {
         m_time = 0.0f;
+        if (m_playing) StartPlayback(context, 0.0f);
     }
-    ImGui::EndDisabled();
 
     ImGui::SameLine();
-    ImGui::Checkbox("ループ", &m_previewLoop);
+    ImGui::Checkbox("ループ", &m_playLoop);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("終わったら、流し始めた位置から流し直す");
 
-    // ---------------------------------------------------------
-    // 2. 再生位置と全体の長さ
-    // ---------------------------------------------------------
+    // --- 再生位置と全体の長さ ---
     ImGui::SameLine(0.0f, kGroupSpacing);
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%.2f /", m_time);
@@ -456,98 +295,43 @@ void CinematicEditorWindow::DrawTransportBar(EditorContext &context)
     ImGui::SameLine();
     ImGui::SetNextItemWidth(kDurationFieldWidth);
     m_dirty |= DragSeconds("##duration", m_script.duration, 0.1f);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("ムービー全体の長さ");
-    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ムービー全体の長さ");
 
-    // ---------------------------------------------------------
-    // 3. ゲーム画面への出し方
-    // ---------------------------------------------------------
+    // --- 設定 ---
     ImGui::SameLine(0.0f, kGroupSpacing);
-    ImGui::TextUnformatted("画面:");
+    m_dirty |= ImGui::Checkbox("長押しでスキップ", &m_script.allowSkip);
 
-    ImGui::SameLine();
-    ImGui::SetNextItemWidth(kPreviewModeWidth);
-    ComboEnum("##previewMode", kPreviewModeNames, m_previewMode);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("一時停止中だけ : Tab で止めて、じっくり構図を詰める\n"
-                          "止めずに出す : キャラのアニメを動かしたまま見る（操作と敵は止まる）");
-    }
-
-    // ---------------------------------------------------------
-    // 4. ゲームで流す
-    // ---------------------------------------------------------
-
-    // ゲームと同じ再生要求で流す。読むのはゲーム側が持つ台本なので、保存してからでないと古い方が流れる
     ImGui::SameLine(0.0f, kGroupSpacing);
-    ImGui::TextUnformatted("ゲームで流す:");
-
-    ImGui::SameLine();
-    ImGui::BeginDisabled(m_dirty || !hasFile);
-    if (ImGui::Button("頭から") && context.world)
-    {
-        context.world->GetEventBus().Publish(CinematicPlayRequestEvent{m_script.path});
-    }
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("SE・エフェクト・アニメまで本番どおりに確かめる\n保存してから、一時停止を解いて押す");
-    }
-
-    // 途中から流す。イベントの少し手前に再生位置を置いて押せば、そこだけを何度でも見直せる
-    ImGui::SameLine();
-    if (ImGui::Button("ここから") && context.world)
-    {
-        context.world->GetEventBus().Publish(CinematicPlayRequestEvent{m_script.path, m_time});
-    }
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-    {
-        ImGui::SetTooltip("再生位置（%.2f 秒）から流す。気になる所だけ見直すときに", m_time);
-    }
+    ImGui::Checkbox("一時停止中に画面へ出す", &m_previewEnabled);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Tab で止めて、再生位置のカメラの絵を見ながら構図を詰める");
 }
 
 
 
 void CinematicEditorWindow::DrawStatusLine(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. 今の状態の注意（ゲームで再生中・基準がいない・一時停止待ち）
-    // 2. 注意がなければ、直近の読み込み・保存・取り込みの結果
+    // 行が増えたり消えたりすると下のタイムラインが跳ねるので、いつも1行だけ描く
+    if (m_playing)
+    {
+        ImGui::TextColored(kWarnColor, "再生中（止めると、流す前の状態に戻ります）");
+        return;
+    }
 
-    // いつも1行だけ描く。行が増えたり消えたりすると、下のタイムラインが上下に跳ねるため
-
-    // ---------------------------------------------------------
-    // 1. 今の状態の注意
-    // ---------------------------------------------------------
     if (m_followingGame)
     {
         ImGui::TextColored(kWarnColor, "ゲームで再生中（再生位置が付いていきます）");
         return;
     }
 
-    if (IsPreviewShown(context))
+    // カメラ側は毎フレーム警告を出せないので、基準がいないことはここで知らせる
+    const CameraShot *shot = ShotAt(m_script.shots, m_time);
+    if (m_previewPushed && shot && !shot->subject.empty() && context.world &&
+        Cinematic::FindEntityByName(*context.world, shot->subject) == InvalidEntityID)
     {
-        // 基準がいないショットは絵を作れない。カメラ側は毎フレーム警告を出せないので、ここで知らせる
-        const CameraShot *shot = ShotAt(m_script.shots, m_time);
-        if (shot && !shot->subject.empty() && context.world &&
-            Cinematic::FindEntityByName(*context.world, shot->subject) == InvalidEntityID)
-        {
-            ImGui::TextColored(kWarnColor, "ショットの基準 '%s' がシーンに居ないので、画面に出せません",
-                               shot->subject.c_str());
-            return;
-        }
-    }
-    else if (m_previewMode == PreviewMode::WhilePaused)
-    {
-        ImGui::TextDisabled("Tab で一時停止すると、ゲーム画面に絵が出ます");
+        ImGui::TextColored(kWarnColor, "ショットの基準 '%s' がシーンにいないので、画面に出せません", shot->subject.c_str());
         return;
     }
 
-    // ---------------------------------------------------------
-    // 2. 直近の結果
-    // ---------------------------------------------------------
     ImGui::TextDisabled("%s", m_status.c_str());
 }
 
@@ -555,17 +339,7 @@ void CinematicEditorWindow::DrawStatusLine(EditorContext &context)
 
 bool CinematicEditorWindow::DrawAddButtons()
 {
-    // 処理フロー:
-    // 1. 置く時刻を決める
-    // 2. 種類ごとのボタン。押したら足して、その項目を選ぶ
-    // 3. リップルの切り替え
-    // 4. タイムラインの操作の早見
-
-    // ---------------------------------------------------------
-    // 1. 置く時刻
-    // ---------------------------------------------------------
-
-    // 足すときは再生位置に置く。全体の長さちょうどには置けない（読み込みが「映らない」と弾く）ので、1コマ手前までにする
+    // 全体の長さちょうどに置くと映らないので、1コマ手前までにする
     const float lastTime = std::max(0.0f, m_script.duration - 1.0f / CinematicTimelineSequence::kFramesPerSecond);
     const float at       = std::clamp(m_time, 0.0f, lastTime);
 
@@ -573,29 +347,21 @@ bool CinematicEditorWindow::DrawAddButtons()
     RowKind     kind  = RowKind::Shot;
     std::size_t index = 0;
 
-    // ---------------------------------------------------------
-    // 2. 種類ごとのボタン
-    // ---------------------------------------------------------
+    // --- 足す ---
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("足す:");
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("再生位置に置く");
-    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("再生位置に置く");
 
     ImGui::SameLine();
     if (ImGui::Button("ショット"))
     {
-        // 再生位置で映っているショットを写して足す。一から数値を書くより、近い構図から直す方が早い
+        // 一から書くより近い構図から直す方が早いので、今映っているショットを写す
         CameraShot shot;
-        if (const CameraShot *base = ShotAt(m_script.shots, at))
-        {
-            shot = *base;
-        }
+        if (const CameraShot *base = ShotAt(m_script.shots, at)) shot = *base;
         shot.start    = at;
         shot.duration = 1.0f;
-        shot.blendIn  = 0.0f;
         m_script.shots.push_back(shot);
+
         added = true;
         kind  = RowKind::Shot;
         index = m_script.shots.size() - 1;
@@ -607,6 +373,7 @@ bool CinematicEditorWindow::DrawAddButtons()
         CinematicSound sound;
         sound.time = at;
         m_script.sounds.push_back(sound);
+
         added = true;
         kind  = RowKind::Sound;
         index = m_script.sounds.size() - 1;
@@ -618,6 +385,7 @@ bool CinematicEditorWindow::DrawAddButtons()
         CinematicEffect effect;
         effect.time = at;
         m_script.effects.push_back(effect);
+
         added = true;
         kind  = RowKind::Effect;
         index = m_script.effects.size() - 1;
@@ -629,6 +397,7 @@ bool CinematicEditorWindow::DrawAddButtons()
         CinematicSignal signal;
         signal.time = at;
         m_script.signals.push_back(signal);
+
         added = true;
         kind  = RowKind::Signal;
         index = m_script.signals.size() - 1;
@@ -640,31 +409,21 @@ bool CinematicEditorWindow::DrawAddButtons()
         CinematicAnimation anim;
         anim.start = at;
         m_script.animations.push_back(anim);
+
         added = true;
         kind  = RowKind::Animation;
         index = m_script.animations.size() - 1;
     }
 
     // 足した項目を選んで、すぐ数値を直せるようにする
-    if (added)
-    {
-        m_selectedRow = CinematicTimelineSequence::RowOf(m_script, kind, index);
-    }
+    if (added) m_selectedRow = CinematicTimelineSequence::RowOf(m_script, kind, index);
 
-    // ---------------------------------------------------------
-    // 3. リップル
-    // ---------------------------------------------------------
+    // --- リップル ---
     ImGui::SameLine(0.0f, kGroupSpacing);
     ImGui::Checkbox("後ろも一緒にずらす", &m_rippleEnabled);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("ショットの終わりを動かすと、それより後ろのショット・SE・エフェクト・シグナル・アニメと\n"
-                          "全体の長さも同じだけずれる（リップル）。ショットの途中にある項目は動かない");
-    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ショットの終わりを動かすと、後ろの項目と全体の長さも同じだけずれる");
 
-    // ---------------------------------------------------------
-    // 4. 操作の早見（右端に寄せる）
-    // ---------------------------------------------------------
+    // --- 操作の早見（右端に寄せる） ---
     const char *helpLabel = "(?)";
     ImGui::SameLine();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
@@ -673,8 +432,7 @@ bool CinematicEditorWindow::DrawAddButtons()
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip("帯の中をドラッグ : 時刻をずらす\n"
-                          "帯の端をドラッグ : 長さを変える\n"
-                          "（「後ろも一緒にずらす」なら、ショットの後ろの項目も付いてくる）\n"
+                          "帯の端をドラッグ : 長さを変える（ショット・アニメだけ）\n"
                           "上の目盛りをクリック : 再生位置を動かす\n"
                           "Ctrl + ホイール : 拡大・縮小");
     }
@@ -697,8 +455,8 @@ bool CinematicEditorWindow::DrawTimeline()
         return false;
     }
 
-    // ImSequencer は残りの高さを全部使うので、行数ぶんの高さの子ウィンドウに閉じ込める
-    //   目盛り(20) + 行(20 x 数) + 下の横スクロール(14) + 内側の余白(8) + 少しの余裕
+    // ImSequencer は残りの高さを全部使うので、行数ぶんの高さに閉じ込める
+    // 目盛り(20) + 行(20 x 数) + 横スクロール(14) + 余白(8) + 余裕(4)
     constexpr float kItemHeight = 20.0f;
     const float     height      = kItemHeight * (m_sequence->GetItemCount() + 1) + 14.0f + 8.0f + 4.0f;
 
@@ -707,11 +465,7 @@ bool CinematicEditorWindow::DrawTimeline()
                            ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_CHANGE_FRAME);
     ImGui::EndChild();
 
-    if (frame != before)
-    {
-        m_time = CinematicTimelineSequence::FrameToTime(frame);
-    }
-
+    if (frame != before) m_time = CinematicTimelineSequence::FrameToTime(frame);
     return m_sequence->Flush();
 }
 
@@ -719,33 +473,14 @@ bool CinematicEditorWindow::DrawTimeline()
 
 bool CinematicEditorWindow::DrawInspector(EditorContext &context)
 {
-    // 処理フロー:
-    // 1. 何も選んでいなければ、台本の設定を出す
-    // 2. 選んでいる項目の名前と、消すボタン
-    // 3. 種類ごとの数値の欄
-
-    // 欄の幅は、右に名前が収まるだけ残して、ペインの幅いっぱいにする
-    const float fieldWidth = -ImGui::GetFontSize() * kLabelChars;
-
-    // ---------------------------------------------------------
-    // 1. 台本の設定
-    // ---------------------------------------------------------
     CinematicTimelineSequence::Row row;
     if (!m_sequence->RowAt(m_selectedRow, row))
     {
-        ImGui::SeparatorText("台本の設定");
-        ImGui::PushItemWidth(fieldWidth);
-        const bool changed = DrawScriptSettings();
-        ImGui::PopItemWidth();
-
-        ImGui::Spacing();
         ImGui::TextDisabled("タイムラインの帯を選ぶと、その項目を直せます");
-        return changed;
+        return false;
     }
 
-    // ---------------------------------------------------------
-    // 2. 名前と消すボタン
-    // ---------------------------------------------------------
+    // --- 名前と消すボタン ---
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(m_sequence->GetItemLabel(m_selectedRow));
 
@@ -760,13 +495,10 @@ bool CinematicEditorWindow::DrawInspector(EditorContext &context)
     }
     ImGui::Separator();
 
-    // ---------------------------------------------------------
-    // 3. 数値の欄
-    // ---------------------------------------------------------
-    bool changed = false;
-    ImGui::PushItemWidth(fieldWidth);
+    // --- 数値の欄。右に名前が収まるだけ残して、幅いっぱいにする ---
+    ImGui::PushItemWidth(-ImGui::GetFontSize() * kLabelChars);
 
-    // 行の対応は、このフレームのタイムラインで作り直したもの（項目の足し消しはその前に済んでいる）
+    bool changed = false;
     switch (row.kind)
     {
     case RowKind::Shot:
@@ -792,35 +524,13 @@ bool CinematicEditorWindow::DrawInspector(EditorContext &context)
 
 
 
-bool CinematicEditorWindow::DrawScriptSettings()
-{
-    bool changed = false;
-
-    changed |= DragSeconds("開始待ち", m_script.startDelay);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("最初の絵で止めて見せる時間。例: 登場前の溜め");
-    }
-
-    changed |= ImGui::Checkbox("長押しでスキップできる", &m_script.allowSkip);
-    return changed;
-}
-
-
-
 void CinematicEditorWindow::EraseSelected()
 {
     CinematicTimelineSequence::Row row;
-    if (!m_sequence->RowAt(m_selectedRow, row))
-    {
-        return;
-    }
+    if (!m_sequence->RowAt(m_selectedRow, row)) return;
 
     auto eraseAt = [](auto &items, std::size_t i) {
-        if (i < items.size())
-        {
-            items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
-        }
+        if (i < items.size()) items.erase(items.begin() + static_cast<std::ptrdiff_t>(i));
     };
 
     switch (row.kind)
@@ -853,12 +563,12 @@ void CinematicEditorWindow::EraseSelected()
 bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t shotIndex)
 {
     // 処理フロー:
-    // 1. 時間（開始・長さ・入りのブレンド）。リップルなら、開始・長さで終わりが動いた分だけ後ろもずらす
-    // 2. 動き（基準・動かし方・速さのカーブ）
+    // 1. 時間。リップルなら、終わりが動いた分だけ後ろもずらす
+    // 2. 動き
     // 3. 構図（開始と終了をタブで切り替える）
     // 4. 被写界深度
 
-    // リップルは他のショットの時刻を書き換えるが、配列の大きさは変えないので、この参照は最後まで使える
+    // リップルはほかのショットの時刻を書き換えるが、配列の大きさは変えないので、この参照は最後まで使える
     CameraShot &shot    = m_script.shots[shotIndex];
     bool        changed = false;
 
@@ -867,9 +577,7 @@ bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t s
     // ---------------------------------------------------------
     ImGui::SeparatorText("時間");
 
-    // 開始・長さを触り始める直前の、後ろの項目の時刻を控える。触っている間は控え直さない
-    // 控え直すと、縮めたときにショットの途中にあった項目へ終わりが追いつき、そこから一緒に押してしまう
-    // 控えが別のショットのもの（欄を触ったまま選び直した）なら、取り直す
+    // 触っている間は控え直さない。縮めたときに、途中にあった項目へ終わりが追いついて一緒に押してしまう
     const bool otherShot = !m_timeFieldRipple.valid || m_timeFieldRipple.shotIndex != shotIndex;
     if (m_rippleEnabled && (!m_timeFieldActive || otherShot))
     {
@@ -885,29 +593,18 @@ bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t s
     if (timeChanged && m_rippleEnabled) CinematicRipple::Apply(m_script, m_timeFieldRipple);
     changed |= timeChanged;
 
-    changed |= DragSeconds("入りのブレンド", shot.blendIn);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("0 でカット。前のショットから滑らかにつなぐときに");
-    }
-
     // ---------------------------------------------------------
     // 2. 動き
     // ---------------------------------------------------------
     ImGui::SeparatorText("動き");
     changed |= DrawSubjectField(context, shot.subject, "ワールドの原点");
     changed |= ComboEnum("動かし方", kCameraMotionNames, shot.motion);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("Truck : 開始から終了へまっすぐ動く\nOrbit : 注視点の周りを回り込む");
-    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Truck : 開始から終了へまっすぐ動く\nOrbit : 注視点の周りを回り込む");
     changed |= ComboEnum("速さのカーブ", kCameraEaseNames, shot.ease);
 
     // ---------------------------------------------------------
     // 3. 構図
     // ---------------------------------------------------------
-
-    // 開始と終了は同じ並びなので、タブで切り替えて1つずつ見せる（縦に2つ並べると長くなりすぎる）
     ImGui::SeparatorText("構図");
     const bool orbit = (shot.motion == CameraMotion::Orbit);
 
@@ -916,19 +613,10 @@ bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t s
         for (int side = 0; side < 2; ++side)
         {
             const bool toEnd = (side == 1);
-            if (!ImGui::BeginTabItem(toEnd ? "終了" : "開始"))
-            {
-                continue;
-            }
+            if (!ImGui::BeginTabItem(toEnd ? "終了" : "開始")) continue;
 
-            if (ImGui::Button("今の画面を取り込む", ImVec2(-FLT_MIN, 0.0f)))
-            {
-                changed |= CaptureView(context, shot, toEnd);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("自由カメラで決めた構図を、そのまま入れる");
-            }
+            if (ImGui::Button("今の画面を取り込む", ImVec2(-FLT_MIN, 0.0f))) changed |= CaptureView(context, shot, toEnd);
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("自由カメラで決めた構図を、そのまま入れる");
 
             changed |= DragVec3("注視点", toEnd ? shot.lookEnd : shot.lookStart);
             if (orbit)
@@ -962,62 +650,37 @@ bool CinematicEditorWindow::DrawShotFields(EditorContext &context, std::size_t s
 
 bool CinematicEditorWindow::DrawShotDofFields(EditorContext &context, CameraShot &shot)
 {
-    bool changed = false;
     ImGui::SeparatorText("被写界深度");
 
-    changed |= ImGui::Checkbox("ぼかす", &shot.dof);
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("ピントは注視点に合います（カメラから注視点までの距離）\n"
-                          "開始と終了で注視点を変えると、ピント送りになります");
-
+    bool changed = ImGui::Checkbox("ぼかす", &shot.dof);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ピントは注視点に合う。開始と終了で注視点を変えるとピント送りになる");
     if (!shot.dof) return changed;
-
-    ImGui::SameLine();
-    ImGui::TextDisabled("ピント %.1f m → %.1f m", FocusDistance(shot, false), FocusDistance(shot, true));
 
     changed |= ImGui::DragFloat("ぼけない幅", &shot.dofRange, 0.05f, 0.0f, 100.0f, "%.2f m");
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("ピントの前後この距離までは、くっきり映す");
     changed |= ImGui::DragFloat("ぼけきる距離", &shot.dofFalloff, 0.1f, 0.1f, 200.0f, "%.1f m");
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ぼけない幅の外から、一番ぼけるまでの距離。短いほど急にぼける");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("短いほど急にぼける");
     changed |= ImGui::DragFloat("ぼけの強さ", &shot.dofMaxBlur, 0.0005f, 0.0f, 0.05f, "%.4f");
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("一番ぼけたときの半径（画面に対する割合）。0.01 前後が目安");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("0.01 前後が目安");
 
-    // ぼかすのはシーンの DepthOfField。ないシーンでは何も起きないので、ここで知らせる
-    if (context.world && !context.world->GetSingletonComponent<DepthOfFieldConfigComponent>())
-        ImGui::TextColored(kWarnColor, "シーンに DepthOfField が無いので、ぼけません");
+    const bool hasDof = context.world && context.world->GetSingletonComponent<DepthOfFieldConfigComponent>();
+    if (!hasDof) ImGui::TextColored(kWarnColor, "シーンに DepthOfField がないので、ぼけません");
 
     return changed;
 }
 
 
 
-float CinematicEditorWindow::FocusDistance(const CameraShot &shot, bool toEnd)
-{
-    // 基準の向きで回しても距離は変わらないので、台本のずれのまま測る
-    if (shot.motion == CameraMotion::Orbit)
-    {
-        const float radius = toEnd ? shot.radiusEnd : shot.radiusStart;
-        const float height = toEnd ? shot.heightEnd : shot.heightStart;
-        return std::sqrt(radius * radius + height * height);
-    }
-
-    const Vector3 eye  = toEnd ? shot.eyeEnd : shot.eyeStart;
-    const Vector3 look = toEnd ? shot.lookEnd : shot.lookStart;
-    return Vector3::Distance(eye, look);
-}
-
-
-
 bool CinematicEditorWindow::DrawSoundFields(EditorContext &context, CinematicSound &sound)
 {
-    bool changed = false;
+    bool changed = DragSeconds("時刻", sound.time);
 
-    changed |= DragSeconds("時刻", sound.time);
-
-    // 音は AudioConfig に登録した名前から選ぶ（アニメのシーケンサーの Sound と同じ出どころ）
+    // アニメのシーケンサーの Sound と同じく、AudioConfig に登録した名前から選ぶ
     std::vector<std::string> names;
     if (context.world && context.world->HasResource<std::shared_ptr<IAudioAPI>>())
+    {
         if (auto &api = context.world->GetResource<std::shared_ptr<IAudioAPI>>()) names = api->GetEventNames();
+    }
 
     if (ImGui::BeginCombo("音", sound.event.empty() ? "（未設定）" : sound.event.c_str()))
     {
@@ -1045,9 +708,7 @@ bool CinematicEditorWindow::DrawSoundFields(EditorContext &context, CinematicSou
 
 bool CinematicEditorWindow::DrawEffectFields(EditorContext &context, CinematicEffect &effect)
 {
-    bool changed = false;
-
-    changed |= DragSeconds("時刻", effect.time);
+    bool changed = DragSeconds("時刻", effect.time);
     changed |= PathField("VFX プレハブ", effect.effect, "Prefab", true);
     changed |= DrawSubjectField(context, effect.subject, nullptr);
     changed |= DragVec3("ずれ", effect.offset);
@@ -1062,11 +723,8 @@ bool CinematicEditorWindow::DrawEffectFields(EditorContext &context, CinematicEf
 
 bool CinematicEditorWindow::DrawSignalFields(CinematicSignal &signal)
 {
-    bool changed = false;
-
-    changed |= DragSeconds("時刻", signal.time);
+    bool changed = DragSeconds("時刻", signal.time);
     changed |= InputString("名前", signal.name);
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ゲーム側の受け手（CinematicSignalSystem）が名前で意味を決める\n例: Telop");
     changed |= InputString("引数1", signal.param);
     changed |= InputString("引数2", signal.param2);
     changed |= ImGui::DragFloat("引数3（数値）", &signal.value, 0.01f);
@@ -1078,14 +736,9 @@ bool CinematicEditorWindow::DrawSignalFields(CinematicSignal &signal)
 
 bool CinematicEditorWindow::DrawAnimationFields(EditorContext &context, CinematicAnimation &anim)
 {
-    bool changed = false;
-
-    changed |= DragSeconds("開始", anim.start);
+    bool changed = DragSeconds("開始", anim.start);
     changed |= DragSeconds("長さ", anim.duration);
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("0 ならクリップ1回分");
-    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("0 ならクリップ1回分");
     ImGui::TextDisabled("実際の長さ %.2f 秒", anim.Length());
 
     changed |= DrawSubjectField(context, anim.subject, nullptr);
@@ -1097,12 +750,10 @@ bool CinematicEditorWindow::DrawAnimationFields(EditorContext &context, Cinemati
     if (!anim.sequence.empty() && !anim.resolved) ImGui::TextColored(kWarnColor, "このアニメを読み込めません");
 
     changed |= ImGui::Checkbox("ループ", &anim.loop);
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ループは終わりが無いので、長さを 0 にできない");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("ループするときは長さを書く");
     changed |= ImGui::DragFloat("速さ", &anim.speed, 0.01f, 0.01f, 10.0f, "%.2f 倍");
     changed |= DragSeconds("握るときのブレンド", anim.blendIn);
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("同じ相手のアニメに続けるときは、前のアニメに少し重ねて置く\n"
-                          "重なった頭から、この時間で前のアニメから切り替わる");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("同じ相手のアニメに続けるときは、前のアニメに少し重ねて置く");
     changed |= DragSeconds("離すときのブレンド", anim.blendOut);
     return changed;
 }
@@ -1112,20 +763,154 @@ bool CinematicEditorWindow::DrawAnimationFields(EditorContext &context, Cinemati
 bool CinematicEditorWindow::DrawSubjectField(EditorContext &context, std::string &subject, const char *emptyMeans)
 {
     const bool changed = InputString("基準の名前", subject);
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("シーンの Entity の名前（NameComponent）。例: Player / Valkyra");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("シーンの Entity の名前。例: Player / Valkyra");
 
     if (subject.empty())
     {
         if (emptyMeans)
+        {
             ImGui::TextDisabled("空 = %s", emptyMeans);
+        }
         else
+        {
             ImGui::TextColored(kWarnColor, "空にはできません");
+        }
     }
     else if (context.world && Cinematic::FindEntityByName(*context.world, subject) == InvalidEntityID)
     {
-        ImGui::TextColored(kWarnColor, "シーンに '%s' が居ません", subject.c_str());
+        ImGui::TextColored(kWarnColor, "シーンに '%s' がいません", subject.c_str());
     }
     return changed;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 再生とプレビュー
+// ---------------------------------------------------------------------------
+
+void CinematicEditorWindow::StartPlayback(EditorContext &context, float from)
+{
+    if (!context.world) return;
+    auto &bus = context.world->GetEventBus();
+
+    // 再生中に届いた再生要求は捨てられるので、先に止める。ゲーム側が流しているムービーも止まる
+    auto script = std::make_shared<CinematicScript>(MakePlayableCopy());
+    bus.Publish(CinematicStopRequestEvent{});
+    bus.Publish(CinematicPlayRequestEvent{script->path, from, script});
+
+    // ループで流し直すときは、最初に流す前の状態を覚えたままにする
+    if (!m_playing) m_pausedBeforePlay = context.isPaused;
+    context.isPaused = false;
+
+    m_playing        = true;
+    m_playStarted    = false;
+    m_playWaitFrames = 0;
+    m_playFrom       = from;
+    m_time           = from;
+}
+
+
+
+void CinematicEditorWindow::StopPlayback(EditorContext &context, bool sendStop)
+{
+    if (sendStop && context.world) context.world->GetEventBus().Publish(CinematicStopRequestEvent{});
+
+    // 止め直せば、流し終えたところの絵とエフェクトをそのまま見られる
+    if (m_playing && m_pausedBeforePlay) context.isPaused = true;
+    m_playing = false;
+}
+
+
+
+void CinematicEditorWindow::UpdatePlayback(EditorContext &context)
+{
+    if (!m_playing) return;
+
+    // 要求は描画の段で受け付けられるので、出したフレームにはまだ流れていない
+    if (m_followingGame)
+    {
+        m_playStarted = true;
+        return;
+    }
+
+    // ムービー用カメラがないなどで受け付けられなければ、あきらめて元へ戻す
+    if (!m_playStarted)
+    {
+        if (++m_playWaitFrames < kPlayStartTimeoutFrames) return;
+        m_status = "流せませんでした（シーンにムービー用カメラがない、など。ログを確認）";
+        StopPlayback(context, false);
+        return;
+    }
+
+    // 流し終えた。ループなら同じ位置から流し直し、違えば流す前の一時停止へ戻す
+    if (m_playLoop)
+    {
+        StartPlayback(context, m_playFrom);
+        return;
+    }
+    StopPlayback(context, false);
+}
+
+
+
+bool CinematicEditorWindow::FollowGamePlayback(EditorContext &context)
+{
+    if (!context.world) return false;
+
+    const std::string name      = PlaybackName();
+    bool              following = false;
+    context.world->ViewEach<CinematicCameraComponent>([&](EntityID id) {
+        const auto *cine = context.world->GetComponent<CinematicCameraComponent>(id);
+        if (!cine || cine->state != CinematicState::Playing || cine->script.path != name) return;
+
+        m_time    = cine->time;
+        following = true;
+    });
+    return following;
+}
+
+
+
+void CinematicEditorWindow::PushPreview(EditorContext &context, bool active)
+{
+    if (!context.world) return;
+    World &world = *context.world;
+
+    world.ViewEach<CinematicCameraComponent>([&](EntityID id) {
+        auto *cine = world.GetComponent<CinematicCameraComponent>(id);
+        if (!cine) return;
+
+        cine->previewActive = active;
+        if (!active) return;
+
+        cine->previewScript = MakePlayableCopy();
+        cine->previewTime   = m_time;
+    });
+}
+
+
+
+CinematicScript CinematicEditorWindow::MakePlayableCopy() const
+{
+    CinematicScript copy = m_script;
+    copy.path            = PlaybackName();
+
+    // ドラッグや追加で崩れた並びを、再生側が前提にする時刻の順へ直す
+    CinematicScriptIO::SortByTime(copy);
+
+    auto &anims = copy.animations;
+    anims.erase(std::remove_if(anims.begin(), anims.end(), [](const CinematicAnimation &a) { return !a.resolved; }),
+                anims.end());
+    return copy;
+}
+
+
+
+std::string CinematicEditorWindow::PlaybackName() const
+{
+    if (m_script.path.empty()) return kUnsavedPlaybackName;
+    return m_script.path;
 }
 
 
@@ -1147,7 +932,7 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
     // ---------------------------------------------------------
     if (!context.world || !context.world->HasResource<Camera *>() || !context.world->GetResource<Camera *>())
     {
-        m_status = "画面のカメラが無いので取り込めません";
+        m_status = "画面のカメラがないので取り込めません";
         return false;
     }
     const Camera &camera = *context.world->GetResource<Camera *>();
@@ -1163,7 +948,7 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
     float   yaw = 0.0f;
     if (!Cinematic::FindSubjectPose(*context.world, shot.subject, subjectPos, yaw))
     {
-        m_status = "基準 '" + shot.subject + "' がシーンに居ないので取り込めません";
+        m_status = "基準 '" + shot.subject + "' がシーンにいないので取り込めません";
         return false;
     }
 
@@ -1171,9 +956,8 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
     // 3. 注視点
     // ---------------------------------------------------------
 
-    // 画面のカメラは向きしか持たないので、視線の上のどこを注視点にするかを決める
-    // 視線の上で基準に一番近い点にすると、Orbit の中心が基準の近くに来る
-    // 基準がカメラの後ろ（または近すぎる）なら、5m 先にする
+    // 画面のカメラは向きしか持たないので、視線の上で基準に一番近い点を注視点にする
+    // 基準がカメラの後ろか近すぎるときは、5m 先にする
     float distance = (subjectPos - eye).Dot(front);
     if (distance < 1.0f) distance = 5.0f;
     const Vector3 look = eye + front * distance;
@@ -1184,18 +968,15 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
 
     // 再生側は「ずれを基準の向きで回して足す」ので、逆に「引いてから逆向きに回す」
     const Matrix toLocal = Matrix::CreateRotationY(-yaw);
-
-    const Vector3 lookOffset = Vector3::TransformNormal(look - subjectPos, toLocal);
-    (toEnd ? shot.lookEnd : shot.lookStart) = lookOffset;
+    (toEnd ? shot.lookEnd : shot.lookStart) = Vector3::TransformNormal(look - subjectPos, toLocal);
 
     if (shot.motion == CameraMotion::Orbit)
     {
-        // Orbit は注視点からのずれを、角度（0=前, 90=右）・水平の距離・高さに直す
-        const Vector3 o      = Vector3::TransformNormal(eye - look, toLocal);
-        float         angle  = DirectX::XMConvertToDegrees(std::atan2(o.x, o.z));
-        const float   other  = toEnd ? shot.angleStart : shot.angleEnd;
+        const Vector3 o     = Vector3::TransformNormal(eye - look, toLocal);
+        float         angle = DirectX::XMConvertToDegrees(std::atan2(o.x, o.z));
+        const float   other = toEnd ? shot.angleStart : shot.angleEnd;
 
-        // 角度は数値のまま補間されるので、反対側の端に一番近い表し方にする（-170 と 170 で1周近く回らないように）
+        // 角度は数値のまま補間されるので、反対側の端に近い表し方にする（-170 と 170 で1周回らないように）
         while (angle - other > 180.0f) angle -= 360.0f;
         while (angle - other < -180.0f) angle += 360.0f;
 
@@ -1208,7 +989,7 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
         (toEnd ? shot.eyeEnd : shot.eyeStart) = Vector3::TransformNormal(eye - subjectPos, toLocal);
     }
 
-    // 正射影のカメラには画角がない（0）ので、そのときは書かない
+    // 正射影のカメラは画角が 0 なので書かない
     const float fovDeg = DirectX::XMConvertToDegrees(camera.GetFovY());
     if (fovDeg > 0.0f) (toEnd ? shot.fovEnd : shot.fovStart) = fovDeg;
 
@@ -1218,39 +999,12 @@ bool CinematicEditorWindow::CaptureView(EditorContext &context, CameraShot &shot
 
 
 
-void CinematicEditorWindow::PushPreview(EditorContext &context, bool active)
-{
-    if (!context.world) return;
-    World &world = *context.world;
-
-    world.ViewEach<CinematicCameraComponent>([&](EntityID id) {
-        auto *cine = world.GetComponent<CinematicCameraComponent>(id);
-        if (!cine) return;
-
-        cine->previewActive = active;
-
-        // 一時停止せずに見ているときだけ、操作と敵の思考を止めてもらう（一時停止中はもう止まっている）
-        cine->previewFreeze = active && !context.isPaused;
-        if (!active) return;
-
-        cine->previewScript = m_script;
-        cine->previewTime   = m_time;
-
-        // カメラ側のショットの探し方は開始時刻の昇順を前提にする
-        // 編集中の写しはドラッグや追加で順が崩れているので、渡す写しだけ並べる（読み込みと同じく同時刻は書いた順）
-        std::stable_sort(cine->previewScript.shots.begin(), cine->previewScript.shots.end(),
-                         [](const CameraShot &a, const CameraShot &b) { return a.start < b.start; });
-    });
-}
-
-
-
 void CinematicEditorWindow::Open(const std::string &path, bool keepView)
 {
     CinematicScript loaded;
     if (!CinematicScriptIO::Load(path, loaded))
     {
-        m_status = "読み込めませんでした（コンソールを確認）: " + path;
+        m_status = "読み込めませんでした（ログを確認）: " + path;
         return;
     }
 
@@ -1258,7 +1012,7 @@ void CinematicEditorWindow::Open(const std::string &path, bool keepView)
     m_dirty  = false;
     m_status = "開きました : " + path;
 
-    // 読み込みで時刻の順へ並び直るので、選んでいた行は別の項目を指しうる。選び直してもらう
+    // 読み込みで時刻の順に並び直るので、選んでいた行は別の項目を指しうる
     m_selectedRow = -1;
 
     if (keepView)
@@ -1291,17 +1045,16 @@ void CinematicEditorWindow::SaveAs(EditorContext &context)
     auto picked = FileDialog::SavePreset("Cinematic");
     if (!picked) return;
 
+    // ゲームが読むのは台本フォルダの直下だけ
     const std::string path = FileDialog::ConvertToRelativePath(*picked);
-
-    // ゲームが読むのは台本フォルダの直下だけ。それ以外へ保存すると、「ゲームで再生」しても見つからない
-    const std::string dir = std::string(kCinematicScriptDir) + "/";
+    const std::string dir  = std::string(kCinematicScriptDir) + "/";
     if (path.rfind(dir, 0) != 0 || path.find('/', dir.size()) != std::string::npos)
     {
-        m_status = "台本は " + std::string(kCinematicScriptDir) + " の直下に保存してください（ゲームはそこだけを読む）: " + path;
+        m_status = "台本は " + std::string(kCinematicScriptDir) + " の直下に保存してください: " + path;
         return;
     }
 
-    // 保存に失敗したときは元の保存先へ戻す。新しい保存先を残すと、次の「保存」が失敗した先へ書きにいく
+    // 失敗したら元の保存先へ戻す。残すと、次の「保存」が失敗した先へ書きにいく
     const std::string previous = m_script.path;
     m_script.path              = path;
     if (!Save(context)) m_script.path = previous;
@@ -1311,18 +1064,17 @@ void CinematicEditorWindow::SaveAs(EditorContext &context)
 
 bool CinematicEditorWindow::Save(EditorContext &context)
 {
-    // まだ一度も保存していない台本は、保存先を選ばせる
+    // まだ保存先がなければ、選ばせてから保存する
     if (m_script.path.empty())
     {
         SaveAs(context);
         return !m_script.path.empty();
     }
 
-    // 書けるかどうかは、読み込みと同じ決まりで CinematicScriptIO が確かめる
-    std::string err;
-    if (!CinematicScriptIO::Save(m_script.path, m_script, err))
+    // 台本を JSON へ書き出す
+    if (!CinematicScriptIO::Save(m_script.path, m_script))
     {
-        m_status = "保存できませんでした : " + err;
+        m_status = "保存できませんでした（ログを確認）: " + m_script.path;
         return false;
     }
 
@@ -1331,7 +1083,7 @@ bool CinematicEditorWindow::Save(EditorContext &context)
     Open(path, true);
     m_status = "保存しました : " + path;
 
-    // ゲーム側が持つ台本の一覧も読み直させる。保存してすぐ「ゲームで再生」を押したときに、新しい台本で流すため
+    // ゲーム側にも台本を読み直させる
     if (context.world) context.world->GetEventBus().Publish(CinematicScriptsChangedEvent{});
     return true;
 }
@@ -1345,115 +1097,35 @@ class CinematicTimelineSequence
 };
 
 CinematicEditorWindow::CinematicEditorWindow() : EditorWindow("Cinematic Editor", false) {}
-
-
-
 CinematicEditorWindow::~CinematicEditorWindow() = default;
 
 void CinematicEditorWindow::DrawContents(EditorContext &) {}
-
-
-
 void CinematicEditorWindow::OnFrameBegin(EditorContext &) {}
-
-
-
 void CinematicEditorWindow::DrawToolbar(EditorContext &) {}
-
-
-
 void CinematicEditorWindow::DrawTransportBar(EditorContext &) {}
-
-
-
 void CinematicEditorWindow::DrawStatusLine(EditorContext &) {}
-
-
-
-bool CinematicEditorWindow::DrawScriptSettings() { return false; }
-
-
-
-bool CinematicEditorWindow::DrawTimeline() { return false; }
-
-
-
 bool CinematicEditorWindow::DrawAddButtons() { return false; }
-
-
-
+bool CinematicEditorWindow::DrawTimeline() { return false; }
 bool CinematicEditorWindow::DrawInspector(EditorContext &) { return false; }
-
-
-
 void CinematicEditorWindow::EraseSelected() {}
-
-
-
-bool CinematicEditorWindow::IsPreviewShown(const EditorContext &) const { return false; }
-
-
-
 bool CinematicEditorWindow::DrawShotFields(EditorContext &, std::size_t) { return false; }
-
-
-
 bool CinematicEditorWindow::DrawShotDofFields(EditorContext &, CameraShot &) { return false; }
-
-
-
-float CinematicEditorWindow::FocusDistance(const CameraShot &, bool) { return 0.0f; }
-
-
-
-bool CinematicEditorWindow::FollowGamePlayback(EditorContext &) { return false; }
-
-
-
-void CinematicEditorWindow::StepPreviewPlayback() {}
-
-
-
 bool CinematicEditorWindow::DrawSoundFields(EditorContext &, CinematicSound &) { return false; }
-
-
-
 bool CinematicEditorWindow::DrawEffectFields(EditorContext &, CinematicEffect &) { return false; }
-
-
-
 bool CinematicEditorWindow::DrawSignalFields(CinematicSignal &) { return false; }
-
-
-
 bool CinematicEditorWindow::DrawAnimationFields(EditorContext &, CinematicAnimation &) { return false; }
-
-
-
 bool CinematicEditorWindow::DrawSubjectField(EditorContext &, std::string &, const char *) { return false; }
-
-
-
-bool CinematicEditorWindow::CaptureView(EditorContext &, CameraShot &, bool) { return false; }
-
-
-
+void CinematicEditorWindow::StartPlayback(EditorContext &, float) {}
+void CinematicEditorWindow::StopPlayback(EditorContext &, bool) {}
+void CinematicEditorWindow::UpdatePlayback(EditorContext &) {}
+bool CinematicEditorWindow::FollowGamePlayback(EditorContext &) { return false; }
 void CinematicEditorWindow::PushPreview(EditorContext &, bool) {}
-
-
-
+CinematicScript CinematicEditorWindow::MakePlayableCopy() const { return {}; }
+std::string CinematicEditorWindow::PlaybackName() const { return {}; }
+bool CinematicEditorWindow::CaptureView(EditorContext &, CameraShot &, bool) { return false; }
 void CinematicEditorWindow::Open(const std::string &, bool) {}
-
-
-
 void CinematicEditorWindow::NewScript() {}
-
-
-
 bool CinematicEditorWindow::Save(EditorContext &) { return false; }
-
-
-
 void CinematicEditorWindow::SaveAs(EditorContext &) {}
 
 #endif // ENABLE_EDITOR

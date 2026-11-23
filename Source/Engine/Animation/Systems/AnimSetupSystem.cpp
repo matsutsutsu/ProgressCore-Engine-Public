@@ -5,7 +5,7 @@
 
 using namespace CCL::ECS;
 
-void AnimSetupSystem::Update(float /*dt*/)
+void AnimSetupSystem::Update(float dt)
 {
     // 処理フロー:
     // 1. 足りないコンポーネントを持つ Entity を集める

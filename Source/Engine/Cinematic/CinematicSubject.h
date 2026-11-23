@@ -57,4 +57,4 @@ namespace Cinematic
         outYaw = YawOf(*trans);
         return true;
     }
-} // namespace Cinematic
+}

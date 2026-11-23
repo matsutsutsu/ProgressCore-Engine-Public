@@ -529,6 +529,9 @@
     <Filter Include="Source\Game\Logics\Character\Boss\Systems">
       <UniqueIdentifier>{26282c6a-b038-4c3e-9623-0dd3a09282da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Game\Logics\Character\Boss\Systems\Actions">
+      <UniqueIdentifier>{2264e17f-ee66-403c-b491-fcd38dccfdc8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Game\Logics\AnimLab">
       <UniqueIdentifier>{aa02d675-e392-405e-942d-0d9032d0aec7}</UniqueIdentifier>
     </Filter>
@@ -924,6 +927,9 @@
     <ClInclude Include="Source\Engine\UI\ImGui\ImGuiThemes.h">
       <Filter>Source\Engine\UI\ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Math\Angle.h">
+      <Filter>Source\Engine\Core\Math</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Core\Math\Interpolation.h">
       <Filter>Source\Engine\Core\Math</Filter>
     </ClInclude>
@@ -1038,7 +1044,7 @@
     <ClInclude Include="Source\Editor\Windows\Game\TextEditorWindow.h">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Windows\AI\BossBTDebugWindow.h">
+    <ClInclude Include="Source\Editor\Windows\AI\BossDebugWindow.h">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Windows\AI\BehaviorTreeWindow.h">
@@ -1057,6 +1063,9 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponent.h">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Components\BossStatusVfxComponent.h">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Actions\BTConditions_Boss.h">
@@ -1086,7 +1095,10 @@
     <ClInclude Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.h">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.h">
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.h">
+      <Filter>Source\Game\Logics\Combat\Feedback</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Combat\Feedback\FinishPresentationState.h">
       <Filter>Source\Game\Logics\Combat\Feedback</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.h">
@@ -1126,6 +1138,9 @@
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimBlendSpaceMath.h">
+      <Filter>Source\Engine\Animation\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Animation\Core\AnimOwnerUtils.h">
       <Filter>Source\Engine\Animation\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Animation\Core\AnimPoseUtils.h">
@@ -1656,9 +1671,6 @@
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostEffectOverrides.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\PostFx.h">
-      <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Graphics\Components\PostProcess\VignetteConfigComponent.h">
       <Filter>Source\Engine\Graphics\Components\PostProcess</Filter>
     </ClInclude>
@@ -1737,7 +1749,10 @@
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.h">
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.h">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.h">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.h">
@@ -1770,8 +1785,11 @@
     <ClInclude Include="Source\Engine\Camera\CameraEvents.h">
       <Filter>Source\Engine\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponent.h">
-      <Filter>Source\Engine\Camera\Components</Filter>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraComponent.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponent.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Camera\Systems\CameraListenerSystem.h">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
@@ -1782,8 +1800,8 @@
     <ClInclude Include="Source\Engine\Camera\Systems\VisualCameraSystem.h">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.h">
-      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraSystem.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Cinematic\CameraShot.h">
       <Filter>Source\Engine\Cinematic</Filter>
@@ -1816,6 +1834,9 @@
       <Filter>Source\Game\Logics\Cinematic</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Camera\CameraTargetBindSystem.h">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Camera\PlayerCameraLookup.h">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.h">
@@ -1965,10 +1986,39 @@
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionGeometry.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossVoiceSystem.h">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClInclude>    <ClInclude Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.h">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.h">
@@ -1990,6 +2040,9 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.h">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.h">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Game\Scenes\ParticleScene.h">
@@ -2037,6 +2090,9 @@
       <Filter>Source\Game\Logics\AI\BehaviorTree\Data</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossCommandComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Components\BossStatusVfxComponentMeta.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Components</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Components\EnemyTagMeta.cpp">
@@ -2411,7 +2467,7 @@
     <ClCompile Include="Source\Editor\Windows\Game\TextEditorWindow.cpp">
       <Filter>Source\Editor\Windows\Game</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\Windows\AI\BossBTDebugWindow.cpp">
+    <ClCompile Include="Source\Editor\Windows\AI\BossDebugWindow.cpp">
       <Filter>Source\Editor\Windows\AI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Windows\AI\BehaviorTreeWindow.cpp">
@@ -2447,7 +2503,7 @@
     <ClCompile Include="Source\Game\Logics\Combat\Systems\DamageResolutionSystem.cpp">
       <Filter>Source\Game\Logics\Combat\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Combat\Feedback\DefeatSlowMotionSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Combat\Feedback\FinishPresentationSystem.cpp">
       <Filter>Source\Game\Logics\Combat\Feedback</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Combat\Feedback\HitEffectSystem.cpp">
@@ -2891,7 +2947,10 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerInputSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpFacingSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerFacingSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Player\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerJumpSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\PlayerMoveSystem.cpp">
@@ -2901,6 +2960,9 @@
       <Filter>Source\Game\Logics\Character\Player\JustEvade</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Camera\CameraTargetBindSystem.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraLookup.cpp">
       <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Player\Core\BattleStartFacingSystem.cpp">
@@ -2936,8 +2998,11 @@
     <ClCompile Include="Source\Game\Logics\Character\Player\Feedback\PlayerActionVfxSystem.cpp">
       <Filter>Source\Game\Logics\Character\Player\Feedback</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera\Components\CameraBodyActionTPSComponentMeta.cpp">
-      <Filter>Source\Engine\Camera\Components</Filter>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraLockOnComponentMeta.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Camera\Systems\CameraListenerSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Game</Filter>
@@ -2948,8 +3013,8 @@
     <ClCompile Include="Source\Engine\Camera\Systems\VisualCameraSystem.cpp">
       <Filter>Source\Engine\Camera\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Camera\Systems\CameraActionTPSSystem.cpp">
-      <Filter>Source\Engine\Camera\Systems\Game</Filter>
+    <ClCompile Include="Source\Game\Logics\Camera\PlayerCameraSystem.cpp">
+      <Filter>Source\Game\Logics\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Cinematic\CinematicScript.cpp">
       <Filter>Source\Engine\Cinematic</Filter>
@@ -3065,10 +3130,36 @@
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossActionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossActionCommon.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossMoveAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossBackStepAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossRepositionAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossFootworkAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossLeapAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\Actions\BossDashAction.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems\Actions</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossAnimSyncSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossStatusVfxSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossVoiceSystem.cpp">
+      <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
+    </ClCompile>    <ClCompile Include="Source\Game\Logics\Character\Boss\Systems\BossPerceptionSystem.cpp">
       <Filter>Source\Game\Logics\Character\Boss\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Battle\BattleContextSyncSystem.cpp">
@@ -3081,6 +3172,9 @@
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Logics\AI\Debug\DroneDebugDrawSystem.cpp">
+      <Filter>Source\Game\Logics\AI\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Game\Logics\AI\Debug\BossLeapDebugDrawSystem.cpp">
       <Filter>Source\Game\Logics\AI\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Source\Game\Scenes\ParticleScene.cpp">

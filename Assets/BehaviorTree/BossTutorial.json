@@ -7,31 +7,6 @@
             "startPin": 2
         },
         {
-            "endPin": 8,
-            "id": 10,
-            "startPin": 5
-        },
-        {
-            "endPin": 12,
-            "id": 13,
-            "startPin": 9
-        },
-        {
-            "endPin": 15,
-            "id": 16,
-            "startPin": 9
-        },
-        {
-            "endPin": 18,
-            "id": 20,
-            "startPin": 5
-        },
-        {
-            "endPin": 22,
-            "id": 24,
-            "startPin": 19
-        },
-        {
             "endPin": 26,
             "id": 27,
             "startPin": 23
@@ -67,64 +42,14 @@
             "startPin": 23
         },
         {
-            "endPin": 47,
-            "id": 49,
-            "startPin": 5
-        },
-        {
-            "endPin": 51,
-            "id": 52,
-            "startPin": 48
-        },
-        {
-            "endPin": 54,
-            "id": 55,
-            "startPin": 48
-        },
-        {
-            "endPin": 57,
-            "id": 58,
-            "startPin": 48
-        },
-        {
-            "endPin": 60,
-            "id": 61,
-            "startPin": 48
-        },
-        {
-            "endPin": 63,
-            "id": 64,
-            "startPin": 48
-        },
-        {
-            "endPin": 66,
-            "id": 67,
-            "startPin": 48
-        },
-        {
-            "endPin": 69,
-            "id": 70,
-            "startPin": 48
-        },
-        {
-            "endPin": 72,
-            "id": 74,
-            "startPin": 5
-        },
-        {
-            "endPin": 76,
-            "id": 77,
-            "startPin": 73
-        },
-        {
             "endPin": 79,
             "id": 80,
             "startPin": 23
         },
         {
-            "endPin": 82,
-            "id": 83,
-            "startPin": 48
+            "endPin": 22,
+            "id": 93,
+            "startPin": 5
         }
     ],
     "editor_nodes": [
@@ -134,7 +59,7 @@
             "inputPinId": 0,
             "name": "ROOT",
             "outputPinId": 2,
-            "posX": 2512.5,
+            "posX": 869.0,
             "posY": 0.0,
             "type": 0
         },
@@ -144,61 +69,18 @@
             "inputPinId": 4,
             "name": "Root Selector",
             "outputPinId": 5,
-            "posX": 2512.5,
-            "posY": 220.0,
+            "posX": 819.0,
+            "posY": 210.0,
             "type": 1
-        },
-        {
-            "actionId": 0,
-            "id": 7,
-            "inputPinId": 8,
-            "name": "遠ければ詰める",
-            "outputPinId": 9,
-            "posX": 150.0,
-            "posY": 440.0,
-            "type": 2
-        },
-        {
-            "actionId": 2,
-            "condition": "C_DistanceGreaterThan",
-            "id": 11,
-            "inputPinId": 12,
-            "outputPinId": 0,
-            "param": 60.0,
-            "posX": 0.0,
-            "posY": 660.0,
-            "type": 3
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 14,
-            "inputPinId": 15,
-            "outputPinId": 0,
-            "param": 1.5,
-            "posX": 300.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "actionId": 0,
-            "decoratorType": 1,
-            "id": 17,
-            "inputPinId": 18,
-            "outputPinId": 19,
-            "param": 7.0,
-            "posX": 1500.0,
-            "posY": 440.0,
-            "type": 6
         },
         {
             "actionId": 0,
             "id": 21,
             "inputPinId": 22,
-            "name": "縦割り（予兆を長く）",
+            "name": "縦割り",
             "outputPinId": 23,
-            "posX": 1500.0,
-            "posY": 660.0,
+            "posX": 804.0,
+            "posY": 430.0,
             "type": 2
         },
         {
@@ -208,8 +90,8 @@
             "inputPinId": 26,
             "outputPinId": 0,
             "param": 50.0,
-            "posX": 600.0,
-            "posY": 880.0,
+            "posX": 41.0,
+            "posY": 670.0,
             "type": 3
         },
         {
@@ -219,8 +101,8 @@
             "inputPinId": 29,
             "outputPinId": 0,
             "param": 24.0,
-            "posX": 900.0,
-            "posY": 880.0,
+            "posX": 491.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -230,8 +112,8 @@
             "inputPinId": 32,
             "outputPinId": 0,
             "param": 2.0,
-            "posX": 1200.0,
-            "posY": 880.0,
+            "posX": 720.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -241,8 +123,8 @@
             "inputPinId": 35,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 1500.0,
-            "posY": 880.0,
+            "posX": 929.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -252,8 +134,8 @@
             "inputPinId": 38,
             "outputPinId": 0,
             "param": 1.5,
-            "posX": 1800.0,
-            "posY": 880.0,
+            "posX": 1126.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -263,8 +145,8 @@
             "inputPinId": 41,
             "outputPinId": 0,
             "param": 0.0,
-            "posX": 2100.0,
-            "posY": 880.0,
+            "posX": 1346.0,
+            "posY": 671.0,
             "type": 4
         },
         {
@@ -273,318 +155,102 @@
             "id": 43,
             "inputPinId": 44,
             "outputPinId": 0,
-            "param": 3.5,
-            "posX": 2400.0,
-            "posY": 880.0,
+            "param": 1.0,
+            "posX": 1543.0,
+            "posY": 671.0,
             "type": 4
         },
         {
-            "actionId": 0,
-            "id": 46,
-            "inputPinId": 47,
-            "name": "横なぎ（予兆を長く）",
-            "outputPinId": 48,
-            "posX": 3600.0,
-            "posY": 440.0,
-            "type": 2
-        },
-        {
-            "actionId": 1,
-            "condition": "C_DistanceLessThan",
-            "id": 50,
-            "inputPinId": 51,
-            "outputPinId": 0,
-            "param": 60.0,
-            "posX": 2700.0,
-            "posY": 660.0,
-            "type": 3
-        },
-        {
-            "action": "A_DroneFormation",
-            "actionId": 128,
-            "id": 53,
-            "inputPinId": 54,
-            "outputPinId": 0,
-            "param": 22.0,
-            "posX": 3000.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 56,
-            "inputPinId": 57,
-            "outputPinId": 0,
-            "param": 2.0,
-            "posX": 3300.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_DroneStrike",
-            "actionId": 100,
-            "id": 59,
-            "inputPinId": 60,
-            "outputPinId": 0,
-            "param": 0.0,
-            "posX": 3600.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 62,
-            "inputPinId": 63,
-            "outputPinId": 0,
-            "param": 2.0,
-            "posX": 3900.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_DroneHighOrbit",
-            "actionId": 102,
-            "id": 65,
-            "inputPinId": 66,
-            "outputPinId": 0,
-            "param": 0.0,
-            "posX": 4200.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 68,
-            "inputPinId": 69,
-            "outputPinId": 0,
-            "param": 3.5,
-            "posX": 4500.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "actionId": 0,
-            "id": 71,
-            "inputPinId": 72,
-            "name": "間合いを保つ",
-            "outputPinId": 73,
-            "posX": 4800.0,
-            "posY": 440.0,
-            "type": 2
-        },
-        {
-            "action": "A_Wait",
-            "actionId": 1,
-            "id": 75,
-            "inputPinId": 76,
-            "outputPinId": 0,
-            "param": 1.5,
-            "posX": 4800.0,
-            "posY": 660.0,
-            "type": 4
-        },
-        {
-            "action": "A_BossBackStep",
-            "actionId": 4,
+            "action": "A_BossReposition",
+            "actionId": 14,
             "id": 78,
             "inputPinId": 79,
             "outputPinId": 0,
-            "param": 1.5,
-            "posX": 750.0,
-            "posY": 880.0,
-            "type": 4
-        },
-        {
-            "action": "A_BossBackStep",
-            "actionId": 4,
-            "id": 81,
-            "inputPinId": 82,
-            "outputPinId": 0,
-            "param": 1.5,
-            "posX": 2850.0,
-            "posY": 660.0,
+            "param": 30.0,
+            "posX": 222.0,
+            "posY": 670.0,
             "type": 4
         }
     ],
-    "last_id_counter": 84,
+    "last_id_counter": 93,
     "nodes": [
         {
             "actionOrConditionId": 0,
             "children": [
-                1,
-                4,
-                13,
-                21
+                1
             ],
+            "name": "Root Selector",
             "type": "Selector"
         },
         {
             "actionOrConditionId": 0,
             "children": [
                 2,
-                3
-            ],
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 2,
-            "condition": "C_DistanceGreaterThan",
-            "param": 60.0,
-            "type": "Condition"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
-            "param": 1.5,
-            "type": "Action"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                5
-            ],
-            "decoratorType": 1,
-            "param": 7.0,
-            "type": "Decorator"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
+                3,
+                4,
+                5,
                 6,
-                23,
                 7,
                 8,
-                9,
-                10,
-                11,
-                12
+                9
             ],
+            "name": "縦割り",
             "type": "Sequence"
         },
         {
             "actionOrConditionId": 1,
+            "children": [],
             "condition": "C_DistanceLessThan",
             "param": 50.0,
             "type": "Condition"
         },
         {
+            "action": "A_BossReposition",
+            "actionOrConditionId": 14,
+            "children": [],
+            "param": 30.0,
+            "type": "Action"
+        },
+        {
             "action": "A_DroneFormation",
             "actionOrConditionId": 128,
+            "children": [],
             "param": 24.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
             "actionOrConditionId": 1,
+            "children": [],
             "param": 2.0,
             "type": "Action"
         },
         {
             "action": "A_DroneStrike",
             "actionOrConditionId": 100,
+            "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
             "actionOrConditionId": 1,
+            "children": [],
             "param": 1.5,
             "type": "Action"
         },
         {
             "action": "A_DroneHighOrbit",
             "actionOrConditionId": 102,
+            "children": [],
             "param": 0.0,
             "type": "Action"
         },
         {
             "action": "A_Wait",
             "actionOrConditionId": 1,
-            "param": 3.5,
-            "type": "Action"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                14,
-                24,
-                15,
-                16,
-                17,
-                18,
-                19,
-                20
-            ],
-            "type": "Sequence"
-        },
-        {
-            "actionOrConditionId": 1,
-            "condition": "C_DistanceLessThan",
-            "param": 60.0,
-            "type": "Condition"
-        },
-        {
-            "action": "A_DroneFormation",
-            "actionOrConditionId": 128,
-            "param": 22.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
-            "param": 2.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_DroneStrike",
-            "actionOrConditionId": 100,
-            "param": 0.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
-            "param": 2.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_DroneHighOrbit",
-            "actionOrConditionId": 102,
-            "param": 0.0,
-            "type": "Action"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
-            "param": 3.5,
-            "type": "Action"
-        },
-        {
-            "actionOrConditionId": 0,
-            "children": [
-                22
-            ],
-            "type": "Sequence"
-        },
-        {
-            "action": "A_Wait",
-            "actionOrConditionId": 1,
-            "param": 1.5,
-            "type": "Action"
-        },
-        {
-            "action": "A_BossBackStep",
-            "actionOrConditionId": 4,
-            "param": 1.5,
-            "type": "Action"
-        },
-        {
-            "action": "A_BossBackStep",
-            "actionOrConditionId": 4,
-            "param": 1.5,
+            "children": [],
+            "param": 1.0,
             "type": "Action"
         }
     ]

@@ -24,6 +24,12 @@ enum class InputIconKind : std::uint8_t
 
     // ポーズ（ESC / START）。PauseSystem がキーを直接見ていて InputConfig.json を通らないので固定
     Pause,
+
+    // 前・後ろへの移動（キーボードなら W / S、パッドなら左スティックの上 / 下）
+    // コンボの派生のように、倒す向きで技が変わる所で使う。Move の4方向の絵では向きが伝わらない
+    // 番号はプレハブに保存されるので、新しい種類は末尾に足す
+    MoveForward,
+    MoveBack,
 };
 
 // UIImage に付けて、どの操作のアイコンを出すかを指定する

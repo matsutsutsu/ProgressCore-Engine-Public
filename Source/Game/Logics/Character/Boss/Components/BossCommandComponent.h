@@ -11,7 +11,7 @@ struct BossCommandComponent
     // 本体に出させたい技。0 は何もしない
     // BossPhaseSystem が毎フレーム 0 に戻す
     ActionID currentActionId    = 0;
-    float    currentActionParam = 0.0f; // 技のノードの param（横移動の距離など）
+    float    currentActionParam = 0.0f; // 技のノードの param（間合いを取るの距離など）
 
     // 技の依頼番号。BT が技を出し始めるたびに1増やす（0 に戻さない）
     // 同じ技を続けて出しても、本体は新しい技として始め直す
@@ -19,4 +19,11 @@ struct BossCommandComponent
 
     bool droneAttackActive     = false; // ドローンへの「今撃て」信号
     bool prevDroneAttackActive = false; // 前フレームの信号（立ち上がり検出）
+
+    // --- 怒り ---
+
+    // 読む側は raging だけを見る。書くのは怒りの行動（A_BossRage）が rageRequested へ
+    // BossPhaseSystem がフレームの最初に rageRequested を raging へ写し、false に戻す
+    bool rageRequested = false; // このフレームに怒りの行動が評価されたか
+    bool raging        = false; // 怒り中か（前のフレームに怒りの行動が評価された）
 };

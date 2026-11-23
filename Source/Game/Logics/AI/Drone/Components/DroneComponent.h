@@ -24,7 +24,7 @@ enum class DroneState : uint8_t
     Returning,    // 離脱: 突撃後に上へ抜ける。当たらない
 };
 
-// FireCharge 中の移動方式。書き手は攻撃陣形
+// FireCharge 中の移動方式。技ごとに決まり、IFormation::GetChargeMode が返す
 enum class ChargeMode : uint8_t
 {
     Straight,    // fireDirection へ直進（弾幕）
@@ -58,14 +58,13 @@ struct DroneComponent
     DirectX::SimpleMath::Vector3 targetLookDirection = DirectX::SimpleMath::Vector3::UnitZ; // 機首を向けたい方向
     DirectX::SimpleMath::Vector3 fireDirection       = DirectX::SimpleMath::Vector3::Zero;  // 直進の突撃の方向
 
-    float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1
+    float attackProgress = 0.0f; // [RT] 陣形攻撃の進行度 0→1。データ陣形は動き切った後も当たりの猶予ぶん 1 を超えて進む
 
     bool               shivers            = false;                    // [RT] 予告の間に震えるか（震えを使う技か）
     DroneFormationType telegraphFormation = DroneFormationType::None; // [RT] telegraphTime をどの陣形で数えているか
     float              telegraphTime      = 0.0f;                     // 予告の経過時間 [秒]。0 より大きい間が予告中
 
-    ChargeMode chargeMode = ChargeMode::Straight; // [RT] FireCharge 中の移動方式
-    float      fireDelay  = 0.0f;                 // 発射待ちの残り [秒]。弾幕だけが使う
+    float fireDelay = 0.0f; // 発射待ちの残り [秒]。弾幕だけが使う
 
     DirectX::SimpleMath::Vector3 followFeedForward = DirectX::SimpleMath::Vector3::Zero; // 先渡しの速度（持ち場そのものが動く速度）
     float                        springScale       = 1.0f;                               // バネの強さの倍率。小隊の陣形が後ろの席ほど小さくする

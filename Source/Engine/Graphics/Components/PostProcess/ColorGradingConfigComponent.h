@@ -37,7 +37,7 @@ struct ColorGradingConfigComponent
     // enable=false でも、演出中は描く
     bool ResolvedEnable() const { return enable || overrides.AnyActive(); }
 
-    // 上書きの土台になる、今の設定そのままの値（新しく取ったスロットへ PostFx::Acquire が入れる）
+    // 上書きの土台になる、今の設定そのままの値（Acquire の base に渡す）
     ColorGradingOverrideParams BaseParams() const
     {
         ColorGradingOverrideParams p;
@@ -52,7 +52,10 @@ struct ColorGradingConfigComponent
     GpuData::CbColorGradingData Resolve() const
     {
         GpuData::CbColorGradingData out = data;
-        overrides.ForEachActive([&out](const ColorGradingOverrideParams &p, float t) {
+        for (const auto *s : overrides.SortedActive())
+        {
+            const auto &p = s->params;
+            const float t = s->Amount();
             out.gradeTint.x     = std::lerp(out.gradeTint.x, p.tint.x, t);
             out.gradeTint.y     = std::lerp(out.gradeTint.y, p.tint.y, t);
             out.gradeTint.z     = std::lerp(out.gradeTint.z, p.tint.z, t);
@@ -61,9 +64,8 @@ struct ColorGradingConfigComponent
             out.gradeContrast   = std::lerp(out.gradeContrast, p.contrast, t);
 
             const float mix = p.mixPeak * t;
-            if (mix > out.gradeMixAmount)
-                out.gradeMixAmount = mix;
-        });
+            if (mix > out.gradeMixAmount) out.gradeMixAmount = mix;
+        }
         return out;
     }
 };

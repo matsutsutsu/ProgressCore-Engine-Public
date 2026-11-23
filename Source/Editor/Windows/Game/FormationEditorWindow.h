@@ -30,7 +30,7 @@ namespace CCL::AI::Formation
     struct FormationAsset;
     struct FormationLayer;
     class FormationRegistry;
-} // namespace CCL::AI::Formation
+}
 
 namespace CCL::AI::Formation::Data { class DataDrivenFormation; }
 

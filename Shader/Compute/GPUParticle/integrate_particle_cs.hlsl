@@ -1,3 +1,11 @@
+// ===========================================================================
+// 概要: GPU パーティクルの毎フレームの更新。粒子を生み、動かし、色と大きさを決め、寿命で消す
+//
+// 入力: 粒子のバッファ・エミッタの設定（cbuffer）・色のランプ・3D ノイズ
+// 出力: 更新した粒子のバッファ
+//
+// 備考: 粒子の種類（particle_type）は全粒子で同じなので、粒子ごとに持たず cbuffer から読む（1粒子 4 バイトの節約）
+// ===========================================================================
 #include "Shader/Compute/GPUParticle/particle.hlsli"
 
 void UpdateParticle(inout particle p);
@@ -5,28 +13,44 @@ void UpdateParticle(inout particle p);
 RWStructuredBuffer<particle> particle_buffer : register(REG_UAV(SLOT_UAV_PARTICLE_BUF));
 
 SamplerState   sampler_linear     : register(REG_SMP(SLOT_SMP_LINEAR));
-Texture2D      color_ramp         : register(REG_SRV(SLOT_SRV_MAT_TEX1));
-Texture3D<float4> noise_3d        : register(REG_SRV(SLOT_SRV_MAT_TEX2));
+Texture2D      color_ramp         : register(REG_SRV(SLOT_SRV_MAT_TEX1)); // 縦方向が年齢（上 = 生まれたとき）の色
+Texture3D<float4> noise_3d        : register(REG_SRV(SLOT_SRV_MAT_TEX2)); // 乱流の向き（0〜1 を -1〜1 に直して使う）
 
 [numthreads(PARTICLE_CS_THREADS, 1, 1)]
 void main(uint3 dtid : SV_DispatchThreadID)
 {
+    // 処理フロー:
+    // 1. エミッタが動いた分、生きている粒子を付いていかせる
+    // 2. バースト: 撃たれたら死んでいる粒子を生み、寿命まで動かす
+    // 3. 継続: 寿命が尽きた粒子を生み直し（止めてあれば待たせ）、動かす
+
     uint id = dtid.x;
     if (id >= (uint)max_count) return;
 
     particle p = particle_buffer[id];
-    // 種別は粒子ごとに持たず、GS/PS が CbParticleStatic.particle_type を直接読む
-    // （全粒子で同一の値のため、1粒子あたり4バイトを節約する）。
 
-    if (emit_mode == 1)  // バーストモード
+    // ---------------------------------------------------------
+    // 1. エミッタへの追従
+    // ---------------------------------------------------------
+
+    // 前のフレームから生きている粒子を、エミッタが動いた分 × 追従率だけずらす
+    //   この後で生まれる粒子は spawn() が今のフレームの軌道の上に置くので、生まれる前にずらしておく
+    //   移動量に delta_time を掛けないので、スロー中の粒子もエミッタの動きにそのまま付いていく
+    if (follow_ratio > 0.0f && p.state == STATE_ALIVE)
+        p.position += (world_position - prev_world_position) * follow_ratio;
+
+    // ---------------------------------------------------------
+    // 2. バースト
+    // ---------------------------------------------------------
+
+    if (emit_mode == 1)
     {
         if (burst_trigger > 0.0f && id < (uint)burst_count)
         {
             if (p.state == STATE_DEAD || p.age > p.lifespan)
             {
-                // 前の人生の種を salt に渡して数珠つなぎにする。
-                //   これが無いと、同じエミッタで2回目のバーストを撃ったとき
-                //   1回目とまったく同じ粒子が生まれる。
+                // 前の命の種を salt に渡して数珠つなぎにする
+                // ないと、同じエミッタで2回目のバーストを撃ったとき、1回目とまったく同じ粒子が生まれる
                 const uint salt = p.seed;
                 spawn(id, p, salt);
                 p.state = STATE_ALIVE;
@@ -47,13 +71,16 @@ void main(uint3 dtid : SV_DispatchThreadID)
             }
         }
     }
-    else  // 継続放出モード
+    else
     {
+        // ---------------------------------------------------------
+        // 3. 継続
+        // ---------------------------------------------------------
+
         bool wasAlive = (p.state == STATE_ALIVE);
 
-        // 生存粒子は常に加齢（ゲートOFFでも寿命まで生きて尾を引いて自然に消える）。
-        // 死亡待機粒子はゲートON中のみ加齢（OFF中は staggered な位相を凍結し、
-        // ゲート開放時に一斉ではなく順次スポーンさせる＝定常流を保証）。
+        // 生きている粒子は、放出を止めても寿命まで年を取り、尾を引いて自然に消える
+        // 死んで待っている粒子は、放出中だけ年を取る（止めている間はずらした年齢を保ち、再開したときに一斉に生まれないようにする）
         if (wasAlive || emit_enabled > 0.5f)
             p.age += delta_time;
 
@@ -61,24 +88,22 @@ void main(uint3 dtid : SV_DispatchThreadID)
         {
             if (emit_enabled > 0.5f)
             {
-                // ゲートON: 軌道上(サブフレーム補間)にスポーン。
-                //   前の人生の種を salt に渡して数珠つなぎにする。これが無いと
-                //   粒子番号5番は生まれ変わるたびに同じ軌道を描き、エミッタ全体が
-                //   完全に周期的な（同じ模様を繰り返す）見た目になる。
+                // 放出中: 生み直す。前の命の種を salt に渡して数珠つなぎにする
+                // ないと、粒子番号5番は生まれ変わるたびに同じ軌道を描き、エミッタ全体が同じ模様を繰り返す
                 const uint salt = p.seed;
                 spawn(id, p, salt);
                 p.state = STATE_ALIVE;
             }
             else
             {
-                // ゲートOFF: 一斉スポーン防止のため age を staggered に戻して死亡待機。
-                // これで次にゲートが開いたときも順次スポーンになる（連続攻撃でも定常）。
+                // 止めてある: 死んで待つ。年齢をずらし直し、次に放出を始めたときも順に生まれるようにする（連続攻撃でも流れが続く）
                 p.state   = STATE_DEAD;
                 p.color.a = 0.0f;
                 p.age     = ((float)id / (float)max_count) * p.lifespan;
             }
         }
 
+        // 年齢が負のうちは、生まれるまでの待ち時間なので動かさない
         if (p.state == STATE_ALIVE && p.age > 0.0f)
         {
             UpdateParticle(p);
@@ -88,14 +113,24 @@ void main(uint3 dtid : SV_DispatchThreadID)
     particle_buffer[id] = p;
 }
 
+// 生きている粒子を1フレーム分進める
 void UpdateParticle(inout particle p)
 {
-    // 重力。等加速度なので質量には依らない
-    // （以前は force に p.mass を掛けたあと p.mass で割っていたが、常に相殺していた）。
+    // 処理フロー:
+    // 1. 速度に力を足す（重力・乱流・引力と渦・空気抵抗）。速すぎれば抑える
+    // 2. 位置と回転を進める
+    // 3. 色と不透明度を決める
+    // 4. スプライトシートのコマを進める
+
+    // ---------------------------------------------------------
+    // 1. 力
+    // ---------------------------------------------------------
+
+    // 重力。等加速度なので質量によらない
     p.velocity += float3(0.0f, gravity, 0.0f) * delta_time;
 
-    // 乱流ノイズ (p.seed で粒子ごとに独立した UV オフセットを与える)
-    //   強度0のエミッタまで3Dテクスチャを引くと丸損なので、使うときだけサンプルする。
+    // 乱流。p.seed で粒子ごとに読む場所をずらす
+    // 強さが 0 のエミッタまで 3D テクスチャを読むと無駄なので、使うときだけ読む
     if (noise_strength > 0.0f)
     {
         float seed_f  = (float)(p.seed & 0xFFFFu) / 65535.0f;
@@ -106,7 +141,7 @@ void UpdateParticle(inout particle p)
         p.velocity += noiseDir * noise_strength * delta_time;
     }
 
-    // ---- Force Field (引力/斥力/渦) ----
+    // 引力・斥力・渦。force_flags の 1 ビット目で有効、2 ビット目で中心をエミッタからの相対位置にする
     if (force_flags & 1u)
     {
         float3 center = (force_flags & 2u) ? (world_position + attractor_pos.xyz)
@@ -115,7 +150,7 @@ void UpdateParticle(inout particle p)
         float dist = length(toCenter) + 1e-4f;
         float3 dir = toCenter / dist;
 
-        // 半径フォールオフ (0=無限。>0 なら端で滑らかに 0 へ)
+        // 中心から離れるほど弱める。attractor_radius が 0 なら弱めない。0 より大きければ、その半径でちょうど 0 になる
         float falloff = 1.0f;
         if (attractor_radius > 0.0f)
         {
@@ -123,10 +158,10 @@ void UpdateParticle(inout particle p)
             falloff = (1.0f - nd) * (1.0f - nd);
         }
 
-        // 引力/斥力: w(=強さ)>0 で中心へ吸い込み、<0 で外へ弾く
+        // attractor_pos.w が強さ。正なら中心へ吸い込み、負なら外へ弾く
         p.velocity += dir * attractor_pos.w * falloff * delta_time;
 
-        // 渦: 中心軸(Y)まわりの接線方向（魔法陣に巻き込む旋回）
+        // 渦。中心を通る縦の軸のまわりを回す（魔法陣に巻き込むような動き）
         if (abs(vortex_strength) > 1e-5f)
         {
             float3 t = cross(float3(0.0f, 1.0f, 0.0f), toCenter);
@@ -136,29 +171,32 @@ void UpdateParticle(inout particle p)
         }
     }
 
-    // ---- ドラッグ (空気抵抗。引力で集めた粒子を中心に沈めるのに有効) ----
+    // 空気抵抗。引力で集めた粒子を、中心で止めるのに使う
     if (drag > 0.0f)
         p.velocity *= saturate(1.0f - drag * delta_time);
 
 
-    // 速度クランプ (max_speed <= 0 は「制限なし」。attractor_radius と同じ約束)
+    // 速さの上限。max_speed が 0 以下なら上限なし（attractor_radius と同じ決まり）
     if (max_speed > 0.0f)
     {
         float spd = length(p.velocity);
         if (spd > max_speed)
-            p.velocity = p.velocity * (max_speed / spd); // normalize + 乗算の分を1回に
+            p.velocity = p.velocity * (max_speed / spd);
     }
 
-    // 位置更新
+    // ---------------------------------------------------------
+    // 2. 位置と回転
+    // ---------------------------------------------------------
+
     p.position += p.velocity * delta_time;
 
-    // 回転
     p.angle += p.angular_speed * delta_time;
 
-    // ---- 色更新 ----
-    // 種別は定数バッファ側の particle_type を参照する
-    //   base_alpha は手動の色のアルファ。インスペクタはアルファも編集できるので、
-    //   下のフェードに掛けないと「下げても何も変わらない」設定になる。
+    // ---------------------------------------------------------
+    // 3. 色と不透明度
+    // ---------------------------------------------------------
+
+    // base_alpha は手動の色のアルファ。インスペクタでアルファも変えられるので、下のフェードに掛ける
     float base_alpha = 1.0f;
     if (particle_type == 0)
     {
@@ -171,9 +209,8 @@ void UpdateParticle(inout particle p)
         {
             p.color     = color_ramp.SampleLevel(sampler_linear,
                                 float2(0.5f, p.age / p.lifespan), 0);
-            // sRGB → リニア。手動の色（C++ の SrgbToLinear）と同じ 2.2 にそろえる
-            //   （ToneMapPS が最後に 1/2.2 乗で戻す）。アルファは下でフェードに上書きされる。
-            //   負値が来ると pow が NaN を返すので saturate で挟む（警告 X3571 対策も兼ねる）。
+            // sRGB からリニアへ。手動の色（C++ の SrgbToLinear）と同じ 2.2 乗にそろえる（ToneMapPS が最後に 1/2.2 乗で戻す）
+            // アルファは下でフェードに上書きされる。負の値は pow が NaN を返すので saturate で挟む（警告 X3571 も消える）
             p.color.rgb = pow(saturate(p.color.rgb), 2.2f);
         }
         else
@@ -183,8 +220,8 @@ void UpdateParticle(inout particle p)
         }
     }
 
-    // 発光の強さ。描画先は HDR なので 1 を超えた分が光り、ブルームがかかる。
-    //   アルファには掛けない（不透明度は 1 を超えられないため）。
+    // 光の強さ。描画先は HDR なので、1 を超えた分が光ってブルームがかかる
+    // 不透明度は 1 を超えられないので、アルファには掛けない
     p.color.rgb *= intensity;
 
     float alpha  = base_alpha
@@ -192,7 +229,11 @@ void UpdateParticle(inout particle p)
                  * fade_out(fade_duration.y, p.age, p.lifespan, 1.0f);
     p.color.a = alpha;
 
-    // ---- スプライトアニメーション ----
+    // ---------------------------------------------------------
+    // 4. スプライトシートのコマ
+    // ---------------------------------------------------------
+
+    // 寿命に合わせて最初のコマから最後のコマへ進める
     if (sprite_anim_mode == 1)
     {
         uint total = sprite_sheet_grid.x * sprite_sheet_grid.y;

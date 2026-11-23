@@ -1,51 +1,154 @@
 {
-    "_comment": "ボス撃破のムービー。よろめくボスを見上げる -> 回り込みながら引いて上がる -> 高い位置から見下ろして終わり、リザルトへ渡す。導入（見上げて強さを見せる）の逆で、最後は見下ろして決着を見せる。プレイヤーは撃破の瞬間どちらを向いているか分からないので、構図はすべてボスの向き基準（+X=右, +Y=上, +Z=前）で組む。撃破のスローが終わってから流す",
-    "duration": 6.4,
-    "startDelay": 0.0,
-    "allowSkip": false,
-    "shots": [
-        {
-            "_comment": "Shot1: カットでボスへ。斜め前の低い位置から望遠で見上げ、ゆっくり寄る（よろめく姿を大きく見せる）",
-            "start": 0.0,
-            "duration": 2.0,
-            "subject": "Valkyra",
-            "ease": "EaseOut",
-            "eyeStart": [7.0, 2.0, 24.0],
-            "eyeEnd": [4.0, 2.5, 19.0],
-            "lookStart": [0.0, 7.0, 0.0],
-            "lookEnd": [0.0, 6.5, 0.0],
-            "fovStart": 30.0,
-            "fovEnd": 26.0
-        },
-        {
-            "_comment": "Shot2: カットで引きへ。ボスの正面を右から左へ回り込みながら、引いて上がる（戦いの終わった場を見せる）",
-            "start": 2.0,
-            "duration": 2.6,
-            "subject": "Valkyra",
-            "motion": "Orbit",
-            "ease": "EaseInOut",
-            "lookStart": [0.0, 5.0, 0.0],
-            "lookEnd": [0.0, 4.0, 0.0],
-            "angleStart": 30.0,
-            "angleEnd": -20.0,
-            "radiusStart": 28.0,
-            "radiusEnd": 40.0,
-            "heightStart": 4.0,
-            "heightEnd": 14.0,
-            "fovStart": 45.0,
-            "fovEnd": 48.0
-        },
-        {
-            "_comment": "Shot3: カットで高い位置へ。前方の上からボスを見下ろし、ゆっくり引いて終わる（この後にリザルトの暗転が重なる）",
-            "start": 4.6,
-            "duration": 1.8,
-            "subject": "Valkyra",
-            "ease": "EaseInOut",
-            "eyeStart": [0.0, 26.0, 22.0],
-            "eyeEnd": [0.0, 30.0, 26.0],
-            "lookStart": [0.0, 2.0, 0.0],
-            "fovStart": 42.0,
-            "fovEnd": 45.0
-        }
-    ]
+  "duration": 6.4,
+  "allowSkip": false,
+  "shots": [
+    {
+      "start": 0.0,
+      "duration": 2.0,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseOut",
+      "lookStart": [
+        0.0,
+        7.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        6.5,
+        0.0
+      ],
+      "eyeStart": [
+        7.0,
+        2.0,
+        24.0
+      ],
+      "eyeEnd": [
+        4.0,
+        2.5,
+        19.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 30.0,
+      "fovEnd": 26.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 2.0,
+      "duration": 2.6,
+      "subject": "Valkyra",
+      "motion": "Orbit",
+      "ease": "EaseInOut",
+      "lookStart": [
+        0.0,
+        5.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        4.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "eyeEnd": [
+        0.0,
+        10.0,
+        -20.0
+      ],
+      "angleStart": 30.0,
+      "angleEnd": -20.0,
+      "radiusStart": 28.0,
+      "radiusEnd": 40.0,
+      "heightStart": 4.0,
+      "heightEnd": 14.0,
+      "fovStart": 45.0,
+      "fovEnd": 48.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    },
+    {
+      "start": 4.6,
+      "duration": 1.8,
+      "subject": "Valkyra",
+      "motion": "Truck",
+      "ease": "EaseInOut",
+      "lookStart": [
+        0.0,
+        2.0,
+        0.0
+      ],
+      "lookEnd": [
+        0.0,
+        2.0,
+        0.0
+      ],
+      "eyeStart": [
+        0.0,
+        26.0,
+        22.0
+      ],
+      "eyeEnd": [
+        0.0,
+        30.0,
+        26.0
+      ],
+      "angleStart": 0.0,
+      "angleEnd": 0.0,
+      "radiusStart": 5.0,
+      "radiusEnd": 5.0,
+      "heightStart": 0.0,
+      "heightEnd": 0.0,
+      "fovStart": 42.0,
+      "fovEnd": 45.0,
+      "dof": false,
+      "dofRange": 2.0,
+      "dofFalloff": 6.0,
+      "dofMaxBlur": 0.01
+    }
+  ],
+  "sounds": [],
+  "effects": [
+    {
+      "time": 0.0,
+      "effect": "Assets/Prefabs/Particles/VFX_Bleak",
+      "subject": "Valkyra",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.0,
+      "follow": false,
+      "duration": 10.0
+    },
+    {
+      "time": 2.0,
+      "effect": "Assets/Prefabs/Particles/VFX_BossExplosion",
+      "subject": "Valkyra",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 2.0,
+      "follow": true,
+      "duration": 2.0
+    }
+  ],
+  "signals": [],
+  "animations": []
 }

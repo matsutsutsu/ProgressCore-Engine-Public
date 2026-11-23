@@ -29,7 +29,7 @@ namespace ax
     {
         struct EditorContext;
     }
-} // namespace ax
+}
 
 struct BehaviorTreeComponent;
 
@@ -196,6 +196,9 @@ private:
 
     // 実行中の残り時間 [秒]。-1 はランタイム側で未開始。実行中の BT がなければ nullopt
     static std::optional<float> DebugTimerOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI);
+
+    // 実行中の再開位置。Repeat では終えた回数。-1 は先頭から。実行中の BT がなければ nullopt
+    static std::optional<int> DebugRunningIndexOf(const EditorBTNode &node, const BehaviorTreeComponent *activeAI);
 
     // ============================================================
     // BehaviorTreeWindow_Graph.cpp : 保存・読込・Bake・親子関係

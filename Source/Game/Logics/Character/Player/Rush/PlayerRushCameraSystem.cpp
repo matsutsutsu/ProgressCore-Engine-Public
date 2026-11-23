@@ -5,10 +5,9 @@
 #include "Engine/Core/Math/Interpolation.h"
 #include "Engine/Core/Math/StringHash.h"
 #include "Engine/Camera/CameraEvents.h"
-#include "Engine/Camera/Components/VirtualCameraComponents.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
+#include "Game/Logics/Camera/PlayerCameraLookup.h"
 #include "Engine/Time/TimeService.h"
-#include "Game/Logics/Combat/Components/DeadTag.h"
 
 #include <imgui.h>
 
@@ -30,7 +29,7 @@ namespace
     constexpr float kMinZeta    = 0.2f;  // 減衰比の下限。これより小さいと何度も揺れ返して酔う
     constexpr float kMaxStepArg = 0.25f; // 1刻みの omega*dt の上限。超えると発散する
     constexpr int   kMaxSubstep = 8;     // 刻みの上限。dt が大きいフレームでも回しすぎない
-} // namespace
+}
 
 
 
@@ -41,16 +40,7 @@ namespace
 std::vector<TypeID> PlayerRushCameraSystem::GetWriteTypes() const
 {
     auto types = Base::GetWriteTypes();
-    types.push_back(TypeInfo<CameraBodyTPSComponent>::ID()); // 構図の上書きスロット
-    return types;
-}
-
-
-
-std::vector<TypeID> PlayerRushCameraSystem::GetReadTypes() const
-{
-    auto types = Base::GetReadTypes();
-    types.push_back(TypeInfo<VirtualCamera>::ID()); // 画角パンチの基準にする今の画角
+    types.push_back(TypeInfo<PlayerCameraComponent>::ID()); // 構図の上書きスロットと画角パンチ
     return types;
 }
 
@@ -69,7 +59,7 @@ void PlayerRushCameraSystem::Update(float dt)
     ForEachWithID([&](EntityID                   id,
                       PlayerRushCameraComponent &cam,
                       const PlayerRushComponent &rush) {
-        const EntityID cameraID = FindCamera(id);
+        const EntityID cameraID = FindPlayerCamera(*m_world, id);
 
         // ---------------------------------------------------------
         // 1. 開始・斬りの瞬間
@@ -98,7 +88,7 @@ void PlayerRushCameraSystem::Update(float dt)
         const bool attackFiredNow = rush.isActive && rush.phase == RushPhase::Attack && rush.attackFired;
         if (attackFiredNow && !cam.wasAttackFired)
         {
-            PunchStrike(cam, id, cameraID);
+            PunchStrike(cam, cameraID);
         }
 
         cam.wasActive      = rush.isActive;
@@ -111,7 +101,8 @@ void PlayerRushCameraSystem::Update(float dt)
         if (rush.isActive)
         {
             const RushCameraShot     &shot = SelectShot(cam, rush.phase);
-            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, PickFocusTarget(rush));
+            // 注視点はラッシュの相手へ寄せる。相手が死ぬと PlayerRushSystem が無効にする
+            const CameraFramingParams goal = ToFraming(shot, cam.yawSign, rush.closeInTarget);
             SpringToward(cam.current, cam.velocity, goal, shot.blendTime, shot.bounce, dt);
         }
         else if (cam.weight > 0.0f)
@@ -126,8 +117,14 @@ void PlayerRushCameraSystem::Update(float dt)
         // 3. カメラへ書く
         // ---------------------------------------------------------
 
-        auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<CameraBodyTPSComponent>(cameraID) : nullptr;
+        auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
         if (!tps) return;
+
+        // 回避離脱と待機の間は、手で視点を回させない。回すと、作った構図が触った分だけ崩れる
+        // 攻撃に入ったら自由に回せるようにする
+        // 1フレーム限りの依頼なので、攻撃に入ったフレームから操作が戻る。止めた間の入力は捨てる
+        const bool blockLook = rush.isActive && (rush.phase == RushPhase::Locked || rush.phase == RushPhase::Ready);
+        if (blockLook) tps->blockLookRequest = true;
 
         if (cam.weight <= 0.0f)
         {
@@ -234,18 +231,18 @@ void PlayerRushCameraSystem::SpringStep(float &x, float &v, float goal, float om
 
 float PlayerRushCameraSystem::DecideYawSign(const PlayerRushComponent &rush, EntityID cameraID) const
 {
-    const auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<CameraBodyTPSComponent>(cameraID) : nullptr;
+    const auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr;
     if (!tps) return 1.0f;
 
-    // カメラの水平の前方
-    // CameraActionTPSSystem はカメラを pivot から (cos yaw, sin yaw) の向きに置くので、前方はその逆
-    const float yawRad = DirectX::XMConvertToRadians(tps->currentYaw);
-    const float fwdX   = -std::cos(yawRad);
-    const float fwdZ   = -std::sin(yawRad);
+    // カメラが水平に見ている向きと、その右
+    // 左手系なので、右は (z, 0, -x)
+    const Vector3 viewDir  = CameraViewDir(tps->currentYaw, 0.0f);
+    const Vector3 rightDir = {viewDir.z, 0.0f, -viewDir.x};
 
-    // 前方と回避方向の外積の y 成分で、左右を判定する
-    const float crossY = fwdZ * rush.evadeDir.x - fwdX * rush.evadeDir.z;
-    return (crossY >= 0.0f) ? 1.0f : -1.0f;
+    // 右へ避けたら -1、左へ避けたら +1
+    // 前後に避けたときも、右か左の成分で決める
+    if (rush.evadeDir.Dot(rightDir) > 0.0f) return -1.0f;
+    return 1.0f;
 }
 
 
@@ -254,15 +251,15 @@ float PlayerRushCameraSystem::DecideYawSign(const PlayerRushComponent &rush, Ent
 // 瞬間の演出
 // ---------------------------------------------------------------------------
 
-void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, EntityID playerID, EntityID cameraID)
+void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, EntityID cameraID)
 {
-    // 画角パンチは「瞬間的にこの画角にする」要求なので、今の画角に足した値を渡す
-    // その後は fovDamping で、攻撃の寄りの画角へ戻っていく
+    // 画角はカメラが次の更新で足し、fovDamping で攻撃の寄りの画角へ戻す
+    // 同じフレームに重なったら、大きい方だけにする
     if (cam.strikeFovPunch > 0.0f)
     {
-        if (const auto *vcam = (cameraID != InvalidEntityID) ? m_world->GetComponent<VirtualCamera>(cameraID) : nullptr)
+        if (auto *tps = (cameraID != InvalidEntityID) ? m_world->GetComponent<PlayerCameraComponent>(cameraID) : nullptr)
         {
-            m_world->GetEventBus().Publish(CameraFovPunchRequestEvent{playerID, vcam->fov + cam.strikeFovPunch});
+            tps->pendingFovPunch = (std::max)(tps->pendingFovPunch, cam.strikeFovPunch);
         }
     }
 
@@ -270,40 +267,6 @@ void PlayerRushCameraSystem::PunchStrike(const PlayerRushCameraComponent &cam, E
     {
         m_world->GetEventBus().Publish(CameraShakeRequestEvent{cam.strikeShake});
     }
-}
-
-
-
-// ---------------------------------------------------------------------------
-// 探索
-// ---------------------------------------------------------------------------
-
-EntityID PlayerRushCameraSystem::FindCamera(EntityID playerID) const
-{
-    EntityID found = InvalidEntityID;
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID camID) {
-        if (found != InvalidEntityID) return;
-
-        const auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(camID);
-        if (tps && tps->target.id == playerID)
-        {
-            found = camID;
-        }
-    });
-    return found;
-}
-
-
-
-// 注視点を寄せる先として、ラッシュの相手を返す
-EntityID PlayerRushCameraSystem::PickFocusTarget(const PlayerRushComponent &rush) const
-{
-    const EntityID id = rush.closeInTarget;
-    if (id == InvalidEntityID || !m_world->IsEntityValid(id) || m_world->HasComponent<Tag::DeadTag>(id))
-    {
-        return InvalidEntityID;
-    }
-    return id;
 }
 
 

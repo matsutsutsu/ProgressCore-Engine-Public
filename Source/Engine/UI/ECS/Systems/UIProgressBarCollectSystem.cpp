@@ -11,7 +11,7 @@
 
 using namespace CCL::ECS;
 
-void UIProgressBarCollectSystem::Update(float /*dt*/)
+void UIProgressBarCollectSystem::Update(float dt)
 {
     if (!m_world->HasResource<UIDrawList>()) return;
 

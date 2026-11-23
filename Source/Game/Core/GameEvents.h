@@ -1,6 +1,6 @@
 #pragma once
 // ゲームの System どうしが EventBus でやり取りするイベント
-// カメラへの演出の要求は、カメラがゲーム側の型を知らずに済むよう Engine/Camera/CameraEvents.h に置く
+// 画面の揺れの要求は Engine のカメラが受けるので、Engine/Camera/CameraEvents.h に置く
 #include "Engine/ECS/Common/CCL_Types.h"
 #include <DirectXMath.h>
 
@@ -33,6 +33,15 @@ struct AttackHitConfirmedEvent
     float hitStopScale    = 1.0f;
 
     bool isFinisher = false; // 攻撃した側のとどめ区間（AnimEventType::Finisher）の中で当てたか
+};
+
+// とどめの一撃が HP の線（HealthComponent.finisherFloor）を上から下へ越えた瞬間に出す
+// 第2形態への移行でも撃破でも出る。どちらになったかは、受けた側の形態で見る
+struct FinishBlowEvent
+{
+    CCL::ECS::EntityID attackerID = CCL::ECS::InvalidEntityID; // とどめを当てた側
+    CCL::ECS::EntityID targetID   = CCL::ECS::InvalidEntityID; // 線を越えられた側
+    DirectX::XMFLOAT3  position   = {0.0f, 0.0f, 0.0f};        // 当たった位置（ワールド座標）
 };
 
 // 攻撃が当たったと確定した瞬間に出す（無敵ですり抜けたときは出ない）

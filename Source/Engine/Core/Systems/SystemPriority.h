@@ -90,4 +90,4 @@ namespace Priority
                              //   このフレームで決まった発音・リスナー位置・スロー度を
                              //   すべて反映し終えた後に1回だけ叩きたいので、Render の最後段
     };
-} // namespace Priority
+}

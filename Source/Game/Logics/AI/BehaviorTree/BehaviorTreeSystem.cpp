@@ -161,8 +161,7 @@ void BehaviorTreeSystem::Update(float rawDt)
     if (!m_world->HasResource<GameFlowState>()) return;
 
     // カットシーン中と決着後（リザルト）はAIの思考を止める
-    const auto &flow      = m_world->GetResource<GameFlowState>();
-    const bool  cinematic = flow.cinematic || flow.matchOver;
+    const bool gameplayFrozen = m_world->GetResource<GameFlowState>().GameplayFrozen();
 
     // ---------------------------------------------------------
     // 1. ビヘイビアツリーのアセットデータを配る
@@ -172,7 +171,7 @@ void BehaviorTreeSystem::Update(float rawDt)
     // ---------------------------------------------------------
     // 2. 評価
     // ---------------------------------------------------------
-    ForEachWithIDParallel([this, cinematic](EntityID                  entity,
+    ForEachWithIDParallel([this, gameplayFrozen](EntityID                  entity,
                                             BehaviorTreeComponent    &btComp,
                                             const TransformComponent &trans,
                                             const TimeStateComponent &time) {
@@ -187,9 +186,9 @@ void BehaviorTreeSystem::Update(float rawDt)
         // アセットのノード数とBTの実行状態の配列の長さが合わない場合は何もしない
         if (btComp.nodeTimers.size() != nodeCount) return;
 
-        // 一時停止中（強制実行を除く）とカットシーン中は評価しない
+        // 一時停止中（強制実行を除く）と、カットシーン中・決着後は評価しない
         const bool forcing = (btComp.debugForcedNodeId >= 0);
-        if ((btComp.debugPaused && !forcing) || cinematic)
+        if ((btComp.debugPaused && !forcing) || gameplayFrozen)
         {
             //
             std::fill(btComp.debugNodeStates.begin(), btComp.debugNodeStates.end(), BTDebugState::None);

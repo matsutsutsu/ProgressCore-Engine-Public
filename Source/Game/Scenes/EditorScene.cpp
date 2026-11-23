@@ -32,7 +32,6 @@ void EditorScene::Initialize()
     }
 
     // ムービー用カメラは GameScene と同じくここで足す
-    // エディタでもムービーを流し、Cinematic Editor のプレビューを出すため
     {
         ZoneScopedN("EditorScene: SpawnPrefab CinematicCamera");
 
@@ -40,13 +39,11 @@ void EditorScene::Initialize()
         if (Prefab::SpawnPrefab(*m_worldPtr, cinematicCameraPrefab) == CCL::ECS::InvalidEntityID)
         {
             // ムービーが出ないだけで開発は続けられるので、失敗しても止めない
-            CCL_LOG_ERROR(LogCategory::Core,
-                          "EditorScene: ムービー用カメラの生成に失敗: %s", cinematicCameraPrefab.c_str());
+            CCL_LOG_ERROR(LogCategory::Core, "EditorScene: ムービー用カメラの生成に失敗: %s", cinematicCameraPrefab.c_str());
         }
     }
 
-    // 導入ムービーは GameScene と同じく、シーンの準備として頼んでおく（理由は GameScene::Initialize）
-    // 開発中に待ちたくなければ、長押しでスキップできる
+    // 導入ムービーは GameScene と同じく、シーンの準備として頼んでおく
     m_worldPtr->GetEventBus().Publish(CinematicPlayRequestEvent{kIntroCinematic});
 
     CCL_LOG_INFO(LogCategory::Core, "EditorScene Initialize");

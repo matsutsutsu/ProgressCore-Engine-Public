@@ -33,7 +33,7 @@ namespace
         DirectX::XMStoreFloat4(&out, q);
         return out;
     }
-} // namespace
+}
 
 template <>
 struct ComponentMeta<TransformComponent>

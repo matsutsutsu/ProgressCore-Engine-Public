@@ -23,6 +23,7 @@ namespace CCL::ECS
     {
     public:
         // jobSystem は EngineServices が持つ共有のプール。World ごとには持たず、SystemManager へ渡す
+        // explicit ... 暗黙的な変換を禁止する
         explicit ECSContext(JobSystem *jobSystem = nullptr)
         {
             m_world         = std::make_unique<World>();
@@ -105,4 +106,4 @@ namespace CCL::ECS
         std::unique_ptr<SystemManager> m_systemManager;
     };
 
-} // namespace CCL::ECS
+}

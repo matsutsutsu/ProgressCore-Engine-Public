@@ -26,21 +26,15 @@ using namespace DirectX::SimpleMath;
 
 namespace
 {
-    // のけぞりのアニメーションのパラメータ。向きは HitDir（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）、再生は Hit トリガー
+    // のけぞりのアニメーションのパラメータ。再生は Hit トリガー、向きは HitDirX / HitDirY
     // 向きは攻撃が来た方向（前 = 正面から当たった、後 = 背後から当たった）
-    const uint32_t HASH_HIT     = CCL::Utils::HashString("Hit");
-    const uint32_t HASH_HIT_DIR = CCL::Utils::HashString("HitDir");
+    const uint32_t HASH_HIT       = CCL::Utils::HashString("Hit");
+    const uint32_t HASH_HIT_DIR_X = CCL::Utils::HashString("HitDirX");
+    const uint32_t HASH_HIT_DIR_Y = CCL::Utils::HashString("HitDirY");
 
-    // 向きごとのトリガー（HitDir と同じ並び）
-    // プレイヤーのアニメーショングラフは Hit と HitDir で Hit_Reaction のサブステートマシンに入るが、
-    // ボスのグラフは向きごとのトリガーで4つのステートに直接入る（待機・移動・様子見の間だけで、技の最中は無視される）
-    // ボスは Hit / HitDir を持たないので、
-    // 両方の形のトリガーを立てる
-    const uint32_t HASH_HIT_DIRECTIONAL[4] = {
-        CCL::Utils::HashString("HitFront"),
-        CCL::Utils::HashString("HitBack"),
-        CCL::Utils::HashString("HitLeft"),
-        CCL::Utils::HashString("HitRight")};
+    // 向きの番号（0 = 前 / 1 = 後 / 2 = 左 / 3 = 右）ごとの、ブレンドスペースの点の位置
+    //   プレイヤーとボスの Hit_Reaction は、この4点に前後左右ののけぞりを置いたブレンドスペース
+    const DirectX::XMFLOAT2 kHitDirPos[4] = {{0.0f, 1.0f}, {0.0f, -1.0f}, {-1.0f, 0.0f}, {1.0f, 0.0f}};
 
     /**
      * @brief 攻撃が来た方向から前後左右ののけぞりを選んで再生する
@@ -81,30 +75,26 @@ namespace
             fromAttacker = -ev.knockbackDir;
         fromAttacker.y = 0.0f;
 
-        // 方向を HitDir に変える。方向が分からないとき（環境からのダメージなど）は前（0）にする
-        float hitDir = 0.0f;
+        // 方向を向きの番号に変える。方向が分からないとき（環境からのダメージなど）は前（0）にする
+        int dirIndex = 0;
         if (fromAttacker.LengthSquared() > 1e-6f)
         {
             fromAttacker.Normalize();
             const float f = fromAttacker.Dot(fwd);   // 正なら前
             const float r = fromAttacker.Dot(right); // 正なら右
             if (std::abs(f) >= std::abs(r))
-                hitDir = (f >= 0.0f) ? 0.0f : 1.0f;
+                dirIndex = (f >= 0.0f) ? 0 : 1;
             else
-                hitDir = (r >= 0.0f) ? 3.0f : 2.0f;
+                dirIndex = (r >= 0.0f) ? 3 : 2;
         }
 
-        // Hit_Reaction のサブステートマシンが HitDir で分かれるので、向きを先に書いてからトリガーを立てる
-        anim->SetFloat(HASH_HIT_DIR, hitDir);
+        // 向きを先に書いてからトリガーを立てる
+        //   ブレンドスペースは入った瞬間の向きをそのまま使うので、後から書くと最初の1ステップだけ別の向きが混ざる
+        anim->SetFloat(HASH_HIT_DIR_X, kHitDirPos[dirIndex].x);
+        anim->SetFloat(HASH_HIT_DIR_Y, kHitDirPos[dirIndex].y);
         anim->SetTrigger(HASH_HIT, 0.15f);
-
-        // 向きごとのトリガーしか持たないグラフ（ボス）のため。持っていないパラメータへの
-        // SetTrigger は無視されるので、どちらの形のグラフでも両方立ててよい
-        const int dirIndex = static_cast<int>(hitDir);
-        if (dirIndex >= 0 && dirIndex < 4)
-            anim->SetTrigger(HASH_HIT_DIRECTIONAL[dirIndex], 0.15f);
     }
-} // namespace
+}
 
 void DamageResolutionSystem::Update(float dt)
 {
@@ -130,6 +120,16 @@ void DamageResolutionSystem::Update(float dt)
                 float nextHealth = health->currentHealth - event.finalDamage;
                 if (!isFinisher && nextHealth < health->finisherFloor)
                     nextHealth = (std::min)(health->currentHealth, health->finisherFloor);
+
+                // デバッグで HP を減らさない間は、HP だけ据え置く（とどめでも線を越えない）
+                // 下の演出・被弾の通知は普段どおり出すので、コンボや怒りの連発はそのまま試せる
+                if (health->debugNoDamage) nextHealth = health->currentHealth;
+
+                // とどめが線を越えたか。線の上から下へ落としたこの一撃だけを数える
+                // 0 は下限なしなので、越える線がない
+                const bool hasFloor   = health->finisherFloor > 0.0f;
+                const bool brokeFloor = isFinisher && hasFloor && health->currentHealth >= health->finisherFloor &&
+                                        nextHealth < health->finisherFloor;
 
                 health->currentHealth      = nextHealth;
                 health->invincibilityTimer = health->invincibilityDuration;
@@ -196,6 +196,16 @@ void DamageResolutionSystem::Update(float dt)
                         event.hitStopDuration,
                         event.hitStopScale,
                         isFinisher});
+
+                // --- とどめの通知 ---
+                // 形態の移行か撃破かは、受けた側が次のフレームに決める
+                if (brokeFloor)
+                {
+                    m_world->GetEventBus().Publish(FinishBlowEvent{
+                        event.attackerID,
+                        event.targetID,
+                        DirectX::XMFLOAT3{event.hitPosition.x, event.hitPosition.y, event.hitPosition.z}});
+                }
 
                 // --- のけぞり（前後左右） ---
                 // 倒れなかったときだけのけぞらせる。倒れたときは倒れるアニメーションに任せる（両方を再生しない）

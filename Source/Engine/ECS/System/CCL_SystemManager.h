@@ -253,4 +253,4 @@ namespace CCL::ECS
         std::vector<void *> m_cachedChunkPointers;
     };
 
-} // namespace CCL::ECS
+}

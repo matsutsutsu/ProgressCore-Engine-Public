@@ -256,4 +256,4 @@ namespace CCL::ECS
         return m_chunkManager.GetChunks()[chunkIdx]->GetComponentPtrByType(tid, entityIdx);
     }
 
-} // namespace CCL::ECS
+}

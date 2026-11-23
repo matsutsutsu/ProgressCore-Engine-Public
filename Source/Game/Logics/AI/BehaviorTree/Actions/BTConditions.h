@@ -141,7 +141,7 @@ namespace CCL::AI::BT
         }
     };
 
-    // 相手を向いて左に param m 以上の空きがある。横移動で壁へ突っ込まないための条件に使う
+    // 相手を向いて左に param m 以上の空きがある。左右へ動く技で壁へ突っ込まないための条件に使う
     class SpaceOnLeft : public IBTCondition
     {
     public:
@@ -171,6 +171,17 @@ namespace CCL::AI::BT
         }
     };
 
+    // 戦い始めてから param 秒以内。開幕のムービーの直後に、いきなり攻めないようにするのに使う
+    // ムービー中は battleTime が進まないので、ムービーの長さに左右されない
+    class BattleTimeLessThan : public IBTCondition
+    {
+    public:
+        bool Evaluate(BTContext &ctx) override
+        {
+            return ctx.bt->blackboard.battleTime < ctx.param;
+        }
+    };
+
     // どの敵でも使う条件を登録する。起動時に1回だけ呼ぶ
     inline void RegisterCommonConditions()
     {
@@ -191,6 +202,7 @@ namespace CCL::AI::BT
         reg.RegisterCondition<SpaceOnLeft>(C_SpaceOnLeft);
         reg.RegisterCondition<SpaceOnRight>(C_SpaceOnRight);
         reg.RegisterCondition<RecentlyHit>(C_RecentlyHit);
+        reg.RegisterCondition<BattleTimeLessThan>(C_BattleTimeLessThan);
     }
 
-} // namespace CCL::AI::BT
+}

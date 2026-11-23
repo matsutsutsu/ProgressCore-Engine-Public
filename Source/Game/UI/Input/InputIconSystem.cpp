@@ -19,11 +19,11 @@ namespace
 
 
     std::string Pad(const char *file) { return std::string(kDirPad) + file; }
-} // namespace
+}
 
 
 
-void InputIconSystem::Update(float /*dt*/)
+void InputIconSystem::Update(float dt)
 {
     if (!m_world->HasResource<std::shared_ptr<IInputAPI>>()) return;
     const auto inputAPI = m_world->GetResource<std::shared_ptr<IInputAPI>>();
@@ -129,6 +129,10 @@ std::string InputIconSystem::ResolveFixedIcon(InputIconKind kind, ActiveDeviceTy
     {
     case InputIconKind::Move:
         return pad ? Pad("stick_l.png") : KM("arrows_all.png");
+    case InputIconKind::MoveForward:
+        return pad ? Pad("stick_l_up.png") : KM("key_w.png");
+    case InputIconKind::MoveBack:
+        return pad ? Pad("stick_l_down.png") : KM("key_s.png");
     case InputIconKind::Camera:
         return pad ? Pad("stick_r.png") : KM("mouse_move.png");
     case InputIconKind::MenuConfirm:

@@ -32,7 +32,7 @@ namespace
     {
         return {a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t};
     }
-} // namespace
+}
 
 
 

@@ -29,7 +29,7 @@
                     ]
                 },
                 "VirtualCamera": {
-                    "blendTime": 0.5,
+                    "blendTime": 0.0,
                     "farClip": 3000.0,
                     "fov": 45.0,
                     "nearClip": 0.1,

@@ -6,6 +6,7 @@
 //   - ボタン（押下中・押した瞬間・離した瞬間）とホイール量の管理
 //   - カーソル位置と前フレームからの移動量
 //   - マウスルック用のカーソルロック（画面中央へ戻し、OS カーソルを隠す）
+//   - ゲームパッド操作中に、固定せずカーソルだけ隠す
 // ===========================================================================
 
 #include <Windows.h>
@@ -92,7 +93,10 @@ public:
     //   移動量(GetVelocity)は「中央からのずれ」になる
     //   ウィンドウが非フォーカスの間はロックしない（alt-tab でカーソルが閉じ込められない）
     void SetCursorLock(bool lock) { m_lockRequested = lock; }
-    bool IsCursorLocked() const { return m_cursorHidden; }
+    bool IsCursorLocked() const { return m_locked; }
+
+    // カーソルを固定せずに隠す。ゲームパッドで操作している間に Input が立てる
+    void SetCursorHidden(bool hidden) { m_hideRequested = hidden; }
 
     // すべてのボタンを「押されていない」にする（アプリが裏に回っている間、他のアプリでのクリックを拾わないように）
     void ClearButtons()
@@ -113,5 +117,7 @@ private:
     HWND        hWnd           = nullptr;
 
     bool m_lockRequested = false; // ゲーム側からのロック要求
-    bool m_cursorHidden  = false; // 実際にロック中か（ShowCursor の表示カウンタの整合とロック開始フレームの検出に使う）
+    bool m_hideRequested = false; // 固定せずに隠す要求
+    bool m_locked        = false; // 実際にロック中か（ロック開始フレームの検出に使う）
+    bool m_cursorHidden  = false; // 実際に隠しているか（ShowCursor の表示カウンタの整合に使う）
 };

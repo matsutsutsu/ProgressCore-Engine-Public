@@ -8,4 +8,4 @@ namespace Tag
     {
     };
 
-} // namespace Tag
+}

@@ -24,4 +24,4 @@ namespace ImGuiThemes
     void ApplyTokyoNight();
     void ApplyDracula();
     void ApplyNord();
-} // namespace ImGuiThemes
+}

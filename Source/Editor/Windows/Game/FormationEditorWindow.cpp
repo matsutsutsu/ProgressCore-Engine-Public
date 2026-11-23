@@ -143,8 +143,9 @@ void FormationEditorWindow::PushStage(EditorContext &context)
 
     // 本編と同じ順番で見せる。予告の間は撃つ合図を落として待機させ（向きは追い続け、当たらない）、
     // 予告が終わったら合図を立てて攻撃へ進む
+    // 進行度は 1 で止めずに渡す。動き切った後に判定が閉じる所まで本編と同じに見せるため（上限は陣形が掛ける）
     const bool  telegraph = (m_time < asset->telegraphSeconds);
-    const float progress  = telegraph ? 0.0f : std::min(1.0f, (m_time - asset->telegraphSeconds) / asset->attackSeconds);
+    const float progress  = telegraph ? 0.0f : (m_time - asset->telegraphSeconds) / asset->attackSeconds;
 
     const BossHandles boss = FindBoss(context);
 
@@ -376,7 +377,7 @@ namespace
     };
 
     constexpr const char *kCustomEaseId = "Custom"; // カーブエディタで手を入れたもの
-} // namespace
+}
 
 CurveData FormationEditorWindow::MakeEaseCurve(const char *id, const CurveKeyframe *keys, int count)
 {

@@ -85,4 +85,4 @@ namespace CCL::UI
         t.computedPos  = {r.x, r.y};
         t.computedSize = {r.w, r.h};
     }
-} // namespace CCL::UI
+}

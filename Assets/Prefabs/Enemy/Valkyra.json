@@ -6,19 +6,16 @@
                 "AnimStateMachine": {
                     "graphPath": "Assets/Animations/Nodes/ValkyraAnimNode.json"
                 },
-                "Animator": {
-                    "isLoop": true,
-                    "playbackSpeed": 1.0
-                },
+                "Animator": null,
                 "BehaviorTreeComponent": {
                     "assetPath": "Assets/BehaviorTree/BossCombat.json"
                 },
                 "BossActionComponent": {
-                    "attackLeap.flight": 1.0,
+                    "attackLeap.descentTime": 0.4000000059604645,
+                    "attackLeap.hangGravityRatio": 0.6299999952316284,
                     "attackLeap.height": 20.0,
-                    "attackLeap.landAttack": true,
+                    "attackLeap.hover": 0.28999999165534973,
                     "attackLeap.landRecovery": 1.25,
-                    "attackLeap.landing": 1,
                     "attackLeap.windup": 0.3499999940395355,
                     "attackStandOff": 3.0,
                     "backStepDistance": 40.0,
@@ -39,40 +36,43 @@
                     "escapeLandingRatio": 0.30000001192092896,
                     "escapeLeap.flight": 1.100000023841858,
                     "escapeLeap.height": 30.0,
-                    "escapeLeap.landAttack": false,
                     "escapeLeap.landRecovery": 0.2199999988079071,
-                    "escapeLeap.landing": 0,
                     "escapeLeap.windup": 0.25,
+                    "exhaustedDuration": 5.0,
+                    "flinchCooldown": 3.0,
                     "footworkMaxTime": 3.0,
                     "footworkMinTime": 1.5,
                     "footworkSpeed": 40.0,
-                    "hoverLeap.flight": 0.8999999761581421,
+                    "hoverLeap.descentTime": 0.44999998807907104,
                     "hoverLeap.height": 16.0,
                     "hoverLeap.hover": 8.170000076293945,
-                    "hoverLeap.landAttack": false,
                     "hoverLeap.landRecovery": 0.6299999952316284,
-                    "hoverLeap.landing": 2,
+                    "hoverLeap.riseTime": 0.44999998807907104,
                     "hoverLeap.windup": 0.30000001192092896,
                     "idleTurnSpeed": 4.0,
+                    "rageRecoveryScale": 0.4000000059604645,
+                    "repositionAccelTime": 0.25,
+                    "repositionDecelTime": 0.3499999940395355,
                     "repositionFarDistance": 110.5,
                     "repositionNearDistance": 40.0,
+                    "repositionSpeed": 90.0,
                     "repositionWallDistance": 20.0,
-                    "sideTravelAccelTime": 0.25,
-                    "sideTravelDecelTime": 0.3499999940395355,
-                    "sideTravelSpeed": 90.0,
                     "turnSpeed": 10.0
                 },
                 "BossCommandComponent": null,
                 "BossPhaseComponent": {
-                    "phase2AssetPath": "Assets/BehaviorTree/BossCombat.json",
+                    "finishSlowRecover": 0.4000000059604645,
+                    "finishSlowScale": 0.10000000149011612,
+                    "phase2AssetPath": "",
                     "phase2HealthThreshold": 50.0,
+                    "transitionDuration": 2.5,
                     "tutorialAssetPath": "Assets/BehaviorTree/BossTutorial.json"
                 },
                 "Character Movement": {
                     "currentVelocity": [
-                        3.783505853677006e-44,
                         0.0,
-                        -3.5032461608120427e-44
+                        0.0,
+                        0.0
                     ],
                     "desiredVelocity": [
                         0.0,
@@ -156,15 +156,15 @@
                     "isStatic": false,
                     "parent": 0,
                     "position": [
-                        4.510964393615723,
-                        -1.0468471050262451,
-                        0.8808068633079529
+                        -8.471165102719169e-08,
+                        -1.0468932390213013,
+                        5.0
                     ],
                     "rotation": [
                         0.0,
-                        0.9999948740005493,
+                        0.9999999403953552,
                         0.0,
-                        0.0031845378689467907
+                        9.77853051153943e-06
                     ],
                     "scale": [
                         5.0,
@@ -174,6 +174,688 @@
                 }
             },
             "lid": 1
+        },
+        {
+            "components": {
+                "BossStatusVfxComponent": {
+                    "kind": 0
+                },
+                "GPUParticle": {
+                    "animControlled": false,
+                    "emitters": [
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                0.0,
+                                0.0,
+                                0.6666666865348816
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.22689276933670044
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                2.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                1.0,
+                                2.299999952316284
+                            ],
+                            "emitSpeed": [
+                                3.5,
+                                5.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.5,
+                                0.5
+                            ],
+                            "followRatio": 1.0,
+                            "gravity": 0.0,
+                            "intensity": 2.0,
+                            "lifespan": [
+                                1.0,
+                                1.2999999523162842
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                3.0,
+                                0.0
+                            ],
+                            "localOffsetY": 5.0,
+                            "maxCount": 50,
+                            "maxSpeed": 10.0,
+                            "name": "",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 2.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 1.600000023841858,
+                            "sizeRandom": 0.6100000143051147,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 1,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Smoke_03.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                0.6254825592041016,
+                                0.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.01745329052209854,
+                                0.26179933547973633
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                2.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.0,
+                                0.10000000149011612
+                            ],
+                            "emitSpeed": [
+                                1.100000023841858,
+                                1.399999976158142
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.5,
+                                0.5
+                            ],
+                            "followRatio": 0.0,
+                            "gravity": 0.0,
+                            "intensity": 5.0,
+                            "lifespan": [
+                                2.299999952316284,
+                                2.5
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 7.0,
+                            "maxCount": 60,
+                            "maxSpeed": 10.0,
+                            "name": " copy",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 2.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.799999952316284,
+                            "sizeRandom": 0.6100000143051147,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Circle_01.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                0.17243699729442596,
+                                0.16134224832057953,
+                                0.3050193190574646,
+                                0.6666666865348816
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.22689276933670044
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.0,
+                                2.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                1.0,
+                                2.299999952316284
+                            ],
+                            "emitSpeed": [
+                                3.299999952316284,
+                                4.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.5,
+                                0.5
+                            ],
+                            "followRatio": 0.0,
+                            "gravity": 0.0,
+                            "intensity": 2.0,
+                            "lifespan": [
+                                1.0,
+                                1.2999999523162842
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 7.0,
+                            "maxCount": 50,
+                            "maxSpeed": 10.0,
+                            "name": "shadow",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 2.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 1,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 1.600000023841858,
+                            "sizeRandom": 0.6100000143051147,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 1,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Fade_02.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        }
+                    ]
+                },
+                "Name": {
+                    "name": "VFX_Rage"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 2
+        },
+        {
+            "components": {
+                "BossStatusVfxComponent": {
+                    "kind": 1
+                },
+                "GPUParticle": {
+                    "animControlled": false,
+                    "emitters": [
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                0.14901961386203766,
+                                0.14901961386203766,
+                                0.14901961386203766,
+                                0.6666666865348816
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.4000000059604645
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                0.30000001192092896,
+                                2.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                1.0,
+                                3.0
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                1.2999999523162842
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.30000001192092896,
+                                0.699999988079071
+                            ],
+                            "followRatio": 0.30000001192092896,
+                            "gravity": 0.0,
+                            "intensity": 1.0,
+                            "lifespan": [
+                                1.5,
+                                2.0
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 7.0,
+                            "maxCount": 30,
+                            "maxSpeed": 10.0,
+                            "name": "湯気",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 1.5,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 1,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.799999952316284,
+                            "sizeRandom": 0.4000000059604645,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 0,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Smoke_03.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                1.0,
+                                0.27799224853515625,
+                                0.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.4000000059604645
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                1.0,
+                                2.0
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.0,
+                                0.6000000238418579
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                1.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.20000000298023224
+                            ],
+                            "followRatio": 0.30000001192092896,
+                            "gravity": 0.0,
+                            "intensity": 4.0,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.6000000238418579
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 7.0,
+                            "maxCount": 10,
+                            "maxSpeed": 10.0,
+                            "name": "Ignition",
+                            "noiseScale": 1.0,
+                            "noiseStrength": 1.5,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.4000000953674316,
+                            "sizeRandom": 0.8999999761581421,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                1,
+                                1
+                            ],
+                            "spriteMode": 1,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Smoke_03.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        },
+                        {
+                            "angularSpeed": [
+                                -1.0,
+                                1.0
+                            ],
+                            "attractorLocal": true,
+                            "attractorPos": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "attractorRadius": 0.0,
+                            "attractorStrength": 0.0,
+                            "burstCount": 0,
+                            "color": [
+                                0.0,
+                                0.8725869655609131,
+                                1.0,
+                                1.0
+                            ],
+                            "colorMode": 0,
+                            "colorRampPath": "",
+                            "coneAngle": [
+                                0.0,
+                                0.4000000059604645
+                            ],
+                            "drag": 0.0,
+                            "emitMode": 0,
+                            "emitRadius": [
+                                1.0,
+                                2.5
+                            ],
+                            "emitShape": 0,
+                            "emitSize": [
+                                0.800000011920929,
+                                1.0
+                            ],
+                            "emitSpeed": [
+                                1.0,
+                                1.0
+                            ],
+                            "emitStretch": [
+                                1.0,
+                                1.0
+                            ],
+                            "fadeDuration": [
+                                0.0,
+                                0.20000000298023224
+                            ],
+                            "followRatio": 0.30000001192092896,
+                            "gravity": 0.0,
+                            "intensity": 4.0,
+                            "lifespan": [
+                                0.30000001192092896,
+                                0.5
+                            ],
+                            "lineEnd": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "localOffset": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "localOffsetY": 7.0,
+                            "maxCount": 10,
+                            "maxSpeed": 10.0,
+                            "name": "Ignition copy",
+                            "noiseScale": 3.0,
+                            "noiseStrength": 3.0,
+                            "orientMode": 0,
+                            "particleType": 1,
+                            "renderMode": 0,
+                            "scale": [
+                                1.0,
+                                1.0
+                            ],
+                            "sizeEase": 2,
+                            "sizeEasePower": 2.4000000953674316,
+                            "sizeRandom": 1.0,
+                            "spawnDelay": [
+                                0.0,
+                                0.0
+                            ],
+                            "spriteGrid": [
+                                2,
+                                2
+                            ],
+                            "spriteMode": 1,
+                            "texturePath": "Assets/Textures/VFX/Particle/T_Particle_Star5_12.png",
+                            "uvScrollSpeed": [
+                                0.0,
+                                0.0
+                            ],
+                            "velocityStretch": 0.0,
+                            "vortexStrength": 0.0
+                        }
+                    ]
+                },
+                "Name": {
+                    "name": "VFX_Exhausted"
+                },
+                "TimeState": {
+                    "buffScale": 1.0,
+                    "cinematicScale": 1.0,
+                    "freezeScale": 0.0,
+                    "group": 0,
+                    "hitStopTimer": 0.0,
+                    "localDt": 0.01666666753590107
+                },
+                "Transform": {
+                    "isStatic": false,
+                    "parent": 1,
+                    "position": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "rotation": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        1.0
+                    ],
+                    "scale": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                }
+            },
+            "lid": 3
         }
     ],
     "magic": 1397506883,

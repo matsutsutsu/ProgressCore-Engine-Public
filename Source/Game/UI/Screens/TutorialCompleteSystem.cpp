@@ -20,7 +20,7 @@ namespace
     constexpr float kSubStart  = 0.35f;  // 線の下の1行を打ち始めるまで（秒。画面を出してから）
     constexpr float kMenuDelay = 0.6f;   // ボタンが出るまで（秒。画面を出してから）
     constexpr float kMenuGap   = 130.0f; // 見出しの下の線から、ボタンの入れ物の上端までの間隔（px）
-} // namespace
+}
 
 
 
@@ -121,6 +121,9 @@ void TutorialCompleteSystem::ShowUI()
     using namespace CCL::GameUI;
     World &w = *m_world;
 
+    // ボタンを押せるように、ここで初めてマウスカーソルを解放する
+    SetResultOpen(true);
+
     // ---------------------------------------------------------
     // 1. Canvas と暗転
     // ---------------------------------------------------------
@@ -142,25 +145,26 @@ void TutorialCompleteSystem::ShowUI()
     // リザルトの勝ちと同じ白金。英語の見出しに、日本語を小さく添える
     const MenuStyleComponent style = GetMenuStyle(w);
     SpawnScreenHeading(w, canvas, "TUTORIAL COMPLETE", style.gold, m_overlay);
-    m_overlay.push_back(SpawnTypedText(w, "TutorialCompleteSub", "操作の基本を覚えた", style.left, style.SubY(), 20.0f,
+    m_overlay.push_back(SpawnTypedText(w, "TutorialCompleteSub", "操作の基本を覚えた", style.left, style.SubY(), style.subPx,
                                        style.sub, kSubStart, canvas));
 
     // ---------------------------------------------------------
     // 3. ボタンと操作のヒント
     // ---------------------------------------------------------
 
-    // 見出しの下の線から、少し間をあけた位置に並べる（ポーズと同じ位置）
-    const EntityID menu = SpawnBox(w, "TutorialCompleteMenu", {0.0f, 0.0f},
-                                   {style.left, style.RuleY() + kMenuGap}, {320.0f, 225.0f}, canvas);
+    // 見出しの下の線から、少し間をあけた位置に並べる（ポーズと同じ位置・大きさ）
+    const float    pitch = style.buttonPitch;
+    const EntityID menu  = SpawnBox(w, "TutorialCompleteMenu", {0.0f, 0.0f}, {style.left, style.RuleY() + kMenuGap},
+                                    {style.buttonSize.x, pitch * 2.0f + style.buttonSize.y}, canvas);
     m_overlay.push_back(menu);
 
     // 最初は「本番へ」を選んでおく。教え終えた人の多くは、そのまま本番へ進む
     const MenuButtonIds buttons[] = {
-        SpawnButton(w, "BtnTutorialToGame", "LblTutorialToGame", "本番へ", {0.0f, -85.0f}, "tutorial_to_game", true,
+        SpawnButton(w, "BtnTutorialToGame", "LblTutorialToGame", "本番へ", {0.0f, -pitch}, "tutorial_to_game", true,
                     230, kMenuDelay, menu),
         SpawnButton(w, "BtnTutorialRetry", "LblTutorialRetry", "もう一度", {0.0f, 0.0f}, "tutorial_retry", false, 230,
                     kMenuDelay + 0.08f, menu),
-        SpawnButton(w, "BtnTutorialTitle", "LblTutorialTitle", "タイトルへ", {0.0f, 85.0f}, "tutorial_title", false, 230,
+        SpawnButton(w, "BtnTutorialTitle", "LblTutorialTitle", "タイトルへ", {0.0f, pitch}, "tutorial_title", false, 230,
                     kMenuDelay + 0.16f, menu),
     };
     for (const MenuButtonIds &b : buttons)
@@ -169,7 +173,7 @@ void TutorialCompleteSystem::ShowUI()
         m_overlay.push_back(b.label);
     }
 
-    SpawnMenuHints(w, menu, 165.0f, m_overlay, 240, kMenuDelay + 0.24f);
+    SpawnMenuHints(w, menu, style.HintY(pitch), m_overlay, 240, kMenuDelay + 0.24f);
 }
 
 
@@ -186,6 +190,7 @@ void TutorialCompleteSystem::CloseUI()
     m_done  = false;
     m_shown = false;
     SetMatchOver(false);
+    SetResultOpen(false);
 }
 
 
@@ -193,6 +198,13 @@ void TutorialCompleteSystem::CloseUI()
 void TutorialCompleteSystem::SetMatchOver(bool over)
 {
     if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().matchOver = over;
+}
+
+
+
+void TutorialCompleteSystem::SetResultOpen(bool open)
+{
+    if (m_world->HasResource<GameFlowState>()) m_world->GetResource<GameFlowState>().resultOpen = open;
 }
 
 

@@ -18,7 +18,7 @@
             },
             "radius": 1.0,
             "startTime": 0.0833333358168602,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 5
         },
         {
@@ -38,7 +38,7 @@
             },
             "radius": 1.0,
             "startTime": 0.0833333358168602,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 8
         },
         {
@@ -58,7 +58,7 @@
             },
             "radius": 1.0,
             "startTime": 0.0833333358168602,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -81,9 +81,9 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07,
-            "soundVolume": 1.0,
+            "soundVolume": 1.7,
             "startTime": 0.0833333358168602,
-            "stringParam": "sfx:/slash_1",
+            "stringParam": "sfx:/SE_PlayerSlashLight",
             "type": 1
         },
         {
@@ -108,7 +108,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.25,
-            "stringParam": "Dive",
+            "stringParam": "",
             "type": 6
         },
         {
@@ -344,6 +344,5 @@
         "preInfinity": 0,
         "visible": true
     },
-    "targetAnimName": "Combo_Attack_Air_06_02_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Combo_Attack_Air_06_02_Seq_0"
 }

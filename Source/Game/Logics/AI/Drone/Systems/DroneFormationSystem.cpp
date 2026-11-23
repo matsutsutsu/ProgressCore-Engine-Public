@@ -24,7 +24,7 @@ namespace
 {
     // 予告の時計（telegraphTime）の上限 [秒]。際限なく育たないための蓋
     constexpr float kTelegraphTimeCap = 10.0f;
-} // namespace
+}
 
 void DroneFormationSystem::Initialize()
 {
@@ -235,7 +235,7 @@ void DroneFormationSystem::OnGui()
 {
     ImGui::SliderFloat("ボスの速度を乗せる割合", &m_bossCarry, 0.0f, 1.0f);
     ImGui::TextDisabled("1 でボスと一緒に動く。下げるほど少し遅れて引きずられる");
-    ImGui::TextDisabled("（小隊突撃は先頭機を基準にするので対象外）");
+    ImGui::TextDisabled("（小隊の弧撃ちで飛ぶ小隊は、1つ前の機を基準にするので対象外）");
 }
 
 

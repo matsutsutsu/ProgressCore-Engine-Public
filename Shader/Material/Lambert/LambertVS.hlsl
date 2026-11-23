@@ -1,3 +1,11 @@
+// ===========================================================================
+// 概要: Lambert マテリアルの頂点シェーダー。位置と法線をワールドへ移し、画面へ移す
+//
+// 入力: モデルの頂点（位置・ボーン・UV・法線）とインスタンスの番号
+// 出力: VS_OUT のうち、画面の位置・UV・法線
+//
+// 備考: VS_OUT のワールド座標（position）は書いていない。LambertPS はそれを読んでライトとフォグを計算する
+// ===========================================================================
 #include "Shader/Common/Common.hlsli"
 #include "Shader/Common/Transform.hlsli"
 
@@ -17,16 +25,14 @@ VS_OUT main(
     float4 worldPos;
     float3 worldNormal;
 
-    // 1. オーバーロードによる 位置・法線 のみの変換
     CalculateWorldTransform(
         position, normal,
         boneWeights, boneIndices, instanceID,
         worldPos, worldNormal
     );
-    
+
     vout.normal = worldNormal;
 
-    // 2. カメラ空間への投影
     vout.vertex = mul(worldPos, viewProjection);
     vout.texcoord = texcoord;
 

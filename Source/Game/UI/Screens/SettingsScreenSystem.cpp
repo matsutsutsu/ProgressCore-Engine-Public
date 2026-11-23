@@ -4,7 +4,7 @@
 #include "Engine/ECS/System/CCL_SystemRegistry.h"
 #include "Engine/Core/Systems/SystemPriority.h"
 #include "Engine/Audio/IAudioAPI.h"
-#include "Engine/Camera/Components/CameraBodyActionTPSComponent.h"
+#include "Game/Logics/Camera/PlayerCameraComponent.h"
 #include "Engine/Platform/Input/Input.h"
 #include "Engine/Platform/Input/GamePad.h"
 #include "Engine/UI/ECS/GameViewportInfo.h"
@@ -28,15 +28,15 @@ namespace
     constexpr int VKEY_LEFT   = 0x25;
     constexpr int VKEY_RIGHT  = 0x27;
 
-    // --- 配置（画面の左上からの px。左端と見出しは MenuStyle にそろえる） ---
-    constexpr float kRowsGap     = 130.0f; // 見出しの下の線から、行の入れ物の上端までの間隔
-    constexpr float kRowH        = 80.0f;  // 行の間隔
-    constexpr float kDecOffset   = 370.0f; // 左端（MenuStyle の left）から < ボタンの中心まで
-    constexpr float kGaugeOffset = 400.0f; // 左端（MenuStyle の left）からゲージの左端まで
-    constexpr float kGaugeW      = 260.0f; // ゲージの長さ
-    constexpr float kIncGap      = 30.0f;  // ゲージの右端から > ボタンの中心まで
-    constexpr float kValueGap    = 34.0f;  // > ボタンの中心から値の文字の左端まで
-    constexpr float kArrowSize   = 36.0f;  // < > ボタンの大きさ
+    // --- 配置（画面の左上からの px。左端・見出し・行の間隔は MenuStyle にそろえる） ---
+    constexpr float kRowsGap   = 130.0f; // 見出しの下の線から、行の入れ物の上端までの間隔
+    constexpr float kDecGap    = 50.0f;  // 行のボタンの右端から < ボタンの中心まで
+    constexpr float kArrowGap  = 12.0f;  // < > ボタンの端からゲージの端まで
+    constexpr float kGaugeW    = 300.0f; // ゲージの長さ
+    constexpr float kValueGap  = 16.0f;  // > ボタンの右端から値の文字の左端まで
+    constexpr float kArrowSize = 48.0f;  // < > ボタンの大きさ
+    constexpr float kGlyphPx   = 30.0f;  // < > の記号の高さ
+    constexpr float kValuePx   = 30.0f;  // 値の文字の高さ
 
     // --- 描画順（ポーズ・リザルトの UI より手前） ---
     constexpr int kSortDim   = 300; // 暗転。下の画面との境目にもなる
@@ -46,10 +46,14 @@ namespace
 
     constexpr float kFadeTime = 0.2f; // 下の画面と設定画面を入れ替える時間（秒）
 
+    // 効果音全体の音量の基準。設定画面の値（0〜1）にこれを掛けてから音声へ渡す
+    // BGM はプレハブの volume で下げているので、効果音だけここで下げる。全体が大きい・小さいときはこの値を変える
+    constexpr float kSfxMixGain = 0.3f;
+
     // 値を刻み（step）の倍数に丸める
     // 足し引きを繰り返して、0.30000001 のような半端な値にならないようにする
     float Snap(float v, float step) { return std::round(v / step) * step; }
-} // namespace
+}
 
 
 
@@ -82,8 +86,8 @@ void SettingsScreenSystem::ApplySettings()
 
     // --- カメラ ---
     // カメラは作り直されることがあるので、感度の倍率は毎フレーム書く
-    m_world->ViewEach<CameraBodyTPSComponent>([&](EntityID id) {
-        if (auto *tps = m_world->GetComponent<CameraBodyTPSComponent>(id)) tps->sensitivityScale = s.lookSensitivity;
+    m_world->ViewEach<PlayerCameraComponent>([&](EntityID id) {
+        if (auto *tps = m_world->GetComponent<PlayerCameraComponent>(id)) tps->sensitivityScale = s.lookSensitivity;
     });
 
     // --- 音声 ---
@@ -95,7 +99,7 @@ void SettingsScreenSystem::ApplySettings()
     if (auto &audio = m_world->GetResource<std::shared_ptr<IAudioAPI>>())
     {
         audio->SetCategoryVolume(AudioCategory::BGM, s.bgmVolume);
-        audio->SetCategoryVolume(AudioCategory::SFX, s.sfxVolume);
+        audio->SetCategoryVolume(AudioCategory::SFX, s.sfxVolume * kSfxMixGain);
         m_appliedBgm = s.bgmVolume;
         m_appliedSfx = s.sfxVolume;
     }
@@ -136,7 +140,6 @@ EntityID SettingsScreenSystem::SpawnArrow(EntityID canvas, const char *name, con
     m_overlay.push_back(e.ID());
 
     // 記号は等幅のフォントなので、文字の幅（高さのおよそ半分）の半分だけ左へずらして中央に置く
-    constexpr float kGlyphPx = 24.0f;
     m_overlay.push_back(SpawnTextTopLeft(*m_world, (std::string(name) + "Glyph").c_str(), glyph, x - kGlyphPx * 0.25f,
                                          y - kGlyphPx * 0.5f, kGlyphPx, GetMenuStyle(*m_world).value, canvas, kSortValue));
     return e.ID();
@@ -211,7 +214,7 @@ void SettingsScreenSystem::Open(EntityID opener)
         rv.delay = 0.2f;
         rv.speed = style.typeSpeed;
         rv.text  = "設定";
-        m_overlay.push_back(SpawnTextTopLeft(w, "SettingsSub", "", style.left, style.SubY(), 20.0f, style.sub, canvas,
+        m_overlay.push_back(SpawnTextTopLeft(w, "SettingsSub", "", style.left, style.SubY(), style.subPx, style.sub, canvas,
                                              kSortHead, 1.0f, &rv));
     }
 
@@ -220,16 +223,21 @@ void SettingsScreenSystem::Open(EntityID opener)
     // ---------------------------------------------------------
 
     // 行のボタンは入れ物の中央からの位置で置く（SpawnButton の決まり）
+    // 入れ物の幅をボタンと同じにして、ボタンの左端を見出しの左端にそろえる
+    const float    rowH    = style.buttonPitch;
     const float    rowsTop = style.RuleY() + kRowsGap;
-    const float    boxH    = kRowH * static_cast<float>(RowCount);
-    const EntityID box     = SpawnBox(w, "SettingsRows", {0.0f, 0.0f}, {style.left, rowsTop}, {320.0f, boxH}, canvas);
+    const float    boxH    = rowH * static_cast<float>(RowCount);
+    const EntityID box     = SpawnBox(w, "SettingsRows", {0.0f, 0.0f}, {style.left, rowsTop},
+                                      {style.buttonSize.x, boxH}, canvas);
     m_overlay.push_back(box);
 
-    // 値の部品（< ゲージ > 値）の横位置。左端は MenuStyle に合わせる
-    const float decX   = style.left + kDecOffset;
-    const float gaugeX = style.left + kGaugeOffset;
-    const float incX   = gaugeX + kGaugeW + kIncGap;
-    const float valueX = incX + kValueGap;
+    // 値の部品（< ゲージ > 値）の横位置
+    // 行のボタンの右端から順に並べるので、ボタンの幅を変えても重ならない
+    const float arrowHalf = kArrowSize * 0.5f;
+    const float decX      = style.left + style.buttonSize.x + kDecGap;
+    const float gaugeX    = decX + arrowHalf + kArrowGap;
+    const float incX      = gaugeX + kGaugeW + kArrowGap + arrowHalf;
+    const float valueX    = incX + arrowHalf + kValueGap;
 
     const char *labels[RowCount] = {"視点の感度", "BGMの音量", "効果音の音量", "戻る"};
     for (int i = 0; i < RowCount; ++i)
@@ -239,7 +247,7 @@ void SettingsScreenSystem::Open(EntityID opener)
         std::snprintf(btnName, sizeof(btnName), "SettingsRow%d", i);
         std::snprintf(lblName, sizeof(lblName), "SettingsRowLabel%d", i);
 
-        const float offsetY = -boxH * 0.5f + kRowH * (static_cast<float>(i) + 0.5f);
+        const float offsetY = -boxH * 0.5f + rowH * (static_cast<float>(i) + 0.5f);
         const auto  ids     = SpawnButton(w, btnName, lblName, labels[i], {0.0f, offsetY},
                                           i == RowBack ? "settings_back" : "settings_row", i == 0, kSortRow, -1.0f, box);
         m_rows[i] = ids.button;
@@ -252,7 +260,7 @@ void SettingsScreenSystem::Open(EntityID opener)
         // --- 値の部品（< ゲージ > 値） ---
 
         // 画面の左上を基準に、行の中心の高さへ置く
-        const float y = rowsTop + kRowH * (static_cast<float>(i) + 0.5f);
+        const float y = rowsTop + rowH * (static_cast<float>(i) + 0.5f);
         char        name[32];
         std::snprintf(name, sizeof(name), "SettingsDec%d", i);
         m_dec[i] = SpawnArrow(canvas, name, "<", decX, y);
@@ -291,14 +299,16 @@ void SettingsScreenSystem::Open(EntityID opener)
 
         // 値の文字。初めの値は、ゲージと同じ理由で生成時に入れる
         std::snprintf(name, sizeof(name), "SettingsValue%d", i);
-        m_valueText[i] = SpawnTextTopLeft(w, name, ValueText(i).c_str(), valueX, y - 12.0f, 24.0f, style.value, canvas, kSortValue);
+        m_valueText[i] = SpawnTextTopLeft(w, name, ValueText(i).c_str(), valueX, y - kValuePx * 0.5f, kValuePx, style.value,
+                                          canvas, kSortValue);
         m_overlay.push_back(m_valueText[i]);
     }
 
     // ---------------------------------------------------------
     // 6. 操作のヒント
     // ---------------------------------------------------------
-    SpawnMenuHints(w, box, boxH * 0.5f + 40.0f, m_overlay, 340, -1.0f);
+    // 一番下の行（戻る）の中心は、入れ物の中央から boxH / 2 - rowH / 2 の所
+    SpawnMenuHints(w, box, style.HintY(boxH * 0.5f - rowH * 0.5f), m_overlay, 340, -1.0f);
 }
 
 
@@ -385,7 +395,7 @@ void SettingsScreenSystem::Adjust(int row, int dir)
 
     // 効果音の音量を変えたときに、下の「移動」の音が新しい音量で鳴るよう、先に反映する
     ApplySettings();
-    PlaySound("sfx:/ui_move");
+    PlaySound("sfx:/SE_UIMove");
     RefreshValues();
 }
 
@@ -543,7 +553,7 @@ void SettingsScreenSystem::Update(float dt)
         m_closing = true;
 
         // 押して閉じたときは UISoundSystem が「決定」を鳴らす。Esc・B で閉じたときだけ「閉じる」を鳴らす
-        if (m_closeByCancel) PlaySound("sfx:/ui_close");
+        if (m_closeByCancel) PlaySound("sfx:/SE_UIClose");
     }
 
     // 入れ替えの途中は、操作を受けない。入れ替えが終わったら閉じる

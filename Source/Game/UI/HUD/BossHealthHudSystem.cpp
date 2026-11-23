@@ -27,7 +27,7 @@ namespace
     constexpr const char *kRootName   = "BossHud";        // ルート（Canvas）
     constexpr const char *kGaugeName  = "BossHpGauge";    // ゲージの子
     constexpr const char *kNameName   = "BossHpName";     // ボスの名前の子
-} // namespace
+}
 
 
 

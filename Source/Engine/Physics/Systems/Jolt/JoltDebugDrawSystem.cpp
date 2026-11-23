@@ -23,7 +23,7 @@ namespace
 
     // コライダー可視化の色。シーンの色と被らないよう明るい緑にしている
     const DirectX::XMFLOAT4 COLLIDER_COLOR = {0.2f, 1.0f, 0.2f, 1.0f};
-} // namespace
+}
 
 // ============================================================
 // BoxCollider

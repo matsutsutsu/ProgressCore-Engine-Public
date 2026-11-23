@@ -18,7 +18,8 @@ namespace
 {
     // ロゴとボタンは画面の左に寄せる
     // 右側は 3D の背景（ボスと群れ）が見える所で、文字を置くと重なってどちらも見えにくくなる
-    constexpr float kMenuX = -408.0f; // ボタンの X（画面の中央から、px）
+    constexpr float kMenuX    = -408.0f; // ボタンの X（画面の中央から、px）
+    constexpr float kMenuTopY = -80.0f;  // 一番上のボタン（はじめる）の Y。以降は MenuStyle の間隔で下へ並べる
 
     // --- タイトルロゴ（位置は画面の中央から、px） ---
     constexpr const char *kLogoPath  = "Assets/Textures/UI/Title/TitleLogo_OverCleave.png";
@@ -55,7 +56,7 @@ namespace
     constexpr float kScrimW       = 2560.0f; // 幅。画面より大きくして、解像度が変わっても端が見えないようにする
     constexpr float kScrimBottomH = 760.0f;  // 高さ
     constexpr float kScrimBottomY = 240.0f;  // 縦の中心。パネルの上端が画面の y ≒ 520px に来る
-} // namespace
+}
 
 
 
@@ -158,14 +159,16 @@ void TitleMenuSystem::SpawnMenu()
     // ---------------------------------------------------------
 
     // 最初は「はじめる」を選んでおく。すぐ遊びたい人は、そのまま決定すれば本番に入れる
-    // 4つ並べると下のヒントが画面からはみ出すので、「はじめる」をロゴの下へ1段上げて並べる
-    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "はじめる", {kMenuX, -45.0f}, "start_game",
+    // 4つ並べると下のヒントが画面からはみ出すので、「はじめる」をロゴのすぐ下まで上げて並べる
+    const MenuStyleComponent style = CCL::GameUI::GetMenuStyle(world);
+    const float              pitch = style.buttonPitch;
+    CCL::GameUI::SpawnButton(world, "BtnStart", "LblStart", "はじめる", {kMenuX, kMenuTopY}, "start_game",
                              true, 10, kAppearStart, canvas);
-    CCL::GameUI::SpawnButton(world, "BtnTutorial", "LblTutorial", "チュートリアル", {kMenuX, 40.0f}, "start_tutorial",
-                             false, 10, kAppearTutorial, canvas);
-    CCL::GameUI::SpawnButton(world, "BtnSettings", "LblSettings", "設定", {kMenuX, 125.0f}, "open_settings", false,
-                             10, kAppearSettings, canvas);
-    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "終了", {kMenuX, 210.0f}, "quit", false,
+    CCL::GameUI::SpawnButton(world, "BtnTutorial", "LblTutorial", "チュートリアル", {kMenuX, kMenuTopY + pitch},
+                             "start_tutorial", false, 10, kAppearTutorial, canvas);
+    CCL::GameUI::SpawnButton(world, "BtnSettings", "LblSettings", "設定", {kMenuX, kMenuTopY + pitch * 2.0f},
+                             "open_settings", false, 10, kAppearSettings, canvas);
+    CCL::GameUI::SpawnButton(world, "BtnQuit", "LblQuit", "終了", {kMenuX, kMenuTopY + pitch * 3.0f}, "quit", false,
                              10, kAppearQuit, canvas);
 
     // ---------------------------------------------------------
@@ -174,7 +177,8 @@ void TitleMenuSystem::SpawnMenu()
 
     // タイトルの UI はシーンごと消えるので、作った ID は持っておかない
     std::vector<CCL::ECS::EntityID> hints;
-    CCL::GameUI::SpawnMenuHints(world, canvas, 290.0f, hints, 230, kAppearHints, kHintShiftX);
+    CCL::GameUI::SpawnMenuHints(world, canvas, style.HintY(kMenuTopY + pitch * 3.0f), hints, 230, kAppearHints,
+                                kHintShiftX);
 }
 
 

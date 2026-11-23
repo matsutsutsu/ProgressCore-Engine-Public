@@ -94,12 +94,12 @@ namespace
     {
         return ImGui::ColorConvertFloat4ToU32(ImVec4(c.x, c.y, c.z, c.w));
     }
-} // namespace
+}
 
 
 
 
-void AIDebugOverlaySystem::Update(float /*dt*/)
+void AIDebugOverlaySystem::Update(float dt)
 {
     if (!m_enabled && !m_showScores) return;
 

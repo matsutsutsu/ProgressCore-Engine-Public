@@ -27,13 +27,12 @@ struct ChromaticAberrationConfigComponent
     float ResolvedStrength() const
     {
         float out = enable ? data.chromaStrength : 0.0f;
-        overrides.ForEachActive([&out](const ChromaticOverrideParams &p, float t) {
-            out = (std::max)(out, p.strength * t);
-        });
+        for (const auto *s : overrides.SortedActive())
+            out = (std::max)(out, s->params.strength * s->Amount());
         return out;
     }
 
-    // 新しいスロットの土台にする、今効いている強さ（PostFx::Acquire が入れる）。enable が false なら 0
+    // 新しい枠の土台にする、今効いている強さ（Acquire の base に渡す）。enable が false なら 0
     // 切ってある強さを土台に入れると、演出が weight を上げただけで、切ったはずの色収差が出てしまう
     ChromaticOverrideParams BaseParams() const
     {

@@ -21,4 +21,4 @@ namespace CCL::AI::Formation
      */
     std::vector<DirectX::SimpleMath::Vector3> SampleModelSurface(const std::string &modelPath, int maxPoints);
 
-} // namespace CCL::AI::Formation
+}

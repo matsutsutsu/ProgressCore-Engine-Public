@@ -63,6 +63,10 @@ void Input::Update(float dt)
             m_activeDeviceType = ActiveDeviceType::KeyboardMouse;
         }
     }
+
+    // 3. ゲームパッドで操作している間は、メニューを出していてもカーソルを出さない
+    //    マウスを動かせばキーボード＆マウスに戻り、次のフレームから出る
+    mouse->SetCursorHidden(m_activeDeviceType == ActiveDeviceType::GamePad);
 }
 
 

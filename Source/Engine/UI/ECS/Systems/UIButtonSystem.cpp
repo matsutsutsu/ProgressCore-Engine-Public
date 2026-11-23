@@ -12,7 +12,7 @@
 
 using namespace CCL::ECS;
 
-void UIButtonSystem::Update(float /*dt*/)
+void UIButtonSystem::Update(float dt)
 {
     ForEachWithID([&](EntityID id, const UIInteractableComponent &inter,
                       const UIButtonComponent &btn, UIImageComponent &img) {

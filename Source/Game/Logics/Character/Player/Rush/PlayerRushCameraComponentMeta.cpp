@@ -16,8 +16,8 @@
     CFIELD_FLOAT_RANGED(Shot.bounce, "行き過ぎ", 0.01f, 0.0f, 0.8f, Category)
 
 COMPONENT_META_BEGIN_FULL(PlayerRushCameraComponent, "Player Rush Camera Component", CCL::Categories::Camera, 158, false)
-RUSH_CAMERA_SHOT_FIELDS(locked, "回避離脱（引き）")
-RUSH_CAMERA_SHOT_FIELDS(ready, "待機（寄り）")
+RUSH_CAMERA_SHOT_FIELDS(locked, "回避離脱")
+RUSH_CAMERA_SHOT_FIELDS(ready, "待機")
 RUSH_CAMERA_SHOT_FIELDS(attack, "攻撃")
 RUSH_CAMERA_SHOT_FIELDS(flurry, "連撃")
 

@@ -30,7 +30,7 @@ namespace ComponentMetaJson
             if (j.contains("maxDistance")) c.data.ssaoMaxDistance = j["maxDistance"].get<float>();
         }
     };
-} // namespace ComponentMetaJson
+}
 
 template <>
 struct ComponentMeta<SSAOConfigComponent>

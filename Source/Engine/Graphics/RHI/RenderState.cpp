@@ -7,7 +7,7 @@ namespace
     //   8 と 16 の見た目の差は小さく、8 でも斜めの面のぼけはほぼ消える
     //   値はサンプリング回数の上限なので、上げるほどメモリ帯域を使う
     constexpr UINT kMaxAnisotropy = 8;
-} // namespace
+}
 
 RenderState::RenderState(ID3D11Device *device)
 {

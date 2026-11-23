@@ -363,7 +363,7 @@ void SceneManager::PlayTransitionSound()
     }
     if (auto &audio = world->GetResource<std::shared_ptr<IAudioAPI>>())
     {
-        audio->PlayOneShot(CCL::Utils::HashString("sfx:/ui_transition"));
+        audio->PlayOneShot(CCL::Utils::HashString("sfx:/SE_UITransition"));
     }
 }
 

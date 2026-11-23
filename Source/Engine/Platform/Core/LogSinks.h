@@ -66,7 +66,7 @@ namespace LogFormat
            << msg.text;
         return os.str();
     }
-} // namespace LogFormat
+}
 
 // ============================================================
 // DebugStreamSink: Visual Studio の「出力」ウィンドウ（OutputDebugString）

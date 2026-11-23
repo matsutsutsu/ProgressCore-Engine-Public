@@ -92,15 +92,16 @@ namespace CCL::AI::Motion
         // 上限は、腕の外側の機が回転半径ぶん速くなり、残すと飛んでいくのを防ぐため
         constexpr RigidFollowTuning kRigidFollow{.inertia = 0.35f, .inertiaMaxScale = 0.6f, .turnRate = 25.0f};
 
-        // --- バネ追従（小隊突撃） ---
+        // --- バネ追従（小隊の弧撃ち） ---
 
         struct SoftFollowTuning
         {
             float damping;       // 今の速度を目標の速度へ寄せる速さ [1/s]
-            float maxSpeedScale; // 出せる速さの上限（moveSpeed 倍）。アンカーの突入速度より上にする
+            float maxSpeedScale; // 出せる速さの上限（moveSpeed 倍）。先渡しの速度が遅いとき（席へ戻るとき）はこれで止める
+            float catchUpScale;  // 先渡しの速度が速いときの上限（先渡しの速度の倍率）。1 より上にして、遅れた分を取り戻せるようにする
             float turnRate;      // 機首を向け直す速さ [1/s]
         };
-        constexpr SoftFollowTuning kSoftFollow{.damping = 10.0f, .maxSpeedScale = 2.4f, .turnRate = 12.0f};
+        constexpr SoftFollowTuning kSoftFollow{.damping = 10.0f, .maxSpeedScale = 2.4f, .catchUpScale = 1.2f, .turnRate = 12.0f};
 
         // バネ追従の強さ。BeginMotionFrame だけが書き、並列ループの間は読むだけ
         float gSoftFollowGain = 10.0f;
@@ -298,7 +299,7 @@ namespace CCL::AI::Motion
 
 
 
-        // バネ追従の突撃（小隊突撃）。持ち場へバネで寄るので、速いほど後ろへ流れて隊列がしなる
+        // バネ追従の突撃（小隊の弧撃ち）。持ち場へバネで寄るので、速いほど後ろへ流れて隊列がしなる
         void MoveSoftFollow(TransformComponent &trans, DroneComponent &drone, float dt)
         {
             // 後ろの席ほど springScale が小さく、遅れて付いてくる
@@ -308,7 +309,11 @@ namespace CCL::AI::Motion
             Vector3 displacement   = drone.targetPosition - trans.position;
             Vector3 targetVelocity = drone.followFeedForward + displacement * pGain;
 
-            const float maxSpeed = drone.moveSpeed * kSoftFollow.maxSpeedScale;
+            // 上限は「決まった速さ」と「先渡しの速度より少し上」の大きい方
+            // 決まった速さだけだと、アンカーをそれより速く飛ばしたときに機体が付いていけず、アンカーだけが先へ行く
+            // 先渡しの速度だけに合わせないのは、席へ戻るとき（先渡しがほぼ 0）に遠い席へ一瞬で飛んでいかないため
+            const float maxSpeed = (std::max)(drone.moveSpeed * kSoftFollow.maxSpeedScale,
+                                              drone.followFeedForward.Length() * kSoftFollow.catchUpScale);
             if (targetVelocity.LengthSquared() > maxSpeed * maxSpeed)
             {
                 targetVelocity.Normalize();
@@ -326,7 +331,7 @@ namespace CCL::AI::Motion
                 TurnToward(trans, look, /*includePitch*/ true, kSoftFollow.turnRate, dt);
             }
         }
-    } // namespace
+    }
 
     // ============================================================
     // 姿勢
@@ -430,9 +435,9 @@ namespace CCL::AI::Motion
 
 
 
-    void MoveCharge(TransformComponent &trans, DroneComponent &drone, float dt)
+    void MoveCharge(TransformComponent &trans, DroneComponent &drone, ChargeMode mode, float dt)
     {
-        switch (drone.chargeMode)
+        switch (mode)
         {
         case ChargeMode::RigidFollow:
             MoveRigidFollow(trans, drone, dt);
@@ -448,9 +453,9 @@ namespace CCL::AI::Motion
 
 
 
-    bool IsChargeDangerous(const DroneComponent &drone)
+    bool IsChargeDangerous(const DroneComponent &drone, ChargeMode mode)
     {
-        switch (drone.chargeMode)
+        switch (mode)
         {
         case ChargeMode::RigidFollow:
         case ChargeMode::SoftFollow:
@@ -464,13 +469,6 @@ namespace CCL::AI::Motion
 
     void BeginStraightCharge(DroneComponent &drone, const ChargeBeginInfo &info)
     {
-        // 処理フロー:
-        // 1. 移動方式を直進に戻す
-        // 2. タメの時間を入れる
-        // 3. 撃つ方向がなければ決める
-
-        // 前の技の追従モードを持ち越さないよう、直進に戻す（追従する技は陣形が毎フレーム上書きする）
-        drone.chargeMode   = ChargeMode::Straight;
         drone.chargeWindup = kStraightCharge.windup;
 
         // 陣形が予備動作中に方向を書いていれば、それを使う
@@ -492,4 +490,4 @@ namespace CCL::AI::Motion
         drone.targetLookDirection = dir;
     }
 
-} // namespace CCL::AI::Motion
+}

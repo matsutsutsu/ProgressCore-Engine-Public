@@ -80,7 +80,7 @@ namespace
         i += 1 + extra;
         return cp;
     }
-} // namespace
+}
 
 // stb に依存する状態をまとめて持つ（ヘッダに stb を持ち込まないため）
 struct TextRenderer::Impl

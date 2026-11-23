@@ -3,7 +3,7 @@
 // 概要: 小隊（5機編隊）の状態と調整値、それをまとめる World リソース
 //
 // 備考: 書くのは SquadUpdateSystem（単スレッド）だけ。陣形・移動の並列ループからは読むだけ
-//       リーダー機を持たず、先頭の位置をアンカーとして持つ。先頭の機が撃破されても隊列が崩れない
+//       リーダー機を持たず、先頭の位置をアンカーとして持つ。追従機が他の機体の Transform を直接引かずに済む
 // ===========================================================================
 #include <array>
 #include <cstdint>
@@ -11,15 +11,16 @@
 #include "Game/Logics/AI/Drone/Components/DroneComponent.h"
 #include "Game/Logics/AI/Drone/Components/DroneTuning.h"
 
-// 小隊が飛べる一番低い高さ。追跡は外れても飛び続けるので、止めないと床を突き抜ける
+// 小隊が飛べる一番低い高さ。前の機が上へ抜けた瞬間、その真後ろの持ち場が床下にならないように使う
 inline constexpr float kSquadFloorY = kDroneGroundY + 2.0f;
 
-// 小隊の段階。待機は BT が他の陣形（頭上円陣など）で作るので、ここには持たない
+// 小隊の段階
 enum class SquadPhase : uint8_t
 {
-    Idle,    // 小隊突撃の指示がない。アンカーは先頭の機に重ねておくだけ
-    Descend, // 今いる場所（頭上円陣など）から真下へ降りてくる（予備動作）
-    Chase,   // プレイヤーを追い続ける。攻撃の合図が落ちるまで続く
+    Idle,    // この技で飛ばない。機体は頭上円陣の席にいて、アンカーは先頭の機に重ねておくだけ
+    FormFan, // ボスの頭上の扇の位置へ並び、並んだら待つ（予備動作）
+    Arc,     // 撃った瞬間のプレイヤー位置へ弧を描いて飛び、そのまま通り過ぎる
+    Return,  // 飛び終わって頭上円陣の席へ戻る。撃つ合図が下りるまでここに留まり、もう一度は飛ばない
 };
 
 // 小隊1個ぶんの状態。書き手はすべて SquadUpdateSystem
@@ -31,22 +32,30 @@ struct SquadState
     DirectX::SimpleMath::Vector3 anchorForward  = DirectX::SimpleMath::Vector3::UnitZ; // 向き（正規化済み）
     DirectX::SimpleMath::Vector3 anchorVelocity = DirectX::SimpleMath::Vector3::Zero;  // 速度。席0の機へ先渡しする
 
-    SquadPhase phase      = SquadPhase::Idle; // 今の段階
-    float      chaseSpeed = 0.0f;             // 追跡中の今の速さ [m/s]
+    SquadPhase phase = SquadPhase::Idle; // 今の段階
 
-    DirectX::SimpleMath::Vector3 descendFrom = DirectX::SimpleMath::Vector3::Zero; // 降り始めた位置（降下に入った瞬間のアンカー）
-    float                        descend     = 0.0f; // 降下の進み具合（0=降り始め、1=降り切った）
+    DirectX::SimpleMath::Vector3 formFrom     = DirectX::SimpleMath::Vector3::Zero; // 扇へ並び始めた位置（FormFan に入った瞬間のアンカー）
+    float                        formProgress = 0.0f; // 扇へ並ぶ進み具合（0=並び始め、1=並び終わった）
+
+    // 弧の道筋。撃った瞬間に決めて、飛び終わるまで変えない（2次ベジェ2本）
+    //   1本目 arcFrom → arcCorner → arcTo   … 降下しながら曲がり、プレイヤーの高さで水平に突っ込む
+    //   2本目 arcTo   → passCorner → passTo … そのまま抜けて上がる
+    DirectX::SimpleMath::Vector3 arcFrom     = DirectX::SimpleMath::Vector3::Zero; // 始点（撃った瞬間のアンカー）
+    DirectX::SimpleMath::Vector3 arcCorner   = DirectX::SimpleMath::Vector3::Zero; // 1本目の曲がり具合を決める点
+    DirectX::SimpleMath::Vector3 arcTo       = DirectX::SimpleMath::Vector3::Zero; // 終点（撃った瞬間のプレイヤー）
+    DirectX::SimpleMath::Vector3 passCorner  = DirectX::SimpleMath::Vector3::Zero; // 2本目の曲がり具合を決める点
+    DirectX::SimpleMath::Vector3 passTo      = DirectX::SimpleMath::Vector3::Zero; // 通り過ぎた先
+    DirectX::SimpleMath::Vector3 arriveDir   = DirectX::SimpleMath::Vector3::UnitZ; // 終点へ入ってくる水平の向き。最後の機が終点を越えたかを測る
+    float                        arcProgress = 0.0f; // 道筋の進み具合（0〜1=1本目、1〜2=2本目、2=道筋の先へ直進中）
+    float                        coastTime   = 0.0f; // 道筋の先へ直進している時間 [秒]
 
     // --- 各席の機体（前フレームの値。添字は席の番号） ---
 
-    std::array<DirectX::SimpleMath::Vector3, 5> memberPos{};   // 位置。追従機は1つ前の席のここを追う
-    std::array<DirectX::SimpleMath::Vector3, 5> memberVel{};   // 速度。追従機へ先渡しする
-    std::array<bool, 5>                         memberValid{}; // 上の値が有効か（撃破された席は false）
-
-    uint8_t aliveCount = 0; // 生存機数。0 の小隊は計算をスキップ
+    std::array<DirectX::SimpleMath::Vector3, 5> memberPos{}; // 位置。追従機は1つ前の席のここを追う
+    std::array<DirectX::SimpleMath::Vector3, 5> memberVel{}; // 速度。追従機へ先渡しする
 };
 
-// 実行中に小隊の調整 UI から変える値（しなり具合と避けやすさは、動かして目で見ないと決まらないため）
+// 実行中に小隊の調整 UI から変える値（しなり具合や扇の形は、動かして目で見ないと決まらないため）
 struct SquadTuning
 {
     // --- 隊列 ---
@@ -54,21 +63,27 @@ struct SquadTuning
     float chainGap   = 2.5f;  // 前の機体との間隔 [m]
     float followGain = 10.0f; // 間隔のずれを直すバネの強さ
 
-    // --- 追跡 ---
+    // --- 扇（予備動作） ---
 
-    float chaseSpeedOverRun = 1.1f;   // 追跡の速さ（プレイヤーの走行速度に掛ける倍率）
-    float chaseSpeedSpread  = 0.08f;  // 小隊ごとに上の倍率へ ± で足す幅
-    float aimSideOffset     = 8.0f;   // 狙う点をプレイヤーの左右へずらす最大量 [m]
-    float aimFadeStartDist  = 30.0f;  // 横ずれを縮め始める距離 [m]
-    float aimFadeEndDist    = 12.0f;  // 横ずれが 0 になる距離 [m]。内側ではプレイヤー本人を狙う
-    float turnSlowMinScale  = 0.4f;   // 大きく曲がるときに落とす速さの下限（追跡の速さに対する割合）
-    float chaseAccel        = 60.0f;  // 速さを変えられる上限 [m/s²]
-    float maxTurnRateDeg    = 200.0f; // 曲がれる角度の上限 [度/秒]
+    int   launchCount    = 3;      // 1回の技で飛ばす小隊の数
+    float fanRadius      = 14.0f;  // 扇の要から小隊までの距離 [m]
+    float fanSpreadDeg   = 120.0f; // 扇の開き [度]。左端の小隊から右端の小隊までの角度
+    float fanPivotHeight = 6.0f;   // 扇の要の高さ（ボス基準）[m]
+    float fanFormTime    = 1.2f;   // 頭上円陣から扇の位置へ並ぶまでの秒数
+    float fanHoldTime    = 1.2f;   // 並び終わってから撃つまで構える秒数。予告の長さ＝並ぶ時間＋これ
 
-    // --- 降下（予備動作） ---
+    // --- 弧（攻撃） ---
 
-    float descendHeight = 5.0f; // 降り切った後の高さ（地面基準）[m]。追跡はここから始まる
-    float descendTime   = 2.0f; // 降り始めてから降り切るまでの秒数。BT の予備動作の Wait をこれ以上にする
+    float arcSpeed     = 40.0f; // 飛ぶ速さ [m/s]。機体の速さの上限は先渡しの速度に合わせて上がるので、上げても付いてくる
+    float arcSideBulge = 8.0f;  // 扇の端の小隊ほど横へふくらませる量 [m]。左右から交差するように来る
+    float passDistance = 15.0f; // プレイヤーの位置を通り過ぎてから飛ぶ水平の距離 [m]
+    float passClimb    = 8.0f;  // 通り過ぎる間に上がる高さ [m]
+
+    // --- 技の時間割 ---
+
+    // 撃ってから頭上円陣へ戻す合図までの秒数。飛ぶ・最後の機が抜ける・席へ戻るの合計より長くする
+    // 短いと飛んでいる途中で円陣へ切り替わり、弧の途中から席へ戻る
+    float recoveryTime = 3.0f;
 };
 
 // 全小隊の状態をまとめた World リソース。小隊番号を添字にした密配列

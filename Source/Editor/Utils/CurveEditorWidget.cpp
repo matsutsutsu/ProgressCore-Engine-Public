@@ -64,7 +64,7 @@ namespace
             dl->AddLine(ImVec2(a.x + nx * d, a.y + ny * d), ImVec2(a.x + nx * d2, a.y + ny * d2), col, thick);
         }
     }
-} // namespace
+}
 
 // ---------------------------------------------------------------------------
 // 公開 API

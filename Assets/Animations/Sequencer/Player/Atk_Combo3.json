@@ -23,7 +23,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.01666666753590107,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 5
         },
         {
@@ -48,13 +48,13 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.01666666753590107,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 8
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 2.0,
+            "damage": 3.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
@@ -73,7 +73,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.01666666753590107,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -96,15 +96,15 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07000000029802322,
-            "soundVolume": 1.0,
+            "soundVolume": 1.7,
             "startTime": 0.05000000074505806,
-            "stringParam": "sfx:/slash_1",
+            "stringParam": "sfx:/SE_PlayerSlashLight",
             "type": 1
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 2.0,
+            "damage": 3.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
@@ -123,13 +123,13 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.11666666716337204,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 2.0,
+            "damage": 3.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
@@ -148,7 +148,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.21666666865348816,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -171,15 +171,15 @@
             "radius": 1.0,
             "soundPitch": 0.0,
             "soundPitchRandom": 0.07000000029802322,
-            "soundVolume": 1.0,
+            "soundVolume": 1.7,
             "startTime": 0.25,
-            "stringParam": "sfx:/slash_1",
+            "stringParam": "sfx:/SE_PlayerSlashLight",
             "type": 1
         },
         {
             "attackLayer": 3,
             "cancelMask": 0,
-            "damage": 2.0,
+            "damage": 3.0,
             "effectAttachTag": "",
             "effectFollow": false,
             "effectScale": 1.0,
@@ -198,7 +198,7 @@
             "soundPitchRandom": 0.0,
             "soundVolume": 1.0,
             "startTime": 0.3166666626930237,
-            "stringParam": "Weapon_R",
+            "stringParam": "",
             "type": 0
         },
         {
@@ -435,6 +435,5 @@
         "visible": true
     },
     "startOffset": 0.0,
-    "targetAnimName": "Combo_Attack_04_02_Seq_0",
-    "targetModelPath": ""
+    "targetAnimName": "Combo_Attack_04_02_Seq_0"
 }

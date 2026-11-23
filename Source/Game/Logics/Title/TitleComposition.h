@@ -89,4 +89,4 @@ namespace CCL::Title
         return MakeFrameBasis(board.eye, board.lookTarget, board.fov, board.aspect);
     }
 
-} // namespace CCL::Title
+}

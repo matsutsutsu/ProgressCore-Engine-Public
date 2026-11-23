@@ -10,11 +10,11 @@
 namespace
 {
     constexpr const char *kPrefabPath = "Assets/Prefabs/UI/MenuStyle.json";
-} // namespace
+}
 
 
 
-void MenuStyleSystem::Update(float /*dt*/)
+void MenuStyleSystem::Update(float dt)
 {
     // Initialize で作らないのは、その後のレベルの読み込みで消されるため
     // 読めなくても試すのは1回だけにする（各画面は既定値で組まれる。理由は Prefab がログに出す）

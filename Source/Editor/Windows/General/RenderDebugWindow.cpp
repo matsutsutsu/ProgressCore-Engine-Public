@@ -29,7 +29,7 @@ namespace
         }
         return "?";
     }
-} // namespace
+}
 #endif // ENABLE_EDITOR
 
 void RenderDebugWindow::DrawContents(EditorContext &context)

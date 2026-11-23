@@ -34,12 +34,8 @@ void PlayerInputSystem::Update(float dt)
 
     // 演出中・決着後も止める
     // 導入演出の最中に動くと、演出の後に想定外の位置から始まる
-    bool blockGameInput = false;
-    if (m_world->HasResource<GameFlowState>())
-    {
-        const auto &flow = m_world->GetResource<GameFlowState>();
-        blockGameInput   = flow.uiInteract || flow.cinematic || flow.matchOver;
-    }
+    const bool blockGameInput =
+        m_world->HasResource<GameFlowState>() && m_world->GetResource<GameFlowState>().PlayerInputBlocked();
 
     // ---------------------------------------------------------
     // 2. ボタンと移動の向き

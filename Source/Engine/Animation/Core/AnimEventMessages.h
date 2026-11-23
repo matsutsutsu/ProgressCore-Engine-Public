@@ -9,7 +9,7 @@
 struct AnimEventSoundMessage
 {
     CCL::ECS::EntityID entity;
-    std::string        eventPath; // サウンドのイベント名（AudioConfigDXTK.json に登録した名前）
+    std::string        eventPath; // サウンドのイベント名（Assets/Audio/SE の下のファイル名。例: "sfx:/SE_PlayerSlashLight"）
     float              volume;    // 音量の倍率（1 で等倍）
     float              pitch;     // ピッチ（オクターブ単位。0 で等倍）
 };

@@ -19,7 +19,7 @@ void UILayoutSystem::Initialize()
 
 
 
-void UILayoutSystem::Update(float /*dt*/)
+void UILayoutSystem::Update(float dt)
 {
     auto       &gfx     = Graphics::Instance();
     const float screenW = gfx.GetScreenWidth();

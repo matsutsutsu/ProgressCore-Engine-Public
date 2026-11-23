@@ -1,6 +1,6 @@
 #pragma once
 // 骨格ポーズの後処理の共通関数
-// 実行時（AnimationPoseSystem）とエディタのプレビュー（AnimationSystem::UpdateManual）の両方が使う
+// AnimationPoseSystem が、実行時のポーズ計算とエディタのプレビュー（ApplyPoseAt）の両方で使う
 #include "Engine/Graphics/Resource/Model.h"
 #include "Engine/Graphics/Resource/ModelResource.h"
 #include <vector>
@@ -27,4 +27,4 @@ namespace CCL::Anim
                 poseBuffer[rootNodeIndex].position.y = modelRes->GetNodes()[rootNodeIndex].translate.y;
         }
     }
-} // namespace CCL::Anim
+}

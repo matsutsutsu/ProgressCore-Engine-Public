@@ -65,10 +65,10 @@ public:
 
     // 揺れは Body が決めた resultPos / resultLookAt に足すので、すべての Body の System より後に走る
     // 先に走ると、足した揺れが Body に上書きされて消える
+    // Game 側の Body（PlayerCameraSystem）は、Engine が名前を知らずに済むよう向こうが GetRunBefore で宣言する
     std::vector<const char *> GetRunAfter() const override
     {
-        return {"CameraActionTPSSystem", "CameraFollowSystem", "CameraLookAtSystem",
-                "CameraFreeControlSystem"};
+        return {"CameraFollowSystem", "CameraLookAtSystem", "CameraFreeControlSystem"};
     }
 
 private:

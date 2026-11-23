@@ -143,10 +143,10 @@ Framework::Framework(HWND hWnd)
     }
 
     {
-        ZoneScopedN("Init: Audio (DXTK) + LoadConfig");
+        ZoneScopedN("Init: Audio (DXTK) + LoadSoundFolder");
         services.audioManager = std::make_shared<DxtkAudioManager>();
         services.audioManager->Initialize();
-        services.audioManager->LoadConfig("Assets/Config/AudioConfigDXTK.json");
+        services.audioManager->LoadSoundFolder("Assets/Audio");
     }
 
     {

@@ -1,43 +1,44 @@
 #ifndef SHADOWMAP_HLSLI
 #define SHADOWMAP_HLSLI
 
-// 定数バッファは ShaderShared.h に移動（C++と共有）
+// ===========================================================================
+// 概要: 平行光源の影（カスケードシャドウ）を読む関数
+//
+// 備考: 影は3段のカスケード。カメラから cascadeSplits.x / .y の距離で段が切り替わる
+//       ShadowPass が書いた深度を、比較サンプラーで3x3 の9点読んで平均する（PCF）
+//       影の cbuffer は ShaderShared.h で C++ と共有している
+// ===========================================================================
 #include "Engine/Graphics/Shader/Shared/ShaderShared.h"
-
-// --- データ定義 ---
 
 Texture2DArray ShadowMap : register(REG_SRV(SLOT_SRV_SHADOW));
 SamplerComparisonState ShadowSampler : register(REG_SMP(SLOT_SMP_SHADOW));
 
-// --- 関数定義 ---
-
-// 1つのカスケード層から影をサンプリングする専用関数
+// 1つの段の影を読む（0 = 影、1 = 日向）
 float SampleCascade(float4 worldPos, int cascadeIndex)
 {
     float4 shadowPos = mul(worldPos, light_view_projection[cascadeIndex]);
     float3 shadow_texcoord = shadowPos.xyz / shadowPos.w;
-    
-    // UV座標の変換
+
+    // ライトから見た画面の位置（-1〜1）を、テクスチャの UV（0〜1、y は下向き）に直す
     shadow_texcoord.x = shadow_texcoord.x * 0.5f + 0.5f;
     shadow_texcoord.y = shadow_texcoord.y * -0.5f + 0.5f;
 
-    // 範囲外判定
+    // この段の範囲の外は日向として扱う
     if (any(shadow_texcoord.xy < 0.0f) || any(shadow_texcoord.xy > 1.0f) || shadow_texcoord.z < 0.0f || shadow_texcoord.z > 1.0f)
         return 1.0f;
-    
-    // ダイナミック・カスケード・バイアス
-    // カスケード層が奥になるほど、解像度の粗さに比例してバイアスを強める
+
+    // 奥の段ほど1テクセルが広いので、バイアスを 3 倍ずつ強める（面に影の縞が出るのを防ぐ）
     float cascadeScale = pow(3.0f, cascadeIndex);
     float dynamicBias = shadow_bias * cascadeScale;
 
     float depth = shadow_texcoord.z - dynamicBias;
     float shadowWeight = 0.0f;
-    
+
     uint width, height, elements;
     ShadowMap.GetDimensions(width, height, elements);
     float2 texelSize = 1.0f / float2(width, height);
-    
-    // 3x3 PCFサンプリング
+
+    // 3x3 の PCF。影の縁をなめらかにする
     [unroll]
     for (int y = -1; y <= 1; ++y)
     {
@@ -53,33 +54,30 @@ float SampleCascade(float4 worldPos, int cascadeIndex)
     return shadowWeight / 9.0f;
 }
 
-// 影の重み (0.0=影, 1.0=日向) を計算し、境界でブレンドするメイン関数
+// 影の重み（0 = 影、1 = 日向）。段の境目の手前では次の段と混ぜ、切り替わりの段差を隠す
 float CalculateShadowWeight(float4 worldPos, float viewDepth)
 {
     int cascadeIndex = 0;
     int nextCascadeIndex = 0;
     float blendFactor = 0.0f;
-    
-    // ブレンドを開始する「境界の手前何メートルか」
-    // (数値を大きくするとグラデーションが広がる)
+
+    // 境目の手前、何 m から次の段と混ぜ始めるか
     const float BLEND_BAND = 5.0f;
 
     if (viewDepth < cascadeSplits.x)
     {
         cascadeIndex = 0;
-        // 次の層(Cascade 1)への距離を測る
+        // 境目に近いほど blendFactor が 1 に近づく
         float distToNext = cascadeSplits.x - viewDepth;
         if (distToNext < BLEND_BAND)
         {
             nextCascadeIndex = 1;
-            // 距離が近いほど、blendFactor が 1.0 に近づく
             blendFactor = 1.0f - (distToNext / BLEND_BAND);
         }
     }
     else if (viewDepth < cascadeSplits.y)
     {
         cascadeIndex = 1;
-        // 次の層(Cascade 2)への距離を測る
         float distToNext = cascadeSplits.y - viewDepth;
         if (distToNext < BLEND_BAND)
         {
@@ -89,27 +87,24 @@ float CalculateShadowWeight(float4 worldPos, float viewDepth)
     }
     else
     {
-        cascadeIndex = 2; // 最終層はブレンド先がない
+        cascadeIndex = 2; // 一番奥の段。混ぜる先はない
     }
 
-    // 1. 現在の層で影をサンプリング（9回）
     float shadowWeight = SampleCascade(worldPos, cascadeIndex);
 
-    // 2. 境界付近（blendFactor > 0）なら、次の層もサンプリングしてブレンドする
+    // 境目の近くだけ次の段も読む（読む回数が 9 回から 18 回に増えるので、帯の中に限る）
     if (blendFactor > 0.0f)
     {
-        float nextShadowWeight = SampleCascade(worldPos, nextCascadeIndex); // さらに9回
+        float nextShadowWeight = SampleCascade(worldPos, nextCascadeIndex);
         shadowWeight = lerp(shadowWeight, nextShadowWeight, blendFactor);
     }
 
     return shadowWeight;
 }
 
-// 最終的な色に影を適用する関数
+// 色を影の分だけ暗くする。shadow_color.a が影の濃さ（0.5 なら影の中は半分の明るさ）
 float3 ApplyShadowColor(float3 finalColor, float shadowWeight)
 {
-    // shadow_color.a (例: 0.5) を「影の濃さ」として使用する
-    // 日向(weight=1.0)なら 1.0倍。日陰(weight=0.0)なら 1.0 - 0.5 = 0.5倍の明るさになる
     float intensity = lerp(1.0f - shadow_color.a, 1.0f, shadowWeight);
     return finalColor * intensity;
 }

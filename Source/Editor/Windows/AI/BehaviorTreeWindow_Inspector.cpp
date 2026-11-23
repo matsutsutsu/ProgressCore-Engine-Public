@@ -257,18 +257,19 @@ void BehaviorTreeWindow::DrawInspector()
                 ImGui::Text("デコレーター");
 
                 // 子を待たずに並行して動かしたいときは Parallel ノードで書く
-                const char *decNames[] = {"反転 (Inverter)", "クールダウン (Cooldown)", "リトライ (Retry)"};
+                const char *decNames[] = {"反転 (Inverter)", "クールダウン (Cooldown)", "リトライ (Retry)",
+                                          "繰り返し (Repeat)"};
                 if (ImGui::Combo("種類", &it->decoratorType, decNames, IM_ARRAYSIZE(decNames)))
                 {
                     // 既定値を入れておく。0 のままだと Cooldown は毎フレーム素通り、
-                    // Retry は子を一度も評価しない＝どちらも「置いたのに効かない」になる
+                    // Retry と Repeat は子を1回しか評価しない＝どれも「置いたのに効かない」になる
                     // 行動・条件の param が同じ理由で自動補完されるのに揃える
                     if (it->param <= 0.0f)
                     {
                         if (it->decoratorType == 1)
                             it->param = 5.0f; // Cooldown [秒]
-                        else if (it->decoratorType == 2)
-                            it->param = 3.0f; // Retry [回]
+                        else if (it->decoratorType == 2 || it->decoratorType == 3)
+                            it->param = 3.0f; // Retry / Repeat [回]
                     }
                     needsUndo             = true;
                     undoMessage           = "Change Decorator Type";
@@ -297,6 +298,22 @@ void BehaviorTreeWindow::DrawInspector()
                     {
                         needsUndo   = true;
                         undoMessage = "Change Retry Count";
+                    }
+                }
+                else if (it->decoratorType == 3)
+                { // Repeat
+                    ImGui::TextDisabled("子が成功するたびに数え、この回数に届いたら成功");
+                    ImGui::TextDisabled("例：怒り中に技を3つ続けて出す");
+
+                    int repeatCount = static_cast<int>(it->param);
+                    if (ImGui::DragInt("回数", &repeatCount, 1, 2, 10))
+                    {
+                        it->param = static_cast<float>(repeatCount);
+                    }
+                    if (ImGui::IsItemDeactivatedAfterEdit())
+                    {
+                        needsUndo   = true;
+                        undoMessage = "Change Repeat Count";
                     }
                 }
             }
@@ -723,7 +740,7 @@ namespace
         }
         return child.scoreRule.base * CCL::AI::BT::DistanceFactor(child.scoreRule, distance);
     }
-} // namespace
+}
 
 std::string BehaviorTreeWindow::GetUtilityChildName(const EditorBTNode &child)
 {

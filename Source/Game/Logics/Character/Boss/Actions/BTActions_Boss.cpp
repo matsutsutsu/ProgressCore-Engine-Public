@@ -111,6 +111,27 @@ namespace CCL::AI::BT
             }
         };
 
+        // 怒りの印。評価されている間、ずっと Running を返して怒り中を要求する
+        // Parallel の従に置く。主が終われば評価されなくなり、枝がどう終わっても次のフレームに解ける
+        class RageAction : public IBTAction
+        {
+        public:
+            std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
+            {
+                return TypeIDsOf<BossCommandComponent>();
+            }
+
+            BTNodeState Execute(BTContext &ctx) override
+            {
+                // lastLogActionId は書かない。従なので、主の技の名前を上書きしてしまう
+                if (auto *cmd = ctx.world->GetComponent<BossCommandComponent>(ctx.entity))
+                {
+                    cmd->rageRequested = true;
+                }
+                return BTNodeState::Running;
+            }
+        };
+
         // ---------------------------------------------------------------------------
         // 移動
         // ---------------------------------------------------------------------------
@@ -150,7 +171,7 @@ namespace CCL::AI::BT
         };
 
         // ---------------------------------------------------------------------------
-        // 体を動かす技（後方ステップ・跳躍・突進・横移動・間合いを取る・様子見）
+        // 体を動かす技（後方ステップ・跳躍・突進・間合いを取る・様子見）
         // ---------------------------------------------------------------------------
 
         // ボス本体へ技を要求し、技が硬直まで終わったら完了する
@@ -316,6 +337,9 @@ namespace CCL::AI::BT
         class DroneTechniqueAction : public IBTAction
         {
         public:
+            // 怒り中の「戻してから次までの間」[秒]。データの間がこれより短ければ、データのまま
+            static constexpr float kRageRestSeconds = 0.2f;
+
             std::vector<CCL::ECS::TypeID> GetExtraWriteTypes() const override
             {
                 return TypeIDsOf<BossCommandComponent>();
@@ -394,6 +418,10 @@ namespace CCL::AI::BT
                 {
                     cmd->requestFormation  = DroneFormationType::HighOrbit;
                     cmd->droneAttackActive = false;
+
+                    // 怒り中は、戻してからの間だけを縮める。予告と攻撃の動きは縮めない（読める時間を残す）
+                    // 怒り中かは技を始めた時でなく、ここで見る。連発の途中で怒りが解けたら、その技から元の間に戻る
+                    if (cmd->raging) timer = (std::min)(timer, kRageRestSeconds);
                 }
 
                 // ---------------------------------------------------------
@@ -404,7 +432,7 @@ namespace CCL::AI::BT
                 return BTNodeState::Running;
             }
         };
-    } // namespace
+    }
 
     // ---------------------------------------------------------------------------
     // 登録
@@ -418,6 +446,7 @@ namespace CCL::AI::BT
 
         reg.RegisterAction<WaitAction>(A_Wait);
         reg.RegisterAction<ResetDamageAction>(A_ResetDamage);
+        reg.RegisterAction<RageAction>(A_BossRage);
 
         // --- 移動 ---
 
@@ -430,10 +459,9 @@ namespace CCL::AI::BT
         reg.RegisterActionInstance(A_BossLeapAttack, std::make_unique<MotionAction>(A_BossLeapAttack));
         reg.RegisterActionInstance(A_BossAirHover, std::make_unique<MotionAction>(A_BossAirHover));
         reg.RegisterActionInstance(A_BossDashAttack, std::make_unique<MotionAction>(A_BossDashAttack));
-        reg.RegisterActionInstance(A_BossSideTravelLeft, std::make_unique<MotionAction>(A_BossSideTravelLeft));
-        reg.RegisterActionInstance(A_BossSideTravelRight, std::make_unique<MotionAction>(A_BossSideTravelRight));
         reg.RegisterActionInstance(A_BossReposition, std::make_unique<MotionAction>(A_BossReposition));
         reg.RegisterActionInstance(A_BossFootwork, std::make_unique<MotionAction>(A_BossFootwork));
+        reg.RegisterActionInstance(A_BossExhausted, std::make_unique<MotionAction>(A_BossExhausted));
 
         // --- ドローンへの指示 ---
 
@@ -451,4 +479,4 @@ namespace CCL::AI::BT
         BT_DRONE_ACTION_LIST(CCL_REGISTER_DRONE_ACTION)
 #undef CCL_REGISTER_DRONE_ACTION
     }
-} // namespace CCL::AI::BT
+}

@@ -1,23 +1,26 @@
-// Shader/PostProcess/PauseBlurPS.hlsl
-//   ポーズ中に背景（ゲーム画面）だけをぼかす。UIは2Dパスでこの後に描かれるので、
-//   メニューは鮮明なまま「奥のゲームだけが引っ込む」画になる。
+// ===========================================================================
+// 概要: ポーズ中のぼかし。ゲームの画面だけをぼかし、奥へ引っ込んだように見せる
 //
-//   ダウンサンプル連鎖を組まず1パスでタップ数を稼いでいる理由:
-//     このエフェクトはポーズ中しか走らない＝ゲームが止まっている間の負荷なので、
-//     速度より「追加のレンダーターゲットと状態管理を増やさないこと」を優先した。
+// 入力: シーンの色
+// 出力: ぼかしたシーンの色
+//
+// 備考: UI はこの後の 2D パスで描くので、メニューはぼけない
+//       縮小を重ねるぼかしにせず、1回で 16 点を読む。ポーズ中にしか走らないので、
+//       速さより、レンダーターゲットと手順を増やさないことを選んだ
+// ===========================================================================
 #include "Shader/PostProcess/PostProcessVS.hlsli"
 #include "Engine/Graphics/Shader/Shared/PostProcessShared.h"
 
-Texture2D    gSceneColor   : register(REG_SRV(SLOT_SRV_BLOOM_IN));
+Texture2D    gSceneColor   : register(REG_SRV(SLOT_SRV_POST_INPUT0));
 SamplerState LinearSampler : register(REG_SMP(SLOT_SMP_LINEAR));
 
-// 二重の円環。内側を半径0.5でずらして配置し、単純な円1本より隙間を埋める。
+// 読む点の並び。2つの輪に8点ずつ。内側の輪を 22.5 度回して、外側の点の間を埋める
 #define PAUSE_BLUR_TAPS 16
 static const float2 kRing[PAUSE_BLUR_TAPS] = {
-    // 外周（半径 1.0）
+    // 外側（半径 1.0）
     float2( 1.000,  0.000), float2( 0.707,  0.707), float2( 0.000,  1.000), float2(-0.707,  0.707),
     float2(-1.000,  0.000), float2(-0.707, -0.707), float2( 0.000, -1.000), float2( 0.707, -0.707),
-    // 内周（半径 0.5・22.5度ずらし）
+    // 内側（半径 0.5）
     float2( 0.462,  0.191), float2( 0.191,  0.462), float2(-0.191,  0.462), float2(-0.462,  0.191),
     float2(-0.462, -0.191), float2(-0.191, -0.462), float2( 0.191, -0.462), float2( 0.462, -0.191)
 };
@@ -27,7 +30,7 @@ float4 main(VS_OUT input) : SV_TARGET
     float2 uv     = input.texcoord;
     float3 center = gSceneColor.Sample(LinearSampler, uv).rgb;
 
-    // 半径がほぼ0なら素通し。ポーズ解除の途中でも分岐で自然に元へ戻る。
+    // 半径がほぼ 0 ならそのまま返す。ポーズを解いて半径が縮んでいく途中も、ここで元の画面に戻る
     if (pauseBlurRadius < 0.0002f)
         return float4(center, 1.0f);
 
