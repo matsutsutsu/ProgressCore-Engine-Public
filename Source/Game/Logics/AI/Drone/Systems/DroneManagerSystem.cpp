@@ -220,11 +220,6 @@ int DroneManagerSystem::SpawnDrones(int count)
             phase ^= phase >> 15;
             d->hoverTimeOffset = static_cast<float>(phase % 65536u) * (kHoverPhasePeriod / 65536.0f);
         }
-        // すでにPrefabで設定されているのでコメントアウト
-        //if (auto *tm = m_world->GetComponent<TimeStateComponent>(droneId))
-        //{
-        //    tm->group = TimeGroup::Enemy;
-        //}
 
         ++spawned;
     }

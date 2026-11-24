@@ -535,10 +535,6 @@ int Framework::Run()
 
             float frameTime = timer.TimeInterval();
 
-            // TODO(2026-09-16): シャドウマップ周りでメモリリークの疑い
-            //   リークダンプの確保番号を _CrtSetBreakAlloc に渡して確保箇所を特定する
-            //   （実行ごとに番号が変わる場合はこの方法は使えない）
-
             // どんなに重くても 0.1 秒進んだことにして打ち切る
             // 打ち切らないと、処理落ちで消化するステップが増え、さらに処理落ちする、を繰り返して止まる
             if (frameTime > 0.1f) frameTime = 0.1f;

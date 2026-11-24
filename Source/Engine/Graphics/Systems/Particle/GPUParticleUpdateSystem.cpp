@@ -255,7 +255,6 @@ void GPUParticleUpdateSystem::RebuildParticleBuffer(ParticleEmitter &emitter)
     ID3D11Device *device = Graphics::Instance().GetDevice();
     if (!device || emitter.desc.maxCount <= 0) return;
 
-    // TODO(2026-03-27): ResourceManager で粒子バッファをプールし、作り直しの処理時間の跳ねをなくす
     emitter.computeBuffer = ResourceManager::Instance().CreateParticleBuffer(device, emitter.desc.maxCount);
 
     emitter.isInitialized = true;

@@ -122,8 +122,6 @@ void Graphics::SetupRenderPipeline()
 
 void Graphics::BuildDefaultRenderPasses()
 {
-    // TODO(2026-09-10): ローディング画面など軽い構成が要るシーン用に、別の Build*RenderPasses を用意して切り替えられるようにする
-
     m_pipeline.AddPass<SetupPass>();                         //  1. HDR バッファのクリアとバインド
     m_pipeline.AddPass<ShadowPass>();                        //  2. シャドウマップ
     m_pipeline.AddPass<NormalPrepass>();                     //  3. 深度と法線のプリパス。不透明の深度を先に決める

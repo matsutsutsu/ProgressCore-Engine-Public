@@ -64,15 +64,9 @@ private:
     void DrawAnnulus(ShapeRenderer *renderer, const DirectX::XMFLOAT3 &center,
                      float rInner, float rOuter, const DirectX::XMFLOAT4 &color) const;
 
-    #if 0
-    bool m_enabled  = true;
-    bool m_drawLine = true; // ボス→プレイヤーの照準線
-    bool m_drawNow  = true; // 今の間合いを示すリング
-    #else
     bool m_enabled  = false;
     bool m_drawLine = false; // ボス→プレイヤーの照準線
     bool m_drawNow  = false; // 今の間合いを示すリング
-    #endif
 
     // しきい値の間を地面の帯で塗る。いちばん読みやすい表示なので既定で ON
     bool m_groundFill = true;

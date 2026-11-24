@@ -209,7 +209,6 @@ void HitboxCollisionSystem::CheckAndSpawnDamageEvent(EntityID attackerCandidate,
             // 判定自身が基準のとき（ドローン）は前方を混ぜない。基準が接触点のすぐそばにあるので、
             // 外向きの向きがそのまま進んできた向きになる。機体の forward 軸がモデルの前方と
             // 合っているかも気にしなくて済む
-            // TODO(2026-09-06): 混ぜる割合を HitBox 区間ごとに技で指定できるようにする
             const float kForwardWeight = hitbox->useSelfAsHitOrigin ? 0.0f : 0.75f;
             Vector3     blended        = fwd * kForwardWeight + radial * (1.0f - kForwardWeight);
             if (blended.LengthSquared() > 1e-6f)

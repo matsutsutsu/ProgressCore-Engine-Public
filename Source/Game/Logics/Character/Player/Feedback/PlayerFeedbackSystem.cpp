@@ -254,8 +254,6 @@ void PlayerFeedbackSystem::OnPlayerDamaged(
     StartDamageVignette();
 
     StartDamageChromaticAberration();
-
-    // TODO(2026-08-25): 被弾の効果音を鳴らす
 }
 
 
@@ -266,8 +264,6 @@ void PlayerFeedbackSystem::OnPlayerAttackHit(
     if (!m_world->HasComponent<PlayerComponent>(event.attackerID)) return;
 
     StartAttackHitVibration(event);
-
-    // TODO(2026-08-25): 命中時のカメラの揺れと効果音を足す
 }
 
 
