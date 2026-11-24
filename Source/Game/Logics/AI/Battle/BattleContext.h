@@ -39,8 +39,6 @@ struct BattleContext
 
     int droneAliveCount = 1000; // ドローンの生存数。書くのは DroneManagerSystem
 
-    // TODO(2026-09-29): arenaCenter / arenaRadius をシーンかステージのデータから設定する
-    //   今のステージ（中心が原点、見えない壁が半径 90m の外側）に合わせた既定値のまま使っている
     DirectX::XMFLOAT3 arenaCenter = {0, 0, 0}; // 戦える範囲（真上から見た円）の中心。書く処理はなく、常に原点
 
     // 戦える範囲の半径（m）。見えない壁の内側に合わせる。書く処理はなく、既定値のまま
